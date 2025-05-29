@@ -10,6 +10,7 @@
 #include "components/policy/core/common/async_policy_loader.h"
 #include "components/policy/policy_export.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/enterprise_device_management_adapter.h"
+#include "base/memory/raw_ptr.h"
 
 namespace base {
 class Value;
@@ -32,18 +33,15 @@ class POLICY_EXPORT PolicyLoaderOhos : public AsyncPolicyLoader {
   void InitOnBackgroundThread() override;
   PolicyBundle Load() override;
 
-  std::shared_ptr<PolicyChangedEventCallback> event_callback() {
-    return event_callback_;
-  }
-  static void TryChoosePolicySource();
+  void TryChoosePolicySource();
   static bool ParsePolicy(const std::string& json, PolicyBundle* bundle);
 
  private:
   std::string ReadTestPolices();
 
   std::shared_ptr<PolicyChangedEventCallback> event_callback_;
-  static bool use_browser_policy_;
-  static bool policy_source_choosed_;
+  bool use_browser_policy_ = false;
+  bool policy_source_choosed_ = false;
 };
 
 class PolicyChangedEventCallback
@@ -60,7 +58,7 @@ class PolicyChangedEventCallback
 
  private:
   void OnPolicyChangedImpl();
-  PolicyLoaderOhos* loader_;
+  raw_ptr<PolicyLoaderOhos> loader_;
 };
 
 }  // namespace policy

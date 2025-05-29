@@ -11,7 +11,6 @@
 #include <memory>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/lru_cache.h"
 #include "base/containers/span.h"
 #include "base/functional/callback.h"
@@ -28,11 +27,13 @@
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkYUVAInfo.h"
+#include "arkweb/build/features/features.h"
 
 class GrDirectContext;
 class SkImage;
 
 namespace gpu {
+class ServiceTransferCacheExt;
 
 // ServiceTransferCache is a GPU process interface for retrieving cached entries
 // from the transfer cache. These entries are populated by client calls to the
@@ -46,6 +47,10 @@ namespace gpu {
 class GPU_GLES2_EXPORT ServiceTransferCache
     : public base::trace_event::MemoryDumpProvider {
  public:
+  friend class ServiceTransferCacheExt;
+  virtual raw_ptr<ServiceTransferCacheExt> AsServiceTransferCacheExt() {
+    return nullptr;
+  }
   struct GPU_GLES2_EXPORT EntryKey {
     EntryKey(int decoder_id,
              cc::TransferCacheEntryType entry_type,
@@ -92,16 +97,6 @@ class GPU_GLES2_EXPORT ServiceTransferCache
       SkYUVColorSpace yuv_color_space,
       size_t buffer_byte_size,
       bool needs_mips);
-
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-  bool CreateLockedRGBAHardwareDecodedImageEntry(
-      int decoder_id,
-      uint32_t entry_id,
-      ServiceDiscardableHandle handle,
-      GrDirectContext* context,
-      std::vector<sk_sp<SkImage>> plane_images,
-      size_t buffer_byte_size);
-#endif
 
   void PurgeMemory(
       base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level);

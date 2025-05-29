@@ -96,22 +96,6 @@ void PointerProperties::SetAxesAndOrientation(float radius_x,
   }
 }
 
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-MotionEventGeneric::MotionEventGeneric(Action action,
-                                       base::TimeTicks event_time,
-                                       const PointerProperties& pointer,
-                                       bool is_lost_focus)
-    : action_(action),
-      event_time_(event_time),
-      unique_event_id_(ui::GetNextTouchEventId()),
-      action_index_(0),
-      button_state_(0),
-      flags_(0),
-      cancel_by_lost_focus_(is_lost_focus) {
-  PushPointer(pointer);
-}
-#endif
-
 MotionEventGeneric::MotionEventGeneric(Action action,
                                        base::TimeTicks event_time,
                                        const PointerProperties& pointer)
@@ -120,11 +104,9 @@ MotionEventGeneric::MotionEventGeneric(Action action,
       unique_event_id_(ui::GetNextTouchEventId()),
       action_index_(0),
       button_state_(0),
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-      flags_(0),
-      cancel_by_lost_focus_(false) {
-#else
       flags_(0) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  motion_event_generic_utils_ = std::make_shared<MotionEventGenericUtils>(this);
 #endif
   PushPointer(pointer);
 }
@@ -136,11 +118,9 @@ MotionEventGeneric::MotionEventGeneric(const MotionEventGeneric& other)
       action_index_(other.action_index_),
       button_state_(other.button_state_),
       flags_(other.flags_),
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-      pointers_(other.pointers_),
-      cancel_by_lost_focus_(false) {
-#else
       pointers_(other.pointers_) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  motion_event_generic_utils_ = std::make_shared<MotionEventGenericUtils>(this);
 #endif
   const size_t history_size = other.GetHistorySize();
   for (size_t h = 0; h < history_size; ++h)
@@ -384,15 +364,4 @@ void MotionEventGeneric::PopPointer() {
   DCHECK_GT(pointers_.size(), 0U);
   pointers_.pop_back();
 }
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-bool MotionEventGeneric::IsCancelByLostFocus() const {
-  return cancel_by_lost_focus_;
-}
-
-void MotionEventGeneric::SetCancelByLostFocus(bool is_lost_focus) {
-  cancel_by_lost_focus_ = is_lost_focus;
-}
-#endif
-
 }  // namespace ui

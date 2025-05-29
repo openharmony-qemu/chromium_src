@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/feature_list.h"
@@ -66,10 +67,13 @@
 #include "ui/gfx/presentation_feedback.h"
 #include "ui/gfx/switches.h"
 #include "ui/gl/gl_switches.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ARKWEB)
 #include "mojo/public/cpp/bindings/sync_call_restrictions.h"
 #endif
+
+#include "arkweb/chromium_ext/ui/compositor/compositor_utils.h"
 
 namespace ui {
 
@@ -109,6 +113,7 @@ Compositor::Compositor(const viz::FrameSinkId& frame_sink_id,
       frame_sink_id_, this, viz::ReportFirstSurfaceActivation::kNo);
   host_frame_sink_manager->SetFrameSinkDebugLabel(frame_sink_id_, "Compositor");
   root_web_layer_ = cc::Layer::Create();
+  compositor_utils_ = std::make_unique<CompositorUtils>(this);
 
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
 
@@ -339,7 +344,10 @@ void Compositor::SetLayerTreeFrameSink(
   layer_tree_frame_sink_requested_ = false;
   display_private_ = std::move(display_private);
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  SetDrawMode(drawMode_);
+  compositor_utils_->SetDrawMode(compositor_utils_->drawMode_);
+#endif
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  compositor_utils_->SetNativeInnerWeb(compositor_utils_->isInnerWeb_);
 #endif
   host_->SetLayerTreeFrameSink(std::move(layer_tree_frame_sink));
   // Display properties are reset when the output surface is lost, so update it
@@ -461,35 +469,6 @@ void Compositor::ReenableSwap() {
     display_private_->Resize(size_);
 }
 #endif
-
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-void Compositor::SetDrawRect(const gfx::Rect& new_rect) {
-  if (display_private_) {
-    TRACE_EVENT0("viz", "Compositor::SetDrawRect");
-    mojo::SyncCallRestrictions::ScopedAllowSyncCall scoped_allow_sync_call;
-    display_private_->SetDrawRect(new_rect);
-  }
-}
-
-void Compositor::SetDrawMode(const int32_t& mode) {
-  drawMode_ = mode;
-  if (display_private_) {
-    TRACE_EVENT0("viz", "Compositor::SetDrawMode");
-    mojo::SyncCallRestrictions::ScopedAllowSyncCall scoped_allow_sync_call;
-    display_private_->SetDrawMode(mode);
-  }
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-void Compositor::SetShouldFrameSubmissionBeforeDraw(bool should) {
-  if (display_private_) {
-    TRACE_EVENT0("viz", "Compositor::SetShouldFrameSubmissionBeforeDraw");
-    mojo::SyncCallRestrictions::ScopedAllowSyncCall scoped_allow_sync_call;
-    display_private_->SetShouldFrameSubmissionBeforeDraw(should);
-  }
-}
-#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
 void Compositor::SetScaleAndSize(float scale,
                                  const gfx::Size& size_in_pixel,
@@ -747,11 +726,6 @@ void Compositor::IssueExternalBeginFrame(
   external_begin_frame_controller_->IssueExternalBeginFrame(
       args, force, std::move(callback));
 }
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-void Compositor::SendInternalBeginFrame() {
-  context_factory_->SendInternalBeginFrame(frame_sink_id());
-}
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 ThroughputTracker Compositor::RequestNewThroughputTracker() {
   return ThroughputTracker(next_throughput_tracker_id_++,
@@ -1009,30 +983,6 @@ void Compositor::SetDelegatedInkPointRenderer(
     display_private_->SetDelegatedInkPointRenderer(std::move(receiver));
 }
 
-#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
-void Compositor::SetEnableLowerFrameRate(bool enabled) {
-  context_factory_->GetHostFrameSinkManager()->SetEnableLowerFrameRate(
-      enabled, frame_sink_id());
-}
-
-void Compositor::EvictFrameBackBuffers(bool invisible) {
-  context_factory_->GetHostFrameSinkManager()->EvictFrameBackBuffers(
-      frame_sink_id(), invisible);
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
-void Compositor::UpdateVSyncFrequency() {
-  context_factory_->GetHostFrameSinkManager()->UpdateVSyncFrequency(
-      frame_sink_id());
-}
-
-void Compositor::ResetVSyncFrequency() {
-  context_factory_->GetHostFrameSinkManager()->ResetVSyncFrequency(
-      frame_sink_id());
-}
-#endif
-
 const cc::LayerTreeSettings& Compositor::GetLayerTreeSettings() const {
   return host_->GetSettings();
 }
@@ -1083,28 +1033,11 @@ void Compositor::OnSetPreferredRefreshRate(float refresh_rate) {
 }
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
-void Compositor::SetCurrentFrameSinkId(const viz::FrameSinkId& id) {
-  if (display_private_) {
-    display_private_->SetCurrentFrameSinkId(id);
-  } else {
-    LOG(ERROR) << "Compositor::SetCurrentDisplay display_private error";
-  }
-}
-#endif
-
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-void Compositor::DisableSwapUntilMaximized() {
-  if (display_private_) {
-    mojo::SyncCallRestrictions::ScopedAllowSyncCall scoped_allow_sync_call;
-    display_private_->DisableSwapUntilMaximized();
-  }
-}
-
 void Compositor::RestoreRenderFit() {
   if (delegate_) {
     delegate_->RestoreRenderFit();
   }
 }
-#endif  // ARKWEB_MAXIMIZE_RESIZE
+#endif // ARKWEB_MAXIMIZE_RESIZE
 }  // namespace ui

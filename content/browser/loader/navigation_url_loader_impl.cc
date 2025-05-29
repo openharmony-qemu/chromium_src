@@ -1082,8 +1082,9 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
   bool is_download =
       !head->intercepted_by_plugin && (must_download || !known_mime_type);
 #if BUILDFLAG(IS_ARKWEB)
-  LOG(INFO) << "is_download " << is_download << " must_download "
-            << must_download << " known_mime_type " << known_mime_type
+  LOG(INFO) << "is_download " << is_download
+            << " must_download " << must_download
+            << " known_mime_type " << known_mime_type
             << " mime_type " << head->mime_type;
 #endif
   CallOnReceivedResponse(std::move(head),
@@ -1614,8 +1615,7 @@ NavigationURLLoaderImpl::CreateTerminalNonNetworkLoaderFactory(
   }
 
 #if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
-  if (url.scheme() == url::kFileScheme ||
-      url.scheme() == url::kResourcesScheme) {
+  if (url.scheme() == url::kFileScheme || url.scheme() == url::kResourcesScheme) {
 #else
   if (url.scheme() == url::kFileScheme) {
 #endif

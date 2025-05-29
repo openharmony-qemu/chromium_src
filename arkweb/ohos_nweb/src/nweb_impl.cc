@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 #include "nweb_impl.h"
 
 #include <unistd.h>
@@ -37,12 +38,12 @@
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "arkweb/chromium_ext/base/report_loss_frame_ext.h"
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 #include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "components/web_cache/browser/web_cache_manager.h"
+#include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
+#include "arkweb/chromium_ext/components/web_cache/browser/web_cache_manager_utils.h"
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
 #include "base/memory/memory_pressure_listener.h"
@@ -53,9 +54,9 @@
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/trace_event/trace_event.h"
 #include "cef_delegate/nweb_download_handler_delegate.h"
-#include "cef/libcef/browser/chrome/chrome_browser_context.h"
 #include "arkweb/chromium_ext/content/renderer/host_proxy.h"
 #include "arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "ndk/arkweb_native_object.h"
 #include "nweb_delegate_adapter.h"
 #include "nweb_export.h"
@@ -69,7 +70,7 @@
 #include "ui/base/clipboard/ohos/clipboard_ohos.h"
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
-#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#if defined(REPORT_SYS_EVENT)
 #include "event_reporter.h"
 #endif
 #if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
@@ -83,13 +84,13 @@
 #include "services/network/network_service.h"
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 
-#if BUILDFLAG(ARKWEB_SECURITY_STATE)
+#if BUILDFLAG(ARKWEB_EXT_SECURITY_STATE)
 #include "components/security_state/core/security_state.h"
 #endif  // BUILDFLAG(ARKWEB_SECURITY_STATE)
 
 #if BUILDFLAG(ARKWEB_HTTP_DNS)
 #include "cef/include/cef_app.h"
-#include "cef/libcef/browser/net_service/net_helpers.h"
+#include "cef/ohos_cef_ext/libcef/browser/net_service/net_helpers.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
@@ -106,7 +107,7 @@
 #include "content/public/common/content_paths.h"
 #endif  // BUILDFLAG(ARKWEB_COOKIE)
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
 #include "content/public/browser/network_service_instance.h"
 #include "services/network/network_service.h"
 #endif
@@ -115,13 +116,12 @@
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_ua_config.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_engine_cloud_config.h"
 #endif
-#endif
 
 #if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
+#include "cef/libcef/browser/chrome/chrome_browser_context.h"
 #include "chrome/browser/ui/zoom/chrome_zoom_level_prefs.h"
 #include "third_party/blink/public/common/page/page_zoom.h"
 #endif
@@ -212,13 +212,13 @@ extern bool g_siteIsolationMode;
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "cef_delegate/nweb_extension_context_menus_delegate_handler.h"
-#include "cef/libcef/browser/menu_manager.h"
 #include "cef_delegate/nweb_extension_window_delegate_handler.h"
 #include "ohos_cef_ext/libcef/browser/extensions/windows_manager.h"
 #include "chrome/browser/profiles/profile.h"
 #include "cef/include/cef_request_context.h"
 #include "cef/libcef/browser/request_context_impl.h"
 #include "cef_delegate/nweb_extension_tab_delegate_hander.h"
+#include "ohos_cef_ext/libcef/browser/extensions/web_extension_menu_manager.h"
 #include "ohos_cef_ext/libcef/browser/extensions/web_extension_tab_manager.h"
 #include "ohos_cef_ext/libcef/browser/extensions/tab_extensions_util.h"
 #include "chrome/browser/extensions/extension_service.h"
@@ -233,6 +233,7 @@ extern bool g_siteIsolationMode;
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
 #include "components/embedder_support/user_agent_utils.h"
+#include "ohos_cef_ext/libcef/browser/alloy/alloy_browser_ua_config.h"
 #endif
 
 #if defined(USE_CEF)
@@ -256,20 +257,28 @@ extern bool g_siteIsolationMode;
 #include "cef/ohos_cef_ext/libcef/browser/policy/browser_policy_handler.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "ohos_nweb/src/nweb_web_storage_impl.h"
+#include "chrome/browser/browser_process.h"
+#include "cef/libcef/browser/prefs/browser_prefs.h"
+#include "components/prefs/pref_service.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
-#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 
+#include "cef/include/cef_app.h"
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
 const uint32_t kSurfaceMaxHeight = 7680;
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-const int32_t kMaxResumeInterval = 60;
-#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 const float richtextDisplayRatio = 1.0;
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -278,7 +287,7 @@ std::vector<std::string> g_browser_args = {};
 int32_t g_browser_service_sdk_api_level = 0;
 #endif  // BUILDFLAG(ARKWEB_NWEB_EX)
 
-#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#if defined(REPORT_SYS_EVENT)
 // For maximum count of nweb instance
 uint32_t g_nweb_max_count = 0;
 #endif
@@ -304,6 +313,9 @@ static bool set_whole_page_drawing = false;
 
 #if BUILDFLAG(ARKWEB_DRAG_RESIZE)
 const int32_t SOC_PERF_WEB_DRAG_RESIZE_ID = 10073;
+#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+const int32_t WEB_RESIZE_CLOSE_DELAY_TIME = 500;
 #endif
 
 bool GetWebOptimizationValue() {
@@ -439,7 +451,7 @@ std::string GetSharedRenderProcessToken(
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
 float GetVirtualPixelRatioForScrollbar() {
   auto display_manager_adapter =
-      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
+      OHOS::NWeb::OhosAdapterHelperExt::CreateDisplayMgrAdapter();
   if (display_manager_adapter == nullptr) {
     LOG(ERROR) << "display_manager_adapter is nullptr";
     return -1;
@@ -518,7 +530,7 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back("--disable-pdf-extension");
     web_engine_args.emplace_back(
         "--disable-blink-features=NonAdvancedSecurityMode");
-#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#if defined(REPORT_SYS_EVENT)
     ReportLockdownModeStatus();
 #endif
   }
@@ -569,6 +581,49 @@ void InitialWebEngineArgs(
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
 }
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+void MigratePasswordsToPasswordVault() {
+  bool migrateReady = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsReady);
+  bool migrateVault = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsToPasswordVault);
+  if (migrateReady == true && migrateVault == false) {
+      OHOS::NWeb::NWebWebStorageImpl* nweb_web_storage = new OHOS::NWeb::NWebWebStorageImpl();
+      nweb_web_storage->MigratePasswords();
+  }
+}
+#endif // ARKWEB_EXT_PASSWORD
+
+typedef void(*ReadDownloadDataCallback)(const char* guid, const void* buffer, const size_t size);
+class NWebReadDownloadDataCallback : public CefReadDownloadDataCallback {
+ public:
+  NWebReadDownloadDataCallback(ReadDownloadDataCallback callback)
+  : read_download_data_callback_(callback) { }
+
+  ~NWebReadDownloadDataCallback() = default;
+
+  NO_SANITIZE("cfi")
+  void OnReadDownloadDataDone(const CefString& guid,
+                              const CefRefPtr<CefBinaryValue>& buffer) override {
+    if (!read_download_data_callback_) {
+      return;
+    }
+    if (!buffer) {
+      LOG(INFO) << "OnReadDownloadDataDone: buffer is nullptr.";
+      read_download_data_callback_(guid.ToString().c_str(), NULL, 0);
+      return;
+    }
+    size_t len = buffer->GetSize();
+    std::vector<uint8_t> dataBuffer(len);
+    buffer->GetData(&dataBuffer[0], len, 0);
+    LOG(INFO) << "OnReadDownloadDataDone: guid: " << guid.ToString() << ", buffer len: " << len;
+    read_download_data_callback_(guid.ToString().c_str(), (void *)(&dataBuffer[0]), len);
+  }
+
+ private:
+  ReadDownloadDataCallback read_download_data_callback_;
+
+  IMPLEMENT_REFCOUNTING(NWebReadDownloadDataCallback);
+};
 }  // namespace
 
 namespace OHOS::NWeb {
@@ -610,7 +665,7 @@ std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
   nweb->AddNWebToMap(nweb_id, nweb);
   ++g_nweb_count;
   WVLOG_E("CreateNWeb NWebId: %{public}u successfully", nweb_id);
-#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#if defined(REPORT_SYS_EVENT)
   // Report nweb instance count
   if (g_nweb_count > g_nweb_max_count) {
     g_nweb_max_count = g_nweb_count;
@@ -680,16 +735,6 @@ void NWebImpl::InitializeWebEngine(
   LOG(INFO) << "NWebImpl::InitializeWebEngine, begin";
   std::list<std::string> web_engine_args;
   InitialWebEngineArgs(web_engine_args, init_args);
-  std::string tempString = "NWebImpl::InitializeWebEngine, begin";
-  tempString.append("123456789123456789");
-  LOG(INFO) << "====================tempString is " << tempString
-            << "===================";
-  tempString.append("123456789123456789");
-  LOG(INFO) << "====================tempString is " << tempString
-            << "===================";
-  tempString.append("123456789123456789");
-  LOG(INFO) << "====================tempString is " << tempString
-            << "===================";
 
   int argc = web_engine_args.size();
   const char** argv = new const char*[argc];
@@ -715,6 +760,12 @@ void NWebImpl::InitializeWebEngine(
 #endif
   NWebApplication::GetDefault()->InitializeCef(mainargs, settings);
   content::GetNetworkService();
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {
+    MigratePasswordsToPasswordVault();
+  }
+#endif
 }
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 
@@ -824,8 +875,7 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
   OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(
       g_siteIsolationMode);
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-  ReportSiteIsolationMode(
-    std::to_string(g_siteIsolationMode));
+  ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
 #endif
 #endif
 
@@ -893,7 +943,7 @@ void NWebImpl::OnDestroy() {
       .StopListen();
 #endif
 
-#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#if defined(REPORT_SYS_EVENT)
   // Report nweb instance count
   ReportMultiInstanceStats(nweb_id_, g_nweb_count, g_nweb_max_count);
 #endif
@@ -915,7 +965,7 @@ void NWebImpl::ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args) {
 bool NWebImpl::SetVirtualDeviceRatio() {
   if (fabs(device_pixel_ratio_) < 1e-15) {
     auto display_manager_adapter =
-        OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
+        OHOS::NWeb::OhosAdapterHelperExt::CreateDisplayMgrAdapter();
     if (display_manager_adapter == nullptr) {
       WVLOG_E("display_manager_adapter is nullptr.");
       return false;
@@ -984,26 +1034,22 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
   std::shared_ptr<NWebEngineInitArgs> init_args =
       create_info->GetEngineInitArgs();
   is_enhance_surface_ = GetIsEnhanceSurface(init_args);
-  void* window = nullptr;
   if (is_enhance_surface_) {
-    window = create_info->GetEnhanceSurfaceInfo();
+    window_ = create_info->GetEnhanceSurfaceInfo();
   } else {
-    window = output_handler_->GetNativeWindowFromSurface(
+    window_ = output_handler_->GetNativeWindowFromSurface(
         create_info->GetProducerSurface());
   }
 
-  if (window == nullptr) {
+  if (window_ == nullptr) {
     WVLOG_E("Init web engine failed, get native window from surface failed");
     delete[] argv;
     return false;
   }
 
-  window_ = reinterpret_cast<EGLNativeWindowType>(window);
-  int32_t ret = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                    .GetWindowAdapterInstance()
-                    .NativeWindowSetBufferGeometry(
-                        reinterpret_cast<void*>(window),
-                        create_info->GetWidth(), create_info->GetHeight());
+  int32_t ret = OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
+                    .NativeWindowSetBufferGeometry(window_, create_info->GetWidth(),
+                                                   create_info->GetHeight());
 
   if (ret == OHOS::NWeb::GSErrorCode::GSERROR_OK) {
     WVLOG_I(
@@ -1024,7 +1070,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
 #endif
   WVLOG_D("nweb create_info.init_args.is_popup: %{public}d", is_popup);
   nweb_delegate_ = NWebDelegateAdapter::CreateNWebDelegate(
-      argc, argv, is_enhance_surface_, window, is_popup
+      argc, argv, is_enhance_surface_, window_, is_popup
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
       ,
       nweb_id_
@@ -1118,6 +1164,20 @@ void NWebImpl::SetNWebHandler(std::shared_ptr<NWebHandler> client) {
   client->SetNWeb(shared_from_this());
 }
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+void NWebImpl::DisableBoost(uint32_t nweb_id) {
+  std::shared_ptr<NWebImpl> newb_impl = GetNWebSharedPtr(nweb_id);
+  if (newb_impl) {
+      newb_impl->ResizeTime_--;
+    if (newb_impl->ResizeTime_ <= 0) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateSocPerfClientAdapter()
+        ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, false);
+      newb_impl->ResizeTime_ = 0;
+    }
+  }
+}
+#endif
+
 void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
   if (is_pause_) {
     LOG(INFO) << "web kernel in pause state, don't resize, store pending size, "
@@ -1147,6 +1207,15 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
             nweb_id_);
     return;
   }
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+    .CreateSocPerfClientAdapter()
+    ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
+  ResizeTime_++;
+  content::GetUIThreadTaskRunner({})->PostDelayedTask(
+    FROM_HERE, base::BindOnce(&NWebImpl::DisableBoost, nweb_id_),
+    base::Milliseconds(WEB_RESIZE_CLOSE_DELAY_TIME));
+#endif
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);
 }
@@ -1546,6 +1615,15 @@ void NWebImpl::OnContinue() {
   }
 }
 
+void NWebImpl::OnDragAttach() {
+  if (inputmethod_handler_ == nullptr) {
+    LOG(ERROR) << "inputmethod_handler_ is nullptr.";
+    return;
+  }
+  inputmethod_handler_->Reattach(
+      nweb_id_, NWebInputMethodHandler::ReattachType::FROM_ONDRAG);
+}
+
 void NWebImpl::WebComponentsBlur() {
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "nweb_delegate_ is nullptr.";
@@ -1582,6 +1660,14 @@ void NWebImpl::SetEnableLowerFrameRate(bool enabled) {
     return;
   }
   nweb_delegate_->SetEnableLowerFrameRate(enabled);
+}
+
+void NWebImpl::SetEnableHalfFrameRate(bool enabled) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nweb_delegate_ is nullptr.";
+    return;
+  }
+  nweb_delegate_->SetEnableHalfFrameRate(enabled);
 }
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
@@ -1675,6 +1761,15 @@ void NWebImpl::PostPortMessage(const std::string& portHandle,
   nweb_delegate_->PostPortMessage(portHandle, data);
 }
 
+void NWebImpl::PostPortMessageV2(const std::string& portHandle,
+                                 std::shared_ptr<NWebRomValue> data) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("JSAPI nweb_delegate_ its null");
+    return;
+  }
+  nweb_delegate_->PostPortMessageV2(portHandle, data);
+}
+
 void NWebImpl::SetPortMessageCallback(
     const std::string& portHandle,
     std::shared_ptr<NWebMessageValueCallback> callback) {
@@ -1704,6 +1799,15 @@ void NWebImpl::FillAutofillData(std::shared_ptr<NWebMessage> data) {
   nweb_delegate_->FillAutofillData(data);
 }
 
+void NWebImpl::FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) {
+  LOG(INFO) << "NWebImpl::FillAutofillDataV2";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("JSAPI nweb_delegate_ its null");
+    return;
+  }
+  nweb_delegate_->FillAutofillDataV2(data);
+}
+
 void NWebImpl::OnAutofillCancel(const std::string& fillContent) {
   LOG(INFO) << "NWebImpl::OnAutofillCancel";
   if (nweb_delegate_ == nullptr) {
@@ -1727,6 +1831,15 @@ std::shared_ptr<HitTestResult> NWebImpl::GetHitTestResult() {
   }
 
   return nweb_delegate_->GetHitTestResult();
+}
+
+std::shared_ptr<HitTestResult> NWebImpl::GetLastHitTestResult() {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("get last hit test result failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return std::make_shared<HitTestResultImpl>();
+  }
+
+  return nweb_delegate_->GetLastHitTestResult();
 }
 
 int NWebImpl::PageLoadProgress() {
@@ -1835,6 +1948,19 @@ void NWebImpl::RegisterNativeArkJSFunctionWithResult(
   }
 }
 
+void NWebImpl::RegisterNativeAsyncThreadArkJSFunctionWithResult(
+    const std::string& objName,
+    const std::vector<std::string>& methodName,
+    std::vector<NativeJSProxyCallbackFuncWithResult>&& callback,
+    const std::string& permission) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->RegisterNativeAsyncThreadJSProxyWithResult(objName, methodName,
+        std::move(callback), permission);
+  } else {
+    LOG(ERROR) << "nweb_delegate_ is nullptr";
+  }
+}
+
 void NWebImpl::UnRegisterNativeArkJSFunction(const char* objName) {
   if (nweb_delegate_ != nullptr) {
     nweb_delegate_->UnRegisterNativeArkJSFunction(objName);
@@ -1916,8 +2042,6 @@ void NWebImpl::RegisterArkJSfunction(
       object_name, method_list, async_method_list, object_id, "");
 }
 
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
 void NWebImpl::RegisterArkJSfunctionV2(
     const std::string& object_name,
     const std::vector<std::string>& method_list,
@@ -1931,7 +2055,6 @@ void NWebImpl::RegisterArkJSfunctionV2(
   return nweb_delegate_->RegisterArkJSfunction(
       object_name, method_list, async_method_list, object_id, permission);
 }
-#endif
 
 void NWebImpl::UnregisterArkJSfunction(
     const std::string& object_name,
@@ -1999,6 +2122,19 @@ void NWebImpl::CallH5Function(
   }
   nweb_delegate_->CallH5Function(routing_id, h5_object_id, h5_method_name,
                                  args);
+}
+
+void NWebImpl::CallH5FunctionV2(
+    int32_t routing_id,
+    int32_t h5_object_id,
+    const std::string& h5_method_name,
+    const std::vector<std::shared_ptr<NWebRomValue>>& args) {
+  if (nweb_delegate_ == nullptr || h5_object_id < 0) {
+    WVLOG_E("fail to call h5 function");
+    return;
+  }
+  nweb_delegate_->CallH5FunctionV2(routing_id, h5_object_id, h5_method_name,
+                                   args);
 }
 
 void NWebImpl::SetNWebJavaScriptResultCallBack(
@@ -2339,6 +2475,30 @@ void NWebImpl::WebSendMouseWheelEvent(
   input_handler_->WebSendMouseWheelEvent(x, y, deltaX, deltaY, pressedCodes);
 }
 
+bool NWebImpl::WebSendMouseWheelEventV2(
+    double x,
+    double y,
+    double deltaX,
+    double deltaY,
+    const std::vector<int32_t>& pressedCodes,
+    int32_t source) {
+  if (input_handler_ == nullptr) {
+    LOG(ERROR) << "WebSendMouseWheelEventV2 input_handler_ is nullptr";
+    return true;
+  }
+
+  ResSchedClientAdapter::ReportScene(
+    ResSchedStatusAdapter::WEB_SCENE_ENTER, ResSchedSceneAdapter::SLIDE);
+
+#if defined(OHOS_PERFORMANCE_INC_FREQ)
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .CreateSocPerfClientAdapter()
+      ->ApplySocPerfConfigById(SOC_PERF_MOUSEWHEEL_CONFIG_ID);
+#endif
+  input_handler_->WebSendMouseWheelEventV2(x, y, deltaX, deltaY, pressedCodes, source);
+  return true;
+}
+
 void NWebImpl::WebSendTouchpadFlingEvent(
     double x,
     double y,
@@ -2412,6 +2572,11 @@ void NWebImpl::SetScreenOffSet(double x, double y) {
   if (inputmethod_handler_) {
     inputmethod_handler_->SetScreenOffSet(x, y);
   }
+#if BUILDFLAG(ARKWEB_SCREEN_OFFSET)
+  if (!is_pause_ && nweb_delegate_) {
+    nweb_delegate_->SetScreenOffset(x, y);
+  }
+#endif  // BUILDFLAG(ARKWEB_SCREEN_OFFSET)
 }
 
 void NWebImpl::SetAudioMuted(bool muted) {
@@ -2440,13 +2605,19 @@ std::string NWebImpl::GetCurrentLanguage() {
 
 void NWebImpl::SetAudioResumeInterval(int32_t resumeInterval) {
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  int32_t interval =
-      resumeInterval > kMaxResumeInterval ? kMaxResumeInterval : resumeInterval;
   if (nweb_delegate_) {
-    nweb_delegate_->SetAudioResumeInterval(interval);
+    nweb_delegate_->SetAudioResumeInterval(resumeInterval);
   }
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void NWebImpl::SetNativeInnerWeb(bool isInnerWeb) {
+  if (nweb_delegate_) {
+    nweb_delegate_->SetNativeInnerWeb(isInnerWeb);
+  }
+}
+#endif
 
 void NWebImpl::SetAudioExclusive(bool audioExclusive) {
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
@@ -2627,7 +2798,7 @@ void NWebImpl::DisableWebActivePolicy() {
 }
 
 void NWebImpl::SetDelayDurationForBackgroundTabFreezing(int64_t delay) {
-#ifdef OHOS_ACTIVE_POLICY
+#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("SetDelayDurationForBackgroundTabFreezing nweb delegate is null");
     return;
@@ -2642,8 +2813,20 @@ void NWebImpl::SetWindowId(uint32_t window_id) {
     WVLOG_E("SetWindowId nweb delegate is null");
     return;
   }
-  nweb_delegate_->SetWindowId(window_id);
+  if (!base::ohos::IsMobileDevice()) {
+    nweb_delegate_->SetWindowId(window_id);
+  }
   inputmethod_handler_->SetWindowIdForIME(window_id);
+}
+
+void NWebImpl::SetFocusWindowId(uint32_t focus_window_id) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("SetFocusWindowId nweb delegate is null");
+    return;
+  }
+  if (base::ohos::IsMobileDevice()) {
+    nweb_delegate_->SetWindowId(focus_window_id);
+  }
 }
 
 void NWebImpl::SetToken(void* token) {
@@ -2696,7 +2879,7 @@ void NWebImpl::InjectOfflineResource(
     const std::map<std::string, std::string>& responseHeaders,
     const int type) {
   auto manager = web_cache::WebCacheManager::GetInstance();
-  manager->AddResourceToCache(url, origin, resource, responseHeaders, type);
+  manager->webCacheManagerUtils->AddResourceToCache(url, origin, resource, responseHeaders, type);
 }
 #endif
 
@@ -2902,28 +3085,29 @@ void NWebImpl::PutExtensionContextMenusCallback(
   NweExtensionContextMenusDelegateHandler::RegisterExtensionContextMenusListener(
       extension_context_menus_callback);
   NweExtensionContextMenusDelegateHandler* handler = NweExtensionContextMenusDelegateHandler::GetInstance();
-  CefMenuManager::SetContextMenusHandler(handler);
+  CefWebExtensionMenuManager::SetContextMenusHandler(handler);
 }
- 
+
 void NWebImpl::RemoveExtensionContextMenusCallback() {
   WVLOG_I("unregister extension context menus listener");
   NweExtensionContextMenusDelegateHandler::UnRegisterExtensionContextMenusListener();
-  CefMenuManager::SetContextMenusHandler(nullptr);
+  CefWebExtensionMenuManager::SetContextMenusHandler(nullptr);
 }
- 
+
 // static
 void NWebImpl::OnClickedExtensionContextMenus(const std::string& extension_id,
                                              ContextMenusOnClickedData& data,
                                              std::optional<NWebExtensionTab>& tab) {
   LOG(DEBUG) << "OnClickedExtensionContextMenus";
-  CefMenuManager::OnClickedExtensionContextMenus(extension_id, data, tab);
+  CefWebExtensionMenuManager::OnClickedExtensionContextMenus(extension_id, data, tab);
 }
- 
+
 // static
 void NWebImpl::GetAllExtensionContextMenus(const std::vector<std::string>& extension_ids,
                                             std::vector<NWebContextMenusItem>& result) {
   LOG(DEBUG) << "GetAllExtensionContextMenus";
-  std::vector<NWebContextMenusItem> menu_items = CefMenuManager::GetAllExtensionContextMenus(extension_ids);
+  std::vector<NWebContextMenusItem> menu_items =
+      CefWebExtensionMenuManager::GetAllExtensionContextMenus(extension_ids);
   result = menu_items;
 }
 
@@ -2935,13 +3119,13 @@ void NWebImpl::PutWebExtensionActionApiCallback(
   NWebExtensionActionCefDelegate::RegisterWebExtensionApiListener(
       action_api_listener);
 }
- 
+
 //static
 void NWebImpl::RemoveWebExtensionActionApiCallback() {
   WVLOG_I("unreqister web extension action api listener");
   NWebExtensionActionCefDelegate::UnRegisterWebExtensionApiListener();
 }
- 
+
 void NWebImpl::WebExtensionActionClicked(std::string extension_id,
                                          const NWebExtensionTab* tab) {
   if (nweb_delegate_ == nullptr) {
@@ -2949,24 +3133,24 @@ void NWebImpl::WebExtensionActionClicked(std::string extension_id,
   }
   nweb_delegate_->WebExtensionActionClicked(extension_id, tab);
 }
- 
+
 //  static
 void NWebImpl::WebExtensionErasePopupWindowId(int popupNwebId) {
   extensions::CefExtensionWindowIdManager::ErasePopupWindowId(popupNwebId);
 }
- 
+
 //  static
 void NWebImpl::WebExtensionSetPopupWindowId(int popupNwebId, int windowId) {
   extensions::CefExtensionWindowIdManager::SetPopupWindowId(popupNwebId,
                                                              windowId);
 }
- 
+
 //  static
 void NWebImpl::WebExtensionEraseSidePanelWindowId(int sidePanelNwebId) {
   extensions::CefExtensionWindowIdManager::EraseSidePanelWindowId(
       sidePanelNwebId);
 }
- 
+
 //  static
 void NWebImpl::WebExtensionSetSidePanelWindowId(int sidePanelNwebId,
                                                 int windowId) {
@@ -2994,6 +3178,7 @@ void NWebImpl::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
   nweb_delegate_->ExecuteVideoAssistantFunction(cmd_id);
 }
 
+NO_SANITIZE("cfi")
 void NWebImpl::OnReportStatisticLog(const std::string& content) {
   if (on_report_statistic_log_callback_) {
     on_report_statistic_log_callback_(content.c_str());
@@ -3003,7 +3188,15 @@ void NWebImpl::OnReportStatisticLog(const std::string& content) {
 void NWebImpl::SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func) {
   on_report_statistic_log_callback_ = func;
 }
-#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+
+void NWebImpl::CustomWebMediaPlayer(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(WARNING) << "nweb delegate is nullptr when enable custom web media player";
+    return;
+  }
+  nweb_delegate_->CustomWebMediaPlayer(enable);
+}
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void NWebImpl::PutWebExtensionApiSidePanelCallback(
@@ -3012,12 +3205,12 @@ void NWebImpl::PutWebExtensionApiSidePanelCallback(
   NWebExtensionSidePanelCefDelegate::RegisterWebExtensionApiListener(
       web_extension_api_listener);
 }
- 
+
 void NWebImpl::RemoveWebExtensionApiSidePanelCallback() {
   WVLOG_I("unreqister web extension api side panel listener");
   NWebExtensionSidePanelCefDelegate::UnRegisterWebExtensionApiListener();
 }
- 
+
 void NWebImpl::PutWebExtensionWindowsApiCallback(
       std::shared_ptr<NWebExtensionWindowsApiCallback> web_extension_windows_api_callback) {
   LOG(INFO) << "NWebImpl::PutWebExtensionWindowsApiCallback";
@@ -3027,12 +3220,12 @@ void NWebImpl::PutWebExtensionWindowsApiCallback(
   NweExtensionWindowDelegateHandler* handler = NweExtensionWindowDelegateHandler::GetInstance();
   CefWindowsManager::GetInstance()->SetWindowHandler(handler);
 }
- 
+
 void NWebImpl::RemoveWebExtensionWindowsApiCallback() {
   WVLOG_I("unreqister web extension windows api side panel listener");
   NweExtensionWindowDelegateHandler::UnRegisterWebExtensionWindowsApiListener();
 }
- 
+
 content::BrowserContext* NWebImplGetGlobalBrowserContext() {
   CefRequestContextImpl* request_context =
       static_cast<CefRequestContextImpl*>(CefRequestContext::GetGlobalContext().get());
@@ -3047,20 +3240,20 @@ content::BrowserContext* NWebImplGetGlobalBrowserContext() {
   }
   return cef_browser_context->AsBrowserContext();
 }
- 
+
 // static
 void NWebImpl::PutWebExtensionManagerCallback(
     std::shared_ptr<NWebExtensionManagerCallBack> web_extension_manager_listener) {
   WVLOG_I("register web extension manager listener");
   extensions::ExtensionRegistryInfoManager::RegisterWebExtensionManagerListener(web_extension_manager_listener);
 }
- 
+
 // static
 void NWebImpl::RemoveWebExtensionManagerCallback() {
   WVLOG_I("unreqister web extension manager listener");
   extensions::ExtensionRegistryInfoManager::UnRegisterWebExtensionManagerListener();
 }
- 
+
 // static
 void NWebImpl::UnLoadWebExtension(const std::string& eid) {
   WVLOG_I("NWebImpl::UnLoadWebExtension %{public}s", eid.c_str());
@@ -3077,7 +3270,7 @@ void NWebImpl::UnLoadWebExtension(const std::string& eid) {
     if (current_extension->was_installed_by_default()) {
       WVLOG_I("NWebImpl::UnLoadWebExtension RemovedDefaultInstalledExtension");
     }
- 
+
     bool result = extensions::ExtensionSystem::Get(browser_context)
         ->extension_service()
         ->UninstallExtension(eid, extensions::UNINSTALL_REASON_COMPONENT_REMOVED, error);
@@ -3086,7 +3279,7 @@ void NWebImpl::UnLoadWebExtension(const std::string& eid) {
   }
   WVLOG_I("NWebImpl::UnLoadWebExtension extension not exist!");
 }
- 
+
 // static
 void NWebImpl::GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionInfo>& extensionsInfo) {
   WVLOG_I("NWebImpl::GetExtensionInfoByTabId, %{public}d", tabId);
@@ -3095,7 +3288,7 @@ void NWebImpl::GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionIn
     LOG(ERROR) << "NWebImpl::GetExtensionInfoByTabId browser_context is null";
     return;
   }
- 
+
   const extensions::ExtensionRegistry* extensionRegistry = extensions::ExtensionRegistry::Get(browser_context);
   const extensions::ExtensionSet extensions = extensionRegistry->GenerateInstalledExtensionsSet();
   for (const auto& extension : extensions) {
@@ -3117,7 +3310,7 @@ void NWebImpl::GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionIn
 }
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
 // static
 void NWebImpl::SetConnectTimeout(int32_t seconds) {
   content::GetNetworkService()->SetConnectTimeout(seconds);
@@ -3181,13 +3374,13 @@ void NWebImpl::SetBrowserUA(const std::string& ua_name) {
 void NWebImpl::EnableGlobalBrowserUAConfig(const bool enable) {
   nweb_ex::AlloyBrowserUAConfig::GetInstance()->EnableGlobalBrowserUAConfig(enable);
 }
- 
+
 void NWebImpl::SetBrowserUAConfigPolicy(int ua_config_policy) {
   nweb_ex::AlloyBrowserUAConfig::GetInstance()->SetBrowserUAConfigPolicy(ua_config_policy);
 }
 #endif  // ARKWEB_EXT_UA
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT) && BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 // static
 void NWebImpl::UpdateBrowserEngineConfig(const std::string& file_path,
                                          const std::string& version) {
@@ -3215,6 +3408,13 @@ void NWebImpl::UpdateAcceptLanguageInternal() {
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+std::string NWebImpl::GetSelectedTextFromContextParam() {
+  if (nweb_delegate_) {
+    return nweb_delegate_->GetSelectedTextFromContextParam();
+  }
+  return std::string();
+}
+
 void NWebImpl::ShowFreeCopyMenu() const {
   if (nweb_delegate_ == nullptr) {
     return;
@@ -3474,12 +3674,7 @@ NWebDownloadItemState NWebImpl::GetDownloadItemStateByGuid(
 void NWebImpl::PutAccessibilityEventCallback(
     std::shared_ptr<NWebAccessibilityEventCallback>
         accessibilityEventListener) {
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->RegisterAccessibilityEventListener(
-        accessibilityEventListener);
-  }
-#endif
+  // Deprecated due to new accessibility architecture
 }
 
 void NWebImpl::PutAccessibilityIdGenerator(
@@ -3488,11 +3683,7 @@ void NWebImpl::PutAccessibilityIdGenerator(
 }
 
 void NWebImpl::ExecuteAction(int64_t accessibilityId, uint32_t action) {
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->ExecuteAction(accessibilityId, action);
-  }
-#endif
+  // Deprecated due to new accessibility architecture
 }
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
@@ -3522,8 +3713,8 @@ bool NWebImpl::GetAccessibilityVisible(int64_t accessibilityId) {
   if (nweb_delegate_ != nullptr) {
     return nweb_delegate_->GetAccessibilityVisible(accessibilityId);
   }
-  return true;
 #endif
+  return true;
 }
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
@@ -3545,6 +3736,20 @@ void NWebImpl::SetAccessibilityState(bool state) {
                                                 : STATE_DISABLED);
   }
 #endif
+}
+
+bool NWebImpl::GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                            int32_t* width,
+                                            int32_t* height,
+                                            int32_t* offsetX,
+                                            int32_t* offsetY) {
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (nweb_delegate_ != nullptr) {
+    return nweb_delegate_->GetAccessibilityNodeRectById(
+        accessibilityId, width, height, offsetX, offsetY);
+  }
+#endif
+  return false;
 }
 
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
@@ -3642,10 +3847,6 @@ bool NWebImpl::Discard() {
   }
 
   WVLOG_D("Discard: Notify the bufferq to clean all caches");
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetWindowAdapterInstance()
-      .NativeWindowSurfaceCleanCacheWithPara(reinterpret_cast<void*>(window_),
-                                             true);
   return true;
 }
 
@@ -3696,6 +3897,15 @@ void NWebImpl::SetFileRenameOption(const int file_rename_option) {
   CefSetFileRenameOption(file_rename_option);
 }
 #endif  // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+
+void NWebImpl::ReadDownloadData(const std::string& guid,
+                                const int32_t read_size,
+                                ReadDownloadDataCallback callback) {
+  WVLOG_I("NWebImpl::ReadDownloadData: option: %{public}s", guid.c_str());
+  CefRefPtr<NWebReadDownloadDataCallback> read_download_data_callback =
+      new NWebReadDownloadDataCallback(callback);
+  CefReadDownloaData(guid, read_size, read_download_data_callback);
+}
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
 void NWebImpl::UpdateBrowserControlsState(int constraints,
@@ -3917,6 +4127,18 @@ void NWebImpl::EnableSafeBrowsingDetection(bool enable, bool strictMode) const {
   }
   nweb_delegate_->EnableSafeBrowsingDetection(enable, strictMode);
 }
+
+void NWebImpl::OnSafeBrowsingDetectionResult(int code,
+                                             int policy,
+                                             const std::string& mappingType,
+                                             const std::string& url) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+
+  nweb_delegate_->OnSafeBrowsingDetectionResult(code, policy, mappingType,
+                                                url);
+}
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
 void NWebImpl::StartCamera() {
@@ -4079,8 +4301,24 @@ bool NWebImpl::IsAnyNWebIntelligentTrackingPreventionEnabled() {
 
 std::string NWebImpl::GetSelectInfo() {
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
-  if (inputmethod_handler_) {
+  if (inputmethod_handler_ && !inputmethod_handler_->GetSelectInfo().empty()) {
     return inputmethod_handler_->GetSelectInfo();
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_AI)
+  if (nweb_delegate_) {
+    auto ai_select_text = nweb_delegate_->GetDataDetectorSelectText();
+    if (!ai_select_text.empty()) {
+      return ai_select_text;
+    }
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebExFreeCopy)) {
+    return GetSelectedTextFromContextParam();
   }
 #endif
   return std::string();
@@ -4197,6 +4435,19 @@ void NWebImpl::SetWholeWebDrawing() {
   set_whole_page_drawing = true;
 }
 #endif
+
+// static
+void NWebImpl::SetMigrationPasswordReady(const bool migrationReady) {
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsReady, migrationReady);
+    LOG(INFO) << "[Autofill] Migrate Passwords Ready:" << migrationReady;
+    if (migrationReady == true) {
+      MigratePasswordsToPasswordVault();
+    }
+  }
+#endif
+}
 
 }  // namespace OHOS::NWeb
 
@@ -4381,6 +4632,17 @@ void NWebImpl::ClearHostIP(const std::string& hostName) {
 #endif
 }
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+void NWebImpl::SetAppCustomUserAgent(const std::string& user_agent) {
+  AlloyBrowserUAConfig::GetInstance()->SetAppCustomUserAgent(user_agent);
+}
+
+void NWebImpl::SetUserAgentForHosts(const std::string& user_agent,
+                                    const std::vector<std::string>& hosts) {
+  AlloyBrowserUAConfig::GetInstance()->SetUserAgentForHosts(user_agent, hosts);
+}
+#endif
+
 void NWebImpl::SuggestionSelected(int index) {
   if (nweb_delegate_ == nullptr) {
     return;
@@ -4415,6 +4677,36 @@ void NWebImpl::OnDestroyImageAnalyzerOverlay() {
   nweb_delegate_->OnDestroyImageAnalyzerOverlay();
 }
 
+void NWebImpl::RunDataDetectorJS() {
+  LOG(DEBUG) << "NWebImpl::RunDataDetectorJS";
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->RunDataDetectorJS();
+}
+
+void NWebImpl::SetDataDetectorEnable(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->SetDataDetectorEnable(enable);
+}
+
+void NWebImpl::OnDataDetectorSelectText() {
+  LOG(DEBUG) << "NWebImpl::OnDataDetectorSelectText";
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->OnDataDetectorSelectText();
+}
+
+void NWebImpl::OnDataDetectorCopy(const std::vector<std::string>& recordMix) {
+  LOG(DEBUG) << "NWebImpl::OnDataDetectorCopy";
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->OnDataDetectorCopy(recordMix);
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
@@ -4445,6 +4737,24 @@ bool NWebImpl::WebPageSnapshot(const char* id,
     return false;
   }
   return nweb_delegate_->WebPageSnapshot(id, type, width, height, callback);
+}
+
+bool NWebImpl::WebPageSnapshotV2(const char* id,
+                                 PixelUnit type,
+                                 int width,
+                                 int height,
+                                 std::shared_ptr<NWebSnapshotCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("WebPageSnapshotV2 failed, nweb delegate is nullptr");
+    return false;
+  }
+  return nweb_delegate_->WebPageSnapshot(
+    id, type, width, height,
+    [callback](const char* id, bool state, float radio, void* data, int width,
+               int height) {
+      WVLOG_I("WebPageSnapshotV2 result return to OH");
+      callback->OnSnapshotResult(id, state, radio, data, width, height);
+    });
 }
 #endif
 
@@ -4545,21 +4855,46 @@ void NWebImpl::SetPathAllowingUniversalAccess(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
+void NWebImpl::DisallowSandboxFileAccessFromFileUrl(bool disallow) const {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->DisallowSandboxFileAccessFromFileUrl(disallow);
+}
+#endif  // BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
+
 void NWebImpl::PerformAction(
+    int64_t accessibilityId,
+    uint32_t action,
+    const std::map<std::string, std::string>& actionArguments) {
+  // Deprecated due to new accessibility architecture
+}
+
+bool NWebImpl::PerformActionV2(
     int64_t accessibilityId,
     uint32_t action,
     const std::map<std::string, std::string>& actionArguments) {
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->ExecuteAction(accessibilityId, action, actionArguments);
+    return nweb_delegate_->ExecuteAction(accessibilityId, action, actionArguments);
   }
 #endif
+  return false;
 }
 
 void NWebImpl::SendAccessibilityHoverEvent(int32_t x, int32_t y) {
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->SendAccessibilityHoverEvent(x, y);
+    nweb_delegate_->SendAccessibilityHoverEvent(x, y, true);
+  }
+}
+
+void NWebImpl::SendAccessibilityHoverEventV2(int32_t x,
+                                             int32_t y,
+                                             bool isHoverEnter) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->SendAccessibilityHoverEvent(x, y, isHoverEnter);
   }
 #endif
 }
@@ -4653,7 +4988,7 @@ void NWebImpl::WebExtensionTabActivated(
   }
   nweb_delegate_->WebExtensionTabActivated(std::move(activeInfo));
 }
- 
+
 void NWebImpl::WebExtensionTabAttached(
     std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) {
   if (nweb_delegate_ == nullptr) {
@@ -4661,7 +4996,7 @@ void NWebImpl::WebExtensionTabAttached(
   }
   nweb_delegate_->WebExtensionTabAttached(std::move(attachInfo));
 }
- 
+
 void NWebImpl::WebExtensionTabDetached(
     std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) {
   if (nweb_delegate_ == nullptr) {
@@ -4669,14 +5004,14 @@ void NWebImpl::WebExtensionTabDetached(
   }
   nweb_delegate_->WebExtensionTabDetached(std::move(detachInfo));
 }
- 
+
 void NWebImpl::WebExtensionTabHighlighted(int32_t tab_id, int32_t window_id) {
   if (nweb_delegate_ == nullptr) {
     return;
   }
   nweb_delegate_->WebExtensionTabHighlighted(tab_id, window_id);
 }
- 
+
 void NWebImpl::WebExtensionTabMoved(
     int32_t tab_id,
     std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) {
@@ -4685,7 +5020,7 @@ void NWebImpl::WebExtensionTabMoved(
   }
   nweb_delegate_->WebExtensionTabMoved(tab_id, std::move(moveInfo));
 }
- 
+
 void NWebImpl::WebExtensionTabReplaced(int32_t addedTabId,
                                        int32_t removedTabId) {
   if (nweb_delegate_ == nullptr) {
@@ -4693,7 +5028,7 @@ void NWebImpl::WebExtensionTabReplaced(int32_t addedTabId,
   }
   nweb_delegate_->WebExtensionTabReplaced(addedTabId, removedTabId);
 }
- 
+
 void NWebImpl::WebExtensionTabZoomChange(
     std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) {
   if (nweb_delegate_ == nullptr) {
@@ -4761,8 +5096,6 @@ void NWebImpl::EnableMediaNetworkTrafficPrompt(bool enable) {
 }
 #endif  // ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT
 
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
 void NWebImpl::SetSurfaceDensity(const double& density) {
   device_pixel_ratio_ = density;
   if (!inputmethod_handler_) {
@@ -4776,7 +5109,6 @@ void NWebImpl::SetSurfaceDensity(const double& density) {
   }
   nweb_delegate_->SetSurfaceDensity(density);
 }
-#endif
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
 void NWebImpl::getTotalSize(float size) {
@@ -4815,8 +5147,7 @@ void NWebImpl::SetPopupSurface(void* popupSurface) {
   void* popup_window = nullptr;
   popup_window = output_handler_->GetNativeWindowFromSurface(popupSurface);
 
-  int32_t ret = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                    .GetWindowAdapterInstance()
+  int32_t ret = OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
                     .NativeWindowSetBufferGeometry(
                         reinterpret_cast<void*>(popup_window), width, height);
   if (ret == OHOS::NWeb::GSErrorCode::GSERROR_OK) {
@@ -4888,6 +5219,14 @@ void NWebImpl::DragResize(uint32_t width,
   nweb_delegate_->Resize(width, height, false);
   output_handler_->Resize(width, height);
 }
+
+bool NWebImpl::IsNWebEx() {
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebEx)) {
+    LOG(DEBUG) << "====== IsNWebEx is true ======= ";
+    return true;
+  }
+  return false;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
@@ -4901,6 +5240,22 @@ void NWebImpl::StopScreenCapture(int32_t nweb_id, const char* session_id) {
     return;
   }
   nweb_delegate_->StopScreenCapture(nweb_id, session_id);
+}
+
+void NWebImpl::SetScreenCapturePickerShow() {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("SetScreenCapturePickerShow nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->SetScreenCapturePickerShow();
+}
+
+void NWebImpl::DisableSessionReuse() {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("DisableSessionReuse nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->DisableSessionReuse();
 }
 
 void NWebImpl::PutWebScreenCaptureDelegateCallback(
@@ -4951,7 +5306,7 @@ void NWebImpl::SetProxyOverride(
       base::BindOnce([](std::shared_ptr<NWebProxyChangedCallback> napiCallback) {napiCallback->OnChanged();},
                      std::move(callback)));
 }
- 
+
 void NWebImpl::RemoveProxyOverride(std::shared_ptr<NWebProxyChangedCallback> callback) {
   NWEB::ProxyConfigMonitor::GetInstance()->ClearProxyOverride(base::BindOnce(
         [](std::shared_ptr<NWebProxyChangedCallback> napiCallback) {napiCallback->OnChanged();},
@@ -4966,13 +5321,12 @@ void NWebImpl::SetEnterprisePolicy(const std::string& policy, int version) {
 }
 #endif
 
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
 void NWebImpl::RegisterNativeJavaScriptProxy(const std::string& objName,
                                              const std::vector<std::string>& methodName,
                                              std::shared_ptr<OHOS::NWeb::NWebJsProxyMethod> data,
                                              bool isAsync,
-                                             const std::string& permission) {
+                                             const std::string& permission)
+{
   if (nweb_delegate_ != nullptr) {
     int len = data->GetSize();
     std::vector<NativeJSProxyCallbackFunc> callback;
@@ -4998,5 +5352,73 @@ void NWebImpl::RegisterNativeJavaScriptProxy(const std::string& objName,
     LOG(ERROR) << "nweb_delegate_ is nullptr";
   }
   return ;
+}
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  bool NWebImpl::SetFocusByPosition(float x, float y) {
+  if (nweb_delegate_ == nullptr) {
+    return false;
+  }
+  return nweb_delegate_->SetFocusByPosition(x, y);
+}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_AI_WRITE)
+int NWebImpl::GetSelectStartIndex()
+{
+  if (inputmethod_handler_) {
+    return inputmethod_handler_->GetSelectStartIndex();
+  }
+  return 0;
+}
+
+int NWebImpl::GetSelectEndIndex()
+{
+  if (inputmethod_handler_) {
+    return inputmethod_handler_->GetSelectEndIndex();
+  }
+  return 0;
+}
+
+std::string NWebImpl::GetAllTextInfo()
+{
+  if (inputmethod_handler_ && !inputmethod_handler_->GetAllTextInfo().empty()) {
+    return inputmethod_handler_->GetAllTextInfo();
+  }
+  return "";
+}
+#endif // ARKWEB_AI_WRITE
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+void NWebImpl::SetBorderRadiusFromWeb(double borderRadiusTopLeft,
+                                      double borderRadiusTopRight,
+                                      double borderRadiusBottomLeft,
+                                      double borderRadiusBottomRight) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->SetBorderRadiusFromWeb(
+      borderRadiusTopLeft, borderRadiusTopRight, borderRadiusBottomLeft,
+      borderRadiusBottomRight);
+}
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_PIP)
+void NWebImpl::SetPipNativeWindow(int delegate_id,
+                                  int child_id,
+                                  int frame_routing_id,
+                                  void* window) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->SetPipNativeWindow(delegate_id, child_id,
+                                       frame_routing_id, window);
+  }
+}
+
+void NWebImpl::SendPipEvent(int delegate_id,
+                            int child_id,
+                            int frame_routing_id,
+                            int event) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->SendPipEvent(delegate_id, child_id,
+                                 frame_routing_id, event);
+  }
 }
 #endif

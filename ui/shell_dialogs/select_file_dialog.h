@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
@@ -17,6 +16,7 @@
 #include "ui/gfx/native_widget_types.h"
 #include "ui/shell_dialogs/base_shell_dialog.h"
 #include "ui/shell_dialogs/shell_dialogs_export.h"
+#include "arkweb/build/features/features.h"
 
 class GURL;
 
@@ -244,7 +244,9 @@ class SHELL_DIALOGS_EXPORT SelectFileDialog
   static constexpr WidgetType kNullWidget = gfx::kNullAcceleratedWidget;
 #endif
 
-  void set_owning_widget(WidgetType widget) { owning_widget_ = widget; }
+  void set_owning_widget(WidgetType widget) {
+    owning_widget_ = widget;
+  }
 
  protected:
   friend class base::RefCountedThreadSafe<SelectFileDialog>;

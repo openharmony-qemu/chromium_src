@@ -350,7 +350,6 @@ OhosNativeBufferImageBacking::ProduceSkiaGanesh(
     scoped_refptr<SharedContextState> context_state) {
   base::AutoLockMaybe auto_lock(drdc_lock_helper_.GetDrDcLockPtr());
   DCHECK(context_state);
-  LOG(ERROR) << "ProduceSkiaGanesh:(OhosNativeBufferImageBacking)" << this;
   // Check whether we are in Vulkan mode OR GL mode and accordingly create
   // Skia representation.
 #if BUILDFLAG(ENABLE_VULKAN)

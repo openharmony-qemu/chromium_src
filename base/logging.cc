@@ -29,7 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/base_export.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
@@ -64,6 +63,7 @@
 #include "cef/libcef/features/features.h"
 #include "third_party/abseil-cpp/absl/base/internal/raw_logging.h"
 #include "third_party/abseil-cpp/absl/cleanup/cleanup.h"
+#include "arkweb/build/features/features.h"
 
 #if !BUILDFLAG(IS_NACL)
 #include "base/auto_reset.h"
@@ -215,8 +215,8 @@ void MaybeInitializeVlogInfo() {
 }
 
 #if !BUILDFLAG(ARKWEB_DFX_LOGGING)
-const char* const log_severity_names[] = {"INFO", "WARNING", "ERROR", "FATAL",
-                                          "DEBUG"};
+const char* const log_severity_names[] = {"INFO", "WARNING", "ERROR", "FATAL", "DEBUG"};
+
 static_assert(LOGGING_NUM_SEVERITIES == std::size(log_severity_names),
               "Incorrect number of log_severity_names");
 
@@ -925,8 +925,7 @@ void LogMessage::Flush() {
       case LOGGING_DEBUG:
         priority = OHOS::NWeb::LogLevelAdapter::DEBUG;
     }
-    OHOS::NWeb::HiLogAdapter::PrintLog(priority, tag_.c_str(), "%{public}s",
-                                       str_newline.c_str());
+    OHOS::NWeb::HiLogAdapter::PrintLog(priority, tag_.c_str(), "%{public}s", str_newline.c_str());
 #elif BUILDFLAG(IS_FUCHSIA)
     // LogMessage() will silently drop the message if the logger is not valid.
     // Skip the final character of |str_newline|, since LogMessage() will add

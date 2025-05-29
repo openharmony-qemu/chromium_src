@@ -10,7 +10,7 @@
 namespace ui {
 
 // Declares named values for each of the recognized DOM Code values.
-#define DOM_CODE(usb, evdev, xkb, win, mac, ohos, code, id) id = usb
+#define DOM_CODE(usb, evdev, xkb, win, mac, code, id) id = usb
 #define DOM_CODE_DECLARATION enum class DomCode : uint32_t
 #include "ui/events/keycodes/dom/dom_code_data.inc"
 #undef DOM_CODE

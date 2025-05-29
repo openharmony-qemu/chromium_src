@@ -268,9 +268,8 @@ MenuScrollViewContainer::MenuScrollViewContainer(SubmenuView* content_view)
 
   SkColor override_color;
   MenuDelegate* delegate = content_view_->GetMenuItem()->GetDelegate();
-  if (delegate && delegate->GetBackgroundColor(-1, false, &override_color)) {
+  if (delegate && delegate->GetBackgroundColor(-1, false, &override_color))
     SetBackground(views::CreateSolidBackground(override_color));
-  }
 
   arrow_ = BubbleBorderTypeFromAnchor(
       content_view_->GetMenuItem()->GetMenuController()->GetAnchorPosition());

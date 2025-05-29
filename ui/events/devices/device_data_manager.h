@@ -11,7 +11,6 @@
 #include <memory>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/observer_list.h"
 #include "ui/events/devices/device_hotplug_event_observer.h"
@@ -21,12 +20,9 @@
 #include "ui/events/devices/touchpad_device.h"
 #include "ui/events/devices/touchscreen_device.h"
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
-
 namespace ui {
 
+class ArkWebDeviceDataManagerUtils;
 class DeviceDataManagerTest;
 class InputDeviceEventObserver;
 
@@ -86,13 +82,7 @@ class EVENTS_DEVICES_EXPORT DeviceDataManager
   // and is hard to replace for tests that require a fresh one.
   void ResetDeviceListsForTest();
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  void AddKeyboardDevice(const KeyboardDevice& device);
-  void AddMouseDevice(const InputDevice& device);
-  void AddTouchpadDevice(const TouchpadDevice& device);
-  void DeleteDevice(const InputDevice& devices);
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
-
+  ArkWebDeviceDataManagerUtils* GetArkWebDeviceDataManagerUtils();
  protected:
   DeviceDataManager();
 
@@ -117,6 +107,7 @@ class EVENTS_DEVICES_EXPORT DeviceDataManager
  private:
   friend class DeviceDataManagerTest;
   friend class DeviceDataManagerTestApi;
+  friend class ArkWebDeviceDataManagerUtils;
 
   void ClearTouchDeviceAssociations();
   void UpdateTouchInfoFromTransform(
@@ -153,12 +144,7 @@ class EVENTS_DEVICES_EXPORT DeviceDataManager
 
   // Contains touchscreen device info for each device mapped by device ID.
   base::flat_map<int, TouchDeviceTransform> touch_map_;
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  std::unique_ptr<OHOS::NWeb::MMIAdapter> mmi_adapter_ = nullptr;
-  std::shared_ptr<OHOS::NWeb::MMIListenerAdapter> dev_listener_ = nullptr;
-  scoped_refptr<base::SequencedTaskRunner> sequenced_task_runner_;
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  std::unique_ptr<ArkWebDeviceDataManagerUtils> arkweb_device_data_manager_utils_;
 };
 
 }  // namespace ui

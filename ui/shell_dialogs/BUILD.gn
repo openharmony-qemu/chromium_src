@@ -43,7 +43,7 @@ component("shell_dialogs") {
     sources += [ "shell_dialog_stub.cc" ]
   }
 
-  if (is_linux && !is_castos) {
+  if ((is_linux && !is_castos) || is_ohos) {
     sources += [
       "select_file_dialog_linux.cc",
       "select_file_dialog_linux.h",
@@ -66,18 +66,6 @@ component("shell_dialogs") {
         "//ui/views",
       ]
     }
-  }
-  if (is_ohos) {
-    sources += [
-      "shell_dialog_ohos.cc",
-      "shell_dialog_ohos.h",
-      "select_file_dialog_ohos.cc",
-      "select_file_dialog_ohos.h",
-    ]
-    deps += [
-      "//ohos/adapter:adapter",
-      "//third_party/jsoncpp"
-    ]
   }
   if (is_mac) {
     sources += [

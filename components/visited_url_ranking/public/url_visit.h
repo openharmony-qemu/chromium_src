@@ -248,7 +248,7 @@ struct URLVisitVariantHelper : Ts... {
 
 template <typename... Ts>
 URLVisitVariantHelper<Ts...> make_visitor(Ts... ts) {
-  return URLVisitVariantHelper<Ts...>{ts...};
+    return URLVisitVariantHelper<Ts...>{ts...};
 }
 #else
 template <class... Ts>

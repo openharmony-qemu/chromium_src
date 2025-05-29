@@ -5,9 +5,9 @@
 #ifndef UI_ACCESSIBILITY_AX_ROLE_PROPERTIES_H_
 #define UI_ACCESSIBILITY_AX_ROLE_PROPERTIES_H_
 
-#include "arkweb/build/features/features.h"
 #include "ui/accessibility/ax_base_export.h"
 #include "ui/accessibility/ax_enums.mojom-forward.h"
+#include "arkweb/build/features/features.h"
 
 namespace ui {
 
@@ -83,7 +83,7 @@ AX_BASE_EXPORT bool IsControlOnAndroid(const ax::mojom::Role role,
 // Returns true if the provided role is a control on the OHOS platform.
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 AX_BASE_EXPORT bool IsControlOnOHOS(const ax::mojom::Role role,
-                                    bool isFocusable);
+                                       bool isFocusable);
 #endif
 
 // Returns true for an <input> used for a date or time.

@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
-#include "build/build_config.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/trace_event/trace_event.h"
 #include "cef/include/base/cef_logging.h"
@@ -28,10 +28,6 @@
 #include "cef/include/internal/cef_types_wrappers.h"
 #include "ui/events/keycodes/keyboard_code_conversion_x.h"
 #include "ui/events/keycodes/keysym_to_unicode.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace OHOS::NWeb {
 
@@ -283,12 +279,15 @@ void NWebEventHandler::SendCefMouseWheelEvent(double x,
                                               double y,
                                               double deltaX,
                                               double deltaY,
-                                              int32_t modifiers) {
+                                              int32_t modifiers,
+                                              int32_t source) {
   CefMouseEvent mouseEvent;
   mouseEvent.x = x;
   mouseEvent.y = y;
   mouseEvent.modifiers = modifiers;
+  mouseEvent.source = source;
   LOG(DEBUG) << "WebSendMouseWheelEvent modifiers = " << mouseEvent.modifiers;
+  LOG(DEBUG) << "WebSendMouseWheelEventV2 source = " << mouseEvent.source;
   if (!browser_ || !browser_->GetHost()) {
     LOG(ERROR)
         << "SendCefMouseWheelEvent browser_ or Host is nullptr, browser_: "
@@ -352,6 +351,17 @@ void NWebEventHandler::WebUpdateModifiers(
   }
 }
 #endif
+
+void NWebEventHandler::WebSendMouseWheelEventV2(
+    double x,
+    double y,
+    double deltaX,
+    double deltaY,
+    const std::vector<int32_t>& pressedCodes,
+    int32_t source) {
+  int32_t modifiers = NWebInputDelegate::GetWebModifiersByPressedCode(pressedCodes);
+  SendCefMouseWheelEvent(x, y, deltaX, deltaY, modifiers, source);
+}
 
 void NWebEventHandler::WebSendTouchpadFlingEvent(
     double x,
@@ -433,9 +443,7 @@ void NWebEventHandler::WebSendMouseEvent(
       last_mouse_y_ = mouseInfo.y;
       browser_->GetHost()->SendMouseMoveEvent(mouseInfo, false);
     } else if (NWebInputDelegate::IsMouseLeave(mouseEvent->GetAction())) {
-      if (previous_button_ == MBT_LEFT || previous_button_ == MBT_RIGHT) {
-        browser_->GetHost()->SendMouseMoveEvent(mouseInfo, true);
-      }
+      browser_->GetHost()->SendMouseMoveEvent(mouseInfo, true);
     } else {
       previous_action_ = mouseEvent->GetAction();
       LOG(DEBUG) << "mouse event action: " << mouseEvent->GetAction();

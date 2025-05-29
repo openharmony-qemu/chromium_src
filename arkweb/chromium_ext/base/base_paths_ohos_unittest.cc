@@ -36,7 +36,7 @@ class CommandLineMock : public CommandLine {
   CommandLineMock(const FilePath& program) : CommandLine(program) {}
   MOCK_METHOD(std::string,
               GetSwitchValueASCII,
-              (StringPiece switch_string),
+              (std::string_view switch_string),
               (const));
   MOCK_METHOD(bool, HasSwitch, (const char switch_constant[]), (const));
 };

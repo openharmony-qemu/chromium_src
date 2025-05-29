@@ -224,12 +224,14 @@ quic::QuicTagVector GetQuicClientConnectionOptions(
   return quic::ParseQuicTagVector(it->second);
 }
 
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
 bool ShouldQuicCloseSessionsOnIpChange(
     const VariationParameters& quic_trial_params) {
   return base::EqualsCaseInsensitiveASCII(
       GetVariationParam(quic_trial_params, "close_sessions_on_ip_change"),
       "true");
 }
+#endif
 
 bool ShouldQuicGoAwaySessionsOnIpChange(
     const VariationParameters& quic_trial_params) {
@@ -613,8 +615,12 @@ void ConfigureQuicParams(const base::CommandLine& command_line,
         GetQuicConnectionOptions(quic_trial_params);
     quic_params->client_connection_options =
         GetQuicClientConnectionOptions(quic_trial_params);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    quic_params->close_sessions_on_ip_change = true;
+#else
     quic_params->close_sessions_on_ip_change =
         ShouldQuicCloseSessionsOnIpChange(quic_trial_params);
+#endif
     quic_params->goaway_sessions_on_ip_change =
         ShouldQuicGoAwaySessionsOnIpChange(quic_trial_params);
     int idle_connection_timeout_seconds =
@@ -858,7 +864,7 @@ net::URLRequestContextBuilder::HttpCacheParams::Type ChooseCacheType() {
     return net::URLRequestContextBuilder::HttpCacheParams::DISK_SIMPLE;
   }
   return net::URLRequestContextBuilder::HttpCacheParams::DISK_BLOCKFILE;
-#endif  // BUILDFLAG(ARKWEB_CACHE)
+#endif // BUILDFLAG(ARKWEB_CACHE)
 }
 
 }  // namespace network_session_configurator

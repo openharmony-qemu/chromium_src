@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "components/viz/common/quads/compositor_frame_metadata.h"
-
 #include "arkweb/build/features/features.h"
 
 namespace viz {

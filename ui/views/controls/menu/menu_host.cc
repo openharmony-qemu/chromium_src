@@ -158,9 +158,8 @@ void MenuHost::InitMenuHost(const InitParams& init_params) {
   // Activatable, so that calling Show in ShowMenuHost will
   // get keyboard focus.
   if (init_params.parent == nullptr &&
-      init_params.parent_widget == gfx::kNullAcceleratedWidget) {
+      init_params.parent_widget == gfx::kNullAcceleratedWidget)
     params.activatable = Widget::InitParams::Activatable::kYes;
-  }
 
 #if BUILDFLAG(IS_WIN)
   // On Windows use the software compositor to ensure that we don't block

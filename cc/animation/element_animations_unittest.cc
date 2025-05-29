@@ -574,8 +574,8 @@ TEST_F(ElementAnimationsTest, SyncPause) {
                                        ->run_state());
 
   // Opacity value doesn't depend on time if paused at specified time offset.
-  EXPECT_EQ(0.3f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
-  EXPECT_EQ(0.3f,
+  EXPECT_EQ(0.4f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.4f,
             client_impl_.GetOpacity(element_id_, ElementListType::ACTIVE));
 }
 
@@ -795,7 +795,7 @@ TEST_F(ElementAnimationsTest, TrivialTransition) {
 
   animation_->Tick(kInitialTickTime + base::Milliseconds(1000));
   animation_->UpdateState(true, events.get());
-  EXPECT_EQ(0.02f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(1.f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
   EXPECT_FALSE(animation_->keyframe_effect()->HasTickingKeyframeModel());
 }
 
@@ -813,7 +813,7 @@ TEST_F(ElementAnimationsTest, FilterTransition) {
   curve->AddKeyframe(
       FilterKeyframe::Create(base::TimeDelta(), start_filters, nullptr));
   FilterOperations end_filters;
-  end_filters.Append(FilterOperation::CreateBrightnessFilter(1.f));
+  end_filters.Append(FilterOperation::CreateBrightnessFilter(2.f));
   curve->AddKeyframe(
       FilterKeyframe::Create(base::Seconds(1.0), end_filters, nullptr));
 
@@ -832,6 +832,8 @@ TEST_F(ElementAnimationsTest, FilterTransition) {
   animation_->UpdateState(true, events.get());
   EXPECT_EQ(1u,
             client_.GetFilters(element_id_, ElementListType::ACTIVE).size());
+  EXPECT_EQ(FilterOperation::CreateBrightnessFilter(1.5f),
+            client_.GetFilters(element_id_, ElementListType::ACTIVE).at(0));
 
   animation_->Tick(kInitialTickTime + base::Milliseconds(1000));
   animation_->UpdateState(true, events.get());
@@ -874,9 +876,14 @@ TEST_F(ElementAnimationsTest, BackdropFilterTransition) {
   EXPECT_EQ(
       1u,
       client_.GetBackdropFilters(element_id_, ElementListType::ACTIVE).size());
+  EXPECT_EQ(
+      FilterOperation::CreateInvertFilter(0.5f),
+      client_.GetBackdropFilters(element_id_, ElementListType::ACTIVE).at(0));
 
   animation_->Tick(kInitialTickTime + base::Milliseconds(1000));
   animation_->UpdateState(true, events.get());
+  EXPECT_EQ(end_filters,
+            client_.GetBackdropFilters(element_id_, ElementListType::ACTIVE));
   EXPECT_FALSE(animation_->keyframe_effect()->HasTickingKeyframeModel());
 }
 
@@ -934,13 +941,20 @@ TEST_F(ElementAnimationsTest, ScrollOffsetTransition) {
 
   animation_impl_->Tick(kInitialTickTime + duration / 2);
   animation_impl_->UpdateState(true, events.get());
+  EXPECT_POINTF_EQ(
+      gfx::PointF(200.f, 250.f),
+      client_impl_.GetScrollOffset(element_id_, ElementListType::ACTIVE));
 
   animation_impl_->Tick(kInitialTickTime + duration);
   animation_impl_->UpdateState(true, events.get());
+  EXPECT_POINTF_EQ(target_value, client_impl_.GetScrollOffset(
+                                     element_id_, ElementListType::ACTIVE));
   EXPECT_FALSE(animation_impl_->keyframe_effect()->HasTickingKeyframeModel());
 
   animation_->Tick(kInitialTickTime + duration);
   animation_->UpdateState(true, nullptr);
+  EXPECT_POINTF_EQ(target_value, client_.GetScrollOffset(
+                                     element_id_, ElementListType::ACTIVE));
   EXPECT_FALSE(animation_->keyframe_effect()->HasTickingKeyframeModel());
 }
 
@@ -976,8 +990,14 @@ TEST_F(ElementAnimationsTest, ScrollOffsetTransitionOnImplOnly) {
 
   animation_impl_->Tick(kInitialTickTime + duration / 2);
   animation_impl_->UpdateState(true, events.get());
+  EXPECT_POINTF_EQ(
+      gfx::PointF(200.f, 250.f),
+      client_impl_.GetScrollOffset(element_id_, ElementListType::ACTIVE));
 
+  animation_impl_->Tick(kInitialTickTime + duration);
   animation_impl_->UpdateState(true, events.get());
+  EXPECT_POINTF_EQ(target_value, client_impl_.GetScrollOffset(
+                                     element_id_, ElementListType::ACTIVE));
   EXPECT_FALSE(animation_impl_->keyframe_effect()->HasTickingKeyframeModel());
 }
 
@@ -1093,16 +1113,26 @@ TEST_F(ElementAnimationsTest, ScrollOffsetTransitionNoImplProvider) {
   animation_->Tick(kInitialTickTime + duration / 2);
   animation_->UpdateState(true, nullptr);
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
+  EXPECT_POINTF_EQ(
+      gfx::PointF(400.f, 150.f),
+      client_.GetScrollOffset(element_id_, ElementListType::ACTIVE));
 
   animation_impl_->Tick(kInitialTickTime + duration / 2);
   animation_impl_->UpdateState(true, events.get());
+  EXPECT_POINTF_EQ(
+      gfx::PointF(400.f, 150.f),
+      client_impl_.GetScrollOffset(element_id_, ElementListType::PENDING));
 
   animation_impl_->Tick(kInitialTickTime + duration);
   animation_impl_->UpdateState(true, events.get());
+  EXPECT_POINTF_EQ(target_value, client_impl_.GetScrollOffset(
+                                     element_id_, ElementListType::PENDING));
   EXPECT_FALSE(animation_impl_->keyframe_effect()->HasTickingKeyframeModel());
 
   animation_->Tick(kInitialTickTime + duration);
   animation_->UpdateState(true, nullptr);
+  EXPECT_POINTF_EQ(target_value, client_.GetScrollOffset(
+                                     element_id_, ElementListType::ACTIVE));
   EXPECT_FALSE(animation_->keyframe_effect()->HasTickingKeyframeModel());
 }
 
@@ -1353,7 +1383,7 @@ TEST_F(ElementAnimationsTest,
       1, TargetProperty::OPACITY, kInitialTickTime + base::Milliseconds(2000)));
   animation_->Tick(kInitialTickTime + base::Milliseconds(5000));
   animation_->UpdateState(true, events.get());
-  EXPECT_EQ(0.02f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(1.f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
   EXPECT_FALSE(animation_->keyframe_effect()->HasTickingKeyframeModel());
 }
 
@@ -1410,10 +1440,10 @@ TEST_F(ElementAnimationsTest, TrivialQueuing) {
                                         ->run_state());
 
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.02f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(1.f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
   animation_->Tick(kInitialTickTime + base::Milliseconds(2000));
   animation_->UpdateState(true, events.get());
-  EXPECT_EQ(0.99f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.5f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
   EXPECT_FALSE(animation_->keyframe_effect()->HasTickingKeyframeModel());
 }
 
@@ -1480,7 +1510,7 @@ TEST_F(ElementAnimationsTest, ScheduleTogetherWhenAPropertyIsBlocked) {
   // The float animation should have started at time 1 and should be done.
   animation_->Tick(kInitialTickTime + base::Milliseconds(2000));
   animation_->UpdateState(true, events.get());
-  EXPECT_EQ(0.02f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(1.f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
   EXPECT_FALSE(animation_->keyframe_effect()->HasTickingKeyframeModel());
 }
 
@@ -1515,13 +1545,13 @@ TEST_F(ElementAnimationsTest, ScheduleTogetherWithAnAnimWaiting) {
   animation_->UpdateState(true, events.get());
   // Should not have started the float transition yet.
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.02f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(1.f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
 
   // The second opacity animation should start at time 2 and should be done by
   // time 3.
   animation_->Tick(kInitialTickTime + base::Milliseconds(3000));
   animation_->UpdateState(true, events.get());
-  EXPECT_EQ(0.99f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.5f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
   EXPECT_FALSE(animation_->keyframe_effect()->HasTickingKeyframeModel());
 }
 
@@ -1545,23 +1575,23 @@ TEST_F(ElementAnimationsTest, TrivialLooping) {
   animation_->Tick(kInitialTickTime + base::Milliseconds(1250));
   animation_->UpdateState(true, events.get());
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.02f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.25f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
   animation_->Tick(kInitialTickTime + base::Milliseconds(1750));
   animation_->UpdateState(true, events.get());
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.04f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.75f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
   animation_->Tick(kInitialTickTime + base::Milliseconds(2250));
   animation_->UpdateState(true, events.get());
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.06f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.25f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
   animation_->Tick(kInitialTickTime + base::Milliseconds(2750));
   animation_->UpdateState(true, events.get());
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.08f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.75f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
   animation_->Tick(kInitialTickTime + base::Milliseconds(3000));
   animation_->UpdateState(true, events.get());
   EXPECT_FALSE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.1f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(1.f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
 
   // Just be extra sure.
   animation_->Tick(kInitialTickTime + base::Milliseconds(4000));
@@ -1589,27 +1619,27 @@ TEST_F(ElementAnimationsTest, InfiniteLooping) {
   animation_->Tick(kInitialTickTime + base::Milliseconds(1250));
   animation_->UpdateState(true, events.get());
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.02f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.25f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
   animation_->Tick(kInitialTickTime + base::Milliseconds(1750));
   animation_->UpdateState(true, events.get());
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.04f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.75f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
 
   animation_->Tick(kInitialTickTime + base::Milliseconds(1073741824250));
   animation_->UpdateState(true, events.get());
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.06f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.25f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
   animation_->Tick(kInitialTickTime + base::Milliseconds(1073741824750));
   animation_->UpdateState(true, events.get());
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.08f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.75f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
 
   EXPECT_TRUE(animation_->GetKeyframeModel(TargetProperty::OPACITY));
   animation_->GetKeyframeModel(TargetProperty::OPACITY)
       ->SetRunState(KeyframeModel::ABORTED,
                     kInitialTickTime + base::Milliseconds(750));
   EXPECT_FALSE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.08f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.75f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
 }
 
 // Test that pausing and resuming work as expected.
@@ -1630,7 +1660,7 @@ TEST_F(ElementAnimationsTest, PauseResume) {
   animation_->Tick(kInitialTickTime + base::Milliseconds(500));
   animation_->UpdateState(true, events.get());
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.02f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.5f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
 
   EXPECT_TRUE(animation_->GetKeyframeModel(TargetProperty::OPACITY));
   animation_->GetKeyframeModel(TargetProperty::OPACITY)
@@ -1640,7 +1670,7 @@ TEST_F(ElementAnimationsTest, PauseResume) {
   animation_->Tick(kInitialTickTime + base::Milliseconds(1024000));
   animation_->UpdateState(true, events.get());
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.04f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.5f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
 
   EXPECT_TRUE(animation_->GetKeyframeModel(TargetProperty::OPACITY));
   animation_->GetKeyframeModel(TargetProperty::OPACITY)
@@ -1649,12 +1679,12 @@ TEST_F(ElementAnimationsTest, PauseResume) {
   animation_->Tick(kInitialTickTime + base::Milliseconds(1024250));
   animation_->UpdateState(true, events.get());
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.06f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.75f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
 
   animation_->Tick(kInitialTickTime + base::Milliseconds(1024500));
   animation_->UpdateState(true, events.get());
   EXPECT_FALSE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.08f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(1.f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
 }
 
 TEST_F(ElementAnimationsTest, AbortAGroupedAnimation) {
@@ -1681,7 +1711,7 @@ TEST_F(ElementAnimationsTest, AbortAGroupedAnimation) {
   animation_->Tick(kInitialTickTime + base::Milliseconds(1000));
   animation_->UpdateState(true, events.get());
   EXPECT_TRUE(animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.01f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.5f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
 
   EXPECT_TRUE(
       animation_->keyframe_effect()->GetKeyframeModelById(keyframe_model_id));
@@ -1696,7 +1726,7 @@ TEST_F(ElementAnimationsTest, AbortAGroupedAnimation) {
   animation_->Tick(kInitialTickTime + base::Milliseconds(2000));
   animation_->UpdateState(true, events.get());
   EXPECT_TRUE(!animation_->keyframe_effect()->HasTickingKeyframeModel());
-  EXPECT_EQ(0.995f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(0.75f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
 }
 
 TEST_F(ElementAnimationsTest, PushUpdatesWhenSynchronizedStartTimeNeeded) {
@@ -1772,7 +1802,7 @@ TEST_F(ElementAnimationsTest, SkipUpdateState) {
   animation_->UpdateState(true, events.get());
 
   // The float tranisition should now be done.
-  EXPECT_EQ(0.02f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(1.f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
   EXPECT_FALSE(animation_->keyframe_effect()->HasTickingKeyframeModel());
 }
 
@@ -2590,9 +2620,9 @@ TEST_F(ElementAnimationsTest, ActivationBetweenAnimateAndUpdateState) {
   animation_impl_->Tick(kInitialTickTime + base::Milliseconds(500));
 
   // Both elements should have been ticked.
-  EXPECT_EQ(0.51f,
+  EXPECT_EQ(0.75f,
             client_impl_.GetOpacity(element_id_, ElementListType::PENDING));
-  EXPECT_EQ(0.51f,
+  EXPECT_EQ(0.75f,
             client_impl_.GetOpacity(element_id_, ElementListType::ACTIVE));
 }
 
@@ -3546,7 +3576,7 @@ TEST_F(ElementAnimationsTest, PushedDeletedAnimationWaitsForActivation) {
   // Only the active observer should have been ticked.
   EXPECT_EQ(0.5f,
             client_impl_.GetOpacity(element_id_, ElementListType::PENDING));
-  EXPECT_EQ(0.51f,
+  EXPECT_EQ(0.75f,
             client_impl_.GetOpacity(element_id_, ElementListType::ACTIVE));
 
   animation_impl_->ActivateKeyframeModels();
@@ -3631,7 +3661,7 @@ TEST_F(ElementAnimationsTest, StartAnimationsAffectingDifferentObservers) {
   // and the pending observer should have been ticked by the new animation.
   EXPECT_EQ(1.f,
             client_impl_.GetOpacity(element_id_, ElementListType::PENDING));
-  EXPECT_EQ(0.02f,
+  EXPECT_EQ(0.5f,
             client_impl_.GetOpacity(element_id_, ElementListType::ACTIVE));
 
   animation_impl_->ActivateKeyframeModels();
@@ -3741,7 +3771,7 @@ TEST_F(ElementAnimationsTest, TestIsCurrentlyAnimatingProperty) {
   EXPECT_FALSE(animation_->keyframe_effect()->IsCurrentlyAnimatingProperty(
       TargetProperty::FILTER, ElementListType::ACTIVE));
 
-  EXPECT_EQ(0.02f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
+  EXPECT_EQ(1.f, client_.GetOpacity(element_id_, ElementListType::ACTIVE));
 }
 
 TEST_F(ElementAnimationsTest, TestIsAnimatingPropertyTimeOffsetFillMode) {

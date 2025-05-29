@@ -40,10 +40,7 @@
 #include "net/third_party/quiche/src/quiche/quic/core/quic_tag.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_utils.h"
 #include "url/scheme_host_port.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
+#include "arkweb/chromium_ext/net/http/http_network_session_for_include.cc"
 
 namespace net {
 
@@ -456,18 +453,5 @@ void HttpNetworkSession::OnMemoryPressure(
       break;
   }
 }
-
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-void HttpNetworkSession::SetConnectTimeout(int seconds) {
-  normal_socket_pool_manager_->SetConnectTimeout(seconds);
-  websocket_socket_pool_manager_->SetConnectTimeout(seconds);
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-void HttpNetworkSession::SetConnectJobWithSecureDnsOnlyTimeout(int seconds) {
-  normal_socket_pool_manager_->SetConnectJobWithSecureDnsOnlyTimeout(seconds);
-}
-#endif
 
 }  // namespace net

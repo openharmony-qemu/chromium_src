@@ -72,29 +72,31 @@ if (is_ios) {
   }
 }
 
-disallowed_extension_deps_ = [
-  # Components should largely not depend on //extensions. Since // extensions
-  # is not a component target and is linked with //chrome, depending on most
-  # //extensions targets will result in duplicate code. See
-  # //docs/component_build.md#dependencies-between-targets and
-  # https://bugs.chromium.org/p/chromium/issues/detail?id=1215550#c6 for an
-  # example of this going awry.
-  # However, there are two //extensions targets we allow:
-  # //extensions/buildflags (needed to see if extensions are enabled) and
-  # //extensions/common:common_constants (which *is* a component target, and
-  # is needed by a number of components).
-  # Since there's no way to say "no //extensions targets _except_", we
-  # instead list ~all the other targets here.
-  "//extensions/browser/*",
-  "//extensions/common",
-  "//extensions/common:mojom",
-  "//extensions/common:core_api_provider",
-  "//extensions/common/api/*",
-  "//extensions/renderer/*",
-  "//extensions/shell/*",
-  "//extensions/components/*",
-  "//extensions/strings/*",
-]
+if (!arkweb_unittests) {
+  disallowed_extension_deps_ = [
+    # Components should largely not depend on //extensions. Since // extensions
+    # is not a component target and is linked with //chrome, depending on most
+    # //extensions targets will result in duplicate code. See
+    # //docs/component_build.md#dependencies-between-targets and
+    # https://bugs.chromium.org/p/chromium/issues/detail?id=1215550#c6 for an
+    # example of this going awry.
+    # However, there are two //extensions targets we allow:
+    # //extensions/buildflags (needed to see if extensions are enabled) and
+    # //extensions/common:common_constants (which *is* a component target, and
+    # is needed by a number of components).
+    # Since there's no way to say "no //extensions targets _except_", we
+    # instead list ~all the other targets here.
+    "//extensions/browser/*",
+    "//extensions/common",
+    "//extensions/common:mojom",
+    "//extensions/common:core_api_provider",
+    "//extensions/common/api/*",
+    "//extensions/renderer/*",
+    "//extensions/shell/*",
+    "//extensions/components/*",
+    "//extensions/strings/*",
+  ]
+}
 
 # To add a unit test to this target, make a "unit_tests" source_set in your
 # component(it's important to use a source_set instead of a static library or
@@ -444,7 +446,6 @@ test("components_unittests") {
       "//components/browsing_topics/common:unit_tests",
       "//components/captive_portal/content:unit_tests",
       "//components/cast_receiver:unit_tests",
-      "//components/cast_streaming:unit_tests",
       "//components/certificate_transparency:unit_tests",
       "//components/commerce/content/browser:unit_tests",
       "//components/content_capture/browser:unit_tests",
@@ -1185,8 +1186,10 @@ if (use_blink) {
     # No components should depend on Chrome.
     # Since //chrome depends on //extensions, we also only assert_no_deps on
     # extensions targets.
-    assert_no_deps = [ "//chrome/*" ]
-    assert_no_deps += disallowed_extension_deps_
+    if (!arkweb_unittests) {
+      assert_no_deps = [ "//chrome/*" ]
+      assert_no_deps += disallowed_extension_deps_
+    }
 
     if (is_fuchsia) {
       additional_manifest_fragments = [

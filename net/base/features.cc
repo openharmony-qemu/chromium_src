@@ -75,7 +75,11 @@ const base::FeatureParam<base::TimeDelta> kUseDnsHttpsSvcbSecureExtraTimeMin{
 
 BASE_FEATURE(kUseDnsHttpsSvcbAlpn,
              "UseDnsHttpsSvcbAlpn",
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#else // BUILDFLAG(ARKWEB_NETWORK_LOAD)
              base::FEATURE_ENABLED_BY_DEFAULT);
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
 BASE_FEATURE(kUseHostResolverCache,
              "UseHostResolverCache",
@@ -154,7 +158,7 @@ BASE_FEATURE(kPartitionConnectionsByNetworkIsolationKey,
 
 BASE_FEATURE(kPostQuantumKyber,
              "PostQuantumKyber",
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ARKWEB)
              base::FEATURE_DISABLED_BY_DEFAULT);
 #else
              base::FEATURE_ENABLED_BY_DEFAULT);
@@ -480,6 +484,12 @@ BASE_FEATURE(kAddressTrackerLinuxIsProxied,
              "AddressTrackerLinuxIsProxied",
              base::FEATURE_ENABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_LINUX)
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+BASE_FEATURE(kEnableNetworkPreload,
+             "EnableNetworkPreload",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif  // BUILDFLAG(ARKWEB_PRP_PRELOAD)
 
 // Enables binding of cookies to the port that originally set them by default.
 BASE_FEATURE(kEnablePortBoundCookies,

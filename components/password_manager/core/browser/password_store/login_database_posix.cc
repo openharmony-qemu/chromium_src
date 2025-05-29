@@ -4,6 +4,7 @@
 
 #include "components/password_manager/core/browser/password_store/login_database.h"
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
@@ -62,10 +63,13 @@ EncryptionResult LoginDatabase::DecryptedString(
     return EncryptionResult::kSuccess;
   }
 #endif  // !BUILDFLAG(IS_FUCHSIA)
-
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  bool decryption_success = OSCrypt::DecryptString16ForMigrate(cipher_text, plain_text);
+#else
   bool decryption_success =
       encryptor_ ? encryptor_->DecryptString16(cipher_text, plain_text)
                  : OSCrypt::DecryptString16(cipher_text, plain_text);
+#endif
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS_ASH)
   // If decryption failed, we assume it was because the value was actually a
   // plain-text password which started with "v10".

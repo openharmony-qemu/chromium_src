@@ -24,13 +24,14 @@ namespace {
 
 bool g_registered_url_schemes = false;
 
-const char* const kDefaultSavableSchemes[] = {url::kHttpScheme,
-                                              url::kHttpsScheme,
-                                              url::kFileScheme,
-                                              url::kFileSystemScheme,
-                                              kChromeDevToolsScheme,
-                                              kChromeUIScheme,
-                                              url::kDataScheme
+const char* const kDefaultSavableSchemes[] = {
+  url::kHttpScheme,
+  url::kHttpsScheme,
+  url::kFileScheme,
+  url::kFileSystemScheme,
+  kChromeDevToolsScheme,
+  kChromeUIScheme,
+  url::kDataScheme
 #if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
                                               ,
                                               url::kResourcesScheme
@@ -121,9 +122,8 @@ void RegisterContentSchemes(bool should_lock_registry) {
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-  for (auto& scheme : schemes.custom_schemes) {
+  for (auto& scheme : schemes.custom_schemes)
     url::AddCustomScheme(scheme.c_str());
-  }
 #endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
   for (auto& [scheme, handler] : schemes.predefined_handler_schemes)

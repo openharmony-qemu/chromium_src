@@ -535,9 +535,8 @@ void Label::SetElideBehavior(gfx::ElideBehavior elide_behavior) {
 }
 
 void Label::SetDrawStringsFlags(int flags) {
-  if (draw_strings_flags_ == flags) {
+  if (draw_strings_flags_ == flags)
     return;
-  }
   draw_strings_flags_ = flags;
   full_text_->SetDrawStringsFlags(draw_strings_flags_);
   OnPropertyChanged(&full_text_ + kLabelDrawStringsFlags,

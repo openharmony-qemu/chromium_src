@@ -17,7 +17,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/debug/alias.h"
 #include "base/files/file.h"
@@ -78,9 +77,7 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-#include "base/command_line.h"
-#include "content/public/common/content_switches.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "arkweb/chromium_ext/ui/base/resource/resource_bundle_for_include.cc"
 #endif
 
 namespace ui {
@@ -390,20 +387,7 @@ void ResourceBundle::LoadSecondaryLocaleDataWithPakFileRegion(
 // static
 bool ResourceBundle::LocaleDataPakExists(const std::string& locale) {
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-  const auto path = GetLocaleFilePath(locale);
-  // If the hap package is not decompressed, the directory does not exist.
-  if (path.empty() || !base::PathExists(path)) {
-    if (locale == "zh-CN" || locale == "en-US" || locale == "resources" ||
-        locale == "bo-CN" || locale == "ug" || locale == "zh-TW" ||
-        locale == "zh-HK" || locale == "chrome_100_percent" ||
-        locale == "chrome_200_percent") {
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    return true;
-  }
+  return LocaleDataPakExistsExt(locale);
 #else
   const auto path = GetLocaleFilePath(locale);
   return !path.empty() && base::PathExists(path);

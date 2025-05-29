@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "cef_delegate/nweb_inputmethod_client.h"
 #define private public
 
 #include "nweb_inputmethod_handler.h"
@@ -41,7 +42,7 @@ class MockCefBrowser : public CefBrowser {
   bool HasOneRef() const override { return false; }
   bool HasAtLeastOneRef() const override { return false; }
   bool IsValid() override { return false; }
-  CefRefPtr<CefBrowserHost> GetHost() override { return nullptr; }
+  CefRefPtr<ArkWebBrowserHostExt> GetHost() override { return nullptr; }
   bool CanGoBack() override { return false; }
   void GoBack() override {}
   bool CanGoForward() override { return false; }
@@ -56,13 +57,19 @@ class MockCefBrowser : public CefBrowser {
   bool HasDocument() override { return false; }
   CefRefPtr<CefFrame> GetMainFrame() override { return nullptr; }
   CefRefPtr<CefFrame> GetFocusedFrame() override { return nullptr; }
-  CefRefPtr<CefFrame> GetFrame(int64 identifier) override { return nullptr; }
-  CefRefPtr<CefFrame> GetFrame(const CefString& name) override {
+  CefRefPtr<CefFrame> GetFrameByIdentifier(const CefString& identifier) override { return nullptr; }
+  CefRefPtr<CefFrame> GetFrameByName(const CefString& name) override {
     return nullptr;
   }
   size_t GetFrameCount() override { return 0; }
-  void GetFrameIdentifiers(std::vector<int64>& identifiers) override {}
+  void GetFrameIdentifiers(std::vector<CefString>& identifiers) override {}
   void GetFrameNames(std::vector<CefString>& names) override {}
+  bool NeedToFireBeforeUnloadOrUnloadEvents() override { return false; }
+  void DispatchBeforeUnload() override {}
+};
+
+class MockCefBrowserExt : public ArkWebBrowserExt {
+ public:
   CefRefPtr<CefBrowserPermissionRequestDelegate> GetPermissionRequestDelegate()
       override {
     return nullptr;
@@ -90,8 +97,6 @@ class MockCefBrowser : public CefBrowser {
   void SetForceEnableZoom(bool forceEnableZoom) override {}
   bool GetForceEnableZoom() override { return false; }
   int GetNWebId() override { return -1; }
-  void SetEnableBlankTargetPopupIntercept(
-      bool enableBlankTargetPopup) override {}
   bool GetSavePasswordAutomatically() override { return false; }
   void SetSavePasswordAutomatically(bool enable) override {}
   void SaveOrUpdatePassword(bool is_update) override {}
@@ -173,6 +178,14 @@ class MockIMFAdapterImpl : public IMFAdapter {
                bool isShowKeyboard,
                const std::shared_ptr<IMFTextConfigAdapter> config,
                bool isResetListener),
+              (override));
+  MOCK_METHOD(bool,
+              AttachWithRequestKeyboardReason,
+              (std::shared_ptr<IMFTextListenerAdapter> listener,
+               bool isShowKeyboard,
+               const std::shared_ptr<IMFTextConfigAdapter> config,
+               bool isResetListener,
+               int32_t requestKeyboardReason),
               (override));
   MOCK_METHOD(void,
               ShowCurrentInput,

@@ -12,9 +12,9 @@
 #include "media/base/demuxer.h"
 #include "net/storage_access_api/status.h"
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-#include "media/base/ranges.h"
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/media/base/media_url_demuxer_for_include.cc"
+#endif
 
 namespace media {
 
@@ -65,25 +65,6 @@ void MediaUrlDemuxer::SetHeaders(
     base::flat_map<std::string, std::string> headers) {
   params_.headers = std::move(headers);
 }
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-void MediaUrlDemuxer::ForwardBufferedEndTimeChangeToDemuxerHost(
-    base::TimeDelta buffered_time) {
-  DCHECK(host_);
-  DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  Ranges<base::TimeDelta> buffered;
-  buffered.Add(base::TimeDelta(), buffered_time);
-  host_->OnBufferedTimeRangesChanged(buffered);
-}
-
-void MediaUrlDemuxer::SetPreloadType(uint32_t preload_type) {
-  params_.custom_media_url_params.preload_type = preload_type;
-}
-
-void MediaUrlDemuxer::SetMediaSourceType(uint32_t media_source_type) {
-  params_.custom_media_url_params.media_source_type = media_source_type;
-}
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 void MediaUrlDemuxer::Initialize(DemuxerHost* host,
                                  PipelineStatusCallback status_cb) {

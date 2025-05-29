@@ -11,6 +11,10 @@ if (is_android) {
   import("//third_party/jni_zero/jni_zero.gni")
 }
 
+#if BUILDFLAG(IS_ARKWEB)
+import("//arkweb/chromium_ext/chromium_ext.gni")
+#endif
+
 source_set("internal") {
   visibility = [
     ":for_tests",
@@ -65,6 +69,9 @@ source_set("internal") {
     "url_download_request_handle.cc",
     "url_loader_factory_provider.cc",
   ]
+  if (is_arkweb) {
+    sources += arkweb_components_download_internal_common_sources
+  }
 
   public_deps = [
     "//components/enterprise/buildflags",

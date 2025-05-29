@@ -108,10 +108,9 @@ void NativeThemeFluent::PaintScrollbarThumb(
     const ScrollbarThumbExtraParams& extra_params,
     ColorScheme color_scheme
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
-    ,
-    SkColor scrollbar_color
-#endif  // ARKWEB_SCROLLBAR
-) const {
+    , SkColor scrollbar_color
+#endif // ARKWEB_SCROLLBAR
+    ) const {
   DCHECK_NE(state, NativeTheme::kDisabled);
 
   cc::PaintFlags flags;

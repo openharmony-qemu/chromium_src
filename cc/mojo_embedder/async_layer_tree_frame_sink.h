@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/read_only_shared_memory_region.h"
 #include "base/memory/weak_ptr.h"
@@ -33,10 +32,10 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
 #include "third_party/abseil-cpp/absl/types/variant.h"
+#include "arkweb/build/features/features.h"
 
-#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
-#include "cc/mojo_embedder/software_compositor_registry_ohos.h"
-#include "cc/mojo_embedder/software_compositor_renderer_ohos.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/cc/mojo_embedder/async_layer_tree_frame_sink_utils.h"
 #endif
 
 namespace cc {
@@ -46,6 +45,8 @@ class LayerTreeHostImpl;
 class RasterContextProviderWrapper;
 
 namespace mojo_embedder {
+
+class AsyncLayerTreeFrameSinkUtils;
 
 // A mojo-based implementation of LayerTreeFrameSink. The typically-used
 // implementation for cc instances that do not share a process with the viz
@@ -198,7 +199,7 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   mojo::Remote<viz::mojom::CompositorFrameSink> compositor_frame_sink_;
   mojo::AssociatedRemote<viz::mojom::CompositorFrameSink>
       compositor_frame_sink_associated_;
-  // One of |compositor_frame_sink_| or |compositor_frame_sink_associated_| will
+  // One of |compositor_frame_sink_| or |compositor_frame_sink_associated_| will：i
   // be bound after calling BindToClient(). |compositor_frame_sink_ptr_| will
   // point to message pipe we want to use. It must be declared last and cleared
   // first.
@@ -223,21 +224,15 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   viz::LocalSurfaceId last_submitted_local_surface_id_;
   float last_submitted_device_scale_factor_ = 1.f;
   gfx::Size last_submitted_size_in_pixels_;
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  gfx::Rect last_draw_rect_;
-#endif
 
   bool use_begin_frame_presentation_feedback_ = false;
 
+#if BUILDFLAG(IS_ARKWEB)
+  AsyncLayerTreeFrameSinkUtils* async_layer_tree_frame_sink_utils_;
+#endif
+
   base::WeakPtrFactory<AsyncLayerTreeFrameSink> weak_factory_{this};
 
-#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
-  std::unique_ptr<SoftwareCompositorRendererOhos> software_renderer_ohos_;
-#endif
-
-#if BUILDFLAG(ARKWEB_DFX_DUMP)
-  bool is_first_submit_ = true;
-#endif
 };
 
 }  // namespace mojo_embedder

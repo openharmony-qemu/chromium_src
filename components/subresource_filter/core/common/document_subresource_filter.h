@@ -27,6 +27,10 @@ namespace subresource_filter {
 class FirstPartyOrigin;
 class MemoryMappedRuleset;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+class DocumentSubresourceFilterExt;
+#endif
+
 // Performs filtering of subresource loads in the scope of a given document.
 class DocumentSubresourceFilter {
  public:
@@ -44,7 +48,17 @@ class DocumentSubresourceFilter {
   DocumentSubresourceFilter& operator=(const DocumentSubresourceFilter&) =
       delete;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  virtual ~DocumentSubresourceFilter();
+
+  virtual DocumentSubresourceFilterExt* AsDocumentSubresourceFilterExt() {
+    return nullptr;
+  }
+
+  friend class DocumentSubresourceFilterExt;
+#else
   ~DocumentSubresourceFilter();
+#endif
 
   const mojom::ActivationState& activation_state() const {
     return activation_state_;
@@ -62,44 +76,6 @@ class DocumentSubresourceFilter {
       const GURL& subresource_url,
       url_pattern_index::proto::ElementType subresource_type);
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  void ClearStatistics();
-
-  std::unique_ptr<std::string> GetSelectors(const GURL& url,
-                                            bool disable_generic_rules) const;
-
-  std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
-  FindMatchingCssRule(const GURL& document_url,
-                      bool disable_generic_rules = false) const;
-
-  bool HasGenericHideTypeOption(
-      const GURL& document_url,
-      const url::Origin& parent_document_origin) const;
-
-  bool HasElemHideTypeOption(const GURL& document_url,
-                             const url::Origin& parent_document_origin) const;
-
-  bool HasDocumentTypeOption(const GURL& document_url,
-                             const url::Origin& parent_document_origin) const;
-
-  const std::vector<const url_pattern_index::flat::CssRule*>
-  FindMatchingCssRule(const GURL& subresource_url);
-
-  void DidMatchCssRule(const GURL& document_url,
-                       const std::string& dom_path,
-                       bool is_for_report = false);
-
-  void SetDidFinishLoad(bool did_load_finished) {
-    did_load_finished_ = did_load_finished;
-  }
-
-  bool GetDidFinishLoad() { return did_load_finished_; }
-
-  std::unique_ptr<std::vector<std::string>> GetUserDomPathSelectors(
-      const GURL& document_url,
-      bool disable_generic_rules) const;
-#endif
-
   // Returns the matching rule that determines whether the request url and type
   // should be allowed. If no rule matches, returns nullptr.
   const url_pattern_index::flat::UrlRule* FindMatchingUrlRule(
@@ -115,19 +91,24 @@ class DocumentSubresourceFilter {
  private:
   mojom::ActivationState activation_state_;
   const scoped_refptr<const MemoryMappedRuleset> ruleset_;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  const ArkWebIndexedRulesetMatcherExt ruleset_matcher_;
+#else
   const IndexedRulesetMatcher ruleset_matcher_;
+#endif
 
   // Equals nullptr iff |activation_state_.filtering_disabled_for_document|.
   std::unique_ptr<FirstPartyOrigin> document_origin_;
 
   mojom::DocumentLoadStatistics statistics_;
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  bool did_load_finished_ = false;
-#endif
   std::string_view uma_tag_;
 };
 
 }  // namespace subresource_filter
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/subresource_filter/core/common/document_subresource_filter_ext.h"
+#endif
 
 #endif  // COMPONENTS_SUBRESOURCE_FILTER_CORE_COMMON_DOCUMENT_SUBRESOURCE_FILTER_H_

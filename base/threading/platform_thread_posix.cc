@@ -4,16 +4,16 @@
 
 #include "base/threading/platform_thread.h"
 
-#include <dlfcn.h>
 #include <errno.h>
 #include <pthread.h>
 #include <sched.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
+#include <dlfcn.h>
 
 #include <memory>
 #include <tuple>
@@ -279,8 +279,7 @@ NO_SANITIZE("cfi-icall") PlatformThreadId PlatformThread::CurrentRealId() {
   using GetProcXid = int (*)(void);
   static GetProcXid getProcTid = nullptr;
   if (getProcTid == nullptr) {
-    getProcTid =
-        reinterpret_cast<GetProcXid>(dlsym(RTLD_DEFAULT, "getproctid"));
+    getProcTid = reinterpret_cast<GetProcXid>(dlsym(RTLD_DEFAULT, "getproctid"));
     CHECK(getProcTid);
   }
   return getProcTid();

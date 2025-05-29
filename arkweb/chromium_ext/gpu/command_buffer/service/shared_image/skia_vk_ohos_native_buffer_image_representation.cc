@@ -1,11 +1,6 @@
-// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Copyright (c) 2025 Huawei Device Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-// Based on shared_image_representation_skia_vk_android.cc originally written by
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file. 
 
 #include "gpu/command_buffer/service/shared_image/skia_vk_ohos_native_buffer_image_representation.h"
 
@@ -225,7 +220,21 @@ bool SkiaVkNBImageRepresentation::BeginAccess(
         SemaphoreHandle(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
                         std::move(sync_fd)));
     if (begin_access_semaphore_ == VK_NULL_HANDLE) {
-      DLOG(ERROR) << "Failed to import semaphore from sync_fd.";
+      LOG(ERROR) << "Failed to import semaphore from sync_fd.";
+      return false;
+    }
+  }
+
+  if (end_semaphores) {
+    end_access_semaphore_ =
+        vk_implementation()->CreateExternalSemaphore(vk_device());
+    if (end_access_semaphore_ == VK_NULL_HANDLE) {
+      DLOG(ERROR) << "Failed to create the external semaphore.";
+      if (begin_access_semaphore_ != VK_NULL_HANDLE) {
+        vkDestroySemaphore(vk_device(), begin_access_semaphore_,
+                           nullptr /*pAllocator=*/);
+        begin_access_semaphore_ = VK_NULL_HANDLE;
+      }
       return false;
     }
   }
@@ -236,7 +245,7 @@ bool SkiaVkNBImageRepresentation::BeginAccess(
   }
   if (end_semaphores) {
     end_semaphores->emplace_back(
-        GrBackendSemaphores::MakeVk(begin_access_semaphore_));
+        GrBackendSemaphores::MakeVk(end_access_semaphore_));
   }
 
   mode_ = readonly ? RepresentationAccessMode::kRead

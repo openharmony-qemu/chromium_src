@@ -78,7 +78,8 @@ struct COMPONENT_EXPORT(GFX) GpuMemoryBufferHandle {
       base::android::ScopedHardwareBufferHandle handle);
 #endif
 #if BUILDFLAG(ARKWEB_VULKAN)
-  explicit GpuMemoryBufferHandle(gpu::ScopedNativeBufferHandle handle);
+  explicit GpuMemoryBufferHandle(
+   gpu::ScopedNativeBufferHandle handle);
 #endif
   GpuMemoryBufferHandle(GpuMemoryBufferHandle&& other);
   GpuMemoryBufferHandle& operator=(GpuMemoryBufferHandle&& other);

@@ -19,7 +19,7 @@
 #include "components/performance_manager/public/graph/graph_operations.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/web_contents.h"
-
+#include "arkweb/chromium_ext/components/performance_manager/graph/page_node_impl_for_include.cc"
 namespace performance_manager {
 
 PageNodeImpl::PageNodeImpl(base::WeakPtr<content::WebContents> web_contents,
@@ -303,21 +303,6 @@ void PageNodeImpl::SetIsAudible(bool is_audible) {
   }
 }
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-void PageNodeImpl::SetIsMediaPlaying(bool is_media_playing) {
-  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  if (is_media_playing) {
-    media_playing_num_++;
-  } else {
-    media_playing_num_--;
-  }
-  if (media_playing_num_ == 0 ||
-      (is_media_playing && media_playing_num_ == 1)) {
-    is_media_playing_.SetAndMaybeNotify(this, is_media_playing);
-  }
-}
-#endif
-
 void PageNodeImpl::SetHasPictureInPicture(bool has_picture_in_picture) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   has_picture_in_picture_.SetAndMaybeNotify(this, has_picture_in_picture);
@@ -408,13 +393,6 @@ FrameNodeImpl* PageNodeImpl::embedder_frame_node() const {
   DCHECK(embedder_frame_node_ || embedding_type_ == EmbeddingType::kInvalid);
   return embedder_frame_node_;
 }
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-bool PageNodeImpl::is_media_playing() const {
-  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  return is_media_playing_.value();
-}
-#endif
 
 FrameNodeImpl* PageNodeImpl::main_frame_node() const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -559,13 +537,6 @@ const FrameNode* PageNodeImpl::GetEmbedderFrameNode() const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   return embedder_frame_node();
 }
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-bool PageNodeImpl::IsMediaPlaying() const {
-  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  return is_media_playing();
-}
-#endif
 
 const FrameNode* PageNodeImpl::GetMainFrameNode() const {
   return main_frame_node();

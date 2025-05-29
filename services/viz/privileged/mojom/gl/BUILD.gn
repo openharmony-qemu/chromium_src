@@ -59,6 +59,10 @@ mojom("gl") {
     enabled_features += [ "arkweb_slide_ltpo" ]
   }
 
+  if (arkweb_d_vsync) {
+    enabled_features += [ "arkweb_d_vsync" ]
+  }
+
   if (use_clang_profiling_inside_sandbox) {
     enabled_features += [ "use_clang_profiling_inside_sandbox" ]
   }

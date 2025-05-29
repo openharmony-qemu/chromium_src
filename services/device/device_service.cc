@@ -6,7 +6,6 @@
 
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/memory/weak_ptr.h"
 #include "base/task/single_thread_task_runner.h"
@@ -31,6 +30,7 @@
 #include "services/device/wake_lock/wake_lock_provider.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "ui/gfx/native_widget_types.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/jni_android.h"
@@ -56,6 +56,11 @@
 #endif
 
 #include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#include "services/device/res_sched_report/res_sched_report.h"
+#include "services/device/sysprop_render_observer/sysprop_render_observer.h"
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
 
 namespace {
 
@@ -329,6 +334,8 @@ void DeviceService::BindPublicIpAddressGeolocationProvider(
   public_ip_address_geolocation_provider_->Bind(std::move(receiver));
 }
 
+#include "arkweb/chromium_ext/service/device/device_service_ext.cc"
+
 void DeviceService::BindScreenOrientationListener(
     mojo::PendingReceiver<mojom::ScreenOrientationListener> receiver) {
 #if BUILDFLAG(IS_ANDROID)
@@ -371,11 +378,7 @@ void DeviceService::BindTimeZoneMonitor(
   }
 
   if (!time_zone_monitor_) {
-#if BUILDFLAG(ARKWEB_TIME_ZONE)
-    time_zone_monitor_ = TimeZoneMonitor::Create();
-#elif
     time_zone_monitor_ = TimeZoneMonitor::Create(file_task_runner_);
-#endif
   }
   time_zone_monitor_->Bind(std::move(receiver));
 }

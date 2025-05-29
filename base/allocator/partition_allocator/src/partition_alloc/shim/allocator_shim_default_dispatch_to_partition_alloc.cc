@@ -729,8 +729,7 @@ const AllocatorDispatch AllocatorDispatch::default_dispatch =
 
 extern "C" {
 
-#if !PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(IS_ANDROID) && \
-    !PA_BUILDFLAG(IS_OHOS)
+#if !PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(IS_ANDROID) && !PA_BUILDFLAG(IS_OHOS)
 
 SHIM_ALWAYS_EXPORT void malloc_stats(void) __THROW {}
 

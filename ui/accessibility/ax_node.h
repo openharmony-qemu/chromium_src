@@ -15,7 +15,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/queue.h"
 #include "base/containers/stack.h"
 #include "base/memory/raw_ptr.h"
@@ -27,6 +26,7 @@
 #include "ui/accessibility/ax_text_attributes.h"
 #include "ui/accessibility/ax_tree_id.h"
 #include "ui/gfx/geometry/rect_f.h"
+#include "arkweb/build/features/features.h"
 
 namespace ui {
 
@@ -384,7 +384,7 @@ class AX_EXPORT AXNode final {
 
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   bool GetStringAttribute(ax::mojom::StringAttribute attribute,
-                          std::string* value) const;
+                                std::string* value) const;
 #endif
 
   const std::string& GetStringAttribute(

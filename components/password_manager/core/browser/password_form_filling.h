@@ -68,12 +68,6 @@ autofill::PasswordFormFillData CreatePasswordFormFillData(
     const url::Origin& main_frame_origin,
     bool wait_for_username,
     base::span<autofill::FieldRendererId> suggestion_banned_fields);
-
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-autofill::PasswordFormFillData CreatePasswordFormFillDataWithoutPasswordInfo(
-    const PasswordForm& form_on_page);
-#endif
-
 }  // namespace password_manager
 
 #endif  // COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_FORM_FILLING_H_

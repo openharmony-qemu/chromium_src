@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/chromium_ext/components/viz/service/display/display_scheduler_utils.h"
 #include "base/auto_reset.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_macros.h"
@@ -101,6 +102,8 @@ DisplayScheduler::DisplayScheduler(BeginFrameSource* begin_frame_source,
           features::kEnableADPFSeparateRendererMainSession)) {
     session_states_.emplace_back(HintSession::SessionType::kRendererMain);
   }
+
+  display_scheduler_utils_ = std::make_unique<DisplaySchedulerUtils>(this);
 }
 
 DisplayScheduler::~DisplayScheduler() {
@@ -147,18 +150,7 @@ void DisplayScheduler::OnDisplayDamaged(SurfaceId surface_id) {
   base::AutoReset<bool> auto_reset(&inside_surface_damaged_, true);
 
   needs_draw_ = true;
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-  TRACE_EVENT1("viz", "DisplayScheduler::OnDisplayDamaged", "surface_id",
-               surface_id.ToString());
-  if (wait_render_frame_submission_before_draw_ &&
-      surface_id.frame_sink_id().client_id() != 0) {
-    TRACE_EVENT1("viz",
-                 "DisplayScheduler::OnDisplayDamaged received render frame",
-                 "surface_id", surface_id.ToString());
-    wait_render_frame_submission_deadline_callback_.Cancel();
-    wait_render_frame_submission_before_draw_ = false;
-  }
-#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  display_scheduler_utils_->OnDisplayDamaged(surface_id);
   MaybeStartObservingBeginFrames();
   UpdateHasPendingSurfaces();
   ScheduleBeginFrameDeadline();
@@ -175,22 +167,8 @@ base::TimeDelta DisplayScheduler::GetDeadlineOffset(
 }
 
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-constexpr int WAIT_RENDER_FRAME_DEADLINE_INTERVAL_MILLISECONDS = 200;
 void DisplayScheduler::SetShouldFrameSubmissionBeforeDraw(bool should) {
-  wait_render_frame_submission_before_draw_ = should;
-  wait_render_frame_submission_deadline_callback_.Reset(
-      base::BindOnce(&DisplayScheduler::ResetShouldFrameSubmissionBeforeDraw,
-                     weak_ptr_factory_.GetWeakPtr()));
-
-  TRACE_EVENT0("viz", "DisplayScheduler::SetShouldFrameSubmissionBeforeDraw");
-  task_runner_->PostDelayedTask(
-      FROM_HERE, wait_render_frame_submission_deadline_callback_.callback(),
-      base::Milliseconds(WAIT_RENDER_FRAME_DEADLINE_INTERVAL_MILLISECONDS));
-}
-
-void DisplayScheduler::ResetShouldFrameSubmissionBeforeDraw() {
-  TRACE_EVENT0("viz", "DisplayScheduler::ResetShouldFrameSubmissionBeforeDraw");
-  wait_render_frame_submission_before_draw_ = false;
+  display_scheduler_utils_->SetShouldFrameSubmissionBeforeDraw(should);
 }
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
@@ -358,7 +336,7 @@ void DisplayScheduler::OnBeginFrameContinuation(const BeginFrameArgs& args) {
   // synchronously trigger the previous deadline before progressing.
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   if (inside_begin_frame_deadline_interval_ &&
-      !wait_render_frame_submission_before_draw_) {
+      !display_scheduler_utils_->wait_before_draw()) {
 #else
   if (inside_begin_frame_deadline_interval_) {
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
@@ -497,10 +475,7 @@ DisplayScheduler::AdjustedBeginFrameDeadlineMode() const {
 DisplayScheduler::BeginFrameDeadlineMode
 DisplayScheduler::DesiredBeginFrameDeadlineMode() const {
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-  if (wait_render_frame_submission_before_draw_) {
-    TRACE_EVENT0("viz", "Wait for render frame submission before draw");
-    return BeginFrameDeadlineMode::kNone;
-  }
+  DESIRED_BEGIN_FRAME_DEADLINE_MODED();
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
   if (output_surface_lost_) {

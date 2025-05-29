@@ -13,7 +13,6 @@
 #include <optional>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/containers/span.h"
@@ -43,6 +42,7 @@
 #include "services/video_effects/public/mojom/video_effects_processor.mojom.h"
 #include "third_party/abseil-cpp/absl/cleanup/cleanup.h"
 #include "third_party/libyuv/include/libyuv.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
 #include "media/capture/video/chromeos/video_capture_jpeg_decoder.h"
@@ -200,11 +200,11 @@ FourccAndFlip GetFourccAndFlipFromPixelFormat(
     case media::PIXEL_FORMAT_MJPEG:
       return {libyuv::FOURCC_MJPG};
 #if false
-      #if BUILDFLAG(ARKWEB_WEBRTC)
-          case PIXEL_FORMAT_ABGR:
-            fourcc_format = libyuv::FOURCC_ABGR;
-            break;
-      #endif // BUILDFLAG(ARKWEB_WEBRTC)
+#if BUILDFLAG(ARKWEB_WEBRTC)
+    case PIXEL_FORMAT_ABGR:
+      fourcc_format = libyuv::FOURCC_ABGR;
+      break;
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
 #endif
     default:
       NOTREACHED();
@@ -539,9 +539,7 @@ void VideoCaptureDeviceClient::OnIncomingCapturedData(
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
-  int stride = format.stride > format.frame_size.width()
-                   ? format.stride
-                   : format.frame_size.width();
+  int stride = format.stride > format.frame_size.width() ? format.stride : format.frame_size.width();
 #endif
   // libyuv::ConvertToI420 uses Rec601 to convert RGB to YUV.
   if (libyuv::ConvertToI420(

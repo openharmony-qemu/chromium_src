@@ -1401,6 +1401,10 @@
   "ohos_resources/components/ohos_components_strings.grd": {
     "messages": [10140],
   },
+  # For arkweb_ai
+  "ohos_resources/data_detector/data_detector_resources.grd": {
+    "includes": [10160],
+  },
 
   "cef/libcef/resources/cef_resources.grd": {
     "META": {"align": 31500},

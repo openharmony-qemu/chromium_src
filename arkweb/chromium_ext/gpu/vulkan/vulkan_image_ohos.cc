@@ -21,17 +21,12 @@
 namespace gpu {
 
 namespace {
-bool IsSinglePlaneRGBVulkanAHBFormat(VkFormat format) {
+bool IsSinglePlaneRGBVulkanNBFormat(VkFormat format) {
   switch (format) {
-    // AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM
     case VK_FORMAT_R8G8B8A8_UNORM:
-    // AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM
     case VK_FORMAT_R8G8B8_UNORM:
-    // AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM
     case VK_FORMAT_R5G6B5_UNORM_PACK16:
-    // AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT
     case VK_FORMAT_R16G16B16A16_SFLOAT:
-    // AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM
     case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
       return true;
     default:
@@ -70,11 +65,10 @@ bool VulkanImage::InitializeFromGpuMemoryBufferHandle(
     }
 
     VkDevice vk_device = device_queue->GetVulkanDevice();
-    // TODO: adapt OH_NativeBuffer
     VkResult result = vkGetNativeBufferPropertiesOHOS(
         vk_device, static_cast<OH_NativeBuffer*>(nb_handle.get()), &nb_props);
     if (result != VK_SUCCESS) {
-      LOG(ERROR) << "GetAhbProps: vkGetNativeBufferPropertiesOHOS failed : "
+      LOG(ERROR) << "vkGetNativeBufferPropertiesOHOS failed : "
                  << result;
       return false;
     }
@@ -89,8 +83,8 @@ bool VulkanImage::InitializeFromGpuMemoryBufferHandle(
         .externalFormat = 0,
     };
 
-    const bool should_use_external_format = !IsSinglePlaneRGBVulkanAHBFormat(
-        nb_format_props.format);  // TODO: should change?
+    const bool should_use_external_format = !IsSinglePlaneRGBVulkanNBFormat(
+        nb_format_props.format);
     if (should_use_external_format) {
       external_format.externalFormat = nb_format_props.externalFormat;
     }
@@ -115,34 +109,29 @@ bool VulkanImage::InitializeFromGpuMemoryBufferHandle(
     // Intended usage of the image.
     VkImageUsageFlags usage_flags = 0;
     auto res = nb_desc->GetBufferUsage();
-    // Get Vulkan Image usage flag equivalence of AHB usage.
+    // Get Vulkan Image usage flag equivalence of NB usage.
     if ((res & gpu::NATIVEBUFFER_USAGE_HW_TEXTURE) ||
-        (res & gpu::NATIVEBUFFER_USAGE_MEM_DMA)) {  // TODO: not equal android
+        (res & gpu::NATIVEBUFFER_USAGE_MEM_DMA)) {
       usage_flags = usage_flags | VK_IMAGE_USAGE_SAMPLED_BIT |
                     VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     }
     if ((res & gpu::NATIVEBUFFER_USAGE_HW_RENDER) ||
-        (res & gpu::NATIVEBUFFER_USAGE_MEM_DMA)) {  // TODO: not equal android
+        (res & gpu::NATIVEBUFFER_USAGE_MEM_DMA)) {
       usage_flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
 
-    // TODO(vikassoni) : AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP is supported from
-    // API level 28 which is not part of current android_ndk version in
-    // chromium. Add equivalent VK usage later.
     if (!usage_flags) {
       LOG(ERROR) << "No valid usage flags found";
       return false;
     }
 
     // Skia currently requires all wrapped VkImages to have transfer src and dst
-    // usage. Additionally all AHB support these usages when imported into
+    // usage. Additionally all nativebuffer support these usages when imported into
     // vulkan.
     usage_flags |=
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     VkImageCreateFlags create_flags = 0;
-
-    // TODO: check usage, OH don't have this
 
     // To import memory created outside of the current Vulkan instance from an
     // OHOS native buffer, add a VkImportNativeBufferInfoOHOS
@@ -150,7 +139,6 @@ bool VulkanImage::InitializeFromGpuMemoryBufferHandle(
     VkImportNativeBufferInfoOHOS nb_import_info = {
         .sType = VK_STRUCTURE_TYPE_IMPORT_NATIVE_BUFFER_INFO_OHOS,
         .buffer = static_cast<OH_NativeBuffer*>(nb_handle.get()),
-        // TODO: adapt OHOS::NWeb::NativeBuffer->OH_NativeBuffer
     };
 
     VkMemoryRequirements requirements = {

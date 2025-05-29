@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
 #include "base/base_switches.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
@@ -110,9 +111,9 @@
 #include "net/android/network_library.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 #include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #endif
 
 #if BUILDFLAG(ENABLE_DEVICE_BOUND_SESSIONS)
@@ -1220,7 +1221,7 @@ void URLRequestHttpJob::ProcessStrictTransportSecurityHeader() {
   }
 }
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
   if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebExHttpDnsFallback)) {
@@ -1234,10 +1235,10 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
   if (request_->isolation_info().request_type() !=
       IsolationInfo::RequestType::kMainFrame) {
     LOG(INFO) << "DOH-Fallback request is not mainframe";
-    // TODO(ARKWEB)
-    // #ifdef OHOS_LOGGER_REPORT
-    //     LOG_FEEDBACK(INFO) << "DOH-Fallback request is not mainframe";
-    // #endif
+// TODO(ARKWEB)
+// #ifdef OHOS_LOGGER_REPORT
+//     LOG_FEEDBACK(INFO) << "DOH-Fallback request is not mainframe";
+// #endif
     return false;
   }
 
@@ -1246,21 +1247,21 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
           ->resolve_error_info.is_secure_network_error) {
     LOG(INFO) << "DOH-Fallback won't retry for is_secure_network_error is "
                  "true";
-    // TODO(ARKWEB)
-    // #ifdef OHOS_LOGGER_REPORT
-    //     LOG_FEEDBACK(INFO)
-    //         << "DOH-Fallback won't retry for is_secure_network_error is "
-    //            "true";
-    // #endif
+// TODO(ARKWEB)
+// #ifdef OHOS_LOGGER_REPORT
+//     LOG_FEEDBACK(INFO)
+//         << "DOH-Fallback won't retry for is_secure_network_error is "
+//            "true";
+// #endif
     return false;
   }
 
-  if (!request_->context()->CanUseSecureDnsFallback()) {
+  if (!const_cast<URLRequestContext*>(request_->context())->AsURLRequestContextExt()->CanUseSecureDnsFallback()) {
     LOG(INFO) << "DOH-Fallback can't use secure dns fallback";
-    // TODO(ARKWEB)
-    // #ifdef OHOS_LOGGER_REPORT
-    //     LOG_FEEDBACK(INFO) << "DOH-Fallback can't use secure dns fallback";
-    // #endif
+// TODO(ARKWEB)
+// #ifdef OHOS_LOGGER_REPORT
+//     LOG_FEEDBACK(INFO) << "DOH-Fallback can't use secure dns fallback";
+// #endif
     return false;
   }
 
@@ -1286,17 +1287,16 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
       net_error == net::ERR_UNABLE_TO_REUSE_CONNECTION_FOR_PROXY_AUTH) {
     net::NetErrorDetails details;
     PopulateNetErrorDetails(&details);
-    // ���stream�Ѿ������ɹ���֤��dns�׶�û�з������⣬�������ǲ���Ҫ����.
+    // streamѾɹ֤dns׶ûз⣬ǲҪ.
     if (details.stream_created) {
       LOG(INFO) << "DOH-Fallback cann't retry with secure dns since the stream "
                    "is created.";
-      // TODO(ARKWEB)
-      // #ifdef OHOS_LOGGER_REPORT
-      //       LOG_FEEDBACK(INFO)
-      //           << "DOH-Fallback cann't retry with secure dns since the
-      //           stream "
-      //              "is created.";
-      // #endif
+// TODO(ARKWEB)
+// #ifdef OHOS_LOGGER_REPORT
+//       LOG_FEEDBACK(INFO)
+//           << "DOH-Fallback cann't retry with secure dns since the stream "
+//              "is created.";
+// #endif
       return false;
     }
     return true;
@@ -1317,10 +1317,10 @@ void URLRequestHttpJob::RetryWithSecureDnsOnly() {
   ResetTimer();
 
   LOG(INFO) << "DOH-Fallback will retry with secure dns only";
-  // TODO(ARKWEB)
-  // #ifdef OHOS_LOGGER_REPORT
-  //   LOG_FEEDBACK(INFO) << "DOH-Fallback will retry with secure dns only";
-  // #endif
+// TODO(ARKWEB)
+// #ifdef OHOS_LOGGER_REPORT
+//   LOG_FEEDBACK(INFO) << "DOH-Fallback will retry with secure dns only";
+// #endif
 
   request_info_.secure_dns_only = true;
   int rv = transaction_->RestartWithSecureDnsOnly(base::BindOnce(
@@ -1345,12 +1345,12 @@ void URLRequestHttpJob::MaybeRetryWithSecureDnsOnly(int result) {
   }
   OnStartCompleted(result);
 }
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 void URLRequestHttpJob::OnStartCompleted(int result) {
   TRACE_EVENT0(NetTracingCategory(), "URLRequestHttpJob::OnStartCompleted");
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   switch (state_) {
     case RetryState::INIT:
       MaybeRetryWithSecureDnsOnly(result);

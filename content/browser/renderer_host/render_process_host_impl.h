@@ -108,10 +108,6 @@
 #include "media/mojo/mojom/video_encode_accelerator.mojom.h"
 #endif
 
-#ifdef IS_ARKWEB
-#include "arkweb/build/features/features.h"
-#endif
-
 namespace base {
 class CommandLine;
 class PersistentMemoryAllocator;
@@ -174,6 +170,10 @@ class RenderWidgetHelper;
 class SiteInfo;
 class SiteInstance;
 class SiteInstanceImpl;
+#if BUILDFLAG(IS_ARKWEB)
+class ArkwebRenderProcessHostImplUtils;
+class ArkwebRenderProcessHostImplExt;
+#endif
 enum class ProcessReusePolicy;
 struct ChildProcessTerminationInfo;
 struct GlobalRenderFrameHostId;
@@ -189,11 +189,6 @@ struct ThemeFont {
   base::FilePath font_path;
   base::File font_file;
 };
-#endif
-
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
-typedef std::map<std::string, RenderProcessHost*>
-    SharedProcessTokenToProcessMap;
 #endif
 
 // Implements a concrete RenderProcessHost for the browser process for talking
@@ -228,6 +223,13 @@ class CONTENT_EXPORT RenderProcessHostImpl
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
 {
  public:
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ArkwebRenderProcessHostImplUtils;
+  friend class ArkwebRenderProcessHostImplExt;
+  virtual ArkwebRenderProcessHostImplExt* AsArkwebRenderProcessHostImplExt() {
+    return nullptr;
+  }
+#endif
   // Special depth used when there are no RenderProcessHostPriorityClients.
   static const unsigned int kMaxFrameDepthForPriority;
 
@@ -243,10 +245,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
   static RenderProcessHost* CreateRenderProcessHost(
       BrowserContext* browser_context,
       SiteInstanceImpl* site_instance);
-
-#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-  static void Refresh();
-#endif
 
   ~RenderProcessHostImpl() override;
 
@@ -464,12 +462,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
   //  - Process reuse timer (experimental):
   //    Keeps the process alive for a set period of time in case it can be
   //    reused for the same site. See https://crbug.com/894253.
-
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-  bool IsProcessBackgrounded() override;
-
-  const base::TimeTicks& ProcessBackgroundTime() override;
-#endif
 
   void IncrementKeepAliveRefCount(uint64_t handle_id_);
   void DecrementKeepAliveRefCount(uint64_t handle_id_);
@@ -900,17 +892,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
       StableVideoDecoderEventCB cb);
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
 
-#if BUILDFLAG(ARKWEB_I18N)
-  void NotifyLocaleChanged(const std::string& update_locale);
-#endif
-
-#if BUILDFLAG(ARKWEB_THEME_FONT)
-  static ThemeFont* EnsureThemeFont();
-  static bool IsThemeFontValid();
-  void OnThemeFontChange() override;
-  void UpdateThemeFontFile(base::File theme_font_file);
-#endif
-
   void GetBoundInterfacesForTesting(std::vector<std::string>& out);
 
   void SetPrivateMemoryFootprintForTesting(
@@ -921,20 +902,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
     return renderer_host_receiver_;
   }
 
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
-  static RenderProcessHost* GetProcessForSharedToken(
-      const std::string& shared_render_process_token);
-
-  static void RegisteProcessForSharedToken(
-      const std::string& shared_render_process_token,
-      RenderProcessHost* renderProcessHost);
-  static void RemoveFromSharedRenderProcessMap(
-      RenderProcessHost* renderProcessHost);
-#endif
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-  void dumpCurrentJavaScriptStackInMainThread(
-      base::OnceCallback<void(const std::string&)> dump_callback) override;
-#endif
  protected:
   // A proxy for our IPC::Channel that lives on the IO thread.
   std::unique_ptr<IPC::ChannelProxy> channel_;
@@ -964,6 +931,9 @@ class CONTENT_EXPORT RenderProcessHostImpl
   friend class VisitRelayingRenderProcessHost;
   friend class StoragePartitonInterceptor;
   friend class RenderProcessHostTestBase;
+#if BUILDFLAG(IS_ARKWEB)
+  std::unique_ptr<ArkwebRenderProcessHostImplUtils> arkweb_render_process_host_impl_utils_;
+#endif
   // TODO(crbug.com/40142495): This class is a friend so that it can call our
   // private mojo implementation methods, acting as a pass-through. This is only
   // necessary during the associated interface migration, after which,
@@ -1029,14 +999,9 @@ class CONTENT_EXPORT RenderProcessHostImpl
         mojo::GenericPendingReceiver receiver);
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-    void ReportKeyThread(int32_t status,
-                         int32_t process_id,
-                         int32_t thread_id,
-                         int32_t role) override;
-    void ReportKeyThreadIds(int32_t status,
-                            int32_t process_id,
-                            const std::vector<int32_t>& thread_ids,
-                            int32_t role) override;
+    void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t role) override;
+    void ReportKeyThreadIds(int32_t status, int32_t process_id,
+    const std::vector<int32_t>& thread_ids, int32_t role) override;
 #endif
 
     const int render_process_id_;
@@ -1224,11 +1189,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
       SiteInstanceImpl* site_instance);
   FRIEND_TEST_ALL_PREFIXES(RenderProcessHostUnitTest,
                            GuestsAreNotSuitableHosts);
-
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-  static RenderProcessHost* GetExistingBackgroundProcessHost(
-      SiteInstanceImpl* site_instance);
-#endif
 
   // Returns a RenderProcessHost that is rendering a URL corresponding to
   // |site_instance| in one of its frames, or that is expecting a navigation to
@@ -1599,10 +1559,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
   uint64_t private_memory_footprint_bytes_ = 0u;
 #if !BUILDFLAG(IS_ANDROID)
   base::TimeTicks private_memory_footprint_valid_until_;
-#endif
-
-#if BUILDFLAG(ARKWEB_THEME_FONT)
-  static std::unique_ptr<ThemeFont> g_theme_font_;
 #endif
 
   // IOThreadHostImpl owns some IO-thread state associated with this

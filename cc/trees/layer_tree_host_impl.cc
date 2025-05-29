@@ -148,6 +148,16 @@
 #include "ui/gfx/geometry/vector2d_conversions.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 #include "ui/gfx/skia_span_util.h"
+#include "arkweb/build/features/features.h"
+#include "cc/trees/layer_tree_impl_utils.h"
+
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+#include "cc/trees/layer_tree_host_impl_for_include.cc"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace cc {
 namespace {
@@ -165,10 +175,6 @@ constexpr size_t kContainsSrgbCacheSize = 3;
 static_assert(kContainsSrgbCacheSize ==
                   gfx::DisplayColorSpaces::kConfigCount / 2,
               "sRGB cache must match the size of DisplayColorSpaces");
-
-#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
-static bool g_frameIsScrolling = false;
-#endif
 
 bool IsMobileOptimized(LayerTreeImpl* active_tree) {
   return util::IsMobileOptimized(active_tree->min_page_scale_factor(),
@@ -533,6 +539,9 @@ LayerTreeHostImpl::LayerTreeHostImpl(
   frame_trackers_.set_custom_tracker_results_added_callback(
       base::BindRepeating(&LayerTreeHostImpl::NotifyThroughputTrackerResults,
                           weak_factory_.GetWeakPtr()));
+#if BUILDFLAG(IS_ARKWEB)
+  is_ohos_pc_ui_setting_ = base::ohos::IsPcDevice() ? true : false;
+#endif
 }
 
 LayerTreeHostImpl::~LayerTreeHostImpl() {
@@ -1588,12 +1597,6 @@ DrawResult LayerTreeHostImpl::CalculateRenderPasses(FrameData* frame) {
   return draw_result;
 }
 
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-void LayerTreeHostImpl::SetDrawRectState(bool isNeedDrawRect) {
-  isNeedDrawRect_ = isNeedDrawRect;
-}
-#endif
-
 void LayerTreeHostImpl::DidAnimateScrollOffset() {
   client_->SetNeedsCommitOnImplThread();
   client_->RenewTreePriority();
@@ -1633,8 +1636,7 @@ DrawResult LayerTreeHostImpl::PrepareToDraw(FrameData* frame) {
                active_tree_->source_frame_number());
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
   OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
-                    std::to_string(CurrentBeginFrameArgs().trace_id), "step",
-                    "GenerateRenderPass");
+                    std::to_string(CurrentBeginFrameArgs().trace_id), "step", "GenerateRenderPass");
 #endif
   if (input_delegate_)
     input_delegate_->WillDraw();
@@ -2627,7 +2629,7 @@ RenderFrameMetadata LayerTreeHostImpl::MakeRenderFrameMetadata(
 
 #if BUILDFLAG(ARKWEB_MENU)
   metadata.clipped_selection_bounds =
-      active_tree_->GetClippedVisualViewportSelectionBounds();
+    active_tree_->layer_tree_impl_utils()->GetClippedVisualViewportSelectionBounds();
 #endif
 
   if (last_draw_render_frame_metadata_) {
@@ -2820,6 +2822,10 @@ std::optional<SubmitInfo> LayerTreeHostImpl::DrawLayers(FrameData* frame) {
             data->add_latency_ids(latency.trace_id());
           }
         });
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+OHOS_TRACE_EVENT0("viz,benchmark", "MainFrame.SubmitCompositorFrame");
+#endif
     layer_tree_frame_sink_->SubmitCompositorFrame(
         std::move(compositor_frame),
         /*hit_test_data_changed=*/false);
@@ -2904,8 +2910,7 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
     FrameData* frame) {
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
   OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
-                    std::to_string(CurrentBeginFrameArgs().trace_id), "step",
-                    "GenerateCompositorFrame");
+                    std::to_string(CurrentBeginFrameArgs().trace_id), "step", "GenerateCompositorFrame");
 #endif
   rendering_stats_instrumentation_->IncrementFrameCount(1);
 
@@ -3110,17 +3115,15 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
       latency.AddLatencyNumberWithTimestamp(
           ui::INPUT_EVENT_LATENCY_RENDERER_SWAP_COMPONENT, draw_time);
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
-      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
-                        "trace_id", std::to_string(latency.trace_id()), "step",
-                        "INPUT_EVENT_LATENCY_RENDERER_SWAP_COMPONENT");
+      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                        std::to_string(latency.trace_id()), "step", "INPUT_EVENT_LATENCY_RENDERER_SWAP_COMPONENT");
 #endif
     }
   }
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
   for (auto& latency : metadata.latency_info) {
-    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
-                      "trace_id", std::to_string(latency.trace_id()), "step",
-                      "STEP_SWAP_BUFFERS");
+      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                        std::to_string(latency.trace_id()), "step", "STEP_SWAP_BUFFERS");
   }
 #endif
 
@@ -3411,15 +3414,6 @@ bool LayerTreeHostImpl::WillBeginImplFrame(const viz::BeginFrameArgs& args) {
   // Assume there is damage if we cannot check for damage.
   return true;
 }
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-void LayerTreeHostImpl::HandleScrollUpdateForInternalBeginFrame(
-    const viz::BeginFrameArgs& args) {
-  if (input_delegate_) {
-    input_delegate_->HandleScrollUpdateForInternalBeginFrame(args);
-  }
-}
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 void LayerTreeHostImpl::DidFinishImplFrame(const viz::BeginFrameArgs& args) {
   frame_trackers_.NotifyFrameEnd(current_begin_frame_tracker_.Current(), args);
@@ -3767,7 +3761,7 @@ void LayerTreeHostImpl::ActivateSyncTree() {
 #if BUILDFLAG(ARKWEB_WEBGL)
     bool should_defer_impl_invalidation = false;
     for (EffectTreeLayerListIterator it(pending_tree_.get());
-         it.state() != EffectTreeLayerListIterator::State::kEnd; ++it) {
+        it.state() != EffectTreeLayerListIterator::State::kEnd; ++it) {
       if (it.state() == EffectTreeLayerListIterator::State::kLayer) {
         LayerImpl* layer = it.current_layer();
         if (layer->ShouldDeferImplInvalidation()) {
@@ -3776,7 +3770,7 @@ void LayerTreeHostImpl::ActivateSyncTree() {
       }
     }
     client_->SetDeferInvalidationForFastMainFrameFromImpl(
-        should_defer_impl_invalidation);
+                 should_defer_impl_invalidation);
 #endif
 
     TreeSynchronizer::PushLayerProperties(pending_tree(), active_tree());
@@ -4275,6 +4269,8 @@ void LayerTreeHostImpl::ReleaseLayerTreeFrameSink() {
   // Windows does not have stability issues that require calling Finish.
   // To minimize risk, only avoid waiting for the UI layer tree.
   should_finish = !settings_.is_layer_tree_for_ui;
+#elif BUILDFLAG(IS_ARKWEB)
+  should_finish = !settings_.is_layer_tree_for_ui || !is_ohos_pc_ui_setting_;
 #endif
 
   if (should_finish && layer_tree_frame_sink_->context_provider()) {
@@ -5805,45 +5801,5 @@ void LayerTreeHostImpl::SetNeedsRedrawOrUpdateDisplayTree() {
     SetNeedsRedraw();
   }
 }
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-void LayerTreeHostImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
-  client_->OnLayerRectUpdate(id, rect);
-}
-
-void LayerTreeHostImpl::OnLayerRectVisibilityChange(int id, bool visibility) {
-  client_->OnLayerRectVisibilityChange(id, visibility);
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-void LayerTreeHostImpl::OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {
-  client_->OnLayerBoundsUpdate(id, bounds);
-}
-#endif  // ARKWEB_VIDEO_ASSISTANT
-
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-void LayerTreeHostImpl::SetupScrollBy() {
-  if (!input_delegate_) {
-    return;
-  }
-
-  gfx::Vector2dF scroll_delta(
-      0.f, browser_controls_offset_manager_->ContentTopOffset());
-  if (scroll_delta.IsZero()) {
-    return;
-  }
-
-  // This counter-scrolls the page to keep the appearance of the page content
-  // being fixed while the browser controls animate.
-  viewport().ScrollBy(scroll_delta,
-                      /*viewport_point=*/gfx::Point(),
-                      /*is_wheel_scroll=*/false,
-                      /*affect_browser_controls=*/false,
-                      /*scroll_outer_viewport=*/true);
-  client_->SetNeedsCommitOnImplThread();
-  client_->RenewTreePriority();
-}
-#endif
 
 }  // namespace cc

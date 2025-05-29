@@ -103,9 +103,8 @@ bool AXComputedNodeData::GetOrComputeIsDescendantOfPlatformLeaf() const {
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 bool AXComputedNodeData::HasOrCanComputeAttribute(
     const ax::mojom::StringAttribute attribute) const {
-  if (owner_->data().HasStringAttribute(attribute)) {
+  if (owner_->data().HasStringAttribute(attribute))
     return true;
-  }
 
   switch (attribute) {
     case ax::mojom::StringAttribute::kValue:
@@ -119,9 +118,8 @@ bool AXComputedNodeData::HasOrCanComputeAttribute(
 
 const std::string& AXComputedNodeData::GetOrComputeAttributeUTF8(
     const ax::mojom::StringAttribute attribute) const {
-  if (owner_->data().HasStringAttribute(attribute)) {
+  if (owner_->data().HasStringAttribute(attribute))
     return owner_->data().GetStringAttribute(attribute);
-  }
 
   switch (attribute) {
     case ax::mojom::StringAttribute::kValue:

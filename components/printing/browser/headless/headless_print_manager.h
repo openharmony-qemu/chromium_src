@@ -45,7 +45,7 @@ class HeadlessPrintManager
   void PrintRequested(PrintRequestedCallback callback) override {}
   void CheckCancel(CheckCancelCallback callback) override {}
   void PrintPdfRequested() override {}
-#endif  // BUILDFLAG(ARKWEB_PRINT)
+#endif // BUILDFLAG(ARKWEB_PRINT)
 
  private:
   friend class content::WebContentsUserData<HeadlessPrintManager>;

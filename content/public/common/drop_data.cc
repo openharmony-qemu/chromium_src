@@ -77,10 +77,8 @@ std::optional<base::FilePath> DropData::GetSafeFilenameForImageFileContents()
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
 bool DropData::IsImageFileContents() const {
   std::string mime_type;
-  if (net::GetWellKnownMimeTypeFromExtension(file_contents_filename_extension,
-                                             &mime_type) &&
-      base::StartsWith(mime_type, "image/",
-                       base::CompareCase::INSENSITIVE_ASCII)) {
+  if (net::GetWellKnownMimeTypeFromExtension(file_contents_filename_extension, &mime_type) &&
+      base::StartsWith(mime_type, "image/", base::CompareCase::INSENSITIVE_ASCII)) {
     return true;
   }
   return false;

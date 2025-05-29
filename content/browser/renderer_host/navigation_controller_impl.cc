@@ -38,7 +38,6 @@
 #include <algorithm>
 #include <utility>
 
-#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "base/command_line.h"
 #include "base/containers/adapters.h"
 #include "base/debug/dump_without_crashing.h"
@@ -55,6 +54,7 @@
 #include "base/types/optional_util.h"
 #include "build/build_config.h"
 #include "cc/base/switches.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "content/browser/bad_message.h"
 #include "content/browser/blob_storage/chrome_blob_storage_context.h"
 #include "content/browser/browser_context_impl.h"
@@ -1735,7 +1735,7 @@ bool NavigationControllerImpl::RendererDidNavigate(
 #if BUILDFLAG(ARKWEB_NAVIGATION)
   details->type = static_cast<OhosNavigationType>(navigation_type);
   details->current_commit_entry_url = active_entry->GetURL();
-#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
+#endif // BUILDFLAG(ARKWEB_NAVIGATION)
 
   active_entry->SetIsOverridingUserAgent(
       navigation_request->is_overriding_user_agent());
@@ -2109,12 +2109,7 @@ void NavigationControllerImpl::RendererDidNavigateToNewEntry(
         false);   // is_initial_entry
 
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-    bool is_currently_error_page = rfh->IsErrorDocument();
-    if (is_currently_error_page &&
-        base::CommandLine::ForCurrentProcess()->HasSwitch(
-            switches::kEnableNwebEx)) {
-      new_entry->set_extra_headers(params.headers);
-    }
+    AsArkWebNavigationControllerImplExt()->NewEntrySetExtraHeaders(rfh, params, new_entry);
 #endif
 
     // Find out whether the new entry needs to update its virtual URL on URL
@@ -3777,8 +3772,8 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::NavigateWithoutEntry(
   // will be updated when the BeforeUnload ack is received.
   const auto navigation_start_time = base::TimeTicks::Now();
 #if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "navigationStart",
-               navigation_start_time);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "navigationStart", navigation_start_time);
 #endif
   std::unique_ptr<NavigationRequest> request =
       CreateNavigationRequestFromLoadParams(
@@ -4145,8 +4140,8 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
           /*visited_link_salt=*/std::nullopt,
           /*local_surface_id=*/std::nullopt,
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-          false, /* site_adblock_enabled */
-          node->current_frame_host()->GetCachedPermissionStatuses());
+           false, /* site_adblock_enabled */
+           node->current_frame_host()->GetCachedPermissionStatuses());
 #endif
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   if (ValidateDataURLAsString(params.data_url_as_string)) {
@@ -5019,80 +5014,5 @@ void NavigationControllerImpl::DidChangeReferrerPolicy(
   entry->set_protect_url_in_navigation_api(
       ShouldProtectUrlInNavigationApi(referrer_policy));
 }
-
-#if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
-const std::string& NavigationControllerImpl::GetOriginalUrl() {
-  int cur_index = GetCurrentEntryIndex();
-  int count = GetEntryCount();
-  if (cur_index >= 0 && cur_index < count) {
-    NavigationEntryImpl* entry = GetEntryAtIndex(cur_index);
-    if (entry) {
-      return entry->GetOriginalRequestURL().spec();
-    }
-  }
-  return base::EmptyString();
-}
-#endif  // BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
-
-#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
-NavigationController::NavigationEntryUpdateError
-NavigationControllerImpl::InsertBackForwardEntry(int index, const GURL& url) {
-  DLOG(INFO) << "InsertNavigationEntryAtFront url: " << url << "[index]"
-             << index;
-  if (index < 0 || static_cast<size_t>(index) > entries_.size()) {
-    return NavigationEntryUpdateError::ERR_WRONG_OFFSET;
-  }
-  if (GetLastCommittedEntry()->IsInitialEntry() && entries_.size() > 0) {
-    entries_.clear();
-  }
-  std::unique_ptr<NavigationEntryImpl> entry =
-      NavigationEntryImpl::FromNavigationEntry(
-          NavigationController::CreateNavigationEntry(
-              url, Referrer(), absl::nullopt, absl::nullopt,
-              ui::PAGE_TRANSITION_FORWARD_BACK, false, std::string(),
-              browser_context_, nullptr));
-  std::unique_ptr<content::NavigationEntryRestoreContext> context =
-      content::NavigationEntryRestoreContext::Create();
-  entry->SetPageState(blink::PageState::CreateFromURL(entry->GetURL()),
-                      context.get());
-  if (entries_.size() == 0) {
-    InsertOrReplaceEntry(std::move(entry), false, false, false, nullptr);
-    return NavigationEntryUpdateError::UPDATE_OK;
-  }
-
-  entries_.insert(entries_.begin() + index, std::move(entry));
-  if (index <= last_committed_entry_index_) {
-    if (pending_entry_ && pending_entry_index_ != -1) {
-      pending_entry_index_++;
-    }
-    last_committed_entry_index_++;
-  }
-
-  return NavigationEntryUpdateError::UPDATE_OK;
-}
-
-NavigationController::NavigationEntryUpdateError
-NavigationControllerImpl::UpdateNavigationEntryUrl(int index, const GURL& url) {
-  DLOG(INFO) << "UpdateNavigationEntryUrl url: " << url << "[index]" << index;
-  if (frame_tree_->IsLoadingIncludingInnerFrameTrees()) {
-    LOG(ERROR)
-        << "If the url of the entry is modified during the loading process,"
-        << " it will cause some unpredictable effects!";
-    return NavigationEntryUpdateError::ERR_OTHER;
-  }
-
-  NavigationEntryImpl* entry = GetEntryAtIndex(index);
-  if (!entry) {
-    return NavigationEntryUpdateError::ERR_WRONG_OFFSET;
-  }
-  GURL new_url = GURL(url);
-  entry->SetURL(new_url);
-  entry->SetVirtualURL(new_url);
-  entry->root_node()->frame_entry->set_committed_origin(
-      url::Origin::Create(new_url));
-  entry->SetOriginalRequestURL(new_url);
-  return NavigationEntryUpdateError::UPDATE_OK;
-}
-#endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 
 }  // namespace content

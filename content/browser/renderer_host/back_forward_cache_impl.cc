@@ -60,10 +60,8 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
-#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#include "base/command_line.h"
-#include "content/public/common/content_switches.h"
-#endif
+#include "arkweb/chromium_ext/content/browser/renderer_host/ark_web_back_forward_cache_impl.h"
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
 namespace content {
 
@@ -137,23 +135,9 @@ WebSchedulerTrackedFeatures SupportedFeaturesImpl() {
   WebSchedulerTrackedFeatures features;
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kEnableCacheNativeEmbed)) {
-    auto feature = blink::scheduler::StringToFeature("EnableCacheNativeEmbed");
-    if (feature.has_value()) {
-      features.Put(feature.value());
-    }
+  if (GetArkWebBackForwardCacheFeatures(features)) {
+    return features;
   }
-
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kEnableCacheMediaTakeOver)) {
-    auto feature =
-        blink::scheduler::StringToFeature("EnableCacheMediaTakeOver");
-    if (feature.has_value()) {
-      features.Put(feature.value());
-    }
-  }
-  return features;
 #endif
 
   if (!IsBackForwardCacheEnabled())
@@ -240,11 +224,10 @@ WebSchedulerTrackedFeatures GetDisallowedWebSchedulerTrackedFeatures() {
           WebSchedulerTrackedFeature::kParserAborted
 #if BUILDFLAG(ARKWEB_BFCACHE)
           ,
-          // kEnableCacheNativeEmbed can allow use native embed web pages enter
-          // BFCache and can be set by command line --enable-cache-native-embed
-          // before web engine init. kEnableCacheMediaTakeOver can allow use
-          // media take over web pages enter BFCache and can be set by command
-          // line --enable-cache-media-take-over before web engine init.
+          // kEnableCacheNativeEmbed can allow use native embed web pages enter BFCache
+          // and can be set by command line --enable-cache-native-embed before web engine init.
+          // kEnableCacheMediaTakeOver can allow use media take over web pages enter BFCache
+          // and can be set by command line --enable-cache-media-take-over before web engine init.
           WebSchedulerTrackedFeature::kEnableCacheNativeEmbed,
           WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver
 #endif
@@ -615,8 +598,7 @@ void BackForwardCacheImpl::RenderProcessPriorityChanged(
     RenderProcessHostImpl* host) {
   EnforceCacheSizeLimit();
 #if BUILDFLAG(ARKWEB_BFCACHE)
-  LOG(DEBUG) << "[BFCACHE]"
-             << " Now stored entries number is: " << GetStoredEntriesNumber();
+  LOG(DEBUG) << "[BFCACHE]" << " Now stored entries number is: " << GetStoredEntriesNumber();
 #endif
 }
 
@@ -644,8 +626,7 @@ BackForwardCacheImpl::BackForwardCacheImpl(BrowserContext* browser_context)
       GetCacheControlNoStoreLevel() >
           CacheControlNoStoreExperimentLevel::kDoNotStore;
 #if BUILDFLAG(ARKWEB_BFCACHE)
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kEnableBFCache)) {
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableBFCache)) {
     this->size_ = 1;
   }
 #endif
@@ -697,12 +678,6 @@ base::TimeDelta BackForwardCacheImpl::GetTimeToLiveInBackForwardCache(
     return base::Seconds(kDefaultTimeToLiveInBackForwardCacheInSeconds);
   }
 }
-
-#if BUILDFLAG(ARKWEB_BFCACHE)
-size_t BackForwardCacheImpl::GetStoredEntriesNumber() {
-  return entries_.size();
-}
-#endif
 
 // static
 size_t BackForwardCacheImpl::GetCacheSize() {
@@ -1286,8 +1261,7 @@ void BackForwardCacheImpl::StoreEntry(
   AddProcessesForEntry(*entries_.front());
   EnforceCacheSizeLimit();
 #if BUILDFLAG(ARKWEB_BFCACHE)
-  LOG(DEBUG) << "[BFCACHE] " << __func__
-             << " Now stored entries number is: " << GetStoredEntriesNumber();
+  LOG(DEBUG) << "[BFCACHE] " << __func__ << " Now stored entries number is: " << GetStoredEntriesNumber();
 #endif
 }
 
@@ -1383,8 +1357,7 @@ std::unique_ptr<BackForwardCacheImpl::Entry> BackForwardCacheImpl::RestoreEntry(
   RestoreBrowserControlsState(entry->render_frame_host());
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
-  LOG(DEBUG) << "[BFCACHE] " << __func__
-             << " Now stored entries number is: " << GetStoredEntriesNumber();
+  LOG(DEBUG) << "[BFCACHE] " << __func__ << " Now stored entries number is: " << GetStoredEntriesNumber();
 #endif
   return entry;
 }
@@ -1643,8 +1616,7 @@ void BackForwardCacheImpl::DestroyEvictedFrames() {
   });
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
-  LOG(DEBUG) << "[BFCACHE] " << __func__
-             << " Now stored entries number is: " << GetStoredEntriesNumber();
+  LOG(DEBUG) << "[BFCACHE] " << __func__ << " Now stored entries number is: " << GetStoredEntriesNumber();
 #endif
 }
 
@@ -1774,29 +1746,6 @@ bool BackForwardCacheImpl::IsMediaSessionServiceAllowed() {
   return base::FeatureList::IsEnabled(
       features::kBackForwardCacheMediaSessionService);
 }
-
-#if BUILDFLAG(ARKWEB_BFCACHE)
-void BackForwardCacheImpl::SetCacheSize(int size) {
-  if (size <= 0) {
-    size = 0;
-  } else if (size > 50) {
-    size = 50;
-  }
-
-  this->size_ = size;
-  LOG(INFO) << "BackForwardCacheImpl set backforward cache size: " << size;
-  EnforceCacheSizeLimit();
-}
-
-base::TimeDelta BackForwardCacheImpl::ArkWebGetTimeToLiveInBackForwardCache() {
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kEnableBFCache)) {
-    return base::Seconds(this->time_to_live_);
-  }
-
-  return base::Seconds(kDefaultTimeToLiveInBackForwardCacheInSeconds);
-}
-#endif
 
 // Static
 bool BackForwardCacheImpl::IsUnloadAllowed() {

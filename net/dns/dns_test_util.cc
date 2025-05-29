@@ -559,7 +559,7 @@ class MockDnsTransactionFactory::MockTransaction final : public DnsTransaction {
   }
 #if BUILDFLAG(IS_OHOS)
   void SetNotNeedMoreAttemptIPQueryType(
-      uint16_t not_need_more_another_ip_query_type) {}
+    uint16_t not_need_more_another_ip_query_type) {}
 #endif
 
   bool delayed() const { return delayed_; }

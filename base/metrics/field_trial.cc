@@ -62,6 +62,10 @@
 #include "base/fuchsia/fuchsia_logging.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "arkweb/chromium_ext/base/feature_list_utils.h"
+#endif
+
 namespace base {
 
 namespace {
@@ -775,22 +779,6 @@ void FieldTrialList::PopulateLaunchOptionsWithFieldTrialState(
 }
 #endif  // BUILDFLAG(USE_BLINK)
 
-#if BUILDFLAG(IS_ARKWEB)
-// static
-int FieldTrialList::GetFieldTrialDescriptor() {
-  InstantiateFieldTrialAllocatorIfNeeded();
-  if (!global_ || !global_->readonly_allocator_region_.IsValid()) {
-    return -1;
-  }
-
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
-  return global_->readonly_allocator_region_.GetPlatformHandle();
-#else
-  return global_->readonly_allocator_region_.GetPlatformHandle().fd;
-#endif
-}
-#endif  // BUILDFLAG(IS_ARKWEB)
-
 // static
 ReadOnlySharedMemoryRegion
 FieldTrialList::DuplicateFieldTrialSharedMemoryForTesting() {
@@ -1143,8 +1131,7 @@ void FieldTrialList::InstantiateFieldTrialAllocatorIfNeeded() {
   // Create the allocator if not already created and add all existing trials.
   if (global_->field_trial_allocator_ != nullptr) {
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
-    FeatureList::GetInstance()->ModifyFeaturesToAllocator(
-        global_->field_trial_allocator_.get());
+    FeatureList::GetInstance()->GetUtils()->ModifyFeaturesToAllocator(global_->field_trial_allocator_.get());
 #endif
     return;
   }

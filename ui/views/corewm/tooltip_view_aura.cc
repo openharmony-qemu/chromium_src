@@ -24,9 +24,6 @@ namespace {
 
 constexpr int kTooltipBorderThickness = 1;
 constexpr gfx::Insets kBorderInset = gfx::Insets::TLBR(4, 8, 5, 8);
-#if BUILDFLAG(IS_OHOS)
-constexpr int kTooltipBorderRoundedCornerRadius = 16;
-#endif
 }  // namespace
 
 TooltipViewAura::TooltipViewAura()
@@ -37,14 +34,8 @@ TooltipViewAura::TooltipViewAura()
   SetBackground(
       views::CreateThemedSolidBackground(ui::kColorTooltipBackground));
   SetBorder(views::CreatePaddedBorder(
-#if BUILDFLAG(IS_OHOS)
-      views::CreateThemedRoundedRectBorder(kTooltipBorderThickness,
-                                           kTooltipBorderRoundedCornerRadius,
-                                           ui::kColorTooltipForeground),
-#else
       views::CreateThemedSolidBorder(kTooltipBorderThickness,
                                      ui::kColorTooltipForeground),
-#endif
       kBorderInset - gfx::Insets(kTooltipBorderThickness)));
 
   GetViewAccessibility().SetRole(ax::mojom::Role::kTooltip);

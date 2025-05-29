@@ -58,7 +58,9 @@ class COMPONENT_EXPORT(UI_BASE_DATA_TRANSFER_POLICY) DataTransferEndpoint {
       EndpointType type,
       DataTransferEndpointOptions options = DataTransferEndpointOptions());
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
-  explicit DataTransferEndpoint(EndpointType type, bool notify_if_restricted);
+  explicit DataTransferEndpoint(
+      EndpointType type,
+      bool notify_if_restricted);
 #endif
 
   DataTransferEndpoint(const DataTransferEndpoint& other);

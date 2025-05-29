@@ -55,6 +55,12 @@ class TransportConnectSubJob : public WebSocketEndpointLockManager::Waiter {
   // Implementation of WebSocketEndpointLockManager::EndpointWaiter.
   void GotEndpointLock() override;
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void SetFromPreload(bool from_preload) { from_preload_ = from_preload; }
+
+  bool IsFromPreload() const { return from_preload_; }
+#endif
+
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
   StreamSocket* Socket() {
     return transport_socket_ ? transport_socket_.get() : nullptr;
@@ -87,6 +93,10 @@ class TransportConnectSubJob : public WebSocketEndpointLockManager::Waiter {
   const SubJobType type_;
 
   std::unique_ptr<StreamSocket> transport_socket_;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool from_preload_ = false;
+#endif
 };
 
 }  // namespace net

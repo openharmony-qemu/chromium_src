@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_buildflags.h"
 #include "base/callback_list.h"
 #include "base/containers/flat_map.h"
@@ -99,10 +100,6 @@
 #include "ui/native_theme/native_theme.h"
 #include "ui/native_theme/native_theme_observer.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(IS_ANDROID)
 #include "content/public/browser/android/child_process_importance.h"
 #endif
@@ -172,9 +169,12 @@ class PreloadingAttempt;
 class DisplayCutoutHostOhos;
 #endif
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-class NativeWebContentsObserver;
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+enum class RendererIsUnresponsiveReason;
 #endif
+
+class WebContentsImplExt;
+class WebContentsImplUtils;
 
 namespace mojom {
 class CreateNewWindowParams;
@@ -187,21 +187,6 @@ class WebContentsAndroid;
 #if BUILDFLAG(ENABLE_PPAPI)
 class PepperPlaybackObserver;
 #endif
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-class CustomMediaPlayerListener;
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
-
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-enum class RendererIsUnresponsiveReason;
-#endif
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-class VideoAssistant;
-#endif  // ARKWEB_VIDEO_ASSISTANT
-
-class WebContentsImplExt;
-class WebContentsImplUtils;
 
 // CreatedWindow holds the WebContentsImpl and target url between IPC calls to
 // CreateNewWindow and ShowCreatedWindow.
@@ -250,7 +235,7 @@ class CONTENT_EXPORT WebContentsImpl
 
   virtual content::WebContentsImplExt* AsWebContentsImplExt() {
     return nullptr;
-  };
+  }
 
   static std::unique_ptr<WebContentsImpl> CreateWithOpener(
       const WebContents::CreateParams& params,
@@ -394,14 +379,6 @@ class CONTENT_EXPORT WebContentsImpl
   // human-readable name.
   std::string GetTitleForMediaControls();
 
-#if BUILDFLAG(ARKWEB_DATALIST)
-  void ShowAutofillPopup(const gfx::RectF& element_bounds,
-                         bool is_rtl,
-                         const std::vector<autofill::Suggestion>& suggestions,
-                         bool is_password_popup_type) override;
-  void HideAutofillPopup() override;
-#endif  // BUILDFLAG(ARKWEB_DATALIST)
-
   // Sets the accessibility mode if this WebContents will potentially be
   // user-visible, and broadcasts it to all of its frames if it differs from the
   // previous mode.
@@ -461,17 +438,6 @@ class CONTENT_EXPORT WebContentsImpl
   bool IsFullAccessibilityModeForTesting() override;
   const std::u16string& GetTitle() override;
   const std::optional<std::u16string>& GetAppTitle() override;
-#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
-  bool is_selectable_;
-  void SetShouldShowFreeCopyMenu(bool is_selectable) {
-    is_selectable_ = is_selectable;
-  }
-  bool ShouldShowFreeCopyMenu() override { return is_selectable_; }
-#endif
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-  void OnShareFile(const std::string& filePath,
-                   const std::string& utdTypeId) override;
-#endif
   void UpdateTitleForEntry(NavigationEntry* entry,
                            const std::u16string& title) override;
   SiteInstanceImpl* GetSiteInstance() override;
@@ -720,9 +686,6 @@ class CONTENT_EXPORT WebContentsImpl
   void OnManifestUrlChanged(PageImpl& page) override;
   void RenderFrameCreated(RenderFrameHostImpl* render_frame_host) override;
   void RenderFrameDeleted(RenderFrameHostImpl* render_frame_host) override;
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
-  void CollapseAllFramesSelection() override;
-#endif
   void ShowContextMenu(
       RenderFrameHostImpl& render_frame_host,
       mojo::PendingAssociatedRemote<blink::mojom::ContextMenuClient>
@@ -765,11 +728,6 @@ class CONTENT_EXPORT WebContentsImpl
                       const std::u16string& app_title) override;
   void UpdateTargetURL(RenderFrameHostImpl* render_frame_host,
                        const GURL& url) override;
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  void WebExtensionUpdateTab(
-      int32_t tab_id,
-      const NWebExtensionTabUpdateProperties* update_properties) override;
-#endif
   bool IsNeverComposited() override;
   void SetCaptureHandleConfig(
       blink::mojom::CaptureHandleConfigPtr config) override;
@@ -1012,7 +970,6 @@ class CONTENT_EXPORT WebContentsImpl
       RenderFrameHostImpl* frame_host,
       mojo::PendingAssociatedReceiver<media::mojom::MediaPlayerHost> receiver)
       override;
-
   void RequestMediaAccessPermission(const MediaStreamRequest& request,
                                     MediaResponseCallback callback) override;
 
@@ -1164,13 +1121,14 @@ class CONTENT_EXPORT WebContentsImpl
   RenderWidgetHostImpl* GetRenderWidgetHostWithPageFocus() override;
   void FocusOwningWebContents(
       RenderWidgetHostImpl* render_widget_host) override;
-  void RendererUnresponsive(RenderWidgetHostImpl* render_widget_host,
-                            base::RepeatingClosure hang_monitor_restarter
+  void RendererUnresponsive(
+      RenderWidgetHostImpl* render_widget_host,
+      base::RepeatingClosure hang_monitor_restarter
 #if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-                            ,
-                            RendererIsUnresponsiveReason reason
+      ,
+      RendererIsUnresponsiveReason reason
 #endif
-                            ) override;
+     ) override;
   void RendererResponsive(RenderWidgetHostImpl* render_widget_host) override;
   void RequestToLockPointer(RenderWidgetHostImpl* render_widget_host,
                             bool user_gesture,
@@ -1312,11 +1270,6 @@ class CONTENT_EXPORT WebContentsImpl
 
   void UpdateOverridingUserAgent() override;
 
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  void SetCustomUA(std::string custom_user_agent) override;
-  std::string GetCustomUA() override;
-#endif
-
   // Forces overscroll to be disabled (used by touch emulation).
   void SetForceDisableOverscrollContent(bool force_disable);
 
@@ -1368,12 +1321,6 @@ class CONTENT_EXPORT WebContentsImpl
   MediaWebContentsObserver* media_web_contents_observer() {
     return media_web_contents_observer_.get();
   }
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  NativeWebContentsObserver* native_web_contents_observer() {
-    return native_web_contents_observer_.get();
-  }
-#endif
 
   // Update the web contents visibility.
   void UpdateWebContentsVisibility(Visibility visibility) override;
@@ -1626,36 +1573,20 @@ class CONTENT_EXPORT WebContentsImpl
 
   WebContents* GetOpenedPartitionedPopin() const override;
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void EnableVideoAssistant(bool enable) override;
-  void ExecuteVideoAssistantFunction(const std::string& cmdId) override;
-  void OnShowToast(double duration, const std::string& toast);
-  void OnShowVideoAssistant(const std::string& videoAssistantItems);
-  void OnReportStatisticLog(const std::string& content);
-#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-
-#if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
-  void OnBeforeUnloadFired(bool proceed) override;
-#endif  // ARKWEB_DISATCH_BEFORE_UNLOAD
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void PopluateVideoAssistantConfig(
-      media::mojom::VideoAssistantConfigPtr& config);
-  void OnVideoPlaying(media::mojom::VideoAttributesForVASTPtr video_attributes,
-                      const MediaPlayerId& id);
-  void OnUpdateVideoAttributes(
-      media::mojom::VideoAttributesForVASTPtr video_attributes,
-      const MediaPlayerId& id);
-  void OnVideoDestroyed(const MediaPlayerId& id);
-#endif  // ARKWEB_VIDEO_ASSISTANT
-
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  void StopScreenCapture(int32_t nweb_id,
-                         const std::string& session_id) override;
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
-
+#if BUILDFLAG(ARKWEB_PIP)
+  MediaPlayerId GetMediaPlayerId(int delegate_id,
+                                 int child_id,
+                                 int frame_routing_id,
+                                 bool& status);
+  void OnPip(int status,
+             int delegate_id,
+             int child_id,
+             int frame_routing_id,
+             int width,
+             int height);
+  void OnPipEvent(int event) override;
+#endif
  private:
-  std::string custom_user_agent_;
   using FrameTreeIterationCallback = base::FunctionRef<void(FrameTree&)>;
   using RenderViewHostIterationCallback =
       base::RepeatingCallback<void(RenderViewHostImpl*)>;
@@ -1869,7 +1800,7 @@ class CONTENT_EXPORT WebContentsImpl
     bool is_notifying_observers_ = false;
     base::ObserverList<WebContentsObserver> observers_;
   };
-  WebContentsImplUtils* implUtils;
+  WebContentsImplUtils* implUtils_;
   // See WebContents::Create for a description of these parameters.
   explicit WebContentsImpl(BrowserContext* browser_context);
 
@@ -2276,10 +2207,6 @@ class CONTENT_EXPORT WebContentsImpl
   std::unique_ptr<WebContentsAndroid> web_contents_android_;
 #endif
 
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
-  bool touch_insert_handle_menu_show_ = false;
-#endif
-
   // Manages the embedder state for browser plugins, if this WebContents is an
   // embedder; NULL otherwise.
   std::unique_ptr<BrowserPluginEmbedder> browser_plugin_embedder_;
@@ -2536,15 +2463,6 @@ class CONTENT_EXPORT WebContentsImpl
   // Manages media players, CDMs, and power save blockers for media.
   std::unique_ptr<MediaWebContentsObserver> media_web_contents_observer_;
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  std::unique_ptr<NativeWebContentsObserver> native_web_contents_observer_;
-  std::map<std::string, gfx::Rect> native_embed_rect_info_map_;
-#endif
-
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-  bool safe_browsing_strict_mode_ = false;
-#endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
-
 #if BUILDFLAG(ENABLE_PPAPI)
   // Observes pepper playback changes, and notifies MediaSession.
   std::unique_ptr<PepperPlaybackObserver> pepper_playback_observer_;
@@ -2608,6 +2526,7 @@ class CONTENT_EXPORT WebContentsImpl
 
   bool is_currently_audible_ = false;
   bool was_ever_audible_ = false;
+
   // Helper variable for resolving races in UpdateTargetURL / ClearTargetURL.
   raw_ptr<RenderFrameHost, DanglingUntriaged> frame_that_set_last_target_url_ =
       nullptr;
@@ -2625,7 +2544,7 @@ class CONTENT_EXPORT WebContentsImpl
 #if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
   std::unique_ptr<DisplayCutoutHostOhos> safe_area_insets_host_;
 #else
-  std::unique_ptr<DisplayCutoutHostImpl> safe_area_insets_host_;
+  std::unique_ptr<SafeAreaInsetsHost> safe_area_insets_host_;
 #endif
 
   // Stores a set of frames that are fullscreen.
@@ -2725,6 +2644,9 @@ class CONTENT_EXPORT WebContentsImpl
   // WebContents::CreateParams::picture_in_picture_options.
   std::optional<blink::mojom::PictureInPictureWindowOptions>
       picture_in_picture_options_;
+#if BUILDFLAG(ARKWEB_PIP)
+  bool picture_in_picture_active_ = false;
+#endif
 
   // Only set if this WebContents represents a document picture-in-picture
   // window. This points to the WebContents that originally opened this
@@ -2732,10 +2654,6 @@ class CONTENT_EXPORT WebContentsImpl
   base::WeakPtr<WebContents> picture_in_picture_opener_;
 
   VisibleTimeRequestTrigger visible_time_request_trigger_;
-
-#if BUILDFLAG(ARKWEB_USERAGENT) || BUILDFLAG(ARKWEB_EXT_UA)
-  std::string user_agent_{""};
-#endif  // ARKWEB_EXT_UA
 
   // Counts the number of open scopes that disallow custom cursors in this web
   // contents. Custom cursors are allowed if this is 0.
@@ -2790,23 +2708,8 @@ class CONTENT_EXPORT WebContentsImpl
   // See https://explainers-by-googlers.github.io/partitioned-popins/
   base::WeakPtr<WebContents> opened_partitioned_popin_;
 
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  cc::BrowserControlsState browser_controls_state_ =
-      cc::BrowserControlsState::kBoth;
-  cc::BrowserControlsState controls_state_fullscreen_ =
-      cc::BrowserControlsState::kBoth;
-  cc::BrowserControlsState controls_state_current_fullscreen_ =
-      cc::BrowserControlsState::kBoth;
-#endif
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
-  std::string shared_render_process_token_;
-#endif
   base::WeakPtrFactory<WebContentsImpl> loading_weak_factory_{this};
   base::WeakPtrFactory<WebContentsImpl> weak_factory_{this};
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  std::unique_ptr<VideoAssistant> video_assistant_;
-#endif  // ARKWEB_VIDEO_ASSISTANT
 };
 
 // Dangerous methods which should never be made part of the public API, so we

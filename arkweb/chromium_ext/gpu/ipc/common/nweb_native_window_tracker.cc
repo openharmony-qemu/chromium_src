@@ -10,6 +10,7 @@
 #include "content/renderer/render_remote_proxy_ohos.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
+#include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 
 NWebNativeWindowTracker* g_instance = nullptr;
 
@@ -41,9 +42,9 @@ void* NWebNativeWindowTracker::GetNativeWindow(int32_t native_window_id) {
         std::make_shared<content::RenderRemoteProxy>();
     if (g_browser_client_) {
       // call binder to get window from browser proc (sync call)
-      void* window = g_browser_client_->QueryRenderSurface(native_window_id);
+      void *window = g_browser_client_->QueryRenderSurface(native_window_id);
       if (window) {
-        native_window_map_.emplace(native_window_id, std::move((void*)window));
+        native_window_map_.emplace(native_window_id, std::move((void *)window));
         LOG(DEBUG) << "Add native window id = " << native_window_id;
         return window;
       }
@@ -71,4 +72,15 @@ void NWebNativeWindowTracker::DestroyNativeWindow(int32_t native_window_id) {
     LOG(DEBUG) << __FUNCTION__
                << "Destroy browser native_window id = " << native_window_id;
   }
+}
+
+bool NWebNativeWindowTracker::CheckNativeWindow(void* native_window)
+{
+    base::AutoLock lock(window_map_lock_);
+    for (auto it : native_window_map_) {
+        if (it.second == native_window) {
+            return true;
+        }
+    }
+    return false;
 }

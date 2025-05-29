@@ -79,18 +79,15 @@ class VIEWS_EXPORT MenuDelegate {
   virtual bool GetTextColor(int command_id,
                             bool is_minor,
                             bool is_hovered,
-                            SkColor* override_color) const {
-    return false;
-  }
+                            SkColor* override_color) const { return false; }
 
   // Override the background color of a given menu item dependent on the
   // |command_id| and its |is_hovered| state. Returns true if it chooses to
   // override the color.
   virtual bool GetBackgroundColor(int command_id,
                                   bool is_hovered,
-                                  SkColor* override_color) const {
-    return false;
-  }
+                                  SkColor* override_color) const
+                                  { return false; }
 
   // The tooltip shown for the menu item. This is invoked when the user
   // hovers over the item, and no tooltip text has been set for that item.

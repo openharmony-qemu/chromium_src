@@ -34,7 +34,7 @@ class COMPONENT_EXPORT(UI_BASE) TouchEditable
   };
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
-  enum OhosMenuCommands {
+  enum OhosMenuCommands{
     QM_EDITFLAG_NONE = 0,
     QM_EDITFLAG_CAN_ELLIPSIS = 1 << 0,
     QM_EDITFLAG_CAN_CUT = 1 << 1,

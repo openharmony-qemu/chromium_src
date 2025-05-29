@@ -852,5 +852,11 @@ void ClipboardHostImpl::OnClipboardDataGuard(
   }
   std::move(callback).Run();
 }
+
+void ClipboardHostImpl::UpdateClipboardData(
+    UpdateClipboardDataCallback callback) {
+  ui::Clipboard::GetForCurrentThread()->UpdateClipboardData(
+      std::move(callback));
+}
 #endif
 }  // namespace content

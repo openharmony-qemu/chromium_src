@@ -24,9 +24,10 @@
 #include "arkweb/build/features/features.h"
 #include "cef/include/cef_resource_handler.h"
 #include "nweb_url_resource_response.h"
+#include "arkweb/chromium_ext/cef/include/cef_resource_handler_ext.h"
 
 namespace OHOS::NWeb {
-class NWebResourceHandler : public CefResourceHandler {
+class NWebResourceHandler : public CefResourceHandlerExt {
  public:
   NWebResourceHandler(std::shared_ptr<NWebUrlResourceResponse> web_response,
                       std::string& str);

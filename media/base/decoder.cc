@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "media/base/decoder.h"
-
 #include "arkweb/build/features/features.h"
 #include "base/notreached.h"
 
@@ -86,6 +85,10 @@ std::string GetDecoderName(AudioDecoderType type) {
       return "AudioToolboxAudioDecoder";
     case AudioDecoderType::kMediaFoundation:
       return "MediaFoundationAudioDecoder";
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+    case AudioDecoderType::kOhos:
+      return "OHOSAudioDecoder";
+#endif
   }
 }
 

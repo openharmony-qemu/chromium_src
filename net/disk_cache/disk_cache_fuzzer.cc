@@ -2,17 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "net/disk_cache/disk_cache.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <cinttypes>
 #include <cstdlib>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <string>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "base/at_exit.h"
 #include "base/command_line.h"
@@ -37,6 +34,7 @@
 #include "net/base/test_completion_callback.h"
 #include "net/disk_cache/backend_cleanup_tracker.h"
 #include "net/disk_cache/blockfile/backend_impl.h"
+#include "net/disk_cache/disk_cache.h"
 #include "net/disk_cache/disk_cache_fuzzer.pb.h"
 #include "net/disk_cache/disk_cache_test_util.h"
 #include "net/disk_cache/memory/mem_backend_impl.h"
@@ -143,7 +141,7 @@ InitGlobals* init_globals = new InitGlobals();
 class DiskCacheLPMFuzzer {
  public:
   DiskCacheLPMFuzzer() {
-    char template_name[] = "temp.XXXXXX";
+        char template_name[] = "temp.XXXXXX";
     char* temp_dir = mkdtemp(template_name);
     base::FilePath file_path(temp_dir);
     CHECK(temp_dir_.Set(file_path));

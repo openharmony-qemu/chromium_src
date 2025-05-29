@@ -26,10 +26,7 @@
 #include "net/socket/stream_socket_handle.h"
 #include "net/socket/websocket_endpoint_lock_manager.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace net {
 
@@ -44,8 +41,8 @@ WebSocketTransportClientSocketPool::WebSocketTransportClientSocketPool(
       proxy_chain_(proxy_chain),
       max_sockets_(max_sockets) {
   DCHECK(common_connect_job_params->websocket_endpoint_lock_manager);
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-  timeout_override_ = 0;
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  utils->SetConnectTimeout(0);
 #endif
 }
 
@@ -114,8 +111,8 @@ int WebSocketTransportClientSocketPool::RequestSocket(
   std::unique_ptr<ConnectJob> connect_job =
       CreateConnectJob(group_id, params, proxy_chain_, proxy_annotation_tag,
                        priority, SocketTag(), connect_job_delegate.get());
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-  connect_job->SetConnectTimeout(timeout_override_);
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  connect_job->SetConnectTimeout(utils->GetConnectTimeout());
 #endif
   int result = connect_job_delegate->Connect(std::move(connect_job));
 

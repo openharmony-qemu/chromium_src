@@ -37,6 +37,10 @@ OHOSCustomMediaPlayerRendererClient::~OHOSCustomMediaPlayerRendererClient() {
 void OHOSCustomMediaPlayerRendererClient::Initialize(
     media::MediaResource* media_resource,
     media::RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    media::RequestSurfaceCB request_surface_cb,
+    media::VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
     media::PipelineStatusCallback init_cb) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
   DCHECK(!init_cb_);
@@ -110,6 +114,10 @@ void OHOSCustomMediaPlayerRendererClient::OnStreamTextureWrapperInitialized(
 
   MojoRendererWrapper::Initialize(
       media_resource, client_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      media::RequestSurfaceCB(),
+      media::VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindOnce(
           &OHOSCustomMediaPlayerRendererClient::OnRemoteRendererInitialized,
           weak_factory_.GetWeakPtr()));

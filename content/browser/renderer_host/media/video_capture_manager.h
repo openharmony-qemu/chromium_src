@@ -9,7 +9,6 @@
 #include <set>
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/circular_deque.h"
 #include "base/containers/flat_set.h"
 #include "base/memory/raw_ptr.h"
@@ -40,6 +39,7 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
 #include "ui/gfx/native_widget_types.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_DESKTOP_ANDROID)
 #include "base/android/application_status_listener.h"
@@ -48,6 +48,7 @@
 namespace content {
 class VideoCaptureController;
 class VideoCaptureControllerEventHandler;
+class VideoCaptureManagerExt;
 
 // VideoCaptureManager is used to open/close, start/stop, enumerate available
 // video capture devices, and manage VideoCaptureController's.
@@ -59,6 +60,8 @@ class CONTENT_EXPORT VideoCaptureManager
       public VideoCaptureDeviceLaunchObserver,
       public ScreenlockObserver {
  public:
+  friend class VideoCaptureManagerExt;
+
   using VideoCaptureDevice = media::VideoCaptureDevice;
 
   // Callback used to signal the completion of a controller lookup.
@@ -261,19 +264,9 @@ class CONTENT_EXPORT VideoCaptureManager
     set_desktop_capture_window_id_callback_for_testing_ = callback;
   }
 
-#if BUILDFLAG(ARKWEB_WEBRTC)
-  void StartCamera(int nWebId) const;
-  void StopCamera(int nWebId) const;
-  void CloseCamera(int nWebId) const;
-  void BindSessionIdToNWebId(media::VideoCaptureSessionId sessionId,
-                             int nWebId);
-#endif  // BUILDFLAG(ARKWEB_WEBRTC)
-
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  void StopScreenCapture(const std::string& session_id);
-  void ScreenCaptureOpened(const std::string& session_id);
-  void OnScreenCaptureOpened(const std::string& session_id);
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+  virtual VideoCaptureManagerExt* AsVideoCaptureManagerExt() {
+    return nullptr;
+  }
 
  private:
   class CaptureDeviceStartRequest;
@@ -417,8 +410,14 @@ class CONTENT_EXPORT VideoCaptureManager
   NWebIdMap nWebId_;
   mutable std::mutex NWebIdMutex_;
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  bool is_picker_show_ = false;
+  bool is_session_reuse_ = true;
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 };
 
 }  // namespace content
+#include "arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_manager_ext.h"
 
 #endif  // CONTENT_BROWSER_RENDERER_HOST_MEDIA_VIDEO_CAPTURE_MANAGER_H_

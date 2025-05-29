@@ -72,9 +72,10 @@ gfx::SwapResult GLSurface::PostSubBuffer(int x,
 }
 
 #if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
-gfx::SwapResult GLSurface::SwapBuffersWithDamage(const std::vector<int>& rects,
-                                                 PresentationCallback callback,
-                                                 gfx::FrameData data) {
+gfx::SwapResult GLSurface::SwapBuffersWithDamage(
+    const std::vector<int>& rects,
+    PresentationCallback callback,
+    gfx::FrameData data) {
   return gfx::SwapResult::SWAP_FAILED;
 }
 #endif
@@ -223,11 +224,9 @@ bool GLSurface::ExtensionsContain(const char* c_extensions, const char* name) {
 }
 
 scoped_refptr<GLSurface> InitializeGLSurfaceWithFormat(
-    scoped_refptr<GLSurface> surface,
-    GLSurfaceFormat format) {
-  if (!surface->Initialize(format)) {
+    scoped_refptr<GLSurface> surface, GLSurfaceFormat format) {
+  if (!surface->Initialize(format))
     return nullptr;
-  }
   return surface;
 }
 scoped_refptr<GLSurface> InitializeGLSurface(scoped_refptr<GLSurface> surface) {

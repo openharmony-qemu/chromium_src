@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "components/viz/service/display_embedder/skia_output_device_gl.h"
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_gl_utils.h"
 
 #include <tuple>
 #include <utility>
@@ -32,7 +33,6 @@
 #include "ui/gl/gl_surface.h"
 #if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 
 namespace viz {
@@ -174,9 +174,7 @@ SkiaOutputDeviceGL::SkiaOutputDeviceGL(
   capabilities_.sk_color_type_map[SinglePlaneFormat::kRGBA_F16] =
       kRGBA_F16_SkColorType;
 #if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
-  supports_damage_region_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                .GetSystemPropertiesInstance()
-                                .GetBoolParameter("web.damageRegion.enable", 1);
+  implUtils_ = std::make_unique<SkiaOutputDeviceGLUtils>(this);
 #endif
   if (features::UseGpuVsync()) {
     // Historically we never disabled vsync on Android and it's very rare
@@ -261,6 +259,14 @@ bool SkiaOutputDeviceGL::Reshape(const ReshapeParams& params) {
   return !!sk_surface_;
 }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void SkiaOutputDeviceGL::SetNativeInnerWeb(bool isInnerWeb) {
+  if (gl_surface_) {
+    gl_surface_->SetNativeInnerWeb(isInnerWeb);
+  }
+}
+#endif
+
 void SkiaOutputDeviceGL::Present(const std::optional<gfx::Rect>& update_rect,
                                  BufferPresentedCallback feedback,
                                  OutputSurfaceFrame frame) {
@@ -294,22 +300,7 @@ void SkiaOutputDeviceGL::Present(const std::optional<gfx::Rect>& update_rect,
     gfx::SwapResult result;
     if (update_rect && !base::ohos::IsEmulator()) {
 #if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
-      if (supports_damage_region_) {
-        result = gl_surface_->SwapBuffersWithDamage(
-            {update_rect->x(),
-             gl_surface_->GetSize().height() - update_rect->y() -
-                 update_rect->height(),
-             update_rect->width(), update_rect->height()},
-            std::move(feedback), std::move(data));
-        LOG(DEBUG) << "Present calling SwapBuffersWithDamage ["
-                   << update_rect->x() << ", "
-                   << gl_surface_->GetSize().height() - update_rect->y() -
-                          update_rect->height()
-                   << ", " << update_rect->width() << ", "
-                   << update_rect->height() << "]";
-      } else {
-        result = gl_surface_->SwapBuffers(std::move(feedback), std::move(data));
-      }
+      result = implUtils_->SwapBuffers(update_rect, feedback, frame);
 #else
       result = gl_surface_->PostSubBuffer(
           update_rect->x(), update_rect->y(), update_rect->width(),

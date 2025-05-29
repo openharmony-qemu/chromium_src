@@ -4,14 +4,11 @@
 
 #include "ui/events/blink/fling_booster.h"
 
-#include "arkweb/build/features/features.h"
 #include "base/trace_event/trace_event.h"
 
 #if BUILDFLAG(ARKWEB_FLING)
-#include "base/system/sys_info.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#endif
-
+#include "arkweb/chromium_ext/ui/events/blink/fling_booster_utils.h"
+#endif  // BUILDFLAG(ARKWEB_FLING)
 using blink::WebGestureEvent;
 using blink::WebInputEvent;
 
@@ -39,23 +36,18 @@ gfx::Vector2dF FlingBooster::GetVelocityForFlingStart(
             fling_start.GetType());
   gfx::Vector2dF velocity(fling_start.data.fling_start.velocity_x,
                           fling_start.data.fling_start.velocity_y);
-#if BUILDFLAG(ARKWEB_FLING)
-  if (!OHOS::NWeb::OhosAdapterHelper::GetInstance()
-           .GetSystemPropertiesInstance()
-           .GetBoolParameter("web.instructionOptimize.enable", 0)) {
-    if (!base::SysInfo::IsLowEndDevice() &&
-        (std::abs(fling_start.data.fling_start.velocity_y) >
-         std::abs(fling_start.data.fling_start.velocity_x))) {
-      velocity.Scale(1.0f, 1.5f);
-    }
-  }
-#endif  // ARKWEB_FLING
 
+#if BUILDFLAG(ARKWEB_FLING)
+    ScaleVelocity(fling_start, velocity);
+#endif  // BUILDFLAG(ARKWEB_FLING)
   TRACE_EVENT2("input", "FlingBooster::GetVelocityForFlingStart", "vx",
                velocity.x(), "vy", velocity.y());
 
   if (ShouldBoostFling(fling_start)) {
     velocity += previous_fling_starting_velocity_;
+#if BUILDFLAG(ARKWEB_FLING)
+    LimitVelocity(velocity);
+#endif
     TRACE_EVENT_INSTANT2("input", "Boosted", TRACE_EVENT_SCOPE_THREAD, "vx",
                          velocity.x(), "vy", velocity.y());
   }

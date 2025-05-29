@@ -357,7 +357,9 @@ NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
     : GLSurfaceEGL(display),
       scoped_window_(std::move(scoped_window)),
       window_(scoped_window_.a_native_window()),
-      vsync_provider_external_(std::move(vsync_provider)) {}
+      vsync_provider_external_(std::move(vsync_provider)) {
+        arkweb_surface_utils_ = new ArkwebGlSurfaceEglUtils();
+      }
 #else
 NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
     GLDisplayEGL* display,
@@ -371,16 +373,7 @@ NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
   if (GetClientRect(window_, &windowRect))
     size_ = gfx::Rect(windowRect).size();
 #endif
-#if BUILDFLAG(ARKWEB_DFX_DUMP)
-  enable_replace_swap_buffer_output_ =
-      OHOS::NWeb::OhosAdapterHelper::GetInstance()
-          .GetSystemPropertiesInstance()
-          .GetBoolParameter("web.debug.eglSwapBuffersBackgroundColor", false);
-  if (enable_replace_swap_buffer_output_) {
-    LOG(INFO) << "NativeViewGLSurfaceEGLOhos:: enable debug background color,"
-                 " The rendering output will be replaced with green.";
-  }
-#endif
+  enable_replace_swap_buffer_output_ = arkweb_surface_utils_->CheckSwapBufferOutputFlag();
 }
 #endif  // BUILDFLAG(IS_ANDROID)
 
@@ -447,13 +440,6 @@ bool NativeViewGLSurfaceEGL::Initialize(GLSurfaceFormat format) {
 
   egl_window_attributes.push_back(EGL_NONE);
   // Create a surface for the native window.
-#if BUILDFLAG(IS_OHOS)
-  if (!window_) {
-    LOG(ERROR) << "eglCreateWindowSurface failed with error,window_ is null";
-    Destroy();
-    return false;
-  }
-#endif
   surface_ = eglCreateWindowSurface(display_->GetDisplay(), GetConfig(),
                                     window_, &egl_window_attributes[0]);
 
@@ -604,8 +590,9 @@ bool NativeViewGLSurfaceEGL::IsOffscreen() {
 gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffers(
     PresentationCallback callback,
     gfx::FrameData data) {
-  OHOS_TRACE_EVENT2("gpu", "NativeViewGLSurfaceEGL:RealSwapBuffers", "width",
-                    GetSize().width(), "height", GetSize().height());
+  OHOS_TRACE_EVENT2("gpu", "NativeViewGLSurfaceEGL:RealSwapBuffers",
+      "width", GetSize().width(),
+      "height", GetSize().height());
 
   EGLuint64KHR new_frame_id = 0;
   bool new_frame_id_is_valid = true;
@@ -775,11 +762,6 @@ bool NativeViewGLSurfaceEGL::Resize(const gfx::Size& size,
   GLSurface* surface = GLSurface::GetCurrent();
   DCHECK(surface);
 
-  if (context == nullptr || surface == nullptr) {
-    LOG(ERROR) << "context or surface is null";
-    return false;
-  }
-
   // Current surface may not be |this| if it is wrapped, but it should point to
   // the same handle.
   DCHECK_EQ(surface->GetHandle(), GetHandle());
@@ -806,11 +788,6 @@ bool NativeViewGLSurfaceEGL::Recreate() {
   DCHECK(context);
   GLSurface* surface = GLSurface::GetCurrent();
   DCHECK(surface);
-
-  if (context == nullptr || surface == nullptr) {
-    LOG(ERROR) << "context or surface is null";
-    return false;
-  }
 
   // Current surface may not be |this| if it is wrapped, but it should point to
   // the same handle.
@@ -964,20 +941,10 @@ gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffersWithDamage(
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   OHOS_TRACE_EVENT2(
-      "gpu", "NativeViewGLSurfaceEGL::RealSwapBuffers SwapBuffersWithDamage",
-      "width", GetSize().width(), "height", GetSize().height());
-
-  if (enable_replace_swap_buffer_output_) {
-    glClearColor(0.0, 1.0, 0.0, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
-  }
-
-  if (is_first_swapbuffers_) {
-    is_first_swapbuffers_ = false;
-    LOG(INFO) << "web render log: first call SwapBuffersWithDamage, size = "
-              << GetSize().ToString();
-  }
-
+    "gpu", "NativeViewGLSurfaceEGL::RealSwapBuffers SwapBuffersWithDamage",
+    "width", GetSize().width(), "height", GetSize().height());
+  is_first_swapbuffers_ = arkweb_surface_utils_->SwapBuffersSolution(
+    enable_replace_swap_buffer_output_, is_first_swapbuffers_, GetSize());
   auto start = std::chrono::high_resolution_clock::now();
 #endif
 
@@ -991,20 +958,7 @@ gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffersWithDamage(
     scoped_swap_buffers.set_result(gfx::SwapResult::SWAP_FAILED);
   }
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
-  auto end = std::chrono::high_resolution_clock::now();
-  auto duration =
-      std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-          .count();
-  if (duration > kMaxSwapIntervalOhos) {
-    LOG(WARNING) << "web render log: SwapBuffersWithDamage cost time = "
-                 << duration << "ms" << ", swap result = "
-                 << static_cast<int32_t>(scoped_swap_buffers.result());
-  }
-
-  if (scoped_swap_buffers.result() == gfx::SwapResult::SWAP_FAILED) {
-    LOG(ERROR) << "web render log: SwapBuffersWithDamage failed, size = "
-               << GetSize().ToString();
-  }
+  arkweb_surface_utils_->SwapBuffersWithDamageSolution(scoped_swap_buffers.result(), start, GetSize());
 #endif
   return scoped_swap_buffers.result();
 }

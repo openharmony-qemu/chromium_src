@@ -2,14 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "base/debug/stack_trace.h"
+
 #include <unwind.h>
 
 #include <algorithm>
 #include <cstddef>
 #include <ostream>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "base/containers/heap_array.h"
+#include "base/containers/span.h"
+#include "base/containers/span_writer.h"
+#endif
 #include "base/debug/proc_maps_linux.h"
-#include "base/debug/stack_trace.h"
 #include "base/logging.h"
 #include "base/stl_util.h"
 #include "base/strings/strcat.h"
@@ -56,7 +63,7 @@ _Unwind_Reason_Code TraceStackFrame(_Unwind_Context* context, void* arg) {
 
 bool EndsWith(const std::string& s, const std::string& suffix) {
   return s.size() >= suffix.size() &&
-         s.substr(s.size() - suffix.size(), suffix.size()) == suffix;
+      s.substr(s.size() - suffix.size(), suffix.size()) == suffix;
 }
 
 }  // namespace
@@ -127,12 +134,72 @@ char* itoa_r(intptr_t i, char* buf, size_t sz, int base, size_t padding) {
   }
   return buf;
 }
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+void itoa_r(intptr_t i, int base, size_t padding, base::span<char> buf) {
+  // Make sure we can write at least one NUL byte.
+  if (buf.empty()) {
+    return;
+  }
+
+  if (base < 2 || base > 16) {
+    buf[0u] = '\000';
+    return;
+  }
+
+  auto writer = base::SpanWriter(buf);
+  size_t start = 0u;
+
+  uintptr_t j = static_cast<uintptr_t>(i);
+
+  // Handle negative numbers (only for base 10).
+  if (i < 0 && base == 10) {
+    // This does "j = -i" while avoiding integer overflow.
+    j = static_cast<uintptr_t>(-(i + 1)) + 1;
+
+    // Make sure we can write the '-' character.
+    if (!writer.Write('-')) {
+      buf[0u] = '\000';
+      return;
+    }
+    start += 1u;  // The number starts after the sign.
+  }
+
+  // Loop until we have converted the entire number. Output at least one
+  // character (i.e. '0').
+  constexpr std::string_view digits = "0123456789abcdef";
+  do {
+    // Output the next digit.
+    if (!writer.Write(digits[j % static_cast<uintptr_t>(base)])) {
+      buf[0] = '\000';
+      return;
+    }
+    j /= static_cast<uintptr_t>(base);
+
+    if (padding > 0)
+      padding--;
+  } while (j > 0 || padding > 0);
+
+  // Terminate the output with a NUL character.
+  if (!writer.Write('\000')) {
+    buf[0] = '\000';
+    return;
+  }
+
+  // Conversion to ASCII actually resulted in the digits being in reverse order.
+  // We can't easily generate them in forward order, as we can't tell the number
+  // of characters needed until we are done converting. So, now, we reverse the
+  // string (except for the possible "-" sign and the NUL terminator).
+  std::ranges::reverse(buf.first(writer.num_written() - 1u).subspan(start));
+}
+#endif
 }  // namespace internal
 
 bool EnableInProcessStackDumping() {
   struct sigaction action;
-  std::fill(reinterpret_cast<unsigned char*>(&action),
-            reinterpret_cast<unsigned char*>(&action) + sizeof(action), 0);
+  std::fill(reinterpret_cast<unsigned char *>(&action),
+            reinterpret_cast<unsigned char *>(&action) + sizeof(action),
+            0);
   action.sa_handler = SIG_IGN;
   sigemptyset(&action.sa_mask);
   return (sigaction(SIGPIPE, &action, NULL) == 0);
@@ -163,9 +230,8 @@ void StackTrace::PrintWithPrefixImpl(cstring_view prefix_string) const {
 // NOTE: Native libraries in APKs are stripped before installing. Print out the
 // relocatable address and library names so host computers can use tools to
 // symbolize and demangle (e.g., addr2line, c++filt).
-void StackTrace::OutputToStreamWithPrefixImpl(
-    std::ostream* os,
-    cstring_view prefix_string) const {
+void StackTrace::OutputToStreamWithPrefixImpl(std::ostream* os,
+                                              cstring_view prefix_string) const {
   std::string proc_maps;
   std::vector<MappedMemoryRegion> regions;
   // Allow IO to read /proc/self/maps. Reading this file doesn't hit the disk

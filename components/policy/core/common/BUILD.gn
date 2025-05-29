@@ -402,9 +402,13 @@ source_set("internal") {
       ]
     }
   }
-  if (is_arkweb && arkweb_edm_policy) {
-    sources += arkweb_components_policy_core_common_sources
+  if (is_arkweb) {
+#if BUILDFLAG(ARKWEB_EDM_POLICY)
+    if (arkweb_edm_policy) {
+      sources += arkweb_components_policy_core_common_sources
+    }
   }
+#endif
 }
 
 static_library("test_support") {

@@ -18,7 +18,6 @@
 #include <string_view>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/files/file.h"
@@ -35,11 +34,7 @@
 #include "ui/base/resource/scoped_file_writer.h"
 
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-#include <unordered_map>
-
-#include "base/command_line.h"
-#include "content/public/common/content_switches.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "arkweb/chromium_ext/ui/base/data_pack_for_include.h"
 #endif
 
 // For details of the file layout, see
@@ -56,26 +51,6 @@ static const size_t kHeaderLengthV4 = 2 * sizeof(uint32_t) + sizeof(uint8_t);
 static const size_t kHeaderLengthV5 =
     sizeof(uint32_t) + sizeof(uint8_t) * 4 + sizeof(uint16_t) * 2;
 
-// We're crashing when trying to load a pak file on Windows.  Add some error
-// codes for logging.
-// http://crbug.com/58056
-// These values are logged to UMA. Entries should not be renumbered and
-// numeric values should never be reused. Keep in sync with "DataPackLoadErrors"
-// in src/tools/metrics/histograms/enums.xml.
-enum LoadErrors {
-  INIT_FAILED_OBSOLETE = 1,
-  BAD_VERSION,
-  INDEX_TRUNCATED,
-  ENTRY_NOT_FOUND,
-  HEADER_TRUNCATED,
-  WRONG_ENCODING,
-  INIT_FAILED_FROM_FILE,
-  UNZIP_FAILED,
-  OPEN_FAILED,
-  MAP_FAILED,
-
-  LOAD_ERRORS_COUNT,
-};
 // Prints the given resource id the first time it's loaded if Chrome has been
 // started with --print-resource-ids. This output is then used to generate a
 // more optimal resource renumbering to improve startup speed. See
@@ -113,42 +88,6 @@ bool MmapHasGzipHeader(const base::MemoryMappedFile* mmap) {
   return header_status == net::GZipHeader::COMPLETE_HEADER;
 }
 
-#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM)
-std::unordered_map<ui::ResourceScaleFactor, std::string> kPakFileNameHapMap = {
-    {ui::ResourceScaleFactor::kScaleFactorNone,
-     "resources/rawfile/resources.pak"},
-    {ui::ResourceScaleFactor::k100Percent,
-     "resources/rawfile/chrome_100_percent.pak"},
-    {ui::ResourceScaleFactor::k200Percent,
-     "resources/rawfile/chrome_200_percent.pak"}};
-
-bool GetPathFromHap(ui::ResourceScaleFactor factor,
-                    const base::FilePath& path,
-                    std::string& pathHap) {
-  auto iter = kPakFileNameHapMap.find(factor);
-  if (iter == kPakFileNameHapMap.end()) {
-    LOG(ERROR) << "kPakFileNameHapMap not find path: " << path;
-    return false;
-  }
-  std::string pathStr = path.MaybeAsASCII();
-  if (pathStr.find("zh-CN.pak") != std::string::npos) {
-    pathHap = "resources/rawfile/locales/zh-CN.pak";
-  } else if (pathStr.find("en-US.pak") != std::string::npos) {
-    pathHap = "resources/rawfile/locales/en-US.pak";
-  } else if (pathStr.find("bo-CN.pak") != std::string::npos) {
-    pathHap = "resources/rawfile/locales/bo-CN.pak";
-  } else if (pathStr.find("ug.pak") != std::string::npos) {
-    pathHap = "resources/rawfile/locales/ug.pak";
-  } else if (pathStr.find("zh-TW.pak") != std::string::npos) {
-    pathHap = "resources/rawfile/locales/zh-TW.pak";
-  } else if (pathStr.find("zh-HK.pak") != std::string::npos) {
-    pathHap = "resources/rawfile/locales/zh-HK.pak";
-  } else {
-    pathHap = iter->second;
-  }
-  return true;
-}
-#endif
 }  // namespace
 
 namespace ui {
@@ -288,46 +227,9 @@ std::unique_ptr<DataPack::DataSource> DataPack::LoadFromPathInternal(
 
 bool DataPack::LoadFromPath(const base::FilePath& path) {
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-  std::string pathHap;
   // If the hap package is not decompressed, the directory does not exist.
   if (path.empty() || !base::PathExists(path)) {
-    if (GetPathFromHap(resource_scale_factor_, path, pathHap)) {
-      auto resourceInstance =
-          OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter();
-
-      std::shared_ptr<OHOS::NWeb::OhosFileMapper> fileMapper =
-          resourceInstance->GetRawFileMapper(pathHap, true);
-
-      if (!fileMapper) {
-        LOG(ERROR) << "DataPack::LoadFromPath couldn't data file: "
-                   << pathHap.c_str();
-        return false;
-      }
-
-      LOG(INFO) << "DataPack::LoadFromPath " << pathHap.c_str()
-                << ", data file length: " << fileMapper->GetDataLen();
-
-      std::unique_ptr<base::MemoryMappedFile> mmap =
-          std::make_unique<base::MemoryMappedFile>();
-      mmap->SetOhosFileMapper(fileMapper);
-      if (MmapHasGzipHeader(mmap.get())) {
-        std::string_view compressed(reinterpret_cast<char*>(mmap->data()),
-                                    mmap->length());
-        std::string data;
-        if (!compression::GzipUncompress(compressed, &data)) {
-          LOG(ERROR) << "Failed to unzip compressed datapack: "
-                     << pathHap.c_str();
-
-          return false;
-        }
-        return LoadImpl(std::make_unique<StringDataSource>(std::move(data)));
-      }
-      return LoadImpl(
-          std::make_unique<MemoryMappedDataSource>(std::move(mmap)));
-    } else {
-      LOG(ERROR) << "LoadFromPath failed file not exist";
-      return false;
-    }
+    return DataPackUtil::LoadFromPathExt(this, path);
   }
 #endif
   std::unique_ptr<DataSource> data_source = LoadFromPathInternal(path);
@@ -646,3 +548,7 @@ bool DataPack::WritePack(const base::FilePath& path,
 }
 
 }  // namespace ui
+
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+#include "arkweb/chromium_ext/ui/base/data_pack_for_include.cc"
+#endif

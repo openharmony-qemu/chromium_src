@@ -99,10 +99,12 @@ class MEDIA_GPU_EXPORT CodecImage
 };
 
 class MEDIA_GPU_EXPORT CodecImageHolder
-    : public base::RefCountedDeleteOnSequence<CodecImageHolder> {
+    : public base::RefCountedDeleteOnSequence<CodecImageHolder>,
+      public gpu::RefCountedLockHelperDrDc {
  public:
   CodecImageHolder(scoped_refptr<base::SequencedTaskRunner> task_runner,
-                   scoped_refptr<CodecImage> codec_image);
+                   scoped_refptr<CodecImage> codec_image,
+                   scoped_refptr<gpu::RefCountedLock> drdc_lock);
 
   CodecImageHolder(const CodecImageHolder&) = delete;
   CodecImageHolder& operator=(const CodecImageHolder&) = delete;

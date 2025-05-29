@@ -41,15 +41,13 @@ void NWebInputMethodHandlerFuzzTest(const uint8_t* data, size_t size) {
   inputInfo.input_mode = CEF_TEXT_INPUT_MODE_DEFAULT;
   inputInfo.input_type = CEF_TEXT_INPUT_TYPE_EMAIL;
   int32_t enterKeyType = -1;
-  NWebInputMethodHandler::Attach(nullptr, inputInfo, is_need_reset_listener,
-                                 enterKeyType);
+  NWebInputMethodHandler handler;
+  handler.Attach(nullptr, inputInfo, is_need_reset_listener, enterKeyType);
   uint32_t nwebId = 0;
   bool result = false;
-  NWebInputMethodHandler::ReattachType type =
-      NWebInputMethodHandler::ReattachType::FROM_CONTINUE;
-  NWebInputMethodHandler::Reattach(nwebId, type);
-  NWebInputMethodHandler::OnSelectionChanged(nullptr, CefString(""),
-                                             CefRange(0, 1));
+  NWebInputMethodHandler::ReattachType type = NWebInputMethodHandler::ReattachType::FROM_CONTINUE;
+  handler.Reattach(nwebId, type);
+  handler.OnSelectionChanged(nullptr, CefString(""), CefRange(0, 1));
 }
 }  // namespace OHOS
 

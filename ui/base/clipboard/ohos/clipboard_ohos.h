@@ -10,8 +10,8 @@
 
 #include <string_view>
 
-#include "ohos_nweb/include/nweb_preference.h"
 #include "ui/base/clipboard/clipboard.h"
+#include "ohos_nweb/include/nweb_preference.h"
 
 namespace OHOS::NWeb {
 class NWebSpanstringConvertHtmlCallback;
@@ -116,6 +116,7 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardOHOS : public Clipboard {
   void WriteConfidentialDataForPassword() override;
   bool HasPasteData() const override;
   void OnClipboardDataGuard(bool status) override;
+  void UpdateClipboardData(UpdateClipboardDataCallback callback) override;
 
   const std::unique_ptr<ClipboardOHOSInternal> clipboard_internal_;
 };

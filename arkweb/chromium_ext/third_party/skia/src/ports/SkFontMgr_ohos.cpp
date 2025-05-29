@@ -8,6 +8,9 @@
 
 using namespace ErrorCode;
 
+#define WHITE_SMILING_FACE_CHATRCTER 9786
+#define WHITE_SMILING_FACE_CHAR "und-Zsye"
+
 /*! Constructor
  * \param path the full path of system font configuration document
  */
@@ -142,13 +145,6 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::onMatchFamilyStyleCharacter(
     return nullptr;
   }
 
-#if BUILDFLAG(ARKWEB_THEME_FONT)
-  auto* themeFontTypeface = fontConfig->getThemeFontTypeface();
-  if (themeFontTypeface && themeFontTypeface->unicharToGlyph(character) != 0) {
-    return sk_ref_sp(themeFontTypeface);
-  }
-#endif
-
   const FallbackForMap& fallbackForMap = fontConfig->getFallbackForMap();
   const FallbackSet& fallbackSet = fontConfig->getFallbackSet();
   SkString defaultFamily("");
@@ -170,7 +166,9 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::onMatchFamilyStyleCharacter(
          defaultFamily.c_str());
     return nullptr;
   }
-
+  if (character == WHITE_SMILING_FACE_CHATRCTER && bcp47Count > 0) {
+    bcp47[bcp47Count - 1] = WHITE_SMILING_FACE_CHAR;
+  }
   while (true) {
     if (bcp47Count > 0) {
       SkTypeface* retTp =
@@ -474,7 +472,7 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::makeTypeface(SkFontData* fontData) const {
   int ttcIndex = fontData->getIndex();
   int axisCount = fontData->getAxisCount();
   SkStreamAsset* stream = fontData->getStream();
-  if (axisCount == 0) {
+  if (axisCount <= 0) {
     if (!fontScanner.scanInstance(stream, ttcIndex, 0, &fontInfo.familyName,
                                   &fontInfo.style, &fontInfo.isFixedWidth,
                                   nullptr)) {
@@ -491,7 +489,7 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::makeTypeface(SkFontData* fontData) const {
       return nullptr;
     }
     if (axisDefs.size() > 0) {
-      fontInfo.setAxisSet(axisCount, axis, axisDefs.data());
+      fontInfo.setAxisSet(std::min(axisCount, axisDefs.size()), axis, axisDefs.data());
     }
   }
 

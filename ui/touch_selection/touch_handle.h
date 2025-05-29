@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "ui/events/velocity_tracker/motion_event.h"
@@ -17,13 +18,12 @@
 #include "ui/touch_selection/touch_selection_draggable.h"
 #include "ui/touch_selection/ui_touch_selection_export.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 namespace ui {
 
 class TouchHandle;
+#if BUILDFLAG(ARKWEB_MENU)
+class TouchHandleExt;
+#endif
 
 // Interface through which |TouchHandle| delegates rendering-specific duties.
 class UI_TOUCH_SELECTION_EXPORT TouchHandleDrawable {
@@ -87,6 +87,11 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandle : public TouchSelectionDraggable {
   TouchHandle& operator=(const TouchHandle&) = delete;
 
   ~TouchHandle() override;
+#if BUILDFLAG(ARKWEB_MENU)
+friend class TouchHandleExt;
+  virtual TouchHandleExt* AsTouchHandleExt() { return nullptr; }
+#endif
+
 
   // TouchSelectionDraggable implementation.
   bool WillHandleTouchEvent(const MotionEvent& event) override;
@@ -140,18 +145,6 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandle : public TouchSelectionDraggable {
   TouchHandleOrientation orientation() const { return orientation_; }
   float alpha() const { return alpha_; }
 
-#if BUILDFLAG(ARKWEB_MENU)
-  void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom);
-  const gfx::PointF& focus_top() const { return focus_top_; }
-  bool GetEnabled() const { return enabled_; }
-  void ResetPositionAfterDragEnd();
-  bool GetVisible() const { return is_visible_; }
-#endif
-
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  const gfx::RectF& viewport() const { return viewport_rect_; }
-#endif
-
  private:
   gfx::PointF ComputeHandleOrigin() const;
   void BeginDrag();
@@ -197,4 +190,7 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandle : public TouchSelectionDraggable {
 
 }  // namespace ui
 
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/ui/touch_selection/touch_handle_ext.h"
+#endif
 #endif  // UI_TOUCH_SELECTION_TOUCH_HANDLE_H_

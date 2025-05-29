@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/files/file_path.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
@@ -36,10 +37,6 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 #include "base/supports_user_data.h"
 #endif
@@ -47,12 +44,19 @@
 namespace download {
 class DownloadFile;
 class DownloadItemImplDelegate;
+class ArkWebDownloadItemImplExt;
+
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+bool CallIsCancellation(DownloadInterruptReason reason);
+#endif
 
 // See download_item.h for usage.
 class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
     : public DownloadItem,
       public DownloadDestinationObserver {
  public:
+  friend ArkWebDownloadItemImplExt;
+  virtual ArkWebDownloadItemImplExt *AsArkWebDownloadItemImplExt() { return nullptr; }
   // Information about the initial request that triggers the download. Most of
   // the fields are immutable after the DownloadItem is successfully
   // created. However, it is possible that the url chain is changed when
@@ -188,22 +192,6 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
     // Time last update was written to target file.
     base::Time end_time;
   };
-
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  struct COMPONENTS_DOWNLOAD_EXPORT RequestMethodData
-      : public base::SupportsUserData::Data {
-    std::string request_method_;
-    RequestMethodData(std::string request_method) {
-      request_method_ = request_method;
-    }
-  };
-
-  struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData
-      : public base::SupportsUserData::Data {
-    int nweb_id_;
-    NWebIdData(int nweb_id) { nweb_id_ = nweb_id; }
-  };
-#endif  //  BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   // The maximum number of attempts we will make to resume automatically.
   static const int kMaxAutoResumeAttempts;
 
@@ -368,9 +356,6 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
   void SetDisplayName(const base::FilePath& name) override;
   std::string DebugString(bool verbose) const override;
   void SimulateErrorForTesting(DownloadInterruptReason reason) override;
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  const std::string& GetRequestMethod() const;
-#endif
 
   // All remaining public interfaces virtual to allow for DownloadItemImpl
   // mocks.
@@ -448,10 +433,6 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
   void SetAutoResumeCountForTesting(int32_t auto_resume_count);
 
   std::pair<int64_t, int64_t> GetRangeRequestOffset() const;
-
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  bool IsBeforeInProgress() const;
-#endif
 
  private:
   // Fine grained states of a download.
@@ -704,12 +685,6 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
 
   void AutoResumeIfValid();
 
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-  void AutoResume();
-  bool CheckIsNeedAutoResume(DownloadInterruptReason reason);
-  bool IsAllowedAutoResume();
-#endif
-
   enum class ResumptionRequestSource { AUTOMATIC, USER };
   void ResumeInterruptedDownload(ResumptionRequestSource source);
 
@@ -937,7 +912,7 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
   bool is_must_download_ = false;
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   std::string request_method_;
 #endif
 
@@ -947,5 +922,7 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
 };
 
 }  // namespace download
+
+#include "arkweb/chromium_ext/components/download/internal/common/arkweb_download_item_impl_ext.h"
 
 #endif  // COMPONENTS_DOWNLOAD_PUBLIC_COMMON_DOWNLOAD_ITEM_IMPL_H_

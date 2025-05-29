@@ -142,6 +142,12 @@ class PictureInPictureMediaPlayerReceiver : public media::mojom::MediaPlayer {
   void RequestMediaRemoting() override {}
   void RequestVisibility(
       RequestVisibilityCallback request_visibility_callback) override {}
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) override {}
+  void PipDown(bool state) override {}
+  void RequestExitPictureInPicture() override {}
+  void NotifyPipResize() override {}
+#endif
 
  private:
   mojo::AssociatedReceiver<media::mojom::MediaPlayer> receiver_{this};

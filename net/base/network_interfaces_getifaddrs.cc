@@ -234,9 +234,10 @@ bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
             base::android::SDK_VERSION_NOUGAT);
   DCHECK(getifaddrs);
   DCHECK(freeifaddrs);
-#elif BUILDFLAG(ARKWEB_NETWORK_BASE)
+#elif BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 namespace internal {
-bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks, int policy) {
+bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
+                                   int policy) {
   constexpr bool use_alternative_getifaddrs = false;
 #else
 bool GetNetworkList(NetworkInterfaceList* networks, int policy) {
@@ -291,7 +292,7 @@ bool GetNetworkList(NetworkInterfaceList* networks, int policy) {
 #if BUILDFLAG(IS_ANDROID)
 }  // namespace internal
 // For Android use GetWifiSSID() impl in network_interfaces_linux.cc.
-#elif BUILDFLAG(ARKWEB_NETWORK_BASE)
+#elif BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 }  // namespace internal
 #else
 std::string GetWifiSSID() {

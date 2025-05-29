@@ -6,7 +6,6 @@
 #define URL_URL_CONSTANTS_H_
 
 #include <stddef.h>
-
 #include "arkweb/build/features/features.h"
 
 namespace url {
@@ -78,7 +77,7 @@ inline constexpr size_t kMaxURLChars = 2 * 1024 * 1024;
 #if BUILDFLAG(IS_ARKWEB)
 inline constexpr char kDatashareScheme[] = "datashare";
 inline constexpr char kDataabilityScheme[] = "dataability";
-#endif  // IS_ARKWEB
+#endif // IS_ARKWEB
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 const char kArkwebScheme[] = "arkweb";

@@ -22,6 +22,9 @@
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/mojom/frame/lifecycle.mojom.h"
 #include "third_party/blink/public/mojom/frame/viewport_intersection_state.mojom.h"
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+#include "content/browser/web_contents/web_contents_impl.h"
+#endif
 
 namespace performance_manager {
 
@@ -163,20 +166,15 @@ void FrameNodeImpl::OnWebMemoryMeasurementRequested(
       std::move(callback), mojo::GetBadMessageCallback());
 }
 #if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
-void FrameNodeImpl::OnFormEditingStateChanged(uint64_t form_id,
-                                              bool did_submit) {
+void FrameNodeImpl::OnFormEditingStateChanged(uint64_t form_id, bool did_submit) {
   if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     content::GetUIThreadTaskRunner({})->PostTask(
         FROM_HERE, base::BindOnce(&FrameNodeImpl::OnFormEditingStateChanged,
                                   weak_this_, form_id, did_submit));
   } else {
-    LOG(INFO) << "FrameNodeImpl::OnFormEditingStateChanged id: " << form_id
-              << "did submit: " << did_submit;
-    content::GlobalRenderFrameHostId global_frame_routing_id =
-        GetRenderFrameHostProxy().global_frame_routing_id();
-    content::WebContents* web_contents =
-        content::WebContentsImpl::FromRenderFrameHostID(
-            global_frame_routing_id);
+    LOG(INFO) << "FrameNodeImpl::OnFormEditingStateChanged id: " << form_id << "did submit: " << did_submit;
+    content::GlobalRenderFrameHostId global_frame_routing_id = GetRenderFrameHostProxy().global_frame_routing_id();
+    content::WebContents* web_contents = content::WebContentsImpl::FromRenderFrameHostID(global_frame_routing_id);
     if (web_contents) {
       web_contents->OnFormEditingStateChanged(form_id, did_submit);
     }

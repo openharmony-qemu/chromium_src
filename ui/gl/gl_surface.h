@@ -101,8 +101,12 @@ class GL_EXPORT GLSurface : public base::RefCounted<GLSurface> {
 
 #if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
   virtual gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
-                                                PresentationCallback callback,
-                                                gfx::FrameData data);
+      PresentationCallback callback,
+      gfx::FrameData data);
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void SetNativeInnerWeb(bool isInnerWeb) {};
 #endif
 
   // Returns whether or not the surface supports PostSubBuffer.

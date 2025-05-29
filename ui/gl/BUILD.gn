@@ -61,8 +61,6 @@ component("gl") {
     "angle_platform_impl.cc",
     "angle_platform_impl.h",
     "egl_timestamps.h",
-    "buffer_format_utils.cc",
-    "buffer_format_utils.h",
     "egl_util.cc",
     "egl_util.h",
     "gl_bindings.cc",
@@ -155,19 +153,6 @@ component("gl") {
     "trace_util.cc",
     "trace_util.h",
   ]
-  if (is_arkweb) {
-    import("//arkweb/chromium_ext/ui/gl/arkweb_ui_gl_ext.gni")
-    sources += arkweb_ui_gl_ext_sources
-    if (arkweb_same_layer) {
-      sources += [
-        "android/egl_fence_utils.cc",
-        "android/egl_fence_utils.h",
-        "gl_fence_android_native_fence_sync.cc",
-        "gl_fence_android_native_fence_sync.h",
-      ]
-      deps += [ "//third_party/libsync" ]
-    }
-  }
 
   configs += [ "//build/config:precompiled_headers" ]
   defines = [ "GL_IMPLEMENTATION" ]
@@ -175,7 +160,7 @@ component("gl") {
     defines += [ "GPU_ENABLE_SERVICE_LOGGING" ]
   }
 
-  deps += [
+  deps = [
     ":buildflags",
     "//mojo/public/cpp/bindings",
     "//ui/base:ozone_buildflags",
@@ -196,6 +181,12 @@ component("gl") {
       "//third_party/swiftshader/src/Vulkan:icd_file",
       "//third_party/swiftshader/src/Vulkan:swiftshader_libvulkan",
     ]
+  }
+
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/ui/gl/arkweb_ui_gl_ext.gni")
+    sources += arkweb_ui_gl_ext_sources
+    deps += arkweb_ui_gl_ext_deps
   }
 
   if (enable_vulkan) {
@@ -556,12 +547,9 @@ test("gl_unittests") {
   ]
 
   if (arkweb_unittests) {
-    sources += [
-      "//content/browser/scheduler/browser_io_thread_delegate.cc",
-      "//content/browser/scheduler/browser_task_queues.cc",
-      "//content/browser/scheduler/browser_ui_thread_scheduler.cc",
-      "//content/browser/scheduler/browser_task_priority.cc",
-    ]
+    import("//arkweb/chromium_ext/ui/gl/arkweb_ui_gl_unittests_ext.gni")
+    deps += arkweb_unittests_deps
+    sources += arkweb_unittests_sources
   }
 
   data_deps = [

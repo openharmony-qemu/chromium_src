@@ -13,7 +13,7 @@
 #include "media/audio/audio_thread_hang_monitor.h"
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
+#include "base/process/process_handle.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
 

@@ -10,6 +10,7 @@
 #include <map>
 #include <set>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
@@ -33,7 +34,6 @@
 #include "media/capture/video/video_capture_device_client.h"
 #include "media/capture/video/video_capture_metrics.h"
 #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
-#include "arkweb/build/features/features.h"
 
 #if !BUILDFLAG(IS_ANDROID)
 #include "content/browser/compositor/image_transport_factory.h"
@@ -274,7 +274,7 @@ void VideoCaptureController::AddClient(
   if (FindClient(id, event_handler, controller_clients_)) {
 #if BUILDFLAG(ARKWEB_WEBRTC)
     LOG(INFO) << "client is already added";
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
     return;
   }
 
@@ -506,15 +506,17 @@ void VideoCaptureController::OnFrameReadyInBuffer(
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
   if (stream_type_ == blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE ||
-      stream_type_ == blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB ||
-      stream_type_ == blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET) {
+      stream_type_ ==
+          blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB ||
+      stream_type_ ==
+          blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET) {
     for (const auto& client : controller_clients_) {
       if (client->session_closed || client->opened) {
         continue;
       }
       client->opened = true;
       if (video_capture_manager_) {
-        video_capture_manager_->AsVideoCaptureManagerExt()->ScreenCaptureOpened(
+        video_capture_manager_->ScreenCaptureOpened(
             client->session_id.ToString());
       }
     }
@@ -583,7 +585,7 @@ void VideoCaptureController::OnError(media::VideoCaptureError error) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
 #if BUILDFLAG(ARKWEB_WEBRTC)
   EmitLogMessage(__func__, 1);
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
   state_ = blink::VIDEO_CAPTURE_STATE_ERROR;
   PerformForClientsWithOpenSession(base::BindRepeating(&CallOnError, error));
 }
@@ -904,12 +906,54 @@ void VideoCaptureController::EmitLogMessage(const std::string& message,
   DVLOG(verbose_log_level) << message;
 #if BUILDFLAG(ARKWEB_WEBRTC)
   LOG(INFO) << message;
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
   emit_log_message_cb_.Run(message);
 }
 
-}  // namespace content
+#if BUILDFLAG(ARKWEB_WEBRTC)
+void VideoCaptureController::PauseClientBySessionId(
+    const base::UnguessableToken& session_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
 
-#ifdef BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_controller_for_include.cc"
-#endif
+  ControllerClient* client = FindClient(session_id, controller_clients_);
+  if (!client) {
+    DVLOG(1) << "Client not found";
+    return;
+  }
+
+  if (client->paused) {
+    DVLOG(1) << "Calling pause on paused client";
+    return;
+  }
+
+  client->paused = true;
+}
+
+void VideoCaptureController::ResumeClientBySessionId(
+    const base::UnguessableToken& session_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+
+  ControllerClient* client = FindClient(session_id, controller_clients_);
+  if (!client) {
+    DVLOG(1) << "Client not found";
+    return;
+  }
+
+  if (!client->paused) {
+    DVLOG(1) << "Calling resume on unpaused client";
+    return;
+  }
+
+  client->paused = false;
+}
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+void VideoCaptureController::SetScreenCaptureListener(
+    VideoCaptureManager* video_capture_manager) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  video_capture_manager_ = video_capture_manager;
+}
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+
+}  // namespace content

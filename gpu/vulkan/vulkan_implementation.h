@@ -122,14 +122,6 @@ class COMPONENT_EXPORT(VULKAN) VulkanImplementation {
       VulkanYCbCrInfo* ycbcr_info) = 0;
 #endif
 
-#if BUILDFLAG(ARKWEB_VULKAN)
-  // Get the sampler ycbcr conversion information from the AHB.
-  virtual bool GetSamplerYcbcrConversionInfo(
-      const VkDevice& vk_device,
-      ScopedNativeBufferHandle ahb_handle,
-      VulkanYCbCrInfo* ycbcr_info) = 0;
-#endif
-
 #if BUILDFLAG(IS_FUCHSIA)
   // Registers a sysmem buffer collection. `service_handle` contains a handle
   // for the eventpair that controls the lifetime of the collection. The

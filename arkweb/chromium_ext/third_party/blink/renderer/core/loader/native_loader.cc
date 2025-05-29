@@ -19,7 +19,6 @@
 #include <limits>
 
 #include "arkweb/chromium_ext/media/mojo/mojom/native_bridge.mojom.h"
-#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_plugin_element_utils.h"
 #include "base/time/time.h"
 #include "cc/layers/layer.h"
 #include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"
@@ -161,18 +160,6 @@ void NativeLoader::LoadResource(LocalFrame* frame) {
   web_native_bridge_->StartPipeline();
 }
 
-gfx::Rect NativeLoader::TransformRect(gfx::Rect rect) {
-  LayoutObject* layoutObject = plugin_element_->GetLayoutObject();
-  if (layoutObject) {
-    gfx::Transform transform = layoutObject->LocalToAbsoluteTransform();
-    auto trandfromRect = transform.MapRect(gfx::RectF(rect));
-    rect.set_width(std::round(trandfromRect.size().width()));
-    rect.set_height(std::round(trandfromRect.size().height()));
-    LOG(INFO) << "NativeEmbed NativeLoader::TransformRect: " << rect.ToString();
-  }
-  return rect;
-}
-
 void NativeLoader::OnCreateNativeSurface(int native_embed_id,
                                          RectChangeCB rect_changed_cb) {
   LOG(INFO) << "[NativeEmbed] NativeLoader::OnCreateNativeSurface";
@@ -196,7 +183,7 @@ void NativeLoader::OnCreateNativeSurface(int native_embed_id,
 
   native_embed_id_ = native_embed_id;
   bounding_rect_changed_cb_ = rect_changed_cb;
-  cc_layer_->layer_utils()->SetNativeEmbedId(native_embed_id_);
+  cc_layer_->SetNativeEmbedId(native_embed_id_);
 
   auto embed_info = media::mojom::blink::NativeEmbedInfo::New();
   auto bounds_to_viewport =
@@ -209,8 +196,7 @@ void NativeLoader::OnCreateNativeSurface(int native_embed_id,
   }
   // We will use the position relative to visual viewport.
   bounding_rect_.set_origin(bounds_to_viewport.origin());
-
-  embed_info->rect = TransformRect(bounds_to_viewport);
+  embed_info->rect = bounds_to_viewport;
   if (!bounding_rect_changed_cb_.is_null()) {
     bounding_rect_changed_cb_.Run(bounds_to_viewport);
   }
@@ -231,12 +217,18 @@ void NativeLoader::OnCreateNativeSurface(int native_embed_id,
   }
 
   if (first_update_visibility_) {
-    NotifyVisibilityChange(visibility_);
+    OnLayerRectVisibilityChange(visibility_);
   }
 }
 
 void NativeLoader::OnLayerRectVisibilityChange(bool visibility) {
-  NotifyVisibilityChange(visibility);
+  visibility_ = visibility;
+  first_update_visibility_ = true;
+  if (native_embed_id_ != -1) {
+    for (auto& observer : native_bridge_observer_remote_set_->Value()) {
+      observer->OnLayerRectVisibilityChange(visibility_, native_embed_id_);
+    }
+  }
 }
 
 void NativeLoader::OnLayerRectChange(const gfx::Rect& rect) {
@@ -257,9 +249,9 @@ void NativeLoader::OnLayerRectChange(const gfx::Rect& rect) {
   cc_layer_update_ = true;
   LOG(INFO) << "NativeEmbed NativeLoader::OnLayerRectChange:"
             << bounding_rect_.ToString();
-  auto bounds_to_viewport = BoundsToViewport(bounding_rect_, plugin_element_->GetDocument());
   for (auto& observer : native_bridge_observer_remote_set_->Value()) {
-    observer->OnEmbedRectChange(TransformRect(bounds_to_viewport));
+    observer->OnEmbedRectChange(
+        BoundsToViewport(bounding_rect_, plugin_element_->GetDocument()));
   }
 }
 
@@ -302,20 +294,13 @@ void NativeLoader::SetCcLayer(cc::Layer* cc_layer) {
     return;
   }
 
-  auto* plugin_element_client =
-      static_cast<DisplayItemClient*>(plugin_element_->GetLayoutObject());
-  if (plugin_element_client) {
-    plugin_element_client->Invalidate(PaintInvalidationReason::kJustCreated);
-  }
-
   plugin_element_->SetNeedsCompositingUpdate();
   cc_layer_ = cc_layer;
   if (cc_layer_) {
     LOG(DEBUG) << "[NativeEmbed] set native flag SetNativeType:"
                << GetTypeAttribute();
-    cc_layer_->layer_utils()->SetMayContainNative(true);
+    cc_layer_->SetMayContainNative(true);
     cc_layer_->SetNeedsPushProperties();
-    // cc_layer_->SetIsNativeVideo(GetTypeAttribute() == "native/video");
   }
 }
 
@@ -386,22 +371,5 @@ void NativeLoader::ReportFirstPaintTime(
   }
 }
 
-void NativeLoader::CleanupVisibilityForRemovedLayer(bool visibility) {
-  if (!plugin_element_->Utils()->IsCssDisplayChangeEnabled()) {
-    return;
-  }
-  LOG(INFO) << "[NativeEmbed] CssDisplayVisibility: " << visibility;
-  NotifyVisibilityChange(visibility);
-}
- 
-void NativeLoader::NotifyVisibilityChange(bool visibility) {
-  visibility_ = visibility;
-  first_update_visibility_ = true;
-  if (native_embed_id_ != -1) {
-    for (auto& observer : native_bridge_observer_remote_set_->Value()) {
-      observer->OnLayerRectVisibilityChange(visibility_, native_embed_id_);
-    }
-  }
-}
 }  // namespace blink
                      

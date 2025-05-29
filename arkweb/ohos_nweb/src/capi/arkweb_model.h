@@ -163,11 +163,6 @@ void RegisterJavaScriptProxyEx(const char* webTag,
                                bool isAsync,
                                const char* permission);
 
-void OH_ArkWeb_RegisterAsyncThreadJavaScriptProxy(
-    const char* webTag,
-    const ArkWeb_ProxyObjectWithResult* proxyObject,
-    const char* permission);
-
 ArkWeb_JavaScriptValuePtr OH_JavaScript_CreateJavaScriptValue(
     ArkWeb_JavaScriptValueType type,
     void* data,

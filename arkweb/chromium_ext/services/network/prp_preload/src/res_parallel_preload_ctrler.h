@@ -10,20 +10,15 @@
 
 namespace ohos_prp_preload {
 using PRPPCtrlerTimeoutCB = base::RepeatingCallback<void(const std::string& url)>;
-class ResParallelPreloadCtrler : public base::RefCountedThreadSafe<ResParallelPreloadCtrler> {
+class ResParallelPreloadCtrler : public base::RefCounted<ResParallelPreloadCtrler> {
  public:
   ResParallelPreloadCtrler(const std::string& url,
-                           const net::NetworkAnonymizationKey& networkAnonymizationKey,
                            const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
                            const PRPPCtrlerTimeoutCB& timeout_cb);
-  ~ResParallelPreloadCtrler()
-  {
-    LOG(INFO) << "PRPPreload.ResParallelPreloadCtrler::~ResParallelPreloadCtrler";
-  }
+  ~ResParallelPreloadCtrler() = default;
 
-  static void InitDiskCacheBackendFactory();
-  static void RemoveCache(base::Time start_time, base::Time end_time);
-  void Init(const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
+  bool Init(const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
+    const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
     base::WeakPtr<net::URLRequestContext> url_request_context,
     const PRPPOnPageOriginCB& on_page_origin_cb);
   void Start();
@@ -33,9 +28,6 @@ class ResParallelPreloadCtrler : public base::RefCountedThreadSafe<ResParallelPr
   void SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak);
   void UpdateIdlePrerequestCount();
  private:
-  void DoInit(const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
-    base::WeakPtr<net::URLRequestContext> url_request_context,
-    const PRPPOnPageOriginCB& on_page_origin_cb);
   void DoStart();
   void DoStop();
   void DoUpdateResRequestInfo(const std::shared_ptr<PRRequestInfo>& info);
@@ -43,19 +35,17 @@ class ResParallelPreloadCtrler : public base::RefCountedThreadSafe<ResParallelPr
   void DoSetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak);
   void DoUpdateIdlePrerequestCount();
   void OnResPreloadInfos(const PRPPPreconnectInfoList& preconnect_info_list,
-    const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree,
+    const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree, bool only_send_reuse_request,
     const std::set<std::string>& need_record_header_urls);
   void OnTimeout();
   std::string url_;
-  const net::NetworkAnonymizationKey networkAnonymizationKey_;
   scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;
   scoped_refptr<ResRequestInfoUpdater> res_req_info_updater_;
   scoped_refptr<ResPreloadScheduler> res_preload_scheduler_;
   PRPPCtrlerTimeoutCB timeout_cb_;
+  base::WeakPtrFactory<ResParallelPreloadCtrler> weak_factory_{this};
   bool start_filter_info_ { false };
   uint32_t filter_count_ { 0 };
-
-  base::WeakPtrFactory<ResParallelPreloadCtrler> weak_factory_{this};
 };
 
 }  // namespace ohos_prp_preload

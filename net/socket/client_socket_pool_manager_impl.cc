@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <utility>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/check_op.h"
 #include "base/values.h"
 #include "net/base/proxy_chain.h"
@@ -18,7 +21,6 @@
 #include "net/socket/transport_client_socket_pool.h"
 #include "net/socket/transport_connect_job.h"
 #include "net/socket/websocket_transport_client_socket_pool.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 
 namespace net {
 
@@ -90,11 +92,11 @@ ClientSocketPool* ClientSocketPoolManagerImpl::GetSocketPool(
         pool_type_ == HttpNetworkSession::WEBSOCKET_SOCKET_POOL,
         &common_connect_job_params_, cleanup_on_ip_address_change_);
   }
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
-  new_pool->utils->SetConnectTimeout(timeout_override_);
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  new_pool->SetConnectTimeout(timeout_override_);
 #endif
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-  new_pool->utils->SetConnectJobWithSecureDnsOnlyTimeout(
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  new_pool->SetConnectJobWithSecureDnsOnlyTimeout(
       connect_job_with_secure_dns_timeout_);
 #endif
 
@@ -125,8 +127,23 @@ base::Value ClientSocketPoolManagerImpl::SocketPoolInfoToValue() const {
 
   return base::Value(std::move(list));
 }
-}  // namespace net
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/net/socket/client_socket_pool_manager_impl_for_include.cc"
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+void ClientSocketPoolManagerImpl::SetConnectTimeout(int seconds) {
+  timeout_override_ = seconds;
+  for (const auto& it : socket_pools_) {
+    it.second->SetConnectTimeout(seconds);
+  }
+}
 #endif
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+void ClientSocketPoolManagerImpl::SetConnectJobWithSecureDnsOnlyTimeout(
+    int seconds) {
+  connect_job_with_secure_dns_timeout_ = seconds;
+  for (const auto& it : socket_pools_) {
+    it.second->SetConnectJobWithSecureDnsOnlyTimeout(seconds);
+  }
+}
+#endif
+}  // namespace net

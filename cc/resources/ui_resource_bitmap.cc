@@ -3,13 +3,13 @@
 // found in the LICENSE file.
 
 #include "cc/resources/ui_resource_bitmap.h"
-#include "arkweb/build/features/features.h"
 
 #include <stdint.h>
 
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/notreached.h"
 #include "base/numerics/checked_math.h"

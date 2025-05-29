@@ -4,6 +4,7 @@
 
 #include "components/password_manager/core/browser/stub_password_manager_driver.h"
 
+#include "arkweb/build/features/features.h"
 #include "components/autofill/core/common/aliases.h"
 #include "url/gurl.h"
 
@@ -92,4 +93,17 @@ const GURL& StubPasswordManagerDriver::GetLastCommittedURL() const {
 base::WeakPtr<PasswordManagerDriver> StubPasswordManagerDriver::AsWeakPtr() {
   return weak_ptr_factory_.GetWeakPtr();
 }
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+void StubPasswordManagerDriver::FillAccountSuggestion(
+    const std::u16string& username,
+    const std::u16string& password) {}
+
+void StubPasswordManagerDriver::SendParsedPasswordFormToRenderer(
+    const autofill::PasswordFormFillData& form_data) {}
+
+void StubPasswordManagerDriver::AutofillSurfaceClosed(
+    bool show_virtual_keyboard) {}
+#endif
+
 }  // namespace password_manager

@@ -27,7 +27,6 @@
 #include "ui/gl/gl_bindings.h"
 #include "ui/gl/gl_context.h"
 #include "ui/gl/gl_surface.h"
-#include "ui/gl/ohos/native_buffer_utils.h"
 
 namespace gpu {
 class AbstractTextureOHOS;
@@ -37,7 +36,7 @@ class TextureBase;
 // OhosWindowBuffer --- AImage
 class OhosWindowBuffer {
  public:
-  raw_ptr<void> rawbuffer = nullptr;
+  void* rawbuffer = nullptr;
 
   OhosWindowBuffer() = default;
   OhosWindowBuffer(const OhosWindowBuffer* buffer) {

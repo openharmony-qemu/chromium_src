@@ -28,6 +28,9 @@
 #include "cc/input/browser_controls_state.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/frame_tree_node_id.h"
+// todo: check use of undeclared identifier 'GuestPageHolder' without include
+#include "arkweb/build/features/features.h"
+#include "content/public/browser/guest_page_holder.h"
 #include "content/public/browser/invalidate_type.h"
 #include "content/public/browser/mhtml_generation_result.h"
 #include "content/public/browser/navigation_controller.h"
@@ -60,11 +63,30 @@
 #include "ui/gfx/native_widget_types.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include "third_party/jni_zero/jni_zero.h"
 #endif
 
-#include "arkweb/chromium_ext/content/public/browser/web_contents_for_include_file.cc"
+#if BUILDFLAG(IS_ARKWEB)
+#include "third_party/blink/public/common/messaging/web_message_port.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_DATALIST)
+#include "components/autofill/core/browser/ui/suggestion.h"
+#include "ui/gfx/geometry/rect_f.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
+#include "arkweb/chromium_ext/service/device/wake_lock/power_save_blocker/nweb_screen_lock_tracker.h"
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/web_extension_tab_items.h"
+#endif
 
 namespace base {
 class FilePath;
@@ -110,7 +132,6 @@ namespace content {
 class BackForwardTransitionAnimationManager;
 class BrowserContext;
 class BrowserPluginGuestDelegate;
-class GuestPageHolder;
 class RenderFrameHost;
 class RenderViewHost;
 class RenderViewHostDelegateView;
@@ -629,6 +650,10 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // other words, it must be a valid HTTP header value).
   virtual void SetUserAgentOverride(const blink::UserAgentOverride& ua_override,
                                     bool override_in_new_tabs) = 0;
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  virtual void SetCustomUA(std::string custom_user_agent) = 0;
+  virtual std::string GetCustomUA() = 0;
+#endif
   // Configures the value of is-overriding-user-agent for renderer initiated
   // navigations. The default is UA_OVERRIDE_INHERIT. This value does not apply
   // to the first renderer initiated navigation if the tab has no navigations.
@@ -694,6 +719,88 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // pending may be provisional (e.g., the navigation could result in a
   // download, in which case the URL would revert to what it was previously).
   virtual const std::u16string& GetTitle() = 0;
+
+#if BUILDFLAG(IS_ARKWEB)
+  // creating two ends of a message channel.
+  // @param ports the web message ports get from nweb.
+  virtual void CreateWebMessagePorts(
+      std::vector<blink::WebMessagePort>& ports) = 0;
+
+  // Posts MessageEvent to the main frame.
+  // @param message message send to mmain frame.
+  // @param ports the web message ports send to main frame.
+  // @param targetUri the uri which can received the ports.
+  virtual void PostWebMessage(std::string& message,
+                              std::vector<blink::WebMessagePort>& ports,
+                              std::string& targetUri) = 0;
+#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+  virtual void OpenDateTimeChooser() = 0;
+  virtual void CloseDateTimeChooser() = 0;
+#endif  // #if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+#endif
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  virtual void CollapseAllFramesSelection() = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+  virtual void SetForceEnableZoom(bool forceEnableZoom) = 0;
+  virtual bool GetForceEnableZoom() = 0;
+#endif  // ARKWEB_EXT_FORCE_ZOOM
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  virtual void SetTouchInsertHandleMenuShow(bool show) = 0;
+  virtual bool GetTouchInsertHandleMenuShow() = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  virtual void TrigAdBlockEnabledForSiteFromUi(
+      const std::string& main_frame_url) = 0;
+
+  virtual void EnableAdsBlock(bool enable) = 0;
+
+  virtual bool IsAdsBlockEnabled() = 0;
+  virtual bool IsAdsBlockEnabledForCurPage() = 0;
+
+  virtual void OnAdsBlocked(
+      const std::string& main_frame_url,
+      const std::map<std::string, int32_t>& subresource_blocked,
+      bool is_site_first_report) = 0;
+
+  virtual void UpdateAdBlockEnabledToRender(bool site_adblock_enabled) = 0;
+
+  virtual bool GetAdblockEnabledForSite() = 0;
+
+  virtual void SetAdBlockEnabledForSite(bool is_adblock_enabled,
+                                        int main_frame_tree_node_id) = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_DATALIST)
+  virtual void ShowAutofillPopup(
+      const gfx::RectF& element_bounds,
+      bool is_rtl,
+      const std::vector<autofill::Suggestion>& suggestions,
+      bool is_password_popup_type) = 0;
+  virtual void HideAutofillPopup() = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  virtual void StartCamera(int nWebID) = 0;
+  virtual void StopCamera(int nWebID) = 0;
+  virtual void CloseCamera(int nWebID) = 0;
+  virtual int GetNWebId() = 0;
+  virtual void SetNWebId(int nWebID) = 0;
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
+
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  virtual void ShowFreeCopyMenu() = 0;
+  virtual bool ShouldShowFreeCopyMenu() = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  virtual void OnShareFile(const std::string& filePath,
+                           const std::string& utdTypeId) = 0;
+#endif
 
   // Saves the given title to the navigation entry and does associated work. It
   // will update history and the view with the new title, and also synthesize
@@ -835,6 +942,17 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // This does not affect audio capture, just local/system output.
   virtual bool IsAudioMuted() = 0;
   virtual void SetAudioMuted(bool mute) = 0;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  virtual void EnableVideoAssistant(bool enable) = 0;
+  virtual void ExecuteVideoAssistantFunction(const std::string& cmdId) = 0;
+#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  // Set whether to the HTML play can be used to control media
+  virtual void SetHtmlPlayEnabled(bool enabled) = 0;
+  virtual bool IsHtmlPlayEnabled() = 0;
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   // Returns true if the audio is currently audible.
   virtual bool IsCurrentlyAudible() = 0;
@@ -1234,6 +1352,11 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // `HasLiveOriginalOpenerChain()` for more details.
   virtual WebContents* GetFirstWebContentsInLiveOriginalOpenerChain() = 0;
 
+#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
+  virtual void SetWakeLockHandler(int32_t windowId,
+                                  const SetKeepScreenOn& handler) = 0;
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
+
   // Returns the WakeLockContext accociated with this WebContents.
   virtual device::mojom::WakeLockContext* GetWakeLockContext() = 0;
 
@@ -1612,6 +1735,14 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   virtual void BackNavigationLikely(PreloadingPredictor predictor,
                                     WindowOpenDisposition disposition) = 0;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  virtual void WebExtensionUpdateTab(
+      int32_t tab_id,
+      const NWebExtensionTabUpdateProperties* update_properties) = 0;
+  virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) = 0;
+  virtual int32_t ExtensionGetTabId() const = 0;
+#endif
+
   // Returns a scope object that needs to be owned by caller in order to
   // disallow custom cursors. Custom cursors whose width or height are larger
   // than `max_dimension_dips` are diallowed in this web contents for as long as
@@ -1647,13 +1778,47 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // `kInvalidNetworkHandle` indicates that the current default network will
   // be bound.
   virtual net::handles::NetworkHandle GetTargetNetwork() = 0;
-#include "arkweb/chromium_ext/content/public/browser/web_contents_for_include.cc"
 
-#if BUILDFLAG(ARKWEB_PIP)
-  virtual void OnPipEvent(int event) = 0;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  virtual void ClearContextMenu() = 0;
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  virtual void EnableSafeBrowsingDetection(bool enable, bool strictMode) = 0;
+  virtual bool IsSafeBrowsingDetectionEnabled() = 0;
+#endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
+
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  virtual void OnFormEditingStateChanged(uint64_t form_id, bool did_submit) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  virtual void UpdateBrowserControlsHeight(int, bool) = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
+  virtual void OnBeforeUnloadFired(bool proceed) = 0;
+#endif  // ARKWEB_DISATCH_BEFORE_UNLOAD
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  void SetMediaTitle(const std::string& data) { media_title_ = data; }
+
+  std::string GetMediaTitle() { return media_title_; }
+
+  void SetVideoPoster(const std::string& data) { video_poster_ = data; }
+
+  std::string GetVideoPoster() { return video_poster_; }
+#endif  // ARKWEB_MEDIA_AVSESSION
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  virtual void StopScreenCapture(int32_t nweb_id,
+                                 const std::string& session_id) = 0;
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+
  private:
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  std::string media_title_;
+  std::string video_poster_;
+#endif  // ARKWEB_MEDIA_AVSESSION
   // This interface should only be implemented inside content.
   friend class WebContentsImpl;
   WebContents() = default;

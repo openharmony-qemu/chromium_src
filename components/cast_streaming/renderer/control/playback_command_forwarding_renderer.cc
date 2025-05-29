@@ -4,11 +4,11 @@
 
 #include "components/cast_streaming/renderer/control/playback_command_forwarding_renderer.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/notreached.h"
 #include "base/task/bind_post_task.h"
 #include "base/task/sequenced_task_runner.h"
-#include "arkweb/build/features/features.h"
 
 namespace cast_streaming {
 namespace {
@@ -80,7 +80,23 @@ class RendererCommandForwarder : public media::mojom::Renderer {
   void SetLatencyHint(std::optional<base::TimeDelta> latency_hint) override {
     NOTIMPLEMENTED();
   }
-
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetMuted(bool muted) override {}
+  void SetSurfaceId(int32_t surface_id, const ::gfx::Rect& rect) override {}
+  void SetMediaPlayerState(bool is_suspend, int32_t suspend_type) override {}
+  void SetMediaSourceList(
+      std::vector<media::mojom::MediaSourceInfoPtr> source_infos) override {}
+  void SetMediaControls(
+      bool show_media_controls,
+      const std::vector<std::string>& controls_list) override {}
+  void SetPoster(const std::string& poster_url) override {}
+  void SetAttributes(
+      const base::flat_map<std::string, std::string>& attributes) override {}
+  void SetReferrer(const std::string& referrer) override {}
+  void SetIsAudio(bool is_audio) override {}
+  void SetPlaybackRateWithReason(double playback_rate,
+                                 media::mojom::ActionReason reason) override {}
+#endif
  private:
   const raw_ptr<PlaybackCommandForwardingRenderer> owning_renderer_;
   mojo::Receiver<media::mojom::Renderer> playback_controller_;
@@ -105,10 +121,6 @@ PlaybackCommandForwardingRenderer::~PlaybackCommandForwardingRenderer() =
 void PlaybackCommandForwardingRenderer::Initialize(
     media::MediaResource* media_resource,
     media::RendererClient* client,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-    media::RequestSurfaceCB request_surface_cb,
-    media::VideoDecoderChangedCB decoder_changed_cb,
-#endif // OHOS_VIDEO_ASSISTANT
     media::PipelineStatusCallback init_cb) {
   DCHECK(!init_cb_);
 
@@ -116,10 +128,6 @@ void PlaybackCommandForwardingRenderer::Initialize(
   init_cb_ = std::move(init_cb);
   real_renderer_->Initialize(
       media_resource, this,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-      media::RequestSurfaceCB(),
-      media::VideoDecoderChangedCB(),
-#endif // OHOS_VIDEO_ASSISTANT
       base::BindPostTask(
           task_runner_, base::BindOnce(&PlaybackCommandForwardingRenderer::
                                            OnRealRendererInitializationComplete,

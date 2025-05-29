@@ -21,10 +21,8 @@ namespace prerender {
 
 namespace {
 
-#if !BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
- const char kPurposeHeaderName[] = "Purpose";
- const char kPurposeHeaderValue[] = "prefetch";
-#endif
+const char kPurposeHeaderName[] = "Purpose";
+const char kPurposeHeaderValue[] = "prefetch";
 
 void CallCancelNoStatePrefetchForUnsupportedScheme(
     mojo::PendingRemote<prerender::mojom::NoStatePrefetchCanceler> canceler) {
@@ -70,10 +68,8 @@ void NoStatePrefetchURLLoaderThrottle::WillStartRequest(
     network::ResourceRequest* request,
     bool* defer) {
   request->load_flags |= net::LOAD_PREFETCH;
-#if !BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-   request->cors_exempt_headers.SetHeader(kPurposeHeaderName,
-                                          kPurposeHeaderValue);
-#endif
+  request->cors_exempt_headers.SetHeader(kPurposeHeaderName,
+                                         kPurposeHeaderValue);
 
   request_destination_ = request->destination;
   // Abort any prerenders that spawn requests that use unsupported HTTP

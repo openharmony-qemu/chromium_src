@@ -63,7 +63,7 @@ class NativeRenderClient : public media::MojoRendererWrapper {
   // Provides the VideoFrames to |sink_|.
   media::ScopedNativeTextureWrapper native_texture_wrapper_;
 
-  raw_ptr<media::VideoRendererSink> sink_;
+  media::VideoRendererSink* sink_;
 
   // Used by |native_texture_wrapper_| to signal OnFrameAvailable() and to send
   // VideoFrames to |sink_| on the right thread.

@@ -36,24 +36,6 @@ struct VideoAttributesForVAST {
   bool visible;
 };
 
-[EnableIf=arkweb_video_assistant]
-struct MediaInfoForVAST {
-  string id;
-  string title;
-  double duration;
-  double current_time;
-  double playback_rate;
-  int32 video_width;
-  int32 video_height;
-  int32 isMuted;
-  bool isPlaying;
-  bool isShowPlaybackSpeed;
-
-  bool show_download_button;
-  bool supports_save;
-  bool fullscreen_overlay;
-};
-
 // Implemented by HTMLMediaElement in the renderer process to allow the
 // browser to control media playback.
 interface MediaPlayer {
@@ -124,24 +106,6 @@ interface MediaPlayer {
  
   [EnableIf=arkweb_video_assistant]
   RequestDownloadUrl();
-
-  [EnableIf=arkweb_video_assistant]
-  HidePlaybackSpeedList();
-
-  [EnableIf=arkweb_video_assistant]
-  SetVideoSurface(int32 widget_id);
-
-  [EnableIf=arkweb_pip]
-  PipEnable(bool enable);
-
-  [EnableIf=arkweb_pip]
-  PipDown(bool enable);
-
-  [EnableIf=arkweb_pip]
-  RequestExitPictureInPicture();
-
-  [EnableIf=arkweb_pip]
-  NotifyPipResize();
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer
@@ -160,10 +124,6 @@ interface MediaPlayerObserver {
   // Notifies that the media player stopped playing content,
   // indicating in |stream_ended| if playback has reached the end of the stream.
   OnMediaPaused(bool stream_ended);
-
-  // Notifies that avsession is over.
-  [EnableIf=arkweb_media_avsession]
-  OnEndAVSession(bool is_hidden);
 
   // Notifies that the media player gone.
   [EnableIf=arkweb_activity_state]
@@ -216,15 +176,6 @@ interface MediaPlayerObserver {
   [EnableIf=arkweb_custom_video_player]
   FullscreenChanged(bool is_fullscreen);
 
-  [EnableIf=arkweb_video_assistant]
-  OnVideoPlaying(VideoAttributesForVAST video_attributes);
-
-  [EnableIf=arkweb_video_assistant]
-  OnUpdateVideoAttributes(VideoAttributesForVAST video_attributes);
-
-  [EnableIf=arkweb_video_assistant]
-  OnVideoDestroyed();
-
   // Notifies that the title of playing content.
   [EnableIf=arkweb_media_avsession]
   OnGetMediaTitle(string data);
@@ -232,6 +183,14 @@ interface MediaPlayerObserver {
   // Notifies that the video poster of playing content.
   [EnableIf=arkweb_media_avsession]
   OnGetVideoPoster(string data);
+  [EnableIf=arkweb_video_assistant]
+  OnVideoPlaying(VideoAttributesForVAST video_attributes);
+ 
+  [EnableIf=arkweb_video_assistant]
+  OnUpdateVideoAttributes(VideoAttributesForVAST video_attributes);
+ 
+  [EnableIf=arkweb_video_assistant]
+  OnVideoDestroyed();
 
   // Notifies that the title of playing content initialized.
   [EnableIf=arkweb_media_avsession]
@@ -240,51 +199,6 @@ interface MediaPlayerObserver {
   // Notifies that the video poster of playing content initialized.
   [EnableIf=arkweb_media_avsession]
   OnInitVideoPoster();
-
-  [EnableIf=arkweb_video_assistant]
-  OnFullScreenOverlayEnter(MediaInfoForVAST media_info);
-
-  [EnableIf=arkweb_video_assistant]
-  UpdatePlayStateOverlay(uint32 playState);
-
-  [EnableIf=arkweb_video_assistant]
-  MutedChangedOverlay(bool muted);
-
-  [EnableIf=arkweb_video_assistant]
-  PlaybackRateChangedOverlay(double playback_rate);
-
-  [EnableIf=arkweb_video_assistant]
-  DurationChangedOverlay(double duration);
-
-  [EnableIf=arkweb_video_assistant]
-  TimeUpdateOverlay(double current_time);
-
-  [EnableIf=arkweb_video_assistant]
-  BufferedEndTimeChangedOverlay(double buffered_end_time);
-
-  [EnableIf=arkweb_video_assistant]
-  EndedOverlay();
-
-  [EnableIf=arkweb_video_assistant]
-  FullscreenChangedOverlay(bool fullscreen);
-
-  [EnableIf=arkweb_video_assistant]
-  SeekingOverlay();
-
-  [EnableIf=arkweb_video_assistant]
-  SeekingFinishedOverlay();
-
-  [EnableIf=arkweb_video_assistant]
-  ErrorOverlay(int32 error_code, string error_msg);
-
-  [EnableIf=arkweb_video_assistant]
-  VideoSizeChangedOverlay(int32 width, int32 height);
-
-  [EnableIf=arkweb_video_assistant]
-  FullscreenOverlayChanged(bool fullscreen_overlay, string decoder_name);
-
-  [EnableIf=arkweb_pip]
-  OnPictureInPictureStateChanged(uint32 state);
 };
 
 // Implemented by MediaWebContentsObserver::MediaPlayerHostImpl in the browser

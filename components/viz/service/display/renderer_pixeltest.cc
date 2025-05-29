@@ -73,9 +73,6 @@
 #include "ui/gfx/test/icc_profiles.h"
 #include "ui/gfx/video_types.h"
 #include "ui/gl/gl_implementation.h"
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#include "arkweb/chromium_ext/components/viz/service/display/renderer_pixeltest_ext.h"
-#endif
 
 namespace viz {
 namespace {
@@ -1069,13 +1066,21 @@ TEST_P(RendererPixelTest, TextureDrawQuadVisibleRectInsetTopLeft) {
       gfx::Transform(), rect, pass.get(), gfx::MaskFilterInfo());
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-    ARKWEB_UNITTESTS_DEFINE_COLOR();
+  auto temp_color_rect1 =
+      is_software_renderer()
+          ? SkColor4f::FromColor(SkColorSetARGB(0, 120, 255, 255))
+          : SkColor4f::FromColor(SkColorSetARGB(0, 255, 255, 120));
+  auto temp_color_rect2 =
+      is_software_renderer()
+          ? SkColor4f::FromColor(SkColorSetARGB(204, 120, 0, 255))
+          : SkColor4f::FromColor(SkColorSetARGB(204, 255, 0, 120));
 #endif
 
   CreateTestTwoColoredTextureDrawQuad(
       !is_software_renderer(), gfx::Rect(this->device_viewport_size_),
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-    ARKWEB_UNITTESTS_PASS_PARAM()
+      temp_color_rect1,  // Texel color 1.
+      temp_color_rect2,  // Texel color 2.
 #else
       SkColor4f::FromColor(SkColorSetARGB(0, 120, 255, 255)),  // Texel color 1.
       SkColor4f::FromColor(SkColorSetARGB(204, 120, 0, 255)),  // Texel color 2.
@@ -1169,7 +1174,8 @@ TEST_P(RendererPixelTest, BypassableTextureQuad_ClipRect) {
                                   child_pass.get(), gfx::MaskFilterInfo());
     sqs->clip_rect = gfx::Rect(170, 200);
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-    auto temp_color_rect = is_software_renderer() ? SkColors::kYellow : SkColors::kCyan;
+    auto temp_color_rect =
+        is_software_renderer() ? SkColors::kYellow : SkColors::kCyan;
 #endif
 
     CreateTestTwoColoredTextureDrawQuad(
@@ -1219,11 +1225,15 @@ TEST_P(RendererPixelTest, BypassableTextureQuad_ClipRect) {
   EXPECT_TRUE(this->RunPixelTest(
       &pass_list, base::FilePath(FILE_PATH_LITERAL("bypass_texture.png")),
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-      ARKWEB_UNITTESTS_RUN_PIXEL_TEST_2()
+      cc::FuzzyPixelComparator()
+          .DiscardAlpha()
+          .SetErrorPixelsPercentageLimit(100.f)
+          .SetAvgAbsErrorLimit(2.f)
+          .SetAbsErrorLimit(2)
 #else
       cc::ExactPixelComparator()
 #endif
-      ));
+          ));
 }
 
 TEST_P(RendererPixelTest, BypassableTextureQuad_Rotation_ClipRect) {
@@ -1263,7 +1273,8 @@ TEST_P(RendererPixelTest, BypassableTextureQuad_Rotation_ClipRect) {
                                   child_pass.get(), gfx::MaskFilterInfo());
     sqs->clip_rect = gfx::Rect(110, 140);
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-    auto temp_color_rect = is_software_renderer() ? SkColors::kYellow : SkColors::kCyan;
+    auto temp_color_rect =
+        is_software_renderer() ? SkColors::kYellow : SkColors::kCyan;
 #endif
 
     CreateTestTwoColoredTextureDrawQuad(
@@ -1641,13 +1652,21 @@ TEST_P(RendererPixelTest, TextureDrawQuadVisibleRectInsetBottomRight) {
       gfx::Transform(), rect, pass.get(), gfx::MaskFilterInfo());
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  ARKWEB_UNITTESTS_DEFINE_COLOR();
+  auto temp_color_rect1 =
+      is_software_renderer()
+          ? SkColor4f::FromColor(SkColorSetARGB(0, 120, 255, 255))
+          : SkColor4f::FromColor(SkColorSetARGB(0, 255, 255, 120));
+  auto temp_color_rect2 =
+      is_software_renderer()
+          ? SkColor4f::FromColor(SkColorSetARGB(204, 120, 0, 255))
+          : SkColor4f::FromColor(SkColorSetARGB(204, 255, 0, 120));
 #endif
 
   CreateTestTwoColoredTextureDrawQuad(
       !is_software_renderer(), gfx::Rect(this->device_viewport_size_),
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-      ARKWEB_UNITTESTS_PASS_PARAM()
+      temp_color_rect1,  // Texel color 1.
+      temp_color_rect2,  // Texel color 2.
 #elif
       SkColor4f::FromColor(SkColorSetARGB(0, 120, 255, 255)),  // Texel color 1.
       SkColor4f::FromColor(SkColorSetARGB(204, 120, 0, 255)),  // Texel color 2.
@@ -2093,7 +2112,10 @@ TEST_P(IntersectingQuadPixelTest, TexturedQuads) {
 TEST_P(IntersectingQuadPixelTest, NonFlippedTexturedQuads) {
   this->SetupQuadStateAndRenderPass();
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  ARKWEB_UNITTESTS_DEFINE_ONE_COLOR();
+  auto temp_color_rect =
+      is_software_renderer()
+          ? SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 255))
+          : SkColor4f::FromColor(SkColorSetARGB(255, 255, 0, 0));
 #endif
   CreateTestTwoColoredTextureDrawQuad(
       !is_software_renderer(), this->quad_rect_,
@@ -2211,7 +2233,10 @@ TEST_P(IntersectingQuadPixelTest, RenderPassQuads) {
   SharedQuadState* child1_quad_state = CreateTestSharedQuadState(
       gfx::Transform(), this->quad_rect_, child_pass1.get(), gfx::MaskFilterInfo());
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  ARKWEB_UNITTESTS_DEFINE_ONE_COLOR();
+  auto temp_color_rect =
+      is_software_renderer()
+          ? SkColor4f::FromColor(SkColorSetARGB(255, 0, 0, 255))
+          : SkColor4f::FromColor(SkColorSetARGB(255, 255, 0, 0));
 #endif
   auto child_pass2 =
       CreateTestRenderPass(child_pass_id2, this->quad_rect_, gfx::Transform());
@@ -2498,11 +2523,15 @@ TEST_P(VideoRendererPixelHiLoTest, SimpleYUVRect) {
   EXPECT_TRUE(this->RunPixelTest(
       &pass_list, base::FilePath(FILE_PATH_LITERAL("yuv_stripes.png")),
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-      ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+      cc::FuzzyPixelComparator()
+          .DiscardAlpha()
+          .SetErrorPixelsPercentageLimit(100.f)
+          .SetAvgAbsErrorLimit(5.f)
+          .SetAbsErrorLimit(7)
 #else
       cc::AlphaDiscardingFuzzyPixelOffByOneComparator()
 #endif
-      ));
+          ));
 }
 
 class VideoRendererPixelHiLoColorSpaceTest
@@ -2631,11 +2660,15 @@ TEST_P(VideoRendererPixelHiLoTest, MAYBE_ClippedYUVRect) {
   EXPECT_TRUE(this->RunPixelTest(
       &pass_list, base::FilePath(FILE_PATH_LITERAL("yuv_stripes_clipped.png")),
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-      ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+      cc::FuzzyPixelComparator()
+          .DiscardAlpha()
+          .SetErrorPixelsPercentageLimit(100.f)
+          .SetAvgAbsErrorLimit(5.f)
+          .SetAbsErrorLimit(7)
 #else
       cc::AlphaDiscardingFuzzyPixelOffByOneComparator()
 #endif
-      ));
+          ));
 }
 #endif  // #if BUILDFLAG(ENABLE_GL_BACKEND_TESTS)
 
@@ -4020,14 +4053,17 @@ TEST_P(GPURendererPixelTest, AntiAliasing) {
     baseline = baseline.InsertBeforeExtensionASCII(kANGLEMetalStr);
   }
 
-  EXPECT_TRUE(this->RunPixelTest(
-      &pass_list, baseline,
+  EXPECT_TRUE(this->RunPixelTest(&pass_list, baseline,
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-                                 ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+                                 cc::FuzzyPixelComparator()
+                                     .DiscardAlpha()
+                                     .SetErrorPixelsPercentageLimit(100.f)
+                                     .SetAvgAbsErrorLimit(5.f)
+                                     .SetAbsErrorLimit(7)
 #else
-      cc::AlphaDiscardingFuzzyPixelOffByOneComparator()
+                                 cc::AlphaDiscardingFuzzyPixelOffByOneComparator()
 #endif
-      ));
+                                     ));
 }
 
 // Software renderer does not support anti-aliased edges.
@@ -4069,14 +4105,17 @@ TEST_P(GPURendererPixelTest, AntiAliasingPerspective) {
     baseline = baseline.InsertBeforeExtensionASCII(kANGLEMetalStr);
   }
 
-  EXPECT_TRUE(this->RunPixelTest(
-      &pass_list, baseline,
+  EXPECT_TRUE(this->RunPixelTest(&pass_list, baseline,
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-                                 ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+                                 cc::FuzzyPixelComparator()
+                                     .DiscardAlpha()
+                                     .SetErrorPixelsPercentageLimit(100.f)
+                                     .SetAvgAbsErrorLimit(5.f)
+                                     .SetAbsErrorLimit(7)
 #else
-      cc::AlphaDiscardingFuzzyPixelOffByOneComparator()
+                                 cc::AlphaDiscardingFuzzyPixelOffByOneComparator()
 #endif
-      ));
+                                     ));
 }
 
 // This test tests that anti-aliasing works for axis aligned quads.
@@ -4390,11 +4429,15 @@ TEST_P(GPURendererPixelTest, TrilinearFiltering) {
 
     EXPECT_TRUE(this->RunPixelTest(&pass_list, baseline,
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-                                   ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+                                   cc::FuzzyPixelComparator()
+                                       .DiscardAlpha()
+                                       .SetErrorPixelsPercentageLimit(100.f)
+                                       .SetAvgAbsErrorLimit(5.f)
+                                       .SetAbsErrorLimit(7)
 #else
                                    cc::AlphaDiscardingExactPixelComparator()
 #endif
-                                   ));
+                                       ));
   }
 }
 
@@ -5293,11 +5336,15 @@ TEST_P(GPURendererPixelTest, TextureQuadBatching) {
   EXPECT_TRUE(this->RunPixelTest(
       &pass_list, base::FilePath(FILE_PATH_LITERAL("spiral.png")),
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-      ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+      cc::FuzzyPixelComparator()
+          .DiscardAlpha()
+          .SetErrorPixelsPercentageLimit(100.f)
+          .SetAvgAbsErrorLimit(5.f)
+          .SetAbsErrorLimit(7)
 #else
       cc::AlphaDiscardingFuzzyPixelOffByOneComparator()
 #endif
-      ));
+          ));
 }
 
 TEST_P(GPURendererPixelTest, TileQuadClamping) {
@@ -5584,11 +5631,16 @@ TEST_P(GPURendererPixelTest, MAYBE_LinearGradientOnRenderPass) {
       &pass_list,
       base::FilePath(FILE_PATH_LITERAL("linear_gradient_render_pass.png")),
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-      ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+      cc::FuzzyPixelComparator()
+          .DiscardAlpha()
+          .SetErrorPixelsPercentageLimit(100.f)
+          .SetAvgAbsErrorLimit(5.f)
+          .SetAbsErrorLimit(7)
 #else
-      cc::FuzzyPixelComparator().DiscardAlpha().SetErrorPixelsPercentageLimit(0.6f)
+      cc::FuzzyPixelComparator().DiscardAlpha().SetErrorPixelsPercentageLimit(
+          0.6f)
 #endif
-      ));
+          ));
 }
 
 #if BUILDFLAG(IS_IOS)
@@ -5656,16 +5708,21 @@ TEST_P(GPURendererPixelTest, MAYBE_MultiLinearGradientOnRenderPass) {
   pass_list.push_back(std::move(child_pass));
   pass_list.push_back(std::move(root_pass));
 
-  EXPECT_TRUE(this->RunPixelTest(
-      &pass_list,
-      base::FilePath(
-          FILE_PATH_LITERAL("multi_linear_gradient_render_pass.png")),
+  EXPECT_TRUE(this->RunPixelTest(&pass_list,
+                                 base::FilePath(FILE_PATH_LITERAL(
+                                     "multi_linear_gradient_render_pass.png")),
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-                                 ARKWEB_UNITTESTS_RUN_PIXEL_TEST_7()
+                                 cc::FuzzyPixelComparator()
+                                     .DiscardAlpha()
+                                     .SetErrorPixelsPercentageLimit(100.f)
+                                     .SetAvgAbsErrorLimit(5.f)
+                                     .SetAbsErrorLimit(7)
 #else
-      cc::FuzzyPixelComparator().DiscardAlpha().SetErrorPixelsPercentageLimit(0.6f)
+                                 cc::FuzzyPixelComparator()
+                                     .DiscardAlpha()
+                                     .SetErrorPixelsPercentageLimit(0.6f)
 #endif
-      ));
+                                     ));
 }
 
 TEST_P(RendererPixelTest, RoundedCornerMultiRadii) {
@@ -6087,7 +6144,14 @@ class ColorTransformPixelTest
 
   void Basic() {
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-    ARKWEB_UNITTESTS_BASIC();
+    if ((src_color_space_.GetTransferID() == TransferID::PQ &&
+         !dst_color_space_.IsHDR()) ||
+        (src_color_space_.GetPrimaryID() == PrimaryID::BT2020 &&
+         src_color_space_.GetTransferID() == TransferID::PQ &&
+         dst_color_space_.GetPrimaryID() == PrimaryID::XYZ_D50 &&
+         dst_color_space_.GetTransferID() == TransferID::SRGB_HDR)) {
+      GTEST_SKIP() << "Skipping tonemapped output";
+    }
 #else
     if (this->src_color_space_.IsToneMappedByDefault() &&
         !this->dst_color_space_.IsHDR()) {
@@ -6164,7 +6228,10 @@ class ColorTransformPixelTest
       color.set_y(std::clamp(color.y(), 0.0f, 1.0f));
       color.set_z(std::clamp(color.z(), 0.0f, 1.0f));
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-      ARKWEB_UNITTESTS_OUTPUT();
+      expected_output_colors[i] =
+          SkColorSetARGB(255, static_cast<size_t>(255.f * color.z() + 0.5f),
+                         static_cast<size_t>(255.f * color.y() + 0.5f),
+                         static_cast<size_t>(255.f * color.x() + 0.5f));
 #else
       expected_output_colors[i] =
           SkColorSetARGB(255, static_cast<size_t>(255.f * color.x() + 0.5f),

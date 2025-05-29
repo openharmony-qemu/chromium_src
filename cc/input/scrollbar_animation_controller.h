@@ -18,9 +18,6 @@
 #include "ui/gfx/geometry/vector2d_f.h"
 
 namespace cc {
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-class ScrollbarAnimationControllerExt;
-#endif
 
 class CC_EXPORT ScrollbarAnimationControllerClient {
  public:
@@ -66,14 +63,7 @@ class CC_EXPORT ScrollbarAnimationController {
       float initial_opacity,
       float idle_thickness_scale);
 
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-  friend class ScrollbarAnimationControllerExt;
-  virtual ScrollbarAnimationControllerExt* AsScrollbarAnimationControllerExt() {
-    return nullptr;
-  }
-  virtual
-#endif
-      ~ScrollbarAnimationController();
+  ~ScrollbarAnimationController();
 
   bool ScrollbarsHidden() const;
   bool visibility_changed() const { return visibility_changed_; }
@@ -186,7 +176,4 @@ class CC_EXPORT ScrollbarAnimationController {
 
 }  // namespace cc
 
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-#include "arkweb/chromium_ext/cc/input/scrollbar_animation_controller_ext.h"
-#endif
 #endif  // CC_INPUT_SCROLLBAR_ANIMATION_CONTROLLER_H_

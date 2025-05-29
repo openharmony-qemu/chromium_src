@@ -8,7 +8,6 @@ import("//components/guest_view/buildflags/buildflags.gni")
 import("//extensions/buildflags/buildflags.gni")
 import("//pdf/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
-import("//arkweb/build/features/features.gni")
 
 assert(enable_extensions_core)
 
@@ -506,14 +505,14 @@ source_set("browser_sources") {
   ]
 
   #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
+  #if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
     sources += [
-      "//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager.h",
-      "//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager.cc",
-      "//arkweb/chromium_ext/extensions/browser/extension_icon_image_observer.cc",
-      "//arkweb/chromium_ext/extensions/browser/extension_icon_image_observer.h",
+      "extension_registry_info_manager.h",
+      "extension_registry_info_manager.cc",
+      "extension_icon_image_observer.cc",
+      "extension_icon_image_observer.h",
     ]
-  }
+  #}
   #endif
 
   deps = [

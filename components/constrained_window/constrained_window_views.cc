@@ -131,8 +131,9 @@ gfx::Rect GetModalDialogBounds(views::Widget* widget,
         display::Screen::GetScreen()->GetDisplayNearestView(
             dialog_host->GetHostView());
     const gfx::Rect work_area = display.work_area();
-    if (!work_area.Contains(display_rect))
+    if (!work_area.Contains(display_rect)) {
       display_rect.AdjustToFit(work_area);
+    }
     position = display_rect.origin();
   }
 
@@ -295,12 +296,13 @@ views::Widget* CreateBrowserModalDialogViews(views::DialogDelegate* dialog,
   gfx::NativeView parent_view =
       parent ? CurrentBrowserModalClient()->GetDialogHostView(parent) : nullptr;
   // Use with CEF windowless rendering.
-  gfx::AcceleratedWidget parent_widget =
-      parent ? CurrentBrowserModalClient()->GetModalDialogHost(parent)->
-          GetAcceleratedWidget() : gfx::kNullAcceleratedWidget;
-  views::Widget* widget =
-      views::DialogDelegate::CreateDialogWidget(dialog, nullptr, parent_view,
-                                                parent_widget);
+  gfx::AcceleratedWidget parent_widget = parent
+                                             ? CurrentBrowserModalClient()
+                                                   ->GetModalDialogHost(parent)
+                                                   ->GetAcceleratedWidget()
+                                             : gfx::kNullAcceleratedWidget;
+  views::Widget* widget = views::DialogDelegate::CreateDialogWidget(
+      dialog, nullptr, parent_view, parent_widget);
   widget->SetNativeWindowProperty(
       views::kWidgetIdentifierKey,
       const_cast<void*>(kConstrainedWindowWidgetIdentifier));
@@ -337,14 +339,16 @@ views::Widget* ShowBrowserModal(std::unique_ptr<ui::DialogModel> dialog_model,
   gfx::NativeView parent_view =
       parent ? CurrentBrowserModalClient()->GetDialogHostView(parent) : nullptr;
   // Use with CEF windowless rendering.
-  gfx::AcceleratedWidget parent_widget =
-      parent ? CurrentBrowserModalClient()->GetModalDialogHost(parent)->
-          GetAcceleratedWidget() : gfx::kNullAcceleratedWidget;
+  gfx::AcceleratedWidget parent_widget = parent
+                                             ? CurrentBrowserModalClient()
+                                                   ->GetModalDialogHost(parent)
+                                                   ->GetAcceleratedWidget()
+                                             : gfx::kNullAcceleratedWidget;
 
   // TODO(crbug.com/41493925): Remove will_use_custom_frame once native frame
   // dialogs support autosize.
-  bool will_use_custom_frame = views::DialogDelegate::CanSupportCustomFrame(
-      parent_view, parent_widget);
+  bool will_use_custom_frame =
+      views::DialogDelegate::CanSupportCustomFrame(parent_view, parent_widget);
   auto dialog = views::BubbleDialogModelHost::CreateModal(
       std::move(dialog_model), ui::mojom::ModalType::kWindow,
       will_use_custom_frame);

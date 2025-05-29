@@ -18,10 +18,14 @@ class AwWebContentsDelegate
   AwWebContentsDelegate(JNIEnv* env, const jni_zero::JavaRef<jobject>& obj);
   ~AwWebContentsDelegate() override;
 
-  void RendererUnresponsive(
-      content::WebContents* source,
-      content::RenderWidgetHost* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) override;
+  void RendererUnresponsive(content::WebContents* source,
+                            content::RenderWidgetHost* render_widget_host,
+                            base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+                            ,
+                            content::RendererIsUnresponsiveReason
+#endif
+                            ) override;
 
   void RendererResponsive(
       content::WebContents* source,

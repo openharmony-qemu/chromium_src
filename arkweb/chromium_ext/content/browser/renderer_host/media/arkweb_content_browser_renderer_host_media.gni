@@ -1,8 +1,0 @@
-import("//arkweb/build/features/features.gni")
-
-arkweb_content_browser_renderer_host_media_sources = [
-  "//arkweb/chromium_ext/content/browser/renderer_host/media/media_stream_manager_ext.cc",
-  "//arkweb/chromium_ext/content/browser/renderer_host/media/media_stream_manager_ext.h",
-  "//arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_manager_ext.cc",
-  "//arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_manager_ext.h",
-]

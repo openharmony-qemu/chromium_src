@@ -67,10 +67,11 @@ NativeImageImageBacking::~NativeImageImageBacking() {
 
 size_t NativeImageImageBacking::GetEstimatedSizeForMemoryDump() const {
   DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());
+
 #if false
-  return stream_texture_sii_->IsUsingGpuMemory() ? GetEstimatedSize() : 0;
+    return stream_texture_sii_->IsUsingGpuMemory() ? GetEstimatedSize() : 0;
 #endif
-    return 0;
+  return 0;
 }
 
 void NativeImageImageBacking::OnContextLost() {
@@ -262,10 +263,9 @@ NativeImageImageBacking::ProduceSkiaGanesh(
                                            std::move(context_state), manager,
                                            this, tracker);
 }
- 
-void NativeImageImageBacking::BeginGLReadAccess(
-    const GLuint service_id) {
-  stream_texture_sii_->UpdateAndBindTexImage(service_id);
+
+void NativeImageImageBacking::BeginGLReadAccess(const GLuint service_id) {
+  //   stream_texture_sii_->UpdateAndBindTexImage(service_id);
 }
 
 class NativeImageImageBacking::SharedImageRepresentationOverlayVideo {
@@ -282,14 +282,15 @@ class NativeImageImageBacking::SharedImageRepresentationOverlayVideo {
       const SharedImageRepresentationOverlayVideo&) = delete;
 
  protected:
-#if false
+#if false 
   void RenderToOverlay() {
     DCHECK(!stream_image()->HasTextureOwner())
         << "CodecImage must be already in overlay";
-    TRACE_EVENT0("media", "OverlayVideoImageRepresentation::RenderToOverlay");
+    TRACE_EVENT0("media",
+    "OverlayVideoImageRepresentation::RenderToOverlay");
     stream_image()->RenderToOverlay();
   }
- 
+
   void NotifyOverlayPromotion(bool promotion,
                               const gfx::Rect& bounds) {
     stream_image()->NotifyOverlayPromotion(promotion, bounds);
@@ -305,16 +306,17 @@ class NativeImageImageBacking::SharedImageRepresentationOverlayVideo {
   }
 #endif
 };
- 
+
 #if false
 std::unique_ptr<gpu::LegacyOverlayImageRepresentation>
 SharedImageVideoOhosNativeImage::ProduceLegacyOverlay(
     gpu::SharedImageManager* manager,
     gpu::MemoryTypeTracker* tracker) {
   DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());
- 
-  return std::make_unique<SharedImageRepresentationOverlayVideo>(manager, this,
+  return std::make_unique<SharedImageRepresentationOverlayVideo>(manager,
+  this,
                                                            tracker);
 }
 #endif
 }  // namespace gpu
+                   

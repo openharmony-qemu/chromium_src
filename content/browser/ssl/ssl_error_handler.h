@@ -5,13 +5,13 @@
 #ifndef CONTENT_BROWSER_SSL_SSL_ERROR_HANDLER_H_
 #define CONTENT_BROWSER_SSL_SSL_ERROR_HANDLER_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/global_request_id.h"
 #include "net/ssl/ssl_info.h"
 #include "url/gurl.h"
-#include "arkweb/build/features/features.h"
 
 namespace net {
 class URLRequest;
@@ -54,7 +54,7 @@ class SSLErrorHandler {
                   const GURL& origin_url,
                   const std::string& referrer
 #endif
-                  );
+  );
 
   SSLErrorHandler(const SSLErrorHandler&) = delete;
   SSLErrorHandler& operator=(const SSLErrorHandler&) = delete;
@@ -114,7 +114,7 @@ class SSLErrorHandler {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   // original request url
   const GURL origin_url_;
- 
+
   // referrer url
   const std::string referrer_;
 #endif

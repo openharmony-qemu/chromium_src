@@ -80,7 +80,7 @@ class MEDIA_MOJO_EXPORT MojoRendererService final : public mojom::Renderer,
   void SetMediaSourceList(
       std::vector<mojom::MediaSourceInfoPtr> source_infos) override;
   void SetMediaControls(bool show_media_controls,
-      const std::vector<std::string>& controls_list) override;
+                        const std::vector<std::string>& controls_list) override;
   void SetPoster(const std::string& poster_url) override;
   void SetAttributes(
       const base::flat_map<std::string, std::string>& attributes) override;
@@ -89,15 +89,7 @@ class MEDIA_MOJO_EXPORT MojoRendererService final : public mojom::Renderer,
   void SetPlaybackRateWithReason(double playback_rate,
                                  mojom::ActionReason reason) override;
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void SetVideoSurface(int32_t surface_id) override;
-#endif  // ARKWEB_VIDEO_ASSISTANT
-#if BUILDFLAG(ARKWEB_MEDIA)
-  void SetNativeWindowSurface(int32_t native_window_id) override;
-#endif // ARKWEB_MEDIA
-#if BUILDFLAG(ARKWEB_PIP)
-  void PipEnable(bool enable) override;
-#endif
+
  private:
   enum State {
     STATE_UNINITIALIZED,

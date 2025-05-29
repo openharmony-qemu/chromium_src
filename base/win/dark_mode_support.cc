@@ -92,8 +92,7 @@ const DarkModeSupport& GetDarkModeSupport() {
 
 bool IsForcedLightMode() {
   static bool kIsForcedLightMode =
-      base::CommandLine::ForCurrentProcess()->HasSwitch(
-          "force-light-mode");
+      base::CommandLine::ForCurrentProcess()->HasSwitch("force-light-mode");
   return kIsForcedLightMode;
 }
 
@@ -102,8 +101,9 @@ bool IsForcedLightMode() {
 namespace base::win {
 
 bool IsDarkModeAvailable() {
-  if (IsForcedLightMode())
+  if (IsForcedLightMode()) {
     return false;
+  }
   auto& dark_mode_support = GetDarkModeSupport();
   return (dark_mode_support.allow_dark_mode_for_app ||
           dark_mode_support.set_preferred_app_mode) &&

@@ -74,11 +74,9 @@ class CORE_EXPORT NativeLoader : public GarbageCollected<NativeLoader>,
                              RectChangeCB rect_changed_cb) final;
   void OnLayerRectChange(const gfx::Rect& rect) final;
   void OnLayerRectVisibilityChange(bool visibility) final;
-  void CleanupVisibilityForRemovedLayer(bool visibility) final;
   void OnDestroyNativeSurface() final;
   void Repaint() final;
   void SetCcLayer(cc::Layer*) final;
-  void NotifyVisibilityChange(bool visibility);
 
   virtual String DebugName() const = 0;
 
@@ -111,8 +109,6 @@ class CORE_EXPORT NativeLoader : public GarbageCollected<NativeLoader>,
   void ClearNativeResource();
 
   void ResetMojoState();
-
-  gfx::Rect TransformRect(gfx::Rect rect);
 
   String GetTypeAttribute() const;
   String GetSrcAttribute() const;

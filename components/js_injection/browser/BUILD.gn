@@ -6,8 +6,6 @@ source_set("browser") {
   sources = [
     "js_communication_host.cc",
     "js_communication_host.h",
-    "//arkweb/chromium_ext/components/js_injection/js_communication_host_utils.h",
-    "//arkweb/chromium_ext/components/js_injection/js_communication_host_utils.cc",
     "js_to_browser_messaging.cc",
     "js_to_browser_messaging.h",
     "navigation_web_message_sender.cc",

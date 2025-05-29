@@ -44,6 +44,14 @@ bool V8ValueConverter::Strategy::FromV8Object(v8::Local<v8::Object> value,
   return false;
 }
 
+bool V8ValueConverter::Strategy::FromV8Object(v8::Local<v8::Object> value,
+                                              std::unique_ptr<base::Value>* out,
+                                              v8::Isolate* isolate,
+                                              bool is_function,
+                                              bool is_promise) {
+  return false;
+}
+
 bool V8ValueConverter::Strategy::FromV8Array(v8::Local<v8::Array> value,
                                              std::unique_ptr<base::Value>* out,
                                              v8::Isolate* isolate) {
@@ -195,9 +203,7 @@ V8ValueConverterImpl::V8ValueConverterImpl()
     : date_allowed_(false),
       reg_exp_allowed_(false),
       function_allowed_(false),
-#if BUILDFLAG(ARKWEB_MSGPORT)
       promise_allowed_(false),
-#endif
       strip_null_from_objects_(false),
       convert_negative_zero_to_int_(false),
       avoid_identity_hash_for_testing_(false),
@@ -213,6 +219,10 @@ void V8ValueConverterImpl::SetRegExpAllowed(bool val) {
 
 void V8ValueConverterImpl::SetFunctionAllowed(bool val) {
   function_allowed_ = val;
+}
+
+void V8ValueConverterImpl::SetPromiseAllowed(bool val) {
+  promise_allowed_ = val;
 }
 
 void V8ValueConverterImpl::SetStripNullFromObjects(bool val) {
@@ -435,19 +445,16 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8ValueImpl(
     if (!function_allowed_)
       // JSON.stringify refuses to convert function(){}.
       return nullptr;
-#if BUILDFLAG(ARKWEB_MSGPORT)
     LOG(DEBUG) << "FromV8ValueImpl IsFunction";
     return FromV8Object(val.As<v8::Object>(), state, isolate, true, false);
   }
 
   if (val->IsPromise()) {
-    if (!promise_allowed_)
+    if (!promise_allowed_) {
       return nullptr;
+    }
     LOG(DEBUG) << "FromV8ValueImpl IsPromise";
     return FromV8Object(val.As<v8::Object>(), state, isolate, false, true);
-#else
-    return FromV8Object(val.As<v8::Object>(), state, isolate);
-#endif
   }
 
   if (val->IsArrayBuffer() || val->IsArrayBufferView())
@@ -640,6 +647,123 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
     // there *is* a "windowId" property, but since it should be an int, code
     // on the browser which doesn't additionally check for null will fail.
     // We can avoid all bugs related to this by stripping null.
+    if (strip_null_from_objects_ && child->is_none()) {
+      continue;
+    }
+
+    result.Set(std::string(*name_utf8, name_utf8.length()),
+               base::Value::FromUniquePtrValue(std::move(child)));
+  }
+
+  return std::make_unique<base::Value>(std::move(result));
+}
+
+std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
+    v8::Local<v8::Object> val,
+    FromV8ValueState* state,
+    v8::Isolate* isolate,
+    bool is_function,
+    bool is_promise) const {
+  ScopedUniquenessGuard uniqueness_guard(state, val);
+  if (!uniqueness_guard.is_valid()) {
+    return std::make_unique<base::Value>();
+  }
+
+  std::unique_ptr<v8::Context::Scope> scope;
+  // If val was created in a different context than our current one, change to
+  // that context, but change back after val is converted.
+  v8::Local<v8::Context> creation_context;
+  if (val->GetCreationContext().ToLocal(&creation_context) &&
+      creation_context != isolate->GetCurrentContext()) {
+    scope = std::make_unique<v8::Context::Scope>(creation_context);
+  }
+
+  if (strategy_) {
+    std::unique_ptr<base::Value> out;
+    LOG(DEBUG) << "FromV8Object is_function = " << is_function
+               << ", is_promise = " << is_promise;
+    if (strategy_->FromV8Object(val, &out, isolate, is_function, is_promise)) {
+      return out;
+    }
+  }
+
+  // Don't consider DOM objects. This check matches isHostObject() in Blink's
+  // bindings/v8/V8Binding.h used in structured cloning. It reads:
+  //
+  // If the object has any internal fields, then we won't be able to serialize
+  // or deserialize them; conveniently, this is also a quick way to detect DOM
+  // wrapper objects, because the mechanism for these relies on data stored in
+  // these fields.
+  //
+  // NOTE: check this after |strategy_| so that callers have a chance to
+  // do something else, such as convert to the node's name rather than NULL.
+  //
+  // ANOTHER NOTE: returning an empty dictionary here to minimise surprise.
+  // See also http://crbug.com/330559.
+  base::Value::Dict result;
+
+  if (val->InternalFieldCount()) {
+    return std::make_unique<base::Value>(std::move(result));
+  }
+
+  v8::Local<v8::Array> property_names;
+  if (!val->GetOwnPropertyNames(isolate->GetCurrentContext())
+           .ToLocal(&property_names)) {
+    return std::make_unique<base::Value>(std::move(result));
+  }
+
+  for (uint32_t i = 0; i < property_names->Length(); ++i) {
+    v8::Local<v8::Value> key =
+        property_names->Get(isolate->GetCurrentContext(), i).ToLocalChecked();
+
+    // Extend this test to cover more types as necessary and if sensible.
+    if (!key->IsString() && !key->IsNumber()) {
+      NOTREACHED() << "Key \"" << *v8::String::Utf8Value(isolate, key)
+                   << "\" "
+                      "is neither a string nor a number";
+      continue;
+    }
+
+    v8::String::Utf8Value name_utf8(isolate, key);
+
+    v8::TryCatch try_catch(isolate);
+    v8::Local<v8::Value> child_v8;
+    v8::MaybeLocal<v8::Value> maybe_child =
+        val->Get(isolate->GetCurrentContext(), key);
+    if (try_catch.HasCaught() || !maybe_child.ToLocal(&child_v8)) {
+      LOG(WARNING) << "Getter for property " << *name_utf8
+                   << " threw an exception.";
+      child_v8 = v8::Null(isolate);
+    }
+
+    std::unique_ptr<base::Value> child =
+        FromV8ValueImpl(state, child_v8, isolate);
+    if (!child) {
+      // JSON.stringify skips properties whose values don't serialize, for
+      // example undefined and functions. Emulate that behavior.
+      continue;
+    }
+
+    // Strip null if asked (and since undefined is turned into null, undefined
+    // too). The use case for supporting this is JSON-schema support,
+    // specifically for extensions, where "optional" JSON properties may be
+    // represented as null, yet due to buggy legacy code elsewhere isn't
+    // treated as such (potentially causing crashes). For example, the
+    // "tabs.create" function takes an object as its first argument with an
+    // optional "windowId" property.
+    //
+    // Given just
+    //
+    //   tabs.create({})
+    //
+    // this will work as expected on code that only checks for the existence of
+    // a "windowId" property (such as that legacy code). However given
+    //
+    //   tabs.create({windowId: null})
+    //
+    // there *is* a "windowId" property, but since it should be an int, code
+    // on the browser which doesn't additionally check for null will fail.
+    // We can avoid all bugs related to this by stripping null.
     if (strip_null_from_objects_ && child->is_none())
       continue;
 
@@ -651,7 +775,3 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
 }
 
 }  // namespace content
-
-#if BUILDFLAG(ARKWEB_MSGPORT)
-#include "arkweb/chromium_ext/content/renderer/v8_value_converter_impl_for_include.cc"
-#endif

@@ -118,8 +118,8 @@ bool PlatformCrashpadInitialization(
 
     // Always add --type=crashpad-handler because the value is expected by
     // CefExecuteProcess.
-    start_arguments.push_back(
-        std::string("--type=") + switches::kCrashpadHandler);
+    start_arguments.push_back(std::string("--type=") +
+                              switches::kCrashpadHandler);
 
     if (embedded_handler) {
       if (!user_data_dir.empty()) {

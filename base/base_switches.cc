@@ -124,7 +124,10 @@ const char kVModule[] = "vmodule";
 // Will wait for 60 seconds for a debugger to come to attach to the process.
 const char kWaitForDebugger[] = "wait-for-debugger";
 
-#include "arkweb/chromium_ext/base/base_switches_for_include.cc"
+#if BUILDFLAG(IS_ARKWEB)
+// virtual pixel ratio for ohos scrollbar
+const char kPixelRatio[] = "virtual-pixel-ratio";
+#endif
 
 #if BUILDFLAG(IS_WIN)
 // Disable high-resolution timer on Windows.
@@ -183,5 +186,15 @@ const char kPackageVersionName[] = "package-version-name";
 // Range is 0(no biased load) ~ 100(mamximum load value).
 const char kSchedulerBoostUrgent[] = "scheduler-boost-urgent";
 #endif
+
+#if BUILDFLAG(IS_ARKWEB)
+const char kBundleInstallationDir[] = "bundle-installation-dir";
+const char kForTest[] = "for-test";
+const char kBundleName[] = "bundle-name";
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+const char kEnableVideoAssistant[] = "enable-nweb-ex-video-assistant";
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace switches

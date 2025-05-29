@@ -7,7 +7,6 @@
 #pragma allow_unsafe_buffers
 #endif
 
-#include "arkweb/build/features/features.h"
 #include "base/posix/unix_domain_socket.h"
 
 #include <stddef.h>
@@ -16,6 +15,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_util.h"
 #include "base/files/scoped_file.h"
 #include "base/functional/bind.h"

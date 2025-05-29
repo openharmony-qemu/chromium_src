@@ -9,6 +9,7 @@
 #include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/callback_helpers.h"
 #include "base/memory/read_only_shared_memory_region.h"
@@ -33,7 +34,6 @@
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
 #include "ui/base/ozone_buildflags.h"
 #include "ui/gfx/ca_layer_params.h"
-#include "arkweb/build/features/features.h"
 
 namespace viz {
 
@@ -44,8 +44,6 @@ class FrameSinkManagerImpl;
 class HintSessionFactory;
 class SyntheticBeginFrameSource;
 class VSyncParameterListener;
-class FrameSinkManagerImplUtils;
-class RootCompositorFrameSinkImplExt;
 
 // The viz portion of a root CompositorFrameSink. Holds the Binding/InterfacePtr
 // for the mojom::CompositorFrameSink interface and owns the Display.
@@ -54,9 +52,6 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
       public mojom::DisplayPrivate,
       public DisplayClient {
  public:
-  friend class FrameSinkManagerImplUtils;
-  friend class RootCompositorFrameSinkImplExt;
-
   // Creates a new RootCompositorFrameSinkImpl.
   static std::unique_ptr<RootCompositorFrameSinkImpl> Create(
       mojom::RootCompositorFrameSinkParamsPtr params,
@@ -83,6 +78,15 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
 #if BUILDFLAG(IS_WIN)
   void DisableSwapUntilResize(DisableSwapUntilResizeCallback callback) override;
 #endif
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  void SetShouldFrameSubmissionBeforeDraw(
+      bool should,
+      SetShouldFrameSubmissionBeforeDrawCallback callback) override;
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  void SetDrawRect(const gfx::Rect& new_rect) override;
+  void SetDrawMode(int32_t mode) override;
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   void Resize(const gfx::Size& size) override;
   void SetDisplayColorMatrix(const gfx::Transform& color_matrix) override;
   void SetDisplayColorSpaces(
@@ -141,6 +145,35 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   void SetThreads(const std::vector<Thread>& threads) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+  void SetEnableLowerFrameRate(bool enabled);
+  void EvictFrameBackBuffers(bool invisible);
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
+  void UpdateVSyncFrequency(int frame_rate);
+  void ResetVSyncFrequency();
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  void ReportKeyThreadIds(const std::vector<int32_t>& thread_ids,
+                          int32_t process_id,
+                          bool is_created) override {}
+#endif  // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
+  void SetCurrentFrameSinkId(const FrameSinkId& frame_sink_id) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void SendInternalBeginFrame();
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void DisableSwapUntilMaximized(
+      DisableSwapUntilMaximizedCallback callback) override;
+#endif  // ARKWEB_MAXIMIZE_RESIZE
+
 #if BUILDFLAG(IS_ANDROID)
   base::ScopedClosureRunner GetCacheBackBufferCb();
 #endif
@@ -153,13 +186,9 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   void StartOverdrawTracking(int interval_length_in_seconds);
   OverdrawTracker::OverdrawTimeSeries StopOverdrawTracking();
 
-  virtual RootCompositorFrameSinkImplExt* AsExt() {
-    return nullptr;
-  }
-
  private:
   class StandaloneBeginFrameObserver;
-  FrameSinkManagerImplUtils* managerImplUtils = nullptr;
+
   RootCompositorFrameSinkImpl(
       FrameSinkManagerImpl* frame_sink_manager,
       const FrameSinkId& frame_sink_id,
@@ -192,6 +221,9 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
       const FrameSinkId& id,
       mojom::CompositorFrameSinkType* type) override;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void RestoreRenderFit(const FrameSinkId& frame_sink_id) override;
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 
   void UpdateVSyncParameters();
   BeginFrameSource* begin_frame_source();

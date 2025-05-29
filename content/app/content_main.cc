@@ -363,8 +363,9 @@ void ContentMainShutdown(ContentMainRunner* content_main_runner) {
 
 // This function must be marked with NO_STACK_PROTECTOR or it may crash on
 // return, see the --change-stack-guard-on-fork command line flag.
-NO_STACK_PROTECTOR int RunContentProcess(ContentMainParams params,
-                  ContentMainRunner* content_main_runner) {
+NO_STACK_PROTECTOR int RunContentProcess(
+    ContentMainParams params,
+    ContentMainRunner* content_main_runner) {
 #if BUILDFLAG(IS_MAC)
   // We need this pool for all the objects created before we get to the event
   // loop, but we don't want to leave them hanging around until the app quits.
@@ -378,8 +379,9 @@ NO_STACK_PROTECTOR int RunContentProcess(ContentMainParams params,
 #endif
 
   int exit_code = ContentMainInitialize(std::move(params), content_main_runner);
-  if (exit_code >= 0)
+  if (exit_code >= 0) {
     return exit_code;
+  }
   exit_code = ContentMainRun(content_main_runner);
 
   ContentMainShutdown(content_main_runner);

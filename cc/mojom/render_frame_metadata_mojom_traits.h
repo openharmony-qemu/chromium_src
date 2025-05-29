@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "build/build_config.h"
 #include "cc/mojom/render_frame_metadata.mojom-shared.h"
@@ -14,7 +15,6 @@
 #include "services/viz/public/cpp/compositing/local_surface_id_mojom_traits.h"
 #include "skia/public/mojom/skcolor4f_mojom_traits.h"
 #include "third_party/skia/include/core/SkColor.h"
-#include "arkweb/build/features/features.h"
 
 namespace mojo {
 
@@ -171,7 +171,7 @@ struct COMPONENT_EXPORT(CC_SHARED_MOJOM_TRAITS)
 
 #if BUILDFLAG(ARKWEB_MENU)
   static const gfx::Rect& clipped_selection_bounds(
-    const cc::RenderFrameMetadata& metadata) {
+      const cc::RenderFrameMetadata& metadata) {
     return metadata.clipped_selection_bounds;
   }
 #endif

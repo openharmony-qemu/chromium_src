@@ -32,18 +32,11 @@ class RenderFrameHost;
 }
 
 namespace password_manager {
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-class ContentPasswordManagerDriverExt;
-#endif
 
 // There is one ContentPasswordManagerDriver per RenderFrameHost.
 // The lifetime is managed by the ContentPasswordManagerDriverFactory.
-class ContentPasswordManagerDriver
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-    : public PasswordManagerDriverExt,
-#else
+class ContentPasswordManagerDriver final
     : public PasswordManagerDriver,
-#endif
       public autofill::mojom::PasswordManagerDriver {
  public:
   ContentPasswordManagerDriver(content::RenderFrameHost* render_frame_host,
@@ -54,12 +47,6 @@ class ContentPasswordManagerDriver
       delete;
 
   ~ContentPasswordManagerDriver() override;
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  friend class ContentPasswordManagerDriverExt;
-  virtual ContentPasswordManagerDriverExt* AsContentPasswordManagerDriverExt() {
-    return nullptr;
-  }
-#endif
 
   // Gets the driver for `render_frame_host`.
   static ContentPasswordManagerDriver* GetForRenderFrameHost(
@@ -105,6 +92,28 @@ class ContentPasswordManagerDriver
 #endif
   void PreviewField(autofill::FieldRendererId field_id,
                     const std::u16string& value) override;
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void FillAccountSuggestion(const GURL& page_url,
+                             const std::u16string& username,
+                             const std::u16string& password);
+
+  void FillAccountSuggestion(const std::u16string& username,
+                             const std::u16string& password) override;
+
+  void OnRequestAutofill(
+      autofill::FormRendererId form_id,
+      const autofill::mojom::OhosPasswordFormAutofillState state,
+      const autofill::InputFillRequestData& username_data,
+      const autofill::InputFillRequestData& password_data) override;
+
+  void SendParsedPasswordFormToRenderer(
+      const autofill::PasswordFormFillData& parsed_form_data_without_password)
+      override;
+
+  void AutofillSurfaceClosed(bool show_virtual_keyboard) override;
+#endif
+
   void PreviewSuggestion(const std::u16string& username,
                          const std::u16string& password) override;
   void PreviewSuggestionById(autofill::FieldRendererId username_element_id,
@@ -209,11 +218,8 @@ class ContentPasswordManagerDriver
   const raw_ptr<content::RenderFrameHost> render_frame_host_;
   const raw_ptr<PasswordManagerClient> client_;
   PasswordGenerationFrameHelper password_generation_helper_;
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  PasswordAutofillManagerExt password_autofill_manager_;
-#else
   PasswordAutofillManager password_autofill_manager_;
-#endif
+
   int id_;
   autofill::FieldRendererId last_triggering_field_id_;
 
@@ -233,7 +239,4 @@ class ContentPasswordManagerDriver
 
 }  // namespace password_manager
 
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-#include "arkweb/chromium_ext/components/password_manager/content/browser/content_password_manager_driver_ext.h"
-#endif
 #endif  // COMPONENTS_PASSWORD_MANAGER_CONTENT_BROWSER_CONTENT_PASSWORD_MANAGER_DRIVER_H_

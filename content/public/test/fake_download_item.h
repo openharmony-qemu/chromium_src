@@ -174,13 +174,6 @@ class FakeDownloadItem : public download::DownloadItem {
   void SetInsecureDownloadStatus(
       download::DownloadItem::InsecureDownloadStatus insecure_download_status);
 
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-  void ReadDownloadData(
-      const std::string& guid,
-      const int32_t read_size,
-      base::OnceCallback<void(const std::vector<uint8_t>&)> callback) {}
-#endif  //  ARKWEB_EXT_DOWNLOAD
-
  private:
   base::ObserverList<Observer> observers_;
   uint32_t id_ = 0;

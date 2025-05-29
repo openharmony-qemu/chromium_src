@@ -52,7 +52,6 @@
 #include "third_party/skia/include/core/SkColor.h"
 #include "ui/accessibility/ax_mode.h"
 #include "ui/base/window_open_disposition.h"
-#include "content/browser/renderer_host/render_frame_host_delegate_ext.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "ui/gfx/native_widget_types.h"
@@ -64,7 +63,8 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-#include "arkweb/chromium_ext/content/browser/renderer_host/render_frame_host_delegate_ext.h"
+#include "arkweb/chromium_ext/content/public/browser/native_embed_info.h"
+#include "arkweb/chromium_ext/media/mojo/mojom/native_bridge.mojom.h"
 #endif
 
 class GURL;
@@ -120,6 +120,9 @@ struct ContextMenuParams;
 struct CookieAccessDetails;
 struct GlobalRequestID;
 struct TrustTokenAccessDetails;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+struct GlobalRenderFrameHostId;
+#endif
 
 namespace mojom {
 class CreateNewWindowParams;
@@ -146,7 +149,7 @@ struct PartitionedPopinOpenerProperties {
 // this. This delegate interface is useful for renderer_host/ to make requests
 // to WebContentsImpl, as renderer_host/ is not permitted to know the
 // WebContents type (see //renderer_host/DEPS).
-class CONTENT_EXPORT RenderFrameHostDelegate : public RenderFrameHostDelegateExt {
+class CONTENT_EXPORT RenderFrameHostDelegate {
  public:
   // Callback used with IsClipboardPasteAllowedByPolicy() method.  If the
   // clipboard paste is allowed to proceed, the callback is called with the data
@@ -177,6 +180,9 @@ class CONTENT_EXPORT RenderFrameHostDelegate : public RenderFrameHostDelegateExt
       const GURL& initiator_url,
       blink::mojom::NavigationBlockedReason reason) {}
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  virtual void NotifyContextMenuWillShow() {}
+#endif
 
   // Called when blink.mojom.LocalFrameHost::DidFinishLoad() is invoked.
   virtual void OnDidFinishLoad(RenderFrameHostImpl* render_frame_host,
@@ -213,6 +219,15 @@ class CONTENT_EXPORT RenderFrameHostDelegate : public RenderFrameHostDelegateExt
       mojo::PendingAssociatedRemote<blink::mojom::ContextMenuClient>
           context_menu_client,
       const ContextMenuParams& params) {}
+
+#if BUILDFLAG(ARKWEB_MENU)
+  virtual void MouseSelectMenuShow(bool show) {}
+  virtual void ChangeVisibilityOfQuickMenu() {}
+#endif
+
+#if BUILDFLAG(ARKWEB_AI)
+  virtual bool CloseImageOverlaySelection() { return false; }
+#endif  // BUILDFLAG(ARKWEB_AI)
 
   // A JavaScript alert, confirmation or prompt dialog should be shown.
   // Will only be called for active frames belonging to a primary page.
@@ -291,6 +306,22 @@ class CONTENT_EXPORT RenderFrameHostDelegate : public RenderFrameHostDelegateExt
       RenderFrameHostImpl* frame_host,
       mojo::PendingAssociatedReceiver<media::mojom::MediaPlayerHost> receiver) {
   }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void CreateNativeBridgeHostForRenderFrameHost(
+      RenderFrameHostImpl* frame_host,
+      mojo::PendingAssociatedReceiver<media::mojom::NativeBridgeHost>
+          receiver) {}
+
+  virtual void OnNativeEmbedStatusUpdate(
+      const NativeEmbedInfo& native_embed_info,
+      NativeEmbedInfo::TagState state) {}
+
+  virtual void OnRenderFrameHostEnterBackForwardCache(
+      const GlobalRenderFrameHostId& id) {}
+  virtual void OnRenderFrameHostLeaveBackForwardCache(
+      const GlobalRenderFrameHostId& id) {}
+#endif
 
   // The render frame has requested access to media devices listed in
   // |request|, and the client should grant or deny that permission by
@@ -734,6 +765,11 @@ class CONTENT_EXPORT RenderFrameHostDelegate : public RenderFrameHostDelegateExt
   // If a timer for an unresponsive renderer fires, whether it should be
   // ignored.
   virtual bool ShouldIgnoreUnresponsiveRenderer();
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  // Notified to UI, contextmenu popup window should be dimissed
+  virtual void ClearContextMenu() {}
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
   // Returns the base permissions policy that should be applied to the Isolated
   // Web App running in the given RenderFrameHostImpl. If std::nullopt is

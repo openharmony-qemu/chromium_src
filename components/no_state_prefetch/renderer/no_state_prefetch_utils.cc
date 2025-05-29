@@ -82,7 +82,7 @@ class MediaLoadDeferrer : public blink::WebViewObserver {
 #else
       content::PageVisibilityState visibility_state,
       bool storing_in_bfcache) override {
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
     if (visibility_state != content::PageVisibilityState::kVisible)
       return;
     std::move(continue_loading_cb_).Run();

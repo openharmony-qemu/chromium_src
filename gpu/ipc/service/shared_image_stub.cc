@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <utility>
+
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/trace_event/trace_event.h"
@@ -22,7 +23,6 @@
 #include "gpu/ipc/service/gpu_channel.h"
 #include "gpu/ipc/service/gpu_channel_manager.h"
 #include "gpu/ipc/service/gpu_channel_shared_image_interface.h"
-#include "arkweb/chromium_ext/gpu/ipc/service/shared_image_stub_ext.h",
 #include "gpu/ipc/service/gpu_memory_buffer_factory.h"
 #include "ui/gfx/buffer_format_util.h"
 #include "ui/gfx/gpu_fence_handle.h"
@@ -32,8 +32,6 @@
 #if BUILDFLAG(IS_WIN)
 #include "ui/gfx/win/d3d_shared_fence.h"
 #endif
-
-#include "arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_factory_ext.h"
 
 namespace {
 
@@ -89,7 +87,7 @@ SharedImageStub::shared_image_interface() {
 
 std::unique_ptr<SharedImageStub> SharedImageStub::Create(GpuChannel* channel,
                                                          int32_t route_id) {
-  auto stub = base::WrapUnique(new SharedImageStubExt(channel, route_id));
+  auto stub = base::WrapUnique(new SharedImageStub(channel, route_id));
   ContextResult result = stub->Initialize();
   if (result == ContextResult::kSuccess)
     return stub;
@@ -199,6 +197,54 @@ bool SharedImageStub::GetGpuMemoryBufferHandleInfo(
   }
   return true;
 }
+
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+bool SharedImageStub::CreateSharedImage(const Mailbox& mailbox,
+                                        gfx::GpuMemoryBufferHandle handle,
+                                        gfx::BufferFormat format,
+                                        gfx::BufferPlane plane,
+                                        const gfx::Size& size,
+                                        const gfx::ColorSpace& color_space,
+                                        GrSurfaceOrigin surface_origin,
+                                        SkAlphaType alpha_type,
+                                        uint32_t usage,
+                                        void* window_buffer) {
+  TRACE_EVENT2("gpu", "SharedImageStub::CreateSharedImage", "width",
+               size.width(), "height", size.height());
+#if false
+  if (!mailbox.IsSharedImage()) {
+    LOG(ERROR) << "[HeifSupport] SharedImageStub: Trying to create a
+    SharedImage with a "
+                  "non-SharedImage mailbox.";
+    OnError();
+    return false;
+  }
+#endif
+  if (!MakeContextCurrent()) {
+    OnError();
+    return false;
+  }
+#if false
+  if (!factory_->CreateSharedImage(
+        params->mailbox, gpu::kNullSurfaceHandle,
+        params->si_info->meta.format,
+        params->si_info->meta.size,
+        params->si_info->meta.color_space,params->si_info->meta.surface_origin,
+        params->si_info->meta.alpha_type,
+        params->si_info->meta.usage,
+        GetLabel(params->si_info->debug_label))) {
+#endif
+  if (!factory_->CreateSharedImage(mailbox, std::move(handle), format, plane,
+                                   size, color_space, surface_origin,
+                                   alpha_type, usage, window_buffer)) {
+    LOG(ERROR)
+        << "[HeifSupport] SharedImageStub: Unable to create shared image";
+    OnError();
+    return false;
+  }
+  return true;
+}
+#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 
 bool SharedImageStub::CreateSharedImage(const Mailbox& mailbox,
                                         gfx::GpuMemoryBufferHandle handle,
@@ -603,7 +649,7 @@ ContextResult SharedImageStub::Initialize() {
     }
   }
 
-  factory_ = std::make_unique<SharedImageFactoryExt>(
+  factory_ = std::make_unique<SharedImageFactory>(
       channel_manager->gpu_preferences(),
       channel_manager->gpu_driver_bug_workarounds(),
       channel_manager->gpu_feature_info(), context_state_.get(),

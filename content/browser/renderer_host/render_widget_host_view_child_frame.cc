@@ -51,12 +51,8 @@ namespace content {
 RenderWidgetHostViewChildFrame* RenderWidgetHostViewChildFrame::Create(
     RenderWidgetHost* widget,
     const display::ScreenInfos& parent_screen_infos) {
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-    RenderWidgetHostViewChildFrame *view = new RenderWidgetHostViewChildFrameExt(widget, parent_screen_infos);
-#else
   RenderWidgetHostViewChildFrame* view =
       new RenderWidgetHostViewChildFrame(widget, parent_screen_infos);
-#endif
   view->Init();
   return view;
 }
@@ -457,11 +453,7 @@ void RenderWidgetHostViewChildFrame::UpdateTooltipUnderCursor(
     return;
 
   if (cursor_manager->IsViewUnderCursor(this))
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-    root_view->UpdateTooltipUnderCursor(tooltip_text);
-#else
     root_view->UpdateTooltip(tooltip_text);
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 }
 
 void RenderWidgetHostViewChildFrame::UpdateTooltipFromKeyboard(
@@ -875,11 +867,26 @@ void RenderWidgetHostViewChildFrame::TakeFallbackContentFrom(
   // This method only makes sense for top-level views.
 }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+bool RenderWidgetHostViewChildFrame::GetScrollable() {
+  if (!frame_connector_) {
+    return true;
+  }
+  auto* root_view = frame_connector_->GetRootRenderWidgetHostView();
+  if (root_view && !root_view->GetScrollable()) {
+    return false;
+  }
+  return true;
+}
+#endif
+
 blink::mojom::InputEventResultState
 RenderWidgetHostViewChildFrame::FilterInputEvent(
     const blink::WebInputEvent& input_event) {
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  if (AsWebRenderWidgetHostViewChildFrameExt()->IsMarkedConsumed(input_event.GetType())) {
+  if (!GetScrollable() &&
+      input_event.GetType() ==
+          blink::WebInputEvent::Type::kGestureScrollUpdate) {
     return blink::mojom::InputEventResultState::kConsumed;
   }
 #endif

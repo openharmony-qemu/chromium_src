@@ -108,7 +108,8 @@ class COMPONENT_EXPORT(INPUT) InputRouterClient {
   virtual void OnInvalidInputEventSource() = 0;
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) = 0;
+  virtual void DynamicFrameLossEvent(const std::string& sceneId,
+                                     bool isStart) = 0;
 #endif
 
   virtual blink::mojom::WidgetInputHandler* GetWidgetInputHandler() = 0;

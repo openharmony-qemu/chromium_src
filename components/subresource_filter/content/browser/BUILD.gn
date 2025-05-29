@@ -6,10 +6,6 @@ import("//build/config/features.gni")
 import("//testing/test.gni")
 import("//arkweb/build/features/features.gni")
 
-#if BUILDFLAG(IS_ARKWEB)
-import("//arkweb/chromium_ext/chromium_ext.gni")
-#endif
-
 static_library("browser") {
   if (use_libfuzzer) {
     configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
@@ -49,10 +45,13 @@ static_library("browser") {
     "subresource_filter_safe_browsing_client.h",
     "subresource_filter_safe_browsing_client_request.cc",
     "subresource_filter_safe_browsing_client_request.h",
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    "ohos_adblock_config.cc",
+    "ohos_adblock_config.h",
+    "safe_browsing_user_ruleset_publisher.cc",
+    "safe_browsing_user_ruleset_publisher.h",
+#endif
   ]
-  if (defined(arkweb_adblock) && arkweb_adblock) {
-    sources += arkweb_components_subresource_filter_content_browser_sources
-  }
   deps = [
     "//base",
     "//components/content_settings/browser",

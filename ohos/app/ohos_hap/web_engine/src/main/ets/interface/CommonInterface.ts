@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 import type ConfigurationConstant from '@ohos.app.ability.ConfigurationConstant';
-import type image from '@ohos.multimedia.image';
 import type inputMethod from '@ohos.inputMethod';
+import type image from '@ohos.multimedia.image';
 import type GestureEvent from '@ohos.multimodalInput.gestureEvent';
 
 export class PowerMonitor {
@@ -40,13 +40,16 @@ export interface NativeContext {
   SendEnterKeyEventCallback: () => void;
   MoveCursorCallback: (direction: inputMethod.Direction) => void;
   SetThemeSource: (themeSource: ConfigurationConstant.ColorMode) => void;
-  OnDragEnterCB: (id: string, dragInfo: OhosDropData, filePaths: Array<string>) => void;
+  OnDragEnterCB:
+      (id: string, dragInfo: OhosDropData, filePaths: Array<string>) => void;
   OnDragLeaveCB: (id: string) => void;
   OnDragEndCB: (id: string) => void;
   OnDragMoveCB: (id: string, windowX: number, windowY: number) => void;
-  OnDropCB: (id: string, dragInfo: OhosDropData, filePaths: Array<string>) => void;
-  OnFontSizeChangeCallback:(fontSizeZoom :number) => void;
-  OnWindowInitSize: (windowRect: WindowBound, drawableRect: WindowBound) => void;
+  OnDropCB:
+      (id: string, dragInfo: OhosDropData, filePaths: Array<string>) => void;
+  OnFontSizeChangeCallback: (fontSizeZoom: number) => void;
+  OnWindowInitSize:
+      (windowRect: WindowBound, drawableRect: WindowBound) => void;
   OnWindowRectChange: (id: string, event: WindowBound, reason: number) => void;
   OnWindowSizeChange: (id: string, event: WindowBound) => void;
   OnWindowEvent: (id: string, event: number) => void;
@@ -64,10 +67,9 @@ export interface XComponentContext {
 }
 
 export interface IParams {
-  callback: (ready: boolean, id: string) => void,
-  id: string,
-  size: number[], // [width, height]
-  initColorRgb: string,
+  callback: (ready: boolean, id: string) => void, id: string,
+                                 size: number[],  // [width, height]
+      initColorRgb: string,
 }
 
 export interface OhosBasicDragData {
@@ -94,8 +96,8 @@ export interface OhosDragParamToJs {
 export interface OhosDropData {
   basicData: OhosBasicDragData;
   filePaths: Array<string>;
-  bookmarkBuffer: ArrayBuffer | undefined;
-  webCustomBuffer: ArrayBuffer | undefined;
+  bookmarkBuffer: ArrayBuffer|undefined;
+  webCustomBuffer: ArrayBuffer|undefined;
 }
 
 export interface IMFAdapterInputAttribute {
@@ -217,19 +219,12 @@ export interface AdvertisingParam {
 }
 
 export interface BatteryInfo {
-  batterySOC: number,
-  chargingStatus: number,
-  isBatteryPresent: boolean,
-  estimatedRemainingChargeTime: number,
-  nowCurrent: number,
-  remainingEnergy: number
+  batterySOC: number, chargingStatus: number, isBatteryPresent: boolean,
+      estimatedRemainingChargeTime: number, nowCurrent: number,
+      remainingEnergy: number
 }
 
 export interface NewWindowParam {
-  id: string,
-  left: number,
-  top: number,
-  width: number,
-  height: number,
-  hide_title_bar: boolean
+  id: string, left: number, top: number, width: number, height: number,
+      hide_title_bar: boolean
 }

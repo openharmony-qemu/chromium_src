@@ -22,7 +22,6 @@
 #include <string>
 #include <utility>
 
-#include "arkweb/chromium_ext/cc/layer/video_layer_ext.h"
 #include "base/check.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
@@ -103,8 +102,7 @@ WebNativeBridgeImpl::~WebNativeBridgeImpl() {
   DVLOG(1) << __func__;
   DCHECK(main_task_runner_->BelongsToCurrentThread());
   LOG(DEBUG) << "[NativeEmbed] ~WebNativeBridgeImpl.";
-
-  // delegate_->PlayerGone(delegate_id_);
+ 
   delegate_->RemoveObserver(delegate_id_);
   delegate_ = nullptr;
 
@@ -120,7 +118,7 @@ WebNativeBridgeImpl::~WebNativeBridgeImpl() {
 
   if (video_layer_) {
     video_layer_->StopUsingProvider();
-    video_layer_->AsExt()->ResetLayerRectCallback();
+    video_layer_->ResetLayerRectCallback();
     LOG(DEBUG) << "[NativeEmbed] ResetLayerRectCallback.";
   }
 
@@ -198,16 +196,9 @@ void WebNativeBridgeImpl::OnLayerRectChange(const gfx::Rect& rect) {
 
 void WebNativeBridgeImpl::OnLayerRectVisibilityChange(bool visibility) {
   DCHECK(main_task_runner_->BelongsToCurrentThread());
-  LOG(DEBUG) << "[NativeEmbed] OnLayerRectVisibilityChange: " << visibility;
+  LOG(INFO) << "[NativeEmbed] OnLayerRectVisibilityChange: " << visibility;
 
   client_->OnLayerRectVisibilityChange(visibility);
-}
-
-void WebNativeBridgeImpl::CleanupVisibilityForRemovedLayer(bool visibility) {
-  DCHECK(main_task_runner_->BelongsToCurrentThread());
-  LOG(DEBUG) << "[NativeEmbed] CleanupVisibilityForRemovedLayer: " << visibility;
-
-  client_->CleanupVisibilityForRemovedLayer(visibility);
 }
 
 gfx::Size WebNativeBridgeImpl::NaturalSize() const {
@@ -221,17 +212,14 @@ void WebNativeBridgeImpl::OnSetLayer() {
   DCHECK(!video_layer_);
   media::RectChangedCB rect_change_cb = base::BindRepeating(
       &WebNativeBridgeImpl::OnLayerRectChange, base::Unretained(this));
+
   media::RectVisibilityChangedCB rect_visibility_change_cb =
       base::BindRepeating(&WebNativeBridgeImpl::OnLayerRectVisibilityChange,
                           base::Unretained(this));
-  media::LayerRemovedVisibilityChangedCB layer_removed_visibility_change_cb =
-      base::BindRepeating(&WebNativeBridgeImpl::CleanupVisibilityForRemovedLayer,
-                          base::Unretained(this));
 
-  video_layer_ = cc::VideoLayerExt::Create(
+  video_layer_ = cc::VideoLayer::Create(
       compositor_.get(), media::kNoTransformation, std::move(rect_change_cb),
-      std::move(rect_visibility_change_cb),
-      std::move(layer_removed_visibility_change_cb));
+      std::move(rect_visibility_change_cb));
   client_->SetCcLayer(video_layer_.get());
 }
 

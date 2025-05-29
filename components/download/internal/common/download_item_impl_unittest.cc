@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/circular_deque.h"
 #include "base/containers/queue.h"
 #include "base/files/file_util.h"
@@ -244,11 +245,7 @@ class DownloadItemTest : public testing::Test {
 
   DownloadItemImpl* CreateDownloadItemWithCreateInfo(
       std::unique_ptr<DownloadCreateInfo> info) {
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-    DownloadItemImpl* download = new ArkWebDownloadItemImplExt(
-#else
     DownloadItemImpl* download = new DownloadItemImpl(
-#endif
         mock_delegate(), next_download_id_++, *(info.get()));
     allocated_downloads_[download] = base::WrapUnique(download);
     return download;
@@ -265,11 +262,7 @@ class DownloadItemTest : public testing::Test {
   // be torn down at the end of the test unless DestroyDownloadItem is
   // called.
   DownloadItemImpl* CreateDownloadItem() {
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-    DownloadItemImpl* download = new ArkWebDownloadItemImplExt(
-#else
     DownloadItemImpl* download = new DownloadItemImpl(
-#endif
         mock_delegate(), ++next_download_id_, *create_info_);
     allocated_downloads_[download] = base::WrapUnique(download);
     return download;
@@ -407,13 +400,13 @@ class DownloadItemTest : public testing::Test {
   }
 
   DownloadCreateInfo* create_info() { return create_info_.get(); }
-
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  void CancelRequest(bool user_cancel, std::optional<std::string> guid) { canceled_ = true; }
+  void CancelRequest(bool user_cancel, std::optional<std::string> guid) {
+    canceled_ = true;
+  }
 #else
   void CancelRequest(bool user_cancel) { canceled_ = true; }
 #endif
-
   bool canceled() { return canceled_; }
 
   base::test::TaskEnvironment task_environment_;

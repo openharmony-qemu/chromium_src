@@ -194,8 +194,8 @@ gfx::GpuMemoryBufferHandle GpuMemoryBufferFactoryDXGI::CreateGpuMemoryBuffer(
       0,
       D3D11_RESOURCE_MISC_SHARED_NTHANDLE |
           static_cast<UINT>(usage == gfx::BufferUsage::SCANOUT_VEA_CPU_READ
-               ? D3D11_RESOURCE_MISC_SHARED
-               : D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX)};
+                                ? D3D11_RESOURCE_MISC_SHARED
+                                : D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX)};
 
   Microsoft::WRL::ComPtr<ID3D11Texture2D> d3d11_texture;
 

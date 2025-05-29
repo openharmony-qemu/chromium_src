@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/run_loop.h"
@@ -17,7 +18,6 @@
 #include "services/network/public/mojom/url_response_head.mojom.h"
 #include "services/network/test/test_url_loader_client.h"
 #include "third_party/blink/public/mojom/devtools/devtools_agent.mojom.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -85,7 +85,8 @@ class FakeEmbeddedWorkerInstanceClient::LoaderClient final
   }
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  void OnTransferDataWithSharedMemory(::base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {};
+  void OnTransferDataWithSharedMemory(::base::ReadOnlySharedMemoryRegion region,
+                                      uint64_t buffer_size) override{};
 #endif
 
  private:

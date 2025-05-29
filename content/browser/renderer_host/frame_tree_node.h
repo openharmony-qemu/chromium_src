@@ -960,13 +960,12 @@ class CONTENT_EXPORT FrameTreeNode : public RenderFrameHostOwner {
   // https://crbug.com/1157988.
   RenderFrameHostManager render_manager_;
 
+  base::WeakPtrFactory<FrameTreeNode> weak_factory_{this};
+
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   bool is_adblock_enabled_ = false;
   bool is_adblock_enabled_last_committed_ = false;
 #endif
-
-  base::WeakPtrFactory<FrameTreeNode> weak_factory_{this};
-
 };
 
 }  // namespace content

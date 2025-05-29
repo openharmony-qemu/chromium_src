@@ -8,13 +8,13 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/weak_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "media/mojo/mojom/renderer.mojom.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
-#include "arkweb/build/features/features.h"
 
 namespace cast_streaming {
 
@@ -57,17 +57,19 @@ class RendererControlMultiplexer : public media::mojom::Renderer {
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetMuted(bool muted) override {}
   void SetSurfaceId(int32_t surface_id, const ::gfx::Rect& rect) override {}
-  void SetNativeWindowSurface(int native_window_id) override {}
   void SetMediaPlayerState(bool is_suspend, int32_t suspend_type) override {}
-  void SetMediaSourceList(std::vector<media::mojom::MediaSourceInfoPtr> source_infos) override {}
-  void SetMediaControls(bool show_media_controls, const std::vector<std::string>& controls_list) override {}
+  void SetMediaSourceList(
+      std::vector<media::mojom::MediaSourceInfoPtr> source_infos) override {}
+  void SetMediaControls(
+      bool show_media_controls,
+      const std::vector<std::string>& controls_list) override {}
   void SetPoster(const std::string& poster_url) override {}
-  void SetAttributes(const base::flat_map<std::string, std::string>& attributes) override {}
+  void SetAttributes(
+      const base::flat_map<std::string, std::string>& attributes) override {}
   void SetReferrer(const std::string& referrer) override {}
   void SetIsAudio(bool is_audio) override {}
   void SetPlaybackRateWithReason(double playback_rate,
                                  media::mojom::ActionReason reason) override {}
-  void SetVideoSurface(int32_t surface_id) override {}
 #endif
  private:
   void OnMojoDisconnect();

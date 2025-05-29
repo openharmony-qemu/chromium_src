@@ -54,12 +54,14 @@ CopyOutputRequest::CopyOutputRequest(ResultFormat result_format,
       result_destination_(result_destination),
       result_callback_(std::move(result_callback)),
       scale_from_(1, 1),
-      scale_to_(1, 1), dump_frame_id_(id), dump_frame_path_(dump_path) {
+      scale_to_(1, 1),
+      dump_frame_id_(id),
+      dump_frame_path_(dump_path) {
   // If format is I420_PLANES, the result must be in system memory. Returning
   // I420_PLANES via textures is not yet supported.
   DCHECK(result_format_ != ResultFormat::I420_PLANES ||
          result_destination_ == ResultDestination::kSystemMemory);
- 
+
   DCHECK(!result_callback_.is_null());
   TRACE_EVENT_NESTABLE_ASYNC_BEGIN0("viz", "CopyOutputRequest", this);
 }

@@ -90,6 +90,7 @@ Trap::Trap() {
 // SIGINFO option. The return value is inconsistent with Linux.
 // IsDefaultSignalAction is false, which in turn causes
 // the debug mode fatal log to cause a crash.
+#if !BUILDFLAG(IS_OHOS)
   // Set new SIGSYS handler
   struct sigaction sa = {};
   // In some toolchain, sa_sigaction is not declared in struct sigaction.
@@ -107,8 +108,13 @@ Trap::Trap() {
         "Existing signal handler when trying to install SIGSYS. SIGSYS needs "
         "to be reserved for seccomp-bpf.";
     DLOG(FATAL) << kExistingSIGSYSMsg;
+#ifdef BUILDFLAG(IS_ARKWEB)
+    LOG(WARNING) << kExistingSIGSYSMsg;
+#else
     LOG(ERROR) << kExistingSIGSYSMsg;
+#endif
   }
+#endif
 
   // Unmask SIGSYS
   sigset_t mask;

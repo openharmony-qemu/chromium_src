@@ -15,7 +15,7 @@
 
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 
-#include "base/base_switches.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "base/command_line.h"
 #include "base/logging.h"
 #include "base/no_destructor.h"
@@ -30,7 +30,6 @@ namespace {
 constexpr char kProductModeEmulator[] = "emulator";
 constexpr char kCompatiblePhone[] = "Phone";
 constexpr char kCompatibleTablet[] = "Tablet";
-bool g_page_scale = false;
 
 using namespace OHOS::NWeb;
 
@@ -52,10 +51,6 @@ class SystemProperties {
   bool is_2in1() { return device_type_ == ProductDeviceType::DEVICE_TYPE_2IN1; }
 
   bool is_emulator() { return product_model_ == kProductModeEmulator; }
-
-  bool is_wearable() {
-    return device_type_ == ProductDeviceType::DEVICE_TYPE_WEARABLE;
-  }
 
   int32_t major_version() { return major_version_; }
 
@@ -123,9 +118,12 @@ SystemProperties::SystemProperties()
       product_model_(OhosAdapterHelper::GetInstance()
                          .GetSystemPropertiesInstance()
                          .GetDeviceInfoProductModel()),
-      api_version_(OhosAdapterHelper::GetInstance()
-                       .GetSystemPropertiesInstance()
-                       .GetDeviceInfoApiVersion()),
+
+      api_version_("10"),
+      // TODO
+      // api_version_(OhosAdapterHelper::GetInstance()
+      //                    .GetSystemPropertiesInstance()
+      //                    .GetDeviceInfoApiVersion()),
       compatible_device_type_(OhosAdapterHelper::GetInstance()
                                   .GetSystemPropertiesInstance()
                                   .GetCompatibleDeviceType()) {}
@@ -157,10 +155,6 @@ BASE_EXPORT bool IsEmulator() {
   return SystemProperties::Instance()->is_emulator();
 }
 
-BASE_EXPORT bool IsWearableDevice() {
-  return SystemProperties::Instance()->is_wearable();
-}
-
 BASE_EXPORT int32_t MajorVersion() {
   return SystemProperties::Instance()->major_version();
 }
@@ -190,8 +184,7 @@ BASE_EXPORT bool IsCompatibleMode() {
 }
 
 BASE_EXPORT int32_t ApplicationApiVersion() {
-  if (base::CommandLine::ForCurrentProcess() &&
-      base::CommandLine::ForCurrentProcess()->HasSwitch(
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kOhosAppApiVersion)) {
     std::string apiVersion =
         base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
@@ -205,13 +198,6 @@ BASE_EXPORT int32_t ApplicationApiVersion() {
   return -1;
 }
 
-BASE_EXPORT void SetPageScale(bool status) {
-  g_page_scale = status;
-}
-
-BASE_EXPORT bool IsPageScale() {
-  return g_page_scale;
-}
 }  // namespace ohos
 
 }  // namespace base

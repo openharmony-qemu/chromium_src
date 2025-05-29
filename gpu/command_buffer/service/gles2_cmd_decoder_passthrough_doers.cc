@@ -3824,10 +3824,8 @@ error::Error GLES2DecoderPassthroughImpl::DoDeleteQueriesEXT(
       continue;
     }
 
-    auto active_query_iter = active_queries_.find(query_info.type);
-    if (active_query_iter != active_queries_.end() &&
-        active_query_iter->second.service_id == query_service_id) {
-      active_queries_.erase(active_query_iter);
+    if (base::Contains(active_queries_, query_info.type)) {
+      active_queries_.erase(query_info.type);
     }
 
     RemovePendingQuery(query_service_id);
@@ -4013,7 +4011,7 @@ error::Error GLES2DecoderPassthroughImpl::DoEndQueryEXT(GLenum target,
     }
   }
 
-  CHECK(base::Contains(active_queries_, target));
+  DCHECK(active_queries_.find(target) != active_queries_.end());
   ActiveQuery active_query = std::move(active_queries_[target]);
   active_queries_.erase(target);
 

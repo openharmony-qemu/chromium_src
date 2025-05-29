@@ -17,7 +17,10 @@
 #include "net/http/http_network_session.h"
 #include "net/socket/client_socket_pool_manager.h"
 #include "net/socket/connect_job.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -51,14 +54,14 @@ class NET_EXPORT_PRIVATE ClientSocketPoolManagerImpl
   // Creates a Value summary of the state of the socket pools.
   base::Value SocketPoolInfoToValue() const override;
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   void SetConnectTimeout(int seconds) override;
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   void SetConnectJobWithSecureDnsOnlyTimeout(int seconds) override;
 #endif
- 
+
  private:
   using SocketPoolMap = std::map<ProxyChain, std::unique_ptr<ClientSocketPool>>;
 
@@ -71,10 +74,10 @@ class NET_EXPORT_PRIVATE ClientSocketPoolManagerImpl
   const bool cleanup_on_ip_address_change_;
 
   SocketPoolMap socket_pools_;
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   int timeout_override_{0};
 #endif
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   int connect_job_with_secure_dns_timeout_{0};
 #endif
 

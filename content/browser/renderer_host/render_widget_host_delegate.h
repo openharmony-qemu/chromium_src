@@ -164,10 +164,6 @@ class CONTENT_EXPORT RenderWidgetHostDelegate {
   // currently focused frame.
   virtual void SelectRange(const gfx::Point& base, const gfx::Point& extent) {}
 
-#if BUILDFLAG(ARKWEB_MENU)
-  virtual void SelectRangeV2(const gfx::Point& position, bool is_base) {}
-#endif
-
   // Requests the renderer to select text around the current caret position.
   // Currently supports word and sentence granularities.
   virtual void SelectAroundCaret(blink::mojom::SelectionGranularity granularity,

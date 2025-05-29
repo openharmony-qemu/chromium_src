@@ -1,0 +1,42 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/config/ohos/config.gni")
+
+component("gpu") {
+  sources = [
+    "gpu_native_ipc_common.h",
+    "gpu_native_ipc_proxy.cc",
+    "gpu_native_ipc_proxy.h",
+    "gpu_native_ipc_stub.cc",
+    "gpu_native_ipc_stub.h",
+    "gpu_native_process.cc",
+    "gpu_native_process.h",
+    "gpu_native_process_host.cc",
+    "gpu_native_process_host.h",
+    "gpu_process_main.cc",
+    "native_child_process.h",
+    "native_ipc_proxy.cc",
+    "native_ipc_proxy.h",
+    "native_ipc_stub.cc",
+    "native_ipc_stub.h",
+    "native_window_parcel.cc",
+    "native_window_parcel.h"
+  ]
+
+  deps = ["//ohos/adapter/multiprocess/command_line:command_line"]
+
+  public_deps = [
+    "//third_party/aki:aki_jsbind",
+    "//third_party:huawei_securec",
+  ]
+
+  cflags = [
+    "-pthread",
+  ]
+
+  libs = [
+        "ipc_capi",
+      ]
+}

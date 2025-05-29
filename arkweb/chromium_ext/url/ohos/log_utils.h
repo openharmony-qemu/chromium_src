@@ -35,7 +35,7 @@ class COMPONENT_EXPORT(URL) LogUtils {
   // The decision to anonymize is based on the value of the feed flow parameter `scenario_type`.
   // For non feed flow pages, only the scheme, domain, and three asterisks (***) will be printed.
   // For feed flow pages, the scheme, domain, and the following query parameters from the URL will be printed:
-  // `to_app`, `channel`, and `channelid`. All other parts will be replaced with three asterisks (***).
+  // `to_app`, `channel`, and `channelid`. All other parts will be replaced with three asterisks (***).                 
   static std::string ConvertUrl(const std::string& url,
                                 int32_t scenario_type = 99,
                                 bool should_noise_url = true);

@@ -20,14 +20,15 @@
 #include "services/network/cookie_settings.h"
 #include "services/network/network_context.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 class CookieInclusionStatus;
 }  // namespace net
 
 namespace network {
-class NetworkServiceNetworkDelegateExt;
 
 // TODO(mmenke):  Look into merging this with URLLoader, and removing the
 // NetworkDelegate interface.
@@ -46,11 +47,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkServiceNetworkDelegate
       const NetworkServiceNetworkDelegate&) = delete;
 
   ~NetworkServiceNetworkDelegate() override;
-
-  virtual NetworkServiceNetworkDelegateExt*
-  AsNetworkServiceNetworkDelegateExt() {
-    return nullptr;
-  }
 
   void set_enable_referrers(bool enable_referrers) {
     enable_referrers_ = enable_referrers;
@@ -75,6 +71,12 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkServiceNetworkDelegate
   void OnBeforeRedirect(net::URLRequest* request,
                         const GURL& new_location) override;
   void OnResponseStarted(net::URLRequest* request, int net_error) override;
+
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  net::AddressList ResolveFromCacheInternal(net::HostCache::Key& key);
+  void RecordErrorInfo(net::URLRequest* request, int net_error);
+  int32_t GetDownStreamThroughputKbps();
+#endif
 
   void OnCompleted(net::URLRequest* request,
                    bool started,
@@ -133,17 +135,12 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkServiceNetworkDelegate
   bool enable_referrers_;
   bool validate_referrer_policy_on_initial_request_;
   mojo::Remote<mojom::ProxyErrorClient> proxy_error_client_;
+  raw_ptr<NetworkContext> network_context_;
 
   mutable base::WeakPtrFactory<NetworkServiceNetworkDelegate> weak_ptr_factory_{
       this};
-
- protected:
-  raw_ptr<NetworkContext> network_context_;
 };
 
 }  // namespace network
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-#include "arkweb/chromium_ext/services/network/network_service_network_delegate_ext.h"
-#endif
 
 #endif  // SERVICES_NETWORK_NETWORK_SERVICE_NETWORK_DELEGATE_H_

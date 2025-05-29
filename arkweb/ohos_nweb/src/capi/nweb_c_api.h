@@ -58,7 +58,6 @@ typedef struct NWebScreenCaptureDelegateCallback
 typedef void (*OnDownloadBeforeStart)(
     NWebDownloadItem* download_item,
     WebBeforeDownloadCallbackWrapper* wrapper);
-typedef void (*ReadDownloadDataCallback)(const char* guid, const void* buffer, size_t size);
 typedef void (*OnDownloadDidUpdate)(NWebDownloadItem* download_item,
                                     WebDownloadItemCallbackWrapper* wrapper);
 typedef void (*OnSrceenCaptureOnStateChange)(int32_t nweb_id,
@@ -223,14 +222,9 @@ NWEB_EXPORT void WebScreenCapture_PutScreenCaptureCallback(
     WebScreenCaptureDelegateCallback* callback,
     int32_t nweb_id);
 
-NWEB_EXPORT char* WebTranslate_GetWebLanguage(int32_t nweb_id);
-
 NWEB_EXPORT void WebScreenCapture_StopScreenCapture(int32_t nweb_id,
                                                     const char* session_id);
 
-NWEB_EXPORT void WebScreenCapture_SetScreenCapturePickerShow(int32_t nweb_id);
-
-NWEB_EXPORT void WebScreenCapture_DisableSessionReuse(int32_t nweb_id);
 /// LoggerCallback API functions.
 NWEB_EXPORT void LoggerCallback_CreateLoggerCallback(
     NWebLoggerCallback** callback);

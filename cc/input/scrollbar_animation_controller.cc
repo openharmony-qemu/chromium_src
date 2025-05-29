@@ -11,7 +11,7 @@
 #include "base/memory/ptr_util.h"
 #include "base/time/time.h"
 #include "cc/trees/layer_tree_impl.h"
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#if BUILDFLAG(IS_ARKWEB)
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #endif
 namespace cc {
@@ -23,11 +23,7 @@ ScrollbarAnimationController::CreateScrollbarAnimationControllerAndroid(
     base::TimeDelta fade_delay,
     base::TimeDelta fade_duration,
     float initial_opacity) {
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-  return base::WrapUnique(new ScrollbarAnimationControllerExt(
-#else
   return base::WrapUnique(new ScrollbarAnimationController(
-#endif
       scroll_element_id, client, fade_delay, fade_duration, initial_opacity));
 }
 
@@ -40,11 +36,7 @@ ScrollbarAnimationController::CreateScrollbarAnimationControllerAuraOverlay(
     base::TimeDelta thinning_duration,
     float initial_opacity,
     float idle_thickness_scale) {
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-  return base::WrapUnique(new ScrollbarAnimationControllerExt(
-#else
   return base::WrapUnique(new ScrollbarAnimationController(
-#endif
       scroll_element_id, client, fade_delay, fade_duration, thinning_duration,
       initial_opacity, idle_thickness_scale));
 }
@@ -63,10 +55,15 @@ ScrollbarAnimationController::ScrollbarAnimationController(
       animation_change_(AnimationChange::kNone),
       scroll_element_id_(scroll_element_id),
       opacity_(initial_opacity),
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
       show_scrollbars_on_scroll_gesture_(false),
+#else
+      show_scrollbars_on_scroll_gesture_(true),
+#endif  // ARKWEB_SCROLLBAR
       need_thinning_animation_(false),
       is_mouse_down_(false),
-      tickmarks_showing_(false) {}
+      tickmarks_showing_(false) {
+}
 
 ScrollbarAnimationController::ScrollbarAnimationController(
     ElementId scroll_element_id,
@@ -162,13 +159,7 @@ bool ScrollbarAnimationController::Animate(base::TimeTicks now) {
       last_awaken_time_ = now;
 
     float progress = AnimationProgressAtTime(now);
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-    if (AsScrollbarAnimationControllerExt()->IsDrawTooFast(now, progress)) {
-#endif
     RunAnimationFrame(progress);
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-    }
-#endif
 
     if (is_animating_)
       client_->SetNeedsAnimateForScrollbarAnimation();
@@ -199,7 +190,8 @@ void ScrollbarAnimationController::RunAnimationFrame(float progress) {
     opacity = std::min(1.f - progress, opacity_);
   }
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
-  TRACE_EVENT2("base", "RunAnimationFrameScroollbar", "opacity", opacity, "progress", progress);
+  TRACE_EVENT2("base", "RunAnimationFrameScroollbar", "opacity", opacity,
+               "progress", progress);
 #endif
   ApplyOpacityToScrollbars(opacity);
   if (progress == 1.f)
@@ -236,7 +228,10 @@ void ScrollbarAnimationController::WillUpdateScroll() {
   if (show_scrollbars_on_scroll_gesture_) {
     UpdateScrollbarState();
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
-  AsScrollbarAnimationControllerExt()->NeedThinningAnimation();
+    if (need_thinning_animation_) {
+      vertical_controller_->DidRequestShow();
+      horizontal_controller_->DidRequestShow();
+    }
 #endif
   }
 }
@@ -244,7 +239,10 @@ void ScrollbarAnimationController::WillUpdateScroll() {
 void ScrollbarAnimationController::DidRequestShow() {
   UpdateScrollbarState();
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
-  AsScrollbarAnimationControllerExt()->NeedThinningAnimation();
+  if (need_thinning_animation_) {
+    vertical_controller_->DidRequestShow();
+    horizontal_controller_->DidRequestShow();
+  }
 #endif
 }
 
@@ -339,12 +337,13 @@ void ScrollbarAnimationController::DidMouseMove(
     }
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
     if (base::ohos::IsPcDevice()) {
-#endif
-    need_trigger_scrollbar_fade_in_ = MouseIsNearAnyScrollbar();
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
+      need_trigger_scrollbar_fade_in_ = MouseIsNearAnyScrollbar();
     } else {
-      need_trigger_scrollbar_fade_in_ = MouseIsNearScrollbar(ScrollbarOrientation::kHorizontal);
+      need_trigger_scrollbar_fade_in_ =
+          MouseIsNearScrollbar(ScrollbarOrientation::kHorizontal);
     }
+#else
+    need_trigger_scrollbar_fade_in_ = MouseIsNearAnyScrollbar();
 #endif  // ARKWEB_SCROLLBAR
     if (need_trigger_scrollbar_fade_in_before !=
         need_trigger_scrollbar_fade_in_) {

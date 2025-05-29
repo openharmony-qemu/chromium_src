@@ -8,6 +8,5 @@ arkweb_gpu_vulkan = []
 if (arkweb_vulkan) {
 arkweb_gpu_vulkan += [
   "//arkweb/chromium_ext/gpu/vulkan/vulkan_image_ohos.cc",
-  "//arkweb/chromium_ext/gpu/vulkan/vulkan_surface_ext.h",
 ]
 }

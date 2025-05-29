@@ -12,7 +12,7 @@
 #include "cc/layers/layer.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/frame/local_frame_view.h"
-#include "third_party/blink/renderer/core/html/html_native_loader.h"
+#include "third_party/blink/renderer/core/html/html_image_loader.h"
 #include "third_party/blink/renderer/core/html/html_plugin_element.h"
 #include "third_party/blink/renderer/core/layout/layout_native.h"
 #include "third_party/blink/renderer/core/paint/box_painter.h"
@@ -82,7 +82,7 @@ void NativePainter::PaintReplaced(const PaintInfo& paint_info,
                       -replaced_rect.Y().ToFloat(),
                       layout_native_.Size().width.ToFloat(),
                       layout_native_.Size().height.ToFloat());
-      layer->layer_utils()->SetNativeRect(rect);
+      layer->SetNativeRect(rect);
       layer->SetBounds(snapped_replaced_rect.size());
       layer->SetIsDrawable(true);
       layer->SetHitTestable(true);
@@ -105,3 +105,4 @@ void NativePainter::PaintReplaced(const PaintInfo& paint_info,
 }
 
 }  // namespace blink
+                     

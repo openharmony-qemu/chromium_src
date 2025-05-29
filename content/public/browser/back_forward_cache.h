@@ -291,9 +291,9 @@ class CONTENT_EXPORT BackForwardCache {
 #if BUILDFLAG(ARKWEB_BFCACHE)
   virtual size_t GetStoredEntriesNumber() = 0;
   virtual void SetCacheSize(int size) = 0;
-  virtual int ArkWebGetCacheSize() const = 0;
+  virtual int ArkWebGetCacheSize() = 0;
   virtual void SetTimeToLive(int timeToLive) = 0;
-  virtual int ArkWebGetTimeToLive() const = 0;
+  virtual int ArkWebGetTimeToLive() = 0;
   virtual base::TimeDelta ArkWebGetTimeToLiveInBackForwardCache() = 0;
 #endif
 

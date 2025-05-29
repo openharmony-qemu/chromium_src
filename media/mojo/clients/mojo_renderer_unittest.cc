@@ -2,10 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "media/mojo/clients/mojo_renderer.h"
+
 #include <stdint.h>
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
@@ -21,7 +24,6 @@
 #include "media/base/test_helpers.h"
 #include "media/cdm/clear_key_cdm_common.h"
 #include "media/cdm/default_cdm_factory.h"
-#include "media/mojo/clients/mojo_renderer.h"
 #include "media/mojo/common/media_type_converters.h"
 #include "media/mojo/mojom/content_decryption_module.mojom.h"
 #include "media/mojo/mojom/renderer.mojom.h"
@@ -35,7 +37,6 @@
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/gurl.h"
-#include "arkweb/build/features/features.h"
 
 using ::base::test::RunCallback;
 using ::base::test::RunOnceCallback;
@@ -132,10 +133,6 @@ class MojoRendererTest : public ::testing::Test {
     DVLOG(1) << __func__ << ": " << status;
     EXPECT_CALL(*this, OnInitialized(SameStatusCode(status)));
     mojo_renderer_->Initialize(&demuxer_, &renderer_client_,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                               RequestSurfaceCB(),
-                               VideoDecoderChangedCB(),
-#endif // ARKWEB_VIDEO_ASSISTANT
                                base::BindOnce(&MojoRendererTest::OnInitialized,
                                               base::Unretained(this)));
     base::RunLoop().RunUntilIdle();
@@ -458,10 +455,6 @@ TEST_F(MojoRendererTest, Destroy_PendingInitialize) {
                          HasStatusCode(PIPELINE_ERROR_INITIALIZATION_FAILED)));
   mojo_renderer_->Initialize(
       &demuxer_, &renderer_client_,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-      RequestSurfaceCB(),
-      VideoDecoderChangedCB(),
-#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindOnce(&MojoRendererTest::OnInitialized, base::Unretained(this)));
   Destroy();
 }
@@ -525,5 +518,30 @@ TEST_F(MojoRendererTest, ErrorDuringFlush) {
   Flush();
 }
 
+#if !BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+TEST_F(MojoRendererTest, SetSurfaceId001) {
+  gfx::Rect rect(0, 0, 800, 600);
+  mojo_renderer_->SetSurfaceId(1, rect);
+  EXPECT_TRUE(mojo_renderer_->remote_renderer_.is_bound());
+}
+
+TEST_F(MojoRendererTest, SetMediaPlayerState001) {
+  mojo_renderer_->SetMediaPlayerState(true, 1);
+  EXPECT_TRUE(mojo_renderer_->remote_renderer_.is_bound());
+}
+
+TEST_F(MojoRendererTest, SetMediaSourceList001) {
+  std::vector<Renderer::MediaSourceInfo> source_infos = {};
+  mojo_renderer_->SetMediaSourceList(source_infos);
+  EXPECT_TRUE(mojo_renderer_->source_infos_.empty());
+}
+
+TEST_F(MojoRendererTest, SetMediaSourceList002) {
+  std::vector<Renderer::MediaSourceInfo> source_infos = {
+      {"source1", "format1"}, {"source2", "format2"}};
+  mojo_renderer_->SetMediaSourceList(source_infos);
+  EXPECT_FALSE(mojo_renderer_->source_infos_.empty());
+}
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 }  // namespace media

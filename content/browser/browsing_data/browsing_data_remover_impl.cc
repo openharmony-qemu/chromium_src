@@ -10,6 +10,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -51,7 +52,6 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 #include "url/url_util.h"
-#include "arkweb/build/features/features.h"
 
 using base::UserMetricsAction;
 
@@ -188,7 +188,7 @@ void BrowsingDataRemoverImpl::Remove(const base::Time& delete_begin,
                  std::unique_ptr<BrowsingDataFilterBuilder>(), nullptr);
 
 #if BUILDFLAG(ARKWEB_PRECOMPILE)
-    oh_code_cache::ResponseCache::ClearAllCache();
+  oh_code_cache::ResponseCache::ClearAllCache();
 #endif
 }
 

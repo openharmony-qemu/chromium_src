@@ -8,12 +8,12 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback_forward.h"
 #include "components/content_settings/core/common/content_settings.h"
 #include "components/content_settings/core/common/content_settings_types.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/network/public/mojom/cookie_manager.mojom.h"
-#include "arkweb/build/features/features.h"
 
 namespace network {
 
@@ -74,14 +74,13 @@ class TestCookieManager : public network::mojom::CookieManager {
       const ::GURL& source_url,
       const ::net::CookieOptions& cookie_options,
       SetCanonicalCookieSyncCallback callback) override {}
-  void GetCookieListSync(
-      const ::GURL& url,
-      const ::net::CookieOptions& cookie_options,
-      const ::net::CookiePartitionKeyCollection& cookie_partition_key_collection,
-      GetCookieListSyncCallback callback) override {}
-  void DeleteCookiesSync(
-      network::mojom::CookieDeletionFilterPtr filter,
-      DeleteCookiesSyncCallback callback) override {}
+  void GetCookieListSync(const ::GURL& url,
+                         const ::net::CookieOptions& cookie_options,
+                         const ::net::CookiePartitionKeyCollection&
+                             cookie_partition_key_collection,
+                         GetCookieListSyncCallback callback) override {}
+  void DeleteCookiesSync(network::mojom::CookieDeletionFilterPtr filter,
+                         DeleteCookiesSyncCallback callback) override {}
   void GetAllCookiesSync(GetAllCookiesSyncCallback callback) override {}
 #endif
 

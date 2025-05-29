@@ -56,10 +56,6 @@ class COMPONENT_EXPORT(VULKAN_OHOS) VulkanImplementationOhos
       gfx::Size size,
       VkFormat vk_format,
       const gfx::ColorSpace& color_space) override;
-  bool GetSamplerYcbcrConversionInfo(
-      const VkDevice& vk_device,
-      ScopedNativeBufferHandle ahb_handle,
-      VulkanYCbCrInfo* ycbcr_info) override;
 
  private:
   VulkanInstance vulkan_instance_;

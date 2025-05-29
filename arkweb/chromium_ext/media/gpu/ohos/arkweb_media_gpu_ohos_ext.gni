@@ -14,8 +14,6 @@ arkweb_media_gpu_ohos_sources = [
       "//arkweb/chromium_ext/media/gpu/ohos/codec_wrapper.h",
       "//arkweb/chromium_ext/media/gpu/ohos/direct_shared_image_video_provider.cc",
       "//arkweb/chromium_ext/media/gpu/ohos/direct_shared_image_video_provider.h",
-      "//arkweb/chromium_ext/media/gpu/ohos/pooled_shared_image_video_provider.cc",
-      "//arkweb/chromium_ext/media/gpu/ohos/pooled_shared_image_video_provider.h",      
       "//arkweb/chromium_ext/media/gpu/ohos/frame_info_helper.cc",
       "//arkweb/chromium_ext/media/gpu/ohos/frame_info_helper.h",
       "//arkweb/chromium_ext/media/gpu/ohos/ohos_video_decoder.cc",

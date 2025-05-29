@@ -564,9 +564,6 @@ struct URLRequest {
  
   [EnableIf=arkweb_prp_preload]
   bool is_preflight;
-
-  [EnableIf=arkweb_resource_interception]
-  bool is_sync_mode;
 };
 
 // URLRequestBody represents body (i.e. upload data) of a HTTP request.

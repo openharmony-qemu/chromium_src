@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
@@ -32,7 +33,6 @@
 #include "mojo/public/cpp/bindings/pending_associated_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/device/public/mojom/wake_lock.mojom.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/android/view_android.h"
@@ -56,28 +56,8 @@ class Size;
 
 namespace content {
 
-#if BUILDFLAG(ARKWEB_PIP)
-enum PictureInPictureState {
-  PIP_STATE_ENTER = 0,
-  PIP_STATE_EXIT,
-  PIP_STATE_PLAY,
-  PIP_STATE_PAUSE,
-  PIP_STATE_FAST_FORWARD,
-  PIP_STATE_FAST_BACKWARD,
-  PIP_STATE_RESTORE,
-  PIP_STATE_HLS_ENTER,
-  PIP_STATE_HLS_EXIT,
-  PIP_STATE_RESIZE,
-  PIP_STATE_NONE,
-};
-#endif
-
 class AudibleMetrics;
 class WebContentsImpl;
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-class MediaPlayerListener;
-#endif // ARKWEB_VIDEO_ASSISTANT
 
 // This class manages all RenderFrame based media related managers at the
 // browser side. It receives IPC messages from media RenderFrameObservers and
@@ -119,9 +99,9 @@ class CONTENT_EXPORT MediaWebContentsObserver
   void DidUpdateAudioMutingState(bool muted) override;
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-    // Set whether to the HTML play can be used to control media
+  // Set whether to the HTML play can be used to control media
   void SetHtmlPlayEnabled(bool enabled) override;
-#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   // MediaPlayerObserverClient implementation.
   void GetHasPlayedBefore(GetHasPlayedBeforeCallback callback) override;
@@ -157,7 +137,7 @@ class CONTENT_EXPORT MediaWebContentsObserver
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   bool IsPlayerIdInMediaPlayerRemotesMap(const MediaPlayerId& player_id);
-#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   // Creates a new MediaPlayerObserverHostImpl associated to |player_id| if
   // needed, and then passes |player_receiver| to it to establish a
@@ -176,19 +156,14 @@ class CONTENT_EXPORT MediaWebContentsObserver
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void RequestEnterFullscreen(const MediaPlayerId& player_id);
   void RequestExitFullscreen(const MediaPlayerId& player_id);
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   bool IsMediaPlaying(const MediaPlayerId& player_id);
   void SetPlaybackRate(double playback_rate, const MediaPlayerId& player_id);
   void RequestFullScreen(bool enable, const MediaPlayerId& player_id);
   void RequestDownloadUrl(const MediaPlayerId& player_id);
-  void HidePlaybackSpeedList(const MediaPlayerId& player_id);
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 
-#if BUILDFLAG(ARKWEB_PIP)
-  MediaPlayerId GetMediaPlayerId(
-    int delegate_id, int child_id, int frame_routing_id, bool& status);
-#endif
  protected:
   MediaSessionControllersManager* session_controllers_manager() {
     return session_controllers_manager_.get();
@@ -223,7 +198,7 @@ class CONTENT_EXPORT MediaWebContentsObserver
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
     void RequestVideoAssistantConfig(
         RequestVideoAssistantConfigCallback callback) override;
-#endif // ARKWEB_VIDEO_ASSISTANT
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
    private:
     GlobalRenderFrameHostId frame_routing_id_;
@@ -256,11 +231,6 @@ class CONTENT_EXPORT MediaWebContentsObserver
         bool has_audio,
         bool has_video,
         media::MediaContentType media_content_type) override;
-
-#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-    void OnEndAVSession(bool is_hidden) override;
-#endif // ARKWEB_MEDIA_AVSESSION
-
     void OnMediaPositionStateChanged(
         const media_session::MediaPosition& media_position) override;
     void OnMediaEffectivelyFullscreenChanged(
@@ -278,44 +248,22 @@ class CONTENT_EXPORT MediaWebContentsObserver
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     void UpdateLayerRect(const gfx::Rect& rect) override;
     void FullscreenChanged(bool is_fullscreen) override;
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
     void OnGetMediaTitle(const std::string& data) override;
     void OnGetVideoPoster(const std::string& data) override;
     void OnInitMediaTitle() override;
     void OnInitVideoPoster() override;
-#endif // ARKWEB_MEDIA_AVSESSION
+#endif  // ARKWEB_MEDIA_AVSESSION
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
     void OnVideoPlaying(
         media::mojom::VideoAttributesForVASTPtr video_attributes) override;
     void OnUpdateVideoAttributes(
         media::mojom::VideoAttributesForVASTPtr video_attributes) override;
     void OnVideoDestroyed() override;
-    void OnFullScreenOverlayEnter(
-        media::mojom::MediaInfoForVASTPtr media_info) override;
-
-    void UpdatePlayStateOverlay(uint32_t playState) override;
-    void MutedChangedOverlay(bool muted) override;
-    void PlaybackRateChangedOverlay(double playback_rate) override;
-
-    void DurationChangedOverlay(double duration) override;
-    void TimeUpdateOverlay(double current_time) override;
-    void BufferedEndTimeChangedOverlay(double buffered_end_time) override;
-    void EndedOverlay() override;
-
-    void FullscreenChangedOverlay(bool fullscreen) override;
-    void SeekingOverlay() override;
-    void SeekingFinishedOverlay() override;
-    void ErrorOverlay(int32_t error_code, const std::string& error_msg) override;
-    void VideoSizeChangedOverlay(int32_t width, int32_t height) override;
-    void FullscreenOverlayChanged(
-        bool fullscreen_overlay, const std::string& decoder_name) override;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-#if BUILDFLAG(ARKWEB_PIP)
-    void OnPictureInPictureStateChanged(uint32_t state) override;
-#endif
    private:
     PlayerInfo* GetPlayerInfo();
     void NotifyAudioStreamMonitorIfNeeded();
@@ -336,10 +284,6 @@ class CONTENT_EXPORT MediaWebContentsObserver
     bool uses_audio_service_ = true;
     std::unique_ptr<AudioStreamMonitor::AudibleClientRegistration>
         audio_client_registration_;
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-    std::unique_ptr<MediaPlayerListener> media_player_listener_;
-#endif // ARKWEB_VIDEO_ASSISTANT
 
     base::WeakPtrFactory<MediaPlayerObserverHostImpl> weak_factory_{this};
   };

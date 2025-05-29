@@ -5,13 +5,13 @@
 #ifndef CONTENT_BROWSER_WAKE_LOCK_WAKE_LOCK_CONTEXT_HOST_H_
 #define CONTENT_BROWSER_WAKE_LOCK_WAKE_LOCK_CONTEXT_HOST_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "content/public/browser/web_contents.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/device/public/mojom/wake_lock_context.mojom.h"
 #include "services/device/public/mojom/wake_lock_provider.mojom.h"
 #include "ui/gfx/native_widget_types.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -39,7 +39,7 @@ class WakeLockContextHost {
 
 #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
   void SetWakeLockHandler(int32_t windowId, const SetKeepScreenOn& handler);
-#endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
 
  private:
   // This instance's ID.
@@ -53,7 +53,7 @@ class WakeLockContextHost {
 
 #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
   int32_t window_id_ = -1;
-#endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
 };
 
 }  // namespace content

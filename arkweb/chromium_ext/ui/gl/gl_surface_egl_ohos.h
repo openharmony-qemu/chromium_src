@@ -12,7 +12,7 @@
 
 namespace gl {
 typedef struct WindowsSurfaceInfoTag {
-  raw_ptr<void> window;
+  void* window;
   EGLDisplay display;
   EGLContext context;
   EGLSurface surface;
@@ -40,16 +40,8 @@ class GL_EXPORT NativeViewGLSurfaceEGLOhos : public NativeViewGLSurfaceEGL {
   bool SetBackbufferAllocation(bool allocated) override;
 #endif
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void SetNativeInnerWeb(bool isInnerWeb) override;
-#endif
-
  private:
-  ~NativeViewGLSurfaceEGLOhos();
   EGLNativeWindowType window_;
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  bool isInnerWeb_ = false;
-#endif
 };
 
 }  // namespace gl

@@ -37,7 +37,6 @@
 #include "components/guest_view/browser/guest_view_base.h"
 #endif
 
-#include "arkweb/chromium_ext/components/performance_manager/performance_manager_tab_helper_utils.cc"
 namespace performance_manager {
 
 namespace {
@@ -641,6 +640,34 @@ void PerformanceManagerTabHelper::AboutToBeDiscarded(
       base::BindOnce(&PageNodeImpl::OnAboutToBeDiscarded,
                      base::Unretained(page_node_.get()), new_page_node));
 }
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+void PerformanceManagerTabHelper::MediaStartedPlaying(
+    const PerformanceManagerTabHelper::MediaPlayerInfo& video_type,
+    const content::MediaPlayerId& id) {
+  LOG(INFO) << "MediaStartedPlaying video: " << video_type.has_video
+            << " audio: " << video_type.has_audio;
+  PerformanceManagerImpl::CallOnGraphImpl(
+      FROM_HERE, base::BindOnce(&PageNodeImpl::SetIsMediaPlaying,
+                                base::Unretained(primary_page_node()), true));
+}
+
+void PerformanceManagerTabHelper::MediaStoppedPlaying(
+    const PerformanceManagerTabHelper::MediaPlayerInfo& video_type,
+    const content::MediaPlayerId& id,
+    PerformanceManagerTabHelper::MediaStoppedReason reason) {
+  LOG(INFO)
+      << "MediaStartedPlaying video: " << video_type.has_video
+      << " audio: " << video_type.has_audio << " "
+      << (reason ==
+                  PerformanceManagerTabHelper::MediaStoppedReason::kUnspecified
+              ? "kUnspecified"
+              : "kReachedEndOfStream");
+  PerformanceManagerImpl::CallOnGraphImpl(
+      FROM_HERE, base::BindOnce(&PageNodeImpl::SetIsMediaPlaying,
+                                base::Unretained(primary_page_node()), false));
+}
+#endif
 
 void PerformanceManagerTabHelper::BindDocumentCoordinationUnit(
     content::RenderFrameHost* render_frame_host,

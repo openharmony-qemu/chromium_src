@@ -20,7 +20,6 @@
 #include "nweb_accessibility_utils.h"
 #endif
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/command_line.h"
 #include "base/check.h"
 #include "base/logging.h"
@@ -34,11 +33,16 @@
 #include "cef/include/internal/cef_string_map.h"
 #include "cef/ohos_cef_ext/include/arkweb_frame_ext.h"
 #include "content/public/common/content_switches.h"
+#include "securec.h"
 #include "nweb_application.h"
 #include "nweb_handler_delegate.h"
 #include "nweb_hit_test_result_impl.h"
 #include "nweb_render_handler.h"
 #include "nweb_value_convert.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
 #include "event_reporter.h"
@@ -80,7 +84,7 @@
 #include <cmath>
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_SECURITY_STATE)
+#if BUILDFLAG(ARKWEB_SECURITY_STATE)
 #include "components/security_state/core/security_state.h"
 #endif
 
@@ -88,22 +92,11 @@
 #include "arkweb/chromium_ext/base/ohos/locale_utils.h"
 #endif
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 #include "ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_impl.h"
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
 #include "cef/include/cef_devtools_message_handler_delegate.h"
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
-
-#if BUILDFLAG(ARKWEB_AI)
-#include "ohos_resources/data_detector/grit/data_detector_resources.h"
-#include "ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
-#include "ui/base/resource/resource_bundle.h"
-#endif // BUILDFLAG(ARKWEB_AI)
-
-#include "nweb_core_value.h"
-#include "ohos_glue/base/include/ark_web_errno.h"
 
 namespace {
 static const float richtextDisplayRatio = 1.0;
@@ -120,9 +113,6 @@ const int NWebPlaybackState_NONE = 0;
 #endif
 
 static const int kDefaultWebNativeProxy = -2;
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-static const int64_t kRootAccessibilityId = 1;
-#endif
 
 #if BUILDFLAG(ARKWEB_MSGPORT)
 void ConvertCefValueToNWebMessage(CefRefPtr<CefValue> src,
@@ -222,22 +212,9 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
         callbackId_(callbackId),
         weakNWebDelegate_(std::weak_ptr<NWebDelegateInterface>(delegate)) {}
   ~JavaScriptResultCallbackImpl() {}
-  void CallbackOnReceiveThread(CefRefPtr<CefValue> result) {
-    auto data =
-        std::make_shared<OHOS::NWeb::NWebCoreValue>(NWebHapValue::Type::NONE);
-    AddNWebValueCefV2(result, data);
+  void CallbackOnReceiveThread(std::shared_ptr<OHOS::NWeb::NWebMessage> data) {
     if (callback_) {
-      callback_->OnReceiveValueV2(data);
-      if (ArkWebGetErrno() != RESULT_OK) {
-        auto data2 =
-            std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
-        ConvertCefValueToNWebMessage(result, data2);
-        callback_->OnReceiveValue(data2);
-      }
-    }
-    if (weakNWebDelegate_.expired()) {
-      LOG(INFO) << "weakNWebDelegate_ expired";
-      return;
+      callback_->OnReceiveValue(data);
     }
     // post this instance to ui to destroy
     auto delegate = weakNWebDelegate_.lock();
@@ -251,12 +228,15 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
 
   void OnJavaScriptExeResult(CefRefPtr<CefValue> result) override {
     if (callback_ != nullptr) {
+      auto data =
+          std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
+      ConvertCefValueToNWebMessage(result, data);
       base::ThreadPool::PostTask(
           FROM_HERE, {base::MayBlock(), base::TaskPriority::HIGHEST},
           base::BindOnce(
               base::IgnoreResult(
                   &JavaScriptResultCallbackImpl::CallbackOnReceiveThread),
-              base::Unretained(this), result));
+              base::Unretained(this), data));
     }
   }
 
@@ -276,15 +256,9 @@ class CefWebMessageReceiverImpl : public CefWebMessageReceiver {
     LOG(DEBUG) << "OnMessage in nweb delegate";
     if (callback_ != nullptr) {
       auto data =
-          std::make_shared<OHOS::NWeb::NWebCoreValue>(NWebHapValue::Type::NONE);
-      AddNWebValueCefV2(message, data);
-      callback_->OnReceiveValueV2(data);
-      if (ArkWebGetErrno() != RESULT_OK) {
-        auto data2 =
-            std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
-        ConvertCefValueToNWebMessage(message, data2);
-        callback_->OnReceiveValue(data2);
-      }
+          std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
+      ConvertCefValueToNWebMessage(message, data);
+      callback_->OnReceiveValue(data);
     }
   }
 
@@ -292,18 +266,11 @@ class CefWebMessageReceiverImpl : public CefWebMessageReceiver {
     LOG(DEBUG) << "OnMessageWithBoolResult in nweb delegate";
     if (callback_ != nullptr) {
       auto data =
-          std::make_shared<OHOS::NWeb::NWebCoreValue>(NWebHapValue::Type::NONE);
-      AddNWebValueCefV2(message, data);
-      callback_->OnReceiveValueV2(data);
-      if (ArkWebGetErrno() != RESULT_OK) {
-        auto data2 =
-            std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
-        ConvertCefValueToNWebMessage(message, data2);
-        callback_->OnReceiveValue(data2);
-        return (data2 && data2->IsBoolean()) ? data2->GetBoolean() : false;
-      }
+          std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
+      ConvertCefValueToNWebMessage(message, data);
+      callback_->OnReceiveValue(data);
 
-      return (data && data->GetType() == NWebHapValue::Type::BOOLEAN) ? data->GetBool() : false;
+      return (data && data->IsBoolean()) ? data->GetBoolean() : false;
     }
     return false;
   }
@@ -344,8 +311,6 @@ class ScreenCaptureCallbackImpl : public CefScreenCaptureCallback {
                      const CefString& session_id,
                      int32_t code) override {
     if (callback_ != nullptr) {
-      LOG(INFO) << "ScreenCapture onStateChange nweb_id:" << nweb_id << ", session_id:" << session_id.ToString()
-                << ", stateCode:" << code;
       callback_->OnStateChange(nweb_id, session_id.ToString().c_str(), code);
     }
   }
@@ -383,14 +348,10 @@ class CefPrecompileCallbackImpl : public CefPrecompileCallback {
 
   void OnPrecompileFinished(int32_t result) override {
     if (callback_ != nullptr) {
-      auto message = std::make_shared<OHOS::NWeb::NWebCoreValue>(NWebHapValue::Type::INTEGER);
-      message->SetInt(result);
-      callback_->OnReceiveValueV2(message);
-      if (ArkWebGetErrno() != RESULT_OK) {
-        auto message2 = std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::INTEGER);
-        message2->SetInt64(result);
-        callback_->OnReceiveValue(message2);
-      }
+      auto message =
+          std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::INTEGER);
+      message->SetInt64(result);
+      callback_->OnReceiveValue(message);
     }
   }
 
@@ -653,7 +614,7 @@ bool NWebDelegate::Init(bool is_enhance_surface,
       display_manager_adapter_->GetDefaultDisplay();
   if (display != nullptr) {
     NotifyScreenInfoChanged(display->GetRotation(),
-                            display->GetDisplayOrientation());
+                            display->GetDisplayOrientation(), true);
     if (!richtext_data_str_.empty()) {
       // Created a richtext component
       SetVirtualPixelRatio(richtextDisplayRatio);
@@ -930,31 +891,6 @@ void NWebDelegate::RegisterRenderCb(
   }
 }
 
-#if BUILDFLAG(ARKWEB_SCREEN_OFFSET)
-void NWebDelegate::SetScreenOffset(double x, double y) {
-  if (display_ratio_ == 0) {
-    return;
-  }
-  if (render_handler_ == nullptr) {
-    return;
-  }
-
-  double origin_x = 0;
-  double origin_y = 0;
-  render_handler_->GetScreenOffset(nullptr, origin_x, origin_y);
-  double new_x = std::round(x / display_ratio_);
-  double new_y = std::round(y / display_ratio_);
-  if (origin_x == new_x && origin_y == new_y) {
-    return;
-  }
-  render_handler_->SetScreenOffset(new_x, new_y);
-  auto browser = GetBrowser();
-  if (browser != nullptr && browser->GetHost() != nullptr) {
-    browser->GetHost()->NotifyScreenInfoChangedV2();
-  }
-}
-#endif  // BUILDFLAG(ARKWEB_SCREEN_OFFSET)
-
 void NWebDelegate::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   if (width == width_ && height == height_) {
@@ -1138,7 +1074,8 @@ void NWebDelegate::SendMouseEvent(int x,
 }
 
 void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
-                                           DisplayOrientation orientation) {
+                                           DisplayOrientation orientation,
+                                           bool isWebinitialization) {
   if (render_handler_ != nullptr) {
     if (display_manager_adapter_ == nullptr) {
       LOG(ERROR) << "Get display_manager_adapter_ failed";
@@ -1169,6 +1106,13 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
     int height = std::ceil(display->GetHeight() / display_ratio);
 #if BUILDFLAG(ARKWEB_SCREEN_ROTATION)
     bool default_portrait = display_manager_adapter_->IsDefaultPortrait();
+    if (hidden_ && !isWebinitialization) {
+      render_handler_->SetLastScreenInfo({rotation, orientation, width, height,
+                                          display_ratio, default_portrait});
+      render_handler_->SetScreenInfo({rotation, orientation, width, height,
+                                      display_ratio, default_portrait});
+      return;
+    }
     render_handler_->SetScreenInfo({rotation, orientation, width, height,
                                     display_ratio, default_portrait});
 #endif  // #if BUILDFLAG(ARKWEB_SCREEN_ROTATION)
@@ -1215,7 +1159,6 @@ bool NWebDelegate::IsUrlFileExist(const GURL& gurl, const std::string& url) {
   if (url == "file://") {
     return false;
   }
- 
   base::FilePath filePath;
   std::string unscaped_url_str = base::UnescapeURLComponent(
       gurl.spec(),
@@ -1223,20 +1166,14 @@ bool NWebDelegate::IsUrlFileExist(const GURL& gurl, const std::string& url) {
   GURL::Replacements repl;
   repl.ClearRef();
   GURL gurl_no_ref = GURL(unscaped_url_str).ReplaceComponents(repl);
-  if (net::FileURLToFilePath(gurl_no_ref, &filePath) && base::PathExists(filePath)) {
-    return true;
+  if (!net::FileURLToFilePath(gurl_no_ref, &filePath)) {
+    return false;
   }
- 
-  // if url start with file:// and end whih *#*.html UnescapeURLComponent function will delete char after #
-  // PathExists will return false but file is actually exist. check again with no unscaped will solve.
-  base::FilePath originFilePath;
-  GURL origin_gurl_no_ref = GURL(url).ReplaceComponents(repl);
-  if (net::FileURLToFilePath(origin_gurl_no_ref, &originFilePath) && base::PathExists(originFilePath)) {
-    return true;
+  if (!base::PathExists(filePath)) {
+    LOG(ERROR) << "IsUrlFileExist failed, file does not exist";
+    return false;
   }
- 
-  LOG(ERROR) << "IsUrlFileExist failed, file does not exist";
-  return false;
+  return true;
 }
 
 int NWebDelegate::Load(const std::string& url) {
@@ -1762,15 +1699,6 @@ void NWebDelegate::FillAutofillData(std::shared_ptr<NWebMessage> data) {
   GetBrowser()->GetHost()->FillAutofillData(message);
 }
 
-void NWebDelegate::FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) {
-  if (!GetBrowser().get()) {
-    return;
-  }
-
-  CefRefPtr<CefValue> message = ParseRomValueToValueHelper(data);
-  GetBrowser()->GetHost()->FillAutofillData(message);
-}
-
 void NWebDelegate::OnContinue() {
   LOG(DEBUG) << "NWebDelegate::OnContinue, nweb_id = " << nweb_id_;
   if (!GetBrowser().get()) {
@@ -1790,6 +1718,14 @@ void NWebDelegate::OnContinue() {
     LOG(DEBUG) << "NWebDelegate::OnContinue set unhidden, nweb_id = "
                << nweb_id_;
     GetBrowser()->GetHost()->WasHidden(false);
+    if (render_handler_->IsNeedCefNotifyScreenInfoChanged()) {
+      render_handler_->SetScreenInfo(render_handler_->GetLastScreenInfo());
+      auto browser = GetBrowser();
+      if (browser != nullptr && browser->GetHost() != nullptr) {
+        LOG(INFO) << "NWebDelegate::OnContinue Notify Screen Info Changed";
+        browser->GetHost()->NotifyScreenInfoChanged();
+      }
+    }
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
     if (GetBrowser()->GetHost()->NeedsReload()) {
@@ -1868,15 +1804,6 @@ void NWebDelegate::SetEnableLowerFrameRate(bool enabled) {
   }
 
   GetBrowser()->GetHost()->SetEnableLowerFrameRate(enabled);
-}
-
-void NWebDelegate::SetEnableHalfFrameRate(bool enabled) {
-  LOG(DEBUG) << "NWebDelegate::SetEnableHalfFrameRate, nweb_id = " << nweb_id_;
-  if (!GetBrowser().get()) {
-    return;
-  }
-
-  GetBrowser()->GetHost()->SetEnableHalfFrameRate(enabled);
 }
 
 void NWebDelegate::InitializeCef(std::string url,
@@ -2139,21 +2066,6 @@ void NWebDelegate::PostPortMessage(const std::string& portHandle,
   GetBrowser()->GetHost()->PostPortMessage(handleCef, message);
 }
 
-void NWebDelegate::PostPortMessageV2(const std::string& portHandle,
-                                   std::shared_ptr<NWebRomValue> data) {
-  if (!GetBrowser().get()) {
-    LOG(ERROR) << "JSAPI PostPortMessageV2 can not get browser";
-    return;
-  }
-  CefString handleCef;
-  handleCef.FromString(portHandle);
-
-  LOG(DEBUG) << "JSAPI PostPortMessageV2 in nweb delegate";
-  CefRefPtr<CefValue> message = ParseRomValueToValueHelper(data);
-
-  GetBrowser()->GetHost()->PostPortMessage(handleCef, message);
-}
-
 void NWebDelegate::SetPortMessageCallback(
     const std::string& portHandle,
     std::shared_ptr<NWebMessageValueCallback> callback) {
@@ -2194,20 +2106,6 @@ std::shared_ptr<HitTestResult> NWebDelegate::GetHitTestResult() const {
   return data;
 }
 
-std::shared_ptr<HitTestResult> NWebDelegate::GetLastHitTestResult() const {
-  std::shared_ptr<HitTestResultImpl> data =
-      std::make_shared<HitTestResultImpl>();
-  if (!GetBrowser().get()) {
-    return data;
-  }
-  int type;
-  CefString extra_data;
-  GetBrowser()->GetHost()->GetLastHitData(type, extra_data);
-  data->SetType(type);
-  data->SetExtra(extra_data.ToString());
-  return data;
-}
-
 int NWebDelegate::PageLoadProgress() {
   if (!GetBrowser().get()) {
     return 0;
@@ -2242,7 +2140,11 @@ int NWebDelegate::Load(
     const std::string& key = iter->first;
     const std::string& value = iter->second;
     if (!key.empty()) {
-      extra += "\r\n" + std::string(key) + ": " + std::string(value);
+      // Delimit with "\r\n".
+      if (!value.empty()) {
+        extra += "\r\n";
+      }
+      extra += std::string(key) + ": " + std::string(value);
     }
   }
   auto browser = GetBrowser();
@@ -2478,42 +2380,6 @@ void NWebDelegate::RegisterNativeJSProxyWithResult(
   }
 }
 
-void NWebDelegate::RegisterNativeAsyncThreadJSProxyWithResult(
-    const std::string& objName,
-    const std::vector<std::string>& methodName,
-    std::vector<std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
-        std::vector<std::vector<uint8_t>>&,
-        std::vector<size_t>&)>>&& callback,
-    const std::string& permission) {
-  if (!CEF_CURRENTLY_ON_UIT()) {
-    CEF_POST_TASK(CEF_UIT,
-                  base::BindOnce(&NWebDelegate::RegisterNativeAsyncThreadJSProxyWithResult,
-                                 this, objName, methodName, std::move(callback),
-                                 permission));
-    return;
-  }
-
-  if (handler_delegate_ == nullptr) {
-    LOG(ERROR) << "handler_delegate_ is nullptr";
-    return;
-  }
-
-  handler_delegate_->RegisterNativeAsyncThreadJavaScriptCallBackWithResult(
-      objName, methodName, std::move(callback), permission);
-
-  size_t size = methodName.size();
-  std::vector<CefString> method_vector;
-  for (size_t i = 0; i < size; i++) {
-    method_vector.push_back(methodName[i]);
-  }
-  if (GetBrowser() && GetBrowser()->GetHost()) {
-    GetBrowser()->GetHost()->RegisterNativeJSProxy(
-        objName, method_vector, kDefaultWebNativeProxy, false, permission);
-  } else {
-    LOG(ERROR) << "browser or host is null";
-  }
-}
-
 void NWebDelegate::UnRegisterNativeArkJSFunction(const char* objName) {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(CEF_UIT,
@@ -2560,13 +2426,8 @@ void NWebDelegate::RegisterNativeScrollCallback(
 #if BUILDFLAG(ARKWEB_JSPROXY)
 void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
-    int count = 0;
-    if (scriptItems.size() == 0) {
-      GetBrowser()->GetHost()->JavaScriptOnDocumentStart("", std::vector<CefString>(),
-                                                         true);
-    }
+    GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentStart();
     for (auto item : scriptItems) {
-      count++;
       CefString script = item.first;
       std::vector<CefString> scriptRules;
       for (std::string rule : item.second) {
@@ -2574,8 +2435,7 @@ void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
         cefRule.FromString(rule);
         scriptRules.push_back(cefRule);
       }
-      GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules,
-                                                         count == scriptItems.size());
+      GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules);
     }
   } else if (preference_delegate_) {
     preference_delegate_->PutJavaScriptOnDocumentStart(scriptItems);
@@ -2588,25 +2448,19 @@ void NWebDelegate::JavaScriptOnDocumentStartByOrder(
     const ScriptItems& scriptItems,
     const ScriptItemsByOrder& scriptItemsByOrder) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
-    if (scriptItems.size() == 0) {
-      GetBrowser()->GetHost()->JavaScriptOnDocumentStart("", std::vector<CefString>(),
-                                                         true);
-    }
-    int count = 0;
+    GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentStart();
     for (const auto& item : scriptItemsByOrder) {
       if (scriptItems.find(item) == scriptItems.end()) {
         continue;
       }
       CefString script = item;
       std::vector<CefString> scriptRules;
-      count++;
       for (const std::string& rule : scriptItems.at(item)) {
         CefString cefRule;
         cefRule.FromString(rule);
         scriptRules.push_back(cefRule);
       }
-      GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules,
-                                                         count == scriptItems.size());
+      GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules);
     }
   } else if (preference_delegate_) {
     preference_delegate_->PutJavaScriptOnDocumentStartByOrder(
@@ -2620,25 +2474,19 @@ void NWebDelegate::JavaScriptOnDocumentEndByOrder(
     const ScriptItems& scriptItems,
     const ScriptItemsByOrder& scriptItemsByOrder) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
-    if (scriptItems.size() == 0) {
-      GetBrowser()->GetHost()->JavaScriptOnDocumentEnd("", std::vector<CefString>(),
-                                                       true);
-    }
-    int count = 0;
+    GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentEnd();
     for (const auto& item : scriptItemsByOrder) {
       if (scriptItems.find(item) == scriptItems.end()) {
         continue;
       }
       CefString script = item;
       std::vector<CefString> scriptRules;
-      count++;
       for (const std::string& rule : scriptItems.at(item)) {
         CefString cefRule;
         cefRule.FromString(rule);
         scriptRules.push_back(cefRule);
       }
-      GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules,
-                                                       count == scriptItems.size());
+      GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules);
     }
   } else if (preference_delegate_) {
     preference_delegate_->PutJavaScriptOnDocumentEndByOrder(scriptItems,
@@ -2652,11 +2500,7 @@ void NWebDelegate::JavaScriptOnHeadReadyByOrder(
     const ScriptItems& scriptItems,
     const ScriptItemsByOrder& scriptItemsByOrder) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
-    if (scriptItems.size() == 0) {
-      GetBrowser()->GetHost()->JavaScriptOnHeadReady("", std::vector<CefString>(),
-                                                     true);
-    }
-    int count = 0;
+    GetBrowser()->GetHost()->RemoveJavaScriptOnHeadReady();
     for (const auto& item : scriptItemsByOrder) {
       if (scriptItems.find(item) == scriptItems.end()) {
         continue;
@@ -2664,14 +2508,12 @@ void NWebDelegate::JavaScriptOnHeadReadyByOrder(
 
       CefString script = item;
       std::vector<CefString> scriptRules;
-      count++;
       for (const std::string& rule : scriptItems.at(item)) {
         CefString cefRule;
         cefRule.FromString(rule);
         scriptRules.push_back(cefRule);
       }
-      GetBrowser()->GetHost()->JavaScriptOnHeadReady(script, scriptRules,
-                                                     count == scriptItems.size());
+      GetBrowser()->GetHost()->JavaScriptOnHeadReady(script, scriptRules);
     }
   } else if (preference_delegate_) {
     preference_delegate_->PutJavaScriptOnHeadReadyByOrder(scriptItems,
@@ -2705,38 +2547,10 @@ void NWebDelegate::CallH5Function(
   }
 }
 
-void NWebDelegate::CallH5FunctionV2(
-    int32_t routing_id,
-    int32_t h5_object_id,
-    const std::string& h5_method_name,
-    const std::vector<std::shared_ptr<NWebRomValue>>& args) const {
-  if (!GetBrowser()) {
-    LOG(ERROR) << "NWebDelegate::CallH5Function fail due to "
-                  "GetBrowser() return null";
-    return;
-  }
-
-  std::vector<CefRefPtr<CefValue>> cef_args;
-  for (auto& item : args) {
-    cef_args.push_back(ParseRomValueToValueHelper(item));
-  }
-
-  CefString name(h5_method_name);
-  if (GetBrowser()->GetHost()) {
-    GetBrowser()->GetHost()->CallH5Function(routing_id, h5_object_id, name,
-                                            cef_args);
-  }
-}
-
 void NWebDelegate::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
-    if (scriptItems.size() == 0) {
-      GetBrowser()->GetHost()->JavaScriptOnDocumentEnd("", std::vector<CefString>(),
-                                                       true);
-    }
-    int count = 0;
+    GetBrowser()->GetHost()->RemoveJavaScriptOnDocumentEnd();
     for (auto item : scriptItems) {
-      count++;
       CefString script = item.first;
       std::vector<CefString> scriptRules;
       for (std::string rule : item.second) {
@@ -2744,8 +2558,7 @@ void NWebDelegate::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
         cefRule.FromString(rule);
         scriptRules.push_back(cefRule);
       }
-      GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules,
-                                                       count == scriptItems.size());
+      GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules);
     }
   } else if (preference_delegate_) {
     preference_delegate_->PutJavaScriptOnDocumentEnd(scriptItems);
@@ -3078,14 +2891,18 @@ void NWebDelegate::GetScrollOffset(float* offset_x, float* offset_y) {
     return;
   }
 
-  if (!render_handler_) {
-    LOG(ERROR) << "JSAPI GetScrollOffset render_handler_ is nullptr.";
+  float offsetX = 0;
+  float offsetY = 0;
+  float ratio = render_handler_->GetVirtualPixelRatio();
+  if (ratio <= 0) {
+    LOG(ERROR) << "get ratio invalid: " << ratio;
     return;
   }
 
-  float offsetX = 0;
-  float offsetY = 0;
-  render_handler_->GetScrollOffset(offsetX, offsetY);
+  GetBrowser()->GetHost()->GetScrollOffset(&offsetX, &offsetY);
+
+  offsetX = std::round(offsetX / ratio);
+  offsetY = std::round(offsetY / ratio);
 
   if ((nullptr == offset_x) || (nullptr == offset_y)) {
     LOG(ERROR) << "offset_x or offset_y is nullptr";
@@ -3188,25 +3005,6 @@ void NWebDelegate::WebSendMouseWheelEvent(
         x / default_virtual_pixel_ratio_, y / default_virtual_pixel_ratio_,
         deltaX / default_virtual_pixel_ratio_,
         deltaY / default_virtual_pixel_ratio_, pressedCodes);
-  } else {
-    LOG(ERROR) << "WebSendMouseWheelEvent event_handler_ is nullptr";
-  }
-}
-void NWebDelegate::WebSendMouseWheelEventV2(
-    double x,
-    double y,
-    double deltaX,
-    double deltaY,
-    const std::vector<int32_t>& pressedCodes,
-    int32_t source) {
-  if (event_handler_ != nullptr) {
-    event_handler_->WebSendMouseWheelEventV2(
-        x / default_virtual_pixel_ratio_,
-        y / default_virtual_pixel_ratio_,
-        deltaX / default_virtual_pixel_ratio_,
-        deltaY / default_virtual_pixel_ratio_,
-        pressedCodes,
-        source);
   } else {
     LOG(ERROR) << "WebSendMouseWheelEvent event_handler_ is nullptr";
   }
@@ -3334,16 +3132,7 @@ void NWebDelegate::GetOverScrollOffset(float* offset_x, float* offset_y) {
     LOG(ERROR) << "JSAPI GetOverScrollOffset can not get browser";
     return;
   }
-  if (!render_handler_) {
-    LOG(ERROR) << "JSAPI GetOverScrollOffset render_handler_ is nullptr.";
-    return;
-  }
-  if (render_handler_->HasOverscroll()) {
-    GetBrowser()->GetHost()->GetOverScrollOffset(offset_x, offset_y);
-  } else {
-    *offset_x = 0.0f;
-    *offset_y = 0.0f;
-  }
+  GetBrowser()->GetHost()->GetOverScrollOffset(offset_x, offset_y);
 }
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -3424,43 +3213,21 @@ void NWebDelegate::StopScreenCapture(int32_t nweb_id, const char* session_id) {
     LOG(ERROR) << "StopScreenCapture can not get browser";
     return;
   }
-  LOG(INFO) << "StopScreenCapture nweb_id:" << nweb_id;
+
   GetBrowser()->GetHost()->StopScreenCapture(nweb_id, CefString(session_id));
-}
-
-void NWebDelegate::SetScreenCapturePickerShow() {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "SetScreenCapturePickerShow can not get browser";
-    return;
-  }
-
-  GetBrowser()->GetHost()->SetScreenCapturePickerShow();
-}
-
-void NWebDelegate::DisableSessionReuse() {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "DisableSessionReuse can not get browser";
-    return;
-  }
-
-  GetBrowser()->GetHost()->DisableSessionReuse();
 }
 
 void NWebDelegate::RegisterScreenCaptureDelegateListener(
     std::shared_ptr<NWebScreenCaptureDelegateCallback> listener) {
-  CefRefPtr<ScreenCaptureCallbackImpl> screenCaptureCb =
-      new ScreenCaptureCallbackImpl(listener);
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    if (handler_delegate_ == nullptr) {
-      LOG(ERROR) << "Fail to register screen capture callback, handler_delegate is nullptr.";
-      return;
-    }
-    handler_delegate_->SetNWebId(nweb_id_);
-    handler_delegate_->RegisterScreenCaptureDelegateListener(screenCaptureCb);
-    LOG(INFO) << "handler_delegate register screen capture callback";
+    LOG(ERROR) << "RegisterScreenCaptureDelegateListener can not get browser";
     return;
   }
-  GetBrowser()->GetHost()->RegisterScreenCaptureDelegateListener(screenCaptureCb);
+
+  CefRefPtr<ScreenCaptureCallbackImpl> screenCaptureCb =
+      new ScreenCaptureCallbackImpl(listener);
+  GetBrowser()->GetHost()->RegisterScreenCaptureDelegateListener(
+      screenCaptureCb);
 }
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 
@@ -3514,14 +3281,6 @@ std::string NWebDelegate::GetCurrentLanguage() {
   return GetBrowser()->GetHost()->GetCurrentLanguage();
 }
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-void NWebDelegate::SetNativeInnerWeb(bool isInnerWeb) {
-  if (GetBrowser().get()) {
-    GetBrowser()->GetHost()->SetNativeInnerWeb(isInnerWeb);
-  }
-}
-#endif
 
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
 void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
@@ -3878,13 +3637,6 @@ void NWebDelegate::PasswordSuggestionSelected(int list_index) const {
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
-std::string NWebDelegate::GetSelectedTextFromContextParam() {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    return std::string();
-  }
-  return GetBrowser()->GetHost()->GetSelectedTextFromContextParam();
-}
-
 void NWebDelegate::ShowFreeCopyMenu() {
   if (GetBrowser().get()) {
     GetBrowser()->ShowFreeCopyMenu();
@@ -3950,18 +3702,6 @@ void NWebDelegate::EnableSafeBrowsingDetection(bool enable, bool strictMode) {
   }
 
   GetBrowser()->EnableSafeBrowsingDetection(enable, strictMode);
-}
-
-void NWebDelegate::OnSafeBrowsingDetectionResult(int code,
-                                                 int policy,
-                                                 const std::string& mappingType,
-                                                 const std::string& url) {
-  if (handler_delegate_ == nullptr) {
-    return;
-  }
-
-  handler_delegate_->OnSafeBrowsingDetectionResult(code, policy, mappingType,
-                                                   url);
 }
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
@@ -4030,21 +3770,7 @@ void NWebDelegate::SetTransformHint(uint32_t rotation) {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
-void NWebDelegate::SetBorderRadiusFromWeb(double borderRadiusTopLeft,
-                                          double borderRadiusTopRight,
-                                          double borderRadiusBottomLeft,
-                                          double borderRadiusBottomRight) {
-  if (!preference_delegate_) {
-    return;
-  }
-  preference_delegate_->SetBorderRadiusFromWeb(
-      borderRadiusTopLeft, borderRadiusTopRight, borderRadiusBottomLeft,
-      borderRadiusBottomRight);
-}
-#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
-
-#if BUILDFLAG(ARKWEB_EXT_SECURITY_STATE)
+#if BUILDFLAG(ARKWEB_SECURITY_STATE)
 int NWebDelegate::GetSecurityLevel() {
   if (GetBrowser() == nullptr) {
     LOG(ERROR) << "NWebDelegate::GetSecurityLevel failed.";
@@ -4056,6 +3782,12 @@ int NWebDelegate::GetSecurityLevel() {
 #endif
 
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+void NWebDelegate::RegisterAccessibilityEventListener(
+    std::shared_ptr<NWebAccessibilityEventCallback>
+        accessibility_event_listener) {
+  accessibility_event_listener_ = accessibility_event_listener;
+}
+
 void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
     LOG(ERROR) << "SetAccessibilityState can not get browser";
@@ -4067,20 +3799,70 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   }
 }
 
-bool NWebDelegate::ExecuteAction(
+void NWebDelegate::ExecuteAction(int64_t accessibilityId, uint32_t action) {
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    return;
+  }
+  auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
+  auto* node =
+      BrowserAccessibilityOHOS::GetFromAccessibilityId(accessibilityId);
+  if (node == nullptr || rootNode == nullptr) {
+    LOG(ERROR) << "ExecuteAction(Deprecated) node or rootNode is not found";
+    return;
+  }
+  AceAction aceAction = static_cast<AceAction>(action);
+  LOG(INFO) << "ExecuteAction(Deprecated) accessibilityId is "
+            << accessibilityId << ", action is " << action;
+  switch (aceAction) {
+    case AceAction::ACTION_CLICK:
+      accessibilityManager->DoDefaultAction(*node);
+      break;
+    case AceAction::ACTION_ACCESSIBILITY_FOCUS:
+      accessibilityManager->MoveAccessibilityFocusToId(accessibilityId);
+      break;
+    case AceAction::ACTION_CLEAR_ACCESSIBILITY_FOCUS:
+      accessibilityManager->SendAccessibilityEvent(
+          accessibilityId, AccessibilityEventType::ACCESSIBILITY_FOCUS_CLEARED);
+      if (accessibilityManager->GetAccessibilityFocusId() == accessibilityId) {
+        accessibilityManager->MoveAccessibilityFocus(
+            accessibilityManager->GetAccessibilityFocusId(), -1);
+        accessibilityManager->SetAccessibilityFocusId(-1);
+      }
+      if (accessibilityManager->GetLastHoverId() == accessibilityId) {
+        accessibilityManager->SendAccessibilityEvent(
+            accessibilityManager->GetLastHoverId(),
+            AccessibilityEventType::HOVER_EXIT_EVENT);
+        accessibilityManager->SetLastHoverId(0);
+      }
+      break;
+    case AceAction::ACTION_FOCUS:
+      accessibilityManager->SetFocus(*node);
+      break;
+    case AceAction::ACTION_CLEAR_FOCUS:
+      accessibilityManager->SetFocus(
+          *accessibilityManager->GetBrowserAccessibilityRoot());
+      break;
+    default:
+      LOG(INFO) << "ExecuteAction(Deprecated) unsupported action";
+      break;
+  }
+}
+
+void NWebDelegate::ExecuteAction(
     int64_t accessibilityId,
     uint32_t action,
     const std::map<std::string, std::string>& actionArguments) {
   auto* accessibilityManager = GetAccessibilityManager();
   if (accessibilityManager == nullptr) {
-    return false;
+    return;
   }
-  BrowserAccessibilityOHOS* node =
-      BrowserAccessibilityOHOS::GetFromAccessibilityId(
-          GetRealAccessibilityId(accessibilityId));
-  if (node == nullptr) {
-    LOG(ERROR) << "ExecuteAction node is not found";
-    return false;
+  auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
+  auto* node =
+      BrowserAccessibilityOHOS::GetFromAccessibilityId(accessibilityId);
+  if (node == nullptr || rootNode == nullptr) {
+    LOG(ERROR) << "ExecuteAction node or rootNode is not found";
+    return;
   }
   AceAction aceAction = static_cast<AceAction>(action);
   LOG(INFO) << "ExecuteAction accessibilityId is " << accessibilityId
@@ -4089,22 +3871,23 @@ bool NWebDelegate::ExecuteAction(
   switch (aceAction) {
     case AceAction::ACTION_CLICK:
       accessibilityManager->DoDefaultAction(*node);
-        break;
+      break;
     case AceAction::ACTION_ACCESSIBILITY_FOCUS:
-        if (accessibilityManager->MoveAccessibilityFocusToId(accessibilityId) &&
-          !is_hovering_) {
-        accessibilityManager->ScrollToMakeNodeVisible(accessibilityId);
-        }
-        break;
+      accessibilityManager->MoveAccessibilityFocusToId(accessibilityId);
+      break;
     case AceAction::ACTION_CLEAR_ACCESSIBILITY_FOCUS:
       accessibilityManager->SendAccessibilityEvent(
-          accessibilityId,
-          AccessibilityEventType::ACCESSIBILITY_FOCUS_CLEARED);
-      if (accessibilityManager->GetAccessibilityFocusId() ==
-          accessibilityId) {
+          accessibilityId, AccessibilityEventType::ACCESSIBILITY_FOCUS_CLEARED);
+      if (accessibilityManager->GetAccessibilityFocusId() == accessibilityId) {
         accessibilityManager->MoveAccessibilityFocus(
             accessibilityManager->GetAccessibilityFocusId(), -1);
         accessibilityManager->SetAccessibilityFocusId(-1);
+      }
+      if (accessibilityManager->GetLastHoverId() == accessibilityId) {
+        accessibilityManager->SendAccessibilityEvent(
+            accessibilityManager->GetLastHoverId(),
+            AccessibilityEventType::HOVER_EXIT_EVENT);
+        accessibilityManager->SetLastHoverId(0);
       }
       break;
     case AceAction::ACTION_FOCUS:
@@ -4147,7 +3930,7 @@ bool NWebDelegate::ExecuteAction(
       break;
     case AceAction::ACTION_SET_SELECTION: {
       if (!node->IsTextField() || actionArguments.empty()) {
-        return false;
+        break;
       }
 
       int start = 0;
@@ -4175,10 +3958,10 @@ bool NWebDelegate::ExecuteAction(
     }
     case AceAction::ACTION_SET_TEXT: {
       if (!node->IsTextField()) {
-        return false;
+        break;
       }
       if (actionArguments.empty()) {
-        return false;
+        break;
       }
       std::string newText = "";
       auto iter = actionArguments.find("setText");
@@ -4186,7 +3969,7 @@ bool NWebDelegate::ExecuteAction(
         newText = iter->second;
       }
       if (newText.empty()) {
-        return false;
+        break;
       }
       accessibilityManager->SetValue(*node, newText);
       accessibilityManager->SetSelection(BrowserAccessibility::AXRange(
@@ -4197,7 +3980,7 @@ bool NWebDelegate::ExecuteAction(
 
     case AceAction::ACTION_SET_CURSOR_POSITION: {
       if (!node->IsTextField() || actionArguments.empty()) {
-        return false;
+        break;
       }
 
       int offset = 0;
@@ -4214,88 +3997,24 @@ bool NWebDelegate::ExecuteAction(
           node->CreatePositionForSelectionAt(offset)));
       break;
     }
-    case AceAction::ACTION_NEXT_HTML_ITEM: {
-      std::string elementType = "";
-      auto iter = actionArguments.find("htmlItem");
-      if (iter != actionArguments.end()) {
-        elementType = iter->second;
-      }
-      return accessibilityManager->JumpToElementType(
-          accessibilityId, elementType, true, false);
-    }
-    case AceAction::ACTION_PREVIOUS_HTML_ITEM: {
-      std::string elementType = "";
-      auto iter = actionArguments.find("htmlItem");
-      if (iter != actionArguments.end()) {
-        elementType = iter->second;
-      }
-      return accessibilityManager->JumpToElementType(
-          accessibilityId, elementType, false,
-          accessibilityId ==
-              accessibilityManager->GetRootAccessibilityId());
-    }
     default:
       LOG(INFO) << "ExecuteAction unsupported action";
       break;
   }
-  return true;
 }
 
-int64_t NWebDelegate::GetRealAccessibilityId(int64_t accessibilityId) const {
-  if (accessibilityId < 0 || accessibilityId == kRootAccessibilityId) {
-    auto* accessibilityManager = GetAccessibilityManager();
-    if (accessibilityManager == nullptr) {
-        return -1;
-    }
-    return accessibilityManager->GetRootAccessibilityId();
-  }
-  return accessibilityId;
-}
-
-bool NWebDelegate::GetAccessibilityNodeRectById(int64_t accessibilityId,
-                                                int32_t* width,
-                                                int32_t* height,
-                                                int32_t* offsetX,
-                                                int32_t* offsetY) {
-  if (width == nullptr || height == nullptr || offsetX == nullptr ||
-      offsetY == nullptr) {
-    return false;
-  }
-  BrowserAccessibilityOHOS* node =
-      BrowserAccessibilityOHOS::GetFromAccessibilityId(
-          GetRealAccessibilityId(accessibilityId));
-  if (node == nullptr) {
-    LOG(ERROR) << "GetAccessibilityNodeRectById node is not found";
-    return false;
-  }
-
-  ui::AXOffscreenResult offscreen_result = ui::AXOffscreenResult::kOnscreen;
-  gfx::Rect rect = node->GetClippedRootFrameBoundsRect(&offscreen_result);
-
-  *width = rect.width();
-  *height = rect.height();
-  *offsetX = rect.x();
-  *offsetY = rect.y() + GetViewPointHeight();
-  return true;
-}
-
-void NWebDelegate::SendAccessibilityHoverEvent(int x, int y, bool isHoverEnter) {
+void NWebDelegate::SendAccessibilityHoverEvent(int x, int y) {
   if (accessibility_state_) {
-    if (!isHoverEnter) {
-      is_hovering_ = false;
-      return;
-    }
-    is_hovering_ = true;
     auto* accessibilityManager = GetAccessibilityManager();
-     if (accessibilityManager != nullptr && handler_delegate_ != nullptr) {
-        auto scale = handler_delegate_->GetScale() / 100.0;
-        gfx::Point point(x / scale, (y - GetViewPointHeight()) / scale);
-        accessibilityManager->HitTest(point, 0);
+    if (accessibilityManager != nullptr) {
+      auto scale = accessibilityManager->GetPageScaleFactor();
+      gfx::Point point(x / scale, (y - GetViewPointHeight()) / scale);
+      accessibilityManager->HitTest(point, 0);
     }
   }
 }
 
-BrowserAccessibilityManagerOHOS* NWebDelegate::GetAccessibilityManager() const {
+BrowserAccessibilityManagerOHOS* NWebDelegate::GetAccessibilityManager() {
   if (!accessibility_state_ || GetBrowser() == nullptr ||
       GetBrowser()->GetHost() == nullptr) {
     return nullptr;
@@ -4321,23 +4040,23 @@ NWebDelegate::GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
   if (isAccessibilityFocus) {
     auto accessibilityFocusId = accessibilityManager->GetAccessibilityFocusId();
     if (accessibilityFocusId > 0) {
-        resultNode = BrowserAccessibilityOHOS::GetFromAccessibilityId(
-            accessibilityFocusId);
+      resultNode = BrowserAccessibilityOHOS::GetFromAccessibilityId(
+          accessibilityFocusId);
     }
   } else {
     resultNode = static_cast<BrowserAccessibilityOHOS*>(
         accessibilityManager->GetFocus());
-    if (resultNode == rootNode) {
-        return nullptr;
-    }
   }
-  if (resultNode == nullptr) {
+  if (resultNode == nullptr || resultNode == rootNode) {
     LOG(ERROR) << "GetFocusedAccessibilityNodeInfo resultNode is not found";
     return nullptr;
   }
-  BrowserAccessibilityOHOS* node =
-      BrowserAccessibilityOHOS::GetFromAccessibilityId(
-          GetRealAccessibilityId(accessibilityId));
+  BrowserAccessibilityOHOS* node = nullptr;
+  if (accessibilityId < 0) {
+    node = static_cast<BrowserAccessibilityOHOS*>(rootNode);
+  } else {
+    node = BrowserAccessibilityOHOS::GetFromAccessibilityId(accessibilityId);
+  }
   if (node == nullptr || !resultNode->IsDescendantOf(node)) {
     LOG(ERROR) << "GetFocusedAccessibilityNodeInfo resultNode is not "
                   "descendant of node";
@@ -4348,9 +4067,21 @@ NWebDelegate::GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
 
 std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebDelegate::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
-  BrowserAccessibilityOHOS* node =
-      BrowserAccessibilityOHOS::GetFromAccessibilityId(
-          GetRealAccessibilityId(accessibilityId));
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    return nullptr;
+  }
+  auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
+  if (rootNode == nullptr) {
+    LOG(ERROR) << "GetAccessibilityNodeInfoById rootNode is not found";
+    return nullptr;
+  }
+  BrowserAccessibilityOHOS* node = nullptr;
+  if (accessibilityId < 0) {
+    node = static_cast<BrowserAccessibilityOHOS*>(rootNode);
+  } else {
+    node = BrowserAccessibilityOHOS::GetFromAccessibilityId(accessibilityId);
+  }
   if (node == nullptr) {
     LOG(ERROR) << "GetAccessibilityNodeInfoById node is not found";
     return nullptr;
@@ -4359,9 +4090,21 @@ NWebDelegate::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
 }
 
 bool NWebDelegate::GetAccessibilityVisible(int64_t accessibilityId) {
-  BrowserAccessibilityOHOS* node =
-      BrowserAccessibilityOHOS::GetFromAccessibilityId(
-          GetRealAccessibilityId(accessibilityId));
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    return true;
+  }
+  auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
+  if (rootNode == nullptr) {
+    LOG(ERROR) << "GetAccessibilityVisible rootNode is not found";
+    return true;
+  }
+  BrowserAccessibilityOHOS* node = nullptr;
+  if (accessibilityId < 0) {
+    node = static_cast<BrowserAccessibilityOHOS*>(rootNode);
+  } else {
+    node = BrowserAccessibilityOHOS::GetFromAccessibilityId(accessibilityId);
+  }
   if (node == nullptr) {
     LOG(ERROR) << "GetAccessibilityNodeInfoById node is not found";
     return true;
@@ -4374,11 +4117,22 @@ bool NWebDelegate::GetAccessibilityVisible(int64_t accessibilityId) {
 std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebDelegate::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                                   int32_t direction) {
-  LOG(INFO) << "GetAccessibilityNodeInfoByFocusMove accessibilityId is "
-            << accessibilityId << ", direction is " << direction;
-  BrowserAccessibilityOHOS* node =
-      BrowserAccessibilityOHOS::GetFromAccessibilityId(
-          GetRealAccessibilityId(accessibilityId));
+  auto* accessibilityManager = GetAccessibilityManager();
+  if (accessibilityManager == nullptr) {
+    return nullptr;
+  }
+  auto rootNode = accessibilityManager->GetBrowserAccessibilityRoot();
+  if (rootNode == nullptr) {
+    LOG(ERROR) << "GetAccessibilityNodeInfoByFocusMove rootNode is not found";
+    return nullptr;
+  }
+  BrowserAccessibilityOHOS* node = nullptr;
+  if (accessibilityId < 0) {
+    node = static_cast<BrowserAccessibilityOHOS*>(
+        accessibilityManager->GetBrowserAccessibilityRoot());
+  } else {
+    node = BrowserAccessibilityOHOS::GetFromAccessibilityId(accessibilityId);
+  }
   if (node == nullptr) {
     LOG(ERROR) << "GetAccessibilityNodeInfoByFocusMove node is not found";
     return nullptr;
@@ -4404,19 +4158,14 @@ NWebDelegate::PopulateAccessibilityNodeInfo(BrowserAccessibilityOHOS* node) {
     LOG(ERROR) << "PopulateAccessibilityNodeInfo nodeInfo or node is null";
     return nullptr;
   }
-  nodeInfo->SetAccessibilityId(kRootAccessibilityId);
+  nodeInfo->SetAccessibilityId(node->GetAccessibilityId());
   nodeInfo->SetParentId(-1);
   bool isRoot = !node->PlatformGetParent();
   if (!isRoot) {
-    nodeInfo->SetAccessibilityId(node->GetAccessibilityId());
     auto* parentNode =
         static_cast<BrowserAccessibilityOHOS*>(node->PlatformGetParent());
     if (parentNode) {
-        if (parentNode->PlatformGetParent()) {
-        nodeInfo->SetParentId(parentNode->GetAccessibilityId());
-        } else {
-        nodeInfo->SetParentId(kRootAccessibilityId);
-        }
+      nodeInfo->SetParentId(parentNode->GetAccessibilityId());
     }
   }
 
@@ -4556,10 +4305,10 @@ void NWebDelegate::AddAccessibilityNodeInfoActions(
   }
   if (nodeInfo->GetIsFocusable()) {
     if (nodeInfo->GetIsFocused()) {
-        actions.emplace_back(
-            static_cast<uint32_t>(AceAction::ACTION_CLEAR_FOCUS));
+      actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_CLEAR_FOCUS));
     } else {
-        actions.emplace_back(static_cast<uint32_t>(AceAction::ACTION_FOCUS));
+      actions.emplace_back(static_cast<uint32_t>(AceAction::ACTION_FOCUS));
     }
   }
 
@@ -4572,26 +4321,23 @@ void NWebDelegate::AddAccessibilityNodeInfoActions(
   }
   if (node != nullptr) {
     if (node->CanScrollForward()) {
-        actions.emplace_back(
-            static_cast<uint32_t>(AceAction::ACTION_SCROLL_FORWARD));
+      actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_SCROLL_FORWARD));
     }
     if (node->CanScrollBackward()) {
-        actions.emplace_back(
-            static_cast<uint32_t>(AceAction::ACTION_SCROLL_BACKWARD));
+      actions.emplace_back(
+          static_cast<uint32_t>(AceAction::ACTION_SCROLL_BACKWARD));
     }
     if (nodeInfo->GetIsEditable() && nodeInfo->GetIsEnabled()) {
-        actions.emplace_back(static_cast<uint32_t>(AceAction::ACTION_PASTE));
-        if (node->HasNonEmptyValue()) {
+      actions.emplace_back(static_cast<uint32_t>(AceAction::ACTION_PASTE));
+      if (node->HasNonEmptyValue()) {
         actions.emplace_back(
             static_cast<uint32_t>(AceAction::ACTION_SET_SELECTION));
         actions.emplace_back(static_cast<uint32_t>(AceAction::ACTION_CUT));
         actions.emplace_back(static_cast<uint32_t>(AceAction::ACTION_COPY));
-        }
+      }
     }
   }
-  actions.emplace_back(static_cast<uint32_t>(AceAction::ACTION_NEXT_HTML_ITEM));
-  actions.emplace_back(
-      static_cast<uint32_t>(AceAction::ACTION_PREVIOUS_HTML_ITEM));
   nodeInfo->SetActions(actions);
 }
 #endif  // BUILDFLAG(ARKWEB_ACCESSIBILITY)
@@ -4618,10 +4364,6 @@ bool NWebDelegate::Discard() {
 
   is_discarded_ = GetBrowser()->GetHost()->Discard();
   LOG(DEBUG) << "NWebDelegate::Discard is_discarded_: " << is_discarded_;
-
-  if (handler_delegate_) {
-    handler_delegate_->Discard();
-  }
   return is_discarded_;
 }
 
@@ -4749,20 +4491,7 @@ void NWebDelegate::ExecuteVideoAssistantFunction(const std::string& cmd_id) {
 
   GetBrowser()->GetHost()->ExecuteVideoAssistantFunction(cmd_id);
 }
-
-void NWebDelegate::CustomWebMediaPlayer(bool enable) {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    if (!handler_delegate_) {
-      LOG(ERROR) << "failed to enable custom web media player, handler delegate is null";
-      return;
-    }
-    handler_delegate_->CustomWebMediaPlayer(enable);
-    return;
-  }
- 
-  GetBrowser()->GetHost()->CustomWebMediaPlayer(enable);
-}
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 
 #if BUILDFLAG(ARKWEB_MENU)
 void NWebDelegate::SetIsRichText(bool is_rich_text) {
@@ -4778,20 +4507,6 @@ std::string NWebDelegate::GetSelectInfo() {
   return std::string();
 }
 
-#if BUILDFLAG(ARKWEB_AI_WRITE)
-int NWebDelegate::GetSelectStartIndex()
-{
-  return 0;
-}
-int NWebDelegate::GetSelectEndIndex()
-{
-  return 0;
-}
-std::string NWebDelegate::GetAllTextInfo()
-{
-  return std::string();
-}
-#endif // ARKWEB_AI_WRITE
 #if BUILDFLAG(ARKWEB_AI)
 void NWebDelegate::OnTextSelected() {
   LOG(INFO) << "NWebDelegate::OnTextSelected";
@@ -4810,102 +4525,12 @@ void NWebDelegate::OnDestroyImageAnalyzerOverlay() {
 }
 
 void NWebDelegate::OnFoldStatusChanged(FoldStatus foldstatus) {
-  if (!CEF_CURRENTLY_ON_UIT()) {
-    CEF_POST_TASK(CEF_UIT, base::BindOnce(&NWebDelegate::OnFoldStatusChanged, this, foldstatus));
-    return;
-  }
-  LOG(INFO) << "NWebDelegate::OnFoldStatusChanged " << static_cast<uint32_t>(foldstatus);
+  LOG(INFO) << "NWebDelegate::OnFoldStatusChanged" << (uint32_t)foldstatus;
   if (!GetBrowser().get()) {
     return;
   }
   GetBrowser()->GetHost()->OnFoldStatusChanged(
       static_cast<uint32_t>(foldstatus));
-}
-
-void NWebDelegate::RunDataDetectorJS() {
-  if (!data_detector_enable_) {
-    return;
-  }
-  LOG(INFO) << "NWebDelegate::RunDataDetectorJS";
-  const auto& rb = ui::ResourceBundle::GetSharedInstance();
-  std::string_view script_data = rb.GetRawDataResource(IDR_DATA_DETECTOR_JS);
-
-  LOG(DEBUG) << "NWebDelegate::GetAndRunDataDetectorJS script_data size:" << script_data.size();
-
-  std::string code(script_data.data(), script_data.size());
-
-  CEF_POST_TASK(
-      CEF_UIT,
-      base::BindOnce((void(NWebDelegate::*)(
-                         const std::string&,
-                         std::shared_ptr<NWebMessageValueCallback>, bool)) &
-                         NWebDelegate::ExecuteJavaScript,
-                     this, code, nullptr, false));
-}
-
-void NWebDelegate::SetDataDetectorEnable(bool enable) {
-  LOG(INFO) << "NWebDelegate::SetDataDetectorEnable: " << enable;
-  data_detector_enable_ = enable;
-}
-
-bool NWebDelegate::GetDataDetectorEnable() {
-  return data_detector_enable_;
-}
-
-std::string NWebDelegate::GetDataDetectorSelectText() {
-  if (!data_detector_enable_) {
-    return std::string();
-  }
-  if (GetBrowser().get()) {
-    return GetBrowser()->GetHost()->GetDataDetectorSelectText();
-  }
-  return std::string();
-}
-
-void NWebDelegate::OnDataDetectorSelectText() {
-  if (!data_detector_enable_) {
-    return;
-  }
-  LOG(INFO) << "NWebDelegate::OnDataDetectorSelectText";
-  if (GetBrowser().get()) {
-    GetBrowser()->GetHost()->OnDataDetectorSelectText();
-  }
-}
-
-void NWebDelegate::OnDataDetectorCopy(const std::vector<std::string>& recordMix) {
-  if (!data_detector_enable_) {
-    return;
-  }
-  LOG(INFO) << "NWebDelegate::OnDataDetectorCopy";
-  if (!preference_delegate_ || recordMix.size() < 2) {
-    return;
-  }
-  auto copy_option =
-      static_cast<CopyOptionMode>(preference_delegate_->GetCopyOptionMode());
-
-  std::shared_ptr<PasteDataRecordAdapter> record =
-      PasteDataRecordAdapter::NewRecord("text/html");
-  PasteRecordVector recordVector;
-
-  std::shared_ptr<std::string> text =
-      std::make_shared<std::string>(recordMix[0]);
-  std::shared_ptr<std::string> html =
-      std::make_shared<std::string>(recordMix[1]);
-  if (record->SetPlainText(text) && record->SetHtmlText(html)) {
-    recordVector.emplace_back(record);
-    LOG(INFO) << "set text to record success";
-  } else {
-    LOG(ERROR) << "set text to record failed";
-  }
-  base::ThreadPool::PostTask(
-      FROM_HERE,
-      base::BindOnce(
-          [](const PasteRecordVector& record_vector, CopyOptionMode copy_option) {
-            OhosAdapterHelper::GetInstance().GetPasteBoard().SetPasteData(
-                record_vector, copy_option);
-            LOG(INFO) << "copy data detector result to clipboard success";
-          },
-          recordVector, copy_option));
 }
 #endif
 
@@ -5011,17 +4636,6 @@ void NWebDelegate::SetPathAllowingUniversalAccess(
   GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list);
 }
 #endif
-
-#if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
-void NWebDelegate::DisallowSandboxFileAccessFromFileUrl(bool disallow) {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "NWebDelegate::DisallowSandboxFileAccessFromFileUrl failed,"
-                  " get browser failed";
-    return;
-  }
-  GetBrowser()->GetHost()->SetDisallowSandboxFileAccessFromFileUrl(disallow);
-}
-#endif  // BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void NWebDelegate::WebExtensionTabCreated(int tab_id) {
@@ -5261,7 +4875,7 @@ void NWebDelegate::SetSurfaceDensity(const double& density) {
   LOG(INFO) << "SetSurfaceDensity: " << density;
   if (display != nullptr) {
     NotifyScreenInfoChanged(display->GetRotation(),
-                            display->GetDisplayOrientation());
+                            display->GetDisplayOrientation(), false);
   }
 }
 
@@ -5382,42 +4996,6 @@ void NWebDelegate::WebExtensionContextMenuReloadFocusedFrame() {
     return;
   }
   return GetBrowser()->GetHost()->ReloadFocusedFrame();
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-bool NWebDelegate::SetFocusByPosition(float x, float y)
-{
-  if (!GetBrowser().get()) {
-    return false;
-  }
-  return GetBrowser()->GetHost()->SetFocusByPosition(x, y);
-}
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
-
-#if BUILDFLAG(ARKWEB_PIP)
-void NWebDelegate::SetPipNativeWindow(int delegate_id,
-                                      int child_id,
-                                      int frame_routing_id,
-                                      void* window) {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "PIC SetPipNativeWindow can not get browser";
-    return;
-  }
-  GetBrowser()->GetHost()->SetPipNativeWindow(delegate_id, child_id,
-                                              frame_routing_id, window);
-}
-
-void NWebDelegate::SendPipEvent(int delegate_id,
-                                int child_id,
-                                int frame_routing_id,
-                                int event) {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "PIC SendPipEvent can not get browser";
-    return;
-  }
-  GetBrowser()->GetHost()->SendPipEvent(delegate_id, child_id,
-                                        frame_routing_id, event);
 }
 #endif
 }  // namespace OHOS::NWeb

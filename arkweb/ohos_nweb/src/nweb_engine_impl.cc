@@ -28,11 +28,6 @@
 
 namespace OHOS::NWeb {
 
-namespace {
-  bool g_web_debugging_enabled = false;
-  int32_t g_web_debugging_port = 0;
-} // namespace
-
 static std::shared_ptr<NWebEngineImpl> g_nweb_engine_impl =
     std::make_shared<NWebEngineImpl>();
 
@@ -81,6 +76,8 @@ void NWebEngineImpl::InitializeWebEngine(
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
   NWebImpl::InitializeWebEngine(init_args);
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
+  // TODO(ohos)
+  SetWebDebuggingAccess(true);
 }
 
 void NWebEngineImpl::PrepareForPageLoad(const std::string& url,
@@ -94,37 +91,15 @@ void NWebEngineImpl::RemoveAllCache(bool include_disk_files) {
 }
 
 void NWebEngineImpl::SetWebDebuggingAccess(bool isEnableDebug) {
-  LOG(INFO) << "SetWebDebuggingAccess(" << isEnableDebug
-            << "), g_web_debugging_enabled[" << g_web_debugging_enabled
-            << "], g_web_debugging_port[" << g_web_debugging_port
-            << "]";
-  if (isEnableDebug == g_web_debugging_enabled && g_web_debugging_port == 0) {
-    return;
-  }
-  g_web_debugging_enabled = isEnableDebug;
-  g_web_debugging_port = 0;
-  if (g_web_debugging_enabled) {
+  static bool isDebuggingEnabled = false;
+  if (isEnableDebug && !isDebuggingEnabled) {
     CefDevToolsManagerDelegate::StartHttpHandler(nullptr);
-  } else if (!g_web_debugging_enabled) {
+    WVLOG_I("StartHttpHandler Enabled");
+    isDebuggingEnabled = true;
+  } else if (!isEnableDebug && isDebuggingEnabled) {
     CefDevToolsManagerDelegate::StopHttpHandler();
-  }
-}
-
-void NWebEngineImpl::SetWebDebuggingAccessAndPort(bool isEnableDebug, int32_t port)
-{
-  LOG(INFO) << "SetWebDebuggingAccess(" << isEnableDebug << ", " << port
-            << "), g_web_debugging_enabled[" << g_web_debugging_enabled
-            << "], g_web_debugging_port[" << g_web_debugging_port
-            << "]";
-  if (isEnableDebug == g_web_debugging_enabled && port == g_web_debugging_port) {
-    return;
-  }
-  g_web_debugging_enabled = isEnableDebug;
-  g_web_debugging_port = port;
-  if (g_web_debugging_enabled) {
-    CefDevToolsManagerDelegate::StartHttpHandlerWithPort(nullptr, port);
-  } else if (!g_web_debugging_enabled) {
-    CefDevToolsManagerDelegate::StopHttpHandler();
+    WVLOG_I("StopHttpHandler Enabled");
+    isDebuggingEnabled = false;
   }
 }
 
@@ -210,25 +185,14 @@ void NWebEngineImpl::ClearHostIP(const std::string& hostName) {
   NWebImpl::ClearHostIP(hostName);
 }
 
-void NWebEngineImpl::SetAppCustomUserAgent(const std::string& user_agent) {
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  NWebImpl::SetAppCustomUserAgent(user_agent);
-#endif
-}
-
-void NWebEngineImpl::SetUserAgentForHosts(
-    const std::string& user_agent,
-    const std::vector<std::string>& hosts) {
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  NWebImpl::SetUserAgentForHosts(user_agent, hosts);
-#endif
-}
-
+// todo: check webview
+#if BUILDFLAG(IS_ARKWEB_EXT)
 void NWebEngineImpl::SetWholeWebDrawing() {
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   NWebImpl::SetWholeWebDrawing();
 #endif
 }
+#endif
 
 std::shared_ptr<NWebAdsBlockManager> NWebEngineImpl::GetAdsBlockManager() {
   return NWebAdsBlockManagerImpl::GetInstance();
@@ -237,18 +201,4 @@ std::shared_ptr<NWebAdsBlockManager> NWebEngineImpl::GetAdsBlockManager() {
 void NWebEngineImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
   NWebImpl::TrimMemoryByPressureLevel(memoryLevel);
 }
-
-void NWebEngineImpl::SetProxyOverride(
-    const std::vector<std::string>& proxyUrls,
-    const std::vector<std::string>& proxySchemeFilters,
-    const std::vector<std::string>& bypassRules,
-    const bool& reverseBypass,
-    std::shared_ptr<NWebProxyChangedCallback> callback) {
-  NWebImpl::SetProxyOverride(proxyUrls, proxySchemeFilters, bypassRules, reverseBypass, callback);
-}
- 
-void NWebEngineImpl::RemoveProxyOverride(std::shared_ptr<NWebProxyChangedCallback> callback) {
-  NWebImpl::RemoveProxyOverride(callback);
-}
 }  // namespace OHOS::NWeb
-

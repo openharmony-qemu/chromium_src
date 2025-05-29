@@ -15,7 +15,6 @@
 
 #include "absl/types/optional.h"
 #include "base/memory/weak_ptr.h"
-#include "base/memory/raw_ptr.h"
 #include "content/common/content_export.h"
 #include "gpu/ipc/common/gpu_channel.mojom.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
@@ -87,7 +86,7 @@ class CONTENT_EXPORT StreamTextureHost
   void OnDestroySurface();
 
   int32_t route_id_;
-  raw_ptr<Listener> listener_;
+  Listener* listener_;
   scoped_refptr<gpu::GpuChannelHost> channel_;
   uint32_t release_id_ = 0;
 

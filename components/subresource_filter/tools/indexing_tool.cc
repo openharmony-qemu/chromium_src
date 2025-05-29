@@ -33,11 +33,7 @@ bool IndexAndWriteRuleset(const base::FilePath& unindexed_path,
   base::File unindexed_file(base::MakeAbsoluteFilePath(unindexed_path),
                             base::File::FLAG_OPEN | base::File::FLAG_READ);
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  subresource_filter::ArkWebRulesetIndexerExt indexer;
-#else
   subresource_filter::RulesetIndexer indexer;
-#endif
 
   CopyingFileInputStream copying_stream(std::move(unindexed_file));
   google::protobuf::io::CopyingInputStreamAdaptor zero_copy_stream_adaptor(

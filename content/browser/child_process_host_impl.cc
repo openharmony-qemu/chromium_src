@@ -338,8 +338,10 @@ void ChildProcessHostImpl::BindHostReceiver(
 }
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-void ChildProcessHostImpl::ReportKeyThread(
-  int32_t status, int32_t process_id, int32_t thread_id, int32_t role) {}
+void ChildProcessHostImpl::ReportKeyThread(int32_t status,
+                                           int32_t process_id,
+                                           int32_t thread_id,
+                                           int32_t role) {}
 #endif
 
 bool ChildProcessHostImpl::OnMessageReceived(const IPC::Message& msg) {

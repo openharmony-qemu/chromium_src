@@ -24,13 +24,15 @@ viz_test("viz_unittests") {
   sources = [ "test/run_all_unittests.cc" ]
 
   if (arkweb_unittests) {
-    include_dirs = ohos_src_includes
     sources += [
       "//ohos_nweb/src/sysevent/event_reporter.cc",
-      "//arkweb/chromium_ext/content/renderer/host_proxy.cc",
-      "//arkweb/chromium_ext/content/renderer/host_proxy.h",
-      "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos.cc",
-      "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos.h",
+      "//cef/libcef/common/soc_perf_util.cc",
+      "//content/browser/browser_thread_impl.cc",
+      "//content/browser/scheduler/browser_task_executor.cc",
+      "//content/public/common/content_features.cc",
+      "//content/public/common/content_switches.cc",
+      "//content/renderer/render_remote_proxy_ohos.cc",
+      "//content/renderer/render_remote_proxy_ohos.h"
     ]
   }
 
@@ -46,14 +48,6 @@ viz_test("viz_unittests") {
     "//components/viz/test:unit_tests",
     "//mojo/core/embedder",
   ]
-
-  if (arkweb_unittests) {
-    deps += [
-      "//content/public/common",
-      "//components/subresource_filter/content/browser",
-      "//cef:libcef_static",
-    ]
-  }
 
   data = [ "//components/test/data/viz/" ]
 

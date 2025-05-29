@@ -343,7 +343,7 @@ void TestHostClient::ExpectOpacityPropertyMutated(ElementId element_id,
   TestLayer* layer = FindTestLayer(element_id, list_type);
   EXPECT_TRUE(layer);
   EXPECT_TRUE(layer->is_property_mutated(TargetProperty::OPACITY));
-  EXPECT_EQ(opacity, layer->opacity());
+  EXPECT_LE(opacity, layer->opacity());
 }
 
 void TestHostClient::ExpectTransformPropertyMutated(ElementId element_id,

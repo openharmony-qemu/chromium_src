@@ -7,8 +7,8 @@
 
 #include <stdint.h>
 
-#include "base/time/time.h"
 #include "arkweb/build/features/features.h"
+#include "base/time/time.h"
 
 namespace viz {
 
@@ -26,7 +26,6 @@ class HostFrameSinkClient {
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
   virtual void RestoreRenderFit() {}
 #endif  // ARKWEB_MAXIMIZE_RESIZE
-
  protected:
   virtual ~HostFrameSinkClient() = default;
 };

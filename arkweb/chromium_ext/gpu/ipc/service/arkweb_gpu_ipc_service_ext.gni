@@ -3,14 +3,7 @@
 # found in the LICENSE file.
 
 import("//arkweb/build/features/features.gni")
-arkweb_gpu_ipc_service_sources = [
-  "//arkweb/chromium_ext/gpu/ipc/service/gpu_channel_shared_image_interface_ext.h",
-  "//arkweb/chromium_ext/gpu/ipc/service/gpu_channel_shared_image_interface_ext.cc",
-  "//arkweb/chromium_ext/gpu/ipc/service/image_decode_accelerator_stub_ext.h",
-  "//arkweb/chromium_ext/gpu/ipc/service/image_decode_accelerator_stub_ext.cc",
-  "//arkweb/chromium_ext/gpu/ipc/service/shared_image_stub_ext.h",
-  "//arkweb/chromium_ext/gpu/ipc/service/shared_image_stub_ext.cc",
-]
+arkweb_gpu_ipc_service_sources = []
 
 if (arkweb_gl_init) {
 arkweb_gpu_ipc_service_sources += [
@@ -21,10 +14,5 @@ arkweb_gpu_ipc_service_sources += [
 arkweb_gpu_ipc_service_sources += [
   "//arkweb/chromium_ext/gpu/ipc/service/stream_texture_ohos.cc",
   "//arkweb/chromium_ext/gpu/ipc/service/stream_texture_ohos.h",
-  "//arkweb/chromium_ext/gpu/ipc/service/gpu_channel_ext.h",
-  "//arkweb/chromium_ext/gpu/ipc/service/gpu_channel_ext.cc",
 ]
 
-arkweb_gpu_ipc_service_unittest = [
-  "//arkweb/chromium_ext/gpu/ipc/service/new_gpu_channel_unittest.cc",
-]

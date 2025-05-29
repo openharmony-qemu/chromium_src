@@ -18,7 +18,6 @@
 #include <vector>
 
 #include "base/logging.h"
-#include "nweb_value_convert.h"
 
 namespace OHOS::NWeb {
 void ArkWebNativeWebMessageCallback::OnReceiveValue(
@@ -51,12 +50,6 @@ void ArkWebNativeWebMessageCallback::OnReceiveValue(
   } else {
     LOG(ERROR) << "NativeArkWeb Web Message, type not support";
   }
-}
-
-void ArkWebNativeWebMessageCallback::OnReceiveValueV2(
-    std::shared_ptr<NWebHapValue> result) {
-  std::shared_ptr<NWebMessage> message = ConvertNwebHap2NwebMessage(result);
-  OnReceiveValue(message);
 }
 }  // namespace OHOS::NWeb
                           

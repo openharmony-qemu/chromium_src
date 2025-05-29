@@ -159,7 +159,6 @@ exec_script_whitelist =
       "//chrome/version.gni",
 
       "//cef/BUILD.gn",
-      "//arkweb/ohos_adapter_ndk/BUILD.gn",
 
       # TODO(dgn): Layer violation but breaks the build otherwise, see
       # https://crbug.com/474506.
@@ -175,5 +174,5 @@ exec_script_whitelist =
 
       "//tools/grit/grit_rule.gni",
       "//tools/gritsettings/BUILD.gn",
-      "//v8/BUILD.gn"
+      "//v8/BUILD.gn",
     ]

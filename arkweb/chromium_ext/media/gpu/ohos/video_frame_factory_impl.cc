@@ -45,12 +45,10 @@ static void AllocateTextureOwnerOnGpuThread(
   }
 
   gl::ohos::TextureOwnerMode texture_owner_mode =
-      base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice()
+      features::IsUsingVulkan() || base::ohos::IsEmulator() ||
+              base::SysInfo::IsLowEndDevice()
           ? gl::ohos::TextureOwnerMode::kNativeImageTexture
           : gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer;
-
-  TRACE_EVENT1("base", "AllocateTextureOwnerOnGpuThread", "texture_owner_mode", texture_owner_mode);
-
   std::move(init_cb).Run(gpu::NativeImageTextureOwner::Create(
       shared_context_state, texture_owner_mode, std::move(drdc_lock)));
 }
@@ -119,12 +117,7 @@ void VideoFrameFactoryImpl::CreateVideoFrame(
       &VideoFrameFactoryImpl::CreateVideoFrame_OnImageReady,
       weak_factory_.GetWeakPtr(), std::move(output_cb), timestamp, natural_size,
       !!codec_buffer_wait_coordinator_, pixel_format,
-#if BUILDFLAG(ARKWEB_PIP)
-      video_frame_copy_required_|IsPipEnable(),
-#else
-      video_frame_copy_required_,
-#endif
-      gpu_task_runner_);
+      video_frame_copy_required_, gpu_task_runner_);
 
   RequestImage(std::move(output_buffer_renderer), std::move(image_ready_cb));
 }
@@ -144,7 +137,6 @@ void VideoFrameFactoryImpl::CreateVideoFrame_OnFrameInfoReady(
     ImageWithInfoReadyCB image_ready_cb,
     std::unique_ptr<CodecOutputBufferRenderer> output_buffer_renderer,
     FrameInfoHelper::FrameInfo frame_info) {
-  TRACE_EVENT0("base", "VideoFrameFactoryImpl::CreateVideoFrame_OnFrameInfoReady");
   if (output_buffer_renderer) {
     image_spec_.coded_size = frame_info.coded_size;
     image_spec_.color_space = output_buffer_renderer->color_space();
@@ -190,6 +182,10 @@ void VideoFrameFactoryImpl::CreateVideoFrame_OnImageReady(
 
   auto codec_image_holder = std::move(record.codec_image_holder);
 
+  gpu::MailboxHolder mailbox_holders[VideoFrame::kMaxPlanes];
+  mailbox_holders[0] = gpu::MailboxHolder(record.mailbox, gpu::SyncToken(),
+                                          GL_TEXTURE_EXTERNAL_OES);
+
   scoped_refptr<VideoFrame> frame = VideoFrame::WrapSharedImage(
       pixel_format, std::move(record.shared_image), gpu::SyncToken(),
       VideoFrame::ReleaseMailboxCB(), frame_info.coded_size,
@@ -197,8 +193,6 @@ void VideoFrameFactoryImpl::CreateVideoFrame_OnImageReady(
 
   LOG(DEBUG) << "CreateVideoFrame_OnImageReady frame id : "
              << frame->unique_id();
-
-  frame->set_ycbcr_info(frame_info.ycbcr_info);
   frame->set_color_space(color_space);
 
   if (!frame) {
@@ -231,15 +225,5 @@ void VideoFrameFactoryImpl::RunAfterPendingVideoFrames(
   RequestImage(nullptr, std::move(image_ready_cb));
 }
 
-#if BUILDFLAG(ARKWEB_PIP)
-void VideoFrameFactoryImpl::PipEnable(bool enable) {
-  LOG(INFO) << __func__ << " enable:" << enable;
-  pip_enable_ = enable;
-}
-
-bool VideoFrameFactoryImpl::IsPipEnable() {
-  return pip_enable_;
-}
-#endif
 }  // namespace media
                      

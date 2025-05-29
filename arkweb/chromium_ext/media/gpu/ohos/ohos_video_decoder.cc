@@ -5,7 +5,7 @@
 // Based on media_codec_video_decoder.cc originally written by
 // Copyright (c) 2012 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// found in the LICENSE file. 
 
 #include "media/gpu/ohos/ohos_video_decoder.h"
 
@@ -134,18 +134,9 @@ void OhosVideoDecoder::DestroyAsync(std::unique_ptr<OhosVideoDecoder> decoder) {
   TRACE_EVENT0("media", "OhosVideoDecoder::DestroyAsync");
   DCHECK(decoder);
   auto* self = decoder.release();
-  if (self == nullptr) {
-    LOG(ERROR) << "OhosVideoDecoder::DestroyAsync decoder is nullptr";
-    return;
-  }
+
   self->weak_factory_.InvalidateWeakPtrs();
 
-  if (self->ohos_crypto_context_) {
-    // Cancel previously registered callback (if any).
-    self->event_cb_registration_.reset();
-    self->ohos_crypto_context_->SetOHOSMediaCryptoReadyCB(base::NullCallback());
-    self->ohos_crypto_context_ = nullptr;
-  }
   if (self->reset_cb_) {
     std::move(self->reset_cb_).Run();
   }
@@ -184,92 +175,13 @@ void OhosVideoDecoder::Initialize(const VideoDecoderConfig& config,
   decoder_config_ = config;
   output_cb_ = output_cb;
   waiting_cb_ = waiting_cb;
+  base::BindPostTaskToCurrentDefault(std::move(init_cb))
+      .Run(DecoderStatus::Codes::kOk);
 
-  // We only support setting CDM at first initialization. Even if the initial
-  // config is clear, we'll still try to set CDM since we may switch to an
-  // encrypted config later.
   const int width = decoder_config_.coded_size().width();
-  if (first_init && cdm_context && cdm_context->GetOHOSMediaCryptoContext()) {
-    LOG(INFO) << "first to handle encrypted video";
-    last_width_ = width;
-    SetCdm(cdm_context, std::move(init_cb));
-    return;
-  }
-  if (config.is_encrypted() && mediaKeySession_ == nullptr) {
-    LOG(INFO) << "No mediaKeySession_ to handle encrypted config";
-    base::BindPostTaskToCurrentDefault(std::move(init_cb))
-        .Run(DecoderStatus::Codes::kUnsupportedEncryptionMode);
-    return;
-  }
-
-  base::BindPostTaskToCurrentDefault(std::move(init_cb)).Run(DecoderStatus::Codes::kOk);
   if (first_init) {
     last_width_ = width;
   }
-}
-
-void OhosVideoDecoder::SetCdm(CdmContext* cdm_context, InitCB init_cb) {
-  TRACE_EVENT0("media", "OhosVideoDecoder::SetCdm");
-  LOG(INFO) << "SetCdm enter";
-  if (!cdm_context) {
-    LOG(INFO) << "SetCdm No CDM provided";
-    base::BindPostTaskToCurrentDefault(std::move(init_cb)).Run(DecoderStatus::Codes::kFailed);
-    return;
-  }
-  ohos_crypto_context_ = cdm_context->GetOHOSMediaCryptoContext();
-
-  event_cb_registration_ = cdm_context->RegisterEventCB(base::BindRepeating(
-      &OhosVideoDecoder::OnCdmContextEvent, weak_factory_.GetWeakPtr()));
-
-  ohos_crypto_context_->SetOHOSMediaCryptoReadyCB(
-      base::BindPostTaskToCurrentDefault(
-          base::BindOnce(&OhosVideoDecoder::OnMediaCryptoReady,
-                         weak_factory_.GetWeakPtr(), std::move(init_cb))));
-}
-
-void OhosVideoDecoder::OnMediaCryptoReady(InitCB init_cb, void* session, bool requires_secure_video_codec) {
-  TRACE_EVENT0("media", "OhosVideoDecoder::OnMediaCryptoReady");
-  LOG(INFO) << "OhosVideoDecoder::OnMediaCryptoReady enter, requires_secure_video_codec = "
-            << requires_secure_video_codec;
-  if (session == nullptr) {
-    ohos_crypto_context_->SetOHOSMediaCryptoReadyCB(base::NullCallback());
-    ohos_crypto_context_ = nullptr;
-    mediaKeySession_ = nullptr;
-    requires_secure_codec_ = requires_secure_video_codec;
-    if (codec_ && !codec_->SetDecryptionConfig(nullptr, requires_secure_video_codec)) {
-      LOG(ERROR) << "OhosVideoDecoder::OnMediaCryptoReady set decryt nullptr fail";
-    }
-    if (decoder_config_.is_encrypted()) {
-      LOG(ERROR) << "OhosVideoDecoder::OnMediaCryptoReady can't play encrypted stream";
-      EnterTerminalState(State::kError, "MediaCrypto is not available");
-      std::move(init_cb).Run(DecoderStatus::Codes::kUnsupportedEncryptionMode);
-      return;
-    }
-
-    // MediaCrypto is not available, but the stream is clear. So we can still
-    // play the current stream. But if we switch to an encrypted stream playback
-    // will fail.
-    std::move(init_cb).Run(DecoderStatus::Codes::kOk);
-    return;
-  }
-
-  mediaKeySession_ = std::move(session);
-  requires_secure_codec_ = requires_secure_video_codec;
-
-  // Signal success, and create the codec lazily on the first decode.
-  if (!init_cb.is_null()) {
-    std::move(init_cb).Run(DecoderStatus::Codes::kOk);
-  }
-}
-
-void OhosVideoDecoder::OnCdmContextEvent(CdmContext::Event event) {
-  LOG(INFO) << "OhosVideoDecoder::OnCdmContextEvent enter";
-  if (event != CdmContext::Event::kHasAdditionalUsableKey) {
-    return;
-  }
-
-  waiting_for_key_ = false;
-  PumpCodec();
 }
 
 void OhosVideoDecoder::StartLazyInit() {
@@ -384,20 +296,8 @@ void OhosVideoDecoder::OnCodecConfigured(
   OHOS::NWeb::DecoderFormat decoderFormat;
   decoderFormat.width = decoder_config_.coded_size().width();
   decoderFormat.height = decoder_config_.coded_size().height();
-  if (codec->ConfigureBridgeDecoder(
-          decoderFormat, base::SequencedTaskRunner::GetCurrentDefault()) ==
-      DecoderAdapterCode::DECODER_ERROR) {
-    LOG(ERROR) << "OhosVideoDecoder::ConfigureBridgeDecoder failed.";
-    EnterTerminalState(State::kError, "Unable to config codec");
-    return;
-  }
-  if (mediaKeySession_ && codec->SetDecryptionConfig(mediaKeySession_, requires_secure_codec_) ==
-      DecoderAdapterCode::DECODER_ERROR) {
-    LOG(ERROR) << "OhosVideoDecoder::SetDecryptionConfig failed.";
-    EnterTerminalState(State::kError, "Unable to initialize codec");
-    return;
-  }
-
+  codec->ConfigureBridgeDecoder(decoderFormat,
+                                base::SequencedTaskRunner::GetCurrentDefault());
   if (codec->SetBridgeOutputSurface(surface_bundle->GetOHOSNativeWindow()) ==
       DecoderAdapterCode::DECODER_ERROR) {
     LOG(ERROR) << "OhosVideoDecoder::SetBridgeOutputSurface failed.";
@@ -417,12 +317,6 @@ void OhosVideoDecoder::OnCodecConfigured(
   if (!codec_) {
     LOG(ERROR) << "codec_ is null.";
   }
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  if (pending_surface_id_ > 0) {
-    codec_->SetVideoSurface(pending_surface_id_);
-    pending_surface_id_ = -1;
-  }
-#endif // ARKWEB_VIDEO_ASSISTANT
   PumpCodec();
 }
 
@@ -482,10 +376,6 @@ bool OhosVideoDecoder::QueueInput() {
     LOG(DEBUG) << "OhosVideoDecoder::QueueInput codec_ is null";
     return false;
   }
-  if (waiting_for_key_) {
-    LOG(DEBUG) << "OhosVideoDecoder::QueueInput wait for key";
-    return false;
-  }
   if (codec_->IsDrained() || deferred_flush_pending_) {
     if (!pending_decodes_.empty()) {
       FlushCodec();
@@ -507,11 +397,6 @@ bool OhosVideoDecoder::QueueInput() {
       break;
     case CodecWrapper::QueueStatus::kTryAgainLater:
       return false;
-    case CodecWrapper::QueueStatus::kNoKey:
-      // Retry when a key is added.
-      waiting_for_key_ = true;
-      waiting_cb_.Run(WaitingReason::kNoDecryptionKey);
-      return false;
     case CodecWrapper::QueueStatus::kError:
       EnterTerminalState(State::kError, "QueueInputBuffer failed");
       return false;
@@ -530,7 +415,7 @@ bool OhosVideoDecoder::QueueInput() {
 
 bool OhosVideoDecoder::DequeueOutput() {
   TRACE_EVENT0("media", "OhosVideoDecoder::DequeueOutput");
-  if (!codec_ || codec_->IsDrained() || waiting_for_key_) {
+  if (!codec_ || codec_->IsDrained()) {
     LOG(DEBUG) << "OhosVideoDecoder::DequeueOutput failed";
     return false;
   }
@@ -734,24 +619,5 @@ int OhosVideoDecoder::GetMaxDecodeRequests() const {
   return 2;
 }
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-void OhosVideoDecoder::SetVideoSurface(int32_t widget_id) {
-  LOG(INFO) << "SetVideoSurface(" << widget_id << "), codec_[" << (!!codec_) << "]";
-  if (codec_) {
-    codec_->SetVideoSurface(widget_id);
-  } else {
-    pending_surface_id_ = widget_id;
-  }
-}
-#endif // ARKWEB_VIDEO_ASSISTANT
-
-#if BUILDFLAG(ARKWEB_PIP)
-void OhosVideoDecoder::PipEnable(bool enable) {
-  LOG(INFO) << __func__ << " PipEnable enable:" << enable;
-  video_frame_factory_->PipEnable(enable);
-  if (!enable) {
-    TransitionToTargetSurface();
-  }
-}
-#endif
 }  // namespace media
+                     

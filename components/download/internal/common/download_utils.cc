@@ -169,6 +169,11 @@ void OnInterMediateUriCreated(LocalPathCallback callback,
 }
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+static FileRenameOptions gFileRenameOptions =
+    FileRenameOptions::RENAME_AND_UNIQUIFY_MODE;
+#endif  // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+
 }  // namespace
 
 const uint32_t DownloadItem::kInvalidId = 0;
@@ -803,6 +808,17 @@ void DetermineLocalPath(DownloadItem* download,
 #endif  // BUILDFLAG(IS_ANDROID)
   std::move(callback).Run(virtual_path, base::FilePath());
 }
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+void SetFileRenameOptions(FileRenameOptions options) {
+  LOG(INFO) << "SetFileRenameOptions to options: " << (int)options;
+  gFileRenameOptions = options;
+}
+
+FileRenameOptions GetFileRenameOptions() {
+  return gFileRenameOptions;
+}
+#endif  // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
 
 bool IsInterruptedDownloadAutoResumable(download::DownloadItem* download_item,
                                         int auto_resumption_size_limit) {

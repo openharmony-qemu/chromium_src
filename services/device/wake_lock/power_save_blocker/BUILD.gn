@@ -79,7 +79,9 @@ source_set("power_save_blocker") {
   } else if (is_win) {
     sources += [ "power_save_blocker_win.cc" ]
   } else if (is_ohos) {
-    sources += arkweb_power_save_blocker_source
+    sources += [
+      "power_save_blocker_ohos.cc"
+    ]
     if (arkweb_screen_lock) {
       sources += arkweb_screen_lock_sources
     }

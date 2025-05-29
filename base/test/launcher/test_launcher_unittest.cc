@@ -8,6 +8,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/base64.h"
 #include "base/command_line.h"
 #include "base/files/file_util.h"
@@ -1451,7 +1452,11 @@ TEST(TestLauncherTools, GetTestOutputSnippetTest) {
 
 MATCHER(CheckTruncationPreservesMessage, "") {
   // Ensure the inserted message matches the expected pattern.
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  constexpr char kExpected[] = R"(.* InitializeIcuTimeZone in OHOS.*)";
+#else
   constexpr char kExpected[] = R"(FATAL.*message\n)";
+#endif
   EXPECT_THAT(arg, ::testing::ContainsRegex(kExpected));
 
   const std::string snippet =

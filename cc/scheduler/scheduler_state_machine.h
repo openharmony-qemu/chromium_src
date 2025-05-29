@@ -375,9 +375,6 @@ class CC_EXPORT SchedulerStateMachine {
   bool resourceless_draw() const { return resourceless_draw_; }
 
   void set_is_scrolling(bool is_scrolling) { is_scrolling_ = is_scrolling; }
-#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-  bool is_scrolling() const {return is_scrolling_; }
-#endif
   void set_waiting_for_scroll_event(bool waiting_for_scroll_event) {
     waiting_for_scroll_event_ = waiting_for_scroll_event;
   }

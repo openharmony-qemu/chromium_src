@@ -22,7 +22,6 @@ class NWEB_EXPORT NWebNativeWindowTracker {
   NWebNativeWindowTracker(const NWebNativeWindowTracker&) = delete;
   NWebNativeWindowTracker& operator=(const NWebNativeWindowTracker&) = delete;
 
-  bool CheckNativeWindow(void* native_window);
   int32_t AddNativeWindow(void* native_window);
   void* GetNativeWindow(int32_t native_window_id);
   void DestroyNativeWindow(int32_t native_window_id);

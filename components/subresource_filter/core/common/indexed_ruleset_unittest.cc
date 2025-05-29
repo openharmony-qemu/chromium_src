@@ -91,29 +91,16 @@ class SubresourceFilterIndexedRulesetTest : public ::testing::Test {
 
   void Finish() {
     indexer_->Finish();
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-    matcher_ = std::make_unique<ArkWebIndexedRulesetMatcherExt>(indexer_->data());
-#else
     matcher_ = std::make_unique<IndexedRulesetMatcher>(indexer_->data());
-#endif
   }
 
   void Reset() {
     matcher_.reset(nullptr);
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-    indexer_ = std::make_unique<ArkWebRulesetIndexerExt>();
-#else
     indexer_ = std::make_unique<RulesetIndexer>();
-#endif
   }
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  std::unique_ptr<ArkWebRulesetIndexerExt> indexer_;
-  std::unique_ptr<ArkWebIndexedRulesetMatcherExt> matcher_;
-#else
   std::unique_ptr<RulesetIndexer> indexer_;
   std::unique_ptr<IndexedRulesetMatcher> matcher_;
-#endif
 };
 
 TEST_F(SubresourceFilterIndexedRulesetTest, EmptyRuleset) {

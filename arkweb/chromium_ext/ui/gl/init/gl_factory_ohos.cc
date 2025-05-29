@@ -57,6 +57,7 @@ scoped_refptr<GLContext> CreateGLContext(GLShareGroup* share_group,
     }
     case kGLImplementationDisabled:
       NOTREACHED();
+      return nullptr;
     default:
       if (!compatible_surface) {
         LOG(ERROR) << "surface is nullptr.";
@@ -86,6 +87,7 @@ scoped_refptr<GLSurface> CreateViewGLSurface(GLDisplay* display,
       }
     default:
       NOTREACHED();
+      return nullptr;
   }
 }
 
@@ -121,6 +123,7 @@ scoped_refptr<GLSurface> CreateOffscreenGLSurfaceWithFormat(
       return new GLSurfaceStub;
     default:
       NOTREACHED();
+      return nullptr;
   }
 }
 
@@ -158,6 +161,7 @@ bool InitializeExtensionSettingsOneOffPlatform(GLDisplay* display) {
       return true;
     default:
       NOTREACHED();
+      return false;
   }
 }
 

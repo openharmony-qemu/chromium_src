@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "net/socket/transport_connect_job.h"
-#include "arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext.h"
 
 #include <memory>
 #include <utility>
@@ -31,9 +30,14 @@
 #include "third_party/abseil-cpp/absl/types/variant.h"
 #include "url/scheme_host_port.h"
 #include "url/url_constants.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
+
+namespace {
 
 // TODO(crbug.com/40181080): Delete once endpoint usage is converted to using
 // url::SchemeHostPort when available.
@@ -48,13 +52,15 @@ HostPortPair ToLegacyDestinationEndpoint(
   return absl::get<HostPortPair>(endpoint);
 }
 
+}  // namespace
+
 TransportSocketParams::TransportSocketParams(
     Endpoint destination,
     NetworkAnonymizationKey network_anonymization_key,
     SecureDnsPolicy secure_dns_policy,
     OnHostResolutionCallback host_resolution_callback,
     base::flat_set<std::string> supported_alpns
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     ,
     bool secure_dns_only
 #endif
@@ -64,7 +70,7 @@ TransportSocketParams::TransportSocketParams(
       secure_dns_policy_(secure_dns_policy),
       host_resolution_callback_(std::move(host_resolution_callback)),
       supported_alpns_(std::move(supported_alpns))
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
       ,
       secure_dns_only_(secure_dns_only)
 #endif
@@ -104,11 +110,7 @@ std::unique_ptr<TransportConnectJob> TransportConnectJob::Factory::Create(
     const scoped_refptr<TransportSocketParams>& params,
     Delegate* delegate,
     const NetLogWithSource* net_log) {
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || BUILDFLAG(ARKWEB_PRP_PRELOAD) || BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-  return std::make_unique<ArkWebTransportConnectJobExt>(priority, socket_tag,
-#else
   return std::make_unique<TransportConnectJob>(priority, socket_tag,
-#endif
                                                common_connect_job_params,
                                                params, delegate, net_log);
 }
@@ -254,8 +256,8 @@ int TransportConnectJob::DoLoop(int result) {
 int TransportConnectJob::DoResolveHost() {
   connect_timing_.domain_lookup_start = base::TimeTicks::Now();
 #if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
-               "domainLookupStart", connect_timing_.domain_lookup_start);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "domainLookupStart",
+               connect_timing_.domain_lookup_start);
 #endif
 
   if (has_dns_override_) {
@@ -270,11 +272,11 @@ int TransportConnectJob::DoResolveHost() {
   HostResolver::ResolveHostParameters parameters;
   parameters.initial_priority = priority();
   parameters.secure_dns_policy = params_->secure_dns_policy();
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   if (host_resolver()->CanUseSecureDnsFallback()) {
     parameters.only_use_secure_fallback = params_->secure_dns_only();
   }
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   if (absl::holds_alternative<url::SchemeHostPort>(params_->destination())) {
     request_ = host_resolver()->CreateRequest(
         absl::get<url::SchemeHostPort>(params_->destination()),
@@ -297,10 +299,10 @@ int TransportConnectJob::DoResolveHostComplete(int result) {
   // through proxies, |connect_start| should not include dns lookup time.
   connect_timing_.connect_start = connect_timing_.domain_lookup_end;
 #if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
-               "domainLookupEnd", connect_timing_.domain_lookup_end);
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
-               "connectStart", connect_timing_.connect_start);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "domainLookupEnd",
+               connect_timing_.domain_lookup_end);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "connectStart",
+               connect_timing_.connect_start);
 #endif
   resolve_error_info_ = request_->GetResolveErrorInfo();
 
@@ -394,14 +396,20 @@ int TransportConnectJob::DoTransportConnect() {
       case ADDRESS_FAMILY_IPV4:
         ipv4_addresses.push_back(ip_endpoint);
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-        AsArkWebTransportConnectJobExt()->AddIpv4AddressLimit(ip_addresses_count, ipv4_addresses_limit, ip_endpoint);
+        if (ip_addresses_count < kMaxMultiSocketNum) {
+          ipv4_addresses_limit.push_back(ip_endpoint);
+        }
+        ip_addresses_count++;
 #endif
         break;
 
       case ADDRESS_FAMILY_IPV6:
         ipv6_addresses.push_back(ip_endpoint);
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-        AsArkWebTransportConnectJobExt()->AddIpv6AddressLimit(ip_addresses_count, ipv4_addresses_limit, ip_endpoint);
+        if (ip_addresses_count < kMaxMultiSocketNum) {
+          ipv6_addresses_limit.push_back(ip_endpoint);
+        }
+        ip_addresses_count++;
 #endif
         break;
 
@@ -426,9 +434,6 @@ int TransportConnectJob::DoTransportConnect() {
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
     ipv6_job_ = std::make_unique<TransportConnectSubJob>(
         std::move(ipv6_addresses), this, SUB_JOB_IPV6);
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-    ipv6_job_->SetFromPreload(IsFromPreload());
-#endif
     int result = ipv6_job_->Start();
     if (result != ERR_IO_PENDING)
       return HandleSubJobComplete(result, ipv6_job_.get());
@@ -441,7 +446,7 @@ int TransportConnectJob::DoTransportConnect() {
                          base::Unretained(this)));
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
       // websocket和老版本保持一致
-      AsArkWebTransportConnectJobExt()->WillDoMultiConnect();
+      WillDoMultiConnect();
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
     }
     return ERR_IO_PENDING;
@@ -449,14 +454,11 @@ int TransportConnectJob::DoTransportConnect() {
 
   DCHECK(!ipv6_job_);
   DCHECK(ipv4_job_);
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  ipv4_job_->SetFromPreload(IsFromPreload());
-#endif
   int result = ipv4_job_->Start();
   if (result != ERR_IO_PENDING)
     return HandleSubJobComplete(result, ipv4_job_.get());
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-  AsArkWebTransportConnectJobExt()->WillDoMultiConnect();
+  WillDoMultiConnect();
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
   return ERR_IO_PENDING;
 }
@@ -494,7 +496,11 @@ int TransportConnectJob::DoTransportConnectComplete(int result) {
   }
 
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-  AsArkWebTransportConnectJobExt()->ClearMultiJobsAndStopTimers();
+  if (!websocket_endpoint_lock_manager()) {
+    if (multi_ip_enabled_) {
+      ClearMultiJobsAndStopTimers();
+    }
+  }
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
   return result;
 }
@@ -504,7 +510,12 @@ int TransportConnectJob::HandleSubJobComplete(int result,
   DCHECK_NE(result, ERR_IO_PENDING);
   if (result == OK) {
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-    AsArkWebTransportConnectJobExt()->MultiIpSubJobReport(job);
+    if (multi_ip_enabled_ && !websocket_endpoint_lock_manager() &&
+        job->Socket() && job->type() > SUB_JOB_IPV6) {
+      IPEndPoint address;
+      job->Socket()->GetPeerAddress(&address);
+      NeedReportSuccessIp(address, job->type());
+    }
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
     SetSocket(job->PassSocket(), dns_aliases_);
     return result;
@@ -530,18 +541,30 @@ int TransportConnectJob::HandleSubJobComplete(int result,
           return HandleSubJobComplete(result, ipv4_job_.get());
         }
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-        AsArkWebTransportConnectJobExt()->WillDoMultiConnectFallback();
+        WillDoMultiConnectFallback();
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
       }
       break;
 
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
     case SUB_MULTI_JOB:
-      AsArkWebTransportConnectJobExt()->EraseFromMultiJobs(job);
+      for (auto it = multi_connect_jobs_.begin();
+           it != multi_connect_jobs_.end(); it++) {
+        if (it->get() == job) {
+          multi_connect_jobs_.erase(it);
+          break;
+        }
+      }
       break;
 
     case SUB_MULTI_FALLBACK_JOB:
-      AsArkWebTransportConnectJobExt()->EraseFromMultiFallbackJobs(job);
+      for (auto it = multi_connect_fallback_jobs_.begin();
+           it != multi_connect_fallback_jobs_.end(); it++) {
+        if (it->get() == job) {
+          multi_connect_fallback_jobs_.erase(it);
+          break;
+        }
+      }
       break;
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
   }
@@ -576,7 +599,7 @@ void TransportConnectJob::StartIPv4JobAsync() {
   if (result != ERR_IO_PENDING)
     OnSubJobComplete(result, ipv4_job_.get());
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-  AsArkWebTransportConnectJobExt()->WillDoMultiConnectFallback();
+  WillDoMultiConnectFallback();
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
 }
 
@@ -644,4 +667,124 @@ TransportConnectJob::GetEndpointResultForCurrentSubJobs() const {
   return endpoint_results_[current_endpoint_result_];
 }
 
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+void TransportConnectJob::SetConnectTimeout(int timeout_override) {
+  timeout_override_ = base::Seconds(timeout_override);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+void TransportConnectJob::ClearMultiJobsAndStopTimers() {
+  multi_connect_timer_.Stop();
+  multi_connect_fallback_timer_.Stop();
+  multi_connect_jobs_.clear();
+  multi_connect_fallback_jobs_.clear();
+}
+
+void TransportConnectJob::WillDoMultiConnect() {
+  if (multi_ip_enabled_ && !websocket_endpoint_lock_manager() &&
+      multi_connect_ip_addresses_.size() > 1) {
+    multi_connect_timer_.Start(
+        FROM_HERE, multi_connect_interval_time_,
+        base::BindRepeating(&TransportConnectJob::StartMultiConnectJobs,
+                            weak_ptr_factory_.GetWeakPtr()));
+  }
+}
+
+void TransportConnectJob::StartMultiConnectJobs() {
+  // The timer should only fire while we're waiting for the main connect to
+  // succeed.
+  if (next_state_ != STATE_TRANSPORT_CONNECT_COMPLETE) {
+    LOG(ERROR) << "StartMultiConnectJobs ret for next_state_[" << next_state_
+               << "] is not expected";
+    return;
+  }
+
+  net_log().AddEvent(NetLogEventType::TRANSPORT_MULTI_CONNECT_JOB);
+  multi_connect_ip_addresses_.erase(multi_connect_ip_addresses_.begin());
+  std::unique_ptr<TransportConnectSubJob> ip_job =
+      std::make_unique<TransportConnectSubJob>(multi_connect_ip_addresses_,
+                                               this, SUB_MULTI_JOB);
+  int result = ip_job->Start();
+  if (multi_connect_ip_addresses_.size() <= 1) {
+    multi_connect_timer_.Stop();
+  }
+  if (result != ERR_IO_PENDING) {
+    OnSubJobComplete(result, ip_job.get());
+    return;
+  }
+  multi_connect_jobs_.push_back(std::move(ip_job));
+}
+
+void TransportConnectJob::WillDoMultiConnectFallback() {
+  if (multi_ip_enabled_ && !websocket_endpoint_lock_manager() &&
+      multi_connect_fallback_ip_addresses_.size() > 1) {
+    multi_connect_fallback_timer_.Start(
+        FROM_HERE, multi_connect_interval_time_,
+        base::BindRepeating(&TransportConnectJob::StartMultiConnectFallbackJobs,
+                            weak_ptr_factory_.GetWeakPtr()));
+  }
+}
+
+void TransportConnectJob::StartMultiConnectFallbackJobs() {
+  // The timer should only fire while we're waiting for the main connect to
+  // succeed.
+  if (next_state_ != STATE_TRANSPORT_CONNECT_COMPLETE) {
+    LOG(ERROR) << "StartMultiConnectFallbackJobs ret for next_state_["
+               << next_state_ << "] is not expected";
+    return;
+  }
+
+  net_log().AddEvent(NetLogEventType::TRANSPORT_MULTI_CONNECT_JOB_FALLBACK);
+  multi_connect_fallback_ip_addresses_.erase(
+      multi_connect_fallback_ip_addresses_.begin());
+  std::unique_ptr<TransportConnectSubJob> ip_job =
+      std::make_unique<TransportConnectSubJob>(
+          multi_connect_fallback_ip_addresses_, this, SUB_MULTI_FALLBACK_JOB);
+  int result = ip_job->Start();
+  if (multi_connect_fallback_ip_addresses_.size() <= 1) {
+    multi_connect_fallback_timer_.Stop();
+  }
+  if (result != ERR_IO_PENDING) {
+    OnSubJobComplete(result, ip_job.get());
+    return;
+  }
+  multi_connect_fallback_jobs_.push_back(std::move(ip_job));
+}
+
+void TransportConnectJob::NeedReportSuccessIp(const IPEndPoint& address,
+                                              SubJobType type) {
+  const HostResolverEndpointResult& endpoint =
+      GetEndpointResultForCurrentSubJobs();
+  if (endpoint.ip_endpoints.size() < 2) {
+    return;
+  }
+
+  size_t success_index = -1;
+  for (size_t i = 0; i < endpoint.ip_endpoints.size(); i++) {
+    if (endpoint.ip_endpoints[i] == address) {
+      success_index = i + 1;
+      break;
+    }
+  }
+
+  // Todo: The check for success_index = 1 should be deleted
+  // when the report is supported.
+  if (success_index == 1) {
+    return;
+  }
+
+  ReportSuccessIp(success_index, endpoint.ip_endpoints.size(), type);
+}
+
+void TransportConnectJob::ReportSuccessIp(int success_index,
+                                          int ip_addresses_num,
+                                          SubJobType type) {
+  std::ostringstream ostr;
+  ostr << "ip_counter=" << ip_addresses_num
+       << ", succeed_number=" << success_index << ", job_type=" << (int)type;
+  std::string host = ToLegacyDestinationEndpoint(params_->destination()).host();
+  LOG(DEBUG) << "event_message: " << ostr.str() << ", resource: " << host;
+}
+#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
 }  // namespace net

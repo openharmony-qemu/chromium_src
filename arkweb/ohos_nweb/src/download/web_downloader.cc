@@ -106,7 +106,7 @@ void WebDownload_Continue(const NWebBeforeDownloadCallbackWrapper* wrapper,
 
 void WebDownload_CancelBeforeDownload(
     const NWebBeforeDownloadCallbackWrapper* wrapper) {
-#if BUILGFLAG(ARKWEB_EX_DOWNLOAD)
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   if (wrapper) {
     wrapper->Cancel();
   }
@@ -115,7 +115,7 @@ void WebDownload_CancelBeforeDownload(
 
 void WebDownload_PauseBeforeDownload(
     const NWebBeforeDownloadCallbackWrapper* wrapper) {
-#if BUILGFLAG(ARKWEB_EX_DOWNLOAD)
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   if (wrapper) {
     wrapper->Pause();
   }
@@ -124,7 +124,7 @@ void WebDownload_PauseBeforeDownload(
 
 void WebDownload_ResumeBeforeDownload(
     const NWebBeforeDownloadCallbackWrapper* wrapper) {
-#if BUILGFLAG(ARKWEB_EX_DOWNLOAD)
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   if (wrapper) {
     wrapper->Resume();
   }
@@ -505,30 +505,6 @@ void WebScreenCapture_StopScreenCapture(int32_t nweb_id,
     return;
   }
   nweb->StopScreenCapture(nweb_id, session_id);
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
-}
-
-void WebScreenCapture_SetScreenCapturePickerShow(int32_t nweb_id) {
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  OHOS::NWeb::NWebImpl* nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
-  if (!nweb) {
-    WVLOG_E("fail to find a nweb with %{public}d ", nweb_id);
-    return;
-  }
-
-  nweb->SetScreenCapturePickerShow();
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
-}
-
-void WebScreenCapture_DisableSessionReuse(int32_t nweb_id) {
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  OHOS::NWeb::NWebImpl* nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
-  if (!nweb) {
-    WVLOG_E("fail to find a nweb with %{public}d ", nweb_id);
-    return;
-  }
-
-  nweb->DisableSessionReuse();
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 }
 

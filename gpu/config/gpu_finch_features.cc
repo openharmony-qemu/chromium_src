@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #include "gpu/config/gpu_finch_features.h"
-#include "arkweb/build/features/features.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
 #include "build/build_config.h"
@@ -31,7 +31,13 @@
 #include "base/system/sys_info.h"
 #endif  // BUILDFLAG(IS_MAC)
 
-#include "arkweb/chromium_ext/gpu/config/gpu_finch_features_ext.h"
+#if BUILDFLAG(ARKWEB_DRDC)
+#include "content/public/common/content_switches.h"
+#endif  // BUILDFLAG(ARKWEB_DRDC)
+
+#if BUILDFLAG(ARKWEB_VULKAN)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 
 namespace features {
 namespace {
@@ -168,7 +174,7 @@ BASE_FEATURE(kAllowHardwareBufferUsageFlagsFromVulkanForScanout,
 // Android and Linux.
 BASE_FEATURE(kDefaultEnableGpuRasterization,
              "DefaultEnableGpuRasterization",
-#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) ||    \
     BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX) || \
     BUILDFLAG(IS_OHOS)
              base::FEATURE_ENABLED_BY_DEFAULT
@@ -521,7 +527,23 @@ bool IsUsingVulkan() {
 
   return true;
 #elif BUILDFLAG(ARKWEB_VULKAN)
-  return features::IsEnableVulkan();
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                        .GetSystemPropertiesInstance();
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  bool cmd_value = false;
+  if (command_line) {
+    cmd_value = command_line->HasSwitch(switches::kOhosEnableVulkan);
+  }
+  std::string vulkan_enable = system_properties_adapter.GetVulkanStatus();
+  LOG(DEBUG) << "vulkan switch config is: " << cmd_value
+             << ", cmd is: " << vulkan_enable;
+  if (vulkan_enable == "false") {
+    return false;
+  } else if (vulkan_enable == "None") {
+    return cmd_value;
+  } else {
+    return true;
+  }
 #else
   return base::FeatureList::IsEnabled(kVulkan);
 #endif
@@ -569,7 +591,18 @@ bool IsDrDcEnabled() {
   if (!base::FeatureList::IsEnabled(kEnableDrDc))
     return false;
 #elif BUILDFLAG(ARKWEB_DRDC)
-  return features::IsDrDcForVulkan();
+  if (IsUsingVulkan()) {
+    LOG(DEBUG) << "vulkan drdc enabled "
+               << base::FeatureList::IsEnabled(kEnableDrDc);
+    return base::FeatureList::IsEnabled(kEnableDrDc);
+  }
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line) {
+    LOG(DEBUG) << "vulkan drdc enabled "
+               << command_line->HasSwitch(::switches::kOhosEnableDrDc);
+    return command_line->HasSwitch(::switches::kOhosEnableDrDc);
+  }
+  return false;
 #else
   return false;
 #endif

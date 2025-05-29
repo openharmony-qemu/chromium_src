@@ -11,15 +11,17 @@
 namespace content::responsiveness {
 
 void NativeEventObserver::RegisterObserver() {
-  if (![NSApp conformsToProtocol:@protocol(NativeEventProcessor)])
+  if (![NSApp conformsToProtocol:@protocol(NativeEventProcessor)]) {
     return;
+  }
   id<NativeEventProcessor> processor =
       static_cast<id<NativeEventProcessor>>(NSApp);
   [processor addNativeEventProcessorObserver:this];
 }
 void NativeEventObserver::DeregisterObserver() {
-  if (![NSApp conformsToProtocol:@protocol(NativeEventProcessor)])
+  if (![NSApp conformsToProtocol:@protocol(NativeEventProcessor)]) {
     return;
+  }
   id<NativeEventProcessor> processor =
       static_cast<id<NativeEventProcessor>>(NSApp);
   [processor removeNativeEventProcessorObserver:this];

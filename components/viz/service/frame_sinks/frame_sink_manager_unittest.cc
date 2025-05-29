@@ -35,7 +35,6 @@
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
 #include "components/viz/common/features.h"
-#include "arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_unittest_ext.h"
 #endif
 
 namespace viz {
@@ -155,8 +154,30 @@ class FrameSinkManagerTest : public testing::Test {
   }
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  ARKWEB_UNITTESTS_MY_EVICT_SURFACES_PART1();
-  ARKWEB_UNITTESTS_MY_EVICT_SURFACES_PART2()
+  void MyEvictSurfaces(const std::vector<SurfaceId>& surface_ids) {
+    for (const SurfaceId& surface_id : surface_ids) {
+      auto it = manager_.support_map_.find(surface_id.frame_sink_id());
+      if (it == manager_.support_map_.end()) {
+        continue;
+      }
+
+      bool should_evict = true;
+      if (it->second->is_root()) {
+        auto root_it = manager_.root_sink_map_.find(surface_id.frame_sink_id());
+        if (root_it != manager_.root_sink_map_.end()) {
+          should_evict = root_it->second->WillEvictSurface(surface_id);
+        }
+      }
+
+      if (should_evict) {
+        it->second->EvictSurface(surface_id.local_surface_id());
+      }
+    }
+
+    // Trigger garbage collection immediately, otherwise the surface may not be
+    // evicted for a long time (e.g. not before a frame is produced).
+    manager_.surface_manager_.GarbageCollectSurfaces();
+  }
 #endif
 
   base::flat_set<FrameSinkId> GetEmbeddedRenderInputRouters(
@@ -960,7 +981,9 @@ TEST_F(FrameSinkManagerTest, SubmitCompositorFrameWithEvictedSurfaceId) {
   const LocalSurfaceId local_surface_id2 = allocator.GetCurrentLocalSurfaceId();
   const SurfaceId surface_id2(kFrameSinkIdRoot, local_surface_id2);
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  ARKWEB_UNITTESTS_SUBMIT_COMPOSITOR_GRAME_SYNC();
+  GetRootCompositorFrameSinkImpl()->SubmitCompositorFrameSync(
+      local_surface_id2, MakeDefaultCompositorFrame(), absl::nullopt, 0,
+      CompositorFrameSinkImpl::SubmitCompositorFrameSyncCallback());
 #else
   GetRootCompositorFrameSinkImpl()->SubmitCompositorFrame(
       local_surface_id, MakeDefaultCompositorFrame(), std::nullopt, 0);

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "content/public/browser/web_contents_delegate.h"
-#include "content/public/browser/custom_media_player_listener.h"
 
 #include <memory>
 #include <utility>
@@ -29,10 +28,8 @@
 #include "ui/gfx/geometry/rect.h"
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 #include "content/browser/media/video_assistant/video_assistant.h"
-#include "content/public/browser/media_player_controller.h"
-#include "content/public/browser/media_player_listener.h"
 #include "media/mojo/mojom/media_player.mojom.h"
-#endif // ARKWEB_VIDEO_ASSISTANT
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
 namespace content {
 
@@ -471,17 +468,17 @@ std::unique_ptr<CustomMediaPlayer> WebContentsDelegate::CreateCustomMediaPlayer(
     const MediaInfo& media_info) {
   return nullptr;
 }
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 void WebContentsDelegate::OnShowToast(double duration,
                                       const std::string& toast) {}
- 
+
 void WebContentsDelegate::OnShowVideoAssistant(
     const std::string& videoAssistantItems) {}
- 
+
 void WebContentsDelegate::OnReportStatisticLog(const std::string& content) {}
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void WebContentsDelegate::WebExtensionUpdateTab(
@@ -501,13 +498,6 @@ void WebContentsDelegate::OnVideoPlaying(
     media::mojom::VideoAttributesForVASTPtr video_attributes) {}
 void WebContentsDelegate::OnUpdateVideoAttributes(
     media::mojom::VideoAttributesForVASTPtr video_attributes) {}
-
-std::unique_ptr<MediaPlayerListener>
-WebContentsDelegate::OnFullScreenOverlayEnter(
-    media::mojom::MediaInfoForVASTPtr media_info,
-    const MediaPlayerId& media_player_id) {
-  return nullptr;
-}
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace content

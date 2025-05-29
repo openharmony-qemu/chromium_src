@@ -65,7 +65,7 @@ bool StructTraits<viz::mojom::BeginFrameArgsDataView, viz::BeginFrameArgs>::
   out->animate_only = data.animate_only();
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   out->internal_frame = data.internal_frame();
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
   if (!data.ReadDrawRect(&out->draw_rect)) {
     return false;

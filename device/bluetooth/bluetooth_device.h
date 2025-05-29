@@ -675,6 +675,10 @@ class DEVICE_BLUETOOTH_EXPORT BluetoothDevice {
   // Return associated BluetoothAdapter.
   BluetoothAdapter* GetAdapter() { return adapter_; }
 
+#if BUILDFLAG(IS_OHOS)
+  BluetoothAdapter* GetAdapter() const { return adapter_; }
+#endif
+
   std::vector<BluetoothRemoteGattService*> GetPrimaryServices();
 
   std::vector<BluetoothRemoteGattService*> GetPrimaryServicesByUUID(

@@ -163,14 +163,6 @@ extended_locales = [
   "zu",
 ]
 
-if (is_ohos) {
-  extended_locales -= [
-    "ka",
-    "mk",
-    "my",
-  ]
-}
-
 # Chrome locales not on Android.
 # These locales have not yet been tested yet. Specifically, AOSP has not been
 # translated to Welsh at the time of writing (April 2022):

@@ -25,6 +25,7 @@ class CONTENT_EXPORT V8ValueConverterImpl : public V8ValueConverter {
   void SetDateAllowed(bool val) override;
   void SetRegExpAllowed(bool val) override;
   void SetFunctionAllowed(bool val) override;
+  void SetPromiseAllowed(bool val) override;
   void SetStripNullFromObjects(bool val) override;
   void SetConvertNegativeZeroToInt(bool val) override;
   void SetStrategy(Strategy* strategy) override;
@@ -33,9 +34,6 @@ class CONTENT_EXPORT V8ValueConverterImpl : public V8ValueConverter {
   std::unique_ptr<base::Value> FromV8Value(
       v8::Local<v8::Value> value,
       v8::Local<v8::Context> context) override;
-#if BUILDFLAG(ARKWEB_MSGPORT)
-  void SetPromiseAllowed(bool val) override;
-#endif
 
  private:
   friend class ScopedAvoidIdentityHashForTesting;
@@ -73,13 +71,11 @@ class CONTENT_EXPORT V8ValueConverterImpl : public V8ValueConverter {
                                             FromV8ValueState* state,
                                             v8::Isolate* isolate) const;
 
-#if BUILDFLAG(ARKWEB_MSGPORT)
   std::unique_ptr<base::Value> FromV8Object(v8::Local<v8::Object> object,
                                             FromV8ValueState* state,
                                             v8::Isolate* isolate,
                                             bool is_function,
                                             bool is_promise) const;
-#endif
 
   // If true, we will convert Date JavaScript objects to doubles.
   bool date_allowed_;
@@ -90,10 +86,8 @@ class CONTENT_EXPORT V8ValueConverterImpl : public V8ValueConverter {
   // If true, we will convert Function JavaScript objects to dictionaries.
   bool function_allowed_;
 
-#if BUILDFLAG(ARKWEB_MSGPORT)
   // If true, we will convert promise JavaScript objects to dictionaries.ls
   bool promise_allowed_;
-#endif
 
   // If true, undefined and null values are ignored when converting v8 objects
   // into Values.

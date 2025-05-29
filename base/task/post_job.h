@@ -7,12 +7,12 @@
 
 #include <limits>
 
+#include "arkweb/build/features/features.h"
 #include "base/base_export.h"
 #include "base/dcheck_is_on.h"
 #include "base/functional/callback.h"
 #include "base/location.h"
 #include "base/memory/stack_allocated.h"
-#include "arkweb/build/features/features.h"
 
 namespace base {
 namespace internal {
@@ -133,9 +133,7 @@ class BASE_EXPORT JobHandle {
   void Detach();
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  internal::JobTaskSource* GetTaskSource() {
-    return task_source_.get();
-  }
+  internal::JobTaskSource* GetTaskSource() { return task_source_.get(); }
 #endif
 
  private:

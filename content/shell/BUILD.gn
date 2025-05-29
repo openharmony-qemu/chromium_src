@@ -165,7 +165,7 @@ if (is_ohos) {
   shared_library("content_shell_web") {
     testonly = true
     sources = [
-      "//arkweb/chromium_ext/content/shell/app/shell_main_ohos.cc",
+      "app/shell_main_ohos.cc",
     ]
     defines = []
 

@@ -20,7 +20,6 @@
 #include "third_party/rust/serde_json_lenient/v0_2/wrapper/lib.rs.h"
 #endif  // BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
 
-
 namespace base {
 
 // TODO(crbug.com/40811643): Move the C++ parser into components/nacl to just
@@ -216,10 +215,10 @@ bool JSONReader::UsingRust() {
     return false;
   }
 #if BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
-   return false;
-#else // BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+  return false;
+#else   // BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
   return base::FeatureList::IsEnabled(base::features::kUseRustJsonParser);
-#endif // BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#endif  // BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
 }
 
 }  // namespace base

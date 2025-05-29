@@ -14,10 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/chromium_ext/services/network/url_loader_utils.h"
-#include "arkweb/chromium_ext/services/network/url_loader_ext.h"
-
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/command_line.h"
 #include "base/containers/fixed_flat_set.h"
 #include "base/files/file.h"
@@ -118,7 +114,9 @@
 #include "third_party/abseil-cpp/absl/container/inlined_vector.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
 #include "arkweb/chromium_ext/services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
@@ -137,6 +135,30 @@ constexpr size_t kBlockedBodyAllocationSize = 1;
 constexpr size_t kDiscardBufferSize = 128 * 1024;
 
 constexpr char kActivateStorageAccessHeader[] = "activate-storage-access";
+
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+const char* kLoadTimingInfoEvent = "load_timing_info";
+const char* kHost = "host";
+const char* kErrorCode = "error_code";
+const char* kProtocol = "protocol";
+const char* kUseQuic = "use_quic";
+const char* kSocketReused = "socket_reused";
+const char* kDnsDurationMs = "dns_duration_ms";
+const char* kConnectDurationMs = "connect_duration_ms";
+const char* kSendStartToReceiveHeadersEndMs =
+    "send_start_to_receive_headers_end_ms";
+const char* kTotalSendBytes = "total_send_bytes";
+const char* kTotalRecvBytes = "total_recv_bytes";
+const char* kSendStartToOnComplete = "send_start_to_on_complete";
+#endif  // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+const std::string SECURITY_URL =
+  "https://lfbrowsertestelbnew.hwcloudtest.cn/security/v1/oh/securityurls";
+ 
+// "4" means blink::mojom::ResourceType::kImage. here not depend blink.
+constexpr int RESOURCE_TYPE_Image = 4;
+#endif
 
 // A subclass of net::UploadBytesElementReader which owns
 // ResourceRequestBody.
@@ -534,6 +556,85 @@ bool IncludesValidLoadField(const net::HttpResponseHeaders* headers) {
 
 }  // namespace
 
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+std::string BoolToString(bool value) {
+  return value ? "true" : "false";
+}
+
+std::string GetProtocol(const GURL& url, const net::HttpResponseInfo& info) {
+  std::string protocol = info.alpn_negotiated_protocol;
+  if (protocol.empty() || protocol == "unknown") {
+    if (info.was_fetched_via_spdy) {
+      protocol = "h2";
+    } else if (url.SchemeIsHTTPOrHTTPS()) {
+      protocol = "http";
+      if (info.headers) {
+        if (info.headers->GetHttpVersion() == net::HttpVersion(0, 9)) {
+          protocol = "http/0.9";
+        } else if (info.headers->GetHttpVersion() == net::HttpVersion(1, 0)) {
+          protocol = "http/1.0";
+        } else if (info.headers->GetHttpVersion() == net::HttpVersion(1, 1)) {
+          protocol = "http/1.1";
+        }
+      }
+    } else {
+      protocol = url.scheme();
+    }
+  }
+  return protocol;
+}
+
+void ReportUrlQuicInfo(net::URLRequest* url_request, int error_code) {
+  net::LoadTimingInfo load_timing_info;
+  url_request->GetLoadTimingInfo(&load_timing_info);
+  std::string host = url_request->url().host();
+  const net::HttpResponseInfo& response_info = url_request->response_info();
+  std::string protocol = GetProtocol(url_request->url(), response_info);
+  bool use_quic = false;
+  if (response_info.DidUseQuic()) {
+    use_quic = true;
+  }
+  bool socket_reused = load_timing_info.socket_reused;
+  int64_t dns_start_ms =
+      load_timing_info.connect_timing.domain_lookup_start.since_origin()
+          .InMilliseconds();
+  int64_t dns_end_ms =
+      load_timing_info.connect_timing.domain_lookup_end.since_origin()
+          .InMilliseconds();
+  int64_t dns_duration_ms = dns_end_ms - dns_start_ms;
+  int64_t connect_start_ms =
+      load_timing_info.connect_timing.connect_start.since_origin()
+          .InMilliseconds();
+  int64_t connect_end_ms =
+      load_timing_info.connect_timing.connect_end.since_origin()
+          .InMilliseconds();
+  int64_t connect_duration_ms = connect_end_ms - connect_start_ms;
+  int64_t send_start_ms =
+      load_timing_info.send_start.since_origin().InMilliseconds();
+  int64_t receive_headers_end_ms =
+      load_timing_info.receive_headers_end.since_origin().InMilliseconds();
+  int64_t send_start_to_receive_headers_end_ms =
+      receive_headers_end_ms - send_start_ms;
+  int total_send_bytes = url_request->GetTotalSentBytes();
+  int total_recv_bytes = url_request->GetTotalReceivedBytes();
+  int64_t on_complete_ms =
+      base::TimeTicks::Now().since_origin().InMilliseconds();
+  int64_t send_start_to_on_complete = on_complete_ms - send_start_ms;
+
+  LOG(INFO) << "event_message: " << kLoadTimingInfoEvent << " " << kErrorCode
+            << ":" << error_code << ", " << kProtocol << ":" << protocol << ", "
+            << kUseQuic << ":" << use_quic << ", " << kSocketReused << ":"
+            << socket_reused << ", " << kDnsDurationMs << ":" << dns_duration_ms
+            << ", " << kConnectDurationMs << ":" << connect_duration_ms << ", "
+            << kSendStartToReceiveHeadersEndMs << ":"
+            << send_start_to_receive_headers_end_ms << ", " << kTotalSendBytes
+            << ":" << total_send_bytes << ", " << kTotalRecvBytes << ":"
+            << total_recv_bytes << ", " << kSendStartToOnComplete << ":"
+            << send_start_to_on_complete << ".";
+  LOG(DEBUG) << "event_message: " << kHost << ":" << host << ".";
+}
+#endif  // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+
 URLLoader::MaybeSyncURLLoaderClient::MaybeSyncURLLoaderClient(
     mojo::PendingRemote<mojom::URLLoaderClient> mojo_client,
     base::WeakPtr<mojom::URLLoaderClient> sync_client)
@@ -600,6 +701,7 @@ URLLoader::URLLoader(
       network_context_client_(context.GetNetworkContextClient()),
       delete_callback_(std::move(delete_callback)),
       options_(options),
+      corb_detachable_(request.corb_detachable),
       resource_type_(request.resource_type),
       is_load_timing_enabled_(request.enable_load_timing),
       factory_params_(context.GetFactoryParams()),
@@ -673,7 +775,7 @@ URLLoader::URLLoader(
           request.trusted_params->include_request_cookies_with_response),
       provide_data_use_updates_(context.DataUseUpdatesEnabled()) {
   DCHECK(delete_callback_);
-  url_loader_utils_ = std::make_unique<URLLoaderUtils>(this, request.corb_detachable);
+
   if (options_ & mojom::kURLLoadOptionReadAndDiscardBody) {
     CHECK(!(options_ & mojom::kURLLoadOptionSniffMimeType))
         << "options ReadAndDiscardBody and SniffMimeType cannot be used "
@@ -711,13 +813,39 @@ URLLoader::URLLoader(
   receiver_.set_disconnect_handler(
       base::BindOnce(&URLLoader::OnMojoDisconnect, base::Unretained(this)));
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  bool isStartReplay = url_loader_utils_->HandlePrppLoaderStartReplay(
-      prpp_loader, context, request, traffic_annotation,
-      shared_dictionary_manager, org_main_url, preload_info,
-      shared_storage_writable_eligible);
-  if (isStartReplay) {
-    return;
+  if (prpp_loader.get()) {
+    prpp_loader_ = prpp_loader;
+    url_request_ = prpp_loader_->GetURLRequest();
+    prpp_loader_->SetRequestDelegate(this);
+    prpp_loader_->SetRequestHeadersCallback(base::BindRepeating(
+        &URLLoader::SetRawRequestHeadersAndNotify, base::Unretained(this)));
+    if (devtools_request_id()) {
+      prpp_loader_->SetResponseHeadersCallback(base::BindRepeating(
+          &URLLoader::SetRawResponseHeaders, base::Unretained(this)));
+    }
+    prpp_loader_->SetEarlyResponseHeadersCallback(base::BindRepeating(
+        &URLLoader::NotifyEarlyResponse, base::Unretained(this)));
+    prpp_loader_->SetResetUrlRequestCallback(base::BindOnce(
+        &URLLoader::ResetUrlRequest, base::Unretained(this)));
+    if (prpp_loader_->StartReplay()) {
+      InitUrlRequestForRollback(
+          context, request, traffic_annotation, shared_dictionary_manager,
+          org_main_url, preload_info);
+      return;
+    }
+    prpp_loader_->SetRequestDelegate(nullptr);
+    prpp_loader_ = nullptr;
   }
+  if (shared_storage_writable_eligible) {
+    preload_info->set_preload_flag(ohos_prp_preload::PRPP_FLAGS_UNSUPPORT);
+  }
+  if (preload_info->only_send_reuse_request() &&
+      preload_info->preload_flag() == ohos_prp_preload::PRPP_FLAGS_NONE) {
+    preload_info->set_preload_flag(ohos_prp_preload::PRPP_FLAGS_URL_DYNAMIC);
+  }
+  url_request_ = url_request_context_->CreateRequestForPrpp(
+      request.url, request.priority, this, traffic_annotation,
+      /*is_for_websockets=*/false, request.net_log_create_info);
 #else
   url_request_ = url_request_context_->CreateRequest(
       request.url, request.priority, this, traffic_annotation,
@@ -821,12 +949,13 @@ URLLoader::URLLoader(
   }
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetUrlRequestForPRPP(request, url_request_, org_main_url, preload_info);
+  SetUrlRequestForPRPP(request, url_request_, org_main_url, preload_info);
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
   if (url_request_) {
-    TRACE_EVENT2("loading", "URLLoader::URLLoader", "url", url_request_->url().spec(), "id", request_id_);
+    TRACE_EVENT2("loading", "URLLoader::URLLoader", "url",
+                 url_request_->url().spec(), "id", request_id_);
   }
 #endif
   ProcessOutboundTrustTokenInterceptor(request);
@@ -1117,7 +1246,13 @@ void URLLoader::ProcessOutboundTrustTokenInterceptor(
   }
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetPreloadFlagUnSupport();
+  if (url_request_ && url_request_->preload_info()) {
+    url_request_->preload_info()->set_preload_flag(ohos_prp_preload::PRPP_FLAGS_UNSUPPORT);
+    if (already_update_info_) {
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
+        url_request_->url().spec(), url_request_->preload_info());
+    }
+  }
 #endif
 
   // Trust token operations other than signing cannot be served from cache
@@ -1279,8 +1414,7 @@ void URLLoader::ScheduleStart() {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
   if (defer) {
     url_request_->LogBlockedBy("ResourceScheduler");
-  }
-  else {
+  } else {
     TRACE_EVENT1("net", "URLLoader::ScheduleStart", "id", request_id_);
     url_request_->Start();
   }
@@ -1364,7 +1498,17 @@ void URLLoader::FollowRedirect(
 void URLLoader::SetPriority(net::RequestPriority priority,
                             int32_t intra_priority_value) {
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetPreloadFlagVisible(priority);
+  if ((resource_type_ == RESOURCE_TYPE_Image) && (priority >= net::MEDIUM) && url_request_ &&
+      url_request_->preload_info() &&
+      (url_request_->preload_info()->preload_flag() ==
+      ohos_prp_preload::PRPP_FLAGS_NONE)) {
+    url_request_->preload_info()->or_preload_flag(
+      ohos_prp_preload::PRPP_FLAGS_VISIBLE);
+    if (already_update_info_) {
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
+        url_request_->url().spec(), url_request_->preload_info());
+    }
+  }
 #endif
   if (url_request_ && resource_scheduler_client_) {
     resource_scheduler_client_->ReprioritizeRequest(
@@ -1508,7 +1652,22 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
   auto response = mojom::URLResponseHead::New();
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   net::LoadTimingInfo load_timing_info = net::LoadTimingInfo();
-  url_loader_utils_->UpdateResponseTimes(response, load_timing_info);
+  if (prpp_loader_.get()) {
+    prpp_loader_->GetLoadTimingInfo(&load_timing_info);
+    if (url_request_->was_cached()) {
+      response->request_time = url_request_->request_time();
+      response->response_time = url_request_->response_time();
+      response->original_response_time = url_request_->original_response_time();
+    } else {
+      response->request_time = load_timing_info.request_start_time;
+      response->response_time = base::Time::Now();
+      response->original_response_time = base::Time::Now();
+    }
+  } else {
+    response->request_time = url_request_->request_time();
+    response->response_time = url_request_->response_time();
+    response->original_response_time = url_request_->original_response_time();
+  }
 #else
   response->request_time = url_request_->request_time();
   response->response_time = url_request_->response_time();
@@ -1523,7 +1682,22 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
-  std::string http_version = url_loader_utils_->GetRequestHttpVersion();
+  std::string http_version;
+  if (url_request_->was_fetched_via_spdy()) {
+    http_version = "http/2.0";
+  } else {
+    net::HttpVersion request_http_version =
+        url_request_->response_headers()->GetHttpVersion();
+    if (request_http_version == net::HttpVersion(0, 9)) {
+      http_version = "http/0.9";
+    } else if (request_http_version == net::HttpVersion(1, 0)) {
+      http_version = "http/1.0";
+    } else if (request_http_version == net::HttpVersion(1, 1)) {
+      http_version = "http/1.1";
+    } else if (request_http_version == net::HttpVersion(2, 0)) {
+      http_version = "http/2.0";
+    }
+  }
   TRACE_EVENT2("net", "URLLoader::BuildResponseHead", "http", http_version,
                "id", request_id_);
 #endif
@@ -1560,7 +1734,13 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
     }
   }
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->GetResponseLoadingTime(response);
+  if (is_load_timing_enabled_) {
+    if (prpp_loader_.get()) {
+      prpp_loader_->GetLoadTimingInfo(&response->load_timing);
+    } else {
+      url_request_->GetLoadTimingInfo(&response->load_timing);
+    }
+  }
 #else
   if (is_load_timing_enabled_)
     url_request_->GetLoadTimingInfo(&response->load_timing);
@@ -1580,7 +1760,11 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
   }
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetRequestStartTime(response, load_timing_info);
+  if (prpp_loader_.get()) {
+    response->request_start = load_timing_info.request_start;
+  } else {
+    response->request_start = url_request_->creation_time();
+  }
 #else
   response->request_start = url_request_->creation_time();
 #endif
@@ -1615,7 +1799,13 @@ void URLLoader::OnReceivedRedirect(net::URLRequest* url_request,
   DCHECK(!deferred_redirect_url_);
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetPreloadFlagUnSupport();
+  if (url_request_ && url_request_->preload_info()) {
+    url_request_->preload_info()->set_preload_flag(ohos_prp_preload::PRPP_FLAGS_UNSUPPORT);
+    if (already_update_info_) {
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
+        url_request_->url().spec(), url_request_->preload_info());
+    }
+  }
 #endif
 
   deferred_redirect_url_ = std::make_unique<GURL>(redirect_info.new_url);
@@ -1701,8 +1891,16 @@ void URLLoader::OnReceivedRedirect(net::URLRequest* url_request,
   response->emitted_extra_info = emitted_devtools_raw_request_;
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->HandleRedirectUrl(redirect_info);
+  if (url_request_->main_url().spec().empty() &&
+      !redirect_info.new_url.spec().empty() &&
+      redirect_info.new_url.spec() != url_request_->url().spec()) {
+    ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateRedirectUrl(
+      url_request_->url().spec(), redirect_info.new_url.spec(),
+      redirect_updated_);
+    redirect_updated_ = true;
+  }
 #endif
+
   ProcessInboundAttributionInterceptorOnReceivedRedirect(redirect_info,
                                                          std::move(response));
 }
@@ -1843,8 +2041,15 @@ void URLLoader::OnAuthRequired(net::URLRequest* url_request,
   DCHECK(!auth_challenge_responder_receiver_.is_bound());
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetPreloadFlagUnSupport();
+  if (url_request_ && url_request_->preload_info()) {
+    url_request_->preload_info()->set_preload_flag(ohos_prp_preload::PRPP_FLAGS_UNSUPPORT);
+    if (already_update_info_) {
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
+        url_request_->url().spec(), url_request_->preload_info());
+    }
+  }
 #endif
+
   url_loader_network_observer_->OnAuthRequired(
       fetch_window_id_, request_id_, url_request_->url(), first_auth_attempt_,
       auth_info, url_request->response_headers(),
@@ -1868,9 +2073,17 @@ void URLLoader::OnCertificateRequested(net::URLRequest* unused,
   // Set up mojo endpoints for ClientCertificateResponder and bind to the
   // Receiver. This enables us to receive messages regarding the client
   // certificate selection.
+
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetPreloadFlagUnSupport();
+  if (url_request_ && url_request_->preload_info()) {
+    url_request_->preload_info()->set_preload_flag(ohos_prp_preload::PRPP_FLAGS_UNSUPPORT);
+    if (already_update_info_) {
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
+        url_request_->url().spec(), url_request_->preload_info());
+    }
+  }
 #endif
+
   url_loader_network_observer_->OnCertificateRequested(
       fetch_window_id_, cert_info,
       client_cert_responder_receiver_.BindNewPipeAndPassRemote());
@@ -1889,8 +2102,7 @@ void URLLoader::OnSSLCertificateError(net::URLRequest* request,
   url_loader_network_observer_->OnSSLCertificateError(
       url_request_->url(), net_error, ssl_info, fatal,
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-      request->original_url(),
-      request->referrer(),
+      request->original_url(), request->referrer(),
 #endif
       base::BindOnce(&URLLoader::OnSSLCertificateErrorResponse,
                      weak_ptr_factory_.GetWeakPtr(), ssl_info));
@@ -1921,9 +2133,15 @@ void URLLoader::ProcessInboundAttributionInterceptorOnResponseStarted() {
 void URLLoader::OnResponseStarted(net::URLRequest* url_request, int net_error) {
   DCHECK(url_request == url_request_.get());
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  if (url_loader_utils_->prpp_loader_.get() && (net_error == ohos_prp_preload::PRPP_ERROR) &&
+  if (prpp_loader_.get() && (net_error == ohos_prp_preload::PRPP_ERROR) &&
       !has_received_response_) {
-    url_loader_utils_->CleanupAndRollback();
+    // roll-back
+    LOG(DEBUG) << "PRPPreload.URLLoader::OnResponseStarted roll-back from prpp";
+    prpp_loader_->ClearLoaderCallback(devtools_request_id().has_value());
+    prpp_loader_ = nullptr;
+    base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
+      FROM_HERE, base::BindOnce(&URLLoader::RollbackFromPPRP,
+                                weak_ptr_factory_.GetWeakPtr()));
     return;
   }
 #endif
@@ -1960,9 +2178,7 @@ void URLLoader::OnResponseStarted(net::URLRequest* url_request, int net_error) {
     // |this| may have been deleted.
     return;
   }
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->UpdatePreconnectInfo();
-#endif
+
   ProcessInboundAttributionInterceptorOnResponseStarted();
 }
 
@@ -2227,7 +2443,16 @@ void URLLoader::ReadMore() {
       pending_write_, pending_write_buffer_offset_);
   read_in_progress_ = true;
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  int bytes_read = url_loader_utils_->ReadDataFromLoaderOrRequest(buf);
+  int bytes_read = 0;
+  if (prpp_loader_.get()) {
+    bytes_read = prpp_loader_->Read(
+        buf.get(), static_cast<int>(pending_write_buffer_size_ -
+                                    pending_write_buffer_offset_));
+  } else {
+    bytes_read = url_request_->Read(
+        buf.get(), static_cast<int>(pending_write_buffer_size_ -
+                                    pending_write_buffer_offset_));
+  }
 #else
   int bytes_read = url_request_->Read(
       buf.get(), static_cast<int>(pending_write_buffer_size_ -
@@ -2327,9 +2552,9 @@ void URLLoader::DidRead(int num_bytes,
 
         if (MaybeBlockResponseForOrb(orb_decision)) {
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-      LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
-                   "ORB blocked origin "
-                   "response, url: ***";
+          LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
+                       "ORB blocked origin "
+                       "response, url: ***";
 #endif
           return;
         }
@@ -2570,10 +2795,10 @@ void URLLoader::CancelRequestIfNonceMatchesAndUrlNotExempted(
 void URLLoader::NotifyCompleted(int error_code) {
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   if (url_request_->isolation_info().request_type() ==
-                        net::IsolationInfo::RequestType::kMainFrame) {
+      net::IsolationInfo::RequestType::kMainFrame) {
     ReportUrlQuicInfo(url_request_.get(), error_code);
   }
-#endif // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+#endif  // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   // Ensure sending the final upload progress message here, since
   // OnResponseCompleted can be called without OnResponseStarted on cancellation
   // or error cases.
@@ -2623,8 +2848,8 @@ void URLLoader::NotifyCompleted(int error_code) {
     status.exists_in_cache = url_request_->response_info().was_cached;
     status.completion_time = base::TimeTicks::Now();
 #if BUILDFLAG(ARKWEB_NETWORK_DFX)
-    TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
-                 "responseEnd", status.completion_time);
+    TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "responseEnd",
+                 status.completion_time);
 #endif
     status.encoded_data_length = url_request_->GetTotalReceivedBytes();
     status.encoded_body_length = url_request_->GetRawBodyBytes();
@@ -2642,19 +2867,101 @@ void URLLoader::NotifyCompleted(int error_code) {
 
     url_loader_client_.Get()->OnComplete(status);
 #if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
-    if (url_loader_utils_) {
-      url_loader_utils_->PrintNetworkInfo();
+    if (url_request_) {
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+      if (url_request_->preload_info()) {
+        url_request_->preload_info()->set_request_end_time(
+            base::Time::Now().ToInternalValue());
+      }
+#endif
+      if (url_request_->response_headers()) {
+        const net::HttpResponseHeaders* response_headers =
+            raw_response_headers_ && enable_reporting_raw_headers_
+                ? raw_response_headers_.get()
+                : url_request_->response_headers();
+        TRACE_EVENT2("net", "URLLoader::NotifyCompleted", "response_code",
+                     response_headers->response_code(), "id", request_id_);
+      }
+      PrintNetworkTimingInfo();
+    }
+    if (response_ && response_->headers) {
+      PrintNetworkCacheInfo();
     }
 #endif
   }
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  if (url_loader_utils_->prpp_loader_.get()) {
-    url_loader_utils_->prpp_loader_->ClearLoaderCallback(devtools_request_id().has_value());
+  if (prpp_loader_.get()) {
+    prpp_loader_->ClearLoaderCallback(devtools_request_id().has_value());
   }
 #endif
+
   DeleteSelf();
 }
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+std::string URLLoader::InMilliseconds(base::TimeTicks time) {
+  return std::to_string(time.since_origin().InMilliseconds());
+}
+
+void URLLoader::PrintNetworkTimingInfo() {
+  using namespace std;
+  net::LoadTimingInfo metrics;
+  url_request_->GetLoadTimingInfo(&metrics);
+  TRACE_EVENT2(
+      TRACE_DISABLED_BY_DEFAULT("network"), "URLLoader::PrintNetworkTimingInfo",
+      "info",
+      "socket_reused: " + to_string(metrics.socket_reused) + ";dns_start: " +
+          InMilliseconds(metrics.connect_timing.domain_lookup_start) +
+          ";dns_end: " +
+          InMilliseconds(metrics.connect_timing.domain_lookup_end) +
+          ";connect_start: " +
+          InMilliseconds(metrics.connect_timing.connect_start) +
+          ";connect_end: " +
+          InMilliseconds(metrics.connect_timing.connect_end) +
+          ";ssl_start: " + InMilliseconds(metrics.connect_timing.ssl_start) +
+          ";ssl_end: " + InMilliseconds(metrics.connect_timing.ssl_end) +
+          ";request_start: " + InMilliseconds(metrics.request_start) +
+          ";send_start: " + InMilliseconds(metrics.send_start) +
+          ";receive_headers_start: " +
+          InMilliseconds(metrics.receive_headers_start) +
+          ";request_end: " + InMilliseconds(base::TimeTicks::Now()) +
+          ";decoded_size: " + to_string(total_written_bytes_) +
+          ";encoded_size: " + to_string(url_request_->GetRawBodyBytes()) +
+          ";idempotency: " + to_string(url_request_->GetIdempotency()),
+      "id", request_id_);
+}
+
+void URLLoader::PrintNetworkCacheInfo() {
+  using namespace std;
+  optional<base::TimeDelta> age = response_->headers->GetAgeValue();
+  optional<base::Time> last_modified =
+      response_->headers->GetLastModifiedValue();
+  optional<base::Time> expires = response_->headers->GetExpiresValue();
+  optional<string> cache_control =
+      response_->headers->GetNormalizedHeader("Cache-Control");
+  optional<string> etag = response_->headers->GetNormalizedHeader("ETag");
+  TRACE_EVENT2(
+      TRACE_DISABLED_BY_DEFAULT("network"), "URLLoader::PrintNetworkCacheInfo",
+      "info",
+      "age: " + (age ? to_string(age.value().InMilliseconds()) : "unset") +
+          ";last_modified: " +
+          (last_modified ? base::Time::ToUTCTimeString(last_modified.value())
+                         : "unset") +
+          ";expires: " +
+          (expires ? base::Time::ToUTCTimeString(expires.value()) : "unset") +
+          ";cache_control: " +
+          (cache_control ? cache_control.value() : "unset") +
+          ";etag: " + (etag ? etag.value() : "unset") + ";is_zero: " +
+          to_string(response_->headers
+                        ->GetFreshnessLifetimes(response_->response_time)
+                        .freshness.is_zero()) +
+          ";was_fetched_via_cache: " +
+          to_string(response_->was_fetched_via_cache) +
+          ";load_flags: " + to_string(url_request_->load_flags()),
+      "id", request_id_);
+}
+#endif
 
 void URLLoader::OnMojoDisconnect() {
   NotifyCompleted(net::ERR_FAILED);
@@ -2817,7 +3124,11 @@ void URLLoader::DispatchOnRawRequest(
 
   net::LoadTimingInfo load_timing_info;
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->GetLoadTimeInfo(&load_timing_info);
+  if (prpp_loader_.get()) {
+    prpp_loader_->GetLoadTimingInfo(&load_timing_info);
+  } else {
+    url_request_->GetLoadTimingInfo(&load_timing_info);
+  }
 #else
   url_request_->GetLoadTimingInfo(&load_timing_info);
 #endif
@@ -3037,7 +3348,7 @@ URLLoader::BlockResponseForOrbResult URLLoader::BlockResponseForOrb() {
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
   // This preserves compatibility with current implementations, which use
   // net::ERR_ABORTED when the resource is detachable.
-  if (url_loader_utils_->corb_detachable_ && blocked_error_code == net::OK) {
+  if (corb_detachable_ && blocked_error_code == net::OK) {
     CHECK(!base::FeatureList::IsEnabled(features::kOpaqueResponseBlockingV02));
     blocked_error_code = net::ERR_ABORTED;
   }
@@ -3418,5 +3729,262 @@ void URLLoader::RecordRequestMetrics() {
   base::UmaHistogramCounts100000(make_histogram_name("TotalRequestSize"),
                                  total_request_size);
 }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+void URLLoader::UpdateResRequestInfo(
+    const std::string& key,
+    const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& info) {
+  if ((info->preload_flag() != ohos_prp_preload::PRPP_FLAGS_NONE) ||
+      (resource_type_ == RESOURCE_TYPE_Image)) {
+    already_update_info_ = true;
+    ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
+        key, info);
+  }
+}
+
+void URLLoader::ConfigureRequestForRollback(
+    const GURL& url,
+    std::string_view method,
+    const net::SiteForCookies& site_for_cookies,
+    bool force_ignore_site_for_cookies,
+    const std::vector<GURL>& url_chain,
+    const GURL& referrer,
+    net::ReferrerPolicy referrer_policy,
+    bool upgrade_if_insecure,
+    bool is_ad_tagged,
+    std::optional<net::IsolationInfo> isolation_info,
+    bool force_main_frame_for_same_site_cookies,
+    net::SecureDnsPolicy secure_dns_policy,
+    net::HttpRequestHeaders extra_request_headers,
+    const std::optional<std::vector<net::SourceStream::SourceType>>&
+        accepted_stream_types,
+    const std::optional<url::Origin>& initiator,
+    net::RedirectInfo::FirstPartyURLPolicy first_party_url_policy,
+    int request_load_flags,
+    bool priority_incremental,
+    net::CookieSettingOverrides cookie_setting_overrides,
+    std::optional<net::SharedDictionaryGetter> shared_dictionary_getter) {
+  url_request_rollback_->set_method(method);
+  url_request_rollback_->set_site_for_cookies(site_for_cookies);
+  url_request_rollback_->set_force_ignore_site_for_cookies(
+      force_ignore_site_for_cookies);
+  if (!url_chain.empty()) {
+    url_request_rollback_->SetURLChain(url_chain);
+  }
+  url_request_rollback_->SetReferrer(referrer.GetAsReferrer().spec());
+  url_request_rollback_->set_referrer_policy(referrer_policy);
+  url_request_rollback_->set_upgrade_if_insecure(upgrade_if_insecure);
+  url_request_rollback_->set_ad_tagged(is_ad_tagged);
+
+  if (isolation_info) {
+    url_request_rollback_->set_isolation_info(std::move(isolation_info).value());
+  }
+
+  url_request_rollback_->set_force_main_frame_for_same_site_cookies(
+      force_main_frame_for_same_site_cookies);
+
+  url_request_rollback_->SetSecureDnsPolicy(secure_dns_policy);
+
+  url_request_rollback_->SetExtraRequestHeaders(std::move(extra_request_headers));
+
+  url_request_rollback_->SetUserData(kUserDataKey,
+                            std::make_unique<UnownedPointer>(this));
+  url_request_rollback_->set_accepted_stream_types(accepted_stream_types);
+
+  url_request_rollback_->set_initiator(initiator);
+
+  // Note: There are some ordering dependencies here. `SetRequestCredentials`
+  // depends on `SetLoadFlags`; `CalculateStorageAccessStatus` depends on
+  // `cookie_setting_overrides` and `SetRequestCredentials`.
+  // `SetFetchMetadataHeaders` will depend on
+  // `url_request_rollback_->storage_access_status()`, once https://crbug.com/366284840
+  // is fixed.
+  url_request_rollback_->cookie_setting_overrides() = cookie_setting_overrides;
+  url_request_rollback_->SetLoadFlags(request_load_flags);
+  SetRequestCredentials(url);
+  url_request_rollback_->set_storage_access_status(
+      url_request_rollback_->CalculateStorageAccessStatus());
+
+  SetFetchMetadataHeaders(url_request_rollback_.get(), request_mode_,
+                          has_user_activation_, request_destination_, nullptr,
+                          *factory_params_, *origin_access_list_);
+
+  url_request_rollback_->set_first_party_url_policy(first_party_url_policy);
+
+  url_request_rollback_->SetPriorityIncremental(priority_incremental);
+
+  url_request_rollback_->SetRequestHeadersCallback(base::BindRepeating(
+      &URLLoader::SetRawRequestHeadersAndNotify, base::Unretained(this)));
+  if (shared_dictionary_checker_) {
+    url_request_rollback_->SetIsSharedDictionaryReadAllowedCallback(base::BindRepeating(
+        &URLLoader::IsSharedDictionaryReadAllowed, base::Unretained(this)));
+  }
+
+  if (devtools_request_id()) {
+    url_request_rollback_->SetResponseHeadersCallback(base::BindRepeating(
+        &URLLoader::SetRawResponseHeaders, base::Unretained(this)));
+  }
+
+  url_request_rollback_->SetEarlyResponseHeadersCallback(base::BindRepeating(
+      &URLLoader::NotifyEarlyResponse, base::Unretained(this)));
+
+  if (shared_dictionary_getter) {
+    url_request_rollback_->SetSharedDictionaryGetter(
+        std::move(shared_dictionary_getter).value());
+  }
+}
+ 
+void URLLoader::InitUrlRequestForRollback(
+    URLLoaderContext& context,
+    const ResourceRequest& request,
+    const net::NetworkTrafficAnnotationTag& traffic_annotation,
+    SharedDictionaryManager* shared_dictionary_manager,
+    const std::string& org_main_url,
+    std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info) {
+  url_request_rollback_ = url_request_context_->CreateRequestForPrpp(
+      request.url, request.priority, this, traffic_annotation,
+      /*is_for_websockets=*/false, request.net_log_create_info);
+
+  // |cors_exempt_headers| must be merged here to avoid breaking CORS checks.
+  // They are non-empty when the values are given by the UA code, therefore
+  // they should be ignored by CORS checks.
+  net::HttpRequestHeaders merged_headers = request.headers;
+  merged_headers.MergeFrom(ComputeAttributionReportingHeaders(request));
+  merged_headers.MergeFrom(request.cors_exempt_headers);
+
+  // This should be ensured by the CorsURLLoaderFactory(), which is called
+  // before URLLoaders are created.
+  DCHECK(AreRequestHeadersSafe(merged_headers));
+
+  // When a service worker forwards a navigation request it uses the
+  // service worker's IsolationInfo.  This causes the cookie code to fail
+  // to send SameSite=Lax cookies for main-frame navigations passed through
+  // a service worker.  To fix this we check to see if the original destination
+  // of the request was a main frame document and then set a flag indicating
+  // SameSite cookies should treat it as a main frame navigation.
+  const bool force_main_frame_for_same_site_cookies =
+      request.mode == mojom::RequestMode::kNavigate &&
+      request.destination == mojom::RequestDestination::kEmpty &&
+      request.original_destination == mojom::RequestDestination::kDocument;
+
+  const net::SecureDnsPolicy secure_dns_policy =
+      factory_params_->disable_secure_dns ||
+              (request.trusted_params &&
+               request.trusted_params->disable_secure_dns)
+          ? net::SecureDnsPolicy::kDisable
+          : net::SecureDnsPolicy::kAllow;
+
+  const net::RedirectInfo::FirstPartyURLPolicy first_party_url_policy =
+      request.update_first_party_url_on_redirect
+          ? net::RedirectInfo::FirstPartyURLPolicy::UPDATE_URL_ON_REDIRECT
+          : net::RedirectInfo::FirstPartyURLPolicy::NEVER_CHANGE_URL;
+
+  if (!request.navigation_redirect_chain.empty()) {
+    DCHECK_EQ(request.mode, mojom::RequestMode::kNavigate);
+  }
+
+  ConfigureRequestForRollback(
+      request.url, request.method, request.site_for_cookies,
+      /*force_ignore_site_for_cookies=*/
+      ShouldForceIgnoreSiteForCookies(request),
+      request.navigation_redirect_chain, request.referrer,
+      request.referrer_policy,
+      /*upgrade_if_insecure=*/request.upgrade_if_insecure,
+      /*is_ad_tagged=*/request.is_ad_tagged,
+      /*isolation_info=*/
+      GetIsolationInfo(factory_params_->isolation_info,
+                       factory_params_->automatically_assign_isolation_info,
+                       request),
+      /*force_main_frame_for_same_site_cookies=*/
+      force_main_frame_for_same_site_cookies, secure_dns_policy,
+      std::move(merged_headers), request.devtools_accepted_stream_types,
+      request.request_initiator, first_party_url_policy,
+      /*request_load_flags=*/request.load_flags,
+      /*priority_incremental=*/request.priority_incremental,
+      /*cookie_setting_overrides=*/
+      CalculateCookieSettingOverrides(factory_params_->cookie_setting_overrides,
+                                      request),
+      /*shared_dictionary_getter=*/
+      shared_dictionary_manager
+          ? std::make_optional(
+                shared_dictionary_manager->MaybeCreateSharedDictionaryGetter(
+                    request.load_flags, request_destination_))
+          : std::nullopt);
+
+  if (context.ShouldRequireIsolationInfo()) {
+    DCHECK(!url_request_rollback_->isolation_info().IsEmpty());
+  }
+
+  throttling_token_ = network::ScopedThrottlingToken::MaybeCreate(
+      url_request_rollback_->net_log().source().id, request.throttling_profile_id);
+
+  if (keepalive_ && keepalive_statistics_recorder_) {
+    keepalive_statistics_recorder_->OnLoadStarted(
+        *factory_params_->top_frame_id, keepalive_request_size_);
+  }
+
+  if (request.net_log_reference_info) {
+    // Log source object that created the request, if available.
+    url_request_rollback_->net_log().AddEventReferencingSource(
+        net::NetLogEventType::CREATED_BY,
+        request.net_log_reference_info.value());
+  }
+
+  SetUrlRequestForPRPP(request, url_request_rollback_, org_main_url, preload_info);
+}
+ 
+void URLLoader::SetUrlRequestForPRPP(
+    const ResourceRequest& request,
+    const std::shared_ptr<net::URLRequest>& url_request,
+    const std::string& org_main_url,
+    std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info) {
+  if (ohos_prp_preload::PRParallelPreloadMgr::GetInstance()
+      .GetPRParallelPreloadMode() ==
+      ohos_prp_preload::PRPPreloadMode::NONE) {
+    return;
+  }
+  if (!request.main_url.spec().empty() &&
+      request.main_url.spec() != request.url.spec() &&
+      (request.url.spec() != SECURITY_URL)) {
+    ohos_prp_preload::LoaderInfo loader_info {
+        resource_type_,
+        keepalive_,
+        do_not_prompt_for_login_,
+        static_cast<int>(request_mode_),
+        static_cast<int>(request_credentials_mode_),
+        static_cast<int>(request_destination_)};
+    preload_info->set_loader_info(loader_info);
+    url_request->set_update_res_request_info_callback(base::BindRepeating(
+        &URLLoader::UpdateResRequestInfo, weak_ptr_factory_.GetWeakPtr()));
+    if (request.allow_preload_record) {
+      preload_info->or_preload_flag(ohos_prp_preload::PRPP_FLAGS_VISIBLE);
+    }
+    if (request.is_preflight) {
+      preload_info->set_type(
+          ohos_prp_preload::PRRequestInfoType::TYPE_PAGE_PREFLIGHT);
+    }
+    preload_info->set_request_start_time(base::Time::Now().ToInternalValue());
+    url_request->set_preload_info(preload_info);
+    url_request->set_allow_preload_record(request.allow_preload_record);
+    if (!org_main_url.empty() && org_main_url != request.main_url.spec()) {
+      url_request->set_main_url(GURL(org_main_url));
+    } else {
+          url_request->set_main_url(request.main_url);
+    }
+  }
+}
+
+void URLLoader::RollbackFromPPRP() {
+  url_request_ = url_request_rollback_;
+  url_request_rollback_ = nullptr;
+  ProcessOutboundAttributionInterceptor();
+}
+
+void URLLoader::ResetUrlRequest(const std::shared_ptr<net::URLRequest>& url_request) {
+  if (prpp_loader_.get()) {
+    url_request_ = url_request;
+  }
+}
+#endif
 
 }  // namespace network

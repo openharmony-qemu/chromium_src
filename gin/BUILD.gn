@@ -103,7 +103,6 @@ component("gin") {
   public_deps = [
     "//base",
     "//base/allocator:buildflags",
-    "//media:media_buildflags",
     "//v8",
   ]
   deps = [

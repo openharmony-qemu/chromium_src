@@ -65,7 +65,8 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ChunkedDataPipeUploadDataStream
   void EnableCache(size_t dst_window_size = kDefaultDestinationWindowSize);
 
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
-  mojo::PendingRemote<mojom::ChunkedDataPipeGetter> ReleaseChunkedDataPipeGetter();
+  mojo::PendingRemote<mojom::ChunkedDataPipeGetter>
+  ReleaseChunkedDataPipeGetter();
 
   bool has_null_source() const { return has_null_source_; }
 #endif
@@ -125,7 +126,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ChunkedDataPipeUploadDataStream
   std::vector<char> cache_;
 
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
-  void ArkWebInitInternal();
   bool has_null_source_{false};
   bool get_size_when_initialize_{false};
 #endif

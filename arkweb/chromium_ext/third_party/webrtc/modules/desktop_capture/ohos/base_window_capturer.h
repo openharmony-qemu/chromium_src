@@ -6,47 +6,27 @@
 #define MODULES_DESKTOP_CAPTURE_OHOS_BASE_WINDOW_CAPTURER_H_
 
 #include <memory>
-#include <optional>
 
 #include "absl/types/optional.h"
 #include "base/memory/weak_ptr.h"
 #include "base/task/single_thread_task_runner.h"
-#include "third_party/webrtc/modules/desktop_capture/desktop_capture_options.h"
-#include "third_party/webrtc/modules/desktop_capture/desktop_capturer.h"
+#include "modules/desktop_capture/desktop_capture_options.h"
+#include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/ohos/desktop_capture_frame.h"
 #include "modules/desktop_capture/ohos/native_frame.h"
 #include "modules/desktop_capture/screen_capture_frame_queue.h"
 #include "modules/desktop_capture/shared_desktop_frame.h"
 #include "multimedia/player_framework/native_avscreen_capture.h"
 #include "native_buffer/native_buffer.h"
+#include "ohos/adapter/screen/screen_adapter.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/screen_capture_adapter.h"
-#include "base/memory/scoped_refptr.h"
-#include "media/base/audio_capturer_source.h"
-#include "third_party/webrtc/modules/desktop_capture/ohos/base_screen_capture_read_callback.h"
-#include "third_party/webrtc/modules/desktop_capture/ohos/base_screen_capture_source_bridge.h"
+
+namespace base {
+class SingleThreadTaskRunner;
+}  // namespace base
 
 namespace webrtc {
-class BaseScreenCaptureReadCallback;
- 
-using namespace OHOS::NWeb;
-using namespace media;
- 
-using OnReadDataCallback = base::RepeatingCallback<void(void)>;
- 
-class WindowCapturerReadCallback : public BaseScreenCaptureReadCallback {
- public:
-  WindowCapturerReadCallback(const OnReadDataCallback& readDataCallback);
- 
-  ~WindowCapturerReadCallback();
- 
-  void OnReadData() override;
- 
-  void OnReadData(OHOS::NWeb::AudioCaptureSourceTypeAdapter type) override {}
- 
- private:
-  OnReadDataCallback readDataCallback_;
-};
 
 class BaseWindowCapturer : public DesktopCapturer {
  public:
@@ -68,7 +48,7 @@ class BaseWindowCapturer : public DesktopCapturer {
     int micro = 0;
   };
 
-  explicit BaseWindowCapturer(CaptureSourceType source_type, bool is_picker_show, int nweb_id);
+  explicit BaseWindowCapturer(CaptureSourceType source_type);
   ~BaseWindowCapturer() override;
 
   static std::unique_ptr<DesktopCapturer> CreateRawCapturer(
@@ -131,17 +111,18 @@ class BaseWindowCapturer : public DesktopCapturer {
 
   std::unique_ptr<SharedMemoryFactory> factory_ = nullptr;
 
-  bool isStart_ = false;
+  std::unique_ptr<OHOS::NWeb::ScreenCaptureAdapter> screen_capture_adapter_ =
+      nullptr;
 
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
+
+  base::WeakPtrFactory<BaseWindowCapturer> weak_factory_{this};
+
+  bool isStart_ = false;
   SourceId selectSourceId_ = -1;
 
-  std::shared_ptr<WindowCapturerReadCallback> WindowCapturerReadCallback_ = nullptr;
-
   OH_AVScreenCapture* screen_capture_ = nullptr;
-  //ohos::adapter::OhosDisplay ohos_screen_;
-  
-  int nweb_id_ = 0;
-  base::WeakPtrFactory<BaseWindowCapturer> weak_factory_{this};
+  ohos::adapter::OhosDisplay ohos_screen_;
 };
 
 }  // namespace webrtc

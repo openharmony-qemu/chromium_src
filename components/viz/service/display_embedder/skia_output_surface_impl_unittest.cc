@@ -47,8 +47,8 @@ class SkiaOutputSurfaceImplTest : public testing::Test {
 
   GpuServiceImpl* GetGpuService() {
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-   gl::init::InitializeGLNoExtensionsOneOff(
-      /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
+    gl::init::InitializeGLNoExtensionsOneOff(
+        /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
 #endif
     return TestGpuServiceHolder::GetInstance()->gpu_service();
   }

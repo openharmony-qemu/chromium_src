@@ -28,10 +28,7 @@ constexpr int NUMBER_TWO = 2;
 base::LazyInstance<AccessibilityIdMap>::Leaky g_accessibility_id_map =
     LAZY_INSTANCE_INITIALIZER;
 
-base::LazyInstance<std::map<const BrowserAccessibilityOHOS*, bool>>::Leaky
-    g_leaf_map = LAZY_INSTANCE_INITIALIZER;
-
-std::unique_ptr<BrowserAccessibility> BrowserAccessibility::Create(
+std::unique_ptr<ui::BrowserAccessibility> BrowserAccessibility::Create(
     BrowserAccessibilityManager* manager,
     AXNode* node) {
   return std::unique_ptr<BrowserAccessibilityOHOS>(
@@ -40,9 +37,9 @@ std::unique_ptr<BrowserAccessibility> BrowserAccessibility::Create(
 
 BrowserAccessibilityOHOS::BrowserAccessibilityOHOS(
     BrowserAccessibilityManager* manager,
-    AXNode* node)
+    ui::AXNode* node)
     : BrowserAccessibility(manager, node) {
-  accessibility_id_ = static_cast<int64_t>(GetUniqueId()) + 1;
+  accessibility_id_ = static_cast<int64_t>(GetUniqueId());
   g_accessibility_id_map.Get()[accessibility_id_] = this;
 }
 
@@ -138,7 +135,8 @@ bool BrowserAccessibilityOHOS::IsSelected() const {
 }
 
 bool BrowserAccessibilityOHOS::IsScrollable() const {
-  return GetBoolAttribute(ax::mojom::BoolAttribute::kScrollable);
+  return GetBoolAttribute(ax::mojom::BoolAttribute::kScrollable) ||
+         (GetMaxScrollX() != 0) || (GetMaxScrollY() != 0);
 }
 
 bool BrowserAccessibilityOHOS::ShouldExposeValueAsName() const {
@@ -412,11 +410,27 @@ bool BrowserAccessibilityOHOS::IsHierarchical() const {
 }
 
 bool BrowserAccessibilityOHOS::HasOnlyTextChildren() const {
-  // This is called from IsLeaf, so don't call PlatformChildCount
-  // from within this!
   for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
-    if (!it->IsText())
+    if (!it->IsText() && it->GetRole() != ax::mojom::Role::kStrong) {
       return false;
+    }
+  }
+  return true;
+}
+
+bool BrowserAccessibilityOHOS::HasOnlyTextAndContainerChildren() const {
+  for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
+    if (!it->IsText() && it->GetRole() != ax::mojom::Role::kStrong &&
+        it->GetRole() != ax::mojom::Role::kGenericContainer) {
+      return false;
+    }
+    if (it->GetRole() == ax::mojom::Role::kGenericContainer) {
+      BrowserAccessibilityOHOS* child =
+          static_cast<BrowserAccessibilityOHOS*>(it.get());
+      if (!child->HasOnlyTextAndContainerChildren()) {
+        return false;
+      }
+    }
   }
   return true;
 }
@@ -430,32 +444,26 @@ BrowserAccessibilityOHOS::GetAccessibilityNodeByFocusMove(
   if (!manager_) {
     return resultNode;
   }
-
-  auto manager = static_cast<BrowserAccessibilityManagerOHOS*>(manager_->GetManagerForRootFrame());
-  if (!manager) {
-    return resultNode;
-  }
   auto root = static_cast<BrowserAccessibilityOHOS*>(
       manager_->GetBrowserAccessibilityRoot());
   if (!root) {
     return resultNode;
   }
-  if (direction == FocusMoveDirection::FORWARD) {
-    int id = manager->FindElementType(
-        accessibility_id_, "", true, false, true);
-    if (id != 0) {
-      resultNode = GetFromAccessibilityId(id);
-    }
-  } else if (direction == FocusMoveDirection::BACKWARD) {
-    int id = manager->FindElementType(
-        accessibility_id_, "", false,
-        accessibility_id_ == root->GetAccessibilityId(), true);
-    if (id != 0) {
-      resultNode = GetFromAccessibilityId(id);
-    }
-  } else {
-    root->AddFocusableNode(nodeList);
-    resultNode = FindNodeInAbsoluteDirection(nodeList, direction);
+  root->AddFocusableNode(nodeList);
+
+  switch (direction) {
+    case FocusMoveDirection::FORWARD:
+    case FocusMoveDirection::BACKWARD:
+      resultNode = FindNodeInRelativeDirection(nodeList, direction);
+      break;
+    case FocusMoveDirection::UP:
+    case FocusMoveDirection::DOWN:
+    case FocusMoveDirection::LEFT:
+    case FocusMoveDirection::RIGHT:
+      resultNode = FindNodeInAbsoluteDirection(nodeList, direction);
+      break;
+    default:
+      break;
   }
   return resultNode;
 }
@@ -488,7 +496,7 @@ BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::FindNodeInRelativeDirection(
 BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::FindNodeInAbsoluteDirection(
     const std::list<BrowserAccessibilityOHOS*>& nodeList,
     int32_t direction) const {
-  AXOffscreenResult offscreen_result = AXOffscreenResult::kOnscreen;
+  ui::AXOffscreenResult offscreen_result = ui::AXOffscreenResult::kOnscreen;
   float dip_scale = manager_->device_scale_factor();
   gfx::Rect rect = gfx::ScaleToEnclosingRect(
       GetUnclippedRootFrameBoundsRect(&offscreen_result), dip_scale, dip_scale);
@@ -791,7 +799,8 @@ std::u16string BrowserAccessibilityOHOS::GetTextContentUTF16() const {
 
 std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
     absl::optional<EarlyExitPredicate> predicate) const {
-  if (ui::IsIframe(GetRole()) || GetRole() == ax::mojom::Role::kRootWebArea) {
+  if (ui::IsIframe(GetRole()) || GetRole() == ax::mojom::Role::kCell ||
+      GetRole() == ax::mojom::Role::kRootWebArea) {
     return std::u16string();
   }
   // First, always return the |value| attribute if this is an
@@ -861,7 +870,8 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
   // from within this!
   if (text.empty() && ((HasOnlyTextChildren() && !HasListMarkerChild()) ||
                        (IsFocusable() && HasOnlyTextAndImageChildren()) ||
-                       GetRole() == ax::mojom::Role::kAlert)) {
+                       (GetRole() == ax::mojom::Role::kParagraph &&
+                        HasOnlyTextAndContainerChildren()))) {
     for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
       text += static_cast<BrowserAccessibilityOHOS*>(it.get())
                   ->GetSubstringTextContentUTF16(predicate);
@@ -882,11 +892,10 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
 }
 
 bool BrowserAccessibilityOHOS::HasOnlyTextAndImageChildren() const {
-  // This is called from IsLeaf, so don't call PlatformChildCount
-  // from within this!
   for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
     BrowserAccessibility* child = it.get();
-    if (!child->IsText() && !ui::IsImageOrVideo(child->GetRole())) {
+    if (!child->IsText() && child->GetRole() != ax::mojom::Role::kStrong &&
+        !ui::IsImageOrVideo(child->GetRole())) {
       return false;
     }
   }
@@ -1087,6 +1096,19 @@ void BrowserAccessibilityOHOS::Scroll(const ax::mojom::Action& action) const {
 }
 
 bool BrowserAccessibilityOHOS::IsAccessibilityGroup() const {
+  if (ui::IsLink(GetRole())) {
+    return true;
+  }
+  if (GetRole() == ax::mojom::Role::kHeading ||
+      GetRole() == ax::mojom::Role::kStrong) {
+    return true;
+  }
+  if (GetRole() == ax::mojom::Role::kParagraph) {
+    return HasOnlyTextChildren() || HasOnlyTextAndContainerChildren();
+  }
+  if (GetRole() == ax::mojom::Role::kGenericContainer) {
+    return HasOnlyTextChildren();
+  }
   return false;
 }
 
@@ -1156,235 +1178,4 @@ bool BrowserAccessibilityOHOS::Scroll(ScrollDirection direction,
   return true;
 }
 
-bool BrowserAccessibilityOHOS::IsInterestingOnOHOS() const
-{
-  // The root is not interesting if it doesn't have a title, even
-  // though it's focusable.
-  if (ui::IsPlatformDocument(GetRole()) &&
-      GetSubstringTextContentUTF16(NonEmptyPredicate()).empty()) {
-    return false;
-  }
-
-  if (IsInvisibleOrIgnored() || IsChildOfLeaf()) {
-    return false;
-  }
-
-  // If it has a control role, then it's interesting.
-  if (IsControl(GetRole())) {
-    return true;
-  }
-
-  // Walk up the ancestry. A non-focusable child of a control is not
-  // interesting. A child of an invisible iframe is also not interesting.
-  // A link is never a leaf node so that its children can be navigated
-  // when swiping by heading, landmark, etc. So we will also mark the
-  // children of a link as not interesting to prevent double utterances.
-  const BrowserAccessibility* parent = PlatformGetParent();
-  while (parent) {
-    if (IsControl(parent->GetRole()) && !IsFocusable()) {
-      return false;
-    }
-
-    if (parent->GetRole() == ax::mojom::Role::kIframe &&
-        parent->IsInvisibleOrIgnored()) {
-      return false;
-    }
-
-    if (parent->GetRole() == ax::mojom::Role::kLink) {
-      return false;
-    }
-
-    parent = parent->PlatformGetParent();
-  }
-
-  // Otherwise, focusable nodes are always interesting. Note that IsFocusable()
-  // already skips over things like iframes and child frames that are
-  // technically focusable but shouldn't be exposed as focusable on OHOS.
-  if (IsFocusable()) {
-    return true;
-  }
-
-  // Mark progress indicators as interesting, since they are not focusable and
-  // not a control, but users should be able to swipe/navigate to them.
-  if (GetRole() == ax::mojom::Role::kProgressIndicator) {
-    return true;
-  }
-
-  // If we are the direct descendant of a link and have no siblings/children,
-  // then we are not interesting, return false
-  parent = PlatformGetParent();
-  if (parent != nullptr && ui::IsLink(parent->GetRole()) &&
-      parent->PlatformChildCount() == 1 && PlatformChildCount() == 0) {
-    return false;
-  }
-
-  return IsLeaf() && !base::ContainsOnlyChars(GetTextContentUTF16(),
-                                              base::kWhitespaceUTF16);
-}
-
-bool BrowserAccessibilityOHOS::IsChildOfLeaf() const
-{
-  BrowserAccessibility* ancestor = InternalGetParent();
-
-  while (ancestor) {
-    if (ancestor->IsLeaf()) {
-      return true;
-    }
-    ancestor = ancestor->InternalGetParent();
-  }
-
-  return false;
-}
-
-bool BrowserAccessibilityOHOS::IsLeaf() const {
-  if (g_leaf_map.Get().find(this) != g_leaf_map.Get().end()) {
-    return g_leaf_map.Get()[this];
-  }
-
-  if (BrowserAccessibility::IsLeaf()) {
-    return true;
-  }
-
-  // Document roots (e.g. kRootWebArea and kPdfRoot), and iframes are always
-  // allowed to contain children.
-  if (ui::IsIframe(GetRole()) || ui::IsPlatformDocument(GetRole())) {
-    return false;
-  }
-
-  // Button, date and time controls should not expose their children to OHOS
-  // accessibility APIs.
-  switch (GetRole()) {
-    case ax::mojom::Role::kButton:
-    case ax::mojom::Role::kDate:
-    case ax::mojom::Role::kDateTime:
-    case ax::mojom::Role::kInputTime:
-      return true;
-    default:
-      break;
-  }
-
-  // Links are never leaves.
-  if (ui::IsLink(GetRole())) {
-    return false;
-  }
-
-  // For some nodes, we will consider children before determining if the node
-  // is a leaf. For nodes with relevant children, we will return false here
-  // and allow the child nodes to be set as a leaf.
-
-  // Headings with text can drop their children (with exceptions).
-  std::u16string name = GetSubstringTextContentUTF16(NonEmptyPredicate());
-  if (GetRole() == ax::mojom::Role::kHeading && !name.empty()) {
-    bool ret = IsLeafConsideringChildren();
-    g_leaf_map.Get()[this] = ret;
-    return ret;
-  }
-
-  // Focusable nodes with text can drop their children (with exceptions).
-  if (HasState(ax::mojom::State::kFocusable) && !name.empty()) {
-    bool ret = IsLeafConsideringChildren();
-    g_leaf_map.Get()[this] = ret;
-    return ret;
-  }
-
-  // Nodes with only static text can drop their children, with the exception
-  // that list markers have a different role and should not be dropped.
-  if (HasOnlyTextChildren() && !HasListMarkerChild()) {
-    g_leaf_map.Get()[this] = true;
-    return true;
-  }
-
-  g_leaf_map.Get()[this] = false;
-  return false;
-}
-
-// static
-void BrowserAccessibilityOHOS::ResetLeafCache()
-{
-  g_leaf_map.Get().clear();
-}
-
-bool BrowserAccessibilityOHOS::IsLeafConsideringChildren() const
-{
-  // This is called from IsLeaf, so don't call PlatformChildCount
-  // from within this!
-
-  // Check for any children that should be exposed and return false if found (by
-  // returning false we are saying the parent node is NOT a leaf and this child
-  // node should instead be the leaf).
-  //
-  // If a node has a child that meets any of these criteria, it is NOT a leaf:
-  //
-  //   * child is focusable, and NOT a menu option
-  //   * child is a table, cell, or row
-  //
-  for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
-    BrowserAccessibility* child = it.get();
-
-    if (child->HasState(ax::mojom::State::kFocusable) &&
-        child->GetRole() != ax::mojom::Role::kMenuListOption) {
-      return false;
-    }
-
-    if (child->GetRole() == ax::mojom::Role::kTable ||
-        child->GetRole() == ax::mojom::Role::kCell ||
-        child->GetRole() == ax::mojom::Role::kRow ||
-        child->GetRole() == ax::mojom::Role::kLayoutTable ||
-        child->GetRole() == ax::mojom::Role::kLayoutTableCell ||
-        child->GetRole() == ax::mojom::Role::kLayoutTableRow) {
-      return false;
-    }
-
-    // Check nested children and return false if any meet above criteria.
-    if (!static_cast<BrowserAccessibilityOHOS*>(child)
-             ->IsLeafConsideringChildren()) {
-      return false;
-    }
-  }
-
-  // If no such children were found, return true signaling the parent node can
-  // be the leaf node.
-  return true;
-}
-
-const BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetSoleInterestingNodeFromSubtree() const
-{
-  if (IsInterestingOnOHOS()) {
-    return this;
-  }
-
-  const BrowserAccessibilityOHOS* sole_interesting_node = nullptr;
-  for (const auto& child : PlatformChildren()) {
-    const BrowserAccessibilityOHOS* interesting_node =
-        static_cast<const BrowserAccessibilityOHOS&>(child)
-            .GetSoleInterestingNodeFromSubtree();
-    if (interesting_node && sole_interesting_node) {
-      // If there are two interesting nodes, return nullptr.
-      return nullptr;
-    } else if (interesting_node) {
-      sole_interesting_node = interesting_node;
-    }
-  }
-
-  return sole_interesting_node;
-}
-
-BrowserAccessibilityOHOS::EarlyExitPredicate BrowserAccessibilityOHOS::NonEmptyPredicate()
-{
-  return base::BindRepeating(
-      [](const std::u16string& partial) { return partial.size() > 0; });
-}
-
-bool BrowserAccessibilityOHOS::CanFireEvents() const
-{
-  return !IsChildOfLeaf();
-}
-
-void BrowserAccessibilityOHOS::OnLocationChanged()
-{
-  auto* manager =
-      static_cast<BrowserAccessibilityManagerOHOS*>(this->manager());
-  manager->FireLocationChanged(this);
-}
-
-}  // namespace content
+}  // namespace ui

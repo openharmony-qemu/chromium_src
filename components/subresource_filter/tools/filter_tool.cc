@@ -89,6 +89,19 @@ const url_pattern_index::flat::UrlRule* FindMatchingUrlRule(
   return filter.FindMatchingUrlRule(request_url, type);
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
+FindMatchingCssRule(const subresource_filter::MemoryMappedRuleset* ruleset,
+                    const url::Origin& document_origin,
+                    const GURL& request_url) {
+  subresource_filter::mojom::ActivationState state;
+  state.activation_level = subresource_filter::mojom::ActivationLevel::kEnabled;
+  subresource_filter::DocumentSubresourceFilter filter(
+      document_origin, state, ruleset, kSafeBrowsingRulesetConfig.uma_tag);
+  return filter.FindMatchingCssRule(request_url, true);
+}
+#endif
+
 const std::string& ExtractStringFromDictionary(
     const base::Value::Dict& dictionary,
     const std::string& key) {
@@ -159,9 +172,14 @@ const url_pattern_index::flat::UrlRule* FilterTool::MatchImpl(
   return rule;
 }
 
-}  // namespace subresource_filter
-#include "arkweb/chromium_ext/components/subresource_filter/tools/filter_tool_for_include.cc"
-namespace subresource_filter {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
+FilterTool::MatchCssRuleImpl(std::string_view document_origin,
+                             std::string_view url) {
+  return FindMatchingCssRule(ruleset_.get(), ParseOrigin(document_origin),
+                             ParseRequestUrl(url));
+}
+#endif
 
 // If |print_each_request| is true, then the result of each match is written
 // to |output_|, just as in Match. Otherwise, the set of matching rules is
@@ -199,9 +217,20 @@ void FilterTool::MatchBatchImpl(std::istream* request_stream,
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
     const url_pattern_index::flat::UrlRule* url_rule =
-        FilterToolUtils::MatchRuleImplExt(origin, request_url, request_type,
-                                          blocked, matched_url_rules,
-                                          matched_css_rules, this);
+        MatchUrlRuleImpl(origin, request_url, request_type, &blocked);
+    if (url_rule) {
+      matched_url_rules[url_rule] += 1;
+    }
+
+    std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
+        css_rules = MatchCssRuleImpl(origin, request_url);
+    if (css_rules) {
+      for (auto* css_rule : *css_rules) {
+        if (css_rule) {
+          matched_css_rules[css_rule] += 1;
+        }
+      }
+    }
 #else
     const url_pattern_index::flat::UrlRule* rule =
         MatchImpl(origin, request_url, request_type, &blocked);

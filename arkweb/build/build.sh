@@ -22,13 +22,9 @@ BUILD_HMP_TOOL_DIR="${ROOT_DIR}/ohos_build/hmp_build"
 BUILD_TARGET_WEBVIEW="ohos_nweb_hap"
 BUILD_TARGET_V8="v8:v8_shared"
 BUILD_TARGET_BROWSERSHELL="ohos_browser_shell"
-BUILD_TARGET_COMPONENT="libarkweb_engine"
-BUILD_TARGET_NATIVE="adapter_ndk_stub libarkweb_engine libarkweb_render arkweb_crashpad_handler libffmpeg"
+BUILD_TARGET_NATIVE="libarkweb_engine libarkweb_render arkweb_crashpad_handler"
 BUILD_TARGET_BROWSER_SERVICE="ohos_nweb_ex/browser_service"
 BUILD_TARGET_BROWSER_SERVICE_HAR="browser_service_har"
-BUILD_TARGET_BROWSER_ENGINE_CORE_UNITTESTS="arkweb/build/unittests:oh_core_unittests"
-BUILD_TARGET_BROWSER_ENGINE_BASE_UNITTESTS="arkweb/build/unittests:oh_base_unittests"
-BUILD_TARGET_BROWSER_ENGINE_SMOKE_UNITTESTS="arkweb/build/unittests:oh_smoke_unittests"
 TEXT_BOLD="\033[1m"
 TEXT_NORMAL="\033[0m"
 
@@ -36,6 +32,7 @@ TEXT_NORMAL="\033[0m"
 buildargs="
   target_os=\"ohos\"
   is_debug=false
+  is_official_build=true
   is_component_build=false
   is_chrome_branded=false
   use_official_google_api_keys=false
@@ -93,21 +90,7 @@ use_thin_lto=0
 additional_gn_args=""
 build_hmp=0
 build_type="$1"
-build_component=0
-is_official_build=1
-npm config set registry http://mirrors.tools.huawei.com/npm/
-npm config set @ohpm-test:registry https://cmc.centralrepo.rnd.huawei.com/artifactory/api/npm/product_npm/
-npm config set @ohos:registry https://cmc.centralrepo.rnd.huawei.com/artifactory/api/npm/product_npm/
-npm config set @baize:registry https://cmc.centralrepo.rnd.huawei.com/artifactory/api/npm/product_npm/
-npm config set strict-ssl false
-cat ${HOME}/.npmrc | grep 'lockfile=false' || echo 'lockfile=false' >> ${HOME}/.npmrc
-cp -rf ./src/upper_level/include_vector_patch.py ./
-cp -rf ./src/upper_level/.cloudbuild ./
-cp -rf ./src/upper_level/.codecheck ./
-cp -rf ./src/upper_level/.gclient ./
-cp -rf ./src/upper_level/.gclient_entries ./
-cp -rf ./src/upper_level/.gclient_previous_sync_commits ./
-cp -rf ./src/upper_level/.gcs_entries ./
+
 if [ -d "${ROOT_DIR}/arkweb/ohos_nweb_ex" ]; then
   with_nweb_ex=1
 fi
@@ -131,7 +114,6 @@ ${TEXT_BOLD}OPTIONS${TEXT_NORMAL}:
                     them locally.
   -asan             Enable AddressSanitizer (ASan).
   -fuzzer           Enable Fuzzer test(with Asan).
-  -coverage         Enable use_clang_coverage.
   -G <gn_args>      Additional gn args.
 
 ${TEXT_BOLD}PRODUCT${TEXT_NORMAL}:
@@ -210,10 +192,6 @@ while [ "$1" != "" ]; do
     "-without-nweb-ex")
       with_nweb_ex=0
       ;;
-    "-coverage")
-      buildargs="${buildargs}
-      use_clang_coverage=true"
-      ;;
     "-G")
       shift
       additional_gn_args="$1"
@@ -265,21 +243,6 @@ case "${build_target}" in
     build_target="${BUILD_TARGET_BROWSER_SERVICE_HAR}"
     [[ "-$buildarg_musl" == "-use_musl=true" ]] && build_sysroot="use_ohos_sdk_sysroot=true"
     ;;
-  "coreut"|"${BUILD_TARGET_BROWSER_ENGINE_CORE_UNITTESTS}")
-    build_target="${BUILD_TARGET_BROWSER_ENGINE_CORE_UNITTESTS}"
-    ;;
-  "allut"|"${BUILD_TARGET_BROWSER_ENGINE_BASE_UNITTESTS}")
-#    is_official_build=0
-    build_target="${BUILD_TARGET_BROWSER_ENGINE_BASE_UNITTESTS}"
-    ;;
-  "smokeut"|"${BUILD_TARGET_BROWSER_ENGINE_SMOKE_UNITTESTS}")
-#    is_official_build=0
-    build_target="${BUILD_TARGET_BROWSER_ENGINE_SMOKE_UNITTESTS}"
-    ;;
-  "component")
-    build_component=1
-    build_target="${BUILD_TARGET_COMPONENT}"
-    ;;
   *)
     echo "Invalid build_target: ${build_target}"
     exit 2
@@ -287,14 +250,12 @@ case "${build_target}" in
 esac
 
 SIGN_INFO="$CUR_DIR/signature_nweb/signature_info.json"
-if [[ -z "$ONLINE_USERNAME" ]] || [[ -z "$ONLINE_PASSWD" ]] ; then
-  if [[ $build_hmp =~ 1 ]] && [[ -f $SIGN_INFO ]] ; then
-    usernameForSignHmp=$(jq -r '.usernameForSignHmp' "$SIGN_INFO")
-    passwordForSignHmp=$(jq -r '.passwordForSignHmp' "$SIGN_INFO")
-    if [[ -z $usernameForSignHmp ]] || [[ -z $passwordForSignHmp ]]; then
-      echo -e "\033[1;31mYou should fill the info in signature_nweb/signature_info.json before build HMP package.\033[0m"
-      exit 2
-    fi
+if [[ $build_hmp =~ 1 ]] && [[ -f $SIGN_INFO ]] ; then
+  usernameForSignHmp=$(jq -r '.usernameForSignHmp' "$SIGN_INFO")
+  passwordForSignHmp=$(jq -r '.passwordForSignHmp' "$SIGN_INFO")
+  if [[ -z $usernameForSignHmp ]] || [[ -z $passwordForSignHmp ]]; then
+    echo -e "\033[1;31mYou should fill the info in signature_nweb/signature_info.json before build HMP package.\033[0m"
+    exit 2
   fi
 fi
 
@@ -335,7 +296,7 @@ else
 fi
 
 if [ ${build_fuzz} -eq 1 ]; then
-  GN_ARGS="${GN_ARGS} dcheck_always_on = false enable_mojom_fuzzer = false use_libfuzzer = true use_remoteexec = false use_thin_lto=false use_clang_coverage=true"
+  GN_ARGS="${GN_ARGS} dcheck_always_on = false enable_mojom_fuzzer = true use_libfuzzer = true use_remoteexec = false use_thin_lto=false use_clang_coverage=true"
 fi
 
 if [ ${build_v8} -eq 1 ]; then
@@ -344,15 +305,6 @@ fi
 
 if [ ${use_thin_lto} -eq 1 ]; then
   GN_ARGS="${GN_ARGS} use_thin_lto=false"
-fi
-if [ ${is_official_build} -eq 0 ]; then
-  GN_ARGS="${GN_ARGS} is_official_build=false"
-else
-  GN_ARGS="${GN_ARGS} is_official_build=true"
-fi
-
-if [ ${build_component} -eq 1 ]; then
-  GN_ARGS="${GN_ARGS} is_component_build=true is_official_build=false is_debug=false"
 fi
 
 # Extract ohos-sdk.
@@ -429,28 +381,27 @@ else
     echo -e "Failed to execute build/config_to_gn.py, see errors above."
     exit 1
   fi
-  buildargs="${buildargs}
-    ohos_nweb_ex_config_name=\"//${build_dir}${BUILD_CONFIG_NAME}\"
-    arkweb_ext_dir=\"//arkweb/ohos_nweb_ex\"
-    "
 fi
 
 if ! [ -d "${CUR_DIR}/deps_code" ]; then
   mkdir -p ${CUR_DIR}/deps_code
   echo "create new deps_code dir"
   cd deps_code
-# use ssh download deps_code
-# git clone ssh://git@szv-open.codehub.huawei.com:2222/OpenSourceCenter_CR/openharmony/web_webview.git -b huawei/EMUI/HarmonyOS/hmos_trunk_dev_20241221/OpenHarmony-v5.0.0-Release
-  git clone https://szv-open.codehub.huawei.com/OpenSourceCenter_CR/openharmony/web_webview.git -b huawei/EMUI/HarmonyOS/hmos_trunk_dev_20250213/OpenHarmony-Trunk
+  # use ssh download deps_code
+  git clone https://gitee.com/openharmony/web_webview.git -b master
   mv web_webview webview
   cd ..
 fi
 cd src
 source arkweb/build/prepare.sh $build_dir
 
-cd cef/tools
-bash ./translator.sh
-cd -
+script_arch="i386"
+if [ "${buildarg_cpu}" = "target_cpu=\"arm64\"" ]; then
+  script_arch="amd64"
+fi
+if ! [ -d "build/linux/debian_bullseye_${script_arch}-sysroot/" ];then
+  python3 build/linux/sysroot_scripts/install-sysroot.py --arch=${script_arch}
+fi
 
 time_start_for_build=$(date +%s)
 time_start_for_gn=$time_start_for_build
@@ -476,19 +427,13 @@ if [ ${build_fuzz} -eq 1 ]; then
 fi
 export OHOS_BASE_SDK_HOME="${ROOT_DIR}/ohos_sdk"
 
-echo "third_party/depot_tools/ninja -C $build_dir -j$buildcount ${build_target}"
 third_party/depot_tools/ninja -C $build_dir -j$buildcount ${build_target}
 
 if [[ $build_hmp =~ 1 ]] ; then
   export HW_HARMONY_ENGINE_ROOT="${CUR_DIR}"
   export HW_HARMONY_ENGINE_OUT_RELEASE="${ROOT_DIR}/${build_dir}/"
-  if [[ -n "$ONLINE_USERNAME" ]] && [[ -n "$ONLINE_PASSWD" ]] ; then
-    export SIGN_NEW_USERNAME="${ONLINE_USERNAME}"
-    export SIGN_NEW_PASSWORD="${ONLINE_PASSWD}"
-  else
-    export SIGN_NEW_USERNAME="${usernameForSignHmp}"
-    export SIGN_NEW_PASSWORD="${passwordForSignHmp}"
-  fi
+  export SIGN_NEW_USERNAME="${usernameForSignHmp}"
+  export SIGN_NEW_PASSWORD="${passwordForSignHmp}"
   export ohos_mr_build_type="$build_type"
 
   bash -c "${BUILD_HMP_TOOL_DIR}/build_hmp.sh"
@@ -507,20 +452,5 @@ time_format $time_end_for_build $time_end_for_gn
 printf "\e[32mTime for build : %dH:%dM:%dS \e[0m\n" $hours $minutes $seconds
 time_format $time_end_for_build $time_start_for_build
 printf "\e[32mTime for Total : %dH:%dM:%dS \e[0m\n\n" $hours $minutes $seconds
-
-json_file="$CUR_DIR/src/arkweb/build/assume_unchanged.json"
-while IFS= read -r dir; do
-    directory=$(echo "$dir" | jq -r '.key')
-    if [ -d "$CUR_DIR/$directory" ]; then
-        cd "$CUR_DIR/$directory"
-        files=$(echo "$dir" | jq -r '.value[]')
-        for file in $files; do
-            git update-index --assume-unchanged "$file"
-        done
-        cd -
-    fi
-done < <(jq -c '. | to_entries[]' "$json_file")
-
-python3 $ROOT_DIR/arkweb/build/ninja2trace.py --ninja-log $ROOT_DIR/$build_dir/.ninja_log --trace-file $ROOT_DIR/$build_dir/build.trace --ninja-start-time "0" --duration-file $ROOT_DIR/$build_dir/sorted_action_duration.txt
 
 echo "build done"

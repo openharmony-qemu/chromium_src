@@ -8,6 +8,7 @@
 #include <array>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/threading/thread_checker.h"
 #include "components/viz/common/resources/release_callback.h"
@@ -16,7 +17,6 @@
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/geometry/rect.h"
-#include "arkweb/build/features/features.h"
 
 class SkBitmap;
 
@@ -200,21 +200,13 @@ class VIZ_COMMON_EXPORT CopyOutputResult {
   virtual gfx::ColorSpace GetRGBAColorSpace() const;
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
-  void SetDumpFrameId(uint64_t id) {
-    dump_frame_id_ = id;
-  }
- 
-  uint64_t DumpFrameId() const {
-    return dump_frame_id_;
-  }
- 
-  void SetDumpFramePath(const std::string path) {
-    dump_frame_path_ = path;
-  }
- 
-  std::string DumpFramePath() const {
-    return dump_frame_path_;
-  }
+  void SetDumpFrameId(uint64_t id) { dump_frame_id_ = id; }
+
+  uint64_t DumpFrameId() const { return dump_frame_id_; }
+
+  void SetDumpFramePath(const std::string path) { dump_frame_path_ = path; }
+
+  std::string DumpFramePath() const { return dump_frame_path_; }
 #endif
 
  protected:

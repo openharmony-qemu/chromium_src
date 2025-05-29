@@ -29,9 +29,6 @@
 #include "media/base/video_decoder_config.h"
 #include "media/base/video_renderer.h"
 #include "media/base/wall_clock_time_source.h"
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/media/renderers/renderer_impl_for_include.cc"
-#endif
 
 namespace media {
 
@@ -138,10 +135,6 @@ RendererImpl::~RendererImpl() {
 
 void RendererImpl::Initialize(MediaResource* media_resource,
                               RendererClient* client,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                              RequestSurfaceCB request_surface_cb,
-                              VideoDecoderChangedCB decoder_changed_cb,
-#endif // ARKWEB_VIDEO_ASSISTANT
                               PipelineStatusCallback init_cb) {
   DVLOG(1) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
@@ -154,10 +147,6 @@ void RendererImpl::Initialize(MediaResource* media_resource,
   client_ = client;
   media_resource_ = media_resource;
   init_cb_ = std::move(init_cb);
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  request_surface_cb_ = std::move(request_surface_cb);
-  decoder_changed_cb_ = std::move(decoder_changed_cb);
-#endif // ARKWEB_VIDEO_ASSISTANT
 
   if (HasEncryptedStream() && !cdm_context_) {
     DVLOG(1) << __func__ << ": Has encrypted stream but CDM is not set.";
@@ -476,10 +465,6 @@ void RendererImpl::InitializeVideoRenderer() {
       DemuxerStream::VIDEO, this, media_resource_);
   video_renderer_->Initialize(
       video_stream, cdm_context_, video_renderer_client_.get(),
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-      std::move(request_surface_cb_),
-      std::move(decoder_changed_cb_),
-#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindRepeating(&RendererImpl::GetWallClockTimes,
                           base::Unretained(this)),
       base::BindOnce(&RendererImpl::OnVideoRendererInitializeDone, weak_this_));
@@ -644,10 +629,6 @@ void RendererImpl::ReinitializeVideoRenderer(
   video_renderer_->OnTimeStopped();
   video_renderer_->Initialize(
       stream, cdm_context_, video_renderer_client_.get(),
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-      std::move(request_surface_cb_),
-      std::move(decoder_changed_cb_),
-#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindRepeating(&RendererImpl::GetWallClockTimes,
                           base::Unretained(this)),
       base::BindOnce(&RendererImpl::OnVideoRendererReinitialized, weak_this_,

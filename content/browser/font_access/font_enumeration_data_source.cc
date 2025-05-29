@@ -65,6 +65,8 @@ std::unique_ptr<FontEnumerationDataSource> FontEnumerationDataSource::Create() {
   return std::make_unique<FontEnumerationDataSourceMac>();
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   return std::make_unique<FontEnumerationDataSourceLinux>();
+#elif BUILDFLAG(IS_OHOS)
+  return std::make_unique<FontEnumerationDataSourceOHOS>();
 #else
   return std::make_unique<FontEnumerationDataSourceNull>();
 #endif  // BUILDFLAG(IS_WIN)

@@ -15,10 +15,6 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "ui/base/ozone_buildflags.h"
 
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#include "arkweb/chromium_ext/components/viz/test/mock_display_client_ext.h"
-#endif
-
 namespace viz {
 
 class MockDisplayClient : public mojom::DisplayClient {
@@ -54,7 +50,11 @@ class MockDisplayClient : public mojom::DisplayClient {
 #endif  // BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  ARKWEB_UNITTESTS_MOCK_DISPLAY_CLIENT()
+  MOCK_METHOD1(DidCompleteSwapWithNewSizeOHOS, void(const gfx::Size&));
+  MOCK_METHOD1(UseProxyOutputDevice, void(UseProxyOutputDeviceCallback));
+  MOCK_METHOD1(
+      CreateLayeredWindowUpdater,
+      void(::mojo::PendingReceiver<::viz::mojom::LayeredWindowUpdater>));
 #endif
  private:
   mojo::Receiver<mojom::DisplayClient> receiver_{this};

@@ -394,7 +394,7 @@ class CastSocketTestBase : public testing::Test {
     context_builder->set_client_socket_factory_for_testing(
         &client_socket_factory_);
     url_request_context_ = context_builder->Build();
-    network_context_ = std::make_unique<network::ArkWebNetworkContextExt>(
+    network_context_ = std::make_unique<network::NetworkContext>(
         nullptr, network_context_remote_.BindNewPipeAndPassReceiver(),
         url_request_context_.get(),
         /*cors_exempt_header_list=*/std::vector<std::string>());

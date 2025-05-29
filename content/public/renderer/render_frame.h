@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/supports_user_data.h"
 #include "base/task/single_thread_task_runner.h"
 #include "content/common/buildflags.h"
@@ -26,7 +27,6 @@
 #include "third_party/blink/public/web/web_navigation_policy.h"
 #include "ui/accessibility/ax_mode.h"
 #include "ui/accessibility/ax_tree_update.h"
-#include "arkweb/build/features/features.h"
 
 class GURL;
 
@@ -239,12 +239,13 @@ class CONTENT_EXPORT RenderFrame :
   // Sets that cross browsing instance frame lookup is allowed.
   virtual void SetAllowsCrossBrowsingInstanceFrameLookup() = 0;
 
-  //TODO:ARKWEB_PASSWORD_AUTOFILL
-  //The "ElementBoundsInWindow" has changed "ConvertViewportToWindow" in base 132.
-  // Returns the bounds of |element| in Window coordinates which are device
-  // scale independent. The bounds have been adjusted to include any
-  // transformations, including page scale. This function will update the layout
-  // if required.
+  // TODO:ARKWEB_PASSWORD_AUTOFILL
+  // The "ElementBoundsInWindow" has changed "ConvertViewportToWindow" in base
+  // 132.
+  //  Returns the bounds of |element| in Window coordinates which are device
+  //  scale independent. The bounds have been adjusted to include any
+  //  transformations, including page scale. This function will update the
+  //  layout if required.
   virtual gfx::RectF ElementBoundsInWindow(
       const blink::WebElement& element) = 0;
 

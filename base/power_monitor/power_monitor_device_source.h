@@ -35,6 +35,10 @@
 #include <objc/runtime.h>
 #endif  // BUILDFLAG(IS_IOS)
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/power_monitor/power_monitor.h"
+#endif
+
 namespace base {
 
 // A class used to monitor the power state change and notify the observers about
@@ -71,6 +75,10 @@ class BASE_EXPORT PowerMonitorDeviceSource : public PowerMonitorSource {
  private:
   friend class PowerMonitorDeviceSourceTest;
 
+#if BUILDFLAG(IS_OHOS)
+  std::unique_ptr<::ohos::adapter::OhosPowerMonitor> impl = nullptr;
+#endif
+
 #if BUILDFLAG(IS_WIN)
   // Represents a message-only window for power message handling on Windows.
   // Only allow PowerMonitor to create it.
@@ -94,10 +102,10 @@ class BASE_EXPORT PowerMonitorDeviceSource : public PowerMonitorSource {
   };
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   void PlatformInit();
   void PlatformDestroy();
-#endif  // BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN)
+#endif  // BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_MAC)
   // Callback from IORegisterForSystemPower(). |refcon| is the |this| pointer.

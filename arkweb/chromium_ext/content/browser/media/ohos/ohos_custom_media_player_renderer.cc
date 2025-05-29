@@ -19,7 +19,6 @@
 #include "content/public/common/content_client.h"
 #include "gpu/ipc/common/gpu_surface_id_tracker.h"
 #include "media/base/timestamp_constants.h"
-#include "mojo/public/cpp/bindings/callback_helpers.h"
 #include "net/http/http_request_headers.h"
 #include "services/network/public/mojom/network_context.mojom.h"
 #include "services/network/public/mojom/restricted_cookie_manager.mojom.h"
@@ -255,10 +254,6 @@ OHOSCustomMediaPlayerRenderer::~OHOSCustomMediaPlayerRenderer() {
 void OHOSCustomMediaPlayerRenderer::Initialize(
     media::MediaResource* media_resource,
     media::RendererClient* client,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-    media::RequestSurfaceCB request_surface_cb,
-    media::VideoDecoderChangedCB decoder_changed_cb,
-#endif  // ARKWEB_VIDEO_ASSISTANT
     media::PipelineStatusCallback init_cb) {
   DVLOG(1) << __func__;
 
@@ -338,14 +333,10 @@ void OHOSCustomMediaPlayerRenderer::GetCookies() {
       cookie_manager.get();
 
   cookie_manager_ptr->GetCookiesString(
-      url, site_for_cookies, top_frame_origin, storage_access_api_status,
-      false, false, false,
-      mojo::WrapCallbackWithDefaultInvokeIfNotRun(
-          base::BindOnce(&ReturnResultOnUIThreadAndClosePipe,
-              std::move(cookie_manager), std::move(callback)),
-          0, /* default version */
-          base::ReadOnlySharedMemoryRegion(),
-          std::string()));
+      url, site_for_cookies, top_frame_origin, storage_access_api_status, false,
+      false, false,
+      base::BindOnce(&ReturnResultOnUIThreadAndClosePipe,
+                     std::move(cookie_manager), std::move(callback)));
 }
 
 void OHOSCustomMediaPlayerRenderer::OnCookiesRetrieved(
@@ -374,17 +365,6 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
 
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
-  if (!init_cb_) {
-    LOG(ERROR) << "CreateMediaPlayer failed, no init_cb";
-    return;
-  }
-
-  if (initialized_) {
-    LOG(ERROR) << "CreateMediaPlayer failed, already initialized";
-    std::move(init_cb_).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
-    return;
-  }
-
   if (!media_url_params_) {
     LOG(ERROR) << "CreateMediaPlayer failed, no media_url_params_";
     std::move(init_cb_).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
@@ -406,32 +386,9 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
     std::move(init_cb_).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
     return;
   }
-
   std::string surface_id_string =
       gpu_process_host->gpu_host()->GetSurfaceId(surface_id_);
 
-  media_player_ =
-      web_contents_impl->AsWebContentsImplExt()->CreateCustomMediaPlayer(
-          std::make_unique<CustomMediaPlayerListenerImpl>(
-              weak_factory_.GetWeakPtr()),
-          BuildMediaInfo(surface_id_string));
-  if (!media_player_) {
-    LOG(INFO) << "CreateCustomMediaPlayer, no media player";
-    std::move(init_cb_).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
-    return;
-  }
-
-  web_contents_impl->AsWebContentsImplExt()->AddCustomMediaPlayer(
-      media_player_id_, media_player_.get());
-
-  initialized_ = true;
-  std::move(init_cb_).Run(media::PIPELINE_OK);
-  LOG(INFO) << "media player initialize ok.";
-}
-
-MediaInfo OHOSCustomMediaPlayerRenderer::BuildMediaInfo(
-    const std::string& surface_id_string)
-{
   MediaInfo media_info;
   media_info.embed_id = std::to_string(surface_id_);
   media_info.media_type =
@@ -468,7 +425,24 @@ MediaInfo OHOSCustomMediaPlayerRenderer::BuildMediaInfo(
         net::HttpRequestHeaders::kUserAgent, std::move(user_agent)));
   }
   media_info.attributes = std::move(attributes_);
-  return media_info;
+
+  media_player_ =
+      web_contents_impl->AsWebContentsImplExt()->CreateCustomMediaPlayer(
+          std::make_unique<CustomMediaPlayerListenerImpl>(
+              weak_factory_.GetWeakPtr()),
+          media_info);
+  if (!media_player_) {
+    LOG(INFO) << "CreateCustomMediaPlayer, no media player";
+    std::move(init_cb_).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
+    return;
+  }
+
+  web_contents_impl->AsWebContentsImplExt()->AddCustomMediaPlayer(
+      media_player_id_, media_player_.get());
+
+  initialized_ = true;
+  std::move(init_cb_).Run(media::PIPELINE_OK);
+  LOG(INFO) << "media player initialize ok.";
 }
 
 void OHOSCustomMediaPlayerRenderer::SetLatencyHint(
@@ -531,10 +505,6 @@ base::TimeDelta OHOSCustomMediaPlayerRenderer::GetMediaTime() {
 
 media::RendererType OHOSCustomMediaPlayerRenderer::GetRendererType() {
   return media::RendererType::kOHOSCustomMediaPlayer;
-}
-
-media::OHOSMediaResourceGetter* OHOSCustomMediaPlayerRenderer::GetMediaResourceGetter() {
-  return nullptr;
 }
 
 void OHOSCustomMediaPlayerRenderer::OnMediaDurationChanged(

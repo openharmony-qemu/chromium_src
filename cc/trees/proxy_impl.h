@@ -113,7 +113,7 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
 #endif
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) override;
-#endif // ARKWEB_VIDEO_ASSISTANT
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
  private:
   // LayerTreeHostImplClient implementation
@@ -135,7 +135,7 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
   void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) override;
 #if BUILDFLAG(ARKWEB_WEBGL)
   void SetDeferInvalidationForFastMainFrameFromImpl(
-           bool defer_invalidation_for_fast_main_frame) override;
+      bool defer_invalidation_for_fast_main_frame) override;
 #endif
   bool IsInsideDraw() override;
   void RenewTreePriority() override;

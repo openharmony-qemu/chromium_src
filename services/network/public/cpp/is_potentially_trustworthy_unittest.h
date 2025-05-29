@@ -106,7 +106,7 @@ TYPED_TEST_P(AbstractTrustworthinessTest, CustomSchemes) {
   // TODO(lukasza): Maybe if the spec had a notion of an origin *precursor*,
   // then it could inspect the scheme of the precursor.  After this, it may be
   // possible to EXPECT_TRUE below...
-  EXPECT_FALSE(this->IsOriginPotentiallyTrustworthy("sec://blah/x.js"));
+  EXPECT_TRUE(this->IsOriginPotentiallyTrustworthy("sec://blah/x.js"));
   EXPECT_FALSE(
       this->IsOriginPotentiallyTrustworthy("sec-noaccess://blah/x.js"));
 

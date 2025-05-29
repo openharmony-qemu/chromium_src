@@ -33,9 +33,23 @@
 #include "gpu/config/gpu_switches.h"
 #include "gpu/ipc/service/gpu_memory_buffer_factory.h"
 #include "ui/gfx/switches.h"
-#include "arkweb/chromium_ext/components/viz/service/main/viz_compositor_thread_runner_impl_utils.h"
+
 #if BUILDFLAG(IS_OZONE)
 #include "ui/ozone/public/ozone_platform.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+#include "arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker.h"
+#include "base/process/process_handle.h"
+#include "content/public/browser/browser_task_traits.h"
+#include "content/public/browser/browser_thread.h"
+#include "content/public/common/content_switches.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
+// #include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+#include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
 #endif
 
 namespace viz {
@@ -77,7 +91,27 @@ std::unique_ptr<VizCompositorThreadType> CreateAndStartCompositorThread() {
 
   CHECK(thread->StartWithOptions(std::move(thread_options)));
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-  ReportThreadForInit(thread);
+  using namespace OHOS::NWeb;
+  auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+      switches::kProcessType);
+  if (type == switches::kGpuProcess) {
+    NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+        thread->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  } else {
+    thread->task_runner()->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
+            ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+            thread->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+  }
+  thread->task_runner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          &base::ohos::DynamicFrameRateDecision::Init,
+          base::Unretained(
+              &base::ohos::DynamicFrameRateDecision::GetInstance())));
 #endif
   return thread;
 #endif  // !BUILDFLAG(IS_ANDROID)
@@ -88,7 +122,6 @@ VizCompositorThreadRunnerImpl::VizCompositorThreadRunnerImpl()
     : thread_(CreateAndStartCompositorThread()),
       task_runner_(thread_->task_runner()) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(gpu_sequence_checker_);
-  implUtils = new VizCompositorThreadRunnerImplUtils(this);
 }
 
 VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
@@ -98,9 +131,23 @@ VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
                      base::Unretained(this)));
   thread_->Stop();
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-  implUtils->ReportThreadForDestroy(thread_);
+  using namespace OHOS::NWeb;
+  auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+      switches::kProcessType);
+  if (type == switches::kGpuProcess) {
+    NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+        ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
+        thread_->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  } else {
+    task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
+            ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
+            thread_->GetThreadRealId(),
+            ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+  }
 #endif
-  delete implUtils;
 }
 
 bool VizCompositorThreadRunnerImpl::CreateHintSessionFactory(

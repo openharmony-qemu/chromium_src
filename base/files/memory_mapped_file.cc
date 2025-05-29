@@ -6,29 +6,71 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
 #include "base/notreached.h"
 #include "base/numerics/safe_math.h"
 #include "base/system/sys_info.h"
 #include "build/build_config.h"
-#include "arkweb/build/features/features.h"
 
 namespace base {
 
 const MemoryMappedFile::Region MemoryMappedFile::Region::kWholeFile = {0, 0};
 
 MemoryMappedFile::~MemoryMappedFile() {
-#if BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
-  mapper_file_ext_.ClearData(std::bind(&MemoryMappedFile::CloseHandles, this));
+#if BUILDFLAG(IS_ARKWEB) && \
+    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
+  if (!customizeData_) {
+    CloseHandles();
+    return;
+  }
+
+  if ((data_ != nullptr) && (mapper_ == nullptr)) {
+    delete[] data_;
+    data_ = nullptr;
+  }
+  length_ = 0;
+  mapper_.reset();
 #else
   CloseHandles();
 #endif
 }
 
-#if BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
-void MemoryMappedFile::SetOhosFileMapper(std::shared_ptr<OHOS::NWeb::OhosFileMapper>& mapper) {
-  mapper_file_ext_.SetOhosFileMapper(mapper, std::bind(&MemoryMappedFile::CloseHandles, this), bytes_);
+#if BUILDFLAG(IS_ARKWEB) && \
+    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
+void MemoryMappedFile::SetOhosFileMapper(
+    std::shared_ptr<OHOS::NWeb::OhosFileMapper>& mapper) {
+  if (IsValid()) {
+    if (customizeData_) {
+      if (mapper_ == nullptr) {
+        delete[] data_;
+        data_ = nullptr;
+      } else {
+        mapper_ = nullptr;
+      }
+    } else {
+      CloseHandles();
+    }
+  }
+
+  customizeData_ = true;
+
+  if (!mapper->IsCompressed()) {
+    mapper_ = std::move(mapper);
+    // data_ = reinterpret_cast<uint8_t*>(mapper_->GetDataPtr());
+    // length_ = mapper_->GetDataLen();
+    uint8_t* tempData = reinterpret_cast<uint8_t*>(mapper_->GetDataPtr());
+    size_t tempLength = mapper_->GetDataLen();
+    bytes_ = span<uint8_t>(tempData, tempLength);
+  } else {
+    uint8_t* tmp;
+    // mapper->UnzipData(&tmp, length_);
+    // data_ = tmp;
+    size_t tmpLength = bytes_.size();
+    mapper->UnzipData(&tmp, tmpLength);
+    bytes_ = span<uint8_t>(tmp, tmpLength);
+  }
 }
 #endif
 

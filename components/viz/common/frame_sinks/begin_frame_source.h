@@ -223,7 +223,7 @@ class VIZ_COMMON_EXPORT BeginFrameSource {
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void SendInternalBeginFrame() {}
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
  protected:
   // Returns whether begin-frames to clients should be withheld (because the gpu
@@ -446,16 +446,11 @@ class VIZ_COMMON_EXPORT ExternalBeginFrameSource : public BeginFrameSource {
 
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
   virtual void SetEnableLowerFrameRate(bool enabled) {}
-  virtual void SetEnableHalfFrameRate(bool enabled) {}
 #endif
 
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
   virtual void UpdateVSyncFrequency(int frame_rate) {}
   virtual void ResetVSyncFrequency() {}
-#endif
-
-#if BUILDFLAG(ARKWEB_PIP)
-  virtual void SetPipActive(bool active) {}
 #endif
 
   // Notifies the begin frame source of the desired frame interval for the

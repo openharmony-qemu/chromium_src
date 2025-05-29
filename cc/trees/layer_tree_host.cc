@@ -125,11 +125,7 @@ std::unique_ptr<LayerTreeHost> LayerTreeHost::CreateThreaded(
   DCHECK(main_task_runner);
   DCHECK(impl_task_runner);
   auto layer_tree_host = base::WrapUnique(
-#if BUILDFLAG(IS_ARKWEB)
-      new LayerTreeHostExt(std::move(params), CompositorMode::THREADED));
-#else
       new LayerTreeHost(std::move(params), CompositorMode::THREADED));
-#endif
   layer_tree_host->InitializeThreaded(std::move(main_task_runner),
                                       std::move(impl_task_runner));
   return layer_tree_host;
@@ -142,11 +138,7 @@ std::unique_ptr<LayerTreeHost> LayerTreeHost::CreateSingleThreaded(
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner =
       params.main_task_runner;
   auto layer_tree_host = base::WrapUnique(
-#if BUILDFLAG(IS_ARKWEB)
-      new LayerTreeHostExt(std::move(params), CompositorMode::SINGLE_THREADED));
-#else
       new LayerTreeHost(std::move(params), CompositorMode::SINGLE_THREADED));
-#endif
   layer_tree_host->InitializeSingleThreaded(single_thread_client,
                                             std::move(main_task_runner));
   return layer_tree_host;
@@ -818,6 +810,12 @@ void LayerTreeHost::ApplyPageScaleDeltaFromImplSide(float page_scale_delta) {
   SetPageScaleFromImplSide(page_scale);
 }
 
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+void LayerTreeHost::SetPinchSmoothMode(bool isEnable) {
+  proxy_->SetPinchSmoothMode(isEnable);
+}
+#endif
+
 void LayerTreeHost::SetVisible(bool visible) {
   DCHECK(IsMainThread());
   if (visible_ == visible)
@@ -1394,6 +1392,19 @@ void LayerTreeHost::RegisterSelection(const LayerSelection& selection) {
   SetNeedsCommit();
 }
 
+#if BUILDFLAG(ARKWEB_MENU)
+void LayerTreeHost::RegisterClippedVisualViewportSelectionBounds(
+    const gfx::Rect& clipped_selection_bounds) {
+  if (pending_commit_state()->clipped_selection_bounds ==
+      clipped_selection_bounds) {
+    return;
+  }
+
+  pending_commit_state()->clipped_selection_bounds = clipped_selection_bounds;
+  SetNeedsCommit();
+}
+#endif
+
 void LayerTreeHost::SetHaveScrollEventHandlers(bool have_event_handlers) {
   if (pending_commit_state()->have_scroll_event_handlers == have_event_handlers)
     return;
@@ -1712,11 +1723,6 @@ void LayerTreeHost::UnregisterLayer(Layer* layer) {
   DCHECK(IsMainThread());
   DCHECK(LayerById(layer->id()));
   DCHECK(!in_paint_layer_contents_);
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  if (auto* ext = AsLayerTreeHostExt()) {
-    ext->CleanupVisibilityForRemovedLayer(layer);
-  }
-#endif
   pending_commit_state()->layers_that_should_push_properties.erase(layer);
   layer_id_map_.erase(layer->id());
 }
@@ -2135,4 +2141,30 @@ void LayerTreeHost::DropActiveScrollDeltaNextCommit(ElementId scroll_element) {
       scroll_element);
   SetNeedsCommit();
 }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void LayerTreeHost::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
+  DCHECK(IsMainThread());
+  if (auto* layer = LayerById(id)) {
+    layer->OnLayerRectUpdate(rect);
+  }
+}
+
+void LayerTreeHost::OnLayerRectVisibilityChange(int id, bool visibility) {
+  DCHECK(IsMainThread());
+  if (auto* layer = LayerById(id)) {
+    layer->OnLayerRectVisibilityChange(visibility);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void LayerTreeHost::OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {
+  DCHECK(IsMainThread());
+  if (auto* layer = LayerById(id)) {
+    layer->OnLayerBoundsUpdate(bounds);
+  }
+}
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
 }  // namespace cc

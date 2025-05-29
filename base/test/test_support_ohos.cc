@@ -5,10 +5,9 @@
 #ifndef BASE_TEST_TEST_SUPPORT_OHOS_H_
 #define BASE_TEST_TEST_SUPPORT_OHOS_H_
 
-
-#include "base/path_service.h"
-#include "base/files/file_path.h"
 #include "base/base_paths.h"
+#include "base/files/file_path.h"
+#include "base/path_service.h"
 
 namespace {
 // Provides the test path for paths overridden during tests.
@@ -19,7 +18,7 @@ bool GetTestProviderPath(int key, base::FilePath* result) {
       *result = base::FilePath("./tmp");
       return true;
     case base::DIR_CACHE:
-      *result = base::FilePath("/data/local");
+      *result = base::FilePath("./cache");
       return true;
     case base::DIR_USER_DESKTOP:
       *result = base::FilePath("./user_desktop");
@@ -51,7 +50,7 @@ void InitPathProvider(int key) {
     base::PathService::RegisterProvider(&GetTestProviderPath, key, key + 1);
   }
 }
-}
+}  // namespace
 
 namespace base {
 void RegisterPathProviderForOhosTest() {

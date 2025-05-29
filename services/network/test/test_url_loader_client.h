@@ -49,9 +49,7 @@ class TestURLLoaderClient final : public mojom::URLLoaderClient {
                         int64_t total_size,
                         OnUploadProgressCallback ack_callback) override;
   void OnComplete(const URLLoaderCompletionStatus& status) override;
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void OnTransferDataWithSharedMemory(::base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
-#endif // ARKWEB_UNITTESTS
+
   bool has_received_early_hints() const { return has_received_early_hints_; }
   bool has_received_response() const { return has_received_response_; }
   bool has_received_redirect() const { return has_received_redirect_; }

@@ -15,6 +15,10 @@
 
 #include <string>
 #include <vector>
+#if defined(__MUSL__)
+#include <sys/types.h>
+#include <unistd.h>
+#endif
 
 #include "sandbox/linux/system_headers/capability.h"
 #include "sandbox/sandbox_export.h"

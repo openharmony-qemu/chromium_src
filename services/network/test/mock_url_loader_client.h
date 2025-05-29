@@ -32,8 +32,7 @@ class MockURLLoaderClient : public network::mojom::URLLoaderClient {
 #if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
   MOCK_METHOD(void,
               OnTransferDataWithSharedMemory,
-              (base::ReadOnlySharedMemoryRegion region,
-               uint64_t buffer_size),
+              (base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size),
               (override));
 #endif
   MOCK_METHOD(void,

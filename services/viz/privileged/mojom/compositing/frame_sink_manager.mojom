@@ -216,10 +216,6 @@ interface FrameSinkManager {
   // Set Enable lower frame rate.
   [EnableIf=arkweb_occluded_opt]
   SetEnableLowerFrameRate(bool enabled, FrameSinkId frame_sink_id);
-
-  // Set Enable half frame rate.
-  [EnableIf=arkweb_occluded_opt]
-  SetEnableHalfFrameRate(bool enabled, FrameSinkId frame_sink_id);
  
   // Set enable lower frame rate, because there is video playing with low frame rate and no touch event
   [EnableIf=arkweb_video_ltpo]
@@ -234,10 +230,6 @@ interface FrameSinkManager {
   // When frame is invisible, evict display back buffers
   [EnableIf=arkweb_occluded_opt]
   EvictFrameBackBuffers(FrameSinkId frame_sink_id, bool invisible);
-
-  // Set pip enable.
-  [EnableIf=arkweb_pip]
-  SetPipActive(bool active, FrameSinkId frame_sink_id);
 
   // Setup the connection between the Browser (at WebContentsImpl level) and
   // the VizCompositor thread (at InputManager level) to allow transferring

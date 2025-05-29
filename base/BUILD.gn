@@ -862,8 +862,6 @@ component("base") {
     "time/tick_clock.h",
     "time/time.cc",
     "time/time.h",
-    "//arkweb/chromium_ext/base/time/time_utils.cc",
-    "//arkweb/chromium_ext/base/time/time_utils.h",
     "time/time_delta_from_string.cc",
     "time/time_delta_from_string.h",
     "time/time_override.cc",
@@ -975,9 +973,6 @@ component("base") {
       "time/time_conversion_posix.cc",
       "timer/hi_res_timer_manager_posix.cc",
     ]
-    if (enable_arkweb) {
-      sources += arkweb_base_process_ext_sources
-    }
   }
 
   if (is_ohos) {
@@ -1006,10 +1001,6 @@ component("base") {
       "threading/thread_type_delegate.cc",
       "threading/thread_type_delegate.h",
     ]
-  }
-
-  if (enable_arkweb) {
-    sources += arkweb_metrics_sources
   }
 
   if (is_chromeos) {
@@ -1055,7 +1046,7 @@ component("base") {
     "//third_party/modp_b64",
   ]
 
-  if (report_sys_event) {
+  if (defined(report_sys_event) && report_sys_event) {
     defines += [ "REPORT_SYS_EVENT" ]
   }
  
@@ -1109,7 +1100,7 @@ component("base") {
   ]
   if (is_ohos && enable_arkweb) {
     sources += arkweb_base_ext_sources
-    deps += [ "//arkweb//build/features", "//base/third_party/xdg_user_dirs",]
+    deps += [ "//arkweb//build/features" ]
     public_deps += [ "//arkweb//build/features" ]
     public_deps += [ ":ohos_package_info" ]
     if (is_ohos) {
@@ -1774,12 +1765,8 @@ component("base") {
       sources += [
         "base_paths_ohos.h",
         "base_paths_ohos.cc",
-        "nix/mime_util_xdg.cc",
-        "nix/mime_util_xdg.h",
         "nix/xdg_util.cc",
         "nix/xdg_util.h",
-        "stack_canary_linux.cc",
-        "stack_canary_linux.h",
       ]
     }
 
@@ -2403,8 +2390,12 @@ component("base") {
     sources += [ "profiler/stack_sampler_posix.cc" ]
   }
 
-  if ((is_posix && !is_apple && !is_android && !is_chromeos) || is_fuchsia) {
+  if ((is_posix && !is_apple && !is_android && !is_chromeos && !is_ohos) || is_fuchsia) {
     sources += [ "power_monitor/power_monitor_device_source_stub.cc" ]
+  }
+
+  if(is_ohos) {
+    sources += ["power_monitor/power_monitor_device_source_ohos.cc"]
   }
 
   # On ARC++-enabled ChromeOS system, we need TimeTicks::FromUptimeMillis to
@@ -2897,10 +2888,6 @@ component("i18n") {
 
   if (is_mac) {
     frameworks = [ "CoreFoundation.framework" ]
-  }
-
-  if (is_arkweb) {
-    sources += arkweb_base_i18n_sources
   }
 }
 
@@ -3903,18 +3890,7 @@ test("base_unittests") {
   }
 
   if (enable_base_tracing) {
-    sources += [
-      "test/test_trace_processor.cc",
-      "test/test_trace_processor.h",
-      "test/test_trace_processor_export.h",
-      "test/test_trace_processor_impl.cc",
-      "test/test_trace_processor_impl.h",
-      "test/test_trace_processor_example_unittest.cc",
-    ]
-
-    deps += [
-      "//third_party/perfetto:libtrace_processor",
-    ]
+    sources += [ "test/test_trace_processor_example_unittest.cc" ]
   }
 
   if (is_posix) {
@@ -4345,27 +4321,27 @@ if (enable_nocompile_tests) {
       "containers/fixed_flat_map_nocompile.nc",
       "containers/fixed_flat_set_nocompile.nc",
       "containers/heap_array_nocompile.nc",
-      # "containers/span_nocompile.nc",
+      "containers/span_nocompile.nc",
       "containers/to_value_list_nocompile.nc",
       "containers/to_vector_nocompile.nc",
       "debug/crash_logging_nocompile.nc",
-      # "functional/bind_nocompile.nc",
-      # "functional/callback_nocompile.nc",
+      "functional/bind_nocompile.nc",
+      "functional/callback_nocompile.nc",
       "functional/function_ref_nocompile.nc",
       "functional/overloaded_nocompile.nc",
-      # "logging_nocompile.nc",
+      "logging_nocompile.nc",
       "memory/protected_memory_nocompile.nc",
       "memory/ref_counted_nocompile.nc",
       "memory/shared_memory_mapping_nocompile.nc",
       "memory/structured_shared_memory_nocompile.nc",
-      # "memory/weak_ptr_nocompile.nc",
+      "memory/weak_ptr_nocompile.nc",
       "metrics/field_trial_params_nocompile.nc",
       "metrics/histogram_nocompile.nc",
       "no_destructor_nocompile.nc",
       "observer_list_nocompile.nc",
       "run_loop_nocompile.nc",
       "sequence_checker_nocompile.nc",
-      # "strings/cstring_view_nocompile.nc",
+      "strings/cstring_view_nocompile.nc",
       "strings/stringprintf_nocompile.nc",
       "synchronization/lock_nocompile.nc",
       "task/bind_post_task_nocompile.nc",

@@ -1506,7 +1506,7 @@ interface NetworkContext {
   InitPRParallelPreloadMgr();
  
   [EnableIf=arkweb_prp_preload]
-  StartPage(string url, NetworkAnonymizationKey networkAnonymizationKey, uint64 addr_web_handle) => (string page_origin_url);
+  StartPage(string url, uint64 addr_web_handle) => (string page_origin_url);
  
   [EnableIf=arkweb_prp_preload]
   StopPage(uint64 addr_web_handle);

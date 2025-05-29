@@ -36,10 +36,11 @@ void ReportLatency(const gfx::SwapTimings& timings,
         ui::INPUT_EVENT_GPU_SWAP_BUFFER_COMPONENT, timings.swap_start);
     latency.AddLatencyNumberWithTimestamp(
         ui::INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT, timings.swap_end);
-#if BUILDFLAG(ARKWEB_DFX_TRACING)    
-    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
-                      std::to_string(latency.trace_id()), "step",
-                      "INPUT_EVENT_GPU_SWAP_BUFFER_COMPONENT & INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT");
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
+                      "trace_id", std::to_string(latency.trace_id()), "step",
+                      "INPUT_EVENT_GPU_SWAP_BUFFER_COMPONENT & "
+                      "INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT");
 #endif
   }
 }
@@ -184,8 +185,8 @@ void SkiaOutputDevice::FinishSwapBuffers(
 #if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
     ,
     const gpu::Mailbox& primary_plane_mailbox
-#endif    
-    ) {
+#endif
+) {
   DCHECK(!pending_swaps_.empty());
 
   TRACE_EVENT(
@@ -204,12 +205,12 @@ void SkiaOutputDevice::FinishSwapBuffers(
 #endif
   auto release_fence = std::move(result.release_fence);
   const gpu::SwapBuffersCompleteParams& params =
-      pending_swaps_.front().Complete(std::move(result), damage_area, 
+      pending_swaps_.front().Complete(std::move(result), damage_area,
                                       std::move(released_overlays),
 #if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
-          primary_plane_mailbox, 
+                                      primary_plane_mailbox,
 #endif
-          frame.data.swap_trace_id);
+                                      frame.data.swap_trace_id);
 
   did_swap_buffer_complete_callback_.Run(params, size,
                                          std::move(release_fence));
@@ -217,8 +218,9 @@ void SkiaOutputDevice::FinishSwapBuffers(
   pending_swaps_.front().CallFeedback();
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
   for (auto& latency : frame.latency_info) {
-    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
-                      std::to_string(latency.trace_id()), "step", "STEP_FINISHED_SWAP_BUFFERS");
+    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
+                      "trace_id", std::to_string(latency.trace_id()), "step",
+                      "STEP_FINISHED_SWAP_BUFFERS");
   }
 #endif
   ReportLatency(params.swap_response.timings, std::move(frame.latency_info));

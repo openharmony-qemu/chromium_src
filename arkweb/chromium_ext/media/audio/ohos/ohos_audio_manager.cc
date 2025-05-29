@@ -27,7 +27,6 @@ constexpr int kMinimumInputBufferSize = 2048;
 const int32_t AUDIO_DEFAULT_DEVICE_ID = 1000000;
 const char* AUDIO_DEFAULT_DEVICE_NAME = "(default)";
 static const char* AUDIO_MANAGER_NAME = "OHOS";
-constexpr std::string_view kScreenSystemAudioDeviceId = "screen:systemAudio:-2:0";
 
 AudioManagerDeviceChangeCallback::AudioManagerDeviceChangeCallback(
     base::RepeatingClosure cb)
@@ -157,6 +156,7 @@ AudioOutputStream* OHOSAudioManager::MakeLinearOutputStream(
     const AudioParameters& params,
     const LogCallback& log_callback) {
   NOTREACHED();
+  return nullptr;
 }
 
 AudioOutputStream* OHOSAudioManager::MakeLowLatencyOutputStream(
@@ -187,6 +187,7 @@ AudioInputStream* OHOSAudioManager::MakeLinearInputStream(
     const std::string& device_id,
     const LogCallback& log_callback) {
   NOTREACHED();
+  return nullptr;
 }
 
 AudioInputStream* OHOSAudioManager::MakeLowLatencyInputStream(
@@ -234,13 +235,8 @@ void OHOSAudioManager::SelectAudioDevice(const std::string& device_id,
     LOG(WARNING) << "OHOSAudioManager::SelectAudioDevice device_id is empty.";
     return;
   }
-  device_id_ = device_id;
   LOG(INFO) << "OHOSAudioManager::SelectAudioDevice device_id is: "
             << device_id;
-  if (device_id_ == std::string(kScreenSystemAudioDeviceId)) {
-    LOG(INFO) << "OHOSAudioManager::SelectAudioDevice is: SystemAudioDevice";
-    return;
-  }
   int deviceId = 0;
   base::StringToInt(device_id, &deviceId);
   int32_t ret = OhosAdapterHelper::GetInstance()
@@ -249,14 +245,6 @@ void OHOSAudioManager::SelectAudioDevice(const std::string& device_id,
   if (ret != 0) {
     LOG(ERROR) << "OHOSAudioManager::SelectAudioDevice failed. ret: " << ret;
   }
-}
-
-std::string OHOSAudioManager::GetSelectAudioDeviceId() {
-  if (device_id_.empty()) {
-    LOG(WARNING) << "OHOSAudioManager::SelectAudioDevice device_id is empty.";
-    return "";
-  }
-  return device_id_;
 }
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 }  // namespace media

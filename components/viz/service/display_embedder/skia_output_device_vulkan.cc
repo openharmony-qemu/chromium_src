@@ -41,9 +41,15 @@
 #include "ui/gl/android/scoped_java_surface.h"
 #endif
 
-#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_vulkan_utils.h"
+#if BUILDFLAG(ARKWEB_VULKAN)
+#include "base/trace_event/trace_event.h"
+#endif
 
 namespace viz {
+#if BUILDFLAG(ARKWEB_VULKAN)
+const int bufferSize = 2;
+#endif
+
 // static
 std::unique_ptr<SkiaOutputDeviceVulkan> SkiaOutputDeviceVulkan::Create(
     VulkanContextProvider* context_provider,
@@ -70,9 +76,7 @@ SkiaOutputDeviceVulkan::SkiaOutputDeviceVulkan(
                        memory_tracker,
                        did_swap_buffer_complete_callback),
       context_provider_(context_provider),
-      surface_handle_(surface_handle) {
-        implUtils = std::make_unique<SkiaOutputDeviceVulkanUtils>(this);
-      }
+      surface_handle_(surface_handle) {}
 
 SkiaOutputDeviceVulkan::~SkiaOutputDeviceVulkan() {
   DCHECK(!scoped_write_);
@@ -393,11 +397,13 @@ void SkiaOutputDeviceVulkan::OnPostSubBufferFinished(OutputSurfaceFrame frame,
   }
 }
 
-void SkiaOutputDeviceVulkan::DiscardBackbuffer() {
 #if BUILDFLAG(ARKWEB_VULKAN)
-  implUtils->DiscardBackbuffer();
-#endif
+void SkiaOutputDeviceVulkan::DiscardBackbuffer() {
+  TRACE_EVENT0("base", "SkiaOutputDeviceVulkan::DiscardBackbuffer");
+  vulkan_surface_->Reshape(gfx::Size(bufferSize, bufferSize),
+                           gfx::OverlayTransform::OVERLAY_TRANSFORM_INVALID);
 }
+#endif
 
 SkiaOutputDeviceVulkan::SkSurfaceSizePair::SkSurfaceSizePair() = default;
 SkiaOutputDeviceVulkan::SkSurfaceSizePair::SkSurfaceSizePair(

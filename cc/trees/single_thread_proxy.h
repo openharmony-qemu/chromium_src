@@ -142,7 +142,7 @@ class CC_EXPORT SingleThreadProxy : public Proxy,
   void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) override {}
 #if BUILDFLAG(ARKWEB_WEBGL)
   void SetDeferInvalidationForFastMainFrameFromImpl(
-           bool defer_invalidation_for_fast_main_frame) override {}
+      bool defer_invalidation_for_fast_main_frame) override {}
 #endif
   bool IsInsideDraw() override;
   void RenewTreePriority() override;

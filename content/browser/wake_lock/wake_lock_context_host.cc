@@ -42,19 +42,21 @@ WakeLockContextHost::~WakeLockContextHost() {
   g_id_to_context_host.Get().erase(id_);
 #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
   NWebScreenLockTracker::Instance().RemoveScreenLock(window_id_, id_);
-#endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
 }
 
 #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
-void WakeLockContextHost::SetWakeLockHandler(int32_t windowId, const SetKeepScreenOn& handler) {
+void WakeLockContextHost::SetWakeLockHandler(int32_t windowId,
+                                             const SetKeepScreenOn& handler) {
   if (handler) {
     window_id_ = windowId;
-    NWebScreenLockTracker::Instance().AddScreenLock(windowId, id_, std::move(handler));
+    NWebScreenLockTracker::Instance().AddScreenLock(windowId, id_,
+                                                    std::move(handler));
   } else {
     NWebScreenLockTracker::Instance().RemoveScreenLock(windowId, id_);
   }
 }
-#endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
 
 // static
 gfx::NativeView WakeLockContextHost::GetNativeViewForContext(int context_id) {

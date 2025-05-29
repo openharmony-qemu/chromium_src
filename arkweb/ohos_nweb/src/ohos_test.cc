@@ -17,7 +17,11 @@
 #include <unistd.h>
 
 #include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(ENABLE_ARKWEB)
 #include "arkweb-test.h"

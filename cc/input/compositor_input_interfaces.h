@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/time/time.h"
 #include "base/types/optional_ref.h"
 #include "cc/input/actively_scrolling_type.h"
@@ -14,7 +15,6 @@
 #include "cc/input/browser_controls_state.h"
 #include "cc/paint/element_id.h"
 #include "ui/gfx/geometry/size.h"
-#include "arkweb/build/features/features.h"
 
 namespace viz {
 struct BeginFrameArgs;

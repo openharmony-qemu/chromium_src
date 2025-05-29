@@ -16,12 +16,10 @@
 #ifndef NWEB_NOTIFICATION_OPTIONS_ITEM_H
 #define NWEB_NOTIFICATION_OPTIONS_ITEM_H
 
-#include <memory>
 #include <string>
 #include <optional>
 #include <array>
 #include <map>
-#include <memory>
 #include <string>
 #include <vector>
 #include "ohos_nweb/src/nweb_hilog.h"

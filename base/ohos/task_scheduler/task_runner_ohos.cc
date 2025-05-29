@@ -23,8 +23,7 @@ TaskRunnerOHOS::UiThreadTaskRunnerCallback& GetUiThreadTaskRunnerCallback() {
 }  // namespace
 
 long Init(int task_traits) {
-  TaskRunnerOHOS* task_runner =
-      TaskRunnerOHOS::Create(task_traits).release();
+  TaskRunnerOHOS* task_runner = TaskRunnerOHOS::Create(task_traits).release();
   return reinterpret_cast<intptr_t>(task_runner);
 }
 
@@ -37,11 +36,11 @@ void TaskRunnerOHOS::Destroy() {
   delete this;
 }
 
-void TaskRunnerOHOS::PostDelayedTask(const Location& from_here, OnceClosure task, int delay) {
-  task_runner_->PostDelayedTask(
-      from_here,
-      std::move(task),
-      Milliseconds(delay));
+void TaskRunnerOHOS::PostDelayedTask(const Location& from_here,
+                                     OnceClosure task,
+                                     int delay) {
+  task_runner_->PostDelayedTask(from_here, std::move(task),
+                                Milliseconds(delay));
 }
 
 void TaskRunnerOHOS::PostTask(const Location& from_here, OnceClosure task) {
@@ -76,7 +75,8 @@ TaskRunnerOHOS::GetUIThreadTaskRunner(int task_traits) {
     return base::SingleThreadTaskRunner::GetCurrentDefault();
   }
   CHECK(GetUiThreadTaskRunnerCallback());
-  return GetUiThreadTaskRunnerCallback().Run(static_cast<::TaskTraits>(task_traits));
+  return GetUiThreadTaskRunnerCallback().Run(
+      static_cast<::TaskTraits>(task_traits));
 }
 
 }  // namespace base

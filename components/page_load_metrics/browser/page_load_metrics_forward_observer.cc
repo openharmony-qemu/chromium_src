@@ -508,4 +508,13 @@ void PageLoadMetricsForwardObserver::OnPrimaryPageRenderProcessGone() {
   DUMP_WILL_BE_NOTREACHED() << "Not supported.";
 }
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+void PageLoadMetricsForwardObserver::
+    OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
+        const mojom::BackForwardCacheTiming& timing,
+        size_t index) {
+  NOTREACHED() << "Not supported.";
+}
+#endif
+
 }  // namespace page_load_metrics

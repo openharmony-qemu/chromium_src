@@ -302,7 +302,7 @@ TEST_P(ContentPasswordManagerDriverTest, SendLoggingStateInCtor) {
   EXPECT_CALL(log_manager_, IsLoggingActive())
       .WillRepeatedly(Return(should_allow_logging));
   std::unique_ptr<ContentPasswordManagerDriver> driver(
-      new ContentPasswordManagerDriverExt(main_rfh(), &password_manager_client_));
+      new ContentPasswordManagerDriver(main_rfh(), &password_manager_client_));
 
   if (should_allow_logging) {
     bool logging_activated = false;
@@ -320,7 +320,7 @@ TEST_P(ContentPasswordManagerDriverTest, SendLoggingStateAfterLogManagerReady) {
   EXPECT_CALL(password_manager_client_, GetLogManager())
       .WillOnce(Return(nullptr));
   std::unique_ptr<ContentPasswordManagerDriver> driver(
-      new ContentPasswordManagerDriverExt(main_rfh(), &password_manager_client_));
+      new ContentPasswordManagerDriver(main_rfh(), &password_manager_client_));
   // Because log manager is not ready yet, should have no logging state sent.
   EXPECT_FALSE(WasLoggingActivationMessageSent(nullptr));
 
@@ -337,7 +337,7 @@ TEST_P(ContentPasswordManagerDriverTest, SendLoggingStateAfterLogManagerReady) {
 
 TEST_F(ContentPasswordManagerDriverTest, ClearPasswordsOnAutofill) {
   std::unique_ptr<ContentPasswordManagerDriver> driver(
-      new ContentPasswordManagerDriverExt(main_rfh(), &password_manager_client_));
+      new ContentPasswordManagerDriver(main_rfh(), &password_manager_client_));
 
   PasswordFormFillData fill_data = GetTestPasswordFormFillData();
   fill_data.wait_for_username = true;
@@ -350,7 +350,7 @@ TEST_F(ContentPasswordManagerDriverTest, SetFrameAndFormMetaDataOfForm) {
   NavigateAndCommit(GURL("https://username:password@hostname/path?query#hash"));
 
   std::unique_ptr<ContentPasswordManagerDriver> driver(
-      new ContentPasswordManagerDriverExt(main_rfh(), &password_manager_client_));
+      new ContentPasswordManagerDriver(main_rfh(), &password_manager_client_));
   autofill::FormData form;
   autofill::FormData form2 = GetFormWithFrameAndFormMetaData(main_rfh(), form);
 
@@ -381,7 +381,7 @@ TEST_P(ContentPasswordManagerDriverTest, LogFilledFieldTypeMetric) {
       .WillByDefault(Return(field_part_of_password_form ? &form : nullptr));
 
   std::unique_ptr<ContentPasswordManagerDriver> driver(
-      new ContentPasswordManagerDriverExt(main_rfh(), &password_manager_client_));
+      new ContentPasswordManagerDriver(main_rfh(), &password_manager_client_));
 
   driver->FillField(
       u"password",
@@ -416,7 +416,7 @@ class ContentPasswordManagerDriverURLTest
     ContentPasswordManagerDriverTest::SetUp();
     ON_CALL(password_manager_client_, GetPasswordManager())
         .WillByDefault(Return(&password_manager_));
-    driver_ = std::make_unique<ContentPasswordManagerDriverExt>(
+    driver_ = std::make_unique<ContentPasswordManagerDriver>(
         main_rfh(), &password_manager_client_);
     NavigateAndCommit(
         GURL("https://username:password@hostname/path?query#hash"));
@@ -511,7 +511,7 @@ TEST_F(ContentPasswordManagerDriverFencedFramesTest,
   NavigateAndCommit(GURL("https://test.org"));
 
   std::unique_ptr<ContentPasswordManagerDriver> driver(
-      new ContentPasswordManagerDriverExt(main_rfh(), &password_manager_client_));
+      new ContentPasswordManagerDriver(main_rfh(), &password_manager_client_));
 
   content::RenderFrameHost* fenced_frame_root =
       content::RenderFrameHostTester::For(main_rfh())->AppendFencedFrame();
@@ -578,7 +578,7 @@ TEST_F(ContentPasswordManagerDriverTest,
 
   // Verify autofill can not be triggered by browser side.
   std::unique_ptr<ContentPasswordManagerDriver> driver(
-      std::make_unique<ContentPasswordManagerDriverExt>(
+      std::make_unique<ContentPasswordManagerDriver>(
           credentialless_rfh_1, &password_manager_client_));
   driver->SetPasswordFillData(GetTestPasswordFormFillData());
   base::RunLoop().RunUntilIdle();

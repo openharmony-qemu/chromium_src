@@ -29,6 +29,26 @@ static bool HandleViewSource(GURL* url, BrowserContext* browser_context) {
 
   // Load the inner URL instead.
   *url = GURL(url->GetContent());
+
+  // Bug 26129: limit view-source to view the content and not any
+  // other kind of 'active' url scheme like 'javascript' or 'data'.
+  static const char* const default_allowed_sub_schemes[] = {
+      url::kHttpScheme,
+      url::kHttpsScheme,
+      kChromeUIScheme,
+      url::kFileScheme,
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
+      url::kFileSystemScheme,
+      url::kResourcesScheme
+#else
+      url::kFileSystemScheme
+#endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      ,
+      kArkWebUIScheme
+#endif
+  };
+
   // https://crbug.com/40077794: limit view-source to view the content and
   // not any other kind of 'active' url scheme like 'javascript' or 'data'.
   std::vector<std::string> all_allowed_sub_schemes(

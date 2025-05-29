@@ -459,11 +459,11 @@ class CONTENT_EXPORT BackForwardCacheImpl
 #if BUILDFLAG(ARKWEB_BFCACHE)
   size_t GetStoredEntriesNumber() override;
   void SetCacheSize(int size) override;
-  int ArkWebGetCacheSize() const override { return size_; }
+  int ArkWebGetCacheSize() override { return size_; }
   void SetTimeToLive(int timeToLive) override {
     this->time_to_live_ = timeToLive;
   }
-  int ArkWebGetTimeToLive() const override { return time_to_live_; }
+  int ArkWebGetTimeToLive() override { return time_to_live_; }
   base::TimeDelta ArkWebGetTimeToLiveInBackForwardCache() override;
 #endif
 

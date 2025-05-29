@@ -12,12 +12,8 @@
 namespace content {
 
 OHOSMediaPlayerRendererClientFactory::OHOSMediaPlayerRendererClientFactory(
-    scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner,
-    std::unique_ptr<media::MojoRendererFactory> mojo_renderer_factory,
-    const GetNativeTextureWrapperCB& get_native_texture_wrapper_cb)
-    : get_native_texture_wrapper_cb_(get_native_texture_wrapper_cb),
-      compositor_task_runner_(compositor_task_runner),
-      mojo_renderer_factory_(std::move(mojo_renderer_factory)) {}
+    std::unique_ptr<media::MojoRendererFactory> mojo_renderer_factory)
+    : mojo_renderer_factory_(std::move(mojo_renderer_factory)) {}
 
 OHOSMediaPlayerRendererClientFactory::~OHOSMediaPlayerRendererClientFactory() {}
 
@@ -45,16 +41,10 @@ OHOSMediaPlayerRendererClientFactory::CreateRenderer(
           std::move(client_extension_remote), media_task_runner,
           video_renderer_sink);
 
-  media::ScopedNativeTextureWrapper native_texture_wrapper =
-      get_native_texture_wrapper_cb_.Run();
-
   return std::make_unique<OHOSMediaPlayerRendererClient>(
       std::move(renderer_extension_remote),
-      std::move(client_extension_receiver),
-      media_task_runner, compositor_task_runner_,
-      std::move(mojo_renderer),
-      std::move(native_texture_wrapper),
-      video_renderer_sink);
+      std::move(client_extension_receiver), media_task_runner,
+      std::move(mojo_renderer), video_renderer_sink);
 }
 
 media::MediaResource::Type

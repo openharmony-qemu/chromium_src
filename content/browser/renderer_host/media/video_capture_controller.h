@@ -8,6 +8,7 @@
 #include <list>
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
@@ -28,7 +29,6 @@
 #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
 #include "third_party/blink/public/common/media/video_capture.h"
 #include "third_party/blink/public/common/mediastream/media_stream_request.h"
-#include "arkweb/build/features/features.h"
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
 #include "video_capture_manager.h"
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
@@ -311,11 +311,11 @@ class CONTENT_EXPORT VideoCaptureController
   // various ControllerClients.
   bool was_crop_ever_called_ = false;
 
+  base::WeakPtrFactory<VideoCaptureController> weak_ptr_factory_{this};
+
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
   VideoCaptureManager* video_capture_manager_ = nullptr;
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
-
-  base::WeakPtrFactory<VideoCaptureController> weak_ptr_factory_{this};
 };
 
 }  // namespace content

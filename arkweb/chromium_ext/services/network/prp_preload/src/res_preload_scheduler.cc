@@ -20,10 +20,11 @@ const std::string CANCEL_ORIGIN = "origin.DEFAULT.Cancel";
 namespace ohos_prp_preload {
 
 ResPreloadScheduler::ResPreloadScheduler(const std::string& url,
+    const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
     const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
     base::WeakPtr<net::URLRequestContext> url_request_context,
     const PRPPOnPageOriginCB& on_page_origin_cb) :
-  url_(url), net_task_runner_(net_task_runner),
+  url_(url), sth_task_runner_(sth_task_runner), net_task_runner_(net_task_runner),
   url_request_context_(url_request_context), on_page_origin_cb_(on_page_origin_cb) {}
 
 void ResPreloadScheduler::CreateReqLoaderAndStart(const std::shared_ptr<PRRequestInfo>& info)
@@ -35,11 +36,9 @@ void ResPreloadScheduler::CreateReqLoaderAndStart(const std::shared_ptr<PRReques
     prerequest_info_list_.push_back(info);
     return;
   }
+
   net_task_runner_->PostTask(FROM_HERE, base::BindOnce(&PRPPRequestLoaderFactory::CreateReqLoaderAndStart,
-    loader_fac_weak_, info, need_record_header_urls_));
-  if (!need_record_header_urls_.empty()) {
-    need_record_header_urls_.clear();
-  }
+    loader_fac_weak_, info, only_send_reuse_request_, need_record_header_urls_));
 }
 
 void ResPreloadScheduler::StopPreload()
@@ -68,15 +67,18 @@ void ResPreloadScheduler::SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFac
 
 void ResPreloadScheduler::SchedulePreloads(const PRPPPreconnectInfoList& preconnect_info_list,
     const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree,
+    bool only_send_reuse_request,
     const std::set<std::string>& need_record_header_urls)
 {
-  if (preload_triggered_ || net_task_runner_ == nullptr) {
+  if (preload_triggered_ || net_task_runner_ == nullptr ||
+      sth_task_runner_ == nullptr) {
     return;
   }
   preload_triggered_ = true;
   prpp_preconnect_info_list_ = preconnect_info_list;
   preload_info_tree_ = preload_info_tree;
   ++info_list_version_;
+  only_send_reuse_request_ = only_send_reuse_request;
   need_record_header_urls_ = need_record_header_urls;
 
   SchedulePreconnects();
@@ -97,13 +99,14 @@ void ResPreloadScheduler::SchedulePreloads(const PRPPPreconnectInfoList& preconn
   }
   cur_parent_ = preload_info_tree_;
   cur_node_iter_ = preload_info_tree_->children_.begin();
-  base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(FROM_HERE, base::BindOnce(
-    &ResPreloadScheduler::SchedulePrerequests, weak_factory_.GetWeakPtr(), MAX_REQUEST_COUNT, info_list_version_));
+  sth_task_runner_->PostTask(FROM_HERE, base::BindOnce(&ResPreloadScheduler::SchedulePrerequests,
+    weak_factory_.GetWeakPtr(), MAX_REQUEST_COUNT, info_list_version_));
 }
+
 
 void ResPreloadScheduler::SchedulePreconnects()
 {
-  if (net_task_runner_ == nullptr) {
+  if (net_task_runner_ == nullptr || sth_task_runner_ == nullptr) {
     return;
   }
   PreconnectInfoListIter iter = prpp_preconnect_info_list_.begin();
@@ -115,9 +118,11 @@ void ResPreloadScheduler::SchedulePreconnects()
       net_task_runner_->PostTask(FROM_HERE, base::BindOnce(&PreconnectRunner::PreconnectSocket,
         info.origin_url_, info.allow_credential_, info.net_anonymization_key_, url_request_context_));
     } else {
-      base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(FROM_HERE,
-        base::BindOnce(&ResPreloadScheduler::ContinueSchedulePreconnects, weak_factory_.GetWeakPtr(),
-        iter, info_list_version_), base::Milliseconds(DELAYED_TIME));
+      if (sth_task_runner_ != nullptr) {
+        sth_task_runner_->PostDelayedTask(FROM_HERE,
+          base::BindOnce(&ResPreloadScheduler::ContinueSchedulePreconnects, weak_factory_.GetWeakPtr(),
+          iter, info_list_version_), base::Milliseconds(DELAYED_TIME));
+      }
       break;
     }
     ++iter;
@@ -129,7 +134,8 @@ void ResPreloadScheduler::ContinueSchedulePreconnects(PreconnectInfoListIter pre
 {
   if (info_list_version != info_list_version_ ||
       (preconnect_infos_iter == prpp_preconnect_info_list_.end()) ||
-      !preload_triggered_ || net_task_runner_ == nullptr) {
+      !preload_triggered_ ||
+      net_task_runner_ == nullptr || sth_task_runner_ == nullptr) {
     return;
   }
 
@@ -140,7 +146,7 @@ void ResPreloadScheduler::ContinueSchedulePreconnects(PreconnectInfoListIter pre
 
   ++preconnect_infos_iter;
   if (preconnect_infos_iter != prpp_preconnect_info_list_.end()) {
-    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(FROM_HERE,
+    sth_task_runner_->PostDelayedTask(FROM_HERE,
       base::BindOnce(&ResPreloadScheduler::ContinueSchedulePreconnects, weak_factory_.GetWeakPtr(),
       preconnect_infos_iter, info_list_version), base::Milliseconds(DELAYED_TIME));
   }
@@ -151,13 +157,14 @@ void ResPreloadScheduler::SchedulePrerequests(uint32_t limit, int32_t info_list_
   PRPPRequestLoaderFactory* loader_fac = loader_fac_weak_.get();
   if ((info_list_version != info_list_version_) ||
       !preload_triggered_ || !cur_parent_ ||
-      net_task_runner_ == nullptr || !loader_fac) {
+      net_task_runner_ == nullptr || sth_task_runner_ == nullptr ||
+      !loader_fac) {
     return;
   }
 
   uint32_t prerequest_num = 0;
   if ((limit == 0) && (idle_prerequest_count_ == 0)) {
-    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(FROM_HERE,
+    sth_task_runner_->PostDelayedTask(FROM_HERE,
       base::BindOnce(&ResPreloadScheduler::SchedulePrerequests,
       weak_factory_.GetWeakPtr(), 0, info_list_version),
       base::Milliseconds(DELAYED_TIME));
@@ -185,7 +192,7 @@ void ResPreloadScheduler::SchedulePrerequests(uint32_t limit, int32_t info_list_
       CreateReqLoaderAndStart((*child)->req_info_);
     }
     if (need_continue) {
-      base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(FROM_HERE,
+      sth_task_runner_->PostDelayedTask(FROM_HERE,
         base::BindOnce(&ResPreloadScheduler::SchedulePrerequests, weak_factory_.GetWeakPtr(),
         0, info_list_version), base::Milliseconds(DELAYED_TIME));
       break;

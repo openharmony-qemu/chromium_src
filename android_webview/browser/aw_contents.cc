@@ -1743,7 +1743,12 @@ VisibilityMetricsLogger::VisibilityInfo AwContents::GetVisibilityInfo() {
 }
 
 void AwContents::RendererUnresponsive(
-    content::RenderProcessHost* render_process_host) {
+    content::RenderProcessHost* render_process_host
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+    ,
+    content::RendererIsUnresponsiveReason reason
+#endif
+) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   JNIEnv* env = AttachCurrentThread();
   ScopedJavaLocalRef<jobject> obj = java_ref_.get(env);

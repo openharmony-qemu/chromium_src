@@ -262,6 +262,79 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 #include "arkweb/chromium_ext/base/trace_event/common/trace_event_common_oh.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+#define OHOS_TRACE_EVENT0(category_group, name) \
+  OHOS_BYTRACE_SCOPED_INIT();                   \
+  do {                                          \
+    if (IsOHOSBytraceEnable()) {                \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(name);    \
+    }                                           \
+  } while (0);                                  \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name)
+
+#define OHOS_TRACE_EVENT1(category_group, name, arg1_name, arg1_val) \
+  OHOS_BYTRACE_SCOPED_INIT();                                        \
+  do {                                                               \
+    if (IsOHOSBytraceEnable()) {                                     \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(                               \
+          GetStringFromArgs(name, arg1_name, arg1_val));             \
+    }                                                                \
+  } while (0);                                                       \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val)
+
+#define OHOS_TRACE_EVENT2(category_group, name, arg1_name, arg1_val,          \
+                          arg2_name, arg2_val)                                \
+  OHOS_BYTRACE_SCOPED_INIT();                                                 \
+  do {                                                                        \
+    if (IsOHOSBytraceEnable()) {                                              \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(                                        \
+          GetStringFromArgs(name, arg1_name, arg1_val, arg2_name, arg2_val)); \
+    }                                                                         \
+  } while (0);                                                                \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, arg1_name, arg1_val,  \
+                                  arg2_name, arg2_val)
+
+#define OHOS_TRACE_EVENT_WITH_FLOW0(category_group, name, bind_id, flow_flags) \
+  OHOS_BYTRACE_SCOPED_INIT();                                                  \
+  do {                                                                         \
+    if (IsOHOSBytraceEnable()) {                                               \
+      (void)(bind_id);                                                         \
+      (void)(flow_flags);                                                      \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(name);                                   \
+    }                                                                          \
+  } while (0);                                                                 \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,     \
+                                            flow_flags)
+
+#define OHOS_TRACE_EVENT_WITH_FLOW1(category_group, name, bind_id, flow_flags, \
+                                    arg1_name, arg1_val)                       \
+  OHOS_BYTRACE_SCOPED_INIT();                                                  \
+  do {                                                                         \
+    if (IsOHOSBytraceEnable()) {                                               \
+      (void)(bind_id);                                                         \
+      (void)(flow_flags);                                                      \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(                                         \
+          GetStringFromArgs(name, arg1_name, arg1_val));                       \
+    }                                                                          \
+  } while (0);                                                                 \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,     \
+                                            flow_flags, arg1_name, arg1_val)
+
+#define OHOS_TRACE_EVENT_WITH_FLOW2(category_group, name, bind_id, flow_flags, \
+                                    arg1_name, arg1_val, arg2_name, arg2_val)  \
+  OHOS_BYTRACE_SCOPED_INIT();                                                  \
+  do {                                                                         \
+    if (IsOHOSBytraceEnable()) {                                               \
+      (void)(bind_id);                                                         \
+      (void)(flow_flags);                                                      \
+      OHOS_BYTRACE_SCOPED_TRACE_EVENT(                                         \
+          GetStringFromArgs(name, arg1_name, arg1_val, arg2_name, arg2_val));  \
+    }                                                                          \
+  } while (0);                                                                 \
+  INTERNAL_TRACE_EVENT_ADD_SCOPED_WITH_FLOW(category_group, name, bind_id,     \
+                                            flow_flags, arg1_name, arg1_val,   \
+                                            arg2_name, arg2_val)
+#endif
 #else  // !BUILDFLAG(ENABLE_BASE_TRACING)
 
 // This macro is still used in some components even when base tracing is

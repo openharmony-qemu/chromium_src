@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/types/pass_key.h"
@@ -29,8 +30,11 @@
 #include "third_party/blink/public/mojom/frame/viewport_intersection_state.mojom-forward.h"
 #include "url/gurl.h"
 #include "url/origin.h"
-#include "arkweb/build/features/features.h"
 
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+#include "content/browser/web_contents/web_contents_impl.h"
+#include "content/public/browser/web_contents.h"
+#endif
 namespace performance_manager {
 
 class FrameNodeImplDescriber;

@@ -51,8 +51,9 @@ void CurrentThread::AddDestructionObserver(
 
 void CurrentThread::RemoveDestructionObserver(
     DestructionObserver* destruction_observer) {
-  if (!current_)
+  if (!current_) {
     return;
+  }
   DCHECK(current_->IsBoundToCurrentThread());
   current_->RemoveDestructionObserver(destruction_observer);
 }

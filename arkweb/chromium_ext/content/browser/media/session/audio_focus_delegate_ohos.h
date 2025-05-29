@@ -48,7 +48,7 @@ class AudioFocusDelegateOHOS : public AudioFocusDelegate {
   void ReleaseRequestId() override {}
 
  private:
-  raw_ptr<MediaSessionImpl> media_session_ = nullptr;
+  MediaSessionImpl* media_session_ = nullptr;
   std::shared_ptr<AudioManagerCallback> cb_ = nullptr;
 };
 

@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
 #include "base/memory/ptr_util.h"
@@ -32,8 +33,17 @@
 #include "gpu/vulkan/vulkan_implementation.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/components/viz/service/display_embedder/compositor_gpu_thread_utils.h"
+#if BUILDFLAG(SKIA_USE_DAWN)
+#include "gpu/command_buffer/service/dawn_context_provider.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+#include "arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker.h"
+#include "base/process/process_handle.h"
+#include "content/public/browser/browser_task_traits.h"
+#include "content/public/browser/browser_thread.h"
+#include "content/public/common/content_switches.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
 
 namespace viz {
@@ -114,9 +124,27 @@ CompositorGpuThread::CompositorGpuThread(
       weak_ptr_factory_(this) {}
 
 CompositorGpuThread::~CompositorGpuThread() {
-#if BUILDFLAG(IS_ARKWEB)
-  CompositorGpuThreadUtils::CompositorGpuThreadDestruct(this);
-#endif
+  using namespace OHOS::NWeb;
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+      switches::kProcessType);
+  if (type == switches::kGpuProcess) {
+    NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+        ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
+        GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  } else {
+#endif  // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    task_runner()->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
+            ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
+            GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+#endif  // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  }
+#endif  // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
   base::Thread::Stop();
 }
 
@@ -232,9 +260,28 @@ bool CompositorGpuThread::Initialize() {
   // Wait until thread is started and Init() is executed in order to return
   // updated |init_succeeded_|.
   WaitUntilThreadStarted();
-#if BUILDFLAG(IS_ARKWEB)
-  CompositorGpuThreadUtils::CompositorGptThreadInitializeUtils(this);
-#endif
+
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  using namespace OHOS::NWeb;
+  auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+      switches::kProcessType);
+  if (type == switches::kGpuProcess) {
+    NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+        GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  } else {
+#endif  // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    task_runner()->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
+            ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
+            GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+#endif  // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  }
+#endif  // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
   return init_succeeded_;
 }
 

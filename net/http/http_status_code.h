@@ -45,6 +45,9 @@ NET_EXPORT const char* TryToGetHttpReasonPhrase(HttpStatusCode code);
 NET_EXPORT const std::optional<HttpStatusCode> TryToGetHttpStatusCode(
     int response_code);
 
+#if BUILDFLAG(IS_OHOS)
+NET_EXPORT const char* GetHttpErrorPhrase(HttpStatusCode code);
+#endif
 }  // namespace net
 
 #endif  // NET_HTTP_HTTP_STATUS_CODE_H_

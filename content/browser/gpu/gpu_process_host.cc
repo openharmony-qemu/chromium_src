@@ -18,8 +18,6 @@
 #include <utility>
 
 #include "arkweb/build/features/features.h"
-#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
-#include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
 #include "base/base64.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
@@ -792,11 +790,12 @@ GpuProcessHost::~GpuProcessHost() {
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  if (in_process_gpu_thread_)
+  if (in_process_gpu_thread_) {
     OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
         OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED,
         base::GetCurrentRealPid(), in_process_gpu_thread_->GetThreadRealId(),
         OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+  }
 #endif
 
   // This is only called on the UI thread so no race against the constructor
@@ -979,7 +978,7 @@ bool GpuProcessHost::Init() {
 
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
   if (gpu_crash_count_ != 0) {
-    ArkwebRenderProcessHostImplUtils::Refresh();
+    RenderProcessHostImpl::Refresh();
   }
 #endif
 

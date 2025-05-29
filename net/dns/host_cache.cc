@@ -220,24 +220,12 @@ HostCache::Key::Key(absl::variant<url::SchemeHostPort, std::string> host,
                     DnsQueryType dns_query_type,
                     HostResolverFlags host_resolver_flags,
                     HostResolverSource host_resolver_source,
-                    const NetworkAnonymizationKey& network_anonymization_key
-#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
-                    ,
-                    bool secure,
-                    bool external_added
-#endif
-                    )
+                    const NetworkAnonymizationKey& network_anonymization_key)
     : host(std::move(host)),
       dns_query_type(dns_query_type),
       host_resolver_flags(host_resolver_flags),
       host_resolver_source(host_resolver_source),
-      network_anonymization_key(network_anonymization_key)
-#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
-      ,
-      secure(secure),
-      external_added(external_added)
-#endif
-       {
+      network_anonymization_key(network_anonymization_key) {
   DCHECK(IsValidHostname(GetHostname(this->host)));
   if (absl::holds_alternative<url::SchemeHostPort>(this->host))
     DCHECK(absl::get<url::SchemeHostPort>(this->host).IsValid());

@@ -61,7 +61,6 @@ class FilterTool {
   void MatchRules(std::istream* request_stream, int min_match_count);
 
  private:
-  friend class FilterToolUtils;
   void PrintResult(bool blocked,
                    const url_pattern_index::flat::UrlRule* rule,
                    std::string_view document_origin,

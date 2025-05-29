@@ -123,13 +123,5 @@ bool CodecOutputBufferRenderer::RenderToFrontBuffer() {
                                          0 /* service_id */);
 }
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-bool CodecOutputBufferRenderer::RenderVideoView() {
-  if (output_buffer_) {
-    return output_buffer_->RenderVideoView();
-  }
-  return false;
-}
-#endif // ARKWEB_VIDEO_ASSISTANT
-
 }  // namespace media
+                     

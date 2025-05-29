@@ -71,7 +71,7 @@ const char* ImageDecodeAcceleratorTypeToString(
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     case gpu::ImageDecodeAcceleratorType::kHeif:
       return "Heif";
-#endif // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     case gpu::ImageDecodeAcceleratorType::kUnknown:
       return "Unknown";
   }

@@ -10,7 +10,6 @@
 #include <map>
 #include <mutex>
 #include <string>
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 
 namespace crypto {
 namespace ohos {
@@ -22,10 +21,6 @@ const size_t IV_SIZE = 16;
 std::string get_symmetric_key_256(const std::string& key_name);
 
 std::string get_symmetric_key_256_for_ota(const std::string& key_name);
-
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-std::string get_asset_handle_file_256(const std::string& key_name);
-#endif
 
 // Get random IV for encryption
 std::string get_iv(size_t sz = IV_SIZE);

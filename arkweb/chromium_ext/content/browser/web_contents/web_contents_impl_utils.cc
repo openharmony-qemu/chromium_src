@@ -17,15 +17,13 @@
 
 #include "content/browser/web_contents/web_contents_impl.h"
 
-#include "content/public/common/content_switches.h"
-
 #if BUILDFLAG(ARKWEB_I18N)
 #include "base/ohos/locale_utils.h"
 #include "ui/base/ui_base_switches.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
-#include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
+#include "content/browser/renderer_host/render_process_host_impl.h"
 #endif
 
 namespace content {
@@ -65,47 +63,18 @@ void WebContentsImplUtils::renderProcessShareInit(
     const WebContents::CreateParams& params,
     scoped_refptr<SiteInstanceImpl> site_instance) {
   if (!params.shared_render_process_token.empty()) {
-    webContentsImpl->AsWebContentsImplExt()->shared_render_process_token_ =
+    webContentsImpl->shared_render_process_token_ =
         params.shared_render_process_token;
     RenderProcessHost* render_process =
-        ArkwebRenderProcessHostImplUtils::GetProcessForSharedToken(
-            webContentsImpl->AsWebContentsImplExt()->shared_render_process_token_);
+        RenderProcessHostImpl::GetProcessForSharedToken(
+            webContentsImpl->shared_render_process_token_);
     if (render_process) {
       site_instance->ReuseExistingProcessIfPossible(render_process);
     } else {
-      ArkwebRenderProcessHostImplUtils::RegisteProcessForSharedToken(
-          webContentsImpl->AsWebContentsImplExt()->shared_render_process_token_,
+      RenderProcessHostImpl::RegisteProcessForSharedToken(
+          webContentsImpl->shared_render_process_token_,
           site_instance->GetProcess());
     }
-  }
-}
-#endif
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-void WebContentsImplUtils::UpdateMainFrameLoadingControlsState(FrameTreeNode* frame_tree_node, bool should_show_loading_ui) {
-  if (frame_tree_node->IsMainFrame()) {
-    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-            switches::kEnableNwebExTopControls) &&
-        should_show_loading_ui) {
-      webContentsImpl->UpdateBrowserControlsState(webContentsImpl->AsWebContentsImplExt()->browser_controls_state_,
-                                 cc::BrowserControlsState::kShown, false,
-                                 std::nullopt);
-    }
-  }
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_USERAGENT) || BUILDFLAG(ARKWEB_EXT_UA)
-void WebContentsImplUtils::UpdateUserAgentOverride(const blink::UserAgentOverride& ua_override){
-  webContentsImpl->AsWebContentsImplExt()->user_agent_ = ua_override.ua_string_override;
-  webContentsImpl->UpdateOverridingUserAgent();
-
-  // DTS2023022711784
-  // 子进程打开新窗口时，会先创建delayed_load_url_params_，等到加载url时直接使用
-  // delayed_load_url_params_的值创建NavigationRequest。其override_user_agent默认值是
-  // UA_OVERRIDE_FALSE，故这里也要更新。
-  if (webContentsImpl->delayed_load_url_params_) {
-    webContentsImpl->delayed_load_url_params_->override_user_agent =
-        NavigationController::UA_OVERRIDE_TRUE;
   }
 }
 #endif

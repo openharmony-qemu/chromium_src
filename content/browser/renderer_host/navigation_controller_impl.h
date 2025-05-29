@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
@@ -40,6 +39,10 @@
 #include "third_party/blink/public/mojom/navigation/navigation_initiator_activation_and_ad_status.mojom.h"
 #include "third_party/blink/public/mojom/navigation/navigation_params.mojom-forward.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace blink {
 struct NavigationDownloadPolicy;
 }  // namespace blink
@@ -51,7 +54,6 @@ class NavigationEntryScreenshotCache;
 class NavigationRequest;
 class RenderFrameHostImpl;
 class SiteInstance;
-class ArkWebNavigationControllerImplExt;
 struct LoadCommittedDetails;
 
 // NavigationControllerImpl is 1:1 with FrameTree. See comments on the base
@@ -130,6 +132,9 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
       RenderFrameHost* render_frame_host,
       const GURL& url,
       const std::string& error_page_html) override;
+#if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
+  const std::string& GetOriginalUrl() override;
+#endif  // BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
   bool CanGoBack() override;
   bool CanGoForward() override;
   bool CanGoToOffset(int offset) override;
@@ -489,14 +494,19 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
   void DidChangeReferrerPolicy(FrameTreeNode* node,
                                network::mojom::ReferrerPolicy referrer_policy);
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  NavigationEntryUpdateError InsertBackForwardEntry(int index,
+                                                    const GURL& url) override;
+  NavigationEntryUpdateError UpdateNavigationEntryUrl(int index,
+                                                      const GURL& url) override;
+#endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+
   base::WeakPtr<NavigationControllerImpl> GetWeakPtr() {
     return weak_factory_.GetWeakPtr();
   }
 
  private:
   friend class RestoreHelper;
-  friend class ArkWebNavigationControllerImplExt;
-  virtual ArkWebNavigationControllerImplExt *AsArkWebNavigationControllerImplExt() { return nullptr; }
 
   FRIEND_TEST_ALL_PREFIXES(TimeSmoother, Basic);
   FRIEND_TEST_ALL_PREFIXES(TimeSmoother, SingleDuplicate);
@@ -1019,6 +1029,5 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
 };
 
 }  // namespace content
-#include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_navigation_controller_impl_ext.h"
 
 #endif  // CONTENT_BROWSER_RENDERER_HOST_NAVIGATION_CONTROLLER_IMPL_H_

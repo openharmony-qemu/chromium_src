@@ -38,7 +38,6 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   enum class ReattachType {
     FROM_ONFOCUS,
     FROM_CONTINUE,
-    FROM_ONDRAG,
   };
   NWebInputMethodHandler();
   ~NWebInputMethodHandler();
@@ -49,15 +48,10 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
               InputInfo inputInfo,
               bool is_need_reset_listener,
               int32_t enterKeyType) override;
-  void Attach(CefRefPtr<CefBrowser> browser,
-              InputInfo inputInfo,
-              bool is_need_reset_listener,
-              int32_t enterKeyType, int32_t requestKeyboardReason) override;
   void ShowTextInput() override;
   void HideTextInput(
       uint32_t nwebId = 0,
-      HideTextinputType hideType = HideTextinputType::FROM_KERNEL,
-      bool noNeedKeyboardByInput = false) override;
+      HideTextinputType hideType = HideTextinputType::FROM_KERNEL) override;
   void HideTextInputForce() override;
   void OnTextSelectionChanged(CefRefPtr<CefBrowser> browser,
                               const CefString& selected_text,
@@ -74,7 +68,6 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool Reattach(uint32_t nwebId, ReattachType type);
   void SetIMEStatus(bool status);
   void WebBlurKeyboardHide();
-  void HandleSecurityLayer();
   void InsertText(const std::u16string& text);
   void DeleteBackward(int32_t length);
   void DeleteForward(int32_t length);
@@ -114,23 +107,16 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   std::string GetSelectInfo();
 #endif
-#if BUILDFLAG(ARKWEB_AI_WRITE)
-  int GetSelectStartIndex();
-  int GetSelectEndIndex();
-  std::string GetAllTextInfo();
-#endif // ARKWEB_AI_WRITE
   bool IsAttached() override { return isAttached_; }
   void SetNeedReattachOnfocus() {
     if (isAttached_) {
       isNeedReattachOnfocus_ = true;
-      isFocusSwitchOnBlur_ = true;
     }
   }
 
  private:
   void SetIMEStatusOnUI(bool status);
   void WebBlurKeyboardHideOnUI();
-  void HandleSecurityLayerHandlerOnUI();
   void InsertTextHandlerOnUI(const std::u16string& text);
   void DeleteBackwardHandlerOnUI(int32_t length);
   void DeleteForwardHandlerOnUI(int32_t length);
@@ -159,10 +145,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool IsTextInputStateChange(const CefString& text,
                               const CefRange& selected_range,
                               const CefRange& compositon_range);
-  bool AttachToSystemIME(bool is_need_reset_listener, int32_t requestKeyboardReason = 0);
-  void SetNeedReattach(HideTextinputType hideType);
-  bool IsKeyboardShow() override;
-  bool NeedKeyboardShow();
+  bool AttachToSystemIME(bool is_need_reset_listener);
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   void AutoFillWithIMFEventOnUI(bool is_username,
@@ -199,10 +182,8 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool type_text_flag_multi_line_ = false;
   std::chrono::high_resolution_clock::time_point lastCloseInputMethodTime_;
   bool isNeedReattachOnfocus_ = false;
-  bool isFocusSwitchOnBlur_ = false;
   int32_t input_flags_ = 0;
   int32_t input_node_id_ = -1;
-  bool input_is_password_ = false;
 
   int textCursorReady_ = 0;
   std::mutex textCursorMutex_;
@@ -219,9 +200,6 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   int32_t composition_range_end_ = 0;
   CompositionType composition_type_ = COMPOSITION_INVALID;
   int32_t composition_cursor_index_ = 0;
-  bool isManualCloseKeyboard_ = false;
-  bool isAttachSuccess_ = true;
-  cef_text_input_mode_t cef_text_input_mode_ = CEF_TEXT_INPUT_MODE_DEFAULT;
 
   std::unordered_map<char16_t, int> keycode_map = {
       {'q', 0x51}, {'w', 0x57},  {'e', 0x45}, {'r', 0x52},  {'t', 0x54},

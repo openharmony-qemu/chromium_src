@@ -14,7 +14,6 @@
 #include "base/functional/bind.h"
 #include "base/task/single_thread_task_runner.h"
 #include "gpu/command_buffer/service/context_state.h"
-// #include "gpu/command_buffer/service/mailbox_manager.h"
 #include "gpu/command_buffer/service/ohos/ohos_video_image_backing.h"
 #include "gpu/command_buffer/service/scheduler.h"
 #include "gpu/command_buffer/service/scheduler_task_runner.h"
@@ -167,6 +166,7 @@ void StreamTexture::NotifyOverlayPromotion(bool promotion,
 
 bool StreamTexture::RenderToOverlay() {
   NOTREACHED();
+  return false;
 }
 
 bool StreamTexture::TextureOwnerBindsTextureOnUpdate() {

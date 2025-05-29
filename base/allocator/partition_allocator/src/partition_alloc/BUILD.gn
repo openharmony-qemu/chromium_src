@@ -906,7 +906,7 @@ if (is_clang_or_gcc) {
     }
 
     if (!use_partition_alloc_as_malloc) {
-      if (is_android || enable_arkweb) {
+      if (is_android) {
         shim_sources += [
           "shim/allocator_shim_default_dispatch_to_linker_wrapped_symbols.cc",
         ]
@@ -971,8 +971,6 @@ if (build_with_chromium) {
         "hardening_unittest.cc",
         "lightweight_quarantine_unittest.cc",
         "memory_reclaimer_unittest.cc",
-        "partition_alloc_base/debug/proc_maps_linux.cc",
-        "partition_alloc_base/debug/proc_maps_linux.h",
         "page_allocator_unittest.cc",
         "partition_alloc_base/bits_pa_unittest.cc",
         "partition_alloc_base/component_export_pa_unittest.cc",
@@ -1072,7 +1070,6 @@ source_set("test_support") {
   ]
   if (is_posix) {
     sources += [
-      "partition_alloc_base/threading/platform_thread_linux_for_testing.cc",
       "partition_alloc_base/threading/platform_thread_posix_for_testing.cc",
     ]
   }

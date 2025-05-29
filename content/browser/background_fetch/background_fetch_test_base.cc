@@ -28,6 +28,11 @@
 #include "third_party/blink/public/mojom/service_worker/service_worker_registration_options.mojom.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_NAVIGATION)
+// #include
+// "cef/ohos_cef_ext/libcef/browser/arkweb_navigation_state_serializer_ext.h"
+#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
+
 namespace content {
 
 namespace {
@@ -203,5 +208,28 @@ BackgroundFetchTestBase::devtools_context() {
   return CHECK_DEREF(static_cast<DevToolsBackgroundServicesContextImpl*>(
       storage_partition()->GetDevToolsBackgroundServicesContext()));
 }
+
+#if BUILDFLAG(ARKWEB_NAVIGATION)
+/*
+CefRefPtr<CefBinaryValue> CefBrowserHostBase::GetWebState() {
+  auto web_contents = GetWebContents();
+  if (!web_contents) {
+    return nullptr;
+  }
+
+  return NavigationStateSerializer::WriteNavigationStatus(*web_contents);
+}
+
+bool CefBrowserHostBase::RestoreWebState(
+    const CefRefPtr<CefBinaryValue> state) {
+  auto web_contents = GetWebContents();
+  if (!web_contents || !state) {
+    return false;
+  }
+  return NavigationStateSerializer::RestoreNavigationStatus(*web_contents,
+                                                            state);
+}
+*/
+#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
 
 }  // namespace content

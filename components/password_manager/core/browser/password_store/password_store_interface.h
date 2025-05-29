@@ -7,7 +7,6 @@
 
 #include <vector>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/callback_list.h"
 #include "base/memory/weak_ptr.h"
 #include "base/observer_list_types.h"
@@ -102,10 +101,6 @@ class PasswordStoreInterface : public RefcountedKeyedService {
       const PasswordForm& new_form,
       const PasswordForm& old_primary_key,
       base::OnceClosure completion = base::DoNothing()) = 0;
-
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-  virtual void UpdateLoginDisplayName(const PasswordForm& form) = 0;
-#endif
 
   // Removes the matching PasswordForm from the secure password store (async).
   // `location` is used for logging purposes and investigations.

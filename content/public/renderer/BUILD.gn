@@ -32,7 +32,6 @@ target(link_target_type, "renderer_sources") {
     visibility += [
       "//media/cdm/library_cdm/clear_key_cdm:clear_key_cdm_bin",
       "//media:media_unittests",
-      "//device:device_unittests",
     ]
   }
 
@@ -115,7 +114,7 @@ target(link_target_type, "renderer_sources") {
     deps += [ "//sandbox" ]
   }
 
-  if (enable_library_cdms || is_win || is_android || arkweb_enable_cdm) {
+  if (enable_library_cdms || is_win || is_android) {
     sources += [
       "key_system_support.cc",
       "key_system_support.h",

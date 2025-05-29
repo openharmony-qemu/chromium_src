@@ -16341,7 +16341,9 @@ void GLES2DecoderImpl::DoBeginSharedImageAccessDirectCHROMIUM(GLuint client_id,
     return;
   }
 #if BUILDFLAG(ARKWEB_VULKAN)
-  TRACE_EVENT2("gpu", __func__, "mailbox", shared_image->mailbox().ToDebugString(), "name", shared_image->GetName());
+  TRACE_EVENT2("gpu", __func__, "mailbox",
+               shared_image->mailbox().ToDebugString(), "name",
+               shared_image->GetName());
 #endif
   if (texture_ref->shared_image_scoped_access()) {
     LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, "DoBeginSharedImageAccessCHROMIUM",

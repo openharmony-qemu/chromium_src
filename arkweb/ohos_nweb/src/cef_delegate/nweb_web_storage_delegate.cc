@@ -19,7 +19,6 @@
 #include <thread>
 #include <vector>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/logging.h"
 #include "base/synchronization/waitable_event.h"
 #include "base/time/time.h"
@@ -27,6 +26,10 @@
 #include "cef/libcef/common/time_util.h"
 #include "nweb_web_storage_origin_impl.h"
 #include "url/gurl.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 using namespace OHOS::NWeb;
 using base::WaitableEvent;
@@ -373,15 +376,6 @@ void NWebWebStorageDelegate::GetSavedPasswordsInfo(int callback_id) {
   LOG(INFO) << "get saved password callback id: " << callback_id;
   web_storage_extension_callback_->OnGetSavedPasswords(
       callback->GetPasswordUrl(), callback->GetPasswordUsername(), callback_id);
-}
-
-void NWebWebStorageDelegate::MigratePasswordsInfo() {
-  CefRefPtr<CefWebStorage> web_storage = GetGlobalWebStorage();
-  if (web_storage == nullptr) {
-    return;
-  }
-  web_storage->MigratePasswordsInfo();
-  LOG(INFO) << "[Autofill] migrate password info.";
 }
 
 void NWebWebStorageDelegate::RegisterWebStorageExtensionCallback(

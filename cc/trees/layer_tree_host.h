@@ -91,9 +91,6 @@ class RenderingStatsInstrumentation;
 class TaskGraphRunner;
 class UIResourceManager;
 class UkmRecorderFactory;
-#if BUILDFLAG(IS_ARKWEB)
-class LayerTreeHostExt;
-#endif
 
 struct CommitState;
 struct CompositorCommitData;
@@ -168,10 +165,6 @@ class CC_EXPORT LayerTreeHost : public MutatorHostClient {
   ~LayerTreeHost() override;
 
   LayerTreeHost& operator=(const LayerTreeHost&) = delete;
-#if BUILDFLAG(IS_ARKWEB)
-  friend class LayerTreeHostExt;
-  virtual LayerTreeHostExt* AsLayerTreeHostExt() { return nullptr; }
-#endif
 
   // Returns the process global unique identifier for this LayerTreeHost.
   int GetId() const;
@@ -260,6 +253,9 @@ class CC_EXPORT LayerTreeHost : public MutatorHostClient {
   // to make it visible before it will attempt to start producing output.
   void SetVisible(bool visible);
   bool IsVisible() const;
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+  void SetPinchSmoothMode(bool isEnable);
+#endif
 
   // Indicates that warm-up is requested to create a new LayerTreeFrameSink
   // even if the LayerTreeHost is invisible. This is an experimental function
@@ -480,6 +476,14 @@ class CC_EXPORT LayerTreeHost : public MutatorHostClient {
   const LayerSelection& selection() const {
     return pending_commit_state()->selection;
   }
+
+#if BUILDFLAG(ARKWEB_MENU)
+  void RegisterClippedVisualViewportSelectionBounds(
+      const gfx::Rect& clipped_selection_bounds);
+  const gfx::Rect& clipped_selection_bounds() {
+    return pending_commit_state()->clipped_selection_bounds;
+  }
+#endif
 
   // Sets or gets if the client has any scroll event handlers registered. This
   // allows the threaded compositor to prioritize main frames even when
@@ -944,6 +948,16 @@ class CC_EXPORT LayerTreeHost : public MutatorHostClient {
   // See CommitState::scrollers_clobbering_active_value_.
   void DropActiveScrollDeltaNextCommit(ElementId scroll_element);
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void OnLayerRectUpdate(int id, const gfx::Rect& rect);
+
+  void OnLayerRectVisibilityChange(int id, bool visibility);
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
  protected:
   LayerTreeHost(InitParams params, CompositorMode mode);
 
@@ -1140,7 +1154,4 @@ class CC_EXPORT LayerTreeHost : public MutatorHostClient {
 
 }  // namespace cc
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/cc/trees/layer_tree_host_ext.h"
-#endif
 #endif  // CC_TREES_LAYER_TREE_HOST_H_

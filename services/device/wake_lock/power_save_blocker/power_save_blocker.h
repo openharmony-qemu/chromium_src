@@ -8,13 +8,12 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/ref_counted.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"
 #include "services/device/public/mojom/wake_lock.mojom.h"
-
-#include "arkweb/build/features/features.h"
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/android/view_android.h"
 #endif  // BUILDFLAG(IS_ANDROID)
@@ -36,10 +35,11 @@ class PowerSaveBlocker {
       const std::string& description,
       scoped_refptr<base::SequencedTaskRunner> ui_task_runner,
       scoped_refptr<base::SingleThreadTaskRunner> blocking_task_runner
-      #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
-      , int32_t id
-      #endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
-      );
+#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
+      ,
+      int32_t id
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
+  );
 
   PowerSaveBlocker(const PowerSaveBlocker&) = delete;
   PowerSaveBlocker& operator=(const PowerSaveBlocker&) = delete;
@@ -53,10 +53,6 @@ class PowerSaveBlocker {
   // valid only for the lifetime of this call; hence it should not be cached
   // internally.
   void InitDisplaySleepBlocker(ui::ViewAndroid* view_android);
-#endif
-
-#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
-  void InitDisplaySleepBlocker(const int32_t id);
 #endif
 
  private:
@@ -78,7 +74,7 @@ class PowerSaveBlocker {
   scoped_refptr<base::SequencedTaskRunner> blocking_task_runner_;
 #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
   int32_t id_;
-#endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
 };
 
 }  // namespace device

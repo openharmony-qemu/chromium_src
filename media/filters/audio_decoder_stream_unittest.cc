@@ -38,13 +38,8 @@ MATCHER(IsEOSDecoderBuffer, "") {
   return arg->end_of_stream();
 }
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-static void OnAudioDecoderStreamInitialized(base::OnceClosure closure,
-                                            bool success, bool, std::string) {
-#else
 static void OnAudioDecoderStreamInitialized(base::OnceClosure closure,
                                             bool success) {
-#endif // ARKWEB_VIDEO_ASSISTANT
   ASSERT_TRUE(success);
   std::move(closure).Run();
 }
@@ -76,9 +71,6 @@ class AudioDecoderStreamTest : public testing::Test {
         &demuxer_stream_,
         base::BindOnce(&OnAudioDecoderStreamInitialized,
                        run_loop.QuitClosure()),
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-        VideoDecoderChangedCB(),
-#endif // ARKWEB_VIDEO_ASSISTANT
         nullptr, base::DoNothing(), base::DoNothing());
     run_loop.Run();
   }

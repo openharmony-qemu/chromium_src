@@ -28,7 +28,10 @@
 #include "net/net_buildflags.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "net/url_request/url_request.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT) 
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 class CertVerifier;
@@ -55,7 +58,6 @@ class TransportSecurityState;
 class URLRequest;
 class URLRequestJobFactory;
 class URLRequestContextBuilder;
-class URLRequestContextExt;
 
 #if BUILDFLAG(ENABLE_REPORTING)
 class NetworkErrorLoggingService;
@@ -74,19 +76,14 @@ class SessionStore;
 // instances. May only be created by URLRequestContextBuilder.
 // Owns most of its member variables, except a few that may be shared
 // with other contexts.
-class NET_EXPORT URLRequestContext {
+class NET_EXPORT URLRequestContext final {
  public:
-  friend class URLRequestContextExt;
   // URLRequestContext must be created by URLRequestContextBuilder.
   explicit URLRequestContext(base::PassKey<URLRequestContextBuilder> pass_key);
   URLRequestContext(const URLRequestContext&) = delete;
   URLRequestContext& operator=(const URLRequestContext&) = delete;
 
-  virtual ~URLRequestContext();
-
-  virtual URLRequestContextExt* AsURLRequestContextExt() {
-    return nullptr;
-  }
+  ~URLRequestContext();
 
   // May return nullptr if this context doesn't have an associated network
   // session.
@@ -267,6 +264,18 @@ class NET_EXPORT URLRequestContext {
     job_factory_ = job_factory;
   }
 
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  handles::NetworkHandle bound_network_for_dns() const {
+    return bound_network_for_dns_;
+  }
+  void SetConnectTimeout(int seconds);
+  void BindDnsToNetwork(handles::NetworkHandle network);
+#endif
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  void SetConnectJobWithSecureDnsOnlyTimeout(int second);
+  bool CanUseSecureDnsFallback() const;
+#endif
+
   const std::optional<std::string>& cookie_deprecation_label() const {
     return cookie_deprecation_label_;
   }
@@ -421,11 +430,15 @@ class NET_EXPORT URLRequestContext {
 
   handles::NetworkHandle bound_network_;
 
-  THREAD_CHECKER(thread_checker_);
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  handles::NetworkHandle bound_network_for_dns_;
+#endif
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   base::WeakPtrFactory<URLRequestContext> weak_factory_{this};
 #endif
+
+  THREAD_CHECKER(thread_checker_);
 };
 
 }  // namespace net

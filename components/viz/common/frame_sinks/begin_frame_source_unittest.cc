@@ -17,10 +17,6 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#include "arkweb/chromium_ext/components/viz/common/frame_sinks/begin_frame_source_unittest_ext.h"
-#endif
-
 using testing::NiceMock;
 using testing::_;
 
@@ -849,7 +845,9 @@ TEST_F(ExternalBeginFrameSourceTest, OnBeginFrameChecksBeginFrameContinuity) {
 
 TEST_F(ExternalBeginFrameSourceTest, GetMissedBeginFrameArgs) {
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  ARKWEB_UNITTESTS_CREATE_BEGIN_FRAME();
+  int64_t now = (base::TimeTicks::Now()).ToInternalValue();
+  BeginFrameArgs args = CreateBeginFrameArgsForTesting(
+      BEGINFRAME_FROM_HERE, 0, 2, now + 10000, now + 10100, 100);
 #else
   BeginFrameArgs args = CreateBeginFrameArgsForTesting(BEGINFRAME_FROM_HERE, 0,
                                                        2, 10000, 10100, 100);
@@ -868,10 +866,11 @@ TEST_F(ExternalBeginFrameSourceTest, GetMissedBeginFrameArgs) {
   // Out of order frame_time. This might not be valid but still shouldn't
   // cause a DCHECK in ExternalBeginFrameSource code.
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  ARKWEB_UNITTESTS_CREATE_BEGIN_FRAME_ONLY();
+  args = CreateBeginFrameArgsForTesting(BEGINFRAME_FROM_HERE, 0, 2, now + 9999,
+                                        now + 10100, 101);
 #else
   args = CreateBeginFrameArgsForTesting(BEGINFRAME_FROM_HERE, 0, 2, 9999, 10100,
-                                       101);
+                                        101);
 #endif
   source_->OnBeginFrame(args);
 

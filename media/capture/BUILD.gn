@@ -534,8 +534,6 @@ test("capture_unittests") {
   if (arkweb_media_capture) {
     import("//arkweb/chromium_ext/media/capture/video/ohos/arkweb_media_capture_video_ohos_ext.gni")
 
-    include_dirs = ohos_src_includes
-    deps += [ "//content/public/common:static_switches" ]
     sources += arkweb_media_capture_video_ohos_unittests
   }
 

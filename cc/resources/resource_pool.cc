@@ -584,7 +584,8 @@ void ResourcePool::EvictResourcesNotUsedSince(base::TimeTicks time_limit) {
 #if BUILDFLAG(IS_ARKWEB_EXT)
     if (delete_unused_resources_delay_enabled_ &&
         unused_resources_.size() <= kUnusedResourcesToKeep &&
-        unused_resources_.back()->last_usage() + kDefaultMaxExpirationDelay > time_limit) {
+        unused_resources_.back()->last_usage() + kDefaultMaxExpirationDelay >
+            time_limit) {
       return;
     }
 #endif

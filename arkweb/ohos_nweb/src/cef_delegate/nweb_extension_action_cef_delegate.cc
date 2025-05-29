@@ -86,16 +86,11 @@ NWebExtensionActionIcon CreateFromImageSkiaReps(
   NWebExtensionActionIcon actionIcon;
   for (auto rep : imageSkiaReps) {
     double scale = rep.scale();
-#if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
-    actionIcon.bitmaps[scale] = new NWebExtensionActionIconBitmap(
-        CreateIconBitmapFromImage(rep.GetBitmap()));
-#else
     NWebExtensionActionIconBitmap* addr =
         (NWebExtensionActionIconBitmap*)__real_malloc(
             sizeof(NWebExtensionActionIconBitmap));
     actionIcon.bitmaps[scale] = new (addr) NWebExtensionActionIconBitmap(
         CreateIconBitmapFromImage(rep.GetBitmap()));
-#endif
   }
   return actionIcon;
 }
@@ -120,18 +115,6 @@ void NWebExtensionActionCefDelegate::UnRegisterWebExtensionApiListener() {
   g_action_api_listener = nullptr;
 }
 
-std::unique_ptr<NWebExtensionActionCefDelegate> NWebExtensionActionCefDelegate::instance = nullptr;
-std::mutex NWebExtensionActionCefDelegate::mtx;
-
-// static
-NWebExtensionActionCefDelegate* NWebExtensionActionCefDelegate::GetInstance() {
-  std::lock_guard<std::mutex> lock(mtx);
-  if (!instance) {
-    instance = std::make_unique<NWebExtensionActionCefDelegate>();
-  }
-  return instance.get();
-}
-
 // static
 NO_SANITIZE("cfi-icall")
 void NWebExtensionActionCefDelegate::OnSetIcon(std::string extension_id,
@@ -145,53 +128,12 @@ void NWebExtensionActionCefDelegate::OnSetIcon(std::string extension_id,
   LOG(INFO) << "OnSetIcon extension ID:" << extension_id;
   NWebExtensionActionIcon actionIcon =
       CreateFromImageSkiaReps(icon_image.AsImageSkia().image_reps());
-#if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
-  NWebExtensionActionIcon* icon =
-      new NWebExtensionActionIcon(actionIcon);
-#else
   NWebExtensionActionIcon* addr =
       (NWebExtensionActionIcon*)__real_malloc(sizeof(actionIcon));
   NWebExtensionActionIcon* icon =
       new (addr) NWebExtensionActionIcon(actionIcon);
-#endif
   g_action_api_listener->OnSetIcon(extension_id.c_str(), icon, tab_id);
   icon->bitmaps = std::map<double, NWebExtensionActionIconBitmap*>();
-}
-
-NO_SANITIZE("cfi-icall")
-void NWebExtensionActionCefDelegate::OnDisable(const std::string& extensionId,
-                                               std::optional<int>& tabId) {
-  if (!g_action_api_listener) {
-    LOG(ERROR) << "No web extension action api listener";
-    return;
-  }
-
-  LOG(INFO) << "OnDisable extension ID:" << extensionId;
-
-  if (!g_action_api_listener->OnDisable) {
-    LOG(ERROR) << "g_action_api_listener OnDisable is nullptr";
-    return;
-  }
-
-  g_action_api_listener->OnDisable(extensionId, tabId);
-}
-
-NO_SANITIZE("cfi-icall")
-void NWebExtensionActionCefDelegate::OnEnable(const std::string& extensionId,
-                                              std::optional<int>& tabId) {
-  if (!g_action_api_listener) {
-    LOG(ERROR) << "No web extension action api listener";
-    return;
-  }
-
-  LOG(INFO) << "OnEnable extension ID:" << extensionId;
-
-  if (!g_action_api_listener->OnEnable) {
-    LOG(ERROR) << "g_action_api_listener OnEnable is nullptr";
-    return;
-  }
-
-  g_action_api_listener->OnEnable(extensionId, tabId);
 }
 
 }  // namespace OHOS::NWeb

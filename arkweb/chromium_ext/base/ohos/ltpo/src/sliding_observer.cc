@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 #include "base/ohos/ltpo/include/sliding_observer.h"
 
 #include <algorithm>
@@ -84,7 +83,7 @@ SlidingObserver::SlidingObserver() {
                             .GetLTPOConfig("fling");
 
   auto display_manager_adapter =
-      OHOS::NWeb::OhosAdapterHelperExt::CreateDisplayMgrAdapter();
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
   if (!display_manager_adapter) {
     LOG(ERROR) << "display_manager_adapter nullptr";
     return;
@@ -236,12 +235,12 @@ float SlidingObserver::GetVelocity(float velocity_x, float velocity_y) {
 }
 
 void SlidingObserver::OnDisplayInfoChange() {
-  LOG(DEBUG) << "SlidingObserver::OnDisplayInfoChange";
+  LOG(INFO) << "SlidingObserver::OnDisplayInfoChange";
   if (!is_inited_) {
     return;
   }
   auto display_manager_adapter =
-      OHOS::NWeb::OhosAdapterHelperExt::CreateDisplayMgrAdapter();
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
   if (!display_manager_adapter) {
     return;
   }

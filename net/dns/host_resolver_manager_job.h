@@ -39,10 +39,6 @@ namespace net {
 class ResolveContext;
 class HostResolverMdnsTask;
 class HostResolverNat64Task;
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-class ArkWebHostResolverManagerJobExt;
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-
 
 // Key used to identify a HostResolverManager::Job.
 struct HostResolverManager::JobKey {
@@ -86,12 +82,6 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
       const base::TickClock* tick_clock,
       const HostResolver::HttpsSvcbOptions& https_svcb_options);
   ~Job() override;
-
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-  virtual ArkWebHostResolverManagerJobExt* AsArkWebHostResolverManagerJobExt() {
-    return nullptr;
-  }
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
   // Add this job to the dispatcher.  If "at_head" is true, adds at the front
   // of the queue.
@@ -164,10 +154,6 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
   }
 
  private:
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-  friend class ArkWebHostResolverManagerJobExt;
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-
   // Keeps track of the highest priority.
   class PriorityTracker {
    public:
@@ -265,6 +251,14 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
           single_transaction_results) override;
   void AddTransactionTimeQueued(base::TimeDelta time_queued) override;
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  void AddTransactionResultForReport(const DnsQueryType query_type,
+                                     int net_error) override;
+  void InitReportInfoForDohFallback() override;
+  void InSecureCacheLookupWithoutRunTask(
+      std::optional<HostCache::Entry>& resolved);
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+
   // DnsTaskResultsManager::Delegate implementation:
   void OnServiceEndpointsUpdated() override;
 
@@ -350,6 +344,12 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
   raw_ptr<const base::TickClock> tick_clock_;
   base::TimeTicks start_time_;
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  int resolved_result_for_ipv4_{0};
+  int resolved_result_for_ipv6_{0};
+  DnsTransactionAddressFailedType failed_transactions_type_;
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+
   HostResolver::HttpsSvcbOptions https_svcb_options_;
 
   NetLogWithSource net_log_;
@@ -390,9 +390,5 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
 };
 
 }  // namespace net
-
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-#include "arkweb/chromium_ext/net/dns/arkweb_host_resolver_manager_job_ext.h"
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 #endif  // NET_DNS_HOST_RESOLVER_MANAGER_JOB_H_

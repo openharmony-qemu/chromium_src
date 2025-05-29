@@ -491,13 +491,6 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
 
   std::vector<std::unique_ptr<NoStatePrefetchManagerObserver>> observers_;
 
-#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  bool MayHitOmniboxUrl(const GURL&,
-                        Origin origin,
-                        base::WeakPtr<content::PreloadingAttempt> attempt);
-  std::set<GURL> oh_prefetch_urls_;
-#endif
-
   base::WeakPtrFactory<NoStatePrefetchManager> weak_factory_{this};
 };
 

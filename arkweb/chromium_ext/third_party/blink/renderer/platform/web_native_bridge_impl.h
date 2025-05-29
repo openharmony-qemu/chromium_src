@@ -20,7 +20,6 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/web_native_bridge.h"
 #include "base/cancelable_callback.h"
 #include "base/compiler_specific.h"
-#include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
@@ -70,7 +69,6 @@ class BLINK_PLATFORM_EXPORT WebNativeBridgeImpl
   void StartPipeline() override;
   void OnLayerRectChange(const gfx::Rect& rect) override;
   void OnLayerRectVisibilityChange(bool visibility) override;
-  void CleanupVisibilityForRemovedLayer(bool visibility) override;
   int GetDelegateId() override { return delegate_id_; }
   gfx::Size NaturalSize() const override;
 
@@ -96,7 +94,7 @@ class BLINK_PLATFORM_EXPORT WebNativeBridgeImpl
   void OnFrameShown() override {}
 
  private:
-  raw_ptr<WebLocalFrame> const frame_;
+  WebLocalFrame* const frame_;
   // Task runner for posting tasks on Chrome's main thread. Also used
   // for DCHECKs so methods calls won't execute in the wrong thread.
   const scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
@@ -105,9 +103,9 @@ class BLINK_PLATFORM_EXPORT WebNativeBridgeImpl
   // |pipeline_controller_| owns an instance of Pipeline.
   std::unique_ptr<media::NativePipelineController> native_pipeline_controller_;
 
-  raw_ptr<WebNativeClient> const client_;
+  WebNativeClient* const client_;
 
-  raw_ptr<WebNativeDelegate> delegate_;
+  WebNativeDelegate* delegate_;
   int delegate_id_ = 0;
 
   // Video rendering members.

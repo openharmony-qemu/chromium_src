@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "content/browser/ssl/ssl_error_handler.h"
@@ -16,7 +17,6 @@
 #include "net/cert/cert_status_flags.h"
 #include "url/gurl.h"
 #include "url/scheme_host_port.h"
-#include "arkweb/build/features/features.h"
 
 namespace net {
 class SSLInfo;
@@ -60,7 +60,7 @@ class SSLManager {
       const GURL& origin_url,
       const std::string& referrer
 #endif
-      );
+  );
 
   // Construct an SSLManager for the specified tab.
   explicit SSLManager(NavigationControllerImpl* controller);

@@ -10,7 +10,7 @@ Standard: Cpp11
 # TODO(crbug.com/1392808): Remove when InsertBraces has been upstreamed into
 # the Chromium style (is implied by BasedOnStyle: Chromium).
 InsertBraces: true
-# InsertNewlineAtEOF: true
+InsertNewlineAtEOF: true
 
 # Sort #includes by following
 # https://google.github.io/styleguide/cppguide.html#Names_and_Order_of_Includes

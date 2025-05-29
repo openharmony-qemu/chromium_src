@@ -219,7 +219,7 @@ class VIZ_SERVICE_EXPORT SurfaceManager {
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
   void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height);
-#endif // ARKWEB_MAXIMIZE_RESIZE
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 
  private:
   friend class CompositorFrameSinkSupportTestBase;

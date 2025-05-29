@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <utility>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/check_op.h"
 #include "base/memory/ptr_util.h"
 #include "base/types/optional_ref.h"
@@ -21,6 +20,10 @@
 #include "ui/gfx/animation/tween.h"
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/vector2d_f.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"

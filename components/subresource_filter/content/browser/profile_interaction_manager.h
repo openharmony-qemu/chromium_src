@@ -35,9 +35,6 @@ class SubresourceFilterProfileContext;
 class ProfileInteractionManager
     : public SafeBrowsingPageActivationThrottle::Delegate {
  public:
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  friend class ProfileInteractionManagerUtil;
-#endif
   explicit ProfileInteractionManager(
       SubresourceFilterProfileContext* profile_context);
   ~ProfileInteractionManager() override;

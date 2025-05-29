@@ -207,11 +207,6 @@ source_set("filters") {
     ]
     deps += [ "//media/base/mac" ]
   }
-
-  if (is_arkweb && arkweb_enable_cdm) {
-    sources += arkweb_media_filters_ohos_sources
-  }
-
   if (is_win && enable_platform_dts_audio) {
     sources += [
       "passthrough_dts_audio_decoder.cc",

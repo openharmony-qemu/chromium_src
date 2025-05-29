@@ -7,7 +7,6 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
@@ -125,10 +124,6 @@ class COMPONENT_EXPORT(VULKAN) VulkanSurface {
       VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 
   std::unique_ptr<VulkanSwapChain> swap_chain_;
-
-#if BUILDFLAG(ARKWEB_VULKAN)
-  raw_ptr<void> window_ = nullptr;
-#endif
 
   base::WeakPtrFactory<VulkanSurface> weak_ptr_factory_{this};
 };

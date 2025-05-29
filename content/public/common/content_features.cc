@@ -6,6 +6,7 @@
 
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/time/time.h"
 #include "build/android_buildflags.h"
@@ -14,7 +15,6 @@
 #include "build/config/chromebox_for_meetings/buildflags.h"
 #include "content/common/buildflags.h"
 #include "content/public/common/dips_utils.h"
-#include "arkweb/build/features/features.h"
 
 namespace features {
 
@@ -185,7 +185,8 @@ BASE_FEATURE(kBrowserVerifiedUserActivationMouse,
 // enabled.
 BASE_FEATURE(kCanvas2DImageChromium,
              "Canvas2DImageChromium",
-#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_CHROMEOS_LACROS) || (BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE))
+#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_CHROMEOS_LACROS) || \
+    (BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE))
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT

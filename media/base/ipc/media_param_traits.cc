@@ -29,10 +29,6 @@ void ParamTraits<AudioParameters>::Write(base::Pickle* m,
   WriteParam(m, p.frames_per_buffer());
   WriteParam(m, p.channels());
   WriteParam(m, p.effects());
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  WriteParam(m, p.render_process_id());
-  WriteParam(m, p.render_frame_id());
-#endif // defined(OHOS_MEDIA_POLICY)
   WriteParam(m, p.mic_positions());
   WriteParam(m, p.latency_tag());
   WriteParam(m, p.hardware_capabilities());
@@ -43,11 +39,7 @@ bool ParamTraits<AudioParameters>::Read(const base::Pickle* m,
                                         AudioParameters* r) {
   AudioParameters::Format format;
   ChannelLayout channel_layout;
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  int sample_rate, frames_per_buffer, channels, effects, render_process_id, render_frame_id;
-#else
   int sample_rate, frames_per_buffer, channels, effects;
-#endif // defined(OHOS_MEDIA_POLICY)
   std::vector<media::Point> mic_positions;
   AudioLatency::Type latency_tag;
   std::optional<media::AudioParameters::HardwareCapabilities>
@@ -57,9 +49,6 @@ bool ParamTraits<AudioParameters>::Read(const base::Pickle* m,
       !ReadParam(m, iter, &sample_rate) ||
       !ReadParam(m, iter, &frames_per_buffer) ||
       !ReadParam(m, iter, &channels) || !ReadParam(m, iter, &effects) ||
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-      !ReadParam(m, iter, &render_process_id) || !ReadParam(m, iter, &render_frame_id) ||
-#endif // defined(OHOS_MEDIA_POLICY)
       !ReadParam(m, iter, &mic_positions) ||
       !ReadParam(m, iter, &latency_tag) ||
       !ReadParam(m, iter, &hardware_capabilities)) {
@@ -75,10 +64,6 @@ bool ParamTraits<AudioParameters>::Read(const base::Pickle* m,
   }
 
   r->set_effects(effects);
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  r->set_render_process_id(render_process_id);
-  r->set_render_frame_id(render_frame_id);
-#endif // defined(OHOS_MEDIA_POLICY)
   r->set_mic_positions(mic_positions);
   r->set_latency_tag(latency_tag);
 

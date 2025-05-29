@@ -15,7 +15,7 @@
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 #include "arkweb/chromium_ext/media/base/custom_media_url_params.h"
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 namespace media {
 
@@ -66,7 +66,7 @@ struct MEDIA_EXPORT MediaUrlParams {
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   CustomMediaUrlParams custom_media_url_params;
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

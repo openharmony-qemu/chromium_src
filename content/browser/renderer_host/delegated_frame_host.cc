@@ -364,7 +364,7 @@ void DelegatedFrameHost::RestoreRenderFit() {
     client_->RestoreRenderFit();
   }
 }
-#endif // ARKWEB_MAXIMIZE_RESIZE
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 
 // CommitPending without a target for TakeFallbackContentFrom. Since we cannot
 // guarantee that Navigation will complete, evict our surfaces which are from

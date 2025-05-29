@@ -326,7 +326,7 @@ void WorkerThread::UpdateThreadType(ThreadType desired_thread_type) {
   current_thread_type_ = desired_thread_type;
 }
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 PlatformThreadId WorkerThread::GetRealTid() {
   return realtid_;
 }
@@ -338,7 +338,7 @@ void WorkerThread::ThreadMain() {
   FileDescriptorWatcher file_descriptor_watcher(io_thread_task_runner_);
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
+#if (BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING) && BUILDFLAG(IS_ARKWEB))
   realtid_ = PlatformThread::CurrentRealId();
 #endif
 

@@ -379,7 +379,7 @@ SharedContextState::SharedContextState(
       sk_surface_cache_(MaxNumSkSurface()) {
   if (gr_context_type_ == GrContextType::kVulkan) {
     if (vk_context_provider_) {
-#if BUILDFLAG(ENABLE_VULKAN) && \
+#if BUILDFLAG(ENABLE_VULKAN) &&                                           \
     (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_WIN) || \
      BUILDFLAG(IS_OHOS))
       external_semaphore_pool_ = std::make_unique<ExternalSemaphorePool>(this);
@@ -417,7 +417,7 @@ SharedContextState::~SharedContextState() {
     UnbindGLContextFromShaderCache(feature_info_);
   }
 
-#if BUILDFLAG(ENABLE_VULKAN) && \
+#if BUILDFLAG(ENABLE_VULKAN) &&                                           \
     (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_WIN) || \
      BUILDFLAG(IS_OHOS))
   external_semaphore_pool_.reset();
@@ -639,7 +639,7 @@ bool SharedContextState::InitializeGanesh(
   }
 
   gr_context_->setResourceCacheLimit(max_resource_cache_bytes);
-  transfer_cache_ = std::make_unique<ServiceTransferCacheExt>(
+  transfer_cache_ = std::make_unique<ServiceTransferCache>(
       gpu_preferences,
       base::BindRepeating(&SharedContextState::ScheduleSkiaCleanup,
                           base::Unretained(this)));
@@ -714,7 +714,7 @@ bool SharedContextState::InitializeGraphite(
       MakeGraphiteRecorder(graphite_context_, context_options.fGpuBudgetInBytes,
                            max_viz_compositor_image_provider_cache_bytes);
 
-  transfer_cache_ = std::make_unique<ServiceTransferCacheExt>(
+  transfer_cache_ = std::make_unique<ServiceTransferCache>(
       gpu_preferences,
       base::BindRepeating(&SharedContextState::ScheduleSkiaCleanup,
                           base::Unretained(this)));

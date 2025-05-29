@@ -67,8 +67,7 @@ OHOSCustomMediaPlayerRendererClientFactory::CreateRenderer(
   return std::make_unique<OHOSMediaPlayerRendererClient>(
       std::move(renderer_extension_remote),
       std::move(client_extension_receiver), media_task_runner,
-      compositor_task_runner_, std::move(mojo_renderer),
-      std::move(native_texture_wrapper), video_renderer_sink);
+      std::move(mojo_renderer), video_renderer_sink);
 }
 
 media::MediaResource::Type

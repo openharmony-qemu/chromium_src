@@ -26,6 +26,10 @@
 #include "gpu/command_buffer/service/shared_image/d3d_image_backing.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
+#include "arkweb/chromium_ext/ui/gl/ohos/native_buffer_utils.h"
+#endif
+
 namespace base {
 class WaitableEvent;
 }
@@ -36,17 +40,10 @@ class Scheduler;
 class StreamTextureSharedImageInterface;
 class RefCountedLock;
 #endif
-class GpuChannelSharedImageInterfaceExt;
 
 class GPU_IPC_SERVICE_EXPORT GpuChannelSharedImageInterface
     : public SharedImageInterface {
  public:
-  friend class GpuChannelSharedImageInterfaceExt;
-                     
-  virtual gpu::GpuChannelSharedImageInterfaceExt* AsGpuChannelSharedImageInterfaceExt() {
-    return nullptr;
-  }
-
   explicit GpuChannelSharedImageInterface(
       base::WeakPtr<SharedImageStub> shared_image_stub);
 
@@ -120,6 +117,15 @@ class GPU_IPC_SERVICE_EXPORT GpuChannelSharedImageInterface
       const gfx::ColorSpace& color_space,
       scoped_refptr<StreamTextureSharedImageInterface> image,
       scoped_refptr<RefCountedLock> drdc_lock);
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
+  scoped_refptr<ClientSharedImage> CreateSharedImageForOhosVideo(
+      const gfx::Size& size,
+      const gfx::ColorSpace& color_space,
+      scoped_refptr<StreamTextureSharedImageInterface> image,
+      scoped_refptr<RefCountedLock> drdc_lock,
+      gl::ohos::TextureOwnerMode texture_owner_mode);
 #endif
 
 #if BUILDFLAG(IS_WIN)

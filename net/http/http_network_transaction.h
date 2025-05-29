@@ -38,7 +38,9 @@
 #include "net/third_party/quiche/src/quiche/quic/core/quic_versions.h"
 #include "net/websockets/websocket_handshake_stream_base.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -49,15 +51,12 @@ class HttpStream;
 class IOBuffer;
 class ProxyInfo;
 class SSLPrivateKey;
-class ArkWebHttpNetworkTransactionExt;
 struct HttpRequestInfo;
 
 class NET_EXPORT_PRIVATE HttpNetworkTransaction
     : public HttpTransaction,
       public HttpStreamRequest::Delegate {
  public:
-  friend class ArkWebHttpNetworkTransactionExt;
-
   HttpNetworkTransaction(RequestPriority priority, HttpNetworkSession* session);
 
   HttpNetworkTransaction(const HttpNetworkTransaction&) = delete;
@@ -65,12 +64,13 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
 
   ~HttpNetworkTransaction() override;
 
-  virtual ArkWebHttpNetworkTransactionExt *AsArkWebHttpNetworkTransactionExt() { return nullptr; }
-
   // HttpTransaction methods:
   int Start(const HttpRequestInfo* request_info,
             CompletionOnceCallback callback,
             const NetLogWithSource& net_log) override;
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  int RestartWithSecureDnsOnly(CompletionOnceCallback callback) override;
+#endif
   int RestartIgnoringLastError(CompletionOnceCallback callback) override;
   int RestartWithCertificate(scoped_refptr<X509Certificate> client_cert,
                              scoped_refptr<SSLPrivateKey> client_private_key,
@@ -164,7 +164,7 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
     STATE_NOTIFY_BEFORE_CREATE_STREAM,
     STATE_CREATE_STREAM,
     STATE_CREATE_STREAM_COMPLETE,
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY,
     STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY_COMPLETE,
 #endif
@@ -210,6 +210,10 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
   int DoNotifyBeforeCreateStream();
   int DoCreateStream();
   int DoCreateStreamComplete(int result);
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  int DoCreateFallbackStreamWithSecureDnsOnly();
+  int DoCreateFallbackStreamWithSecureDnsOnlyComplete(int result);
+#endif
   int DoInitStream();
   int DoInitStreamComplete(int result);
   int DoConnectedCallback();
@@ -375,6 +379,15 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
   static void SetProxyInfoInResponse(const ProxyInfo& proxy_info,
                                      HttpResponseInfo* response_info);
 
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  void StartRecording();
+  void StopRecording();
+  void ReportTimeout();
+
+  base::OneShotTimer timer_;
+  bool is_recording_;
+#endif
+
   scoped_refptr<HttpAuthController>
       auth_controllers_[HttpAuth::AUTH_NUM_TARGETS];
 
@@ -515,7 +528,7 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
 
   bool close_connection_on_destruction_ = false;
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   bool stream_created_ = false;
 #endif
 
@@ -536,6 +549,5 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
 };
 
 }  // namespace net
-#include "arkweb/chromium_ext/net/http/arkweb_http_network_transaction_ext.h"
 
 #endif  // NET_HTTP_HTTP_NETWORK_TRANSACTION_H_

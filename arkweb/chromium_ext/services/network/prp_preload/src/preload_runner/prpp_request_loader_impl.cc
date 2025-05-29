@@ -106,11 +106,11 @@ void PRPPRequestLoaderImpl::InitAndStartUrlRequest(const std::shared_ptr<PRReque
   }
   url_request_->set_send_client_certs(info->send_client_certs());
   url_request_->SetRequestHeadersCallback(base::BindRepeating(
-      &PRPPRequestLoaderImpl::SetRawRequestHeadersAndNotify, weak_ptr_factory_.GetWeakPtr()));
+      &PRPPRequestLoaderImpl::SetRawRequestHeadersAndNotify, base::Unretained(this)));
   url_request_->SetResponseHeadersCallback(base::BindRepeating(
-      &PRPPRequestLoaderImpl::SetRawResponseHeaders, weak_ptr_factory_.GetWeakPtr()));
+      &PRPPRequestLoaderImpl::SetRawResponseHeaders, base::Unretained(this)));
   url_request_->SetEarlyResponseHeadersCallback(base::BindRepeating(
-      &PRPPRequestLoaderImpl::NotifyEarlyResponse, weak_ptr_factory_.GetWeakPtr()));
+      &PRPPRequestLoaderImpl::NotifyEarlyResponse, base::Unretained(this)));
   url_request_->set_storage_access_status(info->storage_access_status());
   url_request_->cookie_setting_overrides().PutAll(info->cookie_setting_overrides());
   url_request_->set_ad_tagged(info->ad_tagged());
@@ -325,12 +325,7 @@ void PRPPRequestLoaderImpl::ReadMore()
     PushFailure(STATE_ERROR);
     return;
   }
-  // if url_request_->AbortAndCloseConnection has been called, when URLLoader called DidRead or OnResponseStarted
-  // URLRequestJob will be destroyed
-  // need to return to ensure that the URLRequest interface will not be invoked in this case
-  if (!url_request_->CanReadFromURLRequestJob()) {
-    return;
-  }
+
   int bytes_read = url_request_->Read(cur_write_block_.get(), cur_write_block_->RemainingCapacity());
   if (bytes_read != net::ERR_IO_PENDING) {
     DidRead(bytes_read, true);
@@ -424,11 +419,6 @@ void PRPPRequestLoaderImpl::SetResetUrlRequestCallback(ResetUrlRequestCallback c
   reset_url_request_callback_ = std::move(callback);
 }
 
-void PRPPRequestLoaderImpl::SetUpdateResRequestInfoCallback(UpdateResRequestInfoCallback callback)
-{
-  update_res_request_info_callback_ = std::move(callback);
-}
-
 bool PRPPRequestLoaderImpl::StartReplay()
 {
   load_timing_info_.request_start_time = base::Time::Now();
@@ -442,8 +432,8 @@ bool PRPPRequestLoaderImpl::StartReplay()
   prpp_req_info_->set_request_start_time(base::Time::Now().ToInternalValue());
   base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(FROM_HERE,
     base::BindOnce(&PRPPRequestLoaderImpl::DoReplay, weak_ptr_factory_.GetWeakPtr()));
-  if (need_update_req_info_ && !update_res_request_info_callback_.is_null()) {
-    std::move(update_res_request_info_callback_).Run(main_url_, prpp_req_info_);
+  if (need_update_req_info_) {
+    PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(main_url_, prpp_req_info_);
   }
   return true;
 }
@@ -461,11 +451,6 @@ void PRPPRequestLoaderImpl::DoReplay()
     LOG(WARNING) << "PRPPreload.PRPPRequestLoaderImpl::DoReplay, no delegate";
     return;
   }
-  ProcessMessages();
-}
-
-void PRPPRequestLoaderImpl::ProcessMessages()
-{
   PRPPRecorderMsg cur_msg = rec_msg_list_.front();
   rec_msg_list_.pop();
   switch (cur_msg) {
@@ -489,13 +474,8 @@ void PRPPRequestLoaderImpl::ProcessMessages()
       break;
     case MSG_RESPONSE_STARTED:
       need_do_replay_self_ = false;
-      if (!rec_msg_list_.empty() ||
-         ((preload_state_ != STATE_RESPONSE_STARTED) && (preload_state_ != STATE_RESPONSED))) {
-        base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(FROM_HERE,
-            base::BindOnce(&PRPPRequestLoaderImpl::DoReplay, weak_ptr_factory_.GetWeakPtr()));
-      }
       delegate_->OnResponseStarted(url_request_.get(), net::OK);
-      return;
+      break;
     case MSG_RESPONSE_BODY:
       break;
     case MSG_ERROR:
@@ -570,9 +550,7 @@ int PRPPRequestLoaderImpl::Read(net::IOBuffer* buf, int max_bytes)
 void PRPPRequestLoaderImpl::UpdateResRequestInfo(const std::string& key, const std::shared_ptr<PRRequestInfo>& info)
 {
   if (delegate_) {
-    if (!update_res_request_info_callback_.is_null()) {
-      std::move(update_res_request_info_callback_).Run(key, info);
-    }
+    PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(key, info);
     return;
   }
   need_update_req_info_ = true;
@@ -656,7 +634,6 @@ void PRPPRequestLoaderImpl::ClearLoaderCallback(bool has_devtools_request_id)
   }
   SetEarlyResponseHeadersCallback(net::ResponseHeadersCallback());
   SetResetUrlRequestCallback(ResetUrlRequestCallback());
-  SetUpdateResRequestInfoCallback(UpdateResRequestInfoCallback());
   completion_once_callback_ = net::CompletionOnceCallback();
   res_loaded_cb_ = ResPreloadedCB();
 }

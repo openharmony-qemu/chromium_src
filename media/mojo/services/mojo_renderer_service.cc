@@ -86,13 +86,9 @@ void MojoRendererService::Initialize(
       media_url_params->custom_media_url_params->preload_type);
   media_resource_->SetMediaSourceType(
       media_url_params->custom_media_url_params->media_source_type);
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
   renderer_->Initialize(
       media_resource_.get(), this,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-      media::RequestSurfaceCB(),
-      media::VideoDecoderChangedCB(),
-#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,
                      std::move(callback)));
 }
@@ -245,10 +241,6 @@ void MojoRendererService::OnAllStreamsReady(
 
   renderer_->Initialize(
       media_resource_.get(), this,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-      media::RequestSurfaceCB(),
-      media::VideoDecoderChangedCB(),
-#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,
                      std::move(callback)));
 }
@@ -320,8 +312,49 @@ void MojoRendererService::OnCdmAttached(base::OnceCallback<void(bool)> callback,
   std::move(callback).Run(success);
 }
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/media/mojo/services/mojo_renderer_service_for_include.cc"
-#endif
-
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+void MojoRendererService::SetMuted(bool muted) {
+  renderer_->SetMuted(muted);
+}
+void MojoRendererService::SetSurfaceId(int surface_id, const gfx::Rect& rect) {
+  renderer_->SetSurfaceId(surface_id, rect);
+}
+void MojoRendererService::SetMediaPlayerState(bool is_suspend,
+                                              int suspend_type) {
+  renderer_->SetMediaPlayerState(is_suspend, suspend_type);
+}
+void MojoRendererService::SetMediaSourceList(
+    std::vector<mojom::MediaSourceInfoPtr> source_infos) {
+  std::vector<media::Renderer::MediaSourceInfo> infos;
+  infos.reserve(source_infos.size());
+  for (const auto& info : source_infos) {
+    infos.push_back({info->media_source, info->media_format});
+  }
+  renderer_->SetMediaSourceList(infos);
+}
+void MojoRendererService::SetMediaControls(
+    bool show_media_controls,
+    const std::vector<std::string>& controls_list) {
+  renderer_->SetMediaControls(show_media_controls, controls_list);
+}
+void MojoRendererService::SetPoster(const std::string& poster_url) {
+  renderer_->SetPoster(poster_url);
+}
+void MojoRendererService::SetAttributes(
+    const base::flat_map<std::string, std::string>& attributes) {
+  renderer_->SetAttributes(attributes);
+}
+void MojoRendererService::SetReferrer(const std::string& referrer) {
+  renderer_->SetReferrer(referrer);
+}
+void MojoRendererService::SetIsAudio(bool is_audio) {
+  renderer_->SetIsAudio(is_audio);
+}
+void MojoRendererService::SetPlaybackRateWithReason(
+    double playback_rate,
+    mojom::ActionReason reason) {
+  renderer_->SetPlaybackRateWithReason(playback_rate,
+                                       static_cast<ActionReason>(reason));
+}
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 }  // namespace media

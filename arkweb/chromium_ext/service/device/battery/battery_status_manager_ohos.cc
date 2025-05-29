@@ -21,7 +21,7 @@ class BatteryEventCallback : public OHOS::NWeb::WebBatteryEventCallback {
   void BatteryInfoChanged(std::shared_ptr<WebBatteryInfo> info) override;
 
  private:
-  raw_ptr<BatteryManagerListener> listener_;
+  BatteryManagerListener* listener_;
 };
 
 class BatteryManagerListener

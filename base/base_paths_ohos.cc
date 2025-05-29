@@ -17,6 +17,7 @@
 #include "base/logging.h"
 #include "base/notreached.h"
 #include "base/process/process_metrics.h"
+#include "ohos/adapter/context_path/context_path_adapter.h"
 
 namespace base {
 // TODO: temporary solution to load resources for multiple processes
@@ -51,6 +52,7 @@ bool PathProviderOHOS(int key, FilePath* result) {
     case base::FILE_EXE: {
       if (!ReadSymbolicLink(FilePath(kProcSelfExe), &bin_dir)) {
         NOTREACHED() << "Unable to resolve " << kProcSelfExe << ".";
+        return false;
       }
       *result = bin_dir;
       return true;
@@ -61,6 +63,7 @@ bool PathProviderOHOS(int key, FilePath* result) {
     case base::DIR_MODULE: {
       if (!ReadSymbolicLink(FilePath(kProcSelfExe), &bin_dir)) {
         NOTREACHED() << "Unable to resolve " << kProcSelfExe << ".";
+        return false;
       }
       *result = bin_dir.DirName();
       return true;
@@ -68,6 +71,7 @@ bool PathProviderOHOS(int key, FilePath* result) {
     case base::DIR_SOURCE_ROOT:
       if (!ReadSymbolicLink(FilePath(kProcSelfExe), &bin_dir)) {
         NOTREACHED() << "Unable to resolve " << kProcSelfExe << ".";
+        return false;
       }
       *result = bin_dir.DirName();
       return true;

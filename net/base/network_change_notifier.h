@@ -18,7 +18,10 @@
 #include "build/build_config.h"
 #include "net/base/net_export.h"
 #include "net/base/network_handle.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #include "net/base/address_map_linux.h"
@@ -30,7 +33,6 @@ class NetworkChangeNotifierFactory;
 struct NetworkInterface;
 class SystemDnsConfigChangeNotifier;
 typedef std::vector<NetworkInterface> NetworkInterfaceList;
-class ArkwebNetworkChangeNotifierExt;
 
 namespace internal {
 #if BUILDFLAG(IS_FUCHSIA)
@@ -45,7 +47,6 @@ class NetworkInterfaceCache;
 // destroyed on the same thread.
 class NET_EXPORT NetworkChangeNotifier {
  public:
-  friend class ArkwebNetworkChangeNotifierExt;
   // This is a superset of the connection types in the NetInfo v3 specification:
   // http://w3c.github.io/netinfo/.
   //
@@ -353,10 +354,6 @@ class NET_EXPORT NetworkChangeNotifier {
   NetworkChangeNotifier& operator=(const NetworkChangeNotifier&) = delete;
   virtual ~NetworkChangeNotifier();
 
-  ArkwebNetworkChangeNotifierExt* AsArkwebNetworkChangeNotifierExt() {
-    return nullptr;
-  }
-
   // Returns the factory or nullptr if it is not set.
   static NetworkChangeNotifierFactory* GetFactory();
 
@@ -576,6 +573,13 @@ class NET_EXPORT NetworkChangeNotifier {
   // Returns a string equivalent to |type|.
   static base::cstring_view ConnectionTypeToString(ConnectionType type);
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  static const std::vector<std::string> GetDnsServers();
+#endif
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  static void BindToNetwork(int32_t network_for_dns);
+#endif
+
   // Allows a second NetworkChangeNotifier to be created for unit testing, so
   // the test suite can create a MockNetworkChangeNotifier, but platform
   // specific NetworkChangeNotifiers can also be created for testing.  To use,
@@ -666,6 +670,12 @@ class NET_EXPORT NetworkChangeNotifier {
 
   virtual bool IsDefaultNetworkActiveInternal();
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  virtual const std::vector<std::string> GetCurrentDnsServers();
+#endif
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  virtual void BindDnsToNetwork(int32_t network_for_dns);
+#endif
 
   // Broadcasts a notification to all registered observers.  Note that this
   // happens asynchronously, even for observers on the current thread, even in
@@ -727,7 +737,7 @@ class NET_EXPORT NetworkChangeNotifier {
 
   raw_ptr<SystemDnsConfigChangeNotifier> system_dns_config_notifier_;
   std::unique_ptr<SystemDnsConfigObserver> system_dns_config_observer_;
- 
+
   // Computes NetworkChange signal from IPAddress and ConnectionType signals.
   std::unique_ptr<NetworkChangeCalculator> network_change_calculator_;
 
@@ -739,6 +749,5 @@ class NET_EXPORT NetworkChangeNotifier {
 };
 
 }  // namespace net
-#include "arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h"
 
 #endif  // NET_BASE_NETWORK_CHANGE_NOTIFIER_H_

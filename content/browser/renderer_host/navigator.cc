@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "content/browser/renderer_host/navigator.h"
-#include "arkweb/chromium_ext/content/browser/renderer_host/navigator_utils.h"
 
 #include <utility>
 
@@ -61,7 +60,6 @@
 #include "third_party/blink/public/mojom/navigation/navigation_params.mojom.h"
 #include "url/gurl.h"
 #include "url/url_util.h"
-#include "arkweb/chromium_ext/content/browser/renderer_host/navigation_request_utils.h"
 
 namespace content {
 
@@ -362,15 +360,23 @@ Navigator::Navigator(
     NavigatorDelegate* delegate,
     NavigationControllerDelegate* navigation_controller_delegate)
     : controller_(browser_context, frame_tree, navigation_controller_delegate),
-      delegate_(delegate) {
-  implUtils_ = std::make_unique<NavigatorUtils>(this);
-}
+      delegate_(delegate) {}
 
-Navigator::~Navigator() {
+Navigator::~Navigator()
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  implUtils_->StopPage();
-#endif
+{
+  content::StoragePartition* storage_partition =
+    controller_.GetBrowserContext()->GetDefaultStoragePartition();
+  if (storage_partition) {
+    network::mojom::NetworkContext* network_context = storage_partition->GetNetworkContext();
+    if (network_context != nullptr) {
+      network_context->StopPage(reinterpret_cast<int64_t>(this));
+    }
+  }
 }
+#else
+= default;
+#endif
 
 // static
 bool Navigator::CheckWebUIRendererDoesNotDisplayNormalURL(
@@ -502,9 +508,7 @@ void Navigator::DidNavigate(
   FrameTreeNode* frame_tree_node = render_frame_host->frame_tree_node();
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   if (navigation_request) {
-    const net::NetworkAnonymizationKey networkAnonymizationKey =
-        implUtils_->GetNetworkAnonymizationKey(frame_tree_node, navigation_request.get());
-    navigation_request->nav_request_utils_->StartPage(networkAnonymizationKey, reinterpret_cast<int64_t>(this));
+    navigation_request->StartPage(reinterpret_cast<int64_t>(this));
   }
 #endif
   FrameTree& frame_tree = frame_tree_node->frame_tree();
@@ -917,9 +921,7 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
   }
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  const net::NetworkAnonymizationKey networkAnonymizationKey =
-      implUtils_->GetNetworkAnonymizationKey(frame_tree_node, request.get());
-  request->nav_request_utils_->StartPage(networkAnonymizationKey, reinterpret_cast<int64_t>(this));
+  request->StartPage(reinterpret_cast<int64_t>(this));
 #endif
 
   metrics_data_ = std::make_unique<NavigationMetricsData>(
@@ -1270,9 +1272,7 @@ void Navigator::OnBeginNavigation(
       false /* is_browser_initiated_before_unload */);
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  const net::NetworkAnonymizationKey networkAnonymizationKey =
-      implUtils_->GetNetworkAnonymizationKey(frame_tree_node, navigation_request);
-  navigation_request->nav_request_utils_->StartPage(networkAnonymizationKey, reinterpret_cast<int64_t>(this));
+  navigation_request->StartPage(reinterpret_cast<int64_t>(this));
 #endif
 
   LogRendererInitiatedBeforeUnloadTime(

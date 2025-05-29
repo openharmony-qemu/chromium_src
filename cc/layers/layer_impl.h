@@ -48,8 +48,6 @@
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 
-#include "arkweb/chromium_ext/cc/layer/layer_impl_utils.h"
-
 namespace viz {
 class ClientResourceProvider;
 class CompositorRenderPass;
@@ -64,7 +62,6 @@ class MicroBenchmarkImpl;
 class PrioritizedTile;
 class SimpleEnclosedRegion;
 class Tile;
-class LayerImplUtils;
 
 enum ViewportLayerType {
   NOT_VIEWPORT_LAYER,
@@ -434,6 +431,17 @@ class CC_EXPORT LayerImpl {
 
   void set_may_contain_video(bool yes) { may_contain_video_ = yes; }
   bool may_contain_video() const { return may_contain_video_; }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void set_may_contain_native(bool yes) { may_contain_native_ = yes; }
+  bool may_contain_native() const { return may_contain_native_; }
+  void set_native_embed_id(int embedId) { native_embed_id_ = embedId; }
+  int native_embed_id() const { return native_embed_id_; }
+  void SetNativeRect(const gfx::RectF& rect);
+  void SetInitScale(float scale);
+  float GetInitScale() { return init_scale_; }
+  gfx::RectF NativeRect() const;
+  gfx::RectF GetNativeRect();
+#endif
   // Layers that share a sorting context id will be sorted together in 3d
   // space.  0 is a special value that means this layer will not be sorted and
   // will be drawn in paint order.
@@ -499,9 +507,8 @@ class CC_EXPORT LayerImpl {
 
   virtual void SetInInvisibleLayerTree() {}
 
-  LayerImplUtils* layer_impl_utils() {
-    return layer_impl_utils_.get();
-  }
+  void SetShouldInterceptTouchEvent(bool intercept);
+  bool ShouldInterceptTouchEvent() const;
 
  protected:
   // When |will_always_push_properties| is true, the layer will not itself set
@@ -559,6 +566,12 @@ class CC_EXPORT LayerImpl {
   bool contributes_to_drawn_render_surface_ : 1 = false;
 
   bool is_inner_viewport_scroll_layer_ : 1 = false;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool may_contain_native_;
+  gfx::RectF native_rect_;
+  int native_embed_id_;
+  float init_scale_ = -1.0f;
+#endif
   HitTestOpaqueness hit_test_opaqueness_ = HitTestOpaqueness::kTransparent;
   TouchActionRegion touch_action_region_;
 
@@ -574,7 +587,6 @@ class CC_EXPORT LayerImpl {
 
  protected:
   friend class TreeSynchronizer;
-  friend class LayerImplUtils;
 
   DrawMode current_draw_mode_;
   EffectTree& GetEffectTree() const;
@@ -611,7 +623,7 @@ class CC_EXPORT LayerImpl {
 
   bool has_transform_node_ : 1 = false;
 
-  std::unique_ptr<LayerImplUtils> layer_impl_utils_;
+  bool should_intercept_touch_event_ = false;
 };
 
 }  // namespace cc

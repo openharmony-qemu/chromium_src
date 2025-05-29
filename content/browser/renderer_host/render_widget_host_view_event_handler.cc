@@ -833,11 +833,12 @@ void RenderWidgetHostViewEventHandler::MoveCursorToCenter(
   }
 #endif
 #if BUILDFLAG(IS_LINUX)
-  if (host_view_->HasExternalParent() &&
-      window_ && window_->delegate()->CanFocus()) {
+  if (host_view_->HasExternalParent() && window_ &&
+      window_->delegate()->CanFocus()) {
     aura::WindowTreeHost* host = window_->GetHost();
-    if (host)
+    if (host) {
       host->Show();
+    }
   }
 #endif
   synthetic_move_position_ = center_in_screen;
@@ -870,13 +871,14 @@ bool RenderWidgetHostViewEventHandler::MatchesSynthesizedMovePosition(
 
 void RenderWidgetHostViewEventHandler::SetKeyboardFocus() {
 #if BUILDFLAG(IS_WIN)
-  if (host_view_->HasExternalParent() &&
-      window_ && window_->delegate()->CanFocus()) {
+  if (host_view_->HasExternalParent() && window_ &&
+      window_->delegate()->CanFocus()) {
     aura::WindowTreeHost* host = window_->GetHost();
     if (host) {
       gfx::AcceleratedWidget hwnd = host->GetAcceleratedWidget();
-      if (!(::GetWindowLong(hwnd, GWL_EXSTYLE) & WS_EX_NOACTIVATE))
+      if (!(::GetWindowLong(hwnd, GWL_EXSTYLE) & WS_EX_NOACTIVATE)) {
         ::SetFocus(hwnd);
+      }
     }
   }
 #endif

@@ -45,9 +45,6 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rounded_corners_f.h"
 
-#include "arkweb/chromium_ext/cc/layer/layer_ext.h"
-#include "arkweb/chromium_ext/cc/layer/layer_utils.h"
-
 namespace viz {
 class CopyOutputRequest;
 }
@@ -59,8 +56,6 @@ class LayerTreeHost;
 class LayerTreeHostCommon;
 class LayerTreeImpl;
 class PictureLayer;
-class LayerExt;
-class LayerUtils;
 
 struct CommitState;
 struct ThreadUnsafeCommitState;
@@ -93,8 +88,7 @@ struct CC_EXPORT LayerDebugInfo {
 // parent (or none at the root). Layers within the tree, other than the root
 // layer, are kept alive by that tree relationship, with refpointer ownership
 // from parents to children.
-class CC_EXPORT Layer : public LayerExt,
-                        public base::RefCounted<Layer>,
+class CC_EXPORT Layer : public base::RefCounted<Layer>,
                         public ProtectedSequenceSynchronizer {
  public:
   // An invalid layer id, as all layer ids are positive.
@@ -674,6 +668,17 @@ class CC_EXPORT Layer : public LayerExt,
   bool may_contain_video() const {
     return GetBitFlag(kMayContainVideoFlagMask);
   }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetMayContainNative(bool value) { native_.Write(*this) = value; }
+
+  bool may_contain_native() const { return native_.Read(*this); }
+
+  void SetNativeEmbedId(int embedId);
+
+  int native_embed_id() const { return native_embed_id_.Read(*this); }
+
+  void SetNativeRect(const gfx::RectF& rect) { native_rect_ = rect; }
+#endif
   // Stable identifier for clients. See comment in cc/paint/element_id.h.
   void SetElementId(ElementId id);
   ElementId element_id() const { return inputs_.Read(*this).element_id; }
@@ -863,14 +868,30 @@ class CC_EXPORT Layer : public LayerExt,
   // surface, returns the ID of that resource.
   virtual viz::ViewTransitionElementResourceId ViewTransitionResourceId() const;
 
-  LayerUtils* layer_utils() {
-    return layer_utils_.get();
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void OnLayerRectUpdate(const gfx::Rect& rect) {}
+
+  virtual void OnLayerRectVisibilityChange(bool visibility) {}
+#endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  virtual void OnLayerBoundsUpdate(const gfx::Rect& bounds) {}
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
+  void SetShouldInterceptTouchEvent(bool intercept) {
+    should_intercept_touch_event_.Write(*this) = intercept;
   }
+  bool ShouldInterceptTouchEvent() {
+    return should_intercept_touch_event_.Read(*this);
+  }
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  virtual bool ShouldOverlay();
+  virtual void SetShouldOverlay(bool should_overlay);
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
  protected:
   friend class LayerImpl;
   friend class TreeSynchronizer;
-  friend class LayerUtils;
 
   Layer();
   ~Layer() override;
@@ -1151,7 +1172,11 @@ class CC_EXPORT Layer : public LayerExt,
   // because it's used in base::AutoReset.
   ProtectedSequenceReadable<bool> ignore_set_needs_commit_for_test_;
 
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  ProtectedSequenceReadable<bool> native_;
+  ProtectedSequenceReadable<int> native_embed_id_;
+  gfx::RectF native_rect_;
+#endif
   enum : uint8_t {
     kDrawsContentFlagMask = 1 << 0,
     kShouldCheckBackfaceVisibilityFlagMask = 1 << 1,
@@ -1205,10 +1230,13 @@ class CC_EXPORT Layer : public LayerExt,
 
   ProtectedSequenceWritable<std::unique_ptr<LayerDebugInfo>> debug_info_;
 
+  ProtectedSequenceReadable<bool> should_intercept_touch_event_{false};
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  bool should_overlay_{false};
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
   static constexpr gfx::Transform kIdentityTransform{};
   static constexpr gfx::RoundedCornersF kNoRoundedCornersF{};
-
-  std::unique_ptr<LayerUtils> layer_utils_;
 };
 
 }  // namespace cc

@@ -10,8 +10,15 @@
 #include "content/public/browser/browser_thread.h"
 #include "ui/events/base_event_utils.h"
 #include "ui/events/gestures/blink/web_gesture_curve_impl.h"
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/components/input/fling_controller_for_include_impl.h"
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+#include "arkweb/chromium_ext/base/report_loss_frame_ext.h"
+#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+#include "base/ohos/ltpo/include/sliding_observer.h"
+#include "content/browser/gpu/gpu_process_host.h"
 #endif
 
 using blink::WebInputEvent;
@@ -58,6 +65,26 @@ FlingController::FlingController(
   DCHECK(scheduler_client);
 }
 
+#if BUILDFLAG(ARKWEB_FLING)
+FlingController::~FlingController() {
+  if (!fling_curve_) {
+    return;
+  }
+  LOG(DEBUG) << "stop web page fling";
+  auto frame_rate = base::ohos::SlidingObserver::GetInstance().StopFling();
+  if (auto* host = content::GpuProcessHost::Get()) {
+    if (auto* host_impl = host->gpu_host()) {
+      host_impl->StopMonitor();
+      if (frame_rate >= 0) {
+        host_impl->ReportSlidingFrameRate(frame_rate);
+      }
+    }
+  }
+}
+#else
+FlingController::~FlingController() = default;
+#endif
+
 bool FlingController::ObserveAndFilterForTapSuppression(
     const GestureEventWithLatencyInfo& gesture_event) {
   switch (gesture_event.event.GetType()) {
@@ -97,6 +124,13 @@ bool FlingController::ObserveAndFilterForTapSuppression(
   }
 }
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void FlingController::DynamicFrameLossEvent(const std::string& sceneId,
+                                            bool isStart) {
+  event_sender_client_->DynamicFrameLossEvent(sceneId, isStart);
+}
+#endif
+
 bool FlingController::ObserveAndMaybeConsumeGestureEvent(
     const GestureEventWithLatencyInfo& gesture_event) {
   TRACE_EVENT0("input", "FlingController::ObserveAndMaybeConsumeGestureEvent");
@@ -110,9 +144,6 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
     TRACE_EVENT_INSTANT0("input", "NoActiveFling", TRACE_EVENT_SCOPE_THREAD);
     return true;
   }
-#if BUILDFLAG(ARKWEB_D_VSYNC)
-  SetIsFlingFalse(gesture_event.event.GetType() == WebInputEvent::Type::kGestureFlingCancel && fling_curve_);
-#endif
 
   if (ObserveAndFilterForTapSuppression(gesture_event)) {
     TRACE_EVENT_INSTANT0("input", "FilterTapSuppression",
@@ -140,9 +171,27 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
   // touchscreen and autoscroll) which are handled normally.
   if (gesture_event.event.GetType() ==
       WebInputEvent::Type::kGestureFlingStart) {
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+    std::string fling_string = "WEB_LIST_FLING";
+#endif
     ProcessGestureFlingStart(gesture_event);
-#if BUILDFLAG(IS_ARKWEB)
-  StartWebPageFling();
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+    ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::START);
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetHiTraceAdapterInstance()
+        .StartAsyncTrace(fling_string, 0);
+#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .CreateSocPerfClientAdapter()
+        ->ApplySocPerfConfigByIdEx(
+            OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+    LOG(DEBUG) << "start web page fling";
+#endif
+#endif
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+    base::ohos::SlidingObserver::GetInstance().StartFling();
 #endif
     return true;
   }
@@ -193,6 +242,7 @@ void FlingController::ScheduleFlingProgress() {
 void FlingController::ProcessGestureFlingCancel(
     const GestureEventWithLatencyInfo& gesture_event) {
   DCHECK(fling_curve_);
+
   // Note: We don't want to reset the fling booster here because a FlingCancel
   // will be received when the user puts their finger down for a potential
   // boost. FlingBooster will process the event stream after the current fling
@@ -244,7 +294,19 @@ void FlingController::ProgressFling(base::TimeTicks current_time) {
       current_fling_parameters_.velocity, delta_to_scroll);
 
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-  FlingUpdate(current_time);
+  if ((current_time - current_fling_parameters_.start_time).InSecondsF() > 0) {
+    int32_t preferredFrameRate =
+        base::ohos::SlidingObserver::GetInstance().OnFlingUpdate(
+            current_fling_parameters_.velocity.x(),
+            current_fling_parameters_.velocity.y());
+    if (auto* host = content::GpuProcessHost::Get()) {
+      if (auto* host_impl = host->gpu_host()) {
+        if (preferredFrameRate >= 0) {
+          host_impl->ReportSlidingFrameRate(preferredFrameRate);
+        }
+      }
+    }
+  }
 #endif
 
   if (!fling_is_active && current_fling_parameters_.source_device !=
@@ -372,11 +434,33 @@ void FlingController::GenerateAndSendFlingEndEvents(
 
 void FlingController::EndCurrentFling(base::TimeTicks current_time) {
   last_progress_time_ = base::TimeTicks();
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  std::string fling_string = "WEB_LIST_FLING";
+#endif
 
   GenerateAndSendFlingEndEvents(current_time);
-#if BUILDFLAG(IS_ARKWEB)
-  StopWebPageFling();
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::STOP);
+  ReportLossFrame::GetInstance()->Report();
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiTraceAdapterInstance()
+      .FinishAsyncTrace(fling_string, 0);
+  LOG(DEBUG) << "stop web page fling";
 #endif
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+  LOG(DEBUG) << "stop web page fling";
+  auto frame_rate = base::ohos::SlidingObserver::GetInstance().StopFling();
+  if (auto* host = content::GpuProcessHost::Get()) {
+    if (auto* host_impl = host->gpu_host()) {
+      host_impl->StopMonitor();
+      if (frame_rate >= 0) {
+        host_impl->ReportSlidingFrameRate(frame_rate);
+      }
+    }
+  }
+#endif
+
   current_fling_parameters_ = ActiveFlingParameters();
 
   if (fling_curve_) {
@@ -410,6 +494,7 @@ bool FlingController::UpdateCurrentFlingState(
     // scroll, the animation should begin at the time of the last update.
     current_fling_parameters_.start_time = last_seen_scroll_update_;
   }
+
   if (velocity.IsZero() && fling_start_event.SourceDevice() !=
                                blink::WebGestureDevice::kSyntheticAutoscroll) {
     fling_booster_.Reset();

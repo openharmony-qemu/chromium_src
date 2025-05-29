@@ -460,19 +460,20 @@ ResultExpr RestrictPtrace() {
   const Arg<uintptr_t> addr(2);
 #endif
   return Switch(request)
-      .Cases({
+      .Cases(
+          {
 #if !defined(__aarch64__)
-                 PTRACE_GETREGS, PTRACE_GETFPREGS, PTRACE_GET_THREAD_AREA,
-                 PTRACE_GETREGSET,
+              PTRACE_GETREGS, PTRACE_GETFPREGS, PTRACE_GET_THREAD_AREA,
+              PTRACE_GETREGSET,
 #if !defined(__aarch64__) && BUILDFLAG(IS_ARKWEB)
-                 PTRACE_GETREGS, PTRACE_GETFPREGS, PTRACE_GETREGSET,
+              PTRACE_GETREGS, PTRACE_GETFPREGS, PTRACE_GETREGSET,
 #endif
 #endif
 #if defined(__arm__)
-                 PTRACE_GETVFPREGS,
+              PTRACE_GETVFPREGS,
 #endif
-                 PTRACE_PEEKDATA, PTRACE_ATTACH, PTRACE_DETACH},
-             Allow())
+              PTRACE_PEEKDATA, PTRACE_ATTACH, PTRACE_DETACH},
+          Allow())
 #if defined(__aarch64__)
       .Case(
           PTRACE_GETREGSET,

@@ -20,7 +20,7 @@
 
 #include "base/files/file.h"
 #include "base/strings/utf_string_conversions.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "ohos_adapter_helper.h"
 
 namespace base {
 namespace testing {

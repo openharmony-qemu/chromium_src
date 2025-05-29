@@ -7,8 +7,8 @@
 #include "content/shell/app/shell_main_delegate.h"
 
 extern "C" {
-int __attribute__((visibility("default"))) ContentMain(int argc,
-    const char** argv) {
+int __attribute__((visibility("default")))
+ContentMain(int argc, const char** argv) {
   content::ShellMainDelegate delegate;
   content::ContentMainParams params(&delegate);
   params.argc = argc;
@@ -16,3 +16,4 @@ int __attribute__((visibility("default"))) ContentMain(int argc,
   return content::ContentMain(std::move(params));
 }
 }
+ 

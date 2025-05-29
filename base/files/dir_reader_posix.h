@@ -5,8 +5,8 @@
 #ifndef BASE_FILES_DIR_READER_POSIX_H_
 #define BASE_FILES_DIR_READER_POSIX_H_
 
-#include "build/build_config.h"
 #include "arkweb/build/features/features.h"
+#include "build/build_config.h"
 
 // This header provides a class, DirReaderPosix, which allows one to open and
 // read from directories without allocating memory. For the interface, see

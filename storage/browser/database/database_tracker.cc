@@ -67,8 +67,11 @@ const base::FilePath::CharType kTemporaryDirectoryPrefix[] =
 const base::FilePath::CharType kTemporaryDirectoryPattern[] =
     FILE_PATH_LITERAL("DeleteMe*");
 
-#if BUILDFLAG(ARKWEB_WEBSTORAGE)
-#include "arkweb/chromium_ext/storage/browser/database/database_tracker_for_include.cc"
+#if BUILDFLAG(IS_ARKWEB)
+const std::u16string kBaseDatabaseDir =
+    base::UTF8ToUTF16(std::string_view{"/data/storage/el2/base/"});
+const std::u16string divisionStr = base::UTF8ToUTF16(std::string_view{"/"});
+const std::u16string kSuffixStr = base::UTF8ToUTF16(std::string_view{".db"});
 #endif
 
 OriginInfo::OriginInfo()
@@ -344,7 +347,28 @@ base::FilePath DatabaseTracker::GetOriginDirectory(
 #endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
 }
 
-#if !BUILDFLAG(ARKWEB_WEBSTORAGE)
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+base::FilePath DatabaseTracker::GetFullDBFilePath(
+    const std::string& origin_identifier,
+    const std::u16string& database_name,
+    bool suffix) {
+  DCHECK(task_runner_->RunsTasksInCurrentSequence());
+  DCHECK(!origin_identifier.empty());
+  if (!LazyInit()) {
+    return base::FilePath();
+  }
+
+  int64_t id =
+      databases_table_->GetDatabaseID(origin_identifier, database_name);
+  if (id < 0) {
+    return base::FilePath();
+  }
+
+  return GetOriginDirectory(origin_identifier)
+      .AppendASCII((suffix ? base::UTF16ToASCII(database_name + kSuffixStr)
+                           : base::UTF16ToASCII(database_name)));
+}
+#else
 base::FilePath DatabaseTracker::GetFullDBFilePath(
     const std::string& origin_identifier,
     const std::u16string& database_name) {
@@ -361,7 +385,7 @@ base::FilePath DatabaseTracker::GetFullDBFilePath(
   return GetOriginDirectory(origin_identifier)
       .AppendASCII(base::NumberToString(id));
 }
-#endif  // !BUILDFLAG(ARKWEB_WEBSTORAGE)
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
 
 bool DatabaseTracker::GetOriginInfo(const std::string& origin_identifier,
                                     OriginInfo* info) {

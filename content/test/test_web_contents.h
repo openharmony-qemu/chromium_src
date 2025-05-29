@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "base/unguessable_token.h"
@@ -27,7 +28,6 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "third_party/blink/public/mojom/loader/pause_subresource_loading_handle.mojom-forward.h"
 #include "ui/base/page_transition_types.h"
-#include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.h"
 
 class GURL;
 class SkBitmap;

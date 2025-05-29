@@ -309,7 +309,7 @@ class NetExportFileWriterTest : public ::testing::Test {
     // configuration.
     params->initial_proxy_config =
         net::ProxyConfigWithAnnotation::CreateDirect();
-    network_context_ = std::make_unique<network::ArkWebNetworkContextExt>(
+    network_context_ = std::make_unique<network::NetworkContext>(
         network_service_.get(),
         network_context_remote_.BindNewPipeAndPassReceiver(),
         std::move(params));

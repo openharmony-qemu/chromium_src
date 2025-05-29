@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 #include "components/viz/client/frame_eviction_manager.h"
-#include "arkweb/build/features/features.h"
 
 #include <algorithm>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
@@ -18,16 +18,31 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/memory_dump_manager.h"
 #include "build/build_config.h"
-#include "arkweb/build/features/features.h"
 
-#include "arkweb/build/features/features.h"
-#include "arkweb/chromium_ext/components/viz/client/frame_eviction_manager_ext.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_DISCARD_BG_WEBPAGE)
+#include "base/command_line.h"
+#include "base/ohos/sys_info_utils_ext.h"
+#include "content/public/common/content_switches.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/trace_event/trace_event.h"
+#endif
 
 namespace viz {
 namespace {
 
+#if BUILDFLAG(ARKWEB_FLING)
+constexpr int kOhosFramesMax = 10;
+constexpr int kOhosFramesBase = 2;
+constexpr int kPhysicalMemoryBlockSize = 256;
+#endif
+
 const int kModeratePressurePercentage = 50;
 const int kCriticalPressurePercentage = 10;
+#if BUILDFLAG(ARKWEB_PERFORMANCE_DISCARD_BG_WEBPAGE)
+const int kMaxNumberOfSavedFrames = 100000;
+#endif
 
 }  // namespace
 
@@ -148,7 +163,10 @@ FrameEvictionManager::FrameEvictionManager()
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_DISCARD_BG_WEBPAGE)
-  UPDATE_MAX_NUMBER_OF_FRAMES(max_number_of_saved_frames_);
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kMaxNumberOfSavedFrames)) {
+    max_number_of_saved_frames_ = kMaxNumberOfSavedFrames;
+  }
 #endif
 
   // For WebView, we may not have a default task runner.
@@ -200,8 +218,11 @@ void FrameEvictionManager::CullOldUnlockedFrames() {
     size_t old_size = unlocked_frames_.size();
     auto* frame = unlocked_frames_.back().first;
 #if BUILDFLAG(IS_ARKWEB)
-    TRACE_EVENT0("viz", "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked frame because timeout");
-    LOG(INFO) << "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked frame because timeout";
+    TRACE_EVENT0("viz",
+                 "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked "
+                 "frame because timeout");
+    LOG(INFO) << "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked "
+                 "frame because timeout";
 #endif
     frame->EvictCurrentFrame();
     // Should remove self from list. If it's not possible, give up and try again

@@ -106,7 +106,9 @@
 #include "components/viz/service/display/overlay_processor_surface_control.h"
 #endif
 
-#include "arkweb/chromium_ext/components/viz/service/display/skia_renderer_ext.h"
+#if BUILDFLAG(ARKWEB_VULKAN)
+#include "gpu/config/gpu_finch_features.h"
+#endif
 
 namespace viz {
 
@@ -1054,7 +1056,7 @@ void SkiaRenderer::FinishDrawingFrame() {
   TRACE_EVENT0("viz", "SkiaRenderer::FinishDrawingFrame");
   current_canvas_ = nullptr;
 #if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
-  UPDATE_SWAP_BUFFER_RECT(swap_buffer_rect_);
+  swap_buffer_rect_ = current_frame()->damage_rect;
 #else
   swap_buffer_rect_ = current_frame()->root_damage_rect;
 #endif
@@ -1175,15 +1177,22 @@ void SkiaRenderer::SwapBuffers(SwapFrameData swap_frame_data) {
   output_frame.choreographer_vsync_id = swap_frame_data.choreographer_vsync_id;
   output_frame.size = viewport_size_for_swap_buffers();
   output_frame.data.seq = swap_frame_data.seq;
-  output_frame.data.swap_trace_id = swap_frame_data.swap_trace_id;
 #if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
 #if BUILDFLAG(ARKWEB_VULKAN)
-  UPDATE_SWAP_BUFFER_RECT_FOR_VULKAN(rect, swap_buffer_rect_);
-#else
-  swap_buffer_rect_.Intersect(gfx::Rect(surface_size_for_swap_buffers()));
+  if (features::IsUsingVulkan()) {
+    gfx::Rect rect = gfx::Rect(surface_size_for_swap_buffers());
+    rect.set_x(swap_buffer_rect_.x());
+    rect.set_y(swap_buffer_rect_.y());
+    swap_buffer_rect_.Intersect(rect);
+  } else {
 #endif
-      output_frame.sub_buffer_rect = swap_buffer_rect_;
+    swap_buffer_rect_.Intersect(gfx::Rect(surface_size_for_swap_buffers()));
+#if BUILDFLAG(ARKWEB_VULKAN)
+  }
+#endif
+  output_frame.sub_buffer_rect = swap_buffer_rect_;
 #else
+  output_frame.data.swap_trace_id = swap_frame_data.swap_trace_id;
   if (use_partial_swap_) {
     swap_buffer_rect_.Intersect(gfx::Rect(surface_size_for_swap_buffers()));
     output_frame.sub_buffer_rect = swap_buffer_rect_;

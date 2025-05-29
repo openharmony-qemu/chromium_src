@@ -120,7 +120,7 @@ class LayerContextImpl : public cc::LayerTreeHostImplClient,
       const std::vector<TransferableResource>& resources) override;
 #if BUILDFLAG(ARKWEB_WEBGL)
   void SetDeferInvalidationForFastMainFrameFromImpl(
-           bool defer_invalidation_for_fast_main_frame) override {}
+      bool defer_invalidation_for_fast_main_frame) override {}
 #endif
   // mojom::LayerContext:
   void SetVisible(bool visible) override;

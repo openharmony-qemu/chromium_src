@@ -85,10 +85,6 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
   void disable_partial_swap() { use_partial_swap_ = false; }
 #endif
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void SetNativeInnerWeb(bool isInnerWeb);
-#endif
-
   void SetOutputSurfaceClipRect(const gfx::Rect& clip_rect);
   void SetVisible(bool visible);
   void ReallocatedFrameBuffers();

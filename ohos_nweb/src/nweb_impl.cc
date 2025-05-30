@@ -2693,8 +2693,20 @@ void NWebImpl::SetWindowId(uint32_t window_id) {
     WVLOG_E("SetWindowId nweb delegate is null");
     return;
   }
-  nweb_delegate_->SetWindowId(window_id);
+  if (!base::ohos::IsMobileDevice()) {
+    nweb_delegate_->SetWindowId(window_id);
+  }
   inputmethod_handler_->SetWindowIdForIME(window_id);
+}
+
+void NWebImpl::SetFocusWindowId(uint32_t focus_window_id) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("SetFocusWindowId nweb delegate is null");
+    return;
+  }
+  if (base::ohos::IsMobileDevice()) {
+    nweb_delegate_->SetWindowId(focus_window_id);
+  }
 }
 
 void NWebImpl::SetToken(void* token) {

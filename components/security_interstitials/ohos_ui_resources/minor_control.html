@@ -3,53 +3,25 @@
   <head>
     <meta charset="utf-8">
     <meta name="theme-color" content="#fff">
-    <meta name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <link rel="stylesheet" href="minor_control.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="url_trust_list_error.css">
     <script src="../core/common/resources/interstitial_common.js"></script>
     <title>$i18n{title}</title>
     <script type="text/javascript">
-      var policy = parseInt('$i18n{policy}')
-      var FORBIDDEN_POLICY = 3;
       var MIN_GAP = 32;
       var MIN_PADDING_GAP = 48;
       var MIN_WIDTH = 188;
 
-      const SecurityInterstitialCommandId = {
-        CMD_DONT_PROCEED: 0,
-        CMD_PROCEED: 1
-      };
-
-      function sendCommand(cmd) {
-        if (window.certificateErrorPageController) {
-          switch (cmd) {
-            case SecurityInterstitialCommandId.CMD_DONT_PROCEED:
-              certificateErrorPageController.dontProceed();
-              break;
-            case SecurityInterstitialCommandId.CMD_PROCEED:
-              certificateErrorPageController.proceed();
-              break;
-          }
-          return;
-        }
-        window.domAutomationController?.send(cmd);
-      }
-
       function onFillErrorPageHtml() {
-        if (policy == FORBIDDEN_POLICY) {
-          document.getElementById("hw-proceed").style.display = 'none';
+        mainPanel = document.getElementById('main')
+        var ua = navigator.userAgent
+        var isTablet = (ua.search("iphone") == -1) && (ua.search("Mobile") == -1)
+        if (isTablet) {
+          document.body.classList.add("hw-istablet");
+          document.getElementById("hw-not-proceed").style.display = 'none';
+        } else {
+          document.getElementById("hw_not_proceed").style.display = 'none';
         }
-
-        document.body.addEventListener('mousemove', function (event) {
-          if (event.sourceCapabilities && event.sourceCapabilities.firesTouchEvents) {
-            return;
-          }
-          document.body.classList.add('using-mouse');
-        });
-
-        document.body.addEventListener('touchstart', function () {
-          document.body.classList.remove('using-mouse');
-        });
 
         calcViewportSize();
       }
@@ -74,26 +46,26 @@
       function onDontProceed() {
         sendCommand(SecurityInterstitialCommandId.CMD_DONT_PROCEED);
       }
-
-      function onProceed() {
-      }
     </script>
   </head>
   <body>
     <div id="main"></div>
-    <div class="hw_block_page">
+    <div class="hw_block_page" style="direction: $i18n{page_direction};">
       <div class="hw-content--wrap">
         <div class="hw-block-img">
-          <img src="ic_minor_control.png" id="hw_block_img"/>
+          <img src="url_trust_list_error.svg" id="url_trust_block_img" />
         </div>
 
         <div class="hw-block-info">
-          <div class="hw-block-info__body"><p>$i18n{block_info_body}</p></div>
+          <div class="hw-block-info__title"><p>$i18n{block_info_title}</p></div>
         </div>
 
         <div class="hw-block-link">
           <div class="hw-link">
             <a id="hw-not-proceed" href="#" onclick="onDontProceed()">$i18n{dontproceed}</a>
+            <button id="hw_not_proceed" onclick="onDontProceed()">
+                <p><span>$i18n{dontproceed}</span></p>
+            </button>
           </div>
         </div>
       </div>

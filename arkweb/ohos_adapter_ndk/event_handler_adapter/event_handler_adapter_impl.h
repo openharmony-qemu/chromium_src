@@ -48,6 +48,7 @@ public:
 
     void RemoveFileDescriptorListener(int32_t fileDescriptor) override;
 
+    void PostTask(const std::shared_ptr<OnceCallbackAdapter> callback) override;
 private:
     ffrt_loop_t loop_ = nullptr;
     std::unordered_map<int32_t, EventHandlerFDListenerAdapterImpl *> fdListenerMap_;

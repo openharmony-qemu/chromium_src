@@ -46,7 +46,7 @@ import "mojo/public/mojom/base/application_state.mojom";
 import "services/network/public/mojom/ct_log_info.mojom";
 
 // #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-// [EnableIf=arkweb_ex_http_dns_fallback]
+[EnableIf=arkweb_ex_http_dns_fallback]
 import "arkweb/chromium_ext/servieces/network/public/mojom/network_config_ohos.mojom";
 // #endif
 

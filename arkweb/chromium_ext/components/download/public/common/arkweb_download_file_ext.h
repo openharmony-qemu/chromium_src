@@ -21,11 +21,13 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 #include "base/functional/callback_forward.h"
-#include "build/build_config.h"
+#include "components/download/public/common/download_export.h"
 
 class GURL;
 
@@ -36,8 +38,10 @@ namespace download {
 // that the download is 'in progress': once the download has been completed or
 // cancelled, the DownloadFile is destroyed.
 class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadFileExt {
- public:
+public:
   virtual ~ArkWebDownloadFileExt() = default;
+  
+  void test() {}
 
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   virtual void RunCallbackIfDataReady() = 0;

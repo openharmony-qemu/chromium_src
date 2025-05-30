@@ -21,7 +21,7 @@
 
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 
-#include "arkweb/ohos_nweb_ex/third_party/securec/include/securec.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 
 #include <network/netstack/net_ssl/net_ssl_c.h>
 

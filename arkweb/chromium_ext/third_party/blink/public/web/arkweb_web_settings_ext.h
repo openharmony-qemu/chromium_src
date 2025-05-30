@@ -19,7 +19,10 @@
 #include <unicode/uscript.h>
 
 #include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "third_party/blink/public/common/css/navigation_controls.h"
 #include "third_party/blink/public/common/web_preferences/web_preferences.h"
 #include "third_party/blink/public/mojom/v8_cache_options.mojom-forward.h"

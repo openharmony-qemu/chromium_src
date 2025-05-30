@@ -39,9 +39,9 @@
 
 namespace partition_alloc::internal {
 
-#if defined(LINUX_NAME_REGION) || BUILDFLAG(ARKWEB_PER_DFX)
+
 void NameRegion(void* start, size_t length, PageTag page_tag);
-#endif  // defined(LINUX_NAME_REGION)
+
 
 #if PA_BUILDFLAG(IS_APPLE)
 // Tests whether the version of macOS supports the MAP_JIT flag and if the

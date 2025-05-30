@@ -51,7 +51,7 @@ buildargs="
   enable_resource_allowlist_generation=false
   clang_use_chrome_plugins=false
   enable_message_center=true
-  use_sysroot=true
+  use_sysroot=false
   gpu_switch=\"on\"
   proprietary_codecs=true
   enable_remoting=true
@@ -95,19 +95,6 @@ build_hmp=0
 build_type="$1"
 build_component=0
 is_official_build=1
-npm config set registry http://mirrors.tools.huawei.com/npm/
-npm config set @ohpm-test:registry https://cmc.centralrepo.rnd.huawei.com/artifactory/api/npm/product_npm/
-npm config set @ohos:registry https://cmc.centralrepo.rnd.huawei.com/artifactory/api/npm/product_npm/
-npm config set @baize:registry https://cmc.centralrepo.rnd.huawei.com/artifactory/api/npm/product_npm/
-npm config set strict-ssl false
-cat ${HOME}/.npmrc | grep 'lockfile=false' || echo 'lockfile=false' >> ${HOME}/.npmrc
-cp -rf ./src/upper_level/include_vector_patch.py ./
-cp -rf ./src/upper_level/.cloudbuild ./
-cp -rf ./src/upper_level/.codecheck ./
-cp -rf ./src/upper_level/.gclient ./
-cp -rf ./src/upper_level/.gclient_entries ./
-cp -rf ./src/upper_level/.gclient_previous_sync_commits ./
-cp -rf ./src/upper_level/.gcs_entries ./
 if [ -d "${ROOT_DIR}/arkweb/ohos_nweb_ex" ]; then
   with_nweb_ex=1
 fi
@@ -429,10 +416,6 @@ else
     echo -e "Failed to execute build/config_to_gn.py, see errors above."
     exit 1
   fi
-  buildargs="${buildargs}
-    ohos_nweb_ex_config_name=\"//${build_dir}${BUILD_CONFIG_NAME}\"
-    arkweb_ext_dir=\"//arkweb/ohos_nweb_ex\"
-    "
 fi
 
 if ! [ -d "${CUR_DIR}/deps_code" ]; then
@@ -446,14 +429,6 @@ if ! [ -d "${CUR_DIR}/deps_code" ]; then
 fi
 cd src
 source arkweb/build/prepare.sh $build_dir
-
-script_arch="i386"
-if [ "${buildarg_cpu}" = "target_cpu=\"arm64\"" ]; then
-  script_arch="amd64"
-fi
-if ! [ -d "build/linux/debian_bullseye_${script_arch}-sysroot/" ];then
-  python3 build/linux/sysroot_scripts/install-sysroot.py --arch=${script_arch}
-fi
 
 cd cef/tools
 bash ./translator.sh

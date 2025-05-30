@@ -41,7 +41,6 @@
 #include "nweb_console_log_impl.h"
 #include "nweb_context_menu_params_impl.h"
 #include "nweb_controller_handler_impl.h"
-#include "nweb_core_value.h"
 #include "nweb_cursor_info_impl.h"
 #include "nweb_data_resubmission_callback_impl.h"
 #include "nweb_date_time_chooser_impl.h"
@@ -128,7 +127,7 @@
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#include "arkweb/ohos_nweb_ex/third_party/securec/include/securec.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 #endif
 #include "cef/ohos_cef_ext/include/arkweb_frame_ext.h"
 
@@ -149,8 +148,10 @@
 #include "ohos_nweb/src/cef_delegate/nweb_media_player_for_vast.h"
 #include "ohos_nweb/src/video_assistant/nweb_media_player_controller_impl.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
 #include "ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/nweb_safe_browsing_detection_handler.h"
+#endif
 #endif
 
 namespace OHOS::NWeb {
@@ -3837,31 +3838,19 @@ int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
     return 0;
   }  // ets proxy object
 
+  std::vector<std::shared_ptr<NWebValue>> value_vector = ParseCefValueTONWebValue(args, args->GetSize());
   if (!nweb_javascript_callback_) {
     return 1;
   }
 
-  std::shared_ptr<NWebHapValue> hap_result =
-      std::make_shared<NWebCoreValue>(NWebHapValue::Type::NONE);
-  std::vector<std::shared_ptr<NWebHapValue>> hap_value_vector =
-      ParseCefValueToHapValue(args, args->GetSize());
-  nweb_javascript_callback_->GetJavaScriptResultV2(
-      hap_value_vector, method, object_name, routing_id, object_id, hap_result);
-  if (ArkWebGetErrno() != RESULT_OK) {
-    std::vector<std::shared_ptr<NWebValue>> value_vector =
-        ParseCefValueTONWebValue(args, args->GetSize());
-    std::shared_ptr<NWebValue> ark_result =
-        nweb_javascript_callback_->GetJavaScriptResult(
-            value_vector, method, object_name, routing_id, object_id);
-    if (!ark_result) {
+  std::shared_ptr<NWebValue> ark_result =
+      nweb_javascript_callback_->GetJavaScriptResult(value_vector, method, object_name, routing_id, object_id);
+  if (!ark_result) {
       return 1;
-    }
-    ParseNWebValueToValue(ark_result, result);
-    return 0;
   }
-
-  ParseNWebValueToHapValue(hap_result, result);
-  return 0;
+ 
+  ParseNWebValueToValue(ark_result, result);
+  return ark_result->error_;
 }
 
 // flowbuf sketch diagram
@@ -4116,31 +4105,19 @@ int NWebHandlerDelegate::NotifyJavaScriptResultFlowbuf(
     return 0;
   }  // ets proxy object
 
+  std::vector<std::shared_ptr<NWebValue>> value_vector = ParseCefValueTONWebValue(args, args->GetSize());
   if (!nweb_javascript_callback_) {
     return 1;
   }
 
-  std::shared_ptr<NWebHapValue> hap_result =
-      std::make_shared<NWebCoreValue>(NWebHapValue::Type::NONE);
-  std::vector<std::shared_ptr<NWebHapValue>> hap_value_vector =
-      ParseCefValueToHapValue(args, args->GetSize());
-  nweb_javascript_callback_->GetJavaScriptResultFlowbufV2(
-      hap_value_vector, method, object_name, fd, routing_id, object_id,
-      hap_result);
-  if (ArkWebGetErrno() != RESULT_OK) {
-    std::vector<std::shared_ptr<NWebValue>> value_vector =
-        ParseCefValueTONWebValue(args, args->GetSize());
-    std::shared_ptr<NWebValue> ark_result =
-        nweb_javascript_callback_->GetJavaScriptResultFlowbuf(
-            value_vector, method, object_name, fd, routing_id, object_id);
-    if (!ark_result) {
+  std::shared_ptr<NWebValue> ark_result =
+      nweb_javascript_callback_->GetJavaScriptResultFlowbuf(value_vector, method, object_name, fd,routing_id, object_id);
+  if (!ark_result) {
       return 1;
-    }
-    ParseNWebValueToValue(ark_result, result);
-    return 0;
   }
-  ParseNWebValueToHapValue(hap_result, result);
-  return 0;
+ 
+  ParseNWebValueToValue(ark_result, result);
+  return ark_result->error_;
 }
 
 bool NWebHandlerDelegate::HasJavaScriptObjectMethods(
@@ -4180,22 +4157,12 @@ void NWebHandlerDelegate::GetJavaScriptObjectMethods(
     return;
   }
 
-  std::shared_ptr<NWebHapValue> hap_result =
-      std::make_shared<NWebCoreValue>(NWebHapValue::Type::NONE);
-  nweb_javascript_callback_->GetJavaScriptObjectMethodsV2(object_id,
-                                                          hap_result);
-  if (ArkWebGetErrno() != RESULT_OK) {
-    std::shared_ptr<NWebValue> ark_result =
-        nweb_javascript_callback_->GetJavaScriptObjectMethods(object_id);
-    if (!ark_result) {
-      LOG(ERROR)
-          << "NWebHandlerDelegate::GetJavaScriptObjectMethods result is null";
+  std::shared_ptr<NWebValue> ark_result =
+      nweb_javascript_callback_->GetJavaScriptObjectMethods(object_id);
+  if (!ark_result) {
       return;
-    }
-    returned_method_names = ParseNWebValueToValueHelper(ark_result);
-  } else {
-    returned_method_names = ParseHapValueToValueHelper(hap_result);
   }
+  returned_method_names = ParseNWebValueToValueHelper(ark_result);
 }
 
 void NWebHandlerDelegate::RemoveJavaScriptObjectHolder(int32_t holder,
@@ -4662,14 +4629,17 @@ void NWebHandlerDelegate::HandleSafeBrowsingDetection(int detectMode,
   LOG(INFO) << "begin to handle safe browsing detection,"
             << "nweb id is " << nweb_id_ << ",detect mode is " << detectMode
             << ",detect switch is " << detectSwitch;
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   NWebSafeBrowsingDetectionHandler::GetInstance().HandleSafeBrowsingDetection(
       nweb_id_, detectMode, detectSwitch, url);
 #else
   OnSafeBrowsingDetectionResult(-1, -1, "", url);
 #endif
+#endif
 }
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
 void NWebHandlerDelegate::OnSafeBrowsingDetectionResult(
     int code,
@@ -4686,11 +4656,14 @@ void NWebHandlerDelegate::OnSafeBrowsingDetectionResult(
                                                        mappingType, url);
 }
 #endif
+#endif
 
 void NWebHandlerDelegate::SetSafeBrowsingDetectionCallback(
     CefRefPtr<CefSafeBrowsingDetectionCallback> callback) {
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   safe_browsing_detection_callback_ = callback;
+#endif
 #endif
 }
 

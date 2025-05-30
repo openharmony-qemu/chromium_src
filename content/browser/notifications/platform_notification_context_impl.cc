@@ -3,7 +3,11 @@
 // found in the LICENSE file.
 
 #include "arkweb/chromium_ext/content/browser/notifications/blink_notification_service_impl_ext.h"
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "content/browser/notifications/platform_notification_context_impl.h"
 
 #include <set>

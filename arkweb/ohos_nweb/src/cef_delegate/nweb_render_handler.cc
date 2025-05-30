@@ -26,7 +26,6 @@
 #include "content/public/common/content_switches.h"
 #include "nweb_delegate_interface.h"
 #include "nweb_gesture_event_result_impl.h"
-#include "nweb_mouse_event_result_impl.h"
 #include "nweb_touch_handle_hot_zone_impl.h"
 #include "nweb_touch_handle_state_impl.h"
 #include "ohos_adapter_helper.h"
@@ -269,110 +268,6 @@ class NWebNativeEmbedTouchEventImpl : public NWebNativeEmbedTouchEvent {
   float screenY_ = 0;
   TouchType type_ = TouchType::DOWN;
   std::shared_ptr<NWebGestureEventResult> result_;
-};
-
-class NWebNativeEmbedMouseEventImpl : public NWebNativeEmbedMouseEvent {
- public:
-  NWebNativeEmbedMouseEventImpl() = default;
-  ~NWebNativeEmbedMouseEventImpl() = default;
-
-  float GetX() override {
-    return x_;
-  }
-
-  void SetX(float x) {
-    x_ = x;
-  }
-
-  float GetY() override {
-    return y_;
-  }
-
-  void SetY(float y) {
-    y_ = y;
-  }
-
-  bool IsHitNativeArea() override {
-    return isHitNativeArea_;
-  }
-
-  void SetIsHitNativeArea(bool isHitNativeArea) {
-    isHitNativeArea_ = isHitNativeArea;
-  }
-
-  MouseType GetType() override {
-    return type_;
-  }
-
-  void SetType(MouseType type) {
-    type_ = type;
-  }
-
-  MouseButton GetButton() override {
-    return button_;
-  }
-
-  void SetButton(MouseButton button) {
-    button_ = button;
-  }
-
-  float GetOffsetX() override {
-    return offsetX_;
-  }
-
-  void SetOffsetX(float offsetX) {
-    offsetX_ = offsetX;
-  }
-
-  float GetOffsetY() override {
-    return offsetY_;
-  }
-
-  void SetOffsetY(float offsetY) {
-    offsetY_ = offsetY;
-  }
-
-  float GetScreenX() override {
-    return screenX_;
-  }
-
-  void SetScreenX(float screenX) {
-    screenX_ = screenX;
-  }
-
-  float GetScreenY() override {
-    return screenY_;
-  }
-
-  void SetScreenY(float screenY) {
-    screenY_ = screenY;
-  }
-
-  std::string GetEmbedId() override {
-    return embedId_;
-  }
-
-  void SetEmbedId(const std::string &embedId) {
-    embedId_ = embedId;
-  }
-
-  std::shared_ptr<NWebMouseEventResult> GetResult() override { return result_;}
-  void SetResult(const std::shared_ptr<NWebMouseEventResult> result) {
-    result_ = result;
-  }
-
- private:
-  std::string embedId_;
-  bool isHitNativeArea_ = false;
-  float x_ = 0;
-  float y_ = 0;
-  float offsetX_ = 0;
-  float offsetY_ = 0;
-  float screenX_ = 0;
-  float screenY_ = 0;
-  MouseType type_ = MouseType::PRESS;
-  MouseButton button_ = MouseButton::NONE_BUTTON;
-  std::shared_ptr<NWebMouseEventResult> result_;
 };
 
 // static
@@ -1269,30 +1164,6 @@ void NWebRenderHandler::OnNativeEmbedGestureEvent(
 
     info->SetResult(result);
     handler->OnNativeEmbedGestureEvent(info);
-  }
-}
-
-void NWebRenderHandler::OnNativeEmbedMouseEvent(
-    CefRefPtr<CefBrowser> browser,
-    const CefEmbedMouseEvent& mouseEvent,
-    CefRefPtr<CefMouseEventCallback> callback) {
-  if (auto handler = handler_.lock()) {
-    std::shared_ptr<NWebNativeEmbedMouseEventImpl> info =
-        std::make_shared<NWebNativeEmbedMouseEventImpl>();
-    info->SetX(mouseEvent.x);
-    info->SetY(mouseEvent.y);
-    info->SetEmbedId(mouseEvent.embedId);
-    info->SetIsHitNativeArea(mouseEvent.isHitNativeArea);
-    info->SetOffsetX(mouseEvent.offsetX);
-    info->SetOffsetY(mouseEvent.offsetY);
-    info->SetScreenX(mouseEvent.screenX);
-    info->SetScreenY(mouseEvent.screenY);
-    info->SetType(static_cast<OHOS::NWeb::MouseType>(mouseEvent.type));
-    info->SetButton(static_cast<OHOS::NWeb::MouseButton>(mouseEvent.button));
-    std::shared_ptr<NWebMouseEventResult> result = std::make_shared<NWebMouseEventResultImpl>(callback);
-
-    info->SetResult(result);
-    handler->OnNativeEmbedMouseEvent(info);
   }
 }
 

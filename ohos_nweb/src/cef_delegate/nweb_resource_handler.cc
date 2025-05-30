@@ -307,7 +307,7 @@ void NWebResourceHandler::GetResponseHeaders(CefRefPtr<CefResponse> response,
 #endif
 }
 
-const std::string& NWebResourceHandler::GetResponseData() {
+const std::string NWebResourceHandler::GetResponseData() {
   if (response_ == nullptr || response_->ResponseDataType() != NWebResponseDataType::NWEB_STRING_TYPE) {
     static const std::string data;
     return data;

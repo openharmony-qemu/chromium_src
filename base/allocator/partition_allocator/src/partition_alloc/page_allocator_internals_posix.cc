@@ -121,7 +121,7 @@ int GetAccessFlags(PageAccessibilityConfiguration accessibility)
 }
 #endif
 
-#if defined(LINUX_NAME_REGION) || defined(ARKWEB_PER_DFX)
+
 
 void NameRegion(void* start, size_t length, PageTag page_tag) {
   // Important: All the names should be string literals. As per prctl.h in
@@ -152,10 +152,11 @@ void NameRegion(void* start, size_t length, PageTag page_tag) {
   }
 
   // No error checking on purpose, testing only.
-  prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, start, length, name);
+  // todo
+  // prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, start, length, name);
+  prctl(0x53564d41, 0, start, length, name);
 }
 
-#endif  // defined(LINUX_NAME_REGION)
 
 #if PA_BUILDFLAG(IS_MAC)
 // Tests whether the version of macOS supports the MAP_JIT flag and if the

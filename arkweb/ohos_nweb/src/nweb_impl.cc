@@ -1762,15 +1762,6 @@ void NWebImpl::PostPortMessage(const std::string& portHandle,
   nweb_delegate_->PostPortMessage(portHandle, data);
 }
 
-void NWebImpl::PostPortMessageV2(const std::string& portHandle,
-                                 std::shared_ptr<NWebRomValue> data) {
-  if (nweb_delegate_ == nullptr) {
-    WVLOG_E("JSAPI nweb_delegate_ its null");
-    return;
-  }
-  nweb_delegate_->PostPortMessageV2(portHandle, data);
-}
-
 void NWebImpl::SetPortMessageCallback(
     const std::string& portHandle,
     std::shared_ptr<NWebMessageValueCallback> callback) {
@@ -1798,15 +1789,6 @@ void NWebImpl::FillAutofillData(std::shared_ptr<NWebMessage> data) {
     return;
   }
   nweb_delegate_->FillAutofillData(data);
-}
-
-void NWebImpl::FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) {
-  LOG(INFO) << "NWebImpl::FillAutofillDataV2";
-  if (nweb_delegate_ == nullptr) {
-    WVLOG_E("JSAPI nweb_delegate_ its null");
-    return;
-  }
-  nweb_delegate_->FillAutofillDataV2(data);
 }
 
 void NWebImpl::OnAutofillCancel(const std::string& fillContent) {
@@ -2126,19 +2108,6 @@ void NWebImpl::CallH5Function(
   }
   nweb_delegate_->CallH5Function(routing_id, h5_object_id, h5_method_name,
                                  args);
-}
-
-void NWebImpl::CallH5FunctionV2(
-    int32_t routing_id,
-    int32_t h5_object_id,
-    const std::string& h5_method_name,
-    const std::vector<std::shared_ptr<NWebRomValue>>& args) {
-  if (nweb_delegate_ == nullptr || h5_object_id < 0) {
-    WVLOG_E("fail to call h5 function");
-    return;
-  }
-  nweb_delegate_->CallH5FunctionV2(routing_id, h5_object_id, h5_method_name,
-                                   args);
 }
 
 void NWebImpl::SetNWebJavaScriptResultCallBack(
@@ -4742,24 +4711,6 @@ bool NWebImpl::WebPageSnapshot(const char* id,
   }
   return nweb_delegate_->WebPageSnapshot(id, type, width, height, callback);
 }
-
-bool NWebImpl::WebPageSnapshotV2(const char* id,
-                                 PixelUnit type,
-                                 int width,
-                                 int height,
-                                 std::shared_ptr<NWebSnapshotCallback> callback) {
-  if (nweb_delegate_ == nullptr) {
-    WVLOG_E("WebPageSnapshotV2 failed, nweb delegate is nullptr");
-    return false;
-  }
-  return nweb_delegate_->WebPageSnapshot(
-    id, type, width, height,
-    [callback](const char* id, bool state, float radio, void* data, int width,
-               int height) {
-      WVLOG_I("WebPageSnapshotV2 result return to OH");
-      callback->OnSnapshotResult(id, state, radio, data, width, height);
-    });
-}
 #endif
 
 #ifdef BUILDFLAG(IS_OHOS)
@@ -5361,6 +5312,7 @@ void NWebImpl::RegisterNativeJavaScriptProxy(const std::string& objName,
   }
   return ;
 }
+#endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool NWebImpl::SetFocusByPosition(float x, float y) {

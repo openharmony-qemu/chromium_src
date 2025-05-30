@@ -320,8 +320,8 @@ class CONTENT_EXPORT RenderWidgetHostView {
   // Returns true if this widget is a HTML popup, e.g. a <select> menu.
   virtual bool IsHTMLFormPopup() const = 0;
 
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  virtual int GetTopControlsOffset() const = 0;
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS) || BUILDFLAG(ARKWEB_EX_TOPCONTROLS)
+  virtual int GetTopControlsOffset() const {return 0;}
 #endif
 };
 

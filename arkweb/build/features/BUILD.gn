@@ -200,7 +200,7 @@ if (!enable_arkweb) {
   arkweb_post_url = false
   arkweb_prefs = false
   arkweb_print = false
-  arkweb_prp_preload = false
+  arkweb_prp_preload = true
   arkweb_render_remove_binder = true
   arkweb_renderer_anr_dump = false
   arkweb_render_process_mode = true
@@ -354,6 +354,7 @@ buildflag_header("features") {
     "ARKWEB_ENABLE_WISEPLAY=$arkweb_enable_wiseplay",
     "ARKWEB_ENCRYPT=$arkweb_encrypt",
     "ARKWEB_EX_DOWNLOAD=$arkweb_ex_download",
+    "ARKWEB_EXT_DOWNLOAD=$arkweb_ext_download",
     "ARKWEB_EX_NETWORK_CONNECTION=$arkweb_ex_network_connection",
     "ARKWEB_FAVICON=$arkweb_favicon",
     "ARKWEB_FCP=$arkweb_fcp",
@@ -516,20 +517,23 @@ buildflag_header("features") {
     "ARKWEB_CANVAS_COMMIT=$arkweb_canvas_commit",
     "ARKWEB_PIP=$arkweb_pip",
     "ARKWEB_IMMEDIATE_DESTORY=$arkweb_immediate_destory",
-    "ARKWEB_CWND=$arkweb_cwnd"
+    "ARKWEB_CWND=$arkweb_cwnd",
     "ARKWEB_PULL_TO_REFRESH=$arkweb_pull_to_refresh",
     "ARKWEB_EX_HTTP_DNS_FALLBACK=$arkweb_ex_http_dns_fallback",
-
+    "ARKWEB_EXT_FILE_ACCESS=$arkweb_ext_file_access",
+    "ARKWEB_EXT_NETWORK_CONNECTION=$arkweb_ext_network_connection",
+    "ARKWEB_EXT_HTTP_DNS_FALLBACK=$arkweb_ext_http_dns_fallback",
+    "ARKWEB_EXT_PASSWORD=$arkweb_ext_password",
+    "ARKWEB_EX_FREE_COPY=$arkweb_ex_free_copy",
+    
     # ARKWEB_EXT dafault value
     "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",
     "ARKWEB_EXT_COOKIE_JS_SETTINGS=false",
-    "ARKWEB_EXT_DOWNLOAD=false",
     "ARKWEB_EXT_ERROR_PAGE=false",
     "ARKWEB_EXT_EXCEPTION_LIST=false",
     "ARKWEB_EXT_FORCE_ZOOM=false",
     "ARKWEB_EXT_FREE_COPY=false",
     "ARKWEB_EXT_GET_ZOOM_LEVEL=false",
-    "ARKWEB_EXT_PASSWORD=false",
     "ARKWEB_EXT_PERMISSION=false",
     "ARKWEB_EXT_TOPCONTROLS=false",
     "ARKWEB_EXT_UA=false",

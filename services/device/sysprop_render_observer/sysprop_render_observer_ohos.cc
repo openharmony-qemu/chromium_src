@@ -93,7 +93,8 @@ class SysPropRenderObserverOhosImpl
     trace_callback_ = std::make_unique<SysPropTraceEventCallback>(this);
     dump_callback_ = std::make_unique<SysPropDumpEventCallback>(this);
     auto& sysproprenderClient = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance();
-    sysproprenderClient.AttachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_HITRACE_ENABLEFLAGS,
+    //sysproprenderClient.AttachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_HITRACE_ENABLEFLAGS,
+    sysproprenderClient.AttachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_DEBUG_TRACE,
                                               trace_callback_.get());
     sysproprenderClient.AttachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_RENDER_DUMP,
                                               dump_callback_.get());

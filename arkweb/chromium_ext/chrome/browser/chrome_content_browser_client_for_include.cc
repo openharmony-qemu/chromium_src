@@ -14,7 +14,9 @@
  */
 
 #include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "cef/ohos_cef_ext/libcef/browser/net_service/net_helpers.h"
 #include "content/public/browser/shared_cors_origin_access_list.h"
 

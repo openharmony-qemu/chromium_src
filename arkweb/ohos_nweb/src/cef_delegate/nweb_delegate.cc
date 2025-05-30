@@ -104,9 +104,6 @@
 #include "ui/base/resource/resource_bundle.h"
 #endif // BUILDFLAG(ARKWEB_AI)
 
-#include "nweb_core_value.h"
-#include "ohos_glue/base/include/ark_web_errno.h"
-
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -224,18 +221,9 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
         callbackId_(callbackId),
         weakNWebDelegate_(std::weak_ptr<NWebDelegateInterface>(delegate)) {}
   ~JavaScriptResultCallbackImpl() {}
-  void CallbackOnReceiveThread(CefRefPtr<CefValue> result) {
-    auto data =
-        std::make_shared<OHOS::NWeb::NWebCoreValue>(NWebHapValue::Type::NONE);
-    AddNWebValueCefV2(result, data);
+  void CallbackOnReceiveThread(std::shared_ptr<OHOS::NWeb::NWebMessage> data) {
     if (callback_) {
-      callback_->OnReceiveValueV2(data);
-      if (ArkWebGetErrno() != RESULT_OK) {
-        auto data2 =
-            std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
-        ConvertCefValueToNWebMessage(result, data2);
-        callback_->OnReceiveValue(data2);
-      }
+      callback_->OnReceiveValue(data);
     }
     if (weakNWebDelegate_.expired()) {
       LOG(INFO) << "weakNWebDelegate_ expired";
@@ -253,12 +241,14 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
 
   void OnJavaScriptExeResult(CefRefPtr<CefValue> result) override {
     if (callback_ != nullptr) {
+      auto data=std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
+      ConvertCefValueToNWebMessage(result, data);
       base::ThreadPool::PostTask(
           FROM_HERE, {base::MayBlock(), base::TaskPriority::HIGHEST},
           base::BindOnce(
               base::IgnoreResult(
                   &JavaScriptResultCallbackImpl::CallbackOnReceiveThread),
-              base::Unretained(this), result));
+              base::Unretained(this), data));
     }
   }
 
@@ -277,35 +267,19 @@ class CefWebMessageReceiverImpl : public CefWebMessageReceiver {
   void OnMessage(CefRefPtr<CefValue> message) override {
     LOG(DEBUG) << "OnMessage in nweb delegate";
     if (callback_ != nullptr) {
-      auto data =
-          std::make_shared<OHOS::NWeb::NWebCoreValue>(NWebHapValue::Type::NONE);
-      AddNWebValueCefV2(message, data);
-      callback_->OnReceiveValueV2(data);
-      if (ArkWebGetErrno() != RESULT_OK) {
-        auto data2 =
-            std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
-        ConvertCefValueToNWebMessage(message, data2);
-        callback_->OnReceiveValue(data2);
-      }
+        auto data = std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
+        ConvertCefValueToNWebMessage(message, data);
+        callback_->OnReceiveValue(data);
     }
   }
 
   bool OnMessageWithBoolResult(CefRefPtr<CefValue> message) override {
     LOG(DEBUG) << "OnMessageWithBoolResult in nweb delegate";
     if (callback_ != nullptr) {
-      auto data =
-          std::make_shared<OHOS::NWeb::NWebCoreValue>(NWebHapValue::Type::NONE);
-      AddNWebValueCefV2(message, data);
-      callback_->OnReceiveValueV2(data);
-      if (ArkWebGetErrno() != RESULT_OK) {
-        auto data2 =
-            std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
-        ConvertCefValueToNWebMessage(message, data2);
-        callback_->OnReceiveValue(data2);
-        return (data2 && data2->IsBoolean()) ? data2->GetBoolean() : false;
-      }
-
-      return (data && data->GetType() == NWebHapValue::Type::BOOLEAN) ? data->GetBool() : false;
+        auto data = std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
+        ConvertCefValueToNWebMessage(message, data);
+        callback_->OnReceiveValue(data);
+        return (data && data->IsBoolean()) ? data->GetBoolean() : false;
     }
     return false;
   }
@@ -385,14 +359,9 @@ class CefPrecompileCallbackImpl : public CefPrecompileCallback {
 
   void OnPrecompileFinished(int32_t result) override {
     if (callback_ != nullptr) {
-      auto message = std::make_shared<OHOS::NWeb::NWebCoreValue>(NWebHapValue::Type::INTEGER);
-      message->SetInt(result);
-      callback_->OnReceiveValueV2(message);
-      if (ArkWebGetErrno() != RESULT_OK) {
-        auto message2 = std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::INTEGER);
-        message2->SetInt64(result);
-        callback_->OnReceiveValue(message2);
-      }
+        auto message = std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::INTEGER);
+        message->SetInt64(result);
+        callback_->OnReceiveValue(message);
     }
   }
 
@@ -1764,15 +1733,6 @@ void NWebDelegate::FillAutofillData(std::shared_ptr<NWebMessage> data) {
   GetBrowser()->GetHost()->FillAutofillData(message);
 }
 
-void NWebDelegate::FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) {
-  if (!GetBrowser().get()) {
-    return;
-  }
-
-  CefRefPtr<CefValue> message = ParseRomValueToValueHelper(data);
-  GetBrowser()->GetHost()->FillAutofillData(message);
-}
-
 void NWebDelegate::OnContinue() {
   LOG(DEBUG) << "NWebDelegate::OnContinue, nweb_id = " << nweb_id_;
   if (!GetBrowser().get()) {
@@ -2137,21 +2097,6 @@ void NWebDelegate::PostPortMessage(const std::string& portHandle,
   LOG(DEBUG) << "JSAPI PostPortMessage in nweb delegate";
   CefRefPtr<CefValue> message = CefValue::Create();
   ConvertNWebMsgToCefValue(data, message);
-
-  GetBrowser()->GetHost()->PostPortMessage(handleCef, message);
-}
-
-void NWebDelegate::PostPortMessageV2(const std::string& portHandle,
-                                   std::shared_ptr<NWebRomValue> data) {
-  if (!GetBrowser().get()) {
-    LOG(ERROR) << "JSAPI PostPortMessageV2 can not get browser";
-    return;
-  }
-  CefString handleCef;
-  handleCef.FromString(portHandle);
-
-  LOG(DEBUG) << "JSAPI PostPortMessageV2 in nweb delegate";
-  CefRefPtr<CefValue> message = ParseRomValueToValueHelper(data);
 
   GetBrowser()->GetHost()->PostPortMessage(handleCef, message);
 }
@@ -2698,29 +2643,6 @@ void NWebDelegate::CallH5Function(
   std::vector<CefRefPtr<CefValue>> cef_args;
   for (auto& item : args) {
     cef_args.push_back(ParseNWebValueToValueHelper(item));
-  }
-
-  CefString name(h5_method_name);
-  if (GetBrowser()->GetHost()) {
-    GetBrowser()->GetHost()->CallH5Function(routing_id, h5_object_id, name,
-                                            cef_args);
-  }
-}
-
-void NWebDelegate::CallH5FunctionV2(
-    int32_t routing_id,
-    int32_t h5_object_id,
-    const std::string& h5_method_name,
-    const std::vector<std::shared_ptr<NWebRomValue>>& args) const {
-  if (!GetBrowser()) {
-    LOG(ERROR) << "NWebDelegate::CallH5Function fail due to "
-                  "GetBrowser() return null";
-    return;
-  }
-
-  std::vector<CefRefPtr<CefValue>> cef_args;
-  for (auto& item : args) {
-    cef_args.push_back(ParseRomValueToValueHelper(item));
   }
 
   CefString name(h5_method_name);

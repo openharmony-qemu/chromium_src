@@ -9,7 +9,10 @@
 #define NET_URL_REQUEST_URL_REQUEST_CONTEXT_EXT_H_
 
 #include "net/url_request/url_request_context.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/threading/thread_checker.h"

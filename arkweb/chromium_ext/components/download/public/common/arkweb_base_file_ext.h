@@ -23,8 +23,12 @@
 #include <string>
 
 #endif
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
+
 #include "base/check.h"
 #include "base/files/file.h"
 #include "base/files/file_path.h"
@@ -65,15 +69,14 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebBaseFileExt : public BaseFile {
 
   ArkWebBaseFileExt* AsArkWebBaseFileExt() override { return this; }
 
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+
   bool ReadDataFromFile(int64_t offset,
                         char* data,
                         size_t data_len,
                         const base::FilePath& file_path);
   base::FilePath GetSaveDirectory(const base::FilePath& default_directory);
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 #endif
 };
 
 }  // namespace download
-
-#endif  // COMPONENTS_ARKWEB_DOWNLOAD_PUBLIC_COMMON_BASE_FILE_EXT_H_

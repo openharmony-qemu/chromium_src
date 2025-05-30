@@ -400,6 +400,7 @@ class NWebImpl : public NWeb {
 
 #if BUILDFLAG(IS_OHOS)
   void SetWindowId(uint32_t window_id) override;
+  void SetFocusWindowId(uint32_t focus_window_id) override;
   void SetToken(void* token) override;
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
   void SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) override;

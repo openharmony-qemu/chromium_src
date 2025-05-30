@@ -46,10 +46,10 @@ NativeEmbedInfo::~NativeEmbedInfo() = default;
 
 std::ostream& operator<<(std::ostream& out, const NativeEmbedInfo& info) {
   out << "[NativeEmbed] native embed id: " << info.native_embed_id
-      << ", url: " << info.url.path()
+      << ", url: *"
       << ", embed element id: " << info.embed_element_id
       << ", native type: " << info.native_type
-      << ", native source: " << info.native_source
+      << ", native source: *"
       << ", tag: " << info.tag
       << ", native rect: " << info.rect.ToString();
   return out;

@@ -4898,12 +4898,12 @@ void WebContentsImpl::OnNativeEmbedStatusUpdate(
     LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
               << " state is " << (int)state << ", "
               << native_embed_info
-              << ", params: " << param_list;
+              << ", params: *";
 #ifdef OHOS_LOGGER_REPORT
     LOG_FEEDBACK(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
              << " state is " << (int)state << ", "
              << native_embed_info
-             << ", params: " << param_list;
+             << ", params: *";
 #endif
   }
 

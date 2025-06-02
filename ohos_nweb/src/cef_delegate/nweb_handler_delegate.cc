@@ -927,6 +927,15 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
       }
     }
 #endif // OHOS_VIDEO_ASSISTANT
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+    if (screen_capture_cb_) {
+      if (main_browser_ && main_browser_->GetHost()) {
+        LOG(INFO) << "nweb handler delegate register screen capture callback";
+        main_browser_->GetHost()->SetNWebId(GetNWebId());
+        main_browser_->GetHost()->RegisterScreenCaptureDelegateListener(screen_capture_cb_);
+      }
+    }
+#endif // OHOS_EX_SCREEN_CAPTURE
     return;
   }
 #endif  // defined(OHOS_MULTI_WINDOW)
@@ -4110,5 +4119,13 @@ void NWebHandlerDelegate::OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
   }
 }
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+void NWebHandlerDelegate::RegisterScreenCaptureDelegateListener(
+    CefRefPtr<CefScreenCaptureCallback> screen_capture_cb) {
+  LOG(INFO) << "NWebHandlerDelegate RegisterScreenCaptureDelegateListener enter";
+  screen_capture_cb_ = screen_capture_cb;
+}
+#endif // OHOS_EX_SCREEN_CAPTURE
 
 }  // namespace OHOS::NWeb

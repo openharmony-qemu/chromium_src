@@ -12,7 +12,9 @@
 #include <utility>
 
 #include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/debug/crash_logging.h"

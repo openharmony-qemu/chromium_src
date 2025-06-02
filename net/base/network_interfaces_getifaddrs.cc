@@ -300,5 +300,3 @@ std::string GetWifiSSID() {
   return std::string();
 }
 #endif
-
-}  // namespace net

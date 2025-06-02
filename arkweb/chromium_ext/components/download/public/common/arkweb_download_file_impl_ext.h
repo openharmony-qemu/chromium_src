@@ -39,6 +39,7 @@
 #include "components/download/public/common/base_file.h"
 #include "components/download/public/common/download_file.h"
 #include "components/download/public/common/download_item.h"
+#include "components/download/public/common/download_file_impl.h"
 #include "components/download/public/common/download_save_info.h"
 #include "components/download/public/common/rate_estimator.h"
 #include "components/enterprise/buildflags/buildflags.h"

@@ -8,7 +8,11 @@
 #include <utility>
 
 #include "arkweb/chromium_ext/content/browser/notifications/blink_notification_service_impl_ext.h"
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/check_op.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"

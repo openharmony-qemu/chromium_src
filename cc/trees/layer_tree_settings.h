@@ -18,6 +18,8 @@
 #include "components/viz/common/display/renderer_settings.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "ui/gfx/geometry/size.h"
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
 
 namespace cc {
 

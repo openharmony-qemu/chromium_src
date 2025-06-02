@@ -1572,9 +1572,14 @@ mojom("mojom") {
     }
   }
 
-  if (is_arkweb) {
+  if (is_arkweb && arkweb_ex_network_connection) {
     enabled_features += [
       "arkweb_ex_network_connection",
+    ]
+  }
+  
+  if (is_arkweb && arkweb_ex_http_dns_fallback) {
+    enabled_features += [
       "arkweb_ex_http_dns_fallback",
     ]
   }

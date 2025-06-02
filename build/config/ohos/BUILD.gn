@@ -120,7 +120,7 @@ config("compiler") {
 
   if (use_musl) {
     cflags += [ "--target=$abi_target" ]
-    include_dirs = [ "$ohos_toolchain_root/include/c++/v1" ]
+    include_dirs = [ ]
     if (current_cpu == "x64") {
       if (arkweb_asan) {
         include_dirs +=

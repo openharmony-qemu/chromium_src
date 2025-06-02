@@ -28,7 +28,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <dlfcn.h>
-#include "securec.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 
 #ifndef EOK

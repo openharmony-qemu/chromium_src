@@ -15,7 +15,10 @@
 #include "arkweb/chromium_ext/third_party/blink/public/common/context_menu_data/context_menu_params_builder_utils.h"
 
 #include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "third_party/blink/public/common/context_menu_data/context_menu_data.h"
 #include "third_party/blink/public/common/context_menu_data/untrustworthy_context_menu_params.h"
 #include "third_party/blink/public/mojom/context_menu/context_menu.mojom.h"

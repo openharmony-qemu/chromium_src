@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 #include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/compiler_specific.h"
 #include "base/debug/alias.h"
 #include "base/memory/ptr_util.h"

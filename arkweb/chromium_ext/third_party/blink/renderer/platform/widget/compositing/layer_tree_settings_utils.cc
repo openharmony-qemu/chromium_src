@@ -181,7 +181,9 @@ void SetEnableDeleteUnusedResourcesDelay(cc::LayerTreeSettings& settings)
     bool excludable_devices =
         base::ohos::IsTabletDevice() || base::ohos::IsPcDevice();
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
     settings.enable_delete_unused_resources_delay = !excludable_devices;
+#endif
   }
 }
 }  // namespace blink

@@ -20,7 +20,6 @@
 
 #include "nweb_value_callback.h"
 #include "nweb_web_message.h"
-#include "nweb_hap_value.h"
 
 namespace OHOS::NWeb {
 class ArkWebNativeJavaScriptExecuteCallback : public NWebMessageValueCallback {
@@ -31,7 +30,6 @@ class ArkWebNativeJavaScriptExecuteCallback : public NWebMessageValueCallback {
       : callback_(callback) {}
   ~ArkWebNativeJavaScriptExecuteCallback() override = default;
   void OnReceiveValue(std::shared_ptr<NWebMessage> result) override;
-  void OnReceiveValueV2(std::shared_ptr<NWebHapValue> result) override;
 
  private:
   JSExecuteFunc callback_ = nullptr;

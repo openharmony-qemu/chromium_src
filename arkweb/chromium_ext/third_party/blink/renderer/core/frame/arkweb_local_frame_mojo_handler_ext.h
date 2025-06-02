@@ -6,7 +6,10 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_ARKWEB_LOCAL_FRAME_MOJO_HANDLER_EXT_H_
 
 #include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "build/build_config.h"
 #include "cc/input/browser_controls_offset_tags_info.h"
 #include "third_party/blink/public/common/tokens/tokens.h"

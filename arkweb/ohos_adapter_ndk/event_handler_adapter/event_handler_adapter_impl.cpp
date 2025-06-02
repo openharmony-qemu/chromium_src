@@ -87,4 +87,8 @@ void EventHandlerAdapterImpl::RemoveFileDescriptorListener(int32_t fileDescripto
         fdListenerMap_.erase(it);
     }
 }
+
+void EventHandlerAdapterImpl::PostTask(const std::shared_ptr<OnceCallbackAdapter> callback){
+}
+
 } // namespace OHOS::NWeb

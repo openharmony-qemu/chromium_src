@@ -60,7 +60,8 @@ declare_args() {
   arkweb_enable_wiseplay = true
   arkweb_encrypt = true
   arkweb_ex_download = true
-  arkweb_ex_network_connection = true
+  arkweb_ext_download = true
+  arkweb_ex_network_connection = false
   arkweb_favicon = true
   arkweb_fcp = true
   arkweb_fido = true
@@ -219,13 +220,18 @@ declare_args() {
   arkweb_notification = true
   arkweb_vulkan = true
   arkweb_pull_to_refresh = true
-  arkweb_ex_http_dns_fallback = true
+  arkweb_ex_http_dns_fallback = false
   arkweb_d_vsync = true
   arkweb_screen_offset = true
   arkweb_canvas_commit = true
   arkweb_pip = true
   arkweb_immediate_destory = true
   arkweb_cwnd = true
+  arkweb_ext_file_access=false
+  arkweb_ext_network_connection=false
+  arkweb_ext_http_dns_fallback=false
+  arkweb_ext_password=false
+  arkweb_ex_free_copy=false
 }
 
 # Features enabled in mojom bindings.

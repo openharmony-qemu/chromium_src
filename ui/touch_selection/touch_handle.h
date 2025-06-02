@@ -7,7 +7,11 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "ui/events/velocity_tracker/motion_event.h"

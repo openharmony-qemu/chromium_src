@@ -14,7 +14,10 @@
 
 set -e
 
-WORK_SPACE=$(cd $(dirname $0); pwd)
+base_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+WORK_SPACE=${base_dir}/../../
+cd ${WORK_SPACE}
+echo "start prepare, workspace: ${WORK_SPACE}"
 
 OHOS_GLUE_DIR=${WORK_SPACE}/ohos_glue
 OHOS_GLUE_REVISION=${WORK_SPACE}/ohos_glue/Revision.txt

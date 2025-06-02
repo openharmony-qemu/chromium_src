@@ -34,7 +34,7 @@
 #include "third_party/blink/renderer/core/frame/settings.h"
 #include "third_party/blink/public/web/web_settings.h"
 
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS) || BUILDFLAG(ARKWEB_SCROLLBAR)
 #include "third_party/blink/renderer/core/frame/browser_controls.h"
 #endif
 

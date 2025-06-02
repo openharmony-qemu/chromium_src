@@ -97,10 +97,6 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (std::shared_ptr<NWebMessage> data),
               (override));
   MOCK_METHOD(void,
-              FillAutofillDataV2,
-              (std::shared_ptr<NWebRomValue> data),
-              (override));
-  MOCK_METHOD(void,
               ExecuteCreatePDFExt,
               (std::shared_ptr<NWebPDFConfigArgs> pdfConfig,
                std::shared_ptr<NWebArrayBufferValueCallback> callback),
@@ -385,13 +381,6 @@ class MockNWebDelegate : public NWebDelegateInterface {
                const std::vector<std::shared_ptr<NWebValue>>& args),
               (override, const));
 
-  MOCK_METHOD(void,
-              CallH5FunctionV2,
-              (int32_t routing_id,
-               int32_t h5_object_id,
-               const std::string& h5_method_name,
-               const std::vector<std::shared_ptr<NWebRomValue>>& args),
-              (override, const));
 
   MOCK_METHOD(bool, Discard, (), (override));
   MOCK_METHOD(bool, Restore, (), (override));
@@ -451,12 +440,6 @@ class MockNWebDelegate : public NWebDelegateInterface {
               PostPortMessage,
               (const std::string& portHandle,
                std::shared_ptr<NWebMessage> data),
-              (override));
-
-  MOCK_METHOD(void,
-              PostPortMessageV2,
-              (const std::string& portHandle,
-               std::shared_ptr<NWebRomValue> data),
               (override));
 
   MOCK_METHOD(void,

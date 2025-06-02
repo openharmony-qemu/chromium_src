@@ -39,8 +39,10 @@ namespace download {
 
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 void InitializeFile(base::File* file, const base::FilePath& file_path);
-class ArkWebBaseFileExt;
+
 #endif
+class ArkWebBaseFileExt;
+
 
 // File being downloaded and saved to disk. This is a base class
 // for DownloadFile and SaveFile, which keep more state information. BaseFile
@@ -49,10 +51,9 @@ class ArkWebBaseFileExt;
 // Detach().
 class COMPONENTS_DOWNLOAD_EXPORT BaseFile {
  public:
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   friend class ArkWebBaseFileExt;
   virtual ArkWebBaseFileExt* AsArkWebBaseFileExt() { return nullptr; }
-#endif
+
   // Given a source and a referrer, determines the "safest" URL that can be used
   // to determine the authority of the download source. Returns an empty URL if
   // no HTTP/S URL can be determined for the <|source_url|, |referrer_url|>

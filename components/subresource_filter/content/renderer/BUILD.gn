@@ -38,7 +38,7 @@ static_library("renderer") {
   if (defined(arkweb_adblock) && arkweb_adblock) {
     sources += arkweb_components_subresource_filter_content_renderer_sources
     deps += [ "//components/subresource_filter/core/browser" ]
-  }  // BUILDFLAG(ARKWEB_ADBLOCK)
+  }
 }
 
 source_set("unit_tests") {

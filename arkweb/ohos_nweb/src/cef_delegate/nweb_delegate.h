@@ -265,11 +265,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       int32_t h5_object_id,
       const std::string& h5_method_name,
       const std::vector<std::shared_ptr<NWebValue>>& args) const override;
-  void CallH5FunctionV2(
-      int32_t routing_id,
-      int32_t h5_object_id,
-      const std::string& h5_method_name,
-      const std::vector<std::shared_ptr<NWebRomValue>>& args) const override;
 
   void RegisterNWebJavaScriptCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) override;
@@ -335,8 +330,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                       const std::string& targetUri) override;
   void PostPortMessage(const std::string& port_handle,
                        std::shared_ptr<NWebMessage> data) override;
-  void PostPortMessageV2(const std::string& port_handle,
-                       std::shared_ptr<NWebRomValue> data) override;
   void SetPortMessageCallback(
       const std::string& port_handle,
       std::shared_ptr<NWebMessageValueCallback> callback) override;
@@ -611,7 +604,6 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   void SetAutofillCallback(
       std::shared_ptr<NWebMessageValueCallback> callback) override;
   void FillAutofillData(std::shared_ptr<NWebMessage> data) override;
-  void FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) override;
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
   void StartCamera() override;

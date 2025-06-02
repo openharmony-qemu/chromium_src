@@ -19,7 +19,9 @@
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 #include "third_party/blink/renderer/core/html/html_hr_element.h"
 #include "ui/base/l10n/l10n_util.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "ohos_nweb_ex/overrides/ui/strings/grit/ohos_ex_ui_strings.h"
+#endif // IS_ARKWEB_EXT
 #include "third_party/blink/renderer/core/html/media/html_media_element.h"
 #endif
 #include "third_party/blink/renderer/core/input_type_names.h"
@@ -30,6 +32,8 @@
 #include "ui/strings/grit/ax_strings.h"
 
 #include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_playback_speed_list_element_ext.h"
+
+#define IDS_HW_MEDIA_VIDEO_PLAYBACK_SPEED_VALUE 62071
 
 namespace blink {
 

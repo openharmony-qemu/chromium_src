@@ -22,6 +22,7 @@
 #include <string>
 #include <utility>
 
+#include "components/download/public/common/arkweb_download_file_impl_ext.h"
 #include "base/files/file_util.h"
 #include "base/functional/bind.h"
 #include "base/task/sequenced_task_runner.h"

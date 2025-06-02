@@ -32,7 +32,9 @@
 #include "net/dns/dns_config.h"
 #include "net/dns/dns_hosts.h"
 #include "net/dns/notify_watcher_mac.h"
+#if !BUILDFLAG(IS_OHOS)
 #include "net/dns/public/resolv_reader.h"
+#endif
 #include "net/dns/serial_worker.h"
 
 #if BUILDFLAG(IS_MAC)
@@ -99,6 +101,7 @@ std::optional<DnsConfig> ReadDnsConfig() {
                                                 base::BlockingType::MAY_BLOCK);
 
   std::optional<DnsConfig> dns_config;
+#if !BUILDFLAG(IS_OHOS)
   {
     std::unique_ptr<ScopedResState> scoped_res_state =
         ResolvReader().GetResState();
@@ -106,6 +109,7 @@ std::optional<DnsConfig> ReadDnsConfig() {
       dns_config = ConvertResStateToDnsConfig(scoped_res_state->state());
     }
   }
+#endif
 
   if (!dns_config.has_value())
     return dns_config;
@@ -254,6 +258,7 @@ void DnsConfigServicePosix::CreateReader() {
   config_reader_ = std::make_unique<ConfigReader>(*this);
 }
 
+#if !BUILDFLAG(IS_OHOS)
 std::optional<DnsConfig> ConvertResStateToDnsConfig(
     const struct __res_state& res) {
   DnsConfig dns_config;
@@ -309,7 +314,7 @@ std::optional<DnsConfig> ConvertResStateToDnsConfig(
   }
   return dns_config;
 }
-
+#endif // !BUILDFLAG(IS_OHOS)
 }  // namespace internal
 
 // static

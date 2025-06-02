@@ -4639,7 +4639,7 @@ void NWebHandlerDelegate::HandleSafeBrowsingDetection(int detectMode,
 #endif
 }
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
+//#if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
 void NWebHandlerDelegate::OnSafeBrowsingDetectionResult(
     int code,
@@ -4656,7 +4656,7 @@ void NWebHandlerDelegate::OnSafeBrowsingDetectionResult(
                                                        mappingType, url);
 }
 #endif
-#endif
+//#endif
 
 void NWebHandlerDelegate::SetSafeBrowsingDetectionCallback(
     CefRefPtr<CefSafeBrowsingDetectionCallback> callback) {

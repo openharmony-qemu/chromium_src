@@ -18,6 +18,13 @@ namespace blink {
 #if BUILDFLAG(ARKWEB_AI)
 static constexpr int MAX_LENGTH = 100;
 static constexpr int HALF_LENGTH = 50;
+void SelectionController::FocusDocumentView() {
+  Page* page = frame_->GetPage();
+  if (!page) {
+    return;
+  }
+  page->GetFocusController().FocusDocumentView(frame_);
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
@@ -30,14 +37,6 @@ void SelectionController::NotifyContextMenuWillShow() {
   if (frame_) {
     frame_->NotifyContextMenuWillShow();
   }
-}
-
-void SelectionController::FocusDocumentView() {
-  Page* page = frame_->GetPage();
-  if (!page) {
-    return;
-  }
-  page->GetFocusController().FocusDocumentView(frame_);
 }
 
 bool SelectionController::ShowSelectionByLastLongPressHitTestResult() {

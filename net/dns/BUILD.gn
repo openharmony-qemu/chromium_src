@@ -160,7 +160,7 @@ source_set("dns") {
     ]
   } else if (defined(arkweb_ex_http_dns_fallback) && arkweb_ex_http_dns_fallback) {
     sources += arkweb_net_dns_sources
-  } else if (is_posix) {
+  } else if (is_posix && !is_ohos) {
     sources += [
       "dns_config_service_posix.cc",
       "dns_config_service_posix.h",

@@ -240,7 +240,7 @@ bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
                                    int policy) {
   constexpr bool use_alternative_getifaddrs = false;
 #else
-bool GetNetworkList(NetworkInterfaceList* networks, int policy) {
+bool GetNetworkListUnused(NetworkInterfaceList* networks, int policy) {
   constexpr bool use_alternative_getifaddrs = false;
 #endif
   if (networks == nullptr)

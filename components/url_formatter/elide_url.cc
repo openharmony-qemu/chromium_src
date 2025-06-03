@@ -579,6 +579,13 @@ UrlType ParseInput(const std::u16string& input,
       (input.substr(parts->username.begin, parts->username.len)
            .find_first_of(base::kWhitespaceUTF16) != std::u16string::npos);
 
+  if (parts->path.is_nonempty() && !username_has_space) {
+    char16_t c = input[parts->path.end() - 1];
+    if ((c == '\\') || (c == '/')) {
+      return UrlType::URL;
+    }
+  }
+
   if ((host_info.family == url::CanonHostInfo::IPV4) &&
       (host_info.num_ipv4_components > 1)) {
     return UrlType::QUERY;

@@ -99,7 +99,7 @@ config("compiler") {
   if (current_cpu == "arm") {
     abi_target = "arm-linux-androideabi"
     if (use_musl) {
-      abi_target = "arm-linux-ohosmusl"
+      abi_target = "arm-linux-ohos"
     } else {
       compile_api_level = arm32_ndk_api_level
     }

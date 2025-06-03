@@ -21,6 +21,7 @@ def ReadHeader(options):
             return defaultVersion
         if "app" in data and "versionName" in data["app"]:
             version = data["app"]["versionName"].split("sp")[0]
+            return version
     return defaultVersion
 
 def WriteHeader(options, version):

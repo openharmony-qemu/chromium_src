@@ -13,7 +13,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_piece.h"
 #include "base/strings/string_split.h"
-#include "base/strings/utf_string_conversions.h"
+#include "base/strings/utf_string_conversions.h"f
 #include "build/build_config.h"
 #include "components/url_formatter/url_formatter.h"
 #include "net/base/registry_controlled_domains/registry_controlled_domain.h"
@@ -578,6 +578,13 @@ UrlType ParseInput(const std::u16string& input,
       parts->username.is_nonempty() &&
       (input.substr(parts->username.begin, parts->username.len)
            .find_first_of(base::kWhitespaceUTF16) != std::u16string::npos);
+
+  if (parts->path.is_nonempty() && !username_has_space) {
+    char16_t c = input[parts->path.end() - 1];
+    if ((c == '\\') || (c == '/')) {
+      return UrlType::URL;
+    }
+  }
 
   if ((host_info.family == url::CanonHostInfo::IPV4) &&
       (host_info.num_ipv4_components > 1)) {

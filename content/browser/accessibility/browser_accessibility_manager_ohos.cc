@@ -148,9 +148,10 @@ void BrowserAccessibilityManagerOHOS::MoveAccessibilityFocus(
 
 void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
     int64_t accessibilityId,
-    OHOS::NWeb::AccessibilityEventType eventType) {
-  if (accessibilityId == 0) {
-    DispatchEvent(0, static_cast<int32_t>(eventType));
+    OHOS::NWeb::AccessibilityEventType eventType,
+    const std::string& argument) {
+  if (accessibilityId == kArkWebId || argument != "") {
+    DispatchEvent(accessibilityId, static_cast<int32_t>(eventType));
   } else if (eventDispatcher_ != nullptr) {
     eventDispatcher_->EnqueueEvent(accessibilityId,
                                    static_cast<int32_t>(eventType));
@@ -269,6 +270,19 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
     DecideAccessibilityFocus(accessibilityId);
   }
   switch (event_type) {
+    case ui::AXEventGenerator::Event::ALERT: {
+      // When an alertdialog is shown, we will announce the hint, which
+      // (should) contain the description set by the author. If it is
+      // empty, then we will try GetTextContentUTF16() as a fallback.
+      std::string text = nodeOHOS->GetHint();
+      if (text.empty()) {
+        text = base::UTF16ToUTF8(nodeOHOS->GetTextContentUTF16());
+      }
+      SendAccessibilityEvent(
+          accessibilityId,
+          OHOS::NWeb::AccessibilityEventType::ANNOUNCE_FOR_ACCESSIBILITY, text);
+      break;
+    }
     case ui::AXEventGenerator::Event::VALUE_IN_TEXT_FIELD_CHANGED:
       if (nodeOHOS->IsTextField() && GetFocus() == wrapper) {
         HandleEditableTextChanged(accessibilityId);
@@ -308,7 +322,11 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
       break;
     }
     case ui::AXEventGenerator::Event::LIVE_REGION_NODE_CHANGED: {
-      SendAccessibilityEvent(accessibilityId, OHOS::NWeb::AccessibilityEventType::SELECTED);
+      std::string text = base::UTF16ToUTF8(nodeOHOS->GetTextContentUTF16());
+      SendAccessibilityEvent(accessibilityId,
+                             OHOS::NWeb::AccessibilityEventType::
+                                 ANNOUNCE_FOR_ACCESSIBILITY_NOT_INTERRUPT,
+                             text);
       break;
     }
     case ui::AXEventGenerator::Event::SUBTREE_CREATED:

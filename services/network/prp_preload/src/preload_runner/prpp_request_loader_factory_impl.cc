@@ -179,7 +179,6 @@ bool PRPPRequestLoaderFactoryImpl::MatchRequestHeaders(std::shared_ptr<PRRequest
 	  req_info_binding->or_preload_flag(PRPP_FLAGS_HDR_NOT_MATCH);
 	  LOG(DEBUG) << "PRPPreload.PRPPRequestLoaderFactoryImpl::MatchRequestHeaders header not match, " <<
         "can not reuse " << item.key;
-	  req_info->extra_request_headers().SetHeader(item.key, item.value);
 	  return false;
 	}
 
@@ -188,8 +187,6 @@ bool PRPPRequestLoaderFactoryImpl::MatchRequestHeaders(std::shared_ptr<PRRequest
         "can not reuse " << item.key;
 	  match = false;
 	  (void)dynamic_header_keys.emplace(item.key);
-	  req_info->extra_request_headers().RemoveHeader(item.key);
-      req_info->extra_request_headers().SetHeader(item.key, item.value);
 	}
   }
 

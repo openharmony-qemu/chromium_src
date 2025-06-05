@@ -17,7 +17,7 @@ set -x
 build_type="$1"
 root_path="."
 sdk_path="${root_path}/src/ohos_sdk"
-sign_tool_path="${sdk_path}/14/toolchains/lib"
+sign_tool_path="${sdk_path}/20/toolchains/lib"
 nosign_hap_path="${root_path}/src/out/${build_type}/ohos_nweb.hap"
 sign_hap_path="${root_path}/src/out/${build_type}/NWeb-${build_type}.hap"
 profile_path="${root_path}/src/third_party/ohos_nweb_hap/signature"

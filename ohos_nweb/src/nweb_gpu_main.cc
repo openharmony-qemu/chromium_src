@@ -32,6 +32,7 @@ const uint32_t IPC_B2G_CODE_INIT_DATA = 10001;
 const uint32_t IPC_G2B_CODE_QUERY_WINDOW = 10002;
 const uint32_t IPC_G2B_CODE_DESTROY_WINDOW = 10003;
 const uint32_t IPC_G2B_CODE_PASS_SURFACE = 10004;
+const uint32_t IPC_G2B_CODE_QUERY_BOOL = 10005;
 const char *GPU_IPC_DESCRIPTOR = "chromium.native.gpu";
 const int START_TIMEOUT_SEC = 3;
 
@@ -168,6 +169,44 @@ void PassWindow(int64_t window_id) {
   }
   OH_IPCParcel_Destroy(data);
   OH_IPCParcel_Destroy(reply);
+}
+
+bool QueryBoolFromBrowserProcess(const std::string& key, bool defaultValue) {
+  if (g_ipc_remote_proxy == nullptr) {
+    WVLOG_I("ipc remote proxy is null");
+    return OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetSystemPropertiesInstance().GetBoolParameter(key, defaultValue);
+  }
+
+  OHIPCParcel* data = OH_IPCParcel_Create();
+  OHIPCParcel* reply = OH_IPCParcel_Create();
+
+  if (OH_IPCParcel_WriteString(data, key.c_str()) != 0) {
+    WVLOG_E("failed to write key");
+    return defaultValue;
+  }
+
+  if (OH_IPCParcel_WriteInt32(data, defaultValue) != 0) {
+    WVLOG_E("failed to write default value");
+    return defaultValue;
+  }
+
+  if (OH_IPCRemoteProxy_SendRequest(g_ipc_remote_proxy, IPC_G2B_CODE_QUERY_BOOL, data, reply, nullptr) != 0) {
+    WVLOG_E("failed to send query bool key = %{public}s", key.c_str());
+    OH_IPCParcel_Destroy(data);
+    OH_IPCParcel_Destroy(reply);
+    return defaultValue;
+  }
+
+  int32_t ret = defaultValue;
+  if (OH_IPCParcel_ReadInt32(reply, &ret) != 0) {
+    WVLOG_E("failed to read value");
+    return -1;
+  }
+
+  OH_IPCParcel_Destroy(data);
+  OH_IPCParcel_Destroy(reply);
+  return !!ret;
 }
 
 extern "C" OHOS_NWEB_EXPORT OHIPCRemoteStub* NativeChildProcess_OnConnect() {

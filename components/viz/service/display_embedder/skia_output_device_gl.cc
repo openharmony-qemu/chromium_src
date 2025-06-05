@@ -31,6 +31,9 @@
 #include "base/ohos/sys_info_utils.h"
 #include "ohos_adapter_helper.h"
 #endif
+
+extern bool QueryBoolFromBrowserProcess(const std::string& key, bool defaultValue);
+
 namespace viz {
 
 namespace {
@@ -151,8 +154,7 @@ SkiaOutputDeviceGL::SkiaOutputDeviceGL(
   capabilities_.sk_color_types[static_cast<int>(gfx::BufferFormat::RGBA_F16)] =
       kRGBA_F16_SkColorType;
 #if BUILDFLAG(IS_OHOS)
-  supports_damage_region_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-  .GetSystemPropertiesInstance().GetBoolParameter("web.damageRegion.enable", 0);
+  supports_damage_region_ = QueryBoolFromBrowserProcess("web.damageRegion.enable", 0);
 #endif
 }
 

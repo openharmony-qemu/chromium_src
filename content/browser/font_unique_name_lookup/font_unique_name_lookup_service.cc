@@ -10,10 +10,15 @@
 #include "base/no_destructor.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/thread_pool.h"
-#include "content/browser/font_unique_name_lookup/font_unique_name_lookup_android.h"
 #include "content/common/features.h"
 #include "mojo/public/cpp/bindings/callback_helpers.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
+
+#if BUILDFLAG(IS_OHOS)
+#include "content/browser/font_unique_name_lookup/font_unique_name_lookup_ohos.h"
+#else
+#include "content/browser/font_unique_name_lookup/font_unique_name_lookup_android.h"
+#endif
 
 namespace content {
 

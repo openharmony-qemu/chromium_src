@@ -48,4 +48,10 @@ void RenderViewHostDelegateView::GestureEventAck(
     const blink::WebGestureEvent& event,
     blink::mojom::InputEventResultState ack_result) {}
 
+#if BUILDFLAG(IS_OHOS)
+void CreateOverlay(const gfx::ImageSkia& image,
+                   const gfx::Rect& image_rect,
+                   const gfx::Point& touch_point,
+                   const gfx::Rect& screen_rect) {}
+#endif
 }  //  namespace content

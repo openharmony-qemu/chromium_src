@@ -403,6 +403,21 @@ source_set("common") {
     }
   }
 
+  if (is_ohos) {
+    sources += [
+      "font_list_ohos.cc",
+      "gpu_pre_sandbox_hook_linux.cc",
+      "gpu_pre_sandbox_hook_linux.h",
+    ]
+    public_deps += [ "//sandbox/policy" ]
+    deps += [
+      "//ohos/adapter:adapter",
+      "//sandbox/linux:sandbox_services",
+      "//sandbox/linux:seccomp_bpf",
+    ]
+    libs += [ "deviceinfo_ndk.z" ]
+  }
+
   if (use_zygote) {
     sources += [
       "zygote/zygote_handle_impl_linux.h",
@@ -410,7 +425,7 @@ source_set("common") {
     ]
   }
 
-  if (is_mac || is_win || is_android || is_fuchsia || is_ios) {
+  if (is_mac || is_win || is_android || is_fuchsia || is_ios || is_ohos) {
     sources -= [ "font_list_fontconfig.cc" ]
   }
 

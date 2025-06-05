@@ -963,6 +963,13 @@ class CONTENT_EXPORT RenderWidgetHostImpl
       bool animate,
       const std::optional<cc::BrowserControlsOffsetTagsInfo>& offset_tags_info);
 
+#if BUILDFLAG(IS_OHOS)
+  void CreateOverlay(const SkBitmap& bitmap,
+                     const gfx::Rect& image_rect,
+                     const gfx::Point& touch_point) override;
+  void OnTextRecognized(std::vector<blink::mojom::TextRecognizeResultPtr> res);
+#endif
+
   void StartDragging(blink::mojom::DragDataPtr drag_data,
                      const url::Origin& source_origin,
                      blink::DragOperationsMask drag_operations_mask,

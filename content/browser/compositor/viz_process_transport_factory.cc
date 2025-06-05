@@ -411,6 +411,10 @@ void VizProcessTransportFactory::OnEstablishedGpuChannel(
   if (command_line->HasSwitch(switches::kDisableFrameRateLimit))
     root_params->disable_frame_rate_limit = true;
 
+#if BUILDFLAG(IS_OHOS)
+  root_params->surface_id = compositor->get_surface_id();
+#endif
+
 #if BUILDFLAG(IS_WIN)
   const bool using_direct_composition = GpuDataManagerImpl::GetInstance()
                                             ->GetGPUInfo()

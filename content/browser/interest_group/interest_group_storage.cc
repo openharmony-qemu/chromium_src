@@ -4467,9 +4467,15 @@ std::optional<DebugReportCooldown> DoGetDebugReportCooldownForOrigin(
     return std::nullopt;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  return DebugReportCooldown{cooldown_debugging_only_report.ColumnTime(0),
+                             static_cast<DebugReportCooldownType>(
+                                 cooldown_debugging_only_report.ColumnInt(1))};
+#else
   return DebugReportCooldown(cooldown_debugging_only_report.ColumnTime(0),
                              static_cast<DebugReportCooldownType>(
                                  cooldown_debugging_only_report.ColumnInt(1)));
+#endif
 }
 
 void DoGetDebugReportCooldowns(
@@ -5306,7 +5312,12 @@ DoGetBiddingAndAuctionServerKeys(sql::Database& db,
     std::vector<BiddingAndAuctionServerKey> keys;
     keys.reserve(key_protos.keys_size());
     for (auto& key_proto : *key_protos.mutable_keys()) {
+#if BUILDFLAG(IS_OHOS)
+      BiddingAndAuctionServerKey key{*key_proto.mutable_key(), key_proto.id()};
+      keys.emplace_back(std::move(key));
+#else
       keys.emplace_back(std::move(*key_proto.mutable_key()), key_proto.id());
+#endif
     }
     return {expiration, keys};
   }

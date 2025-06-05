@@ -1465,6 +1465,15 @@ interface NetworkContext {
               ResolveHostParameters? optional_parameters,
               pending_remote<ResolveHostClient> response_client);
 
+  [EnableIf=is_ohos]
+  InitPRParallelPreloadMgr(mojo_base.mojom.FilePath cache_path);
+
+  [EnableIf=is_ohos]
+  StartMainPage(string url, NetworkAnonymizationKey network_anonymization_key, uint64 addr_web_handle);
+
+  [EnableIf=is_ohos]
+  StopMainPage(uint64 addr_web_handle);
+
   // Creates a HostResolver interface that can be passed to code/processes
   // without direct access to NetworkContext to make ResolveHost requests.
   //

@@ -62,9 +62,9 @@ class PartitionAllocFunctionsInternal {
 
   static void Free(void* object, void* context);
 
-#if PA_BUILDFLAG(IS_APPLE)
+#if PA_BUILDFLAG(IS_APPLE) || PA_BUILDFLAG(IS_OHOS)
   static void FreeDefiniteSize(void* address, size_t size, void* context);
-#endif  // PA_BUILDFLAG(IS_APPLE)
+#endif  // PA_BUILDFLAG(IS_APPLE) || PA_BUILDFLAG(IS_OHOS)
 
   static size_t GetSizeEstimate(void* address, void* context);
 

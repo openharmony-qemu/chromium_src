@@ -222,6 +222,12 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
       network::mojom::AttributionSupport::kUnset;
   mojom::AttributionReportingEligibility attribution_reporting_eligibility =
       mojom::AttributionReportingEligibility::kUnset;
+
+#if BUILDFLAG(IS_OHOS)
+  bool allow_preload_record = false;
+  GURL main_page;
+#endif
+
   bool shared_dictionary_writer_enabled = false;
   std::optional<base::UnguessableToken> attribution_reporting_src_token;
   bool is_ad_tagged = false;

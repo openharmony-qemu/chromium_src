@@ -146,7 +146,14 @@ template <uint32_t MaxLength>
 class CrashKeyStringBreakpad : public internal::CrashKeyStringImpl {
  public:
   constexpr static size_t chunk_count =
+#if BUILDFLAG(IS_OHOS)
+    // fix: chunk size is 127
+    // see the function CrashKeyStringImpl::Set
+    // src/components/crash/core/common/crash_key_breakpad.cc
+      (MaxLength / (internal::kCrashKeyStorageValueSize -1)) + 1;
+#else
       (MaxLength / internal::kCrashKeyStorageValueSize) + 1;
+#endif
 
   // A constructor tag that can be used to initialize a C array of crash keys.
   enum class Tag { kArray };

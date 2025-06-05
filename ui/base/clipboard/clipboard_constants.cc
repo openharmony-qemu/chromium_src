@@ -25,13 +25,14 @@ const char kMimeTypeOctetStream[] = "application/octet-stream";
 // Used for window dragging on some platforms.
 const char kMimeTypeWindowDrag[] = "chromium/x-window-drag";
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
+    BUILDFLAG(IS_OHOS)
 const char kMimeTypeLinuxUtf8String[] = "UTF8_STRING";
 const char kMimeTypeLinuxString[] = "STRING";
 const char kMimeTypeLinuxText[] = "TEXT";
 const char kMimeTypeLinuxSourceUrl[] = "chromium/x-source-url";
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
-        // BUILDFLAG(IS_FUCHSIA)
+        // BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
 
 #if !BUILDFLAG(IS_APPLE)
 const char kMimeTypeDataTransferCustomData[] = "chromium/x-web-custom-data";

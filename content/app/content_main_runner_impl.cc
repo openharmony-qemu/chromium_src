@@ -211,6 +211,10 @@
 #include "base/debug/asan_service.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/multiprocess/app_spawn_communication.h"
+#endif
+
 namespace content {
 extern int GpuMain(MainFunctionParams);
 #if BUILDFLAG(ENABLE_PPAPI)
@@ -856,10 +860,18 @@ int ContentMainRunnerImpl::Initialize(ContentMainParams params) {
   [[maybe_unused]] base::GlobalDescriptors* g_fds =
       base::GlobalDescriptors::GetInstance();
 
+// On OHOS, the ipc_fd is passed through the AppSpawn.
+#if BUILDFLAG(IS_OHOS)
+  auto ids_fds_map = ohos::adapter::multiprocess::AppSpawnCommunication::GetFdIdsRemap();
+  for (auto & [id, fd] : ids_fds_map) {
+    g_fds->Set(id, fd);
+  }
+#endif
+
 // On Android, the shared descriptors are passed through the Java service,
 // which takes care of updating these mappings; otherwise, we need to update
 // the mappings explicitly.
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   g_fds->Set(kMojoIPCChannel,
              kMojoIPCChannel + base::GlobalDescriptors::kBaseDescriptor);
   g_fds->Set(kFieldTrialDescriptor,

@@ -105,8 +105,13 @@ void GLSurfaceEglReadback::ReadPixels(base::span<uint8_t> buffer) {
 
   CHECK_GE(buffer.size() / base::checked_cast<size_t>(size.width()),
            base::checked_cast<size_t>(size.height()));
+#if BUILDFLAG(IS_OHOS)
+  glReadPixels(0, 0, size.width(), size.height(), GL_RGBA, GL_UNSIGNED_BYTE,
+               buffer.data());
+#else
   glReadPixels(0, 0, size.width(), size.height(), GL_BGRA, GL_UNSIGNED_BYTE,
                buffer.data());
+#endif
 
   if (read_fbo)
     glBindFramebufferEXT(GL_READ_FRAMEBUFFER, read_fbo);

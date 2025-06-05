@@ -768,6 +768,11 @@ void URLRequest::CancelWithSSLError(int error, const SSLInfo& ssl_info) {
 
 int URLRequest::DoCancel(int error, const SSLInfo& ssl_info) {
   DCHECK_LT(error, 0);
+#if BUILDFLAG(IS_OHOS)
+  if (error != ERR_ABORTED) {
+    LOG(WARNING) << "URLRequest::DoCancel url is error code is " << error;
+  }
+#endif
   // If cancelled while calling a delegate, clear delegate info.
   if (calling_delegate_) {
     LogUnblocked();

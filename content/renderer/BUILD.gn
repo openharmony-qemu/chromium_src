@@ -200,6 +200,12 @@ target(link_target_type, "renderer") {
     sources += [ "renderer_main_platform_delegate_linux.cc" ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "renderer_main_platform_delegate_ohos.cc",
+    ]
+  }
+
   if (is_mac) {
     sources += [
       "renderer_main_platform_delegate_mac.mm",
@@ -561,7 +567,7 @@ target(link_target_type, "renderer") {
     deps += [ "//third_party:freetype_buildflags" ]
   }
 
-  if (is_linux || is_chromeos || is_android) {
+  if (is_linux || is_chromeos || is_android || is_ohos) {
     deps += [ "//sandbox:sandbox_buildflags" ]
   }
 

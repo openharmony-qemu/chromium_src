@@ -155,6 +155,14 @@
 #include "ui/base/cocoa/cursor_accessibility_scale_factor.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/ocr/ocr_adapter.h"
+#include "third_party/blink/public/mojom/page/text_recognize_result.mojom.h"
+#include "third_party/blink/renderer/platform/wtf/vector.h"
+#include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/skia/include/core/SkImage.h"
+#endif
+
 using blink::DragOperationsMask;
 using blink::WebGestureEvent;
 using blink::WebInputEvent;
@@ -164,6 +172,10 @@ using blink::WebMouseWheelEvent;
 
 namespace content {
 namespace {
+#if BUILDFLAG(IS_OHOS)
+// One pixel of the picture is made up of four bits of binary data.
+constexpr int kImagePixelMap = 4;
+#endif
 
 constexpr gfx::Rect kInvalidScreenRect(std::numeric_limits<int>::max(),
                                        std::numeric_limits<int>::max(),
@@ -2678,6 +2690,64 @@ void RenderWidgetHostImpl::UpdateBrowserControlsState(
       constraints, current, animate, offset_tags_info);
 }
 
+#if BUILDFLAG(IS_OHOS)
+const ohos::adapter::OcrImage ConvertImage(const gfx::ImageSkia* image) {
+  if (image == nullptr || image->bitmap() == nullptr) {
+    LOG(INFO) << "parse ocr image pixel fail image is nullptr!";
+    return {};
+  }
+  const SkBitmap* bitmap = image->bitmap();
+  int width = bitmap->width();
+  int height = bitmap->height();
+  size_t row_bytes = width * kImagePixelMap;
+  size_t buffer_size = bitmap->computeByteSize();
+  std::unique_ptr<char[]> buff = std::make_unique<char[]>(buffer_size);
+  SkPixmap pixmap(SkImageInfo::MakeN32Premul(width, height), buff.get(),
+                  row_bytes);
+  image->bitmap()->peekPixels(&pixmap);
+  if (pixmap.readPixels(SkImageInfo::MakeN32Premul(width, height), buff.get(),
+                        row_bytes, 0, 0)) {
+    return {width, height, std::move(buff)};
+  } else {
+    LOG(ERROR) << "parse ocr image pixel fail!";
+    return {};
+  }
+}
+
+void RenderWidgetHostImpl::CreateOverlay(const SkBitmap& bitmap,
+                                         const gfx::Rect& image_rect,
+                                         const gfx::Point& touch_point) {
+  float scale = GetScaleFactorForView(GetView());
+  const gfx::ImageSkia image = gfx::ImageSkia::CreateFromBitmap(bitmap, scale);
+  const gfx::ImageSkia* ocr_image = &image;
+  std::vector<ohos::adapter::TextWord> words =
+    ohos::adapter::OcrAdapter::GetInstance().OcrFunction(ConvertImage(ocr_image));
+  std::vector<blink::mojom::TextRecognizeResultPtr> res;
+  for (auto& word : words) {
+    std::string raw_value = word.value;
+    gfx::RectF bounding_box;
+    std::vector<::gfx::PointF> corner_points;
+    for (auto& point : word.cornerPoints) {
+      gfx::PointF pointf = ::gfx::PointF(static_cast<float>(point.x),
+                                         static_cast<float>(point.y));
+      corner_points.push_back(pointf);
+    }
+    blink::mojom::TextRecognizeResultPtr line =
+        blink::mojom::TextRecognizeResult::New(raw_value, bounding_box,
+                                               corner_points);
+    res.emplace_back(std::move(line));
+  }
+
+  OnTextRecognized(std::move(res));
+}
+
+void RenderWidgetHostImpl::OnTextRecognized(
+    std::vector<blink::mojom::TextRecognizeResultPtr> res) {
+  float scale = GetScaleFactorForView(GetView());
+  blink_frame_widget_->OnTextRecognized(std::move(res), scale);
+}
+#endif
+
 void RenderWidgetHostImpl::StartDragging(
     blink::mojom::DragDataPtr drag_data,
     const url::Origin& source_origin,
@@ -2755,7 +2825,7 @@ void RenderWidgetHostImpl::StartDragging(
   gfx::ImageSkia image = gfx::ImageSkia::CreateFromBitmap(bitmap, scale);
   gfx::Vector2d offset = cursor_offset_in_dip;
   gfx::Rect rect = drag_obj_rect_in_dip;
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   // Scale the offset by device scale factor, otherwise the drag
   // image location doesn't line up with the drop location (drag destination).
   // TODO(crbug.com/40859305): this conversion should not be necessary.

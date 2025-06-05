@@ -1533,7 +1533,12 @@ void ServiceWorkerContextWrapper::MaybeProcessPendingWarmUpRequest() {
     return;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  auto [url, key, callback] = std::move(*request);
+  GURL document_url = url;
+#else
   auto [document_url, key, callback] = std::move(*request);
+#endif
 
   DCHECK(document_url.is_valid());
   TRACE_EVENT1("ServiceWorker",

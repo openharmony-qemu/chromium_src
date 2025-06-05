@@ -221,6 +221,13 @@ class DISPLAY_EXPORT Screen {
   bool InTabletMode() const;
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(IS_OHOS)
+  virtual gfx::NativeWindow GetLocalProcessWindowAtPoint(
+      const gfx::Point& point,
+      const std::set<gfx::NativeWindow>& ignore,
+      const int32_t display_id) = 0;
+#endif
+
  protected:
   void set_shutdown(bool shutdown) { shutdown_ = shutdown; }
   int64_t display_id_for_new_windows() const {

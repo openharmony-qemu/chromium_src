@@ -77,6 +77,11 @@
 #include "base/ios/scoped_critical_action.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/permission_manager/permission_manager_adapter.h"
+namespace ohos_permission = ohos::adapter::permission;
+#endif
+
 using base::Time;
 using base::TimeTicks;
 using favicon::FaviconBitmap;
@@ -1196,6 +1201,12 @@ void HistoryBackend::AddPage(const HistoryAddPageArgs& request) {
   if (current_visit_was_successfully_added && request.context_annotations) {
     // The `request` contains only the on-visit annotation fields; all other
     // fields aren't known yet. Leave them empty.
+#if BUILDFLAG(IS_OHOS)
+    if (request.url.is_valid() && request.url.SchemeIsFile()) {
+      ohos_permission::PermissionManagerAdapter::FileAccessPersist(
+          request.url.spec());
+    }
+#endif
     VisitContextAnnotations annotations;
     annotations.on_visit = *request.context_annotations;
     AddContextAnnotationsForVisit(last_visit_id, annotations);

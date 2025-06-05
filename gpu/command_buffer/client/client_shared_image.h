@@ -24,6 +24,10 @@
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/gpu_memory_buffer.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/logging.h"
+#endif
+
 namespace media {
 class VideoFrame;
 }  // namespace media
@@ -139,7 +143,15 @@ class GPU_EXPORT ClientSharedImage
   // Valid to call only if this instance was created with a non-null
   // GpuMemoryBuffer.
   gfx::GpuMemoryBufferHandle CloneGpuMemoryBufferHandle() const {
+#if BUILDFLAG(IS_OHOS)
+    // TODO: FIXME
+    if (!gpu_memory_buffer_) {
+      LOG(WARNING) << "gpu_memory_buffer_ is nullptr.";
+      return gfx::GpuMemoryBufferHandle();
+    }
+#else
     CHECK(gpu_memory_buffer_);
+#endif
     return gpu_memory_buffer_->CloneHandle();
   }
 
@@ -305,7 +317,15 @@ class GPU_EXPORT ClientSharedImage
   // layout info and hence stride. This method will then no longer needed and
   // can be removed.
   size_t GetStrideForVideoFrame(uint32_t plane_index) const {
+#if BUILDFLAG(IS_OHOS)
+    // TODO: FIXME
+    if (!gpu_memory_buffer_) {
+      LOG(WARNING) << "gpu_memory_buffer_ is nullptr.";
+      return 0;
+    }
+#else
     CHECK(gpu_memory_buffer_);
+#endif
     return gpu_memory_buffer_->stride(plane_index);
   }
 
@@ -313,13 +333,29 @@ class GPU_EXPORT ClientSharedImage
   // Map() the shared image. This method is supposed to be used by VideoFrame
   // temporarily as mentioned above in ::GetStrideForVideoFrame().
   bool IsSharedMemoryForVideoFrame() const {
+#if BUILDFLAG(IS_OHOS)
+    // TODO: FIXME
+    if (!gpu_memory_buffer_) {
+      LOG(WARNING) << "gpu_memory_buffer_ is nullptr.";
+      return false;
+    }
+#else
     CHECK(gpu_memory_buffer_);
+#endif
     return gpu_memory_buffer_->GetType() ==
            gfx::GpuMemoryBufferType::SHARED_MEMORY_BUFFER;
   }
 
   bool AsyncMappingIsNonBlocking() const {
+#if BUILDFLAG(IS_OHOS)
+    // TODO: FIXME
+    if (!gpu_memory_buffer_) {
+      LOG(WARNING) << "gpu_memory_buffer_ is nullptr.";
+      return false;
+    }
+#else
     CHECK(gpu_memory_buffer_);
+#endif
     return gpu_memory_buffer_->AsyncMappingIsNonBlocking();
   }
 

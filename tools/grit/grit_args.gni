@@ -15,7 +15,7 @@ devtools_grd_path_no_ext = get_path_info(devtools_grd_path, "dir") + "/" +
 # Prefer using this (and excluding specific platforms) when a resource applies
 # to (most) desktop platforms.
 assert(toolkit_views ==
-       (is_chromeos || is_fuchsia || is_linux || is_mac || is_win))
+       (is_chromeos || is_fuchsia || is_linux || is_mac || is_win || is_ohos))
 
 # Variables that are passed to grit with the -D flag.
 
@@ -102,6 +102,9 @@ if (current_toolchain != host_toolchain || is_chromeos) {
   }
   if (is_win) {
     _target_platform = "win32"
+  }
+  if (is_ohos) {
+    _target_platform = "ohos"
   }
 
   if (_target_platform != "") {

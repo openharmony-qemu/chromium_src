@@ -192,6 +192,10 @@ FourccAndFlip GetFourccAndFlipFromPixelFormat(
     case media::PIXEL_FORMAT_ARGB:
       // Windows platforms e.g. send the data vertically flipped sometimes.
       return {libyuv::FOURCC_ARGB, flip_y};
+#if BUILDFLAG(IS_OHOS)
+    case media::PIXEL_FORMAT_ABGR:
+      return {libyuv::FOURCC_ABGR};
+#endif
     case media::PIXEL_FORMAT_MJPEG:
       return {libyuv::FOURCC_MJPG};
     default:

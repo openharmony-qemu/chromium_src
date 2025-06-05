@@ -431,7 +431,7 @@ component("base") {
       sources += [ "pointer/pointer_device_android.cc" ]
     } else if (is_ios) {
       sources += [ "pointer/pointer_device_ios.cc" ]
-    } else if (is_linux || is_chromeos) {
+    } else if (is_linux || is_chromeos || is_ohos) {
       sources += [ "pointer/pointer_device_linux.cc" ]
     } else {
       # Empty implementation for all other cases.
@@ -554,7 +554,7 @@ component("base") {
     deps += [ "//ui/events" ]
   }
 
-  if (use_aura && (is_linux || is_chromeos)) {
+  if (use_aura && (is_linux || is_chromeos || is_ohos)) {
     sources += [ "resource/resource_bundle_auralinux.cc" ]
   }
 
@@ -573,7 +573,7 @@ component("base") {
     ]
   }
 
-  if (is_chromeos || (use_aura && is_linux) || is_fuchsia) {
+  if (is_chromeos || (use_aura && (is_linux || is_ohos)) || is_fuchsia) {
     sources += [
       "dragdrop/os_exchange_data_provider_non_backed.cc",
       "dragdrop/os_exchange_data_provider_non_backed.h",

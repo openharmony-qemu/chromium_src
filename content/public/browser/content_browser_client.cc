@@ -1697,6 +1697,12 @@ bool ContentBrowserClient::ShouldUseFirstPartyStorageKey(
   return false;
 }
 
+#if BUILDFLAG(IS_OHOS)
+bool ContentBrowserClient::IsAdvancedSecurityMode() {
+  return false;
+}
+#endif
+
 std::unique_ptr<ResponsivenessCalculatorDelegate>
 ContentBrowserClient::CreateResponsivenessCalculatorDelegate() {
   return nullptr;

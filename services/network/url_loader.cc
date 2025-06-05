@@ -786,6 +786,11 @@ URLLoader::URLLoader(
         request.net_log_reference_info.value());
   }
 
+#if BUILDFLAG(IS_OHOS)
+  url_request_->set_allow_preload_record(request.allow_preload_record);
+  url_request_->set_main_page(request.main_page);
+#endif
+
   // Resolve elements from request_body and prepare upload data.
   if (request.request_body.get()) {
     OpenFilesForUpload(request);
@@ -1405,6 +1410,10 @@ int URLLoader::OnConnected(net::URLRequest* url_request,
   std::optional<mojom::CorsError> cors_error =
       PrivateNetworkAccessCheckResultToCorsError(result);
   if (cors_error.has_value()) {
+#if BUILDFLAG(IS_OHOS)
+    LOG(WARNING) << "URLLoader::OnConnected result is "
+                 << result << "info.type" << info.type;
+#endif
     if (result == PrivateNetworkAccessCheckResult::kBlockedByPolicyBlock &&
         (info.type == net::TransportType::kCached ||
          info.type == net::TransportType::kCachedFromProxy)) {
@@ -1798,6 +1807,10 @@ void URLLoader::OnSSLCertificateError(net::URLRequest* request,
                                       int net_error,
                                       const net::SSLInfo& ssl_info,
                                       bool fatal) {
+#if BUILDFLAG(IS_OHOS)
+  LOG(WARNING) << "URLLoader::OnSSLCertificateError net_error is "
+                << net_error;
+#endif
   if (!url_loader_network_observer_) {
     OnSSLCertificateErrorResponse(ssl_info, net_error);
     return;
@@ -1846,6 +1859,10 @@ void URLLoader::OnResponseStarted(net::URLRequest* url_request, int net_error) {
   ReportFlaggedResponseCookies(true);
 
   if (net_error != net::OK) {
+#if BUILDFLAG(IS_OHOS)
+  LOG(WARNING) << "URLLoader::OnResponseStarted  net_error is "
+               << net_error;
+#endif
     NotifyCompleted(net_error);
     // |this| may have been deleted.
     return;
@@ -2002,7 +2019,9 @@ void URLLoader::ContinueOnResponseStarted() {
     if (ShouldSniffContent(url_request_->url(), *response_)) {
       // We're going to look at the data before deciding what the content type
       // is.  That means we need to delay sending the response started IPC.
+#if !BUILDFLAG(IS_OHOS)
       VLOG(1) << "Will sniff content for mime type: " << url_request_->url();
+#endif
       is_more_mime_sniffing_needed_ = true;
     } else if (response_->mime_type.empty()) {
       // Ugg.  The server told us not to sniff the content but didn't give us
@@ -2453,6 +2472,12 @@ void URLLoader::NotifyCompleted(int error_code) {
   // Ensure sending the final upload progress message here, since
   // OnResponseCompleted can be called without OnResponseStarted on cancellation
   // or error cases.
+#if BUILDFLAG(IS_OHOS)
+  if (error_code < 0) {
+    LOG(WARNING) << "URLLoader::NotifyCompleted net_error is "
+                  << error_code;
+  }
+#endif
   if (upload_progress_tracker_) {
     upload_progress_tracker_->OnUploadCompleted();
     upload_progress_tracker_ = nullptr;

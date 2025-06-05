@@ -254,6 +254,9 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
                                      gfx::Rect* rect) const override;
   bool HasCompositionText() const override;
   ui::TextInputClient::FocusReason GetFocusReason() const override;
+#if BUILDFLAG(IS_OHOS)
+  ui::RequestKeyboardReason GetRequestKeyboardReason() const override;
+#endif
   bool GetTextRange(gfx::Range* range) const override;
   bool GetCompositionTextRange(gfx::Range* range) const override;
   bool GetEditableSelectionRange(gfx::Range* range) const override;

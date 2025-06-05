@@ -100,6 +100,10 @@ static_library("storage_monitor") {
   if (is_fuchsia) {
     sources += [ "storage_monitor_fuchsia.cc" ]
   }
+
+  if (is_ohos) {
+    sources += [ "storage_monitor_ohos.cc" ]
+  }
 }
 
 static_library("test_support") {

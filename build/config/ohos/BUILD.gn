@@ -1,0 +1,331 @@
+# Copyright 2024 The Huawei Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/config/c++/c++.gni")
+import("//build/config/compiler/compiler.gni")
+import("//build/config/ohos/config.gni")
+import("//build/config/sanitizers/sanitizers.gni")
+
+assert(is_ohos)
+
+# This is included by reference in the //build/config/compiler config that
+# is applied to all targets. It is here to separate out the logic that is
+# ohos-only.
+config("compiler") {
+  cflags = [
+    "-ffunction-sections",
+    "-fno-short-enums",
+    "-Wno-unused-function",
+    "-Wno-global-constructors",
+    "-Wno-vla-cxx-extension",
+    "-Wno-deprecated-this-capture",
+  ]
+
+  cflags_cc = [
+    "-fexperimental-library",
+    "-Wno-vla-cxx-extension",
+    "-Wno-vla-extension",
+  ]
+
+  defines = [
+    "OSOHOS",
+
+    # The NDK has these things, but doesn't define the constants to say that it
+    # does. Define them here instead.
+    "HAVE_SYS_UIO_H",
+  ]
+
+  if (use_musl) {
+    defines += [
+      "__MUSL__",
+      "_LIBCPP_HAS_MUSL_LIBC",
+      "__BUILD_LINUX_WITH_CLANG",
+    ]
+    if (current_cpu == "x64") {
+      defines += [ "PTRACE_GET_THREAD_AREA=25" ]
+    }
+    if (current_cpu == "arm64") {
+      defines += [
+        "__GCC_CONSTRUCTIVE_SIZE=64",
+        "__GCC_DESTRUCTIVE_SIZE=64",
+      ]
+    }
+  } else {
+    defines += [ "__BUILD_LINUX_WITH_CLANG" ]
+  }
+
+  ldflags = [
+    "-Wl,--exclude-libs=libgcc.a",
+    "-Wl,--no-undefined",
+    "-Wl,--exclude-libs=libunwind_llvm.a",
+    "-Wl,--exclude-libs=libc++_static.a",
+
+    # Don't allow visible symbols from libraries that contain
+    # assembly code with symbols that aren't hidden properly.
+    # http://crbug.com/448386
+    "-Wl,--exclude-libs=libvpx_assembly_arm.a",
+  ]
+
+  # TODO(crbug.com/1184398): Move to compiler-rt when we are ready.
+  if (use_musl) {
+    if (current_cpu == "arm") {
+    } else {
+      # ldflags += [ "--rtlib=libgcc" ]
+    }
+  }
+
+  if (current_cpu == "arm64") {
+    if (arm_control_flow_integrity == "standard") {
+      cflags += [ "-mbranch-protection=pac-ret+b-key+bti" ]
+      rustflags = [ "-Zbranch-protection=bti" ]
+    } else if (arm_control_flow_integrity == "pac") {
+      cflags += [ "-mbranch-protection=pac-ret+b-key" ]
+      rustflags = [ "-Zbranch-protection=pac-ret" ]
+    }
+    # For outline atomics on AArch64 (can't pass this unconditionally
+    # due to unused flag warning on other targets).
+    # cflags += [ "--rtlib=libgcc" ]
+  }
+
+  # $compile_api_level corresponds to the API level used for the sysroot path
+  # calculation in //build/config/ohos/config.gni
+  if (current_cpu == "arm") {
+    abi_target = "arm-linux-androideabi"
+    if (use_musl) {
+      abi_target = "arm-linux-ohosmusl"
+    } else {
+      compile_api_level = arm32_ndk_api_level
+    }
+  } else if (current_cpu == "x86") {
+    abi_target = ""
+    compile_api_level = ""
+  } else if (current_cpu == "arm64") {
+    abi_target = "aarch64-linux-ohos"
+    if (!use_musl) {
+      abi_target = "aarch64-linux-android"
+      compile_api_level = arm64_ndk_api_level
+    }
+  } else if (current_cpu == "x64") {
+    abi_target = "x86_64-linux-ohos"
+  } else {
+    assert(false, "Architecture not supported")
+  }
+
+  if (use_musl) {
+    cflags += [ "--target=$abi_target" ]
+    include_dirs = [
+      "$ohos_toolchain_root/include/c++/v1",
+      "$ohos_sysroot/usr/include",
+      "$ohos_sysroot/usr/include/$abi_target",
+    ]
+    if (current_cpu == "x64") {
+      include_dirs += [ "$ohos_sysroot/usr/include/x86_64-linux-ohos/asm-x86" ]
+    }
+    ldflags += [ "--target=$abi_target" ]
+  } else {
+    cflags += [
+      "--target=$abi_target",
+      "-D__ANDROID_API__=$compile_api_level",
+    ]
+    ldflags += [ "--target=$abi_target" ]
+    include_dirs = [
+      "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/sysroot/usr/include",
+      "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/sysroot/usr/include/$abi_target",
+    ]
+  }
+
+  # Assign any flags set for the C compiler to asmflags so that they are sent
+  # to the assembler.
+  asmflags = cflags
+}
+
+# This is included by reference in the //build/config/compiler:runtime_library
+# config that is applied to all targets. It is here to separate out the logic
+# that is Android-only. Please see that target for advice on what should go in
+# :runtime_library vs. :compiler.
+config("runtime_library") {
+  libs = []
+  ldflags = []
+
+  if (use_musl) {
+    defines = [
+      "__MUSL__",
+      "_LIBCPP_HAS_MUSL_LIBC",
+      "__BUILD_LINUX_WITH_CLANG",
+    ]
+  } else {
+    defines = [ "__BUILD_LINUX_WITH_CLANG" ]
+  }
+  if (use_musl) {
+    dynamic_linker = "/lib/ld-musl-arm.so.1"
+    if (current_cpu == "arm") {
+      ldflags += [ "-L" + rebase_path("$ohos_sysroot/usr/lib/arm-linux-ohos",
+                                      root_build_dir) ]
+      ldflags +=
+          [ "-L" + rebase_path("$ohos_toolchain_root/lib/arm-linux-ohos",
+                               root_build_dir) ]
+      ldflags +=
+          [ "-L" + rebase_path(
+                "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos",
+                root_build_dir) ]
+
+      libclang_rt_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.builtins.a"
+
+      if (is_asan) {
+        libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.asan.so"
+        libs += [ rebase_path(libasan_file) ]
+      }
+      if (using_sanitizer) {
+        libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.ubsan_standalone.so"
+        libs += [ rebase_path(libasan_file) ]
+      }
+    }
+
+    if (current_cpu == "arm64") {
+      dynamic_linker = "/lib/ld-musl-aarch64.so.1"
+      ldflags += [ "-Wl,-z,max-page-size=4096" ]
+      ldflags += [ "-Wl,--hash-style=gnu" ]
+      ldflags +=
+          [ "-L" + rebase_path("$ohos_sysroot/usr/lib/aarch64-linux-ohos",
+                               root_build_dir) ]
+      ldflags += [ "-L" + rebase_path(
+                       "$ohos_toolchain_root/lib/aarch64-linux-ohos",
+                       root_build_dir) ]
+      llvm_version = "19"
+      ldflags +=
+          [ "-L" + rebase_path(
+                "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos",
+                root_build_dir) ]
+
+      libclang_rt_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos/libclang_rt.builtins.a"
+
+      if (is_asan) {
+        libasan_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos/libclang_rt.asan.so"
+        libs += [ rebase_path(libasan_file) ]
+      }
+    }
+
+    if (current_cpu == "x64") {
+      ldflags += [ "-Wl,-z,max-page-size=4096" ]
+      ldflags += [ "-Wl,--hash-style=gnu" ]
+      ldflags += [ "-L" + rebase_path("$ohos_sysroot/usr/lib/x86_64-linux-ohos",
+                                      root_build_dir) ]
+      ldflags +=
+          [ "-L" + rebase_path("$ohos_toolchain_root/lib/x86_64-linux-ohos",
+                               root_build_dir) ]
+      ldflags +=
+          [ "-L" + rebase_path(
+                "$ohos_toolchain_root/lib/clang/current/lib/x86_64-linux-ohos",
+                root_build_dir) ]
+      libclang_rt_file = "$ohos_toolchain_root/lib/clang/current/lib/x86_64-linux-ohos/libclang_rt.builtins.a"
+    }
+
+    ldflags += [ "-Wl,--dynamic-linker,$dynamic_linker" ]
+    libs += [
+      rebase_path(libclang_rt_file),
+      "c++abi",
+    ]
+  } else {
+    cflags = [
+      "-isystem" + rebase_path(
+              "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/libcxx/include",
+              root_build_dir),
+      "-isystem" + rebase_path(
+              "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/libcxxabi/include",
+              root_build_dir),
+      "-isystem" + rebase_path("$ohos_toolchain_root/lib64/clang/9.0.3/include",
+                               root_build_dir),
+      "-isystem" + rebase_path(
+              "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/sysroot/usr/include",
+              root_build_dir),
+      "-isystem" + rebase_path(
+              "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/sysroot/usr/include/arm-linux-androideabi",
+              root_build_dir),
+    ]
+
+    cflags_cc = [
+      "-isystem" + rebase_path(
+              "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/libcxx/include",
+              root_build_dir),
+      "-isystem" + rebase_path(
+              "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/libcxxabi/include",
+              root_build_dir),
+    ]
+
+    if (current_cpu == "arm") {
+      ldflags += [ "-L" + rebase_path(
+                       "$ohos_ndk_root/gcc/linux-x86/arm/gcc-linaro-7.5.0-arm-linux-gnueabi/arm-linux-gnueabi/lib",
+                       root_build_dir) ]
+      ldflags += [ "-L" + rebase_path(
+                       "$ohos_ndk_root/gcc/linux-x86/arm/gcc-linaro-7.5.0-arm-linux-gnueabi/lib/gcc/arm-linux-gnueabi/7.5.0",
+                       root_build_dir) ]
+      ldflags += [ "-l:libgcc.a" ]
+      ldflags +=
+          [ "-L" + rebase_path(
+                "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/libcxx/arm",
+                root_build_dir) ]
+      ldflags += [ "-l:libc++_static.a" ]
+      ldflags += [ "-L" + rebase_path(
+                       "$ohos_toolchain_root/lib64/clang/9.0.3/lib/linux",
+                       root_build_dir) ]
+      ldflags += [ "-l:libclang_rt.builtins-arm-android.a" ]
+      ldflags += [ "-L" + rebase_path(
+                       "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/sdk/shared_library/arm",
+                       root_build_dir) ]
+      ldflags += [ "-l:liblog.so" ]
+      ldflags += [ "-L" + rebase_path(
+                       "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/platforms/current/arch-arm/usr/lib",
+                       root_build_dir) ]
+    }
+
+    if (current_cpu == "arm64") {
+      ldflags += [ "-Wl,-z,max-page-size=4096" ]
+      ldflags += [ "-Wl,--hash-style=gnu" ]
+      ldflags += [ "-L" + rebase_path(
+                       "$ohos_ndk_root/gcc/linux-x86/arm/gcc-linaro-7.5.0-arm-linux-gnueabi/arm-linux-gnueabi/lib",
+                       root_build_dir) ]
+      ldflags += [ "-L" + rebase_path(
+                       "$ohos_ndk_root/gcc/linux-x86/arm/gcc-linaro-7.5.0-arm-linux-gnueabi/lib/gcc/arm-linux-gnueabi/7.5.0",
+                       root_build_dir) ]
+      ldflags += [ "-l:libgcc.a" ]
+      ldflags +=
+          [ "-L" + rebase_path(
+                "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/libcxx/arm64",
+                root_build_dir) ]
+      ldflags += [ "-l:libc++_static.a" ]
+      ldflags += [ "-L" + rebase_path(
+                       "$ohos_toolchain_root/lib64/clang/9.0.3/lib/linux",
+                       root_build_dir) ]
+      ldflags += [ "-l:libclang_rt.builtins-aarch64-android.a" ]
+      ldflags += [ "-L" + rebase_path(
+                       "//ohos_ndk_aosp/aosp_prebuilt_libs/asdk_libs/sdk/shared_library/arm64",
+                       root_build_dir) ]
+      ldflags += [ "-l:liblog.so" ]
+      ldflags += [ "-L" + rebase_path(
+                       "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/platforms/current/arch-arm64/usr/lib",
+                       root_build_dir) ]
+    }
+
+    libs += [ "unwind_llvm" ]
+  }
+
+  # arm builds of libc++ starting in NDK r12 depend on unwind.
+  if (current_cpu == "arm") {
+    libs += [ "unwind" ]
+  }
+
+  # TODO(jdduke) Re-enable on mips after resolving linking
+  # issues with libc++ (crbug.com/456380).
+  if (current_cpu != "mipsel" && current_cpu != "mips64el") {
+    ldflags += [ "-Wl,--warn-shared-textrel" ]
+  }
+}
+
+config("lld_pack_relocations") {
+  if (use_musl) {
+    ldflags = [ "-Wl,--pack-dyn-relocs=relr" ]
+  } else {
+    ldflags = [ "-Wl,--pack-dyn-relocs=android" ]
+  }
+}

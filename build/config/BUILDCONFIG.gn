@@ -159,6 +159,10 @@ declare_args() {
 }
 
 declare_args() {
+  use_musl = false
+}
+
+declare_args() {
   # Debug build. Enabling official builds automatically sets is_debug to false.
   is_debug = !is_official_build
 }
@@ -245,6 +249,8 @@ if (target_os == "android") {
   # Targeting android on Mac is best-effort and not guaranteed to work.
   assert(host_os == "linux", "Android builds are only supported on Linux.")
   _default_toolchain = "//build/toolchain/android:android_clang_$target_cpu"
+} else if (target_os == "ohos") {
+  _default_toolchain = "//build/toolchain/ohos:ohos_clang_$target_cpu"
 } else if (target_os == "chromeos" || target_os == "linux") {
   # See comments in build/toolchain/cros/BUILD.gn about board compiles.
   if (is_clang) {
@@ -317,6 +323,7 @@ is_mac = current_os == "mac"
 is_nacl = current_os == "nacl"
 is_watchos = current_os == "watchos"
 is_win = current_os == "win" || current_os == "winuwp"
+is_ohos = current_os == "ohos"
 
 is_apple = is_ios || is_mac || is_watchos
 is_posix = !is_win && !is_fuchsia

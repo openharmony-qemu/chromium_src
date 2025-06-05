@@ -515,7 +515,7 @@ source_set("unit_tests") {
     sources += [ "http_credentials_cleaner_unittest.cc" ]
   }
 
-  if (is_win || is_mac || is_linux || is_chromeos) {
+  if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
     sources += [ "hash_password_manager_unittest.cc" ]
   }
 

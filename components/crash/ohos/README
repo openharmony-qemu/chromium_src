@@ -1,0 +1,9 @@
+# enable crashpad
+if you want to use crashpad subsystem, you can do as follow:
+1. set build arg `enable_crashpad` to true in crashpad.gni
+or
+2. set build arg `enable_crashpad` to true in build.sh
+
+# parse dmp
+1. you can get dmp file from `[path to package]\files\chromium\Crash Reports\pending`
+2. you can parse dmp as the url: `https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/web-crashpad-V5`

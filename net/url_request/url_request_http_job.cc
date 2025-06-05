@@ -436,6 +436,12 @@ void URLRequestHttpJob::Start() {
       net::MutableNetworkTrafficAnnotationTag(request_->traffic_annotation());
   request_info_.socket_tag = request_->socket_tag();
   request_info_.idempotency = request_->GetIdempotency();
+
+#if BUILDFLAG(IS_OHOS)
+  request_info_.allow_preload_record = request_->allow_preload_record();
+  request_info_.main_page = request_->main_page();
+#endif
+
 #if BUILDFLAG(ENABLE_REPORTING)
   request_info_.reporting_upload_depth = request_->reporting_upload_depth();
 #endif

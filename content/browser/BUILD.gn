@@ -51,6 +51,10 @@ if (is_android) {
   }
 }
 
+if (is_ohos) {
+  import("//build/config/ohos/config.gni")
+}
+
 source_set("browser") {
   # Only the public target should depend on this. All other targets (even
   # internal content ones) should depend on the public one.
@@ -2447,6 +2451,28 @@ source_set("browser") {
     deps += [ "//ui/events" ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "child_process_launcher_helper_ohos.cc",
+      "font_access/font_enumeration_data_source_ohos.cc",
+      "font_access/font_enumeration_data_source_ohos.h",
+      "memory/swap_metrics_driver_impl_ohos.cc",
+      "memory/swap_metrics_driver_impl_ohos.h",
+      "sandbox_host_linux.cc",
+      "sandbox_host_linux.h",
+      "sandbox_ipc_linux.cc",
+      "sandbox_ipc_linux.h",
+    ]
+
+    deps += [
+      "//components/printing/common",
+      "//ohos/adapter",
+      "//ui/accessibility:ax_assistant",
+    ]
+
+    public_deps += [ "//components/services/font/public/mojom" ]
+  }
+
   if (is_posix && !is_mac) {
     sources += [
       "v8_snapshot_files.cc",
@@ -2484,6 +2510,13 @@ source_set("browser") {
       "//components/services/font:lib",
       "//content/common:sandbox_support_linux",
       "//third_party/blink/public/mojom:memory_usage_monitor_linux_mojo_bindings",
+    ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "file_system_access/file_path_watcher/file_path_watcher_inotify.cc",
+      "file_system_access/file_path_watcher/file_path_watcher_inotify.h",
     ]
   }
 
@@ -3391,6 +3424,25 @@ source_set("browser") {
       "webid/digital_credentials/cross_device_transaction_impl.h",
     ]
 
+    if (is_ohos) {
+      sources += [
+        "accessibility/browser_accessibility_manager_ohos.cc",
+        "accessibility/browser_accessibility_manager_ohos.h",
+        "accessibility/browser_accessibility_ohos.cc",
+        "accessibility/browser_accessibility_ohos.h",
+        "screenlock_monitor/screenlock_monitor_device_source_ohos.cc",
+        "speech/tts_ohos.cc",
+        "font_unique_name_lookup/font_unique_name_lookup_ohos.cc",
+        "font_unique_name_lookup/font_unique_name_lookup_ohos.h",
+        "font_unique_name_lookup/font_unique_name_lookup_service.cc",
+        "font_unique_name_lookup/font_unique_name_lookup_service.h",
+      ]
+      deps += [
+        "//build/config/freetype",
+        "//third_party/blink/public/common:font_unique_name_table_proto",
+      ]
+    }
+
     if (!is_fuchsia) {
       sources += [
         "speech/soda_speech_recognition_engine_impl.cc",
@@ -3465,7 +3517,7 @@ source_set("browser") {
       "web_contents/web_contents_view_aura.h",
     ]
   }
-
+  
   if (use_aura || is_apple) {
     sources += [
       "compositor/image_transport_factory.cc",

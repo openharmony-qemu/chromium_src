@@ -37,7 +37,7 @@ component("os_crypt") {
     defines += [ "ALLOW_RUNTIME_CONFIGURABLE_KEY_STORAGE" ]
   }
 
-  if ((is_posix && !is_apple && !(is_linux && !is_castos)) || is_fuchsia) {
+  if ((is_posix && !is_apple && !(is_linux && !is_castos) && !is_ohos) || is_fuchsia) {
     sources += [ "os_crypt_posix.cc" ]
   }
 
@@ -54,6 +54,18 @@ component("os_crypt") {
     sources += [ "os_crypt_win.cc" ]
     deps += [ "//components/version_info" ]
     libs = [ "crypt32.lib" ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "ohos_huks_crypto.cc",
+      "ohos_huks_crypto.h",
+      "os_crypt_ohos.cc",
+    ]
+ 
+    libs = [
+      "huks_ndk.z"
+    ]
   }
 
   if (is_linux && !is_castos) {
@@ -137,6 +149,12 @@ source_set("unit_tests") {
   if (is_apple) {
     sources += [ "keychain_password_mac_unittest.mm" ]
     deps += [ "//crypto:mock_apple_keychain" ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "ohos_huks_crypto_unittest.cc",
+    ]
   }
 
   if (is_linux && !is_castos) {

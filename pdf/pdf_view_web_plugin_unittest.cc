@@ -1848,10 +1848,12 @@ class PdfViewWebPluginWithDocInfoTest : public PdfViewWebPluginTest {
       metadata().keywords = "Keywords";
       metadata().creator = "Creator";
       metadata().producer = "Producer";
+#if !BUILDFLAG(IS_OHOS)
       ASSERT_TRUE(base::Time::FromUTCString("2021-05-04 11:12:13",
                                             &metadata().creation_date));
       ASSERT_TRUE(base::Time::FromUTCString("2021-06-04 15:16:17",
                                             &metadata().mod_date));
+#endif
     }
   };
 
@@ -1905,12 +1907,14 @@ class PdfViewWebPluginWithDocInfoTest : public PdfViewWebPluginTest {
     metadata.Set("keywords", "Keywords");
     metadata.Set("creator", "Creator");
     metadata.Set("producer", "Producer");
+#if !BUILDFLAG(IS_OHOS)
     metadata.Set("creationDate",
                  "5/4/21, 4:12:13\xE2\x80\xAF"
                  "AM");
     metadata.Set("modDate",
                  "6/4/21, 8:16:17\xE2\x80\xAF"
                  "AM");
+#endif
     metadata.Set("pageSize", "13.89 × 16.67 in (portrait)");
     metadata.Set("canSerializeDocument", true);
 

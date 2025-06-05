@@ -253,6 +253,11 @@
 #include "content/public/browser/picture_in_picture_window_controller.h"
 #endif  // !BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/permission_manager/permission_manager_adapter.h"
+namespace ohos_permission = ohos::adapter::permission;
+#endif
+
 namespace content {
 
 namespace {
@@ -3342,6 +3347,15 @@ void WebContentsImpl::DidChangeVisibleSecurityState() {
 const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
   OPTIONAL_TRACE_EVENT0("browser", "WebContentsImpl::ComputeWebPreferences");
 
+#if BUILDFLAG(IS_OHOS)
+  if (GetContentClient()->browser()->IsAdvancedSecurityMode()) {
+    base::CommandLine* command_line =
+        base::CommandLine::ForCurrentProcess();
+    command_line->AppendSwitch(switches::kDisableWebGL);
+    command_line->AppendSwitch(switches::kDisableWebGL2);
+  }
+#endif
+
   blink::web_pref::WebPreferences prefs;
 
   // Sets the hardware-related fields in |prefs| that are slow to compute. The
@@ -5757,6 +5771,19 @@ WebContents* WebContentsImpl::OpenURL(
 
     return nullptr;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  if (params.url.is_valid() && params.url.SchemeIsFile()) {
+    ohos_permission::PermissionActivationResult activate_result =
+        ohos_permission::PermissionManagerAdapter::ActivateFileAccessPersist(
+            params.url.spec());
+    if (activate_result !=
+        ohos_permission::PermissionActivationResult::SUCCESS) {
+      LOG(ERROR) << "Failed to activate file uri: " << params.url.spec()
+                 << "error code: " << static_cast<int32_t>(activate_result);
+    }
+  }
+#endif
 
   RenderFrameHost* source_render_frame_host = RenderFrameHost::FromID(
       params.source_render_process_id, params.source_render_frame_id);

@@ -73,8 +73,8 @@ bool EncryptStringWithDPAPI(const std::string& plaintext,
 [[nodiscard]] bool MaybeVerifyFailedDecryptOperation(
     const std::optional<std::string>& decrypted,
     base::span<const uint8_t> ciphertext) {
-#if BUILDFLAG(IS_WIN)
-  // On Windows, decryption fails, and decrypted will have no valid value.
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+  // On Windows, Ohos, decryption fails, and decrypted will have no valid value.
   return !decrypted;
 #else
   // On other platforms, OSCrypt does not recognise the data and it returns

@@ -7,6 +7,11 @@ import("//build/toolchain/toolchain.gni")
 
 default_clang_base_path = "//third_party/llvm-build/Release+Asserts"
 
+if (is_ohos) {
+  import("//build/config/ohos/config.gni")
+  default_clang_base_path = ohos_toolchain_root
+}
+
 declare_args() {
   # Indicates if the build should use the Chrome-specific plugins for enforcing
   # coding guidelines, etc. Only used when compiling with Chrome's Clang, not

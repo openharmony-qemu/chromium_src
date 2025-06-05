@@ -27,7 +27,11 @@ namespace {
 static const int kFSDeniedErrno = EPERM;
 
 }  // namespace.
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+
+#if BUILDFLAG(IS_OHOS)
+BPFBasePolicy::BPFBasePolicy()
+    : baseline_policy_(std::make_unique<BaselinePolicyOhos>(kFSDeniedErrno)) {}
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 BPFBasePolicy::BPFBasePolicy()
     : baseline_policy_(std::make_unique<BaselinePolicy>(kFSDeniedErrno)) {}
 #elif BUILDFLAG(IS_ANDROID)

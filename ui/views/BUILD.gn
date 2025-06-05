@@ -639,6 +639,10 @@ component("views") {
     sources += [ "color_chooser/color_chooser_view.cc" ]
   }
 
+  if (is_ohos) {
+    sources += [ "controls/menu/menu_config_ohos.cc" ]
+  }
+
   if (is_chromeos) {
     public += [ "controls/views_text_services_context_menu_chromeos.h" ]
     sources += [
@@ -897,7 +901,16 @@ component("views") {
           "//ui/base:ozone_buildflags",
         ]
       }
-      if (is_linux || is_fuchsia) {
+      if (is_ohos) {
+        public += [ "widget/desktop_aura/desktop_window_tree_host_ohos.h" ]
+        sources += [
+          "widget/desktop_aura/desktop_window_tree_host_ohos.cc",
+          "widget/desktop_aura/window_event_filter_ohos.cc",
+          "widget/desktop_aura/window_event_filter_ohos.h",
+        ]
+        deps += [ "//ui/base:hit_test" ]
+      }
+      if (is_linux || is_fuchsia || is_ohos) {
         public += [
           "widget/desktop_aura/desktop_window_tree_host_platform.h",
           "widget/desktop_aura/window_move_client_platform.h",
@@ -950,6 +963,13 @@ component("views") {
       sources += [
         "accessibility/view_ax_platform_node_delegate_win.cc",
         "accessibility/view_ax_platform_node_delegate_win.h",
+      ]
+    }
+
+    if (is_ohos) {
+      sources += [
+        "accessibility/view_ax_platform_node_delegate_ohos.cc",
+        "accessibility/view_ax_platform_node_delegate_ohos.h",
       ]
     }
   }

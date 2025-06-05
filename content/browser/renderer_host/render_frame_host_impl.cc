@@ -6046,16 +6046,17 @@ void RenderFrameHostImpl::ProcessBeforeUnloadCompleted(
   if (!initiator)
     return;
 
+  if (on_process_before_unload_completed_for_testing_) [[unlikely]] {
+    std::move(on_process_before_unload_completed_for_testing_).Run();
+  }
+
   // Continue processing the ACK in the frame that triggered beforeunload in
   // this frame.  This could be either this frame itself or an ancestor frame.
   initiator->ProcessBeforeUnloadCompletedFromFrame(
       proceed, treat_as_final_completion_callback, this,
       /*is_frame_being_destroyed=*/false, renderer_before_unload_start_time,
       renderer_before_unload_end_time, for_legacy);
-
-  if (on_process_before_unload_completed_for_testing_) [[unlikely]] {
-    std::move(on_process_before_unload_completed_for_testing_).Run();
-  }
+  // DO NOT add code after this. `this` can be deleted at this point.
 }
 
 void RenderFrameHostImpl::ProcessBeforeUnloadCompletedFromFrame(
@@ -9661,9 +9662,15 @@ void RenderFrameHostImpl::SendFencedFrameReportingBeacon(
 
   for (const blink::FencedFrame::ReportingDestination& destination :
        destinations) {
+#if BUILDFLAG(IS_OHOS)
+    SendFencedFrameReportingBeaconInternal(
+        DestinationEnumEvent{event_type, event_data, cross_origin_exposed},
+        destination);
+#else
     SendFencedFrameReportingBeaconInternal(
         DestinationEnumEvent(event_type, event_data, cross_origin_exposed),
         destination);
+#endif
   }
 }
 
@@ -9692,9 +9699,15 @@ void RenderFrameHostImpl::SendFencedFrameReportingBeaconToCustomURL(
     return;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  SendFencedFrameReportingBeaconInternal(
+      DestinationURLEvent{destination_url, cross_origin_exposed},
+      blink::FencedFrame::ReportingDestination::kBuyer);
+#else
   SendFencedFrameReportingBeaconInternal(
       DestinationURLEvent(destination_url, cross_origin_exposed),
       blink::FencedFrame::ReportingDestination::kBuyer);
+#endif
 }
 
 void RenderFrameHostImpl::MaybeSendFencedFrameAutomaticReportingBeacon(

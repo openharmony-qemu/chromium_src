@@ -177,12 +177,13 @@ bool ProcessExternalDump(
 void OverridePlatformValue(const std::string& platform_value);
 #endif  // BUILDFLAG(IS_IOS)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
 // Logs message and immediately crashes the current process without triggering a
 // crash dump.
 [[noreturn]] void CrashWithoutDumping(const std::string& message);
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
-        // BUILDFLAG(IS_ANDROID)
+        // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 // Returns the Crashpad database path, only valid in the browser. This will
 // return std::nullopt if crashpad has not yet been initialized. On Windows,
@@ -253,15 +254,17 @@ void StartProcessingPendingReports();
 void AllowMemoryRange(void* begin, size_t size);
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 // Install a handler that gets a chance to handle faults before Crashpad. This
 // is used by V8 for trap-based bounds checks.
+#if !defined(__MUSL__)
 void SetFirstChanceExceptionHandler(bool (*handler)(int, siginfo_t*, void*));
+#endif
 
 // Gets the socket and process ID of the Crashpad handler connected to this
 // process, valid if this function returns `true`.
 bool GetHandlerSocket(int* sock, pid_t* pid);
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 namespace internal {
 
@@ -277,13 +280,13 @@ DWORD WINAPI DumpProcessForHungInputThread(void* param);
 
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 // Starts the handler process with an initial client connected on fd,
 // the handler will write minidump to database if write_minidump_to_database is
 // true.
 // Returns `true` on success.
 bool StartHandlerForClient(int fd, bool write_minidump_to_database);
-#endif  // BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 // The platform-specific portion of InitializeCrashpad(). On Windows, if
 // |user_data_dir| is non-empty, the user data directory will be passed to the

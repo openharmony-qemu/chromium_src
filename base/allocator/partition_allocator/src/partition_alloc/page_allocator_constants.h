@@ -69,14 +69,15 @@ extern PageCharacteristics page_characteristics;
 
 // Ability to name anonymous VMAs is available on some, but not all Linux-based
 // systems.
-#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX)
+#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX) || PA_BUILDFLAG(IS_OHOS)
 #include <sys/prctl.h>
 
 #if defined(PR_SET_VMA) && defined(PR_SET_VMA_ANON_NAME)
 #define LINUX_NAME_REGION 1
 #endif
 
-#endif  // PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX)
+#endif  // PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX) || \
+        // PA_BUILDFLAG(IS_OHOS)
 
 namespace partition_alloc {
 namespace internal {

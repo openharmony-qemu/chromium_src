@@ -155,6 +155,13 @@ struct COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowInitProperties {
   bool enable_compositing_based_throttling = false;
 
   size_t compositor_memory_limit_mb = 0;
+#if BUILDFLAG(IS_OHOS)
+  std::optional<SkColor> background_color;
+  bool using_system_floating_window = false;
+  bool use_dark_mode = false;
+  bool is_stateless = false;
+  bool caption_button_visible = true;
+#endif
 };
 
 }  // namespace ui

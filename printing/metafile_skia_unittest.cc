@@ -159,6 +159,8 @@ TEST(MetafileSkiaTest, MultiPictureDocumentTypefaces) {
   constexpr char kTypefaceName1[] = "sans-serif";
 #if BUILDFLAG(IS_WIN)
   constexpr char kTypefaceName2[] = "Courier New";
+#elif BUILDFLAG(IS_OHOS)
+  constexpr char kTypefaceName2[] = "HarmonyOS-Sans-Regular";
 #else
   constexpr char kTypefaceName2[] = "monospace";
 #endif

@@ -287,6 +287,13 @@ static_library("test_support") {
     ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "test_support_ohos.h",
+      "test_support_ohos.cc",
+    ]
+  }
+
   if (is_ios) {
     sources += [
       "ios/wait_util.h",

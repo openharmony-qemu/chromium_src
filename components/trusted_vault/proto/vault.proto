@@ -59,6 +59,7 @@ message PhysicalDeviceMetadata {
     DEVICE_TYPE_WINDOWS = 4;
     DEVICE_TYPE_MAC_OS = 5;
     DEVICE_TYPE_LINUX = 6;
+    DEVICE_TYPE_OHOS = 7;
   }
 
   // The device type for physical device members.

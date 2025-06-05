@@ -326,6 +326,14 @@ component("gl") {
     defines += [ "GL_SILENCE_DEPRECATION" ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "ohos/ohos_native_image.cc",
+      "ohos/ohos_native_image.h",
+    ]
+    libs = ["native_image"]
+  }
+
   if (is_android) {
     sources += [
       "android/egl_fence_utils.cc",

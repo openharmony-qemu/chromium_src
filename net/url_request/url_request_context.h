@@ -249,6 +249,13 @@ class NET_EXPORT URLRequestContext final {
     job_factory_ = job_factory;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  void SetConnectTimeout(int seconds);
+  base::WeakPtr<URLRequestContext> GetWeakPtr() {
+    return weak_factory_.GetWeakPtr();
+  }
+#endif
+
   const std::optional<std::string>& cookie_deprecation_label() const {
     return cookie_deprecation_label_;
   }
@@ -396,6 +403,10 @@ class NET_EXPORT URLRequestContext final {
   std::optional<std::string> cookie_deprecation_label_;
 
   handles::NetworkHandle bound_network_;
+
+#if BUILDFLAG(IS_OHOS)
+  base::WeakPtrFactory<URLRequestContext> weak_factory_{this};
+#endif
 
   THREAD_CHECKER(thread_checker_);
 };

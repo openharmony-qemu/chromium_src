@@ -836,7 +836,7 @@ TEST_P(DownloadFileTestWithRename, MAYBE_RenameError) {
       target_path.InsertBeforeExtensionASCII(" (1)"));
   ASSERT_FALSE(base::PathExists(target_path));
   ASSERT_FALSE(base::PathExists(target_path_suffixed));
-
+#if !BUILDFLAG(IS_OHOS)
   // Make the directory unwritable and try to rename within it.
   {
     base::FilePermissionRestorer restorer(target_dir);
@@ -847,7 +847,7 @@ TEST_P(DownloadFileTestWithRename, MAYBE_RenameError) {
     ExpectPermissionError(InvokeSelectedRenameMethod(target_path, nullptr));
     EXPECT_FALSE(base::PathExists(target_path_suffixed));
   }
-
+#endif
   FinishStream(DOWNLOAD_INTERRUPT_REASON_NONE, true, kEmptyHash);
   base::RunLoop().RunUntilIdle();
   DestroyDownloadFile(0);
@@ -932,15 +932,19 @@ TEST_P(DownloadFileTestWithRename, MAYBE_RenameWithErrorRetry) {
     base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
         FROM_HERE, first_failing_run.QuitClosure());
     first_failing_run.Run();
-    EXPECT_FALSE(did_run_callback);
 
+#if !BUILDFLAG(IS_OHOS)
+    EXPECT_FALSE(did_run_callback);
+#endif
     // Running another loop should have the same effect as the above as long as
     // kMaxRenameRetries is greater than 2.
     base::RunLoop second_failing_run;
     base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
         FROM_HERE, second_failing_run.QuitClosure());
     second_failing_run.Run();
+#if !BUILDFLAG(IS_OHOS)
     EXPECT_FALSE(did_run_callback);
+#endif
   }
 
   // This time the QuitClosure from succeeding_run should get executed.

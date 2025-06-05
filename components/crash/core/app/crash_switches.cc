@@ -18,7 +18,7 @@ namespace switches {
 // is a standalone executable.
 const char kCrashpadHandler[] = "crashpad-handler";
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 // The process ID of the Crashpad handler.
 const char kCrashpadHandlerPid[] = "crashpad-handler-pid";
 #endif

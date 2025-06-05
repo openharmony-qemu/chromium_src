@@ -27,6 +27,10 @@
 #include "ui/base/mojom/menu_source_type.mojom.h"
 #include "ui/latency/latency_info.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/res_sched/res_sched.h"
+#endif
+
 using blink::WebGestureEvent;
 using blink::WebInputEvent;
 
@@ -115,6 +119,26 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
 base::LazyInstance<UnboundWidgetInputHandler>::Leaky g_unbound_input_handler =
     LAZY_INSTANCE_INITIALIZER;
 
+#if BUILDFLAG(IS_OHOS)
+/**
+ * meet gesture event will boost freq
+ */
+void ResScheduleHandleGestureEvent(const WebGestureEvent& gesture_event) {
+  switch (gesture_event.GetType()) {
+    case blink::WebInputEvent::Type::kGestureScrollBegin:
+    case blink::WebInputEvent::Type::kGestureScrollUpdate:
+    case blink::WebInputEvent::Type::kGestureFlingStart: {
+      auto current_time =
+          base::Time::Now().ToDeltaSinceWindowsEpoch().InMicroseconds();
+      ohos::adapter::res_sched::ResSchedManager::GetInstance()
+          .TriggerWebSlideNormal(current_time);
+      break;
+    }
+    default:
+      break;
+  }
+}
+#endif
 }  // namespace
 
 RenderInputRouter::~RenderInputRouter() {
@@ -390,6 +414,10 @@ void RenderInputRouter::ForwardGestureEventWithLatencyInfo(
   if (delegate_->PreHandleGestureEvent(gesture_event)) {
     return;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  ResScheduleHandleGestureEvent(gesture_event);
+#endif
 
   DispatchInputEventWithLatencyInfo(
       gesture_with_latency.event, &gesture_with_latency.latency,

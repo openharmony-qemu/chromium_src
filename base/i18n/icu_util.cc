@@ -53,8 +53,13 @@
 #endif
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || \
-    BUILDFLAG(IS_CHROMEOS) || (BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CASTOS))
+    BUILDFLAG(IS_CHROMEOS) || (BUILDFLAG(IS_LINUX) || \
+    BUILDFLAG(IS_OHOS) && !BUILDFLAG(IS_CASTOS))
 #include "third_party/icu/source/i18n/unicode/timezone.h"
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/ohos_i18n/ohos_i18n.h"
 #endif
 
 namespace base::i18n {
@@ -305,7 +310,13 @@ bool InitializeICUFromDataFile() {
 // On some platforms, the time zone must be explicitly initialized zone rather
 // than relying on ICU's internal initialization.
 void InitializeIcuTimeZone() {
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_OHOS)
+  std::string zone_id = ::ohos::adapter::ohos_i18n::GetTimeZone();
+  if (!zone_id.empty()) {
+    icu::TimeZone::adoptDefault(
+        icu::TimeZone::createTimeZone(icu::UnicodeString::fromUTF8(zone_id)));
+  }
+#elif BUILDFLAG(IS_ANDROID)
   // On Android, we can't leave it up to ICU to set the default time zone
   // because ICU's time zone detection does not work in many time zones (e.g.
   // Australia/Sydney, Asia/Seoul, Europe/Paris ). Use JNI to detect the host

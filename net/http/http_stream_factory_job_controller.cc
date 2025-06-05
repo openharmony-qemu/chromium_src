@@ -781,6 +781,11 @@ int HttpStreamFactory::JobController::DoLoop(int rv) {
         NOTREACHED() << "bad state";
     }
   } while (next_state_ != STATE_NONE && rv != ERR_IO_PENDING);
+#if BUILDFLAG(IS_OHOS)
+  if (rv < ERR_IO_PENDING) {
+    LOG(WARNING) << " next state is " << next_state_ << " error code is " << rv;
+  }
+#endif
   return rv;
 }
 

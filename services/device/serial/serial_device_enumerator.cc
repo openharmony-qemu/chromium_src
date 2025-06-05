@@ -19,6 +19,8 @@
 #include "services/device/serial/serial_device_enumerator_mac.h"
 #elif BUILDFLAG(IS_WIN)
 #include "services/device/serial/serial_device_enumerator_win.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "services/device/serial/serial_device_enumerator_ohos.h"
 #endif
 
 namespace device {
@@ -32,6 +34,8 @@ std::unique_ptr<SerialDeviceEnumerator> SerialDeviceEnumerator::Create(
   return std::make_unique<SerialDeviceEnumeratorMac>();
 #elif BUILDFLAG(IS_WIN)
   return std::make_unique<SerialDeviceEnumeratorWin>(std::move(ui_task_runner));
+#elif BUILDFLAG(IS_OHOS)
+  return SerialDeviceEnumeratorOhos::Create();
 #else
 #error "No implementation of SerialDeviceEnumerator on this platform."
 #endif

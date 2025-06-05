@@ -17,7 +17,7 @@
 //
 // Operating system:
 //   IS_IOS / IS_AIX / IS_ASMJS / IS_FREEBSD / IS_FUCHSIA / IS_LINUX / IS_MAC /
-//   IS_NACL / IS_NETBSD / IS_OPENBSD / IS_QNX / IS_SOLARIS / IS_WIN
+//   IS_NACL / IS_NETBSD / IS_OPENBSD / IS_QNX / IS_SOLARIS / IS_WIN / IS_OHOS
 //
 // Operating system family:
 //   IS_APPLE / IS_BSD / IS_POSIX
@@ -76,6 +76,8 @@
 #else
 #define PA_IS_MAC
 #endif  // defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#elif defined(OSOHOS)
+#define PA_IS_OHOS
 #elif defined(__linux__)
 #if !PA_BUILDFLAG(IS_CHROMEOS)
 // Do not define PA_IS_LINUX on Chrome OS build.
@@ -123,7 +125,7 @@
     defined(PA_IS_IOS) || defined(PA_IS_LINUX) || defined(PA_IS_CHROMEOS) ||  \
     defined(PA_IS_MAC) || defined(PA_IS_NACL) || defined(PA_IS_NETBSD) ||     \
     defined(PA_IS_OPENBSD) || defined(PA_IS_QNX) || defined(PA_IS_SOLARIS) || \
-    PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_CHROMEOS)
+    defined(PA_IS_OHOS) || PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_CHROMEOS)
 #define PA_IS_POSIX
 #endif
 
@@ -434,6 +436,13 @@
 #define PA_BUILDFLAG_INTERNAL_IS_IOS() (0)
 #endif
 #undef PA_IS_IOS
+
+#if defined(PA_IS_OHOS)
+#define PA_BUILDFLAG_INTERNAL_IS_OHOS() (1)
+#else
+#define PA_BUILDFLAG_INTERNAL_IS_OHOS() (0)
+#endif
+#undef PA_IS_OHOS
 
 #if defined(PA_IS_LINUX)
 #define PA_BUILDFLAG_INTERNAL_IS_LINUX() (1)

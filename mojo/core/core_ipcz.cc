@@ -691,7 +691,7 @@ MojoResult MojoUnwrapPlatformSharedMemoryRegionIpcz(
 
   uint32_t capacity = *num_platform_handles;
   uint32_t required_handles = 1;
-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   if (buffer->region().GetMode() ==
       base::subtle::PlatformSharedMemoryRegion::Mode::kWritable) {
     required_handles = 2;
@@ -705,7 +705,7 @@ MojoResult MojoUnwrapPlatformSharedMemoryRegionIpcz(
   PlatformHandle handles[2];
   base::subtle::ScopedPlatformSharedMemoryHandle region_handle =
       buffer->region().PassPlatformHandle();
-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   handles[0] = PlatformHandle(std::move(region_handle.fd));
   handles[1] = PlatformHandle(std::move(region_handle.readonly_fd));
 #else

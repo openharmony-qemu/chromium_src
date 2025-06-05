@@ -156,6 +156,7 @@ bool UpdateProcessTypeAndEnableSandbox(
 
   VLOG(3) << "UpdateProcessTypeAndEnableSandbox: Updating process type to "
           << new_process_type;
+
   command_line->AppendSwitchASCII(switches::kProcessType, new_process_type);
 
   // Update the process title. The argv was already cached by the call to
@@ -385,8 +386,10 @@ bool SandboxLinux::InitializeSandbox(sandbox::mojom::Sandbox sandbox_type,
 
   // For now, restrict the |options.allow_threads_during_sandbox_init| option to
   // the GPU process
+#if !BUILDFLAG(IS_OHOS)
   DCHECK(process_type == switches::kGpuProcess ||
          !options.allow_threads_during_sandbox_init);
+#endif
   if (has_threads && !options.allow_threads_during_sandbox_init) {
     std::string error_message =
         "InitializeSandbox() called with multiple threads in process " +
@@ -449,11 +452,14 @@ bool SandboxLinux::InitializeSandbox(sandbox::mojom::Sandbox sandbox_type,
   // some cases the caller doesn't want to enable the semantic sandbox layer,
   // and this CHECK should be skipped. In this case, the caller should unset
   // |options.check_for_open_directories|.
+#if !BUILDFLAG(IS_OHOS)
+  // setuid not use in ohos
   CHECK(!options.check_for_open_directories || !HasOpenDirectories())
       << "InitializeSandbox() called after unexpected directories have been "
       << "opened. This breaks the security of the setuid sandbox.";
 
   InitLibcLocaltimeFunctions();
+#endif
 
 #if !BUILDFLAG(IS_CHROMEOS)
   if (!IsUnsandboxedSandboxType(sandbox_type)) {
@@ -519,7 +525,12 @@ rlim_t GetProcessDataSizeLimit(sandbox::mojom::Sandbox sandbox_type) {
     } else if (physical_memory > 16 * GB) {
       limit = 16 * GB;
     } else {
+#if BUILDFLAG(IS_OHOS)
+      // On OHOS, allocating 8G virtual memory will cause the sandbox initialization to fail.
+      limit = 16 * GB;
+#else
       limit = 8 * GB;
+#endif
     }
 
     if (sandbox_type == sandbox::mojom::Sandbox::kRenderer &&

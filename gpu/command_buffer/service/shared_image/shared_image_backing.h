@@ -339,7 +339,7 @@ class GPU_GLES2_EXPORT SharedImageBacking {
       bool needs_detiling);
 #endif
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   virtual std::unique_ptr<LegacyOverlayImageRepresentation>
   ProduceLegacyOverlay(SharedImageManager* manager, MemoryTypeTracker* tracker);
 #endif

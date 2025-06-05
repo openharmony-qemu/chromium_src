@@ -21,6 +21,9 @@ namespace display::test {
 class TestScreen : public ScreenBase {
  public:
   static constexpr gfx::Rect kDefaultScreenBounds = gfx::Rect(0, 0, 800, 600);
+#if BUILDFLAG(IS_OHOS)
+  using ScreenBase::GetLocalProcessWindowAtPoint;
+#endif
 
   static TestScreen* Get();
 
@@ -45,6 +48,13 @@ class TestScreen : public ScreenBase {
   TabletState GetTabletState() const override;
   void OverrideTabletStateForTesting(TabletState state);
 #endif  // BUILDFLAG(IS_CHROMEOS)
+
+#if BUILDFLAG(IS_OHOS)
+  gfx::NativeWindow GetLocalProcessWindowAtPoint(
+      const gfx::Point& point,
+      const std::set<gfx::NativeWindow>& ignore,
+      const int32_t display_id) override;
+#endif
 
  private:
   gfx::Point cursor_screen_point_;

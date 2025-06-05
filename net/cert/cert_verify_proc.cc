@@ -66,6 +66,8 @@
 
 #if BUILDFLAG(IS_ANDROID)
 #include "net/cert/cert_verify_proc_android.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "net/cert/cert_verify_proc_ohos.h"
 #elif BUILDFLAG(IS_IOS)
 #include "net/cert/cert_verify_proc_ios.h"
 #endif
@@ -401,6 +403,9 @@ scoped_refptr<CertVerifyProc> CertVerifyProc::CreateSystemVerifyProc(
       std::move(cert_net_fetcher), std::move(crl_set));
 #elif BUILDFLAG(IS_IOS)
   return base::MakeRefCounted<CertVerifyProcIOS>(std::move(crl_set));
+#elif BUILDFLAG(IS_OHOS)
+  return base::MakeRefCounted<CertVerifyProcOHOS>(
+      std::move(cert_net_fetcher), std::move(crl_set));
 #else
 #error Unsupported platform
 #endif

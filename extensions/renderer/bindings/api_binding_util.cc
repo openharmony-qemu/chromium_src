@@ -138,6 +138,8 @@ std::string GetPlatformString() {
   return "fuchsia";
 #elif BUILDFLAG(IS_DESKTOP_ANDROID)
   return "desktop_android";
+#elif BUILDFLAG(IS_OHOS)
+  return "ohos";
 #else
   NOTREACHED();
 #endif

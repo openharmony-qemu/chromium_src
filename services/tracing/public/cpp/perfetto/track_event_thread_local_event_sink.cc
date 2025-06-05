@@ -42,6 +42,59 @@
 #include "third_party/perfetto/protos/perfetto/trace/track_event/thread_descriptor.pbzero.h"
 #include "third_party/perfetto/protos/perfetto/trace/track_event/track_descriptor.pbzero.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "hitrace/trace.h"
+
+namespace {
+void HandleCounterEventByOHHiTrace(base::trace_event::TraceEvent* trace_event) {
+  for (size_t i = 0; i < trace_event->arg_size(); i++) {
+    auto name = trace_event->arg_name(i);
+    auto value = trace_event->arg_value(i);
+    OH_HiTrace_CountTrace(name, value.as_int);
+  }
+}
+
+void HandleTraceEventByOHHiTrace(base::trace_event::TraceEvent* trace_event) {
+  auto phase = trace_event->phase();
+  if (trace_event->name() == nullptr) {
+    LOG(WARNING) << "HiTrace not support empty event name.";
+    return;
+  }
+  std::ostringstream ss;
+  trace_event->AppendPrettyPrinted(&ss);
+  auto pretty_name = ss.str();
+  auto event_name = pretty_name.c_str();
+  auto event_id = trace_event->id();
+  switch (phase) {
+    // Split COMPLETE events into BEGIN/END pairs. We write the BEGIN here, and
+    // the END in UpdateDuration().
+    case TRACE_EVENT_PHASE_COMPLETE:
+    case TRACE_EVENT_PHASE_BEGIN:
+      OH_HiTrace_StartTrace(event_name);
+      break;
+    case TRACE_EVENT_PHASE_END:
+      OH_HiTrace_FinishTrace();
+      break;
+    case TRACE_EVENT_PHASE_ASYNC_BEGIN:
+      OH_HiTrace_StartAsyncTrace(event_name, (int32_t)event_id);
+      break;
+    case TRACE_EVENT_PHASE_ASYNC_END:
+      OH_HiTrace_FinishAsyncTrace(event_name, (int32_t)event_id);
+      break;
+    case TRACE_EVENT_PHASE_INSTANT:
+      OH_HiTrace_StartTrace(event_name);
+      OH_HiTrace_FinishTrace();
+      break;
+    case TRACE_EVENT_PHASE_COUNTER:
+      HandleCounterEventByOHHiTrace(trace_event);
+      break;
+    default:
+      break;
+  };
+}
+} // namespace
+#endif
+
 using TraceLog = base::trace_event::TraceLog;
 using perfetto::protos::pbzero::ChromeThreadDescriptor;
 using perfetto::protos::pbzero::ClockSnapshot;
@@ -208,6 +261,9 @@ void TrackEventThreadLocalEventSink::AddLegacyTraceEvent(
   auto trace_packet = NewTracePacket();
   PrepareTrackEvent(trace_event, handle, &trace_packet);
 
+#if BUILDFLAG(IS_OHOS)
+  HandleTraceEventByOHHiTrace(trace_event);
+#endif
   WriteInternedDataIntoTracePacket(trace_packet.get());
 }
 
@@ -231,6 +287,9 @@ TrackEventThreadLocalEventSink::AddTypedTraceEvent(
   auto* track_event =
       PrepareTrackEvent(trace_event, &base_handle, &pending_trace_packet_);
 
+#if BUILDFLAG(IS_OHOS)
+  HandleTraceEventByOHHiTrace(trace_event);
+#endif
   // |pending_trace_packet_| will be finalized in OnTrackEventCompleted() after
   // the code in //base ran the typed trace point's argument function.
   return base::trace_event::TrackEventHandle(track_event, &incremental_state_,

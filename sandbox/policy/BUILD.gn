@@ -50,7 +50,7 @@ component("policy") {
       "//third_party/jni_zero",
     ]
   }
-  if (is_linux || is_chromeos) {
+  if (is_linux || is_chromeos || is_ohos) {
     sources += [
       "linux/bpf_audio_policy_linux.cc",
       "linux/bpf_audio_policy_linux.h",
@@ -128,6 +128,11 @@ component("policy") {
       "//sandbox/linux:seccomp_bpf",
       "//sandbox/linux:suid_sandbox_client",
     ]
+    if (is_ohos) {
+      deps -= [
+        "//sandbox/linux:suid_sandbox_client",
+      ]
+    }
   }
   if (is_chromeos_ash) {
     sources += [

@@ -925,7 +925,11 @@ int HttpNetworkTransaction::DoLoop(int result) {
         NOTREACHED() << "bad state";
     }
   } while (rv != ERR_IO_PENDING && next_state_ != STATE_NONE);
-
+#if BUILDFLAG(IS_OHOS)
+  if (rv < ERR_IO_PENDING) {
+    LOG(WARNING) << " next state is " << next_state_ << " error code is " << rv;
+  }
+#endif
   return rv;
 }
 
@@ -1366,6 +1370,11 @@ int HttpNetworkTransaction::DoReadHeadersComplete(int result) {
 
   DCHECK(response_.headers.get());
 
+#if BUILDFLAG(IS_OHOS)
+  if (response_.headers->response_code() >= HTTP_BAD_REQUEST) {
+    LOG(WARNING) << "response_code is " << response_.headers->response_code();
+  }
+#endif
   // Check for a 103 Early Hints response.
   if (response_.headers->response_code() == HTTP_EARLY_HINTS) {
     NetLogResponseHeaders(

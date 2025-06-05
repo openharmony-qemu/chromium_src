@@ -251,7 +251,7 @@ component("printing") {
     ]
   }
 
-  if (is_linux) {
+  if (is_linux || is_ohos) {
     sources += [
       "printing_context_linux.cc",
       "printing_context_linux.h",

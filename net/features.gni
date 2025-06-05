@@ -27,7 +27,7 @@ declare_args() {
   disable_zstd_filter = is_cronet_build
 
   # Multicast DNS.
-  enable_mdns = is_win || is_linux || is_chromeos || is_fuchsia || is_apple
+  enable_mdns = is_win || is_linux || is_chromeos || is_fuchsia || is_apple || is_ohos
 
   # Reporting not used on iOS.
   enable_reporting = !is_ios

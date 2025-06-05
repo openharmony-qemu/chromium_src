@@ -56,6 +56,13 @@ component("display") {
     "unified_desktop_utils.h",
   ]
 
+  if (is_ohos) {
+    sources += [
+      "screen_ohos.cc",
+      "screen_ohos.h",
+    ]
+  }
+
   if (is_android) {
     sources += [ "screen_android.cc" ]
   }

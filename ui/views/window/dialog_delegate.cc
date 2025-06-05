@@ -105,7 +105,7 @@ Widget* DialogDelegate::CreateDialogWidget(
 
 // static
 bool DialogDelegate::CanSupportCustomFrame(gfx::NativeView parent) {
-#if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)) && \
+#if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)) && \
     BUILDFLAG(ENABLE_DESKTOP_AURA)
   // The new style doesn't support unparented dialogs on Linux desktop.
   return parent != nullptr;
@@ -160,6 +160,9 @@ Widget::InitParams DialogDelegate::GetDialogWidgetInitParams(
     params.autosize = bubble->is_autosized();
   }
 
+#if BUILDFLAG(IS_OHOS)
+  params.is_stateless = true;
+#endif
   return params;
 }
 

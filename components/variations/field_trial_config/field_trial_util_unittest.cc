@@ -335,6 +335,7 @@ TEST_F(FieldTrialUtilTest,
       Study::PLATFORM_LINUX,
       Study::PLATFORM_MAC,
       Study::PLATFORM_WINDOWS,
+      Study::PLATFORM_OHOS,
   };
 
   // Break if platforms are added without updating |all_platforms|.

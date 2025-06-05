@@ -769,6 +769,9 @@ bool ExecutableExistsInPath(Environment* env,
 #if !BUILDFLAG(IS_APPLE)
 // This is implemented in file_util_apple.mm for Mac.
 bool GetTempDir(FilePath* path) {
+#if BUILDFLAG(IS_OHOS)
+  return PathService::Get(DIR_TEMP, path);
+#else
   const char* tmp = getenv("TMPDIR");
   if (tmp) {
     *path = FilePath(tmp);
@@ -780,6 +783,7 @@ bool GetTempDir(FilePath* path) {
 #else
   *path = FilePath("/tmp");
   return true;
+#endif
 #endif
 }
 #endif  // !BUILDFLAG(IS_APPLE)
@@ -1485,7 +1489,8 @@ bool CopyFileContentsWithSendfile(File& infile,
 
 }  // namespace internal
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
+    BUILDFLAG(IS_OHOS)
 BASE_EXPORT bool IsPathExecutable(const FilePath& path) {
   bool result = false;
   FilePath tmp_file_path;

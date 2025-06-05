@@ -39,6 +39,8 @@
 #include "net/base/network_change_notifier_apple.h"
 #elif BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
 #include "net/base/network_change_notifier_passive.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "net/base/network_change_notifier_ohos.h"
 #elif BUILDFLAG(IS_FUCHSIA)
 #include "net/base/network_change_notifier_fuchsia.h"
 #endif
@@ -307,6 +309,9 @@ std::unique_ptr<NetworkChangeNotifier> NetworkChangeNotifier::CreateIfNeeded(
       std::make_unique<NetworkChangeNotifierWin>();
   network_change_notifier->WatchForAddressChange();
   return network_change_notifier;
+#elif BUILDFLAG(IS_OHOS)
+  return std::make_unique<NetworkChangeNotifierOhos>(initial_type,
+                                                     initial_subtype);
 #elif BUILDFLAG(IS_ANDROID)
   // Fallback to use NetworkChangeNotifierPassive if
   // NetworkChangeNotifierFactory is not set. Currently used for tests and when
@@ -866,7 +871,7 @@ NetworkChangeNotifier::NetworkChangeNotifier(
   }
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 AddressMapOwnerLinux* NetworkChangeNotifier::GetAddressMapOwnerInternal() {
   return nullptr;
 }

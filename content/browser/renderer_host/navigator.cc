@@ -61,6 +61,10 @@
 #include "url/gurl.h"
 #include "url/url_util.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "services/network/public/mojom/network_context.mojom.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -362,7 +366,15 @@ Navigator::Navigator(
     : controller_(browser_context, frame_tree, navigation_controller_delegate),
       delegate_(delegate) {}
 
-Navigator::~Navigator() = default;
+Navigator::~Navigator() {
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context =
+      controller_.GetBrowserContext()->GetDefaultStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr) {
+    network_context->StopMainPage(reinterpret_cast<int64_t>(this));
+  }
+#endif
+}
 
 // static
 bool Navigator::CheckWebUIRendererDoesNotDisplayNormalURL(
@@ -492,6 +504,16 @@ void Navigator::DidNavigate(
     bool was_within_same_document) {
   DCHECK(navigation_request);
   FrameTreeNode* frame_tree_node = render_frame_host->frame_tree_node();
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()->
+      GetStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr) {
+    const net::NetworkAnonymizationKey networkAnonymizationKey =
+        GetNetworkAnonymizationKey(frame_tree_node, navigation_request.get());
+    network_context->StartMainPage(params.url.possibly_invalid_spec(), networkAnonymizationKey,
+        reinterpret_cast<uint64_t>(this));
+  }
+#endif
   FrameTree& frame_tree = frame_tree_node->frame_tree();
   DCHECK_EQ(&frame_tree, &controller_.frame_tree());
 
@@ -829,6 +851,17 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
 
   FrameTreeNode* frame_tree_node = request->frame_tree_node();
   DCHECK_EQ(&(frame_tree_node->frame_tree()), &controller_.frame_tree());
+
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()->
+      GetStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr) {
+    const net::NetworkAnonymizationKey networkAnonymizationKey =
+        GetNetworkAnonymizationKey(frame_tree_node, request.get());
+    network_context->StartMainPage(request->common_params().url.spec(), networkAnonymizationKey,
+        reinterpret_cast<uint64_t>(this));
+  }
+#endif
 
   //  TODO(crbug.com/40496584):Resolved an issue where creating RPHI would cause
   //  a crash when the browser context was shut down. We are actively exploring
@@ -1270,6 +1303,17 @@ void Navigator::OnBeginNavigation(
     return;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()->
+      GetStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr) {
+    const net::NetworkAnonymizationKey networkAnonymizationKey =
+        GetNetworkAnonymizationKey(frame_tree_node, navigation_request);
+    network_context->StartMainPage(navigation_request->common_params().url.spec(), networkAnonymizationKey,
+        reinterpret_cast<uint64_t>(this));
+  }
+#endif
+
   // For main frames, NavigationHandle will be created after the call to
   // |DidStartMainFrameNavigation|, so it receives the most up to date pending
   // entry from the NavigationController.
@@ -1571,5 +1615,15 @@ Navigator::GetNavigationEntryForRendererInitiatedNavigation(
 
   return controller_.GetPendingEntry();
 }
+
+#if BUILDFLAG(IS_OHOS)
+const net::NetworkAnonymizationKey Navigator::GetNetworkAnonymizationKey(
+    FrameTreeNode* frame_tree_node,
+    NavigationRequest* navigation_request) {
+  return frame_tree_node->current_frame_host()->ComputeIsolationInfoForNavigation(
+      navigation_request->common_params().url, navigation_request->is_credentialless(),
+      navigation_request->ComputeFencedFrameNonce()).network_anonymization_key();
+}
+#endif  // BUILDFLAG(IS_OHOS)
 
 }  // namespace content

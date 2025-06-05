@@ -98,7 +98,7 @@ BrowserAccessibilityFindInPageInfo::BrowserAccessibilityFindInPageInfo()
       end_offset(-1),
       active_request_id(-1) {}
 
-#if !BUILDFLAG(HAS_PLATFORM_ACCESSIBILITY_SUPPORT)
+#if !BUILDFLAG(HAS_PLATFORM_ACCESSIBILITY_SUPPORT) && !BUILDFLAG(IS_OHOS)
 // static
 BrowserAccessibilityManager* BrowserAccessibilityManager::Create(
     const AXTreeUpdate& initial_tree,

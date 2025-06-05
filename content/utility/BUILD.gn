@@ -138,7 +138,7 @@ source_set("utility") {
     deps += [ "//services/proxy_resolver:lib" ]
   }
 
-  if (is_linux || is_chromeos) {
+  if (is_linux || is_chromeos || is_ohos) {
     deps += [
       "//content/utility/speech:speech_recognition_sandbox_hook",
       "//services/network:network_sandbox_hook",
@@ -148,7 +148,7 @@ source_set("utility") {
     }
   }
 
-  if (enable_screen_ai_service && (is_linux || is_chromeos)) {
+  if (enable_screen_ai_service && (is_linux || is_chromeos || is_ohos)) {
     deps += [ "//services/screen_ai:screen_ai_sandbox_hook" ]
   }
 

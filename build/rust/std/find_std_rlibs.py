@@ -47,6 +47,8 @@ def main():
 
   # Ask rustc where to find the stdlib for this target.
   rustc = os.path.join(args.rust_bin_dir, "rustc")
+  if sys.platform == 'win32':
+    rustc = os.path.join(args.rust_bin_dir, "rustc.exe")  
   rustc_args = [rustc, "--print", "target-libdir"]
   if args.target:
     rustc_args.extend(["--target", args.target])

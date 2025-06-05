@@ -17,6 +17,10 @@ if (is_ios) {
   import("//ios/build/config.gni")
 }
 
+if (is_ohos) {
+  import("//build/config/ohos/config.gni")
+}
+
 static_library("dom_keycode_converter") {
   public = [
     "keycodes/dom/dom_code.h",

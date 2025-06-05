@@ -103,7 +103,7 @@ static_library("app") {
     libs = [ "log" ]
   }
 
-  if (is_android || is_linux || is_chromeos) {
+  if (is_android || is_linux || is_chromeos || is_ohos) {
     deps += [
       "//base:base_static",
       "//components/crash/core/common",
@@ -111,7 +111,7 @@ static_library("app") {
     ]
   }
 
-  if (is_castos) {
+  if (is_castos || is_ohos) {
     deps += [ "//third_party/breakpad:client" ]
   }
 
@@ -144,6 +144,14 @@ static_library("app") {
   if (is_ios) {
     sources += [ "crashpad_ios.mm" ]
     deps += [ "//third_party/crashpad/crashpad/minidump" ]
+  }
+
+  if (is_ohos) {
+    sources += [ "crashpad_ohos.cc" ]
+    deps += [
+      ":crashpad_handler_main",
+      "//third_party/crashpad/crashpad/handler",
+    ]
   }
 }
 

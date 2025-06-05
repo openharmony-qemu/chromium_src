@@ -28,6 +28,10 @@ source_set("system_cpu") {
     sources += [ "cpu_info_provider_fuchsia.cc" ]
   }
 
+  if (is_ohos) {
+    sources += [ "cpu_info_provider_ohos.cc" ]
+  }
+
   if (is_mac) {
     sources += [ "cpu_info_provider_mac.cc" ]
   }

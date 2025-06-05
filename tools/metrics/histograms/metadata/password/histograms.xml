@@ -1151,6 +1151,15 @@ chromium-metrics-reviews@google.com.
   <summary>User actions performed on the Password Check settings view.</summary>
 </histogram>
 
+<histogram name="PasswordManager.CanUseBiometricsOhos" enum="BooleanSuccess"
+    expires_after="2023-10-01">
+  <owner>mobile@huawei.com</owner>
+  <summary>
+    If user have enabled biometric authentication on their device. It is
+    recorded whenever DeviceAuthenticatorOhos::CanAuthenticate is called.
+  </summary>
+</histogram>
+
 <histogram name="PasswordManager.CanUseBiometricsMac" enum="BooleanSuccess"
     expires_after="2025-03-09">
   <owner>vsemeniuk@google.com</owner>

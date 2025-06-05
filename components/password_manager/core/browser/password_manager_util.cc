@@ -359,7 +359,8 @@ PasswordForm MakeNormalizedBlocklistedForm(
   return result;
 }
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
 // TODO(crbug.com/367336383): Make the this block Ash only for
 // ChromeOS.
 bool ShouldBiometricAuthenticationForFillingToggleBeVisible(
@@ -407,7 +408,8 @@ bool ShouldShowBiometricAuthenticationBeforeFillingPromo(
   return !client->GetPrefs()->GetBoolean(
       password_manager::prefs::kBiometricAuthenticationBeforeFilling);
 }
-#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+        // BUILDFLAG(IS_OHOS)
 
 GURL StripAuthAndParams(const GURL& gurl) {
   GURL::Replacements rep;

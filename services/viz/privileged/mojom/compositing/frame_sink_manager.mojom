@@ -55,6 +55,9 @@ struct RootCompositorFrameSinkParams {
 
   pending_associated_receiver<ExternalBeginFrameController>?
       external_begin_frame_controller;
+
+  [EnableIf=is_ohos]
+  uint64 surface_id;
 };
 
 // The FrameSinkManager interface is a privileged interface that allows the

@@ -23,6 +23,30 @@ const double kMinBoostTouchScrollSpeedSquare = 150 * 150.;
 // are received. The default value on Android native views is 40ms, but we use a
 // slightly increased value to accomodate small IPC message delays.
 constexpr base::TimeDelta kFlingBoostTimeoutDelay = base::Seconds(0.05);
+
+#if BUILDFLAG(IS_OHOS)
+// Set a maximum speed for the slide.
+// Otherwise, sliding too fast may cause the page to freeze.
+const float kMaxBoostFlingSpeed = 4500;
+
+void LimitVelocity(gfx::Vector2dF& velocity) {
+  float vx = velocity.x();
+  float vy = velocity.y();
+  if (vx > kMaxBoostFlingSpeed)
+    vx = kMaxBoostFlingSpeed;
+  else if (vx < -kMaxBoostFlingSpeed)
+    vx = -kMaxBoostFlingSpeed;
+
+  if (vy > kMaxBoostFlingSpeed)
+    vy = kMaxBoostFlingSpeed;
+  else if (vy < -kMaxBoostFlingSpeed)
+    vy = -kMaxBoostFlingSpeed;
+  velocity.set_x(vx);
+  velocity.set_y(vy);
+  TRACE_EVENT_INSTANT2("input", "Fling Boosted", TRACE_EVENT_SCOPE_THREAD, "vx",
+                       velocity.x(), "vy", velocity.y());
+}
+#endif // BUILDFLAG(IS_OHOS)
 }  // namespace
 
 namespace ui {
@@ -33,16 +57,14 @@ gfx::Vector2dF FlingBooster::GetVelocityForFlingStart(
             fling_start.GetType());
   gfx::Vector2dF velocity(fling_start.data.fling_start.velocity_x,
                           fling_start.data.fling_start.velocity_y);
-
-  TRACE_EVENT2("input", "FlingBooster::GetVelocityForFlingStart", "vx",
-               velocity.x(), "vy", velocity.y());
-
   if (ShouldBoostFling(fling_start)) {
     velocity += previous_fling_starting_velocity_;
-    TRACE_EVENT_INSTANT2("input", "Boosted", TRACE_EVENT_SCOPE_THREAD, "vx",
-                         velocity.x(), "vy", velocity.y());
+  #if BUILDFLAG(IS_OHOS)
+    LimitVelocity(velocity);
+  #endif
   }
-
+  TRACE_EVENT_INSTANT2("input", "Boosted", TRACE_EVENT_SCOPE_THREAD, "vx",
+                       velocity.x(), "vy", velocity.y());
   Reset();
 
   previous_fling_starting_velocity_ = velocity;

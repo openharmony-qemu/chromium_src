@@ -253,6 +253,12 @@ class CONTENT_EXPORT Navigator {
       base::TimeTicks renderer_before_unload_start_time,
       base::TimeTicks renderer_before_unload_end_time);
 
+#if BUILDFLAG(IS_OHOS)
+  const net::NetworkAnonymizationKey GetNetworkAnonymizationKey(
+      FrameTreeNode* frame_tree_node,
+      NavigationRequest* navigation_request);
+#endif  // BUILDFLAG(IS_OHOS)
+
   // The NavigationController that will keep track of session history for all
   // RenderFrameHost objects using this Navigator.
   NavigationControllerImpl controller_;

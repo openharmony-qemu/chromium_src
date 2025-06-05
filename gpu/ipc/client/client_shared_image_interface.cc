@@ -313,13 +313,23 @@ ClientSharedImageInterface::CreateSwapChain(viz::SharedImageFormat format,
   return ClientSharedImageInterface::SwapChainSharedImages(
       base::MakeRefCounted<ClientSharedImage>(
           mailboxes.front_buffer,
+#if defined(__clang__) && (__clang_major__ < 17)
+          SharedImageMetadata{format, size, color_space, surface_origin,
+                              alpha_type, usage},
+#else
           SharedImageMetadata(format, size, color_space, surface_origin,
                               alpha_type, usage),
+#endif
           sync_token, holder_, gfx::EMPTY_BUFFER),
       base::MakeRefCounted<ClientSharedImage>(
           mailboxes.back_buffer,
+#if defined(__clang__) && (__clang_major__ < 17)
+          SharedImageMetadata{format, size, color_space, surface_origin,
+                              alpha_type, usage},
+#else
           SharedImageMetadata(format, size, color_space, surface_origin,
                               alpha_type, usage),
+#endif
           sync_token, holder_, gfx::EMPTY_BUFFER));
 }
 
@@ -377,8 +387,13 @@ scoped_refptr<ClientSharedImage> ClientSharedImageInterface::NotifyMailboxAdded(
 
   return base::MakeRefCounted<ClientSharedImage>(
       mailbox,
+#if defined(__clang__) && (__clang_major__ < 17)
+      SharedImageMetadata{format, size, color_space, surface_origin, alpha_type,
+                          usage},
+#else
       SharedImageMetadata(format, size, color_space, surface_origin, alpha_type,
                           usage),
+#endif
       GenUnverifiedSyncToken(), holder_, gfx::EMPTY_BUFFER);
 }
 

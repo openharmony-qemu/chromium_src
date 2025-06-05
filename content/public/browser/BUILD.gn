@@ -683,6 +683,10 @@ source_set("browser_sources") {
     configs += [ "//build/config/linux/atspi2" ]
   }
 
+  if (is_ohos) {
+    sources += [ "ax_inspect_factory_ohos.cc" ]
+  }
+
   if (is_linux || is_chromeos) {
     sources += [ "zygote_host/zygote_host_linux.h" ]
   }

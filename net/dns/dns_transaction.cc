@@ -294,7 +294,11 @@ class DnsUDPAttempt : public DnsAttempt {
 
     if (rv != ERR_IO_PENDING)
       DCHECK_EQ(STATE_NONE, next_state_);
-
+  #if BUILDFLAG(IS_OHOS)
+    if (rv < ERR_IO_PENDING) {
+      LOG(WARNING) << "dns transaction fail : error code is" << rv;
+    }
+  #endif
     return rv;
   }
 

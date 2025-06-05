@@ -240,11 +240,22 @@ struct URLVisitAggregate {
 //         [](Variant2& variant1) {},
 //         [](Variant3& variant1) {},
 //      variant_data);
-template <class... Ts>
+#if defined(__clang__) && (__clang_major__ < 17)
+template <typename... Ts>
 struct URLVisitVariantHelper : Ts... {
   using Ts::operator()...;
 };
 
+template <typename... Ts>
+URLVisitVariantHelper<Ts...> make_visitor(Ts... ts) {
+    return URLVisitVariantHelper<Ts...>{ts...};
+}
+#else
+template <class... Ts>
+struct URLVisitVariantHelper : Ts... {
+  using Ts::operator()...;
+};
+#endif
 }  // namespace visited_url_ranking
 
 #endif  // COMPONENTS_VISITED_URL_RANKING_PUBLIC_URL_VISIT_H_

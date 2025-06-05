@@ -35,6 +35,10 @@
 #include "third_party/skia/include/ports/SkTypeface_win.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "third_party/skia/include/ports/SkFontMgr_ohos.h"
+#endif
+
 #if defined(SK_FONTMGR_FREETYPE_EMPTY_AVAILABLE)
 #include "third_party/skia/include/ports/SkFontMgr_empty.h"
 #endif
@@ -69,6 +73,8 @@ static sk_sp<SkFontMgr> fontmgr_factory() {
   return SkFontMgr_New_Fuchsia(std::move(provider));
 #elif BUILDFLAG(IS_WIN)
   return SkFontMgr_New_DirectWrite();
+#elif BUILDFLAG(IS_OHOS)
+  return SkFontMgr_New_OHOS();
 #elif defined(SK_FONTMGR_FREETYPE_EMPTY_AVAILABLE)
   return SkFontMgr_New_Custom_Empty();
 #else

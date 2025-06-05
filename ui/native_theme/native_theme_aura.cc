@@ -100,7 +100,7 @@ NativeThemeAura::NativeThemeAura(bool use_overlay_scrollbars,
     : NativeThemeBase(should_only_use_dark_colors, system_theme) {
   set_use_overlay_scrollbar(use_overlay_scrollbars);
   // We don't draw scrollbar buttons.
-#if BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   set_scrollbar_button_length(0);
 #endif
   if (use_overlay_scrollbars) {

@@ -231,7 +231,7 @@ TEST_F(GeolocationLocationProviderManagerTest, OnPermissionGranted) {
   EXPECT_FALSE(platform_location_provider());
 }
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 // Tests basic operation (valid position and error position update) for network
 // location provider.
 TEST_F(GeolocationLocationProviderManagerTest, NetworkOnly) {
@@ -273,7 +273,7 @@ TEST_F(GeolocationLocationProviderManagerTest, NetworkOnly) {
   EXPECT_EQ(network_location_provider()->GetPosition()->get_error(),
             observer_->last_result()->get_error());
 }
-#endif  // !BUILDFLAG(IS_ANDROID)
+#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_ANDROID)
 // Tests basic operation (valid position and error position update) for system
@@ -360,7 +360,7 @@ TEST_F(GeolocationLocationProviderManagerTest, CustomSystemProviderOnly) {
   EXPECT_TRUE(fake_location_provider->is_permission_granted());
 }
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 // Tests flipping from Low to High accuracy mode as requested by a location
 // observer.
 TEST_F(GeolocationLocationProviderManagerTest, SetObserverOptions) {
@@ -378,7 +378,7 @@ TEST_F(GeolocationLocationProviderManagerTest, SetObserverOptions) {
   EXPECT_EQ(mojom::GeolocationDiagnostics::ProviderState::kHighAccuracy,
             network_location_provider()->state());
 }
-#endif  // !BUILDFLAG(IS_ANDROID)
+#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_MAC)
 // This test fallback mechanism by simulating a `kWifiDisabled` error code

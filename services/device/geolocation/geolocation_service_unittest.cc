@@ -105,7 +105,7 @@ class GeolocationServiceUnitTest : public DeviceServiceTestBase {
   mojo::Remote<mojom::GeolocationConfig> geolocation_config_;
 };
 
-#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 // ChromeOS fails to perform network geolocation when zero wifi networks are
 // detected in a scan: https://crbug.com/767300.
 #else

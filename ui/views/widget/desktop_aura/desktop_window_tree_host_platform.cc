@@ -147,9 +147,16 @@ ui::PlatformWindowInitProperties ConvertWidgetInitParamsToInitProperties(
     properties.parent_widget = params.parent->GetHost()->GetAcceleratedWidget();
 
 #if BUILDFLAG(IS_OZONE)
+#if BUILDFLAG(IS_OHOS)
+  if (params.type != Widget::InitParams::TYPE_WINDOW &&
+      ui::OzonePlatform::GetInstance()
+          ->GetPlatformProperties()
+          .set_parent_for_non_top_level_windows) {
+#else
   if (ui::OzonePlatform::GetInstance()
           ->GetPlatformProperties()
           .set_parent_for_non_top_level_windows) {
+#endif
     // If context has been set, use that as the parent_widget so that Wayland
     // creates a correct hierarchy of windows.
     if (params.context) {
@@ -169,6 +176,13 @@ ui::PlatformWindowInitProperties ConvertWidgetInitParamsToInitProperties(
 
 #if BUILDFLAG(IS_FUCHSIA)
   properties.enable_keyboard = true;
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  properties.using_system_floating_window = params.using_system_floating_window;
+  properties.use_dark_mode = params.use_dark_mode;
+  properties.is_stateless = params.is_stateless;
+  properties.caption_button_visible = params.caption_button_visible;
 #endif
 
   return properties;
@@ -943,7 +957,13 @@ void DesktopWindowTreeHostPlatform::OnWindowStateChanged(
     if (is_minimized) {
       SetVisible(false);
     } else {
+#if BUILDFLAG(IS_OHOS)
+      if (GetNativeWindowOcclusionState() == aura::Window::OcclusionState::VISIBLE) {
+        SetVisible(true);
+      }
+#else
       SetVisible(true);
+#endif
     }
   }
 
@@ -989,6 +1009,12 @@ void DesktopWindowTreeHostPlatform::OnActivationChanged(bool active) {
   desktop_native_widget_aura_->HandleActivationChanged(active);
   ScheduleRelayout();
 }
+
+#if BUILDFLAG(IS_OHOS)
+void DesktopWindowTreeHostPlatform::SetSurfaceId(uint64_t surface_id) {
+  aura::WindowTreeHostPlatform::SetSurfaceId(surface_id);
+}
+#endif
 
 std::optional<gfx::Size>
 DesktopWindowTreeHostPlatform::GetMinimumSizeForWindow() const {
@@ -1109,6 +1135,12 @@ void DesktopWindowTreeHostPlatform::SetVisible(bool visible) {
   native_widget_delegate_->OnNativeWidgetVisibilityChanged(visible);
 }
 
+#if BUILDFLAG(IS_OHOS)
+void DesktopWindowTreeHostPlatform::SetVisibleOHOS(bool visible) {
+  SetVisible(visible);
+}
+#endif
+
 void DesktopWindowTreeHostPlatform::AddAdditionalInitProperties(
     const Widget::InitParams& params,
     ui::PlatformWindowInitProperties* properties) {}
@@ -1149,7 +1181,7 @@ bool DesktopWindowTreeHostPlatform::RotateFocusForWidget(
 // DesktopWindowTreeHost:
 
 // Linux subclasses this host and adds some Linux specific bits.
-#if !BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_OHOS)
 // static
 DesktopWindowTreeHost* DesktopWindowTreeHost::Create(
     internal::NativeWidgetDelegate* native_widget_delegate,

@@ -142,6 +142,9 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
     raw_ptr<const AggregatedRenderPass> current_render_pass = nullptr;
 
     gfx::Rect root_damage_rect;
+#if BUILDFLAG(IS_OHOS)
+    gfx::Rect damage_rect;
+#endif  // BUILDFLAG(IS_OHOS)
     std::vector<gfx::Rect> root_content_bounds;
     gfx::Size device_viewport_size;
     gfx::DisplayColorSpaces display_color_spaces;

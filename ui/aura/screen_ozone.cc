@@ -173,4 +173,18 @@ gfx::AcceleratedWidget ScreenOzone::GetAcceleratedWidgetForWindow(
   return host->GetAcceleratedWidget();
 }
 
+#if BUILDFLAG(IS_OHOS)
+gfx::NativeWindow ScreenOzone::GetLocalProcessWindowAtPoint(
+    const gfx::Point& point,
+    const std::set<gfx::NativeWindow>& ignore,
+    const int32_t display_id) {
+  DCHECK(platform_screen_);
+  std::set<gfx::AcceleratedWidget> ignore_top_level;
+  for (auto* const window : ignore)
+    ignore_top_level.emplace(window->GetHost()->GetAcceleratedWidget());
+  return GetNativeWindowFromAcceleratedWidget(
+      platform_screen_->GetLocalProcessWidgetAtPoint(point, ignore_top_level, display_id));
+}
+#endif
+
 }  // namespace aura

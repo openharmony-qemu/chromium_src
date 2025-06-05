@@ -31,6 +31,11 @@
 #include "ui/gl/gl_implementation.h"
 #include "ui/gl/gl_surface.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/trace_event/trace_event.h"
+#include "ui/gl/gl_switches.h"
+#endif  // BUILDFLAG(IS_OHOS)
+
 namespace viz {
 
 namespace {
@@ -128,6 +133,10 @@ SkiaOutputDeviceGL::SkiaOutputDeviceGL(
   // rotation independent of the host's native windowing system.
   capabilities_.orientation_mode = OutputSurface::OrientationMode::kHardware;
 #endif  // IS_CHROMEOS_ASH
+
+#if BUILDFLAG(IS_OHOS)
+  ohos_supports_partial_swap_ = features::IsOHOSEnablePartialSwap();
+#endif  // BUILDFLAG(IS_OHOS)
 
   DCHECK(context_state_);
   DCHECK(gl_surface_);
@@ -285,9 +294,25 @@ void SkiaOutputDeviceGL::Present(const std::optional<gfx::Rect>& update_rect,
   } else {
     gfx::SwapResult result;
     if (update_rect) {
+#if BUILDFLAG(IS_OHOS)
+      TRACE_EVENT2("viz", "SkiaOutputDeviceGL::Present", "update_rect",
+                   update_rect->ToString(), "partial_swap",
+                   ohos_supports_partial_swap_);
+      if (ohos_supports_partial_swap_) {
+        result = gl_surface_->SwapBuffersWithDamage(
+            { update_rect->x(),
+             gl_surface_->GetSize().height() - update_rect->y() -
+                 update_rect->height(),
+             update_rect->width(), update_rect->height() },
+            std::move(feedback), std::move(data));
+      } else {
+        result = gl_surface_->SwapBuffers(std::move(feedback), std::move(data));
+      }
+#else
       result = gl_surface_->PostSubBuffer(
           update_rect->x(), update_rect->y(), update_rect->width(),
           update_rect->height(), std::move(feedback), std::move(data));
+#endif  // BUILDFLAG(IS_OHOS)
     } else {
       result = gl_surface_->SwapBuffers(std::move(feedback), std::move(data));
     }

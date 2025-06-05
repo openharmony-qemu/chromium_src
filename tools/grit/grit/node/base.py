@@ -499,6 +499,8 @@ class Node:
 
       elif name == 'is_linux':
         value = target_platform == 'linux'
+      elif name == 'is_ohos':
+        value = target_platform == 'ohos'
       elif name == 'is_chromeos':
         value = target_platform == 'chromeos'
       elif name == 'is_macosx':
@@ -515,7 +517,7 @@ class Node:
         value = 'bsd' in target_platform
       elif name == 'is_posix':
         value = (target_platform in ('linux', 'darwin', 'sunos5', 'android',
-                                     'ios', 'chromeos')
+                                     'ios', 'chromeos', "ohos")
                  or 'bsd' in target_platform)
 
       elif name == 'pp_ifdef':

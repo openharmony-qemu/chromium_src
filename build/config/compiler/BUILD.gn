@@ -125,7 +125,7 @@ declare_args() {
   # the space overhead is too great. We should use some mixture of profiles and
   # optimization settings to better tune the size increase.
   thin_lto_enable_optimizations =
-      (is_chromeos || is_android || is_win || is_linux || is_mac ||
+      (is_chromeos || is_android || is_win || is_linux || is_mac || is_ohos ||
        (is_ios && use_lld)) && is_official_build
 
   # Whether to enable thin lto incremental builds.
@@ -257,7 +257,7 @@ config("default_include_dirs") {
 # the executable they are loaded into, so they are unresolved at link-time.
 config("no_unresolved_symbols") {
   if (!using_sanitizer &&
-      (is_linux || is_chromeos || is_android || is_fuchsia)) {
+      (is_linux || is_chromeos || is_android || is_fuchsia || is_ohos)) {
     ldflags = [
       "-Wl,-z,defs",
       "-Wl,--as-needed",
@@ -291,6 +291,8 @@ config("compiler") {
     configs += [ "//build/config/win:compiler" ]
   } else if (is_android) {
     configs += [ "//build/config/android:compiler" ]
+  } else if (is_ohos) {
+    configs += [ "//build/config/ohos:compiler" ]
   } else if (is_linux || is_chromeos) {
     configs += [ "//build/config/linux:compiler" ]
   } else if (is_nacl) {
@@ -487,7 +489,7 @@ config("compiler") {
 
   # Linux/Android/Fuchsia common flags setup.
   # ---------------------------------
-  if (is_linux || is_chromeos || is_android || is_fuchsia) {
+  if (is_linux || is_chromeos || is_android || is_fuchsia || is_ohos) {
     asmflags += [ "-fPIC" ]
     cflags += [ "-fPIC" ]
     ldflags += [ "-fPIC" ]
@@ -577,34 +579,38 @@ config("compiler") {
       ]
     }
 
-    # TODO(hans): Remove this once Clang generates better optimized debug info
-    # by default. https://crbug.com/765793
-    cflags += [
-      "-mllvm",
-      "-instcombine-lower-dbg-declare=0",
-    ]
-    if (!is_debug && use_thin_lto && is_a_target_toolchain) {
-      if (is_win) {
-        ldflags += [ "-mllvm:-instcombine-lower-dbg-declare=0" ]
-      } else {
-        ldflags += [ "-Wl,-mllvm,-instcombine-lower-dbg-declare=0" ]
-      }
-    }
-
-    # TODO(crbug.com/40283598): This causes binary size growth and potentially
-    # other problems.
-    # TODO(crbug.com/40284925): This isn't supported by Cronet's mainline llvm version.
-    if (default_toolchain != "//build/toolchain/cros:target" &&
-        !llvm_android_mainline) {
+    # remove flag split-threshold-for-reg-with-hint and instcombine-lower-dbg-declare
+    # it's not supported in clang <= 17 on ohos toolchain.
+    if (default_toolchain != "//build/toolchain/ohos:ohos_clang_arm64") {
+      # TODO(hans): Remove this once Clang generates better optimized debug info
+      # by default. https://crbug.com/765793
       cflags += [
         "-mllvm",
-        "-split-threshold-for-reg-with-hint=0",
+        "-instcombine-lower-dbg-declare=0",
       ]
-      if (use_thin_lto && is_a_target_toolchain) {
+      if (!is_debug && use_thin_lto && is_a_target_toolchain) {
         if (is_win) {
-          ldflags += [ "-mllvm:-split-threshold-for-reg-with-hint=0" ]
+          ldflags += [ "-mllvm:-instcombine-lower-dbg-declare=0" ]
         } else {
-          ldflags += [ "-Wl,-mllvm,-split-threshold-for-reg-with-hint=0" ]
+          ldflags += [ "-Wl,-mllvm,-instcombine-lower-dbg-declare=0" ]
+        }
+      }
+
+      # TODO(crbug.com/40283598): This causes binary size growth and potentially
+      # other problems.
+      # TODO(crbug.com/40284925): This isn't supported by Cronet's mainline llvm version.
+      if (default_toolchain != "//build/toolchain/cros:target" &&
+          !llvm_android_mainline) {
+        cflags += [
+          "-mllvm",
+          "-split-threshold-for-reg-with-hint=0",
+        ]
+        if (use_thin_lto && is_a_target_toolchain) {
+          if (is_win) {
+            ldflags += [ "-mllvm:-split-threshold-for-reg-with-hint=0" ]
+          } else {
+            ldflags += [ "-Wl,-mllvm,-split-threshold-for-reg-with-hint=0" ]
+          }
         }
       }
     }
@@ -619,7 +625,8 @@ config("compiler") {
     # Enable ELF CREL (see crbug.com/357878242) for all platforms that use ELF
     # (excluding toolchains that use an older version of LLVM).
     # TODO(crbug.com/376278218): This causes segfault on Linux ARM builds.
-    if (is_linux && !llvm_android_mainline && current_cpu != "arm" &&
+    if (is_linux && !llvm_android_mainline && !llvm_ohos_mainline &&
+        current_cpu != "arm" &&
         default_toolchain != "//build/toolchain/cros:target") {
       cflags += [ "-Wa,--crel,--allow-experimental-crel" ]
     }
@@ -628,7 +635,7 @@ config("compiler") {
   # C11/C++11 compiler flags setup.
   # ---------------------------
   if (is_linux || is_chromeos || is_android || (is_nacl && is_clang) ||
-      current_os == "aix") {
+      is_ohos || current_os == "aix") {
     if (is_clang) {
       standard_prefix = "c"
 
@@ -815,7 +822,11 @@ config("compiler") {
 
       # We only use one version of LLVM within a build so there's no need to
       # upgrade debug info, which can be expensive since it runs the verifier.
-      ldflags += [ "-Wl,-mllvm,-disable-auto-upgrade-debug-info" ]
+      if (!is_ohos) {
+        # We only use one version of LLVM within a build so there's no need to
+        # upgrade debug info, which can be expensive since it runs the verifier.
+        ldflags += [ "-Wl,-mllvm,-disable-auto-upgrade-debug-info" ]
+      }
     }
 
     if (!optimize_for_size) {
@@ -1241,7 +1252,8 @@ config("compiler_cpu_abi") {
         ]
       }
     } else if (current_cpu == "arm") {
-      if (is_clang && !is_android && !is_nacl && !is_chromeos_device) {
+      if (is_clang && !is_android && !is_nacl && !is_ohos &&
+          !is_chromeos_device) {
         cflags += [ "--target=arm-linux-gnueabihf" ]
         ldflags += [ "--target=arm-linux-gnueabihf" ]
       }
@@ -1256,7 +1268,7 @@ config("compiler_cpu_abi") {
       }
     } else if (current_cpu == "arm64") {
       if (is_clang && !is_android && !is_nacl && !is_fuchsia &&
-          !is_chromeos_device) {
+          !is_ohos && !is_chromeos_device) {
         cflags += [ "--target=aarch64-linux-gnu" ]
         ldflags += [ "--target=aarch64-linux-gnu" ]
       }
@@ -1793,6 +1805,8 @@ config("runtime_library") {
     configs += [ "//build/config/mac:runtime_library" ]
   } else if (is_android) {
     configs += [ "//build/config/android:runtime_library" ]
+  } else if (is_ohos) {
+    configs += [ "//build/config/ohos:runtime_library" ]
   }
 
   if (is_component_build) {
@@ -1886,6 +1900,55 @@ config("default_warnings") {
     # warning).
     if (current_cpu == "arm" && !is_clang) {
       cflags += [ "-Wno-psabi" ]
+    }
+
+    if (use_musl) {
+      cflags += [
+        "-Wno-psabi",
+        "-Wno-unknown-pragmas",
+        "-Wno-cpp",
+        "-Wno-extra-tokens",
+        "-Wno-error=c99-designator",
+        "-Wno-error=anon-enum-enum-conversion",
+        "-Wno-error=implicit-fallthrough",
+        "-Wno-error=sizeof-array-div",
+        "-Wno-error=reorder-init-list",
+        "-Wno-error=range-loop-construct",
+        "-Wno-error=deprecated-copy",
+        "-Wno-error=implicit-int-float-conversion",
+        "-Wno-error=inconsistent-dllimport",
+        "-Wno-unknown-warning-option",
+        "-Wno-error=abstract-final-class",
+        "-Wno-error=sign-compare",
+        "-Wno-error=int-in-bool-context",
+        "-Wno-error=xor-used-as-pow",
+        "-Wno-error=implicit-function-declaration",
+        "-Wno-error=non-c-typedef-for-linkage",
+        "-Wno-c++11-narrowing",
+        "-Wno-builtin-assume-aligned-alignment",
+        "-Wno-deprecated-builtins",
+        "-Wno-deprecated-non-prototype",
+        "-Wno-array-parameter",
+        "-Wno-error=unused-but-set-variable",
+        "-Wno-unused-but-set-variable",
+        "-Wno-deprecated-declarations",
+        "-Wno-unqualified-std-cast-call",
+        "-Wno-error=invalid-offsetof",
+        "-Wno-error=unused-private-field",
+        "-Wno-error=sign-conversion",
+        "-Wno-unreachable-code",
+        "-Wno-absolute-value",
+        # Ignore warnings about explicitly defaulted three-way 
+        # comparison operator is implicitly deleted.
+        "-Wno-defaulted-function-deleted",
+        # Ignore Compiler Unknown Attributes
+        "-Wno-ignored-attributes",
+        # Temporary use, to be removed in the future
+        "-Wno-unused-variable",
+        "-Wno-error=exit-time-destructors",
+        "-Wno-error=unused-function",
+        "-Wno-error=shorten-64-to-32",
+      ]
     }
 
     if (!is_clang) {
@@ -1982,7 +2045,8 @@ config("default_warnings") {
         "-Wenum-compare-conditional",
       ]
 
-      if (!is_nacl) {
+      # remove flag -Wno-c++11-narrowing-const-reference it's not supported on ohos.
+      if (!is_nacl && !is_ohos) {
         cflags_cc += [
           # TODO(crbug.com/41486292): Fix and re-enable.
           "-Wno-c++11-narrowing-const-reference",

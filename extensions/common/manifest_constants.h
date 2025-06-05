@@ -203,6 +203,7 @@ inline constexpr char kKeybindingPlatformDefault[] = "default";
 inline constexpr char kKeybindingPlatformLinux[] = "linux";
 inline constexpr char kKeybindingPlatformMac[] = "mac";
 inline constexpr char kKeybindingPlatformWin[] = "windows";
+inline constexpr char kKeybindingPlatformOHOS[] = "ohos";
 inline constexpr char kKeyAlt[] = "Alt";
 inline constexpr char kKeyComma[] = "Comma";
 inline constexpr char kKeyCommand[] = "Command";

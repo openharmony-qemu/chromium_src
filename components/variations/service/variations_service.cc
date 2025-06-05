@@ -106,6 +106,8 @@ std::string GetPlatformString() {
   // Default BSD and SOLARIS to Linux to not break those builds, although these
   // platforms are not officially supported by Chrome.
   return "linux";
+#elif BUILDFLAG(IS_OHOS)
+  return "ohos";
 #else
 #error Unknown platform
 #endif

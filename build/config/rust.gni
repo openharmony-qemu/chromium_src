@@ -296,6 +296,16 @@ if (is_linux || is_chromeos) {
   } else {
     assert(false, "Architecture not supported")
   }
+} else if (is_ohos) {
+  if (current_cpu == "arm64") {
+    rust_abi_target = "aarch64-unknown-linux-ohos"
+    cargo_target_abi = ""
+  } else if (current_cpu == "x64") {
+    rust_abi_target = "x86_64-unknown-linux-ohos"
+    cargo_target_abi = ""
+  } else {
+    assert(false, "Architecture not supported")
+  }
 }
 
 assert(!toolchain_has_rust || rust_abi_target != "")
@@ -347,4 +357,4 @@ if (toolchain_for_rust_host_build_tools) {
 # such as that the panic strategy (unwind, abort) must match how the stdlib is
 # compiled, which is typically as unwind.
 rust_prebuilt_stdlib =
-    !use_chromium_rust_toolchain || toolchain_for_rust_host_build_tools
+    (!use_chromium_rust_toolchain && !is_ohos) || toolchain_for_rust_host_build_tools

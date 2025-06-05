@@ -131,6 +131,12 @@ struct NET_EXPORT HttpRequestInfo {
   // number once set.
   std::optional<int64_t> browser_run_id;
 
+#if BUILDFLAG(IS_OHOS)
+  bool allow_preload_record = true;
+
+  GURL main_page;
+#endif
+
   // Used to get a shared dictionary for the request. This may be null if the
   // request does not use a shared dictionary.
   SharedDictionaryGetter dictionary_getter;

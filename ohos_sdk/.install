@@ -1,0 +1,73 @@
+#!/bin/bash
+
+#!/bin/bash
+
+latest_version="ohos-sdk-linux-5.0.5.165.tar.gz"
+
+
+base_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+version_file="${base_dir}/.version"
+
+sdk_upgrade() {
+  installed_version=""
+  if [ -f "${version_file}" ]; then
+    installed_version=$(head -n 1 "${version_file}")
+  fi
+
+  if [ "-${latest_version}" == "-${installed_version}" ]; then
+    return 0
+  fi
+
+  cd "${base_dir}"
+  if [ ! -f "${latest_version}" ]; then
+    echo "ERROR: Could not find latest SDK tarball: ${base_dir}/${latest_version}"
+    return 1
+  fi
+
+  rm -rf ets js native toolchains licenses previewer [0-9]*
+  #解压文件
+  tar zxf "${latest_version}"
+  rc=$?
+
+  if [ ${rc} -eq 0 ]; then
+    echo -n "${latest_version}" > "${version_file}"
+  else
+    echo "ERROR: Failed to extract SDK tarball: ${base_dir}/${latest_version}, result: ${rc}"
+  fi
+
+  #将编译工具链替换为18版本
+  if [ ! -f "llvm.tar.gz" ]; then
+    # 合并文件
+    cat "llvm.tar.gz".* > "llvm.tar.gz"
+    echo "llvm.tar.gz"
+  fi
+  rm -rf llvm
+  tar zxf "llvm.tar.gz"
+  rc=$?
+  if [ ${rc} -ne 0 ]; then
+    echo "ERROR: Failed to extract llvm tarball: ${base_dir}/llvm.tar.gz, result: ${rc}"
+    return ${rc}
+  fi
+  rm -rf openharmony/native/llvm
+  cp -r llvm openharmony/native/
+  rc=$?
+  if [ ${rc} -eq 0 ]; then
+    echo -n "${latest_version}" > "${version_file}"
+  else
+    echo "ERROR: Failed to replace the llvm, result: ${rc}"
+    return ${rc}
+  fi
+
+  #将rust工具链替换为18版本
+  tar zxf "rust-toolchain.tar.gz"
+  rc=$?
+  if [ ${rc} -ne 0 ]; then
+    echo "ERROR: Failed to extract rust toolchain tarball: ${base_dir}/rust-toolchain.tar.gz, result: ${rc}"
+    return ${rc}
+  fi
+
+  return ${rc}
+}
+
+
+sdk_upgrade

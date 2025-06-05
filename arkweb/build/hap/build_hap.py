@@ -119,6 +119,7 @@ disturl=https://repo.huaweicloud.com/nodejs/
                                stderr=subprocess.PIPE,
                                env=self.env)
     stdout, stderr = process.communicate()
+    print("***********************************")
     print(self.root)
     os.chdir(self.root)
     command = ['./hvigorw', '--mode=module', 'clean', '-p', 'debuggable=false', 'assembleHap', '--no-daemon']

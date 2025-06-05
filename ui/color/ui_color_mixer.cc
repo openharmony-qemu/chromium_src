@@ -360,9 +360,15 @@ void AddUiColorMixer(ColorProvider* provider, const ColorProviderKey& key) {
       dark_mode ? SK_ColorWHITE : SkColorSetRGB(0x50, 0x50, 0x50)};
   mixer[kColorWebNativeControlScrollbarArrowForegroundPressed] = {
       dark_mode ? SK_ColorBLACK : SK_ColorWHITE};
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  mixer[kColorWebNativeControlScrollbarCorner] = {
+      dark_mode ? SkColorSetARGB(0xFF, 0x0D, 0x0D, 0x0D)
+                : SkColorSetARGB(0xFF, 0xFC, 0xFC, 0xFC)};
+#else
   mixer[kColorWebNativeControlScrollbarCorner] = {
       dark_mode ? SkColorSetRGB(0x12, 0x12, 0x12)
                 : SkColorSetRGB(0xDC, 0xDC, 0xDC)};
+#endif
   mixer[kColorWebNativeControlScrollbarThumb] = {
       dark_mode ? SkColorSetA(SK_ColorWHITE, 0x33)
                 : SkColorSetA(SK_ColorBLACK, 0x33)};
@@ -377,9 +383,15 @@ void AddUiColorMixer(ColorProvider* provider, const ColorProviderKey& key) {
   mixer[kColorWebNativeControlScrollbarThumbPressed] = {
       dark_mode ? SkColorSetA(SK_ColorWHITE, 0x80)
                 : SkColorSetA(SK_ColorBLACK, 0x80)};
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  mixer[kColorWebNativeControlScrollbarTrack] = {
+      dark_mode ? SkColorSetARGB(0xFF, 0x0D, 0x0D, 0x0D)
+                : SkColorSetARGB(0xFF, 0xFC, 0xFC, 0xFC)};
+#else
   mixer[kColorWebNativeControlScrollbarTrack] = {
       dark_mode ? SkColorSetRGB(0x42, 0x42, 0x42)
                 : SkColorSetRGB(0xF1, 0xF1, 0xF1)};
+#endif
   mixer[kColorWebNativeControlSlider] = {dark_mode
                                              ? SkColorSetRGB(0x99, 0xC8, 0xFF)
                                              : SkColorSetRGB(0x00, 0x75, 0xFF)};

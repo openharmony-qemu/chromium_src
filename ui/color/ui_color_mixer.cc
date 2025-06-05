@@ -192,8 +192,13 @@ void AddUiColorMixer(ColorProvider* provider,
       dark_mode ? SK_ColorWHITE : SkColorSetRGB(0x50, 0x50, 0x50)};
   mixer[kColorScrollbarArrowForegroundPressed] = {dark_mode ? SK_ColorBLACK
                                                             : SK_ColorWHITE};
+#ifdef OHOS_SCROLLBAR
+  mixer[kColorScrollbarCorner] = {dark_mode ? SkColorSetARGB(0xFF, 0x0D, 0x0D, 0x0D)
+                                           : SkColorSetARGB(0xFF, 0xFC, 0xFC, 0xFC)};
+#else
   mixer[kColorScrollbarCorner] = {dark_mode ? SkColorSetRGB(0x12, 0x12, 0x12)
                                             : SkColorSetRGB(0xDC, 0xDC, 0xDC)};
+#endif
   mixer[kColorScrollbarThumb] = {dark_mode ? SkColorSetA(SK_ColorWHITE, 0x33)
                                            : SkColorSetA(SK_ColorBLACK, 0x33)};
   mixer[kColorScrollbarThumbHovered] = {dark_mode
@@ -204,8 +209,13 @@ void AddUiColorMixer(ColorProvider* provider,
   mixer[kColorScrollbarThumbPressed] = {dark_mode
                                             ? SkColorSetA(SK_ColorWHITE, 0x80)
                                             : SkColorSetA(SK_ColorBLACK, 0x80)};
+#ifdef OHOS_SCROLLBAR
+  mixer[kColorScrollbarTrack] = {dark_mode ? SkColorSetARGB(0xFF, 0x0D, 0x0D, 0x0D)
+                                           : SkColorSetARGB(0xFF, 0xFC, 0xFC, 0xFC)};
+#else
   mixer[kColorScrollbarTrack] = {dark_mode ? SkColorSetRGB(0x42, 0x42, 0x42)
                                            : SkColorSetRGB(0xF1, 0xF1, 0xF1)};
+#endif
   mixer[kColorSeparator] = {kColorMidground};
   mixer[kColorShadowBase] = {dark_mode ? SK_ColorBLACK : gfx::kGoogleGrey800};
   mixer[kColorShadowValueAmbientShadowElevationThree] =

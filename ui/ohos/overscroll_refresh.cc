@@ -224,13 +224,6 @@ void OverscrollRefresh::AnimateHover(float x_delta, float y_delta) {
 }
 
 void OverscrollRefresh::AnimateReset(float x_delta, float y_delta) {
-  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
-    content::GetUIThreadTaskRunner({})->PostTask(
-        FROM_HERE, base::BindOnce(&OverscrollRefresh::AnimateReset,
-                                  base::Unretained(this), x_delta, y_delta));
-    return;
-  }
-
   pulltorefresh_scroll_ -= gfx::Vector2dF(x_delta, y_delta);
   if (pulltorefresh_scroll_.y() > kMinTriggerAnimateTwice) {
     did_stop_refresh_ = false;
@@ -267,11 +260,25 @@ OverscrollRefresh::RefreshListener::RefreshListener(
 OverscrollRefresh::RefreshListener::~RefreshListener() = default;
 
 void OverscrollRefresh::RefreshListener::onAnimationEnd() {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&OverscrollRefresh::RefreshListener::onAnimationEnd,
+                       base::Unretained(this)));
+    return;
+  }
   if (overscroll_refresh_.get()) {
     overscroll_refresh_->AnimateReset(0, 0);
   }
 }
 void OverscrollRefresh::RefreshListener::onAnimationRepeat(float delta) {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&OverscrollRefresh::RefreshListener::onAnimationRepeat,
+                       base::Unretained(this), delta));
+    return;
+  }
   if (overscroll_refresh_.get()) {
     overscroll_refresh_->AnimateHover(0, delta);
   }

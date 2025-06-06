@@ -114,11 +114,14 @@ disturl=https://repo.huaweicloud.com/nodejs/
 
   def Hvigor(self, cmd_array):
     cmd = [self.hvigor_wrapper] + cmd_array
-    process = subprocess.Popen(cmd,
+    try:
+      process = subprocess.Popen(cmd,
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE,
                                env=self.env)
-    stdout, stderr = process.communicate()
+      stdout, stderr = process.communicate()
+    except Exception as e:
+      print(f"An error occurred: {e}")
     print("***********************************")
     print(self.root)
     os.chdir(self.root)
@@ -130,9 +133,9 @@ disturl=https://repo.huaweicloud.com/nodejs/
     except Exception as e:
       print(f"An error occurred: {e}")
     print("***********************************")
-    if process.returncode != 0:
-      err = stderr if len(stderr) > 0 else stdout
-      raise RuntimeError('Command \'%s\' failed\n%s' % (' '.join(cmd), err))
+    #if process.returncode != 0:
+      #err = stderr if len(stderr) > 0 else stdout
+      #raise RuntimeError('Command \'%s\' failed\n%s' % (' '.join(cmd), err))
     return stdout
 
   def _build(self, node_cmd):

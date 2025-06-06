@@ -820,6 +820,11 @@ void OnTouchIconUrlWithSizesReceived(
   void logUrl(const CefString& url) override;
 #endif
 
+#ifdef OHOS_EX_PULL_TO_REFRESH
+  bool OnPullToRefreshAction(int action) override;
+  void OnPullToRefreshPull(float offset_x, float offset_y) override;
+#endif
+
   void OnRequestOpenDevTools();
 
 #if defined(OHOS_VIDEO_ASSISTANT)

@@ -311,6 +311,9 @@ CONTENT_EXPORT extern const char kOhosSubresourceFilter[];
 CONTENT_EXPORT extern const char kOhosCustomScheme[];
 #endif
 CONTENT_EXPORT extern const char kOhSchemeHandlerCustomScheme[];
+#ifdef OHOS_EX_PULL_TO_REFRESH
+CONTENT_EXPORT extern const char kEnableNwebExPullToRefresh[];
+#endif
 #endif
 
 #if BUILDFLAG(IS_WIN)

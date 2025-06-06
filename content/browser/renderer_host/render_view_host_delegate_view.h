@@ -45,6 +45,10 @@ class RenderWidgetHostImpl;
 struct ContextMenuParams;
 struct DropData;
 
+#ifdef OHOS_EX_PULL_TO_REFRESH
+class WebContents;
+#endif
+
 // This class provides a way for the RenderViewHost to reach out to its
 // delegate's view.
 class CONTENT_EXPORT RenderViewHostDelegateView {
@@ -183,6 +187,10 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
                              const gfx::Point& touch_point) {}
 
   virtual void OnOverlayStateChanged(const gfx::Rect& image_rect) {}
+#endif
+
+#ifdef OHOS_EX_PULL_TO_REFRESH
+  virtual WebContents* GetWebContents() { return nullptr; }
 #endif
 
  protected:

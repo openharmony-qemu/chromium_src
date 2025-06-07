@@ -73,6 +73,10 @@ struct SameSizeAsLayer : public base::RefCounted<SameSizeAsLayer>,
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   bool should_overlay_;
 #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if defined(__arm__)
+  char dummy[8];
+#endif
 };
 
 static_assert(sizeof(Layer) == sizeof(SameSizeAsLayer),

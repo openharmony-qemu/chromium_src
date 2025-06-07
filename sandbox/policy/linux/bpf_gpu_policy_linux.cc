@@ -81,7 +81,9 @@ ResultExpr GpuProcessPolicy::EvaluateSyscall(int sysno) const {
 #if BUILDFLAG(IS_OHOS)
     case __NR_openat:
     case __NR_faccessat:
+#if !defined(__arm__) 
     case __NR_newfstatat:
+#endif
 #endif
       return Allow();
 #if defined(__i386__) || defined(__x86_64__) || defined(__mips__)

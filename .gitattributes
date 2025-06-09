@@ -24,5 +24,10 @@ ohos-sdk-linux-5.0.2.56.tar.gz.01 filter=lfs diff=lfs merge=lfs -text
 rust-toolchain.tar.gz filter=lfs diff=lfs merge=lfs -text
 *.zip filter=lfs diff=lfs merge=lfs -text
 *.tar.gz filter=lfs diff=lfs merge=lfs -text
+ohos_sdk/ets-linux-x64-5.1.0.107-Release.zip filter=lfs diff=lfs merge=lfs -text
+ohos_sdk/js-linux-x64-5.1.0.107-Release.zip filter=lfs diff=lfs merge=lfs -text
+ohos_sdk/native-linux-x64-5.1.0.107-Release.zip filter=lfs diff=lfs merge=lfs -text
+ohos_sdk/previewer-linux-x64-5.1.0.107-Release.zip filter=lfs diff=lfs merge=lfs -text
+ohos_sdk/toolchains-linux-x64-5.1.0.107-Release.zip filter=lfs diff=lfs merge=lfs -text
 /ohos_ndk/toolchains/llvm/bin/clang-12 filter=lfs diff=lfs merge=lfs -text
 /ohos_ndk/toolchains/llvm/lib/liblldb.so.12.0.1 filter=lfs diff=lfs merge=lfs -text

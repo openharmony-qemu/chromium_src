@@ -24,10 +24,6 @@
 #include "components/password_manager/core/browser/password_manager_driver.h"
 #include "components/password_manager/core/browser/password_manager_util.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 namespace password_manager {
 
 namespace {
@@ -182,7 +178,8 @@ LikelyFormFilling SendFillInformationToRenderer(
       WaitForUsernameReason::kDontWait;
   if (client->IsOffTheRecord()) {
     wait_for_username_reason = WaitForUsernameReason::kIncognitoMode;
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   } else if (client->GetPasswordFeatureManager()
                  ->IsBiometricAuthenticationBeforeFillingEnabled()) {
     wait_for_username_reason = WaitForUsernameReason::kBiometricAuthentication;
@@ -229,9 +226,6 @@ LikelyFormFilling SendFillInformationToRenderer(
 
   bool wait_for_username =
       wait_for_username_reason != WaitForUsernameReason::kDontWait;
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  wait_for_username = true;
-#endif // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 #else
   bool wait_for_username = true;
 #endif  // !BUILDFLAG(IS_IOS) && !defined(ANDROID)

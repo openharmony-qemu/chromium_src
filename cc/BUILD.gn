@@ -9,10 +9,6 @@ import("//ui/gl/features.gni")
 
 import("//cc/cc.gni")
 
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
-
 if (is_android) {
   import("//build/config/android/rules.gni")
 }
@@ -511,14 +507,6 @@ cc_component("cc") {
     deps += [ ":cc_jni_headers" ]
   }
 
-  if (is_arkweb) {
-    sources += arkweb_cc_layer_source
-    sources += arkweb_cc_scheduler_sources
-    sources += arkweb_cc_input_source
-    sources += arkweb_cc_trees_source
-    deps += [ "//arkweb/build/features" ]
-  }
-
   defines = [ "CC_IMPLEMENTATION=1" ]
 }
 
@@ -715,14 +703,6 @@ cc_test_static_library("test_support") {
     deps += [
       "//third_party/dawn/src/dawn:proc",
       "//third_party/dawn/src/dawn/native",
-    ]
-  }
-  if (arkweb_unittests) {
-    deps += [
-      "//base/test:test_trace_processor",
-      "//cef:libcef_static",
-      "//content/public/browser",
-      "//ohos_nweb:nweb_sources",
     ]
   }
 }

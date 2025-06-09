@@ -11,7 +11,6 @@
 #include <string>
 #include <tuple>
 
-#include "arkweb/build/features/features.h"
 #include "base/unguessable_token.h"
 #include "net/base/net_export.h"
 #include "net/base/network_isolation_key.h"
@@ -62,10 +61,6 @@ class NET_EXPORT NetworkAnonymizationKey {
   // Construct an empty key.
   NetworkAnonymizationKey();
 
-#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
-  NetworkAnonymizationKey(bool should_check_top_frame_site);
-#endif
-
   NetworkAnonymizationKey(
       const NetworkAnonymizationKey& network_anonymization_key);
   NetworkAnonymizationKey(NetworkAnonymizationKey&& network_anonymization_key);
@@ -79,19 +74,8 @@ class NET_EXPORT NetworkAnonymizationKey {
 
   // Compare keys for equality, true if all enabled fields are equal.
   bool operator==(const NetworkAnonymizationKey& other) const {
-#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
-    if (should_check_top_frame_site_ && other.should_check_top_frame_site_) {
-      return std::tie(top_frame_site_, is_cross_site_, nonce_) ==
-             std::tie(other.top_frame_site_, other.is_cross_site_,
-                      other.nonce_);
-    } else {
-      return std::tie(is_cross_site_, nonce_) ==
-             std::tie(other.is_cross_site_, other.nonce_);
-    }
-#else
     return std::tie(top_frame_site_, is_cross_site_, nonce_) ==
            std::tie(other.top_frame_site_, other.is_cross_site_, other.nonce_);
-#endif
   }
 
   // Compare keys for inequality, true if any enabled field varies.
@@ -220,10 +204,6 @@ class NET_EXPORT NetworkAnonymizationKey {
 
   // for non-opaque origins.
   std::optional<base::UnguessableToken> nonce_;
-
-#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
-  bool should_check_top_frame_site_ = true;
-#endif
 };
 
 NET_EXPORT std::ostream& operator<<(std::ostream& os,

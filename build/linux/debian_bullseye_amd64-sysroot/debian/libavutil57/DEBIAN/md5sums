@@ -1,0 +1,5 @@
+b3ed34148230adbbc08dfa3081809739  usr/lib/x86_64-linux-gnu/libavutil.so.57.28.100
+916c832fe0b6c2cf34c5f6bc4a29bf55  usr/share/doc/libavutil57/changelog.Debian.gz
+cfcf661f2091710181a27d2df03dd2d8  usr/share/doc/libavutil57/changelog.gz
+f256357dc30de7d3d96f1e60364f311e  usr/share/doc/libavutil57/copyright
+7df38a1364aa195b49802b9d12000ce3  usr/share/lintian/overrides/libavutil57

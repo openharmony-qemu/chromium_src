@@ -15,7 +15,6 @@
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "third_party/blink/public/platform/web_string.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
 class RenderFrame;
@@ -24,15 +23,12 @@ class RenderFrame;
 namespace js_injection {
 
 class JsBinding;
-class JsCommunicationUtils;
 
 class JsCommunication
     : public mojom::JsCommunication,
       public content::RenderFrameObserver,
       public content::RenderFrameObserverTracker<JsCommunication> {
  public:
-  friend class JsCommunicationUtils;
-  std::unique_ptr<JsCommunicationUtils> implUtils_;
   explicit JsCommunication(content::RenderFrame* render_frame);
 
   JsCommunication(const JsCommunication&) = delete;
@@ -46,19 +42,8 @@ class JsCommunication
       mojo::PendingAssociatedRemote<mojom::JsObjectsClient> client) override;
   void AddDocumentStartScript(
       mojom::DocumentStartJavaScriptPtr script_ptr) override;
-#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
-  void AddDocumentEndScript(
-      mojom::DocumentEndJavaScriptPtr script_ptr) override;
-#endif
-#if BUILDFLAG(ARKWEB_JSPROXY)
-  void AddHeadReadyScript(
-      mojom::DocumentStartJavaScriptPtr script_ptr) override;
-  void RemoveHeadReadyScript(int32_t script_id) override;
-#endif
   void RemoveDocumentStartScript(int32_t script_id) override;
-#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
-  void RemoveDocumentEndScript(int32_t script_id) override;
-#endif
+
   // RenderFrameObserver implementation
   void DidClearWindowObject() override;
   void WillReleaseScriptContext(v8::Local<v8::Context> context,
@@ -70,22 +55,6 @@ class JsCommunication
   mojom::JsToBrowserMessaging* GetJsToJavaMessage(
       const std::u16string& js_object_name);
 
-#if BUILDFLAG(ARKWEB_JSPROXY)
-  void AddPendingJavascriptAtDocumentStart(
-      mojom::DocumentStartJavaScriptPtr script_ptr) override;
-
-  void AddPendingJavascriptAtDocumentEnd(
-      mojom::DocumentEndJavaScriptPtr script_ptr) override;
-
-  void AddPendingJavascriptAtHeadReady(
-      mojom::DocumentStartJavaScriptPtr script_ptr) override;
-
-  void CommitPendingJavascriptsAtDocumentStart() override;
-
-  void CommitPendingJavascriptsAtDocumentEnd() override;
-
-  void CommitPendingJavascriptsAtHeadReady() override;
-#endif
  private:
   class JsObjectInfo;
   struct DocumentStartJavaScript;
@@ -100,9 +69,6 @@ class JsCommunication
   // to prevent doing multiple injection in that case.
   bool inside_did_clear_window_object_ = false;
 
-#if BUILDFLAG(ARKWEB_JSPROXY)
-  std::vector<std::unique_ptr<DocumentStartJavaScript>> swap_scripts_;
-#endif
   std::vector<std::unique_ptr<DocumentStartJavaScript>> scripts_;
   std::vector<base::WeakPtr<JsBinding>> js_bindings_;
 

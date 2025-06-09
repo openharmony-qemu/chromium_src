@@ -7,7 +7,6 @@
 #pragma allow_unsafe_buffers
 #endif
 
-#include "arkweb/build/features/features.h"
 #include "base/posix/unix_domain_socket.h"
 
 #include <stddef.h>
@@ -101,11 +100,7 @@ TEST(UnixDomainSocketTest, SendRecvMsgAvoidsSIGPIPE) {
   Pickle request;
   ASSERT_EQ(
       -1, UnixDomainSocket::SendRecvMsg(fds[1], nullptr, 0U, nullptr, request));
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  ASSERT_EQ(ECONNREFUSED, errno);
-#else
   ASSERT_EQ(EPIPE, errno);
-#endif
   // Restore the SIGPIPE handler.
   ASSERT_EQ(0, sigaction(SIGPIPE, &oldact, nullptr));
 }

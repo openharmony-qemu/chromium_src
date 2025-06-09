@@ -300,11 +300,7 @@ class VideoDecoderStreamTest
     num_decoded_bytes_unreported_ -= statistics.video_bytes_decoded;
   }
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void OnInitialized(bool success, bool, std::string) {
-#else
   void OnInitialized(bool success) {
-#endif // ARKWEB_VIDEO_ASSISTANT
     DCHECK(!pending_read_);
     DCHECK(!pending_reset_);
     DCHECK(pending_initialize_);
@@ -326,9 +322,6 @@ class VideoDecoderStreamTest
         demuxer_stream_.get(),
         base::BindOnce(&VideoDecoderStreamTest::OnInitialized,
                        base::Unretained(this)),
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-        VideoDecoderChangedCB(),
-#endif // ARKWEB_VIDEO_ASSISTANT
         cdm_context_.get(),
         base::BindRepeating(&VideoDecoderStreamTest::OnStatistics,
                             base::Unretained(this)),

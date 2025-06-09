@@ -45,12 +45,6 @@ grit("components_strings") {
   ]
 
   outputs = [ "grit/components_strings.h" ]
- #ifdef arkweb_i18n
-  if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
-  }
-
-  #endif
   foreach(locale, all_chrome_locales) {
     outputs += [ "components_strings_$locale.pak" ]
   }
@@ -70,12 +64,6 @@ if (is_android) {
 }
 
 grit("components_branded_strings") {
- #ifdef arkweb_i18n
-  if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
-  }
-
-  #endif
   source = "../components_${branding_path_product}_strings.grd"
   outputs = [ "grit/components_branded_strings.h" ]
   foreach(locale, all_chrome_locales) {
@@ -94,13 +82,6 @@ if (is_android) {
 grit("components_locale_settings") {
   source = "../components_locale_settings.grd"
   outputs = [ "grit/components_locale_settings.h" ]
-
-  #ifdef arkweb_i18n
-  if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
-  }
-
-  #endif
   foreach(locale, all_chrome_locales) {
     outputs += [ "components_locale_settings_$locale.pak" ]
   }
@@ -113,12 +94,6 @@ grit("components_locale_settings") {
 grit("search_engine_descriptions_strings") {
   source = "../search_engine_descriptions_strings.grd"
   outputs = [ "grit/search_engine_descriptions_strings.h" ]
- #ifdef arkweb_i18n
-  if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
-  }
-
-  #endif
   foreach(locale, all_chrome_locales) {
     outputs += [ "search_engine_descriptions_strings_$locale.pak" ]
   }
@@ -146,12 +121,6 @@ if (is_android) {
 grit("privacy_sandbox_strings") {
   source = "../privacy_sandbox_strings.grd"
   outputs = [ "grit/privacy_sandbox_strings.h" ]
- #ifdef arkweb_i18n
-  if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
-  }
-
-  #endif
   foreach(locale, all_chrome_locales) {
     outputs += [ "privacy_sandbox_strings_$locale.pak" ]
   }

@@ -65,9 +65,6 @@ ui::Accelerator ParseImpl(std::string_view accelerator,
       platform_key != values::kKeybindingPlatformMac &&
       platform_key != values::kKeybindingPlatformChromeOs &&
       platform_key != values::kKeybindingPlatformLinux &&
-#if BUILDFLAG(IS_ARKWEB)
-      platform_key != values::kKeybindingPlatformOHOS &&
-#endif
       platform_key != values::kKeybindingPlatformDefault) {
     *error = ErrorUtils::FormatErrorMessageUTF16(
         errors::kInvalidKeyBindingUnknownPlatform, base::NumberToString(index),
@@ -297,7 +294,7 @@ std::string Command::CommandPlatform() {
   // For now, we use linux keybindings on desktop android.
   // TODO(https://crbug.com/356905053): Should this be ChromeOS keybindings?
   return values::kKeybindingPlatformLinux;
-#elif BUILDFLAG(IS_ARKWEB)
+#elif BUILDFLAG(IS_OHOS)
   return values::kKeybindingPlatformOHOS;
 #else
 #error Unsupported platform

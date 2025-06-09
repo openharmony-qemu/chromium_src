@@ -49,13 +49,6 @@ namespace {
 using MockClosureTarget =
     ::testing::StrictMock<::testing::MockFunction<void()>>;
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-class MockRulesetServiceClient : public RulesetServiceClient {
- public:
-  void OnDeleteRulesetFile() override {}
-};
-#endif
-
 class NotifyingMockRenderProcessHost : public content::MockRenderProcessHost {
  public:
   explicit NotifyingMockRenderProcessHost(

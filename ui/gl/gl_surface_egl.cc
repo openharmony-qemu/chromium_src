@@ -37,10 +37,6 @@
 #include "ui/gl/scoped_make_current.h"
 #include "ui/gl/sync_control_vsync_provider.h"
 
-#if BUILDFLAG(ARKWEB_DFX_DUMP)
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#endif
-
 #if !defined(EGL_FIXED_SIZE_ANGLE)
 #define EGL_FIXED_SIZE_ANGLE 0x3201
 #endif
@@ -357,9 +353,7 @@ NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
     : GLSurfaceEGL(display),
       scoped_window_(std::move(scoped_window)),
       window_(scoped_window_.a_native_window()),
-      vsync_provider_external_(std::move(vsync_provider)) {
-        arkweb_surface_utils_ = new ArkwebGlSurfaceEglUtils();
-      }
+      vsync_provider_external_(std::move(vsync_provider)) {}
 #else
 NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
     GLDisplayEGL* display,
@@ -373,7 +367,6 @@ NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
   if (GetClientRect(window_, &windowRect))
     size_ = gfx::Rect(windowRect).size();
 #endif
-  enable_replace_swap_buffer_output_ = arkweb_surface_utils_->CheckSwapBufferOutputFlag();
 }
 #endif  // BUILDFLAG(IS_ANDROID)
 
@@ -440,6 +433,13 @@ bool NativeViewGLSurfaceEGL::Initialize(GLSurfaceFormat format) {
 
   egl_window_attributes.push_back(EGL_NONE);
   // Create a surface for the native window.
+#if BUILDFLAG(IS_OHOS)
+  if (!window_) {
+    LOG(ERROR) << "eglCreateWindowSurface failed with error,window_ is null";
+    Destroy();
+    return false;
+  }
+#endif
   surface_ = eglCreateWindowSurface(display_->GetDisplay(), GetConfig(),
                                     window_, &egl_window_attributes[0]);
 
@@ -590,7 +590,7 @@ bool NativeViewGLSurfaceEGL::IsOffscreen() {
 gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffers(
     PresentationCallback callback,
     gfx::FrameData data) {
-  OHOS_TRACE_EVENT2("gpu", "NativeViewGLSurfaceEGL:RealSwapBuffers",
+  TRACE_EVENT2("gpu", "NativeViewGLSurfaceEGL:RealSwapBuffers",
       "width", GetSize().width(),
       "height", GetSize().height());
 
@@ -761,7 +761,6 @@ bool NativeViewGLSurfaceEGL::Resize(const gfx::Size& size,
   DCHECK(context);
   GLSurface* surface = GLSurface::GetCurrent();
   DCHECK(surface);
-
   // Current surface may not be |this| if it is wrapped, but it should point to
   // the same handle.
   DCHECK_EQ(surface->GetHandle(), GetHandle());
@@ -788,7 +787,6 @@ bool NativeViewGLSurfaceEGL::Recreate() {
   DCHECK(context);
   GLSurface* surface = GLSurface::GetCurrent();
   DCHECK(surface);
-
   // Current surface may not be |this| if it is wrapped, but it should point to
   // the same handle.
   DCHECK_EQ(surface->GetHandle(), GetHandle());
@@ -939,15 +937,6 @@ gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffersWithDamage(
     gfx::FrameData data) {
   DCHECK(supports_swap_buffer_with_damage_);
 
-#if BUILDFLAG(ARKWEB_DFX_DUMP)
-  OHOS_TRACE_EVENT2(
-    "gpu", "NativeViewGLSurfaceEGL::RealSwapBuffers SwapBuffersWithDamage",
-    "width", GetSize().width(), "height", GetSize().height());
-  is_first_swapbuffers_ = arkweb_surface_utils_->SwapBuffersSolution(
-    enable_replace_swap_buffer_output_, is_first_swapbuffers_, GetSize());
-  auto start = std::chrono::high_resolution_clock::now();
-#endif
-
   GLSurfacePresentationHelper::ScopedSwapBuffers scoped_swap_buffers(
       presentation_helper_.get(), std::move(callback));
   if (!eglSwapBuffersWithDamageKHR(display_->GetDisplay(), surface_,
@@ -957,9 +946,6 @@ gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffersWithDamage(
              << GetLastEGLErrorString();
     scoped_swap_buffers.set_result(gfx::SwapResult::SWAP_FAILED);
   }
-#if BUILDFLAG(ARKWEB_DFX_DUMP)
-  arkweb_surface_utils_->SwapBuffersWithDamageSolution(scoped_swap_buffers.result(), start, GetSize());
-#endif
   return scoped_swap_buffers.result();
 }
 

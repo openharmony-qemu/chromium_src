@@ -73,11 +73,7 @@ bool RenderFrameMatches(const ExtensionFrameHelper* frame_helper,
   blink::WebSecurityOrigin origin =
       frame_helper->render_frame()->GetWebFrame()->GetSecurityOrigin();
   if (origin.IsOpaque() ||
-      (!base::EqualsASCII(origin.Protocol().Utf16(), kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-       && !base::EqualsASCII(origin.Protocol().Utf16(), kArkwebExtensionScheme)
-#endif
-           ) ||
+      !base::EqualsASCII(origin.Protocol().Utf16(), kExtensionScheme) ||
       !base::EqualsASCII(origin.Host().Utf16(), match_extension_id.c_str()))
     return false;
 
@@ -379,11 +375,7 @@ void ExtensionFrameHelper::ReadyToCommitNavigation(
   // be resumed when it happens. It doesn't apply to sandboxed pages.
   if (view_type_ == mojom::ViewType::kAppWindow &&
       web_frame->IsOutermostMainFrame() && !has_started_first_navigation_ &&
-      (GURL(document_loader->GetUrl()).SchemeIs(kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-       || GURL(document_loader->GetUrl()).SchemeIs(kArkwebExtensionScheme)
-#endif
-           ) &&
+      GURL(document_loader->GetUrl()).SchemeIs(kExtensionScheme) &&
       !ScriptContext::IsSandboxedPage(document_loader->GetUrl())) {
     document_loader->BlockParser();
   }

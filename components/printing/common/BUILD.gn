@@ -41,10 +41,6 @@ mojom("mojo_interfaces") {
   if (enable_print_preview) {
     enabled_features += [ "enable_print_preview" ]
   }
-  if (is_arkweb) {
-    enabled_features += [ "is_arkweb" ]
-    enabled_features += [ "arkweb_print" ]
-  }
 }
 
 source_set("unit_tests") {

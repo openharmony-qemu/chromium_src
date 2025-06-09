@@ -12,8 +12,6 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <string.h>
-#include <dlfcn.h>
 
 #include <memory>
 #include <tuple>
@@ -49,6 +47,10 @@
 
 #if PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
 #include "partition_alloc/stack/stack.h"
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+#include "qos/qos.h"
 #endif
 
 namespace base {
@@ -272,20 +274,6 @@ PlatformThreadId PlatformThreadBase::CurrentId() {
 #endif
 }
 
-#if BUILDFLAG(IS_ARKWEB)
-NO_SANITIZE("cfi-icall") PlatformThreadId PlatformThread::CurrentRealId() {
-  // - getproctid() is fast, since its return value is cached in pthread (in the
-  //   thread control block of pthread). See gettid.c in bionic.
-  using GetProcXid = int (*)(void);
-  static GetProcXid getProcTid = nullptr;
-  if (getProcTid == nullptr) {
-    getProcTid = reinterpret_cast<GetProcXid>(dlsym(RTLD_DEFAULT, "getproctid"));
-    CHECK(getProcTid);
-  }
-  return getProcTid();
-}
-#endif
-
 // static
 PlatformThreadRef PlatformThreadBase::CurrentRef() {
   return PlatformThreadRef(pthread_self());
@@ -388,6 +376,32 @@ bool PlatformThreadBase::CanChangeThreadType(ThreadType from, ThreadType to) {
 
 namespace internal {
 
+#if BUILDFLAG(IS_OHOS)
+struct ThreadTypeToQosLevelPair {
+  ThreadType thread_type;
+  QoS_Level qs_level;
+};
+
+const ThreadTypeToQosLevelPair kThreadTypeToQosLevelMap[6] = {
+    {ThreadType::kBackground, QoS_Level::QOS_BACKGROUND},
+    {ThreadType::kUtility, QoS_Level::QOS_UTILITY},
+    {ThreadType::kResourceEfficient, QoS_Level::QOS_DEFAULT},
+    {ThreadType::kDefault, QoS_Level::QOS_DEFAULT},
+    {ThreadType::kDisplayCritical, QoS_Level::QOS_USER_INTERACTIVE},
+    {ThreadType::kRealtimeAudio, QoS_Level::QOS_DEADLINE_REQUEST},
+};
+  
+QoS_Level ThreadTypeToQosLevel(ThreadType thread_type) {
+  for (const auto& pair : kThreadTypeToQosLevelMap) {
+    if (pair.thread_type == thread_type) {
+      return pair.qs_level;
+    }
+  }
+  NOTREACHED() << "Unknown ThreadType";
+  return QoS_Level::QOS_DEFAULT;
+}
+#endif
+
 void SetCurrentThreadTypeImpl(ThreadType thread_type,
                               MessagePumpType pump_type_hint) {
 #if BUILDFLAG(IS_NACL)
@@ -408,6 +422,17 @@ void SetCurrentThreadTypeImpl(ThreadType thread_type,
               << PlatformThread::CurrentId() << ") to " << nice_setting;
   }
 #endif  // BUILDFLAG(IS_NACL)
+
+#if BUILDFLAG(IS_OHOS)
+  const QoS_Level level = internal::ThreadTypeToQosLevel(thread_type);
+  const auto current_tid = PlatformThread::CurrentId();
+  if (OH_QoS_SetThreadQoS(level) != 0) {
+    LOG(ERROR) << "Failed to set thread qos. thread (" << current_tid << ")";
+  } else {
+    LOG(INFO) << "SetCurrentThread thread (" << current_tid << ") to "
+              << (int)level;
+  }
+#endif
 }
 
 }  // namespace internal

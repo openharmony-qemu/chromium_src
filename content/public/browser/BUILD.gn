@@ -10,14 +10,9 @@ import("//media/media_options.gni")
 import("//ppapi/buildflags/buildflags.gni")
 import("//third_party/protobuf/proto_library.gni")
 import("//third_party/webrtc/webrtc.gni")
-import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
-}
-
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
 }
 
 # See //content/BUILD.gn for how this works.
@@ -32,13 +27,6 @@ group("browser") {
 source_set("browser_sources") {
   # External code should depend on via ":browser" above.
   visibility = [ "//content/*" ]
-
-  if (arkweb_unittests) {
-    visibility += [
-      "//media:media_unittests",
-    ]
-  }
-
   sources = [
     "active_url_message_filter.cc",
     "active_url_message_filter.h",
@@ -518,23 +506,6 @@ source_set("browser_sources") {
     "worker_type.h",
     "zoom_level_delegate.h",
   ]
-
-  #if defined(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  if (defined(arkweb_custom_video_player) && arkweb_custom_video_player) {
-    import("//arkweb/chromium_ext/content/public/browser/arkweb_content_public_browser.gni")
-    sources += arkweb_content_public_browser_custom_media_sources
-  }
-  #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
-
-  #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  if (defined(ohos_video_assistant) && ohos_video_assistant) {
-    sources += [
-      "//arkweb/chromium_ext/content/public/browser/media_player_controller.h",
-      "//arkweb/chromium_ext/content/public/browser/media_player_listener.h",
-    ]
-  }
-  #endif // ARKWEB_VIDEO_ASSISTANT
-
   configs += [
     "//build/config:precompiled_headers",
     "//build/config/compiler:wexit_time_destructors",
@@ -712,15 +683,8 @@ source_set("browser_sources") {
     configs += [ "//build/config/linux/atspi2" ]
   }
 
-  if (arkweb_same_layer) {
-    sources += arkweb_content_public_browser_sources
-  }
-
-  if (defined(arkweb_network_base) && arkweb_network_base) {
-    sources += [
-      "//cef/ohos_cef_ext/libcef/browser/ark_web_javascript_dialog_manager.cc",
-      "//cef/ohos_cef_ext/libcef/browser/ark_web_javascript_dialog_manager.h",
-    ]
+  if (is_ohos) {
+    sources += [ "ax_inspect_factory_ohos.cc" ]
   }
 
   if (is_linux || is_chromeos) {

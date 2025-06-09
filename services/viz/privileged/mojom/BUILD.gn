@@ -4,7 +4,6 @@
 
 import("//components/viz/common/debugger/viz_debugger.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
-import("//arkweb/build/features/features.gni")
 
 mojom("mojom") {
   sources = [ "viz_main.mojom" ]
@@ -26,11 +25,6 @@ mojom("mojom") {
     "//services/viz/public/mojom",
     "//ui/gfx/mojom",
   ]
-
-  if (arkweb_occluded_opt) {
-    enabled_features += [ "arkweb_occluded_opt" ]
-  }
-
 }
 
 source_set("unit_tests") {

@@ -14,10 +14,6 @@ import("//services/screen_ai/buildflags/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/webrtc/webrtc.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
-import("//arkweb/build/features/features.gni")
-if (enable_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
 
 if (is_component_build) {
   link_target_type = "source_set"
@@ -35,15 +31,6 @@ target(link_target_type, "renderer") {
     "//content/public/renderer:renderer_sources",
     "//media/mojo/clients:unit_tests",
   ]
-
-  if (use_libfuzzer) {
-    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
-    configs += [ "//build/config/gcc:symbol_visibility_default" ]
-  }
-
-  if(arkweb_unittests){
-    visibility += ["//gpu:gpu_unittests",]
-  }
 
   sources = [
     "accessibility/annotations/ax_annotator.h",
@@ -213,6 +200,12 @@ target(link_target_type, "renderer") {
     sources += [ "renderer_main_platform_delegate_linux.cc" ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "renderer_main_platform_delegate_ohos.cc",
+    ]
+  }
+
   if (is_mac) {
     sources += [
       "renderer_main_platform_delegate_mac.mm",
@@ -349,21 +342,6 @@ target(link_target_type, "renderer") {
     "//v8",
   ]
   allow_circular_includes_from = []
-
-  if (is_arkweb) {
-    include_dirs = ohos_src_includes
-
-    deps += [
-      "//ohos_glue:ohos_adapter_glue_source",
-    ]
-
-    sources += arkweb_content_renderer_sources
-    sources += arkweb_content_render_sources
-
-    sources += [
-      "renderer_main_platform_delegate_linux.cc",
-    ]
-  }
 
   if (is_android) {
     deps += [

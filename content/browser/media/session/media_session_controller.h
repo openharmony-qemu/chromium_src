@@ -19,13 +19,11 @@
 #include "media/base/media_content_type.h"
 #include "services/media_session/public/cpp/media_position.h"
 #include "services/media_session/public/mojom/media_session.mojom.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
 
 class MediaSessionImpl;
 class WebContentsImpl;
-class MediaSessionControllerExt;
 
 // Helper class for controlling a single player's MediaSession instance.  Sends
 // browser side MediaSession commands back to a player hosted in the renderer
@@ -37,7 +35,6 @@ class MediaSessionControllerExt;
 class CONTENT_EXPORT MediaSessionController
     : public MediaSessionPlayerObserver {
  public:
-  friend class MediaSessionControllerExt;
   MediaSessionController(const MediaPlayerId& id,
                          WebContentsImpl* web_contents);
 
@@ -118,10 +115,6 @@ class CONTENT_EXPORT MediaSessionController
   // Called when video visibility changes for the given media player.
   void OnVideoVisibilityChanged(bool meets_visibility_threshold);
 
-  virtual MediaSessionControllerExt* AsMediaSessionControllerExt() {
-    return nullptr;
-  }
-
  private:
   bool IsMediaSessionNeeded() const;
 
@@ -162,6 +155,5 @@ class CONTENT_EXPORT MediaSessionController
 };
 
 }  // namespace content
-#include "arkweb/chromium_ext/content/browser/media/session/media_session_controller_ext.h"
 
 #endif  // CONTENT_BROWSER_MEDIA_SESSION_MEDIA_SESSION_CONTROLLER_H_

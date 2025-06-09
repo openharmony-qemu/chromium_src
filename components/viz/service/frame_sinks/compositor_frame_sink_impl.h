@@ -21,20 +21,9 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-#include "base/process/process_handle.h"
-#endif
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_impl_utils.h"
-#endif
-
 namespace viz {
 
 class FrameSinkManagerImpl;
-#if BUILDFLAG(IS_ARKWEB)
-class CompositorFrameSinkImplUtil;
-#endif
 
 // The viz portion of a non-root CompositorFrameSink. Holds the
 // Binding/InterfacePtr for the mojom::CompositorFrameSink interface.
@@ -77,18 +66,6 @@ class CompositorFrameSinkImpl : public mojom::CompositorFrameSink {
   void BindLayerContext(mojom::PendingLayerContextPtr context) override;
 #if BUILDFLAG(IS_ANDROID)
   void SetThreads(const std::vector<Thread>& threads) override;
-#endif
-
-  friend class CompositorFrameSinkImplUtil;
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  void ReportKeyThreadIds(const std::vector<int32_t>& thread_ids,
-                          int32_t process_id,
-                          bool is_created) override;
-#endif
-
-#if BUILDFLAG(IS_ARKWEB)
-  std::unique_ptr<CompositorFrameSinkImplUtil> compositor_frame_sink_impl_util_;
 #endif
 
  private:

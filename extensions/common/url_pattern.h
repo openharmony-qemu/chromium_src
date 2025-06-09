@@ -10,8 +10,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include "base/feature_list.h"
-
 
 #include "net/base/registry_controlled_domains/registry_controlled_domain.h"
 
@@ -65,10 +63,6 @@ class URLPattern {
     SCHEME_WSS = 1 << 8,
     SCHEME_DATA = 1 << 9,
     SCHEME_UUID_IN_PACKAGE = 1 << 10,
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-    SCHEME_ARKWEBUI = 1 << 11,
-    SCHEME_ARKWEB_EXTENSION = 1 << 12,
-#endif
 
     // IMPORTANT!
     // SCHEME_ALL will match every scheme, including chrome://, chrome-

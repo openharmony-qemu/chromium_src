@@ -3,9 +3,8 @@
 // found in the LICENSE file.
 
 #include "gpu/ipc/common/gpu_info_mojom_traits.h"
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
-#include "base/logging.h"
+
 #include "base/notreached.h"
 #include "mojo/public/cpp/base/time_mojom_traits.h"
 
@@ -364,10 +363,6 @@ gpu::mojom::ImageDecodeAcceleratorType EnumTraits<
       return gpu::mojom::ImageDecodeAcceleratorType::kJpeg;
     case gpu::ImageDecodeAcceleratorType::kWebP:
       return gpu::mojom::ImageDecodeAcceleratorType::kWebP;
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-    case gpu::ImageDecodeAcceleratorType::kHeif:
-      return gpu::mojom::ImageDecodeAcceleratorType::kHeif;
-#endif
     case gpu::ImageDecodeAcceleratorType::kUnknown:
       return gpu::mojom::ImageDecodeAcceleratorType::kUnknown;
   }
@@ -385,11 +380,6 @@ bool EnumTraits<gpu::mojom::ImageDecodeAcceleratorType,
     case gpu::mojom::ImageDecodeAcceleratorType::kWebP:
       *out = gpu::ImageDecodeAcceleratorType::kWebP;
       return true;
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-    case gpu::mojom::ImageDecodeAcceleratorType::kHeif:
-      *out = gpu::ImageDecodeAcceleratorType::kHeif;
-      return true;
-#endif
     case gpu::mojom::ImageDecodeAcceleratorType::kUnknown:
       *out = gpu::ImageDecodeAcceleratorType::kUnknown;
       return true;

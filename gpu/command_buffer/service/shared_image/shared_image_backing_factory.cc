@@ -7,18 +7,11 @@
 #include "gpu/command_buffer/common/shared_image_usage.h"
 #include "gpu/command_buffer/service/shared_image/shared_image_backing.h"
 
-#if BUILDFLAG(ARKWEB_VULKAN)
-#include "arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_util.h"
-#endif
-
 namespace gpu {
+
 SharedImageBackingFactory::SharedImageBackingFactory(
     SharedImageUsageSet valid_usages)
-    : valid_usages_(valid_usages) {
-#if BUILDFLAG(ARKWEB_VULKAN)
-  gpu::ohos::PrintSharedImageUsageInfo(valid_usages);
-#endif
-}
+    : valid_usages_(valid_usages) {}
 
 SharedImageBackingFactory::~SharedImageBackingFactory() = default;
 

@@ -79,7 +79,6 @@
 #include "base/numerics/clamped_math.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_FUCHSIA)
 #include <zircon/types.h>
@@ -134,10 +133,6 @@ constexpr bool isnan(double d) {
 }
 
 }
-
-// Clang compiler is unable to eliminate a "dead" function call to an undefined
-// `std::_Literal_zero_is_expected()` function that MSVC uses to allow
-// comparisons with literal zero without warning.
 
 // TimeDelta ------------------------------------------------------------------
 

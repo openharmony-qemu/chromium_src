@@ -7,7 +7,6 @@
 
 #include <optional>
 
-#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/time/time.h"
 #include "mojo/public/cpp/bindings/struct_traits.h"
@@ -59,12 +58,6 @@ class COMPONENT_EXPORT(NETWORK_CPP_BASE)
       const network::URLLoaderCompletionStatus& status) {
     return status.exists_in_memory_cache;
   }
-
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  static bool abort_due_to_cef_browser_destroyed(const network::URLLoaderCompletionStatus& status) {
-    return status.abort_due_to_cef_browser_destroyed;
-  }
-#endif  //  ARKWEB_EX_DOWNLOAD
 
   static const base::TimeTicks& completion_time(
       const network::URLLoaderCompletionStatus& status) {

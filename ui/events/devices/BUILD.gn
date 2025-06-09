@@ -1,16 +1,11 @@
 # Copyright 2014 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/config.gni")
   import("//build/config/android/rules.gni")
   import("//third_party/jni_zero/jni_zero.gni")
-}
-
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
 }
 
 component("devices") {
@@ -59,10 +54,6 @@ component("devices") {
     ]
   }
 
-  if (arkweb_input_events) {
-    sources += arkweb_ui_events_devices_sources
-  }
-
   defines = [ "EVENTS_DEVICES_IMPLEMENTATION" ]
 
   public_deps = [
@@ -77,8 +68,6 @@ component("devices") {
     "//ui/gfx/geometry",
     "//ui/gfx/geometry:geometry_skia",
   ]
-
-  deps += [ "//arkweb/build/features" ]
 
   if (is_android) {
     deps += [ ":ui_events_devices_jni_headers" ]

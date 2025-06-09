@@ -8,14 +8,12 @@
 #endif
 
 #include "base/files/file_path.h"
-#include "arkweb/build/features/features.h"
 
 #include <string.h>
 
 #include <algorithm>
 #include <string_view>
 
-#include "base/logging.h"
 #include "base/check_op.h"
 #include "base/files/safe_base_name.h"
 #include "base/numerics/safe_conversions.h"
@@ -543,6 +541,7 @@ FilePath FilePath::Append(StringPieceType component) const {
     // component.
     return FilePath(appended);
   }
+
   FilePath new_path(path_);
   new_path.StripTrailingSeparatorsInternal();
 
@@ -559,6 +558,7 @@ FilePath FilePath::Append(StringPieceType component) const {
       }
     }
   }
+
   new_path.path_.append(appended);
   return new_path;
 }
@@ -581,11 +581,6 @@ FilePath FilePath::AppendASCII(std::string_view component) const {
 }
 
 bool FilePath::IsAbsolute() const {
-#if BUILDFLAG(IS_ARKWEB)
-  if (IsDataShareUri()) {
-    return true;
-  }
-#endif
   return IsPathAbsolute(path_);
 }
 
@@ -1420,11 +1415,4 @@ bool FilePath::IsContentUri() const {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_FILE_UPLOAD) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "arkweb/chromium_ext/base/files/file_path_ext.cc"
-#endif
-
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "arkweb/chromium_ext/base/files/file_path_sta_ext.cc"
-#endif
 }  // namespace base

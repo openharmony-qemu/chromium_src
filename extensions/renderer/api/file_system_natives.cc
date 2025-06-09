@@ -54,9 +54,6 @@ void FileSystemNatives::GetIsolatedFileSystem(
   // we use a raw string here because the constant is defined at a different
   // layer, and it's not worth pulling it up into //extensions just for this.
   CHECK(context_url.SchemeIs(extensions::kExtensionScheme) ||
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-        context_url.SchemeIs(extensions::kArkwebExtensionScheme) ||
-#endif
         (context_url.SchemeIs(content::kChromeUIScheme) &&
          context_url.host_piece() == "file-manager"));
 

@@ -160,10 +160,7 @@ int ShellBrowserMainParts::PreCreateThreads() {
 
   content::ChildProcessSecurityPolicy::GetInstance()->RegisterWebSafeScheme(
       kExtensionScheme);
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  content::ChildProcessSecurityPolicy::GetInstance()->RegisterWebSafeScheme(
-      kArkwebExtensionScheme);
-#endif
+
   // Return no error.
   return 0;
 }

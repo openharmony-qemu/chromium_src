@@ -177,10 +177,6 @@
 #include "ui/events/event.h"
 #endif  // USE_AURA
 
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-#include "content/public/browser/web_contents_delegate.h"
-#endif
-
 namespace content {
 namespace {
 
@@ -923,13 +919,8 @@ bool CanCommitURLForTesting(int child_id, const GURL& url) {
 void SimulateUnresponsiveRenderer(WebContents* web_contents,
                                   RenderWidgetHost* widget) {
   static_cast<WebContentsImpl*>(web_contents)
-      ->RendererUnresponsive(
-          RenderWidgetHostImpl::From(widget), base::DoNothing()
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-                                                  ,
-          RendererIsUnresponsiveReason::kOnInputEventAckTimeout
-#endif
-      );
+      ->RendererUnresponsive(RenderWidgetHostImpl::From(widget),
+                             base::DoNothing());
 }
 
 #if defined(USE_AURA)

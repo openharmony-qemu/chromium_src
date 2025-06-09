@@ -92,7 +92,7 @@
     // APIs.
     "channel": "stable",
     "extension_types": ["platform_app"],
-    "platforms": ["chromeos", "win", "mac"] //[] "ohos"]
+    "platforms": ["chromeos", "win", "mac", "ohos"]
   }, {
     "channel": "stable",
     "extension_types": ["platform_app"],

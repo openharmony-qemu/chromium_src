@@ -501,11 +501,6 @@ bool RulesetManager::ShouldEvaluateRequest(
   // scheme. Practically, this has the effect of not allowing an extension to
   // modify its own resources (The extension wouldn't have the permission to
   // other extension origins anyway).
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  if (request.url.SchemeIs(kArkwebExtensionScheme)) {
-    return false;
-  }
-#endif
   if (request.url.SchemeIs(kExtensionScheme)) {
     return false;
   }
@@ -529,11 +524,7 @@ bool RulesetManager::ShouldEvaluateRulesetForRequest(
     // originate from an extension.
     auto initiator_precursor =
         request.initiator->GetTupleOrPrecursorTupleIfOpaque();
-    if ((initiator_precursor.scheme() == kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-         || initiator_precursor.scheme() == extensions::kArkwebExtensionScheme
-#endif
-         ) &&
+    if (initiator_precursor.scheme() == kExtensionScheme &&
         initiator_precursor.host() != ruleset.extension_id) {
       return false;
     }

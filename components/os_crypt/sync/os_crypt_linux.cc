@@ -24,16 +24,11 @@
 #include "crypto/encryptor.h"
 #include "crypto/symmetric_key.h"
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/components/os_crypt/sync/os_crypt_linux_for_include.h"
-#endif
-
 namespace {
 
 // Salt for Symmetric key derivation.
 constexpr char kSalt[] = "saltysalt";
 
-#if !BUILDFLAG(ARKWEB_ENCRYPT)
 // Key size required for 128 bit AES.
 constexpr size_t kDerivedKeySizeInBits = 128;
 
@@ -42,7 +37,6 @@ constexpr size_t kEncryptionIterations = 1;
 
 // Size of initialization vector for AES 128-bit.
 constexpr size_t kIVBlockSizeAES128 = 16;
-#endif
 
 // Prefixes for cypher text returned by obfuscation version.  We prefix the
 // ciphertext with this string so that future data migration can detect
@@ -64,18 +58,11 @@ std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKey(
     const std::string& password) {
   const std::string salt(kSalt);
 
-#if BUILDFLAG(ARKWEB_ENCRYPT)
-  std::unique_ptr<crypto::SymmetricKey> encryption_key(
-      crypto::SymmetricKey::Import(
-          crypto::SymmetricKey::AES,
-          crypto::ohos::get_symmetric_key_256(kDataKeyAlias)));
-#else
   // Create an encryption key from our password and salt.
   std::unique_ptr<crypto::SymmetricKey> encryption_key(
       crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
           crypto::SymmetricKey::AES, password, salt, kEncryptionIterations,
           kDerivedKeySizeInBits));
-#endif
   DCHECK(encryption_key);
 
   return encryption_key;
@@ -83,8 +70,6 @@ std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKey(
 
 // Decrypt `ciphertext` using `encryption_key` and store the result in
 // `encryption_key`.
-
-#if !BUILDFLAG(ARKWEB_ENCRYPT)
 bool DecryptWith(const std::string& ciphertext,
                  crypto::SymmetricKey* encryption_key,
                  std::string* plaintext) {
@@ -96,7 +81,6 @@ bool DecryptWith(const std::string& ciphertext,
 
   return encryptor.Decrypt(ciphertext, plaintext);
 }
-#endif
 
 }  // namespace
 
@@ -125,7 +109,6 @@ void SetRawEncryptionKey(const std::string& key) {
 bool IsEncryptionAvailable() {
   return OSCryptImpl::GetInstance()->IsEncryptionAvailable();
 }
-#if !BUILDFLAG(IS_ARKWEB)
 void UseMockKeyStorageForTesting(
     base::OnceCallback<std::unique_ptr<KeyStorageLinux>()>
         storage_provider_factory) {
@@ -138,12 +121,7 @@ void ClearCacheForTesting() {
 void SetEncryptionPasswordForTesting(const std::string& password) {
   OSCryptImpl::GetInstance()->SetEncryptionPasswordForTesting(password);
 }
-#endif
 }  // namespace OSCrypt
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/components/os_crypt/sync/os_crypt_linux_for_include.cc"
-#endif
 
 OSCryptImpl* OSCryptImpl::GetInstance() {
   return base::Singleton<OSCryptImpl,
@@ -190,24 +168,16 @@ bool OSCryptImpl::EncryptString(const std::string& plaintext,
     return false;
   }
 
-#if BUILDFLAG(ARKWEB_ENCRYPT)
-  std::string iv = crypto::ohos::get_iv(kIVSizeAESGCM);
-  crypto::Encryptor encryptor;
-  if (!encryptor.Init(encryption_key, crypto::Encryptor::GCM, iv)) {
-#else
   const std::string iv(kIVBlockSizeAES128, ' ');
   crypto::Encryptor encryptor;
   if (!encryptor.Init(encryption_key, crypto::Encryptor::CBC, iv)) {
-#endif
     return false;
   }
 
   if (!encryptor.Encrypt(plaintext, ciphertext)) {
     return false;
   }
-#if BUILDFLAG(ARKWEB_ENCRYPT)
-  ciphertext->insert(0, iv);
-#endif
+
   // Prefix the cipher text with version information.
   ciphertext->insert(0, obfuscation_prefix);
   return true;
@@ -254,43 +224,19 @@ bool OSCryptImpl::DecryptString(const std::string& ciphertext,
     return false;
   }
 
-#if BUILDFLAG(ARKWEB_ENCRYPT)
-  if (ciphertext.length() < (obfuscation_prefix.length() + kIVSizeAESGCM)) {
-    return true;
-  }
-  std::string raw_ciphertext =
-      ciphertext.substr(obfuscation_prefix.length() + kIVSizeAESGCM);
-  std::string iv =
-      ciphertext.substr(obfuscation_prefix.length(), kIVSizeAESGCM);
-#else
   // Strip off the versioning prefix before decrypting.
   const std::string raw_ciphertext =
       ciphertext.substr(obfuscation_prefix.length());
-#endif
 
-#if BUILDFLAG(ARKWEB_ENCRYPT)
-  bool result = false;
-  // Retry use before second encrypted key to decrypt password
-  crypto::SymmetricKey* encryption_key_ota = GetPasswordForOtaFail();
-  if (DecryptWithIvForInclude(raw_ciphertext, encryption_key,
-                              encryption_key_ota, plaintext, iv, result)) {
-    return result;
-  }
-#else
   if (DecryptWith(raw_ciphertext, encryption_key, plaintext)) {
     base::UmaHistogramBoolean(kMetricDecryptedWithEmptyKey, false);
     return true;
   }
-#endif
 
   // Some clients have encrypted data with an empty key. See
   // crbug.com/1195256.
   auto empty_key = GenerateEncryptionKey(std::string());
-#if BUILDFLAG(ARKWEB_ENCRYPT)
-  if (DecryptWithIv(raw_ciphertext, encryption_key, plaintext, iv)) {
-#else
   if (DecryptWith(raw_ciphertext, empty_key.get(), plaintext)) {
-#endif
     VLOG(1) << "Decryption succeeded after retrying with an empty key";
     base::UmaHistogramBoolean(kMetricDecryptedWithEmptyKey, true);
     return true;
@@ -337,7 +283,6 @@ std::string OSCryptImpl::GetRawEncryptionKey() {
   return std::string();
 }
 
-#if !BUILDFLAG(IS_ARKWEB)
 void OSCryptImpl::ClearCacheForTesting() {
   password_v10_cache_.reset();
   password_v11_cache_.reset();
@@ -351,15 +296,12 @@ void OSCryptImpl::UseMockKeyStorageForTesting(
   base::AutoLock auto_lock(OSCryptImpl::GetLock());
   storage_provider_factory_for_testing_ = std::move(storage_provider_factory);
 }
-#endif
 
-#if !BUILDFLAG(IS_ARKWEB)
 void OSCryptImpl::SetEncryptionPasswordForTesting(const std::string& password) {
   ClearCacheForTesting();  // IN-TEST
   password_v11_cache_ = GenerateEncryptionKey(password);
   is_password_v11_cached_ = true;
 }
-#endif
 
 // Returns a cached string of "peanuts". Is thread-safe.
 crypto::SymmetricKey* OSCryptImpl::GetPasswordV10() {
@@ -375,11 +317,6 @@ crypto::SymmetricKey* OSCryptImpl::GetPasswordV10() {
 crypto::SymmetricKey* OSCryptImpl::GetPasswordV11(bool probe) {
   base::AutoLock auto_lock(OSCryptImpl::GetLock());
   if (is_password_v11_cached_) {
-#if BUILDFLAG(ARKWEB_COOKIE)
-    if (!config_) {
-      return nullptr;
-    }
-#endif // BUILDFLAG(ARKWEB_COOKIE)
     return password_v11_cache_.get();
   }
 

@@ -45,8 +45,6 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif
 
-#include "arkweb/chromium_ext/components/viz/host/gpu_host_impl_utils.cc"
-
 namespace viz {
 namespace {
 

@@ -10,15 +10,6 @@
 
 namespace ui {
 
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-constexpr int kOverlayScrollbarStrokeWidth = 0;
-constexpr int kOverlayScrollbarThumbWidthPressed = 28;
-constexpr int kOverlayScrollbarThumbWidthPressedPc = 8;
-constexpr float kOverlayScrollbarIdleThicknessScale = 0.5f;
-constexpr base::TimeDelta kOverlayScrollbarFadeDelay = base::Milliseconds(2000);
-constexpr base::TimeDelta kOverlayScrollbarFadeDuration =
-    base::Milliseconds(300);
-#else
 constexpr int kOverlayScrollbarStrokeWidth = 1;
 constexpr int kOverlayScrollbarThumbWidthPressed = 10;
 constexpr float kOverlayScrollbarIdleThicknessScale = 0.4f;
@@ -26,8 +17,6 @@ constexpr float kOverlayScrollbarIdleThicknessScale = 0.4f;
 constexpr base::TimeDelta kOverlayScrollbarFadeDelay = base::Milliseconds(500);
 constexpr base::TimeDelta kOverlayScrollbarFadeDuration =
     base::Milliseconds(200);
-#endif // ARKWEB_SCROLLBAR
-
 // TODO(bokan): This is still undetermined. crbug.com/652520.
 constexpr base::TimeDelta kOverlayScrollbarThinningDuration =
     base::Milliseconds(200);

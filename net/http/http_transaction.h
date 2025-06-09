@@ -19,12 +19,6 @@
 #include "net/socket/connection_attempts.h"
 #include "net/websockets/websocket_handshake_stream_base.h"
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-namespace ohos_prp_preload {
-class PRRequestInfo;
-}
-#endif
-
 namespace net {
 
 class AuthCredentials;
@@ -66,12 +60,6 @@ class NET_EXPORT_PRIVATE HttpTransaction {
       base::RepeatingCallback<int(const TransportInfo& info,
                                   CompletionOnceCallback callback)>;
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  using UpdateResRequestInfoCallback =
-      base::RepeatingCallback<void(const std::string& key,
-      const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& info)>;
-#endif
-
   // Stops any pending IO and destroys the transaction object.
   virtual ~HttpTransaction() = default;
 
@@ -97,10 +85,6 @@ class NET_EXPORT_PRIVATE HttpTransaction {
   virtual int Start(const HttpRequestInfo* request_info,
                     CompletionOnceCallback callback,
                     const NetLogWithSource& net_log) = 0;
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  virtual int RestartWithSecureDnsOnly(CompletionOnceCallback callback) = 0;
-#endif
 
   // Restarts the HTTP transaction, ignoring the last error.  This call can
   // only be made after a call to Start (or RestartIgnoringLastError) failed.
@@ -258,13 +242,6 @@ class NET_EXPORT_PRIVATE HttpTransaction {
   // Only use this method for metrics. It may be removed when associated
   // histograms are removed.
   virtual bool IsMdlMatchForMetrics() const = 0;
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  virtual void SetUpdateResRequestInfoCallback(
-    HttpTransaction::UpdateResRequestInfoCallback callback) { }
-  virtual void SetPreloadInfo(
-    const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info) { }
-#endif
 };
 
 }  // namespace net

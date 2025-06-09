@@ -350,11 +350,7 @@ bool NexeLoadManager::RequestNaClManifest(const std::string& url) {
     const GURL& resolved_url = plugin_base_url_.Resolve(url);
     if (resolved_url.is_valid()) {
       manifest_base_url_ = resolved_url;
-      is_installed_ = manifest_base_url_.SchemeIs("chrome-extension")
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      || manifest_base_url_.SchemeIs("arkweb-extension")
-#endif
-      ;
+      is_installed_ = manifest_base_url_.SchemeIs("chrome-extension");
       HistogramEnumerateManifestIsDataURI(
           manifest_base_url_.SchemeIs("data"));
       set_nacl_ready_state(PP_NACL_READY_STATE_OPENED);
@@ -374,13 +370,8 @@ void NexeLoadManager::ProcessNaClManifest(const std::string& program_url) {
   program_url_ = program_url;
   GURL gurl(program_url);
   DCHECK(gurl.is_valid());
-  if (gurl.is_valid()) {
-    is_installed_ = gurl.SchemeIs("chrome-extension")
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      || gurl.SchemeIs("arkweb-extension")
-#endif
-    ;
-  }
+  if (gurl.is_valid())
+    is_installed_ = gurl.SchemeIs("chrome-extension");
   set_nacl_ready_state(PP_NACL_READY_STATE_LOADING);
   DispatchProgressEvent(pp_instance_, ProgressEvent(PP_NACL_EVENT_PROGRESS));
 }

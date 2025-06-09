@@ -9,7 +9,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "arkweb/build/features/features.h"
 #include "base/clang_profiling_buildflags.h"
 #include "base/compiler_specific.h"
 #include "base/functional/callback.h"
@@ -178,13 +177,6 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
                            EstablishGpuChannelCallback callback) override;
   void SetChannelClientPid(int32_t client_id,
                            base::ProcessId client_pid) override;
-#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-  void GetSurfaceId(int32_t native_embed_id,
-                    GetSurfaceIdCallback callback) override;
-  void SetTransformHint(uint32_t rotation, uint32_t window_id) override;
-  void DestroyNativeWindow(uint32_t native_window_id) override;
-  void Discard(uint32_t native_window_id) override;
-#endif
   void SetChannelDiskCacheHandle(
       int32_t client_id,
       const gpu::GpuDiskCacheHandle& handle) override;
@@ -438,24 +430,6 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
   using VisibilityChangedCallback =
       base::RepeatingCallback<void(bool /*visible*/)>;
   void SetVisibilityChangedCallback(VisibilityChangedCallback);
-#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-  void SetVisible(int32_t nweb_id, bool visible) override;
-  void SetHasTouchPoint(bool has_touch_point) override;
-  void ReportSlidingFrameRate(int32_t frame_rate) override;
-  void SetLTPOStrategy(int32_t strategy) override;
-#endif
-#if BUILDFLAG(ARKWEB_DFX_DUMP)
-  void DumpGpuInfo(DumpGpuInfoCallback callback) override;
-#endif
-
-#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  void StartMonitor() override;
-  void StopMonitor() override;
-#endif
-
-#if BUILDFLAG(ARKWEB_D_VSYNC)
-  void SetIsFling(bool is_fling_enabled) override;
-#endif
 
  private:
   // This class is used to receive direct IPCs for GMB from renderers without

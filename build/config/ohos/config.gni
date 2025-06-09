@@ -6,6 +6,7 @@ if (is_ohos) {
   import("//build/config/dcheck_always_on.gni")
   import("//build_overrides/build.gni")
   import("abi.gni")
+  import("//ohos_sdk/ohos_sdk.gni")
 
   declare_args() {
     use_ohos_sdk_sysroot = false
@@ -15,12 +16,6 @@ if (is_ohos) {
 
     # Enable ohos_nweb_hap build target.
     enable_ohos_nweb_hap = false
-
-    # Is release build.
-    is_release_build = false
-
-    # add minidebug info(add section:.gnu_debugdata).
-    arkweb_enable_minidebug = true
   }
 
   declare_args() {
@@ -32,11 +27,6 @@ if (is_ohos) {
     build_chromium_with_ohos_src = true
     product_name = ""
     gpu_switch = "on"
-    build_watch = false
-  }
-
-  if (is_debug || build_watch) {
-    arkweb_enable_minidebug = false
   }
 
   # Defines the name the ohos build gives to the current host CPU
@@ -63,11 +53,9 @@ if (is_ohos) {
    # config dependent paths
     if (use_musl) {
       ohos_sdk_root = "//ohos_sdk"
-      ohos_sysroot = "$ohos_sdk_root/openharmony/native/sysroot/"
-      ohos_toolchain_root = "$ohos_sdk_root/openharmony/native/llvm/"
+      ohos_sysroot = "$ohos_sdk_root/native/$ohos_sdk_version/sysroot/"
+      ohos_toolchain_root = "$ohos_sdk_root/native/$ohos_sdk_version/llvm/"
   } else {
     assert(false, "Unsupport Non-musl target!")
   }
-
-  ohos_src_includes = [ "//third_party/ohos_ndk/includes/ohos_adapter", "$ohos_sdk_root/../../deps_code/webview/ohos_interface/include/ohos_adapter" ]
 }

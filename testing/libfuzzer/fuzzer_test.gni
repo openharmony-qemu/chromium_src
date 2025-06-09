@@ -71,7 +71,6 @@ template("fuzzer_test") {
     test_data_deps = []
 
     if (defined(invoker.deps)) {
-      invoker.deps += ["//cef:libarkweb_engine"]
       test_deps += invoker.deps
     }
     if (defined(invoker.data_deps)) {

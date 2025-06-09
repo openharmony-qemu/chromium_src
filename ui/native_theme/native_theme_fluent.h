@@ -54,11 +54,7 @@ class NATIVE_THEME_EXPORT NativeThemeFluent : public NativeThemeBase {
                            State state,
                            const gfx::Rect& rect,
                            const ScrollbarThumbExtraParams& extra_params,
-                           ColorScheme color_scheme
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-                           , SkColor scrollbar_color
-#endif // ARKWEB_SCROLLBAR
-                           ) const override;
+                           ColorScheme color_scheme) const override;
   gfx::Insets GetScrollbarSolidColorThumbInsets(Part part) const override;
   SkColor4f GetScrollbarThumbColor(
       const ui::ColorProvider& color_provider,

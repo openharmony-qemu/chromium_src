@@ -5,7 +5,6 @@
 #ifndef UI_BASE_CLIPBOARD_CLIPBOARD_CONSTANTS_H_
 #define UI_BASE_CLIPBOARD_CLIPBOARD_CONSTANTS_H_
 
-#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "build/build_config.h"
 
@@ -151,10 +150,10 @@ extern const int kMaxRegisteredClipboardFormats;
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kWebClipboardFormatPrefix[];
 
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#if BUILDFLAG(IS_OHOS)
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kMimeTypeOHOSCustomData[];
-#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+#endif  // BUILDFLAG(IS_OHOS)
 
 }  // namespace ui
 

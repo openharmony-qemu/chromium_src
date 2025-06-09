@@ -25,10 +25,6 @@
 #include "net/socket/transport_connect_job.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 namespace net {
 
 CommonConnectJobParams::CommonConnectJobParams(
@@ -125,13 +121,9 @@ void ConnectJob::ChangePriority(RequestPriority priority) {
 }
 
 int ConnectJob::Connect() {
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-  if (!timeout_override_.is_zero()) {
-    timer_.Start(FROM_HERE, timeout_override_, this, &ConnectJob::OnTimeout);
-  } else
-#endif
-      if (!timeout_duration_.is_zero())
+  if (!timeout_duration_.is_zero()) {
     timer_.Start(FROM_HERE, timeout_duration_, this, &ConnectJob::OnTimeout);
+  }
 
   LogConnectStart();
 
@@ -177,11 +169,6 @@ void ConnectJob::SetSocket(std::unique_ptr<StreamSocket> socket,
     }
   }
   socket_ = std::move(socket);
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  if (IsFromPreload() && socket_ != nullptr) {
-    socket_->SetFromPreload(IsFromPreload());
-  }
-#endif
 }
 
 void ConnectJob::NotifyDelegateOfCompletion(int rv) {
@@ -220,10 +207,6 @@ void ConnectJob::LogConnectStart() {
 
 void ConnectJob::LogConnectCompletion(int net_error) {
   connect_timing_.connect_end = base::TimeTicks::Now();
-#if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
-               "connectEnd", connect_timing_.connect_end);
-#endif
   net_log().EndEventWithNetErrorCode(net_log_connect_event_type_, net_error);
 }
 

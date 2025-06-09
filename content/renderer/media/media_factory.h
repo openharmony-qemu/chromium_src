@@ -45,10 +45,6 @@ class WebMediaPlayer;
 class WebMediaPlayerBuilder;
 class WebMediaPlayerClient;
 class WebMediaPlayerEncryptedMediaClient;
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-class WebNativeBridge;
-class WebNativeClient;
-#endif
 }  // namespace blink
 
 #if BUILDFLAG(ENABLE_CAST_RECEIVER)
@@ -69,9 +65,6 @@ class MediaLog;
 class MediaObserver;
 class RemotePlaybackClientWrapper;
 class RendererWebMediaPlayerDelegate;
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-class RendererWebNativeDelegate;
-#endif
 }  // namespace media
 
 namespace content {
@@ -79,15 +72,10 @@ namespace content {
 class RenderFrameImpl;
 class MediaInterfaceFactory;
 struct RenderFrameMediaPlaybackOptions;
-class ArkwebMediaFactoryExt;
-class ArkwebMediaFactoryUtils;
 
 // Assist to RenderFrameImpl in creating various media clients.
 class MediaFactory {
  public:
-
-  friend class ArkwebMediaFactoryExt;
-  friend class ArkwebMediaFactoryUtils;
   // Helper function returning whether VideoSurfaceLayer should be enabled for
   // MediaStreams.
   static bool VideoSurfaceLayerEnabledForMS();
@@ -98,10 +86,6 @@ class MediaFactory {
   MediaFactory(RenderFrameImpl* render_frame,
                media::RequestRoutingTokenCallback request_routing_token_cb);
   ~MediaFactory();
-
-  virtual content::ArkwebMediaFactoryExt* AsArkwebMediaFactoryExt() {
-    return nullptr;
-  }
 
   // Instruct MediaFactory to establish Mojo channels as needed to perform its
   // factory duties. This should be called by RenderFrameImpl as soon as its own
@@ -228,11 +212,8 @@ class MediaFactory {
   std::unique_ptr<cast_streaming::ResourceProvider>
       cast_streaming_resource_provider_;
 #endif
-
-  std::unique_ptr<ArkwebMediaFactoryUtils> media_factory_utils_;
 };
 
 }  // namespace content
 
-#include "arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_ext.h"
 #endif  // CONTENT_RENDERER_MEDIA_MEDIA_FACTORY_H_

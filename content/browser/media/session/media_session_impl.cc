@@ -512,12 +512,6 @@ void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
   one_shot_players_.erase(identifier);
   hidden_players_.erase(identifier);
 
-#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-  bool has_normal_player = normal_players_.size() > 0;
-  if (has_normal_player && (normal_players_.size() == 0)) {
-    SetWebviewShow(false, false);
-  }
-#endif // ARKWEB_MEDIA_AVSESSION
   if (guarding_player_id_ && *guarding_player_id_ == identifier)
     ResetDurationUpdateGuard();
 
@@ -551,12 +545,6 @@ void MediaSessionImpl::RemovePlayers(MediaSessionPlayerObserver* observer) {
       ++it;
   }
 
-#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-  bool has_normal_player = normal_players_.size() > 0;
-  if (has_normal_player && (normal_players_.size() == 0)) {
-    SetWebviewShow(false, false);
-  }
-#endif // ARKWEB_MEDIA_AVSESSION
   if (guarding_player_id_ && guarding_player_id_->observer == observer)
     ResetDurationUpdateGuard();
 
@@ -604,7 +592,6 @@ void MediaSessionImpl::OnPlayerPaused(MediaSessionPlayerObserver* observer,
   // Otherwise, suspend the session.
   // The session might not have audio focus if it was paused prior to being
   // suspended, which is fine.
-  implUtils_->DoEndSessionWhenHide();
   OnSuspendInternal(SuspendType::kContent, State::SUSPENDED);
 }
 
@@ -637,10 +624,8 @@ void MediaSessionImpl::RebuildAndNotifyMediaPositionChanged() {
     }
   }
 
-  if (position == position_) {
-    implUtils_->CheckPosition(position);
+  if (position == position_)
     return;
-  }
 
   position_ = position;
 
@@ -667,11 +652,6 @@ void MediaSessionImpl::RebuildAndNotifyMediaPositionChanged() {
 }
 
 void MediaSessionImpl::Resume(SuspendType suspend_type) {
-#if BUILDFLAG(ARKWEB_MEDIA)
-  if (!IsSuspended())
-    return;
-#endif
-
   // If the site has registered an action handler for play, we should pass it to
   // the site and let them handle it.
   if (suspend_type == SuspendType::kUI &&
@@ -994,17 +974,11 @@ MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
       desired_audio_focus_type_(AudioFocusType::kGainTransientMayDuck),
       is_ducking_(false),
       ducking_volume_multiplier_(kDefaultDuckingVolumeMultiplier),
-      routed_service_(nullptr)
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-      , weakMediaSessionFactory_(this)
-#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
-{
-  implUtils_ = new MediaSessionImplUtils(this);
+      routed_service_(nullptr) {
 #if BUILDFLAG(IS_ANDROID)
   session_android_ = std::make_unique<MediaSessionAndroid>(this);
   should_throttle_duration_update_ = true;
 #endif  // BUILDFLAG(IS_ANDROID)
-  CreateSessionOhos();
   if (web_contents && web_contents->GetPrimaryMainFrame() &&
       web_contents->GetPrimaryMainFrame()->GetView()) {
     focused_ = web_contents->GetPrimaryMainFrame()->GetView()->HasFocus();
@@ -1034,10 +1008,6 @@ AudioFocusDelegate::AudioFocusResult MediaSessionImpl::RequestSystemAudioFocus(
   // |kGainTransient| is not used in MediaSessionImpl.
   DCHECK_NE(media_session::mojom::AudioFocusType::kGainTransient,
             audio_focus_type);
-
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  LOG(INFO) << "RequestSystemAudioFocus" << static_cast<int32_t>(audio_focus_type);
-#endif // ARKWEB_MEDIA_POLICY
 
   AudioFocusDelegate::AudioFocusResult result =
       delegate_->RequestAudioFocus(audio_focus_type);
@@ -1852,8 +1822,6 @@ void MediaSessionImpl::RebuildAndNotifyMetadataChanged() {
   media_session::MediaMetadata metadata;
   BuildMetadata(metadata, artwork);
 
-  implUtils_->PushBackMediaImage(artwork);
-
   // If we have no artwork in |images_| or the arwork has changed then we should
   // update it with the latest artwork from the routed service.
   auto it = images_.find(MediaSessionImageType::kArtwork);
@@ -1928,7 +1896,6 @@ void MediaSessionImpl::BuildMetadata(
   if (metadata.title.empty()) {
     metadata.title = SanitizeMediaTitle(web_contents()->GetTitle());
   }
-  implUtils_->SetMediaTitle(metadata);
 
   ContentClient* content_client = GetContentClient();
   const GURL& url = web_contents()->GetLastCommittedURL();
@@ -2030,16 +1997,10 @@ std::vector<MediaAudioVideoState> MediaSessionImpl::GetMediaAudioVideoStates() {
   ForAllPlayers(base::BindRepeating(
       [](RenderFrameHost* routed_rfh, std::vector<MediaAudioVideoState>* states,
          const PlayerIdentifier& player) {
-  // If we have a routed frame then we should limit the players to the
-  // frame so it is aligned with the media metadata.
-#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-        if (!player.observer ||
-            (routed_rfh && player.observer->render_frame_host() != routed_rfh))
-          return;
-#else
+        // If we have a routed frame then we should limit the players to the
+        // frame so it is aligned with the media metadata.
         if (routed_rfh && player.observer->render_frame_host() != routed_rfh)
           return;
-#endif
 
         const bool has_audio = player.observer->HasAudio(player.player_id);
         const bool has_video = player.observer->HasVideo(player.player_id);
@@ -2149,7 +2110,3 @@ PAGE_USER_DATA_KEY_IMPL(MediaSessionImpl::PageData);
 WEB_CONTENTS_USER_DATA_KEY_IMPL(MediaSessionImpl);
 
 }  // namespace content
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/browser/media/session/media_session_impl_for_include.cc"
-#endif

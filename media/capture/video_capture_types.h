@@ -14,7 +14,6 @@
 #include "media/base/video_types.h"
 #include "media/capture/capture_export.h"
 #include "ui/gfx/geometry/size.h"
-#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -292,9 +291,6 @@ struct CAPTURE_EXPORT VideoCaptureFormat {
   }
 
   gfx::Size frame_size;
-#if BUILDFLAG(ARKWEB_WEBRTC)
-  int stride = 0;
-#endif
   float frame_rate;
   VideoPixelFormat pixel_format;
 };
@@ -359,12 +355,6 @@ struct CAPTURE_EXPORT VideoCaptureParams {
   // Flag indicating whether HiDPI mode should be enabled for tab capture
   // sessions.
   bool is_high_dpi_enabled = true;
-
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  bool is_picker_show = false;
-
-  int nweb_id = 0;
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 };
 
 CAPTURE_EXPORT std::ostream& operator<<(

@@ -6,7 +6,7 @@
 #define COMPONENTS_NAVIGATION_METRICS_NAVIGATION_METRICS_H_
 
 #include <string>
-#include "base/feature_list.h"
+
 #include "components/url_formatter/spoof_checks/idna_metrics.h"
 
 class GURL;
@@ -50,12 +50,9 @@ enum class Scheme {
   CHROME_DISTILLER = 13,
   CHROME_DEVTOOLS = 14,
   CHROME_EXTENSION = 15,
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  ARKWEB_EXTENSION,
-#endif
-  VIEW_SOURCE,
-  EXTERNALFILE,
-  ISOLATED_APP,
+  VIEW_SOURCE = 16,
+  EXTERNALFILE = 17,
+  ISOLATED_APP = 18,
   COUNT,
 };
 

@@ -540,11 +540,7 @@ void ServiceWorkerRegisterJob::OnScriptFetchCompleted(
     Complete(script_fetch_status_code, message);
     if (script_fetch_status_code ==
             blink::ServiceWorkerStatusCode::kErrorNetwork &&
-        (version->scope().SchemeIs("chrome-extension")
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      || version->scope().SchemeIs("arkweb-extension")
-#endif
-    )) {
+        version->scope().SchemeIs("chrome-extension")) {
       base::UmaHistogramSparse(
           "Extensions.ServiceWorkerBackground.WorkerScriptFetchNetError",
           (int)version->GetMainScriptNetError());

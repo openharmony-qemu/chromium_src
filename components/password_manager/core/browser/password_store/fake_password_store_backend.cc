@@ -177,12 +177,6 @@ void FakePasswordStoreBackend::UpdateLoginAsync(
       std::move(callback));
 }
 
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-void FakePasswordStoreBackend::UpdateLoginDisplayNameAsync(const PasswordForm& form) {
-  return;
-}
-#endif
-
 void FakePasswordStoreBackend::RemoveLoginAsync(
     const base::Location& location,
     const PasswordForm& form,

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "components/viz/client/frame_eviction_manager.h"
-#include "arkweb/build/features/features.h"
 
 #include <algorithm>
 
@@ -18,10 +17,6 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/memory_dump_manager.h"
 #include "build/build_config.h"
-#include "arkweb/build/features/features.h"
-
-#include "arkweb/build/features/features.h"
-#include "arkweb/chromium_ext/components/viz/client/frame_eviction_manager_ext.h"
 
 namespace viz {
 namespace {
@@ -99,11 +94,9 @@ void FrameEvictionManager::StartFrameCullingTimer() {
 void FrameEvictionManager::RegisterUnlockedFrame(
     FrameEvictionManagerClient* frame) {
   unlocked_frames_.emplace_front(frame, clock_->NowTicks());
-#if !BUILDFLAG(IS_ARKWEB)
   if (!idle_frame_culling_timer_.IsRunning()) {
     StartFrameCullingTimer();
   }
-#endif
 }
 
 size_t FrameEvictionManager::GetMaxNumberOfSavedFrames() const {
@@ -140,15 +133,8 @@ FrameEvictionManager::FrameEvictionManager()
       // If the amount of memory on the device is >= 3.5 GB, save up to 5
       // frames.
       base::SysInfo::AmountOfPhysicalMemoryMB() < 1024 * 3.5f ? 1 : 5;
-#elif BUILDFLAG(ARKWEB_FLING)
-      std::min(kOhosFramesMax, kOhosFramesBase +
-          (base::SysInfo::AmountOfPhysicalMemoryMB() / kPhysicalMemoryBlockSize));
 #else
       std::min(5, 2 + (base::SysInfo::AmountOfPhysicalMemoryMB() / 256));
-#endif
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_DISCARD_BG_WEBPAGE)
-  UPDATE_MAX_NUMBER_OF_FRAMES(max_number_of_saved_frames_);
 #endif
 
   // For WebView, we may not have a default task runner.
@@ -199,10 +185,6 @@ void FrameEvictionManager::CullOldUnlockedFrames() {
           now - unlocked_frames_.back().second >= kPeriodicCullingDelay)) {
     size_t old_size = unlocked_frames_.size();
     auto* frame = unlocked_frames_.back().first;
-#if BUILDFLAG(IS_ARKWEB)
-    TRACE_EVENT0("viz", "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked frame because timeout");
-    LOG(INFO) << "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked frame because timeout";
-#endif
     frame->EvictCurrentFrame();
     // Should remove self from list. If it's not possible, give up and try again
     // later. This should be a rare case, so don't bother rescheduling earlier

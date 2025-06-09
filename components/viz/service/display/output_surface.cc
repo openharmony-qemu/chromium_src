@@ -8,7 +8,6 @@
 
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/trace_event/trace_event.h"
@@ -58,11 +57,6 @@ void OutputSurface::UpdateLatencyInfoOnSwap(
     latency.AddLatencyNumberWithTimestamp(
         ui::INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT,
         response.timings.swap_end);
-#if BUILDFLAG(ARKWEB_DFX_TRACING)
-    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
-                      std::to_string(latency.trace_id()), "step",
-                      "INPUT_EVENT_GPU_SWAP_BUFFER_COMPONENT & INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT");
-#endif
   }
 }
 

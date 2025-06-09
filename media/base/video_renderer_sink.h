@@ -9,7 +9,6 @@
 #include "base/time/time.h"
 #include "media/base/media_export.h"
 #include "media/base/video_frame.h"
-#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -70,10 +69,6 @@ class MEDIA_EXPORT VideoRendererSink {
   // based painting and PaintSingleFrame().
   virtual void PaintSingleFrame(scoped_refptr<VideoFrame> frame,
                                 bool repaint_duplicate_frame = false) = 0;
-
-#if BUILDFLAG(ARKWEB_MEDIA)
-  virtual void SetFinishPaintCallback(base::RepeatingClosure callback) {}
-#endif
 
   virtual ~VideoRendererSink() {}
 };

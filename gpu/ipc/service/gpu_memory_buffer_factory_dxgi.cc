@@ -178,8 +178,7 @@ gfx::GpuMemoryBufferHandle GpuMemoryBufferFactoryDXGI::CreateGpuMemoryBuffer(
   // so make sure that the usage is one that we support.
   DCHECK(usage == gfx::BufferUsage::GPU_READ ||
          usage == gfx::BufferUsage::SCANOUT ||
-         usage == gfx::BufferUsage::SCANOUT_CPU_READ_WRITE ||
-         usage == gfx::BufferUsage::SCANOUT_VEA_CPU_READ)
+         usage == gfx::BufferUsage::SCANOUT_CPU_READ_WRITE)
       << "Incorrect usage, usage=" << gfx::BufferUsageToString(usage);
 
   D3D11_TEXTURE2D_DESC desc = {
@@ -193,9 +192,7 @@ gfx::GpuMemoryBufferHandle GpuMemoryBufferFactoryDXGI::CreateGpuMemoryBuffer(
       D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET,
       0,
       D3D11_RESOURCE_MISC_SHARED_NTHANDLE |
-          static_cast<UINT>(usage == gfx::BufferUsage::SCANOUT_VEA_CPU_READ
-               ? D3D11_RESOURCE_MISC_SHARED
-               : D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX)};
+          D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX};
 
   Microsoft::WRL::ComPtr<ID3D11Texture2D> d3d11_texture;
 

@@ -85,13 +85,6 @@ void AsyncOpen(base::ScopedFILE* file, const base::FilePath& filename) {
   DCHECK(!*file);
   file->reset(base::OpenFile(filename, "wb+"));
   DLOG_IF(ERROR, !*file) << "Failed to open file " << filename.value();
-#if BUILDFLAG(IS_POSIX)
-  int perms = 0;
-  if (base::GetPosixFilePermissions(filename, &perms)) {
-    perms &= ~base::FILE_PERMISSION_OTHERS_MASK;
-    base::SetPosixFilePermissions(filename, perms);
-  }
-#endif  // BUILDFLAG(IS_POSIX)
 }
 
 // Returns true if the write was complete.

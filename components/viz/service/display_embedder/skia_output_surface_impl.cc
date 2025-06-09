@@ -518,15 +518,6 @@ void SkiaOutputSurfaceImpl::Reshape(const ReshapeParams& params) {
   RecreateRootDDLRecorder();
 }
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-void SkiaOutputSurfaceImpl::SetNativeInnerWeb(bool isInnerWeb) {
-  auto task = base::BindOnce(&SkiaOutputSurfaceImplOnGpu::SetNativeInnerWeb,
-                             base::Unretained(impl_on_gpu_.get()), isInnerWeb);
-  EnqueueGpuTask(std::move(task), {}, /*make_current=*/true,
-                 /*need_framebuffer=*/!dependency_->IsOffscreen());
-}
-#endif
-
 void SkiaOutputSurfaceImpl::SetUpdateVSyncParametersCallback(
     UpdateVSyncParametersCallback callback) {
   update_vsync_parameters_callback_ = std::move(callback);

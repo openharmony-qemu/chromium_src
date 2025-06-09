@@ -50,9 +50,6 @@ class CC_EXPORT EventMetrics {
     kGestureScrollEnd,
     kGestureDoubleTap,
     kGestureLongPress,
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-    kGestureDragLongPress,
-#endif
     kGestureLongTap,
     kGestureShowPress,
     kGestureTap,

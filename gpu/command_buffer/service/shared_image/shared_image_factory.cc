@@ -8,7 +8,6 @@
 
 #include <memory>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/trace_event/memory_dump_manager.h"
@@ -64,7 +63,6 @@
 #include "ui/ozone/public/gl_ozone.h"
 #include "ui/ozone/public/ozone_platform.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
-#include "arkweb/chromium_ext/gpu/command_buffer/service/shared_image/ozone_image_backing_factory_ext.h"
 #endif
 
 #if BUILDFLAG(IS_APPLE)
@@ -90,10 +88,6 @@
 #include "gpu/command_buffer/service/shared_image/ahardwarebuffer_image_backing_factory.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(ARKWEB_VULKAN)
-#include "gpu/command_buffer/service/shared_image/ohos_native_buffer_image_backing_factory.h"
-#endif
-
 namespace gpu {
 
 namespace {
@@ -108,9 +102,6 @@ const char* GmbTypeToString(gfx::GpuMemoryBufferType type) {
     case gfx::NATIVE_PIXMAP:
     case gfx::DXGI_SHARED_HANDLE:
     case gfx::ANDROID_HARDWARE_BUFFER:
-#if BUILDFLAG(ARKWEB_VULKAN)
-    case gfx::OHOS_NATIVE_BUFFER:
-#endif
       return "platform";
   }
   NOTREACHED();
@@ -299,11 +290,7 @@ SharedImageFactory::SharedImageFactory(
         gpu_preferences_, workarounds_, feature_info.get());
     factories_.push_back(std::move(egl_backing_factory));
   }
-#ifdef BUILDFLAG(ARKWEB_VULKAN)
-  auto ohos_factory = std::make_unique<OHOSNativeBufferImageBackingFactory>(
-      feature_info.get(), gpu_preferences);
-  factories_.push_back(std::move(ohos_factory));
-#endif
+
 #if BUILDFLAG(IS_ANDROID)
   bool is_ahb_supported = true;
   if (gr_context_type_ == GrContextType::kVulkan) {
@@ -325,8 +312,8 @@ SharedImageFactory::SharedImageFactory(
   if (ui::OzonePlatform::GetInstance()
           ->GetPlatformRuntimeProperties()
           .supports_native_pixmaps) {
-    auto ozone_factory = std::make_unique<OzoneImageBackingFactoryExt>(
-        context_state_, workarounds_, gpu_preferences_);
+    auto ozone_factory = std::make_unique<OzoneImageBackingFactory>(
+        context_state_, workarounds_);
     factories_.push_back(std::move(ozone_factory));
   }
 #if BUILDFLAG(ENABLE_VULKAN) && (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA))
@@ -447,12 +434,7 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
         IsSharedBetweenThreads(usage), buffer_usage);
 
     if (backing) {
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-      LOG(DEBUG)
-#else
-      DVLOG(1)
-#endif
-               << "CreateSharedImageBackedByBuffer[" << backing->GetName()
+      DVLOG(1) << "CreateSharedImageBackedByBuffer[" << backing->GetName()
                << "] size=" << size.ToString()
                << " usage=" << CreateLabelForSharedImageUsage(usage)
                << " format=" << format.ToString();
@@ -505,13 +487,8 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
       }
 
       if (backing) {
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-        LOG(DEBUG)
-#else
-        DVLOG(1)
-#endif
-                 << "CreateSharedImageBackedByBuffer[" << backing->GetName()
-                 << "] with pixels size=" << size.ToString()
+        DVLOG(1) << "CreateSharedImageBackedByBuffer[" << backing->GetName()
+                 << "] size=" << size.ToString()
                  << " usage=" << CreateLabelForSharedImageUsage(usage)
                  << " format=" << format.ToString();
         backing->OnWriteSucceeded();
@@ -548,12 +525,7 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
       SharedImageUsageSet(usage), std::move(debug_label),
       IsSharedBetweenThreads(usage), data);
   if (backing) {
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-    LOG(DEBUG)
-#else
-    DVLOG(1)
-#endif
-             << "CreateSharedImagePixels[" << backing->GetName()
+    DVLOG(1) << "CreateSharedImagePixels[" << backing->GetName()
              << "] with pixels size=" << size.ToString()
              << " usage=" << CreateLabelForSharedImageUsage(usage)
              << " format=" << format.ToString();
@@ -609,12 +581,7 @@ bool SharedImageFactory::CreateSharedImage(
   }
 
   if (backing) {
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-    LOG(DEBUG)
-#else
-    DVLOG(1)
-#endif
-             << "CreateSharedImageWithBuffer[" << backing->GetName()
+    DVLOG(1) << "CreateSharedImageWithBuffer[" << backing->GetName()
              << "] size=" << size.ToString()
              << " usage=" << CreateLabelForSharedImageUsage(usage)
              << " format=" << format.ToString()

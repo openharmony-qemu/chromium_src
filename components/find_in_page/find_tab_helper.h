@@ -7,7 +7,6 @@
 
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/observer_list.h"
 #include "build/build_config.h"
@@ -57,12 +56,7 @@ class FindTabHelper : public content::WebContentsUserData<FindTabHelper> {
                     bool forward_direction,
                     bool case_sensitive,
                     bool find_match,
-                    bool run_synchronously_for_testing = false
-#if BUILDFLAG(ARKWEB_FIND_IN_PAGE)
-                    ,
-                    bool new_session = false
-#endif
-  );
+                    bool run_synchronously_for_testing = false);
 
   // Stops the current Find operation.
   void StopFinding(SelectionAction selection_action);

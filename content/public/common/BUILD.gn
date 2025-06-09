@@ -13,8 +13,6 @@ import("//mojo/public/tools/bindings/mojom.gni")
 import("//ppapi/buildflags/buildflags.gni")
 import("//third_party/webrtc/webrtc.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
-import("//arkweb/build/features/features.gni")
-import("//arkweb/chromium_ext/chromium_ext.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
@@ -57,7 +55,7 @@ source_set("content_descriptor_keys") {
 
 # This target allows other targets to depend on sandbox_support_linux.h which is
 # a header-only dependency, without bringing in all of content.
-if (is_linux || is_chromeos || arkweb_render_process_startup) {
+if (is_linux || is_chromeos) {
   source_set("sandbox_support_linux") {
     public = [
       "//content/common/content_export.h",
@@ -91,10 +89,6 @@ source_set("static_switches") {
     "content_switches.cc",
   ]
 
-  if (is_arkweb) {
-    sources += arkweb_content_public_common_sources
-  }
-
   public_configs = [ ":static_switches_defines" ]
 
   # Deps required by the above headers.
@@ -116,11 +110,6 @@ source_set("switches") {
     "content_switches.cc",
   ]
 
-  if (is_arkweb) {
-    sources += arkweb_content_public_common_sources
-    visibility += [ "//storage:storage_unittests" ]
-  }
-
   # Deps required by the above header.
   deps = [
     "//build:chromeos_buildflags",
@@ -129,11 +118,6 @@ source_set("switches") {
   ]
 
   configs += [ "//content:content_implementation" ]
-
-  if (use_libfuzzer) {
-    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
-    configs += [ "//build/config/gcc:symbol_visibility_default" ]
-  }
 
   if (enable_ipc_fuzzer) {
     configs += [ "//tools/ipc_fuzzer:ipc_fuzzer_config" ]

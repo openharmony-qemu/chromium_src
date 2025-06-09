@@ -3,9 +3,7 @@
 # found in the LICENSE file.
 
 import("//third_party/widevine/cdm/widevine.gni")
-if (is_arkweb) {
-  import("//arkweb/build/features/features.gni")
-}
+
 static_library("common") {
   sources = []
 
@@ -26,11 +24,6 @@ static_library("common") {
     ]
 
     deps += [ "//third_party/widevine/cdm:buildflags" ]
-  }
-
-  if (arkweb_enable_cdm) {
-    import("//arkweb/chromium_ext/chromium_ext.gni")
-    sources += arkweb_components_cdm_common_soureces
   }
 
   if (enable_library_cdms) {

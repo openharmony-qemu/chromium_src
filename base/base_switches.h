@@ -63,10 +63,11 @@ extern const char kPackageVersionName[];
 extern const char kSchedulerBoostUrgent[];
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/base/base_switches_for_include.h"
-#endif  // BUILDFLAG(IS_ARKWEB)
-
+#if defined(OS_OHOS)
+extern const char kBundleInstallationDir[];
+extern const char KDisableBlinkFeatures[];
+extern const char KDisableOcclusionFeature[];
+#endif
 }  // namespace switches
 
 #endif  // BASE_BASE_SWITCHES_H_

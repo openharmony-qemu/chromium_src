@@ -9,7 +9,6 @@
 #include <optional>
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "base/base_paths.h"
 #include "base/command_line.h"
 #include "base/files/file_path.h"
@@ -95,8 +94,6 @@
 #if BUILDFLAG(SKIA_USE_DAWN) && BUILDFLAG(IS_CHROMEOS)
 #include "gpu/command_buffer/service/drm_modifiers_filter_dawn.h"
 #endif
-
-#include "arkweb/chromium_ext/gpu/ipc/service/gpu_init_ext.h"
 
 namespace gpu {
 
@@ -970,9 +967,6 @@ void GpuInit::InitializeInProcess(base::CommandLine* command_line,
 #else
 void GpuInit::InitializeInProcess(base::CommandLine* command_line,
                                   const GpuPreferences& gpu_preferences) {
-#if BUILDFLAG(ARKWEB_GL_INIT)
-  TRACE_EVENT0("startup", "GpuInit::InitializeInProcess");
-#endif
   gpu_preferences_ = gpu_preferences;
   init_successful_ = true;
 #if BUILDFLAG(IS_OHOS)
@@ -1128,13 +1122,8 @@ void GpuInit::InitializeInProcess(base::CommandLine* command_line,
       std::move(supported_buffer_formats_for_gl_native_pixmap_import);
 #endif
 
-#if BUILDFLAG(ARKWEB_VULKAN)
-  CHECK_IS_USING_VULKAN_AND_INITIAL()
-#endif
   DisableInProcessGpuVulkan(&gpu_feature_info_, &gpu_preferences_);
-#if BUILDFLAG(ARKWEB_VULKAN)
-  }
-#endif
+
   UMA_HISTOGRAM_ENUMERATION("GPU.GLImplementation", gl::GetGLImplementation());
 
   InitializeDawnProcs();
@@ -1230,11 +1219,6 @@ bool GpuInit::InitializeDawn() {
 
 bool GpuInit::InitializeVulkan() {
 #if BUILDFLAG(ENABLE_VULKAN)
-#if BUILDFLAG(ARKWEB_VULKAN)
-  if (!features::IsUsingVulkan()) {
-    return false;
-  }
-#endif
   DCHECK_EQ(gpu_feature_info_.status_values[GPU_FEATURE_TYPE_VULKAN],
             kGpuFeatureStatusEnabled);
   DCHECK_NE(gpu_preferences_.use_vulkan, VulkanImplementationName::kNone);

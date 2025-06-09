@@ -31,7 +31,6 @@
 #include "services/network/public/cpp/p2p_param_traits.h"
 #include "third_party/webrtc/media/base/rtp_utils.h"
 #include "url/gurl.h"
-#include "arkweb/build/features/features.h"
 
 namespace network {
 namespace {
@@ -235,12 +234,10 @@ bool P2PSocketTcpBase::OnPacket(base::span<const uint8_t> data) {
     if (stun && IsRequestOrResponse(type)) {
       connected_ = true;
     } else if (!stun || type == STUN_DATA_INDICATION) {
-#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
       LOG(ERROR) << "Received unexpected data packet from "
                  << remote_address_.ip_address.ToString()
                  << " before STUN binding is finished. "
                  << "Terminating connection.";
-#endif
       OnError();
       return false;
     }

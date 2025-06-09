@@ -39,8 +39,6 @@
 #include "extensions/common/permissions/permissions_data.h"
 #include "third_party/flatbuffers/src/include/flatbuffers/flatbuffers.h"
 
-#include "arkweb/chromium_ext/components/url_pattern_index/url_pattern_index_ext.h"
-
 namespace extensions::declarative_net_request {
 namespace {
 
@@ -60,15 +58,6 @@ constexpr int kIndexedRulesetFormatVersion = 34;
 static_assert(url_pattern_index::kUrlPatternIndexFormatVersion == 15,
               "kUrlPatternIndexFormatVersion has changed, make sure you've "
               "also updated kIndexedRulesetFormatVersion above.");
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-// This static assert is meant to catch cases where
-// url pattern_index: : kCssPatternIndexFormatVersion is incremented without
-// updating kIndexedRulesetFormatVersion.
-static_assert(url_pattern_index::kCssPatternIndexFormatVersion == 1,
-              "kCssPatternIndexFormatVersion has changed, make sure you've "
-              "also updated kIndexedRulesetFormatVersion above.");
-#endif
 
 constexpr int kInvalidIndexedRulesetFormatVersion = -1;
 int g_indexed_ruleset_format_version_for_testing =

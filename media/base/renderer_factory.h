@@ -51,17 +51,6 @@ class MEDIA_EXPORT RendererFactory {
   // created by this factory.
   // NOTE: Returns Type::STREAM by default.
   virtual MediaResource::Type GetRequiredMediaResourceType();
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  virtual std::unique_ptr<Renderer> CreateCustomRenderer(
-      const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
-      const scoped_refptr<base::TaskRunner>& worker_task_runner,
-      media::AudioRendererSink* audio_renderer_sink,
-      media::VideoRendererSink* video_renderer_sink,
-      media::RequestOverlayInfoCB request_overlay_info_cb,
-      const gfx::ColorSpace& target_color_space,
-      int player_id);
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

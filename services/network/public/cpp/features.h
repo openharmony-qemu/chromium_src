@@ -53,11 +53,6 @@ extern const base::FeatureParam<std::string>
 COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kMdnsResponderGeneratedNameListing);
 
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-COMPONENT_EXPORT(NETWORK_CPP)
-BASE_DECLARE_FEATURE(kOpaqueResponseBlockingV02);
-#endif
-
 COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kOpaqueResponseBlockingErrorsForAllFetches);
 

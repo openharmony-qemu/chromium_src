@@ -1,0 +1,8 @@
+.b53933120bb08ffc38140a817e3f0f99782254a6bf9622271574fa004e8783a4 filter=lfs diff=lfs merge=lfs -text
+usr/lib/i386-linux-gnu/libcodec2.so.0.9 filter=lfs diff=lfs merge=lfs -text
+usr/lib/i386-linux-gnu/libavcodec.so.58.91.100 filter=lfs diff=lfs merge=lfs -text
+usr/lib/i386-linux-gnu/libcodec2.so.1.0 filter=lfs diff=lfs merge=lfs -text
+usr/lib/i386-linux-gnu/libavcodec.a filter=lfs diff=lfs merge=lfs -text
+usr/lib/i386-linux-gnu/libicudata.so.67.1 filter=lfs diff=lfs merge=lfs -text
+usr/lib/i386-linux-gnu/librsvg-2.so.2.47.0 filter=lfs diff=lfs merge=lfs -text
+usr/lib/i386-linux-gnu/libavcodec.so.59.37.100 filter=lfs diff=lfs merge=lfs -text

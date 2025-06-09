@@ -12,7 +12,6 @@
 #include "ui/gfx/animation/keyframe/animation_curve.h"
 #include "ui/gfx/animation/keyframe/keyframe_animation_export.h"
 #include "ui/gfx/animation/keyframe/keyframed_animation_curve.h"
-#include "arkweb/build/features/features.h"
 
 namespace gfx {
 

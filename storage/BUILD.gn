@@ -15,8 +15,4 @@ test("storage_unittests") {
   } else {
     data = [ "//storage/test/data/" ]
   }
-
-  if (is_arkweb) {
-    deps += [ "//content/public/common:switches" ]
-  }
 }

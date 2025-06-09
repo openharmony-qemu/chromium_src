@@ -338,7 +338,7 @@ void PasswordAutofillManager::DidAcceptSuggestion(
             base::UTF8ToUTF16(GetShownOrigin(url::Origin::Create(
                 password_manager_driver_->GetLastCommittedURL())));
 #endif
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
         message = l10n_util::GetStringFUTF16(
             IDS_PASSWORD_MANAGER_FILLING_REAUTH, origin);
 #elif BUILDFLAG(IS_CHROMEOS)

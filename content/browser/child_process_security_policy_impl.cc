@@ -9,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/debug/crash_logging.h"
@@ -526,10 +525,6 @@ class ChildProcessSecurityPolicyImpl::SecurityState {
   }
 #endif
 
-#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
-#include "arkweb/chromium_ext/content/browser/child_process_security_policy_impl_for_include.cc"
-#endif
-
   void GrantBindings(BindingsPolicySet bindings) {
     enabled_bindings_.PutAll(bindings);
   }
@@ -619,13 +614,6 @@ class ChildProcessSecurityPolicyImpl::SecurityState {
 #if BUILDFLAG(IS_ANDROID)
     if (file.IsContentUri())
       return HasPermissionsForContentUri(file, permissions);
-#endif
-#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
-    auto bundleName = OHOS::NWeb::OhosAdapterHelper::GetInstance().
-         GetSystemPropertiesInstance().GetBundleName();
-    if (file.IsDataShareUri(bundleName)) {
-      return HasPermissionsForDatashareUri(file, permissions);
-    }
 #endif
     if (!permissions || file.empty() || !file.IsAbsolute())
       return false;
@@ -2145,16 +2133,6 @@ bool ChildProcessSecurityPolicyImpl::PerformJailAndCitadelChecks(
         // DeclarativeApiTest.PersistRules.
         if (actual_process_lock.matches_scheme(url::kDataScheme)) {
           return true;
-        }
-
-        // Allow other schemes that are non-standard, non-local and WebSafe.
-        if (lock_url.is_valid() && !lock_url.IsStandard() &&
-            !base::Contains(url::GetLocalSchemes(), lock_url.scheme_piece())) {
-          base::AutoLock schemes_lock(schemes_lock_);
-          if (base::Contains(schemes_okay_to_request_in_any_process_,
-                             lock_url.scheme())) {
-            return true;
-          }
         }
       }
 

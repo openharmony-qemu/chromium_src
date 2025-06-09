@@ -8,10 +8,6 @@
 #include "build/chromeos_buildflags.h"
 #include "ui/base/ui_base_features.h"
 
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#include "ui/gl/init/gl_factory.h"
-#endif
-
 namespace viz {
 
 // static
@@ -32,10 +28,6 @@ VizPixelTest::VizPixelTest(RendererType type)
     : PixelTest(RenderTypeToBackend(type)), renderer_type_(type) {}
 
 void VizPixelTest::SetUp() {
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  gl::init::InitializeGLNoExtensionsOneOff(
-    /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
-#endif
   switch (renderer_type_) {
     case RendererType::kSoftware:
       SetUpSoftwareRenderer();

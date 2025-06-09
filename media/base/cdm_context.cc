@@ -47,12 +47,6 @@ MediaCryptoContext* CdmContext::GetMediaCryptoContext() {
 }
 #endif
 
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
-OHOSMediaCryptoContext* CdmContext::GetOHOSMediaCryptoContext() {
-  return nullptr;
-}
-#endif
-
 #if BUILDFLAG(IS_FUCHSIA)
 FuchsiaCdmContext* CdmContext::GetFuchsiaCdmContext() {
   return nullptr;

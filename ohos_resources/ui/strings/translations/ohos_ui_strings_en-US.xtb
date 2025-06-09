@@ -1,8 +1,0 @@
-<?xml version="1.0" ?>
-<!DOCTYPE translationbundle>
-<translationbundle lang="en-US">
-<translation id="IDS_OHOS_WEBPAGE_ERR_SEARCH_NOTE">The webpage at <ph name="ERROR_URL"/> may be temporarily down, or it may have been permanently moved to another web address.</translation>
-<translation id="IDS_OHOS_MEDIA_VIDEO_PLAYBACK_SPEED_BUTTON">1.0x</translation>
-<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">Youth mode is on. This site can't be accessed.</translation>
-<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">Settings</translation>
-</translationbundle>

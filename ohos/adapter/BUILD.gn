@@ -1,11 +1,34 @@
-# Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file.
+# Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of
+#    conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list
+#    of conditions and the following disclaimer in the documentation and/or other materials
+#    provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used
+#    to endorse or promote products derived from this software without specific prior written
+#    permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import("//build/config/ohos/config.gni")
-# import("//ohos/adapter/aki_hook.gni")
+import("//ohos/adapter/aki_hook.gni")
 
-if (!is_ohos) {
+if (is_ohos) {
   shared_library("adapter") {
     sources = [
       "native_initializer.cc",
@@ -19,6 +42,7 @@ if (!is_ohos) {
     deps = [
       "//ohos/adapter/accessibility:accessibility",
       "//ohos/adapter/aki_hook:aki_hook",
+      "//ohos/adapter/policy:policy",
       "//ohos/adapter/window:window",
       "//ohos/adapter/battery:battery",
       "//ohos/adapter/bluetooth:bluetooth_adapter",
@@ -48,24 +72,21 @@ if (!is_ohos) {
       "//ohos/adapter/notification:notification_adapter",
       "//ohos/adapter/ocr:ocr_adapter",
       "//ohos/adapter/ohos_i18n:ohos_i18n",
-      "//ohos/adapter/pasteboard:pasteboard",
       "//ohos/adapter/permission_manager:permission_manager",
       "//ohos/adapter/power_monitor:power_monitor",
       "//ohos/adapter/print:print",
+      "//ohos/adapter/res_sched:res_sched",
       "//ohos/adapter/runninglock:runninglock",
       "//ohos/adapter/screen:screen",
       "//ohos/adapter/screenlock_monitor:screenlock_monitor",
-      "//ohos/adapter/speech:speech_adapter",
       "//ohos/adapter/shape_detection:shape_detection_adapter",
+      "//ohos/adapter/speech:speech_adapter",
       "//ohos/adapter/tracing:tracing",
       "//ohos/adapter/web_entry:web_entry",
       "//ohos/adapter/xcomponent:xcomponent",
     ]
 
-    public_deps = [
-      "//third_party:huawei_securec",
-      "//third_party/aki:aki_jsbind",
-    ]
+    public_deps = [ "//third_party/aki:aki_jsbind" ]
 
     ldflags = [
       "-l:libc++_static.a",
@@ -73,15 +94,13 @@ if (!is_ohos) {
     ]
 
     libs = [
+      "bundle_ndk.z",
       "c++_static",
+      "child_process",
       "hilog_ndk.z",
       "hitrace_ndk.z",
       "native_window",
-      "time_service_ndk",
-      "child_process"
+      "time_service_ndk"
     ]
-  }
-} else {
-  group("adapter") {
   }
 }

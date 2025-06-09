@@ -13,7 +13,6 @@
 #include "media/base/demuxer_stream.h"
 #include "media/base/media_export.h"
 #include "media/base/pipeline_status.h"
-#include "arkweb/chromium_ext/media/base/renderer_ext.h"
 
 namespace media {
 
@@ -38,25 +37,15 @@ enum class RendererType {
   kCastStreaming = 9,  // PlaybackCommandForwardingRendererFactory
   kContentEmbedderDefined = 10,  // Defined by the content embedder
   kTest = 11,                    // Renderer implementations used in tests
-#if BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
-  kNative = 12,
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  kOHOSCustomMediaPlayer,
-#endif // BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  kOHOSMediaPlayer,      // OHOSMediaPlayerRendererFactory
-  kMaxValue = kOHOSMediaPlayer,
-#else
   kMaxValue = kTest,
-#endif  // BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
 };
 
 // Get the name of the Renderer for `renderer_type`. The returned name could be
 // the actual Renderer class name or a descriptive name.
 std::string MEDIA_EXPORT GetRendererName(RendererType renderer_type);
 
-class MEDIA_EXPORT Renderer : public RendererExt {
+class MEDIA_EXPORT Renderer {
  public:
-  using RendererExt::Initialize;
   Renderer();
 
   Renderer(const Renderer&) = delete;
@@ -72,10 +61,6 @@ class MEDIA_EXPORT Renderer : public RendererExt {
   // be run only prior to returning.
   virtual void Initialize(MediaResource* media_resource,
                           RendererClient* client,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                          RequestSurfaceCB request_surface_cb,
-                          VideoDecoderChangedCB decoder_changed_cb,
-#endif // ARKWEB_VIDEO_ASSISTANT
                           PipelineStatusCallback init_cb) = 0;
 
   // Associates the |cdm_context| with this Renderer for decryption (and
@@ -147,9 +132,6 @@ class MEDIA_EXPORT Renderer : public RendererExt {
   // enforce RendererType registration for all Renderer implementations.
   // Note: New implementation should update RendererType.
   virtual RendererType GetRendererType() = 0;
-#if BUILDFLAG(ARKWEB_PIP)
-  virtual void PipEnable(bool enable) {}
-#endif
 };
 
 }  // namespace media

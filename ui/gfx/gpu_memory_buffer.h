@@ -29,11 +29,6 @@
 #include "base/android/scoped_hardware_buffer_handle.h"
 #endif
 
-#include "arkweb/build/features/features.h"
-#if BUILDFLAG(ARKWEB_VULKAN)
-#include "arkweb/chromium_ext/base/ohos/scoped_native_buffer_handle.h"
-#endif
-
 namespace base {
 namespace trace_event {
 class ProcessMemoryDump;
@@ -52,12 +47,7 @@ enum GpuMemoryBufferType {
   NATIVE_PIXMAP,
   DXGI_SHARED_HANDLE,
   ANDROID_HARDWARE_BUFFER,
-#if BUILDFLAG(ARKWEB_VULKAN)
-  OHOS_NATIVE_BUFFER,
-  GPU_MEMORY_BUFFER_TYPE_LAST = OHOS_NATIVE_BUFFER
-#else
   GPU_MEMORY_BUFFER_TYPE_LAST = ANDROID_HARDWARE_BUFFER
-#endif
 };
 
 using GpuMemoryBufferId = GenericSharedMemoryId;
@@ -76,10 +66,6 @@ struct COMPONENT_EXPORT(GFX) GpuMemoryBufferHandle {
 #if BUILDFLAG(IS_ANDROID)
   explicit GpuMemoryBufferHandle(
       base::android::ScopedHardwareBufferHandle handle);
-#endif
-#if BUILDFLAG(ARKWEB_VULKAN)
-  explicit GpuMemoryBufferHandle(
-   gpu::ScopedNativeBufferHandle handle);
 #endif
   GpuMemoryBufferHandle(GpuMemoryBufferHandle&& other);
   GpuMemoryBufferHandle& operator=(GpuMemoryBufferHandle&& other);
@@ -101,9 +87,6 @@ struct COMPONENT_EXPORT(GFX) GpuMemoryBufferHandle {
   std::optional<DXGIHandleToken> dxgi_token;
 #elif BUILDFLAG(IS_ANDROID)
   base::android::ScopedHardwareBufferHandle android_hardware_buffer;
-#endif
-#if BUILDFLAG(ARKWEB_VULKAN)
-  gpu::ScopedNativeBufferHandle ohos_hardware_buffer;
 #endif
 };
 

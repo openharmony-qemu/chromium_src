@@ -251,8 +251,6 @@ void SelectFileDialogImpl::SelectFileImpl(
   HWND owner = owning_window && owning_window->GetRootWindow()
                    ? owning_window->GetHost()->GetAcceleratedWidget()
                    : nullptr;
-  if (!owner)
-    owner = owning_widget_;
 
   std::unique_ptr<RunState> run_state = BeginRun(owner);
 

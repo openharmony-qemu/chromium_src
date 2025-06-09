@@ -420,10 +420,6 @@ void ResolveContext::InvalidateCachesAndPerSessionData(
 
   if (!doh_server_stats_.empty())
     NotifyDohStatusObserversOfUnavailable(network_change);
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  NotifyDohStatsInit();
-#endif
 }
 
 void ResolveContext::StartDohAutoupgradeSuccessTimer(
@@ -705,9 +701,5 @@ bool ResolveContext::ServerStatsToDohAvailability(
   return stats.last_failure_count < kAutomaticModeFailureLimit &&
          stats.current_connection_success;
 }
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-#include "arkweb/chromium_ext/net/dns/resolve_context_for_include.cc"
-#endif
 
 }  // namespace net

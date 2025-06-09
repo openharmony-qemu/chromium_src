@@ -11,7 +11,6 @@
 #include "services/device/public/mojom/wake_lock_context.mojom.h"
 #include "services/device/public/mojom/wake_lock_provider.mojom.h"
 #include "ui/gfx/native_widget_types.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -37,10 +36,6 @@ class WakeLockContextHost {
     return wake_lock_context_ ? wake_lock_context_.get() : nullptr;
   }
 
-#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
-  void SetWakeLockHandler(int32_t windowId, const SetKeepScreenOn& handler);
-#endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
-
  private:
   // This instance's ID.
   int id_;
@@ -50,10 +45,6 @@ class WakeLockContextHost {
 
   // The WakeLockContext instance that is connected to this instance.
   mojo::Remote<device::mojom::WakeLockContext> wake_lock_context_;
-
-#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
-  int32_t window_id_ = -1;
-#endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
 };
 
 }  // namespace content

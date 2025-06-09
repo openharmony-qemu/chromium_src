@@ -25,9 +25,6 @@
 class GURL;
 
 namespace download {
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-class ArkWebDownloadFileImplExt;
-#endif
 
 // These objects live exclusively on the download sequence and handle the
 // writing operations for one download. These objects live only for the duration
@@ -35,11 +32,6 @@ class ArkWebDownloadFileImplExt;
 // cancelled, the DownloadFile is destroyed.
 class COMPONENTS_DOWNLOAD_EXPORT DownloadFile {
  public:
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-  virtual ArkWebDownloadFileImplExt* AsArkWebDownloadFileImplExt() {
-    return nullptr;
-  }
-#endif
   // Callback used with Initialize.
   //
   // On a successful initialize, |reason| = DOWNLOAD_INTERRUPT_REASON_NONE;

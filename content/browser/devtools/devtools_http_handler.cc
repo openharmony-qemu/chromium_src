@@ -598,7 +598,7 @@ void DevToolsHttpHandler::OnJsonRequest(
     base::Value::Dict version;
     version.Set("Protocol-Version", DevToolsAgentHost::GetProtocolVersion());
     version.Set("WebKit-Version", GetWebKitVersion());
-    version.Set("Browser", GetContentClient()->browser()->GetChromeProduct());
+    version.Set("Browser", GetContentClient()->browser()->GetProduct());
     version.Set("User-Agent", GetContentClient()->browser()->GetUserAgent());
     version.Set("V8-Version", V8_VERSION_STRING);
     std::string host = info.GetHeaderValue("host");
@@ -860,10 +860,6 @@ DevToolsHttpHandler::DevToolsHttpHandler(
       base::SplitString(remote_allow_origins, ",", base::TRIM_WHITESPACE,
                         base::SPLIT_WANT_NONEMPTY);
   remote_allow_origins_.insert(origins.begin(), origins.end());
-
-#if BUILDFLAG(ARKWEB_DEVTOOLS)
-  remote_allow_origins_.insert("*");
-#endif // ARKWEB_DEVTOOLS
 }
 
 void DevToolsHttpHandler::ServerStarted(

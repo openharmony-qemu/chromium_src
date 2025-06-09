@@ -6,7 +6,6 @@
 
 #include <optional>
 
-#include "arkweb/build/features/features.h"
 #include "base/run_loop.h"
 #include "base/test/task_environment.h"
 #include "components/autofill/content/common/mojom/autofill_driver.mojom.h"
@@ -84,14 +83,6 @@ class FakeContentPasswordManagerDriver : public mojom::PasswordManagerDriver {
       mojom::FocusedFieldType focused_field_type) override {}
   void LogFirstFillingResult(FormRendererId form_renderer_id,
                              int32_t result) override {}
-
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  void OnRequestAutofill(
-      autofill::FormRendererId form_id,
-      const autofill::mojom::OhosPasswordFormAutofillState state,
-      const autofill::InputFillRequestData& username_data,
-      const autofill::InputFillRequestData& password_data) override {}
-#endif
 
   // Records whether RecordSavePasswordProgress() gets called.
   bool called_record_save_;

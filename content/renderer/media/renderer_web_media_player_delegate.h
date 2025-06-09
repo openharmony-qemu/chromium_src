@@ -73,12 +73,7 @@ class CONTENT_EXPORT RendererWebMediaPlayerDelegate final
 
   // blink::WebViewObserver overrides.
   void OnPageVisibilityChanged(
-#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
       blink::mojom::PageVisibilityState visibility_state) override;
-#else
-      blink::mojom::PageVisibilityState visibility_state,
-      bool storing_in_bfcache) override;
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   // Returns the number of WebMediaPlayers that are associated with this
   // delegate.

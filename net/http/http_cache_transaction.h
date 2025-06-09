@@ -38,13 +38,16 @@
 #include "net/socket/connection_attempts.h"
 #include "net/websockets/websocket_handshake_stream_base.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "net/prp_preload/include/page_res_parallel_preload_mgr.h"
+#endif
+
 namespace net {
 
 class PartialData;
 struct HttpRequestInfo;
 struct LoadTimingInfo;
 class SSLPrivateKey;
-class HttpTransactionUtils;
 
 // This is the transaction that is returned by the HttpCache transaction
 // factory.
@@ -85,9 +88,7 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   Transaction& operator=(const Transaction&) = delete;
 
   ~Transaction() override;
-  friend class HttpTransactionUtils;
 
-  HttpTransactionUtils* http_transation_utils_;
   // Virtual so it can be extended for testing.
   virtual Mode mode() const;
 
@@ -134,9 +135,6 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   int Start(const HttpRequestInfo* request_info,
             CompletionOnceCallback callback,
             const NetLogWithSource& net_log) override;
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  int RestartWithSecureDnsOnly(CompletionOnceCallback callback) override;
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   int RestartIgnoringLastError(CompletionOnceCallback callback) override;
   int RestartWithCertificate(scoped_refptr<X509Certificate> client_cert,
                              scoped_refptr<SSLPrivateKey> client_private_key,
@@ -596,16 +594,8 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   void BeginDiskCacheAccessTimeCount();
   void EndDiskCacheAccessTimeCount(DiskCacheAccessType type);
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  void SetUpdateResRequestInfoCallback(
-      HttpTransaction::UpdateResRequestInfoCallback callback) override {
-    update_res_request_info_callback_ = std::move(callback);
-  }
-
-  void SetPreloadInfo(
-      const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info) override {
-    preload_info_ = preload_info;
-  }
+#if BUILDFLAG(IS_OHOS)
+  void UpdateCacheInfo(const HttpResponseInfo& response);
 #endif
 
   State next_state_{STATE_NONE};
@@ -746,9 +736,8 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   // True if the Transaction is currently processing the DoLoop.
   bool in_do_loop_ = false;
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#if BUILDFLAG(IS_OHOS)
   std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info_;
-  HttpTransaction::UpdateResRequestInfoCallback update_res_request_info_callback_;
 #endif
 
   base::WeakPtrFactory<Transaction> weak_factory_{this};

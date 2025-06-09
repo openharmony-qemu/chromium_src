@@ -51,8 +51,6 @@ void CurrentThread::AddDestructionObserver(
 
 void CurrentThread::RemoveDestructionObserver(
     DestructionObserver* destruction_observer) {
-  if (!current_)
-    return;
   DCHECK(current_->IsBoundToCurrentThread());
   current_->RemoveDestructionObserver(destruction_observer);
 }
@@ -154,8 +152,7 @@ MessagePumpForUI* CurrentUIThread::GetMessagePumpForUI() const {
   return static_cast<MessagePumpForUI*>(current_->GetMessagePump());
 }
 
-#if BUILDFLAG(IS_OZONE) && !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_WIN) && \
-    !BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_OZONE) && !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_WIN)
 bool CurrentUIThread::WatchFileDescriptor(
     int fd,
     bool persistent,

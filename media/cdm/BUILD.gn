@@ -244,10 +244,6 @@ source_set("unit_tests") {
       "//media/cdm/library_cdm:cdm_host_proxy",
       "//media/cdm/library_cdm:test_support",
     ]
-
-    if (enable_arkweb) {
-      deps += [ "//arkweb/build/features" ]
-    }
   }
 
   if (proprietary_codecs) {

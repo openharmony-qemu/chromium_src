@@ -98,7 +98,6 @@ class PrerenderHostRegistry;
 class RenderFrameHostCSPContext;
 class ServiceWorkerMainResourceHandle;
 class SubframeHistoryNavigationThrottle;
-class NavigationRequestUtils;
 
 // The primary implementation of NavigationHandle.
 //
@@ -115,8 +114,6 @@ class CONTENT_EXPORT NavigationRequest
       private network::mojom::TrustTokenAccessObserver,
       private network::mojom::SharedDictionaryAccessObserver {
  public:
- friend class NavigationRequestUtils;
- std::unique_ptr<NavigationRequestUtils> nav_request_utils_;
   // Keeps track of the various stages of a NavigationRequest.
   // To see what state transitions are allowed, see |SetState|.
   enum NavigationState {

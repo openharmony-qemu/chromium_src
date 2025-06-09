@@ -29,10 +29,6 @@ interface AgentSchedulingGroupHost {
   // postMessages are dispatched prior to acknowledging the unload (which tears
   // down the browser-side RFHI by removing it from the pending delete list)
   DidUnloadRenderFrame(blink.mojom.LocalFrameToken frame_token);
-
-  // Report view was created. This is used on OHOS to dynamic resource scheduling.
-  [EnableIf=arkweb_render_process_mode]
-  ReportCreateView(int32 process_id);
 };
 
 // Interface for general communication between the browser process's

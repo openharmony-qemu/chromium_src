@@ -1,0 +1,21 @@
+Package: librist4
+Source: librist
+Version: 0.2.7+dfsg-1
+Architecture: amd64
+Maintainer: Florian Ernst <florian@debian.org>
+Installed-Size: 190
+Depends: libc6 (>= 2.28), libcjson1 (>= 1.7.5), libmbedcrypto7 (>= 2.28.0)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://code.videolan.org/rist/librist
+Description: Reliable Internet Stream Transport -- shared library
+ Reliable Internet Stream Transport (RIST) is a transport protocol
+ designed for reliable transmission of video over lossy networks
+ (including the Internet) with low latency and high quality.
+ .
+ RIST is intended as a more reliable successor to Secure Reliable
+ Transport (SRT), and as an open alternative to proprietary commercial
+ options such as Zixi, VideoFlow, QVidium, and DVEO (Dozer).
+ .
+ This package contains the shared library.

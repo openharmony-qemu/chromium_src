@@ -20,10 +20,6 @@
 #include "components/viz/common/quads/surface_draw_quad.h"
 #include "ui/gfx/geometry/vector2d_conversions.h"
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-#include "arkweb/chromium_ext/cc/layer/surface_layer_impl_for_include.cc"
-#endif
-
 namespace cc {
 
 // static
@@ -230,13 +226,7 @@ void SurfaceLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
   // Unless the client explicitly specifies otherwise, don't block on
   // |surface_range_| more than once.
   deadline_in_frames_ = 0u;
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  OnLayerBoundsUpdate(visible_quad_rect);
-#endif // ARKWEB_VIDEO_ASSISTANT
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  OnLayerRectUpdate(visible_quad_rect);
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
   if (!base::FeatureList::IsEnabled(
           features::kAlignSurfaceLayerImplToPixelGrid)) {
     return;

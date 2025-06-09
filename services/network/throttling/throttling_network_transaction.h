@@ -56,9 +56,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ThrottlingNetworkTransaction
   int Start(const net::HttpRequestInfo* request,
             net::CompletionOnceCallback callback,
             const net::NetLogWithSource& net_log) override;
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  int RestartWithSecureDnsOnly(net::CompletionOnceCallback callback) override;
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   int RestartIgnoringLastError(net::CompletionOnceCallback callback) override;
   int RestartWithCertificate(
       scoped_refptr<net::X509Certificate> client_cert,

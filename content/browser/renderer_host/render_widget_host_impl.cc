@@ -156,18 +156,11 @@
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-#include "arkweb/chromium_ext/third_party/blink/public/mojom/page/text_recognize_result.mojom.h"
+#include "ohos/adapter/ocr/ocr_adapter.h"
+#include "third_party/blink/public/mojom/page/text_recognize_result.mojom.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkImage.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-#include "base/ohos/sys_info_utils_ext.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-#include "arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_impl_log.h"
 #endif
 
 using blink::DragOperationsMask;
@@ -179,6 +172,10 @@ using blink::WebMouseWheelEvent;
 
 namespace content {
 namespace {
+#if BUILDFLAG(IS_OHOS)
+// One pixel of the picture is made up of four bits of binary data.
+constexpr int kImagePixelMap = 4;
+#endif
 
 constexpr gfx::Rect kInvalidScreenRect(std::numeric_limits<int>::max(),
                                        std::numeric_limits<int>::max(),
@@ -375,7 +372,7 @@ std::unique_ptr<RenderWidgetHostImpl> RenderWidgetHostImpl::Create(
     bool hidden,
     bool renderer_initiated_creation,
     std::unique_ptr<FrameTokenMessageQueue> frame_token_message_queue) {
-  return base::WrapUnique(new RenderWidgetHostImplExt(
+  return base::WrapUnique(new RenderWidgetHostImpl(
       frame_tree, /*self_owned=*/false, frame_sink_id, delegate,
       std::move(site_instance_group), routing_id, hidden,
       renderer_initiated_creation, std::move(frame_token_message_queue)));
@@ -392,7 +389,7 @@ RenderWidgetHostImpl* RenderWidgetHostImpl::CreateSelfOwned(
     std::unique_ptr<FrameTokenMessageQueue> frame_token_message_queue) {
   viz::FrameSinkId frame_sink_id =
       DefaultFrameSinkId(*site_instance_group, routing_id);
-  return new RenderWidgetHostImplExt(frame_tree, /*self_owned=*/true,
+  return new RenderWidgetHostImpl(frame_tree, /*self_owned=*/true,
                                   frame_sink_id, delegate,
                                   std::move(site_instance_group), routing_id,
                                   hidden, /*renderer_initiated_creation=*/true,
@@ -441,12 +438,7 @@ RenderWidgetHostImpl::RenderWidgetHostImpl(
       "Navigation.RenderWidgetHostConstructor");
   CHECK(frame_token_message_queue_);
   frame_token_message_queue_->Init(this);
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-  // Timeout for pc is 15s, if mobileDevice, we kepp it same with android.
-  if (base::ohos::IsMobileDevice()) {
-    hung_renderer_delay_ = base::Seconds(5);
-  }
-#endif
+
   CHECK(delegate_);
   CHECK_NE(MSG_ROUTING_NONE, routing_id_);
   CHECK(base::ThreadPoolInstance::Get());
@@ -811,7 +803,7 @@ void RenderWidgetHostImpl::WasHidden() {
 
   // Cancel pending pointer lock requests, unless there's an open user prompt.
   // Prompts should remain open and functional across tab switches.
-  if (!delegate_ || !delegate_->IsWaitingForPointerLockPrompt(this)) {
+  if (!delegate_->IsWaitingForPointerLockPrompt(this)) {
     RejectPointerLockOrUnlockIfNecessary(
         blink::mojom::PointerLockResult::kWrongDocument);
   }
@@ -2378,9 +2370,6 @@ void RenderWidgetHostImpl::Destroy(bool also_delete) {
 void RenderWidgetHostImpl::OnInputEventAckTimeout() {
   // Since input has timed out, let the BrowserUiThreadScheduler know we are
   // done with input currently.
-#if BUILDFLAG(IS_OHOS)
-  LOG(ERROR) << "OnInputEventAckTimeout";
-#endif
   user_input_active_handle_.reset();
   RendererIsUnresponsive(
       RendererIsUnresponsiveReason::kOnInputEventAckTimeout,
@@ -2404,13 +2393,8 @@ void RenderWidgetHostImpl::RendererIsUnresponsive(
   }
 
   if (delegate_) {
-    delegate_->RendererUnresponsive(
-        this, std::move(restart_hang_monitor_timeout)
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-                  ,
-        static_cast<content::RendererIsUnresponsiveReason>(reason)
-#endif
-    );
+    delegate_->RendererUnresponsive(this,
+                                    std::move(restart_hang_monitor_timeout));
   }
 
   // Do not add code after this since the Delegate may delete this
@@ -2446,12 +2430,6 @@ void RenderWidgetHostImpl::OnKeyboardEventAck(
 
   bool processed =
       (blink::mojom::InputEventResultState::kConsumed == ack_result);
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  if (view_ && processed && !is_hidden() && !event.event.skip_if_unhandled) {
-    view_->KeyboardReDispatch(event.event, true);
-  }
-#endif
 
   // We only send unprocessed key event upwards if we are not hidden,
   // because the user has moved away from us and no longer expect any effect
@@ -2712,6 +2690,64 @@ void RenderWidgetHostImpl::UpdateBrowserControlsState(
       constraints, current, animate, offset_tags_info);
 }
 
+#if BUILDFLAG(IS_OHOS)
+const ohos::adapter::OcrImage ConvertImage(const gfx::ImageSkia* image) {
+  if (image == nullptr || image->bitmap() == nullptr) {
+    LOG(INFO) << "parse ocr image pixel fail image is nullptr!";
+    return {};
+  }
+  const SkBitmap* bitmap = image->bitmap();
+  int width = bitmap->width();
+  int height = bitmap->height();
+  size_t row_bytes = width * kImagePixelMap;
+  size_t buffer_size = bitmap->computeByteSize();
+  std::unique_ptr<char[]> buff = std::make_unique<char[]>(buffer_size);
+  SkPixmap pixmap(SkImageInfo::MakeN32Premul(width, height), buff.get(),
+                  row_bytes);
+  image->bitmap()->peekPixels(&pixmap);
+  if (pixmap.readPixels(SkImageInfo::MakeN32Premul(width, height), buff.get(),
+                        row_bytes, 0, 0)) {
+    return {width, height, std::move(buff)};
+  } else {
+    LOG(ERROR) << "parse ocr image pixel fail!";
+    return {};
+  }
+}
+
+void RenderWidgetHostImpl::CreateOverlay(const SkBitmap& bitmap,
+                                         const gfx::Rect& image_rect,
+                                         const gfx::Point& touch_point) {
+  float scale = GetScaleFactorForView(GetView());
+  const gfx::ImageSkia image = gfx::ImageSkia::CreateFromBitmap(bitmap, scale);
+  const gfx::ImageSkia* ocr_image = &image;
+  std::vector<ohos::adapter::TextWord> words =
+    ohos::adapter::OcrAdapter::GetInstance().OcrFunction(ConvertImage(ocr_image));
+  std::vector<blink::mojom::TextRecognizeResultPtr> res;
+  for (auto& word : words) {
+    std::string raw_value = word.value;
+    gfx::RectF bounding_box;
+    std::vector<::gfx::PointF> corner_points;
+    for (auto& point : word.cornerPoints) {
+      gfx::PointF pointf = ::gfx::PointF(static_cast<float>(point.x),
+                                         static_cast<float>(point.y));
+      corner_points.push_back(pointf);
+    }
+    blink::mojom::TextRecognizeResultPtr line =
+        blink::mojom::TextRecognizeResult::New(raw_value, bounding_box,
+                                               corner_points);
+    res.emplace_back(std::move(line));
+  }
+
+  OnTextRecognized(std::move(res));
+}
+
+void RenderWidgetHostImpl::OnTextRecognized(
+    std::vector<blink::mojom::TextRecognizeResultPtr> res) {
+  float scale = GetScaleFactorForView(GetView());
+  blink_frame_widget_->OnTextRecognized(std::move(res), scale);
+}
+#endif
+
 void RenderWidgetHostImpl::StartDragging(
     blink::mojom::DragDataPtr drag_data,
     const url::Origin& source_origin,
@@ -2789,7 +2825,7 @@ void RenderWidgetHostImpl::StartDragging(
   gfx::ImageSkia image = gfx::ImageSkia::CreateFromBitmap(bitmap, scale);
   gfx::Vector2d offset = cursor_offset_in_dip;
   gfx::Rect rect = drag_obj_rect_in_dip;
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   // Scale the offset by device scale factor, otherwise the drag
   // image location doesn't line up with the drop location (drag destination).
   // TODO(crbug.com/40859305): this conversion should not be necessary.
@@ -3282,11 +3318,6 @@ void RenderWidgetHostImpl::DecrementInFlightEventCount(
   }
 }
 
-void RenderWidgetHostImpl::SetCompositorForFlingScheduler(
-    ui::Compositor* compositor) {
-  GetRenderInputRouter()->fling_scheduler()->SetCompositor(compositor);
-}
-
 void RenderWidgetHostImpl::AddPendingUserActivation(
     const WebInputEvent& event) {
   if ((base::FeatureList::IsEnabled(
@@ -3395,21 +3426,13 @@ void RenderWidgetHostImpl::OnWheelEventAck(
 
 bool RenderWidgetHostImpl::IsIgnoringWebInputEvents(
     const blink::WebInputEvent& event) const {
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  IGNORING_WEB_INPUT_FOR_EVENTS_RETURN(event);
-#else
   return agent_scheduling_group_->GetProcess()->IsBlocked() || !delegate_ ||
          delegate_->ShouldIgnoreWebInputEvents(event);
-#endif
 }
 
 bool RenderWidgetHostImpl::IsIgnoringInputEvents() const {
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  IGNORING_WEB_INPUT_EVENTS_RETURN();
-#else
   return agent_scheduling_group_->GetProcess()->IsBlocked() || !delegate_ ||
          delegate_->ShouldIgnoreInputEvents();
-#endif
 }
 
 bool RenderWidgetHostImpl::GotResponseToPointerLockRequest(
@@ -3491,9 +3514,6 @@ void RenderWidgetHostImpl::GotResponseToForceRedraw(int snapshot_id) {
 }
 
 void RenderWidgetHostImpl::DetachDelegate() {
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  LOG(INFO) << "RenderWidgetHostImpl DetachDelegate";
-#endif
   delegate_ = nullptr;
   GetRenderInputRouter()->GetLatencyTracker()->reset_delegate();
 }
@@ -4062,4 +4082,5 @@ void RenderWidgetHostImpl::CompositorMetricRecorder::TryToRecordMetrics() {
         base::Milliseconds(1), base::Minutes(10), 50);
   }
 }
+
 }  // namespace content

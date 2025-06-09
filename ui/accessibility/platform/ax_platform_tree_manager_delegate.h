@@ -15,12 +15,8 @@
 #include "ui/gfx/geometry/point.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-class RenderFrameHostImpl;
-#endif
 class WebContentsAccessibility;
 }
 
@@ -129,9 +125,6 @@ class COMPONENT_EXPORT(AX_PLATFORM) AXPlatformTreeManagerDelegate {
   // in views. crbug.com/327499435
   virtual bool AccessibilityIsRootFrame() const = 0;
 
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  virtual content::RenderFrameHostImpl* AccessibilityRenderFrameHost() = 0;
-#endif
   // On Mac, VoiceOver moves focus to the web content when it receives an
   // AXLoadComplete event. On chrome's new tab page, focus should stay
   // in the omnibox, so we purposefully do not fire the AXLoadComplete

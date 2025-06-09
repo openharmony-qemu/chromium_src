@@ -513,9 +513,9 @@ NET_EXPORT BASE_DECLARE_FEATURE(kDisableBlackholeOnNoNewNetwork);
 NET_EXPORT BASE_DECLARE_FEATURE(kAddressTrackerLinuxIsProxied);
 #endif  // BUILDFLAG(IS_LINUX)
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#if BUILDFLAG(IS_OHOS)
 NET_EXPORT BASE_DECLARE_FEATURE(kEnableNetworkPreload);
-#endif
+#endif  // BUILDFLAG(IS_OHOS)
 
 // Enables binding of cookies to the port that originally set them by default.
 NET_EXPORT BASE_DECLARE_FEATURE(kEnablePortBoundCookies);

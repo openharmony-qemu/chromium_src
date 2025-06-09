@@ -216,10 +216,6 @@ struct EVENTS_BASE_EXPORT GestureEventDetails {
     data_.pinch_update.angle = angle;
   }
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-#include "arkweb/chromium_ext/ui/events/gesture_event_detail_ext_public_for_include.h"
-#endif
-
   const EventLatencyMetadata& GetEventLatencyMetadata() const {
     return input_timestamps_;
   }

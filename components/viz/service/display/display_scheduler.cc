@@ -8,7 +8,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/chromium_ext/components/viz/service/display/display_scheduler_utils.h"
 #include "base/auto_reset.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_macros.h"
@@ -102,8 +101,6 @@ DisplayScheduler::DisplayScheduler(BeginFrameSource* begin_frame_source,
           features::kEnableADPFSeparateRendererMainSession)) {
     session_states_.emplace_back(HintSession::SessionType::kRendererMain);
   }
-
-  display_scheduler_utils_ = std::make_unique<DisplaySchedulerUtils>(this);
 }
 
 DisplayScheduler::~DisplayScheduler() {
@@ -150,7 +147,6 @@ void DisplayScheduler::OnDisplayDamaged(SurfaceId surface_id) {
   base::AutoReset<bool> auto_reset(&inside_surface_damaged_, true);
 
   needs_draw_ = true;
-  display_scheduler_utils_->OnDisplayDamaged(surface_id);
   MaybeStartObservingBeginFrames();
   UpdateHasPendingSurfaces();
   ScheduleBeginFrameDeadline();
@@ -165,12 +161,6 @@ base::TimeDelta DisplayScheduler::GetDeadlineOffset(
     base::TimeDelta interval) const {
   return BeginFrameArgs::DefaultEstimatedDisplayDrawTime(interval);
 }
-
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-void DisplayScheduler::SetShouldFrameSubmissionBeforeDraw(bool should) {
-  display_scheduler_utils_->SetShouldFrameSubmissionBeforeDraw(should);
-}
-#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
 // This is used to force an immediate swap before a resize.
 void DisplayScheduler::ForceImmediateSwapIfPossible() {
@@ -262,7 +252,7 @@ void DisplayScheduler::ReportFrameTime(
 }
 
 bool DisplayScheduler::DrawAndSwap() {
-  OHOS_TRACE_EVENT0("viz", "DisplayScheduler::DrawAndSwap");
+  TRACE_EVENT0("viz", "DisplayScheduler::DrawAndSwap");
   DCHECK_LT(pending_swaps_,
             std::max(pending_swap_params_.max_pending_swaps,
                      pending_swap_params_.max_pending_swaps_120hz.value_or(0)));
@@ -334,12 +324,7 @@ bool DisplayScheduler::OnBeginFrame(const BeginFrameArgs& args) {
 void DisplayScheduler::OnBeginFrameContinuation(const BeginFrameArgs& args) {
   // If we get another BeginFrame before the previous deadline,
   // synchronously trigger the previous deadline before progressing.
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-  if (inside_begin_frame_deadline_interval_ &&
-      !display_scheduler_utils_->wait_before_draw()) {
-#else
   if (inside_begin_frame_deadline_interval_) {
-#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
     OnBeginFrameDeadline();
   }
 
@@ -474,10 +459,6 @@ DisplayScheduler::AdjustedBeginFrameDeadlineMode() const {
 
 DisplayScheduler::BeginFrameDeadlineMode
 DisplayScheduler::DesiredBeginFrameDeadlineMode() const {
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-  DESIRED_BEGIN_FRAME_DEADLINE_MODED();
-#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-
   if (output_surface_lost_) {
     TRACE_EVENT_INSTANT0("viz", "Lost output surface",
                          TRACE_EVENT_SCOPE_THREAD);

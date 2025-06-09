@@ -15,7 +15,6 @@
 #include "base/files/file_path.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_APPLE)
 #include "base/apple/scoped_mach_port.h"
@@ -182,8 +181,7 @@ void OverridePlatformValue(const std::string& platform_value);
     BUILDFLAG(IS_OHOS)
 // Logs message and immediately crashes the current process without triggering a
 // crash dump.
-// [[noreturn]] void CrashWithoutDumping(const std::string& message); TODO: IS_OHOS
-void CrashWithoutDumping(const std::string& message);
+[[noreturn]] void CrashWithoutDumping(const std::string& message);
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
         // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
@@ -282,13 +280,13 @@ DWORD WINAPI DumpProcessForHungInputThread(void* param);
 
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_CRASHPAD)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 // Starts the handler process with an initial client connected on fd,
 // the handler will write minidump to database if write_minidump_to_database is
 // true.
 // Returns `true` on success.
 bool StartHandlerForClient(int fd, bool write_minidump_to_database);
-#endif  // BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 // The platform-specific portion of InitializeCrashpad(). On Windows, if
 // |user_data_dir| is non-empty, the user data directory will be passed to the

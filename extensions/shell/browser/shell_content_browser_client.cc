@@ -148,9 +148,6 @@ bool ShellContentBrowserClient::IsHandledURL(const GURL& url) {
       url::kFileScheme,
       url::kFileSystemScheme,
       kExtensionScheme,
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      kArkwebExtensionScheme
-#endif
   };
   for (const char* scheme : kProtocolList) {
     if (url.SchemeIs(scheme))
@@ -211,9 +208,6 @@ void ShellContentBrowserClient::GetAdditionalAllowedSchemesForFileSystem(
   ContentBrowserClient::GetAdditionalAllowedSchemesForFileSystem(
       additional_allowed_schemes);
   additional_allowed_schemes->push_back(kExtensionScheme);
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  additional_allowed_schemes->push_back(kArkwebExtensionScheme);
-#endif
 }
 
 std::unique_ptr<content::DevToolsManagerDelegate>
@@ -279,11 +273,7 @@ mojo::PendingRemote<network::mojom::URLLoaderFactory>
 ShellContentBrowserClient::CreateNonNetworkNavigationURLLoaderFactory(
     const std::string& scheme,
     content::FrameTreeNodeId frame_tree_node_id) {
-  if (scheme == extensions::kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  || scheme == extensions::kArkwebExtensionScheme
-#endif
-) {
+  if (scheme == extensions::kExtensionScheme) {
     content::WebContents* web_contents =
         content::WebContents::FromFrameTreeNodeId(frame_tree_node_id);
     return extensions::CreateExtensionNavigationURLLoaderFactory(
@@ -304,12 +294,6 @@ void ShellContentBrowserClient::
       extensions::kExtensionScheme,
       extensions::CreateExtensionWorkerMainResourceURLLoaderFactory(
           browser_context));
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  factories->emplace(
-      extensions::kArkwebExtensionScheme,
-      extensions::CreateExtensionWorkerMainResourceURLLoaderFactory(
-          browser_context));
-#endif
 }
 
 void ShellContentBrowserClient::
@@ -323,12 +307,6 @@ void ShellContentBrowserClient::
       extensions::kExtensionScheme,
       extensions::CreateExtensionServiceWorkerScriptURLLoaderFactory(
           browser_context));
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  factories->emplace(
-      extensions::kArkwebExtensionScheme,
-      extensions::CreateExtensionServiceWorkerScriptURLLoaderFactory(
-          browser_context));
-#endif
 }
 
 void ShellContentBrowserClient::RegisterNonNetworkSubresourceURLLoaderFactories(
@@ -341,11 +319,6 @@ void ShellContentBrowserClient::RegisterNonNetworkSubresourceURLLoaderFactories(
   factories->emplace(extensions::kExtensionScheme,
                      extensions::CreateExtensionURLLoaderFactory(
                          render_process_id, render_frame_id));
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  factories->emplace(extensions::kArkwebExtensionScheme,
-                     extensions::CreateExtensionURLLoaderFactory(
-                         render_process_id, render_frame_id));
-#endif
 }
 
 void ShellContentBrowserClient::WillCreateURLLoaderFactory(

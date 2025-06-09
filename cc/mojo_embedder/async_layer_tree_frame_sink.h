@@ -32,11 +32,6 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
 #include "third_party/abseil-cpp/absl/types/variant.h"
-#include "arkweb/build/features/features.h"
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/cc/mojo_embedder/async_layer_tree_frame_sink_utils.h"
-#endif
 
 namespace cc {
 
@@ -45,8 +40,6 @@ class LayerTreeHostImpl;
 class RasterContextProviderWrapper;
 
 namespace mojo_embedder {
-
-class AsyncLayerTreeFrameSinkUtils;
 
 // A mojo-based implementation of LayerTreeFrameSink. The typically-used
 // implementation for cc instances that do not share a process with the viz
@@ -156,10 +149,6 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
     return last_hit_test_data_;
   }
 
-#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
-  void InitSoftwareCompositorRender(SoftwareCompositorRegistryOhos* registry);
-#endif
-
  private:
   // mojom::CompositorFrameSinkClient implementation:
   void DidReceiveCompositorFrameAck(
@@ -199,7 +188,7 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   mojo::Remote<viz::mojom::CompositorFrameSink> compositor_frame_sink_;
   mojo::AssociatedRemote<viz::mojom::CompositorFrameSink>
       compositor_frame_sink_associated_;
-  // One of |compositor_frame_sink_| or |compositor_frame_sink_associated_| will：i
+  // One of |compositor_frame_sink_| or |compositor_frame_sink_associated_| will
   // be bound after calling BindToClient(). |compositor_frame_sink_ptr_| will
   // point to message pipe we want to use. It must be declared last and cleared
   // first.
@@ -227,12 +216,7 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
 
   bool use_begin_frame_presentation_feedback_ = false;
 
-#if BUILDFLAG(IS_ARKWEB)
-  AsyncLayerTreeFrameSinkUtils* async_layer_tree_frame_sink_utils_;
-#endif
-
   base::WeakPtrFactory<AsyncLayerTreeFrameSink> weak_factory_{this};
-
 };
 
 }  // namespace mojo_embedder

@@ -6,9 +6,6 @@
 
 #include "mojo/public/cpp/base/time_mojom_traits.h"
 #include "services/viz/public/cpp/crash_keys.h"
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-#include "ui/gfx/geometry/mojom/geometry_mojom_traits.h"
-#endif
 
 namespace mojo {
 
@@ -63,14 +60,6 @@ bool StructTraits<viz::mojom::BeginFrameArgsDataView, viz::BeginFrameArgs>::
   out->trace_id = data.trace_id();
   out->on_critical_path = data.on_critical_path();
   out->animate_only = data.animate_only();
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  out->internal_frame = data.internal_frame();
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  if (!data.ReadDrawRect(&out->draw_rect)) {
-    return false;
-  }
-#endif
   return true;
 }
 

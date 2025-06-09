@@ -304,6 +304,21 @@ component("platform") {
       ]
     }
 
+    if (is_ohos) {
+      sources += [
+        "ax_platform_node_ohos.cc",
+        "ax_platform_node_ohos.h",
+        "inspect/ax_tree_formatter_ohos.cc",
+        "inspect/ax_tree_formatter_ohos.h",
+        "ohos/accessibility_bridge_ohos_impl.cc",
+        "ohos/accessibility_bridge_ohos_impl.h",
+      ]
+
+      public_deps += [
+      "//ohos/adapter:adapter",
+      ]
+    }
+
     if (use_atk) {
       sources += [
         "atk_util_auralinux.cc",
@@ -341,10 +356,6 @@ component("platform") {
       }
       if (use_gio) {
         configs += [ "//build/linux:gio_config" ]
-      }
-
-      if (is_clang) {
-        cflags = [ "-Wno-deprecated-volatile" ]
       }
     }
   }

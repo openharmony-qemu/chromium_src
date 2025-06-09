@@ -9,13 +9,13 @@
 namespace base {
 
 PowerMonitorDeviceSource::PowerMonitorDeviceSource() {
-#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   PlatformInit();
 #endif
 }
 
 PowerMonitorDeviceSource::~PowerMonitorDeviceSource() {
-#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   PlatformDestroy();
 #endif
 }

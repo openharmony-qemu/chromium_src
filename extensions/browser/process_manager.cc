@@ -356,7 +356,7 @@ bool ProcessManager::CreateBackgroundHost(const Extension* extension,
     return false;
   }
 
-  LOG(INFO) << "Create background host for " << extension->id();
+  DVLOG(1) << "CreateBackgroundHost " << extension->id();
   ExtensionHost* host =
       new ExtensionHost(extension, GetSiteInstanceForURL(url).get(), url,
                         mojom::ViewType::kExtensionBackgroundPage);

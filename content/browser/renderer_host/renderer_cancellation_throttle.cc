@@ -112,11 +112,7 @@ void RendererCancellationThrottle::OnTimeout() {
   }
 
   previous_rfh->GetRenderWidgetHost()->RendererIsUnresponsive(
-#if !BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
       RenderWidgetHostImpl::RendererIsUnresponsiveReason::
-#else
-      RendererIsUnresponsiveReason::
-#endif
           kRendererCancellationThrottleTimeout,
       base::BindRepeating(&RendererCancellationThrottle::RestartTimeout,
                           weak_factory_.GetWeakPtr()));

@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/types/expected.h"
 #include "cc/animation/animation_host.h"
@@ -118,10 +117,7 @@ class LayerContextImpl : public cc::LayerTreeHostImplClient,
   // cc::TileDisplayLayerImpl::Client:
   void DidAppendQuadsWithResources(
       const std::vector<TransferableResource>& resources) override;
-#if BUILDFLAG(ARKWEB_WEBGL)
-  void SetDeferInvalidationForFastMainFrameFromImpl(
-           bool defer_invalidation_for_fast_main_frame) override {}
-#endif
+
   // mojom::LayerContext:
   void SetVisible(bool visible) override;
   void UpdateDisplayTree(mojom::LayerTreeUpdatePtr update) override;

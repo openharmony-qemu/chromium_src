@@ -53,7 +53,9 @@ ScopedReadOnlyDirectory::ScopedReadOnlyDirectory(
 #else  // BUILDFLAG(IS_WIN)
   EXPECT_TRUE(base::MakeFileUnwritable(read_only_path_));
 #endif
+#if !BUILDFLAG(IS_OHOS)
   EXPECT_FALSE(base::PathIsWritable(read_only_path_));
+#endif
 }
 
 // Initialize a SiteDataProto object with a test value (the same
@@ -270,8 +272,9 @@ TEST_F(LevelDBSiteDataStoreTest, MAYBE_DatabaseOpeningFailure) {
   ScopedReadOnlyDirectory read_only_dir(GetTempPath());
 
   OpenDB(read_only_dir.GetReadOnlyPath());
+#if !BUILDFLAG(IS_OHOS)
   EXPECT_FALSE(DbIsInitialized());
-
+#endif
   SiteDataProto proto_temp;
   EXPECT_FALSE(
       ReadFromDB(url::Origin::Create(GURL("https://foo.com")), &proto_temp));

@@ -66,10 +66,6 @@
 #include "extensions/common/permissions/permissions_data.h"
 #include "url/gurl.h"
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "cef/ohos_cef_ext/libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h"
-#endif // ARKWEB_ARKWEB_EXTENSIONS
-
 using content::BrowserContext;
 using content::BrowserThread;
 using content::SiteInstance;
@@ -649,11 +645,7 @@ void MessageService::OpenChannelToTabImpl(
   DCHECK(
       ExtensionsBrowserClient::Get()->IsSameContext(source_context, context_));
   content::WebContents* receiver_contents =
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      cef::GetWebContentByTabId(tab_id);
-#else
       messaging_delegate_->GetWebContentsByTabId(source_context, tab_id);
-#endif // ARKWEB_ARKWEB_EXTENSIONS
   if (!receiver_contents || receiver_contents->GetController().NeedsReload()) {
     // The tab isn't loaded yet. Don't attempt to connect.
     opener_port->DispatchOnDisconnect(kReceivingEndDoesntExistError);

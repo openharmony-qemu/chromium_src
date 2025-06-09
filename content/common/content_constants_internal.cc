@@ -19,17 +19,6 @@ const int kTraceEventGpuProcessSortIndex = -1;
 
 const int kTraceEventRendererMainThreadSortIndex = -1;
 
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-#if BUILDFLAG(ENABLE_AV1_DECODER)
-const char kFrameAcceptHeaderValue[] =
-    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,"
-    "image/heif,image/webp,image/apng,*/*;q=0.8";
-#else
-const char kFrameAcceptHeaderValue[] =
-    "text/html,application/xhtml+xml,application/xml;q=0.9,image/heif,"
-    "image/webp,image/apng,*/*;q=0.8";
-#endif  // BUILDFLAG(ENABLE_AV1_DECODER)
-#else
 #if BUILDFLAG(ENABLE_AV1_DECODER)
 const char kFrameAcceptHeaderValue[] =
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,"
@@ -38,8 +27,7 @@ const char kFrameAcceptHeaderValue[] =
 const char kFrameAcceptHeaderValue[] =
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,"
     "image/apng,*/*;q=0.8";
-#endif  // BUILDFLAG(ENABLE_AV1_DECODER)
-#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#endif
 
 const int kChildProcessReceiverAttachmentName = 0;
 const int kChildProcessHostRemoteAttachmentName = 1;

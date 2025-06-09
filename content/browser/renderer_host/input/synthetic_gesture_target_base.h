@@ -8,7 +8,6 @@
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
-#include "content/common/content_export.h"
 #include "content/common/input/synthetic_gesture_target.h"
 #include "ui/gfx/geometry/point_f.h"
 
@@ -27,8 +26,7 @@ namespace content {
 
 class RenderWidgetHostImpl;
 
-class CONTENT_EXPORT SyntheticGestureTargetBase :
-    public SyntheticGestureTarget {
+class SyntheticGestureTargetBase : public SyntheticGestureTarget {
  public:
   explicit SyntheticGestureTargetBase(RenderWidgetHostImpl* host);
 

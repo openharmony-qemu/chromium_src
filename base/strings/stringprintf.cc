@@ -86,13 +86,4 @@ void StringAppendV(std::string* dst, const char* format, va_list ap) {
   }
 }
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-void StringAppendVHelper(std::basic_string<char>* out, const char* format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  StringAppendV(out, format, ap);
-  va_end(ap);
-}
-#endif // ARKWEB_VIDEO_ASSISTANT
-
 }  // namespace base

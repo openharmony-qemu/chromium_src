@@ -6,7 +6,6 @@
 
 #include <stddef.h>
 
-#include "arkweb/build/features/features.h"
 #include "base/not_fatal_until.h"
 #include "base/ranges/algorithm.h"
 #include "base/strings/string_util.h"
@@ -29,17 +28,16 @@ static bool HandleViewSource(GURL* url, BrowserContext* browser_context) {
 
   // Load the inner URL instead.
   *url = GURL(url->GetContent());
+
   // https://crbug.com/40077794: limit view-source to view the content and
   // not any other kind of 'active' url scheme like 'javascript' or 'data'.
-  std::vector<std::string> all_allowed_sub_schemes(
-      {url::kHttpScheme, url::kHttpsScheme, kChromeUIScheme, url::kFileScheme,
-       url::kFileSystemScheme,
-#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
-       url::kFileSystemScheme, url::kResourcesScheme
-#else
-       url::kFileSystemScheme
-#endif
-      });
+  std::vector<std::string> all_allowed_sub_schemes({
+      url::kHttpScheme,
+      url::kHttpsScheme,
+      kChromeUIScheme,
+      url::kFileScheme,
+      url::kFileSystemScheme,
+  });
 
   // Merge all the schemes for which view-source is allowed by default, with
   // the view-source schemes defined by the ContentBrowserClient.

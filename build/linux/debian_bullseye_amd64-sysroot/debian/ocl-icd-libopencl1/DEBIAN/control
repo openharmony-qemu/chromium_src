@@ -1,0 +1,24 @@
+Package: ocl-icd-libopencl1
+Source: ocl-icd
+Version: 2.2.14-2
+Architecture: amd64
+Maintainer: Debian OpenCL Maintainers <pkg-opencl-devel@lists.alioth.debian.org>
+Installed-Size: 140
+Depends: libc6 (>= 2.4)
+Suggests: opencl-icd
+Conflicts: amd-app, libopencl1, nvidia-libopencl1-dev
+Replaces: amd-app, libopencl1, nvidia-libopencl1-dev
+Provides: libopencl-1.1-1, libopencl-1.2-1, libopencl-2.0-1, libopencl-2.1-1, libopencl-2.2-1, libopencl-3.0-1, libopencl1
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://github.com/OCL-dev/ocl-icd
+Description: Generic OpenCL ICD Loader
+ OpenCL (Open Computing Language) is a multivendor open standard for
+ general-purpose parallel programming of heterogeneous systems that include
+ CPUs, GPUs and other processors.
+ .
+ This package contains an installable client driver loader (ICD Loader)
+ library that can be used to load any (free or non-free) installable client
+ driver (ICD) for OpenCL. It acts as a demultiplexer so several ICD can
+ be installed and used together.

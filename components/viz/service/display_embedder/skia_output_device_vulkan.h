@@ -9,7 +9,6 @@
 #include <optional>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/types/pass_key.h"
@@ -25,12 +24,9 @@ class VulkanSurface;
 namespace viz {
 
 class VulkanContextProvider;
-class SkiaOutputDeviceVulkanUtils;
 
 class SkiaOutputDeviceVulkan final : public SkiaOutputDevice {
  public:
-  friend class SkiaOutputDeviceVulkanUtils;
-
   SkiaOutputDeviceVulkan(
       base::PassKey<SkiaOutputDeviceVulkan>,
       VulkanContextProvider* context_provider,
@@ -61,7 +57,6 @@ class SkiaOutputDeviceVulkan final : public SkiaOutputDevice {
   SkSurface* BeginPaint(
       std::vector<GrBackendSemaphore>* end_semaphores) override;
   void EndPaint() override;
-  void DiscardBackbuffer() override;
 
  private:
   struct SkSurfaceSizePair {
@@ -103,8 +98,6 @@ class SkiaOutputDeviceVulkan final : public SkiaOutputDevice {
   bool is_new_swap_chain_ = true;
 
   std::vector<gfx::Rect> damage_of_images_;
-
-  std::unique_ptr<SkiaOutputDeviceVulkanUtils> implUtils;
 
   base::WeakPtrFactory<SkiaOutputDeviceVulkan> weak_ptr_factory_{this};
 };

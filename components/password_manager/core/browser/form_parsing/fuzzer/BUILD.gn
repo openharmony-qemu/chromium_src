@@ -53,7 +53,6 @@ fuzzer_test("password_manager_form_data_parser_fuzzer") {
     "//components/autofill/core/common",
     "//components/autofill/core/common:fuzzer_support",
     "//components/password_manager/core/browser/form_parsing",
-    "//cef:libcef_static",
   ]
 
   dict = "form_data_parser_fuzzer.dict"
@@ -71,7 +70,6 @@ fuzzer_test("password_manager_form_data_parser_proto_fuzzer") {
     "//components/autofill/core/common",
     "//components/password_manager/core/browser/form_parsing",
     "//third_party/libprotobuf-mutator",
-    "//cef:libcef_static",
   ]
 
   dict = "form_data_parser_fuzzer.dict"

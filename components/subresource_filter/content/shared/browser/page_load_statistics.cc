@@ -37,13 +37,6 @@ void PageLoadStatistics::OnDocumentLoadStatistics(
       statistics.evaluation_total_wall_duration;
   aggregated_document_statistics_.evaluation_total_cpu_duration +=
       statistics.evaluation_total_cpu_duration;
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  // 需要将每个Document 拦截到的url 进行累加
-  for (auto& pair : statistics.loads_disallowed_url_map) {
-    aggregated_document_statistics_.loads_disallowed_url_map.insert(pair);
-  }
-#endif  // BUILDFLAG(ARKWEB_ADBLOCK)
 }
 
 void PageLoadStatistics::OnDidFinishLoad() {

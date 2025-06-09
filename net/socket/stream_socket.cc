@@ -29,10 +29,4 @@ int StreamSocket::ConfirmHandshake(CompletionOnceCallback callback) {
   return OK;
 }
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-void StreamSocket::SetFromPreload(bool from_preload) { from_preload_ = from_preload; }
-
-bool StreamSocket::IsFromPreload() const { return from_preload_; }
-#endif
-
 }  // namespace net

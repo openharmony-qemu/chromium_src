@@ -761,8 +761,7 @@ void MessagePumpUIApplication::Detach() {
 #else
 
 ScopedPumpMessagesInPrivateModes::ScopedPumpMessagesInPrivateModes() {
-  if (!g_app_pump)
-    return;
+  DCHECK(g_app_pump);
   DCHECK_EQ(kNSApplicationModalSafeModeMask, g_app_pump->GetModeMask());
   // Pumping events in private runloop modes is known to interact badly with
   // app modal windows like NSAlert.
@@ -773,8 +772,7 @@ ScopedPumpMessagesInPrivateModes::ScopedPumpMessagesInPrivateModes() {
 }
 
 ScopedPumpMessagesInPrivateModes::~ScopedPumpMessagesInPrivateModes() {
-  if (!g_app_pump)
-    return;
+  DCHECK(g_app_pump);
   g_app_pump->SetModeMask(kNSApplicationModalSafeModeMask);
 }
 

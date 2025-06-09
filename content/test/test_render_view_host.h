@@ -29,7 +29,6 @@
 #include "ui/base/page_transition_types.h"
 #include "ui/base/resource/resource_scale_factor.h"
 #include "ui/gfx/geometry/vector2d_f.h"
-#include "arkweb/build/features/features.h"
 
 #if defined(USE_AURA)
 #include "ui/aura/window.h"
@@ -104,13 +103,6 @@ class TestRenderWidgetHostView : public RenderWidgetHostViewBase,
 
   void TakeFallbackContentFrom(RenderWidgetHostView* view) override;
   void EnsureSurfaceSynchronizedForWebTest() override;
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void EvictFrameBackBuffers(bool invisible) override {}
-
-  void SetDoubleTapSupportEnabled(bool enabled) {}
-  void SetMultiTouchZoomSupportEnabled(bool enabled) {}
-  bool GetScrollable() {return false;}
-#endif
 
   // RenderWidgetHostViewBase:
   uint32_t GetCaptureSequenceNumber() const override;
@@ -220,10 +212,6 @@ class TestRenderWidgetHostViewChildFrame
   void Reset();
   void SetCompositor(ui::Compositor* compositor);
   ui::Compositor* GetCompositor() override;
-
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  bool GetScrollable() { return false; }
-#endif
 
  private:
   void SetBounds(const gfx::Rect& rect) override {}

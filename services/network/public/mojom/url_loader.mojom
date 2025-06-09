@@ -11,8 +11,6 @@ import "services/network/public/mojom/request_priority.mojom";
 import "services/network/public/mojom/url_loader_completion_status.mojom";
 import "services/network/public/mojom/url_response_head.mojom";
 import "url/mojom/url.mojom";
-[EnableIf=arkweb_resource_interception]
-import "mojo/public/mojom/base/shared_memory.mojom";
 
 [Native]
 struct URLRequestRedirectInfo;
@@ -92,9 +90,6 @@ interface URLLoaderClient {
                     handle<data_pipe_consumer>? body,
                     mojo_base.mojom.BigBuffer? cached_metadata);
 
-  [EnableIf=arkweb_resource_interception]
-  OnTransferDataWithSharedMemory(mojo_base.mojom.ReadOnlySharedMemoryRegion region, uint64 buffer_size);
-                    
   // Called when the request has been redirected. The receiver is expected to
   // call FollowRedirect or cancel the request.
   OnReceiveRedirect(URLRequestRedirectInfo redirect_info, URLResponseHead head);

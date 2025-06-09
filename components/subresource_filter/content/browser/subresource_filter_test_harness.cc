@@ -41,15 +41,6 @@
 
 namespace subresource_filter {
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-class MockRulesetServiceClient : public RulesetServiceClient {
- public:
-  void OnDeleteRulesetFile() override {}
-};
-
-MockRulesetServiceClient g_mock_ruleset_service_client_;
-#endif
-
 constexpr char const SubresourceFilterTestHarness::kDefaultAllowedSuffix[];
 constexpr char const SubresourceFilterTestHarness::kDefaultDisallowedSuffix[];
 constexpr char const SubresourceFilterTestHarness::kDefaultDisallowedUrl[];
@@ -83,26 +74,12 @@ void SubresourceFilterTestHarness::SetUp() {
   // 2. Navigation simulator uses this knowledge. It knows that
   //    |AsyncDocumentSubresourceFilter| posts core initialization tasks on
   //    blocking task runner and this it is the current thread task runner.
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  base::ScopedTempDir unindex_dir;
-  ASSERT_TRUE(unindex_dir.CreateUniqueTempDir());
-
-  ruleset_service_ = std::make_unique<RulesetService>(
-      kSafeBrowsingRulesetConfig, &pref_service_,
-      base::SingleThreadTaskRunner::GetCurrentDefault(),
-      ruleset_service_dir_.GetPath(), unindex_dir.GetPath(),
-      &g_mock_ruleset_service_client_,
-      base::SingleThreadTaskRunner::GetCurrentDefault(),
-      SafeBrowsingRulesetPublisher::Factory());
-#else
   ruleset_service_ = std::make_unique<RulesetService>(
       kSafeBrowsingRulesetConfig, &pref_service_,
       base::SingleThreadTaskRunner::GetCurrentDefault(),
       ruleset_service_dir_.GetPath(),
       base::SingleThreadTaskRunner::GetCurrentDefault(),
       SafeBrowsingRulesetPublisher::Factory());
-#endif
 
   // Publish the test ruleset.
   testing::TestRulesetCreator ruleset_creator;

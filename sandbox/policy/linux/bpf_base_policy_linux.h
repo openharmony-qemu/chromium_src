@@ -18,7 +18,7 @@
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-#include "arkweb/chromium_ext/sandbox/seccomp-bpf-helpers/baseline_policy_ohos.h"
+#include "sandbox/linux/seccomp-bpf-helpers/baseline_policy_ohos.h"
 #endif
 
 namespace sandbox::policy {

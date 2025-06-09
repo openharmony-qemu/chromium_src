@@ -254,13 +254,7 @@ class COMPONENTS_DOWNLOAD_EXPORT InProgressDownloadManager
   void NotifyDownloadsInitialized();
 
   // Cancels the given UrlDownloadHandler.
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  void CancelUrlDownload(UrlDownloadHandlerID downloader,
-                         bool user_cancel,
-                         std::optional<std::string> guid);
-#else
   void CancelUrlDownload(UrlDownloadHandlerID downloader, bool user_cancel);
-#endif
 
   // Active download handlers.
   std::vector<UrlDownloadHandler::UniqueUrlDownloadHandlerPtr>

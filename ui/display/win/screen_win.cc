@@ -633,7 +633,7 @@ gfx::Rect ScreenWin::ScreenToDIPRect(HWND hwnd, const gfx::Rect& pixel_bounds) {
       gfx::PointF(pixel_bounds.origin()), screen_win_display));
   const float scale_factor =
       1.0f / screen_win_display.display().device_scale_factor();
-  return {origin, ScaleToRoundedRect(pixel_bounds, scale_factor).size()};
+  return {origin, ScaleToEnclosingRect(pixel_bounds, scale_factor).size()};
 }
 
 // static
@@ -648,7 +648,7 @@ gfx::Rect ScreenWin::DIPToScreenRect(HWND hwnd, const gfx::Rect& dip_bounds) {
   const gfx::Point origin =
       display::win::DIPToScreenPoint(dip_bounds.origin(), screen_win_display);
   const float scale_factor = screen_win_display.display().device_scale_factor();
-  return {origin, ScaleToRoundedRect(dip_bounds, scale_factor).size()};
+  return {origin, ScaleToEnclosingRect(dip_bounds, scale_factor).size()};
 }
 
 // static

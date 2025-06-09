@@ -41,19 +41,10 @@
 #include "ui/base/window_open_disposition.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/native_widget_types.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
 #endif
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-#include "arkweb/chromium_ext/content/public/browser/native_embed_info.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-#include "media/mojo/mojom/media_player.mojom-forward.h"
-#endif // ARKWEB_VIDEO_ASSISTANT
 
 class GURL;
 
@@ -76,28 +67,13 @@ class EyeDropperListener;
 class FileSelectListener;
 class JavaScriptDialogManager;
 class RenderFrameHost;
-class RenderViewHostDelegateView;
 class RenderWidgetHost;
 class SessionStorageNamespace;
 class SiteInstance;
-class WebContentsView;
 struct ContextMenuParams;
 struct DropData;
 struct MediaPlayerWatchTime;
 struct Referrer;
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-class CustomMediaPlayer;
-class CustomMediaPlayerListener;
-struct MediaInfo;
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-class MediaPlayerController;
-class MediaPlayerListener;
-class VideoAssistant;
-struct MediaPlayerId;
-#endif  // ARKWEB_VIDEO_ASSISTANT
 }  // namespace content
 
 namespace device {
@@ -144,9 +120,6 @@ enum class PictureInPictureResult {
   kNotSupported,
 };
 
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-enum class RendererIsUnresponsiveReason;
-#endif
 // Objects implement this interface to get notified about changes in the
 // WebContents and to provide necessary functionality. If a method doesn't
 // change state, e.g. has no return value, then it can move to
@@ -395,14 +368,6 @@ class CONTENT_EXPORT WebContentsDelegate {
       const StoragePartitionConfig& partition_config,
       SessionStorageNamespace* session_storage_namespace);
 
-  virtual void GetCustomWebContentsView(
-      WebContents* web_contents,
-      const GURL& target_url,
-      int opener_render_process_id,
-      int opener_render_frame_id,
-      raw_ptr<content::WebContentsView>* view,
-      raw_ptr<content::RenderViewHostDelegateView>* delegate_view) {}
-
   // Notifies the delegate about the creation of a new WebContents. This
   // typically happens when popups are created.
   virtual void WebContentsCreated(WebContents* source_contents,
@@ -440,13 +405,8 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual void RendererUnresponsive(
       WebContents* source,
       RenderWidgetHost* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-      ,
-      RendererIsUnresponsiveReason reason
-#endif
-  ) {
-  }
+      base::RepeatingClosure hang_monitor_restarter) {}
+
   // Notification that a process in the WebContents is no longer hung. |source|
   // is the WebContents that was hung, and |render_widget_host| is the
   // RenderWidgetHost that was passed in an earlier call to
@@ -887,19 +847,6 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual BackForwardTransitionAnimationManager::FallbackUXConfig
   GetBackForwardTransitionFallbackUXConfig();
 #endif  // BUILDFLAG(IS_ANDROID)
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/public/browser/web_contents_delegate_for_include.h"
-#endif  // BUILDFLAG(IS_ARKWEB)
-#if BUILDFLAG(ARKWEB_PIP)
-  virtual void OnPipEvent(int event) {}
-  virtual void OnPip(int status,
-                     int delegate_id,
-                     int child_id,
-                     int frame_routing_id,
-                     int width,
-                     int height) {}
-#endif
 
  protected:
   virtual ~WebContentsDelegate();

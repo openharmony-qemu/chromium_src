@@ -13,17 +13,19 @@
 #include "cc/layers/layer.h"
 #include "media/base/video_transformation.h"
 
+namespace media { class VideoFrame; }
+
 namespace cc {
 
 class VideoFrameProvider;
 class VideoLayerImpl;
-class VideoLayerExt;
 
 // A Layer that contains a Video element.
 class CC_EXPORT VideoLayer : public Layer {
  public:
   static scoped_refptr<VideoLayer> Create(VideoFrameProvider* provider,
                                           media::VideoTransformation transform);
+
   VideoLayer(const VideoLayer&) = delete;
   VideoLayer& operator=(const VideoLayer&) = delete;
 
@@ -35,12 +37,7 @@ class CC_EXPORT VideoLayer : public Layer {
   // Clears |provider_| to ensure it is not used after destruction.
   void StopUsingProvider();
 
-  virtual VideoLayerExt* AsExt() {
-    return nullptr;
-  }
-
  private:
-  friend class VideoLayerExt;
   VideoLayer(VideoFrameProvider* provider,
              media::VideoTransformation transform);
   ~VideoLayer() override;

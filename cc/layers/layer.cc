@@ -66,13 +66,6 @@ struct SameSizeAsLayer : public base::RefCounted<SameSizeAsLayer>,
   gfx::Vector2dF offset;
   unsigned bitfields;
   std::unique_ptr<int> debug_info;
-#if DCHECK_IS_ON()
-  bool allow_remove_for_readd;
-#endif
-  std::unique_ptr<LayerUtils> layer_utils_;
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  bool should_overlay_;
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 static_assert(sizeof(Layer) == sizeof(SameSizeAsLayer),
@@ -113,9 +106,7 @@ Layer::Layer()
       property_tree_sequence_number_(-1),
       ignore_set_needs_commit_for_test_(false),
       bitflags_(0u),
-      subtree_property_changed_(false) {
-  layer_utils_ = std::make_unique<LayerUtils>(this);
-}
+      subtree_property_changed_(false) {}
 
 Layer::~Layer() {
   // Our parent should be holding a reference to us so there should be no
@@ -1457,9 +1448,6 @@ void Layer::PushPropertiesTo(LayerImpl* layer,
   if (subtree_property_changed_.Read(*this))
     layer->NoteLayerPropertyChanged();
   layer->set_may_contain_video(may_contain_video());
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  layer_utils_->PushPropertiesToImpl(layer);
-#endif
   layer->SetTouchActionRegion(inputs.touch_action_region);
   layer->SetContentsOpaque(inputs.contents_opaque);
   layer->SetContentsOpaqueForText(inputs.contents_opaque_for_text);
@@ -1675,6 +1663,5 @@ gfx::Transform Layer::ScreenSpaceTransform() const {
   return draw_property_utils::ScreenSpaceTransform(
       this, layer_tree_host()->property_trees()->transform_tree());
 }
-
 
 }  // namespace cc

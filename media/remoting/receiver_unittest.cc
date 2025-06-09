@@ -289,10 +289,6 @@ class ReceiverTest : public ::testing::Test {
 
   void InitializeReceiver() {
     receiver_->Initialize(&mock_media_resource_, nullptr,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                          RequestSurfaceCB(),
-                          VideoDecoderChangedCB(),
-#endif // ARKWEB_VIDEO_ASSISTANT
                           base::BindOnce(&ReceiverTest::OnRendererInitialized,
                                          weak_factory_.GetWeakPtr()));
   }

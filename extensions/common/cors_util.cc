@@ -36,7 +36,6 @@ void AddURLPatternSetToList(
       content::kChromeUIScheme,
 #if BUILDFLAG(IS_CHROMEOS)
       content::kExternalFileScheme,
-    extensions::kArkwebExtensionScheme,
 #endif
       extensions::kExtensionScheme,
       url::kFileScheme,

@@ -22,9 +22,8 @@
 #include "base/task/current_thread.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
-#include "arkweb/build/features/features.h"
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_CRASHPAD)
+#if !BUILDFLAG(IS_ANDROID)
 #include "components/crash/core/app/breakpad_linux_impl.h"
 #endif
 
@@ -33,7 +32,7 @@ class SequencedTaskRunner;
 class Thread;
 }
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_CRASHPAD)
+#if !BUILDFLAG(IS_ANDROID)
 
 namespace breakpad {
 

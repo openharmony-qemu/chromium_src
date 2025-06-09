@@ -29,55 +29,11 @@
 #include "base/win/scoped_handle.h"
 #include "base/win/scoped_localalloc.h"
 #include "base/win/windows_version.h"
-#include "cef/libcef/features/features.h"
-
-#if !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
 #include "third_party/boringssl/src/include/openssl/sha.h"
-#else
-#include <wincrypt.h>
-#endif
 
 namespace base::win {
 
 namespace {
-
-#if BUILDFLAG(IS_CEF_SANDBOX_BUILD)
-
-#define SHA256_DIGEST_LENGTH 32
-
-bool SHA256(const uint8_t* InData, size_t InDataLen, uint8_t* OutHash) {
-  HCRYPTPROV hProv = 0;
-  HCRYPTHASH hHash = 0;
-
-  if (!CryptAcquireContext(&hProv, nullptr, nullptr, PROV_RSA_AES,
-                           CRYPT_VERIFYCONTEXT)) {
-    return false;
-  }
-
-  if (!CryptCreateHash(hProv, CALG_SHA_256, 0, 0, &hHash)) {
-    CryptReleaseContext(hProv, 0);
-    return false;
-  }
-
-  if (!CryptHashData(hHash, InData, static_cast<DWORD>(InDataLen), 0)) {
-    CryptDestroyHash(hHash);
-    CryptReleaseContext(hProv, 0);
-    return false;
-  }
-
-  DWORD dwHashLen = SHA256_DIGEST_LENGTH;
-  if (!CryptGetHashParam(hHash, HP_HASHVAL, OutHash, &dwHashLen, 0)) {
-    CryptDestroyHash(hHash);
-    CryptReleaseContext(hProv, 0);
-    return false;
-  }
-
-  CryptDestroyHash(hHash);
-  CryptReleaseContext(hProv, 0);
-  return true;
-}
-
-#endif  // BUILDFLAG(IS_CEF_SANDBOX_BUILD)
 
 template <typename Iterator>
 Sid FromSubAuthorities(const SID_IDENTIFIER_AUTHORITY& identifier_authority,

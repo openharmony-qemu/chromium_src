@@ -5,17 +5,12 @@
 #ifndef MEDIA_BASE_MEDIA_URL_PARAMS_H_
 #define MEDIA_BASE_MEDIA_URL_PARAMS_H_
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "media/base/media_export.h"
 #include "net/cookies/site_for_cookies.h"
 #include "net/storage_access_api/status.h"
 #include "url/gurl.h"
 #include "url/origin.h"
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-#include "arkweb/chromium_ext/media/base/custom_media_url_params.h"
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 namespace media {
 
@@ -63,10 +58,6 @@ struct MEDIA_EXPORT MediaUrlParams {
 
   // HTTP Request Headers
   base::flat_map<std::string, std::string> headers;
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  CustomMediaUrlParams custom_media_url_params;
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

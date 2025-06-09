@@ -366,9 +366,6 @@ struct NetworkContextParams {
   // cookies. Otherwise it should be false.
   bool persist_session_cookies = false;
 
-  // Schemes that will be passed to CookieMonster::SetCookieableSchemes.
-  array<string>? cookieable_schemes;
-
   // True if an HTTP cache should be used.
   bool http_cache_enabled = true;
   // Maximum size of the HTTP cache. 0 means to use the default size.
@@ -495,10 +492,8 @@ struct NetworkContextParams {
 
   // Binds to the cookie manager associated with this network context, which
   // should only be handed out to trusted processes.
-  // #if BUILDFLAG(ARKWEB_COOKIE)
-  [EnableIf=is_android_or_arkweb_cookie]
+  [EnableIf=is_android]
   pending_receiver<CookieManager>? cookie_manager;
-  // #endif
 
   // Whether to enable Domain Reliability.
   bool enable_domain_reliability = false;
@@ -908,12 +903,6 @@ struct URLLoaderFactoryParams {
   // For context on usage see:
   // https://privacycg.github.io/saa-non-cookie-storage/shared-workers.html
   bool require_cross_site_request_for_cookies = false;
-
-  [EnableIf=arkweb_prp_preload]
-  string main_url = "";
-
-  [EnableIf=arkweb_prp_preload]
-  uint64 addr_web_handle;
 };
 
 // Represents a distinct context for making network requests, with its own
@@ -1476,6 +1465,15 @@ interface NetworkContext {
               ResolveHostParameters? optional_parameters,
               pending_remote<ResolveHostClient> response_client);
 
+  [EnableIf=is_ohos]
+  InitPRParallelPreloadMgr(mojo_base.mojom.FilePath cache_path);
+
+  [EnableIf=is_ohos]
+  StartMainPage(string url, NetworkAnonymizationKey network_anonymization_key, uint64 addr_web_handle);
+
+  [EnableIf=is_ohos]
+  StopMainPage(uint64 addr_web_handle);
+
   // Creates a HostResolver interface that can be passed to code/processes
   // without direct access to NetworkContext to make ResolveHost requests.
   //
@@ -1501,18 +1499,6 @@ interface NetworkContext {
                               string sct_list) => (int32 error_code,
                                                    CertVerifyResult cv_result,
                                                    bool pkp_bypassed);
-
-  [EnableIf=arkweb_prp_preload]
-  InitPRParallelPreloadMgr();
- 
-  [EnableIf=arkweb_prp_preload]
-  StartPage(string url, NetworkAnonymizationKey networkAnonymizationKey, uint64 addr_web_handle) => (string page_origin_url);
- 
-  [EnableIf=arkweb_prp_preload]
-  StopPage(uint64 addr_web_handle);
- 
-  [EnableIf=arkweb_prp_preload]
-  SetURLLoaderFactoryParam(URLLoaderFactoryParams params);
 
   // Adds explicitly-specified data as if it was processed from an
   // HSTS header. Used by tests and implementation of chrome://net-internals.
@@ -1721,10 +1707,4 @@ interface NetworkContext {
   // `bound_network` == -1 means that this NetworkContext is not bound to any
   // network. Refer to NetworkContextParams::bound_network for more info.
   GetBoundNetworkForTesting() => (int64 bound_network);
-
-  [EnableIf=arkweb_custom_dns]
-  SetHostIP(string HostName, array<string> Address, uint32 AliveTime);
-
-  [EnableIf=arkweb_custom_dns]
-  ClearHostIP(string HostName);
 };

@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//arkweb/build/features/features.gni")
 import("//build/config/ui.gni")
 import("//components/viz/viz.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
@@ -70,9 +69,6 @@ mojom("compositing") {
   if (is_android || is_chromeos_ash) {
     enabled_features += [ "can_set_refresh_rate" ]
   }
-  if (arkweb_composite_render) {
-    enabled_features += [ "arkweb_composite_render" ]
-  }
 
   cpp_typemaps = [
     {
@@ -93,11 +89,4 @@ mojom("compositing") {
       traits_public_deps += [ "//ui/gfx/geometry/mojom" ]
     },
   ]
-
-  enabled_features += ["arkweb_occluded_opt"]
-  enabled_features += ["arkweb_video_ltpo"]
-  enabled_features += ["arkweb_performance_jitter"]
-  enabled_features += ["arkweb_maximize_resize"]
-  enabled_features += ["arkweb_pip"]
-  enabled_features += ["arkweb_same_layer"]
 }

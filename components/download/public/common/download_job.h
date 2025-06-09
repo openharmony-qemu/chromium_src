@@ -22,12 +22,7 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadJob {
  public:
   // Callback to cancel the download request.
   using CancelRequestCallback =
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-      base::OnceCallback<void(bool /* user_cancel */,
-                              std::optional<std::string> guid)>;
-#else
       base::OnceCallback<void(bool /* user_cancel */)>;
-#endif
   CancelRequestCallback cancel_request_callback;
 
   DownloadJob(DownloadItem* download_item,

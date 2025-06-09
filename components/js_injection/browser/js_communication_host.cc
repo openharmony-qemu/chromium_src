@@ -18,9 +18,9 @@
 #include "content/public/browser/web_contents.h"
 #include "mojo/public/cpp/bindings/pending_associated_remote.h"
 #include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"
-#include "arkweb/chromium_ext/components/js_injection/js_communication_host_utils.h"
 
 namespace js_injection {
+namespace {
 
 std::string ConvertToNativeAllowedOriginRulesWithSanityCheck(
     const std::vector<std::string>& allowed_origin_rules_strings,
@@ -51,6 +51,8 @@ void ForEachRenderFrameHostWithinSameWebContents(
         return content::RenderFrameHost::FrameIterationAction::kContinue;
       });
 }
+
+}  // namespace
 
 struct JsObject {
   JsObject(const std::u16string& name,
@@ -116,9 +118,7 @@ class JsCommunicationHost::JsToBrowserMessagingList
 };
 
 JsCommunicationHost::JsCommunicationHost(content::WebContents* web_contents)
-    : content::WebContentsObserver(web_contents) {
-      js_communication_host_utils_ = std::make_unique<JsCommunicationHostUtils>(this);
-    }
+    : content::WebContentsObserver(web_contents) {}
 
 JsCommunicationHost::~JsCommunicationHost() = default;
 
@@ -253,9 +253,6 @@ void JsCommunicationHost::RenderFrameCreated(
     content::RenderFrameHost* render_frame_host) {
   NotifyFrameForWebMessageListener(render_frame_host);
   NotifyFrameForAllDocumentStartJavaScripts(render_frame_host);
-#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
-  js_communication_host_utils_->NotifyFrameForAllDocumentEndsJavaScripts(render_frame_host);
-#endif
 }
 
 void JsCommunicationHost::RenderFrameDeleted(
@@ -286,11 +283,6 @@ void JsCommunicationHost::NotifyFrameForAllDocumentStartJavaScripts(
   for (const auto& script : scripts_) {
     NotifyFrameForAddDocumentStartJavaScript(&script, render_frame_host);
   }
-#if BUILDFLAG(ARKWEB_JSPROXY)
-  for (const auto& script : js_communication_host_utils_->head_ready_scripts_) {
-    js_communication_host_utils_->NotifyFrameForAddHeadReadyJavaScript(&script, render_frame_host);
-  }
-#endif
 }
 
 void JsCommunicationHost::NotifyFrameForWebMessageListener(

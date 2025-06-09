@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "gpu/ipc/common/gpu_memory_buffer_support.h"
-#include "arkweb/build/features/features.h"
 
 #include <inttypes.h>
 
@@ -101,7 +100,8 @@ bool GpuMemoryBufferSupport::IsNativeGpuMemoryBufferConfigurationSupported(
       return false;
   }
   NOTREACHED();
-#elif BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#elif BUILDFLAG(IS_OHOS)
+  // TODO: FIXME
   return false;
 #elif BUILDFLAG(IS_ANDROID)
   if (!base::AndroidHardwareBufferCompat::IsSupportAvailable()) {
@@ -270,6 +270,10 @@ GpuMemoryBufferSupport::CreateGpuMemoryBufferImplFromHandle(
       return nullptr;
 #endif
     default:
+#if BUILDFLAG(IS_OHOS)
+      // TODO: FIXME
+      return nullptr;
+#endif
       // TODO(dcheng): Remove default case (https://crbug.com/676224).
       NOTREACHED() << gfx::BufferFormatToString(format) << ", "
                    << gfx::BufferUsageToString(usage);

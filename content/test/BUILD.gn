@@ -30,8 +30,6 @@ import("//tools/grit/grit_rule.gni")
 import("//tools/grit/preprocess_if_expr.gni")
 import("//tools/typescript/webui_ts_library.gni")
 import("//v8/gni/v8.gni")
-import("//arkweb/chromium_ext/chromium_ext.gni")
-import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
@@ -845,14 +843,6 @@ static_library("test_support") {
 
   if (is_fuchsia) {
     public_deps += [ "//third_party/fuchsia-sdk/sdk/fidl/fuchsia.mediacodec:fuchsia.mediacodec_hlcpp" ]
-  }
-
-  if (enable_arkweb) {
-    deps += [ "//arkweb/build/features" ]
-  }
-
-  if (enable_arkweb) {
-    public_deps += [ "//arkweb/build/features" ]
   }
 }
 
@@ -1781,9 +1771,7 @@ test("content_browsertests") {
     "../test/top_frame_population_browsertest.cc",
     "../test/url_loader_interceptor_browsertest.cc",
   ]
-  if (arkweb_unittests) {
-    sources += arkweb_content_renderer_test_sources
-  }
+
   if (is_linux) {
     sources += [ "../browser/network/address_map_linux_browsertest.cc" ]
   }

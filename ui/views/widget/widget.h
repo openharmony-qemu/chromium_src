@@ -368,8 +368,6 @@ class VIEWS_EXPORT Widget : public internal::NativeWidgetDelegate,
     // the concept with bubble anchoring a la BubbleDialogDelegateView.
     gfx::NativeView parent = gfx::NativeView();
 
-    gfx::AcceleratedWidget parent_widget = gfx::kNullAcceleratedWidget;
-
     // Specifies the initial bounds of the Widget. Default is empty, which means
     // the NativeWidget may specify a default size. If the parent is specified,
     // |bounds| is in the parent's coordinate system. If the parent is not
@@ -459,6 +457,16 @@ class VIEWS_EXPORT Widget : public internal::NativeWidgetDelegate,
     // window should request the wayland compositor to send key events,
     // even if it matches with the compositor's keyboard shortcuts.
     bool inhibit_keyboard_shortcuts = false;
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+    bool using_system_floating_window = false;
+    bool use_dark_mode = false;
+    bool caption_button_visible = true;
+
+    // The value `true` indicates that the newly created window does not inherit the size of the current window.
+    // This parameter can be used in scenarios such as WebRTC notification window.
+    bool is_stateless = false;
 #endif
 
     // Directly sets the NativeTheme used by the Widget. Providing the
@@ -770,7 +778,7 @@ class VIEWS_EXPORT Widget : public internal::NativeWidgetDelegate,
   void ShowInactive();
 
   // Activates the widget, assuming it already exists and is visible.
-  virtual void Activate();
+  void Activate();
 
   // Deactivates the widget, making the next window in the Z order the active
   // window.

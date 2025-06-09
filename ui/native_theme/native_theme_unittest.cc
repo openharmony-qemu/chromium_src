@@ -74,6 +74,18 @@ TEST(NativeThemeTest, TestOnNativeThemeUpdatedMetricsEmitted) {
       2);
 }
 
+#if BUILDFLAG(IS_OHOS)
+TEST(NativeThemeTest, SetThemeSource) {
+  TestNativeTheme theme;
+
+  theme.set_theme_source(ui::NativeTheme::ThemeSource::kForcedDark);
+  EXPECT_EQ(theme.ShouldUseDarkColors(), true);
+
+  theme.set_theme_source(ui::NativeTheme::ThemeSource::kForcedLight);
+  EXPECT_EQ(theme.ShouldUseDarkColors(), false);
+}
+#endif  // BUILDFLAG(IS_OHOS)
+
 TEST(NativeThemeTest, TestColorProviderKeyForcedColors) {
   TestNativeTheme theme;
 

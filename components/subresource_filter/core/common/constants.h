@@ -14,10 +14,6 @@ namespace subresource_filter {
 // the ruleset should be stored.
 extern const RulesetConfig kSafeBrowsingRulesetConfig;
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-extern const RulesetConfig kSafeBrowsingUserRulesetConfig;
-#endif
-
 }  // namespace subresource_filter
 
 #endif  // COMPONENTS_SUBRESOURCE_FILTER_CORE_COMMON_CONSTANTS_H_

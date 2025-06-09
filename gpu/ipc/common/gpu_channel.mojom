@@ -204,11 +204,6 @@ interface GpuChannel {
   [Sync, EnableIf=is_win] CreateDCOMPTexture(
       int32 route_id,
       pending_associated_receiver<DCOMPTexture> receiver) => (bool success);
-  
-  [Sync, EnableIf=is_arkweb] CreateNativeTexture(
-      int32 native_id,
-      int32 texture_owner_mode,
-      pending_associated_receiver<StreamTexture> receiver) => (int32 native_embed_id);
 
   // This interface is used by MediaFoundationRendererClient to subscribe
   // to overlay state information from the Viz layer (as provided by the
@@ -365,17 +360,6 @@ interface StreamTexture {
   UpdateRotatedVisibleSize(gfx.mojom.Size rotated_visible_size);
 };
 
-[EnableIf=is_arkweb]
-interface StreamTexture {
-  // Tells the service-side instance to start sending frame available
-  // notifications.
-  StartListening(pending_associated_remote<StreamTextureClient> client);
- 
-  // Updates the visible size from MediaPlayer. The size includes rotation of
-  // video.
-  UpdateRotatedVisibleSize(gfx.mojom.Size rotated_visible_size);
-};
-
 // Interface used by GPU to notify the client of a StreamTexture instance about
 // new frame availability. Implemented by renderer clients and called by
 // StreamTexture instances in the GPU process.
@@ -388,17 +372,6 @@ interface StreamTextureClient {
   // Informs the client that a new frame is available.
   OnFrameAvailable();
 
-  // Informs the client that a new frame with VulkanYcbcrInfo is available.
-  OnFrameWithInfoAvailable(Mailbox mailbox, gfx.mojom.Size coded_size,
-                           gfx.mojom.Rect visible_rect,
-                           VulkanYCbCrInfo? info);
-};
-
-[EnableIf=is_arkweb]
-interface StreamTextureClient {
-  // Informs the client that a new frame is available.
-  OnFrameAvailable();
- 
   // Informs the client that a new frame with VulkanYcbcrInfo is available.
   OnFrameWithInfoAvailable(Mailbox mailbox, gfx.mojom.Size coded_size,
                            gfx.mojom.Rect visible_rect,
@@ -486,11 +459,6 @@ union DeferredRequestParams {
   // by this ID.
   [EnableIf=is_win]
   int32 destroy_dcomp_texture;
-
-  // Sent to indicate the client wants to destroy the NativeImageTexture identified
-  // by this ID.
-  [EnableIf=is_arkweb]
-  int32 destroy_native_texture;
 };
 
 // Details of a batched request targeting a specific command buffer.

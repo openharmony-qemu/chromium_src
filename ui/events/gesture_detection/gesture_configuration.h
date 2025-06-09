@@ -7,7 +7,6 @@
 
 #include "ui/events/gesture_detection/gesture_detection_export.h"
 #include "ui/events/velocity_tracker/velocity_tracker.h"
-#include "arkweb/build/features/features.h"
 
 namespace ui {
 
@@ -69,12 +68,6 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
   void set_short_press_time(base::TimeDelta val) { short_press_time_ = val; }
   int long_press_time_in_ms() const { return long_press_time_in_ms_; }
   void set_long_press_time_in_ms(int val) { long_press_time_in_ms_ = val; }
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  int drag_long_press_time_in_ms() const { return drag_long_press_time_in_ms_; }
-  void set_drag_long_press_time_in_ms(int val) {
-    drag_long_press_time_in_ms_ = val;
-  }
-#endif
   float max_distance_between_taps_for_double_tap() const {
     return max_distance_between_taps_for_double_tap_;
   }
@@ -188,11 +181,6 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
     velocity_tracker_strategy_ = val;
   }
 
-#if BUILDFLAG(ARKWEB_FLING)
-  void set_virtual_pixel_ratio(float ratio) { virtual_pixel_ratio_ = ratio; }
-  float virtual_pixel_ratio() const { return virtual_pixel_ratio_; }
-#endif // ARKWEB_FLING
-
  protected:
   GestureConfiguration();
   virtual ~GestureConfiguration();
@@ -233,20 +221,14 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
 
   bool stylus_scale_enabled_ = false;
   bool gesture_begin_end_types_enabled_ = false;
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  base::TimeDelta short_press_time_ = base::Milliseconds(300);
-  int long_press_time_in_ms_ = 400;
-#else
+
   base::TimeDelta short_press_time_ = base::Milliseconds(400);
   // TODO(crbug.com/40820441): All time fields here should be of type
   // |base::TimeDiff| instead of |int|.
 
   int long_press_time_in_ms_ = 500;
-#endif
   float max_distance_between_taps_for_double_tap_ = 20;
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  int drag_long_press_time_in_ms_ = 400;
-#endif
+
   // The max length of a repeated tap sequence, e.g., to support double-click
   // only this is 2, to support triple-click it's 3.
   int max_tap_count_ = 3;
@@ -262,13 +244,7 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
   int max_time_between_double_click_in_ms_ = 700;
   int max_touch_down_duration_for_click_in_ms_ = 800;
   float max_stylus_move_in_pixels_for_click_ = 20;
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  // set this 12 to balance sliding response latency and third-party library functionality
-  // if it's too small, some library may have bugs.
-  float max_touch_move_in_pixels_for_click_ = 12;
-#else
   float max_touch_move_in_pixels_for_click_ = 15;
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   float min_distance_for_pinch_scroll_in_pixels_ = 20;
   float min_fling_velocity_ = 30;
   float min_gesture_bounds_length_ = 0;
@@ -276,11 +252,7 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
   float min_pinch_update_span_delta_ = 0;
   // If this is too small, we currently can get single finger pinch zoom.  See
   // https://crbug.com/376618 for details.
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  float min_scaling_span_in_pixels_ = 50;
-#else
   float min_scaling_span_in_pixels_ = 125;
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   float min_swipe_velocity_ = 20;
   // TODO(crbug.com/41095532): Disable and remove entirely when issues
   // with intermittent scroll end detection on the Pixel are resolved.
@@ -305,10 +277,6 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
   bool two_finger_tap_enabled_ = false;
   VelocityTracker::Strategy velocity_tracker_strategy_ =
       VelocityTracker::Strategy::STRATEGY_DEFAULT;
-
-#if BUILDFLAG(ARKWEB_FLING)
-  float virtual_pixel_ratio_;
-#endif // ARKWEB_FLING
 };
 
 }  // namespace ui

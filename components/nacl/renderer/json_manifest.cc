@@ -452,11 +452,7 @@ void JsonManifest::GetPrefetchableFiles(
     PP_PNaClOptions unused_pnacl_options;  // pnacl does not support "files".
     // We skip invalid entries in "files".
     if (GetKeyUrl(*files_dict, file_key, &full_url, &unused_pnacl_options)) {
-      if (GURL(full_url).SchemeIs("chrome-extension")
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      || GURL(full_url).SchemeIs("arkweb-extension")
-#endif
-      )
+      if (GURL(full_url).SchemeIs("chrome-extension"))
         out_files->push_back(NaClResourcePrefetchRequest(file_key, full_url));
     }
   }

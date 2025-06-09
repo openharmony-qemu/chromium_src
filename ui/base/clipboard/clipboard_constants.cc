@@ -46,7 +46,4 @@ const char kMimeTypeImageURI[] = "image-uri";
 const int kMaxRegisteredClipboardFormats = 100;
 const char kWebClipboardFormatPrefix[] = "web ";
 
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
-const char kMimeTypeOHOSCustomData[] = "ohos/custom-data";
-#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 }  // namespace ui

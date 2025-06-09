@@ -874,11 +874,7 @@ void SafeBrowsingNavigationObserverManager::RecordNotificationNavigationEvent(
   // Push notifications are tied to the https scheme.
   // We also care about notifications from Chrome extensions.
   if (!script_url.SchemeIs(url::kHttpsScheme) &&
-      (!script_url.SchemeIs("chrome-extension")
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      && !script_url.SchemeIs("arkweb-extension")
-#endif
-  )) {
+      !script_url.SchemeIs("chrome-extension")) {
     return;
   }
   // We only collect notification referrers for ESB users.

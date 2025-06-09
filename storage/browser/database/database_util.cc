@@ -30,10 +30,6 @@ bool IsSafeSuffix(const std::u16string& suffix) {
 }
 }
 
-#if BUILDFLAG(ARKWEB_WEBSTORAGE)
-#include "arkweb/chromium_ext/storage/browser/database/database_util_for_include.cc"
-#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
-
 const char DatabaseUtil::kJournalFileSuffix[] = "-journal";
 
 bool DatabaseUtil::CrackVfsFileName(const std::u16string& vfs_file_name,
@@ -43,10 +39,6 @@ bool DatabaseUtil::CrackVfsFileName(const std::u16string& vfs_file_name,
   // 'vfs_file_name' is of the form <origin_identifier>/<db_name>#<suffix>.
   // <suffix> is optional.
   DCHECK(!vfs_file_name.empty());
-#if BUILDFLAG(ARKWEB_WEBSTORAGE)
-  return CrackVfsFileNameExt(vfs_file_name, origin_identifier, database_name,
-                             sqlite_suffix);
-#else
   size_t first_slash_index = vfs_file_name.find('/');
   size_t last_pound_index = vfs_file_name.rfind('#');
   // '/' and '#' must be present in the string. Also, the string cannot start
@@ -79,7 +71,6 @@ bool DatabaseUtil::CrackVfsFileName(const std::u16string& vfs_file_name,
     *sqlite_suffix = suffix;
 
   return true;
-#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
 }
 
 base::FilePath DatabaseUtil::GetFullFilePathForVfsFile(

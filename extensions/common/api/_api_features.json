@@ -239,8 +239,6 @@
         "chrome://add-supervision/*",
         "chrome://assistant-optin/*",
         "chrome://extensions/*",
-        // ARKWEB_ARKWEB_EXTENSIONS
-        "arkweb://extensions/*",
         "chrome://graduation/*",
         "chrome://home/*",
         "chrome://chrome-signin/*",
@@ -303,9 +301,7 @@
     "contexts": ["webui"],
     "matches": [
       "chrome://extensions/*",
-      "chrome://settings/*",
-      // ARKWEB_ARKWEB_EXTENSIONS
-      "arkweb://extensions/*"
+      "chrome://settings/*"
     ]
   }, {
     "channel": "stable",
@@ -360,8 +356,6 @@
       "chrome://shopping-insights-side-panel.top-chrome/*",
       "chrome://eche-app/*",
       "chrome://extensions/*",
-      // ARKWEB_ARKWEB_EXTENSIONS
-      "arkweb://extensions/*",
       "chrome://file-manager/*",
       "chrome://help-app/*",
       "chrome://history/*",
@@ -780,8 +774,6 @@
     "contexts": ["webui"],
     "matches": [
       "chrome://extensions/*",
-      // ARKWEB_ARKWEB_EXTENSIONS
-      "arkweb://extensions/*",
       // System Web App version of File Manager.
       "chrome://file-manager/*",
       "chrome://webui-test/*"

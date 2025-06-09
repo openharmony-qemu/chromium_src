@@ -21,6 +21,9 @@ class MockVideoRendererSink : public VideoRendererSink {
   MOCK_METHOD2(PaintSingleFrame,
                void(scoped_refptr<VideoFrame> frame,
                     bool repaint_duplicate_frame));
+#if BUILDFLAG(IS_OHOS)
+  MOCK_METHOD1(SetFinishPaintCallback, void(base::RepeatingClosure callback));
+#endif
 };
 
 }  // namespace media

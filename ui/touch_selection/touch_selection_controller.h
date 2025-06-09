@@ -18,15 +18,10 @@
 #include "ui/touch_selection/touch_handle_orientation.h"
 #include "ui/touch_selection/touch_selection_metrics.h"
 #include "ui/touch_selection/ui_touch_selection_export.h"
-#include "arkweb/build/features/features.h"
 
 namespace ui {
 class MotionEvent;
 class Event;
-#if BUILDFLAG(IS_ARKWEB)
-  class TouchSelectionControllerExt;
-  class TouchSelectionControllerUtils;
-#endif
 
 // Interface through which |TouchSelectionController| issues selection-related
 // commands, notifications and requests.
@@ -46,9 +41,6 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionControllerClient {
   virtual std::unique_ptr<TouchHandleDrawable> CreateDrawable() = 0;
   virtual void DidScroll() = 0;
   virtual void ShowTouchSelectionContextMenu(const gfx::Point& location) {}
-#if BUILDFLAG(ARKWEB_MENU)
-  virtual void SelectBetweenCoordinatesV2(const gfx::PointF& position, bool is_base) {}
-#endif
 };
 
 // Controller for manipulating text selection via touch input.
@@ -89,14 +81,6 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
 
   ~TouchSelectionController() override;
 
-#if BUILDFLAG(IS_ARKWEB)
-  friend class TouchSelectionControllerExt;
-  virtual TouchSelectionControllerExt* AsTouchSelectionControllerExt() {
-    return nullptr;
-  }
-  void UpdateSelectionChanged(
-      const TouchSelectionDraggable& draggable) override {}
-#endif
   // To be called when the selection bounds have changed.
   // Note that such updates will trigger handle updates only if preceded
   // by an appropriate call to allow automatic showing.
@@ -290,15 +274,10 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
   bool consume_touch_sequence_;
 
   bool show_touch_handles_;
+
   TouchSelectionSessionMetricsRecorder session_metrics_recorder_;
-#if BUILDFLAG(IS_ARKWEB)
-  std::unique_ptr<TouchSelectionControllerUtils> utils_;
-#endif
 };
 
 }  // namespace ui
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/ui/touch_selection/touch_selection_controller_ext.h"
-#endif
 #endif  // UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_H_

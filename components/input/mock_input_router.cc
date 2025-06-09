@@ -38,12 +38,6 @@ bool MockInputRouter::HasPendingEvents() const {
   return false;
 }
 
-#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-void MockInputRouter::DynamicFrameLossEvent(const std::string& sceneId, bool isStart) {
-  return;
-}
-#endif
-
 std::optional<cc::TouchAction> MockInputRouter::AllowedTouchAction() {
   return cc::TouchAction::kAuto;
 }

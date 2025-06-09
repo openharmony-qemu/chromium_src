@@ -305,16 +305,6 @@ int HostResolverManager::RequestImpl::DoGetParameters() {
                                           parameters_, source_net_log_,
                                           job_key_, ip_address_);
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  if (parameters_.only_use_secure_fallback) {
-    next_state_ = STATE_START_JOB;
-    if (resolver_->CanUseSecureDnsFallback(resolve_context())) {
-      tasks_.push_back(TaskType::SECURE_DNS_FALLBACK);
-    }
-    return OK;
-  }
-#endif
-
   // A reachability probe to determine if the network is only reachable on
   // IPv6 will be scheduled if the parameters are met for using NAT64 in place
   // of an IPv4 address.
@@ -416,10 +406,6 @@ void HostResolverManager::RequestImpl::LogStartRequest() {
                  network_anonymization_key_.ToDebugString());
         dict.Set("secure_dns_policy",
                  base::strict_cast<int>(parameters_.secure_dns_policy));
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-        dict.Set("only_use_secure_fallback",
-                 parameters_.only_use_secure_fallback);
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
         return dict;
       });
 }

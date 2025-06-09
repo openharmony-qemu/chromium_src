@@ -61,10 +61,6 @@ static_library("common") {
     "unique_ids.h",
   ]
 
-  sources += [
-    "arkweb/chromium_ext/components/autofill/core/common/ohos_password_autofill_data.h",
-  ]
-
   public_deps = [
     ":autofill_regex",
     ":features",

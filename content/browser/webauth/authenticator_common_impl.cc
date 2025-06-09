@@ -92,12 +92,6 @@
 #include "content/browser/webauth/is_uvpaa.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_FIDO)
-#include "content/browser/webauth/utils.h"
-#include "device/fido/ohos/ohos_authenticator.h"
-#include "device/fido/ohos/ohos_webauthn_api.h"
-#endif // BUILDFLAG(ARKWEB_FIDO)
-
 namespace content {
 
 // RequestExtension is a type of extension in a WebAuthn request that might
@@ -536,9 +530,6 @@ bool IsPlatformAuthenticatorForInvalidStateError(
     // should be returned. Thus, if it didn't return that, then we shouldn't
     // consider it a platform authenticator.
     case device::AuthenticatorType::kWinNative:
-#if BUILDFLAG(ARKWEB_FIDO)
-    case device::AuthenticatorType::kOhosNative:
-#endif  // BUILDFLAG(ARKWEB_FIDO)
     case device::AuthenticatorType::kOther:
     case device::AuthenticatorType::kPhone:
       return false;
@@ -583,13 +574,6 @@ CredentialRequestResultFromCode(bool success, device::AuthenticatorType type) {
                            kWinNativeSuccess
                      : AuthenticatorCommonImpl::CredentialRequestResult::
                            kWinNativeError;
-#if BUILDFLAG(ARKWEB_FIDO)
-    case device::AuthenticatorType::kOhosNative:
-      return success ? AuthenticatorCommonImpl::CredentialRequestResult::
-                           kOtherSuccess
-                     : AuthenticatorCommonImpl::CredentialRequestResult::
-                           kOtherError;
-#endif  // BUILDFLAG(ARKWEB_FIDO)
   }
 }
 
@@ -837,9 +821,6 @@ AuthenticatorCommonImpl::MaybeCreateRequestDelegate() {
       DisableUI();
     }
   }
-#if BUILDFLAG(ARKWEB_FIDO)
-  DisableUI();
-#endif  // BUILDFLAG(ARKWEB_FIDO)
   return delegate;
 }
 
@@ -1303,55 +1284,6 @@ void AuthenticatorCommonImpl::ContinueMakeCredentialAfterRpIdCheck(
         device::AttestationConveyancePreference::kEnterpriseApprovedByBrowser;
   }
   ctap_make_credential_request->attestation_preference = attestation;
-
-#if BUILDFLAG(ARKWEB_FIDO)
-  ctap_make_credential_request->extra = device::CtapMakeCredentialRequestExtra();
-  ctap_make_credential_request->extra->common.challenge = options->challenge;
-  ctap_make_credential_request->extra->common.mediation =
-      device::CredentialMediationRequirement::kSilent;
-  switch (options->mediation) {
-    case blink::mojom::PublicKeyCredentialMediationRequirement::SILENT:
-      ctap_make_credential_request->extra->common.mediation =
-          device::CredentialMediationRequirement::kSilent;
-      break;
-    case blink::mojom::PublicKeyCredentialMediationRequirement::OPTIONAL:
-      ctap_make_credential_request->extra->common.mediation =
-          device::CredentialMediationRequirement::kOptional;
-      break;
-    case blink::mojom::PublicKeyCredentialMediationRequirement::REQUIRED:
-      ctap_make_credential_request->extra->common.mediation =
-          device::CredentialMediationRequirement::kRequired;
-      break;
-    case blink::mojom::PublicKeyCredentialMediationRequirement::CONDITIONAL:
-      ctap_make_credential_request->extra->common.mediation =
-          device::CredentialMediationRequirement::kConditional;
-      break;
-  }
-  if (options->timeout) {
-    ctap_make_credential_request->extra->common.timeout = *options->timeout;
-  }
-  ctap_make_credential_request->extra->common.hints.reserve(options->hints.size());
-  for (const auto& hint : options->hints) {
-    switch (hint) {
-      case blink::mojom::Hint::SECURITY_KEY:
-            ctap_make_credential_request->extra->common.hints.push_back(
-                device::CredentialHint::kSecurityKey);
-        break;
-      case blink::mojom::Hint::CLIENT_DEVICE:
-            ctap_make_credential_request->extra->common.hints.push_back(
-                device::CredentialHint::kClientDevice);
-        break;
-      case blink::mojom::Hint::HYBRID:
-            ctap_make_credential_request->extra->common.hints.push_back(
-                device::CredentialHint::kHintHybrid);
-        break;
-    }
-  }
-  ctap_make_credential_request->extra->attestation_formats =
-      options->attestation_formats;
-  ctap_make_credential_request->extra->common.origin = caller_origin.Serialize();
-#endif  // BUILDFLAG(ARKWEB_FIDO)
-
   GetWebAuthenticationDelegate()->BrowserProvidedPasskeysAvailable(
       GetBrowserContext(),
       base::BindOnce(
@@ -1627,15 +1559,11 @@ void AuthenticatorCommonImpl::ContinueGetAssertionAfterRpIdCheck(
   req_state_->request_delegate->SetCredentialIdFilter(
       options->allow_credentials);
   if (options->is_conditional) {
-#if BUILDFLAG(ARKWEB_FIDO)
-    // No need to strip allowCredentials for OHOS.
-#else
     // Conditional mediation requests can only be fulfilled by discoverable
     // credentials. The provided allowCredentials list is stripped and will be
     // used to filter returned passkeys
     options->allow_credentials =
         std::vector<device::PublicKeyCredentialDescriptor>();
-#endif // BUILDFLAG(ARKWEB_FIDO)
   }
 
   if (options->allow_credentials.empty()) {
@@ -1673,10 +1601,6 @@ void AuthenticatorCommonImpl::ContinueGetAssertionAfterRpIdCheck(
       req_state_->client_data_json, options, req_state_->app_id);
   auto* ctap_get_assertion_request =
       &absl::get<device::CtapGetAssertionRequest>(req_state_->ctap_request);
-#if BUILDFLAG(ARKWEB_FIDO)
-  ctap_get_assertion_request->extra = CreateCtapGetAssertionRequestExtra(
-      caller_origin, options);
-#endif // BUILDFLAG(ARKWEB_FIDO)
 
   req_state_->request_options.emplace<device::CtapGetAssertionOptions>();
   auto* ctap_get_assertion_options =
@@ -1750,18 +1674,6 @@ void AuthenticatorCommonImpl::ContinueGetAssertionAfterIsUvpaaOverrideCheck(
 void AuthenticatorCommonImpl::GetClientCapabilities(
     url::Origin caller_origin,
     blink::mojom::Authenticator::GetClientCapabilitiesCallback callback) {
-#if BUILDFLAG(ARKWEB_FIDO)
-  if (device::OhosWebAuthnApi::Instance()->IsAvailable()) {
-    const auto capabilities = device::OhosAuthenticator::GetClientCapabilities();
-    std::vector<blink::mojom::WebAuthnClientCapabilityPtr> result;
-    result.reserve(capabilities.size());
-    for (const auto& capability : capabilities) {
-      result.push_back(MakeCapability(capability.first, capability.second));
-    }
-    std::move(callback).Run(std::move(result));
-    return;
-  }
-#endif // BUILDFLAG(ARKWEB_FIDO)
   // IsPPAA is computed based on the results of IsUVPAA and HybridTransport.
   auto completion_callback =
       base::BindOnce(&InsertIsPPAACapability).Then(std::move(callback));
@@ -2081,9 +1993,6 @@ void AuthenticatorCommonImpl::OnRegisterResponse(
     device::MakeCredentialStatus status_code,
     std::optional<device::AuthenticatorMakeCredentialResponse> response_data,
     const device::FidoAuthenticator* authenticator) {
-#if BUILDFLAG(ARKWEB_FIDO)
-  LOG(INFO) << "OnRegisterResponse(" << static_cast<int>(status_code) << ")";
-#endif // BUILDFLAG(ARKWEB_FIDO)
   CHECK(authenticator);
 
   if (!req_state_->request_handler) {
@@ -2097,34 +2006,6 @@ void AuthenticatorCommonImpl::OnRegisterResponse(
   req_state_->request_result = CredentialRequestResultFromCode(
       status_code == device::MakeCredentialStatus::kSuccess,
       authenticator->GetType());
-
-#if BUILDFLAG(ARKWEB_FIDO)
-  if (!response_data) {
-    CompleteMakeCredentialRequest(
-        blink::mojom::AuthenticatorStatus::NOT_ALLOWED_ERROR, nullptr,
-        nullptr, Focus::kDoCheck);
-    return;
-  }
-  if (response_data->response_extra) {
-    if (status_code != device::MakeCredentialStatus::kSuccess) {
-      CompleteMakeCredentialRequest(
-          blink::mojom::AuthenticatorStatus::NOT_ALLOWED_ERROR, nullptr,
-          nullptr, Focus::kDoCheck);
-    } else {
-      req_state_->request_delegate->OnTransactionSuccessful(
-          RequestSource(), device::FidoRequestType::kMakeCredential,
-          authenticator->GetType());
-      AttestationErasureOption attestation_erasure =
-          AttestationErasureOption::kIncludeAttestation;
-      CompleteMakeCredentialRequest(
-          blink::mojom::AuthenticatorStatus::SUCCESS,
-          CreateMakeCredentialResponse(std::move(*response_data),
-                                       attestation_erasure),
-          nullptr, Focus::kDoCheck);
-    }
-    return;
-  }
-#endif // BUILDFLAG(ARKWEB_FIDO)
 
   switch (status_code) {
     case device::MakeCredentialStatus::kUserConsentButCredentialExcluded:
@@ -2335,9 +2216,6 @@ void AuthenticatorCommonImpl::OnSignResponse(
     std::optional<std::vector<device::AuthenticatorGetAssertionResponse>>
         response_data,
     device::FidoAuthenticator* authenticator) {
-#if BUILDFLAG(ARKWEB_FIDO)
-  LOG(INFO) << "OnSignResponse(" << static_cast<int>(status_code) << ")";
-#endif // BUILDFLAG(ARKWEB_FIDO)
   CHECK(authenticator);
   DCHECK(!response_data || !response_data->empty());  // empty vector is invalid
 
@@ -2352,32 +2230,6 @@ void AuthenticatorCommonImpl::OnSignResponse(
   req_state_->request_result = CredentialRequestResultFromCode(
       status_code == device::GetAssertionStatus::kSuccess,
       authenticator->GetType());
-
-#if BUILDFLAG(ARKWEB_FIDO)
-  if (!response_data) {
-    CompleteGetAssertionRequest(
-        blink::mojom::AuthenticatorStatus::NOT_ALLOWED_ERROR);
-    return;
-  }
-  if (response_data->size() == 1) {
-    device::AuthenticatorGetAssertionResponse response =
-        std::move(response_data->at(0));
-    if (response.response_extra) {
-      if (status_code != device::GetAssertionStatus::kSuccess) {
-        CompleteGetAssertionRequest(
-            blink::mojom::AuthenticatorStatus::NOT_ALLOWED_ERROR);
-      } else {
-        req_state_->request_delegate->OnTransactionSuccessful(
-            RequestSource(), device::FidoRequestType::kGetAssertion,
-            authenticator->GetType());
-        CompleteGetAssertionRequest(
-            blink::mojom::AuthenticatorStatus::SUCCESS,
-            CreateGetAssertionResponse(std::move(response)));
-      }
-      return;
-    }
-  }
-#endif // BUILDFLAG(ARKWEB_FIDO)
 
   switch (status_code) {
     case device::GetAssertionStatus::kUserConsentButCredentialNotRecognized:
@@ -2633,26 +2485,6 @@ AuthenticatorCommonImpl::CreateMakeCredentialResponse(
     AttestationErasureOption attestation_erasure) {
   auto response = blink::mojom::MakeCredentialAuthenticatorResponse::New();
   auto common_info = blink::mojom::CommonCredentialInfo::New();
-#if BUILDFLAG(ARKWEB_FIDO)
-  if (response_data.response_extra) {
-    LOG(INFO) << "CreateMakeCredentialResponse response_extra";
-    common_info->client_data_json = response_data.response_extra->common.client_data_json;
-    common_info->raw_id = response_data.response_extra->common.raw_id;
-    common_info->id = Base64UrlEncodeChallenge(common_info->raw_id);
-    common_info->authenticator_data =
-        response_data.response_extra->common.authenticator_data;
-    response->info = std::move(common_info);
-    response->attestation_object = response_data.response_extra->attestation_object;
-    if (response_data.transports) {
-      response->transports.assign(
-          response_data.transports->begin(),
-          response_data.transports->end());
-    }
-    response->public_key_der = response_data.response_extra->public_key;
-    response->public_key_algo = response_data.response_extra->public_key_algorithm;
-    return response;
-  }
-#endif // BUILDFLAG(ARKWEB_FIDO)
   common_info->client_data_json.assign(req_state_->client_data_json.begin(),
                                        req_state_->client_data_json.end());
   common_info->raw_id = response_data.attestation_object.GetCredentialId();
@@ -2852,28 +2684,6 @@ AuthenticatorCommonImpl::CreateGetAssertionResponse(
     device::AuthenticatorGetAssertionResponse response_data) {
   auto response = blink::mojom::GetAssertionAuthenticatorResponse::New();
   auto common_info = blink::mojom::CommonCredentialInfo::New();
-
-#if BUILDFLAG(ARKWEB_FIDO)
-  if (response_data.response_extra) {
-    LOG(INFO) << "CreateGetAssertionResponse response_extra";
-    common_info->client_data_json = response_data.response_extra->common.client_data_json;
-    common_info->raw_id = response_data.response_extra->common.raw_id;
-    common_info->id = Base64UrlEncodeChallenge(common_info->raw_id);
-    common_info->authenticator_data =
-        response_data.response_extra->common.authenticator_data;
-    response->info = std::move(common_info);
-
-    response->authenticator_attachment =
-        response_data.response_extra->common.autenticator_attachment;
-    response->signature = response_data.response_extra->signature;
-    response->user_handle = response_data.response_extra->user_handle;
-    response->extensions =
-        blink::mojom::AuthenticationExtensionsClientOutputs::New();
-
-    return response;
-  }
-#endif // BUILDFLAG(ARKWEB_FIDO)
-
   auto response_extensions =
       blink::mojom::AuthenticationExtensionsClientOutputs::New();
   common_info->client_data_json.assign(req_state_->client_data_json.begin(),

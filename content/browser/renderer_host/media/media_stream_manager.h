@@ -74,7 +74,6 @@ class MediaStreamUIProxy;
 class PermissionControllerImpl;
 class VideoCaptureManager;
 class VideoCaptureProvider;
-class MediaStreamManagerExt;
 
 enum TransferState { KEPT_ALIVE, GOT_OPEN_DEVICE };
 
@@ -84,19 +83,6 @@ struct TransferStatus {
 };
 typedef std::map<const base::UnguessableToken, TransferStatus> TransferMap;
 
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-enum ScreenCaptureState {
-  SCREEN_CAPTURE_OPENED = 0,
-  SCREEN_CAPTURE_STOPED,
-  SCREEN_CAPTURE_ABORTED,
-};
-
-struct SessionIdState {
-  std::string session_id;
-  ScreenCaptureState state;
-};
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
-
 // MediaStreamManager is used to generate and close new media devices, not to
 // start the media flow. The classes requesting new media streams are answered
 // using callbacks.
@@ -104,8 +90,6 @@ class CONTENT_EXPORT MediaStreamManager
     : public MediaStreamProviderListener,
       public base::CurrentThread::DestructionObserver {
  public:
-  friend class MediaStreamManagerExt;
-
   // Callback to deliver the result of a media access request.
   using MediaAccessRequestCallback = base::OnceCallback<void(
       const blink::mojom::StreamDevicesSet& stream_devices_set,
@@ -476,10 +460,6 @@ class CONTENT_EXPORT MediaStreamManager
 
   std::optional<url::Origin> GetOriginByVideoSessionId(
       const base::UnguessableToken& session_id);
-
-  virtual MediaStreamManagerExt* AsMediaStreamManagerExt() {
-    return nullptr;
-  }
 
  private:
   friend class MediaStreamManagerTest;
@@ -883,14 +863,8 @@ class CONTENT_EXPORT MediaStreamManager
 
   std::unique_ptr<media::SystemEventMonitorImpl> system_event_monitor_;
 #endif
-
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  std::map<std::string, int> nweb_id_maps_;
-  mutable std::mutex nweb_id_mutex_;
-  std::list<SessionIdState> session_id_state_;
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 };
+
 }  // namespace content
-#include "arkweb/chromium_ext/content/browser/renderer_host/media/media_stream_manager_ext.h"
 
 #endif  // CONTENT_BROWSER_RENDERER_HOST_MEDIA_MEDIA_STREAM_MANAGER_H_

@@ -9,7 +9,6 @@
 
 #include "base/functional/callback.h"
 #include "base/time/time.h"
-#include "arkweb/build/features/features.h"
 
 namespace media {
 enum class MediaContentType;
@@ -91,11 +90,6 @@ class MediaSessionPlayerObserver {
 
   // Returns true if the |player_id| has video tracks.
   virtual bool HasVideo(int player_id) const = 0;
-
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  // Set to use the given |player_id| to control the HTML play of the media
-  virtual void OnSetHtmlPlayEnabled(int player_id, bool enabled) {}
-#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   // Returns true if `player_id` is paused.
   virtual bool IsPaused(int player_id) const = 0;

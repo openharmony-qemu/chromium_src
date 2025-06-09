@@ -104,10 +104,6 @@ ThreadPoolImpl::ThreadPoolImpl(std::string_view histogram_label,
             : kForegroundPoolEnvironmentParams.thread_type_hint,
         task_tracker_->GetTrackedRef(), tracked_ref_factory_.GetTrackedRef());
   }
-
-  // After https://crrev.com/e2e090c363 the ThreadPool is being created earlier
-  // during initialization. Detach now so we can rebind later on the UI thread.
-  DETACH_FROM_SEQUENCE(sequence_checker_);
 }
 
 ThreadPoolImpl::~ThreadPoolImpl() {

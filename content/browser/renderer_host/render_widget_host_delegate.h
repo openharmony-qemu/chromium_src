@@ -59,9 +59,7 @@ class RenderViewHostDelegateView;
 class TextInputManager;
 class VisibleTimeRequestTrigger;
 enum class KeyboardEventProcessingResult;
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-enum class RendererIsUnresponsiveReason;
-#endif
+
 //
 // RenderWidgetHostDelegate
 //
@@ -164,10 +162,6 @@ class CONTENT_EXPORT RenderWidgetHostDelegate {
   // currently focused frame.
   virtual void SelectRange(const gfx::Point& base, const gfx::Point& extent) {}
 
-#if BUILDFLAG(ARKWEB_MENU)
-  virtual void SelectRangeV2(const gfx::Point& position, bool is_base) {}
-#endif
-
   // Requests the renderer to select text around the current caret position.
   // Currently supports word and sentence granularities.
   virtual void SelectAroundCaret(blink::mojom::SelectionGranularity granularity,
@@ -204,13 +198,7 @@ class CONTENT_EXPORT RenderWidgetHostDelegate {
   // See also WebContentsDelegate::RendererUnresponsive.
   virtual void RendererUnresponsive(
       RenderWidgetHostImpl* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-      ,
-      content::RendererIsUnresponsiveReason reason
-#endif
-  ) {
-  }
+      base::RepeatingClosure hang_monitor_restarter) {}
 
   // Notification that a previously unresponsive renderer has become
   // responsive again. The delegate can use this notification to end the

@@ -280,7 +280,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling V8
   # and whatever else without interference from each other.
-  'v8_revision': 'e5e3a537ff8b0c58757482cdda2627b0f11e3932',
+  'v8_revision': '210ec27ca748c70580fe374f9811761667312b41',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling ANGLE
   # and whatever else without interference from each other.
@@ -1277,7 +1277,7 @@ deps = {
 
   'src/clank': {
     'url': Var('chrome_git') + '/clank/internal/apps.git' + '@' +
-    'af8bfbeaee8aeade4278f866b6a26073f4896f05',
+    '2a522f492943cd51b74f442241518fb7623b4f2b',
     'condition': 'checkout_android and checkout_src_internal',
   },
 
@@ -2132,7 +2132,7 @@ deps = {
       'packages': [
           {
               'package': 'infra/3pp/tools/7z/${{platform}}',
-              'version': 'version:3@24.09',
+              'version': 'version:2@22.01',
           },
       ],
       'condition': 'checkout_win',
@@ -2143,7 +2143,7 @@ deps = {
       'packages': [
           {
               'package': 'infra/3pp/tools/7z/windows-amd64',
-              'version': 'version:3@24.09',
+              'version': 'version:2@22.01',
           },
       ],
       'condition': 'checkout_win',
@@ -4244,7 +4244,7 @@ deps = {
   # grepping.
   'src/chrome/installer/mac/internal': {
       'url': Var('chrome_git') + '/chrome/installer/mac/internal.git' + '@' +
-        '4bac26477e63edd1db3d6fd771236798ec4adc97',
+        '85c282fe6f2763822964028cb89be7b808b07169',
       'condition': 'checkout_src_internal',
   },
 
@@ -4404,7 +4404,7 @@ deps = {
 
   'src/ios_internal':  {
       'url': Var('chrome_git') + '/chrome/ios_internal.git' + '@' +
-        '0a172a302797e91c866671c53cf2ebdd2e6e5f38',
+        '1c39c1305fe3be4784572b7509c1f2600f2c5e3e',
       'condition': 'checkout_ios and checkout_src_internal',
   },
 

@@ -436,16 +436,6 @@ void MimeUtil::AddSupportedMediaFormats() {
     AddContainerWithCodecs("audio/x-mpegurl", hls_codecs);
   }
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ENABLE_HLS_DEMUXER)
-
-#if BUILDFLAG(ARKWEB_MEDIA)
-  if (base::FeatureList::IsEnabled(kCanPlayHls)) {
-    CodecSet hls_codecs{H264,
-                        MP3,
-                        MPEG4_AAC};
-    AddContainerWithCodecs("application/x-mpegurl", hls_codecs);
-  }
-#endif
-
 #endif  // BUILDFLAG(USE_PROPRIETARY_CODECS)
 }
 

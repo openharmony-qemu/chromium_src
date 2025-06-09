@@ -7,7 +7,6 @@
 
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "build/build_config.h"
 #include "content/common/buildflags.h"
@@ -18,13 +17,6 @@
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
 #include "ui/base/dragdrop/mojom/drag_drop_types.mojom-forward.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-#include "ui/gfx/geometry/rect.h"
-#endif
 namespace blink {
 class WebGestureEvent;
 }
@@ -35,9 +27,6 @@ class Rect;
 class Vector2d;
 #if BUILDFLAG(IS_OHOS)
 class Point;
-#endif
-#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
-class Insets;
 #endif
 }
 
@@ -57,10 +46,6 @@ class RenderWidgetHostImpl;
 struct ContextMenuParams;
 struct DropData;
 
-#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
-class WebContents;
-#endif
-
 // This class provides a way for the RenderViewHost to reach out to its
 // delegate's view.
 class CONTENT_EXPORT RenderViewHostDelegateView {
@@ -73,19 +58,6 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   // see https://crbug.com/1257907#c14).
   virtual void ShowContextMenu(RenderFrameHost& render_frame_host,
                                const ContextMenuParams& params) {}
-#if BUILDFLAG(ARKWEB_MENU)
-  virtual void MouseSelectMenuShow(bool show) {}
-  virtual void ChangeVisibilityOfQuickMenu() {}
-#endif
-
-#if BUILDFLAG(ARKWEB_AI)
-  virtual void CloseImageOverlaySelection() {}
-  virtual void OnOverlayZoomChanged() {}
-#endif  // BUILDFLAG(ARKWEB_AI)
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  virtual gfx::Rect GetVisibleRectToWeb() {return gfx::Rect();}
-#endif
 
   // The user started dragging content of the specified type within the
   // `blink::WebView`. Contextual information about the dragged content is
@@ -142,11 +114,7 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   virtual void TakeFocus(bool reverse) {}
 
   // Returns the height of the top controls in physical pixels (not DIPs).
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  virtual int GetTopControlsHeight();
-#else
   virtual int GetTopControlsHeight() const;
-#endif
 
   // Returns the minimum visible height the top controls can have in physical
   // pixels (not DIPs).
@@ -195,19 +163,11 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   virtual ui::OverscrollRefreshHandler* GetOverscrollRefreshHandler() const;
 #endif
 
-#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
-  virtual void OnSafeInsetsChange(const gfx::Insets& safe_insets) {}
-#endif
-
-#if BUILDFLAG(ARKWEB_AI)
+#if BUILDFLAG(IS_OHOS)
   virtual void CreateOverlay(const gfx::ImageSkia& image,
                              const gfx::Rect& image_rect,
-                             const gfx::Point& touch_point) {}
-  virtual void OnOverlayStateChanged(const gfx::Rect& image_rect) {}
-#endif
-
-#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
-  virtual WebContents* GetWebContents() { return nullptr; }
+                             const gfx::Point& touch_point,
+                             const gfx::Rect& screen_rect) {}
 #endif
 
  protected:

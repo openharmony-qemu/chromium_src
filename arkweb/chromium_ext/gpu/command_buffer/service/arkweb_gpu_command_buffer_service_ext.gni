@@ -1,8 +1,0 @@
-arkweb_gpu_command_buffer_service_sources = [
-    "//arkweb/chromium_ext/gpu/command_buffer/service/abstract_texture_ohos.cc",
-    "//arkweb/chromium_ext/gpu/command_buffer/service/abstract_texture_ohos.h",
-]
-
-arkweb_gpu_command_buffer_service_unittest = [
-    # "//arkweb/chromium_ext/gpu/command_buffer/service/abstract_texture_ohos_unittest.cc",
-]

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "gpu/config/gpu_finch_features.h"
-#include "arkweb/build/features/features.h"
 
 #include "base/command_line.h"
 #include "base/feature_list.h"
@@ -30,8 +29,6 @@
 #include "base/mac/mac_util.h"
 #include "base/system/sys_info.h"
 #endif  // BUILDFLAG(IS_MAC)
-
-#include "arkweb/chromium_ext/gpu/config/gpu_finch_features_ext.h"
 
 namespace features {
 namespace {
@@ -232,7 +229,7 @@ BASE_FEATURE(kVaapiWebPImageDecodeAcceleration,
 // Note Android WebView uses kWebViewDrawFunctorUsesVulkan instead of this.
 BASE_FEATURE(kVulkan,
              "Vulkan",
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_VULKAN)
+#if BUILDFLAG(IS_ANDROID)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -287,7 +284,7 @@ BASE_FEATURE(kWebGPUUseTintIR,
 #endif
 );
 
-#if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#if BUILDFLAG(IS_ANDROID)
 
 const base::FeatureParam<std::string> kVulkanBlockListByHardware{
     &kVulkan, "BlockListByHardware", ""};
@@ -473,7 +470,7 @@ bool UseGles2ForOopR() {
 }
 
 bool IsUsingVulkan() {
-#if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#if BUILDFLAG(IS_ANDROID)
   // Force on if Vulkan feature is enabled from command line.
   base::FeatureList* feature_list = base::FeatureList::GetInstance();
   if (feature_list &&
@@ -520,8 +517,7 @@ bool IsUsingVulkan() {
     return false;
 
   return true;
-#elif BUILDFLAG(ARKWEB_VULKAN)
-  return features::IsEnableVulkan();
+
 #else
   return base::FeatureList::IsEnabled(kVulkan);
 #endif
@@ -568,8 +564,10 @@ bool IsDrDcEnabled() {
 
   if (!base::FeatureList::IsEnabled(kEnableDrDc))
     return false;
-#elif BUILDFLAG(ARKWEB_DRDC)
-  return features::IsDrDcForVulkan();
+
+  return true;
+#elif BUILDFLAG(IS_OHOS)
+  return base::FeatureList::IsEnabled(kEnableDrDc);
 #else
   return false;
 #endif

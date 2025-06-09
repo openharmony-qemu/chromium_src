@@ -92,7 +92,6 @@ enum BasePathKey {
   DIR_TEST_DATA,           // Directory containing test data for //base tests.
                            // Only for use in base_unittests. Equivalent to
                            // DIR_SRC_TEST_DATA_ROOT + "/base/test/data".
-  DIR_SOURCE_ROOT = DIR_OUT_TEST_DATA_ROOT,
 
   PATH_END
 };

@@ -1,89 +1,50 @@
-// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of
+ *    conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list
+ *    of conditions and the following disclaimer in the documentation and/or other materials
+ *    provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used
+ *    to endorse or promote products derived from this software without specific prior written
+ *    permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 import { ContainerModule } from 'inversify';
 
-import AccessibilityAdapter from '../adapter/AccessibilityAdapter';
-import AppLifecycleAdapter from '../adapter/AppLifecycleAdapter';
-import AppWindowAdapter from '../adapter/AppWindowAdapter';
-import BatteryAdapter from '../adapter/BatteryAdapter';
-import BluetoothAdapter from '../adapter/BluetoothAdapter';
-import BluetoothLowEnergyAdapter from '../adapter/BluetoothLowEnergyAdapter';
-import CertManagerAdapter from '../adapter/CertManagerAdapter';
-import ContextPathAdapter from '../adapter/ContextPathAdapter';
-import CursorAdapter from '../adapter/CursorAdapter';
-import DefaultApplicationAdapter from '../adapter/DefaultApplicationAdapter';
-import DeviceAdapter from '../adapter/DeviceAdapter';
-import DeviceInfoAdapter from '../adapter/DeviceInfoAdapter';
-import DeviceUserAuthAdapter from '../adapter/DeviceUserAuthAdapter';
-import DisplayAdapter from '../adapter/DisplayAdapter';
-import DragDropAdapter from '../adapter/DragDropAdapter';
-import ExternalProtocolAdapter from '../adapter/ExternalProtocolAdapter';
-import FileManagerAdapter from '../adapter/FileManagerAdapter';
-import FilePickerAdapter from '../adapter/FilePickerAdapter';
-import FontAdapter from '../adapter/FontAdapter';
-import GeolocationAdapter from '../adapter/GeolocationAdapter';
-import I18nAdapter from '../adapter/I18nAdapter';
-import IMFAdapter from '../adapter/IMFAdapter';
-import MediaAdapter from '../adapter/MediaAdapter';
-import MimeTypeAdapter from '../adapter/MimeTypeAdapter';
-import MultiInputAdapter from '../adapter/MultiInputAdapter';
-import NativeThemeAdapter from '../adapter/NativeThemeAdapter';
-import NetConnectionAdapter from '../adapter/NetConnectionAdapter';
-import NotificationAdapter from '../adapter/NotificationAdapter';
-import OcrAdapter from '../adapter/OcrAdapter';
-import PasteBoardAdapter from '../adapter/PasteBoardApadter';
-import PermissionManagerAdapter from '../adapter/PermissionManagerAdapter';
-import PowerMonitorAdapter from '../adapter/PowerMonitorAdapter';
-import PrintAdapter from '../adapter/PrintAdapter';
-import ProcessAdapter from '../adapter/ProcessAdapter';
-import RunningLockAdapter from '../adapter/RunningLockAdapter';
-import ScreenlockMonitorAdapter from '../adapter/ScreenlockMonitorAdapter';
-import ShapeDetectionAdapter from '../adapter/ShapeDetectionAdapter';
-import SpeechAdapter from '../adapter/SpeechAdapter';
-import SubWindowAdapter from '../adapter/SubWindowAdapter';
-import TracingAdapter from '../adapter/TracingAdapter';
 
+import lazy { ContextAdapter } from '../adapter/ContextAdapter';
+import lazy { ContextPathAdapter } from '../adapter/ContextPathAdapter';
+import lazy { DisplayAdapter } from '../adapter/DisplayAdapter';
+import lazy { DragDropAdapter } from '../adapter/DragDropAdapter';
+import lazy { MultiInputAdapter } from '../adapter/MultiInputAdapter';
+import lazy { NativeThemeAdapter } from '../adapter/NativeThemeAdapter';
+import lazy { PermissionManagerAdapter } from '../adapter/PermissionManagerAdapter';
+
+// Only the adapters which used in WebAbility or WebWindow should be added here.
 export const adapterModule = new ContainerModule((bind) => {
-  bind(AccessibilityAdapter).toSelf();
-  bind(AppLifecycleAdapter).toSelf();
-  bind(AppWindowAdapter).toSelf();
-  bind(BatteryAdapter).toSelf();
-  bind(BluetoothAdapter).toSelf();
-  bind(BluetoothLowEnergyAdapter).toSelf();
-  bind(CertManagerAdapter).toSelf();
-  bind(ContextPathAdapter).toSelf();
-  bind(CursorAdapter).toSelf();
-  bind(DefaultApplicationAdapter).toSelf();
-  bind(DeviceAdapter).toSelf();
-  bind(DeviceInfoAdapter).toSelf();
-  bind(DeviceUserAuthAdapter).toSelf();
+  bind(ContextAdapter).toSelf();
   bind(DisplayAdapter).toSelf();
   bind(DragDropAdapter).toSelf();
-  bind(ExternalProtocolAdapter).toSelf();
-  bind(FileManagerAdapter).toSelf();
-  bind(FilePickerAdapter).toSelf();
-  bind(FontAdapter).toSelf();
-  bind(GeolocationAdapter).toSelf();
-  bind(I18nAdapter).toSelf();
-  bind(IMFAdapter).toSelf();
-  bind(MediaAdapter).toSelf();
-  bind(MimeTypeAdapter).toSelf();
   bind(MultiInputAdapter).toSelf();
   bind(NativeThemeAdapter).toSelf();
-  bind(NetConnectionAdapter).toSelf();
-  bind(NotificationAdapter).toSelf();
-  bind(OcrAdapter).toSelf();
-  bind(PasteBoardAdapter).toSelf();
+  bind(ContextPathAdapter).toSelf();
   bind(PermissionManagerAdapter).toSelf();
-  bind(PowerMonitorAdapter).toSelf();
-  bind(PrintAdapter).toSelf();
-  bind(ProcessAdapter).toSelf();
-  bind(RunningLockAdapter).toSelf();
-  bind(ScreenlockMonitorAdapter).toSelf();
-  bind(ShapeDetectionAdapter).toSelf();
-  bind(SpeechAdapter).toSelf();
-  bind(SubWindowAdapter).toSelf();
-  bind(TracingAdapter).toSelf();
 });

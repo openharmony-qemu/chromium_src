@@ -946,11 +946,7 @@ InteractionSequence::StepBuilder InteractiveTestApi::PollState(
     StateIdentifier<PollingStateObserver<T>> id,
     C&& callback,
     base::TimeDelta polling_interval) {
-#if defined(__clang__) && (__clang_major__ < 17)
-  using Cb = typename PollingStateObserver<T>::PollCallback;
-#else
   using Cb = PollingStateObserver<T>::PollCallback;
-#endif
   auto step = CheckElement(
       internal::kInteractiveTestPivotElementId,
       base::BindOnce(
@@ -975,11 +971,7 @@ InteractionSequence::StepBuilder InteractiveTestApi::PollElement(
     ui::ElementIdentifier element_identifier,
     C&& callback,
     base::TimeDelta polling_interval) {
-#if defined(__clang__) && (__clang_major__ < 17)
-  using Cb = typename PollingElementStateObserver<T>::PollElementCallback;
-#else
   using Cb = PollingElementStateObserver<T>::PollElementCallback;
-#endif
   auto step = WithElement(
       internal::kInteractiveTestPivotElementId,
       base::BindOnce(

@@ -120,7 +120,6 @@ source_set("app") {
 
   configs += extra_configs
   deps = content_app_deps + [ "//ipc" ]
-  deps += [ "//third_party:huawei_securec" ]
 
   public_deps = [ ":content_main_runner_app" ]
 

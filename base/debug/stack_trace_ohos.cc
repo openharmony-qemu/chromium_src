@@ -1,6 +1,31 @@
-// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of
+ *    conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list
+ *    of conditions and the following disclaimer in the documentation and/or other materials
+ *    provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used
+ *    to endorse or promote products derived from this software without specific prior written
+ *    permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "base/debug/stack_trace.h"
 
@@ -10,12 +35,7 @@
 #include <cstddef>
 #include <ostream>
 
-#include "arkweb/build/features/features.h"
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#include "base/containers/heap_array.h"
-#include "base/containers/span.h"
 #include "base/containers/span_writer.h"
-#endif
 #include "base/debug/proc_maps_linux.h"
 #include "base/logging.h"
 #include "base/stl_util.h"
@@ -72,70 +92,6 @@ namespace base {
 namespace debug {
 
 namespace internal {
-char* itoa_r(intptr_t i, char* buf, size_t sz, int base, size_t padding) {
-  // Make sure we can write at least one NUL byte.
-  size_t n = 1;
-  if (n > sz) {
-    return nullptr;
-  }
-
-  if (base < 2 || base > 16) {
-    buf[0] = '\000';
-    return nullptr;
-  }
-
-  char* start = buf;
-
-  uintptr_t j = i;
-
-  // Handle negative numbers (only for base 10).
-  if (i < 0 && base == 10) {
-    // This does "j = -i" while avoiding integer overflow.
-    j = static_cast<uintptr_t>(-(i + 1)) + 1;
-
-    // Make sure we can write the '-' character.
-    if (++n > sz) {
-      buf[0] = '\000';
-      return nullptr;
-    }
-    *start++ = '-';
-  }
-
-  // Loop until we have converted the entire number. Output at least one
-  // character (i.e. '0').
-  char* ptr = start;
-  do {
-    // Make sure there is still enough space left in our output buffer.
-    if (++n > sz) {
-      buf[0] = '\000';
-      return nullptr;
-    }
-
-    // Output the next digit.
-    *ptr++ = "0123456789abcdef"[j % base];
-    j /= base;
-
-    if (padding > 0) {
-      padding--;
-    }
-  } while (j > 0 || padding > 0);
-
-  // Terminate the output with a NUL character.
-  *ptr = '\000';
-
-  // Conversion to ASCII actually resulted in the digits being in reverse
-  // order. We can't easily generate them in forward order, as we can't tell
-  // the number of characters needed until we are done converting.
-  // So, now, we reverse the string (except for the possible "-" sign).
-  while (--ptr > start) {
-    char ch = *ptr;
-    *ptr = *start;
-    *start++ = ch;
-  }
-  return buf;
-}
-
-#if BUILDFLAG(ARKWEB_UNITTESTS)
 void itoa_r(intptr_t i, int base, size_t padding, base::span<char> buf) {
   // Make sure we can write at least one NUL byte.
   if (buf.empty()) {
@@ -176,8 +132,9 @@ void itoa_r(intptr_t i, int base, size_t padding, base::span<char> buf) {
     }
     j /= static_cast<uintptr_t>(base);
 
-    if (padding > 0)
+    if (padding > 0) {
       padding--;
+    }
   } while (j > 0 || padding > 0);
 
   // Terminate the output with a NUL character.
@@ -192,7 +149,6 @@ void itoa_r(intptr_t i, int base, size_t padding, base::span<char> buf) {
   // string (except for the possible "-" sign and the NUL terminator).
   std::ranges::reverse(buf.first(writer.num_written() - 1u).subspan(start));
 }
-#endif
 }  // namespace internal
 
 bool EnableInProcessStackDumping() {

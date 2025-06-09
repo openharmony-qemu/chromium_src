@@ -14,10 +14,6 @@
 #include "media/mojo/mojom/renderer_extensions.mojom.h"
 #include "third_party/blink/public/platform/browser_interface_broker_proxy.h"
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-#include "arkweb/chromium_ext/content/renderer/media_interface_factory_for_include.cc"
-#endif
-
 namespace content {
 
 MediaInterfaceFactory::MediaInterfaceFactory(
@@ -141,7 +137,7 @@ void MediaInterfaceFactory::CreateCastRenderer(
 }
 #endif
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+#if BUILDFLAG(IS_ANDROID)
 void MediaInterfaceFactory::CreateMediaPlayerRenderer(
     mojo::PendingRemote<media::mojom::MediaPlayerRendererClientExtension>
         client_extension_remote,
@@ -163,9 +159,7 @@ void MediaInterfaceFactory::CreateMediaPlayerRenderer(
       std::move(client_extension_remote), std::move(receiver),
       std::move(renderer_extension_receiver));
 }
-#endif // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
 
-#if BUILDFLAG(IS_ANDROID)
 void MediaInterfaceFactory::CreateFlingingRenderer(
     const std::string& presentation_id,
     mojo::PendingRemote<media::mojom::FlingingRendererClientExtension>

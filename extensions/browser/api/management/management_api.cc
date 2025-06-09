@@ -9,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
 #include "base/json/json_writer.h"
@@ -789,10 +788,6 @@ ExtensionFunction::ResponseAction ManagementUninstallFunctionBase::Uninstall(
   if (show_confirm_dialog && !user_gesture()) {
     return RespondNow(Error(keys::kGestureNeededForUninstallError));
   }
-
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  show_confirm_dialog = false;
-#endif
 
   if (show_confirm_dialog) {
     // We show the programmatic uninstall ui for extensions uninstalling

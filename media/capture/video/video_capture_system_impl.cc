@@ -101,7 +101,6 @@ void VideoCaptureSystemImpl::GetDeviceInfosAsync(
 
 VideoCaptureErrorOrDevice VideoCaptureSystemImpl::CreateDevice(
     const std::string& device_id) {
-  LOG(INFO) << "CreateDevice device_id: " << device_id;
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("video_and_image_capture"),
                "VideoCaptureSystemImpl::CreateDevice");
   DCHECK(thread_checker_.CalledOnValidThread());

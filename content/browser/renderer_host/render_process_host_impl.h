@@ -14,7 +14,6 @@
 #include <string>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_forward.h"
@@ -116,10 +115,6 @@ namespace android {
 enum class ChildBindingState;
 }
 #endif
-#if BUILDFLAG(ARKWEB_THEME_FONT)
-class File;
-class FilePath;
-#endif
 }  // namespace base
 
 namespace blink {
@@ -170,10 +165,6 @@ class RenderWidgetHelper;
 class SiteInfo;
 class SiteInstance;
 class SiteInstanceImpl;
-#if BUILDFLAG(IS_ARKWEB)
-class ArkwebRenderProcessHostImplUtils;
-class ArkwebRenderProcessHostImplExt;
-#endif
 enum class ProcessReusePolicy;
 struct ChildProcessTerminationInfo;
 struct GlobalRenderFrameHostId;
@@ -181,15 +172,6 @@ struct GlobalRenderFrameHostId;
 typedef base::Thread* (*RendererMainThreadFactoryFunction)(
     const InProcessChildThreadParams& params,
     int32_t renderer_client_id);
-
-#if BUILDFLAG(ARKWEB_THEME_FONT)
-struct ThemeFont {
-  base::FilePath flag_path;
-  base::FilePath manifest_path;
-  base::FilePath font_path;
-  base::File font_file;
-};
-#endif
 
 // Implements a concrete RenderProcessHost for the browser process for talking
 // to actual renderer processes (as opposed to mocks).
@@ -223,13 +205,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
 {
  public:
-#if BUILDFLAG(IS_ARKWEB)
-  friend class ArkwebRenderProcessHostImplUtils;
-  friend class ArkwebRenderProcessHostImplExt;
-  virtual ArkwebRenderProcessHostImplExt* AsArkwebRenderProcessHostImplExt() {
-    return nullptr;
-  }
-#endif
   // Special depth used when there are no RenderProcessHostPriorityClients.
   static const unsigned int kMaxFrameDepthForPriority;
 
@@ -462,7 +437,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
   //  - Process reuse timer (experimental):
   //    Keeps the process alive for a set period of time in case it can be
   //    reused for the same site. See https://crbug.com/894253.
-
   void IncrementKeepAliveRefCount(uint64_t handle_id_);
   void DecrementKeepAliveRefCount(uint64_t handle_id_);
 
@@ -698,7 +672,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
   }
 
   bool is_initialized() const { return is_initialized_; }
-  bool is_dead() const { return is_dead_; }
 
   // Ensures that this process is kept alive for the specified timeouts. This
   // delays by |unload_handler_timeout| to ensure that unload handlers have a
@@ -931,9 +904,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
   friend class VisitRelayingRenderProcessHost;
   friend class StoragePartitonInterceptor;
   friend class RenderProcessHostTestBase;
-#if BUILDFLAG(IS_ARKWEB)
-  std::unique_ptr<ArkwebRenderProcessHostImplUtils> arkweb_render_process_host_impl_utils_;
-#endif
   // TODO(crbug.com/40142495): This class is a friend so that it can call our
   // private mojo implementation methods, acting as a pass-through. This is only
   // necessary during the associated interface migration, after which,
@@ -997,12 +967,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
     static void BindHostReceiverOnUIThread(
         base::WeakPtr<RenderProcessHostImpl> weak_host,
         mojo::GenericPendingReceiver receiver);
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-    void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t role) override;
-    void ReportKeyThreadIds(int32_t status, int32_t process_id,
-    const std::vector<int32_t>& thread_ids, int32_t role) override;
-#endif
 
     const int render_process_id_;
     const base::WeakPtr<RenderProcessHostImpl> weak_host_;

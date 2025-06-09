@@ -820,14 +820,6 @@ message EventLatency {
     GESTURE_PINCH_UPDATE = 25;
     INERTIAL_GESTURE_SCROLL_UPDATE = 26;
     MOUSE_MOVED_EVENT = 27;
-
-    // #if BUILDFLAG(ARKWEB_DRAG_DROP)
-    GESTURE_DRAG_LONG_PRESS = 28;
-    // #endif
-
-    // #if BUILDFLAG(ARKWEB_AI)
-    GESTURE_CREATE_OVERLAY = 29;
-    // #endif
   }
 
   optional EventType event_type = 1;
@@ -2157,14 +2149,6 @@ message ChromeLatencyInfo2 {
     POINTER_RAW_UPDATE_EVENT = 40;
     POINTER_CANCEL_EVENT = 41;
     POINTER_CAUSED_UA_ACTION_EVENT = 42;
-
-    // #if BUILDFLAG(ARKWEB_DRAG_DROP)
-    GESTURE_DRAG_LONG_PRESS_EVENT = 43;
-    // #endif
-
-    // #if BUILDFLAG(ARKWEB_AI)
-    GESTURE_CREATE_OVERLAY_EVENT = 44;
-    // #endif
   }
 
   // The type of input corresponding to this `ChromeLatencyInfo`.

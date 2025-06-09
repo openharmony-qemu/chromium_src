@@ -36,7 +36,6 @@
 #include "third_party/blink/public/mojom/widget/record_content_to_visible_time_request.mojom-forward.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_MAC)
 #include "third_party/blink/public/mojom/webshare/webshare.mojom.h"
@@ -47,9 +46,7 @@ class CrossProcessFrameConnector;
 class RenderWidgetHost;
 class RenderWidgetHostViewChildFrameTest;
 class TouchSelectionControllerClientChildFrame;
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-class RenderWidgetHostViewChildFrameExt;
-#endif
+
 // RenderWidgetHostViewChildFrame implements the view for a RenderWidgetHost
 // associated with content being rendered in a separate process from
 // content that is embedding it. This is not a platform-specific class; rather,
@@ -64,13 +61,6 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
       public RenderFrameMetadataProvider::Observer,
       public viz::HostFrameSinkClient {
  public:
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  friend class RenderWidgetHostViewChildFrameExt;
-  virtual RenderWidgetHostViewChildFrameExt*
-  AsWebRenderWidgetHostViewChildFrameExt() {
-    return nullptr;
-  }
-#endif
   // TODO(crbug.com/40170974): Pass multi-screen info from the parent.
   static RenderWidgetHostViewChildFrame* Create(
       RenderWidgetHost* widget,
@@ -103,9 +93,6 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
   bool IsShowing() override;
   void WasUnOccluded() override;
   void WasOccluded() override;
-#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
-  void EvictFrameBackBuffers(bool) override {}
-#endif
   gfx::Rect GetViewBounds() override;
   gfx::Size GetVisibleViewportSize() override;
   void SetInsets(const gfx::Insets& insets) override;
@@ -356,7 +343,5 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
 };
 
 }  // namespace content
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-#include "arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_view_child_frame_ext.h"
-#endif
+
 #endif  // CONTENT_BROWSER_RENDERER_HOST_RENDER_WIDGET_HOST_VIEW_CHILD_FRAME_H_

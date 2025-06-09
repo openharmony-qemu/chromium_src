@@ -5,7 +5,6 @@
 #ifndef UI_GL_SHARED_GL_FENCE_EGL_H_
 #define UI_GL_SHARED_GL_FENCE_EGL_H_
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/synchronization/lock.h"
@@ -40,9 +39,6 @@ class GL_EXPORT SharedGLFenceEGL
   virtual ~SharedGLFenceEGL();
 
  private:
-#if BUILDFLAG(ARKWEB_DRDC)
-  std::string gpu_version_;
-#endif
   friend class base::RefCountedThreadSafe<SharedGLFenceEGL>;
 
   std::unique_ptr<GLFenceEGL> egl_fence_ GUARDED_BY(lock_);

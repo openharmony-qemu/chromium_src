@@ -122,14 +122,6 @@ UMAEventType GestureTouchUMAHistogram::UMAEventTypeFromEvent(
       return UMA_ET_GESTURE_SHORT_PRESS;
     case EventType::kGestureLongPress:
       return UMA_ET_GESTURE_LONG_PRESS;
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-    case EventType::kGestureDragLongPress:
-      return UMA_ET_GESTURE_DRAG_LONG_PRESS;
-#endif
-#if BUILDFLAG(ARKWEB_AI)
-    case EventType::kGestureCreateOverlay:
-      return UMA_ET_GESTURE_CREATE_OVERLAY;
-#endif
     case EventType::kGestureLongTap:
       return UMA_ET_GESTURE_LONG_TAP;
     case EventType::kGestureSwipe: {

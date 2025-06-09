@@ -10,7 +10,6 @@
 #include <memory>
 #include <utility>
 
-#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
@@ -112,8 +111,6 @@ base::ProcessId GetSelfPID() {
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #if BUILDFLAG(IS_NACL)
   return -1;
-#elif BUILDFLAG(IS_ARKWEB)
-  return base::GetCurrentRealPid();
 #else
   return base::GetCurrentProcId();
 #endif  // BUILDFLAG(IS_NACL)

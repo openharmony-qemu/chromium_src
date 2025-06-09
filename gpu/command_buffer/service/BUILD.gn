@@ -8,11 +8,6 @@ import("//skia/features.gni")
 import("//third_party/dawn/scripts/dawn_features.gni")
 import("//third_party/protobuf/proto_library.gni")
 import("//ui/gl/features.gni")
-import("//arkweb/chromium_ext/chromium_ext.gni")
-
-if (is_arkweb) {
-  import("//arkweb/build/features/features.gni")
-}
 
 group("service") {
   if (is_component_build) {
@@ -233,8 +228,6 @@ target(link_target_type, "gles2_sources") {
     "service_font_manager.h",
     "service_transfer_cache.cc",
     "service_transfer_cache.h",
-    "../../../arkweb/chromium_ext/gpu/command_buffer/service/service_transfer_cache_ext.cc",
-    "../../../arkweb/chromium_ext/gpu/command_buffer/service/service_transfer_cache_ext.h",
     "service_utils.cc",
     "service_utils.h",
     "shader_manager.cc",
@@ -271,13 +264,10 @@ target(link_target_type, "gles2_sources") {
     "shared_image/raw_draw_image_backing_factory.h",
     "shared_image/shared_image_backing.cc",
     "shared_image/shared_image_backing.h",
-    "../../../arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_backing_factory_ext.h",
     "shared_image/shared_image_backing_factory.cc",
     "shared_image/shared_image_backing_factory.h",
     "shared_image/shared_image_factory.cc",
     "shared_image/shared_image_factory.h",
-    "../../../arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_factory_ext.cc",
-    "../../../arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_factory_ext.h",
     "shared_image/shared_image_format_service_utils.cc",
     "shared_image/shared_image_format_service_utils.h",
     "shared_image/shared_image_gl_utils.cc",
@@ -324,31 +314,34 @@ target(link_target_type, "gles2_sources") {
     "webgpu_decoder.h",
   ]
 
-  if (arkweb_same_layer) {
-    import("//arkweb/chromium_ext/gpu/command_buffer/service/arkweb_gpu_command_buffer_service_ext.gni")
-    sources += arkweb_gpu_command_buffer_service_sources
+  if (is_ohos) {
     sources += [
-      "ref_counted_lock.cc",
-      "ref_counted_lock.h",
-      "stream_texture_shared_image_interface.h",
+      "abstract_texture_ohos.cc",
+      "abstract_texture_ohos.h",
     ]
-  }
-
-  if (is_android) {
+  } else if (is_android) {
     sources += [
       "abstract_texture_android.cc",
       "abstract_texture_android.h",
     ]
   }
 
-  if (arkweb_gpu_service) {
-    import("//arkweb/chromium_ext/gpu/command_buffer/service/ohos/arkweb_gpu_command_buffer_service_ohos_ext.gni")
-    sources += arkweb_gpu_command_buffer_service_ohos_sources
-  }
-
-  if (arkweb_vulkan) {
-    import("//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/arkweb_gpu_command_buffer_service_shared_image_ext.gni")
-    sources += arkweb_gpu_command_buffer_service_shared_image_sources
+  if (is_ohos) {
+    sources += [
+      "ohos/native_image_texture_gl_owner.cc",
+      "ohos/native_image_texture_gl_owner.h",
+      "ohos/native_image_texture_owner.cc",
+      "ohos/native_image_texture_owner.h",
+      "ohos/shared_image_backing_ohos.cc",
+      "ohos/shared_image_backing_ohos.h",
+      "ohos/shared_image_video_ohos_native_image.cc",
+      "ohos/shared_image_video_ohos_native_image.h",
+      "ohos/shared_image_video_ohos.cc",
+      "ohos/shared_image_video_ohos.h",
+      "ref_counted_lock.cc",
+      "ref_counted_lock.h",
+      "stream_texture_shared_image_interface.h",
+    ]
   }
 
   if (use_dawn) {
@@ -433,8 +426,6 @@ target(link_target_type, "gles2_sources") {
       "shared_image/ozone_image_backing.cc",
       "shared_image/ozone_image_backing.h",
       "shared_image/ozone_image_backing_factory.cc",
-      "../../../arkweb/chromium_ext/gpu/command_buffer/service/shared_image/ozone_image_backing_factory_ext.cc",
-      "../../../arkweb/chromium_ext/gpu/command_buffer/service/shared_image/ozone_image_backing_factory_ext.h",
       "shared_image/ozone_image_backing_factory.h",
       "shared_image/ozone_image_gl_textures_holder.cc",
       "shared_image/ozone_image_gl_textures_holder.h",

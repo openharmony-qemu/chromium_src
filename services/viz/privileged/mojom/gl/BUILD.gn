@@ -6,7 +6,6 @@ import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/sanitizers/sanitizers.gni")
 import("//media/gpu/args.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
-import("//arkweb/build/features/features.gni")
 
 mojom("gl") {
   sources = [
@@ -45,22 +44,6 @@ mojom("gl") {
   enabled_features = []
   if (!is_android) {
     enabled_features += [ "is_not_android" ]
-  }
-
-  if (is_arkweb) {
-    enabled_features += [ "is_arkweb" ]
-  }
-
-  if (arkweb_report_loss_frame) {
-    enabled_features += [ "arkweb_report_loss_frame" ]
-  }
-    
-  if (arkweb_slide_ltpo) {
-    enabled_features += [ "arkweb_slide_ltpo" ]
-  }
-
-  if (arkweb_d_vsync) {
-    enabled_features += [ "arkweb_d_vsync" ]
   }
 
   if (use_clang_profiling_inside_sandbox) {

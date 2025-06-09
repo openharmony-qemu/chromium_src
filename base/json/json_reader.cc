@@ -12,20 +12,18 @@
 #include "base/logging.h"
 #include "base/metrics/histogram_macros.h"
 #include "build/build_config.h"
-#include "cef/libcef/features/features.h"
 
-#if !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#if !BUILDFLAG(IS_NACL)
 #include "base/strings/string_view_rust.h"
 #include "third_party/rust/serde_json_lenient/v0_2/wrapper/functions.h"
 #include "third_party/rust/serde_json_lenient/v0_2/wrapper/lib.rs.h"
-#endif  // BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
-
+#endif
 
 namespace base {
 
 // TODO(crbug.com/40811643): Move the C++ parser into components/nacl to just
 // run in-process there. Don't compile base::JSONReader on NaCL at all.
-#if !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#if !BUILDFLAG(IS_NACL)
 
 namespace {
 using serde_json_lenient::ContextPointer;
@@ -136,16 +134,16 @@ JSONReader::Result DecodeJSONInRust(std::string_view json,
 
 }  // anonymous namespace
 
-#endif  // !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#endif  // !BUILDFLAG(IS_NACL)
 
 // static
 std::optional<Value> JSONReader::Read(std::string_view json,
                                       int options,
                                       size_t max_depth) {
-#if BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#if BUILDFLAG(IS_NACL)
   internal::JSONParser parser(options, max_depth);
   return parser.Parse(json);
-#else   // BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#else   // BUILDFLAG(IS_NACL)
   SCOPED_UMA_HISTOGRAM_TIMER_MICROS(kSecurityJsonParsingTime);
   if (UsingRust()) {
     JSONReader::Result result = DecodeJSONInRust(json, options, max_depth);
@@ -157,7 +155,7 @@ std::optional<Value> JSONReader::Read(std::string_view json,
     internal::JSONParser parser(options, max_depth);
     return parser.Parse(json);
   }
-#endif  // BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#endif  // BUILDFLAG(IS_NACL)
 }
 
 // static
@@ -175,7 +173,7 @@ std::optional<Value::Dict> JSONReader::ReadDict(std::string_view json,
 JSONReader::Result JSONReader::ReadAndReturnValueWithError(
     std::string_view json,
     int options) {
-#if BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#if BUILDFLAG(IS_NACL)
   internal::JSONParser parser(options);
   auto value = parser.Parse(json);
   if (!value) {
@@ -187,7 +185,7 @@ JSONReader::Result JSONReader::ReadAndReturnValueWithError(
   }
 
   return std::move(*value);
-#else   // BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#else   // BUILDFLAG(IS_NACL)
   SCOPED_UMA_HISTOGRAM_TIMER_MICROS(kSecurityJsonParsingTime);
   if (UsingRust()) {
     return DecodeJSONInRust(json, options, internal::kAbsoluteMaxDepth);
@@ -204,7 +202,7 @@ JSONReader::Result JSONReader::ReadAndReturnValueWithError(
 
     return std::move(*value);
   }
-#endif  // BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#endif  // BUILDFLAG(IS_NACL)
 }
 
 // static
@@ -215,11 +213,11 @@ bool JSONReader::UsingRust() {
   if (!base::FeatureList::GetInstance()) {
     return false;
   }
-#if BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
-   return false;
-#else // BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#if BUILDFLAG(IS_NACL)
+  return false;
+#else
   return base::FeatureList::IsEnabled(base::features::kUseRustJsonParser);
-#endif // BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#endif
 }
 
 }  // namespace base

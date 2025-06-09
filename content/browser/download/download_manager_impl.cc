@@ -90,7 +90,6 @@
 #include "third_party/blink/public/common/loader/throttling_url_loader.h"
 #include "third_party/blink/public/common/storage_key/storage_key.h"
 #include "url/origin.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "net/http/http_content_disposition.h"
@@ -191,11 +190,7 @@ class DownloadItemFactoryImpl : public download::DownloadItemFactory {
     // saved.
     int auto_resume_count = download::DownloadItemImpl::kMaxAutoResumeAttempts;
 
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-    return new download::ArkWebDownloadItemImplExt(
-#else
     return new download::DownloadItemImpl(
-#endif
         delegate, guid, download_id, current_path, target_path, url_chain,
         referrer_url, serialized_embedder_download_data, tab_url,
         tab_refererr_url, request_initiator, mime_type, original_mime_type,
@@ -210,11 +205,7 @@ class DownloadItemFactoryImpl : public download::DownloadItemFactory {
       download::DownloadItemImplDelegate* delegate,
       uint32_t download_id,
       const download::DownloadCreateInfo& info) override {
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-    return new download::ArkWebDownloadItemImplExt(delegate, download_id, info);
-#else
     return new download::DownloadItemImpl(delegate, download_id, info);
-#endif
   }
 
   download::DownloadItemImpl* CreateSavePageItem(
@@ -225,11 +216,7 @@ class DownloadItemFactoryImpl : public download::DownloadItemFactory {
       const std::string& mime_type,
       download::DownloadJob::CancelRequestCallback cancel_request_callback)
       override {
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-    return new download::ArkWebDownloadItemImplExt(delegate, download_id, path, url,
-#else
     return new download::DownloadItemImpl(delegate, download_id, path, url,
-#endif
                                           mime_type,
                                           std::move(cancel_request_callback));
   }
@@ -487,11 +474,7 @@ void DownloadManagerImpl::DetermineDownloadTarget(
     download::DownloadItemImpl* item,
     download::DownloadTargetCallback callback) {
   if (!delegate_ || !delegate_->DetermineDownloadTarget(item, &callback)) {
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-    base::FilePath target_path = item->GetFullPath();
-#else
     base::FilePath target_path = item->GetForcedFilePath();
-#endif  //  ARKWEB_EX_DOWNLOAD
     // TODO(asanka): Determine a useful path if |target_path| is empty.
     download::DownloadTargetInfo target_info;
     target_info.target_path = target_path;
@@ -659,9 +642,6 @@ base::FilePath DownloadManagerImpl::GetDefaultDownloadDirectory() {
 
   if (delegate_ && default_download_directory.empty()) {
     base::FilePath website_save_directory;  // Unused
-#if BUILDFLAG(IS_OHOS)
-    delegate_->ResetDownloadPath();
-#endif
     delegate_->GetSaveDir(GetBrowserContext(), &website_save_directory,
                           &default_download_directory);
   }

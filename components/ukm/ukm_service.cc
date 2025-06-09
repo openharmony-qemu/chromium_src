@@ -400,11 +400,7 @@ void UkmService::PurgeExtensionsData() {
         // It is possible that only one of multiple URLs does due to redirect,
         // in this case, we should still purge the source.
         for (const auto& url_info : source.urls()) {
-          if (GURL(url_info.url()).SchemeIs(kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-              || GURL(url_info.url()).SchemeIs(kArkwebExtensionScheme)
-#endif
-          ) {
+          if (GURL(url_info.url()).SchemeIs(kExtensionScheme)) {
             return true;
           }
         }
@@ -415,9 +411,6 @@ void UkmService::PurgeExtensionsData() {
   // Purge data currently in the recordings intended for the next
   // ukm::Report.
   UkmRecorderImpl::PurgeRecordingsWithUrlScheme(kExtensionScheme);
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  UkmRecorderImpl::PurgeRecordingsWithUrlScheme(kArkwebExtensionScheme);
-#endif
 }
 
 void UkmService::PurgeAppsData() {

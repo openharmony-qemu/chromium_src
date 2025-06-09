@@ -773,11 +773,7 @@ bool HWNDMessageHandler::IsVisible() const {
 }
 
 bool HWNDMessageHandler::IsActive() const {
-  // This active state is checked via FocusManager::SetFocusedViewWithReason.
-  // With CEF external parent hwnd() may be a child window, whereas
-  // GetActiveWindow() will return the root window, so make sure that we always
-  // compare root windows.
-  return ::GetActiveWindow() == ::GetAncestor(hwnd(), GA_ROOT);
+  return ::GetActiveWindow() == hwnd();
 }
 
 bool HWNDMessageHandler::IsMinimized() const {
@@ -3140,13 +3136,10 @@ LRESULT HWNDMessageHandler::HandleMouseEventInternal(UINT message,
   } else if (event.type() == ui::EventType::kMousewheel) {
     ui::MouseWheelEvent mouse_wheel_event(msg);
     // Reroute the mouse wheel to the window under the pointer if applicable.
-    if (ui::RerouteMouseWheel(hwnd(), w_param, l_param) ||
-        delegate_->HandleMouseEvent(&mouse_wheel_event)) {
-      SetMsgHandled(TRUE);
-      return 0;
-    } else {
-      return 1;
-    }
+    return (ui::RerouteMouseWheel(hwnd(), w_param, l_param) ||
+            delegate_->HandleMouseEvent(&mouse_wheel_event))
+               ? 0
+               : 1;
   }
 
   // Suppress |EventType::kMouseMoved| and |EventType::kMouseDragged| events

@@ -14,10 +14,6 @@
 #include "components/password_manager/core/browser/password_form_digest.h"
 #include "components/password_manager/core/browser/password_store/password_store_change.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 namespace base {
 class Location;
 }  // namespace base
@@ -105,10 +101,6 @@ class PasswordStoreInterface : public RefcountedKeyedService {
       const PasswordForm& new_form,
       const PasswordForm& old_primary_key,
       base::OnceClosure completion = base::DoNothing()) = 0;
-
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-  virtual void UpdateLoginDisplayName(const PasswordForm& form) = 0;
-#endif
 
   // Removes the matching PasswordForm from the secure password store (async).
   // `location` is used for logging purposes and investigations.

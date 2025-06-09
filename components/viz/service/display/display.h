@@ -40,8 +40,6 @@
 #include "ui/gfx/swap_result.h"
 #include "ui/latency/latency_info.h"
 
-#include "arkweb/chromium_ext/components/viz/service/display/arkweb_display_utils.h"
-
 namespace gfx {
 class Size;
 }
@@ -64,11 +62,7 @@ class RendererSettings;
 class SharedBitmapManager;
 class SkiaOutputSurface;
 class SoftwareRenderer;
-#if BUILDFLAG(ARKWEB_DFX_DUMP)
-class DumpFrameObserver;
-#endif
 class OcclusionCuller;
-class ArkwebDisplayUtils;
 
 class VIZ_SERVICE_EXPORT DisplayObserver {
  public:
@@ -168,9 +162,6 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   // DisplaySchedulerClient implementation.
   bool DrawAndSwap(const DrawAndSwapParams& params) override;
   void DidFinishFrame(const BeginFrameAck& ack) override;
-#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) override;
-#endif // ARKWEB_MAXIMIZE_RESIZE
 
   // OutputSurfaceClient implementation.
   void DidReceiveSwapBuffersAck(const gpu::SwapBuffersCompleteParams& params,
@@ -254,13 +245,8 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   // calls.
   OverdrawTracker::OverdrawTimeSeries StopTrackingOverdraw();
 
-  ArkwebDisplayUtils* display_utils() {
-    return display_utils_.get();
-  }
-
  protected:
   friend class DisplayTest;
-  friend class ArkwebDisplayUtils;
   // PresentationGroupTiming stores rendering pipeline stage timings associated
   // with a call to Display::DrawAndSwap along with a list of
   // Surface::PresentationHelper's for each aggregated Surface that will be
@@ -388,8 +374,6 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
 
   // A subsampler for potential quad information logging.
   base::MetricsSubSampler metrics_subsampler_;
-
-  std::unique_ptr<ArkwebDisplayUtils> display_utils_;
 };
 
 }  // namespace viz

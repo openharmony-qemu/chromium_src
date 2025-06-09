@@ -1324,9 +1324,6 @@ void PasswordManager::OnPasswordFormsRendered(
 }
 
 void PasswordManager::OnLoginSuccessful() {
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  LOG(INFO) << "[Autofill] Login Successful.";
-#endif
   std::unique_ptr<BrowserSavePasswordProgressLogger> logger;
   if (password_manager_util::IsLoggingActive(client_)) {
     logger = std::make_unique<BrowserSavePasswordProgressLogger>(
@@ -1369,9 +1366,6 @@ void PasswordManager::OnLoginSuccessful() {
                                          client_);
   }
 
-// OH password autofill does not need to store the password in the chromium and
-// does not need to check is able to save passwords.
-#if !BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   bool able_to_save_passwords =
       password_manager_util::IsAbleToSavePasswords(client_);
   UMA_HISTOGRAM_BOOLEAN("PasswordManager.AbleToSavePasswordsOnSuccessfulLogin",
@@ -1382,7 +1376,6 @@ void PasswordManager::OnLoginSuccessful() {
 #endif
     return;
   }
-#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
   // Check for leaks only if there are no muted credentials and it is not a
   // single username submission (a leak warning may offer an automated password

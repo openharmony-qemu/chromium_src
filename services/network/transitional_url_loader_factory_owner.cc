@@ -59,11 +59,7 @@ class TransitionalURLLoaderFactoryOwner::Core {
 
   void CreateNetworkContextOnNetworkThread(
       mojo::PendingReceiver<mojom::NetworkContext> receiver) {
-#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
-    network_context_ = std::make_unique<network::ArkWebNetworkContextExt>(
-#else
     network_context_ = std::make_unique<network::NetworkContext>(
-#endif
         nullptr /* network_service */, std::move(receiver),
         url_request_context_getter_->GetURLRequestContext(),
         /*cors_exempt_header_list=*/std::vector<std::string>());

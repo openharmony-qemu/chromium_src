@@ -571,9 +571,6 @@ void ExtensionPrefs::DeleteExtensionPrefs(const ExtensionId& extension_id) {
     observer.OnExtensionPrefsDeleted(extension_id);
   prefs::ScopedDictionaryPrefUpdate update(prefs_, pref_names::kExtensions);
   update->Remove(extension_id);
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  prefs_->CommitPendingWrite();
-#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void ExtensionPrefs::DeleteExtensionPrefsIfPrefEmpty(

@@ -4,7 +4,6 @@
 
 import("../../partition_alloc.gni")
 import("buildflag_header.gni")
-import("//arkweb/build/features/features.gni")
 
 # //build_overrides/partition_alloc.gni should define partition_alloc_{
 # add,remove}_configs. But if not defined (e.g. the embedder misses the config),
@@ -531,15 +530,6 @@ if (is_clang_or_gcc) {
       deps += [ "//buildtools/third_party/libc++:libc++" ]
     }
 
-    if(is_ohos) {
-      deps += [ "//arkweb/build/features" ]
-    }
-    if (enable_arkweb) {
-      deps += [ "//arkweb/build/features" ]
-    }
-    if (enable_arkweb) {
-      public_deps += [ "//arkweb/build/features" ]
-    }
     public_configs = []
     if (is_fuchsia) {
       deps += [
@@ -906,7 +896,7 @@ if (is_clang_or_gcc) {
     }
 
     if (!use_partition_alloc_as_malloc) {
-      if (is_android || enable_arkweb) {
+      if (is_android) {
         shim_sources += [
           "shim/allocator_shim_default_dispatch_to_linker_wrapped_symbols.cc",
         ]
@@ -948,7 +938,7 @@ if (build_with_chromium) {
 
     sources = [ "partition_alloc_base/test/gtest_util.h" ]
 
-    if (is_linux || is_chromeos || is_android) {
+    if (is_linux || is_chromeos || is_android || is_ohos) {
       sources += [
         "partition_alloc_base/debug/proc_maps_linux.cc",
         "partition_alloc_base/debug/proc_maps_linux.h",
@@ -971,8 +961,6 @@ if (build_with_chromium) {
         "hardening_unittest.cc",
         "lightweight_quarantine_unittest.cc",
         "memory_reclaimer_unittest.cc",
-        "partition_alloc_base/debug/proc_maps_linux.cc",
-        "partition_alloc_base/debug/proc_maps_linux.h",
         "page_allocator_unittest.cc",
         "partition_alloc_base/bits_pa_unittest.cc",
         "partition_alloc_base/component_export_pa_unittest.cc",
@@ -1072,7 +1060,6 @@ source_set("test_support") {
   ]
   if (is_posix) {
     sources += [
-      "partition_alloc_base/threading/platform_thread_linux_for_testing.cc",
       "partition_alloc_base/threading/platform_thread_posix_for_testing.cc",
     ]
   }
@@ -1091,7 +1078,7 @@ source_set("test_support") {
       "partition_alloc_base/threading/platform_thread_apple_for_testing.mm",
     ]
   }
-  if (is_linux || is_chromeos) {
+  if (is_linux || is_chromeos || is_ohos) {
     sources += [
       "partition_alloc_base/threading/platform_thread_linux_for_testing.cc",
     ]

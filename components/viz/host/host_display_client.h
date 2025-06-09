@@ -15,7 +15,6 @@
 #include "services/viz/privileged/mojom/compositing/display_private.mojom.h"
 #include "ui/base/ozone_buildflags.h"
 #include "ui/gfx/native_widget_types.h"
-#include "arkweb/build/features/features.h"
 
 namespace viz {
 
@@ -40,17 +39,16 @@ class VIZ_HOST_EXPORT HostDisplayClient : public mojom::DisplayClient {
   gfx::AcceleratedWidget widget() const { return widget_; }
 #endif
 
+ private:
   // mojom::DisplayClient implementation:
-  void UseProxyOutputDevice(UseProxyOutputDeviceCallback callback) override;
-
 #if BUILDFLAG(IS_APPLE)
   void OnDisplayReceivedCALayerParams(
       const gfx::CALayerParams& ca_layer_params) override;
 #endif
 
+#if BUILDFLAG(IS_WIN)
   void CreateLayeredWindowUpdater(
       mojo::PendingReceiver<mojom::LayeredWindowUpdater> receiver) override;
-#if BUILDFLAG(IS_WIN)
   void AddChildWindowToBrowser(gpu::SurfaceHandle child_window) override;
 #endif
 
@@ -61,10 +59,6 @@ class VIZ_HOST_EXPORT HostDisplayClient : public mojom::DisplayClient {
 #if BUILDFLAG(IS_CHROMEOS_ASH)
   void SetPreferredRefreshRate(float refresh_rate) override;
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
-
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-  void DidCompleteSwapWithNewSizeOHOS(const gfx::Size& size) override;
-#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
   mojo::Receiver<mojom::DisplayClient> receiver_{this};
 #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN)

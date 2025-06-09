@@ -1,5 +1,0 @@
-arkweb_third_party_webrtc_modules_desktop_capture_sources = [
-    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/screen_capturer_ohos.cc",
-
-    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/window_capturer_ohos.cc",
-]

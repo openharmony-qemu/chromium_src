@@ -10,7 +10,6 @@
 #include <set>
 #include <unordered_set>
 
-#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
@@ -75,7 +74,7 @@ CONTENT_EXPORT extern const base::FeatureParam<int>
 // cache.
 BASE_FEATURE(kBackForwardCacheUnloadAllowed,
              "BackForwardCacheUnloadAllowed",
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_BFCACHE)
+#if BUILDFLAG(IS_ANDROID)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -456,17 +455,6 @@ class CONTENT_EXPORT BackForwardCacheImpl
       const std::optional<url::Origin>& initiator_origin,
       bool require_no_subframes) const;
 
-#if BUILDFLAG(ARKWEB_BFCACHE)
-  size_t GetStoredEntriesNumber() override;
-  void SetCacheSize(int size) override;
-  int ArkWebGetCacheSize() const override { return size_; }
-  void SetTimeToLive(int timeToLive) override {
-    this->time_to_live_ = timeToLive;
-  }
-  int ArkWebGetTimeToLive() const override { return time_to_live_; }
-  base::TimeDelta ArkWebGetTimeToLiveInBackForwardCache() override;
-#endif
-
  private:
   // Destroys all evicted frames in the BackForwardCache.
   void DestroyEvictedFrames();
@@ -670,11 +658,6 @@ class CONTENT_EXPORT BackForwardCacheImpl
     // (instead of the reasons for the whole tree).
     std::optional<EvictionInfo> eviction_info_;
   };
-
-#if BUILDFLAG(ARKWEB_BFCACHE)
-  int size_ = -1;
-  int time_to_live_ = 600;
-#endif
 
   base::WeakPtrFactory<BackForwardCacheImpl> weak_factory_;
 

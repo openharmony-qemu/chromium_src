@@ -29,13 +29,6 @@ class MockURLLoaderClient : public network::mojom::URLLoaderClient {
                mojo::ScopedDataPipeConsumerHandle body,
                std::optional<mojo_base::BigBuffer> cached_metadata),
               (override));
-#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
-  MOCK_METHOD(void,
-              OnTransferDataWithSharedMemory,
-              (base::ReadOnlySharedMemoryRegion region,
-               uint64_t buffer_size),
-              (override));
-#endif
   MOCK_METHOD(void,
               OnReceiveRedirect,
               (const net::RedirectInfo& redirect_info,

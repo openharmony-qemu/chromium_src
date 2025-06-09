@@ -8,7 +8,6 @@
 #include <optional>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/span.h"
 #include "base/memory/raw_ptr.h"
 #include "components/autofill/core/common/unique_ids.h"
@@ -68,6 +67,7 @@ autofill::PasswordFormFillData CreatePasswordFormFillData(
     const url::Origin& main_frame_origin,
     bool wait_for_username,
     base::span<autofill::FieldRendererId> suggestion_banned_fields);
+
 }  // namespace password_manager
 
 #endif  // COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_FORM_FILLING_H_

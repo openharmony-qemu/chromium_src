@@ -26,7 +26,6 @@
 #include "ui/accessibility/ax_text_attributes.h"
 #include "ui/accessibility/ax_tree_id.h"
 #include "ui/gfx/geometry/rect_f.h"
-#include "arkweb/build/features/features.h"
 
 namespace ui {
 
@@ -381,12 +380,6 @@ class AX_EXPORT AXNode final {
   }
   bool HasStringAttribute(ax::mojom::StringAttribute attribute) const;
   bool CanComputeStringAttribute(ax::mojom::StringAttribute attribute) const;
-
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  bool GetStringAttribute(ax::mojom::StringAttribute attribute,
-                                std::string* value) const;
-#endif
-
   const std::string& GetStringAttribute(
       ax::mojom::StringAttribute attribute) const;
 

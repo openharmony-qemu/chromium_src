@@ -100,48 +100,6 @@ bool AXComputedNodeData::GetOrComputeIsDescendantOfPlatformLeaf() const {
   return *is_descendant_of_leaf_;
 }
 
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-bool AXComputedNodeData::HasOrCanComputeAttribute(
-    const ax::mojom::StringAttribute attribute) const {
-  if (owner_->data().HasStringAttribute(attribute))
-    return true;
-
-  switch (attribute) {
-    case ax::mojom::StringAttribute::kValue:
-      // The value attribute could be computed on the browser for content
-      // editables and ARIA text/search boxes.
-      return owner_->data().IsNonAtomicTextField();
-    default:
-      return false;
-  }
-}
-
-const std::string& AXComputedNodeData::GetOrComputeAttributeUTF8(
-    const ax::mojom::StringAttribute attribute) const {
-  if (owner_->data().HasStringAttribute(attribute))
-    return owner_->data().GetStringAttribute(attribute);
-
-  switch (attribute) {
-    case ax::mojom::StringAttribute::kValue:
-      if (owner_->data().IsNonAtomicTextField()) {
-        DCHECK(HasOrCanComputeAttribute(attribute))
-            << "Code in `HasOrCanComputeAttribute` should be in sync with "
-               "'GetOrComputeAttributeUTF8`";
-        return GetOrComputeTextContentWithParagraphBreaksUTF8();
-      }
-      // If an atomic text field has no value attribute sent from the renderer,
-      // then it means that it is empty, since we do not compute the values of
-      // such controls on the browser. The same for all other controls, other
-      // than non-atomic text fields.
-      return base::EmptyString();
-    default:
-      // This is a special case: for performance reasons do not use
-      // `base::EmptyString()` in other places throughout the codebase.
-      return base::EmptyString();
-  }
-}
-#endif
-
 const std::string& AXComputedNodeData::ComputeAttributeUTF8(
     const ax::mojom::StringAttribute attribute) const {
   DCHECK(owner_->CanComputeStringAttribute(attribute));

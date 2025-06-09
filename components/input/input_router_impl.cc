@@ -8,7 +8,6 @@
 
 #include <utility>
 
-#include "arkweb/chromium_ext/components/input/arkweb_input_router_impl_utils.h"
 #include "base/auto_reset.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
@@ -34,7 +33,6 @@
 #include "ui/events/event.h"
 #include "ui/events/keycodes/keyboard_codes.h"
 #include "ui/latency/latency_info.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 
 namespace input {
 
@@ -73,6 +71,7 @@ std::unique_ptr<blink::WebCoalescedInputEvent> ScaleEvent(
       std::vector<std::unique_ptr<WebInputEvent>>(),
       std::vector<std::unique_ptr<WebInputEvent>>(), latency_info);
 }
+
 }  // namespace
 
 InputRouterImpl::InputRouterImpl(
@@ -91,8 +90,6 @@ InputRouterImpl::InputRouterImpl(
                            fling_scheduler_client,
                            config.gesture_config),
       device_scale_factor_(1.f) {
-  arkweb_input_router_impl_utils_ =
-      std::make_unique<ArkwebInputRouterImplUtils>(this);
   weak_this_ = weak_ptr_factory_.GetWeakPtr();
 
   DCHECK(client);
@@ -115,9 +112,6 @@ void InputRouterImpl::SendMouseEvent(
     std::move(event_result_callback)
         .Run(mouse_event, blink::mojom::InputEventResultSource::kBrowser,
              blink::mojom::InputEventResultState::kIgnored);
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-    LOG(INFO) << "mouse event suppressed!";
-#endif
     return;
   }
 
@@ -147,9 +141,6 @@ void InputRouterImpl::SendGestureEvent(
 
   GestureEventWithLatencyInfo gesture_event(original_gesture_event);
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  arkweb_input_router_impl_utils_->SendGestureEventEx(gesture_event);
-#endif
   if (gesture_event_queue_.PassToFlingController(gesture_event)) {
     TRACE_EVENT_INSTANT0("input", "FilteredForFling", TRACE_EVENT_SCOPE_THREAD);
     disposition_handler_->OnGestureEventAck(
@@ -585,25 +576,15 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
     const WebInputEvent& input_event,
     const ui::LatencyInfo& latency_info,
     blink::mojom::WidgetInputHandler::DispatchEventCallback callback) {
-#if BUILDFLAG(ARKWEB_DFX_TRACING)
-  arkweb_input_router_impl_utils_->TracingAndSceneReport(input_event, latency_info);
-#else
   TRACE_EVENT1("input", "InputRouterImpl::FilterAndSendWebInputEvent", "type",
                WebInputEvent::GetName(input_event.GetType()));
 
-#endif
   output_stream_validator_.Validate(input_event);
   blink::mojom::InputEventResultState filtered_state =
       client_->FilterInputEvent(input_event, latency_info);
   if (WasHandled(filtered_state)) {
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-    LOG(INFO) << "event was filtered for " << InputEventResultStateToString(filtered_state);
-    TRACE_EVENT1("input", "InputEventFiltered", "filtered_state",
-                 InputEventResultStateToString(filtered_state));
-#else
     TRACE_EVENT_INSTANT0("input", "InputEventFiltered",
                          TRACE_EVENT_SCOPE_THREAD);
-#endif
     if (filtered_state != blink::mojom::InputEventResultState::kUnknown) {
       std::move(callback).Run(blink::mojom::InputEventResultSource::kBrowser,
                               latency_info, filtered_state, nullptr, nullptr);
@@ -611,9 +592,6 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
     return;
   }
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  arkweb_input_router_impl_utils_->ProcessFilteredEvent(input_event);
-#endif
   std::unique_ptr<blink::WebCoalescedInputEvent> event =
       ScaleEvent(input_event, device_scale_factor_, latency_info);
   if (WebInputEventTraits::ShouldBlockEventStream(input_event)) {
@@ -635,12 +613,6 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
                 if (input_router)
                   input_router->client_->OnInvalidInputEventSource();
                 return;
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-              }
-              if (input_router &&
-              (input_router->GetNativeResult() || input_router->GetMouseNativeResult())) {
-                state = blink::mojom::InputEventResultState::kConsumed;
-#endif
               }
 
               std::move(callback).Run(source, latency, state,
@@ -699,12 +671,6 @@ void InputRouterImpl::MouseEventHandled(
   TRACE_EVENT2("input", "InputRouterImpl::MouseEventHandled", "type",
                WebInputEvent::GetName(event.event.GetType()), "ack",
                InputEventResultStateToString(state));
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  if (blink::InputEventOhos::FilterLogEvent(event.event))
-    LOG(INFO) << "InputRouterImpl::TouchEventHandled type:"
-              << blink::InputEventOhos::GetWebEventName(event.event) << " ack "
-              << InputEventResultStateToString(state);
-#endif
 
   if (source != blink::mojom::InputEventResultSource::kBrowser)
     client_->DecrementInFlightEventCount(source);

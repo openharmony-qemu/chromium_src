@@ -66,11 +66,6 @@ bool HasValidURL(content::RenderFrameHost* render_frame_host) {
   if (!url.is_valid())
     return false;
 
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  if (!url.SchemeIsHTTPOrHTTPS())
-    return false;
-#endif
-
   return password_manager::bad_message::CheckForIllegalURL(
       render_frame_host, url,
       password_manager::BadMessageReason::CPMD_BAD_ORIGIN_FORM_SUBMITTED);

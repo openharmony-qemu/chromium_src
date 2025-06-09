@@ -8,7 +8,6 @@
 #include "base/check.h"
 #include "base/dcheck_is_on.h"
 #include "base/no_destructor.h"
-#include "cef/libcef/features/features.h"
 #include "partition_alloc/buildflags.h"
 #include "partition_alloc/shim/allocator_shim.h"
 
@@ -34,7 +33,7 @@ struct Dispatcher::Impl {
   }
 
   void Reset() {
-#if DCHECK_IS_ON() && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#if DCHECK_IS_ON()
     DCHECK([&] {
       auto const was_set = is_initialized_check_flag_.test_and_set();
       is_initialized_check_flag_.clear();

@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 import("//mojo/public/tools/bindings/mojom.gni")
-import("//build/config/features.gni")
 
 mojom("common_mojom") {
   sources = [
@@ -15,13 +14,6 @@ mojom("common_mojom") {
     "//mojo/public/mojom/base",
     "//third_party/blink/public/mojom:mojom_core",
   ]
-
-  enabled_features = []
-  if (is_arkweb) {
-    enabled_features += [ "is_arkweb" ]
-    enabled_features += [ "arkweb_js_on_document_end" ]
-    enabled_features += [ "arkweb_jsproxy" ]
-  }
 
   cpp_typemaps = [
     {

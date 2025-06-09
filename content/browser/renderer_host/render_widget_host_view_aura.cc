@@ -6,7 +6,6 @@
 
 #include <limits>
 #include <memory>
-#include <tuple>
 #include <set>
 #include <string_view>
 #include <utility>
@@ -54,7 +53,6 @@
 #include "content/public/browser/content_browser_client.h"
 #include "content/public/browser/device_service.h"
 #include "content/public/browser/render_view_host.h"
-#include "content/public/browser/web_contents.h"
 #include "content/public/common/page_visibility_state.h"
 #include "services/service_manager/public/cpp/interface_provider.h"
 #include "third_party/blink/public/common/input/web_input_event.h"
@@ -487,7 +485,7 @@ gfx::NativeViewAccessible RenderWidgetHostViewAura::GetNativeViewAccessible() {
     return ToBrowserAccessibilityWin(manager->GetBrowserAccessibilityRoot())
         ->GetCOM();
 
-#elif BUILDFLAG(IS_LINUX)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
   ui::BrowserAccessibilityManager* manager =
       host()->GetOrCreateRootBrowserAccessibilityManager();
   if (manager && manager->GetBrowserAccessibilityRoot())
@@ -762,12 +760,10 @@ gfx::Rect RenderWidgetHostViewAura::GetViewBounds() {
 void RenderWidgetHostViewAura::UpdateBackgroundColor() {
   CHECK(GetBackgroundColor());
 
-  if (window_) {
-    SkColor color = *GetBackgroundColor();
-    bool opaque = SkColorGetA(color) == SK_AlphaOPAQUE;
-    window_->layer()->SetFillsBoundsOpaquely(opaque);
-    window_->layer()->SetColor(color);
-  }
+  SkColor color = *GetBackgroundColor();
+  bool opaque = SkColorGetA(color) == SK_AlphaOPAQUE;
+  window_->layer()->SetFillsBoundsOpaquely(opaque);
+  window_->layer()->SetColor(color);
 }
 
 #if BUILDFLAG(IS_WIN)
@@ -1608,6 +1604,20 @@ ui::TextInputClient::FocusReason RenderWidgetHostViewAura::GetFocusReason()
       return ui::TextInputClient::FOCUS_REASON_OTHER;
   }
 }
+
+#if BUILDFLAG(IS_OHOS)
+ui::RequestKeyboardReason RenderWidgetHostViewAura::GetRequestKeyboardReason()
+    const {
+  switch (last_pointer_type_) {
+    case ui::EventPointerType::kMouse:
+      return ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_MOUSE;
+    case ui::EventPointerType::kTouch:
+      return ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_TOUCH;
+    default:
+      return ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_OTHER;
+  }
+}
+#endif
 
 bool RenderWidgetHostViewAura::GetTextRange(gfx::Range* range) const {
   if (!text_input_manager_ || !GetFocusedWidget())
@@ -2546,16 +2556,6 @@ void RenderWidgetHostViewAura::CreateAuraWindow(aura::client::WindowType type) {
   window_->layer()->SetColor(GetBackgroundColor() ? *GetBackgroundColor()
                                                   : SK_ColorWHITE);
   UpdateFrameSinkIdRegistration();
-
-  // Do this after |window_| is created to avoid crashes on Win10.
-  // See https://crbug.com/761389.
-  auto* web_contents =
-      WebContents::FromRenderViewHost(RenderViewHost::From(host()));
-  if (web_contents) {
-    // TODO(mostynb): actually use prefs.  Landing this as a separate CL
-    // first to rebaseline some unreliable layout tests.
-    std::ignore = web_contents->GetOrCreateWebPreferences();
-  }
 }
 
 void RenderWidgetHostViewAura::UpdateFrameSinkIdRegistration() {

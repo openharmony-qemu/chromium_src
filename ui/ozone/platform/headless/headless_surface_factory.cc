@@ -6,7 +6,6 @@
 
 #include <memory>
 
-#include "arkweb/build/features/features.h"
 #include "base/files/file_util.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
@@ -37,11 +36,6 @@
 
 #if BUILDFLAG(ENABLE_VULKAN) && (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA))
 #include "ui/ozone/platform/headless/vulkan_implementation_headless.h"
-#endif
-// NativePixmapDmaBuf
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-#include "ui/gfx/linux/native_pixmap_dmabuf.h"
-#include "ui/ozone/common/native_pixmap_egl_binding.h"
 #endif
 
 namespace ui {
@@ -194,27 +188,6 @@ class GLOzoneEGLHeadless : public GLOzoneEGL {
   ~GLOzoneEGLHeadless() override = default;
 
   // GLOzone:
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-#if false
-  fixme bool CanImportNativePixmap() override {
-    return true;
-  }
-#endif
-
-  std::unique_ptr<NativePixmapGLBinding> ImportNativePixmap(
-      scoped_refptr<gfx::NativePixmap> pixmap,
-      gfx::BufferFormat plane_format,
-      gfx::BufferPlane plane,
-      gfx::Size plane_size,
-      const gfx::ColorSpace& color_space,
-      GLenum target,
-      GLuint texture_id) override {
-    return NativePixmapEGLBinding::Create(pixmap, plane_format, plane, plane_size,
-                                          color_space, target, texture_id);
-  }
-#endif
-
-  // GLOzone:
   scoped_refptr<gl::GLSurface> CreateViewGLSurface(
       gl::GLDisplay* display,
       gfx::AcceleratedWidget window) override {
@@ -261,9 +234,6 @@ std::vector<gl::GLImplementationParts>
 HeadlessSurfaceFactory::GetAllowedGLImplementations() {
   return std::vector<gl::GLImplementationParts>{
       gl::GLImplementationParts(gl::kGLImplementationEGLANGLE),
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-      gl::GLImplementationParts(gl::kGLImplementationEGLGLES2),
-#endif
   };
 }
 
@@ -293,21 +263,6 @@ scoped_refptr<gfx::NativePixmap> HeadlessSurfaceFactory::CreateNativePixmap(
     std::optional<gfx::Size> framebuffer_size) {
   return new TestPixmap(format);
 }
-
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-scoped_refptr<gfx::NativePixmap> HeadlessSurfaceFactory::CreateNativePixmapFromHandle(
-      gfx::AcceleratedWidget widget,
-      gfx::Size size,
-      gfx::BufferFormat format,
-      gfx::NativePixmapHandle handle,
-      void* window_buffer) {
-  scoped_refptr<gfx::NativePixmapDmaBuf> pixmap =
-      base::MakeRefCounted<gfx::NativePixmapDmaBuf>(
-         size, format, std::move(handle), window_buffer);
-
-  return pixmap;
-}
-#endif
 
 void HeadlessSurfaceFactory::CheckBasePath() const {
   if (base_path_.empty())

@@ -5,7 +5,6 @@
 #ifndef UI_GL_GL_SURFACE_H_
 #define UI_GL_GL_SURFACE_H_
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/weak_ptr.h"
@@ -99,18 +98,14 @@ class GL_EXPORT GLSurface : public base::RefCounted<GLSurface> {
   // Get the underlying platform specific surface "handle".
   virtual void* GetHandle() = 0;
 
-#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
-  virtual gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
-      PresentationCallback callback,
-      gfx::FrameData data);
-#endif
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  virtual void SetNativeInnerWeb(bool isInnerWeb) {};
-#endif
-
   // Returns whether or not the surface supports PostSubBuffer.
   virtual bool SupportsPostSubBuffer();
+
+#if BUILDFLAG(IS_OHOS)
+  virtual gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
+                                                PresentationCallback callback,
+                                                gfx::FrameData data);
+#endif  // BUILDFLAG(IS_OHOS)
 
   // Returns whether SwapBuffersAsync() is supported.
   virtual bool SupportsAsyncSwap();
@@ -167,8 +162,6 @@ class GL_EXPORT GLSurface : public base::RefCounted<GLSurface> {
   // Get a handle used to share the surface with another process. Returns null
   // if this is not possible.
   virtual void* GetShareHandle();
-
-  virtual bool SetBackbufferAllocation(bool allocated);
 
   // Get the platform specific display on which this surface resides, if
   // available.
@@ -253,10 +246,6 @@ class GL_EXPORT GLSurface : public base::RefCounted<GLSurface> {
 // initialization fails.
 GL_EXPORT scoped_refptr<GLSurface> InitializeGLSurface(
     scoped_refptr<GLSurface> surface);
-
-GL_EXPORT scoped_refptr<GLSurface> InitializeGLSurfaceWithFormat(
-    scoped_refptr<GLSurface> surface,
-    GLSurfaceFormat format);
 
 }  // namespace gl
 

@@ -63,15 +63,6 @@ interface GpuService {
   // `client_id`.
   SetChannelClientPid(int32 client_id, mojo_base.mojom.ProcessId client_pid);
 
-  [EnableIf=is_arkweb, Sync] GetSurfaceId(int32 native_embed_id)
-      => (string surfaceId);
-
-  [EnableIf=is_arkweb] Discard(uint32 native_window_id);
-
-  [EnableIf=is_arkweb] SetTransformHint(uint32 rotation, uint32 window_id);
-
-  [EnableIf=is_arkweb] DestroyNativeWindow(uint32 native_window_id);
-
   // Tells the GPU service an assigned cache handle. Note that for each type of
   // handle per client only one unique handle is expected.
   SetChannelDiskCacheHandle(int32 client_id,
@@ -251,35 +242,4 @@ interface GpuService {
   Crash();
   Hang();
   ThrowJavaException();
-  // notify web ltpo to update frame rate when visibility changed
-  [EnableIf=is_ohos]
-  SetVisible(int32 nweb_id, bool visible);
-
-  // start frame loss monitor during page sliding scene
-  [EnableIf=arkweb_report_loss_frame]
-  StartMonitor();
- 
-  // start frame loss monitor during page sliding scene
-  [EnableIf=arkweb_report_loss_frame]
-  StopMonitor();
-
-  // notify web ltpo to update frame rate when touch status changed
-  [EnableIf=arkweb_slide_ltpo]
-  SetHasTouchPoint(bool has_touch_point);
-
-  // Send vsync callback to host client
-  [EnableIf=arkweb_slide_ltpo]
-  ReportSlidingFrameRate(int32 frame_rate);
-
-  // Set ltpo strategy to gpu process
-  [EnableIf=arkweb_slide_ltpo]
-  SetLTPOStrategy(int32 strategy);
-
-  // get gpu total size
-  [EnableIf=is_arkweb]
-  DumpGpuInfo() => (float totalSize);
-
-  // Set fling state to gpu process
-  [EnableIf=arkweb_d_vsync]
-  SetIsFling(bool is_fling_enabled);
 };

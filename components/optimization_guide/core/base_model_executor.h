@@ -12,8 +12,6 @@
 #include "components/optimization_guide/core/optimization_guide_features.h"
 #include "components/optimization_guide/core/tflite_model_executor.h"
 #include "components/optimization_guide/core/tflite_op_resolver.h"
-#include "components/optimization_guide/machine_learning_tflite_buildflags.h"
-#include "arkweb/build/features/features.h"
 #include "third_party/tflite_support/src/tensorflow_lite_support/cc/task/core/base_task_api.h"
 
 namespace optimization_guide {
@@ -60,9 +58,6 @@ class BaseModelExecutor : public TFLiteModelExecutor<OutputType, InputType>,
 
   base::expected<std::unique_ptr<ModelExecutionTask>, ExecutionStatus>
   BuildModelExecutionTask(base::MemoryMappedFile* model_file) override {
-#if BUILDFLAG(ARKWEB_ASAN) && !BUILDFLAG(BUILD_WITH_TFLITE_LIB)
-    return nullptr;
-#endif
     std::unique_ptr<tflite::task::core::TfLiteEngine> tflite_engine =
         std::make_unique<tflite::task::core::TfLiteEngine>(
             std::make_unique<TFLiteOpResolver>());

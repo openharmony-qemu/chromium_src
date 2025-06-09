@@ -17,7 +17,7 @@ scoped_refptr<gl::Presenter> ImageTransportSurface::CreatePresenter(
     SurfaceHandle surface_handle,
     DawnContextProvider* dawn_context_provider) {
   DCHECK_NE(surface_handle, kNullSurfaceHandle);
-#if BUILDFLAG(IS_OZONE) && !BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_OZONE)
   return gl::init::CreateSurfacelessViewGLSurface(display, surface_handle);
 #else
   return nullptr;

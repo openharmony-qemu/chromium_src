@@ -12,10 +12,6 @@
 #include "media/base/demuxer.h"
 #include "net/storage_access_api/status.h"
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/media/base/media_url_demuxer_for_include.cc"
-#endif
-
 namespace media {
 
 MediaUrlDemuxer::MediaUrlDemuxer(

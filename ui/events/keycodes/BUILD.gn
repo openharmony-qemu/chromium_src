@@ -19,15 +19,13 @@ source_set("xkb") {
     "//ui/gfx/x/keysyms",
   ]
 
-  defines = [ "KEYCODES_X_IMPLEMENTATION" ]
-
   deps = [
     "//base",
     "//ui/events:dom_keycode_converter",
   ]
 }
 
-if (ozone_platform_x11 || is_ohos) {
+if (ozone_platform_x11) {
   component("x11") {
     output_name = "keycodes_x11"
 
@@ -45,6 +43,7 @@ if (ozone_platform_x11 || is_ohos) {
       ":xkb",
       "//base",
       "//ui/events:dom_keycode_converter",
+      "//ui/gfx/x",
     ]
   }
 }

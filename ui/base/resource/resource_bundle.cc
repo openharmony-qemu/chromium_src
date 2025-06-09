@@ -76,10 +76,6 @@
 #undef LoadBitmap
 #endif
 
-#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-#include "arkweb/chromium_ext/ui/base/resource/resource_bundle_for_include.cc"
-#endif
-
 namespace ui {
 
 namespace {
@@ -386,12 +382,8 @@ void ResourceBundle::LoadSecondaryLocaleDataWithPakFileRegion(
 #if !BUILDFLAG(IS_ANDROID)
 // static
 bool ResourceBundle::LocaleDataPakExists(const std::string& locale) {
-#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-  return LocaleDataPakExistsExt(locale);
-#else
   const auto path = GetLocaleFilePath(locale);
   return !path.empty() && base::PathExists(path);
-#endif
 }
 #endif  // !BUILDFLAG(IS_ANDROID)
 
@@ -437,17 +429,10 @@ base::FilePath ResourceBundle::GetLocaleFilePath(
     return base::FilePath();
 
   base::FilePath locale_file_path;
-#if !BUILDFLAG(IS_ARKWEB)
   if (base::PathService::Get(ui::DIR_LOCALES, &locale_file_path)) {
     locale_file_path =
         locale_file_path.AppendASCII(app_locale + kPakFileExtension);
   }
-#else
-  if (base::PathService::Get(base::DIR_ASSETS, &locale_file_path)) {
-    locale_file_path = locale_file_path.AppendASCII(
-        std::string("locales/") + app_locale + kPakFileExtension);
-  }
-#endif
 
   // Note: The delegate GetPathForLocalePack() override is currently only used
   // by CastResourceDelegate, which does not call this function prior to
@@ -957,12 +942,6 @@ ResourceBundle::ResourceBundle(Delegate* delegate)
     : delegate_(delegate),
       locale_resources_data_lock_(new base::Lock),
       max_scale_factor_(k100Percent) {
-  // With CEF's multi-threaded mode the ResourceBundle may be created on the
-  // main thread and then accessed on the UI thread. Allow the SequenceChecker
-  // to re-bind on the UI thread when CalledOnValidSequence() is called for the
-  // first time.
-  DETACH_FROM_SEQUENCE(sequence_checker_);
-
   mangle_localized_strings_ = base::CommandLine::ForCurrentProcess()->HasSwitch(
       switches::kMangleLocalizedStrings);
 }
@@ -970,11 +949,6 @@ ResourceBundle::ResourceBundle(Delegate* delegate)
 ResourceBundle::~ResourceBundle() {
   FreeImages();
   UnloadLocaleResources();
-}
-
-void ResourceBundle::CleanupOnUIThread() {
-  FreeImages();
-  font_cache_.clear();
 }
 
 // static

@@ -67,10 +67,6 @@ const base::FilePath::CharType kTemporaryDirectoryPrefix[] =
 const base::FilePath::CharType kTemporaryDirectoryPattern[] =
     FILE_PATH_LITERAL("DeleteMe*");
 
-#if BUILDFLAG(ARKWEB_WEBSTORAGE)
-#include "arkweb/chromium_ext/storage/browser/database/database_tracker_for_include.cc"
-#endif
-
 OriginInfo::OriginInfo()
     : total_size_(0) {}
 
@@ -337,14 +333,9 @@ base::FilePath DatabaseTracker::GetOriginDirectory(
     }
   }
 
-#if BUILDFLAG(ARKWEB_WEBSTORAGE)
-  return base::FilePath::FromUTF16Unsafe(kBaseDatabaseDir + origin_directory);
-#else
   return db_dir_.Append(base::FilePath::FromUTF16Unsafe(origin_directory));
-#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
 }
 
-#if !BUILDFLAG(ARKWEB_WEBSTORAGE)
 base::FilePath DatabaseTracker::GetFullDBFilePath(
     const std::string& origin_identifier,
     const std::u16string& database_name) {
@@ -361,7 +352,6 @@ base::FilePath DatabaseTracker::GetFullDBFilePath(
   return GetOriginDirectory(origin_identifier)
       .AppendASCII(base::NumberToString(id));
 }
-#endif  // !BUILDFLAG(ARKWEB_WEBSTORAGE)
 
 bool DatabaseTracker::GetOriginInfo(const std::string& origin_identifier,
                                     OriginInfo* info) {
@@ -658,11 +648,7 @@ DatabaseTracker::CachedOriginInfo* DatabaseTracker::MaybeGetCachedOriginInfo(
       origin_info.SetDatabaseSize(db.database_name, db_file_size);
 
       base::FilePath path =
-#if BUILDFLAG(ARKWEB_WEBSTORAGE)
-          GetFullDBFilePath(origin_identifier, db.database_name, true);
-#else
           GetFullDBFilePath(origin_identifier, db.database_name);
-#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
       base::File::Info file_info;
       // TODO(jsbell): Avoid duplicate base::GetFileInfo calls between this and
       // the GetDBFileSize() call above.
@@ -678,12 +664,8 @@ DatabaseTracker::CachedOriginInfo* DatabaseTracker::MaybeGetCachedOriginInfo(
 int64_t DatabaseTracker::GetDBFileSize(const std::string& origin_identifier,
                                        const std::u16string& database_name) {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  base::FilePath db_file_name =
-#if BUILDFLAG(ARKWEB_WEBSTORAGE)
-      GetFullDBFilePath(origin_identifier, database_name, true);
-#else
-      GetFullDBFilePath(origin_identifier, database_name);
-#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
+  base::FilePath db_file_name = GetFullDBFilePath(origin_identifier,
+                                                  database_name);
   return base::GetFileSize(db_file_name).value_or(0);
 }
 
@@ -803,12 +785,7 @@ void DatabaseTracker::DeleteDataModifiedSince(
       rv = net::ERR_FAILED;
     }
     for (const DatabaseDetails& db : details) {
-#if BUILDFLAG(ARKWEB_WEBSTORAGE)
-      base::FilePath db_file =
-          GetFullDBFilePath(origin, db.database_name, true);
-#else
       base::FilePath db_file = GetFullDBFilePath(origin, db.database_name);
-#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
       base::File::Info file_info;
       base::GetFileInfo(db_file, &file_info);
       if (file_info.last_modified < cutoff)

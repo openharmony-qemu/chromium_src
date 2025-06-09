@@ -137,8 +137,6 @@
 #include "media/mojo/mojom/speech_recognition_service.mojom.h"
 #endif  // BUILDFLAG(IS_WIN)
 
-#include "arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_utils.h"
-
 namespace {
 
 // This limit is much higher than it needs to be right now, because the logic
@@ -308,9 +306,7 @@ MediaFactory::MediaFactory(
     RenderFrameImpl* render_frame,
     media::RequestRoutingTokenCallback request_routing_token_cb)
     : render_frame_(render_frame),
-      request_routing_token_cb_(std::move(request_routing_token_cb)) {
-  media_factory_utils_ = std::make_unique<ArkwebMediaFactoryUtils>(this);
-}
+      request_routing_token_cb_(std::move(request_routing_token_cb)) {}
 
 MediaFactory::~MediaFactory() {
   // Release the DecoderFactory to the media thread since it may still be in use
@@ -570,7 +566,6 @@ MediaFactory::CreateRendererFactorySelector(
                                      std::move(factory));
   }
 
-  media_factory_utils_->AddOhosAndCustomMediaFactory(factory_selector.get(), render_thread);
 #if BUILDFLAG(IS_ANDROID)
   // MediaPlayerRendererClientFactory setup. It is used for HLS playback.
   auto media_player_factory =

@@ -9,7 +9,6 @@
 
 #include "base/feature_list.h"
 #include "components/performance_manager/public/features.h"
-#include "arkweb/build/features/features.h"
 
 namespace performance_manager {
 

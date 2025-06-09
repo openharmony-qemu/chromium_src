@@ -124,11 +124,7 @@ void CursorManager::UpdateCursor() {
 
   last_set_cursor_type_for_testing_ = cursor.type();
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  root_view_->UpdateCursor(cursor);
-#else
   root_view_->DisplayCursor(cursor);
-#endif
 }
 
 }  // namespace input

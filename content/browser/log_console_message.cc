@@ -3,18 +3,13 @@
 // found in the LICENSE file.
 
 #include "content/browser/log_console_message.h"
-#include <codecvt>
 
-#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
 #include "build/build_config.h"
 #include "content/public/browser/console_message.h"
 #include "content/public/common/content_features.h"
-#if BUILDFLAG(ARKWEB_DFX_LOGGING)
-#include "hilog_adapter.h"
-#include "arkweb/chromium_ext/content/browser/log_console_message_utils.h"
-#endif
+
 namespace content {
 
 void LogConsoleMessage(blink::mojom::ConsoleMessageLevel log_level,
@@ -39,10 +34,7 @@ void LogConsoleMessage(blink::mojom::ConsoleMessageLevel log_level,
 
   if (!base::FeatureList::IsEnabled(features::kLogJsConsoleMessages))
     return;
-
-#if BUILDFLAG(ARKWEB_DFX_LOGGING)
-LogConsoleMessageUtils::LogConsoleMessage(resolved_level, message, line_number, source_id);
-#else
+#if !BUILDFLAG(IS_OHOS)
   logging::LogMessage("CONSOLE", line_number, resolved_level).stream()
       << "\"" << message << "\", source: " << source_id << " (" << line_number
       << ")";

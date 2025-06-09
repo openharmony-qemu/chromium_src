@@ -4,7 +4,6 @@
 
 #include "components/site_isolation/site_isolation_policy.h"
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/feature_list.h"
 #include "base/json/values_util.h"
@@ -53,7 +52,7 @@ bool ShouldDisableSiteIsolationDueToMemorySlow(
   //   it doesn't, use a default that's slightly higher than 1GB (see
   //   https://crbug.com/844118).
   int default_memory_threshold_mb;
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SITE_ISOLATION)
+#if BUILDFLAG(IS_ANDROID)
   if (site_isolation_mode == content::SiteIsolationMode::kStrictSiteIsolation) {
     default_memory_threshold_mb = 3200;
   } else {

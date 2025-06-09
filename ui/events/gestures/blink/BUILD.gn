@@ -3,10 +3,6 @@
 # found in the LICENSE file.
 
 import("//build/config/cast.gni")
-import("//arkweb/build/features/features.gni")
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
 
 source_set("blink") {
   sources = [
@@ -14,15 +10,17 @@ source_set("blink") {
     "web_gesture_curve_impl.h",
   ]
 
+  if (is_ohos) {
+    sources += [
+      "../fling_spring_curve_ohos.h",
+      "../fling_spring_curve_ohos.cc",
+    ]
+  }
+
   if (is_castos) {
     defines = [ "USE_MOBILE_FLING_CURVE" ]
   }
 
-  if (arkweb_fling) {
-    defines = [ "USE_NATIVE_FLING_CURVE" ]
-    sources += arkweb_native_scroller_ohos_device_source_util_sources
-  }
- 
   deps = [
     "//base",
     "//third_party/blink/public:blink_headers",

@@ -21,7 +21,6 @@
 #include "base/version.h"
 #include "build/branding_buildflags.h"
 #include "build/build_config.h"
-#include "cef/libcef/features/features.h"
 #include "components/embedder_support/pref_names.h"
 #include "components/embedder_support/switches.h"
 #include "components/policy/core/common/policy_pref_names.h"
@@ -34,7 +33,6 @@
 #include "net/http/http_util.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/common/user_agent/user_agent_metadata.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include <windows.h>
@@ -42,14 +40,6 @@
 #include "base/win/registry.h"
 #include "base/win/windows_version.h"
 #endif  // BUILDFLAG(IS_WIN)
-
-#if BUILDFLAG(ENABLE_CEF)
-#include "cef/libcef/common/cef_switches.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_USERAGENT)
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#endif
 
 namespace embedder_support {
 
@@ -154,7 +144,6 @@ const std::string& GetWindowsPlatformVersion() {
 
 // Returns true if the user agent reduction should be forced (or prevented).
 // TODO(crbug.com/1330890): Remove this method along with policy.
-#if !BUILDFLAG(ARKWEB_USERAGENT)
 bool ShouldReduceUserAgentMinorVersion(
     UserAgentReductionEnterprisePolicyState user_agent_reduction) {
   return ((user_agent_reduction !=
@@ -164,7 +153,6 @@ bool ShouldReduceUserAgentMinorVersion(
           user_agent_reduction ==
               UserAgentReductionEnterprisePolicyState::kForceEnabled);
 }
-#endif
 
 // For desktop:
 // Returns true if both kReduceUserAgentMinorVersionName and
@@ -185,8 +173,6 @@ bool ShouldSendUserAgentUnifiedPlatform(
   return ShouldReduceUserAgentMinorVersion(user_agent_reduction) &&
          base::FeatureList::IsEnabled(
              blink::features::kReduceUserAgentAndroidVersionDeviceModel);
-#elif BUILDFLAG(ARKWEB_USERAGENT)
-  return false;
 #else
   return ShouldReduceUserAgentMinorVersion(user_agent_reduction) &&
          base::FeatureList::IsEnabled(
@@ -344,48 +330,24 @@ blink::UserAgentBrandList ShuffleBrandList(
 
 }  // namespace
 
-// todo: check
 std::string GetProductAndVersion(
     UserAgentReductionEnterprisePolicyState user_agent_reduction) {
-#if BUILDFLAG(ENABLE_CEF)
-  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  if (command_line != nullptr) {
-    if (command_line->HasSwitch(switches::kUserAgentProductAndVersion)) {
-      return command_line->GetSwitchValueASCII(
-          switches::kUserAgentProductAndVersion);
-    }
-  }
-#endif
-#endif
-
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  std::string version_str = "Chrome/";
-  version_str.append(version_info::GetMajorVersionNumber());
-  version_str.append(".0.0.0");
-  return version_str;
-#else
   return ShouldReduceUserAgentMinorVersion(user_agent_reduction)
              ? version_info::GetProductNameAndVersionForReducedUserAgent(
                    blink::features::kUserAgentFrozenBuildVersion.Get())
              : std::string(
                    version_info::GetProductNameAndVersionForUserAgent());
-#endif
 }
 
 std::optional<std::string> GetUserAgentFromCommandLine() {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  if (command_line != nullptr) {
-    if (command_line->HasSwitch(kUserAgent)) {
-      std::string ua = command_line->GetSwitchValueASCII(kUserAgent);
-      if (net::HttpUtil::IsValidHeaderValue(ua)) {
-        return ua;
-      }
-      LOG(WARNING) << "Ignored invalid value for flag --" << kUserAgent;
+  if (command_line->HasSwitch(kUserAgent)) {
+    std::string ua = command_line->GetSwitchValueASCII(kUserAgent);
+    if (net::HttpUtil::IsValidHeaderValue(ua)) {
+      return ua;
     }
+    LOG(WARNING) << "Ignored invalid value for flag --" << kUserAgent;
   }
-#endif
   return std::nullopt;
 }
 

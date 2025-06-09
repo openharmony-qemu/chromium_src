@@ -55,6 +55,9 @@ struct RootCompositorFrameSinkParams {
 
   pending_associated_receiver<ExternalBeginFrameController>?
       external_begin_frame_controller;
+
+  [EnableIf=is_ohos]
+  uint64 surface_id;
 };
 
 // The FrameSinkManager interface is a privileged interface that allows the
@@ -213,32 +216,6 @@ interface FrameSinkManager {
   EnableFrameSinkManagerTestApi(
       pending_receiver<FrameSinkManagerTestApi> receiver);
 
-  // Set Enable lower frame rate.
-  [EnableIf=arkweb_occluded_opt]
-  SetEnableLowerFrameRate(bool enabled, FrameSinkId frame_sink_id);
-
-  // Set Enable half frame rate.
-  [EnableIf=arkweb_occluded_opt]
-  SetEnableHalfFrameRate(bool enabled, FrameSinkId frame_sink_id);
- 
-  // Set enable lower frame rate, because there is video playing with low frame rate and no touch event
-  [EnableIf=arkweb_video_ltpo]
-  UpdateVSyncFrequency(FrameSinkId frame_sink_id, uint32 client_id);
- 
-  // Reset the frame rate after UpdateVSyncFrequency
-  [EnableIf=arkweb_video_ltpo]
-  ResetVSyncFrequency(FrameSinkId frame_sink_id);
-
-  [EnableIf=is_ohos]
-  SendInternalBeginFrame(FrameSinkId frame_sink_id);
-  // When frame is invisible, evict display back buffers
-  [EnableIf=arkweb_occluded_opt]
-  EvictFrameBackBuffers(FrameSinkId frame_sink_id, bool invisible);
-
-  // Set pip enable.
-  [EnableIf=arkweb_pip]
-  SetPipActive(bool active, FrameSinkId frame_sink_id);
-
   // Setup the connection between the Browser (at WebContentsImpl level) and
   // the VizCompositor thread (at InputManager level) to allow transferring
   // information from Viz to the Browser when the VizCompositor thread is
@@ -287,8 +264,4 @@ interface FrameSinkManagerClient {
   OnScreenshotCaptured(
       blink.mojom.SameDocNavigationScreenshotDestinationToken destination_token,
       CopyOutputResult copy_output_result);
-
-  // Send restore render fit callback to host client
-  [EnableIf=arkweb_maximize_resize]
-  RestoreRenderFit(uint32 client_id, uint32 sink_id);
 };

@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/functional/bind.h"
 #include "base/memory/raw_ptr.h"
@@ -232,8 +231,6 @@ void ProxyImpl::SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) {
   if (was_deferring != should_defer)
     scheduler_->SetDeferBeginMainFrame(ShouldDeferBeginMainFrame());
 }
-
-#include "arkweb/chromium_ext/cc/trees/proxy_impl_for_include.cc"
 
 void ProxyImpl::SetNeedsRedrawOnImpl(const gfx::Rect& damage_rect) {
   DCHECK(IsImplThread());
@@ -759,10 +756,6 @@ void ProxyImpl::ScheduledActionSendBeginMainFrame(
           begin_frame_id->set_sequence_number(args.frame_id.sequence_number);
           begin_frame_id->set_source_id(args.frame_id.source_id);
         });
-#if BUILDFLAG(ARKWEB_DFX_TRACING)
-    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
-                      std::to_string(args.trace_id), "step", "SendBeginMainFrame");
-#endif
   }
   MainThreadTaskRunner()->PostTask(
       FROM_HERE,
@@ -772,7 +765,7 @@ void ProxyImpl::ScheduledActionSendBeginMainFrame(
 }
 
 DrawResult ProxyImpl::ScheduledActionDrawIfPossible() {
-  OHOS_TRACE_EVENT0("cc", "ProxyImpl::ScheduledActionDraw");
+  TRACE_EVENT0("cc", "ProxyImpl::ScheduledActionDraw");
   DCHECK(IsImplThread());
 
   // The scheduler should never generate this call when it can't draw.

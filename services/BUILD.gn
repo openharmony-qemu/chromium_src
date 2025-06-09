@@ -120,6 +120,21 @@ test("services_unittests") {
     ]
   }
 
+  if (is_ohos) {
+    defines = [
+      "NET_UNITTESTS_OHOS_ENABLE",
+    ]
+    sources = [
+      "//net/cert/cert_verify_proc_ohos.cc",
+      "//net/cert/test_root_certs_ohos.cc",
+    ]
+    deps += [
+      "//net",
+      "//net:test_support",
+      "//ohos/adapter:adapter",
+    ]
+  }
+
   if (enable_screen_ai_service) {
     deps += [ "//services/screen_ai:unit_tests" ]
   }

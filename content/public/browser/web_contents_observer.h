@@ -39,7 +39,6 @@
 #include "ui/accessibility/ax_location_and_scroll_updates.h"
 #include "ui/base/page_transition_types.h"
 #include "ui/base/window_open_disposition.h"
-#include "arkweb/build/features/features.h"
 
 class GURL;
 
@@ -244,9 +243,6 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   // example, show the user an indicator that the capturing tab is being
   // controlled by the capturing tab.
   virtual void OnCapturedSurfaceControl() {}
-
-  // This method is invoked when a RenderWidget is created.
-  virtual void RenderWidgetCreated(RenderWidgetHost* render_widget_host) {}
 
   // This method is invoked when the `blink::WebView` of the current
   // RenderViewHost is ready, e.g. because we recreated it after a crash.
@@ -774,11 +770,6 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   // Invoked when the WebContents is muted/unmuted.
   virtual void DidUpdateAudioMutingState(bool muted) {}
 
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  //Set whether to the HTML play can be used to control media
-  virtual void SetHtmlPlayEnabled(bool enabled) {}
-#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
-
   // Invoked when the renderer process has toggled the tab into/out of
   // fullscreen mode.
   virtual void DidToggleFullscreenModeForTab(bool entered_fullscreen,
@@ -876,14 +867,6 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
       const MediaPlayerInfo& video_type,
       const MediaPlayerId& id,
       WebContentsObserver::MediaStoppedReason reason) {}
-#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
-  virtual void MediaPlayerGone(
-      const MediaPlayerInfo& video_type,
-      const MediaPlayerId& id) {}
-#endif
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-  virtual void OneShotMediaPlayerStopped() {}
-#endif
   virtual void MediaResized(const gfx::Size& size, const MediaPlayerId& id) {}
   // Invoked when media enters or exits fullscreen. We must use a heuristic
   // to determine this as it is not trivial for media with custom controls.
@@ -933,10 +916,6 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   // which allows observation that the RenderWidgetHost for the
   // WebContents has gained/lost focus.
   virtual void OnFocusChangedInPage(FocusedNodeDetails* details) {}
-
-  // Notification that |render_frame_host| for this WebContents has gained
-  // focus.
-  virtual void OnFrameFocused(RenderFrameHost* render_frame_host) {}
 
   // Notifies that the manifest URL for the main frame changed to
   // |manifest_url|. This will be invoked when a document with a manifest loads
@@ -993,20 +972,10 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   // Called when WebContents received a request to vibrate the page.
   virtual void VibrationRequested() {}
 
-#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
-  // Called when form editing state changed
-  virtual void OnFormEditingStateChanged(bool state, uint64_t form_id) {}
-#endif
-
   // Called when a first contentful paint happened in the primary main frame.
   virtual void OnFirstContentfulPaintInPrimaryMainFrame() {}
 
   WebContents* web_contents() const;
-
-#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
-  virtual void OpenDateTimeChooser() {}
-  virtual void CloseDateTimeChooser() {}
-#endif
 
  protected:
   // Use this constructor when the object is tied to a single WebContents for

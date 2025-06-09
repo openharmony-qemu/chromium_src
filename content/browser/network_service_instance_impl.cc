@@ -96,10 +96,6 @@
 #include "services/network/public/mojom/network_interface_change_listener.mojom.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
-#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
-#endif
-
 namespace content {
 
 namespace {
@@ -170,11 +166,7 @@ static NetworkServiceClient* g_client = nullptr;
 
 void CreateInProcessNetworkServiceOnThread(
     mojo::PendingReceiver<network::mojom::NetworkService> receiver) {
-#if BUILDFLAG(IS_ARKWEB)
-  g_in_process_instance = new network::ArkWebNetworkServiceExt(
-#else
   g_in_process_instance = new network::NetworkService(
-#endif
       nullptr /* registry */, std::move(receiver),
       true /* delay_initialization_until_set_client */);
 }
@@ -360,13 +352,11 @@ void CreateInProcessNetworkService(
     base::Thread::Options options(base::MessagePumpType::IO, 0);
     GetNetworkServiceDedicatedThread().StartWithOptions(std::move(options));
     task_runner = GetNetworkServiceDedicatedThread().task_runner();
-#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
-    using namespace OHOS::NWeb;
-    ResSchedClientAdapter::ReportKeyThread(
-        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-        GetNetworkServiceDedicatedThread().GetThreadId(),
-        ResSchedRoleAdapter::USER_INTERACT);
-#endif
+    task_runner->PostTask(
+        FROM_HERE, base::BindOnce([]() {
+          mojo::InterfaceEndpointClient::SetThreadNameSuffixForMetrics(
+              "NetworkService");
+        }));
   } else {
     task_runner = GetIOThreadTaskRunner({});
   }
@@ -476,11 +466,7 @@ void CreateNetworkServiceOnIOForTesting(
     return;
   }
 
-#if BUILDFLAG(IS_ARKWEB)
-  GetLocalNetworkService() = std::make_unique<network::ArkWebNetworkServiceExt>(
-#else
   GetLocalNetworkService() = std::make_unique<network::NetworkService>(
-#endif
       nullptr /* registry */, std::move(receiver),
       true /* delay_initialization_until_set_client */);
   GetLocalNetworkService()->Initialize(

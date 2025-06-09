@@ -132,9 +132,6 @@ class SessionCleanupCookieStore;
 class SharedDictionaryManager;
 class WebSocketFactory;
 class WebTransport;
-#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
-class ArkWebNetworkContextExt;
-#endif
 
 struct ResourceRequest;
 
@@ -186,11 +183,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
 
   ~NetworkContext() override;
 
-#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  virtual ArkWebNetworkContextExt* AsArkWebNetworkContextExt() {
-    return nullptr;
-  }
-#endif
   static std::unique_ptr<NetworkContext> CreateForTesting(
       NetworkService* network_service,
       mojo::PendingReceiver<mojom::NetworkContext> receiver,
@@ -410,6 +402,14 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
       const net::NetworkAnonymizationKey& network_anonymization_key,
       mojom::ResolveHostParametersPtr optional_parameters,
       mojo::PendingRemote<mojom::ResolveHostClient> response_client) override;
+
+#if BUILDFLAG(IS_OHOS)
+  void InitPRParallelPreloadMgr(const base::FilePath& cache_path) override;
+  void StartMainPage(const std::string& url,
+      const net::NetworkAnonymizationKey& network_anonymization_key, uint64_t addr_web_handle) override;
+  void StopMainPage(uint64_t addr_web_handle) override;
+#endif
+
   void CreateHostResolver(
       const std::optional<net::DnsConfigOverrides>& config_overrides,
       mojo::PendingReceiver<mojom::HostResolver> receiver) override;
@@ -702,10 +702,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
                                       const GURL& url) const;
 
  private:
-#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  friend class ArkWebNetworkContextExt;
-#endif
-
   class NetworkContextHttpAuthPreferences : public net::HttpAuthPreferences {
    public:
     explicit NetworkContextHttpAuthPreferences(NetworkService* network_service);
@@ -1060,9 +1056,5 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
 };
 
 }  // namespace network
-
-#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
-#include "arkweb/chromium_ext/services/network/arkweb_network_context_ext.h"
-#endif
 
 #endif  // SERVICES_NETWORK_NETWORK_CONTEXT_H_

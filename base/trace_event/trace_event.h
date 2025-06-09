@@ -465,7 +465,4 @@ class TraceScopedTrackableObject {
 }  // namespace trace_event
 }  // namespace base
 
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_DFX_TRACING)
-#include "arkweb/chromium_ext/base/trace_event/trace_event_oh.h"
-#endif
 #endif  // BASE_TRACE_EVENT_TRACE_EVENT_H_

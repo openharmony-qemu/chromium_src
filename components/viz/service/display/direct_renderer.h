@@ -11,7 +11,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/circular_deque.h"
 #include "base/containers/flat_map.h"
 #include "base/functional/callback.h"
@@ -81,14 +80,6 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
 
   bool use_partial_swap() const { return use_partial_swap_; }
 
-#if BUILDFLAG(ARKWEB_VULKAN)
-  void disable_partial_swap() { use_partial_swap_ = false; }
-#endif
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void SetNativeInnerWeb(bool isInnerWeb);
-#endif
-
   void SetOutputSurfaceClipRect(const gfx::Rect& clip_rect);
   void SetVisible(bool visible);
   void ReallocatedFrameBuffers();
@@ -151,9 +142,9 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
     raw_ptr<const AggregatedRenderPass> current_render_pass = nullptr;
 
     gfx::Rect root_damage_rect;
-#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+#if BUILDFLAG(IS_OHOS)
     gfx::Rect damage_rect;
-#endif
+#endif  // BUILDFLAG(IS_OHOS)
     std::vector<gfx::Rect> root_content_bounds;
     gfx::Size device_viewport_size;
     gfx::DisplayColorSpaces display_color_spaces;

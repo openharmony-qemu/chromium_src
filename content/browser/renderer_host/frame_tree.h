@@ -153,11 +153,6 @@ class CONTENT_EXPORT FrameTree {
     // message will not be sent.
     virtual void DidStartLoading(FrameTreeNode* frame_tree_node) = 0;
 
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-    virtual void DidStartLoading(FrameTreeNode* frame_tree_node,
-                                 bool should_show_loading_ui) {}
-#endif
-
     // The FrameTree has stopped loading. Sent only when all FrameTreeNodes have
     // stopped loading.
     virtual void DidStopLoading() = 0;

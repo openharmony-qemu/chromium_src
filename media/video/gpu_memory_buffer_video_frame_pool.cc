@@ -628,7 +628,7 @@ void GpuMemoryBufferVideoFramePool::PoolImpl::CreateHardwareFrame(
     scoped_refptr<VideoFrame> video_frame,
     FrameReadyCB frame_ready_cb) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_OHOS)
   std::move(frame_ready_cb).Run(std::move(video_frame));
   return;
 #else

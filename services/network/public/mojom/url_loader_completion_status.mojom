@@ -93,8 +93,4 @@ struct URLLoaderCompletionStatus {
 
   // Whether the initiator of this request should be collapsed.
   bool should_collapse_initiator = false;
-
-  // Whether the reason of abortion is that browser was destroyed.
-  [EnableIf=arkweb_ex_download]
-  bool abort_due_to_cef_browser_destroyed = false;
 };

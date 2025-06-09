@@ -10,8 +10,6 @@
 
 // This file contains the list of network errors.
 
-#include "arkweb/build/features/features.h"
-
 //
 // Ranges:
 //     0- 99 System related errors
@@ -562,11 +560,6 @@ NET_ERROR(CERT_KNOWN_INTERCEPTION_BLOCKED, -217)
 
 // -218 was SSL_OBSOLETE_VERSION which is not longer used. TLS 1.0/1.1 instead
 // cause SSL_VERSION_OR_CIPHER_MISMATCH now.
-
-#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
-// The connection uses an obsolete version of SSL/TLS or cipher.
-NET_ERROR(SSL_OBSOLETE_VERSION_OR_CIPHER, -218)
-#endif
 
 // Add new certificate error codes here.
 //

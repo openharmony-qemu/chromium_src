@@ -148,11 +148,6 @@ constexpr base::TimeDelta kFindResultCooldown = base::Milliseconds(100);
 constexpr std::string_view kChromeExtensionHost =
     "chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/";
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-constexpr std::string_view kArkWebExtensionHost =
-    "arkweb-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/";
-#endif
-
 // Print Preview base URL.
 constexpr std::string_view kChromePrintHost = "chrome://print/";
 
@@ -478,11 +473,7 @@ bool PdfViewWebPlugin::InitializeCommon() {
   // `pdf::CreateInternalPlugin()`), so we just `CHECK` for defense-in-depth.
   const std::string& embedder_origin = client_->GetEmbedderOriginString();
   is_print_preview_ = (embedder_origin == kChromePrintHost);
-  CHECK(IsPrintPreview() || embedder_origin == kChromeExtensionHost
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-        || embedder_origin == kArkWebExtensionHost
-#endif
-  );
+  CHECK(IsPrintPreview() || embedder_origin == kChromeExtensionHost);
 
   full_frame_ = params->full_frame;
   background_color_ = params->background_color;

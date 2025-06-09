@@ -42,10 +42,8 @@ ActivationStateComputingNavigationThrottle::CreateForChild(
     std::string_view uma_tag) {
   CHECK(!IsInSubresourceFilterRoot(navigation_handle),
         base::NotFatalUntil::M129);
-#if !BUILDFLAG(ARKWEB_ADBLOCK)
   CHECK_NE(mojom::ActivationLevel::kDisabled,
            parent_activation_state.activation_level, base::NotFatalUntil::M129);
-#endif
   CHECK(ruleset_handle, base::NotFatalUntil::M129);
   return base::WrapUnique(new ActivationStateComputingNavigationThrottle(
       navigation_handle, parent_activation_state, ruleset_handle, uma_tag));

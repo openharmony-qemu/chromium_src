@@ -211,10 +211,6 @@ Response ConvertSensorReading(device::mojom::SensorType type,
                               Emulation::SensorReading* const reading,
                               device::SensorReading* out_reading) {
   switch (type) {
-#if BUILDFLAG(ARKWEB_SENSOR)
-    case device::mojom::SensorType::PROXIMITY:
-    case device::mojom::SensorType::PRESSURE:
-#endif
     case device::mojom::SensorType::AMBIENT_LIGHT: {
       if (!reading->HasSingle()) {
         return Response::InvalidParams(

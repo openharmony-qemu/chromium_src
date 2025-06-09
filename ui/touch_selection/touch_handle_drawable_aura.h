@@ -47,9 +47,6 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandleDrawableAura
   void SetAlpha(float alpha) override;
   gfx::RectF GetVisibleBounds() const override;
   float GetDrawableHorizontalPaddingRatio() const override;
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
-  void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) override;
-#endif
 
   // LayerDelegate:
   void OnPaintLayer(const PaintContext& context) override;

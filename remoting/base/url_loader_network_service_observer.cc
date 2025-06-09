@@ -80,18 +80,6 @@ UrlLoaderNetworkServiceObserver::Bind() {
   return pending_remote;
 }
 
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-void UrlLoaderNetworkServiceObserver::OnSSLCertificateError(
-    const GURL& url,
-    int net_error,
-    const net::SSLInfo& ssl_info,
-    bool fatal,
-    const ::GURL& origin_url,
-    const std::string& referrer,
-    OnSSLCertificateErrorCallback response) {
-  std::move(response).Run(net_error);
-}
-#else
 void UrlLoaderNetworkServiceObserver::OnSSLCertificateError(
     const GURL& url,
     int net_error,
@@ -100,7 +88,6 @@ void UrlLoaderNetworkServiceObserver::OnSSLCertificateError(
     OnSSLCertificateErrorCallback response) {
   std::move(response).Run(net_error);
 }
-#endif
 
 void UrlLoaderNetworkServiceObserver::OnCertificateRequested(
     const std::optional<base::UnguessableToken>& window_id,

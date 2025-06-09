@@ -36,30 +36,15 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-#include "base/supports_user_data.h"
-#endif
-
 namespace download {
 class DownloadFile;
 class DownloadItemImplDelegate;
-class ArkWebDownloadItemImplExt;
-
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-bool CallIsCancellation(DownloadInterruptReason reason);
-#endif
 
 // See download_item.h for usage.
 class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
     : public DownloadItem,
       public DownloadDestinationObserver {
  public:
-  friend ArkWebDownloadItemImplExt;
-  virtual ArkWebDownloadItemImplExt *AsArkWebDownloadItemImplExt() { return nullptr; }
   // Information about the initial request that triggers the download. Most of
   // the fields are immutable after the DownloadItem is successfully
   // created. However, it is possible that the url chain is changed when
@@ -195,6 +180,7 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
     // Time last update was written to target file.
     base::Time end_time;
   };
+
   // The maximum number of attempts we will make to resume automatically.
   static const int kMaxAutoResumeAttempts;
 
@@ -915,17 +901,11 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
   bool is_must_download_ = false;
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  std::string request_method_;
-#endif
-
   THREAD_CHECKER(thread_checker_);
 
   base::WeakPtrFactory<DownloadItemImpl> weak_ptr_factory_{this};
 };
 
 }  // namespace download
-
-#include "arkweb/chromium_ext/components/download/internal/common/arkweb_download_item_impl_ext.h"
 
 #endif  // COMPONENTS_DOWNLOAD_PUBLIC_COMMON_DOWNLOAD_ITEM_IMPL_H_

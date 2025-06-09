@@ -66,7 +66,6 @@
 #include "ui/gfx/geometry/rect_conversions.h"
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/vector2d_conversions.h"
-#include "cc/trees/layer_tree_impl_utils.h"
 
 namespace cc {
 namespace {
@@ -177,7 +176,6 @@ LayerTreeImpl::LayerTreeImpl(
       top_controls_shown_ratio_(std::move(top_controls_shown_ratio)),
       bottom_controls_shown_ratio_(std::move(bottom_controls_shown_ratio)) {
   property_trees()->set_is_main_thread(false);
-  utils_ = std::make_unique<LayerTreeImplUtils>(this);
 }
 
 LayerTreeImpl::~LayerTreeImpl() {
@@ -764,10 +762,6 @@ void LayerTreeImpl::PullLayerTreePropertiesFrom(CommitState& commit_state) {
 
   RegisterSelection(commit_state.selection);
 
-#if BUILDFLAG(ARKWEB_MENU)
-  utils_->RegisterClippedVisualViewportSelectionBounds(commit_state.clipped_selection_bounds);
-#endif
-
   PushPageScaleFromMainThread(commit_state.page_scale_factor,
                               commit_state.min_page_scale_factor,
                               commit_state.max_page_scale_factor);
@@ -909,11 +903,6 @@ void LayerTreeImpl::PushPropertiesTo(LayerTreeImpl* target_tree) {
     target_tree->RequestForceSendMetadata();
 
   target_tree->RegisterSelection(selection_);
-
-#if BUILDFLAG(ARKWEB_MENU)
-  target_tree->layer_tree_impl_utils()->RegisterClippedVisualViewportSelectionBounds(
-    utils_->GetClippedVisualViewportSelectionBounds());
-#endif
 
   // This should match the property synchronization in
   // LayerTreeHost::finishCommitOnImplThread().
@@ -1968,15 +1957,10 @@ base::TimeDelta LayerTreeImpl::CurrentBeginFrameInterval() const {
 const gfx::Rect LayerTreeImpl::ViewportRectForTilePriority() const {
   const gfx::Rect& viewport_rect_for_tile_priority =
       host_impl_->viewport_rect_for_tile_priority();
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  return utils_->ViewportRectForTilePriority(viewport_rect_for_tile_priority);
-#else
   return viewport_rect_for_tile_priority.IsEmpty()
              ? GetDeviceViewport()
              : viewport_rect_for_tile_priority;
-#endif
 }
-
 
 std::unique_ptr<ScrollbarAnimationController>
 LayerTreeImpl::CreateScrollbarAnimationController(ElementId scroll_element_id,
@@ -2501,30 +2485,6 @@ LayerImpl* LayerTreeImpl::FindLayerThatIsHitByPoint(
                            &state);
   return state.closest_match;
 }
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-struct HitTestFunctorNative {
-  bool operator()(LayerImpl* layer) const {
-    return layer->layer_impl_utils()->may_contain_native();
-  }
-};
-
-LayerImpl* LayerTreeImpl::FindLayerThatIsHitByPointNative(
-    const gfx::PointF& screen_space_point) {
-  if (layer_list_.empty())
-    return nullptr;
-  bool update_tiles = !features::IsCCSlimmingEnabled();
-  if (!UpdateDrawProperties(update_tiles,
-                            /*update_image_animation_controller=*/true)) {
-    return nullptr;
-  }
-  FindClosestMatchingLayerState state;
-  FindClosestMatchingLayer(screen_space_point, layer_list_[0].get(),
-                           HitTestFunctorNative(),
-                           &state);
-  return state.closest_match;
-}
-#endif
 
 struct FindTouchEventLayerFunctor {
   bool operator()(LayerImpl* layer) const {

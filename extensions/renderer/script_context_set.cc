@@ -359,11 +359,7 @@ mojom::ContextType ScriptContextSet::ClassifyJavaScriptContext(
     return mojom::ContextType::kUnspecified;
   }
 
-  if (url.SchemeIs(content::kChromeUIScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      || url.SchemeIs(content::kArkWebUIScheme)
-#endif
-  ) {
+  if (url.SchemeIs(content::kChromeUIScheme)) {
     return mojom::ContextType::kWebUi;
   }
 

@@ -32,7 +32,6 @@
 #include "ui/gfx/geometry/point_conversions.h"
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/gfx/geometry/vector2d_f.h"
-#include "cc/input/input_handler_utils.h"
 
 namespace cc {
 
@@ -84,9 +83,7 @@ base::WeakPtr<InputHandler> InputHandler::Create(
 InputHandler::InputHandler(CompositorDelegateForInput& compositor_delegate)
     : compositor_delegate_(compositor_delegate),
       scrollbar_controller_(std::make_unique<ScrollbarController>(
-          &compositor_delegate_->GetImplDeprecated())) {
-  handler_utils_ = std::make_unique<InputHandlerUtils>(this);
-}
+          &compositor_delegate_->GetImplDeprecated())) {}
 
 InputHandler::~InputHandler() = default;
 
@@ -315,7 +312,7 @@ InputHandlerScrollResult InputHandler::ScrollUpdate(
     base::TimeDelta delayed_by) {
   // The current_native_scrolling_element should only be set for ScrollBegin.
   DCHECK(!scroll_state.data()->current_native_scrolling_element());
-  OHOS_TRACE_EVENT2("cc", "InputHandler::ScrollUpdate", "dx", scroll_state.delta_x(),
+  TRACE_EVENT2("cc", "InputHandler::ScrollUpdate", "dx", scroll_state.delta_x(),
                "dy", scroll_state.delta_y());
 
   if (!CurrentlyScrollingNode())
@@ -705,13 +702,8 @@ void InputHandler::SetSynchronousInputHandlerRootScrollOffset(
                "offset_x", root_content_offset.x(), "offset_y",
                root_content_offset.y());
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  gfx::Vector2dF physical_delta =
-      gfx::Vector2dF(root_content_offset.x(), root_content_offset.y());
-#else
   gfx::Vector2dF physical_delta =
       root_content_offset - GetViewport().TotalScrollOffset();
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   physical_delta.Scale(ActiveTree().page_scale_factor_for_scroll());
 
   bool changed = !GetViewport()
@@ -857,11 +849,6 @@ InputHandler::EventListenerTypeForTouchStartOrMoveAt(
   if (layer_impl_with_touch_handler == nullptr) {
     if (out_touch_action)
       *out_touch_action = TouchAction::kAuto;
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-    if (handler_utils_->IsNativeLayer(device_viewport_point)) {
-      return InputHandler::TouchStartOrMoveEventListenerType::kHandler;
-    }
-#endif
     return InputHandler::TouchStartOrMoveEventListenerType::kNoHandler;
   }
 
@@ -922,6 +909,7 @@ InputHandler::EventListenerTypeForTouchStartOrMoveAt(
   }
   return InputHandler::TouchStartOrMoveEventListenerType::kHandler;
 }
+
 std::unique_ptr<LatencyInfoSwapPromiseMonitor>
 InputHandler::CreateLatencyInfoSwapPromiseMonitor(ui::LatencyInfo* latency) {
   return compositor_delegate_->GetImplDeprecated()
@@ -1388,13 +1376,6 @@ ActivelyScrollingType InputHandler::GetActivelyScrollingType() const {
 bool InputHandler::IsHandlingTouchSequence() const {
   return is_handling_touch_sequence_;
 }
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-void InputHandler::HandleScrollUpdateForInternalBeginFrame(
-    const viz::BeginFrameArgs& args) {
-  handler_utils_->HandleScrollUpdateForInternalBeginFrame(args);
-}
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 bool InputHandler::IsCurrentScrollMainRepainted() const {
   const ScrollNode* scroll_node = CurrentlyScrollingNode();

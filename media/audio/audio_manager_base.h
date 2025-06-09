@@ -23,7 +23,6 @@
 #include "media/audio/audio_device_name.h"
 #include "media/audio/audio_manager.h"
 #include "media/audio/audio_output_dispatcher.h"
-#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -142,11 +141,6 @@ class MEDIA_EXPORT AudioManagerBase : public AudioManager {
   virtual AudioParameters GetPreferredOutputStreamParameters(
       const std::string& output_device_id,
       const AudioParameters& input_params) = 0;
-
-#if BUILDFLAG(ARKWEB_WEBRTC)
-  virtual AudioParameters GetPreferredInputStreamParameters(
-      const std::string& input_device_id) = 0;
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
 
   // Appends a list of available input devices to |device_names|,
   // which must initially be empty.

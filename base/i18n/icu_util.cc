@@ -31,8 +31,6 @@
 #include "third_party/icu/source/common/unicode/udata.h"
 #include "third_party/icu/source/common/unicode/utrace.h"
 
-#include "arkweb/build/features/features.h"
-
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/apk_assets.h"
 #include "base/android/timezone_utils.h"
@@ -60,9 +58,8 @@
 #include "third_party/icu/source/i18n/unicode/timezone.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/build/features/features.h"
-#include "arkweb/chromium_ext/base/i18n/icu_util_ohos.h"
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/ohos_i18n/ohos_i18n.h"
 #endif
 
 namespace base::i18n {
@@ -185,14 +182,6 @@ void LazyInitIcuDataFile() {
     return;
   }
 #endif  // !BUILDFLAG(IS_APPLE)
-
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-  // If the hap package is not decompressed, the directory does not exist.
-  if (data_path.empty() || !base::PathExists(data_path)) {
-      LOG(ERROR) << data_path << " not exists.";
-      return;
-  }
-#endif
   File file(data_path, File::FLAG_OPEN | File::FLAG_READ);
   if (file.IsValid()) {
     // TODO(brucedawson): http://crbug.com/445616.
@@ -269,11 +258,7 @@ bool InitializeICUWithFileDescriptorInternal(
 
   std::unique_ptr<MemoryMappedFile> mapped_file;
   UErrorCode err;
-#if BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
-  LOAD_ICU_DATA(data_fd, data_region, mapped_file, err);
-#else
   g_debug_icu_load = LoadIcuData(data_fd, data_region, &mapped_file, &err);
-#endif
   if (g_debug_icu_load == 1 || g_debug_icu_load == 2) {
     return false;
   }
@@ -325,13 +310,12 @@ bool InitializeICUFromDataFile() {
 // On some platforms, the time zone must be explicitly initialized zone rather
 // than relying on ICU's internal initialization.
 void InitializeIcuTimeZone() {
-#if BUILDFLAG(IS_ARKWEB)
-#if BUILDFLAG(ARKWEB_TIME_ZONE)
-    // On OHOS, we can't use the method of obtaining the timezone as Linux, because
-    // it detects from the system file which render process doesn't have enough
-    // permission. On OHOS, we can get from OH TimeService Subsystem.
-    CREATE_TIME_ZONE();
-#endif
+#if BUILDFLAG(IS_OHOS)
+  std::string zone_id = ::ohos::adapter::ohos_i18n::GetTimeZone();
+  if (!zone_id.empty()) {
+    icu::TimeZone::adoptDefault(
+        icu::TimeZone::createTimeZone(icu::UnicodeString::fromUTF8(zone_id)));
+  }
 #elif BUILDFLAG(IS_ANDROID)
   // On Android, we can't leave it up to ICU to set the default time zone
   // because ICU's time zone detection does not work in many time zones (e.g.

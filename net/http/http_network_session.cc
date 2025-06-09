@@ -40,7 +40,6 @@
 #include "net/third_party/quiche/src/quiche/quic/core/quic_tag.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_utils.h"
 #include "url/scheme_host_port.h"
-#include "arkweb/chromium_ext/net/http/http_network_session_for_include.cc"
 
 namespace net {
 

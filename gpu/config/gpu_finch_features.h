@@ -100,7 +100,7 @@ GPU_EXPORT BASE_DECLARE_FEATURE(kEnableDrDc);
 
 GPU_EXPORT BASE_DECLARE_FEATURE(kPruneOldTransferCacheEntries);
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_VULKAN)
+#if BUILDFLAG(IS_ANDROID)
 // This flag is use additionally with kEnableDrDc to enable the feature for
 // vulkan enabled android devices.
 GPU_EXPORT BASE_DECLARE_FEATURE(kEnableDrDcVulkan);

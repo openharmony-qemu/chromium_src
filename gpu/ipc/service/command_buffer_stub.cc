@@ -306,11 +306,6 @@ void CommandBufferStub::Destroy() {
   }
   if (wait_for_get_offset_) {
     std::move(wait_for_get_offset_->callback).Run(gpu::CommandBuffer::State());
-#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-    TRACE_EVENT2("gpu", "CommandBufferStub::Destroy", "stop timer, wait_for_get_offset_->start",
-      wait_for_get_offset_->start, "wait_for_get_offset_->end", wait_for_get_offset_->end);
-      wait_for_get_offset_in_range_timer_.Stop();
-#endif
     wait_for_get_offset_.reset();
   }
 
@@ -438,33 +433,14 @@ void CommandBufferStub::WaitForGetOffsetInRange(uint32_t set_get_buffer_count,
   if (wait_for_get_offset_) {
     LOG(ERROR)
         << "Got WaitForGetOffset command while currently waiting for offset.";
-#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-  wait_for_get_offset_in_range_timer_.Stop();
-    TRACE_EVENT0("gpu", "CommandBufferStub::WaitForGetOffsetInRange" \
-      " Got WaitForGetOffset command while currently waiting for offset, stop timer");
-#endif
   }
   channel_->scheduler()->SetSequencePriority(sequence_id_,
                                              SchedulingPriority::kHigh);
   wait_for_get_offset_ =
       std::make_unique<WaitForCommandState>(start, end, std::move(callback));
   wait_set_get_buffer_count_ = set_get_buffer_count;
-#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-  wait_for_get_offset_in_range_timer_.Start(FROM_HERE, base::Milliseconds(3000),
-    base::BindOnce(&gpu::CommandBufferStub::WaitForGetOffsetInRangeTimeout, this->AsWeakPtr()));
-#endif
   CheckCompleteWaits();
 }
-
-#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-void CommandBufferStub::WaitForGetOffsetInRangeTimeout() {
-  TRACE_EVENT2("gpu", "CommandBufferStub::WaitForGetOffsetInRangeTimeout", "wait_for_get_offset_->start", wait_for_get_offset_->start,
-    "wait_for_get_offset_->end", wait_for_get_offset_->end);
-  LOG(ERROR) << "CommandBufferStub::WaitForGetOffsetInRangeTimeout, need to wake up the client thread";
-  std::move(wait_for_get_offset_->callback).Run(gpu::CommandBuffer::State());
-  wait_for_get_offset_.reset();
-}
-#endif
 
 void CommandBufferStub::CheckCompleteWaits() {
   bool has_wait = wait_for_token_ || wait_for_get_offset_;
@@ -486,11 +462,6 @@ void CommandBufferStub::CheckCompleteWaits() {
          state.error != error::kNoError)) {
       ReportState();
       std::move(wait_for_get_offset_->callback).Run(state);
-#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-    TRACE_EVENT2("gpu", "CommandBufferStub::CheckCompleteWaits successfully, stop timer", "wait_for_get_offset_->start",
-      wait_for_get_offset_->start, "wait_for_get_offset_->end", wait_for_get_offset_->end);
-      wait_for_get_offset_in_range_timer_.Stop();
-#endif
       wait_for_get_offset_.reset();
     }
   }

@@ -124,8 +124,6 @@ const char kVModule[] = "vmodule";
 // Will wait for 60 seconds for a debugger to come to attach to the process.
 const char kWaitForDebugger[] = "wait-for-debugger";
 
-#include "arkweb/chromium_ext/base/base_switches_for_include.cc"
-
 #if BUILDFLAG(IS_WIN)
 // Disable high-resolution timer on Windows.
 const char kDisableHighResTimer[] = "disable-highres-timer";
@@ -182,6 +180,12 @@ const char kPackageVersionName[] = "package-version-name";
 // Currently, this values directs to linux scheduler's utilization min clamp.
 // Range is 0(no biased load) ~ 100(mamximum load value).
 const char kSchedulerBoostUrgent[] = "scheduler-boost-urgent";
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+const char kBundleInstallationDir[] = "bundle-installation-dir";
+const char KDisableBlinkFeatures[] = "disable-blink-features";
+const char KDisableOcclusionFeature[] = "disable-occlusion-feature";
 #endif
 
 }  // namespace switches

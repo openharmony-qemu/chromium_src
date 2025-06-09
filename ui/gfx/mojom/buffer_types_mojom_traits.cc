@@ -12,8 +12,6 @@
 #include "mojo/public/cpp/system/scope_to_message_pipe.h"
 #endif
 
-#include "arkweb/build/features/features.h"
-
 namespace mojo {
 
 // static
@@ -86,10 +84,6 @@ gfx::mojom::GpuMemoryBufferPlatformHandlePtr StructTraits<
       break;
 #endif
     }
-#if BUILDFLAG(ARKWEB_VULKAN)
-    case gfx::OHOS_NATIVE_BUFFER: {
-    }
-#endif
   }
 
   return nullptr;

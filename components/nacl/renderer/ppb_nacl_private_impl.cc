@@ -102,11 +102,7 @@ bool InitializePnaclResourceHost() {
 bool CanOpenViaFastPath(content::PepperPluginInstance* plugin_instance,
                         const GURL& gurl) {
   // Fast path only works for installed file URLs.
-  if (!gurl.SchemeIs("chrome-extension")
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      && !gurl.SchemeIs("arkweb-extension")
-#endif
-  )
+  if (!gurl.SchemeIs("chrome-extension"))
     return PP_kInvalidFileHandle;
 
   // IMPORTANT: Make sure the document can request the given URL. If we don't

@@ -27,13 +27,11 @@
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkYUVAInfo.h"
-#include "arkweb/build/features/features.h"
 
 class GrDirectContext;
 class SkImage;
 
 namespace gpu {
-class ServiceTransferCacheExt;
 
 // ServiceTransferCache is a GPU process interface for retrieving cached entries
 // from the transfer cache. These entries are populated by client calls to the
@@ -47,10 +45,6 @@ class ServiceTransferCacheExt;
 class GPU_GLES2_EXPORT ServiceTransferCache
     : public base::trace_event::MemoryDumpProvider {
  public:
-  friend class ServiceTransferCacheExt;
-  virtual raw_ptr<ServiceTransferCacheExt> AsServiceTransferCacheExt() {
-    return nullptr;
-  }
   struct GPU_GLES2_EXPORT EntryKey {
     EntryKey(int decoder_id,
              cc::TransferCacheEntryType entry_type,

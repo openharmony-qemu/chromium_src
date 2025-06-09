@@ -7,7 +7,6 @@
 #include <inttypes.h>
 #include <stdint.h>
 
-#include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
 #include "base/compiler_specific.h"
 #include "base/debug/alias.h"
 #include "base/memory/ptr_util.h"
@@ -41,10 +40,6 @@
 #include "net/ssl/ssl_config_service.h"
 #include "net/url_request/url_request.h"
 #include "net/url_request/url_request_job_factory.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #if BUILDFLAG(ENABLE_REPORTING)
 #include "net/network_error_logging/network_error_logging_service.h"
@@ -148,20 +143,6 @@ std::unique_ptr<URLRequest> URLRequestContext::CreateRequest(
       base::PassKey<URLRequestContext>(), url, priority, delegate, this,
       traffic_annotation, is_for_websockets, net_log_source);
 }
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-std::shared_ptr<URLRequest> URLRequestContext::CreateRequestForPrpp(
-    const GURL& url,
-    RequestPriority priority,
-    URLRequest::Delegate* delegate,
-    NetworkTrafficAnnotationTag traffic_annotation,
-    bool is_for_websockets,
-    const absl::optional<net::NetLogSource> net_log_source) const {
-  return std::make_shared<URLRequest>(
-      base::PassKey<URLRequestContext>(), url, priority, delegate, this,
-      traffic_annotation, is_for_websockets, net_log_source);
-}
-#endif
 
 void URLRequestContext::AssertNoURLRequests() const {
   int num_requests = url_requests_->size();
@@ -289,4 +270,5 @@ void URLRequestContext::set_device_bound_session_store(
   device_bound_session_store_ = std::move(device_bound_session_store);
 }
 #endif  // BUILDFLAG(ENABLE_DEVICE_BOUND_SESSIONS)
+
 }  // namespace net

@@ -63,10 +63,10 @@ class ScopedWebUIConfigRegistration {
 // in the same process. This is not needed for browser tests, which are each run
 // in their own process.
 class CheckForLeakedWebUIRegistrations
-    : public ::testing::EmptyTestEventListener {
+    : public testing::EmptyTestEventListener {
  public:
-  void OnTestStart(const ::testing::TestInfo& test_info) override;
-  void OnTestEnd(const ::testing::TestInfo& test_info) override;
+  void OnTestStart(const testing::TestInfo& test_info) override;
+  void OnTestEnd(const testing::TestInfo& test_info) override;
 
  private:
   size_t initial_size_of_webui_config_map_;

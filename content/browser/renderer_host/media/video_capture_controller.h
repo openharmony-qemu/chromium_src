@@ -28,10 +28,6 @@
 #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
 #include "third_party/blink/public/common/media/video_capture.h"
 #include "third_party/blink/public/common/mediastream/media_stream_request.h"
-#include "arkweb/build/features/features.h"
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-#include "video_capture_manager.h"
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 
 namespace content {
 
@@ -171,15 +167,6 @@ class CONTENT_EXPORT VideoCaptureController
   const media::VideoCaptureParams& parameters() const { return parameters_; }
   bool was_crop_ever_called() const { return was_crop_ever_called_; }
 
-#if BUILDFLAG(ARKWEB_WEBRTC)
-  void PauseClientBySessionId(const base::UnguessableToken& session_id);
-  void ResumeClientBySessionId(const base::UnguessableToken& session_id);
-#endif  // BUILDFLAG(ARKWEB_WEBRTC)
-
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  void SetScreenCaptureListener(VideoCaptureManager* video_capture_manager);
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
-
  private:
   friend class base::RefCountedThreadSafe<VideoCaptureController>;
   struct ControllerClient;
@@ -310,10 +297,6 @@ class CONTENT_EXPORT VideoCaptureController
   // `sub_capture_target_version` would otherwise not line up between the
   // various ControllerClients.
   bool was_crop_ever_called_ = false;
-
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  VideoCaptureManager* video_capture_manager_ = nullptr;
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 
   base::WeakPtrFactory<VideoCaptureController> weak_ptr_factory_{this};
 };

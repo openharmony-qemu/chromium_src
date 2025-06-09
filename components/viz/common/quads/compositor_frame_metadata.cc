@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "components/viz/common/quads/compositor_frame_metadata.h"
-#include "arkweb/build/features/features.h"
 
 namespace viz {
 
@@ -29,9 +28,6 @@ CompositorFrameMetadata::CompositorFrameMetadata(
       page_scale_factor(other.page_scale_factor),
       scrollable_viewport_size(other.scrollable_viewport_size),
       content_color_usage(other.content_color_usage),
-#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
-      is_scrolling(other.is_scrolling),
-#endif
       may_contain_video(other.may_contain_video),
       is_handling_interaction(other.is_handling_interaction),
       root_background_color(other.root_background_color),

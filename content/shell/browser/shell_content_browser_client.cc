@@ -765,7 +765,7 @@ void ShellContentBrowserClient::OnNetworkServiceCreated(
 #endif
 }
 
-bool ShellContentBrowserClient::ConfigureNetworkContextParams(
+void ShellContentBrowserClient::ConfigureNetworkContextParams(
     BrowserContext* context,
     bool in_memory,
     const base::FilePath& relative_partition_path,
@@ -774,7 +774,6 @@ bool ShellContentBrowserClient::ConfigureNetworkContextParams(
         cert_verifier_creation_params) {
   ConfigureNetworkContextParamsForShell(context, network_context_params,
                                         cert_verifier_creation_params);
-  return true;
 }
 
 std::vector<base::FilePath>

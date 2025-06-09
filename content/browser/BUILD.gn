@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//arkweb/build/features/features.gni")
-import("//arkweb/ohos_nweb/src/nweb_sysevent.gni")
 import("//base/allocator/partition_allocator/partition_alloc.gni")
 import("//build/buildflag_header.gni")
 import("//build/config/chromeos/ui_mode.gni")
@@ -29,14 +27,6 @@ import("//services/device/public/cpp/compute_pressure/buildflags.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/blink/public/public_features.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
-
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
-
-if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
-  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
-}
 
 if (is_mac) {
   import("//content/public/app/mac_helpers.gni")
@@ -81,12 +71,7 @@ source_set("browser") {
     "//content/test/fuzzer:first_party_set_parser_fuzzer_support",
     "//content/test/fuzzer:indexed_db_fuzzer_support",
     "//content/test/fuzzer:media_stream_dispatcher_host_mojolpm_fuzzer",
-    "//arkweb/chromium_ext/ohos_test:clipboard_fuzzer",
   ]
-
-  if (arkweb_unittests) {
-    visibility += [ "//gpu:gpu_unittests" ]
-  }
 
   configs += [
     "//build/config:precompiled_headers",
@@ -349,7 +334,6 @@ source_set("browser") {
   public_deps = [
     "//base",
     "//components/memory_pressure",
-    "//components/page_load_metrics/common:page_load_metrics_mojom",
     "//content/browser/indexed_db",
     "//ipc",
     "//media/mojo/mojom:remoting",
@@ -796,7 +780,6 @@ source_set("browser") {
     "code_cache/generated_code_cache.h",
     "code_cache/generated_code_cache_context.cc",
     "code_cache/generated_code_cache_context.h",
-    "code_cache/oh_code_cache.h",
     "code_cache/simple_lru_cache.cc",
     "code_cache/simple_lru_cache.h",
     "compositor/surface_utils.cc",
@@ -1339,20 +1322,6 @@ source_set("browser") {
     # TODO(crbug.com/202736352): This is built even if enable_screen_capture is
     # false. Consider better separation of the screen capture and the other
     # capture code so we can only build this if actually necessary.
-    "../../arkweb/chromium_ext/content/browser/renderer_host/agent_scheduling_group_host_utils.cc",
-    "../../arkweb/chromium_ext/content/browser/renderer_host/agent_scheduling_group_host_utils.h",
-    "../../arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_host_utils.cc",
-    "../../arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_host_utils.h",
-    "../../arkweb/chromium_ext/content/browser/renderer_host/navigation_request_utils.cc",
-    "../../arkweb/chromium_ext/content/browser/renderer_host/navigation_request_utils.h",
-    "../../arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_impl_ext.cc",
-    "../../arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_impl_ext.h",
-    "../../arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.cc",
-    "../../arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.h",
-    "../../arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_utils.cc",
-    "../../arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_utils.h",
-    "//arkweb/chromium_ext/content/browser/renderer_host/navigator_utils.cc",
-    "//arkweb/chromium_ext/content/browser/renderer_host/navigator_utils.h",
     "media/capture/native_screen_capture_picker.cc",
     "media/capture/native_screen_capture_picker.h",
     "media/capture_handle_manager.cc",
@@ -2421,23 +2390,6 @@ source_set("browser") {
     "worker_host/worker_script_loader_factory.h",
   ]
 
-  if (arkweb_webrtc) {
-    import("//arkweb/chromium_ext/content/browser/renderer_host/media/arkweb_content_browser_renderer_host_media.gni")
-    sources += arkweb_content_browser_renderer_host_media_sources
-  }
-
-  if (defined(report_sys_event) && report_sys_event) {
-    defines += [ "REPORT_SYS_EVENT" ]
-  }
-
-  if (arkweb_software_compositor) {
-    sources += [
-      "//arkweb/chromium_ext/content/browser/ohos/software_compositor_host_ohos.cc",
-      "//arkweb/chromium_ext/content/browser/ohos/software_compositor_host_ohos.h",
-    ]
-    sources += arkweb_content_browser_renderer_host_sources
-  }
-
   if (is_android) {
     sources += [
       "memory_pressure/user_level_memory_pressure_signal_generator.cc",
@@ -2501,12 +2453,11 @@ source_set("browser") {
 
   if (is_ohos) {
     sources += [
-      "//arkweb/chromium_ext/content/browser/child_process_launcher_helper_ohos.cc",
-
-      #      "//arkweb/chromium_ext/content/browser/font_access/font_enumeration_data_source_ohos.cc",
-      #      "//arkweb/chromium_ext/content/browser/font_access/font_enumeration_data_source_ohos.h",
-      "//arkweb/chromium_ext/content/browser/memory/swap_metrics_driver_impl_ohos.cc",
-      "//arkweb/chromium_ext/content/browser/memory/swap_metrics_driver_impl_ohos.h",
+      "child_process_launcher_helper_ohos.cc",
+      "font_access/font_enumeration_data_source_ohos.cc",
+      "font_access/font_enumeration_data_source_ohos.h",
+      "memory/swap_metrics_driver_impl_ohos.cc",
+      "memory/swap_metrics_driver_impl_ohos.h",
       "sandbox_host_linux.cc",
       "sandbox_host_linux.h",
       "sandbox_ipc_linux.cc",
@@ -2526,37 +2477,6 @@ source_set("browser") {
     sources += [
       "v8_snapshot_files.cc",
       "v8_snapshot_files.h",
-    ]
-  }
-
-  deps += [ "//arkweb/build/features" ]
-
-  if(is_arkweb) {
-    sources += arkweb_content_browser_notification_sources
-  }
-
-  if (is_arkweb && arkweb_display_cutout) {
-    sources += arkweb_content_browser_display_cutout_sources
-  }
-
-  if (arkweb_precompile) {
-    sources += arkweb_content_browser_code_cache_sources
-  }
-
-  if (arkweb_render_process_mode) {
-    sources += arkweb_render_process_host_impl_sources
-  }
-
-  if (arkweb_render_process_startup) {
-    sources += arkweb_render_process_startup_sources
-  }
-
-  if (is_arkweb) {
-    sources += [
-      "//arkweb/chromium_ext/content/browser/gpu/ark_web_compositor_util.cc",
-      "//arkweb/chromium_ext/content/browser/gpu/ark_web_compositor_util.h",
-      "//arkweb/chromium_ext/content/browser/renderer_host/ark_web_render_frame_host_manager.cc",
-      "//arkweb/chromium_ext/content/browser/renderer_host/ark_web_render_frame_host_manager.h",
     ]
   }
 
@@ -2739,18 +2659,6 @@ source_set("browser") {
       "font_access/font_enumeration_data_source_mac.mm",
     ]
   }
-
-  if (defined(arkweb_video_assistant) && arkweb_video_assistant) {
-    sources += [
-      "media/video_assistant/video_assistant.cc",
-      "media/video_assistant/video_assistant.h",
-    ]
-    if (defined(is_arkweb_ext) && is_arkweb_ext) {
-      deps += [ "//ohos_nweb_ex/overrides/ui/strings" ]
-    }
-  }
-
-  #endif ARKWEB_VIDEO_ASSISTANT
 
   if (is_mac) {
     sources += [
@@ -3517,12 +3425,22 @@ source_set("browser") {
     ]
 
     if (is_ohos) {
-      sources += [ "//arkweb/chromium_ext/content/browser/speech/tts_ohos.cc" ]
-    }
-
-    if (arkweb_enable_cdm) {
-      import("//arkweb/chromium_ext/chromium_ext.gni")
-      sources += arkweb_content_browser_media_key_system_sources
+      sources += [
+        "accessibility/browser_accessibility_manager_ohos.cc",
+        "accessibility/browser_accessibility_manager_ohos.h",
+        "accessibility/browser_accessibility_ohos.cc",
+        "accessibility/browser_accessibility_ohos.h",
+        "screenlock_monitor/screenlock_monitor_device_source_ohos.cc",
+        "speech/tts_ohos.cc",
+        "font_unique_name_lookup/font_unique_name_lookup_ohos.cc",
+        "font_unique_name_lookup/font_unique_name_lookup_ohos.h",
+        "font_unique_name_lookup/font_unique_name_lookup_service.cc",
+        "font_unique_name_lookup/font_unique_name_lookup_service.h",
+      ]
+      deps += [
+        "//build/config/freetype",
+        "//third_party/blink/public/common:font_unique_name_table_proto",
+      ]
     }
 
     if (!is_fuchsia) {
@@ -3532,13 +3450,6 @@ source_set("browser") {
       ]
 
       deps += [ "//media/mojo/mojom:web_speech_recognition" ]
-    }
-
-    if (defined(arkweb_fido) && arkweb_fido) {
-      sources += [
-        "//arkweb/chromium_ext/content/browser/webauth/utils.cpp",
-        "//arkweb/chromium_ext/content/browser/webauth/utils.h",
-      ]
     }
 
     deps += [
@@ -3569,58 +3480,8 @@ source_set("browser") {
     deps += [ "//content/browser/devtools:devtools_resources_extern" ]
   }
 
-  if (arkweb_media_avsession) {
-    sources -= [ "media/session/audio_focus_delegate_default.cc" ]
-    import(
-        "//arkweb/chromium_ext/content/browser/media/session/arkweb_content_browser_media_session_ext.gni")
-    sources += arkweb_content_browser_mediasession_sources
-  }
-
-  if (arkweb_custom_video_player) {
-    import(
-        "//arkweb/chromium_ext/content/browser/media/ohos/arkweb_content_browser_media_ohos_ext.gni")
-    sources += arkweb_content_browser_media_ohos_player_sources
-  }
-
-  if (arkweb_accessibility) {
-    import(
-        "//arkweb/chromium_ext/content/browser/accessibility/arkweb_content_browser_accessibility_ext.gni")
-    sources += arkweb_content_browser_accessibility_sources
-  }
-
-  if (defined(arkweb_pull_to_refresh) && arkweb_pull_to_refresh) {
-    sources += arkweb_content_overscroll_controller_ohos_sources
-  }
-
   if (is_win) {
     deps += [ "//ui/base/ime/win" ]
-  }
-
-  if (arkweb_suspend_all_timers) {
-    import(
-        "//arkweb/chromium_ext/content/browser/ohos/arkweb_content_browser_ohos_ext.gni")
-    sources += arkweb_content_browser_ohos_sources
-    include_dirs = ohos_src_includes
-    deps += [ "//ohos_glue:ohos_adapter_glue_source" ]
-  }
-
-  if (is_arkweb && arkweb_wpt) {
-    sources += arkweb_content_browser_font_unique_name_lookup_sources
-    sources += [
-      "font_unique_name_lookup/font_unique_name_lookup_service.cc",
-      "font_unique_name_lookup/font_unique_name_lookup_service.h",
-    ]
-    deps += [
-      "//build/config/freetype",
-      "//third_party/blink/public/common:font_unique_name_table_proto",
-    ]
-  }
-
-  if (arkweb_css_input_time) {
-    sources += [
-      "//arkweb/chromium_ext/content/browser/ohos/date_time_chooser_ohos.cc",
-      "//arkweb/chromium_ext/content/browser/ohos/date_time_chooser_ohos.h",
-    ]
   }
 
   if (use_aura) {
@@ -3656,13 +3517,7 @@ source_set("browser") {
       "web_contents/web_contents_view_aura.h",
     ]
   }
-
-  if (arkweb_media_mute_audio) {
-    import(
-        "//arkweb/chromium_ext/content/browser/media/ohos/arkweb_content_browser_media_ohos_ext.gni")
-    sources += arkweb_content_browser_media_ohos_audio_sources
-  }
-
+  
   if (use_aura || is_apple) {
     sources += [
       "compositor/image_transport_factory.cc",
@@ -3682,32 +3537,6 @@ source_set("browser") {
 
   if (use_ozone) {
     deps += [ "//ui/ozone" ]
-  }
-
-  if (is_arkweb) {
-    sources -= [
-      "//arkweb/chromium_ext/content/browser/child_process_launcher_helper_ohos.cc",
-      "//arkweb/chromium_ext/content/browser/memory/swap_metrics_driver_impl_ohos.cc",
-      "//arkweb/chromium_ext/content/browser/memory/swap_metrics_driver_impl_ohos.h",
-    ]
-
-    sources += [
-      "child_process_launcher_helper_linux.cc",
-      "memory/swap_metrics_driver_impl_linux.cc",
-      "memory/swap_metrics_driver_impl_linux.h",
-      "zygote_host/zygote_host_impl_linux.cc",
-      "zygote_host/zygote_host_impl_linux.h",
-    ]
-
-    deps += [ "//arkweb//build/features:features" ]
-  }
-
-  if (arkweb_same_layer) {
-    sources += arkweb_content_browser_media_ohos_sources
-  }
-
-  if (use_cras) {
-    defines += [ "USE_CRAS" ]
   }
 
   if (enable_ipc_fuzzer) {
@@ -3776,36 +3605,6 @@ source_set("browser") {
       "profiling_utils.cc",
     ]
   }
-
-  if (arkweb_media) {
-    import(
-        "//arkweb/chromium_ext/media/base/ohos/arkweb_media_base_ohos_ext.gni")
-
-    sources += arkweb_media_base_ohos_sources
-
-    lib_dirs = []
-    if (target_cpu == "arm") {
-      lib_dirs += [
-        "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/",
-      ]
-    } else if (target_cpu == "arm64") {
-      lib_dirs += [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/" ]
-    } else if (target_cpu == "x86" || target_cpu == "x64") {
-      lib_dirs += [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/" ]
-    }
-
-    libs = [ "native_window" ]
-
-    defines += [ "IS_MEDIA_IMPL" ]
-  }
-
-  #if BUILDFLAG(ARKWEB_BFCACHE)
-  if (is_arkweb) {
-    sources += [
-      "//arkweb/chromium_ext/content/browser/renderer_host/ark_web_back_forward_cache_impl.cc",
-      "//arkweb/chromium_ext/content/browser/renderer_host/ark_web_back_forward_cache_impl.h",
-    ]
-  }  #endif // BUILDFLAG(ARKWEB_BFCACHE)
 }
 
 if (is_android) {

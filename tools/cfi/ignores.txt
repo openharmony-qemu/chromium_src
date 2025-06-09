@@ -61,19 +61,6 @@ src:*third_party/spirv-cross/spirv-cross/spirv_cross_containers.hpp
 
 # Vulkan memory allocator
 src:*third_party/vulkan_memory_allocator/include/vk_mem_alloc.h
-src:*nweb_application.cc
-src:*nweb_handler_delegate.cc
-src:*third_party/sqlite/src/amalgamation/sqlite3.c
-# meituan
-src:*__functional/invoke.h
-src:*__functional/function.h
-src:*third_party/ohos_ndk/toolchains/*
-src:*sqlite3*
-# wuba
-src:*third_party/blink/renderer/platform/widget/input/input_handler_proxy.cc
-src:*sigsys_handlers.cc
-src:*input_handler_proxy.cc
-src:*arkweb_model.cc
 
 #############################################################################
 # Base class's constructor accesses a derived class.
@@ -146,19 +133,6 @@ fun:*hasAspectRatio*
 fun:*nextBreakablePosition*
 fun:*supportsCachedOffsets*
 fun:*traceImpl*
-src:*nweb_application.cc
-src:*nweb_handler_delegate.cc
-src:*third_party/sqlite/src/amalgamation/sqlite3.c
-# meituan
-src:*__functional/invoke.h
-src:*__functional/function.h
-src:*third_party/ohos_ndk/toolchains/*
-src:*sqlite3*
-# wuba
-src:*third_party/blink/renderer/platform/widget/input/input_handler_proxy.cc
-src:*sigsys_handlers.cc
-src:*input_handler_proxy.cc
-src:*arkweb_model.cc
 
 #############################################################################
 # Cross-DSO vcalls
@@ -171,19 +145,6 @@ src:*arkweb_model.cc
 type:sandbox::BrokerServices
 type:sandbox::TargetPolicy
 type:sandbox::TargetServices
-src:*nweb_application.cc
-src:*nweb_handler_delegate.cc
-src:*third_party/sqlite/src/amalgamation/sqlite3.c
-# meituan
-src:*__functional/invoke.h
-src:*__functional/function.h
-src:*third_party/ohos_ndk/toolchains/*
-src:*sqlite3*
-# wuba
-src:*third_party/blink/renderer/platform/widget/input/input_handler_proxy.cc
-src:*sigsys_handlers.cc
-src:*input_handler_proxy.cc
-src:*arkweb_model.cc
 
 #############################################################################
 # Disabled indirect calls
@@ -213,19 +174,6 @@ src:*third_party/dav1d/libdav1d/src/ref.c
 
 # Dawn, calls to OpenGL and Vulkan function pointers from shared library.
 src:*third_party/dawn/src/dawn/native/*
-src:*nweb_application.cc
-src:*nweb_handler_delegate.cc
-src:*third_party/sqlite/src/amalgamation/sqlite3.c
-# meituan
-src:*__functional/invoke.h
-src:*__functional/function.h
-src:*third_party/ohos_ndk/toolchains/*
-src:*sqlite3*
-# wuba
-src:*third_party/blink/renderer/platform/widget/input/input_handler_proxy.cc
-src:*sigsys_handlers.cc
-src:*input_handler_proxy.cc
-src:*arkweb_model.cc
 
 # Dawn uses std::function for callbacks from the main binary to
 # liboptimization_guide_internal.so.
@@ -257,19 +205,6 @@ src:*third_party/angle/third_party/vulkan-loader/src/loader*
 src:*third_party/vulkan-loader/src/loader*
 src:*third_party/vulkan-validation-layers/src/layers/*
 src:*third_party/angle/src/common/vulkan/vulkan_icd.cpp
-src:*nweb_application.cc
-src:*nweb_handler_delegate.cc
-src:*third_party/sqlite/src/amalgamation/sqlite3.c
-# meituan
-src:*__functional/invoke.h
-src:*__functional/function.h
-src:*third_party/ohos_ndk/toolchains/*
-src:*sqlite3*
-# wuba
-src:*third_party/blink/renderer/platform/widget/input/input_handler_proxy.cc
-src:*sigsys_handlers.cc
-src:*input_handler_proxy.cc
-src:*arkweb_model.cc
 
 src:*components/os_crypt/sync/*
 
@@ -343,20 +278,6 @@ fun:*PendingPhantomCallback*Invoke*
 fun:*GlobalHandles*PostGarbageCollectionProcessing*
 
 fun:*InvokeAccessorGetterCallback*
-src:*nweb_application.cc
-src:*nweb_handler_delegate.cc
-src:*third_party/sqlite/src/amalgamation/sqlite3.c
-# meituan
-src:*__functional/invoke.h
-src:*__functional/function.h
-src:*third_party/ohos_ndk/toolchains/*
-src:*sqlite3*
-# browser crashpad
-# wuba
-src:*third_party/blink/renderer/platform/widget/input/input_handler_proxy.cc
-src:*sigsys_handlers.cc
-src:*input_handler_proxy.cc
-src:*arkweb_model.cc
 
 # XNNPACK casts incorrect function signature to pthreadpool task type.
 src:*third_party/pthreadpool/src/src/fastpath.c
@@ -365,20 +286,6 @@ src:*third_party/pthreadpool/src/src/portable-api.c
 ######### Uncategorized
 
 src:*native_client/*
-src:*nweb_application.cc
-src:*nweb_handler_delegate.cc
-src:*third_party/sqlite/src/amalgamation/sqlite3.c
-# meituan
-src:*__functional/invoke.h
-src:*__functional/function.h
-src:*third_party/ohos_ndk/toolchains/*
-src:*sqlite3*
-# browser crashpad
-# wuba
-src:*third_party/blink/renderer/platform/widget/input/input_handler_proxy.cc
-src:*sigsys_handlers.cc
-src:*input_handler_proxy.cc
-src:*arkweb_model.cc
 
 # The function pointer type is converted in osIoctl.
 # After cfi-icall is opened, calling osIcctl fails.

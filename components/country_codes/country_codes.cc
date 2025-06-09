@@ -25,6 +25,10 @@
 #include "base/android/locale_utils.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/ohos_i18n/ohos_i18n.h"
+#endif
+
 namespace country_codes {
 
 namespace {
@@ -175,6 +179,12 @@ int GetCurrentCountryID() {
 
 int GetCurrentCountryID() {
   return CountryStringToCountryID(base::android::GetDefaultCountryCode());
+}
+
+#elif BUILDFLAG(IS_OHOS)
+
+int GetCurrentCountryID() {
+  return CountryStringToCountryID(::ohos::adapter::ohos_i18n::getLocaleRegion());
 }
 
 #elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)

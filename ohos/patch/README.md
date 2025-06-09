@@ -1,1 +1,0 @@
-# chromium_ohos_patch

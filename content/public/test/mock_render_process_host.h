@@ -163,8 +163,6 @@ class MockRenderProcessHost : public RenderProcessHost {
   std::unique_ptr<base::PersistentMemoryAllocator> TakeMetricsAllocator()
       override;
   const base::TimeTicks& GetLastInitTime() override;
-  base::TimeTicks timeTicksForMock = base::TimeTicks::Now();
-  const base::TimeTicks& ProcessBackgroundTime() override {return timeTicksForMock;}
   base::Process::Priority GetPriority() override;
   size_t GetWorkerRefCount() const;
   std::string GetKeepAliveDurations() const override;

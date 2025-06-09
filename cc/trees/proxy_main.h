@@ -87,14 +87,6 @@ class CC_EXPORT ProxyMain : public Proxy {
   CommitPipelineStage final_pipeline_stage() const {
     return final_pipeline_stage_;
   }
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void OnLayerRectUpdate(int id, const gfx::Rect& rect);
-
-  void OnLayerRectVisibilityChange(int id, bool visibility);
-#endif
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
-#endif // ARKWEB_VIDEO_ASSISTANT
 
  private:
   // Proxy implementation.
@@ -102,9 +94,6 @@ class CC_EXPORT ProxyMain : public Proxy {
   void SetLayerTreeFrameSink(
       LayerTreeFrameSink* layer_tree_frame_sink) override;
   void SetVisible(bool visible) override;
-#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
-  void SetPinchSmoothMode(bool isEnable) override;
-#endif
   void SetShouldWarmUp() override;
   void SetNeedsAnimate() override;
   void SetNeedsUpdateLayers() override;

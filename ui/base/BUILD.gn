@@ -20,7 +20,6 @@ import("//third_party/jni_zero/jni_zero.gni")
 import("//tools/grit/grit_rule.gni")
 import("//ui/base/ui_features.gni")
 import("//ui/qt/qt.gni")
-import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/config.gni")
@@ -514,10 +513,6 @@ component("base") {
     ]
   }
 
-  if (enable_arkweb) {
-    public_deps += [ "//arkweb/build/features" ]
-  }
-
   if (is_ios) {
     sources += [
       "l10n/l10n_util_mac_bridge.h",
@@ -986,7 +981,7 @@ test("ui_base_unittests") {
   use_xvfb = use_xvfb_in_this_config
 
   sources = [
-  # compile error   "class_property_unittest.cc",
+    "class_property_unittest.cc",
     "clipboard/file_info_unittest.cc",
     "ime/utf_offset_unittest.cc",
     "interaction/element_identifier_unittest.cc",
@@ -1022,9 +1017,7 @@ test("ui_base_unittests") {
     "test/run_all_unittests.cc",
     "webui/i18n_source_stream_unittest.cc",
   ]
-  if (arkweb_unittests) {
-    import("//arkweb/chromium_ext/chromium_ext.gni")
-  }
+
   data = []
   data_deps = [ "//testing/buildbot/filters:ui_base_unittests_filters" ]
   deps = [
@@ -1050,6 +1043,7 @@ test("ui_base_unittests") {
     "//ui/base/clipboard:file_info",
     "//ui/base/cursor:unittests",
     "//ui/base/data_transfer_policy:unittests",
+    "//ui/base/metadata:metadata_tests",
     "//ui/base/prediction:prediction",
     "//ui/display",
     "//ui/gfx:test_support",

@@ -147,20 +147,12 @@ void ContentSettingsStore::SetExtensionContentSetting(
     ContentSettingsType type,
     ContentSetting setting,
     ChromeSettingScope scope) {
-  if (primary_pattern.Matches(GURL("chrome-extension://" + ext_id))
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      || primary_pattern.Matches(GURL("arkweb-extension://" + ext_id))
-#endif
-  ) {
+  if (primary_pattern.Matches(GURL("chrome-extension://" + ext_id))) {
     content_settings_uma_util::RecordContentSettingsHistogram(
         "Extensions.ContentSettings.PrimaryPatternMatchesExtensionOrigin",
         type);
   }
-  if (secondary_pattern.Matches(GURL("chrome-extension://" + ext_id))
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      || secondary_pattern.Matches(GURL("arkweb-extension://" + ext_id))
-#endif
-  ) {
+  if (secondary_pattern.Matches(GURL("chrome-extension://" + ext_id))) {
     content_settings_uma_util::RecordContentSettingsHistogram(
         "Extensions.ContentSettings.SecondaryPatternMatchesExtensionOrigin",
         type);

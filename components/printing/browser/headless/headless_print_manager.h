@@ -40,12 +40,6 @@ class HeadlessPrintManager
                   const std::string& page_ranges,
                   printing::mojom::PrintPagesParamsPtr print_page_params,
                   print_to_pdf::PdfPrintJob::PrintToPdfCallback callback);
-#if BUILDFLAG(ARKWEB_PRINT)
-  void PdfWritingDone(int page_count) override {}
-  void PrintRequested(PrintRequestedCallback callback) override {}
-  void CheckCancel(CheckCancelCallback callback) override {}
-  void PrintPdfRequested() override {}
-#endif // BUILDFLAG(ARKWEB_PRINT)
 
  private:
   friend class content::WebContentsUserData<HeadlessPrintManager>;

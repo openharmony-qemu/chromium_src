@@ -14,11 +14,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted_memory.h"
 #include "base/memory/scoped_refptr.h"
-#if !BUILDFLAG(IS_ARKWEB)
 #include "ui/gfx/x/xproto.h"
-#else
-#include "ui/gfx/x/generated_protos/xproto.h"
-#endif
 
 namespace x11 {
 

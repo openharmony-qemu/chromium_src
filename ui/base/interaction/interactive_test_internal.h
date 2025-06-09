@@ -122,11 +122,7 @@ class InteractiveTestPrivate {
   // Adds `state_observer` and associates it with an element with identifier
   // `id` and context `context`. Must be unique in its context.
   // Returns true on success.
-#if defined(__clang__) && (__clang_major__ < 17)
-  template <typename Observer, typename V = typename Observer::ValueType>
-#else
   template <typename Observer, typename V = Observer::ValueType>
-#endif
   bool AddStateObserver(ElementIdentifier id,
                         ElementContext context,
                         std::unique_ptr<Observer> state_observer);
@@ -478,11 +474,7 @@ struct ArgsExtractor<R(Args...)> {
 };
 
 template <typename F>
-#if defined(__clang__) && (__clang_major__ < 17)
-using ReturnTypeOf = typename MaybeBindTypeHelper<F>::ReturnType;
-#else
 using ReturnTypeOf = MaybeBindTypeHelper<F>::ReturnType;
-#endif
 
 template <size_t N, typename F>
 using NthArgumentOf = std::tuple_element_t<
@@ -551,11 +543,7 @@ struct MatcherTypeHelper<C*> {
 // (e.g. `const char*`) as the corresponding `Matcher` should match a
 // `std::string` or `std::u16string`.
 template <typename T>
-#if defined(__clang__) && (__clang_major__ < 17)
-using MatcherTypeFor = typename MatcherTypeHelper<std::decay_t<T>>::ActualType;
-#else
 using MatcherTypeFor = MatcherTypeHelper<std::decay_t<T>>::ActualType;
-#endif
 
 // Determines if `T` is a valid type to be used in a matcher. This precludes
 // string-like types (const char*, constexpr char16_t[], etc.) in favor of

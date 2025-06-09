@@ -171,13 +171,6 @@ void ExtractUnderlines(NSAttributedString* string,
 
 // RenderWidgetHostViewCocoa ---------------------------------------------------
 
-@interface NSWindow (CefCustomMethods)
-- (int)acceptsFirstMouse;
-@end
-
-constexpr int kStateEnabled = 1;
-constexpr int kStateDisabled = 2;
-
 // Private methods:
 @interface RenderWidgetHostViewCocoa ()
 
@@ -774,15 +767,6 @@ constexpr int kStateDisabled = 2;
 }
 
 - (BOOL)acceptsFirstMouse:(NSEvent*)theEvent {
-  if ([self.window respondsToSelector:@selector(acceptsFirstMouse)]) {
-    const auto mode = [self.window acceptsFirstMouse];
-    if (mode == kStateEnabled) {
-      return YES;
-    } else if (mode == kStateDisabled) {
-      return NO;
-    }
-  }
-
   // Enable "click-through" if mouse clicks are accepted in inactive windows
   return [self acceptsMouseEventsOption] > kAcceptMouseEventsInActiveWindow;
 }

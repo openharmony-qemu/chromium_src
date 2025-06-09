@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
@@ -86,20 +85,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) CookieManager
                           const GURL& source_url,
                           const net::CookieOptions& cookie_options,
                           SetCanonicalCookieCallback callback) override;
-#if BUILDFLAG(ARKWEB_COOKIE)
-  void SetCanonicalCookieSync(const net::CanonicalCookie& cookie,
-                              const GURL& source_url,
-                              const net::CookieOptions& cookie_options,
-                              SetCanonicalCookieCallback callback) override;
-  void GetCookieListSync(
-      const GURL& url,
-      const net::CookieOptions& cookie_options,
-      const net::CookiePartitionKeyCollection& cookie_partition_key_collection,
-      GetCookieListCallback callback) override;
-  void GetAllCookiesSync(GetAllCookiesCallback callback) override;
-  void DeleteCookiesSync(mojom::CookieDeletionFilterPtr filter,
-                         DeleteCookiesCallback callback) override;
-#endif
   void DeleteCanonicalCookie(const net::CanonicalCookie& cookie,
                              DeleteCanonicalCookieCallback callback) override;
   void SetContentSettings(ContentSettingsType content_settings_type,

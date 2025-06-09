@@ -2,16 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//arkweb/build/features/features.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
 import("//net/features.gni")
 import("//services/network/public/cpp/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
 
 component("network_service") {
   sources = [
@@ -218,8 +214,6 @@ component("network_service") {
     "url_loader_context.h",
     "url_loader_factory.cc",
     "url_loader_factory.h",
-    "//arkweb/chromium_ext/services/network/url_loader_factory_utils.h",
-    "//arkweb/chromium_ext/services/network/url_loader_factory_utils.cc",
     "url_request_context_builder_mojo.cc",
     "url_request_context_builder_mojo.h",
     "url_request_context_owner.cc",
@@ -234,11 +228,6 @@ component("network_service") {
     "web_transport.cc",
     "web_transport.h",
   ]
-  if (is_arkweb) {
-    sources += arkweb_services_network_sources
-    sources += arkweb_network_service_network_delegate_sources
-    sources += [ "//arkweb/chromium_ext/services/network/ark_web_chunked_data_pipe_upload_data_stream.cc" ]
-  }
 
   if (is_p2p_enabled) {
     sources += [
@@ -360,7 +349,6 @@ component("network_service") {
     "//third_party/liburlpattern",
     "//third_party/re2",
     "//url",
-    "//arkweb/chromium_ext/services/network:network_service",
   ]
 
   if (is_linux || is_chromeos || is_ohos) {
@@ -368,11 +356,6 @@ component("network_service") {
       ":network_sandbox_hook",
       "//sandbox/linux:sandbox_services",  # TODO(crbug.com/40220505): remove.
     ]
-    configs += [ "//cef/libcef/features:config" ]
-  }
-
-  if (arkweb_prp_preload) {
-    deps += [ "//arkweb/chromium_ext/services/network/prp_preload:prp_preload", ]
   }
 
   public_deps = [ "//services/network/public/cpp:buildflags" ]
@@ -612,10 +595,6 @@ source_set("tests") {
     deps += [ "//components/certificate_transparency" ]
   }
 
-  if (arkweb_prp_preload) {
-    deps += [ "//arkweb/chromium_ext/services/network/prp_preload:prp_preload", ]
-  }
-
   if (use_blink) {
     deps += [ "//services/proxy_resolver:lib" ]
   }
@@ -711,7 +690,6 @@ fuzzer_test("network_content_security_policy_fuzzer") {
   sources = [ "content_security_policy_fuzzer.cc" ]
   deps = [
     "//base",
-    "//cef:libcef_static",
     "//net",
     "//services/network:network_service",
     "//services/network/public/cpp",

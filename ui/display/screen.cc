@@ -108,13 +108,13 @@ base::TimeDelta Screen::CalculateIdleTime() const {
 gfx::Rect Screen::ScreenToDIPRectInWindow(gfx::NativeWindow window,
                                           const gfx::Rect& screen_rect) const {
   float scale = GetDisplayNearestWindow(window).device_scale_factor();
-  return ScaleToRoundedRect(screen_rect, 1.0f / scale);
+  return ScaleToEnclosingRect(screen_rect, 1.0f / scale);
 }
 
 gfx::Rect Screen::DIPToScreenRectInWindow(gfx::NativeWindow window,
                                           const gfx::Rect& dip_rect) const {
   float scale = GetDisplayNearestWindow(window).device_scale_factor();
-  return ScaleToRoundedRect(dip_rect, scale);
+  return ScaleToEnclosingRect(dip_rect, scale);
 }
 
 bool Screen::GetDisplayWithDisplayId(int64_t display_id,

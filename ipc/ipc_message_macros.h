@@ -206,8 +206,6 @@
 #include "ipc/ipc_message_utils.h"
 #include "ipc/param_traits_macros.h"
 
-#include "arkweb/build/features/features.h"
-
 // Convenience macro for defining structs without inheritance. Should not need
 // to be subsequently redefined.
 #define IPC_STRUCT_BEGIN(struct_name) \
@@ -354,9 +352,6 @@
 
 #define IPC_MESSAGE_HANDLER(msg_class, member_func) \
   IPC_MESSAGE_FORWARD(msg_class, this, _IpcMessageHandlerClass::member_func)
-
-
-#include "arkweb/chromium_ext/ipc/ipc_message_macros_ext.h"
 
 #define IPC_MESSAGE_FORWARD_DELAY_REPLY(msg_class, obj, member_func) \
   case msg_class::ID: {                                              \

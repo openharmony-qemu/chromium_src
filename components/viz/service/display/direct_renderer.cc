@@ -53,11 +53,6 @@
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/transform_util.h"
 
-#if BUILDFLAG(ARKWEB_VULKAN) || BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
-#include "gpu/config/gpu_finch_features.h"
-#endif
-#include "arkweb/chromium_ext/components/viz/service/display/direct_renderer_ext.h"
-
 namespace viz {
 
 namespace {
@@ -168,10 +163,6 @@ void DirectRenderer::SetVisible(bool visible) {
   if (visible_ == visible)
     return;
   visible_ = visible;
-#if BUILDFLAG(ARKWEB_VULKAN)
-  LOG(INFO) << "DirectRenderer::SetVisible status change, visible_ = " << visible_;
-  next_frame_needs_full_frame_redraw_ = true;
-#endif
   DidChangeVisibility();
 }
 
@@ -183,14 +174,6 @@ void DirectRenderer::Reshape(
     const OutputSurface::ReshapeParams& reshape_params) {
   output_surface_->Reshape(reshape_params);
 }
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-void DirectRenderer::SetNativeInnerWeb(bool isInnerWeb) {
-  if (output_surface_) {
-    output_surface_->SetNativeInnerWeb(isInnerWeb);
-  }
-}
-#endif
 
 void DirectRenderer::DecideRenderPassAllocationsForFrame(
     const AggregatedRenderPassList& render_passes_in_draw_order) {
@@ -279,13 +262,8 @@ void DirectRenderer::DrawFrame(
   }
   AddInkDamageToRenderPass(current_frame()->root_render_pass,
                            current_frame()->root_damage_rect);
-#if BUILDFLAG(ARKWEB_VULKAN)
-  CHECK_DAMAGE_RECT_WHEN_VULKAN(device_viewport_size)
-#endif
+
   current_frame()->root_damage_rect.Intersect(gfx::Rect(device_viewport_size));
-#if BUILDFLAG(ARKWEB_VULKAN)
-  }
-#endif
   current_frame()->device_viewport_size = device_viewport_size;
   current_frame()->display_color_spaces = display_color_spaces;
 
@@ -441,11 +419,12 @@ void DirectRenderer::DrawFrame(
   if (!use_partial_swap_ && !skip_drawing_root_render_pass)
     needs_full_frame_redraw = true;
 
+#if BUILDFLAG(IS_OHOS)
+  current_frame()->damage_rect = current_frame()->root_damage_rect;
+#endif  // BUILDFLAG(IS_OHOS)
+
   // If we need to redraw the frame, the whole output should be considered
   // damaged.
-#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
-  CHECK_DAMAGE_RECT_OHOS();
-#endif
   if (needs_full_frame_redraw)
     current_frame()->root_damage_rect = gfx::Rect(device_viewport_size);
 

@@ -12,13 +12,12 @@
 #include "build/build_config.h"
 #include "ui/gl/gl_export.h"
 #include "ui/gl/gpu_preference.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include <dxgi1_6.h>
 #endif
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SAME_LAYER)
+#if BUILDFLAG(IS_ANDROID)
 #include "base/files/scoped_file.h"
 #endif
 
@@ -30,7 +29,7 @@ class GLDisplay;
 GL_EXPORT void Crash();
 GL_EXPORT void Hang();
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SAME_LAYER)
+#if BUILDFLAG(IS_ANDROID)
 GL_EXPORT base::ScopedFD MergeFDs(base::ScopedFD a, base::ScopedFD b);
 
 // Disable ANGLE and force to use native or other GL implementation.

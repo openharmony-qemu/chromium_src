@@ -45,11 +45,7 @@ const WebAccessibleResourcesInfo* GetResourcesInfo(const Extension* extension) {
 }
 
 URLPattern GetPattern(std::string relative_path, const Extension& extension) {
-  URLPattern pattern(URLPattern::SCHEME_EXTENSION
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-                     | URLPattern::SCHEME_ARKWEB_EXTENSION
-#endif
-  );
+  URLPattern pattern(URLPattern::SCHEME_EXTENSION);
   URLPattern::ParseResult result = pattern.Parse(extension.url().spec());
   DCHECK_EQ(URLPattern::ParseResult::kSuccess, result);
   while (relative_path[0] == '/')
@@ -230,11 +226,7 @@ bool IsResourceWebAccessibleImpl(
 
       // Allow if a wildcard was used, the initiator origin matches the
       // extension, or if the initiator host matches an entry extension id.
-      if ((initiator_url.SchemeIs(extensions::kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-           || initiator_url.SchemeIs(extensions::kArkwebExtensionScheme)
-#endif
-               ) &&
+      if (initiator_url.SchemeIs(extensions::kExtensionScheme) &&
           (entry.allow_all_extensions ||
            extension.id() == initiator_url.host() ||
            base::Contains(entry.extension_ids, initiator_url.host()))) {
@@ -273,11 +265,7 @@ bool WebAccessibleResourcesInfo::IsResourceWebAccessibleRedirect(
     const std::optional<url::Origin>& initiator_origin,
     const GURL& upstream_url) {
   CHECK(extension);
-  CHECK(target_url.SchemeIs(kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-        || target_url.SchemeIs(kArkwebExtensionScheme)
-#endif
-  );
+  CHECK(target_url.SchemeIs(kExtensionScheme));
 
   return IsResourceWebAccessibleImpl(*extension, initiator_origin, upstream_url,
                                      target_url);

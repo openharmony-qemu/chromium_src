@@ -29,7 +29,6 @@
 #include "third_party/blink/public/mojom/frame/viewport_intersection_state.mojom-forward.h"
 #include "url/gurl.h"
 #include "url/origin.h"
-#include "arkweb/build/features/features.h"
 
 namespace performance_manager {
 
@@ -87,9 +86,7 @@ class FrameNodeImpl
   void OnWebMemoryMeasurementRequested(
       mojom::WebMemoryMeasurement::Mode mode,
       OnWebMemoryMeasurementRequestedCallback callback) override;
-#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
-  void OnFormEditingStateChanged(uint64_t form_id, bool did_submit) override;
-#endif
+
   // Partial FrameNode implementation:
   const blink::LocalFrameToken& GetFrameToken() const override;
   content::BrowsingInstanceId GetBrowsingInstanceId() const override;

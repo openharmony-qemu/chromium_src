@@ -14,9 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/chromium_ext/services/network/url_loader_utils.h"
-#include "arkweb/chromium_ext/services/network/url_loader_ext.h"
-
 #include "base/command_line.h"
 #include "base/containers/fixed_flat_set.h"
 #include "base/files/file.h"
@@ -116,15 +113,6 @@
 #include "services/network/url_loader_factory.h"
 #include "third_party/abseil-cpp/absl/container/inlined_vector.h"
 #include "url/origin.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-#include "arkweb/chromium_ext/services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
-#include "base/functional/callback.h"
-#endif
 
 namespace network {
 
@@ -589,14 +577,7 @@ URLLoader::URLLoader(
     mojo::PendingRemote<mojom::DevToolsObserver> devtools_observer,
     mojo::PendingRemote<mojom::AcceptCHFrameObserver> accept_ch_frame_observer,
     std::unique_ptr<AttributionRequestHelper> attribution_request_helper,
-    bool shared_storage_writable_eligible
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-,
-    std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader,
-    const std::string& org_main_url,
-    std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info
-#endif
-    )
+    bool shared_storage_writable_eligible)
     : url_request_context_(context.GetUrlRequestContext()),
       network_context_client_(context.GetNetworkContextClient()),
       delete_callback_(std::move(delete_callback)),
@@ -674,7 +655,7 @@ URLLoader::URLLoader(
           request.trusted_params->include_request_cookies_with_response),
       provide_data_use_updates_(context.DataUseUpdatesEnabled()) {
   DCHECK(delete_callback_);
-  url_loader_utils_ = std::make_unique<URLLoaderUtils>(this, request.corb_detachable);
+
   if (options_ & mojom::kURLLoadOptionReadAndDiscardBody) {
     CHECK(!(options_ & mojom::kURLLoadOptionSniffMimeType))
         << "options ReadAndDiscardBody and SniffMimeType cannot be used "
@@ -711,19 +692,9 @@ URLLoader::URLLoader(
   }
   receiver_.set_disconnect_handler(
       base::BindOnce(&URLLoader::OnMojoDisconnect, base::Unretained(this)));
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  bool isStartReplay = url_loader_utils_->HandlePrppLoaderStartReplay(
-      prpp_loader, context, request, traffic_annotation,
-      shared_dictionary_manager, org_main_url, preload_info,
-      shared_storage_writable_eligible);
-  if (isStartReplay) {
-    return;
-  }
-#else
   url_request_ = url_request_context_->CreateRequest(
       request.url, request.priority, this, traffic_annotation,
       /*is_for_websockets=*/false, request.net_log_create_info);
-#endif
 
   TRACE_EVENT(
       "loading", "URLLoader::URLLoader",
@@ -815,21 +786,17 @@ URLLoader::URLLoader(
         request.net_log_reference_info.value());
   }
 
+#if BUILDFLAG(IS_OHOS)
+  url_request_->set_allow_preload_record(request.allow_preload_record);
+  url_request_->set_main_page(request.main_page);
+#endif
+
   // Resolve elements from request_body and prepare upload data.
   if (request.request_body.get()) {
     OpenFilesForUpload(request);
     return;
   }
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetUrlRequestForPRPP(request, url_request_, org_main_url, preload_info);
-#endif
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
-  if (url_request_) {
-    TRACE_EVENT2("loading", "URLLoader::URLLoader", "url", url_request_->url().spec(), "id", request_id_);
-  }
-#endif
   ProcessOutboundTrustTokenInterceptor(request);
 }
 
@@ -1117,10 +1084,6 @@ void URLLoader::ProcessOutboundTrustTokenInterceptor(
     return;
   }
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetPreloadFlagUnSupport();
-#endif
-
   // Trust token operations other than signing cannot be served from cache
   // because it needs to send the server the Trust Tokens request header and
   // get the corresponding response header. It is okay to cache the results in
@@ -1276,16 +1239,10 @@ void URLLoader::ScheduleStart() {
         base::BindOnce(&URLLoader::ResumeStart, base::Unretained(this)));
     resource_scheduler_request_handle_->WillStartRequest(&defer);
   }
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
-  if (defer) {
+  if (defer)
     url_request_->LogBlockedBy("ResourceScheduler");
-  }
-  else {
-    TRACE_EVENT1("net", "URLLoader::ScheduleStart", "id", request_id_);
+  else
     url_request_->Start();
-  }
-#endif
 }
 
 URLLoader::~URLLoader() {
@@ -1364,9 +1321,6 @@ void URLLoader::FollowRedirect(
 
 void URLLoader::SetPriority(net::RequestPriority priority,
                             int32_t intra_priority_value) {
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetPreloadFlagVisible(priority);
-#endif
   if (url_request_ && resource_scheduler_client_) {
     resource_scheduler_client_->ReprioritizeRequest(
         url_request_.get(), priority, intra_priority_value);
@@ -1456,6 +1410,10 @@ int URLLoader::OnConnected(net::URLRequest* url_request,
   std::optional<mojom::CorsError> cors_error =
       PrivateNetworkAccessCheckResultToCorsError(result);
   if (cors_error.has_value()) {
+#if BUILDFLAG(IS_OHOS)
+    LOG(WARNING) << "URLLoader::OnConnected result is "
+                 << result << "info.type" << info.type;
+#endif
     if (result == PrivateNetworkAccessCheckResult::kBlockedByPolicyBlock &&
         (info.type == net::TransportType::kCached ||
          info.type == net::TransportType::kCachedFromProxy)) {
@@ -1507,27 +1465,13 @@ int URLLoader::OnConnected(net::URLRequest* url_request,
 
 mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
   auto response = mojom::URLResponseHead::New();
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  net::LoadTimingInfo load_timing_info = net::LoadTimingInfo();
-  url_loader_utils_->UpdateResponseTimes(response, load_timing_info);
-#else
+
   response->request_time = url_request_->request_time();
   response->response_time = url_request_->response_time();
   response->original_response_time = url_request_->original_response_time();
-#endif
   response->headers = url_request_->response_headers();
   response->parsed_headers =
       PopulateParsedHeaders(response->headers.get(), url_request_->url());
-
-#if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
-  response->code_cache_valid = url_request_->is_code_cache_valid();
-#endif
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
-  std::string http_version = url_loader_utils_->GetRequestHttpVersion();
-  TRACE_EVENT2("net", "URLLoader::BuildResponseHead", "http", http_version,
-               "id", request_id_);
-#endif
 
   url_request_->GetCharset(&response->charset);
   response->content_length = url_request_->GetExpectedContentSize();
@@ -1560,12 +1504,10 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
       break;
     }
   }
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->GetResponseLoadingTime(response);
-#else
+
   if (is_load_timing_enabled_)
     url_request_->GetLoadTimingInfo(&response->load_timing);
-#endif
+
   if (url_request_->ssl_info().cert.get()) {
     response->cert_status = url_request_->ssl_info().cert_status;
     if ((options_ & mojom::kURLLoadOptionSendSSLInfoWithResponse) ||
@@ -1580,11 +1522,7 @@ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
     response->request_cookies = request_cookies_;
   }
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetRequestStartTime(response, load_timing_info);
-#else
   response->request_start = url_request_->creation_time();
-#endif
   response->response_start = base::TimeTicks::Now();
   response->encoded_data_length = url_request_->GetTotalReceivedBytes();
   response->auth_challenge_info = url_request_->auth_challenge_info();
@@ -1614,11 +1552,6 @@ void URLLoader::OnReceivedRedirect(net::URLRequest* url_request,
   DCHECK(url_request == url_request_.get());
 
   DCHECK(!deferred_redirect_url_);
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetPreloadFlagUnSupport();
-#endif
-
   deferred_redirect_url_ = std::make_unique<GURL>(redirect_info.new_url);
 
   // Send the redirect response to the client, allowing them to inspect it and
@@ -1701,9 +1634,6 @@ void URLLoader::OnReceivedRedirect(net::URLRequest* url_request,
   DCHECK_EQ(emitted_devtools_raw_request_, emitted_devtools_raw_response_);
   response->emitted_extra_info = emitted_devtools_raw_request_;
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->HandleRedirectUrl(redirect_info);
-#endif
   ProcessInboundAttributionInterceptorOnReceivedRedirect(redirect_info,
                                                          std::move(response));
 }
@@ -1843,9 +1773,6 @@ void URLLoader::OnAuthRequired(net::URLRequest* url_request,
 
   DCHECK(!auth_challenge_responder_receiver_.is_bound());
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetPreloadFlagUnSupport();
-#endif
   url_loader_network_observer_->OnAuthRequired(
       fetch_window_id_, request_id_, url_request_->url(), first_auth_attempt_,
       auth_info, url_request->response_headers(),
@@ -1869,9 +1796,6 @@ void URLLoader::OnCertificateRequested(net::URLRequest* unused,
   // Set up mojo endpoints for ClientCertificateResponder and bind to the
   // Receiver. This enables us to receive messages regarding the client
   // certificate selection.
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->SetPreloadFlagUnSupport();
-#endif
   url_loader_network_observer_->OnCertificateRequested(
       fetch_window_id_, cert_info,
       client_cert_responder_receiver_.BindNewPipeAndPassRemote());
@@ -1883,16 +1807,16 @@ void URLLoader::OnSSLCertificateError(net::URLRequest* request,
                                       int net_error,
                                       const net::SSLInfo& ssl_info,
                                       bool fatal) {
+#if BUILDFLAG(IS_OHOS)
+  LOG(WARNING) << "URLLoader::OnSSLCertificateError net_error is "
+                << net_error;
+#endif
   if (!url_loader_network_observer_) {
     OnSSLCertificateErrorResponse(ssl_info, net_error);
     return;
   }
   url_loader_network_observer_->OnSSLCertificateError(
       url_request_->url(), net_error, ssl_info, fatal,
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-      request->original_url(),
-      request->referrer(),
-#endif
       base::BindOnce(&URLLoader::OnSSLCertificateErrorResponse,
                      weak_ptr_factory_.GetWeakPtr(), ssl_info));
 }
@@ -1921,13 +1845,6 @@ void URLLoader::ProcessInboundAttributionInterceptorOnResponseStarted() {
 
 void URLLoader::OnResponseStarted(net::URLRequest* url_request, int net_error) {
   DCHECK(url_request == url_request_.get());
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  if (url_loader_utils_->prpp_loader_.get() && (net_error == ohos_prp_preload::PRPP_ERROR) &&
-      !has_received_response_) {
-    url_loader_utils_->CleanupAndRollback();
-    return;
-  }
-#endif
   has_received_response_ = true;
 
   if (keepalive_) {
@@ -1942,6 +1859,10 @@ void URLLoader::OnResponseStarted(net::URLRequest* url_request, int net_error) {
   ReportFlaggedResponseCookies(true);
 
   if (net_error != net::OK) {
+#if BUILDFLAG(IS_OHOS)
+  LOG(WARNING) << "URLLoader::OnResponseStarted  net_error is "
+               << net_error;
+#endif
     NotifyCompleted(net_error);
     // |this| may have been deleted.
     return;
@@ -1961,9 +1882,7 @@ void URLLoader::OnResponseStarted(net::URLRequest* url_request, int net_error) {
     // |this| may have been deleted.
     return;
   }
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->UpdatePreconnectInfo();
-#endif
+
   ProcessInboundAttributionInterceptorOnResponseStarted();
 }
 
@@ -2051,13 +1970,6 @@ void URLLoader::ContinueOnResponseStarted() {
               coep_reporter_, document_isolation_policy)) {
     CompleteBlockedResponse(net::ERR_BLOCKED_BY_RESPONSE, false,
                             blocked_reason);
-
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-    LOG(INFO)
-        << "ContinueOnResponseStarted blocked by response, blocked_reason "
-        << static_cast<int>(*blocked_reason) << ", url: ***";
-#endif
-
     // Close the socket associated with the request, to prevent leaking
     // information.
     url_request_->AbortAndCloseConnection();
@@ -2099,11 +2011,6 @@ void URLLoader::ContinueOnResponseStarted() {
         orb_analyzer_->Init(url_request_->url(), url_request_->initiator(),
                             request_mode_, request_destination_, *response_);
     if (MaybeBlockResponseForOrb(decision)) {
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-      LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
-                   "ORB blocked origin "
-                   "response, url: ***";
-#endif
       return;
     }
   }
@@ -2112,7 +2019,9 @@ void URLLoader::ContinueOnResponseStarted() {
     if (ShouldSniffContent(url_request_->url(), *response_)) {
       // We're going to look at the data before deciding what the content type
       // is.  That means we need to delay sending the response started IPC.
+#if !BUILDFLAG(IS_OHOS)
       VLOG(1) << "Will sniff content for mime type: " << url_request_->url();
+#endif
       is_more_mime_sniffing_needed_ = true;
     } else if (response_->mime_type.empty()) {
       // Ugg.  The server told us not to sniff the content but didn't give us
@@ -2227,13 +2136,9 @@ void URLLoader::ReadMore() {
   auto buf = base::MakeRefCounted<NetToMojoIOBuffer>(
       pending_write_, pending_write_buffer_offset_);
   read_in_progress_ = true;
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  int bytes_read = url_loader_utils_->ReadDataFromLoaderOrRequest(buf);
-#else
   int bytes_read = url_request_->Read(
       buf.get(), static_cast<int>(pending_write_buffer_size_ -
                                   pending_write_buffer_offset_));
-#endif
   if (bytes_read != net::ERR_IO_PENDING) {
     DidRead(bytes_read, /*completed_synchronously=*/true,
             /*into_slop_bucket=*/false);
@@ -2327,11 +2232,6 @@ void URLLoader::DidRead(int num_bytes,
         }
 
         if (MaybeBlockResponseForOrb(orb_decision)) {
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-      LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
-                   "ORB blocked origin "
-                   "response, url: ***";
-#endif
           return;
         }
       }
@@ -2569,15 +2469,15 @@ void URLLoader::CancelRequestIfNonceMatchesAndUrlNotExempted(
 }
 
 void URLLoader::NotifyCompleted(int error_code) {
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-  if (url_request_->isolation_info().request_type() ==
-                        net::IsolationInfo::RequestType::kMainFrame) {
-    ReportUrlQuicInfo(url_request_.get(), error_code);
-  }
-#endif // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   // Ensure sending the final upload progress message here, since
   // OnResponseCompleted can be called without OnResponseStarted on cancellation
   // or error cases.
+#if BUILDFLAG(IS_OHOS)
+  if (error_code < 0) {
+    LOG(WARNING) << "URLLoader::NotifyCompleted net_error is "
+                  << error_code;
+  }
+#endif
   if (upload_progress_tracker_) {
     upload_progress_tracker_->OnUploadCompleted();
     upload_progress_tracker_ = nullptr;
@@ -2623,10 +2523,6 @@ void URLLoader::NotifyCompleted(int error_code) {
     }
     status.exists_in_cache = url_request_->response_info().was_cached;
     status.completion_time = base::TimeTicks::Now();
-#if BUILDFLAG(ARKWEB_NETWORK_DFX)
-    TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
-                 "responseEnd", status.completion_time);
-#endif
     status.encoded_data_length = url_request_->GetTotalReceivedBytes();
     status.encoded_body_length = url_request_->GetRawBodyBytes();
     status.decoded_body_length = total_written_bytes_;
@@ -2642,18 +2538,8 @@ void URLLoader::NotifyCompleted(int error_code) {
     }
 
     url_loader_client_.Get()->OnComplete(status);
-#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
-    if (url_loader_utils_) {
-      url_loader_utils_->PrintNetworkInfo();
-    }
-#endif
   }
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  if (url_loader_utils_->prpp_loader_.get()) {
-    url_loader_utils_->prpp_loader_->ClearLoaderCallback(devtools_request_id().has_value());
-  }
-#endif
   DeleteSelf();
 }
 
@@ -2817,11 +2703,7 @@ void URLLoader::DispatchOnRawRequest(
   seen_raw_request_headers_ = true;
 
   net::LoadTimingInfo load_timing_info;
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  url_loader_utils_->GetLoadTimeInfo(&load_timing_info);
-#else
   url_request_->GetLoadTimingInfo(&load_timing_info);
-#endif
 
   emitted_devtools_raw_request_ = true;
 
@@ -2950,7 +2832,6 @@ bool URLLoader::HasDataPipe() const {
 
 void URLLoader::ResumeStart() {
   url_request_->LogUnblocked();
-  TRACE_EVENT1("net", "URLLoader::ResumeStart", "id", request_id_);
   url_request_->Start();
 }
 
@@ -3034,15 +2915,6 @@ URLLoader::BlockResponseForOrbResult URLLoader::BlockResponseForOrb() {
        orb::ResponseAnalyzer::BlockedResponseHandling::kEmptyResponse)
           ? net::OK
           : net::ERR_BLOCKED_BY_ORB;
-
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  // This preserves compatibility with current implementations, which use
-  // net::ERR_ABORTED when the resource is detachable.
-  if (url_loader_utils_->corb_detachable_ && blocked_error_code == net::OK) {
-    CHECK(!base::FeatureList::IsEnabled(features::kOpaqueResponseBlockingV02));
-    blocked_error_code = net::ERR_ABORTED;
-  }
-#endif
 
   // Send empty body to the real URLLoaderClient. This preserves "ORB v0.1"
   // behaviour and will also go away once

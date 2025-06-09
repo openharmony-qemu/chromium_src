@@ -39,10 +39,6 @@
 #include "components/download/internal/common/android/download_collection_bridge.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-#include "components/download/public/common/download_utils.h"
-#endif // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-
 namespace download {
 
 namespace {
@@ -88,6 +84,7 @@ void UnHideFile(const base::FilePath& path) {
   }
 }
 #endif
+
 }  // namespace
 
 DownloadFileImpl::SourceStream::SourceStream(
@@ -213,6 +210,7 @@ DownloadFileImpl::DownloadFileImpl(
 
 DownloadFileImpl::~DownloadFileImpl() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
   TRACE_EVENT_NESTABLE_ASYNC_END0("download", "DownloadFileActive",
                                   download_id_);
 }
@@ -417,16 +415,6 @@ void DownloadFileImpl::RenameAndUniquify(const base::FilePath& full_path,
     return;
   }
 #endif  // BUILDFLAG(IS_ANDROID)
-
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  if (GetFileRenameOptions() == FileRenameOptions::OVERWRITE_MODE) {
-    std::unique_ptr<RenameParameters> parameters(
-        new RenameParameters(OVERWRITE, full_path, std::move(callback)));
-    RenameWithRetryInternal(std::move(parameters));
-    return;
-  }
-#endif  // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-
   std::unique_ptr<RenameParameters> parameters(
       new RenameParameters(UNIQUIFY, full_path, std::move(callback)));
   RenameWithRetryInternal(std::move(parameters));
@@ -631,10 +619,6 @@ void DownloadFileImpl::Pause() {
   // Stop sending updates since meaningless after paused.
   if (update_timer_ && update_timer_->IsRunning())
     update_timer_->Stop();
-
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  AsArkWebDownloadFileImplExt()->StopDownloadJobTimer();
-#endif
 }
 
 void DownloadFileImpl::Resume() {
@@ -654,9 +638,7 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (is_paused_)
     return;
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  AsArkWebDownloadFileImplExt()->ResetDownloadJobTimer();
-#endif
+
   base::TimeTicks start(base::TimeTicks::Now());
   base::TimeTicks now;
   scoped_refptr<net::IOBuffer> incoming_data;
@@ -682,13 +664,9 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
             CalculateBytesToWrite(source_stream, incoming_data_size,
                                   &bytes_to_validate, &bytes_to_write);
         DCHECK_GE(incoming_data_size, bytes_to_write);
-        LOG(DEBUG) << "DownloadFileImpl::StreamActive called";
         reason = ValidateAndWriteDataToFile(
             source_stream->offset() + source_stream->bytes_read(),
             incoming_data->data(), bytes_to_validate, bytes_to_write);
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-        AsArkWebDownloadFileImplExt()->RunCallbackIfDataReady();
-#endif
         bytes_seen_ += bytes_to_write;
         total_incoming_data_size += incoming_data_size;
         if (reason == DOWNLOAD_INTERRUPT_REASON_NONE) {
@@ -707,9 +685,6 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
                 bytes_to_write;
           }
         }
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-        AsArkWebDownloadFileImplExt()->RunCallbackIfDataReady();
-#endif
       } break;
       case InputStream::WAIT_FOR_COMPLETION:
         source_stream->RequestCompletionNotification(
@@ -737,9 +712,6 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
     source_stream->RegisterDataReadyCallback(
         base::BindRepeating(&DownloadFileImpl::StreamActive, weak_factory_.GetWeakPtr(),
                    source_stream));
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-    AsArkWebDownloadFileImplExt()->CreateDownloadJobTimer(source_stream);
-#endif
   }
 
   if (state == InputStream::COMPLETE)
@@ -755,6 +727,7 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
 void DownloadFileImpl::OnStreamCompleted(SourceStream* source_stream) {
   DownloadInterruptReason reason = HandleStreamCompletionStatus(source_stream);
   SendUpdate();
+
   NotifyObserver(source_stream, reason, InputStream::COMPLETE, false);
 }
 
@@ -840,6 +813,7 @@ void DownloadFileImpl::OnDownloadCompleted() {
 
 void DownloadFileImpl::RegisterAndActivateStream(SourceStream* source_stream) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
   source_stream->Initialize();
   // Truncate |source_stream|'s length if necessary.
   for (const auto& received_slice : received_slices_) {

@@ -935,14 +935,6 @@ Value::Dict::Dict(
   }
 }
 
-Value* Value::FindPath(std::string_view path) {
-  return GetDict().FindByDottedPath(path);
-}
-
-const Value* Value::FindPath(std::string_view path) const {
-  return GetDict().FindByDottedPath(path);
-}
-
 bool operator==(const Value::Dict& lhs, const Value::Dict& rhs) {
   auto deref_2nd = [](const auto& p) { return std::tie(p.first, *p.second); };
   return ranges::equal(lhs.storage_, rhs.storage_, {}, deref_2nd, deref_2nd);

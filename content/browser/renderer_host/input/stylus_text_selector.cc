@@ -28,15 +28,8 @@ std::unique_ptr<GestureDetector> CreateGestureDetector(
   // Doubletap, showpress and longpress detection are not required, and
   // should be explicitly disabled for efficiency.
   std::unique_ptr<ui::GestureDetector> detector(
-#if BUILDFLAG(IS_ARKWEB)
-      new ui::GestureDetectorExt(config, listener, null_double_tap_listener));
-#else
       new ui::GestureDetector(config, listener, null_double_tap_listener));
-#endif
   detector->set_press_and_hold_enabled(false);
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  detector->AsGestureDetectorExt()->set_draglongpress_enabled(false);
-#endif
   detector->set_showpress_enabled(false);
 
   return detector;

@@ -60,9 +60,6 @@ class MockTouchHandleDrawable : public TouchHandleDrawable {
 
   gfx::RectF GetVisibleBounds() const override { return data_->rect; }
 
-  void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) override {
-  }
-
  private:
   raw_ptr<MockDrawableData> data_;
 };
@@ -91,11 +88,6 @@ class TouchHandleTest : public testing::Test, public TouchHandleClient {
 
   void OnDragEnd(const TouchSelectionDraggable& handler) override {
     dragging_ = false;
-  }
-
-  void UpdateSelectionChanged(
-      const TouchSelectionDraggable& draggable) override {
-
   }
 
   bool IsWithinTapSlop(const gfx::Vector2dF& delta) const override {

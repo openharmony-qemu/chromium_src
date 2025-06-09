@@ -7,7 +7,6 @@
 #include "build/build_config.h"
 #include "ui/accessibility/accessibility_features.h"
 #include "ui/accessibility/ax_enums.mojom.h"
-#include "arkweb/build/features/features.h"
 
 namespace ui {
 
@@ -272,34 +271,6 @@ bool IsControlOnAndroid(const ax::mojom::Role role, bool isFocusable) {
       return IsControl(role);
   }
 }
-
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-bool IsControlOnOHOS(const ax::mojom::Role role, bool isFocusable) {
-  switch (role) {
-    case ax::mojom::Role::kSplitter:
-      return isFocusable;
-    case ax::mojom::Role::kDate:
-    case ax::mojom::Role::kDateTime:
-    case ax::mojom::Role::kDocBackLink:
-    case ax::mojom::Role::kDocBiblioRef:
-    case ax::mojom::Role::kDocGlossRef:
-    case ax::mojom::Role::kDocNoteRef:
-    case ax::mojom::Role::kInputTime:
-    case ax::mojom::Role::kLink:
-    case ax::mojom::Role::kTreeItem:
-      return true;
-    case ax::mojom::Role::kAlert:
-    case ax::mojom::Role::kDialog:
-    case ax::mojom::Role::kMenu:
-    case ax::mojom::Role::kMenuBar:
-    case ax::mojom::Role::kTree:
-    case ax::mojom::Role::kUnknown:
-      return false;
-    default:
-      return IsControl(role);
-  }
-}
-#endif
 
 bool IsDateOrTimeInput(const ax::mojom::Role role) {
   switch (role) {

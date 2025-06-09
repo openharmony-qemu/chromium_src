@@ -194,13 +194,4 @@ void ContextHostResolver::SetTickClockForTesting(
     resolve_context_->host_cache()->set_tick_clock_for_testing(tick_clock);
 }
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-bool ContextHostResolver::CanUseSecureDnsFallback() const {
-  if (!manager_) {
-    return false;
-  }
-  return manager_->CanUseSecureDnsFallback(resolve_context_.get());
-}
-#endif
-
 }  // namespace net

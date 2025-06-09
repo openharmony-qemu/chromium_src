@@ -22,13 +22,6 @@ grit("strings") {
     source = "plus_addresses_strings.grd"
   }
 
- #ifdef arkweb_i18n
-  if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
-  }
-
-  #endif
-  
   outputs = [ "../../grit/plus_addresses_strings.h" ] +
             process_file_template(
                 all_chrome_locales,

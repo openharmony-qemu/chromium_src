@@ -66,10 +66,6 @@
 #include "third_party/blink/public/platform/web_connection_type.h"
 #include "ui/gfx/native_widget_types.h"
 
-#ifdef IS_ARKWEB
-#include "arkweb/build/features/features.h"
-#endif
-
 namespace blink {
 class WebVideoCaptureImplManager;
 }
@@ -120,10 +116,6 @@ class StreamTextureFactory;
 class DCOMPTextureFactory;
 class OverlayStateServiceProvider;
 class OverlayStateServiceProviderImpl;
-#endif
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-class NativeTextureFactory;
 #endif
 
 // The RenderThreadImpl class represents the main thread, where `blink::WebView`
@@ -276,10 +268,6 @@ class CONTENT_EXPORT RenderThreadImpl
   scoped_refptr<OverlayStateServiceProvider> GetOverlayStateServiceProvider();
 #endif
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  scoped_refptr<NativeTextureFactory> GetNativeTexureFactory();
-#endif
-
   blink::WebVideoCaptureImplManager* video_capture_impl_manager() const {
     return vc_manager_.get();
   }
@@ -406,10 +394,6 @@ class CONTENT_EXPORT RenderThreadImpl
   void RecordAction(const base::UserMetricsAction& action) override;
   void RecordComputedAction(const std::string& action) override;
 
-#if BUILDFLAG(ARKWEB_I18N)
-  void NotifyLocaleChanged(const std::string& update_locale) override;
-#endif
-
 #if BUILDFLAG(IS_ANDROID)
   // ChildThreadImpl
   void OnMemoryPressureFromBrowserReceived(
@@ -461,14 +445,6 @@ class CONTENT_EXPORT RenderThreadImpl
   void SetIsCrossOriginIsolated(bool value) override;
   void SetIsWebSecurityDisabled(bool value) override;
   void SetIsIsolatedContext(bool value) override;
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  void SetDrawMode(int mode, base::PassKey<AgentSchedulingGroup>);
-#endif
-
-#if BUILDFLAG(ARKWEB_THEME_FONT)
-  void UpdateThemeFontFile(base::File theme_font) override;
-#endif
-
   void OnMemoryPressure(
       base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level);
 
@@ -562,10 +538,6 @@ class CONTENT_EXPORT RenderThreadImpl
   scoped_refptr<DCOMPTextureFactory> dcomp_texture_factory_;
   scoped_refptr<OverlayStateServiceProviderImpl>
       overlay_state_service_provider_;
-#endif
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  scoped_refptr<NativeTextureFactory> native_texture_factory_;
 #endif
 
   scoped_refptr<viz::ContextProviderCommandBuffer> shared_main_thread_contexts_;

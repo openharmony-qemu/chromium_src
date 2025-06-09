@@ -29,11 +29,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#include "ui/gl/init/gl_factory.h"
-#include "arkweb/chromium_ext/components/viz/common/yuv_readback_unittest_ext.h"
-#endif
-
 #if !BUILDFLAG(IS_ANDROID)
 
 namespace viz {
@@ -47,9 +42,6 @@ class YUVReadbackTest : public testing::Test {
   YUVReadbackTest() : context_(std::make_unique<gpu::GLInProcessContext>()) {
     gpu::ContextCreationAttribs attributes;
     attributes.bind_generates_resource = false;
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-    ARKWEB_UNITTESTS_INIT_DISPLAY();
-#endif
 
     auto result = context_->Initialize(
         TestGpuServiceHolder::GetInstance()->task_executor(), attributes,
@@ -442,11 +434,6 @@ class YUVReadbackTest : public testing::Test {
       }
     }
 
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-    ARKWEB_UNITTESTS_COMPARE_PLANE_Y();
-    ARKWEB_UNITTESTS_COMPARE_PLANE_U();
-    ARKWEB_UNITTESTS_COMPARE_PLANE_V();
-#else
     ComparePlane(
         Y, y_stride, output_frame->visible_data(media::VideoFrame::Plane::kY),
         output_frame->stride(media::VideoFrame::Plane::kY), 2, output_xsize,
@@ -459,7 +446,7 @@ class YUVReadbackTest : public testing::Test {
         V, v_stride, output_frame->visible_data(media::VideoFrame::Plane::kV),
         output_frame->stride(media::VideoFrame::Plane::kV), 2, output_xsize / 2,
         output_ysize / 2, &input_pixels, message + " V plane");
-#endif
+
     gl_->DeleteTextures(1, &src_texture);
   }
 
@@ -477,12 +464,8 @@ TEST_F(YUVReadbackTest, YUVReadbackOptTest) {
         "gpu.service") "," TRACE_DISABLED_BY_DEFAULT("gpu.decoder"));
 
     // Run a test with no size scaling, just planerization.
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-    ARKWEB_UNITTESTS_TEST_YUV_READBACK();
-#else
     TestYUVReadback(800, 400, 800, 400, 0, 0, 1, false, use_mrt == 1,
                     gpu::GLHelper::SCALER_QUALITY_FAST);
-#endif
 
     std::map<std::string, int> event_counts;
     EndTracing(&event_counts);
@@ -491,9 +474,6 @@ TEST_F(YUVReadbackTest, YUVReadbackOptTest) {
     VLOG(1) << "Draw buffer calls: " << draw_buffer_calls;
     VLOG(1) << "DrawArrays calls: " << draw_arrays_calls;
 
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-    ARKWEB_UNITTESTS_DRAW_RESULT();
-#else
     if (use_mrt) {
       // When using MRT, the YUV readback code should only execute two
       // glDrawArrays(). It will call glDrawBuffersEXT() twice for each pass
@@ -508,7 +488,6 @@ TEST_F(YUVReadbackTest, YUVReadbackOptTest) {
       EXPECT_EQ(3, draw_arrays_calls);
       EXPECT_EQ(0, draw_buffer_calls);
     }
-#endif
   }
 }
 

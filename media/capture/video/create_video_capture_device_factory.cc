@@ -13,9 +13,7 @@
 #include "media/capture/video/fake_video_capture_device_factory.h"
 #include "media/capture/video/file_video_capture_device_factory.h"
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "media/capture/video/ohos/video_capture_device_factory_ohos.h"
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)
 #include "media/capture/video/linux/video_capture_device_factory_linux.h"
 #elif BUILDFLAG(IS_CHROMEOS_ASH)
 #include "media/capture/video/chromeos/public/cros_features.h"
@@ -60,9 +58,7 @@ CreateFakeVideoCaptureDeviceFactory() {
 std::unique_ptr<VideoCaptureDeviceFactory>
 CreatePlatformSpecificVideoCaptureDeviceFactory(
     scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner) {
-#if BUILDFLAG(IS_ARKWEB)
-  return std::make_unique<VideoCaptureDeviceFactoryOHOS>(ui_task_runner);
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)
   return std::make_unique<VideoCaptureDeviceFactoryLinux>(ui_task_runner);
 #elif BUILDFLAG(IS_CHROMEOS_ASH)
   if (base::SysInfo::IsRunningOnChromeOS())
@@ -101,7 +97,6 @@ std::unique_ptr<VideoCaptureDeviceFactory> CreateVideoCaptureDeviceFactory(
   } else {
     // |ui_task_runner| is needed for the Linux ChromeOS factory to retrieve
     // screen rotations.
-    LOG(INFO) << "CreateVideoCaptureDeviceFactory";
     return CreatePlatformSpecificVideoCaptureDeviceFactory(ui_task_runner);
   }
 }

@@ -16,8 +16,6 @@
 #include "third_party/blink/public/mojom/page/widget.mojom.h"
 #include "third_party/blink/public/mojom/widget/platform_widget.mojom.h"
 #include "ui/base/ime/mojom/text_input_state.mojom.h"
-#include "build/build_config.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -79,16 +77,7 @@ class FakeRenderWidgetHost : public blink::mojom::FrameWidgetHost,
           render_frame_metadata_observer_client_receiver,
       mojo::PendingRemote<cc::mojom::RenderFrameMetadataObserver>
           render_frame_metadata_observer) override;
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void GetWordSelection(const std::string& text, int8_t offset, GetWordSelectionCallback callback) override {}
-  void SendCurrentLanguage(const std::string& ans) override {}
-  void CreateOverlay(const ::SkBitmap& image, const ::gfx::Rect& image_rect,
-                     const ::gfx::Point& touch_point) override {}
-  void OnOverlayStateChanged(const gfx::Rect& image_rect) override {};
-  void GetVisibleRectToWeb(GetVisibleRectToWebCallback callback) override {}
-  void DidNativeEmbedEvent(blink::mojom::NativeEmbedTouchEventPtr event) override {}
-  void DidNativeEmbedMouseEvent(blink::mojom::NativeEmbedMouseEventPtr event) override {}
-#endif // BUILDFLAG(ARKWEB_UNITTESTS)
+
   // blink::mojom::PopupWidgetHost overrides.
   void RequestClosePopup() override;
   void ShowPopup(const gfx::Rect& initial_rect,
@@ -130,6 +119,12 @@ class FakeRenderWidgetHost : public blink::mojom::FrameWidgetHost,
   const std::vector<gfx::Rect>& LastCompositionBounds() const {
     return last_composition_bounds_;
   }
+
+#if BUILDFLAG(IS_OHOS)
+void CreateOverlay(const ::SkBitmap& image,
+                   const ::gfx::Rect& image_rect,
+                   const ::gfx::Point& touch_point) override;
+#endif
 
  private:
   gfx::Range last_composition_range_;

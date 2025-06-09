@@ -46,10 +46,6 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/image/image_skia.h"
 #include "ui/gfx/native_widget_types.h"
-#include "arkweb/build/features/features.h"
-#if BUILDFLAG(ARKWEB_PRECOMPILE)
-#include "content/browser/code_cache/oh_code_cache.h"
-#endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include "third_party/jni_zero/jni_zero.h"
@@ -572,14 +568,6 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener,
   virtual void ExecuteJavaScript(const std::u16string& javascript,
                                  JavaScriptResultCallback callback) = 0;
 
-#if BUILDFLAG(IS_ARKWEB)
-  // This is the default API to run JavaScript in this frame. This API can only
-  // be called on chrome:// or devtools:// URLs.
-  virtual void ExecuteJavaScriptExt(const int fd,
-                                    const uint64_t scriptLength,
-                                    JavaScriptResultCallback callback) = 0;
-#endif
-
   // This runs the JavaScript in an isolated world of the top of this frame's
   // context. It is invalid to specify a `world_id` of
   // `ISOLATED_WORLD_ID_GLOBAL`.
@@ -637,21 +625,6 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener,
   // save UI.  Nothing gets done if there is no image at that location (or if
   // the image has a non-data URL).
   virtual void SaveImageAt(int x, int y) = 0;
-
-#if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(IS_ARKWEB_EXT)
-  using ImageCacheCallback =
-      base::OnceCallback<void(uint32_t, base::ReadOnlySharedMemoryRegion)>;
-  virtual void GetImageFromCache(const std::string& url,
-                                 ImageCacheCallback callback) = 0;
-#endif
-
-#if BUILDFLAG(ARKWEB_PRECOMPILE)
-  using CodeCacheCallback = base::OnceCallback<void(int32_t)>;
-  virtual void GenerateCodeCache(const std::string& url,
-                                 const std::string& script,
-                                 const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
-                                 CodeCacheCallback) = 0;
-#endif
 
   // RenderViewHost for this frame.
   virtual RenderViewHost* GetRenderViewHost() const = 0;
@@ -1167,9 +1140,6 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener,
   //   lifetime expectations of the PolicyContainerHost object.
   virtual bool HasPolicyContainerHost() const = 0;
 
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  virtual void OnClearContextMenu() = 0;
-#endif // BUILDFLAG(ARKWEB_DRAG_DROP)
  private:
   // This interface should only be implemented inside content.
   friend class RenderFrameHostImpl;

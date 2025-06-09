@@ -3,5 +3,5 @@
 # found in the LICENSE file.
 
 declare_args() {
-  ohos_sdk_version = "5.0.2.56"
+  ohos_sdk_version = "5.0.5.165"
 }

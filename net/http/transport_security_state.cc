@@ -49,10 +49,6 @@
 #include "net/net_buildflags.h"
 #include "net/ssl/ssl_info.h"
 
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
-
 namespace net {
 
 namespace {
@@ -324,10 +320,6 @@ TransportSecurityState::PKPStatus TransportSecurityState::CheckPublicKeyPins(
     const HostPortPair& host_port_pair,
     bool is_issued_by_known_root,
     const HashValueVector& public_key_hashes) {
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  return AsArkWebTransportSecurityStateExt()->CheckPublicKeyPinsOhos(
-      host_port_pair, public_key_hashes);
-#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
   // Perform pin validation only if the server actually has public key pins.
   if (!HasPublicKeyPins(host_port_pair.host())) {
     return PKPStatus::OK;

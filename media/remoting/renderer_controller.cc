@@ -13,7 +13,6 @@
 #include "build/build_config.h"
 #include "media/base/remoting_constants.h"
 #include "media/remoting/metrics.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "media/base/android/media_codec_util.h"
@@ -323,16 +322,12 @@ void RendererController::OnDataSourceInitialized(
 }
 
 void RendererController::OnHlsManifestDetected() {
-#if BUILDFLAG(ARKWEB_MEDIA)
   is_hls_ = true;
   // TODO(crbug.com/40057824) Android used to rely solely on MediaPlayer for HLS
   // playback, but now there is an alternative native player. Should we still
   // be doing this in all cases? It does work in its current state, on both
   // android and desktop, but it is not thoroughly tested.
   UpdateRemotePlaybackAvailabilityMonitoringState();
-#else
-  NOTREACHED();
-#endif
 }
 
 void RendererController::UpdateRemotePlaybackAvailabilityMonitoringState() {

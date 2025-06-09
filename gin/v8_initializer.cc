@@ -46,8 +46,6 @@
 #include "v8/include/v8-initialization.h"
 #include "v8/include/v8-snapshot.h"
 
-#include "arkweb/build/features/features.h"
-
 #if defined(V8_USE_EXTERNAL_STARTUP_DATA)
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/apk_assets.h"
@@ -55,15 +53,6 @@
 #include "base/apple/foundation_util.h"
 #endif
 #endif  // V8_USE_EXTERNAL_STARTUP_DATA
-
-#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-#include "base/command_line.h"
-#include "base/files/file_util.h"
-#include "content/public/common/content_switches.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-//#include "ohos_adapter_helper.h"
-
-#endif
 
 namespace gin {
 
@@ -672,52 +661,11 @@ void V8Initializer::LoadV8Snapshot(V8SnapshotFileType snapshot_file_type) {
     return;
   }
 
-#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM)
-  base::FilePath v8_snapshot_path;
-  const char* snapshot_filename = GetSnapshotFileName(snapshot_file_type);
-  GetV8FilePath(snapshot_filename, &v8_snapshot_path);
-  // If the hap package is not decompressed, the directory does not exist.
-  if (v8_snapshot_path.empty() || !base::PathExists(v8_snapshot_path)) {
-    LoadV8SnapshotFromFileByHap(snapshot_file_type);
-  } else {
-    base::MemoryMappedFile::Region file_region;
-    base::File file = OpenV8File(snapshot_filename, &file_region);
-    LoadV8SnapshotFromFile(std::move(file), &file_region, snapshot_file_type);
-  }
-#else
   base::MemoryMappedFile::Region file_region;
   base::File file =
       OpenV8File(GetSnapshotFileName(snapshot_file_type), &file_region);
   LoadV8SnapshotFromFile(std::move(file), &file_region, snapshot_file_type);
-#endif
 }
-
-#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-const char kSnapshotFileNameHap[] = "resources/rawfile/snapshot_blob.bin";
-// static
-int V8Initializer::LoadV8SnapshotFromFileByHap(
-    V8SnapshotFileType snapshot_file_type) {
-  auto resourceInstance =
-      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter();
-
-  std::shared_ptr<OHOS::NWeb::OhosFileMapper> fileMapper =
-    resourceInstance->GetRawFileMapper(kSnapshotFileNameHap, true);
-
-  if (!fileMapper) {
-    LOG(FATAL) << "couldn't mmap snapshot_blob data file " << kSnapshotFileNameHap;
-    return 1;
-  }
-  LOG(INFO) << "snapshot_blob data file length: " << fileMapper->GetDataLen();
-
-  std::unique_ptr<base::MemoryMappedFile> mmapped_file =
-      std::make_unique<base::MemoryMappedFile>();
-  mmapped_file->SetOhosFileMapper(fileMapper);
-
-  g_mapped_snapshot = mmapped_file.release();
-  g_snapshot_file_type = snapshot_file_type;
-  return 0;
-}
-#endif
 
 // static
 void V8Initializer::LoadV8SnapshotFromFile(

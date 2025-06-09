@@ -111,8 +111,6 @@ process but are generated using a script that pulls them from outside the repo.-
     <!-- Pseudolocales -->
     <output filename="search_engine_descriptions_strings_ar-XB.pak" type="data_package" lang="ar-XB" />
     <output filename="search_engine_descriptions_strings_en-XA.pak" type="data_package" lang="en-XA" />
-    <output filename="search_engine_descriptions_strings_bo-CN.pak" type="data_package" lang="bo-CN" />
-    <output filename="search_engine_descriptions_strings_ug.pak" type="data_package" lang="ug" />
   </outputs>
   <translations>
   <!-- The below files are generated using http://go/chrome-search-engines-marketing-snippets-script. Do not modify them manually. -->
@@ -171,8 +169,6 @@ process but are generated using a script that pulls them from outside the repo.-
     <file path="strings/search_engine_descriptions_strings_zh-HK.xtb" lang="zh-HK" />
     <file path="strings/search_engine_descriptions_strings_zh-TW.xtb" lang="zh-TW" />
     <file path="strings/search_engine_descriptions_strings_zu.xtb" lang="zu" />
-    <file path="strings/search_engine_descriptions_strings_bo-CN.xtb" lang="bo-CN" />
-    <file path="strings/search_engine_descriptions_strings_ug.xtb" lang="ug" />
   </translations>
   <release seq="1">
     <messages fallback_to_english="true">

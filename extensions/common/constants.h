@@ -22,10 +22,6 @@ inline constexpr char kExtensionScheme[] = "chrome-extension";
 inline constexpr char kExtensionInvalidRequestURL[] =
     "chrome-extension://invalid/";
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-inline constexpr char kArkwebExtensionScheme[] = "arkweb-extension";
-#endif
-
 // The name of the manifest inside an extension.
 inline constexpr base::FilePath::CharType kManifestFilename[] =
     FILE_PATH_LITERAL("manifest.json");

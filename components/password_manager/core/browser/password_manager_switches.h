@@ -10,7 +10,7 @@
 
 namespace password_manager {
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_LINUX)
 extern const char kPasswordStore[];
 extern const char kEnableEncryptionSelection[];
 #endif  // BUILDFLAG(IS_LINUX)

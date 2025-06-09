@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//arkweb/build/features/features.gni")
 import("//build/config/features.gni")
 import("//build/config/ozone.gni")
 import("//build/config/ui.gni")
@@ -10,7 +9,6 @@ import("//device/vr/buildflags/buildflags.gni")
 import("//gpu/vulkan/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
-import("//arkweb/build/features/features.gni")
 
 if (is_ios) {
   import("//build/config/ios/bundle_data_from_filelist.gni")
@@ -424,10 +422,6 @@ component("gfx") {
     deps += [ "//third_party/fontconfig" ]
   }
 
-  if (is_arkweb){
-    deps += [ "//ui/linux:linux_ui" ]
-  }
-
   if (is_apple) {
     frameworks = [ "IOSurface.framework" ]
     deps += [ "//ui/base:features" ]
@@ -659,14 +653,7 @@ source_set("memory_buffer_sources") {
     deps += [ "//build/config/linux/libdrm" ]
   }
 
-  if (is_arkweb) {
-    sources += [
-      "linux/native_pixmap_dmabuf.cc",
-      "linux/native_pixmap_dmabuf.h",
-    ]
-  }
-
-  if (is_linux || is_chromeos || is_android) {
+  if (is_linux || is_chromeos || is_android || is_ohos) {
     deps += [ "//third_party/libsync" ]
   }
 
@@ -889,7 +876,7 @@ test("gfx_unittests") {
     sources += [ "system_fonts_win_unittest.cc" ]
   }
 
-  if (is_linux || is_chromeos || is_android || is_fuchsia || is_win) {
+  if (is_linux || is_chromeos || is_android || is_fuchsia || is_win || is_ohos) {
     sources += [ "platform_font_skia_unittest.cc" ]
   }
 
@@ -994,10 +981,6 @@ test("gfx_unittests") {
     deps += [ "//skia:test_fonts" ]
     additional_manifest_fragments =
         [ "//build/config/fuchsia/test/test_fonts.shard.test-cml" ]
-  }
-
-  if (enable_arkweb) {
-    deps += [ "//arkweb/build/features" ]
   }
 }
 

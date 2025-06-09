@@ -11,7 +11,6 @@
 
 #include <string_view>
 
-#include "arkweb/build/features/features.h"
 #include "base/logging.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/ranges/algorithm.h"
@@ -448,7 +447,7 @@ bool CheckVulkanCompatibilities(
     const GPUInfo& gpu_info) {
 // Android uses AHB and SyncFD for interop. They are imported into GL with other
 // API.
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_VULKAN)
+#if !BUILDFLAG(IS_ANDROID)
 #if BUILDFLAG(IS_WIN)
   constexpr char kMemoryObjectExtension[] = "GL_EXT_memory_object_win32";
   constexpr char kSemaphoreExtension[] = "GL_EXT_semaphore_win32";
@@ -481,13 +480,11 @@ bool CheckVulkanCompatibilities(
   return true;
 #endif
 #else   // BUILDFLAG(IS_ANDROID)
-#if !BUILDFLAG(ARKWEB_VULKAN)
   if (IsBlockedByBuildInfo() && !ShouldBypassMediatekBlock(gpu_info)) {
     return false;
   }
-#endif
+
   if (device_properties.vendor_id == kVendorARM) {
-#if !BUILDFLAG(ARKWEB_VULKAN)
     int emui_version = GetEMUIVersion();
     // TODO(crbug.com/40136096) Display problem with Huawei EMUI < 11 and Honor
     // devices with Mali GPU. The Mali driver version is < 19.0.0.
@@ -495,7 +492,7 @@ bool CheckVulkanCompatibilities(
         emui_version < 11) {
       return false;
     }
-#endif
+
     // Remove "Mali-" prefix.
     std::string_view device_name(device_properties.device_name);
     if (!base::StartsWith(device_name, "Mali-")) {
@@ -516,28 +513,22 @@ bool CheckVulkanCompatibilities(
         return false;
       }
     }
-#if !BUILDFLAG(ARKWEB_VULKAN)
+
     return IsVulkanV1EnabledForMali(gpu_info) ||
            IsVulkanV2EnabledForMali(gpu_info);
-#endif
   }
-#if !BUILDFLAG(ARKWEB_VULKAN)
+
   if (device_properties.vendor_id == kVendorQualcomm) {
     return IsVulkanV1EnabledForAdreno(gpu_info, device_properties) ||
            IsVulkanV2EnabledForAdreno(gpu_info, device_properties) ||
            IsVulkanV3EnabledForAdreno(gpu_info, device_properties);
   }
-#endif
 
   // https://crbug.com/1122650: Poor performance and untriaged crashes with
   // Imagination GPUs.
   if (device_properties.vendor_id == kVendorImagination) {
     // Not allowed with V1.
-#if !BUILDFLAG(ARKWEB_VULKAN)
     return IsVulkanV2EnabledForImagination(gpu_info);
-#else
-    return false;
-#endif
   }
 
   // Some devices implement Vulkan using Swiftshader. We do not want those,

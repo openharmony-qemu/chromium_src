@@ -283,11 +283,6 @@ class FakeAutofillAgent : public mojom::AutofillAgent {
   void PreviewPasswordGenerationSuggestion(
       const std::u16string& password) override {}
 
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  void FillAccountSuggestion(const std::u16string& username,
-                             const std::u16string& password) override {}
-#endif
-
   mojo::AssociatedReceiverSet<mojom::AutofillAgent> receivers_;
 
   base::OnceClosure quit_closure_;

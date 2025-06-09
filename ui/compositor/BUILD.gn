@@ -4,8 +4,6 @@
 
 import("//build/config/ui.gni")
 import("//testing/test.gni")
-import("//arkweb/build/features/features.gni")
-import("//arkweb/chromium_ext/chromium_ext.gni")
 
 component("compositor") {
   sources = [
@@ -122,10 +120,6 @@ component("compositor") {
     # IDR_BITMAP_BRUSH_IMAGE.
     deps += [ "//ui/resources" ]
   }
-
-  if (is_arkweb) {
-    sources += arkweb_ui_compositor_sources
-  }
 }
 
 static_library("test_support") {
@@ -229,9 +223,6 @@ static_library("test_support") {
 }
 
 test("compositor_unittests") {
-  if (is_arkweb) {
-    import("//arkweb/chromium_ext/chromium_ext.gni")
-  }
   use_xvfb = use_xvfb_in_this_config
 
   sources = [
@@ -249,17 +240,6 @@ test("compositor_unittests") {
     "throughput_tracker_unittest.cc",
     "transform_animation_curve_adapter_unittest.cc",
   ]
-
-  if (arkweb_unittests) {
-    include_dirs = ohos_src_includes
-    sources += arkweb_ui_compositor_test_sources
-    sources += [
-      "//arkweb/chromium_ext/content/renderer/host_proxy.cc",
-      "//arkweb/chromium_ext/content/renderer/host_proxy.h",
-      "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos.cc",
-      "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos.h",
-    ]
-  }
 
   data = [ "//ui/gfx/test/data/compositor/" ]
 
@@ -284,14 +264,6 @@ test("compositor_unittests") {
     "//ui/gl",
     "//ui/resources",
   ]
-
-  if (arkweb_unittests) {
-    deps += [
-      "//content/public/common",
-      "//components/subresource_filter/content/browser",
-      "//cef:libcef_static",
-    ]
-  }
 
   if (is_ios) {
     bundle_deps = [
@@ -328,9 +300,5 @@ test("compositor_unittests") {
 
   if (is_ios) {
     public_deps = [ "//ui/gfx:compositor_tests_bundle_data" ]
-  }
-
-  if (enable_arkweb) {
-    deps += [ "//arkweb/build/features" ]
   }
 }

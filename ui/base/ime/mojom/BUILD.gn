@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 import("//mojo/public/tools/bindings/mojom.gni")
-import("//build/config/features.gni")
 
 component("shared_mojom_traits") {
   output_name = "ime_shared_mojom_traits"
@@ -88,11 +87,6 @@ mojom("mojom") {
   export_class_attribute_blink = "BLINK_PLATFORM_EXPORT"
   export_define_blink = "BLINK_PLATFORM_IMPLEMENTATION=1"
   export_header_blink = "third_party/blink/public/platform/web_common.h"
-
-  enabled_features = []
-  if (is_arkweb) {
-    enabled_features += [ "arkweb_input_events" ]
-  }
 }
 
 mojom("test_interfaces") {

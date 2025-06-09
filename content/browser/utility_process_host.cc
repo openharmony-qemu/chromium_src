@@ -7,7 +7,6 @@
 #include <memory>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
 #include "base/containers/span.h"
@@ -244,13 +243,7 @@ bool UtilityProcessHost::StartProcess() {
   process_->SetName(name_);
   process_->SetMetricsName(metrics_name_);
 
-  // TODO(ARKWEB_DFX_TRACING): waiting to confirm the impact
-  // https://open.codehub.huawei.com/innersource/shanhai/wutong/chromium/merge_requests/8781
-#if BUILDFLAG(ARKWEB_DFX_TRACING)
-  if (true) {
-#else
   if (RenderProcessHost::run_renderer_in_process()) {
-#endif
     DCHECK(g_utility_main_thread_factory);
     // See comment in RenderProcessHostImpl::Init() for the background on why we
     // support single process mode this way.

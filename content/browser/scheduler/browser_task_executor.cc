@@ -240,7 +240,7 @@ BrowserTaskExecutor::OnUserInputStart() {
 
 // static
 void BrowserTaskExecutor::Shutdown() {
-  if (!g_browser_task_executor || !g_browser_task_executor->ui_thread_executor_)
+  if (!g_browser_task_executor)
     return;
 
   DCHECK(Get()->ui_thread_executor_);

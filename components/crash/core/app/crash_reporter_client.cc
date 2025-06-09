@@ -70,7 +70,7 @@ bool CrashReporterClient::GetShouldDumpLargerDumps() {
 }
 #endif
 
-#if BUILDFLAG(IS_POSIX)
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC)
 void CrashReporterClient::GetProductNameAndVersion(const char** product_name,
                                                    const char** version) {
 }
@@ -79,7 +79,6 @@ void CrashReporterClient::GetProductNameAndVersion(std::string* product_name,
                                                    std::string* version,
                                                    std::string* channel) {}
 
-#if !BUILDFLAG(IS_MAC)
 base::FilePath CrashReporterClient::GetReporterLogFilename() {
   return base::FilePath();
 }
@@ -88,7 +87,6 @@ bool CrashReporterClient::HandleCrashDump(const char* crashdump_filename,
                                           uint64_t crash_pid) {
   return false;
 }
-#endif
 #endif
 
 #if BUILDFLAG(IS_WIN)
@@ -124,29 +122,7 @@ bool CrashReporterClient::ReportingIsEnforcedByPolicy(bool* breakpad_enabled) {
   return false;
 }
 
-bool CrashReporterClient::EnableBreakpadForProcess(
-    const std::string& process_type) {
-  return false;
-}
-
-void CrashReporterClient::GetCrashOptionalArguments(
-    std::vector<std::string>* arguments) {
-}
-
-#if BUILDFLAG(IS_WIN)
-std::wstring CrashReporterClient::GetCrashExternalHandler(
-    const std::wstring& exe_dir) {
-  return exe_dir + L"\\crashpad_handler.exe";
-}
-#endif
-
-#if BUILDFLAG(IS_MAC)
-bool CrashReporterClient::EnableBrowserCrashForwarding() {
-  return true;
-}
-#endif
-
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_ANDROID)
 unsigned int CrashReporterClient::GetCrashDumpPercentage() {
   return 100;
 }
@@ -161,7 +137,7 @@ bool CrashReporterClient::ShouldWriteMinidumpToLog() {
 
 #endif
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 void CrashReporterClient::GetSanitizationInformation(
     const char* const** allowed_annotations,
     void** target_module,
@@ -181,6 +157,11 @@ std::string CrashReporterClient::GetUploadUrl() {
 }
 
 bool CrashReporterClient::ShouldMonitorCrashHandlerExpensively() {
+  return false;
+}
+
+bool CrashReporterClient::EnableBreakpadForProcess(
+    const std::string& process_type) {
   return false;
 }
 

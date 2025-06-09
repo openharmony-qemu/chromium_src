@@ -49,4 +49,10 @@ void FakeFrameWidget::SetViewportIntersection(
   intersection_state_ = std::move(intersection_state);
 }
 
+#if BUILDFLAG(IS_OHOS)
+void FakeFrameWidget::OnTextRecognized(
+    std::vector<blink::mojom::TextRecognizeResultPtr> res,
+    float scale) {}
+#endif
+
 }  // namespace content

@@ -60,15 +60,9 @@
 #include "ui/gfx/native_widget_types.h"
 #include "url/gurl.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(IS_ANDROID)
 #include "third_party/jni_zero/jni_zero.h"
 #endif
-
-#include "arkweb/chromium_ext/content/public/browser/web_contents_for_include_file.cc"
 
 namespace base {
 class FilePath;
@@ -117,13 +111,11 @@ class BrowserPluginGuestDelegate;
 class GuestPageHolder;
 class RenderFrameHost;
 class RenderViewHost;
-class RenderViewHostDelegateView;
 class RenderWidgetHostView;
 class ScreenOrientationDelegate;
 class SiteInstance;
 class WebContentsDelegate;
 class WebUI;
-class WebContentsView;
 struct DropData;
 struct MHTMLGenerationParams;
 class PreloadingAttempt;
@@ -283,10 +275,6 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
     network::mojom::WebSandboxFlags starting_sandbox_flags =
         network::mojom::WebSandboxFlags::kNone;
 
-    // Optionally specify the view and delegate view.
-    raw_ptr<content::WebContentsView> view = nullptr;
-    raw_ptr<content::RenderViewHostDelegateView> delegate_view = nullptr;
-
     // Value used to set the last time the WebContents was made active, this is
     // the value that'll be returned by GetLastActiveTimeTicks(). If this is
     // left default initialized then the value is not passed on to the
@@ -330,10 +318,6 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
     // default network will be used.
     net::handles::NetworkHandle target_network =
         net::handles::kInvalidNetworkHandle;
-
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
-    std::string shared_render_process_token;
-#endif
   };
 
   // Token that causes input to be blocked on this WebContents for at least as
@@ -633,6 +617,7 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // other words, it must be a valid HTTP header value).
   virtual void SetUserAgentOverride(const blink::UserAgentOverride& ua_override,
                                     bool override_in_new_tabs) = 0;
+
   // Configures the value of is-overriding-user-agent for renderer initiated
   // navigations. The default is UA_OVERRIDE_INHERIT. This value does not apply
   // to the first renderer initiated navigation if the tab has no navigations.
@@ -1651,11 +1636,6 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // `kInvalidNetworkHandle` indicates that the current default network will
   // be bound.
   virtual net::handles::NetworkHandle GetTargetNetwork() = 0;
-#include "arkweb/chromium_ext/content/public/browser/web_contents_for_include.cc"
-
-#if BUILDFLAG(ARKWEB_PIP)
-  virtual void OnPipEvent(int event) = 0;
-#endif
 
  private:
   // This interface should only be implemented inside content.

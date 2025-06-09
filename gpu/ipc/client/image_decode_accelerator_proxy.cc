@@ -8,10 +8,8 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/containers/contains.h"
-#include "base/logging.h"
 #include "base/notreached.h"
 #include "base/ranges/algorithm.h"
 #include "cc/paint/paint_image.h"
@@ -33,13 +31,6 @@ bool IsSupportedImageSize(
     const cc::ImageHeaderMetadata* image_data,
     const ImageDecodeAcceleratorSupportedProfile& supported_profile) {
   DCHECK(image_data);
-
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-  if(image_data->image_type == cc::ImageType::kHEIF) {
-    LOG(INFO) << "[HeifSupport] Heif type, no need to check size.";
-    return true;
-  }
-#endif
 
   gfx::Size image_size;
   if (image_data->coded_size.has_value())
@@ -123,11 +114,7 @@ bool ImageDecodeAcceleratorProxy::IsImageSupported(
   if (image_metadata->has_embedded_color_profile)
     return false;
 
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-  static_assert(static_cast<int>(ImageDecodeAcceleratorType::kMaxValue) == 3,
-#else
   static_assert(static_cast<int>(ImageDecodeAcceleratorType::kMaxValue) == 2,
-#endif
                 "IsImageSupported() must be adapted to support all image types "
                 "in ImageDecodeAcceleratorType");
   ImageDecodeAcceleratorType image_type = ImageDecodeAcceleratorType::kUnknown;
@@ -138,11 +125,6 @@ bool ImageDecodeAcceleratorProxy::IsImageSupported(
     case cc::ImageType::kWEBP:
       image_type = ImageDecodeAcceleratorType::kWebP;
       break;
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-    case cc::ImageType::kHEIF:
-      image_type = ImageDecodeAcceleratorType::kHeif;
-      break;
-#endif // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     default:
       return false;
   }
@@ -168,10 +150,6 @@ bool ImageDecodeAcceleratorProxy::IsImageSupported(
     case ImageDecodeAcceleratorType::kWebP:
       DCHECK(image_metadata->webp_is_non_extended_lossy.has_value());
       return image_metadata->webp_is_non_extended_lossy.value();
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-    case ImageDecodeAcceleratorType::kHeif:
-      return true;
-#endif
     case ImageDecodeAcceleratorType::kUnknown:
       // Should not reach due to a check above.
       NOTREACHED();

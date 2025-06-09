@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
@@ -67,11 +66,6 @@
 #include "services/network/upload_progress_tracker.h"
 #include "services/network/url_loader_context.h"
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-#include "arkweb/chromium_ext/services/network/prp_preload/include/preload_runner/prpp_request_loader.h"
-#include "arkweb/chromium_ext/services/network/prp_preload/include/preload_runner/prpp_request_loader_factory.h"
-#endif
-
 namespace net {
 class HttpResponseHeaders;
 class IOBufferWithSize;
@@ -108,7 +102,6 @@ class NetToMojoPendingBuffer;
 class ScopedThrottlingToken;
 class SharedDictionaryManager;
 class SlopBucket;
-class URLLoaderUtils;
 
 class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
     : public mojom::URLLoader,
@@ -117,7 +110,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       public mojom::ClientCertificateResponder {
  public:
   using DeleteCallback = base::OnceCallback<void(URLLoader* loader)>;
-  friend class URLLoaderUtils;
 
   // Holds a sync and async implementation of URLLoaderClient. The sync
   // implementation can be used if present to avoid posting a task to call back
@@ -204,14 +196,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       mojo::PendingRemote<mojom::AcceptCHFrameObserver>
           accept_ch_frame_observer,
       std::unique_ptr<AttributionRequestHelper> attribution_request_helper,
-      bool shared_storage_writable_eligible
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-,
-      std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader,
-      const std::string& org_main_url,
-      std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info
-#endif
-      );
+      bool shared_storage_writable_eligible);
 
   URLLoader(const URLLoader&) = delete;
   URLLoader& operator=(const URLLoader&) = delete;
@@ -355,7 +340,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       const ResourceRequest& request);
 
  private:
-  std::unique_ptr<URLLoaderUtils> url_loader_utils_;
   // This class is used to set the URLLoader as user data on a URLRequest. This
   // is used instead of URLLoader directly because SetUserData requires a
   // std::unique_ptr. This is safe because URLLoader owns the URLRequest, so is
@@ -685,11 +669,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   const int keepalive_request_size_;
   const bool keepalive_;
   const bool do_not_prompt_for_login_;
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  std::shared_ptr<net::URLRequest> url_request_;
-#else
   std::unique_ptr<net::URLRequest> url_request_;
-#endif
   mojo::Receiver<mojom::URLLoader> receiver_;
   mojo::Receiver<mojom::AuthChallengeResponder>
       auth_challenge_responder_receiver_{this};

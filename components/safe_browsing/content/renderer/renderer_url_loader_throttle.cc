@@ -237,21 +237,11 @@ void RendererURLLoaderThrottle::MaybeSendExtensionWebRequestData(
   // Populate |origin_extension_id_| if request is initiated from an extension
   // page/service worker or content script.
   if (request->request_initiator &&
-      (request->request_initiator->scheme() == extensions::kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-       || request->request_initiator->scheme() ==
-              extensions::kArkwebExtensionScheme
-#endif
-       )) {
+      request->request_initiator->scheme() == extensions::kExtensionScheme) {
     origin_extension_id_ = request->request_initiator->host();
   } else if (request->isolated_world_origin &&
-             (request->isolated_world_origin->scheme() ==
-                  extensions::kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-              || request->isolated_world_origin->scheme() ==
-                     extensions::kArkwebExtensionScheme
-#endif
-              )) {
+             request->isolated_world_origin->scheme() ==
+                 extensions::kExtensionScheme) {
     origin_extension_id_ = request->isolated_world_origin->host();
     initiated_from_content_script_ = true;
   }

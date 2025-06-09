@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
 #include "base/command_line.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/functional/bind.h"
@@ -195,13 +194,6 @@ void VizProcessTransportFactory::ConnectHostFrameSinkManager() {
         GetHostFrameSinkManager()->debug_renderer_settings());
   }
 }
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-void VizProcessTransportFactory::SendInternalBeginFrame(
-    const viz::FrameSinkId& id) {
-  GetHostFrameSinkManager()->managerUtils->SendInternalBeginFrame(id);
-}
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 void VizProcessTransportFactory::CreateLayerTreeFrameSink(
     base::WeakPtr<ui::Compositor> compositor) {
@@ -395,13 +387,8 @@ void VizProcessTransportFactory::OnEstablishedGpuChannel(
   mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private;
   root_params->display_private =
       display_private.BindNewEndpointAndPassReceiver();
-  if (compositor->delegate()) {
-    compositor_data.display_client =
-        compositor->delegate()->CreateHostDisplayClient();
-  } else {
-    compositor_data.display_client =
-        std::make_unique<HostDisplayClient>(compositor);
-  }
+  compositor_data.display_client =
+      std::make_unique<HostDisplayClient>(compositor);
   root_params->display_client =
       compositor_data.display_client->GetBoundRemote(resize_task_runner_);
   mojo::AssociatedRemote<viz::mojom::ExternalBeginFrameController>
@@ -423,6 +410,10 @@ void VizProcessTransportFactory::OnEstablishedGpuChannel(
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   if (command_line->HasSwitch(switches::kDisableFrameRateLimit))
     root_params->disable_frame_rate_limit = true;
+
+#if BUILDFLAG(IS_OHOS)
+  root_params->surface_id = compositor->get_surface_id();
+#endif
 
 #if BUILDFLAG(IS_WIN)
   const bool using_direct_composition = GpuDataManagerImpl::GetInstance()
@@ -450,11 +441,6 @@ void VizProcessTransportFactory::OnEstablishedGpuChannel(
   GetHostFrameSinkManager()->CreateRootCompositorFrameSink(
       std::move(root_params), !using_direct_composition);
 #else
-
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-  root_params->send_swap_size_notifications = true;
-#endif  // BUILDFLAG(ARKWEb_COMPOSITE_RENDER)
-
   GetHostFrameSinkManager()->CreateRootCompositorFrameSink(
       std::move(root_params));
 #endif  // BUILDFLAG(IS_WIN)

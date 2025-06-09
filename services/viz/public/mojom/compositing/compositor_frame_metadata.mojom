@@ -76,10 +76,6 @@ struct CompositorFrameMetadata {
   // Viz process.
   bool has_shared_element_resources;
 
-  // Add for sliding response debug
-  [EnableIf=arkweb_slide]
-  bool is_scrolling;
-
   // When set, the compositor frame submission also informs viz to issue a
   // screenshot against the previous surface.
   blink.mojom.SameDocNavigationScreenshotDestinationToken?

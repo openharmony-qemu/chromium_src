@@ -2,9 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
 static_library("browser") {
   sources = [
     "bad_message.cc",
@@ -31,10 +28,6 @@ static_library("browser") {
       "keyboard_replacing_surface_visibility_controller_impl.cc",
       "keyboard_replacing_surface_visibility_controller_impl.h",
     ]
-  }
-
-  if (arkweb_password_autofill) {
-    sources += arkweb_components_password_manager_content_browser_sources
   }
 
   public_deps = [ "//components/autofill/content/common/mojom" ]

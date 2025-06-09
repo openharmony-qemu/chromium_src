@@ -16,7 +16,6 @@
 #include "net/cert/cert_status_flags.h"
 #include "url/gurl.h"
 #include "url/scheme_host_port.h"
-#include "arkweb/build/features/features.h"
 
 namespace net {
 class SSLInfo;
@@ -54,13 +53,7 @@ class SSLManager {
       NavigationOrDocumentHandle* navigation_or_document,
       int net_error,
       const net::SSLInfo& ssl_info,
-      bool fatal
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-      ,
-      const GURL& origin_url,
-      const std::string& referrer
-#endif
-      );
+      bool fatal);
 
   // Construct an SSLManager for the specified tab.
   explicit SSLManager(NavigationControllerImpl* controller);

@@ -25,10 +25,6 @@
 #include "components/messages/android/message_dispatcher_bridge.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-#include "arkweb/chromium_ext/components/subresource_filter/content/browser/profile_interaction_manager_for_include.cc"
-#endif
-
 namespace subresource_filter {
 
 ProfileInteractionManager::ProfileInteractionManager(
@@ -52,15 +48,8 @@ void ProfileInteractionManager::OnReloadRequested() {
 
   ContentSubresourceFilterThrottleManager::LogAction(
       SubresourceFilterAction::kAllowlistedSite);
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  if (profile_context_ && page_) {
-    profile_context_->settings_manager()->AllowlistSite(
-        page_->GetMainDocument().GetLastCommittedURL());
-  }
-#else
   profile_context_->settings_manager()->AllowlistSite(
       page_->GetMainDocument().GetLastCommittedURL());
-#endif
 
   // Since the reload comes from the primary page, the use of WebContents here
   // is correct.
@@ -86,11 +75,6 @@ void ProfileInteractionManager::OnAdsViolationTriggered(
   //
   // TODO(crbug.com/40721691): Add support for enabling ads interventions
   // separately for different ads violations.
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  if (!ProfileInteractionManagerUtil::OnAdsViolationTriggeredExt(this, rfh, triggered_violation)) {
-    return;
-  }
-#else
   const GURL& url = rfh->GetLastCommittedURL();
   std::optional<AdsInterventionManager::LastAdsIntervention> last_intervention =
       profile_context_->ads_intervention_manager()->GetLastAdsIntervention(url);
@@ -106,7 +90,6 @@ void ProfileInteractionManager::OnAdsViolationTriggered(
 
   profile_context_->ads_intervention_manager()
       ->TriggerAdsInterventionForUrlOnSubsequentLoads(url, triggered_violation);
-#endif
 
   ads_violation_triggered_for_last_committed_navigation_ = true;
 }
@@ -115,9 +98,6 @@ mojom::ActivationLevel ProfileInteractionManager::OnPageActivationComputed(
     content::NavigationHandle* navigation_handle,
     mojom::ActivationLevel initial_activation_level,
     ActivationDecision* decision) {
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  return OnPageActivationComputedExt(navigation_handle, initial_activation_level);
-#else
   CHECK(IsInSubresourceFilterRoot(navigation_handle),
         base::NotFatalUntil::M129);
 
@@ -146,7 +126,6 @@ mojom::ActivationLevel ProfileInteractionManager::OnPageActivationComputed(
   }
 
   return effective_activation_level;
-#endif
 }
 
 void ProfileInteractionManager::MaybeShowNotification() {
@@ -156,14 +135,8 @@ void ProfileInteractionManager::MaybeShowNotification() {
   CHECK(page_->IsPrimary(), base::NotFatalUntil::M129);
 
   const GURL& top_level_url = page_->GetMainDocument().GetLastCommittedURL();
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  if (profile_context_ &&
-      profile_context_->settings_manager()->ShouldShowUIForSite(
-          top_level_url)) {
-#else
   if (profile_context_->settings_manager()->ShouldShowUIForSite(
           top_level_url)) {
-#endif
 #if BUILDFLAG(IS_ANDROID)
     if (messages::MessageDispatcherBridge::Get()
             ->IsMessagesEnabledForEmbedder()) {
@@ -187,13 +160,7 @@ void ProfileInteractionManager::MaybeShowNotification() {
 
     ContentSubresourceFilterThrottleManager::LogAction(
         SubresourceFilterAction::kUIShown);
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-    if (profile_context_) {
-      profile_context_->settings_manager()->OnDidShowUI(top_level_url);
-    }
-#else
     profile_context_->settings_manager()->OnDidShowUI(top_level_url);
-#endif
   } else {
     ContentSubresourceFilterThrottleManager::LogAction(
         SubresourceFilterAction::kUISuppressed);

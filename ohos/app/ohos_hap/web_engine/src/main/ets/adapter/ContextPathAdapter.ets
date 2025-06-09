@@ -1,6 +1,31 @@
-// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of
+ *    conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list
+ *    of conditions and the following disclaimer in the documentation and/or other materials
+ *    provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used
+ *    to endorse or promote products derived from this software without specific prior written
+ *    permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 import { injectable, inject } from 'inversify';
 import environment from '@ohos.file.environment';
@@ -8,29 +33,40 @@ import environment from '@ohos.file.environment';
 import { BaseAdapter } from '../common/BaseAdapter';
 import LogUtil from '../utils/LogUtil';
 import LogMethod from '../common/LogDecorator';
+import { ContextAdapter } from './ContextAdapter';
+import { fileUri, picker } from '@kit.CoreFileKit';
+import { BusinessError } from '@kit.BasicServicesKit';
+import { common } from '@kit.AbilityKit';
 
 const TAG: string = 'ContextPath';
 
 @injectable()
-export default class ContextPathAdapter extends BaseAdapter {
+export class ContextPathAdapter extends BaseAdapter {
+  private ctxAdapter: ContextAdapter;
+
+  constructor(@inject(ContextAdapter) ctxAdapter: ContextAdapter) {
+    super();
+    this.ctxAdapter = ctxAdapter;
+  }
+
   @LogMethod
   getCacheDir(): string {
-    return this.context.getApplicationContext().cacheDir;
+    return this.ctxAdapter.getContext().getApplicationContext().cacheDir;
   }
 
   @LogMethod
   getTempDir(): string {
-    return this.context.getApplicationContext().tempDir;
+    return this.ctxAdapter.getContext().getApplicationContext().tempDir;
   }
 
   @LogMethod
   getFilesDir(): string {
-    return this.context.getApplicationContext().filesDir;
+    return this.ctxAdapter.getContext().getApplicationContext().filesDir;
   }
 
   @LogMethod
   getBundleDir(): string {
-    return this.context.bundleCodeDir;
+    return this.ctxAdapter.getContext().bundleCodeDir;
   }
 
   @LogMethod
@@ -39,8 +75,7 @@ export default class ContextPathAdapter extends BaseAdapter {
     try {
       userDir = environment.getUserDocumentDir();
     } catch (error) {
-      LogUtil.error(TAG, `getUserDocumentDir failed, caused by:${JSON.stringify(error)}, rollback to sandbox
-      dir`);
+      LogUtil.error(TAG, `getUserDocumentDir failed: ${JSON.stringify(error)}`);
     }
     return userDir;
   }
@@ -51,7 +86,7 @@ export default class ContextPathAdapter extends BaseAdapter {
     try {
       userDir = environment.getUserDesktopDir();
     } catch (error) {
-      LogUtil.error(TAG, `GetUserDesktopDir failed, caused by:${JSON.stringify(error)}, rollback to sandbox`);
+      LogUtil.error(TAG, `GetUserDesktopDir failed: ${JSON.stringify(error)}`);
     }
     return userDir;
   }
@@ -62,8 +97,23 @@ export default class ContextPathAdapter extends BaseAdapter {
     try {
       userDir = environment.getUserDownloadDir();
     } catch (error) {
-      LogUtil.error(TAG, `GetUserDownloadDir failed, caused by:${JSON.stringify(error)}, rollback to sandbox`);
+      LogUtil.error(TAG, `GetUserDownloadDir failed: ${JSON.stringify(error)}`);
     }
     return userDir;
+  }
+
+  getAppDownloadDir(callback: (downloadDirPath: string) => void) {
+    let context = getContext(this) as common.Context;
+    const documentViewPicker = new picker.DocumentViewPicker(context);
+    const documentSaveOptions = new picker.DocumentSaveOptions();
+    documentSaveOptions.pickerMode = picker.DocumentPickerMode.DOWNLOAD;
+ 
+    documentViewPicker.save(documentSaveOptions).then((documentSaveResult: Array<string>) => {
+      let downloadDirPath = new fileUri.FileUri(documentSaveResult[0]).path;
+      callback(downloadDirPath);
+    }).catch((err: BusinessError) => {
+      LogUtil.error(TAG, `createAppDownloadDir failed: ${JSON.stringify(err)}`);
+      callback('');
+    })
   }
 }

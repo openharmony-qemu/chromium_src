@@ -221,7 +221,7 @@ BASE_FEATURE(kSystemKeyboardLock,
 BASE_FEATURE(kUiGpuRasterization,
              "UiGpuRasterization",
 #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
-    BUILDFLAG(IS_WIN)
+    BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -264,11 +264,11 @@ BASE_FEATURE(kDragDropEmpty, "DragDropEmpty", base::FEATURE_ENABLED_BY_DEFAULT);
 BASE_FEATURE(kDragDropFiles, "DragDropFiles", base::FEATURE_ENABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
 // Cached in Java as well, make sure defaults are updated together.
 BASE_FEATURE(kElasticOverscroll,
              "ElasticOverscroll",
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(IS_ANDROID)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else  // BUILDFLAG(IS_ANDROID)
              base::FEATURE_DISABLED_BY_DEFAULT

@@ -33,7 +33,6 @@
 #include "media/capture/video/video_capture_device_client.h"
 #include "media/capture/video/video_capture_metrics.h"
 #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
-#include "arkweb/build/features/features.h"
 
 #if !BUILDFLAG(IS_ANDROID)
 #include "content/browser/compositor/image_transport_factory.h"
@@ -84,11 +83,7 @@ struct VideoCaptureController::ControllerClient {
         session_id(session_id),
         parameters(params),
         session_closed(false),
-        paused(false) {
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-    opened = false;
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
-  }
+        paused(false) {}
 
   ~ControllerClient() {}
 
@@ -118,10 +113,6 @@ struct VideoCaptureController::ControllerClient {
   // Indicates whether the client is paused, if true, VideoCaptureController
   // stops updating its buffer.
   bool paused;
-
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  bool opened;
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 };
 
 VideoCaptureController::BufferContext::BufferContext(
@@ -234,7 +225,7 @@ void VideoCaptureController::AddClient(
                 << ", params.requested_format = "
                 << media::VideoCaptureFormat::ToString(params.requested_format);
   EmitLogMessage(string_stream.str(), 1);
-  LOG(INFO) << string_stream.str();
+
   // Params received from a renderer will have been validated by
   // VideoCaptureHost, so here we can just require validity.
   DCHECK(params.IsValid());
@@ -271,12 +262,8 @@ void VideoCaptureController::AddClient(
   }
 
   // Do nothing if this client has called AddClient before.
-  if (FindClient(id, event_handler, controller_clients_)) {
-#if BUILDFLAG(ARKWEB_WEBRTC)
-    LOG(INFO) << "client is already added";
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
+  if (FindClient(id, event_handler, controller_clients_))
     return;
-  }
 
   // If the device has reported OnStarted event, report it to this client here.
   if (state_ == blink::VIDEO_CAPTURE_STATE_STARTED)
@@ -387,7 +374,6 @@ void VideoCaptureController::StopSession(
 
   if (client) {
     client->session_closed = true;
-    client->opened = false;
     client->event_handler->OnEnded(client->controller_id);
   }
 }
@@ -503,23 +489,6 @@ void VideoCaptureController::OnFrameReadyInBuffer(
     OnLog("First frame received at VideoCaptureController");
     has_received_frames_ = true;
   }
-
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  if (stream_type_ == blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE ||
-      stream_type_ == blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB ||
-      stream_type_ == blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET) {
-    for (const auto& client : controller_clients_) {
-      if (client->session_closed || client->opened) {
-        continue;
-      }
-      client->opened = true;
-      if (video_capture_manager_) {
-        video_capture_manager_->AsVideoCaptureManagerExt()->ScreenCaptureOpened(
-            client->session_id.ToString());
-      }
-    }
-  }
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 }
 
 ReadyBuffer VideoCaptureController::MakeReadyBufferAndSetContextFeedbackId(
@@ -581,9 +550,6 @@ void VideoCaptureController::OnBufferRetired(int buffer_id) {
 
 void VideoCaptureController::OnError(media::VideoCaptureError error) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
-#if BUILDFLAG(ARKWEB_WEBRTC)
-  EmitLogMessage(__func__, 1);
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
   state_ = blink::VIDEO_CAPTURE_STATE_ERROR;
   PerformForClientsWithOpenSession(base::BindRepeating(&CallOnError, error));
 }
@@ -902,14 +868,7 @@ void VideoCaptureController::PerformForClientsWithOpenSession(
 void VideoCaptureController::EmitLogMessage(const std::string& message,
                                             int verbose_log_level) {
   DVLOG(verbose_log_level) << message;
-#if BUILDFLAG(ARKWEB_WEBRTC)
-  LOG(INFO) << message;
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
   emit_log_message_cb_.Run(message);
 }
 
 }  // namespace content
-
-#ifdef BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_controller_for_include.cc"
-#endif

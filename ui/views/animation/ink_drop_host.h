@@ -194,8 +194,6 @@ class VIEWS_EXPORT InkDropHost {
   View* host_view() { return host_view_; }
   const View* host_view() const { return host_view_; }
 
-  InkDropMode ink_drop_mode() const { return ink_drop_mode_; }
-
  private:
   friend class test::InkDropHostTestApi;
 

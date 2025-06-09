@@ -57,16 +57,6 @@ bool TextureLayerImpl::IsSnappedToPixelGridInTarget() {
   return true;
 }
 
-#if BUILDFLAG(ARKWEB_WEBGL)
-bool TextureLayerImpl::ShouldDeferImplInvalidation() const {
-  if (!transferable_resource_.enable_defer_impl_invalidation_workaround) {
-    return false;
-  }
-  TRACE_EVENT0("cc", "TextureLayerImpl::ShouldDeferImplInvalidation");
-  return true;
-}
-#endif
-
 void TextureLayerImpl::PushPropertiesTo(LayerImpl* layer) {
   LayerImpl::PushPropertiesTo(layer);
   TextureLayerImpl* texture_layer = static_cast<TextureLayerImpl*>(layer);

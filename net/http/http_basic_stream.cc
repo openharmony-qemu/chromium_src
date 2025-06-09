@@ -9,7 +9,6 @@
 #include <utility>
 
 #include "base/functional/bind.h"
-#include "base/trace_event/trace_event.h"
 #include "net/http/http_network_session.h"
 #include "net/http/http_raw_request_headers.h"
 #include "net/http/http_request_info.h"
@@ -191,10 +190,6 @@ void HttpBasicStream::OnHandshakeConfirmed(CompletionOnceCallback callback,
     // asynchronously. If it was synchronous, GetLoadTimingInfo() assumes the
     // handshake was already confirmed or there was nothing to confirm.
     confirm_handshake_end_ = base::TimeTicks::Now();
-#if BUILDFLAG(ARKWEB_NETWORK_DFX)
-    TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
-                 "connectEnd", confirm_handshake_end_);
-#endif
   }
   std::move(callback).Run(rv);
 }

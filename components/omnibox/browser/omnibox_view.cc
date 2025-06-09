@@ -415,9 +415,6 @@ void OmniboxView::UpdateTextStyle(
 
   const bool is_extension_url =
 #if BUILDFLAG(ENABLE_EXTENSIONS)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      base::EqualsASCII(url_scheme, extensions::kArkwebExtensionScheme) ||
-#endif
       base::EqualsASCII(url_scheme, extensions::kExtensionScheme);
 #else
       false;

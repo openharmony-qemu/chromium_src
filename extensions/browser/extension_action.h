@@ -207,9 +207,6 @@ class ExtensionAction {
   // Returns the image to use as the default icon for the action. Can only be
   // called after SetDefaultIconImage().
   gfx::Image GetDefaultIconImage() const;
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  gfx::Image GetDefaultIconImageV2() const;
-#endif // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
   // Returns the placeholder image for the extension.
   gfx::Image GetPlaceholderIconImage() const;

@@ -44,26 +44,6 @@ const char* ResultDestinationToShortString(
 
 namespace viz {
 
-#if BUILDFLAG(ARKWEB_DFX_DUMP)
-CopyOutputRequest::CopyOutputRequest(ResultFormat result_format,
-                                     ResultDestination result_destination,
-                                     CopyOutputRequestCallback result_callback,
-                                     uint64_t id,
-                                     const std::string& dump_path)
-    : result_format_(result_format),
-      result_destination_(result_destination),
-      result_callback_(std::move(result_callback)),
-      scale_from_(1, 1),
-      scale_to_(1, 1), dump_frame_id_(id), dump_frame_path_(dump_path) {
-  // If format is I420_PLANES, the result must be in system memory. Returning
-  // I420_PLANES via textures is not yet supported.
-  DCHECK(result_format_ != ResultFormat::I420_PLANES ||
-         result_destination_ == ResultDestination::kSystemMemory);
-
-  DCHECK(!result_callback_.is_null());
-  TRACE_EVENT_NESTABLE_ASYNC_BEGIN0("viz", "CopyOutputRequest", this);
-}
-#else
 CopyOutputRequest::CopyOutputRequest(ResultFormat result_format,
                                      ResultDestination result_destination,
                                      CopyOutputRequestCallback result_callback)
@@ -80,7 +60,6 @@ CopyOutputRequest::CopyOutputRequest(ResultFormat result_format,
   DCHECK(!result_callback_.is_null());
   TRACE_EVENT_NESTABLE_ASYNC_BEGIN0("viz", "CopyOutputRequest", this);
 }
-#endif
 
 CopyOutputRequest::~CopyOutputRequest() {
   if (!result_callback_.is_null()) {
@@ -154,12 +133,6 @@ void CopyOutputRequest::SendResult(std::unique_ptr<CopyOutputResult> result) {
       result_task_runner_
           ? result_task_runner_
           : base::ThreadPool::CreateSequencedTaskRunner({base::MayBlock()});
-#if BUILDFLAG(ARKWEB_DFX_DUMP)
-  if (result) {
-    result->SetDumpFrameId(dump_frame_id_);
-    result->SetDumpFramePath(dump_frame_path_);
-  }
-#endif
   runner->PostTask(FROM_HERE, base::BindOnce(std::move(result_callback_),
                                              std::move(result)));
   // Remove the reference to the task runner (no-op if we didn't have one).

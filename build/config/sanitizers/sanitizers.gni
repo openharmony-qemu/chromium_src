@@ -12,7 +12,7 @@ import("//build/toolchain/toolchain.gni")
 declare_args() {
   # The global switch of cfi. Disable it to improve compiling efficiency while
   # being vulnerable to cfi attack.
-  use_cfi = false
+  use_cfi = true
 }
 
 declare_args() {

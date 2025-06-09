@@ -15,14 +15,8 @@
 #include "base/time/time.h"
 #include "third_party/abseil-cpp/absl/container/inlined_vector.h"
 #include "ui/events/velocity_tracker/motion_event.h"
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-#include "arkweb/chromium_ext/ui/events/velocity_tracker/motion_event_generic_utils.h"
-#endif
 
 namespace ui {
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  class MotionEventGenericUtils;
-#endif
 
 struct COMPONENT_EXPORT(VELOCITY_TRACKER) PointerProperties {
   PointerProperties();
@@ -65,12 +59,6 @@ class COMPONENT_EXPORT(VELOCITY_TRACKER) MotionEventGeneric
   MotionEventGeneric(const MotionEventGeneric& other);
 
   ~MotionEventGeneric() override;
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  friend class MotionEventGenericUtils;
-  std::shared_ptr<MotionEventGenericUtils> motion_event_generic_utils_ = nullptr;
-  std::shared_ptr<MotionEventGenericUtils> GetUtils() { return motion_event_generic_utils_; }
-#endif
 
   // MotionEvent implementation.
   uint32_t GetUniqueEventId() const override;

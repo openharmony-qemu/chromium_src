@@ -16,8 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_buildflags.h"
 #include "base/callback_list.h"
 #include "base/containers/flat_map.h"
 #include "base/functional/callback_helpers.h"
@@ -99,10 +97,6 @@
 #include "ui/native_theme/native_theme.h"
 #include "ui/native_theme/native_theme_observer.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(IS_ANDROID)
 #include "content/public/browser/android/child_process_importance.h"
 #endif
@@ -168,17 +162,6 @@ class WebContentsView;
 struct MHTMLGenerationParams;
 class PreloadingAttempt;
 
-#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
-class DisplayCutoutHostOhos;
-#endif
-
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-enum class RendererIsUnresponsiveReason;
-#endif
-
-class WebContentsImplExt;
-class WebContentsImplUtils;
-
 namespace mojom {
 class CreateNewWindowParams;
 }  // namespace mojom
@@ -228,17 +211,11 @@ class CONTENT_EXPORT WebContentsImpl
       public input::mojom::RenderInputRouterDelegateClient {
  public:
   class FriendWrapper;
-  friend class WebContentsImplExt;
-  friend class WebContentsImplUtils;
 
   WebContentsImpl(const WebContentsImpl&) = delete;
   WebContentsImpl& operator=(const WebContentsImpl&) = delete;
 
   ~WebContentsImpl() override;
-
-  virtual content::WebContentsImplExt* AsWebContentsImplExt() {
-    return nullptr;
-  }
 
   static std::unique_ptr<WebContentsImpl> CreateWithOpener(
       const WebContents::CreateParams& params,
@@ -1126,12 +1103,7 @@ class CONTENT_EXPORT WebContentsImpl
       RenderWidgetHostImpl* render_widget_host) override;
   void RendererUnresponsive(
       RenderWidgetHostImpl* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-      ,
-      RendererIsUnresponsiveReason reason
-#endif
-     ) override;
+      base::RepeatingClosure hang_monitor_restarter) override;
   void RendererResponsive(RenderWidgetHostImpl* render_widget_host) override;
   void RequestToLockPointer(RenderWidgetHostImpl* render_widget_host,
                             bool user_gesture,
@@ -1223,10 +1195,6 @@ class CONTENT_EXPORT WebContentsImpl
 
   void LoadingStateChanged(LoadingState new_state) override;
   void DidStartLoading(FrameTreeNode* frame_tree_node) override;
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  void DidStartLoading(FrameTreeNode* frame_tree_node,
-                       bool should_show_loading_ui) override;
-#endif
   void DidStopLoading() override;
   bool IsHidden() override;
   FrameTreeNodeId GetOuterDelegateFrameTreeNodeId() override;
@@ -1447,7 +1415,7 @@ class CONTENT_EXPORT WebContentsImpl
                                  const gfx::RectF& active_rect);
 #endif
 
-#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID)
   // Called by WebContentsAndroid to send the Display Cutout safe area to
   // DisplayCutoutHostImpl.
   void SetDisplayCutoutSafeArea(gfx::Insets insets);
@@ -1576,19 +1544,6 @@ class CONTENT_EXPORT WebContentsImpl
 
   WebContents* GetOpenedPartitionedPopin() const override;
 
-#if BUILDFLAG(ARKWEB_PIP)
-  MediaPlayerId GetMediaPlayerId(int delegate_id,
-                                 int child_id,
-                                 int frame_routing_id,
-                                 bool& status);
-  void OnPip(int status,
-             int delegate_id,
-             int child_id,
-             int frame_routing_id,
-             int width,
-             int height);
-  void OnPipEvent(int event) override;
-#endif
  private:
   using FrameTreeIterationCallback = base::FunctionRef<void(FrameTree&)>;
   using RenderViewHostIterationCallback =
@@ -1803,7 +1758,7 @@ class CONTENT_EXPORT WebContentsImpl
     bool is_notifying_observers_ = false;
     base::ObserverList<WebContentsObserver> observers_;
   };
-  WebContentsImplUtils* implUtils_;
+
   // See WebContents::Create for a description of these parameters.
   explicit WebContentsImpl(BrowserContext* browser_context);
 
@@ -2544,11 +2499,7 @@ class CONTENT_EXPORT WebContentsImpl
           NavigationController::UA_OVERRIDE_INHERIT;
 
   // Gets notified about changes in viewport fit events.
-#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
-  std::unique_ptr<DisplayCutoutHostOhos> safe_area_insets_host_;
-#else
   std::unique_ptr<SafeAreaInsetsHost> safe_area_insets_host_;
-#endif
 
   // Stores a set of frames that are fullscreen.
   // See https://fullscreen.spec.whatwg.org.
@@ -2647,9 +2598,6 @@ class CONTENT_EXPORT WebContentsImpl
   // WebContents::CreateParams::picture_in_picture_options.
   std::optional<blink::mojom::PictureInPictureWindowOptions>
       picture_in_picture_options_;
-#if BUILDFLAG(ARKWEB_PIP)
-  bool picture_in_picture_active_ = false;
-#endif
 
   // Only set if this WebContents represents a document picture-in-picture
   // window. This points to the WebContents that originally opened this
@@ -2736,6 +2684,5 @@ class CONTENT_EXPORT WebContentsImpl::FriendWrapper {
 };
 
 }  // namespace content
-#include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.h"
 
 #endif  // CONTENT_BROWSER_WEB_CONTENTS_WEB_CONTENTS_IMPL_H_

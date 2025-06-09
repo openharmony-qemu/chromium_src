@@ -110,8 +110,6 @@ LayerImpl::LayerImpl(LayerTreeImpl* tree_impl,
   DCHECK(layer_tree_impl_);
   layer_tree_impl_->RegisterLayer(this);
 
-  layer_impl_utils_ = std::make_unique<LayerImplUtils>(this);
-
   SetNeedsPushProperties();
 }
 
@@ -394,9 +392,7 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
   layer->effect_tree_index_ = effect_tree_index_;
   layer->clip_tree_index_ = clip_tree_index_;
   layer->scroll_tree_index_ = scroll_tree_index_;
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  layer_impl_utils_->LayerImplPushPropertiesTo(layer);
-#endif
+
   if (layer_property_changed_not_from_property_trees_ ||
       layer_property_changed_from_property_trees_)
     layer->layer_tree_impl()->set_needs_update_draw_properties();
@@ -421,22 +417,11 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
   // Reset any state that should be cleared for the next update.
   ResetChangeTracking();
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  layer->layer_impl_utils()->SetShouldInterceptTouchEvent(
-      layer_impl_utils_->ShouldInterceptTouchEvent());
-#endif
-
   if (layer_tree_impl()->settings().UseLayerContextForDisplay()) {
     // Ensure updates also propagate to the display tree on its next update.
     layer->SetNeedsPushProperties();
   }
 }
-
-#if BUILDFLAG(ARKWEB_WEBGL)
-bool LayerImpl::ShouldDeferImplInvalidation() const {
-  return false;
-}
-#endif
 
 bool LayerImpl::IsAffectedByPageScale() const {
   TransformTree& transform_tree = GetTransformTree();

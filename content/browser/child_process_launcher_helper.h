@@ -9,7 +9,6 @@
 #include <memory>
 #include <optional>
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/read_only_shared_memory_region.h"
 #include "base/memory/ref_counted.h"
@@ -64,10 +63,6 @@ class MachPortRendezvousServerIOS;
 #endif
 }
 
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-class AafwkAppMgrClientAdapter;
-#endif
-
 namespace content {
 
 class ChildProcessLauncher;
@@ -82,9 +77,6 @@ class PosixFileDescriptorInfo;
 
 namespace internal {
 
-#if BUILDFLAG(IS_ARKWEB)
-class ArkwebChildProcessLauncherHelperUtils;
-#endif
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 using FileMappedForLaunch = PosixFileDescriptorInfo;
 #else
@@ -108,9 +100,6 @@ class ProcessStorageBase {
 class ChildProcessLauncherHelper
     : public base::RefCountedThreadSafe<ChildProcessLauncherHelper> {
  public:
-#if BUILDFLAG(IS_ARKWEB)
-  friend class ArkwebChildProcessLauncherHelperUtils;
-#endif
   // Abstraction around a process required to deal in a platform independent way
   // between Linux (which can use zygotes) and the other platforms.
   struct Process {
@@ -315,7 +304,7 @@ class ChildProcessLauncherHelper
   std::optional<base::ProcessId> process_id_ = std::nullopt;
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   // The priority of the process. The state is stored to avoid changing the
   // setting repeatedly.
   std::optional<base::Process::Priority> priority_;
@@ -360,10 +349,6 @@ class ChildProcessLauncherHelper
   std::unique_ptr<sandbox::policy::SandboxPolicyFuchsia> sandbox_policy_;
 #endif
 
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-  std::unique_ptr<OHOS::NWeb::AafwkAppMgrClientAdapter> app_mgr_client_adapter_{
-      nullptr};
-#endif
 #if BUILDFLAG(IS_WIN)
   // Only valid if the host process has logging enabled.
   base::win::ScopedHandle log_handle_;
@@ -378,9 +363,6 @@ class ChildProcessLauncherHelper
   // Creation time of the helper, used for metrics.
   // TODO(crbug.com/40287847): Remove when parallel launching is finished.
   base::TimeTicks init_start_time_;
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-  std::unique_ptr<ArkwebChildProcessLauncherHelperUtils> arkweb_child_process_launcher_helper_utils_;
-#endif
 };
 
 }  // namespace internal

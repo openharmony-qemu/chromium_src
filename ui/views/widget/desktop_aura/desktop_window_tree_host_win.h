@@ -336,14 +336,6 @@ class VIEWS_EXPORT DesktopWindowTreeHostWin
   // True if the window is allow to take screenshots, by default is true.
   bool allow_screenshots_ = true;
 
-  // True if the widget has a external parent view/window outside of the
-  // Chromium-controlled view/window hierarchy.
-  bool has_external_parent_ = false;
-
-  // True if the first call to HandleWindowMinimizedOrRestored for an initially-
-  // minimized window is pending.
-  bool initially_minimized_first_restore_pending_ = false;
-
   // Visibility of the cursor. On Windows we can have multiple root windows and
   // the implementation of ::ShowCursor() is based on a counter, so making this
   // member static ensures that ::ShowCursor() is always called exactly once

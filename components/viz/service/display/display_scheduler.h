@@ -25,7 +25,6 @@ namespace viz {
 
 class HintSession;
 class HintSessionFactory;
-class DisplaySchedulerUtils;
 
 class VIZ_SERVICE_EXPORT DisplayScheduler
     : public DisplaySchedulerBase,
@@ -68,12 +67,7 @@ class VIZ_SERVICE_EXPORT DisplayScheduler
   // DynamicBeginFrameDeadlineOffsetSource:
   base::TimeDelta GetDeadlineOffset(base::TimeDelta interval) const override;
 
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-  void SetShouldFrameSubmissionBeforeDraw(bool should) override;
-#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-
  protected:
-  friend class DisplaySchedulerUtils;
   class BeginFrameObserver;
   class BeginFrameRequestObserverImpl;
 
@@ -171,8 +165,6 @@ class VIZ_SERVICE_EXPORT DisplayScheduler
     ~AdpfSessionState();
   };
   std::vector<AdpfSessionState> session_states_;
-
-  std::unique_ptr<DisplaySchedulerUtils> display_scheduler_utils_;
 
   base::WeakPtrFactory<DisplayScheduler> weak_ptr_factory_{this};
 };

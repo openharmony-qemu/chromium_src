@@ -853,8 +853,6 @@ GpuControlList::OsType GpuControlList::GetOsType() {
   return kOsMacosx;
 #elif BUILDFLAG(IS_IOS)
   return kOsIOS;
-#elif BUILDFLAG(IS_ARKWEB)
-  return kOsOHOS;
 #else
   return kOsAny;
 #endif

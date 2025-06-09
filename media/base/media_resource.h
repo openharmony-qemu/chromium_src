@@ -69,13 +69,6 @@ class MEDIA_EXPORT MediaResource {
   // This method is only used with the MediaUrlDemuxer, to set headers coming
   // from media url params.
   virtual void SetHeaders(base::flat_map<std::string, std::string> headers);
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  virtual void ForwardBufferedEndTimeChangeToDemuxerHost(
-      base::TimeDelta buffered_time) {}
-  virtual void SetPreloadType(uint32_t preload_type) {}
-  virtual void SetMediaSourceType(uint32_t media_source_type) {}
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

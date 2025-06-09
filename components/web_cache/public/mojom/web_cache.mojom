@@ -7,12 +7,4 @@ module web_cache.mojom;
 interface WebCache {
   // Clear cache.
   ClearCache(bool on_navigation);
-
-  // Add resource into MemoryCache
-  [EnableIf=arkweb_inject_offline_resource]
-  AddResourceToCache(string url,
-                     string origin,
-                     array<uint8> resource,
-                     map<string, string> response_headers,
-                     uint64 type);
 };

@@ -46,10 +46,8 @@ uint64_t GenerateSourceId(uint32_t restart_id) {
 // BeginFrame.
 void FilterAndIssueBeginFrame(BeginFrameObserver* observer,
                               const BeginFrameArgs& args) {
-  if (args.animate_only && !observer->WantsAnimateOnlyBeginFrames()) {
-    TRACE_EVENT0("viz", "FilterAndIssueBeginFrame animate_only");
+  if (args.animate_only && !observer->WantsAnimateOnlyBeginFrames())
     return;
-  }
   observer->OnBeginFrame(args);
 }
 
@@ -577,7 +575,6 @@ void ExternalBeginFrameSource::OnBeginFrame(const BeginFrameArgs& args) {
       continue;
     if (!CheckBeginFrameContinuity(obs, args))
       continue;
-    TRACE_EVENT0("viz", "ExternalBeginFrameSource::OnBeginFrame Process non-root");
     FilterAndIssueBeginFrame(obs, args);
   }
   // Process root observers.
@@ -586,7 +583,6 @@ void ExternalBeginFrameSource::OnBeginFrame(const BeginFrameArgs& args) {
       continue;
     if (!CheckBeginFrameContinuity(obs, args))
       continue;
-    TRACE_EVENT0("viz", "ExternalBeginFrameSource::OnBeginFrame Process root");
     FilterAndIssueBeginFrame(obs, args);
   }
 }

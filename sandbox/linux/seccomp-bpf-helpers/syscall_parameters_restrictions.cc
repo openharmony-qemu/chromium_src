@@ -464,9 +464,6 @@ ResultExpr RestrictPtrace() {
 #if !defined(__aarch64__)
                  PTRACE_GETREGS, PTRACE_GETFPREGS, PTRACE_GET_THREAD_AREA,
                  PTRACE_GETREGSET,
-#if !defined(__aarch64__) && BUILDFLAG(IS_ARKWEB)
-                 PTRACE_GETREGS, PTRACE_GETFPREGS, PTRACE_GETREGSET,
-#endif
 #endif
 #if defined(__arm__)
                  PTRACE_GETVFPREGS,

@@ -29,15 +29,7 @@ class MojoRendererWrapper : public Renderer {
   // Renderer implementation.
   void Initialize(MediaResource* media_resource,
                   RendererClient* client,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                  RequestSurfaceCB request_surface_cb,
-                  VideoDecoderChangedCB decoder_changed_cb,
-#endif // ARKWEB_VIDEO_ASSISTANT
                   PipelineStatusCallback init_cb) override;
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void Initialize(CreateTextureCB create_texture_cb,
-                  DestroyTextureCB destroy_texture_cb) override {}
-#endif
   void SetCdm(CdmContext* cdm_context, CdmAttachedCB cdm_attached_cb) override;
   void SetLatencyHint(std::optional<base::TimeDelta> latency_hint) override;
   void Flush(base::OnceClosure flush_cb) override;
@@ -46,29 +38,6 @@ class MojoRendererWrapper : public Renderer {
   void SetVolume(float volume) override;
   base::TimeDelta GetMediaTime() override;
 
-#if BUILDFLAG(ARKWEB_MEDIA)
-  void SetNativeWindowSurface(int native_window_id) override;
-#endif // ARKWEB_MEDIA
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  void SetMuted(bool muted) override;
-  void SetSurfaceId(int surface_id, const gfx::Rect& rect) override;
-  void SetMediaPlayerState(bool is_suspend, int suspend_type) override;
-  void SetMediaSourceList(
-      const std::vector<MediaSourceInfo>& source_infos) override;
-  void SetMediaControls(bool show_media_controls,
-      const std::vector<std::string>& controls_list) override;
-  void SetPoster(const std::string& poster_url) override;
-  void SetAttributes(
-      base::flat_map<std::string, std::string> attributes) override;
-  void SetReferrer(const std::string& referrer) override;
-  void SetIsAudio(bool is_audio) override;
-  void SetPlaybackRateWithReason(double playback_rate,
-      ActionReason reason) override;
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
-#if BUILDFLAG(ARKWEB_PIP)
-  void PipEnable(bool enable) override;
-#endif
  private:
   std::unique_ptr<MojoRenderer> mojo_renderer_;
 };

@@ -11,7 +11,6 @@
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/task/single_thread_task_runner.h"
-#include "cef/libcef/features/features.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/base/models/image_model.h"
 #include "ui/gfx/image/image.h"
@@ -172,10 +171,8 @@ void SimpleMenuModel::AddSeparator(MenuSeparatorType separator_type) {
     }
 
     if (items_.at(last_visible_item).type == TYPE_SEPARATOR) {
-#if !BUILDFLAG(ENABLE_CEF)
       DCHECK_EQ(NORMAL_SEPARATOR, separator_type);
       DCHECK_EQ(NORMAL_SEPARATOR, items_.at(last_visible_item).separator_type);
-#endif
       // The last item is already a separator. Don't add another.
       return;
     }

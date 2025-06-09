@@ -390,7 +390,7 @@ bool HeadlessContentBrowserClient::IsCookieDeprecationLabelAllowedForContext(
   return true;
 }
 
-bool HeadlessContentBrowserClient::ConfigureNetworkContextParams(
+void HeadlessContentBrowserClient::ConfigureNetworkContextParams(
     content::BrowserContext* context,
     bool in_memory,
     const base::FilePath& relative_partition_path,
@@ -400,7 +400,6 @@ bool HeadlessContentBrowserClient::ConfigureNetworkContextParams(
   HeadlessBrowserContextImpl::From(context)->ConfigureNetworkContextParams(
       in_memory, relative_partition_path, network_context_params,
       cert_verifier_creation_params);
-  return true;
 }
 
 std::string HeadlessContentBrowserClient::GetProduct() {

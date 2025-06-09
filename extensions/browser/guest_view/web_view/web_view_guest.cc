@@ -745,12 +745,7 @@ void WebViewGuest::RendererResponsive(
 void WebViewGuest::RendererUnresponsive(
     WebContents* source,
     content::RenderWidgetHost* render_widget_host,
-    base::RepeatingClosure hang_monitor_restarter
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-    ,
-    content::RendererIsUnresponsiveReason reason
-#endif
-) {
+    base::RepeatingClosure hang_monitor_restarter) {
   CHECK(!base::FeatureList::IsEnabled(features::kGuestViewMPArch));
 
   base::Value::Dict args;
@@ -1876,13 +1871,8 @@ GURL WebViewGuest::ResolveURL(const std::string& src) {
     return GURL(src);
   }
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  GURL default_url(base::StringPrintf("%s://%s/", kArkwebExtensionScheme,
-                                      owner_host().c_str()));
-#else
   GURL default_url(
       base::StringPrintf("%s://%s/", kExtensionScheme, owner_host().c_str()));
-#endif
   return default_url.Resolve(src);
 }
 

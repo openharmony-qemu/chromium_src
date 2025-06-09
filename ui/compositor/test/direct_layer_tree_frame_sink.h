@@ -75,9 +75,6 @@ class DirectLayerTreeFrameSink : public cc::LayerTreeFrameSink,
   base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
       const viz::FrameSinkId& id,
       viz::mojom::CompositorFrameSinkType* type) override;
-#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  void RestoreRenderFit(const viz::FrameSinkId& frame_sink_id) override {}
-#endif // ARKWEB_MAXIMIZE_RESIZE
 
  private:
   // viz::mojom::CompositorFrameSinkClient implementation:

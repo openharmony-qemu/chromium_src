@@ -228,10 +228,6 @@ bool FFmpegGlue::OpenContext(bool is_local_file) {
     return false;
   }
 
-#if BUILDFLAG(ARKWEB_MEDIA)
-  LOG(INFO) << "OhMedia::OpenContext format=" << format_context_->iformat->name;
-#endif // BUILDFLAG(ARKWEB)
-
   // Rely on ffmpeg's parsing if we're able to successfully open the file.
   if (strcmp(format_context_->iformat->name, "mov,mp4,m4a,3gp,3g2,mj2") == 0)
     container_ = container_names::MediaContainerName::kContainerMOV;

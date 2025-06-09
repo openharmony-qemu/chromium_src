@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/feature_list.h"
 #include "net/base/registry_controlled_domains/registry_controlled_domain.h"
@@ -236,7 +235,5 @@ void MaybeRemoveSecHeaders(net::URLRequest* request,
     }
   }
 }
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-#include "arkweb/chromium_ext/services/network/sec_header_helpers_ext.cc"
-#endif
+
 }  // namespace network

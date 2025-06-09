@@ -1232,9 +1232,7 @@ struct EnumTraits<media::stable::mojom::VideoDecoderType,
       case ::media::VideoDecoderType::kMediaCodec:
       case ::media::VideoDecoderType::kD3D11:
       case ::media::VideoDecoderType::kBroker:
-#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
       case ::media::VideoDecoderType::kOHOS:
-#endif
       case ::media::VideoDecoderType::kOutOfProcess:
       case ::media::VideoDecoderType::kVideoToolbox:
         // Only decoders used on CrOS are supported.

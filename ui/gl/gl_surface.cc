@@ -71,14 +71,13 @@ gfx::SwapResult GLSurface::PostSubBuffer(int x,
   return gfx::SwapResult::SWAP_FAILED;
 }
 
-#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
-gfx::SwapResult GLSurface::SwapBuffersWithDamage(
-    const std::vector<int>& rects,
-    PresentationCallback callback,
-    gfx::FrameData data) {
+#if BUILDFLAG(IS_OHOS)
+gfx::SwapResult GLSurface::SwapBuffersWithDamage(const std::vector<int>& rects,
+                                                 PresentationCallback callback,
+                                                 gfx::FrameData data) {
   return gfx::SwapResult::SWAP_FAILED;
 }
-#endif
+#endif  // BUILDFLAG(IS_OHOS)
 
 void GLSurface::PostSubBufferAsync(int x,
                                    int y,
@@ -91,10 +90,6 @@ void GLSurface::PostSubBufferAsync(int x,
 }
 
 bool GLSurface::OnMakeCurrent(GLContext* context) {
-  return true;
-}
-
-bool GLSurface::SetBackbufferAllocation(bool allocated) {
   return true;
 }
 
@@ -223,16 +218,8 @@ bool GLSurface::ExtensionsContain(const char* c_extensions, const char* name) {
   return extensions.find(delimited_name) != std::string::npos;
 }
 
-scoped_refptr<GLSurface> InitializeGLSurfaceWithFormat(
-    scoped_refptr<GLSurface> surface, GLSurfaceFormat format) {
-  if (!surface->Initialize(format))
-    return nullptr;
-  return surface;
-}
 scoped_refptr<GLSurface> InitializeGLSurface(scoped_refptr<GLSurface> surface) {
-  LOG(INFO) << "gl_surface, InitializeGLSurface";
   if (!surface->Initialize(GLSurfaceFormat())) {
-    LOG(INFO) << "gl_surface, InitializeGLSurface failed";
     return nullptr;
   }
   return surface;

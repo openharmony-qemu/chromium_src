@@ -39,7 +39,6 @@
 #include "third_party/blink/public/mojom/frame/fullscreen.mojom.h"
 #include "third_party/blink/public/mojom/frame/intrinsic_sizing_info.mojom-forward.h"
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
-#include "third_party/blink/public/mojom/widget/platform_widget.mojom-forward.h"
 #include "third_party/blink/public/mojom/widget/record_content_to_visible_time_request.mojom.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "ui/accessibility/ax_action_handler_registry.h"
@@ -53,14 +52,6 @@
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/range/range.h"
 #include "ui/surface/transport_dib.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_view_base_interface.h"
-#endif
 
 namespace blink {
 class WebMouseEvent;
@@ -79,7 +70,6 @@ namespace content {
 class DevicePosturePlatformProvider;
 class MouseWheelPhaseHandler;
 class RenderWidgetHostImpl;
-class RenderWidgetHostViewGuest;
 class ScopedViewTransitionResources;
 class TextInputManager;
 class TouchSelectionControllerClientManager;
@@ -90,9 +80,6 @@ class SyntheticGestureTarget;
 // Basic implementation shared by concrete RenderWidgetHostView subclasses.
 class CONTENT_EXPORT RenderWidgetHostViewBase
     : public RenderWidgetHostView,
-#if BUILDFLAG(IS_ARKWEB)
-      public RenderWidgetHostViewBaseInterface,
-#endif
       public input::RenderWidgetHostViewInput {
  public:
   // The TooltipObserver is used in browser tests only.
@@ -144,9 +131,6 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   display::ScreenInfo GetScreenInfo() const override;
   display::ScreenInfos GetScreenInfos() const override;
   virtual void ResetGestureDetection();
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
-  virtual void ResetGestureDetection(bool is_lost_focus) {}
-#endif
 
   // RenderWidgetHostViewInput implementation
   base::WeakPtr<input::RenderWidgetHostViewInput> GetInputWeakPtr() override;
@@ -165,9 +149,6 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
 
   float GetDeviceScaleFactor() const final;
   bool IsPointerLocked() override;
-
-  void SetHasExternalParent(bool val) override;
-  bool HasExternalParent() const override;
 
   // Identical to `CopyFromSurface()`, except that this method issues the
   // `viz::CopyOutputRequest` against the exact `viz::Surface` currently
@@ -200,10 +181,6 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
       const gfx::Rect& keyboard_rect) override {}
   bool IsHTMLFormPopup() const override;
 
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  int GetTopControlsOffset() const override;
-#endif
-
   // This only needs to be overridden by RenderWidgetHostViewBase subclasses
   // that handle content embedded within other RenderWidgetHostViews.
   gfx::PointF TransformPointToRootCoordSpaceF(
@@ -233,10 +210,6 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
 
   // Called when screen information or native widget bounds change.
   virtual void UpdateScreenInfo();
-
-  // Generates the most current set of ScreenInfos from the current set of
-  // displays in the system for use in UpdateScreenInfo.
-  virtual display::ScreenInfos GetNewScreenInfosForUpdate();
 
   // Called by the TextInputManager to notify the view about being removed from
   // the list of registered views, i.e., TextInputManager is no longer tracking
@@ -364,12 +337,6 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
                            const gfx::Rect& bounds,
                            const gfx::Rect& anchor_rect) = 0;
 
-  // Perform all the initialization steps necessary for this object to represent
-  // the platform widget owned by |guest_view| and embedded in
-  // |parent_host_view|.
-  virtual void InitAsGuest(RenderWidgetHostView* parent_host_view,
-                           RenderWidgetHostViewGuest* guest_view) {}
-
   // Indicates whether the page has finished loading.
   virtual void SetIsLoading(bool is_loading) = 0;
 
@@ -475,6 +442,7 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   TextInputManager* GetTextInputManager();
 
   virtual void DidNavigate();
+
   // Called when the RenderWidgetHostImpl establishes a connection to the
   // renderer process Widget.
   virtual void OnRendererWidgetCreated() {}
@@ -619,10 +587,6 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   // to all displays.
   gfx::Size system_cursor_size_;
 
-  // True if the widget has a external parent view/window outside of the
-  // Chromium-controlled view/window hierarchy.
-  bool has_external_parent_ = false;
-
  private:
   FRIEND_TEST_ALL_PREFIXES(
       BrowserSideFlingBrowserTest,
@@ -643,6 +607,10 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
                            NoFallbackIfSwapFailedBeforeNavigation);
 
   void SynchronizeVisualProperties();
+
+  // Generates the most current set of ScreenInfos from the current set of
+  // displays in the system for use in UpdateScreenInfo.
+  display::ScreenInfos GetNewScreenInfosForUpdate();
 
   // Called when display properties that need to be synchronized with the
   // renderer process changes. This method is called before notifying

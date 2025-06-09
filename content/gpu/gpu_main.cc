@@ -119,10 +119,6 @@
 #include "sandbox/policy/sandbox_type.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/gpu/gpu_main_ext.h"
-#endif
-
 namespace content {
 
 namespace {
@@ -194,11 +190,7 @@ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
 #elif BUILDFLAG(IS_MAC)
     return sandbox::Seatbelt::IsSandboxed();
 #elif BUILDFLAG(IS_OHOS)
-#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-    return false;
-#else
     return StartSandboxOHOS(watchdog_thread);
-#endif
 #else
     return false;
 #endif
@@ -446,10 +438,6 @@ int GpuMain(MainFunctionParams parameters) {
   base::allocator::PartitionAllocSupport::Get()->ReconfigureAfterTaskRunnerInit(
       switches::kGpuProcess);
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  retry_times = 0;
-  TryForReportThread();
-#endif //!BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   base::HighResolutionTimerManager hi_res_timer_manager;
 
   // Adds support of wall-time based TimerKeeper metrics for the main GPU thread

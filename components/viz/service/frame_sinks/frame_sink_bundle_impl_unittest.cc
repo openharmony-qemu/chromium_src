@@ -233,11 +233,9 @@ class FrameSinkBundleImplTest : public testing::Test {
                                    client_receiver_.BindNewPipeAndPassRemote());
   }
 
-#if !BUILDFLAG(ARKWEB_UNITTESTS)
   ~FrameSinkBundleImplTest() override {
     manager_.UnregisterBeginFrameSource(&begin_frame_source_);
   }
-#endif
 
   void IssueOnBeginFrame() {
     begin_frame_source_.TestOnBeginFrame(

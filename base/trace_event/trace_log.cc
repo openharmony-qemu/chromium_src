@@ -16,9 +16,6 @@
 #include <unordered_set>
 #include <utility>
 
-#include "build/build_config.h"
-#include "arkweb/build/features/features.h"
-#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
 #include "base/auto_reset.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
@@ -638,8 +635,6 @@ TraceLog::TraceLog(int generation)
 
 #if BUILDFLAG(IS_NACL)  // NaCl shouldn't expose the process id.
   SetProcessID(0);
-#elif BUILDFLAG(ARKWEB_USE_UNIQUE_RENDERER_PROCESS_ID)
-  SetProcessID(GetCurrentRealPid());
 #else
   SetProcessID(GetCurrentProcId());
 #endif

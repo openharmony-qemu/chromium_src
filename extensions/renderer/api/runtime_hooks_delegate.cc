@@ -189,12 +189,7 @@ RequestResult RuntimeHooksDelegate::GetURL(
 
   RequestResult result(RequestResult::HANDLED);
   std::string url = base::StringPrintf(
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      "arkweb-extension://%s%s%s",
-#else
-      "chrome-extension://%s%s%s",
-#endif
-      id.c_str(),
+      "chrome-extension://%s%s%s", id.c_str(),
       !path.empty() && path[0] == '/' ? "" : "/", path.c_str());
   // GURL considers any possible path valid. Since the argument is only appended
   // as part of the path, there should be no way this could conceivably fail.

@@ -4,7 +4,6 @@
 
 #include "services/network/test/test_shared_url_loader_factory.h"
 
-#include "test_network_context.h"
 #include "base/notreached.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_builder.h"
@@ -12,7 +11,6 @@
 #include "services/network/network_context.h"
 #include "services/network/public/cpp/cross_thread_pending_shared_url_loader_factory.h"
 #include "services/network/public/mojom/network_context.mojom-forward.h"
-#include "arkweb/chromium_ext/services/network/arkweb_network_context_ext.h"
 
 namespace network {
 
@@ -22,7 +20,7 @@ TestSharedURLLoaderFactory::TestSharedURLLoaderFactory(
   auto context_builder = net::CreateTestURLRequestContextBuilder();
   url_request_context_ = context_builder->Build();
   mojo::Remote<mojom::NetworkContext> network_context;
-  network_context_ = std::make_unique<ArkWebNetworkContextExt>(
+  network_context_ = std::make_unique<NetworkContext>(
       network_service, network_context.BindNewPipeAndPassReceiver(),
       url_request_context_.get(),
       /*cors_exempt_header_list=*/std::vector<std::string>());

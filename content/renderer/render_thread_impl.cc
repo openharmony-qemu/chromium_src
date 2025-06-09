@@ -18,7 +18,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/allocator/partition_alloc_support.h"
 #include "base/at_exit.h"
 #include "base/command_line.h"
@@ -231,10 +230,6 @@
 #include "base/test/clang_profiling.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/renderer/render_thread_impl_ext.cc"
-#endif
-
 namespace content {
 
 namespace {
@@ -280,11 +275,9 @@ BASE_FEATURE(kUseThreadPoolForMediaTaskRunner,
 
 // Updates the crash key for whether this renderer is foregrounded.
 void UpdateForegroundCrashKey(bool foreground) {
-#if !BUILDFLAG(ARKWEB_BUGFIX_CRASH)
   static auto* const crash_key = base::debug::AllocateCrashKeyString(
       "renderer_foreground", base::debug::CrashKeySize::Size32);
   base::debug::SetCrashKeyString(crash_key, foreground ? "true" : "false");
-#endif
 }
 
 scoped_refptr<viz::ContextProviderCommandBuffer> CreateOffscreenContext(
@@ -559,9 +552,6 @@ void RenderThreadImpl::Init() {
 
 #if BUILDFLAG(USE_EXTERNAL_POPUP_MENU)
   // On Mac and Android Java UI, the select popups are rendered by the browser.
-#if BUILDFLAG(ARKWEB_HTML_SELECT)
-  if (!base::ohos::IsPcDevice())
-#endif
     blink::WebView::SetUseExternalPopupMenus(true);
 #endif
 
@@ -603,8 +593,6 @@ void RenderThreadImpl::Init() {
   url_loader_throttle_provider_ =
       GetContentClient()->renderer()->CreateURLLoaderThrottleProvider(
           blink::URLLoaderThrottleProviderType::kFrame);
-
-  GetContentClient()->renderer()->RenderThreadConnected();
 
   GetAssociatedInterfaceRegistry()->AddInterface<mojom::Renderer>(
       base::BindRepeating(&RenderThreadImpl::OnRendererInterfaceReceiver,
@@ -700,9 +688,6 @@ void RenderThreadImpl::Init() {
   }
 
   blink::WebV8Features::InitializeMojoJSAllowedProtectedMemory();
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-  ChildThreadImpl::SetWebkitInited();
-#endif
 }
 
 RenderThreadImpl::~RenderThreadImpl() {
@@ -919,9 +904,6 @@ void RenderThreadImpl::InitializeWebKit(mojo::BinderMap* binders) {
   // skia initialization code for the GPU.
   SkGraphics::SetImageGeneratorFromEncodedDataFactory(
       blink::WebImageGenerator::CreateAsSkImageGenerator);
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  InitializeWebKitExt(compositor_task_runner_);
-#endif
 }
 
 void RenderThreadImpl::InitializeRenderer(
@@ -1007,13 +989,6 @@ void RenderThreadImpl::RegisterSchemes() {
   // googlechrome:
   WebString google_chrome_scheme(WebString::FromASCII(kGoogleChromeScheme));
   WebSecurityPolicy::RegisterURLSchemeAsDisplayIsolated(google_chrome_scheme);
-
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  WebString arkweb_scheme(WebString::FromASCII(kArkWebUIScheme));
-  WebSecurityPolicy::RegisterURLSchemeAsDisplayIsolated(arkweb_scheme);
-  WebSecurityPolicy::RegisterURLSchemeAsNotAllowingJavascriptURLs(
-      arkweb_scheme);
-#endif
 }
 
 void RenderThreadImpl::RecordAction(const base::UserMetricsAction& action) {
@@ -1600,18 +1575,6 @@ void RenderThreadImpl::SetWebKitSharedTimersSuspended(bool suspend) {
   } else {
     main_thread_scheduler_->ResumeTimersForAndroidWebView();
   }
-#elif BUILDFLAG(ARKWEB_SUSPEND_ALL_TIMERS)
-  if (suspend) {
-    main_thread_scheduler_->PauseTimersForOHOSWebView();
-  } else {
-    main_thread_scheduler_->ResumeTimersForOHOSWebView();
-  }
-#elif BUILDFLAG(ARKWEB_FULLSCREEN)
-  if (suspend) {
-    main_thread_scheduler_->PauseTimersForOHOSWebView();
-  } else {
-    main_thread_scheduler_->ResumeTimersForOHOSWebView();
-  }
 #else
   NOTREACHED();
 #endif
@@ -1938,6 +1901,7 @@ void RenderThreadImpl::OnMemoryPressureFromBrowserReceived(
   }
   blink::RequestUserLevelMemoryPressureSignal();
 }
+
 #endif
 
 }  // namespace content

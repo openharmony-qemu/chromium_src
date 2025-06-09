@@ -304,7 +304,4 @@ struct URLResponseHead {
   // True if the client should load the response content after setting the
   // environment's `has storage access` bit.
   bool load_with_storage_access = false;
-
-  [EnableIf=arkweb_codecache_enhance]
-  bool code_cache_valid = false;
 };

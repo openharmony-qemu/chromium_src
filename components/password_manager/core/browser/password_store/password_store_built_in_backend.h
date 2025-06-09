@@ -21,10 +21,6 @@
 #include "components/prefs/pref_service.h"
 #include "components/sync/model/wipe_model_upon_sync_disabled_behavior.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 namespace base {
 class SequencedTaskRunner;
 }  // namespace base
@@ -89,9 +85,6 @@ class PasswordStoreBuiltInBackend : public PasswordStoreBackend,
                      PasswordChangesOrErrorReply callback) override;
   void UpdateLoginAsync(const PasswordForm& form,
                         PasswordChangesOrErrorReply callback) override;
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-  void UpdateLoginDisplayNameAsync(const PasswordForm& form) override;
-#endif
   void RemoveLoginAsync(const base::Location& location,
                         const PasswordForm& form,
                         PasswordChangesOrErrorReply callback) override;

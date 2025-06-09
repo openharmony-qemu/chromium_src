@@ -36,7 +36,6 @@
 #include "net/url_request/redirect_info.h"
 #include "net/url_request/redirect_util.h"
 #include "net/url_request/url_request_context.h"
-#include "url/url_util.h"
 
 namespace net {
 
@@ -47,16 +46,6 @@ base::Value::Dict SourceStreamSetParams(SourceStream* source_stream) {
   base::Value::Dict event_params;
   event_params.Set("filters", source_stream->Description());
   return event_params;
-}
-
-bool IsSecureScheme(const GURL& url) {
-  if (!url.has_scheme()) {
-    return false;
-  }
-  if (GURL::SchemeIsCryptographic(url.scheme_piece())) {
-    return true;
-  }
-  return base::Contains(url::GetSecureSchemes(), url.scheme_piece());
 }
 
 }  // namespace
@@ -336,7 +325,8 @@ GURL URLRequestJob::ComputeReferrerForPolicy(
   }
 
   bool secure_referrer_but_insecure_destination =
-      IsSecureScheme(original_referrer) && !IsSecureScheme(destination);
+      original_referrer.SchemeIsCryptographic() &&
+      !destination.SchemeIsCryptographic();
 
   switch (policy) {
     case ReferrerPolicy::CLEAR_ON_TRANSITION_FROM_SECURE_TO_INSECURE:
@@ -552,7 +542,11 @@ void URLRequestJob::ReadRawDataComplete(int result) {
 void URLRequestJob::NotifyStartError(int net_error) {
   DCHECK(!has_handled_response_);
   DCHECK_EQ(ERR_IO_PENDING, request_->status());
-
+#if BUILDFLAG(IS_OHOS)
+  if (net_error < ERR_IO_PENDING) {
+    LOG(WARNING) << "URLRequestJob::NotifyStartError net_error is" << net_error;
+  }
+#endif
   has_handled_response_ = true;
   // There may be relevant information in the response info even in the
   // error case.
@@ -568,7 +562,11 @@ void URLRequestJob::OnDone(int net_error, bool notify_done) {
   if (done_)
     return;
   done_ = true;
-
+#if BUILDFLAG(IS_OHOS)
+  if (net_error < ERR_IO_PENDING) {
+    LOG(WARNING) << "URLRequestJob::OnDone net_error is" << net_error;
+  }
+#endif
   // Unless there was an error, we should have at least tried to handle
   // the response before getting here.
   DCHECK(has_handled_response_ || net_error != OK);

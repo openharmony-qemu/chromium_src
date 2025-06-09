@@ -25,9 +25,6 @@ bool TouchscreenTapSuppressionController::FilterTapEvent(
 
     case WebInputEvent::Type::kGestureShowPress:
     case WebInputEvent::Type::kGestureLongPress:
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-    case WebInputEvent::Type::kGestureDragLongPress:
-#endif
     case WebInputEvent::Type::kGestureTapUnconfirmed:
     case WebInputEvent::Type::kGestureTapCancel:
     case WebInputEvent::Type::kGestureTap:

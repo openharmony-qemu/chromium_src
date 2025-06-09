@@ -176,11 +176,7 @@ bool MapUrlToLocalFilePath(const ExtensionSet* extensions,
   // (GetFilePath()), so that this can be called on the non blocking threads. It
   // only handles a subset of the urls.
   if (!use_blocking_api) {
-    if (file_url.SchemeIs(kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-        || file_url.SchemeIs(extensions::kArkwebExtensionScheme)
-#endif
-    ) {
+    if (file_url.SchemeIs(kExtensionScheme)) {
       std::string path = file_url.path();
       base::TrimString(path, "/", &path);  // Remove first slash
       *file_path = extension->path().AppendASCII(path);
@@ -307,11 +303,7 @@ ExtensionId GetExtensionIdForSiteInstance(
   // This works for both apps and extensions because the site has been
   // normalized to the extension URL for hosted apps.
   const GURL& site_url = site_instance.GetSiteURL();
-  if (!site_url.SchemeIs(kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      && !site_url.SchemeIs(kArkwebExtensionScheme)
-#endif
-  )
+  if (!site_url.SchemeIs(kExtensionScheme))
     return ExtensionId();
 
   // Navigating to a disabled (or uninstalled or not-yet-installed) extension
@@ -332,11 +324,7 @@ ExtensionId GetExtensionIdForSiteInstance(
 std::string GetExtensionIdFromFrame(
     content::RenderFrameHost* render_frame_host) {
   const GURL& site = render_frame_host->GetSiteInstance()->GetSiteURL();
-  if (!site.SchemeIs(kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      && !site.SchemeIs(kArkwebExtensionScheme)
-#endif
-  )
+  if (!site.SchemeIs(kExtensionScheme))
     return std::string();
 
   return site.host();

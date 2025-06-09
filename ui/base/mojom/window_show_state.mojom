@@ -20,7 +20,6 @@ enum WindowShowState {
   kMaximized = 3,
   kInactive = 4, // Views only, not persisted.
   kFullscreen = 5,
-  kHidden = 6,
   // TODO(crbug.com/361560784): Investigate and Remove `kEnd`
-  [MinVersion=1] kEnd = 7,
+  [MinVersion=1] kEnd = 6,
 };

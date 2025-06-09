@@ -30,9 +30,6 @@ class FakeLayerTreeHostImplClient : public LayerTreeHostImplClient {
   void SetNeedsPrepareTilesOnImplThread() override {}
   void SetVideoNeedsBeginFrames(bool needs_begin_frames) override {}
   void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) override {}
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void SetDeferInvalidationForFastMainFrameFromImpl(bool defer_invalidation_for_fast_main_frame) override {}
-#endif
   bool IsInsideDraw() override;
   void RenewTreePriority() override {}
   void PostDelayedAnimationTaskOnImplThread(base::OnceClosure task,

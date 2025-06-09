@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "services/tracing/public/cpp/tracing_features.h"
-#include "arkweb/build/features/features.h"
 
 #include <string>
 
@@ -46,7 +45,7 @@ BASE_FEATURE(kEnablePerfettoSystemTracing,
 namespace tracing {
 
 bool ShouldSetupSystemTracing() {
-#if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#if BUILDFLAG(IS_ANDROID)
   if (base::android::BuildInfo::GetInstance()->is_debug_android()) {
     return true;
   }

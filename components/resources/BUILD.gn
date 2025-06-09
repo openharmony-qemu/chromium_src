@@ -75,7 +75,7 @@ grit("components_resources") {
     deps += [ "//components/resources/ssl/ssl_error_assistant:make_ssl_error_assistant_protobuf" ]
   }
 
-  if (safe_browsing_mode > 0 || is_arkweb) {
+  if (safe_browsing_mode > 0) {
     deps += [
       "//components/safe_browsing/content/resources:make_file_types_protobuf",
     ]

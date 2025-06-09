@@ -140,16 +140,6 @@ class CONTENT_EXPORT PermissionControllerImpl : public PermissionController {
       blink::PermissionType permission,
       const url::Origin& requesting_origin,
       const url::Origin& embedding_origin) override;
-
-#if BUILDFLAG(ARKWEB_NOTIFICATION)
-  void GetPermissionStatusAsync(
-      blink::PermissionType permission,
-      bool isFromDocument,
-      void* render_host,
-      const url::Origin& origin,
-      base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) override;
-#endif // ARKWEB_NOTIFICATION
-
   // WARNING: Permission requests order is not guaranteed.
   // TODO(crbug.com/40864728): Migrate to `std::set`.
   // TODO(crbug.com/40275129): `RequestPermissions` and

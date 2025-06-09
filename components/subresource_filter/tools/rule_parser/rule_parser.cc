@@ -18,10 +18,6 @@
 #include "components/subresource_filter/tools/rule_parser/rule_options.h"
 #include "components/url_pattern_index/proto/rules.pb.h"
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-#include "arkweb/chromium_ext/components/subresource_filter/tools/rule_parser_for_include.cc"
-#endif
-
 namespace subresource_filter {
 
 namespace {
@@ -253,13 +249,6 @@ RuleType RuleParser::Parse(std::string_view line) {
       break;
     }
     const char next_char = part[css_separator_pos + 1];
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-    if (!ParseExt(css_separator_pos, part, next_char)) {
-      break;
-    }
-#endif
-
     if (next_char == '#' || next_char == '@')  // CSS rule starter.
       break;
   }

@@ -195,9 +195,6 @@ V8ValueConverterImpl::V8ValueConverterImpl()
     : date_allowed_(false),
       reg_exp_allowed_(false),
       function_allowed_(false),
-#if BUILDFLAG(ARKWEB_MSGPORT)
-      promise_allowed_(false),
-#endif
       strip_null_from_objects_(false),
       convert_negative_zero_to_int_(false),
       avoid_identity_hash_for_testing_(false),
@@ -435,19 +432,7 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8ValueImpl(
     if (!function_allowed_)
       // JSON.stringify refuses to convert function(){}.
       return nullptr;
-#if BUILDFLAG(ARKWEB_MSGPORT)
-    LOG(DEBUG) << "FromV8ValueImpl IsFunction";
-    return FromV8Object(val.As<v8::Object>(), state, isolate, true, false);
-  }
-
-  if (val->IsPromise()) {
-    if (!promise_allowed_)
-      return nullptr;
-    LOG(DEBUG) << "FromV8ValueImpl IsPromise";
-    return FromV8Object(val.As<v8::Object>(), state, isolate, false, true);
-#else
     return FromV8Object(val.As<v8::Object>(), state, isolate);
-#endif
   }
 
   if (val->IsArrayBuffer() || val->IsArrayBufferView())
@@ -651,7 +636,3 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
 }
 
 }  // namespace content
-
-#if BUILDFLAG(ARKWEB_MSGPORT)
-#include "arkweb/chromium_ext/content/renderer/v8_value_converter_impl_for_include.cc"
-#endif

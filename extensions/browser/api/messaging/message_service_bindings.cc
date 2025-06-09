@@ -407,11 +407,7 @@ std::optional<ExtensionId> ValidateSourceContextAndExtractExtensionId(
     // an example of breakage avoided by GetTupleOrPrecursorTupleIfOpaque call.
     const url::SchemeHostPort& scheme_host_port =
         origin.GetTupleOrPrecursorTupleIfOpaque();
-    if (scheme_host_port.scheme() != kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-        && scheme_host_port.scheme() != kArkwebExtensionScheme
-#endif
-    ) {
+    if (scheme_host_port.scheme() != kExtensionScheme) {
       SCOPED_CRASH_KEY_STRING256(
           "EMF_NON_EXTENSION_SENDER_FRAME", "origin",
           origin.GetDebugString(false /* include_nonce */));

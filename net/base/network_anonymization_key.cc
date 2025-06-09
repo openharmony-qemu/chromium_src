@@ -6,7 +6,6 @@
 #include <atomic>
 #include <optional>
 
-#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/unguessable_token.h"
 #include "base/values.h"
@@ -69,14 +68,6 @@ NetworkAnonymizationKey::NetworkAnonymizationKey()
     : top_frame_site_(std::nullopt),
       is_cross_site_(false),
       nonce_(std::nullopt) {}
-
-#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
-NetworkAnonymizationKey::NetworkAnonymizationKey(bool should_check_top_frame_site)
-      : top_frame_site_(std::nullopt),
-      is_cross_site_(false),
-      nonce_(std::nullopt),
-      should_check_top_frame_site_(should_check_top_frame_site) {}
-#endif
 
 NetworkAnonymizationKey::NetworkAnonymizationKey(
     const NetworkAnonymizationKey& network_anonymization_key) = default;

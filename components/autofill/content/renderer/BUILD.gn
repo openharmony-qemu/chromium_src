@@ -2,10 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
-
 static_library("renderer") {
   sources = [
     "a11y_utils.cc",
@@ -65,10 +61,6 @@ static_library("renderer") {
   ]
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
-
-if (arkweb_autofill) {
-  sources += arkweb_components_autofill_content_render_sources
-}
 }
 
 static_library("test_support") {

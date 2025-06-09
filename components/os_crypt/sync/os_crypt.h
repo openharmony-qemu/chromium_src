@@ -279,6 +279,7 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
 
 #if defined(OHOS_EX_PASSWORD)
   bool is_password_migrate_cached_ = false;
+  int migration_count_ = 0;
 #endif
 
   // |config_| is used to initialise |password_v11_cache_| and then cleared.

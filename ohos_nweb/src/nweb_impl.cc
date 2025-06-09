@@ -270,6 +270,7 @@ bool g_logger_callback_initialized = false;
 
 #if defined(OHOS_EX_PASSWORD)
 static const int kMigrationBase = 10;
+static const int kMigrationMaxCount = 10000;
 constexpr base::FilePath::CharType kMigrateKeyFlagFile[] =
     FILE_PATH_LITERAL("migrate/MIGRATE_ASSET_SUCCESS");
 #endif
@@ -535,15 +536,20 @@ void MigratePasswordsToPasswordVault() {
   bool migrateReady = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsReady);
   bool migrateVault = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsToPasswordVault);
   LOG(INFO) << "[Autofill] MigratePasswordsReady:" << migrateReady
-            << ", MigratePasswordsToPasswordVaul:" << migrateVault
+            << ", MigratePasswordsToPasswordVault:" << migrateVault
             << ", IsFlagFileExist:" << IsFlagFileExist;
   if (migrateReady == true && migrateVault == false && IsFlagFileExist == true) {
-    int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCounct);
+    int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCount);
     LOG(INFO) << "[Autofill] migration count:" << count;
-    g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCounct, count + 1);
-    if (count <= kMigrationBase || count % kMigrationBase == 0) {
+    g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCount, count + 1);
+    g_browser_process->local_state()->CommitPendingWrite();
+    if (count <= kMigrationBase || (count % kMigrationBase == 0 && count <= kMigrationMaxCount)) {
       OHOS::NWeb::NWebWebStorageImpl* nweb_web_storage = new OHOS::NWeb::NWebWebStorageImpl();
       nweb_web_storage->MigratePasswords();
+    } else if (count > kMigrationMaxCount) {
+      LOG(ERROR) << "[Autofill] Migrate passwords over max counts, stop migrate.";
+      g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+      g_browser_process->local_state()->CommitPendingWrite();
     }
   }
 }

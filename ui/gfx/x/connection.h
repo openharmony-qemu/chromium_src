@@ -17,16 +17,11 @@
 #include "base/sequence_checker.h"
 #include "ui/events/platform/platform_event_source.h"
 #include "ui/gfx/x/event_observer.h"
+#include "ui/gfx/x/extension_manager.h"
 #include "ui/gfx/x/future.h"
 #include "ui/gfx/x/window_event_manager.h"
 #include "ui/gfx/x/xlib_support.h"
-#if !BUILDFLAG(IS_ARKWEB)
-#include "ui/gfx/x/extension_manager.h"
 #include "ui/gfx/x/xproto.h"
-#else
-#include "ui/gfx/x/generated_protos/extension_manager.h"
-#include "ui/gfx/x/generated_protos/xproto.h"
-#endif
 #include "ui/gfx/x/xproto_types.h"
 
 typedef struct xcb_connection_t xcb_connection_t;

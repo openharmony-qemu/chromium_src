@@ -5,7 +5,6 @@
 #ifndef COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_FORM_PREDICTION_WAITER_H_
 #define COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_FORM_PREDICTION_WAITER_H_
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
@@ -20,11 +19,7 @@ namespace password_manager {
 
 // Filling timeout for waiting for asynchronous predictions.
 inline constexpr base::TimeDelta kMaxFillingDelayForAsyncPredictions =
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-    base::Milliseconds(1);
-#else
     base::Milliseconds(500);
-#endif
 
 // Helper class for PasswordFormManager to manage outstanding asynchronous
 // prediction fetches. This issues callbacks to wait on multiple

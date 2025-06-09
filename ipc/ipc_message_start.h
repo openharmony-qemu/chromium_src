@@ -18,7 +18,6 @@ enum IPCMessageStart {
   NaClMsgStart,
   PpapiMsgStart,
   NaClHostMsgStart,
-  OhGinJavascriptBridgeMsgStart,
   LastIPCMsgStart  // Must come last.
 };
 

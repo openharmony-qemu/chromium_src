@@ -1,20 +1,44 @@
-// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of
+ *    conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list
+ *    of conditions and the following disclaimer in the documentation and/or other materials
+ *    provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used
+ *    to endorse or promote products derived from this software without specific prior written
+ *    permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
+import common from '@ohos.app.ability.common';
 import { inject, injectable } from 'inversify';
 import Base from '@ohos.base';
 import commonEventManager from '@ohos.commonEventManager';
 import image from '@ohos.multimedia.image';
 import notificationManager from '@ohos.notificationManager';
 import wantAgent, { WantAgent } from '@ohos.app.ability.wantAgent';
-import { AbilityManager } from '../common/AbilityManager';
 import { BaseAdapter } from '../common/BaseAdapter';
 import LogUtil from '../utils/LogUtil';
 import LogMethod from '../common/LogDecorator';
 import { NotificationAdapterRequest, NotificationAdapterImage, NotificationAdapterButton } from '../interface/CommonInterface'
-import { MODULE_TYPE } from '../common/ModuleType';
-import { common } from '@kit.AbilityKit';
+import { ContextAdapter } from './ContextAdapter';
 
 const TAG: string = 'Notification';
 const GROUP_NAME: string = 'chromeJSNotificationGroup';
@@ -28,25 +52,21 @@ const CLOSE_EVENT: string = 'chrome.notification.close';
 const BUTTON_CLICK_EVENT: string = 'chrome.notification.button.click';
 
 @injectable()
-export default class NotificationAdapter extends BaseAdapter {
-
+export class NotificationAdapter extends BaseAdapter {
   private customEventSubscriber: commonEventManager.CommonEventSubscriber | undefined = undefined;
-  private abilityManager: AbilityManager;
+  private ctxAdapter: ContextAdapter;
 
-  constructor(
-    @inject(MODULE_TYPE.Context) ctx: common.UIAbilityContext,
-    @inject(AbilityManager) abilityManager: AbilityManager,
-  ) {
-    super(ctx);
-    this.abilityManager = abilityManager;
+  constructor(@inject(ContextAdapter) ctxAdapter: ContextAdapter) {
+    super();
+    this.ctxAdapter = ctxAdapter;
+    this.init();
   }
 
-  init() {
-    super.init();
+  override init() {
     this.createSubscriber();
   }
-  
-  unInit() {
+
+  override unInit() {
     this.removeSubscriber();
   }
 
@@ -55,9 +75,10 @@ export default class NotificationAdapter extends BaseAdapter {
     this.checkNotificationAuthorization(async (grant) => {
       if (grant) {
         let notificationRequest = await this.createNotificationRequest(request);
-        notificationManager.publish(notificationRequest).catch((error: Base.BusinessError) => {
-          LogUtil.error(TAG, `notification push failed :${JSON.stringify(error.message)}`);
-        });
+        notificationManager.publish(notificationRequest)
+          .catch((error: Base.BusinessError) => {
+            LogUtil.error(TAG, `notification push failed :${JSON.stringify(error.message)}`);
+          });
       }
     })
   }
@@ -69,16 +90,17 @@ export default class NotificationAdapter extends BaseAdapter {
 
   @LogMethod
   getAllNotification(callback: Function) {
-    notificationManager.getActiveNotifications().then((data: Array<notificationManager.NotificationRequest>) => {
-      let notificationIds: Array<number> = new Array<number>();
-      for (let i = 0; i < data.length; i++) {
-        if (data[i].id !== undefined) {
-          let notificationId: number = data[i].id as number;
-          notificationIds.push(notificationId);
+    notificationManager.getActiveNotifications()
+      .then((data: Array<notificationManager.NotificationRequest>) => {
+        let notificationIds: Array<number> = new Array<number>();
+        for (let i = 0; i < data.length; i++) {
+          if (data[i].id !== undefined) {
+            let notificationId: number = data[i].id as number;
+            notificationIds.push(notificationId);
+          }
         }
-      }
-      callback(notificationIds);
-    }).catch((err: Base.BusinessError) => {
+        callback(notificationIds);
+      }).catch((err: Base.BusinessError) => {
       LogUtil.error(TAG, `getActiveNotificationCount fail: ${JSON.stringify(err)}`);
       callback(new Array<number>());
     });
@@ -89,9 +111,9 @@ export default class NotificationAdapter extends BaseAdapter {
       if (enable) {
         callback(true);
       } else {
-        let activeContext = this.abilityManager.getActiveContext();
+        let activeContext = this.ctxAdapter.getActiveContext() as common.UIAbilityContext;
         if (!activeContext) {
-          LogUtil.error(TAG, 'no active context');
+          LogUtil.error(TAG, 'Failed to get active context');
           callback(false);
           return;
         }
@@ -125,7 +147,7 @@ export default class NotificationAdapter extends BaseAdapter {
     };
     notificationRequest.content.normal = normal;
     let notificationIcon = await this.convertImagePixelMap(request.icon);
-    if (notificationIcon !== undefined) {
+    if (notificationIcon) {
       notificationIcon = await this.verifyNotificationIcon(notificationIcon);
       notificationRequest.largeIcon = notificationIcon;
     }
@@ -134,29 +156,35 @@ export default class NotificationAdapter extends BaseAdapter {
         'hw_keep_headsup_sticky': true
       }
     }
-    if (request.timestamp !== undefined) {
+    if (request.timestamp) {
       notificationRequest.deliveryTime = request.timestamp;
     }
     if (request.silent) {
-      notificationRequest.notificationSlotType = notificationManager.SlotType.CONTENT_INFORMATION;
+      notificationRequest.notificationSlotType =
+        notificationManager.SlotType.CONTENT_INFORMATION;
     } else {
-      notificationRequest.notificationSlotType = notificationManager.SlotType.SOCIAL_COMMUNICATION;
+      notificationRequest.notificationSlotType =
+        notificationManager.SlotType.SOCIAL_COMMUNICATION;
     }
-    await this.createWantAgent(request.notificationId, CLICK_EVENT, undefined).then((data) => {
-      notificationRequest.wantAgent = data;
-    })
-    await this.createWantAgent(request.notificationId, CLOSE_EVENT, undefined).then((data) => {
-      notificationRequest.removalWantAgent = data;
-    })
-    if (request.buttons !== undefined && request.buttons.length > 0) {
-      await this.createActionButtons(request.notificationId, request.buttons).then((data) => {
-        notificationRequest.actionButtons = data;
+    await this.createWantAgent(request.notificationId, CLICK_EVENT, undefined)
+      .then((data) => {
+        notificationRequest.wantAgent = data;
       })
+    await this.createWantAgent(request.notificationId, CLOSE_EVENT, undefined)
+      .then((data) => {
+        notificationRequest.removalWantAgent = data;
+      })
+    if (request.buttons !== undefined && request.buttons.length > 0) {
+      await this.createActionButtons(request.notificationId, request.buttons)
+        .then((data) => {
+          notificationRequest.actionButtons = data;
+        })
     }
     return notificationRequest;
   }
 
-  private async convertImagePixelMap(requestImage: NotificationAdapterImage): Promise<image.PixelMap | undefined>  {
+  private async convertImagePixelMap(requestImage: NotificationAdapterImage)
+    : Promise<image.PixelMap | undefined>  {
     let pixmap: image.PixelMap;
     if (requestImage.width === 0 || requestImage.height === 0) {
       LogUtil.warn(TAG, 'image is empty, no conversion required');
@@ -174,12 +202,13 @@ export default class NotificationAdapter extends BaseAdapter {
       pixmap = await image.createPixelMap(requestImage.buff, opts);
       return pixmap;
     } catch (error) {
-      LogUtil.error(TAG, 'failed convert image pixel map because: ' +  JSON.stringify(error));
+      LogUtil.error(TAG, 'failed convert pixel map: ' +  JSON.stringify(error));
       return undefined;
     }
   }
 
-  private async verifyNotificationIcon(notificationIcon: image.PixelMap): Promise<image.PixelMap> {
+  private async verifyNotificationIcon(notificationIcon: image.PixelMap)
+    : Promise<image.PixelMap> {
     if (notificationIcon.getPixelBytesNumber() > ICON_MAX_SIZE) {
       let ratio: number = ICON_MAX_SIZE / notificationIcon.getPixelBytesNumber();
       ratio = Math.floor(Math.sqrt(ratio) * HUNDRED) / HUNDRED ;
@@ -188,7 +217,9 @@ export default class NotificationAdapter extends BaseAdapter {
     return notificationIcon;
   }
 
-  private async createWantAgent(notificationId: number, actionName: string, buttonIndex: number | undefined): Promise<WantAgent> {
+  private async createWantAgent(notificationId: number,
+    actionName: string,
+    buttonIndex: number | undefined): Promise<WantAgent> {
     let wantAgentInfo: wantAgent.WantAgentInfo = {
       wants: [
         {
@@ -199,7 +230,7 @@ export default class NotificationAdapter extends BaseAdapter {
       requestCode: CLICK_WANT_AGENT_REQUEST_CODE,
       actionFlags: [wantAgent.WantAgentFlags.CONSTANT_FLAG],
     };
-    if (buttonIndex !== undefined) {
+    if (buttonIndex) {
       wantAgentInfo.wants[0].parameters = {
         notificationId: notificationId,
         buttonIndex: buttonIndex
@@ -213,9 +244,10 @@ export default class NotificationAdapter extends BaseAdapter {
     return clickWantAgent;
   }
 
-  private subscribeCallBack(err: Base.BusinessError, data: commonEventManager.CommonEventData) {
+  private subscribeCallBack(err: Base.BusinessError,
+    data: commonEventManager.CommonEventData) {
     if (err) {
-      LogUtil.error(TAG, `Failed to subscribe notification event. Code is ${err.code}, message is ${err.message}`);
+      LogUtil.error(TAG, `Failed to subscribe event. Cause ${JSON.stringify(err)}`);
       return;
     }
     let notificationId: number = data.parameters?.notificationId;
@@ -235,15 +267,16 @@ export default class NotificationAdapter extends BaseAdapter {
     }
   }
 
-  private createSubscriberCallBack(err: Base.BusinessError, data: commonEventManager.CommonEventSubscriber) {
+  private createSubscriberCallBack(err: Base.BusinessError,
+    data: commonEventManager.CommonEventSubscriber) {
     if (err) {
-      LogUtil.error(TAG, `Failed to create notification subscriber. Code is ${err.code}, message is ${err.message}`);
+      LogUtil.error(TAG, `Failed to create subscriber. Cause ${JSON.stringify(err)}`);
       return;
     }
-    if (data !== null) {
+    if (data) {
       this.customEventSubscriber = data;
       commonEventManager.subscribe(data,
-        (err: Base.BusinessError, data: commonEventManager.CommonEventData) => this.subscribeCallBack(err, data));
+        (err, data) => this.subscribeCallBack(err, data));
     } else {
       LogUtil.error(TAG, `The envent subscriber does not exist`);
     }
@@ -254,7 +287,7 @@ export default class NotificationAdapter extends BaseAdapter {
       events: [CLICK_EVENT, CLOSE_EVENT, BUTTON_CLICK_EVENT],
     }
     commonEventManager.createSubscriber(subscribeInfo,
-      (err: Base.BusinessError, data: commonEventManager.CommonEventSubscriber) => this.createSubscriberCallBack(err,data));
+      (err, data) => this.createSubscriberCallBack(err,data));
   }
 
   private removeSubscriber() {
@@ -264,18 +297,20 @@ export default class NotificationAdapter extends BaseAdapter {
     }
   }
 
-  private async createActionButtons(notificationId: number, buttons: Array<NotificationAdapterButton>): Promise<Array<notificationManager.NotificationActionButton>> {
-    let actionButtons: Array<notificationManager.NotificationActionButton> = new Array<notificationManager.NotificationActionButton>();;
+  private async createActionButtons(notificationId: number,
+    buttons: Array<NotificationAdapterButton>)
+    : Promise<Array<notificationManager.NotificationActionButton>> {
+    let actionButtons = new Array<notificationManager.NotificationActionButton>();
     for (let button of buttons) {
-      await this.createWantAgent(notificationId, BUTTON_CLICK_EVENT, button.buttonIndex).then((data) => {
-        let actionButton: notificationManager.NotificationActionButton = {
-          title: button.title,
-          wantAgent: data,
-        }
-        actionButtons.push(actionButton);
-      })
+      await this.createWantAgent(notificationId, BUTTON_CLICK_EVENT, button.buttonIndex)
+        .then((data) => {
+          let actionButton: notificationManager.NotificationActionButton = {
+            title: button.title,
+            wantAgent: data,
+          }
+          actionButtons.push(actionButton);
+        })
     }
     return actionButtons;
   }
-
 }

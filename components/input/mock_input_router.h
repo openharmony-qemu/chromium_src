@@ -7,7 +7,6 @@
 
 #include <optional>
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "cc/input/touch_action.h"
@@ -49,9 +48,6 @@ class MockInputRouter : public InputRouter {
       const TouchEventWithLatencyInfo& touch_event) override;
   void NotifySiteIsMobileOptimized(bool is_mobile_optimized) override {}
   bool HasPendingEvents() const override;
-#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override;
-#endif
   void SetDeviceScaleFactor(float device_scale_factor) override {}
   std::optional<cc::TouchAction> AllowedTouchAction() override;
   std::optional<cc::TouchAction> ActiveTouchAction() override;
@@ -63,16 +59,6 @@ class MockInputRouter : public InputRouter {
   void OnHasTouchEventConsumers(
       blink::mojom::TouchEventConsumersPtr consumers) override;
   void WaitForInputProcessed(base::OnceClosure callback) override {}
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void SetGestureEventResult(bool result, bool stopPropagation) override {}
-  void SetNativeEmbedMode(bool flag) override {}
-  void SetMouseEventResult(bool result, bool stopPropagation) override {}
-#endif
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  void ScrollBy(float delta_x, float delta_y) override {}
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   bool sent_mouse_event_;
   bool sent_wheel_event_;

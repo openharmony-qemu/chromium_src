@@ -57,10 +57,6 @@ namespace {
 // which would then operate upon that.
 constexpr bool kInitFromDataCopyData = true;
 
-#if BUILDFLAG(ARKWEB_PRINT)
-constexpr int kCheckCancelCount = 5;
-#endif // BUILDFLAG(ARKWEB_PRINT)
-
 bool WriteAssetToBuffer(const SkStreamAsset* asset, void* buffer, size_t size) {
   // Calling duplicate() keeps original asset state unchanged.
   std::unique_ptr<SkStreamAsset> assetCopy(asset->duplicate());
@@ -470,56 +466,5 @@ void MetafileSkia::CustomDataToSkPictureCallback(SkCanvas* canvas,
   SkMatrix matrix = SkMatrix::Translate(rect.x(), rect.y());
   canvas->drawPicture(it->second, &matrix, nullptr);
 }
-
-#if BUILDFLAG(ARKWEB_PRINT)
-bool MetafileSkia::OhosFinishDocument(std::function<bool()> checkCancel) {
-  // If we've already set the data in InitFromData, leave it be.
-  if (data_->data_stream)
-    return false;
-
-  if (data_->recorder.getRecordingCanvas())
-    FinishPage();
-
-  SkDynamicMemoryWStream stream;
-  sk_sp<SkDocument> doc;
-  cc::PlaybackCallbacks::CustomDataRasterCallback custom_callback;
-  switch (data_->type) {
-    case mojom::SkiaDocumentType::kPDF:
-      doc = MakePdfDocument(printing::GetAgent(), title_, accessibility_tree_,
-                            generate_document_outline_, &stream);
-      break;
-    case mojom::SkiaDocumentType::kMSKP:
-      SkSerialProcs procs = SerializationProcs(&data_->subframe_content_info,
-                                              data_->typeface_content_info);
-      doc = SkMultiPictureDocument::Make(&stream, &procs);
-      // It is safe to use base::Unretained(this) because the callback
-      // is only used by `canvas` in the following loop which has shorter
-      // lifetime than `this`.
-      custom_callback = base::BindRepeating(
-          &MetafileSkia::CustomDataToSkPictureCallback, base::Unretained(this));
-      break;
-  }
-
-  int idex = 0;
-  for (const Page& page : data_->pages) {
-    LOG(ERROR) << "OhosPrintManager page " << idex;
-    idex++;
-    if (idex % kCheckCancelCount == 0 && checkCancel()) {
-      doc->close();
-      data_->data_stream = stream.detachAsStream();
-      return false;
-    }
-    cc::SkiaPaintCanvas canvas(
-        doc->beginPage(page.size.width(), page.size.height()));
-    canvas.drawPicture(page.content, custom_callback);
-    doc->endPage();
-  }
-  doc->close();
-
-  data_->data_stream = stream.detachAsStream();
-  return true;
-}
-
-#endif // BUILDFLAG(ARKWEB_PRINT)
 
 }  // namespace printing

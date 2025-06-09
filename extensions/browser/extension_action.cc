@@ -36,11 +36,6 @@
 #include "ui/gfx/skbitmap_operations.h"
 #include "url/gurl.h"
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "extensions/browser/extension_icon_image_observer.h"
-#include "ui/gfx/image/image_skia_operations.h"
-#endif // ARKWEB_ARKWEB_EXTENSIONS
-
 namespace extensions {
 
 namespace {
@@ -244,35 +239,6 @@ gfx::Image ExtensionAction::GetDefaultIconImage() const {
 
   return GetPlaceholderIconImage();
 }
-
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-gfx::Image ExtensionAction::GetDefaultIconImageV2() const {
-  constexpr float GET_ICON_SCALE = 8.0f;
-  constexpr int NONE_TAB_ID = -1;
-  // If we have a default icon, it should be loaded before trying to use it.
-  DCHECK(!default_icon_image_ == !default_icon_);
-  if (default_icon_image_) {
-    gfx::Image icon = default_icon_image_->image();
-    if (icon.IsEmpty()) { // If the value is empty, retain the original process.
-      return icon;
-    }
-    std::vector<gfx::ImageSkiaRep> imgSkReps = icon.AsImageSkia().image_reps();
-    if (imgSkReps.empty()) {
-      gfx::ImageSkiaRep rep =
-          icon.AsImageSkia().GetRepresentation(GET_ICON_SCALE);
-      SetExtensionIconImageObserver(extension_id(), NONE_TAB_ID);
-      ExtensionIconImageObserver* observer =
-          GetExtensionIconImageObserver(extension_id());
-      if (observer) {
-        default_icon_image_->AddObserver(observer);
-      }
-      LOG(INFO) << "ImageSkiaRep is empty, scale=" << rep.scale();
-    }
-    return icon;
-  }
-  return GetPlaceholderIconImage();
-}
-#endif // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 gfx::Image ExtensionAction::GetPlaceholderIconImage() const {
   if (placeholder_icon_image_.IsEmpty()) {

@@ -60,10 +60,8 @@
 #include "base/vlog.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
-#include "cef/libcef/features/features.h"
 #include "third_party/abseil-cpp/absl/base/internal/raw_logging.h"
 #include "third_party/abseil-cpp/absl/cleanup/cleanup.h"
-#include "arkweb/build/features/features.h"
 
 #if !BUILDFLAG(IS_NACL)
 #include "base/auto_reset.h"
@@ -96,10 +94,6 @@ typedef HANDLE FileHandle;
 #include <os/log.h>
 #endif  // BUILDFLAG(IS_APPLE)
 
-#if BUILDFLAG(ARKWEB_DFX_LOGGING)
-#include "third_party/ohos_ndk/includes/ohos_adapter/hilog_adapter.h"
-#endif
-
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #include <errno.h>
 #include <paths.h>
@@ -124,8 +118,8 @@ typedef FILE* FileHandle;
 #include "base/android/jni_android.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_DFX_LOGGING)
-#include "ohos_sdk/openharmony/native/sysroot/usr/include/hilog/log.h"
+#if BUILDFLAG(IS_OHOS)
+#include "hilog/log.h"
 #endif
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
@@ -214,9 +208,7 @@ void MaybeInitializeVlogInfo() {
   }
 }
 
-#if !BUILDFLAG(ARKWEB_DFX_LOGGING)
-const char* const log_severity_names[] = {"INFO", "WARNING", "ERROR", "FATAL", "DEBUG"};
-
+const char* const log_severity_names[] = {"INFO", "WARNING", "ERROR", "FATAL"};
 static_assert(LOGGING_NUM_SEVERITIES == std::size(log_severity_names),
               "Incorrect number of log_severity_names");
 
@@ -225,7 +217,6 @@ const char* log_severity_name(int severity) {
     return log_severity_names[severity];
   return "UNKNOWN";
 }
-#endif
 
 // Specifies the process' logging sink(s), represented as a combination of
 // LoggingDestination values joined by bitwise OR.
@@ -277,7 +268,6 @@ base::stack<LogAssertHandlerFunction>& GetLogAssertHandlerStack() {
 // A log message handler that gets notified of every log message we process.
 LogMessageHandlerFunction g_log_message_handler = nullptr;
 
-#if !BUILDFLAG(ARKWEB_DFX_LOGGING)
 uint64_t TickCount() {
 #if BUILDFLAG(IS_WIN)
   return GetTickCount();
@@ -301,7 +291,6 @@ uint64_t TickCount() {
   return absolute_micro;
 #endif
 }
-#endif
 
 void DeleteFilePath(const PathString& log_name) {
 #if BUILDFLAG(IS_WIN)
@@ -541,7 +530,7 @@ bool BaseInitLoggingImpl(const LoggingSettings& settings) {
   }
 #endif
 
-#if !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+#if !BUILDFLAG(IS_NACL)
   // Connects Rust logging with the //base logging functionality.
   internal::init_rust_log_crate();
 #endif
@@ -724,9 +713,6 @@ LogMessage::LogMessage(const char* file, int line, const char* condition)
   stream_ << "Check failed: " << condition << ". ";
 }
 
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-NO_SANITIZE("cfi-icall")
-#endif
 LogMessage::~LogMessage() {
   Flush();
 }
@@ -905,27 +891,25 @@ void LogMessage::Flush() {
     // The Android system may truncate the string if it's too long.
     __android_log_write(priority, kAndroidLogTag, str_newline.c_str());
 #endif
-#elif BUILDFLAG(ARKWEB_DFX_LOGGING) && BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_OHOS)
+    auto priority = (severity_ < 0) ? LogLevel::LOG_INFO : LogLevel::LOG_FATAL;
 
-    auto priority = (severity_ < 0) ? OHOS::NWeb::LogLevelAdapter::DEBUG
-                                    : OHOS::NWeb::LogLevelAdapter::LEVEL_MAX;
     switch (severity_) {
       case LOGGING_INFO:
-        priority = OHOS::NWeb::LogLevelAdapter::INFO;
+        priority = LogLevel::LOG_INFO;
         break;
       case LOGGING_WARNING:
-        priority = OHOS::NWeb::LogLevelAdapter::WARN;
+        priority = LogLevel::LOG_WARN;
         break;
       case LOGGING_ERROR:
-        priority = OHOS::NWeb::LogLevelAdapter::ERROR;
+        priority = LogLevel::LOG_ERROR;
         break;
       case LOGGING_FATAL:
-        priority = OHOS::NWeb::LogLevelAdapter::FATAL;
+        priority = LogLevel::LOG_FATAL;
         break;
-      case LOGGING_DEBUG:
-        priority = OHOS::NWeb::LogLevelAdapter::DEBUG;
     }
-    OHOS::NWeb::HiLogAdapter::PrintLog(priority, tag_.c_str(), "%{public}s", str_newline.c_str());
+    const char kOHOSLogTag[] = "chromium";
+    OH_LOG_Print(LOG_APP, (LogLevel)priority, LOG_DOMAIN, kOHOSLogTag, "%{public}s", str_newline.c_str());
 #elif BUILDFLAG(IS_FUCHSIA)
     // LogMessage() will silently drop the message if the logger is not valid.
     // Skip the final character of |str_newline|, since LogMessage() will add
@@ -989,27 +973,8 @@ std::string LogMessage::BuildCrashString() const {
 void LogMessage::Init(const char* file, int line) {
   // Don't let actions from this method affect the system error after returning.
   base::ScopedClearLastError scoped_clear_last_error;
-#if BUILDFLAG(ARKWEB_DFX_LOGGING)
-  std::string_view filename;
-  std::string_view message(file);
-  size_t tagStart = message.find_first_of('#');
-  if (tagStart == std::string_view::npos) {
-    tag_ = std::string("chromium");
-    filename = message;
-#ifdef OHOS_LOGGER_REPORT
-    ohos_tag_ = std::string("mainprocess");
-#endif
-  } else {
-    tag_ = std::string(message.substr(0, tagStart));
-#ifdef OHOS_LOGGER_REPORT
-    ohos_tag_ = std::string(message.substr(0, tagStart));
-#endif
-    filename = message.substr(tagStart + 1, message.size() - tagStart);
-  }
-#else
-  std::string_view filename(file);
-#endif
 
+  std::string_view filename(file);
   size_t last_slash_pos = filename.find_last_of("\\/");
   if (last_slash_pos != std::string_view::npos) {
     filename.remove_prefix(last_slash_pos + 1);
@@ -1025,7 +990,6 @@ void LogMessage::Init(const char* file, int line) {
   {
     // TODO(darin): It might be nice if the columns were fixed width.
     stream_ << '[';
-#if !BUILDFLAG(ARKWEB_DFX_LOGGING)
     if (g_log_prefix)
       stream_ << g_log_prefix << ':';
     if (g_log_process_id)
@@ -1075,9 +1039,6 @@ void LogMessage::Init(const char* file, int line) {
       stream_ << "VERBOSE" << -severity_;
     }
     stream_ << ":" << filename << "(" << line << ")] ";
-#else
-    stream_ << filename << ":" << line << "] ";
-#endif
   }
   message_start_ = stream_.str().length();
 }

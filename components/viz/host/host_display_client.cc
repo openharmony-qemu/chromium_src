@@ -48,14 +48,9 @@ void HostDisplayClient::OnDisplayReceivedCALayerParams(
 }
 #endif
 
-void HostDisplayClient::UseProxyOutputDevice(
-    UseProxyOutputDeviceCallback callback) {
-  std::move(callback).Run(false);
-}
-
+#if BUILDFLAG(IS_WIN)
 void HostDisplayClient::CreateLayeredWindowUpdater(
     mojo::PendingReceiver<mojom::LayeredWindowUpdater> receiver) {
-#if BUILDFLAG(IS_WIN)
   if (!NeedsToUseLayerWindow(widget_)) {
     DLOG(ERROR) << "HWND shouldn't be using a layered window";
     return;
@@ -63,10 +58,7 @@ void HostDisplayClient::CreateLayeredWindowUpdater(
 
   layered_window_updater_ =
       std::make_unique<LayeredWindowUpdaterImpl>(widget_, std::move(receiver));
-#endif
 }
-
-#if BUILDFLAG(IS_WIN)
 void HostDisplayClient::AddChildWindowToBrowser(
     gpu::SurfaceHandle child_window) {
   NOTREACHED_IN_MIGRATION();
@@ -85,9 +77,4 @@ void HostDisplayClient::SetPreferredRefreshRate(float refresh_rate) {
 }
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-void HostDisplayClient::DidCompleteSwapWithNewSizeOHOS(const gfx::Size& size) {
-  NOTIMPLEMENTED();
-}
-#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 }  // namespace viz

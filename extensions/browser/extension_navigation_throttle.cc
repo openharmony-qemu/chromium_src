@@ -89,11 +89,7 @@ bool ShouldBlockNavigationToPlatformAppResource(
     if (navigation_handle.IsPdf()) {
       const url::Origin& initiator_origin =
           navigation_handle.GetInitiatorOrigin().value();
-      CHECK(initiator_origin.scheme() == kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-            || initiator_origin.scheme() == kArkwebExtensionScheme
-#endif
-      );
+      CHECK_EQ(initiator_origin.scheme(), kExtensionScheme);
       CHECK_EQ(initiator_origin.host(), extension_misc::kPdfExtensionId);
       return false;
     }
@@ -177,18 +173,11 @@ ExtensionNavigationThrottle::WillStartOrRedirectRequest() {
   bool url_has_extension_scheme = url.SchemeIs(kExtensionScheme);
   url::Origin target_origin = url::Origin::Create(url);
   const Extension* target_extension = nullptr;
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  url_has_extension_scheme |= url.SchemeIs(kArkwebExtensionScheme);
-#endif
   if (url_has_extension_scheme) {
     // "chrome-extension://" URL.
     target_extension = registry->enabled_extensions().GetExtensionOrAppByURL(
         url, true /*include_guid*/);
-  } else if (target_origin.scheme() == kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-             || target_origin.scheme() == kArkwebExtensionScheme
-#endif
-  ) {
+  } else if (target_origin.scheme() == kExtensionScheme) {
     // "blob:chrome-extension://" or "filesystem:chrome-extension://" URL.
     DCHECK(url.SchemeIsFileSystem() || url.SchemeIsBlob());
     target_extension =
@@ -337,11 +326,7 @@ ExtensionNavigationThrottle::WillStartOrRedirectRequest() {
   //   navigated, but the page that contains the PDF can be.
   const url::Origin& initiator_origin =
       navigation_handle()->GetInitiatorOrigin().value();
-  if ((initiator_origin.scheme() == kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-       || initiator_origin.scheme() == kArkwebExtensionScheme
-#endif
-       ) &&
+  if (initiator_origin.scheme() == kExtensionScheme &&
       base::Contains(MimeTypesHandler::GetMIMETypeAllowlist(),
                      initiator_origin.host())) {
     return content::NavigationThrottle::PROCEED;

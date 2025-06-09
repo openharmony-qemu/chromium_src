@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/containers/adapters.h"
@@ -20,7 +19,6 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
-#include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
@@ -510,12 +508,7 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
     const std::optional<url::Origin>& initiator_origin,
     const gfx::Rect& bounds,
     SessionStorageNamespace* session_storage_namespace,
-    base::WeakPtr<content::PreloadingAttempt> attempt
-#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-    ,
-    const std::string& extra_headers
-#endif  // ARKWEB_NO_STATE_PREFETCH
-) {
+    base::WeakPtr<content::PreloadingAttempt> attempt) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
@@ -637,6 +630,7 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
         new NoStatePrefetchHandle(preexisting_prefetch_data));
   }
 
+#ifndef BUILDFLAG(IS_OHOS)
   base::TimeDelta prefetch_age;
   GetPrefetchInformation(url, &prefetch_age, nullptr /* final_status*/,
                          nullptr /* origin */);
@@ -648,6 +642,7 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
                                    PreloadingTriggeringOutcome::kDuplicate);
     return nullptr;
   }
+#endif
 
   // Do not prefetch if there are too many render processes, and we would have
   // to use an existing one.  We do not want prefetching to happen in a shared
@@ -662,11 +657,6 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
   // create a new one.
   if (content::RenderProcessHost::IsProcessLimitReached() &&
       !content::RenderProcessHost::run_renderer_in_process()) {
-#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-    if (!MayHitOmniboxUrl(url, origin, attempt)) {
-      return nullptr;
-    }
-#else
     SkipNoStatePrefetchContentsAndMaybePreconnect(
         url, origin, FINAL_STATUS_TOO_MANY_PROCESSES);
     // Since it is possible that the NSP enabled group uses more processes, we
@@ -678,7 +668,6 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
           ToPreloadingFailureReason(FINAL_STATUS_TOO_MANY_PROCESSES));
     }
     return nullptr;
-#endif
   }
 
   // Record the URL in the prefetch list, even when in full prerender mode, to
@@ -700,10 +689,7 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
   }
 
   DCHECK(!no_state_prefetch_contents_ptr->prefetching_has_started());
-#if BUILDFLAG(IS_ARKWEB)
-  no_state_prefetch_contents_ptr->SetOhStartPrerenderingExtraHeaders(
-      extra_headers);
-#endif
+
   std::unique_ptr<NoStatePrefetchHandle> no_state_prefetch_handle =
       base::WrapUnique(
           new NoStatePrefetchHandle(active_prefetches_.back().get()));
@@ -1061,9 +1047,5 @@ void NoStatePrefetchManager::SetNoStatePrefetchContentsFactoryForTest(
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   no_state_prefetch_contents_factory_.reset(no_state_prefetch_contents_factory);
 }
-
-#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-#include "arkweb/chromium_ext/components/no_state_prefetch/browser/ark_web_no_state_prefetch_manager_for_include.cc"
-#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
 }  // namespace prerender

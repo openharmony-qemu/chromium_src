@@ -7,7 +7,6 @@
 
 #include <memory>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "ui/events/velocity_tracker/motion_event.h"
@@ -21,9 +20,6 @@
 namespace ui {
 
 class TouchHandle;
-#if BUILDFLAG(ARKWEB_MENU)
-class TouchHandleExt;
-#endif
 
 // Interface through which |TouchHandle| delegates rendering-specific duties.
 class UI_TOUCH_SELECTION_EXPORT TouchHandleDrawable {
@@ -54,11 +50,6 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandleDrawable {
 
   // Returns the transparent horizontal padding ratio of the handle drawable.
   virtual float GetDrawableHorizontalPaddingRatio() const = 0;
-
-#if BUILDFLAG(ARKWEB_MENU)
-  // Sets the Selection left-handle-start or right-handle-end's edge.
-  virtual void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) = 0;
-#endif
 };
 
 // Interface through which |TouchHandle| communicates handle manipulation and
@@ -87,11 +78,6 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandle : public TouchSelectionDraggable {
   TouchHandle& operator=(const TouchHandle&) = delete;
 
   ~TouchHandle() override;
-#if BUILDFLAG(ARKWEB_MENU)
-friend class TouchHandleExt;
-  virtual TouchHandleExt* AsTouchHandleExt() { return nullptr; }
-#endif
-
 
   // TouchSelectionDraggable implementation.
   bool WillHandleTouchEvent(const MotionEvent& event) override;
@@ -190,7 +176,4 @@ friend class TouchHandleExt;
 
 }  // namespace ui
 
-#if BUILDFLAG(ARKWEB_MENU)
-#include "arkweb/chromium_ext/ui/touch_selection/touch_handle_ext.h"
-#endif
 #endif  // UI_TOUCH_SELECTION_TOUCH_HANDLE_H_

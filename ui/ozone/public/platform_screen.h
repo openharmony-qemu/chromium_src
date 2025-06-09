@@ -148,6 +148,13 @@ class COMPONENT_EXPORT(OZONE_BASE) PlatformScreen {
   virtual display::TabletState GetTabletState() const = 0;
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+virtual gfx::AcceleratedWidget GetLocalProcessWidgetAtPoint(
+      const gfx::Point& point_in_dip,
+      const std::set<gfx::AcceleratedWidget>& ignore,
+      const int32_t display_id) const;
+#endif
+
  protected:
   void StorePlatformNameIntoListOfValues(base::Value::List& values,
                                          const std::string& platform_name);

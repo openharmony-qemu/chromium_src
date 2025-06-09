@@ -8,7 +8,6 @@
 #include "base/check_op.h"
 #include "base/not_fatal_until.h"
 #include "base/numerics/safe_conversions.h"
-#include "arkweb/chromium_ext/components/subresource_filter/core/common/unindexed_ruleset_for_include.cc"
 
 namespace subresource_filter {
 
@@ -58,14 +57,7 @@ bool UnindexedRulesetWriter::AddUrlRule(const proto::UrlRule& rule) {
 
 bool UnindexedRulesetWriter::Finish() {
   CHECK(!had_error(), base::NotFatalUntil::M129);
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  const bool success =
-      (!pending_chunk_.url_rules_size() && !pending_chunk_.css_rules_size()) ||
-      WritePendingChunk();
-#else
   const bool success = !pending_chunk_.url_rules_size() || WritePendingChunk();
-#endif
-
   if (success)
     coded_stream_.Trim();
   return success;
@@ -73,11 +65,7 @@ bool UnindexedRulesetWriter::Finish() {
 
 bool UnindexedRulesetWriter::WritePendingChunk() {
   CHECK(!had_error(), base::NotFatalUntil::M129);
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  DCHECK_GT(pending_chunk_.url_rules_size() || pending_chunk_.css_rules_size(), 0);
-#else
   CHECK_GT(pending_chunk_.url_rules_size(), 0, base::NotFatalUntil::M129);
-#endif
 
   proto::FilteringRules chunk;
   chunk.Swap(&pending_chunk_);

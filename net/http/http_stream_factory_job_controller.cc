@@ -781,6 +781,11 @@ int HttpStreamFactory::JobController::DoLoop(int rv) {
         NOTREACHED() << "bad state";
     }
   } while (next_state_ != STATE_NONE && rv != ERR_IO_PENDING);
+#if BUILDFLAG(IS_OHOS)
+  if (rv < ERR_IO_PENDING) {
+    LOG(WARNING) << " next state is " << next_state_ << " error code is " << rv;
+  }
+#endif
   return rv;
 }
 
@@ -918,16 +923,8 @@ int HttpStreamFactory::JobController::DoCreateJobs() {
             allowed_bad_certs_, std::move(destination), origin_url_,
             is_websocket_, enable_ip_based_pooling_, net_log_.net_log(),
             NextProto::kProtoUnknown, quic::ParsedQuicVersion::Unsupported());
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-        preconnect_backup_job_->SetFromPreload(from_preload_);
-#endif
       }
     }
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-    main_job_->SetFromPreload(from_preload_);
-#endif
-
     main_job_->Preconnect(num_streams_);
     return OK;
   }

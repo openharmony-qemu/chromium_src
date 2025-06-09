@@ -4,7 +4,6 @@
 
 #include "components/web_cache/browser/web_cache_manager.h"
 
-#include "arkweb/chromium_ext/components/web_cache/browser/web_cache_manager_utils.h"
 #include "base/no_destructor.h"
 
 namespace web_cache {
@@ -22,18 +21,8 @@ WebCacheManager::WebCacheManager() {
        !iter.IsAtEnd(); iter.Advance()) {
     Add(iter.GetCurrentValue()->GetID());
   }
-#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
-  webCacheManagerUtils = new WebCacheManagerUtils(this);
-#endif
 }
-
-#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
-WebCacheManager::~WebCacheManager() {
-  delete webCacheManagerUtils;
-}
-#else
 WebCacheManager::~WebCacheManager() = default;
-#endif
 
 void WebCacheManager::Add(int renderer_id) {
   renderers_.insert(renderer_id);

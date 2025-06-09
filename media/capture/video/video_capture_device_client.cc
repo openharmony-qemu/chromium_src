@@ -42,7 +42,6 @@
 #include "services/video_effects/public/mojom/video_effects_processor.mojom.h"
 #include "third_party/abseil-cpp/absl/cleanup/cleanup.h"
 #include "third_party/libyuv/include/libyuv.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
 #include "media/capture/video/chromeos/video_capture_jpeg_decoder.h"
@@ -199,13 +198,6 @@ FourccAndFlip GetFourccAndFlipFromPixelFormat(
 #endif
     case media::PIXEL_FORMAT_MJPEG:
       return {libyuv::FOURCC_MJPG};
-#if false
-#if BUILDFLAG(ARKWEB_WEBRTC)
-    case PIXEL_FORMAT_ABGR:
-      fourcc_format = libyuv::FOURCC_ABGR;
-      break;
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
-#endif
     default:
       NOTREACHED();
   }
@@ -538,19 +530,11 @@ void VideoCaptureDeviceClient::OnIncomingCapturedData(
   }
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
-#if BUILDFLAG(ARKWEB_WEBRTC)
-  int stride = format.stride > format.frame_size.width() ? format.stride : format.frame_size.width();
-#endif
   // libyuv::ConvertToI420 uses Rec601 to convert RGB to YUV.
   if (libyuv::ConvertToI420(
           data, length, y_plane_data, yplane_stride, u_plane_data,
           uv_plane_stride, v_plane_data, uv_plane_stride, /*crop_x=*/0,
-          /*crop_y=*/0,
-#if BUILDFLAG(ARKWEB_WEBRTC)
-          stride,
-#else
-          format.frame_size.width(),
-#endif
+          /*crop_y=*/0, format.frame_size.width(),
           (flip ? -1 : 1) * format.frame_size.height(), new_unrotated_width,
           new_unrotated_height, rotation_mode, fourcc_format) != 0) {
     DLOG(WARNING) << "Failed to convert buffer's pixel format to I420 from "

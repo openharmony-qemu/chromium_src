@@ -13,7 +13,6 @@
 #include "base/metrics/histogram_macros.h"
 #include "base/notreached.h"
 #include "base/time/time.h"
-#include "base/trace_event/trace_event.h"
 #include "base/trace_event/trace_id_helper.h"
 #include "build/build_config.h"
 #include "components/input/render_input_router_delegate.h"
@@ -59,12 +58,6 @@ const char* GetTraceNameFromType(blink::WebInputEvent::Type type) {
     CASE_TYPE(GestureTwoFingerTap);
     CASE_TYPE(GestureShortPress);
     CASE_TYPE(GestureLongPress);
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-    CASE_TYPE(GestureDragLongPress);
-#endif // BUILDFLAG(ARKWEB_DRAG_DROP)
-#if BUILDFLAG(ARKWEB_AI)
-    CASE_TYPE(GestureCreateOverlay);
-#endif
     CASE_TYPE(GestureLongTap);
     CASE_TYPE(GestureBegin);
     CASE_TYPE(GestureEnd);
@@ -202,32 +195,11 @@ void RenderInputRouterLatencyTracker::OnInputEventAck(
     const WebTouchEvent& touch_event =
         *static_cast<const WebTouchEvent*>(&event);
     if (event.GetType() == WebInputEvent::Type::kTouchStart) {
-#if BUILDFLAG(ARKWEB_PERFORMANCE_TRACE)
-      base::TimeTicks original_event_timestamp;
-      if (latency->FindLatency(ui::INPUT_EVENT_LATENCY_BEGIN_RWH_COMPONENT,
-                               &original_event_timestamp)) {
-        TRACE_EVENT1("input", "RenderWidgetHostLatencyTracker::TouchStartAck",
-                     "time",
-                     (base::TimeTicks::Now() - original_event_timestamp)
-                         .InMillisecondsF());
-      }
-#endif
       touch_start_default_prevented_ =
           ack_result == blink::mojom::InputEventResultState::kConsumed;
     } else if (event.GetType() == WebInputEvent::Type::kTouchEnd ||
                event.GetType() == WebInputEvent::Type::kTouchCancel) {
       active_multi_finger_gesture_ = touch_event.touches_length > 2;
-#if BUILDFLAG(ARKWEB_PERFORMANCE_TRACE)
-    } else if (event.GetType() == WebInputEvent::Type::kTouchMove) {
-      base::TimeTicks original_event_timestamp;
-      if (latency->FindLatency(ui::INPUT_EVENT_LATENCY_BEGIN_RWH_COMPONENT,
-                               &original_event_timestamp)) {
-        TRACE_EVENT1("input", "RenderWidgetHostLatencyTracker::TouchMoveAck",
-                     "time",
-                     (base::TimeTicks::Now() - original_event_timestamp)
-                         .InMillisecondsF());
-      }
-#endif
     }
   }
 

@@ -11,7 +11,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/callback_forward.h"
 #include "base/functional/callback_helpers.h"
@@ -106,9 +105,6 @@ enum class FillingResult {
 class FieldDataManager;
 class RendererSavePasswordProgressLogger;
 class PasswordGenerationAgent;
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  class PasswordAutofillAgentExt;
-#endif // ARKWEB_PASSWORD_AUTOFILL
 
 // This class is responsible for filling password forms.
 class PasswordAutofillAgent : public content::RenderFrameObserver,
@@ -123,11 +119,6 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
   PasswordAutofillAgent& operator=(const PasswordAutofillAgent&) = delete;
 
   ~PasswordAutofillAgent() override;
-
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  friend class PasswordAutofillAgentExt;
-  virtual PasswordAutofillAgentExt* AsPasswordAutofillAgentExt() { return nullptr; }
-#endif // ARKWEB_PASSWORD_AUTOFILL
 
   // Must be called prior to calling other methods.
   void Init(AutofillAgent* autofill_agent);
@@ -188,9 +179,6 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
       base::optional_ref<FormData> extracted_form = std::nullopt);
 
   // Instructs `autofill_agent_` to track the autofilled `element`.
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  virtual
-#endif
   void TrackAutofilledElement(const blink::WebFormControlElement& element);
 
   // Previews the username and password fields of this form with the given
@@ -214,10 +202,6 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
   // `control_element`. Returns whether the agent was able to do so.
   bool TryToShowKeyboardReplacingSurface(
       const blink::WebFormControlElement& control_element);
-#endif
-
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  void SetParsedPasswordForm(const PasswordFormFillData& form_data) override;
 #endif
 
   // Queries password suggestions for the given `element` and `trigger_source`.
@@ -356,14 +340,10 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
   struct PasswordInfo {
     FieldRef password_field;
     PasswordFormFillData fill_data;
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-    // The user manually edited the password more recently than the username was
-    // changed.
-    bool password_was_edited_last = false;
     // The user accepted a suggestion from a dropdown on a password field.
     bool password_field_suggestion_was_accepted = false;
-#endif
   };
+
   // Stores information about form field structure.
   struct FormFieldInfo {
     FieldRendererId renderer_id;
@@ -712,7 +692,4 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
 
 }  // namespace autofill
 
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-#include "arkweb/chromium_ext/components/autofill/content/render/password_autofill_agent_ext.h"
-#endif // ARKWEB_PASSWORD_AUTOFILL
 #endif  // COMPONENTS_AUTOFILL_CONTENT_RENDERER_PASSWORD_AUTOFILL_AGENT_H_

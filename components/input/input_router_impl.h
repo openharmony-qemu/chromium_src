@@ -10,7 +10,6 @@
 #include <memory>
 #include <queue>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
@@ -44,8 +43,6 @@ class SitePerProcessBrowserTouchActionTest;
 
 namespace input {
 
-class ArkwebInputRouterImplUtils;
-class ArkwebInputRouterImplExt;
 class InputDispositionHandler;
 
 // A default implementation for browser input event routing.
@@ -58,11 +55,6 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
       public TouchpadPinchEventQueueClient,
       public blink::mojom::WidgetInputHandlerHost {
  public:
-  friend class ArkwebInputRouterImplUtils;
-  friend class ArkwebInputRouterImplExt;
-  virtual ArkwebInputRouterImplExt* AsArkwebInputRouterImplExt() {
-    return nullptr;
-  }
   InputRouterImpl(InputRouterClient* client,
                   InputDispositionHandler* disposition_handler,
                   FlingControllerSchedulerClient* fling_scheduler_client,
@@ -100,10 +92,6 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   void SetTouchActionFromMain(cc::TouchAction touch_action) override;
   void SetPanAction(blink::mojom::PanAction pan_action) override;
   void DidOverscroll(blink::mojom::DidOverscrollParamsPtr params) override;
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  bool GetNativeResult() { return native_result_; }
-  bool GetMouseNativeResult() { return mouse_native_result_; }
-#endif
   void ImeCancelComposition() override;
   void DidStartScrollingViewport() override;
   void ImeCompositionRangeChanged(
@@ -283,13 +271,9 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   // The host receiver associated with the widget input handler from
   // the widget.
   mojo::Receiver<blink::mojom::WidgetInputHandlerHost> host_receiver_{this};
+
   base::WeakPtr<InputRouterImpl> weak_this_;
   base::WeakPtrFactory<InputRouterImpl> weak_ptr_factory_{this};
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  bool native_result_ = false;
-  bool mouse_native_result_ = false;
-  std::unique_ptr<ArkwebInputRouterImplUtils> arkweb_input_router_impl_utils_;
-#endif
 };
 
 }  // namespace input

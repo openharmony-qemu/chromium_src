@@ -8,7 +8,6 @@
 #include <memory>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/containers/adapters.h"
 #include "base/metrics/histogram.h"
@@ -454,10 +453,6 @@ void LayerTreeImpl::GenerateCompositorFrame(
     viz::CompositorFrame& out_frame,
     base::flat_set<viz::ResourceId>& out_resource_ids,
     viz::HitTestRegionList& out_hit_test_region_list) {
-#if BUILDFLAG(ARKWEB_DFX_TRACING)
-  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
-                    std::to_string(args.trace_id), "step", "GenerateCompositorFrame");
-#endif
   for (auto& resource_request :
        ui_resource_manager_.TakeUIResourcesRequests()) {
     switch (resource_request.GetType()) {

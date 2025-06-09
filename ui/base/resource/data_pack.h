@@ -33,9 +33,6 @@ enum ResourceScaleFactor : int;
 
 class COMPONENT_EXPORT(UI_DATA_PACK) DataPack : public ResourceHandle {
  public:
-#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-  friend class DataPackUtil;
-#endif
   explicit DataPack(ResourceScaleFactor resource_scale_factor);
 
   DataPack(const DataPack&) = delete;

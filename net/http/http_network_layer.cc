@@ -43,7 +43,7 @@ int HttpNetworkLayer::CreateTransaction(
   if (suspended_)
     return ERR_NETWORK_IO_SUSPENDED;
 
-  *trans = std::make_unique<ArkWebHttpNetworkTransactionExt>(priority, GetSession());
+  *trans = std::make_unique<HttpNetworkTransaction>(priority, GetSession());
   return OK;
 }
 

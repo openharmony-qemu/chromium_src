@@ -239,9 +239,6 @@ class CONTENT_EXPORT RenderFrameHostManager {
 
     // Called when a FrameTreeNode is destroyed.
     virtual void OnFrameTreeNodeDestroyed(FrameTreeNode* node) = 0;
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
-    virtual const std::string& SharedRenderProcessToken() = 0;
-#endif
 
    protected:
     virtual ~Delegate() = default;

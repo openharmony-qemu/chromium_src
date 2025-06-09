@@ -37,9 +37,6 @@
 #include "services/network/websocket.h"
 #endif
 
-#include "arkweb/chromium_ext/services/network/network_service_network_delegate_ext.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-
 namespace network {
 
 NetworkServiceNetworkDelegate::NetworkServiceNetworkDelegate(
@@ -153,13 +150,6 @@ int NetworkServiceNetworkDelegate::OnHeadersReceived(
 
   chain->AddResult(HandleClearSiteDataHeader(request, chain->CreateCallback(),
                                              original_response_headers));
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-  if (original_response_headers &&
-      original_response_headers->response_code() >= 400) {
-    LOG(INFO) << "INFO: resource: ***"
-              << " error code: " << original_response_headers->response_code();
-  }
-#endif
 
   return chain->GetResult();
 }
@@ -188,12 +178,6 @@ void NetworkServiceNetworkDelegate::OnCompleted(net::URLRequest* request,
   }
 
   ForwardProxyErrors(net_error);
-
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-  if (net_error != net::OK) {
-    AsNetworkServiceNetworkDelegateExt()->RecordErrorInfo(request, net_error);
-  }
-#endif
 }
 
 void NetworkServiceNetworkDelegate::OnPACScriptError(

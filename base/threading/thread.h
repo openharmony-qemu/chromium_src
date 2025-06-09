@@ -253,11 +253,6 @@ class BASE_EXPORT Thread : PlatformThread::Delegate {
   // This method is thread-safe.
   PlatformThreadId GetThreadId() const;
 
-#if BUILDFLAG(IS_ARKWEB)
-  // This method is thread-safe.
-  PlatformThreadId GetThreadRealId() const;
-#endif
-
   // Returns true if the thread has been started, and not yet stopped.
   bool IsRunning() const;
 
@@ -318,12 +313,6 @@ class BASE_EXPORT Thread : PlatformThread::Delegate {
 
   // The thread's id once it has started.
   PlatformThreadId id_ = kInvalidThreadId;
-
-#if BUILDFLAG(IS_ARKWEB)
-  // The thread's global id once it has started.
-  PlatformThreadId real_id_ = kInvalidThreadId;
-#endif
-
   // Protects |id_| which must only be read while it's signaled.
   mutable WaitableEvent id_event_;
 

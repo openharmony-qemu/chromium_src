@@ -17,10 +17,6 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "url/gurl.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 namespace password_manager {
 
 class MockPasswordStoreBackend : public PasswordStoreBackend {
@@ -67,12 +63,6 @@ class MockPasswordStoreBackend : public PasswordStoreBackend {
               AddLoginAsync,
               (const PasswordForm& form, PasswordChangesOrErrorReply callback),
               (override));
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-  MOCK_METHOD(void,
-              UpdateLoginDisplayNameAsync,
-              (const PasswordForm& form),
-              (override));
-#endif
   MOCK_METHOD(void,
               UpdateLoginAsync,
               (const PasswordForm& form, PasswordChangesOrErrorReply callback),

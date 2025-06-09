@@ -1168,20 +1168,14 @@ ssl_verify_result_t SSLClientSocketImpl::HandleVerifyResult() {
 
     // Only set the resulting net error if it hasn't been previously bypassed.
     if (!IsAllowedBadCert(server_cert_.get(), nullptr))
-#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
-      result = ERR_SSL_OBSOLETE_VERSION_OR_CIPHER;
-#else
       result = ERR_SSL_VERSION_OR_CIPHER_MISMATCH;
-#endif
   }
 #endif
 
   is_fatal_cert_error_ =
       IsCertStatusError(server_cert_verify_result_.cert_status) &&
       result != ERR_CERT_KNOWN_INTERCEPTION_BLOCKED &&
-#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
-      result != ERR_SSL_OBSOLETE_VERSION_OR_CIPHER &&
-#elif BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_OHOS)
       result != ERR_SSL_VERSION_OR_CIPHER_MISMATCH &&
 #endif
       context_->transport_security_state()->ShouldSSLErrorsBeFatal(

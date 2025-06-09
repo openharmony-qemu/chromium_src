@@ -1,4 +1,0 @@
-arkweb_blink_renderer_platform_image_decoders_heif_sources = [
-    "//arkweb/chromium_ext/blink/renderer/platform/image_decoders/heif/heif_image_decoder.cc",
-    "//arkweb/chromium_ext/blink/renderer/platform/image_decoders/heif/heif_image_decoder.h",
-]

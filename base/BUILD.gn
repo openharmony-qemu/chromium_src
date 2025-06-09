@@ -44,11 +44,8 @@ import("//build/rust/rust_static_library.gni")
 import("//build/timestamp.gni")
 import("//build/util/process_version.gni")
 import("//build_overrides/build.gni")
-import("//cef/libcef/features/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
-import("//arkweb/ohos_nweb/src/nweb_sysevent.gni")
-import("//arkweb/build/features/features.gni")
 
 if (is_ios) {
   # Used to access ios_is_app_extension variable definition.
@@ -62,12 +59,6 @@ if (is_mac) {
 
 if (is_win) {
   import("//build/config/win/control_flow_guard.gni")
-}
-
-import("//arkweb/build/features/features.gni")
-
-if (enable_arkweb) {
-  import("//arkweb/chromium_ext/base/arkweb_base_ext.gni")
 }
 
 declare_args() {
@@ -88,6 +79,13 @@ declare_args() {
   # only supported on iOS 64-bit architecture, but some project build //base
   # for 32-bit architecture.
   ios_stack_profiler_enabled = true
+}
+
+declare_args() {
+  # Enabling freeze detection mode will help identify if the system is frozen,
+  # but some functions may be affected, such as when loading large files or
+  # performing resource-intensive operations.
+  freeze_detection_mode = false
 }
 
 # Mutex priority inheritance is disabled by default due to security
@@ -156,6 +154,7 @@ if (is_ohos) {
   config("ohos_system_libs") {
     libs = [
       "hilog_ndk.z",
+      "ohhicollie",
       "qos"
     ]
   }
@@ -862,8 +861,6 @@ component("base") {
     "time/tick_clock.h",
     "time/time.cc",
     "time/time.h",
-    "//arkweb/chromium_ext/base/time/time_utils.cc",
-    "//arkweb/chromium_ext/base/time/time_utils.h",
     "time/time_delta_from_string.cc",
     "time/time_delta_from_string.h",
     "time/time_override.cc",
@@ -975,9 +972,6 @@ component("base") {
       "time/time_conversion_posix.cc",
       "timer/hi_res_timer_manager_posix.cc",
     ]
-    if (enable_arkweb) {
-      sources += arkweb_base_process_ext_sources
-    }
   }
 
   if (is_ohos) {
@@ -1008,10 +1002,6 @@ component("base") {
     ]
   }
 
-  if (enable_arkweb) {
-    sources += arkweb_metrics_sources
-  }
-
   if (is_chromeos) {
     sources += [
       "process/process_priority_delegate.h",
@@ -1034,6 +1024,12 @@ component("base") {
   libs = []
   frameworks = []
 
+  if (is_ohos) {
+    if (freeze_detection_mode) {
+      defines += [ "FREEZE_DETECTION_MODE" ]
+    }
+  }
+
   configs += [
     "//build/config:precompiled_headers",
     "//build/config/compiler:prevent_unsafe_narrowing",
@@ -1054,11 +1050,6 @@ component("base") {
     "//build/config/compiler:compiler_buildflags",
     "//third_party/modp_b64",
   ]
-
-  if (defined(report_sys_event) && report_sys_event) {
-    defines += [ "REPORT_SYS_EVENT" ]
-  }
- 
   if (!is_nacl) {
     # Used by metrics/crc32, except on NaCl builds.
     deps += [ "//third_party/zlib" ]
@@ -1068,10 +1059,6 @@ component("base") {
       ":rust_logger",
       "//third_party/rust/serde_json_lenient/v0_2/wrapper",
     ]
-  }
-
-  if (enable_arkweb) {
-    deps += [ "//arkweb//build/features" ]
   }
 
   # `raw_ptr` cannot be made a component due to CRT symbol issues.
@@ -1107,20 +1094,6 @@ component("base") {
     "//build:chromeos_buildflags",
     "//third_party/abseil-cpp:absl",
   ]
-  if (is_ohos && enable_arkweb) {
-    sources += arkweb_base_ext_sources
-    deps += [ "//arkweb//build/features", "//base/third_party/xdg_user_dirs",]
-    public_deps += [ "//arkweb//build/features" ]
-    public_deps += [ ":ohos_package_info" ]
-    if (is_ohos) {
-      if (!defined(public_deps)) {
-        public_deps = []
-      }
-      public_deps += [
-        "//ohos_glue:ohos_adapter_glue_source",
-      ]
-    }
-  }
 
   if (!is_nacl) {
     sources += [
@@ -1160,7 +1133,7 @@ component("base") {
 
   # Allow more direct string conversions on platforms with native utf8
   # strings
-  if (is_apple || is_chromeos || is_castos || is_cast_android || is_fuchsia) {
+  if (is_apple || is_chromeos || is_castos || is_cast_android || is_fuchsia || is_ohos) {
     defines += [ "SYSTEM_NATIVE_UTF8" ]
   }
 
@@ -1561,11 +1534,7 @@ component("base") {
     "hash/md5_constexpr_internal.h",
     "hash/sha1.h",
   ]
-  deps += [ "//cef/libcef/features" ]
-  if (enable_cef) {
-    configs += [ "//cef/libcef/features:config" ]
-  }
-  if (is_nacl || is_cef_sandbox_build) {
+  if (is_nacl) {
     sources += [
       "hash/md5_nacl.cc",
       "hash/md5_nacl.h",
@@ -1774,12 +1743,6 @@ component("base") {
       sources += [
         "base_paths_ohos.h",
         "base_paths_ohos.cc",
-        "nix/mime_util_xdg.cc",
-        "nix/mime_util_xdg.h",
-        "nix/xdg_util.cc",
-        "nix/xdg_util.h",
-        "stack_canary_linux.cc",
-        "stack_canary_linux.h",
       ]
     }
 
@@ -2011,12 +1974,6 @@ component("base") {
 
     if (com_init_check_hook_disabled) {
       defines += [ "COM_INIT_CHECK_HOOK_DISABLED" ]
-    }
-
-    if (!use_custom_libcxx) {
-      # Enable the VS 2015 Update 2 fix when building with the MSVC standard
-      # library.
-      defines += [ "_ENABLE_ATOMIC_ALIGNMENT_FIX" ]
     }
 
     libs += [
@@ -2399,12 +2356,16 @@ component("base") {
     sources += [ "time/time_exploded_posix.cc" ]
   }
 
-  if ((is_posix && !is_apple && !is_android && !enable_arkweb) || is_fuchsia) {
+  if ((is_posix && !is_apple && !is_android) || is_fuchsia) {
     sources += [ "profiler/stack_sampler_posix.cc" ]
   }
 
-  if ((is_posix && !is_apple && !is_android && !is_chromeos) || is_fuchsia) {
+  if ((is_posix && !is_apple && !is_android && !is_chromeos && !is_ohos) || is_fuchsia) {
     sources += [ "power_monitor/power_monitor_device_source_stub.cc" ]
+  }
+
+  if(is_ohos) {
+    sources += ["power_monitor/power_monitor_device_source_ohos.cc"]
   }
 
   # On ARC++-enabled ChromeOS system, we need TimeTicks::FromUptimeMillis to
@@ -2524,11 +2485,7 @@ component("base") {
         "trace_event/java_heap_dump_provider_android.h",
       ]
     }
-    if (enable_base_tracing && is_ohos && arkweb_dfx_tracing) {
-      include_dirs = [ "//third_party/ohos_ndk/includes/ohos_adapter" ]
-      sources += [ "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.cc" ] 
-      sources += [ "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.h" ]
-    }
+
     if (use_partition_alloc_as_malloc) {
       sources += [
         "trace_event/address_space_dump_provider.cc",
@@ -2614,15 +2571,6 @@ if (is_linux || is_chromeos) {
 
     configs -= [ "//build/config/compiler:default_optimization" ]
     configs += [ "//build/config/compiler:optimize_max" ]
-  }
-}
-
-# Build flags for ArkWeb package infomation
-if (enable_arkweb) {
-  buildflag_header("ohos_package_info") {
-    header = "ohos_package_info.h"
-    header_dir = "base/ohos"
-    flags = [ "OHOS_PACKAGE_NAME=\"${ohos_package_name}\"" ]
   }
 }
 
@@ -2828,10 +2776,6 @@ static_library("base_static") {
     configs -= [ "//build/config/compiler:default_optimization" ]
     configs += [ "//build/config/compiler:optimize_max" ]
   }
-
-  if (enable_arkweb) {
-    deps += [ "//arkweb/build/features" ]
-  }
 }
 
 component("i18n") {
@@ -2897,10 +2841,6 @@ component("i18n") {
 
   if (is_mac) {
     frameworks = [ "CoreFoundation.framework" ]
-  }
-
-  if (is_arkweb) {
-    sources += arkweb_base_i18n_sources
   }
 }
 
@@ -3681,15 +3621,6 @@ test("base_unittests") {
     "allocator/partition_allocator/src/partition_alloc/pointers/raw_ref_unittest.cc",
   ]
 
-  if (arkweb_unittests) {
-    import("//arkweb/chromium_ext/chromium_ext.gni")
- 
-    sources += arkweb_base_unittest_sources
-    sources += [
-      "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
-    ]
-  }
-
   if (!is_cronet_build) {
     # location_unittest.cc fails gn check for tracing-shimmed Cronet builds.
     # Cronet buildbot do not run base_unittests, so exclusing this test
@@ -3903,18 +3834,7 @@ test("base_unittests") {
   }
 
   if (enable_base_tracing) {
-    sources += [
-      "test/test_trace_processor.cc",
-      "test/test_trace_processor.h",
-      "test/test_trace_processor_export.h",
-      "test/test_trace_processor_impl.cc",
-      "test/test_trace_processor_impl.h",
-      "test/test_trace_processor_example_unittest.cc",
-    ]
-
-    deps += [
-      "//third_party/perfetto:libtrace_processor",
-    ]
+    sources += [ "test/test_trace_processor_example_unittest.cc" ]
   }
 
   if (is_posix) {
@@ -4301,10 +4221,6 @@ test("base_unittests") {
   if (enable_nocompile_tests) {
     deps += [ ":base_nocompile_tests" ]
   }
-
-  if (enable_arkweb) {
-    deps += [ "//arkweb/build/features" ]
-  }
 }
 
 # Test that CFG is enabled in Rust code.
@@ -4345,27 +4261,27 @@ if (enable_nocompile_tests) {
       "containers/fixed_flat_map_nocompile.nc",
       "containers/fixed_flat_set_nocompile.nc",
       "containers/heap_array_nocompile.nc",
-      # "containers/span_nocompile.nc",
+      "containers/span_nocompile.nc",
       "containers/to_value_list_nocompile.nc",
       "containers/to_vector_nocompile.nc",
       "debug/crash_logging_nocompile.nc",
-      # "functional/bind_nocompile.nc",
-      # "functional/callback_nocompile.nc",
+      "functional/bind_nocompile.nc",
+      "functional/callback_nocompile.nc",
       "functional/function_ref_nocompile.nc",
       "functional/overloaded_nocompile.nc",
-      # "logging_nocompile.nc",
+      "logging_nocompile.nc",
       "memory/protected_memory_nocompile.nc",
       "memory/ref_counted_nocompile.nc",
       "memory/shared_memory_mapping_nocompile.nc",
       "memory/structured_shared_memory_nocompile.nc",
-      # "memory/weak_ptr_nocompile.nc",
+      "memory/weak_ptr_nocompile.nc",
       "metrics/field_trial_params_nocompile.nc",
       "metrics/histogram_nocompile.nc",
       "no_destructor_nocompile.nc",
       "observer_list_nocompile.nc",
       "run_loop_nocompile.nc",
       "sequence_checker_nocompile.nc",
-      # "strings/cstring_view_nocompile.nc",
+      "strings/cstring_view_nocompile.nc",
       "strings/stringprintf_nocompile.nc",
       "synchronization/lock_nocompile.nc",
       "task/bind_post_task_nocompile.nc",
@@ -4381,6 +4297,16 @@ if (enable_nocompile_tests) {
       "values_nocompile.nc",
     ]
     deps = [ ":base" ]
+    if (is_ohos){
+      sources -=[ 
+        "containers/span_nocompile.nc",
+        "strings/cstring_view_nocompile.nc",
+        ]
+      sources +=[ 
+        "containers/span_nocompile_ohos.nc",
+        "strings/cstring_view_nocompile_ohos.nc",
+        ]
+    }
   }
 }
 

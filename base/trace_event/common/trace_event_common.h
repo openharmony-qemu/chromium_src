@@ -231,7 +231,6 @@ WriteDebugAnnotation(protos::pbzero::DebugAnnotation* annotation, ::base::Time);
 }  // namespace internal
 }  // namespace perfetto
 
-#include "arkweb/build/features/features.h"
 // Pull in the tracing macro definitions from Perfetto.
 #include "third_party/perfetto/include/perfetto/tracing/track_event.h"  // IWYU pragma: export
 #include "third_party/perfetto/include/perfetto/tracing/track_event_legacy.h"  // IWYU pragma: export
@@ -257,10 +256,6 @@ struct BASE_EXPORT TraceTimestampTraits<::base::TimeTicks> {
 };
 
 }  // namespace perfetto
-
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_DFX_TRACING)
-#include "arkweb/chromium_ext/base/trace_event/common/trace_event_common_oh.h"
-#endif
 
 #else  // !BUILDFLAG(ENABLE_BASE_TRACING)
 

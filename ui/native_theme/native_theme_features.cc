@@ -5,21 +5,17 @@
 #include "ui/native_theme/native_theme_features.h"
 
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
-#include "arkweb/build/features/features.h"
 
 namespace features {
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS_ASH) ||    \
-    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_IOS) || \
-    BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_IOS)
 constexpr base::FeatureState kOverlayScrollbarFeatureState =
     base::FEATURE_ENABLED_BY_DEFAULT;
 #else
 constexpr base::FeatureState kOverlayScrollbarFeatureState =
     base::FEATURE_DISABLED_BY_DEFAULT;
 #endif
-
 // Enables or disables overlay scrollbars in Blink (i.e. web content) on Aura
 // or Linux.  The status of native UI overlay scrollbars is determined in
 // PlatformStyle::CreateScrollBar. Does nothing on Mac.

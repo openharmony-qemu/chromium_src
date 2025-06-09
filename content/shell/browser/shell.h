@@ -21,9 +21,6 @@
 #include "ipc/ipc_channel.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/native_widget_types.h"
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-enum class RendererIsUnresponsiveReason;
-#endif
 
 class GURL;
 
@@ -164,15 +161,10 @@ class Shell : public WebContentsDelegate, public WebContentsObserver {
                               const std::u16string& message,
                               int32_t line_no,
                               const std::u16string& source_id) override;
-  void RendererUnresponsive(WebContents* source,
-                            RenderWidgetHost* render_widget_host,
-                            base::RepeatingClosure hang_monitor_restarter
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-                            ,
-                            RenderProcessNotRespondingReason reason
-#endif
-                            ) override;
-
+  void RendererUnresponsive(
+      WebContents* source,
+      RenderWidgetHost* render_widget_host,
+      base::RepeatingClosure hang_monitor_restarter) override;
   void ActivateContents(WebContents* contents) override;
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
   std::unique_ptr<ColorChooser> OpenColorChooser(

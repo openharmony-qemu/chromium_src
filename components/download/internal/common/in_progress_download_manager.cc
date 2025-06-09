@@ -37,10 +37,6 @@
 #include "components/download/public/common/download_path_reservation_tracker.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-#include "third_party/abseil-cpp/absl/types/optional.h"
-#endif
-
 namespace download {
 
 namespace {
@@ -65,11 +61,7 @@ std::unique_ptr<DownloadItemImpl> CreateDownloadItemImpl(
   if (!in_progress_info)
     return nullptr;
 
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-  return std::make_unique<ArkWebDownloadItemImplExt>(
-#else
   return std::make_unique<DownloadItemImpl>(
-#endif
       delegate, entry.download_info->guid, entry.download_info->id,
       in_progress_info->current_path, in_progress_info->target_path,
       in_progress_info->url_chain, in_progress_info->referrer_url,
@@ -508,11 +500,7 @@ void InProgressDownloadManager::StartDownload(
            DOWNLOAD_INTERRUPT_REASON_SERVER_CROSS_ORIGIN_REDIRECT)) {
     if (delegate_ && delegate_->InterceptDownload(*info)) {
       if (cancel_request_callback)
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-        std::move(cancel_request_callback).Run(false, absl::nullopt);
-#else
         std::move(cancel_request_callback).Run(false);
-#endif
       GetIOTaskRunner()->DeleteSoon(FROM_HERE, std::move(stream));
       return;
     }
@@ -541,11 +529,7 @@ void InProgressDownloadManager::StartDownload(
   } else {
     std::string guid = info->guid;
     if (info->is_new_download) {
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-      auto download = std::make_unique<ArkWebDownloadItemImplExt>(
-#else
       auto download = std::make_unique<DownloadItemImpl>(
-#endif
           this, DownloadItem::kInvalidId, *info);
       OnNewDownloadCreated(download.get());
       guid = download->GetGuid();
@@ -574,11 +558,7 @@ void InProgressDownloadManager::StartDownloadWithItem(
     // removed after it was resumed. Ignore. If the download is cancelled
     // while resuming, then also ignore the request.
     if (cancel_request_callback)
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-      std::move(cancel_request_callback).Run(false, absl::nullopt);
-#else
       std::move(cancel_request_callback).Run(false);
-#endif
     // The ByteStreamReader lives and dies on the download sequence.
     if (info->result == DOWNLOAD_INTERRUPT_REASON_NONE)
       GetIOTaskRunner()->DeleteSoon(FROM_HERE, std::move(stream));
@@ -735,24 +715,8 @@ void InProgressDownloadManager::AddInProgressDownloadForTest(
 
 void InProgressDownloadManager::CancelUrlDownload(
     UrlDownloadHandlerID downloader,
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-    bool user_cancel,
-    absl::optional<std::string> guid) {
-  for (auto ptr = url_download_handlers_.begin();
-       ptr != url_download_handlers_.end(); ++ptr) {
-    if (reinterpret_cast<UrlDownloadHandlerID>(ptr->get()) == downloader) {
-      std::string saved_guid = ptr->get()->GetGuid();
-      if (guid.has_value() && !saved_guid.empty() && guid != saved_guid) {
-        return;
-      }
-      url_download_handlers_.erase(ptr);
-      return;
-    }
-  }
-#else
     bool user_cancel) {
   OnUrlDownloadStopped(reinterpret_cast<UrlDownloadHandlerID>(downloader));
-#endif
 }
 
 }  // namespace download

@@ -26,9 +26,9 @@
 #include "services/device/hid/hid_service_win.h"
 #elif BUILDFLAG(IS_FUCHSIA)
 #include "services/device/hid/hid_service_fuchsia.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "services/device/hid/hid_service_ohos.h"
 #endif
-
-#include "arkweb/build/features/features.h"
 
 namespace device {
 
@@ -76,9 +76,8 @@ std::unique_ptr<HidService> HidService::Create() {
   return std::make_unique<HidServiceWin>();
 #elif BUILDFLAG(IS_FUCHSIA)
   return std::make_unique<HidServiceFuchsia>();
-#elif BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-  // OHOS platform functions is not implemented.
-  return nullptr;
+#elif BUILDFLAG(IS_OHOS)
+  return std::make_unique<HidServiceOhos>();
 #else
   return nullptr;
 #endif

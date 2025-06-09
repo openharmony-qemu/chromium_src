@@ -134,6 +134,9 @@ ProxyConfigService::CreateSystemProxyConfigService(
   return std::make_unique<ProxyConfigServiceAndroid>(
       std::move(main_task_runner),
       base::SingleThreadTaskRunner::GetCurrentDefault());
+#elif BUILDFLAG(IS_OHOS)
+  return std::make_unique<ProxyConfigServiceOhos>(
+      kSystemProxyConfigTrafficAnnotation);
 #elif BUILDFLAG(IS_FUCHSIA)
   // TODO(crbug.com/42050626): Implement a system proxy service for Fuchsia.
   return std::make_unique<ProxyConfigServiceDirect>();

@@ -208,29 +208,16 @@ ProposedLayout DialogClientView::CalculateProposedLayout(
   const int container_height =
       button_row_container_->GetHeightForWidth(size_bounds.width().value());
   const int container_y = size_bounds.height().value() - container_height;
-#if defined(__clang__) && (__clang_major__ < 17)
-  layouts.child_layouts.emplace_back(ChildLayout{
-      button_row_container_.get(), button_row_container_->GetVisible(),
-      gfx::Rect(0, container_y, size_bounds.width().value(), container_height),
-      size_bounds});
-#else
   layouts.child_layouts.emplace_back(
       button_row_container_.get(), button_row_container_->GetVisible(),
       gfx::Rect(0, container_y, size_bounds.width().value(), container_height),
       size_bounds);
-#endif
   if (contents_view()) {
     gfx::Rect contents_bounds(size_bounds.width().value(), container_y);
     contents_bounds.Inset(GetDialogDelegate()->margins());
-#if defined(__clang__) && (__clang_major__ < 17)
-    layouts.child_layouts.emplace_back(ChildLayout{contents_view(),
-                                       contents_view()->GetVisible(),
-                                       contents_bounds, size_bounds});
-#else
     layouts.child_layouts.emplace_back(contents_view(),
                                        contents_view()->GetVisible(),
                                        contents_bounds, size_bounds);
-#endif
   }
   layouts.host_size =
       gfx::Size(size_bounds.width().value(), size_bounds.height().value());

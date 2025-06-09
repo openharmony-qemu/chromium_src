@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "arkweb/chromium_ext/content/browser/arkweb_child_process_launcher_helper_utils.h"
 #include "base/command_line.h"
 #include "base/path_service.h"
 #include "base/posix/global_descriptors.h"
@@ -108,11 +107,7 @@ ChildProcessLauncherHelper::LaunchProcessOnLauncherThread(
     process.process = base::Process(handle);
     process.zygote = zygote_handle;
   } else {
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-    arkweb_child_process_launcher_helper_utils_->LaunchChildProcess(command_line(), options, process);
-#else
     process.process = base::LaunchProcess(*command_line(), *options);
-#endif
     *launch_result = process.process.IsValid() ? LAUNCH_RESULT_SUCCESS
                                                : LAUNCH_RESULT_FAILURE;
   }
@@ -142,10 +137,6 @@ ChildProcessTerminationInfo ChildProcessLauncherHelper::GetTerminationInfo(
   if (process.zygote) {
     info.status = process.zygote->GetTerminationStatus(
         process.process.Handle(), known_dead, &info.exit_code);
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-  } if (app_mgr_client_adapter_) {
-  arkweb_child_process_launcher_helper_utils_->GetTerminationInfoArkweb(process.process, known_dead, info);
-#endif
   } else if (known_dead) {
     info.status = base::GetKnownDeadTerminationStatus(process.process.Handle(),
                                                       &info.exit_code);
@@ -161,11 +152,7 @@ bool ChildProcessLauncherHelper::TerminateProcess(const base::Process& process,
                                                   int exit_code) {
   // TODO(crbug.com/40565504): Determine whether we should also call
   // EnsureProcessTerminated() to make sure of process-exit, and reap it.
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-  return ArkwebChildProcessLauncherHelperUtils::TerminateProcessByAppMgr(process);
-#else
   return process.Terminate(exit_code, false);
-#endif
 }
 
 // static
@@ -174,10 +161,6 @@ void ChildProcessLauncherHelper::ForceNormalProcessTerminationSync(
   TRACE_EVENT0("chromeos",
                "ChildProcessLauncherHelper::ForceNormalProcessTerminationSync");
   DCHECK(CurrentlyOnProcessLauncherTaskRunner());
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-  ArkwebChildProcessLauncherHelperUtils::TerminateProcessByAppMgr(process.process);
-  return;
-#else
   process.process.Terminate(RESULT_CODE_NORMAL_EXIT, false);
   // On POSIX, we must additionally reap the child.
   if (process.zygote) {
@@ -187,7 +170,6 @@ void ChildProcessLauncherHelper::ForceNormalProcessTerminationSync(
   } else {
     base::EnsureProcessTerminated(std::move(process.process));
   }
-#endif
 }
 
 void ChildProcessLauncherHelper::SetProcessPriorityOnLauncherThread(
@@ -209,7 +191,7 @@ ZygoteCommunication* ChildProcessLauncherHelper::GetZygoteForLaunch() {
 base::File OpenFileToShare(const base::FilePath& path,
                            base::MemoryMappedFile::Region* region) {
   base::FilePath exe_dir;
-  bool result = base::PathService::Get(base::BasePathKey::DIR_ASSETS, &exe_dir);
+  bool result = base::PathService::Get(base::BasePathKey::DIR_EXE, &exe_dir);
   DCHECK(result);
   base::File file(exe_dir.Append(path),
                   base::File::FLAG_OPEN | base::File::FLAG_READ);

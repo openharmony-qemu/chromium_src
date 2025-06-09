@@ -29,10 +29,6 @@
 #include <sys/utsname.h>
 #endif
 
-#if BUILDFLAG(ARKWEB_USERAGENT)
-#include "arkweb/chromium_ext/content/common/arkweb_user_agent_ext.h"
-#endif
-
 namespace content {
 
 namespace {
@@ -49,6 +45,8 @@ std::string GetUserAgentPlatform() {
   return "";
 #elif BUILDFLAG(IS_MAC)
   return "Macintosh; ";
+#elif BUILDFLAG(IS_OHOS)
+  return "OHOS";
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   return "X11; ";  // strange, but that's what Firefox uses
 #elif BUILDFLAG(IS_ANDROID)
@@ -59,8 +57,6 @@ std::string GetUserAgentPlatform() {
   return ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET
              ? "iPad; "
              : "iPhone; ";
-#elif BUILDFLAG(ARKWEB_USERAGENT)
-  return "";
 #else
 #error Unsupported platform
 #endif
@@ -115,8 +111,6 @@ std::string BuildCpuInfo() {
   cpuinfo = ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET
                 ? "iPad"
                 : "iPhone";
-#elif BUILDFLAG(ARKWEB_USERAGENT)
-  cpuinfo = "";
 #elif BUILDFLAG(IS_WIN)
   base::win::OSInfo* os_info = base::win::OSInfo::GetInstance();
   if (os_info->IsWowX86OnAMD64()) {
@@ -241,10 +235,6 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
 
 #endif
 
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  std::string ohos_fullname_str = GetOhosFullname();
-#endif
-
 #if BUILDFLAG(IS_ANDROID)
   std::string android_version_str = base::SysInfo::OperatingSystemVersion();
   std::string android_info_str =
@@ -265,8 +255,6 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
 #elif BUILDFLAG(IS_ANDROID)
                       "%s%s", android_version_str.c_str(),
                       android_info_str.c_str()
-#elif BUILDFLAG(ARKWEB_USERAGENT)
-                      "%s", ohos_fullname_str.c_str()
 #else
                       ""
 #endif
@@ -312,10 +300,6 @@ std::string BuildOSCpuInfoFromOSVersionAndCpuType(const std::string& os_version,
                       "Android %s", os_version.c_str()
 #elif BUILDFLAG(IS_FUCHSIA)
                       "Fuchsia"
-#elif BUILDFLAG(ARKWEB_USERAGENT)
-                      "%s%s",
-                      os_version.c_str(),  // e.g. 4
-                      cpu_type.c_str()     // e.g. ""
 #elif BUILDFLAG(IS_IOS)
                       "CPU %s OS %s like Mac OS X", cpu_type.c_str(),
                       os_version.c_str()
@@ -437,10 +421,6 @@ std::string BuildUserAgentFromOSAndProduct(const std::string& os_info,
                       "Mozilla/5.0 (%s) AppleWebKit/537.36 (KHTML, like Gecko) "
                       "%s Safari/537.36",
                       os_info.c_str(), product.c_str());
-
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  SetProductString(user_agent);
-#endif
   return user_agent;
 }
 

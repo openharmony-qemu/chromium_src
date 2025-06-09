@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
@@ -33,9 +32,6 @@ struct CONTENT_EXPORT CookieStoreConfig {
 
   // This struct is move-only but also intentionally deletes the move assignment
   // operator as base::FilePath does not implement this operator.
-#if BUILDFLAG(IS_ARKWEB)
-  CookieStoreConfig(CookieStoreConfig& config);
-#endif
   CookieStoreConfig(CookieStoreConfig&&);
   CookieStoreConfig& operator=(CookieStoreConfig&&) = delete;
 
@@ -50,15 +46,9 @@ struct CONTENT_EXPORT CookieStoreConfig {
                     bool persist_session_cookies);
   ~CookieStoreConfig();
 
-#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
-  base::FilePath path;
-  const bool restore_old_session_cookies;
-  bool persist_session_cookies;
-#else
   const base::FilePath path;
   const bool restore_old_session_cookies;
   const bool persist_session_cookies;
-#endif
   // The following are infrequently used cookie store parameters.
   // Rather than clutter the constructor API, these are assigned a default
   // value on CookieStoreConfig construction. Clients should then override

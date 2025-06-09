@@ -5,21 +5,15 @@
 #include "ui/gfx/linux/native_pixmap_dmabuf.h"
 
 #include <utility>
-#include "base/logging.h"
+
 #include "base/posix/eintr_wrapper.h"
 
 namespace gfx {
 
 NativePixmapDmaBuf::NativePixmapDmaBuf(const gfx::Size& size,
                                        gfx::BufferFormat format,
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-                                       gfx::NativePixmapHandle handle,
-                                       void* window_buffer)
-    : size_(size), format_(format), handle_(std::move(handle)), native_window_buffer_(window_buffer) {}
-#else
                                        gfx::NativePixmapHandle handle)
     : size_(size), format_(format), handle_(std::move(handle)) {}
-#endif
 
 NativePixmapDmaBuf::~NativePixmapDmaBuf() {}
 

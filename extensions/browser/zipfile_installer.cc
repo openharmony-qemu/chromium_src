@@ -26,10 +26,6 @@
 #include "services/data_decoder/public/mojom/json_parser.mojom.h"
 #include "ui/base/l10n/l10n_util.h"
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "components/services/unzip/in_process_unzipper.h"
-#endif
-
 namespace extensions {
 
 namespace {
@@ -153,14 +149,8 @@ void ZipFileInstaller::Unzip(ZipResultVariant unzip_dir_or_error) {
 
   base::FilePath unzip_dir = absl::get<base::FilePath>(unzip_dir_or_error);
   unzip::Unzip(
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      // Does not support utility process on OHOS yet, use in-process unzipper
-      // instead.
-      unzip::LaunchInProcessUnzipper(),
-#else
-      unzip::LaunchUnzipper(),
-#endif
-      zip_file_, unzip_dir, unzip::mojom::UnzipOptions::New(),
+      unzip::LaunchUnzipper(), zip_file_, unzip_dir,
+      unzip::mojom::UnzipOptions::New(),
       base::BindRepeating(&ZipFileInstaller::IsManifestFile), base::DoNothing(),
       base::BindOnce(&ZipFileInstaller::ManifestUnzipped, this, unzip_dir));
 }
@@ -233,17 +223,9 @@ void ZipFileInstaller::ManifestParsed(const base::FilePath& unzip_dir,
 
   // TODO(crbug.com/41274425): This silently ignores blocked file types.
   //                         Add install warnings.
-  unzip::Unzip(
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      // Does not support utility process in OHOS yet, use in-process unzipper
-      // instead.
-      unzip::LaunchInProcessUnzipper(),
-#else
-      unzip::LaunchUnzipper(),
-#endif
-      zip_file_, unzip_dir, unzip::mojom::UnzipOptions::New(), filter,
-      base::DoNothing(),
-      base::BindOnce(&ZipFileInstaller::UnzipDone, this, unzip_dir));
+  unzip::Unzip(unzip::LaunchUnzipper(), zip_file_, unzip_dir,
+               unzip::mojom::UnzipOptions::New(), filter, base::DoNothing(),
+               base::BindOnce(&ZipFileInstaller::UnzipDone, this, unzip_dir));
 }
 
 void ZipFileInstaller::UnzipDone(const base::FilePath& unzip_dir,

@@ -1385,35 +1385,10 @@
   "<(SHARED_INTERMEDIATE_DIR)/third_party/blink/public/strings/permission_element_generated_strings.grd": {
     "META": {"sizes": {"messages": [2000],}},
     "messages": [10080],
-  },
+  }
 
   # END "everything else" section.
   # Everything but chrome/, components/, content/, and ios/
-
-  # For IS_ARKWEB_EXT
-  "ohos_nweb_ex/overrides/ui/resources/ohos_nweb_ex_resources.grd": {
-    "includes": [10100],
-  },
-  "ohos_nweb_ex/overrides/ui/strings/ohos_nweb_ex_strings.grd": {
-    "messages": [10120],
-  },
-  #For arkweb_i18n
-  "ohos_resources/components/ohos_components_strings.grd": {
-    "messages": [10140],
-  },
-  # For arkweb_ai
-  "ohos_resources/data_detector/data_detector_resources.grd": {
-    "includes": [10160],
-  },
-
-  "cef/libcef/resources/cef_resources.grd": {
-    "META": {"align": 31500},
-    "includes": [31500],
-  },
-  "cef/libcef/resources/cef_strings.grd": {
-    "META": {"align": 32000},
-    "messages": [32000],
-  }
 
   # Thinking about appending to the end?
   # Please read the header and find the right section above instead.

@@ -1,26 +1,68 @@
-// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of
+ *    conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list
+ *    of conditions and the following disclaimer in the documentation and/or other materials
+ *    provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used
+ *    to endorse or promote products derived from this software without specific prior written
+ *    permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 import { injectable, inject } from 'inversify';
 import abilityAccessCtrl from '@ohos.abilityAccessCtrl';
 import { Permissions } from '@ohos.abilityAccessCtrl';
 import { BusinessError } from '@ohos.base';
 import bundleManager from '@ohos.bundle.bundleManager';
-import { AbilityManager } from '../common/AbilityManager';
 import { BaseAdapter } from '../common/BaseAdapter';
 import LogUtil from '../utils/LogUtil';
 import LogMethod from '../common/LogDecorator';
-import { MODULE_TYPE } from '../common/ModuleType';
+import LaunchHelper from '../utils/LaunchHelper';
+import { ContextAdapter } from './ContextAdapter';
+import { fileShare } from '@kit.CoreFileKit';
+import preferences from '@ohos.data.preferences';
 import prompt from '@ohos.promptAction'
-import { common, Want } from '@kit.AbilityKit';
+import { promptAction } from '@kit.ArkUI';
+import { Want } from '@kit.AbilityKit';
 
 const CONFIRM: number = 0;
 const ERROR: number = -1;
+const ACTIVATE_SUCCESS: number = 1;
+const EMPTY_ARRAY: number = -1;
+const TAG: string = 'PermissionManagerAdapter';
+const REQUEST_PERMISSION_FAIL: number = -2;
+const REQUEST_PERMISSION_SUCCESS: number = 0;
+let dataPreferences: preferences.Preferences | null = null;
+let options: preferences.Options = { name: 'myStore' };
+
+interface ConfirmParams {
+  title: string,
+  content: string,
+  label: string,
+  confirm: string,
+  cancel: string
+}
 
 @injectable()
-export default class PermissionManagerAdapter extends BaseAdapter {
-  private static TAG: string = 'PermissionManagerAdapter';
+export class PermissionManagerAdapter extends BaseAdapter {
   private readonly needPermissions: Map<string, Array<Permissions>> = new Map([
     ['location', [
       'ohos.permission.APPROXIMATELY_LOCATION',
@@ -37,134 +79,254 @@ export default class PermissionManagerAdapter extends BaseAdapter {
     ]],
     ['bluetooth', [
       'ohos.permission.ACCESS_BLUETOOTH',
-    ]],
-    ['directory_download', [
-      'ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY',
-    ]],
-    ['directory_desktop', [
-      'ohos.permission.READ_WRITE_DESKTOP_DIRECTORY',
-    ]],
-    ['directory_document', [
-      'ohos.permission.READ_WRITE_DOCUMENTS_DIRECTORY',
     ]]
   ]);
-  private abilityManager: AbilityManager;
   private atManager: abilityAccessCtrl.AtManager;
   private bundleFlags = bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION;
   private tokenId: number = 0;
-  private titleTextId: number;
-  private contentTextId: number;
-  private confirmTextId: number;
-  private cancelTextId: number;
-  private appLabelId: number;
+  private ctxAdapter: ContextAdapter;
+  private isInitialized: boolean = false;
+  private appLabelId: number = 0;
 
-  constructor(
-    @inject(MODULE_TYPE.Context) ctx: common.UIAbilityContext,
-    @inject(AbilityManager) abilityManager: AbilityManager,
-  ) {
-    super(ctx);
-    this.abilityManager = abilityManager;
+  constructor(@inject(ContextAdapter) ctxAdapter: ContextAdapter) {
+    super();
+    this.ctxAdapter = ctxAdapter;
     this.atManager = abilityAccessCtrl.createAtManager();
-    this.titleTextId = $r("app.string.download_dialog_title").id;
-    this.contentTextId = $r("app.string.download_dialog_content").id;
-    this.confirmTextId = $r("app.string.download_dialog_confirm_button").id;
-    this.cancelTextId = $r("app.string.download_dialog_cancel_button").id;
-    this.appLabelId = ctx.abilityInfo.labelId;
 
     try {
       bundleManager.getBundleInfoForSelf(this.bundleFlags).then((data) => {
         let appInfo: bundleManager.ApplicationInfo = data.appInfo;
         this.tokenId = appInfo.accessTokenId;
+        this.appLabelId = appInfo.labelId;
       }).catch((err: BusinessError) => {
-        LogUtil.error(PermissionManagerAdapter.TAG, `getBundleInfoForSelf failed. Cause: ${err.message}`);
+        LogUtil.error(TAG, `getBundleInfoForSelf failed. Cause: ${err.message}`);
       });
     } catch (err) {
       let message = (err as BusinessError).message;
-      LogUtil.error(PermissionManagerAdapter.TAG, `getBundleInfoForSelf failed.: ${message}`);
+      LogUtil.error(TAG, `getBundleInfoForSelf failed.: ${message}`);
     }
   }
 
   @LogMethod
-  requestPermissions(permissionType: string, callback: (granted: boolean) => void) {
+  requestPermissions(permissionType: string, callback: (granted: number) => void) {
     const permissions = this.needPermissions.get(permissionType);
     if (!permissions) {
-      LogUtil.error(PermissionManagerAdapter.TAG, 'unsupported permission:' + permissionType);
-      callback(false);
+      LogUtil.error(TAG, 'unsupported permission:' + permissionType);
+      callback(REQUEST_PERMISSION_FAIL);
       return;
     }
-    let activeContext = this.abilityManager.getActiveContext();
+    let activeContext = this.ctxAdapter.getActiveContext();
     if (!activeContext) {
-      LogUtil.error(PermissionManagerAdapter.TAG, 'no active context');
-      callback(false);
+      LogUtil.error(TAG, 'requestPermissions, no active context');
+      callback(REQUEST_PERMISSION_FAIL);
       return;
     }
-    
+
     try {
-      this.atManager.requestPermissionsFromUser(activeContext, permissions || []).then((data) => {
-        let grantStatus: Array<number> = data.authResults;
-        for (let i = 0; i < grantStatus.length; i++) {
-          if (grantStatus[i] !== 0) {
-            LogUtil.error(PermissionManagerAdapter.TAG, 'err:' + JSON.stringify(data));
-            callback(false);
-            return;
+      this.atManager.requestPermissionsFromUser(activeContext, permissions || [])
+        .then((data) => {
+          let grantStatus: Array<number> = data.authResults;
+          for (let i = 0; i < grantStatus.length; i++) {
+            if (grantStatus[i] !== 0) {
+              LogUtil.error(TAG, 'Request permissions is failed, err:' + JSON.stringify(data));
+              callback(grantStatus[i]);
+              return;
+            }
           }
-        }
-        callback(true);
-      }).catch((err: BusinessError) => {
-        LogUtil.error(PermissionManagerAdapter.TAG, 'err:' + JSON.stringify(err));
-        callback(false);
+          callback(REQUEST_PERMISSION_SUCCESS);
+        }).catch((err: BusinessError) => {
+        LogUtil.error(TAG, 'Request permissions is failed, type:' + permissionType + 
+        ', err:BusinessError: ' + JSON.stringify(err));
+        callback(REQUEST_PERMISSION_FAIL);
       });
     } catch (err) {
-      LogUtil.error(PermissionManagerAdapter.TAG, 'err:' + JSON.stringify(err));
-      callback(false);
+      LogUtil.error(TAG, 'Request permissions is failed, type:' + permissionType + 
+        ', err:' + JSON.stringify(err));
+      callback(REQUEST_PERMISSION_FAIL);
     }
   }
 
   @LogMethod
-  checkPermissions(permissionType: string, callback: (granted: boolean) => void): void {
+  async checkPermissions(permissionType: string, callback: (granted: boolean) => void): Promise<void> {
     const permissions = this.needPermissions.get(permissionType) as Array<Permissions>;
     if (!permissions) {
-      LogUtil.error(PermissionManagerAdapter.TAG, 'unsupported permission:' + permissionType);
+      LogUtil.error(TAG, 'unsupported permission:' + permissionType);
       callback(false);
       return;
     }
-    let grantStatus: abilityAccessCtrl.GrantStatus = abilityAccessCtrl.GrantStatus.PERMISSION_DENIED;
+    let grantStatus: abilityAccessCtrl.GrantStatus =
+      abilityAccessCtrl.GrantStatus.PERMISSION_DENIED;
+    let bundleInfo: bundleManager.BundleInfo =
+      await bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION);
+    let appInfo: bundleManager.ApplicationInfo = bundleInfo.appInfo;
+    this.tokenId = appInfo.accessTokenId;
     for (let i = 0; i < permissions.length; i++) {
       try {
         grantStatus = this.atManager.checkAccessTokenSync(this.tokenId, permissions[i]);
         if (grantStatus !== abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED) {
-          LogUtil.error(PermissionManagerAdapter.TAG, 'checkPermission error');
+          LogUtil.error(TAG, 'checkPermission error');
           callback(false);
           return;
         }
       } catch (err) {
-        LogUtil.error(PermissionManagerAdapter.TAG,
-          `checkAccessToken failed, code is ${err.code}, message is ${err.message}`);
+        LogUtil.error(TAG, `checkAccessToken failed: ${JSON.stringify(err)}`);
         callback(false);
       }
     }
     callback(true);
   }
+   
+  @LogMethod
+  public async initPermissions(): Promise<void> {
+    if (this.isInitialized) {
+      return;
+    }
+    this.activateFileAccessPersist(this.getUris(), (code) => {
+      if (code === ACTIVATE_SUCCESS) {
+        this.isInitialized = true;
+      } else {
+        LogUtil.error(TAG, 'No URI required for activation or activation failed');
+      }
+    });
+  }
+ 
+  @LogMethod
+  public saveUris(uris: string[]) {
+    try {
+      dataPreferences = preferences.getPreferencesSync(this.ctxAdapter.getContext(), options);
+    } catch (err) {
+      LogUtil.error(TAG, `Failed to get preference. Code:${err.code}, message:${err.message}`);
+    }
+    if (dataPreferences) {
+      try {
+        dataPreferences.putSync('defaultDownloadUri', JSON.stringify(uris));
+        dataPreferences.flush((err: BusinessError) => {
+          if (err) {
+            LogUtil.error(TAG, `Failed to flush. Code:${err.code}, message:${err.message}`);
+            return;
+          }
+          LogUtil.info(TAG, 'Succeeded in flushing.');
+        });
+      } catch (err) {
+        LogUtil.error(TAG, `Failed to save uris. Code:${err.code}, message:${err.message}`);
+      }
+    }
+  }
+ 
+  @LogMethod
+  private getUris(): string[] {
+    try {
+      dataPreferences = preferences.getPreferencesSync(this.ctxAdapter.getContext(), options);
+    } catch (err) {
+      LogUtil.error(TAG, `Failed to get preference. Code:${err.code}, message:${err.message}`);
+    }
+    if (dataPreferences) {
+      try {
+        let uris: string = dataPreferences.getSync('defaultDownloadUri', '[]') as string;
+        return JSON.parse(uris);
+      } catch (err) {
+        LogUtil.error(TAG, `Failed to get uris. Code:${err.code}, message:${err.message}`);
+      }
+    }
+    return [];
+  }
+ 
+  @LogMethod
+  public activateFileAccessPersist(uris: string[], callback: (code: number) => void) {
+    if (uris.length === 0) {
+      LogUtil.error(TAG,'No URI required to activate');
+      callback(EMPTY_ARRAY);
+      return;
+    }
+    let policies = new Array<fileShare.PolicyInfo>();
+    uris.forEach((uri) => {
+      let policyReadWrite: fileShare.PolicyInfo = {
+        uri: uri,
+        operationMode: fileShare.OperationMode.READ_MODE |
+        fileShare.OperationMode.WRITE_MODE,
+      };
+      policies.push(policyReadWrite);
+    });
+    fileShare.activatePermission(policies).then(() => {
+      callback(ACTIVATE_SUCCESS);
+    }).catch((err: BusinessError<Array<fileShare.PolicyErrorResult>>) => {
+      callback(err.code);
+      LogUtil.error(TAG, `activeFileAccessPersist failed: ${JSON.stringify(err)}`);
+    });
+  }
+ 
+  @LogMethod
+  public fileAccessPersist(uris: string[]) {
+    if (uris.length === 0) {
+      LogUtil.error(TAG, 'No URI needs to be persisted');
+      return;
+    }
+    let policies = new Array<fileShare.PolicyInfo>();
+    uris.forEach((uri) => {
+      let policyReadWrite: fileShare.PolicyInfo = {
+        uri: uri,
+        operationMode: fileShare.OperationMode.READ_MODE |
+        fileShare.OperationMode.WRITE_MODE,
+      };
+      policies.push(policyReadWrite);
+    });
+    fileShare.persistPermission(policies)
+      .catch((err: BusinessError<Array<fileShare.PolicyErrorResult>>) => {
+        LogUtil.error(TAG, `fileAccessPersist failed: ${JSON.stringify(err)}`);
+      });
+  }
 
   @LogMethod
-  async openPermissionConfirm(callback: Function) {
-    let context = getContext() as common.UIAbilityContext;
-    let title = context.resourceManager.getStringSync(this.titleTextId);
-    let label = context.resourceManager.getStringSync(this.appLabelId);
-    let content = context.resourceManager.getStringSync(this.contentTextId);
-    content = content.replace("label", label);
-    let confirm = context.resourceManager.getStringSync(this.confirmTextId);
-    let cancel = context.resourceManager.getStringSync(this.cancelTextId);
-    prompt.showDialog({
-      title: title,
-      message: content,
+  openPermissionConfirm(type:string, callback: Function) {
+    LogUtil.info(TAG, `permision type is: ${JSON.stringify(type)}`);
+    let activeContext = this.ctxAdapter.getActiveContext();
+    if (!activeContext) {
+      LogUtil.error(TAG, 'openPermissionConfirm, Failed to get active context');
+      return;
+    }
+    let confirmParams: ConfirmParams = {
+      title: '',
+      content: '',
+      label: '',
+      confirm: '',
+      cancel: ''
+    };
+    switch(type) {
+      case "pasteboard":
+        this.openPasteboardPermissionConfirm(activeContext, confirmParams);
+        break;
+      default:
+        break;
+    }
+    if (!confirmParams.title||!confirmParams.content) {
+      LogUtil.error(TAG, 'openPermissionConfirm, Failed to get title & content');
+      return;
+    }
+    this.openPermissionConfirmDialog(activeContext, confirmParams, callback);
+  }
+
+  private openPasteboardPermissionConfirm(activeContext: Context, pasteboardConfirmParams: ConfirmParams) {
+    pasteboardConfirmParams.title = activeContext.resourceManager.getStringSync($r("app.string.pasteBoard_dialog_title").id);
+    pasteboardConfirmParams.content = activeContext.resourceManager.getStringSync($r("app.string.pasteBoard_dialog_content").id);
+    pasteboardConfirmParams.label = activeContext.resourceManager.getStringSync(this.appLabelId);
+    pasteboardConfirmParams.content = pasteboardConfirmParams.content.replace("label", pasteboardConfirmParams.label);
+    pasteboardConfirmParams.confirm = activeContext.resourceManager.getStringSync($r("app.string.dialog_confirm_button").id);
+    pasteboardConfirmParams.cancel = activeContext.resourceManager.getStringSync($r("app.string.dialog_cancel_button").id);
+  }
+
+  private async openPermissionConfirmDialog(activeContext: Context, confirmParams: ConfirmParams, callback: Function) {
+    let bundleInfo: bundleManager.BundleInfo =
+      await bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION);
+    promptAction.showDialog({
+      title: confirmParams.title,
+      message: confirmParams.content,
       buttons: [
         {
-          text: confirm,
+          text: confirmParams.confirm,
           color: '#000000'
         },
         {
-          text: cancel,
+          text: confirmParams.cancel,
           color: '#000000'
         }
       ],
@@ -173,17 +335,17 @@ export default class PermissionManagerAdapter extends BaseAdapter {
         let wantInfo: Want = {
           bundleName: 'com.huawei.hmos.settings',
           abilityName: 'com.huawei.hmos.settings.MainAbility',
-          uri: 'privacy_settings',
+          uri: 'application_info_entry',
           parameters: {
-            pushParams: 'com.huawei.ohos_chromium'
+            pushParams: bundleInfo.name
           }
         }
-        context.startAbility(wantInfo);
+        LaunchHelper.Launch(activeContext, wantInfo);
       }
       callback(data.index);
     }).catch((err: Error) => {
       callback(ERROR);
-      LogUtil.error(PermissionManagerAdapter.TAG, `openPermissionConfirm failed, caused by:${JSON.stringify(err)}`);
+      LogUtil.error(TAG, `showDialog failed, caused by:${JSON.stringify(err)}`);
     });
   }
 }

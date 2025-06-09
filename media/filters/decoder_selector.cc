@@ -235,14 +235,8 @@ template <DemuxerStream::Type StreamType>
 void DecoderSelector<StreamType>::OnDecoderInitializeDone(
     DecoderStatus status) {
   DCHECK(decoder_);
-#if BUILDFLAG(ARKWEB_MEDIA)
-  LOG(WARNING) << "OhMedia::OnDecoderInitializeDone "
-               << decoder_->GetDecoderType()
-               << " success=" << static_cast<int>(status.code());
-#else
   DVLOG(2) << __func__ << ": " << decoder_->GetDecoderType()
            << " success=" << static_cast<int>(status.code());
-#endif // BUILDFLAG(ARKWEB_MEDIA)
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   if (!status.is_ok()) {

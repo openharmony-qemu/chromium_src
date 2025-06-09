@@ -9,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/allocator/partition_alloc_support.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
@@ -146,11 +145,6 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif  // BUILDFLAG(IS_OZONE)
 
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-#include "media/gpu/ohos/ohos_image_decode_accelerator_worker.h"
-#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-
-#include "arkweb/chromium_ext/components/viz/service/gl/gpu_service_impl_utils.cc"
 namespace viz {
 
 namespace {
@@ -417,11 +411,6 @@ GpuServiceImpl::GpuServiceImpl(
   image_decode_accelerator_worker_ =
       media::VaapiImageDecodeAcceleratorWorker::Create();
 #endif  // BUILDFLAG(USE_VAAPI_IMAGE_CODECS)
-
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-  image_decode_accelerator_worker_ =
-      media::OhosImageDecodeAcceleratorWorker::Create();
-#endif
 
 #if BUILDFLAG(IS_WIN)
   if (media::SupportMediaFoundationClearPlayback()) {

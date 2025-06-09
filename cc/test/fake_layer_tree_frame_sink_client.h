@@ -41,9 +41,7 @@ class FakeLayerTreeFrameSinkClient : public LayerTreeFrameSinkClient {
               const gfx::Rect& viewport,
               bool resourceless_software_draw,
               bool skip_draw) override {}
-  #if BUILDFLAG(ARKWEB_UNITTESTS)
-  void SetDrawRectState(bool isNeedDrawRect) override {}
-  #endif // ARKWEB_UNITTESTS
+
   int ack_count() { return ack_count_; }
 
   bool did_lose_layer_tree_frame_sink_called() {

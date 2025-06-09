@@ -34,9 +34,6 @@
 #include "gpu/gpu_gles2_export.h"
 #include "ui/gfx/geometry/rect.h"
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/build/features/features.h"
-#endif
 namespace gl {
 class ProgressReporter;
 }
@@ -75,7 +72,7 @@ class GPU_GLES2_EXPORT TexturePassthrough final
   // native GL texture in the destructor
   void MarkContextLost();
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_GPU_SERVICE)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   void BindToServiceId(GLuint service_id);
 #endif
 
@@ -242,7 +239,7 @@ class GPU_GLES2_EXPORT Texture final : public TextureBase {
   bool GetLevelType(
       GLint target, GLint level, GLenum* type, GLenum* internal_format) const;
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_GPU_SERVICE)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Overrides |service_id_| with a texture bound to
   // the stream texture. See SetStreamTextureServiceId() for the details of
   // how |service_id| is used.

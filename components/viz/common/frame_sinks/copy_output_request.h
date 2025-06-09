@@ -21,7 +21,6 @@
 #include "mojo/public/cpp/bindings/struct_traits.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/vector2d.h"
-#include "arkweb/build/features/features.h"
 
 namespace viz {
 
@@ -56,19 +55,11 @@ class VIZ_COMMON_EXPORT CopyOutputRequest {
   using CopyOutputRequestCallback =
       base::OnceCallback<void(std::unique_ptr<CopyOutputResult> result)>;
 
-#if BUILDFLAG(ARKWEB_DFX_DUMP)
-  // Creates new CopyOutputRequest. I420_PLANES format returned via
-  // kNativeTextures is currently not supported.
-  CopyOutputRequest(ResultFormat result_format,
-                    ResultDestination result_destination,
-                    CopyOutputRequestCallback result_callback, uint64_t id = 0, const std::string& dump_path = "");
-#else
   // Creates new CopyOutputRequest. I420_PLANES format returned via
   // kNativeTextures is currently not supported.
   CopyOutputRequest(ResultFormat result_format,
                     ResultDestination result_destination,
                     CopyOutputRequestCallback result_callback);
-#endif
 
   CopyOutputRequest(const CopyOutputRequest&) = delete;
   CopyOutputRequest& operator=(const CopyOutputRequest&) = delete;
@@ -185,10 +176,6 @@ class VIZ_COMMON_EXPORT CopyOutputRequest {
   std::optional<gfx::Rect> result_selection_;
 
   std::optional<BlitRequest> blit_request_;
-#if BUILDFLAG(ARKWEB_DFX_DUMP)
-  uint64_t dump_frame_id_ = 0;
-  std::string dump_frame_path_ = "";
-#endif
 };
 
 }  // namespace viz

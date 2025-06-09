@@ -148,8 +148,6 @@ void MenuHost::InitMenuHost(const InitParams& init_params) {
                                        : gfx::NativeWindow();
   params.bounds = init_params.bounds;
 
-  params.parent_widget = init_params.parent_widget;
-
 #if defined(USE_AURA)
   params.init_properties_container.SetProperty(aura::client::kOwnedWindowAnchor,
                                                init_params.owned_window_anchor);
@@ -157,8 +155,7 @@ void MenuHost::InitMenuHost(const InitParams& init_params) {
   // If MenuHost has no parent widget, it needs to be marked
   // Activatable, so that calling Show in ShowMenuHost will
   // get keyboard focus.
-  if (init_params.parent == nullptr &&
-      init_params.parent_widget == gfx::kNullAcceleratedWidget)
+  if (init_params.parent == nullptr)
     params.activatable = Widget::InitParams::Activatable::kYes;
 
 #if BUILDFLAG(IS_WIN)

@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <memory>
 
-#include "base/logging.h"
 #include "base/command_line.h"
 #include "gpu/vulkan/buildflags.h"
 #include "ui/gfx/native_pixmap.h"
@@ -109,12 +108,7 @@ SurfaceFactoryOzone::CreateNativePixmapFromHandle(
     gfx::AcceleratedWidget widget,
     gfx::Size size,
     gfx::BufferFormat format,
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-      gfx::NativePixmapHandle handle,
-      void* window_buffer) {
-#else
-      gfx::NativePixmapHandle handle) {
-#endif
+    gfx::NativePixmapHandle handle) {
   return nullptr;
 }
 

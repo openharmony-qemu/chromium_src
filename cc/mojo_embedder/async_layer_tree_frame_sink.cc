@@ -6,7 +6,6 @@
 
 #include <utility>
 
-#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram.h"
 #include "base/metrics/histogram_functions.h"
@@ -24,7 +23,6 @@
 #include "components/viz/common/hit_test/hit_test_region_list.h"
 #include "components/viz/common/quads/compositor_frame.h"
 #include "services/viz/public/mojom/compositing/thread.mojom.h"
-
 
 namespace cc {
 namespace mojo_embedder {
@@ -86,7 +84,6 @@ AsyncLayerTreeFrameSink::AsyncLayerTreeFrameSink(
       use_begin_frame_presentation_feedback_(
           params->use_begin_frame_presentation_feedback) {
   DETACH_FROM_THREAD(thread_checker_);
-  async_layer_tree_frame_sink_utils_ = new AsyncLayerTreeFrameSinkUtils(this);
 }
 
 AsyncLayerTreeFrameSink::~AsyncLayerTreeFrameSink() {}
@@ -155,16 +152,6 @@ bool AsyncLayerTreeFrameSink::BindToClient(LayerTreeFrameSinkClient* client) {
   compositor_frame_sink_ptr_->SetThreads(threads);
 #endif
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  async_layer_tree_frame_sink_utils_->BindToClientArkWebPerSch(compositor_frame_sink_ptr_,
-      base::PlatformThread::CurrentRealId(),
-      base::GetCurrentRealPid());
-#endif
-
-#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
-  async_layer_tree_frame_sink_utils_->BindToClientArkWebSoftCom(client, begin_frame_source_.get());
-#endif
-
   return true;
 }
 
@@ -179,11 +166,6 @@ void AsyncLayerTreeFrameSink::DetachFromClient() {
   compositor_frame_sink_ptr_ = nullptr;
   compositor_frame_sink_.reset();
   compositor_frame_sink_associated_.reset();
-
-#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
-  async_layer_tree_frame_sink_utils_->DetachFromClientArkWebSoftCom();
-#endif
-
   LayerTreeFrameSink::DetachFromClient();
 }
 
@@ -201,9 +183,7 @@ void AsyncLayerTreeFrameSink::SubmitCompositorFrame(
   DCHECK(compositor_frame_sink_ptr_);
   DCHECK(frame.metadata.begin_frame_ack.has_damage);
   DCHECK(frame.metadata.begin_frame_ack.frame_id.IsSequenceValid());
-#if BUILDFLAG(ARKWEB_DFX_TRACING)
-  async_layer_tree_frame_sink_utils_->SubmitCompositorFrameDfxDumpTrace(frame.metadata.begin_frame_ack.trace_id);
-#endif
+
   if (auto_needs_begin_frame_ && !needs_begin_frames_) {
     UpdateNeedsBeginFramesInternal(/*needs_begin_frames=*/true);
   }
@@ -238,10 +218,6 @@ void AsyncLayerTreeFrameSink::SubmitCompositorFrame(
     last_hit_test_data_ = *hit_test_region_list;
   }
 
-#if BUILDFLAG(ARKWEB_DFX_DUMP)
-  async_layer_tree_frame_sink_utils_->SubmitCompositorFrameDfxDumpLog(local_surface_id_);
-#endif
-
   if (last_submitted_local_surface_id_ != local_surface_id_) {
     last_submitted_local_surface_id_ = local_surface_id_;
     last_submitted_device_scale_factor_ = frame.device_scale_factor();
@@ -273,11 +249,6 @@ void AsyncLayerTreeFrameSink::SubmitCompositorFrame(
                          TRACE_EVENT_FLAG_FLOW_OUT, "step",
                          "SubmitHitTestData");
 
-#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
-  if (async_layer_tree_frame_sink_utils_->SubmitCompositorFrameArkWebSoftCom(frame)) {
-    return;
-  }
-#endif
   compositor_frame_sink_ptr_->SubmitCompositorFrame(
       local_surface_id_, std::move(frame), std::move(hit_test_region_list), 0);
 }
@@ -297,9 +268,6 @@ void AsyncLayerTreeFrameSink::DidNotProduceFrame(const viz::BeginFrameAck& ack,
         data->set_frame_skipped_reason(to_proto_enum(reason));
         data->set_surface_frame_trace_id(ack.trace_id);
       });
-#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
-  async_layer_tree_frame_sink_utils_->SubmitCompositorFrameArkWebSwapBuTr(ack.trace_id, reason);
-#endif
   compositor_frame_sink_ptr_->DidNotProduceFrame(ack);
 }
 
@@ -374,9 +342,6 @@ void AsyncLayerTreeFrameSink::OnBeginFrame(
   }
 
   if (!needs_begin_frames_) {
-#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
-    async_layer_tree_frame_sink_utils_->OnBeginFrameArkWebSwBuTr(args.trace_id);
-#endif
     // We had a race with SetNeedsBeginFrame(false) and still need to let the
     // sink know that we didn't use this BeginFrame. OnBeginFrame() can also be
     // called to deliver presentation feedback.
@@ -384,9 +349,7 @@ void AsyncLayerTreeFrameSink::OnBeginFrame(
                        FrameSkippedReason::kNoDamage);
     return;
   }
-#if BUILDFLAG(ARKWEB_DFX_TRACING)
-  async_layer_tree_frame_sink_utils_->OnBeginFrameArkWebDfxTrace(adjusted_args.trace_id);
-#endif
+
   if (begin_frame_source_)
     begin_frame_source_->OnBeginFrame(adjusted_args);
 }
@@ -451,13 +414,6 @@ void AsyncLayerTreeFrameSink::UpdateNeedsBeginFramesInternal(
   }
   needs_begin_frames_ = needs_begin_frames;
 }
-
-#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
-void AsyncLayerTreeFrameSink::InitSoftwareCompositorRender(
-    SoftwareCompositorRegistryOhos* registry) {
-  async_layer_tree_frame_sink_utils_->InitSoftComRenderArkWebSoftCom(registry);
-}
-#endif
 
 }  // namespace mojo_embedder
 }  // namespace cc

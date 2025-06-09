@@ -26,12 +26,10 @@ mojom("mojom") {
     "pressure_manager.mojom",
     "pressure_update.mojom",
     "public_ip_address_geolocation_provider.mojom",
-    "//arkweb/chromium_ext/services/device/public/mojom/res_sched_report.mojom",
     "screen_orientation.mojom",
     "screen_orientation_lock_types.mojom",
     "serial.mojom",
     "smart_card.mojom",
-    "//arkweb/chromium_ext/services/device/public/mojom/sysprop_render_observer.mojom",
     "time_zone_monitor.mojom",
     "vibration_manager.mojom",
     "wake_lock.mojom",
@@ -169,12 +167,6 @@ mojom("generic_sensor") {
   ]
 
   public_deps = [ "//mojo/public/mojom/base" ]
-
-  enabled_features = []
-  if (is_arkweb) {
-    enabled_features += [ "is_arkweb" ]
-    enabled_features += [ "arkweb_sensor" ]
-  }
 }
 
 mojom("usb") {

@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//arkweb/build/features/features.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//device/vr/buildflags/buildflags.gni")
@@ -119,7 +118,7 @@ test("device_unittests") {
 
   if (is_ohos) {
     sources += [
-      "//arkweb/chromium_ext/device/bluetooth/test/bluetooth/test/bluetooth_test_ohos.cc",
+      "bluetooth/test/bluetooth_test_ohos.cc",
       "bluetooth/test/bluetooth_test_ohos.h",
     ]
   }
@@ -156,10 +155,6 @@ test("device_unittests") {
     "//ui/base",
     "//url",
   ]
-
-  if (arkweb_resource_interception) {
-    deps += ["//content/public/renderer:renderer_sources"]
-  }
 
   data_deps = [
     "bluetooth/strings:bluetooth_test_strings",

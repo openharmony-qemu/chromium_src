@@ -8,7 +8,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
@@ -19,10 +18,6 @@
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "services/viz/public/mojom/compositing/layer_context.mojom.h"
 #include "ui/gfx/overlay_transform.h"
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_impl_utils.h"
-#endif
 
 namespace viz {
 
@@ -126,9 +121,6 @@ CompositorFrameSinkImpl::CompositorFrameSinkImpl(
   if (bundle_id.has_value()) {
     support_->SetBundle(*bundle_id);
   }
-#if BUILDFLAG(IS_ARKWEB)
-  compositor_frame_sink_impl_util_ = std::make_unique<CompositorFrameSinkImplUtil>(this);
-#endif
 }
 
 CompositorFrameSinkImpl::~CompositorFrameSinkImpl() = default;
@@ -154,9 +146,6 @@ void CompositorFrameSinkImpl::SubmitCompositorFrame(
     CompositorFrame frame,
     std::optional<HitTestRegionList> hit_test_region_list,
     uint64_t submit_time) {
-#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-  compositor_frame_sink_impl_util_->SubmitCompositorFrameUtils(frame.metadata);
-#endif
   // Non-root surface frames should not have display transform hint.
   DCHECK_EQ(gfx::OVERLAY_TRANSFORM_NONE, frame.metadata.display_transform_hint);
   SubmitCompositorFrameInternal(local_surface_id, std::move(frame),
@@ -229,17 +218,6 @@ void CompositorFrameSinkImpl::SetThreads(const std::vector<Thread>& threads) {
   support_->SetThreads(/*from_untrusted_client=*/true, threads);
 }
 #endif
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-void CompositorFrameSinkImpl::ReportKeyThreadIds(
-    const std::vector<int32_t>& thread_ids,
-    int32_t process_id,
-    bool is_created) {
-  compositor_frame_sink_impl_util_->ReportKeyThreadIdsUtils(thread_ids,
-      process_id,
-      is_created);
-}
-#endif // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 
 void CompositorFrameSinkImpl::OnClientConnectionLost() {
   // The client that owns this CompositorFrameSink is either shutting down or

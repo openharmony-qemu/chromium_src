@@ -47,11 +47,7 @@ bool ShouldRespondToRequest(blink::WebLocalFrame** frame_ptr,
   bool webui_enabled =
       (render_frame->GetEnabledBindings().Has(BindingsPolicyValue::kWebUi)) &&
       (frame_url.SchemeIs(kChromeUIScheme) ||
-       frame_url.SchemeIs(url::kDataScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-       || frame_url.SchemeIs(kArkWebUIScheme)
-#endif
-      );
+       frame_url.SchemeIs(url::kDataScheme));
 
   if (!webui_enabled)
     return false;

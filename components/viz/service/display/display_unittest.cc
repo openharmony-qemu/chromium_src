@@ -146,9 +146,6 @@ class StubDisplayClient : public DisplayClient {
       mojom::CompositorFrameSinkType* type) override {
     return BeginFrameArgs::MinInterval();
   }
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void RestoreRenderFit(const FrameSinkId& frame_sink_id) override {}
-#endif // ARKWEB_UNITTESTS
 };
 
 void CopyCallback(bool* called,

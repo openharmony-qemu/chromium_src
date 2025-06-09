@@ -256,11 +256,7 @@ bool AllowExtensionResourceLoad(const network::ResourceRequest& request,
 
 // Returns true if the given URL references an icon in the given extension.
 bool URLIsForExtensionIcon(const GURL& url, const Extension* extension) {
-  DCHECK(url.SchemeIs(extensions::kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-         || url.SchemeIs(extensions::kArkwebExtensionScheme)
-#endif
-  );
+  DCHECK(url.SchemeIs(extensions::kExtensionScheme));
   if (!extension) {
     return false;
   }
@@ -332,11 +328,7 @@ void GetSecurityPolicyForURL(const network::ResourceRequest& request,
   const auto origin = extension.origin();
   should_pdf_resource_send_cors_header =
       chrome_pdf::features::IsOopifPdfEnabled() &&
-      (origin.scheme() == extensions::kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-         || origin.scheme() == extensions::kArkwebExtensionScheme
-#endif
-      ) &&
+      origin.scheme() == extensions::kExtensionScheme &&
       origin.host() == extension_misc::kPdfExtensionId &&
       resource_path == "/index.html";
 #endif  // BUILDFLAG(ENABLE_PDF)
@@ -615,10 +607,7 @@ class ExtensionURLLoader : public network::mojom::URLLoader {
     const ProcessMap* process_map = ProcessMap::Get(browser_context_);
     bool incognito_enabled =
         extensions::util::IsIncognitoEnabled(extension_id, browser_context_);
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-    LOG(INFO) << "ExtensionURLLoader Start(): extension_id: " << extension_id
-        << ", request url: " << request_.url;
-#endif
+
     // Redirect guid to id.
     if (base::FeatureList::IsEnabled(
             extensions_features::kExtensionDynamicURLRedirection) &&
@@ -739,13 +728,8 @@ class ExtensionURLLoader : public network::mojom::URLLoader {
       // resource from a sandboxed page.
       if (request_.request_initiator.has_value() &&
           request_.request_initiator->opaque() &&
-         (request_.request_initiator->GetTupleOrPrecursorTupleIfOpaque()
-                  .scheme() == kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-         || request_.request_initiator->GetTupleOrPrecursorTupleIfOpaque()
-                    .scheme() == kArkwebExtensionScheme
-#endif
-        )) {
+          request_.request_initiator->GetTupleOrPrecursorTupleIfOpaque()
+                  .scheme() == kExtensionScheme) {
         // Surface opaque origin for web accessible resource verification.
         const auto origin = url::Origin::Create(
             request_.request_initiator->GetTupleOrPrecursorTupleIfOpaque()
@@ -791,10 +775,6 @@ class ExtensionURLLoader : public network::mojom::URLLoader {
                                        &head->charset, &contents);
         WriteData(std::move(head), base::as_bytes(base::make_span(contents)));
       } else if (is_favicon_url) {
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-        LOG(INFO) << "ExtensionURLLoader get favicon url, request url is"
-            << request_.url;
-#endif
         tracker_ = std::make_unique<base::CancelableTaskTracker>();
         ExtensionsBrowserClient::Get()->GetFavicon(
             browser_context_, extension.get(), request_.url, tracker_.get(),
@@ -980,11 +960,7 @@ class ExtensionURLLoaderFactory : public network::SelfDeletingURLLoaderFactory {
       const net::MutableNetworkTrafficAnnotationTag& traffic_annotation)
       override {
     DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
-    DCHECK(kExtensionScheme == request.url.scheme()
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-           || kArkwebExtensionScheme == request.url.scheme()
-#endif
-    );
+    DCHECK_EQ(kExtensionScheme, request.url.scheme());
     ExtensionURLLoader::CreateAndStart(std::move(loader), std::move(client),
                                        request, is_web_view_request_,
                                        render_process_id_, browser_context_);

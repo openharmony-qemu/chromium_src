@@ -193,9 +193,5 @@ const char kAlwaysOnVpnPreConnectUrlAllowlist[] =
 // Boolean value for the FloatingWorkspaceEnabled policy
 const char kFloatingWorkspaceEnabled[] = "ash.floating_workspace_enabled";
 #endif
-
-#if BUILDFLAG(ARKWEB_EDM_POLICY)
-const char kBrowserPolicyVersion[] = "policy.browser_policy_version";
-#endif
 }  // namespace policy_prefs
 }  // namespace policy

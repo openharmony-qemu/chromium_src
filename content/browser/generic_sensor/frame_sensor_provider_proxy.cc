@@ -31,10 +31,6 @@ namespace {
 constexpr std::vector<blink::mojom::PermissionsPolicyFeature>
 SensorTypeToPermissionsPolicyFeatures(SensorType type) {
   switch (type) {
-#if BUILDFLAG(ARKWEB_SENSOR)
-    case SensorType::PROXIMITY:
-    case SensorType::PRESSURE:
-#endif
     case SensorType::AMBIENT_LIGHT:
       return {blink::mojom::PermissionsPolicyFeature::kAmbientLightSensor};
     case SensorType::ACCELEROMETER:

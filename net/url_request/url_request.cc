@@ -54,14 +54,6 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-#include "arkweb/chromium_ext/url/ohos/log_utils.h"
-#endif
-
 namespace net {
 
 namespace {
@@ -776,6 +768,11 @@ void URLRequest::CancelWithSSLError(int error, const SSLInfo& ssl_info) {
 
 int URLRequest::DoCancel(int error, const SSLInfo& ssl_info) {
   DCHECK_LT(error, 0);
+#if BUILDFLAG(IS_OHOS)
+  if (error != ERR_ABORTED) {
+    LOG(WARNING) << "URLRequest::DoCancel url is error code is " << error;
+  }
+#endif
   // If cancelled while calling a delegate, clear delegate info.
   if (calling_delegate_) {
     LogUnblocked();
@@ -793,15 +790,6 @@ int URLRequest::DoCancel(int error, const SSLInfo& ssl_info) {
       // Don't log an error code on ERR_ABORTED, since that's redundant.
       net_log_.AddEventWithNetErrorCode(NetLogEventType::CANCELLED,
                                         error == ERR_ABORTED ? OK : error);
-#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-      LOG(INFO) << "DoCancel the url_request, url: ***"
-                << ", error " << error;
-#endif
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-      LOG_FEEDBACK(INFO) << "DoCancel the url_request, url: "
-                         << url::LogUtils::ConvertUrlWithMask(url().spec())
-                         << ", error " << error;
-#endif
     }
   }
 

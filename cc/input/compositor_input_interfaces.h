@@ -14,7 +14,6 @@
 #include "cc/input/browser_controls_state.h"
 #include "cc/paint/element_id.h"
 #include "ui/gfx/geometry/size.h"
-#include "arkweb/build/features/features.h"
 
 namespace viz {
 struct BeginFrameArgs;
@@ -104,11 +103,6 @@ class InputDelegateForCompositor {
   // TODO(skobes): Combine IsCurrentlyScrolling, GetActivelyScrollingType, and
   // IsCurrentScrollMainRepainted into a single method returning everything.
   virtual bool IsCurrentScrollMainRepainted() const = 0;
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  virtual void HandleScrollUpdateForInternalBeginFrame(
-      const viz::BeginFrameArgs& args) {}
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   // Returns true if there are input events queued to be dispatched at the start
   // of the next frame.

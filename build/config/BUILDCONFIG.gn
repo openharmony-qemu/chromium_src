@@ -46,34 +46,6 @@
 # When writing build files, to do something only for the host:
 #   if (current_toolchain == host_toolchain) { ...
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-declare_args() {
-  ohos_nweb_ex_config_name = ""
-}
-
-if (ohos_nweb_ex_config_name != "") {
-  import("$ohos_nweb_ex_config_name")
-}  #endif  // ARKWEB_NWEB_EX
-
-#
-# ArkWeb extended global features
-#
-declare_args() {
-  # Enable ArkWeb features
-  enable_arkweb = true
-
-  # ISV manufacture may extend ArkWeb features by setting their source code
-  # If arkweb_ext_dir is configed, ArkWeb will load $arkweb_ext_dir/build/features automatically
-  arkweb_ext_dir = ""
-
-  # Enable ArkWeb extended features
-  enable_arkweb_ext = false
-}
-
-if (arkweb_ext_dir != "") {
-  enable_arkweb_ext = true
-}
-
 if (target_os == "") {
   target_os = host_os
 }
@@ -353,9 +325,6 @@ is_watchos = current_os == "watchos"
 is_win = current_os == "win" || current_os == "winuwp"
 is_ohos = current_os == "ohos"
 
-is_arkweb = is_ohos && enable_arkweb
-is_arkweb_ext = is_arkweb && enable_arkweb_ext
-
 is_apple = is_ios || is_mac || is_watchos
 is_posix = !is_win && !is_fuchsia
 
@@ -450,11 +419,6 @@ if (is_debug) {
 } else {
   default_compiler_configs += [ "//build/config:release" ]
 }
-
-#if BUILDFLAG(ARKWEB_NWEB_EX)
-if (ohos_nweb_ex_config_name != "") {
-  default_compiler_configs += [ "//build/config:ohos_nweb_ex_def_main" ]
-} #endif //ARKWEB_NWEB_EX
 
 # Static libraries and source sets use only the compiler ones.
 set_defaults("static_library") {
@@ -718,15 +682,9 @@ foreach(_target_type,
 # case by setting static_component_type to either "source_set" or
 # "static_library". If unset, the default will be used.
 template("component") {
-  # FIXME(AR20250313353352): Remove this exception logic after the re-architecture
-  if (
-      invoker.target_name == "adapter_ndk" ||
-      invoker.target_name == "ohos_base_glue_source" ||
-      invoker.target_name == "ohos_nweb_glue_source" ||
-      invoker.target_name == "ohos_adapter_glue_source") {
-    _component_mode = "static_library"
-  } else if (is_component_build) {
+  if (is_component_build) {
     _component_mode = "shared_library"
+
     # Generate a unique output_name for a shared library if not set by invoker.
     if (!defined(invoker.output_name)) {
       _output_name = get_label_info(":$target_name", "label_no_toolchain")

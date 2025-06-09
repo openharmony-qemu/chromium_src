@@ -24,7 +24,6 @@
 #include "ui/gfx/mojom/delegated_ink_metadata_mojom_traits.h"
 #include "ui/gfx/mojom/display_color_spaces_mojom_traits.h"
 #include "ui/gfx/mojom/overlay_transform_mojom_traits.h"
-#include "arkweb/build/features/features.h"
 
 namespace mojo {
 
@@ -55,12 +54,6 @@ struct StructTraits<viz::mojom::CompositorFrameMetadataDataView,
       const viz::CompositorFrameMetadata& metadata) {
     return metadata.content_color_usage;
   }
-
-#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
-  static bool is_scrolling(const viz::CompositorFrameMetadata& metadata) {
-    return metadata.is_scrolling;
-  }
-#endif
 
   static bool may_contain_video(const viz::CompositorFrameMetadata& metadata) {
     return metadata.may_contain_video;

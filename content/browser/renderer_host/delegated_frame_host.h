@@ -54,10 +54,6 @@ class CONTENT_EXPORT DelegatedFrameHostClient {
   virtual void InvalidateLocalSurfaceIdOnEviction() = 0;
   virtual viz::FrameEvictorClient::EvictIds CollectSurfaceIdsForEviction() = 0;
   virtual bool ShouldShowStaleContentOnEviction() = 0;
-#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  virtual void RestoreRenderFit() {}
-#endif  // ARKWEB_MAXIMIZE_RESIZE
-
 };
 
 // The DelegatedFrameHost is used to host all of the RenderWidgetHostView state
@@ -108,10 +104,6 @@ class CONTENT_EXPORT DelegatedFrameHost
   void OnFirstSurfaceActivation(const viz::SurfaceInfo& surface_info) override;
   void OnFrameTokenChanged(uint32_t frame_token,
                            base::TimeTicks activation_time) override;
-
-#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  void RestoreRenderFit() override;
-#endif // ARKWEB_MAXIMIZE_RESIZE
 
   // Public interface exposed to RenderWidgetHostView.
 

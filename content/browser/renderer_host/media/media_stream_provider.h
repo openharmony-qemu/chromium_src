@@ -44,10 +44,6 @@ class MediaStreamProviderListener {
   virtual void Aborted(blink::mojom::MediaStreamType stream_type,
                        const base::UnguessableToken& capture_session_id) = 0;
 
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  virtual void OnScreenCaptureOpened(const std::string& session_id) {}
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
-
  protected:
   virtual ~MediaStreamProviderListener() {}
 };

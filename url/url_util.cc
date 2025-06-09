@@ -8,7 +8,6 @@
 #endif
 
 #include "url/url_util.h"
-#include "arkweb/build/features/features.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -65,9 +64,6 @@ struct SchemeRegistry {
        SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION},  // WebSocket secure.
       {kWsScheme, SCHEME_WITH_HOST_PORT_AND_USER_INFORMATION},  // WebSocket.
       {kFileSystemScheme, SCHEME_WITHOUT_AUTHORITY},
-#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
-      {kResourcesScheme, SCHEME_WITH_HOST},
-#endif
   };
 
   // Schemes that are allowed for referrers.
@@ -94,9 +90,6 @@ struct SchemeRegistry {
   // security rules as those applied to "file" URLs).
   std::vector<std::string> local_schemes = {
       kFileScheme,
-#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
-      kResourcesScheme,
-#endif
   };
 
   // Schemes that cause pages loaded with them to not have access to pages
@@ -144,16 +137,6 @@ struct SchemeRegistry {
 
   // Schemes with a predefined default custom handler.
   std::vector<SchemeWithHandler> predefined_handler_schemes;
-
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-  std::vector<std::string> custom_schemes = {};
-#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
-
-#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
-  std::vector<std::string> code_cache_enabled_schemes = {
-    kFileScheme,
-  };
-#endif`
 
   bool allow_non_standard_schemes = false;
 };
@@ -651,11 +634,7 @@ void EnableNonStandardSchemesForAndroidWebView() {
 }
 
 bool AllowNonStandardSchemesForAndroidWebView() {
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-  return true;
-#else
   return GetSchemeRegistry().allow_non_standard_schemes;
-#endif
 }
 
 void AddStandardScheme(const char* new_scheme, SchemeType type) {
@@ -737,36 +716,6 @@ void AddEmptyDocumentScheme(const char* new_scheme) {
 const std::vector<std::string>& GetEmptyDocumentSchemes() {
   return GetSchemeRegistry().empty_document_schemes;
 }
-
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-void AddCustomScheme(const char* new_scheme) {
-  DoAddScheme(new_scheme, &GetSchemeRegistryWithoutLocking()->custom_schemes);
-}
-
-const std::vector<std::string>& GetCustomScheme() {
-  return GetSchemeRegistry().custom_schemes;
-}
-#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
-
-#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
-void AddCodeCacheEnabledScheme(const char* new_scheme) {
-  DoAddScheme(new_scheme,
-              &GetSchemeRegistryWithoutLocking()->code_cache_enabled_schemes);
-}
-
-bool IsCodeCacheEnabledScheme(const std::string& scheme) {
-  for (const std::string& it : GetSchemeRegistry().code_cache_enabled_schemes) {
-    if (it == scheme) {
-      return true;
-    }
-  }
-  return false;
-}
-
-const std::vector<std::string>& GetCodeCacheEnabledSchemes() {
-    return GetSchemeRegistry().code_cache_enabled_schemes;
-}
-#endif
 
 void AddPredefinedHandlerScheme(const char* new_scheme, const char* handler) {
   DoAddSchemeWithHandler(

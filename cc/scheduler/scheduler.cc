@@ -8,15 +8,11 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/chromium_ext/cc/scheduler/scheduler_utils.h"
 #include "base/auto_reset.h"
 #include "base/check_op.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/metrics/histogram_macros.h"
-#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#endif
 #include "base/task/delay_policy.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/trace_event.h"
@@ -29,7 +25,6 @@
 #include "components/viz/common/frame_sinks/delay_based_time_source.h"
 #include "services/tracing/public/cpp/perfetto/macros.h"
 #include "third_party/perfetto/protos/perfetto/trace/track_event/chrome_compositor_scheduler_state.pbzero.h"
-#include "arkweb/build/features/features.h"
 
 namespace cc {
 
@@ -81,7 +76,6 @@ Scheduler::Scheduler(
   wants_animate_only_begin_frames_ = true;
 
   ProcessScheduledActions();
-  scheduler_utils_ = std::make_unique<SchedulerUtils>(this);
 }
 
 Scheduler::~Scheduler() {
@@ -198,12 +192,8 @@ void Scheduler::DidSubmitCompositorFrame(SubmitInfo& submit_info) {
   // Hardware and software draw may occur at the same frame simultaneously for
   // Android WebView. There is no need to call DidSubmitCompositorFrame here for
   // software draw.
-#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
-  if (!state_machine_.resourceless_draw()) {
-#else
   if (!settings_.using_synchronous_renderer_compositor ||
       !state_machine_.resourceless_draw()) {
-#endif
     compositor_frame_reporting_controller_->DidSubmitCompositorFrame(
         submit_info, begin_main_frame_args_.frame_id,
         last_activate_origin_frame_args_.frame_id);
@@ -399,10 +389,6 @@ void Scheduler::OnBeginFrameSourcePausedChanged(bool paused) {
 bool Scheduler::OnBeginFrameDerivedImpl(const viz::BeginFrameArgs& args) {
   TRACE_EVENT1("cc,benchmark", "Scheduler::BeginFrame", "args", args.AsValue());
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  scheduler_utils_->HandleScrollUpdateForInternalBeginFrame(args);
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
-
   // If the begin frame interval is different than last frame and bigger than
   // zero then let |client_| know about the new interval for animations. In
   // theory the interval should always be bigger than zero but the value is
@@ -552,22 +538,9 @@ void Scheduler::BeginImplFrameWithDeadline(const viz::BeginFrameArgs& args) {
   // main_frame_to_active is fast, we should consider using
   // BeginImplFrameDeadlineMode::LATE instead to avoid putting the main
   // thread in high latency mode. See crbug.com/753146.
-#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-  static base::TimeDelta interval = adjusted_args.interval;
-  int64_t interval_ms = interval.InMicroseconds();
-  TRACE_EVENT1("cc,benchmark", "Scheduler::BeginImplFrameWithDeadline", "interval", interval_ms);
-  if (base::ohos::IsMobileDevice() && state_machine_.is_scrolling() && interval_ms > 0) {
-    interval = std::min(interval, adjusted_args.interval);
-  } else {
-    interval = adjusted_args.interval;
-  }
-  base::TimeDelta bmf_to_activate_threshold =
-      interval - compositor_timing_history_->DrawDurationEstimate() - kDeadlineFudgeFactor;
-#else
   base::TimeDelta bmf_to_activate_threshold =
       adjusted_args.interval -
       compositor_timing_history_->DrawDurationEstimate() - kDeadlineFudgeFactor;
-#endif
 
   base::TimeDelta bmf_to_activate_estimate_critical =
       compositor_timing_history_
@@ -619,13 +592,9 @@ void Scheduler::BeginImplFrameWithDeadline(const viz::BeginFrameArgs& args) {
         bmf_sent_to_ready_to_commit_estimate - time_since_main_frame_sent <
         bmf_to_activate_threshold;
   }
-
-#if BUILDFLAG(ARKWEB_WEBGL)
-  scheduler_utils_->SetShouldDeferInvalidation(main_thread_response_expected_soon);
-#else
   state_machine_.set_should_defer_invalidation_for_fast_main_frame(
       main_thread_response_expected_soon);
-#endif
+
   BeginImplFrame(adjusted_args, now);
 }
 

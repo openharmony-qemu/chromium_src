@@ -36,9 +36,6 @@
 #include "ui/accessibility/ax_mode.h"
 #include "ui/base/page_transition_types.h"
 #include "v8/include/v8-forward.h"
-#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
-#include "base/values.h"
-#endif
 
 class GURL;
 
@@ -150,11 +147,6 @@ class CONTENT_EXPORT RenderFrameObserver
   virtual void DidFinishLoad() {}
   virtual void DidFinishLoadForPrinting() {}
   virtual void DidDispatchDOMContentLoadedEvent() {}
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  virtual void DidSubresourceFiltered() {}
-#endif
-
   virtual void DidHandleOnloadEvents() {}
   virtual void DidCreateScriptContext(v8::Local<v8::Context> context,
                                       int32_t world_id) {}
@@ -406,13 +398,6 @@ class CONTENT_EXPORT RenderFrameObserver
   ~RenderFrameObserver() override;
 #else
   virtual ~RenderFrameObserver();
-#endif
-
-#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
-  virtual void AddNamedObject(const std::string& name,
-                              int32_t object_id,
-                              base::Value::List& async_method_list,
-                              bool need_update) {}
 #endif
 
  private:

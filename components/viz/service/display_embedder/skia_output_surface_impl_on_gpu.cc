@@ -96,14 +96,6 @@
 #include "ui/gl/presenter.h"
 #include "ui/gl/progress_reporter.h"
 #include "url/gurl.h"
-#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-#include "arkweb/chromium_ext/base/report_loss_frame_ext.h"
-#include "arkweb/chromium_ext/base/ohos/dynamic_frame_loss_monitor.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
-#include "base/trace_event/typed_macros.h"
-#endif
 
 #if BUILDFLAG(IS_WIN)
 #include "components/viz/service/display/dc_layer_overlay.h"
@@ -448,14 +440,6 @@ void SkiaOutputSurfaceImplOnGpu::Reshape(
   }
 }
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-void SkiaOutputSurfaceImplOnGpu::SetNativeInnerWeb(bool isInnerWeb) {
-  if (output_device_) {
-    output_device_->SetNativeInnerWeb(isInnerWeb);
-  }
-}
-#endif
-
 void SkiaOutputSurfaceImplOnGpu::DrawOverdraw(
     sk_sp<GrDeferredDisplayList> overdraw_ddl,
     SkCanvas& canvas) {
@@ -607,13 +591,7 @@ void SkiaOutputSurfaceImplOnGpu::SwapBuffers(OutputSurfaceFrame frame) {
   TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::SwapBuffers");
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 
-#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  ReportLossFrame::GetInstance()->Record();
-#endif
   SwapBuffersInternal(std::move(frame));
-#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  base::ohos::DynamicFrameLossMonitor::GetInstance().OnSwapBuffer();
-#endif
 }
 
 void SkiaOutputSurfaceImplOnGpu::SetDependenciesResolvedTimings(
@@ -2428,12 +2406,6 @@ void SkiaOutputSurfaceImplOnGpu::PostSubmit(
     output_device_->SetViewportSize(frame->size);
 
     DCHECK(!frame->sub_buffer_rect || capabilities().supports_post_sub_buffer);
-
-#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
-    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
-        std::to_string(frame->data.swap_trace_id), "step", "FinishBufferSwap");
-#endif
-
     output_device_->Present(frame->sub_buffer_rect, buffer_presented_callback_,
                             std::move(*frame));
   }

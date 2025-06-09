@@ -106,19 +106,9 @@ const ThreadPriorityToNiceValuePairForTest
 // The uniqueness of the nice value per-type helps to change and restore the
 // scheduling params of threads when their process toggles between FG and BG.
 const ThreadTypeToNiceValuePair kThreadTypeToNiceValueMap[7] = {
-#if BUILDFLAG(ARKWEB_DFX_TRACING)
-    {ThreadType::kBackground, 0},       {ThreadType::kUtility, 0},
-    {ThreadType::kResourceEfficient, 0}, {ThreadType::kDefault, -10},
-#else
     {ThreadType::kBackground, 10},       {ThreadType::kUtility, 2},
     {ThreadType::kResourceEfficient, 1}, {ThreadType::kDefault, 0},
-#endif
-
-#if BUILDFLAG(ARKWEB_DFX_TRACING)
-    {ThreadType::kDisplayCritical, -20},  {ThreadType::kRealtimeAudio, -20},
-#else
     {ThreadType::kDisplayCritical, -8},  {ThreadType::kRealtimeAudio, -10},
-#endif
 };
 
 bool CanSetThreadTypeToRealtimeAudio() {

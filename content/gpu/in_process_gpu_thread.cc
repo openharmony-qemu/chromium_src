@@ -17,8 +17,6 @@
 #include "gpu/ipc/service/gpu_init.h"
 #include "media/gpu/buildflags.h"
 
-#include "arkweb/chromium_ext/content/gpu/in_process_gpu_thread_utils.h"
-
 #if BUILDFLAG(USE_VAAPI)
 #include "media/gpu/vaapi/vaapi_wrapper.h"
 #endif
@@ -46,9 +44,6 @@ InProcessGpuThread::InProcessGpuThread(
 
 InProcessGpuThread::~InProcessGpuThread() {
   Stop();
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  InProcessGpuThreadDestroy();
-#endif
 }
 
 void InProcessGpuThread::Init() {
@@ -96,9 +91,6 @@ void InProcessGpuThread::Init() {
   child_thread->Init(base::TimeTicks::Now());
 
   gpu_process_->set_main_thread(child_thread);
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  ResetTryForReportThread();
-#endif
 }
 
 void InProcessGpuThread::CleanUp() {

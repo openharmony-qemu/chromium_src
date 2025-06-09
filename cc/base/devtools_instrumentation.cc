@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "cc/base/devtools_instrumentation.h"
-#include "arkweb/build/features/features.h"
+
 #include <string>
 
 namespace cc {
@@ -102,11 +102,6 @@ ScopedImageDecodeTask::~ScopedImageDecodeTask() {
     case ImageType::kIco:
       histogram_name = "Renderer4.ImageDecodeTaskDurationUs.Ico";
       break;
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-    case ImageType::kHeif:
-      histogram_name = "Renderer4.ImageDecodeTaskDurationUs.Heif";
-      break;
-#endif
     case ImageType::kJpeg:
       histogram_name = "Renderer4.ImageDecodeTaskDurationUs.Jpeg";
       break;

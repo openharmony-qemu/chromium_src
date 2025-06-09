@@ -7,8 +7,6 @@
 
 #include <string>
 
-#include "content/public/browser/web_contents.h"
-
 namespace content {
 class BrowserContext;
 class RenderFrameHost;
@@ -27,10 +25,6 @@ class MimeHandlerViewGuestDelegate {
       delete;
 
   virtual ~MimeHandlerViewGuestDelegate() {}
-
-  // Provides an opportunity to supply a custom view implementation.
-  virtual void OverrideWebContentsCreateParams(
-      content::WebContents::CreateParams* params) {}
 
   // Handles context menu, or returns false if unhandled.
   //

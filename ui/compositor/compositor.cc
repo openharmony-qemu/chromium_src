@@ -12,8 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
-#include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/feature_list.h"
@@ -67,13 +65,10 @@
 #include "ui/gfx/presentation_feedback.h"
 #include "ui/gfx/switches.h"
 #include "ui/gl/gl_switches.h"
-#include "arkweb/build/features/features.h"
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_WIN)
 #include "mojo/public/cpp/bindings/sync_call_restrictions.h"
 #endif
-
-#include "arkweb/chromium_ext/ui/compositor/compositor_utils.h"
 
 namespace ui {
 
@@ -113,7 +108,6 @@ Compositor::Compositor(const viz::FrameSinkId& frame_sink_id,
       frame_sink_id_, this, viz::ReportFirstSurfaceActivation::kNo);
   host_frame_sink_manager->SetFrameSinkDebugLabel(frame_sink_id_, "Compositor");
   root_web_layer_ = cc::Layer::Create();
-  compositor_utils_ = std::make_unique<CompositorUtils>(this);
 
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
 
@@ -343,12 +337,6 @@ void Compositor::SetLayerTreeFrameSink(
     mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private) {
   layer_tree_frame_sink_requested_ = false;
   display_private_ = std::move(display_private);
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  compositor_utils_->SetDrawMode(compositor_utils_->drawMode_);
-#endif
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  compositor_utils_->SetNativeInnerWeb(compositor_utils_->isInnerWeb_);
-#endif
   host_->SetLayerTreeFrameSink(std::move(layer_tree_frame_sink));
   // Display properties are reset when the output surface is lost, so update it
   // to match the Compositor's.
@@ -637,6 +625,12 @@ void Compositor::SetMaxVSyncAndVrr(
     display_private_->SetMaxVSyncAndVrr(max_vsync_interval, vrr_state);
   }
 }
+
+#if BUILDFLAG(IS_OHOS)
+void Compositor::SetSurfaceId(uint64_t surface_id) {
+  surface_id_ = surface_id;
+}
+#endif
 
 void Compositor::SetAcceleratedWidget(gfx::AcceleratedWidget widget) {
   // This function should only get called once.
@@ -1033,11 +1027,4 @@ void Compositor::OnSetPreferredRefreshRate(float refresh_rate) {
 }
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-void Compositor::RestoreRenderFit() {
-  if (delegate_) {
-    delegate_->RestoreRenderFit();
-  }
-}
-#endif // ARKWEB_MAXIMIZE_RESIZE
 }  // namespace ui

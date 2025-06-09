@@ -742,6 +742,8 @@ TEST_F(UserAgentUtilsTest, UserAgentMetadata) {
   EXPECT_EQ(metadata.platform, "Solaris");
 #elif BUILDFLAG(IS_FUCHSIA)
   EXPECT_EQ(metadata.platform, "Fuchsia");
+#elif BUILDFLAG(IS_OHOS)
+  EXPECT_EQ(metadata.platform, "OHOS");
 #else
   EXPECT_EQ(metadata.platform, "Unknown");
 #endif

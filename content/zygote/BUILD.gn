@@ -4,9 +4,8 @@
 
 import("//build/config/nacl/config.gni")
 import("//content/public/common/zygote/features.gni")
-import("//arkweb/build/features/features.gni")
 
-if (is_linux || is_chromeos || arkweb_render_process_startup) {
+if (is_linux || is_chromeos) {
   source_set("zygote") {
     sources = [
       "zygote_linux.cc",

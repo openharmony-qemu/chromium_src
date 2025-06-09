@@ -41,20 +41,12 @@ void WebSocketSBExtensionsHandshakeThrottle::MaybeSendExtensionWebRequestData(
   }
 
   if (!isolated_world_origin.IsNull() &&
-      (isolated_world_origin.Protocol() == extensions::kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-       || isolated_world_origin.Protocol() == extensions::kArkwebExtensionScheme
-#endif
-       )) {
+      isolated_world_origin.Protocol() == extensions::kExtensionScheme) {
     extension_web_request_reporter_->SendWebRequestData(
         isolated_world_origin.Host().Utf8().data(), url,
         mojom::WebRequestProtocolType::kWebSocket,
         mojom::WebRequestContactInitiatorType::kContentScript);
-  } else if (creator_origin.Protocol() == extensions::kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-             || creator_origin.Protocol() == extensions::kArkwebExtensionScheme
-#endif
-  ) {
+  } else if (creator_origin.Protocol() == extensions::kExtensionScheme) {
     extension_web_request_reporter_->SendWebRequestData(
         creator_origin.Host().Utf8().data(), url,
         mojom::WebRequestProtocolType::kWebSocket,

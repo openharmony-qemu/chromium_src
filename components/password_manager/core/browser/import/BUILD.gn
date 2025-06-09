@@ -96,7 +96,6 @@ fuzzer_test("csv_reader_fuzzer") {
     ":csv",
     "//base:i18n",
     "//components/autofill/core/common:common",
-    "//cef:libcef_static",
   ]
   seed_corpus = "password_csv_reader_corpus"
   dict = "password_csv_reader_fuzzer.dict"

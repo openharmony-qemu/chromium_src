@@ -55,7 +55,7 @@ bool GetUintFromSwitch(const base::CommandLine* command_line,
 namespace content {
 
 bool ShouldEnableAndroidSurfaceControl(const base::CommandLine& cmd_line) {
-#if !BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#if !BUILDFLAG(IS_ANDROID)
   return false;
 #else
   if (viz::PreferRGB565ResourcesForDisplay())

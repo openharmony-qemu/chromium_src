@@ -17,7 +17,6 @@
 #include "gpu/ipc/service/gpu_ipc_service_export.h"
 #include "ui/gfx/gpu_extra_info.h"
 
-#include "arkweb/build/features/features.h"
 namespace gfx {
 #if BUILDFLAG(IS_WIN)
 class D3DSharedFence;
@@ -31,16 +30,10 @@ class SharedContextState;
 struct Mailbox;
 class GpuChannel;
 class GpuChannelSharedImageInterface;
-class SharedImageStubExt;
 class SharedImageFactory;
 
 class GPU_IPC_SERVICE_EXPORT SharedImageStub : public MemoryTracker {
  public:
-  friend class SharedImageStubExt;
-  virtual gpu::SharedImageStubExt* AsSharedImageStubExt() {
-    return nullptr;
-  }
-
   ~SharedImageStub() override;
 
   using SharedImageDestructionCallback =

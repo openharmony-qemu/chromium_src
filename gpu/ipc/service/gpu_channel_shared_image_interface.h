@@ -32,21 +32,14 @@ class WaitableEvent;
 
 namespace gpu {
 class Scheduler;
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_CODEC)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 class StreamTextureSharedImageInterface;
 class RefCountedLock;
 #endif
-class GpuChannelSharedImageInterfaceExt;
 
 class GPU_IPC_SERVICE_EXPORT GpuChannelSharedImageInterface
     : public SharedImageInterface {
  public:
-  friend class GpuChannelSharedImageInterfaceExt;
-
-  virtual gpu::GpuChannelSharedImageInterfaceExt* AsGpuChannelSharedImageInterfaceExt() {
-    return nullptr;
-  }
-
   explicit GpuChannelSharedImageInterface(
       base::WeakPtr<SharedImageStub> shared_image_stub);
 
@@ -129,6 +122,13 @@ class GPU_IPC_SERVICE_EXPORT GpuChannelSharedImageInterface
       scoped_refptr<gpu::DXGISharedHandleState> dxgi_shared_handle_state,
       size_t array_slice,
       const bool is_thread_safe);
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  scoped_refptr<ClientSharedImage> CreateSharedImageForOhosVideo(
+      const gfx::Size& size,
+      const gfx::ColorSpace& color_space,
+      scoped_refptr<StreamTextureSharedImageInterface> image);
 #endif
 
   SequenceId sequence() { return sequence_; }

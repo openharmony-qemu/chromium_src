@@ -43,7 +43,6 @@
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 #include "ui/gfx/overlay_transform.h"
-#include "arkweb/build/features/features.h"
 
 namespace cc {
 static constexpr int kInvalidSourceFrameNumber = -1;
@@ -105,10 +104,6 @@ struct CC_EXPORT CommitState {
   int hud_layer_id = Layer::INVALID_ID;
   int source_frame_number = 0;
   LayerSelection selection;
-
-#if BUILDFLAG(ARKWEB_MENU)
-  gfx::Rect clipped_selection_bounds;
-#endif
   LayerTreeDebugState debug_state;
   OverscrollBehavior overscroll_behavior;
   SkColor4f background_color = SkColors::kWhite;

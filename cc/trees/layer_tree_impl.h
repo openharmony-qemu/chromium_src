@@ -40,7 +40,6 @@
 #include "cc/trees/swap_promise.h"
 #include "components/viz/common/frame_sinks/begin_frame_args.h"
 #include "ui/gfx/overlay_transform.h"
-#include "arkweb/build/features/features.h"
 
 namespace base {
 namespace trace_event {
@@ -73,7 +72,6 @@ class TileManager;
 class UIResourceRequest;
 class VideoFrameControllerClient;
 struct PendingPageScaleAnimation;
-class LayerTreeImplUtils;
 
 using UIResourceRequestQueue = std::vector<UIResourceRequest>;
 using SyncedScale = SyncedProperty<ScaleGroup>;
@@ -111,7 +109,6 @@ class LayerTreeLifecycle {
 
 class CC_EXPORT LayerTreeImpl {
  public:
-  friend class LayerTreeImplUtils;
   // This is the number of times a fixed point has to be hit continuously by a
   // layer to consider it as jittering.
   enum : int { kFixedPointHitsThreshold = 3 };
@@ -642,9 +639,6 @@ class CC_EXPORT LayerTreeImpl {
 
   LayerImpl* FindLayerThatIsHitByPoint(const gfx::PointF& screen_space_point);
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  LayerImpl* FindLayerThatIsHitByPointNative(const gfx::PointF& screen_space_point);
-#endif
   LayerImpl* FindLayerThatIsHitByPointInTouchHandlerRegion(
       const gfx::PointF& screen_space_point);
 
@@ -827,10 +821,6 @@ class CC_EXPORT LayerTreeImpl {
   void SetViewTransitionContentRect(const viz::ViewTransitionElementResourceId&,
                                     const gfx::RectF&);
 
-  LayerTreeImplUtils* layer_tree_impl_utils() {
-    return utils_.get();
-  }
-
  protected:
   float ClampPageScaleFactorToLimits(float page_scale_factor) const;
   void PushPageScaleFactorAndLimits(const float* page_scale_factor,
@@ -1009,7 +999,6 @@ class CC_EXPORT LayerTreeImpl {
   // See `CommitState::primary_main_frame_item_sequence_number`.
   int64_t primary_main_frame_item_sequence_number_ =
       RenderFrameMetadata::kInvalidItemSequenceNumber;
-  std::unique_ptr<LayerTreeImplUtils> utils_;
 };
 
 }  // namespace cc

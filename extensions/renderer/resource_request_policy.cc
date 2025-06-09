@@ -79,11 +79,7 @@ bool ResourceRequestPolicy::CanRequestResource(
     const url::Origin* initiator_origin) {
   // `target_url` is expected to have a chrome-extension scheme.
   // `upstream_url` could be empty, have a chrome-extension scheme, or other.
-  CHECK(target_url.SchemeIs(kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-        || target_url.SchemeIs(kArkwebExtensionScheme)
-#endif
-  );
+  CHECK(target_url.SchemeIs(kExtensionScheme));
 
   GURL frame_url = frame->GetDocument().Url();
   url::Origin frame_origin = frame->GetDocument().GetSecurityOrigin();
@@ -140,11 +136,7 @@ bool ResourceRequestPolicy::CanRequestResource(
 
 #if BUILDFLAG(ENABLE_PDF)
   // Handle specific cases for the PDF viewer.
-  if ((extension_origin.scheme() == kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-       || extension_origin.scheme() == kArkwebExtensionScheme
-#endif
-       ) &&
+  if (extension_origin.scheme() == kExtensionScheme &&
       extension_origin.host() == extension_misc::kPdfExtensionId) {
     // For the PDF viewer, `page_origin` doesn't match the `extension_origin`,
     // but the PDF extension frame should still be able to request resources

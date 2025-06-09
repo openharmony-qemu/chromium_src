@@ -69,24 +69,13 @@ class FramelessMediaInterfaceProxy final
       const base::UnguessableToken& overlay_plane_id,
       mojo::PendingReceiver<media::mojom::Renderer> receiver) final;
 #endif
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+#if BUILDFLAG(IS_ANDROID)
   void CreateMediaPlayerRenderer(
       mojo::PendingRemote<media::mojom::MediaPlayerRendererClientExtension>
           client_extension_remote,
       mojo::PendingReceiver<media::mojom::Renderer> receiver,
       mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
           renderer_extension_receiver) final;
-#endif //  BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  void CreateCustomMediaPlayerRenderer(
-      mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
-          client_extension_remote,
-      mojo::PendingReceiver<media::mojom::Renderer> receiver,
-      mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
-          renderer_extension_receiver,
-      int player_id) final;
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
-#if BUILDFLAG(IS_ANDROID)
   void CreateFlingingRenderer(
       const std::string& presentation_id,
       mojo::PendingRemote<media::mojom::FlingingRendererClientExtension>

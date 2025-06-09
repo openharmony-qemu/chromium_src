@@ -74,7 +74,7 @@ static sk_sp<SkFontMgr> fontmgr_factory() {
 #elif BUILDFLAG(IS_WIN)
   return SkFontMgr_New_DirectWrite();
 #elif BUILDFLAG(IS_OHOS)
-  return SkFontMgr_New_OHOS(nullptr);
+  return SkFontMgr_New_OHOS();
 #elif defined(SK_FONTMGR_FREETYPE_EMPTY_AVAILABLE)
   return SkFontMgr_New_Custom_Empty();
 #else

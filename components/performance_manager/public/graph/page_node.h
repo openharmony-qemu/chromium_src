@@ -18,7 +18,6 @@
 #include "components/performance_manager/public/resource_attribution/page_context.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
 #include "third_party/blink/public/common/permissions/permission_utils.h"
-#include "arkweb/build/features/features.h"
 
 class GURL;
 
@@ -149,10 +148,6 @@ class PageNode : public TypedNode<PageNode> {
   // Returns true if this page is off the record, false otherwise.
   // A tab is off the record when it is open in incognito or guest mode.
   virtual bool IsOffTheRecord() const = 0;
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-  virtual bool IsMediaPlaying() const = 0;
-#endif
 
   // Returns the page's loading state.
   virtual LoadingState GetLoadingState() const = 0;
@@ -301,11 +296,6 @@ class PageNodeObserver : public base::CheckedObserver {
   // Invoked when the HasPictureInPicture property changes.
   virtual void OnHasPictureInPictureChanged(const PageNode* page_node) = 0;
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-  virtual void OnIsMediaPlayingChanged(const PageNode* page_node) {}
-  virtual void OnDecrementAudioNum(const PageNode* page_node) {}
-#endif
-
   // Invoked when the GetLoadingState property changes.
   virtual void OnLoadingStateChanged(const PageNode* page_node,
                                      PageNode::LoadingState previous_state) = 0;
@@ -382,11 +372,6 @@ class PageNode::ObserverDefaultImpl : public PageNodeObserver {
                      PageType previous_type) override {}
   void OnIsFocusedChanged(const PageNode* page_node) override {}
   void OnIsVisibleChanged(const PageNode* page_node) override {}
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-  void OnIsMediaPlayingChanged(const PageNode* page_node) override {}
-
-  void OnDecrementAudioNum(const PageNode* page_node) override {}
-#endif
   void OnIsAudibleChanged(const PageNode* page_node) override {}
   void OnHasPictureInPictureChanged(const PageNode* page_node) override {}
   void OnLoadingStateChanged(const PageNode* page_node,

@@ -35,10 +35,6 @@
 #include "services/network/tpcd/metadata/manager.h"
 #include "url/gurl.h"
 
-#if BUILDFLAG(ARKWEB_COOKIE)
-#include "arkweb/chromium_ext/services/network/cookie_manager_for_include.cc"
-#endif
-
 using CookieDeletionInfo = net::CookieDeletionInfo;
 using CookieDeleteSessionControl = net::CookieDeletionInfo::SessionControl;
 
@@ -349,9 +345,14 @@ void CookieManager::AllowFileSchemeCookies(
     AllowFileSchemeCookiesCallback callback) {
   OnSettingsWillChange();
 
-  if (!allow)
-    return;
-  cookie_store_->AddCookieableSchemes({url::kFileScheme}, std::move(callback));
+  std::vector<std::string> cookieable_schemes(
+      net::CookieMonster::kDefaultCookieableSchemes,
+      net::CookieMonster::kDefaultCookieableSchemes +
+          net::CookieMonster::kDefaultCookieableSchemesCount);
+  if (allow) {
+    cookieable_schemes.push_back(url::kFileScheme);
+  }
+  cookie_store_->SetCookieableSchemes(cookieable_schemes, std::move(callback));
 }
 
 void CookieManager::SetForceKeepSessionState() {

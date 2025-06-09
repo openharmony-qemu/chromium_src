@@ -25,6 +25,11 @@
 #include "ui/native_theme/native_theme_features.h"
 #include "ui/native_theme/native_theme_utils.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/task_scheduler/task_runner_ohos.h"
+#include "ohos/adapter/native_theme/native_theme_adapter.h"
+#endif  // BUILDFLAG(IS_OHOS)
+
 namespace ui {
 
 namespace {
@@ -146,7 +151,6 @@ void NativeTheme::NotifyOnNativeThemeUpdated() {
   color_provider_manager.ResetColorProviderCache();
   native_theme_observers_.Notify(&NativeThemeObserver::OnNativeThemeUpdated,
                                  this);
-  color_provider_manager.AfterNativeThemeUpdated();
 
   RecordNumColorProvidersInitializedDuringOnNativeThemeUpdated(
       color_provider_manager.num_providers_initialized() -
@@ -211,7 +215,38 @@ NativeTheme::NativeTheme(bool should_use_dark_colors,
 
 NativeTheme::~NativeTheme() = default;
 
+#if BUILDFLAG(IS_OHOS)
+void ThemeSourceEventCallbackImpl::OnThemeSourceChanged(const ohos::adapter::native_theme
+  ::OhosColorMode theme_source_ohos) {
+  auto task = base::BindOnce(
+      [](const ohos::adapter::native_theme::OhosColorMode theme_source_ohos) {
+        ui::NativeTheme::ThemeSource theme_source;
+        ui::NativeTheme::PreferredColorScheme preferred_color_scheme;
+        if (theme_source_ohos == ohos::adapter::native_theme::OhosColorMode::COLOR_MODE_DARK) {
+            theme_source = ui::NativeTheme::ThemeSource::kForcedDark;
+            preferred_color_scheme = ui::NativeTheme::PreferredColorScheme::kDark;
+        } else if (theme_source_ohos == ohos::adapter::native_theme::OhosColorMode::COLOR_MODE_LIGHT) {
+          theme_source = ui::NativeTheme::ThemeSource::kForcedLight;
+          preferred_color_scheme = ui::NativeTheme::PreferredColorScheme::kLight;
+        } else {
+          theme_source = ui::NativeTheme::ThemeSource::kSystem;
+          preferred_color_scheme = ui::NativeTheme::PreferredColorScheme::kMaxValue;
+        }
+        ui::NativeTheme::GetInstanceForNativeUi()->set_preferred_color_scheme(preferred_color_scheme);
+        ui::NativeTheme::GetInstanceForWeb()->set_preferred_color_scheme(preferred_color_scheme);
+        ui::NativeTheme::GetInstanceForNativeUi()->set_theme_source(theme_source);
+        ui::NativeTheme::GetInstanceForWeb()->set_theme_source(theme_source);
+      },
+      theme_source_ohos);
+  base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(FROM_HERE, std::move(task));
+}
+#endif  // BUILDFLAG(IS_OHOS)
+
 bool NativeTheme::ShouldUseDarkColors() const {
+#if BUILDFLAG(IS_OHOS)
+  if (theme_source() == ThemeSource::kForcedLight) return false;
+  if (theme_source() == ThemeSource::kForcedDark) return true;
+#endif  // BUILDFLAG(IS_OHOS)
   return should_use_dark_colors_;
 }
 
@@ -287,13 +322,6 @@ bool NativeTheme::IsForcedDarkMode() {
       base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kForceDarkMode);
   return kIsForcedDarkMode;
-}
-
-bool NativeTheme::IsForcedLightMode() {
-  static bool kIsForcedLightMode =
-      base::CommandLine::ForCurrentProcess()->HasSwitch(
-          "force-light-mode");
-  return kIsForcedLightMode;
 }
 
 bool NativeTheme::IsForcedHighContrast() {

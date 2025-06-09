@@ -23,7 +23,6 @@
 #include "media/audio/test_audio_thread.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "arkweb/build/features/features.h"
 
 using ::testing::_;
 using ::testing::AllOf;
@@ -169,11 +168,6 @@ class MockAudioManager : public AudioManagerBase {
                void(media::AudioDeviceNames* device_name));
   MOCK_METHOD2(GetPreferredOutputStreamParameters, AudioParameters(
       const std::string& device_id, const AudioParameters& params));
-
-#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_WEBRTC)
-  AudioParameters GetPreferredInputStreamParameters(
-      const std::string& input_device_id) override {}
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
 
  private:
   media::FakeAudioLogFactory fake_audio_log_factory_;

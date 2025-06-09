@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
@@ -45,9 +44,6 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rounded_corners_f.h"
 
-#include "arkweb/chromium_ext/cc/layer/layer_ext.h"
-#include "arkweb/chromium_ext/cc/layer/layer_utils.h"
-
 namespace viz {
 class CopyOutputRequest;
 }
@@ -59,8 +55,6 @@ class LayerTreeHost;
 class LayerTreeHostCommon;
 class LayerTreeImpl;
 class PictureLayer;
-class LayerExt;
-class LayerUtils;
 
 struct CommitState;
 struct ThreadUnsafeCommitState;
@@ -93,8 +87,7 @@ struct CC_EXPORT LayerDebugInfo {
 // parent (or none at the root). Layers within the tree, other than the root
 // layer, are kept alive by that tree relationship, with refpointer ownership
 // from parents to children.
-class CC_EXPORT Layer : public LayerExt,
-                        public base::RefCounted<Layer>,
+class CC_EXPORT Layer : public base::RefCounted<Layer>,
                         public ProtectedSequenceSynchronizer {
  public:
   // An invalid layer id, as all layer ids are positive.
@@ -674,6 +667,7 @@ class CC_EXPORT Layer : public LayerExt,
   bool may_contain_video() const {
     return GetBitFlag(kMayContainVideoFlagMask);
   }
+
   // Stable identifier for clients. See comment in cc/paint/element_id.h.
   void SetElementId(ElementId id);
   ElementId element_id() const { return inputs_.Read(*this).element_id; }
@@ -863,14 +857,9 @@ class CC_EXPORT Layer : public LayerExt,
   // surface, returns the ID of that resource.
   virtual viz::ViewTransitionElementResourceId ViewTransitionResourceId() const;
 
-  LayerUtils* layer_utils() {
-    return layer_utils_.get();
-  }
-
  protected:
   friend class LayerImpl;
   friend class TreeSynchronizer;
-  friend class LayerUtils;
 
   Layer();
   ~Layer() override;
@@ -1151,7 +1140,6 @@ class CC_EXPORT Layer : public LayerExt,
   // because it's used in base::AutoReset.
   ProtectedSequenceReadable<bool> ignore_set_needs_commit_for_test_;
 
-
   enum : uint8_t {
     kDrawsContentFlagMask = 1 << 0,
     kShouldCheckBackfaceVisibilityFlagMask = 1 << 1,
@@ -1207,8 +1195,6 @@ class CC_EXPORT Layer : public LayerExt,
 
   static constexpr gfx::Transform kIdentityTransform{};
   static constexpr gfx::RoundedCornersF kNoRoundedCornersF{};
-
-  std::unique_ptr<LayerUtils> layer_utils_;
 };
 
 }  // namespace cc

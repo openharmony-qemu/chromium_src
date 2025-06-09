@@ -45,11 +45,9 @@ struct KeycodeConverterData {
   int native_keycode[kNativeColumns];
 };
 
-#define DOM_CODE(usb, evdev, xkb, win, mac, code, id) \
-  {                                                         \
-    usb, code, #id, {                                       \
-      evdev, xkb, win, mac                                  \
-    }                                                       \
+#define DOM_CODE(usb, evdev, xkb, win, mac, ohos, code, id) \
+  {                                                   \
+    usb, code, #id, { evdev, xkb, win, mac, ohos }          \
   }
 #define DOM_CODE_DECLARATION \
   const KeycodeConverterData kKeycodeConverterData[] =

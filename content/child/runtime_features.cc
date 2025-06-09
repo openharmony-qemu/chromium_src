@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
@@ -48,15 +47,9 @@
 #include "ui/gl/gl_switches.h"
 #include "ui/native_theme/native_theme_features.h"
 #include "ui/native_theme/native_theme_utils.h"
-#include "arkweb/build/features/features.h"
-#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
-#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
-#endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/build_info.h"
-#elif BUILDFLAG(ARKWEB_DISPLAY_CUTOUT) && BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #endif
 
 #if BUILDFLAG(ENABLE_VR)
@@ -117,8 +110,6 @@ void SetRuntimeFeatureDefaultsForPlatform(
     // Display Cutout is limited to Android P+.
     WebRuntimeFeatures::EnableDisplayCutoutAPI(true);
   }
-#elif BUILDFLAG(ARKWEB_DISPLAY_CUTOUT) && BUILDFLAG(IS_ARKWEB)
-  WebRuntimeFeatures::EnableDisplayCutoutAPI(true);
 #endif
 
 #if BUILDFLAG(IS_ANDROID)
@@ -503,10 +494,6 @@ void SetRuntimeFeaturesFromCommandLine(const base::CommandLine& command_line) {
        switches::kEnableWebGPUDeveloperFeatures, true},
       {wrf::EnableWebGPUExperimentalFeatures, switches::kEnableUnsafeWebGPU,
        true},
-#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
-      {wrf::EnableNonAdvancedSecurityMode, switches::kDisableNonAdvancedSecurityMode,
-       false},
-#endif
       {wrf::EnableWebAudioBypassOutputBufferingOptOut,
        blink::switches::kWebAudioBypassOutputBufferingOptOut, true},
   };

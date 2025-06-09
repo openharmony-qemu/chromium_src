@@ -9,15 +9,9 @@
 
 namespace extensions::declarative_net_request {
 
-const char* const kAllowedTransformSchemes[ALLOWED_TRANSFORM_SCHEMES_NUMBER] = {
-    url::kHttpScheme,
-    url::kHttpsScheme,
-    url::kFtpScheme,
-    extensions::kExtensionScheme,
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-    extensions::kArkwebExtensionScheme,
-#endif
-};
+const char* const kAllowedTransformSchemes[4] = {
+    url::kHttpScheme, url::kHttpsScheme, url::kFtpScheme,
+    extensions::kExtensionScheme};
 
 const char kErrorRequestMethodDuplicated[] =
     "Rule with id * includes and excludes the same request method.";

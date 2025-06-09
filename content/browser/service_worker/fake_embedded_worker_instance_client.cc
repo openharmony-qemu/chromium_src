@@ -17,7 +17,6 @@
 #include "services/network/public/mojom/url_response_head.mojom.h"
 #include "services/network/test/test_url_loader_client.h"
 #include "third_party/blink/public/mojom/devtools/devtools_agent.mojom.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -83,10 +82,6 @@ class FakeEmbeddedWorkerInstanceClient::LoaderClient final
     std::move(callback).Run();
     // Do not add code after that, the object is deleted.
   }
-
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void OnTransferDataWithSharedMemory(::base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {};
-#endif
 
  private:
   mojo::Receiver<network::mojom::URLLoaderClient> receiver_;

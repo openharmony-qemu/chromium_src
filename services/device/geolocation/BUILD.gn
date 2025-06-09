@@ -5,10 +5,6 @@
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
-import("//arkweb/build/features/features.gni")
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
 
 if (is_android) {
   import("//build/config/android/config.gni")
@@ -73,14 +69,6 @@ source_set("geolocation") {
     "//services/network/public/cpp",
   ]
 
- if (defined(arkweb_geolocation) && arkweb_geolocation) {
-    sources += arkweb_geolocation_sources
-    import("//build/config/ohos/config.gni")
-    include_dirs = ohos_src_includes
-    deps += [
-      "//ohos_glue:ohos_adapter_glue_source",
-    ]
-  }
   if (is_android) {
     sources += [
       "location_api_adapter_android.cc",
@@ -112,6 +100,16 @@ source_set("geolocation") {
       "win/location_provider_winrt.h",
     ]
     deps += [ "//services/device/public/cpp:device_features" ]
+  }
+
+  if (is_ohos){
+    sources += [
+      "ohos/location_provider_ohos.cc",
+      "ohos/location_provider_ohos.h",
+    ]
+    deps += [
+        "//ohos/adapter:adapter",
+    ]
   }
 
   # Platform-specific WifiDataProvider implementations.

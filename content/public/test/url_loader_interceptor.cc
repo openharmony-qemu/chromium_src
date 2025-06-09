@@ -36,7 +36,6 @@
 #include "services/network/public/cpp/url_loader_factory_builder.h"
 #include "services/network/public/mojom/early_hints.mojom.h"
 #include "services/network/public/mojom/url_loader.mojom.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -182,10 +181,6 @@ class URLLoaderClientInterceptor : public network::mojom::URLLoaderClient {
       completion_status_callback_.Run(request_url_, status);
     original_client_->OnComplete(status);
   }
-
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void OnTransferDataWithSharedMemory(::base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {};
-#endif
 
  private:
   mojo::Remote<network::mojom::URLLoaderClient> original_client_;

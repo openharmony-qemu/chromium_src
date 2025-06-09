@@ -15,10 +15,6 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
-
 source_set("base") {
   # Do not expand the visibility here without double-checking with OWNERS, this
   # is a roll-up target which is part of the //media component. Most other DEPs
@@ -455,10 +451,6 @@ source_set("base") {
     deps += [ "//third_party/libaom" ]
   }
 
-  if (enable_arkweb) {
-    deps += [ "//arkweb//build/features" ]
-  }
-
   if (is_linux && !is_castos) {
     sources += [ "user_input_monitor_linux.cc" ]
   } else if (is_mac) {
@@ -494,10 +486,6 @@ source_set("base") {
     ]
   }
 
-  if (arkweb_same_layer) {
-    sources += arkweb_media_base_sources
-  }
-
   if (is_android) {
     sources += [ "demuxer_memory_limit_android.cc" ]
   } else if (is_castos) {
@@ -516,11 +504,6 @@ source_set("base") {
       "media_drm_storage.cc",
       "media_drm_storage.h",
     ]
-  }
-
-  if (defined(arkweb_custom_video_player) && arkweb_custom_video_player) {
-    import("//arkweb/chromium_ext/media/base/arkweb_media_base.gni") 
-    sources += arkweb_media_base_custom_sources
   }
 }
 

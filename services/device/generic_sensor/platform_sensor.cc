@@ -278,10 +278,6 @@ bool PlatformSensor::IsSignificantlyDifferent(const SensorReading& lhs,
     case mojom::SensorType::ABSOLUTE_ORIENTATION_QUATERNION:
     case mojom::SensorType::RELATIVE_ORIENTATION_QUATERNION:
     case mojom::SensorType::MAGNETOMETER:
-#if BUILDFLAG(ARKWEB_SENSOR)
-    case mojom::SensorType::PRESSURE:
-    case mojom::SensorType::PROXIMITY:
-#endif
       return !base::ranges::equal(lhs.raw.values, rhs.raw.values);
   }
 }

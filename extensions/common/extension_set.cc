@@ -17,12 +17,6 @@ namespace extensions {
 // TODO(solomonkinard): Take GUID-based dynamic URLs in account. Also,
 // disambiguate ExtensionHost.
 ExtensionId ExtensionSet::GetExtensionIdByURL(const GURL& url) {
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  if (url.SchemeIs(kArkwebExtensionScheme)) {
-    return url.host();
-  }
-#endif
-
   if (url.SchemeIs(kExtensionScheme))
     return url.host();
 
@@ -30,12 +24,6 @@ ExtensionId ExtensionSet::GetExtensionIdByURL(const GURL& url) {
   // blob: and filesystem: URLs, which won't match the extension scheme check
   // above.
   url::Origin origin = url::Origin::Create(url);
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  if (origin.scheme() == kArkwebExtensionScheme) {
-    return origin.host();
-  }
-#endif
-
   if (origin.scheme() == kExtensionScheme)
     return origin.host();
 
@@ -175,12 +163,6 @@ ExtensionIdSet ExtensionSet::GetIDs() const {
 }
 
 bool ExtensionSet::ExtensionBindingsAllowed(const GURL& url) const {
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  if (url.SchemeIs(kArkwebExtensionScheme)) {
-    return true;
-  }
-#endif
-
   if (url.SchemeIs(kExtensionScheme))
     return true;
 

@@ -111,9 +111,6 @@ if we want to translate this file.
     <!-- Pseudolocales -->
     <output filename="plus_addresses_strings_ar-XB.pak" type="data_package" lang="ar-XB" />
     <output filename="plus_addresses_strings_en-XA.pak" type="data_package" lang="en-XA" />
-
-    <output filename="plus_addresses_strings_bo-CN.pak" type="data_package" lang="pa" />
-    <output filename="plus_addresses_strings_ug.pak" type="data_package" lang="pl" />
     <!-- On Android, output some strings into Android's xml string format.
          These strings are tagged with formatter_data="android_java" -->
     <if expr="is_android">

@@ -137,10 +137,6 @@ class ChildThreadImpl : public IPC::Listener, virtual public ChildThread {
   // process (or this thread object, in single-process mode).
   void DisconnectChildProcessHost();
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t roleAdapter);
-#endif
-
   virtual void BindServiceInterface(mojo::GenericPendingReceiver receiver);
 
   virtual void OnBindReceiver(mojo::GenericPendingReceiver receiver);
@@ -177,10 +173,6 @@ class ChildThreadImpl : public IPC::Listener, virtual public ChildThread {
   // Received memory pressure signal sent by the browser process.
   virtual void OnMemoryPressureFromBrowserReceived(
       base::MemoryPressureListener::MemoryPressureLevel level);
-#endif
-
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-  void SetWebkitInited();
 #endif
 
  private:
@@ -260,9 +252,7 @@ class ChildThreadImpl : public IPC::Listener, virtual public ChildThread {
   // ChildThreadImpl state which lives on the IO thread, including its
   // implementation of the mojom ChildProcess interface.
   scoped_refptr<IOThreadState> io_thread_state_;
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-  bool webkit_inited_ = false;
-#endif
+
   base::WeakPtrFactory<ChildThreadImpl> weak_factory_{this};
 };
 

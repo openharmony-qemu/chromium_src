@@ -22,10 +22,8 @@
 #include "partition_alloc/partition_alloc_base/posix/eintr_wrapper.h"
 #include "partition_alloc/partition_alloc_check.h"
 #include "partition_alloc/thread_isolation/thread_isolation.h"
-#include "arkweb/build/features/features.h"
 
-
-#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_PER_DFX)
+#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX) || PA_BUILDFLAG(IS_OHOS)
 #include <sys/prctl.h>
 #endif
 
@@ -39,7 +37,7 @@
 
 namespace partition_alloc::internal {
 
-#if defined(LINUX_NAME_REGION) || BUILDFLAG(ARKWEB_PER_DFX)
+#if defined(LINUX_NAME_REGION)
 void NameRegion(void* start, size_t length, PageTag page_tag);
 #endif  // defined(LINUX_NAME_REGION)
 
@@ -95,7 +93,7 @@ uintptr_t SystemAllocPagesInternal(uintptr_t hint,
     ret = nullptr;
   }
 
-#if defined(LINUX_NAME_REGION) || BUILDFLAG(ARKWEB_PER_DFX)
+#if defined(LINUX_NAME_REGION)
   if (ret) {
     NameRegion(ret, length, page_tag);
   }

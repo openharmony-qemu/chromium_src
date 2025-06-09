@@ -15,8 +15,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
-#include "build/build_config.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/containers/lru_cache.h"
@@ -77,10 +75,6 @@
 #include "components/viz/common/view_transition_element_resource_id.h"
 #include "ui/gfx/geometry/rect.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 namespace gfx {
 class PointF;
 }
@@ -140,10 +134,6 @@ class LayerTreeHostImplClient {
   virtual void SetNeedsPrepareTilesOnImplThread() = 0;
   virtual void SetVideoNeedsBeginFrames(bool needs_begin_frames) = 0;
   virtual void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) = 0;
-#if BUILDFLAG(ARKWEB_WEBGL)
-  virtual void SetDeferInvalidationForFastMainFrameFromImpl(
-                   bool defer_invalidation_for_fast_main_frame) = 0;
-#endif
   virtual bool IsInsideDraw() = 0;
   virtual void RenewTreePriority() = 0;
   virtual void PostDelayedAnimationTaskOnImplThread(base::OnceClosure task,
@@ -203,15 +193,6 @@ class LayerTreeHostImplClient {
   virtual void SetWaitingForScrollEvent(bool waiting_for_scroll_event) = 0;
 
   virtual size_t CommitDurationSampleCountForTesting() const = 0;
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  virtual void OnLayerRectUpdate(int id, const gfx::Rect& rect) {}
-
-  virtual void OnLayerRectVisibilityChange(int id, bool visibility) {}
-#endif
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  virtual void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {}
-#endif // ARKWEB_VIDEO_ASSISTANT
 
  protected:
   virtual ~LayerTreeHostImplClient() = default;
@@ -604,9 +585,6 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   void SetExternalTilePriorityConstraints(
       const gfx::Rect& viewport_rect,
       const gfx::Transform& transform) override;
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  void SetDrawRectState(bool isNeedDrawRect) override;
-#endif
   std::optional<viz::HitTestRegionList> BuildHitTestData() override;
   void DidLoseLayerTreeFrameSink() override;
   void DidReceiveCompositorFrameAck() override;
@@ -716,11 +694,6 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   }
   virtual void CreatePendingTree();
   virtual void ActivateSyncTree();
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  virtual void HandleScrollUpdateForInternalBeginFrame(
-      const viz::BeginFrameArgs& args);
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   // Shortcuts to layers/nodes on the active tree.
   ScrollNode* InnerViewportScrollNode() const;
@@ -966,19 +939,6 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
       const viz::ViewTransitionElementResourceId& id,
       const gfx::RectF& rect);
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void OnLayerRectUpdate(int id, const gfx::Rect& rect);
-
-  void OnLayerRectVisibilityChange(int id, bool visibility);
-#endif
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
-#endif // ARKWEB_VIDEO_ASSISTANT
-
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  void SetupScrollBy() override;
-#endif
-
  protected:
   LayerTreeHostImpl(
       const LayerTreeSettings& settings,
@@ -1137,9 +1097,6 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 
   const LayerTreeSettings settings_;
   const bool use_layer_context_for_display_;
-#if BUILDFLAG(IS_ARKWEB)
-  bool is_ohos_pc_ui_setting_ = false;
-#endif
 
   // This is set to true only if:
   //  . The compositor is running single-threaded (i.e. there is no separate
@@ -1413,10 +1370,6 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   // Last drawn frame's BeginFrameArgs, used to check whether the active tree
   // was re-used.
   viz::BeginFrameArgs last_draw_active_tree_begin_frame_args_;
-
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  bool isNeedDrawRect_ = false;
-#endif
 
   // Must be the last member to ensure this is destroyed first in the
   // destruction order and invalidates all weak pointers.

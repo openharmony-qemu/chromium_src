@@ -10,7 +10,6 @@
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "chromeos/dbus/power/power_manager_client.h"
-#include "absl/types/optional.h"
 
 class PrefRegistrySimple;
 

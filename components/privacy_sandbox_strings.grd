@@ -105,8 +105,7 @@
     <!-- Pseudolocales -->
     <output filename="privacy_sandbox_strings_ar-XB.pak" type="data_package" lang="ar-XB" />
     <output filename="privacy_sandbox_strings_en-XA.pak" type="data_package" lang="en-XA" />
-    <output filename="privacy_sandbox_strings_bo-CN.pak" type="data_package" lang="bo-CN" />
-    <output filename="privacy_sandbox_strings_ug.pak" type="data_package" lang="ug" />
+
     <!-- On Android, output some strings into Android's xml string format.
          These strings are tagged with formatter_data="android_java" -->
     <if expr="is_android">
@@ -279,8 +278,6 @@
     <file path="strings/privacy_sandbox_strings_zh-HK.xtb" lang="zh-HK" />
     <file path="strings/privacy_sandbox_strings_zh-TW.xtb" lang="zh-TW" />
     <file path="strings/privacy_sandbox_strings_zu.xtb" lang="zu" />
-    <file path="strings/privacy_sandbox_strings_bo-CN.xtb" lang="bo-CN" />
-    <file path="strings/privacy_sandbox_strings_ug.xtb" lang="ug" />
   </translations>
   <release seq="1">
     <messages fallback_to_english="true">

@@ -165,7 +165,7 @@ if (is_ohos) {
   shared_library("content_shell_web") {
     testonly = true
     sources = [
-      "//arkweb/chromium_ext/content/shell/app/shell_main_ohos.cc",
+      "app/shell_main_ohos.cc",
     ]
     defines = []
 
@@ -937,6 +937,7 @@ if (is_mac) {
       # Specify a sensible install_name for static builds. The library is
       # dlopen()ed so this is not used to resolve the module.
       ldflags = [ "-Wl,-install_name,@executable_path/../Frameworks/$output_name.framework/$output_name" ]
+      deps += [ "//base/test:test_trace_processor_bundle_data" ]
     } else {
       # Both the main :content_shell and :content_shell_helper_app executables
       # need to link the framework. Because they are at different directory

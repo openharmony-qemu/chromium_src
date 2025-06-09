@@ -47,10 +47,6 @@
 #include "third_party/blink/public/common/loader/loader_constants.h"
 #include "third_party/blink/public/mojom/frame/frame_owner_properties.mojom.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 namespace content {
 
 namespace {
@@ -990,12 +986,7 @@ void FrameTree::NodeLoadingStateChanged(
                                          LoadingState::NONE);
   delegate_->LoadingStateChanged(new_frame_tree_loading_state);
   if (previous_frame_tree_loading_state == LoadingState::NONE) {
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-    delegate_->DidStartLoading(&node, new_frame_tree_loading_state ==
-                                          LoadingState::LOADING_UI_REQUESTED);
-#else
     delegate_->DidStartLoading(&node);
-#endif
   } else if (new_frame_tree_loading_state == LoadingState::NONE) {
     delegate_->DidStopLoading();
   }

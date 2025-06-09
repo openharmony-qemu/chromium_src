@@ -38,9 +38,6 @@
 #include "base/strings/string_util.h"  // For EqualsCaseInsensitiveASCII.
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/clock.h"
-#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
-#include "base/trace_event/trace_event.h"
-#endif
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/values.h"
 #include "net/base/auth.h"
@@ -65,16 +62,6 @@
 #include "net/log/net_log_event_type.h"
 #include "net/ssl/ssl_cert_request_info.h"
 #include "net/ssl/ssl_config_service.h"
-#include "arkweb/build/features/features.h"
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
-#include "base/logging.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#endif
-#include "arkweb/chromium_ext/net/http/http_cache_transaction_utils.h"
 
 using base::Time;
 using base::TimeTicks;
@@ -190,7 +177,6 @@ HttpCache::Transaction::Transaction(RequestPriority priority, HttpCache* cache)
     : trace_id_(GetNextTraceId(cache)),
       priority_(priority),
       cache_(cache->GetWeakPtr()) {
-  http_transation_utils_ = new HttpTransactionUtils(this);
   static_assert(HttpCache::Transaction::kNumValidationHeaders ==
                     std::size(kValidationHeaders),
                 "invalid number of validation headers");
@@ -216,7 +202,6 @@ HttpCache::Transaction::~Transaction() {
       cache_->RemovePendingTransaction(this);
     }
   }
-  delete http_transation_utils_;
 }
 
 HttpCache::Transaction::Mode HttpCache::Transaction::mode() const {
@@ -264,9 +249,16 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
   // We have to wait until the backend is initialized so we start the SM.
   next_state_ = STATE_GET_BACKEND;
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  if (!update_res_request_info_callback_.is_null() && request_ && preload_info_) {
-    update_res_request_info_callback_.Run(request_->main_url.spec(), preload_info_);
+#if BUILDFLAG(IS_OHOS)
+  if (ohos_prp_preload::PRParallelPreloadMgr::GetInstance().PRParallelPreloadEnabled()) {
+    if (request_->allow_preload_record) {
+      preload_info_ = std::make_shared<ohos_prp_preload::PRRequestInfo>(request_->url,
+          request_->privacy_mode == PRIVACY_MODE_DISABLED);
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
+          request_->main_page.spec(), preload_info_);
+    } else {
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StopMainPage(request_->main_page.spec());
+    }
   }
 #endif
 
@@ -280,13 +272,6 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
 
   return rv;
 }
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-int HttpCache::Transaction::RestartWithSecureDnsOnly(
-    CompletionOnceCallback callback) {
-  return http_transation_utils_->RestartWithSecureDnsOnly(callback);
-}
-#endif
 
 int HttpCache::Transaction::RestartIgnoringLastError(
     CompletionOnceCallback callback) {
@@ -1085,7 +1070,9 @@ int HttpCache::Transaction::DoLoop(int result) {
     read_buf_ = nullptr;  // Release the buffer before invoking the callback.
     std::move(callback_).Run(rv);
   }
-
+#if BUILDFLAG(IS_OHOS)
+  LOG(WARNING) << "next state is " << next_state_ << "error code is " << rv;
+#endif
   return rv;
 }
 
@@ -1214,10 +1201,6 @@ int HttpCache::Transaction::DoOpenOrCreateEntry() {
   cache_pending_ = true;
   net_log_.BeginEvent(NetLogEventType::HTTP_CACHE_OPEN_OR_CREATE_ENTRY);
   first_cache_access_since_ = TimeTicks::Now();
-#if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
-               "requestStart", first_cache_access_since_);
-#endif
   const bool has_opened_or_created_entry = has_opened_or_created_entry_;
   has_opened_or_created_entry_ = true;
   record_entry_open_or_creation_time_ = false;
@@ -1665,10 +1648,6 @@ int HttpCache::Transaction::DoCacheReadResponseComplete(int result) {
 
   // Record the time immediately before the cached response is parsed.
   read_headers_since_ = TimeTicks::Now();
-#if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
-               "responseStart", read_headers_since_);
-#endif
 
   if (result != read_buf_->size() ||
       !HttpCache::ParseResponseInfo(read_buf_->span(), &response_,
@@ -2032,10 +2011,10 @@ int HttpCache::Transaction::DoSuccessfulSendRequest() {
     return ERR_CACHE_AUTH_FAILURE_AFTER_READ;
   }
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#if BUILDFLAG(IS_OHOS)
   if (request_ && request_->allow_preload_record && preload_info_ &&
       !UpdateAndReportCacheability(*new_response->headers)) {
-    http_transation_utils_->UpdateCacheInfo(*new_response);
+    UpdateCacheInfo(*new_response);
   }
 #endif
 
@@ -2135,19 +2114,6 @@ int HttpCache::Transaction::DoUpdateCachedResponse() {
   response_.restricted_prefetch = new_response_->restricted_prefetch;
   response_.ssl_info = new_response_->ssl_info;
   response_.dns_aliases = new_response_->dns_aliases;
-
-#if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
-  if (new_response_->headers->response_code() == HTTP_NOT_MODIFIED) {
-    static bool res = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                          .GetSystemPropertiesInstance()
-                          .GetBoolParameter("web.304CodeCache.enable", true);
-    if (res) {
-      LOG(DEBUG) << "HttpCache::Transaction::DoUpdateCachedResponse set "
-                    "response code: HTTP_NOT_MODIFIED";
-      response_.code_cache_valid = true;
-    }
-  }
-#endif
 
   // If the new response didn't have a vary header, we continue to use the
   // header from the stored response per the effect of headers->Update().
@@ -2549,11 +2515,6 @@ int HttpCache::Transaction::DoCacheReadData() {
     DCHECK(InWriters() || entry_->TransactionInReaders(this));
   }
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
-  TRACE_EVENT1("net", "HttpCache::Transaction::DoCacheReadData",
-               "url", request_ ? request_->url.spec() : "");
-#endif
-
   TRACE_EVENT_INSTANT("net", "HttpCacheTransaction::DoCacheReadData",
                       perfetto::Track(trace_id_), "read_offset", read_offset_,
                       "read_buf_len", read_buf_len_);
@@ -2790,9 +2751,9 @@ int HttpCache::Transaction::BeginCacheValidation() {
   bool skip_validation = (required_validation == VALIDATION_NONE);
   bool needs_stale_while_revalidate_cache_update = false;
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  if (request_ && request_->allow_preload_record && preload_info_ && skip_validation) {
-    http_transation_utils_->UpdateCacheInfo(response_);
+#if BUILDFLAG(IS_OHOS)
+  if (request_->allow_preload_record && preload_info_ != nullptr && skip_validation) {
+    UpdateCacheInfo(response_);
   }
 #endif
 
@@ -4126,5 +4087,35 @@ void HttpCache::Transaction::EndDiskCacheAccessTimeCount(
   }
   last_disk_cache_access_start_time_ = TimeTicks();
 }
+#if BUILDFLAG(IS_OHOS)
+void HttpCache::Transaction::UpdateCacheInfo(const HttpResponseInfo& response) {
+  if (preload_info_ == nullptr) {
+    return;
+  }
+  ohos_prp_preload::PRRequestCacheType cache_type =
+      ohos_prp_preload::PRRequestCacheType::DISABLE_CACHE;
+  int64_t freshness_life_times = 0;
+  base::TimeDelta times = response.headers->
+      GetFreshnessLifetimes(response.response_time).freshness;
+  if (times.is_zero()) {
+    cache_type = ohos_prp_preload::PRRequestCacheType::FORCE_CACHE;
+  } else {
+    DCHECK(times.is_positive());
+    freshness_life_times = (response.response_time + times -
+                            response.headers->GetCurrentAge(response.request_time,
+                                                            response.response_time,
+                                                            response.response_time)).ToInternalValue();
+    cache_type = ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE;
+  }
+ 
+  std::string e_tag;
+  response.headers->EnumerateHeader(nullptr, "etag", &e_tag);
+  
+  std::string last_modified;
+  response.headers->EnumerateHeader(nullptr, "last-modified", &last_modified);
+ 
+  preload_info_->set_cache_info(cache_type, freshness_life_times, e_tag, last_modified);
+}
+#endif
 
 }  // namespace net

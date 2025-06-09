@@ -3,15 +3,11 @@
 // found in the LICENSE file.
 
 #include "components/viz/service/frame_sinks/root_compositor_frame_sink_impl.h"
-#include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
-#include "arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h"
 
 #include <algorithm>
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
-#include "arkweb/chromium_ext/components/viz/service/frame_sinks/root_compositor_frame_sink_impl_ext.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/overloaded.h"
 #include "base/logging.h"
@@ -34,7 +30,6 @@
 #include "services/viz/public/mojom/compositing/layer_context.mojom.h"
 #include "ui/base/ozone_buildflags.h"
 #include "ui/gfx/geometry/skia_conversions.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "components/viz/service/frame_sinks/external_begin_frame_source_android.h"
@@ -44,6 +39,10 @@
 #include "components/viz/service/frame_sinks/external_begin_frame_source_ios.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "components/viz/service/frame_sinks/external_begin_frame_source_ohos.h"
+#endif
+ 
 #if BUILDFLAG(IS_MAC)
 #include "base/feature_list.h"
 #include "components/viz/service/frame_sinks/external_begin_frame_source_mac.h"
@@ -52,10 +51,6 @@
 #if BUILDFLAG(IS_WIN)
 #include "components/viz/service/frame_sinks/external_begin_frame_source_win.h"
 #endif
-
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-#include "arkweb/chromium_ext/components/viz/service/frame_sinks/external_begin_frame_source_ohos.h"
-#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
 namespace viz {
 
@@ -161,10 +156,10 @@ RootCompositorFrameSinkImpl::Create(
     hw_support_for_multiple_refresh_rates = true;
     external_begin_frame_source =
         std::make_unique<ExternalBeginFrameSourceIOS>(restart_id);
-#elif BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PERFORMANCE_JITTER))
+#elif BUILDFLAG(IS_OHOS)
+    hw_support_for_multiple_refresh_rates = true;
     external_begin_frame_source =
-        std::make_unique<ExternalBeginFrameSourceOHOS>(restart_id,
-                                                       frame_sink_manager);
+        std::make_unique<ExternalBeginFrameSourceOHOS>(restart_id, params->surface_id);
 #else
 #if BUILDFLAG(IS_CHROMEOS_ASH)
     hw_support_for_multiple_refresh_rates =
@@ -251,7 +246,7 @@ RootCompositorFrameSinkImpl::Create(
     external_begin_frame_source_mojo->SetDisplay(display.get());
 
   // base::WrapUnique instead of std::make_unique because the ctor is private.
-  auto impl = base::WrapUnique(new RootCompositorFrameSinkImplExt(
+  auto impl = base::WrapUnique(new RootCompositorFrameSinkImpl(
       frame_sink_manager, params->frame_sink_id,
       std::move(params->compositor_frame_sink),
       std::move(params->compositor_frame_sink_client),
@@ -302,7 +297,6 @@ RootCompositorFrameSinkImpl::Create(
 RootCompositorFrameSinkImpl::~RootCompositorFrameSinkImpl() {
   support_->frame_sink_manager()->UnregisterBeginFrameSource(
       begin_frame_source());
-  delete managerImplUtils;
 }
 
 bool RootCompositorFrameSinkImpl::WillEvictSurface(
@@ -657,7 +651,6 @@ RootCompositorFrameSinkImpl::RootCompositorFrameSinkImpl(
       !display_->OutputSurfaceSupportsSetFrameRate();
 #endif
   UpdateFrameIntervalDeciderSettings();
-  managerImplUtils = new FrameSinkManagerImplUtils(frame_sink_manager);
 }
 
 void RootCompositorFrameSinkImpl::UpdateFrameIntervalDeciderSettings() {
@@ -809,14 +802,10 @@ void RootCompositorFrameSinkImpl::DisplayDidCompleteSwapWithSize(
   if (display_client_ && enable_swap_completion_callback_) {
     display_client_->DidCompleteSwapWithSize(pixel_size);
   }
-#elif BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11) || BUILDFLAG(IS_ARKWEB)
+#elif BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)
   if (display_client_ && pixel_size != last_swap_pixel_size_) {
     last_swap_pixel_size_ = pixel_size;
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-    display_client_->DidCompleteSwapWithNewSizeOHOS(last_swap_pixel_size_);
-#else
     display_client_->DidCompleteSwapWithNewSize(last_swap_pixel_size_);
-#endif
   }
 #else  // !BUILDFLAG(IS_ANDROID) && !(BUILDFLAG(IS_LINUX) &&
        // BUILDFLAG(IS_OZONE_X11))
@@ -916,4 +905,5 @@ void RootCompositorFrameSinkImpl::SetMaxVSyncAndVrr(
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
   UpdateFrameIntervalDeciderSettings();
 }
+
 }  // namespace viz

@@ -19,10 +19,6 @@
 #include "net/base/net_export.h"
 #include "net/base/network_handle.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #include "net/base/address_map_linux.h"
 #endif
@@ -33,7 +29,6 @@ class NetworkChangeNotifierFactory;
 struct NetworkInterface;
 class SystemDnsConfigChangeNotifier;
 typedef std::vector<NetworkInterface> NetworkInterfaceList;
-class ArkwebNetworkChangeNotifierExt;
 
 namespace internal {
 #if BUILDFLAG(IS_FUCHSIA)
@@ -48,7 +43,6 @@ class NetworkInterfaceCache;
 // destroyed on the same thread.
 class NET_EXPORT NetworkChangeNotifier {
  public:
-  friend class ArkwebNetworkChangeNotifierExt;
   // This is a superset of the connection types in the NetInfo v3 specification:
   // http://w3c.github.io/netinfo/.
   //
@@ -355,10 +349,6 @@ class NET_EXPORT NetworkChangeNotifier {
   NetworkChangeNotifier(const NetworkChangeNotifier&) = delete;
   NetworkChangeNotifier& operator=(const NetworkChangeNotifier&) = delete;
   virtual ~NetworkChangeNotifier();
-
-  ArkwebNetworkChangeNotifierExt* AsArkwebNetworkChangeNotifierExt() {
-    return nullptr;
-  }
 
   // Returns the factory or nullptr if it is not set.
   static NetworkChangeNotifierFactory* GetFactory();
@@ -669,7 +659,6 @@ class NET_EXPORT NetworkChangeNotifier {
 
   virtual bool IsDefaultNetworkActiveInternal();
 
-
   // Broadcasts a notification to all registered observers.  Note that this
   // happens asynchronously, even for observers on the current thread, even in
   // tests.
@@ -742,6 +731,5 @@ class NET_EXPORT NetworkChangeNotifier {
 };
 
 }  // namespace net
-#include "arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h"
 
 #endif  // NET_BASE_NETWORK_CHANGE_NOTIFIER_H_

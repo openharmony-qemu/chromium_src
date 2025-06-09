@@ -16,10 +16,6 @@
 #include "components/password_manager/core/browser/password_store/password_store.h"
 #include "components/password_manager/core/browser/password_store/password_store_backend.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 namespace base {
 class SequencedTaskRunner;
 }  // namespace base
@@ -85,9 +81,6 @@ class FakePasswordStoreBackend : public PasswordStoreBackend {
                      PasswordChangesOrErrorReply callback) override;
   void UpdateLoginAsync(const PasswordForm& form,
                         PasswordChangesOrErrorReply callback) override;
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-  void UpdateLoginDisplayNameAsync(const PasswordForm& form) override;
-#endif
   void RemoveLoginAsync(const base::Location& location,
                         const PasswordForm& form,
                         PasswordChangesOrErrorReply callback) override;

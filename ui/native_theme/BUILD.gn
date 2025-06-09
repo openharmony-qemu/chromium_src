@@ -4,9 +4,6 @@
 
 import("//build/config/ui.gni")
 import("//testing/test.gni")
-if(is_arkweb){
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
 
 component("features") {
   output_name = "native_theme_features"
@@ -80,9 +77,6 @@ component("native_theme") {
       "native_theme_aura.h",
       "overlay_scrollbar_constants_aura.h",
     ]
-    if (is_arkweb) {
-      sources += arkweb_ui_native_theme_sources
-    }
   }
 
   defines = [ "NATIVE_THEME_IMPLEMENTATION" ]

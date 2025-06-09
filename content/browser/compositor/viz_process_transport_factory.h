@@ -67,10 +67,6 @@ class VizProcessTransportFactory : public ui::ContextFactory,
   scoped_refptr<viz::RasterContextProvider>
   SharedMainThreadRasterContextProvider() override;
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-void SendInternalBeginFrame(const viz::FrameSinkId& id) override;
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
-
   void RemoveCompositor(ui::Compositor* compositor) override;
   gpu::GpuMemoryBufferManager* GetGpuMemoryBufferManager() override;
   cc::TaskGraphRunner* GetTaskGraphRunner() override;

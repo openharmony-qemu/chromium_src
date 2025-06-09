@@ -8,10 +8,6 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
-#if BUILDFLAG(IS_ARKWEB)
-import("//arkweb/chromium_ext/chromium_ext.gni")
-#endif
-
 static_library("skeleton_generator") {
   sources = [
     "spoof_checks/skeleton_generator.cc",
@@ -35,9 +31,6 @@ static_library("url_formatter") {
     "url_formatter.cc",
     "url_formatter.h",
   ]
-  if (is_arkweb) {
-    sources += arkweb_components_url_formatter_contexts_sources
-  }
 
   deps = [
     "//base",
@@ -66,12 +59,6 @@ static_library("url_formatter") {
     # Used in elide_url.cc
     deps += [ "//ui/gfx" ]
   }
-
-  if (is_arkweb_ext) {
-    deps += [ "//third_party/re2" ]
-  }
-
-  #endif
 }
 
 if (is_android) {

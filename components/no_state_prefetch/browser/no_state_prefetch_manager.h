@@ -12,7 +12,6 @@
 #include <set>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/time/clock.h"
@@ -112,14 +111,6 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
       const url::Origin& initiator_origin,
       const gfx::Size& size);
 
-#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  std::unique_ptr<NoStatePrefetchHandle> StartOhPrefetchingFromOmnibox(
-      const GURL& url,
-      content::SessionStorageNamespace* session_storage_namespace,
-      const gfx::Size& size,
-      content::PreloadingAttempt* attempt,
-      const std::string& extra_headers);
-#endif  // ARKWEB_NO_STATE_PREFETCH
   // Adds a NoStatePrefetch that only allows for same origin requests (i.e.,
   // requests that only redirect to the same origin).
   std::unique_ptr<NoStatePrefetchHandle> AddSameOriginSpeculation(
@@ -346,12 +337,7 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
       const std::optional<url::Origin>& initiator_origin,
       const gfx::Rect& bounds,
       content::SessionStorageNamespace* session_storage_namespace,
-      base::WeakPtr<content::PreloadingAttempt> attempt = nullptr
-#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-      ,
-      const std::string& extra_headers = std::string()
-#endif  // ARKWEB_NO_STATE_PREFETCH
-  );
+      base::WeakPtr<content::PreloadingAttempt> attempt = nullptr);
 
   void StartSchedulingPeriodicCleanups();
   void StopSchedulingPeriodicCleanups();
@@ -490,13 +476,6 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
   raw_ptr<const base::TickClock> tick_clock_;
 
   std::vector<std::unique_ptr<NoStatePrefetchManagerObserver>> observers_;
-
-#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  bool MayHitOmniboxUrl(const GURL&,
-                        Origin origin,
-                        base::WeakPtr<content::PreloadingAttempt> attempt);
-  std::set<GURL> oh_prefetch_urls_;
-#endif
 
   base::WeakPtrFactory<NoStatePrefetchManager> weak_factory_{this};
 };

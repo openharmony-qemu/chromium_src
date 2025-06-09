@@ -68,7 +68,7 @@ interface InterfaceFactory {
   CreateCastRenderer(mojo_base.mojom.UnguessableToken overlay_plane_id,
                      pending_receiver<Renderer> renderer);
 
-  [EnableIf=is_android_or_arkweb]
+  [EnableIf=is_android]
   // Creates a MediaPlayerRenderer (MediaPlayerRendererClientFactory).
   // - |renderer_extension| is bound in MediaPlayerRenderer, and receives calls
   //   from MediaPlayerRendererClient.
@@ -78,13 +78,6 @@ interface InterfaceFactory {
       pending_remote<MediaPlayerRendererClientExtension> client_extension,
       pending_receiver<Renderer> renderer,
       pending_receiver<MediaPlayerRendererExtension> renderer_extension);
-
-  [EnableIf=arkweb_custom_video_player]
-  CreateCustomMediaPlayerRenderer(
-      pending_remote<CustomMediaPlayerRendererClientExtension> client_extension,
-      pending_receiver<Renderer> renderer,
-      pending_receiver<MediaPlayerRendererExtension> renderer_extension,
-      int32 player_id);
 
   [EnableIf=is_win]
   // Creates a MediaFoundationRenderer (MediaFoundationRendererClientFactory).

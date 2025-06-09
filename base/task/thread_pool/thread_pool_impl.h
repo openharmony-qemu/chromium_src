@@ -154,12 +154,6 @@ class BASE_EXPORT ThreadPoolImpl : public ThreadPoolInstance,
   scoped_refptr<UpdateableSequencedTaskRunner>
   CreateUpdateableSequencedTaskRunner(const TaskTraits& traits);
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  ThreadGroup* GetForegroundThreadGroup() {
-    return foreground_thread_group_.get();
-  }
-#endif
-
  private:
   // Invoked after |num_fences_| or |num_best_effort_fences_| is updated. Sets
   // the CanRunPolicy in TaskTracker and wakes up workers as appropriate.

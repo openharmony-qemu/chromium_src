@@ -7,10 +7,6 @@
 #include "base/check_op.h"
 #include "ui/events/devices/device_data_manager.h"
 
-#if BUILDFLAG(ARKWEB_FLING)
-#include "arkweb/chromium_ext/ui/base/pointer/pointer_device_linux_for_include.cc"
-#endif
-
 namespace ui {
 
 namespace {
@@ -46,15 +42,11 @@ bool IsMouseOrTouchpadPresent() {
 
 int GetAvailablePointerTypes() {
   int available_pointer_types = 0;
-#if BUILDFLAG(ARKWEB_FLING)
-  GetPointerTypesForFling(available_pointer_types);
-#else
   if (IsMouseOrTouchpadPresent())
     available_pointer_types |= POINTER_TYPE_FINE;
 
   if (IsTouchDevicePresent())
     available_pointer_types |= POINTER_TYPE_COARSE;
-#endif
 
   if (available_pointer_types == 0)
     available_pointer_types = POINTER_TYPE_NONE;

@@ -39,7 +39,6 @@
 #include "services/network/web_bundle/web_bundle_url_loader_factory.h"
 #include "url/gurl.h"
 #include "url/origin.h"
-#include "arkweb/chromium_ext/services/network/url_loader_factory_utils.h"
 
 namespace network {
 
@@ -107,7 +106,6 @@ URLLoaderFactory::URLLoaderFactory(
     context_->network_service()->keepalive_statistics_recorder()->Register(
         *params_->top_frame_id);
   }
-  factoryUtils_ = std::make_unique<URLLoaderFactoryUtils>(this);
 }
 
 URLLoaderFactory::~URLLoaderFactory() {
@@ -367,11 +365,6 @@ void URLLoaderFactory::CreateLoaderAndStartWithSyncClient(
       AttributionRequestHelper::CreateIfNeeded(
           resource_request.attribution_reporting_eligibility);
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader;
-  std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info;
-  factoryUtils_->PreloadRequestInit(resource_request, prpp_loader,  preload_info);
-#endif
   auto loader = std::make_unique<URLLoader>(
       *this,
       base::BindOnce(&cors::CorsURLLoaderFactory::DestroyURLLoader,
@@ -386,16 +379,7 @@ void URLLoaderFactory::CreateLoaderAndStartWithSyncClient(
       std::move(trust_token_observer), std::move(url_loader_network_observer),
       std::move(devtools_observer), std::move(accept_ch_frame_observer),
       std::move(attribution_request_helper),
-      resource_request.shared_storage_writable_eligible
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-,
-      prpp_loader,
-      factoryUtils_->weak_prpp_req_loader_fac_.get()
-          ? factoryUtils_->weak_prpp_req_loader_fac_.get()->GetMainUrl()
-          : "",
-      preload_info
-#endif
-      );
+      resource_request.shared_storage_writable_eligible);
 
   cors_url_loader_factory_->OnURLLoaderCreated(std::move(loader));
 }

@@ -75,21 +75,9 @@ function handleVariationInfo(
  * @param profilePath The profile path to display.
  */
 function handlePathInfo(
-    {execPath, profilePath
-// <if expr="enable_cef">
-     , modulePath, userDataPath
-// </if>
-    }: {execPath: string, profilePath: string
-// <if expr="enable_cef">
-        , modulePath: string, userDataPath: string
-// </if>
-    }) {
+    {execPath, profilePath}: {execPath: string, profilePath: string}) {
   getRequiredElement('executable_path').textContent = execPath;
   getRequiredElement('profile_path').textContent = profilePath;
-// <if expr="enable_cef">
-  getRequiredElement('module_path').textContent = modulePath;
-  getRequiredElement('user_data_path').textContent = userDataPath;
-// </if>
 }
 
 // <if expr="chromeos_lacros or is_win">

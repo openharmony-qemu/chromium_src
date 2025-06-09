@@ -71,20 +71,8 @@ struct StructTraits<viz::mojom::BeginFrameArgsDataView, viz::BeginFrameArgs> {
     return args.animate_only;
   }
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  static bool internal_frame(const viz::BeginFrameArgs& args) {
-    return args.internal_frame;
-  }
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
-
   static bool Read(viz::mojom::BeginFrameArgsDataView data,
                    viz::BeginFrameArgs* out);
-
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  static gfx::Rect draw_rect(const viz::BeginFrameArgs& args) {
-    return args.draw_rect;
-  }
-#endif
 };
 
 template <>

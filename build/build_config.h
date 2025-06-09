@@ -276,18 +276,6 @@
 #define BUILDFLAG_INTERNAL_IS_OHOS() (0)
 #endif
 
-#if defined(ENABLE_ARKWEB)
-#define BUILDFLAG_INTERNAL_IS_ARKWEB() (1)
-#else
-#define BUILDFLAG_INTERNAL_IS_ARKWEB() (0)
-#endif
-
-#if defined(ENABLE_ARKWEB_EXT)
-#define BUILDFLAG_INTERNAL_IS_ARKWEB_EXT() (1)
-#else
-#define BUILDFLAG_INTERNAL_IS_ARKWEB_EXT() (0)
-#endif
-
 // Compiler detection. Note: clang masquerades as GCC on POSIX and as MSVC on
 // Windows.
 #if defined(__GNUC__)

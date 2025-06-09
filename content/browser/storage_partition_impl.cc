@@ -30,6 +30,9 @@
 #include "base/metrics/histogram_functions.h"
 #include "base/numerics/safe_conversions.h"
 #include "base/observer_list.h"
+#if BUILDFLAG(IS_OHOS)
+#include "base/path_service.h"
+#endif // BUILDFLAG(IS_OHOS)
 #include "base/run_loop.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
@@ -162,7 +165,6 @@
 #include "third_party/blink/public/mojom/private_network_device/private_network_device.mojom.h"
 #include "third_party/blink/public/mojom/quota/quota_types.mojom.h"
 #include "url/scheme_host_port.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "content/public/browser/android/java_interfaces.h"
@@ -2244,10 +2246,6 @@ void StoragePartitionImpl::OnSSLCertificateError(
     int net_error,
     const net::SSLInfo& ssl_info,
     bool fatal,
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-    const GURL& origin_url,
-    const std::string& referrer,
-#endif
     OnSSLCertificateErrorCallback response) {
   URLLoaderNetworkContext context =
       url_loader_network_observers_.current_context();
@@ -2266,13 +2264,7 @@ void StoragePartitionImpl::OnSSLCertificateError(
   bool is_primary_main_frame_request = context.IsPrimaryMainFrameRequest();
   SSLManager::OnSSLCertificateError(
       delegate->GetWeakPtr(), is_primary_main_frame_request, url,
-      context.navigation_or_document(), net_error, ssl_info, fatal
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-      ,
-      origin_url,
-      referrer
-#endif
-      );
+      context.navigation_or_document(), net_error, ssl_info, fatal);
 }
 
 void StoragePartitionImpl::OnLoadingStateUpdate(
@@ -3346,12 +3338,17 @@ void StoragePartitionImpl::InitNetworkContext() {
   cert_verifier::mojom::CertVerifierCreationParamsPtr
       cert_verifier_creation_params =
           cert_verifier::mojom::CertVerifierCreationParams::New();
-  if (!GetContentClient()->browser()->ConfigureNetworkContextParams(
-      browser_context_, is_in_memory(), relative_partition_path_,
-      context_params.get(), cert_verifier_creation_params.get())) {
-    // Don't re-initialize the network context during shutdown.
-    return;
+#if BUILDFLAG(IS_OHOS)
+  base::FilePath cachePath;
+  base::PathService::Get(base::DIR_CACHE, &cachePath);
+  network::mojom::NetworkContext* network_context = GetContentClient()->browser()->GetSystemNetworkContext();
+  if (network_context != nullptr) {
+    network_context->InitPRParallelPreloadMgr(cachePath);
   }
+#endif
+  GetContentClient()->browser()->ConfigureNetworkContextParams(
+      browser_context_, is_in_memory(), relative_partition_path_,
+      context_params.get(), cert_verifier_creation_params.get());
   // Should be initialized with existing per-profile CORS access lists.
   DCHECK(context_params->cors_origin_access_list.empty())
       << "NetworkContextParams::cors_origin_access_list should be populated "

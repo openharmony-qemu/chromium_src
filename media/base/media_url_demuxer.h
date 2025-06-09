@@ -54,13 +54,6 @@ class MEDIA_EXPORT MediaUrlDemuxer : public Demuxer {
   void ForwardDurationChangeToDemuxerHost(base::TimeDelta duration) override;
   void SetHeaders(base::flat_map<std::string, std::string> headers) override;
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  void ForwardBufferedEndTimeChangeToDemuxerHost(
-      base::TimeDelta buffered_time) override;
-  void SetPreloadType(uint32_t preload_type) override;
-  void SetMediaSourceType(uint32_t media_source_type) override;
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
-
   // Demuxer interface.
   std::string GetDisplayName() const override;
   DemuxerType GetDemuxerType() const override;

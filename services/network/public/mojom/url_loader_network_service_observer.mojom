@@ -112,18 +112,10 @@ interface URLLoaderNetworkServiceObserver {
   // Called when an SSL certificate error is encountered.
   // The callback argument is a net::ERROR value. If it's net::OK, then the
   // request is resumed. Otherwise it's cancelled with the given error.
-  [EnableIfNot=arkweb_network_load]
   OnSSLCertificateError(url.mojom.Url url,
                         int32 net_error,
                         SSLInfo ssl_info,
                         bool fatal) => (int32 net_error);
-  [EnableIf=arkweb_network_load]
-  OnSSLCertificateError(url.mojom.Url url,
-                        int32 net_error,
-                        SSLInfo ssl_info,
-                        bool fatal,
-                        url.mojom.Url origin_url,
-                        string referrer) => (int32 net_error);
 
   // Called when an SSL certificate requested message is received for client
   // authentication.

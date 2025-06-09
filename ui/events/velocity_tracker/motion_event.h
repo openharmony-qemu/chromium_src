@@ -12,7 +12,6 @@
 
 #include "base/component_export.h"
 #include "base/time/time.h"
-#include "arkweb/build/features/features.h"
 
 namespace ui {
 
@@ -89,11 +88,6 @@ class COMPONENT_EXPORT(VELOCITY_TRACKER) MotionEvent {
 
   virtual Classification GetClassification() const;
 
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
-  virtual bool FromOverlay() const { return false; }
-  virtual void SetFromOverlay(bool from_overlay){}
-#endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)
-
   // Optional historical data, default implementation provides an empty history.
   virtual size_t GetHistorySize() const;
   virtual base::TimeTicks GetHistoricalEventTime(size_t historical_index) const;
@@ -118,11 +112,6 @@ class COMPONENT_EXPORT(VELOCITY_TRACKER) MotionEvent {
 
   float GetTouchMajor() const { return GetTouchMajor(0); }
   float GetTouchMinor() const { return GetTouchMinor(0); }
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  virtual bool IsCancelByLostFocus() const;
-  virtual void SetCancelByLostFocus(bool is_lost_focus);
-#endif
 
   // Returns the orientation in radians. The meaning is overloaded:
   // * For a touch screen or pad, it's the orientation of the major axis

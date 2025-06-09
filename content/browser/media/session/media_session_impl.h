@@ -33,20 +33,10 @@
 #include "services/media_session/public/mojom/audio_focus.mojom.h"
 #include "third_party/blink/public/mojom/favicon/favicon_url.mojom.h"
 #include "third_party/blink/public/mojom/mediasession/media_session.mojom.h"
-#include "arkweb/build/features/features.h"
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-#include "media/base/media_content_type.h"
-#endif //BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
 #endif  // BUILDFLAG(IS_ANDROID)
-
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-namespace media {
-class OHOSAudioOutputStream;
-}
-#endif //BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 namespace media_session {
 struct MediaMetadata;
@@ -62,15 +52,10 @@ class MediaSessionImplVisibilityBrowserTest;
 class MediaSessionPlayerObserver;
 class MediaSessionServiceImpl;
 class MediaSessionServiceImplBrowserTest;
-class MediaSessionImplUtils;
 
 #if BUILDFLAG(IS_ANDROID)
 class MediaSessionAndroid;
 #endif  // BUILDFLAG(IS_ANDROID)
-
-#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-class MediaSessionOHOS;
-#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 
 // MediaSessionImpl is the implementation of MediaSession. It manages the media
 // session and audio focus for a given WebContents. It is requesting the audio
@@ -93,7 +78,6 @@ class MediaSessionImpl : public MediaSession,
                          public PresentationObserver {
  public:
   enum class State { ACTIVE, SUSPENDED, INACTIVE };
-  friend class MediaSessionImplUtils;
 
   // Returns the MediaSessionImpl associated to this WebContents. Creates one if
   // none is currently available.
@@ -375,47 +359,6 @@ class MediaSessionImpl : public MediaSession,
   // that might otherwise be sitting in a message pipe somewhere.
   void flush_observers_for_testing() { observers_.FlushForTesting(); }
 
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  bool HasOnlyOneShotPlayersPublic() const;
-#endif
-#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-  void PutWebMediaAVSessionEnabled(bool enable);
-#endif // ARKWEB_MEDIA_AVSESSION
-
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
- public:
-  enum NWebPlaybackState { NONE, PLAYING, PAUSED, STOP };
-  enum NWebMediaSessionState { NOINITIAL, NONEED, NEED };
-  NWebPlaybackState NWebGetState();
-
-  bool IsEndOfMedia();
-  void SetEndOfMedia(bool end_of_media);
-  bool GetPlayingState();
-  void SetPlayingState(bool playingState);
-  bool GetMuteState();
-  bool IsPlayingAudio();
-  bool IsPauseByAvsession();
-  void SetPauseByAvsession(bool is_pause);
-  void SetWebviewShow(bool show, bool is_special_for_audio);
-  void EndSessionWhenHide();
-  void SetMediaContentType(media::MediaContentType media_content_type) { media_content_type_ = media_content_type; }
-  media::MediaContentType getMediaContentType() { return media_content_type_; }
-
-  void SetSessionState(NWebMediaSessionState sessionState);
-  NWebMediaSessionState GetSessionState();
-
-  std::unordered_set<media::OHOSAudioOutputStream*> activeAudioStream_;
-  int audioResumeInterval_ = 0;
-  bool audioExclusive_ = true;
-  bool isPlayingState_ = false;
-  bool fileAccess_ = false;
-  std::vector<std::string> grantMediaFileAccessDirs_;
-  NWebMediaSessionState sessionState_ = NWebMediaSessionState::NOINITIAL;
-#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
-#if BUILDFLAG(ARKWEB_PIP)
-  void OnPictureInPictureStateChanged(const MediaPlayerId& id, uint32_t state);
-#endif
-
  private:
   friend class content::WebContentsUserData<MediaSessionImpl>;
   friend class MediaSessionImplBrowserTest;
@@ -429,10 +372,6 @@ class MediaSessionImpl : public MediaSession,
   friend class MediaSessionImplDurationThrottleTest;
   friend class MediaInternalsAudioFocusTest;
   friend class WebAppSystemMediaControlsBrowserTest;
-#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-  friend class MediaSessionOHOS;
-#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-  raw_ptr<MediaSessionImplUtils> implUtils_;
 
   CONTENT_EXPORT void RemoveAllPlayersForTest();
   CONTENT_EXPORT MediaSessionUmaHelper* uma_helper_for_test();
@@ -674,21 +613,12 @@ class MediaSessionImpl : public MediaSession,
     base::flat_map<GURL, SkBitmap> image_cache_;
   };
 
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  media::MediaContentType media_content_type_;
-#endif
-
   // Returns the PageData for the specified |page|.
   PageData& GetPageData(content::Page& page) const;
 
 #if BUILDFLAG(IS_ANDROID)
   std::unique_ptr<MediaSessionAndroid> session_android_;
 #endif  // BUILDFLAG(IS_ANDROID)
-
-#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-  std::unique_ptr<MediaSessionOHOS> session_ohos_;
-  void CreateSessionOhos();
-#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 
   // MediaSessionService-related fields
   using ServicesMap =
@@ -740,12 +670,6 @@ class MediaSessionImpl : public MediaSession,
   // `MaybeGuardDurationUpdate()` for details on duration changes.
   bool is_considered_live_ = false;
 
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
- public:
-  base::WeakPtrFactory<content::MediaSessionImpl> weakMediaSessionFactory_;
-#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
-
- private:
   base::WeakPtrFactory<MediaSessionImpl> weak_factory_{this};
 
   WEB_CONTENTS_USER_DATA_KEY_DECL();
@@ -753,5 +677,4 @@ class MediaSessionImpl : public MediaSession,
 
 }  // namespace content
 
-#include "arkweb/chromium_ext/content/browser/media/session/media_session_impl_utils.h"
 #endif  // CONTENT_BROWSER_MEDIA_SESSION_MEDIA_SESSION_IMPL_H_

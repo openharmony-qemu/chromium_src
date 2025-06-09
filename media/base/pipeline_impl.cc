@@ -83,20 +83,11 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
   void Start(StartType start_type,
              Demuxer* demuxer,
              std::unique_ptr<Renderer> default_renderer,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-             RequestSurfaceCB request_surface_cb,
-             VideoDecoderChangedCB decoder_changed_cb,
-#endif // ARKWEB_VIDEO_ASSISTANT
              base::WeakPtr<PipelineImpl> weak_pipeline);
   void Stop();
   void Seek(base::TimeDelta time);
   void Suspend();
-  void Resume(
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-      RequestSurfaceCB request_surface_cb,
-      VideoDecoderChangedCB decoder_changed_cb,
-#endif // ARKWEB_VIDEO_ASSISTANT
-      std::unique_ptr<Renderer> default_renderer, base::TimeDelta time);
+  void Resume(std::unique_ptr<Renderer> default_renderer, base::TimeDelta time);
   void SetPlaybackRate(double playback_rate);
   void SetVolume(float volume);
   void SetLatencyHint(std::optional<base::TimeDelta> latency_hint);
@@ -122,13 +113,6 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
 
   void OnExternalVideoFrameRequest();
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  void SetMediaPlayerState(bool is_suspend, int suspend_type);
-  void SetPlaybackRateWithReason(double playback_rate, ActionReason reason);
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
-#if BUILDFLAG(ARKWEB_PIP)
-  void PipEnable(bool enable);
-#endif
  private:
   enum class State {
     kCreated,
@@ -284,11 +268,6 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
   // Called from non-media threads when an error occurs.
   PipelineStatusCB error_cb_;
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  RequestSurfaceCB request_surface_cb_;
-  VideoDecoderChangedCB decoder_changed_cb_;
-#endif // ARKWEB_VIDEO_ASSISTANT
-
   base::WeakPtrFactory<RendererWrapper> weak_factory_{this};
 };
 
@@ -321,10 +300,6 @@ void PipelineImpl::RendererWrapper::Start(
     StartType start_type,
     Demuxer* demuxer,
     std::unique_ptr<Renderer> default_renderer,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-    RequestSurfaceCB request_surface_cb,
-    VideoDecoderChangedCB decoder_changed_cb,
-#endif // ARKWEB_VIDEO_ASSISTANT
     base::WeakPtr<PipelineImpl> weak_pipeline) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
   DCHECK(state_ == State::kCreated || state_ == State::kStopped)
@@ -336,11 +311,6 @@ void PipelineImpl::RendererWrapper::Start(
   demuxer_ = demuxer;
   default_renderer_ = std::move(default_renderer);
   weak_pipeline_ = weak_pipeline;
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  request_surface_cb_ = std::move(request_surface_cb);
-  decoder_changed_cb_ = std::move(decoder_changed_cb);
-#endif // ARKWEB_VIDEO_ASSISTANT
 
   // Setup |error_cb_| on the media thread.
   error_cb_ = base::BindRepeating(&RendererWrapper::OnPipelineError,
@@ -480,10 +450,6 @@ void PipelineImpl::RendererWrapper::Suspend() {
 }
 
 void PipelineImpl::RendererWrapper::Resume(
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-    RequestSurfaceCB request_surface_cb,
-    VideoDecoderChangedCB decoder_changed_cb,
-#endif // ARKWEB_VIDEO_ASSISTANT
     std::unique_ptr<Renderer> default_renderer,
     base::TimeDelta timestamp) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
@@ -514,10 +480,6 @@ void PipelineImpl::RendererWrapper::Resume(
   renderer_ended_ = false;
   base::TimeDelta start_timestamp =
       std::max(timestamp, demuxer_->GetStartTime());
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  request_surface_cb_ = std::move(request_surface_cb);
-  decoder_changed_cb_ = std::move(decoder_changed_cb);
-#endif // ARKWEB_VIDEO_ASSISTANT
 
   // Queue the asynchronous actions required to start playback.
   SerialRunner::Queue fns;
@@ -1240,10 +1202,6 @@ void PipelineImpl::RendererWrapper::InitializeRenderer(
   base::UmaHistogramEnumeration(uma_name, CallbackTimeoutStatus::kCreate);
   shared_state_.renderer->Initialize(
       demuxer_, this,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-      std::move(request_surface_cb_),
-      std::move(decoder_changed_cb_),
-#endif // ARKWEB_VIDEO_ASSISTANT
       WrapCallbackWithTimeoutHandler(
           std::move(done_cb), /*timeout_delay=*/base::Seconds(10),
           base::BindOnce(&OnCallbackTimeout, uma_name)));
@@ -1372,10 +1330,6 @@ PipelineImpl::~PipelineImpl() {
 void PipelineImpl::Start(StartType start_type,
                          Demuxer* demuxer,
                          Client* client,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                         RequestSurfaceCB request_surface_cb,
-                         VideoDecoderChangedCB decoder_changed_cb,
-#endif // ARKWEB_VIDEO_ASSISTANT
                          PipelineStatusCallback seek_cb) {
   DVLOG(2) << __func__ << ": start_type=" << static_cast<int>(start_type);
   DCHECK(thread_checker_.CalledOnValidThread());
@@ -1404,10 +1358,6 @@ void PipelineImpl::Start(StartType start_type,
       base::BindOnce(&RendererWrapper::Start,
                      base::Unretained(renderer_wrapper_.get()), start_type,
                      demuxer, std::move(default_renderer),
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                     std::move(request_surface_cb),
-                     std::move(decoder_changed_cb),
-#endif // ARKWEB_VIDEO_ASSISTANT
                      weak_factory_.GetWeakPtr()));
 }
 
@@ -1477,10 +1427,6 @@ void PipelineImpl::Suspend(PipelineStatusCallback suspend_cb) {
 }
 
 void PipelineImpl::Resume(base::TimeDelta time,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                          RequestSurfaceCB request_surface_cb,
-                          VideoDecoderChangedCB decoder_changed_cb,
-#endif // ARKWEB_VIDEO_ASSISTANT
                           PipelineStatusCallback seek_cb) {
   DVLOG(2) << __func__;
   DCHECK(thread_checker_.CalledOnValidThread());
@@ -1500,10 +1446,6 @@ void PipelineImpl::Resume(base::TimeDelta time,
   media_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&RendererWrapper::Resume,
                                 base::Unretained(renderer_wrapper_.get()),
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                                std::move(request_surface_cb),
-                                std::move(decoder_changed_cb),
-#endif // ARKWEB_VIDEO_ASSISTANT
                                 std::move(default_renderer), time));
 }
 
@@ -1848,7 +1790,5 @@ void PipelineImpl::OnSuspendDone() {
   if (suspend_cb_)
     std::move(suspend_cb_).Run(PIPELINE_OK);
 }
+
 }  // namespace media
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/media/base/pipeline_impl_for_include.cc"
-#endif

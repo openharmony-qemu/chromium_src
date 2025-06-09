@@ -6,7 +6,7 @@
 
 namespace password_manager {
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_LINUX)
 // Specifies which encryption storage backend to use. Possible values are
 // kwallet, kwallet5, kwallet6, gnome-libsecret, basic.
 // Any other value will lead to Chrome detecting the best backend automatically.

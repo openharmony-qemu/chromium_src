@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "components/viz/service/display_embedder/skia_output_device_gl.h"
-#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_gl_utils.h"
 
 #include <tuple>
 #include <utility>
@@ -31,9 +30,11 @@
 #include "ui/gl/gl_features.h"
 #include "ui/gl/gl_implementation.h"
 #include "ui/gl/gl_surface.h"
-#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
-#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#endif
+
+#if BUILDFLAG(IS_OHOS)
+#include "base/trace_event/trace_event.h"
+#include "ui/gl/gl_switches.h"
+#endif  // BUILDFLAG(IS_OHOS)
 
 namespace viz {
 
@@ -133,6 +134,10 @@ SkiaOutputDeviceGL::SkiaOutputDeviceGL(
   capabilities_.orientation_mode = OutputSurface::OrientationMode::kHardware;
 #endif  // IS_CHROMEOS_ASH
 
+#if BUILDFLAG(IS_OHOS)
+  ohos_supports_partial_swap_ = features::IsOHOSEnablePartialSwap();
+#endif  // BUILDFLAG(IS_OHOS)
+
   DCHECK(context_state_);
   DCHECK(gl_surface_);
 
@@ -173,9 +178,7 @@ SkiaOutputDeviceGL::SkiaOutputDeviceGL(
   // scRGB linear
   capabilities_.sk_color_type_map[SinglePlaneFormat::kRGBA_F16] =
       kRGBA_F16_SkColorType;
-#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
-  implUtils_ = std::make_unique<SkiaOutputDeviceGLUtils>(this);
-#endif
+
   if (features::UseGpuVsync()) {
     // Historically we never disabled vsync on Android and it's very rare
     // use-case to have multiple active windows there. On other platforms we
@@ -259,14 +262,6 @@ bool SkiaOutputDeviceGL::Reshape(const ReshapeParams& params) {
   return !!sk_surface_;
 }
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-void SkiaOutputDeviceGL::SetNativeInnerWeb(bool isInnerWeb) {
-  if (gl_surface_) {
-    gl_surface_->SetNativeInnerWeb(isInnerWeb);
-  }
-}
-#endif
-
 void SkiaOutputDeviceGL::Present(const std::optional<gfx::Rect>& update_rect,
                                  BufferPresentedCallback feedback,
                                  OutputSurfaceFrame frame) {
@@ -298,14 +293,26 @@ void SkiaOutputDeviceGL::Present(const std::optional<gfx::Rect>& update_rect,
     }
   } else {
     gfx::SwapResult result;
-    if (update_rect && !base::ohos::IsEmulator()) {
-#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
-      result = implUtils_->SwapBuffers(update_rect, feedback, frame);
+    if (update_rect) {
+#if BUILDFLAG(IS_OHOS)
+      TRACE_EVENT2("viz", "SkiaOutputDeviceGL::Present", "update_rect",
+                   update_rect->ToString(), "partial_swap",
+                   ohos_supports_partial_swap_);
+      if (ohos_supports_partial_swap_) {
+        result = gl_surface_->SwapBuffersWithDamage(
+            { update_rect->x(),
+             gl_surface_->GetSize().height() - update_rect->y() -
+                 update_rect->height(),
+             update_rect->width(), update_rect->height() },
+            std::move(feedback), std::move(data));
+      } else {
+        result = gl_surface_->SwapBuffers(std::move(feedback), std::move(data));
+      }
 #else
       result = gl_surface_->PostSubBuffer(
           update_rect->x(), update_rect->y(), update_rect->width(),
           update_rect->height(), std::move(feedback), std::move(data));
-#endif
+#endif  // BUILDFLAG(IS_OHOS)
     } else {
       result = gl_surface_->SwapBuffers(std::move(feedback), std::move(data));
     }
@@ -327,10 +334,6 @@ void SkiaOutputDeviceGL::DoFinishSwapBuffers(const gfx::Size& size,
                                              gfx::SwapCompletionResult result) {
   DCHECK(result.release_fence.is_null());
   FinishSwapBuffers(std::move(result), size, std::move(frame));
-}
-
-void SkiaOutputDeviceGL::DiscardBackbuffer() {
-  gl_surface_->SetBackbufferAllocation(false);
 }
 
 SkSurface* SkiaOutputDeviceGL::BeginPaint(

@@ -7,16 +7,11 @@
 #ifndef CONTENT_PUBLIC_COMMON_CONTENT_SWITCHES_H_
 #define CONTENT_PUBLIC_COMMON_CONTENT_SWITCHES_H_
 
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
 #include "content/common/content_export.h"
 #include "media/media_buildflags.h"
 #include "tools/v8_context_snapshot/buildflags.h"
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
-#endif
 
 namespace switches {
 
@@ -248,6 +243,10 @@ CONTENT_EXPORT extern const char kWebXrRuntimeOpenXr[];
 CONTENT_EXPORT extern const char kZygoteCmdPrefix[];
 CONTENT_EXPORT extern const char kZygoteProcess[];
 
+#if BUILDFLAG(IS_OHOS)
+CONTENT_EXPORT extern const char kEnabledAdvancedSecurityMode[];
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 CONTENT_EXPORT extern const char kDisableMediaSessionAPI[];
 CONTENT_EXPORT extern const char kDisableOoprDebugCrashDump[];
@@ -298,13 +297,6 @@ extern const char kIpcDumpDirectory[];
 extern const char kIpcFuzzerTestcase[];
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
-CONTENT_EXPORT extern const char kOhosDeviceType[];
-CONTENT_EXPORT extern const char kOhosMobileDevice[];
-CONTENT_EXPORT extern const char kOhosTabletDevice[];
-CONTENT_EXPORT extern const char kOhos2IN1Device[];
-CONTENT_EXPORT extern const char kOhosUnkownDevice[];
-#endif
 // DON'T ADD RANDOM STUFF HERE. Put it in the main section above in
 // alphabetical order, or in one of the ifdefs (also in order in each section).
 

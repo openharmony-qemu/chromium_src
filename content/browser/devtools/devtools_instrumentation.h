@@ -114,7 +114,7 @@ bool ApplyUserAgentMetadataOverrides(
     FrameTreeNode* frame_tree_node,
     std::optional<blink::UserAgentMetadata>* override_out);
 
-class CONTENT_EXPORT WillCreateURLLoaderFactoryParams final {
+class WillCreateURLLoaderFactoryParams final {
   STACK_ALLOCATED();
 
  public:

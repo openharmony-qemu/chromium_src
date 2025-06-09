@@ -173,9 +173,6 @@ bool NinePatchThumbScrollbarLayer::PaintThumbIfNeeded() {
 }
 
 bool NinePatchThumbScrollbarLayer::PaintTickmarks() {
-#if BUILDFLAG(IS_ARKWEB)
-  return false;
-#else
   if (!has_find_in_page_tickmarks()) {
     if (!track_and_buttons_resource_.Read(*this)) {
       return false;
@@ -205,7 +202,6 @@ bool NinePatchThumbScrollbarLayer::PaintTickmarks() {
 
   SetNeedsPushProperties();
   return true;
-#endif
 }
 
 ScrollbarLayerBase::ScrollbarLayerType

@@ -35,7 +35,6 @@
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/gurl.h"
-#include "arkweb/build/features/features.h"
 
 using ::base::test::RunCallback;
 using ::base::test::RunOnceCallback;
@@ -132,10 +131,6 @@ class MojoRendererTest : public ::testing::Test {
     DVLOG(1) << __func__ << ": " << status;
     EXPECT_CALL(*this, OnInitialized(SameStatusCode(status)));
     mojo_renderer_->Initialize(&demuxer_, &renderer_client_,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                               RequestSurfaceCB(),
-                               VideoDecoderChangedCB(),
-#endif // ARKWEB_VIDEO_ASSISTANT
                                base::BindOnce(&MojoRendererTest::OnInitialized,
                                               base::Unretained(this)));
     base::RunLoop().RunUntilIdle();
@@ -458,10 +453,6 @@ TEST_F(MojoRendererTest, Destroy_PendingInitialize) {
                          HasStatusCode(PIPELINE_ERROR_INITIALIZATION_FAILED)));
   mojo_renderer_->Initialize(
       &demuxer_, &renderer_client_,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-      RequestSurfaceCB(),
-      VideoDecoderChangedCB(),
-#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindOnce(&MojoRendererTest::OnInitialized, base::Unretained(this)));
   Destroy();
 }
@@ -524,6 +515,5 @@ TEST_F(MojoRendererTest, ErrorDuringFlush) {
                       RunOnceClosure<0>()));
   Flush();
 }
-
 
 }  // namespace media

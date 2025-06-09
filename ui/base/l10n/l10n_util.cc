@@ -61,6 +61,10 @@
 #include "ui/base/l10n/l10n_util_win.h"
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/ohos_i18n/ohos_i18n.h"
+#endif
+
 namespace {
 
 constexpr auto kAcceptLanguageList = base::MakeFixedFlatSet<std::string_view>({
@@ -506,7 +510,25 @@ bool CheckAndResolveLocale(const std::string& locale,
   return CheckAndResolveLocale(locale, resolved_locale, /*perform_io=*/true);
 }
 
-std::string GetApplicationLocaleInternal(const std::string& pref_locale) {
+#if BUILDFLAG(IS_APPLE)
+std::string GetApplicationLocaleInternalMac(const std::string& pref_locale) {
+  // Use any override (Cocoa for the browser), otherwise use the preference
+  // passed to the function.
+  std::string app_locale = l10n_util::GetLocaleOverride();
+  if (app_locale.empty())
+    app_locale = pref_locale;
+
+  // The above should handle all of the cases Chrome normally hits, but for some
+  // unit tests, we need something to fall back too.
+  if (app_locale.empty())
+    app_locale = "en-US";
+
+  return app_locale;
+}
+#endif
+
+#if !BUILDFLAG(IS_APPLE)
+std::string GetApplicationLocaleInternalNonMac(const std::string& pref_locale) {
   std::string resolved_locale;
   std::vector<std::string> candidates;
 
@@ -537,6 +559,13 @@ std::string GetApplicationLocaleInternal(const std::string& pref_locale) {
 
   // On Android, query java.util.Locale for the default locale.
   candidates.push_back(base::android::GetDefaultLocaleString());
+#elif BUILDFLAG(IS_OHOS)
+  // Try pref_locale first.
+  if (!pref_locale.empty())
+    candidates.push_back(base::i18n::GetCanonicalLocale(pref_locale));
+ 
+  // On Ohos, query Locale lang for the default locale.
+  candidates.push_back(::ohos::adapter::ohos_i18n::GetLocaleLang());
 #elif defined(USE_GLIB) && !BUILDFLAG(IS_CHROMEOS)
   // GLib implements correct environment variable parsing with
   // the precedence order: LANGUAGE, LC_ALL, LC_MESSAGES and LANG.
@@ -570,6 +599,15 @@ std::string GetApplicationLocaleInternal(const std::string& pref_locale) {
     return fallback_locale;
 
   return std::string();
+}
+#endif  // !BUILDFLAG(IS_APPLE)
+
+std::string GetApplicationLocaleInternal(const std::string& pref_locale) {
+#if BUILDFLAG(IS_APPLE)
+  return GetApplicationLocaleInternalMac(pref_locale);
+#else
+  return GetApplicationLocaleInternalNonMac(pref_locale);
+#endif
 }
 
 std::string GetApplicationLocale(const std::string& pref_locale,

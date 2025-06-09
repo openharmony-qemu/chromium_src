@@ -19,7 +19,7 @@
 #include "components/performance_manager/public/graph/graph_operations.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/web_contents.h"
-#include "arkweb/chromium_ext/components/performance_manager/graph/page_node_impl_for_include.cc"
+
 namespace performance_manager {
 
 PageNodeImpl::PageNodeImpl(base::WeakPtr<content::WebContents> web_contents,

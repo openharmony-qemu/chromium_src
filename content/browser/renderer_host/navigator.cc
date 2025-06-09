@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "content/browser/renderer_host/navigator.h"
-#include "arkweb/chromium_ext/content/browser/renderer_host/navigator_utils.h"
 
 #include <utility>
 
@@ -61,7 +60,10 @@
 #include "third_party/blink/public/mojom/navigation/navigation_params.mojom.h"
 #include "url/gurl.h"
 #include "url/url_util.h"
-#include "arkweb/chromium_ext/content/browser/renderer_host/navigation_request_utils.h"
+
+#if BUILDFLAG(IS_OHOS)
+#include "services/network/public/mojom/network_context.mojom.h"
+#endif
 
 namespace content {
 
@@ -362,13 +364,15 @@ Navigator::Navigator(
     NavigatorDelegate* delegate,
     NavigationControllerDelegate* navigation_controller_delegate)
     : controller_(browser_context, frame_tree, navigation_controller_delegate),
-      delegate_(delegate) {
-  implUtils_ = std::make_unique<NavigatorUtils>(this);
-}
+      delegate_(delegate) {}
 
 Navigator::~Navigator() {
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  implUtils_->StopPage();
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context =
+      controller_.GetBrowserContext()->GetDefaultStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr) {
+    network_context->StopMainPage(reinterpret_cast<int64_t>(this));
+  }
 #endif
 }
 
@@ -500,11 +504,14 @@ void Navigator::DidNavigate(
     bool was_within_same_document) {
   DCHECK(navigation_request);
   FrameTreeNode* frame_tree_node = render_frame_host->frame_tree_node();
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  if (navigation_request) {
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()->
+      GetStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr) {
     const net::NetworkAnonymizationKey networkAnonymizationKey =
-        implUtils_->GetNetworkAnonymizationKey(frame_tree_node, navigation_request.get());
-    navigation_request->nav_request_utils_->StartPage(networkAnonymizationKey, reinterpret_cast<int64_t>(this));
+        GetNetworkAnonymizationKey(frame_tree_node, navigation_request.get());
+    network_context->StartMainPage(params.url.possibly_invalid_spec(), networkAnonymizationKey,
+        reinterpret_cast<uint64_t>(this));
   }
 #endif
   FrameTree& frame_tree = frame_tree_node->frame_tree();
@@ -845,6 +852,17 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
   FrameTreeNode* frame_tree_node = request->frame_tree_node();
   DCHECK_EQ(&(frame_tree_node->frame_tree()), &controller_.frame_tree());
 
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()->
+      GetStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr) {
+    const net::NetworkAnonymizationKey networkAnonymizationKey =
+        GetNetworkAnonymizationKey(frame_tree_node, request.get());
+    network_context->StartMainPage(request->common_params().url.spec(), networkAnonymizationKey,
+        reinterpret_cast<uint64_t>(this));
+  }
+#endif
+
   //  TODO(crbug.com/40496584):Resolved an issue where creating RPHI would cause
   //  a crash when the browser context was shut down. We are actively exploring
   //  the appropriate long-term solution. Please remove this condition once the
@@ -915,12 +933,6 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
           NavigationDiscardReason::kNewDuplicateNavigation);
     }
   }
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  const net::NetworkAnonymizationKey networkAnonymizationKey =
-      implUtils_->GetNetworkAnonymizationKey(frame_tree_node, request.get());
-  request->nav_request_utils_->StartPage(networkAnonymizationKey, reinterpret_cast<int64_t>(this));
-#endif
 
   metrics_data_ = std::make_unique<NavigationMetricsData>(
       request->common_params().navigation_start, request->common_params().url,
@@ -1269,12 +1281,6 @@ void Navigator::OnBeginNavigation(
       GetPageUkmSourceId(*frame_tree_node->current_frame_host()),
       false /* is_browser_initiated_before_unload */);
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  const net::NetworkAnonymizationKey networkAnonymizationKey =
-      implUtils_->GetNetworkAnonymizationKey(frame_tree_node, navigation_request);
-  navigation_request->nav_request_utils_->StartPage(networkAnonymizationKey, reinterpret_cast<int64_t>(this));
-#endif
-
   LogRendererInitiatedBeforeUnloadTime(
       navigation_request->begin_params().before_unload_start,
       navigation_request->begin_params().before_unload_end);
@@ -1296,6 +1302,17 @@ void Navigator::OnBeginNavigation(
             navigation_request->common_params().navigation_type));
     return;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  network::mojom::NetworkContext* network_context = frame_tree_node->current_frame_host()->
+      GetStoragePartition()->GetNetworkContext();
+  if (network_context != nullptr) {
+    const net::NetworkAnonymizationKey networkAnonymizationKey =
+        GetNetworkAnonymizationKey(frame_tree_node, navigation_request);
+    network_context->StartMainPage(navigation_request->common_params().url.spec(), networkAnonymizationKey,
+        reinterpret_cast<uint64_t>(this));
+  }
+#endif
 
   // For main frames, NavigationHandle will be created after the call to
   // |DidStartMainFrameNavigation|, so it receives the most up to date pending
@@ -1598,5 +1615,15 @@ Navigator::GetNavigationEntryForRendererInitiatedNavigation(
 
   return controller_.GetPendingEntry();
 }
+
+#if BUILDFLAG(IS_OHOS)
+const net::NetworkAnonymizationKey Navigator::GetNetworkAnonymizationKey(
+    FrameTreeNode* frame_tree_node,
+    NavigationRequest* navigation_request) {
+  return frame_tree_node->current_frame_host()->ComputeIsolationInfoForNavigation(
+      navigation_request->common_params().url, navigation_request->is_credentialless(),
+      navigation_request->ComputeFencedFrameNonce()).network_anonymization_key();
+}
+#endif  // BUILDFLAG(IS_OHOS)
 
 }  // namespace content

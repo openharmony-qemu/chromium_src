@@ -11,19 +11,6 @@ import "ui/gfx/geometry/mojom/geometry.mojom";
 
 [EnableIf=is_win]
 import "ui/gfx/mojom/buffer_types.mojom";
-
-[EnableIf=is_arkweb]
-struct OhosSurfaceBufferHandle {
-  uint32 buffer_size;
-  int32 fd_browser;
-  int32 coded_width;
-  int32 coded_height;
-  int32 visible_width;
-  int32 visible_height;
-  int32 format;
-  handle<platform> buffer_fd;
-};
-
 // Extension of the mojo::RendererClient communication layer for HLS and Android
 // software rendering fallback paths.
 // This allows the Browser side to call back into the Renderer side. Concretely,
@@ -34,19 +21,6 @@ interface MediaPlayerRendererClientExtension {
   // metadata changes.
   OnVideoSizeChange(gfx.mojom.Size size);
   OnDurationChange(mojo_base.mojom.TimeDelta duration);
-  [EnableIf=is_arkweb]
-  OnFrameUpdate(OhosSurfaceBufferHandle ohosSurfaceBufferHandle);
-};
-
-[EnableIf=arkweb_custom_video_player]
-interface CustomMediaPlayerRendererClientExtension {
-  OnVideoSizeChange(gfx.mojom.Size size);
-  OnDurationChange(mojo_base.mojom.TimeDelta duration);
-  UpdatePlaybackStatus(uint32 status);
-  UpdateVolume(double volume);
-  UpdateMuted(bool muted);
-  UpdatePlaybackRate(double rate);
-  UpdateBufferedEndTime(double buffered_time);
 };
 
 // Extension of the mojo::Renderer communication layer for HLS and Android
@@ -61,9 +35,6 @@ interface MediaPlayerRendererExtension {
   // StreamTexture's set-up.
   InitiateScopedSurfaceRequest()
       => (mojo_base.mojom.UnguessableToken request_token);
-  
-  [EnableIf=is_arkweb]
-  FinishPaint(int32 fd);
 };
 
 // Extension of the mojo::RendererClient communication layer for media flinging,

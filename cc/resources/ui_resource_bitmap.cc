@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "cc/resources/ui_resource_bitmap.h"
-#include "arkweb/build/features/features.h"
 
 #include <stdint.h>
 
@@ -94,7 +93,7 @@ UIResourceBitmap::UIResourceBitmap(const SkBitmap& skbitmap) {
   DCHECK(skbitmap.isImmutable());
 
   const SkBitmap* target = &skbitmap;
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_DRDC)
+#if BUILDFLAG(IS_ANDROID)
   SkBitmap copy;
   if (features::IsDrDcEnabled()) {
     // TODO(vikassoni): Forcing everything to N32 while android backing cannot

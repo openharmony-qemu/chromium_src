@@ -6,14 +6,6 @@ import("//net/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/protobuf/proto_library.gni")
 
-if (defined(is_arkweb_ext) && is_arkweb_ext) {
-  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
-}
-
-#if BUILDFLAG(IS_ARKWEB)
-import("//arkweb/chromium_ext/chromium_ext.gni")
-#endif
-
 enable_built_in_dns = use_blink
 
 source_set("dns") {
@@ -36,13 +28,6 @@ source_set("dns") {
     "//net/*",
     "//services/network/*",
   ]
-
-  if (defined(arkweb_ex_network_connection) && arkweb_ex_network_connection) {
-    defines = []
-    if (target_cpu == "arm64") {
-      defines += [ "ARKWEB_ARM64" ]
-    }
-  }
 
   public = []
   sources = [
@@ -158,8 +143,11 @@ source_set("dns") {
       "dns_config_service_linux.cc",
       "dns_config_service_linux.h",
     ]
-  } else if (defined(arkweb_ex_http_dns_fallback) && arkweb_ex_http_dns_fallback) {
-    sources += arkweb_net_dns_sources
+  } else if (is_ohos) {
+    sources += [
+      "dns_config_service_ohos.cc",
+      "dns_config_service_ohos.h",
+    ]
   } else if (is_posix) {
     sources += [
       "dns_config_service_posix.cc",
@@ -473,7 +461,7 @@ source_set("tests") {
   } else if (is_linux) {
     sources += [ "dns_config_service_linux_unittest.cc" ]
   } else if (is_ohos) {
-    sources += [ "//arkweb/chromium_ext/net/dns/dns_config_service_ohos_unittest.cc" ]
+    sources += [ "dns_config_service_ohos_unittest.cc" ]
   } else if (is_posix) {
     sources += [ "dns_config_service_posix_unittest.cc" ]
   }
@@ -570,10 +558,10 @@ fuzzer_test("net_dns_host_cache_fuzzer") {
     ":host_cache_fuzzer_proto",
     "//base",
     "//net",
+    "//net:net_fuzzer_test_support",
     "//testing/libfuzzer/proto:json_proto",
     "//testing/libfuzzer/proto:json_proto_converter",
     "//third_party/libprotobuf-mutator",
-    "//cef:libcef_static",
   ]
   dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
 }
@@ -584,7 +572,6 @@ fuzzer_test("net_dns_hosts_parse_fuzzer") {
     "//base",
     "//net",
     "//net:net_fuzzer_test_support",
-    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_hosts_parse_fuzzer.dict"
 }
@@ -606,7 +593,7 @@ fuzzer_test("net_dns_https_record_rdata_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//cef:libcef_static",
+    "//net:net_fuzzer_test_support",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_record_fuzzer.dict"
 }
@@ -616,7 +603,7 @@ fuzzer_test("net_dns_nsswitch_reader_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//cef:libcef_static",
+    "//net:net_fuzzer_test_support",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_nsswitch_reader_fuzzer.dict"
 }
@@ -626,7 +613,7 @@ fuzzer_test("net_dns_record_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//cef:libcef_static",
+    "//net:net_fuzzer_test_support",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_record_fuzzer.dict"
 }
@@ -636,7 +623,7 @@ fuzzer_test("net_dns_query_parse_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//cef:libcef_static",
+    "//net:net_fuzzer_test_support",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_record_fuzzer.dict"
 }
@@ -646,7 +633,7 @@ fuzzer_test("net_dns_response_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//cef:libcef_static",
+    "//net:net_fuzzer_test_support",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_record_fuzzer.dict"
 }
@@ -658,7 +645,6 @@ fuzzer_test("net_host_resolver_manager_fuzzer") {
     "//net",
     "//net:net_fuzzer_test_support",
     "//net:test_support",
-    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_host_resolver_manager_fuzzer.dict"
   libfuzzer_options = [ "max_len=4096" ]

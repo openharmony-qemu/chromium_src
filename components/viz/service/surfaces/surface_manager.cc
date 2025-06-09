@@ -507,26 +507,11 @@ bool SurfaceManager::SurfaceModified(
   if (handle_interaction == SurfaceObserver::HandleInteraction::kYes) {
     last_interactive_frame_ = ack.frame_id;
   }
-  for (auto& observer : observer_list_)
+  for (auto& observer : observer_list_) {
     changed |= observer.OnSurfaceDamaged(surface_id, ack, handle_interaction);
+  }
   return changed;
 }
-
-#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-void SurfaceManager::ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) {
-  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  SurfaceId parent_surface_id;
-  for (auto& parent : references_) {
-    if (parent.second.find(surface_id) != parent.second.end()) {
-      parent_surface_id = parent.first;
-      break;
-    }
-  }
-  for (auto& observer : observer_list_) {
-    observer.ReenableSwapCheck(parent_surface_id, width, height);
-  }
-}
-#endif // ARKWEB_MAXIMIZE_RESIZE
 
 void SurfaceManager::FirstSurfaceActivation(const SurfaceInfo& surface_info) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -593,6 +578,7 @@ void SurfaceManager::SurfaceDestroyed(Surface* surface) {
 
 void SurfaceManager::SurfaceDamageExpected(const SurfaceId& surface_id,
                                            const BeginFrameArgs& args) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   for (auto& observer : observer_list_)
     observer.OnSurfaceDamageExpected(surface_id, args);
 }

@@ -21,13 +21,6 @@
 #include "gpu/vulkan/vulkan_function_pointers.h"
 #include "gpu/vulkan/vulkan_swap_chain.h"
 
-#if BUILDFLAG(ARKWEB_VULKAN)
-#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#include "arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker.h"
-#include "arkweb/chromium_ext/gpu/vulkan/vulkan_surface_ext.h"
-#include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
-#endif
-
 namespace gpu {
 
 namespace {
@@ -90,9 +83,6 @@ uint32_t kMinImageCount = 3u;
 
 VulkanSurface::~VulkanSurface() {
   DCHECK_EQ(static_cast<VkSurfaceKHR>(VK_NULL_HANDLE), surface_);
-#if BUILDFLAG(ARKWEB_VULKAN)
-  UNREF_VULKAN_WINDOW(window_);
-#endif
 }
 
 VulkanSurface::VulkanSurface(VkInstance vk_instance,
@@ -113,9 +103,6 @@ VulkanSurface::VulkanSurface(VkInstance vk_instance,
     vsync_provider_ = std::make_unique<gfx::FixedVSyncProvider>(
         base::TimeTicks(), base::Seconds(1) / 60);
   }
-#if BUILDFLAG(ARKWEB_VULKAN)
-  ADDREF_VULKAN_WINDOW(swap_chain_, window_, accelerated_widget);
-#endif
 }
 
 bool VulkanSurface::Initialize(VulkanDeviceQueue* device_queue,
@@ -269,9 +256,6 @@ base::TimeDelta VulkanSurface::GetDisplayRefreshInterval() {
 
 bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
                                     gfx::OverlayTransform transform) {
-#if BUILDFLAG(ARKWEB_VULKAN)
-  SWAP_CHAIN_DESTROY(swap_chain_);
-#endif
   // Get Surface Information.
   VkSurfaceCapabilitiesKHR surface_caps;
   VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
@@ -323,12 +307,8 @@ bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
   DCHECK_GT(static_cast<uint32_t>(image_size.width()), 0u);
   DCHECK_GT(static_cast<uint32_t>(image_size.height()), 0u);
 
-#if BUILDFLAG(ARKWEB_VULKAN)
-  if (image_size_ == image_size && transform_ == transform) {
-#else
   if (image_size_ == image_size && transform_ == transform &&
       swap_chain_->state() == VK_SUCCESS) {
-#endif
     return true;
   }
 
@@ -353,9 +333,6 @@ bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
       std::make_unique<VulkanSwapChain>(acquire_next_image_timeout_ns_);
   // Create swap chain.
   auto min_image_count = std::max(surface_caps.minImageCount, kMinImageCount);
-#if BUILDFLAG(ARKWEB_VULKAN)
-  GET_IMAGE_COUNT(min_image_count, window_);
-#endif
   if (!swap_chain->Initialize(device_queue_, surface_, surface_format_,
                               image_size_, min_image_count, image_usage_flags_,
                               vk_transform, composite_alpha_,

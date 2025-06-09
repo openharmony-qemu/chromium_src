@@ -24,9 +24,6 @@ namespace extensions {
 
 bool IsSourceFromAnExtension(const std::u16string& source) {
   return GURL(source).SchemeIs(kExtensionScheme) ||
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-         GURL(source).SchemeIs(kArkwebExtensionScheme) ||
-#endif
          base::StartsWith(source, u"extensions::",
                           base::CompareCase::SENSITIVE);
 }

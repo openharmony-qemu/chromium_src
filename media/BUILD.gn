@@ -13,7 +13,6 @@ import("//media/media_options.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
 import("//third_party/ffmpeg/ffmpeg_options.gni")
-import("//arkweb/build/features/features.gni")
 
 if (enable_library_cdms) {
   import("//media/cdm/library_cdm/cdm_paths.gni")
@@ -77,8 +76,6 @@ buildflag_header("media_buildflags") {
       "ENABLE_CDM_HOST_VERIFICATION=$enable_cdm_host_verification",
       "ENABLE_CDM_STORAGE_ID=$enable_cdm_storage_id",
     ]
-  } else if (arkweb_asan) {
-    flags += [ "OHOS_ENABLE_MEDIA_ROUTER=$ohos_enable_media_router" ]
   }
 }
 
@@ -265,15 +262,6 @@ test("media_unittests") {
 
   if (is_ios) {
     deps += [ ":unit_tests_bundle_data" ]
-  }
-
-  if (arkweb_unittests) {
-    deps += [
-      "//content/public/browser:browser_sources",
-      "//content/public/renderer:renderer_sources",
-      "//components/subresource_filter/content/browser:browser",
-      "//cef:libcef_static",
-    ]
   }
 }
 
@@ -481,27 +469,5 @@ if (enable_mse_mpeg2ts_stream_parser) {
       ":media",
       "//base",
     ]
-  }
-}
-
-test("audio_unittests") {
-  deps = [
-    ":test_support",
-    "//base/test:test_support",
-    "//media/audio:unit_tests",
-    "//media/test:run_all_unittests",
-  ]
-  if (is_android) {
-    deps += [
-      # The test needs the java dependencies to add the java classes for their
-      # native counterparts to the test apk.
-      "//media/base/android:media_java",
-      "//ui/android:ui_java",
-    ]
-  }
-
-  if (is_fuchsia) {
-    additional_manifest_fragments =
-        [ "//build/config/fuchsia/test/audio_output.shard.test-cml" ]
   }
 }

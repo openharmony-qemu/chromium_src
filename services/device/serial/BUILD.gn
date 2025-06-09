@@ -5,7 +5,7 @@
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 
-if (is_win || ((is_linux || is_chromeos) && use_udev) || is_mac) {
+if (is_win || ((is_linux || is_chromeos) && use_udev) || is_mac || is_ohos) {
   config("platform_support") {
     visibility = [ ":serial" ]
     if (is_win) {
@@ -58,6 +58,13 @@ if (is_win || ((is_linux || is_chromeos) && use_udev) || is_mac) {
       sources += [
         "serial_device_enumerator_linux.cc",
         "serial_device_enumerator_linux.h",
+      ]
+    }
+
+    if (is_ohos) {
+      sources += [
+        "serial_device_enumerator_ohos.cc",
+        "serial_device_enumerator_ohos.h",
       ]
     }
 

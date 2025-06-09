@@ -9,7 +9,6 @@
 #include <string>
 #include <string_view>
 
-#include "arkweb/build/features/features.h"
 #include "base/files/file_util.h"
 #include "base/format_macros.h"
 #include "base/i18n/file_util_icu.h"
@@ -628,13 +627,6 @@ ResumeMode GetDownloadResumeMode(const GURL& url,
       break;
 
     case DOWNLOAD_INTERRUPT_REASON_NETWORK_FAILED:
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-      if (restart_required) {
-        user_action_required = true;
-      }
-      // Auto resume if network failed.
-      break;
-#endif
     case DOWNLOAD_INTERRUPT_REASON_NETWORK_DISCONNECTED:
     case DOWNLOAD_INTERRUPT_REASON_NETWORK_SERVER_DOWN:
     case DOWNLOAD_INTERRUPT_REASON_SERVER_FAILED:

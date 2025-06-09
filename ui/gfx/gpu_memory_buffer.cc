@@ -38,13 +38,6 @@ GpuMemoryBufferHandle::GpuMemoryBufferHandle(
       android_hardware_buffer(std::move(handle)) {}
 #endif
 
-#if BUILDFLAG(ARKWEB_VULKAN)
-GpuMemoryBufferHandle::GpuMemoryBufferHandle(
-   gpu::ScopedNativeBufferHandle  handle)
-    : type(GpuMemoryBufferType::OHOS_NATIVE_BUFFER),
-      ohos_hardware_buffer(std::move(handle)) {}
-#endif
-
 // TODO(crbug.com/40584691): Reset |type| and possibly the handles on the
 // moved-from object.
 GpuMemoryBufferHandle::GpuMemoryBufferHandle(GpuMemoryBufferHandle&& other) =

@@ -43,7 +43,7 @@
 namespace content {
 
 class UnitTestTestSuite::UnitTestEventListener
-    : public ::testing::EmptyTestEventListener {
+    : public testing::EmptyTestEventListener {
  public:
   UnitTestEventListener(
       base::RepeatingCallback<
@@ -73,11 +73,11 @@ class UnitTestTestSuite::UnitTestEventListener
       std::move(first_test_start_callback_).Run();
   }
 
-  void OnTestStart(const ::testing::TestInfo& test_info) override {
+  void OnTestStart(const testing::TestInfo& test_info) override {
     InitializeObjects();
   }
 
-  void OnTestEnd(const ::testing::TestInfo& test_info) override {
+  void OnTestEnd(const testing::TestInfo& test_info) override {
     browser_accessibility_state_.reset();
 
     // Don't call SetUtilityClientForTesting or SetBrowserClientForTesting since
@@ -137,8 +137,8 @@ UnitTestTestSuite::UnitTestTestSuite(
   ForceCreateNetworkServiceDirectlyForTesting();
   StoragePartitionImpl::ForceInProcessStorageServiceForTesting();
 
-  ::testing::TestEventListeners& listeners =
-      ::testing::UnitTest::GetInstance()->listeners();
+  testing::TestEventListeners& listeners =
+      testing::UnitTest::GetInstance()->listeners();
   listeners.Append(CreateTestEventListener());
   listeners.Append(new CheckForLeakedWebUIRegistrations);
 

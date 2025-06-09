@@ -133,12 +133,7 @@ bool CanSaveAsComplete(const std::string& contents_mime_type) {
 }
 
 void CancelSavePackage(base::WeakPtr<SavePackage> save_package,
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-                       bool user_cancel,
-                       std::optional<std::string> guid) {
-#else
                        bool user_cancel) {
-#endif
   if (save_package.get() && !save_package->canceled())
     save_package->Cancel(user_cancel, false);
 }

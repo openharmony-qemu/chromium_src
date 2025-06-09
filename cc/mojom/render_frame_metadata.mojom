@@ -41,9 +41,6 @@ struct RenderFrameMetadata {
   // empty or otherwise unused, the bound types will indicate such.
   viz.mojom.Selection selection;
 
-  [EnableIf=arkweb_menu]
-  gfx.mojom.Rect clipped_selection_bounds;
-
   // Determines whether the page is mobile optimized or not, which means at
   // least one of the following has to be true:
   // - page has a width=device-width or narrower viewport.
@@ -108,13 +105,13 @@ struct RenderFrameMetadata {
   [EnableIf=is_android_or_ios]
   float max_page_scale_factor;
 
-  [EnableIf=is_android_or_ios_or_arkweb]
+  [EnableIf=is_android_or_ios]
   bool root_overflow_y_hidden;
 
-  [EnableIf=is_android_or_ios_or_arkweb]
+  [EnableIf=is_android_or_ios]
   gfx.mojom.SizeF scrollable_viewport_size;
 
-  [EnableIf=is_android_or_ios_or_arkweb]
+  [EnableIf=is_android_or_ios]
   gfx.mojom.SizeF root_layer_size;
 
   [EnableIf=is_android_or_ios]

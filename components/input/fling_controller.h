@@ -5,7 +5,6 @@
 #ifndef COMPONENTS_INPUT_FLING_CONTROLLER_H_
 #define COMPONENTS_INPUT_FLING_CONTROLLER_H_
 
-#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
@@ -13,9 +12,6 @@
 #include "components/input/touchscreen_tap_suppression_controller.h"
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
 #include "ui/events/blink/fling_booster.h"
-#if BUILDFLAG(ARKWEB_D_VSYNC)
-#include <atomic>
-#endif
 
 namespace blink {
 class WebGestureCurve;
@@ -41,10 +37,6 @@ class COMPONENT_EXPORT(INPUT) FlingControllerEventSenderClient {
 
   // Returns the size of visible viewport in screen space, in DIPs.
   virtual gfx::Size GetRootWidgetViewportSize() = 0;
-
-#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) {}
-#endif
 };
 
 // Interface with which the fling progress gets scheduled.
@@ -68,7 +60,6 @@ class COMPONENT_EXPORT(INPUT) FlingControllerSchedulerClient {
 
 class COMPONENT_EXPORT(INPUT) FlingController {
  public:
-
   struct COMPONENT_EXPORT(INPUT) Config {
     Config();
 
@@ -104,10 +95,6 @@ class COMPONENT_EXPORT(INPUT) FlingController {
 
   // Used to halt an active fling progress whenever needed.
   void StopFling();
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/components/input/fling_controller_for_include.h"
-#endif
 
   // The fling controller needs to observe all gesture events. It may consume
   // or filter some events.  It will return true if the event was consumed or
@@ -217,10 +204,6 @@ class COMPONENT_EXPORT(INPUT) FlingController {
   // Whether the last wheel event was consumed, to determine whether we should
   // allow a fling scroll.
   bool last_wheel_event_consumed_ = false;
-
-#if BUILDFLAG(ARKWEB_D_VSYNC)
-  static std::atomic<int> instance_count_;
-#endif
 
   base::WeakPtrFactory<FlingController> weak_ptr_factory_{this};
 };

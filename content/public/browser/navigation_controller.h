@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
 #include "content/common/content_export.h"
@@ -35,10 +34,6 @@
 #include "ui/base/page_transition_types.h"
 #include "url/gurl.h"
 #include "url/origin.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace base {
 class RefCountedString;
@@ -128,14 +123,6 @@ class NavigationController {
     // Adding new UserAgentOverrideOption? Also update LoadUrlParams.java
     // static constants.
   };
-
-#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
-  enum class NavigationEntryUpdateError {
-    UPDATE_OK = 0,
-    ERR_WRONG_OFFSET = -1,
-    ERR_OTHER = -2
-  };
-#endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 
   // Creates a navigation entry and translates the virtual url to a real one.
   // This is a general call; prefer LoadURL[WithParams] below.
@@ -245,7 +232,7 @@ class NavigationController {
     // displayed to the user for data or pdf loads.
     GURL virtual_url_for_special_cases;
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
+#if BUILDFLAG(IS_ANDROID)
     // Used in LOAD_TYPE_DATA loads only. The real data URI is represented
     // as a string to circumvent the restriction on GURL size. This is only
     // needed to pass URLs that exceed the IPC limit (kMaxURLChars). Short
@@ -503,9 +490,6 @@ class NavigationController {
   // `CanGoBack`/`CanGoForward` are preconditions for these respective methods.
   virtual void GoBack() = 0;
   virtual void GoForward() = 0;
-#if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
-   virtual const std::string& GetOriginalUrl() = 0;
-#endif // BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
 
   // Navigates to the specified absolute index. Should only be used for
   // browser-initiated navigations.
@@ -607,15 +591,6 @@ class NavigationController {
 
   // Gets the BackForwardCache for this NavigationController.
   virtual BackForwardCache& GetBackForwardCache() = 0;
-
-#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
-  virtual NavigationEntryUpdateError InsertBackForwardEntry(
-      int index,
-      const GURL& url) = 0;
-  virtual NavigationEntryUpdateError UpdateNavigationEntryUrl(
-      int index,
-      const GURL& url) = 0;
-#endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 
  private:
   // This interface should only be implemented inside content.

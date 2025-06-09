@@ -40,9 +40,6 @@ enum class CTPolicyCompliance;
 
 class HostPortPair;
 class X509Certificate;
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-class ArkWebTransportSecurityStateExt;
-#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
 
 void NET_EXPORT_PRIVATE SetTransportSecurityStateSourceForTesting(
     const TransportSecurityStateSource* source);
@@ -289,13 +286,7 @@ class NET_EXPORT TransportSecurityState {
   TransportSecurityState(const TransportSecurityState&) = delete;
   TransportSecurityState& operator=(const TransportSecurityState&) = delete;
 
-  virtual ~TransportSecurityState();
-
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  virtual ArkWebTransportSecurityStateExt* AsArkWebTransportSecurityStateExt() {
-    return nullptr;
-  }
-#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
+  ~TransportSecurityState();
 
   // As ShouldUpgradeToSSL(), but also returns whether the decision came from
   // static or dynamic state, for metrics.
@@ -475,9 +466,6 @@ class NET_EXPORT TransportSecurityState {
  private:
   friend class TransportSecurityStateTest;
   friend class TransportSecurityStateStaticFuzzer;
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  friend class ArkWebTransportSecurityStateExt;
-#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
   FRIEND_TEST_ALL_PREFIXES(HttpSecurityHeadersTest, NoClobberPins);
 
   typedef std::map<HashedHost, STSState> STSStateMap;
@@ -560,9 +548,5 @@ class NET_EXPORT TransportSecurityState {
 };
 
 }  // namespace net
-
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-#include "arkweb/chromium_ext/net/http/arkweb_transport_security_state_ext.h"
-#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
 
 #endif  // NET_HTTP_TRANSPORT_SECURITY_STATE_H_

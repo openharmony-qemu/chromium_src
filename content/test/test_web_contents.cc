@@ -50,7 +50,7 @@ RenderProcessHostFactory* GetMockProcessFactory() {
 }  // namespace
 
 TestWebContents::TestWebContents(BrowserContext* browser_context)
-    : WebContentsImplExt(browser_context),
+    : WebContentsImpl(browser_context),
       delegate_view_override_(nullptr),
       web_preferences_changed_counter_(nullptr),
       pause_subresource_loading_called_(false),
@@ -582,9 +582,7 @@ bool TestWebContents::GetOverscrollNavigationEnabled() {
 
 void TestWebContents::SetSafeAreaInsetsHost(
     std::unique_ptr<SafeAreaInsetsHost> safe_area_insets_host) {
-#if false
   safe_area_insets_host_ = std::move(safe_area_insets_host);
-#endif
 }
 
 void TestWebContents::GetMediaCaptureRawDeviceIdsOpened(

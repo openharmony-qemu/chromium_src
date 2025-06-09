@@ -10,7 +10,6 @@
 #include <optional>
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/debug/crash_logging.h"
 #include "base/memory/scoped_refptr.h"
@@ -130,9 +129,6 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
   bool SendsCookies() const;
   bool SavesCookies() const;
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
-  int request_id_perf_stat_;
-#endif
   // See comments in network.mojom.URLRequest in url_request.mojom for details
   // of each field.
   std::string method = net::HttpRequestHeaders::kGetMethod;
@@ -166,9 +162,6 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
       mojom::CorsPreflightPolicy::kConsiderPreflight;
   bool originated_from_service_worker = false;
   bool skip_service_worker = false;
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  bool corb_detachable = false;
-#endif
   // `kNoCors` mode is the default request mode for legacy reasons, however this
   // mode is highly discouraged for new requests made on the web platform;
   // please consider using another mode like `kCors` instead, and only use
@@ -229,22 +222,16 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
       network::mojom::AttributionSupport::kUnset;
   mojom::AttributionReportingEligibility attribution_reporting_eligibility =
       mojom::AttributionReportingEligibility::kUnset;
+
+#if BUILDFLAG(IS_OHOS)
+  bool allow_preload_record = false;
+  GURL main_page;
+#endif
+
   bool shared_dictionary_writer_enabled = false;
   std::optional<base::UnguessableToken> attribution_reporting_src_token;
   bool is_ad_tagged = false;
   std::optional<base::UnguessableToken> prefetch_token;
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  bool allow_preload_record = false;
-  GURL main_url;
-  bool is_preflight = false;
-#endif
-
-#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
-  bool is_sync_mode = false;
-#endif
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  bool is_download_request = false;
-#endif  //  ARKWEB_EX_DOWNLOAD
   net::SocketTag socket_tag;
 };
 // LINT.ThenChange(//services/network/prefetch_matches.cc)

@@ -1432,11 +1432,7 @@ bool WebRequestProxyingURLLoaderFactory::InProgressRequest::IsRedirectSafe(
   // For navigations, non-web accessible resources will be blocked by
   // ExtensionNavigationThrottle.
   if (!is_navigation_request &&
-      (target_url.SchemeIs(extensions::kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-       || target_url.SchemeIs(extensions::kArkwebExtensionScheme)
-#endif
-      )) {
+      target_url.SchemeIs(extensions::kExtensionScheme)) {
     const Extension* extension =
         ExtensionRegistry::Get(factory_->browser_context_)
             ->enabled_extensions()

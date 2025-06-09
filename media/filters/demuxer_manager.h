@@ -8,7 +8,6 @@
 #include <optional>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/memory_pressure_listener.h"
 #include "base/memory/raw_ptr.h"
@@ -75,9 +74,6 @@ class MEDIA_EXPORT DemuxerManager {
     // Used for controlling the client when a demuxer swap happens.
     virtual void StopForDemuxerReset() = 0;
     virtual void RestartForHls() = 0;
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-    virtual void RestartForPrimitive() = 0;
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
     virtual bool IsSecurityOriginCryptographic() const = 0;
 
@@ -129,7 +125,7 @@ class MEDIA_EXPORT DemuxerManager {
   void OnPipelineError(PipelineStatus error);
   void SetLoadedUrl(GURL url);
   const GURL& LoadedUrl() const;
-#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
   void PopulateHlsHistograms(bool cryptographic_url);
   PipelineStatus SelectHlsFallbackMechanism(bool cryptographic_url);
 #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
@@ -148,17 +144,12 @@ class MEDIA_EXPORT DemuxerManager {
       bool load_media_source,
       DataSource::Preload preload,
       bool needs_first_frame,
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-      bool should_create_custom_renderer,
-      uint32_t initial_preload,
-      uint32_t media_source_type,
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
       DemuxerCreatedCB on_demuxer_created,
       base::flat_map<std::string, std::string> headers);
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(IS_ANDROID)
   void SetAllowMediaPlayerRendererCredentials(bool allow);
-#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
+#endif  // BUILDFLAG(IS_ANDROID)
 
   // Methods that help manage or access |data_source_|
   DataSource* GetDataSourceForTesting() const;
@@ -201,11 +192,11 @@ class MEDIA_EXPORT DemuxerManager {
   void RemoveMediaTrack(const media::MediaTrack&);
 #endif  // BUILDFLAG(ENABLE_FFMPEG) || BUILDFLAG(ENABLE_HLS_DEMUXER)
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(IS_ANDROID)
   std::unique_ptr<media::Demuxer> CreateMediaUrlDemuxer(
       bool hls_content,
       base::flat_map<std::string, std::string> headers);
-#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
+#endif  // BUILDFLAG(IS_ANDROID)
 
   void SetDemuxer(std::unique_ptr<Demuxer> demuxer);
 
@@ -219,9 +210,6 @@ class MEDIA_EXPORT DemuxerManager {
   void OnChunkDemuxerOpened();
   void OnProgress();
   void RestartClientForHLS();
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  void RestartClientForPrimitive();
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
   void FreeResourcesAfterMediaThreadWait(base::OnceClosure cb);
 
 #if BUILDFLAG(ENABLE_FFMPEG)
@@ -240,9 +228,9 @@ class MEDIA_EXPORT DemuxerManager {
   // Android's MediaUrlDemuxer needs access to these.
   net::SiteForCookies site_for_cookies_;
   url::Origin top_frame_origin_;
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(IS_ANDROID)
   net::StorageAccessApiStatus storage_access_api_status_;
-#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
+#endif  // BUILDFLAG(IS_ANDROID)
 
   // When MSE memory pressure based garbage collection is enabled, the
   // |enable_instant_source_buffer_gc| controls whether the GC is done
@@ -282,11 +270,11 @@ class MEDIA_EXPORT DemuxerManager {
   // RAII member for notifying demuxers of memory pressure.
   std::unique_ptr<base::MemoryPressureListener> memory_pressure_listener_;
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(IS_ANDROID)
   // Used to determine whether to allow credentials or not for
   // MediaPlayerRenderer.
   bool allow_media_player_renderer_credentials_ = false;
-#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
+#endif  // BUILDFLAG(IS_ANDROID)
 
   HlsFallbackImplementation hls_fallback_ = HlsFallbackImplementation::kNone;
 

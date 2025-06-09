@@ -14,7 +14,6 @@
 #include "build/config/chromebox_for_meetings/buildflags.h"
 #include "content/common/buildflags.h"
 #include "content/public/common/dips_utils.h"
-#include "arkweb/build/features/features.h"
 
 namespace features {
 
@@ -147,11 +146,7 @@ BASE_FEATURE(kBatterySaverModeAlignWakeUps,
 //  - kBlockInsecurePrivateNetworkRequestsFromUnknown
 BASE_FEATURE(kBlockInsecurePrivateNetworkRequests,
              "BlockInsecurePrivateNetworkRequests",
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-             base::FEATURE_DISABLED_BY_DEFAULT);
-#else
              base::FEATURE_ENABLED_BY_DEFAULT);
-#endif
 
 // When this feature is enabled, requests to localhost initiated from non-secure
 // contexts in the `private` IP address space are blocked.
@@ -180,17 +175,6 @@ BASE_FEATURE(kBrokerFileOperationsOnDiskCacheInNetworkService,
 BASE_FEATURE(kBrowserVerifiedUserActivationMouse,
              "BrowserVerifiedUserActivationMouse",
              base::FEATURE_DISABLED_BY_DEFAULT);
-
-// If Canvas2D Image Chromium is allowed, this feature controls whether it is
-// enabled.
-BASE_FEATURE(kCanvas2DImageChromium,
-             "Canvas2DImageChromium",
-#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_CHROMEOS_LACROS) || (BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE))
-             base::FEATURE_ENABLED_BY_DEFAULT
-#else
-             base::FEATURE_DISABLED_BY_DEFAULT
-#endif
-);
 
 // Allows pages with cache-control:no-store to enter the back/forward cache.
 // Feature params can specify whether pages with cache-control:no-store can be
@@ -696,7 +680,7 @@ BASE_FEATURE(kNavigationNetworkResponseQueue,
 // If the network service is enabled, runs it in process.
 BASE_FEATURE(kNetworkServiceInProcess,
              "NetworkServiceInProcess2",
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_ANDROID)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -1149,12 +1133,7 @@ BASE_FEATURE(kDisableProcessReuse,
 // This feature is only consulted in site-per-process mode.
 BASE_FEATURE(kSpareRendererForSitePerProcess,
              "SpareRendererForSitePerProcess",
-#if BUILDFLAG(ARKWEB_SITE_ISOLATION)
-             base::FEATURE_ENABLED_BY_DEFAULT
-#else
-             base::FEATURE_DISABLED_BY_DEFAULT
-#endif
-);
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 // Controls whether site isolation should use origins instead of scheme and
 // eTLD+1.

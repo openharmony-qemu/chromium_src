@@ -133,10 +133,6 @@ class WebBundleURLLoaderClient : public network::mojom::URLLoaderClient {
                                 std::move(cached_metadata));
   }
 
-#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
-  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
-#endif
-
   void OnReceiveRedirect(
       const net::RedirectInfo& redirect_info,
       network::mojom::URLResponseHeadPtr response_head) override {
@@ -835,10 +831,6 @@ void WebBundleURLLoaderFactory::OnResponseParsed(
   const std::string header_string = web_package::CreateHeaderString(response);
 
   loader->SetResponseStartTime(base::TimeTicks::Now());
-#if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
-               "responseStart", base::TimeTicks::Now());
-#endif
   loader->SetHeadersBytes(header_string.size());
   if (!loader->trusted_header_client()) {
     SendResponseToLoader(loader, header_string, response->payload_offset,

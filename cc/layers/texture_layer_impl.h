@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/functional/callback.h"
 #include "base/memory/ptr_util.h"
@@ -48,10 +47,6 @@ class CC_EXPORT TextureLayerImpl : public LayerImpl {
   void ReleaseResources() override;
   void OnPurgeMemory() override;
   gfx::ContentColorUsage GetContentColorUsage() const override;
-
-#if BUILDFLAG(ARKWEB_WEBGL)
-  bool ShouldDeferImplInvalidation() const final;
-#endif
 
   // These setter methods don't cause any implicit damage, so the texture client
   // must explicitly invalidate if they intend to cause a visible change in the

@@ -47,10 +47,6 @@
 #include "ui/base/ui_base_features.h"
 #include "ui/gl/gl_switches.h"
 
-#if BUILDFLAG(ARKWEB_NWEB_EX)
-#include "arkweb/chromium_ext/content/browser/gpu/ark_web_compositor_util.h"
-#endif
-
 namespace content {
 
 namespace {
@@ -521,12 +517,6 @@ int NumberOfRendererRasterThreads() {
 
   const base::CommandLine& command_line =
       *base::CommandLine::ForCurrentProcess();
-
-#if BUILDFLAG(ARKWEB_NWEB_EX)
-  if (auto ark_web_raster_threads = ArkWebNumberOfRendererRasterThreads()) {
-    num_raster_threads = *ark_web_raster_threads;
-  }
-#endif
 
   if (command_line.HasSwitch(switches::kNumRasterThreads)) {
     std::string string_value =

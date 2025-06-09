@@ -810,9 +810,6 @@ class BASE_EXPORT GSL_OWNER Value {
     std::vector<Value> storage_;
   };
 
-  Value* FindPath(std::string_view path);
-  const Value* FindPath(std::string_view path) const;
-
   // Note: Do not add more types. See the file-level comment above for why.
 
   // Comparison operators so that Values can easily be used with standard

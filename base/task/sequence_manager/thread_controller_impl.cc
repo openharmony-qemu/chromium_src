@@ -355,7 +355,7 @@ MessagePump* ThreadControllerImpl::GetBoundMessagePump() const {
   return nullptr;
 }
 
-#if BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ANDROID)
 void ThreadControllerImpl::AttachToMessagePump() {
   NOTREACHED();
 }

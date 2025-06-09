@@ -16,8 +16,6 @@
 // For best practices on how to add new NetLog events see:
 // https://chromium.googlesource.com/chromium/src/+/HEAD/net/docs/net-log.md
 
-#include "arkweb/build/features/features.h"
-
 // --------------------------------------------------------------------------
 // General pseudo-events
 // --------------------------------------------------------------------------
@@ -877,11 +875,6 @@ EVENT_TYPE(SSL_CONNECT_JOB_RESTART_WITH_ECH_CONFIG_LIST)
 // This event is logged when the TransportConnectJob IPv6 fallback timer expires
 // and the IPv4 addresses are attempted.
 EVENT_TYPE(TRANSPORT_CONNECT_JOB_IPV6_FALLBACK)
-
-#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-EVENT_TYPE(TRANSPORT_MULTI_CONNECT_JOB)
-EVENT_TYPE(TRANSPORT_MULTI_CONNECT_JOB_FALLBACK)
-#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
 
 // This event is logged whenever the ConnectJob attempts a new TCP connection.
 // association. The ConnectJob may attempt multiple addresses in parallel, so

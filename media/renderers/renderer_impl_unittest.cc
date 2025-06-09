@@ -133,10 +133,6 @@ class RendererImplTest : public ::testing::Test {
     }
 
     renderer_impl_->Initialize(demuxer_.get(), &callbacks_,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                               RequestSurfaceCB(),
-                               VideoDecoderChangedCB(),
-#endif // ARKWEB_VIDEO_ASSISTANT
                                base::BindOnce(&CallbackHelper::OnInitialize,
                                               base::Unretained(&callbacks_)));
     base::RunLoop().RunUntilIdle();

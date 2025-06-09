@@ -11,7 +11,6 @@
 #include <memory>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/containers/flat_set.h"
 #include "base/memory/raw_ptr.h"
@@ -20,7 +19,6 @@
 #include "components/viz/common/display/update_vsync_parameters_callback.h"
 #include "components/viz/common/frame_sinks/begin_frame_args.h"
 #include "components/viz/common/frame_sinks/delay_based_time_source.h"
-#include "components/viz/common/surfaces/frame_sink_id.h"
 
 namespace perfetto {
 class EventContext;
@@ -220,10 +218,6 @@ class VIZ_COMMON_EXPORT BeginFrameSource {
 
   virtual void SetUpdateVSyncParametersCallback(
       UpdateVSyncParametersCallback callback) {}
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  virtual void SendInternalBeginFrame() {}
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
  protected:
   // Returns whether begin-frames to clients should be withheld (because the gpu
@@ -432,30 +426,6 @@ class VIZ_COMMON_EXPORT ExternalBeginFrameSource : public BeginFrameSource {
   // Notifies when the refresh rate of the display is updated. |refresh_rate| is
   // the rate in frames per second.
   virtual void UpdateRefreshRate(float refresh_rate) {}
-#endif
-
-#if BUILDFLAG(ARKWEB_SYNC_RENDER) && BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
-  // Set Current display client Frame sink ID.
-  virtual void SetDrawRect(const gfx::Rect& new_rect) {}
-#endif
-
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
-  // Set Current display client Frame sink ID.
-  virtual void SetCurrentFrameSinkId(const FrameSinkId& frame_sink_id) {}
-#endif
-
-#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
-  virtual void SetEnableLowerFrameRate(bool enabled) {}
-  virtual void SetEnableHalfFrameRate(bool enabled) {}
-#endif
-
-#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-  virtual void UpdateVSyncFrequency(int frame_rate) {}
-  virtual void ResetVSyncFrequency() {}
-#endif
-
-#if BUILDFLAG(ARKWEB_PIP)
-  virtual void SetPipActive(bool active) {}
 #endif
 
   // Notifies the begin frame source of the desired frame interval for the

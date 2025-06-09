@@ -7,7 +7,6 @@
 #include <optional>
 #include <string_view>
 
-#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "content/browser/devtools/network_service_devtools_observer.h"
 #include "content/browser/renderer_host/frame_tree_node.h"
@@ -85,13 +84,7 @@ network::mojom::URLLoaderFactoryParamsPtr CreateParams(
         trust_token_redemption_policy,
     net::CookieSettingOverrides cookie_setting_overrides,
     std::string_view debug_tag,
-    bool require_cross_site_request_for_cookies
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-,
-    const GURL& main_url = GURL(),
-    uint64_t addr_web_handle = 0
-#endif
-    ) {
+    bool require_cross_site_request_for_cookies) {
   DCHECK(process);
 
   network::mojom::URLLoaderFactoryParamsPtr params =
@@ -115,11 +108,7 @@ network::mojom::URLLoaderFactoryParamsPtr CreateParams(
     // --disable-web-security also disables Opaque Response Blocking (ORB).
     params->is_orb_enabled = false;
   } else if (allow_universal_access_from_file_urls &&
-#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
-            (origin.scheme() == url::kFileScheme || origin.scheme() == url::kResourcesScheme)) {
-#else
-           origin.scheme() == url::kFileScheme) {
-#endif
+             origin.scheme() == url::kFileScheme) {
     // allow_universal_access_from_file_urls disables ORB (via
     // `is_orb_enabled`) and CORS (via `disable_web_security`) for requests
     // made from a file: |origin|.
@@ -155,11 +144,6 @@ network::mojom::URLLoaderFactoryParamsPtr CreateParams(
   params->require_cross_site_request_for_cookies =
       require_cross_site_request_for_cookies;
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  params->main_url = main_url.spec();
-  params->addr_web_handle = addr_web_handle;
-#endif
-
   return params;
 }
 
@@ -180,13 +164,7 @@ URLLoaderFactoryParamsHelper::CreateForFrame(
     network::mojom::TrustTokenOperationPolicyVerdict
         trust_token_redemption_policy,
     net::CookieSettingOverrides cookie_setting_overrides,
-    std::string_view debug_tag
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-,
-    const GURL& main_url,
-    uint64_t addr_web_handle
-#endif
-    ) {
+    std::string_view debug_tag) {
   return CreateParams(
       process,
       frame_origin,  // origin
@@ -203,13 +181,7 @@ URLLoaderFactoryParamsHelper::CreateForFrame(
       NetworkServiceDevToolsObserver::MakeSelfOwned(frame->frame_tree_node()),
       trust_token_issuance_policy, trust_token_redemption_policy,
       cookie_setting_overrides, debug_tag,
-      /*require_cross_site_request_for_cookies=*/false
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-,
-      main_url,
-      addr_web_handle
-#endif
-      );
+      /*require_cross_site_request_for_cookies=*/false);
 }
 
 // static

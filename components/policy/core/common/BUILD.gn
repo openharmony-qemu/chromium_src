@@ -5,8 +5,6 @@
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
-import("//arkweb/build/features/features.gni")
-import("//arkweb/chromium_ext/chromium_ext.gni")
 
 group("policy_namespace") {
   public_deps = [ ":policy_namespace_internal" ]
@@ -402,8 +400,12 @@ source_set("internal") {
       ]
     }
   }
-  if (is_arkweb && arkweb_edm_policy) {
-    sources += arkweb_components_policy_core_common_sources
+
+  if (is_ohos) {
+    sources += [
+      "policy_loader_ohos.cc",
+      "policy_loader_ohos.h",
+    ]
   }
 }
 

@@ -34,16 +34,6 @@ struct DocumentStartJavaScript {
   js_injection.mojom.OriginMatcher origin_matcher;
 };
 
-// DocumentEndJavaScript struct contains the JavaScript snippet |script| and
-// the corresponding |origin_matcher|. We will run the script if the frame's
-// origin matches any rules in the |origin_matcher| when document end.
-[EnableIf=arkweb_js_on_document_end]
-struct DocumentEndJavaScript {
-  int32 script_id;
-  mojo_base.mojom.String16 script;
-  js_injection.mojom.OriginMatcher origin_matcher;
-};
-
 // The ArrayBuffer arm of the JsWebMessage union below, which contains the
 // ArrayBuffer payload sent between JavaScript and browser.
 struct JsWebMessageArrayBufferValue {
@@ -111,53 +101,4 @@ interface JsCommunication {
 
   // Called from browser, to remove the script by the given script_id.
   RemoveDocumentStartScript(int32 script_id);
-
-  // Called from browser, to add a script for a frame to run at document end
-  // stage. The script will run only if the frame's origin matches any of the
-  // allowed_origin_rules.
-  [EnableIf=arkweb_js_on_document_end]
-  AddDocumentEndScript(js_injection.mojom.DocumentEndJavaScript script);
-  // Called from browser, to remove the script by the given script_id.
-  [EnableIf=arkweb_js_on_document_end]
-  RemoveDocumentEndScript(int32 script_id);
-
-  // Called from browser, to add a script for a frame to run at head element ready
-  // stage. The script will run only if the frame's origin matches any of the
-  // allowed_origin_rules.
-  [EnableIf=arkweb_jsproxy]
-  AddHeadReadyScript(js_injection.mojom.DocumentStartJavaScript script);
-
-  // Called from browser, to remove the script by the given script_id.
-  [EnableIf=arkweb_jsproxy]
-  RemoveHeadReadyScript(int32 script_id);
-
-  // Called from browser, to replace scripts for a frame to run at document start
-  // stage. The scripts will run only if the frame's origin matches any of the
-  // allowed_origin_rules.
-  [EnableIf=arkweb_jsproxy]
-  AddPendingJavascriptAtDocumentStart(js_injection.mojom.DocumentStartJavaScript script);
-
-  // Called from browser, to replace scripts for a frame to run at document end
-  // stage. The scripts will run only if the frame's origin matches any of the
-  // allowed_origin_rules.
-  [EnableIf=arkweb_jsproxy]
-  AddPendingJavascriptAtDocumentEnd(js_injection.mojom.DocumentEndJavaScript script);
-
-  // Called from browser, to replace scripts for a frame to run at head element ready
-  // stage. The scripts will run only if the frame's origin matches any of the
-  // allowed_origin_rules.
-  [EnableIf=arkweb_jsproxy]
-  AddPendingJavascriptAtHeadReady(js_injection.mojom.DocumentStartJavaScript script);
-
-  // Called from browser, to Commit document start javaScript
-  [EnableIf=arkweb_jsproxy]
-  CommitPendingJavascriptsAtDocumentStart();
-
-  // Called from browser, to Commit document end javaScript
-  [EnableIf=arkweb_jsproxy]
-  CommitPendingJavascriptsAtDocumentEnd();
-
-  // Called from browser, to Commit head ready javaScript
-  [EnableIf=arkweb_jsproxy]
-  CommitPendingJavascriptsAtHeadReady();
 };

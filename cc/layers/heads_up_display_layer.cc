@@ -20,7 +20,13 @@ scoped_refptr<HeadsUpDisplayLayer> HeadsUpDisplayLayer::Create() {
 }
 
 HeadsUpDisplayLayer::HeadsUpDisplayLayer()
+#if !BUILDFLAG(IS_OHOS)
     : typeface_(skia::MakeTypefaceFromName("Arial", SkFontStyle())) {
+#else
+    // For OH, here should use system's font family.
+    : typeface_(
+      skia::MakeTypefaceFromName("HarmonyOS-Sans-Regular", SkFontStyle())) {
+  #endif
   if (!typeface_.Read(*this)) {
     typeface_.Write(*this) =
         skia::MakeTypefaceFromName("monospace", SkFontStyle::Bold());
@@ -85,7 +91,6 @@ void HeadsUpDisplayLayer::SetLayoutShiftRects(
     const std::vector<gfx::Rect>& rects) {
   layout_shift_rects_.Write(*this) = rects;
 }
-
 
 void HeadsUpDisplayLayer::PushPropertiesTo(
     LayerImpl* layer,

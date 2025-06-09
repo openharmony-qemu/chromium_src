@@ -160,11 +160,7 @@ class WebViewPlugin : public blink::WebPlugin, public blink::WebViewObserver {
   // A helper that handles interaction from WebViewPlugin's internal WebView.
   class WebViewHelper : public blink::WebViewClient,
                         public blink::WebNonCompositedWidgetClient,
-#if BUILDFLAG(IS_ARKWEB)
-                        public blink::WebLocalFrameClientExt,
-#else
                         public blink::WebLocalFrameClient,
-#endif
                         public blink::mojom::WidgetHost {
    public:
     WebViewHelper(
@@ -217,10 +213,6 @@ class WebViewPlugin : public blink::WebPlugin, public blink::WebViewObserver {
     // This function sets the "title" attribute to the text value passed by
     // parameter on the container's element, if possible.
     void UpdateTooltip(const std::u16string& tooltip_text);
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-    void DidNativeEmbedEvent(blink::mojom::NativeEmbedTouchEventPtr touchEvent) override {}
-    void DidNativeEmbedMouseEvent(blink::mojom::NativeEmbedMouseEventPtr mouseEvent) override {}
-#endif
 
    private:
     raw_ptr<WebViewPlugin> plugin_;

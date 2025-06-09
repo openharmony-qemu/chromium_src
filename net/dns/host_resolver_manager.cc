@@ -142,13 +142,6 @@
 #endif // BUILDFLAG(IS_ANDROID)
 #endif  // BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
-#include "base/command_line.h"
-#endif
-
-#include "arkweb/chromium_ext/net/dns/host_resolver_manager_for_include.cc"
-
 namespace net {
 
 namespace {
@@ -661,12 +654,6 @@ void HostResolverManager::SetDnsConfigOverrides(DnsConfigOverrides overrides) {
 
 void HostResolverManager::RegisterResolveContext(ResolveContext* context) {
   registered_contexts_.AddObserver(context);
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  context->SetHttpsDnsFallbackEnabled(https_dns_fallback_enabled_);
-  if (https_dns_fallback_enabled_) {
-    WarmUpHttpsDnsFallback(context);
-  }
-#endif
   context->InvalidateCachesAndPerSessionData(
       dns_client_ ? dns_client_->GetCurrentSession() : nullptr,
       false /* network_change */);
@@ -951,14 +938,9 @@ HostResolverManager::Job* HostResolverManager::AddJobWithoutRequest(
     RequestPriority priority,
     const NetLogWithSource& source_net_log) {
   auto new_job =
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-      std::make_unique<ArkWebHostResolverManagerJobExt>(
-#else
-      std::make_unique<Job>(
-#endif
-          weak_ptr_factory_.GetWeakPtr(), key, cache_usage,
-          host_cache, std::move(tasks), priority, source_net_log, tick_clock_,
-          https_svcb_options_);
+      std::make_unique<Job>(weak_ptr_factory_.GetWeakPtr(), key, cache_usage,
+                            host_cache, std::move(tasks), priority,
+                            source_net_log, tick_clock_, https_svcb_options_);
   auto insert_result = jobs_.emplace(std::move(key), std::move(new_job));
   auto& iterator = insert_result.first;
   bool is_new = insert_result.second;
@@ -1301,12 +1283,6 @@ void HostResolverManager::PushDnsTasks(bool system_task_allowed,
   if (system_task_allowed &&
       (no_dns_or_secure_tasks || allow_fallback_to_systemtask_))
     out_tasks->push_back(TaskType::SYSTEM);
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  if (dns_client_->CanUseSecureDnsFallbackTransactions(resolve_context)) {
-    out_tasks->push_back(TaskType::SECURE_DNS_FALLBACK);
-  }
-#endif
 }
 
 void HostResolverManager::CreateTaskSequence(
@@ -1404,13 +1380,6 @@ void HostResolverManager::CreateTaskSequence(
       // If no external source allowed, a job should not be created or started
       break;
   }
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  if (secure_dns_policy == SecureDnsPolicy::kBootstrap &&
-      out_tasks->back() == TaskType::SECURE_DNS_FALLBACK) {
-    out_tasks->pop_back();
-  }
-#endif
 
   // `HOST_RESOLVER_CANONNAME` is only supported through system resolution.
   if (job_key.flags & HOST_RESOLVER_CANONNAME) {
@@ -1768,18 +1737,6 @@ void HostResolverManager::InvalidateCaches(bool network_change) {
         network_change);
   }
   invalidation_in_progress_ = false;
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kEnableNwebExHttpDnsFallback)) {
-    LOG(INFO) << "Host caches has been invalidated";
-
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    // TODO(ARKWEB_LOGGER_REPORT)
-    //  LOG_FEEDBACK(INFO) << "Host caches has been invalidated";
-#endif
-  }
-#endif
 
 #if DCHECK_IS_ON()
   // Sanity checks that invalidation does not have reentrancy issues.

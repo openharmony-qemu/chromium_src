@@ -38,9 +38,6 @@ bool LongPressDragSelector::WillHandleTouchEvent(const MotionEvent& event) {
     case MotionEvent::Action::UP:
     case MotionEvent::Action::CANCEL:
       SetState(INACTIVE);
-#if BUILDFLAG(ARKWEB_MENU)
-      client_->UpdateSelectionChanged(*this);
-#endif
       return false;
 
     case MotionEvent::Action::MOVE:

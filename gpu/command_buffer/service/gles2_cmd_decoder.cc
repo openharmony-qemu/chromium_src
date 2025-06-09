@@ -26,7 +26,6 @@
 #include <unordered_map>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/containers/flat_set.h"
 #include "base/containers/heap_array.h"
@@ -3284,6 +3283,13 @@ gpu::ContextResult GLES2DecoderImpl::Initialize(
                     "glClearWorkaroundInit failed";
       return gpu::ContextResult::kFatalFailure;
     }
+  }
+
+  if (feature_info_->context_type() == CONTEXT_TYPE_WEBGL2) {
+    // If WebGL 2, the PRIMITIVE_RESTART_FIXED_INDEX should be always enabled.
+    // See the section <Primitive Restart is Always Enabled> in WebGL 2 spec:
+    // https://www.khronos.org/registry/webgl/specs/latest/2.0/#4.1.4
+    DoEnable(GL_PRIMITIVE_RESTART_FIXED_INDEX);
   }
 
   if (group_->gpu_preferences().enable_gpu_driver_debug_logging &&
@@ -16340,9 +16346,7 @@ void GLES2DecoderImpl::DoBeginSharedImageAccessDirectCHROMIUM(GLuint client_id,
                        "bound texture is not a shared image");
     return;
   }
-#if BUILDFLAG(ARKWEB_VULKAN)
-  TRACE_EVENT2("gpu", __func__, "mailbox", shared_image->mailbox().ToDebugString(), "name", shared_image->GetName());
-#endif
+
   if (texture_ref->shared_image_scoped_access()) {
     LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, "DoBeginSharedImageAccessCHROMIUM",
                        "shared image is being accessed");

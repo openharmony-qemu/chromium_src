@@ -862,7 +862,7 @@ NavigationURLLoaderImpl::CreateNonNetworkLoaderFactory(
   mojo::PendingRemote<network::mojom::URLLoaderFactory>
       terminal_external_protocol;
   bool handled = GetContentClient()->browser()->HandleExternalProtocol(
-      resource_request.url, web_contents_getter,
+      resource_request.url, std::move(web_contents_getter),
       frame_tree_node->frame_tree_node_id(), navigation_ui_data,
       request_info.is_primary_main_frame,
       frame_tree_node->IsInFencedFrameTree(), request_info.sandbox_flags,
@@ -874,21 +874,6 @@ NavigationURLLoaderImpl::CreateNonNetworkLoaderFactory(
                 *request_info.initiator_document_token)
           : nullptr,
       request_info.isolation_info, &terminal_external_protocol);
-
-  if (!handled) {
-    handled = GetContentClient()->browser()->HandleExternalProtocol(
-        web_contents_getter, frame_tree_node->frame_tree_node_id(),
-        navigation_ui_data, request_info.is_primary_main_frame,
-        frame_tree_node->IsInFencedFrameTree(), request_info.sandbox_flags,
-        resource_request, initiating_origin,
-        request_info.initiator_document_token
-            ? RenderFrameHostImpl::FromDocumentToken(
-                  request_info.initiator_process_id,
-                  *request_info.initiator_document_token)
-            : nullptr,
-        request_info.isolation_info, &terminal_external_protocol);
-  }
-
   if (terminal_external_protocol) {
     return std::make_pair(
         /*is_cacheable=*/false,
@@ -1081,12 +1066,7 @@ void NavigationURLLoaderImpl::OnReceiveResponse(
   // When a plugin intercepted the response, we don't want to download it.
   bool is_download =
       !head->intercepted_by_plugin && (must_download || !known_mime_type);
-#if BUILDFLAG(IS_ARKWEB)
-  LOG(INFO) << "is_download " << is_download
-            << " must_download " << must_download
-            << " known_mime_type " << known_mime_type
-            << " mime_type " << head->mime_type;
-#endif
+
   CallOnReceivedResponse(std::move(head),
                          std::move(url_loader_client_endpoints), is_download);
 }
@@ -1614,11 +1594,7 @@ NavigationURLLoaderImpl::CreateTerminalNonNetworkLoaderFactory(
     return DataURLLoaderFactory::Create();
   }
 
-#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
-  if (url.scheme() == url::kFileScheme || url.scheme() == url::kResourcesScheme) {
-#else
   if (url.scheme() == url::kFileScheme) {
-#endif
     // USER_BLOCKING because this scenario is exactly one of the examples
     // given by the doc comment for USER_BLOCKING:
     // Loading and rendering a web page after the user clicks a link.

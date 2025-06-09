@@ -10,7 +10,6 @@
 
 #include "media/base/media_export.h"
 #include "media/base/status.h"
-#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -28,13 +27,8 @@ enum class AudioDecoderType : int {
   kMediaFoundation = 8,  // MediaFoundationAudioDecoder
   kPassthroughDTS = 9,   // Passthrough DTS audio
 
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
-  kOhos = 10,
-  kMaxValue = kOhos,
-#else
   // Keep this at the end and equal to the last entry.
   kMaxValue = kPassthroughDTS,
-#endif
 };
 
 // List of known VideoDecoder implementations; recorded to UKM, always add new
@@ -60,15 +54,11 @@ enum class VideoDecoderType : int {
   kV4L2 = 16,          // V4L2VideoDecoder
   kTesting = 17,       // Never send this to UKM, for tests only.
   kOutOfProcess = 18,  // OOPVideoDecoder (Linux and ChromeOS)
-  kVideoToolbox = 19,  // VideoToolboxVideoDecoder (Mac)
+  kOHOS = 19,          //OHOSVideoDecoder
+  kVideoToolbox = 20,  // VideoToolboxVideoDecoder (Mac)
 
   // Keep this at the end and equal to the last entry.
-#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
-  kOHOS = 20,
-  kMaxValue = kOHOS
-#else
   kMaxValue = kVideoToolbox
-#endif
 };
 
 MEDIA_EXPORT std::string GetDecoderName(AudioDecoderType type);

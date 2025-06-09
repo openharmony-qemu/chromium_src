@@ -20,12 +20,6 @@
 #include "media/mojo/clients/mojo_demuxer_stream_impl.h"
 #include "media/mojo/common/media_type_converters.h"
 #include "media/renderers/video_overlay_factory.h"
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-#include "base/task/bind_post_task.h"
-#endif // ARKWEB_VIDEO_ASSISTANT
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/media/mojo/clients/mojo_renderer_for_include.cc"
-#endif
 
 namespace media {
 
@@ -51,10 +45,6 @@ MojoRenderer::~MojoRenderer() {
 
 void MojoRenderer::Initialize(MediaResource* media_resource,
                               media::RendererClient* client,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                              RequestSurfaceCB request_surface_cb,
-                              VideoDecoderChangedCB decoder_changed_cb,
-#endif // ARKWEB_VIDEO_ASSISTANT
                               PipelineStatusCallback init_cb) {
   DVLOG(1) << __func__;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
@@ -69,11 +59,6 @@ void MojoRenderer::Initialize(MediaResource* media_resource,
 
   media_resource_ = media_resource;
   init_cb_ = std::move(init_cb);
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  request_surface_cb_ = std::move(request_surface_cb);
-  decoder_changed_cb_ = std::move(decoder_changed_cb);
-#endif // ARKWEB_VIDEO_ASSISTANT
 
   switch (media_resource_->GetType()) {
     case MediaResource::Type::kStream:
@@ -126,15 +111,8 @@ void MojoRenderer::InitializeRendererFromUrl(media::RendererClient* client) {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
 
   BindRemoteRendererIfNeeded();
-  InitializeRendererFromUrlExt();
-  const MediaUrlParams& url_params = media_resource_->GetMediaUrlParams();
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  mojom::CustomMediaUrlParamsPtr custom_media_url_params =
-      mojom::CustomMediaUrlParams::New(
-          url_params.custom_media_url_params.preload_type,
-          url_params.custom_media_url_params.media_source_type);
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+  const MediaUrlParams& url_params = media_resource_->GetMediaUrlParams();
 
   // Using base::Unretained(this) is safe because |this| owns
   // |remote_renderer_|, and the callback won't be dispatched if
@@ -142,12 +120,7 @@ void MojoRenderer::InitializeRendererFromUrl(media::RendererClient* client) {
   mojom::MediaUrlParamsPtr media_url_params = mojom::MediaUrlParams::New(
       url_params.media_url, url_params.site_for_cookies,
       url_params.top_frame_origin, url_params.storage_access_api_status,
-#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
       url_params.allow_credentials, url_params.is_hls, url_params.headers);
-#else
-      url_params.allow_credentials, url_params.is_hls, url_params.headers,
-      std::move(custom_media_url_params));
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
   remote_renderer_->Initialize(client_receiver_.BindNewEndpointAndPassRemote(),
                                std::nullopt, std::move(media_url_params),
                                base::BindOnce(&MojoRenderer::OnInitialized,
@@ -398,7 +371,6 @@ void MojoRenderer::OnInitialized(media::RendererClient* client, bool success) {
     // It'd be nice to provide this before Initialize(), but that causes some
     // MojoRenderer implementations to crash.
     SetVolume(volume_);
-    OnInitializedExt();
   }
 
   std::move(init_cb_).Run(success ? PIPELINE_OK
@@ -438,4 +410,5 @@ void MojoRenderer::CancelPendingCallbacks() {
   if (cdm_attached_cb_)
     std::move(cdm_attached_cb_).Run(false);
 }
+
 }  // namespace media

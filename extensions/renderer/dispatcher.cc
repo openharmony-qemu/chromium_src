@@ -141,11 +141,7 @@ enum class ExtensionRendererLoadStatus {
 // extension.
 bool ExtensionAPIEnabledForServiceWorkerScript(const GURL& scope,
                                                const GURL& script_url) {
-  if (!script_url.SchemeIs(extensions::kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      && !script_url.SchemeIs(extensions::kArkwebExtensionScheme)
-#endif
-  ) {
+  if (!script_url.SchemeIs(kExtensionScheme)) {
     return false;
   }
 
@@ -370,34 +366,6 @@ Dispatcher::Dispatcher(
   // this enabled-ness is too late.
   WorkerThreadDispatcher::Get()->Init(RenderThread::Get());
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  // Register WebSecurityPolicy allowlists for the arkweb-extension:// scheme.
-  WebString arkWebExtension_scheme(WebString::FromASCII(kArkwebExtensionScheme));
-
-  WebSecurityPolicy::RegisterURLSchemeAsSupportingFetchAPI(
-      arkWebExtension_scheme);
-  // Extension resources, when loaded as the top-level document, should bypass
-  // Blink's strict first-party origin checks.
-  WebSecurityPolicy::RegisterURLSchemeAsFirstPartyWhenTopLevel(
-      arkWebExtension_scheme);
- 
-  // Disallow running javascript URLs on the chrome-extension scheme.
-  WebSecurityPolicy::RegisterURLSchemeAsNotAllowingJavascriptURLs(
-      arkWebExtension_scheme);
- 
-  if (base::FeatureList::IsEnabled(
-          extensions_features::kAllowSharedArrayBuffersUnconditionally)) {
-    WebSecurityPolicy::RegisterURLSchemeAsAllowingSharedArrayBuffers(
-        arkWebExtension_scheme);
-  }
- 
-  // chrome-extension: resources should be allowed to register ServiceWorkers.
-  WebSecurityPolicy::RegisterURLSchemeAsAllowingServiceWorkers(
-      arkWebExtension_scheme);
- 
-  WebSecurityPolicy::RegisterURLSchemeAsAllowingWasmEvalCSP(
-      arkWebExtension_scheme);
-#endif
   // Register WebSecurityPolicy allowlists for the chrome-extension:// scheme.
   WebString extension_scheme(WebString::FromASCII(kExtensionScheme));
 
@@ -586,11 +554,7 @@ void Dispatcher::DidInitializeServiceWorkerContextOnWorkerThread(
     blink::WebServiceWorkerContextProxy* context_proxy,
     const GURL& service_worker_scope,
     const GURL& script_url) {
-  if (!script_url.SchemeIs(kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      && !script_url.SchemeIs(kArkwebExtensionScheme)
-#endif
-  )
+  if (!script_url.SchemeIs(kExtensionScheme))
     return;
 
   {
@@ -623,11 +587,7 @@ void Dispatcher::WillEvaluateServiceWorkerOnWorkerThread(
   // TODO(crbug.com/40626913): We may want to give service workers not
   // registered by extensions minimal bindings, the same as other webpage-like
   // contexts.
-  if (!script_url.SchemeIs(kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      && !script_url.SchemeIs(kArkwebExtensionScheme)
-#endif
-  ) {
+  if (!script_url.SchemeIs(kExtensionScheme)) {
     // Early-out if this isn't a chrome-extension:// scheme, because looking up
     // the extension registry is unnecessary if it's not. Checking this will
     // also skip over hosted apps, which is the desired behavior - hosted app

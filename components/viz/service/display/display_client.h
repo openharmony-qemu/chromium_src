@@ -36,9 +36,6 @@ class DisplayClient {
   virtual base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
       const FrameSinkId& id,
       mojom::CompositorFrameSinkType* type) = 0;
-#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  virtual void RestoreRenderFit(const FrameSinkId& frame_sink_id) = 0;
-#endif // ARKWEB_MAXIMIZE_RESIZE
 };
 
 }  // namespace viz

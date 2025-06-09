@@ -200,12 +200,7 @@ TEST_P(RasterDecoderManualInitTest, GetCapabilitiesNorm16) {
 class RasterDecoderOOPTest : public testing::Test, DecoderClient {
  public:
   void SetUp() override {
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-    display_ = gl::init::InitializeGLNoExtensionsOneOff(
-        /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
-#else
     display_ = gl::GLSurfaceTestSupport::InitializeOneOff();
-#endif
     gpu::GpuDriverBugWorkarounds workarounds;
 
     scoped_refptr<gl::GLShareGroup> share_group = new gl::GLShareGroup();

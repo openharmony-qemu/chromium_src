@@ -139,12 +139,6 @@ class NoStatePrefetchContents
 
   base::TimeTicks load_start_time() const { return load_start_time_; }
 
-#if BUILDFLAG(IS_ARKWEB)
-  void SetOhStartPrerenderingExtraHeaders(const std::string& extra_headers) {
-    start_prerendering_extra_headers_ = extra_headers;
-  }
-#endif
-
   // Indicates whether this prerendered page can be used for the provided
   // |url| and |session_storage_namespace|.
   bool Matches(
@@ -311,10 +305,6 @@ class NoStatePrefetchContents
 
   // The bounds of the WebView from the launching page.
   gfx::Rect bounds_;
-
-#if BUILDFLAG(IS_ARKWEB)
-  std::string start_prerendering_extra_headers_ = std::string();
-#endif
 
   base::WeakPtrFactory<NoStatePrefetchContents> weak_factory_{this};
 };

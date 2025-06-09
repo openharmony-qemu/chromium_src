@@ -12,9 +12,6 @@ import("//testing/test.gni")
 import("//third_party/angle/gni/angle.gni")
 import("//third_party/dawn/scripts/dawn_features.gni")
 import("//ui/gl/features.gni")
-if (is_arkweb) {
-  import("//arkweb/build/features/features.gni")
-}
 
 declare_args() {
   # Whether service side logging (actual calls into the GL driver) is enabled
@@ -183,12 +180,6 @@ component("gl") {
     ]
   }
 
-  if (is_arkweb) {
-    import("//arkweb/chromium_ext/ui/gl/arkweb_ui_gl_ext.gni")
-    sources += arkweb_ui_gl_ext_sources
-    deps += arkweb_ui_gl_ext_deps
-  }
-
   if (enable_vulkan) {
     sources += [
       "gl_angle_util_vulkan.cc",
@@ -333,6 +324,14 @@ component("gl") {
     }
 
     defines += [ "GL_SILENCE_DEPRECATION" ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "ohos/ohos_native_image.cc",
+      "ohos/ohos_native_image.h",
+    ]
+    libs = ["native_image"]
   }
 
   if (is_android) {
@@ -545,12 +544,6 @@ test("gl_unittests") {
     "//ui/platform_window",
     "//ui/platform_window:platform_impls",
   ]
-
-  if (arkweb_unittests) {
-    import("//arkweb/chromium_ext/ui/gl/arkweb_ui_gl_unittests_ext.gni")
-    deps += arkweb_unittests_deps
-    sources += arkweb_unittests_sources
-  }
 
   data_deps = [
     "//testing/buildbot/filters:gl_unittests_filters",

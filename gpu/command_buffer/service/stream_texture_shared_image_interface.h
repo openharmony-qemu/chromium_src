@@ -7,23 +7,14 @@
 
 #include <memory>
 
-#if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_hardware_buffer_fence_sync.h"
-#endif
 #include "gpu/gpu_gles2_export.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gl/gl_bindings.h"
-#include "arkweb/build/features/features.h"
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-#include "gpu/command_buffer/service/ohos/scoped_native_buffer_fence_sync.h"
-#endif
-
-#if BUILDFLAG(IS_ANDROID)
 namespace base::android {
 class ScopedHardwareBufferFenceSync;
 }  // namespace base::android
-#endif
 
 namespace gpu {
 class TextureOwner;
@@ -33,30 +24,12 @@ class TextureBase;
 class GPU_GLES2_EXPORT StreamTextureSharedImageInterface
     : public base::RefCounted<StreamTextureSharedImageInterface> {
  public:
-  enum class BindingsMode {
-    // Binds image to the texture with service id. Doesn't alter current gl
-    // bindings.
-    kBindImage,
-
-    // Updates the current image but does not bind it.
-    kDontBindImage
-  };
-
   // Release the underlying resources. This should be called when the image is
   // not longer valid or the context is lost.
   virtual void ReleaseResources() = 0;
 
-  // Whether the StreamTextureSharedImageInterface is accounting for gpu memory
-  // or not.
-  virtual bool IsUsingGpuMemory() const = 0;
-
-  // Update texture image to the most recent frame and bind it to the provided
-  // texture |service_id| if TextureOwner does not implicitly binds texture
-  // during the update.
-  // If TextureOwner() always binds texture implicitly during the update, then
-  // it will always bind it to TextureOwner's texture id and not to the
-  // |service_id|.
-  virtual void UpdateAndBindTexImage(GLuint service_id) = 0;
+  // Update texture image to the most recent frame.
+  virtual void UpdateAndBindTexImage() = 0;
 
   virtual bool HasTextureOwner() const = 0;
   virtual TextureBase* GetTextureBase() const = 0;
@@ -79,13 +52,9 @@ class GPU_GLES2_EXPORT StreamTextureSharedImageInterface
   // finished and it can be safely read from.
   // The buffer is guaranteed to be valid until the lifetime of the object
   // returned.
-#if BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_OHOS)
   virtual std::unique_ptr<base::android::ScopedHardwareBufferFenceSync>
   GetAHardwareBuffer() = 0;
-#endif
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  virtual std::unique_ptr<ScopedNativeBufferFenceSync> GetNativeBuffer() = 0;
 #endif
 
  protected:

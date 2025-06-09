@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//arkweb/build/features/features.gni")
 import("//build/config/ui.gni")
 import("//gpu/vulkan/features.gni")
 
@@ -40,9 +39,6 @@ component("init") {
   }
   if (is_apple) {
     deps += [ "//gpu/vulkan/mac" ]
-  }
-  if (arkweb_vulkan) {
-    deps += [ "//arkweb/chromium_ext/gpu/vulkan/ohos" ]
   }
 }
 

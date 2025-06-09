@@ -71,8 +71,6 @@
   X("cc")                                                                \
   X("cc.debug")                                                          \
   X("cdp.perf")                                                          \
-  X("cef")                                                               \
-  X("cef.client")                                                        \
   X("chromeos")                                                          \
   X("cma")                                                               \
   X("compositor")                                                        \
@@ -138,7 +136,6 @@
   X("net")                                                               \
   X("network.scheduler")                                                 \
   X("netlog")                                                            \
-  X("NWebImpl")                                                          \
   X("offline_pages")                                                     \
   X("omnibox")                                                           \
   X("oobe")                                                              \

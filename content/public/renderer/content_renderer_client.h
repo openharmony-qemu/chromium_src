@@ -109,9 +109,6 @@ class CONTENT_EXPORT ContentRendererClient {
   // a crash handler (such as crashpad) is already in use.
   virtual void SetUpWebAssemblyTrapHandler();
 
-  // Notifies that the RenderThread can now send sync IPC messages.
-  virtual void RenderThreadConnected() {}
-
   // Notifies that a new RenderFrame has been created.
   virtual void RenderFrameCreated(RenderFrame* render_frame) {}
 
@@ -247,7 +244,7 @@ class CONTENT_EXPORT ContentRendererClient {
   virtual blink::ProtocolHandlerSecurityLevel GetProtocolHandlerSecurityLevel(
       const url::Origin& origin);
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#if BUILDFLAG(IS_ANDROID)
   // TODO(sgurun) This callback is deprecated and will be removed as soon
   // as android webview completes implementation of a resource throttle based
   // shouldoverrideurl implementation. See crbug.com/325351
@@ -353,28 +350,13 @@ class CONTENT_EXPORT ContentRendererClient {
   // invalidate the frame.
   virtual void RunScriptsAtDocumentStart(RenderFrame* render_frame) {}
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  virtual void TriggerElementHidingInFrame(int routing_id) {}
-
-  virtual void TriggerUserElementHidingInFrame(int routing_id) {}
-#endif
-
   // Notifies that the DOM is ready in the frame's document.
   // This method may invalidate the frame.
   virtual void RunScriptsAtDocumentEnd(RenderFrame* render_frame) {}
 
-#if BUILDFLAG(ARKWEB_JSPROXY)
-  // Notifies that the head element is ready in the frame's document.
-  virtual void RunScriptsAtHeadReady(RenderFrame* render_frame) {}
-#endif
-
   // Notifies that the window.onload event is about to fire.
   // This method may invalidate the frame.
   virtual void RunScriptsAtDocumentIdle(RenderFrame* render_frame) {}
-
-  // Notifies that a DevTools agent has attached or detached.
-  virtual void DevToolsAgentAttached() {}
-  virtual void DevToolsAgentDetached() {}
 
   // Allows subclasses to enable some runtime features before Blink has
   // started.

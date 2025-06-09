@@ -9,7 +9,6 @@
 #include "content/public/browser/browser_thread.h"
 #include "net/base/net_errors.h"
 #include "net/cert/cert_status_flags.h"
-#include "arkweb/build/features/features.h"
 
 using net::SSLInfo;
 
@@ -21,23 +20,13 @@ SSLErrorHandler::SSLErrorHandler(WebContents* web_contents,
                                  const GURL& url,
                                  int net_error,
                                  const net::SSLInfo& ssl_info,
-                                 bool fatal
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-                                 ,
-                                 const GURL& origin_url,
-                                 const std::string& referrer
-#endif
-                                 )
+                                 bool fatal)
     : delegate_(delegate),
       request_url_(url),
       is_primary_main_frame_request_(is_primary_main_frame_request),
       ssl_info_(ssl_info),
       cert_error_(net_error),
       fatal_(fatal),
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-      origin_url_(origin_url),
-      referrer_(referrer),
-#endif
       web_contents_(web_contents) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 }

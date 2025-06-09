@@ -230,6 +230,14 @@ class TestNetworkContext : public mojom::NetworkContext {
       const net::NetworkAnonymizationKey& network_anonymization_key,
       mojom::ResolveHostParametersPtr optional_parameters,
       mojo::PendingRemote<mojom::ResolveHostClient> response_client) override {}
+#if BUILDFLAG(IS_OHOS)
+  void InitPRParallelPreloadMgr(const base::FilePath& cache_path) override {}
+  void StartMainPage(
+    const std::string& url,
+    const net::NetworkAnonymizationKey& network_anonymization_key,
+    uint64_t addr_web_handle) override {}
+  void StopMainPage(uint64_t addr_web_handle) override {}
+#endif
   void CreateHostResolver(
       const std::optional<net::DnsConfigOverrides>& config_overrides,
       mojo::PendingReceiver<mojom::HostResolver> receiver) override {}
@@ -373,17 +381,6 @@ class TestNetworkContext : public mojom::NetworkContext {
                     traffic_annotation) override {}
   void GetBoundNetworkForTesting(
       GetBoundNetworkForTestingCallback callback) override {}
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void SetHostIP(const std::string& HostName,
-    const std::vector<std::string>& Address,
-    uint32_t AliveTime) override {}
-  void ClearHostIP(const std::string& HostName) override {}
-  void InitPRParallelPreloadMgr() override {}
-  void StartPage(const std::string &url, const ::net::NetworkAnonymizationKey &networkAnonymizationKey,
-                 uint64_t addr_web_handle, StartPageCallback callback) override {}
-  void StopPage(uint64_t addr_web_handle) override {}
-  void SetURLLoaderFactoryParam(mojom::URLLoaderFactoryParamsPtr params) override {}
-#endif  // BUILDFLAG(ARKWEB_UNITTESTS)
 };
 
 }  // namespace network

@@ -639,7 +639,7 @@ bool SharedContextState::InitializeGanesh(
   }
 
   gr_context_->setResourceCacheLimit(max_resource_cache_bytes);
-  transfer_cache_ = std::make_unique<ServiceTransferCacheExt>(
+  transfer_cache_ = std::make_unique<ServiceTransferCache>(
       gpu_preferences,
       base::BindRepeating(&SharedContextState::ScheduleSkiaCleanup,
                           base::Unretained(this)));
@@ -714,7 +714,7 @@ bool SharedContextState::InitializeGraphite(
       MakeGraphiteRecorder(graphite_context_, context_options.fGpuBudgetInBytes,
                            max_viz_compositor_image_provider_cache_bytes);
 
-  transfer_cache_ = std::make_unique<ServiceTransferCacheExt>(
+  transfer_cache_ = std::make_unique<ServiceTransferCache>(
       gpu_preferences,
       base::BindRepeating(&SharedContextState::ScheduleSkiaCleanup,
                           base::Unretained(this)));

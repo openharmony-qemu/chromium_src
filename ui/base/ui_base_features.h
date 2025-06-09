@@ -10,7 +10,6 @@
 #include "base/metrics/field_trial_params.h"
 #include "build/build_config.h"
 #include "ui/base/buildflags.h"
-#include "arkweb/build/features/features.h"
 
 namespace features {
 
@@ -39,7 +38,7 @@ COMPONENT_EXPORT(UI_BASE_FEATURES) BASE_DECLARE_FEATURE(kDragDropEmpty);
 COMPONENT_EXPORT(UI_BASE_FEATURES) BASE_DECLARE_FEATURE(kDragDropFiles);
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
 COMPONENT_EXPORT(UI_BASE_FEATURES) BASE_DECLARE_FEATURE(kElasticOverscroll);
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
 

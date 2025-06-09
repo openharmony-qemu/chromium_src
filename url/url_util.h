@@ -115,24 +115,6 @@ COMPONENT_EXPORT(URL) const std::vector<std::string>& GetCSPBypassingSchemes();
 COMPONENT_EXPORT(URL) void AddEmptyDocumentScheme(const char* new_scheme);
 COMPONENT_EXPORT(URL) const std::vector<std::string>& GetEmptyDocumentSchemes();
 
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-// Adds an custom scheme
-COMPONENT_EXPORT(URL) void AddCustomScheme(const char* new_scheme);
-COMPONENT_EXPORT(URL) const std::vector<std::string>& GetCustomScheme();
-#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
-
-#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
-// Adds an application-defined scheme that the js of this scheme supports code cache.
-COMPONENT_EXPORT(URL) void AddCodeCacheEnabledScheme(const char* new_scheme);
-
-// Returns true if the given scheme identified by |scheme| within |spec| is in
-// the list of allowed schemes for code cache (see AddCodeCacheEnabledScheme).
-COMPONENT_EXPORT(URL) bool IsCodeCacheEnabledScheme(const std::string& scheme);
-
-// Returns code cache enabled schemes list.
-COMPONENT_EXPORT(URL) const std::vector<std::string>& GetCodeCacheEnabledSchemes();
-#endif
-
 // Adds a scheme with a predefined default handler.
 //
 // This pair of strings must be normalized protocol handler parameters as

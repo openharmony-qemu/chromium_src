@@ -19,7 +19,6 @@
 #include "media/media_buildflags.h"
 #include "ui/gl/gl_features.h"
 #include "ui/gl/gl_utils.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_LINUX)
 #include "base/cpu.h"
@@ -42,10 +41,8 @@ const char kAudioCodecsFromEDID[] = "audio-codecs-from-edid";
 const char kAutoplayPolicy[] = "autoplay-policy";
 
 // Forces input and output stream creation to use fake audio streams.
-const char kDisableAudioOutput[] = "disable-audio-output";
-#if BUILDFLAG(ARKWEB_WEBRTC)
 const char kDisableAudioInput[] = "disable-audio-input";
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
+const char kDisableAudioOutput[] = "disable-audio-output";
 
 // Causes the AudioManager to fail creating audio streams. Used when testing
 // various failure cases.
@@ -353,7 +350,7 @@ BASE_FEATURE(kMediaRecorderHEVCSupport,
 // when in background.
 BASE_FEATURE(kResumeBackgroundVideo,
              "resume-background-video",
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_POLICY)
+#if BUILDFLAG(IS_ANDROID)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -684,15 +681,9 @@ BASE_FEATURE(kSpecCompliantCanPlayThrough,
 
 // Disables the real audio output stream after silent audio has been delivered
 // for too long. Should save quite a bit of power in the muted video case.
-#if BUILDFLAG(ARKWEB_WEBRTC)
-BASE_FEATURE(kSuspendMutedAudio,
-             "SuspendMutedAudio",
-             base::FEATURE_DISABLED_BY_DEFAULT);
-#else
 BASE_FEATURE(kSuspendMutedAudio,
              "SuspendMutedAudio",
              base::FEATURE_ENABLED_BY_DEFAULT);
-#endif
 
 // Enables the Unified Autoplay policy by overriding the platform's default
 // autoplay policy.
@@ -1155,10 +1146,6 @@ BASE_FEATURE(kAllowMediaCodecCallsInSeparateProcess,
              base::FEATURE_ENABLED_BY_DEFAULT);
 
 #endif  // BUILDFLAG(IS_ANDROID)
-
-#if BUILDFLAG(ARKWEB_MEDIA)
-BASE_FEATURE(kCanPlayHls, "CanPlayHls", base::FEATURE_ENABLED_BY_DEFAULT);
-#endif
 
 #if BUILDFLAG(ENABLE_HLS_DEMUXER)
 BASE_FEATURE(kBuiltInHlsPlayer,

@@ -5,14 +5,9 @@
 #ifndef SERVICES_NETWORK_SEC_HEADER_HELPERS_H_
 #define SERVICES_NETWORK_SEC_HEADER_HELPERS_H_
 
-#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "services/network/public/mojom/fetch_api.mojom-forward.h"
 #include "url/gurl.h"
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/services/network/sec_header_helpers_for_include.h"
-#endif
 
 namespace net {
 class URLRequest;

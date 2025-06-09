@@ -32,8 +32,6 @@
 #include "storage/browser/database/database_connections.h"
 #include "url/origin.h"
 
-#include "arkweb/build/features/features.h"
-
 namespace sql {
 class Database;
 class MetaTable;
@@ -141,14 +139,8 @@ class COMPONENT_EXPORT(STORAGE_BROWSER) DatabaseTracker
   // Thread-safe getter.
   const base::FilePath& database_directory() const { return db_dir_; }
 
-#if BUILDFLAG(ARKWEB_WEBSTORAGE)
-  base::FilePath GetFullDBFilePath(const std::string& origin_identifier,
-                                   const std::u16string& database_name,
-                                   bool suffix = false);
-#else
   base::FilePath GetFullDBFilePath(const std::string& origin_identifier,
                                    const std::u16string& database_name);
-#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
 
   // virtual for unit-testing only
   virtual bool GetOriginInfo(const std::string& origin_id, OriginInfo* info);

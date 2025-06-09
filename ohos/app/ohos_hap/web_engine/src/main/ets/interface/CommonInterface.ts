@@ -1,11 +1,38 @@
-// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of
+ *    conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list
+ *    of conditions and the following disclaimer in the documentation and/or other materials
+ *    provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used
+ *    to endorse or promote products derived from this software without specific prior written
+ *    permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
-import type ConfigurationConstant from '@ohos.app.ability.ConfigurationConstant';
 import type image from '@ohos.multimedia.image';
 import type inputMethod from '@ohos.inputMethod';
 import type GestureEvent from '@ohos.multimodalInput.gestureEvent';
+import type ConfigurationConstant from '@ohos.app.ability.ConfigurationConstant';
+import type common from '@ohos.app.ability.common';
+import type window from '@ohos.window';
 
 export class PowerMonitor {
   OnSuspend: () => void;
@@ -20,16 +47,25 @@ export interface WindowBound {
   height: number;
 }
 
+export interface CaptionButtonRect {
+  right: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
 export class JSBind {
   bindFunction: (name: string, func: Function) => number;
 }
 
 export interface NativeContext {
   runBrowser: (vec_args: string[]) => void;
+  BrowserDestroyed: () => boolean;
   runOtherProcessType: (processType: number) => void;
   registerLifecycle: () => void;
-  startNewWindow: (startUri: string) => void;
-  GetLastActive: () => number;
+  startNewWindow: (startUri: string, force_open: boolean) => void;
+  GetLastActiveWidgetId: () => number;
+  AllocateWidgetId: () => number;
   readImageFromReceiver: (receiver: image.ImageReceiver) => image.Image;
   JSBind: JSBind;
   OnPanEventCB: (action: number, id: string, event: GestureEvent) => void;
@@ -40,13 +76,16 @@ export interface NativeContext {
   SendEnterKeyEventCallback: () => void;
   MoveCursorCallback: (direction: inputMethod.Direction) => void;
   SetThemeSource: (themeSource: ConfigurationConstant.ColorMode) => void;
-  OnDragEnterCB: (id: string, dragInfo: OhosDropData, filePaths: Array<string>) => void;
+  OnDragEnterCB: (id: string, dragInfo: OhosDropData, fileUris: Array<string>) => void;
   OnDragLeaveCB: (id: string) => void;
   OnDragEndCB: (id: string) => void;
   OnDragMoveCB: (id: string, windowX: number, windowY: number) => void;
-  OnDropCB: (id: string, dragInfo: OhosDropData, filePaths: Array<string>) => void;
+  OnDropCB: (id: string, dragInfo: OhosDropData, fileUris: Array<string>) => void;
   OnFontSizeChangeCallback:(fontSizeZoom :number) => void;
   OnWindowInitSize: (windowRect: WindowBound, drawableRect: WindowBound) => void;
+  OnWindowStatusChange: (id: string, status: window.WindowStatusType) => void;
+  OnWindowVisibleChange: (windowId: String, visible: boolean) => void;
+  OnWindowInitState: (state: window.WindowStatusType) => void;
   OnWindowRectChange: (id: string, event: WindowBound, reason: number) => void;
   OnWindowSizeChange: (id: string, event: WindowBound) => void;
   OnWindowEvent: (id: string, event: number) => void;
@@ -55,12 +94,11 @@ export interface NativeContext {
   OnNotificationCloseCallback: (id: number) => void;
   OnNotificationButtonClickCallback: (id: number, buttonIndex) => void;
   OnDisplayChangeCallback: (even: string, id: number) => void;
-  OnRequestCloseWindow: (id: string) => void;
   PowerMonitor: PowerMonitor;
-}
-
-export interface XComponentContext {
-  getNativeContext: (contextType: number) => NativeContext;
+  GetBrowserCloseResponse: (id: number) => BrowserCloseResponse;
+  RegisterWindowEventFilter: (origin_window_id: number) => void;
+  ClearWindowEventFilter: (origin_window_id: number) => void;
+  OnCaptionButtonRectChange: (id: string, event: CaptionButtonRect) => void;
 }
 
 export interface IParams {
@@ -70,30 +108,28 @@ export interface IParams {
   initColorRgb: string,
 }
 
-export interface OhosBasicDragData {
+export interface OhosDragParamToJs {
   text: string;
   url: string;
   urlTitle: string;
   html: string;
-  htmlBaseUrl: string;
-}
-
-export interface OhosDragParamToJs {
-  basicData: OhosBasicDragData;
-  imageTempUri: string;
-  width: number;
-  height: number;
+  webImageFilePath: string;
   bookmarkBuffer: ArrayBuffer;
   webCustomBuffer: ArrayBuffer;
-  pixelBuffer: ArrayBuffer;
+  pixelMapBuffer: ArrayBuffer;
+  pixelMapWidth: number;
+  pixelMapHeight: number;
+  pixelMapTouchX: number;
+  pixelMapTouchY: number;
   windowId: string;
-  touchX: number;
-  touchY: number;
 }
 
 export interface OhosDropData {
-  basicData: OhosBasicDragData;
-  filePaths: Array<string>;
+  text: string;
+  url: string;
+  urlTitle: string;
+  html: string;
+  fileUris: Array<string>;
   bookmarkBuffer: ArrayBuffer | undefined;
   webCustomBuffer: ArrayBuffer | undefined;
 }
@@ -226,10 +262,49 @@ export interface BatteryInfo {
 }
 
 export interface NewWindowParam {
+  parent_id: string
+  window_id: string,
+  bounds: WindowBound
+  init_color_argb: string,
+  hide_title_bar: boolean,
+  use_dark_mode: boolean,
+  is_stateless: boolean,
+  caption_button_visible: boolean
+}
+
+export interface ISubWindowInfo {
   id: string,
-  left: number,
-  top: number,
-  width: number,
-  height: number,
-  hide_title_bar: boolean
+  parentId: string,
+  subWindow: window.Window,
+  localStorage: LocalStorage,
+}
+
+export interface SelectFileDialogParams {
+  multi_files: boolean,
+  extensions: Array<Array<string>>,
+  descriptions: Array<string>,
+  include_all_files: boolean
+}
+
+export interface SaveAsDialogParams {
+  file_name: string,
+  dir_name: string,
+  extensions: Array<Array<string>>,
+  descriptions: Array<string>,
+  include_all_files: boolean
+}
+
+export interface PointCoordinate {
+  x: number
+  y: number,
+  displayId: number,
+}
+
+export enum BrowserCloseResponse {
+  kUndetermined,
+  kClosingContinue,
+  kClosingInterrupt,
+  kClosed,
+  kCloseCancelled,
+  kClosedAnyway,
 }

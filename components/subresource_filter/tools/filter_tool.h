@@ -16,9 +16,6 @@
 namespace url_pattern_index {
 namespace flat {
 struct UrlRule;
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-struct CssRule;
-#endif
 }
 }  // namespace url_pattern_index
 
@@ -61,29 +58,17 @@ class FilterTool {
   void MatchRules(std::istream* request_stream, int min_match_count);
 
  private:
-  friend class FilterToolUtils;
   void PrintResult(bool blocked,
                    const url_pattern_index::flat::UrlRule* rule,
                    std::string_view document_origin,
                    std::string_view url,
                    std::string_view type);
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  const url_pattern_index::flat::UrlRule* MatchUrlRuleImpl(
-      std::string_view document_origin,
-      std::string_view url,
-      std::string_view type,
-      bool* blocked);
-
-  std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
-  MatchCssRuleImpl(std::string_view document_origin, std::string_view url);
-#else
   const url_pattern_index::flat::UrlRule* MatchImpl(
       std::string_view document_origin,
       std::string_view url,
       std::string_view type,
       bool* blocked);
-#endif
 
   void MatchBatchImpl(std::istream* request_stream,
                       bool print_each_request,

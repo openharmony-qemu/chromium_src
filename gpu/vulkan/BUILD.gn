@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//arkweb/build/features/features.gni")
 import("//build/buildflag_header.gni")
 import("//build/config/dcheck_always_on.gni")
 import("//build/config/ozone.gni")
@@ -141,7 +140,7 @@ if (enable_vulkan) {
     if (is_posix) {
       sources += [ "vulkan_util_posix.cc" ]
 
-      if (is_linux || is_chromeos || (is_ohos && !arkweb_vulkan)) {
+      if (is_linux || is_chromeos || is_ohos) {
         sources += [ "vulkan_image_linux.cc" ]
       }
     }
@@ -159,11 +158,6 @@ if (enable_vulkan) {
         "vulkan_image_win.cc",
         "vulkan_util_win32.cc",
       ]
-    }
-
-    if (arkweb_vulkan) {
-      import("//arkweb/chromium_ext/gpu/vulkan/arkweb_gpu_vulkan_ext.gni")
-      sources += arkweb_gpu_vulkan
     }
 
     if (use_ozone) {

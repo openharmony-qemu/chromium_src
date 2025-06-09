@@ -91,9 +91,6 @@ class COMPONENTS_DOWNLOAD_EXPORT ResourceDownloader
   void OnResponseCompleted() override;
   bool CanRequestURL(const GURL& url) override;
   void OnUploadProgress(uint64_t bytes_uploaded) override;
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  std::string GetGuid() override { return guid_; }
-#endif
 
  private:
   // Helper method to start the network request.

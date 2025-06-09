@@ -139,9 +139,6 @@ enum CookieType {
 
 void MaybeRunDeleteCallback(base::WeakPtr<net::CookieMonster> cookie_monster,
                             base::OnceClosure callback) {
-  if (!cookie_monster) {
-    LOG(FATAL) << "MaybeRunDeleteCallback cookie_monster is nullptr.";
-  }
   if (cookie_monster && callback)
     std::move(callback).Run();
 }
@@ -635,25 +632,6 @@ void CookieMonster::SetCookieableSchemes(
   }
 
   cookieable_schemes_ = schemes;
-  MaybeRunCookieCallback(std::move(callback), true);
-}
-
-void CookieMonster::AddCookieableSchemes(
-    const std::vector<std::string>& schemes,
-    SetCookieableSchemesCallback callback) {
-  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-
-  // Calls to this method will have no effect if made after a WebView or
-  // CookieManager instance has been created.
-  if (initialized_) {
-    MaybeRunCookieCallback(std::move(callback), false);
-    return;
-  }
-
-  if (!schemes.empty()) {
-    cookieable_schemes_.insert(cookieable_schemes_.begin(), schemes.begin(),
-                               schemes.end());
-  }
   MaybeRunCookieCallback(std::move(callback), true);
 }
 

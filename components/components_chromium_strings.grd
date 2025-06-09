@@ -105,10 +105,6 @@
     <!-- Pseudolocales -->
     <output filename="components_chromium_strings_ar-XB.pak" type="data_package" lang="ar-XB" />
     <output filename="components_chromium_strings_en-XA.pak" type="data_package" lang="en-XA" />
-    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
-      <output filename="components_chromium_strings_bo-CN.pak" type="data_package" lang="bo-CN" />
-      <output filename="components_chromium_strings_ug.pak" type="data_package" lang="ug" />
-    <!-- </if>  -->
   </outputs>
   <translations>
     <file path="strings/components_chromium_strings_af.xtb" lang="af" />
@@ -193,10 +189,6 @@
     <file path="strings/components_chromium_strings_zh-HK.xtb" lang="zh-HK" />
     <file path="strings/components_chromium_strings_zh-TW.xtb" lang="zh-TW" />
     <file path="strings/components_chromium_strings_zu.xtb" lang="zu" />
-    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
-       <file path="strings/components_chromium_strings_bo-CN.xtb" lang="bo-CN" />
-        <file path="strings/components_chromium_strings_ug.xtb" lang="ug" />
-    <!-- </if> -->
   </translations>
   <release seq="1">
     <messages fallback_to_english="true">

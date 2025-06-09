@@ -23,10 +23,6 @@
 #include "ipc/ipc_channel_mojo.h"
 #include "ipc/ipc_channel_proxy.h"
 #include "ipc/ipc_message.h"
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
-#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#endif
 #include "third_party/blink/public/mojom/shared_storage/shared_storage_worklet_service.mojom.h"
 #include "third_party/blink/public/mojom/worker/worklet_global_scope_creation_params.mojom.h"
 
@@ -162,14 +158,12 @@ AgentSchedulingGroupHost::AgentSchedulingGroupHost(RenderProcessHost& process)
   // reset and reinitialized, we'll be notified so that we can reset and
   // reinitialize ours as well.
   SetUpIPC();
-  implUtils = new AgentSchedulingGroupHostUtils(this);
 }
 
 // DO NOT USE |process_| HERE! At this point it (or at least parts of it) is no
 // longer valid.
 AgentSchedulingGroupHost::~AgentSchedulingGroupHost() {
   DCHECK_EQ(state_, LifecycleState::kRenderProcessHostDestroyed);
-  delete implUtils;
 }
 
 void AgentSchedulingGroupHost::RenderProcessExited(
@@ -387,14 +381,6 @@ void AgentSchedulingGroupHost::DidUnloadRenderFrame(
     frame_host->OnUnloadACK();
   }
 }
-
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-void AgentSchedulingGroupHost::ReportCreateView(int32_t process_id) {
-  if (implUtils) {
-    implUtils->ReportCreateView(process_id);
-  }
-}
-#endif
 
 void AgentSchedulingGroupHost::ResetIPC() {
   DCHECK_EQ(state_, LifecycleState::kRenderProcessExited);

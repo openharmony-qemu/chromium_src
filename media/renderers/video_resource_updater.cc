@@ -62,9 +62,6 @@
 #include "ui/gfx/video_types.h"
 #include "ui/gl/gl_enums.h"
 #include "ui/gl/trace_util.h"
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-#include "base/ohos/sys_info_utils_ext.h"
-#endif
 
 namespace media {
 namespace {
@@ -720,12 +717,6 @@ void VideoResourceUpdater::ReleaseFrameResource() {
   frame_resource_id_ = viz::ResourceId();
 }
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-void VideoResourceUpdater::SetHasNativeLayer(bool has_native_layer) {
-  has_native_layer_ = has_native_layer;
-}
-#endif
-
 void VideoResourceUpdater::AppendQuad(
     viz::CompositorRenderPass* render_pass,
     scoped_refptr<VideoFrame> frame,
@@ -777,11 +768,6 @@ void VideoResourceUpdater::AppendQuad(
           frame_resource_type_ == VideoFrameResourceType::RGBA_PREMULTIPLIED;
 
       bool flipped = !frame->metadata().texture_origin_is_top_left;
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-      if (base::ohos::IsEmulator() && has_native_layer_) {
-        flipped = !flipped;
-      }
-#endif
       bool nearest_neighbor = false;
       gfx::ProtectedVideoType protected_video_type =
           ProtectedVideoTypeFromMetadata(frame->metadata());
@@ -909,7 +895,6 @@ VideoResourceUpdater::PlaneResource* VideoResourceUpdater::AllocateResource(
 void VideoResourceUpdater::CopyHardwarePlane(
     VideoFrame* video_frame,
     VideoFrameExternalResource* external_resource) {
-  TRACE_EVENT0("cc", "VideoResourceUpdater::CopyHardwarePlane");
   const gfx::Size output_plane_resource_size = video_frame->coded_size();
   auto shared_image = video_frame->shared_image();
   // The copy needs to be a direct transfer of pixel data, so we use an RGBA8
@@ -984,9 +969,6 @@ VideoFrameExternalResource VideoResourceUpdater::CreateForHardwarePlanes(
                 << VideoPixelFormatToString(video_frame->format());
     return external_resource;
   }
-
-  TRACE_EVENT2("media", "VideoResourceUpdater::CreateForHardwarePlanes",
-      "copy_required", copy_required, "format", VideoPixelFormatToString(video_frame->format()));
 
   // Make a copy of the current release SyncToken so we know if it changes.
   CopyingSyncTokenClient client;

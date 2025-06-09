@@ -54,7 +54,6 @@
 #include "base/types/optional_util.h"
 #include "build/build_config.h"
 #include "cc/base/switches.h"
-#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "content/browser/bad_message.h"
 #include "content/browser/blob_storage/chrome_blob_storage_context.h"
 #include "content/browser/browser_context_impl.h"
@@ -109,9 +108,6 @@
 #include "services/network/public/mojom/fetch_api.mojom.h"
 #include "services/network/public/mojom/url_response_head.mojom-shared.h"
 #include "skia/ext/platform_canvas.h"
-#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
-#include "third_party/abseil-cpp/absl/types/optional.h"
-#endif
 #include "third_party/blink/public/common/blob/blob_utils.h"
 #include "third_party/blink/public/common/chrome_debug_urls.h"
 #include "third_party/blink/public/common/history/session_history_constants.h"
@@ -122,10 +118,6 @@
 #include "third_party/blink/public/mojom/navigation/prefetched_signed_exchange_info.mojom.h"
 #include "third_party/blink/public/mojom/runtime_feature_state/runtime_feature.mojom.h"
 #include "url/url_constants.h"
-
-#if BUILDFLAG(ARKWEB_NETWORK_DFX)
-#include "cef/ohos_cef_ext/libcef/browser/page_load_metrics/arkweb_page_load_metrics_observer.h"
-#endif
 
 namespace content {
 namespace {
@@ -1338,9 +1330,6 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::LoadURL(
   params.referrer = referrer;
   params.transition_type = transition;
   params.extra_headers = extra_headers;
-#if BUILDFLAG(IS_ARKWEB)
-  params.override_user_agent = NavigationController::UA_OVERRIDE_TRUE;
-#endif
   return LoadURLWithParams(params);
 }
 
@@ -1352,9 +1341,6 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::LoadURLWithParams(
   TRACE_EVENT1("browser,navigation",
                "NavigationControllerImpl::LoadURLWithParams", "url",
                params.url.possibly_invalid_spec());
-#if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  OhPageLoadMetricsObserver::OnNavigationStart();
-#endif
   bool is_explicit_navigation =
       GetContentClient()->browser()->IsExplicitNavigation(
           params.transition_type);
@@ -1732,11 +1718,6 @@ bool NavigationControllerImpl::RendererDidNavigate(
   details->is_main_frame = !rfh->GetParent();
   details->http_status_code = params.http_status_code;
 
-#if BUILDFLAG(ARKWEB_NAVIGATION)
-  details->type = static_cast<OhosNavigationType>(navigation_type);
-  details->current_commit_entry_url = active_entry->GetURL();
-#endif // BUILDFLAG(ARKWEB_NAVIGATION)
-
   active_entry->SetIsOverridingUserAgent(
       navigation_request->is_overriding_user_agent());
 
@@ -2107,10 +2088,6 @@ void NavigationControllerImpl::RendererDidNavigateToNewEntry(
         params.transition, request->IsRendererInitiated(),
         nullptr,  // blob_url_loader_factory
         false);   // is_initial_entry
-
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-    AsArkWebNavigationControllerImplExt()->NewEntrySetExtraHeaders(rfh, params, new_entry);
-#endif
 
     // Find out whether the new entry needs to update its virtual URL on URL
     // change and set up the entry accordingly. This is needed to correctly
@@ -2653,7 +2630,7 @@ void NavigationControllerImpl::SetPendingNavigationSSLError(bool error) {
     pending_entry_->set_ssl_error(error);
 }
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
+#if BUILDFLAG(IS_ANDROID)
 // static
 bool NavigationControllerImpl::ValidateDataURLAsString(
     const scoped_refptr<const base::RefCountedString>& data_url_as_string) {
@@ -3771,10 +3748,7 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::NavigateWithoutEntry(
   // RenderFrameHost to execute its BeforeUnload event, the navigation start
   // will be updated when the BeforeUnload ack is received.
   const auto navigation_start_time = base::TimeTicks::Now();
-#if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
-               "navigationStart", navigation_start_time);
-#endif
+
   std::unique_ptr<NavigationRequest> request =
       CreateNavigationRequestFromLoadParams(
           node, params, override_user_agent, should_replace_current_entry,
@@ -3922,7 +3896,7 @@ NavigationControllerImpl::CreateNavigationEntryFromLoadParams(
       // URL.
       entry->SetBaseURLForDataURL(params.base_url_for_data_url);
       entry->SetVirtualURL(params.virtual_url_for_special_cases);
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
+#if BUILDFLAG(IS_ANDROID)
       entry->SetDataURLAsString(params.data_url_as_string);
 #endif
       entry->SetCanLoadLocalResources(params.can_load_local_resources);
@@ -4074,11 +4048,7 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
           network::mojom::CSPDisposition::CHECK, std::vector<int>(),
           params.href_translate,
           false /* is_history_navigation_in_new_child_frame */,
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-          params.input_start, network::mojom::RequestDestination::kEmpty, "");
-#else
           params.input_start, network::mojom::RequestDestination::kEmpty);
-#endif
 
   blink::mojom::CommitNavigationParamsPtr commit_params =
       blink::mojom::CommitNavigationParams::New(
@@ -4101,7 +4071,7 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
           blink::mojom::WasActivatedOption::kUnknown,
           /*navigation_token=*/base::UnguessableToken::Create(),
           std::vector<blink::mojom::PrefetchedSignedExchangeInfoPtr>(),
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
+#if BUILDFLAG(IS_ANDROID)
           /*data_url_as_string=*/std::string(),
 #endif
           /*is_browser_initiated=*/!params.is_renderer_initiated,
@@ -4139,11 +4109,8 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
           /*cookie_deprecation_label=*/std::nullopt,
           /*visited_link_salt=*/std::nullopt,
           /*local_surface_id=*/std::nullopt,
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-           false, /* site_adblock_enabled */
-           node->current_frame_host()->GetCachedPermissionStatuses());
-#endif
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
+          node->current_frame_host()->GetCachedPermissionStatuses());
+#if BUILDFLAG(IS_ANDROID)
   if (ValidateDataURLAsString(params.data_url_as_string)) {
     commit_params->data_url_as_string = params.data_url_as_string->as_string();
   }

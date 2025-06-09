@@ -18,9 +18,8 @@
 #include "partition_alloc/partition_alloc_base/posix/eintr_wrapper.h"
 #include "partition_alloc/partition_alloc_check.h"
 
-#include "arkweb/build/features/features.h"
 #if PA_BUILDFLAG(IS_LINUX) || PA_BUILDFLAG(IS_CHROMEOS) || \
-    PA_BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_UNITTESTS)
+    PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_OHOS)
 #include <inttypes.h>
 #endif
 

@@ -5,8 +5,6 @@
 #ifndef UI_EVENTS_TYPES_EVENT_TYPE_H_
 #define UI_EVENTS_TYPES_EVENT_TYPE_H_
 
-#include "arkweb/build/features/features.h"
-
 namespace ui {
 
 // Event types.
@@ -49,12 +47,6 @@ enum class EventType {
   kGesturePinchUpdate,
   kGestureShortPress,
   kGestureLongPress,
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  kGestureDragLongPress,
-#endif
-#if BUILDFLAG(ARKWEB_AI)
-  kGestureCreateOverlay,
-#endif
   kGestureLongTap,
   // A kGestureSwipe can happen at the end of a touch sequence involving one or
   // more fingers if the finger velocity was high enough when the first finger

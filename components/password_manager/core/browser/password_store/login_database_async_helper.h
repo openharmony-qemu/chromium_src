@@ -15,10 +15,6 @@
 #include "components/password_manager/core/browser/sync/password_store_sync.h"
 #include "components/sync/model/wipe_model_upon_sync_disabled_behavior.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 namespace base {
 class Location;
 }  // namespace base
@@ -72,9 +68,6 @@ class LoginDatabaseAsyncHelper : public PasswordStoreSync {
 
   PasswordChangesOrError AddLogin(const PasswordForm& form);
   PasswordChangesOrError UpdateLogin(const PasswordForm& form);
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-  void UpdateLoginDisplayName(const PasswordForm& form);
-#endif
   PasswordChangesOrError RemoveLogin(const base::Location& location,
                                      const PasswordForm& form);
   PasswordChangesOrError RemoveLoginsCreatedBetween(

@@ -43,10 +43,6 @@
 #include "media/mojo/services/mojo_cdm_service.h"
 #endif  // BUILDFLAG(ENABLE_MOJO_CDM)
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-#include "arkweb/chromium_ext/media/mojo/services/interface_factory_impl_for_include.cc"
-#endif
-
 namespace media {
 
 #if BUILDFLAG(ENABLE_MOJO_AUDIO_DECODER)
@@ -259,7 +255,7 @@ void InterfaceFactoryImpl::CreateCastRenderer(
 }
 #endif
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+#if BUILDFLAG(IS_ANDROID)
 void InterfaceFactoryImpl::CreateMediaPlayerRenderer(
     mojo::PendingRemote<mojom::MediaPlayerRendererClientExtension>
         client_extension_ptr,
@@ -268,9 +264,7 @@ void InterfaceFactoryImpl::CreateMediaPlayerRenderer(
         renderer_extension_receiver) {
   NOTREACHED();
 }
-#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
 
-#if BUILDFLAG(IS_ANDROID)
 void InterfaceFactoryImpl::CreateFlingingRenderer(
     const std::string& audio_device_id,
     mojo::PendingRemote<mojom::FlingingRendererClientExtension>

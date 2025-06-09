@@ -59,12 +59,6 @@
 #include "url/origin.h"
 #include "url/url_constants.h"
 
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-#include "chrome/browser/browser_process.h"
-#include "cef/libcef/browser/prefs/browser_prefs.h"
-#include "components/prefs/pref_service.h"
-#endif
-
 #if BUILDFLAG(IS_IOS)
 #import <Security/Security.h>
 #endif  // BUILDFLAG(IS_IOS)
@@ -1132,10 +1126,7 @@ bool LoginDatabase::Init(
 
   if (!db_.Open(db_path_)) {
     LogDatabaseInitError(OPEN_FILE_ERROR);
-    LOG(ERROR) << "[Autofill] Unable to open the password store database, errorcode = 3.";
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-#endif
+    LOG(ERROR) << "Unable to open the password store database.";
     return false;
   }
 
@@ -1586,8 +1577,6 @@ PasswordStoreChangeList LoginDatabase::UpdateLogin(
 
   return list;
 }
-
-#include "arkweb/chromium_ext/components/password_manager/core/browser/password_store/login_database_for_include.cc"
 
 bool LoginDatabase::RemoveLogin(const PasswordForm& form,
                                 PasswordStoreChangeList* changes) {
@@ -2488,11 +2477,6 @@ void LoginDatabase::InitializeStatementStrings(const SQLTableBuilder& builder) {
   id_and_password_statement_ =
       "SELECT id, password_value, keychain_identifier FROM logins WHERE " +
       all_unique_key_column_names;
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-  DCHECK(update_display_name_statement_.empty());
-  update_display_name_statement_ = "UPDATE logins SET display_name=? WHERE " +
-                                   all_unique_key_column_names;
-#endif
 }
 
 PasswordForm::Store LoginDatabase::GetStore() const {

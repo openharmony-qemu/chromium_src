@@ -40,9 +40,6 @@ const char* const kValidSchemes[] = {
     url::kFileSystemScheme,    url::kWsScheme,
     url::kWssScheme,           url::kDataScheme,
     url::kUuidInPackageScheme,
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-    extensions::kArkwebExtensionScheme,
-#endif
 };
 
 const int kValidSchemeMasks[] = {
@@ -57,9 +54,6 @@ const int kValidSchemeMasks[] = {
     URLPattern::SCHEME_WSS,
     URLPattern::SCHEME_DATA,
     URLPattern::SCHEME_UUID_IN_PACKAGE,
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-    URLPattern::SCHEME_ARKWEB_EXTENSION,
-#endif
 };
 
 static_assert(std::size(kValidSchemes) == std::size(kValidSchemeMasks),

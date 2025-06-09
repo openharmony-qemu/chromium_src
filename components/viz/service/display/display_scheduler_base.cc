@@ -26,12 +26,4 @@ void DisplaySchedulerBase::SetDamageTracker(
   damage_tracker_->SetDelegate(this);
 }
 
-#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-void DisplaySchedulerBase::ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) {
-  if (client_) {
-    client_->ReenableSwapCheck(surface_id, width, height);
-  }
-}
-#endif // ARKWEB_MAXIMIZE_RESIZE
-
 }  // namespace viz

@@ -40,9 +40,6 @@ struct GPUInfo;
 namespace media {
 struct CdmHostFilePath;
 class MediaDrmBridgeClient;
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
-class OHOSMediaDrmBridgeClient;
-#endif // BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
 }
 
 namespace mojo {
@@ -157,9 +154,6 @@ class CONTENT_EXPORT ContentClient {
     // Android WebView requires non-standard schemes to still be preserved.
     bool allow_non_standard_schemes_in_origins = false;
 #endif
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-    std::vector<std::string> custom_schemes;
-#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
   };
 
   virtual void AddAdditionalSchemes(Schemes* schemes) {}
@@ -208,10 +202,6 @@ class CONTENT_EXPORT ContentClient {
   // Returns the MediaDrmBridgeClient to be used by media code on Android.
   virtual media::MediaDrmBridgeClient* GetMediaDrmBridgeClient();
 #endif  // BUILDFLAG(IS_ANDROID)
-
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
-  virtual media::OHOSMediaDrmBridgeClient* GetMediaDrmBridgeClient();
-#endif  // BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
 
   // Allows the embedder to handle incoming interface binding requests from
   // the browser process to any type of child process. This is called once

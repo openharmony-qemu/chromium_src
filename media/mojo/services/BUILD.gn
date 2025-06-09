@@ -8,9 +8,6 @@ import("//media/gpu/args.gni")
 import("//media/media_options.gni")
 import("//mojo/public/tools/fuzzers/mojolpm.gni")
 import("//testing/test.gni")
-if (is_arkweb){
-  import("//arkweb/build/features/features.gni")
-}
 
 enable_playback_events_recorder =
     enable_cast_receiver && (is_fuchsia || is_android)
@@ -122,9 +119,8 @@ component("services") {
     sources += [ "gpu_mojo_media_client_mac.cc" ]
   } else if (is_win) {
     sources += [ "gpu_mojo_media_client_win.cc" ]
-  } else if (arkweb_heif_support || arkweb_enable_cdm) {
-    import("//arkweb/chromium_ext/media/mojo/services/arkweb_media_mojo_services_ext.gni")
-    sources += arkweb_media_mojo_services_sources
+  } else if (is_ohos) {
+    sources += [ "gpu_mojo_media_client_ohos.cc" ]
   } else if (use_vaapi || use_v4l2_codec) {
     if (is_linux) {
       sources += [ "gpu_mojo_media_client_linux.cc" ]
@@ -304,16 +300,7 @@ source_set("unit_tests") {
     "//services/service_manager/public/cpp/test:test_support",
     "//testing/gmock",
     "//testing/gtest",
-    "//content/public/browser:browser",
-    "//cef:libcef_static"
   ]
-
-  if (arkweb_unittests) {
-    deps += [
-      "//content/public/browser:browser",
-      "//cef:libcef_static"
-    ]
-  }
 
   if (enable_library_cdms) {
     sources += [

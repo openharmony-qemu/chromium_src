@@ -49,10 +49,6 @@ class COMPONENTS_DOWNLOAD_EXPORT UrlDownloadHandler {
   UrlDownloadHandler(const UrlDownloadHandler&) = delete;
   UrlDownloadHandler& operator=(const UrlDownloadHandler&) = delete;
 
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  virtual std::string GetGuid() { return ""; }
-#endif
-
   virtual ~UrlDownloadHandler() = default;
 };
 

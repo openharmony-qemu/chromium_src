@@ -53,14 +53,14 @@ source_set("lib") {
     ]
   } else if (is_android) {
     # No C++ sources needed, face and text detection is provided by Java.
-  } else if (is_ohos && !is_arkweb) {
+  } else if (is_ohos) {
     sources += [
-      "//arkweb/chromium_ext/services/shape_detection/face_detection_impl_ohos.cc",
-      "//arkweb/chromium_ext/services/shape_detection/face_detection_impl_ohos.h",
+      "face_detection_impl_ohos.cc",
+      "face_detection_impl_ohos.h",
       "face_detection_provider_ohos.cc",
       "face_detection_provider_ohos.h",
-      "//arkweb/chromium_ext/services/shape_detection/text_detection_impl_ohos.cc",
-      "//arkweb/chromium_ext/services/shape_detection/text_detection_impl_ohos.h",
+      "text_detection_impl_ohos.cc",
+      "text_detection_impl_ohos.h", 
     ]
     deps += [ "//ohos/adapter:adapter" ]
   } else {

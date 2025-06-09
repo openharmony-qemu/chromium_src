@@ -11,7 +11,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/callback_forward.h"
 #include "base/i18n/rtl.h"
 #include "base/memory/safe_ref.h"
@@ -52,7 +51,6 @@
 #include "third_party/skia/include/core/SkColor.h"
 #include "ui/accessibility/ax_mode.h"
 #include "ui/base/window_open_disposition.h"
-#include "content/browser/renderer_host/render_frame_host_delegate_ext.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "ui/gfx/native_widget_types.h"
@@ -61,10 +59,6 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
 #include "services/device/public/mojom/nfc.mojom.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-#include "arkweb/chromium_ext/content/browser/renderer_host/render_frame_host_delegate_ext.h"
 #endif
 
 class GURL;
@@ -146,7 +140,7 @@ struct PartitionedPopinOpenerProperties {
 // this. This delegate interface is useful for renderer_host/ to make requests
 // to WebContentsImpl, as renderer_host/ is not permitted to know the
 // WebContents type (see //renderer_host/DEPS).
-class CONTENT_EXPORT RenderFrameHostDelegate : public RenderFrameHostDelegateExt {
+class CONTENT_EXPORT RenderFrameHostDelegate {
  public:
   // Callback used with IsClipboardPasteAllowedByPolicy() method.  If the
   // clipboard paste is allowed to proceed, the callback is called with the data
@@ -176,7 +170,6 @@ class CONTENT_EXPORT RenderFrameHostDelegate : public RenderFrameHostDelegateExt
       const GURL& blocked_url,
       const GURL& initiator_url,
       blink::mojom::NavigationBlockedReason reason) {}
-
 
   // Called when blink.mojom.LocalFrameHost::DidFinishLoad() is invoked.
   virtual void OnDidFinishLoad(RenderFrameHostImpl* render_frame_host,

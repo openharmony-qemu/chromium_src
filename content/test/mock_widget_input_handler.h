@@ -15,7 +15,6 @@
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "third_party/blink/public/mojom/input/input_handler.mojom.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -263,11 +262,6 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
 
   void DispatchEvent(std::unique_ptr<blink::WebCoalescedInputEvent> event,
                      DispatchEventCallback callback) override;
-#if BUILDFLAG(IS_ARKWEB)
-  void TryStartFling() override {}
-  void TryFinishFling() override {}
-#endif
-
   void DispatchNonBlockingEvent(
       std::unique_ptr<blink::WebCoalescedInputEvent> event) override;
   void WaitForInputProcessed(WaitForInputProcessedCallback callback) override;
@@ -289,14 +283,7 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
       bool animate,
       const std::optional<cc::BrowserControlsOffsetTagsInfo>& offset_tags_info)
       override;
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void SetGestureEventResult(bool result, bool stopPropagation) override {}
-  void SetNativeEmbedMode(bool flag) override {}
-  void AttachSoftwareCompositorOhos(::mojo::PendingReceiver<::blink::mojom::SoftwareCompositorOhos>
-    compositor_request) override {}
-  void ScrollBy(float delta_x, float delta_y) override {}
-  void SetMouseEventResult(bool result, bool stopPropagation) override {}
-#endif
+
   using MessageVector = std::vector<std::unique_ptr<DispatchedMessage>>;
   MessageVector GetAndResetDispatchedMessages();
 

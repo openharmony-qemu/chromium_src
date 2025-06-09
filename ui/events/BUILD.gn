@@ -7,8 +7,6 @@ import("//build/config/ozone.gni")
 import("//build/config/ui.gni")
 import("//testing/test.gni")
 import("//ui/base/ui_features.gni")
-import("//arkweb/chromium_ext/chromium_ext.gni")
-import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
@@ -17,6 +15,10 @@ if (is_android) {
 
 if (is_ios) {
   import("//ios/build/config.gni")
+}
+
+if (is_ohos) {
+  import("//build/config/ohos/config.gni")
 }
 
 static_library("dom_keycode_converter") {
@@ -123,10 +125,6 @@ component("events_base") {
     "pointer_details.cc",
     "pointer_details.h",
   ]
-  
-  if (arkweb_fling){
-    sources += arkweb_native_scroller_sources
-  }
 
   if (is_android) {
     sources += [
@@ -530,10 +528,6 @@ component("velocity_tracker") {
     "velocity_tracker/velocity_tracker_state.h",
   ]
 
-  if (arkweb_drag_drop) {
-    sources += arkweb_ui_events_velocity_tracker_sources
-  }
-
   defines = [ "IS_VELOCITY_TRACKER_IMPL" ]
 
   deps = [
@@ -713,11 +707,6 @@ if (use_blink) {
       "//ui/gfx/geometry/mojom:mojom_traits",
       "//ui/gfx/ipc/geometry",
     ]
-
-    if (arkweb_unittests) {
-      import("//arkweb/chromium_ext/ui/events/build.gni")
-      sources += events_unittests_sources
-    }
 
     if (is_android) {
       sources += [ "android/motion_event_android_unittest.cc" ]

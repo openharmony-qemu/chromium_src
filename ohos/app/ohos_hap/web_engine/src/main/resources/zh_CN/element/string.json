@@ -41,31 +41,27 @@
       "value": "是否允许读取剪贴板"
     },
     {
-      "name": "reason_download",
-      "value": "是否允许浏览器直接访问下载文件夹"
+      "name": "upload_default_type_description",
+      "value": "自定义文件"
     },
     {
-      "name": "reason_documents",
-      "value": "是否允许浏览器直接访问文档文件夹"
+      "name": "upload_all_file_description",
+      "value": "所有文件(*.*)"
     },
     {
-      "name": "reason_desktop",
-      "value": "是否允许浏览器直接访问桌面文件夹"
+      "name": "pasteBoard_dialog_title",
+      "value": "无法访问系统剪贴板"
     },
     {
-      "name": "download_dialog_title",
-      "value": "无法访问系统文件夹"
+      "name": "pasteBoard_dialog_content",
+      "value": "您已关闭剪贴板的访问权限，建议前往设置-> 隐私与安全-> 剪贴板，开启 label 的剪贴板访问权限"
     },
     {
-      "name": "download_dialog_content",
-      "value": "您已关闭文件夹的访问权限，建议前往设置-> 隐私与安全-> 文件夹，开启 label 的文件夹访问权限"
-    },
-    {
-      "name": "download_dialog_confirm_button",
+      "name": "dialog_confirm_button",
       "value": "前往系统设置"
     },
     {
-      "name": "download_dialog_cancel_button",
+      "name": "dialog_cancel_button",
       "value": "取消"
     }
   ]

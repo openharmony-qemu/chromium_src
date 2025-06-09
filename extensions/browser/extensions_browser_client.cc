@@ -230,11 +230,7 @@ void ExtensionsBrowserClient::GetWebViewStoragePartitionConfig(
   auto partition_config = content::StoragePartitionConfig::Create(
       browser_context, owner_site_url.host(), partition_name, in_memory);
 
-  if (owner_site_url.SchemeIs(extensions::kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      || owner_site_url.SchemeIs(extensions::kArkwebExtensionScheme)
-#endif
-  ) {
+  if (owner_site_url.SchemeIs(extensions::kExtensionScheme)) {
     const auto& owner_config = owner_site_instance->GetStoragePartitionConfig();
 #if DCHECK_IS_ON()
     if (browser_context->IsOffTheRecord()) {

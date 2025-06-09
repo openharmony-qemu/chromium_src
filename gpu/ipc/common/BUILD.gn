@@ -2,12 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//arkweb/build/features/features.gni")
 import("//build/config/ui.gni")
 import("//components/nacl/toolchain.gni")
 import("//gpu/vulkan/features.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
-import("//arkweb/build/features/features.gni")
 
 group("common") {
   if (is_component_build) {
@@ -175,16 +173,6 @@ source_set("ipc_common_sources") {
     ]
     libs = [ "android" ]
     deps += [ "//ui/gl:surface_jni_headers" ]
-  }
-
-  if (use_libfuzzer) {
-    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
-    configs += [ "//build/config/gcc:symbol_visibility_default" ]
-  }
-
-  if (is_arkweb) {
-    import("//arkweb/chromium_ext/gpu/ipc/common/arkweb_gpu_ipc_common_ext.gni")
-    sources += arkweb_gpu_ipc_common_sources
   }
 
   if (use_ozone) {
@@ -377,9 +365,6 @@ mojom("interfaces") {
   }
   if (is_win || is_chromeos) {
     enabled_features += [ "has_gpu_revision_info" ]
-  }
-  if (arkweb_heif_support) {
-    enabled_features += [ "arkweb_heif_support" ]
   }
 
   cpp_typemaps = [

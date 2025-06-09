@@ -9,9 +9,6 @@ import("//gpu/vulkan/features.gni")
 import("//skia/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
-if (is_arkweb) {
-  import("//arkweb/build/features/features.gni")
-}
 
 import("//third_party/inspector_protocol/inspector_protocol.gni")
 
@@ -43,10 +40,6 @@ viz_component("shared_image_format") {
     "//ui/gfx:buffer_types",
     "//ui/gfx/geometry",
   ]
-  if (enable_arkweb) {
-    deps += [ "//arkweb//build/features"]
-  }
-  
   if (enable_vulkan) {
     deps += [ "//third_party/vulkan-headers/src:vulkan_headers" ]
   }

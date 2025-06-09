@@ -43,12 +43,7 @@ NET_EXPORT_PRIVATE ConnectJobParams ConstructConnectJobParams(
     SecureDnsPolicy secure_dns_policy,
     bool disable_cert_network_fetches,
     const CommonConnectJobParams* common_connect_job_params,
-    const NetworkAnonymizationKey& proxy_dns_network_anonymization_key
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-    ,
-    bool secure_dns_only
-#endif
-);
+    const NetworkAnonymizationKey& proxy_dns_network_anonymization_key);
 
 }  // namespace net
 

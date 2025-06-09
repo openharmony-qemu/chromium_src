@@ -16,19 +16,8 @@ MojoRendererWrapper::~MojoRendererWrapper() = default;
 
 void MojoRendererWrapper::Initialize(MediaResource* media_resource,
                                      RendererClient* client,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                                     RequestSurfaceCB request_surface_cb,
-                                     VideoDecoderChangedCB decoder_changed_cb,
-#endif // ARKWEB_VIDEO_ASSISTANT
                                      PipelineStatusCallback init_cb) {
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  mojo_renderer_->Initialize(media_resource, client,
-      std::move(request_surface_cb),
-      std::move(decoder_changed_cb),
-      std::move(init_cb));
-#else
   mojo_renderer_->Initialize(media_resource, client, std::move(init_cb));
-#endif // ARKWEB_VIDEO_ASSISTANT
 }
 
 void MojoRendererWrapper::Flush(base::OnceClosure flush_cb) {
@@ -62,5 +51,3 @@ base::TimeDelta MojoRendererWrapper::GetMediaTime() {
 }
 
 }  // namespace media
-
-#include "arkweb/chromium_ext/media/mojo/clients/mojo_renderer_wrapper_for_include.cc"

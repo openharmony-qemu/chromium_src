@@ -4,7 +4,6 @@
 
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
-import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
@@ -56,9 +55,8 @@ source_set("time_zone_monitor") {
     deps += [ "//chromeos/ash/components/settings" ]
   }
 
-  if (arkweb_time_zone) {
-    import("//arkweb/chromium_ext/service/device/time_zone_monitor/arkweb_time_zone_monitor_ext.gni")
-    sources += arkweb_time_zone_monitor_sources
+  if (is_ohos) {
+    sources += [ "time_zone_monitor_ohos.cc" ]
   }
 
   if (is_chromeos_lacros) {

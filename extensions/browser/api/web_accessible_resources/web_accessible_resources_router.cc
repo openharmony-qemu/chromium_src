@@ -23,13 +23,8 @@ std::optional<GURL> TransformToDynamicURLIfNecessary(
   // Verify that the feature is enabled and the host is a valid extension id.
   if (!base::FeatureList::IsEnabled(
           extensions_features::kExtensionDynamicURLRedirection) ||
-      (!url.SchemeIs(kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-       && !url.SchemeIs(kArkwebExtensionScheme)
-#endif
-           )
-
-      || !crx_file::id_util::IdIsValid(url.host())) {
+      !url.SchemeIs(kExtensionScheme) ||
+      !crx_file::id_util::IdIsValid(url.host())) {
     return std::nullopt;
   }
 

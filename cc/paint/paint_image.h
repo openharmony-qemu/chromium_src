@@ -26,8 +26,6 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/hdr_metadata.h"
-#include "build/build_config.h"
-#include "arkweb/build/features/features.h"
 
 class SkBitmap;
 class SkColorSpace;
@@ -43,11 +41,7 @@ class PaintImageGenerator;
 class PaintWorkletInput;
 class TextureBacking;
 
-enum class ImageType { kPNG, kJPEG, kWEBP, kGIF, kICO, kBMP, kAVIF,
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
- kHEIF,
-#endif
- kInvalid };
+enum class ImageType { kPNG, kJPEG, kWEBP, kGIF, kICO, kBMP, kAVIF, kInvalid };
 
 // An encoded image may include several auxiliary images within it. This enum
 // is used to index those images. Auxiliary images can have different sizes and

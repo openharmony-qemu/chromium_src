@@ -1974,7 +1974,6 @@ enum HistogramValue {
   TTSENGINE_UPDATELANGUAGE = 1912,
   ODFSCONFIGPRIVATE_OPENINOFFICEAPP = 1913,
   COOKIES_GETPARTITIONKEY = 1914,
-  DEVELOPERPRIVATE_OPENURL = 1915,
   // Last entry: Add new entries above, then run:
   // tools/metrics/histograms/update_extension_histograms.py
   ENUM_BOUNDARY

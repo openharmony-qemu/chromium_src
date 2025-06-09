@@ -28,8 +28,6 @@
 #include "ui/gfx/gpu_memory_buffer.h"
 #include "ui/gl/gl_bindings.h"
 
-#include "arkweb/build/features/features.h"
-
 namespace gpu {
 class MemoryTracker;
 class SharedContextState;
@@ -37,16 +35,9 @@ class SharedImageBackingFactory;
 class D3DImageBackingFactory;
 struct GpuFeatureInfo;
 struct GpuPreferences;
-class SharedImageFactoryExt;
 
 class GPU_GLES2_EXPORT SharedImageFactory {
  public:
-  friend class SharedImageFactoryExt;
-
-  virtual gpu::SharedImageFactoryExt* AsSharedImageFactoryExt() {
-      return nullptr;
-  }
-
   // All objects passed are expected to outlive this class.
   SharedImageFactory(const GpuPreferences& gpu_preferences,
                      const GpuDriverBugWorkarounds& workarounds,
@@ -55,7 +46,7 @@ class GPU_GLES2_EXPORT SharedImageFactory {
                      SharedImageManager* manager,
                      MemoryTracker* tracker,
                      bool is_for_display_compositor);
-  virtual ~SharedImageFactory();
+  ~SharedImageFactory();
 
   bool CreateSharedImage(const Mailbox& mailbox,
                          viz::SharedImageFormat si_format,

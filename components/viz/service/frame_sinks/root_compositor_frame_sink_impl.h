@@ -33,7 +33,6 @@
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
 #include "ui/base/ozone_buildflags.h"
 #include "ui/gfx/ca_layer_params.h"
-#include "arkweb/build/features/features.h"
 
 namespace viz {
 
@@ -44,8 +43,6 @@ class FrameSinkManagerImpl;
 class HintSessionFactory;
 class SyntheticBeginFrameSource;
 class VSyncParameterListener;
-class FrameSinkManagerImplUtils;
-class RootCompositorFrameSinkImplExt;
 
 // The viz portion of a root CompositorFrameSink. Holds the Binding/InterfacePtr
 // for the mojom::CompositorFrameSink interface and owns the Display.
@@ -54,9 +51,6 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
       public mojom::DisplayPrivate,
       public DisplayClient {
  public:
-  friend class FrameSinkManagerImplUtils;
-  friend class RootCompositorFrameSinkImplExt;
-
   // Creates a new RootCompositorFrameSinkImpl.
   static std::unique_ptr<RootCompositorFrameSinkImpl> Create(
       mojom::RootCompositorFrameSinkParamsPtr params,
@@ -153,13 +147,9 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   void StartOverdrawTracking(int interval_length_in_seconds);
   OverdrawTracker::OverdrawTimeSeries StopOverdrawTracking();
 
-  virtual RootCompositorFrameSinkImplExt* AsExt() {
-    return nullptr;
-  }
-
  private:
   class StandaloneBeginFrameObserver;
-  FrameSinkManagerImplUtils* managerImplUtils = nullptr;
+
   RootCompositorFrameSinkImpl(
       FrameSinkManagerImpl* frame_sink_manager,
       const FrameSinkId& frame_sink_id,
@@ -241,7 +231,7 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   // See comments on `EvictionHandler`.
   EvictionHandler eviction_handler_;
 
-#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11) || BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)
   gfx::Size last_swap_pixel_size_;
 #endif  // BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)
 

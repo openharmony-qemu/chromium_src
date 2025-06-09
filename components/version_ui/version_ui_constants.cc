@@ -6,7 +6,6 @@
 
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
-#include "cef/libcef/features/features.h"
 
 namespace version_ui {
 
@@ -93,16 +92,5 @@ const char kVariationsSeedName[] = "variations_seed_name";
 const char kVersion[] = "version";
 const char kVersionModifier[] = "version_modifier";
 const char kVersionProcessorVariation[] = "version_processor_variation";
-
-#if BUILDFLAG(ENABLE_CEF)
-const char kKeyModulePath[] = "modulePath";
-const char kKeyUserDataPath[] = "userDataPath";
-
-const char kCefVersion[] = "cef_version";
-const char kModulePath[] = "module_path";
-const char kModulePathName[] = "module_path_name";
-const char kUserDataPath[] = "user_data_path";
-const char kUserDataPathName[] = "user_data_path_name";
-#endif
 
 }  // namespace version_ui

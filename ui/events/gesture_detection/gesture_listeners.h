@@ -7,8 +7,6 @@
 
 #include "ui/events/gesture_detection/gesture_detection_export.h"
 
-#include "arkweb/build/features/features.h"
-
 namespace ui {
 
 class MotionEvent;
@@ -22,12 +20,6 @@ class GESTURE_DETECTION_EXPORT GestureListener {
   virtual bool OnSingleTapUp(const MotionEvent& e, int tap_count) = 0;
   virtual void OnShortPress(const MotionEvent& e) = 0;
   virtual void OnLongPress(const MotionEvent& e) = 0;
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  virtual void OnDragLongPress(const MotionEvent& e) = 0;
-#endif
-#if BUILDFLAG(ARKWEB_AI)
-  virtual void OnCreateOverlay(const MotionEvent& e) = 0;
-#endif
   virtual bool OnScroll(const MotionEvent& e1,
                         const MotionEvent& e2,
                         const MotionEvent& secondary_pointer_down,
@@ -69,12 +61,6 @@ class GESTURE_DETECTION_EXPORT SimpleGestureListener
   bool OnSingleTapUp(const MotionEvent& e, int tap_count) override;
   void OnShortPress(const MotionEvent& e) override;
   void OnLongPress(const MotionEvent& e) override;
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  void OnDragLongPress(const MotionEvent& e) override;
-#endif
-#if BUILDFLAG(ARKWEB_AI)
-  void OnCreateOverlay(const MotionEvent& e) override;
-#endif
   bool OnScroll(const MotionEvent& e1,
                 const MotionEvent& e2,
                 const MotionEvent& secondary_pointer_down,

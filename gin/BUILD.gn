@@ -9,7 +9,6 @@ import("//base/allocator/partition_allocator/partition_alloc.gni")
 import("//testing/test.gni")
 import("//tools/v8_context_snapshot/v8_context_snapshot.gni")
 import("//v8/gni/v8.gni")
-import("//arkweb/build/features/features.gni")
 
 component("gin") {
   sources = [
@@ -103,21 +102,12 @@ component("gin") {
   public_deps = [
     "//base",
     "//base/allocator:buildflags",
-    "//media:media_buildflags",
     "//v8",
   ]
   deps = [
     "//third_party/abseil-cpp:absl",
     "//tools/v8_context_snapshot:buildflags",
   ]
-
-  if (enable_arkweb) {
-    deps += [ "//arkweb/build/features" ]
-  }
-
-  if (enable_arkweb) {
-    public_deps += [ "//arkweb/build/features" ]
-  }
 
   if (is_mac) {
     frameworks = [ "CoreFoundation.framework" ]

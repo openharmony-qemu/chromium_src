@@ -5,7 +5,6 @@
 #ifndef COMPONENTS_POLICY_CORE_COMMON_POLICY_PREF_NAMES_H_
 #define COMPONENTS_POLICY_CORE_COMMON_POLICY_PREF_NAMES_H_
 
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "components/policy/policy_export.h"
 
@@ -90,9 +89,6 @@ extern const char kDownloadRestrictions[];
 #if BUILDFLAG(IS_CHROMEOS)
 extern const char kAlwaysOnVpnPreConnectUrlAllowlist[];
 extern const char kFloatingWorkspaceEnabled[];
-#endif
-#if BUILDFLAG(ARKWEB_EDM_POLICY)
-extern const char kBrowserPolicyVersion[];
 #endif
 }  // namespace policy_prefs
 }  // namespace policy

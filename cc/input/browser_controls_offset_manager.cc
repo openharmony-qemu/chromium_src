@@ -21,15 +21,6 @@
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
-#include "base/command_line.h"
-#endif
-
 namespace cc {
 namespace {
 // These constants were chosen empirically for their visually pleasant behavior.
@@ -242,13 +233,6 @@ void BrowserControlsOffsetManager::UpdateBrowserControlsState(
   else
     client_->SetCurrentBrowserControlsShownRatio(final_top_shown_ratio,
                                                  final_bottom_shown_ratio);
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kEnableNwebExTopControls) &&
-      !animate) {
-    client_->SetupScrollBy();
-  }
-#endif
 }
 
 BrowserControlsState BrowserControlsOffsetManager::PullConstraintForMainThread(

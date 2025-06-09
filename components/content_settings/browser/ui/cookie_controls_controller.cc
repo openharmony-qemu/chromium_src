@@ -193,11 +193,7 @@ CookieControlsController::Status CookieControlsController::GetStatus(
 
   const GURL& url = web_contents->GetLastCommittedURL();
   if (url.SchemeIs(content::kChromeUIScheme) ||
-      url.SchemeIs(kExtensionScheme)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      || url.SchemeIs(kArkwebExtensionScheme)
-#endif
-      ) {
+      url.SchemeIs(kExtensionScheme)) {
     return {/*controls_visible=*/false,
             /*protections_on=*/false,
             CookieControlsEnforcement::kNoEnforcement,

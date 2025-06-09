@@ -1,4 +1,0 @@
-arkweb_ui_gl_init_ext_sources = [
-  "//arkweb/chromium_ext/ui/gl/init/gl_factory_ohos.cc",
-  "//arkweb/chromium_ext/ui/gl/init/gl_initializer_ohos.cc"
-]

@@ -612,12 +612,6 @@ enum RendererType {
   kCastStreaming = 9,    // CastStreamingRendererFactory
   kContentEmbedderDefined = 10,  // Defined by the content embedder
   kTest= 11,             // Renderer implementations used in tests
-  [EnableIf=arkweb_media]
-  kNative = 12,
-  [EnableIf=arkweb_custom_video_player]
-  kOHOSCustomMediaPlayer = 13,
-  [EnableIf=arkweb_media]
-  kOHOSMediaPlayer = 14,  // OHOSMediaPlayerRendererFactory
 };
 
 // See media::CreateCdmStatus

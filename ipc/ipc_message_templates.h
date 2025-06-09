@@ -19,9 +19,6 @@
 #include "ipc/ipc_message.h"
 #include "ipc/ipc_message_utils.h"
 #include "ipc/ipc_sync_message.h"
-#include "arkweb/chromium_ext/base/tuple_ext.h"
-
-#include "arkweb/build/features/features.h"
 
 namespace IPC {
 
@@ -202,8 +199,6 @@ class MessageT<Meta, std::tuple<Ins...>, std::tuple<Outs...>>
     sender->Send(reply);
     return true;
   }
-
-  #include "arkweb/chromium_ext/ipc/ipc_message_templates_ext.h"
 
   template <class T, class P, class Method>
   static bool DispatchDelayReply(const Message* msg,

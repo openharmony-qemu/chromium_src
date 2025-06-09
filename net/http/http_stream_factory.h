@@ -94,9 +94,6 @@ class NET_EXPORT HttpStreamFactory {
     PrivacyMode privacy_mode = PRIVACY_MODE_DISABLED;
     SecureDnsPolicy secure_dns_policy = SecureDnsPolicy::kAllow;
     SocketTag socket_tag;
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-    bool secure_dns_only = false;
-#endif
   };
 
   // Calculates an appropriate SPDY session key for the given parameters.
@@ -167,12 +164,7 @@ class NET_EXPORT HttpStreamFactory {
   // Requests that enough connections for |num_streams| be opened.
   //
   // TODO: Make this take StreamRequestInfo instead.
-  void PreconnectStreams(int num_streams, HttpRequestInfo& info
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-,
-                         bool from_preload = false
-#endif
-  );
+  void PreconnectStreams(int num_streams, HttpRequestInfo& info);
 
   const HostMappingRules* GetHostMappingRules() const;
 

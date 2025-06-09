@@ -81,10 +81,6 @@
 #include "mojo/public/cpp/bindings/message.h"
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/browser/media/media_interface_proxy_for_include.cc"
-#endif
-
 namespace content {
 
 namespace {
@@ -384,8 +380,7 @@ void MediaInterfaceProxy::CreateFlingingRenderer(
   media::MojoRendererService::Create(nullptr, std::move(flinging_renderer),
                                      std::move(receiver));
 }
-#endif
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+
 void MediaInterfaceProxy::CreateMediaPlayerRenderer(
     mojo::PendingRemote<media::mojom::MediaPlayerRendererClientExtension>
         client_extension_remote,
@@ -396,11 +391,7 @@ void MediaInterfaceProxy::CreateMediaPlayerRenderer(
 
   media::MojoRendererService::Create(
       nullptr,
-#if BUILDFLAG(IS_ANDROID)
       std::make_unique<MediaPlayerRenderer>(
-#else
-      std::make_unique<OHOSMediaPlayerRenderer>(
-#endif
           render_frame_host().GetProcess()->GetID(),
           render_frame_host().GetRoutingID(),
           WebContents::FromRenderFrameHost(&render_frame_host()),

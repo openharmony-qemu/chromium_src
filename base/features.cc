@@ -37,7 +37,7 @@ namespace base::features {
 // TODO(https://crbug.com/340824113): Remove the feature flag below.
 BASE_FEATURE(kFeatureParamWithCache,
              "FeatureParamWithCache",
-             FEATURE_DISABLED_BY_DEFAULT);
+             FEATURE_ENABLED_BY_DEFAULT);
 
 // Use the Rust JSON parser. Enabled everywhere except Android, where the switch
 // from using the C++ parser in-thread to using the Rust parser in a thread-pool

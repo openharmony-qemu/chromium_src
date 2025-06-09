@@ -54,7 +54,6 @@ const std::map<std::string, UrlScheme>& GetSchemeOptions() {
           {"chrome-distiller", UrlScheme::kChromeDistiller},
           // From extensions/common/constants.cc
           {"chrome-extension", UrlScheme::kChromeExtension},
-          {"arkweb-extension", UrlScheme::kArkwebExtensionScheme},
       });
   return *scheme_options;
 }

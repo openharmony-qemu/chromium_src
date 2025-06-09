@@ -88,10 +88,8 @@ void SelectFileDialog::SetFactory(
 // static
 scoped_refptr<SelectFileDialog> SelectFileDialog::Create(
     Listener* listener,
-    std::unique_ptr<ui::SelectFilePolicy> policy,
-    bool run_from_cef) {
-  // Avoid reentrancy of the CEF factory.
-  if (dialog_factory_ && (!run_from_cef || !dialog_factory_->IsCefFactory()))
+    std::unique_ptr<ui::SelectFilePolicy> policy) {
+  if (dialog_factory_)
     return dialog_factory_->Create(listener, std::move(policy));
   return CreateSelectFileDialog(listener, std::move(policy));
 }
@@ -118,7 +116,7 @@ base::FilePath SelectFileDialog::GetShortenedFilePath(
   return path.DirName().Append(file_string).AddExtension(extension);
 }
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FILE_UPLOAD)
+#if BUILDFLAG(IS_ANDROID)
 // These are overridden by Android's SelectFileDialog subclass.
 void SelectFileDialog::SetAcceptTypes(std::vector<std::u16string> types) {}
 void SelectFileDialog::SetUseMediaCapture(bool use_media_capture) {}

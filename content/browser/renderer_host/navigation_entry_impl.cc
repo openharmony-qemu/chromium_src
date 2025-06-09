@@ -45,11 +45,6 @@
 #include "base/android/content_uri_utils.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-#include <locale>
-#include <codecvt>
-#endif
-
 using base::UTF16ToUTF8;
 
 namespace content {
@@ -464,16 +459,6 @@ NavigationEntryImpl::~NavigationEntryImpl() {
             .same_document_navigation_entry_screenshot_token()
             .value());
   }
-
-#if BUILDFLAG(ARKWEB_NAVIGATION)
-  static constexpr base::TimeDelta kDelayInterval = base::Seconds(5);
-  auto delayed_image = std::make_shared<gfx::Image>(std::move(favicon_.image));
-  base::SequencedTaskRunner::GetCurrentDefault()->PostDelayedTask(
-    FROM_HERE,
-    base::BindOnce([](std::shared_ptr<gfx::Image>){}, std::move(delayed_image)),
-    kDelayInterval
-  );
-#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
 }
 
 int NavigationEntryImpl::GetUniqueID() {
@@ -501,7 +486,7 @@ const GURL& NavigationEntryImpl::GetBaseURLForDataURL() {
   return base_url_for_data_url_;
 }
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
+#if BUILDFLAG(IS_ANDROID)
 void NavigationEntryImpl::SetDataURLAsString(
     scoped_refptr<base::RefCountedString> data_url) {
   if (data_url) {
@@ -662,17 +647,6 @@ const std::u16string& NavigationEntryImpl::GetTitleForDisplay() {
   }
 #endif
 
-#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-  if (GetURL().SchemeIs(url::kResourcesScheme)) {
-    std::string fileName = GetURL().ExtractFileName();
-    if (fileName == "") {
-      title = u"";
-    } else {
-      std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
-      title = converter.from_bytes(fileName);
-    }
-  }
-#endif
   gfx::ElideString(title, blink::mojom::kMaxTitleChars, &cached_display_title_);
   return cached_display_title_;
 }
@@ -869,7 +843,7 @@ NavigationEntryImpl::CloneAndReplaceInternal(
   // ResetForCommit: post_data_
   copy->extra_headers_ = extra_headers_;
   copy->base_url_for_data_url_ = base_url_for_data_url_;
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
+#if BUILDFLAG(IS_ANDROID)
   copy->data_url_as_string_ = data_url_as_string_;
 #endif
   // ResetForCommit: is_renderer_initiated_
@@ -935,11 +909,7 @@ NavigationEntryImpl::ConstructCommonNavigationParams(
       has_user_gesture(), false /* has_text_fragment_token */,
       network::mojom::CSPDisposition::CHECK, std::vector<int>(), std::string(),
       false /* is_history_navigation_in_new_child_frame */, input_start,
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-      network::mojom::RequestDestination::kEmpty, "");
-#else
       network::mojom::RequestDestination::kEmpty);
-#endif
 }
 
 blink::mojom::CommitNavigationParamsPtr
@@ -998,7 +968,7 @@ NavigationEntryImpl::ConstructCommitNavigationParams(
           blink::mojom::WasActivatedOption::kUnknown,
           base::UnguessableToken::Create(),
           std::vector<blink::mojom::PrefetchedSignedExchangeInfoPtr>(),
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
+#if BUILDFLAG(IS_ANDROID)
           std::string(),
 #endif
           false /* is_browser_initiated */, false /*has_ua_visual_transition*/,
@@ -1032,9 +1002,6 @@ NavigationEntryImpl::ConstructCommitNavigationParams(
           /*cookie_deprecation_label=*/std::nullopt,
           /*visited_link_salt=*/std::nullopt,
           /*local_surface_id=*/std::nullopt,
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-          false, /* site_adblock_enabled */
-#endif
           /*initial_permission_statuses=*/std::nullopt);
 #if BUILDFLAG(IS_ANDROID)
   // `data_url_as_string` is saved in NavigationEntry but should only be used by

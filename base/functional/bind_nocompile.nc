@@ -177,11 +177,11 @@ void WeakPtrWithReturnType() {
 void CallbackConversion() {
   // Callbacks should not be constructible from other callbacks in ways that
   // would drop ref or pointer constness or change arity.
-  // RepeatingCallback<int(int&)> wrong_ref_constness = BindRepeating([] (const int&) {});  // expected-error {{no viable conversion from 'RepeatingCallback<UnboundRunType>' to 'RepeatingCallback<int (int &)>'}}
-  // RepeatingCallback<int(int*)> wrong_ptr_constness = BindRepeating([] (const int*) {});  // expected-error {{no viable conversion from 'RepeatingCallback<UnboundRunType>' to 'RepeatingCallback<int (int *)>'}}
-  // RepeatingClosure arg_count_too_low = BindRepeating([] (int) {});                       // expected-error {{no viable conversion from 'RepeatingCallback<UnboundRunType>' to 'RepeatingCallback<void ()>'}}
-  // RepeatingCallback<int(int)> arg_count_too_high = BindRepeating([] { return 0; });      // expected-error {{no viable conversion from 'RepeatingCallback<UnboundRunType>' to 'RepeatingCallback<int (int)>'}}
-  // RepeatingClosure discarding_return = BindRepeating([] { return 0; });                  // expected-error {{no viable conversion from 'RepeatingCallback<UnboundRunType>' to 'RepeatingCallback<void ()>'}}
+  RepeatingCallback<int(int&)> wrong_ref_constness = BindRepeating([] (const int&) {});  // expected-error {{no viable conversion from 'RepeatingCallback<UnboundRunType>' to 'RepeatingCallback<int (int &)>'}}
+  RepeatingCallback<int(int*)> wrong_ptr_constness = BindRepeating([] (const int*) {});  // expected-error {{no viable conversion from 'RepeatingCallback<UnboundRunType>' to 'RepeatingCallback<int (int *)>'}}
+  RepeatingClosure arg_count_too_low = BindRepeating([] (int) {});                       // expected-error {{no viable conversion from 'RepeatingCallback<UnboundRunType>' to 'RepeatingCallback<void ()>'}}
+  RepeatingCallback<int(int)> arg_count_too_high = BindRepeating([] { return 0; });      // expected-error {{no viable conversion from 'RepeatingCallback<UnboundRunType>' to 'RepeatingCallback<int (int)>'}}
+  RepeatingClosure discarding_return = BindRepeating([] { return 0; });                  // expected-error {{no viable conversion from 'RepeatingCallback<UnboundRunType>' to 'RepeatingCallback<void ()>'}}
 }
 
 void CapturingLambdaOrFunctor() {

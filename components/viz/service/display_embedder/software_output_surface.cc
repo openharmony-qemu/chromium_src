@@ -76,11 +76,6 @@ void SoftwareOutputSurface::SwapBuffers(OutputSurfaceFrame frame) {
         data->set_display_trace_id(swap_trace_id);
       });
 
-#if BUILDFLAG(ARKWEB_DFX_TRACING)
-  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
-                    std::to_string(frame.data.swap_trace_id), "step", "BufferSwapPostSubmit");
-#endif
-
   software_device()->OnSwapBuffers(
       base::BindOnce(&SoftwareOutputSurface::SwapBuffersCallback,
                      weak_factory_.GetWeakPtr(), swap_time,
@@ -107,10 +102,7 @@ void SoftwareOutputSurface::SwapBuffersCallback(base::TimeTicks swap_time,
                            StepName::STEP_FINISH_BUFFER_SWAP);
         data->set_display_trace_id(swap_trace_id);
       });
-#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
-  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
-      std::to_string(swap_trace_id), "step", "FinishBufferSwap");
-#endif
+
   gpu::SwapBuffersCompleteParams params;
   params.swap_response.timings = {swap_time, swap_time};
   params.swap_response.result = gfx::SwapResult::SWAP_ACK;

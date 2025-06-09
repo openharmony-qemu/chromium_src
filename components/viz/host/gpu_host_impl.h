@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
@@ -190,12 +189,6 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
                            bool sync,
                            EstablishChannelCallback callback);
   void SetChannelClientPid(int client_id, base::ProcessId client_pid);
-#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-  std::string GetSurfaceId(int32_t native_embed_id);
-  void SetTransformHint(uint32_t rotation, uint32_t window_id);
-  void DestroyNativeWindow(uint32_t native_window_id);
-  void Discard(uint32_t native_window_id);
-#endif
   void SetChannelDiskCacheHandle(int client_id,
                                  const gpu::GpuDiskCacheHandle& handle);
   void RemoveChannelDiskCacheHandles(int client_id);
@@ -228,25 +221,6 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
 #endif
 
   void MaybeSendFontRenderParams();
-
-#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  void StartMonitor();
-  void StopMonitor();
-#endif
-
-#if BUILDFLAG(IS_ARKWEB)
-  void SetVisible(int nweb_id, bool visible);
-#endif
-
-#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-  void SetHasTouchPoint(bool has_touch_point);
-  void ReportSlidingFrameRate(int32_t frame_rate);
-  void SetLTPOStrategy(int32_t strategy);
-#endif
-
-#if BUILDFLAG(ARKWEB_D_VSYNC)
-  void SetIsFling(bool is_fling_enabled);
-#endif
 
  private:
   friend class GpuHostImplTestApi;

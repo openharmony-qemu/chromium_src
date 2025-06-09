@@ -86,14 +86,6 @@ ChromeLatencyInfo2::InputType InputEventTypeToProto(
       return ChromeLatencyInfo2::InputType::GESTURE_SHORT_PRESS_EVENT;
     case WebInputEvent::Type::kGestureLongPress:
       return ChromeLatencyInfo2::InputType::GESTURE_LONG_PRESS_EVENT;
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-    case WebInputEvent::Type::kGestureDragLongPress:
-      return ChromeLatencyInfo2::InputType::GESTURE_DRAG_LONG_PRESS_EVENT;
-#endif // BUILDFLAG(ARKWEB_DRAG_DROP)
-#if BUILDFLAG(ARKWEB_AI)
-    case WebInputEvent::Type::kGestureCreateOverlay:
-      return ChromeLatencyInfo2::InputType::GESTURE_CREATE_OVERLAY_EVENT;
-#endif
     case WebInputEvent::Type::kGestureLongTap:
       return ChromeLatencyInfo2::InputType::GESTURE_LONG_TAP_EVENT;
     case WebInputEvent::Type::kGestureTwoFingerTap:

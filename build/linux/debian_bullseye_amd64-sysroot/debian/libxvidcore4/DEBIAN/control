@@ -1,0 +1,20 @@
+Package: libxvidcore4
+Source: xvidcore
+Version: 2:1.3.7-1
+Architecture: amd64
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Installed-Size: 734
+Depends: libc6 (>= 2.29)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://labs.xvid.com/source/
+Description: Open source MPEG-4 video codec (library)
+ Xvid (formerly XviD) is an open source MPEG-4 video codec, implementing MPEG-4
+ Simple Profile, Advanced Simple Profile, and Advanced Video Coding standards.
+ It is written in C with assembler optimizations for quality and speed
+ (including MMX, SSE, and 3Dnow! code for i386 and AltiVec for PowerPC), and is
+ especially optimized towards offline, multi-pass compression for storage and
+ archival purposes.
+ .
+ This package contains the shared library.

@@ -44,10 +44,10 @@
 //   PA_LIBC_GLIBC
 
 // Definition of PA_BUILDFLAG(...) macro.
-#include "base/allocator/partition_allocator/src/partition_alloc/buildflag.h"  // IWYU pragma: export
+#include "partition_alloc/buildflag.h"  // IWYU pragma: export
 
 // Definition of PA_BUILDFLAG(IS_CHROMEOS).
-#include "base/allocator/partition_allocator/src/partition_alloc/buildflags.h"  // IWYU pragma: export
+#include "partition_alloc/buildflags.h"  // IWYU pragma: export
 
 // Clangd does not detect PA_BUILDFLAG_INTERNAL_* indirect usage, so mark the
 // header as "always_keep" to avoid "unused include" warning.

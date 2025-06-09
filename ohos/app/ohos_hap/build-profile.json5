@@ -4,7 +4,8 @@
       {
         "name": "default",
         "signingConfig": "default",
-        "compatibleSdkVersion": "5.0.0(12)",
+        "compatibleSdkVersion": "5.0.2(14)",
+        "compatibleSdkVersionStage": "beta6",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
           "nativeLib": {
@@ -24,20 +25,8 @@
   },
   "modules": [
     {
-      "name": "pad_entry",
-      "srcPath": "./product/pad",
-      "targets": [
-        {
-          "name": "default",
-          "applyToProducts": [
-            "default"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "pc_entry",
-      "srcPath": "./product/pc",
+      "name": "chromium",
+      "srcPath": "./chromium",
       "targets": [
         {
           "name": "default",

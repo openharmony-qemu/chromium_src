@@ -105,15 +105,6 @@ void MediaSessionControllersManager::WebContentsMutedStateChanged(bool muted) {
     entry.second->WebContentsMutedStateChanged(muted);
 }
 
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-void MediaSessionControllersManager::SetHtmlPlayEnabled(bool enabled) {
-  if (!IsMediaSessionEnabled())
-    return;
-  for (auto& entry : controllers_map_)
-    entry.second->AsMediaSessionControllerExt()->SetHtmlPlayEnabled(enabled);
-}
-#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
-
 void MediaSessionControllersManager::OnMediaMutedStatusChanged(
     const MediaPlayerId& id,
     bool mute) {
@@ -177,25 +168,11 @@ MediaSessionController* MediaSessionControllersManager::FindOrCreateController(
   auto it = controllers_map_.find(id);
   if (it == controllers_map_.end()) {
     it = controllers_map_
-             .emplace(id, std::make_unique<MediaSessionControllerExt>(
+             .emplace(id, std::make_unique<MediaSessionController>(
                               id, web_contents_))
              .first;
   }
   return it->second.get();
 }
 
-#if BUILDFLAG(ARKWEB_PIP)
-void MediaSessionControllersManager::OnPictureInPictureStateChanged(
-    const MediaPlayerId& id,
-    uint32_t state) {
-  if (!IsMediaSessionEnabled())
-    return;
-  auto controller = FindOrCreateController(id);
-  controller->AsMediaSessionControllerExt()->OnPictureInPictureStateChanged(id, state);
-}
-#endif
 }  // namespace content
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/browser/media/session/media_session_controllers_manager_for_include.cc"
-#endif

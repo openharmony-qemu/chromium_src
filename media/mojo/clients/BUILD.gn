@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 import("//media/media_options.gni")
-import("//arkweb/build/features/features.gni")
 
 # Implementations of media C++ interfaces using corresponding mojo services.
 source_set("clients") {
@@ -117,14 +116,6 @@ source_set("clients") {
 
     deps += [ "//third_party/blink/public:blink_headers" ]
   }
-
-  if (enable_arkweb) {
-    deps += [ "//arkweb/build/features" ]
-  }
-
-  if (enable_arkweb) {
-    public_deps += [ "//arkweb/build/features" ]
-  }
 }
 
 static_library("test_support") {
@@ -185,9 +176,5 @@ source_set("unit_tests") {
       "//content/renderer:renderer",
       "//media",
     ]
-  }
-
-  if (enable_arkweb) {
-    deps += [ "//arkweb/build/features" ]
   }
 }

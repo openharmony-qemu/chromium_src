@@ -258,24 +258,6 @@ bool PDFDocumentHelper::IsCommandIdEnabled(int command_id) const {
   // selection changed message?
   bool readable = true;
 
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
-  switch (command_id) {
-    case ui::TouchEditable::QM_EDITFLAG_CAN_CUT:
-      command_id = ui::TouchEditable::kCut;
-      break;
-    case ui::TouchEditable::QM_EDITFLAG_CAN_COPY:
-      command_id = ui::TouchEditable::kCopy;
-      break;
-    case ui::TouchEditable::QM_EDITFLAG_CAN_PASTE:
-      command_id = ui::TouchEditable::kPaste;
-      break;
-    case ui::TouchEditable::QM_EDITFLAG_CAN_SELECT_ALL:
-      command_id = ui::TouchEditable::kSelectAll;
-      break;
-    default:
-      command_id = ui::TouchEditable::QM_EDITFLAG_NONE;
-  }
-#endif
   switch (command_id) {
     case ui::TouchEditable::kCopy:
       return readable && has_selection_;

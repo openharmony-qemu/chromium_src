@@ -13,9 +13,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
-#include "base/allocator/partition_alloc_features.h"
-
 #include "base/base_switches.h"
 #include "base/callback_list.h"
 #include "base/command_line.h"
@@ -148,7 +145,6 @@
 #include "net/ssl/ssl_config_service.h"
 #include "ppapi/buildflags/buildflags.h"
 #include "services/audio/service.h"
-#include "services/data_decoder/data_decoder_service.h"
 #include "services/data_decoder/public/cpp/service_provider.h"
 #include "services/data_decoder/public/mojom/data_decoder_service.mojom.h"
 #include "services/network/public/cpp/network_switches.h"
@@ -188,6 +184,10 @@
 #include "ui/android/screen_android.h"
 #include "ui/display/screen.h"
 #include "ui/gl/gl_surface.h"
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+#include "content/browser/font_unique_name_lookup/font_unique_name_lookup_ohos.h"
 #endif
 
 #if BUILDFLAG(IS_MAC)
@@ -251,10 +251,6 @@
 
 #if BUILDFLAG(MOJO_RANDOM_DELAYS_ENABLED)
 #include "mojo/public/cpp/bindings/lib/test_random_mojo_delays.h"
-#endif
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/browser/browser_main_loop_ext.cc"
 #endif
 
 // One of the linux specific headers defines this as a macro.
@@ -379,7 +375,7 @@ std::unique_ptr<base::MemoryPressureMonitor> CreateMemoryPressureMonitor(
   std::unique_ptr<memory_pressure::MultiSourceMemoryPressureMonitor> monitor;
 
 #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_FUCHSIA) || \
-    BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS) || BUILDFLAG(IS_OHOS)
   monitor =
       std::make_unique<memory_pressure::MultiSourceMemoryPressureMonitor>();
 #endif
@@ -1315,11 +1311,7 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
   // so this cannot happen any earlier than now.
   InitializeMojo();
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  data_decoder_service_provider_ = std::make_unique<InProcessDataDecoder>();
-#else
   data_decoder_service_provider_ = std::make_unique<OopDataDecoder>();
-#endif
 
   HistogramSynchronizer::GetInstance();
 
@@ -1347,11 +1339,7 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
 #if BUILDFLAG(IS_ANDROID)
   // TODO(crbug.com/40396955): This should be set to |true|.
   establish_gpu_channel = false;
-#if !BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   always_uses_gpu = ShouldStartGpuProcessOnBrowserStartup();
-#else
-  always_uses_gpu = true; // TODO: temp enable use gpu for ohos, not from jni
-#endif
   BrowserGpuChannelHostFactory::Initialize(establish_gpu_channel);
 #else
   establish_gpu_channel = true;
@@ -1425,7 +1413,7 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
                  "BrowserMainLoop::PostCreateThreads:InitMediaStreamManager");
 
     media_stream_manager_ =
-        std::make_unique<MediaStreamManagerExt>(audio_system_.get());
+        std::make_unique<MediaStreamManager>(audio_system_.get());
   }
 
   {
@@ -1494,16 +1482,11 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
   }
 #endif
 
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
-  media::SetMediaDrmBridgeClient(GetContentClient()->GetMediaDrmBridgeClient());
-  CdmRegistry::GetInstance()->Init();
-#endif
-
-#if BUILDFLAG(ARKWEB_WPT)
+#if BUILDFLAG(IS_OHOS)
   if (base::FeatureList::IsEnabled(features::kFontSrcLocalMatching)) {
     FontUniqueNameLookup::GetInstance();
   }
-#endif  // BUILDFLAG(ARKWEB_WPT)
+#endif  // BUILDFLAG(IS_OHOS)
 
 #if defined(ENABLE_IPC_FUZZER)
   SetFileUrlPathAliasForIpcFuzzer();

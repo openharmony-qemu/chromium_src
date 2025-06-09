@@ -32,7 +32,6 @@
 #include "components/prefs/json_pref_store.h"
 #include "components/prefs/pref_notifier_impl.h"
 #include "components/prefs/pref_registry.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
 #include "components/prefs/value_map_pref_store.h"
@@ -292,11 +291,6 @@ const PrefService::Preference* PrefService::FindPreference(
   if (it != prefs_map_.end())
     return &(it->second);
   const base::Value* default_value = nullptr;
-#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-  if (!pref_registry_->defaults()) {
-    return nullptr;
-  }
-#endif
   if (!pref_registry_->defaults()->GetValue(path, &default_value)) {
     return nullptr;
   }
@@ -400,11 +394,6 @@ const base::Value* PrefService::GetDefaultPrefValue(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   // Lookup the preference in the default store.
   const base::Value* value = nullptr;
-#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-  if (!pref_registry_->defaults()) {
-    return nullptr;
-  }
-#endif
   bool has_value = pref_registry_->defaults()->GetValue(path, &value);
   DCHECK(has_value) << "Default value missing for pref: " << path;
   return value;
@@ -569,11 +558,6 @@ base::Value* PrefService::GetMutableUserPref(std::string_view path,
 
   // If no user preference of the correct type exists, clone default value.
   const base::Value* default_value = nullptr;
-#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-  if (!pref_registry_->defaults()) {
-    return nullptr;
-  }
-#endif
   pref_registry_->defaults()->GetValue(path, &default_value);
   DCHECK_EQ(default_value->type(), type);
   user_pref_store_->SetValueSilently(path, default_value->Clone(),
@@ -601,9 +585,14 @@ void PrefService::SetUserPrefValue(std::string_view path,
 
   const Preference* pref = FindPreference(path);
   if (!pref) {
+    DUMP_WILL_BE_NOTREACHED()
+        << "Trying to write an unregistered pref: " << path;
     return;
   }
   if (pref->GetType() != new_value.type()) {
+    NOTREACHED_IN_MIGRATION()
+        << "Trying to set pref " << path << " of type " << pref->GetType()
+        << " to value of type " << new_value.type();
     return;
   }
 
@@ -698,16 +687,6 @@ bool PrefService::Preference::IsStandaloneBrowserModifiable() const {
 const base::Value* PrefService::GetPreferenceValue(
     std::string_view path) const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-
-#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-  if (!pref_registry_ || !pref_registry_->defaults()) {
-    return nullptr;
-  }
-
-  if (!pref_value_store_) {
-    return nullptr;
-  }
-#endif
 
   const base::Value* default_value = nullptr;
   CHECK(pref_registry_->defaults()->GetValue(path, &default_value))

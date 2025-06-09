@@ -154,7 +154,7 @@ class ShellContentBrowserClient : public ContentBrowserClient {
   GetGeolocationSystemPermissionManager() override;
   void OnNetworkServiceCreated(
       network::mojom::NetworkService* network_service) override;
-  bool ConfigureNetworkContextParams(
+  void ConfigureNetworkContextParams(
       BrowserContext* context,
       bool in_memory,
       const base::FilePath& relative_partition_path,

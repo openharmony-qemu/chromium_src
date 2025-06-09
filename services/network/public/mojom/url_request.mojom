@@ -292,11 +292,6 @@ struct URLRequest {
   // about this.
   bool skip_service_worker;
 
-  // #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  // If true then the request continues even if it's blocked by CORB.
-  bool corb_detachable = false;
-  // #endif
-
   // https://fetch.spec.whatwg.org/#concept-request-mode
   // Used mainly by CORS handling (out-of-blink CORS), ORB, Service Worker.
   // CORS handling needs a proper origin (including a unique opaque origin).
@@ -535,6 +530,12 @@ struct URLRequest {
   AttributionReportingEligibility attribution_reporting_eligibility =
     AttributionReportingEligibility.kUnset;
 
+  [EnableIf=is_ohos]
+  bool allow_preload_record;
+
+  [EnableIf=is_ohos]
+  url.mojom.Url main_page;
+
   // When applicable, indicates the token of an Attribution Reporting API
   // eligible navigation request to which the current request is associated.
   mojo_base.mojom.UnguessableToken? attribution_reporting_src_token;
@@ -549,24 +550,9 @@ struct URLRequest {
   // CompressionDictionaryTransport feature.
   bool shared_dictionary_writer_enabled = false;
 
-  // True for download request.
-  [EnableIf=arkweb_ex_download]
-  bool is_download_request = false;
   // The socket tag to associate this request with. This is typically set by the
   // embedder.
   SocketTag socket_tag;
-
-  [EnableIf=arkweb_prp_preload]
-  bool allow_preload_record;
- 
-  [EnableIf=arkweb_prp_preload]
-  url.mojom.Url main_url;
- 
-  [EnableIf=arkweb_prp_preload]
-  bool is_preflight;
-
-  [EnableIf=arkweb_resource_interception]
-  bool is_sync_mode;
 };
 
 // URLRequestBody represents body (i.e. upload data) of a HTTP request.

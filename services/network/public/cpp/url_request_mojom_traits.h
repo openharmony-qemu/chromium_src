@@ -9,7 +9,6 @@
 #include <string>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/memory/scoped_refptr.h"
 #include "mojo/public/cpp/base/big_buffer_mojom_traits.h"
@@ -244,11 +243,6 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
   static bool skip_service_worker(const network::ResourceRequest& request) {
     return request.skip_service_worker;
   }
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  static bool corb_detachable(const network::ResourceRequest& request) {
-    return request.corb_detachable;
-  }
-#endif
   static network::mojom::RequestMode mode(
       const network::ResourceRequest& request) {
     return request.mode;
@@ -409,27 +403,6 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
       const network::ResourceRequest& request) {
     return request.required_ip_address_space;
   }
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  static bool allow_preload_record(const network::ResourceRequest& request) {
-    return request.allow_preload_record;
-  }
-  static const GURL& main_url(const network::ResourceRequest& request) {
-    return request.main_url;
-  }
-  static bool is_preflight(const network::ResourceRequest& request) {
-    return request.is_preflight;
-  }
-#endif  //  ARKWEB_PRP_PRELOAD
-#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
-  static bool is_sync_mode(const network::ResourceRequest& request) {
-    return request.is_sync_mode;
-  }
-#endif  //  ARKWEB_RESOURCE_INTERCEPTION
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  static bool is_download_request(const network::ResourceRequest& request) {
-    return request.is_download_request;
-  }
-#endif  //  ARKWEB_EX_DOWNLOAD
   static const net::SocketTag& socket_tag(
       const network::ResourceRequest& request) {
     return request.socket_tag;
@@ -437,6 +410,15 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
 
   static bool Read(network::mojom::URLRequestDataView data,
                    network::ResourceRequest* out);
+  
+#if BUILDFLAG(IS_OHOS)
+  static bool allow_preload_record(const network::ResourceRequest& request) {
+    return request.allow_preload_record;
+  }
+  static const GURL& main_page(const network::ResourceRequest& request) {
+    return request.main_page;
+  }
+#endif  //  IS_OHOS
 };
 
 template <>

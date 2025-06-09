@@ -257,17 +257,7 @@ void AppendFormIssuesInternal(const WebVector<WebFormControlElement>& elements,
 std::vector<FormIssue> GetFormIssues(
     const blink::WebVector<blink::WebFormControlElement>& control_elements,
     std::vector<FormIssue> form_issues) {
-#if BUILDFLAG(IS_OHOS)
-  blink::WebVector<blink::WebFormControlElement> elements(control_elements);
-  std::vector<blink::WebFormControlElement> form_control_elements =
-    elements.ReleaseVector();
-  std::erase_if(form_control_elements, [](const WebFormControlElement& e) {
-    return e.IsNull();
-  });
-  AppendFormIssuesInternal(form_control_elements, form_issues);
-#else
   AppendFormIssuesInternal(control_elements, form_issues);
-#endif
   return form_issues;
 }
 

@@ -148,10 +148,7 @@ void RoundSensorReading(SensorReading* reading, mojom::SensorType sensor_type) {
       break;
 
     case mojom::SensorType::MAGNETOMETER:
-#if BUILDFLAG(ARKWEB_SENSOR)
-    case mojom::SensorType::PRESSURE:
-    case mojom::SensorType::PROXIMITY:
-#endif
+      RoundMagnetometerReading(&reading->magn);
       break;
   }
 }

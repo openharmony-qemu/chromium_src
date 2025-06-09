@@ -7,11 +7,9 @@ import("//build/config/linux/pkg_config.gni")
 import("//media/media_options.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//tools/generate_stubs/rules.gni")
-import("//arkweb/build/features/features.gni")
 
-if (is_arkweb) {
+if (is_ohos) {
   import("//build/config/ohos/config.gni")
-  import("//arkweb/build/features/features.gni")
 }
 
 # When libpulse is not directly linked, use stubs to allow for dlopening of the
@@ -278,9 +276,17 @@ source_set("audio") {
   if (is_linux || is_chromeos) {
     sources += [ "linux/audio_manager_linux.cc" ]
   }
-  if (arkweb_media_audio) {
-    import("//arkweb/chromium_ext/media/audio/ohos/arkweb_media_audio_ohos_ext.gni")
-    sources += arkweb_media_audio_ohos_sources
+  if (is_ohos) {
+    sources += [
+      "ohos/ohos_audio_capturer_source.cc",
+      "ohos/ohos_audio_capturer_source.h",
+      "ohos/ohos_audio_input_stream.cc",
+      "ohos/ohos_audio_input_stream.h",
+      "ohos/ohos_audio_manager.cc",
+      "ohos/ohos_audio_manager.h",
+      "ohos/ohos_audio_output_stream.cc",
+      "ohos/ohos_audio_output_stream.h",
+    ]
     libs += [
       "ohaudio",
     ]
@@ -357,10 +363,6 @@ source_set("audio") {
       "//third_party/fuchsia-sdk/sdk/fidl/fuchsia.media:fuchsia.media_hlcpp",
       "//third_party/fuchsia-sdk/sdk/pkg/sys_cpp",
     ]
-  }
-
-  if (enable_arkweb) {
-    deps += [ "//arkweb/build/features" ]
   }
 }
 
@@ -460,20 +462,6 @@ source_set("unit_tests") {
     "//url",
   ]
 
-  if (arkweb_media_audio) {
-    import("//arkweb/chromium_ext/chromium_ext.gni")
-    include_dirs = ohos_src_includes
-    sources += [
-      "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
-      "//arkweb/ohos_nweb/src/sysevent/event_reporter.h",
-    ]
-    sources += arkweb_content_renderer_sources
-    deps += [
-      "//content/public/browser:browser",
-      "//cef:libcef_static"
-    ]
-  }
-
   configs += [
     ":platform_config",
     "//media:media_config",
@@ -547,10 +535,6 @@ source_set("unit_tests") {
       "alsa/alsa_util_unittest.cc",
       "audio_low_latency_input_output_unittest.cc",
     ]
-  }
-
-  if (enable_arkweb) {
-    deps += [ "//arkweb/build/features" ]
   }
 }
 

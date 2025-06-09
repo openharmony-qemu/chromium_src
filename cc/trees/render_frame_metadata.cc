@@ -28,9 +28,6 @@ bool RenderFrameMetadata::operator==(const RenderFrameMetadata& other) const {
          root_background_color == other.root_background_color &&
          is_scroll_offset_at_top == other.is_scroll_offset_at_top &&
          selection == other.selection &&
-#if BUILDFLAG(ARKWEB_MENU)
-         clipped_selection_bounds == other.clipped_selection_bounds &&
-#endif
          is_mobile_optimized == other.is_mobile_optimized &&
          delegated_ink_metadata == other.delegated_ink_metadata &&
          device_scale_factor == other.device_scale_factor &&
@@ -39,11 +36,6 @@ bool RenderFrameMetadata::operator==(const RenderFrameMetadata& other) const {
          external_page_scale_factor == other.external_page_scale_factor &&
          top_controls_height == other.top_controls_height &&
          top_controls_shown_ratio == other.top_controls_shown_ratio &&
-#if BUILDFLAG(IS_ARKWEB)
-         scrollable_viewport_size == other.scrollable_viewport_size &&
-         root_layer_size == other.root_layer_size &&
-         root_overflow_y_hidden == other.root_overflow_y_hidden &&
-#endif
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
          bottom_controls_height == other.bottom_controls_height &&
          bottom_controls_shown_ratio == other.bottom_controls_shown_ratio &&

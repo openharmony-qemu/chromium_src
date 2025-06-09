@@ -6,7 +6,6 @@
 
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/notreached.h"
@@ -156,12 +155,12 @@ bool StructTraits<
     network::debug::SetDeserializationCrashKeyString("referrer");
     return false;
   }
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  if (!data.ReadMainUrl(&out->main_url)) {
-    network::debug::SetDeserializationCrashKeyString("main_url");
+#if BUILDFLAG(IS_OHOS)
+  if (!data.ReadMainPage(&out->main_page)) {
+    network::debug::SetDeserializationCrashKeyString("main_page");
     return false;
   }
-#endif  //  ARKWEB_PRP_PRELOAD
+#endif  //  IS_OHOS
   if (!data.ReadReferrerPolicy(&out->referrer_policy) ||
       !data.ReadHeaders(&out->headers) ||
       !data.ReadCorsExemptHeaders(&out->cors_exempt_headers) ||
@@ -206,9 +205,6 @@ bool StructTraits<
   out->priority_incremental = data.priority_incremental();
   out->originated_from_service_worker = data.originated_from_service_worker();
   out->skip_service_worker = data.skip_service_worker();
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  out->corb_detachable = data.corb_detachable();
-#endif
   out->destination = data.destination();
   out->keepalive = data.keepalive();
   out->browsing_topics = data.browsing_topics();
@@ -232,20 +228,15 @@ bool StructTraits<
   out->attribution_reporting_support = data.attribution_reporting_support();
   out->attribution_reporting_eligibility =
       data.attribution_reporting_eligibility();
-#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
-  out->is_sync_mode = data.is_sync_mode();
-#endif
+
+#if BUILDFLAG(IS_OHOS)
+  out->allow_preload_record = data.allow_preload_record();
+#endif  //  IS_OHOS
+
   out->is_ad_tagged = data.is_ad_tagged();
   out->shared_dictionary_writer_enabled =
       data.shared_dictionary_writer_enabled();
   out->required_ip_address_space = data.required_ip_address_space();
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  out->allow_preload_record = data.allow_preload_record();
-  out->is_preflight = data.is_preflight();
-#endif  //  ARKWEB_PRP_PRELOAD
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  out->is_download_request = data.is_download_request();
-#endif  //  ARKWEB_EX_DOWNLOAD
   return true;
 }
 

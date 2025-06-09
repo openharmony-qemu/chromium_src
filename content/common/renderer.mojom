@@ -15,8 +15,6 @@ import "services/network/public/mojom/network_types.mojom";
 import "third_party/blink/public/mojom/browser_interface_broker.mojom";
 import "third_party/blink/public/mojom/origin_trials/origin_trials_settings.mojom";
 import "third_party/blink/public/mojom/user_agent/user_agent_metadata.mojom";
-[EnableIf=arkweb_theme_font]
-import "mojo/public/mojom/base/file.mojom";
 
 struct UpdateScrollbarThemeParams {
   // TODO(avi): Update these to optional values when optional numeric types are
@@ -170,14 +168,4 @@ interface Renderer {
                      blink.mojom.UserAgentMetadata metadata,
                      array<string> cors_exempt_header_list,
                      blink.mojom.OriginTrialsSettings? origin_trials_settings);
-
-  // Notify renderer that theme font has been changed.
-  // ARKWEB_THEME_FONT
-  [EnableIf=arkweb_theme_font]
-  UpdateThemeFontFile(mojo_base.mojom.File? theme_font);
-
-  //#ifdef ARKWEB_I18N
-  [EnableIf=arkweb_i18n]
-  NotifyLocaleChanged(string update_locale);
-  //#endif
 };

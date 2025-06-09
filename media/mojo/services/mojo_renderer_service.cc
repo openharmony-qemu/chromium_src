@@ -81,18 +81,8 @@ void MojoRendererService::Initialize(
       media_url_params->storage_access_api_status,
       media_url_params->allow_credentials, media_url_params->is_hls);
   media_resource_->SetHeaders(std::move(media_url_params->headers));
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  media_resource_->SetPreloadType(
-      media_url_params->custom_media_url_params->preload_type);
-  media_resource_->SetMediaSourceType(
-      media_url_params->custom_media_url_params->media_source_type);
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
   renderer_->Initialize(
       media_resource_.get(), this,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-      media::RequestSurfaceCB(),
-      media::VideoDecoderChangedCB(),
-#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,
                      std::move(callback)));
 }
@@ -245,10 +235,6 @@ void MojoRendererService::OnAllStreamsReady(
 
   renderer_->Initialize(
       media_resource_.get(), this,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-      media::RequestSurfaceCB(),
-      media::VideoDecoderChangedCB(),
-#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,
                      std::move(callback)));
 }
@@ -319,9 +305,4 @@ void MojoRendererService::OnCdmAttached(base::OnceCallback<void(bool)> callback,
 
   std::move(callback).Run(success);
 }
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/media/mojo/services/mojo_renderer_service_for_include.cc"
-#endif
-
 }  // namespace media

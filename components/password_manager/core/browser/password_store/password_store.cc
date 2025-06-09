@@ -209,16 +209,6 @@ void PasswordStore::UpdateLoginWithPrimaryKey(
   backend_->RecordAddLoginAsyncCalledFromTheStore();
 }
 
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-void PasswordStore::UpdateLoginDisplayName(const PasswordForm& form) {
-  DCHECK(main_task_runner_->RunsTasksInCurrentSequence());
-  if (!backend_) {
-    return;  // Once the shutdown started, ignore new requests.
-  }
-  backend_->UpdateLoginDisplayNameAsync(form);
-  }
-#endif
-
 void PasswordStore::RemoveLogin(const base::Location& location,
                                 const PasswordForm& form) {
   DCHECK(main_task_runner_->RunsTasksInCurrentSequence());

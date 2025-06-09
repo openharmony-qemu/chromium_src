@@ -16,9 +16,6 @@
 #include "ui/events/gesture_detection/snap_scroll_controller.h"
 
 namespace ui {
-#if BUILDFLAG(IS_ARKWEB)
-class GestureProviderExt;
-#endif
 
 class GESTURE_DETECTION_EXPORT GestureProviderClient {
  public:
@@ -67,11 +64,6 @@ class GESTURE_DETECTION_EXPORT GestureProvider {
   };
 
   GestureProvider(const Config& config, GestureProviderClient* client);
-#if BUILDFLAG(IS_ARKWEB)
-  friend class GestureProviderExt;
-  virtual GestureProviderExt* AsGestureProviderExt() { return nullptr; }
-  virtual
-#endif
   ~GestureProvider();
 
   // Handle the incoming MotionEvent, returning false if the event could not
@@ -136,7 +128,4 @@ class GESTURE_DETECTION_EXPORT GestureProvider {
 
 }  //  namespace ui
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_provider_ext.h"
-#endif
 #endif  // UI_EVENTS_GESTURE_DETECTION_GESTURE_PROVIDER_H_

@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include <limits>
 #include <memory>
 #include <unordered_set>
 
@@ -32,9 +33,7 @@
 #include "components/viz/common/frame_sinks/begin_frame_args.h"
 #include "components/viz/common/surfaces/frame_sink_id.h"
 #include "components/viz/common/surfaces/subtree_capture_id.h"
-#include "components/viz/host/host_display_client.h"
 #include "components/viz/host/host_frame_sink_client.h"
-#include "components/viz/service/display/software_output_device.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "services/viz/privileged/mojom/compositing/display_private.mojom.h"
@@ -58,7 +57,6 @@
 #include "ui/gfx/gpu_memory_buffer.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/overlay_transform.h"
-#include "arkweb/build/features/features.h"
 
 namespace base {
 class SingleThreadTaskRunner;
@@ -103,7 +101,6 @@ class Layer;
 class ScopedAnimationDurationScaleMode;
 class ScrollInputHandler;
 class ThroughputTracker;
-class CompositorUtils;
 struct PendingBeginFrameArgs;
 
 constexpr int kCompositorLockTimeoutMs = 67;
@@ -142,21 +139,6 @@ class COMPOSITOR_EXPORT ContextFactory {
 
   // Gets the frame sink manager host instance.
   virtual viz::HostFrameSinkManager* GetHostFrameSinkManager() = 0;
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  virtual void SendInternalBeginFrame(const viz::FrameSinkId& id) {}
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
-};
-
-class COMPOSITOR_EXPORT CompositorDelegate {
- public:
-  virtual std::unique_ptr<viz::HostDisplayClient> CreateHostDisplayClient() = 0;
-#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  virtual void RestoreRenderFit() = 0;
-#endif // ARKWEB_MAXIMIZE_RESIZE
-
- protected:
-  virtual ~CompositorDelegate() {}
 };
 
 // Compositor object to take care of GPU painting.
@@ -184,8 +166,6 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
 
   ~Compositor() override;
 
-  friend class CompositorUtils;
-
   ui::ContextFactory* context_factory() { return context_factory_; }
 
   void AddChildFrameSink(const viz::FrameSinkId& frame_sink_id);
@@ -203,9 +183,6 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
 
   // Schedules a redraw of the layer tree associated with this compositor.
   void ScheduleDraw();
-
-  CompositorDelegate* delegate() const { return delegate_; }
-  void SetDelegate(CompositorDelegate* delegate) { delegate_ = delegate; }
 
   // Sets the root of the layer tree drawn by this Compositor. The root layer
   // must have no parent. The compositor's root layer is reset if the root layer
@@ -257,6 +234,7 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   void DisableSwapUntilResize();
   void ReenableSwap();
 #endif
+
   // Sets the compositor's device scale factor and size.
   void SetScaleAndSize(float scale,
                        const gfx::Size& size_in_pixel,
@@ -332,6 +310,10 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
       const std::optional<base::TimeDelta>& max_vsync_interval,
       display::VariableRefreshRateState vrr_state);
 
+#if BUILDFLAG(IS_OHOS)
+  void SetSurfaceId(uint64_t surface_id);
+  uint64_t get_surface_id() { return surface_id_; }
+#endif
   // Sets the widget for the compositor to render into.
   void SetAcceleratedWidget(gfx::AcceleratedWidget widget);
   // Releases the widget previously set through SetAcceleratedWidget().
@@ -551,13 +533,6 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   void OnSetPreferredRefreshRate(float refresh_rate);
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  void RestoreRenderFit() override;
-#endif // ARKWEB_MAXIMIZE_RESIZE
-
-  CompositorUtils* Utils() {
-    return compositor_utils_.get();
-  }
  private:
   friend class base::RefCounted<Compositor>;
   friend class TotalAnimationThroughputReporter;
@@ -591,8 +566,6 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   ui::HostBeginFrameObserver::SimpleBeginFrameObserverList
       simple_begin_frame_observers_;
   std::unique_ptr<ui::HostBeginFrameObserver> host_begin_frame_observer_;
-
-  raw_ptr<CompositorDelegate> delegate_ = nullptr;
 
   // The root of the Layer tree drawn by this compositor.
   raw_ptr<Layer> root_layer_ = nullptr;
@@ -696,7 +669,10 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   base::WeakPtrFactory<Compositor> context_creation_weak_ptr_factory_{this};
   base::WeakPtrFactory<Compositor> weak_ptr_factory_{this};
 
-  std::unique_ptr<CompositorUtils> compositor_utils_;
+#if BUILDFLAG(IS_OHOS)
+  uint64_t surface_id_ = std::numeric_limits<std::uint64_t>::max();
+#endif
+ 
 };
 
 }  // namespace ui

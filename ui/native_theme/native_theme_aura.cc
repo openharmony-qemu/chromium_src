@@ -32,17 +32,11 @@
 #include "ui/native_theme/native_theme_fluent.h"
 #include "ui/native_theme/native_theme_utils.h"
 #include "ui/native_theme/overlay_scrollbar_constants_aura.h"
-#if BUILDFLAG(IS_OHOS)
-#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#endif
+
 namespace ui {
 
 namespace {
 
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-constexpr int kOverlayScrollbarMinimumLength = 48;
-constexpr int kOverlayScrollbarBorderPatchWidth = 0;
-#else
 // Constants for painting overlay scrollbars. Other properties needed outside
 // this painting code are defined in overlay_scrollbar_constants_aura.h.
 constexpr int kOverlayScrollbarMinimumLength = 32;
@@ -50,9 +44,7 @@ constexpr int kOverlayScrollbarMinimumLength = 32;
 // stroke width being 1 so that the inner pixel can match the center tile
 // color. This prevents color interpolation between the patches.
 constexpr int kOverlayScrollbarBorderPatchWidth = 2;
-#endif  // ARKWEB_SCROLLBAR
 constexpr int kOverlayScrollbarCenterPatchSize = 1;
-constexpr int kOverlayScrollbarDoubleOrHalf = 2;
 
 // This radius let scrollbar arrows fit in the default rounded border of some
 // form controls. TODO(crbug.com/40285711): We should probably let blink pass
@@ -108,20 +100,12 @@ NativeThemeAura::NativeThemeAura(bool use_overlay_scrollbars,
     : NativeThemeBase(should_only_use_dark_colors, system_theme) {
   set_use_overlay_scrollbar(use_overlay_scrollbars);
   // We don't draw scrollbar buttons.
-#if BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   set_scrollbar_button_length(0);
 #endif
-
-#if BUILDFLAG(IS_ARKWEB)
-  native_theme_aura_utils_ = new NativeThemeAuraUtils(this);
-#endif
-
   if (use_overlay_scrollbars) {
     scrollbar_width_ =
         kOverlayScrollbarThumbWidthPressed + kOverlayScrollbarStrokeWidth;
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-    native_theme_aura_utils_->SetScrollbarThumbWidth();
-#endif
   }
 
   // Images and alphas declarations assume the following order.
@@ -314,17 +298,14 @@ void NativeThemeAura::PaintScrollbarTrack(
   canvas->drawIRect(gfx::RectToSkIRect(rect), flags);
 }
 
-void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
-                                          const ColorProvider* color_provider,
-                                          Part part,
-                                          State state,
-                                          const gfx::Rect& rect,
-                                          const ScrollbarThumbExtraParams& extra_params,
-                                          ColorScheme color_scheme
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-                                          , SkColor scrollbar_color
-#endif // ARKWEB_SCROLLBAR
-                                          ) const {
+void NativeThemeAura::PaintScrollbarThumb(
+    cc::PaintCanvas* canvas,
+    const ColorProvider* color_provider,
+    Part part,
+    State state,
+    const gfx::Rect& rect,
+    const ScrollbarThumbExtraParams& extra_params,
+    ColorScheme color_scheme) const {
   // Do not paint if state is disabled.
   if (state == kDisabled)
     return;
@@ -333,16 +314,11 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
 
   gfx::Rect fill_rect(rect);
   cc::PaintFlags fill_flags;
-  SkColor thumb_color;
 
   if (use_overlay_scrollbar()) {
     if (state == NativeTheme::kDisabled)
       return;
 
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-    native_theme_aura_utils_->PaintOverlayScrollbarThumb(canvas, rect, scrollbar_color, part,
-                                       thumb_color, fill_flags);
-#else
     const bool hovered = state != kNormal;
 
     DCHECK(color_provider);
@@ -376,18 +352,12 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
     // ScrollbarThemeOverlay::paintThumb.
     gfx::Insets fill_insets(kStrokeWidth);
     fill_rect.Inset(fill_insets + edge_adjust_insets);
-#endif // ARKWEB_SCROLLBAR
   } else {
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-    native_theme_aura_utils_->PaintScrollbarThumbWithColor(
-        canvas, rect, scrollbar_color, color_scheme, part, state, extra_params);
-    return;
-#else
     fill_rect.Inset(GetScrollbarSolidColorThumbInsets(part));
     fill_flags.setColor(
         GetScrollbarThumbColor(*color_provider, state, extra_params));
-#endif
   }
+
   canvas->drawIRect(gfx::RectToSkIRect(fill_rect), fill_flags);
 }
 
@@ -447,11 +417,6 @@ void NativeThemeAura::PaintScrollbarCorner(
 gfx::Size NativeThemeAura::GetPartSize(Part part,
                                        State state,
                                        const ExtraParams& extra) const {
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-  gfx::Size result = native_theme_aura_utils_->GetPartSize(part, state, extra);
-  if (!result.IsZero())
-    return result;
-#else
   if (use_overlay_scrollbar()) {
     constexpr int minimum_length =
         kOverlayScrollbarMinimumLength + 2 * kOverlayScrollbarStrokeWidth;
@@ -470,7 +435,6 @@ gfx::Size NativeThemeAura::GetPartSize(Part part,
         break;
     }
   }
-#endif  // BUILDFLAG(ARKWEB_SCROLLBAR)
 
   return NativeThemeBase::GetPartSize(part, state, extra);
 }
@@ -500,24 +464,18 @@ bool NativeThemeAura::SupportsNinePatch(Part part) const {
 
 gfx::Size NativeThemeAura::GetNinePatchCanvasSize(Part part) const {
   DCHECK(SupportsNinePatch(part));
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-  return native_theme_aura_utils_->GetNinePatchCanvasSize(part);
-#else
+
   return gfx::Size(
       kOverlayScrollbarBorderPatchWidth * 2 + kOverlayScrollbarCenterPatchSize,
       kOverlayScrollbarBorderPatchWidth * 2 + kOverlayScrollbarCenterPatchSize);
-#endif // ARKWEB_SCROLLBAR
 }
 
 gfx::Rect NativeThemeAura::GetNinePatchAperture(Part part) const {
   DCHECK(SupportsNinePatch(part));
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-  return native_theme_aura_utils_->GetNinePatchAperture(part);
-#else
+
   return gfx::Rect(
       kOverlayScrollbarBorderPatchWidth, kOverlayScrollbarBorderPatchWidth,
       kOverlayScrollbarCenterPatchSize, kOverlayScrollbarCenterPatchSize);
-#endif // ARKWEB_SCROLLBAR
 }
 
 }  // namespace ui

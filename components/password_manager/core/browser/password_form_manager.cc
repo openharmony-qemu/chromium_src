@@ -11,7 +11,6 @@
 #include <tuple>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/containers/lru_cache.h"
 #include "base/feature_list.h"
@@ -64,10 +63,6 @@
 
 #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
 #include "components/os_crypt/sync/os_crypt.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-#include "arkweb/chromium_ext/components/password_manager/core/browser/password_autofill_manager_ext.h"
 #endif
 
 using autofill::FieldDataManager;
@@ -1172,11 +1167,6 @@ void PasswordFormManager::FillNow() {
   }
   metrics_recorder_->CacheParsingResultInFillingMode(
       *parsed_observed_form_.get());
-
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  driver_->AsPasswordManagerDriverExt()->SendParsedPasswordFormToRenderer(
-      CreatePasswordFormFillDataWithoutPasswordInfo(*parsed_observed_form_.get()));
-#endif
 
   if (form_parsing_result.is_new_password_reliable && !IsBlocklisted()) {
     driver_->FormEligibleForGenerationFound({

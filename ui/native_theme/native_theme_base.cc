@@ -13,7 +13,6 @@
 #include <limits>
 #include <memory>
 
-#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/command_line.h"
 #include "base/containers/fixed_flat_set.h"
@@ -45,11 +44,6 @@ namespace {
 // These are the default dimensions of radio buttons and checkboxes.
 const int kCheckboxAndRadioWidth = 13;
 const int kCheckboxAndRadioHeight = 13;
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-// This matches Windows, same with FluentScrollbarThickness in native_theme_fluent.cc
-const int kInnerSpinButtonWidth = 15;
-#endif
 
 // Color constant pairs for light/default and dark color-schemes below.
 constexpr SkColor kThumbActiveColor[2] = {SkColorSetRGB(0xF4, 0xF4, 0xF4),
@@ -140,11 +134,7 @@ gfx::Size NativeThemeBase::GetPartSize(Part part,
     case kCheckbox:
       return gfx::Size(kCheckboxAndRadioWidth, kCheckboxAndRadioHeight);
     case kInnerSpinButton:
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-      return gfx::Size(kInnerSpinButtonWidth, 0);
-#else
       return gfx::Size(scrollbar_width_, 0);
-#endif
     case kMenuList:
       return gfx::Size();  // No default size.
     case kMenuPopupBackground:
@@ -304,11 +294,7 @@ void NativeThemeBase::Paint(cc::PaintCanvas* canvas,
     case kScrollbarVerticalThumb:
       PaintScrollbarThumb(canvas, color_provider, part, state, rect,
                           absl::get<ScrollbarThumbExtraParams>(extra),
-                          color_scheme
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-                          , absl::get<ScrollbarThumbExtraParams>(extra).scrollbar_color
-#endif // ARKWEB_SCROLLBAR
-);
+                          color_scheme);
       break;
     case kScrollbarHorizontalTrack:
     case kScrollbarVerticalTrack:
@@ -556,11 +542,7 @@ void NativeThemeBase::PaintScrollbarThumb(
     State state,
     const gfx::Rect& rect,
     const ScrollbarThumbExtraParams& extra_params,
-    ColorScheme color_scheme
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-    , SkColor scrollbar_color
-#endif // ARKWEB_SCROLLBAR
-    ) const {
+    ColorScheme color_scheme) const {
   const bool hovered = state == kHovered;
   const int midx = rect.x() + rect.width() / 2;
   const int midy = rect.y() + rect.height() / 2;

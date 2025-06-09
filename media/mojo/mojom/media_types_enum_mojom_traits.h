@@ -389,16 +389,6 @@ struct EnumTraits<media::mojom::RendererType, ::media::RendererType> {
         return media::mojom::RendererType::kContentEmbedderDefined;
       case ::media::RendererType::kTest:
         return media::mojom::RendererType::kTest;
-#if BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
-      case ::media::RendererType::kNative:
-        return media::mojom::RendererType::kNative;
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-      case ::media::RendererType::kOHOSCustomMediaPlayer:
-        return media::mojom::RendererType::kOHOSCustomMediaPlayer;
-#endif // BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-      case ::media::RendererType::kOHOSMediaPlayer:
-        return media::mojom::RendererType::kOHOSMediaPlayer;
-#endif
     }
 
     NOTREACHED();
@@ -442,19 +432,6 @@ struct EnumTraits<media::mojom::RendererType, ::media::RendererType> {
       case media::mojom::RendererType::kTest:
         *output = ::media::RendererType::kTest;
         return true;
-#if BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
-      case ::media::mojom::RendererType::kNative:
-        *output = ::media::RendererType::kNative;
-        return true;
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-      case media::mojom::RendererType::kOHOSCustomMediaPlayer:
-        *output = ::media::RendererType::kOHOSCustomMediaPlayer;
-        return true;
-#endif // BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-      case media::mojom::RendererType::kOHOSMediaPlayer:
-        *output = ::media::RendererType::kOHOSMediaPlayer;
-        return true;
-#endif
     }
 
     NOTREACHED();

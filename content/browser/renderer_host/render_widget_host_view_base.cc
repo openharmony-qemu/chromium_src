@@ -269,13 +269,8 @@ void RenderWidgetHostViewBase::SetBackgroundColor(SkColor color) {
   // TODO(danakj): OPAQUE colors only make sense for main frame widgets,
   // as child frames are always transparent background. We should move this to
   // `blink::WebView` instead.
-  #if BUILDFLAG(ARKWEB_BACKGROUND_COLOR)
-  DCHECK(SkColorGetA(color) == SK_AlphaOPAQUE ||
-        SkColorGetA(color) == SK_AlphaTRANSPARENT);
-  #else
   CHECK(SkColorGetA(color) == SK_AlphaOPAQUE ||
         SkColorGetA(color) == SK_AlphaTRANSPARENT);
-  #endif
   if (default_background_color_ == color)
     return;
 
@@ -589,14 +584,6 @@ void RenderWidgetHostViewBase::SetScaleOverrideForCapture(float scale) {
 
 float RenderWidgetHostViewBase::GetScaleOverrideForCapture() const {
   return scale_override_for_capture_;
-}
-
-void RenderWidgetHostViewBase::SetHasExternalParent(bool val) {
-  has_external_parent_ = val;
-}
-
-bool RenderWidgetHostViewBase::HasExternalParent() const {
-  return has_external_parent_;
 }
 
 void RenderWidgetHostViewBase::OnAutoscrollStart() {
@@ -926,11 +913,5 @@ void RenderWidgetHostViewBase::SetViewTransitionResources(
     std::unique_ptr<ScopedViewTransitionResources> resources) {
   view_transition_resources_ = std::move(resources);
 }
-
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-int RenderWidgetHostViewBase::GetTopControlsOffset() const {
-  return 0;
-}
-#endif
 
 }  // namespace content

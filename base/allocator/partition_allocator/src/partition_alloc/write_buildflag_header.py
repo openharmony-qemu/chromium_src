@@ -86,7 +86,7 @@ def WriteHeader(options):
 
     output_file.write('\n#ifndef %s\n' % options.header_guard)
     output_file.write('#define %s\n\n' % options.header_guard)
-    output_file.write('#include "base/allocator/partition_allocator/src/partition_alloc/buildflag.h" // IWYU pragma: export\n\n')
+    output_file.write('#include "partition_alloc/buildflag.h" // IWYU pragma: export\n\n')
 
     for pair in options.flags:
       output_file.write('#define PA_BUILDFLAG_INTERNAL_%s() (%s)\n' % pair)

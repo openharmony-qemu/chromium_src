@@ -1,8 +1,0 @@
-arkweb_content_browser_accessibility_sources = [
-    "//arkweb/chromium_ext/content/browser/accessibility/browser_accessibility_manager_ohos.h",
-    "//arkweb/chromium_ext/content/browser/accessibility/browser_accessibility_manager_ohos.cc",
-
-    "//arkweb/chromium_ext/content/browser/accessibility/browser_accessibility_ohos.h",
-    "//arkweb/chromium_ext/content/browser/accessibility/browser_accessibility_ohos.cc",
-
-]

@@ -22,7 +22,6 @@
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/hdr_metadata.h"
-#include "arkweb/build/features/features.h"
 
 namespace gpu {
 class ClientSharedImage;
@@ -191,10 +190,6 @@ struct VIZ_COMMON_EXPORT TransferableResource {
   // A gpu resource may be possible to use directly in an overlay if this is
   // true.
   bool is_overlay_candidate = false;
-
-#if BUILDFLAG(ARKWEB_WEBGL)
-  bool enable_defer_impl_invalidation_workaround = false;
-#endif
 
   // This defines when the display compositor returns resources. Clients may use
   // different synchronization types based on their needs.

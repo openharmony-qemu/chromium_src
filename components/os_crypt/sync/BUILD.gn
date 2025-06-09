@@ -6,8 +6,6 @@ import("//build/config/cast.gni")
 import("//build/config/features.gni")
 import("//build/config/ui.gni")
 import("//components/os_crypt/sync/features.gni")
-import("//arkweb/build/features/features.gni")
-import("//arkweb/chromium_ext/chromium_ext.gni")
 
 # Wrapper component to allow dependencies to depend on //components/os_crypt/sync directly.
 group("sync") {
@@ -28,27 +26,18 @@ component("os_crypt") {
     "//build:branding_buildflags",
     "//build:chromecast_buildflags",
     "//build:chromeos_buildflags",
-    "//chrome/common:buildflags",
     "//components/prefs",
     "//crypto",
-  ]
-  deps += [
-    "//arkweb/build/features",
   ]
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
   defines = [ "IS_OS_CRYPT_IMPL" ]
 
-  if (arkweb_encrypt) {
-    sources += arkweb_components_os_crpty_sync_source
-  }
-
   if (allow_runtime_configurable_key_storage) {
     defines += [ "ALLOW_RUNTIME_CONFIGURABLE_KEY_STORAGE" ]
   }
 
-
-  if ((is_posix && !is_apple && !(is_linux && !is_castos) && !is_arkweb) || is_fuchsia) {
+  if ((is_posix && !is_apple && !(is_linux && !is_castos) && !is_ohos) || is_fuchsia) {
     sources += [ "os_crypt_posix.cc" ]
   }
 
@@ -67,18 +56,13 @@ component("os_crypt") {
     libs = [ "crypt32.lib" ]
   }
 
-  if (is_arkweb) {
+  if (is_ohos) {
     sources += [
-      "key_storage_config_linux.cc",
-      "key_storage_config_linux.h",
-      "key_storage_linux.cc",
-      "key_storage_linux.h",
-      "key_storage_util_linux.cc",
-      "key_storage_util_linux.h",
-      "os_crypt_linux.cc",
+      "ohos_huks_crypto.cc",
+      "ohos_huks_crypto.h",
+      "os_crypt_ohos.cc",
     ]
-    deps += [ "//chrome/browser:browser_process" ]
-
+ 
     libs = [
       "huks_ndk.z"
     ]
@@ -165,6 +149,12 @@ source_set("unit_tests") {
   if (is_apple) {
     sources += [ "keychain_password_mac_unittest.mm" ]
     deps += [ "//crypto:mock_apple_keychain" ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "ohos_huks_crypto_unittest.cc",
+    ]
   }
 
   if (is_linux && !is_castos) {

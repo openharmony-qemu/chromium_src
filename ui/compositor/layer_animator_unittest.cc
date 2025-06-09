@@ -3306,12 +3306,8 @@ TEST(LayerAnimatorTest, AnimatorRemovedFromCollectionWhenLayerIsDestroyed) {
 }
 
 TEST(LayerAnimatorTest, LayerMovedBetweenCompositorsDuringAnimation) {
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  base::test::TaskEnvironment task_environment_{};
-#else
   base::test::TaskEnvironment task_environment_(
       base::test::TaskEnvironment::MainThreadType::UI);
-#endif
   const bool enable_pixel_output = false;
   TestContextFactories context_factories(enable_pixel_output);
   const gfx::Rect bounds(10, 10, 100, 100);
@@ -3372,12 +3368,8 @@ TEST(LayerAnimatorTest, LayerMovedBetweenCompositorsDuringAnimation) {
 }
 
 TEST(LayerAnimatorTest, ThreadedAnimationSurvivesIfLayerRemovedAdded) {
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  base::test::TaskEnvironment task_environment_{};
-#else
   base::test::TaskEnvironment task_environment_(
       base::test::TaskEnvironment::MainThreadType::UI);
-#endif
   const bool enable_pixel_output = false;
   TestContextFactories context_factories(enable_pixel_output);
   const gfx::Rect bounds(10, 10, 100, 100);

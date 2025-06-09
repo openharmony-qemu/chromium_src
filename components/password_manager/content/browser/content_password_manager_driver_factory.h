@@ -23,9 +23,6 @@ class WebContents;
 namespace password_manager {
 
 class ContentPasswordManagerDriver;
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-class ContentPasswordManagerDriverExt;
-#endif
 
 // Creates and owns ContentPasswordManagerDrivers. There is one
 // factory per WebContents, and one driver per RenderFrameHost.
@@ -74,11 +71,7 @@ class ContentPasswordManagerDriverFactory
   void RenderFrameDeleted(content::RenderFrameHost* render_frame_host) override;
   void WebContentsDestroyed() override;
 
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  std::map<content::RenderFrameHost*, ContentPasswordManagerDriverExt>
-#else
   std::map<content::RenderFrameHost*, ContentPasswordManagerDriver>
-#endif
       frame_driver_map_;
 
   const raw_ptr<PasswordManagerClient> password_client_;

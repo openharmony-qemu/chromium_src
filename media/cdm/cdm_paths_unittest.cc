@@ -14,7 +14,6 @@
 #include "build/chromeos_buildflags.h"
 #include "media/media_buildflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -32,12 +31,10 @@ const char kComponentPlatform[] =
     "linux";
 #elif BUILDFLAG(IS_FUCHSIA)
     "fuchsia";
-#else
-#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(IS_ARKWEB)
-    "";
+#elif BUILDFLAG(IS_OHOS)
+    "ohos";
 #else
 #error unsupported platform
-#endif
 #endif
 
 // Name of the component architecture.

@@ -1,33 +1,47 @@
-// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of
+ *    conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list
+ *    of conditions and the following disclaimer in the documentation and/or other materials
+ *    provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used
+ *    to endorse or promote products derived from this software without specific prior written
+ *    permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
-import common from '@ohos.app.ability.common';
 import { inject, injectable } from 'inversify';
 import { AbilityManager } from '../common/AbilityManager';
 import { BaseAdapter } from '../common/BaseAdapter';
+import { WebStatus } from '../common/Constants';
 import LogMethod from '../common/LogDecorator';
-import { MODULE_TYPE } from "../common/ModuleType";
-import LogUtil from '../utils/LogUtil';
-
-enum WebStatus {
-  kInit = 0,
-  kStart,
-  kDestroy,
-}
-
-const TAG: string = 'AppLifecycleAdapter';
 
 @injectable()
-export default class AppLifecycleAdapter extends BaseAdapter {
+export class AppLifecycleAdapter extends BaseAdapter {
   private abilityManager: AbilityManager;
   private webStatus: WebStatus;
 
   constructor(
     @inject(AbilityManager) abilityManager: AbilityManager,
-    @inject(MODULE_TYPE.Context) ctx: common.UIAbilityContext
   ) {
-    super(ctx);
+    super();
     this.abilityManager = abilityManager;
     this.webStatus = WebStatus.kInit;
   }
@@ -35,22 +49,25 @@ export default class AppLifecycleAdapter extends BaseAdapter {
   @LogMethod
   onWebCreate() {
     this.webStatus = WebStatus.kStart;
+    this.start();
   }
 
   @LogMethod
   onWebDestroy() {
     this.webStatus = WebStatus.kDestroy;
-    let context = this.abilityManager.getLastContext();
-    context?.terminateSelf((err) => {
-      if (err.code) {
-        LogUtil.error(TAG, `Failed to terminate Self. Code is ${err.code}, message is ${err.message}`);
-        return;
-      }
-      LogUtil.info(TAG, "terminateSelf ok");
-    });
+    this.destroy();
   }
 
   getWebStatus(): number {
     return this.webStatus;
+  }
+
+  start() {}
+
+  destroy() {
+    let proxy_list = this.abilityManager.getProxyList();
+    for (let i = 0; i < proxy_list.length; i++) {
+      proxy_list[i].closeWindow();
+    }
   }
 }

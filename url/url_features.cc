@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "arkweb/build/features/features.h"
 #include "url/url_features.h"
 #include "base/feature_list.h"
 
@@ -20,11 +19,7 @@ BASE_FEATURE(kRecordIDNA2008Metrics,
 // Kill switch for crbug.com/1416006.
 BASE_FEATURE(kStandardCompliantNonSpecialSchemeURLParsing,
              "StandardCompliantNonSpecialSchemeURLParsing",
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-             base::FEATURE_DISABLED_BY_DEFAULT);
-#else // BUILDFLAG(ARKWEB_NETWORK_LOAD)
              base::FEATURE_ENABLED_BY_DEFAULT);
-#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
 BASE_FEATURE(kDisallowSpaceCharacterInURLHostParsing,
              "DisallowSpaceCharacterInURLHostParsing",

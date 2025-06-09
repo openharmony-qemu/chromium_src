@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/types/strong_alias.h"
@@ -110,9 +109,6 @@ class PasswordRequirementsService;
 class PasswordReuseManager;
 class PasswordStoreInterface;
 class WebAuthnCredentialsDelegate;
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-class PasswordManagerClientExt;
-#endif
 struct PasswordForm;
 
 enum class ErrorMessageFlowType { kSaveFlow, kFillFlow };
@@ -144,9 +140,6 @@ class PasswordManagerClient {
   PasswordManagerClient& operator=(const PasswordManagerClient&) = delete;
 
   virtual ~PasswordManagerClient() = default;
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  virtual PasswordManagerClientExt* AsPasswordManagerClientExt() { return nullptr; }
-#endif
 
   // Is saving new data for password autofill and filling of saved data enabled
   // for the current profile and page? For example, saving is disabled in
@@ -577,7 +570,4 @@ class PasswordManagerClient {
 
 }  // namespace password_manager
 
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-#include "arkweb/chromium_ext/components/password_manager/core/browser/password_manager_client_ext.h"
-#endif
 #endif  // COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_MANAGER_CLIENT_H_

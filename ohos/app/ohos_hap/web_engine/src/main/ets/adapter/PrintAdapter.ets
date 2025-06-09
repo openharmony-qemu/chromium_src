@@ -1,8 +1,33 @@
-// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of
+ *    conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list
+ *    of conditions and the following disclaimer in the documentation and/or other materials
+ *    provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used
+ *    to endorse or promote products derived from this software without specific prior written
+ *    permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { BusinessError } from '@ohos.base';
 import print from '@ohos.print';
 import fs, { ListFileOptions } from '@ohos.file.fs';
@@ -12,26 +37,32 @@ import LogUtil from '../utils/LogUtil';
 import LogMethod from '../common/LogDecorator';
 
 import promptAction from '@ohos.promptAction'
+import { ContextAdapter } from './ContextAdapter';
 
 const TAG: string = 'Print';
 
 @injectable()
-export default class PrintAdapter extends BaseAdapter {
+export class PrintAdapter extends BaseAdapter {
   private printFilesPath: string [] = [];
+  private ctxAdapter: ContextAdapter;
 
-  init() {
-    super.init();
+  constructor(@inject(ContextAdapter) ctxAdapter: ContextAdapter) {
+    super();
+    this.ctxAdapter = ctxAdapter;
+    this.init();
+  }
 
-    let dirPath = this.context.getApplicationContext().tempDir + "/print";
+  override init() {
+    let dirPath = this.ctxAdapter.getContext().getApplicationContext().tempDir + "/print";
     fs.mkdir(dirPath).catch((err: BusinessError) => {
-      LogUtil.error(TAG, 'mkdir failed with error message: ' + err.message + ", error code: " + err.code);
+      LogUtil.error(TAG, 'mkdir error: ' + JSON.stringify(err));
     });
   }
 
   @LogMethod
   showPrintDialog(value: string) {
     // TODO: need adapter print file
-    let dirPath = this.context.getApplicationContext().tempDir + "/print";
+    let dirPath = this.ctxAdapter.getContext().getApplicationContext().tempDir + "/print";
     let listFileOption: ListFileOptions = {
       recursion: false,
       listNum: 0,
@@ -44,21 +75,22 @@ export default class PrintAdapter extends BaseAdapter {
         let fileFd = 'fd://' + tempFile.fd;
         this.printFilesPath.push(fileFd);
       }
-      print.print(this.printFilesPath, this.context).then((printTask: print.PrintTask) => {
-        printTask.on('succeed', () => {
-          LogUtil.info(TAG, 'print state is succeed');
-        })
-        printTask.on('cancel', () => {
-          LogUtil.info(TAG, 'print state is cancel');
-        })
-      }).catch((error: Error) => {
+      print.print(this.printFilesPath, this.ctxAdapter.getActiveContext())
+        .then((printTask: print.PrintTask) => {
+          printTask.on('succeed', () => {
+            LogUtil.info(TAG, 'print state is succeed');
+          })
+          printTask.on('cancel', () => {
+            LogUtil.info(TAG, 'print state is cancel');
+          })
+        }).catch((error: Error) => {
         LogUtil.error(TAG, 'print err ' + JSON.stringify(error));
       })
     }).catch((err: BusinessError) => {
-      LogUtil.error(TAG, 'list file failed with error message: ' + err.message + ", error code: " + err.code);
+      LogUtil.error(TAG, 'list file error: ' + JSON.stringify(err));
     });
   }
-  
+
   @LogMethod
   PrintPdfFiles(pdfData: ArrayBuffer) {
     let printAdapter: print.PrintDocumentAdapter = {
@@ -80,10 +112,14 @@ export default class PrintAdapter extends BaseAdapter {
       colorMode: print.PrintColorMode.COLOR_MODE_MONOCHROME,
       duplexMode: print.PrintDuplexMode.DUPLEX_MODE_NONE
     }
-    let context = getContext(this);
-    print.print('', printAdapter, printAttributes, context);
+    print.print('', printAdapter, printAttributes, this.ctxAdapter.getActiveContext())
+      .then(() => {
+        LogUtil.info(TAG, 'Succeeded in print pdf files.');
+      }).catch((err: BusinessError) => {
+      LogUtil.error(TAG, 'Failed to print pdf files. Cause:' + JSON.stringify(err));
+    });
   }
- 
+
   @LogMethod
   showPrintTipsDialog() {
     try {
@@ -100,9 +136,7 @@ export default class PrintAdapter extends BaseAdapter {
           LogUtil.error(TAG, 'showDialog error:' + err);
         })
     } catch (error) {
-      let message = (error as BusinessError).message
-      let code = (error as BusinessError).code
-      LogUtil.error(TAG, 'list file failed with error message: ' + message + ", error code: " + code);
+      LogUtil.error(TAG, 'list file error: ' + JSON.stringify(error));
     }
     ;
   }

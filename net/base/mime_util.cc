@@ -26,10 +26,6 @@
 #include "net/base/platform_mime_util.h"
 #include "net/http/http_util.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 using std::string;
 
 namespace net {
@@ -168,11 +164,6 @@ static const MimeInfo kPrimaryMappings[] = {
     {"audio/webm", "webm"},
     {"audio/x-m4a", "m4a"},
     {"image/avif", "avif"},
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-#if false
-   {"image/heif", "heif,heic,hevc"},
-#endif
-#endif
     {"image/gif", "gif"},
     {"image/jpeg", "jpeg,jpg"},
     {"image/png", "png"},
@@ -229,9 +220,6 @@ static const MimeInfo kSecondaryMappings[] = {
     {"application/x-shockwave-flash", "swf,swl"},
     {"application/x-tar", "tar"},
     {"application/x-x509-ca-cert", "cer,crt"},
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-    {"application/x-zip-compressed", "zip"},
-#endif  // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
     {"application/zip", "zip"},
     // This is the platform mapping on recent versions of Windows 10.
     {"audio/webm", "weba"},
@@ -249,14 +237,6 @@ static const MimeInfo kSecondaryMappings[] = {
     {"text/x-sh", "sh"},
     {"text/xml", "xsl,xbl,xslt"},
     {"video/mpeg", "mpeg,mpg"},
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-    {"video/quicktime", "mov"},
-#endif  // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
-    {"image/pjpeg", "jpg"},
-    {"video/avi", "avi"},
-    {"audio/wma", "wma"},
-#endif
 };
 
 // Finds mime type of |ext| from |mappings|.

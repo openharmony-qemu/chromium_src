@@ -3,18 +3,8 @@
 # found in the LICENSE file.
 
 import("//build/config/features.gni")
-import("//testing/test.gni")
-import("//arkweb/build/features/features.gni")
-
-#if BUILDFLAG(IS_ARKWEB)
-import("//arkweb/chromium_ext/chromium_ext.gni")
-#endif
 
 static_library("browser") {
-  if (use_libfuzzer) {
-    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
-    configs += [ "//build/config/gcc:symbol_visibility_default" ]
-  }
   sources = [
     "ad_tagging_utils.cc",
     "ad_tagging_utils.h",
@@ -50,9 +40,6 @@ static_library("browser") {
     "subresource_filter_safe_browsing_client_request.cc",
     "subresource_filter_safe_browsing_client_request.h",
   ]
-  if (defined(arkweb_adblock) && arkweb_adblock) {
-    sources += arkweb_components_subresource_filter_content_browser_sources
-  }
   deps = [
     "//base",
     "//components/content_settings/browser",

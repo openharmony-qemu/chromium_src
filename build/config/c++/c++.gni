@@ -56,11 +56,6 @@ use_custom_libcxx =
     use_custom_libcxx || (use_custom_libcxx_for_host && !is_a_target_toolchain)
 use_custom_libcxx = use_custom_libcxx && !is_nacl
 
-if (is_arkweb) {
-  use_custom_libcxx = false
-  use_custom_libcxx_for_host = false
-}
-
 declare_args() {
   # WARNING: Setting this to a non-default value is highly discouraged.
   # If true, libc++ will be built as a shared library; otherwise libc++ will be

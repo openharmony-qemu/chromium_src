@@ -33,8 +33,6 @@ WakeLock::WakeLock(mojo::PendingReceiver<mojom::WakeLock> receiver,
 #if BUILDFLAG(IS_ANDROID)
       context_id_(context_id),
       native_view_getter_(native_view_getter),
-#elif BUILDFLAG(ARKWEB_SCREEN_LOCK)
-      context_id_(context_id),
 #endif
       main_task_runner_(base::SingleThreadTaskRunner::GetCurrentDefault()),
       file_task_runner_(std::move(file_task_runner)),
@@ -140,11 +138,7 @@ void WakeLock::CreateWakeLock() {
   DCHECK(!wake_lock_);
 
   wake_lock_ = std::make_unique<PowerSaveBlocker>(
-      type_, reason_, *description_, main_task_runner_, file_task_runner_
-      #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
-      , context_id_
-      #endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
-      );
+      type_, reason_, *description_, main_task_runner_, file_task_runner_);
   observer_->OnWakeLockActivated(type_);
 
   if (type_ != mojom::WakeLockType::kPreventDisplaySleep)
@@ -161,10 +155,6 @@ void WakeLock::CreateWakeLock() {
   if (native_view)
     wake_lock_.get()->InitDisplaySleepBlocker(native_view);
 #endif
-
-#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
-  wake_lock_.get()->InitDisplaySleepBlocker(context_id_);
-#endif
 }
 
 void WakeLock::RemoveWakeLock() {
@@ -179,11 +169,7 @@ void WakeLock::SwapWakeLock() {
   // PowerSaveBlocker is unblocked while the new PowerSaveBlocker is not
   // created.
   auto new_wake_lock = std::make_unique<PowerSaveBlocker>(
-      type_, reason_, *description_, main_task_runner_, file_task_runner_
-      #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
-      , context_id_
-      #endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
-      );
+      type_, reason_, *description_, main_task_runner_, file_task_runner_);
   wake_lock_.swap(new_wake_lock);
 }
 

@@ -16,7 +16,6 @@
 #include <variant>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/callback_forward.h"
@@ -102,10 +101,6 @@
 #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
 #include "third_party/blink/public/mojom/installedapp/related_application.mojom-forward.h"
 #endif  // !BUILDFLAG(IS_ANDROID)
-
-#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
-#include "content/common/frame.mojom.h"
-#endif // BUILDFLAG(ARKWEB_MULTI_WINDOW)
 
 namespace net {
 class SiteForCookies;
@@ -430,11 +425,6 @@ class CONTENT_EXPORT ContentBrowserClient {
   // debug URLs.
   virtual bool IsExplicitNavigation(ui::PageTransition transition);
 
-  // Returns whether gesture fling events should use the mobile-behavior gesture
-  // curve for scrolling.
-#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
-  virtual bool ShouldUseMobileFlingCurve();
-#endif
   // Returns whether all instances of the specified site URL should be
   // rendered by the same process, rather than using process-per-site-instance.
   virtual bool ShouldUseProcessPerSite(BrowserContext* browser_context,
@@ -1307,10 +1297,6 @@ class CONTENT_EXPORT ContentBrowserClient {
       const GURL& request_url,
       bool is_primary_main_frame_request,
       bool strict_enforcement,
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-      const GURL& origin_url,
-      const std::string& referrer,
-#endif
       base::OnceCallback<void(CertificateRequestResultType)> callback);
 
   // Returns true if all requests with certificate errors should be blocked
@@ -1365,21 +1351,6 @@ class CONTENT_EXPORT ContentBrowserClient {
       bool user_gesture,
       bool opener_suppressed,
       bool* no_javascript_access);
-
-#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
-  virtual bool CanCreateWindow(
-      RenderFrameHost* opener,
-      const GURL& target_url,
-      WindowOpenDisposition disposition,
-      bool user_gesture,
-      content::mojom::FrameHost::GetCreateNewWindowCallback callback);
-#endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
-
-  // Called to report the result of new window creation after CanCreateWindow()
-  // returns true. There are cases where the new window may still be canceled.
-  virtual void CreateWindowResult(
-      RenderFrameHost* opener,
-      bool success) {}
 
   // Allows the embedder to return a delegate for the SpeechRecognitionManager.
   // The delegate will be owned by the manager. It's valid to return nullptr.
@@ -2232,7 +2203,7 @@ class CONTENT_EXPORT ContentBrowserClient {
   //
   // If |relative_partition_path| is the empty string, it means this needs to
   // create the default NetworkContext for the BrowserContext.
-  virtual bool ConfigureNetworkContextParams(
+  virtual void ConfigureNetworkContextParams(
       BrowserContext* context,
       bool in_memory,
       const base::FilePath& relative_partition_path,
@@ -2253,7 +2224,7 @@ class CONTENT_EXPORT ContentBrowserClient {
   // convention is to put new constants under a subdict at the key "clientInfo".
   virtual base::Value::Dict GetNetLogConstants();
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#if BUILDFLAG(IS_ANDROID)
   // Only used by Android WebView.
   // Returns:
   //   true  - The check was successfully performed without throwing a
@@ -2456,22 +2427,6 @@ class CONTENT_EXPORT ContentBrowserClient {
       const net::IsolationInfo& isolation_info,
       mojo::PendingRemote<network::mojom::URLLoaderFactory>* out_factory);
 
-  // Same as above, but exposing the whole ResourceRequest object.
-  virtual bool HandleExternalProtocol(
-      base::RepeatingCallback<WebContents*()> web_contents_getter,
-      FrameTreeNodeId frame_tree_node_id,
-      NavigationUIData* navigation_data,
-      bool is_primary_main_frame,
-      bool is_in_fenced_frame_tree,
-      network::mojom::WebSandboxFlags sandbox_flags,
-      const network::ResourceRequest& request,
-      const std::optional<url::Origin>& initiating_origin,
-      RenderFrameHost* initiator_document,
-      const net::IsolationInfo& isolation_info,
-      mojo::PendingRemote<network::mojom::URLLoaderFactory>* out_factory) {
-    return false;
-  }
-
   // Creates an OverlayWindow to be used for video or Picture-in-Picture.
   // This window will house the content shown when in Picture-in-Picture mode.
   // This will return a new OverlayWindow.
@@ -2531,10 +2486,6 @@ class CONTENT_EXPORT ContentBrowserClient {
   // of the form "productname/version", with no other slashes.
   // Used as part of the user agent string.
   virtual std::string GetProduct();
-
-  // Returns the Chrome-specific product string. This is used for compatibility
-  // purposes with external tools like Selenium.
-  virtual std::string GetChromeProduct() { return GetProduct(); }
 
   // Returns the user agent. This can also return the reduced user agent, based
   // on blink::features::kUserAgentReduction. Content may cache this value.
@@ -2978,9 +2929,10 @@ class CONTENT_EXPORT ContentBrowserClient {
   // extension origins.
   virtual bool ShouldUseFirstPartyStorageKey(const url::Origin& origin);
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  virtual void UpdateAdBlockEnabledForSite(RenderFrameHost* rfh,
-                                           const GURL& gurl) {}
+#if BUILDFLAG(IS_OHOS)
+  // Check if advanced security mode is turned on in the privacy and security
+  // settings page.
+  virtual bool IsAdvancedSecurityMode();
 #endif
 
   // Allows the embedder to return a delegate for the responsiveness calculator.

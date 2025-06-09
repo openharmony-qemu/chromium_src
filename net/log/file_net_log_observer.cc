@@ -29,6 +29,10 @@
 #include "net/log/net_log_util.h"
 #include "net/url_request/url_request_context.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "hilog/log.h"
+#endif
+
 namespace {
 
 // Number of events that can build up in |write_queue_| before a task is posted
@@ -88,6 +92,23 @@ size_t WriteToFile(base::File* file,
           file->WriteAtCurrentPos(base::as_byte_span(data3)).value_or(0);
     }
   }
+
+#if BUILDFLAG(IS_OHOS)
+  // Append net log to ohos's hilog.
+  const char kOHOSLogTag[] = "chromium_net_log";
+  if (!data1.empty()) {
+    OH_LOG_Print(LOG_APP, LOG_INFO, LOG_DOMAIN, kOHOSLogTag, "%{public}s",
+                 data1.data());
+  }
+  if (!data2.empty()) {
+    OH_LOG_Print(LOG_APP, LOG_INFO, LOG_DOMAIN, kOHOSLogTag, "%{public}s",
+                 data2.data());
+  }
+  if (!data3.empty()) {
+    OH_LOG_Print(LOG_APP, LOG_INFO, LOG_DOMAIN, kOHOSLogTag, "%{public}s",
+                 data3.data());
+  }
+#endif
 
   return bytes_written;
 }

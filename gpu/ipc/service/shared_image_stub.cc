@@ -8,7 +8,7 @@
 
 #include <memory>
 #include <utility>
-#include "base/logging.h"
+
 #include "base/memory/ptr_util.h"
 #include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
@@ -22,7 +22,6 @@
 #include "gpu/ipc/service/gpu_channel.h"
 #include "gpu/ipc/service/gpu_channel_manager.h"
 #include "gpu/ipc/service/gpu_channel_shared_image_interface.h"
-#include "arkweb/chromium_ext/gpu/ipc/service/shared_image_stub_ext.h",
 #include "gpu/ipc/service/gpu_memory_buffer_factory.h"
 #include "ui/gfx/buffer_format_util.h"
 #include "ui/gfx/gpu_fence_handle.h"
@@ -32,8 +31,6 @@
 #if BUILDFLAG(IS_WIN)
 #include "ui/gfx/win/d3d_shared_fence.h"
 #endif
-
-#include "arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_factory_ext.h"
 
 namespace {
 
@@ -89,7 +86,7 @@ SharedImageStub::shared_image_interface() {
 
 std::unique_ptr<SharedImageStub> SharedImageStub::Create(GpuChannel* channel,
                                                          int32_t route_id) {
-  auto stub = base::WrapUnique(new SharedImageStubExt(channel, route_id));
+  auto stub = base::WrapUnique(new SharedImageStub(channel, route_id));
   ContextResult result = stub->Initialize();
   if (result == ContextResult::kSuccess)
     return stub;
@@ -603,7 +600,7 @@ ContextResult SharedImageStub::Initialize() {
     }
   }
 
-  factory_ = std::make_unique<SharedImageFactoryExt>(
+  factory_ = std::make_unique<SharedImageFactory>(
       channel_manager->gpu_preferences(),
       channel_manager->gpu_driver_bug_workarounds(),
       channel_manager->gpu_feature_info(), context_state_.get(),

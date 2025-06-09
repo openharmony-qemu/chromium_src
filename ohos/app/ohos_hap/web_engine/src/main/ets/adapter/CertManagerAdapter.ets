@@ -1,16 +1,44 @@
-// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this list of
+ *    conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list
+ *    of conditions and the following disclaimer in the documentation and/or other materials
+ *    provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used
+ *    to endorse or promote products derived from this software without specific prior written
+ *    permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 import account_osAccount from '@ohos.account.osAccount';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import certManager from '@ohos.security.certManager';
+import { certificateManager } from '@kit.DeviceCertificateKit';
 import { BusinessError } from '@ohos.base';
 import fs, { Filter } from '@ohos.file.fs';
+import certificateManagerDialog from '@ohos.security.certManagerDialog';
 
 import { BaseAdapter } from '../common/BaseAdapter';
 import LogUtil from '../utils/LogUtil';
 import LogMethod from '../common/LogDecorator';
+import { ContextAdapter } from './ContextAdapter';
 
 class ListFileOption {
   public recursion: boolean = false;
@@ -23,19 +51,19 @@ interface OhosCertInfo {
   uri: string;
 }
 
-@injectable()
-export default class CertManagerAdapter extends BaseAdapter {
-  private static TAG: string = 'CertManagerAdapter';
-  private static uri_separator: string = '\n';
+const TAG: string = 'CertManagerAdapter';
 
-  get uriPath(): string {
-    return `${this.context.filesDir}/uris`;
+@injectable()
+export class CertManagerAdapter extends BaseAdapter {
+  private ctxAdapter: ContextAdapter;
+
+  constructor(@inject(ContextAdapter) ctxAdapter: ContextAdapter) {
+    super();
+    this.ctxAdapter = ctxAdapter;
   }
 
-  writeFile(filePath: string, str: string) {
-    let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
-    fs.writeSync(file.fd, str);
-    fs.closeSync(file);
+  get uriPath(): string {
+    return `${this.ctxAdapter.getContext().filesDir}/uris`;
   }
 
   readFile(filePath: string) : string {
@@ -51,28 +79,18 @@ export default class CertManagerAdapter extends BaseAdapter {
     return this.uint8ArrayToString(new Uint8Array(buf));
   }
 
-  replaceFileContent(filePath: string, strDelete: string) {
-    let content: string = this.readFile(filePath);
-    fs.unlinkSync(filePath);
-    this.writeFile(filePath, content.replace(strDelete, ''));
-  }
-
   @LogMethod
-  installPersonalCert(certData: ArrayBuffer, certPass: string, alias: string, callback: (ready: number) => void) {
+  installPersonalCert(certData: ArrayBuffer,
+    certPass: string,
+    alias: string,
+    callback: (ready: number) => void) {
     const keystore: Uint8Array =  new Uint8Array(certData);
     const keystorePwd: string = certPass;
-    // TODO The alias can contain only letters and digits. Special characters will be supported in later versions.
-    certManager.installPrivateCertificate(keystore, keystorePwd, alias).then((cmResult) => {
-      let uri: string = cmResult.uri || '';
-      let uris: string = this.readFile(uri);
-      let index = uris.indexOf(uri);
-      if (index === -1) {
-        uri += CertManagerAdapter.uri_separator;
-        this.writeFile(this.uriPath, uri);
-      }
-      callback(0);
-    }).catch((err: BusinessError) => {
-      LogUtil.error(CertManagerAdapter.TAG, `installPrivateCertificate failed, code: ${err.code}`);
+    certManager.installPrivateCertificate(keystore, keystorePwd, alias)
+      .then((cmResult) => {
+        callback(0);
+      }).catch((err: BusinessError) => {
+      LogUtil.error(TAG, `installPrivateCertificate failed, code: ${err.code}`);
       callback(err.code);
     });
   }
@@ -83,33 +101,43 @@ export default class CertManagerAdapter extends BaseAdapter {
 
   @LogMethod
   async getAllPrivateCertificates(callback: Function) {
-    let uris: string = this.readFile(this.uriPath);
-    let urisArray = uris.split(CertManagerAdapter.uri_separator) || [];
     const certInfos: OhosCertInfo[] = [];
-    if (urisArray.length < 1) {
-      callback(null, 0);
-      return;
+    try {
+      certificateManager.getPrivateCertificates().then(async (cmResult) => {
+        if (cmResult === undefined || cmResult.credentialList === undefined) {
+          LogUtil.error(TAG, `credentialList is undefined.`);
+          callback(certInfos, 0);
+          return;
+        }
+
+        let list = cmResult.credentialList;
+        for (let i = 0; i < list.length; i++) {
+          let cmResult = await certManager.getPrivateCertificate(list[i].keyUri);
+          if (cmResult && cmResult.credential && cmResult.credential.keyNum > 0) {
+            const certInfo: OhosCertInfo = {
+              uri: list[i].keyUri,
+              cert: this.uint8ArrayToString(cmResult.credential.credentialData)
+            };
+            certInfos.push(certInfo);
+          }
+        }
+        callback(certInfos, certInfos.length);
+      }).catch((err: BusinessError) => {
+        LogUtil.error(TAG, `getPrivateCertificates failed, code: ${err.code}`);
+        callback(certInfos, 0);
+      })
+    } catch (error) {
+      LogUtil.error(TAG, `getPrivateCertificates failed, code: ${error.code}`);
+      callback(certInfos, 0);
     }
-    for (let i = 0; i < urisArray.length - 1; i++) {
-      let cmResult = await certManager.getPrivateCertificate(urisArray[i]);
-      if (cmResult.credential != undefined && cmResult.credential.keyNum > 0) {
-        const certInfo: OhosCertInfo = {
-          uri: urisArray[i],
-          cert: this.uint8ArrayToString(cmResult.credential.credentialData)
-        };
-        certInfos.push(certInfo);
-      }
-    }
-    callback(certInfos, certInfos.length);
   }
 
   @LogMethod
   removeCertByUri(uriparam: string, callback: Function) {
     certManager.uninstallPrivateCertificate(uriparam).then(() => {
-      this.replaceFileContent(this.uriPath, uriparam + CertManagerAdapter.uri_separator);
       callback(0);
     }).catch((err: BusinessError) => {
-      LogUtil.error(CertManagerAdapter.TAG, `uninstallPrivateCertificate failed, code: ${err.code}`);
+      LogUtil.error(TAG, `uninstallPrivateCertificate failed, code: ${err.code}`);
       callback(err.code);
     });
   }
@@ -125,21 +153,21 @@ export default class CertManagerAdapter extends BaseAdapter {
     }
     certManager.init(uri, SignReq, (err: BusinessError, SignHandle: certManager.CMHandle) => {
       if (err) {
-        LogUtil.error(CertManagerAdapter.TAG, `certManager init sign failed, code: ${err.code}`);
+        LogUtil.error(TAG, `init sign failed, code: ${err.code}`);
         callback(buffer_return);
         return;
       }
       const SignHandle_const = SignHandle.handle;
       certManager.update(SignHandle_const, input, (err: BusinessError) => {
         if (err) {
-          LogUtil.error(CertManagerAdapter.TAG, `certManager update sign failed, code: ${err.code}`);
+          LogUtil.error(TAG, `update sign failed, code: ${err.code}`);
           callback(buffer_return);
           return;
         }
         certManager.finish(SignHandle_const).then((cmResult) => {
           callback(cmResult.outData || buffer_return);
         }).catch((err: BusinessError) => {
-          LogUtil.error(CertManagerAdapter.TAG, `certManager finish sign failed, code: ${err.code}`);
+          LogUtil.error(TAG, `finish sign failed, code: ${err.code}`);
           callback(buffer_return);
         });
       });
@@ -147,7 +175,7 @@ export default class CertManagerAdapter extends BaseAdapter {
   }
 
   async getUserId(): Promise<number> {
-    let accountManager: account_osAccount.AccountManager = account_osAccount.getAccountManager();
+    let accountManager = account_osAccount.getAccountManager();
     let localId: number = await accountManager.getOsAccountLocalId();
     return await Promise.resolve(localId);
   }
@@ -183,6 +211,26 @@ export default class CertManagerAdapter extends BaseAdapter {
       cert_crl.push(buf);
     }
     callback(cert_crl, cert_crl.length);
+  }
+
+  @LogMethod
+  showCertificateManagerDialog() {
+    let activeContext = this.ctxAdapter.getActiveContext();
+    if (!activeContext) {
+      LogUtil.warn(TAG, 'Failed to get active context');
+      return;
+    }
+    let pageType: certificateManagerDialog.CertificateDialogPageType =
+       certificateManagerDialog.CertificateDialogPageType.PAGE_MAIN;
+    try {
+      certificateManagerDialog.openCertificateManagerDialog(activeContext, pageType)
+        .then(() => {
+        }).catch((err: BusinessError) => {
+        LogUtil.error(TAG, `openCertificateManagerDialog failed, code: ${err.code}`);
+      })
+    } catch (error) {
+      LogUtil.error(TAG, `openCertificateManagerDialog failed, code: ${error.code}`);
+    }
   }
 
 }

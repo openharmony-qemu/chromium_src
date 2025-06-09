@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 import("//mojo/public/tools/bindings/mojom.gni")
-import("//arkweb//build/features/features.gni")
 
 component("shared_mojom_traits") {
   output_name = "cc_shared_mojom_traits"
@@ -34,11 +33,6 @@ mojom("mojom") {
   enabled_features = []
   if (is_android || is_ios) {
     enabled_features += [ "is_android_or_ios" ]
-  }
-
-  if (is_android || is_ohos || is_arkweb) {
-    enabled_features += [ "is_android_or_ios_or_arkweb" ]
-    enabled_features += [ "arkweb_menu" ]
   }
 
   public_deps = [

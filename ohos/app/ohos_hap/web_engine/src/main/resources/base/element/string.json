@@ -41,31 +41,31 @@
       "value": "Pasteboard requires user_grant permission"
     },
     {
-      "name": "reason_download",
-      "value": "Download requires user_grant permission"
+      "name": "upload_default_type_description",
+      "value": "Custom file"
     },
     {
-      "name": "reason_documents",
-      "value": "Documents requires user_grant permission"
+      "name": "upload_all_file_description",
+      "value": "all file(*.*)"
     },
     {
-      "name": "reason_desktop",
-      "value": "Desktop requires user_grant permission"
+      "name": "screenshot",
+      "value": "Screenshot requires user_grant permission"
     },
     {
-      "name": "download_dialog_title",
-      "value": "Unable to access system folder"
+      "name": "pasteBoard_dialog_title",
+      "value": "Unable to access system clipboard"
     },
     {
-      "name": "download_dialog_content",
-      "value": "You have disabled access to the folder. It is recommended to go to Settings ->Privacy and Security ->Folder and enable access to the label folder"
+      "name": "pasteBoard_dialog_content",
+      "value": "You have disabled the clipboard access permission. Go to Settings > Privacy & security > Clipboard and enable the clipboard access permission for label"
     },
     {
-      "name": "download_dialog_confirm_button",
+      "name": "dialog_confirm_button",
       "value": "Go to System Settings"
     },
     {
-      "name": "download_dialog_cancel_button",
+      "name": "dialog_cancel_button",
       "value": "cancel"
     }
   ]

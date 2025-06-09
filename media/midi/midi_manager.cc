@@ -10,7 +10,6 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
-#include "arkweb/build/features/features.h"
 
 namespace midi {
 
@@ -185,11 +184,7 @@ void MidiManager::EndAllSessions() {
 }
 
 void MidiManager::StartInitialization() {
-#if BUILDFLAG(ARKWEB_MEDIA)
-  CompleteInitialization(Result::OK);
-#else
   CompleteInitialization(Result::NOT_SUPPORTED);
-#endif // BUILDFLAG(ARKWEB_MEDIA)
 }
 
 void MidiManager::CompleteInitialization(Result result) {

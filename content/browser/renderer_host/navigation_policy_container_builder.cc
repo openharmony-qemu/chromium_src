@@ -43,6 +43,7 @@ std::unique_ptr<PolicyContainerPolicies> GetInitiatorPolicies(
       RenderFrameHostImpl::GetPolicyContainerHost(
           frame_token, initiator_process_id, storage_partition);
 
+  DCHECK(initiator_policy_container_host);
   if (!initiator_policy_container_host) {
     // Guard against wrong tokens being passed accidentally.
     return nullptr;

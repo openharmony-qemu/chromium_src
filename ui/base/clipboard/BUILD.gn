@@ -7,12 +7,6 @@ import("//build/config/features.gni")
 import("//build/config/ui.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 
-
-if (is_arkweb) {
-  import("//arkweb/build/features/features.gni")
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
-
 component("clipboard_types") {
   output_name = "ui_base_clipboard_types"
   sources = [
@@ -50,7 +44,7 @@ component("clipboard_types") {
   }
 
   if (is_ohos) {
-    sources += [ "ohos/clipboard_format_type_ohos.cc" ]
+    sources += [ "clipboard_format_type_ohos.cc" ]
   }
 
   defines = [ "IS_UI_BASE_CLIPBOARD_TYPES_IMPL" ]
@@ -171,19 +165,7 @@ component("clipboard") {
     "//ui/base/data_transfer_policy",
   ]
 
-  if (arkweb_clipboard) {
-    import("//build/config/ohos/config.gni")
-    import("ohos/build.gni")
-    sources -= [
-      "clipboard_non_backed.cc",
-      "clipboard_non_backed.h",
-    ]
-    sources += ohos_clipboard_sources
-    include_dirs = ohos_src_includes
-    deps += [
-      "//ohos_glue:ohos_adapter_glue_source",
-    ]
-  } else if (use_aura) {
+  if (use_aura) {
     if (use_ozone) {
       sources += [
         "clipboard_factory_ozone.cc",
@@ -195,6 +177,25 @@ component("clipboard") {
         "//ui/ozone",
       ]
     }
+  }
+
+  if(is_ohos){
+    deps += [
+      "//ohos/adapter:adapter",
+    ]
+
+    sources += [
+     "clipboard_ohos.cc",
+     "clipboard_ohos.h",
+    ]
+
+    sources -= [
+      "clipboard_factory_ozone.cc",
+      "clipboard_ozone.cc",
+      "clipboard_ozone.h",
+    ]
+
+    libs = ["udmf", "pasteboard", "pixelmap", "ability_access_control"]
   }
 
   if (is_android) {
@@ -308,11 +309,6 @@ source_set("clipboard_test") {
         "//ui/ozone:platform",
       ]
     }
-  }
-  if (is_arkweb) {
-    sources -= [
-      "clipboard_non_backed_unittest.cc",
-    ]
   }
 }
 

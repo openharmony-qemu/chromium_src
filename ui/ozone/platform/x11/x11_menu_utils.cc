@@ -20,15 +20,9 @@ int X11MenuUtils::GetCurrentKeyModifiers() const {
 }
 
 std::string X11MenuUtils::ToDBusKeySym(KeyboardCode code) const {
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  return base::UTF16ToUTF8(
-      std::u16string(1, ui::GetUnicodeCharacterFromXKeySym(
-                            XKeysymForWindowsKeyCode(code, false, false))));
-#else
   return base::UTF16ToUTF8(
       std::u16string(1, ui::GetUnicodeCharacterFromXKeySym(
                             XKeysymForWindowsKeyCode(code, false))));
-#endif
 }
 
 }  // namespace ui

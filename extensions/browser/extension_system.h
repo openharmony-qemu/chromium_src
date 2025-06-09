@@ -17,10 +17,6 @@
 #include "extensions/common/extension.h"
 #include "extensions/common/extension_id.h"
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "extensions/browser/extension_registry_info_manager.h"
-#endif // ARKWEB_ARKWEB_EXTENSIONS
-
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS) ||
               BUILDFLAG(ENABLE_DESKTOP_ANDROID_EXTENSIONS));
 
@@ -146,10 +142,6 @@ class ExtensionSystem : public KeyedService {
   // Returns whether the extension installation was finished.
   virtual bool FinishDelayedInstallationIfReady(const ExtensionId& extension_id,
                                                 bool install_immediately) = 0;
-
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  virtual ExtensionRegistryInfoManager* GetExtensionRegistryInfoManager() {return nullptr;}
-#endif
 };
 
 }  // namespace extensions

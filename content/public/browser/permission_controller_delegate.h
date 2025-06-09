@@ -145,13 +145,6 @@ class CONTENT_EXPORT PermissionControllerDelegate {
       blink::PermissionType permission,
       const std::optional<url::Origin>& origin);
 
-#if BUILDFLAG(ARKWEB_NOTIFICATION)
-  virtual void GetPermissionStatusAsync(
-      blink::PermissionType permission,
-      const GURL& requesting_origin,
-      base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) {}
-#endif // ARKWEB_NOTIFICATION
-
   void SetSubscriptions(
       content::PermissionController::SubscriptionsMap* subscriptions);
   content::PermissionController::SubscriptionsMap* subscriptions();

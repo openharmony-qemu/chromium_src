@@ -9,7 +9,6 @@
 
 #include "base/types/pass_key.h"
 #include "base/types/strong_alias.h"
-#include "arkweb/build/features/features.h"
 
 namespace ui {
 
@@ -47,16 +46,8 @@ class AXPlatformNodeId
   // Allow implicit conversion to the platform's node id type.
   constexpr operator const int32_t&() const { return value_; }
 
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  int32_t Get() const { return id_; }
-#endif
-
  private:
   friend class AXUniqueId;
-
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  int32_t id_ = 0;
-#endif
 
   constexpr explicit AXPlatformNodeId(int32_t v)
       : base::StrongAlias<class AXPlatformNodeIdTag, int32_t>::StrongAlias(v) {}

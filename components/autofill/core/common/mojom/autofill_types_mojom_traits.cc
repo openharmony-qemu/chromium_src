@@ -598,21 +598,6 @@ bool StructTraits<autofill::mojom::PasswordFormGenerationDataDataView,
 }
 
 // static
-bool StructTraits<autofill::mojom::InputFillRequestDataDataView,
-                  autofill::InputFillRequestData>::
-    Read(autofill::mojom::InputFillRequestDataDataView data,
-         autofill::InputFillRequestData* out) {
-  out->is_focused = data.is_focused();
-  return data.ReadFieldRendererId(&out->field_renderer_id) &&
-         data.ReadType(&out->type) &&
-         data.ReadBounds(&out->bounds) &&
-         data.ReadValue(&out->value) &&
-         data.ReadPlaceholder(&out->placeholder) &&
-         data.ReadAutocompleteAttr(&out->autocomplete_attr);
-}
-// #endif
-
-// static
 bool StructTraits<autofill::mojom::PasswordGenerationUIDataDataView,
                   autofill::password_generation::PasswordGenerationUIData>::
     Read(autofill::mojom::PasswordGenerationUIDataDataView data,

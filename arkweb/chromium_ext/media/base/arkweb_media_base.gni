@@ -1,6 +1,0 @@
-arkweb_media_base_custom_sources = [
-  "//arkweb/chromium_ext/media/base/action_reason.h",
-  "//arkweb/chromium_ext/media/base/custom_media_url_params.cc",
-  "//arkweb/chromium_ext/media/base/custom_media_url_params.h",
-  "//arkweb/chromium_ext/media/base/renderer_ext.h"
-]

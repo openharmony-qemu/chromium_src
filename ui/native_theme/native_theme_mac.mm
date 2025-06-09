@@ -585,15 +585,11 @@ void NativeThemeMac::PaintSelectedMenuItem(
 
 void NativeThemeMac::InitializeDarkModeStateAndObserver() {
   __block auto theme = this;
-  if (!IsForcedLightMode()) {
-    set_use_dark_colors(IsForcedDarkMode() || IsDarkMode());
-  }
+  set_use_dark_colors(IsDarkMode());
   set_preferred_color_scheme(CalculatePreferredColorScheme());
   appearance_observer_ =
       [[NativeThemeEffectiveAppearanceObserver alloc] initWithHandler:^{
-        if (!IsForcedLightMode()) {
-          theme->set_use_dark_colors(IsForcedDarkMode() || IsDarkMode());
-        }
+        theme->set_use_dark_colors(IsDarkMode());
         theme->set_preferred_color_scheme(CalculatePreferredColorScheme());
         theme->NotifyOnNativeThemeUpdated();
       }];

@@ -10,7 +10,6 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include "base/feature_list.h"
 
 #include "base/gtest_prod_util.h"
 #include "mojo/public/cpp/bindings/struct_traits.h"
@@ -77,9 +76,6 @@ class ContentSettingsPattern {
     SCHEME_HTTPS,
     SCHEME_FILE,
     SCHEME_CHROMEEXTENSION,
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-    SCHEME_ARKWEBEXTENSION,
-#endif
     SCHEME_CHROMESEARCH,
     SCHEME_CHROME,
     SCHEME_CHROMEUNTRUSTED,

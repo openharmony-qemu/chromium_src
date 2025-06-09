@@ -23,7 +23,6 @@
 #include <memory>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/feature_list.h"
@@ -525,7 +524,7 @@ void GpuDataManagerImplPrivate::InitializeGpuModes() {
   // Android and Chrome OS can't switch to software compositing. If the GPU
   // process initialization fails or GPU process is too unstable then crash the
   // browser process to reset everything.
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS_ASH) && !BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS_ASH)
   fallback_modes_.push_back(gpu::GpuMode::DISPLAY_COMPOSITOR);
   if (SwiftShaderAllowed())
     fallback_modes_.push_back(gpu::GpuMode::SWIFTSHADER);

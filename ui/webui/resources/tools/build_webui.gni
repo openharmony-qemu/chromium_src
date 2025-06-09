@@ -296,10 +296,6 @@ template("build_webui") {
       out_folder = preprocess_dir
       in_files = invoker.css_files
       minify = optimize
-      if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
-        # TODO(ohos): replace "chrome" scheme with "arkweb"
-        arkweb_as_default_scheme = false
-      }
     }
   }
 

@@ -6,7 +6,6 @@
 
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -33,7 +32,7 @@
 #include "gpu/config/gpu_switches.h"
 #include "gpu/ipc/service/gpu_memory_buffer_factory.h"
 #include "ui/gfx/switches.h"
-#include "arkweb/chromium_ext/components/viz/service/main/viz_compositor_thread_runner_impl_utils.h"
+
 #if BUILDFLAG(IS_OZONE)
 #include "ui/ozone/public/ozone_platform.h"
 #endif
@@ -76,9 +75,7 @@ std::unique_ptr<VizCompositorThreadType> CreateAndStartCompositorThread() {
   thread_options.thread_type = thread_type;
 
   CHECK(thread->StartWithOptions(std::move(thread_options)));
-#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-  ReportThreadForInit(thread);
-#endif
+
   return thread;
 #endif  // !BUILDFLAG(IS_ANDROID)
 }
@@ -88,7 +85,6 @@ VizCompositorThreadRunnerImpl::VizCompositorThreadRunnerImpl()
     : thread_(CreateAndStartCompositorThread()),
       task_runner_(thread_->task_runner()) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(gpu_sequence_checker_);
-  implUtils = new VizCompositorThreadRunnerImplUtils(this);
 }
 
 VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
@@ -97,10 +93,6 @@ VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
       base::BindOnce(&VizCompositorThreadRunnerImpl::TearDownOnCompositorThread,
                      base::Unretained(this)));
   thread_->Stop();
-#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-  implUtils->ReportThreadForDestroy(thread_);
-#endif
-  delete implUtils;
 }
 
 bool VizCompositorThreadRunnerImpl::CreateHintSessionFactory(

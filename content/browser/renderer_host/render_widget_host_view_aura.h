@@ -50,7 +50,6 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/selection_bound.h"
 #include "ui/wm/public/activation_delegate.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "content/browser/renderer_host/virtual_keyboard_controller_win.h"
@@ -128,10 +127,6 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
   bool IsShowing() override;
   void WasUnOccluded() override;
   void WasOccluded() override;
-#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
-  void EvictFrameBackBuffers(bool invisible) override {}
-  bool GetScrollable() override { return true; }
-#endif
   gfx::Rect GetViewBounds() override;
   bool IsPointerLocked() override;
   gfx::Size GetVisibleViewportSize() override;
@@ -259,6 +254,9 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
                                      gfx::Rect* rect) const override;
   bool HasCompositionText() const override;
   ui::TextInputClient::FocusReason GetFocusReason() const override;
+#if BUILDFLAG(IS_OHOS)
+  ui::RequestKeyboardReason GetRequestKeyboardReason() const override;
+#endif
   bool GetTextRange(gfx::Range* range) const override;
   bool GetCompositionTextRange(gfx::Range* range) const override;
   bool GetEditableSelectionRange(gfx::Range* range) const override;

@@ -4,7 +4,6 @@
 
 #include "content/browser/permissions/permission_controller_impl.h"
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "content/browser/permissions/permission_service_context.h"
 #include "content/browser/permissions/permission_util.h"
@@ -821,8 +820,5 @@ void PermissionControllerImpl::NotifyEventListener() {
     onchange_listeners_callback_for_tests_.Run();
   }
 }
-#if BUILDFLAG(ARKWEB_NOTIFICATION)
-#include "arkweb/chromium_ext/content/browser/permissions/permission_controller_impl_ext.cc"
-#endif // ARKWEB_NOTIFICATION
 
 }  // namespace content

@@ -16,10 +16,6 @@
 #include "components/subresource_filter/core/common/unindexed_ruleset.h"
 #include "components/url_pattern_index/proto/rules.pb.h"
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-#include "base/logging.h"
-#endif
-
 namespace subresource_filter {
 
 bool IndexAndWriteRuleset(const base::FilePath& unindexed_path,
@@ -33,60 +29,24 @@ bool IndexAndWriteRuleset(const base::FilePath& unindexed_path,
   base::File unindexed_file(base::MakeAbsoluteFilePath(unindexed_path),
                             base::File::FLAG_OPEN | base::File::FLAG_READ);
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  subresource_filter::ArkWebRulesetIndexerExt indexer;
-#else
   subresource_filter::RulesetIndexer indexer;
-#endif
 
   CopyingFileInputStream copying_stream(std::move(unindexed_file));
   google::protobuf::io::CopyingInputStreamAdaptor zero_copy_stream_adaptor(
       &copying_stream, 4096 /* buffer_size */);
   UnindexedRulesetReader reader(&zero_copy_stream_adaptor);
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  size_t num_supported_url_rules = 0;
-  size_t num_supported_css_rules = 0;
-  size_t num_unsupported_rules = 0;
-  size_t num_unsupported_css_rules = 0;
-#endif
-
   url_pattern_index::proto::FilteringRules ruleset_chunk;
 
   while (reader.ReadNextChunk(&ruleset_chunk)) {
     for (const auto& rule : ruleset_chunk.url_rules()) {
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-      if (!indexer.AddUrlRule(rule)) {
-        ++num_unsupported_rules;
-      } else {
-        ++num_supported_url_rules;
-      }
-#else
       indexer.AddUrlRule(rule);
-#endif
     }
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-    for (const auto& rule : ruleset_chunk.css_rules()) {
-      if (!indexer.AddCssRule(rule)) {
-        ++num_unsupported_css_rules;
-      } else {
-        ++num_supported_css_rules;
-      }
-    }
-#endif
   }
 
   indexer.Finish();
 
   base::WriteFile(indexed_path, indexer.data());
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  LOG(INFO) << "[AdBlock]reader.num bytes read=" << reader.num_bytes_read()
-            << ",num unsupported url rules=" << num_unsupported_rules
-            << "num unsupported_css_rules=" << num_unsupported_css_rules
-            << "num supported_url rules=" << num_supported_url_rules
-            << ", num_supported_css_rules=" << num_supported_css_rules;
-#endif
 
   if (out_checksum)
     *out_checksum = indexer.GetChecksum();

@@ -21,7 +21,6 @@
 #include <Availability.h>
 #include <Security/Security.h>
 #include <mach/mach.h>
-#include "arkweb/build/features/features.h"
 
 #include "partition_alloc/partition_alloc_base/apple/scoped_cftyperef.h"
 #endif
@@ -121,7 +120,7 @@ int GetAccessFlags(PageAccessibilityConfiguration accessibility)
 }
 #endif
 
-#if defined(LINUX_NAME_REGION) || defined(ARKWEB_PER_DFX)
+#if defined(LINUX_NAME_REGION)
 
 void NameRegion(void* start, size_t length, PageTag page_tag) {
   // Important: All the names should be string literals. As per prctl.h in

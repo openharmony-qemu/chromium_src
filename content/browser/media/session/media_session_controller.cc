@@ -35,9 +35,6 @@ void MediaSessionController::SetMetadata(
     bool has_audio,
     bool has_video,
     media::MediaContentType media_content_type) {
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  media_session_->SetMediaContentType(media_content_type);
-#endif
   has_audio_ = has_audio;
   has_video_ = has_video;
   media_content_type_ = media_content_type;
@@ -47,12 +44,6 @@ void MediaSessionController::SetMetadata(
 bool MediaSessionController::OnPlaybackStarted() {
   is_paused_ = false;
   is_playback_in_progress_ = true;
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  if (media_session_) {
-    media_session_->SetPlayingState(true);
-    media_session_->SetPauseByAvsession(false);
-  }
-#endif
   return AddOrRemovePlayer();
 }
 
@@ -200,19 +191,11 @@ bool MediaSessionController::HasSufficientlyVisibleVideo(int player_id) const {
 
 void MediaSessionController::OnPlaybackPaused(bool reached_end_of_stream) {
   is_paused_ = true;
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  media_session_->SetPlayingState(false);
-  LOG(INFO) << "MediaSessionController OnPlaybackStarted SetPlayingState false";
-#endif
+
   if (reached_end_of_stream) {
     is_playback_in_progress_ = false;
     AddOrRemovePlayer();
   }
-#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-    if (media_session_) {
-      media_session_->SetEndOfMedia(reached_end_of_stream);
-    }
-#endif // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 
   // We check for suspension here since the renderer may issue its own pause
   // in response to or while a pause from the browser is in flight.
@@ -275,13 +258,6 @@ bool MediaSessionController::IsMediaSessionNeeded() const {
   if (!is_playback_in_progress_)
     return false;
 
-#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-  if (media_content_type_ == media::MediaContentType::kTransient) {
-    LOG(INFO) << __func__<< ", media_content_type_: media::MediaContentType::Transient";
-    return false;
-  }
-#endif // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-
   // If the media content has an associated Remote Playback session started, we
   // should request audio focus regardless of whether the tab is muted.
   media_session::mojom::MediaSessionInfoPtr session_info =
@@ -298,9 +274,7 @@ bool MediaSessionController::IsMediaSessionNeeded() const {
 
 bool MediaSessionController::AddOrRemovePlayer() {
   const bool needs_session = IsMediaSessionNeeded();
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  AsMediaSessionControllerExt()->SetSessionStateIfNeed(needs_session);
-#endif // ARKWEB_MEDIA_POLICY
+
   if (needs_session) {
     // Attempt to add a session even if we already have one.  MediaSession
     // expects AddPlayer() to be called after OnPlaybackPaused() to reactivate

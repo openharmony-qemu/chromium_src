@@ -215,13 +215,6 @@ class COMPONENT_EXPORT(PRINTING) PrintingContext {
   void SetJobId(int job_id);
 #endif
 
-  void set_render_ids(int render_process_id, int render_frame_id) {
-    render_process_id_ = render_process_id;
-    render_frame_id_ = render_frame_id;
-  }
-  int render_process_id() const { return render_process_id_; }
-  int render_frame_id() const { return render_frame_id_; }
-
  protected:
   PrintingContext(Delegate* delegate, ProcessBehavior process_behavior);
 
@@ -254,10 +247,6 @@ class COMPONENT_EXPORT(PRINTING) PrintingContext {
   // or test does not require passing such an ID for extra print job
   // management.
   int job_id_ = kNoPrintJobId;
-
-  // Routing IDs for the frame that owns this object.
-  int render_process_id_ = 0;
-  int render_frame_id_ = 0;
 
  private:
   const ProcessBehavior process_behavior_;

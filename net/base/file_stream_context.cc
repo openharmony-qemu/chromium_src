@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "net/base/file_stream_context.h"
-#include "arkweb/build/features/features.h"
 
 #include <utility>
 
@@ -20,10 +19,6 @@
 #if BUILDFLAG(IS_MAC)
 #include "net/base/apple/guarded_fd.h"
 #endif  // BUILDFLAG(IS_MAC)
-
-#if BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
-#include "arkweb/chromium_ext/base/datashare_uri_utils.h"
-#endif
 
 namespace net {
 
@@ -178,14 +173,6 @@ FileStream::Context::OpenResult FileStream::Context::OpenFileImpl(
   open_flags |= base::File::FLAG_WIN_SHARE_DELETE;
 #endif
   base::File file(path, open_flags);
-#if BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
-  if (path.IsDataShareUri()) {
-    file = base::OpenDatashareUriForRead(path);
-  } else {
-    open_flags |= base::File::FLAG_WIN_SHARE_DELETE;
-    file.Initialize(path, open_flags);
-  }
-#endif  // BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
   if (!file.IsValid()) {
     return OpenResult(base::File(),
                       IOResult::FromOSError(logging::GetLastSystemErrorCode()));

@@ -171,10 +171,6 @@ class MockFrameHost : public mojom::FrameHost {
         std::move(browser_interface_broker_receiver));
   }
 
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-    void OnClearContextMenu() override {}
-#endif
-
   void DidCommitSameDocumentNavigation(
       mojom::DidCommitProvisionalLoadParamsPtr params,
       mojom::DidCommitSameDocumentNavigationParamsPtr same_doc_params)
@@ -220,18 +216,6 @@ class MockFrameHost : public mojom::FrameHost {
   void UpdateUserGestureCarryoverInfo() override {}
 #endif
 
-#if BUILDFLAG(ARKWEB_MENU)
-  void ChangeVisibilityOfQuickMenu() override {}
-  void MouseSelectMenuShow(bool show) override {}
-#endif
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void GetCreateNewWindow(const ::GURL& target_url,
-                          ::WindowOpenDisposition disposition,
-                          bool allow_popup,
-                          GetCreateNewWindowCallback callback) override {}
-
-  void CloseImageOverlaySelection() override {}
-#endif
  private:
   mojom::DidCommitProvisionalLoadParamsPtr last_commit_params_;
   mojo::PendingReceiver<blink::mojom::BrowserInterfaceBroker>

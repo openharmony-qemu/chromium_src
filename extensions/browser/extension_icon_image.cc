@@ -22,10 +22,6 @@
 #include "ui/gfx/image/image_skia_rep.h"
 #include "ui/gfx/image/image_skia_source.h"
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "extensions/browser/extension_icon_image_observer.h"
-#endif // ARKWEB_ARKWEB_EXTENSIONS
-
 // The ImageSkia provided by extensions::IconImage contains ImageSkiaReps that
 // are computed and updated using the following algorithm (if no default icon
 // was supplied, transparent icon is considered the default):
@@ -258,9 +254,6 @@ void IconImage::OnImageRepLoaded(const gfx::ImageSkiaRep& rep) {
 
   for (auto& observer : observers_)
     observer.OnExtensionIconImageChanged(this);
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  DestroyExtensionIconImageObserver(extension_->id());
-#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void IconImage::OnExtensionUnloaded(content::BrowserContext* browser_context,

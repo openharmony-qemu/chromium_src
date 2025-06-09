@@ -15,7 +15,6 @@
 #include "base/check.h"
 #include "base/types/expected.h"
 #include "base/types/expected_macros.h"
-#include "base/trace_event/trace_event.h"
 #include "gpu/command_buffer/common/mailbox.h"
 #include "gpu/command_buffer/service/shared_context_state.h"
 #include "gpu/command_buffer/service/shared_image/shared_image_factory.h"
@@ -223,7 +222,6 @@ base::expected<void, GLError> CopySharedImageHelper::CopySharedImage(
     GLsizei width,
     GLsizei height,
     const volatile GLbyte* mailboxes) {
-  TRACE_EVENT0("base", "CopySharedImageHelper::CopySharedImage");
   Mailbox source_mailbox = Mailbox::FromVolatile(
       reinterpret_cast<const volatile Mailbox*>(mailboxes)[0]);
   DLOG_IF(ERROR, !source_mailbox.Verify())

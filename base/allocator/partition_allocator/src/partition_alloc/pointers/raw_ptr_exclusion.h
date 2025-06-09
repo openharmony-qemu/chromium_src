@@ -9,9 +9,9 @@
 
 // This header will be leakily included even when
 // `!use_partition_alloc`, which is okay because it's a leaf header.
-#include "base/allocator/partition_allocator/src/partition_alloc/build_config.h"
-#include "base/allocator/partition_allocator/src/partition_alloc/buildflags.h"
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h"  // nogncheck
+#include "partition_alloc/build_config.h"
+#include "partition_alloc/buildflags.h"
+#include "partition_alloc/partition_alloc_base/compiler_specific.h"  // nogncheck
 
 #if PA_HAS_ATTRIBUTE(annotate)
 #if defined(OFFICIAL_BUILD) && !PA_BUILDFLAG(FORCE_ENABLE_RAW_PTR_EXCLUSION)

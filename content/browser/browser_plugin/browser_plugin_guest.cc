@@ -49,8 +49,6 @@ std::unique_ptr<WebContentsImpl> BrowserPluginGuest::CreateNewGuestWindow(
 }
 
 void BrowserPluginGuest::InitInternal(WebContentsImpl* owner_web_contents) {
-  owner_web_contents_ = owner_web_contents;
-
   RenderWidgetHostImpl* rwhi =
       GetWebContents()->GetPrimaryMainFrame()->GetRenderWidgetHost();
   DCHECK(rwhi);

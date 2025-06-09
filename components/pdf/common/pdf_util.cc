@@ -37,11 +37,8 @@ void ReportPDFLoadStatus(PDFLoadStatus status) {
 
 bool IsPdfExtensionOrigin(const url::Origin& origin) {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
-  return (origin.scheme() == extensions::kExtensionScheme
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      || origin.scheme() == extensions::kArkwebExtensionScheme
-#endif
-  ) && origin.host() == extension_misc::kPdfExtensionId;
+  return origin.scheme() == extensions::kExtensionScheme &&
+         origin.host() == extension_misc::kPdfExtensionId;
 #else
   return false;
 #endif

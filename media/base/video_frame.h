@@ -69,17 +69,7 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
   static constexpr size_t kFrameAddressAlignment =
       VideoFrameLayout::kBufferAddressAlignment;
 
-  enum {
-    kMaxPlanes = 4,
-
-    kYPlane = 0,
-    kARGBPlane = kYPlane,
-    kUPlane = 1,
-    kUVPlane = kUPlane,
-    kVPlane = 2,
-    kAPlaneTriPlanar = kVPlane,
-    kAPlane = 3,
-  };
+  static constexpr size_t kMaxPlanes = 4;
 
   enum Plane : uint8_t {
     kY = 0,
@@ -991,7 +981,6 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
 
   // Allocation which makes up |data_| planes for self-allocated frames.
   std::unique_ptr<uint8_t, base::UncheckedFreeDeleter> private_data_;
-
 };
 
 }  // namespace media

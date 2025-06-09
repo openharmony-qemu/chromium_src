@@ -20,7 +20,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/allocator/allocator_check.h"
 #include "base/allocator/partition_alloc_support.h"
 #include "base/at_exit.h"
@@ -53,7 +52,6 @@
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/threading/hang_watcher.h"
 #include "base/threading/platform_thread.h"
-#include "base/threading/thread_restrictions.h"
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
@@ -213,8 +211,8 @@
 #include "base/debug/asan_service.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "content/renderer/render_remote_proxy_ohos.h"
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/multiprocess/app_spawn_communication.h"
 #endif
 
 namespace content {
@@ -579,15 +577,6 @@ class ContentClientInitializer {
   static void Set(const std::string& process_type,
                   ContentMainDelegate* delegate) {
     ContentClient* content_client = GetContentClient();
-
-  // TODO(ARKWEB_DFX_TRACING): waiting to confirm the impact
-  // https://open.codehub.huawei.com/innersource/shanhai/wutong/chromium/merge_requests/8781
-#if !BUILDFLAG(ARKWEB_DFX_TRACING)
-    if (process_type == switches::kUtilityProcess ||
-        cmd->HasSwitch(switches::kSingleProcess))
-#endif
-      content_client->utility_ = delegate->CreateContentUtilityClient();
-
     if (process_type.empty())
       content_client->browser_ = delegate->CreateContentBrowserClient();
 
@@ -600,6 +589,10 @@ class ContentClientInitializer {
     if (process_type == switches::kRendererProcess ||
         cmd->HasSwitch(switches::kSingleProcess))
       content_client->renderer_ = delegate->CreateContentRendererClient();
+
+    if (process_type == switches::kUtilityProcess ||
+        cmd->HasSwitch(switches::kSingleProcess))
+      content_client->utility_ = delegate->CreateContentUtilityClient();
   }
 };
 
@@ -867,10 +860,18 @@ int ContentMainRunnerImpl::Initialize(ContentMainParams params) {
   [[maybe_unused]] base::GlobalDescriptors* g_fds =
       base::GlobalDescriptors::GetInstance();
 
+// On OHOS, the ipc_fd is passed through the AppSpawn.
+#if BUILDFLAG(IS_OHOS)
+  auto ids_fds_map = ohos::adapter::multiprocess::AppSpawnCommunication::GetFdIdsRemap();
+  for (auto & [id, fd] : ids_fds_map) {
+    g_fds->Set(id, fd);
+  }
+#endif
+
 // On Android, the shared descriptors are passed through the Java service,
 // which takes care of updating these mappings; otherwise, we need to update
 // the mappings explicitly.
-#if (!BUILDFLAG(IS_ANDROID)  && !BUILDFLAG(IS_OHOS))
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   g_fds->Set(kMojoIPCChannel,
              kMojoIPCChannel + base::GlobalDescriptors::kBaseDescriptor);
   g_fds->Set(kFieldTrialDescriptor,
@@ -1128,13 +1129,6 @@ NO_STACK_PROTECTOR int ContentMainRunnerImpl::Run() {
   // Run this logic on all child processes.
   if (!process_type.empty()) {
     if (process_type != switches::kZygoteProcess) {
-      // Zygotes will run this at a later point in time when the command line
-      // has been updated.
-#if BUILDFLAG(IS_ARKWEB)
-      if (!RunRenderRemoteProxy(*command_line)) {
-        return -1;
-      }
-#endif
       if (delegate_->ShouldCreateFeatureList(
               ContentMainDelegate::InvokedInChildProcess())) {
         InitializeFieldTrialAndFeatureList();
@@ -1327,24 +1321,6 @@ int ContentMainRunnerImpl::RunBrowser(MainFunctionParams main_params,
   return RunBrowserProcessMain(std::move(main_params), delegate_);
 }
 
-#if BUILDFLAG(IS_ARKWEB)
-bool ContentMainRunnerImpl::RunRenderRemoteProxy(
-    const base::CommandLine& command_line) {
-  std::string process_type =
-      command_line.GetSwitchValueASCII(switches::kProcessType);
-  if (process_type != switches::kRendererProcess &&
-      process_type != switches::kPpapiPluginProcess &&
-      process_type != switches::kGpuProcess) {
-    return true;
-  }
-  RenderRemoteProxy::CreateAndRegist(command_line);
-  if (!RenderRemoteProxy::WaitForBrowserFd()) {
-    return false;
-  }
-  return true;
-}
-#endif
-
 void ContentMainRunnerImpl::Shutdown() {
   DCHECK(is_initialized_);
   DCHECK(!is_shutdown_);
@@ -1383,11 +1359,6 @@ void ContentMainRunnerImpl::Shutdown() {
 
   delegate_ = nullptr;
   is_shutdown_ = true;
-}
-
-void ContentMainRunnerImpl::ShutdownOnUIThread() {
-  base::ScopedAllowBaseSyncPrimitivesForTesting allow_wait;
-  discardable_shared_memory_manager_.reset();
 }
 
 // static

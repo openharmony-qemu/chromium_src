@@ -13,7 +13,6 @@
 #include "components/viz/common/resources/returned_resource.h"
 #include "components/viz/common/surfaces/local_surface_id.h"
 #include "ui/gfx/geometry/rect.h"
-#include "arkweb/build/features/features.h"
 
 namespace gfx {
 class Transform;
@@ -92,10 +91,6 @@ class CC_EXPORT LayerTreeFrameSinkClient {
   // processed.
   virtual void OnCompositorFrameTransitionDirectiveProcessed(
       uint32_t sequence_id) {}
-
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  virtual void SetDrawRectState(bool isNeedDrawRect) = 0;
-#endif
 
   virtual void OnSurfaceEvicted(const viz::LocalSurfaceId& local_surface_id) {}
 

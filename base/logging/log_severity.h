@@ -5,9 +5,7 @@
 #ifndef BASE_LOGGING_LOG_SEVERITY_H_
 #define BASE_LOGGING_LOG_SEVERITY_H_
 
-// todo: check
 #include "base/dcheck_is_on.h"
-#include "build/build_config.h"
 
 namespace logging {
 
@@ -20,13 +18,7 @@ inline constexpr LogSeverity LOGGING_INFO = 0;
 inline constexpr LogSeverity LOGGING_WARNING = 1;
 inline constexpr LogSeverity LOGGING_ERROR = 2;
 inline constexpr LogSeverity LOGGING_FATAL = 3;
-
-// #if BUILDFLAG(ARKWEB_DFX_LOGGING)
-constexpr LogSeverity LOGGING_DEBUG = 4;
-inline constexpr LogSeverity LOGGING_NUM_SEVERITIES = 5;
-// #else
-// inline constexpr LogSeverity LOGGING_NUM_SEVERITIES = 4;
-// #endif
+inline constexpr LogSeverity LOGGING_NUM_SEVERITIES = 4;
 
 // LOGGING_DFATAL is LOGGING_FATAL in DCHECK-enabled builds, ERROR in normal
 // mode.
@@ -35,14 +27,6 @@ inline constexpr LogSeverity LOGGING_DFATAL = LOGGING_FATAL;
 #else
 inline constexpr LogSeverity LOGGING_DFATAL = LOGGING_ERROR;
 #endif
-
-#if BUILDFLAG(IS_ARKWEB)
-#if !defined(LOGGING_TAG)
-#define LOGGING_TAG "chromium#"
-#endif
-#else // BUILDFLAG(IS_ARKWEB)
-#define LOGGING_TAG
-#endif // BUILDFLAG(IS_ARKWEB)
 
 }  // namespace logging
 

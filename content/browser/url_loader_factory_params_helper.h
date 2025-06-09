@@ -15,10 +15,6 @@
 #include "services/network/public/mojom/url_loader.mojom-shared.h"
 #include "url/origin.h"
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-#include "url/gurl.h"
-#endif
-
 namespace net {
 class IsolationInfo;
 }  // namespace net
@@ -70,13 +66,7 @@ class URLLoaderFactoryParamsHelper {
       network::mojom::TrustTokenOperationPolicyVerdict
           trust_token_redemption_policy,
       net::CookieSettingOverrides cookie_setting_overrides,
-      std::string_view debug_tag
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-,
-      const GURL& main_url = GURL(),
-      uint64_t addr_web_handle = 0
-#endif
-      );
+      std::string_view debug_tag);
 
   // Creates URLLoaderFactoryParams to be used by |isolated_world_origin| hosted
   // within the |frame|.

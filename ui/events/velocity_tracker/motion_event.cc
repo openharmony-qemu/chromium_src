@@ -81,12 +81,4 @@ std::ostream& operator<<(std::ostream& stream,
   return stream << static_cast<int>(tool_type);
 }
 
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-bool MotionEvent::IsCancelByLostFocus() const {
-  return false;
-}
-
-void MotionEvent::SetCancelByLostFocus(bool is_lost_focus) {}
-#endif
-
 }  // namespace ui

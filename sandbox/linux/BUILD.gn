@@ -38,9 +38,8 @@ group("sandbox") {
   if (is_android) {
     public_deps += [ ":seccomp_starter_android" ]
   }
-
   if (is_ohos) {
-    public_deps += [ "//arkweb/chromium_ext/sandbox:seccomp_starter_ohos" ]
+    public_deps += [ ":seccomp_starter_ohos" ]
   }
 }
 
@@ -267,9 +266,25 @@ component("seccomp_bpf") {
   }
 
   if (is_ohos) {
-    deps += [
-      "//arkweb/chromium_ext/sandbox:arkweb_sandbox"
+    sources += [
+      "seccomp-bpf-helpers/baseline_policy_ohos.cc",
+      "seccomp-bpf-helpers/baseline_policy_ohos.h",
     ]
+  }
+}
+
+if (is_ohos) {
+  component("seccomp_starter_ohos") {
+    sources = [
+      "seccomp-bpf-helpers/seccomp_starter_ohos.cc",
+      "seccomp-bpf-helpers/seccomp_starter_ohos.h",
+    ]
+
+    deps = [ "//base" ]
+
+    if (use_seccomp_bpf) {
+      deps += [ ":seccomp_bpf" ]
+    }
   }
 }
 

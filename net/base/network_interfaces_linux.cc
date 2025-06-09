@@ -44,10 +44,6 @@
 #include "net/base/network_interfaces_getifaddrs.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-#include "net/base/network_interfaces_getifaddrs.h"
-#endif
-
 namespace net {
 
 namespace {
@@ -249,14 +245,6 @@ bool GetNetworkList(NetworkInterfaceList* networks, int policy) {
   }
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  bool ret = internal::GetNetworkListUsingGetifaddrs(networks, policy);
-  // Use GetInterfaceConnectionType() to sharpen up interface types.
-  for (NetworkInterface& network : *networks)
-    network.type = internal::GetInterfaceConnectionType(network.name);
-  return ret;
-#else
-
   const AddressMapOwnerLinux* map_owner = nullptr;
   std::optional<internal::AddressTrackerLinux> temp_tracker;
 #if BUILDFLAG(IS_LINUX)
@@ -277,7 +265,6 @@ bool GetNetworkList(NetworkInterfaceList* networks, int policy) {
   return internal::GetNetworkListImpl(
       networks, policy, map_owner->GetOnlineLinks(), map_owner->GetAddressMap(),
       &internal::AddressTrackerLinux::GetInterfaceName);
-#endif
 }
 
 std::string GetWifiSSID() {

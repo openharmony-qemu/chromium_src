@@ -272,7 +272,7 @@ TEST_P(ImageTransferCacheEntryTest, MAYBE_Deserialize) {
   entry.reset();
 }
 
-TEST_P(ImageTransferCacheEntryTest, HardwareDecodedMipsAfterCreation) {
+TEST_P(ImageTransferCacheEntryTest, HardwareDecodedNoMipsAtCreation) {
   base::HeapArray<bool> release_flags;
   std::vector<sk_sp<SkImage>> plane_images = CreateTestYUVImage(release_flags);
   const size_t plane_images_size = plane_images.size();

@@ -496,12 +496,6 @@ OpaqueResponseBlockingAnalyzer::ShouldHandleBlockedResponseAs() const {
   // for non-script fetches, by injecting a network error.
   // "ORB errors-for-all-fetches" uses ORB-specified error handling everywhere.
 
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  if (!base::FeatureList::IsEnabled(features::kOpaqueResponseBlockingV02)) {
-    return BlockedResponseHandling::kEmptyResponse;
-  }
-#endif
-
   if (base::FeatureList::IsEnabled(
           features::kOpaqueResponseBlockingErrorsForAllFetches)) {
     return BlockedResponseHandling::kNetworkError;

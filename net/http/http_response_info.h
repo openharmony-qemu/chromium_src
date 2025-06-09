@@ -205,11 +205,6 @@ class NET_EXPORT HttpResponseInfo {
 
   // True if the response used a shared dictionary for decoding its body.
   bool did_use_shared_dictionary = false;
-
-#if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
-  // Valid when response status code is HTTP_NOT_MODIFIED
-  bool code_cache_valid = false;
-#endif
 };
 
 }  // namespace net

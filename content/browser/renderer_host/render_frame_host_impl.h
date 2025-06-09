@@ -20,7 +20,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/containers/unique_ptr_adapters.h"
@@ -491,17 +490,6 @@ class CONTENT_EXPORT RenderFrameHostImpl
                                JavaScriptResultCallback callback) override;
   void ExecuteJavaScript(const std::u16string& javascript,
                          JavaScriptResultCallback callback) override;
-#if BUILDFLAG(IS_ARKWEB)
-  void ExecuteJavaScriptExt(const int fd,
-                            const uint64_t scriptLength,
-                            JavaScriptResultCallback callback) override;
-#endif
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  void SendAccessibilityEvent(int64_t accessibilityId,
-                              int32_t eventType,
-                              const std::string& argument);
-#endif
-
   void ExecuteJavaScriptInIsolatedWorld(const std::u16string& javascript,
                                         JavaScriptResultCallback callback,
                                         int32_t world_id) override;
@@ -748,9 +736,6 @@ class CONTENT_EXPORT RenderFrameHostImpl
   gfx::NativeWindow GetTopLevelNativeWindow() override;
   bool CanFireAccessibilityEvents() const override;
   bool AccessibilityIsRootFrame() const override;
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  RenderFrameHostImpl* AccessibilityRenderFrameHost() override;
-#endif
   bool ShouldSuppressAXLoadComplete() override;
   WebContentsAccessibility* AccessibilityGetWebContentsAccessibility() override;
 
@@ -1471,11 +1456,6 @@ class CONTENT_EXPORT RenderFrameHostImpl
                                 const gfx::Rect& clip_rect);
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(IS_ARKWEB_EXT)
-  void GetImageFromCache(const std::string& url,
-                         ImageCacheCallback callback) override;
-#endif
-
   // Request a one-time snapshot of the accessibility tree without changing
   // the accessibility mode.
   void RequestAXTreeSnapshot(AXTreeSnapshotCallback callback,
@@ -1595,12 +1575,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
           subresource_overrides,
       blink::mojom::ServiceWorkerContainerInfoForClientPtr container_info,
       const std::optional<blink::DocumentToken>& document_token,
-      const base::UnguessableToken& devtools_navigation_token
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-,
-      uint64_t addr_web_handle
-#endif
-      );
+      const base::UnguessableToken& devtools_navigation_token);
 
   // Indicates that a navigation failed and that this RenderFrame should display
   // an error page.
@@ -2386,9 +2361,6 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void DidChangeThemeColor(std::optional<SkColor> theme_color) override;
   void DidChangeBackgroundColor(const SkColor4f& background_color,
                                 bool color_adjust) override;
-#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
-  void NotifyContextMenuWillShow() override;
-#endif
   void DidFailLoadWithError(const GURL& url, int32_t error_code) override;
   void DidFocusFrame() override;
   void DidCallFocus() override;
@@ -2475,17 +2447,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
           blink_widget_host,
       mojo::PendingAssociatedRemote<blink::mojom::Widget> blink_widget)
       override;
-#if BUILDFLAG(ARKWEB_MENU)
-  void MouseSelectMenuShow(bool show) override;
-  void ChangeVisibilityOfQuickMenu() override;
-#endif
   void ShowContextMenu(
       mojo::PendingAssociatedRemote<blink::mojom::ContextMenuClient>
           context_menu_client,
       const blink::UntrustworthyContextMenuParams& params) override;
-#if BUILDFLAG(ARKWEB_AI)
-  void CloseImageOverlaySelection() override;
-#endif  // BUILDFLAG(ARKWEB_AI)
   void DidLoadResourceFromMemoryCache(
       const GURL& url,
       const std::string& http_method,
@@ -2593,20 +2558,6 @@ class CONTENT_EXPORT RenderFrameHostImpl
                          blink::mojom::WindowFeaturesPtr window_features,
                          bool user_gesture,
                          ShowCreatedWindowCallback callback) override;
-
-#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
-  void GetCreateNewWindow(const GURL& target_url,
-                          WindowOpenDisposition disposition,
-                          bool allow_popup,
-                          GetCreateNewWindowCallback callback) override;
-#endif
-#if BUILDFLAG(ARKWEB_PRECOMPILE)
-  void GenerateCodeCache(const std::string& url,
-                         const std::string& script,
-                         const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
-                         CodeCacheCallback callback) override;
-#endif
-
   void SetWindowRect(const gfx::Rect& bounds,
                      SetWindowRectCallback callback) override;
   void DidFirstVisuallyNonEmptyPaint() override;
@@ -2944,10 +2895,6 @@ class CONTENT_EXPORT RenderFrameHostImpl
           callback);
 #endif
 
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  void OnClearContextMenu() override;
-#endif // BUILDFLAG(ARKWEB_DRAG_DROP)
-
   using JavaScriptResultAndTypeCallback =
       base::OnceCallback<void(blink::mojom::JavaScriptExecutionResultType,
                               base::Value)>;
@@ -3066,10 +3013,6 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // Records metrics on sudden termination handlers found in this frame and
   // subframes.
   void RecordNavigationSuddenTerminationHandlers();
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  void UpdateAdBlockEnabledToRender(bool site_adblock_enabled);
-#endif
 
   // Returns the devtools_navigation_token (see
   // NavigationRequest::devtools_navigation_token()) associated with the last
@@ -3203,12 +3146,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
   bool ShouldPartitionAsPopin() const;
 
   void SimulateDiscardShutdownKeepAliveTimeoutForTesting();
-#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
-  void AddNamedObject(const std::string& name,
-                      int32_t object_id,
-                      base::Value::List& async_method_list,
-                      bool need_update);
-#endif
+
  protected:
   friend class RenderFrameHostFactory;
 

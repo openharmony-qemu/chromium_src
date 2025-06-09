@@ -858,11 +858,7 @@ ui::InteractionSequence::StepBuilder InteractiveViewsTestApi::PollView(
     ui::ElementIdentifier view_id,
     C&& callback,
     base::TimeDelta polling_interval) {
-#if defined(__clang__) && (__clang_major__ < 17)
-  using Cb = typename PollingViewObserver<T, V>::PollViewCallback;
-#else
   using Cb = PollingViewObserver<T, V>::PollViewCallback;
-#endif
   Cb cb = ui::test::internal::MaybeBindRepeating(std::forward<C>(callback));
   auto step =
       WithElement(ui::test::internal::kInteractiveTestPivotElementId,

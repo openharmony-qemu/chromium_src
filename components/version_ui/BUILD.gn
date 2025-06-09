@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//cef/libcef/features/features.gni")
-
 static_library("version_ui") {
   sources = [
     "version_handler_helper.cc",
@@ -19,8 +17,4 @@ static_library("version_ui") {
     "//components/variations/net",
     "//components/variations/service",
   ]
-
-  if (enable_cef) {
-    configs += [ "//cef/libcef/features:config" ]
-  }
 }

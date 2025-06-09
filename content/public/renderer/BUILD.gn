@@ -5,7 +5,6 @@
 import("//build/config/features.gni")
 import("//media/media_options.gni")
 import("//ppapi/buildflags/buildflags.gni")
-import("//arkweb/build/features/features.gni")
 
 # See //content/BUILD.gn for how this works.
 group("renderer") {
@@ -27,14 +26,6 @@ if (is_component_build) {
 target(link_target_type, "renderer_sources") {
   # External code should depend on via ":renderer" above.
   visibility = [ "//content/*" ]
-
-  if (arkweb_unittests) {
-    visibility += [
-      "//media/cdm/library_cdm/clear_key_cdm:clear_key_cdm_bin",
-      "//media:media_unittests",
-      "//device:device_unittests",
-    ]
-  }
 
   sources = [
     "chrome_object_extensions_utils.cc",
@@ -58,11 +49,6 @@ target(link_target_type, "renderer_sources") {
   ]
 
   configs += [ "//content:content_implementation" ]
-
-  if (use_libfuzzer) {
-    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
-    configs += [ "//build/config/gcc:symbol_visibility_default" ]
-  }
 
   public_deps = [
     "//build:chromecast_buildflags",
@@ -115,7 +101,7 @@ target(link_target_type, "renderer_sources") {
     deps += [ "//sandbox" ]
   }
 
-  if (enable_library_cdms || is_win || is_android || arkweb_enable_cdm) {
+  if (enable_library_cdms || is_win || is_android) {
     sources += [
       "key_system_support.cc",
       "key_system_support.h",

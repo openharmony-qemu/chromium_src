@@ -378,14 +378,9 @@ bool UrlPattern::MatchesUrl(const UrlInfo& url) const {
 
   // Use the lower-cased url for case-insensitive comparison. Case-insensitive
   // patterns should already be lower-cased.
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  return IsCaseSensitiveMatch(base::ToLowerASCII(url_pattern_), anchor_left, anchor_right,
-                              url.GetLowerCaseSpec(), url.host());
-#else
   DCHECK(!HasAnyUpperAscii(url_pattern_));
   return IsCaseSensitiveMatch(url_pattern_, anchor_left, anchor_right,
                               url.GetLowerCaseSpec(), url.host());
-#endif
 }
 
 std::ostream& operator<<(std::ostream& out, const UrlPattern& pattern) {

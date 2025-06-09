@@ -398,7 +398,6 @@ class PageLoadMetricsObserverInterface {
   virtual void OnDomContentLoadedEventStart(
       const mojom::PageLoadTiming& timing) = 0;
   virtual void OnLoadEventStart(const mojom::PageLoadTiming& timing) = 0;
-  virtual void OnLoadEventEnd(const mojom::PageLoadTiming& timing) = 0;
   virtual void OnParseStart(const mojom::PageLoadTiming& timing) = 0;
   virtual void OnParseStop(const mojom::PageLoadTiming& timing) = 0;
   virtual void OnConnectStart(const mojom::PageLoadTiming& timing) = 0;
@@ -636,12 +635,6 @@ class PageLoadMetricsObserverInterface {
 
   // Called when the renderer process for the primary main frame is gone.
   virtual void OnPrimaryPageRenderProcessGone() = 0;
-
-#if BUILDFLAG(ARKWEB_BFCACHE)
-  virtual void OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
-      const mojom::BackForwardCacheTiming& timing,
-      size_t index) = 0;
-#endif
 
  private:
   base::WeakPtrFactory<PageLoadMetricsObserverInterface> weak_factory_{this};

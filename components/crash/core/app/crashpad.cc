@@ -112,7 +112,6 @@ bool InitializeCrashpadImpl(bool initial_client,
   if (!internal::PlatformCrashpadInitialization(
           initial_client, browser_process, embedded_handler, user_data_dir,
           exe_path, initial_arguments, &database_path)) {
-    LOG(ERROR) << "crashpad PlatformCrashpadInitialization failed";
     return false;
   }
 
@@ -130,8 +129,7 @@ bool InitializeCrashpadImpl(bool initial_client,
   // fallback. Forwarding is turned off for debug-mode builds even for the
   // browser process, because the system's crash reporter can take a very long
   // time to chew on symbols.
-  if (!browser_process || is_debug_build ||
-      !GetCrashReporterClient()->EnableBrowserCrashForwarding()) {
+  if (!browser_process || is_debug_build) {
     crashpad::CrashpadInfo::GetCrashpadInfo()
         ->set_system_crash_reporter_forwarding(crashpad::TriState::kDisabled);
   }
@@ -162,7 +160,9 @@ bool InitializeCrashpadImpl(bool initial_client,
   // the correct function, at the correct file and line. This would be
   // preferable to having all occurrences show up in DumpWithoutCrashing() at
   // the same file and line.
+#if !BUILDFLAG(IS_OHOS)
   base::debug::SetDumpWithoutCrashingFunction(DumpWithoutCrashing);
+#endif
 
 #if BUILDFLAG(IS_APPLE)
   // On Mac, we only want the browser to initialize the database, but not the
@@ -183,7 +183,8 @@ bool InitializeCrashpadImpl(bool initial_client,
     g_database =
         crashpad::CrashReportDatabase::Initialize(database_path).release();
 
-#if !BUILDFLAG(IS_CHROMEOS_ASH) && !BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_CHROMEOS_ASH) && !BUILDFLAG(IS_IOS) && \
+    !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
     // On Android crashpad doesn't handle uploads. Android uses
     // //components/minidump_uploader which queries metrics sample/consent opt
     // in from preferences.
@@ -265,7 +266,7 @@ void SetUploadConsent(bool consent) {
 
 #endif  // !BUILDFLAG(IS_CHROMEOS_ASH)
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_ARKWEB)
+#if !BUILDFLAG(IS_ANDROID)
 void DumpWithoutCrashing() {
   CRASHPAD_SIMULATE_CRASH();
 }

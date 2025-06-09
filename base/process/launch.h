@@ -369,6 +369,20 @@ struct BASE_EXPORT LaunchOptions {
   // process' controlling terminal.
   int ctrl_terminal_fd = -1;
 #endif  // BUILDFLAG(IS_CHROMEOS)
+
+#if BUILDFLAG(IS_OHOS)
+  // specified process entry point
+  // will be set to "<lib_name>:<function_name>".
+  // Example (including literal quotes)
+  //  process_entry_point = "libadapter.so:IsolateMain"
+  std::string process_entry_point;
+
+  // creating a process via native_spawn
+  bool enable_native_spawn = false;
+
+  // gpu process startup requires special handling to establish IPC channel
+  bool is_gpu_process = false;
+#endif  // BUILDFLAG(IS_OHOS)
 };
 
 // Launch a process via the command line |cmdline|.

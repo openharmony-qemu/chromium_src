@@ -45,8 +45,6 @@ class ContextMenuDelegate {
   // Displays the context menu.
   virtual void ShowMenu(std::unique_ptr<RenderViewContextMenuBase> menu) = 0;
 
-  virtual bool IsMenuRunning() = 0;
-
  private:
   raw_ptr<content::WebContents> web_contents_ = nullptr;
 };

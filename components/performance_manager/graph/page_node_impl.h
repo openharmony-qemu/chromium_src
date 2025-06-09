@@ -120,10 +120,6 @@ class PageNodeImpl
   void SetIsFocused(bool is_focused);
   void SetIsVisible(bool is_visible);
   void SetIsAudible(bool is_audible);
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-  void SetIsMediaPlaying(bool is_media_playing);
-  void OneShotMediaPlayerStopped();
-#endif
   void SetHasPictureInPicture(bool has_picture_in_picture);
   void SetLoadingState(LoadingState loading_state);
   void SetUkmSourceId(ukm::SourceId ukm_source_id);
@@ -153,9 +149,6 @@ class PageNodeImpl
   // Accessors.
   FrameNodeImpl* opener_frame_node() const;
   FrameNodeImpl* embedder_frame_node() const;
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-  bool is_media_playing() const;
-#endif
   FrameNodeImpl* main_frame_node() const;
   NodeSetView<FrameNodeImpl*> main_frame_nodes() const;
 
@@ -232,9 +225,6 @@ class PageNodeImpl
   // Partial PageNode implementation:
   const FrameNode* GetOpenerFrameNode() const override;
   const FrameNode* GetEmbedderFrameNode() const override;
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-  bool IsMediaPlaying() const override;
-#endif
   const FrameNode* GetMainFrameNode() const override;
   NodeSetView<const FrameNode*> GetMainFrameNodes() const override;
 
@@ -339,13 +329,6 @@ class PageNodeImpl
   ObservedProperty::NotifiesOnlyOnChanges<bool,
                                           &PageNodeObserver::OnIsAudibleChanged>
       is_audible_ GUARDED_BY_CONTEXT(sequence_checker_){false};
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-  int32_t media_playing_num_ = 0;
-  ObservedProperty::
-      NotifiesOnlyOnChanges<bool, &PageNodeObserver::OnIsMediaPlayingChanged>
-          is_media_playing_ GUARDED_BY_CONTEXT(sequence_checker_){false};
-#endif
-
   // Whether or not the page is displaying content in picture-in-picture. Driven
   // by browser instrumentation. Initialized on construction.
   ObservedProperty::NotifiesOnlyOnChanges<

@@ -25,10 +25,6 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 namespace net {
 
 class UploadDataStream;
@@ -86,10 +82,6 @@ struct NET_EXPORT HttpRequestInfo {
   // Secure DNS Tag for the request.
   SecureDnsPolicy secure_dns_policy = SecureDnsPolicy::kAllow;
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  bool secure_dns_only = false;
-#endif
-
   // Tag applied to all sockets used to service request.
   SocketTag socket_tag;
 
@@ -139,14 +131,15 @@ struct NET_EXPORT HttpRequestInfo {
   // number once set.
   std::optional<int64_t> browser_run_id;
 
+#if BUILDFLAG(IS_OHOS)
+  bool allow_preload_record = true;
+
+  GURL main_page;
+#endif
+
   // Used to get a shared dictionary for the request. This may be null if the
   // request does not use a shared dictionary.
   SharedDictionaryGetter dictionary_getter;
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  bool allow_preload_record = true;
-  GURL main_url;
-#endif
 };
 
 }  // namespace net

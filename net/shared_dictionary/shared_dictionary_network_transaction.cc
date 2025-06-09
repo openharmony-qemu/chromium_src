@@ -294,16 +294,6 @@ void SharedDictionaryNetworkTransaction::OnReadSharedDictionary(
   }
 }
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-int SharedDictionaryNetworkTransaction::RestartWithSecureDnsOnly(
-    CompletionOnceCallback callback) {
-  shared_dictionary_used_response_info_.reset();
-  return network_transaction_->RestartWithSecureDnsOnly(
-      base::BindOnce(&SharedDictionaryNetworkTransaction::OnStartCompleted,
-                     base::Unretained(this), std::move(callback)));
-}
-#endif
-
 int SharedDictionaryNetworkTransaction::RestartIgnoringLastError(
     CompletionOnceCallback callback) {
   shared_dictionary_used_response_info_.reset();

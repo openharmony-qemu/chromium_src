@@ -71,9 +71,7 @@ WebUIConfigMap::WebUIConfigMap()
 WebUIConfigMap::~WebUIConfigMap() = default;
 
 void WebUIConfigMap::AddWebUIConfig(std::unique_ptr<WebUIConfig> config) {
-#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
   CHECK_EQ(config->scheme(), kChromeUIScheme);
-#endif
   AddWebUIConfigImpl(std::move(config));
 }
 
@@ -97,18 +95,10 @@ WebUIConfig* WebUIConfigMap::GetConfig(BrowserContext* browser_context,
   // don't want navigations to these URLs to have WebUI bindings, e.g.
   // chrome.send() or Mojo.bindInterface(), since some WebUIs currently expose
   // untrusted content via these schemes.
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-  if (url.scheme() != kChromeUIScheme &&
-      url.scheme() != kChromeUIUntrustedScheme &&
-      url.scheme() != kArkWebUIScheme) {
-    return nullptr;
-  }
-#else
   if (url.scheme() != kChromeUIScheme &&
       url.scheme() != kChromeUIUntrustedScheme) {
     return nullptr;
   }
-#endif
 
   auto origin_and_config = configs_map_.find(url::Origin::Create(url));
   if (origin_and_config == configs_map_.end()) {
@@ -125,14 +115,8 @@ WebUIConfig* WebUIConfigMap::GetConfig(BrowserContext* browser_context,
 }
 
 std::unique_ptr<WebUIConfig> WebUIConfigMap::RemoveConfig(const GURL& url) {
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   CHECK(url.scheme() == kChromeUIScheme ||
         url.scheme() == kChromeUIUntrustedScheme);
-#else
-  CHECK(url.scheme() == kChromeUIScheme ||
-        url.scheme() == kChromeUIUntrustedScheme ||
-        url.scheme() == kArkWebUIScheme);
-#endif
 
   auto it = configs_map_.find(url::Origin::Create(url));
   if (it == configs_map_.end()) {
@@ -158,4 +142,5 @@ std::vector<WebUIConfigInfo> WebUIConfigMap::GetWebUIConfigList(
   }
   return origins;
 }
+
 }  // namespace content

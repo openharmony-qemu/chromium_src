@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//arkweb/build/features/features.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/ozone.gni")
 import("//build/config/ui.gni")
@@ -12,11 +11,6 @@ import("//media/gpu/args.gni")
 import("//skia/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/jni_zero/jni_zero.gni")
-import("//arkweb/build/features/features.gni")
-
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
 
 config("viz_service_implementation") {
 }
@@ -67,7 +61,6 @@ viz_component("service") {
     "display/delegated_ink_trail_data.h",
     "display/direct_renderer.cc",
     "display/direct_renderer.h",
-    "//arkweb/chromium_ext/components/viz/service/display/direct_renderer_ext.h",
     "display/display.cc",
     "display/display.h",
     "display/display_client.h",
@@ -136,7 +129,6 @@ viz_component("service") {
     "display/skia_output_surface.h",
     "display/skia_renderer.cc",
     "display/skia_renderer.h",
-    "//arkweb/chromium_ext/components/viz/service/display/direct_renderer_ext.h",
     "display/software_output_device.cc",
     "display/software_output_device.h",
     "display/software_renderer.cc",
@@ -165,8 +157,6 @@ viz_component("service") {
     "display_embedder/skia_output_device_buffer_queue.h",
     "display_embedder/skia_output_device_gl.cc",
     "display_embedder/skia_output_device_gl.h",
-    "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_gl_utils.cc",
-    "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_gl_utils.h",
     "display_embedder/skia_output_device_offscreen.cc",
     "display_embedder/skia_output_device_offscreen.h",
     "display_embedder/skia_output_device_webview.cc",
@@ -192,8 +182,6 @@ viz_component("service") {
     "frame_sinks/compositor_frame_sink_impl.h",
     "frame_sinks/compositor_frame_sink_support.cc",
     "frame_sinks/compositor_frame_sink_support.h",
-    "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils.cc",
-    "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils.h",
     "frame_sinks/eviction_handler.cc",
     "frame_sinks/eviction_handler.h",
     "frame_sinks/external_begin_frame_source_mojo.cc",
@@ -204,8 +192,6 @@ viz_component("service") {
     "frame_sinks/frame_sink_bundle_impl.h",
     "frame_sinks/frame_sink_manager_impl.cc",
     "frame_sinks/frame_sink_manager_impl.h",
-    "//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.cc",
-    "//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h",
     "frame_sinks/frame_sink_observer.h",
     "frame_sinks/gmb_video_frame_pool_context_provider.h",
     "frame_sinks/gmb_video_frame_pool_context_provider_impl.cc",
@@ -282,8 +268,6 @@ viz_component("service") {
     "transitions/surface_animation_manager.h",
     "transitions/transferable_resource_tracker.cc",
     "transitions/transferable_resource_tracker.h",
-    "//cef/libcef/browser/osr/software_output_device_proxy.cc",
-    "//cef/libcef/browser/osr/software_output_device_proxy.h",
   ]
 
   defines = [ "VIZ_SERVICE_IMPLEMENTATION" ]
@@ -352,20 +336,6 @@ viz_component("service") {
     "//ui/gfx/geometry",
     "//ui/latency",
   ]
-
-  if (arkweb_oop_gpu_process) {
-    deps += [ "//arkweb/build/features" ]
-  }
-  
-  if (arkweb_slide_ltpo) {
-    import("//arkweb/chromium_ext/base/arkweb_base_ext.gni")
-    sources += arkweb_base_ohos_ltpo_sources
-  }
-
-  if (arkweb_d_vsync) {
-    import("//arkweb/chromium_ext/base/arkweb_base_ext.gni")
-    sources += arkweb_base_ohos_d_vsync_sources
-  }
 
   if (is_chromeos_ash) {
     sources += [
@@ -464,28 +434,15 @@ viz_component("service") {
     ]
   }
 
-  if (is_arkweb && arkweb_dfx_dump) {
-    sources += arkweb_components_viz_service_display_sources
+  if (is_ohos) {
+    sources += [
+      "frame_sinks/external_begin_frame_source_ohos.cc",
+      "frame_sinks/external_begin_frame_source_ohos.h",
+    ]
+ 
+    libs = [ "native_vsync" ]
   }
-
-  if (is_arkweb && arkweb_composite_render) {
-    sources += arkweb_components_viz_service_frame_sinks_sources
-  }
-
-  if (is_arkweb) {
-    sources += arkweb_chromium_components_viz_service_frame_sinks_sources
-    sources += arkweb_components_viz_service_display_embedder_compositor_gpu_thread_sources
-    sources += arkweb_components_viz_service_display_embedder_skia_output_device_vulkan_sources
-  }
-
-  if (enable_arkweb) {
-    deps += [ "//arkweb//build/features"]
-  }
-
-  if (enable_arkweb) {
-    public_deps += [ "//arkweb/build/features" ]
-  }
-
+ 
   if (use_ozone) {
     sources += [
       "display/overlay_processor_delegated.cc",

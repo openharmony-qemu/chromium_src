@@ -6,8 +6,6 @@ import("//build/buildflag_header.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
 import("features.gni")
-import("//arkweb/build/features/features.gni")
-import("//arkweb/chromium_ext/chromium_ext.gni")
 
 import("//build/config/cronet/config.gni")
 import("//third_party/jni_zero/jni_zero.gni")
@@ -119,12 +117,6 @@ component("url") {
       "//third_party/icu",
     ]
   }
-
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  if (arkweb_logger_report) {
-    sources += arkweb_url_log_utils_sources
-  }
-#endif
 }
 
 if (is_android || is_robolectric) {

@@ -59,15 +59,11 @@ BaseShellDialogImpl::Owners& BaseShellDialogImpl::GetOwners() {
 
 // static
 void BaseShellDialogImpl::DisableOwner(HWND owner) {
-  if (owner)
-    owner = GetAncestor(owner, GA_ROOT);
   SetOwnerEnabled(owner, false);
 }
 
 std::unique_ptr<BaseShellDialogImpl::RunState> BaseShellDialogImpl::BeginRun(
     HWND owner) {
-  if (owner)
-    owner = GetAncestor(owner, GA_ROOT);
   // Cannot run a modal shell dialog if one is already running for this owner.
   DCHECK(!IsRunningDialogForOwner(owner));
   // The owner must be a top level window, otherwise we could end up with two
@@ -93,8 +89,6 @@ void BaseShellDialogImpl::EndRun(std::unique_ptr<RunState> run_state) {
 }
 
 bool BaseShellDialogImpl::IsRunningDialogForOwner(HWND owner) const {
-  if (owner)
-    owner = GetAncestor(owner, GA_ROOT);
   return (owner && GetOwners().find(owner) != GetOwners().end());
 }
 

@@ -21,10 +21,6 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#include "arkweb/chromium_ext/ui/gl/test/run_all_unittests_ext.h"
-#endif
-
 namespace {
 class GlTestSuite : public base::TestSuite {
  public:
@@ -36,10 +32,6 @@ class GlTestSuite : public base::TestSuite {
 
  protected:
   void Initialize() override {
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-    gl::init::InitializeGLNoExtensionsOneOff(
-      /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
-#endif
     base::TestSuite::Initialize();
 
 #if BUILDFLAG(IS_MAC)
@@ -48,12 +40,8 @@ class GlTestSuite : public base::TestSuite {
     mock_cr_app::RegisterMockCrApp();
 #endif
 
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-    task_environment_ = std::make_unique<base::test::TaskEnvironment>();
-#else
     task_environment_ = std::make_unique<base::test::TaskEnvironment>(
         base::test::TaskEnvironment::MainThreadType::UI);
-#endif
 
 #if BUILDFLAG(IS_OZONE)
     // Make Ozone run in single-process mode, where it doesn't expect a GPU
@@ -62,9 +50,6 @@ class GlTestSuite : public base::TestSuite {
     // and GPU components.
     ui::OzonePlatform::InitParams params;
     params.single_process = true;
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-    ARKWEB_UNITTESTS_CREATE_FOR_TESTING()
-#endif
 
     // This initialization must be done after TaskEnvironment has
     // initialized the UI thread.

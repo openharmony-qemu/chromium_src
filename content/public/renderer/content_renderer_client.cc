@@ -143,7 +143,7 @@ ContentRendererClient::GetProtocolHandlerSecurityLevel(
   return blink::ProtocolHandlerSecurityLevel::kStrict;
 }
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#if BUILDFLAG(IS_ANDROID)
 bool ContentRendererClient::HandleNavigation(
     RenderFrame* render_frame,
     blink::WebFrame* frame,

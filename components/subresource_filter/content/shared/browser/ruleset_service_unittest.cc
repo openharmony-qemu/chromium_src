@@ -373,11 +373,7 @@ class SubresourceFilteringRulesetServiceTest : public ::testing::Test {
   void DeleteObsoleteRulesets(const base::FilePath& indexed_ruleset_base_dir,
                               const IndexedRulesetVersion& version_to_keep) {
     return IndexedRulesetLocator::DeleteObsoleteRulesets(
-        indexed_ruleset_base_dir,
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-        base::FilePath(""), nullptr,
-#endif
-        version_to_keep);
+        indexed_ruleset_base_dir, version_to_keep);
   }
 
   base::FilePath GetExpectedVersionDirPath(

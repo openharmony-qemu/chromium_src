@@ -105,7 +105,8 @@ llvm_upgrade() {
     #将编译工具链替换为19版本
 
     tar -xzf $prebuilts_llvm_path
-
+    rm -rf llvm/lib/aarch64-linux-ohos/libc++.so
+    rm -rf llvm/lib/x86_64-linux-ohos/libc++.so
     if [ -d "llvm/lib/clang/19" ]; then
 
       pushd llvm/lib/clang

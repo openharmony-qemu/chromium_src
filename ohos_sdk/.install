@@ -10,15 +10,15 @@ echo ${base_dir}
 
 
 
-prebuilts_native_path="native-linux-x64-6.0.0.34-Canary1.zip"
+prebuilts_native_path="native-linux-x64-5.1.0.107-Release.zip"
 
-prebuilts_ets_path="ets-linux-x64-6.0.0.34-Canary1.zip"
+prebuilts_ets_path="ets-linux-x64-5.1.0.107-Release.zip"
 
-prebuilts_js_path="js-linux-x64-6.0.0.34-Canary1.zip"
+prebuilts_js_path="js-linux-x64-5.1.0.107-Release.zip"
 
-prebuilts_previewer_path="previewer-linux-x64-6.0.0.34-Canary1.zip"
+prebuilts_previewer_path="previewer-linux-x64-5.1.0.107-Release.zip"
 
-prebuilts_toolchains_path="toolchains-linux-x64-6.0.0.34-Canary1.zip"
+prebuilts_toolchains_path="toolchains-linux-x64-5.1.0.107-Release.zip"
 
 
 

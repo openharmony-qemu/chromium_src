@@ -317,6 +317,10 @@ const int32_t SOC_PERF_WEB_DRAG_RESIZE_ID = 10073;
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 const int32_t WEB_RESIZE_CLOSE_DELAY_TIME = 500;
 #endif
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+// Benchmarking against Windows, the average drag-over interval is 65 milliseconds.
+constexpr base::TimeDelta DRAG_OVER_INTERVAL = base::Milliseconds(65);
+#endif
 
 bool GetWebOptimizationValue() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -813,6 +817,13 @@ std::shared_ptr<NWebImpl> NWebImpl::GetNWebSharedPtr(int32_t nweb_id) {
 }
 
 NWebImpl::NWebImpl(uint32_t id) : nweb_id_(id) {
+  drag_over_timer_ = std::make_unique<base::RetainingOneShotTimer>(
+      FROM_HERE, DRAG_OVER_INTERVAL,
+      base::BindRepeating(&NWebImpl::SendDragOverEvent,
+                          weak_factory_.GetWeakPtr()));
+  drag_over_event_.action = DelegateDragAction::DRAG_OVER;
+  drag_over_event_.x = 0;
+  drag_over_event_.y = 0;
   ResSchedClientAdapter::ReportNWebInit(ResSchedStatusAdapter::WEB_SCENE_ENTER,
                                         nweb_id_);
 }
@@ -2223,8 +2234,27 @@ void NWebImpl::SendDragEvent(std::shared_ptr<NWebDragEvent> dragEvent) {
     event.action = static_cast<DelegateDragAction>(dragEvent->GetAction());
     event.x = dragEvent->GetX();
     event.y = dragEvent->GetY();
+
+    if (event.action == DelegateDragAction::DRAG_OVER ||
+        event.action == DelegateDragAction::DRAG_START ||
+        event.action == DelegateDragAction::DRAG_ENTER) {
+      drag_over_event_.x = dragEvent->GetX();
+      drag_over_event_.y = dragEvent->GetY();
+      drag_over_timer_->Reset();
+    } else {
+      drag_over_timer_->Stop();
+    }
   }
   nweb_delegate_->SendDragEvent(event);
+}
+
+void NWebImpl::SendDragOverEvent() {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("nweb_delegate_ is nullptr");
+    return;
+  }
+  drag_over_timer_->Reset();
+  nweb_delegate_->SendDragEvent(drag_over_event_);
 }
 
 std::string NWebImpl::GetUrl() {

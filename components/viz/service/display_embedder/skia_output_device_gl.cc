@@ -30,9 +30,9 @@
 #if BUILDFLAG(IS_OHOS)
 #include "base/ohos/sys_info_utils.h"
 #include "ohos_adapter_helper.h"
-#endif
 
 extern bool QueryBoolFromBrowserProcess(const std::string& key, bool defaultValue);
+#endif
 
 namespace viz {
 

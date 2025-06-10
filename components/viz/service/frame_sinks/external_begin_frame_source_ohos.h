@@ -91,6 +91,7 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   bool update_vsync_frequency_ = false;
   bool reset_vsync_frequency_ = false;
   bool last_dvsync_state_ = false;
+  bool dvsync_enable_ = false;
 };
 }  // namespace viz
 

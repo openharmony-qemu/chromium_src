@@ -5,13 +5,7 @@
 #ifndef BASE_ANDROID_BUILD_INFO_H_
 #define BASE_ANDROID_BUILD_INFO_H_
 
-#if !BUILDFLAG(IS_OHOS)
-#include "build/build_config.h"
-#endif
-
-#if !BUILDFLAG(IS_OHOS)
 #include <jni.h>
-#endif
 
 #include <string>
 #include <vector>

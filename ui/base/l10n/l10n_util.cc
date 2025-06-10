@@ -61,10 +61,6 @@
 #include "ui/base/l10n/l10n_util_win.h"
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_OHOS)
-#include "ohos/adapter/ohos_i18n/ohos_i18n.h"
-#endif
-
 namespace {
 
 constexpr auto kAcceptLanguageList = base::MakeFixedFlatSet<std::string_view>({
@@ -559,13 +555,6 @@ std::string GetApplicationLocaleInternalNonMac(const std::string& pref_locale) {
 
   // On Android, query java.util.Locale for the default locale.
   candidates.push_back(base::android::GetDefaultLocaleString());
-#elif BUILDFLAG(IS_OHOS)
-  // Try pref_locale first.
-  if (!pref_locale.empty())
-    candidates.push_back(base::i18n::GetCanonicalLocale(pref_locale));
- 
-  // On Ohos, query Locale lang for the default locale.
-  candidates.push_back(::ohos::adapter::ohos_i18n::GetLocaleLang());
 #elif defined(USE_GLIB) && !BUILDFLAG(IS_CHROMEOS)
   // GLib implements correct environment variable parsing with
   // the precedence order: LANGUAGE, LC_ALL, LC_MESSAGES and LANG.

@@ -32,8 +32,6 @@ action("make_file_types_protobuf") {
     target_arch = "mac"
   } else if (is_linux) {
     target_arch = "linux"
-  } else if (is_ohos) {
-    target_arch = "ohos"
   } else {
     # This will cause the script to fail.
     target_arch = "unknown_target_arch"

@@ -84,11 +84,6 @@ const int kCertVerifyPending = 1;
 // Default size of the internal BoringSSL buffers.
 const int kDefaultOpenSSLBufferSize = 17 * 1024;
 
-#if BUILDFLAG(IS_OHOS)
-constexpr uint16_t kDefaultSSLVersionMinWarn = SSL_PROTOCOL_VERSION_TLS1_2;
-constexpr uint16_t k3DESCipher = 0x000a;
-#endif
-
 base::Value::Dict NetLogPrivateKeyOperationParams(uint16_t algorithm,
                                                   SSLPrivateKey* key) {
   return base::Value::Dict()
@@ -726,15 +721,9 @@ int SSLClientSocketImpl::Init() {
   SSL_set_mode(ssl_.get(), mode.set_mask);
   SSL_clear_mode(ssl_.get(), mode.clear_mask);
 
-#if BUILDFLAG(IS_OHOS)
-  // Use BoringSSL defaults, but disable HMAC-SHA1 ciphers in ECDSA.
-  // These are the remaining CBC-mode ECDSA ciphers.
-  std::string command("ALL:!aPSK:!ECDSA+SHA1");
-#else
   // Use BoringSSL defaults, but disable 3DES and HMAC-SHA1 ciphers in ECDSA.
   // These are the remaining CBC-mode ECDSA ciphers.
   std::string command("ALL:!aPSK:!ECDSA+SHA1:!3DES");
-#endif
 
   if (ssl_config_.require_ecdhe)
     command.append(":!kRSA");
@@ -752,6 +741,7 @@ int SSLClientSocketImpl::Init() {
     LOG(ERROR) << "SSL_set_cipher_list('" << command << "') failed";
     return ERR_UNEXPECTED;
   }
+
   // Disable SHA-1 server signatures.
   // TODO(crbug.com/boringssl/699): Once the default is flipped in BoringSSL, we
   // no longer need to override it.
@@ -1154,30 +1144,9 @@ ssl_verify_result_t SSLClientSocketImpl::HandleVerifyResult() {
       result = ct_result;
   }
 
-#if BUILDFLAG(IS_OHOS)
-  // If no other errors occurred, check whether the connection used a legacy
-  SSLInfo ssl_info;
-  bool has_ssl_info = GetSSLInfo(&ssl_info);
-  DCHECK(has_ssl_info);
-  uint16_t cipher_suite =
-      SSLConnectionStatusToCipherSuite(ssl_info.connection_status);
-  if (result == OK &&
-      (SSL_version(ssl_.get()) < kDefaultSSLVersionMinWarn ||
-        cipher_suite == k3DESCipher)) {
-    server_cert_verify_result_.cert_status |= CERT_STATUS_LEGACY_TLS;
-
-    // Only set the resulting net error if it hasn't been previously bypassed.
-    if (!IsAllowedBadCert(server_cert_.get(), nullptr))
-      result = ERR_SSL_VERSION_OR_CIPHER_MISMATCH;
-  }
-#endif
-
   is_fatal_cert_error_ =
       IsCertStatusError(server_cert_verify_result_.cert_status) &&
       result != ERR_CERT_KNOWN_INTERCEPTION_BLOCKED &&
-#if BUILDFLAG(IS_OHOS)
-      result != ERR_SSL_VERSION_OR_CIPHER_MISMATCH &&
-#endif
       context_->transport_security_state()->ShouldSSLErrorsBeFatal(
           host_and_port_.host());
 

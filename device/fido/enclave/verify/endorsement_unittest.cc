@@ -94,17 +94,9 @@ TEST(EndorsementTest,
   auto rekor_pub_key =
       ConvertPemToRaw(GetContentsFromFile("rekor_pub_key.pem"));
   ASSERT_TRUE(rekor_pub_key.has_value());
-#if BUILDFLAG(IS_OHOS)
-  // test data in endorsement.json is outdated
-  // notAfter value in endorsement.json is 2025-02-27T09:47:12.067000Z
-  EXPECT_FALSE(VerifyBinaryEndorsement(base::Time::Now(), endorsement, signature,
-                                       log_entry, *endorser_pub_key,
-                                       *rekor_pub_key));
-#else
   EXPECT_TRUE(VerifyBinaryEndorsement(base::Time::Now(), endorsement, signature,
                                       log_entry, *endorser_pub_key,
                                       *rekor_pub_key));
-#endif
 }
 
 TEST(EndorsementTest,

@@ -65,14 +65,6 @@ if (!is_android) {
         "CoreFoundation.framework",
         "IOKit.framework",
       ]
-    } else if (is_ohos) {
-      deps += [
-        "//ohos/adapter:adapter",
-      ]
-      sources += [
-        "battery_status_manager_ohos.cc",
-        "battery_status_manager_ohos.h",
-      ]
     } else {
       sources += [ "battery_status_manager_default.cc" ]
     }

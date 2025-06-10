@@ -120,12 +120,6 @@ class FakeRenderWidgetHost : public blink::mojom::FrameWidgetHost,
     return last_composition_bounds_;
   }
 
-#if BUILDFLAG(IS_OHOS)
-void CreateOverlay(const ::SkBitmap& image,
-                   const ::gfx::Rect& image_rect,
-                   const ::gfx::Point& touch_point) override;
-#endif
-
  private:
   gfx::Range last_composition_range_;
   std::vector<gfx::Rect> last_composition_bounds_;

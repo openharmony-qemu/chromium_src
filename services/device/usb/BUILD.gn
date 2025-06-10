@@ -125,19 +125,6 @@ static_library("usb") {
     ]
   }
 
-  if (is_ohos) {
-    sources += [
-      "usb_device_ohos.cc",
-      "usb_device_ohos.h",
-      "usb_service_ohos.cc",
-      "usb_service_ohos.h",
-    ]
-
-    deps += [
-      "//device/device_watcher",
-    ]
-  }
-
   if (use_udev) {
     if (is_linux || is_chromeos) {
       sources += [
@@ -148,7 +135,7 @@ static_library("usb") {
     deps += [ "//device/udev_linux" ]
   }
 
-  if (is_android || is_chromeos || is_linux || is_ohos) {
+  if (is_android || is_chromeos || is_linux) {
     sources += [
       "usb_device_handle_usbfs.cc",
       "usb_device_handle_usbfs.h",

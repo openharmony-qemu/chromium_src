@@ -26,9 +26,6 @@ if (is_android) {
   import("//build/config/mac/mac_sdk.gni")
 } else if (is_ios) {
   import("//build/config/ios/bundle_data_from_filelist.gni")
-} else if (is_ohos) {
-  import("//build/config/ohos/config.gni")
-  import("//build/config/ohos/abi.gni")
 }
 
 # Android:
@@ -68,7 +65,7 @@ is_arm_cast_shell_build = (is_castos || is_cast_android) &&
 # Python works only on Linux, MacOS and Windows so exclude the others,
 # chromecast, android, fuchsia, ios.
 enable_python_utils =
-    !is_arm_cast_shell_build && !is_android && !is_fuchsia && !is_ios && !is_ohos
+    !is_arm_cast_shell_build && !is_android && !is_fuchsia && !is_ios
 
 # Platforms that cannot use python_utils (like Android but see full
 # list above) will instead use a remote server.
@@ -1248,36 +1245,6 @@ component("net") {
     ]
   }
 
-  if (is_ohos) {
-    sources += [
-      "base/network_change_notifier_ohos.cc",
-      "base/network_change_notifier_ohos.h",
-      "cert/cert_verify_proc_ohos.cc",
-      "cert/cert_verify_proc_ohos.h",
-      "cert/test_root_certs_ohos.cc",
-      "proxy_resolution/proxy_config_service_ohos.cc",
-      "proxy_resolution/proxy_config_service_ohos.h",
-      "ssl/client_cert_store_ohos.cc",
-      "ssl/client_cert_store_ohos.h",
-      "ssl/ssl_platform_key_ohos.cc",
-      "ssl/ssl_platform_key_ohos.h",
-    ]
-
-    deps += [
-      "//media:media_buildflags",
-      "//ohos/adapter:adapter",
-      "//tools/v8_context_snapshot:buildflags",
-    ]
-
-    deps += [
-      "//net/prp_preload:prp_preload",
-    ]
-
-    libs = [
-      "net_connection"
-    ]
-  }
-
   if (is_chromeos && use_nss_certs) {
     sources += [
       "cert/nss_cert_database_chromeos.cc",
@@ -1319,19 +1286,7 @@ component("net") {
     ]
   }
 
-  if (is_ohos) {
-    sources += [
-      "base/address_map_linux.cc",
-      "base/address_map_linux.h",
-      "base/address_tracker_linux.cc",
-      "base/address_tracker_linux.h",
-      "base/network_interfaces_linux.cc",
-      "base/network_interfaces_linux.h",
-      "base/platform_mime_util_ohos.cc",
-    ]
-  }
-
-  if (is_linux || is_ohos) {
+  if (is_linux) {
     sources += [
       "base/address_map_cache_linux.cc",
       "base/address_map_cache_linux.h",
@@ -1501,7 +1456,7 @@ component("net") {
   }
 
   # Use getifaddrs() on POSIX platforms, except Linux.
-  if (is_posix && !is_linux && !is_chromeos && !is_ohos) {
+  if (is_posix && !is_linux && !is_chromeos) {
     sources += [
       "base/network_interfaces_getifaddrs.cc",
       "base/network_interfaces_getifaddrs.h",
@@ -2470,7 +2425,7 @@ if (is_android) {
   }
 }
 
-if (is_android || is_linux || is_chromeos || is_ohos) {
+if (is_android || is_linux || is_chromeos) {
   executable("disk_cache_memory_test") {
     testonly = true
     sources = [ "tools/disk_cache_memory_test/disk_cache_memory_test.cc" ]
@@ -3045,16 +3000,6 @@ target(_test_target_type, "net_unittests") {
     defines += [ "NET_DISABLE_ZSTD" ]
   }
 
-  if (is_ohos) {
-    sources += [
-      "cert/test_root_certs_ohos.cc",
-    ]
-
-    defines += [
-      "NET_UNITTESTS_OHOS_ENABLE",
-    ]
-  }
-
   deps = [
     ":cronet_buildflags",
     ":net",
@@ -3308,7 +3253,7 @@ target(_test_target_type, "net_unittests") {
   }
 
   # Use getifaddrs() on POSIX platforms, except Linux.
-  if (is_posix && !is_linux && !is_chromeos && !is_ohos) {
+  if (is_posix && !is_linux && !is_chromeos) {
     sources += [ "base/network_interfaces_getifaddrs_unittest.cc" ]
   }
 

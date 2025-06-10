@@ -32,7 +32,6 @@ import("//build/config/dcheck_always_on.gni")
 import("//build/config/ios/config.gni")
 import("//build/config/logging.gni")
 import("//build/config/nacl/config.gni")
-import("//build/config/ohos/config.gni")
 import("//build/config/profiling/profiling.gni")
 import("//build/config/rust.gni")
 import("//build/config/sanitizers/sanitizers.gni")
@@ -79,13 +78,6 @@ declare_args() {
   # only supported on iOS 64-bit architecture, but some project build //base
   # for 32-bit architecture.
   ios_stack_profiler_enabled = true
-}
-
-declare_args() {
-  # Enabling freeze detection mode will help identify if the system is frozen,
-  # but some functions may be affected, such as when loading large files or
-  # performing resource-intensive operations.
-  freeze_detection_mode = false
 }
 
 # Mutex priority inheritance is disabled by default due to security
@@ -150,23 +142,13 @@ if (is_fuchsia) {
   }
 }
 
-if (is_ohos) {
-  config("ohos_system_libs") {
-    libs = [
-      "hilog_ndk.z",
-      "ohhicollie",
-      "qos"
-    ]
-  }
-}
-
 buildflag_header("ios_cronet_buildflags") {
   header = "ios_cronet_buildflags.h"
   header_dir = "base/message_loop"
   flags = [ "CRONET_BUILD=$is_cronet_build" ]
 }
 
-use_epoll = is_linux || is_chromeos || is_android || is_ohos
+use_epoll = is_linux || is_chromeos || is_android
 
 # Base and everything it depends on should be a static library rather than
 # a source set. Base is more of a "library" in the classic sense in that many
@@ -974,15 +956,7 @@ component("base") {
     ]
   }
 
-  if (is_ohos) {
-    sources += [
-      "debug/stack_trace_ohos.cc",
-    ]
-
-    public_configs = [ ":ohos_system_libs" ]
-  }
-
-  if (is_linux || is_chromeos || is_ohos) {
+  if (is_linux || is_chromeos) {
     sources += [
       "debug/proc_maps_linux.cc",
       "debug/proc_maps_linux.h",
@@ -1010,7 +984,7 @@ component("base") {
     ]
   }
 
-  if (is_linux || is_chromeos || is_android || is_ohos) {
+  if (is_linux || is_chromeos || is_android) {
     sources += [
       "files/file_path_watcher_inotify.cc",
       "files/file_path_watcher_inotify.h",
@@ -1023,12 +997,6 @@ component("base") {
   data_deps = []
   libs = []
   frameworks = []
-
-  if (is_ohos) {
-    if (freeze_detection_mode) {
-      defines += [ "FREEZE_DETECTION_MODE" ]
-    }
-  }
 
   configs += [
     "//build/config:precompiled_headers",
@@ -1133,27 +1101,8 @@ component("base") {
 
   # Allow more direct string conversions on platforms with native utf8
   # strings
-  if (is_apple || is_chromeos || is_castos || is_cast_android || is_fuchsia || is_ohos) {
+  if (is_apple || is_chromeos || is_castos || is_cast_android || is_fuchsia) {
     defines += [ "SYSTEM_NATIVE_UTF8" ]
-  }
-
-  # OpenHarmony.
-  if (is_ohos) {
-    sources += [
-      "debug/elf_reader.cc",
-      "debug/elf_reader.h",
-      "system/sys_info_linux.cc",
-      "memory/platform_shared_memory_mapper_ohos.cc",
-      "memory/platform_shared_memory_region_ohos.cc",
-      "ohos/task_scheduler/task_runner_ohos.cc",
-      "ohos/task_scheduler/task_runner_ohos.h",
-      "ohos/task_scheduler/task_traits_ohos.h",
-    ]
-
-    deps += [
-      "//third_party/ashmem",
-      "//ohos/adapter:adapter",
-    ]
   }
 
   # Android.
@@ -1697,7 +1646,7 @@ component("base") {
       ]
     }
 
-    if (is_posix && !is_android && !is_ohos) {
+    if (is_posix && !is_android) {
       sources += [ "debug/stack_trace_posix.cc" ]
     }
 
@@ -1737,15 +1686,6 @@ component("base") {
         "stack_canary_linux.h",
       ]
     }
-
-    # FIXME: Only the adaptation to base_path is added.
-    if (is_ohos) {
-      sources += [
-        "base_paths_ohos.h",
-        "base_paths_ohos.cc",
-      ]
-    }
-
     if (use_partition_alloc) {
       # Add stuff that doesn't work in NaCl.
       sources += [
@@ -2291,7 +2231,7 @@ component("base") {
       ]
     }
   } else {
-    if (!is_android && !is_ohos) {
+    if (!is_android) {
       sources -= [
         "linux_util.cc",
         "linux_util.h",
@@ -2317,7 +2257,7 @@ component("base") {
 
   # Android and MacOS have their own custom shared memory handle
   # implementations. e.g. due to supporting both POSIX and native handles.
-  if (is_posix && !is_android && !is_apple && !is_ohos) {
+  if (is_posix && !is_android && !is_apple) {
     sources += [
       "memory/platform_shared_memory_mapper_posix.cc",
       "memory/platform_shared_memory_region_posix.cc",
@@ -2360,12 +2300,8 @@ component("base") {
     sources += [ "profiler/stack_sampler_posix.cc" ]
   }
 
-  if ((is_posix && !is_apple && !is_android && !is_chromeos && !is_ohos) || is_fuchsia) {
+  if ((is_posix && !is_apple && !is_android && !is_chromeos) || is_fuchsia) {
     sources += [ "power_monitor/power_monitor_device_source_stub.cc" ]
-  }
-
-  if(is_ohos) {
-    sources += ["power_monitor/power_monitor_device_source_ohos.cc"]
   }
 
   # On ARC++-enabled ChromeOS system, we need TimeTicks::FromUptimeMillis to
@@ -3858,7 +3794,7 @@ test("base_unittests") {
 
   # Allow more direct string conversions on platforms with native utf8
   # strings
-  if (is_apple || is_chromeos || is_castos || is_cast_android || is_fuchsia || is_ohos) {
+  if (is_apple || is_chromeos || is_castos || is_cast_android || is_fuchsia) {
     defines += [ "SYSTEM_NATIVE_UTF8" ]
   }
 
@@ -4297,16 +4233,6 @@ if (enable_nocompile_tests) {
       "values_nocompile.nc",
     ]
     deps = [ ":base" ]
-    if (is_ohos){
-      sources -=[ 
-        "containers/span_nocompile.nc",
-        "strings/cstring_view_nocompile.nc",
-        ]
-      sources +=[ 
-        "containers/span_nocompile_ohos.nc",
-        "strings/cstring_view_nocompile_ohos.nc",
-        ]
-    }
   }
 }
 

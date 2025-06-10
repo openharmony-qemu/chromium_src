@@ -41,7 +41,6 @@ _platforms = [
     'linux',
     'mac',
     'windows',
-    'ohos',
 ]
 
 _form_factors = [

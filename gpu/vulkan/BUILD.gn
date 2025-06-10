@@ -140,7 +140,7 @@ if (enable_vulkan) {
     if (is_posix) {
       sources += [ "vulkan_util_posix.cc" ]
 
-      if (is_linux || is_chromeos || is_ohos) {
+      if (is_linux || is_chromeos) {
         sources += [ "vulkan_image_linux.cc" ]
       }
     }

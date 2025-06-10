@@ -160,12 +160,7 @@ View* DropHelper::CalculateTargetViewImpl(const gfx::Point& root_view_location,
                                           bool check_can_drop,
                                           raw_ptr<View>* deepest_view) {
   View* view = root_view_->GetEventHandlerForPoint(root_view_location);
-#if BUILDFLAG(IS_OHOS)
-  // If |target_view_| is empty, obtain it again
-  if (view == deepest_view_ && target_view_) {
-#else
   if (view == deepest_view_) {
-#endif
     // The view the mouse is over hasn't changed; reuse the target.
     return target_view_;
   }

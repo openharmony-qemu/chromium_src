@@ -1201,7 +1201,7 @@ TEST_P(NetworkServiceCookieTest, CookieEncryptionProvider) {
       // crypto delegate on some platforms. On other platforms, there is no
       // cookie crypto as it's handled by the OS.
 #if !(BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
-      BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS))
+      BUILDFLAG(IS_CHROMEOS))
       expect_encrypted_data = false;
 #endif
     }

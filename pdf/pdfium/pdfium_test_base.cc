@@ -48,7 +48,7 @@ PDFiumTestBase::~PDFiumTestBase() = default;
 
 // static
 bool PDFiumTestBase::UsingTestFonts() {
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   return true;
 #else
   return false;

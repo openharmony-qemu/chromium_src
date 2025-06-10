@@ -68,10 +68,6 @@ void PlatformWindowDelegate::OnWindowTiledStateChanged(
     WindowTiledEdges new_tiled_edges) {}
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-void PlatformWindowDelegate::OnFullscreenStateChanged() {}
-#endif
-
 std::optional<gfx::Size> PlatformWindowDelegate::GetMinimumSizeForWindow()
     const {
   return std::nullopt;

@@ -16,10 +16,6 @@
 #include "ui/events/gestures/physics_based_fling_curve.h"
 #include "ui/events/mobile_scroller.h"
 
-#if BUILDFLAG(IS_OHOS)
-#include "ui/events/gestures/fling_spring_curve_ohos.h"
-#endif  // BUILDFLAG(IS_OHOS)
-
 using blink::WebGestureCurve;
 
 namespace ui {
@@ -59,12 +55,7 @@ std::unique_ptr<GestureCurve> CreateDefaultPlatformCurve(
         bounding_size);
   }
 
-#if BUILDFLAG(IS_OHOS)
-  return std::make_unique<FlingSpringCurveOhos>(
-      initial_velocity, base::TimeTicks(), device_source);
-#else
   return std::make_unique<FlingCurve>(initial_velocity, base::TimeTicks());
-#endif  // BUILDFLAG(IS_OHOS)
 }
 
 }  // namespace

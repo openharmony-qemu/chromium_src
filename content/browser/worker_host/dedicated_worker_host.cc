@@ -258,6 +258,7 @@ void DedicatedWorkerHost::StartScriptLoad(
 
   RenderFrameHostImpl* creator_render_frame_host = nullptr;
   DedicatedWorkerHost* creator_worker = nullptr;
+
   absl::visit(base::Overloaded(
                   [&](const GlobalRenderFrameHostId& render_frame_host_id) {
                     creator_render_frame_host =
@@ -268,6 +269,7 @@ void DedicatedWorkerHost::StartScriptLoad(
                         dedicated_worker_token);
                   }),
               creator_);
+
   if (!creator_render_frame_host && !creator_worker) {
     ScriptLoadStartFailed(network::URLLoaderCompletionStatus(net::ERR_ABORTED));
     return;

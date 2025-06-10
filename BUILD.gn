@@ -252,20 +252,18 @@ group("gn_all") {
     }
 
     if (!is_ios) {
-      if (!is_ohos) {
-        deps += [
-          "//google_apis/gcm:mcs_probe",
-          "//third_party/catapult/telemetry:bitmaptools($host_toolchain)",
-        ]
-        if (!is_android) {
-          if (!is_castos && !is_fuchsia) {
-            deps += [ "//chrome/test:telemetry_perf_unittests" ]
-          }
-        } else {
-          import("//tools/perf/chrome_telemetry_build/android_browser_types.gni")
-          foreach(_target_suffix, telemetry_android_browser_target_suffixes) {
-            deps += [ "//chrome/test:telemetry_perf_unittests${_target_suffix}" ]
-          }
+      deps += [
+        "//google_apis/gcm:mcs_probe",
+        "//third_party/catapult/telemetry:bitmaptools($host_toolchain)",
+      ]
+      if (!is_android) {
+        if (!is_castos && !is_fuchsia) {
+          deps += [ "//chrome/test:telemetry_perf_unittests" ]
+        }
+      } else {
+        import("//tools/perf/chrome_telemetry_build/android_browser_types.gni")
+        foreach(_target_suffix, telemetry_android_browser_target_suffixes) {
+          deps += [ "//chrome/test:telemetry_perf_unittests${_target_suffix}" ]
         }
       }
     } else {
@@ -754,14 +752,6 @@ group("gn_all") {
       # and how cross-platform this is.
       deps +=
           [ "//components/services/filesystem:filesystem_service_unittests" ]
-    }
-
-    if (is_ohos) {
-      deps += [
-        "//third_party/angle:libANGLE",
-        "//third_party/angle:libEGL",
-        "//third_party/angle:libGLESv2",
-      ]
     }
 
     if ((is_linux && !is_castos) || is_chromeos_lacros) {
@@ -1279,11 +1269,7 @@ if (use_blink && !is_cronet_build) {
       # Using the default toolchain for this tool, as it's run during tests not
       # during the build. This places a symlink in the root_build_dir for scrips
       # to use.
-      if (is_ohos) {
-        data_deps += [ "//third_party/breakpad:minidump_stackwalk($host_system_allocator_toolchain)" ]
-      } else {
-        data_deps += [ "//third_party/breakpad:minidump_stackwalk" ]
-      }
+      data_deps += [ "//third_party/breakpad:minidump_stackwalk" ]
     }
 
     if (is_mac) {

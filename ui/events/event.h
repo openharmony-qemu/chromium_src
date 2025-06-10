@@ -395,12 +395,6 @@ class EVENTS_EXPORT LocatedEvent : public Event {
     return gfx::ToFlooredPoint(root_location_);
   }
   const gfx::PointF& root_location_f() const { return root_location_; }
-#if BUILDFLAG(IS_OHOS)
-  void set_display_id(const int32_t display_id) {
-    display_id_ = display_id;
-  }
-  int32_t display_id() const { return display_id_; }
-#endif
 
   // Transform the locations using |inverted_root_transform| and
   // |inverted_local_transform|. |inverted_local_transform| is only used if
@@ -438,9 +432,6 @@ class EVENTS_EXPORT LocatedEvent : public Event {
         location_(model.location_),
         root_location_(model.root_location_) {
     ConvertLocationToTarget(source, target);
-#if BUILDFLAG(IS_OHOS)
-    set_display_id(model.display_id_);
-#endif
   }
 
   // Used for synthetic events in testing.
@@ -462,10 +453,6 @@ class EVENTS_EXPORT LocatedEvent : public Event {
   // relative to a display. Native events may generate float values with
   // sub-pixel precision.
   gfx::PointF root_location_;
-
-#if BUILDFLAG(IS_OHOS)
-  int32_t display_id_;
-#endif
 };
 
 class EVENTS_EXPORT MouseEvent : public LocatedEvent {

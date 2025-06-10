@@ -77,11 +77,6 @@
 #include "content/shell/browser/fuchsia_view_presenter.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-#include "ohos/adapter/native_theme/native_theme_adapter.h"
-#include "ui/native_theme/native_theme.h"
-#endif  // BUILDFLAG(IS_OHOS)
-
 namespace content {
 
 namespace {
@@ -175,17 +170,6 @@ void ShellBrowserMainParts::ToolkitInitialized() {
 
 #if BUILDFLAG(IS_LINUX)
   ui::LinuxUi::SetInstance(ui::GetDefaultLinuxUi());
-#elif BUILDFLAG(IS_OHOS)
-  std::shared_ptr<ohos::adapter::native_theme::ThemeSourceEventCallback> theme_source_event_callback =
-    std::make_shared<ui::ThemeSourceEventCallbackImpl>();
-  if (!theme_source_event_callback) {
-    return;
-  }
-  ohos::adapter::native_theme::NativeThemeAdapter::GetInstance()
-      .RegisterThemeSourceEvent(theme_source_event_callback);
-  ohos::adapter::native_theme::NativeThemeAdapter::GetInstance()
-      .NotifyThemeSourceEvent(ohos::adapter::native_theme::NativeThemeAdapter
-        ::GetInstance().GetSystemThemeSource());
 #endif
 }
 

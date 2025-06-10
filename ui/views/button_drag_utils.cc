@@ -89,10 +89,6 @@ void SetDragImage(const GURL& url,
                          ui::kColorTextfieldForeground);
 
   SkColor bg_color = color_provider->GetColor(ui::kColorTextfieldBackground);
-#if BUILDFLAG(IS_OHOS)
-  button->SetBackground(views::CreateSolidBackground(bg_color));
-  button->SetBorder(button->CreateDefaultBorder());
-#else
   if (views::Widget::IsWindowCompositingSupported()) {
     button->SetTextShadows(gfx::ShadowValues(
         10, gfx::ShadowValue(gfx::Vector2d(0, 0), 2.0f, bg_color)));
@@ -100,7 +96,6 @@ void SetDragImage(const GURL& url,
     button->SetBackground(views::CreateSolidBackground(bg_color));
     button->SetBorder(button->CreateDefaultBorder());
   }
-#endif
   button->SetMaxSize(gfx::Size(kLinkDragImageMaxWidth, 0));
   if (icon.isNull()) {
     button->SetImageModel(views::Button::STATE_NORMAL,

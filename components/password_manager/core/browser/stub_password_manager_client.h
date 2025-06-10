@@ -75,7 +75,7 @@ class StubPasswordManagerClient : public PasswordManagerClient {
   MockPasswordFeatureManager* GetPasswordFeatureManager();
   version_info::Channel GetChannel() const override;
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_CHROMEOS)
   void OpenPasswordDetailsBubble(
       const password_manager::PasswordForm& form) override;
   std::unique_ptr<
@@ -87,7 +87,7 @@ class StubPasswordManagerClient : public PasswordManagerClient {
       const std::u16string& password_origin,
       base::OnceClosure confirmation_callback) override;
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) ||
-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+        // BUILDFLAG(IS_CHROMEOS)
 
   safe_browsing::PasswordProtectionService* GetPasswordProtectionService()
       const override;

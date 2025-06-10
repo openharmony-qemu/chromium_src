@@ -30,7 +30,7 @@ class NET_EXPORT UnixDomainServerSocket : public ServerSocket {
   // Credentials of a peer process connected to the socket.
   struct NET_EXPORT Credentials {
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_FUCHSIA)
     // Linux and Fuchsia provide more information about the connected peer
     // than Windows/OS X. It's useful for permission-based authorization on
     // Android.

@@ -30,9 +30,6 @@
 #include "base/metrics/histogram_functions.h"
 #include "base/numerics/safe_conversions.h"
 #include "base/observer_list.h"
-#if BUILDFLAG(IS_OHOS)
-#include "base/path_service.h"
-#endif // BUILDFLAG(IS_OHOS)
 #include "base/run_loop.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
@@ -3338,14 +3335,6 @@ void StoragePartitionImpl::InitNetworkContext() {
   cert_verifier::mojom::CertVerifierCreationParamsPtr
       cert_verifier_creation_params =
           cert_verifier::mojom::CertVerifierCreationParams::New();
-#if BUILDFLAG(IS_OHOS)
-  base::FilePath cachePath;
-  base::PathService::Get(base::DIR_CACHE, &cachePath);
-  network::mojom::NetworkContext* network_context = GetContentClient()->browser()->GetSystemNetworkContext();
-  if (network_context != nullptr) {
-    network_context->InitPRParallelPreloadMgr(cachePath);
-  }
-#endif
   GetContentClient()->browser()->ConfigureNetworkContextParams(
       browser_context_, is_in_memory(), relative_partition_path_,
       context_params.get(), cert_verifier_creation_params.get());

@@ -94,12 +94,6 @@ export class CertificateSubentryElement extends CertificateSubentryElementBase {
 
   private onViewClick_() {
     this.closePopupMenu_();
-    // <if expr="is_ohos">
-    if (this.certificateType === CertificateType.CA) {
-      this.browserProxy_.deleteCertificate(this.model.id);
-      return;
-    }
-    // </if>
     this.browserProxy_.viewCertificate(this.model.id);
   }
 
@@ -116,14 +110,9 @@ export class CertificateSubentryElement extends CertificateSubentryElementBase {
   private onExportClick_() {
     this.closePopupMenu_();
     if (this.certificateType === CertificateType.PERSONAL) {
-      // <if expr="is_ohos">
-      this.browserProxy_.exportCertificate(this.model.id);
-      // </if>
-      // <if expr="use_nss_certs">
       this.browserProxy_.exportPersonalCertificate(this.model.id).then(() => {
         this.dispatchCertificateActionEvent_(CertificateAction.EXPORT_PERSONAL);
       }, this.onRejected_.bind(this));
-      // </if>
     } else {
       this.browserProxy_.exportCertificate(this.model.id);
     }

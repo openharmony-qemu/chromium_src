@@ -828,7 +828,7 @@ if (is_clang_or_gcc) {
       shim_sources += [ "shim/allocator_shim_default_dispatch_to_partition_alloc_with_advanced_checks.cc" ]
       shim_headers += [ "shim/allocator_shim_default_dispatch_to_partition_alloc_with_advanced_checks.h" ]
     }
-    if (is_android || is_ohos) {
+    if (is_android) {
       shim_headers += [
         "shim/allocator_shim_override_cpp_symbols.h",
         "shim/allocator_shim_override_linker_wrapped_symbols.h",
@@ -938,7 +938,7 @@ if (build_with_chromium) {
 
     sources = [ "partition_alloc_base/test/gtest_util.h" ]
 
-    if (is_linux || is_chromeos || is_android || is_ohos) {
+    if (is_linux || is_chromeos || is_android) {
       sources += [
         "partition_alloc_base/debug/proc_maps_linux.cc",
         "partition_alloc_base/debug/proc_maps_linux.h",
@@ -1078,7 +1078,7 @@ source_set("test_support") {
       "partition_alloc_base/threading/platform_thread_apple_for_testing.mm",
     ]
   }
-  if (is_linux || is_chromeos || is_ohos) {
+  if (is_linux || is_chromeos) {
     sources += [
       "partition_alloc_base/threading/platform_thread_linux_for_testing.cc",
     ]

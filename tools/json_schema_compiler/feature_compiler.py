@@ -292,7 +292,6 @@ FEATURE_GRAMMAR = ({
                 'linux': 'Feature::LINUX_PLATFORM',
                 'mac': 'Feature::MACOSX_PLATFORM',
                 'win': 'Feature::WIN_PLATFORM',
-                'ohos': 'Feature::OHOS_PLATFORM',
             }
         }
     },

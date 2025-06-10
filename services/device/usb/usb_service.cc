@@ -27,8 +27,6 @@
 #include "services/device/usb/usb_service_impl.h"
 #elif BUILDFLAG(IS_WIN)
 #include "services/device/usb/usb_service_win.h"
-#elif BUILDFLAG(IS_OHOS)
-#include "services/device/usb/usb_service_ohos.h"
 #endif
 
 namespace device {
@@ -57,8 +55,6 @@ std::unique_ptr<UsbService> UsbService::Create() {
   return base::WrapUnique(new UsbServiceWin());
 #elif BUILDFLAG(IS_MAC)
   return base::WrapUnique(new UsbServiceImpl());
-#elif BUILDFLAG(IS_OHOS)
-  return base::WrapUnique(new UsbServiceOhos());
 #else
   return nullptr;
 #endif

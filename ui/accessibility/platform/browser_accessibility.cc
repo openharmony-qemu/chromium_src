@@ -47,7 +47,7 @@ static int browser_accessibility_count = 0;
 constexpr int kDumpBrowserAccessibilityLeakNumObjects = 10000000;
 #endif
 
-#if !BUILDFLAG(HAS_PLATFORM_ACCESSIBILITY_SUPPORT) && !BUILDFLAG(IS_OHOS)
+#if !BUILDFLAG(HAS_PLATFORM_ACCESSIBILITY_SUPPORT)
 // static
 std::unique_ptr<BrowserAccessibility> BrowserAccessibility::Create(
     BrowserAccessibilityManager* manager,

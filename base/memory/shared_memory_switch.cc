@@ -162,7 +162,7 @@ std::string Serialize(PlatformSharedMemoryRegion shmem_region,
   // TODO(crbug.com/40109064): Get rid of |descriptor_to_share| and just
   // populate |launch_options|. The caller should be responsible for translating
   // between |launch_options| and zygote parameters as necessary.
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID)
   descriptor_to_share = std::move(shmem_handle);
 #else
   descriptor_to_share = std::move(shmem_handle.fd);

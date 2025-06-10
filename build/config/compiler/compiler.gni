@@ -74,7 +74,7 @@ declare_args() {
   # gcc >= 4.8 or clang.
   # http://gcc.gnu.org/wiki/DebugFission
   use_debug_fission = !is_android && !is_fuchsia && !is_apple && !is_win &&
-                      use_lld && cc_wrapper == "" && !is_ohos
+                      use_lld && cc_wrapper == ""
 
   # Enables support for ThinLTO, which links 3x-10x faster than full LTO. See
   # also http://blog.llvm.org/2016/06/thinlto-scalable-and-incremental-lto.html
@@ -86,7 +86,7 @@ declare_args() {
   # have the same LLVM revisions as us, making bitcode useless to them.
   use_thin_lto =
       is_cfi || (is_clang && is_official_build && chrome_pgo_phase != 1 &&
-                 (is_linux || is_win || is_mac || is_ohos ||
+                 (is_linux || is_win || is_mac ||
                   (is_ios && use_lld && !is_cronet_build) ||
                   (is_android && target_os != "chromeos") ||
                   (is_chromeos && is_chromeos_device)))
@@ -241,7 +241,7 @@ enable_arm_cfi_table = is_android && !is_component_build && current_cpu == "arm"
 # official builders.
 strip_absolute_paths_from_debug_symbols_default =
     is_android || is_fuchsia || is_nacl || (is_win && use_lld) || is_linux ||
-    is_chromeos || (is_apple && !enable_dsyms) || is_ohos
+    is_chromeos || (is_apple && !enable_dsyms)
 
 # If the platform uses stripped absolute paths by default, then we don't expose
 # it as a configuration option. If this is causing problems, please file a bug.

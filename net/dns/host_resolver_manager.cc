@@ -135,11 +135,9 @@
 #include "net/base/sys_addrinfo.h"
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/build_info.h"
-#include "net/android/network_library.h"
-#elif BUILDFLAG(IS_OHOS)
-#else
+#else  // !BUILDFLAG(IS_ANDROID)
 #include <ifaddrs.h>
-#endif // BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_ANDROID)
 #endif  // BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 
 namespace net {
@@ -442,8 +440,7 @@ HostResolverManager::HostResolverManager(
 #if BUILDFLAG(IS_WIN)
   EnsureWinsockInit();
 #endif
-#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && \
-     !BUILDFLAG(IS_OHOS)) ||                                                  \
+#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)) || \
     BUILDFLAG(IS_FUCHSIA)
   RunLoopbackProbeJob();
 #endif
@@ -1621,8 +1618,7 @@ void HostResolverManager::OnIPAddressChanged() {
   // Abandon all ProbeJobs.
   probe_weak_ptr_factory_.InvalidateWeakPtrs();
   InvalidateCaches();
-#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && \
-     !BUILDFLAG(IS_OHOS)) ||                                                  \
+#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)) || \
     BUILDFLAG(IS_FUCHSIA)
   RunLoopbackProbeJob();
 #endif

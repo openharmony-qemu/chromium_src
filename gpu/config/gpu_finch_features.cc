@@ -166,8 +166,7 @@ BASE_FEATURE(kAllowHardwareBufferUsageFlagsFromVulkanForScanout,
 BASE_FEATURE(kDefaultEnableGpuRasterization,
              "DefaultEnableGpuRasterization",
 #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -238,7 +237,7 @@ BASE_FEATURE(kVulkan,
 
 BASE_FEATURE(kEnableDrDc,
              "EnableDrDc",
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -566,8 +565,6 @@ bool IsDrDcEnabled() {
     return false;
 
   return true;
-#elif BUILDFLAG(IS_OHOS)
-  return base::FeatureList::IsEnabled(kEnableDrDc);
 #else
   return false;
 #endif
@@ -658,8 +655,6 @@ bool IsSkiaGraphiteSupportedByDevice(const base::CommandLine* command_line) {
   // Graphite on Android and ChromeOS uses the Dawn Vulkan backend. Only enable
   // Graphite if device would already be using Ganesh/Vulkan.
   return IsUsingVulkan();
-#elif BUILDFLAG(IS_OHOS)
-  return base::FeatureList::IsEnabled(kEnableDrDc);
 #elif BUILDFLAG(IS_WIN)
   return true;
 #else

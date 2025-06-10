@@ -286,7 +286,3 @@ src:*third_party/pthreadpool/src/src/portable-api.c
 ######### Uncategorized
 
 src:*native_client/*
-
-# The function pointer type is converted in osIoctl.
-# After cfi-icall is opened, calling osIcctl fails.
-src:*third_party/sqlite/src/amalgamation/sqlite3.c

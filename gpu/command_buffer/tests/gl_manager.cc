@@ -449,7 +449,7 @@ size_t GLManager::GetSharedMemoryBytesAllocated() const {
 
 void GLManager::SetupBaseContext() {
   if (!use_count_) {
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID)
     // Virtual contexts is not necessary with passthrough.
     if (!gpu_preferences_.use_passthrough_cmd_decoder) {
       base_share_group_ =

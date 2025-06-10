@@ -10,9 +10,6 @@
 #include "components/fullscreen_control/fullscreen_control_view.h"
 #include "ui/compositor/scoped_layer_animation_settings.h"
 #include "ui/views/widget/widget.h"
-#if BUILDFLAG(IS_OHOS)
-#include "ui/views/widget/native_widget_aura.h"
-#endif
 
 namespace {
 
@@ -35,9 +32,6 @@ std::unique_ptr<views::Widget> CreatePopupWidget(
   params.z_order = ui::ZOrderLevel::kSecuritySurface;
   params.shadow_type = views::Widget::InitParams::ShadowType::kNone;
   params.parent = parent_view;
-#if BUILDFLAG(IS_OHOS)
-  params.native_widget = new views::NativeWidgetAura(popup.get());
-#endif
   popup->Init(std::move(params));
   popup->SetContentsView(std::move(view));
 

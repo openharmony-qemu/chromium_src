@@ -427,9 +427,6 @@ class DrmThreadProxy;
 class DrmDisplayHostManager;
 class ScopedAllowBlockingForGbmSurface;
 class SelectFileDialogLinux;
-#if BUILDFLAG(IS_OHOS)
-class SelectFileDialogOHOS;
-#endif
 class WindowResizeHelperMac;
 }  // namespace ui
 namespace updater {
@@ -648,9 +645,6 @@ class BASE_EXPORT ScopedAllowBlocking {
   friend class ui::DrmDisplayHostManager;
   friend class ui::ScopedAllowBlockingForGbmSurface;
   friend class ui::SelectFileDialogLinux;
- #if BUILDFLAG(IS_OHOS)
-  friend class ui::SelectFileDialogOHOS;
-#endif
   friend class weblayer::BrowserContextImpl;
   friend class weblayer::ContentBrowserClientImpl;
   friend class weblayer::ProfileImpl;

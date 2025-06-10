@@ -24,7 +24,6 @@ schema:
 supported_on:
 - chrome.win:31-
 - chrome.linux:31-
-- chrome.ohos:126-
 - chrome_os:31-
 tags: []
 type: main

@@ -79,7 +79,7 @@
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
 #if (BUILDFLAG(ENABLE_SCREEN_AI_SERVICE) && \
-     (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)))
+     (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)))
 #include "services/screen_ai/public/cpp/utilities.h"  // nogncheck
 #include "services/screen_ai/sandbox/screen_ai_sandbox_hook_linux.h"  // nogncheck
 #endif
@@ -99,18 +99,6 @@
 #include "sandbox/win/src/sandbox.h"
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_OHOS)
-#include "base/file_descriptor_store.h"
-#include "base/files/file_util.h"
-#include "base/pickle.h"
-#include "content/common/gpu_pre_sandbox_hook_linux.h"
-#include "content/public/common/content_descriptor_keys.h"
-#include "content/utility/speech/speech_recognition_sandbox_hook_linux.h"
-#include "sandbox/policy/linux/sandbox_linux.h"
-#include "services/audio/audio_sandbox_hook_linux.h"
-#include "services/network/network_sandbox_hook_linux.h"
-#endif
-
 #if BUILDFLAG(IS_WIN)
 sandbox::TargetServices* g_utility_target_services = nullptr;
 #endif  // BUILDFLAG(IS_WIN)
@@ -123,7 +111,7 @@ namespace content {
 
 namespace {
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 std::vector<std::string> GetNetworkContextsParentDirectories() {
   base::MemoryMappedFile::Region region;
   base::ScopedFD read_pipe_fd = base::FileDescriptorStore::GetInstance().TakeFD(
@@ -151,8 +139,6 @@ std::vector<std::string> GetNetworkContextsParentDirectories() {
 }
 
 bool ShouldUseAmdGpuPolicy(sandbox::mojom::Sandbox sandbox_type) {
-// Amd gpu is not supported on ohos
-#if !BUILDFLAG(IS_OHOS)
   const bool obtain_gpu_info =
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
       sandbox_type == sandbox::mojom::Sandbox::kHardwareVideoDecoding ||
@@ -166,11 +152,10 @@ bool ShouldUseAmdGpuPolicy(sandbox::mojom::Sandbox sandbox_type) {
     gpu::CollectBasicGraphicsInfo(&gpu_info);
     return angle::IsAMD(gpu_info.active_gpu().vendor_id);
   }
-#endif  // !BUILDFLAG(IS_OHOS)
 
   return false;
 }
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
 #if BUILDFLAG(IS_WIN)
 // Handle pre-lockdown sandbox hooks
@@ -279,7 +264,7 @@ int UtilityMain(MainFunctionParams parameters) {
   }
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   // Initializes the sandbox before any threads are created.
   // TODO(jorgelo): move this after GTK initialization when we enable a strict
   // Seccomp-BPF policy.
@@ -300,13 +285,11 @@ int UtilityMain(MainFunctionParams parameters) {
     case sandbox::mojom::Sandbox::kAudio:
       pre_sandbox_hook = base::BindOnce(&audio::AudioPreSandboxHook);
       break;
-#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kOnDeviceModelExecution:
       on_device_model::OnDeviceModelService::AddSandboxLinuxOptions(
           sandbox_options);
       pre_sandbox_hook = base::BindOnce(&GpuPreSandboxHook);
       break;
-#endif  // !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kSpeechRecognition:
       pre_sandbox_hook =
           base::BindOnce(&speech::SpeechRecognitionPreSandboxHook);
@@ -337,12 +320,10 @@ int UtilityMain(MainFunctionParams parameters) {
           base::BindOnce(&media::HardwareVideoDecodingPreSandboxHook);
       break;
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
-#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
       pre_sandbox_hook =
           base::BindOnce(&media::HardwareVideoEncodingPreSandboxHook);
       break;
-#endif
 #if BUILDFLAG(IS_CHROMEOS_ASH)
     case sandbox::mojom::Sandbox::kIme:
       pre_sandbox_hook = base::BindOnce(&ash::ime::ImePreSandboxHook);

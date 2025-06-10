@@ -41,8 +41,7 @@ extern const char kMimeTypeWindowDrag[];
 
 // ----- LINUX & CHROMEOS & FUCHSIA MIME TYPES -----
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
-    BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kMimeTypeLinuxUtf8String[];
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
@@ -52,7 +51,7 @@ extern const char kMimeTypeLinuxText[];
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kMimeTypeLinuxSourceUrl[];
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
-        // BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+        // BUILDFLAG(IS_FUCHSIA)
 
 // ----- EVERYTHING EXCEPT FOR APPLE MIME TYPES -----
 
@@ -149,11 +148,6 @@ extern const int kMaxRegisteredClipboardFormats;
 // Web prefix for web custom format types.
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kWebClipboardFormatPrefix[];
-
-#if BUILDFLAG(IS_OHOS)
-COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
-extern const char kMimeTypeOHOSCustomData[];
-#endif  // BUILDFLAG(IS_OHOS)
 
 }  // namespace ui
 

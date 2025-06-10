@@ -266,13 +266,6 @@ export class CertificateManagerElement extends CertificateManagerElementBase {
   }
 
   private computeTabNames_(): string[] {
-// <if expr="is_ohos">
-return [
-  loadTimeData.getString('certificateManagerYourCertificates'),
-  loadTimeData.getString('certificateManagerAuthorities'),
-];
-// </if>
-// <if expr="not is_ohos">
     return [
       loadTimeData.getString('certificateManagerYourCertificates'),
       ...(this.isKiosk_ ?
@@ -283,7 +276,6 @@ return [
               ]),
       loadTimeData.getString('certificateManagerOthers'),
     ];
-// </if>
   }
 }
 

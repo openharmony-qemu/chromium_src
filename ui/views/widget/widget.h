@@ -459,16 +459,6 @@ class VIEWS_EXPORT Widget : public internal::NativeWidgetDelegate,
     bool inhibit_keyboard_shortcuts = false;
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-    bool using_system_floating_window = false;
-    bool use_dark_mode = false;
-    bool caption_button_visible = true;
-
-    // The value `true` indicates that the newly created window does not inherit the size of the current window.
-    // This parameter can be used in scenarios such as WebRTC notification window.
-    bool is_stateless = false;
-#endif
-
     // Directly sets the NativeTheme used by the Widget. Providing the
     // NativeTheme here vs setting afterwards potentially avoids lots of
     // notifications of theme changes.

@@ -35,10 +35,6 @@ declare_args() {
     # "beta"`.
     use_stable_package_name_for_trichrome = false
   }
-
-  if (is_ohos) {
-    ohos_build_target = "chromium"
-  }
 }
 
 # Ensure !is_android implies !is_high_end_android.

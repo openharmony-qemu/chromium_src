@@ -205,7 +205,7 @@ config("skia_library_config") {
       "SK_GAMMA_EXPONENT=1.2",
       "SK_GAMMA_CONTRAST=0.2",
     ]
-  } else if (is_android || is_ohos) {
+  } else if (is_android) {
     defines += [
       "SK_GAMMA_APPLY_TO_A8",
       "SK_GAMMA_EXPONENT=1.4",
@@ -478,13 +478,6 @@ component("skia") {
       "//third_party/fuchsia-sdk/sdk/pkg/zx",
       "//third_party/icu:icuuc",
     ]
-  }
-
-  if (is_ohos) {
-    sources += [
-      "//third_party/skia/src/ports/SkFontMgr_ohos.cpp"
-    ]
-    libs = [ "native_drawing" ]
   }
 
   configs -= [ "//build/config/compiler:chromium_code" ]

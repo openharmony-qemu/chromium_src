@@ -229,13 +229,6 @@ source_set("permissions") {
     ]
   }
 
-  if (is_ohos) {
-    sources += [
-      "contexts/geolocation_permission_context_ohos.cc",
-      "contexts/geolocation_permission_context_ohos.h",
-    ]
-  }
-
   public_deps = [ ":permissions_common" ]
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]

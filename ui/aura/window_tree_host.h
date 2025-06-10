@@ -7,7 +7,6 @@
 
 #include <stdint.h>
 
-#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -398,10 +397,6 @@ class AURA_EXPORT WindowTreeHost : public ui::ImeKeyEventDispatcher,
   // Calculates the root window bounds to be used by UpdateRootwindowSize().
   virtual gfx::Rect CalculateRootWindowBounds() const;
 
-#if BUILDFLAG(IS_OHOS)
-  void SetSurfaceId(uint64_t surface_id) { surface_id_ = surface_id; }
-#endif
-
   virtual void OnVideoCaptureLockCreated();
   virtual void OnVideoCaptureLockDestroyed();
 
@@ -507,11 +502,6 @@ class AURA_EXPORT WindowTreeHost : public ui::ImeKeyEventDispatcher,
   int video_capture_count_for_occlusion_tracking_ = 0;
 
   base::WeakPtrFactory<WindowTreeHost> weak_factory_{this};
-
-#if BUILDFLAG(IS_OHOS)
-  uint64_t surface_id_ = std::numeric_limits<std::uint64_t>::max();
-#endif
-
 };
 
 }  // namespace aura

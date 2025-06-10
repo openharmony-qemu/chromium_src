@@ -155,12 +155,6 @@ bool StructTraits<
     network::debug::SetDeserializationCrashKeyString("referrer");
     return false;
   }
-#if BUILDFLAG(IS_OHOS)
-  if (!data.ReadMainPage(&out->main_page)) {
-    network::debug::SetDeserializationCrashKeyString("main_page");
-    return false;
-  }
-#endif  //  IS_OHOS
   if (!data.ReadReferrerPolicy(&out->referrer_policy) ||
       !data.ReadHeaders(&out->headers) ||
       !data.ReadCorsExemptHeaders(&out->cors_exempt_headers) ||
@@ -228,11 +222,6 @@ bool StructTraits<
   out->attribution_reporting_support = data.attribution_reporting_support();
   out->attribution_reporting_eligibility =
       data.attribution_reporting_eligibility();
-
-#if BUILDFLAG(IS_OHOS)
-  out->allow_preload_record = data.allow_preload_record();
-#endif  //  IS_OHOS
-
   out->is_ad_tagged = data.is_ad_tagged();
   out->shared_dictionary_writer_enabled =
       data.shared_dictionary_writer_enabled();

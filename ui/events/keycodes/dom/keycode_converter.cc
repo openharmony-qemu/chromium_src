@@ -29,23 +29,19 @@ namespace {
 // Table of USB codes (equivalent to DomCode values), native scan codes,
 // and DOM Level 3 |code| strings.
 #if BUILDFLAG(IS_WIN)
-#define DOM_CODE(usb, evdev, xkb, win, mac, ohos, code, id) \
+#define DOM_CODE(usb, evdev, xkb, win, mac, code, id) \
   { usb, win, code }
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
-#define DOM_CODE(usb, evdev, xkb, win, mac, ohos, code, id) \
+#define DOM_CODE(usb, evdev, xkb, win, mac, code, id) \
   { usb, xkb, code }
-#elif BUILDFLAG(IS_OHOS)
-#define DOM_CODE(usb, evdev, xkb, win, mac, ohos, code, id) \
-  { usb, ohos, code }
-#define DOM_JCODe
 #elif BUILDFLAG(IS_APPLE)
-#define DOM_CODE(usb, evdev, xkb, win, mac, ohos, code, id) \
+#define DOM_CODE(usb, evdev, xkb, win, mac, code, id) \
   { usb, mac, code }
 #elif BUILDFLAG(IS_ANDROID)
-#define DOM_CODE(usb, evdev, xkb, win, mac, ohos, code, id) \
+#define DOM_CODE(usb, evdev, xkb, win, mac, code, id) \
   { usb, evdev, code }
 #elif BUILDFLAG(IS_FUCHSIA)
-#define DOM_CODE(usb, evdev, xkb, win, mac, ohos, code, id) \
+#define DOM_CODE(usb, evdev, xkb, win, mac, code, id) \
   { usb, usb, code }
 #else
 #error Unsupported platform

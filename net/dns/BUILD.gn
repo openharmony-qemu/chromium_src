@@ -143,21 +143,10 @@ source_set("dns") {
       "dns_config_service_linux.cc",
       "dns_config_service_linux.h",
     ]
-  } else if (is_ohos) {
-    sources += [
-      "dns_config_service_ohos.cc",
-      "dns_config_service_ohos.h",
-    ]
   } else if (is_posix) {
     sources += [
       "dns_config_service_posix.cc",
       "dns_config_service_posix.h",
-    ]
-  }
-
-  if (is_ohos) {
-    libs = [
-      "net_connection"
     ]
   }
 
@@ -460,8 +449,6 @@ source_set("tests") {
     sources += [ "dns_config_service_android_unittest.cc" ]
   } else if (is_linux) {
     sources += [ "dns_config_service_linux_unittest.cc" ]
-  } else if (is_ohos) {
-    sources += [ "dns_config_service_ohos_unittest.cc" ]
   } else if (is_posix) {
     sources += [ "dns_config_service_posix_unittest.cc" ]
   }

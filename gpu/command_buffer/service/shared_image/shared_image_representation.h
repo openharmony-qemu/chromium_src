@@ -970,7 +970,7 @@ class GPU_GLES2_EXPORT OverlayImageRepresentation
 ///////////////////////////////////////////////////////////////////////////////
 // LegacyOverlayImageRepresentation
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID)
 class GPU_GLES2_EXPORT LegacyOverlayImageRepresentation
     : public SharedImageRepresentation {
  public:

@@ -237,11 +237,7 @@ class TFLiteModelExecutor : public ModelExecutor<OutputType, InputType> {
   void SendForBatchExecution(
       BatchExecutionCallback callback_on_complete,
       base::TimeTicks start_time,
-#if defined(__clang__) && (__clang_major__ < 17)
-      typename ModelExecutor<OutputType, InputType>::ConstRefInputVector inputs)
-#else
       ModelExecutor<OutputType, InputType>::ConstRefInputVector inputs)
-#endif
       override {
     DCHECK(execution_task_runner_->RunsTasksInCurrentSequence());
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -263,11 +259,7 @@ class TFLiteModelExecutor : public ModelExecutor<OutputType, InputType> {
   // Starts the synchronous execution of the model. Returns model outputs.
   // Model needs to be loaded. Synchronous calls do not load or unload model.
   std::vector<std::optional<OutputType>> SendForBatchExecutionSync(
-#if defined(__clang__) && (__clang_major__ < 17)
-      typename ModelExecutor<OutputType, InputType>::ConstRefInputVector inputs)
-#else
       ModelExecutor<OutputType, InputType>::ConstRefInputVector inputs)
-#endif
       override {
     DCHECK(execution_task_runner_->RunsTasksInCurrentSequence());
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -438,11 +430,7 @@ class TFLiteModelExecutor : public ModelExecutor<OutputType, InputType> {
   // executes it on the model execution thread.
   void LoadModelFileAndBatchExecute(
       BatchExecutionCallback callback_on_complete,
-#if defined(__clang__) && (__clang_major__ < 17)
-      typename ModelExecutor<OutputType, InputType>::ConstRefInputVector inputs) {
-#else
       ModelExecutor<OutputType, InputType>::ConstRefInputVector inputs) {
-#endif
     DCHECK(execution_task_runner_->RunsTasksInCurrentSequence());
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
@@ -459,11 +447,7 @@ class TFLiteModelExecutor : public ModelExecutor<OutputType, InputType> {
 
   // Batch executes the loaded model for inputs.
   void BatchExecuteLoadedModel(
-#if defined(__clang__) && (__clang_major__ < 17)
-      typename ModelExecutor<OutputType, InputType>::ConstRefInputVector inputs,
-#else
       ModelExecutor<OutputType, InputType>::ConstRefInputVector inputs,
-#endif
       std::vector<std::optional<OutputType>>* outputs) {
     DCHECK(execution_task_runner_->RunsTasksInCurrentSequence());
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -523,11 +507,7 @@ class TFLiteModelExecutor : public ModelExecutor<OutputType, InputType> {
   // Unloads the model if needed.
   void BatchExecuteLoadedModelAndRunCallback(
       BatchExecutionCallback callback_on_complete,
-#if defined(__clang__) && (__clang_major__ < 17)
-      typename ModelExecutor<OutputType, InputType>::ConstRefInputVector inputs,
-#else
       ModelExecutor<OutputType, InputType>::ConstRefInputVector inputs,
-#endif
       ExecutionStatus execution_status) {
     DCHECK(execution_task_runner_->RunsTasksInCurrentSequence());
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);

@@ -44,7 +44,7 @@ std::u16string GetUsernameFromLabel(const std::u16string& label) {
 }
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_CHROMEOS)
 // Returns the password form corresponding to the `payload` data. In most
 // cases there is only one such form stored, but having more than one or no
 // forms is also possible. If there is more than one form, showing any of them
@@ -79,7 +79,7 @@ std::optional<password_manager::PasswordForm> GetCorrespondingPasswordForm(
   return *found_form_it;
 }
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) ||
-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+        // BUILDFLAG(IS_CHROMEOS)
 
 }  // namespace
 
@@ -293,7 +293,7 @@ void PasswordManualFallbackFlow::DidAcceptSuggestion(
     }
     case autofill::SuggestionType::kViewPasswordDetails: {
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_CHROMEOS)
       std::optional<password_manager::PasswordForm> credentials =
           GetCorrespondingPasswordForm(
               suggestion.GetPayload<Suggestion::PasswordSuggestionDetails>(),
@@ -302,7 +302,7 @@ void PasswordManualFallbackFlow::DidAcceptSuggestion(
         password_client_->OpenPasswordDetailsBubble(*credentials);
       }
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) ||
-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+        // BUILDFLAG(IS_CHROMEOS)
       break;
     }
     case autofill::SuggestionType::kAllSavedPasswordsEntry:
@@ -386,8 +386,7 @@ void PasswordManualFallbackFlow::MaybeAuthenticateBeforeFilling(
         base::BindOnce(&PasswordManualFallbackFlow::OnBiometricReauthCompleted,
                        weak_ptr_factory_.GetWeakPtr(), std::move(fill_fields));
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
     const std::u16string origin = base::UTF8ToUTF16(GetShownOrigin(
         url::Origin::Create(password_manager_driver_->GetLastCommittedURL())));
 #endif
@@ -429,7 +428,7 @@ void PasswordManualFallbackFlow::EnsureCrossDomainPasswordUsageGetsConsent(
     const Suggestion::PasswordSuggestionDetails& payload,
     base::OnceClosure on_allowed) {
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_CHROMEOS)
   if (payload.is_cross_domain) {
     cross_domain_confirmation_popup_controller_ =
         password_client_->ShowCrossDomainConfirmationPopup(
@@ -439,7 +438,7 @@ void PasswordManualFallbackFlow::EnsureCrossDomainPasswordUsageGetsConsent(
     return;
   }
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) ||
-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+        // BUILDFLAG(IS_CHROMEOS)
 
   std::move(on_allowed).Run();
 }

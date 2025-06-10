@@ -163,7 +163,7 @@ video_capture::mojom::VideoCaptureService& GetVideoCaptureService() {
     } else {
       // Launch in a utility service.
       VideoCaptureServiceLauncher::Launch(std::move(receiver));
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
+#if !BUILDFLAG(IS_ANDROID)
       // On Android, we do not use automatic service shutdown, because when
       // shutting down the service, we lose caching of the supported formats,
       // and re-querying these can take several seconds on certain Android

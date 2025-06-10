@@ -143,8 +143,6 @@ if (current_cpu == "arm" || v8_current_cpu == "arm") {
       # MSAN build) where the target platform is x64, but V8 is configured to
       # use the arm64 simulator.
       arm_control_flow_integrity = "standard"
-    } else if (is_ohos && target_cpu == "arm64") {
-      arm_control_flow_integrity = "pac"
     }
 
     if (host_os == "mac" && host_cpu == "arm64") {

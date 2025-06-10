@@ -82,17 +82,6 @@ source_set("hid") {
       "hid_service_fuchsia.h",
     ]
   }
-
-  if (is_ohos) {
-    sources += [
-      "hid_service_ohos.cc",
-      "hid_service_ohos.h",
-    ]
-
-    deps += [
-      "//device/device_watcher",
-    ]
-  }
 }
 
 fuzzer_test("hid_report_descriptor_fuzzer") {

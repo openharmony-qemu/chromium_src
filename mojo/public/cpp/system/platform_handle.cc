@@ -68,7 +68,7 @@ ScopedSharedBufferHandle WrapPlatformSharedMemoryRegion(
 #elif BUILDFLAG(IS_APPLE)
   platform_handles[0].type = MOJO_PLATFORM_HANDLE_TYPE_MACH_PORT;
   platform_handles[0].value = static_cast<uint64_t>(handle.release());
-#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_ANDROID)
   platform_handles[0].type = MOJO_PLATFORM_HANDLE_TYPE_FILE_DESCRIPTOR;
   platform_handles[0].value = static_cast<uint64_t>(handle.release());
 #else
@@ -133,7 +133,7 @@ base::subtle::PlatformSharedMemoryRegion UnwrapPlatformSharedMemoryRegion(
   if (platform_handles[0].type != MOJO_PLATFORM_HANDLE_TYPE_MACH_PORT)
     return base::subtle::PlatformSharedMemoryRegion();
   region_handle.reset(static_cast<mach_port_t>(platform_handles[0].value));
-#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_ANDROID)
   if (num_platform_handles != 1)
     return base::subtle::PlatformSharedMemoryRegion();
   if (platform_handles[0].type != MOJO_PLATFORM_HANDLE_TYPE_FILE_DESCRIPTOR)

@@ -240,11 +240,6 @@ EVENTS_EXPORT std::vector<std::string_view> KeyEventFlagsNames(int event_flags);
 // Returns a a vector of string representations of MouseEventFlags.
 EVENTS_EXPORT std::vector<std::string_view> MouseEventFlagsNames(
     int event_flags);
-
-#if BUILDFLAG(IS_OHOS)
-EVENTS_EXPORT int32_t EventDisplayIdFromNative(
-    const PlatformEvent& native_event);
-#endif
 }  // namespace ui
 
 #endif  // UI_EVENTS_EVENT_UTILS_H_

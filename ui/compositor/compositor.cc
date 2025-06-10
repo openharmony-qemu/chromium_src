@@ -626,12 +626,6 @@ void Compositor::SetMaxVSyncAndVrr(
   }
 }
 
-#if BUILDFLAG(IS_OHOS)
-void Compositor::SetSurfaceId(uint64_t surface_id) {
-  surface_id_ = surface_id;
-}
-#endif
-
 void Compositor::SetAcceleratedWidget(gfx::AcceleratedWidget widget) {
   // This function should only get called once.
   DCHECK(!widget_valid_);

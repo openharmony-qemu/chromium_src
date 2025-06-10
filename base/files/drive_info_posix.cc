@@ -15,7 +15,7 @@
 #include "base/strings/stringprintf.h"
 #include "build/build_config.h"
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #include <linux/kdev_t.h>
 #endif
 
@@ -31,7 +31,7 @@ std::optional<DriveInfo> GetFileDriveInfo(const FilePath& file_path) {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
   drive_info.has_seek_penalty = false;
   return drive_info;
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   constexpr char kRotationalFormat[] =
       "/sys/dev/block/%lu:%lu/queue/rotational";
   constexpr char kRemovableFormat[] = "/sys/dev/block/%lu:%lu/removable";

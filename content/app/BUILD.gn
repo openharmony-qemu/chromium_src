@@ -99,9 +99,6 @@ source_set("content_main_runner_app") {
   if (build_tflite_with_xnnpack) {
     deps += [ "//third_party/cpuinfo" ]
   }
-  if(is_ohos) {
-    deps += [ "//ohos//adapter:adapter"]
-  }
 }
 
 source_set("app") {

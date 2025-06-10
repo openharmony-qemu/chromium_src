@@ -336,11 +336,7 @@ LocatedEvent::LocatedEvent(const PlatformEvent& native_event)
             EventTypeFromNative(native_event),
             EventFlagsFromNative(native_event)),
       location_(EventLocationFromNative(native_event)),
-      root_location_(location_) {
-#if BUILDFLAG(IS_OHOS)
-      display_id_ = EventDisplayIdFromNative(native_event);
-#endif
-}
+      root_location_(location_) {}
 
 LocatedEvent::LocatedEvent(EventType type,
                            const gfx::PointF& location,

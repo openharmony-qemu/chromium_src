@@ -7,7 +7,6 @@
 
 #include <stdint.h>
 
-#include <limits>
 #include <memory>
 #include <unordered_set>
 
@@ -310,10 +309,6 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
       const std::optional<base::TimeDelta>& max_vsync_interval,
       display::VariableRefreshRateState vrr_state);
 
-#if BUILDFLAG(IS_OHOS)
-  void SetSurfaceId(uint64_t surface_id);
-  uint64_t get_surface_id() { return surface_id_; }
-#endif
   // Sets the widget for the compositor to render into.
   void SetAcceleratedWidget(gfx::AcceleratedWidget widget);
   // Releases the widget previously set through SetAcceleratedWidget().
@@ -668,11 +663,6 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
 
   base::WeakPtrFactory<Compositor> context_creation_weak_ptr_factory_{this};
   base::WeakPtrFactory<Compositor> weak_ptr_factory_{this};
-
-#if BUILDFLAG(IS_OHOS)
-  uint64_t surface_id_ = std::numeric_limits<std::uint64_t>::max();
-#endif
- 
 };
 
 }  // namespace ui

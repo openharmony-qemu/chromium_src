@@ -345,20 +345,4 @@ void AudioBus::SwapChannels(int a, int b) {
   std::swap(channel_data_[a], channel_data_[b]);
 }
 
-#if BUILDFLAG(IS_OHOS)
-base::ThreadLocalOwnedPointer<uint64_t> AudioBus::slot_;
-uint64_t AudioBus::GetAudioDelay() {
-  if (slot_.Get() == nullptr) {
-    slot_.Set(std::make_unique<uint64_t>(0));
-  }
-  return *slot_;
-}
-
-void AudioBus::SetAudioDelay(uint64_t value) {
-  if (slot_.Get() == nullptr) {
-    slot_.Set(std::make_unique<uint64_t>(0));
-  }
-  *(slot_.Get()) = value;
-}
-#endif
 }  // namespace media

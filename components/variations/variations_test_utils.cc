@@ -162,7 +162,6 @@ const Study::Platform array_kFieldTrialConfig_platforms_0[] = {
     Study::PLATFORM_LINUX,
     Study::PLATFORM_MAC,
     Study::PLATFORM_WINDOWS,
-    Study::PLATFORM_OHOS,
 };
 
 const char* enable_features_0[] = {"UnitTestEnabled"};

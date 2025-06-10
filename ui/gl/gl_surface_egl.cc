@@ -433,13 +433,6 @@ bool NativeViewGLSurfaceEGL::Initialize(GLSurfaceFormat format) {
 
   egl_window_attributes.push_back(EGL_NONE);
   // Create a surface for the native window.
-#if BUILDFLAG(IS_OHOS)
-  if (!window_) {
-    LOG(ERROR) << "eglCreateWindowSurface failed with error,window_ is null";
-    Destroy();
-    return false;
-  }
-#endif
   surface_ = eglCreateWindowSurface(display_->GetDisplay(), GetConfig(),
                                     window_, &egl_window_attributes[0]);
 

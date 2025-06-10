@@ -766,11 +766,7 @@ FirstPartySetParser::ParseSetsFromEnterprisePolicy(
                      context.GetPolicySetsFromList(
                          policy.FindList(kFirstPartySetPolicyAdditionsField),
                          PolicySetType::kAddition));
-#if BUILDFLAG(IS_OHOS)
-    return ParsedPolicySetLists{std::move(replacements), std::move(additions)};
-#else
     return ParsedPolicySetLists(std::move(replacements), std::move(additions));
-#endif
   }();
 
   context.PostProcessSetLists(set_lists);

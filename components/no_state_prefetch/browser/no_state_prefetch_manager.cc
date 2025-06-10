@@ -630,7 +630,6 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
         new NoStatePrefetchHandle(preexisting_prefetch_data));
   }
 
-#ifndef BUILDFLAG(IS_OHOS)
   base::TimeDelta prefetch_age;
   GetPrefetchInformation(url, &prefetch_age, nullptr /* final_status*/,
                          nullptr /* origin */);
@@ -642,7 +641,6 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
                                    PreloadingTriggeringOutcome::kDuplicate);
     return nullptr;
   }
-#endif
 
   // Do not prefetch if there are too many render processes, and we would have
   // to use an existing one.  We do not want prefetching to happen in a shared

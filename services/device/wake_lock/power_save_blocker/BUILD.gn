@@ -77,11 +77,6 @@ source_set("power_save_blocker") {
     ]
   } else if (is_win) {
     sources += [ "power_save_blocker_win.cc" ]
-  } else if (is_ohos) {
-    sources += [
-      "power_save_blocker_ohos.cc"
-    ]
-    import("//build/config/ohos/config.gni")
   } else {
     # Fuchsia and non-DBus Linux.
     sources += [ "power_save_blocker_stub.cc" ]

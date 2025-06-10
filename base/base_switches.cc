@@ -182,10 +182,4 @@ const char kPackageVersionName[] = "package-version-name";
 const char kSchedulerBoostUrgent[] = "scheduler-boost-urgent";
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-const char kBundleInstallationDir[] = "bundle-installation-dir";
-const char KDisableBlinkFeatures[] = "disable-blink-features";
-const char KDisableOcclusionFeature[] = "disable-occlusion-feature";
-#endif
-
 }  // namespace switches

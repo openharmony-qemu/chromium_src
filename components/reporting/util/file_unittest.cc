@@ -70,15 +70,11 @@ TEST(FileTest, DeleteFileWarnIfFailed) {
     // Get rid of the write permission from temp_dir
     ASSERT_TRUE(base::MakeFileUnwritable(dir_path));
     // Ensure no deletion permission
-#if !BUILDFLAG(IS_OHOS)
     ASSERT_FALSE(base::PathIsWritable(dir_path));
-#endif
 #endif  // BUILDFLAG(IS_WIN)
     ASSERT_TRUE(base::PathExists(file_path));
-#if !BUILDFLAG(IS_OHOS)
     ASSERT_FALSE(DeleteFileWarnIfFailed(file_path))
         << "Deletion of an existing file without permission should fail";
-#endif
   }
 #endif  // !BUILDFLAG(IS_FUCHSIA)
 

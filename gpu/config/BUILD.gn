@@ -55,7 +55,7 @@ action("process_json") {
     args += [ "win" ]
   } else if (is_mac) {
     args += [ "macosx" ]
-  } else if (is_android || is_ohos) {
+  } else if (is_android) {
     args += [ "android" ]
   } else if (is_chromeos) {
     args += [ "chromeos" ]
@@ -251,10 +251,10 @@ source_set("config_sources") {
   if (is_ios) {
     sources += [ "gpu_info_collector_ios.mm" ]
   }
-  if (is_linux || is_chromeos || is_ohos) {
+  if (is_linux || is_chromeos) {
     sources += [ "gpu_info_collector_linux.cc" ]
   }
-  if (is_linux || is_chromeos || is_apple || is_fuchsia || is_android || is_ohos) {
+  if (is_linux || is_chromeos || is_apple || is_fuchsia || is_android) {
     deps += [ "//third_party/angle:angle_gpu_info_util" ]
   }
   if (use_ozone) {

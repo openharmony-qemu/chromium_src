@@ -1672,8 +1672,7 @@ void CreditCardAccessManager::StartDeviceAuthenticationForFilling(
           card->record_type()),
       authentication_method,
       autofill_metrics::MandatoryReauthAuthenticationFlowEvent::kFlowStarted);
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_IOS) || \
-    BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_IOS)
   autofill_client()
       .GetPaymentsAutofillClient()
       ->GetOrCreatePaymentsMandatoryReauthManager()

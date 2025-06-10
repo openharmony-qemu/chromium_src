@@ -332,13 +332,12 @@ void PasswordAutofillManager::DidAcceptSuggestion(
                            weak_ptr_factory_.GetWeakPtr(),
                            suggestion.main_text.value, suggestion.type);
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
         const std::u16string origin =
             base::UTF8ToUTF16(GetShownOrigin(url::Origin::Create(
                 password_manager_driver_->GetLastCommittedURL())));
 #endif
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
         message = l10n_util::GetStringFUTF16(
             IDS_PASSWORD_MANAGER_FILLING_REAUTH, origin);
 #elif BUILDFLAG(IS_CHROMEOS)

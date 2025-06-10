@@ -112,10 +112,6 @@ class AURA_EXPORT WindowTreeHostPlatform : public WindowTreeHost,
   bool IsKeyLocked(ui::DomCode dom_code) override;
   base::flat_map<std::string, std::string> GetKeyboardLayoutMap() override;
 
-#if BUILDFLAG(IS_OHOS)
-  void SetSurfaceId(uint64_t surface_id) override;
-#endif
-
   void OnVideoCaptureLockCreated() override;
   void OnVideoCaptureLockDestroyed() override;
 

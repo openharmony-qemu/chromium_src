@@ -451,10 +451,6 @@ class VIEWS_EXPORT Textfield : public View,
                                      gfx::Rect* rect) const override;
   bool HasCompositionText() const override;
   FocusReason GetFocusReason() const override;
-#if BUILDFLAG(IS_OHOS)
-  ui::RequestKeyboardReason GetRequestKeyboardReason() const override;
-  void SetRequestKeyboardReasonWithPointer(ui::EventPointerType pointer_type);
-#endif
   bool GetTextRange(gfx::Range* range) const override;
   bool GetCompositionTextRange(gfx::Range* range) const override;
   bool GetEditableSelectionRange(gfx::Range* range) const override;
@@ -918,11 +914,6 @@ class VIEWS_EXPORT Textfield : public View,
   // How this textfield was focused.
   ui::TextInputClient::FocusReason focus_reason_ =
       ui::TextInputClient::FOCUS_REASON_NONE;
-
-#if BUILDFLAG(IS_OHOS)
-  ui::RequestKeyboardReason request_keyboard_reason_ =
-      ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_NONE;
-#endif
 
   // The password char reveal index, for testing only.
   std::optional<size_t> password_char_reveal_index_;

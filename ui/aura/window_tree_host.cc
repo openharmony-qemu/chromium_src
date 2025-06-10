@@ -176,16 +176,14 @@ void WindowTreeHost::SetRootTransform(const gfx::Transform& transform) {
 gfx::Transform WindowTreeHost::GetInverseRootTransform() const {
   gfx::Transform invert;
   gfx::Transform transform = GetRootTransform();
-  if (!transform.GetInverse(&invert)) {
+  if (!transform.GetInverse(&invert))
     return transform;
-  }
   return invert;
 }
 
 void WindowTreeHost::SetDisplayTransformHint(gfx::OverlayTransform transform) {
-  if (compositor()->display_transform_hint() == transform) {
+  if (compositor()->display_transform_hint() == transform)
     return;
-  }
 
   compositor()->SetDisplayTransformHint(transform);
   UpdateCompositorScaleAndSize(GetBoundsInPixels().size());
@@ -200,9 +198,8 @@ gfx::Transform WindowTreeHost::GetInverseRootTransformForLocalEventCoordinates()
     const {
   gfx::Transform invert;
   gfx::Transform transform = GetRootTransformForLocalEventCoordinates();
-  if (!transform.GetInverse(&invert)) {
+  if (!transform.GetInverse(&invert))
     return transform;
-  }
   return invert;
 }
 
@@ -271,9 +268,8 @@ void WindowTreeHost::OnCursorVisibilityChanged(bool show) {
     ui::EventDispatchDetails details = dispatcher()->DispatchMouseExitAtPoint(
         nullptr, dispatcher()->GetLastMouseLocationInRoot(),
         ui::EF_CURSOR_HIDE);
-    if (details.dispatcher_destroyed) {
+    if (details.dispatcher_destroyed)
       return;
-    }
   }
 
   OnCursorVisibilityChangedNative(show);
@@ -319,9 +315,8 @@ ui::EventDispatchDetails WindowTreeHost::DispatchKeyEventPostIME(
   // We should bypass event rewriters here as they've been tried before.
   ui::EventDispatchDetails dispatch_details =
       GetEventSink()->OnEventFromSource(event);
-  if (!dispatch_details.dispatcher_destroyed) {
+  if (!dispatch_details.dispatcher_destroyed)
     dispatcher_->set_skip_ime(false);
-  }
   return dispatch_details;
 }
 
@@ -362,13 +357,11 @@ gfx::Rect WindowTreeHost::GetBoundsInAcceleratedWidgetPixelCoordinates() {
 std::unique_ptr<ScopedKeyboardHook> WindowTreeHost::CaptureSystemKeyEvents(
     std::optional<base::flat_set<ui::DomCode>> dom_codes) {
   // TODO(joedow): Remove the simple hook class/logic once this flag is removed.
-  if (!base::FeatureList::IsEnabled(features::kSystemKeyboardLock)) {
+  if (!base::FeatureList::IsEnabled(features::kSystemKeyboardLock))
     return std::make_unique<ScopedSimpleKeyboardHook>(std::move(dom_codes));
-  }
 
-  if (CaptureSystemKeyEventsImpl(std::move(dom_codes))) {
+  if (CaptureSystemKeyEventsImpl(std::move(dom_codes)))
     return std::make_unique<ScopedKeyboardHook>(weak_factory_.GetWeakPtr());
-  }
   return nullptr;
 }
 
@@ -393,8 +386,6 @@ void WindowTreeHost::SetNativeWindowOcclusionState(
                              ? SkRegion()
                              : raw_occluded_region;
 
-  TRACE_EVENT1("ui", "WindowTreeHost::SetNativeWindowOcclusionState", "state",
-               static_cast<int>(state));
   if (occlusion_state_ == state && occluded_region_ == occluded_region) {
     return;
   }
@@ -449,9 +440,8 @@ void WindowTreeHost::UnlockMouse(Window* window) {
   Window* root_window = window->GetRootWindow();
   DCHECK(root_window);
 
-  if (window->HasCapture()) {
+  if (window->HasCapture())
     window->ReleaseCapture();
-  }
 
   auto* cursor_client = client::GetCursorClient(root_window);
   if (cursor_client) {
@@ -493,9 +483,8 @@ WindowTreeHost::WindowTreeHost(std::unique_ptr<Window> window)
 }
 
 void WindowTreeHost::UpdateCompositorVisibility(bool visible) {
-  if (!compositor()) {
+  if (!compositor())
     return;
-  }
 
   if (NativeOcclusionAffectsThrottle()) {
     // If NativeOcclusionAffectsThrottle() is true, then this function should
@@ -511,9 +500,8 @@ void WindowTreeHost::UpdateCompositorVisibility(bool visible) {
 }
 
 void WindowTreeHost::DestroyCompositor() {
-  if (!compositor_) {
+  if (!compositor_)
     return;
-  }
 
   HostFrameRateThrottler::GetInstance().RemoveHost(this);
 
@@ -542,9 +530,8 @@ void WindowTreeHost::DestroyDispatcher() {
 }
 
 void WindowTreeHost::OnAcceleratedWidgetMadeVisible(bool value) {
-  if (accelerated_widget_made_visible_ == value) {
+  if (accelerated_widget_made_visible_ == value)
     return;
-  }
 
   accelerated_widget_made_visible_ = value;
   // Always update the compositor (ignoring occlusion-state) as it is entirely
@@ -567,11 +554,6 @@ void WindowTreeHost::CreateCompositor(bool force_software_compositor,
       force_software_compositor, enable_compositing_based_throttling,
       memory_limit_when_visible_mb);
   compositor_->AddObserver(this);
-
-#if BUILDFLAG(IS_OHOS)
-  compositor_->SetSurfaceId(surface_id_);
-#endif
-
   if (!dispatcher()) {
     window()->Init(ui::LAYER_NOT_DRAWN);
     window()->set_host(this);
@@ -612,9 +594,8 @@ void WindowTreeHost::OnHostResizedInPixels(
   // The compositor is deleted from WM_DESTROY, but we don't delete things until
   // WM_NCDESTROY, and it must be possible to still get some messages between
   // these two.
-  if (!compositor_) {
+  if (!compositor_)
     return;
-  }
 
   // If we don't have the actual preferred scale, don't overwrite the scale
   // factor with the default value. See https://crbug.com/1285476 for details.
@@ -639,9 +620,8 @@ void WindowTreeHost::OnHostWorkspaceChanged() {
 }
 
 void WindowTreeHost::OnHostDisplayChanged() {
-  if (!compositor_) {
+  if (!compositor_)
     return;
-  }
   display::Display display =
       display::Screen::GetScreen()->GetDisplayNearestWindow(window());
   compositor_->SetDisplayColorSpaces(display.GetColorSpaces());
@@ -656,30 +636,26 @@ void WindowTreeHost::OnHostLostWindowCapture() {
   // root window has already been destroyed (e.g. when the ui::PlatformWindow is
   // destroyed, and during destruction, it loses capture. See more details in
   // http://crbug.com/770670)
-  if (!window()) {
+  if (!window())
     return;
-  }
   Window* capture_window = client::GetCaptureWindow(window());
-  if (capture_window && capture_window->GetRootWindow() == window()) {
+  if (capture_window && capture_window->GetRootWindow() == window())
     capture_window->ReleaseCapture();
-  }
 }
 
 void WindowTreeHost::OnDisplayMetricsChanged(const display::Display& display,
                                              uint32_t metrics) {
   if (metrics & DisplayObserver::DISPLAY_METRIC_COLOR_SPACE && compositor_ &&
-      display.id() == GetDisplayId()) {
+      display.id() == GetDisplayId())
     compositor_->SetDisplayColorSpaces(display.GetColorSpaces());
-  }
 
 // Chrome OS is handled in WindowTreeHostManager::OnDisplayMetricsChanged.
 // Chrome OS requires additional handling for the bounds that we do not need to
 // do for other OSes.
 #if !BUILDFLAG(IS_CHROMEOS)
   if (metrics & DISPLAY_METRIC_DEVICE_SCALE_FACTOR &&
-      display.id() == GetDisplayId()) {
+      display.id() == GetDisplayId())
     OnHostResizedInPixels(GetBoundsInPixels().size());
-  }
 #endif
 }
 
@@ -824,9 +800,8 @@ void WindowTreeHost::OnCompositingAckDeprecated(ui::Compositor* compositor) {
   // Currently, input is only throttled on ash and is not well supported on
   // other platforms. See crbug.com/41359082.
 #if BUILDFLAG(IS_CHROMEOS)
-  if (!holding_pointer_moves_) {
+  if (!holding_pointer_moves_)
     return;
-  }
 
   dispatcher_->ReleasePointerMoves();
   holding_pointer_moves_ = false;
@@ -837,10 +812,8 @@ void WindowTreeHost::OnCompositingChildResizing(ui::Compositor* compositor) {
   // Currently, input is only throttled on ash and is not well supported on
   // other platforms. See crbug.com/41359082.
 #if BUILDFLAG(IS_CHROMEOS)
-  if (!Env::GetInstance()->throttle_input_on_resize() ||
-      holding_pointer_moves_) {
+  if (!Env::GetInstance()->throttle_input_on_resize() || holding_pointer_moves_)
     return;
-  }
   dispatcher_->HoldPointerMoves();
   holding_pointer_moves_ = true;
 #endif

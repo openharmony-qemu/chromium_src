@@ -76,9 +76,6 @@
 #include "sandbox/mac/seatbelt_exec.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-#include "base/test/test_support_ohos.h"
-#endif
 namespace content {
 
 namespace {
@@ -460,9 +457,6 @@ int LaunchTests(TestLauncherDelegate* launcher_delegate,
                 size_t parallel_jobs,
                 int argc,
                 char** argv) {
-#if BUILDFLAG(IS_OHOS)
-  base::RegisterPathProviderForOhosTest();
-#endif
   base::test::AllowCheckIsTestForTesting();
 
   base::CommandLine::Init(argc, argv);

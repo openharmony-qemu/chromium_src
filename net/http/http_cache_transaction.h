@@ -38,10 +38,6 @@
 #include "net/socket/connection_attempts.h"
 #include "net/websockets/websocket_handshake_stream_base.h"
 
-#if BUILDFLAG(IS_OHOS)
-#include "net/prp_preload/include/page_res_parallel_preload_mgr.h"
-#endif
-
 namespace net {
 
 class PartialData;
@@ -594,10 +590,6 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   void BeginDiskCacheAccessTimeCount();
   void EndDiskCacheAccessTimeCount(DiskCacheAccessType type);
 
-#if BUILDFLAG(IS_OHOS)
-  void UpdateCacheInfo(const HttpResponseInfo& response);
-#endif
-
   State next_state_{STATE_NONE};
 
   // Set when a HTTPCache transaction is pending in parallel with other IO.
@@ -735,10 +727,6 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
 
   // True if the Transaction is currently processing the DoLoop.
   bool in_do_loop_ = false;
-
-#if BUILDFLAG(IS_OHOS)
-  std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info_;
-#endif
 
   base::WeakPtrFactory<Transaction> weak_factory_{this};
 };

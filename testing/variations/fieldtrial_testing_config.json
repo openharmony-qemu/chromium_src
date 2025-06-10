@@ -4176,8 +4176,7 @@
                 "chromeos",
                 "linux",
                 "mac",
-                "windows",
-                "ohos"
+                "windows"
             ],
             "experiments": [
                 {
@@ -10628,8 +10627,7 @@
                 "chromeos",
                 "linux",
                 "mac",
-                "windows",
-                "ohos"
+                "windows"
             ],
             "experiments": [
                 {
@@ -10699,8 +10697,7 @@
                 "ios",
                 "linux",
                 "mac",
-                "windows",
-                "ohos"
+                "windows"
             ],
             "experiments": [
                 {
@@ -17561,8 +17558,7 @@
                 "fuchsia",
                 "linux",
                 "mac",
-                "windows",
-                "ohos"
+                "windows"
             ],
             "experiments": [
                 {
@@ -18600,8 +18596,7 @@
                 "chromeos",
                 "linux",
                 "mac",
-                "windows",
-                "ohos"
+                "windows"
             ],
             "experiments": [
                 {
@@ -19136,8 +19131,7 @@
                 "ios",
                 "linux",
                 "mac",
-                "windows",
-                "ohos"
+                "windows"
             ],
             "experiments": [
                 {
@@ -22878,8 +22872,7 @@
                 "chromeos",
                 "linux",
                 "mac",
-                "windows",
-                "ohos"
+                "windows"
             ],
             "experiments": [
                 {

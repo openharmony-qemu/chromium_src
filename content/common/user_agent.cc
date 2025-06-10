@@ -45,8 +45,6 @@ std::string GetUserAgentPlatform() {
   return "";
 #elif BUILDFLAG(IS_MAC)
   return "Macintosh; ";
-#elif BUILDFLAG(IS_OHOS)
-  return "OHOS";
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   return "X11; ";  // strange, but that's what Firefox uses
 #elif BUILDFLAG(IS_ANDROID)
@@ -75,8 +73,6 @@ std::string GetUnifiedPlatform() {
   return "Fuchsia";
 #elif BUILDFLAG(IS_LINUX)
   return "X11; Linux x86_64";
-#elif BUILDFLAG(IS_OHOS)
-  return "OHOS; OHOS x86_64";
 #elif BUILDFLAG(IS_IOS)
   if (ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET) {
     return "iPad; CPU iPad OS 14_0 like Mac OS X";

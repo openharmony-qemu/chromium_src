@@ -102,16 +102,6 @@ source_set("geolocation") {
     deps += [ "//services/device/public/cpp:device_features" ]
   }
 
-  if (is_ohos){
-    sources += [
-      "ohos/location_provider_ohos.cc",
-      "ohos/location_provider_ohos.h",
-    ]
-    deps += [
-        "//ohos/adapter:adapter",
-    ]
-  }
-
   # Platform-specific WifiDataProvider implementations.
   if (is_chromeos_ash) {
     sources += [

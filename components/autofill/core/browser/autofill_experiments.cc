@@ -275,7 +275,7 @@ bool IsInAutofillSuggestionsDisabledExperiment() {
 }
 
 bool IsCreditCardFidoAuthenticationEnabled() {
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_ANDROID)
   // Better Auth project is fully launched on Windows/Mac for Desktop, and
   // Android for mobile.
   return true;
@@ -293,7 +293,7 @@ bool ShouldShowIbanOnSettingsPage(const std::string& user_country_code,
 
 bool IsDeviceAuthAvailable(
     device_reauth::DeviceAuthenticator* device_authenticator) {
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
   CHECK(device_authenticator);
   return device_authenticator->CanAuthenticateWithBiometricOrScreenLock();
 #else

@@ -17,7 +17,7 @@ static_library("features") {
   ]
 }
 
-if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
+if (is_win || is_mac || is_linux || is_chromeos) {
   static_library("browser") {
     sources = [
       "autofill_ai_annotation_prompt_strike_database.h",

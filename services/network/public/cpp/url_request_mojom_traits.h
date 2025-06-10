@@ -410,15 +410,6 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
 
   static bool Read(network::mojom::URLRequestDataView data,
                    network::ResourceRequest* out);
-  
-#if BUILDFLAG(IS_OHOS)
-  static bool allow_preload_record(const network::ResourceRequest& request) {
-    return request.allow_preload_record;
-  }
-  static const GURL& main_page(const network::ResourceRequest& request) {
-    return request.main_page;
-  }
-#endif  //  IS_OHOS
 };
 
 template <>

@@ -113,11 +113,6 @@ GL_EXPORT extern const base::FeatureParam<int>
     kDXGIWaitableSwapChainMaxQueuedFrames;
 GL_EXPORT BASE_DECLARE_FEATURE(kDXGISwapChainPresentInterval0);
 
-#if BUILDFLAG(IS_OHOS)
-GL_EXPORT BASE_DECLARE_FEATURE(kOHOSEnablePartialSwap);
-GL_EXPORT bool IsOHOSEnablePartialSwap();
-#endif  // BUILDFLAG(IS_OHOS)
-
 GL_EXPORT bool IsDefaultANGLEVulkan();
 
 GL_EXPORT bool SupportsEGLDualGPURendering();

@@ -347,14 +347,4 @@ bool SupportsEGLDualGPURendering() {
 #endif  // IS_WIN || IS_MAC
 }
 
-#if BUILDFLAG(IS_OHOS)
-BASE_FEATURE(kOHOSEnablePartialSwap,
-             "OHOSEnablePartialSwap",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
-bool IsOHOSEnablePartialSwap() {
-  return base::FeatureList::IsEnabled(kOHOSEnablePartialSwap);
-}
-#endif  // BUILDFLAG(IS_OHOS)
-
 }  // namespace features

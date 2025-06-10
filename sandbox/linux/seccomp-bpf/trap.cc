@@ -85,12 +85,6 @@ bool IsDefaultSignalAction(const struct sigaction& sa) {
 namespace sandbox {
 
 Trap::Trap() {
-// trap.cc is the normal startup process in the renderer sandbox. The sigaction
-// system capability called by sys_sigaction. oh currently only supports the
-// SIGINFO option. The return value is inconsistent with Linux.
-// IsDefaultSignalAction is false, which in turn causes
-// the debug mode fatal log to cause a crash.
-#if !BUILDFLAG(IS_OHOS)
   // Set new SIGSYS handler
   struct sigaction sa = {};
   // In some toolchain, sa_sigaction is not declared in struct sigaction.
@@ -110,7 +104,6 @@ Trap::Trap() {
     DLOG(FATAL) << kExistingSIGSYSMsg;
     LOG(ERROR) << kExistingSIGSYSMsg;
   }
-#endif
 
   // Unmask SIGSYS
   sigset_t mask;

@@ -11,7 +11,7 @@ namespace ui {
 
 // Declares an array containing all the currently defined DomCode values.
 #define DOM_CODE_TYPE(x) static_cast<DomCode>(x)
-#define DOM_CODE(usb, evdev, xkb, win, mac, ohos, code, id) DOM_CODE_TYPE(usb)
+#define DOM_CODE(usb, evdev, xkb, win, mac, code, id) DOM_CODE_TYPE(usb)
 #define DOM_CODE_DECLARATION constexpr DomCode kDomCodesArray[] =
 #include "ui/events/keycodes/dom/dom_code_data.inc"
 #undef DOM_CODE_TYPE

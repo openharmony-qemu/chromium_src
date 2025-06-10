@@ -28,10 +28,6 @@
 #include "base/win/windows_types.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-#include "ohos/adapter/accessibility/accessibility_adapter.h"
-#endif
-
 // This file provides cross platform typedefs for native widget types.
 //   NativeWindow: this is a handle to a native, top-level window
 //   NativeView: this is a handle to a native UI element. It may be the
@@ -104,10 +100,6 @@ class ViewAndroid;
 }  // namespace ui
 #endif
 class SkBitmap;
-
-#if BUILDFLAG(IS_OHOS)
-using ohos::adapter::accessibility::NativeElementWrapper;
-#endif
 
 #if BUILDFLAG(IS_LINUX)
 extern "C" {
@@ -225,8 +217,6 @@ using NativeViewAccessible = struct objc_object*;
 #elif BUILDFLAG(IS_LINUX)
 // Linux doesn't have a native font type.
 using NativeViewAccessible = AtkObject*;
-#elif BUILDFLAG(IS_OHOS)
-using NativeViewAccessible = NativeElementWrapper*;
 #else
 // Android, Chrome OS, etc.
 using UnimplementedNativeViewAccessible =

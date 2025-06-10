@@ -25,9 +25,6 @@ namespace gfx {
 class ImageSkia;
 class Rect;
 class Vector2d;
-#if BUILDFLAG(IS_OHOS)
-class Point;
-#endif
 }
 
 #if BUILDFLAG(IS_ANDROID)
@@ -161,13 +158,6 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
 
 #if BUILDFLAG(IS_ANDROID)
   virtual ui::OverscrollRefreshHandler* GetOverscrollRefreshHandler() const;
-#endif
-
-#if BUILDFLAG(IS_OHOS)
-  virtual void CreateOverlay(const gfx::ImageSkia& image,
-                             const gfx::Rect& image_rect,
-                             const gfx::Point& touch_point,
-                             const gfx::Rect& screen_rect) {}
 #endif
 
  protected:

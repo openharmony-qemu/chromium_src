@@ -42,9 +42,6 @@ namespace {
 // Timeout for the SSL handshake portion of the connect.
 constexpr base::TimeDelta kSSLHandshakeTimeout(base::Seconds(30));
 
-#if BUILDFLAG(IS_OHOS)
-constexpr uint16_t k3DESCipher = 0x000a;
-#endif
 }  // namespace
 
 SSLSocketParams::SSLSocketParams(

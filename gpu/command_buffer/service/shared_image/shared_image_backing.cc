@@ -291,7 +291,7 @@ std::unique_ptr<VulkanImageRepresentation> SharedImageBacking::ProduceVulkan(
 }
 #endif
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID)
 std::unique_ptr<LegacyOverlayImageRepresentation>
 SharedImageBacking::ProduceLegacyOverlay(SharedImageManager* manager,
                                          MemoryTypeTracker* tracker) {

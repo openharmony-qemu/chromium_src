@@ -9,15 +9,15 @@
 namespace content {
 
 ScreenlockMonitorDeviceSource::ScreenlockMonitorDeviceSource() {
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_MAC)
   StartListeningForScreenlock();
-#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_MAC)
 }
 
 ScreenlockMonitorDeviceSource::~ScreenlockMonitorDeviceSource() {
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_MAC)
   StopListeningForScreenlock();
-#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_MAC)
 }
 
 }  // namespace content

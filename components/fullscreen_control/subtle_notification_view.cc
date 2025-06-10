@@ -23,11 +23,6 @@
 #include "ui/views/layout/box_layout.h"
 #include "ui/views/style/typography.h"
 #include "ui/views/widget/widget.h"
-
-#if BUILDFLAG(IS_OHOS)
-#include "ui/views/widget/native_widget_aura.h"
-#endif
-
 namespace {
 
 // Space between the site info label.
@@ -259,10 +254,6 @@ views::Widget* SubtleNotificationView::CreatePopupWidget(
   params.context = parent_view;
 #else
   params.parent = parent_view;
-#endif
-
-#if BUILDFLAG(IS_OHOS)
-  params.native_widget = new views::NativeWidgetAura(popup);
 #endif
 
   params.opacity = views::Widget::InitParams::WindowOpacity::kTranslucent;

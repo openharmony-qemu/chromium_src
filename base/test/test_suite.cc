@@ -103,10 +103,6 @@
 #include "base/allocator/partition_alloc_support.h"
 #endif  // PA_BUILDFLAG(USE_PARTITION_ALLOC)
 
-#if BUILDFLAG(IS_OHOS)
-#include "base/test/test_support_ohos.h"
-#endif
-
 #if GTEST_HAS_DEATH_TEST
 #include "base/gtest_prod_util.h"
 #endif
@@ -353,10 +349,6 @@ int RunUnitTestsUsingBaseTestSuite(int argc, char** argv) {
 }
 
 TestSuite::TestSuite(int argc, char** argv) : argc_(argc), argv_(argv) {
-#if BUILDFLAG(IS_OHOS)
-  base::RegisterPathProviderForOhosTest();
-#endif
-
   PreInitialize();
 }
 

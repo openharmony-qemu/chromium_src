@@ -129,11 +129,6 @@ const char kDisableWebGL[] = "disable-webgl";
 // Disable WebGL2.
 const char kDisableWebGL2[] = "disable-webgl2";
 
-#if BUILDFLAG(IS_OHOS)
-// Disable ServiceWorker, getUserMedia and RTCDataChannel
-const char kEnabledAdvancedSecurityMode[] = "enabled-advanced-security-mode";
-#endif
-
 // Disable FileSystem API.
 const char kDisableFileSystem[]             = "disable-file-system";
 

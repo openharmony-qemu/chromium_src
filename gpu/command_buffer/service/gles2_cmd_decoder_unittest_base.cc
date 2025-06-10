@@ -425,7 +425,7 @@ ContextResult GLES2DecoderTestBase::MaybeInitDecoderWithWorkarounds(
 
   // TODO(boliu): Remove OS_ANDROID once crbug.com/259023 is fixed and the
   // workaround has been reverted.
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
+#if !BUILDFLAG(IS_ANDROID)
   if (normalized_init.has_alpha && !normalized_init.request_alpha) {
     EXPECT_CALL(*gl_, ClearColor(0, 0, 0, 1)).Times(1).RetiresOnSaturation();
   }
@@ -439,13 +439,6 @@ ContextResult GLES2DecoderTestBase::MaybeInitDecoderWithWorkarounds(
     EXPECT_CALL(*gl_, ClearColor(0, 0, 0, 0)).Times(1).RetiresOnSaturation();
   }
 #endif
-
-  if (init.context_type == CONTEXT_TYPE_WEBGL2 &&
-      group_->feature_info()->gl_version_info().is_es3) {
-    EXPECT_CALL(*gl_, Enable(GL_PRIMITIVE_RESTART_FIXED_INDEX))
-        .Times(1)
-        .RetiresOnSaturation();
-  }
 
   if (context_->HasRobustness()) {
     EXPECT_CALL(*gl_, GetGraphicsResetStatusARB())

@@ -95,10 +95,10 @@ class CONTENT_EXPORT ScreenlockMonitorDeviceSource
   SessionMessageWindow session_message_window_;
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_MAC)
   void StartListeningForScreenlock();
   void StopListeningForScreenlock();
-#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_MAC)
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
   class ScreenLockListener : public session_manager::SessionManagerObserver {

@@ -18,7 +18,7 @@
 #if BUILDFLAG(CAN_UNWIND_WITH_FRAME_POINTERS)
 #include <optional>
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
 #include <pthread.h>
 
 #include "base/process/process_handle.h"

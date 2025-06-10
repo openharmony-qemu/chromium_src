@@ -60,8 +60,6 @@ Study::Platform ClientFilterableState::GetCurrentPlatform() {
   // Default BSD and SOLARIS to Linux to not break those builds, although these
   // platforms are not officially supported by Chrome.
   return Study::PLATFORM_LINUX;
-#elif BUILDFLAG(IS_OHOS)
-  return Study::PLATFORM_OHOS;
 #else
 #error Unknown platform
 #endif

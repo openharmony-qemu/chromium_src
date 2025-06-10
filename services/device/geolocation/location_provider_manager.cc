@@ -363,7 +363,7 @@ LocationProviderManager::NewSystemLocationProvider() {
   CHECK(geolocation_system_permission_manager_);
   return device::NewSystemLocationProvider(
       geolocation_system_permission_manager_->GetSystemGeolocationSource());
-#elif BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
   return device::NewSystemLocationProvider();
 #else
   return nullptr;

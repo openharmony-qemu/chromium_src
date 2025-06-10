@@ -419,10 +419,6 @@ void DirectRenderer::DrawFrame(
   if (!use_partial_swap_ && !skip_drawing_root_render_pass)
     needs_full_frame_redraw = true;
 
-#if BUILDFLAG(IS_OHOS)
-  current_frame()->damage_rect = current_frame()->root_damage_rect;
-#endif  // BUILDFLAG(IS_OHOS)
-
   // If we need to redraw the frame, the whole output should be considered
   // damaged.
   if (needs_full_frame_redraw)

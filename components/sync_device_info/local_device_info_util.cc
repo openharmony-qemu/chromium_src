@@ -85,7 +85,7 @@ void OnMachineStatisticsLoaded(LocalDeviceNameInfo* name_info_ptr,
 sync_pb::SyncEnums::DeviceType GetLocalDeviceType() {
 #if BUILDFLAG(IS_CHROMEOS)
   return sync_pb::SyncEnums_DeviceType_TYPE_CROS;
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_LINUX)
   return sync_pb::SyncEnums_DeviceType_TYPE_LINUX;
 #elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
   switch (ui::GetDeviceFormFactor()) {
@@ -110,7 +110,7 @@ DeviceInfo::OsType GetLocalDeviceOSType() {
   return DeviceInfo::OsType::kChromeOsAsh;
 #elif BUILDFLAG(IS_CHROMEOS_LACROS)
   return DeviceInfo::OsType::kChromeOsLacros;
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_LINUX)
   return DeviceInfo::OsType::kLinux;
 #elif BUILDFLAG(IS_ANDROID)
   return DeviceInfo::OsType::kAndroid;
@@ -129,7 +129,7 @@ DeviceInfo::OsType GetLocalDeviceOSType() {
 
 DeviceInfo::FormFactor GetLocalDeviceFormFactor() {
 #if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
-    BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_WIN)
   return DeviceInfo::FormFactor::kDesktop;
 #elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
   return ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET

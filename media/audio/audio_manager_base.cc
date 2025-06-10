@@ -34,11 +34,7 @@ namespace media {
 
 namespace {
 
-#if BUILDFLAG(IS_OHOS)
-const int kStreamCloseDelaySeconds = 100000;
-#else
 const int kStreamCloseDelaySeconds = 5;
-#endif
 
 // Default maximum number of output streams that can be open simultaneously
 // for all platforms.

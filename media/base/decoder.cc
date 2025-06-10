@@ -52,8 +52,6 @@ std::string GetDecoderName(VideoDecoderType type) {
       return "V4L2VideoDecoder";
     case VideoDecoderType::kTesting:
       return "Testing or Mock Video decoder";
-    case VideoDecoderType::kOHOS:
-      return "OHOSVideoDecoder";
     case VideoDecoderType::kOutOfProcess:
       return "OOPVideoDecoder";
     case VideoDecoderType::kVideoToolbox:

@@ -706,9 +706,6 @@ bool Textfield::OnMousePressed(const ui::MouseEvent& event) {
       (event.IsOnlyLeftMouseButton() || event.IsOnlyRightMouseButton())) {
     if (!had_focus)
       RequestFocusWithPointer(ui::EventPointerType::kMouse);
-#if BUILDFLAG(IS_OHOS)
-    SetRequestKeyboardReasonWithPointer(ui::EventPointerType::kMouse);
-#endif
 #if !BUILDFLAG(IS_WIN)
     ShowVirtualKeyboardIfEnabled();
 #endif
@@ -1147,12 +1144,6 @@ void Textfield::OnPaint(gfx::Canvas* canvas) {
 
 void Textfield::OnFocus() {
   is_processing_focus_ = true;
-
-#if BUILDFLAG(IS_OHOS)
-  if (focus_reason_ == ui::TextInputClient::FOCUS_REASON_NONE)
-    request_keyboard_reason_ =
-        ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_OTHER;
-#endif
 
   // Set focus reason if focused was gained without mouse or touch input.
   if (focus_reason_ == ui::TextInputClient::FOCUS_REASON_NONE)
@@ -1788,30 +1779,6 @@ ui::TextInputClient::FocusReason Textfield::GetFocusReason() const {
   return focus_reason_;
 }
 
-#if BUILDFLAG(IS_OHOS)
-ui::RequestKeyboardReason Textfield::GetRequestKeyboardReason() const {
-  return request_keyboard_reason_;
-}
-
-void Textfield::SetRequestKeyboardReasonWithPointer(
-    ui::EventPointerType pointer_type) {
-  switch (pointer_type) {
-    case ui::EventPointerType::kMouse:
-      request_keyboard_reason_ =
-          ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_MOUSE;
-      break;
-    case ui::EventPointerType::kTouch:
-      request_keyboard_reason_ =
-          ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_TOUCH;
-      break;
-    default:
-      request_keyboard_reason_ =
-          ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_OTHER;
-      break;
-  }
-}
-#endif
-
 bool Textfield::GetTextRange(gfx::Range* range) const {
   if (!ImeEditingAllowed())
     return false;
@@ -2424,9 +2391,6 @@ void Textfield::RequestFocusForGesture(const ui::GestureEventDetails& details) {
 #endif
 
   RequestFocusWithPointer(details.primary_pointer_type());
-#if BUILDFLAG(IS_OHOS)
-  SetRequestKeyboardReasonWithPointer(details.primary_pointer_type());
-#endif
   if (show_virtual_keyboard)
     ShowVirtualKeyboardIfEnabled();
 }

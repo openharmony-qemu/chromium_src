@@ -38,9 +38,6 @@ namespace {
 constexpr int kChunkCloseDistance = 10;
 
 constexpr size_t kReadBufferSize = 256 * 1024;
-#if BUILDFLAG(IS_OHOS)
-constexpr size_t kReadLargeBufferSize = 2048 * 1024;
-#endif
 
 // Return true if the HTTP response of `loader` is a successful one and loading
 // should continue. 4xx error indicate subsequent requests will fail too.
@@ -123,12 +120,6 @@ bool DocumentLoaderImpl::Init(std::unique_ptr<URLLoaderWrapper> loader,
       !base::StartsWith(url, "file://", base::CompareCase::INSENSITIVE_ASCII) &&
       loader_->IsAcceptRangesBytes() && !loader_->IsContentEncoded() &&
       GetDocumentSize());
-
-#if BUILDFLAG(IS_OHOS)
-  if (loader_->GetContentLength() > kReadLargeBufferSize) {
-    buffer_.resize(kReadLargeBufferSize);
-  }
-#endif
 
   ReadMore();
   return true;
@@ -409,9 +400,6 @@ void DocumentLoaderImpl::ReadComplete() {
       SaveChunkData();
   }
   loader_.reset();
-#if BUILDFLAG(IS_OHOS)
-  buffer_.resize(kReadBufferSize);
-#endif
   if (IsDocumentComplete()) {
     client_->OnDocumentComplete();
   } else {

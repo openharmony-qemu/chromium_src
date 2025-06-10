@@ -31,10 +31,6 @@
 #include "base/trace_event/base_tracing.h"
 #include "build/build_config.h"
 
-#if BUILDFLAG(IS_OHOS)
-#include "hicollie/hicollie.h"
-#endif
-
 namespace base {
 
 namespace {
@@ -62,61 +58,6 @@ std::atomic<bool> g_keep_monitoring{true};
 // If true, indicates that this process's shutdown sequence has started. Once
 // flipped to true, cannot be un-flipped.
 std::atomic<bool> g_shutting_down{false};
-
-#if BUILDFLAG(IS_OHOS)
-BASE_FEATURE(kEnableFreezeDetectionMode,
-             "kEnableFreezeDetectionMode",
-#if defined(FREEZE_DETECTION_MODE)
-            FEATURE_ENABLED_BY_DEFAULT);
-#else
-            FEATURE_DISABLED_BY_DEFAULT);
-#endif
-
-std::atomic<bool> g_is_report{false};
-std::atomic<bool> g_need_report{false};
-std::atomic<bool> g_is_init{false};
-std::atomic<uint32_t> g_times = 0;
-constexpr uint32_t kHungThreadReportCycle = 10;
-constexpr uint32_t kHungThreadReportThreshold = 3;
-constexpr uint32_t kHungThreadReportTime = 6;
- 
-constexpr auto kUIMonitoringPeriod = base::Seconds(1);
-constexpr auto kUIHangWatchTime = base::Seconds(4);
- 
-void UpdateHungThreadReportStatus(std::atomic<bool>& need_report_flag,
-                                  std::atomic<bool>& is_report_flag,
-                                  std::atomic<uint32_t>& report_cycle_counter) {
-  report_cycle_counter.fetch_add(
-      static_cast<uint32_t>(kUIMonitoringPeriod.InSeconds()),
-      std::memory_order_relaxed);
-  if (report_cycle_counter.load(std::memory_order_acquire) %
-      kHungThreadReportCycle ==
-      kHungThreadReportThreshold) {
-    need_report_flag.store(true, std::memory_order_relaxed);
-    is_report_flag.store(false, std::memory_order_relaxed);
-  }
-  if (report_cycle_counter.load(std::memory_order_acquire) %
-      kHungThreadReportCycle ==
-      kHungThreadReportTime) {
-    need_report_flag.store(true, std::memory_order_relaxed);
-    is_report_flag.store(true, std::memory_order_relaxed);
-  }
-}
- 
-void OH_HiCollie_Task() {
-  if (g_need_report.load(std::memory_order_relaxed) == true) {
-    bool temp = g_is_report.load(std::memory_order_relaxed);
-    int reportResult = OH_HiCollie_Report(&temp);
-    LOG(ERROR) <<"OH_HiCollie_Report:reportResult = " << reportResult;
-    g_need_report.store(false, std::memory_order_relaxed);
-    g_is_report.store(false, std::memory_order_relaxed);
-  }
-}
-
-bool IsEnableFreezeDetectionMode() {
-  return FeatureList::IsEnabled(kEnableFreezeDetectionMode);
-}
-#endif
 
 // Emits the hung thread count histogram. |count| is the number of threads
 // of type |thread_type| that were hung or became hung during the last
@@ -164,11 +105,6 @@ void LogStatusHistogram(HangWatcher::ThreadType thread_type,
                 "HangWatcher.IsThreadHung.BrowserProcess.UIThread.Normal",
                 any_thread_hung);
           }
-#if BUILDFLAG(IS_OHOS)
-          if (base::IsEnableFreezeDetectionMode() && any_thread_hung) {
-            UpdateHungThreadReportStatus(g_need_report, g_is_report, g_times);
-          }
-#endif
           break;
         case HangWatcher::ThreadType::kThreadPoolThread:
           // Not recorded for now.
@@ -332,16 +268,6 @@ WatchHangsInScope::WatchHangsInScope(TimeDelta timeout) {
   // and resuing the value.
 
   previous_deadline_ = old_deadline;
-
-#if BUILDFLAG(IS_OHOS)
-  if (base::IsEnableFreezeDetectionMode()) {
-    timeout =
-        g_hang_watcher_process_type == HangWatcher::ProcessType::kBrowserProcess
-        ? kUIHangWatchTime
-        : kDefaultHangWatchTime;
-  }
-#endif
-
   TimeTicks deadline = TimeTicks::Now() + timeout;
   current_hang_watch_state->SetDeadline(deadline);
   current_hang_watch_state->IncrementNestingLevel();
@@ -418,14 +344,6 @@ void HangWatcher::InitializeOnMainThread(ProcessType process_type,
   DCHECK(g_io_thread_log_level == LoggingLevel::kNone);
   DCHECK(g_main_thread_log_level == LoggingLevel::kNone);
   DCHECK(g_threadpool_log_level == LoggingLevel::kNone);
-
-#if BUILDFLAG(IS_OHOS)
-  if (base::IsEnableFreezeDetectionMode() &&
-      g_is_init.load(std::memory_order_relaxed) == false) {
-    OH_HiCollie_Init_StuckDetection(OH_HiCollie_Task);
-    g_is_init.store(true, std::memory_order_relaxed);
-  }
-#endif
 
   bool enable_hang_watcher = base::FeatureList::IsEnabled(kEnableHangWatcher);
 
@@ -685,15 +603,6 @@ void HangWatcher::Wait() {
     constexpr base::TimeDelta kWaitDriftTolerance = base::Milliseconds(100);
 
     const base::TimeTicks time_before_wait = tick_clock_->NowTicks();
-
-#if BUILDFLAG(IS_OHOS)
-    if (base::IsEnableFreezeDetectionMode()) {
-      monitoring_period_ =
-          g_hang_watcher_process_type == HangWatcher::ProcessType::kBrowserProcess
-          ? kUIMonitoringPeriod
-          : kMonitoringPeriod;
-    }
-#endif
 
     // Sleep until next scheduled monitoring or until signaled.
     const bool was_signaled = should_monitor_.TimedWait(monitoring_period_);

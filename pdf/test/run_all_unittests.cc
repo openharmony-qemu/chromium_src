@@ -29,10 +29,6 @@
 #include "gin/v8_initializer.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-#include "base/test/test_support_ohos.h"
-#endif
-
 namespace {
 
 #if defined(V8_USE_EXTERNAL_STARTUP_DATA)
@@ -116,9 +112,6 @@ class PdfTestSuite final : public base::TestSuite {
 }  // namespace
 
 int main(int argc, char** argv) {
-#if BUILDFLAG(IS_OHOS)
-  base::RegisterPathProviderForOhosTest();
-#endif
   PdfTestSuite test_suite(argc, argv);
   return base::LaunchUnitTests(
       argc, argv,

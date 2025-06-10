@@ -152,7 +152,7 @@ scoped_refptr<SharedBufferDispatcher> SharedBufferDispatcher::Deserialize(
 
   PlatformHandle handles[2];
 #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && \
-    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL) && !BUILDFLAG(IS_OHOS)
+    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL)
   if (serialized_state->access_mode ==
       MOJO_PLATFORM_SHARED_MEMORY_REGION_ACCESS_MODE_WRITABLE) {
     if (num_platform_handles != 2)
@@ -270,7 +270,7 @@ MojoResult SharedBufferDispatcher::DuplicateBufferHandle(
     } else if (region_.GetMode() ==
                base::subtle::PlatformSharedMemoryRegion::Mode::kWritable) {
       auto handle = region_.PassPlatformHandle();
-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_APPLE)
       // On POSIX systems excluding Android, Fuchsia, iOS, and macOS, we
       // explicitly wipe out the secondary (read-only) FD from the platform
       // handle to repurpose it for exclusive unsafe usage.
@@ -331,7 +331,7 @@ void SharedBufferDispatcher::StartSerialize(uint32_t* num_bytes,
   *num_ports = 0;
   *num_platform_handles = 1;
 #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && \
-    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL) && !BUILDFLAG(IS_OHOS)
+    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL)
   if (region_.GetMode() ==
       base::subtle::PlatformSharedMemoryRegion::Mode::kWritable) {
     *num_platform_handles = 2;
@@ -370,7 +370,7 @@ bool SharedBufferDispatcher::EndSerialize(void* destination,
 
   auto region = std::move(region_);
 #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && \
-    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL) && !BUILDFLAG(IS_OHOS)
+    !BUILDFLAG(MOJO_USE_APPLE_CHANNEL)
   if (region.GetMode() ==
       base::subtle::PlatformSharedMemoryRegion::Mode::kWritable) {
     PlatformHandle platform_handles[2];

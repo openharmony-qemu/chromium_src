@@ -236,7 +236,7 @@ TEST(VariationsStudyFilteringTest, CheckStudyPlatform) {
        Study::PLATFORM_CHROMEOS, Study::PLATFORM_CHROMEOS_LACROS,
        Study::PLATFORM_ANDROID, Study::PLATFORM_IOS,
        Study::PLATFORM_ANDROID_WEBLAYER, Study::PLATFORM_FUCHSIA,
-       Study::PLATFORM_ANDROID_WEBVIEW, Study::PLATFORM_OHOS});
+       Study::PLATFORM_ANDROID_WEBVIEW});
   static_assert(platforms.size() == Study::Platform_ARRAYSIZE,
                 "|platforms| must include all platforms.");
   std::array<bool, platforms.size()> platform_added = {false};

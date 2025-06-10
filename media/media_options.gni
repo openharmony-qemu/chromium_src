@@ -109,7 +109,7 @@ declare_args() {
 
   # Enable browser managed persistent metadata storage for EME persistent
   # session and persistent usage record session.
-  enable_media_drm_storage = is_android || is_castos || is_ohos
+  enable_media_drm_storage = is_android || is_castos
 
   # Enable HLS manifest parser and demuxer.
   enable_hls_demuxer = proprietary_codecs
@@ -119,7 +119,7 @@ declare_args() {
   # Windows, Mac, and Android.
   enable_hevc_parser_and_hw_decoder =
       proprietary_codecs &&
-      (use_fuzzing_engine || is_win || is_apple || is_android || is_linux || is_ohos)
+      (use_fuzzing_engine || is_win || is_apple || is_android || is_linux)
 
   # Enable inclusion of VVC/H.266 parser/demuxer, and also enable VVC/H.266 decoding
   # with hardware acceleration provided by platform. Disabled by default for all builds.
@@ -143,7 +143,7 @@ declare_args() {
   # applies to video-capable devices.
   enable_platform_hevc =
       proprietary_codecs && (enable_hevc_parser_and_hw_decoder ||
-                             is_cast_media_device || is_chromeos_lacros || is_ohos)
+                             is_cast_media_device || is_chromeos_lacros)
 
   enable_mse_mpeg2ts_stream_parser =
       proprietary_codecs &&
@@ -153,9 +153,9 @@ declare_args() {
 declare_args() {
   platform_has_optional_hevc_decode_support =
       enable_platform_hevc &&
-      (is_win || is_chromeos || is_linux || is_apple || is_android || is_ohos)
+      (is_win || is_chromeos || is_linux || is_apple || is_android)
   platform_has_optional_hevc_encode_support =
-      enable_platform_hevc && (is_win || is_apple || is_android || is_ohos)
+      enable_platform_hevc && (is_win || is_apple || is_android)
 }
 
 assert(!enable_hls_demuxer || enable_mse_mpeg2ts_stream_parser,
@@ -202,7 +202,7 @@ declare_args() {
   #
   # TODO(crbug.com/1336055): Remove legacy target_cpu hack used for targeting
   # desktop Chromecast builds.
-  if (is_posix && !is_android && !is_apple && !is_ohos &&
+  if (is_posix && !is_android && !is_apple &&
       (!is_castos || (target_cpu == "x86" || target_cpu == "x64") ||
        is_cast_audio_only)) {
     use_alsa = true
@@ -215,7 +215,7 @@ declare_args() {
     # TODO(crbug.com/40636948): We shouldn't have to do this, but it's unclear why
     # our test bots are hanging and all of the ones that don't hang just fall
     # back to ALSA after a connection error anyways.
-    if (!use_cras && !is_castos && !is_asan && !is_tsan && !is_ohos) {
+    if (!use_cras && !is_castos && !is_asan && !is_tsan) {
       use_pulseaudio = true
     }
   }
@@ -276,7 +276,7 @@ _default_mojo_media_host = ""
 if (is_cast_media_device) {
   _default_mojo_media_services = cast_mojo_media_services
   _default_mojo_media_host = cast_mojo_media_host
-} else if (is_android || is_ohos) {
+} else if (is_android) {
   _default_mojo_media_services = [
     "cdm",
     "audio_decoder",
@@ -338,7 +338,7 @@ declare_args() {
 declare_args() {
   # Media Remoting RPC is disabled on Android since it's unused but increases
   # the native binary size by ~70Kb.
-  enable_media_remoting_rpc = enable_media_remoting && !is_android && !is_ohos
+  enable_media_remoting_rpc = enable_media_remoting && !is_android
 }
 
 declare_args() {
@@ -369,14 +369,6 @@ media_subcomponent_deps = [
 
 if (is_fuchsia) {
   media_subcomponent_deps += [ "//media/fuchsia/common" ]
-}
-
-if (is_ohos) {
-  declare_args() {
-    ohos_enable_media_router = false
-  }
-
-  media_subcomponent_deps += [ "//media/base/ohos" ]
 }
 
 if (media_use_ffmpeg) {

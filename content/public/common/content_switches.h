@@ -243,10 +243,6 @@ CONTENT_EXPORT extern const char kWebXrRuntimeOpenXr[];
 CONTENT_EXPORT extern const char kZygoteCmdPrefix[];
 CONTENT_EXPORT extern const char kZygoteProcess[];
 
-#if BUILDFLAG(IS_OHOS)
-CONTENT_EXPORT extern const char kEnabledAdvancedSecurityMode[];
-#endif
-
 #if BUILDFLAG(IS_ANDROID)
 CONTENT_EXPORT extern const char kDisableMediaSessionAPI[];
 CONTENT_EXPORT extern const char kDisableOoprDebugCrashDump[];

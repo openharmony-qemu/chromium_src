@@ -6,9 +6,9 @@ import("//chrome/common/features.gni")
 import("//crypto/features.gni")
 import("//ui/webui/resources/tools/build_webui.gni")
 
-assert(use_nss_certs || chrome_root_store_cert_management_ui || is_ohos)
+assert(use_nss_certs || chrome_root_store_cert_management_ui)
 
-if (chrome_root_store_cert_management_ui || is_ohos) {
+if (chrome_root_store_cert_management_ui) {
   import("//mojo/public/tools/bindings/mojom.gni")
 
   mojom("mojom") {
@@ -36,7 +36,7 @@ build_webui("build") {
   static_files = []
   css_files = []
 
-  if (use_nss_certs || is_ohos) {
+  if (use_nss_certs) {
     web_component_files += [
       "ca_trust_edit_dialog.ts",
       "certificate_delete_confirmation_dialog.ts",

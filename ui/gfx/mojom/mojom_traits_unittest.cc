@@ -52,12 +52,6 @@ base::ScopedFD CreateValidLookingBufferHandle() {
       .PassPlatformHandle()
       .fd;
 }
-#elif BUILDFLAG(IS_OHOS)
-base::ScopedFD CreateValidLookingBufferHandle() {
-  return base::UnsafeSharedMemoryRegion::TakeHandleForSerialization(
-             base::UnsafeSharedMemoryRegion::Create(1024))
-      .PassPlatformHandle();
-}
 #elif BUILDFLAG(IS_FUCHSIA)
 zx::vmo CreateValidLookingBufferHandle() {
   return base::UnsafeSharedMemoryRegion::TakeHandleForSerialization(
@@ -211,7 +205,7 @@ TEST_F(StructTraitsTest, GpuMemoryBufferHandle) {
   handle2.id = kId;
   handle2.offset = kOffset;
   handle2.stride = kStride;
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   const uint64_t kModifier = 2;
   base::ScopedFD buffer_handle = CreateValidLookingBufferHandle();
   handle2.native_pixmap_handle.modifier = kModifier;

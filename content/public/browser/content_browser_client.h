@@ -2929,12 +2929,6 @@ class CONTENT_EXPORT ContentBrowserClient {
   // extension origins.
   virtual bool ShouldUseFirstPartyStorageKey(const url::Origin& origin);
 
-#if BUILDFLAG(IS_OHOS)
-  // Check if advanced security mode is turned on in the privacy and security
-  // settings page.
-  virtual bool IsAdvancedSecurityMode();
-#endif
-
   // Allows the embedder to return a delegate for the responsiveness calculator.
   // The default implementation returns nullptr.
   virtual std::unique_ptr<ResponsivenessCalculatorDelegate>

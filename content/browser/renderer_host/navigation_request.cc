@@ -270,10 +270,6 @@ enum class UserAgentStringType {
   kMaxValue = kOverriden
 };
 
-#if BUILDFLAG(IS_OHOS)
-constexpr int kCommitDelay = 30;
-#endif  // BUILDFLAG(IS_OHOS)
-
 // Returns the net load flags to use based on the navigation type.
 // TODO(clamy): Remove the blink code that sets the caching flags.
 void UpdateLoadFlagsWithCacheFlags(int* load_flags,
@@ -2469,18 +2465,10 @@ bool NavigationRequest::MaybeStartPrerenderingActivationChecks() {
   // Post a task to run the conditions in case BeginNavigation() is not expected
   // to run synchronously. OnPrerenderingActivationChecksComplete() will be
   // called after all the deferring conditions finish.
-#if BUILDFLAG(IS_OHOS)
-  base::SequencedTaskRunner::GetCurrentDefault()->PostNonNestableDelayedTask(
-      FROM_HERE,
-      base::BindOnce(&NavigationRequest::RunCommitDeferringConditions,
-                     weak_factory_.GetWeakPtr()),
-      base::Milliseconds(kCommitDelay));
-#else
   base::SequencedTaskRunner::GetCurrentDefault()->PostNonNestableTask(
       FROM_HERE,
       base::BindOnce(&NavigationRequest::RunCommitDeferringConditions,
                      weak_factory_.GetWeakPtr()));
-#endif  // BUILDFLAG(IS_OHOS)
   return true;
 }
 

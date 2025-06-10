@@ -100,9 +100,6 @@ bool GpuMemoryBufferSupport::IsNativeGpuMemoryBufferConfigurationSupported(
       return false;
   }
   NOTREACHED();
-#elif BUILDFLAG(IS_OHOS)
-  // TODO: FIXME
-  return false;
 #elif BUILDFLAG(IS_ANDROID)
   if (!base::AndroidHardwareBufferCompat::IsSupportAvailable()) {
     return false;
@@ -270,10 +267,6 @@ GpuMemoryBufferSupport::CreateGpuMemoryBufferImplFromHandle(
       return nullptr;
 #endif
     default:
-#if BUILDFLAG(IS_OHOS)
-      // TODO: FIXME
-      return nullptr;
-#endif
       // TODO(dcheng): Remove default case (https://crbug.com/676224).
       NOTREACHED() << gfx::BufferFormatToString(format) << ", "
                    << gfx::BufferUsageToString(usage);

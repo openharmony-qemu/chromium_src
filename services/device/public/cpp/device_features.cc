@@ -85,19 +85,11 @@ const base::FeatureParam<device::mojom::LocationProviderManagerMode>::Option
          "HybridPlatform"},
 };
 
-#if BUILDFLAG(IS_OHOS)
-const base::FeatureParam<device::mojom::LocationProviderManagerMode>
-    kLocationProviderManagerParam{
-        &kLocationProviderManager, "LocationProviderManagerMode",
-        device::mojom::LocationProviderManagerMode::kHybridPlatform,
-        &location_provider_manager_mode_options};
-#else
 const base::FeatureParam<device::mojom::LocationProviderManagerMode>
     kLocationProviderManagerParam{
         &kLocationProviderManager, "LocationProviderManagerMode",
         device::mojom::LocationProviderManagerMode::kNetworkOnly,
         &location_provider_manager_mode_options};
-#endif  // BUILDFLAG(IS_OHOS)
 
 bool IsOsLevelGeolocationPermissionSupportEnabled() {
 #if BUILDFLAG(IS_WIN)

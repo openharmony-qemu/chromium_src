@@ -74,8 +74,6 @@
 
 #if BUILDFLAG(IS_ANDROID)
 #include "net/cert/cert_verify_proc_android.h"
-#elif BUILDFLAG(IS_OHOS)
-#include "net/cert/cert_verify_proc_ohos.h"
 #elif BUILDFLAG(IS_IOS)
 #include "base/ios/ios_util.h"
 #include "net/cert/cert_verify_proc_ios.h"
@@ -172,7 +170,6 @@ int MockCertVerifyProc::VerifyInternal(X509Certificate* cert,
 // some of the test expectations.
 enum CertVerifyProcType {
   CERT_VERIFY_PROC_ANDROID,
-  CERT_VERIFY_PROC_OHOS,
   CERT_VERIFY_PROC_IOS,
   CERT_VERIFY_PROC_BUILTIN,
   CERT_VERIFY_PROC_BUILTIN_CHROME_ROOTS,
@@ -186,8 +183,6 @@ std::string VerifyProcTypeToName(
   switch (params.param) {
     case CERT_VERIFY_PROC_ANDROID:
       return "CertVerifyProcAndroid";
-    case CERT_VERIFY_PROC_OHOS:
-      return "CertVerifyProcOHOS";
     case CERT_VERIFY_PROC_IOS:
       return "CertVerifyProcIOS";
     case CERT_VERIFY_PROC_BUILTIN:
@@ -215,10 +210,6 @@ scoped_refptr<CertVerifyProc> CreateCertVerifyProc(
     case CERT_VERIFY_PROC_ANDROID:
       return base::MakeRefCounted<CertVerifyProcAndroid>(
           std::move(cert_net_fetcher), std::move(crl_set));
-#elif BUILDFLAG(IS_OHOS)
-    case CERT_VERIFY_PROC_OHOS:
-      return base::MakeRefCounted<CertVerifyProcOHOS>(
-          std::move(cert_net_fetcher), std::move(crl_set), false);
 #elif BUILDFLAG(IS_IOS)
     case CERT_VERIFY_PROC_IOS:
       return base::MakeRefCounted<CertVerifyProcIOS>(std::move(crl_set));
@@ -252,8 +243,6 @@ scoped_refptr<CertVerifyProc> CreateCertVerifyProc(
 constexpr CertVerifyProcType kAllCertVerifiers[] = {
 #if BUILDFLAG(IS_ANDROID)
     CERT_VERIFY_PROC_ANDROID,
-#elif BUILDFLAG(IS_OHOS)
-    CERT_VERIFY_PROC_OHOS,
 #elif BUILDFLAG(IS_IOS)
     CERT_VERIFY_PROC_IOS,
 #elif BUILDFLAG(IS_FUCHSIA)
@@ -2526,8 +2515,6 @@ class CertVerifyProcNameNormalizationTest : public CertVerifyProcInternalTest {
     switch (verify_proc_type()) {
       case CERT_VERIFY_PROC_ANDROID:
         return prefix + "Android";
-      case CERT_VERIFY_PROC_OHOS:
-        return prefix + "OHOS";
       case CERT_VERIFY_PROC_IOS:
         return prefix + "IOS";
       case CERT_VERIFY_PROC_BUILTIN:
@@ -2582,9 +2569,6 @@ TEST_P(CertVerifyProcNameNormalizationTest, StringType) {
 
   switch (verify_proc_type()) {
     case CERT_VERIFY_PROC_IOS:
-      EXPECT_THAT(error, IsError(ERR_CERT_AUTHORITY_INVALID));
-      break;
-    case CERT_VERIFY_PROC_OHOS:
       EXPECT_THAT(error, IsError(ERR_CERT_AUTHORITY_INVALID));
       break;
     case CERT_VERIFY_PROC_ANDROID:

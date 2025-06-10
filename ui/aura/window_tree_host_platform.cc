@@ -199,10 +199,8 @@ void WindowTreeHostPlatform::OnVideoCaptureLockDestroyed() {
 }
 
 void WindowTreeHostPlatform::SetCursorNative(gfx::NativeCursor cursor) {
-#if !BUILDFLAG(IS_OHOS)
   if (cursor == current_cursor_)
     return;
-#endif
   current_cursor_ = cursor;
 
   platform_window_->SetCursor(cursor.platform());
@@ -334,12 +332,6 @@ void WindowTreeHostPlatform::OnAcceleratedWidgetDestroyed() {
 }
 
 void WindowTreeHostPlatform::OnActivationChanged(bool active) {}
-
-#if BUILDFLAG(IS_OHOS)
-void WindowTreeHostPlatform::SetSurfaceId(uint64_t surface_id) {
-  WindowTreeHost::SetSurfaceId(surface_id);
-}
-#endif
 
 void WindowTreeHostPlatform::OnMouseEnter() {
   client::CursorClient* cursor_client = client::GetCursorClient(window());

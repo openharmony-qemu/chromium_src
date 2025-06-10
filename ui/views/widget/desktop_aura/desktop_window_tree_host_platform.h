@@ -71,11 +71,6 @@ class VIEWS_EXPORT DesktopWindowTreeHostPlatform
   void OnNativeWidgetCreated(const Widget::InitParams& params) override;
   void OnWidgetInitDone() override;
   void OnActiveWindowChanged(bool active) override;
- 
-#if BUILDFLAG(IS_OHOS)
-  void SetSurfaceId(uint64_t surface_id) override;
-#endif
-
   std::unique_ptr<corewm::Tooltip> CreateTooltip() override;
   std::unique_ptr<aura::client::DragDropClient> CreateDragDropClient() override;
   void Close() override;
@@ -215,10 +210,6 @@ class VIEWS_EXPORT DesktopWindowTreeHostPlatform
   const Widget* GetWidget() const;
 
   void ScheduleRelayout();
-
-#if BUILDFLAG(IS_OHOS)
-  void SetVisibleOHOS(bool visible);
-#endif
 
  private:
   FRIEND_TEST_ALL_PREFIXES(DesktopWindowTreeHostPlatformTest,

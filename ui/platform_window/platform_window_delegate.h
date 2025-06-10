@@ -171,12 +171,6 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
   virtual void OnOverviewModeChanged(bool in_overview) {}
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-  // On the ohos, the fullscreen is asynchronous and needs to be notified
-  // to complete the change.
-  virtual void OnFullscreenStateChanged();
-#endif
-
   enum RotateDirection {
     kForward,
     kBackward,
@@ -199,10 +193,6 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
   virtual void OnAcceleratedWidgetDestroyed() = 0;
 
   virtual void OnActivationChanged(bool active) = 0;
-
-#if BUILDFLAG(IS_OHOS)
-  virtual void SetSurfaceId(uint64_t surface_id) = 0;
-#endif
 
   // Requests size constraints for the PlatformWindow in DIP.
   virtual std::optional<gfx::Size> GetMinimumSizeForWindow() const;

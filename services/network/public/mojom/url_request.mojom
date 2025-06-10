@@ -530,12 +530,6 @@ struct URLRequest {
   AttributionReportingEligibility attribution_reporting_eligibility =
     AttributionReportingEligibility.kUnset;
 
-  [EnableIf=is_ohos]
-  bool allow_preload_record;
-
-  [EnableIf=is_ohos]
-  url.mojom.Url main_page;
-
   // When applicable, indicates the token of an Attribution Reporting API
   // eligible navigation request to which the current request is associated.
   mojo_base.mojom.UnguessableToken? attribution_reporting_src_token;

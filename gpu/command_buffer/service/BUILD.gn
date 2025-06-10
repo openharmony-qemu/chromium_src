@@ -314,33 +314,10 @@ target(link_target_type, "gles2_sources") {
     "webgpu_decoder.h",
   ]
 
-  if (is_ohos) {
-    sources += [
-      "abstract_texture_ohos.cc",
-      "abstract_texture_ohos.h",
-    ]
-  } else if (is_android) {
+  if (is_android) {
     sources += [
       "abstract_texture_android.cc",
       "abstract_texture_android.h",
-    ]
-  }
-
-  if (is_ohos) {
-    sources += [
-      "ohos/native_image_texture_gl_owner.cc",
-      "ohos/native_image_texture_gl_owner.h",
-      "ohos/native_image_texture_owner.cc",
-      "ohos/native_image_texture_owner.h",
-      "ohos/shared_image_backing_ohos.cc",
-      "ohos/shared_image_backing_ohos.h",
-      "ohos/shared_image_video_ohos_native_image.cc",
-      "ohos/shared_image_video_ohos_native_image.h",
-      "ohos/shared_image_video_ohos.cc",
-      "ohos/shared_image_video_ohos.h",
-      "ref_counted_lock.cc",
-      "ref_counted_lock.h",
-      "stream_texture_shared_image_interface.h",
     ]
   }
 
@@ -451,7 +428,7 @@ target(link_target_type, "gles2_sources") {
       "shared_image/texture_holder_vk.h",
     ]
 
-    if (is_linux || is_fuchsia || is_win || is_ohos) {
+    if (is_linux || is_fuchsia || is_win) {
       sources += [
         "external_semaphore.cc",
         "external_semaphore.h",

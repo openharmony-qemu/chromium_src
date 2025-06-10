@@ -211,16 +211,6 @@ std::optional<float> TestScreen::GetPreferredScaleFactorForWindow(
   return Screen::GetPreferredScaleFactorForWindow(window);
 }
 
-#if BUILDFLAG(IS_OHOS)
-  gfx::NativeWindow TestScreen::GetLocalProcessWindowAtPoint(
-      const gfx::Point& point,
-      const std::set<gfx::NativeWindow>& ignore,
-      const int32_t display_id) {
-    NOTIMPLEMENTED_LOG_ONCE();
-    return gfx::NativeWindow();
-  }
-#endif
-
 TestScreen::TestScreen(const gfx::Rect& screen_bounds) {
   static int64_t synthesized_display_id = 2000;
   display::Display display(synthesized_display_id++);

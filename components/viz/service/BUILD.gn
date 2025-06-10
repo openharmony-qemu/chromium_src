@@ -434,15 +434,6 @@ viz_component("service") {
     ]
   }
 
-  if (is_ohos) {
-    sources += [
-      "frame_sinks/external_begin_frame_source_ohos.cc",
-      "frame_sinks/external_begin_frame_source_ohos.h",
-    ]
- 
-    libs = [ "native_vsync" ]
-  }
- 
   if (use_ozone) {
     sources += [
       "display/overlay_processor_delegated.cc",

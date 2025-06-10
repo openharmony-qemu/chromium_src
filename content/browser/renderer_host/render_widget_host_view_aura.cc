@@ -485,7 +485,7 @@ gfx::NativeViewAccessible RenderWidgetHostViewAura::GetNativeViewAccessible() {
     return ToBrowserAccessibilityWin(manager->GetBrowserAccessibilityRoot())
         ->GetCOM();
 
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_LINUX)
   ui::BrowserAccessibilityManager* manager =
       host()->GetOrCreateRootBrowserAccessibilityManager();
   if (manager && manager->GetBrowserAccessibilityRoot())
@@ -1604,20 +1604,6 @@ ui::TextInputClient::FocusReason RenderWidgetHostViewAura::GetFocusReason()
       return ui::TextInputClient::FOCUS_REASON_OTHER;
   }
 }
-
-#if BUILDFLAG(IS_OHOS)
-ui::RequestKeyboardReason RenderWidgetHostViewAura::GetRequestKeyboardReason()
-    const {
-  switch (last_pointer_type_) {
-    case ui::EventPointerType::kMouse:
-      return ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_MOUSE;
-    case ui::EventPointerType::kTouch:
-      return ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_TOUCH;
-    default:
-      return ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_OTHER;
-  }
-}
-#endif
 
 bool RenderWidgetHostViewAura::GetTextRange(gfx::Range* range) const {
   if (!text_input_manager_ || !GetFocusedWidget())

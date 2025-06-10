@@ -2488,6 +2488,10 @@ void ExtensionPrefs::FinishExtensionInfoPrefs(
 
   for (auto& observer : observer_list_)
     observer.OnExtensionRegistered(extension_id, install_time, is_enabled);
+
+#ifdef OHOS_ARKWEB_EXTENSIONS
+  prefs_->CommitPendingWrite();
+#endif // OHOS_ARKWEB_EXTENSIONS
 }
 
 void ExtensionPrefs::BackfillAndMigrateInstallTimePrefs() {

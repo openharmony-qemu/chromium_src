@@ -559,6 +559,7 @@ FilePath FilePath::Append(StringPieceType component) const {
       }
     }
   }
+  //DLOG(WARNING) << "huamengzheng, FilePath::Append, path_:" << new_path.path_ << " appended:" << appended;
   new_path.path_.append(appended);
   return new_path;
 }

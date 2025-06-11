@@ -16,6 +16,8 @@
 #include "base/task/thread_pool.h"
 #include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
 #include "base/ohos/d_vsync/include/d_vsync_controller.h"
+
+extern bool QueryBoolFromBrowserProcess(const std::string& key, bool defaultValue);
 #endif
 
 namespace viz {
@@ -83,6 +85,7 @@ ExternalBeginFrameSourceOHOS::ExternalBeginFrameSourceOHOS(
   vsync_adapter_.SetOnVsyncEndCallback(ExternalBeginFrameSourceOHOS::OnVSyncEndCallback);
   base::ohos::DynamicFrameRateDecision::GetInstance().Init();
   last_dvsync_state_ = base::ohos::DVsyncController::GetInstance().GetIsFling();
+  dvsync_enable_ = QueryBoolFromBrowserProcess("web.ohos.dvsync", false);
 #endif
 }
 
@@ -167,15 +170,17 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
-bool currentDvsyncState = base::ohos::DVsyncController::GetInstance().GetIsFling();
-if (last_dvsync_state_ != currentDvsyncState) {
-  LOG(INFO) << "ExternalBeginFrameSourceOHOS::OnVSyncImpl::SetDVSyncSwitch: " << currentDvsyncState;
-  TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::SetDVSyncSwitch", "SetDVSyncSwitch",
-               currentDvsyncState);
-  vsync_adapter_.SetDVSyncSwitch(currentDvsyncState);
-  last_dvsync_state_ = currentDvsyncState;
-}
+  ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
+  if (dvsync_enable_) {
+    bool currentDvsyncState = base::ohos::DVsyncController::GetInstance().GetIsFling();
+    if (last_dvsync_state_ != currentDvsyncState) {
+      LOG(INFO) << "ExternalBeginFrameSourceOHOS::OnVSyncImpl::SetDVSyncSwitch: " << currentDvsyncState;
+      TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::SetDVSyncSwitch", "SetDVSyncSwitch",
+                  currentDvsyncState);
+      vsync_adapter_.SetDVSyncSwitch(currentDvsyncState);
+      last_dvsync_state_ = currentDvsyncState;
+    }
+  }
 #endif
   base::TimeDelta vsync_period(base::Nanoseconds(vsync_period_));
   base::TimeTicks frame_time = base::TimeTicks() + base::Nanoseconds(timestamp);

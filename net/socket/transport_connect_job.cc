@@ -444,7 +444,7 @@ int TransportConnectJob::DoTransportConnect() {
                          base::Unretained(this)));
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
       // websocket和老版本保持一致
-      AsArkWebTransportConnectJobExt()->WillDoMultiConnect();
+      //AsArkWebTransportConnectJobExt()->WillDoMultiConnect();
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
     }
     return ERR_IO_PENDING;
@@ -459,7 +459,7 @@ int TransportConnectJob::DoTransportConnect() {
   if (result != ERR_IO_PENDING)
     return HandleSubJobComplete(result, ipv4_job_.get());
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-  AsArkWebTransportConnectJobExt()->WillDoMultiConnect();
+  //AsArkWebTransportConnectJobExt()->WillDoMultiConnect();
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
   return ERR_IO_PENDING;
 }
@@ -497,7 +497,7 @@ int TransportConnectJob::DoTransportConnectComplete(int result) {
   }
 
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-  AsArkWebTransportConnectJobExt()->ClearMultiJobsAndStopTimers();
+  //AsArkWebTransportConnectJobExt()->ClearMultiJobsAndStopTimers();
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
   return result;
 }
@@ -507,7 +507,7 @@ int TransportConnectJob::HandleSubJobComplete(int result,
   DCHECK_NE(result, ERR_IO_PENDING);
   if (result == OK) {
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-    AsArkWebTransportConnectJobExt()->MultiIpSubJobReport(job);
+    //AsArkWebTransportConnectJobExt()->MultiIpSubJobReport(job);
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
     SetSocket(job->PassSocket(), dns_aliases_);
     return result;

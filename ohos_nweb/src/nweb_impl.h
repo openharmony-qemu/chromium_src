@@ -23,6 +23,7 @@
 #include <set>
 #include <vector>
 #include <EGL/eglplatform.h>
+#include "base/timer/timer.h"
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
 #include "capi/nweb_extension_api_callback.h"
@@ -196,6 +197,7 @@ class NWebImpl : public NWeb {
                   ImageAlphaType& alphaType) override;
   void PutNetworkAvailable(bool available) override;
   void SendDragEvent(std::shared_ptr<NWebDragEvent> dragEvent) override;
+  void SendDragOverEvent();
   void UpdateLocale(const std::string& language,
                     const std::string& region) override;
 
@@ -817,6 +819,10 @@ void UpdateAcceptLanguageInternal();
 #if defined(OHOS_VIDEO_ASSISTANT)
   static OnReportStatisticLogFunc on_report_statistic_log_callback_;
 #endif  // defined(OHOS_VIDEO_ASSISTANT)
+
+  std::unique_ptr<base::RetainingOneShotTimer> drag_over_timer_;
+  DelegateDragEvent drag_over_event_;
+  base::WeakPtrFactory<NWebImpl> weak_factory_{this};
 };
 }  // namespace OHOS::NWeb
 

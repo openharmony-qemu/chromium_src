@@ -423,8 +423,9 @@ TileManager::TileManager(
                               base::Unretained(this))),
       signals_check_notifier_(
           task_runner_,
-          base::BindRepeating(&TileManager::FlushAndIssueSignals,
-                              base::Unretained(this))),
+          base::BindRepeating(
+              &TileManager::CheckForCompletedTasksAndIssueSignals,
+              base::Unretained(this))),
       has_scheduled_tile_tasks_(false),
       prepare_tiles_count_(0u),
       next_tile_id_(0u) {}
@@ -566,8 +567,8 @@ bool TileManager::PrepareTiles(
 
   // Ensure that we don't schedule any decode work for checkered images until
   // the raster work for visible tiles is complete. This is done in
-  // FlushAndIssueSignals when the ready to activate/draw signals are dispatched
-  // to the client.
+  // CheckForCompletedTasksAndIssueSignals when the ready to activate/draw
+  // signals are dispatched to the client.
   checker_image_tracker_.SetNoDecodesAllowed();
 
   // We need to call CheckForCompletedTasks() once in-between each call
@@ -608,11 +609,6 @@ void TileManager::PrepareToDraw() {
   tile_task_manager_->CheckForCompletedTasks();
   did_check_for_completed_tasks_since_last_schedule_tasks_ = true;
 
-  if (base::FeatureList::IsEnabled(features::kFlushGpuAtDraw)) {
-    // Flush the GPU before calling SetReadyToDrawCallback, which happens in
-    // CheckPendingGpuWorkAndIssueSignals.
-    raster_buffer_provider_->Flush();
-  }
   CheckPendingGpuWorkAndIssueSignals();
 
   TRACE_EVENT_INSTANT1(
@@ -1403,6 +1399,8 @@ void TileManager::OnRasterTaskCompleted(
     return;
   }
 
+  raster_buffer_provider_->NotifyWorkSubmitted();
+
   // Once raster is done, allow the resource to be exported to the display
   // compositor, by giving it a ResourceId.
   bool exported = resource_pool_->PrepareForExport(resource);
@@ -1524,12 +1522,11 @@ void TileManager::CheckRasterFinishedQueries() {
     ScheduleCheckRasterFinishedQueries();
 }
 
-void TileManager::FlushAndIssueSignals() {
-  TRACE_EVENT0("cc", "TileManager::FlushAndIssueSignals");
+void TileManager::CheckForCompletedTasksAndIssueSignals() {
+  TRACE_EVENT0("cc", "TileManager::CheckForCompletedTasksAndIssueSignals");
   tile_task_manager_->CheckForCompletedTasks();
   did_check_for_completed_tasks_since_last_schedule_tasks_ = true;
 
-  raster_buffer_provider_->Flush();
   CheckPendingGpuWorkAndIssueSignals();
 }
 

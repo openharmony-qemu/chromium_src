@@ -87,6 +87,13 @@ constexpr char MAX_APP_SEQ_MISSSED_FRAMES[] = "MAX_APP_SEQ_MISSSED_FRAMES";
 // For site_isolation
 constexpr char SITE_ISOLATION_MODE[] = "SITE_ISOLATION_MODE";
 constexpr char SITE_ISOLATION_STATUS[] = "SITE_ISOLATION_STATUS";
+
+const char GPU_WHITE_SCREEN_ERROR[] = "GPU_WHITE_SCREEN_ERROR";
+const char EVENT_TYPE[] = "EVENT_TYPE";
+const char EVENT_CONTENT[] = "EVENT_CONTENT";
+
+constexpr char TIMEOUT[] = "TIMEOUT";
+constexpr char MAILBOX_NONEXISTENT[] = "MAILBOX_NONEXISTENT";
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -300,4 +307,19 @@ void ReportSiteIsolationMode(const std::string site_isolation_status) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       SITE_ISOLATION_MODE, HiSysEventAdapter::EventType::BEHAVIOR,
       {SITE_ISOLATION_STATUS, site_isolation_status});
+}
+
+void ReportGpuProcessEvent(CrashType type, std::string eventcontent) {
+  switch(type) {
+    case CrashType::TIMEOUT:
+      OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+        GPU_WHITE_SCREEN_ERROR, HiSysEventAdapter::EventType::STATISTIC,
+        {EVENT_TYPE, TIMEOUT, EVENT_CONTENT, eventcontent});
+      break;
+    case CrashType::MAILBOX_NONEXISTENT:
+      OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+        GPU_WHITE_SCREEN_ERROR, HiSysEventAdapter::EVENT_TYPE::STATISTIC,
+        {EVENT_TYPE, MAILBOX_NONEXISTENT, EVENT_CONTENT, eventcontent});
+      break;
+  }
 }

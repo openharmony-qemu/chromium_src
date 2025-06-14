@@ -21,6 +21,11 @@
 
 #include "oh_web_performance_timing.h"
 
+enum class CrashType {
+    TIMEOUT,
+    MAILBOX_NONEXISTENT
+}
+
 void ReportPageLoadStats(int instanceId,
                          int accessSumCount,
                          int accessSuccCount,
@@ -76,4 +81,6 @@ void ReportSlideJankStats(int64_t startTime,
                           int32_t maxAppSeqMissedFrames);
 
 void ReportSiteIsolationMode(const std::string site_isolation_status);
+
+void ReportGpuProcessEvent(CrashType type, std::string eventContent);
 #endif

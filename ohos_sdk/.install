@@ -107,6 +107,7 @@ llvm_upgrade() {
     tar -xzf $prebuilts_llvm_path
     rm -rf llvm/lib/aarch64-linux-ohos/libc++.so
     rm -rf llvm/lib/x86_64-linux-ohos/libc++.so
+    rm -rf llvm/lib/arm-linux-ohos/libc++.so
     if [ -d "llvm/lib/clang/19" ]; then
 
       pushd llvm/lib/clang

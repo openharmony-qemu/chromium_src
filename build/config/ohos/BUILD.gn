@@ -175,6 +175,7 @@ config("runtime_library") {
                 "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos",
                 root_build_dir) ]
 
+      ldflags += [ "-l:libc++_static.a" ]
       libclang_rt_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.builtins.a"
 
       if (is_asan && arkweb_asan) {

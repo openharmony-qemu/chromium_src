@@ -306,8 +306,8 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   }
 
   WEBCONTENT_SET.insert(webContent_);
+  callback_ = callback;
   if (StartRender()) {
-    callback_ = callback;
     if (memset_s(audio_data_[active_buffer_index_],
         buffer_size_bytes_, 0, buffer_size_bytes_) != EOK) {
       LOG(ERROR) << "audio data memset_s failed.";
@@ -319,6 +319,8 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
       FlushData();
       PumpSamples();
     }
+  } else {
+    callback_ = nullptr;
   }
 }
 

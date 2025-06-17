@@ -280,6 +280,7 @@ class NWebRenderHandler : public CefRenderHandler {
   std::shared_ptr<NWebDragData> nweb_drag_data_ = nullptr;
   bool is_irregular_drag_background_ = true;
   bool select_all_ = false;
+  static std::map<int64_t, std::string> image_sandbox_files_;
 #endif // #ifdef OHOS_DRAG_DROP
 
 #if defined(OHOS_INPUT_EVENTS)

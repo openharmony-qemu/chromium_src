@@ -17,6 +17,7 @@
 
 #include <sys/time.h>
 #include <cerrno>
+#include <chrono>
 #include <cstring>
 
 #include "base/logging.h"
@@ -44,6 +45,9 @@
 #include "cef/libcef/browser/image_impl.h"
 #include "ui/gfx/image/image_skia.h"
 #endif  // #ifdef OHOS_AI
+#ifdef OHOS_DRAG_DROP
+constexpr int drag_image_sandbox_count_limit = 3;
+#endif
 
 namespace {
 #ifdef OHOS_EX_FREE_COPY
@@ -311,6 +315,11 @@ class NWebNativeEmbedTouchEventImpl : public NWebNativeEmbedTouchEvent {
   TouchType type_ = TouchType::DOWN;
   std::shared_ptr<NWebGestureEventResult> result_;
 };
+
+// static
+#ifdef OHOS_DRAG_DROP
+std::map<int64_t, std::string> NWebRenderHandler::image_sandbox_files_{};
+#endif
 
 // static
 CefRefPtr<NWebRenderHandler> NWebRenderHandler::Create() {
@@ -867,16 +876,40 @@ void NWebRenderHandler::ImageDragForFileUri(CefRefPtr<CefDragData> drag_data) {
     tempPath = delegete->GetAppTempDir() + "/dragdrop/";
   }
 
+  CefString fileName = drag_data->GetFileName();
+  std::string cur_filename = fileName.ToString();
   if (base::DirectoryExists(base::FilePath(tempPath))) {
     if (!base::IsDirectoryEmpty(base::FilePath(tempPath))) {
-      base::DeletePathRecursively(base::FilePath(tempPath));
+      LOG(INFO) << "DragDrop, exist sandbox image files count "
+                << image_sandbox_files_.size();
+      // when sandbox dir exist and not empty, and file map empty, remove dir
+      if (image_sandbox_files_.size() == 0) {
+        base::DeletePathRecursively(base::FilePath(tempPath));
+      } else {
+        // when filename exist same one, remove the exist one
+        for (auto it = image_sandbox_files_.begin();
+             it != image_sandbox_files_.end(); ++it) {
+          if (it->second == cur_filename) {
+            CefString remove_file(tempPath.ToString() + cur_filename);
+            base::DeletePathRecursively(base::FilePath(remove_file));
+            image_sandbox_files_.erase(it);
+            break;
+          }
+        }
+        // when file count reach limit, remove the earliest one
+        if (image_sandbox_files_.size() >= drag_image_sandbox_count_limit) {
+          auto first = image_sandbox_files_.begin();
+          CefString remove_file(tempPath.ToString() + first->second);
+          base::DeletePathRecursively(base::FilePath(remove_file));
+          image_sandbox_files_.erase(first);
+        }
+      }
     }
   } else {
     LOG(INFO) << "DragDrop temp dir not exist, create it";
   }
   base::CreateDirectory(base::FilePath(tempPath));
 
-  CefString fileName = drag_data->GetFileName();
   if (!fileName.ToString().empty()) {
     CefString fullName(tempPath.ToString() + fileName.ToString());
     if (base::PathExists(base::FilePath(fullName))) {
@@ -894,6 +927,11 @@ void NWebRenderHandler::ImageDragForFileUri(CefRefPtr<CefDragData> drag_data) {
     size_t size = drag_data->GetFileContents(stream);
     if (size == drag_data->GetImageFileSize()) {
       LOG(INFO) << "DragDrop image file write success, size:" << size;
+      // use time milliseconds as key, for map auto sort
+      auto now = std::chrono::system_clock::now();
+      auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+          now.time_since_epoch());
+      image_sandbox_files_.emplace(now_ms.count(), fileName.ToString());
     } else {
       LOG(ERROR) << "DragDrop image file write failed";
     }

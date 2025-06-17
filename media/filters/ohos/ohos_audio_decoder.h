@@ -357,7 +357,7 @@ class OHOSAudioDecoder : public AudioDecoder,
   scoped_refptr<AudioBufferMemoryPool> pool_;
 
   // ohos cdm object
-  raw_ptr<OHOSMediaCryptoContext> ohos_crypto_context_;
+  raw_ptr<OHOSMediaCryptoContext> ohos_crypto_context_ = nullptr;
 
   void* mediaKeySession_ = nullptr;
 

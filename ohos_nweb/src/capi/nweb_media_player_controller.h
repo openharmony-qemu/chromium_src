@@ -20,18 +20,18 @@
 
 #include "ohos_nweb/src/capi/common/common.h"
 
-class NWebMediaPlayerController;
+template<typename T>
 
 struct NWebMediaPlayerControllerBase {
   const size_t struct_size = sizeof(NWebMediaPlayerControllerBase);
-  void (NWebMediaPlayerController::*play)() = nullptr;
-  void (NWebMediaPlayerController::*pause)() = nullptr;
-  void (NWebMediaPlayerController::*seek)(double time) = nullptr;
-  void (NWebMediaPlayerController::*set_muted)(bool muted) = nullptr;
-  void (NWebMediaPlayerController::*set_playback_rate)(double) = nullptr;
-  void (NWebMediaPlayerController::*exit_fullscreen)() = nullptr;
-  void (NWebMediaPlayerController::*set_video_surface)(void*) = nullptr;
-  void (NWebMediaPlayerController::*download)() = nullptr;
+  void (T::*play)() = nullptr;
+  void (T::*pause)() = nullptr;
+  void (T::*seek)(double time) = nullptr;
+  void (T::*set_muted)(bool muted) = nullptr;
+  void (T::*set_playback_rate)(double) = nullptr;
+  void (T::*exit_fullscreen)() = nullptr;
+  void (T::*set_video_surface)(void*) = nullptr;
+  void (T::*download)() = nullptr;
 
   NWebMediaPlayerControllerBase() = default;
   NWebMediaPlayerControllerBase(
@@ -44,10 +44,11 @@ struct NWebMediaPlayerControllerBase {
       NWebMediaPlayerControllerBase&& other) = delete;
 };
 
-class NWebMediaPlayerController : public NWebMediaPlayerControllerBase {
+class NWebMediaPlayerController : public NWebMediaPlayerControllerBase
+<NWebMediaPlayerController> {
  public:
-  using Base = NWebMediaPlayerControllerBase;
-  NWebMediaPlayerController() : NWebMediaPlayerControllerBase() {
+  using Base = NWebMediaPlayerControllerBase<NWebMediaPlayerController>;
+  NWebMediaPlayerController() : NWebMediaPlayerControllerBase<NWebMediaPlayerController>() {
     this->play = &NWebMediaPlayerController::Play;
     this->pause = &NWebMediaPlayerController::Pause;
     this->seek = &NWebMediaPlayerController::Seek;

@@ -638,7 +638,7 @@ bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
             channel_count_, sample_rate_,
             frame_count, pool_);
 
-  if (memcpy_s(audio_buffer->channel_data()[0], out.size_, out.data_.data(), out.size_) != EOK) {
+  if (memcpy_s(audio_buffer->channel_data()[0], audio_buffer->data_size(), out.data_.data(), out.size_) != EOK) {
     LOG(ERROR) << "OHOSAudioDecoder::OnDecodedFrame copy frame data error";
     audio_decoder_->ReleaseOutputBufferDec(out.index_);
     return false;

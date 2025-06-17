@@ -98,7 +98,12 @@ void HwVideoNativeBufferGLOwner::ReleaseResources() {
 
   // Delete all images before closing the associated image reader.
   for (auto& image_ref : image_refs_) {
-    loader_->ReleaseNativeWindowBuffer(image_ref.first->rawbuffer, -1);
+    int32_t return_code = loader_->ReleaseNativeWindowBuffer(image_ref.first->rawbuffer, -1);
+    if (return_code != 0) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .GetWindowAdapterInstance()
+          .NativeWindowUnRef(image_ref.first->rawbuffer);
+    }
     image_ref.first = nullptr;
   }
 

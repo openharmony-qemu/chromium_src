@@ -101,9 +101,9 @@ class MEDIA_EXPORT OHOSAudioCapturerSource final : public AudioCapturerSource {
   // reports an error to |callback_|.
   void ReportError(const std::string& message);
 
-  OH_AudioCapturer* audio_capturer_ = nullptr;
+  RAW_PTR_EXCLUSION OH_AudioCapturer* audio_capturer_ = nullptr;
 
-  OH_AudioStreamBuilder* audio_stream_builder_ = nullptr;
+  RAW_PTR_EXCLUSION OH_AudioStreamBuilder* audio_stream_builder_ = nullptr;
 
   scoped_refptr<base::SingleThreadTaskRunner> capturer_task_runner_;
 
@@ -111,7 +111,7 @@ class MEDIA_EXPORT OHOSAudioCapturerSource final : public AudioCapturerSource {
 
   AudioParameters params_;
 
-  CaptureCallback* callback_ = nullptr;
+  raw_ptr<CaptureCallback> callback_ = nullptr;
 
   std::shared_ptr<AudioCapturerReadCallback> audioCapturerReadCallback_ =
       nullptr;

@@ -61,9 +61,9 @@ class CAPTURE_EXPORT VideoCaptureDeviceFactoryOHOS
   void GetDevicesInfo(GetDevicesInfoCallback callback) override;
 
  private:
-  Camera_Manager* camera_manager_ = nullptr;
-  Camera_OutputCapability* camera_output_capability_ = nullptr;
-  Camera_Device* cameras_ = nullptr;
+  RAW_PTR_EXCLUSION Camera_Manager* camera_manager_ = nullptr;
+  RAW_PTR_EXCLUSION Camera_OutputCapability* camera_output_capability_ = nullptr;
+  RAW_PTR_EXCLUSION Camera_Device* cameras_ = nullptr;
 };
 
 }  // namespace media

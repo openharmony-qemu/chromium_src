@@ -217,6 +217,15 @@ source_set("tests") {
     ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "battery/battery_status_manager_ohos_unittest.cc",
+    ]
+    deps += [
+      "//ohos/adapter:adapter",
+    ]
+  }
+
   if (os_level_geolocation_permission_supported) {
     sources += [ "public/cpp/geolocation/geolocation_system_permission_manager_unittest.cc" ]
   }

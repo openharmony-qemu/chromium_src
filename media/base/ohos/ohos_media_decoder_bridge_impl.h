@@ -58,7 +58,7 @@ struct BufferInfo {
 };
 
 struct OhosBuffer {
-  uint8_t* addr;
+  raw_ptr<uint8_t> addr;
   uint32_t buffer_size;
 };
 
@@ -192,7 +192,7 @@ class MediaCodecDecoderBridgeImpl {
   bool is_first_decFrame_ = true;
   std::shared_ptr<DecoderBridgeSignal> signal_ = nullptr;
   std::shared_ptr<CodecBridgeCallback> cb_ = nullptr;
-  OH_AVCodec* video_decoder_ = nullptr;
+  RAW_PTR_EXCLUSION OH_AVCodec* video_decoder_ = nullptr;
   bool has_created_ = false;
   scoped_refptr<base::SequencedTaskRunner> decoder_task_runner_ = nullptr;
   int32_t width_;

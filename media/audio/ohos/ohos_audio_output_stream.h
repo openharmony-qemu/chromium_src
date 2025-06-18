@@ -95,7 +95,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   // reallocating the memory every time.
   std::unique_ptr<AudioBus> audio_bus_;
 
-  AudioSourceCallback* callback_ = nullptr;
+  raw_ptr<AudioSourceCallback> callback_ = nullptr;
 
   double volume_ = 1.0;
 
@@ -107,9 +107,9 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   SampleFormat sample_format_;
 
-  OH_AudioRenderer* audio_renderer_ = nullptr;
+  RAW_PTR_EXCLUSION OH_AudioRenderer* audio_renderer_ = nullptr;
 
-  OH_AudioStreamBuilder* audio_stream_builder_ = nullptr;
+  RAW_PTR_EXCLUSION OH_AudioStreamBuilder* audio_stream_builder_ = nullptr;
 
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
 

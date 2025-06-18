@@ -125,12 +125,12 @@ class CAPTURE_EXPORT OHOSCaptureDelegate final {
 
   const VideoCaptureParams capture_params_;
 
-  Camera_Manager* camera_manager_ = nullptr;
-  Camera_CaptureSession* capture_session_ = nullptr;
-  Camera_OutputCapability* camera_output_capability_ = nullptr;
-  Camera_Device* cameras_ = nullptr;
-  Camera_Input* camera_input_ = nullptr;
-  Camera_PreviewOutput* preview_output_ = nullptr;
+  RAW_PTR_EXCLUSION Camera_Manager* camera_manager_ = nullptr;
+  RAW_PTR_EXCLUSION Camera_CaptureSession* capture_session_ = nullptr;
+  RAW_PTR_EXCLUSION Camera_OutputCapability* camera_output_capability_ = nullptr;
+  RAW_PTR_EXCLUSION Camera_Device* cameras_ = nullptr;
+  RAW_PTR_EXCLUSION Camera_Input* camera_input_ = nullptr;
+  RAW_PTR_EXCLUSION Camera_PreviewOutput* preview_output_ = nullptr;
   uint32_t camera_size_;
 };
 

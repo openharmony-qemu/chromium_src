@@ -118,7 +118,7 @@ class COMPONENT_EXPORT(AX_PLATFORM) AccessibilityBridgeOhosImpl final
 
   // Root window for the ohos view for which this accessibility bridge
   // instance is responsible.
-  aura::Window* root_window_;
+  raw_ptr<aura::Window> root_window_;
 
   // The top-left corner position of the root window region.
   int root_window_bound_x_ = 0;

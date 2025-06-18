@@ -67,7 +67,7 @@
    bool vsync_notification_enabled_;
 
    std::unique_ptr<VSyncUserData> user_data_;
-   struct OH_NativeVSync *native_vsync_ = nullptr;
+   RAW_PTR_EXCLUSION OH_NativeVSync* native_vsync_ = nullptr;
   
    long long vsync_period_ = 0;
    base::WeakPtrFactory<ExternalBeginFrameSourceOHOS> weak_factory_{this};

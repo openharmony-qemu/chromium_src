@@ -65,7 +65,7 @@ class MEDIA_GPU_EXPORT CodecSurfaceBundle
 
   scoped_refptr<CodecBufferWaitCoordinator> codec_buffer_wait_coordinator_;
 
-  void* ohos_native_window_;
+  RAW_PTR_EXCLUSION void* ohos_native_window_;
 
   base::WeakPtrFactory<CodecSurfaceBundle> weak_factory_{this};
 };

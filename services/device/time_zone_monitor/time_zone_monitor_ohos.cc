@@ -33,6 +33,7 @@
 #include <string>
 
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
@@ -65,7 +66,7 @@ class TimeZoneMonitorOhosImpl
     : public base::RefCountedThreadSafe<TimeZoneMonitorOhosImpl> {
  public:
   static scoped_refptr<TimeZoneMonitorOhosImpl> Create(
-      TimeZoneMonitorOhos* owner) {
+      raw_ptr<TimeZoneMonitorOhos> owner) {
     auto impl = base::WrapRefCounted(new TimeZoneMonitorOhosImpl(owner));
     return impl;
   }
@@ -73,7 +74,7 @@ class TimeZoneMonitorOhosImpl
   TimeZoneMonitorOhosImpl(const TimeZoneMonitorOhosImpl&) = delete;
   TimeZoneMonitorOhosImpl& operator=(const TimeZoneMonitorOhosImpl&) = delete;
 
-  explicit TimeZoneMonitorOhosImpl(TimeZoneMonitorOhos* owner)
+  explicit TimeZoneMonitorOhosImpl(raw_ptr<TimeZoneMonitorOhos> owner)
       : owner_(owner),
         main_task_runner_(base::SingleThreadTaskRunner::GetCurrentDefault()) {
     StartListening();
@@ -108,7 +109,7 @@ class TimeZoneMonitorOhosImpl
       owner_->NotifyClientsFromImpl(zone_id);
     }
   }
-  TimeZoneMonitorOhos* owner_;
+  raw_ptr<TimeZoneMonitorOhos> owner_;
   scoped_refptr<base::SequencedTaskRunner> main_task_runner_;
 };
 }  // namespace

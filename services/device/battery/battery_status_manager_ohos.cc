@@ -47,7 +47,7 @@ class BatteryUpdateCallbackImpl : public BatteryUpdateCallback {
   void OnBatteryStatusChanged(const BatteryInfo& battery_info) override;
 
  private:
-  BatteryStatusObserver* observer_ohos_ = nullptr;
+  raw_ptr<BatteryStatusObserver> observer_ohos_ = nullptr;
 };
 
 void BatteryUpdateCallbackImpl::OnBatteryStatusChanged(const BatteryInfo& battery_info) {

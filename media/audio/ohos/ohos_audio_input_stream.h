@@ -65,7 +65,7 @@ class OHOSAudioInputStream : public AudioInputStream {
 
   ~OHOSAudioInputStream() override;
 
-  OHOSAudioManager* const manager_;
+  raw_ptr<OHOSAudioManager> const manager_;
 
   AudioParameters parameters_;
 

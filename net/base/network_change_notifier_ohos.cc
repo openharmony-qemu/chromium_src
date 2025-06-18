@@ -35,6 +35,7 @@
 
 #include "base/functional/bind.h"
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "base/task/task_traits.h"
 #include "build/build_config.h"
 #include "net/dns/dns_config_service_ohos.h"
@@ -61,7 +62,7 @@ class NetConnectionCallbackImpl : public NetConnectionCallback {
   int32_t NetLost() override;
 
  private:
-  NetworkChangeNotifierOhos* notifier_ohos_ = nullptr;
+  raw_ptr<NetworkChangeNotifierOhos> notifier_ohos_ = nullptr;
 };
 
 int32_t NetConnectionCallbackImpl::NetAvailable() {

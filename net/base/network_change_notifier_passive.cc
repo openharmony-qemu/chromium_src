@@ -47,6 +47,29 @@ ConvertOhosConnSubtypeToNetBaseConnSubtype(
   return static_cast<net::NetworkChangeNotifier::ConnectionSubtype>(subtype);
 }
 
+class VpnListenerImpl : public OHOS::NWeb::VpnListener {
+ public:
+  VpnListenerImpl(
+      net::NetworkChangeNotifierPassive* network_change_notifier)
+      : network_change_notifier_(network_change_notifier) {}
+  virtual ~VpnListenerImpl() = default;
+  void OnAvailable() override;
+  void OnLost() override;
+
+ private:
+  net::NetworkChangeNotifierPassive* network_change_notifier_ = nullptr;
+};
+
+void VpnListenerImpl::OnAvailable() {
+  LOG(INFO) << "ohos_network Vpn OnAvailable";
+  network_change_notifier_->OnVpnAvailable();
+}
+
+void VpnListenerImpl::OnLost() {
+  LOG(INFO) << "ohos_network Vpn OnLost";
+  network_change_notifier_->OnVpnLost();
+}
+
 class NetConnCallbackImpl : public OHOS::NWeb::NetConnCallback {
  public:
   NetConnCallbackImpl(
@@ -183,6 +206,7 @@ void NetConnCallbackImpl::ConnectionTypeChangedTo(
 }
 
 std::shared_ptr<NetConnCallbackImpl> g_net_connect_callback = nullptr;
+std::shared_ptr<VpnListenerImpl> g_vpn_listener = nullptr;
 int32_t g_callback_id = -1;
 #endif
 }  // namespace
@@ -212,12 +236,14 @@ NetworkChangeNotifierPassive::NetworkChangeNotifierPassive(
               initial_connection_subtype)) {
 #if BUILDFLAG(IS_OHOS)
   g_net_connect_callback = std::make_shared<NetConnCallbackImpl>(this);
+  g_vpn_listener = std::make_shared<VpnListenerImpl>(this);
   if (ohos_net_conn_adapter_) {
     g_callback_id =
         ohos_net_conn_adapter_->RegisterNetConnCallback(g_net_connect_callback);
     if (g_callback_id < 0) {
       LOG(ERROR) << "register ohos net connect callback failed.";
     }
+    ohos_net_conn_adapter_->RegisterVpnListener(g_vpn_listener);
   }
 #endif
 }
@@ -231,6 +257,7 @@ NetworkChangeNotifierPassive::~NetworkChangeNotifierPassive() {
     if (ret != 0) {
       LOG(ERROR) << "unregister ohos net connect callback failed.";
     }
+    ohos_net_conn_adapter_->UnRegisterVpnListener();
   }
 #endif
 }
@@ -244,6 +271,22 @@ void NetworkChangeNotifierPassive::OnIPAddressChanged() {
   NetworkChangeNotifier::NotifyObserversOfIPAddressChange();
 }
 
+#if BUILDFLAG(IS_OHOS)
+void NetworkChangeNotifierPassive::OnVpnAvailable() {
+  LOG(INFO) << "ohos_network on vpn available";
+  vpn_in_place_ = true;
+  OnIPAddressChanged();
+  OnConnectionChanged(connection_type_);
+}
+
+void NetworkChangeNotifierPassive::OnVpnLost() {
+  LOG(INFO) << "ohos_network on vpn lost";
+  vpn_in_place_ = false;
+  OnIPAddressChanged();
+  OnConnectionChanged(connection_type_);
+}
+#endif
+
 void NetworkChangeNotifierPassive::OnConnectionChanged(
     NetworkChangeNotifier::ConnectionType connection_type) {
   // DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
@@ -255,12 +298,20 @@ void NetworkChangeNotifierPassive::OnConnectionChanged(
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_HTTP_DNS_FALLBACK)
   std::vector<std::string> dns_servers;
   if (ohos_net_conn_adapter_) {
-    dns_servers = ohos_net_conn_adapter_->GetDnsServers();
+    if (vpn_in_place_) {
+      dns_servers = ohos_net_conn_adapter_->GetDnsServersForVpn();
+    } else {
+      dns_servers = ohos_net_conn_adapter_->GetDnsServers();
+    }
   }
 
   {
     base::AutoLock scoped_lock(dns_server_lock_);
-    dns_servers_ = std::move(dns_servers);
+    if (!dns_servers.empty()) {
+      dns_servers_ = std::move(dns_servers);
+    } else {
+      LOG(ERROR) << "OnConnectionChanged, ohos_network dns server is empty.";
+    }
   }
 #endif
 

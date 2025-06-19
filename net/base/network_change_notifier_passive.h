@@ -99,7 +99,7 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
 #endif
   double max_bandwidth_mbps_;  // Guarded by |lock_|.
 
-if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_OHOS)
   bool vpn_in_place_{false};
 #endif
 };

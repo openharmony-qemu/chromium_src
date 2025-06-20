@@ -41,6 +41,11 @@ int32_t BufferRequestConfigAdapterImpl::GetTimeout() {
   return timeout_;
 }
 
+int64_t BufferRequestConfigAdapterImpl::GetTimestamp() {
+  return timestamp_;
+}
+
+
 ColorGamutAdapter BufferRequestConfigAdapterImpl::GetColorGamut() {
   return color_gamut_;
 }
@@ -81,5 +86,10 @@ void BufferRequestConfigAdapterImpl::SetTransformType(
     TransformTypeAdapter type) {
   transform_type_ = type;
 }
+
+void BufferRequestConfigAdapterImpl::SetTimestamp(int64_t timestamp) {
+   timestamp_ = timestamp;
+}
+
 
 }  // namespace OHOS::NWeb

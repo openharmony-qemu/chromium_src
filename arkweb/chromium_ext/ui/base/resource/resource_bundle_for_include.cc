@@ -26,7 +26,7 @@ static std::unordered_set<std::string> supportLocaleList = {
   "resources",
   "chrome_100_percent",
   "chrome_200_percent",
-#ifdef SUPPORAT_MULTI_LANGUAGE
+#ifdef SUPPORT_MULTI_LANGUAGE
   "ar",
   "be",
   "bg",
@@ -87,7 +87,7 @@ static std::unordered_set<std::string> supportLocaleList = {
   "zh-TW",
   "zh-HK",
 #endif
-}
+};
 
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
 bool LocaleDataPakExistsExt(const std::string& locale) {

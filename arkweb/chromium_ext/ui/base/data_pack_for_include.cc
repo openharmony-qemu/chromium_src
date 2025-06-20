@@ -20,6 +20,7 @@
 #include "arkweb/build/features/features.h"
 
 #include <unordered_map>
+#include <unordered_set>
 #include "base/command_line.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
@@ -58,30 +59,94 @@ std::unordered_map<ui::ResourceScaleFactor, std::string> kPakFileNameHapMap = {
     {ui::ResourceScaleFactor::k200Percent,
      "resources/rawfile/chrome_200_percent.pak"}};
 
+static std::unordered_set<std::string> supportLocaleList = {
+#ifdef SUPPORAT_MULTI_LANGUAGE
+  "ar.pak",
+  "be.pak",
+  "bg.pak",
+  "bn.pak",
+  "cs.pak",
+  "da.pak",
+  "de.pak",
+  "el.pak",
+  "en-GB.pak",
+  "en-US.pak",
+  "es.pak",
+  "es-419.pak",
+  "et.pak",
+  "fa.pak",
+  "fi.pak",
+  "fil.pak",
+  "fr.pak",
+  "he.pak",
+  "hi.pak",
+  "hr.pak",
+  "hu.pak",
+  "id.pak",
+  "it.pak",
+  "ja.pak",
+  "ka.pak",
+  "kk.pak",
+  "km.pak",
+  "ko.pak",
+  "lt.pak",
+  "lv.pak",
+  "mk.pak",
+  "ms.pak",
+  "my.pak",
+  "nb.pak",
+  "nl.pak",
+  "pl.pak",
+  "pt-BR.pak",
+  "pt-PT.pak",
+  "ro.pak",
+  "ru.pak",
+  "sk.pak",
+  "sl.pak",
+  "sr.pak",
+  "sv.pak",
+  "th.pak",
+  "tr.pak",
+  "uk.pak",
+  "uz.pak",
+  "vi.pak",
+  "zh-CN.pak",
+  "zh-TW.pak",
+  "zh-HK.pak",
+#else
+  "bo-CN.pak",
+  "en-US.pak",
+  "ug.pak",
+  "zh-CN.pak",
+  "zh-TW.pak",
+  "zh-HK.pak",
+#endif
+}
+
+std::string ExtractFileName(const std::string& str)
+{
+  auto lastSlash = str.find_last_of('/');
+  return lastSlash == std::string::npos ? str : str.substr(lastSlash + 1);
+}
+
 bool GetPathFromHap(ui::ResourceScaleFactor factor,
                     const base::FilePath& path,
                     std::string& pathHap) {
+  std::string pathStr = path.MaybeAsASCII();
+  std::string pakFileName = ExtractFileName(pathStr);
+  std::string localePath = "resources/rawfile/locales/";
+  if (supportLocaleList.count(pakFileName)) {
+    pathHap = localePath + pakFileName;
+    return true;
+  }
+
   auto iter = kPakFileNameHapMap.find(factor);
   if (iter == kPakFileNameHapMap.end()) {
     LOG(ERROR) << "kPakFileNameHapMap not find path: " << path;
     return false;
   }
-  std::string pathStr = path.MaybeAsASCII();
-  if (pathStr.find("zh-CN.pak") != std::string::npos) {
-    pathHap = "resources/rawfile/locales/zh-CN.pak";
-  } else if (pathStr.find("en-US.pak") != std::string::npos) {
-    pathHap = "resources/rawfile/locales/en-US.pak";
-  } else if (pathStr.find("bo-CN.pak") != std::string::npos) {
-    pathHap = "resources/rawfile/locales/bo-CN.pak";
-  } else if (pathStr.find("ug.pak") != std::string::npos) {
-    pathHap = "resources/rawfile/locales/ug.pak";
-  } else if (pathStr.find("zh-TW.pak") != std::string::npos) {
-    pathHap = "resources/rawfile/locales/zh-TW.pak";
-  } else if (pathStr.find("zh-HK.pak") != std::string::npos) {
-    pathHap = "resources/rawfile/locales/zh-HK.pak";
-  } else {
-    pathHap = iter->second;
-  }
+
+  pathHap = iter->second;
   return true;
 }
 }

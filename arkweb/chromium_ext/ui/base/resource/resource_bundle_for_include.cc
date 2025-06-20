@@ -22,19 +22,79 @@
 
 namespace ui {
 
+static std::unordered_set<std::string> supportLocaleList = {
+  "resources",
+  "chrome_100_percent",
+  "chrome_200_percent",
+#ifdef SUPPORAT_MULTI_LANGUAGE
+  "ar",
+  "be",
+  "bg",
+  "bn",
+  "cs",
+  "da",
+  "de",
+  "el",
+  "en-GB",
+  "en-US",
+  "es",
+  "es-419",
+  "et",
+  "fa",
+  "fi",
+  "fil",
+  "fr",
+  "he",
+  "hi",
+  "hr",
+  "hu",
+  "id",
+  "it",
+  "ja",
+  "ka",
+  "kk",
+  "km",
+  "ko",
+  "lt",
+  "lv",
+  "mk",
+  "ms",
+  "my",
+  "nb",
+  "nl",
+  "pl",
+  "pt-BR",
+  "pt-PT",
+  "ro",
+  "ru",
+  "sk",
+  "sl",
+  "sr",
+  "sv",
+  "th",
+  "tr",
+  "uk",
+  "uz",
+  "vi",
+  "zh-CN",
+  "zh-TW",
+  "zh-HK",
+#else
+  "bo-CN",
+  "en-US",
+  "ug",
+  "zh-CN",
+  "zh-TW",
+  "zh-HK",
+#endif
+}
+
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
 bool LocaleDataPakExistsExt(const std::string& locale) {
   const auto path = ResourceBundle::GetLocaleFilePath(locale);
   // If the hap package is not decompressed, the directory does not exist.
   if (path.empty() || !base::PathExists(path)) {
-    if (locale == "zh-CN" || locale == "en-US" || locale == "resources" ||
-        locale == "bo-CN" || locale == "ug" || locale == "zh-TW" ||
-        locale == "zh-HK" || locale == "chrome_100_percent" ||
-        locale == "chrome_200_percent") {
-      return true;
-    } else {
-      return false;
-    }
+    return supportLocaleList.count(locale) > 0;
   } else {
     return true;
   }

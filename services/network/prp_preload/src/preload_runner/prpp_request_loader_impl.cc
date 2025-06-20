@@ -345,6 +345,11 @@ void PRPPRequestLoaderImpl::DidRead(int num_bytes, bool completed_synchronously)
   }
   if (num_bytes == 0) {
     total_size_ += (cur_write_block_->capacity() - cur_write_block_->RemainingCapacity());
+    if (total_size_ <= 0) {
+      LOG(DEBUG) << "PRPPreload.PRPPRequestLoaderImpl::DidRead, get empty resources, total_size = " << total_size_;
+      PushFailure(STATE_ERROR);
+      return;
+    }
     body_cache_.push(cur_write_block_);
     cur_write_block_ = nullptr;
     preload_state_ = STATE_RESPONSED;

@@ -36,6 +36,8 @@ class BufferRequestConfigAdapterImpl : public BufferRequestConfigAdapter {
 
   int32_t GetTimeout() override;
 
+  int64_t GetTimestamp() override;
+  
   ColorGamutAdapter GetColorGamut() override;
 
   TransformTypeAdapter GetTransformType() override;
@@ -55,6 +57,8 @@ class BufferRequestConfigAdapterImpl : public BufferRequestConfigAdapter {
   void SetColorGamut(ColorGamutAdapter);
 
   void SetTransformType(TransformTypeAdapter);
+  
+  void SetTimestamp(int64_t);
 
  private:
   int32_t width_;
@@ -64,6 +68,7 @@ class BufferRequestConfigAdapterImpl : public BufferRequestConfigAdapter {
   int32_t format_;        // GraphicPixelFormat
   uint64_t usage_;
   int32_t timeout_;
+  int64_t timestamp_;
   ColorGamutAdapter color_gamut_ = ColorGamutAdapter::SRGB;
   TransformTypeAdapter transform_type_ = TransformTypeAdapter::ROTATE_NONE;
 };

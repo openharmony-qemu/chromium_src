@@ -60,7 +60,7 @@ std::unordered_map<ui::ResourceScaleFactor, std::string> kPakFileNameHapMap = {
      "resources/rawfile/chrome_200_percent.pak"}};
 
 static std::unordered_set<std::string> supportLocaleList = {
-#ifdef SUPPORAT_MULTI_LANGUAGE
+#ifdef SUPPORT_MULTI_LANGUAGE
   "ar.pak",
   "be.pak",
   "bg.pak",
@@ -121,7 +121,7 @@ static std::unordered_set<std::string> supportLocaleList = {
   "zh-TW.pak",
   "zh-HK.pak",
 #endif
-}
+};
 
 std::string ExtractFileName(const std::string& str)
 {

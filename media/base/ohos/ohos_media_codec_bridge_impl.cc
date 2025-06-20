@@ -211,7 +211,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
   configAdapter->SetWidth(frame->coded_size().width());
   configAdapter->SetHeight(frame->coded_size().height());
   configAdapter->SetStrideAlignment(DEFAULT_STRIDE);
-  configAdapter ->SetTimestamp(timestamp_ms)
+  configAdapter ->SetTimestamp(timestamp_ms);
 
   buffer_adapter_ = surface_->RequestBuffer(fence, configAdapter);
   if (buffer_adapter_ == nullptr) {

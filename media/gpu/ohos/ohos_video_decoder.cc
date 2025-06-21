@@ -414,8 +414,7 @@ void OhosVideoDecoder::OnCodecConfigured(
   }
 #ifdef OHOS_VIDEO_ASSISTANT
   if (pending_surface_id_ > 0) {
-    codec_->SetVideoSurface(pending_surface_id_);
-    pending_surface_id_ = -1;
+    is_pended_ = true;
   }
 #endif // OHOS_VIDEO_ASSISTANT
   PumpCodec();
@@ -598,6 +597,14 @@ void OhosVideoDecoder::ForwardVideoFrame(
     frame->metadata().power_efficient = true;
     output_cb_.Run(std::move(frame));
   }
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  if (codec_ && is_pended_) {
+    is_pended_ = false;
+    codec_->SetVideoSurface(pending_surface_id_);
+    pending_surface_id_ = -1;
+  }
+#endif // OHOS_VIDEO_ASSISTANT
 }
 
 void OhosVideoDecoder::Reset(base::OnceClosure closure) {

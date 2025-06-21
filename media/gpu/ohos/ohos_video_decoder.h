@@ -198,6 +198,7 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
 
 #ifdef OHOS_VIDEO_ASSISTANT
   int32_t pending_surface_id_ = -1;
+  bool is_pended_ = false;
 #endif // OHOS_VIDEO_ASSISTANT
 
   base::WeakPtrFactory<OhosVideoDecoder> weak_factory_{this};

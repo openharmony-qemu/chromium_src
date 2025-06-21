@@ -790,10 +790,6 @@ ExtensionFunction::ResponseAction ManagementUninstallFunctionBase::Uninstall(
     return RespondNow(Error(keys::kGestureNeededForUninstallError));
   }
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  show_confirm_dialog = false;
-#endif
-
   if (show_confirm_dialog) {
     // We show the programmatic uninstall ui for extensions uninstalling
     // other extensions.

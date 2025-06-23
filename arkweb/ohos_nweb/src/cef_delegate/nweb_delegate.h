@@ -118,10 +118,14 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void Resize(uint32_t width,
               uint32_t height,
               bool isKeyboard = false) override;
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   void ResizeVisibleViewport(uint32_t width,
                              uint32_t height,
                              bool isKeyboard = false) override;
+#endif
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  void AvoidVisibleViewportBottom(int32_t avoidHeight) override;
+  int32_t GetVisibleViewportAvoidHeight() override;
 #endif
   void OnTouchPress(int32_t id, double x, double y, bool from_overlay) override;
   void OnTouchRelease(int32_t id,
@@ -915,7 +919,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   bool hidden_ = false;
   bool occluded_ = false;
   bool is_popup_ready_ = false;
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PAGE_UP_DOWN) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   uint32_t width_ = 0;
   uint32_t height_ = 0;
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
@@ -947,6 +951,10 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 
 #if BUILDFLAG(ARKWEB_AI)
   bool data_detector_enable_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  int32_t avoid_height_ = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

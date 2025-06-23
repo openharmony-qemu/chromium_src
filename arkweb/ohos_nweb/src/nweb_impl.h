@@ -1037,6 +1037,12 @@ class NWebImpl : public NWeb {
   std::unique_ptr<base::RetainingOneShotTimer> drag_over_timer_;
   DelegateDragEvent drag_over_event_;
   base::WeakPtrFactory<NWebImpl> weak_factory_{this};
+
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  void AvoidVisibleViewportBottom(int32_t avoidHeight) override;
+  int32_t GetVisibleViewportAvoidHeight() override;
+#endif
+
 };
 }  // namespace OHOS::NWeb
 

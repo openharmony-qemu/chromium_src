@@ -921,6 +921,16 @@ class MockNWebDelegate : public NWebDelegateInterface {
                             int frame_routing_id,
                             int event), (override));
 #endif
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  MOCK_METHOD(void,
+              AvoidVisibleViewportBottom,
+              (int32_t avoidHeight),
+              (override));
+  MOCK_METHOD(int32_t,
+              GetVisibleViewportAvoidHeight,
+              (),
+              (override));
+#endif
 };
 
 class MockNWebTouchPointInfo : public NWebTouchPointInfo {

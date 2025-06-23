@@ -309,6 +309,8 @@ class OHOSAudioDecoder : public AudioDecoder,
 
   void WaitingForLicence();
 
+  void ReportDrmAudioPlayErrorInfo(const std::string& errorDesc);
+
  private:
   std::string mime_type_;
 

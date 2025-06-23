@@ -952,9 +952,14 @@ void NWebDelegate::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
     }
     browser->GetHost()->OnTextSelected(false);
   }
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  if (avoid_height_ != 0) {
+    AvoidVisibleViewportBottom(avoid_height_);
+  }
+#endif
 }
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
 void NWebDelegate::ResizeVisibleViewport(uint32_t width,
                                          uint32_t height,
                                          bool isKeyboard) {
@@ -5342,6 +5347,36 @@ void NWebDelegate::SendPipEvent(int delegate_id,
   }
   GetBrowser()->GetHost()->SendPipEvent(delegate_id, child_id,
                                         frame_routing_id, event);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+void NWebDelegate::AvoidVisibleViewportBottom(int32_t avoidHeight) {
+  LOG(INFO) << "NWebDelegate::AvoidVisibleViewportBottom: " << avoidHeight << " viewportHeight: " << height_;
+  if (avoidHeight < 0) {
+    avoidHeight = 0;
+  }
+  avoid_height_ = avoidHeight;
+  if (render_handler_ == nullptr) {
+    LOG(ERROR) << "fail to AvoidVisibleViewportBottom, render handler is nullptr";
+    return;
+  }
+  float ratio = render_handler_->GetVirtualPixelRatio();
+  uint32_t heightChange = static_cast<uint32_t>(std::floor(avoidHeight * ratio));
+  render_handler_->SetViewportAvoidHeight(heightChange);
+  if (heightChange > height_) {
+    heightChange = height_;
+  }
+  if (avoidHeight == 0) {
+    ResizeVisibleViewport(0, 0, false);
+  } else {
+    // when avoidHeight is greater than 0, it needs to scroll.
+    ResizeVisibleViewport(width_, height_ - heightChange, true);
+  }
+}
+
+int32_t NWebDelegate::GetVisibleViewportAvoidHeight() {
+  return avoid_height_;
 }
 #endif
 }  // namespace OHOS::NWeb

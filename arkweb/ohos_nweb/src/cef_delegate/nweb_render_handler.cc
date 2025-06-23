@@ -472,7 +472,7 @@ void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,
   }
 }
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
 void NWebRenderHandler::SetNeedFocusViewport(bool need) {
   LOG(INFO) << "NWebRenderHandler::SetNeedFocusViewport needFocusViewport:"
             << need;
@@ -484,7 +484,15 @@ void NWebRenderHandler::OnResizeScrollableViewport(
   LOG(INFO)
       << "NWebRenderHandler::OnResizeScrollableViewport needFocusViewport:"
       << needFocusViewport_;
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  if (viewportAvoidScrollOffset_ != 0) {
+    LOG(INFO) << "AvoidVisibleViewportBottom set: " << viewportAvoidHeight_
+              << " viewportAvoidScrollOffset_" << viewportAvoidScrollOffset_;
+    browser->GetHost()->ScrollBy(0, viewportAvoidScrollOffset_);
+  } else if (inputmethod_client_ && inputmethod_client_->IsAttached()) {
+#else
   if (inputmethod_client_ && inputmethod_client_->IsAttached()) {
+#endif
     LOG(INFO) << "system keyboard is attached, scroll focused node into view";
     browser->GetHost()->ScrollFocusedEditableNodeIntoView();
   } else if (custom_keyboard_handler_ &&
@@ -524,6 +532,17 @@ void NWebRenderHandler::UpdateSecurityLayer(bool isNeedSecurityLayer) {
   if (handler) {
     handler->EnableSecurityLayer(isNeedSecurityLayer);
   }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+void NWebRenderHandler::SetViewportAvoidHeight(int32_t viewportAvoidHeight) {
+  if (viewportAvoidHeight > viewportAvoidHeight_) {
+    viewportAvoidScrollOffset_ = viewportAvoidHeight - viewportAvoidHeight_;
+  } else {
+    viewportAvoidScrollOffset_ = 0;
+  }
+  viewportAvoidHeight_ = viewportAvoidHeight;
 }
 #endif
 

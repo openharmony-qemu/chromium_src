@@ -93,6 +93,7 @@ declare_args() {
   arkweb_media_interaction = true
   arkweb_mem = true
   arkweb_menu = true
+  arkweb_menu_handle = true
   arkweb_mixed_content = true
   arkweb_msgport = true
   arkweb_multi_ip_connect = true

@@ -102,6 +102,10 @@ extern const char kEnableCacheMediaTakeOver[];
 #if BUILDFLAG(ARKWEB_VULKAN)
 CONTENT_EXPORT extern const char kOhosEnableVulkan[];
 #endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+CONTENT_EXPORT extern const char kSetExtensionName[];
+#endif
 }  // namespace switches
 
 #endif  // ARKWEB_CONTENT_PUBLIC_COMMON_CONTENT_SWITCHES_EXT_H_

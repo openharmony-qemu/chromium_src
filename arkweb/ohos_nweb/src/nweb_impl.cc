@@ -3773,7 +3773,7 @@ void NWebImpl::BindToNetwork(int network) {
     if (network_service) {
       network_service->BindDnsToNetwork(network);
       WVLOG_I("bint to network %{public}d", net_service::NetHelpers::network);
-      net::NetworkChangeNotifier::BindToNetwork(network);
+      // net::NetworkChangeNotifier::BindToNetwork(network);
     } else {
       WVLOG_E("net_work_service is nullptr");
     }
@@ -5089,8 +5089,7 @@ void NWebImpl::EnableMediaNetworkTrafficPrompt(bool enable) {
 }
 #endif  // ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT
 
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(IS_ARKWEB)
 void NWebImpl::SetSurfaceDensity(const double& density) {
   device_pixel_ratio_ = density;
   if (!inputmethod_handler_) {
@@ -5317,8 +5316,7 @@ void NWebImpl::SetEnterprisePolicy(const std::string& policy, int version) {
 }
 #endif
 
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
 void NWebImpl::RegisterNativeJavaScriptProxy(const std::string& objName,
                                              const std::vector<std::string>& methodName,
                                              std::shared_ptr<OHOS::NWeb::NWebJsProxyMethod> data,

@@ -903,8 +903,7 @@ class NWebImpl : public NWeb {
                                      int32_t y,
                                      bool isHoverEnter) override;
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(IS_ARKWEB)
   void SetSurfaceDensity(const double& density) override;
 #endif
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
@@ -1023,8 +1022,7 @@ class NWebImpl : public NWeb {
   static OnReportStatisticLogFunc on_report_statistic_log_callback_;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
   void RegisterNativeJavaScriptProxy(const std::string& objName,
                                      const std::vector<std::string>& methodName,
                                      std::shared_ptr<OHOS::NWeb::NWebJsProxyMethod> data,

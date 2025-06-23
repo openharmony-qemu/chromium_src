@@ -97,6 +97,8 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
 
   void UpdateVolume();
 
+  void GetGrantMediaFileAccessDirs(std::vector<std::string>& grantMediaFileAccessDirs);
+
   mojo::Remote<ClientExtension> client_extension_;
 
   media::RendererClient* renderer_client_;
@@ -117,7 +119,7 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
 
   bool initialized_ = false;
 
-  WebContents* web_contents_ = nullptr;
+  base::WeakPtr<WebContents> web_contents_ = nullptr;
 
   time_t intervalSinceLastSuspend_;
 

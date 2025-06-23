@@ -797,6 +797,8 @@ class NWebImpl : public NWeb {
   static void RemoveWebExtensionManagerCallback();
   static void UnLoadWebExtension(const std::string& eid);
   static void GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionInfo>& extensionInfo);
+  static void SetExtensionName(const std::string& extension_name);
+  static bool GetExtensionName(std::string& extension_name);
   static void PutExtensionContextMenusCallback(
     std::shared_ptr<NWebExtensionContextMenusCallback> extension_context_menus_callback);
   static void RemoveExtensionContextMenusCallback();

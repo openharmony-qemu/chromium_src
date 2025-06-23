@@ -298,6 +298,7 @@ if (!enable_arkweb) {
   arkweb_pull_to_refresh = false
   arkweb_ex_http_dns_fallback = false
   arkweb_screen_offset = false
+  arkweb_screen_size = false
   arkweb_canvas_commit = false
   arkweb_pip = true
   arkweb_immediate_destory = false
@@ -514,6 +515,7 @@ buildflag_header("features") {
     "ARKWEB_VULKAN=$arkweb_vulkan",
     "ARKWEB_D_VSYNC=$arkweb_d_vsync",
     "ARKWEB_SCREEN_OFFSET=$arkweb_screen_offset",
+    "ARKWEB_SCREEN_SIZE=$arkweb_screen_size",
     "ARKWEB_CANVAS_COMMIT=$arkweb_canvas_commit",
     "ARKWEB_PIP=$arkweb_pip",
     "ARKWEB_IMMEDIATE_DESTORY=$arkweb_immediate_destory",

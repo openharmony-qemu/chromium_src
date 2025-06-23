@@ -1270,6 +1270,7 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
           << "NWebRenderHandler::CreateOverlay, get data from bitmap failed";
       return;
     }
+    LOG(INFO) << "NWebRenderHandler::CreateOverlay, data_size = " << data_size;
 
     float scale = browser->GetHost()->GetPageScaleFactor();
     auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
@@ -1280,6 +1281,7 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
         cef_image_rect.y + view_port_height * screen_info_.display_ratio,
         cef_image_rect.width, cef_image_rect.height, cef_touch_point.x * scale,
         cef_touch_point.y * scale);
+    free(buffer);
   }
 }
 

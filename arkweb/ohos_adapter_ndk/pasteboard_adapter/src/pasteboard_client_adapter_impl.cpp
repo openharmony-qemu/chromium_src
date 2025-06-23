@@ -900,6 +900,7 @@ Udmf_ShareOption PasteBoardClientAdapterImpl::TransitionCopyOption(CopyOptionMod
             shareOption = Udmf_ShareOption::SHARE_OPTIONS_IN_APP;
             break;
         case CopyOptionMode::LOCAL_DEVICE:
+        case CopyOptionMode::CROSS_DEVICE:
             shareOption = Udmf_ShareOption::SHARE_OPTIONS_CROSS_APP;
             break;
         default:
@@ -981,11 +982,19 @@ void PasteBoardClientAdapterImpl::SetPasteData(const PasteRecordVector& data, Co
         }
     }
 
+    OH_UdmfProperty* uProp = OH_UdmfProperty_Create(uData);
+    auto shareOption = TransitionCopyOption(copyOption);
+    auto res = OH_UdmfProperty_SetShareOption(uProp, shareOption);
+    if (res != UDMF_E_OK) {
+        WVLOG_E("property set share-option failed. error code is : %{public}d", res);
+    }
+
     auto ret = OH_Pasteboard_SetData(pasteboard_, uData);
     if (ret != ERR_OK) {
         WVLOG_E("set paste data failed. error code is : %{public}d", ret);
     }
     OH_UdmfData_Destroy(uData);
+    OH_UdmfProperty_Destroy(uProp);
 }
 
 bool PasteBoardClientAdapterImpl::HasPasteData()

@@ -293,6 +293,9 @@
                 "const char* OH_UdsHtml_GetContent(OH_UdsHtml* pThis)",
                 "int OH_UdmfRecord_AddHtml(OH_UdmfRecord* pThis, OH_UdsHtml* html)",
                 "int OH_UdmfRecord_AddPlainText(OH_UdmfRecord* pThis, OH_UdsPlainText* plainText)",
+                "OH_UdmfProperty* OH_UdmfProperty_Create(OH_UdmfData* unifiedData)",
+                "int OH_UdmfProperty_SetShareOption(OH_UdmfProperty* pThis, Udmf_ShareOption option)",
+                "void OH_UdmfProperty_Destroy(OH_UdmfProperty* pThis)",
                 "void OH_UdmfData_Destroy(OH_UdmfData* pThis)"
             ],
             "13": [

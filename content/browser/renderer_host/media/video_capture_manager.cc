@@ -516,7 +516,8 @@ void VideoCaptureManager::ConnectClient(
   // First client starts the device. Device can't be started while the screen is
   // locked.
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  if ((!client_exist || !is_session_reuse_) && lock_time_.is_null()) {
+  if ((!client_exist || (!is_session_reuse_ && controller->stream_type() !=
+       blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE)) && lock_time_.is_null()) {
 #else
   if (!client_exist && lock_time_.is_null()) {
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)

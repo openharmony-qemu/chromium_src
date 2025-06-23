@@ -1048,6 +1048,17 @@ class MockNWebDelegate : public NWebDelegateInterface {
                int event),
               (override));
 #endif
+
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  MOCK_METHOD(void,
+              AvoidVisibleViewportBottom,
+              (int32_t avoidHeight),
+              (override));
+  MOCK_METHOD(int32_t,
+              GetVisibleViewportAvoidHeight,
+              (),
+              (override));
+#endif
 };
 
 class MockNWebDragEvent : public NWebDragEvent {

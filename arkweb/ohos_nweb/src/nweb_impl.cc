@@ -1248,6 +1248,14 @@ void NWebImpl::ResizeVisibleViewport(uint32_t width,
             nweb_id_);
     return;
   }
+
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  if (nweb_delegate_->GetVisibleViewportAvoidHeight() != 0) {
+    WVLOG_I("GetVisibleViewportAvoidHeight is not zero, no resize");
+    return;
+  }
+#endif
+
   nweb_delegate_->ResizeVisibleViewport(width, height, isKeyboard);
 #endif
 }
@@ -5410,5 +5418,25 @@ void NWebImpl::SendPipEvent(int delegate_id,
     nweb_delegate_->SendPipEvent(delegate_id, child_id,
                                  frame_routing_id, event);
   }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+void NWebImpl::AvoidVisibleViewportBottom(int32_t avoidHeight) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("AvoidVisibleViewportBottom failed, nweb delegate is nullptr, nweb_id = %{public}u",
+            nweb_id_);
+    return;
+  }
+  nweb_delegate_->AvoidVisibleViewportBottom(avoidHeight);
+}
+
+int32_t NWebImpl::GetVisibleViewportAvoidHeight() {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("GetVisibleViewportAvoidHeight failed, nweb delegate is nullptr, nweb_id = %{public}u",
+            nweb_id_);
+    return;
+  }
+  return nweb_delegate_->GetVisibleViewportAvoidHeight();
 }
 #endif

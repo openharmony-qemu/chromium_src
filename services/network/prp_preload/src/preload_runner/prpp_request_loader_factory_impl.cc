@@ -165,6 +165,10 @@ bool PRPPRequestLoaderFactoryImpl::MatchRequestHeaders(std::shared_ptr<PRRequest
 {
   bool match = true;
   std::set<std::string> dynamic_header_keys;
+  if (resource_request.headers.GetHeaderVector().size() != req_info->extra_request_headers().GetHeaderVector().size()) {
+	LOG(DEBUG) << "PRPPreload.PRPPRequestLoaderFactoryImpl::MatchRequestHeaders header size not match";
+	return false;
+  }
   for (auto item : resource_request.headers.GetHeaderVector()) {
 	net::HttpRequestHeaders::HeaderVector::const_iterator iter =
 	  req_info->extra_request_headers().GetHeaderVector().end();

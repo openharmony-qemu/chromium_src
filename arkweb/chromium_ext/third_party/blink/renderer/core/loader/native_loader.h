@@ -79,6 +79,8 @@ class CORE_EXPORT NativeLoader : public GarbageCollected<NativeLoader>,
   void Repaint() final;
   void SetCcLayer(cc::Layer*) final;
   void NotifyVisibilityChange(bool visibility);
+  void SetNativeEmbedOverlayInfinity(bool native_embed_overlay_infinity);
+  void SetNativeEmbedOverlay(bool native_embed_overlay);
 
   virtual String DebugName() const = 0;
 

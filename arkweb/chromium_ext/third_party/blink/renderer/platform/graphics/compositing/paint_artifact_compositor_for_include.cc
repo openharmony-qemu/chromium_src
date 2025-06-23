@@ -18,7 +18,9 @@ namespace blink {
 void UpdateExt(cc::Layer& layer,
                PendingLayer& pending_layer,
                LayerListBuilder& layer_list_builder,
-               LayerListBuilder& layer_list_builder_for_video) {
+               LayerListBuilder& layer_list_builder_for_video,
+               LayerListBuilder& layer_list_builder_for_infinity,
+               LayerListBuilder& layer_list_builder_for_overlay) {
   bool should_at_top_in_z_order = false;
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   if (!should_at_top_in_z_order) {
@@ -42,7 +44,15 @@ void UpdateExt(cc::Layer& layer,
 #endif  // ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT
   if (should_at_top_in_z_order) {
     layer_list_builder_for_video.Add(&layer);
-  } else {
+  }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  else if (layer.NativeEmbedOverlayInfinity()) {
+    layer_list_builder_for_infinity.Add(&layer);
+  } else if (layer.NativeEmbedOverlay()) {
+    layer_list_builder_for_overlay.Add(&layer);
+  }
+#endif
+  else {
     layer_list_builder.Add(&layer);
   }
 }

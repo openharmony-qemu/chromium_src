@@ -61,7 +61,7 @@ declare_args() {
   arkweb_encrypt = true
   arkweb_ex_download = true
   arkweb_ext_download = true
-  arkweb_ex_network_connection = false
+  arkweb_ex_network_connection = true
   arkweb_favicon = true
   arkweb_fcp = true
   arkweb_fido = true
@@ -228,7 +228,7 @@ declare_args() {
   arkweb_immediate_destory = true
   arkweb_cwnd = true
   arkweb_ext_file_access=false
-  arkweb_ext_network_connection=false
+  arkweb_ext_network_connection=true
   arkweb_ext_http_dns_fallback=false
   arkweb_ext_password=false
   arkweb_ex_free_copy=false

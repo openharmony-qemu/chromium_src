@@ -15,8 +15,8 @@ class BluetoothTestOhos : public BluetoothTestBase {
   ~BluetoothTestOhos() override;
 
   bool PlatformSupportsLowEnergy() override;
-  void InitWithFakeAdapter();
-  BluetoothDevice* SimulateLowEnergyDevice(int device_ordinal);
+  void InitWithFakeAdapter() override;
+  BluetoothDevice* SimulateLowEnergyDevice(int device_ordinal) override;
 };
 
 // Defines common test fixture name. Use TEST_F(BluetoothTest, YourTestName).

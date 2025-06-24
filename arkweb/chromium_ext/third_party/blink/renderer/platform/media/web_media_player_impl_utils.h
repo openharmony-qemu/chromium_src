@@ -32,7 +32,7 @@ public:
   bool UpdatePlayStateExt(bool can_auto_suspend);
   void SetDelegateStateExt();
   void UpdatePlayState_ComputePlayStateExt(bool& idle_suspended, bool& can_stay_suspended);
-  bool ShouldPausePlaybackWhenHiddenExt();
+  void OnVideoNaturalSizeChangeExt();
   void DidEndAVSessionExt();
 };
 

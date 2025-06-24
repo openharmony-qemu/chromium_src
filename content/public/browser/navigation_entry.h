@@ -109,6 +109,7 @@ class NavigationEntry : public base::SupportsUserData {
   // be visible.
   virtual void SetTitle(std::u16string title) = 0;
   virtual const std::u16string& GetTitle() = 0;
+  virtual bool GetIsRealTitle() = 0;
 
   // The app title as set by the page. SetAppTitle gets called only if page has
   // an app-title meta tag. For all other pages, the app_title will not be set.

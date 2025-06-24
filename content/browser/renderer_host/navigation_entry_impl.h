@@ -140,6 +140,7 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
   const GURL& GetVirtualURL() override;
   void SetTitle(std::u16string title) override;
   const std::u16string& GetTitle() override;
+  bool GetIsRealTitle() override;
   void SetAppTitle(const std::u16string& app_title) override;
   const std::optional<std::u16string>& GetAppTitle() override;
   void SetPageState(const blink::PageState& state,

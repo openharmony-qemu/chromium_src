@@ -548,10 +548,6 @@ void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
     }
     return;
   }
-  if (isFocusSwitchOnBlur_) {
-    LOG(INFO) << "triggered by focus switch, inputmethod is not attached, do not need hidetextinput";
-    return;
-  }
 
   if (lastAttachNWebId_ == 0 || lastAttachNWebId_ == nwebId ||
       hideType == HideTextinputType::FROM_KERNEL) {

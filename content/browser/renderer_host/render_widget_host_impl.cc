@@ -1273,6 +1273,9 @@ bool RenderWidgetHostImpl::SynchronizeVisualProperties(
         old_screen_info.orientation_angle != screen_info.orientation_angle ||
         old_screen_info.orientation_type != screen_info.orientation_type;
     if (orientation_changed) {
+#if BUILDFLAG(ARKWEB_MENU_HANDLE)
+      is_orientation_changed_ = true;
+#endif // ARKWEB_MENU_HANDLE
       delegate_->DidChangeScreenOrientation();
     }
   }

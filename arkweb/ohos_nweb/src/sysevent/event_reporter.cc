@@ -91,8 +91,16 @@ constexpr char SITE_ISOLATION_STATUS[] = "SITE_ISOLATION_STATUS";
 constexpr char PAGE_DRAG_BLANK[] = "PAGE_DRAG_BLANK";
 constexpr char PAGE_BLANK_TIME[] = "PAGE_BLANK_TIME";
 
+// For web play error info,such as pip/drm
+constexpr char WEB_MEDIA_PLAY_ERROR[] = "WEB_MEDIA_PLAY_ERROR";
+ 
+// For av session
+constexpr char WEB_AV_SESSION_DISABLE[] = "WEB_AV_SESSION_DISABLE";
+constexpr char DISABLE_WEB_AV_SESSION_STATUS[] = "DISABLE_WEB_AV_SESSION_STATUS";
+
 constexpr char RENDER_INIT_BLOCK[] = "RENDER_INIT_BLOCK";
 constexpr char BLOCK_TIME[] = "BLOCK_TIME";
+
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -285,6 +293,30 @@ void ReportSiteIsolationMode(const std::string site_isolation_status) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       SITE_ISOLATION_MODE, HiSysEventAdapter::EventType::BEHAVIOR,
       {SITE_ISOLATION_STATUS, site_isolation_status});
+}
+
+void ReportWebMediaPlayErrorInfo(const std::string& errorType,
+                              int errorCode,
+                              const std::string& errorDesc) {
+  std::string error_type = "";
+  std::string error_desc = "";
+  int error_code = errorCode;
+  if (!errorType.empty()) {
+    error_type = errorType;
+  }
+  if (!errorDesc.empty()) {
+    error_desc = errorDesc;
+  }
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      WEB_MEDIA_PLAY_ERROR, HiSysEventAdapter::EventType::FAULT,
+      {ERROR_TYPE, error_type, ERROR_CODE, std::to_string(error_code),
+       ERROR_DESC, error_desc});
+}
+ 
+void ReportAvSessionStatus(const std::string& disable_web_av_session_status) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      WEB_AV_SESSION_DISABLE, HiSysEventAdapter::EventType::STATISTIC,
+      {DISABLE_WEB_AV_SESSION_STATUS, disable_web_av_session_status});
 }
 
 void ReportDragBlank(int64_t duration) {

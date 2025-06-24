@@ -93,6 +93,7 @@ declare_args() {
   arkweb_media_interaction = true
   arkweb_mem = true
   arkweb_menu = true
+  arkweb_menu_handle = true
   arkweb_mixed_content = true
   arkweb_msgport = true
   arkweb_multi_ip_connect = true
@@ -223,9 +224,10 @@ declare_args() {
   arkweb_ex_http_dns_fallback = false
   arkweb_d_vsync = true
   arkweb_screen_offset = true
+  arkweb_screen_size = true
   arkweb_canvas_commit = true
   arkweb_pip = true
-  arkweb_immediate_destory = true
+  arkweb_immediate_destory = false
   arkweb_cwnd = true
   arkweb_ext_file_access=false
   arkweb_ext_network_connection=true

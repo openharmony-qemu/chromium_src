@@ -333,7 +333,8 @@ void CameraManagerAdapterImpl::ReportErrorSysEvent(CameraErrorType errorType)
     if (ErrorTypeToString(errorType, errnoTypeString) != CAMERA_OK) {
         return;
     }
-    // ArkWeb_Media_Not_Implement 依赖Hisysevent接口
+    OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(CAMERA_CAPTURE_ERROR,
+        HiSysEventAdapter::EventType::FAULT, { DEVICE_ID, wantedDeviceId_, ERROR_DESC, errnoTypeString });
 }
 
 CameraStatusAdapter GetAdapterCameraStatus(Camera_Status status)

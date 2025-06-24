@@ -59,7 +59,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   void OnSuspend();
 
   void OnResume();
-  
+
   void OldDeviceUnavailable();
   
   bool isNeedResume(int32_t resumeInterval);

@@ -29,6 +29,7 @@ namespace blink {
 GestureManagerUtils::GestureManagerUtils(GestureManager* gesture_manager)
     : gesture_manager_(gesture_manager) {}
 
+#if BUILDFLAG(ARKWEB_AI)
 void GestureManagerUtils::CloseAIOverlay(
     const GestureEventWithHitTestResults& targeted_event) {
   const WebGestureEvent& gesture_event = targeted_event.Event();
@@ -46,6 +47,7 @@ void GestureManagerUtils::CloseAIOverlay(
         ->CloseImageOverlay();
   }
 }
+#endif
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
 WebInputEventResult GestureManagerUtils::HandleGestureDragLongPress(
@@ -95,8 +97,27 @@ WebInputEventResult GestureManagerUtils::HandleGestureCreateOverlay(
       ->HandleGestureCreateOverlay(targeted_event.Event());
   return WebInputEventResult::kHandledSystem;
 }
+
+void GestureManagerUtils::UpdateContextMenuForAI(
+    const HitTestResult& hit_test_result,
+    const HitTestLocation& location,
+    const WebGestureEvent& gesture_event) {
+  unsigned modifiers = gesture_event.GetModifiers();
+
+  WebMouseEvent fake_mouse_event(
+      WebInputEvent::Type::kMouseUp, gesture_event,
+      WebPointerProperties::Button::kLeft, gesture_event.TapCount(),
+      static_cast<WebInputEvent::Modifiers>(
+          modifiers | WebInputEvent::Modifiers::kIsCompatibilityEventForTouch),
+      gesture_event.TimeStamp());
+
+  gesture_manager_->selection_controller_->SetDataDetectorHitTest(
+      MouseEventWithHitTestResults(fake_mouse_event, location,
+                                   hit_test_result));
+}
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 void GestureManagerUtils::UpdateContextMenuForFreeCopy(
     HitTestResult& hit_test_result,
     HitTestLocation& location) {
@@ -135,4 +156,5 @@ void GestureManagerUtils::UpdateContextMenuForFreeCopy(
     }
   }
 }
+#endif
 }  // namespace blink

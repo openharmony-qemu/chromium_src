@@ -20,7 +20,6 @@
 #include "base/logging.h"
 #include "base/notreached.h"
 #include "cc/input/overscroll_behavior.h"
-#include "content/public/browser/browser_thread.h"
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/ohos/overscroll_refresh_handler.h"
 
@@ -57,10 +56,13 @@ OverscrollRefresh::OverscrollRefresh(ui::OverscrollRefreshHandler* handler,
       scroll_consumption_state_(DISABLED),
       edge_width_(edge_width),
       handler_(handler),
-      deceleration_animator_(new DecelerationAnimator(2.f, nullptr)) {
+      deceleration_animator_(new DecelerationAnimator(2.f)) {
   DCHECK(handler);
   deceleration_animator_->setRefreshListener(
-      std::make_unique<RefreshListener>(GetWeakPtr()));
+      base::BindRepeating(&OverscrollRefresh::AnimateHover,
+                          weak_factory_.GetWeakPtr()),
+      base::BindRepeating(&OverscrollRefresh::AnimateReset,
+                          weak_factory_.GetWeakPtr()));
 }
 
 OverscrollRefresh::OverscrollRefresh()
@@ -74,6 +76,7 @@ OverscrollRefresh::OverscrollRefresh()
 OverscrollRefresh::~OverscrollRefresh() {
   if (deceleration_animator_) {
     deceleration_animator_->resetAnimate();
+    deceleration_animator_.reset();
   }
 }
 
@@ -167,6 +170,7 @@ bool OverscrollRefresh::WillHandleScrollUpdate(
   }
 
   NOTREACHED() << "Invalid overscroll state: " << scroll_consumption_state_;
+  return false;
 }
 
 void OverscrollRefresh::ReleaseWithoutActivation() {
@@ -223,13 +227,6 @@ void OverscrollRefresh::AnimateHover(float x_delta, float y_delta) {
 }
 
 void OverscrollRefresh::AnimateReset(float x_delta, float y_delta) {
-  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
-    content::GetUIThreadTaskRunner({})->PostTask(
-        FROM_HERE, base::BindOnce(&OverscrollRefresh::AnimateReset,
-                                  base::Unretained(this), x_delta, y_delta));
-    return;
-  }
-
   pulltorefresh_scroll_ -= gfx::Vector2dF(x_delta, y_delta);
   if (pulltorefresh_scroll_.y() > kMinTriggerAnimateTwice) {
     did_stop_refresh_ = false;
@@ -253,27 +250,4 @@ void OverscrollRefresh::DidStopRefresh() {
   did_stop_refresh_ = true;
 }
 
-base::WeakPtr<OverscrollRefresh> OverscrollRefresh::GetWeakPtr() {
-  return weak_factory_.GetWeakPtr();
-}
-
-OverscrollRefresh::RefreshListener::RefreshListener(
-    base::WeakPtr<ui::OverscrollRefresh> overscroll_refresh)
-    : overscroll_refresh_(overscroll_refresh) {}
-
-OverscrollRefresh::RefreshListener::RefreshListener(
-    const OverscrollRefresh::RefreshListener& other) = default;
-
-OverscrollRefresh::RefreshListener::~RefreshListener() = default;
-
-void OverscrollRefresh::RefreshListener::onAnimationEnd() {
-  if (overscroll_refresh_.get()) {
-    overscroll_refresh_->AnimateReset(0, 0);
-  }
-}
-void OverscrollRefresh::RefreshListener::onAnimationRepeat(float delta) {
-  if (overscroll_refresh_.get()) {
-    overscroll_refresh_->AnimateHover(0, delta);
-  }
-}
 }  // namespace ui

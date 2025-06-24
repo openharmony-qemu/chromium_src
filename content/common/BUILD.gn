@@ -577,6 +577,12 @@ mojom("mojo_bindings") {
   if (defined(arkweb_javascript_bridge) && arkweb_javascript_bridge) {
     enabled_features += [ "arkweb_javascript_bridge" ]
   }
+  if (arkweb_blank_optimize) {
+    enabled_features += [ "arkweb_blank_optimize" ]
+  }
+  if (is_arkweb) {
+    enabled_features += [ "arkweb_dfx_tracing" ]
+  }  
 
   cpp_typemaps = [
     {

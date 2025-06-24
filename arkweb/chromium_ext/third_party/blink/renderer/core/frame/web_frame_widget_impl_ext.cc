@@ -19,6 +19,7 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
 #include "base/command_line.h"
 #include "components/translate/core/language_detection/language_detection_util.h"
+#include "content/child/child_process.h"
 #include "content/public/common/content_switches.h"
 #include "arkweb/chromium_ext/third_party/blink/public/mojom/page/text_recognize_result.mojom-blink.h"
 #include "third_party/blink/public/web/web_frame_content_dumper.h"
@@ -442,6 +443,21 @@ void WebFrameWidgetImplExt::DeterminePageLanguage() {
 
   if (auto host = GetAssociatedFrameWidgetHost(); host) {
     host->SendCurrentLanguage(static_cast<WTF::String>(ans));
+  }
+}
+#endif
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+int64_t WebFrameWidgetImplExt::GetCurrentTimestampMS() {
+  auto currentTime = std::chrono::system_clock::now().time_since_epoch();
+  return std::chrono::duration_cast<std::chrono::microseconds>(currentTime)
+              .count() /
+          kMicrosecondsPerMillisecond;
+}
+void WebFrameWidgetImplExt::ReportBlank(int64_t startTime, int64_t endTime) {
+  int64_t duration = endTime - startTime;
+  std::string mode = "ReportDragBlank";
+  if (content::ChildProcess::current() && duration > 80) {
+    content::ChildProcess::current()->ReportHisyevent(duration, mode);
   }
 }
 #endif

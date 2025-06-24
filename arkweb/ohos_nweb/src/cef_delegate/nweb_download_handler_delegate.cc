@@ -57,6 +57,13 @@ const std::string GetContentDisposition(
 
     return origin_content_disposition;
 }
+
+std::string DesensitizeStr(const std::string& str) {
+    if (str.length() <= 2) {
+        return "**";
+    }
+    return str.substr(0, 2) + "**";
+}
 }
 
 NWebDownloadHandlerDelegate::NWebDownloadHandlerDelegate(
@@ -127,7 +134,7 @@ NWebDownloadItem* NWebDownloadHandlerDelegate::CreateNWebDownloadItem(
       strdup(GenerateSuggestedFilename(download_item).c_str());
   LOG(INFO) << "web_download_item params, nweb_id:" << item->nweb_id
             << ",id:" << item->download_item_id << ",guid:" << item->guid
-            << ",suggested:" << item->suggested_file_name
+            << ",suggested:" << DesensitizeStr(item->suggested_file_name)
             << ",current_speed:" << item->current_speed
             << ",percent_complete:" << item->percent_complete
             << ",total_bytes:" << item->total_bytes
@@ -170,7 +177,7 @@ std::string NWebDownloadHandlerDelegate::GenerateSuggestedFilename(
   LOG(INFO) << "GenerateSuggestedFilename mime_type: " << sniffed_mime_type
             << ", default_charset: " << default_charset
             << ", content-disposition: " << content_disposition
-            << ", generated_filename: " << generated_filename;
+            << ", generated_filename: " << DesensitizeStr(generated_filename.AsUTF8Unsafe());
 
   // If no mime type or explicitly specified a name, don't replace file
   // extension.

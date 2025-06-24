@@ -223,6 +223,7 @@ declare_args() {
   arkweb_ex_http_dns_fallback = false
   arkweb_d_vsync = true
   arkweb_screen_offset = true
+  arkweb_screen_size = true
   arkweb_canvas_commit = true
   arkweb_pip = true
   arkweb_immediate_destory = true

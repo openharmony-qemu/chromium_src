@@ -53,6 +53,10 @@ namespace {
 constexpr size_t kWordSelectionOffsetSize = 2;
 #endif  // ARKWEB_AI
 
+#if BUILDFLAG(ARKWEB_SCREEN_SIZE)
+constexpr int32_t APPLICATION_API_20 = 20;
+#endif  // #if BUILDFLAG(ARKWEB_SCREEN_SIZE)
+
 cef_screen_orientation_type_t ConvertOrientationType(
     OHOS::NWeb::DisplayOrientation type,
     bool default_portrait) {
@@ -577,6 +581,13 @@ bool NWebRenderHandler::GetScreenInfo(CefRefPtr<CefBrowser> browser,
   // instead.
   screen_info.depth = 24;
   screen_info.depth_per_component = 8;
+
+#if BUILDFLAG(ARKWEB_SCREEN_SIZE)
+  if (base::ohos::ApplicationApiVersion() >= APPLICATION_API_20) {
+    screen_info.available_rect.width = screen_info_.width;
+    screen_info.available_rect.height = screen_info_.height;
+  }
+#endif  // #if BUILDFLAG(ARKWEB_SCREEN_SIZE)
 
   cef_device_ratio_ = screen_info.device_scale_factor;
   return true;

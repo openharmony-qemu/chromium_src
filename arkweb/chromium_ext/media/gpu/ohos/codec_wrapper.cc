@@ -390,6 +390,11 @@ bool CodecWrapperImpl::ReleaseCodecOutputBuffer(int64_t id, bool render) {
   int index = buffer_it->second;
   codec_->ReleaseOutputBuffer(index, render);
   buffer_ids_.erase(buffer_it);
+  if (output_buffer_release_cb_) {
+    output_buffer_release_cb_.Run(state_ == State::kDrained ||
+                                  state_ == State::kDraining ||
+                                  buffer_ids_.empty());
+  }
   return true;
 }
 

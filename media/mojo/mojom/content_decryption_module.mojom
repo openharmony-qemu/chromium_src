@@ -121,6 +121,12 @@ interface ContentDecryptionModule {
   // Removes stored session data associated with the active session specified by
   // |session_id|.
   RemoveSession(string session_id) => (CdmPromiseResult result);
+
+  [EnableIf=arkweb_enable_wiseplay]
+  SuspendSession();
+
+  [EnableIf=arkweb_enable_wiseplay]
+  ResumeSession();
 };
 
 // Session callbacks. The implementation is MojoCdm that runs in the render

@@ -44,7 +44,7 @@ const int kRequestedSharedMemoryCount = 10;
 // start for 5 seconds when resuming after standby, and has a startup success
 // check 5 seconds after actually starting, where stats is logged. We must allow
 // enough time for this. See AUAudioInputStream::CheckInputStartupSuccess().
-# BUILDFLAG(ARKWEB_WEBRTC)
+#if BUILDFLAG(ARKWEB_WEBRTC)
 const int kMissingCallbacksTimeBeforeErrorSeconds = 10000;
 #else
 const int kMissingCallbacksTimeBeforeErrorSeconds = 12;

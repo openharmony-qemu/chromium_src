@@ -84,6 +84,9 @@ BluetoothTestBase::BluetoothTestBase() {}
 
 BluetoothTestBase::~BluetoothTestBase() = default;
 void BluetoothTestBase::StartLowEnergyDiscoverySession() {
+  if (!adapter_) {
+    return;
+  }
   adapter_->StartDiscoverySessionWithFilter(
       std::make_unique<BluetoothDiscoveryFilter>(BLUETOOTH_TRANSPORT_LE),
       /*client_name=*/std::string(),

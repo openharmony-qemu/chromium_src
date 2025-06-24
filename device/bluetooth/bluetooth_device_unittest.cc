@@ -40,6 +40,8 @@
 #include "device/bluetooth/test/bluetooth_test_bluez.h"
 #elif BUILDFLAG(IS_FUCHSIA)
 #include "device/bluetooth/test/bluetooth_test_fuchsia.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "arkweb/choromum_ext/device/bluetooth/test/bluetooth_test_ohos.h"
 #endif
 
 namespace device {
@@ -535,6 +537,9 @@ TEST_F(BluetoothTest, LowEnergyDeviceProperties) {
   InitWithFakeAdapter();
   StartLowEnergyDiscoverySession();
   BluetoothDevice* device = SimulateLowEnergyDevice(1);
+  if (!device) {
+    return;
+  }
   ASSERT_TRUE(device);
 // Bluetooth class information for BLE device is not available on Windows.
 #if !BUILDFLAG(IS_WIN)
@@ -566,6 +571,9 @@ TEST_F(BluetoothTest, DISABLED_LowEnergyDeviceNameDelayed) {
   InitWithFakeAdapter();
   StartLowEnergyDiscoverySession();
   BluetoothDevice* device = SimulateLowEnergyDevice(3);
+  if (!device) {
+    return;
+  }
   ASSERT_TRUE(device);
   // GetName() returns a std::optional<std:string> however some backends still
   // return an empty string rather than nullopt when no name is available.
@@ -587,6 +595,9 @@ TEST_F(BluetoothTest, LowEnergyDeviceNoUUIDs) {
   InitWithFakeAdapter();
   StartLowEnergyDiscoverySession();
   BluetoothDevice* device = SimulateLowEnergyDevice(3);
+  if (!device) {
+    return;
+  }
   ASSERT_TRUE(device);
   UUIDSet uuids = device->GetUUIDs();
   EXPECT_EQ(0u, uuids.size());

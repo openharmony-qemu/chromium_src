@@ -52,7 +52,7 @@
 #elif BUILDFLAG(IS_FUCHSIA)
 #include "device/bluetooth/test/bluetooth_test_fuchsia.h"
 #elif BUILDFLAG(IS_OHOS)
-#include "device/bluetooth/test/bluetooth_test_ohos.h"
+#include "arkweb/choromum_ext/device/bluetooth/test/bluetooth_test_ohos.h"
 #endif
 
 namespace device {

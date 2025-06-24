@@ -20,6 +20,7 @@ group("oh_base_unittests") {
     "//cef:libcef_static_unittests",
     "//components/viz:viz_unittests",
     "//crypto:crypto_unittests",
+    "//device:device_unittests",
     "//gin:gin_unittests",
     "//gpu:gpu_unittests",
     "//media:media_unittests",

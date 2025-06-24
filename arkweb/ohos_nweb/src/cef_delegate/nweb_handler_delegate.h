@@ -951,6 +951,16 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                   int event) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_MENU)
+  void OnVisibleChanged(bool isVisible);
+  void SetHandleVisibleCallback(
+      std::function<void(bool)> on_handle_visible) override {
+    this->on_handle_visible_ = on_handle_visible;
+  }
+  void ShowMagnifier() override;
+  void HideMagnifier() override;
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_JSPROXY)
   enum class JsRunTime{Start = 0, End = 1, HEAD_READY};
@@ -1119,6 +1129,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #endif // ARKWEB_EX_SCREEN_CAPTURE
 
   base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};
+
+#if BUILDFLAG(ARKWEB_MENU)
+  std::function<void(bool)> on_handle_visible_;
+#endif
 };
 }  // namespace OHOS::NWeb
 

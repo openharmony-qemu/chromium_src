@@ -931,6 +931,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (),
               (override));
 #endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+  MOCK_METHOD(void, UpdateSingleHandleVisible, (bool isVisible), (override));
+#endif
 };
 
 class MockNWebTouchPointInfo : public NWebTouchPointInfo {

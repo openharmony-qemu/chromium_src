@@ -5379,4 +5379,12 @@ int32_t NWebDelegate::GetVisibleViewportAvoidHeight() {
   return avoid_height_;
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+void NWebDelegate::UpdateSingleHandleVisible(bool isVisible) {
+  if (handler_delegate_) {
+    handler_delegate_->OnVisibleChanged(isVisible);
+  }
+}
+#endif
 }  // namespace OHOS::NWeb

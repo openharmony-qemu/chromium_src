@@ -113,6 +113,9 @@ class CONTENT_EXPORT ChildProcess {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   void ReportCompositorKeyThread(bool is_created);
 #endif
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  void ReportHisyevent(int64_t block_time, const std::string& mode);
+#endif
  private:
 
   const base::AutoReset<ChildProcess*> resetter_;

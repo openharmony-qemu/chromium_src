@@ -21,6 +21,7 @@
 #include "base/metrics/histogram_macros.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/time.h"
+#include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
 #include "cc/mojo_embedder/async_layer_tree_frame_sink.h"
@@ -354,6 +355,16 @@ void VizProcessTransportFactory::OnEstablishedGpuChannel(
 
   bool gpu_compositing =
       !is_gpu_compositing_disabled_ && !compositor->force_software_compositor();
+
+#if BUILDFLAG(IS_ARKWEB)
+  if (!gpu_compositing) {
+    LOG(ERROR) << "Gpu compositor info, gpu_compositing: " << gpu_compositing
+               << " , is_gpu_compositing_disabled_: " << is_gpu_compositing_disabled_;
+  }
+  TRACE_EVENT2("base", "VizProcessTransportFactory::OnEstablishedGpuChannel",
+               "gpu_compositing", gpu_compositing,
+               "is_gpu_compositing_disabled_", is_gpu_compositing_disabled_);
+#endif
 
   if (gpu_compositing) {
     auto context_result = TryCreateContextsForGpuCompositing(gpu_channel_host);

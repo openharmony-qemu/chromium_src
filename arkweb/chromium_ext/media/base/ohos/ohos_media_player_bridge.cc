@@ -49,6 +49,7 @@ OHOSMediaPlayerBridge::OHOSMediaPlayerBridge(
       prepared_(false),
       pending_play_(false),
       seek_complete_(true),
+      fake_seek_complete_(true),
       should_seek_on_prepare_(false),
       should_set_volume_on_prepare_(false),
       seeking_on_playback_complete_(false),
@@ -351,12 +352,10 @@ void OHOSMediaPlayerBridge::SeekTo(base::TimeDelta time) {
 }
 
 void OHOSMediaPlayerBridge::SeekInternal(base::TimeDelta time) {
-  int32_t ret;
+  int32_t ret = -1;
   if (seeking_back_complete_) {
-    ret = player_->Seek(time.InMilliseconds(),
-                        OHOS::NWeb::PlayerSeekMode::SEEK_PREVIOUS_SYNC);
-    LOG(INFO) << "OHOSMediaPlayerBridge::SeekTo mode=SEEK_PREVIOUS_SYNC";
-
+    ret = 0;
+    LOG(INFO) << "OHOSMediaPlayerBridge::SeekTo mode=FAKE_SEEK";
   } else {
     ret = player_->Seek(time.InMilliseconds(),
                         OHOS::NWeb::PlayerSeekMode::SEEK_CLOSEST);
@@ -365,6 +364,9 @@ void OHOSMediaPlayerBridge::SeekInternal(base::TimeDelta time) {
   if (ret != 0) {
     LOG(ERROR) << "Seek error::ret=" << ret;
   } else {
+    if (!seeking_back_complete_) {
+      fake_seek_complete_ = false;
+    }
     seek_complete_ = false;
     seeking_back_complete_ = false;
   }
@@ -414,7 +416,7 @@ base::TimeDelta OHOSMediaPlayerBridge::GetDuration() {
 
 base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
   if (!player_ || !prepared_ || seeking_on_playback_complete_ ||
-      !seek_complete_) {
+      (!seek_complete_ && !fake_seek_complete_)) {
     return pending_seek_;
   }
 
@@ -432,6 +434,7 @@ base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
 void OHOSMediaPlayerBridge::SeekDone() {
   LOG(INFO) << "OHOSMediaPlayerBridge::SeekDone()";
   seek_complete_ = true;
+  fake_seek_complete_ = true;
 }
 
 void OHOSMediaPlayerBridge::OnSeekBack(base::TimeDelta extra_time) {

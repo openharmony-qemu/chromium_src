@@ -44,7 +44,11 @@ const int kRequestedSharedMemoryCount = 10;
 // start for 5 seconds when resuming after standby, and has a startup success
 // check 5 seconds after actually starting, where stats is logged. We must allow
 // enough time for this. See AUAudioInputStream::CheckInputStartupSuccess().
+# BUILDFLAG(ARKWEB_WEBRTC)
+const int kMissingCallbacksTimeBeforeErrorSeconds = 10000;
+#else
 const int kMissingCallbacksTimeBeforeErrorSeconds = 12;
+#endif
 
 // The interval for checking missing callbacks.
 const int kCheckMissingCallbacksIntervalSeconds = 5;
@@ -269,7 +273,7 @@ void AudioInputDevice::OnStreamCreated(
 // here. See comments in AliveChecker and PowerObserverHelper for details and
 // todos.
   if (detect_dead_stream_ == DeadStreamDetection::kEnabled) {
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_WEBRTC)
     const bool stop_at_first_alive_notification = true;
     const bool pause_check_during_suspend = false;
 #else

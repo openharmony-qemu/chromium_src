@@ -393,6 +393,7 @@ void SystemPropertiesAdapterImpl::DispatchAllWatcherInfo(const char* key, const 
     }
 
     PropertiesKey propkey = propKeyIt->second;
+    std::shared_lock lock(sysPropMutex_[propkey]);
     auto& keyObservers = sysPropObserver_[propkey];
 
     if (keyObservers.size() == 0) {
@@ -400,7 +401,6 @@ void SystemPropertiesAdapterImpl::DispatchAllWatcherInfo(const char* key, const 
         return;
     }
 
-    std::shared_lock lock(sysPropMutex_[propkey]);
     for (auto &item : keyObservers) {
         item->PropertiesUpdate(value);
     }
@@ -419,8 +419,8 @@ void SystemPropertiesAdapterImpl::AttachSysPropObserver(PropertiesKey key, Syste
         return;
     }
 
-    std::vector<SystemPropertiesObserver*>& observerVec = observerIt->second;
     std::unique_lock lock(sysPropMutex_[key]);
+    std::vector<SystemPropertiesObserver*>& observerVec = observerIt->second;
     observerVec.push_back(observer);
 }
 
@@ -437,8 +437,8 @@ void SystemPropertiesAdapterImpl::DetachSysPropObserver(PropertiesKey key, Syste
         return;
     }
 
-    std::vector<SystemPropertiesObserver*>& observerVec = observerIt->second;
     std::unique_lock lock(sysPropMutex_[key]);
+    std::vector<SystemPropertiesObserver*>& observerVec = observerIt->second;
 
     auto it = std::find(observerVec.begin(), observerVec.end(), observer);
     if (it != observerVec.end()) {

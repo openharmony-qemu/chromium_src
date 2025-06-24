@@ -788,6 +788,10 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
                     int event) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_MENU)
+  void UpdateSingleHandleVisible(bool isVisible) override;
+#endif
+
  public:
   int argc_;
   const char** argv_;

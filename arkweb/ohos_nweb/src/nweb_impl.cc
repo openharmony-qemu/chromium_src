@@ -5456,3 +5456,11 @@ int32_t NWebImpl::GetVisibleViewportAvoidHeight() {
   return nweb_delegate_->GetVisibleViewportAvoidHeight();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+void NWebImpl::UpdateSingleHandleVisible(bool isVisible) {
+  if (nweb_delegate_) {
+    nweb_delegate_->UpdateSingleHandleVisible(isVisible);
+  }
+}
+#endif

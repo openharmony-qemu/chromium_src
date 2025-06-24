@@ -34,6 +34,8 @@ public:
   void UpdatePlayState_ComputePlayStateExt(bool& idle_suspended, bool& can_stay_suspended);
   bool ShouldPausePlaybackWhenHiddenExt();
   void DidEndAVSessionExt();
+  void SuspendCdmSessionExt();
+  void ResumeCdmSessionExt();
 };
 
 }

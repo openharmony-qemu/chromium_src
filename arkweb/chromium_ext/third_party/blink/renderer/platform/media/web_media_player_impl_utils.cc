@@ -415,4 +415,27 @@ void WebMediaPlayerImplUtils::DidEndAVSessionExt() {
 #endif // ARKWEB_MEDIA_AVSESSION
 }
 
+void WebMediaPlayerImplUtils::SuspendCdmSessionExt() {
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  if (impl && impl->HasVideo() && impl->cdm_context_ref_) {
+    auto* cdm_context = impl->cdm_context_ref_->GetCdmContext();
+    if (cdm_context) {
+      LOG(INFO) << "[DRM]" << __func__ << ", SuspendCdmSession.";
+      cdm_context->SuspendCdmSession();
+    }
+  }
+#endif
+}
+
+void WebMediaPlayerImplUtils::ResumeCdmSessionExt() {
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  if (impl && impl->HasVideo() && impl->cdm_context_ref_) {
+    auto* cdm_context = impl->cdm_context_ref_->GetCdmContext();
+    if (cdm_context) {
+      LOG(INFO) << "[DRM]" << __func__ << ", ResumeCdmSession.";
+      cdm_context->ResumeCdmSession();
+    }
+  }
+#endif
+}
 }

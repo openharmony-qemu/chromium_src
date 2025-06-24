@@ -76,4 +76,6 @@ void ReportSlideJankStats(int64_t startTime,
                           int32_t maxAppSeqMissedFrames);
 
 void ReportSiteIsolationMode(const std::string site_isolation_status);
+
+void ReportDragBlank(int64_t duration);
 #endif

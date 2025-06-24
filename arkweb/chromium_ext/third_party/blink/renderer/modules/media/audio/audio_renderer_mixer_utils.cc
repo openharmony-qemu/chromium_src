@@ -77,14 +77,14 @@ void AudioRendererMixerUtils::AddMixerInputShareInit(int audio_output_tid, int m
       switches::kProcessType);
   if (type == switches::kRendererProcess) {
     blink::ResSchedReportClient report_client(base::GetCurrentRealPid());
-    report_client.SendAudioData(1, base::GetCurrentRealPid(), audio_output_tid);
-    report_client.SendAudioData(1, base::GetCurrentRealPid(), media_tid);
+    report_client.SendAudioData(0, base::GetCurrentRealPid(), audio_output_tid);
+    report_client.SendAudioData(0, base::GetCurrentRealPid(), media_tid);
   } else {
     OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
-        OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
+        OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
         base::GetCurrentRealPid(), audio_output_tid);
     OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
-        OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
+        OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
         base::GetCurrentRealPid(), media_tid);
   }
 }

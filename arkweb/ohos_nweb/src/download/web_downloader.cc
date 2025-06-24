@@ -171,6 +171,14 @@ NWebDownloadItemState WebDownload_GetItemStateByGuid(const std::string& guid) {
 #endif
 }
 
+NWebDownloadItemState WebDownload_GetItemStateByGuidV2(const char* guid) {
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  return OHOS::NWeb::NWebImpl::GetDownloadItemStateByGuid(std::string(guid));
+#else
+  return NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+#endif
+}
+
 void WebDownloadItem_CreateWebDownloadItem(NWebDownloadItem** download_item) {
   if (download_item) {
     *download_item = new NWebDownloadItem();

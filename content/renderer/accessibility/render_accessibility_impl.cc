@@ -202,8 +202,12 @@ void RenderAccessibilityImpl::FireLayoutComplete() {
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
 void RenderAccessibilityImpl::FireLoadCompleteIfLoaded() {
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (GetMainDocument().GetFrame()->GetEmbeddingToken()) {
+#else
   if (GetMainDocument().IsLoaded() &&
       GetMainDocument().GetFrame()->GetEmbeddingToken()) {
+#endif
     DCHECK(ax_context_);
     ax_context_->FireLoadCompleteIfLoaded();
   }

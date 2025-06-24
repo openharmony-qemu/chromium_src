@@ -718,13 +718,8 @@ void NWebRenderHandler::HandleKeyboardAttach(
     custom_keyboard_handler_ =
         std::make_shared<NWebCustomKeyboardHandlerImpl>(handler);
   }
+  UpdateSecurityLayer(text_input_info.input_type == CEF_TEXT_INPUT_TYPE_PASSWORD);
   if (handler && text_input_info.show_keyboard) {
-    auto isPassWord = attributesMap.find("type");
-    if (isPassWord != attributesMap.end() && isPassWord->second == "password") {
-        UpdateSecurityLayer(true);
-    } else {
-        UpdateSecurityLayer(false);
-    }
     handler->OnInterceptKeyboardAttach(custom_keyboard_handler_, attributesMap,
                                        useSystemKeyboard, enterKeyType);
     LOG(INFO) << "WebCustomKeyboard OnInterceptKeyboardAttach return, "

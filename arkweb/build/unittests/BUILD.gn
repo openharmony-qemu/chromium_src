@@ -20,7 +20,6 @@ group("oh_base_unittests") {
     "//cef:libcef_static_unittests",
     "//components/viz:viz_unittests",
     "//crypto:crypto_unittests",
-    "//device:device_unittests",
     "//gin:gin_unittests",
     "//gpu:gpu_unittests",
     "//media:media_unittests",
@@ -41,6 +40,7 @@ group("oh_core_unittests") {
   deps = [
     "//components/gwp_asan:gwp_asan_unittests",
     "//components/services/filesystem:filesystem_service_unittests",
+    "//device:device_unittests",
     "//media:audio_unittests",
     "//media/cast:cast_unittests",
     "//media/midi:midi_unittests",

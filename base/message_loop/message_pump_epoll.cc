@@ -760,6 +760,12 @@ void MessagePumpEpoll::FdWatchController::OnFdReadable() {
 
 void MessagePumpEpoll::FdWatchController::OnFdWritable() {
   DCHECK(watcher_);
+#if BUILDFLAG(IS_OHOS)
+  if (!watcher_) {
+    LOG(ERROR) << "OnFdWritable(), watcher_ is nullptr";
+    return;
+  }
+#endif
   watcher_->OnFileCanWriteWithoutBlocking(interest_->params().fd);
 }
 

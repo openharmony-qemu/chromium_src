@@ -448,7 +448,17 @@ NavigationEntryImpl::NavigationEntryImpl(
               ? InitialNavigationEntryState::kInitialNotForSynchronousAboutBlank
               : InitialNavigationEntryState::kNonInitial) {}
 
-NavigationEntryImpl::~NavigationEntryImpl() {}
+NavigationEntryImpl::~NavigationEntryImpl() {
+#ifdef OHOS_NAVIGATION
+  static constexpr base::TimeDelta kDelayInterval = base::Seconds(5);
+  auto delayed_image = std::make_shared<gfx::Image>(std::move(favicon_.image));
+  base::SequencedTaskRunner::GetCurrentDefault()->PostDelayedTask(
+    FROM_HERE,
+    base::BindOnce([](std::shared_ptr<gfx::Image>){}, std::move(delayed_image)),
+    kDelayInterval
+  );
+#endif
+}
 
 int NavigationEntryImpl::GetUniqueID() {
   return unique_id_;

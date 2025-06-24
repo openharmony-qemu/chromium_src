@@ -225,7 +225,7 @@ declare_args() {
   arkweb_screen_offset = true
   arkweb_canvas_commit = true
   arkweb_pip = true
-  arkweb_immediate_destory = true
+  arkweb_immediate_destory = false
   arkweb_cwnd = true
   arkweb_ext_file_access=false
   arkweb_ext_network_connection=true

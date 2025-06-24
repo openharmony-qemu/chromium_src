@@ -699,6 +699,8 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // download, in which case the URL would revert to what it was previously).
   virtual const std::u16string& GetTitle() = 0;
 
+  virtual bool GetIsRealTitle() = 0;
+
   // Saves the given title to the navigation entry and does associated work. It
   // will update history and the view with the new title, and also synthesize
   // titles for file URLs that have none. Thus |entry| must have a URL set.

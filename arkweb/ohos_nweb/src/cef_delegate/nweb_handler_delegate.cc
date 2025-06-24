@@ -2236,9 +2236,13 @@ CefSize NWebHandlerDelegate::GetPdfPaperSize(CefRefPtr<CefBrowser> browser,
 
 /* CefDisplayHandler method begin */
 void NWebHandlerDelegate::OnTitleChange(CefRefPtr<CefBrowser> browser,
-                                        const CefString& title) {
+                                        const CefString& title,
+                                        bool isRealTitle) {
   if (nweb_handler_ != nullptr) {
-    nweb_handler_->OnPageTitle(title.ToString());
+    nweb_handler_->OnPageTitleV2(title.ToString(), isRealTitle);
+    if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      nweb_handler_->OnPageTitle(title.ToString());
+    }
   }
   return;
 }

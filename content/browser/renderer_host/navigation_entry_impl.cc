@@ -544,6 +544,10 @@ const std::u16string& NavigationEntryImpl::GetTitle() {
   return title_;
 }
 
+bool NavigationEntryImpl::GetIsRealTitle() {
+  return !title_.empty();
+}
+
 void NavigationEntryImpl::SetAppTitle(const std::u16string& app_title) {
   app_title_ = app_title;
 }

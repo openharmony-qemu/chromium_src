@@ -23,10 +23,17 @@ import("//arkweb/build/features/features.gni")
 
 
 ## add ohos fuzz test case here
+group("nweb_cookie_manager_imp_fuzzers") {
+  testonly = true
+  deps = [
+    "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/nweb_cookie_manager/",
+  ]
+}
+
 group("ohos_fuzz") {
     testonly = true
     deps = [
-        
+      ":nweb_cookie_manager_imp_fuzzers",
     ]
 }
 
@@ -85,28 +92,6 @@ fuzzer_test("nweb_resource_handle_fuzzer") {
     "//ohos_nweb_ex/overrides/cef:cef",
     "//third_party/googletest:gtest",
     "//third_party/googletest:gmock",
-  ]
-}
-
-fuzzer_test("nweb_cookie_manager_delegate_fuzzer") {
-  sources = [
-    "fuzztest/ohos_nweb/src/cef_delegate/nweb_cookie_manager_delegate_fuzzer.cc",
-  ]
-  include_dirs = [
-    "//cef",
-    "//ohos_nweb/include",
-    "//ohos_nweb/src",
-  ]
-  deps = [
-    "//base",
-    "//net",
-    "//ui/base",
-    "//cef:libcef_static",
-    "//components/embedder_support:browser_util",
-    "//ohos_nweb_ex/overrides/cef:cef",
-    "//third_party/googletest:gtest",
-    "//third_party/googletest:gmock",
-    "//net:net_fuzzer_test_support",
   ]
 }
 

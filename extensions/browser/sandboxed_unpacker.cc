@@ -995,6 +995,10 @@ bool SandboxedUnpacker::ValidateSignature(
 void SandboxedUnpacker::ReportFailure(
     const SandboxedUnpackerFailureReason reason,
     const std::u16string& error) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << "ReportFailure(" << static_cast<int>(reason)
+            << ", " << base::UTF16ToUTF8(error) << ")";
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   DCHECK(unpacker_io_task_runner_->RunsTasksInCurrentSequence());
 
   UMA_HISTOGRAM_ENUMERATION(

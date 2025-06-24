@@ -140,6 +140,9 @@ void MediaSessionImpl::PutWebMediaAVSessionEnabled(bool enable) {
     }
   } else {
     if (session_ohos_) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+      ReportAvSessionStatus(std::to_string(enable));
+#endif
       session_ohos_.reset();
     }
   }

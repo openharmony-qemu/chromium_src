@@ -36,6 +36,7 @@
 #include "media/base/media_content_type.h"
 #include "media/base/media_switches.h"
 #include "mojo/public/cpp/bindings/callback_helpers.h"
+#include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "services/media_session/public/cpp/media_image_manager.h"
 #include "services/media_session/public/mojom/audio_focus.mojom.h"
 #include "third_party/blink/public/common/features.h"

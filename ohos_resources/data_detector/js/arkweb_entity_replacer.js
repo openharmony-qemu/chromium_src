@@ -17,6 +17,7 @@ class ArkWebEntityReplacer {
   constructor() {
     this.pendingRequests = new Map();
     this.listenerMap = new WeakMap();
+    this.listenerMapForTouchTest = new WeakMap();
     this.lastClickedEntity = null;
     this.init();
   }
@@ -64,10 +65,10 @@ class ArkWebEntityReplacer {
 
     const dpr = window?.devicePixelRatio || 1;
     return {
-      'left': left * dpr,
-      'top': top * dpr,
-      'right': (left + width) * dpr,
-      'bottom': (top + height) * dpr,
+      left: left * dpr,
+      top: top * dpr,
+      right: (left + width) * dpr,
+      bottom: (top + height) * dpr,
     };
   }
 
@@ -95,10 +96,10 @@ class ArkWebEntityReplacer {
     const physicalBottom = visualViewportBottom * dpr * scale;
 
     return {
-      'left': physicalLeft,
-      'top': physicalTop,
-      'right': physicalRight,
-      'bottom': physicalBottom,
+      left: physicalLeft,
+      top: physicalTop,
+      right: physicalRight,
+      bottom: physicalBottom,
     };
   }
 
@@ -111,10 +112,10 @@ class ArkWebEntityReplacer {
       return;
     }
     let msg = {
-      'content': link.textContent,
-      'outerHTML': link.outerHTML,
-      'entityType': link.getAttribute('ohosArkWebType'),
-      'rect': this.getScreenElementEdgesExt(link),
+      content: link.textContent,
+      outerHTML: link.outerHTML,
+      entityType: link.getAttribute('ohosArkWebType'),
+      rect: this.getScreenElementEdgesExt(link),
     };
     try {
       if (window.arkWebAceEntityReplacerProxy) {
@@ -135,24 +136,44 @@ class ArkWebEntityReplacer {
     event.preventDefault();
 
     let msg = {
-      'content': link.textContent,
-      'outerHTML': link.outerHTML,
-      'entityType': link.getAttribute('ohosArkWebType'),
-      'rect': this.getScreenElementEdgesExt(link),
+      content: link.textContent,
+      outerHTML: link.outerHTML,
+      entityType: link.getAttribute('ohosArkWebType'),
+      rect: this.getScreenElementEdgesExt(link),
     };
-    console.log(JSON.stringify(msg));
+    this.lastClickedEntity = new WeakRef(link);
+    this.sendMsgToNative(msg);
+  };
 
+  handleLinkTouchTest = (event) => {
+    if (event.touches.length !== 1) {
+      return;
+    }
+    const link = event.target;
+    if (link.tagName !== 'A' || !link.getAttribute('ohosArkWebType')) {
+      return;
+    }
+    
+    let msg = {
+      content: link.textContent,
+      entityType: link.getAttribute('ohosArkWebType'),
+      touchTest: true,
+    };
+
+    this.sendMsgToNative(msg);
+  };
+
+  sendMsgToNative(msg) {
     try {
       if (window.arkWebAceEntityReplacerProxy) {
         window.arkWebAceEntityReplacerProxy.clickEntity(JSON.stringify(msg));
-        this.lastClickedEntity = new WeakRef(link);
       } else {
         throw new Error('JS::WebDataDetector Native bridge not available');
       }
     } catch (error) {
       console.error('JS::WebDataDetector error:', error);
     }
-  };
+  }
 
   addSmartClickListener(element, callback) {
     if (this.listenerMap.has(element)) {
@@ -167,6 +188,19 @@ class ArkWebEntityReplacer {
     element.addEventListener('click', handler);
   }
 
+  addSmartTouchTestListener(element, callback) {
+    if (this.listenerMapForTouchTest.has(element)) {
+      return;
+    }
+  
+    function handler(event) {
+      callback(event);
+    }
+
+    this.listenerMapForTouchTest.set(element, handler);
+    element.addEventListener('touchstart', handler);
+  }
+
   queueProcessing(root) {
     requestIdleCallback(() => {
       this.processNode(root);
@@ -179,7 +213,6 @@ class ArkWebEntityReplacer {
       NodeFilter.SHOW_TEXT,
       {
         acceptNode: node => {
-          console.log(node.nodeValue);
           if (node.parentNode.style.display === 'none' ||
             node.parentNode.style.visibility === 'hidden') {
             return NodeFilter.FILTER_REJECT;
@@ -321,7 +354,6 @@ class ArkWebEntityReplacer {
       abortController.abort();
     }, timeout);
 
-    console.log(nodes);
     // send request to native
     const payload = {
       requestId,
@@ -330,9 +362,6 @@ class ArkWebEntityReplacer {
         text: node.nodeValue,
       }))
     };
-
-
-    console.log(JSON.stringify(payload));
 
     try {
       if (window.arkWebAceEntityReplacerProxy) {
@@ -409,7 +438,6 @@ class ArkWebEntityReplacer {
       let lastPos = 0;
 
       match.entities.forEach(entity => {
-        console.log(entity);
         // add text before entity
         if (entity.start > lastPos) {
           fragment.appendChild(document.createTextNode(
@@ -453,6 +481,7 @@ class ArkWebEntityReplacer {
       originalNode.parentNode.replaceChild(wrapper, originalNode);
       // add click listener to wrapper ownerDocument.body
       this.addSmartClickListener(wrapper.ownerDocument.body, this.handleLinkClick);
+      this.addSmartTouchTestListener(wrapper.ownerDocument.body, this.handleLinkTouchTest);
     });
     console.log('JS::WebDataDetector end replace for requestId', result.requestId);
   }

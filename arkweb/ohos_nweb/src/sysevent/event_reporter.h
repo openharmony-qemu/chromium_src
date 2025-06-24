@@ -77,5 +77,11 @@ void ReportSlideJankStats(int64_t startTime,
 
 void ReportSiteIsolationMode(const std::string site_isolation_status);
 
+void ReportWebMediaPlayErrorInfo(const std::string& errorType,
+                              int errorCode,
+                              const std::string& errorDesc);
+ 
+void ReportAvSessionStatus(const std::string& disable_web_av_session_status);
+
 void ReportDragBlank(int64_t duration);
 #endif

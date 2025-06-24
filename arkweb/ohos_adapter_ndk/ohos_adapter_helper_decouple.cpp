@@ -318,7 +318,11 @@ ArkOhosAdapterHelperWrapper::CreateConsumerSurfaceAdapter() {
 
 std::unique_ptr<NWeb::PlayerAdapter>
 ArkOhosAdapterHelperWrapper::CreatePlayerAdapter() {
-  return std::make_unique<NWeb::PlayerAdapterImpl>();
+  ArkWebRefPtr<ArkPlayerAdapter> adapter = ctocpp_->CreatePlayerAdapter();
+  if (CHECK_REF_PTR_IS_NULL(adapter)) {
+    return nullptr;
+  }
+  return std::make_unique<ArkPlayerAdapterWrapper>(adapter);
 }
 
 NWeb::WindowAdapter& ArkOhosAdapterHelperWrapper::GetWindowAdapterInstance() {

@@ -153,7 +153,7 @@ handle_copy_files() {
     # sed -i '/ark_ohos_web_data_base_adapter_wrapper/d' ${OHOS_GLUE_DIR}/BUILD.gn
 
     # 由于已经依赖adapter_ndk且adapter_ndk已实现player_adapter，胶水层ark_player_adapter_wrapper.cpp不参与编译
-    sed -i '/ark_player_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
+    # sed -i '/ark_player_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
     # 由于已经依赖adapter_ndk且adapter_ndk已实现iconsumer_surface_adapter.cpp，胶水层ark_iconsumer_surface_adapter_wrapper.cpp不参与编译
     sed -i '/ark_iconsumer_surface_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
 

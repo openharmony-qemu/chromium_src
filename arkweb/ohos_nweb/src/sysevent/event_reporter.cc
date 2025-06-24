@@ -87,6 +87,12 @@ constexpr char MAX_APP_SEQ_MISSSED_FRAMES[] = "MAX_APP_SEQ_MISSSED_FRAMES";
 // For site_isolation
 constexpr char SITE_ISOLATION_MODE[] = "SITE_ISOLATION_MODE";
 constexpr char SITE_ISOLATION_STATUS[] = "SITE_ISOLATION_STATUS";
+
+constexpr char PAGE_DRAG_BLANK[] = "PAGE_DRAG_BLANK";
+constexpr char PAGE_BLANK_TIME[] = "PAGE_BLANK_TIME";
+
+constexpr char RENDER_INIT_BLOCK[] = "RENDER_INIT_BLOCK";
+constexpr char BLOCK_TIME[] = "BLOCK_TIME";
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -166,54 +172,33 @@ void ReportPageDownLoadErrorInfo(long downloadId, int errorCode) {
 }
 
 void ReportPageLoadTimeStats(OhWebPerformanceTiming loadPageTime) {
+  const std::string input = "NAVIGATION_ID" + std::to_string(loadPageTime.navigation_id) +
+    "NAVIGATION_START" + std::to_string(loadPageTime.navigation_start) +
+    "REDIRECT_COUNT" + std::to_string(loadPageTime.redirect_count) +
+    "REDIRECT_START" + std::to_string(loadPageTime.redirect_start) +
+    "REDIRECT_END" + std::to_string(loadPageTime.redirect_end) +
+    "FETCH_START" + std::to_string(loadPageTime.fetch_start) +
+    "WORKER_START" + std::to_string(loadPageTime.worker_start) +
+    "DOMAIN_LOOKUP_START" + std::to_string(loadPageTime.domain_lookup_start) +
+    "DOMAIN_LOOKUP_END" + std::to_string(loadPageTime.domain_lookup_end) +
+    "CONNECT_START" + std::to_string(loadPageTime.connect_start) +
+    "SECURE_CONNECT_START" + std::to_string(loadPageTime.secure_connect_start) +
+    "CONNECT_END" + std::to_string(loadPageTime.connect_end) +
+    "REQUEST_START" + std::to_string(loadPageTime.request_start) +
+    "RESPONSE_START" + std::to_string(loadPageTime.response_start) +
+    "RESPONSE_END" + std::to_string(loadPageTime.response_end) +
+    "DOM_INTERACTIVE" + std::to_string(loadPageTime.dom_interactive) +
+    "DOM_CONTENT_LOADED_EVENT_START" + std::to_string(loadPageTime.dom_content_loaded_event_start) +
+    "DOM_CONTENT_LOADED_EVENT_END" + std::to_string(loadPageTime.dom_content_loaded_event_end) +
+    "LOAD_EVENT_START" + std::to_string(loadPageTime.load_event_start) +
+    "LOAD_EVENT_END" + std::to_string(loadPageTime.load_event_end) +
+    "FIRST_PAINT" + std::to_string(loadPageTime.first_paint) +
+    "FIRST_CONTENTFUL_PAINT" + std::to_string(loadPageTime.first_contentful_paint) +
+    "LARGEST_CONTENTFUL_PAINT" + std::to_string(loadPageTime.largest_contentful_paint) +
+    "RENDER_INIT_BLOCK" + std::to_string(loadPageTime.render_init_block);
+
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
-      "PAGE_LOAD_TIME", HiSysEventAdapter::EventType::STATISTIC,
-      {"NAVIGATION_ID",
-       loadPageTime.navigation_id,
-       "NAVIGATION_START",
-       loadPageTime.navigation_start,
-       "REDIRECT_COUNT",
-       loadPageTime.redirect_count,
-       "REDIRECT_START",
-       loadPageTime.redirect_start,
-       "REDIRECT_END",
-       loadPageTime.redirect_end,
-       "FETCH_START",
-       loadPageTime.fetch_start,
-       "WORKER_START",
-       loadPageTime.worker_start,
-       "DOMAIN_LOOKUP_START",
-       loadPageTime.domain_lookup_start,
-       "DOMAIN_LOOKUP_END",
-       loadPageTime.domain_lookup_end,
-       "CONNECT_START",
-       loadPageTime.connect_start,
-       "SECURE_CONNECT_START",
-       loadPageTime.secure_connect_start,
-       "CONNECT_END",
-       loadPageTime.connect_end,
-       "REQUEST_START",
-       loadPageTime.request_start,
-       "RESPONSE_START",
-       loadPageTime.response_start,
-       "RESPONSE_END",
-       loadPageTime.response_end,
-       "DOM_INTERACTIVE",
-       loadPageTime.dom_interactive,
-       "DOM_CONTENT_LOADED_EVENT_START",
-       loadPageTime.dom_content_loaded_event_start,
-       "DOM_CONTENT_LOADED_EVENT_END",
-       loadPageTime.dom_content_loaded_event_end,
-       "LOAD_EVENT_START",
-       loadPageTime.load_event_start,
-       "LOAD_EVENT_END",
-       loadPageTime.load_event_end,
-       "FIRST_PAINT",
-       loadPageTime.first_paint,
-       "FIRST_CONTENTFUL_PAINT",
-       loadPageTime.first_contentful_paint,
-       "LARGEST_CONTENTFUL_PAINT",
-       loadPageTime.largest_contentful_paint});
+      "PAGE_LOAD_TIME", HiSysEventAdapter::EventType::STATISTIC,{input, ""});
 }
 
 void ReportAudioPlayErrorInfo(const std::string errorType,
@@ -300,4 +285,10 @@ void ReportSiteIsolationMode(const std::string site_isolation_status) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       SITE_ISOLATION_MODE, HiSysEventAdapter::EventType::BEHAVIOR,
       {SITE_ISOLATION_STATUS, site_isolation_status});
+}
+
+void ReportDragBlank(int64_t duration) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      PAGE_DRAG_BLANK, HiSysEventAdapter::EventType::STATISTIC,
+      {PAGE_DRAG_BLANK, std::to_string(duration)});
 }

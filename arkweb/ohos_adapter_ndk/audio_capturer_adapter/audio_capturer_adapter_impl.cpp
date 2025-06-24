@@ -150,7 +150,7 @@ int32_t AudioCapturerAdapterImpl::Create(
         OH_AudioStreamBuilder_Destroy(builder);
         return AUDIO_ERROR;
     }
-    
+
     if (capturerOptions->GetCapturerFlags() != 0) {
         OH_AudioStream_LatencyMode latencyMode = AUDIOSTREAM_LATENCY_MODE_FAST;
         ret = OH_AudioStreamBuilder_SetLatencyMode(builder, latencyMode);
@@ -168,7 +168,7 @@ int32_t AudioCapturerAdapterImpl::Create(
 
     userDataCallBack_ = std::make_shared<UserDataCallBack>();
     OH_AudioStreamBuilder_SetCapturerCallback(builder, callbacks, static_cast<void*>(&userDataCallBack_));
-    
+
     ret = OH_AudioStreamBuilder_GenerateCapturer(builder, &audio_capturer_);
     if (ret != AUDIOSTREAM_SUCCESS) {
         WVLOG_E("create audio stream capturer failed");
@@ -290,7 +290,7 @@ int64_t AudioCapturerAdapterImpl::GetAudioTime()
         WVLOG_E("audio capturer is nullptr");
         return AUDIO_NULL_ERROR;
     }
-    
+
     int64_t framePosition;
     int64_t timestamp;
     auto ret = OH_AudioCapturer_GetTimestamp(audio_capturer_, CLOCK_MONOTONIC, &framePosition, &timestamp);

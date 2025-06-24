@@ -29,6 +29,7 @@
 #include "media/base/ohos/ohos_media_drm_bridge_delegate.h"
 #include "media/base/provision_fetcher.h"
 #include "media/cdm/clear_key_cdm_common.h"
+#include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "third_party/widevine/cdm/widevine_cdm_common.h"
 #if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
 #include "media/cdm/wiseplay_cdm_common.h"
@@ -303,6 +304,8 @@ bool IsKeySystemSupportedWithTypeImpl(const std::string& key_system,
   }
   return supported;
 }
+
+constexpr int DEFAULT_DRM_AUDIO_ERROR_CODE = 0;
 }  // namespace
 
 OHOSDrmCallback::OHOSDrmCallback(
@@ -817,6 +820,13 @@ void OHOSMediaDrmBridge::RejectPromise(uint32_t promise_id,
                                        CdmPromise::Exception exception_code,
                                        const std::string& error_message) {
   LOG(ERROR) << "[DRM]" << __func__ << ", error_message: " << error_message;
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string errorType = "drm certificate verification failed";
+  int errorCode = DEFAULT_DRM_AUDIO_ERROR_CODE;
+  std::string errorDesc = "OHOSMediaDrmBridge::reject promise";
+  ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
+#endif
+
   cdm_promise_adapter_.RejectPromise(promise_id, exception_code, 0,
                                      error_message);
 }

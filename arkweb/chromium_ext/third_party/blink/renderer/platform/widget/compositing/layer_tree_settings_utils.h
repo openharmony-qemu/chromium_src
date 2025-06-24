@@ -23,8 +23,6 @@ void AdjustMemoryLimitBasedOnScreenWidth(cc::ManagedMemoryPolicy& actual,
                                          const gfx::Size& initial_screen_size,
                                          float initial_device_scale_factor);
 size_t EstimatePhysicalMemory();
-void CalculateVisibleMemoryLimit(cc::ManagedMemoryPolicy& actual,
-                                 size_t physical_memory_mb);
 void SetMaxVisibleBytes(cc::ManagedMemoryPolicy& actual);
 void ConfigureOverlayScrollbarSettings(cc::LayerTreeSettings& settings);
 void AdjustGraphicsSettings(const gfx::Size& screen_size,

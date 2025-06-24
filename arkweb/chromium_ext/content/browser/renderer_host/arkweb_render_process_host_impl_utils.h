@@ -140,6 +140,9 @@ class ArkwebRenderProcessHostImplUtils {
                                    int32_t process_id,
                                    const std::vector<int32_t>& thread_ids,
                                    int32_t role);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  static void ReportHisyevent(int64_t block_time, const std::string& mode);
+#endif
 };
 }  // namespace content
 

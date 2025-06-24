@@ -44,7 +44,7 @@ class NWebResourceHandler : public CefResourceHandler {
                           int64& response_length,
                           CefString& redirectUrl) override;
 
-  const std::string& GetResponseData() override;
+  const std::string GetResponseData() override;
 
   size_t GetResponseDataBuffer(char* data) override;
 

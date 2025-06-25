@@ -135,6 +135,22 @@ static int32_t AudioRendererOnInterruptEvent(OH_AudioRenderer* renderer,
   return 0;
 }
 
+static void AudioRendererOutputDeviceChangeCallback(OH_AudioRenderer* renderer,
+                                          void* userData,
+                                          OH_AudioStream_DeviceChangeReason reason) {
+  LOG(INFO) << "AudioRenderer on device change reason:" << static_cast<int32_t>(reason);
+  if (userData) {
+    switch (reason) {
+      case OH_AudioStream_DeviceChangeReason::REASON_OLD_DEVICE_UNAVAILABLE:
+          ((OHOSAudioOutputStream*)(userData))->OldDeviceUnavailable();
+          break;
+      default:
+          LOG(ERROR) << "AudioRendererOutputDeviceChangeCallback reason not foud, reason:" << reason;
+          break;
+    }
+  }
+}
+
 void OHOSAudioOutputStream::OnSuspend() {
     LOG(INFO) << "AudioRendererCallback::OnSuspend";
 
@@ -195,6 +211,59 @@ void OHOSAudioOutputStream::OnResume() {
                            weakMediaSession_,
                            content::MediaSession::SuspendType::kSystem));
     }
+}
+
+void OHOSAudioOutputStream::OldDeviceUnavailable() {
+  if (isCommunication_) {
+    LOG(INFO) << "OldDeviceUnavailable communication";
+    return;
+  }
+ 
+  LOG(INFO) << "AudioRendererOutputDeviceChangeCallback need stop session";
+  auto OutputDeviceChangeFunc =
+    [] (AudioParameters params) {
+    content::RenderFrameHost* renderFrameHost =
+    content::RenderFrameHost::FromID(params.render_process_id(),
+                                      params.render_frame_id());
+    auto webContent =
+        content::WebContents::FromRenderFrameHost(renderFrameHost);
+    if (!webContent) {
+      LOG(ERROR) << "AudioOutputStream get webContent failed.";
+      return;
+    }
+    content::MediaSessionImpl* mediaSession =
+      content::MediaSessionImpl::Get(webContent);
+    if (!mediaSession) {
+      LOG(ERROR) << "AudioOutputStream get mediaSession failed.";
+      return;
+    }
+    auto weakMediaSession = mediaSession->weakMediaSessionFactory_.GetWeakPtr();
+    if (!weakMediaSession) {
+      LOG(ERROR) << "OHOSAudioOutputStream::OHOSAudioOutputStream "
+                    "weakMediaSession get failed";
+      return;
+    }
+ 
+    if (weakMediaSession.get()->IsActive()) {
+      LOG(INFO) << "MediaSession is suspending the audio";
+      weakMediaSession.get()->Suspend(
+          content::MediaSession::SuspendType::kSystem);
+    } else {
+      LOG(INFO) << "MediaSession is suspended";
+    }
+  };
+ 
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    if (!main_task_runner_) {
+      LOG(INFO) << "main_task_runner is nullptr";
+      return;
+    }
+    main_task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(OutputDeviceChangeFunc, parameters_));
+  } else {
+    OutputDeviceChangeFunc(parameters_);
+  }
 }
 
 bool OHOSAudioOutputStream::isNeedResume(int32_t resumeInterval) {
@@ -338,6 +407,12 @@ bool OHOSAudioOutputStream::InitRender() {
   callbacks.OH_AudioRenderer_OnInterruptEvent = AudioRendererOnInterruptEvent;
   OH_AudioStreamBuilder_SetRendererCallback(audio_stream_builder_, callbacks,
                                             this);
+  OH_AudioStream_Result res = OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback(
+                              audio_stream_builder_,
+                              &AudioRendererOutputDeviceChangeCallback, this);
+  if (res != AUDIOSTREAM_SUCCESS) {
+    return false;
+  }
   // set interrupt mode
   Prepare(weakMediaSession_);
 

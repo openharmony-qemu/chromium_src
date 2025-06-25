@@ -395,15 +395,13 @@ void WebMediaPlayerImplUtils::UpdatePlayState_ComputePlayStateExt(
 #endif // ARKWEB_VIDEO_ASSISTANT
 }
 
-bool WebMediaPlayerImplUtils::ShouldPausePlaybackWhenHiddenExt() {
+void WebMediaPlayerImplUtils::OnVideoNaturalSizeChangeExt() {
 #if BUILDFLAG(ARKWEB_MEDIA)
-  // Expect that video will pause after switching to the background while
-  // loading.
-  if (impl->HasVideo() && impl->pipeline_metadata_.natural_size.IsEmpty()) {
-    return true;
+  if (!impl->paused_ && impl->IsPageHidden() && impl->ShouldPausePlaybackWhenHidden()) {
+    LOG(INFO) << "OhMedia::WebMediaPlayerImpl::OnVideoNaturalSizeChange pause when hidden";
+    impl->Pause();
   }
 #endif
-  return false;
 }
 
 void WebMediaPlayerImplUtils::DidEndAVSessionExt() {

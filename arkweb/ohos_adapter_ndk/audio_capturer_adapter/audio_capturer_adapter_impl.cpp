@@ -12,11 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <mutex>
+#include <set>
 #include <unordered_map>
 #include "audio_capturer_adapter_impl.h"
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 
 namespace OHOS::NWeb {
+
+static std::set<OH_AudioCapturer*> captures_;
+static std::mutex capturesSetMutex_;
 
 const std::unordered_map<AudioAdapterSamplingRate, int32_t> SAMPLING_RATE_MAP = {
     {AudioAdapterSamplingRate::SAMPLE_RATE_8000, 8000},
@@ -67,9 +72,18 @@ const OH_AudioStream_EncodingType DEFAULT_ENCODETYPE = AUDIOSTREAM_ENCODING_TYPE
 const OH_AudioStream_SampleFormat DEFAULT_SAMPLE_FORMAT = AUDIOSTREAM_SAMPLE_U8;
 const int32_t DEFAULT_AUDIO_CHANNEL = 2;
 const OH_AudioStream_SourceType DEFAULT_SourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_RECOGNITION;
+} // namespace
 
 int32_t OnReadData(OH_AudioCapturer* capturer, void* userData, void* buffer, int32_t length)
 {
+    {
+        std::unique_lock<std::mutex> lock(capturesSetMutex_);
+        auto it = captures_.find(capturer);
+        if (it == captures_.end()) {
+            WVLOG_E("AudioCapturerAdapterImpl OnReadData cannot find capture, return");
+            return -1;
+        }
+    }
     if (userData == nullptr) {
         return -1;
     }
@@ -83,7 +97,6 @@ int32_t OnReadData(OH_AudioCapturer* capturer, void* userData, void* buffer, int
     userDataCallback->callback->OnReadData(length);
     return 0;
 }
-} // namespace
 
 int32_t AudioCapturerAdapterImpl::Create(
     const std::shared_ptr<AudioCapturerOptionsAdapter> capturerOptions,
@@ -173,6 +186,12 @@ bool AudioCapturerAdapterImpl::Start()
         return false;
     }
     auto ret = OH_AudioCapturer_Start(audio_capturer_);
+    {
+        std::unique_lock<std::mutex> lock(capturesSetMutex_);
+        if (ret == AUDIOSTREAM_SUCCESS) {
+            captures_.insert(audio_capturer_);
+        }
+    }
     return ret == AUDIOSTREAM_SUCCESS;
 }
 
@@ -181,6 +200,10 @@ bool AudioCapturerAdapterImpl::Stop()
     if (audio_capturer_ == nullptr) {
         WVLOG_E("audio capturer is nullptr");
         return false;
+    }
+    {
+        std::unique_lock<std::mutex> lock(capturesSetMutex_);
+        captures_.erase(audio_capturer_);
     }
     auto ret = OH_AudioCapturer_Stop(audio_capturer_);
     return ret == AUDIOSTREAM_SUCCESS;
@@ -191,6 +214,10 @@ bool AudioCapturerAdapterImpl::Release()
     if (audio_capturer_ == nullptr) {
         WVLOG_E("audio capturer is nullptr");
         return false;
+    }
+    {
+        std::unique_lock<std::mutex> lock(capturesSetMutex_);
+        captures_.erase(audio_capturer_);
     }
     auto ret = OH_AudioCapturer_Release(audio_capturer_);
     return ret == AUDIOSTREAM_SUCCESS;

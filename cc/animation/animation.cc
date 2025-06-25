@@ -27,7 +27,7 @@ scoped_refptr<Animation> Animation::Create(int id) {
 }
 
 Animation::Animation(int id) : id_(id) {
-  //DCHECK(id_);
+  DCHECK(id_);
   keyframe_effect_.Write(*this) = std::make_unique<KeyframeEffect>(this);
 }
 

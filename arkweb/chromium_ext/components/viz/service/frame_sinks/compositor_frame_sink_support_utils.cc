@@ -74,6 +74,12 @@ void CompositorFrameSinkSupportUtils::videoLtpoMaybeSubmitCompositorFrame()
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void CompositorFrameSinkSupportUtils::OnSetBypassVsyncCondition(int32_t condition) {
+  compositorFrameSinkSupport->begin_frame_source_->OnSetBypassVsyncCondition(condition);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
 int CompositorFrameSinkSupportUtils::GetFrameRate()
 {

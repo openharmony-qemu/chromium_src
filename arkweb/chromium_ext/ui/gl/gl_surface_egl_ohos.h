@@ -44,11 +44,19 @@ class GL_EXPORT NativeViewGLSurfaceEGLOhos : public NativeViewGLSurfaceEGL {
   void SetNativeInnerWeb(bool isInnerWeb) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override;
+#endif
+
  private:
   ~NativeViewGLSurfaceEGLOhos();
   EGLNativeWindowType window_;
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   bool isInnerWeb_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  int32_t condition_ = 0;
 #endif
 };
 

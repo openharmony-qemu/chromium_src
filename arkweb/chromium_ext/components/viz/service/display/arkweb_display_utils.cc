@@ -170,6 +170,12 @@ void ArkwebDisplayUtils::SetNativeInnerWeb(bool isInnerWeb) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void ArkwebDisplayUtils::SetBypassVsyncCondition(int32_t condition) {
+    display_->renderer_->SetBypassVsyncCondition(condition);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
 void ArkwebDisplayUtils::SetDrawRect(const gfx::Rect& new_rect) {
   if (draw_mode_ == 0) {

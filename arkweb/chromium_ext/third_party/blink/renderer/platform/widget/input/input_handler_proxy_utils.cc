@@ -509,4 +509,12 @@ gfx::Vector2dF InputHandlerProxyUtils::GetOverScrollOffset() {
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void InputHandlerProxyUtils::SetBypassVsyncCondition(int32_t condition) {
+  LOG(INFO) << "InputHandlerProxyUtils::SetBypassVsyncCondition condition:"
+            << condition;
+  proxy_->SetBypassVsyncCondition(condition);
+}
+#endif
+
 }

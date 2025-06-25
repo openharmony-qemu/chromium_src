@@ -5,6 +5,11 @@
 #include "disk_cache_file.h"
 
 #include "base/logging.h"
+#include "base/task/single_thread_task_runner.h"
+
+namespace {
+  constexpr int32_t WAIT_INITED_TIME_OUT = 200; // 200ms
+} // namespace
 
 namespace ohos_prp_preload {
 DiskCacheEntry::DiskCacheEntry(DiskCacheFile* cache,
@@ -19,7 +24,7 @@ DiskCacheEntry::~DiskCacheEntry() {
     entry_ = nullptr;
   }
 }
-  
+
 void DiskCacheEntry::Cache() {
   OnOpComplete(net::OK);
 }
@@ -56,8 +61,15 @@ int DiskCacheEntry::OpenCallback(int rv) {
   auto callback = base::BindOnce(&DiskCacheEntry::OnEntryOpenComplete,
                                  weak_ptr_factory_.GetWeakPtr());
 
+  if (cache_ == nullptr) {
+    return rv;
+  }
+  disk_cache::Backend* backend = cache_->Backend();
+  if (backend == nullptr) {
+    return net::ERR_FAILED;
+  }
   disk_cache::EntryResult create_result =
-      cache_->Backend()->OpenOrCreateEntry(url_, net::HIGHEST, std::move(callback));
+      backend->OpenOrCreateEntry(url_, net::HIGHEST, std::move(callback));
   rv = create_result.net_error();
 
   if (rv != net::ERR_IO_PENDING) {
@@ -68,19 +80,26 @@ int DiskCacheEntry::OpenCallback(int rv) {
 
 int DiskCacheEntry::WriteCallback(int rv) {
   if (rv != net::OK) {
-    cache_->EntryWriteComplete(this);
+    if (cache_ != nullptr) {
+      cache_->EntryWriteComplete(this);
+    }
     return rv;
   }
 
   op_type_ = WRITE_DATA;
   auto io_buf = base::MakeRefCounted<net::StringIOBuffer>(entry_content_);
+  if (!entry_) {
+    return net::ERR_FAILED;
+  }
   return entry_->WriteData(1, 0, io_buf.get(), entry_content_.length(),
                            base::BindOnce(&DiskCacheEntry::OnOpComplete,
                                           weak_ptr_factory_.GetWeakPtr()), true);
 }
 
 int DiskCacheEntry::IOComplete(int rv) {
-  cache_->EntryWriteComplete(this);
+  if (cache_ != nullptr) {
+    cache_->EntryWriteComplete(this);
+  }
   return rv;
 }
 
@@ -137,8 +156,15 @@ int DiskCacheReadHelper::OpenCallback(int rv) {
   auto callback = base::BindOnce(&DiskCacheReadHelper::OnEntryOpenComplete,
                                  weak_ptr_factory_.GetWeakPtr());
 
+  if (cache_ == nullptr) {
+    return rv;
+  }
+  disk_cache::Backend* backend = cache_->Backend();
+  if (backend == nullptr) {
+    return net::ERR_FAILED;
+  }
   disk_cache::EntryResult result =
-      cache_->Backend()->OpenEntry(url_, net::HIGHEST, std::move(callback));
+      backend->OpenEntry(url_, net::HIGHEST, std::move(callback));
   rv = result.net_error();
 
   if (rv != net::ERR_IO_PENDING)
@@ -148,13 +174,21 @@ int DiskCacheReadHelper::OpenCallback(int rv) {
 
 int DiskCacheReadHelper::ReadCallback(int rv) {
   if (rv != net::OK) {
-    LOG(ERROR) << "PRPPreload.DiskCacheReadHelper::ReadCallback load cache entry failed: " << rv;
-    cache_->EntryReadComplete();
+    LOG(DEBUG) << "PRPPreload.DiskCacheReadHelper::ReadCallback load cache entry failed: " << rv;
+    if (!entry_loaded_cb_.is_null()) {
+      entry_loaded_cb_.Run(std::string());
+    }
+    if (cache_ != nullptr) {
+      cache_->EntryReadComplete();
+    }
     return rv;
   }
 
   op_type_ = READ_DATA;
   buf_ = base::MakeRefCounted<net::IOBufferWithSize>(entry_->GetDataSize(1));
+  if (!entry_ || !buf_) {
+    return net::ERR_FAILED;
+  }
   return entry_->ReadData(1, 0, buf_.get(), buf_->size(),
                           base::BindOnce(&DiskCacheReadHelper::OnOpComplete,
                                          weak_ptr_factory_.GetWeakPtr()));
@@ -165,7 +199,9 @@ int DiskCacheReadHelper::IOComplete(int rv) {
     entry_loaded_cb_.Run(std::string(buf_->data(), buf_->size()));
   }
 
-  cache_->EntryReadComplete();
+  if (cache_ != nullptr) {
+    cache_->EntryReadComplete();
+  }
   return rv;
 }
 
@@ -175,22 +211,44 @@ DiskCacheFile::DiskCacheFile(const scoped_refptr<DiskCacheBackendFactory>& disk_
   disk_cache_backend_factory_(disk_cache_backend_factory), url_(url), entry_loaded_cb_(entry_loaded_cb) {}
 
 void DiskCacheFile::StoreInfoAsync(const std::string& entry_content) {
-  if (!disk_cache_backend_factory_->WaitInitedTimeout()) {
-    LOG(ERROR) << "PRPPreload.DiskCacheFile::StoreInfoAsync backend not ready";
+  if (!disk_cache_backend_factory_) {
     return;
   }
+  if (!disk_cache_backend_factory_->CheckBackendAsync(
+      base::BindOnce(&DiskCacheFile::BackendComplete, weak_factory_.GetWeakPtr()))) {
+    LOG(DEBUG) << "PRPPreload.DiskCacheFile::StoreInfoAsync backend not ready";
+    SetDelayedStoreTask(base::BindOnce(&DiskCacheFile::DoStoreInfo, weak_factory_.GetWeakPtr(), entry_content));
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(FROM_HERE, base::BindOnce(
+      &DiskCacheFile::RunStoreTask, weak_factory_.GetWeakPtr(), true), base::Milliseconds(WAIT_INITED_TIME_OUT));
+    return;
+  }
+  DoStoreInfo(entry_content);
+}
+
+void DiskCacheFile::DoStoreInfo(const std::string& entry_content) {
   entry_ = std::make_unique<DiskCacheEntry>(this, url_, entry_content);
   entry_->Cache();
 }
 
 void DiskCacheFile::LoadInfoAsync() {
-  if (!disk_cache_backend_factory_->WaitInitedTimeout()) {
-    LOG(DEBUG) << "PRPPreload.DiskCacheFile::LoadInfoAsync already load";
+  if (!disk_cache_backend_factory_) {
+    return;
+  }
+  if (!disk_cache_backend_factory_->CheckBackendAsync(
+      base::BindOnce(&DiskCacheFile::BackendComplete, weak_factory_.GetWeakPtr()))) {
+    LOG(DEBUG) << "PRPPreload.DiskCacheFile::LoadInfoAsync backend not ready";
+    SetDelayedLoadTask(base::BindOnce(&DiskCacheFile::DoLoadInfo, weak_factory_.GetWeakPtr()));
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(FROM_HERE, base::BindOnce(
+      &DiskCacheFile::RunLoadTask, weak_factory_.GetWeakPtr(), true), base::Milliseconds(WAIT_INITED_TIME_OUT));
     return;
   }
   if (helper_ != nullptr) {
     return;
   }
+  DoLoadInfo();
+}
+
+void DiskCacheFile::DoLoadInfo() {
   helper_ = std::make_unique<DiskCacheReadHelper>(this, url_, entry_loaded_cb_);
   helper_->LoadCache();
 }
@@ -206,6 +264,42 @@ void DiskCacheFile::EntryWriteComplete(DiskCacheEntry* entry) {
   }
 
   entry_.reset();
+}
+
+void DiskCacheFile::SetDelayedStoreTask(base::OnceCallback<void()> delayed_store_task) {
+  delayed_store_task_ = std::move(delayed_store_task);
+}
+
+void DiskCacheFile::SetDelayedLoadTask(base::OnceCallback<void()> delayed_load_task) {
+  delayed_load_task_ = std::move(delayed_load_task);
+}
+
+void DiskCacheFile::BackendComplete() {
+  RunLoadTask();
+  RunStoreTask();
+}
+
+void DiskCacheFile::RunStoreTask(bool clear) {
+  if (clear) {
+    delayed_store_task_ = base::OnceCallback<void()>();
+    return;
+  }
+  if (!delayed_store_task_.is_null()) {
+    std::move(delayed_store_task_).Run();
+  }
+}
+
+void DiskCacheFile::RunLoadTask(bool clear) {
+  if (clear) {
+    delayed_load_task_ = base::OnceCallback<void()>();
+    if (!entry_loaded_cb_.is_null()) {
+      entry_loaded_cb_.Run(std::string());
+    }
+    return;
+  }
+  if (!delayed_load_task_.is_null()) {
+    std::move(delayed_load_task_).Run();
+  }
 }
 
 }  // namespace ohos_prp_preload

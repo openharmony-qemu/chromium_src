@@ -96,14 +96,24 @@ class DiskCacheFile : public base::RefCounted<DiskCacheFile> {
   friend class DiskCacheReadHelper;
 
   disk_cache::Backend* Backend() const { return disk_cache_backend_factory_->Backend(); }
+  void DoStoreInfo(const std::string& entry_content);
+  void DoLoadInfo();
   void EntryReadComplete();
   void EntryWriteComplete(DiskCacheEntry* entry);
+  void SetDelayedStoreTask(base::OnceCallback<void()> delayed_store_task);
+  void SetDelayedLoadTask(base::OnceCallback<void()> delayed_load_task);
+  void BackendComplete();
+  void RunStoreTask(bool clear = false);
+  void RunLoadTask(bool clear = false);
 
   scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory_;
   const std::string& url_;
   EntryLoadedCallback entry_loaded_cb_;
   std::unique_ptr<DiskCacheReadHelper> helper_;
   std::unique_ptr<DiskCacheEntry> entry_;
+  base::OnceCallback<void()> delayed_store_task_;
+  base::OnceCallback<void()> delayed_load_task_;
+  base::WeakPtrFactory<DiskCacheFile> weak_factory_ { this };
 };
 
 }  // namespace ohos_prp_preload

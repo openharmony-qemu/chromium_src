@@ -5427,6 +5427,28 @@ void NWebImpl::SendPipEvent(int delegate_id,
 }
 #endif
 
+#ifdef ARKWEB_BLANK_OPTIMIZE
+void NWebImpl::SetPrivacyStatus(bool isPrivate) {
+
+}
+
+int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) {
+  return 0;
+}
+
+int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key) {
+  return 0;
+}
+
+bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
+  return false;
+}
+
+void NWebImpl::SetVisibility(bool isVisible) {
+
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
 void NWebImpl::AvoidVisibleViewportBottom(int32_t avoidHeight) {
   if (nweb_delegate_ == nullptr) {

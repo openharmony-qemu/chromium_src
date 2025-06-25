@@ -5379,4 +5379,27 @@ int32_t NWebDelegate::GetVisibleViewportAvoidHeight() {
   return avoid_height_;
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+void NWebDelegate::SetErrorPageEnabled(bool enable) {
+  if (!preference_delegate_) {
+    LOG(INFO)
+        << "SetErrorPageEnabled failed, no preference_delegate_"
+        << ", nweb_id_[" << nweb_id_ << "]";
+    return;
+  }
+  preference_delegate_->PutErrorPageEnabled(enable);
+}
+
+bool NWebDelegate::GetErrorPageEnabled() {
+  if (!preference_delegate_) {
+    LOG(INFO)
+        << "GetErrorPageEnabled failed, no preference_delegate_"
+        << ", nweb_id_[" << nweb_id_ << "]";
+    return false;
+  }
+  return preference_delegate_->ErrorPageEnabled();
+}
+#endif
+
 }  // namespace OHOS::NWeb

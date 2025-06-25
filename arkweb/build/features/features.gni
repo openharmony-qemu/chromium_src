@@ -235,6 +235,7 @@ declare_args() {
   arkweb_ext_password=false
   arkweb_ex_free_copy=false
   arkweb_viewport_avoid = true
+  arkweb_error_page = true
 }
 
 # Features enabled in mojom bindings.

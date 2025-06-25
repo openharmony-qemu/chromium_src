@@ -208,6 +208,11 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (override));
 #endif
 
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  MOCK_METHOD(void, SetErrorPageEnabled, (bool enable), (override));
+  MOCK_METHOD(bool, GetErrorPageEnabled, (), (override));
+#endif
+
   MOCK_METHOD(void,
               OnTouchPress,
               (int32_t id, double x, double y, bool from_overlay),

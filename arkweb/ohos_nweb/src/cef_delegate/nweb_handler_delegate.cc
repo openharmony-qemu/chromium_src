@@ -1967,6 +1967,41 @@ bool NWebHandlerDelegate::ShouldOverrideUrlLoading(
   return result;
 }
 
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+std::string NWebHandlerDelegate::OverrideErrorPage(
+    CefRefPtr<CefBrowser> browser,
+    const CefString& url,
+    const CefString& method,
+    bool user_gesture,
+    bool is_redirect,
+    bool is_outermost_main_frame,
+    const CefString& extra_request_headers_str,
+    int error_code,
+    const CefString& error_text) {
+  std::map<std::string, std::string> request_headers;
+  net::HttpRequestHeaders extra_request_headers;
+  extra_request_headers.AddHeadersFromString(
+    extra_request_headers_str.ToString());
+  for (const net::HttpRequestHeaders::HeaderKeyValuePair& header_key_value :
+      extra_request_headers.GetHeaderVector()) {
+    request_headers[header_key_value.key] = header_key_value.value;
+  }
+
+  std::shared_ptr<NWebUrlResourceRequest> nweb_request =
+    std::make_shared<NWebUrlResourceRequestImpl>(
+        method.ToString(), request_headers, url.ToString(), user_gesture,
+        is_outermost_main_frame, is_redirect);
+  std::shared_ptr<NWebUrlResourceError> error =
+    std::make_shared<UrlResourceErrorImpl>(error_code, error_text.ToString());
+  std::string result = "";
+  if (nweb_handler_ != nullptr) {
+    result = nweb_handler_->OnHandleOverrideErrorPage(nweb_request, error);
+    return result;
+  }
+  return result;
+}
+#endif
+
 bool NWebHandlerDelegate::OnOpenAppLink(
     const CefString& url,
     CefRefPtr<CefOpenAppLinkCallback> callback) {

@@ -268,6 +268,11 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutWebMediaAVSessionEnabled(bool enable) override;
 #endif  // ARKWEB_MEDIA_AVSESSION
 
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  bool ErrorPageEnabled();
+  void PutErrorPageEnabled(bool enable);
+#endif
+
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;
 
@@ -292,6 +297,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool raw_file_access_{false};
   bool universal_access_from_file_urls_{false};
   bool raw_file_access_from_file_urls_{false};
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  bool error_page_enabled_{false};
+#endif
 #if BUILDFLAG(ARKWEB_DARKMODE)
   bool force_dark_mode_enabled_{false};
   bool dark_prefer_color_scheme_enabled_{false};

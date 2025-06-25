@@ -63,4 +63,8 @@
   double border_radius_bottom_right_ = 0.0;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  bool error_page_enabled_ = false;
+#endif
+
 #endif

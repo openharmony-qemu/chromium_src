@@ -274,6 +274,9 @@ OnReportStatisticLogFunc
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 
+#include "capi/nweb_logger_report_event_callback.h"
+#include "base/ohos/nweb_engine_event_logger.h"
+
 #include "cef/include/cef_app.h"
 namespace {
 uint32_t g_nweb_count = 0;
@@ -325,6 +328,8 @@ const int32_t WEB_RESIZE_CLOSE_DELAY_TIME = 500;
 // Benchmarking against Windows, the average drag-over interval is 65 milliseconds.
 constexpr base::TimeDelta DRAG_OVER_INTERVAL = base::Milliseconds(65);
 #endif
+
+bool g_logger_callback_initialized = false;
 
 bool GetWebOptimizationValue() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -638,6 +643,8 @@ namespace OHOS::NWeb {
 
 bool NWebImpl::disableWebActivePolicy_ = false;
 
+void* NWebImpl::logger_report_event_callback_ = nullptr;
+
 // static
 std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
     std::shared_ptr<NWebCreateInfo> create_info) {
@@ -895,7 +902,29 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
 #endif
 #endif
 
+  if (!g_logger_callback_initialized) {
+    g_logger_callback_initialized = true;
+    base::ohos::SetUploadCallback(UploadCallback);
+  }
+
   return true;
+}
+
+// static
+void NWebImpl::SetLoggerReportEventCallback(void* callback) {
+  logger_report_event_callback_ = callback;
+}
+
+// static
+NO_SANITIZE("cfi") void NWebImpl::UploadCallback(const std::string& module,
+                                                 const std::string& resource,
+                                                 const std::string& errorCode,
+                                                 const std::string& errorMsg) {
+  if (logger_report_event_callback_ == nullptr) {
+    return;
+  }
+  (static_cast<NWebLoggerReportEventCallback *>(logger_report_event_callback_))
+      ->OnUploadCallback(module, resource, errorCode, errorMsg);
 }
 
 void NWebImpl::OnDestroy() {

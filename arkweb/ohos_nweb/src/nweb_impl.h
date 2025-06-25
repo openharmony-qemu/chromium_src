@@ -297,6 +297,10 @@ class NWebImpl : public NWeb {
   bool Discard() override;
   bool Restore() override;
 #endif
+#if BUILDFLAG(ARKWEB_MENU)
+  void SetTouchHandleExistState(bool touchHandleExist) override;
+  void SetViewportScaleState() override;
+#endif  // BUILDFLAG(ARKWEB_MENU)
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   void PutSpanstringConvertHtmlCallback(
       std::shared_ptr<NWebSpanstringConvertHtmlCallback> callback) override;

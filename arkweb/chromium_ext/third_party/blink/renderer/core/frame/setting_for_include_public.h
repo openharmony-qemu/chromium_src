@@ -123,4 +123,19 @@
   double GetBorderRadiusBottomRight() { return border_radius_bottom_right_; }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_MENU)
+  void SetTouchHandleExistState(bool touchHandleExist) {
+    touch_handle_exist_ = touchHandleExist;
+  }
+  bool IsTouchHandleExist() {
+    return touch_handle_exist_;
+  }
+  void SetViewportScaleState(bool viewportScale) {
+    viewport_scale_ = viewportScale;
+  }
+  bool IsViewportScale() {
+    return viewport_scale_;
+  }
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
 #endif

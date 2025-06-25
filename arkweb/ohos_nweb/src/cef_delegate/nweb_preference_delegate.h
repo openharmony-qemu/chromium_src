@@ -140,6 +140,12 @@ class NWebPreferenceDelegate : public NWebPreference {
                               double borderRadiusBottomLeft,
                               double borderRadiusBottomRight);
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+  void SetTouchHandleExistState(bool touchHandleExist);
+  void SetViewportScaleState(bool viewportScale);
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
 #if BUILDFLAG(ARKWEB_CSS_FONT)
   void SetFontWeightScale(float size) override;
   float GetFontWeightScale() const;
@@ -326,6 +332,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   double border_radius_bottom_left_{0.0};
   double border_radius_bottom_right_{0.0};
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_MENU)
+  bool touch_handle_exist_{false};
+  bool viewport_scale_{false};
+#endif  // BUILDFLAG(ARKWEB_MENU)
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
   float virtual_pixel_ratio_ = 2.0;
 #endif

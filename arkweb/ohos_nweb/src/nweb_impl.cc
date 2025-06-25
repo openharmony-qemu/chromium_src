@@ -5728,7 +5728,19 @@ void NWebImpl::UpdateSingleHandleVisible(bool isVisible) {
     nweb_delegate_->UpdateSingleHandleVisible(isVisible);
   }
 }
-#endif
+
+void NWebImpl::SetTouchHandleExistState(bool touchHandleExist) {
+  if (nweb_delegate_) {
+    nweb_delegate_->SetTouchHandleExistState(touchHandleExist);
+  }
+}
+  
+void NWebImpl::SetViewportScaleState() {
+  if (nweb_delegate_) {
+    nweb_delegate_->SetViewportScaleState(true);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_MENU)
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
 void NWebImpl::SetErrorPageEnabled(bool enable) {

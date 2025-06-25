@@ -173,26 +173,26 @@ int CertChainVerify(X509* server_cert[],
                     int32_t server_cert_sum,
                     X509_STORE* ca_store,
                     std::vector<std::string>* verified_chain) {
-  int32_t server_cert_index;
-  STACK_OF(X509)* ca_stack = nullptr;
   X509_STORE_CTX* ctx = nullptr;
 
-  // Add the server certificate to the certificate store
-  for (server_cert_index = server_cert_sum - 1; server_cert_index > 0;
-       server_cert_index--) {
-    int ret = CertChainRootVerify(server_cert, server_cert_index, ca_store);
-    if (ret == X509_V_OK) {
-      for (int cert_index = server_cert_index; cert_index > 0; cert_index--) {
-        X509_STORE_add_cert(ca_store, server_cert[cert_index]);
-      }
-      break;
-    }
+  STACK_OF(X509)* ca_stack = sk_X509_new_null();
+  if (ca_stack == nullptr) {
+    LOG(ERROR) << "Create ca_stack failed";
+    X509_d2i_free(server_cert, server_cert_sum);
+    X509_STORE_free(ca_store);
+    return X509_V_ERR_UNSPECIFIED;
+  }
+
+  for (int i = 1; i < server_cert_sum; i++) {
+    sk_X509_push(ca_stack, server_cert[i]);
+    X509_up_ref(server_cert[i]);
   }
 
   // Create certificate store context function
   ctx = X509_STORE_CTX_new();
   if (ctx == nullptr) {
     LOG(ERROR) << "Create certificate store context function failed";
+    sk_X509_pop_free(ca_stack, X509_free);
     X509_d2i_free(server_cert, server_cert_sum);
     X509_STORE_free(ca_store);
     return X509_V_ERR_UNSPECIFIED;
@@ -208,6 +208,7 @@ int CertChainVerify(X509* server_cert[],
                << ", Certificate verify info: "
                << X509_verify_cert_error_string(ctx->error)
                << ", Total number of server certificate: " << server_cert_sum;
+    sk_X509_pop_free(ca_stack, X509_free);
     X509_d2i_free(server_cert, server_cert_sum);
     X509_STORE_CTX_free(ctx);
     X509_STORE_free(ca_store);
@@ -216,12 +217,14 @@ int CertChainVerify(X509* server_cert[],
 
   if (GetVerifiedChain(ctx, verified_chain) != X509_V_OK) {
     LOG(ERROR) << "Get verified chain failed";
+    sk_X509_pop_free(ca_stack, X509_free);
     X509_d2i_free(server_cert, server_cert_sum);
     X509_STORE_CTX_free(ctx);
     X509_STORE_free(ca_store);
     return X509_V_ERR_UNSPECIFIED;
   }
 
+  sk_X509_pop_free(ca_stack, X509_free);
   X509_STORE_CTX_free(ctx);
   X509_d2i_free(server_cert, server_cert_sum);
   X509_STORE_free(ca_store);
@@ -576,6 +579,7 @@ void SetCertStatus(int status, CertVerifyResult* verify_result) {
         return false;
       case X509_V_OK:
         break;
+      case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
       case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
         verify_result->cert_status |= CERT_STATUS_AUTHORITY_INVALID;
         break;

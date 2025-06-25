@@ -17,6 +17,7 @@
 
 #include "base/logging.h"
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
+#include "ohos_nweb/src/ndk/common/mem_hook.h"
 
 ArkWeb_Response_::ArkWeb_Response_() {
   cef_response = CefResponse::Create();
@@ -39,7 +40,7 @@ void ArkWeb_Response_::GetUrl(char** url) const {
 
   std::string cef_url = cef_response->GetURL().ToString();
   const int length = cef_url.length();
-  *url = new char[length + 1];
+  *url = OHOS::NWeb::malloc_wrapper(length + 1);
   strcpy((*url), cef_url.c_str());
 }
 
@@ -96,7 +97,7 @@ void ArkWeb_Response_::GetStatusText(char** status_text) const {
 
   std::string cef_status_text = cef_response->GetStatusText().ToString();
   const int length = cef_status_text.length();
-  *status_text = new char[length + 1];
+  *status_text = OHOS::NWeb::malloc_wrapper(length + 1);
   strcpy((*status_text), cef_status_text.c_str());
 }
 
@@ -117,7 +118,7 @@ void ArkWeb_Response_::GetMimeType(char** mime_type) const {
 
   std::string cef_mime_type = cef_response->GetMimeType().ToString();
   const int length = cef_mime_type.length();
-  *mime_type = new char[length + 1];
+  *mime_type = OHOS::NWeb::malloc_wrapper(length + 1);
   strcpy((*mime_type), cef_mime_type.c_str());
 }
 
@@ -138,7 +139,7 @@ void ArkWeb_Response_::GetCharset(char** charset) const {
 
   std::string cef_charset = cef_response->GetCharset().ToString();
   const int length = cef_charset.length();
-  *charset = new char[length + 1];
+  *charset = OHOS::NWeb::malloc_wrapper(length + 1);
   strcpy((*charset), cef_charset.c_str());
 }
 
@@ -161,6 +162,6 @@ void ArkWeb_Response_::GetHeaderByName(const char* name, char** value) const {
 
   std::string cef_value = cef_response->GetHeaderByName(name).ToString();
   const int length = cef_value.length();
-  *value = new char[length + 1];
+  *value = OHOS::NWeb::malloc_wrapper(length + 1);
   strcpy((*value), cef_value.c_str());
 }

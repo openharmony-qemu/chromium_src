@@ -249,6 +249,8 @@ component("cef_nweb") {
     "src/ndk/arkweb_native_object.h",
     "src/ndk/arkweb_native_web_message_callback.cc",
     "src/ndk/arkweb_native_web_message_callback.h",
+    "src/ndk/common/mem_hook.cc",
+    "src/ndk/common/mem_hook.h",
   ]
 
   sources += [

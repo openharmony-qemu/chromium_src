@@ -207,27 +207,21 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
 }
 
 void OHOSAudioOutputStream::GetMediaSessionFromWebContent() {
-  content::RenderFrameHost* render_frame_host =
-      content::RenderFrameHost::FromID(parameters_.render_process_id(),
-                                       parameters_.render_frame_id());
-  webContent_ = content::WebContents::FromRenderFrameHost(render_frame_host);
-  if (!webContent_) {
-    LOG(ERROR) << __func__ << ": AudioOutputStream get webContent failed.";
-    return;
-  }
-  content::MediaSessionImpl* session =
-      content::MediaSessionImpl::FromWebContents(webContent_);
-  if (session) {
-    LOG(INFO) << __func__
-              << "mediaSession already exist in web contents, get success!";
-    weakMediaSession_ = session->weakMediaSessionFactory_.GetWeakPtr();
-    return;
-  }
-  LOG(INFO) << __func__ << "mediaSession not exist in web contents!!!";
   auto GetMediaSessionFunc =
-      [](content::WebContents* web_contents,
+      [](AudioParameters parameters, content::WebContents* web_contents,
          base::WeakPtr<content::MediaSessionImpl>* media_session_out) {
-          content::MediaSessionImpl* media_session = content::MediaSessionImpl::Get(web_contents);
+        content::RenderFrameHost* render_frame_host =
+            content::RenderFrameHost::FromID(parameters.render_process_id(),
+                                             parameters.render_frame_id());
+        web_contents =
+            content::WebContents::FromRenderFrameHost(render_frame_host);
+        if (!web_contents) {
+          LOG(ERROR) << __func__
+                     << ": AudioOutputStream get webContent failed.";
+          return;
+        }
+        content::MediaSessionImpl* media_session =
+            content::MediaSessionImpl::Get(web_contents);
         if (!media_session) {
           LOG(ERROR) << "AudioOutputStream get mediaSession failed.";
           *media_session_out = nullptr;
@@ -242,11 +236,11 @@ void OHOSAudioOutputStream::GetMediaSessionFromWebContent() {
       return;
     }
     main_task_runner_->PostTask(
-        FROM_HERE,
-        base::BindOnce(GetMediaSessionFunc, base::Unretained(webContent_),
-                       base::Unretained(&weakMediaSession_)));
+        FROM_HERE, base::BindOnce(GetMediaSessionFunc, parameters_,
+                                  base::Unretained(webContent_),
+                                  base::Unretained(&weakMediaSession_)));
   } else {
-    GetMediaSessionFunc(webContent_, &weakMediaSession_);
+    GetMediaSessionFunc(parameters_, webContent_, &weakMediaSession_);
   }
 }
 

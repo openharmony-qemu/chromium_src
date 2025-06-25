@@ -602,6 +602,8 @@ arkweb_cc_layer_source = [
   "//arkweb/chromium_ext/cc/layer/layer_utils.h",
   "//arkweb/chromium_ext/cc/layer/video_layer_ext.cc",
   "//arkweb/chromium_ext/cc/layer/video_layer_ext.h",
+  "//arkweb/chromium_ext/cc/layer/surface_layer_impl_utils.cc",
+  "//arkweb/chromium_ext/cc/layer/surface_layer_impl_utils.h",
   "//arkweb/chromium_ext/cc/layer/video_layer_impl_utils.cc",
   "//arkweb/chromium_ext/cc/layer/video_layer_impl_utils.h",
 ]

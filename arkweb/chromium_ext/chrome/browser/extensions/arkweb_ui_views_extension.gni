@@ -3,6 +3,8 @@
 # found in the LICENSE file.
 
 arkweb_ui_views_extension_sources = get_path_info([
+    "extension_install_prompt_ext.cc",
+    "extension_install_prompt_ext.h",
     "extension_uninstall_dialog_ohos.cc",
     "extension_uninstall_dialog_ohos.h",
   ], "abspath")

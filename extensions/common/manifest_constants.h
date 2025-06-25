@@ -699,10 +699,15 @@ inline constexpr char kLocalesTreeMissing[] =
 inline constexpr char kManifestParseError[] = "Manifest is not valid JSON.";
 inline constexpr char kManifestUnreadable[] =
     "Manifest file is missing or unreadable";
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+inline constexpr char kManifestV2IsDeprecatedWarning[] =
+    "Manifest version 2 is deprecated, and support will be removed soon.";
+#else
 inline constexpr char kManifestV2IsDeprecatedWarning[] =
     "Manifest version 2 is deprecated, and support will be removed in 2024. "
     "See https://developer.chrome.com/docs/extensions/develop/migrate/mv2-deprecation-timeline"
     " for details.";
+#endif
 inline constexpr char kManifestVersionTooHighWarning[] =
     "The maximum currently-supported manifest version is *, but this is *.  "
     "Certain features may not work as expected.";

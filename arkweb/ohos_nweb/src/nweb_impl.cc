@@ -1875,13 +1875,6 @@ int NWebImpl::Load(
   if (nweb_delegate_ == nullptr) {
     return NWEB_ERR;
   }
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  GURL passed_in_url = GURL(url);
-  if (passed_in_url.scheme() == content::kArkWebUIScheme &&
-      passed_in_url.host() == chrome::kChromeUIExtensionsHost) {
-    return nweb_delegate_->Load(chrome::kChromeUIExtensionsURL);
-  }
-#endif
   return nweb_delegate_->Load(url, additionalHttpHeaders);
 }
 

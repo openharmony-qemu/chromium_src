@@ -34,6 +34,9 @@ static bool HandleViewSource(GURL* url, BrowserContext* browser_context) {
   std::vector<std::string> all_allowed_sub_schemes(
       {url::kHttpScheme, url::kHttpsScheme, kChromeUIScheme, url::kFileScheme,
        url::kFileSystemScheme,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       kArkWebUIScheme,
+#endif
 #if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
        url::kFileSystemScheme, url::kResourcesScheme
 #else

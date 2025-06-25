@@ -128,7 +128,7 @@ void SetMaxVisibleBytes(cc::ManagedMemoryPolicy& actual)
   Platform* platform = Platform::Current();
   if (platform->GetDrawMode()) {
     actual.bytes_limit_when_visible =
-        std::min(actual.bytes_limit_when_visible,
+        std::max(actual.bytes_limit_when_visible,
                  static_cast<size_t>(2000 * 1024 * 1024));
   }
 }

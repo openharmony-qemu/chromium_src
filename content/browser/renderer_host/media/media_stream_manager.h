@@ -754,6 +754,11 @@ class CONTENT_EXPORT MediaStreamManager
       const MediaDeviceEnumeration& enumeration,
       DeviceRequest* request);
 
+#if BUILDFLAG(IS_OHOS)
+    void PostVideoCaptureSessionBind(blink::mojom::MediaStreamType stream_type, 
+      media::VideoCaptureSessionId session_id, int process_id, int frame_id);
+#endif
+
 #if !BUILDFLAG(IS_ANDROID)
   // Defines a window of opportunity for the Web-application to decide
   // whether a display-surface which it's capturing should be focused.

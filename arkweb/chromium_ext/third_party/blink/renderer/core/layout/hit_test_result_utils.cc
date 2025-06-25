@@ -27,7 +27,7 @@ HitTestResultUtils::HitTestResultUtils(HitTestResult* impl) {
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
 gfx::Rect HitTestResultUtils::GetReplacedContentRect() const {
-  gfx::Rect image_rect = hit_test_result_->ImageRect();
+  gfx::Rect image_rect = ImageRect();
   Node* inner_node = hit_test_result_->InnerNode();
   if (!inner_node) {
     return image_rect;
@@ -56,6 +56,16 @@ gfx::Rect HitTestResultUtils::GetLinkElementRect() const {
     return element_rect;
   }
   return content_rect;
+}
+
+gfx::Rect HitTestResultUtils::ImageRect() const {
+  auto imgNode = hit_test_result_->InnerNodeOrImageMapImage();
+  if (imgNode && imgNode->isConnected() && imgNode->GetLayoutBox()) {
+    return hit_test_result_->ImageRect();
+  } else {
+    LOG(INFO) << "Get ImageRect filed";
+    return gfx::Rect();
+  }
 }
 #endif
 }

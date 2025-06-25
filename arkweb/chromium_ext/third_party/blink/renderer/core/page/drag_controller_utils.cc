@@ -102,7 +102,7 @@ void ArkClampedImageScale(gfx::Vector2dF& image_scale, gfx::Size& image_size,
 gfx::Rect GetImageRectFromImageNode(LocalFrame* frame,
                                     const HitTestResult& hit_test_result) {
   if (!frame || !frame->GetSettings()) {
-    return hit_test_result.ImageRect();
+    return hit_test_result.imp_utils_->ImageRect();
   }
   return hit_test_result.imp_utils_->GetReplacedContentRect();
 }

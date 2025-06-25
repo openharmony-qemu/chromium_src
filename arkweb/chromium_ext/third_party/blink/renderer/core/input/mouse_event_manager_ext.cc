@@ -297,7 +297,7 @@ void MouseEventManagerExt::HandleCreateOverlay(T const& targeted_event) {
   LOG(INFO) << "MouseEventManagerExt::HandleCreateOverlay fold_screen_status_ is "
             << fold_screen_status_;
   gfx::Rect image_rect =
-      frame_->View()->FrameToDocument(hit_test_result.ImageRect());
+      frame_->View()->FrameToDocument(hit_test_result.imp_utils_->ImageRect());
   gfx::Point touch_point = frame_->View()->FrameToDocument(
       gfx::ToRoundedPoint(targeted_event.PositionInRootFrame()));
   gfx::Rect view_rect = frame_->View()->FrameToDocument(

@@ -100,4 +100,5 @@ mojom("compositing") {
   enabled_features += ["arkweb_maximize_resize"]
   enabled_features += ["arkweb_pip"]
   enabled_features += ["arkweb_same_layer"]
+  enabled_features += ["arkweb_vsync_schedule"]
 }

@@ -50,6 +50,10 @@ class ArkwebDisplayUtils {
   void SetNativeInnerWeb(bool isInnerWeb);
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition);
+#endif
+
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
   void DisableSwapUntilMaximized();
   void RestoreRenderFitTimeElapsed();

@@ -169,6 +169,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   int GetBlurEnable();
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   void SetNativeEmbedMode(bool flag) override;
   bool GetNativeEmbedMode() override;

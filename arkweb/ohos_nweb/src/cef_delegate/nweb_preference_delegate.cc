@@ -88,6 +88,17 @@ void NWebPreferenceDelegate::WebPreferencesChanged() {
   browser_->GetHost()->SetWebPreferences(browser_settings);
 }
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void NWebPreferenceDelegate::SetBypassVsyncCondition(int32_t condition) {
+  if (!browser_) {
+    return;
+  }
+  LOG(INFO) << "NWebPreferenceDelegate::SetBypassVsyncCondition condition:"
+            << condition;
+  browser_->GetHost()->SetBypassVsyncCondition(condition);
+}
+#endif
+
 void NWebPreferenceDelegate::ComputeBrowserSettings(
     CefBrowserSettings& browser_settings) {
   CefString str = CefString(StandardFontFamilyName());

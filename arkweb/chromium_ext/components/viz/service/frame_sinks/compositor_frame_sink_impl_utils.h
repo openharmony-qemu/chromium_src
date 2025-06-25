@@ -42,6 +42,10 @@ class CompositorFrameSinkImplUtil {
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
   int GetFrameRate();
 #endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void OnSetBypassVsyncCondition(int32_t condition);
+#endif
 };
 
 } // namespace viz

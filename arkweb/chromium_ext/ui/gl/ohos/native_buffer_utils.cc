@@ -28,6 +28,8 @@
 namespace gl {
 namespace ohos {
 
+const uint32_t timeout_fence = 2000;
+
 gl::ScopedEGLImage CreateEGLImage(EGLClientBuffer egl_client_buffer) {
   EGLint attrs[] = {
       EGL_IMAGE_PRESERVED,
@@ -114,7 +116,7 @@ bool SyncFenceWait(base::ScopedFD acquire_fence_fd) {
 
   int ret = -1;
   do {
-    ret = poll(&poll_fds, 1, -1);
+    ret = poll(&poll_fds, 1, timeout_fence);
   } while (ret == -1 && (errno == EINTR || errno == EAGAIN));
 
   if (ret == 0) {
@@ -129,7 +131,7 @@ bool SyncFenceWait(base::ScopedFD acquire_fence_fd) {
   }
 
   if (ret < 0) {
-    LOG(ERROR) << "Failed to do SyncFenceWait errno " << errno;
+    LOG(ERROR) << "Failed to do SyncFenceWait errno " << errno << ", invalid fd: " << fence_fd;
     return false;
   }
 

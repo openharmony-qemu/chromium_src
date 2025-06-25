@@ -108,7 +108,15 @@ int OhosNativeBufferAdapterImpl::FreeEGLBuffer(void* eglBuffer)
 
 int OhosNativeBufferAdapterImpl::NativeBufferFromNativeWindowBuffer(void* nativeWindowBuffer, void** nativeBuffer)
 {
-    WVLOG_D("native buffer NativeBufferFromNativeWindowBuffer");
+    OH_NativeBuffer* buffer = nullptr;
+    int32_t ret =
+        OH_NativeBuffer_FromNativeWindowBuffer(static_cast<OHNativeWindowBuffer*>(nativeWindowBuffer), &buffer);
+    if (ret != 0 || !buffer) {
+        WVLOG_E("getNativeBuffer fail. ret = %{public}d or buffer is nullptr", ret);
+        return ret;
+    }
+
+    *nativeBuffer = buffer;
     return 0;
 }
 

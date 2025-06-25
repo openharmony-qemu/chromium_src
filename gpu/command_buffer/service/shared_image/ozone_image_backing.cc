@@ -9,6 +9,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/logging.h"
 #include "base/memory/scoped_refptr.h"
@@ -332,9 +333,16 @@ OzoneImageBacking::ProduceSkiaGanesh(
       auto vk_format = format().is_single_plane()
                            ? ToVkFormat(format(), /*plane_index=*/0)
                            : ToVkFormatExternalSampler(format());
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
       auto vulkan_image = vulkan_implementation->CreateImageFromGpuMemoryHandle(
           device_queue, std::move(gmb_handle), size(), vk_format,
           gfx::ColorSpace());
+#else
+      auto vulkan_image = VulkanImage::CreateFromGpuMemoryBufferHandle(
+          pixmap_, device_queue, std::move(gmb_handle), size(), /*ToVkFormat(format())*/VK_FORMAT_R8G8B8A8_UNORM,
+          /*usage=*/0, /*flags=*/0, /*image_tiling=*/VK_IMAGE_TILING_OPTIMAL,
+          /*queue_family_index=*/VK_QUEUE_FAMILY_EXTERNAL);
+#endif
       if (!vulkan_image) {
         return nullptr;
       }
@@ -347,10 +355,17 @@ OzoneImageBacking::ProduceSkiaGanesh(
             GetSinglePlaneGpuMemoryBufferHandle(i);
         gfx::Size plane_size = format().GetPlaneSize(i, size());
         VkFormat vk_format = ToVkFormat(format(), i);
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
         auto vulkan_image =
             vulkan_implementation->CreateImageFromGpuMemoryHandle(
                 device_queue, std::move(gmb_handle), plane_size, vk_format,
                 gfx::ColorSpace());
+#else
+        auto vulkan_image = VulkanImage::CreateFromGpuMemoryBufferHandle(
+          pixmap_, device_queue, std::move(gmb_handle), plane_size, /*ToVkFormat(format())*/VK_FORMAT_R8G8B8A8_UNORM,
+          /*usage=*/0, /*flags=*/0, /*image_tiling=*/VK_IMAGE_TILING_OPTIMAL,
+          /*queue_family_index=*/VK_QUEUE_FAMILY_EXTERNAL);
+#endif
         if (!vulkan_image) {
           return nullptr;
         }

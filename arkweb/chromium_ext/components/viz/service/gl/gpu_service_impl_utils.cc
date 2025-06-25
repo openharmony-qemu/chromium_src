@@ -124,6 +124,13 @@ void GpuServiceImpl::SetLTPOStrategy(int32_t strategy) {
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
 void GpuServiceImpl::DumpGpuInfo(DumpGpuInfoCallback callback) {
+  if (io_runner_->BelongsToCurrentThread()) {
+    auto wrap_callback = base::BindPostTask(io_runner_, std::move(callback));
+    compositor_gpu_task_runner()->PostTask(
+        FROM_HERE, base::BindOnce(&GpuServiceImpl::DumpGpuInfo,
+                                  weak_ptr_, std::move(wrap_callback)));
+    return;
+  }
   float totalSize = 0;
   if (compositor_gpu_thread_) {
     GrDirectContext* grContext =

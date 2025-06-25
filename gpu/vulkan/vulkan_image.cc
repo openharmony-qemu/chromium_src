@@ -73,6 +73,9 @@ std::unique_ptr<VulkanImage> VulkanImage::CreateWithExternalMemory(
 
 // static
 std::unique_ptr<VulkanImage> VulkanImage::CreateFromGpuMemoryBufferHandle(
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+    scoped_refptr<gfx::NativePixmap> pixmap,
+#endif  
     VulkanDeviceQueue* device_queue,
     gfx::GpuMemoryBufferHandle gmb_handle,
     const gfx::Size& size,
@@ -83,6 +86,9 @@ std::unique_ptr<VulkanImage> VulkanImage::CreateFromGpuMemoryBufferHandle(
     uint32_t queue_family_index) {
   auto image = std::make_unique<VulkanImage>(base::PassKey<VulkanImage>());
   if (!image->InitializeFromGpuMemoryBufferHandle(
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+          pixmap,
+#endif      
           device_queue, std::move(gmb_handle), size, format, usage, flags,
           image_tiling, queue_family_index)) {
     return nullptr;

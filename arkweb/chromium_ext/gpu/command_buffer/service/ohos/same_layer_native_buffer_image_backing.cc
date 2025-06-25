@@ -23,7 +23,7 @@
 #include "gpu/command_buffer/service/shared_image/shared_image_backing.h"
 #include "gpu/command_buffer/service/shared_image/shared_image_representation.h"
 #include "gpu/command_buffer/service/shared_image/skia_gl_image_representation.h"
-#include "gpu/command_buffer/service/shared_image/skia_vk_ohos_native_buffer_image_representation.h"
+#include "gpu/command_buffer/service/shared_image/skia_vk_samelayer_native_buffer_image_representation.h"
 #include "gpu/command_buffer/service/skia_utils.h"
 #include "gpu/command_buffer/service/stream_texture_shared_image_interface.h"
 #include "gpu/command_buffer/service/texture_manager.h"
@@ -39,14 +39,14 @@
 
 namespace gpu {
 
-class SkiaVkNBRepresentation : public SkiaVkNBImageRepresentation {
+class SkiaVkNBRepresentation : public SkiaVkSamelayerNBImageRepresentation {
  public:
   SkiaVkNBRepresentation(SharedImageManager* manager,
                          SameLayerNativeBufferImageBacking* backing,
                          scoped_refptr<SharedContextState> context_state,
                          std::unique_ptr<VulkanImage> vulkan_image,
                          MemoryTypeTracker* tracker)
-      : SkiaVkNBImageRepresentation(manager,
+      : SkiaVkSamelayerNBImageRepresentation(manager,
                                     backing,
                                     std::move(context_state),
                                     tracker) {
@@ -78,7 +78,7 @@ std::unique_ptr<VulkanImage> CreateVkImageFromNativeBufferHandle(
   auto* device_queue = context_state->vk_context_provider()->GetDeviceQueue();
   gfx::GpuMemoryBufferHandle gmb_handle(std::move(nb_handle));
   return VulkanImage::CreateFromGpuMemoryBufferHandle(
-      device_queue, std::move(gmb_handle), size, ToVkFormatSinglePlanar(format),
+      nullptr, device_queue, std::move(gmb_handle), size, ToVkFormatSinglePlanar(format),
       /*usage=*/0, /*flags=*/0, /*image_tiling=*/VK_IMAGE_TILING_OPTIMAL,
       /*queue_family_index=*/queue_family_index);
 }
@@ -235,7 +235,7 @@ class SameLayerNativeBufferImageBacking::GLTextureVideoImageRepresentation
 };
 
 class SameLayerNativeBufferImageBacking::SkiaVkSameLayerRepresentation
-    : public SkiaVkNBImageRepresentation,
+    : public SkiaVkSamelayerNBImageRepresentation,
       public RefCountedLockHelperDrDc {
  public:
   SkiaVkSameLayerRepresentation(SharedImageManager* manager,
@@ -243,7 +243,7 @@ class SameLayerNativeBufferImageBacking::SkiaVkSameLayerRepresentation
                                 scoped_refptr<SharedContextState> context_state,
                                 MemoryTypeTracker* tracker,
                                 scoped_refptr<RefCountedLock> drdc_lock)
-      : SkiaVkNBImageRepresentation(manager,
+      : SkiaVkSamelayerNBImageRepresentation(manager,
                                     backing,
                                     std::move(context_state),
                                     tracker),
@@ -321,7 +321,7 @@ class SameLayerNativeBufferImageBacking::SkiaVkSameLayerRepresentation
       DCHECK(promise_texture_);
     }
 
-    return SkiaVkNBImageRepresentation::BeginReadAccess(
+    return SkiaVkSamelayerNBImageRepresentation::BeginReadAccess(
         begin_semaphores, end_semaphores, end_state);
   }
 
@@ -330,7 +330,7 @@ class SameLayerNativeBufferImageBacking::SkiaVkSameLayerRepresentation
     DCHECK(scoped_native_buffer_);
 
     TRACE_EVENT2("base", __FILE__, "func", __func__, "line", __LINE__);
-    SkiaVkNBImageRepresentation::EndReadAccess();
+    SkiaVkSamelayerNBImageRepresentation::EndReadAccess();
 
     // Pass the end read access sync fd to the scoped hardware buffer. This
     // will make sure that the AImage associated with the hardware buffer will

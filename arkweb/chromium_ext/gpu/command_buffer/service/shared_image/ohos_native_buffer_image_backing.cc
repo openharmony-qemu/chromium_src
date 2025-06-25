@@ -75,7 +75,7 @@ std::unique_ptr<VulkanImage> CreateVkImageFromNativeBufferHandle(
   auto* device_queue = context_state->vk_context_provider()->GetDeviceQueue();
   gfx::GpuMemoryBufferHandle gmb_handle(std::move(nb_handle));
   return VulkanImage::CreateFromGpuMemoryBufferHandle(
-      device_queue, std::move(gmb_handle), size, ToVkFormatSinglePlanar(format),
+      nullptr, device_queue, std::move(gmb_handle), size, ToVkFormatSinglePlanar(format),
       /*usage=*/0, /*flags=*/0, /*image_tiling=*/VK_IMAGE_TILING_OPTIMAL,
       /*queue_family_index=*/queue_family_index);
 }
@@ -171,8 +171,7 @@ class SkiaVkNBRepresentation : public SkiaVkNBImageRepresentation {
                                     tracker) {
     DCHECK(vulkan_image);
     LOG(DEBUG)
-        << "create vk native buffer image skia representation VulkanImage "
-        << vulkan_image;
+        << "create vk native buffer image skia representation VulkanImage.";
 
     vulkan_image_ = std::move(vulkan_image);
     // TODO(bsalomon): Determine whether it makes sense to attempt to reuse this

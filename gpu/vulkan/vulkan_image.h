@@ -11,6 +11,7 @@
 #include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/files/scoped_file.h"
 #include "base/memory/raw_ptr.h"
@@ -65,6 +66,9 @@ class COMPONENT_EXPORT(VULKAN) VulkanImage {
       const void* extra_memory_allocation_info = nullptr);
 
   static std::unique_ptr<VulkanImage> CreateFromGpuMemoryBufferHandle(
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      scoped_refptr<gfx::NativePixmap> pixmap,
+#endif  
       VulkanDeviceQueue* device_queue,
       gfx::GpuMemoryBufferHandle gmb_handle,
       const gfx::Size& size,
@@ -190,6 +194,9 @@ class COMPONENT_EXPORT(VULKAN) VulkanImage {
                                     const void* extra_image_create_info,
                                     const void* extra_memory_allocation_info);
   bool InitializeFromGpuMemoryBufferHandle(
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      scoped_refptr<gfx::NativePixmap> pixmap,
+#endif  
       VulkanDeviceQueue* device_queue,
       gfx::GpuMemoryBufferHandle gmb_handle,
       const gfx::Size& size,

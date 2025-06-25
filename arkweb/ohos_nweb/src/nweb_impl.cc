@@ -2041,9 +2041,7 @@ void NWebImpl::RegisterArkJSfunction(
       object_name, method_list, async_method_list, object_id, "");
 }
 
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
-void NWebImpl::RegisterArkJSfunctionV2(
+void NWebImpl::RegisterArkJSfunction(
     const std::string& object_name,
     const std::vector<std::string>& method_list,
     const std::vector<std::string>& async_method_list,
@@ -2056,7 +2054,6 @@ void NWebImpl::RegisterArkJSfunctionV2(
   return nweb_delegate_->RegisterArkJSfunction(
       object_name, method_list, async_method_list, object_id, permission);
 }
-#endif
 
 void NWebImpl::UnregisterArkJSfunction(
     const std::string& object_name,

@@ -166,7 +166,7 @@ std::string NWebDownloadHandlerDelegate::GenerateSuggestedFilename(
   std::string default_charset =
       preference_delegate_
           ? preference_delegate_->DefaultTextEncodingFormat()
-          : (nweb ? nweb->GetPreference()->DefaultTextEncodingFormat()
+          : ((nweb && nweb->GetPreference()) ? nweb->GetPreference()->DefaultTextEncodingFormat()
                   : "utf-8");
   std::string content_disposition = GetContentDisposition(download_item,
                                                           default_charset);

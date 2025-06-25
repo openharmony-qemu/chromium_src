@@ -5456,3 +5456,21 @@ int32_t NWebImpl::GetVisibleViewportAvoidHeight() {
   return nweb_delegate_->GetVisibleViewportAvoidHeight();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+void NWebImpl::SetErrorPageEnabled(bool enable) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "SetErrorPageEnabled: nweb delegate has not init.";
+    return;
+  }
+  nweb_delegate_->SetErrorPageEnabled(enable);
+}
+
+bool NWebImpl::GetErrorPageEnabled() {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "GetErrorPageEnabled: nweb delegate has not init.";
+    return false;
+  }
+  return nweb_delegate_->GetErrorPageEnabled();
+}
+#endif

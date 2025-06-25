@@ -3600,17 +3600,10 @@ void MediaStreamManager::HandleAccessRequestResponse(
       }
       device.set_session_id(GetDeviceManager(device.type)->Open(device));
 
-#if defined(OHOS_WEBRTC)
-      if (device.type == MediaStreamType::DEVICE_VIDEO_CAPTURE) {
-        auto* web_contents = static_cast<WebContentsImpl*>(
-            WebContentsImpl::FromRenderFrameHostID(
-                request->GetTargetProcessId(), request->GetTargetFrameId()));
-        if (web_contents) {
-          video_capture_manager()->BindSessionIdToNWebId(
-              device.session_id(), web_contents->GetNWebId());
-        }
-      }
-#endif  // defined(OHOS_WEBRTC)
+#if BUILDFLAG(IS_OHOS)
+  PostVideoCaptureSessionBind(device.type, device.session_id(),
+    request->GetTargetProcessId(), request->GetTargetFrameId());
+#endif
 
       TranslateDeviceIdToSourceId(request, &device);
       SetRequestDevice(
@@ -3650,6 +3643,31 @@ void MediaStreamManager::HandleAccessRequestResponse(
     HandleRequestDone(label, request);
   }
 }
+
+#if BUILDFLAG(IS_OHOS)
+void MediaStreamManager::PostVideoCaptureSessionBind(blink::mojom::MediaStreamType stream_type,
+  media::VideoCaptureSessionId session_id, int process_id, int frame_id) {
+  if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
+    GetUIThreadTaskRunner({})->PostTask(
+      FROM_HERE,
+      base::BindOnce(&MediaStreamManager::PostVideoCaptureSessionBind,
+                    base::Unretained(this), stream_type,
+                    session_id, process_id, frame_id));
+    return;
+  }
+
+#if defined(OHOS_WEBRTC)
+  if (stream_type == MediaStreamType::DEVICE_VIDEO_CAPTURE) {
+    auto* web_contents = static_cast<WebContentsImpl*>(
+      WebContentsImpl::FromRenderFrameHostID(process_id, frame_id));
+    if (web_contents) {
+      video_capture_manager()->BindSessionIdToNWebId(
+        session_id, web_contents->GetNWebId());
+    }
+  }
+#endif  // defined(OHOS_WEBRTC)
+}
+#endif
 
 void MediaStreamManager::HandleChangeSourceRequestResponse(
     const std::string& label,

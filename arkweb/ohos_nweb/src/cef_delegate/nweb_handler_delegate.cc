@@ -4713,4 +4713,21 @@ void NWebHandlerDelegate::RegisterScreenCaptureDelegateListener(
 }
 #endif // ARKWEB_EX_SCREEN_CAPTURE
 
+#if BUILDFLAG(ARKWEB_MENU)
+void NWebHandlerDelegate::OnVisibleChanged(bool isVisible) {
+  on_handle_visible_(isVisible);
+}
+
+void NWebHandlerDelegate::ShowMagnifier() {
+  if (nweb_handler_) {
+    nweb_handler_->ShowMagnifier();
+  }
+}
+
+void NWebHandlerDelegate::HideMagnifier() {
+  if (nweb_handler_) {
+    nweb_handler_->HideMagnifier();
+  }
+}
+#endif
 }  // namespace OHOS::NWeb

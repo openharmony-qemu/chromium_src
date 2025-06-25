@@ -289,6 +289,9 @@ class NWebImpl : public NWeb {
                               double borderRadiusBottomLeft,
                               double borderRadiusBottomRight) override;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_MENU)
+  void UpdateSingleHandleVisible(bool isVisible) override;
+#endif
   void SuggestionSelected(int index) override;
 #if BUILDFLAG(ARKWEB_DISCARD)
   bool Discard() override;

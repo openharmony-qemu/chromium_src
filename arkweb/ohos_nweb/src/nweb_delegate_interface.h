@@ -810,6 +810,10 @@ class NWebDelegateInterface
   virtual void AvoidVisibleViewportBottom(int32_t avoidHeight) = 0;
   virtual int32_t GetVisibleViewportAvoidHeight() = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+  virtual void UpdateSingleHandleVisible(bool isVisible) = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

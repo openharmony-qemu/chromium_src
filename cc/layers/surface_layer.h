@@ -72,6 +72,19 @@ class CC_EXPORT SurfaceLayer : public Layer {
   void SetLayerBoundsChangeCallback(LayerBoundsChangeCallback callback);
 #endif // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  using RectVisibilityChangeCallback = base::RepeatingCallback<void(bool)>;
+  static scoped_refptr<SurfaceLayer> Create(UpdateSubmissionStateCB update_submission_state_callback,
+                                          RectChangeCallback callback,
+                                          RectVisibilityChangeCallback visibilitycallback);
+  using LayerRemovedVisibilityCallback = base::RepeatingCallback<void(bool)>;
+  static scoped_refptr<SurfaceLayer> Create(
+      UpdateSubmissionStateCB update_submission_state_callback,
+      RectChangeCallback callback,
+      RectVisibilityChangeCallback visibilitycallback,
+      LayerRemovedVisibilityCallback layerRemovedCallback);
+#endif
+
   // Layer overrides.
   std::unique_ptr<LayerImpl> CreateLayerImpl(
       LayerTreeImpl* tree_impl) const override;
@@ -83,6 +96,14 @@ class CC_EXPORT SurfaceLayer : public Layer {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void OnLayerBoundsUpdate(const gfx::Rect& bounds) override;
 #endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void OnLayerRectVisibilityChange(bool visibility) override;
+  void ResetLayerRectUpdateCallback();
+  void ResetLayerRectVisibilityChangeCallback();
+  void CleanupVisibilityForRemovedLayer(bool visibility) override;
+#endif
+
   const viz::SurfaceId& surface_id() const {
     return surface_range_.Read(*this).end();
   }
@@ -97,6 +118,13 @@ class CC_EXPORT SurfaceLayer : public Layer {
 
  protected:
   SurfaceLayer();
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  SurfaceLayer(UpdateSubmissionStateCB updateSubmissionStateCB,
+                                          RectChangeCallback callback,
+                                          RectVisibilityChangeCallback visibilitycallback,
+                                          LayerRemovedVisibilityCallback layerRemovedCallback);
+#endif
   explicit SurfaceLayer(UpdateSubmissionStateCB);
   bool HasDrawableContent() const override;
 
@@ -139,6 +167,11 @@ class CC_EXPORT SurfaceLayer : public Layer {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   LayerBoundsChangeCallback layer_bounds_change_callback_;
 #endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  base::RepeatingCallback<void(const gfx::Rect&)> rect_change_callback_;
+  base::RepeatingCallback<void(bool)> rect_visibility_change_callback_;
+  base::RepeatingCallback<void(bool)> layer_removed_visibility_callback_;
+#endif  // ARKWEB_SAME_LAYER
 };
 
 }  // namespace cc

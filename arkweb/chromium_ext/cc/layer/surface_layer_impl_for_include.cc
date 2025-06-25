@@ -21,6 +21,9 @@ namespace cc {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 void SurfaceLayerImpl::OnLayerBoundsUpdate(gfx::Rect visible_quad_rect) {
+  if (!may_contain_video()) {
+    return;
+  }
   gfx::Rect layer_bounds =
       ScreenSpaceTransform().MapRect(visible_quad_rect);
   if (!layer_bounds_.ApproximatelyEqual(layer_bounds, 1)) {
@@ -32,6 +35,9 @@ void SurfaceLayerImpl::OnLayerBoundsUpdate(gfx::Rect visible_quad_rect) {
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void SurfaceLayerImpl::OnLayerRectUpdate(gfx::Rect visible_quad_rect) {
+  if (!may_contain_video()) {
+    return;
+  }
    visible_quad_rect.set_origin(
         ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
   if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {

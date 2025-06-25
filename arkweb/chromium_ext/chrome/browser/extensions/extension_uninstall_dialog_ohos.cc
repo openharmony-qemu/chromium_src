@@ -39,7 +39,13 @@ class PromptInfoHolder {
     : extension_(extension),
       triggering_extension_(triggering_extension),
       done_callback_(std::move(done_callback)) {}
-  ~PromptInfoHolder() = default;
+
+  ~PromptInfoHolder() {
+    if (!done_callback_) {
+      return;
+    }
+    std::move(done_callback_).Run(false);
+  }
 
   static void ShowExtensionPrompt(
       const extensions::Extension* extension,
@@ -48,12 +54,13 @@ class PromptInfoHolder {
       base::OnceCallback<void(bool)> done_callback) {
     auto info_holder = std::make_unique<PromptInfoHolder>(
         extension, triggering_extension, std::move(done_callback));
+    auto info_holder_weak_ptr = info_holder->weak_factory_.GetWeakPtr();
     auto showPromptFunc =
         base::BindRepeating(&PromptInfoHolder::OnGetPromptAction,
-                            info_holder->weak_factory_.GetWeakPtr());
+                            info_holder_weak_ptr);
     auto getPromptDataFunc =
         base::BindRepeating(&PromptInfoHolder::GetPromptData,
-                            info_holder->weak_factory_.GetWeakPtr());
+                            info_holder_weak_ptr);
     if (!OHOS::NWeb::NWebExtensionPromptCefDelegate::GetInstance()
             .ShowExtensionPrompt(PROMPT_INSTALLATION,
                                  extension->id(),
@@ -61,6 +68,10 @@ class PromptInfoHolder {
                                  showPromptFunc,
                                  getPromptDataFunc)) {
       LOG(INFO) << "ShowExtensionPrompt failed";
+      if (!info_holder_weak_ptr) {
+        // info_holder is already destructed.
+        std::ignore = info_holder.release();
+      }
       return;
     }
     std::ignore = info_holder.release(); // managed by info holder itself.
@@ -139,11 +150,14 @@ gfx::ImageSkia CreateSuitableImage(gfx::ImageSkia image) {
     }
   }
   if (best_match_rep) {
-    return gfx::ImageSkiaOperations::CreateResizedImage(
+    gfx::ImageSkia ret = gfx::ImageSkiaOperations::CreateResizedImage(
         gfx::ImageSkia(*best_match_rep),
         skia::ImageOperations::ResizeMethod::RESIZE_GOOD,
         gfx::Size(extension_misc::EXTENSION_ICON_SMALL,
             extension_misc::EXTENSION_ICON_SMALL));
+    // Ensure ImageSkia has at least one ImageSkiaRep.
+    ret.bitmap();
+    return ret;
   }
   return gfx::ImageSkia();
 }

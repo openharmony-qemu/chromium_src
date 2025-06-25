@@ -109,7 +109,7 @@ std::unique_ptr<VulkanImage> CreateVkImageFromNativeBufferHandle(
   gfx::GpuMemoryBufferHandle gmb_handle(std::move(nb_handle));
 
   return VulkanImage::CreateFromGpuMemoryBufferHandle(
-      device_queue, std::move(gmb_handle), size, ToVkFormatSinglePlanar(format),
+      nullptr, device_queue, std::move(gmb_handle), size, ToVkFormatSinglePlanar(format),
       0 /*usage=*/, 0 /*flags=*/, VK_IMAGE_TILING_OPTIMAL /*image_tiling=*/,
       queue_family_index /*queue_family_index=*/);
 }

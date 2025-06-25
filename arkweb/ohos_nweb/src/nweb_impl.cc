@@ -5101,6 +5101,10 @@ void NWebImpl::getTotalSize(float size) {
 
 float NWebImpl::DumpGpuInfo() {
   content::GpuProcessHost* host = content::GpuProcessHost::Get();
+  if (host == nullptr || host->gpu_service() == nullptr) {
+    WVLOG_E("DumpGpuInfo failed, gpu process host or gpu service is nullptr.");
+    return 0;
+  }
   host->gpu_service()->DumpGpuInfo(
       base::BindOnce(&NWebImpl::getTotalSize, base::Unretained(this)));
   return totalSize_;

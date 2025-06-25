@@ -57,9 +57,7 @@ std::unique_ptr<VulkanSurface> VulkanImplementationOhos::CreateViewSurface(
 
   void* nativeWindow =
       NWebNativeWindowTracker::Instance()->GetNativeWindow(window);
-  LOG(ERROR) << __FUNCTION__
-             << "CreateViewSurface vulkan native_window_id == " << window
-             << " nativeWindow = " << nativeWindow;
+  LOG(INFO) << "CreateViewSurface vulkan native_window_id == " << window;
 
   VkSurfaceCreateInfoOHOS surfaceCreateInfo = {};
   surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_SURFACE_CREATE_INFO_OHOS;

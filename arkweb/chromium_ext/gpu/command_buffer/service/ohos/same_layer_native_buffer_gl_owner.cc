@@ -229,6 +229,8 @@ void SameLayerNativeBufferGLOwner::ReleaseRefOnImageLocked(
   }
 
   if (image_ref.release_fence_fd.is_valid()) {
+    TRACE_EVENT1("gpu", "SameLayerNativeBufferGLOwner::ReleaseRefOnImageLocked",
+                 "fence_fd", image_ref.release_fence_fd.get());
     loader_->ReleaseNativeWindowBuffer(
         image->rawbuffer, std::move(image_ref.release_fence_fd.release()));
   }

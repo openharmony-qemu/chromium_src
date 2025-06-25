@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include "third_party/blink/public/web/web_settings.h"
 #include "third_party/blink/renderer/core/editing/local_caret_rect.h"
 #include "third_party/blink/renderer/core/exported/web_view_impl.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
@@ -59,11 +61,40 @@ bool CaretDisplayItemClientUtils::GetBlinkCaretRect(GraphicsContext& context,
   float ratio = webview->ZoomFactorForViewportLayout();
   gfx::RectF paint_rectf(paint_rect);
   paint_rectf.set_width(2.0 * ratio / scale);
-  paint_rectf.set_x(paint_rectf.x() - (ratio * 0.5));
   context.FillRect(paint_rectf, color,
                    PaintAutoDarkMode(layout_block->StyleRef(),
                                      DarkModeFilter::ElementRole::kForeground));
   return true;
+}
+
+bool CaretDisplayItemClientUtils::IsViewportScale(
+    LayoutBlock* layout_block) {
+  if (layout_block == nullptr) {
+    return false;
+  }
+
+  LocalFrameView* frameView = layout_block->GetFrameView();
+  if (!frameView || !frameView->GetChromeClient()) {
+    return false;
+  }
+
+  WebView* webview = frameView->GetChromeClient()->GetWebView();
+  if (!webview || !webview->GetSettings()) {
+    return false;
+  }
+
+  auto setting = webview->GetSettings();
+  bool viewport_scale = setting->IsViewportScale();
+
+  if (viewport_scale) {
+    on_scale_ = viewport_scale;
+    setting->SetViewportScaleState(false);
+    return false;
+  } else if (!viewport_scale && on_scale_) {
+    on_scale_ = false;
+    return true;
+  }
+  return false;
 }
 #endif  // BUILDFLAG(ARKWEB_MENU)
 }  // namespace blink

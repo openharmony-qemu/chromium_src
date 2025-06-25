@@ -67,4 +67,9 @@
   bool error_page_enabled_ = false;
 #endif
 
+#if BUILDFLAG(ARKWEB_MENU)
+  bool touch_handle_exist_ = false;
+  bool viewport_scale_= false;
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
 #endif

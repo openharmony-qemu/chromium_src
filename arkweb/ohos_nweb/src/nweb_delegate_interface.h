@@ -816,7 +816,9 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_MENU)
   virtual void UpdateSingleHandleVisible(bool isVisible) = 0;
-#endif
+  virtual void SetTouchHandleExistState(bool touchHandleExist) = 0;
+  virtual void SetViewportScaleState(bool viewportScale) = 0;
+#endif  // BUILDFLAG(ARKWEB_MENU)
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   virtual void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,

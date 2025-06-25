@@ -279,8 +279,12 @@ void OHOSMediaPlayerBridge::SetNativeWindowFromSurfaceId() {
   std::string surface_id_string = gpu_process_host->gpu_host()->GetSurfaceId(native_window_id_);
   LOG(INFO) << "CreateMediaPlayer native_window_id_: " << native_window_id_
             << ", surface_id_string: " << surface_id_string;
+  uint64_t id_of_surface = 0;
+  if (!base::StringToUint64(surface_id_string, &id_of_surface)) {
+    LOG(ERROR) << "invalid surface_id_string:" << surface_id_string;
+    return;
+  }
 
-  uint64_t id_of_surface = std::stoull(surface_id_string);
   OHNativeWindow* oh_native_window = nullptr;
   int32_t oh_ret = OH_NativeWindow_CreateNativeWindowFromSurfaceId(id_of_surface, &oh_native_window);
   if (oh_ret != 0 || oh_native_window == nullptr) {

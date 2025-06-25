@@ -306,7 +306,6 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   DCHECK(!callback_);
   DCHECK(reference_time_.is_null());
   isSuspended_ = false;
-  SuspendOtherMediaSession(weakMediaSession_);
 
   callback_ = callback;
   if (!StartRender()) {
@@ -314,6 +313,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
     LOG(ERROR) << "OHOSAudioOutputStream::StartRender failed";
     return;
   }
+  SuspendOtherMediaSession(weakMediaSession_);
   running_ = true;
 }
 

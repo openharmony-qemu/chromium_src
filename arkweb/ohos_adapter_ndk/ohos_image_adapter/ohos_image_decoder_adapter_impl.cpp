@@ -296,7 +296,7 @@ void OhosImageDecoderAdapterImpl::ReleasePixelMap()
     if (pixelMap_) {
         if(has_lock_pixelmap_) {
             has_lock_pixelmap_ = false;
-            Image_ErrorCode errorCode = OH_PixelmapNative_UnaccessPixels(pixelMap_, &ptr);
+            Image_ErrorCode errorCode = OH_PixelmapNative_UnaccessPixels(pixelMap_);
             if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
                 WVLOG_E("[HeifSupport] OH_PixelmapNative_UnaccessPixels failed, errorCode = %{public}d", errorCode);
             }

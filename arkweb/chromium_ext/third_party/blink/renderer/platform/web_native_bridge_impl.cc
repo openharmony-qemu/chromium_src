@@ -64,7 +64,7 @@ void DestructionHelper(
 WebNativeBridgeImpl::WebNativeBridgeImpl(
     WebLocalFrame* frame,
     WebNativeClient* client,
-    WebNativeDelegate* delegate,
+    base::WeakPtr<blink::WebNativeDelegate> delegate,
     std::unique_ptr<media::RendererFactorySelector> renderer_factory_selector,
     std::unique_ptr<VideoFrameCompositor> compositor,
     scoped_refptr<base::SequencedTaskRunner> media_task_runner,
@@ -105,8 +105,9 @@ WebNativeBridgeImpl::~WebNativeBridgeImpl() {
   LOG(DEBUG) << "[NativeEmbed] ~WebNativeBridgeImpl.";
 
   // delegate_->PlayerGone(delegate_id_);
-  delegate_->RemoveObserver(delegate_id_);
-  delegate_ = nullptr;
+  if (delegate_) {
+    delegate_->RemoveObserver(delegate_id_);
+  }
 
   // The underlying Pipeline must be stopped before it is destroyed.
   //

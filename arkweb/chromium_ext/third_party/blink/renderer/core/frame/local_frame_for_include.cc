@@ -75,6 +75,15 @@ void LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
   }
 }
 
+void LocalFrameUtil::SetTextZoomFactorsExt(raw_ptr<LocalFrame> LocalFrameObj) {
+  for (Frame* child = LocalFrameObj->Tree().FirstChild(); child;
+      child = child->Tree().NextSibling()) {
+    if (auto* child_local_frame = DynamicTo<LocalFrame>(child)) {
+      child_local_frame->SetTextZoomFactor(LocalFrameObj->text_zoom_factor_);
+    }
+  }
+}
+
 #if BUILDFLAG(ARKWEB_ADBLOCK)
 void LocalFrame::DidSubresourceFiltered() {
   Client()->DispatchDidSubresourceFiltered();

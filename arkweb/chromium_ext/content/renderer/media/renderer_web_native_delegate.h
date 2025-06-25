@@ -43,6 +43,10 @@ class CONTENT_EXPORT RendererWebNativeDelegate
  public:
   explicit RendererWebNativeDelegate(content::RenderFrame* render_frame);
 
+  base::WeakPtr<RendererWebNativeDelegate> GetWeakPtr() {
+    return weak_factory_.GetWeakPtr();
+  }
+
   RendererWebNativeDelegate(const RendererWebNativeDelegate&) = delete;
   RendererWebNativeDelegate& operator=(const RendererWebNativeDelegate&) =
       delete;
@@ -61,6 +65,7 @@ class CONTENT_EXPORT RendererWebNativeDelegate
 
  private:
   base::IDMap<Observer*> id_map_;
+  base::WeakPtrFactory<RendererWebNativeDelegate> weak_factory_{this};
 };
 
 }  // namespace media

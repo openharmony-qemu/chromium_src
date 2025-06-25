@@ -61,7 +61,7 @@ public:
   }
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   blink::WebNativeBridge* CreateWebNativeBridge(blink::WebNativeClient* client);
-  media::RendererWebNativeDelegate* GetWebNativeDelegate();
+  base::WeakPtr<media::RendererWebNativeDelegate> GetWebNativeDelegate();
 #endif
 
 private:

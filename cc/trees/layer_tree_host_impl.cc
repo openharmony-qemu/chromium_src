@@ -2213,7 +2213,11 @@ void LayerTreeHostImpl::SetExternalTilePriorityConstraints(
       viewport_rect_for_tile_priority_ != viewport_rect;
   viewport_rect_for_tile_priority_ = viewport_rect;
 
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
   if (isNeedDrawRect_ || tile_priority_params_changed) {
+#else
+  if (tile_priority_params_changed) {
+#endif
     active_tree_->set_needs_update_draw_properties();
     if (pending_tree_)
       pending_tree_->set_needs_update_draw_properties();

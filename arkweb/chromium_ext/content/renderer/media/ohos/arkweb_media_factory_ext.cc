@@ -194,11 +194,11 @@ blink::WebNativeBridge* ArkwebMediaFactoryExt::CreateWebNativeBridge(blink::WebN
   return web_native_bridge;
 }
 
-media::RendererWebNativeDelegate* ArkwebMediaFactoryExt::GetWebNativeDelegate() {
+base::WeakPtr<media::RendererWebNativeDelegate> ArkwebMediaFactoryExt::GetWebNativeDelegate() {
   if (!web_native_delegate_) {
     web_native_delegate_ = new media::RendererWebNativeDelegate(render_frame_);
   }
-  return web_native_delegate_;
+  return web_native_delegate_->GetWeakPtr();
 }
 #endif
 

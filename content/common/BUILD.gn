@@ -418,7 +418,7 @@ source_set("common") {
   }
 
   if (is_arkweb) {
-    sources += [ "font_list_android.cc" ]
+    sources += arkweb_content_common_font_list_sources
   }
 
   if (enable_ppapi) {

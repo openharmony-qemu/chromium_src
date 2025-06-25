@@ -29,6 +29,7 @@
 #include "nweb_web_message.h"
 #include "ohos_nweb/include/nweb_engine.h"
 #include "ohos_nweb/include/nweb_errors.h"
+#include "ohos_nweb/src/ndk/common/mem_hook.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 
 #if BUILDFLAG(ARKWEB_COOKIE)
@@ -441,7 +442,7 @@ ARKWEB_NDK_EXPORT ArkWeb_WebMessagePortPtr* OH_ArkWeb_CreateWebMessagePorts(
       return nullptr;
     }
 
-    char* tag = new (std::nothrow) char[std::string(webTag).size() + 1];
+    char* tag = OHOS::NWeb::malloc_wrapper(std::string(webTag).size() + 1);
     if (!tag || memcpy_s(tag, std::string(webTag).size() + 1, (char*)webTag,
                          std::string(webTag).size() + 1) != EOK) {
       LOG(ERROR)
@@ -457,7 +458,7 @@ ARKWEB_NDK_EXPORT ArkWeb_WebMessagePortPtr* OH_ArkWeb_CreateWebMessagePorts(
 
     wPorts[i]->webTag = tag;
 
-    char* portHandle = new (std::nothrow) char[ports[i].size() + 1];
+    char* portHandle = OHOS::NWeb::malloc_wrapper(ports[i].size() + 1);
     if (!portHandle ||
         memcpy_s(portHandle, ports[i].size() + 1, (char*)(ports[i].c_str()),
                  ports[i].size() + 1) != EOK) {
@@ -749,7 +750,7 @@ ARKWEB_NDK_EXPORT void OH_WebMessage_SetData(ArkWeb_WebMessagePtr message,
     return;
   }
 
-  char* destination = new (std::nothrow) char[dataLength];
+  char* destination = OHOS::NWeb::malloc_wrapper(dataLength);
 
   if (!destination) {
     LOG(ERROR) << "NativeArkWeb SetData malloc failed";
@@ -797,13 +798,7 @@ OH_CookieManager_FetchCookieSync(const char* url,
     return ARKWEB_INVALID_PARAM;
   }
 
-#if BUILDFLAG(ARKWEB_COOKIE)
-#if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
-  *cookie_value = new char[cookie_content.length() + 1];
-#else
-  *cookie_value = (char*)__real_malloc(cookie_content.length() + 1);
-#endif // ADDRESS_SANITIZER
-#endif
+  *cookie_value = OHOS::NWeb::malloc_wrapper(cookie_content.length() + 1);
   strcpy((*cookie_value), cookie_content.c_str());
   if (cookie_content == "" && !is_valid) {
     return ARKWEB_INVALID_URL;
@@ -1049,7 +1044,7 @@ OH_JavaScript_CreateJavaScriptValue(ArkWeb_JavaScriptValueType type,
     return nullptr;
   }
 
-  char* destination = new (std::nothrow) char[dataLength];
+  char* destination = OHOS::NWeb::malloc_wrapper(dataLength);
 
   if (!destination) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue malloc failed";

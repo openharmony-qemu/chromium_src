@@ -433,8 +433,11 @@ void NWebCookieManagerDelegate::ConfigCookie(
     return;
   }
   CefCookie cef_cookie;
-  if (!CefCookieManager::CreateCefCookie(CefString(gurl.spec()),
-                                         CefString(value), cef_cookie)) {
+  if (!CefCookieManager::CreateCefCookie(CefString(gurl.spec()), CefString(value),
+#if BUILDFLAG(ARKWEB_COOKIE)
+                                         /*block_truncated=*/false,
+#endif // BUILDFLAG(ARKWEB_COOKIE)
+                                         cef_cookie)) {
     LOG(ERROR) << "CreateCefCookie failed";
     cookie_config_callback->OnErrorCode(NWEB_INVALID_COOKIE_VALUE);
     return;
@@ -469,8 +472,11 @@ void NWebCookieManagerDelegate::SetCookie(
     return;
   }
   CefCookie cef_cookie;
-  if (!CefCookieManager::CreateCefCookie(CefString(gurl.spec()),
-                                         CefString(value), cef_cookie)) {
+  if (!CefCookieManager::CreateCefCookie(CefString(gurl.spec()), CefString(value),
+#if BUILDFLAG(ARKWEB_COOKIE)
+                                         /*block_truncated=*/false,
+#endif // BUILDFLAG(ARKWEB_COOKIE)
+                                         cef_cookie)) {
     LOG(ERROR) << "CreateCefCookie failed";
     if (callback != nullptr) {
       callback->OnReceiveValue(false);
@@ -505,8 +511,11 @@ int NWebCookieManagerDelegate::SetCookie(const std::string& url,
   if (!FixInvalidGurl(url, gurl)) {
     return NWEB_INVALID_URL;
   }
-  if (!CefCookieManager::CreateCefCookie(CefString(gurl.spec()),
-                                         CefString(value), cef_cookie)) {
+  if (!CefCookieManager::CreateCefCookie(CefString(gurl.spec()), CefString(value),
+#if BUILDFLAG(ARKWEB_COOKIE)
+                                         /*block_truncated=*/false,
+#endif // BUILDFLAG(ARKWEB_COOKIE)
+                                         cef_cookie)) {
     LOG(ERROR) << "CreateCefCookie failed";
     return NWEB_INVALID_COOKIE_VALUE;
   }
@@ -537,8 +546,11 @@ int NWebCookieManagerDelegate::SetCookieWithHttpOnly(const std::string& url,
   if (!FixInvalidGurl(url, gurl)) {
     return NWEB_INVALID_URL;
   }
-  if (!CefCookieManager::CreateCefCookie(CefString(gurl.spec()),
-                                         CefString(value), cef_cookie)) {
+  if (!CefCookieManager::CreateCefCookie(CefString(gurl.spec()), CefString(value),
+#if BUILDFLAG(ARKWEB_COOKIE)
+                                         /*block_truncated=*/false,
+#endif // BUILDFLAG(ARKWEB_COOKIE)
+                                         cef_cookie)) {
     LOG(ERROR) << "CreateCefCookie failed";
     return NWEB_INVALID_COOKIE_VALUE;
   }

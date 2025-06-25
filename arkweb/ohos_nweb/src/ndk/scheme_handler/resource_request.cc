@@ -20,6 +20,7 @@
 #include "libcef/common/arkweb_request_impl_ext.h"
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
 #include "ohos_nweb/src/ndk/scheme_handler/http_body_stream.h"
+#include "ohos_nweb/src/ndk/common/mem_hook.h"
 
 ArkWeb_ResourceRequest_::ArkWeb_ResourceRequest_(CefRefPtr<CefRequest> request)
     : cef_request(request) {
@@ -55,7 +56,7 @@ void ArkWeb_ResourceRequest_::GetMethod(char** method) const {
 
   std::string cef_method = cef_request->GetMethod().ToString();
   const int length = cef_method.length();
-  *method = new char[length + 1];
+  *method = OHOS::NWeb::malloc_wrapper(length + 1);
   strcpy((*method), cef_method.c_str());
 }
 
@@ -67,7 +68,7 @@ void ArkWeb_ResourceRequest_::GetUrl(char** url) const {
 
   std::string cef_url = cef_request->GetURL().ToString();
   const int length = cef_url.length();
-  *url = new char[length + 1];
+  *url = OHOS::NWeb::malloc_wrapper(length + 1);
   strcpy((*url), cef_url.c_str());
 }
 
@@ -107,7 +108,7 @@ void ArkWeb_ResourceRequest_::GetReferrer(char** referrer) const {
 
   std::string cef_referrer = cef_request->GetReferrerURL().ToString();
   const int length = cef_referrer.length();
-  *referrer = new char[length + 1];
+  *referrer = OHOS::NWeb::malloc_wrapper(length + 1);
   strcpy((*referrer), cef_referrer.c_str());
 }
 
@@ -129,7 +130,7 @@ void ArkWeb_ResourceRequest_::GetFrameUrl(char** frame_url) const {
   std::string cef_frame_url =
       cef_request->AsArkWebRequestExt()->GetFrameUrl().ToString();
   const int length = cef_frame_url.length();
-  *frame_url = new char[length + 1];
+  *frame_url = OHOS::NWeb::malloc_wrapper(length + 1);
   strcpy((*frame_url), cef_frame_url.c_str());
 }
 
@@ -160,12 +161,12 @@ void ArkWeb_RequestHeaderList_::GetHeader(int index,
 
   std::string cef_key = header_value[index].key;
   int length = cef_key.length();
-  *key = new char[length + 1];
+  *key = OHOS::NWeb::malloc_wrapper(length + 1);
   strcpy((*key), cef_key.c_str());
 
   std::string cef_value = header_value[index].value;
   length = cef_value.length();
-  *value = new char[length + 1];
+  *value = OHOS::NWeb::malloc_wrapper(length + 1);
   strcpy((*value), cef_value.c_str());
 }
 

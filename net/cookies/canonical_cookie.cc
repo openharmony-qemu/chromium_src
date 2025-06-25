@@ -313,7 +313,12 @@ std::unique_ptr<CanonicalCookie> CanonicalCookie::Create(
     std::optional<base::Time> server_time,
     std::optional<CookiePartitionKey> cookie_partition_key,
     CookieSourceType source_type,
-    CookieInclusionStatus* status) {
+    CookieInclusionStatus* status
+#if BUILDFLAG(ARKWEB_COOKIE)
+      , bool block_truncated) {
+#else // BUILDFLAG(ARKWEB_COOKIE)
+      ) {
+#endif // BUILDFLAG(ARKWEB_COOKIE)
   // Put a pointer on the stack so the rest of the function can assign to it if
   // the default nullptr is passed in.
   CookieInclusionStatus blank_status;
@@ -329,7 +334,11 @@ std::unique_ptr<CanonicalCookie> CanonicalCookie::Create(
     return nullptr;
   }
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+  ParsedCookie parsed_cookie(cookie_line, block_truncated, status);
+#else // BUILDFLAG(ARKWEB_COOKIE)
   ParsedCookie parsed_cookie(cookie_line, status);
+#endif // BUILDFLAG(ARKWEB_COOKIE)
 
   // We record this metric before checking validity because the presence of an
   // HTAB will invalidate the ParsedCookie.

@@ -435,7 +435,11 @@ std::string BuildUserAgentFromOSAndProduct(const std::string& os_info,
   std::string user_agent;
   base::StringAppendF(&user_agent,
                       "Mozilla/5.0 (%s) AppleWebKit/537.36 (KHTML, like Gecko) "
+#if BUILDFLAG(ARKWEB_USERAGENT)
+                      "%s Safari/537.36 ",
+#else
                       "%s Safari/537.36",
+#endif
                       os_info.c_str(), product.c_str());
 
 #if BUILDFLAG(ARKWEB_USERAGENT)

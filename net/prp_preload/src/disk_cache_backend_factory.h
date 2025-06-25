@@ -11,7 +11,7 @@
 #include "net/disk_cache/disk_cache.h"
 
 namespace ohos_prp_preload {
-class DiskCacheBackendFactory : public base::RefCounted<DiskCacheBackendFactory> {
+class DiskCacheBackendFactory : public base::RefCountedThreadSafe<DiskCacheBackendFactory> {
  public:
   DiskCacheBackendFactory() = default;
   ~DiskCacheBackendFactory() = default;

@@ -11,7 +11,7 @@
 
 namespace ohos_prp_preload {
 using RPPCtrlerTimeoutCB = base::RepeatingCallback<void(const std::string& url)>;
-class ResParallelPreloadCtrler : public base::RefCounted<ResParallelPreloadCtrler> {
+class ResParallelPreloadCtrler : public base::RefCountedThreadSafe<ResParallelPreloadCtrler> {
  public:
   ResParallelPreloadCtrler(const std::string& url,
                            base::WeakPtr<net::URLRequestContext> url_request_context,

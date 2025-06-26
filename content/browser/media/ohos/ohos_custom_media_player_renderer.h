@@ -144,7 +144,7 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
 
   gfx::Rect video_rect_;
 
-  media::MediaResource* media_resource_;
+  std::unique_ptr<media::MediaUrlParams> media_url_params_;
 
   base::TimeDelta media_time_;
 

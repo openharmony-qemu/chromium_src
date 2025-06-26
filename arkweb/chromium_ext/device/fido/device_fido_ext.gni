@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+arkweb_device_fido_ext_sources = get_path_info([
+    "authenticator_credential_response_extra_common.h",
+    "ctap_get_assertion_request_extra.h",
+    "ctap_make_credential_request_extra.h",
+    "ctap_request_extra_common.h",
+    "ohos/fido2_api.h",
+    "ohos/ohos_authenticator.cpp",
+    "ohos/ohos_authenticator.h",
+    "ohos/ohos_fido_discovery.cpp",
+    "ohos/ohos_fido_discovery.h",
+    "ohos/ohos_webauthn_api.cpp",
+    "ohos/ohos_webauthn_api.h",
+    "ohos/type_conversions.cpp",
+    "ohos/type_conversions.h",
+    "ohos/fido2_api_utils.cpp",
+    "ohos/fido2_api_utils.h",
+  ], "abspath")

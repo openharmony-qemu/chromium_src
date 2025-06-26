@@ -41,7 +41,7 @@
 #include "third_party/blink/public/platform/media/video_frame_compositor.h"
 #include "third_party/blink/public/platform/web_native_client.h"
 #include "third_party/blink/public/web/web_local_frame.h"
-
+#include "content/child/child_process.h"
 namespace blink {
 
 namespace {
@@ -52,7 +52,12 @@ void DestructionHelper(
     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner,
     scoped_refptr<base::SingleThreadTaskRunner> vfc_task_runner,
     std::unique_ptr<VideoFrameCompositor> compositor,
-    std::unique_ptr<media::RendererFactorySelector> renderer_factory_selector) {
+    std::unique_ptr<media::RendererFactorySelector> renderer_factory_selector,
+    std::unique_ptr<WebSurfaceLayerBridge> bridge)
+{
+  // We release `bridge` after pipeline stop to ensure layout tests receive
+  // painted same layer frames before test harness exit.
+  main_task_runner->DeleteSoon(FROM_HERE, std::move(bridge));
   // Since the media::Renderer is gone we can now destroy the compositor and
   // renderer factory selector.
   vfc_task_runner->DeleteSoon(FROM_HERE, std::move(compositor));
@@ -69,7 +74,8 @@ WebNativeBridgeImpl::WebNativeBridgeImpl(
     std::unique_ptr<VideoFrameCompositor> compositor,
     scoped_refptr<base::SequencedTaskRunner> media_task_runner,
     scoped_refptr<base::SingleThreadTaskRunner>
-        video_frame_compositor_task_runner)
+    video_frame_compositor_task_runner,
+    CreateSurfaceLayerBridgeCB create_bridge_callback)
     : frame_(frame),
       main_task_runner_(frame->GetTaskRunner(TaskType::kMediaElementEvent)),
       media_task_runner_(std::move(media_task_runner)),
@@ -77,7 +83,8 @@ WebNativeBridgeImpl::WebNativeBridgeImpl(
       delegate_(delegate),
       vfc_task_runner_(std::move(video_frame_compositor_task_runner)),
       compositor_(std::move(compositor)),
-      renderer_factory_selector_(std::move(renderer_factory_selector)) {
+      renderer_factory_selector_(std::move(renderer_factory_selector)),
+      create_bridge_callback_(std::move(create_bridge_callback)) {
   DCHECK(renderer_factory_selector_);
   DCHECK(client_);
   DCHECK(delegate_);
@@ -115,13 +122,15 @@ WebNativeBridgeImpl::~WebNativeBridgeImpl() {
   // by the DestructionHelper below after trampolining through the media thread.
   native_pipeline_controller_->Stop();
 
+  // Disconnect from the surface layer. We still preserve the `bridge_` until
+  // after pipeline shutdown to ensure any pending frames are painted for tests.
+  if (bridge_)
+    bridge_->ClearObserver();
+
   // Destruct compositor resources in the proper order.
   client_->SetCcLayer(nullptr);
-
-  if (video_layer_) {
-    video_layer_->StopUsingProvider();
-    video_layer_->AsExt()->ResetLayerRectCallback();
-    LOG(DEBUG) << "[NativeEmbed] ResetLayerRectCallback.";
+  if (bridge_) {
+    LOG(DEBUG) << "[NativeEmbed] ResetLayerRectVisibilityChangeCallback.";
   }
 
   // Handle destruction of things that need to be destructed after the pipeline
@@ -130,7 +139,7 @@ WebNativeBridgeImpl::~WebNativeBridgeImpl() {
       FROM_HERE,
       base::BindOnce(&DestructionHelper, std::move(main_task_runner_),
                      std::move(vfc_task_runner_), std::move(compositor_),
-                     std::move(renderer_factory_selector_)));
+                     std::move(renderer_factory_selector_), std::move(bridge_)));
 }
 
 std::unique_ptr<media::Renderer> WebNativeBridgeImpl::CreateRenderer(
@@ -164,6 +173,11 @@ void WebNativeBridgeImpl::StartPipeline() {
 
   native_pipeline_controller_->Start(this, std::move(create_texture_cb),
                                      std::move(destroy_texture_cb));
+
+  vfc_task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&content::ChildProcess::ReportCompositorKeyThread,
+          base::Unretained(content::ChildProcess::current()), true));
 }
 
 void WebNativeBridgeImpl::OnFirstFrame(base::TimeTicks frame_time,
@@ -218,22 +232,57 @@ void WebNativeBridgeImpl::OnSetLayer() {
   LOG(INFO) << "[NativeEmbed] WebNativeBridgeImpl::OnSetLayer";
   DVLOG(1) << __func__;
   DCHECK(main_task_runner_->BelongsToCurrentThread());
-  DCHECK(!video_layer_);
-  media::RectChangedCB rect_change_cb = base::BindRepeating(
-      &WebNativeBridgeImpl::OnLayerRectChange, base::Unretained(this));
-  media::RectVisibilityChangedCB rect_visibility_change_cb =
-      base::BindRepeating(&WebNativeBridgeImpl::OnLayerRectVisibilityChange,
-                          base::Unretained(this));
-  media::LayerRemovedVisibilityChangedCB layer_removed_visibility_change_cb =
-      base::BindRepeating(&WebNativeBridgeImpl::CleanupVisibilityForRemovedLayer,
-                          base::Unretained(this));
+  DCHECK(!bridge_);
 
-  video_layer_ = cc::VideoLayerExt::Create(
-      compositor_.get(), media::kNoTransformation, std::move(rect_change_cb),
-      std::move(rect_visibility_change_cb),
-      std::move(layer_removed_visibility_change_cb));
-  client_->SetCcLayer(video_layer_.get());
+  if (!surface_layer_for_same_layer_) {
+    ActivateSurfaceLayerForSameLayer();
+  }
 }
 
+void WebNativeBridgeImpl::ActivateSurfaceLayerForSameLayer() {
+  DCHECK(!bridge_);
+
+  // use surface layer mode
+  surface_layer_for_same_layer_ = true;
+  bridge_ = std::move(create_bridge_callback_).Run(this, compositor_->GetUpdateSubmissionStateCallback());
+  
+  media::RectChangedCB rect_change_cb = base::BindRepeating(
+      &WebNativeBridgeImpl::OnLayerRectChange, weak_this_);
+  media::RectVisibilityChangedCB rect_visibility_change_cb =
+      base::BindRepeating(&WebNativeBridgeImpl::OnLayerRectVisibilityChange,
+                          weak_this_);
+  media::LayerRemovedVisibilityChangedCB layer_removed_visibility_change_cb =
+      base::BindRepeating(&WebNativeBridgeImpl::CleanupVisibilityForRemovedLayer,
+                          weak_this_);
+
+  surface_layer_ = bridge_->CreateSurfaceLayer(std::move(rect_change_cb), std::move(rect_visibility_change_cb),
+      std::move(layer_removed_visibility_change_cb));
+  client_->SetCcLayer(surface_layer_.get());
+  vfc_task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          &VideoFrameCompositor::EnableSubmission,
+          base::Unretained(compositor_.get()), bridge_->GetSurfaceId(),
+          media::kNoTransformation,
+          false));
+  bridge_->SetContentsOpaque(false);
+}
+
+void WebNativeBridgeImpl::OnWebLayerUpdated() {}
+
+void WebNativeBridgeImpl::RegisterContentsLayer(cc::Layer* layer)
+{
+  DCHECK(bridge_);
+  bridge_->SetContentsOpaque(false);
+  client_->SetCcLayer(layer);
+}
+
+void WebNativeBridgeImpl::UnregisterContentsLayer(cc::Layer* layer)
+{
+  // `client_` will unregister its cc::Layer if given a nullptr.
+  client_->SetCcLayer(nullptr);
+}
+
+void WebNativeBridgeImpl::OnSurfaceIdUpdated(viz::SurfaceId surface_id) {
+}
 }  // namespace blink
-                     

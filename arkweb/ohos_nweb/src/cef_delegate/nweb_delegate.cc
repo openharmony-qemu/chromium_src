@@ -5380,6 +5380,14 @@ int32_t NWebDelegate::GetVisibleViewportAvoidHeight() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_MENU)
+void NWebDelegate::UpdateSingleHandleVisible(bool isVisible) {
+  if (handler_delegate_) {
+    handler_delegate_->OnVisibleChanged(isVisible);
+  }
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
 void NWebDelegate::SetErrorPageEnabled(bool enable) {
   if (!preference_delegate_) {
@@ -5401,5 +5409,4 @@ bool NWebDelegate::GetErrorPageEnabled() {
   return preference_delegate_->ErrorPageEnabled();
 }
 #endif
-
 }  // namespace OHOS::NWeb

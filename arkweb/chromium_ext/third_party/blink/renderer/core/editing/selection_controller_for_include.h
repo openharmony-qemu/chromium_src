@@ -38,9 +38,19 @@ class SelectionControllerUtils {
   static SelectionInFlatTree HandleArkWebAISelectionExt(raw_ptr<SelectionController> obj,
                                                         const HitTestResult& result,
                                                         Node* inner_node,
-                                                        const PositionInFlatTreeWithAffinity& pos);
+                                                        const PositionInFlatTreeWithAffinity& pos,
+                                                        bool isDoubleClick = false);
 
-  static unsigned MaxOffsetTrimTailWhiteSpace(WTF::String& str);
+  static PositionInFlatTree HandleEmptyLine(Node* inner_node,
+                                            const PositionInFlatTree& pos,
+                                            int depth);
+
+  static unsigned MaxOffsetTrimTailWhiteSpace(WTF::String& str, unsigned len);
+
+  static void OffsetAdjustWhiteSpace(int & offset,
+                                     int& temp_offset,
+                                     WTF::String& str,
+                                     bool permission);
 };
 
 }  // namespace blink

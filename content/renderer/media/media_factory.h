@@ -74,8 +74,18 @@ class RendererWebNativeDelegate;
 #endif
 }  // namespace media
 
-namespace content {
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+namespace blink {
+  class WebVideoFrameSubmitter;
+}
 
+namespace content {
+  class RenderFrame;
+}
+#endif
+
+namespace content {
+class RenderFrame;
 class RenderFrameImpl;
 class MediaInterfaceFactory;
 struct RenderFrameMediaPlaybackOptions;
@@ -138,6 +148,14 @@ class MediaFactory {
   // Returns `DecoderFactory`, which can be used to created decoders in WebRTC.
   // Can be dereferenced only on the media thread.
   base::WeakPtr<media::DecoderFactory> GetDecoderFactory();
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  std::unique_ptr<blink::WebVideoFrameSubmitter> CreateSubmitter(
+    scoped_refptr<base::SingleThreadTaskRunner>
+        main_thread_compositor_task_runner,
+    const cc::LayerTreeSettings& settings,
+    media::MediaLog* media_log,
+    content::RenderFrame* render_frame);
+#endif
 
  private:
   // Initializes `decoder_factory_` if it hasn't been initialized yet.

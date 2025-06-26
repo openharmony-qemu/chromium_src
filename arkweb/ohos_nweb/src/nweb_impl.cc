@@ -1875,13 +1875,6 @@ int NWebImpl::Load(
   if (nweb_delegate_ == nullptr) {
     return NWEB_ERR;
   }
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  GURL passed_in_url = GURL(url);
-  if (passed_in_url.scheme() == content::kArkWebUIScheme &&
-      passed_in_url.host() == chrome::kChromeUIExtensionsHost) {
-    return nweb_delegate_->Load(chrome::kChromeUIExtensionsURL);
-  }
-#endif
   return nweb_delegate_->Load(url, additionalHttpHeaders);
 }
 
@@ -2048,9 +2041,7 @@ void NWebImpl::RegisterArkJSfunction(
       object_name, method_list, async_method_list, object_id, "");
 }
 
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
-void NWebImpl::RegisterArkJSfunctionV2(
+void NWebImpl::RegisterArkJSfunction(
     const std::string& object_name,
     const std::vector<std::string>& method_list,
     const std::vector<std::string>& async_method_list,
@@ -2063,7 +2054,6 @@ void NWebImpl::RegisterArkJSfunctionV2(
   return nweb_delegate_->RegisterArkJSfunction(
       object_name, method_list, async_method_list, object_id, permission);
 }
-#endif
 
 void NWebImpl::UnregisterArkJSfunction(
     const std::string& object_name,
@@ -5437,6 +5427,28 @@ void NWebImpl::SendPipEvent(int delegate_id,
 }
 #endif
 
+#ifdef ARKWEB_BLANK_OPTIMIZE
+void NWebImpl::SetPrivacyStatus(bool isPrivate) {
+
+}
+
+int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) {
+  return 0;
+}
+
+int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key) {
+  return 0;
+}
+
+bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
+  return false;
+}
+
+void NWebImpl::SetVisibility(bool isVisible) {
+
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
 void NWebImpl::AvoidVisibleViewportBottom(int32_t avoidHeight) {
   if (nweb_delegate_ == nullptr) {
@@ -5454,6 +5466,14 @@ int32_t NWebImpl::GetVisibleViewportAvoidHeight() {
     return;
   }
   return nweb_delegate_->GetVisibleViewportAvoidHeight();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+void NWebImpl::UpdateSingleHandleVisible(bool isVisible) {
+  if (nweb_delegate_) {
+    nweb_delegate_->UpdateSingleHandleVisible(isVisible);
+  }
 }
 #endif
 

@@ -12,12 +12,16 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#if BUILDFLAG(ARKWEB_AI)
+#include "third_party/blink/renderer/core/editing/editing_utilities.h"
+#endif
 
 namespace blink {
 
 #if BUILDFLAG(ARKWEB_AI)
 static constexpr int MAX_LENGTH = 100;
 static constexpr int HALF_LENGTH = 50;
+static constexpr int MAX_DEPTH = 64; //HandleEmptyLine max calling depth
 void SelectionController::FocusDocumentView() {
   Page* page = frame_->GetPage();
   if (!page) {
@@ -260,22 +264,41 @@ void SelectionControllerUtils::HandleMouseReleaseEventWithMenuExt(raw_ptr<Select
 SelectionInFlatTree SelectionControllerUtils::HandleArkWebAISelectionExt(raw_ptr<SelectionController> obj,
                                                                          const HitTestResult& result,
                                                                          Node* inner_node,
-                                                                         const PositionInFlatTreeWithAffinity& pos) {
+                                                                         const PositionInFlatTreeWithAffinity& pos,
+                                                                         bool isDoubleClick) {
+#if BUILDFLAG(ARKWEB_AI)
+  if (!inner_node) {
+    return;
+  }
   WTF::String str;
-  if (pos.IsNotNull()) {
-    str = pos.AnchorNode()->textContent();
-  } else if (inner_node != nullptr) {
+  bool after_line_select_tail = isDoubleClick || !IsEditable(*inner_node);
+  if (after_line_select_tail) {
+    if (pos.IsNotNull()) {
+      str = pos.AnchorNode()->textContent(true);
+    } else if (inner_node != nullptr) {
+      str = inner_node->textContent(true);
+    }
+    const PositionInFlatTree pos_no_empty_line =
+        SelectionControllerUtils::HandleEmptyLine(inner_node, pos.GetPosition(),
+                                                  MAX_DEPTH);
+    const PositionInFlatTreeWithAffinity new_pos =
+        CreateVisiblePosition(pos_no_empty_line, pos.Affinity())
+            .ToPositionWithAffinity();
+    if(str.ContainsOnlyWhitespaceOrEmpty() && new_pos.IsNotNull() &&
+       !new_pos.AnchorNode()->textContent().ContainsOnlyWhitespaceOrEmpty()) {
+        return HandleArkWebAISelectionExt(obj, result, new_pos.AnchorNode(),
+                                          new_pos, isDoubleClick);
+    }
+  } else {
     str = inner_node->textContent();
   }
-  unsigned len = SelectionControllerUtils::MaxOffsetTrimTailWhiteSpace(str);
+#else
+  WTF::String str = inner_node->textContent();
+#endif
 
+  unsigned len = str.length();
   int offset = pos.GetPosition().OffsetInContainerNode();
   int temp_offset = offset;
-
-  if (len < offset || inner_node->getNodeType() != Node::NodeType::kTextNode) {
-    offset = len;
-    temp_offset = offset;
-  }
 
   if (len > MAX_LENGTH) {
     if (temp_offset < HALF_LENGTH) {
@@ -288,6 +311,10 @@ SelectionInFlatTree SelectionControllerUtils::HandleArkWebAISelectionExt(raw_ptr
       temp_offset = HALF_LENGTH;
     }
   }
+
+#if BUILDFLAG(ARKWEB_AI)
+  OffsetAdjustWhiteSpace(offset, temp_offset, str, after_line_select_tail);
+#endif
 
   WTF::Vector<int8_t> select =
       obj->frame_->View()->GetChromeClient()->AsChromeClientExt()->GetWordSelection(
@@ -323,12 +350,63 @@ SelectionInFlatTree SelectionControllerUtils::HandleArkWebAISelectionExt(raw_ptr
   return temp_selection;
 }
 
-unsigned SelectionControllerUtils::MaxOffsetTrimTailWhiteSpace(WTF::String& str) {
-  unsigned len = str.length();
+unsigned SelectionControllerUtils::MaxOffsetTrimTailWhiteSpace(WTF::String& str,
+                                                              unsigned len) {
+  if (len == 0) {
+    return 0;
+  }
   do {
     --len;
-  } while (len >= 0 && IsASCIISpace(str[len]));
+  } while (len > 0 && IsASCIISpace(str[len]));
   return len;
 }
 
+PositionInFlatTree SelectionControllerUtils::HandleEmptyLine(
+    Node* inner_node,
+    const PositionInFlatTree& pos,
+    int depth)
+{
+  if (!inner_node || !pos.IsNotNull()) {
+    return pos;
+  }
+  WTF::String str = inner_node->textContent(true);
+  if (!str.ContainsOnlyWhitespaceOrEmpty()) {
+    return PositionInFlatTree::CreateWithoutValidation(*inner_node,
+                                                      str.length());
+  } else if (depth && inner_node->HasPreviousSibling()
+             && inner_node->parentNode()) {
+    Node* previous_inner_node = inner_node->previousSibling();
+    Node* parent_inner_node = inner_node->parentNode();
+    bool sameEditable = IsEditable(*previous_inner_node) == IsEditable(*inner_node);
+    sameEditable &= IsEditable(*parent_inner_node) == IsEditable(*inner_node);
+    if (sameEditable) {
+        return SelectionControllerUtils::HandleEmptyLine(previous_inner_node, pos,
+                                                    depth -1);
+    }
+  }
+  return pos;
+}
+
+void SelectionControllerUtils::OffsetAdjustWhiteSpace(int& offset,
+                                                 int& temp_offset,
+                                                 WTF::String& str,
+                                                 bool permission)
+{
+  if (!permission) {
+    return;
+  }
+  unsigned closestLeftNotWhiteOffset =
+    SelectionControllerUtils::MaxOffsetTrimTailWhiteSpace(str, str.length());
+  if (closestLeftNotWhiteOffset < temp_offset) {
+    offset -= temp_offset - closestLeftNotWhiteOffset;
+    temp_offset = closestLeftNotWhiteOffset;
+  } else if (IsASCIISpace(str[temp_offset])) {
+    closestLeftNotWhiteOffset =
+      SelectionControllerUtils::MaxOffsetTrimTailWhiteSpace(str,temp_offset);
+    if (!IsASCIISpace(str[closestLeftNotWhiteOffset])) {
+        offset -= temp_offset - closestLeftNotWhiteOffset;
+        temp_offset = closestLeftNotWhiteOffset;
+    }
+  }
+}
 } // namespace blink

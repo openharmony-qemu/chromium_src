@@ -19,7 +19,6 @@
 #include "base/logging.h"
 
 namespace ui {
-
 TouchSelectionControllerExt::TouchSelectionControllerExt(
     TouchSelectionControllerClient* client,
     const Config& config)
@@ -107,6 +106,59 @@ void TouchSelectionControllerExt::ResetPositionAfterDragEnd(
   if (&draggable == end_selection_handle_.get()) {
     end_selection_handle_->AsTouchHandleExt()->ResetPositionAfterDragEnd();
   }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_AI)
+int32_t TouchSelectionControllerExt::GetTouchNums(const MotionEvent& event) {
+  PreTouchInfo curTouchInfo;
+  curTouchInfo.x = event.GetX(0);
+  curTouchInfo.y = event.GetY(0);
+  curTouchInfo.start = event.GetEventTime();
+  if (gestureTouchQueue_.empty()) {
+    gestureTouchQueue_.push(curTouchInfo);
+    return SINGLE_CLICK_NUM;
+  }
+  PreTouchInfo preTouchInfo = gestureTouchQueue_.back();
+  bool continuous = IsContinuousEvent(preTouchInfo, curTouchInfo, true);
+  if (continuous) {
+    gestureTouchQueue_.push(curTouchInfo);
+    if (gestureTouchQueue_.size() == TRIPLE_CLICK_NUM) {
+      gestureTouchQueue_.pop();
+      return TRIPLE_CLICK_NUM;
+
+    }
+    return DOUBLE_CLICK_NUM;
+  }
+  if (!gestureTouchQueue_.empty()) {
+    std::queue<PreTouchInfo> empty;
+    swap(empty, gestureTouchQueue_);
+    gestureTouchQueue_.push(curTouchInfo);
+  }
+  return SINGLE_CLICK_NUM;
+}
+
+bool TouchSelectionControllerExt::IsContinuousEvent(const PreTouchInfo& first_down,
+                                    const PreTouchInfo& second_down,
+                                    bool should_process_double_tap) {
+  const base::TimeDelta delta_time =
+     second_down.start - first_down.start;
+  if (delta_time > double_tap_timeout_) {
+    return false;
+  }
+  const float delta_x = first_down.x - second_down.x;
+  const float delta_y = first_down.y - second_down.y;
+  return (delta_x * delta_x + delta_y * delta_y < double_tap_slop_square_);
+}
+
+void TouchSelectionControllerExt::SetTouchNumsForHandle(const MotionEvent& event) {
+  int32_t continuous_touch_nums = GetTouchNums(event);
+  if (insertion_handle_)
+    insertion_handle_->SetTouchNums(continuous_touch_nums);
+  if(start_selection_handle_)
+    start_selection_handle_->SetTouchNums(continuous_touch_nums);
+  if(end_selection_handle_)
+    end_selection_handle_->SetTouchNums(continuous_touch_nums);
 }
 #endif
 }  // namespace ui

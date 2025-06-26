@@ -13,6 +13,12 @@
 
 namespace device {
 
+namespace {
+
+const size_t g_max_length = 3;
+
+} // namespace
+
 template<>
 std::string Convert(const FIDO2_ClientCapability& capability)
 {
@@ -33,7 +39,7 @@ std::string Convert(const FIDO2_ClientCapability& capability)
             return "signalAllAcceptedCredentials";
         case FIDO2_SIGNAL_CURRENT_USER_DETAILS:
             return "signalCurrentUserDetails";
-        case FIDO2_SIGNAL_UNKNOW_CREDENTIAL:
+        case FIDO2_SIGNAL_UNKNOWN_CREDENTIAL:
             return "signalUnknownCredential";
         case FIDO2_EXTENSION_UVI:
             return "extension:uvi";
@@ -301,8 +307,7 @@ std::string_view TruncateString(const char* s)
     if (s == nullptr) {
         return "<null>";
     }
-    const size_t max_length = 30;
-    const size_t count = std::min(std::strlen(s), max_length);
+    const size_t count = std::min(std::strlen(s), g_max_length);
     return {s, count};
 }
 
@@ -339,11 +344,12 @@ std::string Convert(const FIDO2_AuthenticatorTransportArray& transports)
 template<>
 std::string Convert(const FIDO2_PublicKeyAttestationCredential& credential)
 {
-    const size_t max_length = 30;
+    const size_t max_length = g_max_length * 2;
     const FIDO2_AuthenticatorAttestationResponse& response = credential.response;
     std::stringstream ss;
     ss << "{\n";
-    ss << "  rawId: 0x" << Convert<std::string>(credential.rawId) << ",\n";
+    ss << "  rawId: 0x"
+       << Convert<std::string>(credential.rawId).substr(0, max_length) << ",\n";
     ss << "  response: {\n";
     ss << "    attestationObject: 0x"
        << Convert<std::string>(response.attestationObject).substr(0, max_length) << ",\n";
@@ -408,19 +414,21 @@ AuthenticatorMakeCredentialResponse Convert(
 template<>
 std::string Convert(const FIDO2_PublicKeyAssertionCredential& credential)
 {
-    const size_t max_length = 30;
+    const size_t max_length = g_max_length * 2;
+    const FIDO2_AuthenticatorResponse& response = credential.response;
     std::stringstream ss;
     ss << "{\n";
-    ss << "  rawId: 0x" << Convert<std::string>(credential.rawId) << ",\n";
+    ss << "  rawId: 0x"
+       << Convert<std::string>(credential.rawId).substr(0, max_length) << ",\n";
     ss << "  response: {\n";
     ss << "    authenticatorData: 0x"
-       << Convert<std::string>(credential.response.authenticatorData).substr(0, max_length) << ",\n";
+       << Convert<std::string>(response.authenticatorData).substr(0, max_length) << ",\n";
     ss << "    signature: 0x"
-       << Convert<std::string>(credential.response.signature).substr(0, max_length) << ",\n";
+       << Convert<std::string>(response.signature).substr(0, max_length) << ",\n";
     ss << "    userHandle: 0x"
-       << Convert<std::string>(credential.response.userHandle).substr(0, max_length) << ",\n";
+       << Convert<std::string>(response.userHandle).substr(0, max_length) << ",\n";
     ss << "    clientDataJson: 0x"
-       << Convert<std::string>(credential.response.clientDataJson).substr(0, max_length) << ",\n";
+       << Convert<std::string>(response.clientDataJson).substr(0, max_length) << ",\n";
     ss << "  },\n";
     ss << "  authenticatorAttachment: "
        << static_cast<int>(credential.authenticatorAttachment) << ",\n";
@@ -469,7 +477,7 @@ AuthenticatorGetAssertionResponse Convert(
 template<>
 std::string Convert(const FIDO2_CredentialCreationOptions& options)
 {
-    const size_t max_length = 30;
+    const size_t max_length = g_max_length * 2;
     const FIDO2_PublicKeyCredentialCreationOptions& public_key = options.publicKey;
     const FIDO2_PublicKeyCredentialRpEntity& rp = public_key.rp;
     const FIDO2_PublicKeyCredentialUserEntity& user = public_key.user;
@@ -484,9 +492,9 @@ std::string Convert(const FIDO2_CredentialCreationOptions& options)
     ss << "      name: " << TruncateString(rp.name) << ",\n";
     ss << "    }\n";
     ss << "    user: {\n";
-    ss << "      id: " << Convert<std::string>(user.id) << ",\n";
-    ss << "      displayName: " << Convert<std::string>(user.displayName) << ",\n";
-    ss << "      name: " << Convert<std::string>(user.name) << ",\n";
+    ss << "      id: " << Convert<std::string>(user.id).substr(0, max_length) << ",\n";
+    ss << "      displayName: " << TruncateString(user.displayName) << ",\n";
+    ss << "      name: " << TruncateString(user.name) << ",\n";
     ss << "    }\n";
     ss << "    challenge: "
        << Convert<std::string>(public_key.challenge).substr(0, max_length) << ",\n";
@@ -506,7 +514,7 @@ std::string Convert(const FIDO2_CredentialCreationOptions& options)
 template<>
 std::string Convert(const FIDO2_CredentialRequestOptions& options)
 {
-    const size_t max_length = 30;
+    const size_t max_length = g_max_length * 2;
     const FIDO2_PublicKeyCredentialRequestOptions& public_key = options.publicKey;
     const FIDO2_PublicKeyCredentialDescriptorArray& descriptors =
         options.publicKey.allowCredentials;

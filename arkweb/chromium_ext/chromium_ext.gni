@@ -309,6 +309,11 @@ arkweb_third_patry_blink_public_platform_graphics_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/platform/graphics/image_ext.h",
 ]
 
+arkweb_third_party_blink_renderer_core_editing_sources = [
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/editing/caret_display_item_client_utils.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/editing/caret_display_item_client_utils.h",
+]
+
 arkweb_third_patry_blink_renderer_core_frame_resources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/web_frame_widget_impl_ext.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/web_frame_widget_impl_ext.h",
@@ -597,6 +602,8 @@ arkweb_cc_layer_source = [
   "//arkweb/chromium_ext/cc/layer/layer_utils.h",
   "//arkweb/chromium_ext/cc/layer/video_layer_ext.cc",
   "//arkweb/chromium_ext/cc/layer/video_layer_ext.h",
+  "//arkweb/chromium_ext/cc/layer/surface_layer_impl_utils.cc",
+  "//arkweb/chromium_ext/cc/layer/surface_layer_impl_utils.h",
   "//arkweb/chromium_ext/cc/layer/video_layer_impl_utils.cc",
   "//arkweb/chromium_ext/cc/layer/video_layer_impl_utils.h",
 ]

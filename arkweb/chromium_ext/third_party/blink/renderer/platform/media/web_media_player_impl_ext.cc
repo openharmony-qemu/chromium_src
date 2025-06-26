@@ -330,7 +330,7 @@ int64_t WebMediaPlayerImplExt::GetPlayedTime() {
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
 bool WebMediaPlayerImplExt::IsFrameHidden() {
-  return IsHidden();
+  return IsPageHidden();
 }
 #endif
 

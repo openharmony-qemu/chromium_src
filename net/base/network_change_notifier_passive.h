@@ -53,6 +53,11 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
   const std::vector<std::string> GetCurrentDnsServers() override;
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  void OnVpnAvailable();
+  void OnVpnLost();
+#endif
+
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_NETWORK_CONNECTION)
   void BindDnsToNetwork(int network_for_dns) override;
 #endif
@@ -101,6 +106,10 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_EX_HTTP_DNS_FALLBACK)
   mutable base::Lock dns_server_lock_;
   std::vector<std::string> dns_servers_;
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  bool vpn_in_place_{false};
 #endif
 };
 

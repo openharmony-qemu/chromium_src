@@ -18,9 +18,15 @@
 
 #include "arkweb/build/features/features.h"
 #include "ui/touch_selection/touch_selection_controller.h"
+#include <queue>
 
 namespace ui {
 class TouchSelectionController;
+struct PreTouchInfo {
+  double x = -1;
+  double y = -1;
+  base::TimeTicks start;
+};
 
 class TouchSelectionControllerExt : public TouchSelectionController {
  public:
@@ -66,6 +72,21 @@ class TouchSelectionControllerExt : public TouchSelectionController {
 #if BUILDFLAG(ARKWEB_VIBRATE)
   bool is_long_press_ = false;
 #endif  // BUILDFLAG(ARKWEB_VIBRATE)
+
+#if BUILDFLAG(ARKWEB_AI)
+  static constexpr int32_t INVALID_CLICK_NUM = 0;
+  static constexpr int32_t SINGLE_CLICK_NUM = 1;
+  static constexpr int32_t DOUBLE_CLICK_NUM = 2;
+  static constexpr int32_t TRIPLE_CLICK_NUM = 3;
+  base::TimeDelta double_tap_timeout_ = base::Milliseconds(300);
+  float double_tap_slop_square_ = 100 * 100;
+  std::queue<PreTouchInfo> gestureTouchQueue_;
+  int32_t GetTouchNums(const MotionEvent& event);
+  bool IsContinuousEvent(const PreTouchInfo& first_down,
+                         const PreTouchInfo& second_down,
+                         bool should_process_double_tap);
+  void SetTouchNumsForHandle(const MotionEvent& event);
+#endif
 };
 }  // namespace ui
 #endif  // UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_EXT_H_

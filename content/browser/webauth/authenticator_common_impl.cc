@@ -1305,51 +1305,8 @@ void AuthenticatorCommonImpl::ContinueMakeCredentialAfterRpIdCheck(
   ctap_make_credential_request->attestation_preference = attestation;
 
 #if BUILDFLAG(ARKWEB_FIDO)
-  ctap_make_credential_request->extra = device::CtapMakeCredentialRequestExtra();
-  ctap_make_credential_request->extra->common.challenge = options->challenge;
-  ctap_make_credential_request->extra->common.mediation =
-      device::CredentialMediationRequirement::kSilent;
-  switch (options->mediation) {
-    case blink::mojom::PublicKeyCredentialMediationRequirement::SILENT:
-      ctap_make_credential_request->extra->common.mediation =
-          device::CredentialMediationRequirement::kSilent;
-      break;
-    case blink::mojom::PublicKeyCredentialMediationRequirement::OPTIONAL:
-      ctap_make_credential_request->extra->common.mediation =
-          device::CredentialMediationRequirement::kOptional;
-      break;
-    case blink::mojom::PublicKeyCredentialMediationRequirement::REQUIRED:
-      ctap_make_credential_request->extra->common.mediation =
-          device::CredentialMediationRequirement::kRequired;
-      break;
-    case blink::mojom::PublicKeyCredentialMediationRequirement::CONDITIONAL:
-      ctap_make_credential_request->extra->common.mediation =
-          device::CredentialMediationRequirement::kConditional;
-      break;
-  }
-  if (options->timeout) {
-    ctap_make_credential_request->extra->common.timeout = *options->timeout;
-  }
-  ctap_make_credential_request->extra->common.hints.reserve(options->hints.size());
-  for (const auto& hint : options->hints) {
-    switch (hint) {
-      case blink::mojom::Hint::SECURITY_KEY:
-            ctap_make_credential_request->extra->common.hints.push_back(
-                device::CredentialHint::kSecurityKey);
-        break;
-      case blink::mojom::Hint::CLIENT_DEVICE:
-            ctap_make_credential_request->extra->common.hints.push_back(
-                device::CredentialHint::kClientDevice);
-        break;
-      case blink::mojom::Hint::HYBRID:
-            ctap_make_credential_request->extra->common.hints.push_back(
-                device::CredentialHint::kHintHybrid);
-        break;
-    }
-  }
-  ctap_make_credential_request->extra->attestation_formats =
-      options->attestation_formats;
-  ctap_make_credential_request->extra->common.origin = caller_origin.Serialize();
+  ctap_make_credential_request->extra =
+      CreateCtapMakeCredentialRequestExtra(caller_origin, options);
 #endif  // BUILDFLAG(ARKWEB_FIDO)
 
   GetWebAuthenticationDelegate()->BrowserProvidedPasskeysAvailable(
@@ -1752,13 +1709,7 @@ void AuthenticatorCommonImpl::GetClientCapabilities(
     blink::mojom::Authenticator::GetClientCapabilitiesCallback callback) {
 #if BUILDFLAG(ARKWEB_FIDO)
   if (device::OhosWebAuthnApi::Instance()->IsAvailable()) {
-    const auto capabilities = device::OhosAuthenticator::GetClientCapabilities();
-    std::vector<blink::mojom::WebAuthnClientCapabilityPtr> result;
-    result.reserve(capabilities.size());
-    for (const auto& capability : capabilities) {
-      result.push_back(MakeCapability(capability.first, capability.second));
-    }
-    std::move(callback).Run(std::move(result));
+    GetClientCapabilitiesFromOhosWebAuthnApi(std::move(callback));
     return;
   }
 #endif // BUILDFLAG(ARKWEB_FIDO)
@@ -2635,22 +2586,7 @@ AuthenticatorCommonImpl::CreateMakeCredentialResponse(
   auto common_info = blink::mojom::CommonCredentialInfo::New();
 #if BUILDFLAG(ARKWEB_FIDO)
   if (response_data.response_extra) {
-    LOG(INFO) << "CreateMakeCredentialResponse response_extra";
-    common_info->client_data_json = response_data.response_extra->common.client_data_json;
-    common_info->raw_id = response_data.response_extra->common.raw_id;
-    common_info->id = Base64UrlEncodeChallenge(common_info->raw_id);
-    common_info->authenticator_data =
-        response_data.response_extra->common.authenticator_data;
-    response->info = std::move(common_info);
-    response->attestation_object = response_data.response_extra->attestation_object;
-    if (response_data.transports) {
-      response->transports.assign(
-          response_data.transports->begin(),
-          response_data.transports->end());
-    }
-    response->public_key_der = response_data.response_extra->public_key;
-    response->public_key_algo = response_data.response_extra->public_key_algorithm;
-    return response;
+    return ::content::CreateMakeCredentialResponse(response_data);
   }
 #endif // BUILDFLAG(ARKWEB_FIDO)
   common_info->client_data_json.assign(req_state_->client_data_json.begin(),
@@ -2855,22 +2791,7 @@ AuthenticatorCommonImpl::CreateGetAssertionResponse(
 
 #if BUILDFLAG(ARKWEB_FIDO)
   if (response_data.response_extra) {
-    LOG(INFO) << "CreateGetAssertionResponse response_extra";
-    common_info->client_data_json = response_data.response_extra->common.client_data_json;
-    common_info->raw_id = response_data.response_extra->common.raw_id;
-    common_info->id = Base64UrlEncodeChallenge(common_info->raw_id);
-    common_info->authenticator_data =
-        response_data.response_extra->common.authenticator_data;
-    response->info = std::move(common_info);
-
-    response->authenticator_attachment =
-        response_data.response_extra->common.autenticator_attachment;
-    response->signature = response_data.response_extra->signature;
-    response->user_handle = response_data.response_extra->user_handle;
-    response->extensions =
-        blink::mojom::AuthenticationExtensionsClientOutputs::New();
-
-    return response;
+    return ::content::CreateGetAssertionResponse(response_data);
   }
 #endif // BUILDFLAG(ARKWEB_FIDO)
 

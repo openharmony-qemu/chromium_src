@@ -206,15 +206,12 @@ class NWebImpl : public NWeb {
                              const std::vector<std::string>& method_list,
                              const std::vector<std::string>& async_method_list,
                              const int32_t object_id) override;
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
-  void RegisterArkJSfunctionV2(
+  void RegisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list,
       const std::vector<std::string>& async_method_list,
       const int32_t object_id,
       const std::string& permission) override;
-#endif
   void UnregisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) override;
@@ -289,6 +286,9 @@ class NWebImpl : public NWeb {
                               double borderRadiusBottomLeft,
                               double borderRadiusBottomRight) override;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_MENU)
+  void UpdateSingleHandleVisible(bool isVisible) override;
+#endif
   void SuggestionSelected(int index) override;
 #if BUILDFLAG(ARKWEB_DISCARD)
   bool Discard() override;
@@ -967,6 +967,15 @@ class NWebImpl : public NWeb {
                     int frame_routing_id,
                     int event) override;
 #endif
+
+#ifdef ARKWEB_BLANK_OPTIMIZE
+  void SetPrivacyStatus(bool isPrivate) override;
+  int32_t GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) override;
+  int32_t SetBlanklessLoadingWithKey(const std::string& key) override;
+  bool TriggerBlanklessForUrl(const std::string& url) override;
+  void SetVisibility(bool isVisible) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   void SetErrorPageEnabled(bool enable) override;
   bool GetErrorPageEnabled() override;

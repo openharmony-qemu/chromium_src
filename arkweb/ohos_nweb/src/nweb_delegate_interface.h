@@ -811,6 +811,10 @@ class NWebDelegateInterface
   virtual int32_t GetVisibleViewportAvoidHeight() = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_MENU)
+  virtual void UpdateSingleHandleVisible(bool isVisible) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   virtual void SetErrorPageEnabled(bool enable) = 0;
   virtual bool GetErrorPageEnabled() = 0;

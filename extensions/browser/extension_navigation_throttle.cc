@@ -352,6 +352,9 @@ ExtensionNavigationThrottle::WillStartOrRedirectRequest() {
   // - https://crbug.com/662602
   // - similar checks in extensions::ResourceRequestPolicy::CanRequestResource
   if (initiator_origin.scheme() == content::kChromeUIScheme ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      initiator_origin.scheme() == content::kArkWebUIScheme ||
+#endif
       initiator_origin.scheme() == content::kChromeDevToolsScheme ||
       ExtensionsBrowserClient::Get()->ShouldSchemeBypassNavigationChecks(
           initiator_origin.scheme())) {

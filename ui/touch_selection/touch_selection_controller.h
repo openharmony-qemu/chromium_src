@@ -48,6 +48,7 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionControllerClient {
   virtual void ShowTouchSelectionContextMenu(const gfx::Point& location) {}
 #if BUILDFLAG(ARKWEB_MENU)
   virtual void SelectBetweenCoordinatesV2(const gfx::PointF& position, bool is_base) {}
+  virtual void NotifyShowMagnifier() {}
 #endif
 };
 
@@ -186,6 +187,9 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
 
   ActiveStatus active_status() const { return active_status_; }
 
+#if BUILDFLAG(ARKWEB_MENU)
+  bool is_first_drag_ = false;
+#endif
  private:
   friend class TouchSelectionControllerTestApi;
 

@@ -36,6 +36,7 @@ BackgroundTaskPolicy::BackgroundTaskPolicy()
     : background_task_holder_(
           std::make_unique<mechanism::BackgroundTaskHolder>()),
       media_playing_num_(0),
+      visible_page_num_(0),
       audio_state_num_(0) {}
 BackgroundTaskPolicy::~BackgroundTaskPolicy() = default;
 

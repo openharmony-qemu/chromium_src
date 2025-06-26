@@ -146,6 +146,9 @@ void OhosVideoDecoder::DestroyAsync(std::unique_ptr<OhosVideoDecoder> decoder) {
     // Cancel previously registered callback (if any).
     self->event_cb_registration_.reset();
     self->ohos_crypto_context_->SetOHOSMediaCryptoReadyCB(base::NullCallback());
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+    self->ohos_crypto_context_->ReleaseInnerResource();
+#endif
     self->ohos_crypto_context_ = nullptr;
   }
   if (self->reset_cb_) {

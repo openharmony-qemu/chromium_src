@@ -505,6 +505,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void ExecuteJavaScriptInIsolatedWorld(const std::u16string& javascript,
                                         JavaScriptResultCallback callback,
                                         int32_t world_id) override;
+  bool GetWorldId(const std::string& worldName, int32_t* worldId);
+  void ExecuteJavaScriptInFrames(const std::u16string& javascript,
+                                 bool recursive,
+                                 const std::string& worldName,
+                                 JavaScriptResultCallback callback) override;
   void ExecuteJavaScriptForTests(const std::u16string& javascript,
                                  JavaScriptResultCallback callback,
                                  int32_t world_id) override;

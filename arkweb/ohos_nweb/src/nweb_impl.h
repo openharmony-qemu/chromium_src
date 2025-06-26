@@ -1050,6 +1050,9 @@ class NWebImpl : public NWeb {
   int32_t GetVisibleViewportAvoidHeight() override;
 #endif
 
+#ifdef ARKWEB_BLANK_OPTIMIZE
+  std::atomic<bool> is_visible_ = false;
+#endif
 };
 }  // namespace OHOS::NWeb
 

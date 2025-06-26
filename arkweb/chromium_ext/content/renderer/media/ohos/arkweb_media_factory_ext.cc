@@ -46,6 +46,7 @@
 #include "content/renderer/media/renderer_web_media_player_delegate.h"
 #include "content/renderer/render_frame_impl.h"
 #include "content/renderer/render_thread_impl.h"
+#include "content/renderer/renderer_blink_platform_impl.h"
 #include "gpu/ipc/client/client_shared_image_interface.h"
 #include "media/base/cdm_factory.h"
 #include "media/base/decoder_factory.h"
@@ -134,6 +135,7 @@
 #if !BUILDFLAG(ARKWEB_SAME_LAYER)
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "base/system/sys_info.h"
+#include "content/renderer/media/media_factory.cc"
 #endif
 
 
@@ -146,52 +148,67 @@ ArkwebMediaFactoryExt::ArkwebMediaFactoryExt(RenderFrameImpl* render_frame,
         }
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-blink::WebNativeBridge* ArkwebMediaFactoryExt::CreateWebNativeBridge(blink::WebNativeClient* client) {
-  LOG(INFO) << "[NativeEmbed] ArkwebMediaFactoryExt::CreateWebNativeBridge.";
-  blink::WebLocalFrame* web_frame = render_frame_->GetWebFrame();
-  // Render thread may not exist in tests, returning nullptr if it does not.
-  RenderThreadImpl* render_thread_ = RenderThreadImpl::current();
-  if (!render_thread_) {
-    return nullptr;
-  }
-  auto factory_selector = std::make_unique<media::RendererFactorySelector>();
-  gl::ohos::TextureOwnerMode texture_owner_mode =
-      base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice()
-        ? gl::ohos::TextureOwnerMode::kNativeImageTexture
-        : gl::ohos::TextureOwnerMode::kSameLayerNativeBuffer;
-  auto native_factory = std::make_unique<NativeRendererClientFactory>(
-      render_thread_->compositor_task_runner(),
-      base::BindRepeating(
-        &NativeTextureWrapperImpl::Create,
-        base::ohos::IsEmulator() ||
-            base::SysInfo::IsLowEndDevice() /*enable_texture_copy*/,
-            texture_owner_mode, render_thread_->GetNativeTexureFactory(),
-            render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia)));
+blink::WebNativeBridge* ArkwebMediaFactoryExt::CreateWebNativeBridge(
+    blink::WebNativeClient* client, viz::FrameSinkId parent_frame_sink_id,
+    scoped_refptr<base::SingleThreadTaskRunner>
+      main_thread_compositor_task_runner) {
+    LOG(INFO) << "[NativeEmbed] ArkwebMediaFactoryExt::CreateWebNativeBridge.";
+    blink::WebLocalFrame* web_frame = render_frame_->GetWebFrame();
+    // Render thread may not exist in tests, returning nullptr if it does not.
+    RenderThreadImpl* render_thread_ = RenderThreadImpl::current();
+    if (!render_thread_) {
+      return nullptr;
+    }
+    auto factory_selector = std::make_unique<media::RendererFactorySelector>();
+    gl::ohos::TextureOwnerMode texture_owner_mode =
+        base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice()
+          ? gl::ohos::TextureOwnerMode::kNativeImageTexture
+          : gl::ohos::TextureOwnerMode::kSameLayerNativeBuffer;
+    auto native_factory = std::make_unique<NativeRendererClientFactory>(
+        render_thread_->compositor_task_runner(),
+        base::BindRepeating(
+          &NativeTextureWrapperImpl::Create,
+          base::ohos::IsEmulator() ||
+              base::SysInfo::IsLowEndDevice() /*enable_texture_copy*/,
+              texture_owner_mode, render_thread_->GetNativeTexureFactory(),
+              render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia)));
+  
+    factory_selector->AddBaseFactory(media::RendererType::kNative, std::move(native_factory));
+    scoped_refptr<base::SequencedTaskRunner> media_task_runner =
+        render_thread_->GetMediaSequencedTaskRunner();
+  
+    if (!media_task_runner) {
+      // If the media thread failed to start, we will receive a null task runner.
+      // Fail the creation by returning null, and let callers handle the error.
+      // See https://crbug.com/775393.
+      return nullptr;
+    }
+    // use surface layer mode.
+    if (!render_thread_->blink_platform_impl()) {
+        LOG(ERROR) << "render_thread->blink_platform_impl() is nullptr";
+        return nullptr;
+    }
+    auto video_frame_compositor_task_runner =
+      render_thread_->blink_platform_impl()->VideoFrameCompositorTaskRunner();
+    std::vector<std::unique_ptr<BatchingMediaLog::EventHandler>> handlers;
+    auto media_log = std::make_unique<BatchingMediaLog>(
+        render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia),
+        std::move(handlers));
+    std::unique_ptr<blink::WebVideoFrameSubmitter> submitter =
+        CreateSubmitter(main_thread_compositor_task_runner, cc::LayerTreeSettings(),
+            media_log.get(), render_frame_);
+    submitter->SetHasNativeLayer(true);
+    auto vfc = std::make_unique<blink::VideoFrameCompositor>(
+        video_frame_compositor_task_runner, std::move(submitter));
 
-  factory_selector->AddBaseFactory(media::RendererType::kNative,
-                                   std::move(native_factory));
-
-  scoped_refptr<base::SequencedTaskRunner> media_task_runner =
-      render_thread_->GetMediaSequencedTaskRunner();
-
-  if (!media_task_runner) {
-    // If the media thread failed to start, we will receive a null task runner.
-    // Fail the creation by returning null, and let callers handle the error.
-    // See https://crbug.com/775393.
-    return nullptr;
-  }
-
-  // TODO: Consider to use surface layer mode.
-  auto video_frame_compositor_task_runner =
-      render_thread_->compositor_task_runner();
-  auto vfc = std::make_unique<blink::VideoFrameCompositor>(
-      video_frame_compositor_task_runner, nullptr);
-
-  auto* web_native_bridge = new blink::WebNativeBridgeImpl(
-      web_frame, client, GetWebNativeDelegate(), std::move(factory_selector),
-      std::move(vfc), std::move(media_task_runner),
-      std::move(video_frame_compositor_task_runner));
-  return web_native_bridge;
+    auto* web_native_bridge = new blink::WebNativeBridgeImpl(
+        web_frame, client, GetWebNativeDelegate(), std::move(factory_selector),
+        std::move(vfc), std::move(media_task_runner),
+        std::move(video_frame_compositor_task_runner),
+        base::BindOnce(&blink::WebSurfaceLayerBridge::Create,
+            parent_frame_sink_id,
+            blink::WebSurfaceLayerBridge::ContainsVideo::kNo));
+    return web_native_bridge;
 }
 
 media::RendererWebNativeDelegate* ArkwebMediaFactoryExt::GetWebNativeDelegate() {

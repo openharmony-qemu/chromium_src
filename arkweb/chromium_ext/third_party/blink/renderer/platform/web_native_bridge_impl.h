@@ -29,6 +29,7 @@
 #include "media/base/renderer_factory_selector.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "third_party/blink/public/platform/web_common.h"
+#include "third_party/blink/public/platform/web_surface_layer_bridge.h"
 
 namespace base {
 class SingleThreadTaskRunner;
@@ -49,10 +50,16 @@ class VideoFrameCompositor;
 class WebLocalFrame;
 class WebNativeClient;
 
+using CreateSurfaceLayerBridgeCB =
+    base::OnceCallback<std::unique_ptr<WebSurfaceLayerBridge>(
+        WebSurfaceLayerBridgeObserver*,
+        cc::UpdateSubmissionStateCB)>;
+
 class BLINK_PLATFORM_EXPORT WebNativeBridgeImpl
     : public WebNativeBridge,
       public media::NativePipeline::Client,
-      public WebNativeDelegate::Observer {
+      public WebNativeDelegate::Observer,
+      public WebSurfaceLayerBridgeObserver {
  public:
   WebNativeBridgeImpl(
       WebLocalFrame* frame,
@@ -62,7 +69,8 @@ class BLINK_PLATFORM_EXPORT WebNativeBridgeImpl
       std::unique_ptr<VideoFrameCompositor> compositor,
       scoped_refptr<base::SequencedTaskRunner> media_task_runner,
       scoped_refptr<base::SingleThreadTaskRunner>
-          video_frame_compositor_task_runner);
+      video_frame_compositor_task_runner,
+      CreateSurfaceLayerBridgeCB create_bridge_callback);
   WebNativeBridgeImpl(const WebNativeBridgeImpl&) = delete;
   WebNativeBridgeImpl& operator=(const WebNativeBridgeImpl&) = delete;
   ~WebNativeBridgeImpl() override;
@@ -95,6 +103,16 @@ class BLINK_PLATFORM_EXPORT WebNativeBridgeImpl
   void OnFrameHidden() override {}
   void OnFrameShown() override {}
 
+  void OnWebLayerUpdated() override;
+  void RegisterContentsLayer(cc::Layer* layer) override;
+  void UnregisterContentsLayer(cc::Layer* layer) override;
+  void OnSurfaceIdUpdated(viz::SurfaceId surface_id) override;
+
+ private:
+  // Switch to SurfaceLayer for same layer situation.
+  void ActivateSurfaceLayerForSameLayer();
+  absl::optional<viz::SurfaceId> GetSurfaceId();
+
  private:
   raw_ptr<WebLocalFrame> const frame_;
   // Task runner for posting tasks on Chrome's main thread. Also used
@@ -122,10 +140,15 @@ class BLINK_PLATFORM_EXPORT WebNativeBridgeImpl
 
   // The compositor layer for displaying the video content when using composited
   // playback.
-  scoped_refptr<cc::VideoLayer> video_layer_;
+  scoped_refptr<cc::SurfaceLayer> surface_layer_;
+
+  // Owns the weblayer and obtains/maintains SurfaceIds.
+  std::unique_ptr<WebSurfaceLayerBridge> bridge_;
+  CreateSurfaceLayerBridgeCB create_bridge_callback_;
 
   gfx::Rect layer_rect_;
 
+  bool surface_layer_for_same_layer_ {false};
   base::WeakPtr<WebNativeBridgeImpl> weak_this_;
   base::WeakPtrFactory<WebNativeBridgeImpl> weak_factory_{this};
 };

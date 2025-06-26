@@ -197,6 +197,8 @@ void NativeLoader::OnCreateNativeSurface(int native_embed_id,
   native_embed_id_ = native_embed_id;
   bounding_rect_changed_cb_ = rect_changed_cb;
   cc_layer_->layer_utils()->SetNativeEmbedId(native_embed_id_);
+  cc_layer_->layer_utils()->SetMayContainNative(true);
+  cc_layer_->SetNeedsCommit();
 
   auto embed_info = media::mojom::blink::NativeEmbedInfo::New();
   auto bounds_to_viewport =

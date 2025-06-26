@@ -581,7 +581,13 @@ void TraceConfig::SetMemoryDumpConfigFromConfigDict(
         const std::string* trigger_type_str =
             trigger_dict.FindString(kTriggerTypeParam);
         DCHECK(trigger_type_str);
+#if BUILDFLAG(IS_OHOS)
+        if (trigger_type_str) {
+          dump_config.trigger_type = StringToMemoryDumpType(*trigger_type_str);
+        }
+#else
         dump_config.trigger_type = StringToMemoryDumpType(*trigger_type_str);
+#endif
       }
       DCHECK(interval.has_value());
       DCHECK_GT(*interval, 0);
@@ -590,8 +596,15 @@ void TraceConfig::SetMemoryDumpConfigFromConfigDict(
       const std::string* level_of_detail_str =
           trigger_dict.FindString(kTriggerModeParam);
       DCHECK(level_of_detail_str);
+#if BUILDFLAG(IS_OHOS)
+      if (level_of_detail_str) {
+        dump_config.level_of_detail =
+            StringToMemoryDumpLevelOfDetail(*level_of_detail_str);
+      }
+#else
       dump_config.level_of_detail =
           StringToMemoryDumpLevelOfDetail(*level_of_detail_str);
+#endif
 
       memory_dump_config_.triggers.push_back(dump_config);
     }

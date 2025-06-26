@@ -46,8 +46,15 @@ class HeapProfilerScopedTaskExecutionTracker {
     using base::trace_event::AllocationContextTracker;
     if (AllocationContextTracker::capture_mode() !=
         AllocationContextTracker::CaptureMode::kDisabled) [[unlikely]] {
+#if BUILDFLAG(IS_OHOS)
+      if (AllocationContextTracker::GetInstanceForCurrentThread()) {
+        AllocationContextTracker::GetInstanceForCurrentThread()
+            ->PushCurrentTaskContext(context_);
+      }
+#else
       AllocationContextTracker::GetInstanceForCurrentThread()
           ->PushCurrentTaskContext(context_);
+#endif
     }
   }
 
@@ -55,8 +62,15 @@ class HeapProfilerScopedTaskExecutionTracker {
     using base::trace_event::AllocationContextTracker;
     if (AllocationContextTracker::capture_mode() !=
         AllocationContextTracker::CaptureMode::kDisabled) [[unlikely]] {
+#if BUILDFLAG(IS_OHOS)
+      if (AllocationContextTracker::GetInstanceForCurrentThread()) {
+        AllocationContextTracker::GetInstanceForCurrentThread()
+            ->PopCurrentTaskContext(context_);
+      }
+#else
       AllocationContextTracker::GetInstanceForCurrentThread()
           ->PopCurrentTaskContext(context_);
+#endif
     }
   }
 
@@ -65,9 +79,17 @@ class HeapProfilerScopedTaskExecutionTracker {
 };
 
 inline const char* HeapProfilerCurrentTaskContext() {
+#if BUILDFLAG(IS_OHOS)
+  if (base::trace_event::AllocationContextTracker::GetInstanceForCurrentThread()) {
+    return base::trace_event::AllocationContextTracker::
+      GetInstanceForCurrentThread()->TaskContext();
+  }
+  return nullptr;
+#else
   return base::trace_event::AllocationContextTracker::
       GetInstanceForCurrentThread()
           ->TaskContext();
+#endif
 }
 
 }  // namespace trace_event_internal

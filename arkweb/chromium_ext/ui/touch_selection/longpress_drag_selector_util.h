@@ -18,6 +18,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "ui/gfx/geometry/point_f.h"
+#include "base/memory/raw_ptr.h"
 
 namespace ui {
 class LongPressDragSelector;
@@ -29,7 +30,7 @@ class LongPressDragSelectorUtils {
   bool PositionInSelection(gfx::PointF position,
                            gfx::PointF start,
                            gfx::PointF end);
-  LongPressDragSelector* controller_;
+  raw_ptr<LongPressDragSelector> controller_;
 };
 }  // namespace ui
 #endif  // UI_LONG_PRESS_DRAG_SELECTOR_UTILS_H_

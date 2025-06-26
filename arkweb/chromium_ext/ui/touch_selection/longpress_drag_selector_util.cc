@@ -31,10 +31,10 @@ bool LongPressDragSelectorUtils::PositionInSelection(gfx::PointF position,
   if (!controller_) {
     return false;
   }
-  if (position.y() < end.y() && !(position.y() < start.y()) &&
-      !(position.x() < start.x()) && position.x() < end.x()) {
+  if (position.y() < end.y() && position.y() > start.y() &&
+      position.x() > start.x() && position.x() < end.x()) {
     return true;
   }
   return false;
 }
-}  // namespace ui
+}  // namespace ui

@@ -12,7 +12,7 @@
 #include "ui/touch_selection/touch_selection_draggable.h"
 #include "ui/touch_selection/ui_touch_selection_export.h"
 #if BUILDFLAG(ARKWEB_MENU)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/ui/touch_selection/longpress_drag_selector_util.h"
 #endif
 

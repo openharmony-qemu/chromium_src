@@ -6,7 +6,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/events/test/motion_event_test_utils.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "arkweb/build/features/features.h"
 
 using ui::test::MockMotionEvent;
 

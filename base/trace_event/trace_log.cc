@@ -1785,7 +1785,13 @@ void TraceLog::AddMetadataEventsWhileLocked() {
     while (!metadata_events_.empty()) {
       TraceEvent* event =
           AddEventToThreadSharedChunkWhileLocked(nullptr, false);
+#if BUILDFLAG(IS_OHOS)
+      if (event) {
+        *event = std::move(*metadata_events_.back());
+      }
+#else
       *event = std::move(*metadata_events_.back());
+#endif
       metadata_events_.pop_back();
     }
   }

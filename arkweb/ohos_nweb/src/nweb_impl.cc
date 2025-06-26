@@ -1606,20 +1606,17 @@ void NWebImpl::OnContinue() {
     LOG(ERROR) << "nweb_delegate_ is nullptr.";
     return;
   }
-
+  nweb_delegate_->OnContinue();
   if (is_pause_) {
     is_pause_ = false;
     if (pending_size_) {
       LOG(INFO) << "web kernel in continue state, continue resize, need resize"
                 << ", nweb_id = " << nweb_id_;
-      Resize(pending_size_.value().width_, pending_size_.value().height_,
-             pending_size_.value().is_keyboard_);
+      const auto& size = pending_size_.value();
+      Resize(size.width_, size.height_, size.is_keyboard_);
       pending_size_.reset();
     }
   }
-
-  nweb_delegate_->OnContinue();
-
   if (nweb_delegate_->IsCustomKeyboard()) {
     LOG(INFO) << "WebCustomKeyboard NWebImpl::OnContinue and focus";
     auto handler = nweb_delegate_->GetCustomKeyboardHandler();

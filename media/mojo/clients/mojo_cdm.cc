@@ -28,6 +28,10 @@
 #include "services/service_manager/public/cpp/connect.h"
 #include "services/service_manager/public/mojom/interface_provider.mojom.h"
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+#include "media/mojo/clients/mojo_cdm_for_include.cc"
+#endif
+
 namespace media {
 
 namespace {

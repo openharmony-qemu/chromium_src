@@ -112,6 +112,10 @@ class PerformanceManagerTabHelper
   void OneShotMediaPlayerStopped() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void OnBrowserForeground() override;
+  void OnBrowserBackground() override;
+#endif
   void BindDocumentCoordinationUnit(
       content::RenderFrameHost* render_frame_host,
       mojo::PendingReceiver<mojom::DocumentCoordinationUnit> receiver);

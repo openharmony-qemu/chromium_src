@@ -921,6 +921,11 @@ class MockNWebDelegate : public NWebDelegateInterface {
                             int frame_routing_id,
                             int event), (override));
 #endif
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+ void OnBrowserForeground() override();
+ void OnBrowserBackground() override();
+#endif
 };
 
 class MockNWebTouchPointInfo : public NWebTouchPointInfo {

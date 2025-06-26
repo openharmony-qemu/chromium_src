@@ -1651,6 +1651,11 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // `kInvalidNetworkHandle` indicates that the current default network will
   // be bound.
   virtual net::handles::NetworkHandle GetTargetNetwork() = 0;
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  virtual void OnBrowserForeground() = 0;
+  virtual void OnBrowserBackground() = 0;
+#endif
 #include "arkweb/chromium_ext/content/public/browser/web_contents_for_include.cc"
 
 #if BUILDFLAG(ARKWEB_PIP)

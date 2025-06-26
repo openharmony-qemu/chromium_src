@@ -784,6 +784,11 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
                     int event) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void OnBrowserForeground() override;
+  void OnBrowserBackground() override;
+#endif
+
  public:
   int argc_;
   const char** argv_;

@@ -232,6 +232,7 @@ declare_args() {
   arkweb_ext_http_dns_fallback=false
   arkweb_ext_password=false
   arkweb_ex_free_copy=false
+  arkweb_bgtask = true
 }
 
 # Features enabled in mojom bindings.

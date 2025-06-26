@@ -920,7 +920,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
       nullptr;
   std::shared_ptr<OHOS::NWeb::DisplayScreenListener> display_listener_ =
       nullptr;
-  int32_t display_listener_id_;
+  int32_t display_listener_id_ = 0;
 #if BUILDFLAG(ARKWEB_AI)
   std::shared_ptr<OHOS::NWeb::FoldStatusScreenListener> foldstatus_listener_ =
       nullptr;
@@ -939,7 +939,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   uint32_t visible_height_ = 0;
 #endif
 
-  uint32_t nweb_id_;
+  uint32_t nweb_id_ = 0;
 
 #if BUILDFLAG(IS_OHOS)
   std::map<std::string, std::shared_ptr<NWebNativeEmbedDataInfo>>

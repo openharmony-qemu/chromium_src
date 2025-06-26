@@ -5380,6 +5380,8 @@ class CONTENT_EXPORT RenderFrameHostImpl
 
   base::OnceClosure on_process_before_unload_completed_for_testing_;
 
+  std::map<std::string, int32_t> isolated_world_;
+
   // WeakPtrFactories are the last members, to ensure they are destroyed before
   // all other fields of `this`.
   base::WeakPtrFactory<RenderFrameHostImpl> weak_ptr_factory_{this};

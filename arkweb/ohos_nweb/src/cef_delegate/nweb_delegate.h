@@ -24,6 +24,7 @@
 #include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "capi/nweb_app_client_extension_callback.h"
+#include "capi/nweb_extension_javascript_item.h"
 #include "cef/include/cef_command_line.h"
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 #include "content/browser/accessibility/browser_accessibility_manager_ohos.h"
@@ -51,6 +52,8 @@
 #include "capi/nweb_download_delegate_callback.h"
 #endif  //  ARKWEB_EX_DOWNLOAD
 
+struct FrameInfos;
+struct IsolatedWorld;
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -791,6 +794,10 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 #if BUILDFLAG(ARKWEB_MENU)
   void UpdateSingleHandleVisible(bool isVisible) override;
 #endif
+
+  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                             bool recursive, IsolatedWorld world,
+                             OnReceiveValueCallback callback) override;
 
  public:
   int argc_;

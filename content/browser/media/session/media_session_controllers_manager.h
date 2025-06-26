@@ -59,6 +59,11 @@ class CONTENT_EXPORT MediaSessionControllersManager {
   // Called when the given player |id| has paused.
   void OnPause(const MediaPlayerId& id, bool reached_end_of_stream);
 
+#if defined(OHOS_MEDIA_AVSESSION)
+  // Called when the given player |id| has destroyed media AVSession.
+  void OnEndAVSession(const MediaPlayerId& id, bool is_hidden);
+#endif // OHOS_MEDIA_AVSESSION
+
   // Called when the given player |id| has been destroyed.
   void OnEnd(const MediaPlayerId& id);
 

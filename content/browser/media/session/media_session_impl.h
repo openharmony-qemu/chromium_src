@@ -363,9 +363,11 @@ class MediaSessionImpl : public MediaSession,
   enum NWebPlaybackState { NONE, PLAYING, PAUSED, STOP };
 
   NWebPlaybackState NWebGetState();
-  void SetWebviewShow(bool show);
-  void SetWebviewShowForAudio(bool show);
+  bool IsPauseByAvsession();
+  void SetPauseByAvsession(bool is_pause);
+  void SetWebviewShow(bool show, bool is_special_for_audio);
 
+  void EndSessionWhenHide();
   std::unordered_set<media::OHOSAudioOutputStream*> activeAudioStream_;
   int audioResumeInterval_ = 0;
   bool audioExclusive_ = true;

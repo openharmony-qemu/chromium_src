@@ -483,6 +483,17 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnMediaPlaying() {
   NotifyAudioStreamMonitorIfNeeded();
 }
 
+#if defined(OHOS_MEDIA_AVSESSION)
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnEndAVSession(
+    bool is_hidden) {
+  if (is_hidden && media_web_contents_observer_ &&
+      media_web_contents_observer_->session_controllers_manager()) {
+    media_web_contents_observer_->session_controllers_manager()->OnEndAVSession(
+        media_player_id_, is_hidden);
+  }
+}
+#endif // OHOS_MEDIA_AVSESSION
+
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnMediaPaused(
     bool stream_ended) {
   PlayerInfo* player_info = GetPlayerInfo();

@@ -206,56 +206,35 @@ void MediaSessionOHOS::Resume() {
   media_session_->Resume(MediaSession::SuspendType::kUI);
 }
 
-bool MediaSessionOHOS::SetWebviewShow(bool show) {
-  bool ret = false;
-  if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
-    LOG(ERROR) << __FUNCTION__ << " media avsession media_type invalid return";
-    return ret;
-  }
-  if (base::ohos::IsPcDevice() ||
-      (media_type_ != OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_VIDEO)) {
-    LOG(ERROR) << __FUNCTION__ << " media avsession IsPcDevice() or not video return  ret=" << (ret ? 1 : 0);
-    return ret;
-  }
-  if (show) {
-    if (media_session_) {
-      media_session_->RebuildAndNotifyMediaSessionInfoChanged();
-    }
-    ret = true;
-  } else {
-    if (avsession_adapter_) {
-      avsession_adapter_->DestroyAVSession();
-      media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
-      ret = true;
-    }
-  }
-  return ret;
+bool MediaSessionOHOS::IsPauseByAvsession() {
+    return is_avsession_pause_cmd_;
 }
 
-bool MediaSessionOHOS::SetWebviewShowForAudio(bool show) {
-  bool ret = false;
+void MediaSessionOHOS::SetPauseByAvsession(bool is_pause) {
+    is_avsession_pause_cmd_ = is_pause;
+}
+
+void MediaSessionOHOS::SetWebviewShow(bool show, bool is_special_for_audio) {
   if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
-    LOG(ERROR) << __FUNCTION__ << " media avsession media_type invalid return";
-    return ret;
+    LOG(WARNING) << __FUNCTION__ << " media avsession media_type invalid return";
+    return;
   }
-  if (base::ohos::IsPcDevice() ||
-      (media_type_ != OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_AUDIO)) {
-    LOG(ERROR) << __FUNCTION__ << " media avsession IsPcDevice() or not audio return  ret=" << (ret ? 1 : 0);
-    return ret;
+  if (is_special_for_audio) {
+    if(media_type_ != OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_AUDIO) {
+      LOG(ERROR) << __FUNCTION__ << " media avsession media_type is not audio return";
+      return;
+    }
   }
   if (show) {
     if (media_session_) {
       media_session_->RebuildAndNotifyMediaSessionInfoChanged();
     }
-    ret = true;
   } else {
     if (avsession_adapter_) {
       avsession_adapter_->DestroyAVSession();
       media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
-      ret = true;
     }
   }
-  return ret;
 }
 
 void MediaSessionOHOS::Suspend() {
@@ -306,21 +285,33 @@ OHOSMediaAVSessionCallback::OHOSMediaAVSessionCallback(
 OHOSMediaAVSessionCallback::~OHOSMediaAVSessionCallback() {}
 
 void OHOSMediaAVSessionCallback::Play() {
-  task_runner_->PostTask(FROM_HERE, base::BindOnce(&MediaSessionOHOS::Resume,
-                                                   media_session_ohos_));
+  if (!media_session_ohos_) {
+    return;
+  }
+  task_runner_->PostTask(FROM_HERE, base::BindOnce(&MediaSessionOHOS::SetPauseByAvsession,
+                                                   media_session_ohos_, false));
 }
 
 void OHOSMediaAVSessionCallback::Pause() {
-  task_runner_->PostTask(FROM_HERE, base::BindOnce(&MediaSessionOHOS::Suspend,
-                                                   media_session_ohos_));
+  if (!media_session_ohos_) {
+    return;
+  }
+  task_runner_->PostTask(FROM_HERE, base::BindOnce(&MediaSessionOHOS::SetPauseByAvsession,
+                                                   media_session_ohos_, true));
 }
 
 void OHOSMediaAVSessionCallback::Stop() {
+  if (!media_session_ohos_) {
+    return;
+  }
   task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&MediaSessionOHOS::Stop, media_session_ohos_));
 }
 
 void OHOSMediaAVSessionCallback::SeekTo(int64_t millisTime) {
+  if (!media_session_ohos_) {
+    return;
+  }
   task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&MediaSessionOHOS::SeekTo, media_session_ohos_,
                                 millisTime));

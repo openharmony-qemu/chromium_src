@@ -522,11 +522,20 @@ bool MediaSessionImpl::AddPlayer(MediaSessionPlayerObserver* observer,
 
 void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
                                     int player_id) {
+#if defined(OHOS_MEDIA_AVSESSION)
+  bool has_normal_player = normal_players_.size() > 0;
+#endif // OHOS_MEDIA_AVSESSION
   const PlayerIdentifier identifier(observer, player_id);
   normal_players_.erase(identifier);
   pepper_players_.erase(identifier);
   one_shot_players_.erase(identifier);
   hidden_players_.erase(identifier);
+
+#if defined(OHOS_MEDIA_AVSESSION)
+  if (has_normal_player && (normal_players_.size() == 0)) {
+    SetWebviewShow(false, false);
+  }
+#endif // OHOS_MEDIA_AVSESSION
 
   if (guarding_player_id_ && *guarding_player_id_ == identifier)
     ResetDurationUpdateGuard();
@@ -540,6 +549,9 @@ void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
 }
 
 void MediaSessionImpl::RemovePlayers(MediaSessionPlayerObserver* observer) {
+#if defined(OHOS_MEDIA_AVSESSION)
+  bool has_normal_player = normal_players_.size() > 0;
+#endif // OHOS_MEDIA_AVSESSION
   for (auto it = normal_players_.begin(); it != normal_players_.end();) {
     if (it->first.observer == observer)
       normal_players_.erase(it++);
@@ -560,6 +572,12 @@ void MediaSessionImpl::RemovePlayers(MediaSessionPlayerObserver* observer) {
     else
       ++it;
   }
+
+#if defined(OHOS_MEDIA_AVSESSION)
+  if (has_normal_player && (normal_players_.size() == 0)) {
+    SetWebviewShow(false, false);
+  }
+#endif // OHOS_MEDIA_AVSESSION
 
   if (guarding_player_id_ && guarding_player_id_->observer == observer)
     ResetDurationUpdateGuard();
@@ -607,8 +625,25 @@ void MediaSessionImpl::OnPlayerPaused(MediaSessionPlayerObserver* observer,
 
   // Otherwise, suspend the session.
   DCHECK(IsActive());
+#if defined(OHOS_MEDIA_AVSESSION)
+  if (!IsPauseByAvsession()) {
+    EndSessionWhenHide();
+  }
+  if (IsSuspended()) {
+    return;
+  }
+#endif // OHOS_MEDIA_AVSESSION
   OnSuspendInternal(SuspendType::kContent, State::SUSPENDED);
 }
+
+#if defined(OHOS_MEDIA_AVSESSION)
+void MediaSessionImpl::EndSessionWhenHide() {
+  auto states = MediaSessionImpl::GetMediaAudioVideoStates();
+  if (!states.empty() && states.back()!= MediaAudioVideoState::kAudioOnly && !focused_) {
+     SetWebviewShow(false, false);
+  }
+}
+#endif // OHOS_MEDIA_AVSESSION
 
 void MediaSessionImpl::RebuildAndNotifyMediaPositionChanged() {
   absl::optional<media_session::MediaPosition> position;
@@ -1295,17 +1330,26 @@ MediaSessionImpl::NWebPlaybackState MediaSessionImpl::NWebGetState() {
   }
 }
 
-void MediaSessionImpl::SetWebviewShow(bool show) {
-  if (session_ohos_) {
-    session_ohos_->SetWebviewShow(show);
-  }
+bool MediaSessionImpl::IsPauseByAvsession() {
+    bool ret = false;
+    if (session_ohos_) {
+        ret = session_ohos_->IsPauseByAvsession();
+    }
+    return ret;
 }
 
-void MediaSessionImpl::SetWebviewShowForAudio(bool show) {
-  if (session_ohos_) {
-    session_ohos_->SetWebviewShowForAudio(show);
-  }
+void MediaSessionImpl::SetPauseByAvsession(bool is_pause) {
+    if (session_ohos_) {
+        session_ohos_->SetPauseByAvsession(is_pause);
+    }
 }
+
+void MediaSessionImpl::SetWebviewShow(bool show, bool is_special_for_audio) {
+    if (session_ohos_) {
+        session_ohos_->SetWebviewShow(show, is_special_for_audio);
+    }
+}
+
 #endif // OHOS_MEDIA_POLICY
 
 void MediaSessionImpl::SetAudioSinkId(const absl::optional<std::string>& id) {

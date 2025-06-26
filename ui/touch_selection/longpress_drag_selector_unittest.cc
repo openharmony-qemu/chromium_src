@@ -69,6 +69,8 @@ class LongPressDragSelectorTest : public testing::Test,
 
   gfx::PointF GetSelectionEnd() const override { return selection_end_; }
 
+  gfx::PointF GetSelectionTop() const override { return selection_start_; }
+
  private:
   bool dragging_;
   bool active_state_changed_;

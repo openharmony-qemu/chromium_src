@@ -320,11 +320,14 @@ fuzzer_test("nweb_accessibility_node_info_impl_fuzzer") {
 fuzzer_test("nweb_delegate_fuzzer") {
   sources = [ "fuzztest/ohos_nweb/cef_delegate/nweb_delegate_fuzzer.cc" ]
   include_dirs = [
+    "//arkweb/ohos_adapter_ndk/interfaces",
     "//cef",
     "//ohos_nweb/include",
     "//ohos_nweb/src",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
   ]
   deps = [
+    "//arkweb/ohos_adapter_ndk:adapter_ndk_stub",
     "//cef:libcef_static",
     "//ohos_nweb:cef_nweb",
     "//ohos_nweb:nweb_sources",

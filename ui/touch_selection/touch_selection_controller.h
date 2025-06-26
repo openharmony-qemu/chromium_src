@@ -96,6 +96,7 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
   }
   void UpdateSelectionChanged(
       const TouchSelectionDraggable& draggable) override {}
+  gfx::PointF GetSelectionTop() const override { return start().edge_start(); }
 #endif
   // To be called when the selection bounds have changed.
   // Note that such updates will trigger handle updates only if preceded

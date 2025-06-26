@@ -483,7 +483,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
              << bufferSize << " " << data_size;
   if (buffer.addr == nullptr) {
     LOG(ERROR) << "MediaCodecDecoderBridgeImpl::QueueInputBuffer buffer.addr"
-               << "is nullptr."
+               << "is nullptr.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   if (memcpy_s(buffer.addr, bufferSize, data, inputSize) != EOK) {

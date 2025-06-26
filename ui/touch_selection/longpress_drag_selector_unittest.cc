@@ -6,6 +6,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/events/test/motion_event_test_utils.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 
 using ui::test::MockMotionEvent;
 
@@ -69,7 +70,9 @@ class LongPressDragSelectorTest : public testing::Test,
 
   gfx::PointF GetSelectionEnd() const override { return selection_end_; }
 
+#if BUILDFLAG(ARKWEB_MENU)
   gfx::PointF GetSelectionTop() const override { return selection_start_; }
+#endif
 
  private:
   bool dragging_;

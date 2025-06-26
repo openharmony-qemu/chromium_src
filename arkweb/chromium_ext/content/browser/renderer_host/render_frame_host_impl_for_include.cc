@@ -28,7 +28,7 @@
 
 namespace content {
 
-// ExecuteJavascriptInFrames need creat new worldId, this is min value;
+// ExecuteJavascriptInFrames need create new worldId, this is the min value;
 const int32_t kCreateIsolatedWorldIdMin = 10000;
 
 #if BUILDFLAG(IS_ARKWEB)

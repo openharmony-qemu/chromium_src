@@ -71,6 +71,7 @@
 #include "ohos_glue/base/include/ark_web_errno.h"
 #include "url/gurl.h"
 #include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
+#include "ohos_nweb/src/capi/nweb_extension_javascript_item.h"
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "base/command_line.h"
@@ -848,6 +849,38 @@ void NWebHandlerDelegate::OnMainFrameChanged(CefRefPtr<CefBrowser> browser,
                                   std::make_shared<NWebCursorInfoImpl>());
     nweb_handler_->OnQuickMenuDismissed();
   }
+}
+
+void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
+                                         CefRefPtr<CefFrame> frame) {
+  LOG(DEBUG) << "NWebHandlerDelegate::OnFrameCreated";
+  if (!frame || !frame->IsValid()) {
+    LOG(WARNING) << "OnFrameCreated failed, frame is invalid";
+    return;
+  }
+ 
+  CefRefPtr<CefFrameHostImpl> frameHost = static_cast<CefFrameHostImpl*>(frame.get());
+  if (!frameHost->GetRenderFrameHost()) {
+    LOG(WARNING) << "OnFrameCreated failed, GetRenderFrameHost failed";
+    return;
+  }
+ 
+  content::RenderFrameHostImpl* rfh =
+    static_cast<content::RenderFrameHostImpl*>(frameHost ->GetRenderFrameHost());
+  auto globalId = rfh->GetGlobalId();
+ 
+  FrameInfos frameInfo;
+  frameInfo.id = std::to_string(globalId.child_id) + "_" + std::to_string(globalId.frame_routing_id);
+  if (content::RenderFrameHostImpl* parent = rfh->GetParent()) {
+    auto parentGlobalId = parent->GetGlobalId();
+    frameInfo.parentId = std::to_string(parentGlobalId.child_id) + "_" +
+                         std::to_string(parentGlobalId.frame_routing_id);
+  } else {
+    frameInfo.parentId.clear();
+  }
+  frameInfo.url = rfh->GetLastCommittedURL().spec();
+ 
+  dispatcher_.OnFrameCreated(frameInfo);
 }
 /* CefFrameHandler methods end */
 

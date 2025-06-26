@@ -935,6 +935,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #if BUILDFLAG(ARKWEB_MENU)
   MOCK_METHOD(void, UpdateSingleHandleVisible, (bool isVisible), (override));
 #endif
+  MOCK_METHOD(void,
+              RunJavaScriptInFrames,
+              (const std::string& jsString, FrameInfos rootFrame,
+               bool recursive, IsolatedWorld world,
+               OnReceiveValueCallback callback),
+              (override));
 };
 
 class MockNWebTouchPointInfo : public NWebTouchPointInfo {

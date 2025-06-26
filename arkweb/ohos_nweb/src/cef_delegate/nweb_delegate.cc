@@ -5383,9 +5383,9 @@ int32_t NWebDelegate::GetVisibleViewportAvoidHeight() {
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
 void NWebDelegate::SetErrorPageEnabled(bool enable) {
   if (!preference_delegate_) {
-    LOG(INFO)
-        << "SetErrorPageEnabled failed, no preference_delegate_"
-        << ", nweb_id_[" << nweb_id_ << "]";
+    LOG(ERROR)
+      << "SetErrorPageEnabled failed, no preference_delegate_"
+      << ", nweb_id_[" << nweb_id_ << "]";
     return;
   }
   preference_delegate_->PutErrorPageEnabled(enable);
@@ -5393,9 +5393,9 @@ void NWebDelegate::SetErrorPageEnabled(bool enable) {
 
 bool NWebDelegate::GetErrorPageEnabled() {
   if (!preference_delegate_) {
-    LOG(INFO)
-        << "GetErrorPageEnabled failed, no preference_delegate_"
-        << ", nweb_id_[" << nweb_id_ << "]";
+    LOG(ERROR)
+      << "GetErrorPageEnabled failed, no preference_delegate_"
+      << ", nweb_id_[" << nweb_id_ << "]";
     return false;
   }
   return preference_delegate_->ErrorPageEnabled();

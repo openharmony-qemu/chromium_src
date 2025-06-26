@@ -270,6 +270,23 @@ source_set("unit_tests") {
   }
 }
 
+if (is_ohos) {
+  action("create_prepopulated_engines_json") {
+    script = "//arkweb/build/search_engines/prepopulated_engines.py"
+    outputs = [
+      "$root_gen_dir/../../../arkweb/build/search_engines/prepopulated_engines.json"
+    ]
+  }
+  copy("copy_prepopulated_engines_json") {
+    sources = [
+      "//arkweb/build/search_engines/prepopulated_engines.json"
+    ]
+    outputs = [
+      "$root_gen_dir/../../../components/search_engines/prepopulated_engines.json"
+    ]
+  }
+}
+
 json_to_struct("prepopulated_engines") {
   visibility = [ ":*" ]
 
@@ -280,6 +297,11 @@ json_to_struct("prepopulated_engines") {
     ":search_engine_type",
     "//base",
   ]
+  if (is_ohos) {
+    deps += [
+      ":copy_prepopulated_engines_json"
+    ]
+  }
 }
 
 if (is_android) {

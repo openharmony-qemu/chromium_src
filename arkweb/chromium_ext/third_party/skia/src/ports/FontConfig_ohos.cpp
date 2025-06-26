@@ -392,12 +392,48 @@ sk_sp<SkTypeface_OHOS> FontConfig_OHOS::matchFontStyle(
   for (int i = 0; i < count; i++) {
     const SkFontStyle& fontStyle = typefaceSet[i]->fontStyle();
     uint32_t diff = getFontStyleDifference(pattern, fontStyle);
+    const std::vector<SkFontScanner::AxisDefinition>& axisRange = typefaceSet[i]->getFontInfo()->axisSet.range;
+    if (axisRange.size() > 0) {
+      diff = getVariableFontStyleDifference(pattern, fontStyle, axisRange);
+    }
     if (diff < minDiff) {
       minDiff = diff;
       index = i;
     }
   }
   return typefaceSet[index];
+}
+
+/*! To get the difference between a variable font style and the matching font style
+ * \param dstStyle the style to be matching
+ * \param srcStyle a variable font style
+ * \param srcAxisRange the variable axis range
+ * \return The difference value of a specified variable style with the matching style
+ */
+uint32_t FontConfig_OHOS::getVariableFontStyleDifference(const SkFontStyle dstStyle,
+    const SkFontStyle& srcStyle, const std::vector<SkFontScanner::AxisDefinition>& srcAxisRange)
+{
+  int weight = srcStyle.weight();
+  int width = srcStyle.width();
+  SkFontStyle::Slant slant = srcStyle.slant();
+  static constexpr SkFourByteTag wghtTag = SkSetFourByteTag('w', 'g', 'h', 't');
+  static constexpr SkFourByteTag wdthTag = SkSetFourByteTag('w', 'd', 't', 'h');
+
+  for (size_t j = 0; j < srcAxisRange.size(); j++) {
+    if (srcAxisRange[j].fTag == wghtTag) {
+      weight = SkTpin(dstStyle.weight()
+                      SkScalarFloorToInt(srcAxisRange[j].fMinimum),
+                      SkScalarFloorToInt(srcAxisRange[j].fMaximum));
+    }
+    if (srcAxisRange[j].fTag == wdhtTag) {
+      int widthMin = SkFontDescriptor::SkFontStyleWidthForWidthAxisValue(srcAxisRange[j].fMinimum);
+      int widthMax = SkFontDescriptor::SkFontStyleWidthForWidthAxisValue(srcAxisRange[j].fMaximum);
+      width = SkTpin(dstStyle.width(), widthMin, widthMax);
+    }
+  }
+  SkFontStyle useStyle = SkFontStyle(weight, width, slant);
+  uint32_t diff = getFontStyleDifference(dstStyle, useStyle);
+  return diff;
 }
 
 /*! To get the difference between a font style and the matching font style
@@ -1103,6 +1139,30 @@ bool FontConfig_OHOS::insertVariableFont(const AxisDefinitions& axisDefs,
   return true;
 }
 
+/*! To add axisDefs into a VariableFont's fontInfo
+ * \param axisDefs the axis ranges of a variable font
+ * \param font an object of the FontInfo with font information
+ */
+void FontConfig_OHOS::addAxisToVariableFont(const AxisDefinitions& axisDefs, FontInfo& font) 
+{
+  const SkString& key = font.familyName;
+  if (variationMap.find(key) == nullptr || axisDefs.size() == 0) {
+    LOG(ERROR) << "addAxisToVariableFont error | notfind axis";
+    return;
+  }
+  SkString specifiedName;
+  TypefaceSet* tpSet = getTypefaceSet(key, specifiedName);
+  if (tpSet == nullptr) {
+    LOG(ERROR) << "addAxisToVariableFont error | notfind tySet";
+    return;
+  }
+  font.axisSet.axis.clear();
+  font.axisSet.range.clear();
+  for (int i = 0; i < axisDefs.size(); i++) {
+    font.axisSet.range.emplace_back(axisDefs[i]);
+  }
+}
+
 /*! To get the typeface set of a font style set
  * \param familyName the family name of a font style set
  * \param[out] specifiedName the specified family name of a font style set
@@ -1159,7 +1219,8 @@ int FontConfig_OHOS::loadFont(const SkFontScanner& fontScanner,
   }
   int installPathLen = strlen("/data/service/el1/public/for-all-app/fonts/");
   if (installedOrStyle &&
-      strncmp(fname, OHOS_FONT_INSTALL_DIR.c_str(), installPathLen) == 0) {
+      strncmp(fname, OHOS_FONT_INSTALL_DIR.c_str(), installPathLen) == 0 &&
+      fallbackNames.find(SkString(font.familyName)) == nullptr) {
     SkString fallbackFor("");
     unsigned int startPos = 0;
     std::unique_ptr<FallbackInfo> fallback = std::make_unique<FallbackInfo>();
@@ -1188,6 +1249,7 @@ int FontConfig_OHOS::loadFont(const SkFontScanner& fontScanner,
     ret = insertTtcFont(count, font);
   } else if (axisDefs.size() > 0) {
     ret = insertVariableFont(axisDefs, font);
+    addAxisToVariableFont(axisDefs, font);
   }
   auto familyName = pathToFamily.find(SkString(fname));
   if (familyName) {

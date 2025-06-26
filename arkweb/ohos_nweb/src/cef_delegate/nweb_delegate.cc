@@ -123,6 +123,24 @@ static const int kDefaultWebNativeProxy = -2;
 static const int64_t kRootAccessibilityId = 1;
 #endif
 
+std::string ConvertCefValueToString(CefRefPtr<CefValue> src) {
+  std::string dst;
+  int type = src->GetType();
+  LOG(DEBUG) << "OnMessage type:" << type;
+  switch (type) {
+    case VTYPE_STRING: {
+      dst = src->GetString();
+      break;
+    }
+    default: {
+      LOG(ERROR) << "OnMessage not support type";
+      dst = std::string("OnMessage not support type");
+      break;
+    }
+  }
+  return dst;
+}
+
 #if BUILDFLAG(ARKWEB_MSGPORT)
 void ConvertCefValueToNWebMessage(CefRefPtr<CefValue> src,
                                   std::shared_ptr<NWebMessage> dst) {
@@ -476,6 +494,29 @@ class NavigationEntryVisitorImpl : public CefNavigationEntryVisitor {
 };
 
 #endif  // BUILDFLAG(ARKWEB_NAVIGATION)
+
+class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback {
+ public:
+  JavaScriptInFramesResultCallbackImpl(
+      OnReceiveValueCallback callback, uint32_t nweb_id)
+      : callback_(callback),
+        nweb_id_(nweb_id){}
+  ~JavaScriptInFramesResultCallbackImpl() {}
+ 
+  NO_SANITIZE("cfi")
+  void OnJavaScriptExeResult(CefRefPtr<CefValue> result) override {
+    if (callback_ != nullptr) {
+      std::string data = ConvertCefValueToString(result);
+      callback_(nweb_id_, data);
+    }
+  }
+ 
+ private:
+  OnReceiveValueCallback callback_;
+  uint32_t nweb_id_ = 0;
+ 
+  IMPLEMENT_REFCOUNTING(JavaScriptInFramesResultCallbackImpl);
+};
 
 NWebDelegate::NWebDelegate(int argc, const char* argv[])
     : argc_(argc), argv_(argv) {}
@@ -5387,4 +5428,26 @@ void NWebDelegate::UpdateSingleHandleVisible(bool isVisible) {
   }
 }
 #endif
+
+void NWebDelegate::RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                                         bool recursive, IsolatedWorld world,
+                                         OnReceiveValueCallback callback) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce((void(NWebDelegate::*)(
+                           const std::string&,
+                           FrameInfos, bool, IsolatedWorld,
+                           OnReceiveValueCallback)) &
+                           NWebDelegate::RunJavaScriptInFrames,
+                       this, jsString, rootFrame, recursive, world, callback));
+    return;
+  }
+ 
+  if (GetBrowser().get()) {
+    CefRefPtr<JavaScriptInFramesResultCallbackImpl> JsResultCb =
+        new JavaScriptInFramesResultCallbackImpl(callback, nweb_id_);
+    GetBrowser()->GetHost()->RunJavaScriptInFrames(jsString, rootFrame, recursive, world, JsResultCb);
+  }
+}
 }  // namespace OHOS::NWeb

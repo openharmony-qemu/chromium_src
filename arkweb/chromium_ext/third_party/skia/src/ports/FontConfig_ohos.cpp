@@ -410,7 +410,7 @@ sk_sp<SkTypeface_OHOS> FontConfig_OHOS::matchFontStyle(
  * \param srcAxisRange the variable axis range
  * \return The difference value of a specified variable style with the matching style
  */
-uint32_t FontConfig_OHOS::getVariableFontStyleDifference(const SkFontStyle dstStyle,
+uint32_t FontConfig_OHOS::getVariableFontStyleDifference(const SkFontStyle& dstStyle,
     const SkFontStyle& srcStyle, const std::vector<SkFontScanner::AxisDefinition>& srcAxisRange)
 {
   int weight = srcStyle.weight();
@@ -421,14 +421,14 @@ uint32_t FontConfig_OHOS::getVariableFontStyleDifference(const SkFontStyle dstSt
 
   for (size_t j = 0; j < srcAxisRange.size(); j++) {
     if (srcAxisRange[j].fTag == wghtTag) {
-      weight = SkTpin(dstStyle.weight()
+      weight = SkTPin(dstStyle.weight()
                       SkScalarFloorToInt(srcAxisRange[j].fMinimum),
                       SkScalarFloorToInt(srcAxisRange[j].fMaximum));
     }
-    if (srcAxisRange[j].fTag == wdhtTag) {
+    if (srcAxisRange[j].fTag == wdthTag) {
       int widthMin = SkFontDescriptor::SkFontStyleWidthForWidthAxisValue(srcAxisRange[j].fMinimum);
       int widthMax = SkFontDescriptor::SkFontStyleWidthForWidthAxisValue(srcAxisRange[j].fMaximum);
-      width = SkTpin(dstStyle.width(), widthMin, widthMax);
+      width = SkTPin(dstStyle.width(), widthMin, widthMax);
     }
   }
   SkFontStyle useStyle = SkFontStyle(weight, width, slant);
@@ -1146,14 +1146,14 @@ bool FontConfig_OHOS::insertVariableFont(const AxisDefinitions& axisDefs,
 void FontConfig_OHOS::addAxisToVariableFont(const AxisDefinitions& axisDefs, FontInfo& font) 
 {
   const SkString& key = font.familyName;
-  if (variationMap.find(key) == nullptr || axisDefs.size() == 0) {
+  if (axisDefs.size() == 0) {
     LOG(ERROR) << "addAxisToVariableFont error | notfind axis";
     return;
   }
   SkString specifiedName;
   TypefaceSet* tpSet = getTypefaceSet(key, specifiedName);
   if (tpSet == nullptr) {
-    LOG(ERROR) << "addAxisToVariableFont error | notfind tySet";
+    LOG(ERROR) << "addAxisToVariableFont error | notfind tpSet";
     return;
   }
   font.axisSet.axis.clear();

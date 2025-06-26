@@ -65,8 +65,8 @@ class NWebEngineEventLogger {
   scoped_refptr<SingleThreadTaskRunner> task_runner_;
 };
 
-NWebEngineEventLogger::NWebEngineEventLogger() {
-  upload_callback_ = nullptr;
+NWebEngineEventLogger::NWebEngineEventLogger() : upload_callback_(nullptr) {
+
 }
 
 }  // namespace

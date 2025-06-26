@@ -47,7 +47,7 @@ interface ChildProcessHost {
   ReportKeyThreadIds(int32 status, int32 process_id, array<int32> thread_ids, int32 role);
 
   [EnableIf=arkweb_dfx_tracing]
-  ReportHisyevent(int64_t block_time, string mode);
+  ReportHisyevent(int64 block_time, string mode);
 };
 
 // A control interface the browser uses to drive the behavior of all types of

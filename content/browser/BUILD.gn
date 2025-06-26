@@ -32,6 +32,9 @@ import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
 
 if (is_arkweb) {
   import("//arkweb/chromium_ext/chromium_ext.gni")
+  if (defined(arkweb_fido) && arkweb_fido) {
+    import("//arkweb/chromium_ext/content/browser/webauth/webauth_ext.gni")
+  }
 }
 
 if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
@@ -3535,10 +3538,7 @@ source_set("browser") {
     }
 
     if (defined(arkweb_fido) && arkweb_fido) {
-      sources += [
-        "//arkweb/chromium_ext/content/browser/webauth/utils.cpp",
-        "//arkweb/chromium_ext/content/browser/webauth/utils.h",
-      ]
+      sources += arkweb_webauth_ext_sources
     }
 
     deps += [

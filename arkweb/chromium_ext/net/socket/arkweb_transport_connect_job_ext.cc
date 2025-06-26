@@ -36,6 +36,11 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/ohos/nweb_engine_event_logger.h"
+#include "base/ohos/nweb_engine_event_logger_code.h"
+#endif
+
 namespace net {
 
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
@@ -224,6 +229,15 @@ void ArkWebTransportConnectJobExt::ReportSuccessIp(int success_index,
        << ", succeed_number=" << success_index << ", job_type=" << (int)type;
   std::string host = ToLegacyDestinationEndpoint(params_->destination()).host();
   LOG(DEBUG) << "event_message: " << ostr.str() << ", resource: " << host;
+
+#if BUILDFLAG(IS_ARKWEB)
+  // 打点
+  base::ohos::ReportEngineEvent(
+    base::ohos::kModuleNet,
+    base::ohos::kDefaultUrl,
+    base::ohos::kMultiIpConnect,
+    ostr.str());
+#endif
 }
 #endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
 

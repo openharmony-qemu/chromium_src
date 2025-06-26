@@ -750,6 +750,13 @@ class NWebImpl : public NWeb {
   void OnCreateNativeMediaPlayer(
       std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
 
+  static void SetLoggerReportEventCallback(void* callback);
+  static void UploadCallback(const std::string& module,
+                             const std::string& resource,
+                             const std::string& errorCode,
+                             const std::string& errorMsg);
+  static void* logger_report_event_callback_;
+
 #if BUILDFLAG(ARKWEB_ITP)
   static void AddIntelligentTrackingPreventionBypassingList(
       const std::vector<std::string>& hosts);

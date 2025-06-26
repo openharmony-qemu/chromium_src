@@ -5445,7 +5445,7 @@ bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
 }
 
 void NWebImpl::SetVisibility(bool isVisible) {
-
+  is_visible_ = isVisible;
 }
 #endif
 

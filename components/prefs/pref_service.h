@@ -247,6 +247,10 @@ class COMPONENTS_PREFS_EXPORT PrefService {
   // `path` must point to a registered preference (DCHECK).
   const base::Value& GetValue(base::StringPiece path) const;
 
+#if BUILDFLAG(IS_OHOS)
+  const base::Value* GetPrefValue(base::StringPiece path) const;
+#endif
+
   // Returns the branch if it exists, or the registered default value otherwise.
   // `path` must point to a registered preference whose value and registered
   // default are of type `base::Value::Type::DICT (DCHECK).

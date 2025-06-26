@@ -189,7 +189,7 @@ void PrefService::SchedulePendingLossyWrites() {
 
 bool PrefService::GetBoolean(base::StringPiece path) const {
 #if BUILDFLAG(IS_OHOS)
-  const base::Value* value = &GetValue(path);
+  const base::Value* value = GetPrefValue(path);
   if (!value || !value->is_bool()) {
     return false;
   }
@@ -201,7 +201,7 @@ bool PrefService::GetBoolean(base::StringPiece path) const {
 
 int PrefService::GetInteger(base::StringPiece path) const {
 #if BUILDFLAG(IS_OHOS)
-  const base::Value* value = &GetValue(path);
+  const base::Value* value = GetPrefValue(path);
   if (!value || !value->is_int()) {
     return 0;
   }
@@ -213,7 +213,7 @@ int PrefService::GetInteger(base::StringPiece path) const {
 
 double PrefService::GetDouble(base::StringPiece path) const {
 #if BUILDFLAG(IS_OHOS)
-  const base::Value* value = &GetValue(path);
+  const base::Value* value = GetPrefValue(path);
   if (!value || !value->is_double()) {
     return 0.0;
   }
@@ -225,7 +225,7 @@ double PrefService::GetDouble(base::StringPiece path) const {
 
 const std::string& PrefService::GetString(base::StringPiece path) const {
 #if BUILDFLAG(IS_OHOS)
-  const base::Value* value = &GetValue(path);
+  const base::Value* value = GetPrefValue(path);
   if (!value || !value->is_string()) {
     const std::string str = std::string();
     return str;
@@ -238,7 +238,7 @@ const std::string& PrefService::GetString(base::StringPiece path) const {
 
 base::FilePath PrefService::GetFilePath(base::StringPiece path) const {
 #if BUILDFLAG(IS_OHOS)
-  const base::Value* value = &GetValue(path);
+  const base::Value* value = GetPrefValue(path);
   if (!value) {
     return base::FilePath();
   }
@@ -348,6 +348,13 @@ bool PrefService::IsUserModifiablePreference(
   return pref && pref->IsUserModifiable();
 }
 
+#if BUILDFLAG(IS_OHOS)
+  const base::Value* PrefService::GetPrefValue(base::StringPiece path) const {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    return GetPreferenceValueChecked(path);
+  }
+#endif
+
 const base::Value& PrefService::GetValue(base::StringPiece path) const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   return *GetPreferenceValueChecked(path);
@@ -355,7 +362,7 @@ const base::Value& PrefService::GetValue(base::StringPiece path) const {
 
 const base::Value::Dict& PrefService::GetDict(base::StringPiece path) const {
 #if BUILDFLAG(IS_OHOS)
-  const base::Value* value = &GetValue(path);
+  const base::Value* value = GetPrefValue(path);
   if (!value) {
     return base::Value::Dict();
   }
@@ -368,7 +375,7 @@ const base::Value::Dict& PrefService::GetDict(base::StringPiece path) const {
 
 const base::Value::List& PrefService::GetList(base::StringPiece path) const {
 #if BUILDFLAG(IS_OHOS)
-  const base::Value* value = &GetValue(path);
+  const base::Value* value = GetPrefValue(path);
   if (!value) {
     return base::Value::List();
   }
@@ -517,7 +524,7 @@ void PrefService::SetInt64(const std::string& path, int64_t value) {
 
 int64_t PrefService::GetInt64(const std::string& path) const {
 #if BUILDFLAG(IS_OHOS)
-  const base::Value* value = &GetValue(path);
+  const base::Value* value = GetPrefValue(path);
   if (!value) {
     return 0;
   }
@@ -536,7 +543,7 @@ void PrefService::SetUint64(const std::string& path, uint64_t value) {
 
 uint64_t PrefService::GetUint64(const std::string& path) const {
 #if BUILDFLAG(IS_OHOS)
-  const base::Value* value = &GetValue(path);
+  const base::Value* value = GetPrefValue(path);
   if (!value || !value->is_string()) {
     return 0;
   }
@@ -560,7 +567,7 @@ void PrefService::SetTime(const std::string& path, base::Time value) {
 
 base::Time PrefService::GetTime(const std::string& path) const {
 #if BUILDFLAG(IS_OHOS)
-  const base::Value* value = &GetValue(path);
+  const base::Value* value = GetPrefValue(path);
   if (!value) {
     return base::Time();
   }
@@ -579,7 +586,7 @@ void PrefService::SetTimeDelta(const std::string& path, base::TimeDelta value) {
 
 base::TimeDelta PrefService::GetTimeDelta(const std::string& path) const {
 #if BUILDFLAG(IS_OHOS)
-  const base::Value* value = &GetValue(path);
+  const base::Value* value = GetPrefValue(path);
   if (!value) {
     return base::TimeDelta();
   }

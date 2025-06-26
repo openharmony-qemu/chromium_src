@@ -967,6 +967,13 @@ class NWebImpl : public NWeb {
                     int frame_routing_id,
                     int event) override;
 #endif
+#ifdef ARKWEB_BLANK_OPTIMIZE
+  void SetPrivacyStatus(bool isPrivate) override;
+  int32_t GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) override;
+  int32_t SetBlanklessLoadingWithKey(const std::string& key) override;
+  bool TriggerBlanklessForUrl(const std::string& url) override;
+  void SetVisibility(bool isVisible) override;
+#endif
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

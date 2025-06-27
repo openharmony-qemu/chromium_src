@@ -1175,10 +1175,6 @@ component("base") {
       "ohos/task_scheduler/task_runner_ohos.cc",
       "ohos/task_scheduler/task_runner_ohos.h",
       "ohos/task_scheduler/task_traits_ohos.h",
-      "ohos/nweb_engine_event_logger.cc",
-      "ohos/nweb_engine_event_logger.h",
-      "ohos/nweb_engine_event_logger_code.cc",
-      "ohos/nweb_engine_event_logger_code.h",
     ]
 
     deps += [

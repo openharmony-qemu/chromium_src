@@ -123,6 +123,7 @@ static const int kDefaultWebNativeProxy = -2;
 static const int64_t kRootAccessibilityId = 1;
 #endif
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 std::string ConvertCefValueToString(CefRefPtr<CefValue> src) {
   std::string dst;
   int type = src->GetType();
@@ -140,6 +141,7 @@ std::string ConvertCefValueToString(CefRefPtr<CefValue> src) {
   }
   return dst;
 }
+#endif
 
 #if BUILDFLAG(ARKWEB_MSGPORT)
 void ConvertCefValueToNWebMessage(CefRefPtr<CefValue> src,
@@ -495,6 +497,7 @@ class NavigationEntryVisitorImpl : public CefNavigationEntryVisitor {
 
 #endif  // BUILDFLAG(ARKWEB_NAVIGATION)
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback {
  public:
   JavaScriptInFramesResultCallbackImpl(
@@ -517,6 +520,7 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
  
   IMPLEMENT_REFCOUNTING(JavaScriptInFramesResultCallbackImpl);
 };
+#endif
 
 NWebDelegate::NWebDelegate(int argc, const char* argv[])
     : argc_(argc), argv_(argv) {}
@@ -5429,6 +5433,7 @@ void NWebDelegate::UpdateSingleHandleVisible(bool isVisible) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 void NWebDelegate::RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
                                          bool recursive, IsolatedWorld world,
                                          OnReceiveValueCallback callback) {
@@ -5450,4 +5455,5 @@ void NWebDelegate::RunJavaScriptInFrames(const std::string& jsString, FrameInfos
     GetBrowser()->GetHost()->RunJavaScriptInFrames(jsString, rootFrame, recursive, world, JsResultCb);
   }
 }
+#endif
 }  // namespace OHOS::NWeb

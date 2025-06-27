@@ -41,6 +41,8 @@ arkweb_content_renderer_sources = [
   "//arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_ext.cc",
   "//arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_utils.h",
   "//arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_utils.cc",
+  "//arkweb/chromium_ext/content/renderer/renderer_engine_event.cc",
+  "//arkweb/chromium_ext/content/renderer/renderer_engine_event.h",
 ]
 
 arkweb_native_scroller_sources = [

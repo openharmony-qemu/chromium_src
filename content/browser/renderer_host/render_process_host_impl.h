@@ -1059,13 +1059,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
 #endif
   void HasGpuProcess(HasGpuProcessCallback callback) override;
 
-#if BUILDFLAG(IS_ARKWEB)
-  void ReportEngineEvent(const std::string& module,
-                         const std::string& resource,
-                         const std::string& error_code,
-                         const std::string& error_msg) override;
-#endif
-
   void CreateEmbeddedFrameSinkProvider(
       mojo::PendingReceiver<blink::mojom::EmbeddedFrameSinkProvider> receiver);
   void BindCompositingModeReporter(

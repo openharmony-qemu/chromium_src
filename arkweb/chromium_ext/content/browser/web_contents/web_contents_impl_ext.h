@@ -319,6 +319,12 @@ public:
   void DelAllVideoSurfaces();
   void ReportVideoDecoderName(const std::string& decoder_name);
 #endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void OnBrowserForeground() override;
+  void OnBrowserBackground() override;
+#endif
+
 private:
   std::string custom_user_agent_;
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)

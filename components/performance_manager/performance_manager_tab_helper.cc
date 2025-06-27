@@ -689,6 +689,25 @@ FrameNodeImpl* PerformanceManagerTabHelper::GetExistingFrameNode(
   return it->second.get();
 }
 
+#if BUILDFLAG(ARKWEB_BGTASK)
+void PerformanceManagerTabHelper::OnBrowserForeground()
+{
+  PerformanceManagerImpl::CallOnGraphImpl(
+    FROM_HERE,
+    base::BindOnce(&PageNodeImpl::SetBrowserForeground,
+                   base::Unretained(primary_page_node())));
+}
+
+void PerformanceManagerTabHelper::OnBrowserBackground()
+{
+  PerformanceManagerImpl::CallOnGraphImpl(
+    FROM_HERE,
+    base::BindOnce(&PageNodeImpl::SetBrowserBackground,
+                   base::Unretained(primary_page_node())));
+}
+#endif
+
+
 WEB_CONTENTS_USER_DATA_KEY_IMPL(PerformanceManagerTabHelper);
 
 }  // namespace performance_manager

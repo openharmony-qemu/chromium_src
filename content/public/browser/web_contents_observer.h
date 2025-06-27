@@ -1008,6 +1008,11 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   virtual void CloseDateTimeChooser() {}
 #endif
 
+#if BUILDFLAG(ARKWEB_BGTASK)
+  virtual void OnBrowserForeground() {}
+  virtual void OnBrowserBackground() {}
+#endif
+
  protected:
   // Use this constructor when the object is tied to a single WebContents for
   // its entire lifetime.

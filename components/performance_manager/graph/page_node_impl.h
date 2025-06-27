@@ -225,7 +225,10 @@ class PageNodeImpl
   void SetHadUserEdits(base::PassKey<PageAggregatorData>, bool had_user_edits) {
     SetHadUserEdits(had_user_edits);
   }
-
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void SetBrowserForeground();
+  void SetBrowserBackground();
+#endif
  private:
   friend class PageNodeImplDescriber;
 
@@ -402,6 +405,20 @@ class PageNodeImpl
   ObservedProperty::
       NotifiesOnlyOnChanges<bool, &PageNodeObserver::OnHadUserEditsChanged>
           had_user_edits_ GUARDED_BY_CONTEXT(sequence_checker_){false};
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  // Notify the browser is foreground
+  ObservedProperty::NotifiesAlways<
+    bool,
+    &PageNodeObserver::SetBrowserForeground>
+    browser_foreground_ GUARDED_BY_CONTEXT(sequence_checker_){false};
+
+  // Notify the browser is background
+  ObservedProperty::NotifiesAlways<
+    bool,
+    &PageNodeObserver::SetBrowserBackground>
+    browser_background_ GUARDED_BY_CONTEXT(sequence_checker_){false};    
+#endif
 
   base::WeakPtr<PageNodeImpl> weak_this_;
   base::WeakPtrFactory<PageNodeImpl> weak_factory_

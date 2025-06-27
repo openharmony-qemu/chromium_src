@@ -302,6 +302,7 @@ if (!enable_arkweb) {
   arkweb_pip = true
   arkweb_immediate_destory = false
   arkweb_cwnd = false
+  arkweb_bgtask = false
 }
 
 buildflag_header("features") {
@@ -525,6 +526,7 @@ buildflag_header("features") {
     "ARKWEB_EXT_HTTP_DNS_FALLBACK=$arkweb_ext_http_dns_fallback",
     "ARKWEB_EXT_PASSWORD=$arkweb_ext_password",
     "ARKWEB_EX_FREE_COPY=$arkweb_ex_free_copy",
+    "ARKWEB_BGTASK=$arkweb_bgtask",
     
     # ARKWEB_EXT dafault value
     "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",

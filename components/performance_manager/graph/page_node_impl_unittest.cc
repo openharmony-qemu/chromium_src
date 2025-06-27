@@ -291,6 +291,8 @@ class LenientMockObserver : public PageNodeImpl::Observer {
               OnAboutToBeDiscarded,
               (const PageNode*, const PageNode*),
               (override));
+  MOCK_METHOD(void, SetBrowserForeground, (const PageNode*), (override));
+  MOCK_METHOD(void, SetBrowserBackground, (const PageNode*), (override));
 
   void SetNotifiedPageNode(const PageNode* page_node) {
     notified_page_node_ = page_node;

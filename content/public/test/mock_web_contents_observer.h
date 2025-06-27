@@ -342,6 +342,8 @@ class MockWebContentsObserver : public WebContentsObserver {
               (WebContents * new_contents),
               (override));
   MOCK_METHOD(void, WasDiscarded, (), (override));
+  MOCK_METHOD(void, OnBrowserForeground, (), (override));
+  MOCK_METHOD(void, OnBrowserBackground, (), (override));
 };
 
 }  // namespace content

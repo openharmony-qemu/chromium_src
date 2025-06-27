@@ -355,6 +355,14 @@ class PageNodeObserver : public base::CheckedObserver {
   // for more detail.
   virtual void OnAboutToBeDiscarded(const PageNode* page_node,
                                     const PageNode* new_page_node) = 0;
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  // Invoked when Browser is foreground.
+  virtual void SetBrowserForeground(const PageNode* page_node) = 0;
+
+  // Invoked when Browser is background.
+  virtual void SetBrowserBackground(const PageNode* page_node) = 0;
+#endif
 };
 
 // Default implementation of observer that provides dummy versions of each
@@ -405,6 +413,11 @@ class PageNode::ObserverDefaultImpl : public PageNodeObserver {
   void OnFaviconUpdated(const PageNode* page_node) override {}
   void OnAboutToBeDiscarded(const PageNode* page_node,
                             const PageNode* new_page_node) override {}
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void SetBrowserForeground(const PageNode* page_node) override {}
+  void SetBrowserBackground(const PageNode* page_node) override {}
+#endif
 };
 
 // std::ostream support for PageNode::EmbeddingType.

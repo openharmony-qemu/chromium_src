@@ -1048,6 +1048,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
                int event),
               (override));
 #endif
+  void OnBrowserForeground() override {}
+  void OnBrowserBackground() override {}
 };
 
 class MockNWebDragEvent : public NWebDragEvent {
@@ -1793,5 +1795,19 @@ TEST_F(NWebImplTest, OnDestroyWithNullInitArgs) {
   nweb_impl_->OnDestroy();
   EXPECT_EQ(nweb_impl_->destroyCallback_, nullptr);
 }
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+TEST_F(NWebImplTest, OnBrowserForegroundWithNullInitArgs)
+{
+  nweb_impl_->OnBrowserForeground();
+  EXPECT_NE(nweb_impl_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnBrowserBackgroundWithNullInitArgs)
+{
+  nweb_impl_->OnBrowserBackground();
+  EXPECT_NE(nweb_impl_, nullptr);
+}
+#endif
 }  // namespace OHOS::NWeb
                           

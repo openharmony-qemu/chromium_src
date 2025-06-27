@@ -805,6 +805,11 @@ class NWebDelegateInterface
                             int frame_routing_id,
                             int event) = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  virtual void OnBrowserForeground() = 0;
+  virtual void OnBrowserBackground() = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

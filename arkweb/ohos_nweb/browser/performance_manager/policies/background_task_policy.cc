@@ -35,7 +35,6 @@ const std::string BG_TASK_TAG = "[BGTASKPOLICY]";
 BackgroundTaskPolicy::BackgroundTaskPolicy()
     : background_task_holder_(
           std::make_unique<mechanism::BackgroundTaskHolder>()),
-      is_request_background_task_(false),
       visible_page_num_(0),
       media_playing_num_(0),
       audio_state_num_(0) {}
@@ -64,10 +63,7 @@ void BackgroundTaskPolicy::OnPageNodeAdded(const PageNode* page_node) {
     LOG(ERROR) << BG_TASK_TAG << " page_node is null";
     return;
   }
-
   LOG(INFO) << BG_TASK_TAG << " OnPageNodeAdded";
-  visible_page_num_++;
-  MaybeChangeBackgroundTask(page_node);
 }
 
 void BackgroundTaskPolicy::OnBeforePageNodeRemoved(const PageNode* page_node) {}
@@ -88,8 +84,6 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
             << " media avsession IsVisibleChanged: "
             << (visible_num > 0 ? "true" : "false")
             << ", visible_page_num: " << visible_page_num_;
-
-  MaybeChangeBackgroundTask(page_node);
 }
 
 void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
@@ -109,7 +103,6 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
             << " page_node=" << page_node
             << ", media_playing_num: " << media_playing_num_
             << " page_node->IsVisible=" << (page_node->IsVisible() ? "true" : "false");
-  MaybeChangeBackgroundTask(page_node);
 }
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
@@ -133,7 +126,6 @@ void BackgroundTaskPolicy::OnDecrementAudioNum(const PageNode* page_node) {
 
   LOG(INFO) << BG_TASK_TAG << " OnDecrementAudioNum media_playing_num_: " << media_playing_num_
             << "audio_state_num_: "<< audio_state_num_;
-  MaybeChangeBackgroundTask(page_node);
 }
 #endif
 
@@ -151,46 +143,30 @@ void BackgroundTaskPolicy::OnIsAudibleChanged(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << " OnIsAudibleChanged "
             << (page_node->IsAudible() ? "true" : "false")
             << ", audio_state_num: " << audio_state_num_;
-  MaybeChangeBackgroundTask(page_node);
 }
 
-void BackgroundTaskPolicy::MaybeChangeBackgroundTask(
-    const PageNode* page_node) {
-  LOG(INFO) << "BackgroundTaskPolicy::MaybeChangeBackgroundTask "
-            << " page_node=" << page_node
-            << " visible_page_num_: " << visible_page_num_
-            << " media_playing_num_: " << media_playing_num_
-            << " audio_state_num_: " << audio_state_num_
-            << " is_request_background_task_: " << is_request_background_task_;
-
-  RequestBackgroundTaskReason reason =
-      RequestBackgroundTaskReason::NO_CHANGE_BG_TASK;
-  if (is_request_background_task_ &&
-      (visible_page_num_ > 0 ||
-       (media_playing_num_ == 0 && audio_state_num_ == 0))) {
-    reason = RequestBackgroundTaskReason::NO_NEED_BG_TASK;
-  } else if (!is_request_background_task_ &&
-             (visible_page_num_ == 0 &&
-              (media_playing_num_ > 0 || audio_state_num_ > 0))) {
-    reason = RequestBackgroundTaskReason::NEED_BG_TASK;
-  } else {
-  }
-
-  if (reason == RequestBackgroundTaskReason::NO_CHANGE_BG_TASK) {
-    LOG(INFO) << BG_TASK_TAG << " no change return";
-    return;
-  }
-
-  bool need_request = reason == RequestBackgroundTaskReason::NEED_BG_TASK;
-  bool ret = background_task_holder_->MaybeRequestBackgroundRunning(
-      need_request, BackgroundModeAdapter::AUDIO_PLAYBACK);
-  is_request_background_task_ = need_request;
+void BackgroundTaskPolicy::SetBrowserForeground(const PageNode* page_node)
+{
+  LOG(INFO) << BG_TASK_TAG << "BackgroundTaskPolicy::" << __FUNCTION__;
+  bool ret = background_task_holder_->MaybeRequestBackgroundRunning(false, BackgroundModeAdapter::AUDIO_PLAYBACK);
   if (ret) {
-    LOG(INFO) << BG_TASK_TAG << " request bg task success, reason: "
-              << static_cast<int32_t>(reason);
+    LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << "request bg task success";
   } else {
-    LOG(INFO) << BG_TASK_TAG << " request bg task failed";
+    LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << "request bg task failed";
   }
+}
+
+void BackgroundTaskPolicy::SetBrowserBackground(const PageNode* page_node)
+{
+  LOG(INFO) << BG_TASK_TAG << "BackgroundTaskPolicy::" << __FUNCTION__;
+  if (media_playing_num_ > 0 || audio_state_num_ > 0) {
+    bool ret = background_task_holder_->MaybeRequestBackgroundRunning(true, BackgroundModeAdapter::AUDIO_PLAYBACK);
+    if (ret) {
+      LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << "request bg task success";
+    } else {
+      LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << "request bg task failed";
+    }
+  }  
 }
 }  // namespace performance_manager::policies
                                              

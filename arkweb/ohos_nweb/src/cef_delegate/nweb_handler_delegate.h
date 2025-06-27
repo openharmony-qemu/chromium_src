@@ -727,8 +727,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void OnMainFrameChanged(CefRefPtr<CefBrowser> browser,
                           CefRefPtr<CefFrame> old_frame,
                           CefRefPtr<CefFrame> new_frame) override;
+#if BUILDFLAG(ARKWEB_NWEB_EX)
   void OnFrameCreated(CefRefPtr<CefBrowser> browser,
                       CefRefPtr<CefFrame> frame) override;
+#endif
   /* CefFrameHandler methods end */
 
   const std::vector<std::string> GetVisitedHistory();

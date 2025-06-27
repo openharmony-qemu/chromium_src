@@ -795,9 +795,11 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   void UpdateSingleHandleVisible(bool isVisible) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
   void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
                              bool recursive, IsolatedWorld world,
                              OnReceiveValueCallback callback) override;
+#endif
 
  public:
   int argc_;

@@ -851,6 +851,7 @@ void NWebHandlerDelegate::OnMainFrameChanged(CefRefPtr<CefBrowser> browser,
   }
 }
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
                                          CefRefPtr<CefFrame> frame) {
   LOG(DEBUG) << "NWebHandlerDelegate::OnFrameCreated";
@@ -882,6 +883,7 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
  
   dispatcher_.OnFrameCreated(frameInfo);
 }
+#endif
 /* CefFrameHandler methods end */
 
 /* CefLifeSpanHandler methods begin */

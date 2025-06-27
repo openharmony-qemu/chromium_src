@@ -815,9 +815,11 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_MENU)
   virtual void UpdateSingleHandleVisible(bool isVisible) = 0;
 #endif
+#if BUILDFLAG(ARKWEB_NWEB_EX)
   virtual void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
                                      bool recursive, IsolatedWorld world,
                                      OnReceiveValueCallback callback) = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

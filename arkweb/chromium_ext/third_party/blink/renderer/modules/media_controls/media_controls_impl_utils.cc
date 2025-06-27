@@ -161,7 +161,6 @@ void MediaControlsImplUtils::UpdateOverflowMenuWantedExt(
     std::pair<MediaControlElementBase*, bool>(&row_elements)[kRowElementsCount]) {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (ShouldShowVideoControlsHM()) {
-    row_elements[kDownloadIndexToRowColumns].second = true;
     row_elements[kPlaybackSpeedIndexToRowColumns].second = true;
   }
 #endif
@@ -223,7 +222,7 @@ void MediaControlsImplUtils::PopulatePanelHM() {
     MediaControlElementsHelper::CreateDiv(
         AtomicString("-internal-media-controls-button-spacer"), impl->top_row_panel_);
     impl->top_row_panel_->ParserAppendChild(impl->volume_control_container_);
-    impl->top_row_panel_->ParserAppendChild(impl->download_button_);
+    impl->top_row_panel_->ParserAppendChild(impl->overflow_menu_);
     impl->panel_->ParserAppendChild(impl->top_row_panel_);
   }
 
@@ -258,6 +257,7 @@ void MediaControlsImplUtils::PopulatePanelHM() {
   impl->AttachHoverBackground(impl->playback_speed_button_);
   button_panel->ParserAppendChild(impl->fullscreen_button_);
   impl->AttachHoverBackground(impl->fullscreen_button_);
+  impl->AttachHoverBackground(impl->overflow_menu_);
 }
 #endif // ARKWEB_VIDEO_ASSISTANT
 

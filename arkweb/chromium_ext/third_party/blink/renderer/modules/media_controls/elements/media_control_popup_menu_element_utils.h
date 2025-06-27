@@ -33,6 +33,7 @@ public:
     void ShouldSetPopupAnchorHM(DOMRect* bounding_client_rect, LocalDOMWindow* dom_window);
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    bool IsOverflowMenuPopup();
     void SetPopupAnchorHM(DOMRect* bounding_client_rect, LocalDOMWindow* dom_window);
 #endif
 

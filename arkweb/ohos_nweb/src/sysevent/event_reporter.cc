@@ -39,6 +39,7 @@ constexpr char PAGE_LOAD_ERROR[] = "PAGE_LOAD_ERROR";
 constexpr char ERROR_TYPE[] = "ERROR_TYPE";
 constexpr char ERROR_CODE[] = "ERROR_CODE";
 constexpr char ERROR_DESC[] = "ERROR_DESC";
+constexpr char ERROR_COUNT[] = "ERROR_COUNT";
 
 constexpr char JANK_STATS_APP[] = "JANK_STATS_APP";
 constexpr char STARTTIME[] = "STARTTIME";
@@ -121,6 +122,7 @@ void ReportMultiInstanceStats(int instanceId, int nwebCount, int nwebMaxCount) {
 void ReportPageLoadErrorInfo(int instanceId,
                              const std::string errorType,
                              int errorCode,
+                             uint32_t errorCount,
                              const std::string errorDesc) {
   std::string error_type = "";
   std::string error_desc = "";
@@ -134,7 +136,7 @@ void ReportPageLoadErrorInfo(int instanceId,
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       PAGE_LOAD_ERROR, HiSysEventAdapter::EventType::FAULT,
       {CURRENT_INSTANCE_ID, std::to_string(instanceId), ERROR_TYPE, error_type,
-       ERROR_CODE, std::to_string(error_code), ERROR_DESC, error_desc});
+       ERROR_CODE, std::to_string(error_code), ERROR_COUNT, std::to_string(errorCount), ERROR_DESC, error_desc});
 }
 
 void ReportJankStats(int64_t startTime,

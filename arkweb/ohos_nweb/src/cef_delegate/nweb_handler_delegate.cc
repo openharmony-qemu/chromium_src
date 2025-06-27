@@ -179,6 +179,55 @@ std::shared_ptr<NWebExtensionApiCallback> g_extension_api_listener = nullptr;
 static std::map<int, TabCreatedCallback> g_tab_created_map_;
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
+#if defined(REPORT_SYS_EVENT)
+uint32_t g_access_fail_count = 0;
+uint32_t g_access_sum_count = 0;
+constexpr base::TimeDelta kPageLoadtime = base::Hours(1);
+struct PageLoadErrData {
+  uint32_t err_count = 0;
+  std::string err_desc = "";
+};
+static std::map<int, PageLoadErrData> g_page_load_error_map;
+static std::shared_mutex g_page_load_error_map_lock;
+
+void ReportPageLoadErrorInfoInternal(uint32_t nwebId)
+{
+  std::unique_lock<std::shared_mutex> lock(g_page_load_error_map_lock);
+  if (g_page_load_error_map.empty()) {
+    return;
+  }
+  for (auto it = g_page_load_error_map.begin(); it != g_page_load_error_map.end(); ++it) {
+    std::string err_type = "load error";
+    ReportPageLoadErrorInfo(nwebId, err_type, it->first, it->second.err_count, it->second.err_desc);
+  }
+  g_page_load_error_map.clear();
+}
+
+void ReportPageLoadStatsInternal(uint32_t nwebId)
+{
+  static base::Time last_report_stats_time;
+  if (last_report_stats_time.is_null()) {
+    last_report_stats_time = base::Time::Now();
+  }
+  base::Time now = base::Time::Now();
+  uint32_t access_success_count = g_access_sum_count - g_access_fail_count;
+  if (now - last_report_satts_time < kPageLoadtime) {
+    return;
+  }
+  ReportPageLoadStats(nwebId, g_access_sum_count, access_success_count, g_access_fail_count);
+  g_access_sum_count = 0;
+  g_access_fail_count = 0;
+  last_report_stats_time = std::move(now);
+  ReportPageLoadErrorInfoInternal(nwebId);
+}
+
+void SetPageLoadErrorInfo(uint32_t nwebId, int error_code, const std::string error_desc)
+{
+  std::unique_lock<std::shared_mutex> lock(g_page_load_error_map_lock);
+  g_page_load_error_map[error_code].err_count += 1;
+  g_page_load_error_map[error_code].err_desc = error_desc;
+}
+#endif
 
 ImageColorType TransformColorType(cef_color_type_t color_type) {
   switch (color_type) {
@@ -1433,23 +1482,10 @@ void NWebHandlerDelegate::OnLoadEnd(CefRefPtr<CefBrowser> browser,
   }
 
 #if defined(REPORT_SYS_EVENT)
-  std::string error_type = "";
-  std::string error_desc =
-      "refer to "
-      "https://www.iana.org/assignments/http-status-codes/"
-      "http-status-codes.xml";
-  if (http_status_code < 400) {
-    access_success_count_++;
-  } else if (http_status_code >= 400 && http_status_code < 500) {
-    error_type = "http client error";
-    access_fail_count_++;
-    ReportPageLoadErrorInfo(nweb_id_, error_type, http_status_code, error_desc);
-  } else {
-    access_fail_count_++;
-  }
-  access_sum_count_ = access_success_count_ + access_fail_count_;
-  ReportPageLoadStats(nweb_id_, access_sum_count_, access_success_count_,
-                      access_fail_count_);
+  LOG(DEBUG) << "NWebHandlerDelegate::OnLoadEnd url=" << frame->GetURL().ToString()
+             << " http_status_code=" << http_status_code;
+  g_access_sum_count++;
+  ReportPageLoadStatsInternal(nweb_id_);
 #endif
 }
 
@@ -1591,13 +1627,12 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
   }
 
 #if defined(REPORT_SYS_EVENT)
-  std::string error_type = "failded url";
-  access_fail_count_++;
-  access_sum_count_ = access_success_count_ + access_fail_count_;
-  ReportPageLoadErrorInfo(nweb_id_, error_type, int(error_code),
-                          std::string(error_text));
-  ReportPageLoadStats(nweb_id_, access_sum_count_, access_success_count_,
-                      access_fail_count_);
+  if (frame != nullptr && frame->IsMain()) {
+    LOG(DEBUG) << "NWebHandlerDelegate::OnLoadError main url=" << failed_url.ToString()
+               << " error_code=" << int(error_code) << " error_desc=" << std::string(error_text);
+    g_access_fail_count++;
+    SetPageLoadErrorInfo(nweb_id_, int(error_code), std::string(error_text));
+  }
 #endif
 }
 
@@ -1625,16 +1660,6 @@ void NWebHandlerDelegate::OnLoadErrorWithRequest(CefRefPtr<CefRequest> request,
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnResourceLoadError(web_request, error);
   }
-
-#if defined(REPORT_SYS_EVENT)
-  std::string error_type = "resource load error";
-  access_fail_count_++;
-  access_sum_count_ = access_success_count_ + access_fail_count_;
-  ReportPageLoadErrorInfo(nweb_id_, error_type, error_code,
-                          error_text.ToString());
-  ReportPageLoadStats(nweb_id_, access_sum_count_, access_success_count_,
-                      access_fail_count_);
-#endif
 }
 
 void NWebHandlerDelegate::OnHttpError(CefRefPtr<CefRequest> request,
@@ -1663,16 +1688,6 @@ void NWebHandlerDelegate::OnHttpError(CefRefPtr<CefRequest> request,
             data);
     nweb_handler_->OnHttpError(web_request, web_response);
   }
-
-#if defined(REPORT_SYS_EVENT)
-  std::string error_type = "http error";
-  access_fail_count_++;
-  access_sum_count_ = access_success_count_ + access_fail_count_;
-  ReportPageLoadErrorInfo(nweb_id_, error_type, response->GetStatus(),
-                          std::string(response->GetStatusText()));
-  ReportPageLoadStats(nweb_id_, access_sum_count_, access_success_count_,
-                      access_fail_count_);
-#endif
 }
 
 void NWebHandlerDelegate::OnRefreshAccessedHistory(
@@ -1908,12 +1923,6 @@ void NWebHandlerDelegate::OnRenderProcessTerminated(
             << " render process exit, reason = " << static_cast<int>(reason)
             << " reason info = " << error_desc;
   nweb_handler_->OnRenderExited(reason);
-
-#if defined(REPORT_SYS_EVENT)
-  std::string error_type = "render exitted";
-  ReportPageLoadErrorInfo(nweb_id_, error_type, static_cast<int>(reason),
-                          error_desc);
-#endif
 
 #if BUILDFLAG(ARKWEB_NWEB_EX) && BUILDFLAG(ARKWEB_CRASHPAD)
   OHOS::NWeb::ReportFeedbacklogsCrashDmpFiles(

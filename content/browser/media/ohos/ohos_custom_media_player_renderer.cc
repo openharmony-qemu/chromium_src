@@ -255,28 +255,37 @@ void OHOSCustomMediaPlayerRenderer::Initialize(media::MediaResource* media_resou
 
   renderer_client_ = client;
 
-  if (media_resource->GetType() != media::MediaResource::Type::URL) {
+  if (!media_resource || media_resource->GetType() != media::MediaResource::Type::URL) {
     DLOG(ERROR) << "MediaResource is not of Type URL";
     std::move(init_cb).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
     return;
   }
 
+  media_url_params_ = std::make_unique<media::MediaUrlParams>(media_resource->GetMediaUrlParams());
+  if (!media_url_params_) {
+    LOG(ERROR) << "GetMediaUrlParams failed";
+    std::move(init_cb).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
+    return;
+  }
   init_cb_ = std::move(init_cb);
-  media_resource_ = media_resource;
 
   GetCookies();
 }
 
 void OHOSCustomMediaPlayerRenderer::GetCookies() {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  if (!media_url_params_) {
+    LOG(ERROR) << "GetCookies failed, no media_url_params";
+    return;
+  }
 
-  const GURL& url = media_resource_->GetMediaUrlParams().media_url;
+  const GURL& url = media_url_params_->media_url;
   const net::SiteForCookies& site_for_cookies =
-      media_resource_->GetMediaUrlParams().site_for_cookies;
+      media_url_params_->site_for_cookies;
   const url::Origin& top_frame_origin =
-      media_resource_->GetMediaUrlParams().top_frame_origin;
+      media_url_params_->top_frame_origin;
   bool has_storage_access =
-      media_resource_->GetMediaUrlParams().has_storage_access;
+      media_url_params_->has_storage_access;
 
   base::OnceCallback<void(const std::string&)> callback =
         base::BindOnce(&OHOSCustomMediaPlayerRenderer::OnCookiesRetrieved,
@@ -339,6 +348,23 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
 
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
+  if (!media_url_params_) {
+    LOG(ERROR) << "CreateMediaPlayer failed, no media_url_params_";
+    std::move(init_cb_).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
+    return;
+  }
+
+  if (!init_cb_) {
+    LOG(ERROR) << "CreateMediaPlayer failed, no init_cb";
+    return;
+  }
+
+  if (initialized_) {
+    LOG(ERROR) << "CreateMediaPlayer failed, already initialized";
+    std::move(init_cb_).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
+    return;
+  }
+
   WebContentsImpl* web_contents_impl =
       static_cast<WebContentsImpl*>(web_contents());
 
@@ -365,7 +391,7 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
   for (const auto& info : source_infos_) {
     media_info.media_src_list.push_back({
         static_cast<MediaInfo::SourceType>(
-            media_resource_->GetMediaUrlParams().custom_media_url_params.media_source_type),
+            media_url_params_->custom_media_url_params.media_source_type),
         info.media_source, info.media_format});
   }
   media_info.surface_info.id = surface_id_string;
@@ -378,7 +404,7 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
   media_info.muted = muted_;
   media_info.poster_url = poster_url_;
   media_info.preload = ConvertTo(
-      media_resource_->GetMediaUrlParams().custom_media_url_params.preload_type);
+      media_url_params_->custom_media_url_params.preload_type);
   if (!cookies_->empty()) {
     media_info.https_headers.insert(std::make_pair(
         net::HttpRequestHeaders::kCookie,

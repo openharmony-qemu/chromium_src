@@ -126,6 +126,10 @@ void OhosVideoDecoder::DestroyAsync(std::unique_ptr<OhosVideoDecoder> decoder) {
   TRACE_EVENT0("media", "OhosVideoDecoder::DestroyAsync");
   DCHECK(decoder);
   auto* self = decoder.release();
+  if (self == nullptr) {
+    LOG(ERROR) << "OhosVideoDecoder::DestroyAsync decoder is nullptr";
+    return;
+  }
 
   self->weak_factory_.InvalidateWeakPtrs();
 

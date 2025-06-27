@@ -227,7 +227,7 @@ const std::string& PrefService::GetString(base::StringPiece path) const {
 #if BUILDFLAG(IS_OHOS)
   const base::Value* value = &GetValue(path);
   if (!value || !value->is_string()) {
-    const std::string str = std::string();
+    static const std::string str = std::string();
     return str;
   }
   return value->GetString();
@@ -357,7 +357,8 @@ const base::Value::Dict& PrefService::GetDict(base::StringPiece path) const {
 #if BUILDFLAG(IS_OHOS)
   const base::Value* value = &GetValue(path);
   if (!value) {
-    return base::Value::Dict();
+    static base::Value::Dict dict;
+    return dict;
   }
   return value->GetDict();
 #else
@@ -370,7 +371,8 @@ const base::Value::List& PrefService::GetList(base::StringPiece path) const {
 #if BUILDFLAG(IS_OHOS)
   const base::Value* value = &GetValue(path);
   if (!value) {
-    return base::Value::List();
+    static base::Value::List list;
+    return list;
   }
   return value->GetList();
 #else

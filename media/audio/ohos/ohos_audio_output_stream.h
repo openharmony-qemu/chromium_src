@@ -89,7 +89,7 @@ class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
 
 class OHOSAudioOutputStream : public AudioOutputStream {
  public:
-  static std::vector<AudioParameters> audioParameterSet_;
+  static std::map<AudioParameters, std::vector<base::WeakPtr<OHOSAudioOutputStream>>> audioParameterMap_;
 
   OHOSAudioOutputStream(const OHOSAudioOutputStream&) = delete;
   OHOSAudioOutputStream& operator=(const OHOSAudioOutputStream&) = delete;

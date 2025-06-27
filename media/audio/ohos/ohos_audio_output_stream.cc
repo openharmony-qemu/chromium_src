@@ -179,7 +179,7 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
   }
 }
 
-std::map<AudioParameters, std::vector<base::WeakPtr<OHOSAudioOutputStream>>>	
+std::map<AudioParameters, std::vector<base::WeakPtr<OHOSAudioOutputStream>>>
   OHOSAudioOutputStream::audioParameterMap_ = {};
 
 OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,

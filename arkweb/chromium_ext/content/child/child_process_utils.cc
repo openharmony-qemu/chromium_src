@@ -110,7 +110,7 @@ void ChildProcessUtils::ReportHisyevent(int64_t block_time, const std::string& m
 
 void ChildProcess::ReportHisyevent(int64_t block_time, const std::string& mode) {
   if (implUtils) {
-    if (!main_thread_) {
+    if (main_thread_) {
       implUtils->ReportHisyevent(block_time, mode, main_thread_->IsInBrowserProcess());
     }
   }

@@ -762,7 +762,8 @@ void BrowserMainLoop::PostCreateMainMessageLoop() {
   {
     TRACE_EVENT0("startup",
                  "BrowserMainLoop::Subsystem:BrowserAccessibilityStateImpl");
-    BrowserAccessibilityStateImpl::GetInstance()->InitBackgroundTasks();
+    browser_accessibility_state_ = BrowserAccessibilityStateImpl::Create();
+    browser_accessibility_state_->InitBackgroundTasks();
   }
 }
 

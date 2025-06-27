@@ -247,32 +247,24 @@ void OHOSAudioOutputStream::Close() {
   manager_->ReleaseOutputStream(this);
 }
 
-void OHOSAudioOutputStream::SuspendOtherMediaSession(
-    base::WeakPtr<content::MediaSessionImpl> weakMediaSession) {
-  bool registered = false;
-  auto it = web_content_map_.begin();
-  while (it != web_content_map_.end()) {
-    auto otherWeakMediaSession = content::MediaSessionImpl::Get(it->first)
-                                     ->weakMediaSessionFactory_.GetWeakPtr();
-    auto otherMediaSession = otherWeakMediaSession.get();
-    if (!otherMediaSession) {
-      LOG(INFO) << "Delete invalid mediaSession.";
-      it = web_content_map_.erase(it);
+void OHOSAudioOutputStream::SuspendOtherMediaSession() {
+  auto it = OHOSAudioOutputStream::audioParameterSet_.begin();
+  while (it != OHOSAudioOutputStream::audioParameterSet_.end()) {
+    if (!(*it).IsValid() || ((*it).render_process_id() <= 0 || (*it).render_frame_id() <= 0)) {
+      LOG(INFO) << "Delete invalid parameter.";
+      it = OHOSAudioOutputStream::audioParameterSet_.erase(it);
       continue;
     }
-    if (otherMediaSession == weakMediaSession_.get()) {
-      LOG(INFO) << "skip mediaSession control because of same mediaSession.";
-      it->second.push_back(weak_factory_.GetWeakPtr());
+    if ((*it).Equals(parameters_)) {
+      LOG(INFO) << "skip mediaSession control because of same audioparameters.";
       it++;
-      registered = true;
       continue;
     }
-    if (GetInterruptMode() && otherMediaSession->IsActive()) {
+    if (GetInterruptMode()) {
       LOG(INFO) << "MediaSession is suspending the audio in other web.";
       main_task_runner_->PostTask(
           FROM_HERE,
-          base::BindOnce(&content::MediaSessionImpl::Suspend, otherWeakMediaSession,
-                         content::MediaSession::SuspendType::kSystem));
+          base::BindOnce(OHOSAudioFocusController::OnSuspend, (*it)));
       std::vector<base::WeakPtr<OHOSAudioOutputStream>> vec = it->second;
       for (auto weakStream = vec.begin(); weakStream != vec.end(); ++weakStream) {
           auto stream = weakStream->get();

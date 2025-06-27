@@ -3970,11 +3970,32 @@ void NWebImpl::UpdateBrowserControlsHeight(int height, bool animate) {
 }
 #endif
 
+bool NWebImpl::GetIsEditTextType() {
+  auto hitTest = GetLastHitTestResult();
+  if (!hitTest) {
+    return false;
+  }
+
+  if (inputmethod_handler_ == nullptr) {
+    LOG(ERROR) << "inputmethod_handler_ is nullptr.";
+    return false;
+  }
+
+  if (hitTest->GetType() != HitTestResult::EDIT_TEXT_TYPE) {
+    LOG(INFO) << "no hittest edit text, web close keyboard.";
+    return false;
+  }
+  return true;
+}
+
 bool NWebImpl::NeedSoftKeyboard() {
   if (inputmethod_handler_) {
-    return inputmethod_handler_->GetIsEditableNode();
+    if (inputmethod_handler_->GetIsEditableNode()) {
+      return true;
+    } else {
+      return GetIsEditTextType();
+    }
   }
-  return false;
 }
 
 #if BUILDFLAG(ARKWEB_EXT_PERMISSION)

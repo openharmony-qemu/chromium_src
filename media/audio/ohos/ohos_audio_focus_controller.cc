@@ -17,6 +17,7 @@ void OHOSAudioFocusController::OnResume(const AudioParameters& parameters) {
     LOG(ERROR) << "OnResume RenderFrameHost not found for PID: "
                << parameters.render_process_id() 
                << ", FrameID: " << parameters.render_frame_id();
+    return;
   }
   auto webContent = content::WebContents::FromRenderFrameHost(renderFrameHost);
   if (!webContent) {
@@ -39,6 +40,7 @@ void OHOSAudioFocusController::OnSuspend(const AudioParameters& parameters) {
     LOG(ERROR) << "OnSuspend RenderFrameHost not found for PID: "
                << parameters.render_process_id() 
                << ", FrameID: " << parameters.render_frame_id();
+    return;
   }
   auto webContent = content::WebContents::FromRenderFrameHost(renderFrameHost);
   if (!webContent) {
@@ -85,16 +87,19 @@ MediaContentType OHOSAudioFocusController::GetContentTypeOnUIThread(const AudioP
     LOG(ERROR) << "GetContentTypeOnUIThread RenderFrameHost not found for PID: "
                << params.render_process_id() 
                << ", FrameID: " << params.render_frame_id();
+    return media::MediaContentType::Invalid;
   }
 
   content::WebContents* webContents = content::WebContents::FromRenderFrameHost(renderFrameHost);
   if (!webContents) {
     LOG(ERROR) << "GetContentTypeOnUIThread WebContents not associated with RenderFrameHost";
+    return media::MediaContentType::Invalid;
   }
 
   content::MediaSessionImpl* mediaSession = content::MediaSessionImpl::Get(webContents);
   if (!mediaSession) {
     LOG(ERROR) << "GetContentTypeOnUIThread MediaSession not initialized for WebContents";
+    return media::MediaContentType::Invalid;
   }
 
   return mediaSession->getMediaContentType();

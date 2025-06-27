@@ -421,7 +421,7 @@ uint32_t FontConfig_OHOS::getVariableFontStyleDifference(const SkFontStyle& dstS
 
   for (size_t j = 0; j < srcAxisRange.size(); j++) {
     if (srcAxisRange[j].fTag == wghtTag) {
-      weight = SkTPin(dstStyle.weight()
+      weight = SkTPin(dstStyle.weight(),
                       SkScalarFloorToInt(srcAxisRange[j].fMinimum),
                       SkScalarFloorToInt(srcAxisRange[j].fMaximum));
     }

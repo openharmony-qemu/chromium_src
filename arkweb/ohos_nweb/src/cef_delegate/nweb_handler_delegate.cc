@@ -4435,6 +4435,24 @@ NWebHandlerDelegate::OnFullScreenOverlayEnter(
   return std::make_unique<NWebMediaPlayerListenerForVAST>(
       std::unique_ptr<NWebMediaPlayerListener>(listener));
 }
+
+void NWebHandlerDelegate::WebMediaPlayerControllerSetVolume(double volume)
+{
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  (nweb_media_player_controller_.get()
+       ->*(nweb_media_player_controller_->set_volume))(volume);
+#endif // IS_ARKWEB_EXT
+}
+
+double NWebHandlerDelegate::WebMediaPlayerControllerGetVolume()
+{
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  return (nweb_media_player_controller_.get()
+      ->*(nweb_media_player_controller_->get_volume))();
+#else
+  return 1.0;
+#endif // IS_ARKWEB_EXT
+}
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)

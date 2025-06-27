@@ -132,6 +132,30 @@ void MediaWebContentsObserver::SetPlaybackRate(double playback_rate,
   iter->second->SetPlaybackRate(playback_rate);
 }
 
+void MediaWebContentsObserver::SetVolume(double volume,
+                                         const MediaPlayerId& player_id)
+{
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+  if (iter->second) {
+    iter->second->SetVolume(volume);
+  }
+}
+
+double MediaWebContentsObserver::GetVolume(const MediaPlayerId& player_id)
+{
+  double volume = -1.0;
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return volume;
+  }
+  if (iter->second) {
+    iter->second->GetVolume(&volume);
+  }
+  return volume;
+}
 void MediaWebContentsObserver::RequestFullScreen(
     bool enable,
     const MediaPlayerId& player_id) {
@@ -308,6 +332,15 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::VideoSizeChangedOver
   media_player_listener_->OnVideoSizeChanged(width, height);
 }
 
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnVolumeChanged(double volume)
+{
+  if (!media_player_listener_) {
+    return;
+  }
+  LOG(INFO) << "MediaWebContentsObserver::OnVolumeChanged enter. volume = " << volume;
+  media_player_listener_->OnVolumeChanged(volume);
+}
+
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     FullscreenOverlayChanged(
         bool fullscreen_overlay, const std::string& decoder_name) {
@@ -323,7 +356,6 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
             << fullscreen_overlay << ", " << decoder_name << ")";
   media_player_listener_->OnFullscreenOverlayChanged(fullscreen_overlay);
 }
-
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_PIP)

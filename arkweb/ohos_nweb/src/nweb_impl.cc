@@ -3247,6 +3247,26 @@ void NWebImpl::CustomWebMediaPlayer(bool enable) {
   }
   nweb_delegate_->CustomWebMediaPlayer(enable);
 }
+
+void NWebImpl::WebMediaPlayerControllerSetVolume(double volume)
+{
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to WebMediaPlayerControllerSetVolume, "
+                  "delegate is null";
+    return;
+  }
+  nweb_delegate_->WebMediaPlayerControllerSetVolume(volume);
+}
+
+double NWebImpl::WebMediaPlayerControllerGetVolume()
+{
+  if (!nweb_delegate_) {
+    LOG(ERROR) << "failed to WebMediaPlayerControllerGetVolume, "
+                  "delegate is null";
+    return -1.0;
+  }
+  return nweb_delegate_->WebMediaPlayerControllerGetVolume();
+}
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)

@@ -584,6 +584,8 @@ class NWebImpl : public NWeb {
   static void OnReportStatisticLog(const std::string& content);
   static void SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func);
   void CustomWebMediaPlayer(bool enable);
+  void WebMediaPlayerControllerSetVolume(double volume);
+  double WebMediaPlayerControllerGetVolume();
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)

@@ -250,11 +250,11 @@ void OHOSAudioOutputStream::Close() {
 
 void OHOSAudioOutputStream::SuspendOtherMediaSession() {
   bool registered = false;
-  auto it = OHOSAudioOutputStream::audioParameterMap_.begin();
-  while (it != OHOSAudioOutputStream::audioParameterMap_.end()) {
+  auto it = audioParameterMap_.begin();
+  while (it != audioParameterMap_.end()) {
     if (!(it->first).IsValid() || ((it->first).render_process_id() <= 0 || (it->first).render_frame_id() <= 0)) {
       LOG(INFO) << "Delete invalid parameter.";
-      it = OHOSAudioOutputStream::audioParameterMap_.erase(it);
+      it = audioParameterMap_.erase(it);
       continue;
     }
     if ((it->first).Equals(parameters_)) {
@@ -281,7 +281,7 @@ void OHOSAudioOutputStream::SuspendOtherMediaSession() {
     it++;
   }
   if (!registered) {
-    OHOSAudioOutputStream::audioParameterMap_.insert(std::make_pair(parameters_, std::vector<base::WeakPtr<OHOSAudioOutputStream>>()));
+    audioParameterMap_.insert(std::make_pair(parameters_, std::vector<base::WeakPtr<OHOSAudioOutputStream>>()));
   }
 }
 

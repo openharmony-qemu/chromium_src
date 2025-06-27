@@ -137,6 +137,10 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/web_native_bridge.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+#include "arkweb/chromium_ext/content/renderer/ark_web_render_frame_impl.h"
+#endif
+
 namespace blink {
 namespace scheduler {
 class WebAgentGroupScheduler;
@@ -182,6 +186,7 @@ class RendererPpapiHost;
 class RenderAccessibilityManager;
 class RenderFrameObserver;
 class ArkwebMediaFactoryExt;
+class RenderFrameImplUtils;
 
 class CONTENT_EXPORT RenderFrameImpl
     : public RenderFrame,
@@ -197,6 +202,7 @@ class CONTENT_EXPORT RenderFrameImpl
 #endif
       service_manager::mojom::InterfaceProvider {
  public:
+  friend class RenderFrameImplUtils;
   // Creates a new RenderFrame as the main frame of `web_view`. Note that not
   // all main RenderFrame creation uses this function. `CreateMainFrame()`
   // is used to create a RenderFrame that is immediately attached as the main
@@ -418,6 +424,9 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_AI)
   void CloseImageOverlaySelection() override;
 #endif  // BUILDFLAG(ARKWEB_AI)
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  void SendCommitNavigationTime(int64_t start_time) override;
+#endif  // BUILDFLAG(ARKWEB_DFX_TRACING)
 
   void AddMessageToConsole(blink::mojom::ConsoleMessageLevel level,
                            const std::string& message) override;
@@ -1715,6 +1724,8 @@ class CONTENT_EXPORT RenderFrameImpl
   const bool is_for_nested_main_frame_;
 
   base::WeakPtrFactory<RenderFrameImpl> weak_factory_{this};
+
+  RenderFrameImplUtils* implUtils;
 };
 
 }  // namespace content

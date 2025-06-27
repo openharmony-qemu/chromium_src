@@ -26,6 +26,11 @@ HTMLPlugInElementUtils::HTMLPlugInElementUtils(HTMLPlugInElement* pluginElement)
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 bool HTMLPlugInElementUtils::CheckNativeType(const char* key) const {
+  if (!plugin_->GetDocument().IsActive() || !plugin_->GetDocument().GetFrame()) {
+    LOG(ERROR) << "[NativeEmbed] Document is not active or has no frame";
+    return false;
+  }
+  
   auto settings = plugin_->GetDocument().GetSettings();
   if (plugin_->GetObjectContentType() != HTMLPlugInElement::ObjectContentType::kNone) {
     LOG(ERROR) << "[NativeEmbed] It's a standard object content type "

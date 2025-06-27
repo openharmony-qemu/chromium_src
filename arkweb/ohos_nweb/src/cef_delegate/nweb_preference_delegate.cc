@@ -206,6 +206,9 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if BUILDFLAG(ARKWEB_VIEWPORT)
   browser_settings.viewport_meta_enabled = GetViewportEnable();
 #endif  // BUILDFLAG(ARKWEB_VIEWPORT)
+#if BUILDFLAG(ARKWEB_FOCUS)
+  browser_settings.gesture_focus_mode = GetGestureFocusMode();
+#endif
 
 #if BUILDFLAG(ARKWEB_BACKGROUND_COLOR)
   browser_settings.background_color = GetBackgroundColor();
@@ -894,6 +897,17 @@ NWebPreference::CopyOptionMode NWebPreferenceDelegate::GetCopyOptionMode() {
   return copy_option_;
 }
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+
+#if BUILDFLAG(ARKWEB_FOCUS)
+void NWebPreferenceDelegate::SetGestureFocusMode(int32_t mode) {
+  gesture_focus_mode_ = mode;
+  WebPreferencesChanged();
+}
+
+int32_t NWebPreferenceDelegate::GetGestureFocusMode() const {
+  return gesture_focus_mode_;
+}
+#endif
 
 void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
                                                         bool shouldOverlay) {

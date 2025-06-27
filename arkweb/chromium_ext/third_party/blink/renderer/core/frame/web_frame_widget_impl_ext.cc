@@ -46,6 +46,9 @@ const int WORD_CORNER_NUM = 4;
 #if BUILDFLAG(ARKWEB_MEDIA_INTERACTION)
 constexpr int kDisableDelayTime = 300;
 #endif
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+constexpr int kDragBlankTime = 80;
+#endif
 
 WebFrameWidgetImplExt::WebFrameWidgetImplExt(
     base::PassKey<WebLocalFrame> pass_key,
@@ -456,7 +459,7 @@ int64_t WebFrameWidgetImplExt::GetCurrentTimestampMS() {
 void WebFrameWidgetImplExt::ReportBlank(int64_t startTime, int64_t endTime) {
   int64_t duration = endTime - startTime;
   std::string mode = "ReportDragBlank";
-  if (content::ChildProcess::current() && duration > 80) {
+  if (content::ChildProcess::current() && duration > kDragBlankTime) {
     content::ChildProcess::current()->ReportHisyevent(duration, mode);
   }
 }

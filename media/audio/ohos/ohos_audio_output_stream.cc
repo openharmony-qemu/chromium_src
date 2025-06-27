@@ -281,7 +281,7 @@ void OHOSAudioOutputStream::SuspendOtherMediaSession() {
     it++;
   }
   if (!registered) {
-    web_content_map_.insert(std::make_pair(parameters_, std::vector<base::WeakPtr<OHOSAudioOutputStream>>()));
+    OHOSAudioOutputStream::audioParameterMap_.insert(std::make_pair(parameters_, std::vector<base::WeakPtr<OHOSAudioOutputStream>>()));
   }
 }
 

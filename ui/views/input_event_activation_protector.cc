@@ -41,8 +41,10 @@ bool InputEventActivationProtector::IsPossiblyUnintendedInteraction(
   if (event.IsKeyEvent() && event.AsKeyEvent()->is_repeat())
     return true;
 
-  if (!event.IsMouseEvent() && !event.IsTouchEvent())
+  if (!event.IsMouseEvent() && !event.IsTouchEvent() &&
+      !event.IsGestureEvent()) {
     return false;
+  }
 
   const base::TimeDelta kShortInterval =
       base::Milliseconds(GetDoubleClickInterval());

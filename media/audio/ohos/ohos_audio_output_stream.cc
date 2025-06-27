@@ -179,7 +179,8 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
   }
 }
 
-std::vector<AudioParameters> OHOSAudioOutputStream::audioParameterSet_ = {};
+std::map<AudioParameters, std::vector<base::WeakPtr<OHOSAudioOutputStream>>>	
+  OHOSAudioOutputStream::audioParameterMap_ = {};
 
 OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
                                              const AudioParameters& parameters,
@@ -248,27 +249,40 @@ void OHOSAudioOutputStream::Close() {
 }
 
 void OHOSAudioOutputStream::SuspendOtherMediaSession() {
-  auto it = OHOSAudioOutputStream::audioParameterSet_.begin();
-  while (it != OHOSAudioOutputStream::audioParameterSet_.end()) {
-    if (!(*it).IsValid() || ((*it).render_process_id() <= 0 || (*it).render_frame_id() <= 0)) {
+  bool registered = false;
+  auto it = OHOSAudioOutputStream::audioParameterMap_.begin();
+  while (it != OHOSAudioOutputStream::audioParameterMap_.end()) {
+    if (!(it->first).IsValid() || ((it->first).render_process_id() <= 0 || (it->first).render_frame_id() <= 0)) {
       LOG(INFO) << "Delete invalid parameter.";
-      it = OHOSAudioOutputStream::audioParameterSet_.erase(it);
+      it = OHOSAudioOutputStream::audioParameterMap_.erase(it);
       continue;
     }
-    if ((*it).Equals(parameters_)) {
+    if ((it->first).Equals(parameters_)) {
       LOG(INFO) << "skip mediaSession control because of same audioparameters.";
+      it->second.push_back(weak_factory_.GetWeakPtr());
       it++;
+      registered = true;
       continue;
     }
     if (GetInterruptMode()) {
       LOG(INFO) << "MediaSession is suspending the audio in other web.";
       main_task_runner_->PostTask(
           FROM_HERE,
-          base::BindOnce(OHOSAudioFocusController::OnSuspend, (*it)));
+          base::BindOnce(OHOSAudioFocusController::OnSuspend, (it->first)));
+      std::vector<base::WeakPtr<OHOSAudioOutputStream>> vec = it->second;
+      for (auto weakStream = vec.begin(); weakStream != vec.end(); ++weakStream) {
+          auto stream = weakStream->get();
+          if (stream != nullptr) {
+              main_task_runner_->PostTask(FROM_HERE,
+                  base::BindOnce(&OHOSAudioOutputStream::OnSuspend, base::Unretained(stream)));
+          } 
+      }
     }
     it++;
   }
-  OHOSAudioOutputStream::audioParameterSet_.emplace_back(parameters_);
+  if (!registered) {
+    web_content_map_.insert(std::make_pair(parameters_, std::vector<base::WeakPtr<OHOSAudioOutputStream>>()));
+  }
 }
 
 void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
@@ -307,11 +321,7 @@ void OHOSAudioOutputStream::Stop() {
 
   running_ = false;
   timer_.Stop();
-  auto it = std::find(OHOSAudioOutputStream::audioParameterSet_.begin(),
-                      OHOSAudioOutputStream::audioParameterSet_.end(), parameters_);
-  if (it != OHOSAudioOutputStream::audioParameterSet_.end()) {
-    OHOSAudioOutputStream::audioParameterSet_.erase(it);
-  }
+  audioParameterMap_.erase(parameters_);
   if (rendererCallback_ && isSuspended_) {
     LOG(DEBUG) << "OHOSAudioOutputStream::Stop cannot continue.";
     return;

@@ -280,6 +280,8 @@ source_set("audio") {
     sources += [
       "ohos/ohos_audio_manager.cc",
       "ohos/ohos_audio_manager.h",
+      "ohos/ohos_audio_focus_controller.cc",
+      "ohos/ohos_audio_focus_controller.h",
       "ohos/ohos_audio_output_stream.cc",
       "ohos/ohos_audio_output_stream.h",
       "ohos/ohos_audio_input_stream.cc",

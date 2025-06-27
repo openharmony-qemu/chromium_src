@@ -864,6 +864,8 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   void EnableVideoAssistant(bool enable) override;
   void ExecuteVideoAssistantFunction(const std::string& cmd_id) override;
   void CustomWebMediaPlayer(bool enable) override;
+  void WebMediaPlayerControllerSetVolume(double volume) override;
+  double WebMediaPlayerControllerGetVolume() override;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)

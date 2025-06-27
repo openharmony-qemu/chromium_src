@@ -31,6 +31,7 @@ class NWebMediaPlayerListenerForVAST : public CefMediaPlayerListenerForVAST {
   void OnError(uint32_t error_code, const std::string& error_msg) override;
   void OnVideoSizeChanged(int width, int height) override;
   void OnFullscreenOverlayChanged(bool fullscreen_overlay) override;
+  void OnVolumeChanged(double volume) override;
 
  private:
   std::unique_ptr<NWebMediaPlayerListener> nweb_listener_;

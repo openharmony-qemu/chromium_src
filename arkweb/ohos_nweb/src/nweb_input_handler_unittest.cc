@@ -877,6 +877,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, EnableVideoAssistant, (bool enable), (override));
   MOCK_METHOD(void, ExecuteVideoAssistantFunction, (const std::string& cmd_id), (override));
   MOCK_METHOD(void, CustomWebMediaPlayer, (bool enable), (override));
+  MOCK_METHOD(void, WebMediaPlayerControllerSetVolume, (double volume), (override));
+  MOCK_METHOD(double, WebMediaPlayerControllerGetVolume, (), (override));
   MOCK_METHOD(void, OnDestroyImageAnalyzerOverlay, (), (override));
   MOCK_METHOD(void, OnFoldStatusChanged, (FoldStatus foldstatus), (override));
   MOCK_METHOD(void, WebExtensionTabCreated, (int tab_id), (override));

@@ -329,6 +329,7 @@ HTMLMediaElement::CollectMediaInfoAttributesForVAST() {
   mediaInfoAttr->id = WTF::String::FromUTF8(GetIdAttribute().Utf8());
   mediaInfoAttr->title = WTF::String::FromUTF8(html_media_element_utils_->GetTitle().Utf8());
   mediaInfoAttr->duration = duration();
+  mediaInfoAttr->volume = volume();
   mediaInfoAttr->current_time = media_player->CurrentTime();
   mediaInfoAttr->playback_rate = playbackRate();
   mediaInfoAttr->video_width = media_player->NaturalSize().width();
@@ -395,14 +396,23 @@ void HTMLMediaElement::OnSupportVideoSurfaceChanged(
   }
 }
 
-
-
-
 void HTMLMediaElement::SetVideoSurface(int32_t widget_id) {
   LOG(INFO) << "SetVideoSurface(" << widget_id << ")";
   if (GetWebMediaPlayer()) {
     GetWebMediaPlayer()->SetVideoSurface(widget_id);
   }
+}
+
+void HTMLMediaElement::SetVolume(double volume)
+{
+  LOG(INFO) << "HTMLMediaElement::SetVolume volume=" << volume;
+  setVolume(volume);
+}
+
+void HTMLMediaElement::GetVolume(GetVolumeCallback callback)
+{
+  LOG(INFO) << "HTMLMediaElement::GetVolume volume=" << EffectiveMediaVolume();
+  std::move(callback).Run(EffectiveMediaVolume());
 }
 
 void HTMLMediaElement::RequestExitFullscreenIfNeeded() {

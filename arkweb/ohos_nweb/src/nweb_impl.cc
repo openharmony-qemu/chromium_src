@@ -3038,6 +3038,7 @@ void NWebImpl::RemoveWebExtensionCallback() {
   nweb_delegate_->UnRegisterWebExtensionListener();
 }
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 void NWebImpl::RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
                                      bool recursive, IsolatedWorld world,
                                      OnReceiveValueCallback callback) {
@@ -3055,6 +3056,7 @@ void NWebImpl::RunJavaScriptInFrames(const std::string& jsString, FrameInfos roo
  
   nweb_delegate_->RunJavaScriptInFrames(jsString, rootFrame, recursive, world, callback);
 }
+#endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void NWebImpl::PutWebExtensionApiCallback(

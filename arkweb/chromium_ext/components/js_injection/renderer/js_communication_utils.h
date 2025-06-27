@@ -50,7 +50,7 @@ class JsCommunicationUtils {
     blink::WebString script;
     int32_t script_id;
   };
-  JsCommunication* jsCommunication_;
+  raw_ptr<JsCommunication> jsCommunication_;
   std::vector<std::unique_ptr<DocumentEndJavaScript>> document_end_scripts_;
   std::vector<std::unique_ptr<DocumentStartJavaScript>> head_ready_scripts_;
   std::vector<std::unique_ptr<DocumentEndJavaScript>> swap_document_end_scripts_;

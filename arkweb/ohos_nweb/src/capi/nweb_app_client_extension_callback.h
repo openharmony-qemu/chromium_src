@@ -23,6 +23,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "build/build_config.h"
+#include "ohos_nweb/src/capi/nweb_extension_javascript_item.h"
 #include "ohos_nweb/src/capi/nweb_native_embed_first_frame_paint_event.h"
 #include "ohos_nweb/src/capi/nweb_permission_request.h"
 
@@ -122,6 +123,7 @@ struct NWebAppClientExtensionCallback {
 #if BUILDFLAG(ARKWEB_PIP)
   void (*OnPipEvent)(int event, int nweb_id);
 #endif
+  void (*OnFrameCreated)(int32_t nweb_id, const FrameInfos& frame);
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

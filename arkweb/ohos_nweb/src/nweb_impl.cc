@@ -5147,7 +5147,7 @@ void NWebImpl::getTotalSize(float size) {
 float NWebImpl::DumpGpuInfo() {
   content::GpuProcessHost* host = content::GpuProcessHost::Get();
   host->gpu_service()->DumpGpuInfo(
-      base::BindOnce(&NWebImpl::getTotalSize, base::Unretained(this)));
+      base::BindOnce(&NWebImpl::getTotalSize, weak_factory_.GetWeakPtr()));
   return totalSize_;
 }
 #endif

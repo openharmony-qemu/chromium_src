@@ -3067,6 +3067,26 @@ void NWebImpl::RemoveWebExtensionCallback() {
   nweb_delegate_->UnRegisterWebExtensionListener();
 }
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+void NWebImpl::RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                                     bool recursive, IsolatedWorld world,
+                                     OnReceiveValueCallback callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "remove web app client extension callback failed, nweb delegate is "
+        "nullptr, nweb_id = %{public}u",
+        nweb_id_);
+    return;
+  }
+  if (callback == nullptr) {
+    LOG(INFO) << "NWebImpl::RunJavaScriptInFrames callback is nullptr";
+    return;
+  } 
+ 
+  nweb_delegate_->RunJavaScriptInFrames(jsString, rootFrame, recursive, world, callback);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void NWebImpl::PutWebExtensionApiCallback(
     std::shared_ptr<NWebExtensionApiCallback> web_extension_api_listener) {

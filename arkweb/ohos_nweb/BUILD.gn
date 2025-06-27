@@ -389,6 +389,7 @@ component("nweb_sources") {
     "src/capi/browser_service/nweb_extension_prompt_types.h",
     "src/capi/nweb_app_client_extension_callback.h",
     "src/capi/nweb_devtools_message_handler.h",
+    "src/capi/nweb_extension_javascript_item.h",
     "src/capi/nweb_native_embed_first_frame_paint_event.h",
     "src/capi/nweb_storage_extension_callback.h",
     "src/capi/nweb_statistic_callback.h",

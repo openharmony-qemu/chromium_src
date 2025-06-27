@@ -29,6 +29,7 @@
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
 #include "capi/nweb_extension_api_callback.h"
+#include "capi/nweb_extension_javascript_item.h"
 #include "nweb.h"
 #include "nweb_download_callback.h"
 #include "nweb_errors.h"
@@ -53,6 +54,8 @@
 #include "capi/nweb_statistic_callback.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+struct FrameInfos;
+struct IsolatedWorld;
 struct OpenDevToolsParam;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "capi/nweb_extension_manager_callback.h"
@@ -564,6 +567,9 @@ class NWebImpl : public NWeb {
   void PutWebExtensionCallback(
       std::shared_ptr<NWebExtensionCallback> web_extension_callback);
   void RemoveWebExtensionCallback();
+  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                             bool recursive, IsolatedWorld world,
+                             OnReceiveValueCallback callback);
   void GetImageFromContextNode();
   void GetImageFromCache(const std::string& url);
   void ReloadOriginalUrl() const;

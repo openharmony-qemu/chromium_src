@@ -26,6 +26,10 @@
 #include "arkweb/chromium_ext/content/browser/renderer_host/navigation_request_utils.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+#include "arkweb/chromium_ext/content/renderer/ark_web_render_frame_impl.h"
+#endif
+
 namespace content {
 
 #if BUILDFLAG(IS_ARKWEB)

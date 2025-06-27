@@ -1307,6 +1307,12 @@ void RenderProcessHostImpl::IOThreadHostImpl::ReportKeyThreadIds(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+void RenderProcessHostImpl::IOThreadHostImpl::ReportHisyevent(int64_t block_time, const std::string& mode) {
+  ArkwebRenderProcessHostImplUtils::ReportHisyevent(block_time, mode);
+}
+#endif
+
 // static
 scoped_refptr<base::SingleThreadTaskRunner>
 RenderProcessHostImpl::GetInProcessRendererThreadTaskRunnerForTesting() {

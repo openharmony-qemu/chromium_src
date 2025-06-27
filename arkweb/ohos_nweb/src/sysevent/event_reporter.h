@@ -82,4 +82,6 @@ void ReportWebMediaPlayErrorInfo(const std::string& errorType,
                               const std::string& errorDesc);
  
 void ReportAvSessionStatus(const std::string& disable_web_av_session_status);
+
+void ReportDragBlank(int64_t duration);
 #endif

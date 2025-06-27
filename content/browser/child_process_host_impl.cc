@@ -342,6 +342,10 @@ void ChildProcessHostImpl::ReportKeyThread(
   int32_t status, int32_t process_id, int32_t thread_id, int32_t role) {}
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+void ChildProcessHostImpl::ReportHisyevent(int64_t block_time, const std::string& mode) {}
+#endif
+
 bool ChildProcessHostImpl::OnMessageReceived(const IPC::Message& msg) {
 #if BUILDFLAG(CONTENT_ENABLE_LEGACY_IPC)
 #if BUILDFLAG(IPC_MESSAGE_LOG_ENABLED)

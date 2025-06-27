@@ -1063,6 +1063,14 @@ void NWebDelegate::OnTouchRelease(int32_t id,
                                    y / default_virtual_pixel_ratio_,
                                    from_overlay);
   }
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (accessibility_state_) {
+    auto* accessibilityManager = GetAccessibilityManager();
+    if (accessibilityManager != nullptr) {
+      accessibilityManager->HitTest(gfx::Point(0, 0), 0);
+    }
+  }
+#endif
 }
 
 void NWebDelegate::OnTouchMove(

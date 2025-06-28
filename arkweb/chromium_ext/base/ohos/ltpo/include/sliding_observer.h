@@ -42,6 +42,10 @@ class SlidingObserver {
   int32_t OnScrollUpdate(float delta_x, float delta_y);
   int32_t OnFlingUpdate(float velocity_x, float velocity_y);
   void OnDisplayInfoChange();
+#if BUILDFLAG(ARKWEB_PDF)
+  void SetIsPdf(bool is_pdf);
+  bool IsPdf();
+#endif
 
  private:
   float GetVelocity(float velocity_x, float velocity_y);
@@ -55,6 +59,10 @@ class SlidingObserver {
   bool is_inited_{false};
   bool is_sliding_{false};
   bool is_off_screen_{false};
+#if BUILDFLAG(ARKWEB_PDF)
+  bool is_pdf_{false};
+  bool use_pdf_rate_{false};
+#endif
   int32_t dpi_{-1};
   std::vector<OHOS::NWeb::FrameRateSetting> on_screen_setting_{};
   std::vector<OHOS::NWeb::FrameRateSetting> off_screen_setting_{};

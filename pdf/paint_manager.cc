@@ -201,7 +201,7 @@ void PaintManager::EnsureCallbackPending() {
 #if BUILDFLAG(ARKWEB_PDF)
 void PaintManager::DoPaint(bool is_repainting) {
 #else
- void PaintManager::DoPaint() {
+void PaintManager::DoPaint() {
 #endif
   base::AutoReset<bool> auto_reset_in_paint(&in_paint_, true);
 

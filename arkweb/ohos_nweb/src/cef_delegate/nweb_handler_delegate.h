@@ -920,6 +920,8 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void EnableVideoAssistant(bool enable);
 
   void CustomWebMediaPlayer(bool enable);
+  void WebMediaPlayerControllerSetVolume(double volume);
+  double WebMediaPlayerControllerGetVolume();
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)

@@ -183,6 +183,8 @@ class CONTENT_EXPORT MediaWebContentsObserver
   void RequestFullScreen(bool enable, const MediaPlayerId& player_id);
   void RequestDownloadUrl(const MediaPlayerId& player_id);
   void HidePlaybackSpeedList(const MediaPlayerId& player_id);
+  void SetVolume(double volume, const MediaPlayerId& player_id);
+  double GetVolume(const MediaPlayerId& player_id);
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_PIP)
@@ -311,6 +313,7 @@ class CONTENT_EXPORT MediaWebContentsObserver
     void VideoSizeChangedOverlay(int32_t width, int32_t height) override;
     void FullscreenOverlayChanged(
         bool fullscreen_overlay, const std::string& decoder_name) override;
+    void OnVolumeChanged(double volume) override;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_PIP)

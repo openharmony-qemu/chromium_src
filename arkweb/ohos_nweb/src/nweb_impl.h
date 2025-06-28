@@ -981,13 +981,13 @@ class NWebImpl : public NWeb {
                     int frame_routing_id,
                     int event) override;
 #endif
-
-#ifdef ARKWEB_BLANK_OPTIMIZE
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessLoadingKey(const std::string& key) override;
   void SetPrivacyStatus(bool isPrivate) override;
   int32_t GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) override;
-  int32_t SetBlanklessLoadingWithKey(const std::string& key) override;
-  bool TriggerBlanklessForUrl(const std::string& url) override;
-  void SetVisibility(bool isVisible) override;
+  int32_t SetBlanklessLoadingWithKey(const std::string& key, bool isStart) override;
+  int64_t GetPreferenceHash();
+  static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
 #endif
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
@@ -1070,7 +1070,12 @@ class NWebImpl : public NWeb {
   int32_t GetVisibleViewportAvoidHeight() override;
 #endif
 
-#ifdef ARKWEB_BLANK_OPTIMIZE
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void ClearBlanklessKey();
+  void CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file);
+  // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
+  std::atomic<uint64_t> blankless_key_ = UINT64_MAX;
+  std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
 #endif
 };

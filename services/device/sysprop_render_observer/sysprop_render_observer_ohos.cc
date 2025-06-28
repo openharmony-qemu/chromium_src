@@ -16,6 +16,7 @@
 #include <memory>
 
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/task/single_thread_task_runner.h"
 #include "sysprop_render_observer.h"
@@ -61,7 +62,7 @@ class SysPropTraceEventCallback : public OHOS::NWeb::SystemPropertiesObserver {
    void PropertiesUpdate(const char* value) override;
 
  private:
-   SysPropRenderObserverOhosImpl* impl_;
+   raw_ptr<SysPropRenderObserverOhosImpl> impl_;
 };
 
 class SysPropDumpEventCallback : public OHOS::NWeb::SystemPropertiesObserver {
@@ -73,7 +74,7 @@ class SysPropDumpEventCallback : public OHOS::NWeb::SystemPropertiesObserver {
    void PropertiesUpdate(const char* value) override;
 
  private:
-  SysPropRenderObserverOhosImpl* impl_;
+  raw_ptr<SysPropRenderObserverOhosImpl> impl_;
 };
 
 class SysPropRenderObserverOhosImpl
@@ -115,7 +116,7 @@ class SysPropRenderObserverOhosImpl
 
   std::unique_ptr<SysPropDumpEventCallback> dump_callback_;
 
-  SysPropRenderObserverOhos* owner_;
+  raw_ptrSysPropRenderObserverOhos> owner_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
 };
 }

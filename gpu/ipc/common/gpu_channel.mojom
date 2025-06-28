@@ -279,6 +279,9 @@ interface GpuChannel {
   CopyNativeGmbToSharedMemoryAsync(gfx.mojom.GpuMemoryBufferHandle
       buffer_handle, mojo_base.mojom.UnsafeSharedMemoryRegion shared_memory)
                      => (bool success);
+
+  [EnableIf=arkweb_blank_optimize]
+  SetBlanklessDumpInfo(uint32 nweb_id, uint64 blankless_key, uint64 frame_sink_id, int32 lcp_time, int64 pref_hash);
 };
 
 // Interface used to issue commands to a specific CommandBuffer instance in the

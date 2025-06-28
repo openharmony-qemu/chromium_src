@@ -15,6 +15,11 @@
 
 #include "ohos_nweb/src/cef_delegate/nweb_preference_delegate.h"
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include <sstream>
+#include <iostream>
+#endif
+
 #include "arkweb/build/features/features.h"
 #include "base/logging.h"
 #if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
@@ -82,6 +87,11 @@ void NWebPreferenceDelegate::WebPreferencesChanged() {
     // LOG(DEBUG) << "update web preferences failed, browser is null";
     return;
   }
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  pref_hash_cached_ = false;
+  pref_hash_ = 0;
+#endif
 
   CefBrowserSettings browser_settings;
   ComputeBrowserSettings(browser_settings);
@@ -1163,6 +1173,48 @@ void NWebPreferenceDelegate::PutWebMediaAVSessionEnabled(bool enable) {
 void NWebPreferenceDelegate::PutErrorPageEnabled(bool enable) {
   error_page_enabled_ = enable;
   WebPreferencesChanged();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+int64_t NWebPreferenceDelegate::GetPreferenceHash()
+{
+  if (pref_hash_cached_) {
+    LOG(DEBUG) << "NWebPreferenceDelegate::GetPreferenceHash() using cache. hash = " << pref_hash_;
+    return pref_hash_;
+  }
+  pref_hash_cached_ = true;
+
+  std::ostringstream str;
+  str << UserAgent() << ", "
+    << CursiveFontFamilyName() << ", "
+    << FantasyFontFamilyName() << ", "
+    << FixedFontFamilyName() << ", "
+    << SansSerifFontFamilyName() << ", "
+    << SerifFontFamilyName() << ", "
+    << StandardFontFamilyName() << ", "
+    << DefaultFixedFontSize() << ", "
+    << DefaultFontSize() << ", "
+    << ForceDarkModeEnabled() << ", "
+    << FontSizeLowerLimit() << ", "
+    << LogicalFontSizeLowerLimit() << ", "
+    << IsLoadWithOverviewMode() << ", "
+    << DarkSchemeEnabled() << ", "
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    << IsHorizontalScrollBarAccess() << ", "
+    << IsVerticalScrollBarAccess() << ", "
+    << GetOverscrollMode() << ", "
+    << GetScrollable() << ", "
+#endif
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    << GetNativeEmbedMode() << ", "
+#endif
+    << GetScrollBarColor();
+  pref_hash_ = std::hash<std::string>{}(str.str());
+
+  LOG(DEBUG) << "NWebPreferenceDelegate::GetPreferenceHash() hash = " << pref_hash_;
+
+  return pref_hash_;
 }
 #endif
 }  // namespace OHOS::NWeb

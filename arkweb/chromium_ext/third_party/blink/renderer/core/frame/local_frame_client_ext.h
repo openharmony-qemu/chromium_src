@@ -47,6 +47,9 @@ public:
 #if BUILDFLAG(ARKWEB_JSPROXY)
   virtual void RunScriptsAtHeadElementAvailable() = 0;
 #endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  virtual void NotifyLcpForBlankless() {}
+#endif
 };
 }
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_LOCAL_FRAME_CLIENT_EXT_H_

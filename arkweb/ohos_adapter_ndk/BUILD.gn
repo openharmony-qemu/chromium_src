@@ -138,6 +138,7 @@ component("adapter_ndk") {
     "hiviewdfx_adapter/hitrace_adapter_impl.cpp",
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.h",
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.cpp",
+    "distributeddatamgr_adapter/ohos_web_snapshot_data_base.cpp",
   ]
 
   include_dirs = [

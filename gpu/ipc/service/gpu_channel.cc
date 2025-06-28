@@ -273,6 +273,14 @@ class GPU_IPC_SERVICE_EXPORT GpuChannelMessageFilter
   }
 #endif  // BUILDFLAG(IS_FUCHSIA)
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessDumpInfo(uint32_t nweb_id,
+                            uint64_t key,
+                            uint64_t frame_sink_id,
+                            int32_t lcp_time,
+                            int64_t pref_hash) override;
+#endif
+
   // Map of route id to scheduler sequence id.
   base::flat_map<int32_t, SequenceId> route_sequences_;
   mutable base::Lock gpu_channel_lock_;

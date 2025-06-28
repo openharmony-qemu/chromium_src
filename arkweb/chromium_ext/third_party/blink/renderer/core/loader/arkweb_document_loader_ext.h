@@ -137,6 +137,10 @@ class CORE_EXPORT ArkWebDocumentLoaderExt : public DocumentLoader {
   scoped_refptr<const SharedBuffer> OnGetImageFromCache(const WTF::String& url);
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void NotifyLcpForBlankless();
+#endif
+
  protected:
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   void UpdateAllowPreloadRecord();

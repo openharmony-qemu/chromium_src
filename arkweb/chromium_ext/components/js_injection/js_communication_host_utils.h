@@ -51,7 +51,7 @@ class JsCommunicationHost;
 class JsCommunicationHostUtils {
   public:
     JsCommunicationHostUtils(JsCommunicationHost* js_communication_host);
-    JsCommunicationHost* js_communication_host_;
+    raw_ptr<JsCommunicationHost> js_communication_host_;
 
 #if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
   // Native side AddDocumentEndJavaScript, returns an error message if the

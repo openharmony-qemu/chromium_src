@@ -112,6 +112,8 @@ namespace blink {
   void ErrorOverlay(int32_t error_code, const String& error_msg);
   void VideoSizeChangedOverlay(int32_t width, int32_t height);
   bool IsRTL() const;
+  void SetVolume(double volume);
+  void OnVolumeChanged(double volume);
 #endif
   void DidPlayerMutedStatusChangeExt(bool muted);
  };

@@ -639,6 +639,8 @@ class NWebDelegateInterface
   virtual void EnableVideoAssistant(bool enable) = 0;
   virtual void ExecuteVideoAssistantFunction(const std::string& cmd_id) = 0;
   virtual void CustomWebMediaPlayer(bool enable) = 0;
+  virtual void WebMediaPlayerControllerSetVolume(double volume) = 0;
+  virtual double WebMediaPlayerControllerGetVolume() = 0;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_MENU)

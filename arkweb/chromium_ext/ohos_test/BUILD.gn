@@ -267,39 +267,19 @@ fuzzer_test("mmi_new_adapter_impl_fuzzer") {
   ]
 }
 
-fuzzer_test("mmi_new_adapter_impl_fuzzer") {
-  sources = [ "fuzztest/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl_fuzzer.cc" ]
+fuzzer_test("arkweb_child_process_launcher_helper_utils_fuzzer") {
+  sources = [ "fuzztest/content/browser/arkweb_child_process_launcher_helper_utils_fuzzer.cc" ]
   include_dirs = [
     "//cef",
     "//cef/include",
     "//ohos_nweb/include",
-    "//arkweb/ohos_adapter_ndk/multimodalinputnew_adapter",
-    "//third_party/ohos_ndk/includes/ohos_adapter",
   ]
   deps = [
     "//cef:libcef_static",
     "//ohos_nweb:nweb_sources",
     "//third_party/googletest:gtest",
     "//third_party/googletest:gmock",
-    "//arkweb/ohos_adapter_ndk:adapter_ndk",
-  ]
-}
-
-fuzzer_test("mmi_new_adapter_impl_fuzzer") {
-  sources = [ "fuzztest/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl_fuzzer.cc" ]
-  include_dirs = [
-    "//cef",
-    "//cef/include",
-    "//ohos_nweb/include",
-    "//arkweb/ohos_adapter_ndk/multimodalinputnew_adapter",
-    "//third_party/ohos_ndk/includes/ohos_adapter",
-  ]
-  deps = [
-    "//cef:libcef_static",
-    "//ohos_nweb:nweb_sources",
-    "//third_party/googletest:gtest",
-    "//third_party/googletest:gmock",
-    "//arkweb/ohos_adapter_ndk:adapter_ndk",
+    "//content/test:test_support",
   ]
 }
 

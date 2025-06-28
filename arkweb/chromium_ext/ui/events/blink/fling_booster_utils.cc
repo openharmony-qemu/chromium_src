@@ -24,6 +24,9 @@
 #include "base/system/sys_info.h"
 #include "base/ohos/sys_info_utils_ext.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/ohos/ltpo/include/sliding_observer.h"
+#endif
 #endif
 
 namespace ui {
@@ -31,6 +34,9 @@ constexpr int kStartVelocityThreshold = 1500;
 
 #if BUILDFLAG(ARKWEB_FLING)
 constexpr float kMaxBoostFlingSpeed = 9000;
+#if BUILDFLAG(ARKWEB_PDF)
+constexpr float kMaxBoostFlingSpeedPdf = 5000;
+#endif
 #endif // BUILDFLAG(ARKWEB_FLING)
 
 #if BUILDFLAG(ARKWEB_FLING)
@@ -51,6 +57,26 @@ void LimitVelocity(gfx::Vector2dF &velocity)
     velocity.set_x(vx);
     velocity.set_y(vy);
     TRACE_EVENT2("input", "Fling Boosted", "vx", velocity.x(), "vy", velocity.y());
+#if BUILDFLAG(ARKWEB_PDF)
+  } else {
+    bool is_pdf = base::ohos::SlidingObserver::GetInstance().IsPdf();
+    if (is_pdf) {
+      float vx = velocity.x();
+      float vy = velocity.y();
+      if (vx > kMaxBoostFlingSpeedPdf) {
+        vx = kMaxBoostFlingSpeedPdf;
+      } else if (vx < -kMaxBoostFlingSpeedPdf) {
+        vx = -kMaxBoostFlingSpeedPdf;
+      }
+      if (vy > kMaxBoostFlingSpeedPdf) {
+        vy = kMaxBoostFlingSpeedPdf;
+      } else if (vy < -kMaxBoostFlingSpeedPdf) {
+        vy = -kMaxBoostFlingSpeedPdf;
+      }
+      velocity.set_x(vx);
+      velocity.set_y(vy);
+    }
+#endif
   }
 }
 

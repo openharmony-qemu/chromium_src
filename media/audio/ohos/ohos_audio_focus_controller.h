@@ -14,8 +14,6 @@ public:
 
   static bool IsActive(const AudioParameters& parameters);
 
-  static void OneShotMediaPlayerStopped(const AudioParameters& parameters);
-
   static bool GetAudioExclusive(const AudioParameters& parameters);
 
   // AudioRendererCallback mediaSession State

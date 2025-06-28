@@ -105,18 +105,6 @@ bool OHOSAudioFocusController::CheckActiveOnUIThread(const AudioParameters& para
   return mediaSession->IsActive();
 }
 
-void OHOSAudioFocusController::OneShotMediaPlayerStopped(const AudioParameters& parameters) {
-  content::RenderFrameHost* renderFrameHost =
-      content::RenderFrameHost::FromID(parameters.render_process_id(),
-                                       parameters.render_frame_id());
-  auto webContent = content::WebContents::FromRenderFrameHost(renderFrameHost);
-  if (!webContent) {
-    LOG(ERROR) << "OneShotMediaPlayerStopped OnSuspend get webContent failed.";
-    return;
-  }
-  webContent->OneShotMediaPlayerStopped();
-}
-
 bool OHOSAudioFocusController::GetAudioExclusive(const AudioParameters& parameters) {
   if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     return CheckGetAudioExclusiveUIThread(parameters);

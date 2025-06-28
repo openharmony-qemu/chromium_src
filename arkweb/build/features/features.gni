@@ -84,7 +84,9 @@ declare_args() {
   arkweb_media = true
   arkweb_media_avsession = true
   arkweb_media_capabilities_enhance = true
+  arkweb_media_dmabuf = true
   arkweb_media_mute_audio = true
+  arkweb_media_memory_pressure = false
   arkweb_media_network_traffic_prompt = false
   arkweb_media_per = true
   arkweb_media_policy = true

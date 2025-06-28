@@ -71,6 +71,22 @@ void MojoRendererService::PipEnable(bool enable) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void MojoRendererService::RecycleDmaBuffer() {
+  if (renderer_) {
+    LOG(INFO) << "DMABUF::MojoRendererService, RecycleDmaBuffer";
+    renderer_->RecycleDmaBuffer();
+  }
+}
+
+void MojoRendererService::ResumeDmaBuffer() {
+  if (renderer_) {
+    LOG(INFO) << "DMABUF::MojoRendererService, ResumeDmaBuffer";
+    renderer_->ResumeDmaBuffer();
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
+
 #if BUILDFLAG(ARKWEB_MEDIA)
 void MojoRendererService::SetNativeWindowSurface(int32_t native_window_id) {
   renderer_->SetNativeWindowSurface(native_window_id);

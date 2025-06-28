@@ -22,4 +22,20 @@ void MojoVideoDecoderService::PipEnable(bool enable) {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void MojoVideoDecoderService::RecycleDmaBuffer() {
+  if (decoder_) {
+    LOG(INFO) << "DMABUF::MojoVideoDecoderService, RecycleDmaBuffer";
+    decoder_->RecycleDmaBuffer();
+  }
+}
+
+void MojoVideoDecoderService::ResumeDmaBuffer() {
+  if (decoder_) {
+    LOG(INFO) << "DMABUF::MojoVideoDecoderService, ResumeDmaBuffer";
+    decoder_->ResumeDmaBuffer();
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
 }

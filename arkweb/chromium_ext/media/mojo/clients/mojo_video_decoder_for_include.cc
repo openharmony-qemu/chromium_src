@@ -23,4 +23,24 @@ void MojoVideoDecoder::PipEnable(bool enable) {
   remote_decoder_->PipEnable(enable);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void MojoVideoDecoder::RecycleDmaBuffer() {
+  if (has_connection_error_) {
+    return;
+  }
+  if (remote_decoder_) {
+    remote_decoder_->RecycleDmaBuffer();
+  }
+}
+
+void MojoVideoDecoder::ResumeDmaBuffer() {
+  if (has_connection_error_) {
+    return;
+  }
+  if (remote_decoder_) {
+    remote_decoder_->ResumeDmaBuffer();
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
 }

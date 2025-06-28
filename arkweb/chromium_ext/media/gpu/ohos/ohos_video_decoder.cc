@@ -783,4 +783,20 @@ void OhosVideoDecoder::PipEnable(bool enable) {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void OhosVideoDecoder::RecycleDmaBuffer() {
+  if (codec_) {
+    LOG(INFO) << "DMABUF::OhosVideoDecoder, RecycleDmaBuffer";
+    codec_->RecycleDmaBuffer();
+  }
+}
+
+void OhosVideoDecoder::ResumeDmaBuffer() {
+  if (codec_) {
+    LOG(INFO) << "DMABUF::OhosVideoDecoder, ResumeDmaBuffer";
+    codec_->ResumeDmaBuffer();
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
 }  // namespace media

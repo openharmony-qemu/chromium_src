@@ -278,6 +278,10 @@ class MEDIA_EXPORT Pipeline {
 #if BUILDFLAG(ARKWEB_PIP)
   virtual void PipEnable(bool enable) {}
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  virtual void RecycleDmaBuffer() {}
+  virtual void ResumeDmaBuffer() {}
+#endif  // ARKWEB_MEDIA_DMABUF
 };
 
 }  // namespace media

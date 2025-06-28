@@ -95,6 +95,10 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable) override;
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() override;
+  void ResumeDmaBuffer() override;
+#endif  // ARKWEB_MEDIA_DMABUF
  private:
   // mojom::RendererClient implementation, dispatched on the |task_runner_|.
   void OnTimeUpdate(base::TimeDelta time,

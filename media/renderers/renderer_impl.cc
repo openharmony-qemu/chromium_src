@@ -1012,6 +1012,9 @@ void RendererImpl::OnSelectedVideoTracksChanged(
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   TRACE_EVENT0("media", "RendererImpl::OnSelectedVideoTracksChanged");
 
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  LOG(INFO) << "DMABUF::RendererImpl::OnSelectedVideoTracksChanged";
+#endif
   DCHECK_LT(enabled_tracks.size(), 2u);
   DemuxerStream* stream = enabled_tracks.empty() ? nullptr : enabled_tracks[0];
 

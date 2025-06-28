@@ -105,6 +105,10 @@ class MEDIA_EXPORT VideoRendererImpl
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable) override;
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() override;
+  void ResumeDmaBuffer() override;
+#endif  // ARKWEB_MEDIA_DMABUF
  private:
   // Callback for |video_decoder_stream_| initialization.
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)

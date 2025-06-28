@@ -433,4 +433,53 @@ void HTMLMediaElement::PipEnable(bool enable) {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void HTMLMediaElement::OnDmaBufferSeekTo(base::TimeDelta dmabuf_pause_time) {
+  double time = dmabuf_pause_time.InSecondsF();
+  LOG(INFO) << "DMABUF::" << __func__ << "(" << *this << "),  time=" << time;
+  Seek(time);
+}
+
+void HTMLMediaElement::RecycleDmaBuffer() {
+  if (GetWebMediaPlayer()) {
+    LOG(INFO) << "DMABUF::" << __func__ << "(" << *this << ")";
+    GetWebMediaPlayer()->RecycleDmaBuffer();
+  }
+}
+
+void HTMLMediaElement::ResumeDmaBuffer() {
+  if (GetWebMediaPlayer()) {
+    LOG(INFO) << "DMABUF::" << __func__ << "(" << *this << ")";
+    GetWebMediaPlayer()->ResumeDmaBuffer();
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
+
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+void HTMLMediaElement::NotifyMemoryLevel(int32_t level) {
+  LOG(INFO) << "DMABUF::" << __func__ << "(" << *this << "),  level=" << level;
+  switch (level) {
+    case 0:
+      memory_pressure_level_ = base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE;
+      break;
+    case 1:
+      memory_pressure_level_ = base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_MODERATE;
+      break;
+    case 2:
+      memory_pressure_level_ = base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL;
+      break;
+    default:
+      LOG(WARNING) << "DMABUF::" << __func__ << ": Unknown memory level " << level;
+      memory_pressure_level_ = base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE;
+      break;
+  }
+  if (GetWebMediaPlayer()) {
+    GetWebMediaPlayer()->NotifyMemoryLevel(memory_pressure_level_);
+  }
+  if (memory_pressure_level_ >= base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_MODERATE) {
+    RecycleDmaBuffer();
+  }
+}
+#endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
 }  // namespace blink

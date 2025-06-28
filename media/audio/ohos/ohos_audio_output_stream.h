@@ -134,8 +134,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   void Prepare(const AudioParameters& parameters);
 
-  void SuspendOtherMediaSession(
-    base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
+  void SuspendOtherMediaSession();
 
   void GetMediaSessionFromWebContent();
 

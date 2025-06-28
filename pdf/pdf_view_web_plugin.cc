@@ -2243,6 +2243,12 @@ void PdfViewWebPlugin::UpdateLayerTransform(float scale,
   UpdateScaledValues();
 }
 
+#if BUILDFLAG(ARKWEB_PDF)
+gfx::Rect PdfViewWebPlugin::GetAvailableArea() {
+  return available_area_;
+}
+#endif
+
 void PdfViewWebPlugin::EnableAccessibility() {
   if (accessibility_state_ == AccessibilityState::kLoaded)
     return;

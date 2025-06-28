@@ -12,6 +12,9 @@
 #include "pdf/paint_aggregator.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "ui/gfx/geometry/size.h"
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/threading/thread.h"
+#endif
 
 class SkImage;
 class SkSurface;
@@ -140,8 +143,12 @@ class PaintManager {
   // to the message loop via ExecuteOnMainThread.
   void EnsureCallbackPending();
 
+#if BUILDFLAG(ARKWEB_PDF)
+  void DoPaint(bool is_repainting);
+#else
   // Does the client paint and executes a Flush if necessary.
   void DoPaint();
+#endif
 
   // Executes a Flush.
   void Flush();
@@ -183,6 +190,11 @@ class PaintManager {
 
   // True when the view size just changed and we're waiting for a paint.
   bool view_size_changed_waiting_for_paint_ = false;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  scoped_refptr<base::SingleThreadTaskRunner> main_thread_task_runner_;
+  PaintAggregator::PaintUpdate last_update_rect;
+#endif
 
   base::WeakPtrFactory<PaintManager> weak_factory_{this};
 };

@@ -11,6 +11,7 @@ import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
 if (is_arkweb) {
   import("//arkweb/build/features/features.gni")
+  import("//arkweb/chromium_ext/chromium_ext.gni")
 }
 
 import("//third_party/inspector_protocol/inspector_protocol.gni")
@@ -329,6 +330,11 @@ viz_component("common") {
     ]
 
     deps += [ "//ui/base" ]
+  }
+
+  if (is_arkweb) {
+    sources += arkweb_components_viz_common_frame_sinks_copy_output_result_sources
+    deps += arkweb_components_viz_common_frame_sinks_copy_output_result_deps
   }
 
   if (is_android) {

@@ -50,6 +50,8 @@
 #include "media/gpu/chromeos/vulkan_overlay_adaptor.h"
 #endif
 
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_utils.h"
+
 namespace gfx {
 namespace mojom {
 class DelegatedInkPointRenderer;
@@ -87,6 +89,7 @@ class AsyncReadResultLock;
 class ImageContextImpl;
 class SkiaOutputSurfaceDependency;
 class VulkanContextProvider;
+class SkiaOutputSurfaceImplOnGpuUtils;
 
 namespace copy_output {
 struct RenderPassGeometry;
@@ -97,6 +100,7 @@ struct RenderPassGeometry;
 class SkiaOutputSurfaceImplOnGpu
     : public gpu::SharedContextState::ContextLostObserver {
  public:
+  friend class SkiaOutputSurfaceImplOnGpuUtils;
   using DidSwapBufferCompleteCallback =
       base::RepeatingCallback<void(gpu::SwapBuffersCompleteParams,
                                    const gfx::Size& pixel_size,
@@ -309,6 +313,10 @@ class SkiaOutputSurfaceImplOnGpu
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
   void SetBypassVsyncCondition(int32_t condition);
 #endif
+
+  std::shared_ptr<SkiaOutputSurfaceImplOnGpuUtils> impl_utils() {
+    return impl_utils_;
+  }
 
  private:
   struct MailboxAccessData {
@@ -626,6 +634,7 @@ class SkiaOutputSurfaceImplOnGpu
 
   base::WeakPtr<SkiaOutputSurfaceImplOnGpu> weak_ptr_;
   base::WeakPtrFactory<SkiaOutputSurfaceImplOnGpu> weak_ptr_factory_{this};
+  std::shared_ptr<SkiaOutputSurfaceImplOnGpuUtils> impl_utils_ = nullptr;
 };
 
 }  // namespace viz

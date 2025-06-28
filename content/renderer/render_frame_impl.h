@@ -141,6 +141,10 @@
 #include "arkweb/chromium_ext/content/renderer/ark_web_render_frame_impl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#endif
+
 namespace blink {
 namespace scheduler {
 class WebAgentGroupScheduler;
@@ -893,6 +897,14 @@ class CONTENT_EXPORT RenderFrameImpl
                       int32_t object_id,
                       base::Value::List async_method_list,
                       bool need_update) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void NotifyLcpForBlankless() override;
+  void SendBlanklessKeyToRenderFrame(uint32_t nweb_id,
+                                     uint64_t blankless_key,
+                                     uint64_t frame_sink_id,
+                                     int64_t pref_hash) override;
 #endif
  protected:
   explicit RenderFrameImpl(CreateParams params);
@@ -1726,6 +1738,13 @@ class CONTENT_EXPORT RenderFrameImpl
   base::WeakPtrFactory<RenderFrameImpl> weak_factory_{this};
 
   RenderFrameImplUtils* implUtils;
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  uint32_t nweb_id_ = 0;
+  uint64_t blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
+  uint64_t frame_sink_id_ = 0;
+  int64_t pref_hash_ = 0;
+#endif
 };
 
 }  // namespace content

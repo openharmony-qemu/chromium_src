@@ -32,6 +32,14 @@
 #include "gpu/config/gpu_finch_features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#include "arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_request_utils.h"
+#include "arkweb/chromium_ext/components/viz/service/display/frame_snapshot_copy_output_request.h"
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_channel_ext.h"
+#include "gpu/ipc/service/gpu_channel.h"
+#endif
+
 namespace viz {
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
@@ -108,6 +116,9 @@ constexpr base::TimeDelta reset_state_delay = base::Milliseconds(600);
 constexpr base::TimeDelta reenable_draw_delay = base::Milliseconds(3000);
 #endif  // ARKWEB_MAXIMIZE_RESIZE
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+const int kRectNumthreshold = 5;
+#endif
 }  // namespace
 
 ArkwebDisplayUtils::ArkwebDisplayUtils(Display* display) : display_(display) {
@@ -326,4 +337,67 @@ void ArkwebDisplayUtils::DrawAndSwap(AggregatedRenderPass& last_render_pass,
               << last_render_pass.output_rect.ToString();
   }
 }
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void ArkwebDisplayUtils::removeDeplicatesRect(std::vector<gfx::Rect>& quad_list) {
+  if (quea_list.empty()) {
+    LOG(ERROR) << "blankless removeDeplicatesRect, quad_list is empty.";
+    return;
+  }
+  for (int i = 0; i < quad_list.size() - 1; i++) {
+     auto iter = std::remove(quad_list.begin() + i + 1, quad_list.end(), quad_list[i]);
+     quad_list.erase(iter, quad_list.end());
+  }
+}
+
+void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
+  if (!gpu_channel_manager_) {
+    LOG(ERROR) << "blankless DumpSnapshotForBlankLess, gpu_channel_manager_ is nullptr";
+    return;
+  }
+  gpu::GpuChannel* gpu_channel = gpu_channel_manager_->LookupChannel(client_id_);
+  if (!gpu_channel) {
+    LOG(DEBUG) << "blankless DumpSnapshotForBlankLess, dump is disable now";
+    return;
+  }
+
+  uint64_t id = display_->frame_sink_id_.hash();
+  base::ohos::BlanklessDumpInfo info;
+  if (!gpu_channel->AsGpuChannelExt() ||
+      !gpu_channel->AsGpuChannelExt()->GetBlanklessDumpInfoAndDisableDump(id, info) ||
+      !info.dump_enabled) {
+    LOG(DEBUG) << "blankless dump disable";
+    return;
+  }
+  LOG(DEBUG) << "blankless create FrameSnapshotCopyOutputRequest";
+  auto snapshot_request = std::make_unique<FrameSnapshotCopyOutputRequest>();
+  snapshot_request->copy_output_request_utils()->SetBlanklessKey(info.blankless_key);
+  snapshot_request->copy_output_request_utils()->SetLcpTime(info.lcp_time);
+  snapshot_request->copy_output_request_utils()->SetPreferenceHash(info.pref_hash);
+  auto& root_render_pass = frame.render_pass_list.back();
+  if (!root_render_pass) {
+    LOG(ERROR) << "blankless no root render pass";
+    return;
+  }
+  QuadList* quad_list = &root_render_pass->quad_list;
+  std::vector<gfx::Rect> draw_quad_list;
+  for (auto it = quad_list->begin(); it != quad_list->end(); ++it) {
+    gfx::Rect rect = it->rect;
+    draw_quad_list.push_back(rect);
+  }
+  removeDeplicatesRect(draw_quad_list);
+  if (draw_quad_list.size() >= kRectNumthreshold) {
+    snapshot_request->copy_output_request_utils()->SetQuadList(draw_quad_list);
+    root_render_pass->copy_requests.push_back(std::move(snapshot_request));
+  }
+}
+
+void ArkwebDisplayUtils::SetClientId(const uint32_t client_id) {
+  client_id_ = client_id;
+}
+
+void ArkwebDisplayUtils::SetGpuChannelManager(gpu::GpuChannelManager* gpu_channel_manager) {
+  gpu_channel_manager_ = gpu_channel_manager;
+}
+#endif
 }  // namespace viz

@@ -25,6 +25,10 @@
 #include "third_party/blink/public/web/web_navigation_control.h"
 #include "third_party/blink/public/web/web_view.h"
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "third_party/blink/public/web/web_performance_metrics_for_reporting.h"
+#endif
+
 namespace content {
 
 std::optional<blink::WebString> ArkWebUserAgentOverride(
@@ -146,4 +150,30 @@ void RenderFrameImpl::SendCommitNavigationTime(int64_t start_time) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void RenderFrameImpl::NotifyLcpForBlankless() {
+  if (blankless_key_ == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
+    return;
+  }
+  if (RenderThreadImpl* render_thread = RenderThreadImpl::current()) {
+    const blink::WebPerformanceMetricsForReporting& perf = GetWebFrame()->PerformanceMetricsForReporting();
+    double start = perf.NavigationStart();
+    blink::LargestContentfulPaintDetailsForReporting lcp_details = perf.LargestContentfulDetailsForMetrics();
+    double ms = (std::max(lcp_details.image_paint_time, lcp_details.text_paint_time) - start) * 1000;
+    int32_t lcp_time = ms > INT32_MAX ? INT32_MAX : static_cast<int32_t>(ms);
+    render_thread->SetBlanklessDumpInfo(nweb_id_, blankless_key_, frame_sink_id_, lcp_time, pref_hash_);
+  }
+}
+
+void RenderFrameImpl::SendBlanklessKeyToRenderFrame(uint32_t nweb_id,
+                                                    uint64_t blankless_key,
+                                                    uint64_t frame_sink_id,
+                                                    int64_t pref_hash)
+{
+  nweb_id_ = nweb_id;
+  blankless_key_ = blankless_key;
+  frame_sink_id_ = frame_sink_id;
+  pref_hash_ = pref_hash;
+}
+#endif
 }  // namespace content

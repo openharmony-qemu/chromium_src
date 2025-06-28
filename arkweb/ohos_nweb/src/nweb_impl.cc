@@ -274,6 +274,9 @@ OnReportStatisticLogFunc
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 
+#include "capi/nweb_logger_report_event_callback.h"
+#include "base/ohos/nweb_engine_event_logger.h"
+
 #include "cef/include/cef_app.h"
 namespace {
 uint32_t g_nweb_count = 0;
@@ -325,6 +328,8 @@ const int32_t WEB_RESIZE_CLOSE_DELAY_TIME = 500;
 // Benchmarking against Windows, the average drag-over interval is 65 milliseconds.
 constexpr base::TimeDelta DRAG_OVER_INTERVAL = base::Milliseconds(65);
 #endif
+
+bool g_logger_callback_initialized = false;
 
 bool GetWebOptimizationValue() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -638,6 +643,8 @@ namespace OHOS::NWeb {
 
 bool NWebImpl::disableWebActivePolicy_ = false;
 
+void* NWebImpl::logger_report_event_callback_ = nullptr;
+
 // static
 std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
     std::shared_ptr<NWebCreateInfo> create_info) {
@@ -895,7 +902,29 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
 #endif
 #endif
 
+  if (!g_logger_callback_initialized) {
+    g_logger_callback_initialized = true;
+    base::ohos::SetUploadCallback(UploadCallback);
+  }
+
   return true;
+}
+
+// static
+void NWebImpl::SetLoggerReportEventCallback(void* callback) {
+  logger_report_event_callback_ = callback;
+}
+
+// static
+NO_SANITIZE("cfi") void NWebImpl::UploadCallback(const std::string& module,
+                                                 const std::string& resource,
+                                                 const std::string& errorCode,
+                                                 const std::string& errorMsg) {
+  if (logger_report_event_callback_ == nullptr) {
+    return;
+  }
+  (static_cast<NWebLoggerReportEventCallback *>(logger_report_event_callback_))
+      ->OnUploadCallback(module, resource, errorCode, errorMsg);
 }
 
 void NWebImpl::OnDestroy() {
@@ -3039,6 +3068,26 @@ void NWebImpl::RemoveWebExtensionCallback() {
   nweb_delegate_->UnRegisterWebExtensionListener();
 }
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+void NWebImpl::RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                                     bool recursive, IsolatedWorld world,
+                                     OnReceiveValueCallback callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E(
+        "remove web app client extension callback failed, nweb delegate is "
+        "nullptr, nweb_id = %{public}u",
+        nweb_id_);
+    return;
+  }
+  if (callback == nullptr) {
+    LOG(INFO) << "NWebImpl::RunJavaScriptInFrames callback is nullptr";
+    return;
+  } 
+ 
+  nweb_delegate_->RunJavaScriptInFrames(jsString, rootFrame, recursive, world, callback);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void NWebImpl::PutWebExtensionApiCallback(
     std::shared_ptr<NWebExtensionApiCallback> web_extension_api_listener) {
@@ -3942,11 +3991,32 @@ void NWebImpl::UpdateBrowserControlsHeight(int height, bool animate) {
 }
 #endif
 
+bool NWebImpl::GetIsEditTextType() {
+  auto hitTest = GetLastHitTestResult();
+  if (!hitTest) {
+    return false;
+  }
+
+  if (inputmethod_handler_ == nullptr) {
+    LOG(ERROR) << "inputmethod_handler_ is nullptr.";
+    return false;
+  }
+
+  if (hitTest->GetType() != HitTestResult::EDIT_TEXT_TYPE) {
+    LOG(INFO) << "no hittest edit text, web close keyboard.";
+    return false;
+  }
+  return true;
+}
+
 bool NWebImpl::NeedSoftKeyboard() {
   if (inputmethod_handler_) {
-    return inputmethod_handler_->GetIsEditableNode();
+    if (inputmethod_handler_->GetIsEditableNode()) {
+      return true;
+    } else {
+      return GetIsEditTextType();
+    }
   }
-  return false;
 }
 
 #if BUILDFLAG(ARKWEB_EXT_PERMISSION)
@@ -5119,7 +5189,7 @@ void NWebImpl::getTotalSize(float size) {
 float NWebImpl::DumpGpuInfo() {
   content::GpuProcessHost* host = content::GpuProcessHost::Get();
   host->gpu_service()->DumpGpuInfo(
-      base::BindOnce(&NWebImpl::getTotalSize, base::Unretained(this)));
+      base::BindOnce(&NWebImpl::getTotalSize, weak_factory_.GetWeakPtr()));
   return totalSize_;
 }
 #endif
@@ -5443,7 +5513,7 @@ bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
 }
 
 void NWebImpl::SetVisibility(bool isVisible) {
-
+  is_visible_ = isVisible;
 }
 #endif
 

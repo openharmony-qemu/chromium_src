@@ -15321,6 +15321,10 @@ void RenderFrameHostImpl::SendCommitNavigation(
     const blink::DocumentToken& document_token,
     const base::UnguessableToken& devtools_navigation_token) {
   TRACE_EVENT0("navigation", "RenderFrameHostImpl::SendCommitNavigation");
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  int64_t start_time = RenderFrameImplUtils::GetCurrentTimestampMS();
+  GetMojomFrameInRenderer()->SendCommitNavigationTime(start_time);
+#endif
   if (RenderWidgetHostImpl* rwh = GetLocalRenderWidgetHost()) {
     if (rwh->compositor_metric_recorder()) {
       if (lifecycle_state() == LifecycleStateImpl::kPendingCommit) {

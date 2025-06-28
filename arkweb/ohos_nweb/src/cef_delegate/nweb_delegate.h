@@ -24,6 +24,7 @@
 #include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "capi/nweb_app_client_extension_callback.h"
+#include "capi/nweb_extension_javascript_item.h"
 #include "cef/include/cef_command_line.h"
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 #include "content/browser/accessibility/browser_accessibility_manager_ohos.h"
@@ -51,6 +52,8 @@
 #include "capi/nweb_download_delegate_callback.h"
 #endif  //  ARKWEB_EX_DOWNLOAD
 
+struct FrameInfos;
+struct IsolatedWorld;
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -792,6 +795,12 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   void UpdateSingleHandleVisible(bool isVisible) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                             bool recursive, IsolatedWorld world,
+                             OnReceiveValueCallback callback) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   void SetErrorPageEnabled(bool enable) override;
   bool GetErrorPageEnabled() override;
@@ -918,7 +927,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
       nullptr;
   std::shared_ptr<OHOS::NWeb::DisplayScreenListener> display_listener_ =
       nullptr;
-  int32_t display_listener_id_;
+  int32_t display_listener_id_ = 0;
 #if BUILDFLAG(ARKWEB_AI)
   std::shared_ptr<OHOS::NWeb::FoldStatusScreenListener> foldstatus_listener_ =
       nullptr;
@@ -937,7 +946,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   uint32_t visible_height_ = 0;
 #endif
 
-  uint32_t nweb_id_;
+  uint32_t nweb_id_ = 0;
 
 #if BUILDFLAG(IS_OHOS)
   std::map<std::string, std::shared_ptr<NWebNativeEmbedDataInfo>>

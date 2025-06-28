@@ -127,6 +127,10 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
   // Takes care of the platform dependant bits, of any, for creating the window.
   virtual bool InitializeNativeWindow();
 
+#if BUILDFLAG(ARKWEB_DRDC)
+  static std::string GetGLRenderer();
+#endif
+
  protected:
   ~NativeViewGLSurfaceEGL() override;
 
@@ -187,6 +191,10 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
 
   bool vsync_enabled_ = true;
   std::unique_ptr<GLSurfacePresentationHelper> presentation_helper_;
+
+#if BUILDFLAG(ARKWEB_DRDC)
+  static std::string gpu_version_;
+#endif
 
   raw_ptr<ArkwebGlSurfaceEglUtils> arkweb_surface_utils_;
 

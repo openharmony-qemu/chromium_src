@@ -505,6 +505,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void ExecuteJavaScriptInIsolatedWorld(const std::u16string& javascript,
                                         JavaScriptResultCallback callback,
                                         int32_t world_id) override;
+  bool GetWorldId(const std::string& worldName, int32_t* worldId);
+  void ExecuteJavaScriptInFrames(const std::u16string& javascript,
+                                 bool recursive,
+                                 const std::string& worldName,
+                                 JavaScriptResultCallback callback) override;
   void ExecuteJavaScriptForTests(const std::u16string& javascript,
                                  JavaScriptResultCallback callback,
                                  int32_t world_id) override;
@@ -5391,6 +5396,8 @@ class CONTENT_EXPORT RenderFrameHostImpl
   base::Uuid base_auction_nonce_;
 
   base::OnceClosure on_process_before_unload_completed_for_testing_;
+
+  std::map<std::string, int32_t> isolated_world_;
 
   // WeakPtrFactories are the last members, to ensure they are destroyed before
   // all other fields of `this`.

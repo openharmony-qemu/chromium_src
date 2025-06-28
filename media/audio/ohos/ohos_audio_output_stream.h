@@ -56,7 +56,7 @@ class AudioRendererOptions : public AudioRendererOptionsAdapter {
 
 class AudioRendererCallback : public AudioRendererCallbackAdapter {
  public:
-  AudioRendererCallback(content::MediaSessionImpl* media_session,
+  AudioRendererCallback(const AudioParameters& params,
                         const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
                         base::WeakPtr<OHOSAudioOutputStream> audio_output_stream);
   ~AudioRendererCallback();
@@ -65,7 +65,8 @@ class AudioRendererCallback : public AudioRendererCallbackAdapter {
   int32_t OnWriteDataCallback(void* buffer, int32_t length) override;
 
  private:
-  content::MediaSessionImpl* media_session_;
+  AudioParameters parameters_;
+  int audioResumeInterval_ = 0;
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_ = nullptr;
   time_t intervalSinceLastSuspend_ = 0.0;
   base::WeakPtr<OHOSAudioOutputStream> audio_output_stream_ = nullptr;
@@ -88,8 +89,7 @@ class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
 
 class OHOSAudioOutputStream : public AudioOutputStream {
  public:
-  static std::map<content::WebContents*,
-    std::vector<base::WeakPtr<OHOSAudioOutputStream>>> web_content_map_;
+  static std::map<AudioParameters, std::vector<base::WeakPtr<OHOSAudioOutputStream>>> audioParameterMap_;
 
   OHOSAudioOutputStream(const OHOSAudioOutputStream&) = delete;
   OHOSAudioOutputStream& operator=(const OHOSAudioOutputStream&) = delete;
@@ -132,10 +132,9 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   bool StartRender();
 
-  void Prepare(base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
+  void Prepare(const AudioParameters& parameters);
 
-  void SuspendOtherMediaSession(
-    base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
+  void SuspendOtherMediaSession();
 
   void GetMediaSessionFromWebContent();
 
@@ -161,10 +160,6 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   SampleFormat sample_format_;
 
   std::unique_ptr<AudioRendererAdapter> audio_renderer_;
-
-  content::WebContents* webContent_ = nullptr;
-
-  base::WeakPtr<content::MediaSessionImpl> weakMediaSession_ = nullptr;
 
   std::shared_ptr<AudioRendererCallback> rendererCallback_ = nullptr;
 

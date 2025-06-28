@@ -27,6 +27,9 @@ enum class MediaContentType {
   OneShot,
   // The maximum number of media content types.
   Max = OneShot,
+#if defined(OHOS_MEDIA_POLICY)
+  InValid,
+#endif
 };
 
 // Utility function for deciding the MediaContentType of a player based on its

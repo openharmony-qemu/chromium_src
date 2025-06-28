@@ -20,13 +20,17 @@
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
 
 struct ArkWeb_HttpBodyStream_ : public ArkWebCefPostDataStreamInitCallback,
-                                ArkWebCefPostDataStreamReadCallback {
+                                ArkWebCefPostDataStreamReadCallback,
+                                ArkWebCefPostDataStreamAsyncReadCallback {
   ArkWeb_HttpBodyStream_(const ArkWeb_ResourceRequest* resource_request);
   ~ArkWeb_HttpBodyStream_();
 
   void SetReadCallback(ArkWeb_HttpBodyStreamReadCallback read_callback_in);
+  void SetAsyncReadCallback(
+      ArkWeb_HttpBodyStreamAsyncReadCallback read_async_callback_in);
   void Init(ArkWeb_HttpBodyStreamInitCallback stream_init_callback_in);
   void Read(void* buffer, int64_t buf_len) const;
+  void AsyncRead(void* buffer, int64_t buf_len) const;
   int64_t GetSize() const;
   int64_t GetPosition() const;
   bool IsChunked() const;
@@ -36,10 +40,12 @@ struct ArkWeb_HttpBodyStream_ : public ArkWebCefPostDataStreamInitCallback,
   void* GetUserData() const;
   void OnInitComplete(int rv) override;
   void OnReadComplete(char* buffer, int bytes_read) override;
+  void OnAsyncReadComplete(char* buffer, int bytes_read) override;
   void Reset();
   void SetForEts(bool ets) { is_ets_ = ets; }
 
   ArkWeb_HttpBodyStreamReadCallback read_callback{nullptr};
+  ArkWeb_HttpBodyStreamAsyncReadCallback read_async_callback{nullptr};
   ArkWeb_HttpBodyStreamInitCallback stream_init_callback{nullptr};
   CefRefPtr<ArkWebCefPostDataStream> post_data_stream;
   void* user_data{nullptr};

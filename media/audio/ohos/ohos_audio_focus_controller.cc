@@ -55,56 +55,6 @@ void OHOSAudioFocusController::OnSuspend(const AudioParameters& parameters) {
   mediaSession->Suspend(content::MediaSession::SuspendType::kSystem);
 }
 
-MediaContentType OHOSAudioFocusController::GetMediaContentType(const AudioParameters& parameters) {
-  if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
-    return GetContentTypeOnUIThread(parameters);
-  }
-
-  MediaContentType result;
-  base::WaitableEvent event(base::WaitableEvent::ResetPolicy::AUTOMATIC,
-                            base::WaitableEvent::InitialState::NOT_SIGNALED);
-
-  content::GetUIThreadTaskRunner({})->PostTask(
-      FROM_HERE,
-      base::BindOnce([](const AudioParameters& params,
-                        MediaContentType* out_result,
-                        base::WaitableEvent* out_event) {
-        *out_result = GetContentTypeOnUIThread(params);
-        out_event->Signal();
-      }, parameters, &result, &event));
-
-  event.Wait();
-  return result;
-}
-
-MediaContentType OHOSAudioFocusController::GetContentTypeOnUIThread(const AudioParameters& params) {
-  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
-
-  content::RenderFrameHost* renderFrameHost =
-      content::RenderFrameHost::FromID(params.render_process_id(),
-                                       params.render_frame_id());
-  if (!renderFrameHost) {
-    LOG(ERROR) << "GetContentTypeOnUIThread RenderFrameHost not found for PID: "
-               << params.render_process_id() 
-               << ", FrameID: " << params.render_frame_id();
-    return media::MediaContentType::Invalid;
-  }
-
-  content::WebContents* webContents = content::WebContents::FromRenderFrameHost(renderFrameHost);
-  if (!webContents) {
-    LOG(ERROR) << "GetContentTypeOnUIThread WebContents not associated with RenderFrameHost";
-    return media::MediaContentType::Invalid;
-  }
-
-  content::MediaSessionImpl* mediaSession = content::MediaSessionImpl::Get(webContents);
-  if (!mediaSession) {
-    LOG(ERROR) << "GetContentTypeOnUIThread MediaSession not initialized for WebContents";
-    return media::MediaContentType::Invalid;
-  }
-
-  return mediaSession->getMediaContentType();
-}
-
 bool OHOSAudioFocusController::IsActive(const AudioParameters& parameters) {
   if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     return CheckActiveOnUIThread(parameters);
@@ -203,59 +153,6 @@ bool OHOSAudioFocusController::CheckOneShotPlayersOnUIThread(const AudioParamete
   }
 
   return mediaSession->HasOnlyOneShotPlayersPublic();
-}
-
-content::MediaSessionImpl::NWebMediaSessionState
-    OHOSAudioFocusController::GetSessionState(const AudioParameters& parameters) {
-  if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
-    return CheckGetSessionStateOnUIThread(parameters);
-  }
-
-  content::MediaSessionImpl::NWebMediaSessionState
-      result = content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL;
-  base::WaitableEvent event(base::WaitableEvent::ResetPolicy::AUTOMATIC,
-                            base::WaitableEvent::InitialState::NOT_SIGNALED);
-
-  content::GetUIThreadTaskRunner({})->PostTask(
-      FROM_HERE,
-      base::BindOnce([](const media::AudioParameters& params,
-                        content::MediaSessionImpl::NWebMediaSessionState* out_result,
-                        base::WaitableEvent* out_event) {
-        *out_result = CheckGetSessionStateOnUIThread(params);
-        out_event->Signal();
-      }, parameters, &result, &event));
-
-  event.Wait();
-  return result;    
-}
-
-content::MediaSessionImpl::NWebMediaSessionState
-    OHOSAudioFocusController::CheckGetSessionStateOnUIThread(const AudioParameters& params) {
-  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
-
-  content::RenderFrameHost* renderFrameHost =
-      content::RenderFrameHost::FromID(params.render_process_id(),
-                                       params.render_frame_id());
-  if (!renderFrameHost) {
-    LOG(ERROR) << "CheckGetSessionStateOnUIThread RenderFrameHost not found for PID: "
-               << params.render_process_id() 
-               << ", FrameID: " << params.render_frame_id();
-    return content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL;
-  }
-
-  content::WebContents* webContents = content::WebContents::FromRenderFrameHost(renderFrameHost);
-  if (!webContents) {
-    LOG(INFO) << "CheckGetSessionStateOnUIThread WebContents not found for RenderFrameHost";
-    return content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL;
-  }
-
-  content::MediaSessionImpl* mediaSession = content::MediaSessionImpl::Get(webContents);
-  if (!mediaSession) {
-    LOG(INFO) << "CheckGetSessionStateOnUIThread MediaSession not available for WebContents";
-    return content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL;
-  }
-
-  return mediaSession->GetSessionState();
 }
 
 bool OHOSAudioFocusController::GetPlayingState(const AudioParameters& parameters) {

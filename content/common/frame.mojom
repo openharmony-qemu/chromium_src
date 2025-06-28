@@ -537,6 +537,11 @@ interface Frame {
                         int32 object_id,
                         mojo_base.mojom.ListValue async_method_list,
                         bool need_update);
+
+  // #if BUILDFLAG(ARKWEB_DFX_TRACING)
+  [EnableIf=arkweb_dfx_tracing]
+  SendCommitNavigationTime(int64 start_time);
+  // #endif
 };
 
 // Implemented by the frame (e.g. renderer processes).

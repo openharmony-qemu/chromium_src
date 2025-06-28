@@ -165,6 +165,8 @@ arkweb_ui_touch_selection_sources = [
   "//arkweb/chromium_ext/ui/touch_selection/touch_selection_controller_utils.h",
   "//arkweb/chromium_ext/ui/touch_selection/touch_handle_ext.cc",
   "//arkweb/chromium_ext/ui/touch_selection/touch_handle_ext.h",
+  "//arkweb/chromium_ext/ui/touch_selection/longpress_drag_selector_util.cc",
+  "//arkweb/chromium_ext/ui/touch_selection/longpress_drag_selector_util.h",
 ]
 
 arkweb_ui_native_theme_sources = [

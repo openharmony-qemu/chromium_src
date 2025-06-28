@@ -14,6 +14,7 @@
  */
 
 #include "arkweb/chromium_ext/content/renderer/ark_web_render_frame_impl.h"
+#include "content/child/child_process.h"
 
 #include "arkweb/build/features/features.h"
 #include "content/public/common/content_client.h"
@@ -107,5 +108,42 @@ void RenderFrameImpl::AddNamedObject(const std::string& name,
   }
 }
 #endif  // BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+
+RenderFrameImplUtils::RenderFrameImplUtils(RenderFrameImpl* impl) {
+  this->renderFrameImpl = impl;
+}
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+int64_t RenderFrameImplUtils::GetCurrentTimestampMS() {
+  auto currentTime = std::chrono::system_clock::now().time_since_epoch();
+  return std::chrono::duration_cast<std::chrono::microseconds>(currentTime)
+              .count() /
+          kMicrosecondsPerMillisecond;
+}
+
+void RenderFrameImplUtils::ReportRenderInitBlock() {
+  int64_t initialize_time = GetCurrentTimestampMS();
+  std::string mode = "ReportRenderInitBlock";
+  if (is_complete_initialize) {
+    is_complete_initialize = false;
+    int64_t block_time = initialize_time - commit_navigation_time_;
+    if(ChildProcess::current()) {
+      ChildProcess::current()->ReportHisyevent(block_time, mode);
+    }
+  }
+}
+
+void RenderFrameImplUtils::ChangeCommitNavigationTime(int64_t time) {
+  commit_navigation_time_ = time;
+}
+
+void RenderFrameImplUtils::ChangeCompleteInitialize(bool complete) {
+  is_complete_initialize = complete;
+}
+
+void RenderFrameImpl::SendCommitNavigationTime(int64_t start_time) {
+  implUtils->ChangeCommitNavigationTime(start_time);
+  implUtils->ChangeCompleteInitialize(true);
+}
+#endif
 
 }  // namespace content

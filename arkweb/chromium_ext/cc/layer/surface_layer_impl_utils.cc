@@ -48,7 +48,7 @@ void SurfaceLayerImplUtils::VisbilityChange()
 
 void SurfaceLayerImplUtils::LayerRectUpdate()
 {
-  if (impl->may_contain_video()) {
+  if (impl->may_contain_video() || !impl->layer_impl_utils()->may_contain_native()) {
       return;
   }
   gfx::Transform transform = impl->DrawTransform();

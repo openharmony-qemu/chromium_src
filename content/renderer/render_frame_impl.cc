@@ -1962,6 +1962,7 @@ RenderFrameImpl::RenderFrameImpl(CreateParams params)
                               base::Unretained(this))),
       devtools_frame_token_(params.devtools_frame_token),
       is_for_nested_main_frame_(params.is_for_nested_main_frame) {
+  implUtils = new RenderFrameImplUtils(this);
   TRACE_EVENT_WITH_FLOW0("navigation", "RenderFrameImpl::RenderFrameImpl",
                          TRACE_ID_LOCAL(this), TRACE_EVENT_FLAG_FLOW_OUT);
   DCHECK(RenderThread::IsMainThread());
@@ -2024,6 +2025,7 @@ RenderFrameImpl::~RenderFrameImpl() {
                                             routing_id_
 #endif
   );
+  delete implUtils;
 }
 
 void RenderFrameImpl::Initialize(blink::WebFrame* parent) {
@@ -2067,6 +2069,7 @@ void RenderFrameImpl::Initialize(blink::WebFrame* parent) {
       routing_id_,
 #endif
       this, GetTaskRunner(blink::TaskType::kInternalNavigationAssociated));
+  implUtils->ReportRenderInitBlock();
 }
 
 void RenderFrameImpl::GetInterface(

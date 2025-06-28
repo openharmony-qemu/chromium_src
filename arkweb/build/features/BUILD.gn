@@ -165,7 +165,9 @@ if (!enable_arkweb) {
   arkweb_media = false
   arkweb_media_avsession = false
   arkweb_media_capabilities_enhance = true
+  arkweb_media_dmabuf = false
   arkweb_media_mute_audio = false
+  arkweb_media_memory_pressure = false
   arkweb_media_network_traffic_prompt = false
   arkweb_media_per = false
   arkweb_media_policy = false
@@ -381,7 +383,9 @@ buildflag_header("features") {
     "ARKWEB_MEDIA=$arkweb_media",
     "ARKWEB_MEDIA_AVSESSION=$arkweb_media_avsession",
     "ARKWEB_MEDIA_CAPABILITIES_ENHANCE=$arkweb_media_capabilities_enhance",
+    "ARKWEB_MEDIA_DMABUF=$arkweb_media_dmabuf",
     "ARKWEB_MEDIA_MUTE_AUDIO=$arkweb_media_mute_audio",
+    "ARKWEB_MEDIA_MEMORY_PRESSURE=$arkweb_media_memory_pressure",
     "ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT=$arkweb_media_network_traffic_prompt",
     "ARKWEB_MEDIA_PER=$arkweb_media_per",
     "ARKWEB_MEDIA_POLICY=$arkweb_media_policy",

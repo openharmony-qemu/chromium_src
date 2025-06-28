@@ -149,6 +149,10 @@ class MEDIA_EXPORT PipelineImpl : public Pipeline {
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable) override;
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() override;
+  void ResumeDmaBuffer() override;
+#endif  // ARKWEB_MEDIA_DMABUF
  private:
   friend class MediaLog;
   class RendererWrapper;

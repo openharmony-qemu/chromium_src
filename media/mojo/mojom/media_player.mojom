@@ -142,6 +142,9 @@ interface MediaPlayer {
 
   [EnableIf=arkweb_pip]
   NotifyPipResize();
+
+  [EnableIf=arkweb_media_memory_pressure]
+  NotifyMemoryLevel(int32 level);
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer

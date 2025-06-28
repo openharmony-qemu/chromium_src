@@ -78,6 +78,10 @@ class MEDIA_EXPORT VideoRenderer {
 #if BUILDFLAG(ARKWEB_PIP)
   virtual void PipEnable(bool enable) = 0;
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  virtual void RecycleDmaBuffer() = 0;
+  virtual void ResumeDmaBuffer() = 0;
+#endif  // ARKWEB_MEDIA_DMABUF
 };
 
 }  // namespace media

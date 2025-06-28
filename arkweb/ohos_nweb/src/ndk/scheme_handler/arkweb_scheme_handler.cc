@@ -205,6 +205,18 @@ ARKWEB_EXPORT int32_t OH_ArkWebHttpBodyStream_SetReadCallback(
   return ARKWEB_NET_OK;
 }
 
+ARKWEB_EXPORT int32_t OH_ArkWebHttpBodyStream_SetAsyncReadCallback(
+    ArkWeb_HttpBodyStream* http_body_stream,
+    ArkWeb_HttpBodyStreamAsyncReadCallback readCallback) {
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
+    return ARKWEB_INVALID_PARAM;
+  }
+
+  http_body_stream->SetAsyncReadCallback(readCallback);
+  return ARKWEB_NET_OK;
+}
+
 ARKWEB_EXPORT int32_t
 OH_ArkWebHttpBodyStream_SetUserData(ArkWeb_HttpBodyStream* http_body_stream,
                                     void* user_data) {
@@ -249,6 +261,18 @@ ARKWEB_EXPORT void OH_ArkWebHttpBodyStream_Read(
   }
 
   http_body_stream->Read(buffer, buf_len);
+}
+
+ARKWEB_EXPORT void OH_ArkWebHttpBodyStream_AsyncRead(
+    const ArkWeb_HttpBodyStream* http_body_stream,
+    uint8_t* buffer,
+    int buf_len) {
+  if (!http_body_stream) {
+    LOG(ERROR) << "scheme_handler http body stream is nullptr";
+    return;
+  }
+
+  http_body_stream->AsyncRead(buffer, buf_len);
 }
 
 ARKWEB_EXPORT uint64_t

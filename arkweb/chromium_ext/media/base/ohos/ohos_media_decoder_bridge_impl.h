@@ -130,6 +130,11 @@ class MediaCodecDecoderBridgeImpl {
   DecoderAdapterCode SetVideoSurface(int32_t widget_id);
 #endif // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  DecoderAdapterCode RecycleDmaBuffer();
+  DecoderAdapterCode ResumeDmaBuffer();
+#endif  // ARKWEB_MEDIA_DMABUF
+
  private:
   MediaCodecDecoderBridgeImpl(const std::string codec_type,
                               base::RepeatingClosure on_buffers_available_cb =

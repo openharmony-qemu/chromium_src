@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/task/single_thread_task_runner.h"
 #include "services/device/time_zone_monitor/time_zone_monitor.h"
@@ -46,7 +47,7 @@ class TimezoneEventCallback : public OHOS::NWeb::TimezoneEventCallbackAdapter {
   void TimezoneChanged(std::shared_ptr<WebTimezoneInfo> info) override;
 
  private:
-  TimeZoneMonitorOhosImpl* impl_;
+  raw_ptr<TimeZoneMonitorOhosImpl> impl_;
 };
 
 class TimeZoneMonitorOhosImpl
@@ -112,7 +113,7 @@ class TimeZoneMonitorOhosImpl
 
   std::shared_ptr<TimezoneEventCallbackAdapter> event_callback_;
 
-  TimeZoneMonitorOhos* owner_;
+  raw_ptr<TimeZoneMonitorOhos> owner_;
   bool isListen;
   std::unique_ptr<OHOS::NWeb::DateTimeFormatAdapter> timezoneClient;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;

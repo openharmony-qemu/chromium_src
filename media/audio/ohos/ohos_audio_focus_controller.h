@@ -11,14 +11,10 @@ class OHOSAudioFocusController {
 public:
   // OHOSAudioOutputStream mediaSession State
   static void OnSuspend(const AudioParameters& parameters);
-  
-  static MediaContentType GetMediaContentType(const AudioParameters& parameters);
 
   static bool IsActive(const AudioParameters& parameters);
 
   static bool HasOnlyOneShotPlayersPublic(const AudioParameters& parameters);
-
-  static content::MediaSessionImpl::NWebMediaSessionState GetSessionState(const AudioParameters& parameters);
 
   static bool GetPlayingState(const AudioParameters& parameters);
 
@@ -41,12 +37,7 @@ private:
   // OHOSAudioOutputStream mediaSession State
   static bool CheckActiveOnUIThread(const AudioParameters& params);
 
-  static MediaContentType GetContentTypeOnUIThread(const AudioParameters& params);
-
   static bool CheckOneShotPlayersOnUIThread(const AudioParameters& params);
-
-  static content::MediaSessionImpl::NWebMediaSessionState
-      CheckGetSessionStateOnUIThread(const AudioParameters& params);
 
   static bool CheckGetPlayingStateOnUIThread(const AudioParameters& params);
 

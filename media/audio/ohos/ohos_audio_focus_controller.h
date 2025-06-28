@@ -14,8 +14,6 @@ public:
 
   static bool IsActive(const AudioParameters& parameters);
 
-  static bool GetMediaSession(const AudioParameters& parameters);
-
   static void OneShotMediaPlayerStopped(const AudioParameters& parameters);
 
   static bool GetAudioExclusive(const AudioParameters& parameters);
@@ -30,8 +28,6 @@ public:
 private:
   // OHOSAudioOutputStream mediaSession State
   static bool CheckActiveOnUIThread(const AudioParameters& params);
-
-  static bool CheckGetMediaSessionUIThread(const AudioParameters& params);
 
   static bool CheckGetAudioExclusiveUIThread(const AudioParameters& params);
 

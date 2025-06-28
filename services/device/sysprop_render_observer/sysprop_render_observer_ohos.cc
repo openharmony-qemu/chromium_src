@@ -116,7 +116,7 @@ class SysPropRenderObserverOhosImpl
 
   std::unique_ptr<SysPropDumpEventCallback> dump_callback_;
 
-  raw_ptrSysPropRenderObserverOhos> owner_;
+  raw_ptr<SysPropRenderObserverOhos> owner_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
 };
 }

@@ -35,11 +35,23 @@
 #include "ui/gfx/geometry/skia_conversions.h"
 #include "ui/gfx/geometry/vector2d.h"
 #include "ui/gfx/geometry/vector2d_f.h"
+#if BUILDFLAG(ARKWEB_PDF)
+#include "arkweb/chromium_ext/cc/input/input_handler_utils.h"
+#endif
 
 namespace chrome_pdf {
 
 PaintManager::PaintManager(Client* client) : client_(client) {
   DCHECK(client_);
+#if BUILDFLAG(ARKWEB_PDF)
+  if (!base::ohos::IsPcDevice()) {
+    main_thread_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
+    cc::InputHandlerUtils::SetScrollEndEventListener([this](){
+        main_thread_task_runner_->PostTask(
+            FROM_HERE, base::BindOnce(&PaintManager::DoPaint, weak_factory_.GetWeakPtr(), true));
+    });
+  }
+#endif
 }
 
 PaintManager::~PaintManager() = default;
@@ -186,7 +198,11 @@ void PaintManager::EnsureCallbackPending() {
   manual_callback_pending_ = true;
 }
 
-void PaintManager::DoPaint() {
+#if BUILDFLAG(ARKWEB_PDF)
+void PaintManager::DoPaint(bool is_repainting) {
+#else
+ void PaintManager::DoPaint() {
+#endif
   base::AutoReset<bool> auto_reset_in_paint(&in_paint_, true);
 
   std::vector<PaintReadyRect> ready_rects;
@@ -238,7 +254,25 @@ void PaintManager::DoPaint() {
   }
 
   PaintAggregator::PaintUpdate update = aggregator_.GetPendingUpdate();
-  client_->OnPaint(update.paint_rects, ready_rects, pending_rects);
+#if BUILDFLAG(ARKWEB_PDF)
+  if (update.has_scroll) {
+    last_update_rect.has_scroll = update.has_scroll;
+    last_update_rect.scroll_delta = update.scroll_delta;
+    last_update_rect.scroll_rect = update.scroll_rect;
+    last_update_rect.paint_rects = update.paint_rects;
+  }
+  if (is_repainting && last_update_rect.has_scroll) {
+    for (auto& rect : last_update_rect.paint_rects) {
+      rect = client_->GetAvailableArea();
+    }
+    client_->OnPaint(last_update_rect.paint_rects, ready_rects, pending_rects);
+    last_update_rect.paint_rects.clear();
+  } else {
+#endif
+    client_->OnPaint(update.paint_rects, ready_rects, pending_rects);
+#if BUILDFLAG(ARKWEB_PDF)
+  }
+#endif
 
   if (ready_rects.empty() && pending_rects.empty())
     return;  // Nothing was painted, don't schedule a flush.
@@ -299,9 +333,21 @@ void PaintManager::DoPaint() {
       surface_->getCanvas()->drawRect(skia_rect, paint);
     }
 
-    surface_->getCanvas()->drawImageRect(
-        ready_rect.image(), skia_rect, skia_rect, SkSamplingOptions(), nullptr,
-        SkCanvas::kStrict_SrcRectConstraint);
+#if BUILDFLAG(ARKWEB_PDF)
+    if (!base::ohos::IsPcDevice()) {
+      if (!cc::InputHandlerUtils::PdfOverSpeed() || is_repainting) {
+        surface_->getCanvas()->drawImageRect(
+            ready_rect.image(), skia_rect, skia_rect, SkSamplingOptions(), nullptr,
+            SkCanvas::kStrict_SrcRectConstraint);
+      }
+    } else {
+#endif
+      surface_->getCanvas()->drawImageRect(
+      ready_rect.image(), skia_rect, skia_rect, SkSamplingOptions(), nullptr,
+      SkCanvas::kStrict_SrcRectConstraint);
+#if BUILDFLAG(ARKWEB_PDF)
+    }
+#endif
   }
 
   Flush();
@@ -331,7 +377,11 @@ void PaintManager::OnFlushComplete() {
   // If more paints were enqueued while we were waiting for the flush to
   // complete, execute them now.
   if (aggregator_.HasPendingUpdate())
+#if BUILDFLAG(ARKWEB_PDF)
+    DoPaint(false);
+#else
     DoPaint();
+#endif
 
   // If there was another flush request while flushing we flush again.
   if (flush_requested_) {
@@ -348,7 +398,11 @@ void PaintManager::OnManualCallbackComplete() {
   // is pending, a Flush callback could have come in before this callback was
   // executed and that could have cleared the queue.
   if (aggregator_.HasPendingUpdate())
+#if BUILDFLAG(ARKWEB_PDF)
+    DoPaint(false);
+#else
     DoPaint();
+#endif
 }
 
 }  // namespace chrome_pdf

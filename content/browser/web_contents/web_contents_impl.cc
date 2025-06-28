@@ -6457,6 +6457,11 @@ void WebContentsImpl::SetVisibilityAndNotifyObservers(Visibility visibility) {
   // for the first time.
   if (visibility != previous_visibility ||
       (visibility == Visibility::VISIBLE && !did_first_set_visible_)) {
+#if BUILDFLAG(ARKWEB_PDF)
+    if (implUtils_) {
+      implUtils_->JudgeIsPdfPageVisibilityChanged(visibility);
+    }
+#endif
     SCOPED_UMA_HISTOGRAM_TIMER("WebContentsObserver.OnVisibilityChanged");
     observers_.NotifyObservers(&WebContentsObserver::OnVisibilityChanged,
                                visibility);

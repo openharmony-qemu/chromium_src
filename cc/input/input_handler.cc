@@ -317,6 +317,10 @@ InputHandlerScrollResult InputHandler::ScrollUpdate(
   DCHECK(!scroll_state.data()->current_native_scrolling_element());
   OHOS_TRACE_EVENT2("cc", "InputHandler::ScrollUpdate", "dx", scroll_state.delta_x(),
                "dy", scroll_state.delta_y());
+#if BUILDFLAG(ARKWEB_PDF)
+  InputHandlerUtils::pdf_delta_x_ = scroll_state.delta_x();
+  InputHandlerUtils::pdf_delta_y_ = scroll_state.delta_y();
+#endif
 
   if (!CurrentlyScrollingNode())
     return InputHandlerScrollResult();
@@ -2286,6 +2290,14 @@ void InputHandler::ClearCurrentlyScrollingNode() {
   last_scroll_update_state_.reset();
   last_scroll_begin_state_.reset();
   compositor_delegate_->DidEndScroll();
+#if BUILDFLAG(ARKWEB_PDF)
+  if (!base::ohos::IsPcDevice()) {
+    std::lock_guard<std::recursive_mutex> lock(InputHandlerUtils::scroll_end_listener_mutex);
+    if (InputHandlerUtils::scroll_end_listener_) {
+      InputHandlerUtils::scroll_end_listener_();
+    }
+  }
+#endif
 }
 
 std::optional<gfx::PointF> InputHandler::ScrollAnimationUpdateTarget(

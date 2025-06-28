@@ -64,7 +64,7 @@ class WebCacheManager : public content::RenderProcessHostCreationObserver,
   void RenderProcessHostDestroyed(content::RenderProcessHost* host) override;
 
 #if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
-  WebCacheManagerUtils* webCacheManagerUtils;
+  raw_ptr<WebCacheManagerUtils> webCacheManagerUtils;
 #endif
 
  private:

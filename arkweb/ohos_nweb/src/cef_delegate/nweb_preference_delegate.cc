@@ -146,6 +146,9 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.dark_prefer_color_scheme_enabled =
       DarkSchemeEnabled() ? STATE_ENABLED : STATE_DISABLED;
 #endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  browser_settings.error_page_enabled = ErrorPageEnabled();
+#endif
   browser_settings.javascript_can_open_windows_automatically =
       IsCreateWindowsByJavaScriptAllowed();
   browser_settings.text_size_percent = ZoomingForTextFactor();
@@ -526,6 +529,12 @@ bool NWebPreferenceDelegate::IsDataBaseEnabled() {
 int NWebPreferenceDelegate::DefaultFixedFontSize() {
   return default_fixed_font_size_;
 }
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+bool NWebPreferenceDelegate::ErrorPageEnabled() {
+  return error_page_enabled_;
+}
+#endif
 
 int NWebPreferenceDelegate::DefaultFontSize() {
   return default_font_size_;
@@ -1107,4 +1116,11 @@ void NWebPreferenceDelegate::PutWebMediaAVSessionEnabled(bool enable) {
   browser_->GetHost()->PutWebMediaAVSessionEnabled(enable);
 }
 #endif  // ARKWEB_MEDIA_AVSESSION
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+void NWebPreferenceDelegate::PutErrorPageEnabled(bool enable) {
+  error_page_enabled_ = enable;
+  WebPreferencesChanged();
+}
+#endif
 }  // namespace OHOS::NWeb

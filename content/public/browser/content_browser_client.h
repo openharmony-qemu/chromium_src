@@ -2275,6 +2275,22 @@ class CONTENT_EXPORT ContentBrowserClient {
                                         bool* ignore_navigation);
 #endif
 
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  virtual std::string OverrideErrorPage(
+    FrameTreeNodeId frame_tree_node_id,
+    bool browser_initiated,
+    const GURL& gurl,
+    const std::string& request_method,
+    bool has_user_gesture,
+    bool is_redirect,
+    bool is_outermost_main_frame,
+    int error_code,
+    const std::string& error_text,
+    bool is_prerendering,
+    ui::PageTransition transition,
+    std::string* html);
+#endif
+
   // Whether same-site RenderFrameHost swaps due to RenderDocument is allowed
   // for navigations from `rfh`. Embedders can choose to disallow this if there
   // are cases that are not correctly supported yet.

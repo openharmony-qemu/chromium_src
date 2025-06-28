@@ -105,56 +105,6 @@ bool OHOSAudioFocusController::CheckActiveOnUIThread(const AudioParameters& para
   return mediaSession->IsActive();
 }
 
-bool OHOSAudioFocusController::GetPlayingState(const AudioParameters& parameters) {
-  if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
-    return CheckGetPlayingStateOnUIThread(parameters);
-  }
-
-  bool result = false;
-  base::WaitableEvent event(base::WaitableEvent::ResetPolicy::AUTOMATIC,
-                            base::WaitableEvent::InitialState::NOT_SIGNALED);
-
-  content::GetUIThreadTaskRunner({})->PostTask(
-      FROM_HERE,
-      base::BindOnce([](const media::AudioParameters& params,
-                        bool* out_result,
-                        base::WaitableEvent* out_event) {
-        *out_result = CheckGetPlayingStateOnUIThread(params);
-        out_event->Signal();
-      }, parameters, &result, &event));
-
-  event.Wait();
-  return result;    
-}
-
-bool OHOSAudioFocusController::CheckGetPlayingStateOnUIThread(const AudioParameters& params) {
-  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
-
-  content::RenderFrameHost* renderFrameHost =
-      content::RenderFrameHost::FromID(params.render_process_id(),
-                                       params.render_frame_id());
-  if (!renderFrameHost) {
-    LOG(ERROR) << "CheckGetPlayingStateOnUIThread RenderFrameHost not found for PID: "
-               << params.render_process_id() 
-               << ", FrameID: " << params.render_frame_id();
-    return false;
-  }
-
-  content::WebContents* webContents = content::WebContents::FromRenderFrameHost(renderFrameHost);
-  if (!webContents) {
-    LOG(ERROR) << "CheckGetPlayingStateOnUIThread WebContents not found for RenderFrameHost";
-    return false;
-  }
-
-  content::MediaSessionImpl* mediaSession = content::MediaSessionImpl::Get(webContents);
-  if (!mediaSession) {
-    LOG(ERROR) << "CheckGetPlayingStateOnUIThread MediaSession not available for WebContents";
-    return false;
-  }
-
-  return mediaSession->GetPlayingState();
-}
-
 bool OHOSAudioFocusController::GetMuteState(const AudioParameters& parameters) {
   if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     return CheckGetMuteStateOnUIThread(parameters);

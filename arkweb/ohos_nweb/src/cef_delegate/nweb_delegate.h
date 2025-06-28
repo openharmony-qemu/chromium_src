@@ -801,6 +801,11 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
                              OnReceiveValueCallback callback) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  void SetErrorPageEnabled(bool enable) override;
+  bool GetErrorPageEnabled() override;
+#endif
+
  public:
   int argc_;
   const char** argv_;

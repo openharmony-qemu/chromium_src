@@ -288,4 +288,54 @@ void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
     }
   });
 }
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+void RenderFrameHostImpl::CommitFailedNavigation(
+    mojom::NavigationClient* navigation_client,
+    NavigationRequest* navigation_request,
+    blink::mojom::CommonNavigationParamsPtr common_params,
+    blink::mojom::CommitNavigationParamsPtr commit_params,
+    bool has_stale_copy_in_cache,
+    int error_code,
+    int extended_error_code,
+    const net::ResolveErrorInfo& resolve_error_info,
+    const std::optional<std::string>& error_page_content,
+    std::unique_ptr<blink::PendingURLLoaderFactoryBundle> subresource_loaders,
+    const blink::DocumentToken& document_token,
+    blink::mojom::PolicyContainerPtr policy_container,
+    mojom::AlternativeErrorPageOverrideInfoPtr alternative_error_page_info,
+    mojom::NavigationClient::CommitFailedNavigationCallback callback) {
+  std::string html = "";
+  std::optional<std::string> override_error_page_content = std::nullopt;
+
+  if (GetOrCreateWebPreferences().error_page_enabled) {
+    GetContentClient()->browser()->OverrideErrorPage(
+      navigation_request->frame_tree_node()->frame_tree_node_id(),
+      commit_params->is_browser_initiated,
+      commit_params->original_url,
+      commit_params->original_method,
+      common_params->has_user_gesture,
+      false,
+      navigation_request->frame_tree_node()->IsOutermostMainFrame(),
+      error_code,
+      net::ErrorToShortString(error_code),
+      navigation_request->frame_tree_node()->frame_tree().is_prerendering(),
+      ui::PageTransitionFromInt(common_params->transition),
+      &html);
+  }
+
+  if (html.empty()) {
+    override_error_page_content = error_page_content;
+  } else {
+    override_error_page_content.emplace(html);
+  }
+
+  navigation_client->CommitFailedNavigation(
+      std::move(common_params), std::move(commit_params),
+      has_stale_copy_in_cache, error_code, extended_error_code,
+      resolve_error_info, override_error_page_content, std::move(subresource_loaders),
+      document_token, std::move(policy_container),
+      std::move(alternative_error_page_info), std::move(callback));
+}
+#endif
 }  // namespace content

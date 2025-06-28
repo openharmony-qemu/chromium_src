@@ -989,6 +989,11 @@ class NWebImpl : public NWeb {
   int64_t GetPreferenceHash();
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
 #endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  void SetErrorPageEnabled(bool enable) override;
+  bool GetErrorPageEnabled() override;
+#endif
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

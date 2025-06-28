@@ -5464,4 +5464,26 @@ void NWebDelegate::RunJavaScriptInFrames(const std::string& jsString, FrameInfos
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+void NWebDelegate::SetErrorPageEnabled(bool enable) {
+  if (!preference_delegate_) {
+    LOG(ERROR)
+      << "SetErrorPageEnabled failed, no preference_delegate_"
+      << ", nweb_id_[" << nweb_id_ << "]";
+    return;
+  }
+  preference_delegate_->PutErrorPageEnabled(enable);
+}
+
+bool NWebDelegate::GetErrorPageEnabled() {
+  if (!preference_delegate_) {
+    LOG(ERROR)
+      << "GetErrorPageEnabled failed, no preference_delegate_"
+      << ", nweb_id_[" << nweb_id_ << "]";
+    return false;
+  }
+  return preference_delegate_->ErrorPageEnabled();
+}
+#endif
 }  // namespace OHOS::NWeb

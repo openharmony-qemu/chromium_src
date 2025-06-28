@@ -965,6 +965,19 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void HideMagnifier() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  std::string OverrideErrorPage(
+    CefRefPtr<CefBrowser> browser,
+    const CefString& url,
+    const CefString& method,
+    bool user_gesture,
+    bool is_redirect,
+    bool is_outermost_main_frame,
+    const CefString& extra_request_headers_str,
+    int error_code,
+    const CefString& error_text) override;
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_JSPROXY)
   enum class JsRunTime{Start = 0, End = 1, HEAD_READY};

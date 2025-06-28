@@ -493,6 +493,11 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (override));
 #endif
 
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  MOCK_METHOD(void, SetErrorPageEnabled, (bool enable), (override));
+  MOCK_METHOD(bool, GetErrorPageEnabled, (), (override));
+#endif
+
 #if BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
   MOCK_METHOD(void, SetAudioMuted, (bool muted), (override));
 #endif  // BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)

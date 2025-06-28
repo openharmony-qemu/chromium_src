@@ -1005,6 +1005,12 @@ MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
   session_android_ = std::make_unique<MediaSessionAndroid>(this);
   should_throttle_duration_update_ = true;
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+  memory_pressure_listener_ = std::make_unique<base::MemoryPressureListener>(
+              FROM_HERE,
+              base::BindRepeating(&MediaSessionImpl::OnMemoryPressure,
+                                  weakMediaSessionFactory_.GetWeakPtr()));
+#endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
   CreateSessionOhos();
   if (web_contents && web_contents->GetPrimaryMainFrame() &&
       web_contents->GetPrimaryMainFrame()->GetView()) {

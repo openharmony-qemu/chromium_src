@@ -195,6 +195,21 @@ public:
   bool IsFrameHidden() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() override;
+  void ResumeDmaBuffer() override;
+
+  base::Lock lock_;
+  DmaBufferState dma_state_;
+#endif  // ARKWEB_MEDIA_DMABUF
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+  void NotifyMemoryLevel(
+    base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level) override;
+
+  base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level_ =
+    base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE;
+#endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
+
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   int64_t GetFreezeTime() const override;
   int64_t GetPlayedTime() override;

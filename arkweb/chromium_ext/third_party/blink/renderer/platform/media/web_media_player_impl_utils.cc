@@ -350,13 +350,20 @@ void WebMediaPlayerImplUtils::SetVolumeExt(double volume) {
 }
 
 void WebMediaPlayerImplUtils::OnFrameShownExt() {
+#if BUILDFLAG(ARKWEB_MEDIA)
+  LOG(INFO) << "OhMedia::WebMediaPlayerImpl::OnFrameShown()"
+            << " delegate_id_:" << impl->delegate_id_;
+#endif // ARKWEB_MEDIA
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   impl->client_->OnPageVisibilityChanged();
 #endif  // ARKWEB_VIDEO_ASSISTANT
 }
 
 void WebMediaPlayerImplUtils::OnFrameHiddenExt() {
-  LOG(INFO) << "WebMediaPlayerImpl::OnFrameHidden()";
+#if BUILDFLAG(ARKWEB_MEDIA)
+  LOG(INFO) << "WebMediaPlayerImpl::OnFrameHidden()"
+            << " delegate_id_:" << impl->delegate_id_;
+#endif  // BUILDFLAG(ARKWEB_MEDIA)
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   impl->client_->OnPageVisibilityChanged();

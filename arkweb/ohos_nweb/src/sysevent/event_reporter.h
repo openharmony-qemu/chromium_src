@@ -84,4 +84,6 @@ void ReportWebMediaPlayErrorInfo(const std::string& errorType,
 void ReportAvSessionStatus(const std::string& disable_web_av_session_status);
 
 void ReportDragBlank(int64_t duration);
+
+void ReportFirstMeaningfulPaintDone(OhWebPerformanceTiming loadPageTime);
 #endif

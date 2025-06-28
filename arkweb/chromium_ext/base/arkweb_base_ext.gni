@@ -11,6 +11,8 @@ arkweb_base_ext_sources += [
   "//arkweb/chromium_ext/base/ohos/dynamic_frame_loss_monitor.h",
   "//arkweb/chromium_ext/base/files/memory_mapped_file_ext.cc",
   "//arkweb/chromium_ext/base/files/memory_mapped_file_ext.h",
+  "//arkweb/chromium_ext/base/ohos/blankless/blankless_controller.cc",
+  "//arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h",
   "//arkweb/chromium_ext/base/ohos/nweb_engine_event_logger.cc",
   "//arkweb/chromium_ext/base/ohos/nweb_engine_event_logger.h",
   "//arkweb/chromium_ext/base/ohos/nweb_engine_event_logger_code.cc",

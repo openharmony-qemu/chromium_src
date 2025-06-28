@@ -29,6 +29,7 @@
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
 #include "capi/nweb_extension_api_callback.h"
+#include "capi/nweb_extension_javascript_item.h"
 #include "nweb.h"
 #include "nweb_download_callback.h"
 #include "nweb_errors.h"
@@ -53,6 +54,8 @@
 #include "capi/nweb_statistic_callback.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+struct FrameInfos;
+struct IsolatedWorld;
 struct OpenDevToolsParam;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "capi/nweb_extension_manager_callback.h"
@@ -564,6 +567,9 @@ class NWebImpl : public NWeb {
   void PutWebExtensionCallback(
       std::shared_ptr<NWebExtensionCallback> web_extension_callback);
   void RemoveWebExtensionCallback();
+  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                             bool recursive, IsolatedWorld world,
+                             OnReceiveValueCallback callback);
   void GetImageFromContextNode();
   void GetImageFromCache(const std::string& url);
   void ReloadOriginalUrl() const;
@@ -630,6 +636,7 @@ class NWebImpl : public NWeb {
 
   bool NeedSoftKeyboard() override;
 
+  bool GetIsEditTextType();
   static std::shared_ptr<NWeb> GetNWeb(int32_t nweb_id);
   static std::shared_ptr<NWeb> CreateNWeb(
       std::shared_ptr<NWebCreateInfo> create_info);
@@ -974,12 +981,13 @@ class NWebImpl : public NWeb {
                     int frame_routing_id,
                     int event) override;
 #endif
-#ifdef ARKWEB_BLANK_OPTIMIZE
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessLoadingKey(const std::string& key) override;
   void SetPrivacyStatus(bool isPrivate) override;
   int32_t GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) override;
-  int32_t SetBlanklessLoadingWithKey(const std::string& key) override;
-  bool TriggerBlanklessForUrl(const std::string& url) override;
-  void SetVisibility(bool isVisible) override;
+  int32_t SetBlanklessLoadingWithKey(const std::string& key, bool isStart) override;
+  int64_t GetPreferenceHash();
+  static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
 #endif
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
@@ -1057,7 +1065,12 @@ class NWebImpl : public NWeb {
   int32_t GetVisibleViewportAvoidHeight() override;
 #endif
 
-#ifdef ARKWEB_BLANK_OPTIMIZE
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void ClearBlanklessKey();
+  void CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file);
+  // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
+  std::atomic<uint64_t> blankless_key_ = UINT64_MAX;
+  std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
 #endif
 };

@@ -32,6 +32,9 @@
 
 namespace content {
 
+// ExecuteJavascriptInFrames need create new worldId, this is the min value;
+const int32_t kCreateIsolatedWorldIdMin = 10000;
+
 #if BUILDFLAG(IS_ARKWEB)
 void RenderFrameHostImpl::ExecuteJavaScriptExt(
     const int fd,
@@ -216,4 +219,73 @@ void CommitNavigationExt(
   }
 }
 
+bool RenderFrameHostImpl::GetWorldId(const std::string& worldName, int32_t* worldId) {
+  if (worldName.empty()) {
+    return false;
+  }
+  if (isolated_world_.empty()) {
+    *worldId = kCreateIsolatedWorldIdMin + 1;
+    isolated_world_.emplace(worldName, *worldId);
+    return true;
+  }
+ 
+  auto it = isolated_world_.find(worldName);
+  if (it != isolated_world_.end()) {
+    *worldId = it->second;
+    return true;
+ 
+  }
+ 
+  int32_t maxValue = INT_MIN;
+  for (const auto& pair : isolated_world_) {
+    if (pair.second > maxValue) {
+      maxValue = pair.second;
+    }
+  }
+  *worldId = maxValue + 1;
+  isolated_world_.emplace(worldName, *worldId);
+  return true;
+}
+ 
+void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
+    const std::u16string& javascript,
+    bool recursive,
+    const std::string& worldName,
+    JavaScriptResultCallback callback) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  CHECK(CanExecuteJavaScript());
+  AssertFrameWasCommitted();
+ 
+  const bool wants_result = !callback.is_null();
+  int32_t worldId = 0;
+  bool worldIdResult = GetWorldId(worldName, &worldId);
+  if (worldIdResult) {
+    GetAssociatedLocalFrame()->JavaScriptExecuteRequestInIsolatedWorld(
+      javascript, wants_result, worldId, std::move(callback));
+  } else {
+    GetAssociatedLocalFrame()->JavaScriptExecuteRequest(javascript, wants_result,
+                                                        std::move(callback));
+  }
+ 
+  if (!recursive) {
+    return;
+  }
+ 
+  RenderFrameHostImpl* initialFrame = this;
+  ForEachRenderFrameHost(
+    [&javascript, &worldName, &initialFrame](RenderFrameHostImpl* rfh) {
+    int32_t world_id = 0;
+    if (rfh == initialFrame) {
+      return;
+    }
+    bool worldId_result = rfh->GetWorldId(worldName, &world_id); 
+    if (worldId_result) {
+      rfh->GetAssociatedLocalFrame()->JavaScriptExecuteRequestInIsolatedWorld(
+        javascript, false, world_id, JavaScriptResultCallback {});
+    } else {
+      rfh->GetAssociatedLocalFrame()->JavaScriptExecuteRequest(javascript, false,
+                                                               JavaScriptResultCallback {});
+    }
+  });
+}
 }  // namespace content

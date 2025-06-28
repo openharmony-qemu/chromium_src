@@ -22,6 +22,7 @@
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
 #include "capi/nweb_extension_callback.h"
+#include "capi/nweb_extension_javascript_item.h"
 #include "cef_delegate/nweb_inputmethod_client.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/display_manager_adapter.h"
 #include "include/arkweb_client_ext.h"
@@ -813,6 +814,11 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_MENU)
   virtual void UpdateSingleHandleVisible(bool isVisible) = 0;
+#endif
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  virtual void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                                     bool recursive, IsolatedWorld world,
+                                     OnReceiveValueCallback callback) = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

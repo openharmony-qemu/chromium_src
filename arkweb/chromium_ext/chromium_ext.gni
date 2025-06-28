@@ -576,6 +576,7 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/base/debug/stack_trace_ohos_unittest.cc",
   "//arkweb/chromium_ext/base/files/file_util_posix_unittest.cc",
   "//arkweb/chromium_ext/base/files/memory_mapped_file_ext_unittest.cc",
+  "//arkweb/chromium_ext/base/files/file_path_sta_ext_unittest.cc",
 ]
 
 arkweb_base_trace_event_sources = [

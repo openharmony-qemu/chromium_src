@@ -681,6 +681,43 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetVideoSurface(
 }
 #endif // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+DecoderAdapterCode MediaCodecDecoderBridgeImpl::RecycleDmaBuffer() {
+  LOG(INFO) << "DMABUF::MediaCodecDecoderBridgeImpl, RecycleDmaBuffer";
+  if (videoDecoder_ == nullptr) {
+    LOG(ERROR) << "DMABUF::MediaCodecDecoderBridgeImpl::RecycleDmaBuffer decoder is NULL";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+
+  if (signal_ == nullptr) {
+    LOG(ERROR) << "DMABUF::MediaCodecDecoderBridgeImpl::RecycleDmaBuffer signal_ is NULL";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+
+  DecoderAdapterCode ret = StopBridgeDecoder();
+  if (ret != DecoderAdapterCode::DECODER_OK) {
+    LOG(ERROR) << "DMABUF::MediaCodecDecoderBridgeImpl::RecycleDmaBuffer Stop "
+                  "decoder failed.";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+
+  clearInputQueue(signal_->inputQueue_);
+  clearOutputQueue(signal_->outputQueue_);
+  return ret;
+}
+
+DecoderAdapterCode MediaCodecDecoderBridgeImpl::ResumeDmaBuffer() {
+  LOG(INFO) << "DMABUF::MediaCodecDecoderBridgeImpl, ResumeDmaBuffer";
+  DecoderAdapterCode ret = StartBridgeDecoder();
+  if (ret != DecoderAdapterCode::DECODER_OK) {
+    LOG(ERROR) << "DMABUF::MediaCodecDecoderBridgeImpl::RecycleDmaBuffer Start "
+                  "decoder failed.";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+  return ret;
+}
+#endif  // ARKWEB_MEDIA_DMABUF
+
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetDecryptionConfig(void *session, bool isSecure)
 {
   if (videoDecoder_ == nullptr) {

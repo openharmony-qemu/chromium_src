@@ -292,10 +292,6 @@
 #include "content/public/browser/browser_message_filter.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "base/ohos/nweb_engine_event_logger.h"
-#endif
-
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
@@ -5272,15 +5268,6 @@ uint64_t RenderProcessHostImpl::GetPrivateMemoryFootprint() {
 void RenderProcessHostImpl::HasGpuProcess(HasGpuProcessCallback callback) {
   GpuProcessHost::GetHasGpuProcess(std::move(callback));
 }
-
-#if BUILDFLAG(IS_ARKWEB)
-void RenderProcessHostImpl::ReportEngineEvent(const std::string& module,
-                                              const std::string& resource,
-                                              const std::string& error_code,
-                                              const std::string& error_msg) {
-  base::ohos::ReportEngineEvent(module, resource, error_code, error_msg);
-}
-#endif
 
 void RenderProcessHostImpl::UpdateProcessPriorityInputs() {
   int32_t new_visible_widgets_count = 0;

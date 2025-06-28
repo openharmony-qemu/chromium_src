@@ -588,6 +588,13 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener,
       JavaScriptResultCallback callback,
       int32_t world_id) = 0;
 
+  // This can run the JavaScript in all of frames.
+  virtual void ExecuteJavaScriptInFrames(
+      const std::u16string& javascript,
+      bool recursive,
+      const std::string& worldName,
+      JavaScriptResultCallback callback) = 0;
+
   // This runs the JavaScript, but without restrictions. Specify a `world_id` of
   // `ISOLATED_WORLD_ID_GLOBAL` to run the code in the global world. THIS IS
   // ONLY FOR TESTS.

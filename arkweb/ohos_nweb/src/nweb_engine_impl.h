@@ -18,6 +18,7 @@
 
 #include "build/build_config.h"
 #include "build/buildflag.h"
+#include "arkweb/build/features/features.h"
 #include "nweb_engine.h"
 
 namespace OHOS::NWeb {
@@ -111,6 +112,14 @@ class NWebEngineImpl : public NWebEngine {
 
   void RemoveProxyOverride(std::shared_ptr<NWebProxyChangedCallback> callback) override;
   void SetWebDebuggingAccessAndPort(bool isEnableDebug, int32_t port) override;
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  uint32_t AddBlanklessLoadingUrls(const std::vector<std::string>& urls) override;
+  void RemoveBlanklessLoadingUrls(const std::vector<std::string>& urls) override;
+  void ClearBlanklessLoadingCache(const std::vector<std::string>& urls) override;
+  std::string CheckBlankOptEnable(const std::string& key, int32_t nweb_id) override;
+  void SetBlanklessLoadingCacheCapacity(int32_t capacity) override;
+#endif
 
  private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;

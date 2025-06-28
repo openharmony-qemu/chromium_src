@@ -27,7 +27,7 @@ class WebCacheManager;
 
 class WebCacheManagerUtils {
  public:
-  WebCacheManager* webCacheManager;
+  raw_ptr<WebCacheManager> webCacheManager;
   WebCacheManagerUtils(WebCacheManager* impl);
 
 #if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)

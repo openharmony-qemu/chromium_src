@@ -109,4 +109,15 @@ void WebContentsImplUtils::UpdateUserAgentOverride(const blink::UserAgentOverrid
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+void WebContentsImplUtils::JudgeIsPdfPageVisibilityChanged(Visibility visibility) {
+  if (visibility == Visibility::VISIBLE && !webContentsImpl->did_first_set_visible_) {
+    GURL url = webContentsImpl->GetVisibleURL();
+    url::Origin url_origin = url::Origin::Create(url);
+    bool is_pdf = IsPdfExtensionOrigin(url_origin);
+    base::ohos::SlidingObserver::GetInstance().SetIsPdf(is_pdf);
+  }
+}
++#endif
 }  // namespace content

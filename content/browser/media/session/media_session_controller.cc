@@ -44,6 +44,12 @@ void MediaSessionController::SetMetadata(
 bool MediaSessionController::OnPlaybackStarted() {
   is_paused_ = false;
   is_playback_in_progress_ = true;
+#if defined(OHOS_MEDIA_POLICY)
+  if (media_session_) {
+    media_session_->SetPauseByAvsession(false);
+  }
+  LOG(INFO) << "MediaSessionController OnPlaybackStarted SetPlayingState true";
+#endif
   return AddOrRemovePlayer();
 }
 
@@ -231,6 +237,15 @@ void MediaSessionController::OnMediaMutedStatusChanged(bool mute) {
   media_session_->OnMediaMutedStatusChanged(mute);
 }
 
+#if defined(OHOS_MEDIA_AVSESSION)
+void MediaSessionController::OnEndAVSession(const MediaPlayerId& id,
+                                            bool is_hidden) {
+  if (is_hidden && media_session_) {
+    media_session_->EndSessionWhenHide();
+  }
+}
+#endif // OHOS_MEDIA_AVSESSION
+
 void MediaSessionController::OnPictureInPictureAvailabilityChanged(
     bool available) {
   is_picture_in_picture_available_ = available;
@@ -259,6 +274,13 @@ bool MediaSessionController::IsMediaSessionNeeded() const {
 
   if (!is_playback_in_progress_)
     return false;
+
+#if defined(OHOS_MEDIA_AVSESSION)
+  if (media_content_type_ == media::MediaContentType::Transient) {
+      LOG(INFO) << __func__<< ", media_content_type_: media::MediaContentType::Transient";
+      return false;
+  }
+#endif // defined(OHOS_MEDIA_AVSESSION)
 
   // We want to make sure we do not request audio focus on a muted tab as it
   // would break user expectations by pausing/ducking other playbacks.

@@ -87,6 +87,10 @@ interface MediaPlayerObserver {
   // indicating in |stream_ended| if playback has reached the end of the stream.
   OnMediaPaused(bool stream_ended);
 
+  // Notifies that avsession is over.
+  [EnableIf=ohos_media_avsession]
+  OnEndAVSession(bool is_hidden);
+
   // Notifies that the muted status of the media player has changed.
   OnMutedStatusChanged(bool muted);
 

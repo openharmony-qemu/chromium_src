@@ -51,45 +51,13 @@ class BackgroundTaskPolicy : public GraphObserver,
   void OnIsVisibleChanged(const PageNode* page_node) override;
   void OnIsMediaPlayingChanged(const PageNode* page_node) override;
   void OnIsAudibleChanged(const PageNode* page_node) override;
-  void OnMainFrameUrlChanged(const PageNode* page_node) override;
-  void OnPageStateChanged(const PageNode* page_node,
-                          PageState old_state) override;
-  void OnOpenerFrameNodeChanged(const PageNode* page_node,
-                                const FrameNode* previous_opener) override;
-  void OnEmbedderFrameNodeChanged(
-      const PageNode* page_node,
-      const FrameNode* previous_embedder,
-      EmbeddingType previous_embedding_type) override;
-  void OnTypeChanged(const PageNode* page_node,
-                     PageType previous_type) override;
-  void OnLoadingStateChanged(const PageNode* page_node,
-                             PageNode::LoadingState previous_state) override;
-  void OnUkmSourceIdChanged(const PageNode* page_node) override;
-  void OnPageLifecycleStateChanged(const PageNode* page_node) override;
-  void OnPageIsHoldingWebLockChanged(const PageNode* page_node) override;
-  void OnPageIsHoldingIndexedDBLockChanged(const PageNode* page_node) override;
-  void OnMainFrameDocumentChanged(const PageNode* page_node) override;
-  void OnHadFormInteractionChanged(const PageNode* page_node) override;
-  void OnHadUserEditsChanged(const PageNode* page_node) override;
-  void OnTitleUpdated(const PageNode* page_node) override;
-  void OnFaviconUpdated(const PageNode* page_node) override;
-  void OnAboutToBeDiscarded(const PageNode* page_node,
-                            const PageNode* new_page_node) override;
-  void OnFreezingVoteChanged(
-      const PageNode* page_node,
-      absl::optional<freezing::FreezingVote> previous_vote) override;
-
   void MaybeChangeBackgroundTask(const PageNode* page_node);
-  void SetWebviewShow(const PageNode* page_node, bool show, bool &ret);
-  void SetWebviewShowForAudio(const PageNode* page_node, bool show, bool &ret);
   raw_ptr<const PageNode> page_node_being_removed_ = nullptr;
   std::unique_ptr<mechanism::BackgroundTaskHolder> background_task_holder_;
   bool is_request_background_task_;
   int32_t visible_page_num_;
   int32_t media_playing_num_;
   int32_t audio_state_num_;
-  PageNode* last_avsession_page_node_;
-  bool is_main_frame_url_changed_;
 };
 }  // namespace policies
 }  // namespace performance_manager

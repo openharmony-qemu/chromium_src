@@ -202,23 +202,22 @@ bool ReadDirFilesByPid(const int& pid, std::vector<std::string>& files) {
 }
 
 bool GetTidsByPidWithFunc(const int pid,
-                          std::vector<int>& tids,
                           std::function<bool(int)> const& func) {
   std::vector<std::string> files;
+  bool found = false;
   if (ReadDirFilesByPid(pid, files)) {
     for (size_t i = 0; i < files.size(); ++i) {
       pid_t tid = atoi(files[i].c_str());
       if (tid == 0) {
         continue;
       }
-      tids.push_back(tid);
-
+      found = true;
       if (func != nullptr) {
         func(tid);
       }
     }
   }
-  return (tids.size() > 0);
+  return found;
 }
 
 bool GetTidMapByPid(const int pid,
@@ -235,8 +234,7 @@ bool GetTidMapByPid(const int pid,
       return true;
     };
   }
-  std::vector<int> real_tids;
-  (void)GetTidsByPidWithFunc(pid, real_tids, func);
+  (void)GetTidsByPidWithFunc(pid, func);
   return (tid_nstid_map.size() > 0);
 }
 }  // namespace crashpad

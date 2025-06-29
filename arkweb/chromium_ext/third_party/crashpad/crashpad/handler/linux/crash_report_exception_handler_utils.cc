@@ -45,34 +45,15 @@
 #include "util/stream/zlib_output_stream.h"
 using namespace crashpad;
 
-bool CrashReportExceptionHandlerUtils::HandleOverwritten(
-    PtraceConnection* connection,
-    UUID* local_report_id, CrashReportExceptionHandler* crashReportExceptionHandler,
-    std::unique_ptr<ProcessSnapshotLinux>& process_snapshot,
-    std::unique_ptr<ProcessSnapshotSanitized>& sanitized_snapshot)
+void CrashReportExceptionHandlerUtils::InitExtendedUserStream(
+  PtraceConnection* connection,
+  UserStreamDataSources* extendedUserStream)
 {
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-  /*
-    add ohos maps info
-    for now, user_stream_data_sources_ is empty.
-    see third_party/crashpad/crashpad/handler/main.cc
-  */
-  const UserStreamDataSources* tmp = crashReportExceptionHandler->user_stream_data_sources_;
-  if (crashReportExceptionHandler->user_stream_data_sources_->size() != 0) {
-    LOG(ERROR) << "user_stream_data_sources_ will be overwritten !!!";
+  if (extendedUserStream == nullptr) {
+    return;
   }
-  UserStreamDataSources tmp_overwrite;
-  tmp_overwrite.push_back(
-      std::make_unique<OhosUserStreamDataSource>(connection));
-  crashReportExceptionHandler->user_stream_data_sources_ = &tmp_overwrite;
-  bool ret = crashReportExceptionHandler->write_minidump_to_database_
-                 ? crashReportExceptionHandler->WriteMinidumpToDatabase(process_snapshot.get(),
-                                           sanitized_snapshot.get(),
-                                           crashReportExceptionHandler->write_minidump_to_log_,
-                                           local_report_id)
-                 : crashReportExceptionHandler->WriteMinidumpToLog(process_snapshot.get(),
-                                      sanitized_snapshot.get());
-  crashReportExceptionHandler->user_stream_data_sources_ = tmp;
-  return ret;
+  extendedUserStream->push_back(
+    std::make_unique<OhosUserStreamDataSource>(connection));
 #endif
 }

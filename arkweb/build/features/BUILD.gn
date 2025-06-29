@@ -307,6 +307,7 @@ if (!enable_arkweb) {
   arkweb_viewport_avoid = false
   arkweb_blank_optimize = false
   arkweb_error_page = false
+  arkweb_gwp_asan = false
 }
 
 buildflag_header("features") {
@@ -535,6 +536,7 @@ buildflag_header("features") {
     "ARKWEB_BLANK_OPTIMIZE=$arkweb_blank_optimize",
     "ARKWEB_VIEWPORT_AVOID=$arkweb_viewport_avoid",
     "ARKWEB_ERROR_PAGE=$arkweb_error_page",
+    "ARKWEB_GWP_ASAN=$arkweb_gwp_asan",
     
     # ARKWEB_EXT dafault value
     "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",

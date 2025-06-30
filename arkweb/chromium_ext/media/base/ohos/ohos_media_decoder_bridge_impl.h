@@ -159,7 +159,7 @@ class MediaCodecDecoderBridgeImpl {
   std::recursive_mutex decoderMutex_;
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void* window_from_surface_ = nullptr;
+  raw_ptr<void> window_from_surface_ = nullptr;
   int32_t video_surface_id_ = -1;
 #endif // ARKWEB_VIDEO_ASSISTANT
   base::WeakPtrFactory<MediaCodecDecoderBridgeImpl> weak_factory_{this};

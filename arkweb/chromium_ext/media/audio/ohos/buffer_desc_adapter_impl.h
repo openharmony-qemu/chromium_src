@@ -17,6 +17,7 @@
 #define BUFFER_DESC_ADAPTER_IMPL_H
 
 #include "third_party/ohos_ndk/includes/ohos_adapter/audio_capturer_adapter.h"
+#include "base/memory/raw_ptr.h"
 
 namespace OHOS::NWeb {
 
@@ -37,7 +38,7 @@ class BufferDescAdapterImpl : public BufferDescAdapter {
   void SetDataLength(size_t dataLength) override;
 
  private:
-  uint8_t* buffer_ = nullptr;
+  raw_ptr<uint8_t> buffer_ = nullptr;
   size_t buf_length_ = 0;
   size_t data_length_ = 0;
 };

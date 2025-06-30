@@ -33,9 +33,11 @@ class CORE_EXPORT CaretDisplayItemClientUtils {
                          const gfx::Rect& paint_rect,
                          LayoutBlock* painter_block,
                          const Color& color);
+  bool IsViewportScale(LayoutBlock* layout_block);
 #endif  // BUILDFLAG(ARKWEB_MENU)
  private:
   CaretDisplayItemClient* caret_display_item_client_ = nullptr;
+  bool on_scale_ = false;
 };
 }  // namespace blink
 

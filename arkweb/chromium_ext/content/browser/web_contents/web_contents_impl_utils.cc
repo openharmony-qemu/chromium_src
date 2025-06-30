@@ -119,5 +119,5 @@ void WebContentsImplUtils::JudgeIsPdfPageVisibilityChanged(Visibility visibility
     base::ohos::SlidingObserver::GetInstance().SetIsPdf(is_pdf);
   }
 }
-+#endif
+#endif
 }  // namespace content

@@ -44,6 +44,10 @@ const double kSimilaritythreshold = 0.33;
 
 
 static double Mean(const std::vector<double>& data) {
+  if (data.size() == 0) {
+    LOG(DEBUG) << "blankless Mean data size 0";
+    return 0;
+  }
   double sum = 0.0;
   for (double value : data) {
     sum += value;
@@ -52,6 +56,10 @@ static double Mean(const std::vector<double>& data) {
 }
 
 static double Variance(const std::vector<double>& data, double mean_value) {
+  if (data.size() == 0) {
+    LOG(DEBUG) << "blankless Variance data size 0";
+    return 0;
+  }
   double sum = 0.0;
   for (double value : data) {
     sum += (value - mean_value) * (value - mean_value);
@@ -63,6 +71,10 @@ static double Covariance(const std::vector<double>& data1,
                          double mean1,
                          const std::vector<double>& data2,
                          double mean2) {
+  if (data1.size() == 0) {
+    LOG(DEBUG) << "blankless Covariance data1 size 0";
+    return 0;
+  }
   double sum = 0.0;
   for (size_t i = 0; i < data1.size(); ++i) {
     sum += (data1[i] - mean1) * (data2[i] - mean2);
@@ -82,6 +94,10 @@ static double CalculateSSIM(const std::vector<double>& img1, const std::vector<d
 
   double numerator = (2 * mean1 * mean2 + C1) * (2 * cov12 + C2);
   double denominator = (mean1 * mean1 + mean2 * mean2 + C1) * (var1 + var2 + C2);
+
+  if (denominator == 0) {
+    return 0;
+  }
 
   return numerator / denominator;
 }
@@ -149,6 +165,11 @@ static double CalculateSnapshotSimilarity(std::vector<double>& pixels1,
                                    int height,
                                    const std::vector<BlanklessDataController::SnapShotRect>& quad_list,
                                    const int depth) {
+  if (width == 0 || height == 0) {
+    LOG(DEBUG) << "blankless width: " << widht ", height: " << height;
+    return 0;
+  }
+  
   if (pixels1.size() != pixels2.size()) {
     LOG(ERROR) << "blankless old pixels size != new pixels size";
     return 0;

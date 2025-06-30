@@ -119,6 +119,9 @@ void SetExceptionInformation(siginfo_t* siginfo,
   base::ProcessId realPid = base::GetCurrentRealPid();
   if (GetProcStatusByPid(realPid, proc) && proc.ns &&
       GetTidMapByPid(realPid, tid_nstid_map)) {
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    info->signo = siginfo->si_signo;
+#endif
     LOG(INFO) << "crashpad SetExceptionInformation, crash happened, crash "
                  "process real pid = "
               << realPid << " is in pid namespace = " << proc.ns
@@ -141,6 +144,9 @@ void SetClientInformation(ExceptionInformation* exception,
   info->sanitization_information_address =
       FromPointerCast<decltype(info->sanitization_information_address)>(
           sanitization);
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    info->signo = exception->signo;
+#endif
 }
 
 // A signal handler for non-browser processes in the sandbox.

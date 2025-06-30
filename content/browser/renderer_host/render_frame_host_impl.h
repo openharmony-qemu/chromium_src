@@ -505,6 +505,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void ExecuteJavaScriptInIsolatedWorld(const std::u16string& javascript,
                                         JavaScriptResultCallback callback,
                                         int32_t world_id) override;
+  bool GetWorldId(const std::string& worldName, int32_t* worldId);
+  void ExecuteJavaScriptInFrames(const std::u16string& javascript,
+                                 bool recursive,
+                                 const std::string& worldName,
+                                 JavaScriptResultCallback callback) override;
   void ExecuteJavaScriptForTests(const std::u16string& javascript,
                                  JavaScriptResultCallback callback,
                                  int32_t world_id) override;
@@ -3213,6 +3218,23 @@ class CONTENT_EXPORT RenderFrameHostImpl
                       base::Value::List& async_method_list,
                       bool need_update);
 #endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  void CommitFailedNavigation(
+    mojom::NavigationClient* navigation_client,
+    NavigationRequest* navigation_request,
+    blink::mojom::CommonNavigationParamsPtr common_params,
+    blink::mojom::CommitNavigationParamsPtr commit_params,
+    bool has_stale_copy_in_cache,
+    int error_code,
+    int extended_error_code,
+    const net::ResolveErrorInfo& resolve_error_info,
+    const std::optional<std::string>& error_page_content,
+    std::unique_ptr<blink::PendingURLLoaderFactoryBundle> subresource_loaders,
+    const blink::DocumentToken& document_token,
+    blink::mojom::PolicyContainerPtr policy_container,
+    mojom::AlternativeErrorPageOverrideInfoPtr alternative_error_page_info,
+    mojom::NavigationClient::CommitFailedNavigationCallback callback);
+#endif
  protected:
   friend class RenderFrameHostFactory;
 
@@ -5374,6 +5396,8 @@ class CONTENT_EXPORT RenderFrameHostImpl
   base::Uuid base_auction_nonce_;
 
   base::OnceClosure on_process_before_unload_completed_for_testing_;
+
+  std::map<std::string, int32_t> isolated_world_;
 
   // WeakPtrFactories are the last members, to ensure they are destroyed before
   // all other fields of `this`.

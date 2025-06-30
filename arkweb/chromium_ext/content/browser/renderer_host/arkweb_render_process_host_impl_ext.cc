@@ -17,6 +17,10 @@
 
 #include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/ohos/nweb_engine_event_logger.h"
+#endif
+
 namespace content {
 
 ArkwebRenderProcessHostImplExt::ArkwebRenderProcessHostImplExt(
@@ -58,6 +62,15 @@ void ArkwebRenderProcessHostImplExt::dumpCurrentJavaScriptStackInMainThread(
 void ArkwebRenderProcessHostImplExt::InvokeRenderCrashDump() {
   child_process_->InvokeRenderCrashDump();
 }
+
+#if BUILDFLAG(IS_ARKWEB)
+void ArkwebRenderProcessHostImplExt::ReportEngineEvent(const std::string& module,
+                                                       const std::string& resource,
+                                                       const std::string& error_code,
+                                                       const std::string& error_msg) {
+  base::ohos::ReportEngineEvent(module, resource, error_code, error_msg);
+}
+#endif
 #endif
 
 }  // namespace content

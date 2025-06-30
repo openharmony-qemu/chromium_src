@@ -237,6 +237,10 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   DCHECK(!callback_);
   DCHECK(reference_time_.is_null());
   isSuspended_ = false;
+
+  // set interrupt mode
+  Prepare(weakMediaSession_);
+
   SuspendOtherMediaSession(weakMediaSession_);
 
   callback_ = callback;
@@ -320,6 +324,7 @@ bool OHOSAudioOutputStream::InitRender() {
   OH_AudioStreamBuilder_SetFrameSizeInCallback(audio_stream_builder_,
                                                parameters_.frames_per_buffer());
   OH_AudioStreamBuilder_SetEncodingType(audio_stream_builder_, AUDIOSTREAM_ENCODING_TYPE_RAW);
+  OH_AudioStreamBuilder_SetRendererInterruptMode(audio_stream_builder_, (OH_AudioInterrupt_Mode)false);
   if (isCommunication_) {
     OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_VOICE_COMMUNICATION);
   } else {
@@ -338,9 +343,6 @@ bool OHOSAudioOutputStream::InitRender() {
   callbacks.OH_AudioRenderer_OnInterruptEvent = AudioRendererOnInterruptEvent;
   OH_AudioStreamBuilder_SetRendererCallback(audio_stream_builder_, callbacks,
                                             this);
-  // set interrupt mode
-  Prepare(weakMediaSession_);
-
   OH_AudioStream_Result ret;
   // create audio render
   OH_AudioRenderer* tempAudioRenderer = audio_renderer_.get();
@@ -367,7 +369,6 @@ void OHOSAudioOutputStream::Prepare(
     return;
   }
   audioExclusive_ = mediaSession->audioExclusive_;
-  OH_AudioStreamBuilder_SetRendererInterruptMode(audio_stream_builder_, (OH_AudioInterrupt_Mode)false);
   LOG(INFO) << "OHOSAudioOutputStream::SetRendererInterruptMode audioExclusive: " << audioExclusive_;
 }
 

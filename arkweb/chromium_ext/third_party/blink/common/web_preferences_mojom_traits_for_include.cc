@@ -105,6 +105,9 @@ static void WebPreferenceMojomExt(blink::mojom::WebPreferencesDataView data,
   out->video_assistant_enabled = data.video_assistant_enabled();
   out->custom_media_player_enabled = data.custom_media_player_enabled();
 #endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  out->error_page_enabled = data.error_page_enabled();
+#endif
 }
 
 } // namespace mojo

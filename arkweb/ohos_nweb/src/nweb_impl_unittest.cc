@@ -208,6 +208,11 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (override));
 #endif
 
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  MOCK_METHOD(void, SetErrorPageEnabled, (bool enable), (override));
+  MOCK_METHOD(bool, GetErrorPageEnabled, (), (override));
+#endif
+
   MOCK_METHOD(void,
               OnTouchPress,
               (int32_t id, double x, double y, bool from_overlay),
@@ -959,6 +964,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
   void EnableVideoAssistant(bool enable) override {}
   void ExecuteVideoAssistantFunction(const std::string& cmd_id) override {}
   void CustomWebMediaPlayer(bool enable) override {}
+  void WebMediaPlayerControllerSetVolume(double volume) override {}
+  double WebMediaPlayerControllerGetVolume() override { return 1.0; }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -1062,6 +1069,14 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
 #if BUILDFLAG(ARKWEB_MENU)
   MOCK_METHOD(void, UpdateSingleHandleVisible, (bool isVisible), (override));
+#endif
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  MOCK_METHOD(void,
+              RunJavaScriptInFrames,
+              (const std::string& jsString, FrameInfos rootFrame,
+               bool recursive, IsolatedWorld world,
+               OnReceiveValueCallback callback),
+              (override));
 #endif
 };
 

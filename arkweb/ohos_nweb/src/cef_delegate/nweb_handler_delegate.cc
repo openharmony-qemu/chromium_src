@@ -71,6 +71,7 @@
 #include "ohos_glue/base/include/ark_web_errno.h"
 #include "url/gurl.h"
 #include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
+#include "ohos_nweb/src/capi/nweb_extension_javascript_item.h"
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "base/command_line.h"
@@ -849,6 +850,40 @@ void NWebHandlerDelegate::OnMainFrameChanged(CefRefPtr<CefBrowser> browser,
     nweb_handler_->OnQuickMenuDismissed();
   }
 }
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
+                                         CefRefPtr<CefFrame> frame) {
+  LOG(DEBUG) << "NWebHandlerDelegate::OnFrameCreated";
+  if (!frame || !frame->IsValid()) {
+    LOG(WARNING) << "OnFrameCreated failed, frame is invalid";
+    return;
+  }
+ 
+  CefRefPtr<CefFrameHostImpl> frameHost = static_cast<CefFrameHostImpl*>(frame.get());
+  if (!frameHost->GetRenderFrameHost()) {
+    LOG(WARNING) << "OnFrameCreated failed, GetRenderFrameHost failed";
+    return;
+  }
+ 
+  content::RenderFrameHostImpl* rfh =
+    static_cast<content::RenderFrameHostImpl*>(frameHost ->GetRenderFrameHost());
+  auto globalId = rfh->GetGlobalId();
+ 
+  FrameInfos frameInfo;
+  frameInfo.id = std::to_string(globalId.child_id) + "_" + std::to_string(globalId.frame_routing_id);
+  if (content::RenderFrameHostImpl* parent = rfh->GetParent()) {
+    auto parentGlobalId = parent->GetGlobalId();
+    frameInfo.parentId = std::to_string(parentGlobalId.child_id) + "_" +
+                         std::to_string(parentGlobalId.frame_routing_id);
+  } else {
+    frameInfo.parentId.clear();
+  }
+  frameInfo.url = rfh->GetLastCommittedURL().spec();
+ 
+  dispatcher_.OnFrameCreated(frameInfo);
+}
+#endif
 /* CefFrameHandler methods end */
 
 /* CefLifeSpanHandler methods begin */
@@ -1966,6 +2001,41 @@ bool NWebHandlerDelegate::ShouldOverrideUrlLoading(
              << result;
   return result;
 }
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+std::string NWebHandlerDelegate::OverrideErrorPage(
+    CefRefPtr<CefBrowser> browser,
+    const CefString& url,
+    const CefString& method,
+    bool user_gesture,
+    bool is_redirect,
+    bool is_outermost_main_frame,
+    const CefString& extra_request_headers_str,
+    int error_code,
+    const CefString& error_text) {
+  std::map<std::string, std::string> request_headers;
+  net::HttpRequestHeaders extra_request_headers;
+  extra_request_headers.AddHeadersFromString(
+    extra_request_headers_str.ToString());
+  for (const net::HttpRequestHeaders::HeaderKeyValuePair& header_key_value :
+      extra_request_headers.GetHeaderVector()) {
+    request_headers[header_key_value.key] = header_key_value.value;
+  }
+
+  std::shared_ptr<NWebUrlResourceRequest> nweb_request =
+    std::make_shared<NWebUrlResourceRequestImpl>(
+        method.ToString(), request_headers, url.ToString(), user_gesture,
+        is_outermost_main_frame, is_redirect);
+  std::shared_ptr<NWebUrlResourceError> error =
+    std::make_shared<UrlResourceErrorImpl>(error_code, error_text.ToString());
+  std::string result = "";
+  if (nweb_handler_ != nullptr) {
+    result = nweb_handler_->OnHandleOverrideErrorPage(nweb_request, error);
+    return result;
+  }
+  return result;
+}
+#endif
 
 bool NWebHandlerDelegate::OnOpenAppLink(
     const CefString& url,
@@ -4399,6 +4469,24 @@ NWebHandlerDelegate::OnFullScreenOverlayEnter(
   }
   return std::make_unique<NWebMediaPlayerListenerForVAST>(
       std::unique_ptr<NWebMediaPlayerListener>(listener));
+}
+
+void NWebHandlerDelegate::WebMediaPlayerControllerSetVolume(double volume)
+{
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  (nweb_media_player_controller_.get()
+       ->*(nweb_media_player_controller_->set_volume))(volume);
+#endif // IS_ARKWEB_EXT
+}
+
+double NWebHandlerDelegate::WebMediaPlayerControllerGetVolume()
+{
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  return (nweb_media_player_controller_.get()
+      ->*(nweb_media_player_controller_->get_volume))();
+#else
+  return 1.0;
+#endif // IS_ARKWEB_EXT
 }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 

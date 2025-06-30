@@ -72,6 +72,10 @@ ArkwebInputMethodControllerUtils::ArkwebInputMethodControllerUtils(
 
 ArkwebInputMethodControllerUtils::~ArkwebInputMethodControllerUtils() = default;
 
+void ArkwebInputMethodControllerUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(input_method_controller_);
+}
+
 Document& ArkwebInputMethodControllerUtils::GetDocument() const {
   return input_method_controller_->GetDocument();
 }

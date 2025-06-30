@@ -138,44 +138,6 @@
         },
         "includes": []
     },
-    "ohcamera": {
-        "apiList": {
-            "14":[
-                "Camera_ErrorCode OH_Camera_DeleteCameraManager(Camera_Manager* cameraManager);",
-                "Camera_ErrorCode OH_Camera_GetCameraManager(Camera_Manager** cameraManager);",
-                "Camera_ErrorCode OH_CameraManager_DeleteSupportedCameras(Camera_Manager* cameraManager, Camera_Device* cameras, uint32_t size);",
-                "Camera_ErrorCode OH_CameraManager_GetSupportedCameras(Camera_Manager* cameraManager, Camera_Device** cameras, uint32_t* size);",
-                "Camera_ErrorCode OH_CameraManager_DeleteSupportedCameraOutputCapability(Camera_Manager* cameraManager, Camera_OutputCapability* cameraOutputCapability);",
-                "Camera_ErrorCode OH_CameraManager_GetSupportedCameraOutputCapability(Camera_Manager* cameraManager, const Camera_Device* camera, Camera_OutputCapability** cameraOutputCapability);",
-                "Camera_ErrorCode OH_CameraManager_CreateCameraInput(Camera_Manager* cameraManager, const Camera_Device* camera, Camera_Input** cameraInput);",
-                "Camera_ErrorCode OH_CameraManager_CreatePreviewOutput(Camera_Manager* cameraManager, const Camera_Profile* profile, const char* surfaceId, Camera_PreviewOutput** previewOutput);",
-                "Camera_ErrorCode OH_CameraManager_RegisterCallback(Camera_Manager* cameraManager, CameraManager_Callbacks* callback);",
-                "Camera_ErrorCode OH_CameraManager_UnregisterCallback(Camera_Manager* cameraManager, CameraManager_Callbacks* callback);",
-                "Camera_ErrorCode OH_CameraManager_CreateCaptureSession(Camera_Manager* cameraManager, Camera_CaptureSession** captureSession);",
-                "Camera_ErrorCode OH_CameraInput_Open(Camera_Input* cameraInput);",
-                "Camera_ErrorCode OH_CameraInput_Release(Camera_Input* cameraInput);",
-                "Camera_ErrorCode OH_CameraDevice_GetCameraOrientation(Camera_Device* camera, uint32_t* orientation);",
-                "Camera_ErrorCode OH_CaptureSession_IsExposureModeSupported(Camera_CaptureSession* session, Camera_ExposureMode exposureMode, bool* isSupported);",
-                "Camera_ErrorCode OH_CaptureSession_GetExposureMode(Camera_CaptureSession* session, Camera_ExposureMode* exposureMode);",
-                "Camera_ErrorCode OH_CaptureSession_GetExposureBiasRange(Camera_CaptureSession* session, float* minExposureBias, float* maxExposureBias, float* step);",
-                "Camera_ErrorCode OH_CaptureSession_GetExposureBias(Camera_CaptureSession* session, float* exposureBias);",
-                "Camera_ErrorCode OH_CaptureSession_IsFocusModeSupported(Camera_CaptureSession* session, Camera_FocusMode focusMode, bool* isSupported);",
-                "Camera_ErrorCode OH_CaptureSession_GetFocusMode(Camera_CaptureSession* session, Camera_FocusMode* focusMode);",
-                "Camera_ErrorCode OH_CaptureSession_IsFlashModeSupported(Camera_CaptureSession* session, Camera_FlashMode flashMode, bool* isSupported);",
-                "Camera_ErrorCode OH_CaptureSession_BeginConfig(Camera_CaptureSession* session);",
-                "Camera_ErrorCode OH_CaptureSession_AddInput(Camera_CaptureSession* session, Camera_Input* cameraInput);",
-                "Camera_ErrorCode OH_CaptureSession_AddPreviewOutput(Camera_CaptureSession* session, Camera_PreviewOutput* previewOutput);",
-                "Camera_ErrorCode OH_CaptureSession_CommitConfig(Camera_CaptureSession* session);",
-                "Camera_ErrorCode OH_CaptureSession_Start(Camera_CaptureSession* session);",
-                "Camera_ErrorCode OH_CaptureSession_Stop(Camera_CaptureSession* session);",
-                "Camera_ErrorCode OH_CaptureSession_Release(Camera_CaptureSession* session);",
-                "Camera_ErrorCode OH_PreviewOutput_Stop(Camera_PreviewOutput* previewOutput);",
-                "Camera_ErrorCode OH_PreviewOutput_Release(Camera_PreviewOutput* previewOutput);"
-            ]
-        },
-        "includes": [
-        ]
-    },
     "hilog_ndk": {
         "apiList": {
             "14": [

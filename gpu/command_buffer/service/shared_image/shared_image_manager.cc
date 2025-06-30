@@ -250,11 +250,11 @@ std::unique_ptr<SkiaImageRepresentation> SharedImageManager::ProduceSkia(
   AutoLock autolock(this);
   auto found = images_.find(mailbox);
   if (found == images_.end()) {
-  #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-    std::string error_msg =
-      "SharedImageManager::ProduceSkia: Trying to Produce a Skia representation from a non-existent mailbox.";
-    ReportGpuProcessEvent(CrashType::MAILBOX_NONEXISTENT, error_msg);
-  #endif
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string error_msg =
+    "SharedImageManager::ProduceSkia: Trying to Produce a Skia representation from a non-existent mailbox.";
+  ReportGpuProcessEvent(CrashType::MAILBOX_NONEXISTENT, error_msg);
+#endif
     LOG(ERROR) << "SharedImageManager::ProduceSkia: Trying to Produce a "
                   "Skia representation from a non-existent mailbox.";
     return nullptr;

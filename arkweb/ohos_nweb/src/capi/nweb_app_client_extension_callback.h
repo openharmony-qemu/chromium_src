@@ -22,14 +22,9 @@
 #include <string>
 
 #include "arkweb/build/features/features.h"
-#include "build/build_config.h"
 #include "ohos_nweb/src/capi/nweb_extension_javascript_item.h"
 #include "ohos_nweb/src/capi/nweb_native_embed_first_frame_paint_event.h"
 #include "ohos_nweb/src/capi/nweb_permission_request.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #if BUILDFLAG(ARKWEB_NAVIGATION)
 #include "arkweb/ohos_nweb/src/capi/nweb_icon_size.h"
@@ -117,6 +112,10 @@ struct NWebAppClientExtensionCallback {
 #endif // ARKWEB_VIDEO_ASSISTANT
 
   void (*OnShowToast)(int32_t nweb_id, double duration, const char* toast);
+
+  void (*OnResizedDueToAutoResize)(int32_t nweb_id,
+                                   int32_t width,
+                                   int32_t height);
 
   void (*OnShowVideoAssistant)(int32_t nweb_id,
                                const char* video_assistant_items);

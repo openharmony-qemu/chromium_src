@@ -26,7 +26,7 @@ struct NWebPermissionRequest {
   std::string origin_url;
   std::shared_ptr<OHOS::NWeb::NWebAccessRequest> access_request;
 
-  NWebPermissionRequest() : nweb_id(-1), access_request(nullptr) {
+  NWebPermissionRequest() : nweb_id(-1), resource_id(-1),access_request(nullptr) {
     WVLOG_I("NWebPermissionRequest() is called");
   }
 

@@ -341,7 +341,7 @@ void ReportGpuProcessEvent(CrashType type, std::string eventcontent) {
       break;
     case CrashType::MAILBOX_NONEXISTENT:
       OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
-        GPU_DISPLAY_ERROR, HiSysEventAdapter::EVENT_TYPE::STATISTIC,
+        GPU_DISPLAY_ERROR, HiSysEventAdapter::EventType::STATISTIC,
         {EVENT_TYPE, MAILBOX_NONEXISTENT, EVENT_CONTENT, eventcontent});
       break;
   }

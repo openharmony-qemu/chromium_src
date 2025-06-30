@@ -330,6 +330,7 @@ void ReportDragBlank(int64_t duration) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       PAGE_DRAG_BLANK, HiSysEventAdapter::EventType::STATISTIC,
       {PAGE_DRAG_BLANK, std::to_string(duration)});
+}
 
 void ReportGpuProcessEvent(CrashType type, std::string eventcontent) {
   switch(type) {

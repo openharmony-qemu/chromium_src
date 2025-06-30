@@ -142,7 +142,7 @@ class CONTENT_EXPORT ChildProcess {
   // Whether this ChildProcess initialized ThreadPoolInstance.
   bool initialized_thread_pool_ = false;
 
-  ChildProcessUtils* implUtils;
+  raw_ptr<ChildProcessUtils> implUtils;
 };
 
 }  // namespace content

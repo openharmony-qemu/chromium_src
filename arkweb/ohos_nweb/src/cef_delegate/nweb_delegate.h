@@ -585,6 +585,10 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
                               double borderRadiusBottomLeft,
                               double borderRadiusBottomRight) override;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_MENU)
+  void SetTouchHandleExistState(bool touchHandleExist) override;
+  void SetViewportScaleState(bool viewportScale) override;
+#endif  // BUILDFLAG(ARKWEB_MENU)
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   void SetAccessibilityState(cef_state_t accessibility_state) override;
   bool ExecuteAction(

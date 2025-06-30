@@ -169,6 +169,10 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.border_radius_bottom_left = border_radius_bottom_left_;
   browser_settings.border_radius_bottom_right = border_radius_bottom_right_;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_MENU)
+  browser_settings.touch_handle_exist = touch_handle_exist_;
+  browser_settings.viewport_scale = viewport_scale_;
+#endif  // BUILDFLAG(ARKWEB_MENU)
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   browser_settings.hide_horizontal_scrollbars =
       !IsHorizontalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
@@ -349,6 +353,19 @@ void NWebPreferenceDelegate::SetBorderRadiusFromWeb(
   WebPreferencesChanged();
 }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+void NWebPreferenceDelegate::SetTouchHandleExistState(bool touchHandleExist) {
+  touch_handle_exist_ = touchHandleExist;
+  WebPreferencesChanged();
+}
+
+void NWebPreferenceDelegate::SetViewportScaleState(bool viewportScale) {
+  viewport_scale_ = viewportScale;
+  WebPreferencesChanged();
+}
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
 void NWebPreferenceDelegate::PutForceDarkModeEnabled(int forceDark) {
   force_dark_mode_enabled_ = forceDark;
   WebPreferencesChanged();

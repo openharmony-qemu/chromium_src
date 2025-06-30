@@ -4026,6 +4026,20 @@ void NWebDelegate::SetBorderRadiusFromWeb(double borderRadiusTopLeft,
 }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_MENU)
+void NWebDelegate::SetTouchHandleExistState(bool touchHandleExist) {
+  if (preference_delegate_) {
+    preference_delegate_->SetTouchHandleExistState(touchHandleExist);
+  }
+}
+
+void NWebDelegate::SetViewportScaleState(bool viewportScale) {
+  if (preference_delegate_) {
+    preference_delegate_->SetViewportScaleState(viewportScale);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
 #if BUILDFLAG(ARKWEB_SECURITY_STATE)
 int NWebDelegate::GetSecurityLevel() {
   if (GetBrowser() == nullptr) {

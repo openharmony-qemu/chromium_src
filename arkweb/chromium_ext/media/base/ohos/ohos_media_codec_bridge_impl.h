@@ -41,7 +41,7 @@ struct EncodeOutputBuffer {
 };
 
 struct EncodeConfigDataCache {
-  uint8_t* config_data_addr = nullptr;
+  raw_ptr<uint8_t> config_data_addr = nullptr;
   uint32_t config_data_size;
   uint32_t config_info_size;
 };
@@ -128,7 +128,7 @@ class OHOSMediaCodecBridgeImpl : public OHOSMediaCodecBridge {
   std::shared_ptr<CodecEncodeBridgeCallback> cb_;
   scoped_refptr<base::SequencedTaskRunner> codec_task_runner_ = nullptr;
   std::atomic<bool> is_running_ = false;
-  uint8_t* keyframe_addr_ = nullptr;
+  raw_ptr<uint8_t> keyframe_addr_;
   EncodeConfigDataCache config_data_cache_;
   std::shared_ptr<ProducerSurfaceAdapter> surface_;
   std::shared_ptr<SurfaceBufferAdapter> buffer_adapter_;

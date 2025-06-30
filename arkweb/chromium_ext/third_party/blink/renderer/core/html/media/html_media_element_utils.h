@@ -24,7 +24,7 @@ namespace blink {
  public:
     enum class PlayState { kPause = 0, kPlay, kWaiting, kPlaying };
     WebString GetTitle() const;
-    HTMLMediaElement* htmlMediaElement_;
+    raw_ptr<HTMLMediaElement> htmlMediaElement_ = nullptr;
     HTMLMediaElementUtils(HTMLMediaElement* element);
 
     #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)

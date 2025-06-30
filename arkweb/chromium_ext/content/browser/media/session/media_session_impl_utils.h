@@ -33,7 +33,7 @@ class MediaSessionOHOS;
 
 class MediaSessionImplUtils {
 public:
-    MediaSessionImpl* impl;
+    raw_ptr<MediaSessionImpl> impl = nullptr;
     MediaSessionImplUtils(MediaSessionImpl* impl);
 
     void CheckPosition(std::optional<media_session::MediaPosition> position);

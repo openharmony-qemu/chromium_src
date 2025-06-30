@@ -32,7 +32,7 @@ struct BufferInfo {
 };
 
 struct OhosBuffer {
-  uint8_t* addr;
+  raw_ptr<uint8_t> addr = nullptr;
   uint32_t bufferSize;
 };
 

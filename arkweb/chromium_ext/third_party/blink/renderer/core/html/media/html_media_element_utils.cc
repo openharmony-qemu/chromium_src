@@ -227,10 +227,10 @@ void HTMLMediaElementUtils::TryNotifyVideoPlaying() {
   }
   if (!htmlMediaElement_->video_assistant_) {
     auto callback = WTF::BindOnce(&HTMLMediaElement::NotifyVideoPlayingInternal,
-                                  WrapWeakPersistent(htmlMediaElement_));
+                                  WrapWeakPersistent(htmlMediaElement_.get()));
     htmlMediaElement_->GetMediaPlayerHostRemote().RequestVideoAssistantConfig(
         WTF::BindOnce(&HTMLMediaElement::OnVideoAssistantConfigReceived,
-                      WrapWeakPersistent(htmlMediaElement_), std::move(callback)));
+                      WrapWeakPersistent(htmlMediaElement_.get()), std::move(callback)));
     return;
   }
   htmlMediaElement_->NotifyVideoPlayingInternal();

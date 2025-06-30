@@ -84,7 +84,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   // Call to determine whether media is preload
   bool IsPreloadOrMutedMediaMode();
 
-  raw_ptr<OHOSAudioManager> manager_;
+  raw_ptr<OHOSAudioManager> manager_ = nullptr;
 
   AudioParameters parameters_;
 

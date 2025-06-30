@@ -50,7 +50,7 @@ class MediaControlTimelineRowPanelElement;
 
 class MediaControlsImplUtils {
 public:
-  MediaControlsImpl* impl;
+  raw_ptr<MediaControlsImpl> impl = nullptr;
   MediaControlsImplUtils(MediaControlsImpl* mediaControlsImpl, HTMLMediaElement& media_element);
   static bool ShouldShowPlaybackSpeedButtonExt(HTMLMediaElement& media_element);
   void InitializeControlsExt();

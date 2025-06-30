@@ -144,7 +144,7 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
 #endif // ARKWEB_VIDEO_ASSISTANT
 
   std::unique_ptr<OHOS::NWeb::PlayerAdapter> player_ = nullptr;
-  void* native_window_origin_ = nullptr;
+  raw_ptr<void> native_window_origin_ = nullptr;
 
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   raw_ptr<Client> client_;

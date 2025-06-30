@@ -1017,19 +1017,20 @@ const std::string process_type = "gpu";
 
 void GpuProcessHost::OnProcessLaunchFailed(int error_code) {
   LOG(ERROR) << "GPU process launch failed: error_code=" << error_code;
-  #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-    std::string error_msg = "gpu process launch failed, error code:" + std::to_string(error_code);
-    crashpad::CrashpadDfx::ProcessCrashReport(process_type, "", "", error_msg);
-  #endif
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string error_msg = "gpu process launch failed, error code:" + std::to_string(error_code);
+  crashpad::CrashpadDfx::ProcessCrashReport(process_type, "", "", error_msg);
+#endif
   RecordProcessCrash();
 }
 
 void GpuProcessHost::OnProcessCrashed(int exit_code) {
   // Record crash before doing anything that could start a new GPU process.
   LOG(ERROR) << "GPU process exited unexpectedly: exit_code=" << exit_code;
-  #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-    std::string error_msg = "gpu crashed, error code:" + std::to_string(exit_code);
-  #endif
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string error_msg = "gpu crashed, error code:" + std::to_string(exit_code);
+  crashpad::CrashpadDfx::ProcessCrashReport(process_type, "", "", error_msg);
+#endif
   RecordProcessCrash();
   gpu_host_->OnProcessCrashed();
   SendOutstandingReplies();

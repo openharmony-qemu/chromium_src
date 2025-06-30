@@ -44,7 +44,7 @@ BASE_FEATURE(kFeatureParamWithCache,
 // introduces too much latency.
 BASE_FEATURE(kUseRustJsonParser,
              "UseRustJsonParser",
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || defined(__arm__)
              FEATURE_DISABLED_BY_DEFAULT
 #else
              FEATURE_ENABLED_BY_DEFAULT

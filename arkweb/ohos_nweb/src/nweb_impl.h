@@ -29,6 +29,7 @@
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
 #include "capi/nweb_extension_api_callback.h"
+#include "capi/nweb_extension_javascript_item.h"
 #include "nweb.h"
 #include "nweb_download_callback.h"
 #include "nweb_errors.h"
@@ -53,6 +54,8 @@
 #include "capi/nweb_statistic_callback.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+struct FrameInfos;
+struct IsolatedWorld;
 struct OpenDevToolsParam;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "capi/nweb_extension_manager_callback.h"
@@ -206,15 +209,12 @@ class NWebImpl : public NWeb {
                              const std::vector<std::string>& method_list,
                              const std::vector<std::string>& async_method_list,
                              const int32_t object_id) override;
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
-  void RegisterArkJSfunctionV2(
+  void RegisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list,
       const std::vector<std::string>& async_method_list,
       const int32_t object_id,
       const std::string& permission) override;
-#endif
   void UnregisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) override;
@@ -289,6 +289,9 @@ class NWebImpl : public NWeb {
                               double borderRadiusBottomLeft,
                               double borderRadiusBottomRight) override;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_MENU)
+  void UpdateSingleHandleVisible(bool isVisible) override;
+#endif
   void SuggestionSelected(int index) override;
 #if BUILDFLAG(ARKWEB_DISCARD)
   bool Discard() override;
@@ -564,6 +567,9 @@ class NWebImpl : public NWeb {
   void PutWebExtensionCallback(
       std::shared_ptr<NWebExtensionCallback> web_extension_callback);
   void RemoveWebExtensionCallback();
+  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                             bool recursive, IsolatedWorld world,
+                             OnReceiveValueCallback callback);
   void GetImageFromContextNode();
   void GetImageFromCache(const std::string& url);
   void ReloadOriginalUrl() const;
@@ -578,6 +584,8 @@ class NWebImpl : public NWeb {
   static void OnReportStatisticLog(const std::string& content);
   static void SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func);
   void CustomWebMediaPlayer(bool enable);
+  void WebMediaPlayerControllerSetVolume(double volume);
+  double WebMediaPlayerControllerGetVolume();
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
@@ -630,6 +638,7 @@ class NWebImpl : public NWeb {
 
   bool NeedSoftKeyboard() override;
 
+  bool GetIsEditTextType();
   static std::shared_ptr<NWeb> GetNWeb(int32_t nweb_id);
   static std::shared_ptr<NWeb> CreateNWeb(
       std::shared_ptr<NWebCreateInfo> create_info);
@@ -750,6 +759,13 @@ class NWebImpl : public NWeb {
   void OnCreateNativeMediaPlayer(
       std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) override;
 
+  static void SetLoggerReportEventCallback(void* callback);
+  static void UploadCallback(const std::string& module,
+                             const std::string& resource,
+                             const std::string& errorCode,
+                             const std::string& errorMsg);
+  static void* logger_report_event_callback_;
+
 #if BUILDFLAG(ARKWEB_ITP)
   static void AddIntelligentTrackingPreventionBypassingList(
       const std::vector<std::string>& hosts);
@@ -797,6 +813,8 @@ class NWebImpl : public NWeb {
   static void RemoveWebExtensionManagerCallback();
   static void UnLoadWebExtension(const std::string& eid);
   static void GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionInfo>& extensionInfo);
+  static void SetExtensionName(const std::string& extension_name);
+  static bool GetExtensionName(std::string& extension_name);
   static void PutExtensionContextMenusCallback(
     std::shared_ptr<NWebExtensionContextMenusCallback> extension_context_menus_callback);
   static void RemoveExtensionContextMenusCallback();
@@ -903,8 +921,7 @@ class NWebImpl : public NWeb {
                                      int32_t y,
                                      bool isHoverEnter) override;
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(IS_ARKWEB)
   void SetSurfaceDensity(const double& density) override;
 #endif
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
@@ -966,6 +983,19 @@ class NWebImpl : public NWeb {
                     int frame_routing_id,
                     int event) override;
 #endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessLoadingKey(const std::string& key) override;
+  void SetPrivacyStatus(bool isPrivate) override;
+  int32_t GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) override;
+  int32_t SetBlanklessLoadingWithKey(const std::string& key, bool isStart) override;
+  int64_t GetPreferenceHash();
+  static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
+#endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  void SetErrorPageEnabled(bool enable) override;
+  bool GetErrorPageEnabled() override;
+#endif
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
@@ -1023,8 +1053,7 @@ class NWebImpl : public NWeb {
   static OnReportStatisticLogFunc on_report_statistic_log_callback_;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
   void RegisterNativeJavaScriptProxy(const std::string& objName,
                                      const std::vector<std::string>& methodName,
                                      std::shared_ptr<OHOS::NWeb::NWebJsProxyMethod> data,
@@ -1037,6 +1066,20 @@ class NWebImpl : public NWeb {
   std::unique_ptr<base::RetainingOneShotTimer> drag_over_timer_;
   DelegateDragEvent drag_over_event_;
   base::WeakPtrFactory<NWebImpl> weak_factory_{this};
+
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  void AvoidVisibleViewportBottom(int32_t avoidHeight) override;
+  int32_t GetVisibleViewportAvoidHeight() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void ClearBlanklessKey();
+  void CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file);
+  // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
+  std::atomic<uint64_t> blankless_key_ = UINT64_MAX;
+  std::atomic<bool> is_private_ = false;
+  std::atomic<bool> is_visible_ = false;
+#endif
 };
 }  // namespace OHOS::NWeb
 

@@ -79,4 +79,22 @@ void NWebMediaPlayerControllerImpl::Download() {
     cef_controller_->Download();
   }
 }
+
+void NWebMediaPlayerControllerImpl::SetVolume(double volume)
+{
+  LOG(INFO) << "NWebMediaPlayerControllerImpl::SetVolume volume=" << volume;
+  if (cef_controller_) {
+    cef_controller_->SetVolume(volume);
+  }
+}
+
+double NWebMediaPlayerControllerImpl::GetVolume()
+{
+  LOG(INFO) << "NWebMediaPlayerControllerImpl::GetVolume()";
+  if (cef_controller_) {
+    return cef_controller_->GetVolume();
+  }
+  return -1.0;
+}
+
 } // namespace OHOS::NWeb

@@ -95,4 +95,8 @@ const char kEnableCacheMediaTakeOver[] = "enable-cache-media-take-over";
 const char kOhosEnableVulkan[] = "ohos-enable-vulkan";
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+const char kSetExtensionName[] = "set-extension-name";
+#endif
+
 }  // namespace switches

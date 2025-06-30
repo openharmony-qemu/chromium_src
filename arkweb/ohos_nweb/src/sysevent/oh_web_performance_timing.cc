@@ -29,5 +29,6 @@ void OhWebPerformanceTiming::Reset() {
   first_paint = -1;
   first_contentful_paint = -1;
   largest_contentful_paint = -1;
+  render_init_block = -1;
 }
  

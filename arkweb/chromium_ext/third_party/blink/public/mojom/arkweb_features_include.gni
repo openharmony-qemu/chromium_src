@@ -93,6 +93,10 @@ if (arkweb_menu) {
   mojom_platform_enabled_features += [ "arkweb_menu" ]
 }
 
+if (arkweb_error_page) {
+  mojom_platform_enabled_features += [ "arkweb_error_page" ]
+}
+
 if (arkweb_precompile) {
   mojom_core_enabled_features += [ "arkweb_precompile" ]
 }

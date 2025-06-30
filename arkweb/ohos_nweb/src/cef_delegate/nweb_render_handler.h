@@ -95,14 +95,16 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
 #endif
   /* CefRenderHandler method begin */
   void GetViewRect(CefRefPtr<CefBrowser> browser, CefRect& rect) override;
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   void GetVisibleViewportRect(CefRefPtr<CefBrowser> browser,
                               CefRect& rect) override;
   void SetNeedFocusViewport(bool need);
   void OnResizeScrollableViewport(CefRefPtr<CefBrowser> browser) override;
   void UpdateSecurityLayer(bool isNeedSecurityLayer) override;
 #endif
-
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  void SetViewportAvoidHeight(int32_t viewportAvoidHeight);
+#endif
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   void SetFillContent(const CefString& content) override;
 #endif
@@ -347,6 +349,11 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
 #endif
 
   std::function<void(double, double)> on_scroll_cb_ = nullptr;
+
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  int32_t viewportAvoidHeight_ = 0;
+  int32_t viewportAvoidScrollOffset_ = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

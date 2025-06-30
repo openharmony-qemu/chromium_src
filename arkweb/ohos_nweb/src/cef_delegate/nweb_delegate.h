@@ -24,6 +24,7 @@
 #include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "capi/nweb_app_client_extension_callback.h"
+#include "capi/nweb_extension_javascript_item.h"
 #include "cef/include/cef_command_line.h"
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 #include "content/browser/accessibility/browser_accessibility_manager_ohos.h"
@@ -51,6 +52,8 @@
 #include "capi/nweb_download_delegate_callback.h"
 #endif  //  ARKWEB_EX_DOWNLOAD
 
+struct FrameInfos;
+struct IsolatedWorld;
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -118,10 +121,14 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void Resize(uint32_t width,
               uint32_t height,
               bool isKeyboard = false) override;
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   void ResizeVisibleViewport(uint32_t width,
                              uint32_t height,
                              bool isKeyboard = false) override;
+#endif
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  void AvoidVisibleViewportBottom(int32_t avoidHeight) override;
+  int32_t GetVisibleViewportAvoidHeight() override;
 #endif
   void OnTouchPress(int32_t id, double x, double y, bool from_overlay) override;
   void OnTouchRelease(int32_t id,
@@ -784,6 +791,21 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
                     int event) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_MENU)
+  void UpdateSingleHandleVisible(bool isVisible) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                             bool recursive, IsolatedWorld world,
+                             OnReceiveValueCallback callback) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  void SetErrorPageEnabled(bool enable) override;
+  bool GetErrorPageEnabled() override;
+#endif
+
  public:
   int argc_;
   const char** argv_;
@@ -847,6 +869,8 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   void EnableVideoAssistant(bool enable) override;
   void ExecuteVideoAssistantFunction(const std::string& cmd_id) override;
   void CustomWebMediaPlayer(bool enable) override;
+  void WebMediaPlayerControllerSetVolume(double volume) override;
+  double WebMediaPlayerControllerGetVolume() override;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
@@ -905,7 +929,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
       nullptr;
   std::shared_ptr<OHOS::NWeb::DisplayScreenListener> display_listener_ =
       nullptr;
-  int32_t display_listener_id_;
+  int32_t display_listener_id_ = 0;
 #if BUILDFLAG(ARKWEB_AI)
   std::shared_ptr<OHOS::NWeb::FoldStatusScreenListener> foldstatus_listener_ =
       nullptr;
@@ -915,7 +939,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   bool hidden_ = false;
   bool occluded_ = false;
   bool is_popup_ready_ = false;
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PAGE_UP_DOWN) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   uint32_t width_ = 0;
   uint32_t height_ = 0;
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
@@ -924,7 +948,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   uint32_t visible_height_ = 0;
 #endif
 
-  uint32_t nweb_id_;
+  uint32_t nweb_id_ = 0;
 
 #if BUILDFLAG(IS_OHOS)
   std::map<std::string, std::shared_ptr<NWebNativeEmbedDataInfo>>
@@ -947,6 +971,10 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 
 #if BUILDFLAG(ARKWEB_AI)
   bool data_detector_enable_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  int32_t avoid_height_ = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

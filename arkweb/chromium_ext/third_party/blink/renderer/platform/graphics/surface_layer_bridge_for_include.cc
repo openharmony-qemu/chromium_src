@@ -37,4 +37,38 @@ void SurfaceLayerBridge::SetLayerBoundsChangeCallback(
 }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+scoped_refptr<cc::SurfaceLayer> SurfaceLayerBridge::CreateSurfaceLayer(cc::SurfaceLayer::RectChangeCallback callback,
+    cc::SurfaceLayer::RectVisibilityChangeCallback visibilitycallback,
+    cc::SurfaceLayer::LayerRemovedVisibilityCallback layerRemovedCallback)
+{
+  surface_layer_ = cc::SurfaceLayer::Create(update_submission_state_callback_,
+      std::move(callback), std::move(visibilitycallback), std::move(layerRemovedCallback));
+
+  // This surface_id is essentially just a placeholder for the real one we will
+  // get in OnFirstSurfaceActivation. We need it so that we properly get a
+  // WillDraw, which then pushes the first compositor frame.
+  parent_local_surface_id_allocator_.GenerateId();
+  current_surface_id_ = viz::SurfaceId(
+      frame_sink_id_,
+      parent_local_surface_id_allocator_.GetCurrentLocalSurfaceId());
+
+  surface_layer_->SetSurfaceId(current_surface_id_,
+                               cc::DeadlinePolicy::UseDefaultDeadline());
+
+  surface_layer_->SetStretchContentToFillBounds(true);
+  surface_layer_->SetIsDrawable(true);
+  surface_layer_->SetHitTestable(true);
+  surface_layer_->SetMayContainVideo(contains_video_ == ContainsVideo::kYes);
+
+  if (observer_) {
+    observer_->RegisterContentsLayer(surface_layer_.get());
+  }
+  // We ignore our opacity until we are sure that we have something to show,
+  // as indicated by getting an OnFirstSurfaceActivation call.
+  surface_layer_->SetContentsOpaque(false);
+
+  return surface_layer_;
+}
+#endif  // ARKWEB_SAME_LAYER
 }  // namespace blink

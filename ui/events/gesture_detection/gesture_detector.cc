@@ -436,6 +436,10 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
               (std::abs(velocity_x) > min_fling_velocity_)) {
             handled = listener_->OnFling(*current_down_event_, ev, velocity_x,
                                          velocity_y);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+            LOG(INFO) << "GestureDetector::OnTouchEvent: OnFling vx:" << velocity_x
+                      << ", vy:" << velocity_y << ", handled: " << handled;
+#endif
           }
 
           handled |= HandleSwipeIfNeeded(ev, velocity_x, velocity_y);

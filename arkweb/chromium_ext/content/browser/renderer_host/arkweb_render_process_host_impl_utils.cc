@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 #include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
-
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#include "arkweb/ohos_nweb/src/nweb_resize_helper.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/browser/renderer_host/render_process_host_impl.h"
 #include "content/browser/site_info.h"
@@ -28,6 +29,7 @@
 #include "services/device/public/mojom/time_zone_monitor.mojom.h"
 #include "services/metrics/public/cpp/ukm_recorder.h"
 #include "services/metrics/public/mojom/ukm_interface.mojom.h"
+#include "cef/ohos_cef_ext/libcef/browser/page_load_metrics/arkweb_page_load_metrics_observer.h"
 #if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
 #include "arkweb/chromium_ext/services/device/public/mojom/res_sched_report.mojom.h"
 #include "arkweb/chromium_ext/services/device/public/mojom/sysprop_render_observer.mojom.h"
@@ -550,6 +552,17 @@ void ArkwebRenderProcessHostImplUtils::ReportKeyThreadIdsEx(
         static_cast<ResSchedRoleAdapter>(role));
   }
 }
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+void ArkwebRenderProcessHostImplUtils::ReportHisyevent(int64_t block_time, const std::string& mode) {
+  if (mode == "ReportRenderInitBlock") {
+    OhPageLoadMetricsObserver::RenderInitBlock(block_time);
+  }
+  if (mode == "ReportDragBlank" && OHOS::NWeb::NWebResizeHelper::GetInstance().IsDragResizeStart()) {
+    ReportDragBlank(block_time);
+  }
+}
+#endif
 
 void ArkwebRenderProcessHostImplUtils::AddHostUIThreadInterface(
     service_manager::BinderRegistry* registry) {

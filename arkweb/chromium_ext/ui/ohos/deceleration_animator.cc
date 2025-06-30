@@ -17,6 +17,7 @@
 
 #include "base/threading/platform_thread.h"
 #include "base/time/time.h"
+#include "content/public/browser/browser_thread.h"
 
 namespace ui {
 void DecelerationAnimator::startAnimate(float distance,
@@ -40,27 +41,28 @@ void DecelerationAnimator::animate(float distance, base::TimeDelta duration) {
     float relativeDistance = interpolator_.getInterpolation(timeProgress);
     float currY = relativeDistance * distance;
     float delta = currY - lastY;
-    if (listener_) {
-      listener_->onAnimationRepeat(delta);
-    }
+
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE, base::BindOnce(repeat_callback_, 0, delta));
 
     lastY = currY;
 
     base::PlatformThread::Sleep(base::Milliseconds(kAnimateMilliseconds));
   }
-  if (listener_) {
-    listener_->onAnimationEnd();
-  }
+
+  content::GetUIThreadTaskRunner({})->PostTask(
+      FROM_HERE, base::BindOnce(end_callback_, 0, 0));
 }
 
 void DecelerationAnimator::resetAnimate() {
-  listener_.reset();
   task_runner_.reset();
 }
 
 void DecelerationAnimator::setRefreshListener(
-    std::unique_ptr<DecelerationAnimatorListener> listener) {
-  listener_ = std::move(listener);
+    const AnimationRepeatCallback& repeat_callback,
+    const AnimationEndCallback& end_callback) {
+  repeat_callback_ = std::move(repeat_callback);
+  end_callback_ = std::move(end_callback);
 }
 
 }  // namespace ui

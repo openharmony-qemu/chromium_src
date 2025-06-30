@@ -5,7 +5,7 @@
 include "components/url_pattern_index/flat/url_pattern_index.fbs";
 
 // #if BUILDFLAG(ARKWEB_ADBLOCK)
-include "components/url_pattern_index/flat/css_pattern_index.fbs";
+include "arkweb/chromium_ext/components/url_pattern_index/flat/css_pattern_index.fbs";
 // #endif
 
 namespace subresource_filter.flat;

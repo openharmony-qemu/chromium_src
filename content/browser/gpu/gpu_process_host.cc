@@ -1220,6 +1220,8 @@ bool GpuProcessHost::GpuAccessAllowed() const {
 void GpuProcessHost::DisableGpuCompositing() {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS_ASH)
   DLOG(ERROR) << "Can't disable GPU compositing";
+#elif BUILDFLAG(IS_ARKWEB)
+  LOG(ERROR) << "Can't disable GPU compositing";
 #else
   // TODO(crbug.com/40565996): The switch from GPU to software compositing
   // should be handled here instead of by ImageTransportFactory.

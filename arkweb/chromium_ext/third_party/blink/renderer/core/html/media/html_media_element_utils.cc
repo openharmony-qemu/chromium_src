@@ -97,6 +97,8 @@ void HTMLMediaElementUtils::ScheduleNamedEventUtils(const AtomicString& event_na
     played_time_recorder_.StopRecord();
     freeze_time_recorder_.StopRecord();
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+    } else if (event_name == event_type_names::kVolumechange) {
+      OnVolumeChanged(htmlMediaElement_->volume());
     }
   }
 #endif // ARKWEB_VIDEO_ASSISTANT
@@ -462,6 +464,21 @@ void HTMLMediaElementUtils::VideoSizeChangedOverlay(int32_t width, int32_t heigh
   if (htmlMediaElement_->IsHTMLVideoElement()) {
     for (auto& observer : htmlMediaElement_->media_player_observer_remote_set_->Value()) {
       observer->VideoSizeChangedOverlay(width, height);
+    }
+  }
+}
+
+void HTMLMediaElementUtils::OnVolumeChanged(double volume)
+{
+  LOG(INFO) << "HTMLMediaElementUtils::OnVolumeChanged volume=" << volume;
+  if (!htmlMediaElement_ || !htmlMediaElement_->IsCustomMediaPlayerEnabled()) {
+    return;
+  }
+
+  if (htmlMediaElement_->IsHTMLVideoElement()) {
+    for (auto& observer : htmlMediaElement_->media_player_observer_remote_set_->Value()) {
+      LOG(INFO) << "HTMLMediaElementUtils::OnVolumeChanged for observer, volume=" << volume;
+      observer->OnVolumeChanged(volume);
     }
   }
 }

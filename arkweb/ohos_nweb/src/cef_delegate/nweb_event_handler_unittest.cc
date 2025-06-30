@@ -743,6 +743,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 #endif
   CefRefPtr<CefFrame> GetFrameByIdentifier(
       const CefString& identifier) override {  return nullptr; }
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                             bool recursive, IsolatedWorld world,
+                             CefRefPtr<CefJavaScriptResultCallback> callback) override {}
+#endif
 #endif  // BUILDFLAG(IS_OHOS)
 };
 

@@ -161,6 +161,7 @@ class MediaCodecDecoderBridgeImpl {
   scoped_refptr<base::SequencedTaskRunner> decoder_task_runner_ = nullptr;
   int32_t width_;
   int32_t height_;
+  std::recursive_mutex decoderMutex_;
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void* window_from_surface_ = nullptr;

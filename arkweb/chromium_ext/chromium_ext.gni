@@ -41,6 +41,8 @@ arkweb_content_renderer_sources = [
   "//arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_ext.cc",
   "//arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_utils.h",
   "//arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_utils.cc",
+  "//arkweb/chromium_ext/content/renderer/renderer_engine_event.cc",
+  "//arkweb/chromium_ext/content/renderer/renderer_engine_event.h",
 ]
 
 arkweb_native_scroller_sources = [
@@ -574,6 +576,7 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/base/debug/stack_trace_ohos_unittest.cc",
   "//arkweb/chromium_ext/base/files/file_util_posix_unittest.cc",
   "//arkweb/chromium_ext/base/files/memory_mapped_file_ext_unittest.cc",
+  "//arkweb/chromium_ext/base/files/file_path_sta_ext_unittest.cc",
 ]
 
 arkweb_base_trace_event_sources = [

@@ -1004,6 +1004,9 @@ class CONTENT_EXPORT RenderProcessHostImpl
     const std::vector<int32_t>& thread_ids, int32_t role) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    void ReportHisyevent(int64_t block_time, const std::string& mode) override;
+#endif
     const int render_process_id_;
     const base::WeakPtr<RenderProcessHostImpl> weak_host_;
     std::unique_ptr<service_manager::BinderRegistry> binders_;
@@ -1055,13 +1058,6 @@ class CONTENT_EXPORT RenderProcessHostImpl
       uint64_t private_memory_footprint_bytes) override;
 #endif
   void HasGpuProcess(HasGpuProcessCallback callback) override;
-
-#if BUILDFLAG(IS_ARKWEB)
-  void ReportEngineEvent(const std::string& module,
-                         const std::string& resource,
-                         const std::string& error_code,
-                         const std::string& error_msg) override;
-#endif
 
   void CreateEmbeddedFrameSinkProvider(
       mojo::PendingReceiver<blink::mojom::EmbeddedFrameSinkProvider> receiver);

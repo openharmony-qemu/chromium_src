@@ -727,6 +727,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void OnMainFrameChanged(CefRefPtr<CefBrowser> browser,
                           CefRefPtr<CefFrame> old_frame,
                           CefRefPtr<CefFrame> new_frame) override;
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void OnFrameCreated(CefRefPtr<CefBrowser> browser,
+                      CefRefPtr<CefFrame> frame) override;
+#endif
   /* CefFrameHandler methods end */
 
   const std::vector<std::string> GetVisitedHistory();
@@ -916,6 +920,8 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void EnableVideoAssistant(bool enable);
 
   void CustomWebMediaPlayer(bool enable);
+  void WebMediaPlayerControllerSetVolume(double volume);
+  double WebMediaPlayerControllerGetVolume();
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
@@ -959,6 +965,19 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   }
   void ShowMagnifier() override;
   void HideMagnifier() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  std::string OverrideErrorPage(
+    CefRefPtr<CefBrowser> browser,
+    const CefString& url,
+    const CefString& method,
+    bool user_gesture,
+    bool is_redirect,
+    bool is_outermost_main_frame,
+    const CefString& extra_request_headers_str,
+    int error_code,
+    const CefString& error_text) override;
 #endif
 
  private:

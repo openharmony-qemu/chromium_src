@@ -37,6 +37,7 @@ struct NWebMediaPlayerListenerBase {
   void (T::*on_error)(uint32_t, const std::string&) = nullptr;
   void (T::*on_video_size_changed)(int, int) = nullptr;
   void (T::*on_fullscreen_overlay_changed)(bool) = nullptr;
+  void (T::*on_volume_changed)(double) = nullptr;
 
   NWebMediaPlayerListenerBase() = default;
   NWebMediaPlayerListenerBase(
@@ -68,6 +69,8 @@ class NWebMediaPlayerListener : public NWebMediaPlayerListenerBase
     this->on_video_size_changed = &NWebMediaPlayerListener::OnVideoSizeChanged;
     this->on_fullscreen_overlay_changed =
         &NWebMediaPlayerListener::OnFullscreenOverlayChanged;
+    this->on_volume_changed =
+        &NWebMediaPlayerListener::OnVolumeChanged;
   }
   virtual ~NWebMediaPlayerListener() = default;
 
@@ -85,6 +88,7 @@ class NWebMediaPlayerListener : public NWebMediaPlayerListenerBase
   virtual void OnError(uint32_t error_code, const std::string& error_msg) {}
   virtual void OnVideoSizeChanged(int width, int height) {}
   virtual void OnFullscreenOverlayChanged(bool fullscreen_overlay) {}
+  virtual void OnVolumeChanged(double volume) {}
 
  private:
   static_assert(offsetof(Base, struct_size) == 0,
@@ -140,6 +144,10 @@ class NWebMediaPlayerListener : public NWebMediaPlayerListenerBase
   static_assert(
       (offsetof(Base, on_fullscreen_overlay_changed) - offsetof(Base, on_video_size_changed))
           == sizeof(Base::on_video_size_changed),
+      "Must NOT break the order of Base members.");
+  static_assert(
+      (offsetof(Base, on_volume_changed) - offsetof(Base, on_fullscreen_overlay_changed))
+          == sizeof(Base::on_fullscreen_overlay_changed),
       "Must NOT break the order of Base members.");
 };
 

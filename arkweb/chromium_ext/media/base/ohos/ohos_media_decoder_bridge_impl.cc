@@ -252,6 +252,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::PrepareBridgeDecoder() {
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::StartBridgeDecoder() {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::StartBridgeDecoder start decoder.";
+  std::lock_guard<std::recursive_mutex> lock(decoderMutex_);
   isRunning_.store(true);
 
   if (videoDecoder_ == nullptr) {
@@ -265,17 +266,20 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::StartBridgeDecoder() {
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::StopBridgeDecoder() {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::StopBridgeDecoder stop decoder.";
+  std::lock_guard<std::recursive_mutex> lock(decoderMutex_);
   if (videoDecoder_ == nullptr) {
     LOG(ERROR)
         << "MediaCodecDecoderBridgeImpl::StopBridgeDecoder decoder is NULL.";
     return DecoderAdapterCode::DECODER_ERROR;
   }
+  isRunning_.store(false);
   return videoDecoder_->StopDecoder();
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::FlushBridgeDecoder() {
   LOG(INFO)
       << " MediaCodecDecoderBridgeImpl::FlushBridgeDecoder flush decoder.";
+  std::lock_guard<std::recursive_mutex> lock(decoderMutex_);
   if (videoDecoder_ == nullptr) {
     LOG(ERROR)
         << "MediaCodecDecoderBridgeImpl::FlushBridgeDecoder decoder is NULL.";
@@ -307,6 +311,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::FlushBridgeDecoder() {
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::ResetBridgeDecoder() {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::ResetBridgeDecoder reset decoder.";
+  std::lock_guard<std::recursive_mutex> lock(decoderMutex_);
   if (videoDecoder_ == nullptr) {
     LOG(ERROR)
         << "MediaCodecDecoderBridgeImpl::ResetBridgeDecoder decoder is NULL.";
@@ -317,6 +322,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ResetBridgeDecoder() {
     return DecoderAdapterCode::DECODER_ERROR;
   }
 
+  isRunning_.store(false);
   signal_->isDecoderFlushing_.store(true);
   DecoderAdapterCode ret = videoDecoder_->ResetDecoder();
   if (ret != DecoderAdapterCode::DECODER_OK) {
@@ -338,6 +344,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ResetBridgeDecoder() {
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder() {
   LOG(INFO)
       << "MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder release decoder.";
+  std::lock_guard<std::recursive_mutex> lock(decoderMutex_);
   if (videoDecoder_ == nullptr) {
     LOG(ERROR)
         << "MediaCodecDecoderBridgeImpl::ReleaseBridgeDecoder decoder is NULL.";
@@ -447,6 +454,15 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
     int64_t presentation_time,
     const DecryptConfig* decrypt_config) {
   LOG(DEBUG) << "MediaCodecDecoderBridgeImpl::QueueInputBuffer";
+  std::lock_guard<std::recursive_mutex> lock(decoderMutex_);
+  if (!isRunning_.load()) {
+    LOG(ERROR)
+        << "MediaCodecDecoderBridgeImpl::QueueInputBuffer decoder is stopped.";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+  if (data == nullptr || data_size == 0) {
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
   if (signal_ == nullptr || signal_->isOnError_) {
     return DecoderAdapterCode::DECODER_ERROR;
   }
@@ -465,7 +481,16 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
   size_t inputSize = bufferSize >= data_size ? data_size : bufferSize;
   LOG(DEBUG) << "MediaCodecDecoderBridgeImpl::QueueInputBuffer bufferSize: "
              << bufferSize << " " << data_size;
-  memcpy(buffer.addr, data, inputSize);
+  if (buffer.addr == nullptr) {
+    LOG(ERROR) << "MediaCodecDecoderBridgeImpl::QueueInputBuffer buffer.addr"
+               << "is nullptr.";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+  if (memcpy_s(buffer.addr, bufferSize, data, inputSize) != EOK) {
+    LOG(ERROR)
+      << "MediaCodecDecoderBridgeImpl::QueueInputBuffer memcpy failed.";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
   if (decrypt_config && SetAVCencInfo(index, decrypt_config) ==
     DecoderAdapterCode::DECODER_ERROR) {
     return DecoderAdapterCode::DECODER_ERROR;
@@ -479,6 +504,12 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBufferEOS() {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::QueueInputBufferEOS";
+  std::lock_guard<std::recursive_mutex> lock(decoderMutex_);
+  if (!isRunning_.load()) {
+    LOG(ERROR)
+        << "MediaCodecDecoderBridgeImpl::QueueInputBufferEOS decoder is stopped.";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
   if (signal_ == nullptr || signal_->isOnError_) {
     return DecoderAdapterCode::DECODER_ERROR;
   }
@@ -662,6 +693,7 @@ void CodecBridgeCallback::OnNeedOutputData(
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetVideoSurface(
         int32_t widget_id) {
     LOG(INFO) << "MediaCodecDecoderBridgeImpl::SetVideoSurface(" << widget_id << ")";
+    
     if (video_surface_id_ == widget_id) {
         return DecoderAdapterCode::DECODER_OK;
     }

@@ -2472,6 +2472,17 @@ void NWebImpl::GetScrollOffset(float* offset_x, float* offset_y) {
   *offset_x = finalOffset_x;
   *offset_y = finalOffset_y;
 }
+
+void NWebImpl::GetPageOffset(float* offset_x, float* offset_y) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  float scroll_offset_x = 0;
+  float scroll_offset_y = 0;
+  nweb_delegate_->GetScrollOffset(&scroll_offset_x, &scroll_offset_y);
+  *offset_x = scroll_offset_x;
+  *offset_y = scroll_offset_y;
+}
 #endif
 #endif  // #if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
 

@@ -302,4 +302,19 @@ void NWebEngineImpl::SetBlanklessLoadingCacheCapacity(int32_t capacity) {
   }
 }
 #endif
+
+void NWebEngineImpl::EnablePrivateNetworkAccess(bool enable) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  NWebImpl::EnablePrivateNetworkAccess(enable);
+#endif
+}
+
+bool NWebEngineImpl::IsPrivateNetworkAccessEnabled() {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  return NWebImpl::IsPrivateNetworkAccessEnabled();
+#else
+  return false;
+#endif
+}
+
 }  // namespace OHOS::NWeb

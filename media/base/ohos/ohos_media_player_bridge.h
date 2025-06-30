@@ -63,8 +63,7 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
                         bool hide_url_log,
                         Client* client,
                         bool allow_credentials,
-                        bool is_hls,
-                        const std::vector<std::string>& grantMediaFileAccessDirs);
+                        bool is_hls);
   virtual ~OHOSMediaPlayerBridge();
 
   OHOSMediaPlayerBridge(const OHOSMediaPlayerBridge&) = delete;
@@ -97,7 +96,6 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   void SeekInternal(base::TimeDelta time);
   void PropagateDuration(base::TimeDelta duration);
   bool IsAudible(float volume);
-  bool CheckIsPathValid(const std::string& path);
 
   const std::string surfaceFormat = "SURFACE_FORMAT";
   std::unique_ptr<OHOS::NWeb::PlayerAdapter> player_ = nullptr;
@@ -122,8 +120,6 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   // MediaPlayer is unable to handle Seek request when playback end. We should
   // pending the SeekTo request until its playback state changed.
   bool seeking_on_playback_complete_;
-  // MediaPlayer File Access config
-  std::vector<std::string> grantMediaFileAccessDirs_;
 #if defined(RK3568)
   bool is_hls_;
 #endif

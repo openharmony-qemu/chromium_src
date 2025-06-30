@@ -44,7 +44,7 @@ OHOSMediaPlayerRenderer::OHOSMediaPlayerRenderer(
     : client_extension_(std::move(client_extension_remote)),
       has_error_(false),
       volume_(kDefaultVolume),
-      web_contents_(web_contents->GetWeakPtr()),
+      web_contents_(web_contents),
       renderer_extension_receiver_(this,
                                    std::move(renderer_extension_receiver)) {
   WebContentsImpl* web_contents_impl =
@@ -85,13 +85,11 @@ void OHOSMediaPlayerRenderer::CreateMediaPlayer(
     const media::MediaUrlParams& url_params,
     media::PipelineStatusCallback init_cb) {
   const std::string user_agent = GetContentClient()->browser()->GetUserAgent();
-  std::vector<std::string> grantMediaFileAccessDirs;
-  GetGrantMediaFileAccessDirs(grantMediaFileAccessDirs);
   media_player_.reset(new media::OHOSMediaPlayerBridge(
       url_params.media_url, url_params.site_for_cookies,
       url_params.top_frame_origin, user_agent,
       false,  // hide_url_log
-      this, url_params.allow_credentials, url_params.is_hls, grantMediaFileAccessDirs));
+      this, url_params.allow_credentials, url_params.is_hls));
   init_cb_ = std::move(init_cb);
   int32_t ret = media_player_->Initialize();
   if (ret != 0) {
@@ -221,11 +219,11 @@ void OHOSMediaPlayerRenderer::OnWebContentsDestroyed() {
 }
 
 void OHOSMediaPlayerRenderer::OnPlayerInterruptEvent(int32_t value) {
-  if (web_contents_.get() == nullptr) {
+  if (web_contents_ == nullptr) {
     LOG(ERROR) << "web contents is nullptr";
     return;
   }
-  MediaSessionImpl* mediaSession = MediaSessionImpl::Get(web_contents_.get());
+  MediaSessionImpl* mediaSession = MediaSessionImpl::Get(web_contents_);
   if (mediaSession == nullptr) {
     LOG(ERROR) << "get mediaSession is nullptr";
     return;
@@ -258,18 +256,14 @@ void OHOSMediaPlayerRenderer::UpdateVolume() {
 }
 
 void OHOSMediaPlayerRenderer::OnAudioStateChanged(bool isAudible) {
-  if (web_contents_.get() == nullptr) {
-    LOG(ERROR) << "web contents is nullptr";
-    return;
-  }
   WebContentsImpl* web_contents_impl =
-      static_cast<WebContentsImpl*>(web_contents_.get());
+      static_cast<WebContentsImpl*>(web_contents_);
   if (isAudible) {
     web_contents_impl->AddMediaPlayerAudibleCount();
-    web_contents_.get()->OnAudioStateChanged();
+    web_contents_->OnAudioStateChanged();
   } else {
     web_contents_impl->DelMediaPlayerAudibleCount();
-    web_contents_.get()->OnAudioStateChanged();
+    web_contents_->OnAudioStateChanged();
   }
 }
 
@@ -284,28 +278,4 @@ media::RendererType OHOSMediaPlayerRenderer::GetRendererType() {
   return media::RendererType::kOHOSMediaPlayer;
 }
 
-void OHOSMediaPlayerRenderer::GetGrantMediaFileAccessDirs(std::vector<std::string>& grantMediaFileAccessDirs) {
-  if (web_contents_.get() == nullptr) {
-     LOG(ERROR) << "web contents is nullptr";
-     return;
-   }
-  MediaSessionImpl* mediaSession = MediaSessionImpl::Get(web_contents_.get());
-  if (mediaSession == nullptr) {
-    LOG(ERROR) << "get mediaSession is nullptr";
-    return;
-  }
-  // if setPathAllowingUniversalAccess called, use it
-  if (!mediaSession->grantMediaFileAccessDirs_.empty()) {
-    for (auto dir: mediaSession->grantMediaFileAccessDirs_) {
-      grantMediaFileAccessDirs.emplace_back(dir);
-    }
-    return;
-  }
-
-  // if fileAccess is false. use default path
-  if (!mediaSession->fileAccess_) {
-    grantMediaFileAccessDirs.emplace_back("/data/storage/el1/bundle/entry/resources/resfile");
-    LOG(INFO) << "USE DEFALUT PATH";
-  }
-}
 }  // namespace content

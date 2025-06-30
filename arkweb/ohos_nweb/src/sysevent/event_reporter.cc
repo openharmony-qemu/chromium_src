@@ -101,7 +101,7 @@ constexpr char DISABLE_WEB_AV_SESSION_STATUS[] = "DISABLE_WEB_AV_SESSION_STATUS"
 constexpr char RENDER_INIT_BLOCK[] = "RENDER_INIT_BLOCK";
 constexpr char BLOCK_TIME[] = "BLOCK_TIME";
 
-const char GPU_WHITE_SCREEN_ERROR[] = "GPU_WHITE_SCREEN_ERROR";
+const char GPU_DISPLAY_ERROR[] = "GPU_DISPLAY_ERROR";
 const char EVENT_TYPE[] = "EVENT_TYPE";
 const char EVENT_CONTENT[] = "EVENT_CONTENT";
 
@@ -335,12 +335,12 @@ void ReportGpuProcessEvent(CrashType type, std::string eventcontent) {
   switch(type) {
     case CrashType::TIMEOUT:
       OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
-        GPU_WHITE_SCREEN_ERROR, HiSysEventAdapter::EventType::STATISTIC,
+        GPU_DISPLAY_ERROR, HiSysEventAdapter::EventType::STATISTIC,
         {EVENT_TYPE, TIMEOUT, EVENT_CONTENT, eventcontent});
       break;
     case CrashType::MAILBOX_NONEXISTENT:
       OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
-        GPU_WHITE_SCREEN_ERROR, HiSysEventAdapter::EVENT_TYPE::STATISTIC,
+        GPU_DISPLAY_ERROR, HiSysEventAdapter::EVENT_TYPE::STATISTIC,
         {EVENT_TYPE, MAILBOX_NONEXISTENT, EVENT_CONTENT, eventcontent});
       break;
   }

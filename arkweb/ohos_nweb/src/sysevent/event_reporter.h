@@ -31,6 +31,7 @@ void ReportMultiInstanceStats(int instanceId, int nwebCount, int nwebMaxCount);
 void ReportPageLoadErrorInfo(int instanceId,
                              const std::string errorType,
                              int errorCode,
+                             uint32_t errorCount,
                              const std::string errorDesc);
 
 void ReportJankStats(int64_t startTime,

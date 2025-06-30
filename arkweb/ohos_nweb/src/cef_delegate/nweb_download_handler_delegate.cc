@@ -121,6 +121,17 @@ void NWebDownloadHandlerDelegate::OnDownloadUpdated(
       new NWebDownloadItemCallbackWrapper();
   web_download_item_callback_wrapper->callback_ = std::move(callback);
   struct NWebDownloadItem* item = CreateNWebDownloadItem(download_item);
+#if defined(REPORT_SYS_EVENT)
+  if (item != nullptr) {
+    LOG(DEBUG) << "NWebDownloadHandlerDelegate::OnDownloadUpdated code=" << item->last_error_code;
+    if (item->state == NWebDownloadItemState::INTERRUPTED ||
+        item->state == NWebDownloadItemState::CANCELED) {
+      ReportPageDownLoadErrorInfo(item->download_item_id, item->last_error_code);
+    } else if (item->state == NWebDownloadItemState::COMPLETE) {
+      ReportPageDownLoadErrorInfo(item->download_item_id, 0);
+    }
+  }
+#endif
   web_download_delegate_listener_->downloadDidUpdate(
       item, web_download_item_callback_wrapper);
 }

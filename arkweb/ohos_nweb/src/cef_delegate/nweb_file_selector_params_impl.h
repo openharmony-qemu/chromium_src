@@ -22,6 +22,7 @@
 #include "cef_dialog_handler.h"
 #include "nweb_file_selector_params.h"
 #include "nweb_handler.h"
+#include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 
 namespace OHOS::NWeb {
 class FileSelectorParamsImpl : public NWebFileSelectorParams {
@@ -62,6 +63,27 @@ class FileSelectorCallbackImpl : public NWebStringVectorValueCallback {
   ~FileSelectorCallbackImpl() = default;
 
   void OnReceiveValue(const std::vector<std::string>& value) override;
+
+ private:
+  CefRefPtr<CefFileDialogCallback> callback_;
+  std::vector<CefString> file_path_;
+  bool is_used_;
+};
+
+class FileSelectorCallbackImplNativeApi
+    : public NWebStringVectorValueCallbackNativeApi {
+ public:
+  explicit FileSelectorCallbackImplNativeApi(
+      CefRefPtr<CefFileDialogCallback> callback)
+      : callback_(callback),
+        file_path_(std::vector<CefString>()),
+        is_used_(false) {}
+  ~FileSelectorCallbackImplNativeApi() = default;
+
+  void OnReceiveValue(const char** value) override;
+
+ private:
+  void ConverToVector(const char** arr, std::vector<std::string>& vec);
 
  private:
   CefRefPtr<CefFileDialogCallback> callback_;

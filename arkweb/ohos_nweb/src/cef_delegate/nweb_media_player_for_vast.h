@@ -7,6 +7,7 @@
 
 #include <memory>
 #include "cef/ohos_cef_ext/include/cef_media_player_listener_for_vast.h"
+#include "ohos_nweb/src/capi/nweb_media_player_callback.h"
 
 class NWebMediaPlayerListener;
 
@@ -16,6 +17,8 @@ class NWebMediaPlayerListenerForVAST : public CefMediaPlayerListenerForVAST {
  public:
   NWebMediaPlayerListenerForVAST(
       std::unique_ptr<NWebMediaPlayerListener> nweb_listener);
+  NWebMediaPlayerListenerForVAST(
+      std::unique_ptr<NWebMediaPlayerCallback> nweb_listener);
   ~NWebMediaPlayerListenerForVAST() override;
 
   void OnStatusChanged(uint32_t status) override;
@@ -35,6 +38,7 @@ class NWebMediaPlayerListenerForVAST : public CefMediaPlayerListenerForVAST {
 
  private:
   std::unique_ptr<NWebMediaPlayerListener> nweb_listener_;
+  std::unique_ptr<NWebMediaPlayerCallback> arkweb_listener_;
 };
 
 } // namespace OHOS::NWeb

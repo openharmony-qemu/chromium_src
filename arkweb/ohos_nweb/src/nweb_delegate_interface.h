@@ -52,6 +52,10 @@
 #include "capi/nweb_screencapture_delegate_callback.h"
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
+#endif
+
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -94,6 +98,10 @@ class NWebDelegateInterface
   virtual void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) = 0;
   virtual void RegisterRenderCb(
       std::function<void(const char*)> render_update_cb) = 0;
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  virtual void RegisterArkWebAppClientExtensionListener(
+      std::shared_ptr<ArkWebAppClientExtensionCallback> callback) = 0;
+#endif
   virtual void RegisterWebAppClientExtensionListener(
       std::shared_ptr<NWebAppClientExtensionCallback>
           web_app_client_extension_listener) = 0;
@@ -144,6 +152,7 @@ class NWebDelegateInterface
 #endif
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   virtual bool CanStoreWebArchive() const = 0;
+  virtual void UnRegisterArkWebAppClientExtensionListener() = 0;
   virtual void UnRegisterWebAppClientExtensionListener() = 0;
   virtual void RegisterWebExtensionListener(
       std::shared_ptr<NWebExtensionCallback> web_extension_listener) = 0;
@@ -639,6 +648,15 @@ class NWebDelegateInterface
   virtual void EnableVideoAssistant(bool enable) = 0;
   virtual void ExecuteVideoAssistantFunction(const std::string& cmd_id) = 0;
   virtual void CustomWebMediaPlayer(bool enable) = 0;
+  virtual void WebMediaPlayerControllerPlay() = 0;
+  virtual void WebMediaPlayerControllerPause() = 0;
+  virtual void WebMediaPlayerControllerSeek(double time) = 0;
+  virtual void WebMediaPlayerControllerSetMuted(bool muted) = 0;
+  virtual void WebMediaPlayerControllerSetPlaybackRate(
+      double playback_rate) = 0;
+  virtual void WebMediaPlayerControllerExitFullscreen() = 0;
+  virtual void WebMediaPlayerControllerSetVideoSurface(void* native_window) = 0;
+  virtual void WebMediaPlayerControllerDownload() = 0;
   virtual void WebMediaPlayerControllerSetVolume(double volume) = 0;
   virtual double WebMediaPlayerControllerGetVolume() = 0;
 #endif  // ARKWEB_VIDEO_ASSISTANT
@@ -685,7 +703,6 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   virtual void WebExtensionTabCreated(int tab_id) = 0;
-  virtual void WebExtensionTabRemoved(int tab_id) = 0;
   virtual void WebExtensionTabUpdated(
       int tab_id,
       const std::vector<std::string>& changed_property_names,
@@ -694,14 +711,23 @@ class NWebDelegateInterface
       int tab_id,
       const std::vector<std::string>& changed_property_names,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) = 0;
+  virtual void WebExtensionTabCreated(
+      std::unique_ptr<NWebExtensionTab> tab) = 0;
+  virtual void WebExtensionTabRemoved(
+      int tab_id,
+      bool isWindowClosing,
+      int windowId) = 0;
+  virtual void WebExtensionTabUpdated(
+      int tab_id,
+      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
+      std::unique_ptr<NWebExtensionTab> tab) = 0;
   virtual void WebExtensionTabActivated(
       std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) = 0;
   virtual void WebExtensionTabAttached(
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) = 0;
   virtual void WebExtensionTabDetached(
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) = 0;
-  virtual void WebExtensionTabHighlighted(int32_t tab_id,
-                                          int32_t window_id) = 0;
+  virtual void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) = 0;
   virtual void WebExtensionTabMoved(
       int32_t tab_id,
       std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) = 0;
@@ -709,9 +735,16 @@ class NWebDelegateInterface
                                        int32_t removedTabId) = 0;
   virtual void WebExtensionTabZoomChange(
       std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) = 0;
-  virtual void WebExtensionActionClicked(std::string extension_id,
-                                         const NWebExtensionTab* tab) = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_PERMISSION)
+  virtual void PermissionRequestGrant(int32_t resourse_id,
+                                      int nweb_request_key) = 0;
+  virtual void PermissionRequestDeny(int nweb_request_key) = 0;
+  virtual std::string PermissionRequestGetOrigin(int nweb_request_key) = 0;
+  virtual int32_t PermissionRequestGetResourceId(int nweb_request_key) = 0;
+  virtual void PermissionRequestDelete(int nweb_request_key) = 0;
+#endif  // ARKWEB_EXT_PERMISSION
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   virtual void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) = 0;
@@ -770,6 +803,13 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_EX_REFRESH_IFRAME)
   virtual bool WebExtensionContextMenuIsIframe() = 0;
   virtual void WebExtensionContextMenuReloadFocusedFrame() = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  virtual void EnableViewAutoResize(
+      const CefSize& min_size,
+      const CefSize& max_size) = 0;
+  virtual void DisableViewAutoResize() = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_JSPROXY)

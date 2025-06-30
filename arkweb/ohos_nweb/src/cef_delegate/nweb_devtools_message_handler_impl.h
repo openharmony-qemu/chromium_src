@@ -20,7 +20,7 @@
 
 #include "cef/include/cef_devtools_message_handler_delegate.h"
 
-class NWebDevtoolsMessageHandler;
+struct NWebDevtoolsMessageHandler;
 
 namespace OHOS::NWeb {
 
@@ -29,29 +29,32 @@ class NWebDevToolsMessageHandlerImpl
  public:
   NWebDevToolsMessageHandlerImpl(
       std::unique_ptr<NWebDevtoolsMessageHandler> handler);
+  NWebDevToolsMessageHandlerImpl(raw_ptr<NWebDevtoolsMessageHandler> handler);
   virtual ~NWebDevToolsMessageHandlerImpl();
 
-  bool ShowFileChooser(
-      FileDialogMode mode,
-      const CefString& title,
-      const CefString& default_file_path,
-      const std::vector<CefString>& accept_filters,
-      bool capture,
-      CefRefPtr<CefFileDialogCallback> callback) override;
-  void ShowInfoBar(
-      const CefString& message,
-      const CefString& cef_path,
-      CefRefPtr<CefInfoBarCallback> callback) override;
+  bool ShowFileChooser(FileDialogMode mode,
+                       const CefString& title,
+                       const CefString& default_file_path,
+                       const std::vector<CefString>& accept_filters,
+                       bool capture,
+                       CefRefPtr<CefFileDialogCallback> callback) override;
+  void ShowInfoBar(const CefString& message,
+                   const CefString& cef_path,
+                   CefRefPtr<CefInfoBarCallback> callback) override;
   bool BringToFront() override;
   bool CloseWindow() override;
   bool ActiveDevToolsWindow() override;
 
  private:
+  void GetFileSelectorTitle(std::string& title, uint32_t mode);
+
+ private:
   std::unique_ptr<NWebDevtoolsMessageHandler> handler_;
+  raw_ptr<NWebDevtoolsMessageHandler> handlerNativeApi_;
 
   IMPLEMENT_REFCOUNTING(NWebDevToolsMessageHandlerImpl);
 };
 
-} // namespace
+}  // namespace OHOS::NWeb
 
-#endif // OHOS_NWEB_SRC_CEF_DELEGATE_NWEB_DEVTOOLS_MESSAGE_HANDLER_IMPL_H_
+#endif  // OHOS_NWEB_SRC_CEF_DELEGATE_NWEB_DEVTOOLS_MESSAGE_HANDLER_IMPL_H_

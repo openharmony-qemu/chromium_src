@@ -121,10 +121,6 @@ virtual void SetWakeLockHandler(int32_t windowId,
 #endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-virtual void WebExtensionUpdateTab(
-    int32_t tab_id,
-    const NWebExtensionTabUpdateProperties* update_properties) = 0;
-virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) = 0;
 virtual int32_t ExtensionGetTabId() const = 0;
 #endif
 

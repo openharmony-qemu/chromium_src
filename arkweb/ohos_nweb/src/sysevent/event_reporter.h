@@ -24,7 +24,7 @@
 enum class CrashType {
     TIMEOUT,
     MAILBOX_NONEXISTENT
-}
+};
 
 void ReportPageLoadStats(int instanceId,
                          int accessSumCount,

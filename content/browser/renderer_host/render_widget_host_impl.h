@@ -220,6 +220,13 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   static viz::FrameSinkId DefaultFrameSinkId(const SiteInstanceGroup& group,
                                              int routing_id);
 
+#if BUILDFLAG(ARKWEB_MENU_HANDLE)
+  bool IsOrientationChange() { return is_orientation_changed_; }
+  void SetOrientationChange(bool is_orientation_changed) {
+    is_orientation_changed_ = is_orientation_changed;
+  }
+#endif // ARKWEB_MENU_HANDLE
+
   // TODO(crbug.com/40169570): FrameTree and FrameTreeNode will not be const as
   // with prerenderer activation the page needs to move between FrameTreeNodes
   // and FrameTrees. As it's hard to make sure that all places handle this
@@ -1264,6 +1271,10 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   static const base::TimeDelta kActivationNotificationExpireTime;
 
   raw_ptr<FrameTree> frame_tree_;
+
+#if BUILDFLAG(ARKWEB_MENU_HANDLE)
+  bool is_orientation_changed_= false;
+#endif // ARKWEB_MENU_HANDLE
 
   // RenderWidgetHost are either:
   // - Owned by RenderViewHostImpl.

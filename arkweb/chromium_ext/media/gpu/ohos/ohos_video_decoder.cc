@@ -38,9 +38,11 @@
 #include "media/base/video_frame.h"
 #include "media/gpu/ohos/codec_allocator.h"
 #include "media/media_buildflags.h"
+#include "ohos_nweb/src/sysevent/event_reporter.h"
 
 namespace media {
 namespace {
+constexpr int DEFAULT_DRM_VIDEO_ERROR_CODE = 0;
 
 void OutputBufferReleased(base::RepeatingClosure pump_cb, bool has_work) {
   if (!has_work) {
@@ -144,6 +146,9 @@ void OhosVideoDecoder::DestroyAsync(std::unique_ptr<OhosVideoDecoder> decoder) {
     // Cancel previously registered callback (if any).
     self->event_cb_registration_.reset();
     self->ohos_crypto_context_->SetOHOSMediaCryptoReadyCB(base::NullCallback());
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+    self->ohos_crypto_context_->ReleaseInnerResource();
+#endif
     self->ohos_crypto_context_ = nullptr;
   }
   if (self->reset_cb_) {
@@ -431,10 +436,26 @@ void OhosVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
   LOG(DEBUG) << "OhosVideoDecoder::Decode: " << buffer->AsHumanReadableString();
   if (!buffer) {
     LOG(ERROR) << "OhosVideoDecoder::Decode buffer is null";
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    if (!ohos_crypto_context_) {
+      std::string errorType = "drm video play error";
+      int errorCode = DEFAULT_DRM_VIDEO_ERROR_CODE;
+      std::string errorDesc = "OhosVideoDecoder::Decode buffer is null";
+      ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
+    }
+#endif
     std::move(decode_cb).Run(DecoderStatus::Codes::kFailed);
     return;
   }
   if (state_ == State::kError) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    if (!ohos_crypto_context_) {
+      std::string errorType = "drm video play error";
+      int errorCode = DEFAULT_DRM_VIDEO_ERROR_CODE;
+      std::string errorDesc = "OhosVideoDecoder::Decode state_ is error";
+      ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
+    }
+#endif
     std::move(decode_cb).Run(DecoderStatus::Codes::kFailed);
     return;
   }
@@ -464,6 +485,14 @@ void OhosVideoDecoder::FlushCodec() {
   }
 
   if (!codec_->Flush()) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    if (!ohos_crypto_context_) {
+      std::string errorType = "drm video play error";
+      int errorCode = DEFAULT_DRM_VIDEO_ERROR_CODE;
+      std::string errorDesc = "Codec flush failed";
+      ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
+    }
+#endif
     EnterTerminalState(State::kError, "Codec flush failed");
   }
 }

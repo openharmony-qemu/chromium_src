@@ -5,4 +5,7 @@
 <translation id="IDS_OHOS_MEDIA_VIDEO_PLAYBACK_SPEED_BUTTON">1.0x</translation>
 <translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">Youth mode is on. This site can't be accessed.</translation>
 <translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">Settings</translation>
+<translation id="IDS_OHOS_MEDIA_OVERFLOW_MENU_EXIT_PICTURE_IN_PICTURE">Exit picture-in-picture</translation>
+<translation id="IDS_OHOS_MEDIA_OVERFLOW_MENU_ENTER_PICTURE_IN_PICTURE">Picture-in-picture</translation>
+<translation id="IDS_OHOS_MEDIA_OVERFLOW_MENU_DOWNLOAD">Download</translation>
 </translationbundle>

@@ -24,7 +24,8 @@ void RenderFrameImpl::CloseImageOverlaySelection() {
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 blink::WebNativeBridge* RenderFrameImpl::CreateWebNativeBridge(
     blink::WebNativeClient* client) {
-  return media_factory_.CreateWebNativeBridge(client);
+    return media_factory_.CreateWebNativeBridge(client, GetLocalRootWebFrameWidget()->GetFrameSinkId(),
+        agent_scheduling_group_->agent_group_scheduler().CompositorTaskRunner());
 }
 #endif
 

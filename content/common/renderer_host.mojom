@@ -40,6 +40,10 @@ interface RendererHost {
   [EnableIf=is_android]
   SetPrivateMemoryFootprint(uint64 private_memory_footprint_bytes);
 
+  // Notify the browser that specify event occurred in render process
+  [EnableIf=is_arkweb]
+  ReportEngineEvent(string mod, string resource, string error_code, string error_msg);
+
   // A renderer sends this when it wants to know whether a gpu process exists.
   [Sync] HasGpuProcess() => (bool has_gpu_process);
 };

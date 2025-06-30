@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/threading/thread_checker.h"
 #include "gpu/command_buffer/service/ohos/native_image_texture_owner.h"
 #include "gpu/gpu_export.h"

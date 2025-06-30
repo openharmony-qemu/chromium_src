@@ -36,6 +36,64 @@ class SingleThreadTaskRunner;
 
 namespace media {
 
+// This class is used to encapsulate DRM related property information.
+// These properties are utilized when handling DRM sessions, key types,
+// licenses, and other operations.
+class DrmProperties {
+ public:
+  DrmProperties(const std::string& session_id,
+                const std::string& mime_type,
+                const uint32_t key_type,
+                const uint32_t promise_id,
+                bool persistent_license,
+                const std::vector<uint8_t>& init_data)
+      : session_id_(session_id),
+        mime_type_(mime_type),
+        key_type_(key_type),
+        promise_id_(promise_id),
+        persistent_license_(persistent_license),
+        init_data_(init_data) {}
+
+  DrmProperties(const std::string& session_id, const uint32_t promise_id)
+      : session_id_(session_id),
+        promise_id_(promise_id),
+        persistent_license_(true) {}
+
+  ~DrmProperties() = default;
+
+  const std::string& session_id() const { return session_id_; }
+  const std::string& mime_type() const { return mime_type_; }
+  uint32_t key_type() const { return key_type_; }
+  uint32_t promise_id() const { return promise_id_; }
+  bool persistent_license() const { return persistent_license_; }
+  const std::vector<uint8_t>& init_data() const { return init_data_; }
+
+  void update(const std::string& session_id,
+              const std::string& mime_type,
+              const uint32_t key_type,
+              const uint32_t promise_id,
+              const std::vector<uint8_t>& init_data) {
+    session_id_ = session_id;
+    mime_type_ = mime_type;
+    key_type_ = key_type;
+    promise_id_ = promise_id;
+    init_data_ = init_data;
+  }
+
+  void update(const std::string& session_id, const uint32_t promise_id) {
+    session_id_ = session_id;
+    promise_id_ = promise_id;
+  }
+
+ private:
+  std::string session_id_ = "";
+  std::string mime_type_ = "";
+  uint32_t key_type_ = 0;
+  uint32_t promise_id_ = 0;
+  bool persistent_license_ = false;
+  std::vector<uint8_t> init_data_;
+};
+
 class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
                                         public CdmContext {
  public:
@@ -54,6 +112,34 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
   enum OHOSClearInfoType {
     OHOS_KEY_RELEASE = 0,
     OHOS_LOAD_FAIL,
+  };
+
+  enum DrmStatus {
+    // The default value for DRM status, representing that DRM is in an initial
+    // or normal state.
+    DRM_STATUS_DEFAULT = 0,
+    // DRM enters a suspended state, where related operations will be paused.
+    DRM_STATUS_SUSPEND = 1,
+    // DRM suspends and releases related resources to save system resources.
+    DRM_STATUS_SUSPEND_RELEASE_RESOURCE = 2,
+    // DRM resumes from the suspended state and starts to continue related
+    // operations.
+    DRM_STATUS_RESUME = 3,
+    // DRM resumes and creates a key system to prepare for subsequent content
+    // decryption.
+    DRM_STATUS_RESUME_CREATE_KEYSYSTEM = 4,
+    // DRM resumes and the media key session is ready, allowing key-related
+    // operations.
+    DRM_STATUS_RESUME_MEDIA_KEY_SESSION_READY = 5,
+    // DRM resumes and generates a key request to request the keys required for
+    // content decryption from the server.
+    DRM_STATUS_RESUME_GENERATE_REQUEST = 6,
+    // DRM resumes and loads the session, attempting to restore the previously
+    // saved DRM session.
+    DRM_STATUS_RESUME_LOAD_SESSION = 7,
+    // DRM resumes and the license is ready, indicating that the license
+    // required for content decryption has been obtained.
+    DRM_STATUS_RESUME_LICENSE_READY = 8,
   };
 
   using OHOSMediaCryptoReadyCB = OHOSMediaCryptoContext::OHOSMediaCryptoReadyCB;
@@ -91,6 +177,13 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
                     std::unique_ptr<media::SimpleCdmPromise> promise) override;
   void RemoveSession(const std::string& session_id,
                      std::unique_ptr<media::SimpleCdmPromise> promise) override;
+
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  void SuspendSession() override;
+  void ResumeSession() override;
+  void ReleaseInnerResource();
+#endif
+
   CdmContext* GetCdmContext() override;
   void DeleteOnCorrectThread() const override;
 
@@ -204,7 +297,18 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
                                const std::string& request_data);
   void ProcessProvisionResponse(bool success, const std::string& response);
   void OnHasAdditionalUsableKey();
+
+  void InitDrmKeySystem();
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  void ResumeMediaLicense();
+#endif
+
   std::vector<uint8_t> scheme_uuid_;
+  SecurityLevel security_level_;
+  std::string origin_id_;
+  std::unique_ptr<DrmProperties> properties_;
+  DrmStatus drm_status_;
+
   std::unique_ptr<OHOSMediaDrmStorageBridge> storage_;
   CreateFetcherCB create_fetcher_cb_;
   std::unique_ptr<ProvisionFetcher> provision_fetcher_;

@@ -197,6 +197,8 @@ void NativeLoader::OnCreateNativeSurface(int native_embed_id,
   native_embed_id_ = native_embed_id;
   bounding_rect_changed_cb_ = rect_changed_cb;
   cc_layer_->layer_utils()->SetNativeEmbedId(native_embed_id_);
+  cc_layer_->layer_utils()->SetMayContainNative(true);
+  cc_layer_->SetNeedsCommit();
 
   auto embed_info = media::mojom::blink::NativeEmbedInfo::New();
   auto bounds_to_viewport =
@@ -315,6 +317,13 @@ void NativeLoader::SetCcLayer(cc::Layer* cc_layer) {
                << GetTypeAttribute();
     cc_layer_->layer_utils()->SetMayContainNative(true);
     cc_layer_->SetNeedsPushProperties();
+    bool is_infinity_overlay = plugin_element_->Utils()->IsOverlayInfinity();
+    bool is_standard_overlay = plugin_element_->Utils()->IsOverlay();
+    if (is_infinity_overlay) {
+      SetNativeEmbedOverlayInfinity(is_infinity_overlay);
+    } else if (is_standard_overlay && !is_infinity_overlay) {
+      SetNativeEmbedOverlay(is_standard_overlay);
+    }
     // cc_layer_->SetIsNativeVideo(GetTypeAttribute() == "native/video");
   }
 }
@@ -401,6 +410,24 @@ void NativeLoader::NotifyVisibilityChange(bool visibility) {
     for (auto& observer : native_bridge_observer_remote_set_->Value()) {
       observer->OnLayerRectVisibilityChange(visibility_, native_embed_id_);
     }
+  }
+}
+
+void NativeLoader::SetNativeEmbedOverlayInfinity(bool native_embed_overlay_infinity) {
+  LOG(INFO) << "[NativeEmbed] NativeLoader::SetNativeEmbedOverlayInfinity: "
+            << native_embed_overlay_infinity;
+  cc_layer_->SetNativeEmbedOverlayInfinity(native_embed_overlay_infinity);
+  if (native_embed_overlay_infinity) {
+    cc_layer_->layer_utils()->SetShouldInterceptTouchEvent(true);
+  }
+}
+
+void NativeLoader::SetNativeEmbedOverlay(bool native_embed_overlay) {
+  LOG(INFO) << "[NativeEmbed] NativeLoader::SetNativeEmbedOverlay: "
+            << native_embed_overlay;
+  cc_layer_->SetNativeEmbedOverlay(native_embed_overlay);
+  if (native_embed_overlay) {
+    cc_layer_->layer_utils()->SetShouldInterceptTouchEvent(true);
   }
 }
 }  // namespace blink

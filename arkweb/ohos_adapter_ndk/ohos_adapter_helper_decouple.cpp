@@ -344,7 +344,8 @@ NWeb::NetProxyAdapter& ArkOhosAdapterHelperWrapper::GetNetProxyInstance() {
 
 NWeb::CameraManagerAdapter&
 ArkOhosAdapterHelperWrapper::GetCameraManagerAdapter() {
-  return CameraManagerAdapterImpl::GetInstance();
+  static ArkCameraManagerAdapterWrapper instance(ctocpp_->GetCameraManagerAdapter());
+  return instance;
 }
 
 std::unique_ptr<NWeb::ScreenCaptureAdapter>

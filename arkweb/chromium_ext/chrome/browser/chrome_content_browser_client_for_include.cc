@@ -388,3 +388,45 @@ void ChromeContentBrowserClient::UpdateAdBlockEnabledForSite(
   web_contents->TrigAdBlockEnabledForSiteFromUi(gurl.spec());
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+std::string ChromeContentBrowserClient::OverrideErrorPage(
+    content::FrameTreeNodeId frame_tree_node_id,
+    bool browser_initiated,
+    const GURL& gurl,
+    const std::string& request_method,
+    bool has_user_gesture,
+    bool is_redirect,
+    bool is_outermost_main_frame,
+    int error_code,
+    const std::string& error_text,
+    bool is_prerendering,
+    ui::PageTransition transition,
+    std::string* html) {
+  std::string result = "";
+
+  content::WebContents* web_contents =
+    content::WebContents::FromFrameTreeNodeId(frame_tree_node_id);
+  if (web_contents == nullptr) {
+    return result;
+  }
+
+  CefRefPtr<CefBrowserHostBase> browser_host =
+    CefBrowserHostBase::GetBrowserForContents(web_contents);
+  if (browser_host == nullptr) {
+    return result;
+  }
+
+  if (auto client = browser_host->GetClient()) {
+    if (auto handler = client->GetRequestHandler()) {
+      *html = handler->AsCefRequestHandlerExt()->OverrideErrorPage(
+        browser_host.get(), gurl.possibly_invalid_spec(), request_method,
+        has_user_gesture, is_redirect, is_outermost_main_frame, "",
+        error_code, error_text);
+      return *html;
+    }
+  }
+
+  return result;
+}
+#endif

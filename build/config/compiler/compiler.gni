@@ -183,11 +183,11 @@ if (is_chromeos) {
   } else {
     enable_frame_pointers = true
   }
-} else if (is_android) {
+} else if (is_android || is_ohos) {
   enable_frame_pointers =
       enable_profiling ||
       # Ensure that stacks from arm64 crash dumps are usable (crbug.com/391706).
-      current_cpu == "arm64" ||
+      (current_cpu == "arm64" || current_cpu == "arm") ||
       # For x86 Android, unwind tables are huge without frame pointers
       # (crbug.com/762629). Enabling frame pointers grows the code size slightly
       # but overall shrinks binaries considerably by avoiding huge unwind

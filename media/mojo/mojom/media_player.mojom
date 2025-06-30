@@ -41,6 +41,7 @@ struct MediaInfoForVAST {
   string id;
   string title;
   double duration;
+  double volume;
   double current_time;
   double playback_rate;
   int32 video_width;
@@ -142,6 +143,12 @@ interface MediaPlayer {
 
   [EnableIf=arkweb_pip]
   NotifyPipResize();
+
+  [EnableIf=arkweb_video_assistant]
+  SetVolume(double volume);
+
+  [Sync, EnableIf=arkweb_video_assistant]
+  GetVolume() => (double volume);
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer
@@ -282,6 +289,9 @@ interface MediaPlayerObserver {
 
   [EnableIf=arkweb_video_assistant]
   FullscreenOverlayChanged(bool fullscreen_overlay, string decoder_name);
+
+  [EnableIf=arkweb_video_assistant]
+  OnVolumeChanged(double volume);
 
   [EnableIf=arkweb_pip]
   OnPictureInPictureStateChanged(uint32 state);

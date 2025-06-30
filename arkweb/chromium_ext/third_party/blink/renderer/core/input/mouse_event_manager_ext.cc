@@ -45,6 +45,8 @@ namespace blink {
 #if BUILDFLAG(ARKWEB_AI)
 const int kMinAnalyzedImageWidth = 100;
 const int kMinAnalyzedImageHeight = 100;
+const int KMaxAnalyzedImageDimension = 1024;
+const long long kMaxAnalyzedImageArea = 104857600; // 10240 * 10240
 const double kMinAnalyzedImageToPageRatio = 0.8;
 constexpr base::TimeDelta HOVER_CREATE_OVERLAY_TIME = base::Milliseconds(1000);
 const unsigned long WORD_CORNER_NUM = 4ul;
@@ -265,7 +267,7 @@ void MouseEventManagerExt::HandleCreateOverlay(T const& targeted_event) {
 
   Image* image = hit_test_result.GetImage();
   Node* inner_node = hit_test_result.InnerNodeOrImageMapImage();
-  if (hit_test_result.AbsoluteImageURL().IsEmpty() ||
+  if (hit_test_result.AbsoluteImageURL().IsEmpty() || !image ||
       !IsValidOverlayNode(inner_node)) {
     LOG(INFO)
         << "MouseEventManagerExt::HandleCreateOverlay, invalid or has no image";
@@ -306,15 +308,33 @@ void MouseEventManagerExt::HandleCreateOverlay(T const& targeted_event) {
       fold_screen_status_ * image_rect.width() / view_rect.width();
   LOG(INFO) << "MouseEventManagerExt::HandleCreateOverlay width ratio is "
             << image_to_page_width_ratio;
-  if (image->width() >= kMinAnalyzedImageWidth &&
-      image->height() >= kMinAnalyzedImageHeight &&
+  int image_width = image->width();
+  int image_height = image->height();
+  if (1ll * image_width * image_height > kMaxAnalyzedImageArea) {
+    LOG(ERROR) << "MouseEventManagerExt::HandleCreateOverlay, image is too large!";
+    return;
+  }
+  if (image_width >= kMinAnalyzedImageWidth &&
+      image_height >= kMinAnalyzedImageHeight &&
       (base::ohos::IsPcDevice() ||
        image_to_page_width_ratio > kMinAnalyzedImageToPageRatio)) {
-    LOG(INFO) << "MouseEventManagerExt::HandleCreateOverlay, start";
+    LOG(INFO)
+        << "MouseEventManagerExt::HandleCreateOverlay, start, image w x h: "
+        << image_width << " x " << image_height;
     PaintImage paint_image = image->PaintImageForCurrentFrame();
     if (!paint_image.GetSwSkImage()) {
       LOG(ERROR) << "MouseEventManagerExt::HandleCreateOverlay, "
                     "paint_image.GetSwSkImage() is null";
+      return;
+    }
+    float shrink_ratio =
+        std::min(1.0f, KMaxAnalyzedImageDimension * 1.0f /
+                           std::max(image_width, image_height));
+    paint_image = Image::ResizeAndOrientImage(
+        paint_image, image->CurrentFrameOrientation(),
+        gfx::Vector2dF(shrink_ratio, shrink_ratio));
+    if (!paint_image.GetSwSkImage()) {
+      LOG(ERROR) << "MouseEventManagerExt::CreateOverlay, downsampling failed.";
       return;
     }
     SetOverlayCreatingStatus(true);
@@ -342,6 +362,7 @@ void MouseEventManagerExt::CloseImageOverlayWhenMousePress(const MouseEventWithH
 }
 
 void MouseEventManagerExt::Trace(Visitor* visitor) const {
+  MouseEventManager::Trace(visitor);
   visitor->Trace(frame_);
   visitor->Trace(scroll_manager_);
   visitor->Trace(element_under_mouse_);
@@ -350,6 +371,7 @@ void MouseEventManagerExt::Trace(Visitor* visitor) const {
 #if BUILDFLAG(ARKWEB_AI)
   visitor->Trace(hit_image_node_);
 #endif
+  visitor->Trace(weak_factory_);
   SynchronousMutationObserver::Trace(visitor);
 }
 

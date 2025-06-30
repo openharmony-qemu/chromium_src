@@ -123,6 +123,26 @@ static const int kDefaultWebNativeProxy = -2;
 static const int64_t kRootAccessibilityId = 1;
 #endif
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+std::string ConvertCefValueToString(CefRefPtr<CefValue> src) {
+  std::string dst;
+  int type = src->GetType();
+  LOG(DEBUG) << "OnMessage type:" << type;
+  switch (type) {
+    case VTYPE_STRING: {
+      dst = src->GetString();
+      break;
+    }
+    default: {
+      LOG(ERROR) << "OnMessage not support type";
+      dst = std::string("OnMessage not support type");
+      break;
+    }
+  }
+  return dst;
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_MSGPORT)
 void ConvertCefValueToNWebMessage(CefRefPtr<CefValue> src,
                                   std::shared_ptr<NWebMessage> dst) {
@@ -476,6 +496,31 @@ class NavigationEntryVisitorImpl : public CefNavigationEntryVisitor {
 };
 
 #endif  // BUILDFLAG(ARKWEB_NAVIGATION)
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback {
+ public:
+  JavaScriptInFramesResultCallbackImpl(
+      OnReceiveValueCallback callback, uint32_t nweb_id)
+      : callback_(callback),
+        nweb_id_(nweb_id){}
+  ~JavaScriptInFramesResultCallbackImpl() {}
+ 
+  NO_SANITIZE("cfi")
+  void OnJavaScriptExeResult(CefRefPtr<CefValue> result) override {
+    if (callback_ != nullptr) {
+      std::string data = ConvertCefValueToString(result);
+      callback_(nweb_id_, data);
+    }
+  }
+ 
+ private:
+  OnReceiveValueCallback callback_;
+  uint32_t nweb_id_ = 0;
+ 
+  IMPLEMENT_REFCOUNTING(JavaScriptInFramesResultCallbackImpl);
+};
+#endif
 
 NWebDelegate::NWebDelegate(int argc, const char* argv[])
     : argc_(argc), argv_(argv) {}
@@ -952,9 +997,14 @@ void NWebDelegate::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
     }
     browser->GetHost()->OnTextSelected(false);
   }
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  if (avoid_height_ != 0) {
+    AvoidVisibleViewportBottom(avoid_height_);
+  }
+#endif
 }
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
 void NWebDelegate::ResizeVisibleViewport(uint32_t width,
                                          uint32_t height,
                                          bool isKeyboard) {
@@ -1013,6 +1063,14 @@ void NWebDelegate::OnTouchRelease(int32_t id,
                                    y / default_virtual_pixel_ratio_,
                                    from_overlay);
   }
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (accessibility_state_) {
+    auto* accessibilityManager = GetAccessibilityManager();
+    if (accessibilityManager != nullptr) {
+      accessibilityManager->HitTest(gfx::Point(0, 0), 0);
+    }
+  }
+#endif
 }
 
 void NWebDelegate::OnTouchMove(
@@ -4686,6 +4744,24 @@ void NWebDelegate::CustomWebMediaPlayer(bool enable) {
 
   GetBrowser()->GetHost()->CustomWebMediaPlayer(enable);
 }
+
+void NWebDelegate::WebMediaPlayerControllerSetVolume(double volume) {
+  if (!handler_delegate_) {
+    LOG(ERROR) << "failed to WebMediaPlayerControllerSetVolume, handler "
+                  "delegate is null";
+    return;
+  }
+  handler_delegate_->WebMediaPlayerControllerSetVolume(volume);
+}
+
+double NWebDelegate::WebMediaPlayerControllerGetVolume() {
+  if (!handler_delegate_) {
+    LOG(ERROR) << "failed to WebMediaPlayerControllerGetVolume, handler "
+                  "delegate is null";
+    return -1.0;
+  }
+  return handler_delegate_->WebMediaPlayerControllerGetVolume();
+}
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_MENU)
@@ -5342,6 +5418,90 @@ void NWebDelegate::SendPipEvent(int delegate_id,
   }
   GetBrowser()->GetHost()->SendPipEvent(delegate_id, child_id,
                                         frame_routing_id, event);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+void NWebDelegate::AvoidVisibleViewportBottom(int32_t avoidHeight) {
+  LOG(INFO) << "NWebDelegate::AvoidVisibleViewportBottom: " << avoidHeight << " viewportHeight: " << height_;
+  if (avoidHeight < 0) {
+    avoidHeight = 0;
+  }
+  avoid_height_ = avoidHeight;
+  if (render_handler_ == nullptr) {
+    LOG(ERROR) << "fail to AvoidVisibleViewportBottom, render handler is nullptr";
+    return;
+  }
+  float ratio = render_handler_->GetVirtualPixelRatio();
+  uint32_t heightChange = static_cast<uint32_t>(std::floor(avoidHeight * ratio));
+  render_handler_->SetViewportAvoidHeight(heightChange);
+  if (heightChange > height_) {
+    heightChange = height_;
+  }
+  if (avoidHeight == 0) {
+    ResizeVisibleViewport(0, 0, false);
+  } else {
+    // when avoidHeight is greater than 0, it needs to scroll.
+    ResizeVisibleViewport(width_, height_ - heightChange, true);
+  }
+}
+
+int32_t NWebDelegate::GetVisibleViewportAvoidHeight() {
+  return avoid_height_;
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+void NWebDelegate::UpdateSingleHandleVisible(bool isVisible) {
+  if (handler_delegate_) {
+    handler_delegate_->OnVisibleChanged(isVisible);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+void NWebDelegate::RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                                         bool recursive, IsolatedWorld world,
+                                         OnReceiveValueCallback callback) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce((void(NWebDelegate::*)(
+                           const std::string&,
+                           FrameInfos, bool, IsolatedWorld,
+                           OnReceiveValueCallback)) &
+                           NWebDelegate::RunJavaScriptInFrames,
+                       this, jsString, rootFrame, recursive, world, callback));
+    return;
+  }
+ 
+  if (GetBrowser().get()) {
+    CefRefPtr<JavaScriptInFramesResultCallbackImpl> JsResultCb =
+        new JavaScriptInFramesResultCallbackImpl(callback, nweb_id_);
+    GetBrowser()->GetHost()->RunJavaScriptInFrames(jsString, rootFrame, recursive, world, JsResultCb);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+void NWebDelegate::SetErrorPageEnabled(bool enable) {
+  if (!preference_delegate_) {
+    LOG(ERROR)
+      << "SetErrorPageEnabled failed, no preference_delegate_"
+      << ", nweb_id_[" << nweb_id_ << "]";
+    return;
+  }
+  preference_delegate_->PutErrorPageEnabled(enable);
+}
+
+bool NWebDelegate::GetErrorPageEnabled() {
+  if (!preference_delegate_) {
+    LOG(ERROR)
+      << "GetErrorPageEnabled failed, no preference_delegate_"
+      << ", nweb_id_[" << nweb_id_ << "]";
+    return false;
+  }
+  return preference_delegate_->ErrorPageEnabled();
 }
 #endif
 }  // namespace OHOS::NWeb

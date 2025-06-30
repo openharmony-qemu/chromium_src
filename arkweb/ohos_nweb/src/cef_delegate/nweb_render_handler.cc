@@ -53,6 +53,10 @@ namespace {
 constexpr size_t kWordSelectionOffsetSize = 2;
 #endif  // ARKWEB_AI
 
+#if BUILDFLAG(ARKWEB_SCREEN_SIZE)
+constexpr int32_t APPLICATION_API_20 = 20;
+#endif  // #if BUILDFLAG(ARKWEB_SCREEN_SIZE)
+
 cef_screen_orientation_type_t ConvertOrientationType(
     OHOS::NWeb::DisplayOrientation type,
     bool default_portrait) {
@@ -472,7 +476,7 @@ void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,
   }
 }
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
 void NWebRenderHandler::SetNeedFocusViewport(bool need) {
   LOG(INFO) << "NWebRenderHandler::SetNeedFocusViewport needFocusViewport:"
             << need;
@@ -484,7 +488,15 @@ void NWebRenderHandler::OnResizeScrollableViewport(
   LOG(INFO)
       << "NWebRenderHandler::OnResizeScrollableViewport needFocusViewport:"
       << needFocusViewport_;
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  if (viewportAvoidScrollOffset_ != 0) {
+    LOG(INFO) << "AvoidVisibleViewportBottom set: " << viewportAvoidHeight_
+              << " viewportAvoidScrollOffset_" << viewportAvoidScrollOffset_;
+    browser->GetHost()->ScrollBy(0, viewportAvoidScrollOffset_);
+  } else if (inputmethod_client_ && inputmethod_client_->IsAttached()) {
+#else
   if (inputmethod_client_ && inputmethod_client_->IsAttached()) {
+#endif
     LOG(INFO) << "system keyboard is attached, scroll focused node into view";
     browser->GetHost()->ScrollFocusedEditableNodeIntoView();
   } else if (custom_keyboard_handler_ &&
@@ -527,6 +539,17 @@ void NWebRenderHandler::UpdateSecurityLayer(bool isNeedSecurityLayer) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+void NWebRenderHandler::SetViewportAvoidHeight(int32_t viewportAvoidHeight) {
+  if (viewportAvoidHeight > viewportAvoidHeight_) {
+    viewportAvoidScrollOffset_ = viewportAvoidHeight - viewportAvoidHeight_;
+  } else {
+    viewportAvoidScrollOffset_ = 0;
+  }
+  viewportAvoidHeight_ = viewportAvoidHeight;
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 void NWebRenderHandler::SetFillContent(const CefString& content) {
   if (inputmethod_client_) {
@@ -558,6 +581,13 @@ bool NWebRenderHandler::GetScreenInfo(CefRefPtr<CefBrowser> browser,
   // instead.
   screen_info.depth = 24;
   screen_info.depth_per_component = 8;
+
+#if BUILDFLAG(ARKWEB_SCREEN_SIZE)
+  if (base::ohos::ApplicationApiVersion() >= APPLICATION_API_20) {
+    screen_info.available_rect.width = screen_info_.width;
+    screen_info.available_rect.height = screen_info_.height;
+  }
+#endif  // #if BUILDFLAG(ARKWEB_SCREEN_SIZE)
 
   cef_device_ratio_ = screen_info.device_scale_factor;
   return true;
@@ -1270,6 +1300,7 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
           << "NWebRenderHandler::CreateOverlay, get data from bitmap failed";
       return;
     }
+    LOG(INFO) << "NWebRenderHandler::CreateOverlay, data_size = " << data_size;
 
     float scale = browser->GetHost()->GetPageScaleFactor();
     auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
@@ -1280,6 +1311,7 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
         cef_image_rect.y + view_port_height * screen_info_.display_ratio,
         cef_image_rect.width, cef_image_rect.height, cef_touch_point.x * scale,
         cef_touch_point.y * scale);
+    free(buffer);
   }
 }
 

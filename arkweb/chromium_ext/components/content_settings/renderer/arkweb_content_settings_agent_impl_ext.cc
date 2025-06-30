@@ -131,7 +131,11 @@ bool ArkWebContentSettingsAgentImplExt::IsWhitelistedForContentSettings(
 
   blink::WebString protocol = origin.Protocol();
 
-  if (protocol == content::kChromeUIScheme) {
+  if (protocol == content::kChromeUIScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || protocol == content::kArkWebUIScheme
+#endif
+  ) {
     return true;  // Browser UI elements should still work.
   }
 

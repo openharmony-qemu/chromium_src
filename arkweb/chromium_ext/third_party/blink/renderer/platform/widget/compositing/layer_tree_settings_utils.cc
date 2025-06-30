@@ -79,50 +79,6 @@ size_t EstimatePhysicalMemory()
 #endif
 }
 
-void CalculateVisibleMemoryLimit(cc::ManagedMemoryPolicy& actual,
-                                 size_t physical_memory_mb)
-{
-  // Now we take a default of 1/8th of memory on high-memory devices,
-  // and gradually scale that back for low-memory devices (to be nicer
-  // to other apps so they don't get killed). Examples:
-  // Nexus 4/10(2GB)    256MB (normally 128MB)
-  // Droid Razr M(1GB)  114MB (normally 57MB)
-  // Galaxy Nexus(1GB)  100MB (normally 50MB)
-  // Xoom(1GB)          100MB (normally 50MB)
-  // Nexus S(low-end)   8MB (normally 8MB)
-  // Note that the compositor now uses only some of this memory for
-  // pre-painting and uses the rest only for 'emergencies'.
-  if (actual.bytes_limit_when_visible == 0) {
-    // NOTE: Non-low-end devices use only 50% of these limits,
-    // except during 'emergencies' where 100% can be used.
-    if (physical_memory_mb >= 1536) {
-      actual.bytes_limit_when_visible = physical_memory_mb / 8;  // >192MB
-    } else if (physical_memory_mb >= 1152) {
-      actual.bytes_limit_when_visible = physical_memory_mb / 8;  // >144MB
-    } else if (physical_memory_mb >= 768) {
-      actual.bytes_limit_when_visible = physical_memory_mb / 10;  // >76MB
-    } else if (physical_memory_mb >= 513) {
-      actual.bytes_limit_when_visible = physical_memory_mb / 12;  // <64MB
-    } else {
-      // Devices with this little RAM have very little headroom so we hardcode
-      // the limit rather than relying on the heuristics above.  (They also use
-      // 4444 textures so we can use a lower limit.)
-      actual.bytes_limit_when_visible = 8;
-    }
-
-    actual.bytes_limit_when_visible =
-        actual.bytes_limit_when_visible * 1024 * 1024;
-    // Clamp the observed value to a specific range on Android or ARKWEB.
-    actual.bytes_limit_when_visible = std::max(
-        actual.bytes_limit_when_visible, static_cast<size_t>(8 * 1024 * 1024));
-    actual.bytes_limit_when_visible =
-        std::min(actual.bytes_limit_when_visible,
-                 static_cast<size_t>(256 * 1024 * 1024));
-  }
-  actual.priority_cutoff_when_visible =
-      gpu::MemoryAllocation::CUTOFF_ALLOW_EVERYTHING;
-}
-
 void SetMaxVisibleBytes(cc::ManagedMemoryPolicy& actual)
 {
   Platform* platform = Platform::Current();

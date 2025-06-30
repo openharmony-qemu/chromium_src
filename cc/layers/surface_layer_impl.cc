@@ -52,7 +52,9 @@ SurfaceLayerImpl::SurfaceLayerImpl(
     UpdateSubmissionStateCB update_submission_state_callback)
     : LayerImpl(tree_impl, id),
       update_submission_state_callback_(
-          std::move(update_submission_state_callback)) {}
+          std::move(update_submission_state_callback)) {
+  surfaceLayerImplUtils_ = new SurfaceLayerImplUtils(this);
+}
 
 SurfaceLayerImpl::~SurfaceLayerImpl() {
   // Do not call `update_submission_state_callback_` here.  There is only very
@@ -155,7 +157,14 @@ void SurfaceLayerImpl::PushPropertiesTo(LayerImpl* layer) {
 bool SurfaceLayerImpl::WillDraw(
     DrawMode draw_mode,
     viz::ClientResourceProvider* resource_provider) {
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  surfaceLayerImplUtils_->VisbilityChange();
+#endif
   bool will_draw = LayerImpl::WillDraw(draw_mode, resource_provider);
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  surfaceLayerImplUtils_->LayerRectUpdate();
+#endif
+
   // If we have a change in WillDraw (meaning that visibility has changed), we
   // want to inform the VideoFrameSubmitter to start or stop submitting
   // compositor frames.

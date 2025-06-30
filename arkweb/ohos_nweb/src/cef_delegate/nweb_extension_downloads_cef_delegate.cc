@@ -415,16 +415,15 @@ void NWebExtensionDownloadCefDelegate::Show(const int downloadId) {
   LOG(INFO) << "NWebExtensionDownloadCefDelegate::Show downloadId: "
             << downloadId;
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
-  return false;
+  return;
 #else
   NWebExtensionDownloadsDispatcher::GetInstance().Show(downloadId);
-
 #endif
 }
 
 void NWebExtensionDownloadCefDelegate::ShowDefaultFolder() {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
-  return false;
+  return;
 #else
   NWebExtensionDownloadsDispatcher::GetInstance().ShowDefaultFolder();
 #endif

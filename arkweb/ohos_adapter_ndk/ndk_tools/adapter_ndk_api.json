@@ -542,7 +542,9 @@
     "deviceinfo": {
         "apiList": {
             "10": [
-                "char *OH_GetDeviceType(void)"
+                "char *OH_GetDeviceType(void)",
+                "char *OH_GetOsReleaseType(void)",
+                "char *OH_GetDistributionOSReleaseType(void)"
             ]
         },
         "includes": []

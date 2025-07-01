@@ -83,6 +83,15 @@ void ReportSlideJankStats(int64_t startTime,
 
 void ReportSiteIsolationMode(const std::string site_isolation_status);
 
+void ReportRendererMem(const std::string& type,
+                       const std::string& pid,
+                       const std::string& rss,
+                       const std::string& pss,
+                       const std::string& js_heap_total,
+                       const std::string& js_heap_used,
+                       const std::string& gpu_mem,
+                       const std::string& url);
+
 void ReportWebMediaPlayErrorInfo(const std::string& errorType,
                               int errorCode,
                               const std::string& errorDesc);

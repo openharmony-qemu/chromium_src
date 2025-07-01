@@ -204,7 +204,7 @@ class WebContentsImplExt : public WebContentsImpl {
 #endif
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  std::map<MediaPlayerId, CustomMediaPlayer*> players_;
+  std::map<MediaPlayerId, raw_ptr<CustomMediaPlayer>> players_;
 
   std::unique_ptr<CustomMediaPlayer> CreateCustomMediaPlayer(
       std::unique_ptr<CustomMediaPlayerListener> listenter,

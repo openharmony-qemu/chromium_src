@@ -96,6 +96,13 @@ void TouchSelectionController::OnSelectionBoundsChanged(
       return;
 #endif
     HideHandles();
+#if BUILDFLAG(ARKWEB_MENU)
+    LOG(INFO) << "OnSelectionBoundsChanged show_touch_handles_: " << show_touch_handles_
+              << " start.visible: " << start.visible();
+    if (show_touch_handles_ && start.visible()) {
+      AsTouchSelectionControllerExt()->OnInsertionChangedExt(start, end);
+    }
+#endif
     return;
   }
 

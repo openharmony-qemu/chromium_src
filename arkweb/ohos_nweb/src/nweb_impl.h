@@ -297,6 +297,10 @@ class NWebImpl : public NWeb {
   bool Discard() override;
   bool Restore() override;
 #endif
+#if BUILDFLAG(ARKWEB_MENU)
+  void SetTouchHandleExistState(bool touchHandleExist) override;
+  void SetViewportScaleState() override;
+#endif  // BUILDFLAG(ARKWEB_MENU)
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   void PutSpanstringConvertHtmlCallback(
       std::shared_ptr<NWebSpanstringConvertHtmlCallback> callback) override;
@@ -393,6 +397,7 @@ class NWebImpl : public NWeb {
   void PageDown(bool bottom) override;
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   void GetScrollOffset(float* offset_x, float* offset_y) override;
+  void GetPageOffset(float* offset_x, float* offset_y) override;
 #endif
 #endif  // #if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
 

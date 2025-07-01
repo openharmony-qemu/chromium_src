@@ -86,6 +86,11 @@ void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
       prefs.border_radius_bottom_left, prefs.border_radius_bottom_right);
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_MENU)
+  settings->SetTouchHandleExistState(prefs.touch_handle_exist);
+  settings->SetViewportScaleState(prefs.viewport_scale);
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
 #if BUILDFLAG(ARKWEB_COPY_OPTION)
   settings->SetCopyOption(prefs.copy_option);
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)

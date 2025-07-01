@@ -230,6 +230,19 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     }
 
     if (sysno == __NR_ioctl) {
+
+struct QosCtrlData {
+    int pid;
+    unsigned int type;
+    unsigned int level;
+    int qos;
+    int staticQos;
+    int dynamicQos;
+    bool tagSchedEnable = false;
+};
+constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
+#define QOS_CTRL_BASIC_OPERATION _IOWR(QOS_CTRL_IPC_MAGIC, 1, struct QosCtrlData)
+
         const Arg<unsigned int> request(1);
         #ifdef BINDER_IPC_32BIT
         const unsigned int kBinderWriteRead32 = BINDER_WRITE_READ;
@@ -251,6 +264,8 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
                         BINDER_THREAD_EXIT, BINDER_VERSION, BINDER_ENABLE_ONEWAY_SPAM_DETECTION,
                         BINDER_FEATURE_SET, BINDER_GET_SENDER_INFO},
                     Allow())
+            .Cases({QOS_CTRL_BASIC_OPERATION, TIOCGWINSZ},
+                    Error(EPERM))
             .Default(RestrictIoctl());
     }
 
@@ -266,6 +281,56 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
             AnyOf(flags==kMuslForkFlags, flags == kPthreadCreateFlags);
         return If(is_fork_or_pthread, Allow()).Else(CrashSIGSYSClone());
     }
+
+    if (sysno == __NR_prctl) {
+#define PR_SET_JITFORT_OPTION 0x6a6974
+#define JITFORT_CPU_FEATURES 7
+#define HM_PR_SILK_BLOCKAWARE_OPS 0x534b4241
+#define BLOCKAWARE_SUBOPS_INIT 1
+#define BLOCKAWARE_SUBOPS_REG 2
+#define BLOCKAWARE_SUBOPS_UNREG 3
+#define BLOCKAWARE_SUBOPS_MONITORFD 6
+        const Arg<int> option(0), arg(1);
+
+        return Switch(option)
+            .Cases({PR_SET_JITFORT_OPTION},
+                If(arg == JITFORT_CPU_FEATURES, Allow()).Else(CrashSIGSYSPrctl()))
+            .Cases({HM_PR_SILK_BLOCKAWARE_OPS},
+                If(AnyOf(arg == BLOCKAWARE_SUBOPS_INIT, arg == BLOCKAWARE_SUBOPS_REG,
+                    arg == BLOCKAWARE_SUBOPS_UNREG, arg == BLOCKAWARE_SUBOPS_MONITORFD),
+                    Error(EPERM)).Else(CrashSIGSYSPrctl()))
+            .Default(BaselinePolicy::EvaluateSyscall(sysno));
+    }
+
+    if (sysno == __NR_timerfd_create) {
+#define TFD_CLOEXEC  02000000
+#define TFD_NONBLOCK 00004000
+        const Arg<int> clockid(0), flags(1);
+
+        return Switch(clockid)
+            .Cases({CLOCK_MONOTONIC},
+                If(flags == (TFD_CLOEXEC | TFD_NONBLOCK), Allow()).Else(CrashSIGSYS()))
+            .Default(BaselinePolicy::EvaluateSyscall(sysno));
+    }
+
+    if (sysno == __NR_timerfd_settime) {
+#define TFD_TIMER_ABSTIME (1 << 0)
+        const Arg<int> option(1);
+
+        return Switch(option)
+            .Cases({TFD_TIMER_ABSTIME, 0},
+                Error(EPERM))
+            .Default(BaselinePolicy::EvaluateSyscall(sysno));
+    }
+
+    if (sysno == __NR_getsockopt) {
+        const Arg<int> level(1), optname(2);
+
+        return Switch(level)
+            .Cases({SOL_SOCKET},
+                If(optname == SO_SNDBUF, Error(EPERM)).Else(CrashSIGSYSSockopt()))
+            .Default(BaselinePolicy::EvaluateSyscall(sysno));
+    }
 #endif
 
     switch(sysno) {
@@ -280,7 +345,6 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_flock:
     case __NR_sched_setaffinity:
     case __NR_getrusage:
-    case __NR_getsockopt:
     case __NR_process_vm_readv:
     case __NR_pkey_free:
     case __NR_pkey_mprotect:

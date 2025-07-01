@@ -225,7 +225,8 @@ int RendererMain(MainFunctionParams parameters) {
     bool should_run_loop = true;
     bool need_sandbox =
         !command_line.HasSwitch(sandbox::policy::switches::kNoSandbox);
-
+    
+    need_sandbox = true;
     if (!need_sandbox) {
       // The post-sandbox actions still need to happen at some point.
       if (client) {

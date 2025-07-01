@@ -102,6 +102,13 @@ constexpr char DISABLE_WEB_AV_SESSION_STATUS[] = "DISABLE_WEB_AV_SESSION_STATUS"
 constexpr char RENDER_INIT_BLOCK[] = "RENDER_INIT_BLOCK";
 constexpr char BLOCK_TIME[] = "BLOCK_TIME";
 
+const char GPU_DISPLAY_ERROR[] = "GPU_DISPLAY_ERROR";
+const char EVENT_TYPE[] = "EVENT_TYPE";
+const char EVENT_CONTENT[] = "EVENT_CONTENT";
+
+constexpr char TIMEOUT[] = "TIMEOUT";
+constexpr char MAILBOX_NONEXISTENT[] = "MAILBOX_NONEXISTENT";
+
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -339,4 +346,19 @@ void ReportFirstMeaningfulPaintDone(OhWebPerformanceTiming loadPageTime) {
 
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       "FIRST_MEANINGFUL_PAINT_DONE", HiSysEventAdapter::EventType::STATISTIC,{input, ""});
+}
+
+void ReportGpuProcessEvent(CrashType type, std::string eventcontent) {
+  switch(type) {
+    case CrashType::TIMEOUT:
+      OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+        GPU_DISPLAY_ERROR, HiSysEventAdapter::EventType::STATISTIC,
+        {EVENT_TYPE, TIMEOUT, EVENT_CONTENT, eventcontent});
+      break;
+    case CrashType::MAILBOX_NONEXISTENT:
+      OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+        GPU_DISPLAY_ERROR, HiSysEventAdapter::EventType::STATISTIC,
+        {EVENT_TYPE, MAILBOX_NONEXISTENT, EVENT_CONTENT, eventcontent});
+      break;
+  }
 }

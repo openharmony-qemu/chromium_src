@@ -219,6 +219,14 @@ void NWebApplication::OnBeforeChildProcessLaunch(
   for (const auto& arg : NWebImpl::GetCommandLineArgsForNWebEx()) {
     command_line->AppendSwitch(arg);
   }
+
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+  std::string extension_name;
+  if (NWebImpl::GetExtensionName(extension_name)) {
+    command_line->AppendSwitchWithValue(::switches::kSetExtensionName,
+                                        extension_name);
+  }
+#endif
 #endif  // defined(OHOS_NWEB_EX)
 
 #ifdef OHOS_HAP_DECOMPRESSED

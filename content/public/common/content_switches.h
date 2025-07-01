@@ -346,6 +346,10 @@ extern const char kEnableCacheNativeEmbed[];
 extern const char kEnableCacheMediaTakeOver[];
 #endif
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+CONTENT_EXPORT extern const char kSetExtensionName[];
+#endif
+
 // DON'T ADD RANDOM STUFF HERE. Put it in the main section above in
 // alphabetical order, or in one of the ifdefs (also in order in each section).
 

@@ -107,6 +107,23 @@ void TouchSelectionControllerExt::ResetPositionAfterDragEnd(
     end_selection_handle_->AsTouchHandleExt()->ResetPositionAfterDragEnd();
   }
 }
+
+void TouchSelectionControllerExt::OnInsertionChangedExt(const gfx::SelectionBound& start,
+                                                        const gfx::SelectionBound& end) {
+  start_ = start;
+  end_ = end;
+  DeactivateSelection();
+  const bool activated = ActivateInsertionIfNecessary();
+  if (insertion_handle_) {
+    const TouchHandle::AnimationStyle animation = GetAnimationStyle(!activated);
+    if (auto* handle_ext = insertion_handle_->AsTouchHandleExt()) {
+        handle_ext->SetEdge(start_.edge_start(), start_.edge_end());
+    }
+    insertion_handle_->SetFocus(start_.edge_start(), start_.edge_end());
+    insertion_handle_->SetVisible(GetStartVisible(), animation);
+    UpdateHandleLayoutIfNecessary();
+  }
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)

@@ -31,7 +31,7 @@ void OhWebPerformanceTiming::Reset() {
   largest_contentful_paint = -1;
   render_init_block = -1;
   input_time = -1;
-  is_paint_down = false;
+  is_paint_done = false;
   first_meaningful_paint = -1;
 }
  

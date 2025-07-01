@@ -342,7 +342,7 @@ void ReportFirstMeaningfulPaintDone(OhWebPerformanceTiming loadPageTime) {
     "FIRST_PAINT" + std::to_string(loadPageTime.first_paint) +
     "FIRST_CONTENTFUL_PAINT" + std::to_string(loadPageTime.first_contentful_paint) +
     "FIRST_MEANINGFUL_PAINT" + std::to_string(loadPageTime.first_meaningful_paint) +
-    "IS_PAINT_DOWN" + std::to_string(loadPageTime.is_paint_down);
+    "IS_PAINT_DONE" + std::to_string(loadPageTime.is_paint_done);
 
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       "FIRST_MEANINGFUL_PAINT_DONE", HiSysEventAdapter::EventType::STATISTIC,{input, ""});

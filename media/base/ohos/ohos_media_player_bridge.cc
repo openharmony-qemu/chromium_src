@@ -6,11 +6,7 @@
 
 #include <fcntl.h>
 #include <sys/stat.h>
-#include "base/command_line.h"
-#include "base/files/file_path.h"
-#include "base/files/file_util.h"
 #include "base/logging.h"
-#include "content/public/common/content_switches.h"
 #include "base/task/single_thread_task_runner.h"
 #include "media/base/ohos/ohos_media_player_callback.h"
 #include "media/base/ohos/ohos_media_player_listener.h"
@@ -29,8 +25,7 @@ OHOSMediaPlayerBridge::OHOSMediaPlayerBridge(
     bool hide_url_log,
     Client* client,
     bool allow_credentials,
-    bool is_hls,
-    const std::vector<std::string>& grantMediaFileAccessDirs)
+    bool is_hls)
     : client_(client),
       url_(url),
       prepared_(false),
@@ -39,9 +34,6 @@ OHOSMediaPlayerBridge::OHOSMediaPlayerBridge(
       should_seek_on_prepare_(false),
       should_set_volume_on_prepare_(false),
       seeking_on_playback_complete_(false) {
-    for (auto& file_dir: grantMediaFileAccessDirs) {
-      grantMediaFileAccessDirs_.emplace_back(file_dir);
-    }
 #if defined(RK3568)
   is_hls_ = is_hls;
 #endif
@@ -414,30 +406,7 @@ void OHOSMediaPlayerBridge::OnPlayerInterruptEvent(int32_t value) {
   }
 }
 
-bool OHOSMediaPlayerBridge::CheckIsPathValid(const std::string& path) {
-    base::FilePath file_path(path);
-    auto real_file_path =
-        base::MakeAbsoluteFilePathNoResolveSymbolicLinks(file_path).value_or(base::FilePath());
-    if (real_file_path.empty()) {
-        return false;
-    }
-    if (grantMediaFileAccessDirs_.empty()) {
-        return true;
-    }
-    for (auto dir: grantMediaFileAccessDirs_) {
-        base::FilePath file_dir(dir);
-        if (file_dir.IsParent(real_file_path) || real_file_path == file_dir) {
-            return true;
-        }
-    }
-    return false;
-}
-
 int32_t OHOSMediaPlayerBridge::SetFdSource(const std::string& path) {
-  if (!CheckIsPathValid(path)) {
-    LOG(ERROR) << "OHOSMediaPlayerBridge::SetFdSource, invalid path";
-    return -1;
-  }
   int32_t fd = open(path.c_str(), O_RDONLY);
   if (fd < 0) {
     LOG(ERROR) << "SetFdSource error:Open file failed";

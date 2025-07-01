@@ -371,8 +371,6 @@ class MediaSessionImpl : public MediaSession,
   std::unordered_set<media::OHOSAudioOutputStream*> activeAudioStream_;
   int audioResumeInterval_ = 0;
   bool audioExclusive_ = true;
-  bool fileAccess_ = false;
-  std::vector<std::string> grantMediaFileAccessDirs_;
   base::WeakPtrFactory<content::MediaSessionImpl> weakMediaSessionFactory_;
 #endif // defined(OHOS_MEDIA_POLICY)
 

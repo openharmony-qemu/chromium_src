@@ -31,9 +31,9 @@ public:
     timer_.Stop();
   }
 
-  static constexpr std::string MEM_LEAK_DETECTED = "MEM_LEAK_DETECTED";
-  static constexpr std::string PAGE_MEM_LEAK_ERROR = "PAGE_MEM_LEAK_ERROR";
-  static constexpr std::string PAGE_MEM_LEAK_WARNING = "PAGE_MEM_LEAK_WARNING";
+  static constexpr char MEM_LEAK_DETECTED[] = "MEM_LEAK_DETECTED";
+  static constexpr char PAGE_MEM_LEAK_ERROR[] = "PAGE_MEM_LEAK_ERROR";
+  static constexpr char PAGE_MEM_LEAK_WARNING[] = "PAGE_MEM_LEAK_WARNING";
 
   static std::shared_ptr<MemoryMonitorImpl> GetInstance();
   void Trigger(std::string url)

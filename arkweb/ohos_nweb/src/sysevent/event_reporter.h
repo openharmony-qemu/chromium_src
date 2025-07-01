@@ -21,6 +21,11 @@
 
 #include "oh_web_performance_timing.h"
 
+enum class CrashType {
+    TIMEOUT,
+    MAILBOX_NONEXISTENT
+};
+
 void ReportPageLoadStats(int instanceId,
                          int accessSumCount,
                          int accessSuccCount,
@@ -87,4 +92,6 @@ void ReportAvSessionStatus(const std::string& disable_web_av_session_status);
 void ReportDragBlank(int64_t duration);
 
 void ReportFirstMeaningfulPaintDone(OhWebPerformanceTiming loadPageTime);
+
+void ReportGpuProcessEvent(CrashType type, std::string eventContent);
 #endif

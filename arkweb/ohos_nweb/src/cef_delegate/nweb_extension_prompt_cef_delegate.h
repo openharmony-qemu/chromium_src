@@ -34,6 +34,7 @@ class NWebExtensionPromptCefDelegate {
   static NWebExtensionPromptCefDelegate& GetInstance();
 
   NWebExtensionPromptData* GetPromptData(int id);
+  std::vector<std::string> GetIdList(int id);
 
   static void FreePromptData(void* addr);
 
@@ -42,6 +43,10 @@ class NWebExtensionPromptCefDelegate {
                            const gfx::Image& icon_image,
                            ShowPromptCallbackFunc showPromptFunc,
                            GetPromptDataCallbackFunc getPromptDataFunc);
+
+  bool ShowMultiExtensionUninstallPrompt(
+      const std::vector<std::string>& extension_ids,
+      ShowPromptCallbackFunc show_prompt_func);
 
   void OnShowExtensionPrompt(int id, int action, const char* error);
 

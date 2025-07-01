@@ -36,6 +36,7 @@ void ReportMultiInstanceStats(int instanceId, int nwebCount, int nwebMaxCount);
 void ReportPageLoadErrorInfo(int instanceId,
                              const std::string errorType,
                              int errorCode,
+                             uint32_t errorCount,
                              const std::string errorDesc);
 
 void ReportJankStats(int64_t startTime,
@@ -89,6 +90,8 @@ void ReportWebMediaPlayErrorInfo(const std::string& errorType,
 void ReportAvSessionStatus(const std::string& disable_web_av_session_status);
 
 void ReportDragBlank(int64_t duration);
+
+void ReportFirstMeaningfulPaintDone(OhWebPerformanceTiming loadPageTime);
 
 void ReportGpuProcessEvent(CrashType type, std::string eventContent);
 #endif

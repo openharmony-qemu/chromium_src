@@ -15,6 +15,10 @@
 #include "sandbox/policy/sandbox.h"
 #include "sandbox/policy/sandbox_type.h"
 
+#include <unistd.h>
+#include "sandbox/linux/seccomp-bpf-helpers/baseline_policy_ohos.h"
+#include "sandbox/linux/seccomp-bpf-helpers/seccomp_starter_ohos.h"
+
 namespace content {
 
 RendererMainPlatformDelegate::RendererMainPlatformDelegate(
@@ -30,6 +34,15 @@ void RendererMainPlatformDelegate::PlatformUninitialize() {
 }
 
 bool RendererMainPlatformDelegate::EnableSandbox() {
+
+  sandbox::SeccompStarterOhos starter;
+  starter.set_policy(std::make_unique<sandbox::BaselinePolicyOhos>());
+  starter.StartSandbox();
+  if (starter.status() == sandbox::SeccompSandboxStatus::ENGAGED) {
+    return true;
+  }
+  return false;
+/*
   // The setuid sandbox is started in the zygote process: zygote_main_linux.cc
   // https://chromium.googlesource.com/chromium/src/+/main/docs/linux/suid_sandbox.md
   //
@@ -67,6 +80,7 @@ bool RendererMainPlatformDelegate::EnableSandbox() {
 #endif  // __x86_64__
 
   return true;
+*/
 }
 
 }  // namespace content

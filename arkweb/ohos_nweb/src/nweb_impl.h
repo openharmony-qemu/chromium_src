@@ -397,6 +397,7 @@ class NWebImpl : public NWeb {
   void PageDown(bool bottom) override;
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   void GetScrollOffset(float* offset_x, float* offset_y) override;
+  void GetPageOffset(float* offset_x, float* offset_y) override;
 #endif
 #endif  // #if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
 

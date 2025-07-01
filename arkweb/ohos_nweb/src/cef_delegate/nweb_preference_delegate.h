@@ -196,6 +196,11 @@ class NWebPreferenceDelegate : public NWebPreference {
   CopyOptionMode GetCopyOptionMode() override;
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 
+#if BUILDFLAG(ARKWEB_FOCUS)
+  void SetGestureFocusMode(int32_t mode) override;
+  int32_t GetGestureFocusMode() const;
+#endif  // BUILDFLAG(ARKWEB_FOCUS)
+
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   void PutAudioExclusive(bool audioExclusive);
   bool GetAudioExclusive();
@@ -374,6 +379,11 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(ARKWEB_COPY_OPTION)
   CopyOptionMode copy_option_{CopyOptionMode::CROSS_DEVICE};
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+
+#if BUILDFLAG(ARKWEB_FOCUS)
+  int32_t gesture_focus_mode_{0};
+#endif
+
   CacheModeFlag cache_mode_flag_{CacheModeFlag::USE_DEFAULT};
 #if BUILDFLAG(ARKWEB_BACKGROUND_COLOR)
   int32_t background_color_{0xffffffff};

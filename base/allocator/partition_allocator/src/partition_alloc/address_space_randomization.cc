@@ -12,10 +12,17 @@
 #if PA_BUILDFLAG(IS_WIN)
 #include <windows.h>
 #endif
-
+#if PA_BUILDFLAG(IS_OHOS)
+extern bool IsOhosTsanRuntime();
+#endif
 namespace partition_alloc {
 
 uintptr_t GetRandomPageBase() {
+#if PA_BUILDFLAG(IS_OHOS)
+  if (IsOhosTsanRuntime()) {
+    return 0X200000000;
+  }
+#endif
   uintptr_t random = static_cast<uintptr_t>(internal::RandomValue());
 
 #if PA_BUILDFLAG(HAS_64_BIT_POINTERS)

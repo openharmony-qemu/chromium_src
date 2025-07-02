@@ -35,13 +35,13 @@ static_assert(sizeof(void*) == 8, "");
 static_assert(sizeof(void*) != 8, "");
 #endif  // PA_CONFIG(HAS_64_BITS_POINTERS)
 
-#if PA_BUILDFLAG(HAS_64_BIT_POINTERS) && PA_BUILDFLAG(IS_IOS)
+#if PA_BUILDFLAG(HAS_64_BIT_POINTERS) && (PA_BUILDFLAG(IS_IOS) || PA_BUILDFLAG(IS_OHOS))
 // Allow PA to select an alternate pool size at run-time before initialization,
 // rather than using a single constexpr value.
 //
 // This is needed on iOS because iOS test processes can't handle large pools
 // (see crbug.com/1250788).
-//
+// This is needed on OHOS because OHOS tsan processes can't handle large pools
 // This setting is specific to 64-bit, as 32-bit has a different implementation.
 #define PA_CONFIG_DYNAMICALLY_SELECT_POOL_SIZE() 1
 #else

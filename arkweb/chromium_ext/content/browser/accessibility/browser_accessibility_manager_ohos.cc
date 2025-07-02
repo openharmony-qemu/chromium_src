@@ -301,11 +301,6 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
       if (nodeOHOS->IsSelected()) {
         SendAccessibilityEvent(accessibilityId,
                                OHOS::NWeb::AccessibilityEventType::SELECTED);
-        if (accessibilityId != accessibilityFocusId_) {
-          SendAccessibilityEvent(
-              accessibilityId,
-              OHOS::NWeb::AccessibilityEventType::REQUEST_FOCUS);
-        }
       }
       break;
     case AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED: {

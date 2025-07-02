@@ -154,6 +154,9 @@
 #include "ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/nweb_safe_browsing_detection_handler.h"
 #endif
 #endif
+#if BUILDFLAG(ARKWEB_PIP)
+#include "content/browser/media/media_web_contents_observer.h"
+#endif
 
 namespace OHOS::NWeb {
 namespace {
@@ -1205,6 +1208,11 @@ bool NWebHandlerDelegate::DoClose(CefRefPtr<CefBrowser> browser) {
     if (pip_status_ >= 0) {
         LOG(INFO) << "Pip exit " << " " << pip_delegate_id_
                   << " " << pip_child_id_ << " " << pip_frame_routing_id_;
+        if (GetBrowser() && GetBrowser()->GetHost()) {
+            GetBrowser()->GetHost()->SendPipEvent(
+              pip_delegate_id_, pip_child_id_, pip_frame_routing_id_,
+              content::PIP_STATE_EXIT);
+        }
         nweb_handler_->OnPip(1, pip_delegate_id_, pip_child_id_,
                              pip_frame_routing_id_, 0, 0);
     }

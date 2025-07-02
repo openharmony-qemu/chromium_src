@@ -505,7 +505,7 @@ declare global {
       export function updateSiteAccess(
           site: string, updates: ExtensionSiteAccessUpdate[]): Promise<void>;
       // ifdef ARKWEB_ARKWEB_EXTENSIONS
-      export function openUrl(url: string): void;
+      export function openUrl(url: string, type: number): void;
       export function dismissSafetyHubExtensionsMenuNotification(): void;
       export function dismissMv2DeprecationPanel(): void;
       export function dismissMv2DeprecationNoticeForExtension(

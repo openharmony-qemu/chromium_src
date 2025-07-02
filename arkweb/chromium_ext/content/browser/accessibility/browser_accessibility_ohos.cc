@@ -7,6 +7,7 @@
 #include <codecvt>
 #include <locale>
 
+#include "base/check_deref.h"
 #include "browser_accessibility_manager_ohos.h"
 #include "content/public/common/content_client.h"
 #include "ohos_nweb/src/cef_delegate/nweb_accessibility_utils.h"
@@ -23,6 +24,13 @@ using AccessibilityIdMap =
     std::unordered_map<int64_t, BrowserAccessibilityOHOS*>;
 namespace {
 constexpr int NUMBER_TWO = 2;
+constexpr int32_t LIVE_REGION_OFF = 0;
+constexpr int32_t LIVE_REGION_POLITE = 1;
+constexpr int32_t LIVE_REGION_ASSERTIVE = 2;
+constexpr int32_t CHECKBOX_GROUP_STATUS_TRUE = 0;
+constexpr int32_t CHECKBOX_GROUP_STATUS_MIXED = 1;
+constexpr int32_t CHECKBOX_GROUP_STATUS_FALSE = 2;
+constexpr int32_t CHECKBOX_GROUP_STATUS_DEFAULT = -1;
 }
 
 base::LazyInstance<AccessibilityIdMap>::Leaky g_accessibility_id_map =
@@ -74,6 +82,14 @@ bool BrowserAccessibilityOHOS::IsEnabled() const {
       return false;
   }
   return true;
+}
+
+bool BrowserAccessibilityOHOS::IsExpanded() const {
+  return HasState(ax::mojom::State::kExpanded);
+}
+
+bool BrowserAccessibilityOHOS::IsCollapsed() const {
+  return HasState(ax::mojom::State::kCollapsed);
 }
 
 std::string BrowserAccessibilityOHOS::GetHint() const {
@@ -279,11 +295,11 @@ int32_t BrowserAccessibilityOHOS::OHOSLiveRegionType() const {
   std::string live =
       GetStringAttribute(ax::mojom::StringAttribute::kLiveStatus);
   if (live == "polite") {
-    return 1;
+    return LIVE_REGION_POLITE;
   } else if (live == "assertive") {
-    return 1;
+    return LIVE_REGION_ASSERTIVE;
   }
-  return 0;
+  return LIVE_REGION_OFF;
 }
 
 int32_t BrowserAccessibilityOHOS::GetSelectionStart() const {
@@ -1385,6 +1401,234 @@ void BrowserAccessibilityOHOS::OnLocationChanged()
   auto* manager =
       static_cast<BrowserAccessibilityManagerOHOS*>(this->manager());
   manager->FireLocationChanged(this);
+}
+
+int32_t BrowserAccessibilityOHOS::GetCheckboxGroupSelectedStatus() const
+{
+  // To communicate kMixed state Checkboxes, we will rely on state description,
+  // so we will not report node as checkable to avoid duplicate utterances.
+  if (IsCheckable() && GetRole() == ax::mojom::Role::kMenuItemCheckBox) {
+    auto status = GetData().GetCheckedState();
+    switch (status) {
+      case ax::mojom::CheckedState::kTrue:
+        return CHECKBOX_GROUP_STATUS_TRUE;
+      case ax::mojom::CheckedState::kMixed:
+        return CHECKBOX_GROUP_STATUS_MIXED;
+      case ax::mojom::CheckedState::kFalse:
+        return CHECKBOX_GROUP_STATUS_FALSE;
+      default:
+        break;
+    }
+  }
+  return CHECKBOX_GROUP_STATUS_DEFAULT;
+}
+
+std::u16string BrowserAccessibilityOHOS::GetLocalizedString(
+    int message_id) const {
+  return CHECK_DEREF(content::GetContentClient()).GetLocalizedString(message_id);
+}
+
+std::u16string BrowserAccessibilityOHOS::GetComboboxExpandedText() const {
+  const BrowserAccessibilityOHOS* input_node = nullptr;
+  for (const auto& child : PlatformChildren()) {
+    const BrowserAccessibilityOHOS& ohos_child =
+        static_cast<const BrowserAccessibilityOHOS&>(child);
+    if (ohos_child.IsTextField()) {
+      input_node = &ohos_child;
+      break;
+    }
+  }
+
+  // If we have not found a child input element, consider aria 1.0 spec:
+  //
+  // <input type="text" role="combobox" aria-owns="options">
+  // <ul role="listbox" id="options">...</ul>
+  //
+  // Check if |this| is the input, otherwise try our fallbacks.
+  if (!input_node) {
+    if (IsTextField()) {
+      input_node = this;
+    } else {
+      return GetComboboxExpandedTextFallback();
+    }
+  }
+
+  // Get the aria-controls nodes of |input_node|.
+  std::vector<BrowserAccessibility*> controls =
+      manager()->GetAriaControls(input_node);
+  // |input_node| should control only one element, if it doesn't, try fallbacks.
+  if (controls.size() != 1) {
+    return GetComboboxExpandedTextFallback();
+  }
+
+  // |controlled_node| needs to be a combobox container, if not, try fallbacks.
+  BrowserAccessibilityOHOS* controlled_node =
+      static_cast<BrowserAccessibilityOHOS*>(controls[0]);
+  if (!ui::IsComboBoxContainer(controlled_node->GetRole())) {
+    return GetComboboxExpandedTextFallback();
+  }
+
+  // For dialogs, return special case string.
+  if (controlled_node->GetRole() == ax::mojom::Role::kDialog) {
+    return GetLocalizedString(IDS_AX_COMBOBOX_EXPANDED_DIALOG);
+  }
+
+  // Find |controlled_node| set size, or return default string.
+  if (!controlled_node->GetSetSize()) {
+    return GetLocalizedString(IDS_AX_COMBOBOX_EXPANDED_AUTOCOMPLETE_DEFAULT);
+  }
+
+  // Replace placeholder with count and return string.
+  return base::ReplaceStringPlaceholders(
+      GetLocalizedString(
+          IDS_AX_COMBOBOX_EXPANDED_AUTOCOMPLETE_X_OPTIONS_AVAILABLE),
+      base::NumberToString16(*controlled_node->GetSetSize()), nullptr);
+}
+
+std::u16string BrowserAccessibilityOHOS::GetComboboxExpandedTextFallback() const {
+  // If a combobox was of an indeterminate form, attempt any special cases here,
+  // or return "expanded" as a final option.
+
+  // Check for child nodes that are collections.
+  int child_collection_count = 0;
+  const BrowserAccessibilityOHOS* collection_node = nullptr;
+  for (const auto& child : PlatformChildren()) {
+    const auto& ohos_child =
+        static_cast<const BrowserAccessibilityOHOS&>(child);
+    if (ohos_child.IsCollection()) {
+      child_collection_count++;
+      collection_node = &ohos_child;
+    }
+  }
+
+  // If we find none, or more than one, we will not be able to determine the
+  // correct utterance, so return a default string instead.
+  if (child_collection_count != 1) {
+    return GetLocalizedString(IDS_AX_COMBOBOX_EXPANDED);
+  }
+
+  // Find |collection_node| set size, or return defaul string.
+  if (!collection_node->GetSetSize()) {
+    return GetLocalizedString(IDS_AX_COMBOBOX_EXPANDED_AUTOCOMPLETE_DEFAULT);
+  }
+
+  // Replace placeholder with count and return string.
+  return base::ReplaceStringPlaceholders(
+      GetLocalizedString(
+          IDS_AX_COMBOBOX_EXPANDED_AUTOCOMPLETE_X_OPTIONS_AVAILABLE),
+      base::NumberToString16(*collection_node->GetSetSize()), nullptr);
+}
+
+std::u16string BrowserAccessibilityOHOS::GetRoleDescription() const {
+  // If an element has an aria-roledescription set, use that value by default.
+  if (HasStringAttribute(ax::mojom::StringAttribute::kRoleDescription)) {
+    return GetString16Attribute(ax::mojom::StringAttribute::kRoleDescription);
+  }
+
+  if (GetRole() == ax::mojom::Role::kHeading) {
+    std::vector<std::u16string> role_description;
+    role_description.push_back(GetLocalizedString(IDS_AX_ROLE_HEADING));
+
+    // For visited links, we additionally want to append "visited" to the
+    // description.
+    if (HasState(ax::mojom::State::kVisited)) {
+      role_description.push_back(GetLocalizedString(IDS_AX_STATE_LINK_VISITED));
+    }
+
+    return base::JoinString(role_description, u" ");
+  }
+
+  // If this node is a link and the parent is a heading, return the role
+  // description of the parent (e.g. "heading 1 link").
+  if (ui::IsLink(GetRole()) && PlatformGetParent()) {
+    BrowserAccessibilityOHOS* parent =
+      static_cast<BrowserAccessibilityOHOS*>(PlatformGetParent());
+    if (parent->IsHeadingLink()) {
+      return parent->GetRoleDescription();
+    }
+  }
+
+  // If this node is a link and visited, append "visited" to the description.
+  if (ui::IsLink(GetRole())) {
+    std::vector<std::u16string> role_description = {
+        GetLocalizedStringForRoleDescription()};
+    if (HasState(ax::mojom::State::kVisited)) {
+      role_description.push_back(GetLocalizedString(IDS_AX_STATE_LINK_VISITED));
+    }
+    return base::JoinString(role_description, u" ");
+  }
+
+  // For buttons with a kHasPopup attribute, return a more specific role.
+  if (ui::IsButton(GetRole())) {
+    switch (static_cast<ax::mojom::HasPopup>(
+        GetIntAttribute(ax::mojom::IntAttribute::kHasPopup))) {
+      case ax::mojom::HasPopup::kTrue:
+      case ax::mojom::HasPopup::kMenu:
+        return GetLocalizedString(IDS_AX_ROLE_POP_UP_BUTTON_MENU);
+      case ax::mojom::HasPopup::kDialog:
+        return GetLocalizedString(IDS_AX_ROLE_POP_UP_BUTTON_DIALOG);
+      case ax::mojom::HasPopup::kListbox:
+      case ax::mojom::HasPopup::kTree:
+      case ax::mojom::HasPopup::kGrid:
+        return GetLocalizedString(IDS_AX_ROLE_POP_UP_BUTTON);
+      case ax::mojom::HasPopup::kFalse:
+        break;
+    }
+  }
+
+  switch (GetRole()) {
+    case ax::mojom::Role::kAlert:
+    case ax::mojom::Role::kAudio:
+    case ax::mojom::Role::kCode:
+    case ax::mojom::Role::kDetails:
+    case ax::mojom::Role::kEmphasis:
+    case ax::mojom::Role::kForm:
+    case ax::mojom::Role::kRowGroup:
+    case ax::mojom::Role::kSectionFooter:
+    case ax::mojom::Role::kSectionHeader:
+    case ax::mojom::Role::kSectionWithoutName:
+    case ax::mojom::Role::kStrong:
+    case ax::mojom::Role::kSubscript:
+    case ax::mojom::Role::kSuperscript:
+    case ax::mojom::Role::kTime:
+      // No role description on OHOS.
+      break;
+    case ax::mojom::Role::kCanvas:
+      return GetLocalizedString(IDS_AX_ROLL_CANVAS_OHOS);
+    case ax::mojom::Role::kComboBoxMenuButton:
+    case ax::mojom::Role::kComboBoxSelect:
+      return GetLocalizedString(IDS_AX_ROLE_COMBO_BOX_OHOS);
+    case ax::mojom::Role::kDescriptionList:
+      return GetLocalizedString(IDS_AX_ROLE_DESCRIPTION_LIST_OHOS);
+    case ax::mojom::Role::kFigure:
+      // Default is IDS_AX_ROLE_FIGURE.
+      return GetLocalizedString(IDS_AX_ROLE_GRAPHIC);
+    case ax::mojom::Role::kHeader:
+      // Default is IDS_AX_ROLE_HEADER.
+      return GetLocalizedString(IDS_AX_ROLE_BANNER);
+    case ax::mojom::Role::kListGrid:
+      // Default is no special role description.
+      return GetLocalizedString(IDS_AX_ROLE_TABLE);
+    case ax::mojom::Role::kMarquee:
+      return GetLocalizedString(IDS_AX_ROLE_MARQUEE_OHOS);
+    case ax::mojom::Role::kMenuItemCheckBox:
+      // Default is no special role description.
+      return GetLocalizedString(IDS_AX_ROLE_CHECK_BOX);
+    case ax::mojom::Role::kMenuItemRadio:
+      // Default is no special role description.
+      return GetLocalizedString(IDS_AX_ROLE_RADIO);
+    case ax::mojom::Role::kRadioButton:
+      return GetLocalizedString(IDS_AX_ROLE_RADIO_OHOS);
+    case ax::mojom::Role::kTextField:
+    case ax::mojom::Role::kTextFieldWithComboBox:
+      return GetLocalizedString(IDS_AX_ROLE_TEXT_FIELD);
+    case ax::mojom::Role::kVideo:
+      // Default is no special role description.
+      return GetLocalizedString(IDS_AX_MEDIA_VIDEO_ELEMENT);
+    default:
+      return GetLocalizedStringForRoleDescription();
+  }
+  return std::u16string();
 }
 
 }  // namespace content

@@ -4487,6 +4487,17 @@ void NWebDelegate::AddAccessibilityNodeInfoAttributes(
     nodeInfo->SetRangeInfoCurrent(0.0f);
   }
   nodeInfo->SetIsAccessibilityGroup(node->IsAccessibilityGroup());
+  nodeInfo->SetComponentTypeDescription(base::UTF16ToUTF8(node->GetRoleDescription()));
+  nodeInfo->SetCheckboxGroupSelectedStatus(node->GetCheckboxGroupSelectedStatus());
+  if (node->GetRoleString() !=  ui::ToString(ax::mojom::Role::kComboBoxMenuButton)) {
+    if (node->IsExpanded()) {
+      nodeInfo->SetExpandedState("expanded");
+    } else if (node->IsCollapsed()) {
+      nodeInfo->SetExpandedState("collapsed");
+    } else {
+      nodeInfo->SetExpandedState("");
+    }
+  }
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoRect(

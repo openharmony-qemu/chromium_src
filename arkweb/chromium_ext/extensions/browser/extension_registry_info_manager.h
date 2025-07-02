@@ -47,8 +47,13 @@ class ExtensionRegistryInfoManager : public MenuManager::LoadObserver, public Ex
 
   void NotifyOnExtensionLoaded(const Extension& extension);
 
+  void GetExtensionManifestInfo(const Extension& extension,
+                                WebExtensionManifestInfo& out_manifest) const;
+
   WebExtensionActionInfo GetExtensionActionInfo(const Extension& extension,
                                                 int32_t tabId) const;
+
+  void DeleteExtensionActionInfo(WebExtensionActionInfo& action_info);
 
   WebExtensionSidePanelInfo GetExtensionSidePanelInfo(
       const Extension& extension,
@@ -90,7 +95,7 @@ class ExtensionRegistryInfoManager : public MenuManager::LoadObserver, public Ex
   void OnShutdown(ExtensionRegistry* registry) override;
  
  private:
-  raw_ptr<content::BrowserContext> browser_context_;
+  content::BrowserContext* browser_context_;
 };
 
 }  // namespace extensions

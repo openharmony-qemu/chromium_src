@@ -58,6 +58,10 @@
 #endif  // BUILDFLAG(ENABLE_ALLOCATION_TRACE_RECORDER_FULL_REPORTING)
 #endif  // BUILDFLAG(ENABLE_ALLOCATION_STACK_TRACE_RECORDER)
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 namespace memory_system {
 namespace {
 
@@ -228,6 +232,10 @@ void MemorySystem::Impl::InitializeGwpASan(
     const GwpAsanParameters& gwp_asan_parameters,
     InitializationData& initialization_data) {
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
+  if (!base::ohos::IsMobileDevice() && !base::ohos::IsPcDevice()) {
+    LOG(INFO) << "gwp-asan Unsupported platfrom";
+    return;
+  }
   if (gwp_asan_parameters.process_type != "renderer") {
     LOG(INFO) << "gwp-asan only support for renderer, pass process_type = "
       << gwp_asan_parameters.process_type;

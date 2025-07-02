@@ -31,6 +31,9 @@
 #include "third_party/blink/renderer/core/geometry/dom_rect.h"
 #include "third_party/blink/renderer/core/html/html_element.h"
 #include "third_party/blink/renderer/core/html/media/html_media_element.h"
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace blink {
 
@@ -54,7 +57,9 @@ static constexpr int kPopupMenuBottomSpaceLeft = 358;
 // 216+4+4+8=232
 static constexpr int kPopupMenuLeftSpaceLeft = 232;
 
+// 216 + 4 + 4
 static constexpr int kOverflowPopupMenuLeftSpaceLeft = 224;
+static constexpr int kOverflowPopupMenuBorderPx = 2;
 
 static const char kImportant[] = "important";
 static const char kPx[] = "px";
@@ -69,8 +74,13 @@ void MediaControlPopupMenuElementUtils::SetPopupAnchorHM(
         kPx;
     WTF::String left_str_value;
     if (!element->MediaElement().html_media_element_utils_->IsRTL()) {
-      left_str_value = WTF::String::Number(bounding_client_rect->right() -
-          kOverflowPopupMenuLeftSpaceLeft) + kPx;
+      if (base::ohos::IsPcDevice()) {
+        left_str_value = WTF::String::Number(bounding_client_rect->right() -
+            kOverflowPopupMenuLeftSpaceLeft - kOverflowPopupMenuBorderPx) + kPx;
+      } else {
+        left_str_value = WTF::String::Number(bounding_client_rect->right() -
+            kOverflowPopupMenuLeftSpaceLeft) + kPx;
+      }
     } else {
       left_str_value = WTF::String::Number(bounding_client_rect->left()) + kPx;
     }

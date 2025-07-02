@@ -48,6 +48,12 @@ class MediaControlTopRowPanelElement;
 class MediaControlTimelineRowPanelElement;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+// The CSS class names for the different device.
+const char kMediaControlsDevicePhoneCSSClass[] = "device-phone";
+const char kMediaControlsDevicePcCSSClass[] = "device-pc";
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
 class MediaControlsImplUtils {
 public:
   MediaControlsImpl* impl;
@@ -82,6 +88,7 @@ public:
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   bool ShouldShowVideoControlsHM() const;
+  void UpdateDeviceCSSClassExt();
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)

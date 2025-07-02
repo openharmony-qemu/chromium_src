@@ -678,7 +678,7 @@ need to be translated for each locale.-->
         <message name="IDS_AX_ROLE_WEEK" desc="Accessibility role description for a week input">
           week picker
         </message>
-        <if expr="is_android">
+        <if expr="is_android or is_ohos">
           <message name="IDS_AX_ROLE_POP_UP_BUTTON_MENU" desc="Accessibility role description for a pop up button that opens a menu">
             menu pop up button
           </message>
@@ -687,7 +687,7 @@ need to be translated for each locale.-->
           </message>
         </if>
         <!-- Accessibility state localized descriptions -->
-        <if expr="is_android">
+        <if expr="is_android or is_ohos">
           <message name="IDS_AX_MULTISELECTABLE_STATE_DESCRIPTION" desc="Accessibility state description for a multiselectable node when some children are selected">
             multiselectable, <ph name="SELECTED">$1<ex>3</ex></ph> of <ph name="COUNT">$2<ex>10</ex></ph> selected.
           </message>
@@ -998,6 +998,26 @@ need to be translated for each locale.-->
       <message name="CONTENT_INVALID_GRAMMAR" desc="Error message for aria-invalid = grammar">
         Invalid grammar
       </message>
+      <if expr="is_ohos">
+        <message name="IDS_AX_ROLL_CANVAS_OHOS" desc="Accessibility role description for a canvas element">
+          canvas ohos
+        </message>
+        <message name="IDS_AX_ROLE_MARQUEE_OHOS" desc="Accessibility role description for a marquee, such as a stock ticker or ad banner that frequently changes">
+          marquee ohos
+        </message>
+        <message name="IDS_AX_ROLE_COMBO_BOX_OHOS" desc="Accessibility role description for a combo box, an editable text control with an associated drop-down list">
+          combo box ohos
+        </message>
+        <message name="IDS_AX_ROLE_RADIO_OHOS" desc="Accessibility role description for a radio button">
+          radio button ohos
+        </message>
+        <message name="IDS_AX_ROLE_DESCRIPTION_LIST_OHOS" desc="Accessibility role description for a definition list">
+          definition list ohos
+        </message>
+        <message name="IDS_AX_ROLE_TEXT_FIELD" desc="Accessibility role description for text field">
+          text field ohos
+        </message>
+      </if>
    </messages>
   </release>
 </grit>

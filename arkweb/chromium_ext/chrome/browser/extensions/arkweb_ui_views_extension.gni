@@ -5,6 +5,8 @@
 arkweb_ui_views_extension_sources = get_path_info([
     "extension_install_prompt_ext.cc",
     "extension_install_prompt_ext.h",
+    "extension_multiple_uninstall_dialog_ohos.cc",
+    "extension_multiple_uninstall_dialog_ohos.h",
     "extension_uninstall_dialog_ohos.cc",
     "extension_uninstall_dialog_ohos.h",
   ], "abspath")

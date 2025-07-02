@@ -406,7 +406,7 @@ component("capture_lib") {
     sources += arkweb_media_capture_video_ohos_sources
     
     include_dirs = ohos_src_includes
-    #libs = ["ohcamera"]
+    libs = ["ohcamera"]
   }
 }
 

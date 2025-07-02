@@ -143,6 +143,9 @@ class ArkOhosAdapterHelperWrapper : public NWeb::OhosAdapterHelper {
   std::unique_ptr<NWeb::MigrationManagerAdapter> CreateMigrationMgrAdapter()
       override;
 
+  std::unique_ptr<NWeb::ScreenlockManagerAdapter> CreateScreenlockManagerAdapter()
+      override;
+
  private:
   ArkWebRefPtr<ArkOhosAdapterHelper> ctocpp_;
 };

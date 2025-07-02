@@ -44,6 +44,7 @@ class WindowCapturerReadCallback : public BaseScreenCaptureReadCallback {
 
   void OnReadData(OHOS::NWeb::AudioCaptureSourceTypeAdapter type) override {}
 
+  void OnDisplaySelected(uint64_t displayId) override {}
  private:
   OnReadDataCallback readDataCallback_;
 };
@@ -68,17 +69,25 @@ class BaseWindowCapturer : public DesktopCapturer {
     int micro = 0;
   };
 
-  explicit BaseWindowCapturer(CaptureSourceType source_type, bool is_picker_show, int nweb_id);
+  explicit BaseWindowCapturer(
+      CaptureSourceType source_type,
+      bool is_picker_show, 
+      int nweb_id, 
+      base::OnceCallback<void(uint64_t displayId)> callback = 
+          base::BindOnce([](uint64_t value) {}));
+
   ~BaseWindowCapturer() override;
 
   static std::unique_ptr<DesktopCapturer> CreateRawCapturer(
       const DesktopCaptureOptions& options,
-      const CaptureSourceType& type);
+      const CaptureSourceType& type,
+      base::OnceCallback<void(uint64_t displayId)> callback);
 
   bool Init(const DesktopCaptureOptions& options);
 
   // DesktopCapturer interface.
   void Start(Callback* delegate) override;
+  void Stop() override;
   void CaptureFrame() override;
   bool GetSourceList(SourceList* sources) override;
   bool SelectSource(SourceId id) override;

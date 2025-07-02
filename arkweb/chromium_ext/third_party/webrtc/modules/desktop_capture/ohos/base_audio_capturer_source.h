@@ -52,6 +52,7 @@ class AudioScreenCapturerReadCallback : public BaseScreenCaptureReadCallback {
 
   void OnReadData(OHOS::NWeb::AudioCaptureSourceTypeAdapter type) override;
 
+  void OnDisplaySelected(uint64_t displayId) override;
  private:
   OnAudioReadDataCallback readDataCallback_;
 };

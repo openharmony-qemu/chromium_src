@@ -13,10 +13,12 @@ namespace webrtc {
 
 // static
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
-    const DesktopCaptureOptions& options) {
+    const DesktopCaptureOptions& options,
+    base::OnceCallback<void(uint64_t displayId)> callback) {
   LOG(INFO) << "webrtc DesktopCapturer::CreateRawScreenCapturer";
   return BaseWindowCapturer::CreateRawCapturer(
-      options, BaseWindowCapturer::CaptureSourceType::kScreen);
+      options, BaseWindowCapturer::CaptureSourceType::kScreen,
+      std::move(callback));
 }
 
 }  // namespace webrtc

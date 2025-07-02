@@ -117,6 +117,7 @@ public:
 
     int32_t InitV2(const std::shared_ptr<ScreenCaptureConfigAdapter> config, int nweb_id) override;
 
+    void ClearBufferQueue(int nwebId) override;
 private:
     void Release();
 

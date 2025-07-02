@@ -1762,6 +1762,19 @@ void MediaStreamManager::GenerateStreams(
   DeviceRequests::const_iterator request_it = AddRequest(std::move(request));
   const std::string& label = request_it->first;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (controls.video.device_ids.empty()) {
+    LOG(ERROR) << "device_ids=nullptr";
+  }
+  if (!controls.video.device_ids.empty() &&
+      !DesktopStreamsRegistry::GetInstance()->CheckStreamID(
+          controls.video.device_ids.front())) {
+    LOG(ERROR) << " device_ids=" << controls.video.device_ids.front()
+               << ",not valid";
+    FinalizeRequestFailed(request_it, MediaStreamRequestResult::INVALID_STATE);
+    return;
+  }
+#endif
   if (generate_stream_test_callback_) {
     // The test callback is responsible to verify whether the |controls| is
     // as expected. Then we need to finish getUserMedia and let Javascript
@@ -3661,6 +3674,9 @@ void MediaStreamManager::HandleAccessRequestResponse(
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
       if (device.type == MediaStreamType::DEVICE_VIDEO_CAPTURE ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        device.type == MediaStreamType::GUM_DESKTOP_VIDEO_CAPTURE ||
+#endif
         device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE) {
         auto* web_contents = static_cast<WebContentsImpl*>(
             WebContentsImpl::FromRenderFrameHostID(

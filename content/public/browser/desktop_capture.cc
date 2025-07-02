@@ -51,8 +51,12 @@ bool CGDisplayStreamCreateIsAvailable() {
 namespace content::desktop_capture {
 
 webrtc::DesktopCaptureOptions CreateDesktopCaptureOptions() {
+  LOG(INFO) << __FUNCTION__ << " enter ";
   auto options = webrtc::DesktopCaptureOptions::CreateDefault();
   // Leave desktop effects enabled during WebRTC captures.
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  options.set_picker_show(true);
+#endif
   options.set_disable_effects(false);
 #if BUILDFLAG(IS_WIN)
   // TODO(crbug.com/webrtc/15045): Possibly remove this flag. Keeping for now
@@ -83,8 +87,15 @@ webrtc::DesktopCaptureOptions CreateDesktopCaptureOptions() {
   return options;
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+std::unique_ptr<webrtc::DesktopCapturer> CreateScreenCapturer(
+    bool allow_wgc_screen_capturer,
+    int nweb_id,
+    base::OnceCallback<void(uint64_t displayId)> callback) {
+#else
 std::unique_ptr<webrtc::DesktopCapturer> CreateScreenCapturer(
     bool allow_wgc_screen_capturer) {
+#endif
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
   return std::make_unique<DesktopCapturerLacros>(
       DesktopCapturerLacros::CaptureType::kScreen,
@@ -98,7 +109,12 @@ std::unique_ptr<webrtc::DesktopCapturer> CreateScreenCapturer(
     options.set_allow_wgc_screen_capturer(true);
   }
 #endif  // defined(RTC_ENABLE_WIN_WGC)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  options.set_nweb_id(nweb_id);
+  return webrtc::DesktopCapturer::CreateScreenCapturer(options, std::move(callback));
+#else
   return webrtc::DesktopCapturer::CreateScreenCapturer(options);
+#endif
 #endif
 }
 

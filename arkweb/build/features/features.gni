@@ -237,6 +237,7 @@ declare_args() {
   arkweb_blank_optimize = false
   arkweb_viewport_avoid = true
   arkweb_error_page = true
+  arkweb_gwp_asan = true
 }
 
 # Features enabled in mojom bindings.

@@ -363,7 +363,6 @@ class BASE_EXPORT PersistentMemoryAllocator {
   // the returned view instead of relying on a terminating NUL char.
   std::string_view Name() const;
 
-
   // Is this segment open only for read?
   bool IsReadonly() const { return access_mode_ == kReadOnly; }
 

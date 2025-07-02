@@ -20,6 +20,8 @@ constexpr int32_t kAccessibilityEventDelayDefault = 200;
 constexpr int32_t kAccessibilityEventDelayHover = 200;
 constexpr int32_t kMaxLocationChangedEventsToFire = 3;
 constexpr int32_t kShiftedBitNumber = 32;
+constexpr int32_t kLiveRegionTypePolite = 1;
+constexpr int32_t kLiveRegionTypeAssertive = 2;
 
 using SearchKeyToPredicateMap =
     std::unordered_map<std::u16string, AccessibilityMatchPredicate>;
@@ -270,6 +272,7 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
   if (event_type != AXEventGenerator::Event::SUBTREE_CREATED) {
     HandleContentChanged(accessibilityId);
   }
+
   switch (event_type) {
     case AXEventGenerator::Event::ALERT: {
       // When an alertdialog is shown, we will announce the hint, which
@@ -332,6 +335,32 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
                              OHOS::NWeb::AccessibilityEventType::
                                  ANNOUNCE_FOR_ACCESSIBILITY_NOT_INTERRUPT,
                              text);
+      break;
+    }
+    case ui::AXEventGenerator::Event::EXPANDED: {
+      if (ui::SupportsExpandCollapse(nodeOHOS->GetRole()) &&
+          GetFocus()->IsDescendantOf(nodeOHOS)) {
+        SendAccessibilityEvent(
+            accessibilityId,
+            OHOS::NWeb::AccessibilityEventType::ANNOUNCE_FOR_ACCESSIBILITY,
+            base::UTF16ToUTF8(nodeOHOS->GetComboboxExpandedText()));
+      }
+      break;
+    }
+    case ui::AXEventGenerator::Event::LIVE_REGION_CHANGED: {
+      std::string text = base::UTF16ToUTF8(nodeOHOS->GetTextContentUTF16());
+      int32_t liveRegionType = nodeOHOS->OHOSLiveRegionType();
+      if (liveRegionType == kLiveRegionTypePolite) {
+        SendAccessibilityEvent(accessibilityId,
+                               OHOS::NWeb::AccessibilityEventType::
+                                   ANNOUNCE_FOR_ACCESSIBILITY_NOT_INTERRUPT,
+                               text);
+      } else if (liveRegionType == kLiveRegionTypeAssertive) {
+        SendAccessibilityEvent(accessibilityId,
+                               OHOS::NWeb::AccessibilityEventType::
+                                   ANNOUNCE_FOR_ACCESSIBILITY,
+                               text);
+      }
       break;
     }
     case AXEventGenerator::Event::SUBTREE_CREATED:

@@ -193,7 +193,11 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
       CefRefPtr<CefBrowser> browser,
       const CefEmbedTouchEvent& event,
       CefRefPtr<CefGestureEventCallback> callback) override;
-  void OnNativeEmbedLifecycleChange(CefRefPtr<CefBrowser> browser,
+  void OnNativeEmbedMouseEvent(
+      CefRefPtr<CefBrowser> browser,
+      const CefEmbedMouseEvent& event,
+      CefRefPtr<CefMouseEventCallback> callback) override;
+  void OnNativeEmbedLifecycleChange(CefRefPtr<CefBrowser> browser,  
                                     const CefNativeEmbedData& info) override;
   void OnNativeEmbedVisibilityChange(const CefString& embed_id,
                                      bool visibility) override;

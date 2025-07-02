@@ -65,6 +65,7 @@
 
 #if BUILDFLAG(IS_ARKWEB)
 #include "cef/ohos_cef_ext/libcef/browser/net/ohos_applink_throttle.h"
+#include "cef/ohos_cef_ext/libcef/browser/net/ohos_enable_applinking_util.h"
 #endif  // BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
@@ -219,6 +220,9 @@ class ChromeContentBrowserClientUtils {
       const network::ResourceRequest& request,
       std::vector<std::unique_ptr<blink::URLLoaderThrottle>>& result,
       content::FrameTreeNodeId frame_tree_node_id) {
+    if (!OhosEnableApplinkingUtil::IsAppLinkingEnabled()) {
+        return;
+    }
     if (request.destination == network::mojom::RequestDestination::kDocument &&
         request.url.SchemeIs(url::kHttpsScheme) &&
         request.transition_type !=

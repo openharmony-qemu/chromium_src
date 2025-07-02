@@ -16,7 +16,14 @@
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "base/datashare_uri_utils.h"
 #include "extensions/browser/extension_registry_info_manager.h"
+#include "extensions/common/manifest_handlers/options_page_info.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
+
+#include "ohos_nweb/src/nweb_common.h"
+ 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/core/extension/nweb_extension_manager_dispatcher.h"
+#endif // ARKWEB_NWEB_EX
 
 namespace extensions {
 
@@ -37,7 +44,50 @@ DeveloperPrivateOpenUrlFunction::Run() {
       api::developer_private::OpenUrl::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
-  ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack(params->url);
+  if (IsNativeApiEnable()) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    NWebExtensionManagerDispatcher::OnExtensionOpenUrlCallBack(params->url,
+                                                              params->type);
+#endif
+  } else {
+    ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack(params->url);
+  }
+
+  return RespondNow(NoArguments());
+}
+
+ExtensionFunction::ResponseAction DeveloperPrivateShowOptionsFunction::Run() {
+  std::optional<developer::ShowOptions::Params> params =
+      developer::ShowOptions::Params::Create(args());
+  EXTENSION_FUNCTION_VALIDATE(params);
+  const char kNoSuchExtensionError[] = "No such extension.";
+  const char kNoOptionsPageForExtensionError[] =
+      "Extension does not have an options page.";
+  const char kCouldNotFindWebContentsError[] =
+      "Could not find a valid web contents.";
+ 
+  const Extension* extension = GetEnabledExtensionById(params->extension_id);
+  if (!extension)
+    return RespondNow(Error(kNoSuchExtensionError));
+ 
+  if (OptionsPageInfo::GetOptionsPage(extension).is_empty())
+    return RespondNow(Error(kNoOptionsPageForExtensionError));
+ 
+  content::WebContents* web_contents = GetSenderWebContents();
+  if (!web_contents)
+    return RespondNow(Error(kCouldNotFindWebContentsError));
+ 
+  GURL url_to_navigate = OptionsPageInfo::GetOptionsPage(extension);
+  if (IsNativeApiEnable()) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    NWebExtensionManagerDispatcher::OnExtensionOpenUrlCallBack(
+        url_to_navigate.spec(), URL_TYPE_OPTIONS);
+#endif
+  } else {
+    ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack(
+        url_to_navigate.spec());
+  }
+ 
   return RespondNow(NoArguments());
 }
 #endif // ARKWEB_ARKWEB_EXTENSIONS

@@ -147,6 +147,7 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_msync:
     case __NR_set_robust_list:
     case __NR_sched_getparam:
+    case __NR_getrandom:
 #endif
 #if defined(__arm__)
     case __NR_sched_getaffinity:
@@ -184,6 +185,7 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_getrlimit:
     case __NR_newfstatat:
     case __NR_fstatfs:
+    case __NR_mmap:
 #endif
 
     override_and_allow = true;
@@ -290,6 +292,7 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
 #define BLOCKAWARE_SUBOPS_REG 2
 #define BLOCKAWARE_SUBOPS_UNREG 3
 #define BLOCKAWARE_SUBOPS_MONITORFD 6
+#define HM_GOT_RO 0x70726f74
         const Arg<int> option(0), arg(1);
 
         return Switch(option)
@@ -299,6 +302,7 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
                 If(AnyOf(arg == BLOCKAWARE_SUBOPS_INIT, arg == BLOCKAWARE_SUBOPS_REG,
                     arg == BLOCKAWARE_SUBOPS_UNREG, arg == BLOCKAWARE_SUBOPS_MONITORFD),
                     Error(EPERM)).Else(CrashSIGSYSPrctl()))
+            .Cases({HM_GOT_RO}, Allow())
             .Default(BaselinePolicy::EvaluateSyscall(sysno));
     }
 

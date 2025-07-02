@@ -86,6 +86,7 @@
 #include "ui/gfx/geometry/size.h"
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "base/ohos/sys_info_utils_ext.h"
 #include "third_party/blink/renderer/core/html/html_style_element.h"
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_top_row_panel_element.h"
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_timeline_row_panel_element.h"
@@ -169,6 +170,12 @@ void MediaControlsImplUtils::UpdateOverflowMenuWantedExt(
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 bool MediaControlsImplUtils::ShouldShowVideoControlsHM() const {
   return impl->MediaElement().IsCustomMediaPlayerEnabled() && impl->ShouldShowVideoControls();
+}
+
+void MediaControlsImplUtils::UpdateDeviceCSSClassExt() {
+  if (impl) {
+    impl->SetClass(kMediaControlsDevicePcCSSClass, base::ohos::IsPcDevice());
+  }
 }
 #endif
 

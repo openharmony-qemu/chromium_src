@@ -5,6 +5,12 @@ arkweb_blink_renderer_modules_media_controls_sources = [
     "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_entered_fullscreen_title_display_element_ext.cc",
     "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_entered_fullscreen_title_display_element_ext.h",
 
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_overflow_menu_list_element_utils.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_overflow_menu_list_element_utils.h",
+
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_picture_in_picture_button_element_utils.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_picture_in_picture_button_element_utils.h",
+
     "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_scrubbing_panel_element.cc",
     "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_scrubbing_panel_element.h",
 

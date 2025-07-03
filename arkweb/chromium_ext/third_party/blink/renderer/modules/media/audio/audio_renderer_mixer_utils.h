@@ -24,7 +24,7 @@ namespace blink {
 
 class AudioRendererMixerUtils {
 public:
-  AudioRendererMixer* audioRendererMixer;
+  raw_ptr<AudioRendererMixer> audioRendererMixer = nullptr;
   AudioRendererMixerUtils(AudioRendererMixer* impl);
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)

@@ -3523,6 +3523,12 @@ source_set("browser") {
       sources += [ "//arkweb/chromium_ext/content/browser/speech/tts_ohos.cc" ]
     }
 
+    if (arkweb_crashpad) {
+      deps += [
+        "//arkweb/chromium_ext/content/browser/dfx:dfx_monitor_browser"
+      ]
+    }
+
     if (arkweb_enable_cdm) {
       import("//arkweb/chromium_ext/chromium_ext.gni")
       sources += arkweb_content_browser_media_key_system_sources

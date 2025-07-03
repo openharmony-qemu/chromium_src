@@ -348,6 +348,7 @@ SkiaOutputSurfaceImplOnGpu::SkiaOutputSurfaceImplOnGpu(
   weak_ptr_ = weak_ptr_factory_.GetWeakPtr();
   buffer_presented_callback_ = CreateSafeRepeatingCallback(
       weak_ptr_, std::move(buffer_presented_callback));
+  impl_utils_ =  std::make_shared<SkiaOutputSurfaceImplOnGpuUtils>(this);
 }
 
 void SkiaOutputSurfaceImplOnGpu::ReleaseAsyncReadResultHelpers() {
@@ -452,6 +453,14 @@ void SkiaOutputSurfaceImplOnGpu::Reshape(
 void SkiaOutputSurfaceImplOnGpu::SetNativeInnerWeb(bool isInnerWeb) {
   if (output_device_) {
     output_device_->SetNativeInnerWeb(isInnerWeb);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void SkiaOutputSurfaceImplOnGpu::SetBypassVsyncCondition(int32_t condition) {
+  if (output_device_) {
+    output_device_->SetBypassVsyncCondition(condition);
   }
 }
 #endif

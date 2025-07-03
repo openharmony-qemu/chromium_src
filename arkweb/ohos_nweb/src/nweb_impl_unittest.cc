@@ -1080,6 +1080,11 @@ class MockNWebDelegate : public NWebDelegateInterface {
                OnReceiveValueCallback callback),
               (override));
 #endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  MOCK_METHOD(void, SetBlanklessLoadingKey, (uint32_t nweb_id, uint64_t blankless_key), (override));
+  MOCK_METHOD(int64_t, GetPreferenceHash, (), (override));
+#endif
 };
 
 class MockNWebDragEvent : public NWebDragEvent {

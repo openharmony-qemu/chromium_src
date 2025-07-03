@@ -253,6 +253,10 @@
 #include "content/browser/ohos/date_time_chooser_ohos.h"
 #endif  // BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "arkweb/chromium_ext/content/browser/dfx/dfx_reporter_browser_impl.h"
+#endif
+
 namespace blink {
 class StorageKey;
 }  // namespace blink
@@ -1142,6 +1146,15 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
         base::Unretained(GetContentClient()->browser()),
         base::Unretained(host)));
   }
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  map->Add<dfx::mojom::DfxReporter>(base::BindRepeating(
+      [](RenderFrameHostImpl *host,
+         mojo::PendingReceiver<dfx::mojom::DfxReporter> receiver) {
+        DfxReporterImpl::ProcessPendingReceiver(receiver);
+      },
+      host));
+#endif
 }
 
 void PopulateBinderMapWithContext(

@@ -17,9 +17,14 @@
 
 #include "gpu/ipc/service/gpu_channel.h"
 #include "base/functional/callback.h"
+#include "base/trace_event/trace_event.h"
 #include "gpu/ipc/common/gpu_channel.mojom.h"
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 #include "ui/gl/ohos/native_buffer_utils.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #endif
 
 namespace gpu {
@@ -56,10 +61,21 @@ class GpuChannelExt : public GpuChannel {
   void DestroyNativeTexture(int32_t stream_id);
   int32_t current_native_embed_id(int32_t native_id);
 #endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessDumpInfo(uint64_t frame_sink_id, const base::ohos::BlanklessDumpInfo& info);
+  bool GetBlanklessDumpInfoAndDisableDump(uint64_t frame_sink_id, base::ohos::BlanklessDumpInfo& info);
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   // Set of active NativeTextures.
   base::flat_map<int32_t, scoped_refptr<StreamTexture>> native_textures_;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  std::map<uint64_t, base::ohos::BlanklessDumpInfo> blankless_dump_info_map_;
+  std::mutex dump_info_map_mtx_;
 #endif
 };
 }// namespace gpu

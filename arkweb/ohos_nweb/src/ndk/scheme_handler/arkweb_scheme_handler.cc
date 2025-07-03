@@ -271,6 +271,10 @@ ARKWEB_EXPORT void OH_ArkWebHttpBodyStream_AsyncRead(
     LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return;
   }
+  if (buf_len < 0) {
+    LOG(ERROR) << "buf_len smaller then zero";
+    return;
+  }
 
   http_body_stream->AsyncRead(buffer, buf_len);
 }

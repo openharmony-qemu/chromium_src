@@ -50,6 +50,11 @@
 #include "ui/gfx/mojom/dxgi_info.mojom.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "third_party/skia/include/core/SkPixmap.h"
+#include "ui/gfx/geometry/rect.h"
+#endif
+
 namespace gfx {
 struct FontRenderParams;
 }
@@ -246,6 +251,20 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   void SetIsFling(bool is_fling_enabled);
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SendBlanklessSnapshotInfo(uint64_t blankless_key,
+                                 int32_t lcp_time,
+                                 int64_t pref_hash,
+                                 const SkBitmap& bitmap,
+                                 const std::vector<gfx::Rect>& quad_list) override;
+  static void DumpBlanklessSnapshot(uint64_t blankless_key,
+                                    int32_t lcp_time,
+                                    int64_t pref_hash,
+                                    const SkBitmap& bitmap,
+                                    const std::vector<gfx::Rect>& quad_list);
+  void ClearBlanklessSnapshotInfo(uint64_t blankless_key) override;
 #endif
 
  private:

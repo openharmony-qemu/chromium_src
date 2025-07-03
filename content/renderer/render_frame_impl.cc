@@ -265,6 +265,10 @@
 #include "arkweb/chromium_ext/content/renderer/render_frame_impl_before_for_include.cc"
 #endif
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "arkweb/chromium_ext/content/browser/dfx/memory_monitor_render_impl.h"
+#endif
+
 using base::Time;
 using blink::ContextMenuData;
 using blink::WebContentDecryptionModule;
@@ -4041,6 +4045,15 @@ void RenderFrameImpl::DidCommitNavigation(
   if (IsMainFrame()) {
     LOG(WARNING) << "event_message: page load start, routing_id: "
                  << GetRoutingID() << ", url: ***";
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    if (!MemoryMonitorImpl::GetInstance()->IsInitialized()) {
+      GetBrowserInterfaceBroker().GetInterface(
+          std::move(MemoryMonitorImpl::GetInstance()->GetPendingReceiver())
+      );
+    }
+    MemoryMonitorImpl::GetInstance()->Trigger(document_loader->GetUrl().GetString().Utf8());
+#endif
   }
 #endif
 

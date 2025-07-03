@@ -38,6 +38,9 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   void SendInternalBeginFrame() override;
  
   static void OnVSync(int64_t timestamp, void* data);
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void OnSetBypassVsyncCondition(int32_t condition) override;
+#endif
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   static void OnVSyncCallback();
 #endif

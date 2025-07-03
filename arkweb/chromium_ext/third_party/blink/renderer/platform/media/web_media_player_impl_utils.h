@@ -10,7 +10,7 @@ class WebMediaPlayerImpl;
 
 class WebMediaPlayerImplUtils {
 public:
-  WebMediaPlayerImpl* impl;
+  raw_ptr<WebMediaPlayerImpl> impl = nullptr;
   WebMediaPlayerImplUtils(WebMediaPlayerImpl* WebMediaPlayerImpl);
   void ExitedFullscreenExt();
   bool DoLoadExt(WebMediaPlayer::CorsMode cors_mode, bool is_cache_disabled);

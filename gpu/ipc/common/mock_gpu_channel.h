@@ -118,6 +118,9 @@ class MockGpuChannel : public mojom::GpuChannel {
                     gfx::BufferUsage,
                     bool));
 #endif  // BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  MOCK_METHOD5(SetBlanklessDumpInfo, void(uint32_t, uint64_t, uint64_t, int32_t, int64_t));
+#endif
 };
 
 }  // namespace gpu

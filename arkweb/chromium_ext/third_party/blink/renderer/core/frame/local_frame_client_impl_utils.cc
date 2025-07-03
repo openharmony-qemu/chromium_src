@@ -53,4 +53,13 @@ bool LocalFrameClientImplUtils::GetGlobalAdblockEnabled() {
   return frame_client_impl_->web_frame_->GetGlobalAdblockEnabled();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void LocalFrameClientImplUtils::NotifyLcpForBlankless() {
+  if (frame_client_impl_->web_frame_ && frame_client_impl_->web_frame_->Client() &&
+      frame_client_impl_->web_frame_->Client()->AsWebLocalFrameClientExt()) {
+    frame_client_impl_->web_frame_->Client()->AsWebLocalFrameClientExt()->NotifyLcpForBlankless();
+  }
+}
+#endif
 } // namespace blink

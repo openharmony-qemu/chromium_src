@@ -72,6 +72,10 @@ class RootCompositorFrameSinkImplExt : public RootCompositorFrameSinkImpl {
   void SetNativeInnerWeb(bool isInnerWeb) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
   void SetEnableLowerFrameRate(bool enabled);
   void SetEnableHalfFrameRate(bool enabled);

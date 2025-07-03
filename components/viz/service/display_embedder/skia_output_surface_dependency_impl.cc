@@ -29,7 +29,9 @@ SkiaOutputSurfaceDependencyImpl::SkiaOutputSurfaceDependencyImpl(
     : gpu_service_impl_(gpu_service_impl),
       surface_handle_(surface_handle),
       client_thread_task_runner_(
-          base::SingleThreadTaskRunner::GetCurrentDefault()) {}
+          base::SingleThreadTaskRunner::GetCurrentDefault()) {
+  impl_utils_ = std::make_unique<SkiaOutputSurfaceDependencyImplUtils>(this);
+}
 
 SkiaOutputSurfaceDependencyImpl::~SkiaOutputSurfaceDependencyImpl() = default;
 
@@ -203,4 +205,14 @@ bool SkiaOutputSurfaceDependencyImpl::IsUsingCompositorGpuThread() {
   return !!gpu_service_impl_->compositor_gpu_thread();
 }
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void SkiaOutputSurfaceDependencyImpl::SendBlanklessSnapshotInfo(
+    uint64_t blankless_key,
+    int32_t lcp_time,
+    int64_t pref_hash,
+    const SkBitmap& bitmap,
+    const std::vector<gfx::Rect>& quad_list) {
+  return impl_utils_->SendBlanklessSnapshotInfo(blankless_key, lcp_time, pref_hash, bitmap, quad_list);
+}
+#endif
 }  // namespace viz

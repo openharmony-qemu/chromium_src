@@ -516,6 +516,12 @@ void ExternalBeginFrameSource::AddObserver(BeginFrameObserver* obs) {
   BeginFrameArgs missed_args = GetMissedBeginFrameArgs(obs);
   if (missed_args.IsValid()) {
     DCHECK_EQ(BeginFrameArgs::MISSED, missed_args.type);
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+    base::TimeTicks now = base::TimeTicks::Now();
+    if (condition_ && missed_args.deadline < now) {
+      missed_args.deadline = now + missed_args.interval / 4;
+    }
+#endif
     FilterAndIssueBeginFrame(obs, missed_args);
   }
 }

@@ -453,6 +453,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void OnDataDetectorSelectText() override {}
   std::string GetDataDetectorSelectText() override { return std::string(); }
+  void SetBypassVsyncCondition(int32_t condition) override {}
 #endif
 
 #if BUILDFLAG(ARKWEB_JSPROXY)

@@ -34,6 +34,9 @@ namespace {
 const float kMilliMeterPerInch = 25.4;
 const float kMicroSecondPerSecond = 1000000.0;
 static const int32_t kDefaultPreferedFrameRate = 120;
+#if BUILDFLAG(ARKWEB_PDF)
+static const int32_t kPdfScrollPreferedFrameRate = 90;
+#endif
 static const int32_t STOP_FLING_LTPO = 0;
 static const int32_t START_FLING_LTPO = 1;
 static const int32_t STOP_ALL_FLING_LTPO = 2;
@@ -213,14 +216,29 @@ int32_t SlidingObserver::GetPreferedFrameRate(
     float velocity,
     const std::vector<OHOS::NWeb::FrameRateSetting>& setting) {
   if (setting.empty()) {
+#if BUILDFLAG(ARKWEB_PDF)
+    if (use_pdf_rate_) {
+      return kPdfScrollPreferedFrameRate;
+    }
+#endif
     return kDefaultPreferedFrameRate;
   }
   for (auto& item : setting) {
     if (velocity >= item.min_ && (velocity < item.max_ || item.max_ < 0)) {
+#if BUILDFLAG(ARKWEB_PDF)
+      if (use_pdf_rate_ && (item.preferredFrameRate_ > kPdfScrollPreferedFrameRate)) {
+        return kPdfScrollPreferedFrameRate;
+      }
+#endif
       return item.preferredFrameRate_;
     }
   }
   LOG(WARNING) << "can not find proper prfered frame rate";
+#if BUILDFLAG(ARKWEB_PDF)
+  if (use_pdf_rate_) {
+    return kPdfScrollPreferedFrameRate;
+  }
+#endif
   return kDefaultPreferedFrameRate;
 }
 
@@ -257,5 +275,20 @@ void SlidingObserver::OnDisplayInfoChange() {
     virtual_pixel_ratio_ = ratio;
   }
 }
+
+#if BUILDFLAG(ARKWEB_PDF)
+void SlidingObserver::SetIsPdf(bool is_pdf) {
+  is_pdf_ = is_pdf;
+  if (is_pdf_ && !base::ohos::IsPcDevice()) {
+    use_pdf_rate_ = true;
+  } else {
+    use_pdf_rate_ = false;
+  }
+}
+
+bool SlidingObserver::IsPdf() {
+  return is_pdf_;
+}
+#endif
 }  // namespace ohos
 }  // namespace base

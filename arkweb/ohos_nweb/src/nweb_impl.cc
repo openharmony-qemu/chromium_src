@@ -5780,3 +5780,15 @@ bool NWebImpl::GetErrorPageEnabled() {
   return nweb_delegate_->GetErrorPageEnabled();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+void NWebImpl::EnablePrivateNetworkAccess(bool enable) {
+  net_service::NetHelpers::SetPrivateNetworkAccess(enable);
+}
+
+bool NWebImpl::IsPrivateNetworkAccessEnabled() {
+  LOG(DEBUG) << "PrivateNetworkAccess is "
+             << (net_service::NetHelpers::GetPrivateNetworkAccess() ? "enable" : "false");
+  return net_service::NetHelpers::GetPrivateNetworkAccess();
+}
+#endif

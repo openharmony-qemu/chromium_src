@@ -1002,6 +1002,12 @@ class NWebImpl : public NWeb {
   void SetErrorPageEnabled(bool enable) override;
   bool GetErrorPageEnabled() override;
 #endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  static void EnablePrivateNetworkAccess(bool enable);
+  static bool IsPrivateNetworkAccessEnabled();
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

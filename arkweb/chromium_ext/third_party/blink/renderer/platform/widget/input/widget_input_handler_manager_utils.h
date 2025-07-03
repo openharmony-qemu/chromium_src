@@ -65,6 +65,10 @@ public:
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition);
+#endif
+
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   void DidNativeEmbedEvent(blink::WebInputEvent::Type type,
                            std::string embedId,

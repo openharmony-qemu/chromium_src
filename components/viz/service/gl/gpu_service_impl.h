@@ -62,6 +62,11 @@
 #include "ui/gl/direct_composition_support.h"
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "third_party/skia/include/core/SkPixmap.h"
+#include "ui/gfx/geometry/rect.h"
+#endif
+
 #if BUILDFLAG(IS_CHROMEOS_ASH)
 namespace arc {
 class ProtectedBufferManager;
@@ -455,6 +460,16 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   void SetIsFling(bool is_fling_enabled) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SendBlanklessSnapshotInfo(uint64_t blankless_key,
+                                 int32_t lcp_time,
+                                 int64_t pref_hash,
+                                 const SkBitmap& bitmap,
+                                 const std::vector<gfx::Rect>& quad_list);
+
+  void ClearBlanklessSnapshotInfo(uint64_t blankless_key);
 #endif
 
  private:

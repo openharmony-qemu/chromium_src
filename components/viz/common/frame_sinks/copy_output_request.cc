@@ -16,6 +16,15 @@
 #include "components/viz/common/frame_sinks/copy_output_result.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_request_utils.h"
+#include "arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_result_utils.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#endif
+
 namespace {
 
 const char* ResultFormatToShortString(
@@ -62,6 +71,7 @@ CopyOutputRequest::CopyOutputRequest(ResultFormat result_format,
 
   DCHECK(!result_callback_.is_null());
   TRACE_EVENT_NESTABLE_ASYNC_BEGIN0("viz", "CopyOutputRequest", this);
+  copy_output_request_utils_ = std::make_unique<ArkwebCopyOutputRequestUtils>(this);
 }
 #else
 CopyOutputRequest::CopyOutputRequest(ResultFormat result_format,
@@ -79,6 +89,7 @@ CopyOutputRequest::CopyOutputRequest(ResultFormat result_format,
 
   DCHECK(!result_callback_.is_null());
   TRACE_EVENT_NESTABLE_ASYNC_BEGIN0("viz", "CopyOutputRequest", this);
+  copy_output_request_utils_ = std::make_unique<ArkwebCopyOutputRequestUtils>(this);
 }
 #endif
 
@@ -158,6 +169,15 @@ void CopyOutputRequest::SendResult(std::unique_ptr<CopyOutputResult> result) {
   if (result) {
     result->SetDumpFrameId(dump_frame_id_);
     result->SetDumpFramePath(dump_frame_path_);
+  }
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (result &&
+      copy_output_request_utils_->GetBlanklessKey() != base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
+    result->copy_output_result_utils()->SetBlanklessKey(copy_output_request_utils_->GetBlanklessKey());
+    result->copy_output_result_utils()->SetLcpTime(copy_output_request_utils_->GetLcpTime());
+    result->copy_output_result_utils()->SetPreferenceHash(copy_output_request_utils_->GetPreferenceHash());
+    result->copy_output_result_utils()->SetQuadList(copy_output_request_utils_->GetQuadList());
   }
 #endif
   runner->PostTask(FROM_HERE, base::BindOnce(std::move(result_callback_),

@@ -409,6 +409,10 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
   void SetPipActive(bool active, const FrameSinkId& frame_sink_id) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void ClearBlanklessSnapshotInfo(uint64_t blankless_key) override;
+#endif
+
  private:
   friend class FrameSinkManagerTest;
   friend class CompositorFrameSinkSupportTestBase;

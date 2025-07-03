@@ -782,6 +782,14 @@ DrawResult ProxyImpl::ScheduledActionDrawIfPossible() {
   return DrawInternal(forced_draw);
 }
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void ProxyImpl::OnScheduledActionDraw() {
+  DCHECK(IsImplThread());
+  TRACE_EVENT0("cc", "ProxyImpl::OnScheduledActionDraw");
+  ScheduledActionDrawIfPossible();
+}
+#endif
+
 DrawResult ProxyImpl::ScheduledActionDrawForced() {
   TRACE_EVENT0("cc", "ProxyImpl::ScheduledActionDrawForced");
   DCHECK(IsImplThread());

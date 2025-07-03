@@ -175,6 +175,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   int GetBlurEnable();
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   void SetNativeEmbedMode(bool flag) override;
   bool GetNativeEmbedMode() override;
@@ -282,6 +286,10 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   bool ErrorPageEnabled();
   void PutErrorPageEnabled(bool enable);
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  int64_t GetPreferenceHash();
 #endif
 
  private:
@@ -423,6 +431,11 @@ class NWebPreferenceDelegate : public NWebPreference {
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   CefRefPtr<CefWebMessageReceiver> autofill_callback_ = nullptr;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  bool pref_hash_cached_ = false;
+  int64_t pref_hash_ = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

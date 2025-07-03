@@ -169,6 +169,10 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
   virtual void SetNativeInnerWeb(bool isInnerWeb) {};
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void SetBypassVsyncCondition(int32_t condition) {}
+#endif
+
   // Acknowledges a SwapBuffers request without actually attempting to swap.
   // This should be called when the GPU thread decides to skip a swap that was
   // invoked by the viz thread to ensure that we still run the relevant metrics

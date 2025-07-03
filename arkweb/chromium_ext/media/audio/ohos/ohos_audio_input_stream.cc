@@ -43,7 +43,7 @@ class OHOSAudioInputStream::CaptureCallbackAdapter
   void OnCaptureMuted(bool is_muted) override {}
 
  private:
-  raw_ptr<AudioInputCallback> callback_;
+  raw_ptr<AudioInputCallback> callback_ = nullptr;
 };
 
 OHOSAudioInputStream::OHOSAudioInputStream(OHOSAudioManager* manager,

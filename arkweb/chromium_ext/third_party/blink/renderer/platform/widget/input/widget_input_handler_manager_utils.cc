@@ -169,6 +169,15 @@ gfx::Vector2dF WidgetInputHandlerManagerUtils::GetOverScrollOffset() {
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void WidgetInputHandlerManagerUtils::SetBypassVsyncCondition(int32_t condition) {
+  if (!manager_->input_handler_proxy_) {
+    return;
+  }
+  manager_->input_handler_proxy_->proxy_utils()->SetBypassVsyncCondition(condition);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 void WidgetInputHandlerManagerUtils::DidNativeEmbedEvent(
     blink::WebInputEvent::Type type,

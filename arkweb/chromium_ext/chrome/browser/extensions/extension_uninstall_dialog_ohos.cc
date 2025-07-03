@@ -62,7 +62,7 @@ class PromptInfoHolder {
         base::BindRepeating(&PromptInfoHolder::GetPromptData,
                             info_holder_weak_ptr);
     if (!OHOS::NWeb::NWebExtensionPromptCefDelegate::GetInstance()
-            .ShowExtensionPrompt(PROMPT_INSTALLATION,
+            .ShowExtensionPrompt(PROMPT_UNINSTALLATION,
                                  extension->id(),
                                  icon,
                                  showPromptFunc,

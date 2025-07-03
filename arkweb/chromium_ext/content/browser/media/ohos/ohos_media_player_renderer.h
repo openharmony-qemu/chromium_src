@@ -116,7 +116,7 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
 
   mojo::Remote<ClientExtension> client_extension_;
 
-  raw_ptr<media::RendererClient> renderer_client_;
+  raw_ptr<media::RendererClient> renderer_client_ = nullptr;
 
   std::unique_ptr<media::OHOSMediaPlayerBridge> media_player_;
 
@@ -137,7 +137,7 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   std::unique_ptr<media::OHOSMediaResourceGetter> media_resource_getter_;
 
   bool web_contents_muted_;
-  raw_ptr<OHOSMediaPlayerRendererWebContentsObserver> web_contents_observer_;
+  raw_ptr<OHOSMediaPlayerRendererWebContentsObserver> web_contents_observer_ = nullptr;
   float volume_;
 
   bool initialized_ = false;

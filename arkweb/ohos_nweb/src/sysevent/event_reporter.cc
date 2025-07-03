@@ -89,6 +89,17 @@ constexpr char MAX_APP_SEQ_MISSSED_FRAMES[] = "MAX_APP_SEQ_MISSSED_FRAMES";
 constexpr char SITE_ISOLATION_MODE[] = "SITE_ISOLATION_MODE";
 constexpr char SITE_ISOLATION_STATUS[] = "SITE_ISOLATION_STATUS";
 
+// For renderer memory statistics
+constexpr char PAGE_MEM_LEAK[] = "PAGE_MEM_LEAK";
+constexpr char TYPE[] = "TYPE";
+constexpr char PID[] = "PID";
+constexpr char RSS[] = "RSS";
+constexpr char PSS[] = "PSS";
+constexpr char JS_HEAP_TOTAL[] = "JS_HEAP_TOTAL";
+constexpr char JS_HEAP_USED[] = "JS_HEAP_USED";
+constexpr char GPU_MEM[] = "GPU_MEM";
+constexpr char URL[] = "URL";
+
 constexpr char PAGE_DRAG_BLANK[] = "PAGE_DRAG_BLANK";
 constexpr char PAGE_BLANK_TIME[] = "PAGE_BLANK_TIME";
 
@@ -303,6 +314,21 @@ void ReportSiteIsolationMode(const std::string site_isolation_status) {
       SITE_ISOLATION_MODE, HiSysEventAdapter::EventType::BEHAVIOR,
       {SITE_ISOLATION_STATUS, site_isolation_status});
 }
+
+void ReportRendererMem(const std::string& type,
+                       const std::string& pid,
+                       const std::string& rss,
+                       const std::string& pss,
+                       const std::string& js_heap_total,
+                       const std::string& js_heap_used,
+                       const std::string& gpu_mem,
+                       const std::string& url)
+{
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      PAGE_MEM_LEAK, HiSysEventAdapter::EventType::STATISTIC,
+      {TYPE, type, PID, pid, RSS, rss, PSS, pss, JS_HEAP_TOTAL, js_heap_total,
+       JS_HEAP_USED, js_heap_used, GPU_MEM, gpu_mem, URL, url});
+}  
 
 void ReportWebMediaPlayErrorInfo(const std::string& errorType,
                               int errorCode,

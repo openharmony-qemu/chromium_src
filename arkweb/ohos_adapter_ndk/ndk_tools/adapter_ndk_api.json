@@ -499,6 +499,9 @@
                 "Input_Result OH_Input_GetDeviceVendor(Input_DeviceInfo *deviceInfo, int32_t *vendor)",
                 "Input_DeviceInfo* OH_Input_CreateDeviceInfo(void)",
                 "void OH_Input_DestroyDeviceInfo(Input_DeviceInfo **deviceInfo)"
+            ],
+            "14": [
+                "Input_Result OH_Input_GetIntervalSinceLastInput(int64_t *timeInterval)"
             ]
         },
         "includes": []
@@ -542,7 +545,9 @@
     "deviceinfo": {
         "apiList": {
             "10": [
-                "char *OH_GetDeviceType(void)"
+                "char *OH_GetDeviceType(void)",
+                "char *OH_GetOsReleaseType(void)",
+                "char *OH_GetDistributionOSReleaseType(void)"
             ]
         },
         "includes": []

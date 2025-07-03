@@ -382,6 +382,8 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   virtual void SetSynchronousInputHandlerRootScrollOffset(
       const gfx::PointF& root_content_offset);
 
+  virtual void SetBypassVsyncCondition(int32_t condition);
+
   virtual void PinchGestureBegin(const gfx::Point& anchor,
                                  ui::ScrollInputType source);
   virtual void PinchGestureUpdate(float magnify_delta,
@@ -893,6 +895,10 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   bool has_scrolled_by_scrollbar_ = false;
 
   bool prefers_reduced_motion_ = false;
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  int32_t condition_ = 0;
+#endif
 
   bool is_handling_touch_sequence_ = false;
 

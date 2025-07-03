@@ -31,6 +31,8 @@
 #include "mojo/public/cpp/bindings/shared_associated_remote.h"
 #include "ui/gfx/gpu_memory_buffer.h"
 
+#include "arkweb/chromium_ext/gpu/ipc/client/gpu_channel_host_utils.h"
+
 namespace IPC {
 class ChannelMojo;
 }
@@ -40,6 +42,7 @@ class ClientSharedImageInterface;
 struct SyncToken;
 class GpuChannelHost;
 class GpuMemoryBufferManager;
+class GpuChannelHostUtils;
 
 using GpuChannelEstablishedCallback =
     base::OnceCallback<void(scoped_refptr<GpuChannelHost>)>;
@@ -60,6 +63,7 @@ class GPU_EXPORT GpuChannelEstablishFactory {
 class GPU_EXPORT GpuChannelHost
     : public base::RefCountedThreadSafe<GpuChannelHost> {
  public:
+  friend class GpuChannelHostUtils;
   GpuChannelHost(
       int channel_id,
       const gpu::GPUInfo& gpu_info,
@@ -182,6 +186,10 @@ class GPU_EXPORT GpuChannelHost
 
   // Calls ConnectionTracker::RemoveObserver() directly.
   void RemoveObserver(GpuChannelLostObserver* obs);
+
+  GpuChannelHostUtils* gpu_channel_host_utils() {
+    return gpu_channel_host_utils_.get();
+  }
 
  protected:
   friend class base::RefCountedThreadSafe<GpuChannelHost>;
@@ -334,6 +342,8 @@ class GPU_EXPORT GpuChannelHost
   uint32_t flushed_deferred_message_id_ GUARDED_BY(deferred_message_lock_) = 0;
 
   const bool sync_point_graph_validation_enabled_;
+
+  std::unique_ptr<GpuChannelHostUtils> gpu_channel_host_utils_;
 };
 
 }  // namespace gpu

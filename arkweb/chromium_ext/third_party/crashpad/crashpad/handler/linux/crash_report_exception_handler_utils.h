@@ -38,11 +38,9 @@ CrashReportExceptionHandlerUtils(const CrashReportExceptionHandlerUtils&) =
 CrashReportExceptionHandlerUtils& operator=(
       const CrashReportExceptionHandlerUtils&) = delete;
 
-  static bool HandleOverwritten(
-      PtraceConnection* connection,
-      UUID* local_report_id, CrashReportExceptionHandler* crashReportExceptionHandler,
-      std::unique_ptr<ProcessSnapshotLinux>& process_snapshot,
-    std::unique_ptr<ProcessSnapshotSanitized>& sanitized_snapshot);
+static void InitExtendedUserStream(
+  PtraceConnection* connection,
+  UserStreamDataSources* extendedUserStream);
 };
 }
 #endif  // CRASHPAD_HANDLER_LINUX_CRASH_REPORT_EXCEPTION_HANDLER_H_

@@ -323,6 +323,13 @@ void AsyncLayerTreeFrameSink::DidDeleteSharedBitmap(
   compositor_frame_sink_ptr_->DidDeleteSharedBitmap(id);
 }
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void AsyncLayerTreeFrameSink::OnSetBypassVsyncCondition(int32_t condition) {
+  DCHECK(compositor_frame_sink_ptr_);
+  compositor_frame_sink_ptr_->OnSetBypassVsyncCondition(condition);
+}
+#endif
+
 void AsyncLayerTreeFrameSink::DidReceiveCompositorFrameAck(
     std::vector<viz::ReturnedResource> resources) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);

@@ -154,6 +154,11 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
     DLOG(WARNING) << "Input request on unbound interface";
   }
 #endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+#endif
 };
 
 base::LazyInstance<UnboundWidgetInputHandler>::Leaky g_unbound_input_handler =

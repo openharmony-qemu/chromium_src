@@ -205,6 +205,10 @@ class VIZ_COMMON_EXPORT BeginFrameSource {
   // only one frame is pending at a time.
   virtual void DidFinishFrame(BeginFrameObserver* obs) = 0;
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void OnSetBypassVsyncCondition(int32_t condition) {}
+#endif
+
   // Add/Remove an observer from the source. When no observers are added the BFS
   // should shut down its timers, disable vsync, etc.
   virtual void AddObserver(BeginFrameObserver* obs) = 0;
@@ -479,6 +483,9 @@ class VIZ_COMMON_EXPORT ExternalBeginFrameSource : public BeginFrameSource {
   base::flat_set<raw_ptr<BeginFrameObserver, CtnExperimental>> observers_;
   raw_ptr<ExternalBeginFrameSourceClient> client_;
   bool paused_ = false;
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  int32_t condition_ = 0;
+#endif
 
  private:
   BeginFrameArgs pending_begin_frame_args_;

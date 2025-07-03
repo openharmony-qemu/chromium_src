@@ -109,6 +109,10 @@ class GL_EXPORT GLSurface : public base::RefCounted<GLSurface> {
   virtual void SetNativeInnerWeb(bool isInnerWeb) {};
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void SetBypassVsyncCondition(int32_t condition) {}
+#endif
+
   // Returns whether or not the surface supports PostSubBuffer.
   virtual bool SupportsPostSubBuffer();
 

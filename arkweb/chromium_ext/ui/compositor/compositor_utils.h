@@ -46,6 +46,11 @@ class CompositorUtils {
   bool isInnerWeb_ = false;
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition);
+  int32_t condition_ = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   void SetShouldFrameSubmissionBeforeDraw(bool should);
 #endif

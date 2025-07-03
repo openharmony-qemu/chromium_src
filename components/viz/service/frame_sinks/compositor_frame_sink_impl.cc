@@ -149,6 +149,12 @@ void CompositorFrameSinkImpl::SetAutoNeedsBeginFrame() {
   support_->SetAutoNeedsBeginFrame();
 }
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void CompositorFrameSinkImpl::OnSetBypassVsyncCondition(int32_t condition) {
+  compositor_frame_sink_impl_util_->OnSetBypassVsyncCondition(condition);
+}
+#endif
+
 void CompositorFrameSinkImpl::SubmitCompositorFrame(
     const LocalSurfaceId& local_surface_id,
     CompositorFrame frame,

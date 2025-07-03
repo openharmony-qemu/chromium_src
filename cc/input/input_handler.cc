@@ -708,6 +708,12 @@ void InputHandler::SetSynchronousInputHandlerRootScrollOffset(
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   gfx::Vector2dF physical_delta =
       gfx::Vector2dF(root_content_offset.x(), root_content_offset.y());
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+      float page_scroll_offset = 0.0;
+      if (condition_) {
+        page_scroll_offset = GetViewport().TotalScrollOffset().y();
+      }
+#endif
 #else
   gfx::Vector2dF physical_delta =
       root_content_offset - GetViewport().TotalScrollOffset();
@@ -731,9 +737,27 @@ void InputHandler::SetSynchronousInputHandlerRootScrollOffset(
   // After applying the synchronous input handler's scroll offset, tell it what
   // we ended up with.
   UpdateRootLayerStateForSynchronousInputHandler();
-
-  compositor_delegate_->SetNeedsFullViewportRedraw();
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  TRACE_EVENT2("cc", "InputHandler::SetSynchronousInputHandlerRootScrollOffset",
+               "page_scroll_offset", page_scroll_offset, "condition", condition_);
+  if (page_scroll_offset < 1e-6 && condition_) {
+    compositor_delegate_->ScheduledActionDraw();
+  } else {
+#endif
+    compositor_delegate_->SetNeedsFullViewportRedraw();
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  }
+#endif
 }
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void InputHandler::SetBypassVsyncCondition(int32_t condition) {
+  condition_ = condition;
+  LOG(INFO) << "InputHandler::SetBypassVsyncCondition condition:"
+            << condition;
+  compositor_delegate_->GetImplDeprecated().OnSetBypassVsyncCondition(condition);
+}
+#endif
 
 void InputHandler::PinchGestureBegin(const gfx::Point& anchor,
                                      ui::ScrollInputType source) {

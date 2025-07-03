@@ -301,6 +301,7 @@ if (!enable_arkweb) {
   arkweb_screen_offset = false
   arkweb_screen_size = false
   arkweb_canvas_commit = false
+  arkweb_vsync_schedule = false
   arkweb_pip = true
   arkweb_immediate_destory = false
   arkweb_cwnd = false
@@ -523,6 +524,7 @@ buildflag_header("features") {
     "ARKWEB_SCREEN_OFFSET=$arkweb_screen_offset",
     "ARKWEB_SCREEN_SIZE=$arkweb_screen_size",
     "ARKWEB_CANVAS_COMMIT=$arkweb_canvas_commit",
+    "ARKWEB_VSYNC_SCHEDULE=$arkweb_vsync_schedule",
     "ARKWEB_PIP=$arkweb_pip",
     "ARKWEB_IMMEDIATE_DESTORY=$arkweb_immediate_destory",
     "ARKWEB_CWND=$arkweb_cwnd",

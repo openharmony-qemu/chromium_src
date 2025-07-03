@@ -44,6 +44,10 @@ class COMPONENT_EXPORT(INPUT) ArkwebInputRouterImplExt : public InputRouterImpl 
   void ScrollBy(float delta_x, float delta_y) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override;
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override;

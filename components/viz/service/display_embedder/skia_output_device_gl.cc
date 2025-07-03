@@ -267,6 +267,14 @@ void SkiaOutputDeviceGL::SetNativeInnerWeb(bool isInnerWeb) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void SkiaOutputDeviceGL::SetBypassVsyncCondition(int32_t condition) {
+  if (gl_surface_) {
+    gl_surface_->SetBypassVsyncCondition(condition);
+  }
+}
+#endif
+
 void SkiaOutputDeviceGL::Present(const std::optional<gfx::Rect>& update_rect,
                                  BufferPresentedCallback feedback,
                                  OutputSurfaceFrame frame) {

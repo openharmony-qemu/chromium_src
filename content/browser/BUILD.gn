@@ -3594,10 +3594,6 @@ source_set("browser") {
     sources += arkweb_content_browser_accessibility_sources
   }
 
-  if (defined(arkweb_pull_to_refresh) && arkweb_pull_to_refresh) {
-    sources += arkweb_content_overscroll_controller_ohos_sources
-  }
-
   if (is_win) {
     deps += [ "//ui/base/ime/win" ]
   }

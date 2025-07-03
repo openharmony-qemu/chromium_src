@@ -360,7 +360,7 @@ void WebMediaPlayerImplExt::SetDmaBufferSeekState(bool state) {
 }
 
 bool WebMediaPlayerImplExt::IsDmaBufferRecycleEnabled() {
-  if (GetDemuxerType() == media::DemuxerType::KChunkDemuxer) {
+  if (GetDemuxerType() == media::DemuxerType::kChunkDemuxer) {
     return false;
   }
 

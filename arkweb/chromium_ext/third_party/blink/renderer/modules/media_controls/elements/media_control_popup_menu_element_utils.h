@@ -27,7 +27,7 @@ class MediaControlPlaybackSpeedButtonElement;
 
 class MediaControlPopupMenuElementUtils {
 public:
-    MediaControlPopupMenuElement* element;
+    raw_ptr<MediaControlPopupMenuElement> element = nullptr;
     MediaControlPopupMenuElementUtils(MediaControlPopupMenuElement* element);
 
     void ShouldSetPopupAnchorHM(DOMRect* bounding_client_rect, LocalDOMWindow* dom_window);

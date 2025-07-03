@@ -16,8 +16,13 @@
 #include "extensions/browser/extension_registry_info_manager.h"
 
 #include "chrome/browser/extensions/menu_manager.h"
+#include "chrome/common/extensions/manifest_handlers/settings_overrides_handler.h"
+#include "content/public/common/url_constants.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_item.h"
 #include "extensions/browser/extension_system.h"
+#include "extensions/common/manifest_constants.h"
+#include "extensions/common/manifest_handlers/options_page_info.h"
+#include "extensions/common/manifest_url_handlers.h"
 #include "ohos_nweb/src/cef_delegate/nweb_extension_action_cef_delegate.h"
 #include "extensions/browser/extension_action_icon_factory.h"
 #include "extensions/browser/extension_registry.h"
@@ -26,6 +31,15 @@
 #include "ui/gfx/image/image_skia_operations.h"
 #include "extensions/browser/management_policy.h"
 #include "base/logging.h"
+#include "ohos_nweb/src/nweb_common.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/core/extension/nweb_extension_manager_dispatcher.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 extern "C" {
@@ -36,6 +50,9 @@ void* __real_malloc(size_t);
 namespace extensions {
 
 namespace {
+constexpr char kExtensionsHost[] = "extensions";
+constexpr char kUrlSeparator[] = "://";
+
 std::string GetTypeStr(extensions::MenuItem::Type type) {
   switch (type) {
     case extensions::MenuItem::Type::NORMAL : return "normal";
@@ -106,25 +123,49 @@ void GetFlattenedMenuItemSubtree(std::vector<NWebContextMenusItem>& items,
 void GetBadgeBackgroundColor(int32_t tabId, ExtensionAction* extension_action, WebExtensionActionInfo& actionInfo) {
   if (extension_action->HasBadgeBackgroundColor(tabId)) {
     SkColor groudColor = extension_action->GetBadgeBackgroundColor(tabId);
-    std::array<int32_t, EM_MAX> colors;
-    colors[EM_ZERO] = static_cast<int32_t>(SkColorGetR(groudColor));
-    colors[EM_ONE] = static_cast<int32_t>(SkColorGetG(groudColor));
-    colors[EM_TWO] = static_cast<int32_t>(SkColorGetB(groudColor));
-    colors[EM_THREE] = static_cast<int32_t>(SkColorGetA(groudColor));
-    actionInfo.badgeBackgroundColor = std::optional<std::array<int32_t, EM_MAX>>(colors);
+    std::array<int32_t, EXT_COLOR_MAX> colors;
+    colors[EXT_COLOR_RED] = static_cast<int32_t>(SkColorGetR(groudColor));
+    colors[EXT_COLOR_GREEN] = static_cast<int32_t>(SkColorGetG(groudColor));
+    colors[EXT_COLOR_BLUE] = static_cast<int32_t>(SkColorGetB(groudColor));
+    colors[EXT_COLOR_ALPHA] = static_cast<int32_t>(SkColorGetA(groudColor));
+    actionInfo.badgeBackgroundColor = std::optional<std::array<int32_t, EXT_COLOR_MAX>>(colors);
   }
 }
 
 void GetBadgeTextColor(int32_t tabId, ExtensionAction* extension_action, WebExtensionActionInfo& actionInfo) {
   if (extension_action->HasBadgeTextColor(tabId)) {
     SkColor textColor = extension_action->GetBadgeTextColor(tabId);
-    std::array<int32_t, EM_MAX> colors;
-    colors[EM_ZERO] = static_cast<int32_t>(SkColorGetR(textColor));
-    colors[EM_ONE] = static_cast<int32_t>(SkColorGetG(textColor));
-    colors[EM_TWO] = static_cast<int32_t>(SkColorGetB(textColor));
-    colors[EM_THREE] = static_cast<int32_t>(SkColorGetA(textColor));
-    actionInfo.badgeTextColor = std::optional<std::array<int32_t, EM_MAX>>(colors);
+    std::array<int32_t, EXT_COLOR_MAX> colors;
+    colors[EXT_COLOR_RED] = static_cast<int32_t>(SkColorGetR(textColor));
+    colors[EXT_COLOR_GREEN] = static_cast<int32_t>(SkColorGetG(textColor));
+    colors[EXT_COLOR_BLUE] = static_cast<int32_t>(SkColorGetB(textColor));
+    colors[EXT_COLOR_ALPHA] = static_cast<int32_t>(SkColorGetA(textColor));
+    actionInfo.badgeTextColor = std::optional<std::array<int32_t, EXT_COLOR_MAX>>(colors);
   }
+}
+
+std::optional<WebExtensionManifestOptionsPageInfo> GetManifestOptionsPageInfo(
+    const Extension& extension) {
+  if (!OptionsPageInfo::HasOptionsPage(&extension)) {
+    return std::nullopt;
+  }
+ 
+  WebExtensionManifestOptionsPageInfo page;
+  page.open_in_tab = OptionsPageInfo::ShouldOpenInTab(&extension);
+  if (page.open_in_tab) {
+    page.options_page = OptionsPageInfo::GetOptionsPage(&extension).spec();
+  } else {
+    std::string url_str =
+        std::string(content::kArkWebUIScheme) + kUrlSeparator + kExtensionsHost;
+    GURL url_to_navigate = GURL(url_str);
+    GURL::Replacements replacements;
+    std::string query =
+        base::StringPrintf("options=%s", extension.id().c_str());
+    replacements.SetQueryStr(query);
+    page.options_page =
+        url_to_navigate.ReplaceComponents(replacements).spec();
+  }
+  return std::make_optional<WebExtensionManifestOptionsPageInfo>(page);
 }
 
 }
@@ -261,6 +302,62 @@ std::vector<NWebContextMenusItem> ExtensionRegistryInfoManager::GetAllExtensionC
   return items;
 }
 
+void DeleteExtensionActionInfoIcon(WebExtensionActionInfo& action_info) {
+  if (!action_info.icon.has_value()) {
+    return;
+  }
+ 
+  for (auto it : action_info.icon.value()->bitmaps) {
+    delete it.second;
+  }
+  delete action_info.icon.value();
+  action_info.icon.reset();
+}
+
+void ExtensionRegistryInfoManager::GetExtensionManifestInfo(
+    const Extension& extension,
+    WebExtensionManifestInfo& manifest) const {
+  const GURL& homepage_url = ManifestURL::GetManifestHomePageURL(&extension);
+  if (homepage_url.is_valid()) {
+    manifest.homepage_url = homepage_url.spec();
+  }
+  const SettingsOverrides* settings = SettingsOverrides::Get(&extension);
+  if (settings) {
+    manifest.settings_overrides.emplace(
+        WebExtensionManifestSettingsOverrides());
+    if (settings->homepage) {
+      manifest.settings_overrides->homepage = settings->homepage->spec();
+    }
+    if (!settings->startup_pages.empty()) {
+      for (const auto& page : settings->startup_pages) {
+        manifest.settings_overrides->startup_pages.emplace_back(page.spec());
+      }
+    }
+    if (settings->search_engine) {
+      WebExtensionManifestSearchProvider searcher;
+      searcher.name = settings->search_engine->name;
+      searcher.keyword = settings->search_engine->keyword;
+      searcher.favicon_url = settings->search_engine->favicon_url;
+      searcher.search_url = settings->search_engine->search_url;
+      searcher.encoding = settings->search_engine->encoding;
+      searcher.suggest_url = settings->search_engine->suggest_url;
+      searcher.image_url = settings->search_engine->image_url;
+      searcher.search_url_post_params =
+          settings->search_engine->search_url_post_params;
+      searcher.suggest_url_post_params =
+          settings->search_engine->suggest_url_post_params;
+      searcher.image_url_post_params =
+          settings->search_engine->image_url_post_params;
+      if (settings->search_engine->alternate_urls)
+        searcher.alternate_urls = *settings->search_engine->alternate_urls;
+      searcher.prepopulated_id = settings->search_engine->prepopulated_id;
+      searcher.is_default = settings->search_engine->is_default;
+      manifest.settings_overrides->search_provider.emplace(std::move(searcher));
+    }
+  }
+  manifest.options_page = GetManifestOptionsPageInfo(extension);
+}
+
 void ExtensionRegistryInfoManager::NotifyOnExtensionLoaded(const Extension& extension) {
   if (!extensions::ui_util::ShouldDisplayInExtensionSettings(extension)) {
     return;
@@ -268,15 +365,45 @@ void ExtensionRegistryInfoManager::NotifyOnExtensionLoaded(const Extension& exte
   LOG(INFO) << "ExtensionRegistryInfoManager::NotifyOnExtensionLoaded";
   ManagementPolicy* management_policy = extensions::ExtensionSystem::Get(
         browser_context_)->management_policy();
-  WebExtensionInfo loadedInfo;
-  loadedInfo.extensionId = extension.id();
-  loadedInfo.mustRemainInstalled = management_policy->MustRemainInstalled(&extension, nullptr);
-  loadedInfo.action = GetExtensionActionInfo(extension, -1);
-  loadedInfo.sidePanel = GetExtensionSidePanelInfo(extension, std::nullopt);
-  loadedInfo.contextMenus = GetAllExtensionContextMenus(extension.id());
-  ExtensionRegistryInfoManager::OnExtensionLoadedCallBack(loadedInfo);
-  if (loadedInfo.action.icon) {
-    loadedInfo.action.icon.value()->bitmaps = std::map<double, OHOS::NWeb::NWebExtensionActionIconBitmap*>();
+  if (IsNativeApiEnable()) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    if (NWebExtensionManagerDispatcher::HasPbLoadedCallback()) {
+      WebExtensionInfoV2 info;
+      info.info.extensionId = extension.id();
+      info.info.mustRemainInstalled =
+          management_policy->MustRemainInstalled(&extension, nullptr);
+      info.info.isOnToolbar = false;
+      info.info.action = GetExtensionActionInfo(extension, -1);
+      info.info.sidePanel = GetExtensionSidePanelInfo(extension, std::nullopt);
+      info.info.contextMenus = GetAllExtensionContextMenus(extension.id());
+      GetExtensionManifestInfo(extension, info.manifest_info);
+      NWebExtensionManagerDispatcher::OnExtensionLoadedByPb(info);
+      DeleteExtensionActionInfoIcon(info.info.action);
+    } else {
+      WebExtensionInfo loadedInfo;
+      loadedInfo.extensionId = extension.id();
+      loadedInfo.mustRemainInstalled =
+          management_policy->MustRemainInstalled(&extension, nullptr);
+      loadedInfo.action = GetExtensionActionInfo(extension, -1);
+      loadedInfo.sidePanel = GetExtensionSidePanelInfo(extension, std::nullopt);
+      loadedInfo.contextMenus = GetAllExtensionContextMenus(extension.id());
+      NWebExtensionManagerDispatcher::OnExtensionLoadedCallBack(loadedInfo);
+      DeleteExtensionActionInfoIcon(loadedInfo.action);
+    }
+#endif
+  } else {
+    WebExtensionInfo loadedInfo;
+    loadedInfo.extensionId = extension.id();
+    loadedInfo.mustRemainInstalled =
+        management_policy->MustRemainInstalled(&extension, nullptr);
+    loadedInfo.action = GetExtensionActionInfo(extension, -1);
+    loadedInfo.sidePanel = GetExtensionSidePanelInfo(extension, std::nullopt);
+    loadedInfo.contextMenus = GetAllExtensionContextMenus(extension.id());
+    ExtensionRegistryInfoManager::OnExtensionLoadedCallBack(loadedInfo);
+    if (loadedInfo.action.icon) {
+      loadedInfo.action.icon.value()->bitmaps =
+          std::map<double, OHOS::NWeb::NWebExtensionActionIconBitmap*>();
+    }
   }
 }
 
@@ -300,7 +427,13 @@ void ExtensionRegistryInfoManager::OnExtensionUnloaded(content::BrowserContext* 
                                                        const Extension* extension,
                                                        UnloadedExtensionReason reason) {
   // It must be triggered after the observer notification.
-  OnExtensionUnLoadedCallBack(extension->id());
+  if (IsNativeApiEnable()) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    NWebExtensionManagerDispatcher::OnExtensionUnLoadedCallBack(extension->id());
+#endif
+  } else {
+    OnExtensionUnLoadedCallBack(extension->id());
+  }
 }
 
 void ExtensionRegistryInfoManager::OnExtensionWillBeInstalled(content::BrowserContext* browser_context,

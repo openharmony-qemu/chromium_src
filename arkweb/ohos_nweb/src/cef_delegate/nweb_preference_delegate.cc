@@ -15,6 +15,11 @@
 
 #include "ohos_nweb/src/cef_delegate/nweb_preference_delegate.h"
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include <sstream>
+#include <iostream>
+#endif
+
 #include "arkweb/build/features/features.h"
 #include "base/logging.h"
 #if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
@@ -83,10 +88,26 @@ void NWebPreferenceDelegate::WebPreferencesChanged() {
     return;
   }
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  pref_hash_cached_ = false;
+  pref_hash_ = 0;
+#endif
+
   CefBrowserSettings browser_settings;
   ComputeBrowserSettings(browser_settings);
   browser_->GetHost()->SetWebPreferences(browser_settings);
 }
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void NWebPreferenceDelegate::SetBypassVsyncCondition(int32_t condition) {
+  if (!browser_) {
+    return;
+  }
+  LOG(INFO) << "NWebPreferenceDelegate::SetBypassVsyncCondition condition:"
+            << condition;
+  browser_->GetHost()->SetBypassVsyncCondition(condition);
+}
+#endif
 
 void NWebPreferenceDelegate::ComputeBrowserSettings(
     CefBrowserSettings& browser_settings) {
@@ -169,6 +190,10 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.border_radius_bottom_left = border_radius_bottom_left_;
   browser_settings.border_radius_bottom_right = border_radius_bottom_right_;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_MENU)
+  browser_settings.touch_handle_exist = touch_handle_exist_;
+  browser_settings.viewport_scale = viewport_scale_;
+#endif  // BUILDFLAG(ARKWEB_MENU)
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   browser_settings.hide_horizontal_scrollbars =
       !IsHorizontalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
@@ -209,6 +234,9 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if BUILDFLAG(ARKWEB_VIEWPORT)
   browser_settings.viewport_meta_enabled = GetViewportEnable();
 #endif  // BUILDFLAG(ARKWEB_VIEWPORT)
+#if BUILDFLAG(ARKWEB_FOCUS)
+  browser_settings.gesture_focus_mode = GetGestureFocusMode();
+#endif
 
 #if BUILDFLAG(ARKWEB_BACKGROUND_COLOR)
   browser_settings.background_color = GetBackgroundColor();
@@ -349,6 +377,19 @@ void NWebPreferenceDelegate::SetBorderRadiusFromWeb(
   WebPreferencesChanged();
 }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+void NWebPreferenceDelegate::SetTouchHandleExistState(bool touchHandleExist) {
+  touch_handle_exist_ = touchHandleExist;
+  WebPreferencesChanged();
+}
+
+void NWebPreferenceDelegate::SetViewportScaleState(bool viewportScale) {
+  viewport_scale_ = viewportScale;
+  WebPreferencesChanged();
+}
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
 void NWebPreferenceDelegate::PutForceDarkModeEnabled(int forceDark) {
   force_dark_mode_enabled_ = forceDark;
   WebPreferencesChanged();
@@ -904,6 +945,17 @@ NWebPreference::CopyOptionMode NWebPreferenceDelegate::GetCopyOptionMode() {
 }
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 
+#if BUILDFLAG(ARKWEB_FOCUS)
+void NWebPreferenceDelegate::SetGestureFocusMode(int32_t mode) {
+  gesture_focus_mode_ = mode;
+  WebPreferencesChanged();
+}
+
+int32_t NWebPreferenceDelegate::GetGestureFocusMode() const {
+  return gesture_focus_mode_;
+}
+#endif
+
 void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
                                                         bool shouldOverlay) {
   if (native_video_player_config_ == std::make_tuple(enable, shouldOverlay)) {
@@ -1121,6 +1173,49 @@ void NWebPreferenceDelegate::PutWebMediaAVSessionEnabled(bool enable) {
 void NWebPreferenceDelegate::PutErrorPageEnabled(bool enable) {
   error_page_enabled_ = enable;
   WebPreferencesChanged();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+int64_t NWebPreferenceDelegate::GetPreferenceHash()
+{
+  if (pref_hash_cached_) {
+    LOG(DEBUG) << "NWebPreferenceDelegate::GetPreferenceHash() using cache. hash = " << pref_hash_;
+    return pref_hash_;
+  }
+  pref_hash_cached_ = true;
+
+  std::ostringstream str;
+  str << UserAgent() << ", "
+    << CursiveFontFamilyName() << ", "
+    << FantasyFontFamilyName() << ", "
+    << FixedFontFamilyName() << ", "
+    << SansSerifFontFamilyName() << ", "
+    << SerifFontFamilyName() << ", "
+    << StandardFontFamilyName() << ", "
+    << DefaultFixedFontSize() << ", "
+    << DefaultFontSize() << ", "
+    << ZoomingForTextFactor() << ", "
+    << ForceDarkModeEnabled() << ", "
+    << FontSizeLowerLimit() << ", "
+    << LogicalFontSizeLowerLimit() << ", "
+    << IsLoadWithOverviewMode() << ", "
+    << DarkSchemeEnabled() << ", "
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    << IsHorizontalScrollBarAccess() << ", "
+    << IsVerticalScrollBarAccess() << ", "
+    << GetOverscrollMode() << ", "
+    << GetScrollable() << ", "
+#endif
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    << GetNativeEmbedMode() << ", "
+#endif
+    << GetScrollBarColor();
+  pref_hash_ = std::hash<std::string>{}(str.str());
+
+  LOG(DEBUG) << "NWebPreferenceDelegate::GetPreferenceHash() hash = " << pref_hash_;
+
+  return pref_hash_;
 }
 #endif
 }  // namespace OHOS::NWeb

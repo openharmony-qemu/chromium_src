@@ -312,7 +312,7 @@ class CONTENT_EXPORT VideoCaptureController
   bool was_crop_ever_called_ = false;
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  VideoCaptureManager* video_capture_manager_ = nullptr;
+  raw_ptr<VideoCaptureManager> video_capture_manager_ = nullptr;
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 
   base::WeakPtrFactory<VideoCaptureController> weak_ptr_factory_{this};

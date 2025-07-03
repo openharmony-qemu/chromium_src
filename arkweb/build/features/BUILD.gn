@@ -303,12 +303,14 @@ if (!enable_arkweb) {
   arkweb_screen_offset = false
   arkweb_screen_size = false
   arkweb_canvas_commit = false
+  arkweb_vsync_schedule = false
   arkweb_pip = true
   arkweb_immediate_destory = false
   arkweb_cwnd = false
   arkweb_viewport_avoid = false
   arkweb_blank_optimize = false
   arkweb_error_page = false
+  arkweb_gwp_asan = false
 }
 
 buildflag_header("features") {
@@ -526,6 +528,7 @@ buildflag_header("features") {
     "ARKWEB_SCREEN_OFFSET=$arkweb_screen_offset",
     "ARKWEB_SCREEN_SIZE=$arkweb_screen_size",
     "ARKWEB_CANVAS_COMMIT=$arkweb_canvas_commit",
+    "ARKWEB_VSYNC_SCHEDULE=$arkweb_vsync_schedule",
     "ARKWEB_PIP=$arkweb_pip",
     "ARKWEB_IMMEDIATE_DESTORY=$arkweb_immediate_destory",
     "ARKWEB_CWND=$arkweb_cwnd",
@@ -539,6 +542,7 @@ buildflag_header("features") {
     "ARKWEB_BLANK_OPTIMIZE=$arkweb_blank_optimize",
     "ARKWEB_VIEWPORT_AVOID=$arkweb_viewport_avoid",
     "ARKWEB_ERROR_PAGE=$arkweb_error_page",
+    "ARKWEB_GWP_ASAN=$arkweb_gwp_asan",
     
     # ARKWEB_EXT dafault value
     "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",

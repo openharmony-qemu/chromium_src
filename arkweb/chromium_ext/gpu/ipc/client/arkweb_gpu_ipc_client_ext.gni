@@ -1,0 +1,4 @@
+arkweb_gpu_ipc_client_sources = [
+  "//arkweb/chromium_ext/gpu/ipc/client/gpu_channel_host_utils.cc",
+  "//arkweb/chromium_ext/gpu/ipc/client/gpu_channel_host_utils.h"
+]

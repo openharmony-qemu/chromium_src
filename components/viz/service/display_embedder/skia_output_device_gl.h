@@ -59,6 +59,10 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
   void SetNativeInnerWeb(bool isInnerWeb) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override;
+#endif
+
  private:
   class MultiSurfaceSwapBuffersTracker;
 

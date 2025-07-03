@@ -270,13 +270,33 @@ void ExternalBeginFrameSourceOHOS::SetEnabled(bool enabled) {
   }
   TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::SetEnabled", "enabled",
                enabled);
-  base::ohos::DynamicFrameRateDecision::GetInstance().SetVsyncEnabled(enabled);
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::SetEnabled", "condition_",
+               condition_);
+#endif
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  if (condition_) {
+    SendInternalBeginFrame();
+  } else {
+#endif
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+    base::ohos::DynamicFrameRateDecision::GetInstance().SetVsyncEnabled(enabled);
+#endif
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  }
+#endif
   vsync_notification_enabled_ = enabled;
   if (vsync_notification_enabled_ && user_data_ != nullptr) {
     vsync_adapter_.RequestVsync(user_data_.release(),
                                 ExternalBeginFrameSourceOHOS::OnVSync);
   }
 }
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void ExternalBeginFrameSourceOHOS::OnSetBypassVsyncCondition(int32_t condition) {
+  condition_ = condition;
+}
+#endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
 void ExternalBeginFrameSourceOHOS::UpdateVSyncFrequency(int frame_rate) {

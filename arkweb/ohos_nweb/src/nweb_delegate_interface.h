@@ -814,9 +814,16 @@ class NWebDelegateInterface
   virtual int32_t GetVisibleViewportAvoidHeight() = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  virtual void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) = 0;
+  virtual int64_t GetPreferenceHash() = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_MENU)
   virtual void UpdateSingleHandleVisible(bool isVisible) = 0;
-#endif
+  virtual void SetTouchHandleExistState(bool touchHandleExist) = 0;
+  virtual void SetViewportScaleState(bool viewportScale) = 0;
+#endif  // BUILDFLAG(ARKWEB_MENU)
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   virtual void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,

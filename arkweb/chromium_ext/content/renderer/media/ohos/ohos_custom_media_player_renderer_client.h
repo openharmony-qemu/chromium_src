@@ -87,13 +87,13 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRendererClient
   void OnSurfaceCreated(int surface_id);
   void OnSurfaceDestroyed();
 
-  raw_ptr<media::MediaResource> media_resource_;
+  raw_ptr<media::MediaResource> media_resource_ = nullptr;
 
   media::ScopedNativeTextureWrapper native_texture_wrapper_;
 
-  raw_ptr<media::RendererClient> client_;
+  raw_ptr<media::RendererClient> client_ = nullptr;
 
-  raw_ptr<media::VideoRendererSink> sink_;
+  raw_ptr<media::VideoRendererSink> sink_ = nullptr;
 
   scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
 

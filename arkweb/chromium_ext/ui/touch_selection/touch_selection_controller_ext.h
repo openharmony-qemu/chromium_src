@@ -65,6 +65,8 @@ class TouchSelectionControllerExt : public TouchSelectionController {
   void ArkSelectBetweenCoordinates(const gfx::PointF& base,
                                    const gfx::PointF& extent);
   void ResetPositionAfterDragEnd(const TouchSelectionDraggable& draggable);
+  void OnInsertionChangedExt(const gfx::SelectionBound& start,
+                             const gfx::SelectionBound& end);
 #endif
 
   bool SelectOverImg();

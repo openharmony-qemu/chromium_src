@@ -152,6 +152,9 @@ bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
 
   // EglDestroy has notified the bufferqueue associated with the OHNativeWindow to clean cache
   if (!allocated && NWebNativeWindowTracker::GetInstance()->CheckNativeWindow(reinterpret_cast<void*>(window_))) {
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+    if (!condition_) {
+#endif
     if (NativeViewGLSurfaceEGL::Recreate()) {
       // Notify the bufferqueue associated with the OHNativeWindow to clean
       // cache
@@ -159,6 +162,9 @@ bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
           .GetWindowAdapterInstance()
           .NativeWindowSurfaceCleanCache(reinterpret_cast<void*>(window_));
     }
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+    }
+#endif
   }
   return true;
 }
@@ -176,6 +182,13 @@ NativeViewGLSurfaceEGLOhos::~NativeViewGLSurfaceEGLOhos()
 void NativeViewGLSurfaceEGLOhos::SetNativeInnerWeb(bool isInnerWeb) {
   LOG(INFO)<<"NativeViewGLSurfaceEGLOhos::SetNativeInnerWeb is "<<isInnerWeb;
   isInnerWeb_ = isInnerWeb;
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void NativeViewGLSurfaceEGLOhos::SetBypassVsyncCondition(int32_t condition) {
+  LOG(INFO) << "NativeViewGLSurfaceEGLOhos::SetBypassVsyncCondition is " << condition;
+  condition_ = condition;
 }
 #endif
 }  // namespace gl

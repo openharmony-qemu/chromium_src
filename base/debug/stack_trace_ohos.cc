@@ -38,7 +38,7 @@ struct StackCrawlState {
         max_depth(max_depth),
         have_skipped_self(false) {}
 
-  uintptr_t* frames;
+  raw_ptr<uintptr_t, AllowPtrArithmetic> frames;
   size_t frame_count;
   size_t max_depth;
   bool have_skipped_self;

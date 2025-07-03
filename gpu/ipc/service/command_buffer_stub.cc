@@ -48,6 +48,10 @@
 #include "base/win/win_util.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#endif
+
 namespace gpu {
 
 struct WaitForCommandState {
@@ -460,6 +464,9 @@ void CommandBufferStub::WaitForGetOffsetInRange(uint32_t set_get_buffer_count,
 void CommandBufferStub::WaitForGetOffsetInRangeTimeout() {
   TRACE_EVENT2("gpu", "CommandBufferStub::WaitForGetOffsetInRangeTimeout", "wait_for_get_offset_->start", wait_for_get_offset_->start,
     "wait_for_get_offset_->end", wait_for_get_offset_->end);
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  ReportGpuProcessEvent(CrashType::TIMEOUT, "GPU I/O wait timeout(>3000ms) exceeded");
+#endif
   LOG(ERROR) << "CommandBufferStub::WaitForGetOffsetInRangeTimeout, need to wake up the client thread";
   std::move(wait_for_get_offset_->callback).Run(gpu::CommandBuffer::State());
   wait_for_get_offset_.reset();

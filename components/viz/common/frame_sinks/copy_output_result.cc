@@ -13,6 +13,10 @@
 #include "third_party/skia/include/core/SkPixelRef.h"
 #include "ui/gfx/color_space.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_result_utils.h"
+#endif
+
 namespace viz {
 
 CopyOutputResult::TextureResult::TextureResult(
@@ -37,6 +41,7 @@ CopyOutputResult::CopyOutputResult(Format format,
          format == Format::NV12);
   DCHECK(destination_ == Destination::kSystemMemory ||
          destination_ == Destination::kNativeTextures);
+  copy_output_result_utils_ = std::make_unique<ArkwebCopyOutputResultUtils>(this);
 }
 
 CopyOutputResult::~CopyOutputResult() = default;

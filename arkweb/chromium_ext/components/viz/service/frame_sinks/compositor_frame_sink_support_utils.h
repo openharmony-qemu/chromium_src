@@ -54,6 +54,10 @@ public:
 	int64_t GetCurrentTimeStampMS();
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+    void OnSetBypassVsyncCondition(int32_t condition);
+#endif
+
 private:
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
   base::queue<int64_t> frames_time_stamps_;

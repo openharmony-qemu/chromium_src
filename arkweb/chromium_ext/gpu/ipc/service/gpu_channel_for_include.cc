@@ -58,4 +58,21 @@ void GpuChannelMessageFilter::CreateNativeTexture(int32_t native_id,
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void GpuChannelMessageFilter::SetBlanklessDumpInfo(uint32_t nweb_id, uint64_t blankless_key,
+                                                   uint64_t frame_sink_id, int32_t lcp_time, int64_t pref_hash) {
+  base::AutoLock auto_lock(gpu_channel_lock_);
+  if (!gpu_channel_ || !gpu_channel_->AsGpuChannelExt()) {
+    return;
+  }
+  base::ohos::BlanklessDumpInfo info {
+    .blankless_key = blankless_key,
+    .lcp_time = lcp_time,
+    .nweb_id = nweb_id,
+    .pref_hash = pref_hash,
+    .dump_enabled = true
+  };
+  gpu_channel_->AsGpuChannelExt()->SetBlanklessDumpInfo(frame_sink_id, std::move(info));
+}
+#endif
 } // namespace gpu

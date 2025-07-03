@@ -9,6 +9,10 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#endif
 #include "base/containers/contains.h"
 #include "base/debug/crash_logging.h"
 #include "base/debug/dump_without_crashing.h"
@@ -246,6 +250,11 @@ std::unique_ptr<SkiaImageRepresentation> SharedImageManager::ProduceSkia(
   AutoLock autolock(this);
   auto found = images_.find(mailbox);
   if (found == images_.end()) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string error_msg =
+    "SharedImageManager::ProduceSkia: Trying to Produce a Skia representation from a non-existent mailbox.";
+  ReportGpuProcessEvent(CrashType::MAILBOX_NONEXISTENT, error_msg);
+#endif
     LOG(ERROR) << "SharedImageManager::ProduceSkia: Trying to Produce a "
                   "Skia representation from a non-existent mailbox.";
     return nullptr;

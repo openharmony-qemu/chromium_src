@@ -21,6 +21,11 @@
 
 #include "oh_web_performance_timing.h"
 
+enum class CrashType {
+    TIMEOUT,
+    MAILBOX_NONEXISTENT
+};
+
 void ReportPageLoadStats(int instanceId,
                          int accessSumCount,
                          int accessSuccCount,
@@ -31,6 +36,7 @@ void ReportMultiInstanceStats(int instanceId, int nwebCount, int nwebMaxCount);
 void ReportPageLoadErrorInfo(int instanceId,
                              const std::string errorType,
                              int errorCode,
+                             uint32_t errorCount,
                              const std::string errorDesc);
 
 void ReportJankStats(int64_t startTime,
@@ -77,6 +83,15 @@ void ReportSlideJankStats(int64_t startTime,
 
 void ReportSiteIsolationMode(const std::string site_isolation_status);
 
+void ReportRendererMem(const std::string& type,
+                       const std::string& pid,
+                       const std::string& rss,
+                       const std::string& pss,
+                       const std::string& js_heap_total,
+                       const std::string& js_heap_used,
+                       const std::string& gpu_mem,
+                       const std::string& url);
+
 void ReportWebMediaPlayErrorInfo(const std::string& errorType,
                               int errorCode,
                               const std::string& errorDesc);
@@ -84,4 +99,8 @@ void ReportWebMediaPlayErrorInfo(const std::string& errorType,
 void ReportAvSessionStatus(const std::string& disable_web_av_session_status);
 
 void ReportDragBlank(int64_t duration);
+
+void ReportFirstMeaningfulPaintDone(OhWebPerformanceTiming loadPageTime);
+
+void ReportGpuProcessEvent(CrashType type, std::string eventContent);
 #endif

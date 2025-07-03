@@ -159,4 +159,27 @@ double WebSettingsImplExt::GetBorderRadiusBottomRight()
   return settings_->GetBorderRadiusBottomRight();
 }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+void WebSettingsImplExt::SetTouchHandleExistState(bool touchHandleExist)
+{
+  settings_->SetTouchHandleExistState(touchHandleExist);
+}
+
+bool WebSettingsImplExt::IsTouchHandleExist()
+{
+  return settings_->IsTouchHandleExist();
+}
+
+void WebSettingsImplExt::SetViewportScaleState(bool viewportScale)
+{
+  settings_->SetViewportScaleState(viewportScale);
+}
+
+bool WebSettingsImplExt::IsViewportScale()
+{
+  return settings_->IsViewportScale();
+}
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
 }  // namespace blink

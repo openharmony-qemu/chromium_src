@@ -5,6 +5,7 @@
 #include "content/public/common/user_agent.h"
 
 #include <stdint.h>
+#include <atomic>
 
 #include "base/containers/contains.h"
 #include "base/logging.h"
@@ -241,6 +242,9 @@ std::string GetDistVersion() {
 }
 #endif
 
+std::atomic<bool> is_compatible_type_setted{false};
+static std::string compatible_device_type;
+
 std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
                          IncludeAndroidModel include_android_model) {
   std::string os_version;
@@ -270,6 +274,21 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
   if (command_line != nullptr) {
     if (command_line->HasSwitch(::switches::kUserAgentValue)) {
       device_type_string = command_line->GetSwitchValueASCII(::switches::kUserAgentValue);
+    }
+  }
+
+  if (!is_compatible_type_setted) {
+    compatible_device_type = base::ohos::CompatibleDeviceType();
+    is_compatible_type_setted = true;
+  }
+
+  if (!compatible_device_type.empty()) {
+    if (compatible_device_type == "Phone" || compatible_device_type == "PC" ||
+        compatible_device_type == "Tablet") {
+      LOG(DEBUG) << "compatible device type is: " << compatible_device_type;
+      device_type_string = compatible_device_type;
+    } else {
+      LOG(DEBUG) << "unknown compatible device type: " << compatible_device_type;
     }
   }
 
@@ -480,8 +499,17 @@ std::string BuildUserAgentFromOSAndProduct(const std::string& os_info,
  
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
   std::string product_string = "";
+
+  if (!is_compatible_type_setted) {
+    compatible_device_type = base::ohos::CompatibleDeviceType();
+    is_compatible_type_setted = true;
+  }
   base::StringAppendF(&product_string, " ArkWeb/%s", ARKWEB_VERSION);
   if (base::ohos::IsMobileDevice()) {
+    product_string += " Mobile";
+  } else if (base::ohos::IsTabletDevice() && (compatible_device_type == "Phone")) {
+    product_string += " Mobile";
+  } else if (base::ohos::IsPcDevice() && (compatible_device_type == "Phone")) {
     product_string += " Mobile";
   }
   base::StringAppendF(&user_agent, "%s", product_string.c_str());

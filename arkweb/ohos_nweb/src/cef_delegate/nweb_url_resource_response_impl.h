@@ -16,6 +16,7 @@
 #ifndef NWEB_URL_RESOURCE_RESPONSE_IMPL_H
 #define NWEB_URL_RESOURCE_RESPONSE_IMPL_H
 
+#include "base/memory/raw_ptr.h"
 #include "nweb_url_resource_response.h"
 
 namespace OHOS::NWeb {
@@ -168,7 +169,7 @@ class NWebUrlResourceResponseImpl : public NWebUrlResourceResponse {
   bool isFileFd_ = false;
   bool isDataReady_ = true;
   std::shared_ptr<NWebResourceReadyCallback> readyCallback_ = nullptr;
-  char* buffer_;
+  raw_ptr<char> buffer_;
   size_t bufferSize_ = 0;
 };
 

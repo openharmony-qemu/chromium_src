@@ -16,6 +16,7 @@
 #ifndef SERVICES_NETWORK_URL_LOADER_FACTORY_UTILS_H_
 #define SERVICES_NETWORK_URL_LOADER_FACTORY_UTILS_H_
 
+#include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
@@ -27,7 +28,7 @@ class URLLoaderFactory;
 
 class URLLoaderFactoryUtils {
 public:
-    URLLoaderFactory* urlLoaderFactory;
+    raw_ptr<URLLoaderFactory> urlLoaderFactory;
     URLLoaderFactoryUtils(URLLoaderFactory* factory);
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)

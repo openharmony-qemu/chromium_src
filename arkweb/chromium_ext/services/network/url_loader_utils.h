@@ -16,6 +16,7 @@
 #ifndef SERVICES_NETWORK_URL_LOADER_UTILS_H_
 #define SERVICES_NETWORK_URL_LOADER_UTILS_H_
 
+#include "base/memory/raw_ptr.h"
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/base/time/time_utils.h"
 #include "net/url_request/url_request.h"
@@ -27,7 +28,7 @@ class URLLoader;
 
 class URLLoaderUtils {
  public:
-  URLLoader* url_loader_;
+  raw_ptr<URLLoader> url_loader_;
   URLLoaderUtils(URLLoader* url_loader, const bool corb_detachable);
   const bool corb_detachable_;
 

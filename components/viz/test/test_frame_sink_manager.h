@@ -113,6 +113,9 @@ class TestFrameSinkManagerImpl : public mojom::FrameSinkManager {
 #if BUILDFLAG(ARKWEB_PIP)
   void SetPipActive(bool active, const FrameSinkId& frame_sink_id) override {}
 #endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void ClearBlanklessSnapshotInfo(uint64_t blankless_key) override {}
+#endif
   mojo::Receiver<mojom::FrameSinkManager> receiver_{this};
   mojo::Remote<mojom::FrameSinkManagerClient> client_;
 

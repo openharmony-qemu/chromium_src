@@ -144,4 +144,18 @@ void GpuServiceImpl::SetIsFling(bool is_fling_enabled) {
   base::ohos::DVsyncController::GetInstance().SetIsFling(is_fling_enabled);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void GpuServiceImpl::SendBlanklessSnapshotInfo(uint64_t blankless_key,
+                                               int32_t lcp_time,
+                                               int64_t pref_hash,
+                                               const SkBitmap& bitmap,
+                                               const std::vector<gfx::Rect>& quad_list) {
+  gpu_host_->SendBlanklessSnapshotInfo(blankless_key, lcp_time, pref_hash, bitmap, quad_list);
+}
+
+void GpuServiceImpl::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {
+  gpu_host_->ClearBlanklessSnapshotInfo(blankless_key);
+}
+#endif
  } // namespace viz

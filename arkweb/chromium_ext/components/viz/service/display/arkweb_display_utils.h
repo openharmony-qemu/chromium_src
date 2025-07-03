@@ -24,6 +24,9 @@
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "gpu/ipc/service/gpu_channel_manager.h"
+#endif
 namespace viz {
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
@@ -70,6 +73,15 @@ class ArkwebDisplayUtils {
                    gfx::Size current_surface_size,
                    AggregatedFrame& frame);
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void removeDeplicatesRect(std::vector<gfx::Rect>& quad_list);
+
+  void DumpSnapshotForBlankLess(AggregatedFrame& frame);
+
+  void SetClientId(const uint32_t client_id);
+
+  void SetGpuChannelManager(gpu::GpuChannelManager* gpu_channel_manager);
+#endif
  private:
   raw_ptr<Display> display_;
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
@@ -92,6 +104,11 @@ class ArkwebDisplayUtils {
   std::unique_ptr<base::RetainingOneShotTimer> reset_init_timer_;
   std::unique_ptr<base::RetainingOneShotTimer> reenable_swap_timer_;
 #endif  // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  raw_ptr<gpu::GpuChannelManager> gpu_channel_manager_;
+  uint32_t client_id_ = 0;
+#endif
 };
 
 }  // namespace viz

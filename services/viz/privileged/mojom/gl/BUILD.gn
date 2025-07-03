@@ -71,6 +71,11 @@ mojom("gl") {
     enabled_features += [ "enable_arc_media" ]
   }
 
+  if (arkweb_blank_optimize) {
+    enabled_features += [ "arkweb_blank_optimize" ]
+    public_deps += [ "//skia/public/mojom:mojom" ]
+  }
+
   cpp_typemaps = [
     {
       types = [

@@ -17,6 +17,7 @@
 
 #include "base/trace_event/trace_event.h"
 #include "components/viz/service/display/display_scheduler.h"
+#include "components/viz/service/display/display.h"
 
 namespace viz {
 DisplaySchedulerUtils::DisplaySchedulerUtils(
@@ -57,5 +58,11 @@ void DisplaySchedulerUtils::ResetShouldFrameSubmissionBeforeDraw() {
   wait_render_frame_submission_before_draw_ = false;
 }
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (display_scheduler_->client_) {
+    display_scheduler_->client_->SetClientId(surface_id.frame_sink_id().client_id());
+  }
+#endif
 
 }  // namespace viz

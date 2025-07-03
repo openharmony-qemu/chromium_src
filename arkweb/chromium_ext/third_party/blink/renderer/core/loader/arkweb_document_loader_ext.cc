@@ -324,4 +324,15 @@ void ArkWebDocumentLoaderExt::UpdateAllowPreloadRecord() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void ArkWebDocumentLoaderExt::NotifyLcpForBlankless() {
+  if (original_url_.IsEmpty() || original_url_.IsAboutBlankURL()) {
+    return;
+  }
+  if (frame_) {
+    GetLocalFrameClient().NotifyLcpForBlankless();
+  }
+}
+#endif
+
 }  // namespace blink

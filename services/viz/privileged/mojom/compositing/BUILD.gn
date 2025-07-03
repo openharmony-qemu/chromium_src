@@ -73,6 +73,9 @@ mojom("compositing") {
   if (arkweb_composite_render) {
     enabled_features += [ "arkweb_composite_render" ]
   }
+  if (arkweb_blank_optimize) {
+    enabled_features += [ "arkweb_blank_optimize" ]
+  }
 
   cpp_typemaps = [
     {

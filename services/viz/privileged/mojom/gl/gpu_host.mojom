@@ -10,6 +10,10 @@ import "gpu/ipc/common/gpu_info.mojom";
 import "gpu/ipc/common/surface_handle.mojom";
 import "mojo/public/mojom/base/byte_string.mojom";
 import "services/viz/privileged/mojom/gl/context_lost_reason.mojom";
+[EnableIf=arkweb_blank_optimize]
+import "ui/gfx/geometry/mojom/geometry.mojom";
+[EnableIf=arkweb_blank_optimize]
+import "skia/public/mojom/bitmap.mojom";
 import "third_party/blink/public/mojom/tokens/tokens.mojom";
 import "ui/gfx/mojom/gpu_extra_info.mojom";
 import "url/mojom/url.mojom";
@@ -77,4 +81,13 @@ interface GpuHost {
 
   // Tells the GPU host to clear the shader disk cache.
   ClearGrShaderDiskCache();
+
+  // send snapshot to save
+  [EnableIf=arkweb_blank_optimize]
+  SendBlanklessSnapshotInfo(uint64 blankless_key, int32 lcp_time, int64 pref_hash, skia.mojom.BitmapN32 bitmap,
+                            array<gfx.mojom.Rect> quad_list);
+
+  // clear snapshot
+  [EnableIf=arkweb_blank_optimize]
+  ClearBlanklessSnapshotInfo(uint64 blankless_key);
 };

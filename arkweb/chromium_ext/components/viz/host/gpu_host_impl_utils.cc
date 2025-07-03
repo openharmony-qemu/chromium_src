@@ -13,7 +13,15 @@
  * limitations under the License.
  */
 
- namespace viz {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include <mutex>
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
+#include "base/task/thread_pool.h"
+#include "base/time/time.h"
+#endif
+
+namespace viz {
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
 void GpuHostImpl::StartMonitor() {
@@ -79,4 +87,50 @@ void GpuHostImpl::Discard(uint32_t native_window_id)
   LOG(DEBUG) << "discard native window id = " << native_window_id;
   gpu_service_remote_->Discard(native_window_id);
 }
- } // namespace viz
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void GpuHostImpl::SendBlanklessSnapshotInfo(uint64_t blankless_key,
+                                            int32_t lcp_time,
+                                            int64_t pref_hash,
+                                            const SkBitmap& bitmap,
+                                            const std::vector<gfx::Rect>& quad_list) {
+  TRACE_EVENT1("io", "blankless GpuHostImpl::SendBlanklessSnapshotInfo", "blankless_key", blankless_key);
+  base::ThreadPool::PostTask(
+      FROM_HERE,
+      {base::MayBlock(), base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN,
+       base::TaskPriority::USER_BLOCKING},
+      base::BindOnce(&GpuHostImpl::DumpBlanklessSnapshot, blankless_key, lcp_time, pref_hash, bitmap, quad_list));
+}
+
+void GpuHostImpl::DumpBlanklessSnapshot(uint64_t blankless_key,
+                                        int32_t lcp_time,
+                                        int64_t pref_hash,
+                                        const SkBitmap& bitmap,
+                                        const std::vector<gfx::Rect>& quad_list) {
+  TRACE_EVENT1("io", "blankless GpuHostImpl::DumpBlanklessSnapshot", "blankless_key", blankless_key);
+  LOG(DEBUG) << "GpuHostImpl::DumpBlanklessSnapshot url begin : key " << blankless_key
+    << ", lcp_time " << lcp_time << ", pref_hash " << pref_hash;
+  auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
+  std::vector<base::ohos::BlanklessDataController::SnapShotRect> rect_list;
+  if (quad_list.size() > 0) {
+    rect_list.reserve(quad_list.size());
+  }
+  for (const auto& quad: quad_list) {
+    rect_list.push_back({
+      quad.x(),
+      quad.y(),
+      quad.width(),
+      quad.height(),
+    });
+  }
+  databaseAdapter.DumpBlanklessSnapshot(blankless_key, lcp_time, pref_hash, bitmap, rect_list);
+}
+
+void GpuHostImpl::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {
+  TRACE_EVENT1("io", "blankless GpuHostImpl::ClearBlanklessSnapshotInfo", "blankless_key", blankless_key);
+  LOG(DEBUG) << "blankless clear last snapshot info, blankless_key " << blankless_key;
+  auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
+  databaseAdapter.ClearSnapshot(blankless_key);
+}
+#endif
+} // namespace viz

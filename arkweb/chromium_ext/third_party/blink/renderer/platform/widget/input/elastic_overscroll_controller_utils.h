@@ -42,7 +42,7 @@ class PLATFORM_EXPORT ElasticOverscrollControllerUtils {
   }
   int overscroll_mode_ = 0;
 #endif
-  ElasticOverscrollController* elastic_overscroll_controller_;
+  raw_ptr<ElasticOverscrollController> elastic_overscroll_controller_;
 };
 }  // namespace blink
 #endif  // ARKWEB_CHROMIUM_EXT_THIRD_PARTY_BLINK_RENDERER_PLATFORM_WIDGET_INPUT_ELASTIC_OVERSCROLL_CONTROLLER_UTILS_H

@@ -34,7 +34,7 @@ class TouchSelectionControllerUtils {
   bool GetResetSelectionTemporarily() { return reset_selection_temporarily_; }
 #endif  // BUILDFLAG(ARKWEB_MENU)
 
-  TouchSelectionController* controller_;
+  raw_ptr<TouchSelectionController> controller_;
 #if BUILDFLAG(ARKWEB_MENU)
   bool reset_selection_temporarily_ = false;
 #endif  // BUILDFLAG(ARKWEB_MENU)

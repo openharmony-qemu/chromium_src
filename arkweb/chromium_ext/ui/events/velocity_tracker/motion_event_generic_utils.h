@@ -30,7 +30,7 @@ class MotionEventGenericUtils {
 
   bool cancel_by_lost_focus_ = false;
 
-  MotionEventGeneric* motion_event_generic_ = nullptr;
+  raw_ptr<MotionEventGeneric> motion_event_generic_ = nullptr;
 #endif
 };
 }  // namespace ui

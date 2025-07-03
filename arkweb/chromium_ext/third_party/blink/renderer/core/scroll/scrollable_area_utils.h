@@ -44,7 +44,7 @@ class CORE_EXPORT ScrollableAreaUtils {
   bool GetScrollable();
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
-  ScrollableArea* scrollable_area_ = nullptr;
+  raw_ptr<ScrollableArea> scrollable_area_ = nullptr;
 };
 }  // namespace blink
 

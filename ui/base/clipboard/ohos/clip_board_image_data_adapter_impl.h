@@ -57,7 +57,7 @@ class ClipBoardImageDataAdapterImpl : public ClipBoardImageDataAdapter {
       ClipBoardImageColorType::COLOR_TYPE_UNKNOWN;
   ClipBoardImageAlphaType alpha_type_ =
       ClipBoardImageAlphaType::ALPHA_TYPE_UNKNOWN;
-  uint32_t* data_ = nullptr;
+  raw_ptr<uint32_t> data_ = nullptr;
   size_t data_size_ = 0;
   size_t row_bytes_ = 0;
   int32_t width_ = 0;

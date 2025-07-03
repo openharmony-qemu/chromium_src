@@ -88,7 +88,7 @@ VizCompositorThreadRunnerImpl::VizCompositorThreadRunnerImpl()
     : thread_(CreateAndStartCompositorThread()),
       task_runner_(thread_->task_runner()) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(gpu_sequence_checker_);
-  implUtils = new VizCompositorThreadRunnerImplUtils(this);
+  implUtils = std::make_unique<VizCompositorThreadRunnerImplUtils>(this);
 }
 
 VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
@@ -100,7 +100,6 @@ VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
   implUtils->ReportThreadForDestroy(thread_);
 #endif
-  delete implUtils;
 }
 
 bool VizCompositorThreadRunnerImpl::CreateHintSessionFactory(

@@ -64,6 +64,8 @@ class SystemProperties {
 
   std::string product_model() { return product_model_; }
 
+  std::string compatible_device_type() { return compatible_device_type_; }
+
   bool is_compatible_mode() {
     LOG(INFO) << "systemProperties compatible type is " << compatible_device_type_.c_str();
     return is_2in1() &&
@@ -165,6 +167,10 @@ BASE_EXPORT std::string OsVersion() {
 
 BASE_EXPORT std::string BaseOsName() {
   return SystemProperties::Instance()->base_os_name();
+}
+
+BASE_EXPORT std::string CompatibleDeviceType() {
+  return SystemProperties::Instance()->compatible_device_type();
 }
 
 BASE_EXPORT int32_t ApplicationApiVersion() {

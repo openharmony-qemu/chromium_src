@@ -128,4 +128,24 @@ void MojoRenderer::PipEnable(bool enable) {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void MojoRenderer::RecycleDmaBuffer() {
+  if (remote_renderer_.is_bound()) {
+    LOG(INFO) << "DMABUF::MojoRenderer, RecycleDmaBuffer";
+    remote_renderer_->RecycleDmaBuffer();
+  } else {
+    LOG(ERROR) << "DMABUF::MojoRenderer, RecycleDmaBuffer failed";
+  }
+}
+
+void MojoRenderer::ResumeDmaBuffer() {
+  if (remote_renderer_.is_bound()) {
+    LOG(INFO) << "DMABUF::MojoRenderer, ResumeDmaBuffer";
+    remote_renderer_->ResumeDmaBuffer();
+  } else {
+    LOG(ERROR) << "DMABUF::MojoRenderer, ResumeDmaBuffer failed";
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
 }

@@ -96,6 +96,9 @@ class MediaSessionPlayerObserver {
   // Set to use the given |player_id| to control the HTML play of the media
   virtual void OnSetHtmlPlayEnabled(int player_id, bool enabled) {}
 #endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+  virtual void OnNotifyMemoryLevel(int player_id, int32_t level) {}
+#endif
 
   // Returns true if `player_id` is paused.
   virtual bool IsPaused(int player_id) const = 0;

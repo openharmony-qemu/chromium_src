@@ -86,7 +86,7 @@ class OHOSAudioDecoderLoop {
 
     ~InputData();
 
-    raw_ptr<uint8_t> memory = nullptr;
+    uint8_t* memory = nullptr;
 
     size_t length = 0;
 

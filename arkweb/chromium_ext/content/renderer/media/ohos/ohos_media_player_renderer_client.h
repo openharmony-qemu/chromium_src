@@ -31,7 +31,7 @@ namespace content {
 struct CachedBuffer {
   int fd_browser_;
   int fd_;
-  raw_ptr<uint8_t> mapped_ = nullptr;
+  uint8_t* mapped_;
   uint32_t buffer_size_;
 };
 

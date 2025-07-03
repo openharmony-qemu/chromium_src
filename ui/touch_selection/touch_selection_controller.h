@@ -188,9 +188,6 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
 
   ActiveStatus active_status() const { return active_status_; }
 
-#if BUILDFLAG(ARKWEB_MENU)
-  bool is_first_drag_ = false;
-#endif
  private:
   friend class TouchSelectionControllerTestApi;
 
@@ -295,6 +292,9 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
   bool consume_touch_sequence_;
 
   bool show_touch_handles_;
+#if BUILDFLAG(ARKWEB_MENU)
+  bool is_first_drag_ = false;
+#endif
   TouchSelectionSessionMetricsRecorder session_metrics_recorder_;
 #if BUILDFLAG(IS_ARKWEB)
   std::unique_ptr<TouchSelectionControllerUtils> utils_;

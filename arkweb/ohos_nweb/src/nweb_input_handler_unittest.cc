@@ -941,6 +941,14 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
 #if BUILDFLAG(ARKWEB_MENU)
   MOCK_METHOD(void, UpdateSingleHandleVisible, (bool isVisible), (override));
+  MOCK_METHOD(void,
+              SetTouchHandleExistState,
+              (bool touchHandleExist),
+              (override));
+  MOCK_METHOD(void,
+              SetViewportScaleState,
+              (bool viewportScale),
+              (override));
 #endif
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   MOCK_METHOD(void,
@@ -949,6 +957,11 @@ class MockNWebDelegate : public NWebDelegateInterface {
                bool recursive, IsolatedWorld world,
                OnReceiveValueCallback callback),
               (override));
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  MOCK_METHOD(void, SetBlanklessLoadingKey, (uint32_t nweb_id, uint64_t blankless_key), (override));
+  MOCK_METHOD(int64_t, GetPreferenceHash, (), (override));
 #endif
 };
 

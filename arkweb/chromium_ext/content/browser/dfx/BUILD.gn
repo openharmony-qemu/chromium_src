@@ -1,0 +1,22 @@
+source_set("dfx_monitor_browser") {
+  sources = [
+    "dfx_reporter_browser_impl.cc",
+    "dfx_reporter_browser_impl.h",
+  ]
+  deps = [
+    "//base",
+    "//mojo/public/cpp/bindings",
+    "mojom",
+  ]
+}
+source_set("memory_monitor_render") {
+  sources = [
+    "memory_monitor_render_impl.cc",
+    "memory_monitor_render_impl.h",
+  ]
+  deps = [
+    "//base",
+    "mojom",
+    "//v8",
+  ]
+}

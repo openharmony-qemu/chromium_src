@@ -104,6 +104,15 @@
 #include "ui/base/resource/resource_bundle.h"
 #endif // BUILDFLAG(ARKWEB_AI)
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
+#include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
+#include "components/viz/host/host_frame_sink_manager.h"
+#include "content/public/browser/context_factory.h"
+#include "ui/compositor/compositor.h"
+#endif
+
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -4026,6 +4035,20 @@ void NWebDelegate::SetBorderRadiusFromWeb(double borderRadiusTopLeft,
 }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_MENU)
+void NWebDelegate::SetTouchHandleExistState(bool touchHandleExist) {
+  if (preference_delegate_) {
+    preference_delegate_->SetTouchHandleExistState(touchHandleExist);
+  }
+}
+
+void NWebDelegate::SetViewportScaleState(bool viewportScale) {
+  if (preference_delegate_) {
+    preference_delegate_->SetViewportScaleState(viewportScale);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
 #if BUILDFLAG(ARKWEB_SECURITY_STATE)
 int NWebDelegate::GetSecurityLevel() {
   if (GetBrowser() == nullptr) {
@@ -4473,6 +4496,17 @@ void NWebDelegate::AddAccessibilityNodeInfoAttributes(
     nodeInfo->SetRangeInfoCurrent(0.0f);
   }
   nodeInfo->SetIsAccessibilityGroup(node->IsAccessibilityGroup());
+  nodeInfo->SetComponentTypeDescription(base::UTF16ToUTF8(node->GetRoleDescription()));
+  nodeInfo->SetCheckboxGroupSelectedStatus(node->GetCheckboxGroupSelectedStatus());
+  if (node->GetRoleString() !=  ui::ToString(ax::mojom::Role::kComboBoxMenuButton)) {
+    if (node->IsExpanded()) {
+      nodeInfo->SetExpandedState("expanded");
+    } else if (node->IsCollapsed()) {
+      nodeInfo->SetExpandedState("collapsed");
+    } else {
+      nodeInfo->SetExpandedState("");
+    }
+  }
 }
 
 void NWebDelegate::AddAccessibilityNodeInfoRect(
@@ -5448,6 +5482,35 @@ void NWebDelegate::AvoidVisibleViewportBottom(int32_t avoidHeight) {
 
 int32_t NWebDelegate::GetVisibleViewportAvoidHeight() {
   return avoid_height_;
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void NWebDelegate::SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) {
+  if (blankless_key != base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
+    if (auto context_factory = content::GetContextFactory()) {
+      if (auto frame_sinke_manager = context_factory->GetHostFrameSinkManager()) {
+        frame_sinke_manager->managerUtils->ClearBlanklessSnapshotInfo(blankless_key);
+      }
+    }
+  }
+
+  auto browser = GetBrowser();
+  if (browser == nullptr) {
+    LOG(ERROR) << "NWebDelegate::SetBlanklessLoadingKey browser is nullptr";
+    return;
+  }
+  // frame_sink_id is 0 because we cannot know the frame_sink_id now.
+  // before send to render_frame, frame_sink_id will be get from compositor.
+  int64_t pref_hash = preference_delegate_ ? preference_delegate_->GetPreferenceHash() : 0;
+  browser->GetMainFrame()->AsArkWebFrame()->SendBlanklessKeyToRenderFrame(nweb_id, blankless_key, 0, pref_hash);
+}
+
+int64_t NWebDelegate::GetPreferenceHash() {
+  if (!preference_delegate_) {
+    return base::ohos::BlanklessDataController::INVALID_PREF_HASH;
+  }
+  return preference_delegate_->GetPreferenceHash();
 }
 #endif
 

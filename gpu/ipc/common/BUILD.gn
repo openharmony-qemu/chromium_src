@@ -301,6 +301,11 @@ mojom("gpu_channel_mojom") {
   export_class_attribute = "GPU_EXPORT"
   export_header = "gpu/gpu_export.h"
   cpp_configs = [ "//gpu:gpu_implementation" ]
+
+  enabled_features = []
+  if (arkweb_blank_optimize) {
+    enabled_features += [ "arkweb_blank_optimize" ]
+  }
 }
 
 mojom("gmb_interface") {

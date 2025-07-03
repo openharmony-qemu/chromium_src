@@ -93,6 +93,14 @@ public:
   virtual double GetBorderRadiusBottomLeft() = 0;
   virtual double GetBorderRadiusBottomRight() = 0;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+  virtual void SetTouchHandleExistState(bool) = 0;
+  virtual bool IsTouchHandleExist() = 0;
+  virtual void SetViewportScaleState(bool) = 0;
+  virtual bool IsViewportScale() = 0;
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
 protected:
     virtual ~WebSettingsArkwebInterface() = default;
 };

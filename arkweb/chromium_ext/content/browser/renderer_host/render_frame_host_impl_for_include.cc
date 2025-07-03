@@ -189,20 +189,6 @@ void RenderFrameHostImpl::CloseImageOverlaySelection() {
 }
 #endif  // BUILDFLAG(ARKWEB_AI)
 
-#if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
-bool RenderFrameHostImpl::IsJsDialogShowOrBeforeUnloadTimedOut() {
-  DCHECK(IsInPrimaryMainFrame());
-  if (!delegate_) {
-    return false;
-  }
-
-  // If there is a JavaScript dialog up, don't bother sending the renderer the
-  // close event because it is known unresponsive, waiting for the reply from
-  // the dialog.
-  return delegate_->IsJavaScriptDialogShowing() || BeforeUnloadTimedOut();
-}
-#endif // ARKWEB_DISATCH_BEFORE_UNLOAD
-
 void CommitNavigationExt(
     const std::string& effective_scheme,
     ContentBrowserClient::NonNetworkURLLoaderFactoryMap& non_network_factories,

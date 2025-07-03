@@ -42,6 +42,10 @@ class LocalFrameClientImplUtils {
   bool GetGlobalAdblockEnabled();
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void NotifyLcpForBlankless();
+#endif
+
  private:
   raw_ptr<LocalFrameClientImpl> frame_client_impl_;
 };

@@ -129,6 +129,12 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable);
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA)
+  base::WeakPtr<RendererWrapper> AsWeakPtr() {
+    return weak_factory_.GetWeakPtr();
+  }
+#endif
+
  private:
   enum class State {
     kCreated,
@@ -1558,10 +1564,21 @@ void PipelineImpl::SetVolume(float volume) {
   }
 
   volume_ = volume;
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (!renderer_wrapper_) {
+    LOG(ERROR) << "renderer_wrapper_ is nullptr, volume:" << volume;
+    return;
+  }
   media_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&RendererWrapper::SetVolume,
-                     base::Unretained(renderer_wrapper_.get()), volume_));
+                     renderer_wrapper_->AsWeakPtr(), volume_));
+#else
+   media_task_runner_->PostTask(
+       FROM_HERE,
+       base::BindOnce(&RendererWrapper::SetVolume,
+                      base::Unretained(renderer_wrapper_.get()), volume_));
+#endif
 }
 
 void PipelineImpl::SetLatencyHint(std::optional<base::TimeDelta> latency_hint) {

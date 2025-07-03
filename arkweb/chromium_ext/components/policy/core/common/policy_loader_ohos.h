@@ -35,6 +35,8 @@ class POLICY_EXPORT PolicyLoaderOhos : public AsyncPolicyLoader {
 
   void TryChoosePolicySource();
   static bool ParsePolicy(const std::string& json, PolicyBundle* bundle);
+  static void ParseExtensionsPolicy(const base::Value* policies,
+                                    PolicyBundle* bundle);
 
  private:
   std::string ReadTestPolices();

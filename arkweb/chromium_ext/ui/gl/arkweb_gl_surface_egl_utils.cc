@@ -14,6 +14,9 @@
  */
 #include "arkweb/chromium_ext/ui/gl/arkweb_gl_surface_egl_utils.h"
 #include "ui/gl/gl_surface_egl.h"
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+
+#define GPU_WAIT_IO_TIMEOUT 3000
 
 namespace gl {
 
@@ -56,10 +59,15 @@ void ArkwebGlSurfaceEglUtils::SwapBuffersWithDamageSolution(
   auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
           .count();
+
   if (duration > kMaxSwapIntervalOhos) {
     LOG(WARNING) << "web render log: SwapBuffersWithDamage cost time = "
                  << duration << "ms" << ", swap result = "
                  << static_cast<int32_t>(buffer_result);
+  }
+
+  if (duration >= GPU_WAIT_IO_TIMEOUT) {
+    ReportGpuProcessEvent(CrashType::TIMEOUT, "GPU Process SwapBuffer timeout(>3000ms) exceeded");
   }
 
   if (buffer_result == gfx::SwapResult::SWAP_FAILED) {

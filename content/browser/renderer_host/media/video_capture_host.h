@@ -140,7 +140,7 @@ class CONTENT_EXPORT VideoCaptureHost
                      VideoCaptureControllerID controller_id,
                      VideoCaptureManager::DoneCB done_cb,
                      BrowserContext* browser_context);
-  VideoCaptureHostUtils* implUtils;
+  raw_ptr<VideoCaptureHostUtils> implUtils = nullptr;
   class RenderFrameHostDelegateImpl;
   std::unique_ptr<RenderFrameHostDelegate> render_frame_host_delegate_;
   uint32_t number_of_active_streams_ = 0;

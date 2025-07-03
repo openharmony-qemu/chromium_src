@@ -1,0 +1,6 @@
+import("//mojo/public/tools/bindings/mojom.gni")
+
+mojom("mojom") {
+  sources = [ "dfx_reporting.mojom" ]
+  public_deps = [ "//mojo/public/mojom/base" ]
+}

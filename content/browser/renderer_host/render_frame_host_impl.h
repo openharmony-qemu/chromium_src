@@ -3064,10 +3064,6 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // used on primary main frames.
   bool IsPageReadyToBeClosed();
 
-#if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
-  bool IsJsDialogShowOrBeforeUnloadTimedOut();
-#endif // ARKWEB_DISATCH_BEFORE_UNLOAD
-
   // Retrieves the information about the cookie changes that are observed on the
   // last committed document.
   CookieChangeListener::CookieChangeInfo GetCookieChangeInfo();

@@ -49,7 +49,7 @@ declare_args() {
 
   # Enable usage of libvpx within the media library. Used for software based
   # decoding of VP9 and VP8A type content.
-  media_use_libvpx = false
+  media_use_libvpx = true
 
   # non-blink builds doesn't use ffmpeg, libvpx.
   if (!use_blink) {

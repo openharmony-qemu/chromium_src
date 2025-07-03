@@ -22,12 +22,15 @@ class SkBitmap;
 
 namespace viz {
 
+class ArkwebCopyOutputResultUtils;
+
 // Base class for providing the result of a CopyOutputRequest. Implementations
 // that execute CopyOutputRequests will use a subclass implementation to define
 // data storage, access and ownership semantics relative to the lifetime of the
 // CopyOutputResult instance.
 class VIZ_COMMON_EXPORT CopyOutputResult {
  public:
+  friend class ArkwebCopyOutputResultUtils;
   enum class Format : uint8_t {
     // A normal bitmap. When the results are returned in system memory, the
     // AsSkBitmap() will return a bitmap in "N32Premul" form. When the results
@@ -217,6 +220,10 @@ class VIZ_COMMON_EXPORT CopyOutputResult {
   }
 #endif
 
+  ArkwebCopyOutputResultUtils* copy_output_result_utils() {
+    return copy_output_result_utils_.get();
+  }
+
  protected:
   // Lock the content of SkBitmap returned from AsSkBitmap() call.
   // Return true, if lock operation is successful, implementations should
@@ -247,6 +254,7 @@ class VIZ_COMMON_EXPORT CopyOutputResult {
   uint64_t dump_frame_id_ = 0;
   std::string dump_frame_path_ = "";
 #endif
+  std::unique_ptr<ArkwebCopyOutputResultUtils> copy_output_result_utils_;
 };
 
 // Subclass of CopyOutputResult that provides a RGBA result from an

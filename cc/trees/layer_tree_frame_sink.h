@@ -140,6 +140,10 @@ class CC_EXPORT LayerTreeFrameSink : public viz::SharedBitmapReporter,
   virtual void SubmitCompositorFrame(viz::CompositorFrame frame,
                                      bool hit_test_data_changed) = 0;
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void OnSetBypassVsyncCondition(int32_t condition) {}
+#endif
+
   // Signals that a BeginFrame issued by the viz::BeginFrameSource provided to
   // the client did not lead to a CompositorFrame submission.
   virtual void DidNotProduceFrame(const viz::BeginFrameAck& ack,

@@ -180,6 +180,10 @@ bool PolicyLoaderOhos::ParsePolicy(const std::string& json,
   }
 
   if (json_value->type() == base::Value::Type::DICT) {
+    auto third_party = json_value->GetDict().Extract("3rdparty");
+    if (third_party.has_value()) {
+      ParseExtensionsPolicy(&*third_party, bundle);
+    }
     for (auto kv : json_value->GetDict()) {
       std::string key = kv.first;
       if (kv.second.type() != base::Value::Type::DICT) {
@@ -226,6 +230,48 @@ bool PolicyLoaderOhos::ParsePolicy(const std::string& json,
   bundle->Get(PolicyNamespace(POLICY_DOMAIN_CHROME, std::string()))
       .MergeFrom(policy_map);
   return true;
+}
+
+// static
+void PolicyLoaderOhos::ParseExtensionsPolicy(const base::Value* policies,
+                                             PolicyBundle* bundle) {
+  if (!policies || !bundle) {
+    LOG(ERROR) << __FUNCTION__ << " policies or bundle is null!";
+    return;
+  }
+  const base::Value::Dict* extensions_dict = policies->GetIfDict();
+  if (!extensions_dict) {
+    LOG(WARNING) << __FUNCTION__ << " source value is not a dictionary!";
+    return;
+  }
+  for (auto extensions_it : *extensions_dict) {
+    std::string key = extensions_it.first;
+    if (key != "extensions") {
+      LOG(WARNING) << __FUNCTION__ << " unsupported key: " << key;
+      continue;
+    }
+    const base::Value::Dict* items_dict = extensions_it.second.GetIfDict();
+    if (!items_dict) {
+      LOG(WARNING) << __FUNCTION__ << " extensions value is not a dictionary!";
+      continue;
+    }
+    for (auto items_it : *items_dict) {
+      std::string extension_id = items_it.first;
+      const base::Value::Dict* policy_dict = items_it.second.GetIfDict();
+      if (!policy_dict) {
+        LOG(WARNING) << __FUNCTION__ << " extension " << extension_id
+                     << " value is not a dictionary!";
+        continue;
+      }
+      PolicyMap policy;
+      policy.LoadFrom(*policy_dict, POLICY_LEVEL_MANDATORY,
+                      POLICY_SCOPE_MACHINE, POLICY_SOURCE_PLATFORM);
+      bundle->Get(PolicyNamespace(POLICY_DOMAIN_EXTENSIONS, extension_id))
+          .MergeFrom(policy);
+      LOG(INFO) << __FUNCTION__ << " extension " << extension_id
+                << " policy merged";
+    }
+  }
 }
 
 }  // namespace policy

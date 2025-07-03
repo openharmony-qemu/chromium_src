@@ -57,6 +57,7 @@
 #include "power_mgr_client_adapter.h"
 #include "print_manager_adapter.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/screen_capture_adapter.h"
+#include "screenlock_manager_adapter.h"
 #include "soc_perf_client_adapter.h"
 #include "system_properties_adapter.h"
 #include "sensor_adapter.h"
@@ -165,6 +166,8 @@ public:
 
     virtual OhosDrawingTextTypographyAdapter& GetOhosDrawingTextTypographyAdapter() = 0;
     virtual std::unique_ptr<MigrationManagerAdapter> CreateMigrationMgrAdapter() = 0;
+
+    virtual std::unique_ptr<ScreenlockManagerAdapter> CreateScreenlockManagerAdapter() = 0;
 };
 
 } // namespace OHOS::NWeb

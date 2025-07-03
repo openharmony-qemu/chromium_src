@@ -17,6 +17,7 @@
 #define CHILD_PROCESS_UTILS_H_
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 
 namespace content {
 class ChildProcess;
@@ -24,7 +25,7 @@ class ChildThreadImpl;
 
 class ChildProcessUtils {
 public:
-  ChildProcess* childProcess;
+  raw_ptr<ChildProcess> childProcess;
   ChildProcessUtils(ChildProcess* impl);
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   void ReportIoThreadStatus(bool is_created, bool is_in_browser_process);

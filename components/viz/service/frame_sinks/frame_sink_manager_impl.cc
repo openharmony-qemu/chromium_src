@@ -1250,4 +1250,10 @@ void FrameSinkManagerImpl::SetPipActive(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void FrameSinkManagerImpl::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {
+  managerImplUtils->ClearBlanklessSnapshotInfo(blankless_key);
+}
+#endif
+
 }  // namespace viz

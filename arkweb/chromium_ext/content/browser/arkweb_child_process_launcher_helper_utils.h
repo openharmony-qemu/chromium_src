@@ -43,10 +43,12 @@
 
 namespace content {
 namespace internal {
+class FuzzArkwebChildProcessLauncherHelperUtilsFriend;
 
 class ArkwebChildProcessLauncherHelperUtils {
  public:
   friend class ChildProcessLauncherHelper;
+  friend class FuzzArkwebChildProcessLauncherHelperUtilsFriend;
   explicit ArkwebChildProcessLauncherHelperUtils(
       ChildProcessLauncherHelper* child_process_launcher_helper);
   ~ArkwebChildProcessLauncherHelperUtils();

@@ -64,7 +64,7 @@ class SystemProperties {
 
   std::string product_model() { return product_model_; }
 
-  std::string compatible_device_type() { return compatible_device_type_ };
+  std::string compatible_device_type() { return compatible_device_type_; }
 
   bool is_compatible_mode() {
     LOG(INFO) << "systemProperties compatible type is " << compatible_device_type_.c_str();

@@ -512,4 +512,3 @@ fuzzer_test("nweb_output_handler_fuzzer") {
     "//ohos_nweb:nweb_sources",
   ]
 }
-}

@@ -1195,6 +1195,7 @@ int64_t NWebPreferenceDelegate::GetPreferenceHash()
     << StandardFontFamilyName() << ", "
     << DefaultFixedFontSize() << ", "
     << DefaultFontSize() << ", "
+    << ZoomingForTextFactor() << ", "
     << ForceDarkModeEnabled() << ", "
     << FontSizeLowerLimit() << ", "
     << LogicalFontSizeLowerLimit() << ", "

@@ -40,8 +40,8 @@ const std::unordered_map<int, int> kCmTypeFlagMap = {
 const std::unordered_map<int, int> kCmMediaTypeMap = {
     {CM_MEDIATYPE_NONE, CmMt::CM_MT_NONE},
     {CM_MEDIATYPE_IMAGE, CmMt::CM_MT_IMAGE},
-    {CM_MEDIATYPE_VIDEO, CmMt::CM_MT_NONE},
-    {CM_MEDIATYPE_AUDIO, CmMt::CM_MT_NONE},
+    {CM_MEDIATYPE_VIDEO, CmMt::CM_MT_VIDEO},
+    {CM_MEDIATYPE_AUDIO, CmMt::CM_MT_AUDIO},
     {CM_MEDIATYPE_FILE, CmMt::CM_MT_NONE},
     {CM_MEDIATYPE_PLUGIN, CmMt::CM_MT_NONE},
 };

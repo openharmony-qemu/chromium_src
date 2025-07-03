@@ -406,4 +406,22 @@ void OHOSMediaPlayerRenderer::PipEnable(bool enable) {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void OHOSMediaPlayerRenderer::RecycleDmaBuffer() {
+  if (media_player_) {
+    media_player_->RecycleDmaBuffer();
+  } else {
+    LOG(INFO) << "DMABUF::RecycleDmaBuffer, no media_player_";
+  }
+}
+
+void OHOSMediaPlayerRenderer::ResumeDmaBuffer() {
+  if (media_player_) {
+    media_player_->ResumeDmaBuffer();
+  } else {
+    LOG(INFO) << "DMABUF::ResumeDmaBuffer, no media_player_";
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
 }  // namespace content

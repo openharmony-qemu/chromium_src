@@ -98,6 +98,10 @@ class MEDIA_MOJO_EXPORT MojoRendererService final : public mojom::Renderer,
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable) override;
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() override;
+  void ResumeDmaBuffer() override;
+#endif  // ARKWEB_MEDIA_DMABUF
  private:
   enum State {
     STATE_UNINITIALIZED,

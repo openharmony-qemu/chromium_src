@@ -156,6 +156,12 @@ interface VideoDecoder {
 
   [EnableIf=arkweb_pip]
   PipEnable(bool enable);
+
+  [EnableIf=arkweb_media_dmabuf]
+  RecycleDmaBuffer();
+
+  [EnableIf=arkweb_media_dmabuf]
+  ResumeDmaBuffer();
 };
 
 interface VideoDecoderClient {

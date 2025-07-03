@@ -12,4 +12,20 @@ void DecoderStreamTraits<DemuxerStream::VIDEO>::PipEnable(
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void DecoderStreamTraits<DemuxerStream::VIDEO>::RecycleDmaBuffer(
+    DecoderType* decoder) {
+  if (decoder) {
+    decoder->RecycleDmaBuffer();
+  }
+}
+
+void DecoderStreamTraits<DemuxerStream::VIDEO>::ResumeDmaBuffer(
+  DecoderType* decoder) {
+  if (decoder) {
+    decoder->ResumeDmaBuffer();
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
 }

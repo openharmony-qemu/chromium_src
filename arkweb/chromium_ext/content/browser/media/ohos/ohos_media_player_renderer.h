@@ -106,6 +106,11 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   void PipEnable(bool enable) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() override;
+  void ResumeDmaBuffer() override;
+#endif  // ARKWEB_MEDIA_DMABUF
+
  private:
   void CreateMediaPlayer();
   void TryOrCreateMediaPlayer();

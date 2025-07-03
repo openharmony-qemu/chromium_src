@@ -122,6 +122,12 @@ interface Renderer {
 
   [EnableIf=arkweb_pip]
   PipEnable(bool enable);
+
+  [EnableIf=arkweb_media_dmabuf]
+  RecycleDmaBuffer();
+
+  [EnableIf=arkweb_media_dmabuf]
+  ResumeDmaBuffer();
 };
 
 // A Mojo equivalent of media::RendererClient. See media/mojo/README.md

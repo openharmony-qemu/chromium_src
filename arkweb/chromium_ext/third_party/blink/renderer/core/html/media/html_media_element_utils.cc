@@ -62,6 +62,15 @@ WebString HTMLMediaElementUtils::GetTitle() const {
 #endif // ARKWEB_MEDIA || ARKWEB_VIDEO_ASSISTANT()
 
 void HTMLMediaElementUtils::ScheduleNamedEventUtils(const AtomicString& event_name) {
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (event_name == event_type_names::kPlaying ||
+      event_name == event_type_names::kWaiting ||
+      event_name == event_type_names::kSeeking ||
+      event_name == event_type_names::kStalled) {
+    LOG(INFO) << "OhMedia::ScheduleEvent() " << event_name;
+  }
+#endif // ARKWEB_MEDIA
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (htmlMediaElement_->IsCustomMediaPlayerEnabled()) {
     if (event_name == event_type_names::kTimeupdate) {

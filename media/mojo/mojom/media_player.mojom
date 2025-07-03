@@ -149,6 +149,9 @@ interface MediaPlayer {
 
   [Sync, EnableIf=arkweb_video_assistant]
   GetVolume() => (double volume);
+
+  [EnableIf=arkweb_media_memory_pressure]
+  NotifyMemoryLevel(int32 level);
 };
 
 // Implemented by the MediaWebContentsObserver. The remote lives in the renderer

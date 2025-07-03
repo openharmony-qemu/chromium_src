@@ -81,4 +81,46 @@ void PipelineImpl::PipEnable(bool enable) {
                                 enable));
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void PipelineImpl::RendererWrapper::RecycleDmaBuffer() {
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+
+  if (shared_state_.renderer) {
+    LOG(INFO) << "DMABUF::PipelineImpl::RendererWrapper, RecycleDmaBuffer";
+    shared_state_.renderer->RecycleDmaBuffer();
+  } else {
+    LOG(WARNING) << "DMABUF::PipelineImpl::RecycleDmaBuffer, no video renderer";
+  }
+}
+
+void PipelineImpl::RecycleDmaBuffer() {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  LOG(INFO) << "DMABUF::PipelineImpl, RecycleDmaBuffer";
+
+ media_task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&RendererWrapper::RecycleDmaBuffer,
+                                base::Unretained(renderer_wrapper_.get())));
+}
+
+void PipelineImpl::RendererWrapper::ResumeDmaBuffer() {
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+
+  if (shared_state_.renderer) {
+    LOG(INFO) << "DMABUF::PipelineImpl::RendererWrapper, ResumeDmaBuffer";
+    shared_state_.renderer->ResumeDmaBuffer();
+  } else {
+    LOG(WARNING) << "DMABUF::PipelineImpl::ResumeDmaBuffer, no video renderer";
+  }
+}
+
+void PipelineImpl::ResumeDmaBuffer() {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  LOG(INFO) << "DMABUF::PipelineImpl, ResumeDmaBuffer";
+
+  media_task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&RendererWrapper::ResumeDmaBuffer,
+                                base::Unretained(renderer_wrapper_.get())));
+}
+#endif  // ARKWEB_MEDIA_DMABUF
 }

@@ -170,7 +170,6 @@ bool OverscrollRefresh::WillHandleScrollUpdate(
   }
 
   NOTREACHED() << "Invalid overscroll state: " << scroll_consumption_state_;
-  return false;
 }
 
 void OverscrollRefresh::ReleaseWithoutActivation() {

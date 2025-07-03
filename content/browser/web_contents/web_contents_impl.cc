@@ -2479,6 +2479,10 @@ const std::u16string& WebContentsImpl::GetTitle() {
   return GetNavigationEntryForTitle()->GetTitleForDisplay();
 }
 
+bool WebContentsImpl::GetIsRealTitle() {
+  return GetNavigationEntryForTitle()->GetIsRealTitle();
+}
+
 const std::optional<std::u16string>& WebContentsImpl::GetAppTitle() {
   return GetNavigationEntryForTitle()->GetAppTitle();
 }

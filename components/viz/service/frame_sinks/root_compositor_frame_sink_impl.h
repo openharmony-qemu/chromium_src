@@ -137,6 +137,10 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   void InitializeCompositorFrameSinkType(
       mojom::CompositorFrameSinkType type) override;
   void BindLayerContext(mojom::PendingLayerContextPtr context) override;
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void OnSetBypassVsyncCondition(int32_t condition) override {}
+#endif
 #if BUILDFLAG(IS_ANDROID)
   void SetThreads(const std::vector<Thread>& threads) override;
 #endif

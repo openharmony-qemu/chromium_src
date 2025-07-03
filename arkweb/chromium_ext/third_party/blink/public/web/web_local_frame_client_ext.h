@@ -61,6 +61,14 @@ class BLINK_EXPORT WebLocalFrameClientExt : public WebLocalFrameClient {
 #if BUILDFLAG(ARKWEB_JSPROXY)
   virtual void RunScriptsAtHeadReady() {}
 #endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  virtual void NotifyLcpForBlankless() {}
+  virtual void SendBlanklessKeyToRenderFrame(uint32_t nweb_id,
+                                             uint64_t blankless_key,
+                                             uint64_t frame_sink_id,
+                                             int64_t pref_hash) {}
+#endif
 };
 
 }

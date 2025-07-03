@@ -52,6 +52,15 @@ void CompositorUtils::SetNativeInnerWeb(bool isInnerWeb) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void CompositorUtils::SetBypassVsyncCondition(int32_t condition) {
+  condition_ = condition;
+  if (compositor_->display_private_) {
+    compositor_->display_private_->SetBypassVsyncCondition(condition);
+  }
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 void CompositorUtils::SetShouldFrameSubmissionBeforeDraw(bool should) {
   if (compositor_->display_private_) {

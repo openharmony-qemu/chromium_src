@@ -201,6 +201,9 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
   void HandleScrollUpdateForInternalBeginFrame(
       const viz::BeginFrameArgs& args) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void OnScheduledActionDraw() override;
+#endif
   DrawResult DrawInternal(bool forced_draw);
 
   bool IsImplThread() const;

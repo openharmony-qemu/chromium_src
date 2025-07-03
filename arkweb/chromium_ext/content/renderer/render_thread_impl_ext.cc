@@ -94,4 +94,16 @@ void RenderThreadImpl::NotifyLocaleChanged(const std::string& locale) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void RenderThreadImpl::SetBlanklessDumpInfo(uint32_t nweb_id, uint64_t blankless_key,
+                                            uint64_t frame_sink_id, int32_t lcp_time, int64_t pref_hash) {
+  if (GetGpuChannel() && GetGpuChannel()->gpu_channel_host_utils()) {
+    GetGpuChannel()->gpu_channel_host_utils()->SetBlanklessDumpInfo(nweb_id,
+                                                                    blankless_key,
+                                                                    frame_sink_id,
+                                                                    lcp_time,
+                                                                    pref_hash);
+  }
+}
+#endif
 }  // namespace content

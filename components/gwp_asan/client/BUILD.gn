@@ -89,7 +89,7 @@ component("client") {
 
   configs += [ ":gwp_asan_implementation" ]
 
-  if (is_android) {
+  if (is_android || is_arkweb) {
     deps += [ "//components/crash/core/app" ]
   }
 }

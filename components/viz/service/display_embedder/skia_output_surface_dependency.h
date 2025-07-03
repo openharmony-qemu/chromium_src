@@ -19,6 +19,11 @@
 #include "gpu/ipc/common/surface_handle.h"
 #include "ui/gl/gl_surface_format.h"
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "third_party/skia/include/core/SkBitmap.h"
+#include "ui/gfx/geometry/rect.h"
+#endif
+
 class GURL;
 
 namespace gl {
@@ -104,6 +109,13 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceDependency {
 
   // This returns true if CompositorGpuThread(aka DrDc thread) is enabled.
   virtual bool IsUsingCompositorGpuThread() = 0;
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  virtual void SendBlanklessSnapshotInfo(uint64_t blankless_key,
+                                         int32_t lcp_time,
+                                         int64_t pref_hash,
+                                         const std::vector<gfx::Rect>& quad_list) = 0;
+#endif
 };
 
 }  // namespace viz

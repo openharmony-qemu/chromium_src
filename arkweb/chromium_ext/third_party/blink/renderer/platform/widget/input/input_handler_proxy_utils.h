@@ -70,6 +70,10 @@ public:
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition);
+#endif
+
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   void DidNativeSendEvent(std::unique_ptr<EventWithCallback> event_with_callback);
   InputHandlerProxyUtils::NativeEventDisposition DidNativeEmbedEvent(

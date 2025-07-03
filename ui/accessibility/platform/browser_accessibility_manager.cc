@@ -505,6 +505,12 @@ bool BrowserAccessibilityManager::OnAccessibilityEvents(
                    GetBrowserAccessibilityRoot(), -1);
   }
 
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (details.events.empty() && GetBrowserAccessibilityRoot()) {
+    FireGeneratedEvent(AXEventGenerator::Event::NONE,
+                       GetBrowserAccessibilityRoot()->node());
+  }
+#endif
   // Fire any events related to changes to the tree that come from ancestors of
   // the currently-focused node. We do this so that screen readers are made
   // aware of changes in the tree which might be relevant to subsequent events

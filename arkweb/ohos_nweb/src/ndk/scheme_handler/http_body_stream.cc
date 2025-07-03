@@ -49,6 +49,11 @@ void ArkWeb_HttpBodyStream_::SetReadCallback(
   read_callback = read_callback_in;
 }
 
+void ArkWeb_HttpBodyStream_::SetAsyncReadCallback(
+    ArkWeb_HttpBodyStreamAsyncReadCallback read_async_callback_in) {
+  read_async_callback = read_async_callback_in;
+}
+
 void ArkWeb_HttpBodyStream_::Init(
     ArkWeb_HttpBodyStreamInitCallback stream_init_callback_in) {
   if (!CEF_CURRENTLY_ON_IOT()) {
@@ -90,6 +95,21 @@ void ArkWeb_HttpBodyStream_::Read(void* buffer, int64_t buf_len) const {
 
   post_data_stream->Read(buffer, buf_len,
                          const_cast<ArkWeb_HttpBodyStream*>(this));
+}
+
+void ArkWeb_HttpBodyStream_::AsyncRead(void* buffer, int64_t buf_len) const {
+  if (!post_data_stream) {
+    LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
+    return;
+  }
+
+  if (!buffer) {
+    LOG(ERROR) << "scheme_hadnler read buffer is nullptr.";
+    return;
+  }
+
+  post_data_stream->AsyncRead(buffer, buf_len,
+                              const_cast<ArkWeb_HttpBodyStream*>(this));
 }
 
 int64_t ArkWeb_HttpBodyStream_::GetSize() const {
@@ -177,6 +197,19 @@ void ArkWeb_HttpBodyStream_::OnReadComplete(char* buffer, int bytes_read) {
   }
 
   read_callback(this, reinterpret_cast<uint8_t*>(buffer), bytes_read);
+}
+
+NO_SANITIZE("cfi-icall")
+void ArkWeb_HttpBodyStream_::OnAsyncReadComplete(char* buffer, int bytes_read) {
+  if (!post_data_stream) {
+    LOG(ERROR) << "scheme_handler post_data_stream is nullptr.";
+  }
+
+  if (!read_async_callback) {
+    LOG(ERROR) << "scheme_handler read async callback is nullptr.";
+    return;
+  }
+  read_async_callback(this, reinterpret_cast<uint8_t*>(buffer), bytes_read);
 }
 
 void ArkWeb_HttpBodyStream_::Reset() {

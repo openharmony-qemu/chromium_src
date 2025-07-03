@@ -272,6 +272,10 @@ OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/libcef/browser/net/ohos_enable_applinking_util.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
@@ -2471,6 +2475,17 @@ void NWebImpl::GetScrollOffset(float* offset_x, float* offset_y) {
   }
   *offset_x = finalOffset_x;
   *offset_y = finalOffset_y;
+}
+
+void NWebImpl::GetPageOffset(float* offset_x, float* offset_y) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  float scroll_offset_x = 0;
+  float scroll_offset_y = 0;
+  nweb_delegate_->GetScrollOffset(&scroll_offset_x, &scroll_offset_y);
+  *offset_x = scroll_offset_x;
+  *offset_y = scroll_offset_y;
 }
 #endif
 #endif  // #if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
@@ -5187,6 +5202,12 @@ void NWebImpl::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) {
 #endif
 }
 
+#if BUILDFLAG(IS_ARKWEB)
+void NWebImpl::EnableAppLinking(bool enable) {
+  OhosEnableApplinkingUtil::EnableAppLinking(enable);
+}
+#endif
+
 void NWebImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
   using MemoryPressureLevel = base::MemoryPressureListener::MemoryPressureLevel;
@@ -5728,7 +5749,19 @@ void NWebImpl::UpdateSingleHandleVisible(bool isVisible) {
     nweb_delegate_->UpdateSingleHandleVisible(isVisible);
   }
 }
-#endif
+
+void NWebImpl::SetTouchHandleExistState(bool touchHandleExist) {
+  if (nweb_delegate_) {
+    nweb_delegate_->SetTouchHandleExistState(touchHandleExist);
+  }
+}
+  
+void NWebImpl::SetViewportScaleState() {
+  if (nweb_delegate_) {
+    nweb_delegate_->SetViewportScaleState(true);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_MENU)
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
 void NWebImpl::SetErrorPageEnabled(bool enable) {

@@ -29,9 +29,13 @@ namespace OHOS::NWeb {
 
 namespace {
 
+static int g_request_id = 0;
+
 static std::map<int, ShowPromptCallbackFunc> g_show_prompt_callbacks;
 
 static std::map<int, GetPromptDataCallbackFunc> g_get_prompt_data_callbacks;
+
+static std::map<int, std::vector<std::string>> g_prompt_extension_ids;
 
 }  // namespace
 
@@ -58,6 +62,14 @@ NWebExtensionPromptData* NWebExtensionPromptCefDelegate::GetPromptData(int id) {
 #endif
 
   return nullptr;
+}
+
+std::vector<std::string> NWebExtensionPromptCefDelegate::GetIdList(int id) {
+  auto iter = g_prompt_extension_ids.find(id);
+  if (iter == g_prompt_extension_ids.end()) {
+    return {};
+  }
+  return iter->second;
 }
 
 void NWebExtensionPromptCefDelegate::FreePromptData(void* addr) {
@@ -114,9 +126,7 @@ bool NWebExtensionPromptCefDelegate::ShowExtensionPrompt(
     ShowPromptCallbackFunc showPromptFunc,
     GetPromptDataCallbackFunc getPromptDataFunc) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  static int requestId = 0;
-
-  int id = requestId++;
+  int id = g_request_id++;
   NWebExtensionActionIcon* icon = CreateActionIcon(icon_image);
   g_show_prompt_callbacks[id] = showPromptFunc;
   g_get_prompt_data_callbacks[id] = getPromptDataFunc;
@@ -141,6 +151,28 @@ bool NWebExtensionPromptCefDelegate::ShowExtensionPrompt(
   return false;
 }
 
+bool NWebExtensionPromptCefDelegate::ShowMultiExtensionUninstallPrompt(
+    const std::vector<std::string>& extension_ids,
+    ShowPromptCallbackFunc show_prompt_func) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  int id = g_request_id++;
+  g_prompt_extension_ids[id] = extension_ids;
+  g_show_prompt_callbacks[id] = std::move(show_prompt_func);
+
+  std::string empty_id;
+  if (NWebExtensionPromptDispatcher::GetInstance().ShowExtensionPrompt(
+      id, PROMPT_MULTI_UNINSTALLATION, empty_id.c_str(), nullptr)) {
+    LOG(INFO) << "succeed to call show multi-extensions prompt,id is " << id;
+    return true;
+  }
+
+  LOG(WARNING) << "failed to call show multi-extension prompt,id is " << id;
+  g_prompt_extension_ids.erase(id);
+  g_show_prompt_callbacks.erase(id);
+#endif
+  return false;
+}
+
 void NWebExtensionPromptCefDelegate::OnShowExtensionPrompt(int id,
                                                            int action,
                                                            const char* error) {
@@ -152,6 +184,7 @@ void NWebExtensionPromptCefDelegate::OnShowExtensionPrompt(int id,
     std::move(g_show_prompt_callbacks[id]).run(action, strError);
     g_show_prompt_callbacks.erase(id);
     g_get_prompt_data_callbacks.erase(id);
+    g_prompt_extension_ids.erase(id);
     return;
   }
 

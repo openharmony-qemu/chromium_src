@@ -74,4 +74,11 @@ void ArkwebWidgetInputHandlerImplExt::ScrollBy(float delta_x, float delta_y) {
   }
 }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void ArkwebWidgetInputHandlerImplExt::SetBypassVsyncCondition(int32_t condition) {
+  if (input_handler_manager_) {
+    input_handler_manager_->manager_utils()->SetBypassVsyncCondition(condition);
+  }
+}
+#endif
 }  // namespace blink

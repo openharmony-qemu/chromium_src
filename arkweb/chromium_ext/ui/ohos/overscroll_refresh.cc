@@ -236,6 +236,7 @@ void OverscrollRefresh::AnimateReset(float x_delta, float y_delta) {
         base::BindRepeating(&OverscrollRefresh::StartResetAnimate,
                             base::Unretained(this)));
   } else {
+    reset_timer_.Stop();
     Reset();
   }
 }

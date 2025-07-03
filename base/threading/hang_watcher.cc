@@ -131,7 +131,7 @@ void LogStatusHistogram(HangWatcher::ThreadType thread_type,
               any_thread_hung);
           break;
         case HangWatcher::ThreadType::kMainThread:
-#if BUILDFLAG(ARKWEB)
+#if BUILDFLAG(ARKWEB_CRASHPAD)
           if (any_thread_hung) {
             ReportRenderFreeze();
           }

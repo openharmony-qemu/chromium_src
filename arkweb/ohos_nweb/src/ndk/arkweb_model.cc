@@ -1113,6 +1113,45 @@ OH_NativeArkWeb_LoadData(const char* webTag,
   return ArkWeb_ErrorCode::ARKWEB_SUCCESS;
 }
 
+ARKWEB_NDK_EXPORT ArkWeb_BlanklessInfo OH_NativeArkWeb_GetBlanklessInfoWithKey(const char* webTag, const char* key)
+{
+    auto webObjectPtr = OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
+    if (webObjectPtr == nullptr) {
+        LOG(ERROR) << "OH_NativeArkWeb_GetBlanklessInfoWithKey web object pointer is nullptr";
+        return { ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_CONTROLLER_NOT_INITED, 0.0, 0 };
+    }
+
+    auto nwebSharedPtr = webObjectPtr->GetWebSharedPtr();
+    if (nwebSharedPtr == nullptr) {
+        LOG(ERROR) << "OH_NativeArkWeb_GetBlanklessInfoWithKey get nweb null for webTag: " << webTag;
+        return { ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_CONTROLLER_NOT_INITED, 0.0, 0 };
+    }
+
+    double similarity = 0.0;
+    int32_t loadingTime = 0;
+    int32_t errCode = nwebSharedPtr->GetBlanklessInfoWithKey(key, &similarity, &loadingTime);
+    return { static_cast<ArkWeb_BlanklessErrorCode>(errCode), similarity, loadingTime };
+}
+
+ARKWEB_NDK_EXPORT ArkWeb_BlanklessErrorCode OH_NativeArkWeb_SetBlanklessLoadingWithKey(const char* webTag,
+                                                                                       const char* key,
+                                                                                       bool isStarted)
+{
+    auto webObjectPtr = OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
+    if (webObjectPtr == nullptr) {
+        LOG(ERROR) << "OH_NativeArkWeb_SetBlanklessLoadingWithKey web object pointer is nullptr";
+        return ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_CONTROLLER_NOT_INITED;
+    }
+
+    auto nwebSharedPtr = webObjectPtr->GetWebSharedPtr();
+    if (nwebSharedPtr == nullptr) {
+        LOG(ERROR) << "OH_NativeArkWeb_SetBlanklessLoadingWithKey get nweb null for webTag: " << webTag;
+        return ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_CONTROLLER_NOT_INITED;
+    }
+
+    int32_t errCode = nwebSharedPtr->SetBlanklessLoadingWithKey(key, isStarted);
+    return static_cast<ArkWeb_BlanklessErrorCode>(errCode);
+}
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

@@ -215,7 +215,7 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
   // buffers until OnCdmContextEvent() is called with kHasAdditionalUsableKey.
   bool waiting_for_key_ = false;
 
-  raw_ptr<void> mediaKeySession_ = nullptr;
+  void* mediaKeySession_ = nullptr;
   base::WeakPtrFactory<OhosVideoDecoder> weak_factory_{this};
   base::WeakPtrFactory<OhosVideoDecoder> codec_allocator_weak_factory_{this};
 };

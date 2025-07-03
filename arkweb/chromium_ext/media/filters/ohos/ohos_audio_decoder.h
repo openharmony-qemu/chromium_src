@@ -82,11 +82,11 @@ public:
   void SetMode(uint32_t mode) override { mode_ = mode; }
 
 private:
-  raw_ptr<uint8_t> keyId_ = nullptr;
+  uint8_t* keyId_;
 
   uint32_t keyIdLen_;
 
-  raw_ptr<uint8_t> iv_ = nullptr;
+  uint8_t* iv_;
 
   uint32_t ivLen_;
 
@@ -172,7 +172,7 @@ public:
 
   int32_t setup_header_;
 
-  raw_ptr<uint8_t>codec_config_;
+  uint8_t* codec_config_;
 
   uint32_t codec_config_size_;
 };
@@ -365,7 +365,7 @@ class OHOSAudioDecoder : public AudioDecoder,
   // ohos cdm object
   raw_ptr<OHOSMediaCryptoContext> ohos_crypto_context_;
 
-  raw_ptr<void> mediaKeySession_ = nullptr;
+  void* mediaKeySession_ = nullptr;
 
   base::WeakPtrFactory<OHOSAudioDecoder> weak_factory_{this};
 

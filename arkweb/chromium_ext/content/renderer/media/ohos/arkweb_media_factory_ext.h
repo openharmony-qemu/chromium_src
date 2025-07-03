@@ -71,7 +71,7 @@ public:
 private:
   raw_ptr<RenderFrameImpl> render_frame_;
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  media::RendererWebNativeDelegate* web_native_delegate_ = nullptr;
+  raw_ptr<media::RendererWebNativeDelegate> web_native_delegate_ = nullptr;
 #endif
 
 };

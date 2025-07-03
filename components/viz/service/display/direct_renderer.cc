@@ -192,6 +192,14 @@ void DirectRenderer::SetNativeInnerWeb(bool isInnerWeb) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void DirectRenderer::SetBypassVsyncCondition(int32_t condition) {
+  if (output_surface_) {
+    output_surface_->SetBypassVsyncCondition(condition);
+  }
+}
+#endif
+
 void DirectRenderer::DecideRenderPassAllocationsForFrame(
     const AggregatedRenderPassList& render_passes_in_draw_order) {
   DCHECK(render_pass_bypass_quads_.empty());

@@ -232,6 +232,18 @@ class NWebAccessibilityNodeInfoImpl : public NWebAccessibilityNodeInfo {
 
   std::string GetAccessibilityText() override;
 
+  void SetComponentTypeDescription(const std::string& component_type_description);
+
+  std::string GetComponentTypeDescription() override;
+
+  void SetCheckboxGroupSelectedStatus(int32_t checkbox_group_selected_status);
+
+  int32_t GetCheckboxGroupSelectedStatus() override;
+
+  void SetExpandedState(const std::string& expanded_state);
+
+  std::string GetExpandedState() override;
+
  private:
   int64_t accessibility_id_ = -1;
   size_t item_counts_ = 0;
@@ -247,6 +259,8 @@ class NWebAccessibilityNodeInfoImpl : public NWebAccessibilityNodeInfo {
   std::string content_;
   std::string error_;
   std::string description_info_;
+  std::string component_type_description_;
+  std::string expanded_state_;
 
   std::string accessibility_level_;
   std::string accessibility_description_;
@@ -263,6 +277,7 @@ class NWebAccessibilityNodeInfoImpl : public NWebAccessibilityNodeInfo {
   int32_t grid_item_column_span_ = -1;
   std::vector<uint32_t> actions_;
   int32_t page_id_ = -1;
+  int32_t checkbox_group_selected_status_ = -1;
 
   int32_t rect_x_ = 0;
   int32_t rect_y_ = 0;

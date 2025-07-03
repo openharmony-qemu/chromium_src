@@ -121,6 +121,9 @@ class InputRouter {
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void ScrollBy(float delta_x, float delta_y) = 0;
 #endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void SetBypassVsyncCondition(int32_t condition) = 0;
+#endif
 };
 
 }  // namespace input

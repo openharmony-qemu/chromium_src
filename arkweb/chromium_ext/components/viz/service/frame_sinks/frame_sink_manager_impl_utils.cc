@@ -122,4 +122,16 @@ void FrameSinkManagerImplUtils::SetPipActive(
   it->second->AsExt()->SetPipActive(active);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+GpuServiceImpl* FrameSinkManagerImplUtils::gpu_service() {
+  return frameSinkManagerImpl->gpu_service_;
+}
+
+void FrameSinkManagerImplUtils::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {
+  if (GpuServiceImpl* gpu_device = gpu_service()) {
+    gpu_device->ClearBlanklessSnapshotInfo(blankless_key);
+  }
+}
+#endif
 }

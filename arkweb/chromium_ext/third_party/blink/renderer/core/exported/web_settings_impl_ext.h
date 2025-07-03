@@ -99,6 +99,13 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
   double GetBorderRadiusBottomLeft() override;
   double GetBorderRadiusBottomRight() override;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+  void SetTouchHandleExistState(bool touchHandleExist) override;
+  bool IsTouchHandleExist() override;
+  void SetViewportScaleState(bool viewportScale) override;
+  bool IsViewportScale() override;
+#endif  // BUILDFLAG(ARKWEB_MENU)
 };
 }  // namespace blink
 

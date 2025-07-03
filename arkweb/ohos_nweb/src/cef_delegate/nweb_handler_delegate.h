@@ -511,7 +511,8 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
   /* CefDisplayHandler method begin */
   void OnTitleChange(CefRefPtr<CefBrowser> browser,
-                     const CefString& title) override;
+                     const CefString& title,
+                     bool isRealTitle) override;
   void OnLoadingProgressChange(CefRefPtr<CefBrowser> browser,
                                double progress) override;
   void OnFullscreenModeChange(CefRefPtr<CefBrowser> browser,

@@ -362,6 +362,7 @@ void MouseEventManagerExt::CloseImageOverlayWhenMousePress(const MouseEventWithH
 }
 
 void MouseEventManagerExt::Trace(Visitor* visitor) const {
+  MouseEventManager::Trace(visitor);
   visitor->Trace(frame_);
   visitor->Trace(scroll_manager_);
   visitor->Trace(element_under_mouse_);
@@ -370,6 +371,7 @@ void MouseEventManagerExt::Trace(Visitor* visitor) const {
 #if BUILDFLAG(ARKWEB_AI)
   visitor->Trace(hit_image_node_);
 #endif
+  visitor->Trace(weak_factory_);
   SynchronousMutationObserver::Trace(visitor);
 }
 

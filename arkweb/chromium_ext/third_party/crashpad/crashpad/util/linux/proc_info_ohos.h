@@ -47,7 +47,6 @@ bool TidToNstid(const int pid, const int tid, int& nstid);
 bool IsThreadInPid(int32_t pid, int32_t tid);
 
 bool GetTidsByPidWithFunc(const int pid,
-                          std::vector<int>& tids,
                           std::function<bool(int)> const& func);
 
 bool GetTidMapByPid(const int pid, std::unordered_map<int, int>& tid_nstid_map);

@@ -24,6 +24,7 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/imf_adapter.h"
 
 namespace OHOS::NWeb {
+class FuzzNWebInputMethodHandler;
 enum CompositionType {
   COMPOSITION_CURRENT,
   COMPOSITION_POSITION,
@@ -35,6 +36,7 @@ enum CompositionType {
 
 class NWebInputMethodHandler : public NWebInputMethodClient {
  public:
+  friend class FuzzNWebInputMethodHandler;
   enum class ReattachType {
     FROM_ONFOCUS,
     FROM_CONTINUE,

@@ -25,6 +25,8 @@
 
 namespace viz {
 
+class ArkwebCopyOutputRequestUtils;
+
 namespace mojom {
 class CopyOutputRequestDataView;
 }
@@ -46,6 +48,7 @@ class CopyOutputRequestDataView;
 // screen capture use cases (please use FrameSinkVideoCapturer instead).
 class VIZ_COMMON_EXPORT CopyOutputRequest {
  public:
+  friend class ArkwebCopyOutputRequestUtils;
   using ResultFormat = CopyOutputResult::Format;
   // Specifies intended destination for the results. For software compositing,
   // only the system-memory results are supported - even if the
@@ -167,6 +170,10 @@ class VIZ_COMMON_EXPORT CopyOutputRequest {
 
   std::string ToString() const;
 
+  ArkwebCopyOutputRequestUtils* copy_output_request_utils() {
+    return copy_output_request_utils_.get();
+  }
+
  private:
   // Note: The StructTraits may "steal" the |result_callback_|, to allow it to
   // outlive this CopyOutputRequest (and wait for the result from another
@@ -189,6 +196,7 @@ class VIZ_COMMON_EXPORT CopyOutputRequest {
   uint64_t dump_frame_id_ = 0;
   std::string dump_frame_path_ = "";
 #endif
+  std::unique_ptr<ArkwebCopyOutputRequestUtils> copy_output_request_utils_;
 };
 
 }  // namespace viz

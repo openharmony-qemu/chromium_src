@@ -441,4 +441,31 @@ std::string NWebAccessibilityNodeInfoImpl::GetAccessibilityText() {
   return accessibility_text_;
 }
 
+void NWebAccessibilityNodeInfoImpl::SetComponentTypeDescription(
+    const std::string& component_type_description) {
+  component_type_description_ = component_type_description;
+}
+
+std::string NWebAccessibilityNodeInfoImpl::GetComponentTypeDescription() {
+  return component_type_description_;
+}
+
+void NWebAccessibilityNodeInfoImpl::SetCheckboxGroupSelectedStatus(
+    int32_t checkbox_group_selected_status) {
+  checkbox_group_selected_status_ = checkbox_group_selected_status;
+}
+
+int32_t NWebAccessibilityNodeInfoImpl::GetCheckboxGroupSelectedStatus() {
+  return checkbox_group_selected_status_;
+}
+
+void NWebAccessibilityNodeInfoImpl::SetExpandedState(
+    const std::string& expanded_state) {
+  expanded_state_ = expanded_state;
+}
+
+std::string NWebAccessibilityNodeInfoImpl::GetExpandedState() {
+  return expanded_state_;
+}
+
 }  // namespace OHOS::NWeb

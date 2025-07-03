@@ -228,6 +228,7 @@ declare_args() {
   arkweb_screen_offset = true
   arkweb_screen_size = true
   arkweb_canvas_commit = true
+  arkweb_vsync_schedule = true
   arkweb_pip = true
   arkweb_immediate_destory = false
   arkweb_cwnd = true
@@ -239,6 +240,7 @@ declare_args() {
   arkweb_blank_optimize = false
   arkweb_viewport_avoid = true
   arkweb_error_page = true
+  arkweb_gwp_asan = true
 }
 
 # Features enabled in mojom bindings.

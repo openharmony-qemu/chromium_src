@@ -272,6 +272,10 @@ OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/libcef/browser/net/ohos_enable_applinking_util.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
@@ -5197,6 +5201,12 @@ void NWebImpl::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) {
   nweb_delegate_->SetBackForwardCacheOptions(size, timeToLive);
 #endif
 }
+
+#if BUILDFLAG(IS_ARKWEB)
+void NWebImpl::EnableAppLinking(bool enable) {
+  OhosEnableApplinkingUtil::EnableAppLinking(enable);
+}
+#endif
 
 void NWebImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)

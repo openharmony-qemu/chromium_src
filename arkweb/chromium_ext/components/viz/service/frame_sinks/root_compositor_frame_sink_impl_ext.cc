@@ -63,6 +63,14 @@ void RootCompositorFrameSinkImplExt::SetNativeInnerWeb(bool isInnerWeb) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void RootCompositorFrameSinkImplExt::SetBypassVsyncCondition(int32_t condition) {
+#if !defined(COMPONENT_BULID) // FIXME
+  display_->display_utils()->SetBypassVsyncCondition(condition);
+#endif
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 void RootCompositorFrameSinkImplExt::SetShouldFrameSubmissionBeforeDraw(
     bool should,

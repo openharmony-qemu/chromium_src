@@ -219,6 +219,10 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceImpl : public SkiaOutputSurface {
   void SetNativeInnerWeb(bool isInnerWeb) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override;
+#endif
+
  private:
   bool Initialize();
   void InitializeOnGpuThread(bool* result);

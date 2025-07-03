@@ -90,4 +90,12 @@ int CompositorFrameSinkImplUtil::GetFrameRate() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void CompositorFrameSinkImplUtil::OnSetBypassVsyncCondition(int32_t condition) {
+  if (compositorFrameSinkImpl_ && compositorFrameSinkImpl_->support_) {
+    (compositorFrameSinkImpl_->support_)->supportUtils->OnSetBypassVsyncCondition(condition);
+  }
+}
+#endif
+
 }  // namespace cc

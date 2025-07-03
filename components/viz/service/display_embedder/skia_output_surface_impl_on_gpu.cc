@@ -456,6 +456,14 @@ void SkiaOutputSurfaceImplOnGpu::SetNativeInnerWeb(bool isInnerWeb) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void SkiaOutputSurfaceImplOnGpu::SetBypassVsyncCondition(int32_t condition) {
+  if (output_device_) {
+    output_device_->SetBypassVsyncCondition(condition);
+  }
+}
+#endif
+
 void SkiaOutputSurfaceImplOnGpu::DrawOverdraw(
     sk_sp<GrDeferredDisplayList> overdraw_ddl,
     SkCanvas& canvas) {

@@ -306,6 +306,10 @@ class SkiaOutputSurfaceImplOnGpu
   void SetNativeInnerWeb(bool isInnerWeb);
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition);
+#endif
+
  private:
   struct MailboxAccessData {
     MailboxAccessData();

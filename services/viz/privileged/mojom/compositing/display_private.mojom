@@ -127,6 +127,9 @@ interface DisplayPrivate {
 
   [EnableIf=arkweb_same_layer]
   SetNativeInnerWeb(bool isInnerWeb);
+
+  [EnableIf=arkweb_vsync_schedule]
+  SetBypassVsyncCondition(int32 condition);
 };
 
 // DisplayClient allows privileged clients to receive events from the Display.

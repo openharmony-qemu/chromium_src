@@ -310,6 +310,23 @@ void LayerTreeHostImpl::AccumulateScrollDeltaForTracing(
   scroll_accumulated_this_frame_ += delta;
 }
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void LayerTreeHostImpl::ScheduledActionDraw() {
+  client_->OnScheduledActionDraw();
+}
+
+void LayerTreeHostImpl::OnSetBypassVsyncCondition(int32_t condition) {
+  if (!layer_tree_frame_sink_) {
+    LOG(INFO)
+        << "layer_tree_frame_sink_::need_layer_tree_frame_sink_:true";
+      need_layer_tree_frame_sink_ = true;
+      condition_ = condition;
+      return ;
+  }
+  layer_tree_frame_sink_->OnSetBypassVsyncCondition(condition);
+}
+#endif
+
 void LayerTreeHostImpl::DidStartPinchZoom() {
   client_->RenewTreePriority();
   frame_trackers_.StartSequence(FrameSequenceTrackerType::kPinchZoom);
@@ -4390,6 +4407,11 @@ bool LayerTreeHostImpl::InitializeFrameSink(
       child_local_surface_id_allocator_.GetCurrentLocalSurfaceId();
   if (local_surface_id.is_valid())
     AllocateLocalSurfaceId();
+
+  if (need_layer_tree_frame_sink_) {
+    OnSetBypassVsyncCondition(condition_);
+    need_layer_tree_frame_sink_ = false;
+  }
 
   return true;
 }

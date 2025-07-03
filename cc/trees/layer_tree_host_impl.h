@@ -146,6 +146,9 @@ class LayerTreeHostImplClient {
 #endif
   virtual bool IsInsideDraw() = 0;
   virtual void RenewTreePriority() = 0;
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void OnScheduledActionDraw() {}
+#endif
   virtual void PostDelayedAnimationTaskOnImplThread(base::OnceClosure task,
                                                     base::TimeDelta delay) = 0;
   virtual void DidActivateSyncTree() = 0;
@@ -401,6 +404,10 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   void SetNeedsFullViewportRedraw() override;
   void DidUpdateScrollAnimationCurve() override;
   void AccumulateScrollDeltaForTracing(const gfx::Vector2dF& delta) override;
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void ScheduledActionDraw() override;
+  void OnSetBypassVsyncCondition(int32_t condition);
+#endif
   void DidStartPinchZoom() override;
   void DidUpdatePinchZoom() override;
   void DidEndPinchZoom() override;
@@ -1182,7 +1189,10 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
       worker_context_visibility_;
 
   RasterCapabilities raster_caps_;
-
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  bool need_layer_tree_frame_sink_ = false;
+  int condition_ = 0;
+#endif
   std::unique_ptr<RasterBufferProvider> raster_buffer_provider_;
   std::unique_ptr<ResourcePool> resource_pool_;
   std::unique_ptr<RasterQueryQueue> pending_raster_queries_;

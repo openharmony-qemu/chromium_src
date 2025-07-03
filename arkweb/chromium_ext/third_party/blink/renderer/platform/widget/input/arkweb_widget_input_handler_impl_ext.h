@@ -62,6 +62,9 @@ class ArkwebWidgetInputHandlerImplExt : public WidgetInputHandlerImpl {
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void ScrollBy(float delta_x, float delta_y) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override;
+#endif
  private:
 };
 

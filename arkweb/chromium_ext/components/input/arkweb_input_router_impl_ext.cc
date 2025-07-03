@@ -50,6 +50,12 @@ void ArkwebInputRouterImplExt::ScrollBy(float delta_x, float delta_y) {
 }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void ArkwebInputRouterImplExt::SetBypassVsyncCondition(int32_t condition) {
+  client_->GetWidgetInputHandler()->SetBypassVsyncCondition(condition);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
 void ArkwebInputRouterImplExt::DynamicFrameLossEvent(const std::string& sceneId,
                                             bool isStart) {

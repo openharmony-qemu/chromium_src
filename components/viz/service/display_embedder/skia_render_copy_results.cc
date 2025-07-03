@@ -13,6 +13,10 @@
 #include "third_party/libyuv/include/libyuv/planar_functions.h"
 #include "third_party/skia/include/core/SkPixelRef.h"
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_result_utils.h"
+#endif
+
 namespace viz {
 
 AsyncReadResultHelper::AsyncReadResultHelper(
@@ -107,6 +111,10 @@ void CopyOutputResultSkiaRGBA::OnReadbackDone(
   auto result = std::make_unique<CopyOutputResultSkiaRGBA>(
       impl_on_gpu, context->result_rect, std::move(async_result),
       context->color_space);
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  result->copy_output_result_utils()->SetImplOnGpu(impl_on_gpu);
+#endif
   context->request->SendResult(std::move(result));
 }
 

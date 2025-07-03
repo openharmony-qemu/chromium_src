@@ -43,7 +43,14 @@ RootCompositorFrameSinkImplExt::RootCompositorFrameSinkImplExt(
                                   std::move(synthetic_begin_frame_source),
                                   std::move(external_begin_frame_source),
                                   std::move(display),
-                                  hw_support_for_multiple_refresh_rates) {}
+                                  hw_support_for_multiple_refresh_rates) {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (display_) {
+    auto gpu_service = managerImplUtils->gpu_service();
+    display_->display_utils()->SetGpuChannelManager(gpu_service ? gpu_service->gpu_channel_manager() : nullptr);
+  }
+#endif
+}
 
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
 void RootCompositorFrameSinkImplExt::SetDrawRect(const gfx::Rect& new_rect) {

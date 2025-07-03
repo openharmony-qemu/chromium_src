@@ -389,6 +389,14 @@ class CONTENT_EXPORT RenderThreadImpl
   void SetPrivateMemoryFootprint(uint64_t private_memory_footprint_bytes);
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessDumpInfo(uint32_t nweb_id,
+                            uint64_t blankless_key,
+                            uint64_t frame_sink_id,
+                            int32_t lcp_time,
+                            int64_t pref_hash);
+#endif
+
  private:
   FRIEND_TEST_ALL_PREFIXES(RenderThreadImplBrowserTest,
                            TransferSharedLastForegroundTime);

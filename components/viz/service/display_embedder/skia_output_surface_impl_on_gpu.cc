@@ -348,6 +348,7 @@ SkiaOutputSurfaceImplOnGpu::SkiaOutputSurfaceImplOnGpu(
   weak_ptr_ = weak_ptr_factory_.GetWeakPtr();
   buffer_presented_callback_ = CreateSafeRepeatingCallback(
       weak_ptr_, std::move(buffer_presented_callback));
+  impl_utils_ =  std::make_shared<SkiaOutputSurfaceImplOnGpuUtils>(this);
 }
 
 void SkiaOutputSurfaceImplOnGpu::ReleaseAsyncReadResultHelpers() {

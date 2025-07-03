@@ -88,7 +88,7 @@ class NWebPipeResourceHandler : public CefResourceHandlerExt {
   CefRefPtr<CefResponse> response_;
   CefRefPtr<CefCallback> response_ready_callback_;
   CefRefPtr<CefResourceReadCallback> resource_ready_callback_;
-  void* last_data_out_{nullptr};
+  raw_ptr<void> last_data_out_{nullptr};
   int last_bytes_to_read_{0};
   scoped_refptr<net::GrowableIOBuffer> data_buffer_;
   raw_ptr<const ArkWeb_ResourceRequest> resource_request_ = nullptr;

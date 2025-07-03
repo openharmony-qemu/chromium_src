@@ -120,6 +120,9 @@ const char EVENT_CONTENT[] = "EVENT_CONTENT";
 constexpr char TIMEOUT[] = "TIMEOUT";
 constexpr char MAILBOX_NONEXISTENT[] = "MAILBOX_NONEXISTENT";
 
+// For render freeze monitoring
+constexpr char PROCESS_FREEZE_WARNING[] = "PROCESS_FREEZE_WARNING";
+
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -387,4 +390,10 @@ void ReportGpuProcessEvent(CrashType type, std::string eventcontent) {
         {EVENT_TYPE, MAILBOX_NONEXISTENT, EVENT_CONTENT, eventcontent});
       break;
   }
+}
+
+void ReportAppfreeze() {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      PROCESS_FREEZE_WARNING, HiSysEventAdapter::EventType::FAULT,
+      {"", std::to_string()});
 }

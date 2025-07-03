@@ -363,6 +363,12 @@ DesktopCaptureDevice::Core::~Core() {
   client_.reset();
   output_frame_.reset();
   last_frame_size_.set(0, 0);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (desktop_capturer_) {
+    LOG(INFO) << __FUNCTION__ << " enter ";
+    desktop_capturer_->Stop();
+  }
+#endif
   desktop_capturer_.reset();
 }
 
@@ -829,8 +835,16 @@ std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
       options.set_picker_show(is_picker_show);
       options.set_nweb_id(nweb_id);
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      base::OnceCallback<void(uint64_t)> callback =
+          base::BindOnce([](uint64_t value) {});
+      std::unique_ptr<webrtc::DesktopCapturer> screen_capturer(
+          webrtc::DesktopCapturer::CreateScreenCapturer(options,
+                                                        std::move(callback)));
+#else
       std::unique_ptr<webrtc::DesktopCapturer> screen_capturer(
           webrtc::DesktopCapturer::CreateScreenCapturer(options));
+#endif
       if (screen_capturer && screen_capturer->SelectSource(source.id)) {
         capturer = std::make_unique<webrtc::DesktopAndCursorComposer>(
             std::move(screen_capturer), options);

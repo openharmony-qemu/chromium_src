@@ -45,6 +45,10 @@ AudioScreenCapturerReadCallback::AudioScreenCapturerReadCallback(
 
 AudioScreenCapturerReadCallback::~AudioScreenCapturerReadCallback() {}
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void AudioScreenCapturerReadCallback::OnDisplaySelected(uint64_t displayId) {}
+#endif
+
 void AudioScreenCapturerReadCallback::OnReadData(OHOS::NWeb::AudioCaptureSourceTypeAdapter type) {
   if (!readDataCallback_.is_null()) {
     readDataCallback_.Run(type);

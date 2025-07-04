@@ -17,6 +17,7 @@
 #define UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_UTILS_H_
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 
 namespace ui {
 class TouchSelectionController;

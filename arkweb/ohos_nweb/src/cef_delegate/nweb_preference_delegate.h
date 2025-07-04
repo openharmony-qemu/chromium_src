@@ -210,6 +210,8 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool GetAudioExclusive();
   void PutAudioResumeInterval(int32_t resumeInterval);
   int32_t GetAudioResumeInterval();
+  void PutAudioSessionType(int32_t audioSessionType);
+  int32_t GetAudioSessionType();
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   void SetNativeVideoPlayerConfig(bool enable, bool shouldOverlay) override;
@@ -400,6 +402,7 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   bool audio_exclusive_{true};
   int32_t resume_interval_{0};
+  int32_t audio_session_type_{5};
 #endif
 #if BUILDFLAG(ARKWEB_JSPROXY)
   ScriptItems script_items_start_{};

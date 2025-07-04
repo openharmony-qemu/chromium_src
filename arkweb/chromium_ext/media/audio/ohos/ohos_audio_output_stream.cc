@@ -325,17 +325,8 @@ bool OHOSAudioOutputStream::InitRender() {
                                                parameters_.frames_per_buffer());
   OH_AudioStreamBuilder_SetEncodingType(audio_stream_builder_, AUDIOSTREAM_ENCODING_TYPE_RAW);
   OH_AudioStreamBuilder_SetRendererInterruptMode(audio_stream_builder_, (OH_AudioInterrupt_Mode)false);
-  if (isCommunication_) {
-    OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_VOICE_COMMUNICATION);
-  } else {
-    OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_UNKNOWN);
-  }
-  if (weakMediaSession_) {
-    media::MediaContentType contentType = weakMediaSession_.get()->getMediaContentType();
-    if (contentType == media::MediaContentType::kTransient) {
-      OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_NAVIGATION);
-    }
-  }
+  SetStreamUsage();
+
   // set callback
   OH_AudioRenderer_Callbacks callbacks;
   callbacks.OH_AudioRenderer_OnWriteData = AudioRendererOnWriteData;
@@ -354,6 +345,27 @@ bool OHOSAudioOutputStream::InitRender() {
     return false;
   }
   return true;
+}
+
+void OHOSAudioOutputStream::SetStreamUsage() {
+  if (isCommunication_) {
+    OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_VOICE_COMMUNICATION);
+    return;
+  }
+ 
+  OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_UNKNOWN);
+  if (weakMediaSession_) {
+    LOG(INFO) << "OHOSAudioOutputStream AudioSessionType: " << weakMediaSession_->audioSessionType_;
+    AudioSessionType audioSessionType = static_cast<AudioSessionType>(weakMediaSession_->audioSessionType_);
+    if (audioSessionType == AudioSessionType::AMBIENT) {
+      OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_GAME);
+    } else if (audioSessionType == AudioSessionType::AUTO) {
+      media::MediaContentType contentType = weakMediaSession_.get()->getMediaContentType();
+      if (contentType == media::MediaContentType::kTransient) {
+        OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_NAVIGATION);
+      }
+    }
+  }
 }
 
 void OHOSAudioOutputStream::Prepare(

@@ -392,6 +392,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void SetAudioExclusive(bool audioExclusive) override {}
 
+  void SetAudioSessionType(int audioSessionType) override {}
+
   void CloseMedia() override {}
 
   void StopMedia() override {}

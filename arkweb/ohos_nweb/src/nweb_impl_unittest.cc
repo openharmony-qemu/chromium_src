@@ -589,6 +589,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (int32_t resumeInterval),
               (override));
   MOCK_METHOD(void, SetAudioExclusive, (bool audioExclusive), (override));
+  MOCK_METHOD(void, SetAudioSessionType, (int32_t audioSessionType), (override));
   MOCK_METHOD(void, CloseAllMediaPresentations, (), (override));
   MOCK_METHOD(void, StopAllMedia, (), (override));
   MOCK_METHOD(void, ResumeAllMedia, (), (override));

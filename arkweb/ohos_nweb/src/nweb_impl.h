@@ -1045,7 +1045,7 @@ class NWebImpl : public NWeb {
   static bool disableWebActivePolicy_;
 
   bool incognito_mode_ = false;
-  void* window_;
+  raw_ptr<void> window_;
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   float totalSize_;
 #endif

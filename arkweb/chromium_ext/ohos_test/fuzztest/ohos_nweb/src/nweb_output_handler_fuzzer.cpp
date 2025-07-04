@@ -14,6 +14,7 @@
  */
 
 #include <cstdint>
+#include <cstring>
 #include <fuzzer/FuzzedDataProvider.h>
 #include "nweb_output_handler.h"
 

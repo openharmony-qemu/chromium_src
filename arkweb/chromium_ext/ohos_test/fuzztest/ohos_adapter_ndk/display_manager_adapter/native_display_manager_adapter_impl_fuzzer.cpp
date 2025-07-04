@@ -14,6 +14,8 @@
  */
 #define private public
 #include <fuzzer/FuzzedDataProvider.h>
+#include <cstring>
+#include <cstdint>
 #include "native_display_manager_adapter_impl.h"
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 #include "ohos_sdk/openharmony/native/sysroot/usr/include/window_manager/oh_display_info.h"

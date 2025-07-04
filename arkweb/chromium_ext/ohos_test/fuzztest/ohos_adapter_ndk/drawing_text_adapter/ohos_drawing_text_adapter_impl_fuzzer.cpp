@@ -14,6 +14,8 @@
  */
 
 #include <fuzzer/FuzzedDataProvider.h>
+#include <cstring>
+#include <cstdint>
 #include "ohos_drawing_text_adapter_impl.h"
 #include "ohos_drawing_text_adapter.h"
 #include "ohos_sdk/openharmony/native/sysroot/usr/include/native_drawing/drawing_types.h"
@@ -55,7 +57,7 @@ void FuzzdDrawingTextTypographyAdapter(FuzzedDataProvider* fdp) {
     void* drawingArray=nullptr;
     int32_t sizeOfArray=fdp->ConsumeIntegral<int32_t>();
     adapter.GetDrawingArraySize(drawingArray, sizeOfArray);
-    
+
     adapter.DestroySystemFontConfigInfo(nullptr);
 }
 

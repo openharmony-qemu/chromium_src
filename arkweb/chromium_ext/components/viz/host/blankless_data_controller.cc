@@ -166,7 +166,7 @@ static double CalculateSnapshotSimilarity(std::vector<double>& pixels1,
                                    const std::vector<BlanklessDataController::SnapShotRect>& quad_list,
                                    const int depth) {
   if (width == 0 || height == 0) {
-    LOG(DEBUG) << "blankless width: " << widht ", height: " << height;
+    LOG(DEBUG) << "blankless width: " << width << ", height: " << height;
     return 0;
   }
   

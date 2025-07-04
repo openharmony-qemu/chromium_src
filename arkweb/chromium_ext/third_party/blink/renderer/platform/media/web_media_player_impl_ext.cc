@@ -355,6 +355,23 @@ void WebMediaPlayerImpl::PipEnable(bool enable) {
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void WebMediaPlayerImplExt::SetDmaBufferSeekState(bool state) {
+  dmabuf_seeking_enabled_ = state;
+}
+
+bool WebMediaPlayerImplExt::IsDmaBufferRecycleEnabled() {
+  if (GetDemuxerType() == media::DemuxerType::kChunkDemuxer) {
+    return false;
+  }
+
+  if (!dmabuf_seeking_enabled_) {
+    return false;
+  }
+
+  LOG(INFO) << "DMABUF::WebMediaPlayerImplExt(" << *this << "), IsDmaBufferRecycleEnabled = true";
+  return dmabuf_recycled.value_or(true);
+}
+
 void WebMediaPlayerImplExt::RecycleDmaBuffer() {
   base::AutoLock lock(lock_);
 
@@ -402,6 +419,7 @@ void WebMediaPlayerImplExt::ResumeDmaBuffer() {
     pipeline_controller_->ResumeDmaBuffer();
     dma_state_ = kHaveExist;
     if (client_) {
+      dmabuf_seeking_enabled_ = true;
       client_->OnDmaBufferSeekTo(paused_time_);
     } else {
       LOG(ERROR) << "DMABUF::WebMediaPlayerImplExt::ResumeDmaBuffer, client is null";  

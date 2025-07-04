@@ -457,7 +457,6 @@ class NWebImpl : public NWeb {
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   void SetAudioExclusive(bool audioExclusive) override;
-  void SetAudioSessionType(int32_t audioSessionType) override;
   void NotifyMemoryLevel(int32_t level) override;
   void OnWebviewHide() override;
   void OnWebviewShow() override;

@@ -26,8 +26,6 @@ using namespace OHOS::NWeb;
 
 class OHOSAudioManager;
 
-enum class AudioSessionType {AUTO = 0, AMBIENT = 3};
-
 class OHOSAudioOutputStream : public AudioOutputStream {
  public:
  static std::set<content::WebContents*> webContentSet_;
@@ -85,8 +83,6 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   // Call to determine whether media is preload
   bool IsPreloadOrMutedMediaMode();
-
-  void SetStreamUsage();
 
   raw_ptr<OHOSAudioManager> manager_ = nullptr;
 

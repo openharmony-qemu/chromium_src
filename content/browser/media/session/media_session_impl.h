@@ -407,7 +407,6 @@ class MediaSessionImpl : public MediaSession,
   std::unordered_set<media::OHOSAudioOutputStream*> activeAudioStream_;
   int audioResumeInterval_ = 0;
   bool audioExclusive_ = true;
-  int audioSessionType_ = 0;
   bool isPlayingState_ = false;
   bool fileAccess_ = false;
   std::vector<std::string> grantMediaFileAccessDirs_;

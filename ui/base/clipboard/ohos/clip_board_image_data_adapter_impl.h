@@ -16,6 +16,7 @@
 #ifndef CLIP_BOARD_IMAGE_DATA_ADAPTER_IMPL_H
 #define CLIP_BOARD_IMAGE_DATA_ADAPTER_IMPL_H
 
+#include "base/memory/raw_ptr.h"
 #include "pasteboard_client_adapter.h"
 
 namespace OHOS::NWeb {

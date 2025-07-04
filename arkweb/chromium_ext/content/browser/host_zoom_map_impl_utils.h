@@ -20,7 +20,7 @@
 namespace content {
 class CONTENT_EXPORT HostZoomMapImplUtils {
  public:
-  HostZoomMapImpl* zoom_map_impl_;
+  raw_ptr<HostZoomMapImpl> zoom_map_impl_;
   HostZoomMapImplUtils(HostZoomMapImpl* impl);
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

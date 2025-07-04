@@ -25,6 +25,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "build/build_config.h"
+#include "base/memory/raw_ptr.h"
 #include "base/timer/timer.h"
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"

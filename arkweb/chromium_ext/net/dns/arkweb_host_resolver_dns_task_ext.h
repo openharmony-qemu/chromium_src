@@ -37,7 +37,7 @@ class HostResolverDnsTask;
 class NET_EXPORT_PRIVATE ArkWebHostResolverDnsTaskExt final {
  public:
   friend class HostResolverDnsTask;
-  HostResolverDnsTask *hostResolverDnsTask;
+  raw_ptr<HostResolverDnsTask> hostResolverDnsTask;
   ArkWebHostResolverDnsTaskExt(HostResolverDnsTask *resolver) { hostResolverDnsTask = resolver; }
   ~ArkWebHostResolverDnsTaskExt() = default;
 

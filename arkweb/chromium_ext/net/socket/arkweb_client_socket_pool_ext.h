@@ -35,7 +35,7 @@ class ConnectJobFactory;
 
 class NET_EXPORT ArkWebClientSocketPoolExt {
  public:
-  ClientSocketPool* client_socket_pool;
+  raw_ptr<ClientSocketPool> client_socket_pool;
   ArkWebClientSocketPoolExt(ClientSocketPool* socketPool);
 
   ArkWebClientSocketPoolExt(const ArkWebClientSocketPoolExt&) = delete;

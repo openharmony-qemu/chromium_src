@@ -22,7 +22,7 @@ using namespace OHOS::NWeb;
 
 void NwebOutputHandlerFuzzTest(FuzzedDataProvider* fdp) {
     auto output_frame_cb = [](const char* data, uint32_t width, uint32_t height) -> bool {
-        return true;
+        return false;
     };
     uint32_t width = fdp->ConsumeIntegral<uint32_t>();
     uint32_t height = fdp->ConsumeIntegral<uint32_t>();

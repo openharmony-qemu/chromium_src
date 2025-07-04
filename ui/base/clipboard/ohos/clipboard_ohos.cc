@@ -162,7 +162,7 @@ class ClipboardOHOSInternal {
     }
 
    private:
-    ClipboardOHOSInternal* clipboard_internal_ = nullptr;
+    raw_ptr<ClipboardOHOSInternal> clipboard_internal_ = nullptr;
   };
 
   ClipboardOHOSInternal() {

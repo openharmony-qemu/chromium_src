@@ -19,6 +19,7 @@
 #include <tuple>
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 #include "cef/include/cef_browser.h"
 #if BUILDFLAG(ARKWEB_JSPROXY)
 #include "ohos_nweb/include/nweb.h"
@@ -353,7 +354,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   float virtual_pixel_ratio_ = 2.0;
 #endif
 #if BUILDFLAG(ARKWEB_PRINT)
-  void* token_ = nullptr;
+  raw_ptr<void> token_ = nullptr;
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool horizontal_scrollBar_access_{true};

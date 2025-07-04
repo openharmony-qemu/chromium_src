@@ -2722,6 +2722,12 @@ void NWebImpl::SetAudioExclusive(bool audioExclusive) {
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 }
 
+void NWebImpl::SetAudioSessionType(int32_t audioSessionType) {
+  if (nweb_delegate_) {
+    nweb_delegate_->SetAudioSessionType(audioSessionType);
+  }
+}
+
 void NWebImpl::CloseAllMediaPresentations() {
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   if (nweb_delegate_ == nullptr) {

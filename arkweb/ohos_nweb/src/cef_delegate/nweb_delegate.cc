@@ -3569,15 +3569,6 @@ void NWebDelegate::SetAudioExclusive(bool audioExclusive) {
   }
 }
 
-void NWebDelegate::SetAudioSessionType(int32_t audioSessionType) {
-  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
-    GetBrowser()->GetHost()->SetAudioSessionType(audioSessionType);
-  }
-  if (preference_delegate_) {
-    preference_delegate_->PutAudioSessionType(audioSessionType);
-  }
-}
-
 void NWebDelegate::CloseAllMediaPresentations() {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
     LOG(ERROR) << "CloseAllMediaPresentations can not get browser";

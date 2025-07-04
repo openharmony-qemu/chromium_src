@@ -470,7 +470,6 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   virtual void SetAudioResumeInterval(int32_t resumeInterval) = 0;
   virtual void SetAudioExclusive(bool audioExclusive) = 0;
-  virtual void SetAudioSessionType(int32_t audioSessionType) = 0;
   virtual void CloseAllMediaPresentations() = 0;
   virtual void StopAllMedia() = 0;
   virtual void ResumeAllMedia() = 0;

@@ -237,6 +237,10 @@ arkweb_media_base_sources = [
   "//arkweb/chromium_ext/media/base/video_util_ext.h"
 ]
 
+arkweb_media_base_unittest_sources = [
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_codec_bridge_impl_unittest.cc",
+]
+
 arkweb_media_filters_sources = [
   "//arkweb/chromium_ext/media/filters/native_pipeline_controller.cc",
   "//arkweb/chromium_ext/media/filters/native_pipeline_controller.h",

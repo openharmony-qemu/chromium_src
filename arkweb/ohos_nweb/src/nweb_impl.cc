@@ -634,14 +634,14 @@ void InitialWebEngineArgs(
   if (base::PathExists(ohos_command_line_file)) {
     std::string ohos_command_line_contest;
     if (base::ReadFileToString(ohos_command_line_file, &ohos_command_line_contest)) {
-      std::vector<sttd::string> args = tokenizeQuotedArguments(ohos_command_line_contest);
+      std::vector<std::string> args = tokenizeQuotedArguments(ohos_command_line_contest);
       for (auto& arg : args) {
         web_engine_args.emplace_back(arg);
       }
     }
-    LOG(INFO) << "ohos command line args analysis from ohos_command_line file succ."
+    LOG(INFO) << "ohos command line args analysis from ohos_command_line file succ.";
   } else {
-    LOG(INFO) << "file ohos-command-line does not exist."
+    LOG(INFO) << "file ohos-command-line does not exist.";
   }
 }
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)

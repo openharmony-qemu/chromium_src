@@ -301,7 +301,8 @@ ArkOhosAdapterHelperWrapper::GetAccessTokenAdapterInstance() {
 
 std::unique_ptr<NWeb::EventHandlerAdapter>
 ArkOhosAdapterHelperWrapper::GetEventHandlerAdapter() {
-  ArkWebRefPtr<ArkEventHandlerAdapter> adapter = ctocpp_->GetEventHandlerAdapter();
+  ArkWebRefPtr<ArkEventHandlerAdapter> adapter =
+      ctocpp_->GetEventHandlerAdapter();
 
   if (CHECK_REF_PTR_IS_NULL(adapter)) {
     return nullptr;

@@ -512,3 +512,18 @@ fuzzer_test("nweb_output_handler_fuzzer") {
     "//ohos_nweb:nweb_sources",
   ]
 }
+
+fuzzer_test("event_report_fuzzer") {
+  sources = [ "fuzztest/ohos_nweb/event_report/event_report_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}

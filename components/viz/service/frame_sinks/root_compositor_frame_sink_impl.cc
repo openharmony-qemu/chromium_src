@@ -302,7 +302,6 @@ RootCompositorFrameSinkImpl::Create(
 RootCompositorFrameSinkImpl::~RootCompositorFrameSinkImpl() {
   support_->frame_sink_manager()->UnregisterBeginFrameSource(
       begin_frame_source());
-  delete managerImplUtils;
 }
 
 bool RootCompositorFrameSinkImpl::WillEvictSurface(
@@ -657,7 +656,7 @@ RootCompositorFrameSinkImpl::RootCompositorFrameSinkImpl(
       !display_->OutputSurfaceSupportsSetFrameRate();
 #endif
   UpdateFrameIntervalDeciderSettings();
-  managerImplUtils = new FrameSinkManagerImplUtils(frame_sink_manager);
+  managerImplUtils = std::make_unique<FrameSinkManagerImplUtils>(frame_sink_manager);
 }
 
 void RootCompositorFrameSinkImpl::UpdateFrameIntervalDeciderSettings() {

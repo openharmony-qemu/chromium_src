@@ -400,6 +400,8 @@ component("nweb_sources") {
     "src/capi/nweb_statistic_callback.h",
     "src/nweb_adsblock_manager_impl.cc",
     "src/nweb_adsblock_manager_impl.h",
+    "src/nweb_advanced_security.cc",
+    "src/nweb_advanced_security.h",
     "src/nweb_common.cc",
     "src/nweb_common.h",
     "src/nweb_cookie_manager_delegate_interface.h",

@@ -14,14 +14,13 @@
  */
 
 #include "css_utils.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "ohos_nweb/src/nweb_advanced_security.h"
 
 namespace blink {
 
 bool Cssutils::IsMathFormulaDisabledMode() {
-  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                        .GetSystemPropertiesInstance();
-  return system_properties_adapter.IsAdvancedSecurityMode();
+  return OHOS::NWeb::NWebAdvancedSecurityHelper::Inst().
+        IsSecFeatureEnabled(OHOS::NWeb::NWebAdvancedSecurityHelper::Feature::ENABLE_MATHML);
 }
 
 }  // namespace

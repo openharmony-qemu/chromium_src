@@ -314,38 +314,6 @@ fuzzer_test("nweb_delegate_fuzzer") {
   ]
 }
 
-fuzzer_test("nweb_impl_rely_on_nweb_delegate_fuzzer") {
-    sources = [
-        "fuzztest/ohos_nweb/nweb_impl_rely_on_nweb_delegate_fuzzer.cc",
-    ]
-    include_dirs = [
-        "//cef",
-        "//cef/include",
-        "//ohos_nweb/include",
-    ]
-    deps = [
-        "//cef:libcef_static",
-        "//ohos_nweb:nweb_sources",
-    ]
-}
-
-fuzzer_test("nweb_impl_set_connection_timeout_fuzzer") {
-    sources = [
-        "fuzztest/ohos_nweb/nweb_impl_set_connection_timeout_fuzzer.cc",
-    ]
-    include_dirs = [
-        "//cef",
-        "//cef/include",
-        "//ohos_nweb/include",
-        "//third_party/skia",
-    ]
-    deps = [
-        "//cef:libcef_static",
-        "//ohos_nweb:nweb_sources",
-        "//net:net_fuzzer_test_support",
-    ]
-}
-
 fuzzer_test("media_avsession_adapter_impl_fuzzer") {
   sources = [ "fuzztest/ohos_adapter_ndk/media_avsession_adapter/media_avsession_adapter_impl_fuzzer.cpp" ]
   include_dirs = [
@@ -434,23 +402,6 @@ fuzzer_test("player_framework_adapter_impl_fuzzer") {
     "//third_party/googletest:gmock",
     "//arkweb/ohos_adapter_ndk:adapter_ndk",
   ]
-}
-
-fuzzer_test("nweb_impl_prepare_for_page_fuzzer") {
-    sources = [
-        "fuzztest/ohos_nweb/nweb_impl_prepare_for_page_fuzzer.cc",
-    ]
-    include_dirs = [
-        "//cef",
-        "//cef/include",
-        "//ohos_nweb/include",
-        "//third_party/skia",
-        "//third_party/boringssl/src/include",
-    ]
-    deps = [
-        "//cef:libcef_static",
-        "//ohos_nweb:nweb_sources",
-    ]
 }
 
 fuzzer_test("nweb_preference_delegate_secondary_fuzzer") {

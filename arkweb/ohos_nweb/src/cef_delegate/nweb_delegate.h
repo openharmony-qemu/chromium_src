@@ -398,6 +398,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   void SetAudioResumeInterval(int32_t resumeInterval) override;
   void SetAudioExclusive(bool audioExclusive) override;
+  void SetAudioSessionType(int32_t audioSessionType) override;
   void CloseAllMediaPresentations() override;
   void StopAllMedia() override;
   void ResumeAllMedia() override;

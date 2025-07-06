@@ -1067,6 +1067,8 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
             preference_delegate_->GetAudioExclusive());
         main_browser_->GetHost()->SetAudioResumeInterval(
             preference_delegate_->GetAudioResumeInterval());
+        main_browser_->GetHost()->SetAudioSessionType(
+            preference_delegate_->GetAudioSessionType());
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 #if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
         if (popup_window_) {

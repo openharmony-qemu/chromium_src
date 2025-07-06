@@ -17,6 +17,7 @@
 #define NWEB_JS_SSL_ERROR_RESULT_IMPL_H
 
 #include "cef/include/cef_callback.h"
+#include "cef/ohos_cef_ext/include/arkweb_cef_ssl_callback.h"
 #include "nweb_js_ssl_error_result.h"
 
 namespace OHOS::NWeb {
@@ -35,13 +36,14 @@ class NWebJSSslErrorResultImpl : public NWebJSSslErrorResult {
 class NWebJSAllSslErrorResultImpl : public NWebJSAllSslErrorResult {
  public:
   NWebJSAllSslErrorResultImpl() = default;
-  explicit NWebJSAllSslErrorResultImpl(CefRefPtr<CefCallback> callback);
+  explicit NWebJSAllSslErrorResultImpl(CefRefPtr<ArkWebCefSslCallback> callback);
   ~NWebJSAllSslErrorResultImpl() = default;
   void HandleConfirm() override;
   void HandleCancel() override;
+  void HandleCancelV2(bool abortLoading) override;
 
  private:
-  CefRefPtr<CefCallback> callback_;
+  CefRefPtr<ArkWebCefSslCallback> callback_;
 };
 }  // namespace OHOS::NWeb
 

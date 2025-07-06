@@ -4341,7 +4341,7 @@ bool NWebHandlerDelegate::OnAllCertificateError(
     bool is_main_frame_request,
     bool is_fatal_error,
     CefRefPtr<CefSSLInfo> ssl_info,
-    CefRefPtr<CefCallback> callback) {
+    CefRefPtr<ArkWebCefSslCallback> callback) {
   LOG(INFO) << "NWebHandlerDelegate::OnAllCertificateError happened";
   SslError error = SslErrorConvert(cert_error);
 

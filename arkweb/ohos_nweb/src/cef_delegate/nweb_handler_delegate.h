@@ -826,7 +826,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                              bool is_main_frame_request,
                              bool is_fatal_error,
                              CefRefPtr<CefSSLInfo> ssl_info,
-                             CefRefPtr<CefCallback> callback) override;
+                             CefRefPtr<ArkWebCefSslCallback> callback) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)

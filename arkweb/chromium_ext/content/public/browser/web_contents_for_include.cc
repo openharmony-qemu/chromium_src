@@ -125,7 +125,7 @@ virtual void WebExtensionUpdateTab(
     int32_t tab_id,
     const NWebExtensionTabUpdateProperties* update_properties) = 0;
 virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) = 0;
-virtual int32_t ExtensionGetTabId() const = 0;
+virtual int32_t ExtensionGetTabId() = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)

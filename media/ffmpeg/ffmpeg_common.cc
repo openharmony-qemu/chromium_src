@@ -85,7 +85,7 @@ void ApplyCodecContextSecuritySettings(AVCodecContext* codec_context) {
   }
 
   // Note: This is security sensitive. FFmpeg may not always continue safely
-  // in the presence of errors. See http://crbug.com/379418979
+  // in the presence of errors. See https://crbug.com/379418979
   if (base::FeatureList::IsEnabled(kStrictFFmpegCodecs)) {
     codec_context->err_recognition |= AV_EF_EXPLODE;
   }

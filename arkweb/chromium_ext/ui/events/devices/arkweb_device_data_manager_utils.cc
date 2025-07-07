@@ -117,7 +117,7 @@ class MMIListenerAdapterImpl : public OHOS::NWeb::MMIListenerAdapter {
   }
 
  private:
-  ArkWebDeviceDataManagerUtils* utils_;
+  raw_ptr<ArkWebDeviceDataManagerUtils> utils_;
   std::unique_ptr<OHOS::NWeb::MMIAdapter> mmi_adapter_;
   scoped_refptr<base::SequencedTaskRunner> sequenced_task_runner_;
 };

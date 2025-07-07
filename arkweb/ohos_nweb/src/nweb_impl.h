@@ -25,6 +25,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "build/build_config.h"
+#include "base/memory/raw_ptr.h"
 #include "base/timer/timer.h"
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
@@ -457,6 +458,7 @@ class NWebImpl : public NWeb {
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   void SetAudioExclusive(bool audioExclusive) override;
+  void SetAudioSessionType(int32_t audioSessionType) override;
   void NotifyMemoryLevel(int32_t level) override;
   void OnWebviewHide() override;
   void OnWebviewShow() override;
@@ -1002,6 +1004,12 @@ class NWebImpl : public NWeb {
   void SetErrorPageEnabled(bool enable) override;
   bool GetErrorPageEnabled() override;
 #endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  static void EnablePrivateNetworkAccess(bool enable);
+  static bool IsPrivateNetworkAccessEnabled();
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
@@ -1039,7 +1047,7 @@ class NWebImpl : public NWeb {
   static bool disableWebActivePolicy_;
 
   bool incognito_mode_ = false;
-  void* window_;
+  raw_ptr<void> window_;
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   float totalSize_;
 #endif

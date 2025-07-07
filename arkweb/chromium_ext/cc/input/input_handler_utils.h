@@ -17,6 +17,9 @@
 #define CC_INPUT_INPUT_HANDLER_UTILS_H_
 
 #include "cc/input/input_handler.h"
+#if BUILDFLAG(ARKWEB_PDF)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace cc {
 
@@ -37,6 +40,16 @@ public:
   LayerImpl* GetNativeLayerImpl(const gfx::Point& viewport_point);
   LayerImpl* GetLayerImplById(int id);
   bool IsNativeLayer(gfx::PointF device_viewport_point);
+#endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+  static bool PdfOverSpeed();
+  static double pdf_delta_x_;
+  static double pdf_delta_y_;
+
+  static void SetScrollEndEventListener(const std::function<void()>& listener);
+  static std::recursive_mutex scroll_end_listener_mutex;
+  static std::function<void()> scroll_end_listener_;
 #endif
 
 private:

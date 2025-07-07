@@ -282,6 +282,8 @@ OnReportStatisticLogFunc
 #endif
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+#include "ohos_nweb/src/nweb_advanced_security.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 
 #include "capi/nweb_logger_report_event_callback.h"
 #include "base/ohos/nweb_engine_event_logger.h"
@@ -338,6 +340,8 @@ const int32_t WEB_RESIZE_CLOSE_DELAY_TIME = 500;
 constexpr base::TimeDelta DRAG_OVER_INTERVAL = base::Milliseconds(65);
 #endif
 
+using ASHelper = OHOS::NWeb::NWebAdvancedSecurityHelper;
+
 bool g_logger_callback_initialized = false;
 
 bool GetWebOptimizationValue() {
@@ -347,9 +351,7 @@ bool GetWebOptimizationValue() {
 }
 
 static bool IsAdvancedSecurityMode() {
-  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                        .GetSystemPropertiesInstance();
-  return system_properties_adapter.IsAdvancedSecurityMode();
+  return ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::SECURE_SHIELD_ENABLED);
 }
 
 static std::string GetOOPGPUStatus() {
@@ -547,11 +549,24 @@ void InitialWebEngineArgs(
         "including "
         "WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
     web_engine_args.emplace_back("--js-flags=--jitless");
-    web_engine_args.emplace_back("--disable-webgl");
-    web_engine_args.emplace_back("--disable-webgl2");
-    web_engine_args.emplace_back("--disable-pdf-extension");
-    web_engine_args.emplace_back(
-        "--disable-blink-features=NonAdvancedSecurityMode");
+
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_WEBGL)) {
+      web_engine_args.emplace_back("--disable-webgl");
+      web_engine_args.emplace_back("--disable-webgl2");
+    }
+
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_PDFVIEWER)) {
+      web_engine_args.emplace_back("--disable-pdf-extension");
+    }
+
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_SPEECHAPI)) {
+      web_engine_args.emplace_back(
+          "--disable-blink-features=NonAdvancedSecurityMode");
+    }
+
+    std::string AdSec = "--advanced_sec_value=" + std::to_string(ASHelper::Inst().GetAdStat());
+    web_engine_args.emplace_back(AdSec);
+
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
     ReportLockdownModeStatus();
 #endif
@@ -2720,6 +2735,12 @@ void NWebImpl::SetAudioExclusive(bool audioExclusive) {
     nweb_delegate_->SetAudioExclusive(audioExclusive);
   }
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+}
+
+void NWebImpl::SetAudioSessionType(int32_t audioSessionType) {
+  if (nweb_delegate_) {
+    nweb_delegate_->SetAudioSessionType(audioSessionType);
+  }
 }
 
 void NWebImpl::CloseAllMediaPresentations() {
@@ -5778,5 +5799,17 @@ bool NWebImpl::GetErrorPageEnabled() {
     return false;
   }
   return nweb_delegate_->GetErrorPageEnabled();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+void NWebImpl::EnablePrivateNetworkAccess(bool enable) {
+  net_service::NetHelpers::SetPrivateNetworkAccess(enable);
+}
+
+bool NWebImpl::IsPrivateNetworkAccessEnabled() {
+  LOG(DEBUG) << "PrivateNetworkAccess is "
+             << (net_service::NetHelpers::GetPrivateNetworkAccess() ? "enable" : "false");
+  return net_service::NetHelpers::GetPrivateNetworkAccess();
 }
 #endif

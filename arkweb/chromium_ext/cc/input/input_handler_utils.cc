@@ -64,4 +64,32 @@ bool InputHandlerUtils::IsNativeLayer(gfx::PointF device_viewport_point) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+double InputHandlerUtils::pdf_delta_x_ = 0;
+double InputHandlerUtils::pdf_delta_y_ = 0;
+
+bool InputHandlerUtils::PdfOverSpeed() {  
+  constexpr float kMaxPdfOverSpeed = 150;
+  if (InputHandlerUtils::pdf_delta_x_ > kMaxPdfOverSpeed)
+    return true;
+  else if (InputHandlerUtils::pdf_delta_x_ < -kMaxPdfOverSpeed)
+    return true;
+
+  if (InputHandlerUtils::pdf_delta_y_ > kMaxPdfOverSpeed)
+    return true;
+  else if (InputHandlerUtils::pdf_delta_y_ < -kMaxPdfOverSpeed)
+    return true;
+  
+  return false;
+}
+
+std::recursive_mutex InputHandlerUtils::scroll_end_listener_mutex;
+std::function<void()> InputHandlerUtils::scroll_end_listener_ = nullptr;
+
+void InputHandlerUtils::SetScrollEndEventListener(const std::function<void()>& listener) {
+  std::lock_guard<std::recursive_mutex> lock(scroll_end_listener_mutex);
+  scroll_end_listener_ = listener;
+}
+#endif
+
 }

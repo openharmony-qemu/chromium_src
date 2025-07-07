@@ -17,6 +17,7 @@
 #define UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_UTILS_H_
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 
 namespace ui {
 class TouchSelectionController;
@@ -34,7 +35,7 @@ class TouchSelectionControllerUtils {
   bool GetResetSelectionTemporarily() { return reset_selection_temporarily_; }
 #endif  // BUILDFLAG(ARKWEB_MENU)
 
-  TouchSelectionController* controller_;
+  raw_ptr<TouchSelectionController> controller_;
 #if BUILDFLAG(ARKWEB_MENU)
   bool reset_selection_temporarily_ = false;
 #endif  // BUILDFLAG(ARKWEB_MENU)

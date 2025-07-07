@@ -22,7 +22,7 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
       public ExternalBeginFrameSourceClient {
  public:
  friend class FrameSinkManagerImplUtils;
- FrameSinkManagerImplUtils* managerImplUtils;
+ std::unique_ptr<FrameSinkManagerImplUtils> managerImplUtils;
 #if BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
   explicit ExternalBeginFrameSourceOHOS(
       uint32_t restart_id,

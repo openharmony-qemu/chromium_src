@@ -285,8 +285,8 @@ static_library("test_support") {
 
   if (is_ohos) {
     sources += [
-      "test_support_ohos.h",
-      "test_support_ohos.cc",
+      "//arkweb/chromium_ext/base/test/test_support_ohos.h",
+      "//arkweb/chromium_ext/base/test/test_support_ohos.cc",
     ]
   }
 

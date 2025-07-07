@@ -470,7 +470,7 @@ void WebContentsImplExt::OnOverlayZoomChanged() {
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-void WebContentsImplExt::WebExtensionUpdateTabUrl(int32_t tab_id,	
+void WebContentsImplExt::WebExtensionUpdateTabUrl(int32_t tab_id,
                                                   const GURL& url) {
   OPTIONAL_TRACE_EVENT2("content", "WebContentsImplExt::WebExtensionUpdateTabUrl",
                         "tab_id", tab_id, "url", url);

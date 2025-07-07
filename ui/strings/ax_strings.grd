@@ -193,10 +193,10 @@ need to be translated for each locale.-->
     <file path="translations/ax_strings_ur.xtb" lang="ur" />
     <file path="translations/ax_strings_uz.xtb" lang="uz" />
     <file path="translations/ax_strings_vi.xtb" lang="vi" />
-    <if expr="is_ios">
+    <if expr="is_ohos">
       <file path="translations/ax_strings_zh-CN_ohos.xtb" lang="zh-CN" />
     </if>
-    <if expr="not is_ios">
+    <if expr="not is_ohos">
       <file path="translations/ax_strings_zh-CN.xtb" lang="zh-CN" />
     </if>
     <file path="translations/ax_strings_zh-HK.xtb" lang="zh-HK" />

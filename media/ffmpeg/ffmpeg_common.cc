@@ -39,8 +39,8 @@ namespace media {
 
 namespace {
 
-// TODO(cubug.com/379418979): Remove after M133 is stable.
-BASE_FEATURE(kStringFFmpegCodes,
+// TODO(crbug.com/379418979): Remove after M133 is stable.
+BASE_FEATURE(kStringFFmpegCodecs,
              "StrictFFmpegCodecs",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
@@ -1032,7 +1032,7 @@ const char* GetAllowedAudioDecoders() {
 #endif
     return allowed_decoders;
   }());
-  return kAllowedAudiocodecs->c_str();
+  return kAllowedAudioCodecs->c_str();
 }
 
 }  // namespace media

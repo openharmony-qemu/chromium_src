@@ -4372,6 +4372,12 @@ NWebDelegate::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
   return PopulateAccessibilityNodeInfo(node);
 }
 
+int64_t NWebDelegate::GetWebAccessibilityIdByHtmlElementId(const std::string& htmlElementId) {
+  auto id = BrowserAccessibilityOHOS::GetAccessibilityIdByHtmlElementId(htmlElementId);
+  LOG(DEBUG) << "web accessibility id get from BrowserAccessibilityOHOS: " << id;
+  return id;
+}
+
 bool NWebDelegate::GetAccessibilityVisible(int64_t accessibilityId) {
   BrowserAccessibilityOHOS* node =
       BrowserAccessibilityOHOS::GetFromAccessibilityId(
@@ -4417,6 +4423,16 @@ NWebDelegate::PopulateAccessibilityNodeInfo(BrowserAccessibilityOHOS* node) {
   if (nodeInfo == nullptr || node == nullptr) {
     LOG(ERROR) << "PopulateAccessibilityNodeInfo nodeInfo or node is null";
     return nullptr;
+  }
+  auto axnode = node->node();
+  if (axnode) {
+    const base::StringPairs& htmlAttributes = axnode->GetHtmlAttributes();
+    for (const auto& pair : htmlAttributes) {
+      if (base::EqualsCaseInsensitiveASCII(pair.first, "id")) {
+        nodeInfo->SetHtmlElementId(pair.second);
+        break;
+      }
+    }
   }
   nodeInfo->SetAccessibilityId(kRootAccessibilityId);
   nodeInfo->SetParentId(-1);

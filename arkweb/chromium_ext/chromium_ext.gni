@@ -714,6 +714,8 @@ arkweb_chrome_browser_notifications_sources = [
 arkweb_chrome_browser_password_manager_sources = [
   "//arkweb/chromium_ext/chrome/browser/password_manager/chrome_password_manager_client_ext.cc",
   "//arkweb/chromium_ext/chrome/browser/password_manager/chrome_password_manager_client_ext.h",
+  "//arkweb/chromium_ext/chrome/browser/password_manager/keyboard_suppressor_ohos.cc",
+  "//arkweb/chromium_ext/chrome/browser/password_manager/keyboard_suppressor_ohos.h",
 ]
 
 arkweb_third_party_blink_common_event_sources = [

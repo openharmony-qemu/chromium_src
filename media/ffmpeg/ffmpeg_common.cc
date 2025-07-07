@@ -40,7 +40,7 @@ namespace media {
 namespace {
 
 // TODO(crbug.com/379418979): Remove after M133 is stable.
-BASE_FEATURE(kStringFFmpegCodecs,
+BASE_FEATURE(kStrictFFmpegCodecs,
              "StrictFFmpegCodecs",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
@@ -86,7 +86,7 @@ void ApplyCodecContextSecuritySettings(AVCodecContext* codec_context) {
 
   // Note: This is security sensitive. FFmpeg may not always continue safely
   // in the presence of errors. See http://crbug.com/379418979
-  if (base::FetureList::IsEnable(kStrictFFmpegCodecs)) {
+  if (base::FeatureList::IsEnabled(kStrictFFmpegCodecs)) {
     codec_context->err_recognition |= AV_EF_EXPLODE;
   }
 }

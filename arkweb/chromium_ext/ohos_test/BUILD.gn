@@ -577,3 +577,35 @@ fuzzer_test("ohos_drawing_text_adapter_impl_fuzzer") {
     "//arkweb/ohos_adapter_ndk:adapter_ndk",
   ]
 }
+
+fuzzer_test("first_meaningful_paint_details_fuzzer") {
+  sources = [ "fuzztest\cef\ohos_cef_ext\libcef\browser\first_meaningful_paint_details_fuzzer.cpp" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("largest_contentful_paint_details_fuzzer") {
+  sources = [ "fuzztest\cef\ohos_cef_ext\libcef\browser\largest_contentful_paint_details_fuzzer.cpp" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}

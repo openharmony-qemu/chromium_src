@@ -164,6 +164,8 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   void OnLocationChanged() override;
 
+  static int64_t GetAccessibilityIdByHtmlElementId(const std::string& htmlElementId);
+
   int32_t GetCheckboxGroupSelectedStatus() const;
 
   std::u16string GetComboboxExpandedText() const;
@@ -258,6 +260,7 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
                               const gfx::Rect& tempBest);
 
   int64_t accessibility_id_ = -1;
+  std::string html_element_id_;
 };
 }  // namespace ui
 

@@ -1033,6 +1033,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
                                             int32_t* height,
                                             int32_t* offsetX,
                                             int32_t* offsetY) override {}
+  int64_t GetWebAccessibilityIdByHtmlElementId(const std::string& htmlElementId) override {}
   bool GetAccessibilityVisible(int64_t accessibilityId) override {}
 #endif
 

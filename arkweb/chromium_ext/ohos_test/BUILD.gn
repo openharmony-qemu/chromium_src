@@ -547,7 +547,7 @@ fuzzer_test("event_report_fuzzer") {
 }
 
 fuzzer_test("native_display_manager_adapter_impl_fuzzer") {
-  sources = [ "fuzztest\ohos_adapter_ndk\display_manager_adapter\native_display_manager_adapter_impl_fuzzer.cpp" ]
+  sources = [ "fuzztest/ohos_adapter_ndk/display_manager_adapter/native_display_manager_adapter_impl_fuzzer.cpp" ]
   include_dirs = [
     "//cef",
     "//cef/include",
@@ -563,7 +563,7 @@ fuzzer_test("native_display_manager_adapter_impl_fuzzer") {
 }
 
 fuzzer_test("ohos_drawing_text_adapter_impl_fuzzer") {
-  sources = [ "fuzztest\ohos_adapter_ndk\drawing_text_adapter\ohos_drawing_text_adapter_impl_fuzzer.cpp" ]
+  sources = [ "fuzztest/ohos_adapter_ndk/drawing_text_adapter/ohos_drawing_text_adapter_impl_fuzzer.cpp" ]
   include_dirs = [
     "//cef",
     "//cef/include",
@@ -579,7 +579,7 @@ fuzzer_test("ohos_drawing_text_adapter_impl_fuzzer") {
 }
 
 fuzzer_test("first_meaningful_paint_details_fuzzer") {
-  sources = [ "fuzztest\cef\ohos_cef_ext\libcef\browser\first_meaningful_paint_details_fuzzer.cpp" ]
+  sources = [ "fuzztest/cef/ohos_cef_ext/libcef/browser/first_meaningful_paint_details_fuzzer.cpp" ]
   include_dirs = [
     "//cef",
     "//cef/include",
@@ -595,7 +595,39 @@ fuzzer_test("first_meaningful_paint_details_fuzzer") {
 }
 
 fuzzer_test("largest_contentful_paint_details_fuzzer") {
-  sources = [ "fuzztest\cef\ohos_cef_ext\libcef\browser\largest_contentful_paint_details_fuzzer.cpp" ]
+  sources = [ "fuzztest/cef/ohos_cef_ext/libcef/browser/largest_contentful_paint_details_fuzzer.cpp" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("render_process_state_handler_fuzzer") {
+  sources = [ "fuzztest/cef/ohos_cef_ext/libcef/browser/alloy/render_process_state_handler_fuzzer.cpp" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("alloy_native_embed_first_frame_piant_event_fuzzer") {
+  sources = [ "fuzztest/cef/ohos_cef_ext/libcef/browser/web_client_extension/alloy_native_embed_first_frame_piant_event_fuzzer.cpp" ]
   include_dirs = [
     "//cef",
     "//cef/include",

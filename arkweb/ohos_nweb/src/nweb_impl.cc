@@ -3878,6 +3878,15 @@ NWebImpl::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
   return nullptr;
 }
 
+int64_t NWebImpl::GetWebAccessibilityIdByHtmlElementId(const std::string& htmlElementId) {
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (nweb_delegate_ != nullptr) {
+    return nweb_delegate_->GetWebAccessibilityIdByHtmlElementId(htmlElementId);
+  }
+#endif
+  return -1;
+}
+
 bool NWebImpl::GetAccessibilityVisible(int64_t accessibilityId) {
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   if (nweb_delegate_ != nullptr) {

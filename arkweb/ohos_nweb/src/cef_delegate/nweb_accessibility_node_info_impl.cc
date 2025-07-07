@@ -441,6 +441,14 @@ std::string NWebAccessibilityNodeInfoImpl::GetAccessibilityText() {
   return accessibility_text_;
 }
 
+void NWebAccessibilityNodeInfoImpl::SetHtmlElementId(const std::string& htmlElementId) {
+  html_element_id_ = htmlElementId;
+}
+
+std::string NWebAccessibilityNodeInfoImpl::GetHtmlElementId() {
+  return html_element_id_;
+}
+
 void NWebAccessibilityNodeInfoImpl::SetComponentTypeDescription(
     const std::string& component_type_description) {
   component_type_description_ = component_type_description;

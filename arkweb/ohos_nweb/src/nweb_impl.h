@@ -279,6 +279,7 @@ class NWebImpl : public NWeb {
       bool isAccessibilityFocus) override;
   std::shared_ptr<NWebAccessibilityNodeInfo> GetAccessibilityNodeInfoById(
       int64_t accessibilityId) override;
+  int64_t GetWebAccessibilityIdByHtmlElementId(const std::string& htmlElementId) override;
   bool GetAccessibilityVisible(int64_t accessibilityId) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,

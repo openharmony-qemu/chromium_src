@@ -1501,7 +1501,7 @@ int NWebImpl::Load(const std::string& url) {
 
   int result = nweb_delegate_->Load(url);
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (result == NWEB_OK && base::ohos::BlanklessController::SimpleCheck() && !is_private_ &&
+  if (result == NWEB_OK && base::ohos::BlanklessController::CheckGlobalProperty() && !is_private_ &&
       base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
     blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
     nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
@@ -1951,7 +1951,7 @@ int NWebImpl::Load(
   }
   int ret = nweb_delegate_->Load(url, additionalHttpHeaders);
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (ret == NWEB_OK && base::ohos::BlanklessController::SimpleCheck() && !is_private_ &&
+  if (ret == NWEB_OK && base::ohos::BlanklessController::CheckGlobalProperty() && !is_private_ &&
       base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
     blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
     nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
@@ -5623,7 +5623,7 @@ void NWebImpl::SetPrivacyStatus(bool isPrivate) {
 }
 
 int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) {
-  if (!base::ohos::BlanklessController::SimpleCheck() ||
+  if (!base::ohos::BlanklessController::CheckGlobalProperty() ||
       !nweb_delegate_ || !similarity || !loadingTime || is_private_) {
     return 0;  // SUCCESS
   }
@@ -5647,7 +5647,7 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
 }
 
 int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStart) {
-  if (!base::ohos::BlanklessController::SimpleCheck() || is_private_) {
+  if (!base::ohos::BlanklessController::CheckGlobalProperty() || is_private_) {
     return -5;  // ERR_SIGNIFICANT_CHANGE
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
@@ -5669,7 +5669,7 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
 }
 
 void NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
-  if (!base::ohos::BlanklessController::SimpleCheck() || is_private_ || !nweb_delegate_ ||
+  if (!base::ohos::BlanklessController::CheckGlobalProperty() || is_private_ || !nweb_delegate_ ||
       !base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
     return false;
   }
@@ -5697,11 +5697,11 @@ void NWebImpl::SetVisibility(bool isVisible) {
 }
 
 void NWebImpl::ClearBlanklessKey() {
-  if (nweb_delegate_ == nullptr || !has_send_blankless_key_) {
+  if (nweb_delegate_ == nullptr || blankless_key_ == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
     return;
   }
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, base::ohos::BlanklessController::INVALID_BLANKLESS_KEY);
-  has_send_blankless_key_ = false;
+  blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
 }
 
 void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file) {

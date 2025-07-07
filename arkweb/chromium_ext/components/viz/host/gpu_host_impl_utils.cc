@@ -14,11 +14,8 @@
  */
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-#include <mutex>
-#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
 #include "base/task/thread_pool.h"
-#include "base/time/time.h"
 #endif
 
 namespace viz {

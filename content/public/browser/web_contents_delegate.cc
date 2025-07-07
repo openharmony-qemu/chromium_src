@@ -483,13 +483,6 @@ void WebContentsDelegate::OnShowVideoAssistant(
 void WebContentsDelegate::OnReportStatisticLog(const std::string& content) {}
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-void WebContentsDelegate::WebExtensionUpdateTab(
-    int32_t tab_id,
-    const NWebExtensionTabUpdateProperties* update_properties) {}
-
-#endif
-
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 std::unique_ptr<VideoAssistant> WebContentsDelegate::CreateVideoAssistant() {
   return std::make_unique<VideoAssistant>();

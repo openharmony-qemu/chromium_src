@@ -479,7 +479,7 @@ void WebContentsImplExt::WebExtensionUpdateTabUrl(int32_t tab_id,
   }
 }
 
-int32_t WebContentsImplExt::ExtensionGetTabId() const {
+int32_t WebContentsImplExt::ExtensionGetTabId() {
   if (delegate_) {
     return delegate_->ExtensionGetTabId();
   }

@@ -173,6 +173,7 @@ class WebContentsImplExt : public WebContentsImpl {
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) override;
   int32_t ExtensionGetTabId() override;
 #endif
 
@@ -244,6 +245,11 @@ class WebContentsImplExt : public WebContentsImpl {
 #endif
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   void CollapseAllFramesSelection() override;
+#endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void WebExtensionUpdateTab(
+      int32_t tab_id,
+      const NWebExtensionTabUpdateProperties* update_properties) override;
 #endif
 #if BUILDFLAG(ARKWEB_MENU)
   void SelectRangeV2(const gfx::Point& position, bool is_base) override;

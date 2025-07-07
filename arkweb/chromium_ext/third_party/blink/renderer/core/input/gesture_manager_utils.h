@@ -45,7 +45,7 @@ class GestureManagerUtils {
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   void UpdateContextMenuForFreeCopy(HitTestResult& hit_test_result, HitTestLocation& location);
 #endif
-  GestureManager* gesture_manager_;
+  raw_ptr<GestureManager> gesture_manager_;
 };
 }  // namespace blink
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_INPUT_GESTURE_MANAGER_UTILS_H_

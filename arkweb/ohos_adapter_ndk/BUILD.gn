@@ -130,11 +130,6 @@ component("adapter_ndk") {
     "net_connect_adapter/net_connection_properties_adapter_impl.cpp",
     "net_connect_adapter/net_capabilities_adapter_impl.h",
     "net_connect_adapter/net_capabilities_adapter_impl.cpp",
-    "location_adapter/ark_location_instance_decouple.cpp",
-    "location_adapter/location_instance_impl.cpp",
-    "location_adapter/location_instance_impl.h",
-    "location_adapter/location_proxy_adapter_impl.cpp",
-    "location_adapter/location_proxy_adapter_impl.h",
     "hiviewdfx_adapter/hitrace_adapter_impl.cpp",
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.h",
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.cpp",
@@ -209,7 +204,6 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libtelephony_radio.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libohcommonevent.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_media_venc.so",
-    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/liblocation_ndk.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libhitrace_ndk.z.so", ]
   } else if (target_cpu == "arm") {
     libs = [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libffrt.z.so",
@@ -263,7 +257,6 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libtelephony_radio.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libohcommonevent.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_media_venc.so",
-    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/liblocation_ndk.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libhitrace_ndk.z.so", ]
   } else if (target_cpu == "x86_64" || target_cpu == "x64") {
     libs = [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libffrt.z.so",
@@ -317,7 +310,6 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libtelephony_radio.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libohcommonevent.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_media_venc.so",
-    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/liblocation_ndk.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libhitrace_ndk.z.so", ]
   }
 

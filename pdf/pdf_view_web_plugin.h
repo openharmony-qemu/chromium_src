@@ -418,6 +418,9 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   void UpdateLayerTransform(float scale,
                             const gfx::Vector2dF& translate) override;
 
+#if BUILDFLAG(ARKWEB_PDF)
+  gfx::Rect GetAvailableArea() override;
+#endif
   // PdfAccessibilityActionHandler:
   void EnableAccessibility() override;
   void HandleAccessibilityAction(

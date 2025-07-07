@@ -15,6 +15,7 @@
 #ifndef NET_HTTP_CACHE_TRANSACTION_UTILS_H_
 #define NET_HTTP_CACHE_TRANSACTION_UTILS_H_
 
+#include "base/memory/raw_ptr.h"
 #include "arkweb/build/features/features.h"
 #include "net/http/http_cache_transaction.h"
 
@@ -23,7 +24,7 @@ class HttpCache;
 
 class HttpTransactionUtils {
  public:
-  HttpCache::Transaction* http_cache_transaction_;
+  raw_ptr<HttpCache::Transaction> http_cache_transaction_;
   HttpTransactionUtils(HttpCache::Transaction* http_cache_transaction);
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   void UpdateCacheInfo(const HttpResponseInfo& response);

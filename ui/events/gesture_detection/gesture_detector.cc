@@ -120,7 +120,7 @@ class GestureDetector::TimeoutGestureHandler {
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   friend class TimeoutGestureHandlerUtils;
-  TimeoutGestureHandlerUtils* timeout_gesture_handler_utils_;
+  raw_ptr<TimeoutGestureHandlerUtils> timeout_gesture_handler_utils_;
   TimeoutGestureHandlerUtils* GetUtils() { return timeout_gesture_handler_utils_; }
 #endif
 

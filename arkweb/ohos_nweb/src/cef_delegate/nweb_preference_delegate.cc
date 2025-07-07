@@ -993,6 +993,14 @@ void NWebPreferenceDelegate::PutAudioResumeInterval(int32_t resumeInterval) {
 int32_t NWebPreferenceDelegate::GetAudioResumeInterval() {
   return resume_interval_;
 }
+
+void NWebPreferenceDelegate::PutAudioSessionType(int32_t audioSessionType) {
+  audio_session_type_ = audioSessionType;
+}
+ 
+int32_t NWebPreferenceDelegate::GetAudioSessionType() {
+  return audio_session_type_;
+}
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 #if BUILDFLAG(ARKWEB_JSPROXY)

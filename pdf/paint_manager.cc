@@ -262,11 +262,15 @@ void PaintManager::DoPaint() {
     last_update_rect.paint_rects = update.paint_rects;
   }
   if (is_repainting && last_update_rect.has_scroll) {
+    if (last_update_rect.paint_rects.empty()) {
+      last_update_rect.paint_rects = update.paint_rects;
+    }
     for (auto& rect : last_update_rect.paint_rects) {
       rect = client_->GetAvailableArea();
     }
     client_->OnPaint(last_update_rect.paint_rects, ready_rects, pending_rects);
     last_update_rect.paint_rects.clear();
+    last_update_rect.has_scroll = false;
   } else {
 #endif
     client_->OnPaint(update.paint_rects, ready_rects, pending_rects);

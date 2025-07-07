@@ -118,8 +118,6 @@ handle_copy_files() {
     # 由于已经依赖adapter_ndk且adapter_ndk已实现hilog，胶水层ark_cert_mgr_adapter_impl_wrapper.cpp不参与编译
     sed -i '/ark_cert_mgr_adapter_impl_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
 
-    # 由于已实现event_handler_adapter，胶水层ark_event_handler_adapter_wrapper.cpp不参与编译
-    sed -i '/ark_event_handler_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
     #由于已经依赖adapter_ndk且adapter_ndk已实现datashare，胶水层ark_datashare_adapter_wrapper.cpp不参与编译
     sed -i '/ark_datashare_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
     # 由于已经依赖adapter_ndk且adapter_ndk已实现pasteboard，相关胶水层不参与编译

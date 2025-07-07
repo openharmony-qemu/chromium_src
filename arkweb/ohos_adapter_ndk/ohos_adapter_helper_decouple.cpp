@@ -73,7 +73,6 @@
 #include "ohos_adapter/bridge/ark_vsync_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_web_timezone_info_wrapper.h"
 #include "ohos_adapter/bridge/ark_window_adapter_wrapper.h"
-#include "arkweb/ohos_adapter_ndk/event_handler_adapter/event_handler_adapter_impl.h"
 #include "datashare_adapter/datashare_adapter_impl.h"
 #include "distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.h"
 
@@ -302,7 +301,14 @@ ArkOhosAdapterHelperWrapper::GetAccessTokenAdapterInstance() {
 
 std::unique_ptr<NWeb::EventHandlerAdapter>
 ArkOhosAdapterHelperWrapper::GetEventHandlerAdapter() {
-  return std::make_unique<NWeb::EventHandlerAdapterImpl>();
+  ArkWebRefPtr<ArkEventHandlerAdapter> adapter =
+      ctocpp_->GetEventHandlerAdapter();
+
+  if (CHECK_REF_PTR_IS_NULL(adapter)) {
+    return nullptr;
+  }
+
+  return std::make_unique<ArkEventHandlerAdapterWrapper>(adapter);
 }
 
 NWeb::PrintManagerAdapter&

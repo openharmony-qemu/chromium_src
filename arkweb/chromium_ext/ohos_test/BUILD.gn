@@ -314,6 +314,80 @@ fuzzer_test("nweb_delegate_fuzzer") {
   ]
 }
 
+fuzzer_test("nweb_context_menu_params_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_nweb/src/cef_delegate/nweb_context_menu_params_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("nweb_cursor_info_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_nweb/src/cef_delegate/nweb_cursor_info_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("nweb_custom_keyboard_handler_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_nweb/src/cef_delegate/nweb_custom_keyboard_handler_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("nweb_date_time_chooser_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_nweb/src/cef_delegate/nweb_date_time_chooser_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("nweb_file_selector_params_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_nweb/src/cef_delegate/nweb_file_selector_params_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
 
 fuzzer_test("screen_capture_adapter_impl_fuzzer") {
   sources = [ "fuzztest/ohos_adapter_ndk/screen_capture_adapter/screen_capture_adapter_impl_fuzzer.cpp" ]

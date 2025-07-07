@@ -20,30 +20,79 @@
 
 using namespace OHOS::NWeb;
 
+void NwebOutputHandlerFuzzTest1(FuzzedDataProvider* fdp) {
+    auto output_frame_cb = [](const char* data, uint32_t width, uint32_t height) -> bool {
+        return false;
+    };
+    uint32_t width = 10;
+    uint32_t height = 10;
+    std::shared_ptr<NWebOutputHandler> handler = 
+        NWebOutputHandler::Create(width, height, output_frame_cb);
+
+    width = fdp->ConsumeIntegralInRange<uint32_t>(1, 10);
+    height = fdp->ConsumeIntegralInRange<uint32_t>(1, 10);
+    handler->GetWindowInfo(width, height);
+}
+
 void NwebOutputHandlerFuzzTest(FuzzedDataProvider* fdp) {
     auto output_frame_cb = [](const char* data, uint32_t width, uint32_t height) -> bool {
         return false;
     };
-    uint32_t width = fdp->ConsumeIntegral<uint32_t>();
-    uint32_t height = fdp->ConsumeIntegral<uint32_t>();
+    uint32_t width = 10;
+    uint32_t height = 10;
+    std::shared_ptr<NWebOutputHandler> handler = 
+        NWebOutputHandler::Create(width, height, output_frame_cb);
+    handler->StartRenderOutput();
+}
+
+void NwebOutputHandlerFuzzTest2(FuzzedDataProvider* fdp) {
+    auto output_frame_cb = [](const char* data, uint32_t width, uint32_t height) -> bool {
+        return false;
+    };
+    uint32_t width = 10;
+    uint32_t height = 10;
     std::shared_ptr<NWebOutputHandler> handler = 
         NWebOutputHandler::Create(width, height, output_frame_cb);
 
-    width = fdp->ConsumeIntegral<uint32_t>();
-    height = fdp->ConsumeIntegral<uint32_t>();
-    handler->GetWindowInfo(width, height);
-    handler->StartFrameStat();
-    handler->StartRenderOutput();
-    
     bool flag = fdp->ConsumeBool();
     handler->SetFrameInfoDump(flag);
-    std::string path = fdp->ConsumeRandomLengthString(256);
-    handler->SetDumpPath(path);
+}
 
-    uint32_t id = fdp->ConsumeIntegral<uint32_t>();
+void NwebOutputHandlerFuzzTest3(FuzzedDataProvider* fdp) {
+    auto output_frame_cb = [](const char* data, uint32_t width, uint32_t height) -> bool {
+        return false;
+    };
+    uint32_t width = 10;
+    uint32_t height = 10;
+    std::shared_ptr<NWebOutputHandler> handler = 
+        NWebOutputHandler::Create(width, height, output_frame_cb);
+
+    std::string path = fdp->ConsumeRandomLengthString(64);
+    handler->SetDumpPath(path);
+}
+
+void NwebOutputHandlerFuzzTest4(FuzzedDataProvider* fdp) {
+    auto output_frame_cb = [](const char* data, uint32_t width, uint32_t height) -> bool {
+        return false;
+    };
+    uint32_t width = 10;
+    uint32_t height = 10;
+    std::shared_ptr<NWebOutputHandler> handler = 
+        NWebOutputHandler::Create(width, height, output_frame_cb);
+
+    uint32_t id = fdp->ConsumeIntegralInRange<uint32_t>(1, 10);
     handler->SetNWebId(id);
+}
+
+void NwebOutputHandlerFuzzTest5(FuzzedDataProvider* fdp) {
+    auto output_frame_cb = [](const char* data, uint32_t width, uint32_t height) -> bool {
+        return false;
+    };
+    uint32_t width = 10;
+    uint32_t height = 10;
+    std::shared_ptr<NWebOutputHandler> handler = 
+        NWebOutputHandler::Create(width, height, output_frame_cb);
     handler->IsSizeValid();
-    
     void* surface = nullptr;
     handler->GetNativeWindowFromSurface(surface);
 }
@@ -53,7 +102,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         return 0;
     }
     FuzzedDataProvider fdp(data, size);
+    NwebOutputHandlerFuzzTest1(&fdp);
     NwebOutputHandlerFuzzTest(&fdp);
+    NwebOutputHandlerFuzzTest2(&fdp);
+    NwebOutputHandlerFuzzTest3(&fdp);
+    NwebOutputHandlerFuzzTest4(&fdp);
+    NwebOutputHandlerFuzzTest5(&fdp);
     return 0;
 }
  

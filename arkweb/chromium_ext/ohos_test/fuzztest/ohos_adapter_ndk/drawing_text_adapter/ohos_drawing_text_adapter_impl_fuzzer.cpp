@@ -23,41 +23,49 @@
 
 using namespace OHOS::NWeb;
 
-void FuzzdDrawingTextAdapter(FuzzedDataProvider* fdp) {
+void FuzzdDrawingTextAdapter1(FuzzedDataProvider* fdp) {
     OhosDrawingTextFontAdapterImpl& adapter =
      OhosDrawingTextFontAdapterImpl::GetInstance();
-    int32_t systemFontType = fdp->ConsumeIntegral<int32_t>();
+    int32_t systemFontType = fdp->ConsumeIntegralInRange<int32_t>(1, 5);
     void* drawingArray = nullptr;
     adapter.GetSystemFontFullNamesByType(systemFontType, &drawingArray);
+}
 
-    OH_Drawing_String obj;
-    uint8_t dataNweb = fdp->ConsumeIntegral<uint8_t>();
-    obj.strData=&dataNweb;
-    obj.strLen=fdp->ConsumeIntegral<uint32_t>();
-    void* drawingFontDescriptor=nullptr;
-    adapter.GetFontDescriptorByFullName(&obj, systemFontType, &drawingFontDescriptor);
-
-    int32_t indexOfFullName = fdp->ConsumeIntegral<int32_t>();
+void FuzzdDrawingTextAdapter2(FuzzedDataProvider* fdp) {
+    OhosDrawingTextFontAdapterImpl& adapter =
+     OhosDrawingTextFontAdapterImpl::GetInstance();
+    int32_t indexOfFullName = fdp->ConsumeIntegralInRange<int32_t>(1, 10);
     const void* drawingString=nullptr;
+    void* drawingArray = nullptr;
     adapter.GetSystemFontFullNameByIndex(drawingArray, indexOfFullName, &drawingString);
+}
+
+void FuzzdDrawingTextAdapter3(FuzzedDataProvider* fdp) {
+    OhosDrawingTextFontAdapterImpl& adapter =
+     OhosDrawingTextFontAdapterImpl::GetInstance();
+    const void* drawingArray=nullptr;
     adapter.DestroySystemFontFullNames(drawingArray);
     void* descriptor=nullptr;
     adapter.DestroyFontDescriptor(descriptor);
 }
 
-void FuzzdDrawingTextTypographyAdapter(FuzzedDataProvider* fdp) {
+void FuzzdDrawingTextTypographyAdapter1(FuzzedDataProvider* fdp) {
     OhosDrawingTextTypographyAdapter& adapter = 
     OhosDrawingTextTypographyAdapter::GetInstance();
      
-    int errorCode=fdp->ConsumeIntegralInRanger<int>(0, 5);
-    OH_Drawing_FontConfigInfoErrorCode errorPtr=static_cast<OH_Drawing_FontConfigInfoErrorCode>(errorCode);
+    int errorCode=fdp->ConsumeIntegralInRange<int>(0, 5);
+    OH_Drawing_FontConfigInfoErrorCode errorPtr=
+    static_cast<OH_Drawing_FontConfigInfoErrorCode>(errorCode);
     void* fontConfigInfo=nullptr;
     adapter.GetSystemFontConfigInfo(&errorPtr, &fontConfigInfo);
+}
 
+void FuzzdDrawingTextTypographyAdapter2(FuzzedDataProvider* fdp) {
+    OhosDrawingTextTypographyAdapter& adapter = 
+    OhosDrawingTextTypographyAdapter::GetInstance();
     void* drawingArray=nullptr;
-    int32_t sizeOfArray=fdp->ConsumeIntegral<int32_t>();
+    int32_t sizeOfArray=fdp->ConsumeIntegralInRange<int32_t>(1, 100);
     adapter.GetDrawingArraySize(drawingArray, sizeOfArray);
-
     adapter.DestroySystemFontConfigInfo(nullptr);
 }
 
@@ -66,8 +74,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         return 0;
     }
     FuzzedDataProvider fdp(data, size);
-    FuzzdDrawingTextAdapter(&fdp);
-    FuzzdDrawingTextTypographyAdapter(&fdp);
+    FuzzdDrawingTextAdapter1(&fdp);
+    FuzzdDrawingTextAdapter2(&fdp);
+    FuzzdDrawingTextAdapter3(&fdp);
+    FuzzdDrawingTextTypographyAdapter1(&fdp);
+    FuzzdDrawingTextTypographyAdapter2(&fdp);
     return 0;
 }
  

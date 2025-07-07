@@ -18,7 +18,7 @@
 
 #include <mutex>
 #include <pthread.h>
-#include <securec.h>
+#include "third_party/bounds_checking_function/include/securec.h"
 #include <map>
 
 #include "drm_adapter.h"

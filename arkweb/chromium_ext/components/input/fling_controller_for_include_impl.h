@@ -105,7 +105,7 @@ void FlingController::StartWebPageFling() {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
   int socPerfId = OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID;
 #if BUILDFLAG(ARKWEB_D_VSYNC)
-  if (base::ohos::IsPcDevice()) {
+  if (base::ohos::IsPcDevice() || base::ohos::IsTabletDevice()) {
     socPerfId = SOC_PERF_WEB_SLIDE_SCROLL;
   }
 #endif

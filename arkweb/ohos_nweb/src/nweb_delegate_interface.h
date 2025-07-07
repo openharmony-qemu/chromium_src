@@ -589,6 +589,7 @@ class NWebDelegateInterface
                                   bool isAccessibilityFocus) = 0;
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoById(int64_t accessibilityId) = 0;
+  virtual int64_t GetWebAccessibilityIdByHtmlElementId(const std::string& htmlElementId) = 0;
   virtual bool GetAccessibilityVisible(int64_t accessibilityId) = 0;
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,

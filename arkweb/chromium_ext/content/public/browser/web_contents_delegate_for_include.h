@@ -38,7 +38,7 @@ virtual void OnActivateContent() {}
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-virtual void WebExtensionUpdateTab(	
+virtual void WebExtensionUpdateTab(
     int32_t tab_id,
     const NWebExtensionTabUpdateProperties* update_properties);
 virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) {}

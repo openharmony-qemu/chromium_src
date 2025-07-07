@@ -498,7 +498,6 @@ ProxyConfigServiceOHOS::ProxyConfigServiceOHOS(
     : delegate_(
           new Delegate(main_task_runner, base::BindRepeating(&GetProperty))) {
   delegate_->FetchInitialConfig();
-
   std::shared_ptr<NetProxyEventCallback> callback = NetProxyEventCallback::GetInstance();
   callback->AddObserver(this);
 }

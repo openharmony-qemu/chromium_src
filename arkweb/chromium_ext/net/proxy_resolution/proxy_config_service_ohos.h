@@ -118,20 +118,23 @@ class NET_EXPORT ProxyConfigServiceOHOS : public ProxyConfigService {
                               const std::vector<std::string>& exclusion_list);
 
   scoped_refptr<Delegate> delegate_;
-  std::shared_ptr<OHOS::NWeb::NetProxyEventCallbackAdapter> event_callback_;
 };
 
 class NetProxyEventCallback : public OHOS::NWeb::NetProxyEventCallbackAdapter {
  public:
-  NetProxyEventCallback(ProxyConfigServiceOHOS* service) : service_(service) {}
+  static std::shared_ptr<NetProxyEventCallback> GetInstance();
+  ~NetProxyEventCallback() = default;
 
   void Changed(const std::string& host,
                const uint16_t& port,
                const std::string& pacUrl,
                const std::vector<std::string>& exclusionList) override;
 
+  void AddObserver(ProxyConfigServiceOHOS*);
+
  private:
-  raw_ptr<ProxyConfigServiceOHOS> service_;
+  NetProxyEventCallback() = default;
+  std::list<raw_ptr<ProxyConfigServiceOHOS>> services_;
 };
 
 }  // namespace net

@@ -1597,9 +1597,9 @@ std::u16string BrowserAccessibilityOHOS::GetRoleDescription() const {
       return GetLocalizedString(IDS_AX_ROLL_CANVAS_OHOS);
     case ax::mojom::Role::kComboBoxMenuButton:
     case ax::mojom::Role::kComboBoxSelect:
-      return GetLocalizedString(IDS_AX_ROLE_COMBO_BOX_OHOS);
+      return GetLocalizedString(IDS_AX_ROLE_COMBO_BOX);
     case ax::mojom::Role::kDescriptionList:
-      return GetLocalizedString(IDS_AX_ROLE_DESCRIPTION_LIST_OHOS);
+      return GetLocalizedString(IDS_AX_ROLE_DESCRIPTION_LIST);
     case ax::mojom::Role::kFigure:
       // Default is IDS_AX_ROLE_FIGURE.
       return GetLocalizedString(IDS_AX_ROLE_GRAPHIC);
@@ -1610,15 +1610,14 @@ std::u16string BrowserAccessibilityOHOS::GetRoleDescription() const {
       // Default is no special role description.
       return GetLocalizedString(IDS_AX_ROLE_TABLE);
     case ax::mojom::Role::kMarquee:
-      return GetLocalizedString(IDS_AX_ROLE_MARQUEE_OHOS);
+      return GetLocalizedString(IDS_AX_ROLE_MARQUEE);
     case ax::mojom::Role::kMenuItemCheckBox:
       // Default is no special role description.
       return GetLocalizedString(IDS_AX_ROLE_CHECK_BOX);
     case ax::mojom::Role::kMenuItemRadio:
+    case ax::mojom::Role::kRadioButton:
       // Default is no special role description.
       return GetLocalizedString(IDS_AX_ROLE_RADIO);
-    case ax::mojom::Role::kRadioButton:
-      return GetLocalizedString(IDS_AX_ROLE_RADIO_OHOS);
     case ax::mojom::Role::kTextField:
     case ax::mojom::Role::kTextFieldWithComboBox:
       return GetLocalizedString(IDS_AX_ROLE_TEXT_FIELD);

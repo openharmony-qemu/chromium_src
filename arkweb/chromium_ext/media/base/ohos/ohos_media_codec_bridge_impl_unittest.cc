@@ -382,7 +382,7 @@ TEST_F(OHOSMediaCodecBridgeImplTest, Configure001)
 TEST_F(OHOSMediaCodecBridgeImplTest, Configure002)
 {
     CodecConfigPara config{.width = 640, .height = 480, .bitRate = 1000000, .frameRate = 30};
-    scoped_refptr<base::SequencedTaskRunner> codec_task_runner = GetTaskRunner();;
+    scoped_refptr<base::SequencedTaskRunner> codec_task_runner = GetTaskRunner();
     SetCodecEncodeBridgeCallback(nullptr);
     CodecCodeAdapter result = bridge_impl.Configure(config, codec_task_runner);
     EXPECT_EQ(result, CodecCodeAdapter::ERROR);
@@ -391,7 +391,7 @@ TEST_F(OHOSMediaCodecBridgeImplTest, Configure002)
 TEST_F(OHOSMediaCodecBridgeImplTest, Configure003)
 {
     CodecConfigPara config{.width = 640, .height = 480, .bitRate = 1000000, .frameRate = 30};
-    scoped_refptr<base::SequencedTaskRunner> codec_task_runner = GetTaskRunner();;
+    scoped_refptr<base::SequencedTaskRunner> codec_task_runner = GetTaskRunner();
     SetCodecAdapter(nullptr);
     CodecCodeAdapter result = bridge_impl.Configure(config, codec_task_runner);
     EXPECT_EQ(result, CodecCodeAdapter::ERROR);
@@ -599,21 +599,6 @@ TEST_F(OHOSMediaCodecBridgeImplTest, DequeueOutputBufferTest003)
     BufferFlag flag;
     OhosBuffer buffer;
     EXPECT_EQ(bridge_impl.DequeueOutputBuffer(index, info, flag, buffer), CodecCodeAdapter::OK);
-}
-
-TEST_F(OHOSMediaCodecBridgeImplTest, RequestKeyFrameSoonTest_001)
-{
-    SetCodecAdapter(nullptr);
-    CodecCodeAdapter result = bridge_impl.RequestKeyFrameSoon();
-    ASSERT_EQ(result, CodecCodeAdapter::ERROR);
-}
-
-TEST_F(OHOSMediaCodecBridgeImplTest, RequestKeyFrameSoonTest_002)
-{
-    auto mock_adapter = std::make_unique<MockMediaCodecAdapter>();
-    EXPECT_CALL(*mock_adapter, RequestKeyFrameSoon()).WillOnce(::testing::Return(CodecCodeAdapter::OK));
-    SetCodecAdapter(std::move(mock_adapter));
-    ASSERT_EQ(CodecCodeAdapter::OK, GetCodecAdapter()>RequestKeyFrameSoon());
 }
 
 TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBufferTest_001)

@@ -22,12 +22,12 @@
 void RenderProcessHandlersFuzzTest(FuzzedDataProvider* fdp){
     RenderProcessStateHandler* handler = RenderProcessStateHandler::GetInstance();
 
-    uint32_t render_process_id = fdp->ConsumeIntegralInRanger<uint32_t>(1, 64);
-    int nweb_id = fdp->ConsumeIntegralInRanger<int>(1, 64);
+    uint32_t render_process_id = fdp->ConsumeIntegralInRange<uint32_t>(1, 64);
+    int nweb_id = fdp->ConsumeIntegralInRange<int>(1, 64);
     handler->InitRenderProcessState(render_process_id, nweb_id);
 
-    render_process_id = fdp->ConsumeIntegralInRanger<uint32_t>(1, 64);
-    nweb_id = fdp->ConsumeIntegralInRanger<int>(1, 64);
+    render_process_id = fdp->ConsumeIntegralInRange<uint32_t>(1, 64);
+    nweb_id = fdp->ConsumeIntegralInRange<int>(1, 64);
     bool is_to_background = fdp->ConsumeBool();
     handler->UpdateRenderProcessState(render_process_id, nweb_id);
 }

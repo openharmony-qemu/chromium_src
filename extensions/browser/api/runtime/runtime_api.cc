@@ -46,6 +46,11 @@
 #include "storage/browser/file_system/isolated_context.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "chrome/browser/extensions/api/tabs/tabs_api.h"
+#include "extensions/common/manifest_handlers/options_page_info.h"
+#endif
+
 using content::BrowserContext;
 
 namespace extensions {
@@ -631,7 +636,12 @@ void RuntimeEventRouter::OnExtensionUninstalled(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  std::string url = uninstall_url.spec();
+  extensions::TabsCreateFunction::CreateTabForExtension(url);
+#else
   RuntimeAPI::GetFactoryInstance()->Get(context)->OpenURL(uninstall_url);
+#endif
 }
 
 void RuntimeAPI::OnExtensionInstalledAndLoaded(

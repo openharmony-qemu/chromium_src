@@ -14,6 +14,7 @@
  */
 
 #include <cstdint>
+#include <cstring>
 #include <fuzzer/FuzzedDataProvider.h>
 #include "nweb_output_handler.h"
 
@@ -21,7 +22,7 @@ using namespace OHOS::NWeb;
 
 void NwebOutputHandlerFuzzTest(FuzzedDataProvider* fdp) {
     auto output_frame_cb = [](const char* data, uint32_t width, uint32_t height) -> bool {
-        return true;
+        return false;
     };
     uint32_t width = fdp->ConsumeIntegral<uint32_t>();
     uint32_t height = fdp->ConsumeIntegral<uint32_t>();
@@ -46,7 +47,6 @@ void NwebOutputHandlerFuzzTest(FuzzedDataProvider* fdp) {
     void* surface = nullptr;
     handler->GetNativeWindowFromSurface(surface);
 }
-
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     if((data == nullptr) || (size < sizeof(int32_t))) {

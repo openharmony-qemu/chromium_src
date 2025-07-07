@@ -29,7 +29,7 @@ void RenderProcessHandlersFuzzTest(FuzzedDataProvider* fdp){
     render_process_id = fdp->ConsumeIntegralInRange<uint32_t>(1, 64);
     nweb_id = fdp->ConsumeIntegralInRange<int>(1, 64);
     bool is_to_background = fdp->ConsumeBool();
-    handler->UpdateRenderProcessState(render_process_id, nweb_id);
+    handler->UpdateRenderProcessState(render_process_id, nweb_id, is_to_background);
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {

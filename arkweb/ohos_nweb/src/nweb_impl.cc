@@ -2773,6 +2773,12 @@ void NWebImpl::NotifyMemoryLevel(int32_t level) {
   last_memory_level = memory_pressure_level;
   last_notify_time = std::move(now);
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  ReportSkiaOOMError(level == kMemoryLevelModerate
+                    ? "MEMORY_PRESSURE_LEVEL_MODERATE"
+                    : "MEMORY_PRESSURE_LEVEL_CRITICAL");
+#endif
+
   LOG(INFO) << "NWebImpl::NotifyMemoryLevel "
             << (level == kMemoryLevelModerate
                     ? "MEMORY_PRESSURE_LEVEL_MODERATE"

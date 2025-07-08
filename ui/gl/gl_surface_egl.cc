@@ -357,9 +357,7 @@ NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
     : GLSurfaceEGL(display),
       scoped_window_(std::move(scoped_window)),
       window_(scoped_window_.a_native_window()),
-      vsync_provider_external_(std::move(vsync_provider)) {
-        arkweb_surface_utils_ = new ArkwebGlSurfaceEglUtils();
-      }
+      vsync_provider_external_(std::move(vsync_provider)) {}
 #else
 NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
     GLDisplayEGL* display,
@@ -368,6 +366,7 @@ NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
     : GLSurfaceEGL(display),
       window_(window),
       vsync_provider_external_(std::move(vsync_provider)) {
+  arkweb_surface_utils_ = new ArkwebGlSurfaceEglUtils();
 #if BUILDFLAG(IS_WIN)
   RECT windowRect;
   if (GetClientRect(window_, &windowRect))

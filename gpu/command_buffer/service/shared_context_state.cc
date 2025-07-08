@@ -83,6 +83,11 @@
 #include "ui/gl/gl_angle_util_win.h"
 #endif
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#endif
+
 namespace gpu {
 namespace {
 
@@ -1327,6 +1332,9 @@ std::optional<error::ContextLostReason> SharedContextState::GetResetStatus(
     }
 
     if (gr_context_->oomed()) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+      ReportSkiaOOMError("SKIA_OOM_ERROR.");
+#endif
       LOG(ERROR) << "SharedContextState context lost via Skia OOM.";
       return error::kOutOfMemory;
     }

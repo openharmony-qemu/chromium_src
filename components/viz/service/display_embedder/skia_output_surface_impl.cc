@@ -527,15 +527,6 @@ void SkiaOutputSurfaceImpl::SetNativeInnerWeb(bool isInnerWeb) {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
-void SkiaOutputSurfaceImpl::SetBypassVsyncCondition(int32_t condition) {
-  auto task = base::BindOnce(&SkiaOutputSurfaceImplOnGpu::SetBypassVsyncCondition,
-                             base::Unretained(impl_on_gpu_.get()), condition);
-  EnqueueGpuTask(std::move(task), {}, /*make_current=*/true,
-                 /*need_framebuffer=*/!dependency_->IsOffscreen());
-}
-#endif
-
 void SkiaOutputSurfaceImpl::SetUpdateVSyncParametersCallback(
     UpdateVSyncParametersCallback callback) {
   update_vsync_parameters_callback_ = std::move(callback);
@@ -1732,3 +1723,7 @@ void SkiaOutputSurfaceImpl::ReadbackForTesting(
 }
 
 }  // namespace viz
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_for_include.cc"
+#endif

@@ -3,7 +3,10 @@
 # Extending //gpu:gpu_unittests target
 #
 gpu_unittests_ext = {
-  sources = [ "//arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker_unittest.cc" ]
+  sources = [ 
+    "//arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker_unittest.cc",
+    "//arkweb/chromium_ext/content/browser/gpu/ark_web_compositor_util_unittest.cc",
+  ]
   sources_del = [ ]
   deps = [
     "//arkweb/build/features",

@@ -87,6 +87,9 @@ constexpr char MAX_APP_SEQ_MISSSED_FRAMES[] = "MAX_APP_SEQ_MISSSED_FRAMES";
 // For site_isolation
 constexpr char SITE_ISOLATION_MODE[] = "SITE_ISOLATION_MODE";
 constexpr char SITE_ISOLATION_STATUS[] = "SITE_ISOLATION_STATUS";
+
+// For skia out of memory error
+constexpr char SKIA_OOM_ERROR[] = "SKIA_OOM_ERROR";
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -300,4 +303,14 @@ void ReportSiteIsolationMode(const std::string site_isolation_status) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       SITE_ISOLATION_MODE, HiSysEventAdapter::EventType::BEHAVIOR,
       {SITE_ISOLATION_STATUS, site_isolation_status});
+}
+
+void ReportSkiaOOMError(const std::string& errorDesc) {
+  std::string error_desc = "";
+  if (!errorDesc.empty()) {
+    error_desc = errorDesc;
+  }
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      SKIA_OOM_ERROR, HiSysEventAdapter::EventType::FAULT,
+      {ERROR_DESC, error_desc});
 }

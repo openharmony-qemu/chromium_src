@@ -489,6 +489,9 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
   virtual void SetFormHighlight(bool enable_form);
 
  private:
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnSelectionPositionChangedForPDF(gfx::Rect& left, gfx::Rect& right, const std::vector<PDFiumRange>& selections);
+#endif
   // This helper class is used to detect the difference in selection between
   // construction and destruction.  At destruction, it invalidates all the
   // parts that are newly selected, along with all the parts that used to be

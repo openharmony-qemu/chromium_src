@@ -267,14 +267,6 @@ void SkiaOutputDeviceGL::SetNativeInnerWeb(bool isInnerWeb) {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
-void SkiaOutputDeviceGL::SetBypassVsyncCondition(int32_t condition) {
-  if (gl_surface_) {
-    gl_surface_->SetBypassVsyncCondition(condition);
-  }
-}
-#endif
-
 void SkiaOutputDeviceGL::Present(const std::optional<gfx::Rect>& update_rect,
                                  BufferPresentedCallback feedback,
                                  OutputSurfaceFrame frame) {
@@ -350,3 +342,7 @@ SkSurface* SkiaOutputDeviceGL::BeginPaint(
 void SkiaOutputDeviceGL::EndPaint() {}
 
 }  // namespace viz
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_gl_for_include.cc"
+#endif

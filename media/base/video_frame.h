@@ -992,6 +992,10 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
   // Allocation which makes up |data_| planes for self-allocated frames.
   std::unique_ptr<uint8_t, base::UncheckedFreeDeleter> private_data_;
 
+  #if BUILDFLAG(ARKWEB_UNITTESTS)
+    friend class ConvertAndScaleFrameTest;
+  #endif
+
 };
 
 }  // namespace media

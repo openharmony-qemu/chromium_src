@@ -3539,6 +3539,9 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
       switches::kOhSchemeHandlerCustomScheme,
       switches::kOhosEnableVulkan,
 #endif
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+      switches::kAdSecValue,
+#endif
   };
   renderer_cmd->CopySwitchesFrom(browser_cmd, kSwitchNames);
 

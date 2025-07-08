@@ -1026,6 +1026,8 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
             preference_delegate_->GetAudioExclusive());
         main_browser_->GetHost()->SetAudioResumeInterval(
             preference_delegate_->GetAudioResumeInterval());
+        main_browser_->GetHost()->SetAudioSessionType(
+            preference_delegate_->GetAudioSessionType());
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 #if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
         if (popup_window_) {
@@ -2284,9 +2286,13 @@ CefSize NWebHandlerDelegate::GetPdfPaperSize(CefRefPtr<CefBrowser> browser,
 
 /* CefDisplayHandler method begin */
 void NWebHandlerDelegate::OnTitleChange(CefRefPtr<CefBrowser> browser,
-                                        const CefString& title) {
+                                        const CefString& title,
+                                        bool isRealTitle) {
   if (nweb_handler_ != nullptr) {
-    nweb_handler_->OnPageTitle(title.ToString());
+    nweb_handler_->OnPageTitleV2(title.ToString(), isRealTitle);
+    if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      nweb_handler_->OnPageTitle(title.ToString());
+    }
   }
   return;
 }
@@ -4516,7 +4522,7 @@ bool NWebHandlerDelegate::OnAllCertificateError(
     bool is_main_frame_request,
     bool is_fatal_error,
     CefRefPtr<CefSSLInfo> ssl_info,
-    CefRefPtr<CefCallback> callback) {
+    CefRefPtr<ArkWebCefSslCallback> callback) {
   LOG(INFO) << "NWebHandlerDelegate::OnAllCertificateError happened";
   SslError error = SslErrorConvert(cert_error);
 

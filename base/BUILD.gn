@@ -982,7 +982,7 @@ component("base") {
 
   if (is_ohos) {
     sources += [
-      "debug/stack_trace_ohos.cc",
+      "//arkweb/chromium_ext/base/debug/stack_trace_ohos.cc",
     ]
 
     public_configs = [ ":ohos_system_libs" ]
@@ -1170,8 +1170,8 @@ component("base") {
       "debug/elf_reader.cc",
       "debug/elf_reader.h",
       "system/sys_info_linux.cc",
-      "memory/platform_shared_memory_mapper_ohos.cc",
-      "memory/platform_shared_memory_region_ohos.cc",
+      "//arkweb/chromium_ext/base/memory/platform_shared_memory_mapper_ohos.cc",
+      "//arkweb/chromium_ext/base/memory/platform_shared_memory_region_ohos.cc",
       "ohos/task_scheduler/task_runner_ohos.cc",
       "ohos/task_scheduler/task_runner_ohos.h",
       "ohos/task_scheduler/task_traits_ohos.h",
@@ -1772,8 +1772,8 @@ component("base") {
     # FIXME: Only the adaptation to base_path is added.
     if (is_ohos) {
       sources += [
-        "base_paths_ohos.h",
-        "base_paths_ohos.cc",
+        "//arkweb/chromium_ext/base/base_paths_ohos.h",
+        "//arkweb/chromium_ext/base/base_paths_ohos.cc",
         "nix/mime_util_xdg.cc",
         "nix/mime_util_xdg.h",
         "nix/xdg_util.cc",

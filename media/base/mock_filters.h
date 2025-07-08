@@ -488,6 +488,10 @@ class MockVideoRenderer : public VideoRenderer {
 #if BUILDFLAG(ARKWEB_PIP)
   MOCK_METHOD1(PipEnable, void(bool));
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  MOCK_METHOD0(RecycleDmaBuffer, void());
+  MOCK_METHOD0(ResumeDmaBuffer, void());
+#endif  // ARKWEB_MEDIA_DMABUF
 };
 
 class MockAudioRenderer : public AudioRenderer {
@@ -570,6 +574,10 @@ class MockRenderer : public Renderer {
 #if BUILDFLAG(ARKWEB_PIP)
   MOCK_METHOD1(PipEnable, void(bool));
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  MOCK_METHOD0(RecycleDmaBuffer, void());
+  MOCK_METHOD0(ResumeDmaBuffer, void());
+#endif  // ARKWEB_MEDIA_DMABUF
 
   base::WeakPtr<MockRenderer> AsWeakPtr() {
     return weak_ptr_factory_.GetWeakPtr();

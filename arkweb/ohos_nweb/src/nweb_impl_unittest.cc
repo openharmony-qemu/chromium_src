@@ -594,6 +594,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (int32_t resumeInterval),
               (override));
   MOCK_METHOD(void, SetAudioExclusive, (bool audioExclusive), (override));
+  MOCK_METHOD(void, SetAudioSessionType, (int32_t audioSessionType), (override));
   MOCK_METHOD(void, CloseAllMediaPresentations, (), (override));
   MOCK_METHOD(void, StopAllMedia, (), (override));
   MOCK_METHOD(void, ResumeAllMedia, (), (override));
@@ -1065,6 +1066,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
                                             int32_t* height,
                                             int32_t* offsetX,
                                             int32_t* offsetY) override {}
+  int64_t GetWebAccessibilityIdByHtmlElementId(const std::string& htmlElementId) override {}
   bool GetAccessibilityVisible(int64_t accessibilityId) override {}
 #endif
 
@@ -1103,7 +1105,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #if BUILDFLAG(ARKWEB_MENU)
   MOCK_METHOD(void, UpdateSingleHandleVisible, (bool isVisible), (override));
   MOCK_METHOD(void, SetTouchHandleExistState, (bool touchHandleExist), (override));
-  MOCK_METHOD(void, SetViewportScaleState, (), (override));
+  MOCK_METHOD(void, SetViewportScaleState, (bool viewportScale), (override));
 #endif
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   MOCK_METHOD(void,

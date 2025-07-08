@@ -12,7 +12,9 @@
 #if PA_BUILDFLAG(IS_WIN)
 #include <windows.h>
 #endif
-
+#if PA_BUILDFLAG(IS_OHOS)
+extern bool IsOhosTsanRuntime();
+#endif
 namespace partition_alloc {
 
 uintptr_t GetRandomPageBase() {

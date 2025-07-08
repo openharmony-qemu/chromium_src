@@ -32,7 +32,10 @@ struct BlanklessDumpInfo {
 
 class BlanklessController {
 public:
+  using Callback = std::function<void()>;
+
   static constexpr uint64_t INVALID_BLANKLESS_KEY = UINT64_MAX;
+  static constexpr double CALLBACK_SIMILARITY_THRESHOLD = 0.75;
 
   static uint64_t ConvertToBlanklessKey(const std::string& value);
 
@@ -52,13 +55,18 @@ public:
 
   uint64_t GetBlanklessLoadingKey(const std::string& url, int32_t nweb_id);
 
-  void SetPrivacyStatus(int32_t nweb_id, bool is_private);
-  bool GetPrivacyStatus(int32_t nweb_id);
+  void RegisterFrameRemoveCallback(uint64_t blankless_key, Callback&& callback);
+  void FireFrameRemoveCallback(uint64_t blankless_key);
+
+  void RegisterFrameInsertCallback(uint64_t blankless_key, Callback&& callback, int32_t lcp_time);
+  int32_t FireFrameInsertCallback(uint64_t blankless_key);
+  void CancelFrameInsertCallback(uint64_t blankless_key);
 
   void SetCapacity(int32_t capacity);
   int32_t GetCapacity() const;
 
   void RecordBlanklessKey(int32_t nweb_id, uint64_t blankless_key);
+  bool CheckBlanklessKey(int32_t nweb_id, uint64_t blankless_key);
   bool SetLoadingEnabled(int32_t nweb_id, uint64_t blankless_key, bool enabled);
 
   uint32_t AddEnabledUrlList(const std::vector<std::string>& url_list);
@@ -105,11 +113,15 @@ private:
   std::mutex m_enabled_url_set_mtx_;
   std::unordered_set<std::string> m_enabled_url_set_;
 
-  std::mutex m_privacy_mtx_;
-  std::unordered_map<int32_t, bool> m_nweb_privacy_map_;
-
   std::mutex m_nweb_info_map_mtx_;
+  std::unordered_map<int32_t, uint64_t> m_nweb_key_map_;
   std::unordered_map<int32_t, NWebInfo> m_nweb_info_map_;
+
+  std::mutex m_frame_remove_callback_map_mtx_;
+  std::unordered_map<uint64_t, Callback> m_frame_remove_callback_map_;
+
+  std::mutex m_frame_insert_callback_map_mtx_;
+  std::unordered_map<uint64_t, std::pair<Callback, int32_t>> m_frame_insert_callback_map_;
 
   std::atomic<int32_t> m_capacity_ = 30; // default capacity is 30
 };

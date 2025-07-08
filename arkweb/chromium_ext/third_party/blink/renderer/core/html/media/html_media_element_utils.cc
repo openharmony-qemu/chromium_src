@@ -62,6 +62,15 @@ WebString HTMLMediaElementUtils::GetTitle() const {
 #endif // ARKWEB_MEDIA || ARKWEB_VIDEO_ASSISTANT()
 
 void HTMLMediaElementUtils::ScheduleNamedEventUtils(const AtomicString& event_name) {
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (event_name == event_type_names::kPlaying ||
+      event_name == event_type_names::kWaiting ||
+      event_name == event_type_names::kSeeking ||
+      event_name == event_type_names::kStalled) {
+    LOG(INFO) << "OhMedia::ScheduleEvent() " << event_name;
+  }
+#endif // ARKWEB_MEDIA
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (htmlMediaElement_->IsCustomMediaPlayerEnabled()) {
     if (event_name == event_type_names::kTimeupdate) {
@@ -227,10 +236,10 @@ void HTMLMediaElementUtils::TryNotifyVideoPlaying() {
   }
   if (!htmlMediaElement_->video_assistant_) {
     auto callback = WTF::BindOnce(&HTMLMediaElement::NotifyVideoPlayingInternal,
-                                  WrapWeakPersistent(htmlMediaElement_));
+                                  WrapWeakPersistent(htmlMediaElement_.get()));
     htmlMediaElement_->GetMediaPlayerHostRemote().RequestVideoAssistantConfig(
         WTF::BindOnce(&HTMLMediaElement::OnVideoAssistantConfigReceived,
-                      WrapWeakPersistent(htmlMediaElement_), std::move(callback)));
+                      WrapWeakPersistent(htmlMediaElement_.get()), std::move(callback)));
     return;
   }
   htmlMediaElement_->NotifyVideoPlayingInternal();

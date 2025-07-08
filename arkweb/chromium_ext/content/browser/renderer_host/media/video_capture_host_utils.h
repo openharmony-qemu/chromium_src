@@ -24,7 +24,7 @@ class VideoCaptureHost;
 
 class VideoCaptureHostUtils {
 public:
-  VideoCaptureHost* videoCaptureHost;
+  raw_ptr<VideoCaptureHost> videoCaptureHost = nullptr;
   VideoCaptureHostUtils(VideoCaptureHost* impl);
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)

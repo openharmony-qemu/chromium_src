@@ -34,4 +34,22 @@ void DecoderStream<StreamType>::PipEnable(bool enable) {
   traits_->PipEnable(decoder_.get(), enable);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+template <DemuxerStream::Type StreamType>
+void DecoderStream<StreamType>::RecycleDmaBuffer() {
+  if (traits_) {
+    LOG(INFO) << "DMABUF::DecoderStreamForInclude, RecycleDmaBuffer";
+    traits_->RecycleDmaBuffer(decoder_.get());
+  }
+}
+
+template <DemuxerStream::Type StreamType>
+void DecoderStream<StreamType>::ResumeDmaBuffer() {
+  if (traits_) {
+    LOG(INFO) << "DMABUF::DecoderStreamForInclude, ResumeDmaBuffer";
+    traits_->ResumeDmaBuffer(decoder_.get());
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
 }

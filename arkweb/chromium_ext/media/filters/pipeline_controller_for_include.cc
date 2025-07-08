@@ -36,4 +36,20 @@ void PipelineController::PipEnable(bool enable) {
   pipeline_->PipEnable(enable);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void PipelineController::RecycleDmaBuffer() {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  if (pipeline_) {
+    pipeline_->RecycleDmaBuffer();
+  }
+}
+
+void PipelineController::ResumeDmaBuffer() {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  if (pipeline_) {
+    pipeline_->ResumeDmaBuffer();
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
 }  // namespace media

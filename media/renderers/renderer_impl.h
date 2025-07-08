@@ -90,6 +90,10 @@ class MEDIA_EXPORT RendererImpl final : public Renderer {
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable) final;
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() final;
+  void ResumeDmaBuffer() final;
+#endif  // ARKWEB_MEDIA_DMABUF
 
  private:
   class RendererClientInternal;

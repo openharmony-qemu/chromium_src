@@ -41,6 +41,9 @@ class DesktopStreamsRegistryImpl : public DesktopStreamsRegistry {
       const url::Origin& origin,
       const DesktopStreamRegistryType type) override;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  bool CheckStreamID(const std::string& stream_id) override;
+#endif
  private:
   // Type used to store list of accepted desktop media streams.
   struct ApprovedDesktopMediaStream {

@@ -1276,6 +1276,7 @@ PdfViewWebPlugin::SearchString(const std::u16string& needle,
 }
 
 void PdfViewWebPlugin::DocumentLoadComplete() {
+  LOG(INFO) << __func__ << ", PDF load success.";
   DCHECK_EQ(DocumentLoadState::kLoading, document_load_state_);
   document_load_state_ = DocumentLoadState::kComplete;
 
@@ -1366,7 +1367,7 @@ void PdfViewWebPlugin::DocumentLoadProgress(uint32_t available,
       progress =
           std::min(std::log(static_cast<double>(available)) / kFactor, 100.0);
   }
-
+  LOG(INFO) << __func__ << ", PDF load progress: " << progress << "%";
   // DocumentLoadComplete() will send the 100% load progress.
   if (progress >= 100)
     return;
@@ -2242,6 +2243,12 @@ void PdfViewWebPlugin::UpdateLayerTransform(float scale,
   snapshot_scale_ = scale;
   UpdateScaledValues();
 }
+
+#if BUILDFLAG(ARKWEB_PDF)
+gfx::Rect PdfViewWebPlugin::GetAvailableArea() {
+  return available_area_;
+}
+#endif
 
 void PdfViewWebPlugin::EnableAccessibility() {
   if (accessibility_state_ == AccessibilityState::kLoaded)

@@ -36,6 +36,9 @@ constexpr int32_t CHECKBOX_GROUP_STATUS_DEFAULT = -1;
 base::LazyInstance<AccessibilityIdMap>::Leaky g_accessibility_id_map =
     LAZY_INSTANCE_INITIALIZER;
 
+base::LazyInstance<std::unordered_map<std::string, int64_t>>::Leaky
+    g_html_element_id_map = LAZY_INSTANCE_INITIALIZER;
+
 base::LazyInstance<std::map<const BrowserAccessibilityOHOS*, bool>>::Leaky
     g_leaf_map = LAZY_INSTANCE_INITIALIZER;
 
@@ -52,10 +55,35 @@ BrowserAccessibilityOHOS::BrowserAccessibilityOHOS(
     : BrowserAccessibility(manager, node) {
   accessibility_id_ = static_cast<int64_t>(GetUniqueId()) + 1;
   g_accessibility_id_map.Get()[accessibility_id_] = this;
+  if (node && node->GetRole() == ax::mojom::Role::kEmbeddedObject) {
+    const base::StringPairs& htmlAttributes = node->GetHtmlAttributes();
+    for (const auto& pair : htmlAttributes) {
+      if (base::EqualsCaseInsensitiveASCII(pair.first, "id")) {
+        html_element_id_ = pair.second;
+        LOG(DEBUG) << "html element id map with accessibility id: "
+                   << html_element_id_ << ": " << accessibility_id_;
+        g_html_element_id_map.Get()[html_element_id_] = accessibility_id_;
+        break;
+      }
+    }
+  }
+}
+
+int64_t BrowserAccessibilityOHOS::GetAccessibilityIdByHtmlElementId(
+    const std::string& htmlElementId) {
+  auto it = g_html_element_id_map.Get().find(htmlElementId);
+  if (it != g_html_element_id_map.Get().end()) {
+    return it->second;
+  } else {
+    return -1;
+  }
 }
 
 BrowserAccessibilityOHOS::~BrowserAccessibilityOHOS() {
   g_accessibility_id_map.Get().erase(accessibility_id_);
+  if (!html_element_id_.empty()) {
+    g_html_element_id_map.Get().erase(html_element_id_);
+  }
 }
 
 int64_t BrowserAccessibilityOHOS::GetAccessibilityId() const {
@@ -1234,6 +1262,9 @@ bool BrowserAccessibilityOHOS::IsInterestingOnOHOS() const
     return false;
   }
 
+  if (GetRole() == ax::mojom::Role::kEmbeddedObject) {
+    return true;
+  }
   return IsLeaf() && !base::ContainsOnlyChars(GetTextContentUTF16(),
                                               base::kWhitespaceUTF16);
 }
@@ -1597,9 +1628,9 @@ std::u16string BrowserAccessibilityOHOS::GetRoleDescription() const {
       return GetLocalizedString(IDS_AX_ROLL_CANVAS_OHOS);
     case ax::mojom::Role::kComboBoxMenuButton:
     case ax::mojom::Role::kComboBoxSelect:
-      return GetLocalizedString(IDS_AX_ROLE_COMBO_BOX_OHOS);
+      return GetLocalizedString(IDS_AX_ROLE_COMBO_BOX);
     case ax::mojom::Role::kDescriptionList:
-      return GetLocalizedString(IDS_AX_ROLE_DESCRIPTION_LIST_OHOS);
+      return GetLocalizedString(IDS_AX_ROLE_DESCRIPTION_LIST);
     case ax::mojom::Role::kFigure:
       // Default is IDS_AX_ROLE_FIGURE.
       return GetLocalizedString(IDS_AX_ROLE_GRAPHIC);
@@ -1610,15 +1641,14 @@ std::u16string BrowserAccessibilityOHOS::GetRoleDescription() const {
       // Default is no special role description.
       return GetLocalizedString(IDS_AX_ROLE_TABLE);
     case ax::mojom::Role::kMarquee:
-      return GetLocalizedString(IDS_AX_ROLE_MARQUEE_OHOS);
+      return GetLocalizedString(IDS_AX_ROLE_MARQUEE);
     case ax::mojom::Role::kMenuItemCheckBox:
       // Default is no special role description.
       return GetLocalizedString(IDS_AX_ROLE_CHECK_BOX);
     case ax::mojom::Role::kMenuItemRadio:
+    case ax::mojom::Role::kRadioButton:
       // Default is no special role description.
       return GetLocalizedString(IDS_AX_ROLE_RADIO);
-    case ax::mojom::Role::kRadioButton:
-      return GetLocalizedString(IDS_AX_ROLE_RADIO_OHOS);
     case ax::mojom::Role::kTextField:
     case ax::mojom::Role::kTextFieldWithComboBox:
       return GetLocalizedString(IDS_AX_ROLE_TEXT_FIELD);

@@ -22,5 +22,10 @@ component("ohos") {
     "overscroll_refresh_handler.h",
     "ui_ohos_export.h",
   ]
-  deps = [ "//base" ]
+  deps = [
+    "//base",
+    "//cc",
+    "//content/public/browser",
+    "//ui/gfx/geometry",
+  ]
 }

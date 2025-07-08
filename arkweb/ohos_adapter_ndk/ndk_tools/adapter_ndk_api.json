@@ -69,6 +69,9 @@
                 "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetDataCallback(OH_AVScreenCapture *capture, OH_AVScreenCapture_OnBufferAvailable callback, void *userData)",
                 "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetStateCallback(OH_AVScreenCapture *capture, OH_AVScreenCapture_OnStateChange callback, void *userData)",
                 "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetCanvasRotation(OH_AVScreenCapture *capture, bool canvasRotation)"
+            ],
+        "15": [
+            "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetDisplayCallback(struct OH_AVScreenCapture *capture, OH_AVScreenCapture_OnDisplaySelected callback, void *userData)"
             ]
         },
         "includes": []

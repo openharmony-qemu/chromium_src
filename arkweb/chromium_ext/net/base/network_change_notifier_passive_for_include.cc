@@ -53,7 +53,7 @@ class NetConnCallbackImpl : public OHOS::NWeb::NetConnCallback {
                                OHOS::NWeb::NetConnectType type,
                                OHOS::NWeb::NetConnectSubtype subtype);
 
-  net::NetworkChangeNotifierPassive* network_change_notifier_posix_ = nullptr;
+  raw_ptr<net::NetworkChangeNotifierPassive> network_change_notifier_posix_ = nullptr;
   std::shared_ptr<OHOS::NWeb::NetCapabilitiesAdapter> capabilities_ = nullptr;
   std::shared_ptr<OHOS::NWeb::NetConnectionPropertiesAdapter> properties_ =
       nullptr;

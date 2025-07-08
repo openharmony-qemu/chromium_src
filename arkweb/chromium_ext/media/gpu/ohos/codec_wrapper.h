@@ -106,6 +106,11 @@ class MEDIA_GPU_EXPORT CodecWrapper {
   void SetVideoSurface(int32_t widget_id);
 #endif // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer();
+  void ResumeDmaBuffer();
+#endif  // ARKWEB_MEDIA_DMABUF
+
   scoped_refptr<CodecSurfaceBundle> SurfaceBundle();
 
   enum class QueueStatus { kOk, kError, kTryAgainLater, kNoKey };

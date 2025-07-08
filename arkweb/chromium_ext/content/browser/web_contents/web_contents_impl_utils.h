@@ -24,11 +24,17 @@
 #include "content/public/browser/web_contents.h"
 #include "content/browser/renderer_host/frame_tree_node.h"
 
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/ohos/ltpo/include/sliding_observer.h"
+#include "components/pdf/common/pdf_util.h"
+#endif
+
 namespace content {
 class WebContentsImpl;
 
 class WebContentsImplUtils {
  public:
+  static bool is_pdf_static;
   raw_ptr<WebContentsImpl> webContentsImpl;
   WebContentsImplUtils(WebContentsImpl* impl);
 
@@ -47,6 +53,10 @@ class WebContentsImplUtils {
 
 #if BUILDFLAG(ARKWEB_USERAGENT) || BUILDFLAG(ARKWEB_EXT_UA)
   void UpdateUserAgentOverride(const blink::UserAgentOverride& ua_override);
+#endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+  void JudgeIsPdfPageVisibilityChanged(Visibility visibility);
 #endif
 };
 

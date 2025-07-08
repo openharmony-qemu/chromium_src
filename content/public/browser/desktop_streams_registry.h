@@ -56,6 +56,9 @@ class CONTENT_EXPORT DesktopStreamsRegistry {
       int render_frame_id,
       const url::Origin& origin,
       const DesktopStreamRegistryType type) = 0;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  virtual bool CheckStreamID(const std::string& stream_id) = 0;
+#endif
 };
 
 }  // namespace content

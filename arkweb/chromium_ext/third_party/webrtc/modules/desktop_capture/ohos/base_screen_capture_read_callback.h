@@ -37,6 +37,8 @@ public:
     virtual void OnReadData() = 0;
 
     virtual void OnReadData(OHOS::NWeb::AudioCaptureSourceTypeAdapter type) = 0;
+
+    virtual void OnDisplaySelected(uint64_t displayId) = 0;
 };
 
 }

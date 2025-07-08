@@ -37,6 +37,9 @@
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
 #include "media/base/media_content_type.h"
 #endif //BUILDFLAG(ARKWEB_MEDIA_POLICY)
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+#include "base/memory/memory_pressure_listener.h"
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
@@ -407,6 +410,7 @@ class MediaSessionImpl : public MediaSession,
   std::unordered_set<media::OHOSAudioOutputStream*> activeAudioStream_;
   int audioResumeInterval_ = 0;
   bool audioExclusive_ = true;
+  int audioSessionType_ = 0;
   bool isPlayingState_ = false;
   bool fileAccess_ = false;
   std::vector<std::string> grantMediaFileAccessDirs_;
@@ -414,6 +418,15 @@ class MediaSessionImpl : public MediaSession,
 #endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 #if BUILDFLAG(ARKWEB_PIP)
   void OnPictureInPictureStateChanged(const MediaPlayerId& id, uint32_t state);
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+  void OnNotifyMemoryLevel(int32_t level);
+  // Memory pressure handler, called by |memory_pressure_listener_|.
+  void OnMemoryPressure(
+      base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level);
+  std::unique_ptr<base::MemoryPressureListener> memory_pressure_listener_;
+  base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level_ =
+      base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE;
 #endif
 
  private:

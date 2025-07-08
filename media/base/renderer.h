@@ -150,6 +150,10 @@ class MEDIA_EXPORT Renderer : public RendererExt {
 #if BUILDFLAG(ARKWEB_PIP)
   virtual void PipEnable(bool enable) {}
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  virtual void RecycleDmaBuffer() {}
+  virtual void ResumeDmaBuffer() {}
+#endif  // ARKWEB_MEDIA_DMABUF
 };
 
 }  // namespace media

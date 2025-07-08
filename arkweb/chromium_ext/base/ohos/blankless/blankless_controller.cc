@@ -109,7 +109,7 @@ BlanklessController& BlanklessController::GetInstance()
 
 uint64_t BlanklessController::GetBlanklessLoadingKey(const std::string& url, int32_t nweb_id)
 {
-  if (!CheckGlobalProperty() || !CheckEnableForDeviceType() || GetPrivacyStatus(nweb_id) || m_capacity_ == 0) {
+  if (m_capacity_ == 0) {
     return INVALID_BLANKLESS_KEY;
   }
   if (uint64_t key = GetKeyAndResetLoadingStatus(nweb_id); key != INVALID_BLANKLESS_KEY) {
@@ -121,20 +121,55 @@ uint64_t BlanklessController::GetBlanklessLoadingKey(const std::string& url, int
   return INVALID_BLANKLESS_KEY;
 }
 
-void BlanklessController::SetPrivacyStatus(int32_t nweb_id, bool is_private)
+void BlanklessController::RegisterFrameRemoveCallback(uint64_t blankless_key, Callback&& callback)
 {
-  std::lock_guard<std::mutex> lck(m_privacy_mtx_);
-  m_nweb_privacy_map_[nweb_id] = is_private;
+  std::lock_guard<std::mutex> lck(m_frame_remove_callback_map_mtx_);
+  m_frame_remove_callback_map_[blankless_key] = callback;
 }
 
-bool BlanklessController::GetPrivacyStatus(int32_t nweb_id)
+void BlanklessController::FireFrameRemoveCallback(uint64_t blankless_key)
 {
-  std::lock_guard<std::mutex> lck(m_privacy_mtx_);
-  auto it = m_nweb_privacy_map_.find(nweb_id);
-  if (it != m_nweb_privacy_map_.end()) {
-    return it->second;
+  std::optional<Callback> callback;
+  {
+    std::lock_guard<std::mutex> lck(m_frame_remove_callback_map_mtx_);
+    if (auto it = m_frame_remove_callback_map_.find(blankless_key); it != m_frame_remove_callback_map_.end()) {
+      callback = std::move(it->second);
+      m_frame_remove_callback_map_.erase(it);
+    }
   }
-  return false;
+  if (callback.has_value()) {
+    callback.value()();
+  }
+}
+
+void BlanklessController::RegisterFrameInsertCallback(uint64_t blankless_key, Callback&& callback, int32_t lcp_time)
+{
+  std::lock_guard<std::mutex> lck(m_frame_insert_callback_map_mtx_);
+  m_frame_insert_callback_map_[blankless_key] = { callback, lcp_time };
+}
+
+int32_t BlanklessController::FireFrameInsertCallback(uint64_t blankless_key)
+{
+  std::optional<Callback> callback;
+  int32_t ret = INT32_MAX;
+  {
+    std::lock_guard<std::mutex> lck(m_frame_insert_callback_map_mtx_);
+    if (auto it = m_frame_insert_callback_map_.find(blankless_key); it != m_frame_insert_callback_map_.end()) {
+      callback = std::move(it->second.first);
+      ret = it->second.second;
+      m_frame_insert_callback_map_.erase(it);
+    }
+  }
+  if (callback.has_value()) {
+    callback.value()();
+  }
+  return ret;
+}
+
+void BlanklessController::CancelFrameInsertCallback(uint64_t blankless_key)
+{
+  std::lock_guard<std::mutex> lck(m_frame_insert_callback_map_mtx_);
+  m_frame_insert_callback_map_.erase(blankless_key);
 }
 
 void BlanklessController::SetCapacity(int32_t capacity)
@@ -149,18 +184,29 @@ int32_t BlanklessController::GetCapacity() const
 
 void BlanklessController::RecordBlanklessKey(int32_t nweb_id, uint64_t blankless_key)
 {
-  if (m_capacity_ == 0) {
-    return;
-  }
   std::lock_guard<std::mutex> lck(m_nweb_info_map_mtx_);
+  m_nweb_key_map_[nweb_id] = blankless_key;
   m_nweb_info_map_[nweb_id] = {blankless_key, LoadingStatus::LOADING_CAN_SET};
+}
+
+bool BlanklessController::CheckBlanklessKey(int32_t nweb_id, uint64_t blankless_key)
+{
+  std::lock_guard<std::mutex> lck(m_nweb_info_map_mtx_);
+  auto it = m_nweb_key_map_.find(nweb_id);
+  if (it == m_nweb_key_map_.end()) {
+    LOG(DEBUG) << "blankless CheckBlanklessKey key not found";
+    return false;
+  }
+  if (it->second != blankless_key) {
+    LOG(ERROR) << "blankless CheckBlanklessKey key not match";
+    return false;
+  }
+  m_nweb_key_map_.erase(it);
+  return true;
 }
 
 bool BlanklessController::SetLoadingEnabled(int32_t nweb_id, uint64_t blankless_key, bool enabled)
 {
-  if (m_capacity_ == 0) {
-    return true;
-  }
   std::lock_guard<std::mutex> lck(m_nweb_info_map_mtx_);
   auto it = m_nweb_info_map_.find(nweb_id);
   if (it == m_nweb_info_map_.end()) {
@@ -223,7 +269,7 @@ bool BlanklessController::CheckEnableForDeviceType()
 bool BlanklessController::CheckGlobalProperty()
 {
   static bool BlankOptEnableFlag =
-      OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBoolParameter("web.blank.opt.enable", true);
+      OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBoolParameter("web.blankless.enabled", false);
   return BlankOptEnableFlag;
 }
 

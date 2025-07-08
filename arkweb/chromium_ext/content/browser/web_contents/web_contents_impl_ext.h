@@ -173,7 +173,7 @@ class WebContentsImplExt : public WebContentsImpl {
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  int32_t ExtensionGetTabId() const override;
+  int32_t ExtensionGetTabId() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ACTIVITY_STATE)

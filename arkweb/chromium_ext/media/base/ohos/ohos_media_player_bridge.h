@@ -109,6 +109,11 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable);
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer();
+  void ResumeDmaBuffer();
+#endif  // ARKWEB_MEDIA_DMABUF
  private:
   int32_t SetFdSource(const std::string& path);
   void Prepare();

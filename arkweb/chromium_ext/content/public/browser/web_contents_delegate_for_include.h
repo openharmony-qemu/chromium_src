@@ -117,4 +117,9 @@ virtual std::unique_ptr<MediaPlayerListener> OnFullScreenOverlayEnter(
     const MediaPlayerId& media_player_id);
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_PDF)
+virtual void OnPdfScrollAtBottom(const std::string& url) {}
+virtual void OnPdfLoadEvent(int32_t result, const std::string& url) {}
+#endif  // ARKWEB_PDF
+
 #endif  // ARKWEB_CHROMIUM_EXT_CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_DELEGATE_FOR_INCLUDE_H_

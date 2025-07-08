@@ -958,6 +958,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                   int event) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnPdfScrollAtBottom(const std::string& url) override;
+  void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_MENU)
   void OnVisibleChanged(bool isVisible);
   void SetHandleVisibleCallback(

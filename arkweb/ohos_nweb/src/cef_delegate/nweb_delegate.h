@@ -398,6 +398,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   void SetAudioResumeInterval(int32_t resumeInterval) override;
   void SetAudioExclusive(bool audioExclusive) override;
+  void SetAudioSessionType(int32_t audioSessionType) override;
   void CloseAllMediaPresentations() override;
   void StopAllMedia() override;
   void ResumeAllMedia() override;
@@ -605,6 +606,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
       bool isAccessibilityFocus) override;
   std::shared_ptr<NWebAccessibilityNodeInfo> GetAccessibilityNodeInfoById(
       int64_t accessibilityId) override;
+  int64_t GetWebAccessibilityIdByHtmlElementId(const std::string& htmlElementId) override;
   bool GetAccessibilityVisible(int64_t accessibilityId) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,

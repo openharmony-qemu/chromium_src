@@ -103,6 +103,10 @@ extern const char kEnableCacheMediaTakeOver[];
 CONTENT_EXPORT extern const char kOhosEnableVulkan[];
 #endif
 
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+CONTENT_EXPORT extern const char kAdSecValue[];
+#endif
+
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 CONTENT_EXPORT extern const char kSetExtensionName[];
 #endif

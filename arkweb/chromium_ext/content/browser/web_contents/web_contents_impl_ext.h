@@ -174,7 +174,7 @@ class WebContentsImplExt : public WebContentsImpl {
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) override;
-  int32_t ExtensionGetTabId() const override;
+  int32_t ExtensionGetTabId() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ACTIVITY_STATE)

@@ -21,6 +21,9 @@
 #include <utility>
 
 #include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/logging.h"
+#endif
 #include "base/auto_reset.h"
 #include "base/check_op.h"
 #include "base/containers/contains.h"
@@ -776,6 +779,7 @@ void PDFiumEngine::PostPaint() {
 
 bool PDFiumEngine::HandleDocumentLoad(std::unique_ptr<UrlLoader> loader,
                                       const std::string& original_url) {
+  LOG(INFO) << __func__ << ", pdf client start to consume.";
   password_tries_remaining_ = kMaxPasswordTries;
   process_when_pending_request_complete_ =
       base::FeatureList::IsEnabled(features::kPdfIncrementalLoading);

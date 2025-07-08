@@ -54,8 +54,6 @@ component("adapter_ndk") {
   sources = [
     "ohos_adapter_helper_ext.h",
     "ohos_adapter_helper_decouple.cpp",
-    "event_handler_adapter/event_handler_adapter_impl.h",
-    "event_handler_adapter/event_handler_adapter_impl.cpp",
     "inputmethodframework_adapter/imf_adapter_impl.h",
     "inputmethodframework_adapter/imf_adapter_impl.cpp",
     "inputmethodframework_adapter/third_party/cJSON/cJSON.c",

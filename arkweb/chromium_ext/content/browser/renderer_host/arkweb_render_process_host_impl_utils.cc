@@ -94,10 +94,11 @@ void ArkwebRenderProcessHostImplUtils::RemoveFromSharedRenderProcessMap(
     return;
   }
   auto iter = processes.begin();
-  for (; iter != processes.end(); ++iter) {
+  for (; iter != processes.end();) {
     if (iter->second == renderProcessHost) {
-      processes.erase(iter);
-      break;
+      iter = processes.erase(iter);
+    } else {
+      iter++;
     }
   }
 }

@@ -572,6 +572,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (int32_t resumeInterval),
               (override));
   MOCK_METHOD(void, SetAudioExclusive, (bool audioExclusive), (override));
+  MOCK_METHOD(void, SetAudioSessionType, (int32_t audioSessionType), (override));
   MOCK_METHOD(void, CloseAllMediaPresentations, (), (override));
   MOCK_METHOD(void, StopAllMedia, (), (override));
   MOCK_METHOD(void, ResumeAllMedia, (), (override));
@@ -875,6 +876,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(bool, GetAccessibilityNodeRectById,
               (int64_t accessibilityId, int32_t *width, int32_t *height, int32_t *offsetX, int32_t *offsetY),
               (override));
+  MOCK_METHOD(int64_t, GetWebAccessibilityIdByHtmlElementId, (const std::string& htmlElementId), (override));
   MOCK_METHOD(bool, GetAccessibilityVisible, (int64_t accessibilityId), (override));
   MOCK_METHOD(NWebDownloadItemState, GetDownloadItemState, (long item_id), (override));
   MOCK_METHOD(int, ScaleGestureChangeV2, (int type, double scale, double originScale, double centerX, double centerY),

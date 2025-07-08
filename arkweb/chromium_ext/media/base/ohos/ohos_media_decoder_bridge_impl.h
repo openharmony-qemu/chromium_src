@@ -26,6 +26,10 @@
 namespace media {
 // using namespace OHOS::NWeb;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class MediaCodecDecoderBridgeImplTest;
+#endif
+
 class MEDIA_EXPORT VideoBridgeCodecConfig {
  public:
   VideoBridgeCodecConfig();
@@ -168,6 +172,9 @@ class MediaCodecDecoderBridgeImpl {
   int32_t video_surface_id_ = -1;
 #endif // ARKWEB_VIDEO_ASSISTANT
   base::WeakPtrFactory<MediaCodecDecoderBridgeImpl> weak_factory_{this};
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class MediaCodecDecoderBridgeImplTest;
+#endif
 };
 
 }  // namespace media

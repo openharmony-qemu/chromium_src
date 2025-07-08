@@ -734,6 +734,7 @@ source_set("unit_tests") {
       "//third_party/ohos_ndk/includes/ohos_adapter"
     ]
     sources += arkweb_media_base_unittest_sources
+    sources += arkweb_media_adapter_unittest_sources
     deps += [
       "//arkweb/ohos_adapter_ndk:adapter_ndk"
     ]

@@ -507,6 +507,9 @@ bool MediaSessionImpl::AddPlayer(MediaSessionPlayerObserver* observer,
 
 void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
                                     int player_id) {
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  bool has_normal_player = normal_players_.size() > 0;
+#endif // ARKWEB_MEDIA_AVSESSION
   const PlayerIdentifier identifier(observer, player_id);
   normal_players_.erase(identifier);
   pepper_players_.erase(identifier);
@@ -514,7 +517,6 @@ void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
   hidden_players_.erase(identifier);
 
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-  bool has_normal_player = normal_players_.size() > 0;
   if (has_normal_player && (normal_players_.size() == 0)) {
     SetWebviewShow(false, false);
   }
@@ -531,6 +533,9 @@ void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
 }
 
 void MediaSessionImpl::RemovePlayers(MediaSessionPlayerObserver* observer) {
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  bool has_normal_player = normal_players_.size() > 0;
+#endif // ARKWEB_MEDIA_AVSESSION
   for (auto it = normal_players_.begin(); it != normal_players_.end();) {
     if (it->first.observer == observer)
       normal_players_.erase(it++);
@@ -553,7 +558,6 @@ void MediaSessionImpl::RemovePlayers(MediaSessionPlayerObserver* observer) {
   }
 
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-  bool has_normal_player = normal_players_.size() > 0;
   if (has_normal_player && (normal_players_.size() == 0)) {
     SetWebviewShow(false, false);
   }
@@ -1005,6 +1009,12 @@ MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
   session_android_ = std::make_unique<MediaSessionAndroid>(this);
   should_throttle_duration_update_ = true;
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+  memory_pressure_listener_ = std::make_unique<base::MemoryPressureListener>(
+              FROM_HERE,
+              base::BindRepeating(&MediaSessionImpl::OnMemoryPressure,
+                                  weakMediaSessionFactory_.GetWeakPtr()));
+#endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
   CreateSessionOhos();
   if (web_contents && web_contents->GetPrimaryMainFrame() &&
       web_contents->GetPrimaryMainFrame()->GetView()) {

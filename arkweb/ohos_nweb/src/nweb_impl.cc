@@ -268,12 +268,18 @@ OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/libcef/browser/net/ohos_enable_applinking_util.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
 #endif
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
+#include "ohos_nweb/src/nweb_advanced_security.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 
 #include "capi/nweb_logger_report_event_callback.h"
 #include "base/ohos/nweb_engine_event_logger.h"
@@ -330,6 +336,8 @@ const int32_t WEB_RESIZE_CLOSE_DELAY_TIME = 500;
 constexpr base::TimeDelta DRAG_OVER_INTERVAL = base::Milliseconds(65);
 #endif
 
+using ASHelper = OHOS::NWeb::NWebAdvancedSecurityHelper;
+
 bool g_logger_callback_initialized = false;
 
 bool GetWebOptimizationValue() {
@@ -339,9 +347,7 @@ bool GetWebOptimizationValue() {
 }
 
 static bool IsAdvancedSecurityMode() {
-  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                        .GetSystemPropertiesInstance();
-  return system_properties_adapter.IsAdvancedSecurityMode();
+  return ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::SECURE_SHIELD_ENABLED);
 }
 
 static std::string GetOOPGPUStatus() {
@@ -539,11 +545,24 @@ void InitialWebEngineArgs(
         "including "
         "WebAssembly, WebGL, PDF viewer, MathML, speech recognition, etc.");
     web_engine_args.emplace_back("--js-flags=--jitless");
-    web_engine_args.emplace_back("--disable-webgl");
-    web_engine_args.emplace_back("--disable-webgl2");
-    web_engine_args.emplace_back("--disable-pdf-extension");
-    web_engine_args.emplace_back(
-        "--disable-blink-features=NonAdvancedSecurityMode");
+
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_WEBGL)) {
+      web_engine_args.emplace_back("--disable-webgl");
+      web_engine_args.emplace_back("--disable-webgl2");
+    }
+
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_PDFVIEWER)) {
+      web_engine_args.emplace_back("--disable-pdf-extension");
+    }
+
+    if (ASHelper::Inst().IsSecFeatureEnabled(ASHelper::Feature::ENABLE_SPEECHAPI)) {
+      web_engine_args.emplace_back(
+          "--disable-blink-features=NonAdvancedSecurityMode");
+    }
+
+    std::string AdSec = "--advanced_sec_value=" + std::to_string(ASHelper::Inst().GetAdStat());
+    web_engine_args.emplace_back(AdSec);
+
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
     ReportLockdownModeStatus();
 #endif
@@ -1478,7 +1497,7 @@ int NWebImpl::Load(const std::string& url) {
 
   int result = nweb_delegate_->Load(url);
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (result == NWEB_OK && base::ohos::BlanklessController::SimpleCheck() && !is_private_ &&
+  if (result == NWEB_OK && base::ohos::BlanklessController::CheckGlobalProperty() && !is_private_ &&
       base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
     blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
     nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
@@ -1928,7 +1947,7 @@ int NWebImpl::Load(
   }
   int ret = nweb_delegate_->Load(url, additionalHttpHeaders);
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (ret == NWEB_OK && base::ohos::BlanklessController::SimpleCheck() && !is_private_ &&
+  if (ret == NWEB_OK && base::ohos::BlanklessController::CheckGlobalProperty() && !is_private_ &&
       base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
     blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
     nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
@@ -2712,6 +2731,12 @@ void NWebImpl::SetAudioExclusive(bool audioExclusive) {
     nweb_delegate_->SetAudioExclusive(audioExclusive);
   }
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+}
+
+void NWebImpl::SetAudioSessionType(int32_t audioSessionType) {
+  if (nweb_delegate_) {
+    nweb_delegate_->SetAudioSessionType(audioSessionType);
+  }
 }
 
 void NWebImpl::CloseAllMediaPresentations() {
@@ -3830,6 +3855,15 @@ NWebImpl::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
   }
 #endif
   return nullptr;
+}
+
+int64_t NWebImpl::GetWebAccessibilityIdByHtmlElementId(const std::string& htmlElementId) {
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (nweb_delegate_ != nullptr) {
+    return nweb_delegate_->GetWebAccessibilityIdByHtmlElementId(htmlElementId);
+  }
+#endif
+  return -1;
 }
 
 bool NWebImpl::GetAccessibilityVisible(int64_t accessibilityId) {
@@ -5227,6 +5261,12 @@ void NWebImpl::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) {
 #endif
 }
 
+#if BUILDFLAG(IS_ARKWEB)
+void NWebImpl::EnableAppLinking(bool enable) {
+  OhosEnableApplinkingUtil::EnableAppLinking(enable);
+}
+#endif
+
 void NWebImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
   using MemoryPressureLevel = base::MemoryPressureListener::MemoryPressureLevel;
@@ -5621,7 +5661,7 @@ void NWebImpl::SetPrivacyStatus(bool isPrivate) {
 }
 
 int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) {
-  if (!base::ohos::BlanklessController::SimpleCheck() ||
+  if (!base::ohos::BlanklessController::CheckGlobalProperty() ||
       !nweb_delegate_ || !similarity || !loadingTime || is_private_) {
     return 0;  // SUCCESS
   }
@@ -5645,7 +5685,7 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
 }
 
 int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStart) {
-  if (!base::ohos::BlanklessController::SimpleCheck() || is_private_) {
+  if (!base::ohos::BlanklessController::CheckGlobalProperty() || is_private_) {
     return -5;  // ERR_SIGNIFICANT_CHANGE
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
@@ -5667,7 +5707,7 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
 }
 
 void NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
-  if (!base::ohos::BlanklessController::SimpleCheck() || is_private_ || !nweb_delegate_ ||
+  if (!base::ohos::BlanklessController::CheckGlobalProperty() || is_private_ || !nweb_delegate_ ||
       !base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
     return false;
   }
@@ -5695,11 +5735,11 @@ void NWebImpl::SetVisibility(bool isVisible) {
 }
 
 void NWebImpl::ClearBlanklessKey() {
-  if (nweb_delegate_ == nullptr || !has_send_blankless_key_) {
+  if (nweb_delegate_ == nullptr || blankless_key_ == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
     return;
   }
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, base::ohos::BlanklessController::INVALID_BLANKLESS_KEY);
-  has_send_blankless_key_ = false;
+  blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
 }
 
 void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file) {
@@ -5797,5 +5837,17 @@ bool NWebImpl::GetErrorPageEnabled() {
     return false;
   }
   return nweb_delegate_->GetErrorPageEnabled();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+void NWebImpl::EnablePrivateNetworkAccess(bool enable) {
+  net_service::NetHelpers::SetPrivateNetworkAccess(enable);
+}
+
+bool NWebImpl::IsPrivateNetworkAccessEnabled() {
+  LOG(DEBUG) << "PrivateNetworkAccess is "
+             << (net_service::NetHelpers::GetPrivateNetworkAccess() ? "enable" : "false");
+  return net_service::NetHelpers::GetPrivateNetworkAccess();
 }
 #endif

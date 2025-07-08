@@ -606,7 +606,15 @@ class ExtensionFunction : public base::RefCountedThreadSafe<
   std::string error_;
 
   // The callback to run once the function has done execution.
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ResponseCallback response_callback_ =
+      base::OnceCallback<void(ResponseType,
+                              base::Value::List,
+                              const std::string&,
+                              extensions::mojom::ExtraResponseDataPtr)>();
+#else
   ResponseCallback response_callback_;
+#endif
 
   // UUID for this request.
   base::Uuid request_uuid_;

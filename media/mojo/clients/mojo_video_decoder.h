@@ -89,6 +89,10 @@ class MojoVideoDecoder final : public VideoDecoder,
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable) final;
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() final;
+  void ResumeDmaBuffer() final;
+#endif  // ARKWEB_MEDIA_DMABUF
 
  private:
   void FailInit(InitCB init_cb, DecoderStatus err);

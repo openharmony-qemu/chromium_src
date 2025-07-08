@@ -33,7 +33,7 @@ def _replace_scheme_in_file(src_path, dest_path, old_scheme, new_scheme):
       content = f_in.read()
     new_content = content.replace(old_scheme_string, new_scheme_string)
 
-    flags = os.O_WRONLY | os.O_CREAT
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
     mode = stat.S_IWUSR | stat.S_IRUSR
     with os.fdopen(os.open(dest_path, flags, mode), 'w') as f_out:
       f_out.write(new_content)

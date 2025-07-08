@@ -470,7 +470,7 @@ void WebContentsImplExt::OnOverlayZoomChanged() {
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-int32_t WebContentsImplExt::ExtensionGetTabId() const {
+int32_t WebContentsImplExt::ExtensionGetTabId() {
   if (delegate_) {
     return delegate_->ExtensionGetTabId();
   }

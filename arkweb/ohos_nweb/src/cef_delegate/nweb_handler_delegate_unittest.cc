@@ -232,7 +232,7 @@ class MockCefBrowser : public ArkWebBrowserExt {
   int UpdateNavigationEntryUrl(int index, const CefString& url) override {}
   void ClearForwardList() override {}
   void ExtensionSetTabId(int tab_id) override {}
-  int ExtensionGetTabId() const override {}
+  int ExtensionGetTabId() override {}
   uint32_t GetAcceleratedWidget(bool isPopup) override {}
   void SetAdBlockEnabledForSite(bool is_adblock_enabled,
                                         int main_frame_tree_node_id) override {}

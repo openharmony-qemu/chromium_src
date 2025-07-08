@@ -104,6 +104,16 @@ class OHOSScreenCaptureCallback
       base::BindOnce(&BaseScreenCaptureSource::SetScreenCaptureState, capturer_, stateCode, nweb_id));
   }
 
+  void OnDisplaySelectedV2(uint64_t displayId, int32_t nweb_id) override {
+    if (!BaseScreenCaptureSource::GetInstance().WindowCallbackIsExist(nweb_id) ||
+      BaseScreenCaptureSource::GetInstance().window_callback_map_[nweb_id] == nullptr) {
+      LOG(ERROR) << "BaseScreenCaptureSource window callback is nullptr";
+      return;
+    }
+    
+    BaseScreenCaptureSource::GetInstance().OnDisplaySelectCallback(displayId);
+  }
+
   void OnAudioBufferAvailable(bool isReady, OHOS::NWeb::AudioCaptureSourceTypeAdapter type) override {}
   void OnVideoBufferAvailable(bool isReadye) override {}
   void OnStateChange(OHOS::NWeb::ScreenCaptureStateCodeAdapter stateCode) override {}
@@ -147,6 +157,12 @@ class OHOSScreenCaptureCallback
 
   bool BaseScreenCaptureSource::SetScreenCaptureConfig(int nweb_id)
   {
+      LOG(INFO) << __FUNCTION__ << " enter ";
+      if (screen_capture_adapter_map_.find(nweb_id) != screen_capture_adapter_map_.end()) {
+          LOG(INFO) <<"nweb_id_ =" << nweb_id << ",already exist";
+          screen_capture_adapter_map_[nweb_id]->ClearBufferQueue(nweb_id);
+          return true;
+      }
       capture_state_code_map_[nweb_id] = OHOS::NWeb::ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_INVLID;
       main_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
       if (!main_task_runner_) {
@@ -299,6 +315,13 @@ class OHOSScreenCaptureCallback
     LOG(INFO) << "BaseScreenCaptureSource Start Capture";
     int32_t ret = -1;
     if (ScreenCaptureAdapterIsExist(nweb_id)) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      if (capture_state_code_map_[nweb_id] ==
+          OHOS::NWeb::ScreenCaptureStateCodeAdapter::
+              SCREEN_CAPTURE_STATE_STARTED) {
+      return 0;
+      }
+#endif
       ret = screen_capture_adapter_map_[nweb_id]->StartCapture();
     }
     return ret;
@@ -326,5 +349,33 @@ class OHOSScreenCaptureCallback
       return true;
     }
     return false;
+  }
+
+  void BaseScreenCaptureSource::OnDisplaySelectCallback(uint64_t displayId) {
+    std::lock_guard<std::mutex> lock(displaySelectedCallbackMutex_);
+    LOG(INFO) << __FUNCTION__ << " enter ";
+    if (displaySelectedCallback_.is_null() || main_task_runner_ == nullptr) {
+      LOG(ERROR) << "displaySelectedCallback_.is_null() || "
+                    "main_task_runner_ == nullptr";
+      return;
+    }
+
+    main_task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce([](base::OnceCallback<void(uint64_t displayId)> cb,
+                          uint64_t id) { std::move(cb).Run(id); },
+                       std::move(displaySelectedCallback_), displayId));
+  }
+
+  void BaseScreenCaptureSource::SetDisplaySelectCallback(
+      base::OnceCallback<void(uint64_t displayId)> callback) {
+    std::lock_guard<std::mutex> lock(displaySelectedCallbackMutex_);
+    LOG(INFO) << "SetDisplaySelectCallback is called";
+    if (!callback) {
+      LOG(ERROR) << "BaseScreenCaptureSource::SetDisplaySelectCallback nullptr";
+      return;
+    }
+
+    displaySelectedCallback_ = std::move(callback);
   }
 } // webrtc

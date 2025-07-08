@@ -479,6 +479,7 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   virtual void SetAudioResumeInterval(int32_t resumeInterval) = 0;
   virtual void SetAudioExclusive(bool audioExclusive) = 0;
+  virtual void SetAudioSessionType(int32_t audioSessionType) = 0;
   virtual void CloseAllMediaPresentations() = 0;
   virtual void StopAllMedia() = 0;
   virtual void ResumeAllMedia() = 0;
@@ -597,6 +598,7 @@ class NWebDelegateInterface
                                   bool isAccessibilityFocus) = 0;
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoById(int64_t accessibilityId) = 0;
+  virtual int64_t GetWebAccessibilityIdByHtmlElementId(const std::string& htmlElementId) = 0;
   virtual bool GetAccessibilityVisible(int64_t accessibilityId) = 0;
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,

@@ -129,6 +129,11 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable);
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer();
+  void ResumeDmaBuffer();
+#endif
+
 #if BUILDFLAG(ARKWEB_MEDIA)
   base::WeakPtr<RendererWrapper> AsWeakPtr() {
     return weak_factory_.GetWeakPtr();

@@ -16,6 +16,7 @@
 #include "blankless_data_controller.h"
 
 #include <mutex>
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "base/files/file_enumerator.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
@@ -166,7 +167,7 @@ static double CalculateSnapshotSimilarity(std::vector<double>& pixels1,
                                    const std::vector<BlanklessDataController::SnapShotRect>& quad_list,
                                    const int depth) {
   if (width == 0 || height == 0) {
-    LOG(DEBUG) << "blankless width: " << widht ", height: " << height;
+    LOG(DEBUG) << "blankless width: " << width << ", height: " << height;
     return 0;
   }
   
@@ -429,6 +430,10 @@ void BlanklessDataController::DumpBlanklessSnapshot(int64_t blankless_key,
                                                   bitmapNew.height(), quad_list, bitmapNew.bytesPerPixel() * 8);
   snapshotDataItem.historySimilarity = similarity;
   LOG(DEBUG) << "blankless Insert Snapshot: " << newFile << " " << similarity;
+  if (similarity >= base::ohos::BlanklessController::CALLBACK_SIMILARITY_THRESHOLD) {
+    base::ohos::BlanklessController::GetInstance().CancelFrameInsertCallback(blankless_key);
+    base::ohos::BlanklessController::GetInstance().FireFrameRemoveCallback(blankless_key);
+  }
   if (similarity > kSimilaritythreshold) {
     snapshotDataItem.staticPath = newFile;
   }

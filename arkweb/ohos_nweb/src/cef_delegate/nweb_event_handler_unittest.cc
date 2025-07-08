@@ -392,6 +392,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void SetAudioExclusive(bool audioExclusive) override {}
 
+  void SetAudioSessionType(int audioSessionType) override {}
+
   void CloseMedia() override {}
 
   void StopMedia() override {}
@@ -703,7 +705,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   int UpdateNavigationEntryUrl(int index, const CefString& url) override { return 0; }
   void ClearForwardList() override {}
   void ExtensionSetTabId(int tab_id) override {}
-  int ExtensionGetTabId() const override { return 0; }
+  int ExtensionGetTabId() override { return 0; }
   uint32_t GetAcceleratedWidget(bool isPopup) { return 0; }
   void SetAdBlockEnabledForSite(bool is_adblock_enabled, int main_frame_tree_node_id) override {}
   void FindEx(const CefString &searchText, bool forward, bool matchCase, bool findNext, bool newSession) override {}
@@ -827,7 +829,7 @@ class MockCefBrowser : public ArkWebBrowserExt {
   int UpdateNavigationEntryUrl(int index, const CefString& url) override { return 0; }
   void ClearForwardList() override {}
   void ExtensionSetTabId(int tab_id) override {}
-  int ExtensionGetTabId() const override { return 0; }
+  int ExtensionGetTabId() override { return 0; }
   uint32_t GetAcceleratedWidget(bool isPopup) { return 0; }
   void SetAdBlockEnabledForSite(bool is_adblock_enabled, int main_frame_tree_node_id) override {}
   CefRefPtr<CefFrame> GetFrameByIdentifier(

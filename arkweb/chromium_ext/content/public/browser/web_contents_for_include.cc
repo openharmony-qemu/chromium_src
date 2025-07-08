@@ -121,7 +121,7 @@ virtual void SetWakeLockHandler(int32_t windowId,
 #endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-virtual int32_t ExtensionGetTabId() const = 0;
+virtual int32_t ExtensionGetTabId() = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)

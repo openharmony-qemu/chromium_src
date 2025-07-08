@@ -42,7 +42,7 @@ virtual void WebExtensionUpdateTab(
     int32_t tab_id,
     const NWebExtensionTabUpdateProperties* update_properties);
 virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) {}
-virtual int32_t ExtensionGetTabId() const {
+virtual int32_t ExtensionGetTabId() {
   return -1;
 }
 virtual DropData* GetDropData() {

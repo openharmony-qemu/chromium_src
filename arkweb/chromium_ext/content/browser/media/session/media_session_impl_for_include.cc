@@ -179,4 +179,33 @@ void MediaSessionImpl::OnPictureInPictureStateChanged(
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+void MediaSessionImpl::OnMemoryPressure(
+    base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level) {
+  memory_pressure_level_ = memory_pressure_level;
+  switch (memory_pressure_level) {
+    case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE:
+      LOG(INFO) << "DMABUF::MediaSessionImpl, MEMORY_PRESSURE_LEVEL_NONE";
+      break;
+    case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_MODERATE:
+      LOG(INFO) << "DMABUF::MediaSessionImpl, MEMORY_PRESSURE_LEVEL_MODERATE";
+      OnNotifyMemoryLevel(static_cast<int32_t>(memory_pressure_level));
+      break;
+    case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL:
+      LOG(INFO) << "DMABUF::MediaSessionImpl, MEMORY_PRESSURE_LEVEL_CRITICAL";
+      OnNotifyMemoryLevel(static_cast<int32_t>(memory_pressure_level));
+      break;
+    default:
+      LOG(WARNING) << "DMABUF::" << __func__ << ": Unknown memory pressure level";
+      break;
+  }
+}
+
+void MediaSessionImpl::OnNotifyMemoryLevel(int32_t level) {
+  for (const auto& it : normal_players_) {
+    it.first.observer->OnNotifyMemoryLevel(it.first.player_id, level);
+  }
+}
+#endif
 }

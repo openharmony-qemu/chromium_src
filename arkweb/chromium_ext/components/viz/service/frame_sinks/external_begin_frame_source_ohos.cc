@@ -93,7 +93,7 @@ ExternalBeginFrameSourceOHOS::ExternalBeginFrameSourceOHOS(
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   last_dvsync_state_ = base::ohos::DVsyncController::GetInstance().GetIsFling();
 #endif
-  managerImplUtils = new FrameSinkManagerImplUtils(frame_sink_manager);
+  managerImplUtils = std::make_unique<FrameSinkManagerImplUtils>(frame_sink_manager);
 }
 
 void ExternalBeginFrameSourceOHOS::SendInternalBeginFrame() {
@@ -110,7 +110,6 @@ void ExternalBeginFrameSourceOHOS::SendInternalBeginFrame() {
 ExternalBeginFrameSourceOHOS::~ExternalBeginFrameSourceOHOS() {
   LOG(INFO) << "ExternalBeginFrameSourceOHOS destructor!!!";
   SetEnabled(false);
-  delete managerImplUtils;
 }
 
 void ExternalBeginFrameSourceOHOS::OnVSync(int64_t timestamp, void* data) {

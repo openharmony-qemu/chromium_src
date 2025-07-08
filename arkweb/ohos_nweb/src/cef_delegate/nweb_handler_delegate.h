@@ -514,7 +514,8 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
   /* CefDisplayHandler method begin */
   void OnTitleChange(CefRefPtr<CefBrowser> browser,
-                     const CefString& title) override;
+                     const CefString& title,
+                     bool isRealTitle) override;
   void OnLoadingProgressChange(CefRefPtr<CefBrowser> browser,
                                double progress) override;
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -847,7 +848,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                              bool is_main_frame_request,
                              bool is_fatal_error,
                              CefRefPtr<CefSSLInfo> ssl_info,
-                             CefRefPtr<CefCallback> callback) override;
+                             CefRefPtr<ArkWebCefSslCallback> callback) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)

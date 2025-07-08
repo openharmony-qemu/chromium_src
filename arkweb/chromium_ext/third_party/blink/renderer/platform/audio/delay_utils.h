@@ -21,6 +21,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 
 namespace blink {
 class Delay;
@@ -30,7 +31,7 @@ bool MemcpyMediaAudioUtils(float* write_pointer, int remainder, const float* sou
 
 class DelayUtils {
 public:
-    Delay* delay;
+    raw_ptr<Delay> delay = nullptr;
     DelayUtils(Delay* impl);
 
     bool MemcpyMediaAudio(float* sample, uint32_t remainder, float* read_pointer,

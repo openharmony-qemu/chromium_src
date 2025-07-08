@@ -21,6 +21,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "ui/gfx/geometry/rect.h"
 
 namespace cc {
@@ -28,7 +29,7 @@ class VideoLayerImpl;
 
 class VideoLayerImplUtils {
 public:
-  VideoLayerImpl* impl;
+  raw_ptr<VideoLayerImpl> impl = nullptr;
   VideoLayerImplUtils(VideoLayerImpl* videoLayerImpl);
 
   void VisibilityChange();

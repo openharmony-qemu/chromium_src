@@ -40,7 +40,7 @@ BASE_FEATURE(kSiteIsolationForPasswordSites,
 BASE_FEATURE(kSiteIsolationForOAuthSites,
              "SiteIsolationForOAuthSites",
 // Enabled by default on Android only; see https://crbug.com/1206770.
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT

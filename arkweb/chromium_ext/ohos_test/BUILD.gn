@@ -314,37 +314,6 @@ fuzzer_test("nweb_delegate_fuzzer") {
   ]
 }
 
-fuzzer_test("nweb_impl_rely_on_nweb_delegate_fuzzer") {
-    sources = [
-        "fuzztest/ohos_nweb/nweb_impl_rely_on_nweb_delegate_fuzzer.cc",
-    ]
-    include_dirs = [
-        "//cef",
-        "//cef/include",
-        "//ohos_nweb/include",
-    ]
-    deps = [
-        "//cef:libcef_static",
-        "//ohos_nweb:nweb_sources",
-    ]
-}
-
-fuzzer_test("nweb_impl_set_connection_timeout_fuzzer") {
-    sources = [
-        "fuzztest/ohos_nweb/nweb_impl_set_connection_timeout_fuzzer.cc",
-    ]
-    include_dirs = [
-        "//cef",
-        "//cef/include",
-        "//ohos_nweb/include",
-        "//third_party/skia",
-    ]
-    deps = [
-        "//cef:libcef_static",
-        "//ohos_nweb:nweb_sources",
-        "//net:net_fuzzer_test_support",
-    ]
-}
 
 fuzzer_test("screen_capture_adapter_impl_fuzzer") {
   sources = [ "fuzztest/ohos_adapter_ndk/screen_capture_adapter/screen_capture_adapter_impl_fuzzer.cpp" ]
@@ -491,22 +460,6 @@ fuzzer_test("player_framework_adapter_impl_fuzzer") {
   ]
 }
 
-fuzzer_test("nweb_impl_prepare_for_page_fuzzer") {
-    sources = [
-        "fuzztest/ohos_nweb/nweb_impl_prepare_for_page_fuzzer.cc",
-    ]
-    include_dirs = [
-        "//cef",
-        "//cef/include",
-        "//ohos_nweb/include",
-        "//third_party/skia",
-        "//third_party/boringssl/src/include",
-    ]
-    deps = [
-        "//cef:libcef_static",
-        "//ohos_nweb:nweb_sources",
-    ]
-}
 
 fuzzer_test("camera_manager_adapter_impl_fuzzer") {
   sources = [ "fuzztest/ohos_adapter_ndk/camera_adapter/camera_manager_adapter_impl_fuzzer.cpp" ]

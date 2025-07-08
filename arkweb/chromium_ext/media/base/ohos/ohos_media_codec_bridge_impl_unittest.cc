@@ -150,7 +150,7 @@ public:
     OHOSMediaCodecBridgeImpl bridge_impl = OHOSMediaCodecBridgeImpl(refToMyString);
     std::optional<VideoFrameLayout> layout =
     VideoFrameLayout::Create(VideoPixelFormat::PIXEL_FORMAT_I422A, gfx::Size());
-    scoped_refptr<VideoFrame> video_frame = base::MakeRefCounted<VideoFrame>(
+    scoped_refptr<VideoFrame> video_frame = new VideoFrame(
         layout.value(), VideoFrame::StorageType::STORAGE_GPU_MEMORY_BUFFER, 
         gfx::Rect(), gfx::Size(), base::Seconds(1));
 protected:
@@ -633,7 +633,7 @@ TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenFra
     EXPECT_EQ(result, CodecCodeAdapter::ERROR);
 }
 
-TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenRequestBufferFails)\
+TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenRequestBufferFails)
 {
     std::shared_ptr<MockProducerSurfaceAdapter> mock_producer_surface_adapter =
     std::make_shared<MockProducerSurfaceAdapter>();

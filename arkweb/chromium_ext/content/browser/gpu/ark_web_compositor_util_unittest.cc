@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "arkweb\chromium_ext\content\browser\gpu\ark_web_compositor_util.h"
+#include "arkweb/chromium_ext/content/browser/gpu/ark_web_compositor_util.h"
 
 #include <optional>
 #include <gtest/gtest.h>
@@ -51,4 +51,30 @@ TEST_F(ArkWebRenderUtilsTest, WithoutNwebExFlag)
     auto result = ArkWebNumberOfRendererRasterThreads();
     EXPECT_FALSE(result.has_value());
 }
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+TEST_F(ArkWebRenderUtilsTest, WithNwebExFlag_EnableSwitchOnly)
+{
+  base::test::ScopedCommandLine scoped_command_line;
+  auto* command_line = base::CommandLine::ForCurrentProcess();
+
+  command_line->AppendSwitch(switches::kEnableNwebEx);
+
+  auto result = ArkWebNumberOfRendererRasterThreads();
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result.value(), 1);
+}
+
+TEST_F(ArkWebRenderUtilsTest, WithNwebExFlag_BothSwitches)
+{
+  base::test::ScopedCommandLine scoped_command_line;
+  auto* command_line = base::CommandLine::ForCurrentProcess();
+
+  command_line->AppendSwitch(switches::kEnableNwebEx);
+  command_line->AppendSwitch(switches::kNumRasterThreads);
+
+  auto result = ArkWebNumberOfRendererRasterThreads();
+  EXPECT_FALSE(result.has_value());
+}
+#endif
 }

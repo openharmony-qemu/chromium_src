@@ -21,6 +21,7 @@
 #endif
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   void SetIsFlingFalse(const bool flag);
+  void SetIsScroll(const bool isScrollBegin, const bool isScrollEnd);
 #endif
 #if BUILDFLAG(IS_ARKWEB)
   void StartWebPageFling();

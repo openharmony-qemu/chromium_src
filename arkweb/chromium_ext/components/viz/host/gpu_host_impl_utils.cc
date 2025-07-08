@@ -54,6 +54,14 @@ void GpuHostImpl::SetLTPOStrategy(int32_t strategy) {
 void GpuHostImpl::SetIsFling(bool is_fling_enabled) {
   gpu_service_remote_->SetIsFling(is_fling_enabled);
 }
+
+void SetIsScroll(bool is_scroll_enabled) {
+  is_scroll_enabled_ = is_scroll_enabled;
+}
+
+bool GetIsScroll() {
+  return is_scroll_enabled_;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)

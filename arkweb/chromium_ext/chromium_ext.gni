@@ -239,6 +239,7 @@ arkweb_media_base_sources = [
 
 arkweb_media_base_unittest_sources = [
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_codec_bridge_impl_unittest.cc",
+  "//arkweb/chromium_ext/media/base/video_util_ext_unittest.cc",
 ]
 
 arkweb_media_filters_sources = [

@@ -2318,6 +2318,8 @@ void InputHandler::ClearCurrentlyScrollingNode() {
   if (!base::ohos::IsPcDevice()) {
     std::lock_guard<std::recursive_mutex> lock(InputHandlerUtils::scroll_end_listener_mutex);
     if (InputHandlerUtils::scroll_end_listener_) {
+      InputHandlerUtils::pdf_delta_x_ = 0;
+      InputHandlerUtils::pdf_delta_y_ = 0;
       InputHandlerUtils::scroll_end_listener_();
     }
   }

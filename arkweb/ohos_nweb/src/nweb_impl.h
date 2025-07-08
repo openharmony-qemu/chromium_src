@@ -25,6 +25,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "build/build_config.h"
+#include "base/memory/raw_ptr.h"
 #include "base/timer/timer.h"
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
@@ -278,6 +279,7 @@ class NWebImpl : public NWeb {
       bool isAccessibilityFocus) override;
   std::shared_ptr<NWebAccessibilityNodeInfo> GetAccessibilityNodeInfoById(
       int64_t accessibilityId) override;
+  int64_t GetWebAccessibilityIdByHtmlElementId(const std::string& htmlElementId) override;
   bool GetAccessibilityVisible(int64_t accessibilityId) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
@@ -457,6 +459,7 @@ class NWebImpl : public NWeb {
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   void SetAudioExclusive(bool audioExclusive) override;
+  void SetAudioSessionType(int32_t audioSessionType) override;
   void NotifyMemoryLevel(int32_t level) override;
   void OnWebviewHide() override;
   void OnWebviewShow() override;
@@ -1045,7 +1048,7 @@ class NWebImpl : public NWeb {
   static bool disableWebActivePolicy_;
 
   bool incognito_mode_ = false;
-  void* window_;
+  raw_ptr<void> window_;
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   float totalSize_;
 #endif

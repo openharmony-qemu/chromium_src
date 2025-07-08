@@ -461,13 +461,35 @@ class ProxyConfigServiceOHOS::Delegate
   bool has_proxy_override_;
 };
 
+std::shared_ptr<NetProxyEventCallback> NetProxyEventCallback::GetInstance() {
+  static std::shared_ptr<NetProxyEventCallback> proxy_event_callback_ = nullptr;
+ 
+  if (proxy_event_callback_) {
+    return proxy_event_callback_;
+  }
+ 
+  NetProxyEventCallback* raw = new NetProxyEventCallback();
+  proxy_event_callback_.reset(raw);
+ 
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetNetProxyInstance()
+      .RegNetProxyEvent(proxy_event_callback_);
+  return proxy_event_callback_;
+}
+ 
+void NetProxyEventCallback::AddObserver(ProxyConfigServiceOHOS* observer) {
+  services_.push_back(observer);
+}
+
 void NetProxyEventCallback::Changed(
     const std::string& host,
     const uint16_t& port,
     const std::string& pacUrl,
     const std::vector<std::string>& exclusionList) {
-  if (service_) {
-    service_->ProxySettingsChangedTo(host, port, pacUrl, exclusionList);
+  for (auto service : services_) {
+    if (service) {
+      service->ProxySettingsChangedTo(host, port, pacUrl, exclusionList);
+    }
   }
 }
 
@@ -476,11 +498,8 @@ ProxyConfigServiceOHOS::ProxyConfigServiceOHOS(
     : delegate_(
           new Delegate(main_task_runner, base::BindRepeating(&GetProperty))) {
   delegate_->FetchInitialConfig();
-  event_callback_ = std::make_shared<NetProxyEventCallback>(this);
-
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetNetProxyInstance()
-      .RegNetProxyEvent(event_callback_);
+  std::shared_ptr<NetProxyEventCallback> callback = NetProxyEventCallback::GetInstance();
+  callback->AddObserver(this);
 }
 
 ProxyConfigServiceOHOS::~ProxyConfigServiceOHOS() {}

@@ -212,8 +212,8 @@ WTF::Vector<int8_t> WebFrameWidgetImplExt::GetWordSelection(
     const WTF::String& text,
     int8_t offset) {
   WTF::Vector<int8_t> select;
-  if (!GetAssociatedFrameWidgetHost()->GetWordSelection(text, offset,
-                                                        &select)) {
+  if (text.IsNull() || !GetAssociatedFrameWidgetHost()->GetWordSelection(
+                           text, offset, &select)) {
     select = {-1, -1};
   }
   return select;

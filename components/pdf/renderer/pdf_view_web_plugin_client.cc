@@ -283,6 +283,22 @@ void PdfViewWebPluginClient::DidStopLoading() {
   frame_client->DidStopLoading();
 }
 
+#if BUILDFLAG(ARKWEB_PDF)
+void PdfViewWebPluginClient::OnPdfScrollAtBottom(const std::string& url) {
+  if (!render_frame_)
+    return;
+
+  render_frame_->OnPdfScrollAtBottom(url);
+}
+
+void PdfViewWebPluginClient::OnPdfLoadEvent(int32_t result, const std::string& url) {
+  if (!render_frame_)
+    return;
+
+  render_frame_->OnPdfLoadEvent(result, url);
+}
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
 void PdfViewWebPluginClient::Print() {
   blink::WebElement element = plugin_container_->GetElement();
   DCHECK(!element.IsNull());

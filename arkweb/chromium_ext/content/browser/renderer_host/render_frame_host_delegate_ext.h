@@ -58,6 +58,10 @@ class RenderFrameHostDelegateExt {
   // Notified to UI, contextmenu popup window should be dimissed
   virtual void ClearContextMenu() {}
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+#if BUILDFLAG(ARKWEB_PDF)
+  virtual void OnPdfScrollAtBottom(const std::string& url) {}
+  virtual void OnPdfLoadEvent(int32_t result, const std::string& url) {}
+#endif  // BUILDFLAG(ARKWEB_PDF)
 };
 }  // namespace content
 #endif  // CONTENT_BROWSER_RENDERER_HOST_RENDER_FRAME_HOST_DELEGATE_EXT_H_

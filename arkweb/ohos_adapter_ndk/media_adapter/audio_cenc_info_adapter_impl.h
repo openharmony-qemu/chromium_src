@@ -77,6 +77,9 @@ public:
 
     static void PrintCencInfoData(std::shared_ptr<AudioCencInfoAdapter> cencInfo)
     {
+        if (!cencInfo) {
+            return;
+        }
         WVLOG_I("AudioCodecDecoder PrintFormatData:algo[%{public}u], encryptedBlockCount[%{public}u],"
                 "skippedBlockCount[%{public}u], firstEncryptedOffset[%{public}u], mode[%{public}u],",
                 cencInfo->GetAlgo(), cencInfo->GetEncryptedBlockCount(), cencInfo->GetSkippedBlockCount(),

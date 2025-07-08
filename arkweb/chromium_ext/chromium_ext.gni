@@ -555,6 +555,17 @@ arkweb_content_browser_code_cache_sources = [
   "//arkweb/chromium_ext/content/browser/code_cache/oh_code_cache.h",
 ]
 
+arkweb_media_adapter_unittest_sources = [
+  "//arkweb/ohos_adapter_ndk/media_adapter/audio_cenc_info_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/media_adapter/audio_codec_decoder_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/media_adapter/buffer_info_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/media_adapter/capability_data_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/media_adapter/codec_format_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/media_adapter/drm_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/media_adapter/media_codec_decoder_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/media_adapter/ohos_buffer_adapter_impl_unittest.cc",
+]
+
 arkweb_content_browser_media_sources = [
   "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer_web_contents_observer.cc",
   "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer_web_contents_observer.h",

@@ -890,7 +890,7 @@ void NWebDelegate::UnRegisterWebAppClientExtensionListener() {
 void NWebDelegate::GetImageFromContextNode() {
   auto browser = GetBrowser();
   if (browser != nullptr && browser->GetHost() != nullptr) {
-    browser->GetHost()->GetImageForContextNode(MENU_ID_IMAGE_SHARE);
+    browser->GetHost()->GetImageForContextNode(browser->GetMainFrame(), MENU_ID_IMAGE_SHARE);
   }
 }
 

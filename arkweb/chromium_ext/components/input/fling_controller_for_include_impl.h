@@ -100,7 +100,7 @@ void FlingController::SetIsScroll(const bool isScrollBegin, const bool isScrollE
     if (auto* host = content::GpuProcessHost::Get()) {
         if (auto* host_impl = host->gpu_host()) {
           TRACE_EVENT0("input","FlingController::SetIsScroll FALSE for DVSync, type: isScrollEnd");
-          host_impl->SetIsScroll(true);
+          host_impl->SetIsScroll(false);
         }
     }
   }

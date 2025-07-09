@@ -53,7 +53,7 @@ RealTimeUrlLookupService::RealTimeUrlLookupService(
     std::unique_ptr<SafeBrowsingTokenFetcher> token_fetcher,
     const ClientConfiguredForTokenFetchesCallback& client_token_config_callback,
     bool is_off_the_record,
-    base::RepatingCallback<variations::VariationsService*()>
+    base::RepeatingCallback<variations::VariationsService*()>
         variations_service_getter,
     ReferrerChainProvider* referrer_chain_provider,
     WebUIDelegate* delegate)

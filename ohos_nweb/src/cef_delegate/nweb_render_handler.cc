@@ -1190,6 +1190,7 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
     gfx::ImageSkia image_skia = static_cast<CefImageImpl*>(cef_image.get())->AsImageSkia();
     int width = cef_image->GetWidth();
     int height = cef_image->GetHeight();
+    LOG(INFO) << "NWebRenderHandler::CreateOverlay, image w x h: " << width << " x " << height;
     auto bitmap = cef_image->GetAsBitmap(1, CEF_COLOR_TYPE_RGBA_8888, CEF_ALPHA_TYPE_OPAQUE, width, height);
     if (!bitmap) {
       LOG(ERROR) << "NWebRenderHandler::CreateOverlay, bitmap invalid";
@@ -1207,6 +1208,7 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
       LOG(ERROR) << "NWebRenderHandler::CreateOverlay, get data from bitmap failed";
       return;
     }
+    LOG(INFO) << "NWebRenderHandler::CreateOverlay, data_size = " << data_size;
 
     float scale = browser->GetHost()->GetPageScaleFactor();
     auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
@@ -1222,6 +1224,7 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
         cef_image_rect.height,
         cef_touch_point.x * scale,
         cef_touch_point.y * scale);
+    free(buffer);
   }
 }
 

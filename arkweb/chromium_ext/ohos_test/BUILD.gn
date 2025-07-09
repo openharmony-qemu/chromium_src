@@ -34,6 +34,10 @@ group("ohos_fuzz") {
     testonly = true
     deps = [
       ":nweb_cookie_manager_imp_fuzzers",
+      "./fuzztest/ohos_adapter_ndk/battery_mgr_adapter:battery_mgr_adapter_fuzzer",
+      "./fuzztest/ohos_adapter_ndk/datashare_adapter:datashare_adapter_fuzzer",
+      "./fuzztest/ohos_adapter_ndk/event_handler_adapter:event_handler_adapter_fuzzer",
+      "./fuzztest/ohos_adapter_ndk/sensor_adapter:sensor_adapter_fuzzer",
     ]
 }
 

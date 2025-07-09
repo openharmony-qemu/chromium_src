@@ -23,6 +23,7 @@
 #include "arkweb/build/features/features.h"
 #if BUILDFLAG(ARKWEB_PDF)
 #include "base/logging.h"
+#include "arkweb/chromium_ext/pdf/pdfium/pdfium_engine_for_include.cc"
 #endif
 #include "base/auto_reset.h"
 #include "base/check_op.h"
@@ -3758,6 +3759,9 @@ void PDFiumEngine::OnSelectionPositionChanged() {
   gfx::Rect left(std::numeric_limits<int32_t>::max(),
                  std::numeric_limits<int32_t>::max(), 0, 0);
   gfx::Rect right;
+#if BUILDFLAG(ARKWEB_PDF)
+  OnSelectionPositionChangedForPDF(left, right, selection_);
+#else
   for (const auto& sel : selection_) {
     const std::vector<gfx::Rect>& screen_rects =
         sel.GetScreenRects(GetVisibleRect().origin(), current_zoom_,
@@ -3769,6 +3773,7 @@ void PDFiumEngine::OnSelectionPositionChanged() {
         right = rect;
     }
   }
+#endif
   right.set_x(right.x() + right.width());
   if (left.IsEmpty()) {
     left.set_x(0);

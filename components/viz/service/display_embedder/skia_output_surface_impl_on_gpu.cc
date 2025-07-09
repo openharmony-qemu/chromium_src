@@ -627,17 +627,15 @@ void SkiaOutputSurfaceImplOnGpu::SwapBuffers(OutputSurfaceFrame frame) {
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)
 void SkiaOutputSurfaceImplOnGpu::SetDVsyncIfNecessary() {
-  if (!get_delay_before_) {
-    delay_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-            .GetSystemPropertiesInstance().GetIntParameter("web.dvsync.delay", -1);
-    get_delay_before_ = true;
-  }
+  static int delay_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                      .GetSystemPropertiesInstance().GetIntParameter("web.dvsync.delay", -1);
   if (delay_ == -1) {  
     return;
   }
   if (auto* host = content::GpuProcessHost::Get()) {
-    if (auto* host_impl = host->gpu_host()) {
-      bool is_scroll = host_impl->GetIsScroll();
+    auto* host_impl = host->gpu_host();
+    if (host_impl) {
+      bool is_scroll = host_impl -> GetIsScroll();
       if (is_scroll && !did_dvsync_on_) {
         if (delay_num_ == delay_) {
           TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::SwapBuffers::SetIsFling True for Dvsync");
@@ -647,10 +645,13 @@ void SkiaOutputSurfaceImplOnGpu::SetDVsyncIfNecessary() {
         } else {
           delay_num_++;
         }
-      } else if (!is_scroll && did_dvsync_on_) {
-        TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::SwapBuffers::SetIsFling False for Dvsync");
-        base::ohos::DVsyncController::GetInstance().SetIsFling(false);
-        did_dvsync_on_ = false;
+      } else if (!is_scroll) {
+        delay_num_ = 0;
+        if (did_dvsync_on_) {
+          TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::SwapBuffers::SetIsFling False for Dvsync");
+          base::ohos::DVsyncController::GetInstance().SetIsFling(false);
+          did_dvsync_on_ = false;
+        }
       }
     }
   }

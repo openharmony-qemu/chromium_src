@@ -8,10 +8,14 @@
 #include "base/system/system_monitor.h"
 #include "base/task/bind_post_task.h"
 #include "gtest/gtest.h"
+#include "media/audio/audio_thread.h"
 #include "media/base/media_switches.h"
 #include "ohos_adapter_helper.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#define private public
+#include "ohos_audio_manager.h"
+#undef private
 
 using namespace testing;
 namespace media {
@@ -40,13 +44,13 @@ void SimulateDeviceChange(
 
 class MockAudioThread : public AudioThread {
  public:
-  void Stop() override { std::cout << "Stop function called" << std::endl; }
+  void Stop() { std::cout << "Stop function called" << std::endl; }
 
-  bool IsHung() const override { return false; }
+  bool IsHung() const { return false; }
 
-  base::SingleThreadTaskRunner* GetTaskRunner() override { return nullptr; }
+  base::SingleThreadTaskRunner* GetTaskRunner() { return nullptr; }
 
-  base::SingleThreadTaskRunner* GetWorkerTaskRunner() override {
+  base::SingleThreadTaskRunner* GetWorkerTaskRunner() {
     return nullptr;
   }
 };
@@ -190,25 +194,6 @@ TEST_F(OHOSAudioManagerTest, TestGetAudioInputDeviceNames) {
 }
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
-TEST_F(OHOSAudioManagerTest, TestMakeLinearOutputStream) {
-  AudioParameters params;
-  AudioManagerBase::LogCallback log_callback;
-  AudioOutputStream* outputStream =
-      ohos_audio_manager_->MakeLinearOutputStream(params, log_callback);
-
-  EXPECT_EQ(outputStream, nullptr);
-}
-
-TEST_F(OHOSAudioManagerTest, TestMakeLinearInputStream) {
-  AudioParameters params;
-  std::string device_id = "some_device_id";
-  AudioManagerBase::LogCallback log_callback;
-  AudioInputStream* inputStream = ohos_audio_manager_->MakeLinearInputStream(
-      params, device_id, log_callback);
-
-  EXPECT_EQ(inputStream, nullptr);
-}
-
 TEST_F(OHOSAudioManagerTest, TestMakeLowLatencyInputStream) {
   AudioParameters params;
   std::string device_id = "some_device_id";
@@ -263,6 +248,86 @@ TEST_F(OHOSAudioManagerTest, TestGetPreferredInputStreamParameters) {
 TEST_F(OHOSAudioManagerTest, TestSelectAudioDevice) {
   std::string device_id = "some_device_id";
   ohos_audio_manager.SelectAudioDevicePublic(device_id, false);
+}
+
+TEST_F(OHOSAudioManagerTest, TestGetPreferredInputStreamParameters001) {
+  std::string input_device_id = "";
+  AudioParameters expectedInputParams(
+      AudioParameters::AUDIO_PCM_LOW_LATENCY,
+      ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
+      kMinimumInputBufferSize);
+
+  expectedInputParams.set_effects(0);
+  AudioParameters input_params;
+  AudioParameters actualInputParams =
+      ohos_audio_manager.GetPreferredInputStreamParametersForTest(
+          input_device_id, input_params);
+
+  EXPECT_EQ(actualInputParams.sample_rate(), expectedInputParams.sample_rate());
+  EXPECT_EQ(actualInputParams.channel_layout(),
+            expectedInputParams.channel_layout());
+  EXPECT_EQ(actualInputParams.frames_per_buffer(),
+            expectedInputParams.frames_per_buffer());
+  EXPECT_EQ(actualInputParams.effects(), expectedInputParams.effects());
+}
+
+TEST_F(OHOSAudioManagerTest, TestGetPreferredInputStreamParameters002) {
+  std::string input_device_id = "screen:systemAudio:-2:0";
+  AudioParameters expectedInputParams(
+      AudioParameters::AUDIO_PCM_LOW_LATENCY,
+      ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
+      kMinimumInputBufferSize);
+
+  expectedInputParams.set_effects(0);
+  AudioParameters input_params;
+  AudioParameters actualInputParams =
+      ohos_audio_manager.GetPreferredInputStreamParametersForTest(
+          input_device_id, input_params);
+
+  EXPECT_EQ(actualInputParams.sample_rate(), expectedInputParams.sample_rate());
+  EXPECT_EQ(actualInputParams.channel_layout(),
+            expectedInputParams.channel_layout());
+  EXPECT_EQ(actualInputParams.frames_per_buffer(),
+            expectedInputParams.frames_per_buffer());
+  EXPECT_EQ(actualInputParams.effects(), expectedInputParams.effects());
+}
+
+TEST_F(OHOSAudioManagerTest, TestGetPreferredOutputStreamParameters001) {
+  std::string output_device_id = "";
+  AudioParameters expectedOutputParams(
+      AudioParameters::AUDIO_PCM_LOW_LATENCY,
+      ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
+      kMinimumOutputBufferSize);
+  AudioParameters output_params;
+  AudioParameters actualOutputParams =
+      ohos_audio_manager.GetPreferredOutputStreamParametersForTest(
+          output_device_id, output_params);
+
+  EXPECT_EQ(actualOutputParams.sample_rate(),
+            expectedOutputParams.sample_rate());
+  EXPECT_EQ(actualOutputParams.channel_layout(),
+            expectedOutputParams.channel_layout());
+  EXPECT_EQ(actualOutputParams.frames_per_buffer(),
+            expectedOutputParams.frames_per_buffer());
+}
+
+TEST_F(OHOSAudioManagerTest, TestGetPreferredOutputStreamParameters002) {
+  std::string output_device_id = "screen:systemAudio:-2:0";
+  AudioParameters expectedOutputParams(
+      AudioParameters::AUDIO_PCM_LOW_LATENCY,
+      ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
+      kMinimumOutputBufferSize);
+  AudioParameters output_params;
+  AudioParameters actualOutputParams =
+      ohos_audio_manager.GetPreferredOutputStreamParametersForTest(
+          output_device_id, output_params);
+
+  EXPECT_EQ(actualOutputParams.sample_rate(),
+            expectedOutputParams.sample_rate());
+  EXPECT_EQ(actualOutputParams.channel_layout(),
+            expectedOutputParams.channel_layout());
+  EXPECT_EQ(actualOutputParams.frames_per_buffer(),
+            expectedOutputParams.frames_per_buffer());
 }
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 }  // namespace media

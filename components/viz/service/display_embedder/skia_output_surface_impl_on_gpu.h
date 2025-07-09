@@ -643,8 +643,6 @@ class SkiaOutputSurfaceImplOnGpu
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   bool did_dvsync_on_ = false;
   int delay_num_ = 0;
-  int delay_ = -1;
-  bool get_delay_before_ = false;
 #endif
 };
 

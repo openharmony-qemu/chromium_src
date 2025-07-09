@@ -395,5 +395,5 @@ void ReportGpuProcessEvent(CrashType type, std::string eventcontent) {
 void ReportAppfreeze() {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       PROCESS_FREEZE_WARNING, HiSysEventAdapter::EventType::FAULT,
-      {"", std::to_string()});
+      {"", std::string()});
 }

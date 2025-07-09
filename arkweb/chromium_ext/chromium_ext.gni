@@ -241,6 +241,12 @@ arkweb_media_base_unittest_sources = [
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_codec_bridge_impl_unittest.cc",
   "//arkweb/chromium_ext/media/base/video_util_ext_unittest.cc",
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_decoder_bridge_impl_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_player_bridge_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_codec_util_unittest.cc",
+]
+
+arkweb_media_audio_unittest_sources = [
+  "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_manager_unittest.cc",
 ]
 
 arkweb_media_filters_sources = [

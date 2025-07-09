@@ -111,8 +111,7 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
     return true;
   }
 #if BUILDFLAG(ARKWEB_D_VSYNC)
-  SetIsScroll(gesture_event.event.GetType() == WebInputEvent::Type::kGestureScrollBegin,
-              gesture_event.event.GetType() == WebInputEvent::Type::kGestureScrollEnd);
+  SetIsScroll(gesture_event.event.GetType());
   SetIsFlingFalse(gesture_event.event.GetType() == WebInputEvent::Type::kGestureFlingCancel && fling_curve_);
 #endif
 

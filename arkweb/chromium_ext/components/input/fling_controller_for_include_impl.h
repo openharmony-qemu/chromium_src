@@ -86,23 +86,22 @@ void FlingController::SetIsFlingFalse(const bool flag) {
   }
 }
 
-void FlingController::SetIsScroll(const bool isScrollBegin, const bool isScrollEnd) {
-  LOG(DEBUG) << "FlingController::ObserveAndMaybeConsumeGestureEvent::SetIsScroll isScrollBegin " << isScrollBegin << ", isScrollEnd: " << isScrollEnd;
-  if (isScrollBegin) {
-    if (auto* host = content::GpuProcessHost::Get()) {
-        if (auto* host_impl = host->gpu_host()) {
-          TRACE_EVENT0("input","FlingController::SetIsScroll TRUE for DVSync, type: isScrollBegin");
-          host_impl->SetIsScroll(true);
-        }
-    }
+void FlingController::SetIsScroll(blink::WebInputEvent::Type scrollType) {
+  auto* host = content::GpuProcessHost::Get();
+  if (!host) {
+    return;
+  } 
+  auto* host_impl = host->gpu_host();
+  if (!host_impl) {
+    return;
   }
-  if (isScrollEnd) {
-    if (auto* host = content::GpuProcessHost::Get()) {
-        if (auto* host_impl = host->gpu_host()) {
-          TRACE_EVENT0("input","FlingController::SetIsScroll FALSE for DVSync, type: isScrollEnd");
-          host_impl->SetIsScroll(false);
-        }
-    }
+  if (scrollType == blink::WebInputEvent::Type::kGestureScrollBegin) {
+    TRACE_EVENT0("input", "wyhtrace1 FlingController::SetIsScroll::DVSync isScrollBegin");
+    host_impl->SetIsScroll(true);
+  }
+  if (scrollType == blink::WebInputEvent::Type::kGestureScrollEnd) {
+    TRACE_EVENT0("input", "wyhtrace1 FlingController::SetIsScroll::DVSync isScrollEnd");
+    host_impl->SetIsScroll(false);
   }
 }
 #endif

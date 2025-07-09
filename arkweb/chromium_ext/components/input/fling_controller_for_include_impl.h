@@ -96,11 +96,11 @@ void FlingController::SetIsScroll(blink::WebInputEvent::Type scrollType) {
     return;
   }
   if (scrollType == blink::WebInputEvent::Type::kGestureScrollBegin) {
-    TRACE_EVENT0("input", "wyhtrace1 FlingController::SetIsScroll::DVSync isScrollBegin");
+    TRACE_EVENT0("input", "FlingController::SetIsScroll TRUE for DVSync");
     host_impl->SetIsScroll(true);
   }
   if (scrollType == blink::WebInputEvent::Type::kGestureScrollEnd) {
-    TRACE_EVENT0("input", "wyhtrace1 FlingController::SetIsScroll::DVSync isScrollEnd");
+    TRACE_EVENT0("input", "FlingController::SetIsScroll FALSE for DVSync");
     host_impl->SetIsScroll(false);
   }
 }

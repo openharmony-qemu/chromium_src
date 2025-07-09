@@ -29,7 +29,7 @@ public:
   static std::shared_ptr<AppfreezeMonitorImpl> GetInstance();
   void GetRemoteAndSend(const std::string& args) {
     if (remote_.is_bound()) {
-      remote_ReportHiSysEvent(args, "");
+      remote_->ReportHiSysEvent(args, "");
     }
   }
   mojo::PendingReceiver<dfx::mojom::DfxReporter> &GetPendingReceiver() {

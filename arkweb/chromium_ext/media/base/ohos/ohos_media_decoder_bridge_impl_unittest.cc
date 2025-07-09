@@ -119,7 +119,8 @@ class MockSystemPropertiesAdapter : public OHOS::NWeb::SystemPropertiesAdapter {
   MOCK_METHOD(std::string, GetScrollVelocityScale, (), (override));
   MOCK_METHOD(std::string, GetScrollFriction, (), (override));
   MOCK_METHOD(std::string, GetBundleName, (), (override));
-  MOCK_METHOD(std::string, GetStringParameter, (const std::string& key, const td::string& defaultValue), (override));
+  MOCK_METHOD(std::string, GetStringParameter, 
+              (const std::string& key, const td::string& defaultValue), (override));
   MOCK_METHOD(int32_t, GetInitialCongestionWindowSize, (), (override));
 };
 
@@ -367,6 +368,10 @@ class MockOhosAdapterHelper : public OhosAdapterHelper {
               CreateMigrationMgrAdapter,
               (),
               (override));
+  MOCK_METHOD(std::unique_ptr<ScreenlockManagerAdapter>,
+              CreateScreenlockManagerAdapter,
+              (),
+              (override));
   static MockOhosAdapterHelper& GetInstance() {
     static MockOhosAdapterHelper instance;
     return instance;
@@ -404,7 +409,7 @@ class MockSequencedTaskRunner : public base::SequencedTaskRunner {
               ());
   MOCK_METHOD(bool,
               PostNonNestableDelayedTask,
-              (const base::Location& location, base::OnceClosure onceClosure, ase::TimeDelta timeDelta),
+              (const base::Location& location, base::OnceClosure onceClosure, base::TimeDelta timeDelta),
               (override));
   MOCK_METHOD(base::DelayedTaskHandle,
               PostCancelableDelayedTask,
@@ -434,7 +439,7 @@ class MockSequencedTaskRunner : public base::SequencedTaskRunner {
               DeleteOrReleaseSoonInternal,
               (const base::Location&, void (*)(const void*), const void*),
               (override));
-  MOCK_METHOD(bool, PostDelayedTask, (const base::Location&, base::OnceClosure, ase::TimeDelta), (override));
+  MOCK_METHOD(bool, PostDelayedTask, (const base::Location&, base::OnceClosure, base::TimeDelta), (override));
 };
 
 class MockDecoderFormatAdapter : public DecoderFormatAdapter {
@@ -492,8 +497,10 @@ class MediaCodecDecoderBridgeImplTest : public ::testing::Test {
     window_adapter_mock_ = std::make_unique<NiceMock<MockWindowAdapter>>();
     ON_CALL(*ohos_adapter_helper_mock_, GetWindowAdapterInstance())
         .WillByDefault(ReturnRef(*window_adapter_mock_));
-
-    bridge_ = std::unique_ptr<MediaCodecDecoderBridgeImpl>(new MediaCodecDecoderBridgeImpl("video/avc"));
+    VideoBridgeCodecConfig config;
+    config.codec = media::VideoCodec::kH264;
+    config.on_buffers_available_cb = base::DoNothing();
+    bridge_ = MediaCodecDecoderBridgeImpl::CreateVideoDecoder(config);
     bridge_->videoDecoder_ = std::move(mock_adapter_);
     bridge_->signal_ = signal_;
     callback_ = std::make_shared<CodecBridgeCallback>(signal_);
@@ -549,7 +556,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoDecoder_WhenCodecTypeIsHEVC) 
   ASSERT_NE(bridge_impl, nullptr);
 }
 
-TEST_F(MediaCodecDecoderBridgeImplTest, reateVideoDecoder_ShouldReturnNull_WhenCodecTypeIsAV1) {
+TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoDecoder_ShouldReturnNull_WhenCodecTypeIsAV1) {
   VideoBridgeCodecConfig config;
   config.codec = media::VideoCodec::kAV1;
   config.on_buffers_available_cb = base::DoNothing();
@@ -557,10 +564,10 @@ TEST_F(MediaCodecDecoderBridgeImplTest, reateVideoDecoder_ShouldReturnNull_WhenC
   ASSERT_EQ(bridge_impl, nullptr);
 }
 
-TEST_F(MediaCodecDecoderBridgeImplTest, repareForCallback_WhenSignalAndCbAreNullptr) {
+TEST_F(MediaCodecDecoderBridgeImplTest, PrepareForCallback_WhenSignalAndCbAreNullptr) {
   SetSignal(nullptr);
   SetCodecEncodeBridgeCallback(nullptr);
-  std::shared_ptr<DecoderCallbackAdapter> codec_cb = GetCodecEncodeBridgeCallback);
+  std::shared_ptr<DecoderCallbackAdapter> codec_cb = GetCodecEncodeBridgeCallback();
   auto mock_media_player_ = make_unique<MockMediaCodecDecoderAdapter>();
   EXPECT_CALL(*mock_media_player_, SetCallbackDec(testing::_))
       .WillOnce(Return(DecoderAdapterCode::DECODER_OK));
@@ -570,10 +577,10 @@ TEST_F(MediaCodecDecoderBridgeImplTest, repareForCallback_WhenSignalAndCbAreNull
   ASSERT_TRUE(result == DecoderAdapterCode::DECODER_OK);
 }
 
-TEST_F(MediaCodecDecoderBridgeImplTest, repareForCallback_WhenSignalAndCbAreNotNullptr) {
+TEST_F(MediaCodecDecoderBridgeImplTest, PrepareForCallback_WhenSignalAndCbAreNotNullptr) {
   SetSignal(make_shared<NiceMock<MockDecoderBridgeSignal>>());
   SetCodecEncodeBridgeCallback(make_shared<CodecBridgeCallback>(signal_));
-  std::shared_ptr<DecoderCallbackAdapter> codec_cb = GetCodecEncodeBridgeCallback);
+  std::shared_ptr<DecoderCallbackAdapter> codec_cb = GetCodecEncodeBridgeCallback();
   auto mock_media_player_ = make_unique<MockMediaCodecDecoderAdapter>();
   EXPECT_CALL(*mock_media_player_, SetCallbackDec(codec_cb))
       .WillOnce(Return(DecoderAdapterCode::DECODER_OK));
@@ -611,7 +618,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, PrepareForCallback_WhenCbIsNullptr) {
   ASSERT_TRUE(result == DecoderAdapterCode::DECODER_OK);
 }
 
-TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByMime_ShouldReturnError_WhenDecoderIsNull) {
+TEST_F(MediaCodecDecoderBridgeImplTest, 
+       CreateVideoBridgeDecoderByMime_ShouldReturnError_WhenDecoderIsNull) {
   SetVideoDecoder(nullptr);
   mock_adapter_ = std::make_unique<NiceMock<MockMediaCodecDecoderAdapter>>();
   std::string codec_name = "video/h264";
@@ -621,8 +629,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByMime_ShouldRet
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
 
-
-TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByMime_ShouldReturnError_WhenCreateDecoderByMineFails) {
+TEST_F(MediaCodecDecoderBridgeImplTest, 
+       CreateVideoBridgeDecoderByMime_ShouldReturnError_WhenCreateDecoderByMineFails) {
   std::string codec_name = "video/h264";
   auto mock_media_player_ = make_unique<MockMediaCodecDecoderAdapter>();
   EXPECT_CALL(*mock_media_player_, CreateVideoDecoderByMime(codec_name))
@@ -634,7 +642,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByMime_ShouldRet
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
 
-TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByMime_ShouldReturnOk_WhenCreateDecoderByMineSucceeds) {
+TEST_F(MediaCodecDecoderBridgeImplTest, 
+       CreateVideoBridgeDecoderByMime_ShouldReturnOk_WhenCreateDecoderByMineSucceeds) {
   std::string codec_name = "video/h264";
   auto mock_media_player_ = make_unique<MockMediaCodecDecoderAdapter>();
   EXPECT_CALL(*mock_media_player_, CreateVideoDecoderByMime(codec_name))
@@ -649,7 +658,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByMime_ShouldRet
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_OK);
 }
 
-TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByName_ShouldReturnError_WhenVideoDecoderIsNull) {
+TEST_F(MediaCodecDecoderBridgeImplTest, 
+       CreateVideoBridgeDecoderByName_ShouldReturnError_WhenVideoDecoderIsNull) {
   SetVideoDecoder(nullptr);
   std::string codec_name = "video/h264";
   DecoderAdapterCode result =
@@ -657,7 +667,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByName_ShouldRet
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
 
-TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByName_ShouldReturnOk_WhenCreateVideoDecoderByNameSucceeds {
+TEST_F(MediaCodecDecoderBridgeImplTest, 
+       CreateVideoBridgeDecoderByName_ShouldReturnOk_WhenCreateVideoDecoderByNameSucceeds) {
   std::string codec_name = "video/h264";
   auto mock_media_player_ = make_unique<MockMediaCodecDecoderAdapter>();
   EXPECT_CALL(*mock_media_player_, CreateVideoDecoderByName(codec_name))
@@ -672,7 +683,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByName_ShouldRet
   ASSERT_TRUE(result == DecoderAdapterCode::DECODER_OK);
 }
 
-TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByName_ShouldReturnError_WhenCreateVideoDecoderByNameFails {
+TEST_F(MediaCodecDecoderBridgeImplTest, 
+       CreateVideoBridgeDecoderByName_ShouldReturnError_WhenCreateVideoDecoderByNameFails) {
   std::string codec_name = "video/h264";
   auto mock_media_player_ = make_unique<MockMediaCodecDecoderAdapter>();
   EXPECT_CALL(*mock_media_player_, CreateVideoDecoderByName(codec_name))
@@ -777,7 +789,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, SetBridgeOutputSurface_ShouldReturnOk_Wh
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_OK);
 }
 
-TEST_F(MediaCodecDecoderBridgeImplTest, GetOutputFormatBridgeDecoder_ShouldReturnError_WhenVideoDecoderIsNull) {
+TEST_F(MediaCodecDecoderBridgeImplTest, 
+       GetOutputFormatBridgeDecoder_ShouldReturnError_WhenVideoDecoderIsNull) {
   DecoderFormat format;
   format.width = 0;
   format.height = 0;

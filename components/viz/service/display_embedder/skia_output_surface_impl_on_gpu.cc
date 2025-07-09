@@ -646,7 +646,7 @@ void SkiaOutputSurfaceImplOnGpu::SetDVsyncIfNecessary() {
   bool is_scroll = host_impl->GetIsScroll();
   if (is_scroll && !did_dvsync_on_) {
     if (delay_num_ == delay_) {
-      TRACE_EVENT1("viz", "wyhtrace1 SwapBuffers", "set is_fling",  is_scroll);
+      TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::SetDVsyncIfNecessary::SetIsFling TRUE");
       base::ohos::DVsyncController::GetInstance().SetIsFling(true);
       did_dvsync_on_ = true;
       delay_num_ = 0;
@@ -656,7 +656,7 @@ void SkiaOutputSurfaceImplOnGpu::SetDVsyncIfNecessary() {
   } else if (!is_scroll) {
     delay_num_ = 0;
     if (did_dvsync_on_) {
-      TRACE_EVENT2("viz", "wyhtrace1 SwapBuffers", "SetIsFling", is_scroll, "delay_num_", delay_num_);
+      TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::SetDVsyncIfNecessary::SetIsFling FALSE");
       base::ohos::DVsyncController::GetInstance().SetIsFling(false);
       did_dvsync_on_ = false;
     }

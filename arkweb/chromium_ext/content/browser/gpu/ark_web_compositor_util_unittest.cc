@@ -53,11 +53,24 @@ TEST_F(ArkWebRenderUtilsTest, WithoutNwebExFlag)
 }
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-TEST_F(ArkWebRenderUtilsTest, WithNwebExFlag_EnableSwitchOnly)
+TEST_F(ArkWebRenderUtilsTest, WithNwebExFlag_NoEnableSwitch)
 {
   base::test::ScopedCommandLine scoped_command_line;
   auto* command_line = base::CommandLine::ForCurrentProcess();
 
+  ASSERT_NE(command_line, nullptr);
+  command_line->AppendSwitch(switches::kEnableNwebEx);
+
+  auto result = ArkWebNumberOfRendererRasterThreads();
+  EXPECT_FALSE(result.has_value());
+}
+
+TEST_F(ArkWebRenderUtilsTest, WithNwebExFlag_EnableSwitchOnly)
+{
+  base::test::ScopedCommandLine scoped_command_line;
+  auto* command_line = base::CommandLine::ForCurrentProcess();
+  
+  ASSERT_NE(command_line, nullptr);
   command_line->AppendSwitch(switches::kEnableNwebEx);
 
   auto result = ArkWebNumberOfRendererRasterThreads();
@@ -69,7 +82,8 @@ TEST_F(ArkWebRenderUtilsTest, WithNwebExFlag_BothSwitches)
 {
   base::test::ScopedCommandLine scoped_command_line;
   auto* command_line = base::CommandLine::ForCurrentProcess();
-
+  
+  ASSERT_NE(command_line, nullptr);
   command_line->AppendSwitch(switches::kEnableNwebEx);
   command_line->AppendSwitch(switches::kNumRasterThreads);
 

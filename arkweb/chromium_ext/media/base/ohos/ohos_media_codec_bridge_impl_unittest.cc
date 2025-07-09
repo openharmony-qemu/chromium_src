@@ -647,7 +647,7 @@ TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenDst
     std::shared_ptr<MockProducerSurfaceAdapter> mock_producer_surface_adapter =
     std::make_shared<MockProducerSurfaceAdapter>();
     auto buffer_adapter = std::make_shared<MockSurfaceBufferAdapter>();
-    EXPECT_CALL(*mock_producer_surface_adapter, RequestBuffer).WillOnce(testing::Return(buffer_adapter))
+    EXPECT_CALL(*mock_producer_surface_adapter, RequestBuffer).WillOnce(testing::Return(buffer_adapter));
     EXPECT_CALL(*buffer_adapter, GetVirAddr()).WillOnce(testing::Return(nullptr));
     EXPECT_CALL(*buffer_adapter, GetStride()).WillOnce(testing::Return(1));
     SetSurface(mock_producer_surface_adapter);

@@ -643,7 +643,7 @@ void SkiaOutputSurfaceImplOnGpu::SetDVsyncIfNecessary() {
     return;
   }
 
-  bool is_scroll = host_impl -> GetIsScroll();
+  bool is_scroll = host_impl->GetIsScroll();
   if (is_scroll && !did_dvsync_on_) {
     if (delay_num_ == delay_) {
       TRACE_EVENT1("viz", "wyhtrace1 SwapBuffers", "set is_fling",  is_scroll);

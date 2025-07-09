@@ -450,7 +450,7 @@ class MockDecoderFormatAdapter : public DecoderFormatAdapter {
   MOCK_METHOD(void, SetWidth, (int32_t width), (override));
   MOCK_METHOD(void, SetHeight, (int32_t height), (override));
   MOCK_METHOD(void, SetFrameRate, (double frameRate), (override));
-  MOCK_METHOD(DecoderAdapterCode, SetParameterDecoder, (const td::shared_ptr<DecoderFormatAdapter> format));
+  MOCK_METHOD(DecoderAdapterCode, SetParameterDecoder, (const std::shared_ptr<DecoderFormatAdapter> format));
   MOCK_METHOD(DecoderAdapterCode, PrepareDecoder, ());
 };
 
@@ -473,7 +473,7 @@ class MediaCodecDecoderBridgeImplTest : public ::testing::Test {
     bridge_->signal_ = signal;
   }
 
-  void SetCodecEncodeBridgeCallback(std::shared_ptr<CodecBridgeCallback> allback) {
+  void SetCodecEncodeBridgeCallback(std::shared_ptr<CodecBridgeCallback> callback) {
     bridge_->cb_ = callback;
   }
 

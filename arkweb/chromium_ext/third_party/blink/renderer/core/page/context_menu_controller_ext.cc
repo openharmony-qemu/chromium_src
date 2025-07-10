@@ -230,6 +230,7 @@ void ContextMenuControllerExt::SetArkWebMenuData(ContextMenuData& data, HitTestR
 
 
 void ContextMenuControllerExt::IsAILink(ContextMenuData& data, HitTestResult& result) {
+  data.is_ai_link = false;
   if (!data.link_url.is_empty()) {
     Element* link_element = result.InnerElement();
     if (link_element) {

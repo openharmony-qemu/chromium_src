@@ -4426,10 +4426,12 @@ void NWebImpl::OnSafeBrowsingDetectionResult(int code,
                                                 url);
 }
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 // static
 void NWebImpl::OnGlobalConfigResult(const std::string& path) {
   global_config::OnGlobalConfigResult(path);
 }
+#endif  // BUILDFLAG(IS_ARKWEB_EXT)
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
 void NWebImpl::StartCamera() {

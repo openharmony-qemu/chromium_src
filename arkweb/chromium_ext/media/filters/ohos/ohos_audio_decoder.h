@@ -367,8 +367,6 @@ class OHOSAudioDecoder : public AudioDecoder,
 
   void* mediaKeySession_ = nullptr;
 
-  base::WeakPtrFactory<OHOSAudioDecoder> weak_factory_{this};
-
   bool waiting_for_key_ = true;
 
   int32_t time_out_count_ = 0;
@@ -377,6 +375,8 @@ class OHOSAudioDecoder : public AudioDecoder,
   base::RepeatingTimer io_timer_;
 
   bool audio_decoder_created_ = false;
+
+  base::WeakPtrFactory<OHOSAudioDecoder> weak_factory_{this};
 };
 
 }

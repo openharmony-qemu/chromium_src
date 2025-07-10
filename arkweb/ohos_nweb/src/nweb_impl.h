@@ -477,6 +477,10 @@ class NWebImpl : public NWeb {
 
   static void DisableWebActivePolicy();
 
+  WebDestroyMode GetWebDestroyMode() override;
+
+  static void SetWebDestroyMode(WebDestroyMode mode);
+
   void SetDelayDurationForBackgroundTabFreezing(int64_t delay);
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
@@ -1046,6 +1050,7 @@ class NWebImpl : public NWeb {
   bool is_enhance_surface_ = false;
   bool is_richtext_value_ = false;
   static bool disableWebActivePolicy_;
+  static WebDestroyMode webDestroyMode_;
 
   bool incognito_mode_ = false;
   raw_ptr<void> window_;

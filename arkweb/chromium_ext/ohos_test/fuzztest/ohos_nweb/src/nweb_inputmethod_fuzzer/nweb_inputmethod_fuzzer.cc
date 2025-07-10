@@ -25,6 +25,7 @@
 #include "content/public/common/content_client.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#define private public
 #include "ohos_nweb/include/nweb.h"
 #include "ohos_nweb/src/nweb_impl.h"
 #include "ohos_nweb/src/nweb_inputmethod_handler.h"
@@ -75,14 +76,10 @@ class FuzzNWebInputMethodHandler : public NWebInputMethodHandler {
     return composition_cursor_index_;
   }
 
-  int32_t CallGetCompositionTypeAndCheckInput(
-      const std::u16string& text,
-      int32_t start,
-      int32_t end,
-      CompositionType& composition_type) {
-    return GetCompositionTypeAndCheckInput(text, start, end, composition_type);
-  }
-  void SetFocusStatusForTest(bool value) { focus_rect_status_ = value; }
+  void SetFocusRectForTest(const CefRect& rect) { focus_rect_ = rect; }
+  void SetDevicePixelRatioForTest(double ratio) { device_pixel_ratio_ = ratio; }
+  void SetOffsetXForTest(double x) { offset_x_ = x; }
+  void SetOffsetYForTest(double y) { offset_y_ = y; }
 };
 class MockCefBrowser : public CefBrowser {
   void AddRef() const override {}
@@ -123,22 +120,12 @@ class MockCefBrowser : public CefBrowser {
   void CancelAllPrerendering() {}
 };
 
-class MockFunctionKeyAdapter : public IMFAdapterFunctionKeyAdapter {
+class MockIMFAdapterFunctionKeyAdapter : public IMFAdapterFunctionKeyAdapter {
  public:
-  MockFunctionKeyAdapter(FuzzedDataProvider& fdp) : fdp_(fdp) {}
-
   IMFAdapterEnterKeyType GetEnterKeyType() override {
-    static const std::vector<IMFAdapterEnterKeyType> types = {
-        IMFAdapterEnterKeyType::UNSPECIFIED, IMFAdapterEnterKeyType::NONE,
-        IMFAdapterEnterKeyType::GO,          IMFAdapterEnterKeyType::SEARCH,
-        IMFAdapterEnterKeyType::SEND,        IMFAdapterEnterKeyType::NEXT,
-        IMFAdapterEnterKeyType::DONE,        IMFAdapterEnterKeyType::PREVIOUS,
-        IMFAdapterEnterKeyType::NEW_LINE};
-    return types[fdp_.ConsumeIntegralInRange<size_t>(0, types.size() - 1)];
+    return IMFAdapterEnterKeyType::UNSPECIFIED;
   }
-
- private:
-  FuzzedDataProvider& fdp_;
+  void SetEnterKeyType(IMFAdapterEnterKeyType keyType) {}
 };
 
 class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
@@ -322,10 +309,28 @@ void NWebInputMethodHandlerFuzzTest(const uint8_t* data, size_t size) {
         fdp.ConsumeBool() ? IMFAdapterKeyboardStatus::SHOW
                           : IMFAdapterKeyboardStatus::HIDE;
     listener.SendKeyboardStatus(keyboardStatus);
+    auto mockFunctionKey = std::make_shared<MockIMFAdapterFunctionKeyAdapter>();
 
+    for (int32_t typeValue =
+             static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED);
+         typeValue <= static_cast<int32_t>(IMFAdapterEnterKeyType::NEW_LINE);
+         typeValue) {
+      IMFAdapterEnterKeyType keyType =
+          static_cast<IMFAdapterEnterKeyType>(typeValue);
+      mockFunctionKey->SetEnterKeyType(keyType);
+      listener.SendFunctionKey(mockFunctionKey);
+    }
+    listener.SetKeyboardStatus(fdp.ConsumeBool());
+    listener.KeyboardUpperRightCornerHide();
     size_t dirIndex =
         fdp.ConsumeIntegralInRange<size_t>(0, directions.size() - 1);
     listener.MoveCursor(directions[dirIndex]);
+    listener.HandleSetSelection(fdp.ConsumeIntegral<int32_t>(),
+                                fdp.ConsumeIntegral<int32_t>());
+    listener.HandleExtendAction(fdp.ConsumeIntegral<int32_t>());
+    listener.HandleSelect(fdp.ConsumeIntegral<int32_t>(),
+                          fdp.ConsumeIntegral<int32_t>());
+    listener.SetNeedUnderLine(fdp.ConsumeBool());
 
     listener.GetTextIndexAtCursor();
     int32_t textNumber = fdp.ConsumeIntegralInRange<int32_t>(0, 20);
@@ -397,19 +402,16 @@ void NWebInputMethodHandlerFuzzTest(const uint8_t* data, size_t size) {
     selectedRange.from = fdp.ConsumeIntegral<int64_t>();
     selectedRange.to = fdp.ConsumeIntegral<int64_t>();
     handler.OnTextSelectionChanged(browser.get(), selectedText, selectedRange);
+    handler.OnSelectionChanged(browser.get(), selectedText, selectedRange);
 
+    bool focusStatus = fdp.ConsumeBool();
+    handler.SetFocusStatus(focusStatus);
     CefRect cursorRect;
     cursorRect.x = fdp.ConsumeIntegral<int>();
     cursorRect.y = fdp.ConsumeIntegral<int>();
     cursorRect.width = fdp.ConsumeIntegral<int>();
     cursorRect.height = fdp.ConsumeIntegral<int>();
     handler.OnCursorUpdate(cursorRect);
-
-    handler.OnSelectionChanged(browser.get(), selectedText, selectedRange);
-
-    bool focusStatus = fdp.ConsumeBool();
-    handler.SetFocusStatusForTest(true);
-    handler.SetFocusStatus(focusStatus);
 
     bool isEditableNode = fdp.ConsumeBool();
     handler.OnEditableChanged(browser.get(), isEditableNode);
@@ -469,10 +471,73 @@ void NWebInputMethodHandlerFuzzTest(const uint8_t* data, size_t size) {
     size_t comp_type_index =
         fdp.ConsumeIntegralInRange<size_t>(0, allCompTypes.size() - 1);
     CompositionType comp_type = allCompTypes[comp_type_index];
-    int32_t result = handler.CallGetCompositionTypeAndCheckInput(
+    int32_t result = handler.GetCompositionTypeAndCheckInput(
         text, comp_start, comp_end, comp_type);
     (void)result;
     (void)comp_type;
+
+    for (auto inputMode : allModes) {
+      handler.TextInputModeToIMFAdapter(inputMode);
+    }
+
+    for (auto inputType : allTypes) {
+      handler.TextInputTypeToIMFAdapter(inputType);
+    }
+
+    for (auto inputAction : allActions) {
+      inputInfo.input_action = inputAction;
+      inputInfo.input_mode = static_cast<cef_text_input_mode_t>(
+          fdp.ConsumeIntegralInRange<int32_t>(0, allModes.size() - 1));
+      inputInfo.input_type = static_cast<cef_text_input_type_t>(
+          fdp.ConsumeIntegralInRange<int32_t>(0, allTypes.size() - 1));
+      inputInfo.input_flags =
+          static_cast<cef_text_input_flags_t>(fdp.ConsumeIntegral<uint32_t>());
+      handler.TextInputActionToIMFAdapter(inputInfo);
+    }
+    CefRect rect(fdp.ConsumeIntegral<int>(), fdp.ConsumeIntegral<int>(),
+                 fdp.ConsumeIntegral<int>(), fdp.ConsumeIntegral<int>());
+    double ratio = fdp.ConsumeFloatingPoint<double>();
+    double offsetX = fdp.ConsumeFloatingPoint<double>();
+    double offsetY = fdp.ConsumeFloatingPoint<double>();
+
+    handler.SetFocusRectForTest(rect);
+    handler.SetDevicePixelRatioForTest(ratio);
+    handler.SetOffsetXForTest(offsetX);
+    handler.SetOffsetYForTest(offsetY);
+
+    std::shared_ptr<IMFCursorInfoAdapter> cursorInfo = handler.GetCursorInfo();
+    handler.HandleSecurityLayerHandlerOnUI();
+    handler.AttachToSystemIME(fdp.ConsumeBool(),
+                              fdp.ConsumeIntegralInRange<int32_t>(0, 10));
+    handler.NeedKeyboardShow();
+    handler.IsKeyboardShow();
+    handler.SetNeedReattach(hideTypes[1]);
+    handler.SetNeedReattach(hideTypes[2]);
+    handler.SetIMEStatusOnUI(fdp.ConsumeBool());
+    handler.WebBlurKeyboardHideOnUI();
+    std::string insertTextHandlerOnUIUtf8 = fdp.ConsumeRandomLengthString(100);
+    std::u16string insertTextHandlerOnUIU16(insertTextHandlerOnUIUtf8.begin(),
+                                            insertTextHandlerOnUIUtf8.end());
+    handler.InsertTextHandlerOnUI(insertTextHandlerOnUIU16);
+    std::string previewTextHandlerOnUIUtf8 = fdp.ConsumeRandomLengthString(100);
+    std::u16string previewTextHandlerOnUIU16(previewTextHandlerOnUIUtf8.begin(),
+                                             previewTextHandlerOnUIUtf8.end());
+    handler.PreviewTextHandlerOnUI(previewTextHandlerOnUIU16,
+                                   fdp.ConsumeIntegralInRange<int32_t>(0, 10),
+                                   fdp.ConsumeIntegralInRange<int32_t>(10, 20));
+    handler.CancelPreviewHandlerOnUI();
+    handler.FinishPreviewTextOnUI();
+    handler.DeleteForwardHandlerOnUI(
+        fdp.ConsumeIntegralInRange<int32_t>(0, 100));
+    handler.DeleteBackwardHandlerOnUI(
+        fdp.ConsumeIntegralInRange<int32_t>(0, 100));
+    handler.SendEnterKeyEvent(fdp.ConsumeIntegralInRange<int32_t>(
+        static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED),
+        static_cast<int32_t>(IMFAdapterEnterKeyType::NEW_LINE)));
+    handler.SendEnterKeyEventOnUI(fdp.ConsumeIntegralInRange<int32_t>(
+        static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED),
+        static_cast<int32_t>(IMFAdapterEnterKeyType::NEW_LINE)));
+    handler.AutoFillWithIMFEventOnUI(true, true, true, "text");
   }
 
   {
@@ -488,9 +553,12 @@ void NWebInputMethodHandlerFuzzTest(const uint8_t* data, size_t size) {
 
     listener.SendKeyEventFromInputMethod();
     listener.SendKeyboardStatus(IMFAdapterKeyboardStatus::SHOW);
+    listener.SendKeyboardStatus(IMFAdapterKeyboardStatus::HIDE);
 
     listener.MoveCursor(IMFAdapterDirection::LEFT);
     listener.MoveCursor(IMFAdapterDirection::RIGHT);
+    listener.MoveCursor(IMFAdapterDirection::UP);
+    listener.MoveCursor(IMFAdapterDirection::DOWN);
 
     listener.GetTextIndexAtCursor();
     listener.GetLeftTextOfCursor(5);
@@ -507,76 +575,111 @@ void NWebInputMethodHandlerFuzzTest(const uint8_t* data, size_t size) {
     listener.AutoFillWithIMFEvent(true, false, true, "Fixed Autofill Content");
 
     CefRefPtr<CefBrowser> browser = new MockCefBrowser();
+    CefRefPtr<CefBrowser> nullBrowser = nullptr;
     bool resetListener = true;
-    cef_text_input_mode_t mode = CEF_TEXT_INPUT_MODE_TEXT;
-    cef_text_input_type_t type = CEF_TEXT_INPUT_TYPE_TEXT;
-    cef_text_input_action_t action = CEF_TEXT_INPUT_ACTION_DEFAULT;
-    uint32_t flagsValue =
-        CEF_TEXT_INPUT_FLAG_AUTOCOMPLETE_ON | CEF_TEXT_INPUT_FLAG_SPELLCHECK_ON;
-    NWebInputMethodClient::InputInfo inputInfo;
-    inputInfo.node_id = 12345;
-    inputInfo.show_keyboard = true;
-    inputInfo.input_mode = mode;
-    inputInfo.input_type = type;
-    inputInfo.input_action = action;
-    inputInfo.input_flags = static_cast<cef_text_input_flags_t>(flagsValue);
-    inputInfo.always_hide_ime = false;
-    int32_t enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::DONE);
+    bool noResetListener = false;
+    for (auto mode : allModes) {
+      for (auto type : allTypes) {
+        for (auto action : allActions) {
+          uint32_t flagsValue = CEF_TEXT_INPUT_FLAG_AUTOCOMPLETE_ON |
+                                CEF_TEXT_INPUT_FLAG_SPELLCHECK_ON |
+                                CEF_TEXT_INPUT_FLAG_AUTOCORRECT_ON;
 
-    handler.Attach(browser.get(), inputInfo, resetListener, enterKeyType);
-    handler.Attach(browser.get(), inputInfo, resetListener, enterKeyType, 1);
+          NWebInputMethodClient::InputInfo inputInfo;
+          inputInfo.node_id = 12345;
+          inputInfo.show_keyboard = true;
+          inputInfo.input_mode = mode;
+          inputInfo.input_type = type;
+          inputInfo.input_action = action;
+          inputInfo.input_flags =
+              static_cast<cef_text_input_flags_t>(flagsValue);
+          inputInfo.always_hide_ime = false;
+
+          for (int enterKeyType = 0;
+               enterKeyType <=
+               static_cast<int>(IMFAdapterEnterKeyType::NEW_LINE);
+               enterKeyType) {
+            handler.Attach(browser.get(), inputInfo, resetListener,
+                           enterKeyType);
+            handler.Attach(nullBrowser.get(), inputInfo, noResetListener,
+                           enterKeyType);
+            handler.Attach(browser.get(), inputInfo, resetListener,
+                           enterKeyType, 1);
+            handler.Attach(browser.get(), inputInfo, resetListener,
+                           enterKeyType, 100);
+          }
+        }
+      }
+    }
 
     handler.Reattach(9999, NWebInputMethodHandler::ReattachType::FROM_ONFOCUS);
+    handler.Reattach(9999, NWebInputMethodHandler::ReattachType::FROM_CONTINUE);
+    handler.Reattach(9999, NWebInputMethodHandler::ReattachType::FROM_ONDRAG);
 
     handler.ShowTextInput();
     handler.HideTextInput(
         0, NWebInputMethodHandler::HideTextinputType::FROM_KERNEL, false);
+    handler.HideTextInput(
+        12345, NWebInputMethodHandler::HideTextinputType::FROM_ONBLUR, true);
     handler.HideTextInputForce();
 
     std::string selectedTextUtf8 = "Fixed Selected Text";
     CefString selectedText(selectedTextUtf8);
     CefRange selectedRange = {2, 8};
     handler.OnTextSelectionChanged(browser.get(), selectedText, selectedRange);
+    handler.OnTextSelectionChanged(nullBrowser.get(), selectedText,
+                                   selectedRange);
+
+    CefRange reversedRange = {8, 2};
+    handler.OnSelectionChanged(browser.get(), selectedText, reversedRange);
+
+    handler.SetFocusStatus(true);
+    handler.SetFocusStatus(false);
 
     CefRect cursorRect = {100, 200, 20, 30};
     handler.OnCursorUpdate(cursorRect);
 
-    handler.OnSelectionChanged(browser.get(), selectedText, selectedRange);
-
-    handler.SetFocusStatusForTest(true);
-    handler.SetFocusStatus(true);
+    CefRect zeroRect = {0, 0, 0, 0};
+    handler.OnCursorUpdate(zeroRect);
 
     handler.OnEditableChanged(browser.get(), true);
+    handler.OnEditableChanged(browser.get(), false);
     handler.GetIsEditableNode();
 
     handler.SetIMEStatus(true);
+    handler.SetIMEStatus(false);
 
     handler.WebBlurKeyboardHide();
 
     handler.HandleSecurityLayer();
 
     handler.SetScreenOffSet(10.5, 20.5);
+    handler.SetScreenOffSet(0.0, 0.0);
 
     handler.SetVirtualDeviceRatio(1.5f);
+    handler.SetVirtualDeviceRatio(2.0f);
 
     handler.SetWindowIdForIME(5000);
+    handler.SetWindowIdForIME(0);
 
     handler.SetNeedUnderLine(true);
+    handler.SetNeedUnderLine(false);
 
     handler.HasComposition();
 
     CefRange compositionRange = {3, 7};
     handler.OnImeCompositionRangeChanged(browser.get(), compositionRange);
+    handler.OnImeCompositionRangeChanged(nullBrowser.get(), compositionRange);
 
     handler.OnUpdateTextInputStateCalled(browser.get(), selectedText,
                                          selectedRange, compositionRange);
 
     handler.IsAttached();
-
     handler.SetNeedReattachOnfocus();
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
     handler.SetFillContent("Fixed Fill Content", 6789);
+    handler.SetFillContent("", 0);
 #endif
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
@@ -588,17 +691,24 @@ void NWebInputMethodHandlerFuzzTest(const uint8_t* data, size_t size) {
     handler.GetSelectEndIndex();
     handler.GetAllTextInfo();
 #endif
+
     handler.SetHasCompositionForTest(true);
+    handler.SetHasCompositionForTest(false);
+
     std::string whole_text_str = "This is a test string";
     handler.SetWholeTextForTest(
         std::u16string(whole_text_str.begin(), whole_text_str.end()));
+
     std::string preview_str = "preview";
     handler.SetPreviewTextCacheForTest(
         std::u16string(preview_str.begin(), preview_str.end()));
+
     handler.SetCompositionRangeStartForTest(5);
     handler.SetCompositionRangeEndForTest(8);
+
     std::string text_str = "test";
     std::u16string text(text_str.begin(), text_str.end());
+
     struct {
       int32_t start;
       int32_t end;
@@ -606,43 +716,50 @@ void NWebInputMethodHandlerFuzzTest(const uint8_t* data, size_t size) {
     } testCases[] = {{0, 5, COMPOSITION_CURRENT},
                      {2, 4, COMPOSITION_POSITION},
                      {1, 6, COMPOSITION_REPLACE},
-
                      {-1, 3, COMPOSITION_CANCEL},
                      {0, 100, COMPOSITION_DELETE},
                      {5, 2, COMPOSITION_INVALID},
-
-                     // Unicode boundary cases
                      {0, text.length(), COMPOSITION_CURRENT},
                      {2, text.length() - 1, COMPOSITION_POSITION}};
 
-    // Run all test cases
     for (const auto& testCase : testCases) {
-      int32_t result = handler.CallGetCompositionTypeAndCheckInput(
-          text, testCase.start, testCase.end, testCase.type);
-
-      // Output results for verification
-      std::cout << "Test case: start=" << testCase.start
-                << ", end=" << testCase.end
-                << ", type=" << static_cast<int>(testCase.type)
-                << " => result=" << result << "\n";
+      CompositionType tempType = testCase.type;
+      int32_t result = handler.GetCompositionTypeAndCheckInput(
+          text, testCase.start, testCase.end, tempType);
     }
 
     {
       std::u16string empty_text;
       CompositionType comp_type = COMPOSITION_CURRENT;
-      int32_t result = handler.CallGetCompositionTypeAndCheckInput(
-          empty_text, 0, 0, comp_type);
+      int32_t result =
+          handler.GetCompositionTypeAndCheckInput(empty_text, 0, 0, comp_type);
     }
+
+    std::u16string uiText = u"UITestText";
+    handler.InsertTextHandlerOnUI(uiText);
+    handler.PreviewTextHandlerOnUI(uiText, 0, uiText.length());
+    handler.CancelPreviewHandlerOnUI();
+    handler.FinishPreviewTextOnUI();
+    handler.DeleteForwardHandlerOnUI(3);
+    handler.DeleteBackwardHandlerOnUI(2);
+
+    for (int i = 0; i <= static_cast<int>(IMFAdapterEnterKeyType::NEW_LINE);
+         i) {
+      int32_t enterKeyType = static_cast<int32_t>(i);
+      handler.SendEnterKeyEvent(enterKeyType);
+      handler.SendEnterKeyEventOnUI(enterKeyType);
+    }
+
+    handler.AutoFillWithIMFEventOnUI(true, true, true, "fixed_autofill");
+    handler.AutoFillWithIMFEventOnUI(false, false, false, "");
   }
 }
-
 }  // namespace OHOS::NWeb
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (data == nullptr || size < sizeof(uint32_t)) {
     return;
   }
-  FuzzedDataProvider fdp(data, size);
   NWebInputMethodHandlerFuzzTest(data, size);
   return 0;
 }

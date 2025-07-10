@@ -458,6 +458,11 @@ class CONTENT_EXPORT RenderFrameImpl
   float GetDeviceScaleFactor() override;
   blink::scheduler::WebAgentGroupScheduler& GetAgentGroupScheduler() override;
 
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnPdfScrollAtBottom(const std::string& url) override;
+  void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   void ClearContextMenu() override;
 #endif

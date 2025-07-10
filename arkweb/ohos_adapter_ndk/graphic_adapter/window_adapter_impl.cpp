@@ -82,6 +82,26 @@ void WindowAdapterNdkImpl::NativeWindowUnRef(NWebNativeWindow window)
     }
 }
 
+int WindowAdapterNdkImpl::GetNativeWindowRequestBuffer(NWebNativeWindow window,
+    OHNativeWindowBuffer **buffer, int *fenceFd)
+{
+    int32_t ret = OH_NativeWindow_NativeWindowRequestBuffer(reinterpret_cast<OHNativeWindow*>(window),
+      buffer, fenceFd);
+    if (ret != 0) {
+        WVLOG_E("OH_NativeWindow request buffer failed.");
+    }
+    return ret;
+}
+
+int WindowAdapterNdkImpl::GetNativeWindowAbortBuffer(NWebNativeWindow window, OHNativeWindowBuffer *buffer)
+{
+    int32_t ret = OH_NativeWindow_NativeWindowAbortBuffer(reinterpret_cast<OHNativeWindow*>(window), buffer);
+    if (ret != 0) {
+        WVLOG_E("OH_NativeWindow abort buffer failed.");
+    }
+    return ret;
+}
+
 int WindowAdapterNdkImpl::GetNativeWindowQueueSize(NWebNativeWindow window)
 {
     int bufferQueueSize = 0;

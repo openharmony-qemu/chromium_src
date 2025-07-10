@@ -369,7 +369,8 @@
                 "OHNativeWindow* OH_NativeWindow_CreateNativeWindow(void* pSurface)",
                 "int32_t OH_NativeWindow_GetSurfaceId(OHNativeWindow *window, uint64_t *surfaceId)",
                 "int32_t OH_NativeWindow_NativeObjectUnreference(void *obj)",
-                "int32_t OH_NativeWindow_NativeObjectReference(void *obj)"
+                "int32_t OH_NativeWindow_NativeObjectReference(void *obj)",
+                "int32_t OH_NativeWindow_NativeWindowAbortBuffer(OHNativeWindow *window, OHNativeWindowBuffer *buffer)"
             ]
         },
         "includes": [

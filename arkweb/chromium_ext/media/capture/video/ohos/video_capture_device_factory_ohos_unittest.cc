@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <gtest/gtest.h>
 #include "media/capture/video/ohos/video_capture_device_factory_ohos.h"
 

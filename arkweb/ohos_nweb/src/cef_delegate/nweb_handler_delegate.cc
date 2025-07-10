@@ -4841,4 +4841,18 @@ void NWebHandlerDelegate::HideMagnifier() {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+void NWebHandlerDelegate::OnPdfScrollAtBottom(const std::string& url) {
+  if (nweb_handler_) {
+    nweb_handler_->OnPdfScrollAtBottom(url);
+  }
+}
+
+void NWebHandlerDelegate::OnPdfLoadEvent(int32_t result, const std::string& url) {
+  if (nweb_handler_) {
+    nweb_handler_->OnPdfLoadEvent(result, url);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }  // namespace OHOS::NWeb

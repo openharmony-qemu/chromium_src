@@ -1017,4 +1017,28 @@ void WebContentsImpl::OnPipEvent(int event) {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+void WebContentsImplExt::OnPdfScrollAtBottom(const std::string& url) {
+  // Ensure that PdfScrollAtBottom event propagate from innermost to outermost WebContents.
+  if (GetOuterWebContents() && GetOuterWebContents()->AsWebContentsImplExt()) {
+    GetOuterWebContents()->AsWebContentsImplExt()->OnPdfScrollAtBottom(url);
+    return;
+  }
+  if (delegate_) {
+    delegate_->OnPdfScrollAtBottom(url);
+  }
+}
+
+void WebContentsImplExt::OnPdfLoadEvent(int32_t result, const std::string& url) {
+  // Ensure that PdfLoad event propagate from innermost to outermost WebContents.
+  if (GetOuterWebContents() && GetOuterWebContents()->AsWebContentsImplExt()) {
+    GetOuterWebContents()->AsWebContentsImplExt()->OnPdfLoadEvent(result, url);
+    return;
+  }
+  if (delegate_) {
+    delegate_->OnPdfLoadEvent(result, url);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }  // namespace content

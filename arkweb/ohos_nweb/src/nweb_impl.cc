@@ -289,6 +289,17 @@ OnReportStatisticLogFunc
 #include "base/ohos/nweb_engine_event_logger.h"
 
 #include "cef/include/cef_app.h"
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include "arkweb/ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/nweb_safe_browsing_detection_handler.h"
+#include "base/strings/string_split.h"
+#include "base/strings/stringprintf.h"
+#include "base/values.h"
+#include "cef/libcef/browser/prefs/browser_prefs.h"
+#include "cef/ohos_cef_ext/libcef/browser/global_config/global_config_prefs.h"
+#include "chrome/browser/browser_process.h"
+#include "components/prefs/pref_service.h"
+#endif
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -630,6 +641,56 @@ void MigratePasswordsToPasswordVault() {
 }
 #endif // ARKWEB_EXT_PASSWORD
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+void ApplyCommandLineFromJson(const std::string& commandline) {
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+ 
+  // Split the command line into individual arguments.
+  std::vector<std::string> args = base::SplitString(
+      commandline, " ", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
+ 
+  for (const auto& arg : args) {
+    if (arg.empty()) {
+      continue;
+    }
+ 
+    size_t equals_pos = arg.find('=');
+    if (equals_pos != std::string::npos && (arg[0] == '-' && arg[1] == '-')) {
+      // Argument with value: --switch=value
+      std::string switch_name = arg.substr(0, equals_pos);
+      std::string value = arg.substr(equals_pos + 1);
+      command_line->AppendSwitchASCII(switch_name.substr(2), value); // Remove '--'
+    } else if (arg[0] == '-' && arg[1] == '-') {
+      // Switch without value: --switch
+      command_line->AppendSwitch(arg.substr(2)); // Remove '--'
+    } else {
+      // Regular argument
+      command_line->AppendArgNative(arg);
+    }
+  }
+}
+ 
+void AddGlobalConfigFeaturesSwitchesToCommandLine() {
+  const base::Value::List& featuresSwitches =
+    g_browser_process->local_state()->GetList(global_config::kGlobalConfigFeaturesSwitches);
+  if (featuresSwitches.empty()) {
+    LOG(INFO) << "featuresSWitches need not add to commandLine.";
+    return;
+  }
+  for (const auto& item : featuresSwitches) {
+    if (!item.is_dict()) {
+      continue;
+    }
+ 
+    const std::string* name = item.GetDict().FindString("name");
+    const std::string* cmdLine = item.GetDict().FindString("commandline");
+    if (name && cmdLine) {
+      ApplyCommandLineFromJson(*cmdLine);
+    }
+  }
+}
+#endif
+
 typedef void(*ReadDownloadDataCallback)(const char* guid, const void* buffer, const size_t size);
 class NWebReadDownloadDataCallback : public CefReadDownloadDataCallback {
  public:
@@ -801,6 +862,14 @@ void NWebImpl::InitializeWebEngine(
 #endif
   NWebApplication::GetDefault()->InitializeCef(mainargs, settings);
   content::GetNetworkService();
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  LOG(INFO) << "AddGlobalConfigFeaturesSwitchesToCommandLine begin.";
+  AddGlobalConfigFeaturesSwitchesToCommandLine();
+ 
+  LOG(INFO) << "HandleGlobalConfig begin.";
+  OHOS::NWeb::NWebSafeBrowsingDetectionHandler::GetInstance().HandleGlobalConfig();
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {
@@ -4349,6 +4418,11 @@ void NWebImpl::OnSafeBrowsingDetectionResult(int code,
 
   nweb_delegate_->OnSafeBrowsingDetectionResult(code, policy, mappingType,
                                                 url);
+}
+
+// static
+void NWebImpl::OnGlobalConfigResult(const std::string& path) {
+  global_config::OnGlobalConfigResult(path);
 }
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 

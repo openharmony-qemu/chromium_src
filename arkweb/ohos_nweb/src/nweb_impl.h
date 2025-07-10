@@ -498,6 +498,7 @@ class NWebImpl : public NWeb {
                                      int policy,
                                      const std::string& mappingType,
                                      const std::string& url);
+  static void OnGlobalConfigResult(const std::string& path);
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
 #if BUILDFLAG(IS_OHOS)

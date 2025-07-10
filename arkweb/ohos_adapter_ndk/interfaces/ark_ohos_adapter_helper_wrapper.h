@@ -146,6 +146,8 @@ class ArkOhosAdapterHelperWrapper : public NWeb::OhosAdapterHelper {
   std::unique_ptr<NWeb::ScreenlockManagerAdapter> CreateScreenlockManagerAdapter()
       override;
 
+  std::unique_ptr<NWeb::NetConfigAdapter> GetNetConfigAdapter() override;
+
  private:
   ArkWebRefPtr<ArkOhosAdapterHelper> ctocpp_;
 };

@@ -106,6 +106,7 @@
 #include "hiviewdfx_adapter/hitrace_adapter_impl.h"
 
 #include "arkweb/ohos_adapter_ndk/drawing_text_adapter/ohos_drawing_text_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/net_config_adapter/net_config_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -466,5 +467,10 @@ ArkOhosAdapterHelperWrapper::CreateScreenlockManagerAdapter() {
   }
 
   return std::make_unique<ArkScreenlockManagerAdapterWrapper>(adapter);
+}
+
+std::unique_ptr<NWeb::NetConfigAdapter>
+ArkOhosAdapterHelperWrapper::GetNetConfigAdapter() {
+  return std::make_unique<NetConfigAdapterImpl>();
 }
 }  // namespace OHOS::ArkWeb

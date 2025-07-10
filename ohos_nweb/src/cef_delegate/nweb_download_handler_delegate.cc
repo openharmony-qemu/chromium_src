@@ -160,7 +160,7 @@ std::string NWebDownloadHandlerDelegate::GenerateSuggestedFilename(
   std::shared_ptr<NWeb> nweb = NWebImpl::GetNWeb(download_item->GetNWebId());
   std::string default_charset =
       preference_delegate_ ? preference_delegate_->DefaultTextEncodingFormat() :
-      (nweb ? nweb->GetPreference()->DefaultTextEncodingFormat() : "utf-8");
+      ((nweb && nweb->GetPreference()) ? nweb->GetPreference()->DefaultTextEncodingFormat() : "utf-8");
   std::string content_disposition = GetContentDisposition(download_item,
                                                           default_charset);
   GURL gurl(download_item->GetURL().ToString());

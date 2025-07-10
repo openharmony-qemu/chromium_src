@@ -215,7 +215,7 @@ BASE_EXPORT bool IsPageScale() {
 }
 
 BASE_EXPORT std::string ComponentName() {
-return std::string(kComponentName);
+  return std::string(kComponentName);
 }
 }  // namespace ohos
 

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "arkweb/chromium_ext/gpu/command_buffer/common/gpu_memory_buffer_support_utils.h"
+#include "arkweb/chromium_ext/content/gpu/in_process_gpu_thread_utils.h"
 #include "base/test/task_environment.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include <dirent.h>
@@ -239,7 +239,7 @@ TEST_F(InProcessGpuThreadUtilsTest, TryForReportThread_SuccessOnFirstAttempt) {
     TryForReportThread();
 
     EXPECT_FALSE(MockResSchedClientAdapter::report_called);
-    EXPECT_EQ(OHOS::NWeb::ResSchedClientAdapter::THREAD_CREATED,
+    EXPECT_EQ(OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
               MockResSchedClientAdapter::last_status);
 
     RestoreThreadReporting();
@@ -313,18 +313,18 @@ TEST_F(InProcessGpuThreadUtilsTest, InProcessGpuThreadDestory_ReportsDestory) {
     InProcessGpuThreadDestroy();
 
     EXPECT_FALSE(MockResSchedClientAdapter::report_called);
-    EXPECT_NE(OHOS::NWeb::MockResSchedClientAdapter::THREAD_DESTROYED,
+    EXPECT_NE(OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED,
               MockResSchedClientAdapter::last_status);
 
-    RetoreThreadReporting();
+    RestoreThreadReporting();
 }
 
 TEST_F(InProcessGpuThreadUtilsTest, LoadStringFromFile_ExceedMaxLength) {
     std::string large_content(kMaxFileLength + 1, 'a');
-    MockFileContent('/large/file', large_content);
+    MockFileContent("/large/file", large_content);
 
     std::string result;
-    EXPECT_TRUE(LoadStringFromFile('/large/file', result));
+    EXPECT_TRUE(LoadStringFromFile("/large/file", result));
 }
 
 #ifdef UNIT_TESTING

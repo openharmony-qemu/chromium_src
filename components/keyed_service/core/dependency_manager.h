@@ -7,6 +7,7 @@
 
 #include <set>
 #include <string>
+#include <unordered_set>
 
 #include "arkweb/build/features/features.h"
 #include "base/dcheck_is_on.h"
@@ -58,7 +59,7 @@ class KEYED_SERVICE_EXPORT DependencyManager {
 
 #if BUILDFLAG(ARKWEB_DISABLE_SERVICES)
   bool disabledServicesInitialized = false;
-  std::vector<std::string> disabledServices;
+  std::unordered_set<std::string> disabledServices;
 #endif
 
  protected:

@@ -85,6 +85,25 @@ void FlingController::SetIsFlingFalse(const bool flag) {
     TRACE_EVENT0("input", "ObserveAndMaybeConsumeGestureEvent::SetNeedDVsync=false, reason=kGestureFlingCancel");
   }
 }
+
+void FlingController::SetIsScroll(blink::WebInputEvent::Type scrollType) {
+  auto* host = content::GpuProcessHost::Get();
+  if (!host) {
+    return;
+  } 
+  auto* host_impl = host->gpu_host();
+  if (!host_impl) {
+    return;
+  }
+  if (scrollType == blink::WebInputEvent::Type::kGestureScrollBegin) {
+    TRACE_EVENT0("input", "FlingController::SetIsScroll TRUE for DVSync");
+    host_impl->SetIsScroll(true);
+  }
+  if (scrollType == blink::WebInputEvent::Type::kGestureScrollEnd) {
+    TRACE_EVENT0("input", "FlingController::SetIsScroll FALSE for DVSync");
+    host_impl->SetIsScroll(false);
+  }
+}
 #endif
 
 #if BUILDFLAG(IS_ARKWEB)

@@ -250,6 +250,10 @@ std::vector<std::string> g_browser_args = {};
 int32_t g_browser_service_sdk_api_level = 0;
 #endif  // defined(OHOS_NWEB_EX)
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+std::optional<std::string> g_extension_name;
+#endif
+
 #if defined(REPORT_SYS_EVENT)
 // For maximum count of nweb instance
 uint32_t g_nweb_max_count = 0;
@@ -3406,6 +3410,19 @@ void NWebImpl::GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionIn
       itemInfo.contextMenus = manager->GetAllExtensionContextMenus(extension->id());
     }
     extensionsInfo.push_back(itemInfo);
+  }
+}
+
+void NWebImpl::SetExtensionName(const std::string& extension_name) {
+  g_extension_name = extension_name;
+}
+
+bool NWebImpl::GetExtensionName(std::string& extension_name) {
+  if (g_extension_name.has_value()) {
+    extension_name = g_extension_name.value();
+    return true;
+  } else {
+    return false;
   }
 }
 #endif // OHOS_ARKWEB_EXTENSIONS

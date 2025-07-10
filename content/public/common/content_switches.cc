@@ -1146,4 +1146,8 @@ const char kEnableCacheNativeEmbed[] = "enable-cache-native-embed";
 const char kEnableCacheMediaTakeOver[] = "enable-cache-media-take-over";
 #endif
 
+#if defined(OHOS_ARKWEB_EXTENSIONS)
+const char kSetExtensionName[] = "set-extension-name";
+#endif
+
 }  // namespace switches

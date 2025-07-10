@@ -194,6 +194,10 @@ RenderProcessMode NWebEngineImpl::GetRenderProcessMode() {
 #endif
 }
 
+void NWebEngineImpl::SetWebDestroyMode(WebDestroyMode mode) {
+    NWebImpl::SetWebDestroyMode(mode);
+}
+
 void NWebEngineImpl::ClearPrefetchedResource(
     const std::vector<std::string>& cache_key_list) {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)

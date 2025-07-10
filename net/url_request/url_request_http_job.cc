@@ -128,6 +128,8 @@
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #endif
 
 namespace {

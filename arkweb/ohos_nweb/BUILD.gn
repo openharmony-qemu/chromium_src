@@ -610,6 +610,7 @@ source_set("unittests") {
   include_dirs = [ "//ppapi/lib/gl/include" ]
 
   sources = [
+    "src/cef_delegate/nweb_access_request_delegate_unittest.cc",
     "src/cef_delegate/nweb_delegate_unittest.cc",
     "src/cef_delegate/nweb_event_handler_unittest.cc",
     "src/cef_delegate/nweb_handler_delegate_unittest.cc",

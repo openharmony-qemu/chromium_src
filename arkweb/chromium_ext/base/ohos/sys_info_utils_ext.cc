@@ -30,6 +30,7 @@ namespace {
 constexpr char kProductModeEmulator[] = "emulator";
 constexpr char kCompatiblePhone[] = "Phone";
 constexpr char kCompatibleTablet[] = "Tablet";
+constexpr char kComponentName[] = "ArkWeb";
 bool g_page_scale = false;
 
 using namespace OHOS::NWeb;
@@ -211,6 +212,10 @@ BASE_EXPORT void SetPageScale(bool status) {
 
 BASE_EXPORT bool IsPageScale() {
   return g_page_scale;
+}
+
+BASE_EXPORT std::string ComponentName() {
+return std::string(kComponentName);
 }
 }  // namespace ohos
 

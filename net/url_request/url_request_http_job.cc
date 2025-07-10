@@ -126,6 +126,10 @@
 #include "arkweb/chromium_ext/net/base/page_res_request_info.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 namespace {
 
 // These values are persisted to logs. Entries should not be renumbered and
@@ -390,6 +394,20 @@ std::unique_ptr<URLRequestJob> URLRequestHttpJob::Create(URLRequest* request) {
                           /*is_secure=*/false, request->load_flags());
       return std::make_unique<URLRequestErrorJob>(request,
                                                   ERR_CLEARTEXT_NOT_PERMITTED);
+    }
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    if (base::ohos::ApplicationApiVersion() >= APP_API_LEVEL_20) {
+      auto NetConfigAdapter =
+          OHOS::NWeb::OhosAdapterHelper::GetInstance().GetNetConfigAdapter();
+      if (!NetConfigAdapter) {
+        LOG(ERROR) << "get netconfig adapter failed";
+      } else if (NetConfigAdapter->GetIsCleartextCfgByComponent(
+                     base::ohos::ComponentName()) &&
+                 !NetConfigAdapter->GetIsCleartextPermittedByHostName(url.host())) {
+        return std::make_unique<URLRequestErrorJob>(request, ERR_CLEARTEXT_NOT_PERMITTED);
+      }
     }
 #endif
   }

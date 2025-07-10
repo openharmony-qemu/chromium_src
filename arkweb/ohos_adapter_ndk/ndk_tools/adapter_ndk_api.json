@@ -431,6 +431,10 @@
                 "int32_t OH_NetStack_GetPinSetForHostName(const char *hostname, NetStack_CertificatePinning *pin)",
                 "int32_t OH_NetStack_GetCertificatesForHostName(const char *hostname, NetStack_Certificates *certs)",
                 "void OH_Netstack_DestroyCertificatesContent(NetStack_Certificates *certs)"
+            ],
+            "18": [
+                "int OH_Netstack_IsCleartextPermitted(bool *isCleartextPermitted)",
+                "int OH_Netstack_IsCleartextPermittedByHostName(const char *hostname, bool *isCleartextPermitted)"
             ]
         },
         "includes": []

@@ -32,7 +32,7 @@
 #include "base/files/file.h"
 #include "base/memory/raw_ptr_exclusion.h"
 #include "build/build_config.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #if BUILDFLAG(ARKWEB_UNITTESTS)
 #define private public
 #endif  // ARKWEB_UNITTESTS

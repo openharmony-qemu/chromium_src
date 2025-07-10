@@ -470,15 +470,6 @@ void WebContentsImplExt::OnOverlayZoomChanged() {
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-void WebContentsImplExt::WebExtensionUpdateTabUrl(int32_t tab_id,
-                                                  const GURL& url) {
-  OPTIONAL_TRACE_EVENT2("content", "WebContentsImplExt::WebExtensionUpdateTabUrl",
-                        "tab_id", tab_id, "url", url);
-  if (delegate_) {
-    delegate_->WebExtensionUpdateTabUrl(tab_id, url);
-  }
-}
-
 int32_t WebContentsImplExt::ExtensionGetTabId() {
   if (delegate_) {
     return delegate_->ExtensionGetTabId();
@@ -817,16 +808,6 @@ void WebContentsImplExt::CollapseAllFramesSelection() {
   }
 }
 #endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-void WebContentsImplExt::WebExtensionUpdateTab(
-    int32_t tab_id,
-    const NWebExtensionTabUpdateProperties* update_properties) {
-  OPTIONAL_TRACE_EVENT1("content", "WebContentsImplExt::WebExtensionUpdateTab",
-                        "tab_id", tab_id);
-  if (delegate_)
-    delegate_->WebExtensionUpdateTab(tab_id, update_properties);
-}
-#endif
 #if BUILDFLAG(ARKWEB_MENU)
 void WebContentsImplExt::SelectRangeV2(const gfx::Point& position,
                                     bool is_base) {

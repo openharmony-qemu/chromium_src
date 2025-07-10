@@ -21,7 +21,7 @@ namespace extensions {
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void ExtensionActionDispatcher::DispatchExtensionActionClickedWithCustomArgs(
-    content::WebContents* web_contents,
+    content::BrowserContext* context,
     std::string extension_id,
     const NWebExtensionTab* custom_tab) {
   LOG(DEBUG) << "ExtensionActionAPI "
@@ -32,9 +32,9 @@ void ExtensionActionDispatcher::DispatchExtensionActionClickedWithCustomArgs(
 
   args.Append(GetTabValue(*custom_tab));
 
-  DispatchEventToExtension(web_contents->GetBrowserContext(),
-                            extension_id, histogram_value,
-                            event_name, std::move(args));
+  DispatchEventToExtension(context,
+                           extension_id, histogram_value,
+                           event_name, std::move(args));
 }
 #endif  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 

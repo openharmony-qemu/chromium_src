@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-#include "base/logging.h"
 #include "nweb_access_query_delegate.h"
+
+#include "base/logging.h"
 
 namespace OHOS::NWeb {
 
@@ -41,12 +42,12 @@ int NWebAccessQueryDelegate::ResourceAcessId() {
 }
 
 void NWebAccessQueryDelegate::ReportQueryResult(int32_t status) {
-  LOG(ERROR) << "NWebAccessQueryDelegate on ReportQueryResult";
   if (query_ != nullptr) {
     query_->ReportQueryResult(status);
+    return;
   }
 
   LOG(ERROR) << "NWebAccessQueryDelegate ReportQueryResult fail";
 }
 
-}
+}  // namespace OHOS::NWeb

@@ -54,6 +54,8 @@
 #include "nweb_render_handler.h"
 #include "nweb_value.h"
 
+#include "ohos_nweb/src/video_assistant/nweb_media_player_controller_impl.h"
+
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
@@ -70,9 +72,9 @@
 #include "capi/nweb_icon_size.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-using TabCreatedCallback = base::RepeatingCallback<void(const NWebExtensionTab*)>;
-#endif // ARKWEB_ARKWEB_EXTENSIONS
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
+#endif
 
 struct NativeWindow;
 
@@ -97,7 +99,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                             public CefMediaHandler,
                             public CefFormHandler,
                             public CefFrameHandler,
-                            public CefWebExtensionApiHandler,
                             public CefDialogHandlerExt,
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
                             public CefWebClientExtensionHandler,
@@ -133,6 +134,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener);
   void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler);
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void RegisterArkWebAppClientExtensionListener(
+      std::shared_ptr<ArkWebAppClientExtensionCallback> callback);
+#endif
   void RegisterWebAppClientExtensionListener(
       std::shared_ptr<NWebAppClientExtensionCallback>
           web_app_client_extension_listener);
@@ -207,6 +212,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                                       CefRefPtr<CefListValue> result);
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+  void UnRegisterArkWebAppClientExtensionListener();
   void UnRegisterWebAppClientExtensionListener();
   void RegisterWebExtensionListener(
       std::shared_ptr<NWebExtensionCallback> web_extension_listener);
@@ -294,9 +300,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       override;
 #endif
   CefRefPtr<CefFrameHandler> GetFrameHandler() override;
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  CefRefPtr<CefWebExtensionApiHandler> GetWebExtensionApiHandler() override;
-#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
   /* CefClient methods end */
   CefRefPtr<ArkWebClientExt> AsArkWebClient() override { return this; }
@@ -515,6 +518,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                      bool isRealTitle) override;
   void OnLoadingProgressChange(CefRefPtr<CefBrowser> browser,
                                double progress) override;
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  bool OnAutoResize(CefRefPtr<CefBrowser> browser,
+                    const CefSize& new_size) override;
+#endif
   void OnFullscreenModeChange(CefRefPtr<CefBrowser> browser,
                               bool full_screen,
                               const CefSize& video_natural_size) override;
@@ -577,6 +584,14 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void OnPermissionRequest(CefRefPtr<CefAccessRequest> request) override;
   void OnPermissionRequestCanceled(
       CefRefPtr<CefAccessRequest> request) override;
+
+#if BUILDFLAG(ARKWEB_EXT_PERMISSION)
+  void PermissionRequestGrant(int32_t resourse_id, int nweb_request_key);
+  void PermissionRequestDeny(int nweb_request_key);
+  std::string PermissionRequestGetOrigin(int nweb_request_key);
+  int32_t PermissionRequestGetResourceId(int nweb_request_key);
+  void PermissionRequestDelete(int nweb_request_key);
+#endif  // ARKWEB_EXT_PERMISSION
 
   void OnScreenCaptureRequest(
       CefRefPtr<CefScreenCaptureAccessRequest> request) override;
@@ -786,6 +801,13 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                    const std::string& utd_type_id) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_PERMISSION)
+  static std::shared_ptr<NWebPermissionRequest> GetPermissionRequestByKey(
+      int key);
+  static int InsertPermissionRequest(
+      std::shared_ptr<NWebPermissionRequest> nweb_request);
+#endif  // ARKWEB_EXT_PERMISSION
+
   // #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
   void OnTopControlsChanged(float top_controls_offset,
                             float top_content_offset) override;
@@ -875,22 +897,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void SetWebPaintedForSnapshot() { isWebPaintedForSnapshot_ = true; }
 #endif
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  static void RegisterWebExtensionApiListener(
-      std::shared_ptr<NWebExtensionApiCallback> web_extension_api_listener);
-  static void UnRegisterWebExtensionApiListener();
-
-  // CefWebExtensionApiHandler implements
-  void OnUpdateTab(
-      int tab_id,
-      const NWebExtensionTabUpdateProperties* update_properties) override;
-  static bool OnCreateTab(const NWebTabCreateInfo& create_info,
-                          TabCreatedCallback callback);
-  static void WebExtensionTabCreateCallback(int request_id,
-                                            const NWebExtensionTab* tab);
-  static bool HasExtensionListener();
-#endif // ARKWEB_ARKWEB_EXTENSIONS
-
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
   void SetTransformHint(uint32_t rotation);
 #endif
@@ -899,7 +905,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void OnActivateContent() override;
 #endif
 
-#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+#if BUILDFLAG(ARKWEB_EXT_PULL_TO_REFRESH)
   bool OnPullToRefreshAction(int action) override;
   void OnPullToRefreshPull(float offset_x, float offset_y) override;
 #endif
@@ -919,8 +925,15 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #endif
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void EnableVideoAssistant(bool enable);
-
   void CustomWebMediaPlayer(bool enable);
+  void WebMediaPlayerControllerPlay();
+  void WebMediaPlayerControllerPause();
+  void WebMediaPlayerControllerSeek(double time);
+  void WebMediaPlayerControllerSetMuted(bool muted);
+  void WebMediaPlayerControllerSetPlaybackRate(double playback_rate);
+  void WebMediaPlayerControllerExitFullscreen();
+  void WebMediaPlayerControllerSetVideoSurface(void* native_window);
+  void WebMediaPlayerControllerDownload();
   void WebMediaPlayerControllerSetVolume(double volume);
   double WebMediaPlayerControllerGetVolume();
 #endif  // ARKWEB_VIDEO_ASSISTANT
@@ -1142,7 +1155,12 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   std::optional<bool> video_assistant_enabled_;
   std::optional<bool> custom_web_media_player_enabled_;
+  std::unique_ptr<NWebMediaPlayerControllerImpl> nweb_media_player_controller_;
 #endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  NWebAppClientExtensionDispatcher dispatcher_;
+#endif
 
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   CefRefPtr<CefSafeBrowsingDetectionCallback>

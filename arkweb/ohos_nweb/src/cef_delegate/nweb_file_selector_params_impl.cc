@@ -96,4 +96,39 @@ void FileSelectorCallbackImpl::OnReceiveValue(
     callback_->Continue(file_path_);
   }
 }
+
+void FileSelectorCallbackImplNativeApi::OnReceiveValue(const char** value) {
+  if (callback_ == nullptr || is_used_) {
+    LOG(ERROR) << "NWebFileSelectorCallbackImplNew is null or already used";
+    return;
+  }
+  std::vector<std::string> vec;
+  ConverToVector(value, vec);
+
+  is_used_ = true;
+  if (vec.size() == 0) {
+    callback_->Cancel();
+  } else {
+    for (auto& c : vec) {
+      if (c.empty()) {
+        continue;
+      }
+      file_path_.push_back(CefString(c));
+    }
+    callback_->Continue(file_path_);
+  }
+}
+
+void FileSelectorCallbackImplNativeApi::ConverToVector(
+    const char** arr,
+    std::vector<std::string>& vec) {
+  if (!arr) {
+    return;
+  }
+
+  while (*arr) {
+    vec.push_back(*arr);
+    ++arr;
+  }
+}
 }  // namespace OHOS::NWeb

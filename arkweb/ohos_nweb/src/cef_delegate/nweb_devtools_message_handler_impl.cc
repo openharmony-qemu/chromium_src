@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #include "ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_impl.h"
 
 #include "cef/include/base/cef_logging.h"
@@ -20,10 +20,11 @@
 #include "ohos_nweb/include/nweb_file_selector_params.h"
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 #include "ohos_nweb/src/cef_delegate/nweb_file_selector_params_impl.h"
+#include "securec.h"
 
 extern "C" {
 void* __real_malloc(size_t);
-}       // extern "C"
+}  // extern "C"
 
 namespace OHOS::NWeb {
 
@@ -50,8 +51,7 @@ NWebFileSelectorParams::FileSelectorMode ConvertFileSelectorMode(
 
 class InfoBarCallbackImpl : public NWebBoolValueCallback {
  public:
-  InfoBarCallbackImpl(
-      CefRefPtr<CefInfoBarCallback> cef_callback)
+  InfoBarCallbackImpl(CefRefPtr<CefInfoBarCallback> cef_callback)
       : callback_(cef_callback) {}
   ~InfoBarCallbackImpl() override {
     if (callback_) {
@@ -70,11 +70,36 @@ class InfoBarCallbackImpl : public NWebBoolValueCallback {
   CefRefPtr<CefInfoBarCallback> callback_;
 };
 
-} // namespace
+class InfoBarCallbackImplNativeApi : public NWebBoolValueCallbackNativeApi {
+ public:
+  InfoBarCallbackImplNativeApi(CefRefPtr<CefInfoBarCallback> cef_callback)
+      : callback_(cef_callback) {}
+  ~InfoBarCallbackImplNativeApi() override {
+    if (callback_) {
+      callback_->Allow(default_value_);
+    }
+  }
+
+  void OnReceiveValue(bool value) override {
+    if (callback_) {
+      callback_->Allow(value);
+    }
+  }
+
+ private:
+  bool default_value_ = true;
+  CefRefPtr<CefInfoBarCallback> callback_;
+};
+
+}  // namespace
 
 NWebDevToolsMessageHandlerImpl::NWebDevToolsMessageHandlerImpl(
     std::unique_ptr<NWebDevtoolsMessageHandler> handler)
-  : handler_(std::move(handler)) {}
+    : handler_(std::move(handler)) {}
+
+NWebDevToolsMessageHandlerImpl::NWebDevToolsMessageHandlerImpl(
+    raw_ptr<NWebDevtoolsMessageHandler> handler)
+    : handlerNativeApi_(handler) {}
 
 NO_SANITIZE("cfi")
 NWebDevToolsMessageHandlerImpl::~NWebDevToolsMessageHandlerImpl() {
@@ -84,6 +109,42 @@ NWebDevToolsMessageHandlerImpl::~NWebDevToolsMessageHandlerImpl() {
   }
 }
 
+const char** ConvertToCharPtrArray(const std::vector<CefString>& filters) {
+  const char** result = new const char*[filters.size() + 1];
+  for (size_t i = 0; i < filters.size(); ++i) {
+    std::string str = filters[i].ToString();
+    char* tmp = new char[str.size() + 1];
+    if (strcpy_s(tmp, str.size() + 1, str.c_str()) != EOK) {
+      LOG(ERROR) << "strcpy_s failed when ConvertToCharPtrArray";
+    }
+    result[i] = tmp;
+  }
+  result[filters.size()] = nullptr;
+  return result;
+}
+
+void NWebDevToolsMessageHandlerImpl::GetFileSelectorTitle(std::string& title,
+                                                          uint32_t mode) {
+  if (title.empty()) {
+    switch (mode) {
+       case NWebFileSelectorParams::FileSelectorMode::FILE_OPEN_MODE:
+        title = "open file";
+         break;
+       case NWebFileSelectorParams::FileSelectorMode::FILE_OPEN_MULTIPLE_MODE:
+        title = "open files";
+         break;
+       case NWebFileSelectorParams::FileSelectorMode::FILE_OPEN_FOLDER_MODE:
+        title = "open file folder";
+         break;
+       case NWebFileSelectorParams::FileSelectorMode::FILE_SAVE_MODE:
+        title = "save as";
+         break;
+       default:
+         break;
+     }
+   }
+}
+
 bool NWebDevToolsMessageHandlerImpl::ShowFileChooser(
     FileDialogMode mode,
     const CefString& title,
@@ -91,109 +152,161 @@ bool NWebDevToolsMessageHandlerImpl::ShowFileChooser(
     const std::vector<CefString>& accept_filters,
     bool capture,
     CefRefPtr<CefFileDialogCallback> callback) {
-  if (!handler_) {
-    LOG(INFO) << "ShowFileChooser failed, handler_ is null";
-    return false;
-  }
-
   std::string file_selector_title = title.ToString();
   NWebFileSelectorParams::FileSelectorMode file_mode =
       ConvertFileSelectorMode(mode);
-  if (file_selector_title.empty()) {
-    switch (file_mode) {
-      case NWebFileSelectorParams::FileSelectorMode::FILE_OPEN_MODE:
-        file_selector_title = "open file";
-        break;
-      case NWebFileSelectorParams::FileSelectorMode::FILE_OPEN_MULTIPLE_MODE:
-        file_selector_title = "open files";
-        break;
-      case NWebFileSelectorParams::FileSelectorMode::FILE_OPEN_FOLDER_MODE:
-        file_selector_title = "open file folder";
-        break;
-      case NWebFileSelectorParams::FileSelectorMode::FILE_SAVE_MODE:
-        file_selector_title = "save as";
-        break;
-      default:
-        break;
-    }
-  }
-
+  GetFileSelectorTitle(file_selector_title, file_mode);
+  if (handler_) {
 #if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
-  FileSelectorParamsImpl* tmp = new FileSelectorParamsImpl(
-    file_mode, file_selector_title, accept_filters, default_file_path.ToString(), capture);
+    FileSelectorParamsImpl* tmp = new FileSelectorParamsImpl(
+        file_mode, file_selector_title, accept_filters,
+        default_file_path.ToString(), capture);
 #else
-  void* addr = __real_malloc(sizeof(FileSelectorParamsImpl));
-  FileSelectorParamsImpl* tmp = new (addr) FileSelectorParamsImpl(
-    file_mode, file_selector_title, accept_filters, default_file_path.ToString(), capture);
+    void* addr = __real_malloc(sizeof(FileSelectorParamsImpl));
+    FileSelectorParamsImpl* tmp = new (addr)
+        FileSelectorParamsImpl(file_mode, file_selector_title, accept_filters,
+                               default_file_path.ToString(), capture);
 #endif
-  std::shared_ptr<NWebFileSelectorParams> param(tmp);
+    std::shared_ptr<NWebFileSelectorParams> param(tmp);
 
-  std::shared_ptr<NWebStringVectorValueCallback> file_path_callback =
-      std::make_shared<FileSelectorCallbackImpl>(callback);
+    std::shared_ptr<NWebStringVectorValueCallback> file_path_callback =
+        std::make_shared<FileSelectorCallbackImpl>(callback);
 
-  if (!CheckValid(handler_.get(), &handler_->show_file_chooser)) {
-    LOG(ERROR) << "ShowFileChooser failed, method is invalid";
-    return false;
+    if (!CheckValid(handler_.get(), &handler_->show_file_chooser)) {
+      LOG(ERROR) << "ShowFileChooser failed, method is invalid";
+      return false;
+    }
+    return (handler_.get()->*(handler_->show_file_chooser))(param,
+                                                            file_path_callback);
   }
-  return (handler_.get()->*(handler_->show_file_chooser))(
-      param, file_path_callback);
+
+  if (handlerNativeApi_) {
+    std::string default_file = default_file_path.ToString();
+    const char** accept_filters_array = ConvertToCharPtrArray(accept_filters);
+    std::unique_ptr<NWebFileSelectorParamsNativeApi> param =
+        std::make_unique<NWebFileSelectorParamsNativeApi>(
+            file_mode, file_selector_title.c_str(), accept_filters_array,
+            accept_filters.size(), default_file.c_str(), capture);
+    std::unique_ptr<NWebStringVectorValueCallbackNativeApi> file_path_callback =
+        std::make_unique<FileSelectorCallbackImplNativeApi>(callback);
+    if (!CheckValid(handlerNativeApi_.get(),
+                    &handlerNativeApi_->show_file_chooser_native_api)) {
+      LOG(ERROR) << "ShowFileChooser failed, method is invalid";
+      for (uint32_t i = 0; i < accept_filters.size(); ++i) {
+        delete[] accept_filters_array[i];
+      }
+      delete[] accept_filters_array;
+      return false;
+    }
+    bool result = (handlerNativeApi_.get()
+                       ->*(handlerNativeApi_->show_file_chooser_native_api))(
+        param.release(), file_path_callback.release());
+    for (uint32_t i = 0; i < accept_filters.size(); ++i) {
+      delete[] accept_filters_array[i];
+    }
+    delete[] accept_filters_array;
+    return result;
+  }
+  LOG(INFO) << "ShowFileChooser failed, handler is null";
+  return false;
 }
 
 void NWebDevToolsMessageHandlerImpl::ShowInfoBar(
     const CefString& cef_message,
     const CefString& cef_path,
     CefRefPtr<CefInfoBarCallback> cef_callback) {
-  if (!handler_) {
-    LOG(INFO) << "ShowInfoBar failed, handler_ is null";
+  if (handler_) {
+    std::shared_ptr<NWebBoolValueCallback> callback =
+        std::make_shared<InfoBarCallbackImpl>(cef_callback);
+    std::string message = cef_message.ToString();
+    std::string path = cef_path.ToString();
+
+    if (!CheckValid(handler_.get(), &handler_->show_info_bar)) {
+      LOG(ERROR) << "ShowInfoBar failed, method is invalid";
+      return;
+    }
+    return (handler_.get()->*(handler_->show_info_bar))(message, path,
+                                                        callback);
+  }
+  if (handlerNativeApi_) {
+    std::unique_ptr<NWebBoolValueCallbackNativeApi> callback =
+        std::make_unique<InfoBarCallbackImplNativeApi>(cef_callback);
+    std::string message = cef_message.ToString().c_str();
+    std::string path = cef_path.ToString().c_str();
+
+    if (!CheckValid(handlerNativeApi_.get(),
+                    &handlerNativeApi_->show_info_bar_native_api)) {
+      LOG(ERROR) << "ShowInfoBar failed, method is invalid";
+      return;
+    }
+    (handlerNativeApi_.get()->*(handlerNativeApi_->show_info_bar_native_api))(
+        message.c_str(), path.c_str(), callback.release());
     return;
   }
-  std::shared_ptr<NWebBoolValueCallback> callback =
-    std::make_shared<InfoBarCallbackImpl>(cef_callback);
-  std::string message = cef_message.ToString();
-  std::string path = cef_path.ToString();
-
-  if (!CheckValid(handler_.get(), &handler_->show_info_bar)) {
-    LOG(ERROR) << "ShowInfoBar failed, method is invalid";
-    return ;
-  }
-  return (handler_.get()->*(handler_->show_info_bar))(message, path, callback);
+  LOG(INFO) << "ShowInfoBar failed, handler is null";
+  return;
 }
 
 bool NWebDevToolsMessageHandlerImpl::BringToFront() {
-  if (!handler_) {
-    LOG(INFO) << "BringToFront failed, handler_ is null";
-    return false;
+  if (handler_) {
+    if (!CheckValid(handler_.get(), &handler_->bring_to_front)) {
+      LOG(ERROR) << "BringToFront failed, method is invalid";
+      return false;
+    }
+    return (handler_.get()->*(handler_->bring_to_front))();
   }
-  if (!CheckValid(handler_.get(), &handler_->bring_to_front)) {
-    LOG(ERROR) << "BringToFront failed, method is invalid";
-    return false;
+  if (handlerNativeApi_) {
+    if (!CheckValid(handlerNativeApi_.get(),
+                    &handlerNativeApi_->bring_to_front)) {
+      LOG(ERROR) << "BringToFront failed, method is invalid";
+      return false;
+    }
+    return (handlerNativeApi_.get()->*(handlerNativeApi_->bring_to_front))();
   }
-  return (handler_.get()->*(handler_->bring_to_front))();
+  LOG(INFO) << "BringToFront failed, handler is null";
+  return false;
 }
 
 bool NWebDevToolsMessageHandlerImpl::CloseWindow() {
-  if (!handler_) {
-    LOG(INFO) << "CloseWindow failed, handler_ is null";
-    return false;
+  if (handler_) {
+    if (!CheckValid(handler_.get(), &handler_->close_window)) {
+      LOG(ERROR) << "CloseWindow failed, method is invalid";
+      return false;
+    }
+    return (handler_.get()->*(handler_->close_window))();
   }
-  if (!CheckValid(handler_.get(), &handler_->close_window)) {
-    LOG(ERROR) << "CloseWindow failed, method is invalid";
-    return false;
+  if (handlerNativeApi_) {
+    if (!CheckValid(handlerNativeApi_.get(),
+                    &handlerNativeApi_->close_window)) {
+      LOG(ERROR) << "CloseWindow failed, method is invalid";
+      return false;
+    }
+    return (handlerNativeApi_.get()->*(handlerNativeApi_->close_window))();
   }
-  return (handler_.get()->*(handler_->close_window))();
+  LOG(INFO) << "CloseWindow failed, handler is null";
+  return false;
 }
 
 bool NWebDevToolsMessageHandlerImpl::ActiveDevToolsWindow() {
-  if (!handler_) {
-    LOG(INFO) << "ActiveDevToolsWindow failed, handler_ is null";
-    return false;
+  if (handler_) {
+    if (!CheckValid(handler_.get(), &handler_->active_devtools_window)) {
+      LOG(ERROR) << "ActiveDevToolsWindow failed, method is invalid";
+      return false;
+    }
+    return (handler_.get()->*(handler_->active_devtools_window))();
   }
 
-  if (!CheckValid(handler_.get(), &handler_->active_devtools_window)) {
-    LOG(ERROR) << "ActiveDevToolsWindow failed, method is invalid";
-    return false;
+  if (handlerNativeApi_) {
+    if (!CheckValid(handlerNativeApi_.get(),
+                    &handlerNativeApi_->active_devtools_window)) {
+      LOG(ERROR) << "ActiveDevToolsWindow failed, method is invalid";
+      return false;
+    }
+    return (handlerNativeApi_.get()
+                ->*(handlerNativeApi_->active_devtools_window))();
   }
-  return (handler_.get()->*(handler_->active_devtools_window))();
+  LOG(INFO) << "ActiveDevToolsWindow failed, handler is null";
+  return false;
 }
 
-} // namespace
+}  // namespace OHOS::NWeb

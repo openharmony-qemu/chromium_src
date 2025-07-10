@@ -1513,10 +1513,14 @@ NavigationRequest::CreateForSynchronousRendererCommit(
           false /* is_history_navigation_in_new_child_frame */,
           base::TimeTicks::Now() /* input_start */,
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-          network::mojom::RequestDestination::kEmpty, "");
+          network::mojom::RequestDestination::kEmpty, ""
 #else
-          network::mojom::RequestDestination::kEmpty);
+          network::mojom::RequestDestination::kEmpty
 #endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+          , false
+#endif
+          );
   // Note that some params are set to default values (e.g. page_state set to
   // the default blink::PageState()) even if the DidCommit message that came
   // from the renderer contained relevant info that can be used to fill the

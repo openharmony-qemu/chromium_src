@@ -56,12 +56,12 @@ TEST(GpuMemoryBufferSupportUtilsTest, GetPlaneBufferFormat) {
               gfx::BufferFormat::RG_1616);
     
     EXPECT_EQ(GetPlaneBufferFormat(gfx::BufferPlane::U, gfx::BufferFormat::YVU_420),
-              gfx::BufferFormat::RG_8);
+              gfx::BufferFormat::R_8);
     EXPECT_EQ(GetPlaneBufferFormat(gfx::BufferPlane::V, gfx::BufferFormat::YVU_420),
-              gfx::BufferFormat::RG_8);
+              gfx::BufferFormat::R_8);
     
     EXPECT_EQ(GetPlaneBufferFormat(gfx::BufferPlane::A, gfx::BufferFormat::YUVA_420_TRIPLANAR),
-              gfx::BufferFormat::RG_8);
+              gfx::BufferFormat::R_8);
     
     EXPECT_EQ(GetPlaneBufferFormat(gfx::BufferPlane::DEFAULT, gfx::BufferFormat::BGRA_8888),
               gfx::BufferFormat::RGBA_8888);

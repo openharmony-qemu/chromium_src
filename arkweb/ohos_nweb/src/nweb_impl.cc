@@ -669,6 +669,8 @@ bool NWebImpl::disableWebActivePolicy_ = false;
 
 void* NWebImpl::logger_report_event_callback_ = nullptr;
 
+WebDestroyMode NWebImpl::webDestroyMode_ = WebDestroyMode::NORMAL_MODE;
+
 // static
 std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
     std::shared_ptr<NWebCreateInfo> create_info) {
@@ -2911,6 +2913,15 @@ bool NWebImpl::IsActivePolicyDisable() {
 void NWebImpl::DisableWebActivePolicy() {
   WVLOG_I("NWebImpl DisableWebActivePolicy");
   disableWebActivePolicy_ = true;
+}
+
+WebDestroyMode NWebImpl::GetWebDestroyMode() {
+  return webDestroyMode_;
+}
+
+void NWebImpl::SetWebDestroyMode(WebDestroyMode mode) {
+  WVLOG_I("NWebImpl set web destroy mode %{public}d", static_cast<int32_t>(mode));
+  webDestroyMode_ = mode;
 }
 
 void NWebImpl::SetDelayDurationForBackgroundTabFreezing(int64_t delay) {

@@ -123,6 +123,7 @@ class NWebEngineImpl : public NWebEngine {
 
   void EnablePrivateNetworkAccess(bool enable) override;
   bool IsPrivateNetworkAccessEnabled() override;
+  void SetWebDestroyMode(WebDestroyMode mode) override;
 
  private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;

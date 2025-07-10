@@ -110,6 +110,9 @@ CONTENT_EXPORT extern const char kAdSecValue[];
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 CONTENT_EXPORT extern const char kSetExtensionName[];
 #endif
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+CONTENT_EXPORT extern const char  kOhosEnableGwpAsanType[];
+#endif
 }  // namespace switches
 
 #endif  // ARKWEB_CONTENT_PUBLIC_COMMON_CONTENT_SWITCHES_EXT_H_

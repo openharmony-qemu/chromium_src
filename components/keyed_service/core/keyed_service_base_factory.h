@@ -5,6 +5,8 @@
 #ifndef COMPONENTS_KEYED_SERVICE_CORE_KEYED_SERVICE_BASE_FACTORY_H_
 #define COMPONENTS_KEYED_SERVICE_CORE_KEYED_SERVICE_BASE_FACTORY_H_
 
+#include <unordered_set>
+
 #include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/sequence_checker.h"
@@ -143,7 +145,7 @@ class KEYED_SERVICE_EXPORT KeyedServiceBaseFactory : public DependencyNode {
 
 #if BUILDFLAG(ARKWEB_DISABLE_SERVICES)
   bool KeyedServiceDisabled(const char* service_name);
-  std::vector<std::string> GetDisableServices();
+  const std::unordered_set<std::string>& GetDisableServices();
 #endif
 };
 

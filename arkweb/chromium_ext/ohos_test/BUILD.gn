@@ -708,8 +708,8 @@ fuzzer_test("render_process_state_handler_fuzzer") {
   ]
 }
 
-fuzzer_test("alloy_native_embed_first_frame_piant_event_fuzzer") {
-  sources = [ "fuzztest/cef/ohos_cef_ext/libcef/browser/web_client_extension/alloy_native_embed_first_frame_piant_event_fuzzer.cpp" ]
+fuzzer_test("alloy_native_embed_first_frame_paint_event_fuzzer") {
+  sources = [ "fuzztest/cef/ohos_cef_ext/libcef/browser/web_client_extension/alloy_native_embed_first_frame_paint_event_fuzzer.cpp" ]
   include_dirs = [
     "//cef",
     "//cef/include",

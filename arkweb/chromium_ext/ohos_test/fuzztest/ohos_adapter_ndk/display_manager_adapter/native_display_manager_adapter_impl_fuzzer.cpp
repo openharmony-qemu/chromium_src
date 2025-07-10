@@ -30,7 +30,7 @@ void FuzzNativeDisplayAdapterImpl(FuzzedDataProvider* fdp) {
     int mode = fdp->ConsumeIntegralInRange<int>(0, 5);
     adapter.OnFoldStatusChanged(static_cast<NativeDisplayManager_FoldDisplayMode>(mode));
 
-    std::shared_ptr<NativeDisplayAdapterImpl> displayAdapter =
+    std::unique_ptr<NativeDisplayAdapterImpl> displayAdapter =
      std::make_unique<NativeDisplayAdapterImpl>();
 
     int rotation = fdp->ConsumeIntegralInRange<int>(0, 4);
@@ -69,26 +69,26 @@ void FuzzNativeDisplayAdapterImpl(FuzzedDataProvider* fdp) {
     displayAdapter->GetPhysicalHeight();
     displayAdapter->GetDefaultVirtualPixelRatio();
 
-    std::shared_ptr<NativeDisplayManagerAdapterImpl> displaymanger =
+    std::unique_ptr<NativeDisplayManagerAdapterImpl> displayManager =
      std::make_unique<NativeDisplayManagerAdapterImpl>();
-    displaymanger->GetDefaultDisplayId();
-    displaymanger->GetDefaultDisplay();
-    uint32_t displayId = fdp->ConsumeIntegral<uint32_t>();
-    displaymanger->DisplayChangeCallback(displayId);
+    displayManager->GetDefaultDisplayId();
+    displayManager->GetDefaultDisplay();
+    uint64_t displayId = fdp->ConsumeIntegral<uint64_t>();
+    displayManager->DisplayChangeCallback(displayId);
 
-    std::shared_ptr<DisplayListenerAdapter> displaylistener = nullptr;
-    displaymanger->RegisterDisplayListener(displaylistener);
+    std::shared_ptr<DisplayListenerAdapter> displayListener = nullptr;
+    displayManager->RegisterDisplayListener(displayListener);
     uint32_t id = fdp->ConsumeIntegral<uint32_t>();
-    displaymanger->UnregisterDisplayListener(id);
-    displaymanger->IsDefaultPortrait();
+    displayManager->UnregisterDisplayListener(id);
+    displayManager->IsDefaultPortrait();
 
-    std::shared_ptr<FoldStatusListenerAdapter> flodlistener =
+    std::shared_ptr<FoldStatusListenerAdapter> foldListener =
      std::make_unique<FoldStatusListenerAdapter>();
-    displaymanger->RegisterFoldStatusListener(flodlistener);
-    uint32_t flodId = fdp->ConsumeIntegral<uint32_t>();
-    displaymanger.UnregisterFoldStatusListener(flodId);
-    displaymanger->GetPrimaryDisplay();
-    displaymanger->GetAllDisplays();
+    displayManager->RegisterFoldStatusListener(foldListener);
+    uint32_t foldId = fdp->ConsumeIntegral<uint32_t>();
+    displayManager->UnregisterFoldStatusListener(foldId);
+    displayManager->GetPrimaryDisplay();
+    displayManager->GetAllDisplays();
 }
 
 

@@ -32,6 +32,7 @@ public:
     void DefaultEventHandlerExt(Event& event);
     void SetHrHidden(Event& event);
     void RemoveHrHidden(Event& event);
+    void SetSplitLineItemIsWanted(bool wanted);
 #endif
 };
 

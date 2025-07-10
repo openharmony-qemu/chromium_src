@@ -60,6 +60,17 @@ void MediaControlOverflowMenuListElementUtils::DefaultEventHandlerExt(Event& eve
     }
   }
 }
+
+void MediaControlOverflowMenuListElementUtils::SetSplitLineItemIsWanted(bool wanted) {
+  if (element && element->split_line_item_) {
+    if (wanted) {
+      element->split_line_item_->RemoveInlineStyleProperty(CSSPropertyID::kDisplay);
+    } else {
+      element->split_line_item_->SetInlineStyleProperty(CSSPropertyID::kDisplay,
+                                                        CSSValueID::kNone);
+    }
+  }
+}
 #endif
 
 }  // namespace blink

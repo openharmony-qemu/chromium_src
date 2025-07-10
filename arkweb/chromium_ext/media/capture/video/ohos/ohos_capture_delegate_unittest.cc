@@ -460,20 +460,12 @@ TEST_F(OHOSCaptureDelegateTest, GetFlashState001)
         .WillByDefault(Return(false));
     mojom::PhotoStatePtr photo_capabilities = mojom::PhotoState::New();
     GetFlashState(photo_capabilities);
-}
-
-TEST_F(OHOSCaptureDelegateTest, GetFlashState002)
-{
-    ON_CALL(*camera_manager_adapter_mock, IsFlashModeSupported(FlashModeAdapter::FLASH_MODE_CLOSE))
-        .WillByDefault(Return(false));
-    mojom::PhotoStatePtr photo_capabilities = mojom::PhotoState::New();
-    GetFlashState(photo_capabilities);
     EXPECT_TRUE(std::find(photo_capabilities->fill_light_mode.begin(),
                     photo_capabilities->fill_light_mode.end(),
                     mojom::FillLightMode::OFF) == photo_capabilities->fill_light_mode.end());
 }
 
-TEST_F(OHOSCaptureDelegateTest, GetFlashState003)
+TEST_F(OHOSCaptureDelegateTest, GetFlashState002)
 {
     ON_CALL(*camera_manager_adapter_mock, IsFlashModeSupported(FlashModeAdapter::FLASH_MODE_OPEN))
         .WillByDefault(Return(false));
@@ -484,7 +476,7 @@ TEST_F(OHOSCaptureDelegateTest, GetFlashState003)
                     mojom::FillLightMode::FLASH) == photo_capabilities->fill_light_mode.end());
 }
 
-TEST_F(OHOSCaptureDelegateTest, GetFlashState004)
+TEST_F(OHOSCaptureDelegateTest, GetFlashState003)
 {
     ON_CALL(*camera_manager_adapter_mock, IsFlashModeSupported(FlashModeAdapter::FLASH_MODE_AUTO))
         .WillByDefault(Return(false));

@@ -290,6 +290,7 @@ OnReportStatisticLogFunc
 
 #include "cef/include/cef_app.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
 #include "arkweb/ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/nweb_safe_browsing_detection_handler.h"
 #include "base/strings/string_split.h"
@@ -299,6 +300,7 @@ OnReportStatisticLogFunc
 #include "cef/ohos_cef_ext/libcef/browser/global_config/global_config_prefs.h"
 #include "chrome/browser/browser_process.h"
 #include "components/prefs/pref_service.h"
+#endif
 #endif
 namespace {
 uint32_t g_nweb_count = 0;
@@ -641,6 +643,7 @@ void MigratePasswordsToPasswordVault() {
 }
 #endif // ARKWEB_EXT_PASSWORD
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
 void ApplyCommandLineFromJson(const std::string& commandline) {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
@@ -689,6 +692,7 @@ void AddGlobalConfigFeaturesSwitchesToCommandLine() {
     }
   }
 }
+#endif
 #endif
 
 typedef void(*ReadDownloadDataCallback)(const char* guid, const void* buffer, const size_t size);
@@ -863,12 +867,14 @@ void NWebImpl::InitializeWebEngine(
   NWebApplication::GetDefault()->InitializeCef(mainargs, settings);
   content::GetNetworkService();
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   LOG(INFO) << "AddGlobalConfigFeaturesSwitchesToCommandLine begin.";
   AddGlobalConfigFeaturesSwitchesToCommandLine();
  
   LOG(INFO) << "HandleGlobalConfig begin.";
   OHOS::NWeb::NWebSafeBrowsingDetectionHandler::GetInstance().HandleGlobalConfig();
+#endif
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)

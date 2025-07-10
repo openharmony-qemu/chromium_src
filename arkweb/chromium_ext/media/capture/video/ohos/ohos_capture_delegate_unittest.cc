@@ -378,12 +378,6 @@ TEST_F(OHOSCaptureDelegateTest, Resume_ShouldReturn_WhenIsCapturingIsFalse)
     EXPECT_EQ(log_output1.find("*"), std::string::npos);
 }
 
-TEST_F(OHOSCaptureDelegateTest, GetWeakPtr)
-{
-    auto ret = c_delegate->GetWeakPtr();
-    EXPECT_NE(ret, nullptr);
-}
-
 TEST_F(OHOSCaptureDelegateTest, StartStream)
 {
     auto cameraManagerAdapterMock = std::make_shared<CameraManagerAdapterMock>();

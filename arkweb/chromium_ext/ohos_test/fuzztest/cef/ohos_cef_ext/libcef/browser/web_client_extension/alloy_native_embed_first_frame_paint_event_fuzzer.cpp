@@ -15,7 +15,7 @@
 
 #include <cstdint>
 #include <fuzzer/FuzzedDataProvider.h>
-#include "libcef/browser/web_clint_extension/alloy_native_embed_first_frame_paint_event.h"
+#include "libcef/browser/web_client_extension/alloy_native_embed_first_frame_paint_event.h"
 #include "content/common/native_embed_first_paint_event.h"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {

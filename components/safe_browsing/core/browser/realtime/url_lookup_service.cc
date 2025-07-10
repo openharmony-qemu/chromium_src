@@ -53,8 +53,7 @@ RealTimeUrlLookupService::RealTimeUrlLookupService(
     std::unique_ptr<SafeBrowsingTokenFetcher> token_fetcher,
     const ClientConfiguredForTokenFetchesCallback& client_token_config_callback,
     bool is_off_the_record,
-    base::RepeatingCallback<variations::VariationsService*()>
-        variations_service_getter,
+    variations::VariationsService* variations_service,
     ReferrerChainProvider* referrer_chain_provider,
     WebUIDelegate* delegate)
     : RealTimeUrlLookupServiceBase(url_loader_factory,
@@ -67,7 +66,7 @@ RealTimeUrlLookupService::RealTimeUrlLookupService(
       token_fetcher_(std::move(token_fetcher)),
       client_token_config_callback_(client_token_config_callback),
       is_off_the_record_(is_off_the_record),
-      variations_service_getter_(variations_service_getter) {
+      variations_(variations_service) {
   pref_change_registrar_.Init(pref_service_);
   pref_change_registrar_.Add(
       prefs::kSafeBrowsingEnhanced,
@@ -125,13 +124,13 @@ RealTimeUrlLookupService::~RealTimeUrlLookupService() = default;
 
 bool RealTimeUrlLookupService::CanPerformFullURLLookup() const {
   return RealTimePolicyEngine::CanPerformFullURLLookup(
-      pref_service_, is_off_the_record_, variations_service_getter_.Run());
+      pref_service_, is_off_the_record_, variations_);
 }
 
 bool RealTimeUrlLookupService::CanPerformFullURLLookupWithToken() const {
   return RealTimePolicyEngine::CanPerformFullURLLookupWithToken(
       pref_service_, is_off_the_record_, client_token_config_callback_,
-      variations_service_getter_.Run());
+      variations_);
 }
 
 int RealTimeUrlLookupService::GetReferrerUserGestureLimit() const {

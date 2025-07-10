@@ -24,7 +24,6 @@
 #include "components/sync_preferences/testing_pref_service_syncable.h"
 #include "components/unified_consent/pref_names.h"
 #include "components/unified_consent/unified_consent_service.h"
-#include "components/variations/service/variations_service.h"
 #include "net/base/net_errors.h"
 #include "net/http/http_status_code.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
@@ -163,10 +162,7 @@ class RealTimeUrlLookupServiceTest : public PlatformTest {
         base::BindRepeating(
             &RealTimeUrlLookupServiceTest::AreTokenFetchesConfiguredInClient,
             base::Unretained(this)),
-        /*is_off_the_record=*/false,
-        /*variations_service_gatter=*/
-        base::BindRepeating(
-            []() -> variations::VariationsService* { return nullptr; }),
+        /*is_off_the_record=*/false, /*variations_service=*/nullptr,
         referrer_chain_provider_.get(),
         /*webui_delegate=*/nullptr);
   }

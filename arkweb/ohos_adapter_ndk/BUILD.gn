@@ -132,6 +132,8 @@ component("adapter_ndk") {
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.h",
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.cpp",
     "distributeddatamgr_adapter/ohos_web_snapshot_data_base.cpp",
+    "net_config_adapter/net_config_adapter_impl.h",
+    "net_config_adapter/net_config_adapter_impl.cpp",
   ]
 
   include_dirs = [
@@ -333,5 +335,6 @@ component("adapter_ndk") {
   deps = [
     "//third_party:huawei_securec",
     "//arkweb/build/features",
+    "//base:tracing_buildflags",
   ]
 }

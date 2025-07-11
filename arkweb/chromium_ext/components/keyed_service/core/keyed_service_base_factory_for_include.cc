@@ -18,12 +18,12 @@
 #include "third_party/angle/third_party/rapidjson/src/include/rapidjson/error/en.h"
 #include "base/files/file_util.h"
 
-std::vector<std::string> KeyedServiceBaseFactory::GetDisableServices() {
+const std::unordered_set<std::string>& KeyedServiceBaseFactory::GetDisableServices() {
   if (dependency_manager_->disabledServicesInitialized) {
     return dependency_manager_->disabledServices;
   }
 
-  std::vector<std::string> services;
+  std::unordered_set<std::string> services;
   base::FilePath file_path = base::FilePath::FromUTF8Unsafe("/data/storage/el1/bundle/arkwebcore/etc/disabled_services.json");
 
   // 读取文件内容
@@ -31,7 +31,7 @@ std::vector<std::string> KeyedServiceBaseFactory::GetDisableServices() {
   if (!base::ReadFileToString(file_path, &json_content)) {
     LOG(WARNING) << "WARNING: read file empty: " << file_path.value();
     dependency_manager_->disabledServicesInitialized = true;
-    return services;
+    return dependency_manager_->disabledServices;
   }
 
   // 解析 JSON 内容
@@ -39,13 +39,13 @@ std::vector<std::string> KeyedServiceBaseFactory::GetDisableServices() {
   if (doc.Parse(json_content.c_str()).HasParseError()) {
     LOG(ERROR) << "ERROR: Failed to parse JSON content: " << rapidjson::GetParseError_En(doc.GetParseError());
     dependency_manager_->disabledServicesInitialized = true;
-    return services;
+    return dependency_manager_->disabledServices;
   }
 
   // 检查解析结果是否为数组类型
   if (doc.IsArray()) {
     for (const auto& s : doc.GetArray()) {
-      services.push_back(s.GetString());
+      services.insert(s.GetString());
     }
   } else {
     LOG(WARNING) << "WARNING: JSON content is not an array: " << file_path.value();
@@ -53,15 +53,14 @@ std::vector<std::string> KeyedServiceBaseFactory::GetDisableServices() {
 
   dependency_manager_->disabledServicesInitialized = true;
   dependency_manager_->disabledServices = services;
-  return services;
+  return dependency_manager_->disabledServices;
 }
 
 bool KeyedServiceBaseFactory::KeyedServiceDisabled(const char* service_name) {
-  std::vector<std::string> desired_strings = GetDisableServices();
-  for (std::string desired_string : desired_strings) {
-    if (std::string(service_name) == desired_string) {
-      return true;
-    }
+  const std::unordered_set<std::string>& desired_strings = GetDisableServices();
+  std::string service_name_input = std::string(service_name);
+  if (desired_strings.count(service_name_input) > 0) {
+    return true;
   }
   return false;
 }

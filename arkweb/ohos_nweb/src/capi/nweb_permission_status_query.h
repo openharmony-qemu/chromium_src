@@ -16,6 +16,7 @@
 #ifndef OHOS_NWEB_SRC_NWEB_PERMISSION_STATUS_QUERY_H_
 #define OHOS_NWEB_SRC_NWEB_PERMISSION_STATUS_QUERY_H_
 
+#include <hilog/log.h>
 #include "ohos_nweb/src/nweb_hilog.h"
 #include "ohos_nweb/src/nweb_access_query.h"
 #include <string.h>
@@ -29,17 +30,17 @@ struct NWebPermissionStatusQuery {
 
   NWebPermissionStatusQuery()
       : access_query(nullptr) {
-    WVLOG_I("NWebPermissionStatusQuery() is called");
+    OH_LOG_INFO(LOG_APP, "NWebPermissionStatusQuery() is called");
   }
 
   ~NWebPermissionStatusQuery() {
-    WVLOG_I("~NWebPermissionStatusQuery() is called");
+    OH_LOG_INFO(LOG_APP, "~NWebPermissionStatusQuery() is called");
   }
 
   NWebPermissionStatusQuery(
       std::shared_ptr<OHOS::NWeb::NWebAccessQuery> query)
       : access_query(query) {
-    WVLOG_I("NWebPermissionStatusQuery() is called");
+    OH_LOG_INFO(LOG_APP, "NWebPermissionStatusQuery() is called");
     if (access_query.get()) {
       resource_id = access_query->ResourceAcessId();
       origin_url = access_query->Origin();

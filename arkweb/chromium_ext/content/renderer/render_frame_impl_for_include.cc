@@ -108,3 +108,17 @@ void RenderFrameImpl::ChangeVisibilityOfQuickMenu() {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+void RenderFrameImpl::OnPdfScrollAtBottom(const std::string& url) {
+  if (GetFrameHost()) {
+    GetFrameHost()->OnPdfScrollAtBottom(url);
+  }
+}
+
+void RenderFrameImpl::OnPdfLoadEvent(int32_t result, const std::string& url) {
+  if (GetFrameHost()) {
+    GetFrameHost()->OnPdfLoadEvent(result, url);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_PDF)

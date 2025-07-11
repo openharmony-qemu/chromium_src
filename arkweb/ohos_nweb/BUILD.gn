@@ -91,6 +91,8 @@ component("cef_nweb") {
     "//third_party:huawei_securec",
     "//cef/libcef/features",
     "//cef/libcef/common/mojom",
+    "//components/js_injection/common",
+    "//components/js_injection/common:common_mojom",
   ]
 
   sources = [
@@ -203,8 +205,6 @@ component("cef_nweb") {
 
   if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
     sources += [
-      "src/cef_delegate/nweb_extension_context_menus_delegate_handler.h",
-      "src/cef_delegate/nweb_extension_context_menus_delegate_handler.cc",
       "src/cef_delegate/nweb_extension_action_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_action_cef_delegate.h",
       "src/cef_delegate/nweb_extension_bookmarks_cef_delegate.cc",
@@ -213,15 +213,21 @@ component("cef_nweb") {
       "src/cef_delegate/nweb_extension_downloads_cef_delegate.h",
       "src/cef_delegate/nweb_extension_prompt_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_prompt_cef_delegate.h",
-      "src/cef_delegate/nweb_extension_side_panel_cef_delegate.cc",
-      "src/cef_delegate/nweb_extension_side_panel_cef_delegate.h",
       "src/cef_delegate/nweb_extension_side_panel_cef_controller.cc",
       "src/cef_delegate/nweb_extension_side_panel_cef_controller.h",
+      "src/cef_delegate/nweb_extension_tab_cef_delegate.cc",
+      "src/cef_delegate/nweb_extension_tab_cef_delegate.h",
       "src/cef_delegate/nweb_extension_window_delegate_handler.h",
       "src/cef_delegate/nweb_extension_window_delegate_handler.cc",
-      "src/cef_delegate/nweb_extension_tab_delegate_handler.cc",
-      "src/cef_delegate/nweb_extension_tab_delegate_handler.h",
+      "src/cef_delegate/nweb_extension_window_cef_delegate.cc",
+      "src/cef_delegate/nweb_extension_window_cef_delegate.h",
     ]
+
+    if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
+      deps += [
+        "//ohos_nweb_ex:dispatcher",
+      ]
+    }
   }
 
   if (defined(arkweb_notification) && arkweb_notification) {
@@ -610,6 +616,7 @@ source_set("unittests") {
   include_dirs = [ "//ppapi/lib/gl/include" ]
 
   sources = [
+    "src/cef_delegate/nweb_access_request_delegate_unittest.cc",
     "src/cef_delegate/nweb_delegate_unittest.cc",
     "src/cef_delegate/nweb_event_handler_unittest.cc",
     "src/cef_delegate/nweb_handler_delegate_unittest.cc",

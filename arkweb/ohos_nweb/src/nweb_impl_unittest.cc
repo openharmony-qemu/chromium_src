@@ -69,6 +69,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (std::function<void(const char*)> render_update_cb),
               (override));
   MOCK_METHOD(void,
+              RegisterArkWebAppClientExtensionListener,
+              (std::shared_ptr<ArkWebAppClientExtensionCallback> callback),
+              (override));
+  MOCK_METHOD(void,
               RegisterWebAppClientExtensionListener,
               (std::shared_ptr<NWebAppClientExtensionCallback>
                    web_app_client_extension_listener),
@@ -177,6 +181,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   MOCK_METHOD(bool, CanStoreWebArchive, (), (const, override));
+  MOCK_METHOD(void, UnRegisterArkWebAppClientExtensionListener, (), (override));
   MOCK_METHOD(void, UnRegisterWebAppClientExtensionListener, (), (override));
   MOCK_METHOD(void,
               RegisterWebExtensionListener,
@@ -965,6 +970,14 @@ class MockNWebDelegate : public NWebDelegateInterface {
   void EnableVideoAssistant(bool enable) override {}
   void ExecuteVideoAssistantFunction(const std::string& cmd_id) override {}
   void CustomWebMediaPlayer(bool enable) override {}
+  void WebMediaPlayerControllerPlay() override {}
+  void WebMediaPlayerControllerPause() override {}
+  void WebMediaPlayerControllerSeek(double time) override {}
+  void WebMediaPlayerControllerSetMuted(bool muted) override {}
+  void WebMediaPlayerControllerSetPlaybackRate(double playback_rate) override {}
+  void WebMediaPlayerControllerExitFullscreen() override {}
+  void WebMediaPlayerControllerSetVideoSurface(void* native_window) override {}
+  void WebMediaPlayerControllerDownload() override {}
   void WebMediaPlayerControllerSetVolume(double volume) override {}
   double WebMediaPlayerControllerGetVolume() override { return 1.0; }
 #endif  // ARKWEB_VIDEO_ASSISTANT
@@ -976,7 +989,6 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void WebExtensionTabCreated(int tab_id) override {}
-  void WebExtensionTabRemoved(int tab_id) override {}
   void WebExtensionTabUpdated(
       int tab_id,
       const std::vector<std::string>& changed_property_names,
@@ -985,14 +997,19 @@ class MockNWebDelegate : public NWebDelegateInterface {
       int tab_id,
       const std::vector<std::string>& changed_property_names,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) override {}
+  void WebExtensionTabCreated(
+      std::unique_ptr<NWebExtensionTab> tab) override {}
+  void WebExtensionTabUpdated(
+      int tab_id,
+      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
+      std::unique_ptr<NWebExtensionTab> tab) override {}
   void WebExtensionTabActivated(
       std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) override {}
   void WebExtensionTabAttached(
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) override {}
   void WebExtensionTabDetached(
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) override {}
-  void WebExtensionTabHighlighted(int32_t tab_id,
-                                          int32_t window_id) override {}
+  void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) override {}
   void WebExtensionTabMoved(
       int32_t tab_id,
       std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) override {}
@@ -1000,8 +1017,24 @@ class MockNWebDelegate : public NWebDelegateInterface {
                                        int32_t removedTabId) override {}
   void WebExtensionTabZoomChange(
       std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) override {}
-  void WebExtensionActionClicked(std::string extension_id,
-                                         const NWebExtensionTab* tab) override {}
+  void WebExtensionTabRemoved(int tab_id,
+      bool isWindowClosing, int windowId) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_PERMISSION)
+  void PermissionRequestGrant(int32_t resourse_id,
+                              int nweb_request_key) override {}
+  void PermissionRequestDeny(int nweb_request_key) override {}
+  std::string PermissionRequestGetOrigin(int nweb_request_key) override {}
+  int32_t PermissionRequestGetResourceId(int nweb_request_key) override {}
+  void PermissionRequestDelete(int nweb_request_key) override {}
+#endif  // ARKWEB_EXT_PERMISSION
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void EnableViewAutoResize(
+      const CefSize& min_size,
+      const CefSize& max_size)  override {};
+  void DisableViewAutoResize()  override {};
 #endif
 
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)

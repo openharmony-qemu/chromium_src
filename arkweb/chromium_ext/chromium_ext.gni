@@ -241,6 +241,12 @@ arkweb_media_base_unittest_sources = [
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_codec_bridge_impl_unittest.cc",
   "//arkweb/chromium_ext/media/base/video_util_ext_unittest.cc",
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_decoder_bridge_impl_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_player_bridge_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_codec_util_unittest.cc",
+]
+
+arkweb_media_audio_unittest_sources = [
+  "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_manager_unittest.cc",
 ]
 
 arkweb_media_filters_sources = [
@@ -556,14 +562,20 @@ arkweb_content_browser_code_cache_sources = [
 ]
 
 arkweb_media_adapter_unittest_sources = [
-  "//arkweb/ohos_adapter_ndk/media_adapter/audio_cenc_info_adapter_impl_unittest.cc",
-  "//arkweb/ohos_adapter_ndk/media_adapter/audio_codec_decoder_adapter_impl_unittest.cc",
-  "//arkweb/ohos_adapter_ndk/media_adapter/buffer_info_adapter_impl_unittest.cc",
-  "//arkweb/ohos_adapter_ndk/media_adapter/capability_data_adapter_impl_unittest.cc",
-  "//arkweb/ohos_adapter_ndk/media_adapter/codec_format_adapter_impl_unittest.cc",
-  "//arkweb/ohos_adapter_ndk/media_adapter/drm_adapter_impl_unittest.cc",
-  "//arkweb/ohos_adapter_ndk/media_adapter/media_codec_decoder_adapter_impl_unittest.cc",
-  "//arkweb/ohos_adapter_ndk/media_adapter/ohos_buffer_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/media_adapter/audio_cenc_info_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/audio_codec_decoder_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/buffer_info_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/capability_data_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/codec_format_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/drm_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/media_codec_decoder_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/ohos_buffer_adapter_impl_unittest.cpp",
+]
+
+arkweb_media_gpu_unittest_sources = [
+  "//arkweb/chromium_ext/media/gpu/ohos/direct_shared_image_video_provider_unittest.cc",
+  "//arkweb/chromium_ext/media/gpu/ohos/ohos_video_decoder_unittest.cc",
+  "//arkweb/chromium_ext/media/gpu/ohos/ohos_video_encode_accelerator_unittest.cc",
 ]
 
 arkweb_content_browser_media_sources = [
@@ -940,6 +952,15 @@ arkweb_components_subresource_filter_content_shared_browser = [
   "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/user_ruleset_service.h",
   "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/user_unindexed_ruleset_stream_generator.cc",
   "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/user_unindexed_ruleset_stream_generator.h",
+]
+
+arkweb_ohos_adapter_ndk_unittests_sources = [
+  "//arkweb/chromium_ext/ohos_test/unittest/date_time_format_adapter/date_time_format_adapter_impl_unittests.cc",
+  "//arkweb/chromium_ext/ohos_test/unittest/graphic_adapter/native_image_adapter_impl_unittests.cc",
+  "//arkweb/chromium_ext/ohos_test/unittest/graphic_adapter/native_window_adapter_impl_unittests.cc",
+  "//arkweb/chromium_ext/ohos_test/unittest/graphic_adapter/vsync_adapter_impl_unittests.cc",
+  "//arkweb/chromium_ext/ohos_test/unittest/graphic_adapter/window_adapter_impl_unittests.cc",
+  "//arkweb/chromium_ext/ohos_test/unittest/ohos_native_buffer_adapter/ohos_native_buffer_adapter_impl_unittests.cc",
 ]
 
 arkweb_components_viz_common_frame_sinks_copy_output_result_sources = [

@@ -31,6 +31,7 @@
 #import "components/sync_preferences/testing_pref_service_syncable.h"
 #import "components/unified_consent/pref_names.h"
 #import "components/unified_consent/unified_consent_service.h"
+#import "components/variations/service/variations_service.h"
 #import "ios/components/security_interstitials/safe_browsing/fake_safe_browsing_client.h"
 #import "ios/components/security_interstitials/safe_browsing/safe_browsing_query_manager.h"
 #import "ios/components/security_interstitials/safe_browsing/safe_browsing_service_impl.h"

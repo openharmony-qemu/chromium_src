@@ -2361,6 +2361,10 @@ void ExtensionPrefs::FinishExtensionInfoPrefs(
 
   for (auto& observer : observer_list_)
     observer.OnExtensionRegistered(extension_id, install_time, is_enabled);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  prefs_->CommitPendingWrite();
+#endif // AR
 }
 
 void ExtensionPrefs::BackfillAndMigrateInstallTimePrefs() {

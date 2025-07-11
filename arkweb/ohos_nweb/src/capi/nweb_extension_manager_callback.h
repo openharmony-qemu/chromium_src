@@ -38,7 +38,7 @@ struct WebExtensionActionInfo {
   std::optional<std::array<int32_t, EXT_COLOR_MAX>> badgeTextColor;
   std::optional<std::string> popup;
   std::optional<std::string> title;
-  std::optional<OHOS::NWeb::NWebExtensionActionIcon*> icon;
+  std::optional<NWebExtensionActionIcon*> icon;
 };
 
 struct WebExtensionSidePanelInfo {

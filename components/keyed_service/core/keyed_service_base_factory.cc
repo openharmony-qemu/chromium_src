@@ -12,6 +12,10 @@
 #include "components/pref_registry/pref_registry_syncable.h"
 #include "components/prefs/pref_service.h"
 
+#if BUILDFLAG(ARKWEB_DISABLE_SERVICES)
+#include "arkweb/chromium_ext/components/keyed_service/core/keyed_service_base_factory_for_include.cc"
+#endif
+
 KeyedServiceBaseFactory::KeyedServiceBaseFactory(const char* service_name,
                                                  DependencyManager* manager,
                                                  Type type)
@@ -24,6 +28,12 @@ KeyedServiceBaseFactory::KeyedServiceBaseFactory(const char* service_name,
       "protos/perfetto/trace/track_event/chrome_keyed_service.proto. "
       "Contact tracing@chromium.org and base/metrics/OWNERS if this needs to "
       "change.");
+
+#if BUILDFLAG(ARKWEB_DISABLE_SERVICES)
+  if (KeyedServiceDisabled(service_name)) {
+    return;
+  }
+#endif
 
   dependency_manager_->AddComponent(this);
 }
@@ -40,6 +50,12 @@ void KeyedServiceBaseFactory::DependsOn(KeyedServiceBaseFactory* rhs) {
   // Each type can only depend on other services that are of the same type.
   if (rhs->type() != type_)
     return;
+
+#if BUILDFLAG(ARKWEB_DISABLE_SERVICES)
+  if (KeyedServiceDisabled(rhs->service_name_) || KeyedServiceDisabled(service_name_)) {
+    return;
+  }
+#endif
 
   dependency_manager_->AddEdge(rhs, this);
 }

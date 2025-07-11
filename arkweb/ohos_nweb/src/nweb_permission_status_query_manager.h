@@ -16,19 +16,27 @@
 #ifndef NWEB_PERMISSION_STATUS_QUERY_MANAGER_H_
 #define NWEB_PERMISSION_STATUS_QUERY_MANAGER_H_
 
-#include "capi/nweb_permission_status_query_delegate_callback.h"
-#include <string>
 #include <memory>
+#include <string>
+
+#include "capi/nweb_permission_status_query_delegate_callback.h"
 #include "ohos_nweb/src/capi/nweb_permission_status_query.h"
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/public/capi/arkweb_permission_status_query.h"
+#endif
 
 namespace OHOS::NWeb {
 
 class NWebPermissionStatusQueryManager {
  public:
-  static void SetPermissionStatusQueryDelegate(struct NWebPermissionStatusQueryDelegateCallback*);
+  static void SetPermissionStatusQueryDelegate(
+      struct NWebPermissionStatusQueryDelegateCallback*);
   static void QueryPermissionStatus(NWebPermissionStatusQuery*);
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  static void QueryPermissionStatus(ArkWebPermissionStatusQuery*);
+#endif
 };
 
-} // namespace OHOS::NWeb
+}  // namespace OHOS::NWeb
 
 #endif // NWEB_KEY_EVENT_IMPL_H

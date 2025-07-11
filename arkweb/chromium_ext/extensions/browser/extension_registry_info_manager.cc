@@ -32,13 +32,9 @@
 #include "extensions/browser/management_policy.h"
 #include "base/logging.h"
 #include "ohos_nweb/src/nweb_common.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_extension_manager_dispatcher.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
@@ -172,7 +168,6 @@ std::optional<WebExtensionManifestOptionsPageInfo> GetManifestOptionsPageInfo(
 
 std::shared_ptr<NWebExtensionManagerCallBack> g_extension_manager_listener = nullptr;
 
-
 gfx::Image ExtensionRegistryGetIcon(
     int tabId,
     ExtensionAction* extension_action) {
@@ -241,14 +236,14 @@ WebExtensionActionInfo ExtensionRegistryInfoManager::GetExtensionActionInfo(
           GET_ICON_SCALE);
       skia.AddRepresentation(resized_rep);
     }
-    OHOS::NWeb::NWebExtensionActionIcon icon =
+    NWebExtensionActionIcon icon =
         OHOS::NWeb::CreateFromImageSkiaReps(
             icon_image.AsImageSkia().image_reps());
 #if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
-    OHOS::NWeb::NWebExtensionActionIcon* iconTmp = new OHOS::NWeb::NWebExtensionActionIcon(icon);
+    NWebExtensionActionIcon* iconTmp = new NWebExtensionActionIcon(icon);
 #else
-    OHOS::NWeb::NWebExtensionActionIcon* addr = (OHOS::NWeb::NWebExtensionActionIcon*)__real_malloc(sizeof(icon));
-    OHOS::NWeb::NWebExtensionActionIcon* iconTmp = new (addr) OHOS::NWeb::NWebExtensionActionIcon(icon);
+    NWebExtensionActionIcon* addr = (NWebExtensionActionIcon*)__real_malloc(sizeof(icon));
+    NWebExtensionActionIcon* iconTmp = new (addr) NWebExtensionActionIcon(icon);
 #endif
     actionInfo.icon = iconTmp;
   }
@@ -306,7 +301,6 @@ void DeleteExtensionActionInfoIcon(WebExtensionActionInfo& action_info) {
   if (!action_info.icon.has_value()) {
     return;
   }
- 
   for (auto it : action_info.icon.value()->bitmaps) {
     delete it.second;
   }
@@ -399,10 +393,16 @@ void ExtensionRegistryInfoManager::NotifyOnExtensionLoaded(const Extension& exte
     loadedInfo.action = GetExtensionActionInfo(extension, -1);
     loadedInfo.sidePanel = GetExtensionSidePanelInfo(extension, std::nullopt);
     loadedInfo.contextMenus = GetAllExtensionContextMenus(extension.id());
-    ExtensionRegistryInfoManager::OnExtensionLoadedCallBack(loadedInfo);
-    if (loadedInfo.action.icon) {
-      loadedInfo.action.icon.value()->bitmaps =
-          std::map<double, OHOS::NWeb::NWebExtensionActionIconBitmap*>();
+    if (IsNativeApiEnable()) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+      NWebExtensionMangerDispatcher::OnExtensionLoadedCallBack(loadedInfo);
+#endif
+      DeleteExtensionActionInfoIcon(loadedInfo.action);
+    } else {
+      ExtensionRegistryInfoManager::OnExtensionLoadedCallBack(loadedInfo);
+      if (loadedInfo.action.icon) {
+        loadedInfo.action.icon.value()->bitmaps = std::map<double, NWebExtensionActionIconBitmap*>();
+      }
     }
   }
 }

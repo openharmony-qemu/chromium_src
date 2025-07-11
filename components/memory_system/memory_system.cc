@@ -6,6 +6,9 @@
 
 #include "base/allocator/dispatcher/dispatcher.h"
 #include "base/allocator/dispatcher/initializer.h"
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+#include "base/command_line.h"
+#endif
 #include "base/debug/crash_logging.h"
 #include "base/debug/debugging_buildflags.h"
 #include "build/build_config.h"

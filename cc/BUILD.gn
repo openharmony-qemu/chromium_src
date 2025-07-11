@@ -923,6 +923,12 @@ cc_test("cc_unittests") {
     "test/run_all_unittests.cc",
   ]
 
+  if (arkweb_unittests) {
+    sources += arkweb_cc_layer_unittest_sources
+    sources += arkweb_cc_trees_unittest_sources
+    sources += arkweb_cc_mojo_embedder_unittest_sources
+  }
+
   if (skia_support_skottie) {
     sources += [
       "paint/skottie_mru_resource_provider_unittest.cc",

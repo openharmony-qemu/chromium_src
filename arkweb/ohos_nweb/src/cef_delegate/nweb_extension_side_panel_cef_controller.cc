@@ -46,14 +46,9 @@ NWebExtensionSidePanelCefController::GetOptions(std::string extension_id,
   auto service = extensions::SidePanelService::Get(browser_context);
   LOG(INFO) << "GetSidePanelService service pointer:" << service;
 
-  std::optional<int> in_tab_id;
-  if (tab_id.has_value())
-    in_tab_id = *tab_id;
-  auto options = service->GetOptions(*extension, in_tab_id);
-  if (options.enabled.has_value())
-    result.enabled = *options.enabled;
-  if (options.tab_id.has_value())
-    result.tab_id = *options.tab_id;
+  auto options = service->GetOptions(*extension, tab_id);
+  result.enabled = *options.enabled;
+  result.tab_id = *options.tab_id;
   if (options.path.has_value()) {
     result.path = extension->GetResourceURL(*options.path).spec();
   }

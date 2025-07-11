@@ -41,6 +41,9 @@ void AddURLPatternSetToList(
 #if BUILDFLAG(IS_CHROMEOS)
       content::kExternalFileScheme,
 #endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      extensions::kArkwebExtensionScheme,
+#endif
       extensions::kExtensionScheme,
       url::kFileScheme,
       url::kFtpScheme,

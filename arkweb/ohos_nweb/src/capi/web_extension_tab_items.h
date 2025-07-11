@@ -45,6 +45,15 @@ struct NWebExtensionTabImageDetails {
   std::optional<int32_t> quality;
 };
 
+struct NWebTabCreateInfo {
+  std::optional<bool> active;
+  std::optional<int32_t> index;
+  std::optional<int32_t> openerTabId;
+  std::optional<bool> pinned;
+  std::optional<std::string> url;
+  std::optional<int32_t> windowId;
+};
+
 struct NWebExtensionTabCreateProperties {
   std::optional<int32_t> windowId;
 };

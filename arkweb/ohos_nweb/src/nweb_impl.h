@@ -65,6 +65,10 @@ struct OpenDevToolsParam;
 #include "ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
+#endif
+
 namespace OHOS::NWeb {
 class NWebImpl : public NWeb {
  public:
@@ -477,6 +481,10 @@ class NWebImpl : public NWeb {
 
   static void DisableWebActivePolicy();
 
+  WebDestroyMode GetWebDestroyMode() override;
+
+  static void SetWebDestroyMode(WebDestroyMode mode);
+
   void SetDelayDurationForBackgroundTabFreezing(int64_t delay);
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
@@ -494,6 +502,7 @@ class NWebImpl : public NWeb {
                                      int policy,
                                      const std::string& mappingType,
                                      const std::string& url);
+  static void OnGlobalConfigResult(const std::string& path);
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
 #if BUILDFLAG(IS_OHOS)
@@ -566,10 +575,12 @@ class NWebImpl : public NWeb {
                                     int32_t api_level);
   static bool GetBrowserServiceApiEnabled();
   static int32_t GetBrowserServiceSdkAPILevel();
-
+  void PutArkWebAppClientExtensionCallback(
+      std::shared_ptr<ArkWebAppClientExtensionCallback> callback);
   void PutWebAppClientExtensionCallback(
       std::shared_ptr<NWebAppClientExtensionCallback>
           web_app_client_extension_listener);
+  void RemoveArkWebAppClientExtensionCallback();
   void RemoveWebAppClientExtensionCallback();
 
   void PutWebExtensionCallback(
@@ -584,6 +595,10 @@ class NWebImpl : public NWeb {
   void SetBrowserUserAgentString(const std::string& user_agent);
   void OpenDevtools(std::unique_ptr<OpenDevToolsParam> param);
   void CloseDevtools();
+  void EnableAutoResize(
+      int32_t min_width, int32_t min_height, int32_t max_width, int32_t max_height);
+  void DisableAutoResize();
+  std::shared_ptr<HitTestResult> GetLastHitTestResultForBrowser();
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
@@ -592,6 +607,14 @@ class NWebImpl : public NWeb {
   static void OnReportStatisticLog(const std::string& content);
   static void SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func);
   void CustomWebMediaPlayer(bool enable);
+  void WebMediaPlayerControllerPlay();
+  void WebMediaPlayerControllerPause();
+  void WebMediaPlayerControllerSeek(double time);
+  void WebMediaPlayerControllerSetMuted(bool muted);
+  void WebMediaPlayerControllerSetPlaybackRate(double playback_rate);
+  void WebMediaPlayerControllerExitFullscreen();
+  void WebMediaPlayerControllerSetVideoSurface(void* native_window);
+  void WebMediaPlayerControllerDownload();
   void WebMediaPlayerControllerSetVolume(double volume);
   double WebMediaPlayerControllerGetVolume();
 #endif  // ARKWEB_VIDEO_ASSISTANT
@@ -736,6 +759,11 @@ class NWebImpl : public NWeb {
   void Deny(NWebPermissionRequest* request);
   std::string GetOrigin(NWebPermissionRequest* request);
   int32_t GetResourceId(NWebPermissionRequest* request);
+  void GrantV2(int32_t resourse_id, int nweb_request_key);
+  void DenyV2(int nweb_request_key);
+  std::string GetOriginV2(int nweb_request_key);
+  int32_t GetResourceIdV2(int nweb_request_key);
+  void PermissionRequestDelete(int nweb_request_key);
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
@@ -807,12 +835,6 @@ class NWebImpl : public NWeb {
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  static void PutWebExtensionApiSidePanelCallback(
-      std::shared_ptr<NWebExtensionSidePanelApiCallback> web_extension_api_callback);
-  static void RemoveWebExtensionApiSidePanelCallback();
-  static void PutWebExtensionWindowsApiCallback(
-      std::shared_ptr<NWebExtensionWindowsApiCallback> web_extension_windows_api_callback);
-  static void RemoveWebExtensionWindowsApiCallback();
   static void PutWebExtensionApiCallback(
       std::shared_ptr<NWebExtensionApiCallback> web_extension_api_callback);
   static void RemoveWebExtensionApiCallback();
@@ -823,24 +845,8 @@ class NWebImpl : public NWeb {
   static void GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionInfo>& extensionInfo);
   static void SetExtensionName(const std::string& extension_name);
   static bool GetExtensionName(std::string& extension_name);
-  static void PutExtensionContextMenusCallback(
-    std::shared_ptr<NWebExtensionContextMenusCallback> extension_context_menus_callback);
-  static void RemoveExtensionContextMenusCallback();
-
-  static void OnClickedExtensionContextMenus(const std::string& extension_id,
-                                             ContextMenusOnClickedData& data,
-                                             std::optional<NWebExtensionTab>& tab);
-
-  static void GetAllExtensionContextMenus(const std::vector<std::string>& extension_ids,
-                                            std::vector<NWebContextMenusItem>& result);
-  static void PutWebExtensionActionApiCallback(
-      std::shared_ptr<NWebExtensionActionApiCallback>
-          web_extension_api_callback);
-  static void RemoveWebExtensionActionApiCallback();
-
-  static void WebExtensionTabCreateCallback(int request_id, const NWebExtensionTab* tab);
+  //old version
   void WebExtensionTabCreated(int tab_id);
-  void WebExtensionTabRemoved(int tab_id);
   void WebExtensionTabUpdated(
       int tab_id,
       const std::vector<std::string>& changed_property_names,
@@ -849,25 +855,25 @@ class NWebImpl : public NWeb {
       int tab_id,
       const std::vector<std::string>& changed_property_names,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo);
+  // new version
+  void WebExtensionTabCreated(std::unique_ptr<NWebExtensionTab> tab);
+  void WebExtensionTabRemoved(int tab_id, bool isWindowClosing, int windowId);
+  void WebExtensionTabUpdated(
+      int tab_id,
+      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
+      std::unique_ptr<NWebExtensionTab> tab);
   void WebExtensionTabActivated(
       std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo);
   void WebExtensionTabAttached(
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo);
   void WebExtensionTabDetached(
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo);
-  void WebExtensionTabHighlighted(int32_t tab_id, int32_t window_id);
+  void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo);
   void WebExtensionTabMoved(int32_t tab_id,
                             std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo);
   void WebExtensionTabReplaced(int32_t addedTabId, int32_t removedTabId);
   void WebExtensionTabZoomChange(
       std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo);
-  void WebExtensionActionClicked(std::string extension_id,
-                                 const NWebExtensionTab* tab);
-  static void WebExtensionErasePopupWindowId(int popupNwebId);
-  static void WebExtensionSetPopupWindowId(int windowId, int popupNwebId);
-  static void WebExtensionEraseSidePanelWindowId(int popupNwebId);
-  static void WebExtensionSetSidePanelWindowId(int windowId,
-                                               int sidePanelNwebId);
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -1046,6 +1052,7 @@ class NWebImpl : public NWeb {
   bool is_enhance_surface_ = false;
   bool is_richtext_value_ = false;
   static bool disableWebActivePolicy_;
+  static WebDestroyMode webDestroyMode_;
 
   bool incognito_mode_ = false;
   raw_ptr<void> window_;

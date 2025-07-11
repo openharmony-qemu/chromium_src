@@ -60,6 +60,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (std::function<void(const char*)> render_update_cb),
               (override));
   MOCK_METHOD(void,
+              RegisterArkWebAppClientExtensionListener,
+              (std::shared_ptr<ArkWebAppClientExtensionCallback> callback),
+              (override));
+  MOCK_METHOD(void,
               RegisterWebAppClientExtensionListener,
               (std::shared_ptr<NWebAppClientExtensionCallback>
                    web_app_client_extension_listener),
@@ -169,6 +173,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   MOCK_METHOD(bool, CanStoreWebArchive, (), (const, override));
+  MOCK_METHOD(void, UnRegisterArkWebAppClientExtensionListener, (), (override));
   MOCK_METHOD(void, UnRegisterWebAppClientExtensionListener, (), (override));
 #endif  // BUILDFLAG(ARKWEB_NWEB_EX)
 
@@ -884,6 +889,14 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, EnableVideoAssistant, (bool enable), (override));
   MOCK_METHOD(void, ExecuteVideoAssistantFunction, (const std::string& cmd_id), (override));
   MOCK_METHOD(void, CustomWebMediaPlayer, (bool enable), (override));
+  MOCK_METHOD(void, WebMediaPlayerControllerPlay, (), (override));
+  MOCK_METHOD(void, WebMediaPlayerControllerPause, (), (override));
+  MOCK_METHOD(void, WebMediaPlayerControllerSeek, (double time), (override));
+  MOCK_METHOD(void, WebMediaPlayerControllerSetMuted, (bool muted), (override));
+  MOCK_METHOD(void, WebMediaPlayerControllerSetPlaybackRate, (double playback_rate), (override));
+  MOCK_METHOD(void, WebMediaPlayerControllerExitFullscreen, (), (override));
+  MOCK_METHOD(void, WebMediaPlayerControllerSetVideoSurface, (void* native_window), (override));
+  MOCK_METHOD(void, WebMediaPlayerControllerDownload, (), (override));
   MOCK_METHOD(void, WebMediaPlayerControllerSetVolume, (double volume), (override));
   MOCK_METHOD(double, WebMediaPlayerControllerGetVolume, (), (override));
   MOCK_METHOD(void, OnDestroyImageAnalyzerOverlay, (), (override));
@@ -896,16 +909,26 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (int tab_id, const std::vector<std::string> &changed_property_names,
                std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo),
               (override));
+  MOCK_METHOD(void, WebExtensionTabCreated, (std::unique_ptr<NWebExtensionTab> tab), (override));
+  MOCK_METHOD(void, WebExtensionTabUpdated,
+	      (int tab_id, std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
+	       std::unique_ptr<NWebExtensionTab> tab),
+	       (override));
   MOCK_METHOD(void, WebExtensionTabActivated, (std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo), (override));
   MOCK_METHOD(void, WebExtensionTabAttached, (std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo), (override));
   MOCK_METHOD(void, WebExtensionTabDetached, (std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo), (override));
-  MOCK_METHOD(void, WebExtensionTabHighlighted, (int32_t tab_id, int32_t window_id), (override));
+  MOCK_METHOD(void, WebExtensionTabHighlighted, (NWebExtensionTabHighlightInfo& highlightInfo), (override));
   MOCK_METHOD(void, WebExtensionTabMoved, (int32_t tab_id, std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo),
               (override));
   MOCK_METHOD(void, WebExtensionTabReplaced, (int32_t addedTabId, int32_t removedTabId), (override));
   MOCK_METHOD(void, WebExtensionTabZoomChange, (std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo),
               (override));
-  MOCK_METHOD(void, WebExtensionActionClicked, (std::string extension_id, const NWebExtensionTab *tab), (override));
+  MOCK_METHOD(void, WebExtensionTabRemoved, (int32_t tab_id, bool isWindowClosing, int32_t windowId), (override));
+  MOCK_METHOD(void, PermissionRequestGrant, (int32_t resourse_id, int nweb_request_key), (override));
+  MOCK_METHOD(void, PermissionRequestDeny, (int nweb_request_key), (override));
+  MOCK_METHOD(std::string, PermissionRequestGetOrigin, (int nweb_request_key), (override));
+  MOCK_METHOD(int32_t, PermissionRequestGetResourceId, (int nweb_request_key), (override));
+  MOCK_METHOD(void, PermissionRequestDelete, (int nweb_request_key), (override));
   MOCK_METHOD(void, SetWholePageDrawing, (), (override));
   MOCK_METHOD(void, SetSurfaceDensity, (const double& density), (override));
   MOCK_METHOD(void, OpenDevtoolsWith,
@@ -959,6 +982,11 @@ class MockNWebDelegate : public NWebDelegateInterface {
                bool recursive, IsolatedWorld world,
                OnReceiveValueCallback callback),
               (override));
+#endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  MOCK_METHOD(void, EnableViewAutoResize, (const CefSize& min_size, const CefSize& max_size), (override));
+  MOCK_METHOD(void, DisableViewAutoResize, (), (override));
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)

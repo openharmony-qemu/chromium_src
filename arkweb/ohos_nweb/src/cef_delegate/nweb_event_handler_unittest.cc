@@ -285,7 +285,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   bool GetWebDebuggingAccess() override { return false; }
 
-  void GetImageForContextNode(int command_id) override {}
+  void GetImageForContextNode(CefRefPtr<CefFrame> frame, int command_id) override {}
 
   void GetImageFromCache(const CefString& url, int command_id) override {}
 
@@ -720,12 +720,6 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void GetScrollOffset(float* offset_x, float* offset_y) override {}
   void GetOverScrollOffset(float* offset_x, float* offset_y) override {}
   void OnFoldStatusChanged(uint32_t foldStatus) override {}
-  void WebExtensionTabUpdated(int tab_id, const std::vector<CefString> &changed_property_names,
-                              const CefString &url) override {}
-  void WebExtensionTabUpdated(int tab_id, const std::vector<CefString> &changed_property_names,
-                              std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) override {}
-  void WebExtensionTabActivated(int tab_id, int window_id) override {}
-  void WebExtensionActionClicked(std::string extensionId, const NWebExtensionTab *tab) override {}
   void SetNativeEmbedMode(bool flag) override {}
   void SetNativeInnerWeb(bool isInnerWeb) override {}
   void ScaleGestureChangeV2(int type, float scale, float originScale, float width, float height) override {}

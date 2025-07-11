@@ -20,7 +20,6 @@
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #include "ohos_nweb/src/nweb_common.h"
- 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_extension_manager_dispatcher.h"
 #endif // ARKWEB_NWEB_EX
@@ -46,8 +45,7 @@ DeveloperPrivateOpenUrlFunction::Run() {
 
   if (IsNativeApiEnable()) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-    NWebExtensionManagerDispatcher::OnExtensionOpenUrlCallBack(params->url,
-                                                              params->type);
+    NWebExtensionMangerDispatcher::OnExtensionOpenUrlCallBack(params->url);
 #endif
   } else {
     ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack(params->url);

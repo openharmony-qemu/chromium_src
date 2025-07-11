@@ -758,6 +758,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
                                int32_t removedTabId) override;
   void WebExtensionTabZoomChange(std::unique_ptr<NWebExtensionTabZoomChangeInfo>
                                      tabZoomChangeInfo) override;
+  void WebExtensionSetViewType(int32_t type) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_PERMISSION)

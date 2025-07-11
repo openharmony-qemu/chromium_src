@@ -177,7 +177,7 @@ bool AudioParameters::operator==(const AudioParameters& other) const {
   return render_process_id_ == other.render_process_id() &&
          render_frame_id_ == other.render_frame_id();
 }
-+#endif
+#endif
 
 void AudioParameters::Reset(Format format,
                             ChannelLayoutConfig channel_layout_config,

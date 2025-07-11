@@ -35,7 +35,6 @@ using namespace media;
 
 class BaseScreenCaptureSource {
 private:
-
     bool is_picker_show_ = false;
 
     BaseScreenCaptureSource();

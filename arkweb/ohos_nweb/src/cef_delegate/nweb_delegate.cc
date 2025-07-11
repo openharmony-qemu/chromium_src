@@ -5367,6 +5367,14 @@ void NWebDelegate::WebExtensionTabZoomChange(
   }
   GetBrowser()->GetHost()->WebExtensionTabZoomChange(std::move(tabZoomChangeInfo));
 }
+
+void NWebDelegate::WebExtensionSetViewType(int32_t type) {
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "WebExtensionSetViewType failed, get browser failed";
+    return;
+  }
+  GetBrowser()->GetHost()->WebExtensionSetViewType(type);
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_PERMISSION)

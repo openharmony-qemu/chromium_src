@@ -1019,6 +1019,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
       std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) override {}
   void WebExtensionTabRemoved(int tab_id,
       bool isWindowClosing, int windowId) override;
+  void WebExtensionSetViewType(int32_t type) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_PERMISSION)

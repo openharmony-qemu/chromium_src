@@ -903,6 +903,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, OnFoldStatusChanged, (FoldStatus foldstatus), (override));
   MOCK_METHOD(void, WebExtensionTabCreated, (int tab_id), (override));
   MOCK_METHOD(void, WebExtensionTabRemoved, (int tab_id), (override));
+  MOCK_METHOD(void, WebExtensionSetViewType, (int32_t type), (override));
   MOCK_METHOD(void, WebExtensionTabUpdated,
               (int tab_id, const std::vector<std::string> &changed_property_names, const std::string &url), (override));
   MOCK_METHOD(void, WebExtensionTabUpdated,

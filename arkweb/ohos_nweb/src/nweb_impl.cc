@@ -5340,6 +5340,13 @@ void NWebImpl::WebExtensionTabZoomChange(
   }
   nweb_delegate_->WebExtensionTabZoomChange(std::move(tabZoomChangeInfo));
 }
+
+void NWebImpl::WebExtensionSetViewType(int32_t type) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->WebExtensionSetViewType(type);
+}
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 void NWebImpl::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) {

@@ -120,7 +120,7 @@ class MockSystemPropertiesAdapter : public OHOS::NWeb::SystemPropertiesAdapter {
   MOCK_METHOD(std::string, GetScrollFriction, (), (override));
   MOCK_METHOD(std::string, GetBundleName, (), (override));
   MOCK_METHOD(std::string, GetStringParameter, 
-              (const std::string& key, const td::string& defaultValue), (override));
+              (const std::string& key, const std::string& defaultValue), (override));
   MOCK_METHOD(int32_t, GetInitialCongestionWindowSize, (), (override));
 };
 

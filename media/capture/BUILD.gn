@@ -531,7 +531,7 @@ test("capture_unittests") {
     deps += [ "//components/viz/test:test_support" ]
   }
 
-  if (arkweb_media_capture) {
+  if (arkweb_unittests) {
     import("//arkweb/chromium_ext/media/capture/video/ohos/arkweb_media_capture_video_ohos_ext.gni")
 
     include_dirs = ohos_src_includes

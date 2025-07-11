@@ -30,7 +30,7 @@ enum class AudioSessionType {AUTO = 0, AMBIENT = 3};
 
 class OHOSAudioOutputStream : public AudioOutputStream {
  public:
- static std::set<content::WebContents*> webContentSet_;
+  static std::vector<AudioParameters> audioParameterSet_;
   OHOSAudioOutputStream(const OHOSAudioOutputStream&) = delete;
   OHOSAudioOutputStream& operator=(const OHOSAudioOutputStream&) = delete;
 
@@ -78,15 +78,16 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   bool StartRender();
 
-  void Prepare(base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
+  void Prepare(const AudioParameters& parameters);
 
-  void SuspendOtherMediaSession(
-      base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
+  void SuspendOtherMediaSession();
 
   // Call to determine whether media is preload
   bool IsPreloadOrMutedMediaMode();
 
   void SetStreamUsage();
+
+  void OneShotMediaPlayerStopped();
 
   raw_ptr<OHOSAudioManager> manager_ = nullptr;
 
@@ -131,15 +132,13 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
 
-  content::WebContents* webContent_ = nullptr;
-
-  base::WeakPtr<content::MediaSessionImpl> weakMediaSession_ = nullptr;
-
   bool audioExclusive_ = false;
 
   bool isSilentMode_ = false;
 
   std::atomic<bool> isDestroyed_ = {false};
+
+  int audioResumeInterval_ = 0;
 };
 
 }  // namespace media

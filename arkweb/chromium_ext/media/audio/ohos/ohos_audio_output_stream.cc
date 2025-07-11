@@ -202,7 +202,8 @@ void OHOSAudioOutputStream::SuspendOtherMediaSession() {
       it = OHOSAudioOutputStream::audioParameterSet_.erase(it);
       continue;
     }
-    if ((*it).Equals(parameters_)) {
+    if (parameters_.render_process_id() == parameters_.render_process_id() &&
+        parameters_.render_frame_id() == parameters_.render_frame_id()) {
       LOG(INFO) << "skip mediaSession control because of same audioparameters.";
       it++;
       continue;

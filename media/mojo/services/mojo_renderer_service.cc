@@ -67,7 +67,7 @@ void MojoRendererService::Initialize(
 
   if (!media_url_params) {
     DCHECK(streams.has_value());
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_MEDIA)
     if (!streams.has_value()) {
       std::move(callback).Run(false);
       return;

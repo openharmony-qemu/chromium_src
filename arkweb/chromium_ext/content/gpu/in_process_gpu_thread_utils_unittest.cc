@@ -23,6 +23,7 @@
 
 #define private public
 #define UNIT_TESTING
+#define INVALID_PID 1234
 
 using namespace testing;
 
@@ -224,12 +225,12 @@ TEST_F(InProcessGpuThreadUtilsTest, GetTidListByName_FindGpuThread) {
 
 TEST_F(InProcessGpuThreadUtilsTest, GetTidListByName_FindMaliThread) {
     MockFileContent("/proc/1234/task/5678/comm", "mali-cmar-backe\n");
-    EXPECT_EQ(-1, GetTidListByName(1234, "mali-cmar-backe"));
+    EXPECT_EQ(-1, GetTidListByName(INVALID_PID, "mali-cmar-backe"));
 }
 
 TEST_F(InProcessGpuThreadUtilsTest, GetTidListByName_ThreadNotFound) {
     MockFileContent("/proc/1234/task/1234/comm", "other-thread\n");
-    EXPECT_EQ(-1, GetTidListByName(1234, "gpu-work-server"));
+    EXPECT_EQ(-1, GetTidListByName(INVALID_PID, "gpu-work-server"));
 }
 
 TEST_F(InProcessGpuThreadUtilsTest, TryForReportThread_SuccessOnFirstAttempt) {
@@ -275,14 +276,14 @@ TEST_F(InProcessGpuThreadUtilsTest, LoadStringFromFile_FileNotExist) {
 TEST_F(InProcessGpuThreadUtilsTest, GetTidListByName_NonDigitDirEntry) {
     posix_mock::simulate_non_digit = true;
 
-    EXPECT_EQ(-1, GetTidListByName(1234, "gpu-work-server"));
+    EXPECT_EQ(-1, GetTidListByName(INVALID_PID, "gpu-work-server"));
 
     posix_mock::simulate_non_digit = false;
 }
 
 TEST_F(InProcessGpuThreadUtilsTest, GetTidListByName_CommFileReadFailed) {
     SetFileReadFail(true);
-    EXPECT_EQ(-1, GetTidListByName(1234, "gpu-work-server"));
+    EXPECT_EQ(-1, GetTidListByName(INVALID_PID, "gpu-work-server"));
     SetFileReadFail(false);
 }
 

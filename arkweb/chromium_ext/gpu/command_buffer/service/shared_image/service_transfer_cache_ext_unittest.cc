@@ -15,6 +15,7 @@ class ServiceTransferCacheExtTest : public testing::Test {
         GpuPreferences preferences;
         cache_ = std::make_unique<ServiceTransferCacheExt>(
             preferences, base::RepeatingClosure());
+        ASSERT_NE(cache_, nullptr);
     }
 
     std::unique_ptr<ServiceTransferCacheExt> cache_;
@@ -25,6 +26,10 @@ TEST_F(ServiceTransferCacheExtTest, CreateEntrySuccess) {
     auto surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     std::vector<sk_sp<SkImage>> images = {surface->makeImageSnapshot()};
 
+    ASSERT_NE(surface, nullptr);
+    ASSERT_FALSE(images.empty());
+    ASSERT_NE(images[0], nullptr);
+
     EXPECT_TRUE(cache_->CreateLockedRGBAHardwareDecodedImageEntry(
         1, 100, ServiceDiscardableHandle(), nullptr, std::move(images), 100));
 }
@@ -32,6 +37,10 @@ TEST_F(ServiceTransferCacheExtTest, CreateEntrySuccess) {
 TEST_F(ServiceTransferCacheExtTest, CreateDuplicateEntryFails) {
     auto surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     std::vector<sk_sp<SkImage>> images = {surface->makeImageSnapshot()};
+
+    ASSERT_NE(surface, nullptr);
+    ASSERT_FALSE(images.empty());
+    ASSERT_NE(images[0], nullptr);
 
     EXPECT_TRUE(cache_->CreateLockedRGBAHardwareDecodedImageEntry(
         1, 100, ServiceDiscardableHandle(), nullptr, images, 100));
@@ -44,6 +53,10 @@ TEST_F(ServiceTransferCacheExtTest, CreateEntryUpdatesCacheSize) {
     auto surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     std::vector<sk_sp<SkImage>> images = {surface->makeImageSnapshot()};
 
+    ASSERT_NE(surface, nullptr);
+    ASSERT_FALSE(images.empty());
+    ASSERT_NE(images[0], nullptr);
+
     EXPECT_TRUE(cache_->CreateLockedRGBAHardwareDecodedImageEntry(
         1, 100, ServiceDiscardableHandle(), nullptr, std::move(images), 100));
 }
@@ -51,6 +64,10 @@ TEST_F(ServiceTransferCacheExtTest, CreateEntryUpdatesCacheSize) {
 TEST_F(ServiceTransferCacheExtTest, CreateEntryUpdatesImageCount) {
     auto surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     std::vector<sk_sp<SkImage>> images = {surface->makeImageSnapshot()};
+
+    ASSERT_NE(surface, nullptr);
+    ASSERT_FALSE(images.empty());
+    ASSERT_NE(images[0], nullptr);
 
     EXPECT_TRUE(cache_->CreateLockedRGBAHardwareDecodedImageEntry(
         1, 100, ServiceDiscardableHandle(), nullptr, std::move(images), 100));

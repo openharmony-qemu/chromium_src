@@ -128,3 +128,7 @@ if (arkweb_custom_video_player) {
 if (arkweb_video_assistant) {
   mojom_core_enabled_features += [ "arkweb_video_assistant" ]
 }
+
+if (arkweb_error_page) {
+  mojom_core_enabled_features += [ "arkweb_error_page" ]
+}

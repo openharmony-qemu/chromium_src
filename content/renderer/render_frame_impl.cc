@@ -678,10 +678,14 @@ blink::mojom::CommonNavigationParamsPtr MakeCommonNavigationParams(
       initiator_origin_trial_features, info->href_translate.Latin1(),
       is_history_navigation_in_new_child_frame, info->input_start,
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-      request_destination, "");
+      request_destination, ""
 #else
-      request_destination);
+      request_destination
 #endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+      , false
+#endif
+      );
 }
 
 WebFrameLoadType NavigationTypeToLoadType(
@@ -3224,6 +3228,12 @@ void RenderFrameImpl::CommitFailedNavigation(
   std::string* error_html_ptr = &error_html;
   if (error_code == net::ERR_HTTP_RESPONSE_CODE_FAILURE) {
     DCHECK_NE(commit_params->http_response_code, -1);
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+    if (error_page_content && common_params->is_override_error_page) {
+      error_html = error_page_content.value();
+      error_html_ptr = nullptr;
+    }
+#endif
     GetContentClient()->renderer()->PrepareErrorPageForHttpStatusError(
         this, error, navigation_params->http_method.Ascii(),
         commit_params->http_response_code, nullptr, error_html_ptr);

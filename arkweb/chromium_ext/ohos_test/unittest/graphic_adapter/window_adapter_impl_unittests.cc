@@ -26,7 +26,7 @@ using namespace testing;
 
 namespace OHOS::NWeb {
 
-class VSyncAdapterImplTest : public testing::Test {
+class WindowAdapterImplTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
@@ -34,15 +34,15 @@ public:
     void TearDown();
 };
 
-void VSyncAdapterImplTest::SetUpTestCase() {}
+void WindowAdapterImplTest::SetUpTestCase() {}
 
-void VSyncAdapterImplTest::TearDownTestCase() {}
+void WindowAdapterImplTest::TearDownTestCase() {}
 
-void VSyncAdapterImplTest::SetUp() {}
+void WindowAdapterImplTest::SetUp() {}
 
-void VSyncAdapterImplTest::TearDown() {}
+void WindowAdapterImplTest::TearDown() {}
 
-TEST_F(VSyncAdapterImplTest, VSyncAdapterImplTest_001)
+TEST_F(WindowAdapterImplTest, WindowAdapterImplTest_001)
 {
     WindowAdapterNdkImpl &adapter = WindowAdapterNdkImpl::GetInstance();
     NWebNativeWindow window = adapter.CreateNativeWindowFromSurface(nullptr);

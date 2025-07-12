@@ -324,4 +324,18 @@ void RenderFrameHostImpl::CommitFailedNavigation(
       std::move(alternative_error_page_info), std::move(callback));
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+void RenderFrameHostImpl::OnPdfScrollAtBottom(const std::string& url) {
+  if (delegate_) {
+    delegate_->OnPdfScrollAtBottom(url);
+  }
+}
+
+void RenderFrameHostImpl::OnPdfLoadEvent(int32_t result, const std::string& url) {
+  if (delegate_) {
+    delegate_->OnPdfLoadEvent(result, url);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }  // namespace content

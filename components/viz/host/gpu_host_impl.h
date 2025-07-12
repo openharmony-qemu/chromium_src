@@ -251,6 +251,8 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   void SetIsFling(bool is_fling_enabled);
+  void SetIsScroll(bool is_scroll_enabled);
+  bool GetIsScroll();
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -371,6 +373,10 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
   SEQUENCE_CHECKER(sequence_checker_);
 
   base::WeakPtrFactory<GpuHostImpl> weak_ptr_factory_{this};
+
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  bool is_scroll_enabled_ = false; 
+#endif
 };
 
 }  // namespace viz

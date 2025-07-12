@@ -285,7 +285,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   bool GetWebDebuggingAccess() override { return false; }
 
-  void GetImageForContextNode(int command_id) override {}
+  void GetImageForContextNode(CefRefPtr<CefFrame> frame, int command_id) override {}
 
   void GetImageFromCache(const CefString& url, int command_id) override {}
 

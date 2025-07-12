@@ -319,6 +319,10 @@ public:
   void DelAllVideoSurfaces();
   void ReportVideoDecoderName(const std::string& decoder_name);
 #endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnPdfScrollAtBottom(const std::string& url) override;
+  void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 private:
   std::string custom_user_agent_;
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)

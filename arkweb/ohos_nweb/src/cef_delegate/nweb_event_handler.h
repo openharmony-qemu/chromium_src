@@ -113,6 +113,8 @@ class NWebEventHandler {
   bool is_in_web_ = false;
   bool isFocus_ = false;
   double sum_deltaY_ = 0.0;
+  // Whether return characters should be passed on to the front.
+  bool accept_return_character_ = false;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
         // last mouse move coordinates
   int last_mouse_x_ = -1;

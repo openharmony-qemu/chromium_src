@@ -894,4 +894,14 @@ interface FrameHost {
   CloseImageOverlaySelection();
   // #endif
 
+  // #if BUILDFLAG(ARKWEB_PDF)
+  [EnableIf=arkweb_pdf]
+  OnPdfScrollAtBottom(string url);
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_PDF)
+  [EnableIf=arkweb_pdf]
+  OnPdfLoadEvent(int32 result, string url);
+  // #endif
+
 };

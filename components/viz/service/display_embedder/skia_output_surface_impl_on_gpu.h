@@ -485,6 +485,10 @@ class SkiaOutputSurfaceImplOnGpu
   // returns a newly produced one and caches it.
   gpu::SkiaImageRepresentation* GetSkiaRepresentation(gpu::Mailbox mailbox);
 
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  void SetDVsyncIfNecessary();
+#endif
+
   class ReleaseCurrent {
    public:
     ReleaseCurrent(scoped_refptr<gl::GLSurface> gl_surface,
@@ -635,6 +639,11 @@ class SkiaOutputSurfaceImplOnGpu
   base::WeakPtr<SkiaOutputSurfaceImplOnGpu> weak_ptr_;
   base::WeakPtrFactory<SkiaOutputSurfaceImplOnGpu> weak_ptr_factory_{this};
   std::shared_ptr<SkiaOutputSurfaceImplOnGpuUtils> impl_utils_ = nullptr;
+
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  bool did_dvsync_on_ = false;
+  int delay_num_ = 0;
+#endif
 };
 
 }  // namespace viz

@@ -3688,6 +3688,7 @@ test("base_unittests") {
     sources += [
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
     ]
+    sources += arkweb_ohos_adapter_ndk_unittests_sources
   }
 
   if (!is_cronet_build) {

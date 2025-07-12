@@ -48,6 +48,7 @@ declare_args() {
   arkweb_dfx_dump = true
   arkweb_dfx_logging = true
   arkweb_dfx_tracing = true
+  arkweb_disable_services = true
   arkweb_dispatch_before_unload = true
   arkweb_display_cutout = true
   arkweb_download = true

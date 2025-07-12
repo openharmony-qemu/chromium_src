@@ -504,11 +504,12 @@ void OHOSCustomMediaPlayerRenderer::SetPlaybackRate(double playback_rate) {
       return;
     }
     media_player_->SetPlaybackRate(playback_rate);
+
+    if (!is_playing_) {
+      media_player_->Play();
+    }
+    is_playing_ = true;
   }
-  if (!is_playing_) {
-    media_player_->Play();
-  }
-  is_playing_ = true;
 }
 
 void OHOSCustomMediaPlayerRenderer::SetVolume(float volume) {

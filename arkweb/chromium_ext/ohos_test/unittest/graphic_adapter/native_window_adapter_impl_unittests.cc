@@ -105,14 +105,14 @@ TEST_F(NativeWindowAdapterImplTest, NativeWindowAdapterImplTest_003)
 TEST_F(NativeWindowAdapterImplTest, NativeWindowAdapterImplTest_004)
 {
     NativeBufferAdapterImpl adapter = NativeBufferAdapterImpl(nullptr);
-    int32_t ret = adapter.Stride();
+    int32_t ret = adapter.GetStride();
     EXPECT_EQ(ret, -1);
     void* buffer = nullptr;
     TestBufferAllocate(&buffer);
     OHNativeWindowBuffer* nativeWindowBuffer =
         OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer(static_cast<OH_NativeBuffer*>(buffer));
     NativeBufferAdapterImpl nativeAdapter = NativeBufferAdapterImpl(nativeWindowBuffer);
-    ret = nativeAdapter.Stride();
+    ret = nativeAdapter.GetStride();
     EXPECT_NE(ret, -1);
 }
 
@@ -135,7 +135,7 @@ TEST_F(NativeWindowAdapterImplTest, NativeWindowAdapterImplTest_006)
     NativeBufferAdapterImpl adapter = NativeBufferAdapterImpl(nullptr);
     uint32_t ret = adapter.GetSize();
     EXPECT_EQ(ret, -1);
-    void* addr = afapter.GetVirAddr();
+    void* addr = adapter.GetVirAddr();
     EXPECT_EQ(addr, nullptr);
     void* buffer = nullptr;
     TestBufferAllocate(&buffer);

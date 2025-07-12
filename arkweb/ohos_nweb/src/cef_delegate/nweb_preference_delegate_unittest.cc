@@ -473,3 +473,367 @@ TEST(NWebPreferenceDelegateTest, SetNativeEmbedMode) {
   auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
   preference_delegate->SetNativeEmbedMode(true);
 }
+
+TEST(NWebPreferenceDelegateTest, SetBrowserSettingsToNetHelpers) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->SetBrowserSettingsToNetHelpers();
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutMultiWindowAccess) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutMultiWindowAccess(true);
+    EXPECT_TRUE(preference_delegate->IsMultiWindowAccess());
+}
+
+TEST(NWebPreferenceDelegateTest, PutEnableContentAccess) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutEnableContentAccess(false);
+    EXPECT_FALSE(preference_delegate->IsMultiWindowAccess());
+}
+
+TEST(NWebPreferenceDelegateTest, PutEnableRawFileAccess_BrowserNull) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    preference_delegate->PutEnableRawFileAccess(false);
+    EXPECT_FALSE(preference_delegate->EnableRawFileAccess());
+}
+
+TEST(NWebPreferenceDelegateTest, PutEnableRawFileAccessFromFileURLs) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutEnableRawFileAccessFromFileURLs(true);
+    EXPECT_TRUE(preference_delegate->EnableRawFileAccessFromFileURLs());
+}
+
+TEST(NWebPreferenceDelegateTest, PutEnableUniversalAccessFromFileURLs) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutEnableUniversalAccessFromFileURLs(true);
+    EXPECT_TRUE(preference_delegate->EnableUniversalAccessFromFileURLs());
+}
+
+TEST(NWebPreferenceDelegateTest, PutLoadImageFromNetworkDisabled) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutLoadImageFromNetworkDisabled(true);
+    EXPECT_TRUE(preference_delegate->IsLoadImageFromNetworkDisabled());
+}
+
+TEST(NWebPreferenceDelegateTest, PutCursiveFontFamilyName) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutCursiveFontFamilyName("cursive");
+    EXPECT_EQ(preference_delegate->CursiveFontFamilyName(), "cursive");
+}
+
+TEST(NWebPreferenceDelegateTest, PutDatabaseAllowed) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutDatabaseAllowed(true);
+    EXPECT_TRUE(preference_delegate->IsDataBaseEnabled());
+}
+
+TEST(NWebPreferenceDelegateTest, PutDefaultFixedFontSize) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutDefaultFixedFontSize(24);
+    EXPECT_EQ(preference_delegate->DefaultFixedFontSize(), 24);
+}
+
+TEST(NWebPreferenceDelegateTest, PutDefaultFontSize) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutDefaultFontSize(24);
+    EXPECT_EQ(preference_delegate->DefaultFontSize(), 24);
+}
+
+TEST(NWebPreferenceDelegateTest, PutDefaultTextEncodingFormat) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutDefaultTextEncodingFormat("UTF-8");
+    EXPECT_EQ(preference_delegate->DefaultTextEncodingFormat(), "UTF-8");
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutDomStorageEnabled) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutDomStorageEnabled(true);
+    EXPECT_TRUE(preference_delegate->IsDomStorageEnabled());
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutFantasyFontFamilyName) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutFantasyFontFamilyName("fansasy");
+    EXPECT_EQ(preference_delegate->FantasyFontFamilyName(), "fansasy");
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutFixedFontFamilyName) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutFixedFontFamilyName("monospace");
+    EXPECT_EQ(preference_delegate->FixedFontFamilyName(), "monospace");
+}
+
+
+TEST(NWebPreferenceDelegateTest, SetBorderRadiusFromWeb) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->SetBorderRadiusFromWeb(0.0, 0.0, 0.0, 0.0);
+}
+
+
+TEST(NWebPreferenceDelegateTest, SetTouchHandleExistState) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->SetTouchHandleExistState(true);
+}
+
+
+TEST(NWebPreferenceDelegateTest, SetViewportScaleState) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->SetViewportScaleState(true);
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutForceDarkModeEnabled) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutForceDarkModeEnabled(0);
+    EXPECT_FALSE(preference_delegate->ForceDarkModeEnabled());
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutDarkSchemeEnabled) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutDarkSchemeEnabled(0);
+    EXPECT_FALSE(preference_delegate->DarkSchemeEnabled());
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutIsCreateWindowsByJavaScriptAllowed) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutIsCreateWindowsByJavaScriptAllowed(true);
+    EXPECT_TRUE(preference_delegate->IsCreateWindowsByJavaScriptAllowed());
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutJavaScriptEnabled) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutJavaScriptEnabled(true);
+    EXPECT_TRUE(preference_delegate->IsJavaScriptAllowed());
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutImageLoadingAllowed) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutImageLoadingAllowed(true);
+    EXPECT_TRUE(preference_delegate->IsImageLoadingAllowed());
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutFontSizeLowerLimit) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutFontSizeLowerLimit(24);
+    EXPECT_EQ(preference_delegate->FontSizeLowerLimit(), 24);
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutLogicalFontSizeLowerLimit) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutLogicalFontSizeLowerLimit(24);
+    EXPECT_EQ(preference_delegate->LogicalFontSizeLowerLimit(), 24);
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutLoadWithOverviewMode) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutLoadWithOverviewMode(true);
+    EXPECT_TRUE(preference_delegate->IsLoadWithOverviewMode());
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutSansSerifFontFamilyName) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutSansSerifFontFamilyName("sans-serif");
+    EXPECT_EQ(preference_delegate->SansSerifFontFamilyName(), "sans-serif");
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutSerifFontFamilyName) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutSerifFontFamilyName("serif");
+    EXPECT_EQ(preference_delegate->SerifFontFamilyName(), "serif");
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutStandardFontFamilyName) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutStandardFontFamilyName("sans-serif");
+    EXPECT_EQ(preference_delegate->StandardFontFamilyName(), "sans-serif");
+}
+
+TEST(NWebPreferenceDelegateTest, PutZoomingForTextFactor) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutZoomingForTextFactor(99);
+    EXPECT_EQ(preference_delegate->ZoomingForTextFactor(), 99);
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutGeolocationAllowed) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutGeolocationAllowed(true);
+    EXPECT_TRUE(preference_delegate->GeolocationAllowed());
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutAccessModeForSecureOriginLoadFromInsecure) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutAccessModeForSecureOriginLoadFromInsecure(OHOS::NWeb::NWebPreference::AccessMode::ALWAYS_ALLOW);
+    EXPECT_EQ(preference_delegate->AccessModeForSecureOriginLoadFromInsecure(), OHOS::NWeb::NWebPreference::AccessMode::ALWAYS_ALLOW);
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutZoomingFunctionEnabled) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutZoomingFunctionEnabled(true);
+    EXPECT_TRUE(preference_delegate->ZoomingfunctionEnabled());
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutBlockNetwork_BrowserNull) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    preference_delegate->PutBlockNetwork(true);
+    EXPECT_TRUE(preference_delegate->IsNetworkBlocked());
+    preference_delegate->PutBlockNetwork(false);
+    EXPECT_FALSE(preference_delegate->IsNetworkBlocked());
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutCacheMode_BrowserNull) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    preference_delegate->PutCacheMode(OHOS::NWeb::NWebPreference::CacheModeFlag::USE_DEFAULT);
+    EXPECT_EQ(preference_delegate->CacheMode(), OHOS::NWeb::NWebPreference::CacheModeFlag::USE_DEFAULT);
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutWebDebuggingAccess_BrowserNull) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    preference_delegate->PutWebDebuggingAccess(true);
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutMediaPlayGestureAccess) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutMediaPlayGestureAccess(true);
+    EXPECT_TRUE(preference_delegate->GetMediaPlayGestureAccess());
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutPinchSmoothMode) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutPinchSmoothMode(true);
+    EXPECT_TRUE(preference_delegate->GetPinchSmoothMode());
+}
+
+TEST(NWebPreferenceDelegateTest, DefaultUserAgent) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    EXPECT_EQ(preference_delegate->DefaultUserAgent(), "");
+}
+
+TEST(NWebPreferenceDelegateTest, UserAgent) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    EXPECT_EQ(preference_delegate->UserAgent(), "");
+}
+
+
+TEST(NWebPreferenceDelegateTest, MixedContentAutoupgradesAllowed001) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->EnableMixedContentAutoUpgrades(true);
+    EXPECT_TRUE(preference_delegate->IsMixedContentAutoUpgradesEnabled());
+}
+
+TEST(NWebPreferenceDelegateTest, MixedContentAutoupgradesAllowed002) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    EXPECT_FALSE(preference_delegate->MixedContentAutoupgradesAllowed());
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutHasInternetPermission) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutHasInternetPermission(true);
+
+}
+
+
+TEST(NWebPreferenceDelegateTest, IsWebDebuggingAccess) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->IsWebDebuggingAccess();
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutHorizontalScrollBarAccess) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutHorizontalScrollBarAccess(true);
+    EXPECT_TRUE(preference_delegate->IsHorizontalScrollBarAccess());
+
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutVerticalScrollBarAccess) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutVerticalScrollBarAccess(true);
+    EXPECT_TRUE(preference_delegate->IsVerticalScrollBarAccess());
+}
+
+
+TEST(NWebPreferenceDelegateTest, PutOverscrollMode_BrowserNull) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    preference_delegate->PutOverscrollMode(6);
+    EXPECT_EQ(preference_delegate->GetOverscrollMode(), 6);
+}
+
+
+TEST(NWebPreferenceDelegateTest, SetBlurOnKeyboardHideMode) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->SetBlurOnKeyboardHideMode(24);
+    EXPECT_EQ(preference_delegate->GetBlurEnable(), 24);
+}
+
+
+TEST(NWebPreferenceDelegateTest, SetScrollable_BrowserNull) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    preference_delegate->SetScrollable(true);
+    EXPECT_TRUE(preference_delegate->GetScrollable());
+}
+
+
+TEST(NWebPreferenceDelegateTest, SetScrollable2_UNKNOWN_BrowserNull) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    preference_delegate->SetScrollable(true, -1);
+    EXPECT_TRUE(preference_delegate->GetScrollable());
+}
+
+
+TEST(NWebPreferenceDelegateTest, SetScrollable2_EVENT_BrowserNull) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+        CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    preference_delegate->SetScrollable(true, 0);
+    EXPECT_TRUE(preference_delegate->GetScrollable());
+}
+
+
+TEST(NWebPreferenceDelegateTest, SetNativeEmbedMode_BrowserNull) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    CefRefPtr<CefBrowser> browser = nullptr;
+    preference_delegate->SetBrowser(browser);
+    preference_delegate->SetNativeEmbedMode(true);
+    EXPECT_TRUE(preference_delegate->GetNativeEmbedMode());
+    preference_delegate->SetNativeEmbedMode(false);
+    EXPECT_FALSE(preference_delegate->GetNativeEmbedMode());
+
+}

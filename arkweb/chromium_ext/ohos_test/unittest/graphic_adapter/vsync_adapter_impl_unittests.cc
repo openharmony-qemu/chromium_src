@@ -67,8 +67,8 @@ TEST_F(VSyncAdapterImplTest, VSyncAdapterImplTest_002)
     VSyncAdapterNdkImpl &adapter = VSyncAdapterNdkImpl::GetInstance();
     adapter.SetScene("", 1);
     adapter.hasRequestedVsync_ = true;
-    EXPECT_EQ(VSyncErrorCode::SUCCESS, adapter.RequestVSync(nullptr, nullptr));
+    EXPECT_EQ(VSyncErrorCode::SUCCESS, adapter.RequestVsync(nullptr, nullptr));
     adapter.hasRequestedVsync_ = false;
-    EXPECT_EQ(VSyncErrorCode::SUCCESS, adapter.RequestVSync(nullptr, nullptr));
+    EXPECT_EQ(VSyncErrorCode::SUCCESS, adapter.RequestVsync(nullptr, nullptr));
 }
 } // namespace OHOS::NWeb

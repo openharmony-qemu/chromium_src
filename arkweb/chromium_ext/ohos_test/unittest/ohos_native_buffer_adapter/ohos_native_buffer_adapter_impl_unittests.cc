@@ -73,18 +73,6 @@ TEST_F(NativeBufferAdapterImplTest, NativeBufferAdapterImplTest_001)
     adapter->AcquireBuffer(nativeBuffer);
 }
 
-TEST_F(NativeBufferAdapterImplTest, NativeBufferAdapterImplTest_001)
-{
-    std::shared_ptr<OhosNativeBufferAdapterImpl> adapter = std::make_shared<OhosNativeBufferAdapterImpl>();
-    EXPECT_NE(adapter, nullptr);
-    void* buffer = nullptr;
-    adapter->AcquireBuffer(buffer);
-    void* nativeBuffer = nullptr;
-    TestAllocate(&nativeBuffer);
-    EXPECT_NE(nativeBuffer, nullptr);
-    adapter->AcquireBuffer(nativeBuffer);
-}
-
 TEST_F(NativeBufferAdapterImplTest, NativeBufferAdapterImplTest_002)
 {
     std::shared_ptr<OhosNativeBufferAdapterImpl> adapter = std::make_shared<OhosNativeBufferAdapterImpl>();
@@ -177,7 +165,7 @@ TEST_F(NativeBufferAdapterImplTest, NativeBufferAdapterImplTest_008)
     void* nativeBuffer = nullptr;
     TestAllocate(&nativeBuffer);
     EXPECT_NE(nativeBuffer, nullptr);
-    res = adapter->IsBufferLocked(nativeBuffer);
+    res = adapter->IsBufferLocked(static_cast<OH_NativeBuffer*>(nativeBuffer));
     EXPECT_FALSE(res);
     ret = adapter->Unlock(nativeBuffer, &fence);
     EXPECT_EQ(ret, -1);

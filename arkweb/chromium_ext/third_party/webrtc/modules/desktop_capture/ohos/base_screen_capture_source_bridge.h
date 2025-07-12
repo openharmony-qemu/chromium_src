@@ -34,6 +34,13 @@ using namespace OHOS::NWeb;
 using namespace media;
 
 class BaseScreenCaptureSource {
+private:
+    bool is_picker_show_ = false;
+
+    BaseScreenCaptureSource();
+
+    ~BaseScreenCaptureSource();
+
 public:
 
     // Single Instance
@@ -91,14 +98,6 @@ public:
     std::mutex displaySelectedCallbackMutex_;
 
     base::WeakPtrFactory<BaseScreenCaptureSource> weak_factory_{this};
-
-private:
-
-    bool is_picker_show_ = false;
-
-    BaseScreenCaptureSource();
-
-    ~BaseScreenCaptureSource();
 };
 }
 

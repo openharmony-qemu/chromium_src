@@ -83,10 +83,12 @@ bool NweExtensionWindowCefDelegate::OnCreateWindow(const WebExtensionWindowCreat
   static int request_id = 0;
   request_id++;
 
+  g_window_created_map_[request_id] = std::move(callback);
   if (!NWebExtensionWindowsDispathcher::OnCreateWindow(request_id, create_date)) {
+    g_window_created_map_.erase(request_id);
     return false;
   }
-  g_window_created_map_[request_id] = std::move(callback);
+
   return true;
 #endif
 }
@@ -101,10 +103,12 @@ bool NweExtensionWindowCefDelegate::OnUpdateWindow(int windowId,
   static int request_id = 0;
   request_id++;
 
+  g_window_updated_map_[request_id] = std::move(callback);
   if (!NWebExtensionWindowsDispathcher::OnUpdateWindow(request_id, windowId, update_info)) {
+    g_window_updated_map_.erase(request_id);
     return false;
   }
-  g_window_updated_map_[request_id] = std::move(callback);
+
   return true;
 #endif
 }
@@ -118,10 +122,12 @@ bool NweExtensionWindowCefDelegate::OnRemoveWindow(int windowId,
   static int request_id = 0;
   request_id++;
 
+  g_window_removed_map_[request_id] = std::move(callback);
   if (!NWebExtensionWindowsDispathcher::OnRemoveWindow(request_id, windowId)) {
+    g_window_removed_map_.erase(request_id);
     return false;
   }
-  g_window_removed_map_[request_id] = std::move(callback);
+
   return true;
 #endif
 }

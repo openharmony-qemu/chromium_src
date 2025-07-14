@@ -665,3 +665,72 @@ fuzzer_test("alloy_native_embed_first_frame_paint_event_fuzzer") {
     "//ohos_nweb:nweb_sources",
   ]
 }
+
+fuzzer_test("audio_cenc_info_adapter_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_adapter_ndk/media_adapter/audio_cenc_info_adapter_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//arkweb/ohos_adapter_ndk/media_adapter",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gmock",
+    "//arkweb/ohos_adapter_ndk:adapter_ndk",
+  ]
+}
+
+fuzzer_test("ohos_image_decoder_adapter_fuzzer") {
+  sources = [ "fuzztest/ohos_adapter_ndk/ohos_image_decoder_adapter_fuzzer/ohos_image_decoder_adapter_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//arkweb/ohos_adapter_ndk/media_adapter",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gmock",
+    "//arkweb/ohos_adapter_ndk:adapter_ndk",
+  ]
+}
+
+fuzzer_test("nweb_media_info_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_nweb/src/native_media_player/nweb_media_info_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//ohos_nweb/src/native_media_player",
+  ]
+  deps = [
+    "//arkweb/ohos_adapter_ndk:adapter_ndk_stub",
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+
+fuzzer_test("nweb_native_media_player_handler_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_nweb/src/native_media_player/nweb_native_media_player_handler_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//ohos_nweb/src/native_media_player",
+  ]
+  deps = [
+    "//arkweb/ohos_adapter_ndk:adapter_ndk_stub",
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}

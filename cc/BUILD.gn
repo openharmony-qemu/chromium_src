@@ -924,6 +924,7 @@ cc_test("cc_unittests") {
   ]
 
   if (arkweb_unittests) {
+    sources += arkweb_cc_input_unittest_sources
     sources += arkweb_cc_layer_unittest_sources
     sources += arkweb_cc_trees_unittest_sources
     sources += arkweb_cc_mojo_embedder_unittest_sources

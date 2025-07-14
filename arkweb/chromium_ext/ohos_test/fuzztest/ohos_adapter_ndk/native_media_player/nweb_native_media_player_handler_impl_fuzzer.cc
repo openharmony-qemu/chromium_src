@@ -99,7 +99,6 @@ bool PlayerFrameworkAdapterImpl_SetMediaSourceHeaderFuzzTest(FuzzedDataProvider*
     return true;
 }
 
-
 } // namespace OHOS
 
 /* Fuzzer entry point */

@@ -18,8 +18,6 @@
 #include <cstring>
 #include <fuzzer/FuzzedDataProvider.h>
 
-
-
 using namespace OHOS::NWeb;
 
 namespace OHOS {
@@ -129,8 +127,6 @@ bool MediaCodecDecoderAdapterImplFuzzTest(const uint8_t* data, size_t size)
     buffer = nullptr;
     return true;
 }
-
-
 
 } // namespace OHOS
 

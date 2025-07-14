@@ -1123,7 +1123,7 @@ TEST(NWebPreferenceDelegateTest, PutErrorPageEnabled) {
     EXPECT_TRUE(preference_delegate->ErrorPageEnabled());
 }
 
-TEST(NWebPreferenceDelegateTest, PutErrorPageEnabled) {
+TEST(NWebPreferenceDelegateTest, GetPreferenceHash) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);

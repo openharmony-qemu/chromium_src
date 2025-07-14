@@ -27,7 +27,6 @@
 using namespace OHOS::NWeb;
 
 namespace OHOS {
-constexpr int MAX_SET_NUMBER = 1000;
 
 class MediaAVSessionCallbackAdapterMock : public MediaAVSessionCallbackAdapter {
 public:
@@ -103,7 +102,6 @@ bool MediaAVSessionAdapterImplFuzzTest(FuzzedDataProvider* fdp)
     type = MediaAVSessionType::MEDIA_TYPE_VIDEO;
     avSessionAdapter->CreateAVSession(type);
 
-    int64_t time = fdp->ConsumeIntegralInRange<int64_t>(0, MAX_SET_NUMBER);
     key->Init();
     key->GetPID();
     key->GetType();

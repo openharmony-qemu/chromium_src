@@ -914,8 +914,8 @@ TEST(NWebPreferenceDelegateTest, PutCopyOptionMode) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
-    preference_delegate->PutCopyOptionMode(OHOS::NWeb::NWeb::NWebPreference::CopyOptionMode::CROSS_DEVICE);
-    EXPECT_EQ(preference_delegate->GetCopyOptionMode(), OHOS::NWeb::NWeb::NWebPreference::CopyOptionMode::CROSS_DEVICE);
+    preference_delegate->PutCopyOptionMode(OHOS::NWeb::NWebPreference::CopyOptionMode::CROSS_DEVICE);
+    EXPECT_EQ(preference_delegate->GetCopyOptionMode(), OHOS::NWeb::NWebPreference::CopyOptionMode::CROSS_DEVICE);
 }
 
 TEST(NWebPreferenceDelegateTest, SetGestureFocusMode) {
@@ -1041,7 +1041,7 @@ TEST(NWebPreferenceDelegateTest, SetWholePageDrawing) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
-    preference_delegate->SetWholePageDrawing(script_items);
+    preference_delegate->SetWholePageDrawing();
     EXPECT_TRUE(preference_delegate->GetWholeWebPageDrawing());
 }
 
@@ -1069,16 +1069,6 @@ TEST(NWebPreferenceDelegateTest, SetUsageScenario) {
     EXPECT_EQ(preference_delegate->GetUsageScenario(), 1);
     preference_delegate->SetUsageScenario(2);
     EXPECT_EQ(preference_delegate->GetUsageScenario(), 2);
-}
-
-TEST(NWebPreferenceDelegateTest, EnableMediaNetworkTrafficPrompt) {
-    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
-    CefRefPtr<CefBrowser> browser = nullptr;
-    preference_delegate->SetBrowser(browser);
-    preference_delegate->EnableMediaNetworkTrafficPrompt(true);
-    EXPECT_TRUE(preference_delegate->GetUsageScenario());
-    preference_delegate->SetUsageScenario(false);
-    EXPECT_FALSE(preference_delegate->GetUsageScenario());
 }
 
 TEST(NWebPreferenceDelegateTest, PutBackForwardCacheOptions) {

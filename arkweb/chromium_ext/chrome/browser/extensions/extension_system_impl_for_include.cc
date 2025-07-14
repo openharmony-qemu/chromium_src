@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "libcef/browser/extensions/extension_action_browser_notifier.h"
+
 namespace extensions {
 
 void InitForRegularProfileForInclude(
@@ -30,6 +32,9 @@ void InitForRegularProfileForInclude(
     LOG(ERROR) << "menu_manager is null";
   }
   menu_manager->AddLoadObserver(extension_registry_info_manager);
+
+  ExtensionActionBrowserNotifier::GetInstance()->StartObservingActionDispatcher(
+      profile);
 #endif
 }
 

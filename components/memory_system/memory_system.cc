@@ -238,8 +238,12 @@ void MemorySystem::Impl::InitializeGwpASan(
   const base::CommandLine* const command_line =
       base::CommandLine::ForCurrentProcess();
   const std::string enable_type = command_line->GetSwitchValueASCII("ohos-enable-gwp-asan-type");
+  if (enable_type.empty()) {
+    LOG(INFO) << "gwp-asan Not supported.";
+    return;
+  }
   if (enable_type != "all" && enable_type != gwp_asan_parameters.process_type) {
-    LOG(INFO) << "gwp-asan only support for renderer, pass enable_type = "
+    LOG(INFO) << "gwp-asan is off for this process, enable_type = "
       << enable_type << ", process_type = " << gwp_asan_parameters.process_type;
     return;
   }

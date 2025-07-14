@@ -891,7 +891,7 @@ TEST(NWebPreferenceDelegateTest, PutTextAutosizingEnabled) {
     preference_delegate->PutTextAutosizingEnabled(true);
     EXPECT_TRUE(preference_delegate->IsTextAutosizingEnabled());
     preference_delegate->PutTextAutosizingEnabled(false);
-    EXPECT_TRUE(preference_delegate->IsTextAutosizingEnabled());
+    EXPECT_FALSE(preference_delegate->IsTextAutosizingEnabled());
 }
 
 TEST(NWebPreferenceDelegateTest, SetFitContent) {

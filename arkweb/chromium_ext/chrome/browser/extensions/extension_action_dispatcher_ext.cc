@@ -14,6 +14,7 @@
  */
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h"
 #include "ohos_cef_ext/libcef/browser/extensions/tab_extensions_util.h"
 #endif
 
@@ -35,6 +36,33 @@ void ExtensionActionDispatcher::DispatchExtensionActionClickedWithCustomArgs(
   DispatchEventToExtension(context,
                            extension_id, histogram_value,
                            event_name, std::move(args));
+}
+
+void ExtensionActionDispatcher::ClearAllValuesForTab(
+    content::WebContents* web_contents) {
+  DCHECK(web_contents);
+  int tab_id = cef::GetTabIdForWebContents(web_contents);
+  if (tab_id < 0) {
+    LOG(ERROR) << "invalid tab_id for ClearAllValuesForTab";
+    return;
+  }
+
+  content::BrowserContext* browser_context = web_contents->GetBrowserContext();
+  const ExtensionSet& enabled_extensions =
+      ExtensionRegistry::Get(browser_context_)->enabled_extensions();
+  ExtensionActionManager* action_manager =
+      ExtensionActionManager::Get(browser_context_);
+
+  for (const auto& extension : enabled_extensions) {
+    ExtensionAction* extension_action =
+        action_manager->GetExtensionAction(*extension);
+    if (extension_action) {
+      extension_action->ClearAllValuesForTab(tab_id);
+      LOG(INFO) << "clearing all action values for extension "
+                << extension_action->extension_id() << ", tab_id: " << tab_id;
+      NotifyChange(extension_action, web_contents, browser_context);
+    }
+  }
 }
 #endif  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 

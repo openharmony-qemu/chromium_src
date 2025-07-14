@@ -718,7 +718,6 @@ fuzzer_test("nweb_media_info_impl_fuzzer") {
   ]
 }
 
-
 fuzzer_test("nweb_native_media_player_handler_impl_fuzzer") {
   sources = [ "fuzztest/ohos_nweb/src/native_media_player/nweb_native_media_player_handler_impl_fuzzer.cc" ]
   include_dirs = [

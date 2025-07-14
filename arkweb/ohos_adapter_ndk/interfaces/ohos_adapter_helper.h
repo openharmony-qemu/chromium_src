@@ -170,6 +170,8 @@ public:
 
     virtual std::unique_ptr<ScreenlockManagerAdapter> CreateScreenlockManagerAdapter() = 0;
 
+    virtual std::unique_ptr<CertManagerAdapter> GetCertManagerAdapter() = 0;
+
     virtual std::unique_ptr<NetConfigAdapter> GetNetConfigAdapter() = 0;
 };
 

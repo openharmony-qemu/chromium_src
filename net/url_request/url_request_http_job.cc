@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
 #include "base/base_switches.h"
 #include "base/check_op.h"

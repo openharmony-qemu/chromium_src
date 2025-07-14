@@ -640,15 +640,23 @@ arkweb_cc_trees_source = [
   "//arkweb/chromium_ext/cc/trees/layer_tree_impl_utils.h",
 ]
 
+arkweb_cc_input_unittest_sources = [
+  "//arkweb/chromium_ext/cc/input/input_handler_utils_unittest.cc",
+]
+
 arkweb_cc_layer_unittest_sources = [
+  "//arkweb/chromium_ext/cc/layer/layer_impl_utils_unittest.cc",
   "//arkweb/chromium_ext/cc/layer/layer_utils_unittest.cc",
   "//arkweb/chromium_ext/cc/layer/surface_layer_for_include_unittest.cc",
   "//arkweb/chromium_ext/cc/layer/surface_layer_impl_for_include_unittest.cc",
+  "//arkweb/chromium_ext/cc/layer/surface_layer_impl_utils_unittest.cc",
   "//arkweb/chromium_ext/cc/layer/video_layer_ext_unittest.cc",
+  "//arkweb/chromium_ext/cc/layer/video_layer_impl_utils_unittest.cc",
 ]
 
 arkweb_cc_trees_unittest_sources = [
   "//arkweb/chromium_ext/cc/trees/layer_tree_impl_utils_unittest.cc",
+  "//arkweb/chromium_ext/cc/trees/layer_tree_host_ext_unittest.cc",
 ]
 
 arkweb_cc_mojo_embedder_unittest_sources = [

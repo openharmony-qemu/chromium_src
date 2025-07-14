@@ -203,6 +203,10 @@ class MockOhosAdapterHelper : public OHOS::NWeb::OhosAdapterHelper {
               CreateMigrationMgrAdapter,
               (),
               (override));
+  MOCK_METHOD(std::unique_ptr<CertManagerAdapter>,
+              GetCertManagerAdapter,
+              (),
+              (override));
   MOCK_METHOD(std::unique_ptr<NetConfigAdapter>,
               GetNetConfigAdapter,
               (),

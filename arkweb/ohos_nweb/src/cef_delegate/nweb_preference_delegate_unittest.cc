@@ -850,14 +850,14 @@ TEST(NWebPreferenceDelegateTest, SetViewportEnable) {
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
     preference_delegate->SetViewportEnable(true);
-    EXPECT_TRUE(preference_delegate->GetViewportEnable())
+    EXPECT_TRUE(preference_delegate->GetViewportEnable());
 }
 
 TEST(NWebPreferenceDelegateTest, GetScrollBarColor) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
-    preference_delegate->GetScrollBarColor(true);
+    preference_delegate->GetScrollBarColor();
 }
 
 TEST(NWebPreferenceDelegateTest, SetBackgroundColor) {
@@ -865,15 +865,7 @@ TEST(NWebPreferenceDelegateTest, SetBackgroundColor) {
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
     preference_delegate->SetBackgroundColor(2);
-    EXPECT_EQ(preference_delegate->GetBackgroundColor());
-}
-
-TEST(NWebPreferenceDelegateTest, PutScrollBarColor) {
-    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
-    CefRefPtr<CefBrowser> browser = nullptr;
-    preference_delegate->SetBrowser(browser);
-    preference_delegate->PutScrollBarColor(2);
-    EXPECT_EQ(preference_delegate->GetScrollBarColor(), 2);
+    EXPECT_EQ(preference_delegate->GetBackgroundColor(), 2);
 }
 
 TEST(NWebPreferenceDelegateTest, PutScrollBarColor) {
@@ -922,8 +914,8 @@ TEST(NWebPreferenceDelegateTest, PutCopyOptionMode) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
-    preference_delegate->PutCopyOptionMode(CopyOptionMode::CROSS_DEVICE);
-    EXPECT_EQ(preference_delegate->GetCopyOptionMode(), CopyOptionMode::CROSS_DEVICE);
+    preference_delegate->PutCopyOptionMode(OHOS::NWeb::NWeb::NWebPreference::CopyOptionMode::CROSS_DEVICE);
+    EXPECT_EQ(preference_delegate->GetCopyOptionMode(), OHOS::NWeb::NWeb::NWebPreference::CopyOptionMode::CROSS_DEVICE);
 }
 
 TEST(NWebPreferenceDelegateTest, SetGestureFocusMode) {
@@ -976,7 +968,9 @@ TEST(NWebPreferenceDelegateTest, PutJavaScriptOnDocumentStart) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
-    ScriptItems script_items = {"testKey": {"testVal1", "testVal2"}};
+    ScriptItems script_items = {
+      {"testKey", {"testVal1", "testVal2"}}
+    };
     preference_delegate->PutJavaScriptOnDocumentStart(script_items);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentStart(), script_items);
 }
@@ -985,8 +979,10 @@ TEST(NWebPreferenceDelegateTest, PutJavaScriptOnDocumentStartByOrder) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
-    ScriptItems script_items = {"testKey": {"testVal1", "testVal2"}};
-    script_items_start_by_order_ script_items_start_by_order_ = {"testVal1", "testVal2"};
+        ScriptItems script_items = {
+      {"testKey", {"testVal1", "testVal2"}}
+    };
+    ScriptItemsByOrder script_items_start_by_order_ = {"testVal1", "testVal2"};
     preference_delegate->PutJavaScriptOnDocumentStartByOrder(script_items, script_items_start_by_order_);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentStart(), script_items);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentStartByOrder(), script_items_start_by_order_);
@@ -996,7 +992,10 @@ TEST(NWebPreferenceDelegateTest, PutJavaScriptOnDocumentEnd) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
-    ScriptItems script_items = {"testKey": {"testVal1", "testVal2"}};
+    ScriptItems script_items = {
+      {"testKey", {"testVal1", "testVal2"}}
+    };
+    ScriptItemsByOrder script_items_start_by_order_ = {"testVal1", "testVal2"};
     preference_delegate->PutJavaScriptOnDocumentEnd(script_items);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentEnd(), script_items);
 }
@@ -1005,8 +1004,10 @@ TEST(NWebPreferenceDelegateTest, PutJavaScriptOnDocumentEndByOrder) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
-    ScriptItems script_items = {"testKey": {"testVal1", "testVal2"}};
-    script_items_start_by_order_ script_items_start_by_order_ = {"testVal1", "testVal2"};
+    ScriptItems script_items = {
+      {"testKey", {"testVal1", "testVal2"}}
+    };
+    ScriptItemsByOrder script_items_start_by_order_ = {"testVal1", "testVal2"};
     preference_delegate->PutJavaScriptOnDocumentEndByOrder(script_items, script_items_start_by_order_);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentEnd(), script_items);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentEndByOrder(), script_items_start_by_order_);
@@ -1016,7 +1017,9 @@ TEST(NWebPreferenceDelegateTest, PutJavaScriptOnHeadReady) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
-    ScriptItems script_items = {"testKey": {"testVal1", "testVal2"}};
+    ScriptItems script_items = {
+      {"testKey", {"testVal1", "testVal2"}}
+    };
     preference_delegate->PutJavaScriptOnHeadReady(script_items);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnHeadReady(), script_items);
 }
@@ -1025,8 +1028,10 @@ TEST(NWebPreferenceDelegateTest, PutJavaScriptOnHeadReadyByOrder) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
-    ScriptItems script_items = {"testKey": {"testVal1", "testVal2"}};
-    script_items_start_by_order_ script_items_start_by_order_ = {"testVal1", "testVal2"};
+    ScriptItems script_items = {
+      {"testKey", {"testVal1", "testVal2"}}
+    };
+    ScriptItemsByOrder script_items_start_by_order_ = {"testVal1", "testVal2"};
     preference_delegate->PutJavaScriptOnHeadReadyByOrder(script_items, script_items_start_by_order_);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnHeadReady(), script_items);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnHeadReadyByOrder(), script_items_start_by_order_);

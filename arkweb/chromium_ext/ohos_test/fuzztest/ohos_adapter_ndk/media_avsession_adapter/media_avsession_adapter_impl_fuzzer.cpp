@@ -15,23 +15,18 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
-
 #include <cstdlib>
 #include <ctime>
-
-#include <fuzzer/FuzzedDataProvider.h>
-
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "ohos_adapter_helper.h"
 #define private public
 #include "arkweb/ohos_adapter_ndk/media_avsession_adapter/media_avsession_adapter_impl.h"
-
+#undef private
 using namespace OHOS::NWeb;
 
 namespace OHOS {
-constexpr int MAX_SET_NUMBER = 1000;
 
 class MediaAVSessionCallbackAdapterMock : public MediaAVSessionCallbackAdapter {
 public:
@@ -42,34 +37,102 @@ public:
     void SeekTo(int64_t millisTime) {};
 };
 
+class MediaAVSessionKeyMock : public MediaAVSessionKey {
+public:
+    std::string bundleName = "test1";
+    std::string abilityName = "testAbility";
+
+    std::string &GetBundleName() {
+        return bundleName;
+    }
+
+    std::string &GetAbilityName() {
+        return abilityName;
+    }
+};
+
+class MediaAVSessionMetadataAdapterMock : public MediaAVSessionMetadataAdapter {
+public:
+    MediaAVSessionMetadataAdapterMock() = default;
+    void SetTitle(const std::string& title) {}
+
+    std::string GetTitle() { return ""; }
+
+    void SetArtist(const std::string& artist) {}
+
+    std::string GetArtist() { return ""; }
+
+    void SetAlbum(const std::string& album) {}
+
+    std::string GetAlbum() { return ""; }
+
+    void SetImageUrl(const std::string& imageUrl) {}
+
+    std::string GetImageUrl() { return ""; }
+};
+
+class MediaAVSessionPositionAdapterMock : public MediaAVSessionPositionAdapter {
+public:
+    MediaAVSessionPositionAdapterMock() = default;
+
+    void SetDuration(int64_t duration) {}
+
+    int64_t GetDuration() { return 0; }
+
+    void SetElapsedTime(int64_t elapsedTime) {}
+
+    int64_t GetElapsedTime() { return 0; }
+
+    void SetUpdateTime(int64_t updateTime) {}
+
+    int64_t GetUpdateTime() { return 0; }
+};
+
 bool MediaAVSessionAdapterImplFuzzTest(FuzzedDataProvider* fdp)
 {
-    int64_t time = fdp->ConsumeIntegralInRange<int64_t>(0, MAX_SET_NUMBER);
-
+    std::shared_ptr<MediaAVSessionMetadataAdapterMock> metadataadapter =
+        std::make_shared<MediaAVSessionMetadataAdapterMock>();
+    std::shared_ptr<MediaAVSessionPositionAdapterMock> pointeradapter =
+        std::make_shared<MediaAVSessionPositionAdapterMock>();
+    std::shared_ptr<MediaAVSessionAdapterImpl> avSessionAdapter = std::make_shared<MediaAVSessionAdapterImpl>();
     std::shared_ptr<MediaAVSessionKey> key = std::make_shared<MediaAVSessionKey>();
+
+    auto type = MediaAVSessionType::MEDIA_TYPE_AUDIO;
+    avSessionAdapter->CreateAVSession(type);
+    type = MediaAVSessionType::MEDIA_TYPE_VIDEO;
+    avSessionAdapter->CreateAVSession(type);
+
     key->Init();
     key->GetPID();
     key->GetType();
     key->ToString();
-
-    std::shared_ptr<MediaAVSessionAdapterImpl> avSessionAdapter = std::make_shared<MediaAVSessionAdapterImpl>();
-
-    auto avSessionKey = std::make_shared<MediaAVSessionKey>();
-    avSessionAdapter->avSessionKey_ = avSessionKey;
-    avSessionAdapter->avSessionKey_->Init();
-    avSessionAdapter->avSession_ = nullptr;
-
-    int32_t rawValue = fdp->ConsumeIntegralInRange<int32_t>(-1, 1);
-    MediaAVSessionType type = static_cast<MediaAVSessionType>(rawValue);
-    avSessionAdapter->CreateAVSession(type);
-    avSessionAdapter->DestroyAVSession();
+    key->SetType(MediaAVSessionType::MEDIA_TYPE_INVALID);
 
     auto mediaAVSessionCallbackAdapterMock = std::make_shared<MediaAVSessionCallbackAdapterMock>();
     avSessionAdapter->RegistCallback(mediaAVSessionCallbackAdapterMock);
+
+    auto avSessionKey = std::make_shared<MediaAVSessionKeyMock>();
+    avSessionAdapter->avSessionKey_ = avSessionKey;
+    avSessionAdapter->avSessionKey_->Init();
+
+    int32_t rawValue = fdp->ConsumeIntegralInRange<int32_t>(-1, 1);
+    type = static_cast<MediaAVSessionType>(rawValue);
+    avSessionAdapter->CreateAVSession(type);
     avSessionAdapter->IsActivated();
     avSessionAdapter->Activate();
-    avSessionAdapter->DeActivate();
+    avSessionAdapter->SetMetadata(metadataadapter);
+    rawValue = fdp->ConsumeIntegralInRange<int64_t>(0, 3);
+    auto playState = static_cast<MediaAVSessionPlayState>(rawValue);
+    avSessionAdapter->SetPlaybackState(playState);
 
+    avSessionAdapter->SetPlaybackPosition(pointeradapter);
+    avSessionAdapter->UpdateMetaDataCache(metadataadapter);
+    avSessionAdapter->UpdateMetaDataCache(pointeradapter);
+    avSessionAdapter->UpdatePlaybackStateCache(playState);
+    avSessionAdapter->UpdateAVMetadata();
+    avSessionAdapter->DeActivate();
+    avSessionAdapter->DestroyAVSession();
+    avSessionAdapter->DestroyAndEraseSession();
     return true;
 }
 } // namespace OHOS

@@ -196,6 +196,7 @@ test("crypto_unittests") {
     "signature_verifier_unittest.cc",
     "symmetric_key_unittest.cc",
     "unexportable_key_unittest.cc",
+    "../arkweb/chromium_ext/components/os_crypt/sync/ohos_crypto_unittest.cc",
   ]
 
   if (is_win || is_mac) {
@@ -229,6 +230,7 @@ test("crypto_unittests") {
     "//base",
     "//base/test:run_all_unittests",
     "//base/test:test_support",
+    "//components/os_crypt/sync",
     "//testing/gmock",
     "//testing/gtest",
   ]

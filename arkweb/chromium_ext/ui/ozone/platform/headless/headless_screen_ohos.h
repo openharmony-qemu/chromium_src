@@ -63,6 +63,7 @@ class HeadlessScreenOhos : public HeadlessScreen {
   void RemoveObserver(display::DisplayObserver* observer) override;
 
  private:
+  friend class HeadlessScreenOhosTest;
   bool Initialize();
   bool FetchDisplays(display::DisplayList& displays);
   bool ConvertDisplay(std::shared_ptr<OHOS::NWeb::DisplayAdapter> src_display,

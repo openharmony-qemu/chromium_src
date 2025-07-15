@@ -31,6 +31,7 @@ group("oh_base_unittests") {
     "//ui/base:ui_base_unittests",
     "//ui/compositor:compositor_unittests",
     "//ui/gl:gl_unittests",
+    "//ui/ozone:ozone_headless_unittests",
   ]
 }
 

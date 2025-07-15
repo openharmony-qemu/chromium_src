@@ -992,3 +992,7 @@ arkweb_third_patry_blink_renderer_core_paint_timing_detector_resources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.h",
 ]
+
+arkweb_ui_ozone_platform_headless_unittests_sources = [
+  "//arkweb/chromium_ext/ui/ozone/platform/headless_screen_ohos_unittest.cc",
+]

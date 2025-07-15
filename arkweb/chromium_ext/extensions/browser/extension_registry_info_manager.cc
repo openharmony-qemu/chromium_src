@@ -311,6 +311,7 @@ void DeleteExtensionActionInfoIcon(WebExtensionActionInfo& action_info) {
 void ExtensionRegistryInfoManager::GetExtensionManifestInfo(
     const Extension& extension,
     WebExtensionManifestInfo& manifest) const {
+  manifest.name = extension.name();
   const GURL& homepage_url = ManifestURL::GetManifestHomePageURL(&extension);
   if (homepage_url.is_valid()) {
     manifest.homepage_url = homepage_url.spec();

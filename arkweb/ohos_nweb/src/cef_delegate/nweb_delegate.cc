@@ -5223,22 +5223,6 @@ void NWebDelegate::WebExtensionTabUpdated(int tab_id,
       tab_id, changed_properties, std::move(changeInfo));
 }
 
-void NWebDelegate::WebExtensionTabCreated(std::unique_ptr<NWebExtensionTab> tab) {
-  if (!tab) {
-    LOG(ERROR) << "WebExtensionTabCreated tab is null";
-    return;
-  }
-  int tabId = tab->id ? tab->id.value() : -1;
-  LOG(INFO) << "WebExtensionTabCreated:" << tabId;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabCreated failed, get browser failed";
-    return;
-  }
-
-  GetBrowser()->ExtensionSetTabId(tabId);
-  GetBrowser()->GetHost()->WebExtensionTabCreated(tabId, std::move(tab));
-}
-
 void NWebDelegate::WebExtensionTabRemoved(int tab_id,
   bool isWindowClosing, int windowId) {
   LOG(INFO) << "WebExtensionTabRemoved:" << tab_id;

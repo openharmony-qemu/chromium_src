@@ -856,7 +856,6 @@ class NWebImpl : public NWeb {
       const std::vector<std::string>& changed_property_names,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo);
   // new version
-  void WebExtensionTabCreated(std::unique_ptr<NWebExtensionTab> tab);
   void WebExtensionTabRemoved(int tab_id, bool isWindowClosing, int windowId);
   void WebExtensionTabUpdated(
       int tab_id,

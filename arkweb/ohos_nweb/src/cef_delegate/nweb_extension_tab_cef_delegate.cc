@@ -16,6 +16,9 @@
 #include "nweb_extension_tab_cef_delegate.h"
 
 #include <map>
+#include "base/logging.h"
+#include "chrome/browser/extensions/api/tabs/tabs_windows_api.h"
+#include "nweb_extension_utils.h"
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_extension_tabs_dispatcher.h"
@@ -324,6 +327,22 @@ int NWebExtensionTabCefDelegate::GetAnyTab(int windowId) {
 #else
   return NWebExtensionTabDispatcher::GetAnyTab(windowId);
 #endif
+}
+
+void NWebExtensionTabCefDelegate::OnTabCreated(std::unique_ptr<NWebExtensionTab> tab) {
+  if (!tab) {
+    LOG(ERROR) << "OnTabCreated tab is null";
+    return;
+  }
+
+  auto browserContext = GetBrowserContext();
+  if (!browserContext) {
+    return;
+  }
+
+  int tabId = tab->id ? tab->id.value() : -1;
+  extensions::TabsWindowsAPI::Get(browserContext)
+      ->TabCreated(tabId, browserContext, std::move(tab));
 }
 
 }  // namespace OHOS::NWeb

@@ -139,6 +139,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   std::atomic<bool> isDestroyed_ = {false};
 
   int audioResumeInterval_ = 0;
+
+  base::WeakPtrFactory<OHOSAudioOutputStream> weak_factory_{this};
 };
 
 }  // namespace media

@@ -37,6 +37,7 @@ ozone_platform_interactive_ui_tests_sources =
 if (ozone_platform_headless) {
   ozone_platforms += [ "headless" ]
   ozone_platform_deps += [ "platform/headless" ]
+  ozone_platform_test_deps += [ "platform/headless:headless_unittests" ]
 }
 
 if (ozone_platform_drm) {
@@ -335,6 +336,7 @@ static_library("test_support") {
     "platform/wayland:test_support",
     "platform/wayland:wayland_unittests",
     "platform/x11:x11_unittests",
+    "platform/headless:headless_unittests",
   ]
 
   testonly = true
@@ -466,6 +468,23 @@ test("ozone_integration_tests") {
   ]
 
   deps += ozone_platform_integration_test_deps
+}
+
+test("ozone_headless_unittests") {
+  testonly = true
+
+  visibility += [ "*" ]
+
+  sources = [ "test/ozone_integration_tests_main.cc" ]
+
+  deps = [
+    "//base/test:test_support",
+    "//mojo/core/embedder",
+    "//testing/gtest",
+    "//testing/gmock",
+  ]
+
+  deps += ["platform/headless:headless_unittests"]
 }
 
 group("unittests") {

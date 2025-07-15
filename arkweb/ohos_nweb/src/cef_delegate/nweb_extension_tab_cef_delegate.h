@@ -119,6 +119,8 @@ class NWebExtensionTabCefDelegate {
 
   // like chrome::FindAnyBrowser, get an existing tab.
   static int GetAnyTab(int windowId);
+
+  static void OnTabCreated(std::unique_ptr<NWebExtensionTab> tab);
 };
 
 }  // namespace OHOS::NWeb

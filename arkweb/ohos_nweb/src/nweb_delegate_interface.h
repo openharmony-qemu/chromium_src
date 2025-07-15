@@ -713,8 +713,6 @@ class NWebDelegateInterface
       int tab_id,
       const std::vector<std::string>& changed_property_names,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) = 0;
-  virtual void WebExtensionTabCreated(
-      std::unique_ptr<NWebExtensionTab> tab) = 0;
   virtual void WebExtensionTabRemoved(
       int tab_id,
       bool isWindowClosing,

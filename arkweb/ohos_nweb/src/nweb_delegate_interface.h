@@ -737,7 +737,7 @@ class NWebDelegateInterface
                                        int32_t removedTabId) = 0;
   virtual void WebExtensionTabZoomChange(
       std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) = 0;
-  void WebExtensionSetViewType(int32_t type) override;
+  void WebExtensionSetViewType(int32_t type) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_PERMISSION)

@@ -508,7 +508,7 @@ TEST(NWebPreferenceDelegateTest, PutEnableRawFileAccessFromFileURLs) {
 TEST(NWebPreferenceDelegateTest, PutEnableUniversalAccessFromFileURLs) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     preference_delegate->PutEnableUniversalAccessFromFileURLs(true);
-    EXPECT_TRUE(preference_delegate->EnableRawFileAccess());
+    EXPECT_TRUE(preference_delegate->EnableUniversalAccessFromFileURLs());
 }
 
 TEST(NWebPreferenceDelegateTest, PutLoadImageFromNetworkDisabled) {

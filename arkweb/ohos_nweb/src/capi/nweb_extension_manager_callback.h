@@ -107,6 +107,7 @@ struct WebExtensionManifestOptionsPageInfo {
 };
  
 struct WebExtensionManifestInfo {
+  std::optional<std::string> name;
   std::optional<std::string> homepage_url;
   std::optional<WebExtensionManifestSettingsOverrides> settings_overrides;
   std::optional<WebExtensionManifestOptionsPageInfo> options_page;

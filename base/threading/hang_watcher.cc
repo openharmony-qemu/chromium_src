@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/build/features/features.h"
 #include "base/threading/hang_watcher.h"
 
 #include <atomic>
@@ -30,6 +31,9 @@
 #include "base/time/time.h"
 #include "base/trace_event/base_tracing.h"
 #include "build/build_config.h"
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+extern void ReportRenderFreeze();
+#endif
 
 namespace base {
 
@@ -127,6 +131,11 @@ void LogStatusHistogram(HangWatcher::ThreadType thread_type,
               any_thread_hung);
           break;
         case HangWatcher::ThreadType::kMainThread:
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+          if (any_thread_hung) {
+            ReportRenderFreeze();
+          }
+#endif
           UMA_HISTOGRAM_SPLIT_BY_PROCESS_PRIORITY(
               UMA_HISTOGRAM_BOOLEAN, sample_ticks, monitoring_period,
               "HangWatcher.IsThreadHung.RendererProcess.MainThread",

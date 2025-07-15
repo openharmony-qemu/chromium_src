@@ -2148,7 +2148,7 @@ void NWebHandlerDelegate::KeyboardReDispatch(const CefKeyEvent& event,
     if (keyCode == -1) {
       return;
     }
-    if (keyCode == NWebInputDelegate::CefConverter("ohoskeycode", static_cast<int32_t>(ui::VKEY_TAB))) &&
+    if (keyCode == NWebInputDelegate::CefConverter("ohoskeycode", static_cast<int32_t>(ui::VKEY_TAB)) &&
         action == static_cast<int32_t>(OHOS::NWeb::NWebKeyEvent::KeyEventAction::KEY_DOWN_ACTION) && isUsed) {
         return;
     }

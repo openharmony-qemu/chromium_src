@@ -195,15 +195,6 @@ handle_copy_files() {
     # 由于已实现VideoEncoderAdapter，胶水层ark_media_codec_encoder_adapter_wrapper.cpp不参与编译
     sed -i '/ark_media_codec_encoder_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
 
-    # 由于已实现LocationInstance，胶水层ark_location_instance_wrapper.cpp不参与编译
-    sed -i '/ark_location_instance_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
-
-    # 由于已实现LocationProxyAdapter，胶水层ark_location_proxy_adapter_wrapper.cpp不参与编译
-    sed -i '/ark_location_proxy_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
-
-    # 由于已实现LocationRequestConfig，胶水层ark_location_request_config_wrapper.cpp不参与编译
-    sed -i '/ark_location_request_config_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
-
     # 由于已实现HitraceAdapterWrapper，胶水层ark_hitrace_adapter_wrapper.cpp不参与编译
     sed -i '/ark_hitrace_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
 

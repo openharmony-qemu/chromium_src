@@ -735,7 +735,6 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
       int tab_id,
       const std::vector<std::string>& changed_property_names,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) override;
-  void WebExtensionTabCreated(std::unique_ptr<NWebExtensionTab> tab) override;
   void WebExtensionTabRemoved(
       int tab_id,
       bool isWindowClosing,

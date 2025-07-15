@@ -5261,13 +5261,6 @@ void NWebImpl::WebExtensionTabUpdated(
   nweb_delegate_->WebExtensionTabUpdated(tab_id, changed_property_names, std::move(changeInfo));
 }
 
-void NWebImpl::WebExtensionTabCreated(std::unique_ptr<NWebExtensionTab> tab) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->WebExtensionTabCreated(std::move(tab));
-}
-
 void NWebImpl::WebExtensionTabRemoved(int tab_id, bool isWindowClosing, int windowId) {
   if (nweb_delegate_ == nullptr) {
     return;

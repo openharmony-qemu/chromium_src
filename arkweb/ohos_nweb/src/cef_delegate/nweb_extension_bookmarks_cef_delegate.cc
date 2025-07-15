@@ -23,6 +23,7 @@
 #include "cef/libcef/browser/request_context_impl.h"
 #include "cef/ohos_cef_ext/libcef/browser/extensions/api/bookmarks/bookmarks_event_router.h"
 #include "content/public/browser/browser_context.h"
+#include "nweb_extension_utils.h"
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
@@ -70,21 +71,6 @@ std::mutex g_bookmarks_search_callback_map_mutex;
 
 static std::map<int, BookmarksUpdateCallback> g_bookmarks_update_callback_map_;
 std::mutex g_bookmarks_update_callback_map_mutex;
-
-content::BrowserContext* GetBrowserContext() {
-  CefRequestContextImpl* request_context = static_cast<CefRequestContextImpl*>(
-      CefRequestContext::GetGlobalContext().get());
-  if (!request_context) {
-    LOG(ERROR) << "request_context is null";
-    return nullptr;
-  }
-  CefBrowserContext* cef_browser_context = request_context->GetBrowserContext();
-  if (!cef_browser_context) {
-    LOG(ERROR) << "cef_browser_context is null";
-    return nullptr;
-  }
-  return cef_browser_context->AsBrowserContext();
-}
 
 }  // namespace
 

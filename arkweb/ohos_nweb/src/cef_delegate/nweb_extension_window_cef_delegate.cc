@@ -19,6 +19,7 @@
 #include "content/public/browser/browser_context.h"
 #include "cef/libcef/browser/request_context_impl.h"
 #include "cef/ohos_cef_ext/libcef/browser/extensions/api/windows/cef_windows_event_router.h"
+#include "nweb_extension_utils.h"
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_extension_windows_dispatcher.h"
@@ -30,24 +31,6 @@ namespace {
   static std::map<int, WindowCreatedCallback> g_window_created_map_;
   static std::map<int, WindowUpdatedCallback> g_window_updated_map_;
   static std::map<int, WindowRemovedCallback> g_window_removed_map_;
- 
-content::BrowserContext* GetBrowserContext() {
-  CefRefPtr<CefRequestContext> request_context = CefRequestContext::GetGlobalContext();
-  if (!request_context) {
-    LOG(ERROR) << "request context is null";
-    return nullptr;
-  }
- 
-  CefRequestContextImpl* request_context_impl =
-    static_cast<CefRequestContextImpl*>(request_context.get());
-  CefBrowserContext* cef_browser_context = request_context_impl->GetBrowserContext();
-  if (!cef_browser_context) {
-    LOG(ERROR) << "cef browser context is null";
-    return nullptr;
-  }
-  content::BrowserContext* browser_context = cef_browser_context->AsBrowserContext();
-  return browser_context;
-}
 }
  
 // static

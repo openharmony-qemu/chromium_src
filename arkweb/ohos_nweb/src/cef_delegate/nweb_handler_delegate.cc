@@ -2148,6 +2148,10 @@ void NWebHandlerDelegate::KeyboardReDispatch(const CefKeyEvent& event,
     if (keyCode == -1) {
       return;
     }
+    if (keyCode == NWebInputDelegate::CefConverter("ohoskeycode", static_cast<int32_t>(ui::VKEY_TAB))) &&
+        action == static_cast<int32_t>(OHOS::NWeb::NWebKeyEvent::KeyEventAction::KEY_DOWN_ACTION) && isUsed) {
+        return;
+    }
     std::shared_ptr<NWebKeyEvent> nwebEvent =
         std::make_shared<NWebKeyEventImpl>(action, keyCode);
     return nweb_handler_->KeyboardReDispatch(nwebEvent, isUsed);

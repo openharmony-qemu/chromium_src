@@ -103,4 +103,6 @@ void ReportDragBlank(int64_t duration);
 void ReportFirstMeaningfulPaintDone(OhWebPerformanceTiming loadPageTime);
 
 void ReportGpuProcessEvent(CrashType type, std::string eventContent);
+
+void ReportAppfreeze();
 #endif

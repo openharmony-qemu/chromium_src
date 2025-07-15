@@ -267,6 +267,7 @@
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
 #include "arkweb/chromium_ext/content/browser/dfx/memory_monitor_render_impl.h"
+#include "arkweb/chromium_ext/content/browser/dfx/appfreeze_monitor_render_impl.h"
 #endif
 
 using base::Time;
@@ -4063,6 +4064,11 @@ void RenderFrameImpl::DidCommitNavigation(
       );
     }
     MemoryMonitorImpl::GetInstance()->Trigger(document_loader->GetUrl().GetString().Utf8());
+    if (!AppfreezeMonitorImpl::GetInstance()->IsInitialized()) {
+      GetBrowserInterfaceBroker().GetInterface(
+        std::move(AppfreezeMonitorImpl::GetInstance()->GetPendingReceiver()));
+      AppfreezeMonitorImpl::GetInstance()->HasInitialized();
+    }
 #endif
   }
 #endif

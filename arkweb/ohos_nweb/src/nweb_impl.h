@@ -874,6 +874,7 @@ class NWebImpl : public NWeb {
   void WebExtensionTabReplaced(int32_t addedTabId, int32_t removedTabId);
   void WebExtensionTabZoomChange(
       std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo);
+  void WebExtensionSetViewType(int32_t type);
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_AI)

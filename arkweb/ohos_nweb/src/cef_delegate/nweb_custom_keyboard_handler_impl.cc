@@ -261,15 +261,15 @@ bool NWebCustomKeyboardHandlerImpl::AttachFromWebStateChange(
   bool isNeedReattach = false;
   if (mode == WebCustomKeyboardState::FROME_ONFOCUS && isCloseFromOnblur_) {
     isNeedReattach = true;
-    isCloseFromOnblur_ = false;
   } else if (mode == WebCustomKeyboardState::FROME_ONCONTINUE &&
              isCloseFromOnpause_) {
     isNeedReattach = true;
-    isCloseFromOnpause_ = false;
   }
 
   if (isNeedReattach) {
     isAttached_ = true;
+    isCloseFromOnblur_ = false;
+    isCloseFromOnpause_ = false;
     if (auto handler = nweb_handler_.lock()) {
       handler->OnCustomKeyboardAttach();
     }

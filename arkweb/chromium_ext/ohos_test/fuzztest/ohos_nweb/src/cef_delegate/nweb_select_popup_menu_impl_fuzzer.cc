@@ -136,6 +136,7 @@ void NWebSelectPopupMenuCallbackImplFuzzTest(FuzzedDataProvider* fdp) {
   NWebSelectPopupMenuCallbackImpl impl(callback);
 
   impl.Continue(indices);
+
   impl.Cancel();
 }
 

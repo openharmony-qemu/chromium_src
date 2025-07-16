@@ -50,7 +50,9 @@ class ExtensionRegistryInfoManager : public MenuManager::LoadObserver, public Ex
   void GetExtensionManifestInfo(const Extension& extension,
                                 WebExtensionManifestInfo& out_manifest) const;
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
   ExtensionIncognitoMode GetExtensionIncognitoMode(const Extension* extension) const;
+#endif
 
   WebExtensionActionInfo GetExtensionActionInfo(const Extension& extension,
                                                 int32_t tabId) const;

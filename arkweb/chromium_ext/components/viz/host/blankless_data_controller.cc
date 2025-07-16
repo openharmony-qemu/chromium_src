@@ -375,16 +375,16 @@ std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::
   if (auto it = last_info_.find(blankless_key); it != last_info_.end()) {
     snapshotInfo = it->second;
   }
-  auto snapshotDataItem = OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance().GetSnapshotDataItem(blankless_key);
-  if (snapshotInfo == nullptr && !snapshotDataItem.wholePath.empty()) {
+  if (snapshotInfo == nullptr) {
+    auto snapshotDataItem = OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance().GetSnapshotDataItem(blankless_key);
+    snapshotInfo = std::make_shared<SnapshotInfo>();
+    snapshotInfo->path = snapshotDataItem.wholePath;
     SkBitmap bitmap;
-    if (LoadBitmap(snapshotDataItem.wholePath.c_str(), bitmap)) {
-      snapshotInfo = std::make_shared<SnapshotInfo>();
+    if (!snapshotDataItem.wholePath.empty() && LoadBitmap(snapshotDataItem.wholePath.c_str(), bitmap)) {
       snapshotInfo->bitmap = std::move(bitmap);
       snapshotInfo->pixels = GetSnapshotPixels(snapshotInfo->bitmap.pixmap());
-      snapshotInfo->path = snapshotDataItem.wholePath;
-      last_info_.emplace(blankless_key, snapshotInfo);
     }
+    last_info_.emplace(blankless_key, snapshotInfo);
   }
   return snapshotInfo;
 }

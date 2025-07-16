@@ -150,7 +150,7 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
     int64_t accessibilityId,
     OHOS::NWeb::AccessibilityEventType eventType,
     const std::string& argument) {
-  if (accessibilityId == kArkWebId || argument != "") {
+  if (accessibilityId == kArkWebId) {
     DispatchEvent(accessibilityId, static_cast<int32_t>(eventType), argument);
   } else if (eventDispatcher_ != nullptr) {
     eventDispatcher_->EnqueueEvent(accessibilityId,
@@ -300,12 +300,6 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
     case AXEventGenerator::Event::SCROLL_HORIZONTAL_POSITION_CHANGED:
     case AXEventGenerator::Event::SCROLL_VERTICAL_POSITION_CHANGED:
       HandleScrollPositionChanged(accessibilityId);
-      break;
-    case AXEventGenerator::Event::SELECTED_CHANGED:
-      if (nodeOHOS->IsSelected()) {
-        SendAccessibilityEvent(accessibilityId,
-                               OHOS::NWeb::AccessibilityEventType::SELECTED);
-      }
       break;
     case AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED: {
       if (ax_tree() == nullptr) {
@@ -698,6 +692,14 @@ void BrowserAccessibilityManagerOHOS::InitializeAccessibilityEventDispatcher()
       std::make_pair(static_cast<int32_t>(
                          OHOS::NWeb::AccessibilityEventType::HOVER_ENTER_EVENT),
                      kAccessibilityEventDelayHover));
+  eventThrottleDelays.insert(std::make_pair(
+      static_cast<int32_t>(OHOS::NWeb::AccessibilityEventType::
+                               ANNOUNCE_FOR_ACCESSIBILITY_NOT_INTERRUPT),
+      kAccessibilityEventDelayHover));
+  eventThrottleDelays.insert(std::make_pair(
+      static_cast<int32_t>(
+          OHOS::NWeb::AccessibilityEventType::ANNOUNCE_FOR_ACCESSIBILITY),
+      kAccessibilityEventDelayHover));
 
   std::unordered_set<int32_t> viewIndependentEvents;
   viewIndependentEvents.insert(
@@ -771,7 +773,7 @@ void AccessibilityEventDispatcher::RunTask(int64_t accessibilityId,
 {
   // We have delayed firing this event, so accessibility may not be enabled or
   // the node may be invalid, in which case dispatch will return false.
-  if (manager_ && manager_->DispatchEvent(accessibilityId, eventType)) {
+  if (manager_ && manager_->DispatchEvent(accessibilityId, eventType, argument)) {
     // After sending event, record time it was sent
     auto millis = std::chrono::time_point_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now());

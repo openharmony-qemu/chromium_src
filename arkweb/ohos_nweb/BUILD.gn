@@ -622,6 +622,8 @@ source_set("unittests") {
     "src/cef_delegate/nweb_handler_delegate_unittest.cc",
     "src/cef_delegate/nweb_pipe_resource_handler_unittest.cc",
     "src/cef_delegate/nweb_preference_delegate_unittest.cc",
+    "src/cef_delegate/nweb_web_storage_delegate_unittest.cc",
+    "src/cef_delegate/nweb_data_base_delegate_unittest.cc",
     "src/cef_delegate/nweb_render_handler_unittest.cc",
     "src/cef_delegate/nweb_scheme_handler_factory_unittest.cc",
     "src/ndk/scheme_handler/http_body_stream_unittest.cc",
@@ -632,6 +634,7 @@ source_set("unittests") {
     "src/nweb_input_handler_unittest.cc",
     "src/nweb_inputmethod_handler_unittest.cc",
     "src/set_renderer_seccomp_policy_unittest.cc",
+    "src/nweb_web_storage_impl_unittest.cc",
   ]
 
   deps = [

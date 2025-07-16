@@ -5759,14 +5759,14 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
     return 0;  // SUCCESS
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
+  uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
+  instance.RecordBlanklessKey(nweb_id_, blankless_key);
   if (instance.GetCapacity() == 0) {
     *similarity = 0;
     *loadingTime = 0;
   } else {
-    uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
     blankless_key_ = blankless_key;
     nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key);
-    instance.RecordBlanklessKey(nweb_id_, blankless_key);
     auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
     OHOS::NWeb::SnapshotDataItem dataItem = databaseAdapter.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
     *similarity = dataItem.historySimilarity;
@@ -5785,6 +5785,9 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
   uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
   if (!instance.CheckBlanlessKey(nweb_id_, blankless_key)) {
     return -4;    // ERR_KEY_NOT_MATCH
+  }
+  if (instance.GetCapacity() == 0) {
+    return (isStart ? -5 : 0);  // ERR_SIGNIFICANT_CHANGE(true) or SUCCESS(false)
   }
   if (isStart) {
     auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();

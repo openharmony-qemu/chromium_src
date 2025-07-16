@@ -354,10 +354,13 @@ void ExtensionRegistryInfoManager::GetExtensionManifestInfo(
     }
   }
   manifest.options_page = GetManifestOptionsPageInfo(extension);
+#if BUILDFLAG(ARKWEB_NWEB_EX)
   manifest.incognito_mode =
       std::make_optional<ExtensionIncognitoMode>(GetExtensionIncognitoMode(&extension));
+#endif
 }
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 ExtensionIncognitoMode ExtensionRegistryInfoManager::GetExtensionIncognitoMode(
     const Extension* extension) const {
   if (!IncognitoInfo::IsIncognitoAllowed(extension)) {
@@ -374,6 +377,7 @@ ExtensionIncognitoMode ExtensionRegistryInfoManager::GetExtensionIncognitoMode(
 
   return EXT_INCOGNITO_NONE;
 }
+#endif
 
 void ExtensionRegistryInfoManager::NotifyOnExtensionLoaded(const Extension& extension) {
   if (!extensions::ui_util::ShouldDisplayInExtensionSettings(extension)) {

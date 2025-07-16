@@ -50,6 +50,8 @@ class ExtensionRegistryInfoManager : public MenuManager::LoadObserver, public Ex
   void GetExtensionManifestInfo(const Extension& extension,
                                 WebExtensionManifestInfo& out_manifest) const;
 
+  ExtensionIncognitoMode GetExtensionIncognitoMode(const Extension* extension) const;
+
   WebExtensionActionInfo GetExtensionActionInfo(const Extension& extension,
                                                 int32_t tabId) const;
 

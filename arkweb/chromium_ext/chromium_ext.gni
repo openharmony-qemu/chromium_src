@@ -152,6 +152,11 @@ arkweb_third_patry_skia_src_ports_sources = [
 
 ark_third_party_skia_src_ports_unittest_sources = [
   "//arkweb/chromium_ext/third_party/skia/src/ports/FontConfig_ohos_unittest.cpp",
+  "//arkweb/chromium_ext/third_party/skia/src/ports/SkFontMgr_ohos_unittest.cpp",
+  "//arkweb/chromium_ext/third_party/skia/src/ports/SkFontStyleSet_ohos_unittest.cpp",
+  "//arkweb/chromium_ext/third_party/skia/src/ports/SkTypeface_ohos_unittest.cpp",
+  "//arkweb/chromium_ext/third_party/skia/src/codec/SkHeiDecoderAPIOhos_unittest.cpp",
+  "//arkweb/chromium_ext/skia/ext/skia_memory_tracer_unittest.cc",
 ]
 
 arkweb_ui_events_devices_sources = [

@@ -247,6 +247,18 @@ arkweb_media_base_unittest_sources = [
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_decoder_bridge_impl_unittest.cc",
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_player_bridge_unittest.cc",
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_codec_util_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_cdm_factory_unittests.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_crypto_context_impl_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_drm_bridge_client_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_drm_bridge_delegate_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_drm_bridge_factory_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_drm_bridge_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_drm_storage_bridge_unittest.cc",
+]
+
+arkweb_media_mojo_services_unittest_sources = [
+  "//arkweb/chromium_ext/media/mojo/services/ohos_mojo_media_client_unittests.cc",
+  "//arkweb/chromium_ext/media/mojo/services/ohos_mojo_util_unittests.cc",
 ]
 
 arkweb_media_audio_unittest_sources = [

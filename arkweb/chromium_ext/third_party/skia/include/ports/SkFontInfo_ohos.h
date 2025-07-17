@@ -21,7 +21,9 @@ public:
      */
     FontInfo() : familyName(""), fname(""), index(0),
         style(SkFontStyle::Normal()), isFixedWidth(false), stream(nullptr) {
-        memset(&axisSet, 0, sizeof(AxisSet));
+        if (memset_s(&axisSet, sizeof(axisSet), 0, sizeof(AxisSet)) != EOK) {
+            LOG(ERROR) << "memset_s failed:(FontInfo::Constructor)";
+        }
     }
     /*! Copy Constructor
      * \param font an object of FontInfo
@@ -59,7 +61,9 @@ public:
         if (fname) {
             this->fname.set(fname);
         }
-        memset(&axisSet, 0, sizeof(axisSet));
+        if (memset_s(&axisSet, sizeof(axisSet), 0, sizeof(axisSet)) != EOK) {
+            LOG(ERROR) << "memset_s failed:(FontInfo::Constructor)";
+        }
     }
 
     /*! Destructor

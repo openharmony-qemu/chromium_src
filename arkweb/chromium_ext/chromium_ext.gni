@@ -789,7 +789,7 @@ arkweb_string_message_codec_cc_sources = [ "//arkweb/chromium_ext/third_party/bl
 
 arkweb_string_message_codec_h_sources = [ "//arkweb/chromium_ext/third_party/blink/public/common/messaging/string_message_codec_ext.h" ]
 
-arkweb_string_message_codec_test_sources = [ "//arkweb/chromium_ext/third_party/blink/public/common/messaging/string_message_codec_ext_unittest.cc" ]
+arkweb_string_message_codec_test_sources = [ "//arkweb/chromium_ext/third_party/blink/common/messaging/string_message_codec_ext_unittest.cc" ]
 
 arkweb_page_load_statistics_sources = [
   "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/page_load_statistics_ext.cc",

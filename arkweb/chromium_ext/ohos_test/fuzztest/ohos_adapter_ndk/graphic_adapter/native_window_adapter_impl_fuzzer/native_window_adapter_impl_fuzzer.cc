@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
+#include <memory>
 #define private public
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_image_adapter_impl.h"
 #undef private
 
 #include <cstring>
@@ -23,6 +25,40 @@
 using namespace OHOS::NWeb;
 namespace OHOS {
 
+class MockIBufferConsumerListenerAdapter : public IBufferConsumerListenerAdapter {
+public:
+    MockIBufferConsumerListenerAdapter() = default;
+    ~MockIBufferConsumerListenerAdapter() = default;
+
+    void OnBufferAvailable(std::shared_ptr<SurfaceBufferAdapter> buffer) override {}
+};
+
+class MockBufferRequestConfigAdapter : public BufferRequestConfigAdapter {
+public:
+    MockBufferRequestConfigAdapter() = default;
+
+    ~MockBufferRequestConfigAdapter() = default;
+
+    int32_t GetWidth() override { return 1; }
+
+    int32_t GetHeight() override { return 1; }
+
+    int32_t GetStrideAlignment() override { return 1; }
+
+    int32_t GetFormat() override { return 1; }
+
+    uint64_t GetUsage() override { return 1; }
+
+    int32_t GetTimeout() override { return 1; }
+
+    ColorGamutAdapter GetColorGamut() override { return ColorGamutAdapter::NATIVE; }
+
+    TransformTypeAdapter GetTransformType() override { return TransformTypeAdapter::ROTATE_90; }
+
+    int64 GetTimestamp() override { return 1; }
+};
+
+constexpr int INVALID_VALUE = -2;
 constexpr int MAX_SET_NUMBER = 1000;
 constexpr int MAX_SIZE = 10;
 
@@ -42,7 +78,7 @@ bool NativeWindowAdapterImplFuzzTest(const uint8_t* data, size_t size)
     adapter.GetVirAddr();
     adapter.GetBuffer();
 
-    OH_NativeBuffer_config config = {
+    OH_NativeBuffer_Config config = {
         .width = dataProvider.ConsumeIntegralInRange<uint32_t>(1, MAX_SET_NUMBER),
         .height = dataProvider.ConsumeIntegralInRange<uint32_t>(1, MAX_SET_NUMBER),
         .format = OH_NativeBuffer_Format::NATIVEBUFFER_PIXEL_FMT_RGBA_8888,
@@ -63,6 +99,76 @@ bool NativeWindowAdapterImplFuzzTest(const uint8_t* data, size_t size)
 
     return true;
 }
+
+bool NativeBufferConsumerListenerImplFuzzTest(const uint8_t* data, size_t size)
+{
+    if ((data == nullptr) || (size == 0)) {
+        return false;
+    }
+    NativeBufferConsumerListenerImpl impl =
+        NativeBufferConsumerListenerImpl(nullptr, nullptr);
+    impl.OnBufferAvailable();
+    std::shared_ptr<NativeImageAdapterImpl> adapter =
+        std::make_shared<NativeImageAdapterImpl>();
+    if (adapter == nullptr) {
+        return false;
+    }
+    adapter->NewNativeImage();
+    std::shared_ptr<IBufferConsumerListenerAdapter> listener =
+        std::make_shared<MockIBufferConsumerListenerAdapter>();
+    NativeBufferConsumerListenerImpl nativeImpl =
+        NativeBufferConsumerListenerImpl(adapter->ohNativeImage_, listener);
+    nativeImpl.OnBufferAvailable();
+
+    return true;
+}
+
+bool ConsumerNativeAdapterImplFuzzTest(const uint8_t* data, size_t size)
+{
+    if ((data == nullptr) || (size == 0)) {
+        return false;
+    }
+    FuzzedDataProvider dataProvider(data, size);
+    ConsumerNativeAdapterImpl impl = ConsumerNativeAdapterImpl();
+    std::shared_ptr<IBufferConsumerListenerAdapter> listener =
+        std::make_shared<MockIBufferConsumerListenerAdapter>();
+    impl.RegisterConsumerListener(listener);
+    impl.RegisterConsumerListener(nullptr);
+    int32_t fence = dataProvider.ConsumeIntegralInRange<int32_t>(1, MAX_SIZE);
+    impl.ReleaseBuffer(nullptr, fence);
+    std::string key = "key";
+    std::string val = "val";
+    impl.SetUserData(key, val);
+    uint32_t queueSize = dataProvider.ConsumeIntegralInRange<uint32_t>(1, MAX_SET_NUMBER);
+    impl.SetQueueSize(queueSize);
+    impl.GetConsumerSurface();
+
+    return true;
+}
+
+bool ProducerNativeAdapterImplFuzzTest(const uint8_t* data, size_t size)
+{
+    if ((data == nullptr) || (size == 0)) {
+        return false;
+    }
+    FuzzedDataProvider dataProvider(data, size);
+    ProducerNativeAdapterImpl impl = ProducerNativeAdapterImpl(nullptr);
+    int32_t random = dataProvider.ConsumeIntegralInRange<int32_t>(INVALID_VALUE, MAX_SIZE);
+    TransformTypeAdapter type = static_cast<TransformTypeAdapter>(random);
+    impl.TransToTransformType(type);
+    ColorGamutAdapter colorGamut = static_cast<ColorGamutAdapter>(random);
+    impl.TransToColorGamut(colorGamut);
+    impl.TransToBufferConfig(nullptr);
+    int32_t fence = dataProvider.ConsumeIntegralInRange<int32_t>(-1, MAX_SIZE);
+    impl.RequestBuffer(fence, nullptr);
+    std::shared_ptr<BufferRequestConfigAdapter> configAdapter =
+        std::make_shared<MockBufferRequestConfigAdapter>();
+    impl.RequestBuffer(fence, configAdapter);
+    impl.TransToBufferConfig(configAdapter);
+    impl.FlushBuffer(nullptr, fence, nullptr);
+
+    return true;
+}
 } // namespace OHOS
 
 /* Fuzzer entry point */
@@ -70,5 +176,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
     OHOS::NativeWindowAdapterImplFuzzTest(data, size);
+    OHOS::NativeBufferConsumerListenerImplFuzzTest(data, size);
+    OHOS::ConsumerNativeAdapterImplFuzzTest(data, size);
+    OHOS::ProducerNativeAdapterImplFuzzTest(data, size);
     return 0;
 }

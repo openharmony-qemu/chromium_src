@@ -27,8 +27,7 @@ BASE_FEATURE(kAdditionalOpaqueOriginEnforcements,
              "AdditionalOpaqueOriginEnforcements",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
-// Warm up a spare renderer after each navigation on Android.BASE_FEATURE(kPrivateNetworkAccessSendPreflights,
-             "PrivateNetworkAccessSendPreflights",
+// Warm up a spare renderer after each navigation on Android.
 BASE_FEATURE(kAndroidWarmUpSpareRendererWithTimeout,
              "AndroidWarmUpSpareRendererWithTimeout",
              base::FEATURE_DISABLED_BY_DEFAULT);

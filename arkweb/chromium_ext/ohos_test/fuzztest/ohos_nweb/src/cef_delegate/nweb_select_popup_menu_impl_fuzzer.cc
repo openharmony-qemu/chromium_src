@@ -25,6 +25,8 @@
 #include "ohos_nweb/include/nweb.h"
 #include "ohos_nweb/src/nweb_impl.h"
 
+#include "ohos_nweb/src/cef_delegate/nweb_select_menu_bound_impl.h"
+
 using namespace OHOS::NWeb;
 
 void NWebSelectPopupMenuItemImplFuzzTest(FuzzedDataProvider* fdp) {
@@ -34,7 +36,7 @@ void NWebSelectPopupMenuItemImplFuzzTest(FuzzedDataProvider* fdp) {
   std::string tool_tip = fdp->ConsumeRandomLengthString(256);
   bool is_checked = fdp->ConsumeBool();
   bool is_enabled = fdp->ConsumeBool();
-  TextDirection text_direction = TextDirection::kLtr;
+  TextDirection text_direction = SP_UNKNOWN;
   bool has_text_direction_override = fdp->ConsumeBool();
   NWebSelectPopupMenuItemImpl impl;
 
@@ -73,7 +75,7 @@ void NWebSelectPopupMenuItemImplFuzzTest(FuzzedDataProvider* fdp) {
 
 void NWebSelectPopupMenuParamImplFuzzTest(FuzzedDataProvider* fdp) {
   std::shared_ptr<NWebSelectPopupMenuItem> menu_item
-      = std::make_shared<NWebSelectPopupMenuItem>();
+      = std::make_shared<NWebSelectPopupMenuItemImpl>();
   std::vector<std::shared_ptr<NWebSelectPopupMenuItem>> menu_items;
   menu_items.push_back(menu_item);
   int item_height = fdp->ConsumeIntegralInRange<int>(0, 256);
@@ -86,7 +88,7 @@ void NWebSelectPopupMenuParamImplFuzzTest(FuzzedDataProvider* fdp) {
   int width = fdp->ConsumeIntegralInRange<int>(0, 256);
   int height = fdp->ConsumeIntegralInRange<int>(0, 256);
   std::shared_ptr<NWebSelectMenuBound> bounds
-      = std::make_shared<NWebSelectMenuBound>(x, y, width, height);
+      = std::make_shared<NWebSelectMenuBoundImpl>(x, y, width, height);
 
   bool is_allow_multiple_selection = fdp->ConsumeBool();
   NWebSelectPopupMenuParamImpl impl;

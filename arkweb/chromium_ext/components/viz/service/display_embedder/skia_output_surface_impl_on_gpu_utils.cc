@@ -30,11 +30,13 @@ void SkiaOutputSurfaceImplOnGpuUtils::SendBlanklessSnapshotInfo(
     int64_t pref_hash,
     const SkBitmap& bitmap,
     const std::vector<gfx::Rect>& quad_list) {
-  return skiaOutputSurfaceImplOnGpu->dependency_->SendBlanklessSnapshotInfo(blankless_key,
-                                                                            lcp_time,
-                                                                            pref_hash,
-                                                                            bitmap,
-                                                                            quad_list);
+  if (skiaOutputSurfaceImplOnGpu && skiaOutputSurfaceImplOnGpu->dependency_) {
+    return skiaOutputSurfaceImplOnGpu->dependency_->SendBlanklessSnapshotInfo(blankless_key,
+                                                                              lcp_time,
+                                                                              pref_hash,
+                                                                              bitmap,
+                                                                              quad_list);
+  }
 }
 #endif
 

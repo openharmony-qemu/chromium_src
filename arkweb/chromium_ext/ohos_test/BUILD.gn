@@ -38,6 +38,7 @@ group("ohos_fuzz") {
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/graphic_adapter/window_adapter_impl_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/graphic_adapter/native_image_adapter_impl_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/graphic_adapter/vsync_adapter_impl_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/ohos_native_buffer_adapter_impl_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/nweb_inputmethod_fuzzer:nweb_inputmethod_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/nweb_imf_cursor_info_adapter_fuzzer:nweb_imf_cursor_info_adapter_fuzzer",

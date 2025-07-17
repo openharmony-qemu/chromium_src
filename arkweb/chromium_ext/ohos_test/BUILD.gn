@@ -306,6 +306,51 @@ fuzzer_test("nweb_date_time_chooser_impl_fuzzer") {
   ]
 }
 
+fuzzer_test("nweb_key_event_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_nweb/src/cef_delegate/nweb_key_event_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("nweb_select_menu_bound_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_nweb/src/cef_delegate/nweb_select_menu_bound_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("nweb_select_popup_menu_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_nweb/src/cef_delegate/nweb_select_popup_menu_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
 fuzzer_test("nweb_file_selector_params_impl_fuzzer") {
   sources = [ "fuzztest/ohos_nweb/src/cef_delegate/nweb_file_selector_params_impl_fuzzer.cc" ]
   include_dirs = [

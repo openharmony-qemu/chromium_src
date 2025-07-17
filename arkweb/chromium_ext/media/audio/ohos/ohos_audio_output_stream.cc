@@ -121,9 +121,9 @@ static int32_t AudioRendererOnInterruptEvent(OH_AudioRenderer* renderer,
 }
 
 void OHOSAudioOutputStream::OnSuspend() {
-  LOG(INFO) << "AudioRendererCallback::OnSuspend. [" << (void*)this << "]";
+  LOG(INFO) << "OHOSAudioOutputStream::OnSuspend. [" << (void*)this << "]";
   if (!parameters_.IsValid()) {
-    LOG(ERROR) << "AudioRendererCallback::OnSuspend parameters_ is not valid.";
+    LOG(ERROR) << "OHOSAudioOutputStream::OnSuspend parameters_ is not valid.";
     return;
   }
   if (OHOSAudioFocusController::IsActive(parameters_)) {
@@ -163,7 +163,7 @@ void OHOSAudioOutputStream::OneShotMediaPlayerStopped() {
   LOG(INFO) << __func__ << "[" << (void*)this << "]";
   if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     if (!main_task_runner_) {
-      LOG(INFO) << "main_task_runner is nullptr";
+      LOG(ERROR) << "main_task_runner is nullptr";
       return;
     }
     main_task_runner_->PostTask(
@@ -181,15 +181,16 @@ void OHOSAudioOutputStream::OneShotMediaPlayerStopped() {
 }
 
 void OHOSAudioOutputStream::OnResume() {
-  LOG(DEBUG) << "AudioRendererCallback::OnResume audioResumeInterval is: "
-             << std::time(nullptr) - intervalSinceLastSuspend_;
+  LOG(INFO) << "OHOSAudioOutputStream::OnResume audioResumeInterval is: "
+            << std::time(nullptr) - intervalSinceLastSuspend_;
   if (!parameters_.IsValid()) {
-    LOG(ERROR) << "AudioRendererCallback::OnResume parameters_ is not valid.";
+    LOG(ERROR) << "OHOSAudioOutputStream::OnResume parameters_ is not valid.";
     return;
   }
   if (isNeedResume(audioResumeInterval_) &&
       OHOSAudioFocusController::IsSuspended(parameters_)) {
     if (!main_task_runner_) {
+      LOG(ERROR) << "OHOSAudioOutputStream::OnResume main task runner is nullptr";
       return;
     }
     main_task_runner_->PostTask(
@@ -268,6 +269,7 @@ void OHOSAudioOutputStream::Stop() {
     OHOSAudioOutputStream::audioParameterSet_.erase(it);
   }
   if (!audio_renderer_) {
+    LOG(ERROR) << "OHOSAudioOutputStream::Stop. audio_renderer_ is nullptr";
     return;
   }
   callback_ = nullptr;
@@ -324,6 +326,8 @@ void OHOSAudioOutputStream::GetVolume(double* volume) {
 
 bool OHOSAudioOutputStream::InitRender() {
   if (!parameters_.IsValid() || !audio_stream_builder_) {
+    LOG(ERROR) << "OHOSAudioOutputStream::InitRender, parameters_ is not valid "
+                  "or audio_stream_builder_ is nullptr.";
     return false;
   }
   // set params
@@ -335,8 +339,10 @@ bool OHOSAudioOutputStream::InitRender() {
                                        AUDIOSTREAM_LATENCY_MODE_NORMAL);
   OH_AudioStreamBuilder_SetFrameSizeInCallback(audio_stream_builder_,
                                                parameters_.frames_per_buffer());
-  OH_AudioStreamBuilder_SetEncodingType(audio_stream_builder_, AUDIOSTREAM_ENCODING_TYPE_RAW);
-  OH_AudioStreamBuilder_SetRendererInterruptMode(audio_stream_builder_, (OH_AudioInterrupt_Mode)false);
+  OH_AudioStreamBuilder_SetEncodingType(audio_stream_builder_,
+                                        AUDIOSTREAM_ENCODING_TYPE_RAW);
+  OH_AudioStreamBuilder_SetRendererInterruptMode(
+      audio_stream_builder_, (OH_AudioInterrupt_Mode) false);
   SetStreamUsage();
 
   // set callback
@@ -396,6 +402,7 @@ bool OHOSAudioOutputStream::StartRender() {
     OH_AudioRenderer_SetSilentModeAndMixWithOthers(audio_renderer_, true);
     LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode true";
     isSilentMode_ = true;
+    write_data_counts_ = 0;
   }
   OH_AudioStream_Result ret = OH_AudioRenderer_Start(audio_renderer_);
   if (ret != AUDIOSTREAM_SUCCESS) {
@@ -516,35 +523,40 @@ void OHOSAudioOutputStream::OnWriteData(void* buffer, int32_t length) {
   }
 }
 
-void OHOSAudioOutputStream::SetUpAudioSilentState()
-{
+void OHOSAudioOutputStream::SetUpAudioSilentState() {
   if (!isSilentMode_) {
     return;
   }
 
   if (!parameters_.IsValid() || !audio_renderer_) {
-    LOG(ERROR) << "OHOSAudioOutputStream: Try to set audio silent but get parameters or audioRender failed!";
+    LOG(ERROR) << "OHOSAudioOutputStream: Try to set audio silent but get "
+                  "parameters or audioRender failed!";
     return;
   }
-
   bool is_playing = OHOSAudioFocusController::IsActive(parameters_) ||
-                    OHOSAudioFocusController::GetPlayingState(parameters_);
+                    OHOSAudioFocusController::GetPlayingState(parameters_) ||
+                    write_data_counts_ >= 1;
   bool is_muted = OHOSAudioFocusController::GetMuteState(parameters_);
   if (is_playing && !is_muted) {
     OH_AudioRenderer_SetSilentModeAndMixWithOthers(audio_renderer_, false);
     LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode false!";
     isSilentMode_ = false;
+    write_data_counts_ = 0;
+  } else {
+    ++write_data_counts_;
   }
 }
 
-bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode()
-{
+bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode() {
   if (base::ohos::IsPcDevice()) {
-    LOG(INFO) << "OHOSAudioOutputStream::IsPreloadOrMutedMediaMode device is pc";
+    LOG(INFO)
+        << "OHOSAudioOutputStream::IsPreloadOrMutedMediaMode device is pc";
     return false;
   }
 
   if (!parameters_.IsValid()) {
+    LOG(ERROR) << "OHOSAudioOutputStream::IsPreloadOrMutedMediaMode,"
+                  "parameters_ is not valid";
     return false;
   }
 
@@ -553,8 +565,10 @@ bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode()
   bool is_active = OHOSAudioFocusController::IsActive(parameters_);
   bool is_playingState = OHOSAudioFocusController::GetPlayingState(parameters_);
   bool is_muted = OHOSAudioFocusController::GetMuteState(parameters_);
-  LOG(INFO) << "OHOSAudioOutputStream sessionState:" << static_cast<uint32_t>(sessionState)
-      << ", mutedMode:" << is_muted << ", activeMode:" << is_active << ", playingState: " << is_playingState;
+  LOG(INFO) << "OHOSAudioOutputStream sessionState:"
+            << static_cast<uint32_t>(sessionState) << ", mutedMode:" << is_muted
+            << ", activeMode:" << is_active
+            << ", playingState: " << is_playingState;
 
   bool is_preload = is_active || is_playingState;
   if (sessionState == content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL) {

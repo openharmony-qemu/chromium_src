@@ -291,6 +291,9 @@ OnReportStatisticLogFunc
 #include "arkweb/ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/nweb_safe_browsing_detection_handler.h"
 #include "base/strings/string_split.h"
 #include "base/strings/stringprintf.h"
+#include "base/task/task_traits.h"
+#include "base/task/thread_pool.h"
+#include "base/threading/platform_thread.h"
 #include "base/values.h"
 #include "cef/libcef/browser/prefs/browser_prefs.h"
 #include "cef/ohos_cef_ext/libcef/browser/global_config/global_config_prefs.h"
@@ -673,7 +676,6 @@ void AddGlobalConfigFeaturesSwitchesToCommandLine() {
   const base::Value::List& featuresSwitches =
     g_browser_process->local_state()->GetList(global_config::kGlobalConfigFeaturesSwitches);
   if (featuresSwitches.empty()) {
-    LOG(INFO) << "featuresSWitches need not add to commandLine.";
     return;
   }
   for (const auto& item : featuresSwitches) {
@@ -687,6 +689,12 @@ void AddGlobalConfigFeaturesSwitchesToCommandLine() {
       ApplyCommandLineFromJson(*cmdLine);
     }
   }
+}
+
+void DealGlobalConfigInThread() {
+  AddGlobalConfigFeaturesSwitchesToCommandLine();
+ 
+  OHOS::NWeb::NWebSafeBrowsingDetectionHandler::GetInstance().HandleGlobalConfig();
 }
 #endif
 #endif
@@ -865,11 +873,10 @@ void NWebImpl::InitializeWebEngine(
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
-  LOG(INFO) << "AddGlobalConfigFeaturesSwitchesToCommandLine begin.";
-  AddGlobalConfigFeaturesSwitchesToCommandLine();
- 
-  LOG(INFO) << "HandleGlobalConfig begin.";
-  OHOS::NWeb::NWebSafeBrowsingDetectionHandler::GetInstance().HandleGlobalConfig();
+  base::ThreadPool::PostTask(
+          FROM_HERE,
+          {base::MayBlock(), base::TaskPriority::USER_VISIBLE},
+          base::BindOnce(DealGlobalConfigInThread));
 #endif
 #endif
 

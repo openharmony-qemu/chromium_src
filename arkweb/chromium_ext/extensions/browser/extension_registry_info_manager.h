@@ -95,7 +95,7 @@ class ExtensionRegistryInfoManager : public MenuManager::LoadObserver,
   void OnShutdown(ExtensionRegistry* registry) override;
 
  private:
-  raw_ptr<content::BrowserContext> browser_context_;
+  content::BrowserContext* browser_context_;
 };
 
 }  // namespace extensions

@@ -14,11 +14,8 @@
  */
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-#include <mutex>
-#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
 #include "base/task/thread_pool.h"
-#include "base/time/time.h"
 #endif
 
 namespace viz {
@@ -56,6 +53,14 @@ void GpuHostImpl::SetLTPOStrategy(int32_t strategy) {
 #if BUILDFLAG(ARKWEB_D_VSYNC)
 void GpuHostImpl::SetIsFling(bool is_fling_enabled) {
   gpu_service_remote_->SetIsFling(is_fling_enabled);
+}
+
+void GpuHostImpl::SetIsScroll(bool is_scroll_enabled) {
+  is_scroll_enabled_ = is_scroll_enabled;
+}
+
+bool GpuHostImpl::GetIsScroll() {
+  return is_scroll_enabled_;
 }
 #endif
 

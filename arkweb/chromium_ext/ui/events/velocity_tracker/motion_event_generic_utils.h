@@ -16,6 +16,7 @@
 #ifndef ARKWEB_CHROMIUM_EXT_UI_EVENTS_VELOCITY_TRACKER_MOTION_EVENT_GENERIC_UTILS_H_
 #define ARKWEB_CHROMIUM_EXT_UI_EVENTS_VELOCITY_TRACKER_MOTION_EVENT_GENERIC_UTILS_H_
 
+#include "base/memory/raw_ptr.h"
 #include "ui/events/velocity_tracker/motion_event_generic.h"
 
 namespace ui {
@@ -30,7 +31,7 @@ class MotionEventGenericUtils {
 
   bool cancel_by_lost_focus_ = false;
 
-  MotionEventGeneric* motion_event_generic_ = nullptr;
+  raw_ptr<MotionEventGeneric> motion_event_generic_ = nullptr;
 #endif
 };
 }  // namespace ui

@@ -30,6 +30,10 @@
 #include "arkweb/chromium_ext/content/renderer/ark_web_render_frame_impl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+#include "net/http/http_status_code.h"
+#endif
+
 namespace content {
 
 // ExecuteJavascriptInFrames need create new worldId, this is the min value;
@@ -294,7 +298,18 @@ void RenderFrameHostImpl::CommitFailedNavigation(
   std::string html = "";
   std::optional<std::string> override_error_page_content = std::nullopt;
 
-  if (GetOrCreateWebPreferences().error_page_enabled) {
+  int real_error_code = error_code;
+  std::string error_info = net::ErrorToShortString(error_code);
+  if (error_code == net::ERR_HTTP_RESPONSE_CODE_FAILURE) {
+    DCHECK_NE(commit_params->http_response_code, -1);
+    real_error_code = commit_params->http_response_code;
+    error_info = net::GetHttpReasonPhrase(
+      static_cast<net::HttpStatusCode>(real_error_code));
+  }
+
+  FrameTreeNode* tree_node = frame_tree_node();
+
+  if (GetOrCreateWebPreferences().error_page_enabled && tree_node->IsMainFrame()) {
     GetContentClient()->browser()->OverrideErrorPage(
       navigation_request->frame_tree_node()->frame_tree_node_id(),
       commit_params->is_browser_initiated,
@@ -303,8 +318,8 @@ void RenderFrameHostImpl::CommitFailedNavigation(
       common_params->has_user_gesture,
       false,
       navigation_request->frame_tree_node()->IsOutermostMainFrame(),
-      error_code,
-      net::ErrorToShortString(error_code),
+      real_error_code,
+      error_info,
       navigation_request->frame_tree_node()->frame_tree().is_prerendering(),
       ui::PageTransitionFromInt(common_params->transition),
       &html);
@@ -314,6 +329,7 @@ void RenderFrameHostImpl::CommitFailedNavigation(
     override_error_page_content = error_page_content;
   } else {
     override_error_page_content.emplace(html);
+    common_params->is_override_error_page = true;
   }
 
   navigation_client->CommitFailedNavigation(
@@ -324,4 +340,18 @@ void RenderFrameHostImpl::CommitFailedNavigation(
       std::move(alternative_error_page_info), std::move(callback));
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+void RenderFrameHostImpl::OnPdfScrollAtBottom(const std::string& url) {
+  if (delegate_) {
+    delegate_->OnPdfScrollAtBottom(url);
+  }
+}
+
+void RenderFrameHostImpl::OnPdfLoadEvent(int32_t result, const std::string& url) {
+  if (delegate_) {
+    delegate_->OnPdfLoadEvent(result, url);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }  // namespace content

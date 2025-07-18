@@ -567,6 +567,7 @@ void HeuristicClassificationTests::SetUp() {
   }
 }
 
+#if !BUILDFLAG(ARKWEB_UNITTESTS)
 TEST_P(HeuristicClassificationTests, EndToEnd) {
   base::FilePath input_file = GetParam();
   SCOPED_TRACE(::testing::Message() << input_file);
@@ -737,6 +738,7 @@ TEST_P(HeuristicClassificationTests, EndToEnd) {
     }
   }
 }
+#endif
 
 // Maps a test file name to a short string that is used in the test name.
 // E.g. a file "internal/DE.json" becomes "DE" such that the test is called
@@ -750,10 +752,12 @@ std::string GenerateTestName(
   return name;
 }
 
+#if !BUILDFLAG(ARKWEB_UNITTESTS)
 INSTANTIATE_TEST_SUITE_P(AllForms,
                          HeuristicClassificationTests,
                          testing::ValuesIn(GetTestFiles()),
                          GenerateTestName);
+#endif
 
 }  // namespace
 }  // namespace autofill

@@ -193,7 +193,12 @@ need to be translated for each locale.-->
     <file path="translations/ax_strings_ur.xtb" lang="ur" />
     <file path="translations/ax_strings_uz.xtb" lang="uz" />
     <file path="translations/ax_strings_vi.xtb" lang="vi" />
-    <file path="translations/ax_strings_zh-CN.xtb" lang="zh-CN" />
+    <if expr="is_ohos">
+      <file path="translations/ax_strings_zh-CN_ohos.xtb" lang="zh-CN" />
+    </if>
+    <if expr="not is_ohos">
+      <file path="translations/ax_strings_zh-CN.xtb" lang="zh-CN" />
+    </if>
     <file path="translations/ax_strings_zh-HK.xtb" lang="zh-HK" />
     <file path="translations/ax_strings_zh-TW.xtb" lang="zh-TW" />
     <file path="translations/ax_strings_zu.xtb" lang="zu" />
@@ -1000,22 +1005,10 @@ need to be translated for each locale.-->
       </message>
       <if expr="is_ohos">
         <message name="IDS_AX_ROLL_CANVAS_OHOS" desc="Accessibility role description for a canvas element">
-          canvas ohos
-        </message>
-        <message name="IDS_AX_ROLE_MARQUEE_OHOS" desc="Accessibility role description for a marquee, such as a stock ticker or ad banner that frequently changes">
-          marquee ohos
-        </message>
-        <message name="IDS_AX_ROLE_COMBO_BOX_OHOS" desc="Accessibility role description for a combo box, an editable text control with an associated drop-down list">
-          combo box ohos
-        </message>
-        <message name="IDS_AX_ROLE_RADIO_OHOS" desc="Accessibility role description for a radio button">
-          radio button ohos
-        </message>
-        <message name="IDS_AX_ROLE_DESCRIPTION_LIST_OHOS" desc="Accessibility role description for a definition list">
-          definition list ohos
+          Canvas
         </message>
         <message name="IDS_AX_ROLE_TEXT_FIELD" desc="Accessibility role description for text field">
-          text field ohos
+          text field
         </message>
       </if>
    </messages>

@@ -90,9 +90,8 @@ class MouseEventManagerExt
 #if BUILDFLAG(IS_ARKWEB)
   bool overlay_in_progress_ = false;
   WebMouseEvent last_mouse_drag_;
-  Image* last_analyzed_image_ = nullptr;
+  raw_ptr<Image> last_analyzed_image_ = nullptr;
   base::RetainingOneShotTimer create_overlay_timer_;
-  WeakCellFactory<MouseEventManagerExt> weak_factory_{this};
   gfx::Rect image_rect_;
   gfx::Rect view_rect_;
   SkBitmap bm_;
@@ -109,6 +108,7 @@ class MouseEventManagerExt
    private:
     Member<blink::Element> element_;
   };
+  WeakCellFactory<MouseEventManagerExt> weak_factory_{this};
 #endif
 };
 }  // namespace blink

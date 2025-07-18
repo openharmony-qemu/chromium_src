@@ -54,8 +54,6 @@ component("adapter_ndk") {
   sources = [
     "ohos_adapter_helper_ext.h",
     "ohos_adapter_helper_decouple.cpp",
-    "event_handler_adapter/event_handler_adapter_impl.h",
-    "event_handler_adapter/event_handler_adapter_impl.cpp",
     "inputmethodframework_adapter/imf_adapter_impl.h",
     "inputmethodframework_adapter/imf_adapter_impl.cpp",
     "inputmethodframework_adapter/third_party/cJSON/cJSON.c",
@@ -134,6 +132,8 @@ component("adapter_ndk") {
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.h",
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.cpp",
     "distributeddatamgr_adapter/ohos_web_snapshot_data_base.cpp",
+    "net_config_adapter/net_config_adapter_impl.h",
+    "net_config_adapter/net_config_adapter_impl.cpp",
   ]
 
   include_dirs = [
@@ -204,7 +204,8 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libtelephony_radio.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libohcommonevent.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_media_venc.so",
-    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libhitrace_ndk.z.so", ]
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libhitrace_ndk.z.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_vsync.so", ]
   } else if (target_cpu == "arm") {
     libs = [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libffrt.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libhilog_ndk.z.so",
@@ -335,5 +336,6 @@ component("adapter_ndk") {
   deps = [
     "//third_party:huawei_securec",
     "//arkweb/build/features",
+    "//base:tracing_buildflags",
   ]
 }

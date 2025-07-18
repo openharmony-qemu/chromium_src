@@ -87,7 +87,7 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   ~Transaction() override;
   friend class HttpTransactionUtils;
 
-  HttpTransactionUtils* http_transation_utils_;
+  raw_ptr<HttpTransactionUtils> http_transation_utils_;
   // Virtual so it can be extended for testing.
   virtual Mode mode() const;
 

@@ -940,10 +940,14 @@ NavigationEntryImpl::ConstructCommonNavigationParams(
       network::mojom::CSPDisposition::CHECK, std::vector<int>(), std::string(),
       false /* is_history_navigation_in_new_child_frame */, input_start,
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-      network::mojom::RequestDestination::kEmpty, "");
+      network::mojom::RequestDestination::kEmpty, ""
 #else
-      network::mojom::RequestDestination::kEmpty);
+      network::mojom::RequestDestination::kEmpty
 #endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+      , false
+#endif
+      );
 }
 
 blink::mojom::CommitNavigationParamsPtr

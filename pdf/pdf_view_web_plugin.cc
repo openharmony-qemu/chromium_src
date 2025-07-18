@@ -132,6 +132,10 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/pdf/pdf_view_web_plugin_for_include.cc"
+#endif
+
 namespace chrome_pdf {
 
 namespace {
@@ -664,6 +668,10 @@ void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
   float max_y = std::max(document_size_.height() * static_cast<float>(zoom_) -
                              plugin_dip_size_.height(),
                          0.0f);
+
+#if BUILDFLAG(ARKWEB_PDF)
+  NotifyPdfScrollAtBottom(scroll_position.y(), max_y);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   gfx::PointF scaled_scroll_position(
       std::clamp(scroll_position.x(), 0.0f, max_x),
@@ -1276,10 +1284,15 @@ PdfViewWebPlugin::SearchString(const std::u16string& needle,
 }
 
 void PdfViewWebPlugin::DocumentLoadComplete() {
+  LOG(INFO) << __func__ << ", PDF load success.";
   DCHECK_EQ(DocumentLoadState::kLoading, document_load_state_);
   document_load_state_ = DocumentLoadState::kComplete;
 
   client_->RecordComputedAction("PDF.LoadSuccess");
+
+#if BUILDFLAG(ARKWEB_PDF)
+  client_->OnPdfLoadEvent(CastFpdfErrorToPdfLoadEvent(FPDF_ERR_SUCCESS), url_);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Clear the focus state for on-screen keyboards.
   FormFieldFocusChange(PDFiumEngineClient::FocusFieldType::kNoFocus);
@@ -1331,6 +1344,11 @@ void PdfViewWebPlugin::DocumentLoadFailed() {
 
   client_->RecordComputedAction("PDF.LoadFailure");
 
+#if BUILDFLAG(ARKWEB_PDF)
+  LOG(INFO) << "PdfViewWebPlugin::DocumentLoadFailed, last_error: " << FPDF_GetLastError();
+  client_->OnPdfLoadEvent(CastFpdfErrorToPdfLoadEvent(FPDF_GetLastError()), url_);
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   // Send a progress value of -1 to indicate a failure.
   SendLoadingProgress(-1);
 
@@ -1366,7 +1384,7 @@ void PdfViewWebPlugin::DocumentLoadProgress(uint32_t available,
       progress =
           std::min(std::log(static_cast<double>(available)) / kFactor, 100.0);
   }
-
+  LOG(INFO) << __func__ << ", PDF load progress: " << progress << "%";
   // DocumentLoadComplete() will send the 100% load progress.
   if (progress >= 100)
     return;
@@ -2242,6 +2260,12 @@ void PdfViewWebPlugin::UpdateLayerTransform(float scale,
   snapshot_scale_ = scale;
   UpdateScaledValues();
 }
+
+#if BUILDFLAG(ARKWEB_PDF)
+gfx::Rect PdfViewWebPlugin::GetAvailableArea() {
+  return available_area_;
+}
+#endif
 
 void PdfViewWebPlugin::EnableAccessibility() {
   if (accessibility_state_ == AccessibilityState::kLoaded)

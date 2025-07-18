@@ -3585,6 +3585,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void UpdateState(const blink::PageState& state) override;
   void OpenURL(blink::mojom::OpenURLParamsPtr params) override;
   void DidStopLoading() override;
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnPdfScrollAtBottom(const std::string& url) override;
+  void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // blink::mojom::AssociatedInterfaceProvider:
   void GetAssociatedInterface(

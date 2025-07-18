@@ -418,7 +418,7 @@ source_set("common") {
   }
 
   if (is_arkweb) {
-    sources += [ "font_list_android.cc" ]
+    sources += arkweb_content_common_font_list_sources
   }
 
   if (enable_ppapi) {
@@ -542,6 +542,10 @@ mojom("mojo_bindings") {
   if (enable_arkweb) {
     enabled_features += [ "arkweb_theme_font" ]
     enabled_features += [ "arkweb_i18n" ]
+  }
+
+  if (arkweb_pdf) {
+    enabled_features += [ "arkweb_pdf" ]
   }
 
   if (arkweb_renderer_anr_dump) {

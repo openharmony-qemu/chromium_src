@@ -285,7 +285,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   bool GetWebDebuggingAccess() override { return false; }
 
-  void GetImageForContextNode(int command_id) override {}
+  void GetImageForContextNode(CefRefPtr<CefFrame> frame, int command_id) override {}
 
   void GetImageFromCache(const CefString& url, int command_id) override {}
 
@@ -391,6 +391,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void SetAudioResumeInterval(int resumeInterval) override {}
 
   void SetAudioExclusive(bool audioExclusive) override {}
+
+  void SetAudioSessionType(int audioSessionType) override {}
 
   void CloseMedia() override {}
 
@@ -703,7 +705,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   int UpdateNavigationEntryUrl(int index, const CefString& url) override { return 0; }
   void ClearForwardList() override {}
   void ExtensionSetTabId(int tab_id) override {}
-  int ExtensionGetTabId() const override { return 0; }
+  int ExtensionGetTabId() override { return 0; }
   uint32_t GetAcceleratedWidget(bool isPopup) { return 0; }
   void SetAdBlockEnabledForSite(bool is_adblock_enabled, int main_frame_tree_node_id) override {}
   void FindEx(const CefString &searchText, bool forward, bool matchCase, bool findNext, bool newSession) override {}
@@ -718,12 +720,6 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void GetScrollOffset(float* offset_x, float* offset_y) override {}
   void GetOverScrollOffset(float* offset_x, float* offset_y) override {}
   void OnFoldStatusChanged(uint32_t foldStatus) override {}
-  void WebExtensionTabUpdated(int tab_id, const std::vector<CefString> &changed_property_names,
-                              const CefString &url) override {}
-  void WebExtensionTabUpdated(int tab_id, const std::vector<CefString> &changed_property_names,
-                              std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) override {}
-  void WebExtensionTabActivated(int tab_id, int window_id) override {}
-  void WebExtensionActionClicked(std::string extensionId, const NWebExtensionTab *tab) override {}
   void SetNativeEmbedMode(bool flag) override {}
   void SetNativeInnerWeb(bool isInnerWeb) override {}
   void ScaleGestureChangeV2(int type, float scale, float originScale, float width, float height) override {}
@@ -833,7 +829,7 @@ class MockCefBrowser : public ArkWebBrowserExt {
   int UpdateNavigationEntryUrl(int index, const CefString& url) override { return 0; }
   void ClearForwardList() override {}
   void ExtensionSetTabId(int tab_id) override {}
-  int ExtensionGetTabId() const override { return 0; }
+  int ExtensionGetTabId() override { return 0; }
   uint32_t GetAcceleratedWidget(bool isPopup) { return 0; }
   void SetAdBlockEnabledForSite(bool is_adblock_enabled, int main_frame_tree_node_id) override {}
   CefRefPtr<CefFrame> GetFrameByIdentifier(

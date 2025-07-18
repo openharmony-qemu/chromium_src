@@ -263,9 +263,9 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
   int max_touch_down_duration_for_click_in_ms_ = 800;
   float max_stylus_move_in_pixels_for_click_ = 20;
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  // set this 12 to balance sliding response latency and third-party library functionality
+  // set this 8 to balance sliding response latency and third-party library functionality
   // if it's too small, some library may have bugs.
-  float max_touch_move_in_pixels_for_click_ = 12;
+  float max_touch_move_in_pixels_for_click_ = 8;
 #else
   float max_touch_move_in_pixels_for_click_ = 15;
 #endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)

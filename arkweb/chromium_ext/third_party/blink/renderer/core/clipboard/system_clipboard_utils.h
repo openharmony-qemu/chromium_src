@@ -22,14 +22,14 @@ namespace blink {
 class LocalFrame;
 class SystemClipboard;
 
-class SystemClipboardUtils {
+class SystemClipboardUtils : public GarbageCollected<SystemClipboardUtils> {
  public:
   SystemClipboardUtils(SystemClipboard* system_clipboard, LocalFrame* frame);
   ~SystemClipboardUtils();
 
   bool IsCopyAllowed();
-
-  SystemClipboard* system_clipboard_;
+  void Trace(Visitor*) const;
+  Member<SystemClipboard> system_clipboard_;
   Member<LocalFrame> frame_;
 };
 }  // namespace blink

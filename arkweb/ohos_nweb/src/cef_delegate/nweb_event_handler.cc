@@ -250,6 +250,14 @@ void NWebEventHandler::SendCefKeyEvent(CefKeyEvent& keyEvent) {
                << !browser_;
     return;
   }
+  if (keyEvent.windows_key_code == ui::VKEY_RETURN) {
+    // Do not forward return key release events if no press event was handled.
+    if (keyEvent.type == KEYEVENT_KEYUP && !accept_return_character_) {
+      return;
+    }
+    // Accept return key character events between press and release events.
+    accept_return_character_ = keyEvent.type == KEYEVENT_RAWKEYDOWN;
+  }
   browser_->GetHost()->SendKeyEvent(keyEvent);
 
   if (keyEvent.type == KEYEVENT_RAWKEYDOWN) {

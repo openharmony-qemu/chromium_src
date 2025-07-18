@@ -31,7 +31,7 @@ PaintTimingDetectorUtils::PaintTimingDetectorUtils(PaintTimingDetector* paint_ti
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 void PaintTimingDetectorUtils::NotifyLcpForBlankless() {
   LOG(DEBUG) << "blankless PaintTimingDetectorUtils::NotifyLcpForBlankless";
-  if (!base::ohos::BlanklessController::SimpleCheck()) {
+  if (!base::ohos::BlanklessController::CheckGlobalProperty()) {
     return;
   }
   Document* document = paint_timing_detector_->frame_view_->GetFrame().GetDocument();

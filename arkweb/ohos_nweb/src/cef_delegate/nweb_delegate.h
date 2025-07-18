@@ -21,7 +21,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_extension_javascript_item.h"
@@ -51,6 +50,11 @@
 
 #include "capi/nweb_download_delegate_callback.h"
 #endif  //  ARKWEB_EX_DOWNLOAD
+
+#include "build/build_config.h"
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
+#endif
 
 struct FrameInfos;
 struct IsolatedWorld;
@@ -90,6 +94,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void NotifyForNextTouchEvent() override;
   bool IsReady() override;
   void OnDestroy(bool is_close_all) override;
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void RegisterArkWebAppClientExtensionListener(
+      std::shared_ptr<ArkWebAppClientExtensionCallback> callback) override;
+#endif
   void RegisterWebAppClientExtensionListener(
       std::shared_ptr<NWebAppClientExtensionCallback>
           web_app_client_extension_listener) override;
@@ -383,6 +391,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   bool CanStoreWebArchive() const override;
+  void UnRegisterArkWebAppClientExtensionListener() override;
   void UnRegisterWebAppClientExtensionListener() override;
   void UnRegisterWebExtensionListener() override;
   void RegisterWebExtensionListener(
@@ -398,6 +407,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   void SetAudioResumeInterval(int32_t resumeInterval) override;
   void SetAudioExclusive(bool audioExclusive) override;
+  void SetAudioSessionType(int32_t audioSessionType) override;
   void CloseAllMediaPresentations() override;
   void StopAllMedia() override;
   void ResumeAllMedia() override;
@@ -605,6 +615,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
       bool isAccessibilityFocus) override;
   std::shared_ptr<NWebAccessibilityNodeInfo> GetAccessibilityNodeInfoById(
       int64_t accessibilityId) override;
+  int64_t GetWebAccessibilityIdByHtmlElementId(const std::string& htmlElementId) override;
   bool GetAccessibilityVisible(int64_t accessibilityId) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
@@ -716,7 +727,6 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void WebExtensionTabCreated(int tab_id) override;
-  void WebExtensionTabRemoved(int tab_id) override;
   void WebExtensionTabUpdated(
       int tab_id,
       const std::vector<std::string>& changed_property_names,
@@ -725,13 +735,21 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
       int tab_id,
       const std::vector<std::string>& changed_property_names,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) override;
+  void WebExtensionTabRemoved(
+      int tab_id,
+      bool isWindowClosing,
+      int windowId) override;
+  void WebExtensionTabUpdated(
+      int tab_id,
+      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
+      std::unique_ptr<NWebExtensionTab> tab) override;
   void WebExtensionTabActivated(
       std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) override;
   void WebExtensionTabAttached(
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) override;
   void WebExtensionTabDetached(
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) override;
-  void WebExtensionTabHighlighted(int32_t tab_id, int32_t window_id) override;
+  void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) override;
   void WebExtensionTabMoved(
       int32_t tab_id,
       std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) override;
@@ -739,10 +757,17 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
                                int32_t removedTabId) override;
   void WebExtensionTabZoomChange(std::unique_ptr<NWebExtensionTabZoomChangeInfo>
                                      tabZoomChangeInfo) override;
- 
-  void WebExtensionActionClicked(std::string extensionId,
-                                 const NWebExtensionTab* tab) override;
+  void WebExtensionSetViewType(int32_t type) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_PERMISSION)
+  void PermissionRequestGrant(int32_t resourse_id,
+                              int nweb_request_key) override;
+  void PermissionRequestDeny(int nweb_request_key) override;
+  std::string PermissionRequestGetOrigin(int nweb_request_key) override;
+  int32_t PermissionRequestGetResourceId(int nweb_request_key) override;
+  void PermissionRequestDelete(int nweb_request_key) override;
+#endif  // ARKWEB_EXT_PERMISSION
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
@@ -754,6 +779,13 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
   void SetPopupSurface(void* popupSurface) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void EnableViewAutoResize(
+      const CefSize& min_size,
+      const CefSize& max_size) override;
+  void DisableViewAutoResize() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
@@ -878,6 +910,14 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   void EnableVideoAssistant(bool enable) override;
   void ExecuteVideoAssistantFunction(const std::string& cmd_id) override;
   void CustomWebMediaPlayer(bool enable) override;
+  void WebMediaPlayerControllerPlay() override;
+  void WebMediaPlayerControllerPause() override;
+  void WebMediaPlayerControllerSeek(double time) override;
+  void WebMediaPlayerControllerSetMuted(bool muted) override;
+  void WebMediaPlayerControllerSetPlaybackRate(double playback_rate) override;
+  void WebMediaPlayerControllerExitFullscreen() override;
+  void WebMediaPlayerControllerSetVideoSurface(void* native_window) override;
+  void WebMediaPlayerControllerDownload() override;
   void WebMediaPlayerControllerSetVolume(double volume) override;
   double WebMediaPlayerControllerGetVolume() override;
 #endif  // ARKWEB_VIDEO_ASSISTANT

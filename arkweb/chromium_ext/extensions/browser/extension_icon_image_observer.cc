@@ -61,7 +61,7 @@ ExtensionIconImageObserver::~ExtensionIconImageObserver() = default;
 void ExtensionIconImageObserver::OnExtensionIconImageChanged(IconImage* icon_image) {
     LOG(INFO) << "ExtensionIconImageObserver::OnExtensionIconImageChange start";
     gfx::Image icon = icon_image->image();
-    OHOS::NWeb::NWebExtensionActionCefDelegate::OnSetIcon(
+    OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnSetIcon(
         extension_id_, icon, tab_id_);
     icon_image->RemoveObserver(this);
 }

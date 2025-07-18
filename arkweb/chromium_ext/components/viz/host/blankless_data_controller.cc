@@ -16,6 +16,7 @@
 #include "blankless_data_controller.h"
 
 #include <mutex>
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "base/files/file_enumerator.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
@@ -39,8 +40,8 @@ namespace ohos {
 const base::FilePath::CharType DUMP_FILE_PATH[] = FILE_PATH_LITERAL("snapshot");
 const std::string DUMP_FILE_PRE = "/web_frame_";
 const std::string DUMP_FILE_TYPE = ".png";
-const double kSSIMthreshold = 0.95;
-const double kSimilaritythreshold = 0.33;
+const double SSIM_THRESHOLD = 0.95;
+const double SIMILARITY_THRESHOLD = 0.33;
 
 
 static double Mean(const std::vector<double>& data) {
@@ -83,6 +84,7 @@ static double Covariance(const std::vector<double>& data1,
 }
 
 static double CalculateSSIM(const std::vector<double>& img1, const std::vector<double>& img2, const int depth) {
+  // SSIM计算公式中的常数值共计算公式C1=(K1*L)*(K1*L);C2=(K2*L)*(K2*L);其中K1和K2默认值为0.01和0.03
   double C1 = (0.01 * depth) * (0.01 * depth);
   double C2 = (0.03 * depth) * (0.03 * depth);
 
@@ -152,6 +154,7 @@ static std::vector<double> GetSnapshotPixels(const SkPixmap& pixmap) {
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
       const SkColor color = pixmap.getColor(x, y);
+      // 灰度值计算公式0.299、0.587、0.114是RGB各通道的权重
       double gray = 0.299 * SkColorGetR(color) + 0.587 * SkColorGetG(color) + 0.114 * SkColorGetB(color);
       pixels[y * width + x] = gray;
     }
@@ -166,13 +169,13 @@ static double CalculateSnapshotSimilarity(std::vector<double>& pixels1,
                                    const std::vector<BlanklessDataController::SnapShotRect>& quad_list,
                                    const int depth) {
   if (width == 0 || height == 0) {
-    LOG(DEBUG) << "blankless width: " << widht ", height: " << height;
-    return 0;
+    LOG(DEBUG) << "blankless width: " << width << ", height: " << height;
+    return 0.0;
   }
   
   if (pixels1.size() != pixels2.size()) {
     LOG(ERROR) << "blankless old pixels size != new pixels size";
-    return 0;
+    return 0.0;
   }
 
   std::vector<double> samePixels;
@@ -203,7 +206,7 @@ static double CalculateSnapshotSimilarity(std::vector<double>& pixels1,
       }
     }
     double SSIM = CalculateSSIM(rectPixels1, rectPixels2, depth);
-    if (SSIM < kSSIMthreshold) {
+    if (SSIM < SSIM_THRESHOLD) {
       continue;
     }
     for (int y = y0; y < height && y < y0 + rectHeight; y++) {
@@ -303,10 +306,8 @@ class OhosWebSnapshotDataBaseCallbackImpl : public OHOS::NWeb::OhosWebSnapshotDa
  public:
   void OnDataDelete(const std::string& path) override {
     base::FilePath dataPath(path);
-    if (base::PathExists(dataPath)) {
-      if (!base::DeleteFile(dataPath)) {
-        LOG(ERROR) << "blankless delete snapshot failed:" << path;
-      }
+    if (!base::DeleteFile(dataPath)) {
+      LOG(ERROR) << "blankless delete snapshot failed:" << path;
     }
   }
   void OnDataExist(const std::unordered_set<std::string>& existPaths) override {
@@ -374,16 +375,16 @@ std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::
   if (auto it = last_info_.find(blankless_key); it != last_info_.end()) {
     snapshotInfo = it->second;
   }
-  auto snapshotDataItem = OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance().GetSnapshotDataItem(blankless_key);
-  if (snapshotInfo == nullptr && !snapshotDataItem.wholePath.empty()) {
+  if (snapshotInfo == nullptr) {
+    auto snapshotDataItem = OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance().GetSnapshotDataItem(blankless_key);
+    snapshotInfo = std::make_shared<SnapshotInfo>();
+    snapshotInfo->path = snapshotDataItem.wholePath;
     SkBitmap bitmap;
-    if (LoadBitmap(snapshotDataItem.wholePath.c_str(), bitmap)) {
-      snapshotInfo = std::make_shared<SnapshotInfo>();
+    if (!snapshotDataItem.wholePath.empty() && LoadBitmap(snapshotDataItem.wholePath.c_str(), bitmap)) {
       snapshotInfo->bitmap = std::move(bitmap);
       snapshotInfo->pixels = GetSnapshotPixels(snapshotInfo->bitmap.pixmap());
-      snapshotInfo->path = snapshotDataItem.wholePath;
-      last_info_.emplace(blankless_key, snapshotInfo);
     }
+    last_info_.emplace(blankless_key, snapshotInfo);
   }
   return snapshotInfo;
 }
@@ -429,7 +430,11 @@ void BlanklessDataController::DumpBlanklessSnapshot(int64_t blankless_key,
                                                   bitmapNew.height(), quad_list, bitmapNew.bytesPerPixel() * 8);
   snapshotDataItem.historySimilarity = similarity;
   LOG(DEBUG) << "blankless Insert Snapshot: " << newFile << " " << similarity;
-  if (similarity > kSimilaritythreshold) {
+  if (similarity >= base::ohos::BlanklessController::CALLBACK_SIMILARITY_THRESHOLD) {
+    base::ohos::BlanklessController::GetInstance().CancelFrameInsertCallback(blankless_key);
+    base::ohos::BlanklessController::GetInstance().FireFrameRemoveCallback(blankless_key);
+  }
+  if (similarity > SIMILARITY_THRESHOLD) {
     snapshotDataItem.staticPath = newFile;
   }
   dbInstance_.InsertSnapshotDataItem(blankless_key, snapshotDataItem);

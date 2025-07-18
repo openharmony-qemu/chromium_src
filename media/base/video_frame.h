@@ -61,6 +61,10 @@ struct GpuMemoryBufferHandle;
 
 namespace media {
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class OHOSMediaCodecBridgeImplTest;
+#endif
+
 class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
  public:
   static constexpr size_t kFrameSizeAlignment = 16;
@@ -992,6 +996,10 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
   // Allocation which makes up |data_| planes for self-allocated frames.
   std::unique_ptr<uint8_t, base::UncheckedFreeDeleter> private_data_;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class ConvertAndScaleFrameTest;
+  friend class OHOSMediaCodecBridgeImplTest;
+#endif
 };
 
 }  // namespace media

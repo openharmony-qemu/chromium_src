@@ -82,9 +82,11 @@ config("compiler") {
 
   if (current_cpu == "arm64") {
     if (arm_control_flow_integrity == "standard") {
-      cflags += [ "-mbranch-protection=pac-ret+b-key+bti" ]
-      rustflags = [ "-Zbranch-protection=bti" ]
-      ldflags += [ "-Wl,-z,force-bti" ]
+      if (!is_hwasan) {
+        cflags += [ "-mbranch-protection=pac-ret+b-key+bti" ]
+        rustflags = [ "-Zbranch-protection=bti" ]
+        ldflags += [ "-Wl,-z,force-bti" ]
+      }
     } else if (arm_control_flow_integrity == "pac") {
       cflags += [ "-mbranch-protection=pac-ret+b-key" ]
       rustflags = [ "-Zbranch-protection=pac-ret" ]
@@ -183,6 +185,11 @@ config("runtime_library") {
         libs += [ rebase_path(libasan_file) ]
         dynamic_linker = "/lib/ld-musl-arm-asan.so.1"
       }
+      if (is_hwasan && arkweb_asan) {
+        libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.hwasan.so"
+        libs += [ rebase_path(libasan_file) ]
+        dynamic_linker = "/lib/ld-musl-arm-asan.so.1"
+      }
       if (using_sanitizer) {
         libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.ubsan_standalone.so"
         libs += [ rebase_path(libasan_file) ]
@@ -210,6 +217,11 @@ config("runtime_library") {
       if (is_asan) {
         libasan_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos/libclang_rt.asan.so"
         libs += [ rebase_path(libasan_file) ]
+      }
+      if (is_hwasan) {
+        libasan_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos/libclang_rt.hwasan.so"
+        libs += [ rebase_path(libasan_file) ]
+        dynamic_linker = "/lib/ld-musl-aarch64-asan.so.1"
       }
     }
 

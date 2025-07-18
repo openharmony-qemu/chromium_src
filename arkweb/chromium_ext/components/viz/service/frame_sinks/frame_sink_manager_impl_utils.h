@@ -20,6 +20,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "components/viz/common/surfaces/frame_sink_id.h"
+#include "base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr.h"
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "components/viz/service/gl/gpu_service_impl.h"
@@ -30,7 +31,7 @@ class FrameSinkManagerImpl;
 
 class FrameSinkManagerImplUtils {
 public:
-  FrameSinkManagerImpl* frameSinkManagerImpl;
+  raw_ptr<FrameSinkManagerImpl> frameSinkManagerImpl;
   FrameSinkManagerImplUtils(FrameSinkManagerImpl* managerImplUtils);
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
   void EvictFrameBackBuffers(const FrameSinkId& root_frame_sink_id,

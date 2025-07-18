@@ -43,7 +43,6 @@ bool OhosBufferAdapterImplFuzzTest(const uint8_t* data, size_t size)
 }
 } // namespace OHOS
 
-
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     OHOS::OhosBufferAdapterImplFuzzTest(data, size);
     return 0;

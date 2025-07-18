@@ -25,8 +25,6 @@
 #include "base/test/scoped_command_line.h"
 #include "cc/base/switches.h"
 
-#define private public
-
 using namespace testing;
 
 namespace content {

@@ -798,7 +798,7 @@ class MockNWebKeyboardEvent : public NWebKeyboardEvent {
                         int32_t action,
                         int32_t unicode,
                         bool enableCapsLock,
-                        std::vector<int32_t> pressKeyCodes)
+                        const std::vector<int32_t>& pressKeyCodes)
       : keyCode_(keyCode),
         action_(action),
         unicode_(unicode),
@@ -825,7 +825,7 @@ class MockNWebMouseEvent : public NWebMouseEvent {
                      int32_t button,
                      int32_t action,
                      int32_t clickNum,
-                     std::vector<int32_t> pressKeyCodes,
+                     const std::vector<int32_t>& pressKeyCodes,
                      int32_t rawX,
                      int32_t rawY)
       : x_(x),

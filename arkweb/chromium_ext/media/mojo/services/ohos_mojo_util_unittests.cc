@@ -63,7 +63,7 @@ TEST_F(OHOSMojoUtilTest, CreateProvisionFetcher) {
   mojo::PendingRemote<mojom::ProvisionFetcher> provision_fetcher;
   EXPECT_CALL(*Mock_frame_interfaces, CreateProvisionFetcher(_))
       .WillOnce(Invoke([&]() {
-        auto receiver = provision_fetcher.InitWithNewPipeAndPassReceiver();
+          auto receiver = provision_fetcher.InitWithNewPipeAndPassReceiver();
       }));
   scoped_refptr<base::SingleThreadTaskRunner> task_runner(
       base::MakeRefCounted<base::TestSimpleTaskRunner>());
@@ -77,7 +77,7 @@ TEST_F(OHOSMojoUtilTest, CreateMediaDrmStorage) {
   mojo::PendingRemote<mojom::MediaDrmStorage> media_drm_storage;
   EXPECT_CALL(*Mock_frame_interfaces, BindEmbedderReceiver(_))
       .WillOnce(Invoke([&](mojo::GenericPendingReceiver receiver) {
-        auto receiver_ = media_drm_storage.InitWithNewPipeAndPassReceiver();
+          auto receiver_ = media_drm_storage.InitWithNewPipeAndPassReceiver();
       }));
   scoped_refptr<base::SingleThreadTaskRunner> task_runner(
       base::MakeRefCounted<base::TestSimpleTaskRunner>());

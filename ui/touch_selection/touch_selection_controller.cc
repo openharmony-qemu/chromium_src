@@ -637,6 +637,9 @@ void TouchSelectionController::OnInsertionChanged() {
 #endif
   insertion_handle_->SetFocus(start_.edge_start(), start_.edge_end());
   insertion_handle_->SetVisible(GetStartVisible(), animation);
+#if BUILDFLAG(ARKWEB_MENU)
+  insertion_handle_->AsTouchHandleExt()->SetInsertHandleAlpha(1.f);
+#endif
 
   UpdateHandleLayoutIfNecessary();
 

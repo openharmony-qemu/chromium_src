@@ -117,10 +117,13 @@ void TouchSelectionControllerExt::OnInsertionChangedExt(const gfx::SelectionBoun
   if (insertion_handle_) {
     const TouchHandle::AnimationStyle animation = GetAnimationStyle(!activated);
     if (auto* handle_ext = insertion_handle_->AsTouchHandleExt()) {
-        handle_ext->SetEdge(start_.edge_start(), start_.edge_end());
+      handle_ext->SetEdge(start_.edge_start(), start_.edge_end());
     }
     insertion_handle_->SetFocus(start_.edge_start(), start_.edge_end());
     insertion_handle_->SetVisible(GetStartVisible(), animation);
+    if (insertion_handle_->AsTouchHandleExt()) {
+      insertion_handle_->AsTouchHandleExt()->SetInsertHandleAlpha(0.f);
+    }
     UpdateHandleLayoutIfNecessary();
   }
 }

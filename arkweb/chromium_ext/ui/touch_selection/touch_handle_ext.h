@@ -42,6 +42,7 @@ class TouchHandleExt : public TouchHandle {
   void ResetPositionAfterDragEnd();
   bool GetVisible() const { return is_visible_; }
   bool SetFocus(const gfx::PointF& top, const gfx::PointF& bottom);
+  void SetInsertHandleAlpha(float alpha);
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)

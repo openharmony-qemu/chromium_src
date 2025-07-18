@@ -30,6 +30,7 @@
 #include "extensions/browser/ui_util.h"
 #include "ui/gfx/image/image_skia_operations.h"
 #include "extensions/browser/management_policy.h"
+#include "extensions/browser/unloaded_extension_reason.h"
 #include "base/logging.h"
 #include "ohos_nweb/src/nweb_common.h"
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -424,13 +425,29 @@ void ExtensionRegistryInfoManager::OnExtensionReady(content::BrowserContext* bro
                                                     const Extension* extension) {
 }
 
+int UnloadedExtensionReasonEnumToInt(UnloadedExtensionReason reason) {
+    switch (reason) {
+        case UnloadedExtensionReason::UNDEFINED:
+            return 0;
+        case UnloadedExtensionReason::DISABLE:
+            return 1;
+        case UnloadedExtensionReason::UPDATE:
+            return 2;
+        case UnloadedExtensionReason::UNINSTALL:
+            return 3;
+        default:
+            return 0;
+    }
+}
+
 void ExtensionRegistryInfoManager::OnExtensionUnloaded(content::BrowserContext* browser_context,
                                                        const Extension* extension,
                                                        UnloadedExtensionReason reason) {
   // It must be triggered after the observer notification.
   if (IsNativeApiEnable()) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-    NWebExtensionManagerDispatcher::OnExtensionUnLoadedCallBack(extension->id());
+    NWebExtensionManagerDispatcher::OnExtensionUnLoadedCallBack(
+      extension->id(), UnloadedExtensionReasonEnumToInt(reason));
 #endif
   } else {
     OnExtensionUnLoadedCallBack(extension->id());

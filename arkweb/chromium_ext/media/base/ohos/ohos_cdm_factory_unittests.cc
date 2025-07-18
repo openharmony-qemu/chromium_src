@@ -116,45 +116,41 @@ TEST_F(OHOSCdmFactoryTest, Create) {
   base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner);
 
   {
-    auto cb = [](const scoped_refptr<ContentDecryptionModule>& cdm,
-                              CreateCdmStatus cdmStatus) {};
+    auto cb = [](const scoped_refptr<ContentDecryptionModule>& cdm, CreateCdmStatus cdmStatus) {};
     CdmCreatedCB cdm_created_cb = base::BindOnce(cb);
     cdm_factory_->Create(cdm_config, session_message_cb, session_closed_cb,
-                        session_keys_change_cb, session_expiration_update_cb,
-                        std::move(cdm_created_cb));
+                         session_keys_change_cb, session_expiration_update_cb,
+                         std::move(cdm_created_cb));
     EXPECT_TRUE(cdm_factory_->pending_creations_.empty());
   }
 
   {
     cdm_config.key_system = media::kClearKeyKeySystem;
-    auto cb = [](const scoped_refptr<ContentDecryptionModule>& cdm,
-                              CreateCdmStatus cdmStatus) {};
+    auto cb = [](const scoped_refptr<ContentDecryptionModule>& cdm, CreateCdmStatus cdmStatus) {};
     CdmCreatedCB cdm_created_cb = base::BindOnce(cb);
     cdm_factory_->Create(cdm_config, session_message_cb, session_closed_cb,
-                        session_keys_change_cb, session_expiration_update_cb,
-                        std::move(cdm_created_cb));
+                         session_keys_change_cb, session_expiration_update_cb,
+                         std::move(cdm_created_cb));
     EXPECT_TRUE(cdm_factory_->pending_creations_.empty());
   }
 
   {
     cdm_config.key_system = "org.w3.clearkey.test";
-    auto cb = [](const scoped_refptr<ContentDecryptionModule>& cdm,
-                              CreateCdmStatus cdmStatus) {};
+    auto cb = [](const scoped_refptr<ContentDecryptionModule>& cdm, CreateCdmStatus cdmStatus) {};
     CdmCreatedCB cdm_created_cb = base::BindOnce(cb);
     cdm_factory_->Create(cdm_config, session_message_cb, session_closed_cb,
-                        session_keys_change_cb, session_expiration_update_cb,
-                        std::move(cdm_created_cb));
+                         session_keys_change_cb, session_expiration_update_cb,
+                         std::move(cdm_created_cb));
     EXPECT_TRUE(cdm_factory_->pending_creations_.empty());
   }
 
   {
     cdm_config.key_system = media::kWiseplayKeySystem;
-    auto cb = [](const scoped_refptr<ContentDecryptionModule>& cdm,
-                              CreateCdmStatus cdmStatus) {};
+    auto cb = [](const scoped_refptr<ContentDecryptionModule>& cdm, CreateCdmStatus cdmStatus) {};
     CdmCreatedCB cdm_created_cb = base::BindOnce(cb);
     cdm_factory_->Create(cdm_config, session_message_cb, session_closed_cb,
-                        session_keys_change_cb, session_expiration_update_cb,
-                        std::move(cdm_created_cb));
+                         session_keys_change_cb, session_expiration_update_cb,
+                         std::move(cdm_created_cb));
     EXPECT_TRUE(cdm_factory_->pending_creations_.empty());
   }
 }

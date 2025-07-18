@@ -427,16 +427,16 @@ void ExtensionRegistryInfoManager::OnExtensionReady(content::BrowserContext* bro
 
 int UnloadedExtensionReasonEnumToInt(UnloadedExtensionReason reason) {
   switch (reason) {
-      case UnloadedExtensionReason::UNDEFINED:
-          return 0;
-      case UnloadedExtensionReason::DISABLE:
-          return 1;
-      case UnloadedExtensionReason::UPDATE:
-          return 2;
-      case UnloadedExtensionReason::UNINSTALL:
-          return 3;
-      default:
-          return 0;
+    case UnloadedExtensionReason::UNDEFINED:
+      return 0;
+    case UnloadedExtensionReason::DISABLE:
+      return 1;
+    case UnloadedExtensionReason::UPDATE:
+      return 2;
+    case UnloadedExtensionReason::UNINSTALL:
+      return 3;
+    default:
+      return 0;
   }
 }
 

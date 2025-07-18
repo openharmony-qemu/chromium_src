@@ -536,6 +536,7 @@ NWebDelegate::NWebDelegate(int argc, const char* argv[])
     : argc_(argc), argv_(argv) {}
 
 NWebDelegate::~NWebDelegate() {
+  LOG(INFO) << "NWebDelegate::~NWebDelegate, nweb id = " << nweb_id_;
   if (display_listener_id_ >= 0 && display_listener_ != nullptr &&
       display_manager_adapter_ != nullptr) {
     display_manager_adapter_->UnregisterDisplayListener(display_listener_id_);

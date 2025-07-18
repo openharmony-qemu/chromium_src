@@ -12,11 +12,10 @@
  * See the License for the specific language governing permissions and	
  * limitations under the License.	
  */
-
-#define private public
-
 #include "gtest/gtest.h"
+#define private public
 #include "skia_memory_tracer.h"
+#undef private
 
 namespace skia {
 

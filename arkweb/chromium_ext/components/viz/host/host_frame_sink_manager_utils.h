@@ -23,7 +23,7 @@
 namespace viz {
 class HostFrameSinkManagerUtils {
 public:
-    HostFrameSinkManager* hostFrameSinkManager;
+    raw_ptr<HostFrameSinkManager> hostFrameSinkManager;
     HostFrameSinkManagerUtils(HostFrameSinkManager* manager);
 
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)

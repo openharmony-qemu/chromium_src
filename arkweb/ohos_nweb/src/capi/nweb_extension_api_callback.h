@@ -22,7 +22,6 @@
 #include "ohos_nweb/src/capi/web_extension_tab_items.h"
 #include "ohos_nweb/src/capi/nweb_extension_action_icon.h"
 #include "ohos_nweb/src/capi/web_extension_window_items.h"
-#include "nweb_extension_api_struct_info.h"
 #include "web_extension_tab_items.h"
 
 struct NWebExtensionApiCallback {
@@ -42,43 +41,64 @@ struct NWebExtensionApiCallback {
   void (*NotifyGetZoomSettings)(int32_t tabId);
   void (*NotifyGroup)(NWebExtensionTabGroupOptions& options);
   void (*NotifyHighlight)(NWebExtensionTabHighlightInfo& highlightInfo);
-  void (*NotifyMove)(std::vector<int32_t>& tabIds,
-                     NWebExtensionTabMoveProperties& moveProperties);
   void (*NotifyQuery)(const NWebExtensionTabQueryInfo& queryInfo, std::vector<NWebExtensionTab>& tabs);
   void (*NotifyReload)(int32_t tabId,
                        NWebExtensionTabReloadProperties* reloadProperties);
-  void (*NotifyRemove)(std::vector<int32_t>& tabIds);
   void (*NotifySetZoom)(int32_t tabId, int32_t zoomFactor);
   void (*NotifySetZoomSettings)(int32_t tabId,
                                 NWebExtensionTabZoomSettings& zoomSettings);
   void (*NotifyUngroup)(std::vector<int32_t>& tabIds);
+  void (*NotifyMoveWithId)(const std::vector<int32_t>& tabIds,
+                     const NWebExtensionTabMoveProperties& moveProperties,
+                     int request_id);
+ 
+  void (*NotifyRemoveWithId)(const std::vector<int32_t>& tabIds, int request_id);
 };
  
 struct NWebExtensionWindowsApiCallback {
   size_t struct_size = sizeof(NWebExtensionWindowsApiCallback);
   int nweb_id{0};
+  void (*OnCreateWindow)(int request_id, const WebExtensionWindowCreateData& create_data);
+  void (*OnRemoveWindow)(int request_id, int window_id);
+  void (*OnUpdateWindow)(int request_id, int window_id, const WebExtensionWindowUpdateInfo& update_info);
+  std::optional<WebExtensionWindow> (*OnGetWindow)(int window_id,
+                                                     const WebExtensionWindowQueryOptions& query_options);
   void (*OnGetAllWindows)(const WebExtensionWindowQueryOptions& queryOptions,
-                           std::vector<WebExtensionWindow>& result);
+                          std::vector<WebExtensionWindow>& result);
+  std::optional<WebExtensionWindow> (*OnGetCurrentWindow)(int currentWindowId,
+                                                          const WebExtensionWindowQueryOptions& query_options);
+  std::optional<WebExtensionWindow> (*OnGetLastFocusedWindow)(const WebExtensionWindowQueryOptions& query_options);
 };
  
 struct NWebExtensionSidePanelApiCallback {
   size_t struct_size = sizeof(NWebExtensionSidePanelApiCallback);
-  void (*OnSidePanelOpen)(const char* extension_id, int tab_id, int window_id);
   void (*OnSidePanelSetOptions)(std::string extension_id,
-                                std::optional<bool> enabled,
-                                std::optional<int> tab_id,
-                                std::optional<std::string> path);
+    std::optional<bool> enabled,
+    std::optional<int> tab_id,
+    std::optional<std::string> path);
   void (*OnSidePanelSetPanelBehavior)(const char* extension_id,
                                       int open_panel_on_action_click);
+  void (*OnSidePanelOpen)(const char* extension_id, int tab_id, int window_id);
 };
  
 struct NWebExtensionActionApiCallback {
   size_t struct_size = sizeof(NWebExtensionActionApiCallback);
   void (*OnSetIcon)(const char* extension_id,
-                    OHOS::NWeb::NWebExtensionActionIcon* icon,
+                    NWebExtensionActionIcon* icon,
                     int tab_id);
   void (*OnDisable)(const std::string& extensionId, std::optional<int>& tabId);
   void (*OnEnable)(const std::string& extensionId, std::optional<int>& tabId);
+  void (*OnOpenPopup)(const std::string& extensionId,
+                      const std::optional<NWebExtensionActionOpenPopupOptions>& options);
+  void (*OnSetTitle)(const std::string& extensionId, const NWebExtensionActionSetTitleDetails& details);
+  void (*OnSetPopup)(const std::string& extensionId, const NWebExtensionActionSetPopupDetails& details);
+  void (*OnSetBadgeText)(const std::string& extensionId,
+                        const NWebExtensionActionSetBadgeTextDetails& details);
+  void (*OnSetBadgeTextColor)(const std::string& extensionId,
+                              const NWebExtensionActionSetBadgeTextColorDetails& details);
+  void (*OnSetBadgeBackgroundColor)(const std::string& extensionId,
+                                    const NWebExtensionActionSetBadgeBackgroundColorDetails& details);
+  std::optional<NWebExtensionActionUserSettings> (*OnGetUserSettings)(const std::string& extensionId);
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_EXTENSION_API_CALLBACK_H_

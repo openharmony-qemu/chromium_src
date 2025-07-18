@@ -131,6 +131,7 @@ if (!enable_arkweb) {
   arkweb_dfx_dump = false
   arkweb_dfx_logging = true
   arkweb_dfx_tracing = false
+  arkweb_disable_services = false
   arkweb_dispatch_before_unload = true
   arkweb_display_cutout = false
   arkweb_download = false
@@ -351,6 +352,7 @@ buildflag_header("features") {
     "ARKWEB_DFX_DUMP=$arkweb_dfx_dump",
     "ARKWEB_DFX_LOGGING=$arkweb_dfx_logging",
     "ARKWEB_DFX_TRACING=$arkweb_dfx_tracing",
+    "ARKWEB_DISABLE_SERVICES=$arkweb_disable_services",
     "ARKWEB_DISATCH_BEFORE_UNLOAD=$arkweb_dispatch_before_unload",
     "ARKWEB_DISPLAY_CUTOUT=$arkweb_display_cutout",
     "ARKWEB_DOWNLOAD=$arkweb_download",
@@ -543,7 +545,8 @@ buildflag_header("features") {
     "ARKWEB_VIEWPORT_AVOID=$arkweb_viewport_avoid",
     "ARKWEB_ERROR_PAGE=$arkweb_error_page",
     "ARKWEB_GWP_ASAN=$arkweb_gwp_asan",
-    
+    "ARKWEB_HWASAN=$is_hwasan",
+
     # ARKWEB_EXT dafault value
     "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",
     "ARKWEB_EXT_COOKIE_JS_SETTINGS=false",

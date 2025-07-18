@@ -232,6 +232,10 @@ class NWebAccessibilityNodeInfoImpl : public NWebAccessibilityNodeInfo {
 
   std::string GetAccessibilityText() override;
 
+  void SetHtmlElementId(const std::string& htmlElementId);
+
+  std::string GetHtmlElementId() override;  // only embed inject html element id
+
   void SetComponentTypeDescription(const std::string& component_type_description);
 
   std::string GetComponentTypeDescription() override;
@@ -265,6 +269,7 @@ class NWebAccessibilityNodeInfoImpl : public NWebAccessibilityNodeInfo {
   std::string accessibility_level_;
   std::string accessibility_description_;
   std::string accessibility_text_;
+  std::string html_element_id_;
 
   std::vector<int64_t> child_ids_;
   int64_t parent_id_ = -1;

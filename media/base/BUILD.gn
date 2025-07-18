@@ -726,6 +726,20 @@ source_set("unit_tests") {
   if (is_castos) {
     sources += [ "demuxer_memory_limit_cast_unittest.cc" ]
   }
+
+  if (arkweb_unittests) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    include_dirs = [
+      "//arkweb/ohos_adapter_ndk/interfaces",
+      "//third_party/ohos_ndk/includes/ohos_adapter"
+    ]
+    sources += arkweb_media_base_unittest_sources
+    sources += arkweb_media_adapter_unittest_sources
+    sources += arkweb_media_gpu_unittest_sources
+    deps += [
+      "//arkweb/ohos_adapter_ndk:adapter_ndk"
+    ]
+  }
 }
 
 source_set("perftests") {

@@ -89,6 +89,10 @@ bool PlayerFrameworkAdapterImpl_SeekFuzzTest(FuzzedDataProvider* fdp) {
 
     int32_t duration = fdp->ConsumeIntegralInRange<int32_t>(0, MAX_SET_NUMBER);
     playerAdapter.GetDuration(duration);
+    playerAdapter.Seek(seekpoint, PlayerSeekMode::SEEK_NEXT_SYNC);
+    playerAdapter.Seek(seekpoint, PlayerSeekMode::SEEK_PREVIOUS_SYNC);
+    playerAdapter.Seek(seekpoint, PlayerSeekMode::SEEK_CLOSEST_SYNC);
+    playerAdapter.Seek(seekpoint, PlayerSeekMode::SEEK_CLOSEST);
     return true;
 }
 
@@ -102,6 +106,11 @@ bool PlayerFrameworkAdapterImpl_SetPlaybackSpeedFuzzTest(FuzzedDataProvider* fdp
     auto rawValue = fdp->ConsumeIntegralInRange<int32_t>(0, 4);
     auto type = static_cast<PlaybackRateMode>(rawValue);
     playerAdapter.SetPlaybackSpeed(type);
+    playerAdapter.SetPlaybackSpeed(PlaybackRateMode::SPEED_FORWARD_0_75_X);
+    playerAdapter.SetPlaybackSpeed(PlaybackRateMode::SPEED_FORWARD_1_00_X);
+    playerAdapter.SetPlaybackSpeed(PlaybackRateMode::SPEED_FORWARD_1_25_X);
+    playerAdapter.SetPlaybackSpeed(PlaybackRateMode::SPEED_FORWARD_1_75_X);
+    playerAdapter.SetPlaybackSpeed(PlaybackRateMode::SPEED_FORWARD_2_00_X);
     return true;
 }
 

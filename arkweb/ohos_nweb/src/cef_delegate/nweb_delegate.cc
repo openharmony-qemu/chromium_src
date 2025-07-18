@@ -96,6 +96,7 @@
 #include "ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_impl.h"
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
 #include "cef/include/cef_devtools_message_handler_delegate.h"
+#include "ohos_nweb/src/nweb_common.h"
 #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -857,6 +858,17 @@ void NWebDelegate::FindNext(const bool forward) const {
   find_delegate_->FindNext(GetBrowser().get(), forward);
 }
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+void NWebDelegate::RegisterArkWebAppClientExtensionListener(
+    std::shared_ptr<ArkWebAppClientExtensionCallback> callback) {
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "fail to register web app client extension listener, nweb "
+                  "handler delegate is nullptr";
+    return;
+  }
+  handler_delegate_->RegisterArkWebAppClientExtensionListener(callback);
+}
+#endif
 void NWebDelegate::RegisterWebAppClientExtensionListener(
     std::shared_ptr<NWebAppClientExtensionCallback>
         web_app_client_extension_listener) {
@@ -878,6 +890,15 @@ bool NWebDelegate::CanStoreWebArchive() const {
   return GetBrowser()->CanStoreWebArchive();
 }
 
+void NWebDelegate::UnRegisterArkWebAppClientExtensionListener() {
+  if (handler_delegate_ == nullptr) {
+    LOG(ERROR) << "fail to unregister ark web app client extension listener, nweb "
+                  "handler delegate is nullptr";
+    return;
+  }
+  handler_delegate_->UnRegisterArkWebAppClientExtensionListener();
+}
+
 void NWebDelegate::UnRegisterWebAppClientExtensionListener() {
   if (handler_delegate_ == nullptr) {
     LOG(ERROR) << "fail to unregister web app client extension listener, nweb "
@@ -890,7 +911,7 @@ void NWebDelegate::UnRegisterWebAppClientExtensionListener() {
 void NWebDelegate::GetImageFromContextNode() {
   auto browser = GetBrowser();
   if (browser != nullptr && browser->GetHost() != nullptr) {
-    browser->GetHost()->GetImageForContextNode(MENU_ID_IMAGE_SHARE);
+    browser->GetHost()->GetImageForContextNode(browser->GetMainFrame(), MENU_ID_IMAGE_SHARE);
   }
 }
 
@@ -1006,14 +1027,9 @@ void NWebDelegate::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
     }
     browser->GetHost()->OnTextSelected(false);
   }
-#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
-  if (avoid_height_ != 0) {
-    AvoidVisibleViewportBottom(avoid_height_);
-  }
-#endif
 }
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 void NWebDelegate::ResizeVisibleViewport(uint32_t width,
                                          uint32_t height,
                                          bool isKeyboard) {
@@ -3569,6 +3585,15 @@ void NWebDelegate::SetAudioExclusive(bool audioExclusive) {
   }
 }
 
+void NWebDelegate::SetAudioSessionType(int32_t audioSessionType) {
+  if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
+    GetBrowser()->GetHost()->SetAudioSessionType(audioSessionType);
+  }
+  if (preference_delegate_) {
+    preference_delegate_->PutAudioSessionType(audioSessionType);
+  }
+}
+
 void NWebDelegate::CloseAllMediaPresentations() {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
     LOG(ERROR) << "CloseAllMediaPresentations can not get browser";
@@ -4363,6 +4388,12 @@ NWebDelegate::GetAccessibilityNodeInfoById(int64_t accessibilityId) {
   return PopulateAccessibilityNodeInfo(node);
 }
 
+int64_t NWebDelegate::GetWebAccessibilityIdByHtmlElementId(const std::string& htmlElementId) {
+  auto id = BrowserAccessibilityOHOS::GetAccessibilityIdByHtmlElementId(htmlElementId);
+  LOG(DEBUG) << "web accessibility id get from BrowserAccessibilityOHOS: " << id;
+  return id;
+}
+
 bool NWebDelegate::GetAccessibilityVisible(int64_t accessibilityId) {
   BrowserAccessibilityOHOS* node =
       BrowserAccessibilityOHOS::GetFromAccessibilityId(
@@ -4408,6 +4439,16 @@ NWebDelegate::PopulateAccessibilityNodeInfo(BrowserAccessibilityOHOS* node) {
   if (nodeInfo == nullptr || node == nullptr) {
     LOG(ERROR) << "PopulateAccessibilityNodeInfo nodeInfo or node is null";
     return nullptr;
+  }
+  auto axnode = node->node();
+  if (axnode) {
+    const base::StringPairs& htmlAttributes = axnode->GetHtmlAttributes();
+    for (const auto& pair : htmlAttributes) {
+      if (base::EqualsCaseInsensitiveASCII(pair.first, "id")) {
+        nodeInfo->SetHtmlElementId(pair.second);
+        break;
+      }
+    }
   }
   nodeInfo->SetAccessibilityId(kRootAccessibilityId);
   nodeInfo->SetParentId(-1);
@@ -4779,6 +4820,80 @@ void NWebDelegate::CustomWebMediaPlayer(bool enable) {
   GetBrowser()->GetHost()->CustomWebMediaPlayer(enable);
 }
 
+void NWebDelegate::WebMediaPlayerControllerPlay() {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to WebMediaPlayerControllerPlay, handler delegate is null";
+    return;
+  }
+  handler_delegate_->WebMediaPlayerControllerPlay();
+}
+
+void NWebDelegate::WebMediaPlayerControllerPause() {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to WebMediaPlayerControllerPause, handler delegate is null";
+    return;
+  }
+  handler_delegate_->WebMediaPlayerControllerPause();
+}
+
+void NWebDelegate::WebMediaPlayerControllerSeek(double time) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to WebMediaPlayerControllerSeek, handler delegate is null";
+    return;
+  }
+  handler_delegate_->WebMediaPlayerControllerSeek(time);
+}
+
+void NWebDelegate::WebMediaPlayerControllerSetMuted(bool muted) {
+  if (!handler_delegate_) {
+    LOG(ERROR) << "failed to WebMediaPlayerControllerSetMuted, handler "
+                  "delegate is null";
+    return;
+  }
+  handler_delegate_->WebMediaPlayerControllerSetMuted(muted);
+}
+
+void NWebDelegate::WebMediaPlayerControllerSetPlaybackRate(
+    double playback_rate) {
+  if (!handler_delegate_) {
+    LOG(ERROR) << "failed to WebMediaPlayerControllerSetPlaybackRate, handler "
+                  "delegate is null";
+    return;
+  }
+  handler_delegate_->WebMediaPlayerControllerSetPlaybackRate(playback_rate);
+}
+
+void NWebDelegate::WebMediaPlayerControllerExitFullscreen() {
+  if (!handler_delegate_) {
+    LOG(ERROR) << "failed to WebMediaPlayerControllerExitFullscreen, handler "
+                  "delegate is null";
+    return;
+  }
+  handler_delegate_->WebMediaPlayerControllerExitFullscreen();
+}
+
+void NWebDelegate::WebMediaPlayerControllerSetVideoSurface(
+    void* native_window) {
+  if (!handler_delegate_) {
+    LOG(ERROR) << "failed to WebMediaPlayerControllerSetVideoSurface, handler "
+                  "delegate is null";
+    return;
+  }
+  handler_delegate_->WebMediaPlayerControllerSetVideoSurface(native_window);
+}
+
+void NWebDelegate::WebMediaPlayerControllerDownload() {
+  if (!handler_delegate_) {
+    LOG(ERROR) << "failed to WebMediaPlayerControllerDownload, handler "
+                  "delegate is null";
+    return;
+  }
+  handler_delegate_->WebMediaPlayerControllerDownload();
+}
+
 void NWebDelegate::WebMediaPlayerControllerSetVolume(double volume) {
   if (!handler_delegate_) {
     LOG(ERROR) << "failed to WebMediaPlayerControllerSetVolume, handler "
@@ -5068,16 +5183,6 @@ void NWebDelegate::WebExtensionTabCreated(int tab_id) {
   return GetBrowser()->ExtensionSetTabId(tab_id);
 }
 
-void NWebDelegate::WebExtensionTabRemoved(int tab_id) {
-  LOG(INFO) << "WebExtensionTabRemoved:" << tab_id;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabRemoved failed, get browser failed";
-    return;
-  }
-
-  return GetBrowser()->ExtensionSetTabId(tab_id);
-}
-
 void NWebDelegate::WebExtensionTabUpdated(
     int tab_id,
     const std::vector<std::string>& changed_property_names,
@@ -5117,20 +5222,55 @@ void NWebDelegate::WebExtensionTabUpdated(int tab_id,
   return GetBrowser()->GetHost()->WebExtensionTabUpdated(
       tab_id, changed_properties, std::move(changeInfo));
 }
+
+void NWebDelegate::WebExtensionTabRemoved(int tab_id,
+  bool isWindowClosing, int windowId) {
+  LOG(INFO) << "WebExtensionTabRemoved:" << tab_id;
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "WebExtensionTabRemoved failed, get browser failed";
+    return;
+  }
+
+  return GetBrowser()->GetHost()->WebExtensionTabRemoved(
+      tab_id, isWindowClosing, windowId);
+}
+
+void NWebDelegate::WebExtensionTabUpdated(
+    int tab_id,
+    std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
+    std::unique_ptr<NWebExtensionTab> tab) {
+  LOG(DEBUG) << "WebExtensionTabUpdated:" << tab_id;
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "WebExtensionTabUpdated failed, get browser failed";
+    return;
+  }
+
+  GetBrowser()->ExtensionSetTabId(tab_id);
+  return GetBrowser()->GetHost()->WebExtensionTabUpdated(
+      tab_id, std::move(changeInfo), std::move(tab));
+}
  
 void NWebDelegate::WebExtensionTabActivated(
     std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) {
+  if (!activeInfo) {
+    LOG(ERROR) << "WebExtensionTabActivated activeInfo is null";
+    return;
+  }
   LOG(INFO) << "WebExtensionTabActivated, tab_id: "
             << activeInfo->tabId << " windowId: " << activeInfo->windowId;
   if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
     LOG(ERROR) << "WebExtensionTabActivated failed, get browser failed";
     return;
   }
-  return GetBrowser()->GetHost()->WebExtensionTabActivated(activeInfo->tabId, activeInfo->windowId);
+  GetBrowser()->GetHost()->WebExtensionTabActivated(activeInfo->tabId, activeInfo->windowId);
 }
  
 void NWebDelegate::WebExtensionTabAttached(
     std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) {
+  if (!attachInfo) {
+    LOG(ERROR) << "WebExtensionTabAttached attachInfo is null";
+    return;
+  }
   LOG(INFO) << "WebExtensionTabAttached, newPosition: "
             << attachInfo->newPosition
             << " newWindowId: " << attachInfo->newWindowId;
@@ -5138,10 +5278,16 @@ void NWebDelegate::WebExtensionTabAttached(
     LOG(ERROR) << "WebExtensionTabAttached failed, get browser failed";
     return;
   }
+
+  GetBrowser()->GetHost()->WebExtensionTabAttached(attachInfo->newPosition, attachInfo->newWindowId);
 }
  
 void NWebDelegate::WebExtensionTabDetached(
     std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) {
+  if (!detachInfo) {
+    LOG(ERROR) << "WebExtensionTabDetached detachInfo is null";
+    return;
+  }
   LOG(INFO) << "WebExtensionTabDetached, oldPosition: "
             << detachInfo->oldPosition
             << " oldWindowId: " << detachInfo->oldWindowId;
@@ -5149,21 +5295,25 @@ void NWebDelegate::WebExtensionTabDetached(
     LOG(ERROR) << "WebExtensionTabDetached failed, get browser failed";
     return;
   }
+  GetBrowser()->GetHost()->WebExtensionTabDetached(std::move(detachInfo));
 }
  
-void NWebDelegate::WebExtensionTabHighlighted(int32_t tab_id,
-                                              int32_t window_id) {
-  LOG(INFO) << "WebExtensionTabHighlighted, tab_id: " << tab_id
-            << " windowId: " << window_id;
+void NWebDelegate::WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) {
+  LOG(INFO) << "WebExtensionTabHighlighted, windowId: " << highlightInfo.windowId.value();
   if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
     LOG(ERROR) << "WebExtensionTabHighlighted failed, get browser failed";
     return;
   }
+  GetBrowser()->GetHost()->WebExtensionTabHighlighted(highlightInfo);
 }
  
 void NWebDelegate::WebExtensionTabMoved(
     int32_t tab_id,
     std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) {
+  if (!moveInfo) {
+    LOG(ERROR) << "WebExtensionTabMoved moveInfo is null";
+    return;
+  }
   LOG(INFO) << "WebExtensionTabMoved, tab_id: " << tab_id
             << " from: " << moveInfo->fromIndex << " to: " << moveInfo->toIndex
             << "window id: " << moveInfo->windowId;
@@ -5171,6 +5321,7 @@ void NWebDelegate::WebExtensionTabMoved(
     LOG(ERROR) << "WebExtensionTabMoved failed, get browser failed";
     return;
   }
+  GetBrowser()->GetHost()->WebExtensionTabMoved(tab_id, std::move(moveInfo));
 }
  
 void NWebDelegate::WebExtensionTabReplaced(int32_t addedTabId,
@@ -5181,10 +5332,15 @@ void NWebDelegate::WebExtensionTabReplaced(int32_t addedTabId,
     LOG(ERROR) << "WebExtensionTabReplaced failed, get browser failed";
     return;
   }
+  GetBrowser()->GetHost()->WebExtensionTabReplaced(addedTabId, removedTabId);
 }
  
 void NWebDelegate::WebExtensionTabZoomChange(
     std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) {
+  if (!tabZoomChangeInfo) {
+    LOG(ERROR) << "WebExtensionTabZoomChange tabZoomChangeInfo is null";
+    return;
+  }
   LOG(INFO) << "WebExtensionTabZoomChange, tab_id: "
             << tabZoomChangeInfo->tabId
             << " newZoomFactor: " << tabZoomChangeInfo->newZoomFactor
@@ -5193,19 +5349,63 @@ void NWebDelegate::WebExtensionTabZoomChange(
     LOG(ERROR) << "WebExtensionTabZoomChange failed, get browser failed";
     return;
   }
+  GetBrowser()->GetHost()->WebExtensionTabZoomChange(std::move(tabZoomChangeInfo));
 }
- 
-void NWebDelegate::WebExtensionActionClicked(std::string extensionId,
-                                             const NWebExtensionTab* tab) {
-  LOG(DEBUG) << "NWebDelegate WebExtensionActionClicked";
+
+void NWebDelegate::WebExtensionSetViewType(int32_t type) {
   if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "ActionClicked failed, get browser failed";
+    LOG(ERROR) << "WebExtensionSetViewType failed, get browser failed";
+    return;
+  }
+  GetBrowser()->GetHost()->WebExtensionSetViewType(type);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_PERMISSION)
+void NWebDelegate::PermissionRequestGrant(int32_t resourse_id,
+                                          int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR) << "failed to PermissionRequestGrant, handler delegate is null";
     return;
   }
  
-  GetBrowser()->GetHost()->WebExtensionActionClicked(extensionId, tab);
+  handler_delegate_->PermissionRequestGrant(resourse_id, nweb_request_key);
 }
-#endif
+
+void NWebDelegate::PermissionRequestDeny(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR) << "failed to PermissionRequestDeny, handler delegate is null";
+    return;
+  }
+  handler_delegate_->PermissionRequestDeny(nweb_request_key);
+}
+
+std::string NWebDelegate::PermissionRequestGetOrigin(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to PermissionRequestGetOrigin, handler delegate is null";
+    return std::string();
+  }
+  return handler_delegate_->PermissionRequestGetOrigin(nweb_request_key);
+}
+
+int32_t NWebDelegate::PermissionRequestGetResourceId(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR)
+        << "failed to PermissionRequestGetResourceId, handler delegate is null";
+    return -1;
+  }
+  return handler_delegate_->PermissionRequestGetResourceId(nweb_request_key);
+}
+
+void NWebDelegate::PermissionRequestDelete(int nweb_request_key) {
+  if (!handler_delegate_) {
+    LOG(ERROR) << "failed to PermissionRequestDelete, handler delegate is null";
+    return;
+  }
+  handler_delegate_->PermissionRequestDelete(nweb_request_key);
+}
+#endif  // ARKWEB_EXT_PERMISSION
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
 void NWebDelegate::SetBackForwardCacheOptions(int32_t size,
@@ -5348,8 +5548,14 @@ void NWebDelegate::OpenDevtoolsWith(
       static_cast<NWebDelegate*>(nweb_delegate.get());
 
 #if BUILDFLAG(ARKWEB_DEVTOOLS)
-  auto devtools_message_handler = CefRefPtr<NWebDevToolsMessageHandlerImpl>(
-      new NWebDevToolsMessageHandlerImpl(std::move(param->handler)));
+  CefRefPtr<NWebDevToolsMessageHandlerImpl> devtools_message_handler;
+  if (IsNativeApiEnable()) {
+    devtools_message_handler = CefRefPtr<NWebDevToolsMessageHandlerImpl>(
+        new NWebDevToolsMessageHandlerImpl(std::move(param->handlerNativeApi)));
+  } else {
+    devtools_message_handler = CefRefPtr<NWebDevToolsMessageHandlerImpl>(
+        new NWebDevToolsMessageHandlerImpl(std::move(param->handler)));
+  }
 
   CefPoint inspect_element_at(param->point.x, param->point.y);
   GetBrowser()->GetHost()->ShowDevToolsWith(
@@ -5400,6 +5606,26 @@ void NWebDelegate::DispatchBeforeUnload() {
   }
 }
 #endif  // ARKWEB_DISATCH_BEFORE_UNLOAD
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+void NWebDelegate::EnableViewAutoResize(const CefSize& min_size,
+                                        const CefSize& max_size) {
+  LOG(INFO) << "NWebDelegate::EnableViewAutoResize";
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(INFO) << "EnableViewAutoResize failed, no browser host";
+    return;
+  }
+  GetBrowser()->GetHost()->SetAutoResizeEnabled(true, min_size, max_size);
+}
+void NWebDelegate::DisableViewAutoResize() {
+  LOG(INFO) << "NWebDelegate::DisableViewAutoResize";
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(INFO) << "DisableViewAutoResize failed, no browser host";
+    return;
+  }
+  GetBrowser()->GetHost()->SetAutoResizeEnabled(false, CefSize(), CefSize());
+}
+#endif
 
 #if BUILDFLAG(ARKWEB_EX_REFRESH_IFRAME)
 bool NWebDelegate::WebExtensionContextMenuIsIframe() {

@@ -39,7 +39,7 @@ class ImageDecodeAcceleratorWorker {
     size_t buffer_byte_size;
     SkYUVColorSpace yuv_color_space;
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-    void* window_buffer = nullptr;
+    raw_ptr<void> window_buffer = nullptr;
     raw_ptr<base::WaitableEvent> event = nullptr;
 #endif
   };

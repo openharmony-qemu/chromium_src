@@ -32,13 +32,11 @@
 #include "extensions/browser/management_policy.h"
 #include "base/logging.h"
 #include "ohos_nweb/src/nweb_common.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "extensions/browser/extension_util.h"
+#include "extensions/common/manifest_handlers/incognito_info.h"
 #include "ohos_nweb_ex/core/extension/nweb_extension_manager_dispatcher.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
@@ -109,6 +107,7 @@ NWebContextMenusItem GetNWebContextMenusItem(extensions::MenuItem* menu_item) {
   item.type = GetTypeStr(menu_item->type());
   item.visible = menu_item->visible();
   item.extensionId = menu_item->extension_id();
+  item.isOffTheRecord = menu_item->incognito();
   return item;
 }
 
@@ -171,7 +170,6 @@ std::optional<WebExtensionManifestOptionsPageInfo> GetManifestOptionsPageInfo(
 }
 
 std::shared_ptr<NWebExtensionManagerCallBack> g_extension_manager_listener = nullptr;
-
 
 gfx::Image ExtensionRegistryGetIcon(
     int tabId,
@@ -241,14 +239,14 @@ WebExtensionActionInfo ExtensionRegistryInfoManager::GetExtensionActionInfo(
           GET_ICON_SCALE);
       skia.AddRepresentation(resized_rep);
     }
-    OHOS::NWeb::NWebExtensionActionIcon icon =
+    NWebExtensionActionIcon icon =
         OHOS::NWeb::CreateFromImageSkiaReps(
             icon_image.AsImageSkia().image_reps());
 #if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
-    OHOS::NWeb::NWebExtensionActionIcon* iconTmp = new OHOS::NWeb::NWebExtensionActionIcon(icon);
+    NWebExtensionActionIcon* iconTmp = new NWebExtensionActionIcon(icon);
 #else
-    OHOS::NWeb::NWebExtensionActionIcon* addr = (OHOS::NWeb::NWebExtensionActionIcon*)__real_malloc(sizeof(icon));
-    OHOS::NWeb::NWebExtensionActionIcon* iconTmp = new (addr) OHOS::NWeb::NWebExtensionActionIcon(icon);
+    NWebExtensionActionIcon* addr = (NWebExtensionActionIcon*)__real_malloc(sizeof(icon));
+    NWebExtensionActionIcon* iconTmp = new (addr) NWebExtensionActionIcon(icon);
 #endif
     actionInfo.icon = iconTmp;
   }
@@ -306,7 +304,6 @@ void DeleteExtensionActionInfoIcon(WebExtensionActionInfo& action_info) {
   if (!action_info.icon.has_value()) {
     return;
   }
- 
   for (auto it : action_info.icon.value()->bitmaps) {
     delete it.second;
   }
@@ -317,6 +314,7 @@ void DeleteExtensionActionInfoIcon(WebExtensionActionInfo& action_info) {
 void ExtensionRegistryInfoManager::GetExtensionManifestInfo(
     const Extension& extension,
     WebExtensionManifestInfo& manifest) const {
+  manifest.name = extension.name();
   const GURL& homepage_url = ManifestURL::GetManifestHomePageURL(&extension);
   if (homepage_url.is_valid()) {
     manifest.homepage_url = homepage_url.spec();
@@ -356,7 +354,30 @@ void ExtensionRegistryInfoManager::GetExtensionManifestInfo(
     }
   }
   manifest.options_page = GetManifestOptionsPageInfo(extension);
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  manifest.incognito_mode =
+      std::make_optional<ExtensionIncognitoMode>(GetExtensionIncognitoMode(&extension));
+#endif
 }
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+ExtensionIncognitoMode ExtensionRegistryInfoManager::GetExtensionIncognitoMode(
+    const Extension* extension) const {
+  if (!IncognitoInfo::IsIncognitoAllowed(extension)) {
+    return EXT_INCOGNITO_NOT_ALLOWED;
+  }
+
+  if (IncognitoInfo::IsSpanningMode(extension)) {
+    return EXT_INCOGNITO_SPANNING;
+  }
+
+  if (IncognitoInfo::IsSplitMode(extension)) {
+    return EXT_INCOGNITO_SPLIT;
+  }
+
+  return EXT_INCOGNITO_NONE;
+}
+#endif
 
 void ExtensionRegistryInfoManager::NotifyOnExtensionLoaded(const Extension& extension) {
   if (!extensions::ui_util::ShouldDisplayInExtensionSettings(extension)) {
@@ -377,6 +398,7 @@ void ExtensionRegistryInfoManager::NotifyOnExtensionLoaded(const Extension& exte
       info.info.sidePanel = GetExtensionSidePanelInfo(extension, std::nullopt);
       info.info.contextMenus = GetAllExtensionContextMenus(extension.id());
       GetExtensionManifestInfo(extension, info.manifest_info);
+      info.is_incognito_enabled = util::IsIncognitoEnabled(extension.id(), browser_context_);
       NWebExtensionManagerDispatcher::OnExtensionLoadedByPb(info);
       DeleteExtensionActionInfoIcon(info.info.action);
     } else {
@@ -399,10 +421,16 @@ void ExtensionRegistryInfoManager::NotifyOnExtensionLoaded(const Extension& exte
     loadedInfo.action = GetExtensionActionInfo(extension, -1);
     loadedInfo.sidePanel = GetExtensionSidePanelInfo(extension, std::nullopt);
     loadedInfo.contextMenus = GetAllExtensionContextMenus(extension.id());
-    ExtensionRegistryInfoManager::OnExtensionLoadedCallBack(loadedInfo);
-    if (loadedInfo.action.icon) {
-      loadedInfo.action.icon.value()->bitmaps =
-          std::map<double, OHOS::NWeb::NWebExtensionActionIconBitmap*>();
+    if (IsNativeApiEnable()) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+      NWebExtensionMangerDispatcher::OnExtensionLoadedCallBack(loadedInfo);
+#endif
+      DeleteExtensionActionInfoIcon(loadedInfo.action);
+    } else {
+      ExtensionRegistryInfoManager::OnExtensionLoadedCallBack(loadedInfo);
+      if (loadedInfo.action.icon) {
+        loadedInfo.action.icon.value()->bitmaps = std::map<double, NWebExtensionActionIconBitmap*>();
+      }
     }
   }
 }

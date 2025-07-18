@@ -30,6 +30,7 @@ struct NWebContextMenusItem {
   std::string type;
   bool visible;
   std::string extensionId;
+  std::optional<bool> isOffTheRecord;
 };
  
 #endif  //  OHOS_NWEB_SRC_NWEB_CONTEXT_MENUS_ITEM_H_

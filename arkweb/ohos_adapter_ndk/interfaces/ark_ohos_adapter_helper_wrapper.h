@@ -79,6 +79,8 @@ class ArkOhosAdapterHelperWrapper : public NWeb::OhosAdapterHelper {
 
   std::unique_ptr<NWeb::CertManagerAdapter> GetRootCertDataAdapter() override;
 
+  std::unique_ptr<NWeb::CertManagerAdapter> GetCertManagerAdapter() override;
+
   NWeb::AccessTokenAdapter& GetAccessTokenAdapterInstance() override;
 
   std::unique_ptr<NWeb::EventHandlerAdapter> GetEventHandlerAdapter() override;
@@ -145,6 +147,8 @@ class ArkOhosAdapterHelperWrapper : public NWeb::OhosAdapterHelper {
 
   std::unique_ptr<NWeb::ScreenlockManagerAdapter> CreateScreenlockManagerAdapter()
       override;
+
+  std::unique_ptr<NWeb::NetConfigAdapter> GetNetConfigAdapter() override;
 
  private:
   ArkWebRefPtr<ArkOhosAdapterHelper> ctocpp_;

@@ -42,7 +42,7 @@ virtual void WebExtensionUpdateTab(
     int32_t tab_id,
     const NWebExtensionTabUpdateProperties* update_properties);
 virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) {}
-virtual int32_t ExtensionGetTabId() const {
+virtual int32_t ExtensionGetTabId() {
   return -1;
 }
 virtual DropData* GetDropData() {
@@ -116,5 +116,10 @@ virtual std::unique_ptr<MediaPlayerListener> OnFullScreenOverlayEnter(
     media::mojom::MediaInfoForVASTPtr media_info,
     const MediaPlayerId& media_player_id);
 #endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_PDF)
+virtual void OnPdfScrollAtBottom(const std::string& url) {}
+virtual void OnPdfLoadEvent(int32_t result, const std::string& url) {}
+#endif  // ARKWEB_PDF
 
 #endif  // ARKWEB_CHROMIUM_EXT_CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_DELEGATE_FOR_INCLUDE_H_

@@ -6456,6 +6456,11 @@ void WebContentsImpl::SetVisibilityAndNotifyObservers(Visibility visibility) {
   // for the first time.
   if (visibility != previous_visibility ||
       (visibility == Visibility::VISIBLE && !did_first_set_visible_)) {
+#if BUILDFLAG(ARKWEB_PDF)
+    if (implUtils_) {
+      implUtils_->JudgeIsPdfPageVisibilityChanged(visibility);
+    }
+#endif
     SCOPED_UMA_HISTOGRAM_TIMER("WebContentsObserver.OnVisibilityChanged");
     observers_.NotifyObservers(&WebContentsObserver::OnVisibilityChanged,
                                visibility);
@@ -8439,10 +8444,15 @@ void WebContentsImpl::RunJavaScriptDialog(
         GetPrimaryMainFrame()->AddMessageToConsole(
             blink::mojom::ConsoleMessageLevel::kWarning,
             base::StringPrintf(
+#if !BUILDFLAG(ARKWEB_DEVTOOLS)
                 "A different origin subframe tried to create a JavaScript "
                 "dialog. This is no longer allowed and was blocked. See "
                 "https://www.chromestatus.com/feature/5148698084376576 for "
                 "more details."));
+#else
+                "A different origin subframe tried to create a JavaScript "
+                "dialog. This is no longer allowed and was blocked."));
+#endif // ARKWEB_DEVTOOLS
       }
     }
   }

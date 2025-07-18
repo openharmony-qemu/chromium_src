@@ -1762,19 +1762,6 @@ void MediaStreamManager::GenerateStreams(
   DeviceRequests::const_iterator request_it = AddRequest(std::move(request));
   const std::string& label = request_it->first;
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  if (controls.video.device_ids.empty()) {
-    LOG(ERROR) << "device_ids=nullptr";
-  }
-  if (!controls.video.device_ids.empty() &&
-      !DesktopStreamsRegistry::GetInstance()->CheckStreamID(
-          controls.video.device_ids.front())) {
-    LOG(ERROR) << " device_ids=" << controls.video.device_ids.front()
-               << ",not valid";
-    FinalizeRequestFailed(request_it, MediaStreamRequestResult::INVALID_STATE);
-    return;
-  }
-#endif
   if (generate_stream_test_callback_) {
     // The test callback is responsible to verify whether the |controls| is
     // as expected. Then we need to finish getUserMedia and let Javascript

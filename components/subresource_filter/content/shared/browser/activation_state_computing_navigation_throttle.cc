@@ -71,8 +71,14 @@ void ActivationStateComputingNavigationThrottle::
         const mojom::ActivationState& page_activation_state) {
   CHECK(IsInSubresourceFilterRoot(navigation_handle()),
         base::NotFatalUntil::M129);
+#if !BUILDFLAG(ARKWEB_ADBLOCK)
   CHECK_NE(mojom::ActivationLevel::kDisabled,
            page_activation_state.activation_level, base::NotFatalUntil::M129);
+#endif
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  LOG(DEBUG) << "[AdBlock] NotifyPageActivationWithRuleset activation_level:"
+             << page_activation_state.activation_level;
+#endif
   parent_activation_state_ = page_activation_state;
   CHECK(ruleset_handle, base::NotFatalUntil::M129);
   ruleset_handle_ = ruleset_handle->AsWeakPtr();

@@ -34,7 +34,7 @@ void NWebJSSslErrorResultImpl::HandleCancel() {
 }
 
 NWebJSAllSslErrorResultImpl::NWebJSAllSslErrorResultImpl(
-    CefRefPtr<CefCallback> callback)
+    CefRefPtr<ArkWebCefSslCallback> callback)
     : callback_(callback) {}
 
 void NWebJSAllSslErrorResultImpl::HandleConfirm() {
@@ -46,5 +46,11 @@ void NWebJSAllSslErrorResultImpl::HandleConfirm() {
 void NWebJSAllSslErrorResultImpl::HandleCancel() {
   if (callback_ != nullptr) {
     return callback_->Cancel();
+  }
+}
+
+void NWebJSAllSslErrorResultImpl::HandleCancelV2(bool abortLoading) {
+  if (callback_ != nullptr) {
+    return callback_->Cancel(abortLoading);
   }
 }

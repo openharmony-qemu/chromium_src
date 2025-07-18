@@ -4075,10 +4075,14 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
           params.href_translate,
           false /* is_history_navigation_in_new_child_frame */,
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-          params.input_start, network::mojom::RequestDestination::kEmpty, "");
+          params.input_start, network::mojom::RequestDestination::kEmpty, ""
 #else
-          params.input_start, network::mojom::RequestDestination::kEmpty);
+          params.input_start, network::mojom::RequestDestination::kEmpty
 #endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+          , false
+#endif
+          );
 
   blink::mojom::CommitNavigationParamsPtr commit_params =
       blink::mojom::CommitNavigationParams::New(

@@ -15,7 +15,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "base/debug/stack_trace_ohos.cc"
+#include "arkweb/chromium_ext/base/debug/stack_trace_ohos.cc"
 
 class StackTraceOhosTest : public testing::Test {
  public:

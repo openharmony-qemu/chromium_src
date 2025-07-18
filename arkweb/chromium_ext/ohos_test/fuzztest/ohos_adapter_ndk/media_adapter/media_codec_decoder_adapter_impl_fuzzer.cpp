@@ -18,8 +18,6 @@
 #include <cstring>
 #include <fuzzer/FuzzedDataProvider.h>
 
-
-
 using namespace OHOS::NWeb;
 
 namespace OHOS {
@@ -82,7 +80,7 @@ public:
 bool MediaCodecDecoderAdapterImplFuzzTest(const uint8_t* data, size_t size)
 {
     NWeb::MediaCodecDecoderAdapterImpl mediaCodecDecoderAdapterImpl;
-    NWeb::DecoderAdapterCode code = mediaCodecDecoderAdapterImpl.CreateVideoDecoderByMime("testmimeType");
+    NWeb::DecoderAdapterCode code = mediaCodecDecoderAdapterImpl.CreateVideoDecoderByMime("video/avc");
     std::shared_ptr<NWeb::DecoderFormatAdapter> format = std::make_unique<DecoderFormatAdapterMock>();
     FuzzedDataProvider dataProvider(data, size);
     std::string stringParam = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
@@ -129,8 +127,6 @@ bool MediaCodecDecoderAdapterImplFuzzTest(const uint8_t* data, size_t size)
     buffer = nullptr;
     return true;
 }
-
-
 
 } // namespace OHOS
 

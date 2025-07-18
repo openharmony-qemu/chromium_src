@@ -150,6 +150,15 @@ arkweb_third_patry_skia_src_ports_sources = [
   "//arkweb/chromium_ext/third_party/skia/src/ports/SkTypeface_ohos.cpp",
 ]
 
+ark_third_party_skia_src_ports_unittest_sources = [
+  "//arkweb/chromium_ext/third_party/skia/src/ports/FontConfig_ohos_unittest.cpp",
+  "//arkweb/chromium_ext/third_party/skia/src/ports/SkFontMgr_ohos_unittest.cpp",
+  "//arkweb/chromium_ext/third_party/skia/src/ports/SkFontStyleSet_ohos_unittest.cpp",
+  "//arkweb/chromium_ext/third_party/skia/src/ports/SkTypeface_ohos_unittest.cpp",
+  "//arkweb/chromium_ext/third_party/skia/src/codec/SkHeiDecoderAPIOhos_unittest.cpp",
+  "//arkweb/chromium_ext/skia/ext/skia_memory_tracer_unittest.cc",
+]
+
 arkweb_ui_events_devices_sources = [
   "//arkweb/chromium_ext/ui/events/devices/arkweb_device_data_manager_utils.cc",
   "//arkweb/chromium_ext/ui/events/devices/arkweb_device_data_manager_utils.h",
@@ -235,6 +244,18 @@ arkweb_media_base_sources = [
   "//arkweb/chromium_ext/media/base/native_texture_wrapper.h",
   "//arkweb/chromium_ext/media/base/video_util_ext.cc",
   "//arkweb/chromium_ext/media/base/video_util_ext.h"
+]
+
+arkweb_media_base_unittest_sources = [
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_codec_bridge_impl_unittest.cc",
+  "//arkweb/chromium_ext/media/base/video_util_ext_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_decoder_bridge_impl_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_player_bridge_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_codec_util_unittest.cc",
+]
+
+arkweb_media_audio_unittest_sources = [
+  "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_manager_unittest.cc",
 ]
 
 arkweb_media_filters_sources = [
@@ -549,6 +570,23 @@ arkweb_content_browser_code_cache_sources = [
   "//arkweb/chromium_ext/content/browser/code_cache/oh_code_cache.h",
 ]
 
+arkweb_media_adapter_unittest_sources = [
+  "//arkweb/ohos_adapter_ndk/media_adapter/audio_cenc_info_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/audio_codec_decoder_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/buffer_info_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/capability_data_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/codec_format_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/drm_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/media_codec_decoder_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/ohos_buffer_adapter_impl_unittest.cpp",
+]
+
+arkweb_media_gpu_unittest_sources = [
+  "//arkweb/chromium_ext/media/gpu/ohos/direct_shared_image_video_provider_unittest.cc",
+  "//arkweb/chromium_ext/media/gpu/ohos/ohos_video_decoder_unittest.cc",
+  "//arkweb/chromium_ext/media/gpu/ohos/ohos_video_encode_accelerator_unittest.cc",
+]
+
 arkweb_content_browser_media_sources = [
   "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer_web_contents_observer.cc",
   "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer_web_contents_observer.h",
@@ -635,6 +673,34 @@ arkweb_cc_trees_source = [
   "//arkweb/chromium_ext/cc/trees/layer_tree_impl_utils.h",
 ]
 
+arkweb_cc_input_unittest_sources = [
+  "//arkweb/chromium_ext/cc/input/input_handler_utils_unittest.cc",
+]
+
+arkweb_cc_layer_unittest_sources = [
+  "//arkweb/chromium_ext/cc/layer/layer_impl_utils_unittest.cc",
+  "//arkweb/chromium_ext/cc/layer/layer_utils_unittest.cc",
+  "//arkweb/chromium_ext/cc/layer/surface_layer_for_include_unittest.cc",
+  "//arkweb/chromium_ext/cc/layer/surface_layer_impl_for_include_unittest.cc",
+  "//arkweb/chromium_ext/cc/layer/surface_layer_impl_utils_unittest.cc",
+  "//arkweb/chromium_ext/cc/layer/video_layer_ext_unittest.cc",
+  "//arkweb/chromium_ext/cc/layer/video_layer_impl_utils_unittest.cc",
+]
+
+arkweb_third_party_blink_renderer_core_unittest_sources = [
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_view_utils_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/web_frame_widget_impl_ext_unittest.cc",
+]
+
+arkweb_cc_trees_unittest_sources = [
+  "//arkweb/chromium_ext/cc/trees/layer_tree_impl_utils_unittest.cc",
+  "//arkweb/chromium_ext/cc/trees/layer_tree_host_ext_unittest.cc",
+]
+
+arkweb_cc_mojo_embedder_unittest_sources = [
+  "//arkweb/chromium_ext/cc/mojo_embedder/async_layer_tree_frame_sink_utils_unittest.cc",
+]
+
 arkweb_ui_compositor_test_sources = [
   "//arkweb/chromium_ext/ui/compositor/compositor_unittests.cc",
 ]
@@ -653,6 +719,10 @@ arkweb_content_common_sources = [
   "//arkweb/chromium_ext/content/common/native_embed_first_paint_event.h",
   "//arkweb/chromium_ext/content/common/arkweb_user_agent_ext.cc",
   "//arkweb/chromium_ext/content/common/arkweb_user_agent_ext.h",
+]
+
+arkweb_content_common_font_list_sources = [
+  "//arkweb/chromium_ext/content/common/font_list_ohos.cc",
 ]
 
 arkweb_input_router_impl_sources = [
@@ -706,6 +776,8 @@ arkweb_chrome_browser_notifications_sources = [
 arkweb_chrome_browser_password_manager_sources = [
   "//arkweb/chromium_ext/chrome/browser/password_manager/chrome_password_manager_client_ext.cc",
   "//arkweb/chromium_ext/chrome/browser/password_manager/chrome_password_manager_client_ext.h",
+  "//arkweb/chromium_ext/chrome/browser/password_manager/keyboard_suppressor_ohos.cc",
+  "//arkweb/chromium_ext/chrome/browser/password_manager/keyboard_suppressor_ohos.h",
 ]
 
 arkweb_third_party_blink_common_event_sources = [
@@ -721,6 +793,8 @@ arkweb_geolocation_sources = [
 arkweb_string_message_codec_cc_sources = [ "//arkweb/chromium_ext/third_party/blink/common/messaging/string_message_codec_ext.cc" ]
 
 arkweb_string_message_codec_h_sources = [ "//arkweb/chromium_ext/third_party/blink/public/common/messaging/string_message_codec_ext.h" ]
+
+arkweb_string_message_codec_test_sources = [ "//arkweb/chromium_ext/third_party/blink/common/messaging/string_message_codec_ext_unittest.cc" ]
 
 arkweb_page_load_statistics_sources = [
   "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/page_load_statistics_ext.cc",
@@ -919,6 +993,15 @@ arkweb_components_subresource_filter_content_shared_browser = [
   "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/user_unindexed_ruleset_stream_generator.h",
 ]
 
+arkweb_ohos_adapter_ndk_unittests_sources = [
+  "//arkweb/chromium_ext/ohos_test/unittest/date_time_format_adapter/date_time_format_adapter_impl_unittests.cc",
+  "//arkweb/chromium_ext/ohos_test/unittest/graphic_adapter/native_image_adapter_impl_unittests.cc",
+  "//arkweb/chromium_ext/ohos_test/unittest/graphic_adapter/native_window_adapter_impl_unittests.cc",
+  "//arkweb/chromium_ext/ohos_test/unittest/graphic_adapter/vsync_adapter_impl_unittests.cc",
+  "//arkweb/chromium_ext/ohos_test/unittest/graphic_adapter/window_adapter_impl_unittests.cc",
+  "//arkweb/chromium_ext/ohos_test/unittest/ohos_native_buffer_adapter/ohos_native_buffer_adapter_impl_unittests.cc",
+]
+
 arkweb_components_viz_common_frame_sinks_copy_output_result_sources = [
   "//arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_request_utils.cc",
   "//arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_request_utils.h",
@@ -932,4 +1015,8 @@ arkweb_components_viz_common_frame_sinks_copy_output_result_deps = [
 arkweb_third_patry_blink_renderer_core_paint_timing_detector_resources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.h",
+]
+
+arkweb_ui_ozone_platform_headless_unittests_sources = [
+  "//arkweb/chromium_ext/ui/ozone/platform/headless_screen_ohos_unittest.cc",
 ]

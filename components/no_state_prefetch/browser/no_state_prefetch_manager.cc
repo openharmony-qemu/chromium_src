@@ -27,6 +27,7 @@
 #include "base/metrics/field_trial.h"
 #include "base/not_fatal_until.h"
 #include "base/notreached.h"
+#include "base/ohos/sys_info_utils_ext.h"
 #include "base/ranges/algorithm.h"
 #include "base/strings/string_util.h"
 #include "base/system/sys_info.h"
@@ -538,7 +539,11 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
   }
 
   // Disallow prerendering on low end devices.
-  if (IsLowEndDevice()) {
+  if (IsLowEndDevice()
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+      && !base::ohos::IsWearableDevice()
+#endif
+) {
     SkipNoStatePrefetchContentsAndMaybePreconnect(url_arg, origin,
                                                   FINAL_STATUS_LOW_END_DEVICE);
     SetPreloadingEligibility(attempt.get(), PreloadingEligibility::kLowMemory);
@@ -661,7 +666,12 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
   // available on Android. If not, kill an existing renderers so that we can
   // create a new one.
   if (content::RenderProcessHost::IsProcessLimitReached() &&
-      !content::RenderProcessHost::run_renderer_in_process()) {
+      !content::RenderProcessHost::run_renderer_in_process()
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+      && !base::ohos::IsWearableDevice()
+#endif
+    ) {
+    
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
     if (!MayHitOmniboxUrl(url, origin, attempt)) {
       return nullptr;

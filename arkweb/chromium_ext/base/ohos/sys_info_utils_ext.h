@@ -16,6 +16,8 @@
 #ifndef BASE_OHOS_SYS_INFO_UTILS_H_
 #define BASE_OHOS_SYS_INFO_UTILS_H_
 
+#define APP_API_LEVEL_20 20
+
 #include <stdint.h>
 
 #include <string>
@@ -57,6 +59,8 @@ BASE_EXPORT int32_t ApplicationApiVersion();
 BASE_EXPORT void SetPageScale(bool status);
 
 BASE_EXPORT bool IsPageScale();
+
+BASE_EXPORT std::string ComponentName();
 }  // namespace ohos
 }  // namespace base
 

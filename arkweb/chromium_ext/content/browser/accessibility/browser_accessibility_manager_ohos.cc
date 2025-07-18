@@ -20,6 +20,7 @@ constexpr int32_t kAccessibilityEventDelayDefault = 200;
 constexpr int32_t kAccessibilityEventDelayHover = 200;
 constexpr int32_t kMaxLocationChangedEventsToFire = 3;
 constexpr int32_t kShiftedBitNumber = 32;
+constexpr int32_t kLiveRegionTypeOff = 0;
 constexpr int32_t kLiveRegionTypePolite = 1;
 constexpr int32_t kLiveRegionTypeAssertive = 2;
 
@@ -149,11 +150,11 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
     int64_t accessibilityId,
     OHOS::NWeb::AccessibilityEventType eventType,
     const std::string& argument) {
-  if (accessibilityId == kArkWebId || argument != "") {
+  if (accessibilityId == kArkWebId) {
     DispatchEvent(accessibilityId, static_cast<int32_t>(eventType), argument);
   } else if (eventDispatcher_ != nullptr) {
     eventDispatcher_->EnqueueEvent(accessibilityId,
-                                   static_cast<int32_t>(eventType));
+                                   static_cast<int32_t>(eventType), argument);
   }
 }
 
@@ -300,12 +301,6 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
     case AXEventGenerator::Event::SCROLL_VERTICAL_POSITION_CHANGED:
       HandleScrollPositionChanged(accessibilityId);
       break;
-    case AXEventGenerator::Event::SELECTED_CHANGED:
-      if (nodeOHOS->IsSelected()) {
-        SendAccessibilityEvent(accessibilityId,
-                               OHOS::NWeb::AccessibilityEventType::SELECTED);
-      }
-      break;
     case AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED: {
       if (ax_tree() == nullptr) {
         break;
@@ -326,13 +321,21 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
     }
     case AXEventGenerator::Event::LIVE_REGION_NODE_CHANGED: {
       std::string text = base::UTF16ToUTF8(nodeOHOS->GetTextContentUTF16());
-      SendAccessibilityEvent(accessibilityId,
-                             OHOS::NWeb::AccessibilityEventType::
-                                 ANNOUNCE_FOR_ACCESSIBILITY_NOT_INTERRUPT,
-                             text);
+      int32_t liveRegionType = nodeOHOS->OHOSLiveRegionType();
+      if (liveRegionType == kLiveRegionTypeAssertive) {
+        SendAccessibilityEvent(accessibilityId,
+                               OHOS::NWeb::AccessibilityEventType::
+                                   ANNOUNCE_FOR_ACCESSIBILITY,
+                               text);
+      } else {
+        SendAccessibilityEvent(accessibilityId,
+                               OHOS::NWeb::AccessibilityEventType::
+                                   ANNOUNCE_FOR_ACCESSIBILITY_NOT_INTERRUPT,
+                               text);
+      }
       break;
     }
-    case ui::AXEventGenerator::Event::EXPANDED: {
+    case AXEventGenerator::Event::EXPANDED: {
       if (ui::SupportsExpandCollapse(nodeOHOS->GetRole()) &&
           GetFocus()->IsDescendantOf(nodeOHOS)) {
         SendAccessibilityEvent(
@@ -342,19 +345,20 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
       }
       break;
     }
-    case ui::AXEventGenerator::Event::LIVE_REGION_CHANGED: {
+    case AXEventGenerator::Event::LIVE_REGION_CHANGED: {
       std::string text = base::UTF16ToUTF8(nodeOHOS->GetTextContentUTF16());
       int32_t liveRegionType = nodeOHOS->OHOSLiveRegionType();
-      if (liveRegionType == kLiveRegionTypePolite) {
+      if (liveRegionType == kLiveRegionTypePolite ||
+          (liveRegionType == kLiveRegionTypeOff && GetFocus() == wrapper)) {
         SendAccessibilityEvent(accessibilityId,
                                OHOS::NWeb::AccessibilityEventType::
                                    ANNOUNCE_FOR_ACCESSIBILITY_NOT_INTERRUPT,
                                text);
       } else if (liveRegionType == kLiveRegionTypeAssertive) {
-        SendAccessibilityEvent(accessibilityId,
-                               OHOS::NWeb::AccessibilityEventType::
-                                   ANNOUNCE_FOR_ACCESSIBILITY,
-                               text);
+        SendAccessibilityEvent(
+            accessibilityId,
+            OHOS::NWeb::AccessibilityEventType::ANNOUNCE_FOR_ACCESSIBILITY,
+            text);
       }
       break;
     }
@@ -688,6 +692,14 @@ void BrowserAccessibilityManagerOHOS::InitializeAccessibilityEventDispatcher()
       std::make_pair(static_cast<int32_t>(
                          OHOS::NWeb::AccessibilityEventType::HOVER_ENTER_EVENT),
                      kAccessibilityEventDelayHover));
+  eventThrottleDelays.insert(std::make_pair(
+      static_cast<int32_t>(OHOS::NWeb::AccessibilityEventType::
+                               ANNOUNCE_FOR_ACCESSIBILITY_NOT_INTERRUPT),
+      kAccessibilityEventDelayHover));
+  eventThrottleDelays.insert(std::make_pair(
+      static_cast<int32_t>(
+          OHOS::NWeb::AccessibilityEventType::ANNOUNCE_FOR_ACCESSIBILITY),
+      kAccessibilityEventDelayHover));
 
   std::unordered_set<int32_t> viewIndependentEvents;
   viewIndependentEvents.insert(
@@ -700,7 +712,8 @@ void BrowserAccessibilityManagerOHOS::InitializeAccessibilityEventDispatcher()
 }
 
 void AccessibilityEventDispatcher::EnqueueEvent(int64_t accessibilityId,
-                                                int32_t eventType)
+                                                int32_t eventType,
+                                                const std::string& argument)
 {
   // Check whether this type of event is one we want to throttle, and if not
   // then send it
@@ -708,7 +721,7 @@ void AccessibilityEventDispatcher::EnqueueEvent(int64_t accessibilityId,
     return;
   }
   if (eventThrottleDelays_.find(eventType) == eventThrottleDelays_.end()) {
-    manager_->DispatchEvent(accessibilityId, eventType);
+    manager_->DispatchEvent(accessibilityId, eventType, argument);
     return;
   }
 
@@ -716,11 +729,11 @@ void AccessibilityEventDispatcher::EnqueueEvent(int64_t accessibilityId,
       std::chrono::system_clock::now());
   auto now = millis.time_since_epoch().count();
   int64_t uuid = Uuid(accessibilityId, eventType);
-  if (eventLastFiredTimes_.find(uuid) == eventLastFiredTimes_.end() ||
+  if (eventLastFiredTimes_.find(uuid) != eventLastFiredTimes_.end() &&
       now - eventLastFiredTimes_[uuid] >= eventThrottleDelays_[eventType]) {
     // Attempt to dispatch an event, can fail and return false if node is
     // invalid etc.
-    if (manager_->DispatchEvent(accessibilityId, eventType)) {
+    if (manager_->DispatchEvent(accessibilityId, eventType, argument)) {
       // Record time of last fired event if the dispatch was successful.
       eventLastFiredTimes_[uuid] = now;
     }
@@ -746,7 +759,7 @@ void AccessibilityEventDispatcher::EnqueueEvent(int64_t accessibilityId,
         base::subtle::PostDelayedTaskPassKeyForTesting(), FROM_HERE,
         base::BindOnce(&AccessibilityEventDispatcher::RunTask,
                        base::Unretained(this), accessibilityId, eventType,
-                       uuid),
+                       uuid, argument),
         base::Milliseconds(eventLastFiredTimes_[uuid] +
                            eventThrottleDelays_[eventType] - now));
     pendingEvents_[uuid] = std::move(task);
@@ -754,11 +767,13 @@ void AccessibilityEventDispatcher::EnqueueEvent(int64_t accessibilityId,
 }
 
 void AccessibilityEventDispatcher::RunTask(int64_t accessibilityId,
-                                           int32_t eventType, int64_t uuid)
+                                           int32_t eventType,
+                                           int64_t uuid,
+                                           const std::string& argument)
 {
   // We have delayed firing this event, so accessibility may not be enabled or
   // the node may be invalid, in which case dispatch will return false.
-  if (manager_ && manager_->DispatchEvent(accessibilityId, eventType)) {
+  if (manager_ && manager_->DispatchEvent(accessibilityId, eventType, argument)) {
     // After sending event, record time it was sent
     auto millis = std::chrono::time_point_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now());

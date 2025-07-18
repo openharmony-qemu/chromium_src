@@ -20,6 +20,10 @@
 #include "base/logging.h"
 #include "nweb_impl.h"
 #include "chrome/browser/notifications/notification_platform_bridge_ohos.h"
+#include "nweb_common.h"
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/core/notification/nweb_notification_dispatcher.h"
+#endif
 
 namespace OHOS::NWeb {
 
@@ -48,6 +52,12 @@ void NWebNotificationManagerDelegate::RegisterNotificationManagerDelegateListene
 NO_SANITIZE("cfi-icall")
 void NWebNotificationManagerDelegate::OnShowNotification(
     std::shared_ptr<NWebNotificationOptionsItem> options_item) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    NWebNotificationDispatcher::OnShowNotification(options_item);
+    return;
+  }
+#endif
   if (!options_item) {
     LOG(ERROR) << "NWebNotificationManagerDelegate::OnShowNotification error, "
                   "not invalid";
@@ -63,6 +73,12 @@ void NWebNotificationManagerDelegate::OnShowNotification(
 
 NO_SANITIZE("cfi-icall")
 void NWebNotificationManagerDelegate::OnCloseNotification(std::string id) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    NWebNotificationDispatcher::OnCloseNotification(id);
+    return;
+  }
+#endif
   if (notification_delegate_listener_ != nullptr) {
     notification_delegate_listener_->closeNotification(id);
   } else {

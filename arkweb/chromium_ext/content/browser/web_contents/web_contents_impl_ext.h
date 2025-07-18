@@ -173,8 +173,7 @@ class WebContentsImplExt : public WebContentsImpl {
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) override;
-  int32_t ExtensionGetTabId() const override;
+  int32_t ExtensionGetTabId() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
@@ -246,11 +245,6 @@ class WebContentsImplExt : public WebContentsImpl {
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   void CollapseAllFramesSelection() override;
 #endif
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  void WebExtensionUpdateTab(
-      int32_t tab_id,
-      const NWebExtensionTabUpdateProperties* update_properties) override;
-#endif
 #if BUILDFLAG(ARKWEB_MENU)
   void SelectRangeV2(const gfx::Point& position, bool is_base) override;
 #endif
@@ -319,6 +313,10 @@ public:
   void DelAllVideoSurfaces();
   void ReportVideoDecoderName(const std::string& decoder_name);
 #endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnPdfScrollAtBottom(const std::string& url) override;
+  void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 private:
   std::string custom_user_agent_;
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)

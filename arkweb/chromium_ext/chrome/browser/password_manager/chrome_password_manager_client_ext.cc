@@ -34,7 +34,6 @@
 #include "ohos_cef_ext/include/arkweb_render_handler_ext.h"
 #endif
 
-
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 const std::string SOURCE = "source";
 const std::string SOURCE_LOGIN = "login";
@@ -178,7 +177,9 @@ void ChromePasswordManagerClientExt::ProcessAutofillCancel(
   is_need_restore_keyboard_ = false;
 
   LOG(INFO) << "autofill handle fill cancel event";
-  UnsuppressKeyboard();
+  if (suppressor_) {
+    suppressor_->Unsuppress();
+  }
 
   if (!web_contents()) {
     LOG(ERROR) << "web_contents is nullptr";
@@ -247,6 +248,9 @@ void ChromePasswordManagerClientExt::FillData(const std::string& page_url,
                                            const std::string& username,
                                            const std::string& password,
                                            bool is_other_account) {
+  if (suppressor_) {
+    suppressor_->Unsuppress();
+  }
   is_need_restore_keyboard_ = false;
   auto username_id = last_request_fill_username_.field_renderer_id;
   auto password_id = last_request_fill_password_.field_renderer_id;
@@ -254,10 +258,10 @@ void ChromePasswordManagerClientExt::FillData(const std::string& page_url,
                     ? std::string()
                     : crypto::SHA256HashString(username + HASH_SALT + password);
   if (username_id) {
-    auto_filled_forms_username_.insert(digest);
+    auto_filled_forms_username_[*username_id] = digest;
   }
   if (password_id) {
-    auto_filled_forms_password_.insert(digest);
+    auto_filled_forms_password_[*password_id] = digest;
   }
 
   FillAccountSuggestion(GURL(page_url), base::UTF8ToUTF16(username),
@@ -280,42 +284,19 @@ void ChromePasswordManagerClientExt::SuppressKeyboard() {
     LOG(ERROR) << "autofill_driver is nullptr";
     return;
   }
-  if (suppressed_driver_.get() == autofill_driver) {
-    return;
-  }
-  UnsuppressKeyboard();
-  LOG(INFO) << "Set the soft keyboard to be suppressd";
 
-  if (!is_suppress_ime_callback_registered_) {
-    content::RenderWidgetHost* rwh = rfh->GetRenderWidgetHost();
-    if (!rfh->GetParent() || rfh->GetParent()->GetRenderWidgetHost() != rwh) {
-      rwh->AddSuppressShowingImeCallback(base::BindRepeating(
-          [](base::WeakPtr<ChromePasswordManagerClientExt> self) {
-            if (self && self->isSuppressing()) {
-              LOG(INFO) << "The soft keyboard has been suppressed by password "
-                           "autofill";
-              return true;
-            }
-            return false;
-          },
-          weak_ptr_factory_.GetWeakPtr()));
-      is_suppress_ime_callback_registered_ = true;
+  if (!suppressor_) {
+    auto* autofill_client =
+        autofill::ContentAutofillClient::FromWebContents(web_contents());
+    if (!autofill_client) {
+      LOG(ERROR) << "autofill_client is nullptr";
+      return;
     }
+    suppressor_ = std::make_unique<KeyboardSuppressorOhos>(autofill_client,
+                                                           base::Seconds(1));
   }
-
-  suppressed_driver_ = autofill_driver;
+  suppressor_->Suppress(autofill_driver);
   is_need_restore_keyboard_ = true;
-  unsuppress_timer_.Start(FROM_HERE, base::Seconds(1), this,
-                          &ChromePasswordManagerClientExt::UnsuppressKeyboard);
-}
-
-void ChromePasswordManagerClientExt::UnsuppressKeyboard() {
-  if (!suppressed_driver_) {
-    return;
-  }
-  LOG(INFO) << "Set the soft keyboard to be unsuppressd";
-  suppressed_driver_ = nullptr;
-  unsuppress_timer_.Stop();
 }
 
 bool ChromePasswordManagerClientExt::IsLoginInfoConsistentWithFilled(
@@ -326,20 +307,23 @@ bool ChromePasswordManagerClientExt::IsLoginInfoConsistentWithFilled(
   AutofilledMap* auto_filled_forms = nullptr;
   LOG(INFO) << "login autosave, username renderer_id:" << username_id
             << ", password renderer_id:" << password_id;
-  std::string login_digest = crypto::SHA256HashString(
-      base::UTF16ToUTF8(info.username_value) + HASH_SALT +
-      base::UTF16ToUTF8(info.password_value));
   if (password_id) {
     auto_filled_forms = &auto_filled_forms_password_;
-    it = auto_filled_forms->find(login_digest);
+    it = auto_filled_forms->find(*password_id);
   } else if (username_id) {
     auto_filled_forms = &auto_filled_forms_username_;
-    it = auto_filled_forms->find(login_digest);
+    it = auto_filled_forms->find(*username_id);
   }
 
-  if (auto_filled_forms && it != auto_filled_forms->end()) {
-    auto_filled_forms->erase(it);
-    return true;
+  if (auto_filled_forms && it != auto_filled_forms->end() &&
+      !it->second.empty()) {
+    std::string login_digest = crypto::SHA256HashString(
+        base::UTF16ToUTF8(info.username_value) + HASH_SALT +
+        base::UTF16ToUTF8(info.password_value));
+    if (it->second == login_digest) {
+      auto_filled_forms->erase(it);
+      return true;
+    }
   }
   return false;
 }
@@ -352,13 +336,21 @@ void ChromePasswordManagerClientExt::UpdateLastRequestFilledItems(
 }
 
 void ChromePasswordManagerClientExt::NotifyAutofillPopupShow(bool is_show) {
+  if (!web_contents()) {
+    LOG(ERROR) << "web_contents is nullptr";
+    return;
+  }
   content::RenderFrameHost* rfh = web_contents()->GetFocusedFrame();
-  auto driver = autofill::ContentAutofillDriver::GetForRenderFrameHost(rfh);
+  if (!rfh || !rfh->IsActive()) {
+    LOG(ERROR) << "rfh is nullptr or not active";
+    return;
+  }
+  auto* driver = autofill::ContentAutofillDriver::GetForRenderFrameHost(rfh);
   if (!driver) {
     LOG(ERROR) << "autofill_driver is nullptr";
     return;
   }
-  auto autofill_manager =
+  auto* autofill_manager =
       static_cast<autofill::OhAutofillManager*>(&driver->GetAutofillManager());
   if (!autofill_manager) {
     LOG(ERROR) << "autofill_manager is nullptr";

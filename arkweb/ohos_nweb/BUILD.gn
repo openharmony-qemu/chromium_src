@@ -623,6 +623,7 @@ source_set("unittests") {
     "src/cef_delegate/nweb_access_request_delegate_unittest.cc",
     "src/cef_delegate/nweb_delegate_unittest.cc",
     "src/cef_delegate/nweb_event_handler_unittest.cc",
+    "src/cef_delegate/nweb_find_delegate_unittest.cc",
     "src/cef_delegate/nweb_handler_delegate_unittest.cc",
     "src/cef_delegate/nweb_pipe_resource_handler_unittest.cc",
     "src/cef_delegate/nweb_preference_delegate_unittest.cc",
@@ -637,6 +638,7 @@ source_set("unittests") {
     "src/nweb_impl_unittest.cc",
     "src/nweb_input_handler_unittest.cc",
     "src/nweb_inputmethod_handler_unittest.cc",
+    "src/nweb_notification_manager_delegate_unittest.cc",
     "src/set_renderer_seccomp_policy_unittest.cc",
     "src/nweb_web_storage_impl_unittest.cc",
   ]

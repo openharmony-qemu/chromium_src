@@ -71,8 +71,8 @@ class ExtensionRegistryInfoManager : public MenuManager::LoadObserver, public Ex
                                 const Extension* extension) override;
 
   void OnExtensionUnloaded(content::BrowserContext* browser_context,
-                                  const Extension* extension,
-                                  UnloadedExtensionReason reason) override;
+                           const Extension* extension,
+                           UnloadedExtensionReason reason) override;
 
   void OnExtensionWillBeInstalled(
       content::BrowserContext* browser_context,

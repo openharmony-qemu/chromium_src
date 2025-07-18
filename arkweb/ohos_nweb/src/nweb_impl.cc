@@ -497,7 +497,7 @@ std::string GetGwpAsanEnable()
 {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                         .GetSystemPropertiesInstance();
-  return system_properties_adapter.GetStringParameter("web.gwpasan.enable", "");
+  return system_properties_adapter.GetStringParameter("web.gwpasan.enable", "none");
 }
 #endif
 

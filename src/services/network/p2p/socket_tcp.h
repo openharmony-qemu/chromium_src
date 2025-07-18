@@ -146,9 +146,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) P2PSocketTcp : public P2PSocketTcpBase {
  protected:
   bool ProcessInput(base::span<const uint8_t> input,
                     size_t* bytes_consumed) override;
-  void DoSend(const net::IPEndPoint& to,
-              base::span<const uint8_t> data,
-              const rtc::PacketOptions& options) override;
+
+  [[nodiscard]] bool DoSend(
+      const net::IPEndPoint& to,
+      base::span<const uint8_t> data,
+      const rtc::PacketOptions& options) override;
 };
 
 // P2PSocketStunTcp class provides the framing of STUN messages when used
@@ -174,9 +176,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) P2PSocketStunTcp
  protected:
   bool ProcessInput(base::span<const uint8_t> input,
                     size_t* bytes_consumed) override;
-  void DoSend(const net::IPEndPoint& to,
-              base::span<const uint8_t> data,
-              const rtc::PacketOptions& options) override;
+  [[nodiscard]] bool DoSend(
+      const net::IPEndPoint& to,
+      base::span<const uint8_t> data,
+      const rtc::PacketOptions& options) override;
 
  private:
   int GetExpectedPacketSize(base::span<const uint8_t> data, int* pad_bytes);

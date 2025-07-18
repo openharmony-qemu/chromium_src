@@ -33,6 +33,8 @@
 #include "base/logging.h"
 #include "ohos_nweb/src/nweb_common.h"
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "extensions/browser/extension_util.h"
+#include "extensions/common/manifest_handlers/incognito_info.h"
 #include "ohos_nweb_ex/core/extension/nweb_extension_manager_dispatcher.h"
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
@@ -105,6 +107,7 @@ NWebContextMenusItem GetNWebContextMenusItem(extensions::MenuItem* menu_item) {
   item.type = GetTypeStr(menu_item->type());
   item.visible = menu_item->visible();
   item.extensionId = menu_item->extension_id();
+  item.isOffTheRecord = menu_item->incognito();
   return item;
 }
 
@@ -351,7 +354,30 @@ void ExtensionRegistryInfoManager::GetExtensionManifestInfo(
     }
   }
   manifest.options_page = GetManifestOptionsPageInfo(extension);
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  manifest.incognito_mode =
+      std::make_optional<ExtensionIncognitoMode>(GetExtensionIncognitoMode(&extension));
+#endif
 }
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+ExtensionIncognitoMode ExtensionRegistryInfoManager::GetExtensionIncognitoMode(
+    const Extension* extension) const {
+  if (!IncognitoInfo::IsIncognitoAllowed(extension)) {
+    return EXT_INCOGNITO_NOT_ALLOWED;
+  }
+
+  if (IncognitoInfo::IsSpanningMode(extension)) {
+    return EXT_INCOGNITO_SPANNING;
+  }
+
+  if (IncognitoInfo::IsSplitMode(extension)) {
+    return EXT_INCOGNITO_SPLIT;
+  }
+
+  return EXT_INCOGNITO_NONE;
+}
+#endif
 
 void ExtensionRegistryInfoManager::NotifyOnExtensionLoaded(const Extension& extension) {
   if (!extensions::ui_util::ShouldDisplayInExtensionSettings(extension)) {
@@ -372,6 +398,7 @@ void ExtensionRegistryInfoManager::NotifyOnExtensionLoaded(const Extension& exte
       info.info.sidePanel = GetExtensionSidePanelInfo(extension, std::nullopt);
       info.info.contextMenus = GetAllExtensionContextMenus(extension.id());
       GetExtensionManifestInfo(extension, info.manifest_info);
+      info.is_incognito_enabled = util::IsIncognitoEnabled(extension.id(), browser_context_);
       NWebExtensionManagerDispatcher::OnExtensionLoadedByPb(info);
       DeleteExtensionActionInfoIcon(info.info.action);
     } else {

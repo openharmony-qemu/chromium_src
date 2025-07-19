@@ -148,6 +148,7 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItem
       base::OnceCallback<void(const std::vector<uint8_t>&)> callback) override;
   const std::string& GetRequestMethod() const;
   bool IsBeforeInProgress() const;
+  bool IsDownloadInProgress() const;
 
   struct COMPONENTS_DOWNLOAD_EXPORT RequestMethodData
       : public base::SupportsUserData::Data {
@@ -174,22 +175,17 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItem
       const std::string& guid,
       const int32_t read_size,
       base::OnceCallback<void(const std::vector<uint8_t>&)> callback);
-
-  void ReadDownloadDataAndRunCallback(uint32_t size);
-
-  void ReadDownloadDataAndRunCallbackInternal(uint32_t size);
-
-  void RunCallbackIfDataReady();
-
+ 
+  void ReadDataFromDownloadFileDone(const std::vector<uint8_t>& data);
+ 
+  void ReadDownloadDataAndRunCallback(int32_t size);
+ 
   void RunCallbackIfStateMatch();
-  void RunCallbackIfStateMatchInternal();
-
+ 
   void RunCallbackIfExistsCallback();
-  void RunCallbackIfExistsCallbackInternal();
-
-  void RegisterReadDownloadCallback(
-        base::OnceCallback<void()> callback,
-        uint32_t size);
+ 
+  void RegisterReadDownloadCallback(base::OnceCallback<void()> callback,
+                                    int32_t size);
 
   base::OnceCallback<void(const std::vector<uint8_t>&)>
       read_download_callback_from_ui_;

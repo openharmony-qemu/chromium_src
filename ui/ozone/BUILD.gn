@@ -8,6 +8,7 @@ import("//build/config/python.gni")
 import("//build/config/ui.gni")
 import("//gpu/vulkan/features.gni")
 import("//testing/test.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 assert(use_ozone)
 
@@ -37,7 +38,6 @@ ozone_platform_interactive_ui_tests_sources =
 if (ozone_platform_headless) {
   ozone_platforms += [ "headless" ]
   ozone_platform_deps += [ "platform/headless" ]
-  ozone_platform_test_deps += [ "platform/headless:headless_unittests" ]
 }
 
 if (ozone_platform_drm) {
@@ -336,7 +336,6 @@ static_library("test_support") {
     "platform/wayland:test_support",
     "platform/wayland:wayland_unittests",
     "platform/x11:x11_unittests",
-    "platform/headless:headless_unittests",
   ]
 
   testonly = true
@@ -472,19 +471,10 @@ test("ozone_integration_tests") {
 
 test("ozone_headless_unittests") {
   testonly = true
-
   visibility += [ "*" ]
-
-  sources = [ "test/ozone_integration_tests_main.cc" ]
-
-  deps = [
-    "//base/test:test_support",
-    "//mojo/core/embedder",
-    "//testing/gtest",
-    "//testing/gmock",
-  ]
-
-  deps += ["platform/headless:headless_unittests"]
+  import("//arkweb/chromium_ext/ui/ozone/platform/headless/headless_screen_ohos_ext.gni")
+  sources = headless_unittests_ext.sources
+  deps = headless_unittests_ext.deps
 }
 
 group("unittests") {

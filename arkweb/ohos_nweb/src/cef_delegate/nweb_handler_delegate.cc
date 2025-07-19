@@ -1015,7 +1015,8 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
         main_browser_->GetHost()->SetVirtualPixelRatio(
             preference_delegate_->GetVirtualPixelRatio());
         main_browser_->GetHost()->PutUserAgent(
-            preference_delegate_->UserAgent());
+            preference_delegate_->UserAgent(),
+            preference_delegate_->HasSetUserAgent());
 #if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
         main_browser_->GetHost()->SetFileAccess(
             preference_delegate_->EnableRawFileAccess());

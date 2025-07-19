@@ -1,5 +1,0 @@
-include_rules = [
-  "+ash/components/settings",
-  "+mojo/public/cpp/bindings",
-  "+ui/gfx/win",
-]

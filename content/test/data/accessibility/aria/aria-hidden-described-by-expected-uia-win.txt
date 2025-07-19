@@ -1,5 +1,0 @@
-Document
-++Group Name='span-A'
-++Group Name='span-B'
-++Group Name='span-C'
-++Group Name='span-D'

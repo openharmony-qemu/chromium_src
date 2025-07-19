@@ -1,5 +1,0 @@
-UNKNOWN focusable
-++UNKNOWN hidden
-++++UNKNOWN
-++++++UNKNOWN
-++++++UNKNOWN

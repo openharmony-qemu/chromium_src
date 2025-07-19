@@ -1,4 +1,0 @@
-Document
-++Group IsControlElement=false
-++++Button Name='No file chosen, Choose File' Value.Value='No file chosen'
-++++++Button Name='Choose File'

@@ -1,5 +1,0 @@
-UNKNOWN focusable
-++UNKNOWN hidden
-++++UNKNOWN
-++++++STATIC_TEXT label='My car is blue.'
-++++++++UNKNOWN label='My car is blue.'

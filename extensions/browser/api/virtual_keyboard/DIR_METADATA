@@ -1,4 +1,0 @@
-monorail {
-  component: "OS>Inputs"  # for Chrome/Chromium OS only.
-  # For OSes other than Chrome/Chromium OS, please use "UI>Input>VirtualKeyboard".
-}

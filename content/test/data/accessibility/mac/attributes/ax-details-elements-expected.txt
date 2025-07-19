@@ -1,2 +1,0 @@
-details.AXDetailsElements=[:4, :6]
-none.AXDetailsElements=n/a

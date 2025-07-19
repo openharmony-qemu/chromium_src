@@ -1,7 +1,0 @@
-include_rules = [
-  "+chromeos/assistant/buildflags.h",
-  "+ppapi/buildflags",
-  "+printing/buildflags",
-  "+sandbox/constants.h",
-  "+sandbox",
-]

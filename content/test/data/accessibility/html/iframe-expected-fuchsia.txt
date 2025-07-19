@@ -1,7 +1,0 @@
-UNKNOWN focusable
-++UNKNOWN hidden
-++++UNKNOWN
-++++++UNKNOWN focusable label='Empty iframe'
-++++++++UNKNOWN focusable
-++++++++++UNKNOWN hidden
-++++++++++++UNKNOWN hidden

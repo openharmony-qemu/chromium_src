@@ -1,5 +1,0 @@
-include_rules = [
-  "+components/services/font/public/cpp",
-  "+third_party/pdfium/public",
-  "+ui/gfx/codec",
-]

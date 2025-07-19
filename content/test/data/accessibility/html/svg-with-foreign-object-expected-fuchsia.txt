@@ -1,9 +1,0 @@
-UNKNOWN focusable
-++UNKNOWN hidden
-++++UNKNOWN
-++++++UNKNOWN
-++++++++UNKNOWN hidden
-++++++++++PARAGRAPH
-++++++++++++STATIC_TEXT label='Hello world'
-++++++++++++++UNKNOWN label='Hello '
-++++++++++++++UNKNOWN label='world'

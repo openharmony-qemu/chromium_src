@@ -1,4 +1,0 @@
-UNKNOWN focusable
-++UNKNOWN hidden
-++++UNKNOWN
-++++++BUTTON focusable label='Submit' actions='{DEFAULT}'

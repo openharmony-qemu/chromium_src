@@ -1,4 +1,0 @@
-file://chrome/browser/resources/settings/chromeos/os_apps_page/OWNERS
-
-per-file *.mojom=set noparent
-per-file *.mojom=file://ipc/SECURITY_OWNERS

@@ -121,9 +121,9 @@ component("url") {
   }
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  if (arkweb_logger_report) {
-    sources += arkweb_url_log_utils_sources
-  }
+  #if (arkweb_logger_report) {
+  sources += arkweb_url_log_utils_sources
+  #}
 #endif
 }
 

@@ -175,15 +175,15 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItem
       const std::string& guid,
       const int32_t read_size,
       base::OnceCallback<void(const std::vector<uint8_t>&)> callback);
- 
+
   void ReadDataFromDownloadFileDone(const std::vector<uint8_t>& data);
- 
+
   void ReadDownloadDataAndRunCallback(int32_t size);
- 
+
   void RunCallbackIfStateMatch();
- 
+
   void RunCallbackIfExistsCallback();
- 
+
   void RegisterReadDownloadCallback(base::OnceCallback<void()> callback,
                                     int32_t size);
 

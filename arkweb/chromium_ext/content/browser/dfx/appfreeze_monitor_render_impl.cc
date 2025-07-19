@@ -14,13 +14,10 @@
  */
 
 #include "arkweb/chromium_ext/content/browser/dfx/appfreeze_monitor_render_impl.h"
-#include <mutex>
-
-std::mutex lock;
 
 void ReportRenderFreeze() {
-  std::lock_guard<std::mutex> locks(lock);
   std::shared_ptr<AppfreezeMonitorImpl> appfreezeMonitorImpl = AppfreezeMonitorImpl::GetInstance();
+  std::lock_guard<std::mutex> appfreeze_monitor_locks(appfreezeMonitorImpl->appfreeze_monitor_lock_);
   if (appfreezeMonitorImpl->reported_) {
     return;
   }

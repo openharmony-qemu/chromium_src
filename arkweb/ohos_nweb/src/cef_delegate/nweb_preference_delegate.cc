@@ -451,6 +451,7 @@ void NWebPreferenceDelegate::PutStandardFontFamilyName(
 
 void NWebPreferenceDelegate::PutUserAgent(const std::string& ua) {
   std::string old_user_agent = user_agent_;
+  has_set_user_agent_ = true;
   if (ua.empty() || ua.length() == 0) {
     user_agent_ = DefaultUserAgent();
   } else {
@@ -460,7 +461,7 @@ void NWebPreferenceDelegate::PutUserAgent(const std::string& ua) {
     return;
   }
   if (old_user_agent != user_agent_) {
-    browser_->GetHost()->PutUserAgent(ua);
+    browser_->GetHost()->PutUserAgent(ua, has_set_user_agent_);
   }
 }
 

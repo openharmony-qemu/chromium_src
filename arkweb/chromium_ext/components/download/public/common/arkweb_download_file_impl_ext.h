@@ -89,22 +89,22 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadFileImplExt
 
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   void ReadAndRunCallbackIfDataReady() override;
- 
+
   void RegisterReadDownloadCallback(ReadDownloadDataCallback callback,
                                     int32_t size) override;
- 
+
   bool ReadDownloadDataFromFile(int64_t offset,
                                 char* data,
                                 size_t size) override;
- 
+
   uint32_t GetNoHoleDownloadDataSize() override;
- 
+
   void CreateDownloadJobTimer(SourceStream* source_stream);
- 
+
   void StopDownloadJobTimer();
- 
+
   void ResetDownloadJobTimer();
- 
+
   void ReadDownloadDataAndRunCallback(int32_t read_download_size) override;
 #endif
 

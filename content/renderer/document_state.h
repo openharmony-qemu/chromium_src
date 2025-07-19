@@ -12,6 +12,10 @@
 #include "third_party/blink/public/web/web_document_loader.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace content {
 
 class NavigationState;

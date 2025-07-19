@@ -15,24 +15,27 @@
 
 #include "extensions/browser/extension_registry_info_manager.h"
 
+#include "base/logging.h"
 #include "chrome/browser/extensions/menu_manager.h"
 #include "chrome/common/extensions/manifest_handlers/settings_overrides_handler.h"
 #include "content/public/common/url_constants.h"
-#include "ohos_nweb/src/capi/nweb_context_menus_item.h"
 #include "extensions/browser/extension_system.h"
 #include "extensions/common/manifest_constants.h"
 #include "extensions/common/manifest_handlers/options_page_info.h"
 #include "extensions/common/manifest_url_handlers.h"
-#include "ohos_nweb/src/cef_delegate/nweb_extension_action_cef_delegate.h"
 #include "extensions/browser/extension_action_icon_factory.h"
 #include "extensions/browser/extension_registry.h"
 #include "extensions/browser/extension_system.h"
 #include "extensions/browser/ui_util.h"
-#include "ui/gfx/image/image_skia_operations.h"
 #include "extensions/browser/management_policy.h"
-#include "base/logging.h"
+#include "extensions/browser/unloaded_extension_reason.h"
+#include "ohos_nweb/src/cef_delegate/nweb_extension_action_cef_delegate.h"
+#include "ohos_nweb/src/capi/nweb_context_menus_item.h"
 #include "ohos_nweb/src/nweb_common.h"
+#include "ui/gfx/image/image_skia_operations.h"
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "extensions/browser/extension_util.h"
+#include "extensions/common/manifest_handlers/incognito_info.h"
 #include "ohos_nweb_ex/core/extension/nweb_extension_manager_dispatcher.h"
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
@@ -105,6 +108,7 @@ NWebContextMenusItem GetNWebContextMenusItem(extensions::MenuItem* menu_item) {
   item.type = GetTypeStr(menu_item->type());
   item.visible = menu_item->visible();
   item.extensionId = menu_item->extension_id();
+  item.isOffTheRecord = menu_item->incognito();
   return item;
 }
 
@@ -351,7 +355,30 @@ void ExtensionRegistryInfoManager::GetExtensionManifestInfo(
     }
   }
   manifest.options_page = GetManifestOptionsPageInfo(extension);
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  manifest.incognito_mode =
+      std::make_optional<ExtensionIncognitoMode>(GetExtensionIncognitoMode(&extension));
+#endif
 }
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+ExtensionIncognitoMode ExtensionRegistryInfoManager::GetExtensionIncognitoMode(
+    const Extension* extension) const {
+  if (!IncognitoInfo::IsIncognitoAllowed(extension)) {
+    return EXT_INCOGNITO_NOT_ALLOWED;
+  }
+
+  if (IncognitoInfo::IsSpanningMode(extension)) {
+    return EXT_INCOGNITO_SPANNING;
+  }
+
+  if (IncognitoInfo::IsSplitMode(extension)) {
+    return EXT_INCOGNITO_SPLIT;
+  }
+
+  return EXT_INCOGNITO_NONE;
+}
+#endif
 
 void ExtensionRegistryInfoManager::NotifyOnExtensionLoaded(const Extension& extension) {
   if (!extensions::ui_util::ShouldDisplayInExtensionSettings(extension)) {
@@ -372,6 +399,7 @@ void ExtensionRegistryInfoManager::NotifyOnExtensionLoaded(const Extension& exte
       info.info.sidePanel = GetExtensionSidePanelInfo(extension, std::nullopt);
       info.info.contextMenus = GetAllExtensionContextMenus(extension.id());
       GetExtensionManifestInfo(extension, info.manifest_info);
+      info.is_incognito_enabled = util::IsIncognitoEnabled(extension.id(), browser_context_);
       NWebExtensionManagerDispatcher::OnExtensionLoadedByPb(info);
       DeleteExtensionActionInfoIcon(info.info.action);
     } else {
@@ -424,13 +452,29 @@ void ExtensionRegistryInfoManager::OnExtensionReady(content::BrowserContext* bro
                                                     const Extension* extension) {
 }
 
+int UnloadedExtensionReasonEnumToInt(UnloadedExtensionReason reason) {
+  switch (reason) {
+    case UnloadedExtensionReason::UNDEFINED:
+      return 0;
+    case UnloadedExtensionReason::DISABLE:
+      return 1;
+    case UnloadedExtensionReason::UPDATE:
+      return 2;
+    case UnloadedExtensionReason::UNINSTALL:
+      return 3;
+    default:
+      return 0;
+  }
+}
+
 void ExtensionRegistryInfoManager::OnExtensionUnloaded(content::BrowserContext* browser_context,
                                                        const Extension* extension,
                                                        UnloadedExtensionReason reason) {
   // It must be triggered after the observer notification.
   if (IsNativeApiEnable()) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-    NWebExtensionManagerDispatcher::OnExtensionUnLoadedCallBack(extension->id());
+    NWebExtensionManagerDispatcher::OnExtensionUnLoadedCallBack(
+      extension->id(), UnloadedExtensionReasonEnumToInt(reason));
 #endif
   } else {
     OnExtensionUnLoadedCallBack(extension->id());

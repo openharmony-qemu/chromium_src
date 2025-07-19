@@ -75,6 +75,8 @@ const uint8_t kUint32 = 'U';
 const uint8_t kError = 'r';
 const uint8_t kBeginDenseJSArray = 'A';
 const uint8_t kEndDenseJSArray = '$';
+const uint8_t kOther = 'O';
+const double valueZero = 0.0;
 
 void WriteUint8(uint8_t value, std::vector<uint8_t>* buffer) {
   buffer->push_back(value);
@@ -90,26 +92,6 @@ void WriteUint32(uint32_t value, std::vector<uint8_t>* buffer) {
     }
     WriteUint8(b | (1 << kVarIntShift), buffer);
   }
-}
-
-void WriteBytes(base::span<const uint8_t> bytes, std::vector<uint8_t>* buffer) {
-  buffer->insert(buffer->end(), bytes.begin(), bytes.end());
-}
-
-struct TestStruct {
-  uint32_t one;
-  uint8_t two;
-};
-
-bool operator==(const TestStruct& lhs, const TestStruct& rhs) {
-  return lhs.one == rhs.one && lhs.two == rhs.two;
-}
-
-TestStruct CreateTestStruct() {
-  TestStruct expected;
-  expected.one = 0xabcdef12;
-  expected.two = 0x34;
-  return expected;
 }
 }
 
@@ -706,5 +688,87 @@ TEST(StringMessageCodecExtTest, ReadHeaderTag) {
     result = ReadHeaderTag(iter8, tag);
     EXPECT_EQ(result, false);
     buffer.clear();
+}
+
+TEST(StringMessageCodecExtTest, DecodeToWebMessagePayload_001) {
+    struct WebMessagePort::Message original;
+    original.data = u"test";
+    original.bool_value_ = true;
+    original.double_value_ = valueZero;
+    original.int64_value_ = 1;
+    original.string_arr_.push_back(u"t");
+    original.bool_arr_.push_back(true);
+    original.double_arr_.push_back(valueZero);
+    original.int64_arr_.push_back(1);
+    original.err_name_ = u"err";
+    original.err_msg_ = u"msg";
+    uint8_t typeList[] = {
+        kOneByteStringTag, kTwoByteStringTag, kArrayBuffer, kTrue, kFalse,
+        kDouble, kInt32, kUint32, kError, kBeginDenseJSArray, kOther};
+
+    for(int i = 0; i < static_cast<int>(sizeof(typeList)); i++) {
+        struct WebMessagePort::Message decoded_msg;
+        original.type_ = static_cast<WebMessagePort::Message::MessageType>(i);
+        auto message = EncodeWebMessagePayload(original);
+        message.owned_encoded_message[0] = typeList[i];
+        TransferableMessage msg;
+        msg.owned_encoded_message = message.owned_encoded_message;
+        msg.encoded_message = msg.owned_encoded_message;
+        auto result = DecodeToWebMessagePayload(msg, decoded_msg);
+        if (typeList[i] == kDouble) {
+            EXPECT_EQ(result , false);
+        } else {
+            EXPECT_EQ(result , true);
+        }
+    }
+}
+
+TEST(StringMessageCodecExtTest, DecodeToWebMessagePayload_002) {
+    TransferableMessage msg;
+    struct WebMessagePort::Message decoded_msg;
+    msg.owned_encoded_message.push_back(kOneByteStringTag);
+    msg.encoded_message = msg.owned_encoded_message;
+    auto result = DecodeToWebMessagePayload(msg, decoded_msg);
+    EXPECT_EQ(result , false);
+    msg.owned_encoded_message.clear();
+    msg.owned_encoded_message.push_back(kTwoByteStringTag);
+    msg.encoded_message = msg.owned_encoded_message;
+    result = DecodeToWebMessagePayload(msg, decoded_msg);
+    EXPECT_EQ(result , false);
+    msg.owned_encoded_message.clear();
+    msg.owned_encoded_message.push_back(kArrayBuffer);
+    msg.encoded_message = msg.owned_encoded_message;
+    result = DecodeToWebMessagePayload(msg, decoded_msg);
+    EXPECT_EQ(result , false);
+    msg.owned_encoded_message.clear();
+    const double value = valueZero;
+    std::vector<uint8_t> buffer;
+    buffer.push_back(kDouble);
+    WriteDouble(value, &buffer);
+    msg.owned_encoded_message = buffer;
+    msg.encoded_message = msg.owned_encoded_message;
+    result = DecodeToWebMessagePayload(msg, decoded_msg);
+    EXPECT_EQ(result , true);
+    msg.owned_encoded_message.clear();
+    msg.owned_encoded_message.push_back(kInt32);
+    msg.encoded_message = msg.owned_encoded_message;
+    result = DecodeToWebMessagePayload(msg, decoded_msg);
+    EXPECT_EQ(result , false);
+    msg.owned_encoded_message.clear();
+    msg.owned_encoded_message.push_back(kUint32);
+    msg.encoded_message = msg.owned_encoded_message;
+    result = DecodeToWebMessagePayload(msg, decoded_msg);
+    EXPECT_EQ(result , false);
+    msg.owned_encoded_message.clear();
+    msg.owned_encoded_message.push_back(kError);
+    msg.encoded_message = msg.owned_encoded_message;
+    result = DecodeToWebMessagePayload(msg, decoded_msg);
+    EXPECT_EQ(result , false);
+    msg.owned_encoded_message.clear();
+    msg.owned_encoded_message.push_back(kBeginDenseJSArray);
+    msg.encoded_message = msg.owned_encoded_message;
+    result = DecodeToWebMessagePayload(msg, decoded_msg);
+    EXPECT_EQ(result , false);
+    msg.owned_encoded_message.clear();
 }
 }

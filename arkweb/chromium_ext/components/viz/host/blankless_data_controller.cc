@@ -40,8 +40,8 @@ namespace ohos {
 const base::FilePath::CharType DUMP_FILE_PATH[] = FILE_PATH_LITERAL("snapshot");
 const std::string DUMP_FILE_PRE = "/web_frame_";
 const std::string DUMP_FILE_TYPE = ".png";
-const double kSSIMthreshold = 0.95;
-const double kSimilaritythreshold = 0.33;
+const double SSIM_THRESHOLD = 0.95;
+const double SIMILARITY_THRESHOLD = 0.33;
 
 
 static double Mean(const std::vector<double>& data) {
@@ -84,6 +84,7 @@ static double Covariance(const std::vector<double>& data1,
 }
 
 static double CalculateSSIM(const std::vector<double>& img1, const std::vector<double>& img2, const int depth) {
+  // SSIM计算公式中的常数值共计算公式C1=(K1*L)*(K1*L);C2=(K2*L)*(K2*L);其中K1和K2默认值为0.01和0.03
   double C1 = (0.01 * depth) * (0.01 * depth);
   double C2 = (0.03 * depth) * (0.03 * depth);
 
@@ -153,6 +154,7 @@ static std::vector<double> GetSnapshotPixels(const SkPixmap& pixmap) {
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
       const SkColor color = pixmap.getColor(x, y);
+      // 灰度值计算公式0.299、0.587、0.114是RGB各通道的权重
       double gray = 0.299 * SkColorGetR(color) + 0.587 * SkColorGetG(color) + 0.114 * SkColorGetB(color);
       pixels[y * width + x] = gray;
     }
@@ -168,12 +170,12 @@ static double CalculateSnapshotSimilarity(std::vector<double>& pixels1,
                                    const int depth) {
   if (width == 0 || height == 0) {
     LOG(DEBUG) << "blankless width: " << width << ", height: " << height;
-    return 0;
+    return 0.0;
   }
   
   if (pixels1.size() != pixels2.size()) {
     LOG(ERROR) << "blankless old pixels size != new pixels size";
-    return 0;
+    return 0.0;
   }
 
   std::vector<double> samePixels;
@@ -204,7 +206,7 @@ static double CalculateSnapshotSimilarity(std::vector<double>& pixels1,
       }
     }
     double SSIM = CalculateSSIM(rectPixels1, rectPixels2, depth);
-    if (SSIM < kSSIMthreshold) {
+    if (SSIM < SSIM_THRESHOLD) {
       continue;
     }
     for (int y = y0; y < height && y < y0 + rectHeight; y++) {
@@ -304,10 +306,8 @@ class OhosWebSnapshotDataBaseCallbackImpl : public OHOS::NWeb::OhosWebSnapshotDa
  public:
   void OnDataDelete(const std::string& path) override {
     base::FilePath dataPath(path);
-    if (base::PathExists(dataPath)) {
-      if (!base::DeleteFile(dataPath)) {
-        LOG(ERROR) << "blankless delete snapshot failed:" << path;
-      }
+    if (!base::DeleteFile(dataPath)) {
+      LOG(ERROR) << "blankless delete snapshot failed:" << path;
     }
   }
   void OnDataExist(const std::unordered_set<std::string>& existPaths) override {
@@ -434,7 +434,7 @@ void BlanklessDataController::DumpBlanklessSnapshot(int64_t blankless_key,
     base::ohos::BlanklessController::GetInstance().CancelFrameInsertCallback(blankless_key);
     base::ohos::BlanklessController::GetInstance().FireFrameRemoveCallback(blankless_key);
   }
-  if (similarity > kSimilaritythreshold) {
+  if (similarity > SIMILARITY_THRESHOLD) {
     snapshotDataItem.staticPath = newFile;
   }
   dbInstance_.InsertSnapshotDataItem(blankless_key, snapshotDataItem);

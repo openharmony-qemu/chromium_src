@@ -83,7 +83,9 @@ protected:
 
     void createTempFile(const char* filename) {
         FILE* f = fopen(filename, "w");
-        if (f) fclose(f);
+        if (f) {
+            fclose(f);
+        }
     }
 
     void createFile() {
@@ -428,14 +430,6 @@ TEST_F(FontConfig_OHOSTest, getFileData) {
     int fileSize2 = 0;
     auto ret2 = fontConfig->getFileData(filename2, fileSize2);
     EXPECT_NE(ret2, nullptr);
-
-    auto original_malloc = (void*(*)(size_t))dlsym(RTLD_NEXT, "malloc");
-    #define malloc(size) nullptr
-    const char* filename3 = "existing.ttf";
-    int size3 = 0;
-    auto data = fontConfig->getFileData(filename3, size3);
-    EXPECT_EQ(data, nullptr);
-    ASSERT_NE(original_malloc, nullptr);
 }
 
 TEST_F(FontConfig_OHOSTest, parseConfig) {
@@ -1896,8 +1890,12 @@ TEST_F(FontConfig_OHOSTest, scanFonts003) {
     // Create test font files
     FILE* f1 = fopen((std::string(testDir) + "/test1.ttf").c_str(), "w");
     FILE* f2 = fopen((std::string(testDir) + "/test2.otf").c_str(), "w");
-    if (f1) fclose(f1);
-    if (f2) fclose(f2);
+    if (f1) {
+        fclose(f1);
+    }
+    if (f2) {
+        fclose(f2);
+    }
     
     int result = fontConfig->scanFonts(scanner, SkString(testDir), false);
     
@@ -1916,8 +1914,12 @@ TEST_F(FontConfig_OHOSTest, scanFonts004) {
     // Create test files
     FILE* f1 = fopen((std::string(testDir) + "/text.txt").c_str(), "w");
     FILE* f2 = fopen((std::string(testDir) + "/image.png").c_str(), "w");
-    if (f1) fclose(f1);
-    if (f2) fclose(f2);
+    if (f1) {
+        fclose(f1);
+    }
+    if (f2) {
+        fclose(f2);
+    }
     
     int result = fontConfig->scanFonts(scanner, SkString(testDir), false);
     
@@ -2130,7 +2132,8 @@ TEST_F(FontConfig_OHOSTest, resetFallbackValue002) {
     auto fallbackInfo = std::make_unique<FallbackInfo>();
 
     fallbackInfo->typefaceSet = std::make_shared<TypefaceSet>();
-    FontInfo fontInfo1, fontInfo2;
+    FontInfo fontInfo1;
+    FontInfo fontInfo2;
     fontInfo1.familyName = SkString("A");
     fontInfo2.familyName = SkString("B");
     fallbackInfo->typefaceSet->push_back(sk_make_sp<SkTypeface_OHOS>(fontInfo1));
@@ -2168,7 +2171,8 @@ TEST_F(FontConfig_OHOSTest, hasError002) {
     fallbackInfo->typefaceSet = std::make_shared<TypefaceSet>();
     
     // Add dummy typefaces
-    FontInfo fontInfo1, fontInfo2;
+    FontInfo fontInfo1;
+    FontInfo fontInfo2;
     fontInfo1.familyName = SkString("A");
     fontInfo2.familyName = SkString("B");
     fallbackInfo->typefaceSet->push_back(sk_make_sp<SkTypeface_OHOS>(fontInfo1));

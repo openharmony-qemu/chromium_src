@@ -105,12 +105,20 @@ struct WebExtensionManifestOptionsPageInfo {
   std::string options_page;
   bool open_in_tab;
 };
- 
+
+typedef enum {
+  EXT_INCOGNITO_NONE = 0,
+  EXT_INCOGNITO_SPLIT = 1,
+  EXT_INCOGNITO_SPANNING = 2,
+  EXT_INCOGNITO_NOT_ALLOWED = 3,
+} ExtensionIncognitoMode;
+
 struct WebExtensionManifestInfo {
   std::optional<std::string> name;
   std::optional<std::string> homepage_url;
   std::optional<WebExtensionManifestSettingsOverrides> settings_overrides;
   std::optional<WebExtensionManifestOptionsPageInfo> options_page;
+  std::optional<ExtensionIncognitoMode> incognito_mode;
 };
  
 struct WebExtensionInfoV2 {
@@ -129,6 +137,7 @@ struct WebExtensionInfoV2 {
   bool buffers_needs_free;
   WebExtensionInfo info;
   WebExtensionManifestInfo manifest_info;
+  bool is_incognito_enabled = false;
 };
 
 typedef void (*OnWebExtensionLoadedFun)(const WebExtensionInfo& load_info);

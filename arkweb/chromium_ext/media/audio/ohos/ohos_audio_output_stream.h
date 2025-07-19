@@ -140,6 +140,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   int audioResumeInterval_ = 0;
 
+  int write_data_counts_ = 0;
+
   base::WeakPtrFactory<OHOSAudioOutputStream> weak_factory_{this};
 };
 

@@ -87,6 +87,7 @@ artifact_mode=0
 with_nweb_ex=0
 build_sysroot="use_ohos_sdk_sysroot=false"
 build_asan=0
+build_hwasan=0
 build_release=0
 build_fuzz=0
 use_thin_lto=0
@@ -180,6 +181,9 @@ while [ "$1" != "" ]; do
       ;;
     "-asan")
       build_asan=1
+      ;;
+    "-hwasan")
+      build_hwasan=1
       ;;
     "-r")
       build_release=1
@@ -313,6 +317,12 @@ if [ ${build_asan} -eq 1 ]; then
   GN_ARGS="${GN_ARGS} is_asan=true"
 else
   GN_ARGS="${GN_ARGS} is_asan=false"
+fi
+
+if [ ${build_hwasan} -eq 1 ]; then
+  GN_ARGS="${GN_ARGS} is_hwasan=true use_thin_lto=false v8_enable_pointer_compression=false v8_use_external_startup_data=false"
+else
+  GN_ARGS="${GN_ARGS} is_hwasan=false"
 fi
 
 if [ ${build_release} -eq 1 ]; then

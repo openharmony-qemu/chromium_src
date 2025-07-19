@@ -98,6 +98,7 @@
 #include "ui/gfx/geometry/size.h"
 
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/web_media_player_impl_ext.h"
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 
 namespace blink {
 
@@ -383,7 +384,7 @@ void WebMediaPlayerImplExt::RecycleDmaBuffer() {
 #endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
 
   if (IsPageHidden() || (IsHidden() && should_pause_when_frame_is_hidden_)) {
-    if (ShouldPausePlaybackWhenHidden()) {
+    if (ShouldPausePlaybackWhenHidden() || !base::ohos::IsPcDevice()) {
       LOG(INFO) << "DMABUF::The device is not a PC or not have media player, No need RecycleDmaBuffer";
       return;
     }

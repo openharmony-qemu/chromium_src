@@ -2819,6 +2819,21 @@ void RenderFrameImpl::CommitNavigation(
       std::move(navigation_client_impl_), request_id,
       was_initiated_in_this_frame);
 
+#if BUILDFLAG(ARKWEB_EXT_UA)
+  const base::CommandLine* command_line =
+      base::CommandLine::ForCurrentProcess();
+  if (command_line && command_line->HasSwitch(switches::kEnableNwebExUa)) {
+    if ((common_params->navigation_type ==
+             blink::mojom::NavigationType::RELOAD ||
+         common_params->navigation_type ==
+             blink::mojom::NavigationType::RELOAD_BYPASSING_CACHE) &&
+        viewport_meta_enabled_ != GetBlinkPreferences().viewport_meta_enabled) {
+      document_state->set_must_reset_scroll_and_scale_state(true);
+    }
+    viewport_meta_enabled_ = GetBlinkPreferences().viewport_meta_enabled;
+  }
+#endif
+
   // Check if the navigation being committed originated as a client redirect.
   bool is_client_redirect =
       !!(common_params->transition & ui::PAGE_TRANSITION_CLIENT_REDIRECT);
@@ -5331,6 +5346,13 @@ void RenderFrameImpl::UpdateStateForCommit(
   SendUpdateState();
 
   UpdateNavigationHistory(commit_type);
+
+#if BUILDFLAG(ARKWEB_EXT_UA)
+  if (document_state->must_reset_scroll_and_scale_state()) {
+    GetWebView()->ResetScrollAndScaleState();
+    document_state->set_must_reset_scroll_and_scale_state(false);
+  }
+#endif
 
   if (!frame_->Parent()) {  // Only for top frames.
     RenderThreadImpl* render_thread_impl = RenderThreadImpl::current();

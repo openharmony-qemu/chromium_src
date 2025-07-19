@@ -657,6 +657,8 @@ arkweb_cc_layer_unittest_sources = [
 arkweb_third_party_blink_renderer_core_unittest_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_view_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/web_frame_widget_impl_ext_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_theme_ohos_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_object_utils_unittest.cc",
 ]
 
 arkweb_cc_trees_unittest_sources = [

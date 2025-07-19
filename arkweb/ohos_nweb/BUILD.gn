@@ -634,6 +634,7 @@ source_set("unittests") {
     "src/nweb_input_handler_unittest.cc",
     "src/nweb_inputmethod_handler_unittest.cc",
     "src/set_renderer_seccomp_policy_unittest.cc",
+    "src/nweb_resize_helper_unittests.cc",
   ]
 
   deps = [

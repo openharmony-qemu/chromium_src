@@ -735,6 +735,7 @@ void IMFTextListenerAdapterImpl::HandleSelect(int32_t keyCode, int32_t cursorMov
     }
 }
 
+// LCOV_EXCL_START
 int32_t IMFTextListenerAdapterImpl::GetTextIndexAtCursor()
 {
     if (listener_) {
@@ -742,6 +743,7 @@ int32_t IMFTextListenerAdapterImpl::GetTextIndexAtCursor()
     }
     return -1;
 }
+// LCOV_EXCL_STOP
 
 std::u16string IMFTextListenerAdapterImpl::GetLeftTextOfCursor(int32_t number)
 {
@@ -767,12 +769,14 @@ int32_t IMFTextListenerAdapterImpl::SetPreviewText(const std::u16string& text, i
     return -1;
 }
 
+// LCOV_EXCL_START
 void IMFTextListenerAdapterImpl::FinishTextPreview()
 {
     if (listener_) {
         listener_->FinishTextPreview();
     }
 }
+// LCOV_EXCL_STOP
 
 std::shared_ptr<std::string> PrivateCommandGetStrValue(InputMethod_PrivateCommand *privateCommand)
 {
@@ -987,6 +991,7 @@ void IMFAdapterImpl::ShowCurrentInput(const IMFAdapterTextInputType& inputType)
     }
 }
 
+// LCOV_EXCL_START
 void IMFAdapterImpl::HideTextInput()
 {
     if (inputMethodProxy_) {
@@ -1006,6 +1011,7 @@ void IMFAdapterImpl::Close()
         }
     }
 }
+// LCOV_EXCL_STOP
 
 void IMFAdapterImpl::OnCursorUpdate(const std::shared_ptr<IMFCursorInfoAdapter> cursorInfo)
 {

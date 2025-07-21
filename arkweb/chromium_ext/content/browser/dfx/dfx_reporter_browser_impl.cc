@@ -41,11 +41,9 @@ void ReportMemTraceNLog(std::map<std::string, std::string>& memMap)
             << "js_heap_total = " << memMap["js_heap_total"] << "KB, "
             << "js_heap_used = " << memMap["js_heap_used"] << "KB, "
             << "gpu_mem = " << memMap["gpu_mem"] << "KB";
-  std::string traceMsg = logStream.str();
-  logStream << ", url = " << memMap["url"];
   std::string logMsg = logStream.str();
 
-  TRACE_EVENT1("base", "WEBVIEW::PAGE_MEM_LEAK", "MEMORY_INFO", traceMsg);
+  TRACE_EVENT1("base", "WEBVIEW::PAGE_MEM_LEAK", "MEMORY_INFO", logMsg);
   LOG(INFO) << logMsg;
 }
 

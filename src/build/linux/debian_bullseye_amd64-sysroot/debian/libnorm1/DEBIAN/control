@@ -1,0 +1,16 @@
+Package: libnorm1
+Source: norm
+Version: 1.5.9+dfsg-2
+Architecture: amd64
+Maintainer: Luca Boccassi <bluca@debian.org>
+Installed-Size: 506
+Depends: libc6 (>= 2.29), libgcc-s1 (>= 3.0), libstdc++6 (>= 5)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.nrl.navy.mil/itd/ncs/products/norm
+Description: NACK-Oriented Reliable Multicast (NORM) library
+ The NORM protocol is designed to provide end-to-end reliable transport of
+ bulk data objects or streams over generic IP multicast routing and forwarding
+ services.
+ libnorm provides a shared library and an API to use such protocol.

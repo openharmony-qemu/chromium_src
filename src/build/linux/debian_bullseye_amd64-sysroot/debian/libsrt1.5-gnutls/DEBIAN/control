@@ -1,0 +1,19 @@
+Package: libsrt1.5-gnutls
+Source: srt
+Version: 1.5.1-1
+Architecture: amd64
+Maintainer: Florian Ernst <florian@debian.org>
+Installed-Size: 911
+Depends: libc6 (>= 2.34), libgcc-s1 (>= 3.0), libgnutls30 (>= 3.7.0), libnettle8, libstdc++6 (>= 11)
+Breaks: libsrt1-gnutls
+Replaces: libsrt1-gnutls
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://github.com/Haivision/srt
+Description: Secure Reliable Transport UDP streaming library (GnuTLS flavour)
+ SRT is a latency-aware UDP transport mechanism optimized for video streams.
+ It detects and compensates for jitter and bandwidth fluctuations due to
+ network congestion. It mitigates packet loss and supports AES encryption.
+ .
+ SSL support is provided by GnuTLS.

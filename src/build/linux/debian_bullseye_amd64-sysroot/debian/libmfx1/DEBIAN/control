@@ -1,0 +1,21 @@
+Package: libmfx1
+Source: intel-mediasdk
+Version: 21.1.0-1
+Architecture: amd64
+Maintainer: Timo Aaltonen <tjaalton@debian.org>
+Installed-Size: 27723
+Depends: libc6 (>= 2.30), libgcc-s1 (>= 3.0), libstdc++6 (>= 9), libva2 (>= 2.9.0)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://github.com/Intel-Media-SDK/MediaSDK
+Description: Intel Media SDK -- shared library
+ Intel® Media SDK provides an API to access hardware-accelerated video decode,
+ encode and filtering on Intel® platforms with integrated graphics.
+ .
+ Supported video encoders: HEVC, AVC, MPEG-2, JPEG
+ Supported Video decoders: HEVC, AVC, VP8, MPEG-2, VC1, JPEG
+ Supported video pre-processing filters: Color Conversion, Deinterlace, Denoise,
+ Resize, Rotate, Composition
+ .
+ This package contains the shared library.

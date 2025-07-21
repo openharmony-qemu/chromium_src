@@ -1,0 +1,18 @@
+Package: libmp3lame0
+Source: lame
+Version: 3.100-3
+Architecture: amd64
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Installed-Size: 547
+Depends: libc6 (>= 2.29)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: http://lame.sourceforge.net/
+Description: MP3 encoding library
+ LAME (recursive acronym for "LAME Ain't an MP3 Encoder") is a research
+ project for learning about and improving MP3 encoding technology.
+ LAME includes an MP3 encoding library, a simple frontend application,
+ and other tools for sound analysis, as well as convenience tools.
+ .
+ This package contains the shared library.

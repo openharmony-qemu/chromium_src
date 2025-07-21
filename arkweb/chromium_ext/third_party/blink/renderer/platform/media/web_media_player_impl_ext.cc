@@ -451,5 +451,5 @@ void WebMediaPlayerImplExt::MediaResumeFromBFCachePage(bool restoring_in_bfcache
     client_->ResumePlayback();  // Calls UpdatePlayState() so return afterwards.
   }
 }
-+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
 }

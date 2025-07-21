@@ -105,6 +105,10 @@ void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
   ApplyOhosMediaPlayerEnabled(prefs, web_view, settings);
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  settings->SetMediaResumeFromBFCachePage(prefs.media_resume_from_bfcache_page);
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
 #if BUILDFLAG(ARKWEB_MEDIA)
   settings->SetPreferHiddenVolumeControls(!base::ohos::IsPcDevice());
 #endif

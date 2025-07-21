@@ -1103,6 +1103,9 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
                                                  cache_time_to_live);
       }
     }
+    if (main_browser_ && main_browser_->GetHost()) {
+      main_browser_->GetHost()->SetMediaResumeFromBFCachePage(media_resume_from_bfcache_page_);
+    }
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
     if (video_assistant_enabled_) {
@@ -2661,6 +2664,10 @@ void NWebHandlerDelegate::UpdateFavicon(CefRefPtr<CefBrowser> browser) {
       &data, color_type, alpha_type, width, height);
   SetFavicon(data, width, height, ImageColorType(color_type),
              ImageAlphaType(alpha_type));
+}
+
+void NWebHandlerDelegate::SetMediaResumeFromBFCachePage(bool resume) {
+  media_resume_from_bfcache_page_ = resume;
 }
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 

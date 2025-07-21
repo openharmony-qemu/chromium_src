@@ -115,6 +115,10 @@ virtual void SetHtmlPlayEnabled(bool enabled) = 0;
 virtual bool IsHtmlPlayEnabled() = 0;
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+virtual void SetMediaResumeFromBFCachePage(bool resume) = 0;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
+
 #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
 virtual void SetWakeLockHandler(int32_t windowId,
                                 const SetKeepScreenOn& handler) = 0;

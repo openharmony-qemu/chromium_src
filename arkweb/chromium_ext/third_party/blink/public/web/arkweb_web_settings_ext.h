@@ -82,6 +82,11 @@ public:
   virtual bool GetCustomMediaPlayerEnabled() { return false; }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  virtual void SetMediaResumeFromBFCachePage(bool resume) {}
+  virtual bool GetMediaResumeFromBFCachePage() { return true; }
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   virtual void SetUsageScenario(int32_t usage_scenario) = 0;
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE

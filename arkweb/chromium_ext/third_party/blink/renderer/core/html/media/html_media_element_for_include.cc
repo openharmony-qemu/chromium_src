@@ -466,6 +466,15 @@ void HTMLMediaElement::ResumeDmaBuffer() {
 }
 #endif  // ARKWEB_MEDIA_DMABUF
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+bool HTMLMediaElement::IsMediaResumeFromBFCachePage() const {
+  if (GetDocument().GetSettings()) {
+    return GetDocument().GetSettings()->GetMediaResumeFromBFCachePage();
+  }
+  return true;
+}
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
 #if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
 void HTMLMediaElement::NotifyMemoryLevel(int32_t level) {
   LOG(INFO) << "DMABUF::" << __func__ << "(" << *this << "),  level=" << level;

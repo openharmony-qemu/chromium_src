@@ -108,6 +108,9 @@ static void WebPreferenceMojomExt(blink::mojom::WebPreferencesDataView data,
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   out->error_page_enabled = data.error_page_enabled();
 #endif
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  out->media_resume_from_bfcache_page = data.media_resume_from_bfcache_page();
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
 }
 
 } // namespace mojo

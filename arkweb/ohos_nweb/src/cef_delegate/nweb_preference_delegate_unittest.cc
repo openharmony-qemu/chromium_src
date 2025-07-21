@@ -211,6 +211,7 @@ class MockCefBrowser : public CefBrowser, public CefBrowserHost {
   void RegisterScreenCaptureDelegateListener(CefRefPtr<CefScreenCaptureCallback> listener) override {}
   void CustomWebMediaPlayer(bool enable) override {}
 
+  void SetMediaResumeFromBFCachePage(bool resume) override {}
   void UpdateBrowserSettings(const CefBrowserSettings& browser_settings);
 #if BUILDFLAG(ARKWEB_PIP)
   void SetPipNativeWindow(int delegate_id,

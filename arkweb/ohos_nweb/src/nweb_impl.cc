@@ -5375,6 +5375,17 @@ void NWebImpl::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) {
 #endif
 }
 
+void NWebImpl::SetMediaResumeFromBFCachePage(bool resume) {
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("fail to set media resume from bfcache page. nweb_delegate is nullptr.");
+    return;
+  }
+  WVLOG_I("NWebImpl SetMediaResumeFromBFCachePage value: %{public}d.", resume);
+  nweb_delegate_->SetMediaResumeFromBFCachePage(resume);
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
+}
+
 #if BUILDFLAG(IS_ARKWEB)
 void NWebImpl::EnableAppLinking(bool enable) {
   OhosEnableApplinkingUtil::EnableAppLinking(enable);

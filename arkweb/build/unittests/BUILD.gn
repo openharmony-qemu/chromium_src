@@ -15,6 +15,7 @@
 group("oh_base_unittests") {
   testonly = true
   deps = [
+    "//arkweb/chromium_ext/sandbox:arkweb_sandbox_unittests",
     "//base:base_unittests",
     "//cc:cc_unittests",
     "//components:components_unittests",

@@ -12,11 +12,12 @@
 # limitations under the License.
 import("//build/config/features.gni")
 import("//sandbox/features.gni")
+import("//testing/test.gni")
 
 component("arkweb_sandbox") {
   sources = [
     "seccomp-bpf-helpers/baseline_policy_ohos.cc",
-    "seccomp-bpf-helpers/baseline_policy_ohos.h"
+    "seccomp-bpf-helpers/baseline_policy_ohos.h",
   ]
 
   deps = [
@@ -35,4 +36,28 @@ component("seccomp_starter_ohos") {
   if (use_seccomp_bpf) {
     deps += [ "//sandbox/linux:seccomp_bpf" ]
   }
+}
+
+test("arkweb_sandbox_unittests") {
+  include_dirs = [ "//ppapi/lib/gl/include" ]
+
+  sources = [ "seccomp-bpf-helpers/baseline_policy_ohos_unittest.cc" ]
+
+  public_deps = [
+    "//testing/gmock",
+    "//testing/gtest",
+  ]
+
+  deps = [
+    "//base",
+    "//base/test:test_support",
+    "//cef:libcef_static",
+    "//components/web_cache/browser:browser",
+    "//content/public/common",
+    "//ohos_glue:ohos_adapter_glue_source",
+    "//ohos_glue:ohos_nweb_glue_source",
+    "//third_party/boringssl",
+  ]
+
+  include_dirs += [ "//third_party/ohos_ndk/includes/ohos_adapter" ]
 }

@@ -16,8 +16,9 @@
 #include "cef_delegate/nweb_inputmethod_client.h"
 #include "condition_variable"
 #define private public
-
+#include "base/ohos/sys_info_utils_ext.h"
 #include "nweb_inputmethod_handler.h"
+#include "ohos_nweb/include/nweb_errors.h"
 
 #include <gmock/gmock.h>
 
@@ -1952,22 +1953,158 @@ TEST_F(NWebInputMethodHandlerTest, ComputeEditorInfo) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, HandleSecurityLayerHandlerOnUI) {
-    inputmethod_handler_->browser_ = nullptr;
-    inputmethod_handler_->HandleSecurityLayerHandlerOnUI();
+  inputmethod_handler_->browser_ = nullptr;
+  inputmethod_handler_->HandleSecurityLayerHandlerOnUI();
 
-    CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-    inputmethod_handler_->browser_ = browser;
-    inputmethod_handler_->HandleSecurityLayerHandlerOnUI();
-    EXPECT_NE(inputmethod_handler_->browser_, nullptr);
+  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
+  inputmethod_handler_->browser_ = browser;
+  inputmethod_handler_->HandleSecurityLayerHandlerOnUI();
+  EXPECT_NE(inputmethod_handler_->browser_, nullptr);
 }
 
 TEST_F(NWebInputMethodHandlerTest, HandleSecurityLayer) {
-    inputmethod_handler_->browser_ = nullptr;
-    inputmethod_handler_->HandleSecurityLayer();
+  inputmethod_handler_->browser_ = nullptr;
+  inputmethod_handler_->HandleSecurityLayer();
 
-    CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-    inputmethod_handler_->browser_ = browser;
-    inputmethod_handler_->HandleSecurityLayer();
-    EXPECT_NE(inputmethod_handler_->browser_, nullptr);
+  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
+  inputmethod_handler_->browser_ = browser;
+  inputmethod_handler_->HandleSecurityLayer();
+  EXPECT_NE(inputmethod_handler_->browser_, nullptr);
+}
+
+TEST_F(NWebInputMethodHandlerTest, TextInputActionToIMFAdapter) {
+  NWebInputMethodClient::InputInfo inputInfo;
+  inputInfo.input_action = CEF_TEXT_INPUT_ACTION_DEFAULT;
+  inputInfo.input_mode = CEF_TEXT_INPUT_MODE_DEFAULT;
+  inputInfo.input_type = CEF_TEXT_INPUT_TYPE_SEARCH;
+  IMFAdapterEnterKeyType result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
+  EXPECT_EQ(result, IMFAdapterEnterKeyType::SEARCH);
+
+  inputInfo.input_mode = CEF_TEXT_INPUT_MODE_NONE;
+  inputmethod_handler_->type_text_flag_multi_line_ = true;
+  result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
+  EXPECT_EQ(result, IMFAdapterEnterKeyType::NEW_LINE);
+
+  inputmethod_handler_->type_text_flag_multi_line_ = false;
+  inputInfo.input_flags = CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT;
+  result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
+  EXPECT_EQ(result, IMFAdapterEnterKeyType::NEXT);
+
+  inputInfo.input_flags = CEF_TEXT_INPUT_FLAG_VERTICAL;
+  result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
+  EXPECT_EQ(result, IMFAdapterEnterKeyType::GO);
+
+  inputInfo.input_action = CEF_TEXT_INPUT_ACTION_ENTER;
+  result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
+  EXPECT_EQ(result, IMFAdapterEnterKeyType::NEW_LINE);
+
+  inputInfo.input_action = CEF_TEXT_INPUT_ACTION_DONE;
+  result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
+  EXPECT_EQ(result, IMFAdapterEnterKeyType::DONE);
+
+  inputInfo.input_action = CEF_TEXT_INPUT_ACTION_GO;
+  result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
+  EXPECT_EQ(result, IMFAdapterEnterKeyType::GO);
+
+  inputInfo.input_action = CEF_TEXT_INPUT_ACTION_NEXT;
+  result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
+  EXPECT_EQ(result, IMFAdapterEnterKeyType::NEXT);
+
+  inputInfo.input_action = CEF_TEXT_INPUT_ACTION_PREVIOUS;
+  result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
+  EXPECT_EQ(result, IMFAdapterEnterKeyType::PREVIOUS);
+
+  inputInfo.input_action = CEF_TEXT_INPUT_ACTION_SEARCH;
+  result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
+  EXPECT_EQ(result, IMFAdapterEnterKeyType::SEARCH);
+
+  inputInfo.input_action = CEF_TEXT_INPUT_ACTION_SEND;
+  result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
+  EXPECT_EQ(result, IMFAdapterEnterKeyType::SEND);
+}
+
+TEST_F(NWebInputMethodHandlerTest, TextInputTypeToIMFAdapter) {
+  cef_text_input_type_t input = CEF_TEXT_INPUT_TYPE_TEXT;
+  IMFAdapterTextInputType result = inputmethod_handler_->TextInputTypeToIMFAdapter(input);
+  EXPECT_EQ(IMFAdapterTextInputType::TEXT, result);
+
+  input = CEF_TEXT_INPUT_TYPE_PASSWORD;
+  result = inputmethod_handler_->TextInputTypeToIMFAdapter(input);
+  EXPECT_EQ(IMFAdapterTextInputType::VISIBLE_PASSWORD, result);
+
+  input = CEF_TEXT_INPUT_TYPE_EMAIL;
+  result = inputmethod_handler_->TextInputTypeToIMFAdapter(input);
+  EXPECT_EQ(IMFAdapterTextInputType::EMAIL_ADDRESS, result);
+
+  input = CEF_TEXT_INPUT_TYPE_NUMBER;
+  result = inputmethod_handler_->TextInputTypeToIMFAdapter(input);
+  EXPECT_EQ(IMFAdapterTextInputType::NUMBER, result);
+
+  input = CEF_TEXT_INPUT_TYPE_TELEPHONE;
+  result = inputmethod_handler_->TextInputTypeToIMFAdapter(input);
+  EXPECT_EQ(IMFAdapterTextInputType::PHONE, result);
+
+  input = CEF_TEXT_INPUT_TYPE_URL;
+  result = inputmethod_handler_->TextInputTypeToIMFAdapter(input);
+  EXPECT_EQ(IMFAdapterTextInputType::URL, result);
+
+  input = CEF_TEXT_INPUT_TYPE_TEXT_AREA;
+  result = inputmethod_handler_->TextInputTypeToIMFAdapter(input);
+  EXPECT_EQ(IMFAdapterTextInputType::TEXT, result);
+
+  input = CEF_TEXT_INPUT_TYPE_CONTENT_EDITABLE;
+  result = inputmethod_handler_->TextInputTypeToIMFAdapter(input);
+  EXPECT_EQ(IMFAdapterTextInputType::TEXT, result);
+
+  input = static_cast<cef_text_input_type_t>(-1);
+  result = inputmethod_handler_->TextInputTypeToIMFAdapter(input);
+  EXPECT_EQ(IMFAdapterTextInputType::TEXT, result);
+}
+
+TEST_F(NWebInputMethodHandlerTest, TextInputModeToIMFAdapter) {
+  cef_text_input_mode_t mode = CEF_TEXT_INPUT_MODE_TEXT;
+  IMFAdapterTextInputType result = inputmethod_handler_->TextInputModeToIMFAdapter(mode);
+  EXPECT_EQ(IMFAdapterTextInputType::TEXT, result);
+  EXPECT_FALSE(inputmethod_handler_->type_text_flag_multi_line_);
+
+  mode = CEF_TEXT_INPUT_MODE_TEL;
+  result = inputmethod_handler_->TextInputModeToIMFAdapter(mode);
+  EXPECT_EQ(IMFAdapterTextInputType::PHONE, result);
+  EXPECT_FALSE(inputmethod_handler_->type_text_flag_multi_line_);
+
+  mode = CEF_TEXT_INPUT_MODE_URL;
+  result = inputmethod_handler_->TextInputModeToIMFAdapter(mode);
+  EXPECT_EQ(IMFAdapterTextInputType::URL, result);
+  EXPECT_FALSE(inputmethod_handler_->type_text_flag_multi_line_);
+
+  mode = CEF_TEXT_INPUT_MODE_EMAIL;
+  result = inputmethod_handler_->TextInputModeToIMFAdapter(mode);
+  EXPECT_EQ(IMFAdapterTextInputType::EMAIL_ADDRESS, result);
+  EXPECT_FALSE(inputmethod_handler_->type_text_flag_multi_line_);
+
+  mode = CEF_TEXT_INPUT_MODE_EMAIL;
+  result = inputmethod_handler_->TextInputModeToIMFAdapter(mode);
+  EXPECT_EQ(IMFAdapterTextInputType::EMAIL_ADDRESS, result);
+  EXPECT_FALSE(inputmethod_handler_->type_text_flag_multi_line_);
+
+  mode = CEF_TEXT_INPUT_MODE_NUMERIC;
+  result = inputmethod_handler_->TextInputModeToIMFAdapter(mode);
+  EXPECT_EQ(IMFAdapterTextInputType::NUMBER, result);
+  EXPECT_FALSE(inputmethod_handler_->type_text_flag_multi_line_);
+
+  mode = CEF_TEXT_INPUT_MODE_DECIMAL;
+  result = inputmethod_handler_->TextInputModeToIMFAdapter(mode);
+  EXPECT_EQ(IMFAdapterTextInputType::NUMBER, result);
+  EXPECT_FALSE(inputmethod_handler_->type_text_flag_multi_line_);
+
+  mode = CEF_TEXT_INPUT_MODE_SEARCH;
+  result = inputmethod_handler_->TextInputModeToIMFAdapter(mode);
+  EXPECT_EQ(IMFAdapterTextInputType::TEXT, result);
+  EXPECT_TRUE(inputmethod_handler_->type_text_flag_multi_line_);
+
+  mode = static_cast<cef_text_input_mode_t>(-1);
+  result = inputmethod_handler_->TextInputModeToIMFAdapter(mode);
+  EXPECT_EQ(IMFAdapterTextInputType::TEXT, result);
+  EXPECT_TRUE(inputmethod_handler_->type_text_flag_multi_line_);
 }
 }  // namespace OHOS::NWeb

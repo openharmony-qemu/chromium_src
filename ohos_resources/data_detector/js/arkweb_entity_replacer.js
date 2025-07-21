@@ -14,11 +14,16 @@
  */
 
 class ArkWebEntityReplacer {
+  static DATA_DETECTOR_ATTR_PREFIX = 'ohos-arkweb-data-detectors-attr-';
+  static DATA_DETECTOR_TYPE = 'ohos-arkweb-data-detectors-type';
+  static DATA_DETECTOR_NATIVE_KEYS = ['ohosarkwebtype', 'ohos-arkweb-type'];
+
   constructor() {
     this.pendingRequests = new Map();
     this.listenerMap = new WeakMap();
     this.listenerMapForTouchTest = new WeakMap();
     this.lastClickedEntity = null;
+    this.entityAllAttrs = new Set();
     this.init();
   }
 
@@ -114,23 +119,15 @@ class ArkWebEntityReplacer {
     let msg = {
       content: link.textContent,
       outerHTML: link.outerHTML,
-      entityType: link.getAttribute('ohosArkWebType'),
+      entityType: link.getAttribute(ArkWebEntityReplacer.DATA_DETECTOR_TYPE),
       rect: this.getScreenElementEdgesExt(link),
     };
-    try {
-      if (window.arkWebAceEntityReplacerProxy) {
-        window.arkWebAceEntityReplacerProxy.clickEntity(JSON.stringify(msg));
-      } else {
-        throw new Error('JS::WebDataDetector Native bridge not available');
-      }
-    } catch (error) {
-      console.error('JS::WebDataDetector error:', error);
-    }
+    this.sendMsgToNative(msg);
   }
 
   handleLinkClick = (event) => {
     const link = event.target;
-    if (link.tagName !== 'A' || !link.getAttribute('ohosArkWebType')) {
+    if (link.tagName !== 'A' || !link.hasAttribute(ArkWebEntityReplacer.DATA_DETECTOR_TYPE)) {
       return;
     }
     event.preventDefault();
@@ -138,7 +135,7 @@ class ArkWebEntityReplacer {
     let msg = {
       content: link.textContent,
       outerHTML: link.outerHTML,
-      entityType: link.getAttribute('ohosArkWebType'),
+      entityType: link.getAttribute(ArkWebEntityReplacer.DATA_DETECTOR_TYPE),
       rect: this.getScreenElementEdgesExt(link),
     };
     this.lastClickedEntity = new WeakRef(link);
@@ -150,14 +147,15 @@ class ArkWebEntityReplacer {
       return;
     }
     const link = event.target;
-    if (link.tagName !== 'A' || !link.getAttribute('ohosArkWebType')) {
+    if (link.tagName !== 'A' || !link.hasAttribute(ArkWebEntityReplacer.DATA_DETECTOR_TYPE)) {
       return;
     }
     
     let msg = {
       content: link.textContent,
-      entityType: link.getAttribute('ohosArkWebType'),
+      entityType: link.getAttribute(ArkWebEntityReplacer.DATA_DETECTOR_TYPE),
       touchTest: true,
+      attrs: this.getAttrsJson(link),
     };
 
     this.sendMsgToNative(msg);
@@ -173,6 +171,24 @@ class ArkWebEntityReplacer {
     } catch (error) {
       console.error('JS::WebDataDetector error:', error);
     }
+  }
+
+  getAttrsJson(elem) {
+    let attrsJson = {};
+    try {
+      const prefix = ArkWebEntityReplacer.DATA_DETECTOR_ATTR_PREFIX;
+      this.entityAllAttrs.forEach((key) => {
+        if (elem.hasAttribute(key) && key.startsWith(prefix)) {
+          const newKey = key.slice(prefix.length).replace(/-([a-z])/g, (_, group1) => group1.toUpperCase());
+          attrsJson[newKey] = elem.getAttribute(key);
+        }
+      });
+    } catch (error) {
+      console.error('JS::WebDataDetector error:', error);
+      return {};
+    }
+    
+    return attrsJson;
   }
 
   addSmartClickListener(element, callback) {
@@ -230,10 +246,6 @@ class ArkWebEntityReplacer {
           }
 
           if (/^[\s\W_]+$/.test(text) && !/[\p{L}\p{N}]/u.test(text)) {
-            return NodeFilter.FILTER_REJECT;
-          }
-
-          if (/<[a-z][\s\S]*>/i.test(text)) {
             return NodeFilter.FILTER_REJECT;
           }
 
@@ -383,13 +395,14 @@ class ArkWebEntityReplacer {
   }
 
   handleNativeResult(resultJson) {
+    let context;
     try {
       const result = JSON.parse(resultJson);
       if (!result) {
         console.warn('JS::WebDataDetector result is empty');
         return;
       }
-      const context = this.pendingRequests.get(result.requestId);
+      context = this.pendingRequests.get(result.requestId);
 
       if (!context) {
         console.warn('JS::WebDataDetector unknown requestId:', result.requestId);
@@ -455,9 +468,17 @@ class ArkWebEntityReplacer {
           link.style.textDecoration = result.style.textDecoration;
         }
         if (entity.attrs) {
-          for (const key in entity.attrs) {
-            link.setAttribute(key, entity.attrs[key]);
-          }
+          Object.entries(entity.attrs).forEach(([key, value]) => {
+            if (ArkWebEntityReplacer.DATA_DETECTOR_NATIVE_KEYS.includes(key.toLowerCase())) {
+              link.setAttribute(ArkWebEntityReplacer.DATA_DETECTOR_TYPE, value);
+            } else {
+              const newKey = ArkWebEntityReplacer.DATA_DETECTOR_ATTR_PREFIX + key.replace(/[A-Z]/g, (letter) => {
+                return `-${letter.toLowerCase()}`;
+              });
+              link.setAttribute(newKey, value);
+              this.entityAllAttrs.add(newKey);
+            }
+          });
         }
         fragment.appendChild(link);
 

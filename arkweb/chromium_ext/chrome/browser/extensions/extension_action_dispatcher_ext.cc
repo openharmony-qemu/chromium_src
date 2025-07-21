@@ -14,7 +14,7 @@
  */
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h"
+#include "chrome/browser/extensions/extension_tab_util.h"
 #include "ohos_cef_ext/libcef/browser/extensions/tab_extensions_util.h"
 #endif
 
@@ -41,7 +41,7 @@ void ExtensionActionDispatcher::DispatchExtensionActionClickedWithCustomArgs(
 void ExtensionActionDispatcher::ClearAllValuesForTab(
     content::WebContents* web_contents) {
   DCHECK(web_contents);
-  int tab_id = cef::GetTabIdForWebContents(web_contents);
+  int tab_id = ExtensionTabUtil::GetTabId(web_contents);
   if (tab_id < 0) {
     LOG(ERROR) << "invalid tab_id for ClearAllValuesForTab";
     return;

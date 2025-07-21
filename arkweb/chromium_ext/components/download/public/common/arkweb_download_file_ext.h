@@ -39,21 +39,28 @@ namespace download {
 // cancelled, the DownloadFile is destroyed.
 class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadFileExt {
 public:
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  typedef base::OnceCallback<void(const std::vector<unsigned char>&)>
+      ReadDownloadDataCallback;
+#endif
+
   virtual ~ArkWebDownloadFileExt() = default;
   
   void test() {}
 
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-  virtual void RunCallbackIfDataReady() = 0;
-
-  virtual void RegisterReadDownloadCallback(base::OnceCallback<void()> callback,
-                                            uint32_t size) = 0;
+  virtual void ReadAndRunCallbackIfDataReady() = 0;
+ 
+  virtual void RegisterReadDownloadCallback(ReadDownloadDataCallback callback,
+                                            int32_t size) = 0;
 
   virtual bool ReadDownloadDataFromFile(int64_t offset,
                                         char* data,
                                         size_t size) = 0;
 
   virtual uint32_t GetNoHoleDownloadDataSize() = 0;
+
+  virtual void ReadDownloadDataAndRunCallback(int32_t read_download_size) = 0;
 #endif
 };
 

@@ -1750,6 +1750,10 @@ class CONTENT_EXPORT RenderFrameImpl
   uint64_t frame_sink_id_ = 0;
   int64_t pref_hash_ = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_UA)
+  bool viewport_meta_enabled_{false};
+#endif
 };
 
 }  // namespace content

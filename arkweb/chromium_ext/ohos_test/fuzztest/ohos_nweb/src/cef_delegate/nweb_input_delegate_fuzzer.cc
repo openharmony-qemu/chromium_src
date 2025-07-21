@@ -96,7 +96,7 @@ void NWebInputDelegateFuzzTest(FuzzedDataProvider* fdp) {
 
   impl.IsMMIKeyEvent(keyCode);
 
-  impl.SetMouseWheelRatio(keyCode);
+  impl.SetMouseWheelRatio(ratio);
 
   impl.GetMouseWheelRatio();
 

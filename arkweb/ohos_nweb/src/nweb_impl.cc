@@ -504,6 +504,15 @@ float GetVirtualPixelRatioForScrollbar() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+std::string GetGwpAsanEnable()
+{
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                        .GetSystemPropertiesInstance();
+  return system_properties_adapter.GetStringParameter("web.gwpasan.enable", "none");
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 void InitialWebEngineArgs(
     std::list<std::string>& web_engine_args,
@@ -608,6 +617,11 @@ void InitialWebEngineArgs(
   for (auto arg : args_to_add) {
     web_engine_args.emplace_back(arg);
   }
+
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+  std::string gwpEnable = "--ohos-enable-gwp-asan-type=" + GetGwpAsanEnable();
+  web_engine_args.emplace_back(gwpEnable);
+#endif
 
   std::string oop_gpu_enable = GetOOPGPUStatus();
   if ((xml_gpu && oop_gpu_enable != "false") ||

@@ -17,6 +17,7 @@
 
 void ReportRenderFreeze() {
   std::shared_ptr<AppfreezeMonitorImpl> appfreezeMonitorImpl = AppfreezeMonitorImpl::GetInstance();
+  std::lock_guard<std::mutex> appfreeze_monitor_locks(appfreezeMonitorImpl->appfreeze_monitor_lock_);
   if (appfreezeMonitorImpl->reported_) {
     return;
   }

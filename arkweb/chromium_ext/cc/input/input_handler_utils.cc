@@ -69,7 +69,7 @@ double InputHandlerUtils::pdf_delta_x_ = 0;
 double InputHandlerUtils::pdf_delta_y_ = 0;
 
 bool InputHandlerUtils::PdfOverSpeed() {  
-  constexpr float kMaxPdfOverSpeed = 150;
+  constexpr float kMaxPdfOverSpeed = 400;
   if (InputHandlerUtils::pdf_delta_x_ > kMaxPdfOverSpeed)
     return true;
   else if (InputHandlerUtils::pdf_delta_x_ < -kMaxPdfOverSpeed)

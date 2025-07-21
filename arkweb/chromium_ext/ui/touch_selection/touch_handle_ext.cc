@@ -47,5 +47,13 @@ bool TouchHandleExt::SetFocus(const gfx::PointF& top, const gfx::PointF& bottom)
   }
   return false;
 }
+
+void TouchHandleExt::SetInsertHandleAlpha(float alpha) {
+  alpha = std::clamp(alpha, 0.0f, 1.0f);
+  if (alpha_ == alpha)
+    return;
+  alpha_ = alpha;
+  drawable_->SetAlpha(alpha);
+}
 #endif
 }  // namespace ui

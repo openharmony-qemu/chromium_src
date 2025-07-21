@@ -6,6 +6,9 @@
 
 #include "base/allocator/dispatcher/dispatcher.h"
 #include "base/allocator/dispatcher/initializer.h"
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+#include "base/command_line.h"
+#endif
 #include "base/debug/crash_logging.h"
 #include "base/debug/debugging_buildflags.h"
 #include "build/build_config.h"
@@ -232,13 +235,16 @@ void MemorySystem::Impl::InitializeGwpASan(
     const GwpAsanParameters& gwp_asan_parameters,
     InitializationData& initialization_data) {
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
-  if (!base::ohos::IsMobileDevice() && !base::ohos::IsPcDevice()) {
-    LOG(INFO) << "gwp-asan Unsupported platfrom";
+  const base::CommandLine* const command_line =
+      base::CommandLine::ForCurrentProcess();
+  const std::string enable_type = command_line->GetSwitchValueASCII("ohos-enable-gwp-asan-type");
+  if (enable_type.empty()) {
+    LOG(INFO) << "gwp-asan Not supported.";
     return;
   }
-  if (gwp_asan_parameters.process_type != "renderer") {
-    LOG(INFO) << "gwp-asan only support for renderer, pass process_type = "
-      << gwp_asan_parameters.process_type;
+  if (enable_type != "all" && enable_type != gwp_asan_parameters.process_type) {
+    LOG(INFO) << "gwp-asan is off for this process, enable_type = "
+      << enable_type << ", process_type = " << gwp_asan_parameters.process_type;
     return;
   }
 #endif

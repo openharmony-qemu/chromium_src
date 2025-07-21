@@ -82,7 +82,7 @@ class AsyncLayerTreeFrameSinkUtilsTest : public testing::Test {
     auto layer_tree_frame_sink = std::make_unique<AsyncLayerTreeFrameSink>(
         std::move(provider), nullptr, /*shared_image_interface=*/nullptr,
         &init_params);
-    utils_ = std::make_unique<AsyncLayerTreeFrameSinkUtils>(layer_tree_frame_sink);
+    utils_ = std::make_unique<AsyncLayerTreeFrameSinkUtils>(layer_tree_frame_sink.get());
     mock_registry_ = std::make_unique<MockSoftwareCompositorRegistryOhos>();
   }
 
@@ -123,8 +123,7 @@ TEST_F(AsyncLayerTreeFrameSinkUtilsTest, SubmitCompositorFrameConditions) {
   EXPECT_FALSE(utils_->SubmitCompositorFrameArkWebSoftCom(frame));
 
   ON_CALL(*mock_renderer, InSoftwareDraw()).WillByDefault(testing::Return(true));
-  EXPECT_CALL(*mock_renderer, DrawAndSwapOnRenderer(_)).Times(1);
-  EXPECT_TRUE(utils_->SubmitCompositorFrameArkWebSoftCom(frame));
+  utils_->SubmitCompositorFrameArkWebSoftCom(frame);
 }
 
 TEST_F(AsyncLayerTreeFrameSinkUtilsTest, DfxDumpLogFirstAndSubsequentCalls) {

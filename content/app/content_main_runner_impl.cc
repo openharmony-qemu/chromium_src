@@ -1344,10 +1344,6 @@ bool ContentMainRunnerImpl::RunRenderRemoteProxy(
       process_type != switches::kGpuProcess) {
     return true;
   }
-  RenderRemoteProxy::CreateAndRegist(command_line);
-  if (!RenderRemoteProxy::WaitForBrowserFd()) {
-    return false;
-  }
   return true;
 }
 #endif

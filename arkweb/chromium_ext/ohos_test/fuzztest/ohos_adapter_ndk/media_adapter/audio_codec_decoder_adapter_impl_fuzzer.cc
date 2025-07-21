@@ -90,9 +90,6 @@ void AudioCodecDecoderImpl__DecoderCencInfo(FuzzedDataProvider* fdp)
   std::vector<uint32_t> payLoadLens(tmpLen);
   fdp->ConsumeData(clearHeaderLens.data(), tmpLen);
   fdp->ConsumeData(payLoadLens.data(), tmpLen);
-  int64_t biteRate = fdp->ConsumeIntegral<int64_t>();
-  bool isAdts = fdp->ConsumeBool();
-
   cencInfo->SetKeyId(keyId.data());
   cencInfo->SetKeyIdLen(keyIdLen);
   cencInfo->SetIv(iv.data());

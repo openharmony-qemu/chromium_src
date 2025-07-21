@@ -309,7 +309,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void SetWebPreferences(const CefBrowserSettings& browser_settings) override {}
 
-  void PutUserAgent(const CefString& ua) override {}
+  void PutUserAgent(const CefString& ua, bool from_app) override {}
 
   CefString DefaultUserAgent() override { return CefString(); }
 

@@ -20,6 +20,7 @@
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/types/expected_macros.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/extensions/browser_extension_window_controller.h"
 #include "chrome/browser/extensions/chrome_extension_function_details.h"
@@ -73,6 +74,10 @@
 #include "third_party/blink/public/common/chrome_debug_urls.h"
 #include "third_party/blink/public/common/features.h"
 #include "url/gurl.h"
+
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/libcef/browser/chrome/extensions/chrome_extension_util.h"
+#endif
 
 using content::NavigationEntry;
 using content::WebContents;
@@ -719,6 +724,14 @@ bool ExtensionTabUtil::GetTabById(int tab_id,
       }
     }
   }
+
+#if BUILDFLAG(ENABLE_CEF)
+  if (cef::GetAlloyTabById(tab_id, profile, include_incognito, out_contents)) {
+    // |out_window| and |out_tab_index| are tied to a specific Browser window,
+    // which doesn't exist for an Alloy style browser.
+    return true;
+  }
+#endif  // BUILDFLAG(ENABLE_CEF)
 
   if (base::FeatureList::IsEnabled(blink::features::kPrerender2InNewTab)) {
     // Prerendering tab is not visible and it cannot be in `TabStripModel`, if

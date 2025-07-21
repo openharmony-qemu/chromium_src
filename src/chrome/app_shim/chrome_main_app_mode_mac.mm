@@ -35,6 +35,7 @@
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/threading/thread.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/app/chrome_crash_reporter_client.h"
 #include "chrome/app_shim/app_shim_controller.h"
 #include "chrome/app_shim/app_shim_delegate.h"
@@ -171,7 +172,9 @@ int APP_SHIM_ENTRY_POINT_NAME(const app_mode::ChromeAppModeInfo* info) {
         base::FilePath(info->user_data_dir).DirName().DirName().DirName();
 
     // TODO(crbug.com/40807881): Specify `user_data_dir` to  CrashPad.
+#if !BUILDFLAG(ENABLE_CEF)
     ChromeCrashReporterClient::Create();
+#endif
     crash_reporter::InitializeCrashpad(true, "app_shim");
 
     base::PathService::OverrideAndCreateIfNeeded(

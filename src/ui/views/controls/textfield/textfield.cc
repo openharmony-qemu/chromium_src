@@ -3028,6 +3028,10 @@ void Textfield::OnCursorBlinkTimerFired() {
 void Textfield::OnEnabledChanged() {
   if (GetInputMethod())
     GetInputMethod()->OnTextInputTypeChanged(this);
+  if (GetWidget()) {
+    SetColor(GetTextColor());
+    UpdateBackgroundColor();
+  }
   UpdateDefaultBorder();
 
   // Only expose readonly if enabled. Don't overwrite the disabled restriction.

@@ -1385,10 +1385,19 @@
   "<(SHARED_INTERMEDIATE_DIR)/third_party/blink/public/strings/permission_element_generated_strings.grd": {
     "META": {"sizes": {"messages": [2000],}},
     "messages": [10080],
-  }
+  },
 
   # END "everything else" section.
   # Everything but chrome/, components/, content/, and ios/
+
+  "cef/libcef/resources/cef_resources.grd": {
+    "META": {"align": 31500},
+    "includes": [31500],
+  },
+  "cef/libcef/resources/cef_strings.grd": {
+    "META": {"align": 32000},
+    "messages": [32000],
+  }
 
   # Thinking about appending to the end?
   # Please read the header and find the right section above instead.

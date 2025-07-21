@@ -583,6 +583,14 @@ gfx::Rect FindBarHost::GetDialogPosition(gfx::Rect avoid_overlapping_rect) {
   // The BrowserView does Layout for the components that we care about
   // positioning relative to, so we ask it to tell us where we should go.
   gfx::Rect find_bar_bounds = browser_view_->GetFindBarBoundingBox();
+
+#if BUILDFLAG(ENABLE_CEF)
+  if (browser_view_->browser() && browser_view_->browser()->cef_delegate()) {
+    browser_view_->browser()->cef_delegate()->UpdateFindBarBoundingBox(
+        &find_bar_bounds);
+  }
+#endif
+
   if (find_bar_bounds.IsEmpty()) {
     return gfx::Rect();
   }

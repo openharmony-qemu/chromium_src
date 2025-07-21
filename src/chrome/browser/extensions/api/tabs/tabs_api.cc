@@ -1652,7 +1652,7 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
       return RespondNow(Error(ExtensionTabUtil::kTabStripNotEditableError));
     }
 
-    if (tab_strip->active_index() != tab_index) {
+    if (tab_strip && tab_strip->active_index() != tab_index) {
       tab_strip->ActivateTabAt(tab_index);
       DCHECK_EQ(contents, tab_strip->GetActiveWebContents());
     }
@@ -1666,7 +1666,7 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
     }
 
     bool highlighted = *params->update_properties.highlighted;
-    if (highlighted != tab_strip->IsTabSelected(tab_index)) {
+    if (tab_strip && highlighted != tab_strip->IsTabSelected(tab_index)) {
       tab_strip->ToggleSelectionAt(tab_index);
     }
   }
@@ -1678,7 +1678,7 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
         kCannotUpdateMuteCaptured, base::NumberToString(tab_id))));
   }
 
-  if (params->update_properties.opener_tab_id) {
+  if (tab_strip && params->update_properties.opener_tab_id) {
     int opener_id = *params->update_properties.opener_tab_id;
     WebContents* opener_contents = nullptr;
     if (opener_id == tab_id) {
@@ -1713,7 +1713,7 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
         ->SetAutoDiscardable(state);
   }
 
-  if (params->update_properties.pinned) {
+  if (tab_strip && params->update_properties.pinned) {
     // Bug fix for crbug.com/1197888. Don't let the extension update the tab if
     // the user is dragging tabs.
     if (!ExtensionTabUtil::IsTabStripEditable()) {
@@ -1734,7 +1734,8 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
   // Navigate the tab to a new location if the url is different.
   if (params->update_properties.url) {
     std::string updated_url = *params->update_properties.url;
-    if (browser->profile()->IsIncognitoProfile() &&
+    auto* profile = Profile::FromBrowserContext(browser_context());
+    if (profile->IsIncognitoProfile() &&
         !IsURLAllowedInIncognito(GURL(updated_url))) {
       return RespondNow(Error(ErrorUtils::FormatErrorMessage(
           tabs_constants::kURLsNotAllowedInIncognitoError, updated_url)));
@@ -1749,7 +1750,7 @@ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
       return RespondNow(Error(std::move(error)));
     }
 
-    NotifyExtensionTelemetry(Profile::FromBrowserContext(browser_context()),
+    NotifyExtensionTelemetry(profile,
                              extension(), safe_browsing::TabsApiInfo::UPDATE,
                              current_url, updated_url, js_callstack());
   }

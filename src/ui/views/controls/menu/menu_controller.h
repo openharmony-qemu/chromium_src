@@ -138,7 +138,9 @@ class VIEWS_EXPORT MenuController final : public gfx::AnimationDelegate,
            MenuAnchorPosition position,
            bool context_menu,
            bool is_nested_drag,
-           gfx::NativeView native_view_for_gestures = gfx::NativeView());
+           gfx::NativeView native_view_for_gestures = gfx::NativeView(),
+           gfx::AcceleratedWidget parent_widget =
+               gfx::kNullAcceleratedWidget);
 
   bool for_drop() const { return for_drop_; }
 
@@ -737,6 +739,8 @@ class VIEWS_EXPORT MenuController final : public gfx::AnimationDelegate,
   // An optional NativeView to which gestures will be forwarded to if
   // RunType::SEND_GESTURE_EVENTS_TO_OWNER is set.
   gfx::NativeView native_view_for_gestures_ = gfx::NativeView();
+
+  gfx::AcceleratedWidget parent_widget_ = gfx::kNullAcceleratedWidget;
 
   // Indicates a possible drag operation.
   bool possible_drag_ = false;

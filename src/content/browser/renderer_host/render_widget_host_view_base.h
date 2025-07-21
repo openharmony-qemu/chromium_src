@@ -70,6 +70,7 @@ namespace content {
 class DevicePosturePlatformProvider;
 class MouseWheelPhaseHandler;
 class RenderWidgetHostImpl;
+class RenderWidgetHostViewGuest;
 class ScopedViewTransitionResources;
 class TextInputManager;
 class TouchSelectionControllerClientManager;
@@ -150,6 +151,9 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   float GetDeviceScaleFactor() const final;
   bool IsPointerLocked() override;
 
+  void SetHasExternalParent(bool val) override;
+  bool HasExternalParent() const override;
+
   // Identical to `CopyFromSurface()`, except that this method issues the
   // `viz::CopyOutputRequest` against the exact `viz::Surface` currently
   // embedded by this View, while `CopyFromSurface()` may return a copy of any
@@ -210,6 +214,10 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
 
   // Called when screen information or native widget bounds change.
   virtual void UpdateScreenInfo();
+
+  // Generates the most current set of ScreenInfos from the current set of
+  // displays in the system for use in UpdateScreenInfo.
+  virtual display::ScreenInfos GetNewScreenInfosForUpdate();
 
   // Called by the TextInputManager to notify the view about being removed from
   // the list of registered views, i.e., TextInputManager is no longer tracking
@@ -336,6 +344,12 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   virtual void InitAsPopup(RenderWidgetHostView* parent_host_view,
                            const gfx::Rect& bounds,
                            const gfx::Rect& anchor_rect) = 0;
+
+  // Perform all the initialization steps necessary for this object to represent
+  // the platform widget owned by |guest_view| and embedded in
+  // |parent_host_view|.
+  virtual void InitAsGuest(RenderWidgetHostView* parent_host_view,
+                           RenderWidgetHostViewGuest* guest_view) {}
 
   // Indicates whether the page has finished loading.
   virtual void SetIsLoading(bool is_loading) = 0;
@@ -587,6 +601,10 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   // to all displays.
   gfx::Size system_cursor_size_;
 
+  // True if the widget has a external parent view/window outside of the
+  // Chromium-controlled view/window hierarchy.
+  bool has_external_parent_ = false;
+
  private:
   FRIEND_TEST_ALL_PREFIXES(
       BrowserSideFlingBrowserTest,
@@ -607,10 +625,6 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
                            NoFallbackIfSwapFailedBeforeNavigation);
 
   void SynchronizeVisualProperties();
-
-  // Generates the most current set of ScreenInfos from the current set of
-  // displays in the system for use in UpdateScreenInfo.
-  display::ScreenInfos GetNewScreenInfosForUpdate();
 
   // Called when display properties that need to be synchronized with the
   // renderer process changes. This method is called before notifying

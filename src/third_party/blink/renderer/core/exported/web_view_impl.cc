@@ -257,8 +257,13 @@ void WebView::SetUseExternalPopupMenus(bool use_external_popup_menus) {
   g_should_use_external_popup_menus = use_external_popup_menus;
 }
 
-bool WebViewImpl::UseExternalPopupMenus() {
-  return g_should_use_external_popup_menus;
+void WebViewImpl::SetUseExternalPopupMenusThisInstance(
+    bool use_external_popup_menus) {
+  should_use_external_popup_menus_ = use_external_popup_menus;
+}
+
+bool WebViewImpl::UseExternalPopupMenus() const {
+  return should_use_external_popup_menus_;
 }
 
 namespace {
@@ -617,6 +622,7 @@ WebViewImpl::WebViewImpl(
           blink::ZoomFactorToZoomLevel(kMinimumBrowserZoomFactor)),
       maximum_zoom_level_(
           blink::ZoomFactorToZoomLevel(kMaximumBrowserZoomFactor)),
+      should_use_external_popup_menus_(g_should_use_external_popup_menus),
       does_composite_(does_composite),
       fullscreen_controller_(std::make_unique<FullscreenController>(this)),
       page_base_background_color_(

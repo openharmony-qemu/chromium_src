@@ -8260,9 +8260,21 @@ NavigationRequest::GetOriginForURLLoaderFactoryBeforeResponseWithDebugInfo(
       (sandbox_flags & network::mojom::WebSandboxFlags::kOrigin) ==
       network::mojom::WebSandboxFlags::kOrigin;
   if (use_opaque_origin) {
+    origin_and_debug_info.second += ", sandbox_flags";
+  }
+
+  if (!origin_and_debug_info.first.GetURL().IsStandard()) {
+    // Always return an opaque origin for non-standard URLs. Otherwise, the
+    // CanAccessDataForOrigin() check may fail for unregistered custom scheme
+    // requests in CEF.
+    use_opaque_origin = true;
+    origin_and_debug_info.second += ", cef_nonstandard";
+  }
+
+  if (use_opaque_origin) {
     origin_and_debug_info =
         std::pair(origin_and_debug_info.first.DeriveNewOpaqueOrigin(),
-                  origin_and_debug_info.second + ", sandbox_flags");
+                  origin_and_debug_info.second);
   }
 
   return origin_and_debug_info;
@@ -8370,11 +8382,20 @@ NavigationRequest::GetOriginForURLLoaderFactoryAfterResponseWithDebugInfo() {
       DetermineInitiatorRelationship(initiator_rfh,
                                      frame_tree_node_->current_frame_host()));
 
+  if (origin_with_debug_info.first.opaque() &&
+      origin_with_debug_info.second.find("cef_nonstandard") !=
+          std::string::npos) {
+    // Always return an opaque origin for non-standard URLs. Otherwise, the
+    // below CanAccessDataForOrigin() check may fail for unregistered custom
+    // scheme requests in CEF.
+    return origin_with_debug_info;
+  }
+
   // MHTML documents should commit as an opaque origin. They should not be able
   // to make network request on behalf of the real origin.
   // TODO(crbug.com/370979008): Migrate to CHECK.
-  DUMP_WILL_BE_CHECK(!IsMhtmlOrSubframe() ||
-                     origin_with_debug_info.first.opaque());
+  // DUMP_WILL_BE_CHECK(!IsMhtmlOrSubframe() ||
+  //                    origin_with_debug_info.first.opaque());
 
   // If the target of this navigation will be rendered in a RenderFrameHost,
   // then verify that the chosen origin is allowed to be accessed from that

@@ -1,0 +1,379 @@
+diff --git base/BUILD.gn base/BUILD.gn
+index 5dee8a9226d24..a8215969e3494 100644
+--- base/BUILD.gn
++++ base/BUILD.gn
+@@ -43,6 +43,7 @@ import("//build/rust/rust_static_library.gni")
+ import("//build/timestamp.gni")
+ import("//build/util/process_version.gni")
+ import("//build_overrides/build.gni")
++import("//cef/libcef/features/features.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ import("//testing/test.gni")
+ 
+@@ -1483,7 +1484,11 @@ component("base") {
+     "hash/md5_constexpr_internal.h",
+     "hash/sha1.h",
+   ]
+-  if (is_nacl) {
++  deps += [ "//cef/libcef/features" ]
++  if (enable_cef) {
++    configs += [ "//cef/libcef/features:config" ]
++  }
++  if (is_nacl || is_cef_sandbox_build) {
+     sources += [
+       "hash/md5_nacl.cc",
+       "hash/md5_nacl.h",
+@@ -1916,6 +1921,12 @@ component("base") {
+       defines += [ "COM_INIT_CHECK_HOOK_DISABLED" ]
+     }
+ 
++    if (!use_custom_libcxx) {
++      # Enable the VS 2015 Update 2 fix when building with the MSVC standard
++      # library.
++      defines += [ "_ENABLE_ATOMIC_ALIGNMENT_FIX" ]
++    }
++
+     libs += [
+       "cfgmgr32.lib",
+       "ntdll.lib",
+diff --git base/allocator/dispatcher/dispatcher.cc base/allocator/dispatcher/dispatcher.cc
+index 3dd632a89dc90..a64cd61ddb02b 100644
+--- base/allocator/dispatcher/dispatcher.cc
++++ base/allocator/dispatcher/dispatcher.cc
+@@ -8,6 +8,7 @@
+ #include "base/check.h"
+ #include "base/dcheck_is_on.h"
+ #include "base/no_destructor.h"
++#include "cef/libcef/features/features.h"
+ #include "partition_alloc/buildflags.h"
+ #include "partition_alloc/shim/allocator_shim.h"
+ 
+@@ -33,7 +34,7 @@ struct Dispatcher::Impl {
+   }
+ 
+   void Reset() {
+-#if DCHECK_IS_ON()
++#if DCHECK_IS_ON() && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+     DCHECK([&] {
+       auto const was_set = is_initialized_check_flag_.test_and_set();
+       is_initialized_check_flag_.clear();
+diff --git base/hash/md5.h base/hash/md5.h
+index 215d636fec275..922e88f31b999 100644
+--- base/hash/md5.h
++++ base/hash/md5.h
+@@ -11,8 +11,9 @@
+ #include "base/base_export.h"
+ #include "base/containers/span.h"
+ #include "build/build_config.h"
++#include "cef/libcef/features/features.h"
+ 
+-#if BUILDFLAG(IS_NACL)
++#if BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+ #include "base/hash/md5_nacl.h"
+ #else
+ #include "base/hash/md5_boringssl.h"
+diff --git base/hash/sha1.h base/hash/sha1.h
+index 2158b648ca58a..8a8cb13b2fd74 100644
+--- base/hash/sha1.h
++++ base/hash/sha1.h
+@@ -15,7 +15,9 @@
+ #include "base/compiler_specific.h"
+ #include "base/containers/span.h"
+ #include "build/build_config.h"
+-#if BUILDFLAG(IS_NACL)
++#include "cef/libcef/features/features.h"
++
++#if BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+ #include "base/hash/sha1_nacl.h"
+ #else
+ #include "base/hash/sha1_boringssl.h"
+diff --git base/json/json_reader.cc base/json/json_reader.cc
+index b3db0dea0fff6..e53ff0049559a 100644
+--- base/json/json_reader.cc
++++ base/json/json_reader.cc
+@@ -12,8 +12,9 @@
+ #include "base/logging.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "build/build_config.h"
++#include "cef/libcef/features/features.h"
+ 
+-#if !BUILDFLAG(IS_NACL)
++#if !(BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD))
+ #include "base/strings/string_view_rust.h"
+ #include "third_party/rust/serde_json_lenient/v0_2/wrapper/functions.h"
+ #include "third_party/rust/serde_json_lenient/v0_2/wrapper/lib.rs.h"
+@@ -23,7 +24,7 @@ namespace base {
+ 
+ // TODO(crbug.com/40811643): Move the C++ parser into components/nacl to just
+ // run in-process there. Don't compile base::JSONReader on NaCL at all.
+-#if !BUILDFLAG(IS_NACL)
++#if !(BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD))
+ 
+ namespace {
+ using serde_json_lenient::ContextPointer;
+@@ -134,16 +135,16 @@ JSONReader::Result DecodeJSONInRust(std::string_view json,
+ 
+ }  // anonymous namespace
+ 
+-#endif  // !BUILDFLAG(IS_NACL)
++#endif  // !(BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD))
+ 
+ // static
+ std::optional<Value> JSONReader::Read(std::string_view json,
+                                       int options,
+                                       size_t max_depth) {
+-#if BUILDFLAG(IS_NACL)
++#if (BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD))
+   internal::JSONParser parser(options, max_depth);
+   return parser.Parse(json);
+-#else   // BUILDFLAG(IS_NACL)
++#else   // (BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD))
+   SCOPED_UMA_HISTOGRAM_TIMER_MICROS(kSecurityJsonParsingTime);
+   if (UsingRust()) {
+     JSONReader::Result result = DecodeJSONInRust(json, options, max_depth);
+@@ -155,7 +156,7 @@ std::optional<Value> JSONReader::Read(std::string_view json,
+     internal::JSONParser parser(options, max_depth);
+     return parser.Parse(json);
+   }
+-#endif  // BUILDFLAG(IS_NACL)
++#endif  // (BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD))
+ }
+ 
+ // static
+@@ -173,7 +174,7 @@ std::optional<Value::Dict> JSONReader::ReadDict(std::string_view json,
+ JSONReader::Result JSONReader::ReadAndReturnValueWithError(
+     std::string_view json,
+     int options) {
+-#if BUILDFLAG(IS_NACL)
++#if (BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD))
+   internal::JSONParser parser(options);
+   auto value = parser.Parse(json);
+   if (!value) {
+@@ -185,7 +186,7 @@ JSONReader::Result JSONReader::ReadAndReturnValueWithError(
+   }
+ 
+   return std::move(*value);
+-#else   // BUILDFLAG(IS_NACL)
++#else   // (BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD))
+   SCOPED_UMA_HISTOGRAM_TIMER_MICROS(kSecurityJsonParsingTime);
+   if (UsingRust()) {
+     return DecodeJSONInRust(json, options, internal::kAbsoluteMaxDepth);
+@@ -202,7 +203,7 @@ JSONReader::Result JSONReader::ReadAndReturnValueWithError(
+ 
+     return std::move(*value);
+   }
+-#endif  // BUILDFLAG(IS_NACL)
++#endif  // (BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD))
+ }
+ 
+ // static
+@@ -213,7 +214,7 @@ bool JSONReader::UsingRust() {
+   if (!base::FeatureList::GetInstance()) {
+     return false;
+   }
+-#if BUILDFLAG(IS_NACL)
++#if (BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD))
+   return false;
+ #else
+   return base::FeatureList::IsEnabled(base::features::kUseRustJsonParser);
+diff --git base/logging.cc base/logging.cc
+index 508ce135131aa..4158b7d5273b0 100644
+--- base/logging.cc
++++ base/logging.cc
+@@ -60,6 +60,7 @@
+ #include "base/vlog.h"
+ #include "build/build_config.h"
+ #include "build/chromeos_buildflags.h"
++#include "cef/libcef/features/features.h"
+ #include "third_party/abseil-cpp/absl/base/internal/raw_logging.h"
+ #include "third_party/abseil-cpp/absl/cleanup/cleanup.h"
+ 
+@@ -526,7 +527,7 @@ bool BaseInitLoggingImpl(const LoggingSettings& settings) {
+   }
+ #endif
+ 
+-#if !BUILDFLAG(IS_NACL)
++#if !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+   // Connects Rust logging with the //base logging functionality.
+   internal::init_rust_log_crate();
+ #endif
+diff --git base/metrics/crc32.cc base/metrics/crc32.cc
+index 83e3cee2579ab..8238767ab9126 100644
+--- base/metrics/crc32.cc
++++ base/metrics/crc32.cc
+@@ -3,14 +3,15 @@
+ // found in the LICENSE file.
+ 
+ #include "base/metrics/crc32.h"
++#include "cef/libcef/features/features.h"
+ 
+-#if !BUILDFLAG(IS_NACL)
++#if !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+ #include "third_party/zlib/zlib.h"
+ #endif  // !BUILDFLAG(IS_NACL)
+ 
+ namespace base {
+ 
+-#if !BUILDFLAG(IS_NACL)
++#if !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+ uint32_t Crc32(uint32_t sum, span<const uint8_t> data) {
+   if (data.empty()) {
+     return sum;
+diff --git base/rand_util.h base/rand_util.h
+index b198a7198aab9..01bc8e9b6ad1f 100644
+--- base/rand_util.h
++++ base/rand_util.h
+@@ -17,8 +17,9 @@
+ #include "base/containers/span.h"
+ #include "base/gtest_prod_util.h"
+ #include "build/build_config.h"
++#include "cef/libcef/features/features.h"
+ 
+-#if !BUILDFLAG(IS_NACL)
++#if !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+ #include "third_party/boringssl/src/include/openssl/rand.h"
+ #endif
+ 
+@@ -117,7 +118,7 @@ class RandomBitGenerator {
+   ~RandomBitGenerator() = default;
+ };
+ 
+-#if !BUILDFLAG(IS_NACL)
++#if !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+ class NonAllocatingRandomBitGenerator {
+  public:
+   using result_type = uint64_t;
+diff --git base/rand_util_win.cc base/rand_util_win.cc
+index 9c2ae8389bfb2..e639a4d85b3dd 100644
+--- base/rand_util_win.cc
++++ base/rand_util_win.cc
+@@ -20,7 +20,11 @@
+ 
+ #include "base/check.h"
+ #include "base/feature_list.h"
++#include "cef/libcef/features/features.h"
++
++#if !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+ #include "third_party/boringssl/src/include/openssl/rand.h"
++#endif
+ 
+ // Prototype for ProcessPrng.
+ // See: https://learn.microsoft.com/en-us/windows/win32/seccng/processprng
+@@ -32,6 +36,7 @@ namespace base {
+ 
+ namespace internal {
+ 
++#if !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+ namespace {
+ 
+ // The BoringSSl helpers are duplicated in rand_util_fuchsia.cc and
+@@ -53,6 +58,10 @@ bool UseBoringSSLForRandBytes() {
+   return g_use_boringssl.load(std::memory_order_relaxed);
+ }
+ 
++#else  // !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
++void ConfigureBoringSSLBackedRandBytesFieldTrial() {}
++#endif
++
+ }  // namespace internal
+ 
+ namespace {
+@@ -70,11 +79,13 @@ decltype(&ProcessPrng) GetProcessPrng() {
+ }
+ 
+ void RandBytesInternal(span<uint8_t> output, bool avoid_allocation) {
++#if !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+   if (!avoid_allocation && internal::UseBoringSSLForRandBytes()) {
+     // BoringSSL's RAND_bytes always returns 1. Any error aborts the program.
+     (void)RAND_bytes(output.data(), output.size());
+     return;
+   }
++#endif  // !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+ 
+   static decltype(&ProcessPrng) process_prng_fn = GetProcessPrng();
+   BOOL success =
+diff --git base/unguessable_token.cc base/unguessable_token.cc
+index ea33ca66f384c..33f4cc76f76bd 100644
+--- base/unguessable_token.cc
++++ base/unguessable_token.cc
+@@ -11,8 +11,9 @@
+ #include "base/format_macros.h"
+ #include "base/rand_util.h"
+ #include "build/build_config.h"
++#include "cef/libcef/features/features.h"
+ 
+-#if !BUILDFLAG(IS_NACL)
++#if !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+ #include "third_party/boringssl/src/include/openssl/mem.h"
+ #endif
+ 
+@@ -58,7 +59,7 @@ std::optional<UnguessableToken> UnguessableToken::DeserializeFromString(
+ }
+ 
+ bool operator==(const UnguessableToken& lhs, const UnguessableToken& rhs) {
+-#if BUILDFLAG(IS_NACL)
++#if BUILDFLAG(IS_NACL) || BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+   // BoringSSL is unavailable for NaCl builds so it remains timing dependent.
+   return lhs.token_ == rhs.token_;
+ #else
+diff --git base/win/sid.cc base/win/sid.cc
+index 2f250ba9bf79d..0af427e779266 100644
+--- base/win/sid.cc
++++ base/win/sid.cc
+@@ -29,12 +29,56 @@
+ #include "base/win/scoped_handle.h"
+ #include "base/win/scoped_localalloc.h"
+ #include "base/win/windows_version.h"
++#include "cef/libcef/features/features.h"
++
++#if !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
+ #include "third_party/boringssl/src/include/openssl/sha.h"
++#else
++#include <wincrypt.h>
++#endif
+ 
+ namespace base::win {
+ 
+ namespace {
+ 
++#if BUILDFLAG(IS_CEF_SANDBOX_BUILD)
++
++#define SHA256_DIGEST_LENGTH 32
++
++bool SHA256(const uint8_t* InData, size_t InDataLen, uint8_t* OutHash) {
++  HCRYPTPROV hProv = 0;
++  HCRYPTHASH hHash = 0;
++
++  if (!CryptAcquireContext(&hProv, nullptr, nullptr, PROV_RSA_AES,
++                           CRYPT_VERIFYCONTEXT)) {
++    return false;
++  }
++
++  if (!CryptCreateHash(hProv, CALG_SHA_256, 0, 0, &hHash)) {
++    CryptReleaseContext(hProv, 0);
++    return false;
++  }
++
++  if (!CryptHashData(hHash, InData, static_cast<DWORD>(InDataLen), 0)) {
++    CryptDestroyHash(hHash);
++    CryptReleaseContext(hProv, 0);
++    return false;
++  }
++
++  DWORD dwHashLen = SHA256_DIGEST_LENGTH;
++  if (!CryptGetHashParam(hHash, HP_HASHVAL, OutHash, &dwHashLen, 0)) {
++    CryptDestroyHash(hHash);
++    CryptReleaseContext(hProv, 0);
++    return false;
++  }
++
++  CryptDestroyHash(hHash);
++  CryptReleaseContext(hProv, 0);
++  return true;
++}
++
++#endif  // BUILDFLAG(IS_CEF_SANDBOX_BUILD)
++
+ template <typename Iterator>
+ Sid FromSubAuthorities(const SID_IDENTIFIER_AUTHORITY& identifier_authority,
+                        size_t sub_authority_count,

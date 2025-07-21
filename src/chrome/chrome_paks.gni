@@ -6,6 +6,7 @@ import("//ash/ambient/resources/resources.gni")
 import("//build/config/chrome_build.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/locales.gni")
+import("//cef/libcef/features/features.gni")
 import("//chrome/browser/buildflags.gni")
 import("//chrome/common/features.gni")
 import("//components/compose/features.gni")
@@ -478,6 +479,10 @@ template("chrome_extra_paks") {
         "$root_gen_dir/extensions/extensions_resources.pak",
       ]
       deps += [ "//extensions:extensions_resources" ]
+    }
+    if (enable_cef) {
+      sources += [ "$root_gen_dir/cef/cef_resources.pak" ]
+      deps += [ "//cef:cef_resources" ]
     }
     if (enable_extensions) {
       sources += [ "$root_gen_dir/chrome/extensions_resources.pak" ]

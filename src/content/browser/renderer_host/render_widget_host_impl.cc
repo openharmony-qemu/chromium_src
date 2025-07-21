@@ -791,7 +791,7 @@ void RenderWidgetHostImpl::WasHidden() {
 
   // Cancel pending pointer lock requests, unless there's an open user prompt.
   // Prompts should remain open and functional across tab switches.
-  if (!delegate_->IsWaitingForPointerLockPrompt(this)) {
+  if (!delegate_ || !delegate_->IsWaitingForPointerLockPrompt(this)) {
     RejectPointerLockOrUnlockIfNecessary(
         blink::mojom::PointerLockResult::kWrongDocument);
   }
@@ -3246,6 +3246,11 @@ void RenderWidgetHostImpl::DecrementInFlightEventCount(
       RestartInputEventAckTimeoutIfNecessary();
     }
   }
+}
+
+void RenderWidgetHostImpl::SetCompositorForFlingScheduler(
+    ui::Compositor* compositor) {
+  GetRenderInputRouter()->fling_scheduler()->SetCompositor(compositor);
 }
 
 void RenderWidgetHostImpl::AddPendingUserActivation(

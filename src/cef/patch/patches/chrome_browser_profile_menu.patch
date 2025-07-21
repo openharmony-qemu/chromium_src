@@ -1,0 +1,75 @@
+diff --git chrome/browser/ui/bookmarks/bookmark_stats.cc chrome/browser/ui/bookmarks/bookmark_stats.cc
+index bd47b3f13aa2a..0f4f3c47d2647 100644
+--- chrome/browser/ui/bookmarks/bookmark_stats.cc
++++ chrome/browser/ui/bookmarks/bookmark_stats.cc
+@@ -21,7 +21,9 @@ bool IsBookmarkBarLocation(BookmarkLaunchLocation location) {
+ 
+ auto GetMetricProfile(const Profile* profile) {
+   DCHECK(profile);
+-  DCHECK(profile->IsRegularProfile() || profile->IsIncognitoProfile());
++  DCHECK(profile->IsRegularProfile() || profile->IsIncognitoProfile() ||
++         (profile->IsOffTheRecord() &&
++          profile->GetOTRProfileID().IsUniqueForCEF()));
+   return profile->IsRegularProfile()
+              ? profile_metrics::BrowserProfileType::kRegular
+              : profile_metrics::BrowserProfileType::kIncognito;
+diff --git chrome/browser/ui/views/incognito_clear_browsing_data_dialog.cc chrome/browser/ui/views/incognito_clear_browsing_data_dialog.cc
+index 3ac5ebf1b49b5..d41cffecb5603 100644
+--- chrome/browser/ui/views/incognito_clear_browsing_data_dialog.cc
++++ chrome/browser/ui/views/incognito_clear_browsing_data_dialog.cc
+@@ -32,7 +32,9 @@ IncognitoClearBrowsingDataDialog::IncognitoClearBrowsingDataDialog(
+       dialog_type_(type),
+       incognito_profile_(incognito_profile) {
+   DCHECK(incognito_profile_);
+-  DCHECK(incognito_profile_->IsIncognitoProfile());
++  DCHECK(incognito_profile_->IsIncognitoProfile() ||
++         (incognito_profile_->IsOffTheRecord() &&
++          incognito_profile_->GetOTRProfileID().IsUniqueForCEF()));
+   SetButtons(static_cast<int>(ui::mojom::DialogButton::kNone));
+   SetShowCloseButton(true);
+ 
+diff --git chrome/browser/ui/views/incognito_clear_browsing_data_dialog_coordinator.cc chrome/browser/ui/views/incognito_clear_browsing_data_dialog_coordinator.cc
+index caa20ec03434a..2a3ca921445c1 100644
+--- chrome/browser/ui/views/incognito_clear_browsing_data_dialog_coordinator.cc
++++ chrome/browser/ui/views/incognito_clear_browsing_data_dialog_coordinator.cc
+@@ -26,6 +26,10 @@ void IncognitoClearBrowsingDataDialogCoordinator::Show(
+           ->toolbar_button_provider()
+           ->GetAvatarToolbarButton();
+ 
++  // The full toolbar may not be visible.
++  if (!avatar_toolbar_button)
++    return;
++
+   auto bubble = std::make_unique<IncognitoClearBrowsingDataDialog>(
+       avatar_toolbar_button, GetBrowser().profile(), type);
+   DCHECK_EQ(nullptr, bubble_tracker_.view());
+diff --git chrome/browser/ui/views/profiles/incognito_menu_view.cc chrome/browser/ui/views/profiles/incognito_menu_view.cc
+index 00510c991e657..830db4087c274 100644
+--- chrome/browser/ui/views/profiles/incognito_menu_view.cc
++++ chrome/browser/ui/views/profiles/incognito_menu_view.cc
+@@ -36,7 +36,9 @@
+ IncognitoMenuView::IncognitoMenuView(views::Button* anchor_button,
+                                      Browser* browser)
+     : ProfileMenuViewBase(anchor_button, browser) {
+-  DCHECK(browser->profile()->IsIncognitoProfile());
++  DCHECK(browser->profile()->IsIncognitoProfile() ||
++         (browser->profile()->IsOffTheRecord() &&
++          browser->profile()->GetOTRProfileID().IsUniqueForCEF()));
+   GetViewAccessibility().SetName(GetAccessibleWindowTitle(),
+                                  ax::mojom::NameFrom::kAttribute);
+ 
+diff --git chrome/browser/ui/views/profiles/profile_menu_coordinator.cc chrome/browser/ui/views/profiles/profile_menu_coordinator.cc
+index 58026d48e15a6..acb3b51f86943 100644
+--- chrome/browser/ui/views/profiles/profile_menu_coordinator.cc
++++ chrome/browser/ui/views/profiles/profile_menu_coordinator.cc
+@@ -52,7 +52,9 @@ void ProfileMenuCoordinator::Show(bool is_source_accelerator) {
+ 
+   std::unique_ptr<ProfileMenuViewBase> bubble;
+   bool is_incognito = browser.profile()->IsIncognitoProfile();
+-  if (is_incognito) {
++  if (is_incognito ||
++         (browser.profile()->IsOffTheRecord() &&
++          browser.profile()->GetOTRProfileID().IsUniqueForCEF())) {
+     bubble =
+         std::make_unique<IncognitoMenuView>(avatar_toolbar_button, &browser);
+   } else {

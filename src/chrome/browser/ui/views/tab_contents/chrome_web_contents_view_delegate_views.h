@@ -55,6 +55,7 @@ class ChromeWebContentsViewDelegateViews
       content::RenderFrameHost& render_frame_host,
       const content::ContextMenuParams& params) override;
   void ShowMenu(std::unique_ptr<RenderViewContextMenuBase> menu) override;
+  bool IsMenuRunning() override;
 
  private:
   // The context menu is reset every time we show it, but we keep a pointer to

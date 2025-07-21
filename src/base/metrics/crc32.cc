@@ -3,14 +3,15 @@
 // found in the LICENSE file.
 
 #include "base/metrics/crc32.h"
+#include "cef/libcef/features/features.h"
 
-#if !BUILDFLAG(IS_NACL)
+#if !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
 #include "third_party/zlib/zlib.h"
 #endif  // !BUILDFLAG(IS_NACL)
 
 namespace base {
 
-#if !BUILDFLAG(IS_NACL)
+#if !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)
 uint32_t Crc32(uint32_t sum, span<const uint8_t> data) {
   if (data.empty()) {
     return sum;

@@ -610,6 +610,9 @@ class NATIVE_THEME_EXPORT NativeTheme {
   // Calculates and returns the use overlay scrollbar setting.
   static bool CalculateUseOverlayScrollbar();
 
+  // Whether light mode is forced via command-line flag.
+  static bool IsForcedLightMode();
+
  protected:
   explicit NativeTheme(
       bool should_only_use_dark_colors,

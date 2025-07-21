@@ -895,7 +895,7 @@ DomKey DomKeyFromNSEvent(NSEvent* event) {
       return DomKeyFromKeyCode(event.keyCode);
     }
     default:
-      NOTREACHED();
+      return ui::DomKey::NONE;
   }
 }
 

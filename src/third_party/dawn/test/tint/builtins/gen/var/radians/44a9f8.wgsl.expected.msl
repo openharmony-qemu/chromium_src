@@ -1,0 +1,39 @@
+#include <metal_stdlib>
+
+using namespace metal;
+void radians_44a9f8() {
+  float2 res = float2(0.01745329238474369049f);
+}
+
+fragment void fragment_main() {
+  radians_44a9f8();
+  return;
+}
+
+kernel void compute_main() {
+  radians_44a9f8();
+  return;
+}
+
+struct VertexOutput {
+  float4 pos;
+};
+
+struct tint_symbol {
+  float4 pos [[position]];
+};
+
+VertexOutput vertex_main_inner() {
+  VertexOutput out = {};
+  out.pos = float4(0.0f);
+  radians_44a9f8();
+  return out;
+}
+
+vertex tint_symbol vertex_main() {
+  VertexOutput const inner_result = vertex_main_inner();
+  tint_symbol wrapper_result = {};
+  wrapper_result.pos = inner_result.pos;
+  return wrapper_result;
+}
+

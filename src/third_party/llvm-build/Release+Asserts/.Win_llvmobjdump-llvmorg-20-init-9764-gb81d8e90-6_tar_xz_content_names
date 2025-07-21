@@ -1,0 +1,1 @@
+["bin", "bin/llvm-bcanalyzer.exe", "bin/llvm-cxxfilt.exe", "bin/llvm-dwarfdump.exe", "bin/llvm-nm.exe", "bin/llvm-objdump.exe", "llvmobjdump_build_revision"]

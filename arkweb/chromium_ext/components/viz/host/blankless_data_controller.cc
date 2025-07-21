@@ -257,25 +257,39 @@ static std::string GetDumpFilePath() {
   return dump_cache_path.value();
 }
 
-static bool SaveImage(const SkBitmap& bitmap, std::string& filename) {
+static bool EncodeSnapShotImage(const SkBitmap& bitmap, SkDynamicMemoryWStream& stream)
+{
+  SkPngEncoder::Options opts;
+  opts.fFilterFlags = SkPngEncoder::FilterFlag::kAll;
+  opts.fZLibLevel = 6; // 6 is the default compression ratio for PNG
+  return SkPngEncoder::Encode(&stream, bitmap.pixmap(), opts);
+}
+
+static bool SaveImage(std::string& filename, SkDynamicMemoryWStream& stream) {
   std::string dumpFilePath = GetDumpFilePath();
   if (dumpFilePath.empty()) {
     LOG(ERROR) << "blankless get dumpFilePath error!";
     return false;
   }
+
+  sk_sp<SkData> skData = stream.detachAsData();
+  if (!skData) {
+    LOG(ERROR) << "blankless snapshot stream data is invalid!";
+    return false;
+  }
+
   filename.append(dumpFilePath);
   filename.append(DUMP_FILE_PRE);
   filename.append(base::NumberToString(base::TimeTicks::Now().since_origin().InMicroseconds()));
   filename.append(DUMP_FILE_TYPE);
-  SkFILEWStream fileStream(filename.c_str());
-  SkPngEncoder::Options opts;
-  opts.fFilterFlags = SkPngEncoder::FilterFlag::kAll;
-  opts.fZLibLevel = 6; //6为png默认压缩率
-  bool res = SkPngEncoder::Encode(&fileStream, bitmap.pixmap(), opts);
+  base::FilePath filePath(filename);
+  std::string_view sv(static_cast<const char*>(skData->data()), skData->size());
+  bool res = base::WriteFile(filePath, sv);
   if (!res) {
-    LOG(ERROR) << "blankless save snapshot img error!";
+    LOG(ERROR) << "blankless write snapshot file error!";
+  } else {
+    LOG(DEBUG) << "blankless save snapshot img:" << filename.c_str();
   }
-  LOG(DEBUG) << "blankless save snapshot img:" << filename.c_str();
   return res;
 }
 
@@ -397,7 +411,16 @@ void BlanklessDataController::DumpBlanklessSnapshot(int64_t blankless_key,
 {
   SkBitmap bitmapNew = DownscaleToLowRes(bitmap, bitmap.width() / 2, bitmap.height() / 2);
   std::string newFile;
-  if (!SaveImage(bitmapNew, newFile)) {
+  SkDynamicMemoryWStream stream;
+  if (!EncodeSnapShotImage(bitmapNew, stream)) {
+    LOG(ERROR) << "blankless encode snapShot image failed!";
+    return;
+  }
+  if (stream.bytesWritten() > dbInstance_.GetCapacityInByte()) {
+    LOG(ERROR) << "blankless no capacity to save img";
+    return;
+  }
+  if (!SaveImage(newFile, stream)) {
     LOG(ERROR) << "blankless save snapshot img failed!";
     return;
   }

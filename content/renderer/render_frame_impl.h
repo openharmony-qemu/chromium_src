@@ -1740,8 +1740,6 @@ class CONTENT_EXPORT RenderFrameImpl
   // Set if this RenderFrameImpl is for a main frame which is not top-level.
   const bool is_for_nested_main_frame_;
 
-  base::WeakPtrFactory<RenderFrameImpl> weak_factory_{this};
-
   RenderFrameImplUtils* implUtils;
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -1754,6 +1752,8 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_EXT_UA)
   bool viewport_meta_enabled_{false};
 #endif
+
+  base::WeakPtrFactory<RenderFrameImpl> weak_factory_{this};
 };
 
 }  // namespace content

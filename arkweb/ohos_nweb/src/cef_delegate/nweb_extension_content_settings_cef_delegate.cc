@@ -114,7 +114,7 @@ void NWebExtensionContentSettingsCefDelegate::OnGetCallback(const NWebExtensionC
     callback = std::move(it->second);
     g_content_settings_get_callback_map_.erase(it);
   }
-  LOG(INFO)<<"ContentSettingsGetCallback end":
+  LOG(INFO)<<"ContentSettingsGetCallback end";
   std::move(callback).Run(result->detailParam, result->error);
 }
 

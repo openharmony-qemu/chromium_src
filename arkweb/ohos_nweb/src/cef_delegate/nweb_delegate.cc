@@ -249,23 +249,18 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
       std::shared_ptr<NWebDelegateInterface> delegate)
       : callback_(callback),
         callbackId_(callbackId),
-        weakNWebDelegate_(std::weak_ptr<NWebDelegateInterface>(delegate)) {}
+        nwebDelegate_(delegate) {}
   ~JavaScriptResultCallbackImpl() {}
   void CallbackOnReceiveThread(std::shared_ptr<OHOS::NWeb::NWebMessage> data) {
     if (callback_) {
       callback_->OnReceiveValue(data);
     }
-    if (weakNWebDelegate_.expired()) {
-      LOG(INFO) << "weakNWebDelegate_ expired";
-      return;
-    }
     // post this instance to ui to destroy
-    auto delegate = weakNWebDelegate_.lock();
-    if (delegate) {
+    if (nwebDelegate_) {
       CEF_POST_TASK(
           CEF_UIT,
           base::BindOnce(&NWebDelegateInterface::EraseJavaScriptCallbackImpl,
-                         delegate, callbackId_));
+                         nwebDelegate_, callbackId_));
     }
   }
 
@@ -285,7 +280,7 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
  private:
   std::shared_ptr<NWebMessageValueCallback> callback_;
   uint32_t callbackId_;
-  std::weak_ptr<NWebDelegateInterface> weakNWebDelegate_;
+  std::shared_ptr<NWebDelegateInterface> nwebDelegate_;
 
   IMPLEMENT_REFCOUNTING(JavaScriptResultCallbackImpl);
 };

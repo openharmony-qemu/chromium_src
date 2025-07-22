@@ -54,10 +54,10 @@ class ArkwebCopyOutputResultUtils {
 #endif
 
  private:
-  CopyOutputResult* copyOutputResult_;
+  raw_ptr<CopyOutputResult> copyOutputResult_;
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  SkiaOutputSurfaceImplOnGpu* impl_on_gpu_ = nullptr;
+  raw_ptr<SkiaOutputSurfaceImplOnGpu> impl_on_gpu_ = nullptr;
   uint64_t blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
   int32_t lcp_time_ = 0;
   int64_t pref_hash_ = 0;

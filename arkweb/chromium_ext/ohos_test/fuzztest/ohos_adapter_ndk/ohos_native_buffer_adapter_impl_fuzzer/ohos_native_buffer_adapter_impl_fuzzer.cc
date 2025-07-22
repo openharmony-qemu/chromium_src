@@ -55,10 +55,10 @@ bool OhosNativeBufferAdapterImplFuzzTest(const uint8_t* data, size_t size)
     std::shared_ptr<OhosNativeBufferAdapterImpl> adapter = std::make_shared<OhosNativeBufferAdapterImpl>();
     adapter->GetInstance();
     void* buffer = nullptr;
-    adapter->AquireBuffer(buffer);
+    adapter->AcquireBuffer(buffer);
     adapter->IsBufferLocked(static_cast<OH_NativeBuffer*>(buffer));
-    adapter->ReleaseBuffer(buffer);
-    adapter->GetSeqNum();
+    adapter->Release(buffer);
+    adapter->GetSeqNum(buffer);
     void* outBuffer = nullptr;
     adapter->Allocate(nullptr, &outBuffer);
     adapter->Describe(nullptr, buffer);
@@ -69,7 +69,7 @@ bool OhosNativeBufferAdapterImplFuzzTest(const uint8_t* data, size_t size)
     adapter->FreeEGLBuffer(eglBuffer);
     void* nativeWindowBuffer = nullptr;
     void* nativeBuffer = nullptr;
-    adapter->NativeWindowBufferFromNativeWindowBuffer(nativeWindowBuffer, &nativeBuffer);
+    adapter->NativeBufferFromNativeWindowBuffer(nativeWindowBuffer, &nativeBuffer);
     void* address = nullptr;
     adapter->Lock(buffer, usage, fence, &address);
     adapter->Unlock(buffer, &fence);
@@ -77,7 +77,7 @@ bool OhosNativeBufferAdapterImplFuzzTest(const uint8_t* data, size_t size)
     TestAllocate(&nativeBuffer);
     adapter->AcquireBuffer(nativeBuffer);
     adapter->IsBufferLocked(static_cast<OH_NativeBuffer*>(nativeBuffer));
-    adapter->GetSeqNum();
+    adapter->GetSeqNum(buffer);
     adapter->GetEGLBuffer(nativeBuffer, &eglBuffer);
     adapter->FreeEGLBuffer(eglBuffer);
     adapter->Release(nativeBuffer);

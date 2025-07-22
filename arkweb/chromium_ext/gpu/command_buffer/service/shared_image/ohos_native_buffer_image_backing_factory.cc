@@ -312,7 +312,9 @@ OHOSNativeBufferImageBackingFactory::MakeBackingWithValidateConfig(
     for (int y = 0; y < size.height(); y++) {
       void* dst = reinterpret_cast<uint8_t*>(address) + dst_stride * y;
       const void* src = pixel_data.data() + src_stride * y;
-      memcpy_s(dst, dst_stride, src, src_stride);
+      if (memcpy_s(dst, dst_stride, src, src_stride) != EOK) {
+        LOG(ERROR) << "memcpy_s failed:(OHOSNativeBufferImageBackingFactory::MakeBackingWithValidateConfig)";
+      }
     }
 
     int32_t fence = -1;

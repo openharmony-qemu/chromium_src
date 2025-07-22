@@ -727,6 +727,7 @@ source_set("unit_tests") {
     sources += [ "demuxer_memory_limit_cast_unittest.cc" ]
   }
 
+  defines = []
   if (arkweb_unittests) {
     import("//arkweb/chromium_ext/chromium_ext.gni")
     include_dirs = [
@@ -739,6 +740,7 @@ source_set("unit_tests") {
     deps += [
       "//arkweb/ohos_adapter_ndk:adapter_ndk"
     ]
+    defines += [ "IS_MEDIA_IMPL" ]
   }
 }
 

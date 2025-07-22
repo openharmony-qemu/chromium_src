@@ -253,6 +253,12 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   void ProcessDeferredGestureEventQueue();
   void OnSetCompositorAllowedTouchAction(cc::TouchAction touch_action);
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool native_result_ = false;
+  bool mouse_native_result_ = false;
+  std::unique_ptr<ArkwebInputRouterImplUtils> arkweb_input_router_impl_utils_;
+#endif
+
   raw_ptr<InputRouterClient> client_;
   raw_ptr<InputDispositionHandler> disposition_handler_;
 
@@ -285,11 +291,6 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   mojo::Receiver<blink::mojom::WidgetInputHandlerHost> host_receiver_{this};
   base::WeakPtr<InputRouterImpl> weak_this_;
   base::WeakPtrFactory<InputRouterImpl> weak_ptr_factory_{this};
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  bool native_result_ = false;
-  bool mouse_native_result_ = false;
-  std::unique_ptr<ArkwebInputRouterImplUtils> arkweb_input_router_impl_utils_;
-#endif
 };
 
 }  // namespace input

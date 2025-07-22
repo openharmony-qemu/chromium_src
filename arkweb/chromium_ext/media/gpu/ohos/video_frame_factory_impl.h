@@ -95,7 +95,9 @@ class MEDIA_GPU_EXPORT VideoFrameFactoryImpl
 
   std::unique_ptr<SharedImageVideoProvider> image_provider_;
   scoped_refptr<base::SingleThreadTaskRunner> gpu_task_runner_;
-
+#if BUILDFLAG(ARKWEB_PIP)
+  bool pip_enable_ = false;
+#endif
   scoped_refptr<CodecBufferWaitCoordinator> codec_buffer_wait_coordinator_;
 
   bool video_frame_copy_required_ = features::IsUsingVulkan() ||
@@ -112,9 +114,6 @@ class MEDIA_GPU_EXPORT VideoFrameFactoryImpl
   SEQUENCE_CHECKER(sequence_checker_);
 
   base::WeakPtrFactory<VideoFrameFactoryImpl> weak_factory_{this};
-#if BUILDFLAG(ARKWEB_PIP)
-  bool pip_enable_ = false;
-#endif
 };
 
 }  // namespace media

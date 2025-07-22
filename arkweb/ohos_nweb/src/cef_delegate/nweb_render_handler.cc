@@ -895,6 +895,9 @@ void NWebRenderHandler::GetTouchHandleSize(
     if (hot_zone->GetWidth() > 0 && hot_zone->GetHeight() > 0) {
       size.width = static_cast<int>(hot_zone->GetWidth()) + 1;
       size.height = static_cast<int>(hot_zone->GetHeight()) + 1;
+    } else if (hot_zone->GetWidth() > 0 && hot_zone->GetHeight() == 0) {
+      size.width = static_cast<int>(hot_zone->GetWidth()) + 1;
+      size.height = 0;
     }
   }
   LOG(INFO) << "GetTouchHandleSize " << size.width << " " << size.height;

@@ -17,6 +17,7 @@
 #define GPU_IPC_CLIENT_GPU_CHANNEL_HOST_UTILS_H_
 
 #include "arkweb/build/features/features.h"
+#include "base/allocator/partition_allocator/src/partition_alloc/pointers/raw_ptr.h"
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include <string>
@@ -27,7 +28,7 @@ class GpuChannelHost;
 
 class GpuChannelHostUtils {
  public:
-  GpuChannelHost* gpu_channel_Host_;
+  raw_ptr<GpuChannelHost> gpu_channel_Host_;
   GpuChannelHostUtils(GpuChannelHost* gpu_channel_Host);
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)

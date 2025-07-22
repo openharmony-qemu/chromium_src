@@ -306,8 +306,10 @@ SandboxGrantResult MaybeGrantSandboxAccessToNetworkContextData(
                     << params->file_paths->http_cache_directory->path();
       }
 #if BUILDFLAG(ARKWEB_PRECOMPILE)
-      oh_code_cache::ResponseCache::InitCacheDirectory(
-          params->file_paths->shared_dictionary_directory->path());
+      if (params->file_paths->shared_dictionary_directory) {
+        oh_code_cache::ResponseCache::InitCacheDirectory(
+            params->file_paths->shared_dictionary_directory->path());
+      }
 #endif
     }
   }

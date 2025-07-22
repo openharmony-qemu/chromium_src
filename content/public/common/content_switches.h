@@ -303,6 +303,7 @@ CONTENT_EXPORT extern const char kEnablePrinting[];
 CONTENT_EXPORT extern const char kOhosHttpCacheSimple[];
 CONTENT_EXPORT extern const char kCalcTabletMode[];
 CONTENT_EXPORT extern const char kDisableNonAdvancedSecurityMode[];
+CONTENT_EXPORT extern const char kDisableMobileStyleSheet[];
 #ifdef OHOS_ARKWEB_ADBLOCK
 CONTENT_EXPORT extern const char kOhosSubresourceFilter[];
 #endif

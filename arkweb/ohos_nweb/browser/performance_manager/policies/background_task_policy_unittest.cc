@@ -1,0 +1,283 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <cstdint>
+#include <memory>
+#include <memory>
+#include <unordered_set>
+#include <gmock/gmock.h>
+
+#include "base/dcheck_is_on.h"
+#include "base/memory/ptr_util.h"
+#include "base/memory/raw_ptr.h"
+#include "base/observer_list_types.h"
+#include "base/sequence_checker.h"
+#include "background_task_adapter.h"
+#include "components/performance_manager/public/graph/node_set_view.h"
+#include "content/browser/scheduler/browser_task_executor.h"
+#include "ohos_nweb/browser/performance_manager/mechanisms/background_task_holder.h"
+#include "gtest/gtest.h"
+
+#define private public
+#include "background_task_policy.h"
+#include "components/performance_manager/graph/graph_impl.h"
+
+using namespace testing;
+using namespace OHOS::NWeb;
+using namespace performance_manager;
+using namespace performance_manager::policies;
+using namespace performance_manager::mechanism;
+
+class GraphMock : public performance_manager::GraphImpl {
+    public:
+    GraphMock() { }
+
+    ~GraphMock() { }
+
+    void RemovePageNodeObserver(PageNodeObserver* observer) {
+        DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    }
+
+    void AddPageNodeObserver(PageNodeObserver* observer) {
+        DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    }
+
+    void SetLifecycleState() {
+        lifecycle_state_ = LifecycleState::kTearDownCalled;
+    }
+};
+
+class PageNodeMock : public PageNode {
+public:
+
+    bool is_visible = false;
+
+    bool is_audible = false;
+
+    bool is_media_playing = false;
+
+    int frame_node_flag = 0;
+
+    int main_frame_nodes_count = 0;
+
+    PageNodeMock() { }
+
+    static const char* ToString(PageNode::EmbeddingType embedding_type) { }
+
+    static const char* ToString(PageType type) { }
+    static const char* ToString(PageNode::LoadingState loading_state) { }
+
+    static constexpr NodeTypeEnum Type() { return NodeTypeEnum::kPage; }
+
+    const std::string& GetBrowserContextID() const { }
+
+    const FrameNode* GetOpenerFrameNode() const { }
+
+    const FrameNode* GetEmbedderFrameNode() const { }
+
+    resource_attribution::PageContext GetResourceContext() const { }
+
+    EmbeddingType GetEmbeddingType() const { }
+
+    PageType GetType() const { }
+
+    bool IsFocused() const { }
+
+    void SetIsVisible(bool visibility) {
+        is_visible = visibility;
+    }
+
+    bool IsVisible() const { 
+        return is_visible;
+    }
+
+    base::TimeDelta GetTimeSinceLastVisibilityChange() const { }
+
+    void SetIsAudible(bool audible) {
+        is_audible = audible;
+    }
+
+    bool IsAudible() const { 
+        return is_audible;
+    }
+
+    std::optional<base::TimeDelta> GetTimeSinceLastAudibleChange()
+        const { }
+
+    bool HasPictureInPicture() const { }
+
+    bool IsOffTheRecord() const { }
+
+    #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+    void SetIsMediaPlaying(bool media_playing) {
+        is_media_playing = media_playing;
+    }
+
+    bool IsMediaPlaying() const { 
+        return is_media_playing;
+    }
+    #endif
+
+    LoadingState GetLoadingState() const { }
+
+    ukm::SourceId GetUkmSourceID() const { }
+
+    LifecycleState GetLifecycleState() const { }
+
+    bool IsHoldingWebLock() const { }
+
+    bool IsHoldingIndexedDBLock() const { }
+
+    bool UsesWebRTC() const { }
+
+    int64_t GetNavigationID() const { }
+
+    const std::string& GetContentsMimeType() const { }
+
+    std::optional<blink::mojom::PermissionStatus>
+    GetNotificationPermissionStatus() const { }
+
+    base::TimeDelta GetTimeSinceLastNavigation() const { }
+
+    const FrameNode* GetMainFrameNode() const { }
+
+    NodeSetView<const FrameNode*> GetMainFrameNodes() const {
+    }
+
+    const GURL& GetMainFrameUrl() const { }
+
+    uint64_t EstimateMainFramePrivateFootprintSize() const { }
+
+    bool HadFormInteraction() const { }
+
+    bool HadUserEdits() const { }
+
+    base::WeakPtr<content::WebContents> GetWebContents() const { }
+
+    uint64_t EstimateResidentSetSize() const { }
+
+    uint64_t EstimatePrivateFootprintSize() const { }
+
+    const void* GetImpl() const { }
+
+    uintptr_t GetImplType() const { }
+
+    NodeState GetNodeState() const { }
+
+    Graph* GetGraph() const { }
+};
+
+class BackgroundTaskHolderMock : public BackgroundTaskHolder {
+    public:
+
+    bool back_ground = false;
+
+    BackgroundTaskHolderMock() {}
+
+    void SetBackground(bool back_ground_tmp) {
+        back_ground = back_ground_tmp;
+    }
+
+    bool MaybeRequestBackgroundRunning(bool running,
+        BackgroundModeAdapter bgMode) {
+        return back_ground;
+    }
+};
+
+TEST(BackgroundTaskPolicyTEST, OnTakenFromGraph001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    background_task_policy->OnTakenFromGraph(nullptr);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnTakenFromGraph002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    GraphMock graph_mock;
+    graph_mock.SetLifecycleState();
+    background_task_policy->OnTakenFromGraph(&graph_mock);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnPassedToGraph001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    background_task_policy->OnPassedToGraph(nullptr);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnPassedToGraph002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    GraphMock graph_mock;
+    graph_mock.SetLifecycleState();
+    background_task_policy->OnPassedToGraph(&graph_mock);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnPageNodeAdded001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    background_task_policy->OnPageNodeAdded(nullptr);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnPageNodeAdded002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->OnPageNodeAdded(&page_node_mock);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnBeforePageNodeRemoved) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    background_task_policy->OnBeforePageNodeRemoved(nullptr);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsVisibleChanged001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    background_task_policy->OnIsVisibleChanged(nullptr);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsVisibleChanged002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->OnIsVisibleChanged(&page_node_mock);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsMediaPlayingChanged001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    background_task_policy->OnIsMediaPlayingChanged(nullptr);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsMediaPlayingChanged002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnDecrementAudioNum001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    background_task_policy->OnDecrementAudioNum(nullptr);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnDecrementAudioNum002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    page_node_mock.SetIsMediaPlaying(true);
+    page_node_mock.SetIsAudible(true);
+    background_task_policy->OnDecrementAudioNum(&page_node_mock);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    background_task_policy->OnIsAudibleChanged(nullptr);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    background_task_policy->OnIsAudibleChanged(&page_node_mock);
+}

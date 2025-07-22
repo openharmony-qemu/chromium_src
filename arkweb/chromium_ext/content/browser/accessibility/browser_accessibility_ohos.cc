@@ -881,7 +881,6 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
   // Append image description strings to the text.
   auto status = GetData().GetImageAnnotationStatus();
   switch (status) {
-    case ax::mojom::ImageAnnotationStatus::kEligibleForAnnotation:
     case ax::mojom::ImageAnnotationStatus::kAnnotationPending:
     case ax::mojom::ImageAnnotationStatus::kAnnotationEmpty:
     case ax::mojom::ImageAnnotationStatus::kAnnotationAdult:
@@ -898,6 +897,7 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
     case ax::mojom::ImageAnnotationStatus::kWillNotAnnotateDueToScheme:
     case ax::mojom::ImageAnnotationStatus::kIneligibleForAnnotation:
     case ax::mojom::ImageAnnotationStatus::kSilentlyEligibleForAnnotation:
+    case ax::mojom::ImageAnnotationStatus::kEligibleForAnnotation:
       break;
   }
 

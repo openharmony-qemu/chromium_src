@@ -72,6 +72,29 @@ ArkWebDownloadFileImplExt::ArkWebDownloadFileImplExt(
 ArkWebDownloadFileImplExt::~ArkWebDownloadFileImplExt() {}
 
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+void ArkWebDownloadFileImplExt::ReadDownloadDataAndRunCallback(
+    int32_t read_download_size) {
+  if (!read_download_callback_) {
+    return;
+  }
+ 
+  std::vector<uint8_t> data(read_download_size);
+  if (!ReadDownloadDataFromFile(0, (char*)(data.data()), read_download_size)) {
+    LOG(INFO) << "ReadDownloadDataAndRunCallback called, size: "
+              << read_download_size;
+    main_task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(std::move(read_download_callback_),
+                                  std::vector<uint8_t>()));
+    return;
+  }
+ 
+  LOG(INFO) << "ReadDownloadDataAndRunCallback called, size: "
+            << read_download_size;
+  main_task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(std::move(read_download_callback_), std::move(data)));
+}
+
 bool ArkWebDownloadFileImplExt::ReadDownloadDataFromFile(int64_t offset,
                                                          char* data,
                                                          size_t size) {
@@ -87,12 +110,11 @@ bool ArkWebDownloadFileImplExt::ReadDownloadDataFromFile(int64_t offset,
   return true;
 }
 
-void ArkWebDownloadFileImplExt::RunCallbackIfDataReady() {
-  LOG(DEBUG)
-      << "DownloadFileImpl::RunCallbackIfDataReady called, TotalBytesReceived: "
-      << TotalBytesReceived();
+void ArkWebDownloadFileImplExt::ReadAndRunCallbackIfDataReady() {
+  LOG(DEBUG) << "ReadAndRunCallbackIfDataReady called, TotalBytesReceived: "
+             << TotalBytesReceived();
   if (!read_download_callback_) {
-    LOG(DEBUG) << "DownloadFileImpl::RunCallbackIfDataReady "
+    LOG(DEBUG) << "DownloadFileImpl::ReadAndRunCallbackIfDataReady "
                   "read_download_callback_ null";
     return;
   }
@@ -102,12 +124,13 @@ void ArkWebDownloadFileImplExt::RunCallbackIfDataReady() {
   }
 
   if (GetNoHoleDownloadDataSize() < read_download_size_) {
-    LOG(DEBUG) << "DownloadFileImpl::RunCallbackIfDataReady PreDownloadSize:"
-               << GetNoHoleDownloadDataSize();
+    LOG(DEBUG)
+        << "DownloadFileImpl::ReadAndRunCallbackIfDataReady PreDownloadSize:"
+        << GetNoHoleDownloadDataSize();
     return;
   }
 
-  LOG(DEBUG) << "DownloadFileImpl::RunCallbackIfDataReady "
+  LOG(DEBUG) << "DownloadFileImpl::ReadAndRunCallbackIfDataReady "
                 "MaybeRunReadDownloadCallback";
   MaybeRunReadDownloadCallback();
 }
@@ -135,8 +158,8 @@ uint32_t ArkWebDownloadFileImplExt::GetNoHoleDownloadDataSize() {
 }
 
 void ArkWebDownloadFileImplExt::RegisterReadDownloadCallback(
-    base::OnceCallback<void()> callback,
-    uint32_t size) {
+    ReadDownloadDataCallback callback,
+    int32_t size) {
   if (read_download_callback_) {
     LOG(DEBUG) << "DownloadFileImpl::RegisterReadDownloadCallback callback "
                   "already exsit";
@@ -151,7 +174,7 @@ void ArkWebDownloadFileImplExt::RegisterReadDownloadCallback(
 void ArkWebDownloadFileImplExt::MaybeRunReadDownloadCallback() {
   if (read_download_callback_) {
     LOG(DEBUG) << "DownloadFileImpl::MaybeRunReadDownloadCallback called";
-    std::move(read_download_callback_).Run();
+    ReadDownloadDataAndRunCallback(read_download_size_);
   }
 }
 #endif

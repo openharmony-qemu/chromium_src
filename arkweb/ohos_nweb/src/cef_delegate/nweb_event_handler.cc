@@ -27,7 +27,9 @@
 #include "cef/include/internal/cef_types.h"
 #include "cef/include/internal/cef_types_wrappers.h"
 #include "ui/events/keycodes/keyboard_code_conversion_x.h"
+#include "ui/events/keycodes/keyboard_code_conversion_xkb.h"
 #include "ui/events/keycodes/keysym_to_unicode.h"
+#include "ui/events/event_constants.h"
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
@@ -261,8 +263,20 @@ void NWebEventHandler::SendCefKeyEvent(CefKeyEvent& keyEvent) {
   browser_->GetHost()->SendKeyEvent(keyEvent);
 
   if (keyEvent.type == KEYEVENT_RAWKEYDOWN) {
+#if !defined(COMPONENT_BUILD) // FIXME
+    ui::KeyboardCode key_code =
+      static_cast<ui::KeyboardCode>(keyEvent.windows_key_code);
+    int keysym = ui::XKeysymForWindowsKeyCode(
+      key_code, keyEvent.modifiers & EVENTFLAG_SHIFT_DOWN, keyEvent.modifiers & EVENTFLAG_CAPS_LOCK_ON);
+    ui::DomKey dom_key = ui::XKeySymToDomKey(keysym, keyEvent.character);
+    if (dom_key.IsCharacter()) {
+      keyEvent.type = KEYEVENT_CHAR;
+      browser_->GetHost()->SendKeyEvent(keyEvent);
+    }
+#else
     keyEvent.type = KEYEVENT_CHAR;
     browser_->GetHost()->SendKeyEvent(keyEvent);
+#endif
   }
 }
 

@@ -103,4 +103,7 @@ const char kAdSecValue[] = "advanced_sec_value";
 const char kSetExtensionName[] = "set-extension-name";
 #endif
 
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+const char  kOhosEnableGwpAsanType[] = "ohos-enable-gwp-asan-type";
+#endif
 }  // namespace switches

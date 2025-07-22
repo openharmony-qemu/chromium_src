@@ -14,7 +14,7 @@
  */
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h"
+#include "chrome/browser/extensions/extension_tab_util.h"
 #include "libcef/browser/extensions/window_extensions_util.h"
 
 namespace extensions {
@@ -24,7 +24,7 @@ void ChromeExtensionsBrowserClient::GetTabAndWindowIdForWebContents(
     int* tab_id,
     int* window_id) {
   if (web_contents) {
-    *tab_id = cef::GetTabIdForWebContents(web_contents);
+    *tab_id = ExtensionTabUtil::GetTabId(web_contents);
     *window_id = GetCurrentWindowId(web_contents, -1 /* default_window_id */);
   } else {
     *tab_id = -1;

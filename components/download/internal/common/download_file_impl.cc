@@ -687,7 +687,7 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
             source_stream->offset() + source_stream->bytes_read(),
             incoming_data->data(), bytes_to_validate, bytes_to_write);
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-        AsArkWebDownloadFileImplExt()->RunCallbackIfDataReady();
+        AsArkWebDownloadFileImplExt()->ReadAndRunCallbackIfDataReady();
 #endif
         bytes_seen_ += bytes_to_write;
         total_incoming_data_size += incoming_data_size;
@@ -708,7 +708,7 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
           }
         }
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-        AsArkWebDownloadFileImplExt()->RunCallbackIfDataReady();
+        AsArkWebDownloadFileImplExt()->ReadAndRunCallbackIfDataReady();
 #endif
       } break;
       case InputStream::WAIT_FOR_COMPLETION:

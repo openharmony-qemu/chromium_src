@@ -46,6 +46,12 @@
 #endif
 
 namespace blink {
+#if BUILDFLAG(ARKWEB_MENU)
+namespace {
+constexpr char kAILinkAttr[] = "ohos-arkweb-data-detectors-type";
+}
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
 ContextMenuControllerExt::ContextMenuControllerExt(Page* page)
     : ContextMenuController(page) {}
 
@@ -236,7 +242,7 @@ void ContextMenuControllerExt::IsAILink(ContextMenuData& data, HitTestResult& re
     if (link_element) {
       auto attributes_collection = link_element->AttributesWithoutUpdate();
       for (const Attribute& attr : attributes_collection) {
-        if (attr.LocalName().GetString() == "ohosarkwebtype") {
+        if (attr.LocalName().GetString() == kAILinkAttr) {
           data.is_ai_link = true;
         }
       }

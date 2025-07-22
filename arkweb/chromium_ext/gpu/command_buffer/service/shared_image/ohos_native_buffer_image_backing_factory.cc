@@ -314,7 +314,6 @@ OHOSNativeBufferImageBackingFactory::MakeBackingWithValidateConfig(
       const void* src = pixel_data.data() + src_stride * y;
       if (memcpy_s(dst, dst_stride, src, src_stride) != EOK) {
         LOG(ERROR) << "memcpy_s failed:(OHOSNativeBufferImageBackingFactory::MakeBackingWithValidateConfig)";
-        continue;
       }
     }
 

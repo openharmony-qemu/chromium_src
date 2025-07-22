@@ -642,6 +642,9 @@ source_set("unittests") {
     "src/nweb_output_handler_unittest.cc",
     "src/set_renderer_seccomp_policy_unittest.cc",
     "src/nweb_web_storage_impl_unittest.cc",
+    "src/nweb_file_writer_cleaner_unittest.cc",
+    "src/nweb_data_base_impl_unittest.cc",
+    "browser/performance_manager/policies/background_task_policy_unittest.cc",
     "src/nweb_resize_helper_unittests.cc",
   ]
 

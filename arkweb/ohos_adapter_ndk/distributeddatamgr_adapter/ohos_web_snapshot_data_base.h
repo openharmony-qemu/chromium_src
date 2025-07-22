@@ -62,6 +62,7 @@ public:
     SnapshotDataItem GetSnapshotDataItem(int64_t blankless_key);
     void RegisterDataBaseCallback(std::shared_ptr<OhosWebSnapshotDataBaseCallback> callback);
     int32_t SetBlanklessLoadingCacheCapacity(int32_t capacity);
+    int32_t GetCapacityInByte() const;
 
 private:
     OhosWebSnapshotDataBase();
@@ -74,25 +75,30 @@ private:
     };
 
     void GetAllInfo();
+    void GetDatabaseInfo();
     int64_t GetCurrentTime();
     void GetOrOpen(const OH_Rdb_Config& config);
     void InsertDataBaseDataItem(int64_t blankless_key, const DataBaseDataItem& data);
+    bool IsKeyExist(int64_t blankless_key);
     void NotifyDataBaseDeletePath(const std::string& path);
 
     int32_t DataClear();
     int32_t DataDelete(int64_t blankless_key);
     int32_t DataInsert(int64_t blankless_key, const DataBaseDataItem& data);
+    int32_t DataUpdateCapacity(int32_t capacity);
 
     void DataMapClear();
     void DataMapErase(int64_t blankless_key);
-    std::vector<int64_t> DataMapInsert(int64_t blankless_key, const DataBaseDataItem& data);
-    bool DataMapUpdate(int64_t blankless_key, const DataBaseDataItem& newData);
+    void DataMapEraseOldestKeyWithoutLock(std::vector<int64_t>& needDeleteKeys);
+    void DataMapEraseInnerWithoutLock(int64_t blankless_key);
+    bool DataMapInsert(int64_t blankless_key, const DataBaseDataItem& data, std::vector<int64_t>& needDeleteKeys);
+    bool DataMapUpdate(int64_t blankless_key, const DataBaseDataItem& data, std::vector<int64_t>& needDeleteKeys);
 
-    OH_Rdb_Store* rdbStore_;
+    OH_Rdb_Store* rdbStore_ = nullptr;
     std::mutex dataBaseMapMtx_;
     std::unordered_map<int64_t, DataBaseDataItem> dataBaseMap_;
     std::vector<std::shared_ptr<OhosWebSnapshotDataBaseCallback>> dataBaseDeleteCallbacks_;
-    uint64_t totalSnapShotFileBytes_;
+    int32_t totalSnapShotFileBytes_ = 0;
 
     std::atomic<int32_t> capacityInByte_;
 };

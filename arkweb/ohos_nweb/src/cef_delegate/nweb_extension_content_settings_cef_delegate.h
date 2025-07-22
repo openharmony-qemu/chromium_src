@@ -34,7 +34,7 @@ namespace OHOS::NWeb {
 
 class NWebExtensionContentSettingsCefDelegate {
  public:
-  static NWebExtensionContentSettingsCefDelegate& GetInstance();
+  static NWebExtensionContentSettingsCefDelegate &GetInstance();
 
   // ContentSettings.get
   bool OnGet(const NWebExtensionContentSettingsGetParam* getParam, ContentSettingsGetCallback callback);
@@ -56,8 +56,8 @@ class NWebExtensionContentSettingsCefDelegate {
  private:
   NWebExtensionContentSettingsCefDelegate() = default;
   ~NWebExtensionContentSettingsCefDelegate() = default;
-  NWebExtensionContentSettingsCefDelegate(const NWebExtensionContentSettingsCefDelegate&) = delete;
-  NWebExtensionContentSettingsCefDelegate& operator=(const NWebExtensionContentSettingsCefDelegate&) = delete;
+  NWebExtensionContentSettingsCefDelegate(const NWebExtensionContentSettingsCefDelegate &) = delete;
+  NWebExtensionContentSettingsCefDelegate& operator=(const NWebExtensionContentSettingsCefDelegate &) = delete;
 };
 
 }  // namespace OHOS::NWeb

@@ -636,9 +636,10 @@ class SkiaOutputSurfaceImplOnGpu
       nullptr;
 #endif
 
+  std::shared_ptr<SkiaOutputSurfaceImplOnGpuUtils> impl_utils_ = nullptr;
+
   base::WeakPtr<SkiaOutputSurfaceImplOnGpu> weak_ptr_;
   base::WeakPtrFactory<SkiaOutputSurfaceImplOnGpu> weak_ptr_factory_{this};
-  std::shared_ptr<SkiaOutputSurfaceImplOnGpuUtils> impl_utils_ = nullptr;
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   bool did_dvsync_on_ = false;

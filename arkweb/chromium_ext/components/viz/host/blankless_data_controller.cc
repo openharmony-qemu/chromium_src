@@ -41,7 +41,6 @@ const base::FilePath::CharType DUMP_FILE_PATH[] = FILE_PATH_LITERAL("snapshot");
 const std::string DUMP_FILE_PRE = "/web_frame_";
 const std::string DUMP_FILE_TYPE = ".png";
 const double SSIM_THRESHOLD = 0.95;
-const double SIMILARITY_THRESHOLD = 0.33;
 
 
 static double Mean(const std::vector<double>& data) {
@@ -457,9 +456,7 @@ void BlanklessDataController::DumpBlanklessSnapshot(int64_t blankless_key,
     base::ohos::BlanklessController::GetInstance().CancelFrameInsertCallback(blankless_key);
     base::ohos::BlanklessController::GetInstance().FireFrameRemoveCallback(blankless_key);
   }
-  if (similarity > SIMILARITY_THRESHOLD) {
-    snapshotDataItem.staticPath = newFile;
-  }
+  snapshotDataItem.staticPath = newFile;
   dbInstance_.InsertSnapshotDataItem(blankless_key, snapshotDataItem);
 }
 

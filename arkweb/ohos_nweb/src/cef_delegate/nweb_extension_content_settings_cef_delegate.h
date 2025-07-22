@@ -42,7 +42,7 @@ class NWebExtensionContentSettingsCefDelegate {
   void OnGetCallback(const NWebExtensionContentSettingsCallbackResult* result);
 
   // ContentSettings.set
-  bool OnGet(const NWebExtensionContentSettingsSetParam* setParam, ContentSettingsSetCallback callback);
+  bool OnSet(const NWebExtensionContentSettingsSetParam* setParam, ContentSettingsSetCallback callback);
 
   void OnSetCallback(const NWebExtensionContentSettingsCallbackSetResult* result);
 
@@ -51,7 +51,7 @@ class NWebExtensionContentSettingsCefDelegate {
 
   void OnClearCallback(const NWebExtensionContentSettingsCallbackSetResult* result);
 
-  bool OnCreateCallback(const NWebExtensionContentSettingsCallbackSetResult* result);
+  bool OnCreateCallback(const NWebExtensionContentSettingsCallbackResult* result);
 
  private:
   NWebExtensionContentSettingsCefDelegate() = default;

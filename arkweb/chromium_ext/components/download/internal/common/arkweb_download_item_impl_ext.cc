@@ -105,7 +105,7 @@ void ReadDataFromDownloadFile(
   download_file_ext->RegisterReadDownloadCallback(std::move(callback),
                                                   read_size);
   if (read_now) {
-    download_file_ext->ReadDownloadDataAndRunCallback(read_size);
+    ReadDownloadDataAndRunCallbackImpl(download_file);
   } else {
     download_file_ext->ReadAndRunCallbackIfDataReady();
   }

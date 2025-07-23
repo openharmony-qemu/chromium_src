@@ -1,2 +1,0 @@
-AXLiveRegionChanged on AXGroup
-AXLiveRegionCreated on AXGroup

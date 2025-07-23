@@ -1,4 +1,0 @@
-include_rules = [
-  "+components/sync/base",
-  "+components/sync/test/android", # For sync test tools
-]

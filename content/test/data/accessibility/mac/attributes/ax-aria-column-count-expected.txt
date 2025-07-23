@@ -1,3 +1,0 @@
-tableAuto.AXARIAColumnCount=1
-table.AXARIAColumnCount=2
-div.AXARIAColumnCount=n/a

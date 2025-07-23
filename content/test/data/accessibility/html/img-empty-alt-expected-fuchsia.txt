@@ -1,6 +1,0 @@
-UNKNOWN focusable
-++UNKNOWN hidden
-++++UNKNOWN
-++++++IMAGE
-++++++IMAGE
-++++++IMAGE label='full'

@@ -1,6 +1,0 @@
-UNKNOWN focusable
-++UNKNOWN hidden
-++++UNKNOWN
-++++++UNKNOWN
-++++++++UNKNOWN actions='{DEFAULT}'
-++++++++++UNKNOWN hidden

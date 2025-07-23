@@ -1,6 +1,0 @@
-include_rules = [
-  "+cc/paint",
-  "+cc/test",
-  "+third_party/skia",
-  "+ui/gfx",
-]

@@ -1,3 +1,0 @@
-UNKNOWN focusable label='Title of the document'
-++UNKNOWN hidden
-++++UNKNOWN hidden

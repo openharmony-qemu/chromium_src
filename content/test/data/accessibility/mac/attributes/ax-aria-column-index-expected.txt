@@ -1,3 +1,0 @@
-tableCellAuto.AXARIAColumnIndex=1
-tableCell.AXARIAColumnIndex=2
-div.AXARIAColumnIndex=n/a

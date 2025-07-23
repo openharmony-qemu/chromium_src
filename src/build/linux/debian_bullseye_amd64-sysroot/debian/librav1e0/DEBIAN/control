@@ -1,0 +1,15 @@
+Package: librav1e0
+Source: rust-rav1e
+Version: 0.5.1-6
+Architecture: amd64
+Maintainer: Debian Rust Maintainers <pkg-rust-maintainers@alioth-lists.debian.net>
+Installed-Size: 2664
+Depends: libc6 (>= 2.34), libgcc-s1 (>= 4.2)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://github.com/xiph/rav1e
+Description: Fastest and safest AV1 encoder - shared library
+ rav1e is a encoder for the AV1 video codec.
+ .
+ This package contains the shared library.

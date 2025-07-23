@@ -1,0 +1,17 @@
+Package: libopenmpt0
+Source: libopenmpt
+Version: 0.4.11-1
+Architecture: amd64
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Installed-Size: 1696
+Depends: libc6 (>= 2.29), libgcc1 (>= 1:3.0), libmpg123-0 (>= 1.13.7), libstdc++6 (>= 8), libvorbis0a (>= 1.1.2), libvorbisfile3 (>= 1.1.2), zlib1g (>= 1:1.1.4)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://lib.openmpt.org/libopenmpt/
+Description: module music library based on OpenMPT -- shared library
+ libopenmpt is a cross-platform C++ and C library to decode tracked music
+ files (modules) into a raw PCM audio stream. It is based on the player code
+ of the OpenMPT project, a descendant of the original ModPlug Tracker.
+ .
+ This package contains the main shared library.

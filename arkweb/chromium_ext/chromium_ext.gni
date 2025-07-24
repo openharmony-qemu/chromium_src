@@ -865,10 +865,6 @@ arkweb_components_viz_service_display_embedder_skia_output_device_vulkan_sources
 arkweb_components_viz_service_display_embedder_compositor_gpu_thread_sources = [
   "//arkweb/chromium_ext/components/viz/service/display_embedder/compositor_gpu_thread_utils.cc",
   "//arkweb/chromium_ext/components/viz/service/display_embedder/compositor_gpu_thread_utils.h",
-  "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_dependency_impl_utils.cc",
-  "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_dependency_impl_utils.h",
-  "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_utils.cc",
-  "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_utils.h"
 ]
 
 arkweb_components_viz_service_gl_gpu_service_sources = [

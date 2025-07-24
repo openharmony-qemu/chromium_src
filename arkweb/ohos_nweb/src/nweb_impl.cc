@@ -537,7 +537,6 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back(
       "--browser-subprocess-path=/system/bin/web_render");
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");
-  web_engine_args.emplace_back("--remote-debugging-port=9222");
   web_engine_args.emplace_back("--enable-touch-drag-drop");
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
   static float ratio = -1.0f;

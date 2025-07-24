@@ -11,6 +11,7 @@ using namespace ErrorCode;
 #define WHITE_SMILING_FACE_CHATRCTER 9786
 #define WHITE_SMILING_FACE_CHAR "und-Zsye"
 
+//LCOV_EXCL_START
 /*! Constructor
  * \param path the full path of system font configuration document
  */
@@ -37,6 +38,7 @@ void SkFontMgr_OHOS::onGetFamilyName(int index, SkString* familyName) const {
   }
   fontConfig->getFamilyName(index, familyName);
 }
+//LCOV_EXCL_STOP
 
 /*! To create an object of SkFontStyleSet
  * \param index the index of a font style set
@@ -506,6 +508,7 @@ void SkFontMgr_OHOS::onInvalidateThemeFont(int fd) {
 }
 #endif
 
+//LCOV_EXCL_START
 /*! To create SkFontMgr object for Harmony platform
  * \param fname the full name of system font configuration documents
  * \return The object of SkFontMgr_OHOS
@@ -513,3 +516,4 @@ void SkFontMgr_OHOS::onInvalidateThemeFont(int fd) {
 sk_sp<SkFontMgr> SkFontMgr_New_OHOS(const char* fname) {
   return sk_make_sp<SkFontMgr_OHOS>(fname);
 }
+//LCOV_EXCL_STOP

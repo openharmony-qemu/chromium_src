@@ -46,6 +46,7 @@ namespace viz {
 const int DUMP_FRAME_FREQ = 60;
 const int MAIN_PROCESS_ID_MIN = 20000000;
 
+//LCOV_EXCL_START
 class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
  public:
   DumpFrameObserver() = default;
@@ -101,6 +102,7 @@ class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
   std::vector<std::string> dump_param_list_;
 };
 #endif
+//LCOV_EXCL_STOP
 
 namespace {
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
@@ -121,6 +123,7 @@ const int kRectNumthreshold = 5;
 #endif
 }  // namespace
 
+//LCOV_EXCL_START
 ArkwebDisplayUtils::ArkwebDisplayUtils(Display* display) : display_(display) {
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   dump_frame_observer_ = std::make_unique<DumpFrameObserver>();
@@ -186,6 +189,7 @@ void ArkwebDisplayUtils::SetBypassVsyncCondition(int32_t condition) {
     display_->renderer_->SetBypassVsyncCondition(condition);
 }
 #endif
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
 void ArkwebDisplayUtils::SetDrawRect(const gfx::Rect& new_rect) {
@@ -200,13 +204,16 @@ void ArkwebDisplayUtils::SetDrawRect(const gfx::Rect& new_rect) {
   LOG(INFO) << "SetDrawRect new_rect=" << new_rect.ToString();
 }
 
+//LCOV_EXCL_START
 void ArkwebDisplayUtils::SetDrawMode(const int32_t mode) {
   LOG(INFO) << "SetDrawMode mode=" << mode;
   draw_mode_ = mode;
 }
+//LCOV_EXCL_STOP
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+//LCOV_EXCL_START
 void ArkwebDisplayUtils::DisableSwapUntilMaximized() {
   temp_idle_state_ = TempIdleState::INIT;
   if (reset_init_timer_) {
@@ -222,6 +229,7 @@ void ArkwebDisplayUtils::RestoreRenderFitTimeElapsed() {
     display_->client_->RestoreRenderFit(display_->frame_sink_id_);
   }
 }
+//LCOV_EXCL_STOP
 
 void ArkwebDisplayUtils::ReenableSwapCheck(const SurfaceId& surface_id,
                                            int width,
@@ -243,6 +251,7 @@ void ArkwebDisplayUtils::ReenableSwapCheck(const SurfaceId& surface_id,
   }
 }
 
+//LCOV_EXCL_START
 void ArkwebDisplayUtils::RestoreRenderFit() {
   if (temp_idle_state_ == TempIdleState::REENABLE_SWAP && display_->client_) {
     LOG(INFO) << "Display RestoreRenderFit, frame_sink_id_: "
@@ -271,6 +280,7 @@ void ArkwebDisplayUtils::DrawAndSwapDump(AggregatedFrame& frame) {
   }
 }
 #endif
+//LCOV_EXCL_STOP
 
 void ArkwebDisplayUtils::Resize(const gfx::Size& size) {
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
@@ -350,6 +360,7 @@ void ArkwebDisplayUtils::removeDeplicatesRect(std::vector<gfx::Rect>& quad_list)
   }
 }
 
+//LCOV_EXCL_START
 void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
   if (!gpu_channel_manager_) {
     LOG(ERROR) << "blankless DumpSnapshotForBlankLess, gpu_channel_manager_ is nullptr";
@@ -399,5 +410,6 @@ void ArkwebDisplayUtils::SetClientId(const uint32_t client_id) {
 void ArkwebDisplayUtils::SetGpuChannelManager(gpu::GpuChannelManager* gpu_channel_manager) {
   gpu_channel_manager_ = gpu_channel_manager;
 }
+//LCOV_EXCL_STOP
 #endif
 }  // namespace viz

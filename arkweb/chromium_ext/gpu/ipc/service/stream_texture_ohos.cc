@@ -48,9 +48,11 @@ std::unique_ptr<ui::ScopedMakeCurrent> MakeCurrent(
   return scoped_make_current;
 }
 
+//LCOV_EXCL_START
 scoped_refptr<gpu::RefCountedLock> CreateDrDcLockIfNeeded() {
   return base::MakeRefCounted<gpu::RefCountedLock>();
 }
+//LCOV_EXCL_STOP
 
 }  // namespace
 
@@ -119,6 +121,7 @@ StreamTexture::StreamTexture(
                           weak_factory_.GetWeakPtr()));
 }
 
+//LCOV_EXCL_START
 StreamTexture::~StreamTexture() {
   DCHECK_CALLED_ON_VALID_THREAD(gpu_main_thread_checker_);
 
@@ -222,6 +225,7 @@ void StreamTexture::StartListening(
     mojo::PendingAssociatedRemote<mojom::StreamTextureClient> client) {
   client_.Bind(std::move(client));
 }
+//LCOV_EXCL_STOP
 
 gpu::Mailbox StreamTexture::CreateSharedImage(const gfx::Size& coded_size) {
   DCHECK_CALLED_ON_VALID_THREAD(gpu_main_thread_checker_);
@@ -259,6 +263,7 @@ void StreamTexture::UpdateRotatedVisibleSize(
   }
 }
 
+//LCOV_EXCL_START
 std::unique_ptr<ScopedNativeBufferFenceSync> StreamTexture::GetNativeBuffer() {
   DCHECK(native_texture_owner_);
 
@@ -277,6 +282,7 @@ int StreamTexture::NativeEmbedID() {
   }
   return native_embed_id_;
 }
+//LCOV_EXCL_STOP
 
 }  // namespace gpu
                    

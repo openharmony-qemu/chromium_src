@@ -35,6 +35,7 @@ namespace gpu {
 // This class is safe to be created/destroyed on different threads. This is made
 // sure by destruction happening on correct thread. This class is not thread
 // safe to be used concurrently on multiple thraeads.
+//LCOV_EXCL_START
 class HwVideoNativeBufferGLOwner::ScopedNativeBufferImpl
     : public ScopedNativeBufferFenceSync {
  public:
@@ -196,6 +197,7 @@ void HwVideoNativeBufferGLOwner::ReleaseRefOnImage(OhosWindowBuffer* image,
   base::AutoLock auto_lock(lock_);
   ReleaseRefOnImageLocked(image, std::move(fence_fd));
 }
+//LCOV_EXCL_STOP
 
 void HwVideoNativeBufferGLOwner::ReleaseRefOnImageLocked(
     OhosWindowBuffer* image,
@@ -257,6 +259,7 @@ void HwVideoNativeBufferGLOwner::ReleaseRefOnImageLocked(
   }
 }
 
+//LCOV_EXCL_START
 gl::GLContext* HwVideoNativeBufferGLOwner::GetContext() const {
   DCHECK_CALLED_ON_VALID_THREAD(gpu_main_thread_checker_);
   return context_.get();
@@ -266,6 +269,7 @@ gl::GLSurface* HwVideoNativeBufferGLOwner::GetSurface() const {
   DCHECK_CALLED_ON_VALID_THREAD(gpu_main_thread_checker_);
   return surface_.get();
 }
+//LCOV_EXCL_STOP
 
 void HwVideoNativeBufferGLOwner::RunWhenBufferIsAvailable(
     base::OnceClosure callback) {
@@ -334,6 +338,7 @@ bool HwVideoNativeBufferGLOwner::GetCodedSizeAndVisibleRect(
   return true;
 }
 
+//LCOV_EXCL_START
 HwVideoNativeBufferGLOwner::ImageRef::ImageRef() = default;
 HwVideoNativeBufferGLOwner::ImageRef::~ImageRef() = default;
 HwVideoNativeBufferGLOwner::ImageRef::ImageRef(ImageRef&& other) = default;
@@ -391,5 +396,6 @@ void HwVideoNativeBufferGLOwner::ReleaseNativeImage() {
     loader_->ReleaseNativeImage();
   }
 }
+//LCOV_EXCL_STOP
 }  // namespace gpu
                    

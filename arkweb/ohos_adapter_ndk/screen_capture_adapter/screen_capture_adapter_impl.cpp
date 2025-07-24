@@ -179,7 +179,7 @@ OH_AVScreenCaptureConfig ConvertScreenCaptureConfig(const std::shared_ptr<Screen
         const std::string& sourceUrl = config->GetRecorderInfo()->GetUrl();
         avConfig.recorderInfo.urlLen = static_cast<uint32_t>(sourceUrl.length() + 1);
         avConfig.recorderInfo.url = new char[avConfig.recorderInfo.urlLen];
-        errot err = strncpy_c(
+        erron_t err = strncpy_s(
             avConfig.recorderInfo.url,
             avConfig.recorderInfo.urlLen,
             sourceUrl.c_str(),

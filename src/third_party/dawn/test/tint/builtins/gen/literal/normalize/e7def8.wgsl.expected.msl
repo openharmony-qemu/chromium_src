@@ -1,0 +1,39 @@
+#include <metal_stdlib>
+
+using namespace metal;
+void normalize_e7def8() {
+  float3 res = float3(0.57735025882720947266f);
+}
+
+fragment void fragment_main() {
+  normalize_e7def8();
+  return;
+}
+
+kernel void compute_main() {
+  normalize_e7def8();
+  return;
+}
+
+struct VertexOutput {
+  float4 pos;
+};
+
+struct tint_symbol {
+  float4 pos [[position]];
+};
+
+VertexOutput vertex_main_inner() {
+  VertexOutput out = {};
+  out.pos = float4(0.0f);
+  normalize_e7def8();
+  return out;
+}
+
+vertex tint_symbol vertex_main() {
+  VertexOutput const inner_result = vertex_main_inner();
+  tint_symbol wrapper_result = {};
+  wrapper_result.pos = inner_result.pos;
+  return wrapper_result;
+}
+

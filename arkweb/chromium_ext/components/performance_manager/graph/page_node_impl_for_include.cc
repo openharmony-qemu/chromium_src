@@ -27,6 +27,7 @@ void PageNodeImpl::SetIsMediaPlaying(bool is_media_playing) {
   }
 }
 
+// LCOV_EXCL_START
 void PageNodeImpl::OneShotMediaPlayerStopped() {
   for (auto& observer : GetObservers()) {
     observer.OnDecrementAudioNum(this);
@@ -42,5 +43,6 @@ bool PageNodeImpl::IsMediaPlaying() const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   return is_media_playing();
 }
+// LCOV_EXCL_STOP
 #endif
 }

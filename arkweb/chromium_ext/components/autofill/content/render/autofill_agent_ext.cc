@@ -78,6 +78,7 @@ void AutofillAgentExt::ArkFillAccountSuggestion(
 #endif
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+// LCOV_EXCL_START
 void AutofillAgentExt::OhFormControlElementClicked() {
   WebElement focused_element =
       unsafe_render_frame()->GetWebFrame()->GetDocument().FocusedElement();
@@ -94,6 +95,7 @@ void AutofillAgentExt::OhFormControlElementClicked() {
     }
   }
 }
+// LCOV_EXCL_STOP
 #endif
 
 #if BUILDFLAG(ARKWEB_AUTOFILL)
@@ -121,6 +123,7 @@ void AutofillAgentExt::OhAutoFillFormControlElementClicked(
 #endif
 
 #if BUILDFLAG(ARKWEB_AUTOFILL)
+// LCOV_EXCL_START
 bool AutofillAgentExt::OhAutoFillDidChangeScrollOffset() {
   WebFormControlElement last_queried_element = last_queried_element_.GetField();
   if (!last_queried_element) {
@@ -155,6 +158,7 @@ bool AutofillAgentExt::OhAutoFillDidChangeScrollOffset() {
   }
   return false;
 }
+// LCOV_EXCL_STOP
 #endif
 
 bool AutofillAgentExt::FillFieldWithValue(FieldRendererId field_id,

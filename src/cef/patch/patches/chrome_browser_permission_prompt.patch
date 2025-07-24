@@ -1,0 +1,51 @@
+diff --git chrome/browser/ui/permission_bubble/permission_prompt.h chrome/browser/ui/permission_bubble/permission_prompt.h
+index fbce13c16ad10..0512b2f09937e 100644
+--- chrome/browser/ui/permission_bubble/permission_prompt.h
++++ chrome/browser/ui/permission_bubble/permission_prompt.h
+@@ -11,6 +11,13 @@ namespace content {
+ class WebContents;
+ }
+ 
++using CreatePermissionPromptFunctionPtr =
++    std::unique_ptr<permissions::PermissionPrompt> (*)(
++        content::WebContents* web_contents,
++        permissions::PermissionPrompt::Delegate* delegate,
++        bool* default_handling);
++void SetCreatePermissionPromptFunction(CreatePermissionPromptFunctionPtr);
++
+ // Factory function to create permission prompts for chrome.
+ std::unique_ptr<permissions::PermissionPrompt> CreatePermissionPrompt(
+     content::WebContents* web_contents,
+diff --git chrome/browser/ui/views/permissions/permission_prompt_factory.cc chrome/browser/ui/views/permissions/permission_prompt_factory.cc
+index 7f976b5bc5c44..ee2faa5c297a7 100644
+--- chrome/browser/ui/views/permissions/permission_prompt_factory.cc
++++ chrome/browser/ui/views/permissions/permission_prompt_factory.cc
+@@ -222,11 +222,28 @@ std::unique_ptr<permissions::PermissionPrompt> CreateQuietPrompt(
+   }
+ }
+ 
++CreatePermissionPromptFunctionPtr g_create_permission_prompt_ptr = nullptr;
++
+ }  // namespace
+ 
++void SetCreatePermissionPromptFunction(
++    CreatePermissionPromptFunctionPtr ptr) {
++  g_create_permission_prompt_ptr = ptr;
++}
++
+ std::unique_ptr<permissions::PermissionPrompt> CreatePermissionPrompt(
+     content::WebContents* web_contents,
+     permissions::PermissionPrompt::Delegate* delegate) {
++  if (g_create_permission_prompt_ptr) {
++    bool default_handling = true;
++    auto prompt = g_create_permission_prompt_ptr(web_contents, delegate,
++                                                 &default_handling);
++    if (prompt)
++      return prompt;
++    if (!default_handling)
++      return nullptr;
++  }
++
+   Browser* browser = chrome::FindBrowserWithTab(web_contents);
+   if (!browser) {
+     DLOG(WARNING) << "Permission prompt suppressed because the WebContents is "

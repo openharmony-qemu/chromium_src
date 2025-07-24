@@ -22,6 +22,7 @@
 #include "base/time/time.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/browser_process_impl.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/ui/webui/version/version_handler.h"
@@ -70,6 +71,10 @@
 #include "chrome/browser/ui/webui/version/version_util_win.h"
 #endif
 
+#if BUILDFLAG(ENABLE_CEF)
+#include "cef/include/cef_version.h"
+#endif
+
 using content::WebUIDataSource;
 
 namespace {
@@ -90,6 +95,10 @@ void CreateAndAddVersionUIDataSource(Profile* profile) {
       {version_ui::kCommandLineName, IDS_VERSION_UI_COMMAND_LINE},
       {version_ui::kExecutablePathName, IDS_VERSION_UI_EXECUTABLE_PATH},
       {version_ui::kProfilePathName, IDS_VERSION_UI_PROFILE_PATH},
+#if BUILDFLAG(ENABLE_CEF)
+      {version_ui::kModulePathName, IDS_VERSION_UI_MODULE_PATH},
+      {version_ui::kUserDataPathName, IDS_VERSION_UI_USER_DATA_PATH},
+#endif
       {version_ui::kVariationsName, IDS_VERSION_UI_VARIATIONS},
       {version_ui::kVariationsCmdName, IDS_VERSION_UI_VARIATIONS_CMD},
       {version_ui::kCopyVariationsLabel, IDS_VERSION_UI_COPY_VARIATIONS_LABEL},
@@ -130,6 +139,10 @@ void CreateAndAddVersionUIDataSource(Profile* profile) {
                                IDR_PRODUCT_LOGO_WHITE);
 #endif  // BUILDFLAG(IS_ANDROID)
   html_source->SetDefaultResource(IDR_VERSION_UI_ABOUT_VERSION_HTML);
+
+#if BUILDFLAG(ENABLE_CEF)
+  html_source->AddString(version_ui::kCefVersion, CEF_VERSION);
+#endif
 }
 
 std::string GetProductModifier() {
@@ -247,6 +260,10 @@ void VersionUI::AddVersionDetailStrings(content::WebUIDataSource* html_source) {
   // blank.
   html_source->AddString(version_ui::kExecutablePath, std::string());
   html_source->AddString(version_ui::kProfilePath, std::string());
+#if BUILDFLAG(ENABLE_CEF)
+  html_source->AddString(version_ui::kModulePath, std::string());
+  html_source->AddString(version_ui::kUserDataPath, std::string());
+#endif
 
 #if BUILDFLAG(IS_MAC)
   html_source->AddString(version_ui::kOSType, base::mac::GetOSDisplayName());

@@ -18,6 +18,7 @@
 #include "build/branding_buildflags.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/about_flags.h"
 #include "chrome/browser/buildflags.h"
 #include "chrome/browser/devtools/devtools_ui_bindings.h"
@@ -485,6 +486,9 @@ ChromeWebUIControllerFactory::GetListOfAcceptableURLs() {
     GURL(chrome::kChromeUIGpuURL),
     GURL(chrome::kChromeUIHistogramsURL),
     GURL(chrome::kChromeUIInspectURL),
+#if BUILDFLAG(ENABLE_CEF)
+    GURL(chrome::kChromeUILicenseURL),
+#endif
     GURL(chrome::kChromeUIManagementURL),
     GURL(chrome::kChromeUINetExportURL),
     GURL(chrome::kChromeUIPrefsInternalsURL),

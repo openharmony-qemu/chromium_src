@@ -48,6 +48,7 @@
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
 #include "build/config/chromebox_for_meetings/buildflags.h"  // PLATFORM_CFM
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/after_startup_task_utils.h"
 #include "chrome/browser/ai/ai_manager_keyed_service_factory.h"
 #include "chrome/browser/app_mode/app_mode_utils.h"
@@ -1516,6 +1517,8 @@ ChromeContentBrowserClient::GetPopupNavigationDelegateFactoryForTesting() {
 }
 
 ChromeContentBrowserClient::ChromeContentBrowserClient() {
+  keepalive_timer_.reset(new base::OneShotTimer());
+
 #if BUILDFLAG(ENABLE_PLUGINS)
   extra_parts_.push_back(
       std::make_unique<ChromeContentBrowserClientPluginsPart>());
@@ -1551,6 +1554,11 @@ ChromeContentBrowserClient::~ChromeContentBrowserClient() {
   while (!extra_parts_.empty()) {
     extra_parts_.pop_back();
   }
+}
+
+void ChromeContentBrowserClient::CleanupOnUIThread() {
+  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+  keepalive_timer_.reset();
 }
 
 // static
@@ -4017,28 +4025,25 @@ bool UpdatePreferredColorScheme(WebPreferences* web_prefs,
         web_prefs->preferred_color_scheme;
   }
 #else
-  // Update based on native theme scheme.
-  web_prefs->preferred_color_scheme =
-      ToBlinkPreferredColorScheme(native_theme->GetPreferredColorScheme());
+  auto preferred_color_scheme = native_theme->GetPreferredColorScheme();
 
-  bool using_different_colored_frame = false;
-  if (Profile* profile =
-          Profile::FromBrowserContext(web_contents->GetBrowserContext())) {
-    if (ThemeService* theme_service =
-            ThemeServiceFactory::GetForProfile(profile)) {
-      using_different_colored_frame = !theme_service->UsingDefaultTheme() ||
-                                      theme_service->GetUserColor().has_value();
-    }
+  auto* profile = Profile::FromBrowserContext(
+      web_contents->GetBrowserContext());
+  const auto* theme_service = ThemeServiceFactory::GetForProfile(profile);
+
+  const auto browser_color_scheme = theme_service->GetBrowserColorScheme();
+  if (browser_color_scheme != ThemeService::BrowserColorScheme::kSystem) {
+    // Override the native theme.
+    preferred_color_scheme =
+        browser_color_scheme == ThemeService::BrowserColorScheme::kLight
+            ? ui::NativeTheme::PreferredColorScheme::kLight
+            : ui::NativeTheme::PreferredColorScheme::kDark;
   }
 
-  // Update based on the ColorProvider associated with `web_contents`. Depends
-  // on the browser color mode settings and whether the user profile has set a
-  // custom coloring for the browser ui.
-  web_prefs->preferred_root_scrollbar_color_scheme =
-      web_contents->GetColorMode() == ui::ColorProviderKey::ColorMode::kLight ||
-              using_different_colored_frame
-          ? blink::mojom::PreferredColorScheme::kLight
-          : blink::mojom::PreferredColorScheme::kDark;
+  // Update based on native theme scheme.
+  web_prefs->preferred_color_scheme =
+      web_prefs->preferred_root_scrollbar_color_scheme =
+      ToBlinkPreferredColorScheme(preferred_color_scheme);
 #endif  // BUILDFLAG(IS_ANDROID)
 
   // Reauth WebUI doesn't support dark mode yet because it shares the dialog
@@ -4794,9 +4799,11 @@ void ChromeContentBrowserClient::BrowserURLHandlerCreated(
                           &search::HandleNewTabURLReverseRewrite);
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if !BUILDFLAG(ENABLE_CEF)
   // chrome: & friends.
   handler->AddHandlerPair(&ChromeContentBrowserClient::HandleWebUI,
                           &ChromeContentBrowserClient::HandleWebUIReverse);
+#endif
 }
 
 base::FilePath ChromeContentBrowserClient::GetDefaultDownloadDirectory() {
@@ -6903,7 +6910,7 @@ void ChromeContentBrowserClient::OnNetworkServiceCreated(
 #endif
 }
 
-void ChromeContentBrowserClient::ConfigureNetworkContextParams(
+bool ChromeContentBrowserClient::ConfigureNetworkContextParams(
     content::BrowserContext* context,
     bool in_memory,
     const base::FilePath& relative_partition_path,
@@ -6921,6 +6928,8 @@ void ChromeContentBrowserClient::ConfigureNetworkContextParams(
     network_context_params->user_agent = GetUserAgentBasedOnPolicy(context);
     network_context_params->accept_language = GetApplicationLocale();
   }
+
+  return true;
 }
 
 std::vector<base::FilePath>
@@ -8087,11 +8096,11 @@ void ChromeContentBrowserClient::OnKeepaliveRequestStarted(
   const auto now = base::TimeTicks::Now();
   const auto timeout = GetKeepaliveTimerTimeout(context);
   keepalive_deadline_ = std::max(keepalive_deadline_, now + timeout);
-  if (keepalive_deadline_ > now && !keepalive_timer_.IsRunning()) {
+  if (keepalive_deadline_ > now && !keepalive_timer_->IsRunning()) {
     if (!KeepAliveRegistry::GetInstance()->IsShuttingDown()) {
       DVLOG(1) << "Starting a keepalive timer(" << timeout.InSecondsF()
                << " seconds)";
-      keepalive_timer_.Start(
+      keepalive_timer_->Start(
           FROM_HERE, keepalive_deadline_ - now,
           base::BindOnce(
               &ChromeContentBrowserClient::OnKeepaliveTimerFired,
@@ -8113,7 +8122,8 @@ void ChromeContentBrowserClient::OnKeepaliveRequestFinished() {
   --num_keepalive_requests_;
   if (num_keepalive_requests_ == 0) {
     DVLOG(1) << "Stopping the keepalive timer";
-    keepalive_timer_.Stop();
+    if (keepalive_timer_)
+      keepalive_timer_->Stop();
     // This deletes the keep alive handle attached to the timer function and
     // unblock the shutdown sequence.
   }
@@ -8288,7 +8298,7 @@ void ChromeContentBrowserClient::OnKeepaliveTimerFired(
   const auto now = base::TimeTicks::Now();
   const auto then = keepalive_deadline_;
   if (now < then) {
-    keepalive_timer_.Start(
+    keepalive_timer_->Start(
         FROM_HERE, then - now,
         base::BindOnce(&ChromeContentBrowserClient::OnKeepaliveTimerFired,
                        weak_factory_.GetWeakPtr(),

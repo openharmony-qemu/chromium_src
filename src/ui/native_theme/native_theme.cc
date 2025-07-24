@@ -146,6 +146,7 @@ void NativeTheme::NotifyOnNativeThemeUpdated() {
   color_provider_manager.ResetColorProviderCache();
   native_theme_observers_.Notify(&NativeThemeObserver::OnNativeThemeUpdated,
                                  this);
+  color_provider_manager.AfterNativeThemeUpdated();
 
   RecordNumColorProvidersInitializedDuringOnNativeThemeUpdated(
       color_provider_manager.num_providers_initialized() -
@@ -286,6 +287,13 @@ bool NativeTheme::IsForcedDarkMode() {
       base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kForceDarkMode);
   return kIsForcedDarkMode;
+}
+
+bool NativeTheme::IsForcedLightMode() {
+  static bool kIsForcedLightMode =
+      base::CommandLine::ForCurrentProcess()->HasSwitch(
+          "force-light-mode");
+  return kIsForcedLightMode;
 }
 
 bool NativeTheme::IsForcedHighContrast() {

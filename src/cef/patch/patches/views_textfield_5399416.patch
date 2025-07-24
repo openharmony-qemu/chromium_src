@@ -1,0 +1,15 @@
+diff --git ui/views/controls/textfield/textfield.cc ui/views/controls/textfield/textfield.cc
+index 85bb58edd7041..36d9bf3ae5263 100644
+--- ui/views/controls/textfield/textfield.cc
++++ ui/views/controls/textfield/textfield.cc
+@@ -3028,6 +3028,10 @@ void Textfield::OnCursorBlinkTimerFired() {
+ void Textfield::OnEnabledChanged() {
+   if (GetInputMethod())
+     GetInputMethod()->OnTextInputTypeChanged(this);
++  if (GetWidget()) {
++    SetColor(GetTextColor());
++    UpdateBackgroundColor();
++  }
+   UpdateDefaultBorder();
+ 
+   // Only expose readonly if enabled. Don't overwrite the disabled restriction.

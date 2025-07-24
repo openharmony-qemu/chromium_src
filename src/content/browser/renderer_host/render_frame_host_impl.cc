@@ -9197,6 +9197,16 @@ void RenderFrameHostImpl::CreateNewWindow(
     return;
   }
 
+  callback = base::BindOnce(
+      [](RenderFrameHostImpl* self,
+         CreateNewWindowCallback callback,
+         mojom::CreateNewWindowStatus status,
+         mojom::CreateNewWindowReplyPtr reply) {
+        GetContentClient()->browser()->CreateWindowResult(
+            self, status == mojom::CreateNewWindowStatus::kSuccess);
+        std::move(callback).Run(status, std::move(reply));
+      }, base::Unretained(this), std::move(callback));
+
   // Otherwise, consume user activation before we proceed. In particular, it is
   // important to do this before we return from the |opener_suppressed| case
   // below.
@@ -11560,6 +11570,7 @@ void RenderFrameHostImpl::CommitNavigation(
   auto browser_calc_origin_to_commit =
       navigation_request->GetOriginToCommitWithDebugInfo();
   if (!process_lock.is_error_page() && !is_mhtml_subframe &&
+      common_params->url.IsStandard() &&
       !policy->CanAccessOrigin(
           GetProcess()->GetID(), browser_calc_origin_to_commit.first.value(),
           ChildProcessSecurityPolicyImpl::AccessType::kCanCommitNewOrigin)) {

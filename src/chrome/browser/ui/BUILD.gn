@@ -8,6 +8,7 @@ import("//build/config/compiler/compiler.gni")
 import("//build/config/features.gni")
 import("//build/config/ozone.gni")
 import("//build/config/ui.gni")
+import("//cef/libcef/features/features.gni")
 import("//chrome/browser/buildflags.gni")
 import("//chrome/common/features.gni")
 import("//chromeos/ash/components/assistant/assistant.gni")
@@ -297,6 +298,10 @@ static_library("ui") {
     "//build/config/compiler:wexit_time_destructors",
   ]
 
+  if (enable_cef) {
+    configs += [ "//cef/libcef/features:config" ]
+  }
+
   public_deps = [
     # WARNING WARNING WARNING
     # New dependencies outside of //chrome/browser should be added to
@@ -323,6 +328,7 @@ static_library("ui") {
     "//build:chromeos_buildflags",
     "//build/config/chromebox_for_meetings:buildflags",
     "//cc/paint",
+    "//cef/libcef/features",
     "//chrome:resources",
     "//chrome:strings",
     "//chrome/app:chrome_dll_resources",
@@ -686,6 +692,10 @@ static_library("ui") {
 
   if (is_chrome_branded) {
     deps += [ "//components/plus_addresses/resources:vector_icons" ]
+  }
+
+  if (enable_cef) {
+    deps += [ "//cef:cef_resources" ]
   }
 
   # TODO(crbug.com/41437292): Remove this circular dependency.
@@ -5479,6 +5489,7 @@ static_library("ui") {
   if (enable_printing) {
     deps += [
       "//components/printing/browser",
+      "//components/printing/common:mojo_interfaces",
       "//printing",
     ]
   }

@@ -699,6 +699,11 @@ void SadTabView::OnBoundsChanged(const gfx::Rect& previous_bounds) {
   title_->SizeToFit(max_width);
 }
 
+// static
+std::u16string SadTabView::ErrorToString(int error_code) {
+  return ::ErrorToString(error_code);
+}
+
 SadTab* SadTab::Create(content::WebContents* web_contents, SadTabKind kind) {
   return new SadTabView(web_contents, kind);
 }

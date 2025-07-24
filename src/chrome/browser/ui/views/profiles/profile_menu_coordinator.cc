@@ -52,7 +52,9 @@ void ProfileMenuCoordinator::Show(bool is_source_accelerator) {
 
   std::unique_ptr<ProfileMenuViewBase> bubble;
   bool is_incognito = browser.profile()->IsIncognitoProfile();
-  if (is_incognito) {
+  if (is_incognito ||
+         (browser.profile()->IsOffTheRecord() &&
+          browser.profile()->GetOTRProfileID().IsUniqueForCEF())) {
     bubble =
         std::make_unique<IncognitoMenuView>(avatar_toolbar_button, &browser);
   } else {

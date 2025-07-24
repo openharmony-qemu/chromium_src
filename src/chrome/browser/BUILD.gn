@@ -12,6 +12,7 @@ import("//build/config/compiler/pgo/pgo.gni")
 import("//build/config/features.gni")
 import("//build/config/python.gni")
 import("//build/config/ui.gni")
+import("//cef/libcef/features/features.gni")
 import("//chrome/browser/buildflags.gni")
 import("//chrome/browser/downgrade/buildflags.gni")
 import("//chrome/browser/request_header_integrity/buildflags.gni")
@@ -1835,6 +1836,7 @@ static_library("browser") {
     "//build/config/chromebox_for_meetings:buildflags",
     "//build/config/compiler:compiler_buildflags",
     "//cc",
+    "//cef/libcef/features",
     "//chrome:extra_resources",
     "//chrome:resources",
     "//chrome:strings",
@@ -2505,6 +2507,10 @@ static_library("browser") {
     sources += [ "net/net_error_diagnostics_dialog_win.cc" ]
   } else {
     sources += [ "net/net_error_diagnostics_dialog_stub.cc" ]
+  }
+
+  if (enable_cef) {
+    configs += [ "//cef/libcef/features:config" ]
   }
 
   if (is_android) {

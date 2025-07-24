@@ -1,0 +1,13 @@
+diff --git content/browser/scheduler/browser_task_executor.cc content/browser/scheduler/browser_task_executor.cc
+index 0cc947d5ba1c6..4cb8ee3b1544b 100644
+--- content/browser/scheduler/browser_task_executor.cc
++++ content/browser/scheduler/browser_task_executor.cc
+@@ -208,7 +208,7 @@ BrowserTaskExecutor::OnUserInputStart() {
+ 
+ // static
+ void BrowserTaskExecutor::Shutdown() {
+-  if (!g_browser_task_executor)
++  if (!g_browser_task_executor || !g_browser_task_executor->ui_thread_executor_)
+     return;
+ 
+   DCHECK(Get()->ui_thread_executor_);

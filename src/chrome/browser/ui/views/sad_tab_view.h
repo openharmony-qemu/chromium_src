@@ -56,6 +56,8 @@ class SadTabView : public SadTab, public views::View {
   // Overridden from views::View:
   void OnBoundsChanged(const gfx::Rect& previous_bounds) override;
 
+  static std::u16string ErrorToString(int error_code);
+
  protected:
   // Overridden from views::View:
   void OnPaint(gfx::Canvas* canvas) override;

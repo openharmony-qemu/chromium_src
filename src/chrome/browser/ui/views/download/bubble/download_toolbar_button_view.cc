@@ -834,6 +834,10 @@ void DownloadToolbarButtonView::ShowPendingDownloadStartedAnimation() {
   if (!gfx::Animation::ShouldRenderRichAnimation()) {
     return;
   }
+  if (!IsDrawn()) {
+    // Don't animate with a hidden download button.
+    return;
+  }
   content::WebContents* const web_contents =
       browser_->tab_strip_model()->GetActiveWebContents();
   if (!web_contents ||

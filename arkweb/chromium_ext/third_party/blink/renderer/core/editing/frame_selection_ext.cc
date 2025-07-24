@@ -158,6 +158,7 @@ void FrameSelectionExt::MoveRangeSelection(const gfx::Point& point,
 #endif
 
 #if BUILDFLAG(ARKWEB_MENU)
+// LCOV_EXCL_START
 void FrameSelectionExt::NeedUpdateCursorLocation() {
   if (!selection_editor_) {
     LOG(ERROR) << "selection_editor_ is nullptr";
@@ -165,18 +166,22 @@ void FrameSelectionExt::NeedUpdateCursorLocation() {
   }
   selection_editor_->NeedRecalculateCursor();
 }
+// LCOV_EXCL_STOP
 #endif
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
+// LCOV_EXCL_START
 void FrameSelectionExt::InvalidateSelectionForDrag() {
   auto* view = GetDocument().GetLayoutView();
   if (view) {
     layout_selection_->InvalidateStyleAndPaintForSelection();
   }
 }
+// LCOV_EXCL_STOP
 #endif  //(ARKWEB_DRAG_DROP)
 
 #if BUILDFLAG(ARKWEB_MENU)
+// LCOV_EXCL_START
 gfx::Rect FrameSelectionExt::ClippedSelectionBoundsInRootFrame() const {
   if (!frame_ || !frame_->GetPage() || !frame_->View()) {
     return gfx::Rect();
@@ -199,8 +204,10 @@ gfx::Rect FrameSelectionExt::ClippedSelectionBoundsInRootFrame() const {
   return gfx::ScaleToEnclosingRect(
       selection_bounds, frame_->GetPage()->GetVisualViewport().Scale());
 }
+// LCOV_EXCL_STOP
 #endif
 
+// LCOV_EXCL_START
 bool FrameSelectionExt::GetSelectionMarkMaxLengthOverflow() {
   LOG(DEBUG) << "FrameSelectionExt::GetSelectionMarkMaxLengthOverflow "
              << is_max_length_overflow_;
@@ -210,4 +217,5 @@ bool FrameSelectionExt::GetSelectionMarkMaxLengthOverflow() {
   is_max_length_overflow_ = false;
   return false;
 }
+// LCOV_EXCL_STOP
 }  // namespace blink

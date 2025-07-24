@@ -32,6 +32,7 @@ void PaintLayerScrollableAreaUtils::ScaleSize(gfx::Size& visible_size) {
   visible_size.set_height(visible_size.height() / scale_factor);
 }
 
+// LCOV_EXCL_START
 LayoutUnit PaintLayerScrollableAreaUtils::ScaleWidth() {
   auto scale_factor = scrollable_area_->AsPaintLayerScrollableAreaExt()
                           ->ComputeVisibleAreaScale();
@@ -43,7 +44,9 @@ LayoutUnit PaintLayerScrollableAreaUtils::ScaleWidth() {
       scrollable_area_->VerticalScrollbarWidth(kIgnoreOverlayScrollbarSize));
   return client_width;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 LayoutUnit PaintLayerScrollableAreaUtils::ScaleHeight() {
   auto scale_factor = scrollable_area_->AsPaintLayerScrollableAreaExt()
                           ->ComputeVisibleAreaScale();
@@ -55,6 +58,7 @@ LayoutUnit PaintLayerScrollableAreaUtils::ScaleHeight() {
       scrollable_area_->HorizontalScrollbarHeight(kIgnoreOverlayScrollbarSize));
   return client_height;
 }
+// LCOV_EXCL_STOP
 
 ScrollOffset PaintLayerScrollableAreaUtils::GetScrollOffset(
     const mojom::blink::ScrollIntoViewParamsPtr& params,

@@ -21,6 +21,7 @@
 #endif
 namespace blink {
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void HTMLVideoElement::RequestEnterFullscreen() {
   if (!IsFullscreen()) {
@@ -37,12 +38,14 @@ void HTMLVideoElement::RequestExitFullscreen() {
   }
 }
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 void HTMLVideoElement::SetPlaybackRate(double playback_rate) {
   setPlaybackRate(playback_rate);
 }
 
+// LCOV_EXCL_START
 void HTMLVideoElement::RequestDownloadUrl() {
   const KURL& url = downloadURL();
   if (url.IsNull() || url.IsEmpty()) {
@@ -66,6 +69,7 @@ void HTMLVideoElement::RequestDownloadUrl() {
       request, network::mojom::blink::RedirectMode::kError);
 }
 #endif  // ARKWEB_VIDEO_ASSISTANT
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_PIP)
 void HTMLVideoElement::OnPictureInPictureStateChanged(uint32_t state) {

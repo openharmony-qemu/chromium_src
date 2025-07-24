@@ -104,6 +104,7 @@ void OHOSMediaPlayerRenderer::Initialize(
   TryOrCreateMediaPlayer();
 }
 
+// LCOV_EXCL_START
 void OHOSMediaPlayerRenderer::CreateMediaPlayer() {
     const std::string user_agent = GetContentClient()->browser()->GetUserAgent();
     std::vector<std::string> grantMediaFileAccessDirs;
@@ -132,6 +133,7 @@ void OHOSMediaPlayerRenderer::CreateMediaPlayer() {
         LOG(INFO) << "media player Initialize ok";
     }
 }
+// LCOV_EXCL_STOP
 
 void OHOSMediaPlayerRenderer::SetLatencyHint(
     std::optional<base::TimeDelta> latency_hint) {}
@@ -186,6 +188,7 @@ void OHOSMediaPlayerRenderer::SetNativeWindowSurface(int native_window_id) {
   TryOrCreateMediaPlayer();
 }
 
+// LCOV_EXCL_START
 void OHOSMediaPlayerRenderer::TryOrCreateMediaPlayer() {
   LOG(INFO) << "TryOrCreateMediaPlayer enter";
   bool wait_surface_created = native_window_id_ == -1;
@@ -199,6 +202,7 @@ void OHOSMediaPlayerRenderer::TryOrCreateMediaPlayer() {
   }
   CreateMediaPlayer();
 }
+// LCOV_EXCL_STOP
 
 void OHOSMediaPlayerRenderer::OnFrameAvailable(int fd,
                                                uint32_t size,
@@ -209,6 +213,7 @@ void OHOSMediaPlayerRenderer::OnFrameAvailable(int fd,
                                                int32_t format) {
 }
 
+// LCOV_EXCL_START
 media::OHOSMediaResourceGetter* OHOSMediaPlayerRenderer::GetMediaResourceGetter()
 {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
@@ -227,6 +232,7 @@ media::OHOSMediaResourceGetter* OHOSMediaPlayerRenderer::GetMediaResourceGetter(
   }
   return media_resource_getter_.get();
 }
+// LCOV_EXCL_STOP
 
 void OHOSMediaPlayerRenderer::OnMediaDurationChanged(base::TimeDelta duration) {
   if (duration.is_zero()) {

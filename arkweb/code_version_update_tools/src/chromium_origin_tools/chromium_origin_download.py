@@ -17,7 +17,7 @@
 import sys
 import platform
 import os
-from config import MAJOR, BUILD, PATCH
+from chromium_origin_config import MAJOR, BUILD, PATCH
 from chromium_origin_utils import run_one_cmd, \
 download_depot_tools, update_depot_tools, download_cef, update_cef, \
 set_gclient, check_gclient, download_chromium, update_chromium, \

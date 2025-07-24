@@ -39,8 +39,3 @@ test_interest_path = [
 remote_source_left_path = ('repo', '132_trunk', 'https://gitcode.com/openharmony-tpc/manifest.git', 'developer.xml')
 remote_source_right_path = ('git', 'chromium_baseline', 'https://gitcode.com/openharmony-tpc/chromium_src.git')
 remote_target_path = ('git', 'xxx', 'https://xxx/xxx.git')
-
-# chromium_origin_xxx所使用的版本号，谷歌版本号格式：MAJOR.MINOR.BUILD.PATCH。如：https://chromium.googlesource.com/chromium/src/+refs
-MAJOR = 138
-BUILD = 7204
-PATCH = 35

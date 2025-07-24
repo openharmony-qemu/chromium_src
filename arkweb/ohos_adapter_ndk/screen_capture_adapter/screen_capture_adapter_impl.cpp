@@ -177,7 +177,21 @@ OH_AVScreenCaptureConfig ConvertScreenCaptureConfig(const std::shared_ptr<Screen
     }
 
     if (config->GetDataType() == DataTypeAdapter::CAPTURE_FILE_DATA_TYPE && config->GetRecorderInfo()) {
-        avConfig.recorderInfo.url = const_cast<char*>(config->GetRecorderInfo()->GetUrl().c_str());
+        const std::string& sourceUrl = config->GetRecorderInfo()->GetUrl();
+        if (avConfig.recorderInfo.url != nullptr) {
+            delete[] avConfig.recorderInfo.url;
+            avConfig.recorderInfo.url = nullptr;
+            avConfig.recorderInfo.urlLen = 0;
+        }
+        avConfig.recorderInfo.urlLen = static_cast<uint32_t>(sourceUrl.length());
+        avConfig.recorderInfo.url = new char[avConfig.recorderInfo.urlLen + 1];
+        strncpy_c(
+            avConfig.recorderInfo.url,
+            avConfig.recorderInfo.urlLen + 1,
+            sourceUrl.c_str(),
+            avConfig.recorderInfo.urlLen
+        );
+        avConfig.recorderInfo.url[avConfig.recorderInfo.urlLen] = '\0';
         avConfig.recorderInfo.fileFormat = GetOHContainerFormatType(config->GetRecorderInfo()->GetFileFormat());
     } else {
         avConfig.recorderInfo = {};

@@ -14,13 +14,13 @@
  */
 
 #define private public
-
 #include "third_party/skia/src/ports/FontConfig_ohos.h"
-#include "gtest/gtest.h"
 #include "src/ports/SkFontScanner_FreeType_priv.h"
+#include "third_party/skia/include/core/SkFontScanner.h"
+#undef private
+#include "gtest/gtest.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "base/logging.h"
-#include "third_party/skia/include/core/SkFontScanner.h"
 #include <gmock/gmock.h>
 #include <dlfcn.h>
 #include <json/reader.h>

@@ -2661,6 +2661,15 @@ void NWebHandlerDelegate::UpdateFavicon(CefRefPtr<CefBrowser> browser) {
       &data, color_type, alpha_type, width, height);
   SetFavicon(data, width, height, ImageColorType(color_type),
              ImageAlphaType(alpha_type));
+  if (data == nullptr) {
+    LOG(ERROR) << "data is null";
+    return;
+  }
+  if (nweb_handler_) {
+    nweb_handler_->OnPageIcon(data, width, height,
+                              ImageColorType(color_type),
+                              ImageAlphaType(alpha_type));
+  }
 }
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 

@@ -38,6 +38,7 @@ class NWebExtensionActionCefDelegate {
                                         const NWebExtensionTab* tab);
   static void WebExtensionActionPinnedStateChanged(
       std::string extensionId, bool isPinned);
+  static void WebExtensionActionShowPopup(int tabId, std::string extensionId);
   static void WebExtensionSetPopupWindowId(int popupNwebId, int windowId);
   static void WebExtensionErasePopupWindowId(int popupNwebId);
   void OnDisable(const std::string& extensionId, std::optional<int>& tabId);

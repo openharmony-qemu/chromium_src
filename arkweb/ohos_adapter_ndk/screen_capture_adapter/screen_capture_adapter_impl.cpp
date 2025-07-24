@@ -23,6 +23,7 @@
 namespace OHOS::NWeb {
 std::unordered_map<int, std::queue<std::shared_ptr<SurfaceBufferAdapter>>> bufferAvailableQueueMap_;
 std::unordered_map<int, std::queue<std::shared_ptr<OH_AudioBufferAdapterImpl>>> audioBufferAvailableQueueMap_;
+OH_AVScreenCaptureConfig avConfig;
 const int MAX_QUEUE_SIZE = 20;
 namespace {
 OH_CaptureMode GetOHCaptureMode(const CaptureModeAdapter& mode)
@@ -176,11 +177,6 @@ OH_AVScreenCaptureConfig ConvertScreenCaptureConfig(const std::shared_ptr<Screen
 
     if (config->GetDataType() == DataTypeAdapter::CAPTURE_FILE_DATA_TYPE && config->GetRecorderInfo()) {
         const std::string& sourceUrl = config->GetRecorderInfo()->GetUrl();
-        if (avConfig.recorderInfo.url != nullptr) {
-            delete[] avConfig.recorderInfo.url;
-            avConfig.recorderInfo.url = nullptr;
-            avConfig.recorderInfo.urlLen = 0;
-        }
         avConfig.recorderInfo.urlLen = static_cast<uint32_t>(sourceUrl.length() + 1);
         avConfig.recorderInfo.url = new char[avConfig.recorderInfo.urlLen];
         errot err = strncpy_c(
@@ -441,6 +437,11 @@ void ScreenCaptureAdapterImpl::Release()
     if (!screenCapture_) {
         return;
     }
+    if (avConfig.recorderInfo.url != nullptr) {
+        delete[] avConfig.recorderInfo.url;
+        avConfig.recorderInfo.url = nullptr;
+        avConfig.recorderInfo.urlLen = 0;
+     }
     int32_t ret = OH_AVScreenCapture_Release(screenCapture_);
     if (ret != OH_AVSCREEN_CAPTURE_ErrCode::AV_SCREEN_CAPTURE_ERR_OK) {
         WVLOG_E("OH_AVScreenCapture release failed, ret = %{public}d", ret);

@@ -37,7 +37,7 @@ public:
 #endif
 
 private:
-  Scheduler* scheduler_;
+  RAW_PTR_EXCLUSION Scheduler* scheduler_;
 };
 
 }

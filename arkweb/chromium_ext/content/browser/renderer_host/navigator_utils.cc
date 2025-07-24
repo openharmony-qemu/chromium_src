@@ -31,7 +31,7 @@ void NavigatorUtils::StopPage()
     network::mojom::NetworkContext* network_context =
         storage_partition->GetNetworkContext();
     if (network_context != nullptr) {
-      network_context->StopPage(reinterpret_cast<int64_t>(navigator_));
+      network_context->StopPage(reinterpret_cast<int64_t>(navigator_.get()));
     }
   }
 }

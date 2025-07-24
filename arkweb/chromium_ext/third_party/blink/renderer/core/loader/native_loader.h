@@ -100,6 +100,7 @@ class CORE_EXPORT NativeLoader : public GarbageCollected<NativeLoader>,
   void UpdateLayoutObject();
 
  private:
+  friend class NativeLoaderTest;
   // ExecutionContextLifecycleStateObserver functions.
   void ContextLifecycleStateChanged(mojom::FrameLifecycleState) override {}
   void ContextDestroyed() override;

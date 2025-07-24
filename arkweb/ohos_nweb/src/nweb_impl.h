@@ -921,6 +921,7 @@ class NWebImpl : public NWeb {
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
+  void SetMediaResumeFromBFCachePage(bool resume);
 #endif
 
 #if BUILDFLAG(ARKWEB_MIXED_CONTENT)

@@ -1022,4 +1022,17 @@ void WebContentsImplExt::OnPdfLoadEvent(int32_t result, const std::string& url) 
   }
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+void WebContentsImplExt::SetMediaResumeFromBFCachePage(bool resume) {
+  LOG(INFO) << "WebContentsImplExt SetMediaResumeFromBFCachePage enter resume = " << resume;
+  if (media_resume_from_bfcache_page_ == resume) {
+    return;
+  }
+  LOG(INFO) << "WebContentsImplExt SetMediaResumeFromBFCachePage";
+  media_resume_from_bfcache_page_ = resume;
+  OnWebPreferencesChanged();
+}
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
+
 }  // namespace content

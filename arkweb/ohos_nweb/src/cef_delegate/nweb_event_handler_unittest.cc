@@ -635,6 +635,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void CustomWebMediaPlayer(bool enable) override {}
 
+  void SetMediaResumeFromBFCachePage(bool resume) override {}
+
   bool IsValid() override { return false; }
 
   MOCK_METHOD(CefRefPtr<ArkWebBrowserHostExt>, GetHost, (), (override));

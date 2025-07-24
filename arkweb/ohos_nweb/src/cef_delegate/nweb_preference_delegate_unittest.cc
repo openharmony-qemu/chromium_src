@@ -222,6 +222,9 @@ class MockCefBrowser : public CefBrowser, public CefBrowserHost {
                     int frame_routing_id,
                     int event) override {}
 #endif
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  void SetMediaResumeFromBFCachePage(bool resume) override {}
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
   CefBrowserSettings settings_;
   std::unique_ptr<CefBrowserContentsDelegate> contents_delegate_;
 };

@@ -128,8 +128,6 @@ OH_ContainerFormatType GetOHContainerFormatType(const ContainerFormatTypeAdapter
 
 OH_AVScreenCaptureConfig ConvertScreenCaptureConfig(const std::shared_ptr<ScreenCaptureConfigAdapter> config)
 {
-    OH_AVScreenCaptureConfig avConfig;
-
     if (!config) {
         WVLOG_I("ConvertScreenCaptureConfig config is null");
         return avConfig;
@@ -183,15 +181,21 @@ OH_AVScreenCaptureConfig ConvertScreenCaptureConfig(const std::shared_ptr<Screen
             avConfig.recorderInfo.url = nullptr;
             avConfig.recorderInfo.urlLen = 0;
         }
-        avConfig.recorderInfo.urlLen = static_cast<uint32_t>(sourceUrl.length());
-        avConfig.recorderInfo.url = new char[avConfig.recorderInfo.urlLen + 1];
-        strncpy_c(
+        avConfig.recorderInfo.urlLen = static_cast<uint32_t>(sourceUrl.length() + 1);
+        avConfig.recorderInfo.url = new char[avConfig.recorderInfo.urlLen];
+        errot err = strncpy_c(
             avConfig.recorderInfo.url,
-            avConfig.recorderInfo.urlLen + 1,
+            avConfig.recorderInfo.urlLen,
             sourceUrl.c_str(),
-            avConfig.recorderInfo.urlLen
+            sourceUrl.length()
         );
-        avConfig.recorderInfo.url[avConfig.recorderInfo.urlLen] = '\0';
+        if (err != 0) {
+            delete[] avConfig.recorderInfo.url;
+            avConfig.recorderInfo.url = nullptr;
+            avConfig.recorderInfo.urlLen = 0;
+            WVLOG_E("ConvertScreenCaptureConfig strncpy_c recorderInfo is error");
+        };
+        avConfig.recorderInfo.url[avConfig.recorderInfo.urlLen - 1] = '\0';
         avConfig.recorderInfo.fileFormat = GetOHContainerFormatType(config->GetRecorderInfo()->GetFileFormat());
     } else {
         avConfig.recorderInfo = {};

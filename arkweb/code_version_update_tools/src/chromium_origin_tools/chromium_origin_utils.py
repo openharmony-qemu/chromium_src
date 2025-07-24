@@ -21,7 +21,6 @@ import os
 import subprocess
 import datetime
 import shutil
-import util
 
 if sys.version_info.major != 3:
     sys.stderr.write('Python3 is required!')
@@ -56,6 +55,11 @@ def run_one_cmd(cmd):
     cmd = ['/bin/sh', '-c', cmd]
     result = subprocess.run(cmd, shell=False, text=True)
     return result
+
+
+def ERROR(info):
+    output = "\033[1;31m" + info + "\033[0m"
+    print(output)
 
 
 def recursive_rm_all_git(folder_path):
@@ -167,10 +171,10 @@ def update_repository_for_upload(CHROMIUM_MAJOR):
 
 def check_returncode(run_one_cmd_result):
     if run_one_cmd_result.returncode != 0:
-        util.ERROR('命令执行失败，程序退出')
+        ERROR('命令执行失败，程序退出')
         sys.exit(-1)
 
-target_download_path = os.path.join(os.sep.join(__file__.split(os.sep)[:-2]), 'chromium_origin')
+target_download_path = os.path.join(os.sep.join(__file__.split(os.sep)[:-3]), 'chromium_origin')
 if not os.path.exists(target_download_path):
     os.mkdir(target_download_path)
 depot_tools_path = os.path.join(target_download_path, 'depot_tools')

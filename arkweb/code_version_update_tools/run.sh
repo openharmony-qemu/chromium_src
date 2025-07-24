@@ -61,7 +61,7 @@ if [ ! -d "$folder_name" ]; then
     fi
 fi
 
-cmds=("python3 src/download.py" "python3 src/difference.py" "python3 src/applypatch.py" "python3 src/commit.py")
+cmds=("python3 src/download.py" "python3 src/difference.py" "python3 src/applypatch.py")
 for cmd in "${cmds[@]}"
 do
     echo $cmd

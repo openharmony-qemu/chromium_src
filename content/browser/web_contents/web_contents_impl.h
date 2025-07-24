@@ -1804,7 +1804,7 @@ class CONTENT_EXPORT WebContentsImpl
     bool is_notifying_observers_ = false;
     base::ObserverList<WebContentsObserver> observers_;
   };
-  WebContentsImplUtils* implUtils_;
+  raw_ptr<WebContentsImplUtils> implUtils_;
   // See WebContents::Create for a description of these parameters.
   explicit WebContentsImpl(BrowserContext* browser_context);
 

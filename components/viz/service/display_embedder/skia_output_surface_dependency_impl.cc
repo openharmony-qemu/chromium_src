@@ -30,6 +30,7 @@ SkiaOutputSurfaceDependencyImpl::SkiaOutputSurfaceDependencyImpl(
       surface_handle_(surface_handle),
       client_thread_task_runner_(
           base::SingleThreadTaskRunner::GetCurrentDefault()) {
+  impl_utils_ = std::make_unique<SkiaOutputSurfaceDependencyImplUtils>(this);
 }
 
 SkiaOutputSurfaceDependencyImpl::~SkiaOutputSurfaceDependencyImpl() = default;
@@ -203,4 +204,10 @@ bool SkiaOutputSurfaceDependencyImpl::NeedsSupportForExternalStencil() {
 bool SkiaOutputSurfaceDependencyImpl::IsUsingCompositorGpuThread() {
   return !!gpu_service_impl_->compositor_gpu_thread();
 }
+
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+bool SkiaOutputSurfaceDependencyImpl::GetIsScroll() {
+  return impl_utils_->GetIsScroll();
+}
+#endif
 }  // namespace viz

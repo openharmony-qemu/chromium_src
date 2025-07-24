@@ -56,11 +56,7 @@ void GpuHostImpl::SetIsFling(bool is_fling_enabled) {
 }
 
 void GpuHostImpl::SetIsScroll(bool is_scroll_enabled) {
-  is_scroll_enabled_ = is_scroll_enabled;
-}
-
-bool GpuHostImpl::GetIsScroll() {
-  return is_scroll_enabled_;
+  gpu_service_remote_->SetIsScroll(is_scroll_enabled);
 }
 #endif
 

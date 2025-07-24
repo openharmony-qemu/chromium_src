@@ -23,12 +23,11 @@
 
 #include "base/logging.h"
 #include "cef/include/cef_browser.h"
+#include "cef_devtools_message_handler_delegate.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include "nweb_devtools_message_handler_impl.h"
-#include "cef_devtools_message_handler_delegate.h"
 #include "nweb_devtools_message_handler.h"
+#include "nweb_devtools_message_handler_impl.h"
 
 using namespace OHOS::NWeb;
 
@@ -38,11 +37,13 @@ bool LLVMFuzzerTestSetup() {
 }
 
 void FuzzApi(const uint8_t* data, size_t size) {
-  std::unique_ptr<NWebDevtoolsMessageHandler> handler = std::make_unique<NWebDevtoolsMessageHandler>();
+  std::unique_ptr<NWebDevtoolsMessageHandler> handler =
+      std::make_unique<NWebDevtoolsMessageHandler>();
   NWebDevToolsMessageHandlerImpl handleImp(std::move(handler));
   FuzzedDataProvider fdp(data, size);
   uint32_t raw_value = fdp.ConsumeIntegralInRange<uint32_t>(0, 3);
-  NWebDevToolsMessageHandlerImpl::FileDialogMode mode = static_cast<NWebDevToolsMessageHandlerImpl::FileDialogMode>(raw_value);
+  NWebDevToolsMessageHandlerImpl::FileDialogMode mode =
+      static_cast<NWebDevToolsMessageHandlerImpl::FileDialogMode>(raw_value);
   std::string titleTmp = fdp.ConsumeRandomLengthString();
   CefString title = CefString(titleTmp);
   std::string default_file_path_tmp = fdp.ConsumeRandomLengthString();
@@ -52,7 +53,8 @@ void FuzzApi(const uint8_t* data, size_t size) {
   CefString item = CefString(tmp);
   accept_filters.push_back(item);
   bool capture = fdp.ConsumeBool();
-  handleImp.ShowFileChooser(mode, title, default_file_path, accept_filters, capture, nullptr);
+  handleImp.ShowFileChooser(mode, title, default_file_path, accept_filters,
+                            capture, nullptr);
   handleImp.BringToFront();
   handleImp.CloseWindow();
   handleImp.ActiveDevToolsWindow();

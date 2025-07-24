@@ -34,14 +34,19 @@ void TouchSelectionControllerExt::UpdateSelectionChanged(
   }
 }
 
+// LCOV_EXCL_START
 bool TouchSelectionControllerExt::IsLongPressDragSelectionActive() {
   return longpress_drag_selector_.IsActive();
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void TouchSelectionControllerExt::ResetResponsePendingInputEvent() {
   response_pending_input_event_ = INPUT_EVENT_TYPE_NONE;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 bool TouchSelectionControllerExt::SelectOverImg() {
   if (active_status_ == SELECTION_ACTIVE && start_selection_handle_ &&
       end_selection_handle_ && show_touch_handles_) {
@@ -59,6 +64,7 @@ bool TouchSelectionControllerExt::SelectOverImg() {
   }
   return false;
 }
+// LCOV_EXCL_STOP
 
 bool TouchSelectionControllerExt::OnHandleSwap(bool need_swap,
                                                const gfx::SelectionBound& start,

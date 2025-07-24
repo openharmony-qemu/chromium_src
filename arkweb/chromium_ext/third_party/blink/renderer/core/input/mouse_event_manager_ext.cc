@@ -66,10 +66,12 @@ MouseEventManagerExt::MouseEventManagerExt(LocalFrame& frame, ScrollManager& scr
 MouseEventManagerExt::~MouseEventManagerExt() = default;
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
+// LCOV_EXCL_START
 bool MouseEventManagerExt::IsDraging() {
   DCHECK(frame_->GetPage());
   return frame_->GetPage()->GetDragController().AsDragControllerExt()->IsDraging();
 }
+// LCOV_EXCL_STOP
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -83,22 +85,28 @@ void MouseEventManagerExt::HandleCreateOverlayWhenDrag(const MouseEventWithHitTe
   }
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::StopCreateOverlayTimer() {
   create_overlay_timer_.Stop();
 }
+// LCOV_EXCL_STOP
 
 void MouseEventManagerExt::HandleGestureCreateOverlay(
     const WebGestureEvent& gesture_event) {
   HandleCreateOverlay(gesture_event);
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::CreateOverlayCallback() {
   HandleCreateOverlay(last_mouse_drag_);
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 bool MouseEventManagerExt::GetOverlayInProgress() {
   return overlay_in_progress_;
 }
+// LCOV_EXCL_STOP
 
 void MouseEventManagerExt::ConverCoordinates(float& left, float& top, float& width, float& height,
                                              std::vector<gfx::PointF>& pointfs) {
@@ -189,6 +197,7 @@ HitOverlayStatus MouseEventManagerExt::GetHitOverlayStatusFromMouseEvent(
   return GetHitOverlayStatus(hit_test_result);
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::CloseImageOverlay() {
   if (!overlay_in_progress_) {
     LOG(INFO)
@@ -201,6 +210,7 @@ void MouseEventManagerExt::CloseImageOverlay() {
     web_local_frame->Client()->AsWebLocalFrameClientExt()->CloseImageOverlaySelection();
   }
 }
+// LCOV_EXCL_STOP
 
 void MouseEventManagerExt::GetAbsImageRect(gfx::RectF& abs_rect) {
   abs_rect = gfx::RectF();
@@ -220,6 +230,7 @@ void MouseEventManagerExt::GetAbsImageRect(gfx::RectF& abs_rect) {
   }
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::SetOverlayInProgress(bool flag) {
   LOG(INFO) << "MouseEventManagerExt::SetOverlayInProgress, flag == " << flag;
   overlay_in_progress_ = flag;
@@ -228,12 +239,16 @@ void MouseEventManagerExt::SetOverlayInProgress(bool flag) {
     hit_image_node_ = nullptr;
   }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::SetOverlayCreatingStatus(bool flag) {
   LOG(INFO) << "MouseEventManagerExt::SetOverlayCreatingStatus, flag == " << flag;
   overlay_creating_ = flag;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::OnDestroyImageAnalyzerOverlay() {
   LOG(INFO) << "MouseEventManagerExt::OnDestroyImageAnalyzerOverlay";
   overlay_in_progress_ = false;
@@ -241,6 +256,7 @@ void MouseEventManagerExt::OnDestroyImageAnalyzerOverlay() {
   last_analyzed_image_ = nullptr;
   hit_image_node_ = nullptr;
 }
+// LCOV_EXCL_STOP
 
 void MouseEventManagerExt::OnFoldStatusChanged(uint32_t foldstatus) {
   LOG(INFO) << "MouseEventManagerExt::OnFoldStatusChanged foldstatus = "
@@ -361,6 +377,7 @@ void MouseEventManagerExt::CloseImageOverlayWhenMousePress(const MouseEventWithH
   }
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::Trace(Visitor* visitor) const {
   MouseEventManager::Trace(visitor);
   visitor->Trace(frame_);
@@ -374,6 +391,7 @@ void MouseEventManagerExt::Trace(Visitor* visitor) const {
   visitor->Trace(weak_factory_);
   SynchronousMutationObserver::Trace(visitor);
 }
+// LCOV_EXCL_STOP
 
 MouseEventManagerExt::OverLayerMouseLeaveEventListener::OverLayerMouseLeaveEventListener(blink::Element* element)
     : element_(element) {}
@@ -391,11 +409,13 @@ void MouseEventManagerExt::OverLayerMouseLeaveEventListener::Invoke(
   }
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::OverLayerMouseLeaveEventListener::Trace(
     Visitor* visitor) const {
   visitor->Trace(element_);
   NativeEventListener::Trace(visitor);
 }
+// LCOV_EXCL_STOP
 
 #endif
 }

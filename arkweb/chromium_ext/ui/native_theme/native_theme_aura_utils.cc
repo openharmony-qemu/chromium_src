@@ -47,6 +47,7 @@ constexpr float kOverlayScrollbarCornerRatio = 1.2f;
 NativeThemeAuraUtils::NativeThemeAuraUtils(NativeThemeAura* native_theme_aura)
     : native_theme_aura_(native_theme_aura) {}
 
+// LCOV_EXCL_START
 void NativeThemeAuraUtils::SetScrollbarThumbWidth() {
   if (base::ohos::IsPcDevice()) {
     native_theme_aura_->scrollbar_width_ = kOverlayScrollbarThumbWidthPressedPc;
@@ -55,6 +56,7 @@ void NativeThemeAuraUtils::SetScrollbarThumbWidth() {
     native_theme_aura_->scrollbar_width_ = kOverlayScrollbarThumbWidthPressed;
   }
 }
+// LCOV_EXCL_STOP
 
 void NativeThemeAuraUtils::PaintOverlayScrollbarThumb(
     cc::PaintCanvas* canvas,

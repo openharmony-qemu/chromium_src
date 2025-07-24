@@ -15,8 +15,9 @@
 
 #define private public
 #define protected public
-
 #include "SkFontMgr_ohos.h"
+#undef protected
+#undef private
 
 #include "include/core/SkRefCnt.h"
 

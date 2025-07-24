@@ -440,7 +440,6 @@ void ScreenCaptureAdapterImpl::Release()
     if (avConfig.recorderInfo.url != nullptr) {
         delete[] avConfig.recorderInfo.url;
         avConfig.recorderInfo.url = nullptr;
-        avConfig.recorderInfo.urlLen = 0;
      }
     int32_t ret = OH_AVScreenCapture_Release(screenCapture_);
     if (ret != OH_AVSCREEN_CAPTURE_ErrCode::AV_SCREEN_CAPTURE_ERR_OK) {

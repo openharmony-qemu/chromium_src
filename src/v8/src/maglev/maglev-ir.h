@@ -310,6 +310,7 @@ class ExceptionHandlerInfo;
   V(CheckMapsWithMigration)                   \
   V(CheckDetectableCallable)                  \
   V(CheckNotHole)                             \
+  V(CheckHoleyFloat64NotHole)                 \
   V(CheckNumber)                              \
   V(CheckSmi)                                 \
   V(CheckString)                              \
@@ -598,7 +599,7 @@ inline constexpr bool IsZeroExtendedRepresentation(ValueRepresentation repr) {
   V(Oddball, (1 << 6) | kAnyHeapObject | kNumberOrOddball)  \
   V(Boolean, (1 << 7) | kOddball | kNumberOrBoolean)        \
   V(Name, (1 << 8) | kAnyHeapObject)                        \
-  V(StringOrStringWrapper, (1 << 9))                        \
+  V(StringOrStringWrapper, (1 << 9) | kAnyHeapObject)       \
   V(String, (1 << 10) | kName | kStringOrStringWrapper)     \
   V(InternalizedString, (1 << 11) | kString)                \
   V(Symbol, (1 << 12) | kName)                              \
@@ -2484,7 +2485,7 @@ class ValueNode : public Node {
                                         GetMachineRepresentation(),
                                         FirstRegisterCode());
     }
-    DCHECK(is_loadable());
+    CHECK(is_loadable());
     return spill_;
   }
 
@@ -5204,8 +5205,8 @@ class VirtualObject : public FixedInputValueNodeT<0, VirtualObject> {
     DCHECK_NE(offset, 0);  // Don't try to set the map through this setter.
     DCHECK_EQ(type_, kDefault);
     DCHECK(!IsSnapshot());
-    // Values set here can leak to the interpreter. Conversions should be stored
-    // in known_node_aspects/NodeInfo.
+    // Values set here can leak to the interpreter frame state. Conversions
+    // should be stored in known_node_aspects/NodeInfo.
     DCHECK(!value->properties().is_conversion());
     offset -= kTaggedSize;
     SBXCHECK_LT(offset / kTaggedSize, slot_count());
@@ -9333,6 +9334,24 @@ class CheckNotHole : public FixedInputNodeT<1, CheckNotHole> {
       typename Base::InputTypes kInputTypes{ValueRepresentation::kTagged};
 
   Input& object_input() { return input(0); }
+
+  void SetValueLocationConstraints();
+  void GenerateCode(MaglevAssembler*, const ProcessingState&);
+  void PrintParams(std::ostream&, MaglevGraphLabeller*) const {}
+};
+
+class CheckHoleyFloat64NotHole
+    : public FixedInputNodeT<1, CheckHoleyFloat64NotHole> {
+  using Base = FixedInputNodeT<1, CheckHoleyFloat64NotHole>;
+
+ public:
+  explicit CheckHoleyFloat64NotHole(uint64_t bitfield) : Base(bitfield) {}
+
+  static constexpr OpProperties kProperties = OpProperties::EagerDeopt();
+  static constexpr
+      typename Base::InputTypes kInputTypes{ValueRepresentation::kHoleyFloat64};
+
+  Input& float64_input() { return input(0); }
 
   void SetValueLocationConstraints();
   void GenerateCode(MaglevAssembler*, const ProcessingState&);

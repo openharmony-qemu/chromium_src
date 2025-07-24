@@ -149,7 +149,10 @@ WasmCode* WasmImportWrapperCache::CompileWasmImportCallWrapper(
     // Now that we have the lock (in the form of the cache_scope), check
     // again whether another thread has just created the wrapper.
     wasm_code = cache_scope[key];
-    if (wasm_code) return wasm_code;
+    if (wasm_code) {
+      WasmCodeRefScope::AddRef(wasm_code);
+      if (!wasm_code->is_dying()) return wasm_code;
+    }
 
     wasm_code = cache_scope.AddWrapper(key, std::move(result),
                                        WasmCode::Kind::kWasmToJsWrapper);

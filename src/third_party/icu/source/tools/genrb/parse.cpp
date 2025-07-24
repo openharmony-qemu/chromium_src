@@ -274,7 +274,7 @@ expect(ParseState* state, enum ETokenType expectedToken, struct UString **tokenV
     if (token != expectedToken)
     {
         *status = U_INVALID_FORMAT_ERROR;
-        error(line, "expecting %s, got %s", tokenNames[expectedToken], tokenNames[token]);
+        error((line == nullptr) ? 0 : *line, "invariant characters required for table keys, binary data, etc.");
     }
     else
     {

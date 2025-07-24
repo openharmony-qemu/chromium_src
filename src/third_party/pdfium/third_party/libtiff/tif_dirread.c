@@ -6040,6 +6040,20 @@ static uint16_t TIFFFetchDirectory(TIFF *tif, uint64_t diroff,
             dircount16 = (uint16_t)dircount64;
             dirsize = 20;
         }
+        /* Before allocating a huge amount of memory for corrupted files, check
+         * if size of requested memory is not greater than file size. */
+        uint64_t filesize = TIFFGetFileSize(tif);
+        uint64_t allocsize = (uint64_t)dircount16 * dirsize;
+        if (allocsize > filesize)
+        {
+            TIFFWarningExtR(
+                tif, module,
+                "Requested memory size for TIFF directory of %" PRIu64
+                " is greather than filesize %" PRIu64
+                ". Memory not allocated, TIFF directory not read",
+                allocsize, filesize);
+            return 0;
+        }
         origdir = _TIFFCheckMalloc(tif, dircount16, dirsize,
                                    "to read TIFF directory");
         if (origdir == NULL)

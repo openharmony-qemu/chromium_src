@@ -3821,7 +3821,8 @@ JSNativeContextSpecialization::
     // Check that the {index} is in the valid range for the {receiver}.
     index = effect = graph()->NewNode(
         simplified()->CheckBounds(FeedbackSource(),
-                                  CheckBoundsFlag::kConvertStringAndMinusZero),
+                                  CheckBoundsFlag::kConvertStringAndMinusZero |
+                                      CheckBoundsFlag::kAllow64BitBounds),
         index, length, effect, control);
     situation = kBoundsCheckDone;
   }
@@ -3851,7 +3852,8 @@ JSNativeContextSpecialization::
                 simplified()->CheckBounds(
                     FeedbackSource(),
                     CheckBoundsFlag::kConvertStringAndMinusZero |
-                        CheckBoundsFlag::kAbortOnOutOfBounds),
+                        CheckBoundsFlag::kAbortOnOutOfBounds |
+                        CheckBoundsFlag::kAllow64BitBounds),
                 index, length, etrue, if_true);
           }
 
@@ -3933,7 +3935,8 @@ JSNativeContextSpecialization::
                 simplified()->CheckBounds(
                     FeedbackSource(),
                     CheckBoundsFlag::kConvertStringAndMinusZero |
-                        CheckBoundsFlag::kAbortOnOutOfBounds),
+                        CheckBoundsFlag::kAbortOnOutOfBounds |
+                        CheckBoundsFlag::kAllow64BitBounds),
                 index, length, etrue, if_true);
           }
 

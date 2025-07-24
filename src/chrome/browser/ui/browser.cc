@@ -1728,8 +1728,9 @@ content::KeyboardEventProcessingResult Browser::PreHandleKeyboardEvent(
 #if BUILDFLAG(ENABLE_CEF)
   if (cef_browser_delegate_) {
     auto result = cef_browser_delegate_->PreHandleKeyboardEvent(source, event);
-    if (result != content::KeyboardEventProcessingResult::NOT_HANDLED)
+    if (result != content::KeyboardEventProcessingResult::NOT_HANDLED) {
       return result;
+    }
   }
 #endif
 
@@ -2665,8 +2666,9 @@ void Browser::RequestMediaAccessPermission(
   if (cef_browser_delegate_) {
     callback = cef_browser_delegate_->RequestMediaAccessPermissionEx(
         web_contents, request, std::move(callback));
-    if (callback.is_null())
+    if (callback.is_null()) {
       return;
+    }
   }
 #endif
 

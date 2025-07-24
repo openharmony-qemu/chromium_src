@@ -4522,7 +4522,6 @@ Reduction JSCallReducer::ReduceCallOrConstructWithArrayLikeOrSpread(
   }
 
   DCHECK_EQ(arguments_list->opcode(), IrOpcode::kJSCreateLiteralArray);
-  int new_argument_count;
 
   // Find array length and elements' kind from the feedback's allocation
   // site's boilerplate JSArray.
@@ -4539,13 +4538,15 @@ Reduction JSCallReducer::ReduceCallOrConstructWithArrayLikeOrSpread(
   JSArrayRef boilerplate_array = site.boilerplate(broker())->AsJSArray();
   int const array_length =
       boilerplate_array.GetBoilerplateLength(broker()).AsSmi();
+  SBXCHECK_GE(array_length, 0);
 
   // We'll replace the arguments_list input with {array_length} element loads.
-  new_argument_count = argument_count - 1 + array_length;
+  uint32_t new_argument_count =
+      static_cast<uint32_t>(array_length) + argument_count - 1;
 
   // Do not optimize calls with a large number of arguments.
   // Arbitrarily sets the limit to 32 arguments.
-  const int kMaxArityForOptimizedFunctionApply = 32;
+  const uint32_t kMaxArityForOptimizedFunctionApply = 32;
   if (new_argument_count > kMaxArityForOptimizedFunctionApply) {
     return NoChange();
   }
@@ -4601,10 +4602,10 @@ Reduction JSCallReducer::ReduceCallOrConstructWithArrayLikeOrSpread(
   }
 
   NodeProperties::ChangeOp(
-      node,
-      javascript()->Call(JSCallNode::ArityForArgc(new_argument_count),
-                         frequency, feedback_source, ConvertReceiverMode::kAny,
-                         speculation_mode, CallFeedbackRelation::kUnrelated));
+      node, javascript()->Call(
+                JSCallNode::ArityForArgc(static_cast<int>(new_argument_count)),
+                frequency, feedback_source, ConvertReceiverMode::kAny,
+                speculation_mode, CallFeedbackRelation::kUnrelated));
   NodeProperties::ReplaceEffectInput(node, effect);
   return Changed(node).FollowedBy(ReduceJSCall(node));
 }
@@ -4652,6 +4653,9 @@ Reduction JSCallReducer::ReduceJSCall(Node* node) {
       // succeed.
       FixedArrayRef bound_arguments = function.bound_arguments(broker());
       const uint32_t bound_arguments_length = bound_arguments.length();
+      if (arity + bound_arguments_length > Code::kMaxArguments) {
+        return NoChange();
+      }
       static constexpr int kInlineSize = 16;  // Arbitrary.
       base::SmallVector<Node*, kInlineSize> args;
       for (uint32_t i = 0; i < bound_arguments_length; ++i) {
@@ -5225,6 +5229,18 @@ TNode<Object> JSCallReducerAssembler::ReduceJSCallWithArrayLikeOrSpreadOfEmpty(
   TNode<Object> arguments_list = n.LastArgument();
   DCHECK_EQ(static_cast<Node*>(arguments_list)->opcode(),
             IrOpcode::kJSCreateEmptyLiteralArray);
+
+  // Check that arguments_list's prototype is still an array prototype.
+  TNode<Map> map = LoadMap(TNode<HeapObject>::UncheckedCast(arguments_list));
+  TNode<HeapObject> proto = TNode<HeapObject>::UncheckedCast(
+      LoadField(AccessBuilder::ForMapPrototype(), map));
+  TNode<HeapObject> initial_array_prototype =
+      HeapConstant(broker()
+                       ->target_native_context()
+                       .initial_array_prototype(broker())
+                       .object());
+  TNode<Boolean> check = ReferenceEqual(proto, initial_array_prototype);
+  CheckIf(check, DeoptimizeReason::kWrongMap, p.feedback());
 
   // Turn the JSCallWithArrayLike or JSCallWithSpread roughly into:
   //
@@ -6674,8 +6690,11 @@ Reduction JSCallReducer::ReduceArrayIteratorPrototypeNext(Node* node) {
     // an exploitation technique that abuses typer mismatches.
     if (v8_flags.turbo_typer_hardening) {
       index = etrue = graph()->NewNode(
-          simplified()->CheckBounds(p.feedback(),
-                                    CheckBoundsFlag::kAbortOnOutOfBounds),
+          simplified()->CheckBounds(
+              p.feedback(), CheckBoundsFlag::kAbortOnOutOfBounds |
+                                (IsTypedArrayElementsKind(elements_kind)
+                                     ? CheckBoundsFlag::kAllow64BitBounds
+                                     : CheckBoundsFlag(0))),
           index, length, etrue, if_true);
     }
 
@@ -8481,8 +8500,10 @@ Reduction JSCallReducer::ReduceDataViewAccess(Node* node, DataViewAccess access,
 
     // Check that the {offset} is within range of the {length}.
     Node* byte_length = jsgraph()->ConstantNoHole(length - (element_size - 1));
-    offset = effect = graph()->NewNode(simplified()->CheckBounds(p.feedback()),
-                                       offset, byte_length, effect, control);
+    offset = effect =
+        graph()->NewNode(simplified()->CheckBounds(
+                             p.feedback(), CheckBoundsFlag::kAllow64BitBounds),
+                         offset, byte_length, effect, control);
   } else {
     // We only deal with DataViews here that have Smi [[ByteLength]]s.
     Node* byte_length = effect =
@@ -8503,8 +8524,10 @@ Reduction JSCallReducer::ReduceDataViewAccess(Node* node, DataViewAccess access,
     }
 
     // Check that the {offset} is within range of the {byte_length}.
-    offset = effect = graph()->NewNode(simplified()->CheckBounds(p.feedback()),
-                                       offset, byte_length, effect, control);
+    offset = effect =
+        graph()->NewNode(simplified()->CheckBounds(
+                             p.feedback(), CheckBoundsFlag::kAllow64BitBounds),
+                         offset, byte_length, effect, control);
   }
 
   // Coerce {is_little_endian} to boolean.

@@ -11,7 +11,6 @@
 #include "src/common/globals.h"
 #include "src/execution/isolate-utils.h"
 #include "src/objects/fixed-array.h"
-#include "src/objects/property-array.h"
 #include "src/objects/smi.h"
 #include "src/objects/tagged-field.h"
 #include "src/roots/roots.h"

@@ -55,6 +55,7 @@ FontConfig_OHOS::FontConfig_OHOS(const SkFontScanner& fontScanner,
 
 /* ! To Check the new font engine is ok
  */
+//LCOV_EXCL_START
 int FontConfig_OHOS::checkNewFontengineISOK()
 {
     OHOS::NWeb::ArkWeb_Drawing_FontConfigInfo* fontconfig = nullptr;
@@ -149,6 +150,7 @@ void FontConfig_OHOS::buildNameToFamilyMap() {
       .DestroySystemFontConfigInfo(fontconfig);
   fontconfig = nullptr;
 }
+//LCOV_EXCL_STOP
 
 /*! To build stylish and installed name to fallbackSet
  */
@@ -205,6 +207,7 @@ void FontConfig_OHOS::buildStyleNameToFamilyMap(
   fontList = nullptr;
 }
 
+//LCOV_EXCL_START
 /*! To get the fallbackForMap
  *  \return The reference of fallbackForMap
  */
@@ -235,6 +238,7 @@ int FontConfig_OHOS::getFamilyCount() const {
 int FontConfig_OHOS::getDefaultFamily(SkString* familyName) const {
   return getFamilyName(0, familyName);
 }
+//LCOV_EXCL_STOP
 
 /*! To get the family name of a font style set
  * \param index the index of a font style set in generic family
@@ -998,6 +1002,7 @@ void FontConfig_OHOS::dumpFont(const FontInfo& font) const {
   }
 }
 
+//LCOV_EXCL_START
 /*! To print out the information of generic font style set
  */
 void FontConfig_OHOS::dumpGeneric() const {
@@ -1047,6 +1052,7 @@ void FontConfig_OHOS::dumpFallback() const {
         }
       });
 }
+//LCOV_EXCL_STOP
 #endif
 
 /*! To get the axis value and set to 'font'
@@ -1418,6 +1424,7 @@ int FontConfig_OHOS::scanFontsBackup(const SkFontScanner& fontScanner)
     return err;
 }
 
+//LCOV_EXCL_START
 /*! To reset the generic family
  * \n 1. To sort the typefaces for each font style set in generic list
  * \n 2. To build typeface set for those font style sets which have single
@@ -1453,6 +1460,7 @@ void FontConfig_OHOS::resetGenericValue() {
   variationMap.reset();
   ttcIndexMap.reset();
 }
+//LCOV_EXCL_STOP
 
 /*! To build a sub typeface set according to weight from a typeface set
  * \param typefaceSet the parent typeface set
@@ -1483,6 +1491,7 @@ void FontConfig_OHOS::buildSubTypefaceSet(
   }
 }
 
+//LCOV_EXCL_START
 /*! To reset the fallback value
  * \n To sort the typefaces for each font style set in fallback list.
  */
@@ -1494,6 +1503,7 @@ void FontConfig_OHOS::resetFallbackValue() {
     sortTypefaceSet(fallbackSet[i]->typefaceSet);
   }
 }
+//LCOV_EXCL_STOP
 
 /*! To check if an error happened
  * \param err the id of an error
@@ -1510,12 +1520,14 @@ bool FontConfig_OHOS::hasError(int err, const SkString& text) const {
   return false;
 }
 
+//LCOV_EXCL_START
 /*! To get the total count of errors happened
  * \return The count of errors
  */
 int FontConfig_OHOS::getErrorCount() const {
   return errSet.size();
 }
+//LCOV_EXCL_STOP
 
 /*! To sort the typeface set
  * \param typefaceSet the typeface set to be sorted

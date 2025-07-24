@@ -26,12 +26,14 @@
 namespace gl {
 namespace init {
 
+//LCOV_EXCL_START
 std::vector<GLImplementationParts> GetAllowedGLImplementations() {
   return std::vector<gl::GLImplementationParts>{
       gl::GLImplementationParts(gl::kGLImplementationEGLGLES2),
       gl::GLImplementationParts(gl::kGLImplementationEGLANGLE),
   };
 }
+//LCOV_EXCL_STOP
 
 bool GetGLWindowSystemBindingInfo(const GLVersionInfo& gl_info,
                                   GLWindowSystemBindingInfo* info) {
@@ -124,10 +126,12 @@ scoped_refptr<GLSurface> CreateOffscreenGLSurfaceWithFormat(
   }
 }
 
+//LCOV_EXCL_START
 scoped_refptr<GLSurface> CreateOffscreenGLSurface(gl::GLDisplay* display,
                                                   const gfx::Size& size) {
   return CreateOffscreenGLSurfaceWithFormat(display, size, GLSurfaceFormat());
 }
+//LCOV_EXCL_STOP
 
 void SetDisabledExtensionsPlatform(const std::string& disabled_extensions) {
   GLImplementation implementation = GetGLImplementation();

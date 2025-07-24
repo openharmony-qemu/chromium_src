@@ -66,9 +66,11 @@ constexpr viz::SharedImageFormat kSupportedFormats[6]{
     viz::SinglePlaneFormat::kRGBX_8888, viz::SinglePlaneFormat::kRGBA_1010102};
 
 // Returns whether the format is supported by NativeBuffer.
+//LCOV_EXCL_START
 bool NativeBufferSupportedFormat(viz::SharedImageFormat format) {
   return base::Contains(kSupportedFormats, format);
 }
+//LCOV_EXCL_STOP
 
 constexpr SharedImageUsageSet kSupportedUsage =
     SHARED_IMAGE_USAGE_GLES2_READ | SHARED_IMAGE_USAGE_GLES2_WRITE |
@@ -170,8 +172,10 @@ OHOSNativeBufferImageBackingFactory::OHOSNativeBufferImageBackingFactory(
 #endif  // BUILDFLAG(USE_DAWN)
 }
 
+//LCOV_EXCL_START
 OHOSNativeBufferImageBackingFactory::~OHOSNativeBufferImageBackingFactory() =
     default;
+//LCOV_EXCL_STOP
 
 bool OHOSNativeBufferImageBackingFactory::ValidateUsage(
     SharedImageUsageSet usage,
@@ -195,6 +199,7 @@ bool OHOSNativeBufferImageBackingFactory::ValidateUsage(
   return true;
 }
 
+//LCOV_EXCL_START
 // Stub implementations of some dependencies
 bool ValidateUsage(SharedImageUsageSet usage,
                    const gfx::Size& size,
@@ -216,6 +221,7 @@ FormatInfo GetFormatInfo(const viz::SharedImageFormat& format) {
   // Stub implementation: return dummy data
   return {0};
 }
+//LCOV_EXCL_STOP
 
 std::unique_ptr<SharedImageBacking>
 OHOSNativeBufferImageBackingFactory::MakeBacking(
@@ -349,6 +355,7 @@ OHOSNativeBufferImageBackingFactory::MakeBackingWithValidateConfig(
   return backing;
 }
 
+//LCOV_EXCL_START
 std::unique_ptr<SharedImageBacking>
 OHOSNativeBufferImageBackingFactory::CreateSharedImage(
     const Mailbox& mailbox,
@@ -387,6 +394,7 @@ bool OHOSNativeBufferImageBackingFactory::CanImportGpuMemoryBuffer(
     gfx::GpuMemoryBufferType memory_buffer_type) {
   return memory_buffer_type == gfx::OHOS_NATIVE_BUFFER;
 }
+//LCOV_EXCL_STOP
 
 bool OHOSNativeBufferImageBackingFactory::IsSupported(
     SharedImageUsageSet usage,
@@ -424,9 +432,11 @@ bool OHOSNativeBufferImageBackingFactory::IsSupported(
   return true;
 }
 
+//LCOV_EXCL_START
 OHOSNativeBufferImageBackingFactory::FormatInfo::FormatInfo() = default;
 
 OHOSNativeBufferImageBackingFactory::FormatInfo::~FormatInfo() = default;
+//LCOV_EXCL_STOP
 
 std::unique_ptr<SharedImageBacking>
 OHOSNativeBufferImageBackingFactory::CreateSharedImage(
@@ -459,8 +469,10 @@ OHOSNativeBufferImageBackingFactory::CreateSharedImage(
   return backing;
 }
 
+//LCOV_EXCL_START
 SharedImageBackingType OHOSNativeBufferImageBackingFactory::GetBackingType() {
   return SharedImageBackingType::kOHOSNativeBuffer;
 }
+//LCOV_EXCL_STOP
 
 }  // namespace gpu

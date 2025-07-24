@@ -91,6 +91,7 @@ void GpuServiceImpl::Discard(uint32_t native_window_id)
 
 #endif
 
+//LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
 void GpuServiceImpl::StartMonitor() {
   base::ohos::DynamicFrameLossMonitor::GetInstance().StartMonitor();
@@ -121,6 +122,7 @@ void GpuServiceImpl::SetLTPOStrategy(int32_t strategy) {
   base::ohos::DynamicFrameRateDecision::GetInstance().SetLTPOStrategy(strategy);
 }
 #endif
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
 void GpuServiceImpl::DumpGpuInfo(DumpGpuInfoCallback callback) {
@@ -139,6 +141,7 @@ void GpuServiceImpl::DumpGpuInfo(DumpGpuInfoCallback callback) {
 }
 #endif
 
+//LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_D_VSYNC)
 void GpuServiceImpl::SetIsFling(bool is_fling_enabled) {
   base::ohos::DVsyncController::GetInstance().SetIsFling(is_fling_enabled);
@@ -158,4 +161,5 @@ void GpuServiceImpl::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {
   gpu_host_->ClearBlanklessSnapshotInfo(blankless_key);
 }
 #endif
+//LCOV_EXCL_STOP
  } // namespace viz

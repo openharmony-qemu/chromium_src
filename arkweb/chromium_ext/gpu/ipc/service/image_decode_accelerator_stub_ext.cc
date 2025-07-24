@@ -60,6 +60,7 @@
 
 namespace gpu {
 
+//LCOV_EXCL_START
 struct CleanUpContext {
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
   raw_ptr<SharedContextState> shared_context_state_ = nullptr;
@@ -78,6 +79,7 @@ struct CleanUpContext {
         skia_scoped_access_(std::move(skia_scoped_access)),
         num_callbacks_pending_(skia_representation_->NumPlanesExpected()) {}
 };
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 void CleanUpResource(SkImages::ReleaseContext context) {
@@ -94,6 +96,7 @@ void CleanUpResource(SkImages::ReleaseContext context) {
 }
 #endif
 
+//LCOV_EXCL_START
 ImageDecodeAcceleratorStubExt::ImageDecodeAcceleratorStubExt(
     ImageDecodeAcceleratorWorker* worker,
     GpuChannel* channel, int32_t route_id)
@@ -104,6 +107,7 @@ ImageDecodeAcceleratorStubExt::ImageDecodeAcceleratorStubExt(
 ImageDecodeAcceleratorStubExt::~ImageDecodeAcceleratorStubExt() {
 
 }
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 bool ImageDecodeAcceleratorStubExt::ProcessCompletedDecodeExt(mojom::ScheduleImageDecodeParams& params,

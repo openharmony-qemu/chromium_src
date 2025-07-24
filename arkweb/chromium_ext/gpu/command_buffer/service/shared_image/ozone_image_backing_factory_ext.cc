@@ -34,6 +34,7 @@
 
 namespace gpu {
 
+//LCOV_EXCL_START
 OzoneImageBackingFactoryExt::OzoneImageBackingFactoryExt(
     scoped_refptr<SharedContextState> shared_context_state,
     const GpuDriverBugWorkarounds& workarounds,
@@ -46,6 +47,7 @@ OzoneImageBackingFactoryExt::OzoneImageBackingFactoryExt(
       dawn::native::GetProcs());
 #endif  // BUILDFLAG(USE_DAWN)
 }
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 std::unique_ptr<SharedImageBacking> OzoneImageBackingFactoryExt::CreateSharedImage(

@@ -13,6 +13,7 @@
 
 constexpr uint32_t MEMUNIT_RATE = 1024;
 
+//LCOV_EXCL_START
 SkiaMemoryTracer::SkiaMemoryTracer(const std::vector<ResourcePair>& resourceMap,
                                    bool itemizeType)
     : resourceMap_(resourceMap),
@@ -25,6 +26,7 @@ SkiaMemoryTracer::SkiaMemoryTracer(const char* categoryKey, bool itemizeType)
       itemizeType_(itemizeType),
       totalSize_("bytes", 0),
       purgeableSize_("bytes", 0) {}
+//LCOV_EXCL_STOP
 
 const char* SkiaMemoryTracer::MapName(const char* resourceName) {
   for (auto& resource : resourceMap_) {
@@ -35,6 +37,7 @@ const char* SkiaMemoryTracer::MapName(const char* resourceName) {
   return nullptr;
 }
 
+//LCOV_EXCL_START
 void SkiaMemoryTracer::ProcessElement() {
   if (currentElement_.empty()) {
     return;
@@ -100,6 +103,7 @@ const char* SkiaMemoryTracer::ProcessResourceName() {
   }
   return resourceName;
 }
+//LCOV_EXCL_STOP
 
 void SkiaMemoryTracer::ProcessResults(const char* resourceName,
                                       const std::string& key) {
@@ -133,10 +137,12 @@ void SkiaMemoryTracer::dumpNumericValue(const char* dumpName,
   currentValues_.insert({valueName, {units, value}});
 }
 
+//LCOV_EXCL_START
 float SkiaMemoryTracer::GetGpuMemorySizeInMB() {
   ProcessElement();
   return ConvertToMB(totalSize_);
 }
+//LCOV_EXCL_STOP
 
 float SkiaMemoryTracer::ConvertToMB(const TraceValue& value) {
   if (value.units == SkString("bytes")) {

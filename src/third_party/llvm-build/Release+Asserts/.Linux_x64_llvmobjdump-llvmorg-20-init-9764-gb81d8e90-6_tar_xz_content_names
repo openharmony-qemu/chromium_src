@@ -1,0 +1,1 @@
+["bin", "bin/llvm-bcanalyzer", "bin/llvm-cxxfilt", "bin/llvm-dwarfdump", "bin/llvm-nm", "bin/llvm-objdump", "bin/llvm-otool", "llvmobjdump_build_revision"]

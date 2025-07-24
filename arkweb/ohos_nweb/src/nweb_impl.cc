@@ -1021,6 +1021,11 @@ NWebImpl::~NWebImpl() {
                                         nweb_id_);
   ReportLossFrame::GetInstance()->Reset();
   ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::STOP);
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
+    base::ohos::BlanklessController::GetInstance().RemoveStatus(nweb_id_);
+  }
+#endif
   base::AutoLock lock_scope(nweb_map_lock_);
   g_nweb_map.Get().erase(nweb_id_);
 }
@@ -1653,13 +1658,6 @@ int NWebImpl::Load(const std::string& url) {
 #endif
 
   int result = nweb_delegate_->Load(url);
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (result == NWEB_OK && base::ohos::BlanklessController::CheckGlobalProperty() && !is_private_ &&
-      base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
-    blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
-    nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
-  }
-#endif
   output_handler_->StartRenderOutput();
   return result;
 }
@@ -2102,15 +2100,7 @@ int NWebImpl::Load(
   if (nweb_delegate_ == nullptr) {
     return NWEB_ERR;
   }
-  int ret = nweb_delegate_->Load(url, additionalHttpHeaders);
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (ret == NWEB_OK && base::ohos::BlanklessController::CheckGlobalProperty() && !is_private_ &&
-      base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
-    blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
-    nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
-  }
-#endif
-  return ret;
+  return nweb_delegate_->Load(url, additionalHttpHeaders);
 }
 
 int NWebImpl::PostUrl(const std::string& url,
@@ -5912,15 +5902,16 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
   uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
-  instance.RecordBlanklessKey(nweb_id_, blankless_key);
-  if (instance.GetCapacity() == 0) {
+  auto status_code = instance.RecordKey(nweb_id_, blankless_key);
+  auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
+  if (status_code != base::ohos::BlanklessController::StatusCode::DUMPED ||
+      databaseInstance.GetBlanklessLoadingCacheCapacity() == 0) {
     *similarity = 0;
     *loadingTime = 0;
   } else {
     blankless_key_ = blankless_key;
     nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key);
-    auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
-    OHOS::NWeb::SnapshotDataItem dataItem = databaseAdapter.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
+    OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
     *similarity = dataItem.historySimilarity;
     *loadingTime = dataItem.lcpTime;
     LOG(DEBUG) << "blankless GetBlanklessInfoWithKey similarity: " << dataItem.historySimilarity
@@ -5935,22 +5926,23 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
   uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
-  if (!instance.CheckBlanlessKey(nweb_id_, blankless_key)) {
+  auto status_code = instance.MatchKey(nweb_id_, blankless_key);
+  if (status_code == base::ohos::BlanklessController::StatusCode::KEY_NOT_MATCH) {
     return -4;    // ERR_KEY_NOT_MATCH
   }
-  if (instance.GetCapacity() == 0) {
+  auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
+  if (status_code != base::ohos::BlanklessController::StatusCode::INSERTED ||
+      databaseInstance.GetBlanklessLoadingCacheCapacity() == 0) {
     return (isStart ? -5 : 0);  // ERR_SIGNIFICANT_CHANGE(true) or SUCCESS(false)
   }
   if (isStart) {
-    auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
-    OHOS::NWeb::SnapshotDataItem dataItem = databaseAdapter.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
+    OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
     if (dataItem.historySimilarity < 0.33) {
       LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey similarity < 0.33";
       return -5;    // ERR_SIGNIFICANT_CHANGE
     }
     CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath);
   }
-  instance.SetLoadingEnabled(nweb_id_, blankless_key, isStart);
   return 0;   // SUCCESS
 }
 

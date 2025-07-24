@@ -4027,8 +4027,8 @@ bool UpdatePreferredColorScheme(WebPreferences* web_prefs,
 #else
   auto preferred_color_scheme = native_theme->GetPreferredColorScheme();
 
-  auto* profile = Profile::FromBrowserContext(
-      web_contents->GetBrowserContext());
+  auto* profile = 
+    Profile::FromBrowserContext(web_contents->GetBrowserContext());
   const auto* theme_service = ThemeServiceFactory::GetForProfile(profile);
 
   const auto browser_color_scheme = theme_service->GetBrowserColorScheme();

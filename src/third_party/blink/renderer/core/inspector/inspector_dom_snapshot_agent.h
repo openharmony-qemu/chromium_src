@@ -105,7 +105,6 @@ class CORE_EXPORT InspectorDOMSnapshotAgent final
   static void VisitPaintLayer(PaintLayer*, PaintOrderMap* paint_order_map);
 
   using CSSPropertyFilter = Vector<const CSSProperty*>;
-  using OriginUrlMap = WTF::HashMap<DOMNodeId, String>;
 
   // State of current snapshot.
   std::unique_ptr<protocol::Array<protocol::DOMSnapshot::DOMNode>> dom_nodes_;

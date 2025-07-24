@@ -6418,9 +6418,9 @@ static int mov_flush_fragment(AVFormatContext *s, int force)
         int buf_size, write_moof = 1, moof_tracks = -1;
         uint8_t *buf;
 
-        if (mov->flags & FF_MOV_FLAG_SEPARATE_MOOF) {
-            if (!track->entry)
+        if (!track->entry)
                 continue;
+        if (mov->flags & FF_MOV_FLAG_SEPARATE_MOOF) {
             mdat_size = avio_tell(track->mdat_buf);
             moof_tracks = i;
         } else {

@@ -110,7 +110,7 @@ void NodeBase::CheckCanOverwriteWith(Opcode new_opcode,
 #define CASE(op)                                                          \
   case Opcode::k##op: {                                                   \
     DCHECK_EQ(old_input_count, StaticInputCount(static_cast<op*>(this))); \
-    DCHECK_EQ(sizeof(op), old_sizeof);                                    \
+    DCHECK_LE(sizeof(op), old_sizeof);                                    \
     break;                                                                \
   }
     NODE_BASE_LIST(CASE)

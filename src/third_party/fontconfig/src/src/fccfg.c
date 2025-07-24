@@ -2592,7 +2592,7 @@ FcConfigXdgDataDirs (void)
     const char *env = getenv ("XDG_DATA_DIRS");
     FcStrSet *ret = FcStrSetCreate ();
 
-    if (env)
+    if (env && *env)
     {
 	FcChar8 *ee, *e = ee = FcStrCopy ((const FcChar8 *) env);
 

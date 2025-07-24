@@ -72,4 +72,24 @@ TEST_F(NWebResizeHelperTest, ParameterRefresh) {
 TEST_F(NWebResizeHelperTest, RefreshStartTimeStamp) {
   helper_->RefreshStartTimeStamp();
 }
+
+TEST_F(NWebResizeHelperTest, HeightNegativeResult) {
+  helper_->GetResizeAdjustValue(100, -60, true);
+}
+
+TEST_F(NWebResizeHelperTest, HeightBelowLastValue) {
+  helper_->GetResizeAdjustValue(100, -30, true);
+}
+
+TEST_F(NWebResizeHelperTest, WidthFirstTimeResize) {
+  helper_->GetResizeAdjustValue(200, 0, false);
+}
+
+TEST_F(NWebResizeHelperTest, WidthNegativeResult) {
+  helper_->GetResizeAdjustValue(200, -60, false);
+}
+
+TEST_F(NWebResizeHelperTest, WidthBelowLastValue) {
+  helper_->GetResizeAdjustValue(200, -30, false);
+}
 }

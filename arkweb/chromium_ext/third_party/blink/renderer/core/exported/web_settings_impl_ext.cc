@@ -131,6 +131,16 @@ bool WebSettingsImplExt::GetCustomMediaPlayerEnabled() {
 }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+void WebSettingsImplExt::SetMediaResumeFromBFCachePage(bool resume) {
+  settings_->SetMediaResumeFromBFCachePage(resume);
+}
+
+bool WebSettingsImplExt::GetMediaResumeFromBFCachePage() {
+  return settings_->GetMediaResumeFromBFCachePage();
+}
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
 void WebSettingsImplExt::SetBorderRadiusFromWeb(
     double borderRadiusTopLeft,

@@ -845,6 +845,9 @@ class NWebImpl : public NWeb {
   static void GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionInfo>& extensionInfo);
   static void SetExtensionName(const std::string& extension_name);
   static bool GetExtensionName(std::string& extension_name);
+  static std::string GetExtensionVersion(const std::string& extension_id);
+  static void InstallExtensionFile(const std::string& file_path,
+                                   OnExtensionInstallCallback callback);
   //old version
   void WebExtensionTabCreated(int tab_id);
   void WebExtensionTabUpdated(

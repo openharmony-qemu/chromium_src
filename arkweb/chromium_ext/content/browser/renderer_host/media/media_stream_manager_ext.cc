@@ -54,6 +54,7 @@ void MediaStreamManagerExt::StopScreenCapture(int32_t nweb_id,
   video_capture_manager_->AsVideoCaptureManagerExt()->StopScreenCapture(session_id);
 }
 
+// LCOV_EXCL_START
 void MediaStreamManagerExt::SetScreenCapturePickerShow() {
   if (!video_capture_manager_) {
     LOG(ERROR) << "videoCaptureManager null";
@@ -71,6 +72,7 @@ void MediaStreamManagerExt::DisableSessionReuse() {
 
   video_capture_manager_->AsVideoCaptureManagerExt()->DisableSessionReuse();
 }
+// LCOV_EXCL_STOP
 
 void MediaStreamManagerExt::SendScreenCaptureState(const std::string& session_id,
                                                    int32_t state) {

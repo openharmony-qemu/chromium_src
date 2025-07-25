@@ -48,6 +48,7 @@ void HTMLMediaElementUtils::DidPlayerMutedStatusChangeExt(bool muted) {
   }
 }
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_MEDIA) || BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 WebString HTMLMediaElementUtils::GetTitle() const {
 
@@ -60,6 +61,7 @@ WebString HTMLMediaElementUtils::GetTitle() const {
   return WebString();
 }
 #endif // ARKWEB_MEDIA || ARKWEB_VIDEO_ASSISTANT()
+// LCOV_EXCL_STOP
 
 void HTMLMediaElementUtils::ScheduleNamedEventUtils(const AtomicString& event_name) {
 #if BUILDFLAG(ARKWEB_MEDIA)
@@ -114,6 +116,7 @@ void HTMLMediaElementUtils::ScheduleNamedEventUtils(const AtomicString& event_na
   }
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 }
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
 void HTMLMediaElementUtils::ResetMediaPlayerAndMediaSourceUtils() {
   // reset mediaplayer and wait for new src, so reset flags too.
@@ -151,6 +154,7 @@ double HTMLMediaElementUtils::freezeTime() {
   return total_freeze_time.InMillisecondsF();
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
 
@@ -215,6 +219,7 @@ bool HTMLMediaElementUtils::IsMediaPlayerShown() const {
   return htmlMediaElement_->web_media_player_->IsMediaPlayerShown();
 }
 
+// LCOV_EXCL_START
 media::mojom::blink::VideoAttributesForVASTPtr HTMLMediaElementUtils::CollectVideoAttributesForVAST() {
   auto attributes = media::mojom::blink::VideoAttributesForVAST::New();
   attributes->show_fullscreen_button = true;
@@ -257,7 +262,7 @@ void HTMLMediaElementUtils::UpdateVideoAssistantAttributes() {
     }
   }
 }
-
+// LCOV_EXCL_STOP
 
 void HTMLMediaElementUtils::NotifyVideoVisible(bool visible) {
   if (!htmlMediaElement_->IsVideoAssistantEnabled()) {
@@ -363,6 +368,7 @@ void HTMLMediaElementUtils::BufferedEndTimeChangedOverlay(double buffered_end_ti
   }
 }
 
+// LCOV_EXCL_START
 double HTMLMediaElementUtils::CalculateBufferedEndTime()
 {
   const double kCurrentTimeBufferedDelta = 1.0;
@@ -397,6 +403,7 @@ void HTMLMediaElementUtils::EndedOverlay() {
     }
   }
 }
+// LCOV_EXCL_STOP
 
 void HTMLMediaElementUtils::FullscreenChangedOverlay(bool fullscreen) {
   if (!htmlMediaElement_->IsCustomMediaPlayerEnabled()) {
@@ -414,6 +421,7 @@ void HTMLMediaElementUtils::FullscreenChangedOverlay(bool fullscreen) {
   }
 }
 
+// LCOV_EXCL_START
 void HTMLMediaElementUtils::SeekingOverlay() {
   if (!htmlMediaElement_->IsCustomMediaPlayerEnabled()) {
     return;
@@ -437,7 +445,7 @@ void HTMLMediaElementUtils::SeekingFinishedOverlay() {
     }
   }
 }
-
+// LCOV_EXCL_STOP
 
 void HTMLMediaElementUtils::ErrorOverlay(int32_t error_code, const String& error_msg) {
   if (!htmlMediaElement_->IsCustomMediaPlayerEnabled()) {

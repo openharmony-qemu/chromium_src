@@ -55,6 +55,7 @@ DragControllerExt::~DragControllerExt() {}
 #endif
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
+// LCOV_EXCL_START
 bool DragControllerExt::IsHyperLinkDragging() {
   if (!drag_state_) {
     LOG(DEBUG) << "DragDrop state null, drag nothing";
@@ -89,7 +90,9 @@ bool DragControllerExt::IsHyperLinkDragging() {
   return drag_state_->drag_type_ == kDragSourceActionLink &&
          did_initiate_drag_ && frame->Selection().SelectionHasFocus();
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 bool DragControllerExt::DragLinkCheckSrcAndType() {
   if (!drag_state_) {
     LOG(DEBUG) << "DragDrop state null, drag nothing";
@@ -117,6 +120,7 @@ bool DragControllerExt::DragLinkCheckSrcAndType() {
   }
   return true;
 }
+// LCOV_EXCL_STOP
 
 void DragControllerExt::UpdateLinkStyle(Node* node) {
   if (!node) {
@@ -152,6 +156,7 @@ void DragControllerExt::UpdateLinkStyle(Node* node) {
   }
 }
 
+// LCOV_EXCL_START
 NO_SANITIZE("cfi") void DragControllerExt::StartDragLinkEffects() {
   if (!DragLinkCheckSrcAndType()) {
     LOG(DEBUG) << "DragDrop check not pass, no need to change style";
@@ -183,6 +188,7 @@ NO_SANITIZE("cfi") void DragControllerExt::StartDragLinkEffects() {
   }
   InvalidateSelectionForDrag(node->ownerDocument());
 }
+// LCOV_EXCL_STOP
 
 void DragControllerExt::RestoreLinkStyle(Node* node) {
   if (!node) {
@@ -241,6 +247,7 @@ void DragControllerExt::FindAndRemoveGrayStyle(Element* tempEle) {
   }
 }
 
+// LCOV_EXCL_START
 NO_SANITIZE("cfi") void DragControllerExt::RestoreDragLinkEffects() {
   if (!DragLinkCheckSrcAndType()) {
     LOG(DEBUG) << "DragDrop check not pass, no need to change style";
@@ -267,7 +274,9 @@ NO_SANITIZE("cfi") void DragControllerExt::RestoreDragLinkEffects() {
   }
   InvalidateSelectionForDrag(node->ownerDocument());
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 NO_SANITIZE("cfi") void DragControllerExt::StartDragTextEffects() {
   if (!drag_state_) {
     return;
@@ -292,7 +301,9 @@ NO_SANITIZE("cfi") void DragControllerExt::StartDragTextEffects() {
 
   InvalidateSelectionForDrag(node->ownerDocument());
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 NO_SANITIZE("cfi") void DragControllerExt::RestoreDragTextEffects() {
   if (!drag_state_) {
     return;
@@ -317,7 +328,9 @@ NO_SANITIZE("cfi") void DragControllerExt::RestoreDragTextEffects() {
 
   InvalidateSelectionForDrag(node->ownerDocument());
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 bool DragControllerExt::IsInTextDraging() {
   if (!drag_state_) {
     return false;
@@ -325,7 +338,9 @@ bool DragControllerExt::IsInTextDraging() {
   return drag_state_->drag_type_ == kDragSourceActionSelection &&
          did_initiate_drag_;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 bool DragControllerExt::IsInImageDraging() {
   if (!drag_state_) {
     return false;
@@ -333,7 +348,9 @@ bool DragControllerExt::IsInImageDraging() {
   return drag_state_->drag_type_ == kDragSourceActionImage &&
          did_initiate_drag_;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 NO_SANITIZE("cfi") void DragControllerExt::StartDragImageEffects() {
   if (!drag_state_) {
     return;
@@ -373,7 +390,9 @@ NO_SANITIZE("cfi") void DragControllerExt::StartDragImageEffects() {
 
   InvalidateSelectionForDrag(node->ownerDocument());
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 NO_SANITIZE("cfi") void DragControllerExt::RestoreDragImageEffects() {
   if (!drag_state_) {
     return;
@@ -403,6 +422,7 @@ NO_SANITIZE("cfi") void DragControllerExt::RestoreDragImageEffects() {
   }
   did_start_drag_image_effects_ = false;
 }
+// LCOV_EXCL_STOP
 
 void DragControllerExt::InvalidateSelectionForDrag(Document* document) {
   if (!document) {

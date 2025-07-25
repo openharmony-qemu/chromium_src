@@ -845,6 +845,9 @@ class NWebImpl : public NWeb {
   static void GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionInfo>& extensionInfo);
   static void SetExtensionName(const std::string& extension_name);
   static bool GetExtensionName(std::string& extension_name);
+  static std::string GetExtensionVersion(const std::string& extension_id);
+  static void InstallExtensionFile(const std::string& file_path,
+                                   OnExtensionInstallCallback callback);
   //old version
   void WebExtensionTabCreated(int tab_id);
   void WebExtensionTabUpdated(
@@ -921,6 +924,7 @@ class NWebImpl : public NWeb {
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
+  void SetMediaResumeFromBFCachePage(bool resume);
 #endif
 
 #if BUILDFLAG(ARKWEB_MIXED_CONTENT)

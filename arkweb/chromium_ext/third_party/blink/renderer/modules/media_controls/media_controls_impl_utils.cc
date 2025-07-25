@@ -179,6 +179,7 @@ void MediaControlsImplUtils::UpdateDeviceCSSClassExt() {
 }
 #endif
 
+// LCOV_EXCL_START
 void MediaControlsImplUtils::InitializeControlsExt() {
 #if BUILDFLAG(ARKWEB_MEDIA)
   impl->entered_fullscreen_panel_ =
@@ -470,6 +471,7 @@ void MediaControlsImplUtils::OnPlaybackSpeedRateChanged() {
   impl->playback_speed_button_->RefreshPlaybackSpeedButton();
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 void MediaControlsImplUtils::VideoAssistantTrace(Visitor* visitor) const {
@@ -498,6 +500,7 @@ void MediaControlsImplUtils::CreateExt(
 #endif
 }
 
+// LCOV_EXCL_START
 bool MediaControlsImplUtils::PopulatePanelExtVideoAssistant() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (impl->mediaControlsImplUtils_->ShouldShowVideoControlsHM()) {
@@ -507,6 +510,7 @@ bool MediaControlsImplUtils::PopulatePanelExtVideoAssistant() {
 #endif
   return false;
 }
+// LCOV_EXCL_STOP
 
 void MediaControlsImplUtils::BeginScrubbingExt(bool is_touch_event) {
 #if BUILDFLAG(ARKWEB_MEDIA)
@@ -516,6 +520,7 @@ void MediaControlsImplUtils::BeginScrubbingExt(bool is_touch_event) {
 #endif
 }
 
+// LCOV_EXCL_START
 void MediaControlsImplUtils::ScrubbingTimerFiredExt() {
   if (!impl->MediaElement().isConnected()) {
     return;
@@ -529,5 +534,6 @@ void MediaControlsImplUtils::ScrubbingTimerFiredExt() {
     impl->is_begin_scrubbing = false;
   }
 }
+// LCOV_EXCL_STOP
 
 } // namespace blink

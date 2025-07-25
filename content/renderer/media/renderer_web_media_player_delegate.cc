@@ -235,7 +235,11 @@ void RendererWebMediaPlayerDelegate::OnPageVisibilityChanged(
 
     for (base::IDMap<Observer*>::iterator it(&id_map_); !it.IsAtEnd();
          it.Advance()) {
+#if !BUILDFLAG(ARKWEB_BFCACHE)
       it.GetCurrentValue()->OnPageShown();
+#else
+      it.GetCurrentValue()->OnPageShown(storing_in_bfcache);
+#endif // #endif // BUILDFLAG(ARKWEB_BFCACHE)
     }
   } else {
     RecordAction(base::UserMetricsAction("Media.Hidden"));

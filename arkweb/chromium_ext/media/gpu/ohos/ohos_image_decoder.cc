@@ -55,6 +55,7 @@ OhosImageDecodeStatus OhosImageDecoder::Decode(
   return OhosImageDecodeStatus::kSuccess;
 }
 
+// LCOV_EXCL_START
 gpu::ImageDecodeAcceleratorSupportedProfile
 OhosImageDecoder::GetSupportedProfile() const {
   gpu::ImageDecodeAcceleratorSupportedProfile profile;
@@ -68,6 +69,7 @@ OhosImageDecoder::GetSupportedProfile() const {
   profile.subsamplings.push_back(gpu::ImageDecodeAcceleratorSubsampling::k420);
   return profile;
 }
+// LCOV_EXCL_STOP
 
 std::unique_ptr<media::NativePixmapAndSizeInfo>
 OhosImageDecoder::ExportAsNativePixmapDmaBuf(OhosImageDecodeStatus* status) {

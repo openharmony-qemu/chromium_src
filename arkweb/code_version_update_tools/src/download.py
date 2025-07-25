@@ -35,7 +35,7 @@ def check_repo_installed():
 def repo_init(manifest_url, branch, workspace, model = "default.xml"):
     util.INFO(f"Initializing repo with {manifest_url} [{branch}] [{model}]")
     try:
-        cmd = ["repo", "init", "-u", manifest_url, "-b", branch, "-m", model, "--repo-branch=stable_py3"]
+        cmd = ["repo", "init", "-u", manifest_url, "-b", branch, "-m", model]
         print(cmd)
         subprocess.run(
             cmd,

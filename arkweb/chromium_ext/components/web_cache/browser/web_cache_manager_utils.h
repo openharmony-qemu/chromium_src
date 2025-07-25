@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 
 namespace web_cache {
 class WebCacheManager;

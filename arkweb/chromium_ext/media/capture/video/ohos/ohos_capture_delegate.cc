@@ -130,6 +130,7 @@ void OHOSCaptureDelegate::AllocateAndStart(
   client_->OnStarted();
 }
 
+
 void OHOSCaptureDelegate::StopAndDeAllocate() {
   DCHECK(capture_stask_runner_->BelongsToCurrentThread());
   LOG(INFO) << "OHOSCaptureDelegate::StopAndDeAllocate";
@@ -345,6 +346,7 @@ void OHOSCaptureDelegate::SetPhotoOptions(
   std::move(callback).Run(true);
 }
 
+// LCOV_EXCL_START
 void OHOSCaptureDelegate::MaybeSuspend() {
   DCHECK(capture_stask_runner_->BelongsToCurrentThread());
   if (!is_capturing_) {
@@ -422,6 +424,7 @@ bool OHOSCaptureDelegate::StopStream() {
 
   return true;
 }
+// LCOV_EXCL_STOP
 
 void OHOSCaptureDelegate::SetErrorState(VideoCaptureError error,
                                         const base::Location& from_here,

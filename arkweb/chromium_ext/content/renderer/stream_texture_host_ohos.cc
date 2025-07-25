@@ -63,6 +63,7 @@ bool StreamTextureHost::BindToCurrentThread(Listener* listener) {
                      base::Unretained(this)));
   return true;
 }
+
 // LCOV_EXCL_START
 void StreamTextureHost::OnDisconnectedFromGpuProcess() {
   channel_ = nullptr;

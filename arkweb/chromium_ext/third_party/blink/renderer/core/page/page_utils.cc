@@ -75,7 +75,6 @@ gfx::Insets PageUtils::SafeAreaScaled() const {
   return gfx::ScaleToFlooredInsets(safe_area_, 1 / page_->PageScaleFactor());
 }
 #endif
-
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
 bool PageUtils::IsHyperLinkDragging() {
   if (page_->drag_controller_) {

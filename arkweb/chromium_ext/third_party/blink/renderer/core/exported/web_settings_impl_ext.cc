@@ -127,7 +127,6 @@ void WebSettingsImplExt::SetCustomMediaPlayerEnabled(bool enabled) {
   settings_->SetCustomMediaPlayerEnabled(enabled);
   MediaControlsResourceLoader::SetCustomMediaPlayerEnabled(enabled);
 }
-
 bool WebSettingsImplExt::GetCustomMediaPlayerEnabled() {
   return settings_->GetCustomMediaPlayerEnabled();
 }

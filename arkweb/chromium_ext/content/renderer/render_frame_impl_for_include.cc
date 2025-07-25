@@ -96,7 +96,6 @@ gfx::Vector2dF RenderFrameImpl::GetOverScrollOffset() {
   return web_frame_widget->GetOverScrollOffset();
 }
 #endif
-
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_MENU)
 void RenderFrameImpl::MouseSelectMenuShow(bool show) {

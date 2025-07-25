@@ -239,6 +239,8 @@ extern bool g_siteIsolationMode;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "chrome/common/webui_url_constants.h"
 #include "url/url_constants.h"
+#include "chrome/browser/extensions/crx_installer.h"
+#include "extensions/browser/install/crx_install_error.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
@@ -315,6 +317,64 @@ int32_t g_browser_service_sdk_api_level = 0;
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 std::optional<std::string> g_extension_name;
+
+static void HandleExtensionInstallResult(
+    OnExtensionInstallCallback callback,
+    const std::optional<extensions::CrxInstallError>& error) {
+  if (!callback) {
+    return;
+  }
+
+  if (error.has_value()) {
+    auto error_message =
+        std::make_shared<std::string>(base::UTF16ToUTF8(error->message()));
+    callback(static_cast<int>(error->type()), error_message->c_str());
+  } else {
+    callback(0, "Success");
+  }
+}
+
+static void ConfigureCrxInstaller(
+    scoped_refptr<extensions::CrxInstaller> installer) {
+  installer->set_off_store_install_allow_reason(
+      extensions::CrxInstaller::OffStoreInstallAllowedFromSettingsPage);
+  installer->set_install_cause(extension_misc::INSTALL_CAUSE_USER_DOWNLOAD);
+  installer->set_install_immediately(true);
+  installer->set_allow_silent_install(true);
+  installer->set_grant_permissions(true);
+}
+
+static void PerformCrxInstallation(const std::string& file_path,
+                                   OnExtensionInstallCallback callback,
+                                   content::BrowserContext* context,
+                                   bool file_exists) {
+  if (!file_exists) {
+    if (callback) {
+      callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
+               "File not found");
+    }
+    return;
+  }
+
+  extensions::ExtensionService* service =
+      extensions::ExtensionSystem::Get(context)->extension_service();
+  if (!service) {
+    if (callback) {
+      callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
+               "Extension service not available");
+    }
+    return;
+  }
+
+  scoped_refptr<extensions::CrxInstaller> installer =
+      extensions::CrxInstaller::Create(service, nullptr);
+
+  ConfigureCrxInstaller(installer);
+
+  installer->AddInstallerCallback(
+      base::BindOnce(&HandleExtensionInstallResult, callback));
+  installer->InstallCrx(base::FilePath(file_path));
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
@@ -537,7 +597,6 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back(
       "--browser-subprocess-path=/system/bin/web_render");
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");
-  web_engine_args.emplace_back("--remote-debugging-port=9222");
   web_engine_args.emplace_back("--enable-touch-drag-drop");
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
   static float ratio = -1.0f;
@@ -3564,6 +3623,67 @@ bool NWebImpl::GetExtensionName(std::string& extension_name) {
   }
 }
 
+std::string NWebImpl::GetExtensionVersion(const std::string& extension_id) {
+  WVLOG_I("NWebImpl::GetExtensionVersion for extension: %s",
+          extension_id.c_str());
+
+  if (extension_id.empty()) {
+    return "";
+  }
+
+  content::BrowserContext* browser_context = NWebImplGetGlobalBrowserContext();
+  if (!browser_context) {
+    WVLOG_E("Failed to get global browser context");
+    return "";
+  }
+
+  extensions::ExtensionRegistry* registry =
+      extensions::ExtensionRegistry::Get(browser_context);
+  if (!registry) {
+    WVLOG_E("Failed to get extension registry");
+    return "";
+  }
+
+  const extensions::Extension* extension = registry->GetExtensionById(
+      extension_id, extensions::ExtensionRegistry::ENABLED);
+
+  return extension ? extension->version().GetString() : "";
+}
+
+void NWebImpl::InstallExtensionFile(const std::string& file_path,
+                                    OnExtensionInstallCallback callback) {
+  WVLOG_I("NWebImpl::InstallExtensionFile: %s", file_path.c_str());
+
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&NWebImpl::InstallExtensionFile, file_path, callback));
+    return;
+  }
+
+  if (file_path.empty()) {
+    if (callback) {
+      callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
+               "Invalid file path");
+    }
+    return;
+  }
+
+  content::BrowserContext* browser_context = NWebImplGetGlobalBrowserContext();
+  if (!browser_context) {
+    WVLOG_E("Failed to get global browser context");
+    if (callback) {
+      callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
+               "Browser context not available");
+    }
+  }
+
+  base::FilePath crx_path(file_path);
+  base::ThreadPool::PostTaskAndReplyWithResult(
+      FROM_HERE, {base::MayBlock()},
+      base::BindOnce(&base::PathExists, crx_path),
+      base::BindOnce(&PerformCrxInstallation, file_path, callback, browser_context));
+}
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
@@ -5373,6 +5493,17 @@ void NWebImpl::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) {
 
   nweb_delegate_->SetBackForwardCacheOptions(size, timeToLive);
 #endif
+}
+
+void NWebImpl::SetMediaResumeFromBFCachePage(bool resume) {
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("fail to set media resume from bfcache page. nweb_delegate is nullptr.");
+    return;
+  }
+  WVLOG_I("NWebImpl SetMediaResumeFromBFCachePage value: %{public}d.", resume);
+  nweb_delegate_->SetMediaResumeFromBFCachePage(resume);
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
 }
 
 #if BUILDFLAG(IS_ARKWEB)

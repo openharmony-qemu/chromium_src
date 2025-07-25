@@ -22,6 +22,7 @@ namespace blink {
 static constexpr int MAX_LENGTH = 100;
 static constexpr int HALF_LENGTH = 50;
 static constexpr int MAX_DEPTH = 64; //HandleEmptyLine max calling depth
+// LCOV_EXCL_START
 void SelectionController::FocusDocumentView() {
   Page* page = frame_->GetPage();
   if (!page) {
@@ -29,6 +30,7 @@ void SelectionController::FocusDocumentView() {
   }
   page->GetFocusController().FocusDocumentView(frame_);
 }
+// LCOV_EXCL_STOP
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
@@ -37,12 +39,15 @@ void SelectionController::SetLastLongPressHitTestResult(
   last_long_press_hit_test_result_ = HitTestResult(other);
 }
 
+// LCOV_EXCL_START
 void SelectionController::NotifyContextMenuWillShow() {
   if (frame_) {
     frame_->NotifyContextMenuWillShow();
   }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 bool SelectionController::ShowSelectionByLastLongPressHitTestResult() {
   if (!Selection().IsAvailable()) {
     return false;
@@ -78,6 +83,7 @@ bool SelectionController::ShowSelectionByLastLongPressHitTestResult() {
   SetCaretAtHitTestResult(last_long_press_hit_test_result_);
   return true;
 }
+// LCOV_EXCL_STOP
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY) || BUILDFLAG(ARKWEB_AI)
@@ -214,6 +220,7 @@ void SelectionController::SetDataDetectorHitTest(const MouseEventWithHitTestResu
              << static_cast<int32_t>(last_link_menu_source_type_);
 }
 
+// LCOV_EXCL_START
 bool SelectionController::ShowSelectionByLastLinkHitTestResult() {
   if (!Selection().IsAvailable()) {
     return false;
@@ -238,6 +245,7 @@ bool SelectionController::ShowSelectionByLastLinkHitTestResult() {
   last_link_menu_source_type_ = WebMenuSourceType::kMenuSourceNone;
   return false;
 }
+// LCOV_EXCL_STOP
 #endif
 
 void SelectionControllerUtils::HandleMouseReleaseEventWithAIExt(

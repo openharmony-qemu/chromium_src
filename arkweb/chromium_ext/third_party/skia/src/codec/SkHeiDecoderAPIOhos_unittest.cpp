@@ -40,11 +40,6 @@ protected:
         testFile.close();
     }
 
-    bool fileExists(const std::string& filename) {
-        namespace fs = std::filesystem;
-        return fs::exists(filename) && fs::is_regular_file(filename);
-    }
-
     std::unique_ptr<SkStream> CreateTestStream(const std::string& path) {
         auto stream = SkFILEStream::Make(path.c_str());
         return stream ? std::move(stream) : nullptr;
@@ -90,8 +85,6 @@ TEST_F(HeifDecoderTest, test005) {
     if (stream && decoder.init(std::move(stream), &info) && decoder.decode(&info)) {
         uint64_t size = 0;
         void* data = decoder.getDecodeData(size);
-        // ASSERT_NE(data, nullptr);
-        // ASSERT_GT(size, 0);
         
         if (data) {
             decoder.closeDecodeData(data, size);
@@ -106,7 +99,6 @@ TEST_F(HeifDecoderTest, test006) {
     
     if (stream && decoder.init(std::move(stream), &info) && decoder.decode(&info)) {
         int32_t stride = decoder.getStride();
-        // ASSERT_GT(stride, 0);
     }
 }
 

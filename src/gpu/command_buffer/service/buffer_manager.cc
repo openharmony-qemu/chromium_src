@@ -464,6 +464,16 @@ void BufferManager::ValidateAndDoBufferData(ContextState* context_state,
     return;
   }
 
+  if (context_state->bound_transform_feedback &&
+    context_state->bound_transform_feedback->active() &&
+    !context_state->bound_transform_feedback->paused() &&
+    buffer->IsBoundForTransformFeedback()) {
+    ERRORSTATE_SET_GL_ERROR(error_state, GL_INVALID_OPERATION, "glBufferData",
+                            "buffer is bound for transform feedback that is "
+                            "currently active and not paused");
+    return;
+  }
+
   DoBufferData(error_state, buffer, target, size, usage, data);
 
   if (context_state->bound_transform_feedback.get()) {
@@ -519,6 +529,17 @@ void BufferManager::ValidateAndDoBufferSubData(ContextState* context_state,
   Buffer* buffer = RequestBufferAccess(context_state, error_state, target,
                                        offset, size, "glBufferSubData");
   if (!buffer) {
+    return;
+  }
+
+  if (context_state->bound_transform_feedback &&
+      context_state->bound_transform_feedback->active() &&
+      !context_state->bound_transform_feedback->paused() &&
+      buffer->IsBoundForTransformFeedback()) {
+    ERRORSTATE_SET_GL_ERROR(error_state, GL_INVALID_OPERATION,
+                            "glBufferSubData",
+                            "buffer is bound for transform feedback that is "
+                            "currently active and not paused");
     return;
   }
   DoBufferSubData(buffer, target, offset, size, data);

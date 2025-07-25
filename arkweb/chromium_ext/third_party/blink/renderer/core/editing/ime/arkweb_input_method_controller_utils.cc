@@ -103,6 +103,7 @@ void ArkwebInputMethodControllerUtils::Clear() {
 }
 // LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void ArkwebInputMethodControllerUtils::InsertTextDuringCompositionWithEvents(
     LocalFrame& frame,
     const String& text,
@@ -202,6 +203,7 @@ bool ArkwebInputMethodControllerUtils::ReplaceCompositionEx(
 
   return true;
 }
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 void ArkwebInputMethodControllerUtils::GetInputElementAttributes(

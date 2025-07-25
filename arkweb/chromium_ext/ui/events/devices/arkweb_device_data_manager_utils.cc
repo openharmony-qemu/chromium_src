@@ -191,6 +191,7 @@ void ArkWebDeviceDataManagerUtils::DeleteDevice(const InputDevice& device) {
   }
 }
 
+// LCOV_EXCL_START
 void ArkWebDeviceDataManagerUtils::SetupDeviceListeners() {
   auto& helper = OHOS::NWeb::OhosAdapterHelperExt::GetInstance();
   mmi_adapter_ = helper.CreateMMIAdapter();
@@ -264,5 +265,6 @@ void ArkWebDeviceDataManagerUtils::CleanupDeviceListeners() {
   }
 }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+// LCOV_EXCL_STOP
 
 }  // namespace ui

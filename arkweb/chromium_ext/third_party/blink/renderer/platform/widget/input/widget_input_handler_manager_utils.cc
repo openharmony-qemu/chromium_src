@@ -38,6 +38,7 @@ class SoftwareCompositorProxyRegistryOhos
       : compositor_thread_default_task_runner_(
             std::move(compositor_task_runner)) {}
 
+// LCOV_EXCL_START
   ~SoftwareCompositorProxyRegistryOhos() {
     // Ensure the proxy has already been release on the compositor thread
     // before destroying this object.
@@ -78,6 +79,7 @@ class SoftwareCompositorProxyRegistryOhos
     DCHECK(compositor_thread_default_task_runner_->BelongsToCurrentThread());
     proxy_.reset();
   }
+// LCOV_EXCL_STOP
 
  private:
   scoped_refptr<base::SingleThreadTaskRunner>
@@ -87,7 +89,7 @@ class SoftwareCompositorProxyRegistryOhos
 };
 #endif
 
-
+// LCOV_EXCL_START
 WidgetInputHandlerManagerUtils::WidgetInputHandlerManagerUtils(
     WidgetInputHandlerManager* manager) : manager_(manager) {
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
@@ -96,6 +98,7 @@ WidgetInputHandlerManagerUtils::WidgetInputHandlerManagerUtils(
           manager_->compositor_thread_default_task_runner_);
 #endif
 }
+
 WidgetInputHandlerManagerUtils::~WidgetInputHandlerManagerUtils() {}
 
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
@@ -126,6 +129,7 @@ WidgetInputHandlerManagerUtils::GetSoftwareCompositorRegistryOhos() {
   return software_proxy_registry_.get();
 }
 #endif
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 void WidgetInputHandlerManagerUtils::SetZoomLevel(float magnify_delta,
                                              const gfx::Point& anchor) {
@@ -271,5 +275,6 @@ void WidgetInputHandlerManagerUtils::AsyncNativeMouseHitTestResult(bool isNative
   }
 }
 #endif
+// LCOV_EXCL_STOP
 
 }

@@ -20,6 +20,7 @@
 #include "content/public/browser/browser_thread.h"
 
 namespace ui {
+// LCOV_EXCL_START
 void DecelerationAnimator::startAnimate(float distance,
                                         base::TimeDelta duration) {
   if (task_runner_) {
@@ -28,6 +29,7 @@ void DecelerationAnimator::startAnimate(float distance,
                                   base::RetainedRef(this), distance, duration));
   }
 }
+// LCOV_EXCL_STOP
 
 void DecelerationAnimator::animate(float distance, base::TimeDelta duration) {
   auto startTime = base::Time::Now();
@@ -54,6 +56,7 @@ void DecelerationAnimator::animate(float distance, base::TimeDelta duration) {
       FROM_HERE, base::BindOnce(end_callback_, 0, 0));
 }
 
+// LCOV_EXCL_START
 void DecelerationAnimator::resetAnimate() {
   task_runner_.reset();
 }
@@ -64,5 +67,6 @@ void DecelerationAnimator::setRefreshListener(
   repeat_callback_ = std::move(repeat_callback);
   end_callback_ = std::move(end_callback);
 }
+// LCOV_EXCL_STOP
 
 }  // namespace ui

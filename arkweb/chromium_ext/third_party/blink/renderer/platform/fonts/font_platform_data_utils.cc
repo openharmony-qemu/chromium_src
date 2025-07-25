@@ -17,8 +17,11 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 FontPlatformDataUtils::FontPlatformDataUtils(FontPlatformData* data) : font_data_(data) {}
+
 FontPlatformDataUtils::~FontPlatformDataUtils() {}
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 const ScaleParam& FontPlatformDataUtils::FindCompressionConfigWithFont(

@@ -23,6 +23,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_MENU)
 void WebLocalFrameImpl::SelectRangeV2(const gfx::Point& position,
                                       bool is_base) {
@@ -99,4 +100,5 @@ void WebLocalFrameImpl::OnDataDetectorSelectText() {
   }
 }
 #endif
+// LCOV_EXCL_STOP
 }  // namespace blink

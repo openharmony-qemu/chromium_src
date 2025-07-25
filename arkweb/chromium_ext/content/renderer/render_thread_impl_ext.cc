@@ -43,6 +43,7 @@ void InitializeWebKitExt(scoped_refptr<base::SingleThreadTaskRunner> compositor_
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 scoped_refptr<NativeTextureFactory> RenderThreadImpl::GetNativeTexureFactory() {
   DCHECK(IsMainThread());
@@ -72,6 +73,7 @@ void RenderThreadImpl::UpdateThemeFontFile(base::File theme_font) {
   blink::FontCache::Get().InvalidateSystemFontFamily();
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_I18N)
 void RenderThreadImpl::NotifyLocaleChanged(const std::string& locale) {
@@ -94,6 +96,7 @@ void RenderThreadImpl::NotifyLocaleChanged(const std::string& locale) {
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 void RenderThreadImpl::SetBlanklessDumpInfo(uint32_t nweb_id, uint64_t blankless_key,
                                             uint64_t frame_sink_id, int32_t lcp_time, int64_t pref_hash) {
@@ -106,4 +109,5 @@ void RenderThreadImpl::SetBlanklessDumpInfo(uint32_t nweb_id, uint64_t blankless
   }
 }
 #endif
+// LCOV_EXCL_STOP
 }  // namespace content

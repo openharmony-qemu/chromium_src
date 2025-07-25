@@ -115,4 +115,5 @@ gpu::SyncToken StreamTextureHost::GenUnverifiedSyncToken() {
                         release_id_);
 }
 // LCOV_EXCL_STOP
+
 }  // namespace content

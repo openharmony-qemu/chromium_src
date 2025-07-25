@@ -31,6 +31,7 @@ ArkwebWidgetInputHandlerImplExt::ArkwebWidgetInputHandlerImplExt(
                              widget,
                              frame_widget_input_handler) {}
 
+
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 void ArkwebWidgetInputHandlerImplExt::TryStartFling() {
   soc_perf::SocPerUtil::EnableFlingBoost();

@@ -89,6 +89,7 @@ class SoftwareCompositorProxyRegistryOhos
 };
 #endif
 
+
 // LCOV_EXCL_START
 WidgetInputHandlerManagerUtils::WidgetInputHandlerManagerUtils(
     WidgetInputHandlerManager* manager) : manager_(manager) {
@@ -98,7 +99,6 @@ WidgetInputHandlerManagerUtils::WidgetInputHandlerManagerUtils(
           manager_->compositor_thread_default_task_runner_);
 #endif
 }
-
 WidgetInputHandlerManagerUtils::~WidgetInputHandlerManagerUtils() {}
 
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
@@ -129,7 +129,6 @@ WidgetInputHandlerManagerUtils::GetSoftwareCompositorRegistryOhos() {
   return software_proxy_registry_.get();
 }
 #endif
-
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 void WidgetInputHandlerManagerUtils::SetZoomLevel(float magnify_delta,
                                              const gfx::Point& anchor) {

@@ -75,8 +75,6 @@ const std::string CREATE_DATABAS_INFO_TABLE = "CREATE TABLE " + DATABASE_INFO_TA
 
 const std::string DELETE_DATABAS_INFO_TABLE = "DROP TABLE " + DATABASE_INFO_TABLE_NAME + ";";
 
-const std::string WEB_PATH = "/web";
-
 const std::unordered_map<AbilityRuntime_AreaMode, Rdb_SecurityArea> AREA_MODE_MAP = {
     { AbilityRuntime_AreaMode::ABILITY_RUNTIME_AREA_MODE_EL1, Rdb_SecurityArea::RDB_SECURITY_AREA_EL1 },
     { AbilityRuntime_AreaMode::ABILITY_RUNTIME_AREA_MODE_EL2, Rdb_SecurityArea::RDB_SECURITY_AREA_EL2 },
@@ -137,29 +135,19 @@ void OhosWebSnapshotDataBase::GetOrOpen(const OH_Rdb_Config& config)
     }
 }
 
-OhosWebSnapshotDataBase::OhosWebSnapshotDataBase()
-    : totalSnapShotFileBytes_(0), capacityInByte_(DEFAULT_CAPACITY * BYTE_PER_MB)
+OhosWebSnapshotDataBase::OhosWebSnapshotDataBase() : capacityInByte_(DEFAULT_CAPACITY * BYTE_PER_MB) {}
+
+void OhosWebSnapshotDataBase::Init(const char* databaseDir)
 {
-    AbilityRuntime_ErrorCode code = ABILITY_RUNTIME_ERROR_CODE_PARAM_INVALID;
+    if (access(databaseDir, F_OK) != 0) {
+        WVLOG_E("web snapshot fail to access cache web dir:%{public}s", databaseDir);
+        return;
+    }
+
     constexpr int32_t NATIVE_BUFFER_SIZE = 1024;
-    char cacheDir[NATIVE_BUFFER_SIZE];
-    int32_t cacheDirLength = 0;
-    code = OH_AbilityRuntime_ApplicationContextGetCacheDir(cacheDir, NATIVE_BUFFER_SIZE, &cacheDirLength);
-    if (code != ABILITY_RUNTIME_ERROR_CODE_NO_ERROR) {
-        WVLOG_E("OH_AbilityRuntime_ApplicationContextGetCacheDir failed:err=%{public}d", code);
-        return;
-    }
-    std::string stringDir(cacheDir);
-    std::string databaseDir = stringDir + WEB_PATH;
-
-    if (access(databaseDir.c_str(), F_OK) != 0) {
-        WVLOG_E("web snapshot fail to access cache web dir:%{public}s", databaseDir.c_str());
-        return;
-    }
-
     char bundleName[NATIVE_BUFFER_SIZE];
     int32_t bundleNameLength = 0;
-    code = OH_AbilityRuntime_ApplicationContextGetBundleName(bundleName, NATIVE_BUFFER_SIZE, &bundleNameLength);
+    auto code = OH_AbilityRuntime_ApplicationContextGetBundleName(bundleName, NATIVE_BUFFER_SIZE, &bundleNameLength);
     if (code != ABILITY_RUNTIME_ERROR_CODE_NO_ERROR) {
         WVLOG_E("OH_AbilityRuntime_ApplicationContextGetBundleName failed:err=%{public}d", code);
         return;
@@ -175,7 +163,7 @@ OhosWebSnapshotDataBase::OhosWebSnapshotDataBase()
 
     OH_Rdb_Config config = {0};
     config.selfSize = sizeof(OH_Rdb_Config);
-    config.dataBaseDir = databaseDir.c_str();
+    config.dataBaseDir = databaseDir;
     config.bundleName = bundleName;
     config.storeName = WEB_SNAPSHOT_DATABASE_FILE.c_str();
     config.area = it->second;

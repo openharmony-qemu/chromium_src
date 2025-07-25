@@ -2479,6 +2479,10 @@ const std::u16string& WebContentsImpl::GetTitle() {
   return GetNavigationEntryForTitle()->GetTitleForDisplay();
 }
 
+bool WebContentsImpl::GetIsRealTitle() {
+  return GetNavigationEntryForTitle()->GetIsRealTitle();
+}
+
 const std::optional<std::u16string>& WebContentsImpl::GetAppTitle() {
   return GetNavigationEntryForTitle()->GetAppTitle();
 }
@@ -3052,6 +3056,9 @@ bool WebContentsImpl::NeedToFireBeforeUnloadOrUnloadEvents() {
 #if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
   // The return value of NeedToFireBeforeUnloadOrUnloadEvents will not be saved
   // after receiving a ClosePage ACK.
+  if (GetPrimaryMainFrame() && GetPrimaryMainFrame()->IsJsDialogShowOrBeforeUnloadTimedOut()) {
+    return false;
+  }
 #else
   // Don't fire if the main frame indicates that beforeunload and unload have
   // already executed (e.g., after receiving a ClosePage ACK) or should be
@@ -3059,8 +3066,7 @@ bool WebContentsImpl::NeedToFireBeforeUnloadOrUnloadEvents() {
   if (GetPrimaryMainFrame()->IsPageReadyToBeClosed()) {
     return false;
   }
-#endif  // ARKWEB_DISATCH_BEFORE_UNLOAD
-
+#endif // ARKWEB_DISATCH_BEFORE_UNLOAD
   // Check whether any frame in the frame tree needs to run beforeunload or
   // unload-time event handlers.
   for (FrameTreeNode* node : primary_frame_tree_.Nodes()) {
@@ -3607,6 +3613,9 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
   prefs.custom_media_player_enabled = AsWebContentsImplExt()->custom_media_player_enabled_;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  prefs.media_resume_from_bfcache_page = AsWebContentsImplExt()->media_resume_from_bfcache_page_;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
   return prefs;
 }
 
@@ -6457,6 +6466,11 @@ void WebContentsImpl::SetVisibilityAndNotifyObservers(Visibility visibility) {
   // for the first time.
   if (visibility != previous_visibility ||
       (visibility == Visibility::VISIBLE && !did_first_set_visible_)) {
+#if BUILDFLAG(ARKWEB_PDF)
+    if (implUtils_) {
+      implUtils_->JudgeIsPdfPageVisibilityChanged(visibility);
+    }
+#endif
     SCOPED_UMA_HISTOGRAM_TIMER("WebContentsObserver.OnVisibilityChanged");
     observers_.NotifyObservers(&WebContentsObserver::OnVisibilityChanged,
                                visibility);
@@ -8440,10 +8454,15 @@ void WebContentsImpl::RunJavaScriptDialog(
         GetPrimaryMainFrame()->AddMessageToConsole(
             blink::mojom::ConsoleMessageLevel::kWarning,
             base::StringPrintf(
+#if !BUILDFLAG(ARKWEB_DEVTOOLS)
                 "A different origin subframe tried to create a JavaScript "
                 "dialog. This is no longer allowed and was blocked. See "
                 "https://www.chromestatus.com/feature/5148698084376576 for "
                 "more details."));
+#else
+                "A different origin subframe tried to create a JavaScript "
+                "dialog. This is no longer allowed and was blocked."));
+#endif // ARKWEB_DEVTOOLS
       }
     }
   }

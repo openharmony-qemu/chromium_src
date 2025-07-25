@@ -36,6 +36,10 @@
 #include <sys/mman.h>
 #endif
 
+#if PA_BUILDFLAG(IS_OHOS)
+#include "arkweb/chromium_ext/base/allocator/partition_allocator/src/partition_alloc/partition_address_space_for_include.cc"
+#endif
+
 namespace partition_alloc::internal {
 
 #if PA_BUILDFLAG(HAS_64_BIT_POINTERS)
@@ -97,7 +101,7 @@ uintptr_t PartitionAddressSpace::pool_shadow_address_ =
     PartitionAddressSpace::kUninitializedPoolBaseAddress;
 #endif  // PA_CONFIG(ENABLE_SHADOW_METADATA)
 
-#if PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE)
+#if PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE) && !PA_BUILDFLAG(IS_OHOS)
 #if !PA_BUILDFLAG(IS_IOS)
 #error Dynamic pool size is only supported on iOS.
 #endif
@@ -133,7 +137,7 @@ bool PartitionAddressSpace::IsIOSTestProcess() {
 
   return has_suffix("Runner") || has_suffix("ios_web_view_inttests");
 }
-#endif  // PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE)
+#endif  // PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE) && !PA_BUILDFLAG(IS_OHOS)
 
 #if PA_CONFIG(ENABLE_SHADOW_METADATA)
 size_t PartitionAddressSpace::CorePoolShadowSize() {

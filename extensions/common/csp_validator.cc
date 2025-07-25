@@ -251,6 +251,7 @@ std::string GetSecureDirectiveValues(
         isNonWildcardTLD(source_lower, "https://", true) ||
         isNonWildcardTLD(source_lower, "chrome://", false) ||
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        isNonWildcardTLD(source_lower, "arkweb://", false) ||
         isNonWildcardTLD(source_lower,
                          std::string(extensions::kArkwebExtensionScheme) +
                              url::kStandardSchemeSeparator,

@@ -69,6 +69,7 @@
 #if BUILDFLAG(ARKWEB_NOTIFICATION)
 #include "ohos_nweb/src/nweb_notification_manager_delegate.h"
 #include "ohos_nweb/src/capi/nweb_notification_options_item.h"
+#include "ohos_nweb/src/nweb_common.h"
 #endif // ARKWEB_NOTIFICATION
 
 #if BUILDFLAG(ARKWEB_NOTIFICATION)
@@ -258,15 +259,33 @@ NWebNotificationOptionsItemIcon CreateFromImageSkiaReps(
         new NWebNotificationOptionsItemIconBitmap(
             CreateIconBitmapFromImage(rep.GetBitmap()));
 #else
-    NWebNotificationOptionsItemIconBitmap* addr =
-        (NWebNotificationOptionsItemIconBitmap*)__real_malloc(
-            sizeof(NWebNotificationOptionsItemIconBitmap));
-    actionIcon.bitmaps[scale] =
-        new (addr) NWebNotificationOptionsItemIconBitmap(
-            CreateIconBitmapFromImage(rep.GetBitmap()));
+    if (IsNativeApiEnable()) {
+      actionIcon.bitmaps[scale] = new NWebNotificationOptionsItemIconBitmap(
+          CreateIconBitmapFromImage(rep.GetBitmap()));
+    } else {
+      NWebNotificationOptionsItemIconBitmap* addr =
+          (NWebNotificationOptionsItemIconBitmap*)__real_malloc(
+              sizeof(NWebNotificationOptionsItemIconBitmap));
+      actionIcon.bitmaps[scale] =
+          new (addr) NWebNotificationOptionsItemIconBitmap(
+              CreateIconBitmapFromImage(rep.GetBitmap()));
+    }
 #endif
   }
   return actionIcon;
+}
+
+void DeleteNWebNotificationOptionsItemIcon(
+    NWebNotificationOptionsItemIcon* icon) {
+  if (!icon) {
+    return;
+  }
+
+  for (auto it : icon->bitmaps) {
+    delete it.second;
+  }
+  delete icon;
+  icon = nullptr;
 }
 #endif // ARKWEB_NOTIFICATION
 
@@ -320,18 +339,30 @@ void NotificationPlatformBridgeOhos::Display(
   }
 
   options->requireInteraction = notification.never_timeout();
+#if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
   NWebNotificationOptionsItemIcon icon = CreateFromImageSkiaReps(
       notification.icon().GetImage().AsImageSkia().image_reps());
-#if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
   options->icon = new NWebNotificationOptionsItemIcon(icon);
 #else
-  NWebNotificationOptionsItemIcon* addr =
-      (NWebNotificationOptionsItemIcon*)__real_malloc(sizeof(icon));
-  options->icon = new (addr) NWebNotificationOptionsItemIcon(icon);
+  if (IsNativeApiEnable()) {
+    options->icon = new NWebNotificationOptionsItemIcon(CreateFromImageSkiaReps(
+        notification.icon().GetImage().AsImageSkia().image_reps()));
+  } else {
+    NWebNotificationOptionsItemIcon icon = CreateFromImageSkiaReps(
+        notification.icon().GetImage().AsImageSkia().image_reps());
+    NWebNotificationOptionsItemIcon* addr =
+        (NWebNotificationOptionsItemIcon*)__real_malloc(sizeof(icon));
+    options->icon = new (addr) NWebNotificationOptionsItemIcon(icon);
+  }
 #endif
+
   OHOS::NWeb::NWebNotificationManagerDelegate::OnShowNotification(options);
-  options->icon->bitmaps =
-      std::map<double, NWebNotificationOptionsItemIconBitmap*>();
+  if (IsNativeApiEnable()) {
+    DeleteNWebNotificationOptionsItemIcon(options->icon);
+  } else {
+    options->icon->bitmaps =
+       std::map<double, NWebNotificationOptionsItemIconBitmap*>();
+  }
 #endif // ARKWEB_NOTIFICATION
 }
 
@@ -402,7 +433,7 @@ void NotificationPlatformBridgeOhos::OnClosed(const std::string id) {
 
   const message_center::Notification& notification = FindProfileNotification(id)->notification();
   PassThroughDelegate* delegate = static_cast<PassThroughDelegate*>(notification.delegate());
-  delegate->Close(false);
+  delegate->Close(true);
 
   CancelById(id, ProfileNotification::GetProfileID(delegate->GetProfile()));
 }

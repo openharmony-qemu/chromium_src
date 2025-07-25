@@ -86,6 +86,7 @@
 #include "ui/gfx/geometry/size.h"
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "base/ohos/sys_info_utils_ext.h"
 #include "third_party/blink/renderer/core/html/html_style_element.h"
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_top_row_panel_element.h"
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_timeline_row_panel_element.h"
@@ -161,7 +162,6 @@ void MediaControlsImplUtils::UpdateOverflowMenuWantedExt(
     std::pair<MediaControlElementBase*, bool>(&row_elements)[kRowElementsCount]) {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (ShouldShowVideoControlsHM()) {
-    row_elements[kDownloadIndexToRowColumns].second = true;
     row_elements[kPlaybackSpeedIndexToRowColumns].second = true;
   }
 #endif
@@ -171,8 +171,15 @@ void MediaControlsImplUtils::UpdateOverflowMenuWantedExt(
 bool MediaControlsImplUtils::ShouldShowVideoControlsHM() const {
   return impl->MediaElement().IsCustomMediaPlayerEnabled() && impl->ShouldShowVideoControls();
 }
+
+void MediaControlsImplUtils::UpdateDeviceCSSClassExt() {
+  if (impl) {
+    impl->SetClass(kMediaControlsDevicePcCSSClass, base::ohos::IsPcDevice());
+  }
+}
 #endif
 
+// LCOV_EXCL_START
 void MediaControlsImplUtils::InitializeControlsExt() {
 #if BUILDFLAG(ARKWEB_MEDIA)
   impl->entered_fullscreen_panel_ =
@@ -223,7 +230,7 @@ void MediaControlsImplUtils::PopulatePanelHM() {
     MediaControlElementsHelper::CreateDiv(
         AtomicString("-internal-media-controls-button-spacer"), impl->top_row_panel_);
     impl->top_row_panel_->ParserAppendChild(impl->volume_control_container_);
-    impl->top_row_panel_->ParserAppendChild(impl->download_button_);
+    impl->top_row_panel_->ParserAppendChild(impl->overflow_menu_);
     impl->panel_->ParserAppendChild(impl->top_row_panel_);
   }
 
@@ -258,6 +265,7 @@ void MediaControlsImplUtils::PopulatePanelHM() {
   impl->AttachHoverBackground(impl->playback_speed_button_);
   button_panel->ParserAppendChild(impl->fullscreen_button_);
   impl->AttachHoverBackground(impl->fullscreen_button_);
+  impl->AttachHoverBackground(impl->overflow_menu_);
 }
 #endif // ARKWEB_VIDEO_ASSISTANT
 
@@ -463,6 +471,7 @@ void MediaControlsImplUtils::OnPlaybackSpeedRateChanged() {
   impl->playback_speed_button_->RefreshPlaybackSpeedButton();
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 void MediaControlsImplUtils::VideoAssistantTrace(Visitor* visitor) const {
@@ -491,6 +500,7 @@ void MediaControlsImplUtils::CreateExt(
 #endif
 }
 
+// LCOV_EXCL_START
 bool MediaControlsImplUtils::PopulatePanelExtVideoAssistant() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (impl->mediaControlsImplUtils_->ShouldShowVideoControlsHM()) {
@@ -500,6 +510,7 @@ bool MediaControlsImplUtils::PopulatePanelExtVideoAssistant() {
 #endif
   return false;
 }
+// LCOV_EXCL_STOP
 
 void MediaControlsImplUtils::BeginScrubbingExt(bool is_touch_event) {
 #if BUILDFLAG(ARKWEB_MEDIA)
@@ -509,6 +520,7 @@ void MediaControlsImplUtils::BeginScrubbingExt(bool is_touch_event) {
 #endif
 }
 
+// LCOV_EXCL_START
 void MediaControlsImplUtils::ScrubbingTimerFiredExt() {
   if (!impl->MediaElement().isConnected()) {
     return;
@@ -522,5 +534,6 @@ void MediaControlsImplUtils::ScrubbingTimerFiredExt() {
     impl->is_begin_scrubbing = false;
   }
 }
+// LCOV_EXCL_STOP
 
 } // namespace blink

@@ -17,6 +17,9 @@
 namespace gl {
 
 const std::string PRODUCT_MODEL_EMULATOR = "emulator";
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+constexpr int32_t DEFAULT_FENCE_FD = -1;
+#endif
 
 scoped_refptr<gl::NativeViewGLSurfaceEGLOhos>
 NativeViewGLSurfaceEGLOhos::CreateNativeViewGLSurfaceEGLOhos(
@@ -152,6 +155,9 @@ bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
 
   // EglDestroy has notified the bufferqueue associated with the OHNativeWindow to clean cache
   if (!allocated && NWebNativeWindowTracker::GetInstance()->CheckNativeWindow(reinterpret_cast<void*>(window_))) {
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+    if (!condition_) {
+#endif
     if (NativeViewGLSurfaceEGL::Recreate()) {
       // Notify the bufferqueue associated with the OHNativeWindow to clean
       // cache
@@ -159,6 +165,9 @@ bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
           .GetWindowAdapterInstance()
           .NativeWindowSurfaceCleanCache(reinterpret_cast<void*>(window_));
     }
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+    }
+#endif
   }
   return true;
 }
@@ -176,6 +185,42 @@ NativeViewGLSurfaceEGLOhos::~NativeViewGLSurfaceEGLOhos()
 void NativeViewGLSurfaceEGLOhos::SetNativeInnerWeb(bool isInnerWeb) {
   LOG(INFO)<<"NativeViewGLSurfaceEGLOhos::SetNativeInnerWeb is "<<isInnerWeb;
   isInnerWeb_ = isInnerWeb;
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void NativeViewGLSurfaceEGLOhos::SetBypassVsyncCondition(int32_t condition) {
+  LOG(INFO) << "NativeViewGLSurfaceEGLOhos::SetBypassVsyncCondition is " << condition;
+  if (condition_ == 1 || condition == 0) {
+    return;
+  }
+  condition_ = condition;
+  int32_t buffer_num = OHOS::NWeb::WindowAdapterNdkImpl::GetInstance()
+                          .GetNativeWindowQueueSize(reinterpret_cast<void*>(window_));
+  if (buffer_num == 0) {
+    return;
+  }
+  int32_t fence_fd = DEFAULT_FENCE_FD;
+  std::vector<NativeWindowBuffer*> native_window_buffers(buffer_num, nullptr);
+  int32_t buffer_cnt = 0;
+  for (int32_t i = 0; i < buffer_num - 1; i++) {
+    int32_t ret = OHOS::NWeb::WindowAdapterNdkImpl::GetInstance()
+                          .GetNativeWindowRequestBuffer(reinterpret_cast<void*>(window_),
+                          &native_window_buffers[i], &fence_fd);
+    if (ret != 0) {
+      break;
+    }
+    buffer_cnt++;
+    if (fence_fd != DEFAULT_FENCE_FD) {
+      close(fence_fd);
+      fence_fd = DEFAULT_FENCE_FD;
+    }
+  }
+  for (int32_t i = 0; i < buffer_cnt; i++) {
+    OHOS::NWeb::WindowAdapterNdkImpl::GetInstance()
+                          .GetNativeWindowAbortBuffer(reinterpret_cast<void*>(window_),
+                          native_window_buffers[i]);
+  }
 }
 #endif
 }  // namespace gl

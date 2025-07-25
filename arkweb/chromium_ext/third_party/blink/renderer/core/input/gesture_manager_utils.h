@@ -27,14 +27,25 @@ class GestureManagerUtils {
 
  public:
   GestureManagerUtils(GestureManager* gesture_manager);
-
+#if BUILDFLAG(ARKWEB_AI)
   void CloseAIOverlay(const GestureEventWithHitTestResults& targeted_event);
+#endif
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
   WebInputEventResult HandleGestureDragLongPress(
       const GestureEventWithHitTestResults& targeted_event);
+#endif
+#if BUILDFLAG(ARKWEB_AI)
   WebInputEventResult HandleGestureCreateOverlay(
       const GestureEventWithHitTestResults& targeted_event);
+  
+  void UpdateContextMenuForAI(const HitTestResult& hit_test_result,
+                              const HitTestLocation& location,
+                              const WebGestureEvent& gesture_event);
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   void UpdateContextMenuForFreeCopy(HitTestResult& hit_test_result, HitTestLocation& location);
-  GestureManager* gesture_manager_;
+#endif
+  raw_ptr<GestureManager> gesture_manager_;
 };
 }  // namespace blink
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_INPUT_GESTURE_MANAGER_UTILS_H_

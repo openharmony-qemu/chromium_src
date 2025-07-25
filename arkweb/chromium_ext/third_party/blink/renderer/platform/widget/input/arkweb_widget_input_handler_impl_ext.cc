@@ -19,6 +19,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 ArkwebWidgetInputHandlerImplExt::ArkwebWidgetInputHandlerImplExt(
     scoped_refptr<WidgetInputHandlerManager> manager,
     scoped_refptr<MainThreadEventQueue> input_event_queue,
@@ -74,4 +75,12 @@ void ArkwebWidgetInputHandlerImplExt::ScrollBy(float delta_x, float delta_y) {
   }
 }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void ArkwebWidgetInputHandlerImplExt::SetBypassVsyncCondition(int32_t condition) {
+  if (input_handler_manager_) {
+    input_handler_manager_->manager_utils()->SetBypassVsyncCondition(condition);
+  }
+}
+#endif
+// LCOV_EXCL_STOP
 }  // namespace blink

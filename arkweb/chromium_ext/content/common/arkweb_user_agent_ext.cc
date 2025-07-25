@@ -40,15 +40,17 @@ std::string GetOhosFullname() {
 
   if (!is_compatible_type_setted) {
     compatible_device_type = base::ohos::CompatibleDeviceType();
+    is_compatible_type_setted = true;
+  }
+
+  if (!compatible_device_type.empty()) {
     if (compatible_device_type == "Phone" || compatible_device_type == "PC" ||
         compatible_device_type == "Tablet") {
       LOG(DEBUG) << "compatible device type is: " << compatible_device_type;
       device_type_string = compatible_device_type;
     } else {
-      LOG(DEBUG) << "unknown compatible device type: "
-                 << compatible_device_type;
+      LOG(DEBUG) << "unknown compatible device type: " << compatible_device_type;
     }
-    is_compatible_type_setted = true;
   }
 
   int32_t ohos_major_version = base::ohos::MajorVersion();

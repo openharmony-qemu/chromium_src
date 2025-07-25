@@ -98,4 +98,21 @@ int32_t GpuChannelExt::current_native_embed_id(int32_t native_id) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void GpuChannelExt::SetBlanklessDumpInfo(uint64_t frame_sink_id, const base::ohos::BlanklessDumpInfo& info) {
+  std::lock_guard<std::mutex> lck(dump_info_map_mtx_);
+  blankless_dump_info_map_[frame_sink_id] = std::move(info);
+}
+
+bool GpuChannelExt::GetBlanklessDumpInfoAndDisableDump(uint64_t frame_sink_id, base::ohos::BlanklessDumpInfo& info) {
+  std::lock_guard<std::mutex> lck(dump_info_map_mtx_);
+  auto it = blankless_dump_info_map_.find(frame_sink_id);
+  if (it == blankless_dump_info_map_.end()) {
+    return false;
+  }
+  info = it->second;
+  it->second.dump_enabled = false;
+  return true;
+}
+#endif
 }

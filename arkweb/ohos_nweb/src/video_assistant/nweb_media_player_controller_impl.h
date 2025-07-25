@@ -26,7 +26,8 @@ class NWebMediaPlayerControllerImpl : public NWebMediaPlayerController {
   void ExitFullscreen() override;
   void SetVideoSurface(void* native_window) override;
   void Download() override;
-
+  void SetVolume(double volume) override;
+  double GetVolume() override;
  private:
   std::unique_ptr<CefMediaPlayerController> cef_controller_;
 };

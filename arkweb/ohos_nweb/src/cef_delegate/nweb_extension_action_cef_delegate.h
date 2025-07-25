@@ -20,7 +20,7 @@
 #include "ui/gfx/image/image.h"
 #include "ui/gfx/image/image_skia.h"
 #include "ui/gfx/image/image_skia_rep.h"
-
+#include "ohos_nweb/src/capi/nweb_extension_action_icon.h"
 #include "ohos_nweb/src/capi/nweb_extension_api_callback.h"
 
 namespace OHOS::NWeb {
@@ -34,11 +34,31 @@ class NWebExtensionActionCefDelegate {
     std::shared_ptr<NWebExtensionActionApiCallback> action_api_listener);
   static void UnRegisterWebExtensionApiListener();
   static NWebExtensionActionCefDelegate* GetInstance();
-  static void OnSetIcon(std::string extension_id,
-                        const gfx::Image& icon_image,
-                        int32_t tab_id);
+  static void WebExtensionActionClicked(std::string extension_id,
+                                        const NWebExtensionTab* tab);
+  static void WebExtensionActionPinnedStateChanged(
+      std::string extensionId, bool isPinned);
+  static void WebExtensionActionShowPopup(int tabId, std::string extensionId);
+  static void WebExtensionSetPopupWindowId(int popupNwebId, int windowId);
+  static void WebExtensionErasePopupWindowId(int popupNwebId);
   void OnDisable(const std::string& extensionId, std::optional<int>& tabId);
   void OnEnable(const std::string& extensionId, std::optional<int>& tabId);
+  void OnOpenPopup(const std::string& extensionId,
+                   const std::optional<NWebExtensionActionOpenPopupOptions>& options);
+  void OnSetTitle(const std::string& extensionId,
+                  const NWebExtensionActionSetTitleDetails& details);
+  void OnSetPopup(const std::string& extensionId,
+                  const NWebExtensionActionSetPopupDetails& details);
+  void OnSetIcon(std::string extension_id,
+                 const gfx::Image& icon_image,
+                 int32_t tab_id);
+  void OnSetBadgeText(const std::string& extensionId,
+                      const NWebExtensionActionSetBadgeTextDetails& details);
+  void OnSetBadgeTextColor(const std::string& extensionId,
+                           const NWebExtensionActionSetBadgeTextColorDetails& details);
+  void OnSetBadgeBackgroundColor(const std::string& extensionId,
+                                 const NWebExtensionActionSetBadgeBackgroundColorDetails& details);
+  std::optional<NWebExtensionActionUserSettings> OnGetUserSettings(const std::string& extensionId);
 
  private:
   static std::unique_ptr<NWebExtensionActionCefDelegate> instance;

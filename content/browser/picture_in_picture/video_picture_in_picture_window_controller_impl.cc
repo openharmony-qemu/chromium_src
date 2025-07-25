@@ -487,7 +487,14 @@ void VideoPictureInPictureWindowControllerImpl::MediaStartedPlaying(
 
   if (!active_session_ || active_session_->player_id() != media_player_id)
     return;
-
+#if BUILDFLAG(ARKWEB_PIP)
+  if (GetWebContentsImpl() && GetWebContentsImpl()->AsWebContentsImplExt()) {
+    GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(PIP_STATE_PLAY,
+      media_player_id.delegate_id,
+      media_player_id.frame_routing_id.child_id,
+      media_player_id.frame_routing_id.frame_routing_id, 0, 0);
+  }
+#endif
   UpdatePlaybackState();
 }
 
@@ -500,7 +507,14 @@ void VideoPictureInPictureWindowControllerImpl::MediaStoppedPlaying(
 
   if (!active_session_ || active_session_->player_id() != media_player_id)
     return;
-
+#if BUILDFLAG(ARKWEB_PIP)
+  if (GetWebContentsImpl() && GetWebContentsImpl()->AsWebContentsImplExt()) {
+    GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(PIP_STATE_PAUSE,
+      media_player_id.delegate_id,
+      media_player_id.frame_routing_id.child_id,
+      media_player_id.frame_routing_id.frame_routing_id, 0, 0);
+  }
+#endif
   UpdatePlaybackState();
 }
 

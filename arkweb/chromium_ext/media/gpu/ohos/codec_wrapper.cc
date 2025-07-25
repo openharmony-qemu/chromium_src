@@ -48,6 +48,10 @@ class CodecWrapperImpl : public base::RefCountedThreadSafe<CodecWrapperImpl> {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void SetVideoSurface(int32_t widget_id);
 #endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer();
+  void ResumeDmaBuffer();
+#endif  // ARKWEB_MEDIA_DMABUF
   scoped_refptr<CodecSurfaceBundle> SurfaceBundle();
   QueueStatus QueueInputBuffer(const DecoderBuffer& buffer);
   DequeueStatus DequeueOutputBuffer(
@@ -357,6 +361,22 @@ void CodecWrapperImpl::SetVideoSurface(int32_t widget_id) {
 }
 #endif // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void CodecWrapperImpl::RecycleDmaBuffer() {
+  if (codec_) {
+    LOG(INFO) << "DMABUF::CodecWrapperImpl, RecycleDmaBuffer";
+    codec_->RecycleDmaBuffer();
+  }
+}
+
+void CodecWrapperImpl::ResumeDmaBuffer() {
+  if (codec_) {
+    LOG(INFO) << "DMABUF::CodecWrapperImpl, ResumeDmaBuffer";
+    codec_->ResumeDmaBuffer();
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
+
 scoped_refptr<CodecSurfaceBundle> CodecWrapperImpl::SurfaceBundle() {
   base::AutoLock l(lock_);
   return surface_bundle_;
@@ -462,6 +482,20 @@ void CodecWrapper::SetVideoSurface(int32_t widget_id) {
     impl_->SetVideoSurface(widget_id);
 }
 #endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void CodecWrapper::RecycleDmaBuffer() {
+  if (impl_) {
+    impl_->RecycleDmaBuffer();
+  }
+}
+
+void CodecWrapper::ResumeDmaBuffer() {
+  if (impl_) {
+    impl_->ResumeDmaBuffer();
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
 
 scoped_refptr<CodecSurfaceBundle> CodecWrapper::SurfaceBundle() {
   return impl_->SurfaceBundle();

@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
+
 # URLs to be passed as `excludes` to most (but not all) bundle_js() invocations.
 BUNDLE_JS_EXCLUDES = []
 foreach(excluded_file,
@@ -20,4 +22,9 @@ foreach(excluded_file,
     "chrome://${excluded_file}",
     "//${excluded_file}",
   ]
+  if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
+    BUNDLE_JS_EXCLUDES += [
+      "arkweb://${excluded_file}",
+    ]
+  }
 }

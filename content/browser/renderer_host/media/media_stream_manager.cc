@@ -3661,6 +3661,9 @@ void MediaStreamManager::HandleAccessRequestResponse(
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
       if (device.type == MediaStreamType::DEVICE_VIDEO_CAPTURE ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        device.type == MediaStreamType::GUM_DESKTOP_VIDEO_CAPTURE ||
+#endif
         device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE) {
         auto* web_contents = static_cast<WebContentsImpl*>(
             WebContentsImpl::FromRenderFrameHostID(

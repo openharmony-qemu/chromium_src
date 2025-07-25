@@ -5,7 +5,7 @@
 // Based on overscroll_refresh.h originally written by
 // Copyright (c) 2014 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file. 
+// found in the LICENSE file.
 
 #ifndef UI_OHOS_OVERSCROLL_REFRESH_H_
 #define UI_OHOS_OVERSCROLL_REFRESH_H_
@@ -101,21 +101,6 @@ class UI_OHOS_EXPORT OverscrollRefresh {
 
   void DidStopRefresh();
 
-  base::WeakPtr<OverscrollRefresh> GetWeakPtr();
-
-  class RefreshListener : public DecelerationAnimatorListener {
-   public:
-    RefreshListener(base::WeakPtr<ui::OverscrollRefresh> overscroll_refresh);
-    RefreshListener(const RefreshListener& other);
-    ~RefreshListener() override;
-
-    void onAnimationEnd() override;
-    void onAnimationRepeat(float delta) override;
-
-   private:
-    base::WeakPtr<OverscrollRefresh> overscroll_refresh_ = nullptr;
-  };
-
  protected:
   // This constructor is for mocking only.
   OverscrollRefresh();
@@ -150,7 +135,6 @@ class UI_OHOS_EXPORT OverscrollRefresh {
   gfx::Vector2dF pulltorefresh_scroll_;
   base::RetainingOneShotTimer reset_timer_;
   scoped_refptr<DecelerationAnimator> deceleration_animator_;
-  const scoped_refptr<base::SequencedTaskRunner> task_runner_;
 
   static const base::TimeDelta kResetDurationMs;
   static const base::TimeDelta kAnimateDurationMs;

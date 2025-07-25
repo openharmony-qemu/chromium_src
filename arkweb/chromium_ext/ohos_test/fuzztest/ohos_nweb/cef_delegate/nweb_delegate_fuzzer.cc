@@ -35,18 +35,21 @@ void NwebDelegateFuzzTest(const uint8_t* data, size_t size) {
   if ((data == nullptr) || (size == 0)) {
     return false;
   }
+  int argc;
+  const char* argv[5];
+  std::shared_ptr<NWebDelegate> nweb_delegate_ = std::make_shared<NWebDelegate>(argc, argv);
   uint32_t width = 100;
   uint32_t height = 100;
   bool isKeyboard = false;
-  NWebDelegate::Resize(width, height, isKeyboard);
+  nweb_delegate_->Resize(width, height, isKeyboard);
   const FocusReason focusReason = FocusReason::FOCUS_DEFAULT;
-  NWebDelegate::OnFocus(focusReason);
-  NWebDelegate::OnBlur();
+  nweb_delegate_->OnFocus(focusReason);
+  nweb_delegate_->OnBlur();
   int32_t id = 1;
   double x = 100.0;
   double y = 100.0;
   bool from_overlay = false;
-  NWebDelegate::OnTouchPress(id, x, y, from_overlay);
+  nweb_delegate_->OnTouchPress(id, x, y, from_overlay);
 }
 }  // namespace OHOS
 

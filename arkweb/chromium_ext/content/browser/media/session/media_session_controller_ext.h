@@ -37,6 +37,10 @@ public:
 #if BUILDFLAG(ARKWEB_PIP)
   void OnPictureInPictureStateChanged(const MediaPlayerId& id, uint32_t state);
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+  void OnNotifyMemoryLevel(int player_id, int32_t level) override;
+#endif
 };
 
 }

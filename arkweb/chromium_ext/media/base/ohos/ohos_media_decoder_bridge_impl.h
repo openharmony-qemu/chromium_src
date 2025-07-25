@@ -26,6 +26,10 @@
 namespace media {
 // using namespace OHOS::NWeb;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class MediaCodecDecoderBridgeImplTest;
+#endif
+
 class MEDIA_EXPORT VideoBridgeCodecConfig {
  public:
   VideoBridgeCodecConfig();
@@ -130,6 +134,11 @@ class MediaCodecDecoderBridgeImpl {
   DecoderAdapterCode SetVideoSurface(int32_t widget_id);
 #endif // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  DecoderAdapterCode RecycleDmaBuffer();
+  DecoderAdapterCode ResumeDmaBuffer();
+#endif  // ARKWEB_MEDIA_DMABUF
+
  private:
   MediaCodecDecoderBridgeImpl(const std::string codec_type,
                               base::RepeatingClosure on_buffers_available_cb =
@@ -156,12 +165,16 @@ class MediaCodecDecoderBridgeImpl {
   scoped_refptr<base::SequencedTaskRunner> decoder_task_runner_ = nullptr;
   int32_t width_;
   int32_t height_;
+  std::recursive_mutex decoderMutex_;
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void* window_from_surface_ = nullptr;
   int32_t video_surface_id_ = -1;
 #endif // ARKWEB_VIDEO_ASSISTANT
   base::WeakPtrFactory<MediaCodecDecoderBridgeImpl> weak_factory_{this};
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class MediaCodecDecoderBridgeImplTest;
+#endif
 };
 
 }  // namespace media

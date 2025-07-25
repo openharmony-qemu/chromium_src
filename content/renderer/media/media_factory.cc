@@ -139,6 +139,15 @@
 
 #include "arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_utils.h"
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/content/renderer/media/ohos/native_renderer_client_factory.h"
+#include "arkweb/chromium_ext/content/renderer/media/ohos/native_texture_wrapper_impl.h"
+#include "arkweb/chromium_ext/content/renderer/media/renderer_web_native_delegate.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/web_native_bridge_impl.h"
+#include "base/system/sys_info.h"
+#endif
+
 namespace {
 
 // This limit is much higher than it needs to be right now, because the logic
@@ -901,4 +910,8 @@ const blink::BrowserInterfaceBrokerProxy& MediaFactory::GetInterfaceBroker()
   return render_frame_->GetBrowserInterfaceBroker();
 }
 
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/content/renderer/media/media_factory_for_include.cc"
+#endif
 }  // namespace content

@@ -8,6 +8,7 @@
 
 namespace media {
 
+// LCOV_EXCL_START
 void MojoRenderer::InitializeRendererFromUrlExt() {
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   remote_renderer_->SetMediaSourceList(std::move(source_infos_));
@@ -32,6 +33,7 @@ void MojoRenderer::OnInitializedExt() {
     }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 }
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_MEDIA)
 void MojoRenderer::SetNativeWindowSurface(int native_window_id) {
@@ -128,4 +130,26 @@ void MojoRenderer::PipEnable(bool enable) {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+// LCOV_EXCL_START
+void MojoRenderer::RecycleDmaBuffer() {
+  if (remote_renderer_.is_bound()) {
+    LOG(INFO) << "DMABUF::MojoRenderer, RecycleDmaBuffer";
+    remote_renderer_->RecycleDmaBuffer();
+  } else {
+    LOG(ERROR) << "DMABUF::MojoRenderer, RecycleDmaBuffer failed";
+  }
+}
+
+void MojoRenderer::ResumeDmaBuffer() {
+  if (remote_renderer_.is_bound()) {
+    LOG(INFO) << "DMABUF::MojoRenderer, ResumeDmaBuffer";
+    remote_renderer_->ResumeDmaBuffer();
+  } else {
+    LOG(ERROR) << "DMABUF::MojoRenderer, ResumeDmaBuffer failed";
+  }
+}
+// LCOV_EXCL_STOP
+#endif  // ARKWEB_MEDIA_DMABUF
 }

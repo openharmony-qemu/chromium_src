@@ -35,7 +35,7 @@ const float kAnimateMilliseconds = 10;
 namespace ui {
 class DecelerateInterpolator {
  public:
-  DecelerateInterpolator(float factor) : factor_(factor) {}
+  explicit DecelerateInterpolator(float factor) : factor_(factor) {}
   float getInterpolation(float input) {
     return kOne - std::pow(kOne - input, kFactorMultiplier * factor_);
   }
@@ -44,32 +44,28 @@ class DecelerateInterpolator {
   float factor_ = 1.f;
 };
 
-class DecelerationAnimatorListener {
- public:
-  virtual void onAnimationEnd() = 0;
-  virtual void onAnimationRepeat(float) = 0;
-  virtual ~DecelerationAnimatorListener() {}
-};
-
 class DecelerationAnimator
     : public base::RefCountedThreadSafe<DecelerationAnimator> {
  public:
-  DecelerationAnimator() : interpolator_(2.f), listener_(nullptr) {}
-  DecelerationAnimator(float decelerate_factor,
-                       std::unique_ptr<DecelerationAnimatorListener> listener)
-      : interpolator_(decelerate_factor), listener_(std::move(listener)) {}
+  using AnimationRepeatCallback = base::RepeatingCallback<void(float, float)>;
+  using AnimationEndCallback = base::RepeatingCallback<void(float, float)>;
+
+  DecelerationAnimator() : interpolator_(2.f) {}
+  explicit DecelerationAnimator(float decelerate_factor)
+      : interpolator_(decelerate_factor) {}
   ~DecelerationAnimator() = default;
 
   void startAnimate(float distance, base::TimeDelta duration);
   void resetAnimate();
-  void setRefreshListener(
-      std::unique_ptr<DecelerationAnimatorListener> listener);
+  void setRefreshListener(const AnimationRepeatCallback& repeat_callback,
+                          const AnimationEndCallback& end_callback);
 
  private:
   void animate(float distance, base::TimeDelta duration);
 
   DecelerateInterpolator interpolator_;
-  std::unique_ptr<DecelerationAnimatorListener> listener_;
+  AnimationRepeatCallback repeat_callback_;
+  AnimationEndCallback end_callback_;
   scoped_refptr<base::SequencedTaskRunner> task_runner_ =
       base::ThreadPool::CreateSequencedTaskRunner(
           {base::MayBlock(), base::TaskPriority::BEST_EFFORT,

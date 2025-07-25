@@ -24,4 +24,23 @@ void RendererImpl::PipEnable(bool enable) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void RendererImpl::RecycleDmaBuffer() {
+  DCHECK(task_runner_->RunsTasksInCurrentSequence());
+
+  if (video_renderer_) {
+    LOG(INFO) << "DMABUF::RendererImpl, RecycleDmaBuffer";
+    video_renderer_->RecycleDmaBuffer();
+  }
+}
+
+void RendererImpl::ResumeDmaBuffer() {
+  DCHECK(task_runner_->RunsTasksInCurrentSequence());
+
+  if (video_renderer_) {
+    LOG(INFO) << "DMABUF::RendererImpl, ResumeDmaBuffer";
+    video_renderer_->ResumeDmaBuffer();
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
 }

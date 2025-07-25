@@ -26,6 +26,11 @@
 #include "nweb_key_event_impl.h"
 #include "nweb_web_storage_impl.h"
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
+#endif
+
 namespace OHOS::NWeb {
 
 namespace {
@@ -189,6 +194,10 @@ RenderProcessMode NWebEngineImpl::GetRenderProcessMode() {
 #endif
 }
 
+void NWebEngineImpl::SetWebDestroyMode(WebDestroyMode mode) {
+    NWebImpl::SetWebDestroyMode(mode);
+}
+
 void NWebEngineImpl::ClearPrefetchedResource(
     const std::vector<std::string>& cache_key_list) {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
@@ -253,4 +262,63 @@ void NWebEngineImpl::SetProxyOverride(
 void NWebEngineImpl::RemoveProxyOverride(std::shared_ptr<NWebProxyChangedCallback> callback) {
   NWebImpl::RemoveProxyOverride(callback);
 }
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+uint32_t NWebEngineImpl::AddBlanklessLoadingUrls(const std::vector<std::string>& urls) {
+  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
+    return base::ohos::BlanklessController::GetInstance().AddEnabledUrlList(urls);
+  }
+  return 0;
+}
+
+void NWebEngineImpl::RemoveBlanklessLoadingUrls(const std::vector<std::string>& urls) {
+  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
+    base::ohos::BlanklessController::GetInstance().RemoveEnabledUrlList(urls);
+  }
+}
+
+void NWebEngineImpl::ClearBlanklessLoadingCache(const std::vector<std::string>& urls) {
+  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
+    std::vector<int64_t> keys;
+    for (const auto& url : urls) {
+      keys.push_back(static_cast<int64_t>(std::hash<std::string>{}(url)));
+    }
+    base::ohos::BlanklessDataController::GetInstance().ClearSnapshotDataItem(keys);
+  }
+}
+
+std::string NWebEngineImpl::CheckBlankOptEnable(const std::string& key, int32_t nweb_id) {
+  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
+    uint64_t blankless_key = base::ohos::BlanklessController::GetInstance().GetBlanklessLoadingKey(key, nweb_id);
+    if (base::ohos::BlanklessController::INVALID_BLANKLESS_KEY != blankless_key) {
+      const auto& data = base::ohos::BlanklessDataController::GetInstance().GetSnapshotDataItem(blankless_key,
+        NWebImpl::GetPreferenceHashByNwebId(nweb_id));
+      return data.staticPath;
+    }
+  }
+  return "";
+}
+
+void NWebEngineImpl::SetBlanklessLoadingCacheCapacity(int32_t capacity) {
+  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
+    base::ohos::BlanklessController::GetInstance().SetCapacity(capacity);
+    base::ohos::BlanklessDataController::GetInstance().SetBlanklessLoadingCacheCapacity(capacity);
+  }
+}
+#endif
+
+void NWebEngineImpl::EnablePrivateNetworkAccess(bool enable) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  NWebImpl::EnablePrivateNetworkAccess(enable);
+#endif
+}
+
+bool NWebEngineImpl::IsPrivateNetworkAccessEnabled() {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  return NWebImpl::IsPrivateNetworkAccessEnabled();
+#else
+  return false;
+#endif
+}
+
 }  // namespace OHOS::NWeb

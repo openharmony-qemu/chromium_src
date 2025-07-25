@@ -265,6 +265,11 @@
 #include "arkweb/chromium_ext/content/renderer/render_frame_impl_before_for_include.cc"
 #endif
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "arkweb/chromium_ext/content/browser/dfx/memory_monitor_render_impl.h"
+#include "arkweb/chromium_ext/content/browser/dfx/appfreeze_monitor_render_impl.h"
+#endif
+
 using base::Time;
 using blink::ContextMenuData;
 using blink::WebContentDecryptionModule;
@@ -674,10 +679,14 @@ blink::mojom::CommonNavigationParamsPtr MakeCommonNavigationParams(
       initiator_origin_trial_features, info->href_translate.Latin1(),
       is_history_navigation_in_new_child_frame, info->input_start,
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-      request_destination, "");
+      request_destination, ""
 #else
-      request_destination);
+      request_destination
 #endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+      , false
+#endif
+      );
 }
 
 WebFrameLoadType NavigationTypeToLoadType(
@@ -1962,6 +1971,7 @@ RenderFrameImpl::RenderFrameImpl(CreateParams params)
                               base::Unretained(this))),
       devtools_frame_token_(params.devtools_frame_token),
       is_for_nested_main_frame_(params.is_for_nested_main_frame) {
+  implUtils = new RenderFrameImplUtils(this);
   TRACE_EVENT_WITH_FLOW0("navigation", "RenderFrameImpl::RenderFrameImpl",
                          TRACE_ID_LOCAL(this), TRACE_EVENT_FLAG_FLOW_OUT);
   DCHECK(RenderThread::IsMainThread());
@@ -2024,6 +2034,7 @@ RenderFrameImpl::~RenderFrameImpl() {
                                             routing_id_
 #endif
   );
+  delete implUtils;
 }
 
 void RenderFrameImpl::Initialize(blink::WebFrame* parent) {
@@ -2067,6 +2078,7 @@ void RenderFrameImpl::Initialize(blink::WebFrame* parent) {
       routing_id_,
 #endif
       this, GetTaskRunner(blink::TaskType::kInternalNavigationAssociated));
+  implUtils->ReportRenderInitBlock();
 }
 
 void RenderFrameImpl::GetInterface(
@@ -2807,6 +2819,16 @@ void RenderFrameImpl::CommitNavigation(
       std::move(navigation_client_impl_), request_id,
       was_initiated_in_this_frame);
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  if ((common_params->navigation_type == blink::mojom::NavigationType::RELOAD ||
+       common_params->navigation_type ==
+           blink::mojom::NavigationType::RELOAD_BYPASSING_CACHE) &&
+      viewport_meta_enabled_ != GetBlinkPreferences().viewport_meta_enabled) {
+    document_state->set_must_reset_scroll_and_scale_state(true);
+  }
+  viewport_meta_enabled_ = GetBlinkPreferences().viewport_meta_enabled;
+#endif
+
   // Check if the navigation being committed originated as a client redirect.
   bool is_client_redirect =
       !!(common_params->transition & ui::PAGE_TRANSITION_CLIENT_REDIRECT);
@@ -3217,6 +3239,12 @@ void RenderFrameImpl::CommitFailedNavigation(
   std::string* error_html_ptr = &error_html;
   if (error_code == net::ERR_HTTP_RESPONSE_CODE_FAILURE) {
     DCHECK_NE(commit_params->http_response_code, -1);
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+    if (error_page_content && common_params->is_override_error_page) {
+      error_html = error_page_content.value();
+      error_html_ptr = nullptr;
+    }
+#endif
     GetContentClient()->renderer()->PrepareErrorPageForHttpStatusError(
         this, error, navigation_params->http_method.Ascii(),
         commit_params->http_response_code, nullptr, error_html_ptr);
@@ -4038,6 +4066,20 @@ void RenderFrameImpl::DidCommitNavigation(
   if (IsMainFrame()) {
     LOG(WARNING) << "event_message: page load start, routing_id: "
                  << GetRoutingID() << ", url: ***";
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    if (!MemoryMonitorImpl::GetInstance()->IsInitialized()) {
+      GetBrowserInterfaceBroker().GetInterface(
+          std::move(MemoryMonitorImpl::GetInstance()->GetPendingReceiver())
+      );
+    }
+    MemoryMonitorImpl::GetInstance()->Trigger(document_loader->GetUrl().GetString().Utf8());
+    if (!AppfreezeMonitorImpl::GetInstance()->IsInitialized()) {
+      GetBrowserInterfaceBroker().GetInterface(
+        std::move(AppfreezeMonitorImpl::GetInstance()->GetPendingReceiver()));
+      AppfreezeMonitorImpl::GetInstance()->HasInitialized();
+    }
+#endif
   }
 #endif
 
@@ -5299,6 +5341,13 @@ void RenderFrameImpl::UpdateStateForCommit(
   SendUpdateState();
 
   UpdateNavigationHistory(commit_type);
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  if (document_state->must_reset_scroll_and_scale_state()) {
+    GetWebView()->ResetScrollAndScaleState();
+    document_state->set_must_reset_scroll_and_scale_state(false);
+  }
+#endif
 
   if (!frame_->Parent()) {  // Only for top frames.
     RenderThreadImpl* render_thread_impl = RenderThreadImpl::current();

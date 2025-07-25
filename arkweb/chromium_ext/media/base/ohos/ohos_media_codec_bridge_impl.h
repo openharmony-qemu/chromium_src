@@ -25,6 +25,11 @@
 
 namespace media {
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class OHOSMediaCodecBridgeImplTest;
+class CodecEncodeBridgeCallbackTest;
+#endif
+
 struct EncodeConfigData {
   uint32_t index;
   BufferInfo buffer_info;
@@ -84,6 +89,9 @@ class CodecEncodeBridgeCallback
   BufferInfo config_buffer_info_;
   OhosBuffer config_buffer_data_;
   EncodeConfigData config_data_;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class CodecEncodeBridgeCallbackTest;
+#endif
 };
 
 class OHOSMediaCodecBridgeImpl : public OHOSMediaCodecBridge {
@@ -132,6 +140,9 @@ class OHOSMediaCodecBridgeImpl : public OHOSMediaCodecBridge {
   EncodeConfigDataCache config_data_cache_;
   std::shared_ptr<ProducerSurfaceAdapter> surface_;
   std::shared_ptr<SurfaceBufferAdapter> buffer_adapter_;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class OHOSMediaCodecBridgeImplTest;
+#endif
 };
 
 }  // namespace media

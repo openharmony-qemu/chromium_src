@@ -282,4 +282,8 @@ interface GpuService {
   // Set fling state to gpu process
   [EnableIf=arkweb_d_vsync]
   SetIsFling(bool is_fling_enabled);
+
+  // Set scroll state to gpu process
+  [EnableIf=arkweb_d_vsync]
+  SetIsScroll(bool is_scroll_enabled);
 };

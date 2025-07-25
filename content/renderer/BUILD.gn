@@ -357,6 +357,13 @@ target(link_target_type, "renderer") {
       "//ohos_glue:ohos_adapter_glue_source",
     ]
 
+    if (arkweb_crashpad) {
+      deps += [
+        "//arkweb/chromium_ext/content/browser/dfx:memory_monitor_render",
+        "//arkweb/chromium_ext/content/browser/dfx:appfreeze_monitor",
+      ]
+    }
+
     sources += arkweb_content_renderer_sources
     sources += arkweb_content_render_sources
 

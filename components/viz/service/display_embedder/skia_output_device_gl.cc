@@ -342,3 +342,7 @@ SkSurface* SkiaOutputDeviceGL::BeginPaint(
 void SkiaOutputDeviceGL::EndPaint() {}
 
 }  // namespace viz
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_gl_for_include.cc"
+#endif

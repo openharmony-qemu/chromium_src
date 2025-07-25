@@ -220,6 +220,7 @@ bool IsControl(const ax::mojom::Role role) {
     case ax::mojom::Role::kDisclosureTriangle:
     case ax::mojom::Role::kDisclosureTriangleGrouped:
     case ax::mojom::Role::kInputTime:
+    case ax::mojom::Role::kListItem:
     case ax::mojom::Role::kListBox:
     case ax::mojom::Role::kListGrid:
     case ax::mojom::Role::kMenuItem:

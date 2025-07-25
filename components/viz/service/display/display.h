@@ -258,6 +258,10 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
     return display_utils_.get();
   }
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetClientId(const uint32_t client_id) override;
+#endif
+
  protected:
   friend class DisplayTest;
   friend class ArkwebDisplayUtils;

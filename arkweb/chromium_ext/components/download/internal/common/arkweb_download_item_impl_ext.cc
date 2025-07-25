@@ -84,6 +84,34 @@
 
 namespace download {
 
+namespace {
+void ReadDownloadDataAndRunCallbackImpl(DownloadFile* download_file) {
+  DCHECK(GetDownloadTaskRunner()->RunsTasksInCurrentSequence());
+  ArkWebDownloadFileExt* download_file_ext =
+      download_file->AsArkWebDownloadFileImplExt();
+ 
+  download_file_ext->ReadDownloadDataAndRunCallback(
+      download_file_ext->GetNoHoleDownloadDataSize());
+}
+ 
+void ReadDataFromDownloadFile(
+    DownloadFile* download_file,
+    int32_t read_size,
+    bool read_now,
+    ArkWebDownloadFileExt::ReadDownloadDataCallback callback) {
+  DCHECK(GetDownloadTaskRunner()->RunsTasksInCurrentSequence());
+  ArkWebDownloadFileExt* download_file_ext =
+      download_file->AsArkWebDownloadFileImplExt();
+  download_file_ext->RegisterReadDownloadCallback(std::move(callback),
+                                                  read_size);
+  if (read_now) {
+    ReadDownloadDataAndRunCallbackImpl(download_file);
+  } else {
+    download_file_ext->ReadAndRunCallbackIfDataReady();
+  }
+}
+}  // namespace
+
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 const std::string& ArkWebDownloadItemImplExt::GetRequestMethod() const {
   return request_method_;
@@ -161,164 +189,84 @@ bool ArkWebDownloadItemImplExt::IsBeforeInProgress() const {
   }
 }
 
+bool ArkWebDownloadItemImplExt::IsDownloadInProgress() const {
+  if (state_ == COMPLETE_INTERNAL || state_ == COMPLETING_INTERNAL ||
+      state_ == INTERRUPTED_INTERNAL ||
+      state_ == INTERRUPTED_TARGET_PENDING_INTERNAL ||
+      state_ == CANCELLED_INTERNAL) {
+    return false;
+  }
+ 
+  return true;
+}
+ 
 void ArkWebDownloadItemImplExt::ReadDownloadData(
     const std::string& guid,
     const int32_t read_size,
     base::OnceCallback<void(const std::vector<uint8_t>&)> callback) {
+  LOG(INFO) << "DownloadItemImpl::ReadDownloadData " << state_;
+  if (read_download_callback_from_ui_) {
+    LOG(INFO) << "ReadDownloadData exsit callback and return";
+    return;
+  }
+  read_download_callback_from_ui_ = std::move(callback);
+  if (!download_file_) {
+    LOG(INFO) << "ReadDownloadData download_file null";
+    ReadDataFromDownloadFileDone(std::vector<uint8_t>());
+    return;
+  }
+ 
   if (GetDownloadTaskRunner()) {
+    bool read_now = !IsDownloadInProgress() || PercentComplete() == 100;
+ 
     GetDownloadTaskRunner()->PostTask(
         FROM_HERE,
-        base::BindOnce(&ArkWebDownloadItemImplExt::ReadDownloadDataInternal,
-        weak_ptr_factory_.GetWeakPtr(), guid, read_size, std::move(callback)));
+        base::BindOnce(
+            &ReadDataFromDownloadFile, base::Unretained(download_file_.get()),
+            read_size, read_now,
+            base::BindOnce(
+                &ArkWebDownloadItemImplExt::ReadDataFromDownloadFileDone,
+                weak_ptr_factory_.GetWeakPtr())));
   }
 }
 
-void ArkWebDownloadItemImplExt::ReadDownloadDataInternal(
-    const std::string& guid,
-    const int32_t read_size,
-    base::OnceCallback<void(const std::vector<uint8_t>&)> callback) {
+void ArkWebDownloadItemImplExt::ReadDataFromDownloadFileDone(
+    const std::vector<uint8_t>& data) {
   if (!read_download_callback_from_ui_) {
-    LOG(INFO) << "ArkWebDownloadItemImplExt::ReadDownloadData set callback";
-    read_download_callback_from_ui_ = std::move(callback);
-  }
-  read_download_size_ = read_size;
-
-  RegisterReadDownloadCallback(base::BindOnce(&ArkWebDownloadItemImplExt::ReadDownloadDataAndRunCallback,
-                                              weak_ptr_factory_.GetWeakPtr(), read_size),
-                               read_size);
-  LOG(INFO) << "ArkWebDownloadItemImplExt::ReadDownloadData set callback state_=" << state_;
-
-  if (PercentComplete() == 100) {
-    LOG(INFO) << "ArkWebDownloadItemImplExt::ReadDownloadData complete already";
-    RunCallbackIfExistsCallback();
     return;
   }
 
-  if (state_ == COMPLETE_INTERNAL ||
-      state_ == COMPLETING_INTERNAL ||
-      state_ == INTERRUPTED_INTERNAL ||
-      state_ == INTERRUPTED_TARGET_PENDING_INTERNAL ||
-      state_ == CANCELLED_INTERNAL) {
-    LOG(INFO) << "ArkWebDownloadItemImplExt::ReadDownloadData state match";
-    RunCallbackIfExistsCallback();
-  } else {
-    RunCallbackIfDataReady();
-  }
-}
-
-void ArkWebDownloadItemImplExt::ReadDownloadDataAndRunCallback(uint32_t size) {
-  if (GetDownloadTaskRunner()) {
-    GetDownloadTaskRunner()->PostTask(
-        FROM_HERE,
-        base::BindOnce(&ArkWebDownloadItemImplExt::ReadDownloadDataAndRunCallbackInternal,
-        weak_ptr_factory_.GetWeakPtr(), size));
-  }
-}
-
-void ArkWebDownloadItemImplExt::ReadDownloadDataAndRunCallbackInternal(uint32_t size) {
-  if (!read_download_callback_from_ui_) {
-    LOG(DEBUG) << "ArkWebDownloadItemImplExt::ReadDownloadDataAndRunCallbackInternal called, size: "
-               << size;
-    return;
-  }
-
-  if (!download_file_.get() ||
-      !download_file_.get()->AsArkWebDownloadFileImplExt()) {
-    LOG(INFO) << "ArkWebDownloadItemImplExt::ReadDownloadDataAndRunCallbackInternal called, size: "
-              << size;
-    std::move(read_download_callback_from_ui_).Run(std::vector<uint8_t>());
-    return;
-  }
-
-  std::vector<uint8_t> data(size);
-  if (!download_file_.get()
-           ->AsArkWebDownloadFileImplExt()
-           ->ReadDownloadDataFromFile(0, (char*)(data.data()), size)) {
-    LOG(INFO) << "ArkWebDownloadItemImplExt::ReadDownloadDataAndRunCallbackInternal called, size: "
-              << size;
-    std::move(read_download_callback_from_ui_).Run(std::vector<uint8_t>());
-    return;
-  }
-
-  LOG(INFO) << "ArkWebDownloadItemImplExt::ReadDownloadDataAndRunCallbackInternal called, size: "
-            << size;
   std::move(read_download_callback_from_ui_).Run(std::move(data));
 }
 
-void ArkWebDownloadItemImplExt::RunCallbackIfDataReady() {
-  if (download_file_.get() &&
-      download_file_.get()->AsArkWebDownloadFileImplExt()) {
-    LOG(INFO) << "ArkWebDownloadItemImplExt::RunCallbackIfDataReady called";
-    download_file_.get()
-        ->AsArkWebDownloadFileImplExt()
-        ->RunCallbackIfDataReady();
-  }
-}
-
 void ArkWebDownloadItemImplExt::RunCallbackIfStateMatch() {
+  if (!read_download_callback_from_ui_ || IsDownloadInProgress() ||
+      !download_file_) {
+    return;
+  }
+ 
+  LOG(INFO) << "DownloadItemImpl::RunCallbackIfStateMatch";
+ 
   if (GetDownloadTaskRunner()) {
     GetDownloadTaskRunner()->PostTask(
-        FROM_HERE,
-        base::BindOnce(&ArkWebDownloadItemImplExt::RunCallbackIfStateMatchInternal,
-        weak_ptr_factory_.GetWeakPtr()));
-  }
-}
-
-void ArkWebDownloadItemImplExt::RunCallbackIfStateMatchInternal() {
-  LOG(INFO) << "ArkWebDownloadItemImplExt::RunCallbackIfStateMatchInternal called";
-  if (state_ == COMPLETE_INTERNAL ||
-      state_ == COMPLETING_INTERNAL ||
-      state_ == INTERRUPTED_INTERNAL ||
-      state_ == INTERRUPTED_TARGET_PENDING_INTERNAL ||
-      state_ == CANCELLED_INTERNAL) {
-    uint32_t size = 0;
-
-    if (download_file_.get() &&
-        download_file_.get()->AsArkWebDownloadFileImplExt()) {
-      size = download_file_.get()
-                 ->AsArkWebDownloadFileImplExt()
-                 ->GetNoHoleDownloadDataSize();
-      LOG(INFO) << "ArkWebDownloadItemImplExt::RunCallbackIfStateMatchInternal size: " << size;
-    }
-
-    ReadDownloadDataAndRunCallback(size);
+        FROM_HERE, base::BindOnce(&ReadDownloadDataAndRunCallbackImpl,
+                                  base::Unretained(download_file_.get())));
   }
 }
 
 void ArkWebDownloadItemImplExt::RunCallbackIfExistsCallback() {
-  if (GetDownloadTaskRunner()) {
-    GetDownloadTaskRunner()->PostTask(
-        FROM_HERE,
-        base::BindOnce(&ArkWebDownloadItemImplExt::RunCallbackIfExistsCallbackInternal,
-        weak_ptr_factory_.GetWeakPtr()));
-  }
-}
-
-void ArkWebDownloadItemImplExt::RunCallbackIfExistsCallbackInternal() {
-  uint32_t size = 0;
-  if (download_file_.get() &&
-      download_file_.get()->AsArkWebDownloadFileImplExt()) {
-    size = download_file_.get()
-               ->AsArkWebDownloadFileImplExt()
-               ->GetNoHoleDownloadDataSize();
-    LOG(INFO) << "ArkWebDownloadItemImplExt::RunCallbackIfExistsCallback size: " << size;
-  }
-
-  ReadDownloadDataAndRunCallback(size);
-}
-
-void ArkWebDownloadItemImplExt::RegisterReadDownloadCallback(
-      base::OnceCallback<void()> callback,
-      uint32_t size) {
-  if (!download_file_ || !download_file_.get()->AsArkWebDownloadFileImplExt()) {
-    LOG(INFO) << "ArkWebDownloadItemImplExt::RegisterReadDownloadCallback download_file_ null";
-    RunCallbackIfExistsCallback();
+  if (!read_download_callback_from_ui_) {
     return;
   }
-
-  download_file_.get()
-      ->AsArkWebDownloadFileImplExt()
-      ->RegisterReadDownloadCallback(base::BindOnce(std::move(callback)), size);
+  if (!download_file_) {
+    ReadDataFromDownloadFileDone(std::vector<uint8_t>());
+    return;
+  }
+  if (GetDownloadTaskRunner()) {
+    GetDownloadTaskRunner()->PostTask(
+        FROM_HERE, base::BindOnce(&ReadDownloadDataAndRunCallbackImpl,
+                                  base::Unretained(download_file_.get())));
+  }
 }
 #endif  //  ARKWEB_EXT_DOWNLOAD
 

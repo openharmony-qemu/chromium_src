@@ -35,6 +35,10 @@ struct OhWebPerformanceTiming {
   int64_t first_paint = -1;
   int64_t first_contentful_paint = -1;
   int64_t largest_contentful_paint = -1;
+  int64_t render_init_block = -1;
+  int64_t input_time = -1;
+  bool is_paint_done = false;
+  int64_t first_meaningful_paint = -1;
 };
 
 #endif  // OH_WEB_PERFORMANCE_TIMING_H_

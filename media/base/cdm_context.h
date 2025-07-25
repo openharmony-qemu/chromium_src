@@ -99,6 +99,11 @@ class MEDIA_EXPORT CdmContext {
 
   static std::string CdmIdToString(const base::UnguessableToken* cdm_id);
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  virtual void SuspendCdmSession() {}
+  virtual void ResumeCdmSession() {}
+#endif
+
 #if BUILDFLAG(IS_WIN)
   // Returns whether the CDM requires Media Foundation-based media Renderer.
   // This is separate from GetMediaFoundationCdmProxy() since it needs to be

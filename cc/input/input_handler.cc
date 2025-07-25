@@ -56,6 +56,11 @@ InputHandlerClient::ScrollEventDispatchMode GetScrollEventDispatchMode() {
                  kScrollEventDispatchModeUseScrollPredictorForDeadline) {
     return InputHandlerClient::ScrollEventDispatchMode::
         kUseScrollPredictorForDeadline;
+  } else if (mode_name ==
+             ::features::
+                 kScrollEventDispatchModeDispatchScrollEventsUntilDeadline) {
+    return InputHandlerClient::ScrollEventDispatchMode::
+        kDispatchScrollEventsUntilDeadline;
   }
 
   return InputHandlerClient::ScrollEventDispatchMode::kEnqueueScrollEvents;
@@ -104,7 +109,8 @@ void InputHandler::BindToClient(InputHandlerClient* client) {
   input_handler_client_->SetPrefersReducedMotion(prefers_reduced_motion_);
   if (base::FeatureList::IsEnabled(::features::kWaitForLateScrollEvents)) {
     input_handler_client_->SetScrollEventDispatchMode(
-        GetScrollEventDispatchMode());
+        GetScrollEventDispatchMode(),
+        ::features::kWaitForLateScrollEventsDeadlineRatio.Get());
   }
 }
 
@@ -317,6 +323,10 @@ InputHandlerScrollResult InputHandler::ScrollUpdate(
   DCHECK(!scroll_state.data()->current_native_scrolling_element());
   OHOS_TRACE_EVENT2("cc", "InputHandler::ScrollUpdate", "dx", scroll_state.delta_x(),
                "dy", scroll_state.delta_y());
+#if BUILDFLAG(ARKWEB_PDF)
+  InputHandlerUtils::pdf_delta_x_ = scroll_state.delta_x();
+  InputHandlerUtils::pdf_delta_y_ = scroll_state.delta_y();
+#endif
 
   if (!CurrentlyScrollingNode())
     return InputHandlerScrollResult();
@@ -708,6 +718,12 @@ void InputHandler::SetSynchronousInputHandlerRootScrollOffset(
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   gfx::Vector2dF physical_delta =
       gfx::Vector2dF(root_content_offset.x(), root_content_offset.y());
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+      float page_scroll_offset = 0.0;
+      if (condition_) {
+        page_scroll_offset = GetViewport().TotalScrollOffset().y();
+      }
+#endif
 #else
   gfx::Vector2dF physical_delta =
       root_content_offset - GetViewport().TotalScrollOffset();
@@ -731,9 +747,27 @@ void InputHandler::SetSynchronousInputHandlerRootScrollOffset(
   // After applying the synchronous input handler's scroll offset, tell it what
   // we ended up with.
   UpdateRootLayerStateForSynchronousInputHandler();
-
-  compositor_delegate_->SetNeedsFullViewportRedraw();
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  TRACE_EVENT2("cc", "InputHandler::SetSynchronousInputHandlerRootScrollOffset",
+               "page_scroll_offset", page_scroll_offset, "condition", condition_);
+  if (page_scroll_offset < 1e-6 && condition_) {
+    compositor_delegate_->ScheduledActionDraw();
+  } else {
+#endif
+    compositor_delegate_->SetNeedsFullViewportRedraw();
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  }
+#endif
 }
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void InputHandler::SetBypassVsyncCondition(int32_t condition) {
+  condition_ = condition;
+  LOG(INFO) << "InputHandler::SetBypassVsyncCondition condition:"
+            << condition;
+  compositor_delegate_->GetImplDeprecated().OnSetBypassVsyncCondition(condition);
+}
+#endif
 
 void InputHandler::PinchGestureBegin(const gfx::Point& anchor,
                                      ui::ScrollInputType source) {
@@ -2286,6 +2320,16 @@ void InputHandler::ClearCurrentlyScrollingNode() {
   last_scroll_update_state_.reset();
   last_scroll_begin_state_.reset();
   compositor_delegate_->DidEndScroll();
+#if BUILDFLAG(ARKWEB_PDF)
+  if (!base::ohos::IsPcDevice()) {
+    std::lock_guard<std::recursive_mutex> lock(InputHandlerUtils::scroll_end_listener_mutex);
+    if (InputHandlerUtils::scroll_end_listener_) {
+      InputHandlerUtils::pdf_delta_x_ = 0;
+      InputHandlerUtils::pdf_delta_y_ = 0;
+      InputHandlerUtils::scroll_end_listener_();
+    }
+  }
+#endif
 }
 
 std::optional<gfx::PointF> InputHandler::ScrollAnimationUpdateTarget(

@@ -17,6 +17,7 @@
 #define CHROME_BROWSER_PASSWORD_MANAGER_CHROME_PASSWORD_MANAGER_CLIENT_EXT_H_
 
 #include "chrome/browser/password_manager/chrome_password_manager_client.h"
+#include "chrome/browser/password_manager/keyboard_suppressor_ohos.h"
 #include "arkweb/build/features/features.h"
 
 #include "components/autofill/core/common/unique_ids.h"
@@ -80,8 +81,6 @@ public:
       const autofill::mojom::OhosPasswordFormAutofillState state,
       const autofill::InputFillRequestData& username_data,
       const autofill::InputFillRequestData& password_data) override;
-
-  bool isSuppressing() { return suppressed_driver_.get(); }
 #endif
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
@@ -96,7 +95,6 @@ public:
       const password_manager::PasswordForm& form);
 
   void SuppressKeyboard();
-  void UnsuppressKeyboard();
 
   bool IsLoginInfoConsistentWithFilled(
       const password_manager::PasswordForm& info);
@@ -110,7 +108,7 @@ public:
 #endif
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  using AutofilledMap = std::set<std::string>;
+  using AutofilledMap = std::unordered_map<std::uint64_t, std::string>;
 
   GURL form_to_request_url_;
 
@@ -123,11 +121,8 @@ public:
   autofill::InputFillRequestData last_request_fill_username_;
   autofill::InputFillRequestData last_request_fill_password_;
 
-  // Keyboard suppressor
   bool is_need_restore_keyboard_ = false;
-  bool is_suppress_ime_callback_registered_ = false;
-  raw_ptr<autofill::ContentAutofillDriver> suppressed_driver_ = nullptr;
-  base::OneShotTimer unsuppress_timer_;
+  std::unique_ptr<KeyboardSuppressorOhos> suppressor_;
 
   base::WeakPtrFactory<ChromePasswordManagerClientExt> weak_ptr_factory_{this};
 #endif

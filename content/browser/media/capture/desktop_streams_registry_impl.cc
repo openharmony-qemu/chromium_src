@@ -69,6 +69,15 @@ std::string DesktopStreamsRegistryImpl::RegisterStream(
   return id;
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+bool DesktopStreamsRegistryImpl::CheckStreamID(const std::string& stream_id) {
+  if (stream_id.empty()) {
+    LOG(WARNING) << "stream_id is empty";
+    return false;
+  }
+  return approved_streams_.find(stream_id) != approved_streams_.end();
+}
+#endif
 DesktopMediaID DesktopStreamsRegistryImpl::RequestMediaForStreamId(
     const std::string& id,
     int render_process_id,

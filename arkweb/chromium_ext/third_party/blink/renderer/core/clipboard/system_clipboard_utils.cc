@@ -34,5 +34,9 @@ bool SystemClipboardUtils::IsCopyAllowed() {
   }
   return true;
 }
+void SystemClipboardUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(system_clipboard_);
+  visitor->Trace(frame_);
+}
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 }  // namespace blink

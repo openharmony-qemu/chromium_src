@@ -148,6 +148,9 @@ friend class TouchHandleExt;
   const gfx::PointF& focus_bottom() const { return focus_bottom_; }
   TouchHandleOrientation orientation() const { return orientation_; }
   float alpha() const { return alpha_; }
+#if BUILDFLAG(ARKWEB_AI)
+  void SetTouchNums(int32_t touchNums) { continuous_touch_nums_ = touchNums; }
+#endif
 
  private:
   gfx::PointF ComputeHandleOrigin() const;
@@ -190,6 +193,9 @@ friend class TouchHandleExt;
   bool mirror_vertical_;
   bool mirror_horizontal_;
   float handle_horizontal_padding_;
+#if BUILDFLAG(ARKWEB_AI)
+  int32_t continuous_touch_nums_ = 0;
+#endif
 };
 
 }  // namespace ui

@@ -23,7 +23,7 @@
 namespace viz {
 class HostFrameSinkManagerUtils {
 public:
-    HostFrameSinkManager* hostFrameSinkManager;
+    raw_ptr<HostFrameSinkManager> hostFrameSinkManager;
     HostFrameSinkManagerUtils(HostFrameSinkManager* manager);
 
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
@@ -43,6 +43,10 @@ public:
 
 #if BUILDFLAG(ARKWEB_PIP)
     void SetPipActive(bool active, const FrameSinkId& frame_sink_id);
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void ClearBlanklessSnapshotInfo(uint64_t blankless_key);
 #endif
 
 void UtilsRestoreRenderFit(uint32_t client_id, uint32_t sink_id);

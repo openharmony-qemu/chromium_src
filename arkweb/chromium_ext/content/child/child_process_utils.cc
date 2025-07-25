@@ -95,4 +95,25 @@ void ChildProcessUtils::ReportCompositorKeyThread(bool is_created, bool is_in_br
              << " id created: " << is_created;
 }
 #endif // !BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+void ChildProcessUtils::ReportHisyevent(int64_t block_time, const std::string& mode, bool is_in_browser_process) {
+  if (!childProcess->main_thread_) {
+    LOG(WARNING) << "main thread is nullptr";
+    return;
+  }
+  if(is_in_browser_process) {
+    return;
+  }
+  childProcess->main_thread_->ReportHisyevent(block_time, mode);
+}
+
+void ChildProcess::ReportHisyevent(int64_t block_time, const std::string& mode) {
+  if (implUtils) {
+    if (main_thread_) {
+      implUtils->ReportHisyevent(block_time, mode, main_thread_->IsInBrowserProcess());
+    }
+  }
+}
+#endif
 }

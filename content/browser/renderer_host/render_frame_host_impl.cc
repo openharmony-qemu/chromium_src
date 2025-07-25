@@ -15321,6 +15321,10 @@ void RenderFrameHostImpl::SendCommitNavigation(
     const blink::DocumentToken& document_token,
     const base::UnguessableToken& devtools_navigation_token) {
   TRACE_EVENT0("navigation", "RenderFrameHostImpl::SendCommitNavigation");
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  int64_t start_time = RenderFrameImplUtils::GetCurrentTimestampMS();
+  GetMojomFrameInRenderer()->SendCommitNavigationTime(start_time);
+#endif
   if (RenderWidgetHostImpl* rwh = GetLocalRenderWidgetHost()) {
     if (rwh->compositor_metric_recorder()) {
       if (lifecycle_state() == LifecycleStateImpl::kPendingCommit) {
@@ -15547,6 +15551,16 @@ void RenderFrameHostImpl::SendCommitFailedNavigation(
 
   {
     auto scope = MakeUrgentMessageScopeIfNeeded();
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+    CommitFailedNavigation(navigation_client, navigation_request, std::move(common_params),
+      std::move(commit_params), has_stale_copy_in_cache, error_code,
+      extended_error_code, navigation_request->GetResolveErrorInfo(),
+      error_page_content, std::move(subresource_loader_factories), document_token,
+      std::move(policy_container),
+      GetContentClient()->browser()->GetAlternativeErrorPageOverrideInfo(
+        navigation_request->GetURL(), this, GetBrowserContext(), error_code),
+        BuildCommitFailedNavigationCallback(navigation_request));
+#else
     navigation_client->CommitFailedNavigation(
         std::move(common_params), std::move(commit_params),
         has_stale_copy_in_cache, error_code, extended_error_code,
@@ -15557,6 +15571,7 @@ void RenderFrameHostImpl::SendCommitFailedNavigation(
             navigation_request->GetURL(), this, GetBrowserContext(),
             error_code),
         BuildCommitFailedNavigationCallback(navigation_request));
+#endif
   }
 }
 

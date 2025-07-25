@@ -20,6 +20,7 @@
 namespace content {
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+// LCOV_EXCL_START
 bool MediaSessionImpl::HasOnlyOneShotPlayersPublic() const {
   return HasOnlyOneShotPlayers();
 }
@@ -57,6 +58,7 @@ bool MediaSessionImpl::IsEndOfMedia() {
   }
   return ret;
 }
+// LCOV_EXCL_STOP
 
 void MediaSessionImpl::SetEndOfMedia(bool end_of_media) {
   if (session_ohos_) {
@@ -140,6 +142,9 @@ void MediaSessionImpl::PutWebMediaAVSessionEnabled(bool enable) {
     }
   } else {
     if (session_ohos_) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+      ReportAvSessionStatus(std::to_string(enable));
+#endif
       session_ohos_.reset();
     }
   }
@@ -173,6 +178,35 @@ void MediaSessionImpl::OnPictureInPictureStateChanged(
           VideoPictureInPictureWindowControllerImpl::FromWebContents(
               web_contents())) {
     pip_window_controller_->OnPictureInPictureStateChanged(id, state);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+void MediaSessionImpl::OnMemoryPressure(
+    base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level) {
+  memory_pressure_level_ = memory_pressure_level;
+  switch (memory_pressure_level) {
+    case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE:
+      LOG(INFO) << "DMABUF::MediaSessionImpl, MEMORY_PRESSURE_LEVEL_NONE";
+      break;
+    case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_MODERATE:
+      LOG(INFO) << "DMABUF::MediaSessionImpl, MEMORY_PRESSURE_LEVEL_MODERATE";
+      OnNotifyMemoryLevel(static_cast<int32_t>(memory_pressure_level));
+      break;
+    case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL:
+      LOG(INFO) << "DMABUF::MediaSessionImpl, MEMORY_PRESSURE_LEVEL_CRITICAL";
+      OnNotifyMemoryLevel(static_cast<int32_t>(memory_pressure_level));
+      break;
+    default:
+      LOG(WARNING) << "DMABUF::" << __func__ << ": Unknown memory pressure level";
+      break;
+  }
+}
+
+void MediaSessionImpl::OnNotifyMemoryLevel(int32_t level) {
+  for (const auto& it : normal_players_) {
+    it.first.observer->OnNotifyMemoryLevel(it.first.player_id, level);
   }
 }
 #endif

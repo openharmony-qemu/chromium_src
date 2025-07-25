@@ -168,6 +168,10 @@ if (is_ohos) {
     "ka",
     "mk",
     "my",
+    "be",
+    "kk",
+    "km",
+    "uz",
   ]
 }
 

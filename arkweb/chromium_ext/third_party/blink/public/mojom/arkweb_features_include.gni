@@ -77,6 +77,10 @@ if (arkweb_video_assistant) {
   mojom_platform_enabled_features += [ "arkweb_video_assistant" ]
 }
 
+if (arkweb_bfcache) {
+  mojom_platform_enabled_features += [ "arkweb_bfcache" ]
+}
+
 if (arkweb_media_capabilities_enhance) {
   mojom_platform_enabled_features += [ "arkweb_media_capabilities_enhance" ]
 }
@@ -91,6 +95,10 @@ if (arkweb_performance_inc_freq) {
 
 if (arkweb_menu) {
   mojom_platform_enabled_features += [ "arkweb_menu" ]
+}
+
+if (arkweb_error_page) {
+  mojom_platform_enabled_features += [ "arkweb_error_page" ]
 }
 
 if (arkweb_precompile) {
@@ -123,4 +131,12 @@ if (arkweb_custom_video_player) {
 
 if (arkweb_video_assistant) {
   mojom_core_enabled_features += [ "arkweb_video_assistant" ]
+}
+
+if (arkweb_error_page) {
+  mojom_core_enabled_features += [ "arkweb_error_page" ]
+}
+
+if (arkweb_bfcache) {
+  mojom_core_enabled_features += [ "arkweb_bfcache" ]
 }

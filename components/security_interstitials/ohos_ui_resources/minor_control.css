@@ -68,40 +68,43 @@
     margin: auto;
   }
 
-  .hw-istablet .hw-block-img {
-    justify-content: center;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    height: 160px;
-    width: 160px;
-    margin: auto;
-  }
-
-  .hw-ispc .hw-block-img {
-    justify-content: center;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    height: 240px;
-    width: 240px;
-    margin: auto;
-  }
-
   .hw-block-img img {
     display: block;
     height: 72px;
     width: 72px;
   }
 
-  .hw-istablet .hw-block-img img {
-    height: 96px;
-    width: 96px;
+  @media (min-width: 600px) and (max-width: 1440px) {
+    .hw_block_page {
+      position: absolute;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      top: calc(50% - env(safe-area-inset-bottom) / 2);
+      transform: translateY(-50%);
+    }
+ 
+    .hw-block-img {
+      height: 160px;
+      width: 160px;
+    }
+ 
+    .hw-block-img img {
+      height: 96px;
+      width: 96px;
+    }
   }
-
-  .hw-ispc .hw-block-img img {
-    height: 144px;
-    width: 144px;
+ 
+  @media (min-width: 1441px) {
+    .hw-block-img {
+      height: 240px;
+      width: 240px;
+    }
+ 
+    .hw-block-img img {
+      height: 144px;
+      width: 144px;
+    }
   }
 
   /*******hw-block-info*******/
@@ -285,31 +288,5 @@
 
     button:active {
       background-color: rgba(255, 255, 255, 0.15);
-    }
-  }
-
-  @media (min-width: 600px) and (max-width: 1440px) {
-    .hw_block_page {
-      position: absolute;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      top: calc(50% - env(safe-area-inset-bottom) / 2);
-      transform: translateY(-50%);
-    }
-
-    .hw-block-img {
-      justify-content: center;
-      display: flex;
-      align-items: center;
-      overflow: hidden;
-      height: 160px;
-      width: 160px;
-      margin: auto;
-    }
-
-    .hw-block-img img{
-      height: 96px;
-      width: 96px;
     }
   }

@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//build/config/sanitizers/sanitizers.gni")
 declare_args() {
   ohos_package_name = "com.ohos.arkwebcore"
 
@@ -48,6 +49,7 @@ declare_args() {
   arkweb_dfx_dump = true
   arkweb_dfx_logging = true
   arkweb_dfx_tracing = true
+  arkweb_disable_services = true
   arkweb_dispatch_before_unload = true
   arkweb_display_cutout = true
   arkweb_download = true
@@ -61,7 +63,7 @@ declare_args() {
   arkweb_encrypt = true
   arkweb_ex_download = true
   arkweb_ext_download = true
-  arkweb_ex_network_connection = false
+  arkweb_ex_network_connection = true
   arkweb_favicon = true
   arkweb_fcp = true
   arkweb_fido = true
@@ -84,7 +86,9 @@ declare_args() {
   arkweb_media = true
   arkweb_media_avsession = true
   arkweb_media_capabilities_enhance = true
+  arkweb_media_dmabuf = true
   arkweb_media_mute_audio = true
+  arkweb_media_memory_pressure = false
   arkweb_media_network_traffic_prompt = false
   arkweb_media_per = true
   arkweb_media_policy = true
@@ -93,6 +97,7 @@ declare_args() {
   arkweb_media_interaction = true
   arkweb_mem = true
   arkweb_menu = true
+  arkweb_menu_handle = true
   arkweb_mixed_content = true
   arkweb_msgport = true
   arkweb_multi_ip_connect = true
@@ -223,15 +228,21 @@ declare_args() {
   arkweb_ex_http_dns_fallback = false
   arkweb_d_vsync = true
   arkweb_screen_offset = true
+  arkweb_screen_size = true
   arkweb_canvas_commit = true
+  arkweb_vsync_schedule = true
   arkweb_pip = true
-  arkweb_immediate_destory = true
+  arkweb_immediate_destory = false
   arkweb_cwnd = true
   arkweb_ext_file_access=false
-  arkweb_ext_network_connection=false
+  arkweb_ext_network_connection=true
   arkweb_ext_http_dns_fallback=false
   arkweb_ext_password=false
   arkweb_ex_free_copy=false
+  arkweb_blank_optimize = false
+  arkweb_viewport_avoid = true
+  arkweb_error_page = true
+  arkweb_gwp_asan = true
 }
 
 # Features enabled in mojom bindings.

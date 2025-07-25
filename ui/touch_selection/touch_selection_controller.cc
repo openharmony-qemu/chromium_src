@@ -96,6 +96,13 @@ void TouchSelectionController::OnSelectionBoundsChanged(
       return;
 #endif
     HideHandles();
+#if BUILDFLAG(ARKWEB_MENU)
+    LOG(INFO) << "OnSelectionBoundsChanged show_touch_handles_: " << show_touch_handles_
+              << " start.visible: " << start.visible();
+    if (show_touch_handles_ && start.visible()) {
+      AsTouchSelectionControllerExt()->OnInsertionChangedExt(start, end);
+    }
+#endif
     return;
   }
 
@@ -406,7 +413,9 @@ bool TouchSelectionController::WillHandleTouchEventImpl(
       longpress_drag_selector_.WillHandleTouchEvent(event)) {
     return true;
   }
-
+#if BUILDFLAG(ARKWEB_AI)
+  AsTouchSelectionControllerExt()->SetTouchNumsForHandle(event);
+#endif
   if (active_status_ == INSERTION_ACTIVE) {
     DCHECK(insertion_handle_);
     return insertion_handle_->WillHandleTouchEvent(event);
@@ -426,7 +435,6 @@ bool TouchSelectionController::WillHandleTouchEventImpl(
         (event_pos - GetEndPosition()).LengthSquared()) {
       return start_selection_handle_->WillHandleTouchEvent(event);
     }
-
 #if BUILDFLAG(ARKWEB_MENU)
     AsTouchSelectionControllerExt()->HandleIfEndNotVisible(event);
 #endif
@@ -461,6 +469,7 @@ void TouchSelectionController::OnDragBegin(
     DCHECK_EQ(active_status_, INSERTION_ACTIVE);
     if (config_.hide_active_handle)
       insertion_handle_->SetTransparent();
+    is_first_drag_ = true;
     client_->OnSelectionEvent(INSERTION_HANDLE_DRAG_STARTED);
     anchor_drag_to_selection_start_ = true;
     return;
@@ -529,6 +538,12 @@ void TouchSelectionController::OnDragUpdate(
   else
     client_->MoveRangeSelectionExtent(line_position);
 
+#if BUILDFLAG(ARKWEB_MENU)
+  if (is_first_drag_) {
+    client_->NotifyShowMagnifier();
+    is_first_drag_ = false;
+  }
+#endif
   // We use the bound middle point to restrict the ability to move up and
   // down, but let user move it more freely in horizontal direction.
   if (&draggable == &longpress_drag_selector_) {
@@ -555,6 +570,9 @@ void TouchSelectionController::OnDragEnd(
   }
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
   if (&draggable == insertion_handle_.get()) {
+#if BUILDFLAG(ARKWEB_MENU)
+    is_first_drag_ = false;
+#endif
     client_->OnSelectionEvent(INSERTION_HANDLE_DRAG_STOPPED);
   } else {
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
@@ -619,6 +637,9 @@ void TouchSelectionController::OnInsertionChanged() {
 #endif
   insertion_handle_->SetFocus(start_.edge_start(), start_.edge_end());
   insertion_handle_->SetVisible(GetStartVisible(), animation);
+#if BUILDFLAG(ARKWEB_MENU)
+  insertion_handle_->AsTouchHandleExt()->SetInsertHandleAlpha(1.f);
+#endif
 
   UpdateHandleLayoutIfNecessary();
 
@@ -810,5 +831,4 @@ void TouchSelectionController::LogDragType(
     RecordTouchSelectionDrag(TouchSelectionDragType::kDoublePressDrag);
   }
 }
-
 }  // namespace ui

@@ -34,4 +34,12 @@ void ChildThreadImpl::ReportKeyThread(int32_t status, int32_t process_id, int32_
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+void ChildThreadImpl::ReportHisyevent(int64_t block_time, const std::string& mode) {
+  using namespace OHOS::NWeb;
+  if (child_process_host_)
+    child_process_host_->ReportHisyevent(block_time, mode);
+}
+#endif
+
 } // namespace content

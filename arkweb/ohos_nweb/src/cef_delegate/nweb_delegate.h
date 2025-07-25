@@ -21,9 +21,9 @@
 #include <string>
 #include <unordered_map>
 
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "capi/nweb_app_client_extension_callback.h"
+#include "capi/nweb_extension_javascript_item.h"
 #include "cef/include/cef_command_line.h"
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 #include "content/browser/accessibility/browser_accessibility_manager_ohos.h"
@@ -51,6 +51,13 @@
 #include "capi/nweb_download_delegate_callback.h"
 #endif  //  ARKWEB_EX_DOWNLOAD
 
+#include "build/build_config.h"
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
+#endif
+
+struct FrameInfos;
+struct IsolatedWorld;
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -87,6 +94,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void NotifyForNextTouchEvent() override;
   bool IsReady() override;
   void OnDestroy(bool is_close_all) override;
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void RegisterArkWebAppClientExtensionListener(
+      std::shared_ptr<ArkWebAppClientExtensionCallback> callback) override;
+#endif
   void RegisterWebAppClientExtensionListener(
       std::shared_ptr<NWebAppClientExtensionCallback>
           web_app_client_extension_listener) override;
@@ -118,10 +129,14 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void Resize(uint32_t width,
               uint32_t height,
               bool isKeyboard = false) override;
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   void ResizeVisibleViewport(uint32_t width,
                              uint32_t height,
                              bool isKeyboard = false) override;
+#endif
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  void AvoidVisibleViewportBottom(int32_t avoidHeight) override;
+  int32_t GetVisibleViewportAvoidHeight() override;
 #endif
   void OnTouchPress(int32_t id, double x, double y, bool from_overlay) override;
   void OnTouchRelease(int32_t id,
@@ -376,6 +391,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   bool CanStoreWebArchive() const override;
+  void UnRegisterArkWebAppClientExtensionListener() override;
   void UnRegisterWebAppClientExtensionListener() override;
   void UnRegisterWebExtensionListener() override;
   void RegisterWebExtensionListener(
@@ -391,6 +407,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   void SetAudioResumeInterval(int32_t resumeInterval) override;
   void SetAudioExclusive(bool audioExclusive) override;
+  void SetAudioSessionType(int32_t audioSessionType) override;
   void CloseAllMediaPresentations() override;
   void StopAllMedia() override;
   void ResumeAllMedia() override;
@@ -578,6 +595,10 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
                               double borderRadiusBottomLeft,
                               double borderRadiusBottomRight) override;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_MENU)
+  void SetTouchHandleExistState(bool touchHandleExist) override;
+  void SetViewportScaleState(bool viewportScale) override;
+#endif  // BUILDFLAG(ARKWEB_MENU)
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   void SetAccessibilityState(cef_state_t accessibility_state) override;
   bool ExecuteAction(
@@ -594,6 +615,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
       bool isAccessibilityFocus) override;
   std::shared_ptr<NWebAccessibilityNodeInfo> GetAccessibilityNodeInfoById(
       int64_t accessibilityId) override;
+  int64_t GetWebAccessibilityIdByHtmlElementId(const std::string& htmlElementId) override;
   bool GetAccessibilityVisible(int64_t accessibilityId) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
@@ -705,7 +727,6 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void WebExtensionTabCreated(int tab_id) override;
-  void WebExtensionTabRemoved(int tab_id) override;
   void WebExtensionTabUpdated(
       int tab_id,
       const std::vector<std::string>& changed_property_names,
@@ -714,13 +735,21 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
       int tab_id,
       const std::vector<std::string>& changed_property_names,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) override;
+  void WebExtensionTabRemoved(
+      int tab_id,
+      bool isWindowClosing,
+      int windowId) override;
+  void WebExtensionTabUpdated(
+      int tab_id,
+      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
+      std::unique_ptr<NWebExtensionTab> tab) override;
   void WebExtensionTabActivated(
       std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) override;
   void WebExtensionTabAttached(
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) override;
   void WebExtensionTabDetached(
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) override;
-  void WebExtensionTabHighlighted(int32_t tab_id, int32_t window_id) override;
+  void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) override;
   void WebExtensionTabMoved(
       int32_t tab_id,
       std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) override;
@@ -728,13 +757,21 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
                                int32_t removedTabId) override;
   void WebExtensionTabZoomChange(std::unique_ptr<NWebExtensionTabZoomChangeInfo>
                                      tabZoomChangeInfo) override;
- 
-  void WebExtensionActionClicked(std::string extensionId,
-                                 const NWebExtensionTab* tab) override;
+  void WebExtensionSetViewType(int32_t type) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_PERMISSION)
+  void PermissionRequestGrant(int32_t resourse_id,
+                              int nweb_request_key) override;
+  void PermissionRequestDeny(int nweb_request_key) override;
+  std::string PermissionRequestGetOrigin(int nweb_request_key) override;
+  int32_t PermissionRequestGetResourceId(int nweb_request_key) override;
+  void PermissionRequestDelete(int nweb_request_key) override;
+#endif  // ARKWEB_EXT_PERMISSION
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
+  void SetMediaResumeFromBFCachePage(bool resume) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
@@ -743,6 +780,13 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
   void SetPopupSurface(void* popupSurface) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void EnableViewAutoResize(
+      const CefSize& min_size,
+      const CefSize& max_size) override;
+  void DisableViewAutoResize() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
@@ -782,6 +826,26 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
                     int child_id,
                     int frame_routing_id,
                     int event) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+  void UpdateSingleHandleVisible(bool isVisible) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                             bool recursive, IsolatedWorld world,
+                             OnReceiveValueCallback callback) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  void SetErrorPageEnabled(bool enable) override;
+  bool GetErrorPageEnabled() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) override;
+  int64_t GetPreferenceHash() override;
 #endif
 
  public:
@@ -847,6 +911,16 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   void EnableVideoAssistant(bool enable) override;
   void ExecuteVideoAssistantFunction(const std::string& cmd_id) override;
   void CustomWebMediaPlayer(bool enable) override;
+  void WebMediaPlayerControllerPlay() override;
+  void WebMediaPlayerControllerPause() override;
+  void WebMediaPlayerControllerSeek(double time) override;
+  void WebMediaPlayerControllerSetMuted(bool muted) override;
+  void WebMediaPlayerControllerSetPlaybackRate(double playback_rate) override;
+  void WebMediaPlayerControllerExitFullscreen() override;
+  void WebMediaPlayerControllerSetVideoSurface(void* native_window) override;
+  void WebMediaPlayerControllerDownload() override;
+  void WebMediaPlayerControllerSetVolume(double volume) override;
+  double WebMediaPlayerControllerGetVolume() override;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
@@ -905,7 +979,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
       nullptr;
   std::shared_ptr<OHOS::NWeb::DisplayScreenListener> display_listener_ =
       nullptr;
-  int32_t display_listener_id_;
+  int32_t display_listener_id_ = 0;
 #if BUILDFLAG(ARKWEB_AI)
   std::shared_ptr<OHOS::NWeb::FoldStatusScreenListener> foldstatus_listener_ =
       nullptr;
@@ -915,7 +989,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   bool hidden_ = false;
   bool occluded_ = false;
   bool is_popup_ready_ = false;
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PAGE_UP_DOWN) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   uint32_t width_ = 0;
   uint32_t height_ = 0;
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
@@ -924,7 +998,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   uint32_t visible_height_ = 0;
 #endif
 
-  uint32_t nweb_id_;
+  uint32_t nweb_id_ = 0;
 
 #if BUILDFLAG(IS_OHOS)
   std::map<std::string, std::shared_ptr<NWebNativeEmbedDataInfo>>
@@ -947,6 +1021,10 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 
 #if BUILDFLAG(ARKWEB_AI)
   bool data_detector_enable_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  int32_t avoid_height_ = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

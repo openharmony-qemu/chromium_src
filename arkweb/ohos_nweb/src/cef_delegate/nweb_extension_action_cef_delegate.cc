@@ -14,15 +14,24 @@
  */
 
 #include "nweb_extension_action_cef_delegate.h"
+
 #include "base/command_line.h"
-#include "content/public/common/content_switches.h"
 #include "base/logging.h"
+#include "cef/libcef/browser/browser_host_base.h"
+#include "cef/ohos_cef_ext/libcef/browser/alloy/alloy_browser_host_impl_ext.h"
+#include "cef/ohos_cef_ext/libcef/browser/extensions/tab_extensions_util.h"
+#include "content/public/common/content_switches.h"
 #include "third_party/skia/include/core/SkBitmap.h"
+#include "nweb_common.h"
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/core/extension/nweb_extension_action_dispatcher.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 extern "C" {
 void* __real_malloc(size_t);
-}       // extern "C"
+}  // extern "C"
 #endif
 
 namespace OHOS::NWeb {
@@ -76,7 +85,7 @@ NWebExtensionActionIconBitmap CreateIconBitmapFromImage(
   iconBitmap.alphaType = GetAlphaTypeFromSkBitmap(bitmap);
   iconBitmap.width = bitmap.width();
   iconBitmap.height = bitmap.height();
-  iconBitmap.bitmap = static_cast<uint8_t *>(bitmap.getPixels());
+  iconBitmap.bitmap = static_cast<uint8_t*>(bitmap.getPixels());
 
   return iconBitmap;
 }
@@ -101,8 +110,19 @@ NWebExtensionActionIcon CreateFromImageSkiaReps(
 }
 
 namespace {
-std::shared_ptr<NWebExtensionActionApiCallback> g_action_api_listener =
-    nullptr;
+std::shared_ptr<NWebExtensionActionApiCallback> g_action_api_listener = nullptr;
+}
+
+void DeleteNWebExtensionActionIcon(NWebExtensionActionIcon** icon) {
+  if (!icon || !*icon) {
+    return;
+  }
+
+  for (auto& it : (*icon)->bitmaps) {
+    delete it.second;
+  }
+  delete *icon;
+  *icon = nullptr;
 }
 
 // static
@@ -120,7 +140,8 @@ void NWebExtensionActionCefDelegate::UnRegisterWebExtensionApiListener() {
   g_action_api_listener = nullptr;
 }
 
-std::unique_ptr<NWebExtensionActionCefDelegate> NWebExtensionActionCefDelegate::instance = nullptr;
+std::unique_ptr<NWebExtensionActionCefDelegate>
+    NWebExtensionActionCefDelegate::instance = nullptr;
 std::mutex NWebExtensionActionCefDelegate::mtx;
 
 // static
@@ -133,40 +154,55 @@ NWebExtensionActionCefDelegate* NWebExtensionActionCefDelegate::GetInstance() {
 }
 
 // static
-NO_SANITIZE("cfi-icall")
-void NWebExtensionActionCefDelegate::OnSetIcon(std::string extension_id,
-                                               const gfx::Image& icon_image,
-                                               int32_t tab_id) {
-  if (!g_action_api_listener) {
-    LOG(ERROR) << "No web extension action api listener";
-    return;
-  }
+void NWebExtensionActionCefDelegate::WebExtensionActionPinnedStateChanged(
+    std::string extensionId,
+    bool isPinned) {
+  AlloyBrowserHostImplExt::WebExtensionActionPinnedStateChanged(extensionId,
+                                                                isPinned);
+}
 
-  LOG(INFO) << "OnSetIcon extension ID:" << extension_id;
-  NWebExtensionActionIcon actionIcon =
-      CreateFromImageSkiaReps(icon_image.AsImageSkia().image_reps());
-#if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
-  NWebExtensionActionIcon* icon =
-      new NWebExtensionActionIcon(actionIcon);
-#else
-  NWebExtensionActionIcon* addr =
-      (NWebExtensionActionIcon*)__real_malloc(sizeof(actionIcon));
-  NWebExtensionActionIcon* icon =
-      new (addr) NWebExtensionActionIcon(actionIcon);
-#endif
-  g_action_api_listener->OnSetIcon(extension_id.c_str(), icon, tab_id);
-  icon->bitmaps = std::map<double, NWebExtensionActionIconBitmap*>();
+// static
+void NWebExtensionActionCefDelegate::WebExtensionActionClicked(
+    std::string extension_id,
+    const NWebExtensionTab* tab) {
+  AlloyBrowserHostImplExt::WebExtensionActionClicked(extension_id, tab);
+}
+
+// static
+void NWebExtensionActionCefDelegate::WebExtensionActionShowPopup(
+    int tabId,
+    std::string extensionId) {
+  AlloyBrowserHostImplExt::WebExtensionActionShowPopup(tabId, extensionId);
+}
+
+//  static
+void NWebExtensionActionCefDelegate::WebExtensionErasePopupWindowId(
+    int popupNwebId) {
+  extensions::CefExtensionWindowIdManager::ErasePopupWindowId(popupNwebId);
+}
+
+//  static
+void NWebExtensionActionCefDelegate::WebExtensionSetPopupWindowId(
+    int popupNwebId,
+    int windowId) {
+  extensions::CefExtensionWindowIdManager::SetPopupWindowId(popupNwebId,
+                                                            windowId);
 }
 
 NO_SANITIZE("cfi-icall")
 void NWebExtensionActionCefDelegate::OnDisable(const std::string& extensionId,
                                                std::optional<int>& tabId) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    NWebExtensionActionDispathcher::GetInstance().OnDisable(extensionId, tabId);
+    return;
+  }
+#endif
+
   if (!g_action_api_listener) {
     LOG(ERROR) << "No web extension action api listener";
     return;
   }
-
-  LOG(INFO) << "OnDisable extension ID:" << extensionId;
 
   if (!g_action_api_listener->OnDisable) {
     LOG(ERROR) << "g_action_api_listener OnDisable is nullptr";
@@ -179,12 +215,17 @@ void NWebExtensionActionCefDelegate::OnDisable(const std::string& extensionId,
 NO_SANITIZE("cfi-icall")
 void NWebExtensionActionCefDelegate::OnEnable(const std::string& extensionId,
                                               std::optional<int>& tabId) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    NWebExtensionActionDispathcher::GetInstance().OnEnable(extensionId, tabId);
+    return;
+  }
+#endif
+
   if (!g_action_api_listener) {
     LOG(ERROR) << "No web extension action api listener";
     return;
   }
-
-  LOG(INFO) << "OnEnable extension ID:" << extensionId;
 
   if (!g_action_api_listener->OnEnable) {
     LOG(ERROR) << "g_action_api_listener OnEnable is nullptr";
@@ -192,6 +233,224 @@ void NWebExtensionActionCefDelegate::OnEnable(const std::string& extensionId,
   }
 
   g_action_api_listener->OnEnable(extensionId, tabId);
+}
+
+NO_SANITIZE("cfi-icall")
+void NWebExtensionActionCefDelegate::OnOpenPopup(
+    const std::string& extensionId,
+    const std::optional<NWebExtensionActionOpenPopupOptions>& options) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    NWebExtensionActionDispathcher::GetInstance().OnOpenPopup(extensionId,
+                                                              options);
+    return;
+  }
+#endif
+
+  if (!g_action_api_listener) {
+    LOG(ERROR) << "No web extension action api listener";
+    return;
+  }
+
+  if (!g_action_api_listener->OnOpenPopup) {
+    LOG(ERROR) << "g_action_api_listener OnOpenPopup is nullptr";
+    return;
+  }
+
+  g_action_api_listener->OnOpenPopup(extensionId, options);
+}
+
+NO_SANITIZE("cfi-icall")
+void NWebExtensionActionCefDelegate::OnSetTitle(
+    const std::string& extensionId,
+    const NWebExtensionActionSetTitleDetails& details) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    NWebExtensionActionDispathcher::GetInstance().OnSetTitle(extensionId,
+                                                             details);
+    return;
+  }
+#endif
+
+  if (!g_action_api_listener) {
+    LOG(ERROR) << "No web extension action api listener";
+    return;
+  }
+
+  if (!g_action_api_listener->OnSetTitle) {
+    LOG(ERROR) << "g_action_api_listener OnSetTitle is nullptr";
+    return;
+  }
+
+  g_action_api_listener->OnSetTitle(extensionId, details);
+}
+
+NO_SANITIZE("cfi-icall")
+void NWebExtensionActionCefDelegate::OnSetPopup(
+    const std::string& extensionId,
+    const NWebExtensionActionSetPopupDetails& details) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    NWebExtensionActionDispathcher::GetInstance().OnSetPopup(extensionId,
+                                                             details);
+    return;
+  }
+#endif
+
+  if (!g_action_api_listener) {
+    LOG(ERROR) << "No web extension action api listener";
+    return;
+  }
+
+  if (!g_action_api_listener->OnSetPopup) {
+    LOG(ERROR) << "g_action_api_listener OnSetPopup is nullptr";
+    return;
+  }
+
+  g_action_api_listener->OnSetPopup(extensionId, details);
+}
+
+NO_SANITIZE("cfi-icall")
+void NWebExtensionActionCefDelegate::OnSetIcon(std::string extension_id,
+                                               const gfx::Image& icon_image,
+                                               int32_t tab_id) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    LOG(INFO) << "OnSetIcon extension ID:" << extension_id;
+    NWebExtensionActionIcon actionIcon =
+        CreateFromImageSkiaReps(icon_image.AsImageSkia().image_reps());
+#if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
+    NWebExtensionActionIcon* icon = new NWebExtensionActionIcon(actionIcon);
+#else
+    NWebExtensionActionIcon* addr =
+        (NWebExtensionActionIcon*)__real_malloc(sizeof(actionIcon));
+    NWebExtensionActionIcon* icon =
+        new (addr) NWebExtensionActionIcon(actionIcon);
+#endif
+    NWebExtensionActionDispathcher::GetInstance().OnSetIcon(extension_id, icon,
+                                                            tab_id);
+    DeleteNWebExtensionActionIcon(&icon);
+    return;
+  }
+#endif
+
+  if (!g_action_api_listener) {
+    LOG(ERROR) << "No web extension action api listener";
+    return;
+  }
+
+  LOG(INFO) << "OnSetIcon extension ID:" << extension_id;
+  NWebExtensionActionIcon actionIcon =
+      CreateFromImageSkiaReps(icon_image.AsImageSkia().image_reps());
+#if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
+  NWebExtensionActionIcon* icon = new NWebExtensionActionIcon(actionIcon);
+#else
+  NWebExtensionActionIcon* addr =
+      (NWebExtensionActionIcon*)__real_malloc(sizeof(actionIcon));
+  NWebExtensionActionIcon* icon =
+      new (addr) NWebExtensionActionIcon(actionIcon);
+#endif
+  g_action_api_listener->OnSetIcon(extension_id.c_str(), icon, tab_id);
+  icon->bitmaps = std::map<double, NWebExtensionActionIconBitmap*>();
+}
+
+NO_SANITIZE("cfi-icall")
+void NWebExtensionActionCefDelegate::OnSetBadgeText(
+    const std::string& extensionId,
+    const NWebExtensionActionSetBadgeTextDetails& details) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    NWebExtensionActionDispathcher::GetInstance().OnSetBadgeText(extensionId,
+                                                                 details);
+    return;
+  }
+#endif
+  if (!g_action_api_listener) {
+    LOG(ERROR) << "No web extension action api listener";
+    return;
+  }
+
+  if (!g_action_api_listener->OnSetBadgeText) {
+    LOG(ERROR) << "g_action_api_listener OnSetBadgeText is nullptr";
+    return;
+  }
+
+  g_action_api_listener->OnSetBadgeText(extensionId, details);
+}
+
+NO_SANITIZE("cfi-icall")
+void NWebExtensionActionCefDelegate::OnSetBadgeTextColor(
+    const std::string& extensionId,
+    const NWebExtensionActionSetBadgeTextColorDetails& details) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    NWebExtensionActionDispathcher::GetInstance().OnSetBadgeTextColor(
+        extensionId, details);
+    return;
+  }
+#endif
+
+  if (!g_action_api_listener) {
+    LOG(ERROR) << "No web extension action api listener";
+    return;
+  }
+
+  if (!g_action_api_listener->OnSetBadgeTextColor) {
+    LOG(ERROR) << "g_action_api_listener OnSetBadgeTextColor is nullptr";
+    return;
+  }
+
+  g_action_api_listener->OnSetBadgeTextColor(extensionId, details);
+}
+
+NO_SANITIZE("cfi-icall")
+void NWebExtensionActionCefDelegate::OnSetBadgeBackgroundColor(
+    const std::string& extensionId,
+    const NWebExtensionActionSetBadgeBackgroundColorDetails& details) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    NWebExtensionActionDispathcher::GetInstance().OnSetBadgeBackgroundColor(
+        extensionId, details);
+    return;
+  }
+#endif
+
+  if (!g_action_api_listener) {
+    LOG(ERROR) << "No web extension action api listener";
+    return;
+  }
+
+  if (!g_action_api_listener->OnSetBadgeBackgroundColor) {
+    LOG(ERROR) << "g_action_api_listener OnSetBadgeBackgroundColor is nullptr";
+    return;
+  }
+
+  g_action_api_listener->OnSetBadgeBackgroundColor(extensionId, details);
+}
+
+NO_SANITIZE("cfi-icall")
+std::optional<NWebExtensionActionUserSettings>
+NWebExtensionActionCefDelegate::OnGetUserSettings(
+    const std::string& extensionId) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    return NWebExtensionActionDispathcher::GetInstance().OnGetUserSettings(
+        extensionId);
+  }
+#endif
+
+  if (!g_action_api_listener) {
+    LOG(ERROR) << "No web extension action api listener";
+    return std::nullopt;
+  }
+
+  if (!g_action_api_listener->OnGetUserSettings) {
+    LOG(ERROR) << "g_action_api_listener OnGetUserSettings is nullptr";
+    return std::nullopt;
+  }
+
+  LOG(DEBUG) << "Action OnGetUserSettings";
+  return g_action_api_listener->OnGetUserSettings(extensionId);
 }
 
 }  // namespace OHOS::NWeb

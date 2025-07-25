@@ -33,6 +33,7 @@ namespace blink {
 
 #define NO_NATIVE_TYPE 100
 
+// LCOV_EXCL_START
 InputHandlerProxyUtils::InputHandlerProxyUtils(InputHandlerProxy* proxy)
     : proxy_(proxy) {
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
@@ -83,6 +84,7 @@ bool IsSameEventType(WebInputEvent::Type type, WebTouchPoint::State state) {
       return false;
   }
 }
+// LCOV_EXCL_STOP
 
 void InputHandlerProxyUtils::NativeHitTestResult(bool native,
                                             size_t fingerId,
@@ -425,14 +427,17 @@ void InputHandlerProxyUtils::SetMouseEventResult(bool result, bool stopPropagati
   }
 }
 
+// LCOV_EXCL_START
 void InputHandlerProxyUtils::SetNativeEmbedMode(bool flag) {
   native_enabled_ = flag;
   LOG(DEBUG) << "[NativeEmbed] SetNativeEmbedMode native_enabled_ is : "
              << native_enabled_;
 }
+// LCOV_EXCL_STOP
 #endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+// LCOV_EXCL_START
 void InputHandlerProxyUtils::ScrollBy(float delta_x, float delta_y) {
   TRACE_EVENT_INSTANT2(
       "input", "ScrollBy", TRACE_EVENT_SCOPE_THREAD, "delta_x",
@@ -450,6 +455,7 @@ void InputHandlerProxyUtils::SetOverscrollMode(int mode) {
   }
   proxy_->elastic_overscroll_controller_->GetUtils()->SetOverscrollMode(mode);
 }
+// LCOV_EXCL_STOP
 
 void InputHandlerProxyUtils::NeedFlushScrollUpdateGesture(
   const WebGestureEvent& gesture_event) {
@@ -460,6 +466,7 @@ void InputHandlerProxyUtils::NeedFlushScrollUpdateGesture(
   }
 }
 
+// LCOV_EXCL_START
 void InputHandlerProxyUtils::ResetNeedFlushScrollUpdateGesture() {
   if (need_flush_scroll_update_gesture_) {
     LOG(INFO) << "InputHandlerProxy::HandleGestureScrollUpdate "
@@ -467,6 +474,7 @@ void InputHandlerProxyUtils::ResetNeedFlushScrollUpdateGesture() {
     need_flush_scroll_update_gesture_ = false;
   }
 }
+// LCOV_EXCL_STOP
 
 std::unique_ptr<EventWithCallback> InputHandlerProxyUtils::OverScrollRunCallback(
   std::unique_ptr<EventWithCallback> event_with_callback,
@@ -486,6 +494,7 @@ std::unique_ptr<EventWithCallback> InputHandlerProxyUtils::OverScrollRunCallback
   return event_with_callback;
 }
 
+// LCOV_EXCL_START
 std::unique_ptr<ScrollPredictor>
 InputHandlerProxyUtils::CreateScrollPredictor() {
   return (base::FeatureList::IsEnabled(blink::features::kResamplingScrollEvents) &&
@@ -507,6 +516,17 @@ gfx::Vector2dF InputHandlerProxyUtils::GetOverScrollOffset() {
   return proxy_->elastic_overscroll_controller_->GetUtils()->GetOverScrollOffset();
 }
 #endif
+// LCOV_EXCL_STOP
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+// LCOV_EXCL_START
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void InputHandlerProxyUtils::SetBypassVsyncCondition(int32_t condition) {
+  LOG(INFO) << "InputHandlerProxyUtils::SetBypassVsyncCondition condition:"
+            << condition;
+  proxy_->SetBypassVsyncCondition(condition);
+}
+#endif
+// LCOV_EXCL_STOP
 
 }

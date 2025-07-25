@@ -93,6 +93,9 @@ bool ResourceRequestPolicy::CanRequestResource(
   // - https://crbug.com/662602
   // - similar scheme checks in ExtensionNavigationThrottle
   if (frame_origin.scheme() == content::kChromeUIScheme ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      frame_origin.scheme() == content::kArkWebUIScheme ||
+#endif
       frame_origin.scheme() == content::kChromeDevToolsScheme) {
     return true;
   }

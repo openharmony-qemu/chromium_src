@@ -27,6 +27,9 @@ enum class MediaContentType {
   kOneShot,
   // The maximum number of media content types.
   kMax = kOneShot,
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  kInvalid,
+#endif
 };
 
 // Utility function for deciding the MediaContentType of a player based on its

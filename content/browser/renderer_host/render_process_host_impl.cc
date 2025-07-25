@@ -1303,6 +1303,12 @@ void RenderProcessHostImpl::IOThreadHostImpl::ReportKeyThreadIds(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+void RenderProcessHostImpl::IOThreadHostImpl::ReportHisyevent(int64_t block_time, const std::string& mode) {
+  ArkwebRenderProcessHostImplUtils::ReportHisyevent(block_time, mode);
+}
+#endif
+
 // static
 scoped_refptr<base::SingleThreadTaskRunner>
 RenderProcessHostImpl::GetInProcessRendererThreadTaskRunnerForTesting() {
@@ -3532,6 +3538,13 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
       switches::kPixelRatio,
       switches::kOhSchemeHandlerCustomScheme,
       switches::kOhosEnableVulkan,
+      switches::kDisableMobileStyleSheet,
+#endif
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+      switches::kAdSecValue,
+#endif
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+      switches::kOhosEnableGwpAsanType,
 #endif
   };
   renderer_cmd->CopySwitchesFrom(browser_cmd, kSwitchNames);

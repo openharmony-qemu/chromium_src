@@ -262,6 +262,14 @@ class CONTENT_EXPORT RenderFrame :
   virtual blink::scheduler::WebAgentGroupScheduler&
   GetAgentGroupScheduler() = 0;
 
+#if BUILDFLAG(ARKWEB_PDF)
+  // NotifyPdfScrollAtBottom
+  virtual void OnPdfScrollAtBottom(const std::string& url) = 0;
+
+  // NotifyPdfLoadEvent
+  virtual void OnPdfLoadEvent(int32_t result, const std::string& url) = 0;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   virtual bool GetGlobalAdblockEnabled() = 0;
 #endif

@@ -18,20 +18,22 @@
 
 #include <string>
 
-#include "extensions/browser/extension_registry.h"
-#include "chrome/browser/extensions/menu_manager.h"
-#include "ohos_nweb/src/capi/nweb_extension_manager_callback.h"
 #include "chrome/browser/extensions/api/side_panel/side_panel_service.h"
+#include "chrome/browser/extensions/menu_manager.h"
 #include "extensions/browser/extension_action.h"
 #include "extensions/browser/extension_action_manager.h"
+#include "extensions/browser/extension_registry.h"
 #include "extensions/browser/extension_registry_observer.h"
+#include "ohos_nweb/src/capi/nweb_extension_manager_callback.h"
 
 namespace extensions {
 
-class ExtensionRegistryInfoManager : public MenuManager::LoadObserver, public ExtensionRegistryObserver {
+class ExtensionRegistryInfoManager : public MenuManager::LoadObserver,
+                                     public ExtensionRegistryObserver {
  public:
   static void RegisterWebExtensionManagerListener(
-  std::shared_ptr<NWebExtensionManagerCallBack> web_extension_manager_listener);
+      std::shared_ptr<NWebExtensionManagerCallBack>
+          web_extension_manager_listener);
 
   static void UnRegisterWebExtensionManagerListener();
 
@@ -47,48 +49,55 @@ class ExtensionRegistryInfoManager : public MenuManager::LoadObserver, public Ex
 
   void NotifyOnExtensionLoaded(const Extension& extension);
 
+  void GetExtensionManifestInfo(const Extension& extension,
+                                WebExtensionManifestInfo& out_manifest) const;
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  ExtensionIncognitoMode GetExtensionIncognitoMode(const Extension* extension) const;
+#endif
+
   WebExtensionActionInfo GetExtensionActionInfo(const Extension& extension,
                                                 int32_t tabId) const;
+
+  void DeleteExtensionActionInfo(WebExtensionActionInfo& action_info);
 
   WebExtensionSidePanelInfo GetExtensionSidePanelInfo(
       const Extension& extension,
       std::optional<int32_t> tabId) const;
 
-  std::vector<NWebContextMenusItem> GetAllExtensionContextMenus(const std::string& extensionId) const;
+  std::vector<NWebContextMenusItem> GetAllExtensionContextMenus(
+      const std::string& extensionId) const;
 
   void Loaded(const std::string& extension_id) override;
 
-  void OnExtensionLoaded(
-  content::BrowserContext* browser_context,
-  const Extension* extension) override;
+  void OnExtensionLoaded(content::BrowserContext* browser_context,
+                         const Extension* extension) override;
 
   void OnExtensionReady(content::BrowserContext* browser_context,
-                                const Extension* extension) override;
+                        const Extension* extension) override;
 
   void OnExtensionUnloaded(content::BrowserContext* browser_context,
-                                  const Extension* extension,
-                                  UnloadedExtensionReason reason) override;
+                           const Extension* extension,
+                           UnloadedExtensionReason reason) override;
 
-  void OnExtensionWillBeInstalled(
-      content::BrowserContext* browser_context,
-      const Extension* extension,
-      bool is_update,
-      const std::string& old_name) override;
+  void OnExtensionWillBeInstalled(content::BrowserContext* browser_context,
+                                  const Extension* extension,
+                                  bool is_update,
+                                  const std::string& old_name) override;
 
   void OnExtensionInstalled(content::BrowserContext* browser_context,
-                                    const Extension* extension,
-                                    bool is_update) override;
+                            const Extension* extension,
+                            bool is_update) override;
 
   void OnExtensionUninstalled(content::BrowserContext* browser_context,
-                                      const Extension* extension,
-                                      UninstallReason reason) override;
+                              const Extension* extension,
+                              UninstallReason reason) override;
 
-  void OnExtensionUninstallationDenied(
-      content::BrowserContext* browser_context,
-      const Extension* extension) override;
+  void OnExtensionUninstallationDenied(content::BrowserContext* browser_context,
+                                       const Extension* extension) override;
 
   void OnShutdown(ExtensionRegistry* registry) override;
- 
+
  private:
   content::BrowserContext* browser_context_;
 };

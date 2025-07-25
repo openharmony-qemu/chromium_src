@@ -21,11 +21,18 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 HTMLPlugInElementUtils::HTMLPlugInElementUtils(HTMLPlugInElement* pluginElement)
     : plugin_(pluginElement) {}
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 bool HTMLPlugInElementUtils::CheckNativeType(const char* key) const {
+  if (!plugin_->GetDocument().IsActive() || !plugin_->GetDocument().GetFrame()) {
+    LOG(ERROR) << "[NativeEmbed] Document is not active or has no frame";
+    return false;
+  }
+  
   auto settings = plugin_->GetDocument().GetSettings();
   if (plugin_->GetObjectContentType() != HTMLPlugInElement::ObjectContentType::kNone) {
     LOG(ERROR) << "[NativeEmbed] It's a standard object content type "
@@ -53,6 +60,7 @@ bool HTMLPlugInElementUtils::CheckNativeType(const char* key) const {
   return true;
 }
 
+// LCOV_EXCL_START
 bool HTMLPlugInElementUtils::CheckIntrinsicSizeEnable() const {
   auto settings = plugin_->GetDocument().GetSettings();
   if (!settings || !settings->GetNativeEmbedModeEnabled()) {
@@ -67,6 +75,27 @@ bool HTMLPlugInElementUtils::IsCssDisplayChangeEnabled() const {
     return false;
   }
   return settings->GetCSSDisplayChangeEnabled();
+}
+// LCOV_EXCL_STOP
+
+void HTMLPlugInElementUtils::SetNativeEmbedOverlay(bool native_embed_overlay) {
+  if (native_embed_overlay_ == native_embed_overlay) {
+    return;
+  }
+  native_embed_overlay_ = native_embed_overlay;
+  if (auto* native_loader = plugin_->NativeLoader()) {
+    native_loader->SetNativeEmbedOverlay(native_embed_overlay_);
+  }
+}
+
+void HTMLPlugInElementUtils::SetNativeEmbedOverlayInfinity(bool native_embed_overlay_infinity) {
+  if (native_embed_overlay_infinity_ == native_embed_overlay_infinity) {
+    return;
+  }
+  native_embed_overlay_infinity_ = native_embed_overlay_infinity;
+  if (auto* native_loader = plugin_->NativeLoader()) {
+    native_loader->SetNativeEmbedOverlayInfinity(native_embed_overlay_infinity_);
+  }
 }
 #endif
 

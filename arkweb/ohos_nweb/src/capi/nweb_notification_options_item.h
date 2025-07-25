@@ -16,6 +16,7 @@
 #ifndef NWEB_NOTIFICATION_OPTIONS_ITEM_H
 #define NWEB_NOTIFICATION_OPTIONS_ITEM_H
 
+#include <hilog/log.h>
 #include <memory>
 #include <string>
 #include <optional>
@@ -24,7 +25,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "ohos_nweb/src/nweb_hilog.h"
 
 enum class NWebNotificationOptionsItemIconColorType {
   UNKNOWN = 0,
@@ -63,11 +63,14 @@ struct NWebNotificationOptionsItem {
   NWebNotificationOptionsItemIcon* icon;
 
   NWebNotificationOptionsItem() {
-    WVLOG_I("NWebNotificationOptionsItem() is called");
+    requireInteraction = false;
+    icon = nullptr;
+    OH_LOG_INFO(LOG_APP, "NWebNotificationOptionsItem() is called");
   }
 
   ~NWebNotificationOptionsItem() {
-    WVLOG_I("~NWebNotificationOptionsItem() is called");
+    delete icon;
+    OH_LOG_INFO(LOG_APP, "~NWebNotificationOptionsItem() is called");
   }
 };
 

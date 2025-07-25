@@ -699,8 +699,12 @@ void GpuWatchdogThread::DeliberatelyTerminateToRecoverFromHang() {
   auto last_arm_disarm_counter = ReadArmDisarmCounter();
   base::debug::Alias(&last_arm_disarm_counter);
 
+#if BUILDFLAG(IS_ARKWEB)
+  LOG(ERROR) << "ArkWeb do not create a crash dump without crashing";
+#else
   // Create a crash dump first
   base::debug::DumpWithoutCrashing();
+#endif
 
   // A kKill event is triggered and DumpWithoutCrashing() is called in the
   // watchdog timeout routine OnWatchdogTimeout(). If it turns out

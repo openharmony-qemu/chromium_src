@@ -12,7 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_AI)
 void RenderFrameImpl::CloseImageOverlaySelection() {
   if (GetFrameHost()) {
@@ -20,11 +21,13 @@ void RenderFrameImpl::CloseImageOverlaySelection() {
   }
 }
 #endif  // BUILDFLAG(ARKWEB_AI)
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 blink::WebNativeBridge* RenderFrameImpl::CreateWebNativeBridge(
     blink::WebNativeClient* client) {
-  return media_factory_.CreateWebNativeBridge(client);
+    return media_factory_.CreateWebNativeBridge(client, GetLocalRootWebFrameWidget()->GetFrameSinkId(),
+        agent_scheduling_group_->agent_group_scheduler().CompositorTaskRunner());
 }
 #endif
 
@@ -55,6 +58,7 @@ bool RenderFrameImpl::GetNewWindowWebView(const GURL& target_url,
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
 void RenderFrameImpl::ClearContextMenu() {
   // It does not postTask here because contextmenu popup windows should be
@@ -107,3 +111,18 @@ void RenderFrameImpl::ChangeVisibilityOfQuickMenu() {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+void RenderFrameImpl::OnPdfScrollAtBottom(const std::string& url) {
+  if (GetFrameHost()) {
+    GetFrameHost()->OnPdfScrollAtBottom(url);
+  }
+}
+
+void RenderFrameImpl::OnPdfLoadEvent(int32_t result, const std::string& url) {
+  if (GetFrameHost()) {
+    GetFrameHost()->OnPdfLoadEvent(result, url);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_PDF)
+// LCOV_EXCL_STOP

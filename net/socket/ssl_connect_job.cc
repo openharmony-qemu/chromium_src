@@ -253,9 +253,7 @@ int SSLConnectJob::DoTransportConnect() {
     DCHECK(endpoint_result_);
     endpoint_result_override.emplace(*endpoint_result_, dns_aliases_);
   }
-// todo
-//#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
   nested_connect_job_ = std::make_unique<ArkWebTransportConnectJobExt>(
 #else
   nested_connect_job_ = std::make_unique<TransportConnectJob>(

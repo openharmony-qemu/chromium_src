@@ -170,6 +170,13 @@ void NWebPipeResourceHandler::GetResponseHeaders(
     response_->GetHeaderMap(cef_response_headers);
     response->SetHeaderMap(cef_response_headers);
     response_length = -1;
+
+    int64_t content_length;
+    if (base::StringToInt64(
+            response_->GetHeaderByName("Content-Length").ToString(),
+            &content_length)) {
+      response_length = content_length < 0 ? -1 : content_length;
+    }
   }
 }
 

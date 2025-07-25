@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "third_party/crashpad/crashpad/util/posix/signals.h"
+#include "unistd.h"
+#endif
 #include "partition_alloc/oom.h"
 
 #include "partition_alloc/build_config.h"
@@ -32,7 +37,9 @@ namespace internal {
   g_oom_size = size;
   size_t tmp_size = size;
   internal::base::debug::Alias(&tmp_size);
-
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  kill(getpid(), SIGOOM);
+#endif
 #if PA_BUILDFLAG(IS_WIN)
   // Create an exception vector with:
   // [0] the size of the allocation, in bytes

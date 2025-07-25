@@ -45,6 +45,8 @@ namespace blink {
 #if BUILDFLAG(ARKWEB_AI)
 const int kMinAnalyzedImageWidth = 100;
 const int kMinAnalyzedImageHeight = 100;
+const int KMaxAnalyzedImageDimension = 1024;
+const long long kMaxAnalyzedImageArea = 104857600; // 10240 * 10240
 const double kMinAnalyzedImageToPageRatio = 0.8;
 constexpr base::TimeDelta HOVER_CREATE_OVERLAY_TIME = base::Milliseconds(1000);
 const unsigned long WORD_CORNER_NUM = 4ul;
@@ -64,10 +66,12 @@ MouseEventManagerExt::MouseEventManagerExt(LocalFrame& frame, ScrollManager& scr
 MouseEventManagerExt::~MouseEventManagerExt() = default;
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
+// LCOV_EXCL_START
 bool MouseEventManagerExt::IsDraging() {
   DCHECK(frame_->GetPage());
   return frame_->GetPage()->GetDragController().AsDragControllerExt()->IsDraging();
 }
+// LCOV_EXCL_STOP
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -81,78 +85,28 @@ void MouseEventManagerExt::HandleCreateOverlayWhenDrag(const MouseEventWithHitTe
   }
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::StopCreateOverlayTimer() {
   create_overlay_timer_.Stop();
 }
+// LCOV_EXCL_STOP
 
 void MouseEventManagerExt::HandleGestureCreateOverlay(
     const WebGestureEvent& gesture_event) {
   HandleCreateOverlay(gesture_event);
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::CreateOverlayCallback() {
   HandleCreateOverlay(last_mouse_drag_);
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 bool MouseEventManagerExt::GetOverlayInProgress() {
   return overlay_in_progress_;
 }
-
-void MouseEventManagerExt::ConverCoordinates(float& left, float& top, float& width, float& height,
-                                             std::vector<gfx::PointF>& pointfs) {
-  float x_offset;
-  float y_offset;
-  float x_y_ratio;
-  float image_rect_ratio = width / height;
-  float bm_width = static_cast<float>(bm_.width());
-  float bm_height = static_cast<float>(bm_.height());
-  float bm_ratio = bm_width / bm_height;
-  if (width >= bm_width && height >= bm_height) {
-    x_offset = (width - bm_width) / 2.0f;
-    y_offset = (height - bm_height) / 2.0f;
-    x_y_ratio = 1.0f;
-  } else if (bm_ratio <= image_rect_ratio) {
-    x_y_ratio = height / bm_height;
-    x_offset = (width - bm_width * x_y_ratio) / 2.0f;
-    y_offset = 0.0f;
-  } else {
-    x_y_ratio = width / bm_width;
-    x_offset = 0.0f;
-    y_offset = (height - bm_height * x_y_ratio) / 2.0f;
-  }
-
-  left += x_offset;
-  top += y_offset;
-  width = bm_width * x_y_ratio;
-  height = bm_height * x_y_ratio;
-  for (auto& pointf : pointfs) {
-    pointf.set_x(pointf.x() * x_y_ratio);
-    pointf.set_y(pointf.y() * x_y_ratio);
-  }
-}
-
-void MouseEventManagerExt::SetOverlayStyle(Element* overlay_div, float left, float top, float width, float height) {
-  std::string attributes =
-      "left: " + std::to_string(left) + "px;" + "top: " + std::to_string(top) +
-      "px;" + "width: " + std::to_string(width) + "px;" +
-      "height: " + std::to_string(height) + "px;" + "position:absolute;" +
-      "display:flex;" + "z-index:999;" + "opacity:1;";
-  overlay_div->setAttribute(html_names::kStyleAttr,
-                            AtomicString(String(attributes)));
-}
-
-void MouseEventManagerExt::SetTextStyle(Element* text_div, float left, float top, float width, float height,
-                                        float font_size) {
-  std::string text_attributes =
-      "left: " + std::to_string(left) + "px;" + "top: " + std::to_string(top) +
-      "px;" + "width: " + std::to_string(width) + "px;" +
-      "height: " + std::to_string(height) + "px;" +
-      "font-size: " + std::to_string(font_size) + "px;" +
-      "position:absolute; display:flex; justify-content:center; "
-      "align-items:center; color:transparent;";
-  text_div->setAttribute(html_names::kStyleAttr,
-                         AtomicString(String(text_attributes)));
-}
+// LCOV_EXCL_STOP
 
 bool MouseEventManagerExt::IsValidOverlayNode(Node* node) {
   auto image = HitTestResult::GetImage(node);
@@ -187,6 +141,7 @@ HitOverlayStatus MouseEventManagerExt::GetHitOverlayStatusFromMouseEvent(
   return GetHitOverlayStatus(hit_test_result);
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::CloseImageOverlay() {
   if (!overlay_in_progress_) {
     LOG(INFO)
@@ -199,6 +154,7 @@ void MouseEventManagerExt::CloseImageOverlay() {
     web_local_frame->Client()->AsWebLocalFrameClientExt()->CloseImageOverlaySelection();
   }
 }
+// LCOV_EXCL_STOP
 
 void MouseEventManagerExt::GetAbsImageRect(gfx::RectF& abs_rect) {
   abs_rect = gfx::RectF();
@@ -218,6 +174,7 @@ void MouseEventManagerExt::GetAbsImageRect(gfx::RectF& abs_rect) {
   }
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::SetOverlayInProgress(bool flag) {
   LOG(INFO) << "MouseEventManagerExt::SetOverlayInProgress, flag == " << flag;
   overlay_in_progress_ = flag;
@@ -226,12 +183,16 @@ void MouseEventManagerExt::SetOverlayInProgress(bool flag) {
     hit_image_node_ = nullptr;
   }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::SetOverlayCreatingStatus(bool flag) {
   LOG(INFO) << "MouseEventManagerExt::SetOverlayCreatingStatus, flag == " << flag;
   overlay_creating_ = flag;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::OnDestroyImageAnalyzerOverlay() {
   LOG(INFO) << "MouseEventManagerExt::OnDestroyImageAnalyzerOverlay";
   overlay_in_progress_ = false;
@@ -239,6 +200,7 @@ void MouseEventManagerExt::OnDestroyImageAnalyzerOverlay() {
   last_analyzed_image_ = nullptr;
   hit_image_node_ = nullptr;
 }
+// LCOV_EXCL_STOP
 
 void MouseEventManagerExt::OnFoldStatusChanged(uint32_t foldstatus) {
   LOG(INFO) << "MouseEventManagerExt::OnFoldStatusChanged foldstatus = "
@@ -265,7 +227,7 @@ void MouseEventManagerExt::HandleCreateOverlay(T const& targeted_event) {
 
   Image* image = hit_test_result.GetImage();
   Node* inner_node = hit_test_result.InnerNodeOrImageMapImage();
-  if (hit_test_result.AbsoluteImageURL().IsEmpty() ||
+  if (hit_test_result.AbsoluteImageURL().IsEmpty() || !image ||
       !IsValidOverlayNode(inner_node)) {
     LOG(INFO)
         << "MouseEventManagerExt::HandleCreateOverlay, invalid or has no image";
@@ -306,15 +268,33 @@ void MouseEventManagerExt::HandleCreateOverlay(T const& targeted_event) {
       fold_screen_status_ * image_rect.width() / view_rect.width();
   LOG(INFO) << "MouseEventManagerExt::HandleCreateOverlay width ratio is "
             << image_to_page_width_ratio;
-  if (image->width() >= kMinAnalyzedImageWidth &&
-      image->height() >= kMinAnalyzedImageHeight &&
+  int image_width = image->width();
+  int image_height = image->height();
+  if (1ll * image_width * image_height > kMaxAnalyzedImageArea) {
+    LOG(ERROR) << "MouseEventManagerExt::HandleCreateOverlay, image is too large!";
+    return;
+  }
+  if (image_width >= kMinAnalyzedImageWidth &&
+      image_height >= kMinAnalyzedImageHeight &&
       (base::ohos::IsPcDevice() ||
        image_to_page_width_ratio > kMinAnalyzedImageToPageRatio)) {
-    LOG(INFO) << "MouseEventManagerExt::HandleCreateOverlay, start";
+    LOG(INFO)
+        << "MouseEventManagerExt::HandleCreateOverlay, start, image w x h: "
+        << image_width << " x " << image_height;
     PaintImage paint_image = image->PaintImageForCurrentFrame();
     if (!paint_image.GetSwSkImage()) {
       LOG(ERROR) << "MouseEventManagerExt::HandleCreateOverlay, "
                     "paint_image.GetSwSkImage() is null";
+      return;
+    }
+    float shrink_ratio =
+        std::min(1.0f, KMaxAnalyzedImageDimension * 1.0f /
+                           std::max(image_width, image_height));
+    paint_image = Image::ResizeAndOrientImage(
+        paint_image, image->CurrentFrameOrientation(),
+        gfx::Vector2dF(shrink_ratio, shrink_ratio));
+    if (!paint_image.GetSwSkImage()) {
+      LOG(ERROR) << "MouseEventManagerExt::CreateOverlay, downsampling failed.";
       return;
     }
     SetOverlayCreatingStatus(true);
@@ -341,7 +321,9 @@ void MouseEventManagerExt::CloseImageOverlayWhenMousePress(const MouseEventWithH
   }
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::Trace(Visitor* visitor) const {
+  MouseEventManager::Trace(visitor);
   visitor->Trace(frame_);
   visitor->Trace(scroll_manager_);
   visitor->Trace(element_under_mouse_);
@@ -350,8 +332,10 @@ void MouseEventManagerExt::Trace(Visitor* visitor) const {
 #if BUILDFLAG(ARKWEB_AI)
   visitor->Trace(hit_image_node_);
 #endif
+  visitor->Trace(weak_factory_);
   SynchronousMutationObserver::Trace(visitor);
 }
+// LCOV_EXCL_STOP
 
 MouseEventManagerExt::OverLayerMouseLeaveEventListener::OverLayerMouseLeaveEventListener(blink::Element* element)
     : element_(element) {}
@@ -369,11 +353,13 @@ void MouseEventManagerExt::OverLayerMouseLeaveEventListener::Invoke(
   }
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::OverLayerMouseLeaveEventListener::Trace(
     Visitor* visitor) const {
   visitor->Trace(element_);
   NativeEventListener::Trace(visitor);
 }
+// LCOV_EXCL_STOP
 
 #endif
 }

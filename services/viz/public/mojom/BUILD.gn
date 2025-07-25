@@ -63,6 +63,9 @@ mojom("mojom") {
   if (arkweb_performance_scheduling) {
     enabled_features += ["arkweb_performance_scheduling"]
   }
+  if (arkweb_vsync_schedule) {
+    enabled_features += ["arkweb_vsync_schedule"]
+  }
 
   deps = [ "//gpu/ipc/common:gmb_interface" ]
 

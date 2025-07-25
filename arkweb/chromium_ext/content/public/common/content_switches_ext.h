@@ -42,6 +42,7 @@ CONTENT_EXPORT extern const char kIgnoreLockdownMode[];
 CONTENT_EXPORT extern const char kEnablePrinting[];
 CONTENT_EXPORT extern const char kOhosHttpCacheSimple[];
 CONTENT_EXPORT extern const char kCalcTabletMode[];
+CONTENT_EXPORT extern const char kDisableMobileStyleSheet[];
 CONTENT_EXPORT extern const char kDisableNonAdvancedSecurityMode[];
 #endif
 
@@ -101,6 +102,17 @@ extern const char kEnableCacheMediaTakeOver[];
 
 #if BUILDFLAG(ARKWEB_VULKAN)
 CONTENT_EXPORT extern const char kOhosEnableVulkan[];
+#endif
+
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+CONTENT_EXPORT extern const char kAdSecValue[];
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+CONTENT_EXPORT extern const char kSetExtensionName[];
+#endif
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+CONTENT_EXPORT extern const char  kOhosEnableGwpAsanType[];
 #endif
 }  // namespace switches
 

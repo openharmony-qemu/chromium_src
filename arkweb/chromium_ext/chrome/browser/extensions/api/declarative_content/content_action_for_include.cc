@@ -83,8 +83,8 @@ void ContentActionSetIcon(ExtensionAction* action,
   int tab_id = ExtensionTabUtil::GetTabId(apply_info.tab);
   gfx::Image icon = ContentActionGetActionIcon(action, tab_id);
   if (!icon.IsEmpty()) {
-    OHOS::NWeb::NWebExtensionActionCefDelegate::OnSetIcon(extension_id, icon,
-                                                          tab_id);
+    OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnSetIcon(
+        extension_id, icon, tab_id);
   } else {
     LOG(ERROR) << "ContentActionSetIcon: invalid icon for extension "
                << extension_id << " of tab " << tab_id;

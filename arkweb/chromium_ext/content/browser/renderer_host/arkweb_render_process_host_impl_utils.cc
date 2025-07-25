@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 #include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
-
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#include "arkweb/ohos_nweb/src/nweb_resize_helper.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/browser/renderer_host/render_process_host_impl.h"
 #include "content/browser/site_info.h"
@@ -28,6 +29,7 @@
 #include "services/device/public/mojom/time_zone_monitor.mojom.h"
 #include "services/metrics/public/cpp/ukm_recorder.h"
 #include "services/metrics/public/mojom/ukm_interface.mojom.h"
+#include "cef/ohos_cef_ext/libcef/browser/page_load_metrics/arkweb_page_load_metrics_observer.h"
 #if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
 #include "arkweb/chromium_ext/services/device/public/mojom/res_sched_report.mojom.h"
 #include "arkweb/chromium_ext/services/device/public/mojom/sysprop_render_observer.mojom.h"
@@ -43,6 +45,7 @@
 namespace content {
 namespace {
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
 // the global list of all renderer processes
 SharedProcessTokenToProcessMap& GetAllSharedProcessHosts() {
@@ -51,6 +54,7 @@ SharedProcessTokenToProcessMap& GetAllSharedProcessHosts() {
   return *s_all_shared_process_hosts;
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
 constexpr int kSingleRenderProcessCount = 1;
@@ -92,15 +96,17 @@ void ArkwebRenderProcessHostImplUtils::RemoveFromSharedRenderProcessMap(
     return;
   }
   auto iter = processes.begin();
-  for (; iter != processes.end(); ++iter) {
+  for (; iter != processes.end();) {
     if (iter->second == renderProcessHost) {
-      processes.erase(iter);
-      break;
+      iter = processes.erase(iter);
+    } else {
+      iter++;
     }
   }
 }
 #endif
 
+// LCOV_EXCL_START
 size_t ArkwebRenderProcessHostImplUtils::GetMaxRendererProcessCountEx() {
   if (RenderProcessHost::render_process_mode() ==
       RenderProcessMode::SINGLE_MODE) {
@@ -141,6 +147,7 @@ size_t ArkwebRenderProcessHostImplUtils::GetMaxRendererProcessCountEx() {
 
   return max_count * 0.9;
 }
+// LCOV_EXCL_STOP
 
 bool ArkwebRenderProcessHostImplUtils::IsSuitableHostForArkweb(
     RenderProcessHost* host,
@@ -182,6 +189,7 @@ size_t ArkwebRenderProcessHostImplUtils::GetProcessCountForLimitArkweb(
 #endif
 }
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
 class DelayedRenderKiller {
   public:
@@ -331,6 +339,7 @@ void ArkwebRenderProcessHostImplUtils::Refresh() {
   } while (0);
 }
 #endif
+// LCOV_EXCL_STOP
 
 void ArkwebRenderProcessHostImplUtils::GetProcessHostForSiteInstanceArkweb(
     RenderProcessHost* render_process_host,
@@ -425,6 +434,7 @@ const base::FilePath::CharType kAppThemeFontsManifest[] =
 std::unique_ptr<ThemeFont> ArkwebRenderProcessHostImplUtils::g_theme_font_ =
     nullptr;
 
+// LCOV_EXCL_START
 // static
 bool ArkwebRenderProcessHostImplUtils::IsThemeFontValid() {
   if (!g_theme_font_ || !base::PathExists(g_theme_font_->flag_path) ||
@@ -518,6 +528,7 @@ ThemeFont* ArkwebRenderProcessHostImplUtils::EnsureThemeFont() {
 
   return g_theme_font_.get();
 }
+// LCOV_EXCL_STOP
 
 void ArkwebRenderProcessHostImplUtils::UpdateThemeFontFile(
     RenderProcessHostImpl* host,
@@ -550,6 +561,17 @@ void ArkwebRenderProcessHostImplUtils::ReportKeyThreadIdsEx(
         static_cast<ResSchedRoleAdapter>(role));
   }
 }
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+void ArkwebRenderProcessHostImplUtils::ReportHisyevent(int64_t block_time, const std::string& mode) {
+  if (mode == "ReportRenderInitBlock") {
+    OhPageLoadMetricsObserver::RenderInitBlock(block_time);
+  }
+  if (mode == "ReportDragBlank" && OHOS::NWeb::NWebResizeHelper::GetInstance().IsDragResizeStart()) {
+    ReportDragBlank(block_time);
+  }
+}
+#endif
 
 void ArkwebRenderProcessHostImplUtils::AddHostUIThreadInterface(
     service_manager::BinderRegistry* registry) {

@@ -71,6 +71,9 @@ class VIZ_SERVICE_EXPORT DisplaySchedulerBase
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
   void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) override;
 #endif // ARKWEB_MAXIMIZE_RESIZE
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  virtual void SetClientId(const uint32_t client_id) {}
+#endif
 
  protected:
   raw_ptr<DisplaySchedulerClient> client_ = nullptr;

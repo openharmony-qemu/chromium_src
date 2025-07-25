@@ -14,14 +14,47 @@
  */
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "chrome/browser/extensions/extension_tab_util.h"
+#include "chrome/browser/extensions/permissions/active_tab_permission_granter.h"
+#include "chrome/browser/extensions/tab_helper.h"
+#include "extensions/browser/extension_registry.h"
 #include "ohos_cef_ext/libcef/browser/extensions/tab_extensions_util.h"
 #endif
 
 namespace extensions {
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+namespace {
+ 
+void ExtensionActionInvokeActiveTab(
+    content::BrowserContext* context,
+    int tab_id,
+    std::string extension_id) {
+  ExtensionRegistry* registry = ExtensionRegistry::Get(context);
+  if (!registry) {
+    LOG(ERROR) << "ExtensionActionInvokeActiveTab registry is null";
+    return;
+  }
+ 
+  const Extension* extension =
+      registry->enabled_extensions().GetByID(extension_id);
+  if (!extension) {
+    LOG(ERROR) << "ExtensionActionInvokeActiveTab extension is null";
+    return;
+  }
+ 
+  content::WebContents* out_contents = nullptr;
+  if (ExtensionTabUtil::GetTabById(tab_id, context, true, &out_contents)) {
+    TabHelper::FromWebContents(out_contents)
+        ->active_tab_permission_granter()
+        ->GrantIfRequested(extension);
+  }
+}
+ 
+}
+
 void ExtensionActionDispatcher::DispatchExtensionActionClickedWithCustomArgs(
-    content::WebContents* web_contents,
+    content::BrowserContext* context,
     std::string extension_id,
     const NWebExtensionTab* custom_tab) {
   LOG(DEBUG) << "ExtensionActionAPI "
@@ -32,9 +65,47 @@ void ExtensionActionDispatcher::DispatchExtensionActionClickedWithCustomArgs(
 
   args.Append(GetTabValue(*custom_tab));
 
-  DispatchEventToExtension(web_contents->GetBrowserContext(),
-                            extension_id, histogram_value,
-                            event_name, std::move(args));
+  if (custom_tab->id.has_value()) {
+    ExtensionActionInvokeActiveTab(context, custom_tab->id.value(), extension_id);
+  }
+
+  DispatchEventToExtension(context,
+                           extension_id, histogram_value,
+                           event_name, std::move(args));
+}
+
+void ExtensionActionDispatcher::WebExtensionActionShowPopup(
+    content::BrowserContext* context,
+    int tab_id,
+    std::string extension_id) {
+  ExtensionActionInvokeActiveTab(context, tab_id, extension_id);
+}
+
+void ExtensionActionDispatcher::ClearAllValuesForTab(
+    content::WebContents* web_contents) {
+  DCHECK(web_contents);
+  int tab_id = ExtensionTabUtil::GetTabId(web_contents);
+  if (tab_id < 0) {
+    LOG(ERROR) << "invalid tab_id for ClearAllValuesForTab";
+    return;
+  }
+
+  content::BrowserContext* browser_context = web_contents->GetBrowserContext();
+  const ExtensionSet& enabled_extensions =
+      ExtensionRegistry::Get(browser_context_)->enabled_extensions();
+  ExtensionActionManager* action_manager =
+      ExtensionActionManager::Get(browser_context_);
+
+  for (const auto& extension : enabled_extensions) {
+    ExtensionAction* extension_action =
+        action_manager->GetExtensionAction(*extension);
+    if (extension_action) {
+      extension_action->ClearAllValuesForTab(tab_id);
+      LOG(INFO) << "clearing all action values for extension "
+                << extension_action->extension_id() << ", tab_id: " << tab_id;
+      NotifyChange(extension_action, web_contents, browser_context);
+    }
+  }
 }
 #endif  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 

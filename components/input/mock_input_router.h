@@ -72,6 +72,7 @@ class MockInputRouter : public InputRouter {
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void ScrollBy(float delta_x, float delta_y) override {}
+  void SetBypassVsyncCondition(int32_t condition) override {}
 #endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   bool sent_mouse_event_;

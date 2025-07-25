@@ -692,11 +692,10 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   };
   using ThroughputTrackerMap = base::flat_map<TrackerId, TrackerState>;
   ThroughputTrackerMap throughput_tracker_map_;
+  std::unique_ptr<CompositorUtils> compositor_utils_;
 
   base::WeakPtrFactory<Compositor> context_creation_weak_ptr_factory_{this};
   base::WeakPtrFactory<Compositor> weak_ptr_factory_{this};
-
-  std::unique_ptr<CompositorUtils> compositor_utils_;
 };
 
 }  // namespace ui

@@ -1723,3 +1723,7 @@ void SkiaOutputSurfaceImpl::ReadbackForTesting(
 }
 
 }  // namespace viz
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_for_include.cc"
+#endif

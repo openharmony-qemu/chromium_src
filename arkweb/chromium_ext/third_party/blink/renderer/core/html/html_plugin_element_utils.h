@@ -29,9 +29,19 @@ class HTMLPlugInElementUtils {
   bool CheckNativeType(const char* key) const;
   bool CheckIntrinsicSizeEnable() const;
   bool IsCssDisplayChangeEnabled() const;
+  void SetNativeEmbedOverlay(bool native_embed_overlay);
+  void SetNativeEmbedOverlayInfinity(bool native_embed_overlay_infinity);
+  bool IsOverlay() {
+    return native_embed_overlay_;
+  }
+  bool IsOverlayInfinity() {
+    return native_embed_overlay_infinity_;
+  }
 #endif
  private:
   raw_ptr<HTMLPlugInElement> plugin_;
+  bool native_embed_overlay_{false};
+  bool native_embed_overlay_infinity_{false};
 };
 
 }  // namespace blink

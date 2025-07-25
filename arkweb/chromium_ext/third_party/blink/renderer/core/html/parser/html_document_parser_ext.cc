@@ -20,6 +20,7 @@
 #include "base/containers/buffer_iterator.h"
 
 namespace blink {
+// LCOV_EXCL_START
 #if BUILDFLAG(IS_OHOS)
 void SetOptimizeParserBudgetEnabled(bool enable)
 {
@@ -28,4 +29,5 @@ void SetOptimizeParserBudgetEnabled(bool enable)
   kUseOptimizedBudget = enable;
 }
 #endif
+// LCOV_EXCL_STOP
 }

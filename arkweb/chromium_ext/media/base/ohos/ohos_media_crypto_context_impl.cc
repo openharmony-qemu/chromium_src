@@ -38,4 +38,15 @@ void OHOSMediaCryptoContextImpl::SetOHOSMediaCryptoReadyCB(
   media_drm_bridge_->SetOHOSMediaCryptoReadyCB(
       std::move(media_crypto_ready_cb));
 }
+
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+void OHOSMediaCryptoContextImpl::ReleaseInnerResource() {
+  if (!media_drm_bridge_) {
+    LOG(ERROR) << "[DRM]media_drm_bridge_ is nullptr.";
+    return;
+  }
+  media_drm_bridge_->ReleaseInnerResource();
+}
+#endif
+
 }  // namespace media

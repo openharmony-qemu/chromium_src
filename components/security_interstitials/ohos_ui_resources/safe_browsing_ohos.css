@@ -220,6 +220,14 @@ a {
   padding-inline-start: 16px;
 }
 
+.forbidden-policy #hw-proceed {
+  display: none;
+}
+
+.forbidden-policy #hw_proceed {
+  display: none;
+}
+
 .hw-istablet #hw_proceed {
   margin-inline-start: 24px;
 }

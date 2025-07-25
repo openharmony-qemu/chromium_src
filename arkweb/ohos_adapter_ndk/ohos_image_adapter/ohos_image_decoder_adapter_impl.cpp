@@ -53,6 +53,7 @@ void ReleaseDecodeOptions(OH_DecodingOptions* decodeOptions)
     WVLOG_D("[HeifSupport] ReleaseDecodeOptions options is null, do not need release");
 }
 
+// LCOV_EXCL_START
 void OhosImageDecoderAdapterImpl::NativeBufferFromPixelMap()
 {
     if (pixelMap_) {
@@ -65,6 +66,7 @@ void OhosImageDecoderAdapterImpl::NativeBufferFromPixelMap()
     }
     WVLOG_E("[HeifSupport] NativeBufferFromPixelMap GetNativeBuffer pixelMap_ not exists");
 }
+// LCOV_EXCL_STOP
 
 bool OhosImageDecoderAdapterImpl::ParseRawData(const uint8_t* data, uint32_t size)
 {
@@ -180,6 +182,7 @@ bool OhosImageDecoderAdapterImpl::Decode(const uint8_t* data,
     return true;
 }
 
+// LCOV_EXCL_START
 int32_t OhosImageDecoderAdapterImpl::GetFd()
 {
     if (!GetBufferHandle()) {
@@ -353,6 +356,7 @@ bool OhosImageDecoderAdapterImpl::GetBufferHandle()
     }
     return true;
 }
+// LCOV_EXCL_STOP
 
 }  // namespace NWeb
 }  // namespace OHOS

@@ -537,6 +537,11 @@ interface Frame {
                         int32 object_id,
                         mojo_base.mojom.ListValue async_method_list,
                         bool need_update);
+
+  // #if BUILDFLAG(ARKWEB_DFX_TRACING)
+  [EnableIf=arkweb_dfx_tracing]
+  SendCommitNavigationTime(int64 start_time);
+  // #endif
 };
 
 // Implemented by the frame (e.g. renderer processes).
@@ -887,6 +892,16 @@ interface FrameHost {
   // #if BUILDFLAG(ARKWEB_AI)
   [EnableIf=arkweb_ai]
   CloseImageOverlaySelection();
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_PDF)
+  [EnableIf=arkweb_pdf]
+  OnPdfScrollAtBottom(string url);
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_PDF)
+  [EnableIf=arkweb_pdf]
+  OnPdfLoadEvent(int32 result, string url);
   // #endif
 
 };

@@ -140,6 +140,7 @@ WebMediaPlayerImplUtils::WebMediaPlayerImplUtils(WebMediaPlayerImpl* WebMediaPla
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 }
 
+// LCOV_EXCL_START
 void WebMediaPlayerImplUtils::ExitedFullscreenExt() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   bool surface_changed = impl->video_surface_id_ != -1;
@@ -152,6 +153,7 @@ void WebMediaPlayerImplUtils::ExitedFullscreenExt() {
   }
 #endif // ARKWEB_VIDEO_ASSISTANT
 }
+// LCOV_EXCL_STOP
 
 bool WebMediaPlayerImplUtils::DoLoadExt(WebMediaPlayer::CorsMode cors_mode, bool is_cache_disabled) {
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
@@ -173,6 +175,7 @@ bool WebMediaPlayerImplUtils::DoLoadExt(WebMediaPlayer::CorsMode cors_mode, bool
 return false;
 }
 
+// LCOV_EXCL_START
 void WebMediaPlayerImplUtils::PlayExt() {
   impl->pipeline_controller_->SetMediaPlayerState(false);
   if (impl->action_reason_ != media::ActionReason::kNormal) {
@@ -233,6 +236,7 @@ void WebMediaPlayerImplUtils::OnMetadataExt() {
       }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 }
+// LCOV_EXCL_STOP
 
 void WebMediaPlayerImplUtils::OnPageHiddenExt(bool storing_in_bfcache) {
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
@@ -247,6 +251,7 @@ void WebMediaPlayerImplUtils::OnPageHiddenExt(bool storing_in_bfcache) {
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 }
 
+// LCOV_EXCL_START
 void WebMediaPlayerImplUtils::CreateRendererExtSetRendererType() {
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   impl->primitive_renderer_type_ =
@@ -257,6 +262,7 @@ void WebMediaPlayerImplUtils::CreateRendererExtSetRendererType() {
   }
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 }
+// LCOV_EXCL_STOP
 
 std::unique_ptr<media::Renderer> WebMediaPlayerImplUtils::CreateRendererExtConfigRenderer(
     media::RequestOverlayInfoCB request_overlay_info_cb) {
@@ -308,6 +314,7 @@ std::unique_ptr<media::Renderer> WebMediaPlayerImplUtils::CreateRendererExtConfi
   return nullptr;
 }
 
+// LCOV_EXCL_START
 void WebMediaPlayerImplUtils::SetSuspendStateExt() {
   media::RequestSurfaceCB request_surface_cb =
       base::BindPostTaskToCurrentDefault(
@@ -336,6 +343,7 @@ void WebMediaPlayerImplUtils::PauseExt() {
     impl->pipeline_controller_->SetPlaybackRate(0.0);
   }
 }
+// LCOV_EXCL_STOP
 
 void WebMediaPlayerImplUtils::DoSeekExt(base::TimeDelta time) {
 #if BUILDFLAG(ARKWEB_MEDIA)
@@ -350,13 +358,20 @@ void WebMediaPlayerImplUtils::SetVolumeExt(double volume) {
 }
 
 void WebMediaPlayerImplUtils::OnFrameShownExt() {
+#if BUILDFLAG(ARKWEB_MEDIA)
+  LOG(INFO) << "OhMedia::WebMediaPlayerImpl::OnFrameShown()"
+            << " delegate_id_:" << impl->delegate_id_;
+#endif // ARKWEB_MEDIA
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   impl->client_->OnPageVisibilityChanged();
 #endif  // ARKWEB_VIDEO_ASSISTANT
 }
 
 void WebMediaPlayerImplUtils::OnFrameHiddenExt() {
-  LOG(INFO) << "WebMediaPlayerImpl::OnFrameHidden()";
+#if BUILDFLAG(ARKWEB_MEDIA)
+  LOG(INFO) << "WebMediaPlayerImpl::OnFrameHidden()"
+            << " delegate_id_:" << impl->delegate_id_;
+#endif  // BUILDFLAG(ARKWEB_MEDIA)
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   impl->client_->OnPageVisibilityChanged();
@@ -378,6 +393,7 @@ bool WebMediaPlayerImplUtils::UpdatePlayStateExt(bool can_auto_suspend) {
   return can_auto_suspend;
 }
 
+// LCOV_EXCL_START
 void WebMediaPlayerImplUtils::SetDelegateStateExt() {
 #if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
   impl->client_->DidPlayerPaused(impl->ended_);
@@ -415,4 +431,28 @@ void WebMediaPlayerImplUtils::DidEndAVSessionExt() {
 #endif // ARKWEB_MEDIA_AVSESSION
 }
 
+void WebMediaPlayerImplUtils::SuspendCdmSessionExt() {
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  if (impl && impl->HasVideo() && impl->cdm_context_ref_) {
+    auto* cdm_context = impl->cdm_context_ref_->GetCdmContext();
+    if (cdm_context) {
+      LOG(INFO) << "[DRM]" << __func__ << ", SuspendCdmSession.";
+      cdm_context->SuspendCdmSession();
+    }
+  }
+#endif
+}
+
+void WebMediaPlayerImplUtils::ResumeCdmSessionExt() {
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  if (impl && impl->HasVideo() && impl->cdm_context_ref_) {
+    auto* cdm_context = impl->cdm_context_ref_->GetCdmContext();
+    if (cdm_context) {
+      LOG(INFO) << "[DRM]" << __func__ << ", ResumeCdmSession.";
+      cdm_context->ResumeCdmSession();
+    }
+  }
+#endif
+}
+// LCOV_EXCL_STOP
 }

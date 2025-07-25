@@ -90,6 +90,7 @@ void StyleCascadeUtil::LookupAndApplyDeclarationExt(
   }
 }
 
+// LCOV_EXCL_START
 CSSVariableData* StyleCascadeUtil::GetEnvironmentVariableExt(
     raw_ptr<const StyleCascade> StyleCascadeObj,
     const AtomicString& name,
@@ -104,5 +105,6 @@ CSSVariableData* StyleCascadeUtil::GetEnvironmentVariableExt(
              << (result ? result->OriginalText().Utf8() : std::string("null"));
   return result;
 }
+// LCOV_EXCL_STOP
 
 }  // namespace blink

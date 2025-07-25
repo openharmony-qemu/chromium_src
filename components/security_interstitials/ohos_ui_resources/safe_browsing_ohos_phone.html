@@ -33,6 +33,10 @@
         }
         window.domAutomationController?.send(cmd);
       }
+
+      if (policy === FORBIDDEN_POLICY) {
+        document.documentElement.className += ' forbidden-policy';
+      }
  
       function onFillErrorPageHtml() {
         if (policy == FORBIDDEN_POLICY) {

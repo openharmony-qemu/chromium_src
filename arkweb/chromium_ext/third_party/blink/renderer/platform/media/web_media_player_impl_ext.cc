@@ -98,8 +98,16 @@
 #include "ui/gfx/geometry/size.h"
 
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/web_media_player_impl_ext.h"
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 
 namespace blink {
+
+namespace {
+  std::ostream& operator<<(std::ostream& stream,
+                         WebMediaPlayerImplExt const& media_player) {
+  return stream << static_cast<void const*>(&media_player);
+}
+}
 
 WebMediaPlayerImplExt::WebMediaPlayerImplExt(
     WebLocalFrame* frame,
@@ -138,7 +146,13 @@ WebMediaPlayerImplExt::WebMediaPlayerImplExt(
       initial_cdm, request_routing_token_cb, media_observer, enable_instant_source_buffer_gc,
       embedded_media_experience_enabled, std::move(metrics_provider), std::move(create_bridge_callback),
       raster_context_provider, use_surface_layer, is_background_suspend_enabled, is_background_video_play_enabled,
-      is_background_video_track_optimization_supported, std::move(demuxer_override), remote_interfaces) {
+      is_background_video_track_optimization_supported, std::move(demuxer_override),
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+      remote_interfaces),
+      dma_state_(kHaveExist) {
+#else
+      remote_interfaces) {
+#endif  // ARKWEB_MEDIA_DMABUF
           weak_this_ = weak_factory_.GetWeakPtr();
 }
 
@@ -330,7 +344,7 @@ int64_t WebMediaPlayerImplExt::GetPlayedTime() {
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
 bool WebMediaPlayerImplExt::IsFrameHidden() {
-  return IsHidden();
+  return IsPageHidden();
 }
 #endif
 
@@ -340,4 +354,102 @@ void WebMediaPlayerImpl::PipEnable(bool enable) {
   pipeline_controller_->PipEnable(enable);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void WebMediaPlayerImplExt::SetDmaBufferSeekState(bool state) {
+  dmabuf_seeking_enabled_ = state;
+}
+
+bool WebMediaPlayerImplExt::IsDmaBufferRecycleEnabled() {
+  if (GetDemuxerType() == media::DemuxerType::kChunkDemuxer) {
+    return false;
+  }
+
+  if (!dmabuf_seeking_enabled_) {
+    return false;
+  }
+
+  LOG(INFO) << "DMABUF::WebMediaPlayerImplExt(" << *this << "), IsDmaBufferRecycleEnabled = true";
+  return dmabuf_recycled.value_or(true);
+}
+
+void WebMediaPlayerImplExt::RecycleDmaBuffer() {
+  base::AutoLock lock(lock_);
+
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+  // Called by the OnPageHidden
+  if (memory_pressure_level_ < base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_MODERATE) {
+    return;
+  }
+#endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
+
+  if (IsPageHidden() || (IsHidden() && should_pause_when_frame_is_hidden_)) {
+    if (ShouldPausePlaybackWhenHidden() || !base::ohos::IsPcDevice()) {
+      LOG(INFO) << "DMABUF::The device is not a PC or not have media player, No need RecycleDmaBuffer";
+      return;
+    }
+  }
+  
+  // Called by the memory pressure listener
+  if (!paused_ || !IsPageHidden()) {
+    return;
+  }
+
+  if (!pipeline_controller_) {
+    LOG(ERROR) << "DMABUF::WebMediaPlayerImplExt::RecycleDmaBuffer, pipeline_controller is null";
+    return;
+  }
+  
+  if (dma_state_ == kHaveExist) {
+    LOG(INFO) << "DMABUF::WebMediaPlayerImplExt, RecycleDmaBuffer(" << *this << ")";
+    pipeline_controller_->RecycleDmaBuffer();
+    dma_state_ = kHaveRecycled;
+  }
+}
+
+void WebMediaPlayerImplExt::ResumeDmaBuffer() {
+  base::AutoLock lock(lock_);
+
+  if (!pipeline_controller_) {
+    LOG(ERROR) << "DMABUF::WebMediaPlayerImplExt::ResumeDmaBuffer, pipeline_controller is null";
+    return;
+  }
+
+  if (dma_state_ == kHaveRecycled) {
+    LOG(INFO) << "DMABUF::WebMediaPlayerImplExt, ResumeDmaBuffer(" << *this << ")";
+    pipeline_controller_->ResumeDmaBuffer();
+    dma_state_ = kHaveExist;
+    if (client_) {
+      dmabuf_seeking_enabled_ = true;
+      client_->OnDmaBufferSeekTo(paused_time_);
+    } else {
+      LOG(ERROR) << "DMABUF::WebMediaPlayerImplExt::ResumeDmaBuffer, client is null";  
+    }
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
+
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+void WebMediaPlayerImplExt::NotifyMemoryLevel(
+    base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level) {
+  memory_pressure_level_ = memory_pressure_level;
+}
+#endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+void WebMediaPlayerImplExt::MediaResumeFromBFCachePage(bool restoring_in_bfcache) {
+  LOG(INFO) << "MediaResumeFromBFCachePage restoring_in_bfcache" << restoring_in_bfcache;
+  if (!client_) {
+    LOG(ERROR) << "OhMedia::media_player_client is nullptr";
+    return;
+  }
+  bool is_media_resume = client_->IsMediaResumeFromBFCachePage();
+  LOG(INFO) << "MediaResumeFromBFCachePage is_media_resume: " << is_media_resume;
+  if (restoring_in_bfcache && !is_media_resume) {
+    LOG(INFO) << "OhMedia::WebPage is restored from BFCACHE without resuming playback.";
+  } else {
+    client_->ResumePlayback();  // Calls UpdatePlayState() so return afterwards.
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
 }

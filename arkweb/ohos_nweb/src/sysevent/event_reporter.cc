@@ -39,6 +39,7 @@ constexpr char PAGE_LOAD_ERROR[] = "PAGE_LOAD_ERROR";
 constexpr char ERROR_TYPE[] = "ERROR_TYPE";
 constexpr char ERROR_CODE[] = "ERROR_CODE";
 constexpr char ERROR_DESC[] = "ERROR_DESC";
+constexpr char ERROR_COUNT[] = "ERROR_COUNT";
 
 constexpr char JANK_STATS_APP[] = "JANK_STATS_APP";
 constexpr char STARTTIME[] = "STARTTIME";
@@ -87,6 +88,41 @@ constexpr char MAX_APP_SEQ_MISSSED_FRAMES[] = "MAX_APP_SEQ_MISSSED_FRAMES";
 // For site_isolation
 constexpr char SITE_ISOLATION_MODE[] = "SITE_ISOLATION_MODE";
 constexpr char SITE_ISOLATION_STATUS[] = "SITE_ISOLATION_STATUS";
+
+// For renderer memory statistics
+constexpr char PAGE_MEM_LEAK[] = "PAGE_MEM_LEAK";
+constexpr char TYPE[] = "TYPE";
+constexpr char PID[] = "PID";
+constexpr char RSS[] = "RSS";
+constexpr char PSS[] = "PSS";
+constexpr char JS_HEAP_TOTAL[] = "JS_HEAP_TOTAL";
+constexpr char JS_HEAP_USED[] = "JS_HEAP_USED";
+constexpr char GPU_MEM[] = "GPU_MEM";
+constexpr char URL[] = "URL";
+
+constexpr char PAGE_DRAG_BLANK[] = "PAGE_DRAG_BLANK";
+constexpr char PAGE_BLANK_TIME[] = "PAGE_BLANK_TIME";
+
+// For web play error info,such as pip/drm
+constexpr char WEB_MEDIA_PLAY_ERROR[] = "WEB_MEDIA_PLAY_ERROR";
+ 
+// For av session
+constexpr char WEB_AV_SESSION_DISABLE[] = "WEB_AV_SESSION_DISABLE";
+constexpr char DISABLE_WEB_AV_SESSION_STATUS[] = "DISABLE_WEB_AV_SESSION_STATUS";
+
+constexpr char RENDER_INIT_BLOCK[] = "RENDER_INIT_BLOCK";
+constexpr char BLOCK_TIME[] = "BLOCK_TIME";
+
+const char GPU_DISPLAY_ERROR[] = "GPU_DISPLAY_ERROR";
+const char EVENT_TYPE[] = "EVENT_TYPE";
+const char EVENT_CONTENT[] = "EVENT_CONTENT";
+
+constexpr char TIMEOUT[] = "TIMEOUT";
+constexpr char MAILBOX_NONEXISTENT[] = "MAILBOX_NONEXISTENT";
+
+// For render freeze monitoring
+constexpr char PROCESS_FREEZE_WARNING[] = "PROCESS_FREEZE_WARNING";
+
 }  // namespace
 
 void ReportPageLoadStats(int instanceId,
@@ -114,6 +150,7 @@ void ReportMultiInstanceStats(int instanceId, int nwebCount, int nwebMaxCount) {
 void ReportPageLoadErrorInfo(int instanceId,
                              const std::string errorType,
                              int errorCode,
+                             uint32_t errorCount,
                              const std::string errorDesc) {
   std::string error_type = "";
   std::string error_desc = "";
@@ -127,7 +164,7 @@ void ReportPageLoadErrorInfo(int instanceId,
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       PAGE_LOAD_ERROR, HiSysEventAdapter::EventType::FAULT,
       {CURRENT_INSTANCE_ID, std::to_string(instanceId), ERROR_TYPE, error_type,
-       ERROR_CODE, std::to_string(error_code), ERROR_DESC, error_desc});
+       ERROR_CODE, std::to_string(error_code), ERROR_COUNT, std::to_string(errorCount), ERROR_DESC, error_desc});
 }
 
 void ReportJankStats(int64_t startTime,
@@ -166,54 +203,33 @@ void ReportPageDownLoadErrorInfo(long downloadId, int errorCode) {
 }
 
 void ReportPageLoadTimeStats(OhWebPerformanceTiming loadPageTime) {
+  const std::string input = "NAVIGATION_ID" + std::to_string(loadPageTime.navigation_id) +
+    "NAVIGATION_START" + std::to_string(loadPageTime.navigation_start) +
+    "REDIRECT_COUNT" + std::to_string(loadPageTime.redirect_count) +
+    "REDIRECT_START" + std::to_string(loadPageTime.redirect_start) +
+    "REDIRECT_END" + std::to_string(loadPageTime.redirect_end) +
+    "FETCH_START" + std::to_string(loadPageTime.fetch_start) +
+    "WORKER_START" + std::to_string(loadPageTime.worker_start) +
+    "DOMAIN_LOOKUP_START" + std::to_string(loadPageTime.domain_lookup_start) +
+    "DOMAIN_LOOKUP_END" + std::to_string(loadPageTime.domain_lookup_end) +
+    "CONNECT_START" + std::to_string(loadPageTime.connect_start) +
+    "SECURE_CONNECT_START" + std::to_string(loadPageTime.secure_connect_start) +
+    "CONNECT_END" + std::to_string(loadPageTime.connect_end) +
+    "REQUEST_START" + std::to_string(loadPageTime.request_start) +
+    "RESPONSE_START" + std::to_string(loadPageTime.response_start) +
+    "RESPONSE_END" + std::to_string(loadPageTime.response_end) +
+    "DOM_INTERACTIVE" + std::to_string(loadPageTime.dom_interactive) +
+    "DOM_CONTENT_LOADED_EVENT_START" + std::to_string(loadPageTime.dom_content_loaded_event_start) +
+    "DOM_CONTENT_LOADED_EVENT_END" + std::to_string(loadPageTime.dom_content_loaded_event_end) +
+    "LOAD_EVENT_START" + std::to_string(loadPageTime.load_event_start) +
+    "LOAD_EVENT_END" + std::to_string(loadPageTime.load_event_end) +
+    "FIRST_PAINT" + std::to_string(loadPageTime.first_paint) +
+    "FIRST_CONTENTFUL_PAINT" + std::to_string(loadPageTime.first_contentful_paint) +
+    "LARGEST_CONTENTFUL_PAINT" + std::to_string(loadPageTime.largest_contentful_paint) +
+    "RENDER_INIT_BLOCK" + std::to_string(loadPageTime.render_init_block);
+
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
-      "PAGE_LOAD_TIME", HiSysEventAdapter::EventType::STATISTIC,
-      {"NAVIGATION_ID",
-       loadPageTime.navigation_id,
-       "NAVIGATION_START",
-       loadPageTime.navigation_start,
-       "REDIRECT_COUNT",
-       loadPageTime.redirect_count,
-       "REDIRECT_START",
-       loadPageTime.redirect_start,
-       "REDIRECT_END",
-       loadPageTime.redirect_end,
-       "FETCH_START",
-       loadPageTime.fetch_start,
-       "WORKER_START",
-       loadPageTime.worker_start,
-       "DOMAIN_LOOKUP_START",
-       loadPageTime.domain_lookup_start,
-       "DOMAIN_LOOKUP_END",
-       loadPageTime.domain_lookup_end,
-       "CONNECT_START",
-       loadPageTime.connect_start,
-       "SECURE_CONNECT_START",
-       loadPageTime.secure_connect_start,
-       "CONNECT_END",
-       loadPageTime.connect_end,
-       "REQUEST_START",
-       loadPageTime.request_start,
-       "RESPONSE_START",
-       loadPageTime.response_start,
-       "RESPONSE_END",
-       loadPageTime.response_end,
-       "DOM_INTERACTIVE",
-       loadPageTime.dom_interactive,
-       "DOM_CONTENT_LOADED_EVENT_START",
-       loadPageTime.dom_content_loaded_event_start,
-       "DOM_CONTENT_LOADED_EVENT_END",
-       loadPageTime.dom_content_loaded_event_end,
-       "LOAD_EVENT_START",
-       loadPageTime.load_event_start,
-       "LOAD_EVENT_END",
-       loadPageTime.load_event_end,
-       "FIRST_PAINT",
-       loadPageTime.first_paint,
-       "FIRST_CONTENTFUL_PAINT",
-       loadPageTime.first_contentful_paint,
-       "LARGEST_CONTENTFUL_PAINT",
-       loadPageTime.largest_contentful_paint});
+      "PAGE_LOAD_TIME", HiSysEventAdapter::EventType::STATISTIC,{input, ""});
 }
 
 void ReportAudioPlayErrorInfo(const std::string errorType,
@@ -300,4 +316,84 @@ void ReportSiteIsolationMode(const std::string site_isolation_status) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       SITE_ISOLATION_MODE, HiSysEventAdapter::EventType::BEHAVIOR,
       {SITE_ISOLATION_STATUS, site_isolation_status});
+}
+
+void ReportRendererMem(const std::string& type,
+                       const std::string& pid,
+                       const std::string& rss,
+                       const std::string& pss,
+                       const std::string& js_heap_total,
+                       const std::string& js_heap_used,
+                       const std::string& gpu_mem,
+                       const std::string& url)
+{
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      PAGE_MEM_LEAK, HiSysEventAdapter::EventType::STATISTIC,
+      {TYPE, type, PID, pid, RSS, rss, PSS, pss, JS_HEAP_TOTAL, js_heap_total,
+       JS_HEAP_USED, js_heap_used, GPU_MEM, gpu_mem, URL, url});
+}  
+
+void ReportWebMediaPlayErrorInfo(const std::string& errorType,
+                              int errorCode,
+                              const std::string& errorDesc) {
+  std::string error_type = "";
+  std::string error_desc = "";
+  int error_code = errorCode;
+  if (!errorType.empty()) {
+    error_type = errorType;
+  }
+  if (!errorDesc.empty()) {
+    error_desc = errorDesc;
+  }
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      WEB_MEDIA_PLAY_ERROR, HiSysEventAdapter::EventType::FAULT,
+      {ERROR_TYPE, error_type, ERROR_CODE, std::to_string(error_code),
+       ERROR_DESC, error_desc});
+}
+ 
+void ReportAvSessionStatus(const std::string& disable_web_av_session_status) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      WEB_AV_SESSION_DISABLE, HiSysEventAdapter::EventType::STATISTIC,
+      {DISABLE_WEB_AV_SESSION_STATUS, disable_web_av_session_status});
+}
+
+void ReportDragBlank(int64_t duration) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      PAGE_DRAG_BLANK, HiSysEventAdapter::EventType::STATISTIC,
+      {PAGE_DRAG_BLANK, std::to_string(duration)});
+}
+
+void ReportFirstMeaningfulPaintDone(OhWebPerformanceTiming loadPageTime) {
+  const std::string input = "NAVIGATION_ID" + std::to_string(loadPageTime.navigation_id) +
+    "NAVIGATION_START" + std::to_string(loadPageTime.navigation_start) +
+    "REDIRECT_COUNT" + std::to_string(loadPageTime.redirect_count) +
+    "INPUT_TIME" + std::to_string(loadPageTime.input_time) +
+    "FIRST_PAINT" + std::to_string(loadPageTime.first_paint) +
+    "FIRST_CONTENTFUL_PAINT" + std::to_string(loadPageTime.first_contentful_paint) +
+    "FIRST_MEANINGFUL_PAINT" + std::to_string(loadPageTime.first_meaningful_paint) +
+    "IS_PAINT_DONE" + std::to_string(loadPageTime.is_paint_done);
+
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      "FIRST_MEANINGFUL_PAINT_DONE", HiSysEventAdapter::EventType::STATISTIC,{input, ""});
+}
+
+void ReportGpuProcessEvent(CrashType type, std::string eventcontent) {
+  switch(type) {
+    case CrashType::TIMEOUT:
+      OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+        GPU_DISPLAY_ERROR, HiSysEventAdapter::EventType::STATISTIC,
+        {EVENT_TYPE, TIMEOUT, EVENT_CONTENT, eventcontent});
+      break;
+    case CrashType::MAILBOX_NONEXISTENT:
+      OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+        GPU_DISPLAY_ERROR, HiSysEventAdapter::EventType::STATISTIC,
+        {EVENT_TYPE, MAILBOX_NONEXISTENT, EVENT_CONTENT, eventcontent});
+      break;
+  }
+}
+
+void ReportAppfreeze() {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      PROCESS_FREEZE_WARNING, HiSysEventAdapter::EventType::FAULT,
+      {"", std::string()});
 }

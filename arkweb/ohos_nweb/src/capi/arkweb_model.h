@@ -64,6 +64,22 @@ struct ArkWeb_JavaScriptValue {
   size_t dataLength;
 };
 
+/**
+ * @brief Defines the blankless information.
+ *
+ * @since 20
+ */
+typedef struct {
+  /** The errCode of the blankless. */
+  ArkWeb_BlanklessErrorCode errCode;
+
+  /** The estimated similarity of the history snapshots. */
+  double similarity;
+
+  /** The loadingTime of the history loading. */
+  int32_t loadingTime;
+} ArkWeb_BlanklessInfo;
+
 void OH_ArkWeb_RunJavaScript(const char* webTag,
                              const ArkWeb_JavaScriptObject* javascriptObject);
 void OH_ArkWeb_RegisterJavaScriptProxy(const char* webTag,
@@ -179,6 +195,12 @@ ArkWeb_ErrorCode OH_NativeArkWeb_LoadData(const char* webTag,
                                           const char* encoding,
                                           const char* baseUrl,
                                           const char* historyUrl);
+
+ArkWeb_BlanklessInfo OH_NativeArkWeb_GetBlanklessInfoWithKey(const char* webTag, const char* key);
+
+ArkWeb_BlanklessErrorCode OH_NativeArkWeb_SetBlanklessLoadingWithKey(const char* webTag,
+                                                                     const char* key,
+                                                                     bool isStarted);
 
 #ifdef __cplusplus
 }

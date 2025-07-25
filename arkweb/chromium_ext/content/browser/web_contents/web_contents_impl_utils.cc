@@ -30,9 +30,11 @@
 
 namespace content {
 
+// LCOV_EXCL_START
 WebContentsImplUtils::WebContentsImplUtils(WebContentsImpl* impl) {
   this->webContentsImpl = impl;
 }
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_I18N)
 void WebContentsImplUtils::UpdateRenderAcceptLanguageIfNeed(
@@ -106,6 +108,20 @@ void WebContentsImplUtils::UpdateUserAgentOverride(const blink::UserAgentOverrid
   if (webContentsImpl->delayed_load_url_params_) {
     webContentsImpl->delayed_load_url_params_->override_user_agent =
         NavigationController::UA_OVERRIDE_TRUE;
+  }
+}
+#endif
+
+bool WebContentsImplUtils::is_pdf_static = false;
+
+#if BUILDFLAG(ARKWEB_PDF)
+void WebContentsImplUtils::JudgeIsPdfPageVisibilityChanged(Visibility visibility) {
+  if (visibility == Visibility::VISIBLE && !webContentsImpl->did_first_set_visible_) {
+    GURL url = webContentsImpl->GetVisibleURL();
+    url::Origin url_origin = url::Origin::Create(url);
+    bool is_pdf = IsPdfExtensionOrigin(url_origin);
+    is_pdf_static = is_pdf;
+    base::ohos::SlidingObserver::GetInstance().SetIsPdf(is_pdf);
   }
 }
 #endif

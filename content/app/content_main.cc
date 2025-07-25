@@ -285,9 +285,11 @@ int ContentMainInitialize(ContentMainParams params,
     // default, "C", locale.
     setlocale(LC_NUMERIC, "C");
 
+#if !BUILDFLAG(IS_OHOS)
     if (!params.disable_signal_handlers) {
       SetupSignalHandlers();
     }
+#endif  // !BUILDFLAG(IS_OHOS)
 #endif
 
 #if BUILDFLAG(IS_WIN)

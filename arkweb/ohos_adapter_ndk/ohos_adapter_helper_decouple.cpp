@@ -65,6 +65,7 @@
 #include "ohos_adapter/bridge/ark_print_manager_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_running_lock_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_screen_capture_adapter_wrapper.h"
+#include "ohos_adapter/bridge/ark_screenlock_manager_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_sensor_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_soc_perf_client_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_surface_buffer_adapter_wrapper.h"
@@ -72,7 +73,6 @@
 #include "ohos_adapter/bridge/ark_vsync_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_web_timezone_info_wrapper.h"
 #include "ohos_adapter/bridge/ark_window_adapter_wrapper.h"
-#include "arkweb/ohos_adapter_ndk/event_handler_adapter/event_handler_adapter_impl.h"
 #include "datashare_adapter/datashare_adapter_impl.h"
 #include "distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.h"
 
@@ -106,6 +106,7 @@
 #include "hiviewdfx_adapter/hitrace_adapter_impl.h"
 
 #include "arkweb/ohos_adapter_ndk/drawing_text_adapter/ohos_drawing_text_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/net_config_adapter/net_config_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -294,6 +295,18 @@ ArkOhosAdapterHelperWrapper::GetRootCertDataAdapter() {
   return std::make_unique<CertManagerAdapterImpl>();
 }
 
+std::unique_ptr<NWeb::CertManagerAdapter>
+ArkOhosAdapterHelperWrapper::GetCertManagerAdapter() {
+  ArkWebRefPtr<ArkCertManagerAdapter> adapter =
+      ctocpp_->GetRootCertDataAdapter();
+ 
+  if (CHECK_REF_PTR_IS_NULL(adapter)) {
+    return nullptr;
+  }
+ 
+  return std::make_unique<ArkCertManagerAdapterWrapper>(adapter);
+}
+
 NWeb::AccessTokenAdapter&
 ArkOhosAdapterHelperWrapper::GetAccessTokenAdapterInstance() {
   return AccessTokenAdapterImpl::GetInstance();
@@ -301,7 +314,14 @@ ArkOhosAdapterHelperWrapper::GetAccessTokenAdapterInstance() {
 
 std::unique_ptr<NWeb::EventHandlerAdapter>
 ArkOhosAdapterHelperWrapper::GetEventHandlerAdapter() {
-  return std::make_unique<NWeb::EventHandlerAdapterImpl>();
+  ArkWebRefPtr<ArkEventHandlerAdapter> adapter =
+      ctocpp_->GetEventHandlerAdapter();
+
+  if (CHECK_REF_PTR_IS_NULL(adapter)) {
+    return nullptr;
+  }
+
+  return std::make_unique<ArkEventHandlerAdapterWrapper>(adapter);
 }
 
 NWeb::PrintManagerAdapter&
@@ -344,7 +364,8 @@ NWeb::NetProxyAdapter& ArkOhosAdapterHelperWrapper::GetNetProxyInstance() {
 
 NWeb::CameraManagerAdapter&
 ArkOhosAdapterHelperWrapper::GetCameraManagerAdapter() {
-  return CameraManagerAdapterImpl::GetInstance();
+  static ArkCameraManagerAdapterWrapper instance(ctocpp_->GetCameraManagerAdapter());
+  return instance;
 }
 
 std::unique_ptr<NWeb::ScreenCaptureAdapter>
@@ -448,4 +469,20 @@ ArkOhosAdapterHelperWrapper::CreateMigrationMgrAdapter() {
   return std::make_unique<ArkMigrationManagerAdapterWrapper>(adapter);
 }
 
+std::unique_ptr<NWeb::ScreenlockManagerAdapter>
+ArkOhosAdapterHelperWrapper::CreateScreenlockManagerAdapter() {
+  ArkWebRefPtr<ArkScreenlockManagerAdapter> adapter =
+      ctocpp_->CreateScreenlockManagerAdapter();
+
+  if (CHECK_REF_PTR_IS_NULL(adapter)) {
+    return nullptr;
+  }
+
+  return std::make_unique<ArkScreenlockManagerAdapterWrapper>(adapter);
+}
+
+std::unique_ptr<NWeb::NetConfigAdapter>
+ArkOhosAdapterHelperWrapper::GetNetConfigAdapter() {
+  return std::make_unique<NetConfigAdapterImpl>();
+}
 }  // namespace OHOS::ArkWeb

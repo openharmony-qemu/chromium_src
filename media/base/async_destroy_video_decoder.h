@@ -103,6 +103,20 @@ class AsyncDestroyVideoDecoder final : public VideoDecoder {
     wrapped_decoder_->PipEnable(enable);
   }
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer() override {
+    DCHECK(wrapped_decoder_);
+    if (wrapped_decoder_) {
+      wrapped_decoder_->RecycleDmaBuffer();  
+    }
+  }
+  void ResumeDmaBuffer() override {
+    DCHECK(wrapped_decoder_);
+    if (wrapped_decoder_) {
+      wrapped_decoder_->ResumeDmaBuffer();
+    }
+  }
+#endif  // ARKWEB_MEDIA_DMABUF
 
  private:
   std::unique_ptr<T> wrapped_decoder_;

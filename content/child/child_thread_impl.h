@@ -141,6 +141,10 @@ class ChildThreadImpl : public IPC::Listener, virtual public ChildThread {
   void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t roleAdapter);
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  void ReportHisyevent(int64_t block_time, const std::string& mode);
+#endif
+
   virtual void BindServiceInterface(mojo::GenericPendingReceiver receiver);
 
   virtual void OnBindReceiver(mojo::GenericPendingReceiver receiver);

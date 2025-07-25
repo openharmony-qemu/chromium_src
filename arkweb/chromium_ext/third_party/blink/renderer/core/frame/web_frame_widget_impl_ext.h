@@ -127,6 +127,11 @@ class WebFrameWidgetImplExt : public WebFrameWidgetImpl {
   OnDestroyImageAnalyzerOverlayCallback on_destroy_image_overlay_callback_;
   uint32_t fold_status_ = 0;
 #endif
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  int64_t GetCurrentTimestampMS();
+  void ReportBlank(int64_t startTime, int64_t endTime);
+  static constexpr int64_t kMicrosecondsPerMillisecond = 1000;
+#endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_INTERACTION)
   int64_t rawKeyDownTime_ = 0;

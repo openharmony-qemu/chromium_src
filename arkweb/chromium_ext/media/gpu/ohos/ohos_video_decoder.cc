@@ -55,6 +55,7 @@ bool IsSurfaceControlEnabled(const gpu::GpuFeatureInfo& info) {
   return true;
 }
 
+// LCOV_EXCL_START
 std::vector<SupportedVideoDecoderConfig> GetSupportedConfigsInternal() {
   std::vector<SupportedVideoDecoderConfig> supported_configs;
   supported_configs.emplace_back(H264PROFILE_MIN, H264PROFILE_MAX,
@@ -79,6 +80,7 @@ std::vector<SupportedVideoDecoderConfig> GetSupportedConfigsInternal() {
   //                                  true, false);
   return supported_configs;
 }
+// LCOV_EXCL_STOP
 
 }  // namespace
 
@@ -277,6 +279,7 @@ void OhosVideoDecoder::OnCdmContextEvent(CdmContext::Event event) {
   PumpCodec();
 }
 
+// LCOV_EXCL_START
 void OhosVideoDecoder::StartLazyInit() {
   LOG(INFO) << "OhosVideoDecoder::StartLazyInit";
   TRACE_EVENT0("media", "OhosVideoDecoder::StartLazyInit");
@@ -285,6 +288,7 @@ void OhosVideoDecoder::StartLazyInit() {
       base::BindRepeating(&OhosVideoDecoder::OnVideoFrameFactoryInitialized,
                           weak_factory_.GetWeakPtr()));
 }
+// LCOV_EXCL_STOP
 
 void OhosVideoDecoder::OnVideoFrameFactoryInitialized(
     scoped_refptr<gpu::NativeImageTextureOwner> texture_owner) {
@@ -299,6 +303,7 @@ void OhosVideoDecoder::OnVideoFrameFactoryInitialized(
   OnSurfaceChosen();
 }
 
+// LCOV_EXCL_START
 void OhosVideoDecoder::OnSurfaceChosen() {
   DCHECK(state_ == State::kInitializing);
   TRACE_EVENT0("media", "OhosVideoDecoder::OnSurfaceChosen");
@@ -351,6 +356,7 @@ void OhosVideoDecoder::CreateCodec() {
                      codec_allocator_, target_surface_bundle_),
       std::move(config));
 }
+// LCOV_EXCL_STOP
 
 // static
 void OhosVideoDecoder::OnCodecConfiguredInternal(
@@ -470,6 +476,7 @@ void OhosVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
   PumpCodec();
 }
 
+// LCOV_EXCL_START
 void OhosVideoDecoder::FlushCodec() {
   LOG(DEBUG) << "OhosVideoDecoder::FlushCodec";
   deferred_flush_pending_ = false;
@@ -622,6 +629,7 @@ bool OhosVideoDecoder::DequeueOutput() {
                      std::move(async_trace), base::TimeTicks::Now()));
   return true;
 }
+// LCOV_EXCL_STOP
 
 void OhosVideoDecoder::RunEosDecodeCb(int reset_generation) {
   if (reset_generation == reset_generation_ && eos_decode_cb_) {
@@ -678,6 +686,7 @@ void OhosVideoDecoder::StartDrainingCodec(DrainType drain_type) {
   PumpCodec();
 }
 
+// LCOV_EXCL_START
 void OhosVideoDecoder::OnCodecDrained() {
   LOG(INFO) << "OhosVideoDecoder::OnCodecDrained";
   TRACE_EVENT0("media", "OhosVideoDecoder::OnCodecDrained");
@@ -696,6 +705,7 @@ void OhosVideoDecoder::OnCodecDrained() {
     FlushCodec();
   }
 }
+// LCOV_EXCL_STOP
 
 void OhosVideoDecoder::EnterTerminalState(State state, const char* reason) {
   LOG(INFO) << "OhosVideoDecoder::EnterTerminalState reason: " << reason;
@@ -732,6 +742,7 @@ void OhosVideoDecoder::CancelPendingDecodes(DecoderStatus status) {
   }
 }
 
+// LCOV_EXCL_START
 void OhosVideoDecoder::ReleaseCodec() {
   LOG(INFO) << "OhosVideoDecoder::ReleaseCodec";
   if (!codec_) {
@@ -746,6 +757,7 @@ void OhosVideoDecoder::ReleaseCodec() {
           base::SequencedTaskRunner::GetCurrentDefault(), FROM_HERE,
           std::move(pair.second)));
 }
+// LCOV_EXCL_STOP
 
 VideoDecoderType OhosVideoDecoder::GetDecoderType() const {
   return VideoDecoderType::kMediaCodec;

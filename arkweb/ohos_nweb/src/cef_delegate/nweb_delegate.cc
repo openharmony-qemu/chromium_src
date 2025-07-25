@@ -955,13 +955,6 @@ void NWebDelegate::SetInputMethodClient(
     return;
   }
   render_handler_->SetInputMethodClient(client);
-
-  if (handler_delegate_ == nullptr) {
-    LOG(ERROR)
-        << "fail to register inputmethod client, delegate handler is nullptr";
-    return;
-  }
-  handler_delegate_->SetInputMethodClient(client);
 }
 
 void NWebDelegate::RegisterRenderCb(

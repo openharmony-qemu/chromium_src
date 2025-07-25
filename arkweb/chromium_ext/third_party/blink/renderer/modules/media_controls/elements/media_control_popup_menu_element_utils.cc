@@ -69,26 +69,7 @@ void MediaControlPopupMenuElementUtils::SetPopupAnchorHM(
   element->style()->removeProperty("max-height", ASSERT_NO_EXCEPTION);
 
   if (IsOverflowMenuPopup()) {
-    WTF::String top_str_value =
-        WTF::String::Number(bounding_client_rect->bottom() + kPopupMenuMarginPxOhos) +
-        kPx;
-    WTF::String left_str_value;
-    if (!element->MediaElement().html_media_element_utils_->IsRTL()) {
-      if (base::ohos::IsPcDevice()) {
-        left_str_value = WTF::String::Number(bounding_client_rect->right() -
-            kOverflowPopupMenuLeftSpaceLeft - kOverflowPopupMenuBorderPx) + kPx;
-      } else {
-        left_str_value = WTF::String::Number(bounding_client_rect->right() -
-            kOverflowPopupMenuLeftSpaceLeft) + kPx;
-      }
-    } else {
-      left_str_value = WTF::String::Number(bounding_client_rect->left()) + kPx;
-    }
-    element->style()->setProperty(dom_window, "top", top_str_value, kImportant,
-                                  ASSERT_NO_EXCEPTION);
-    element->style()->setProperty(dom_window, "left", left_str_value, kImportant,
-                                  ASSERT_NO_EXCEPTION);
-
+    SetOverflowPopupAnchorHM(bounding_client_rect, dom_window);
     return;
   }
 
@@ -130,6 +111,45 @@ void MediaControlPopupMenuElementUtils::SetPopupAnchorHM(
     } else {
       WTF::String left_str_value = WTF::String::Number(bounding_client_rect->left()) + kPx;
       element->style()->setProperty(dom_window, "left", left_str_value, kImportant, ASSERT_NO_EXCEPTION);
+    }
+  }
+}
+
+void  MediaControlPopupMenuElementUtils::SetOverflowPopupAnchorHM(
+    DOMRect* bounding_client_rect, LocalDOMWindow* dom_window) {
+  if (!bounding_client_rect || !dom_window || !element) {
+    return;
+  }
+
+  WTF::String top_str_value =
+      WTF::String::Number(bounding_client_rect->bottom() + kPopupMenuMarginPxOhos) + kPx;
+  element->style()->setProperty(dom_window, "top", top_str_value, kImportant,
+                                ASSERT_NO_EXCEPTION);
+
+  if (element->MediaElement().html_media_element_utils_ &&
+      element->MediaElement().html_media_element_utils_->IsRTL()) {
+    WTF::String left_str_value = WTF::String::Number(bounding_client_rect->left()) + kPx;
+    element->style()->setProperty(dom_window, "left", left_str_value, kImportant,
+                                  ASSERT_NO_EXCEPTION);
+  } else {
+    if (base::ohos::IsPcDevice()) {
+      int client_offset = 0;
+      if (element->GetDocument().documentElement() &&
+          dom_window->innerWidth() > element->GetDocument().documentElement()->clientWidth()) {
+        client_offset = dom_window->innerWidth() - element->GetDocument().documentElement()->clientWidth();
+      }
+      int right_value = dom_window->innerWidth() - client_offset - bounding_client_rect->right();
+      if (right_value < 0) {
+        right_value = 0;
+      }
+      WTF::String right_str_value = WTF::String::Number(right_value) + kPx;
+      element->style()->setProperty(dom_window, "right", right_str_value, kImportant,
+                                    ASSERT_NO_EXCEPTION);
+    } else {
+      WTF::String left_str_value = WTF::String::Number(bounding_client_rect->right() -
+                                                       kOverflowPopupMenuLeftSpaceLeft) + kPx;
+      element->style()->setProperty(dom_window, "left", left_str_value, kImportant,
+                                    ASSERT_NO_EXCEPTION);
     }
   }
 }

@@ -35,6 +35,7 @@ void FrameWidgetInputHandlerImpl::SelectRangeV2(const gfx::Point& position,
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 void FrameWidgetInputHandlerImpl::ShowFreeCopyMenu() {
   RunOnMainThread(base::BindOnce(
@@ -51,4 +52,5 @@ void FrameWidgetInputHandlerImpl::ShowFreeCopyMenu() {
       widget_, main_thread_frame_widget_input_handler_));
 }
 #endif
+// LCOV_EXCL_STOP
 }  // namespace blink

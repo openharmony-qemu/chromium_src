@@ -24,6 +24,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 WebSettingsImplExt::WebSettingsImplExt(Settings* settings,
                                        DevToolsEmulator* dev_tools_emulator)
     : WebSettingsImpl(settings, dev_tools_emulator) {}
@@ -191,5 +192,6 @@ bool WebSettingsImplExt::IsViewportScale()
   return settings_->IsViewportScale();
 }
 #endif  // BUILDFLAG(ARKWEB_MENU)
+// LCOV_EXCL_STOP
 
 }  // namespace blink

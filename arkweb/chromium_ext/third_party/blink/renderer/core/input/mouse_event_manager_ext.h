@@ -60,10 +60,6 @@ class MouseEventManagerExt
   void HandleGestureCreateOverlay(const WebGestureEvent& gesture_event);
   void CreateOverlayCallback();
   bool GetOverlayInProgress();
-  void ConverCoordinates(float& left, float& top, float& width, float& height, std::vector<gfx::PointF>& pointfs);
-  void SetOverlayStyle(Element* overlay_div, float left, float top, float width, float height);
-  void SetTextStyle(Element* text_div, float left, float top, float width, float height, float font_size);
-  void RemoveElementOnMouseOut(const std::string& id, blink::Event* event);
   template <typename T>
   void HandleCreateOverlay(T const& targeted_event);
   enum class FoldStatus : uint32_t {

@@ -175,6 +175,7 @@ bool MediaControlsImplUtils::ShouldShowVideoControlsHM() const {
 void MediaControlsImplUtils::UpdateDeviceCSSClassExt() {
   if (impl) {
     impl->SetClass(kMediaControlsDevicePcCSSClass, base::ohos::IsPcDevice());
+    impl->SetClass(kMediaControlsDevicePhoneCSSClass, !base::ohos::IsPcDevice());
   }
 }
 #endif

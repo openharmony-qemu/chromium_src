@@ -85,6 +85,7 @@ source_set("browser") {
     "//content/test/fuzzer:indexed_db_fuzzer_support",
     "//content/test/fuzzer:media_stream_dispatcher_host_mojolpm_fuzzer",
     "//arkweb/chromium_ext/ohos_test:clipboard_fuzzer",
+    "//arkweb/chromium_ext/ohos_test/fuzztest/content/browser/renderer_host/arkweb_render_process_host_fuzzer",
   ]
 
   if (arkweb_unittests) {

@@ -37,7 +37,6 @@ struct SoftwareCompositorProxyOhos::SharedMemoryWithSize {
 };
 // LCOV_EXCL_STOP
 
-
 void SoftwareCompositorProxyOhos::DemandDrawSwAsync(
     mojom::blink::SoftwareCompositorDemandDrawSwParamsPtr params,
     DemandDrawSwAsyncCallback callback) {

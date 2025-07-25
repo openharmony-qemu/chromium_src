@@ -955,6 +955,7 @@ void WebContentsImplExt::EnterFullscreenMode(
   }
 #endif
 }
+
 // LCOV_EXCL_START
 void WebContentsImplExt::ExitFullscreenMode(bool will_cause_resize) {
   WebContentsImpl::ExitFullscreenMode(will_cause_resize);
@@ -977,6 +978,7 @@ void WebContentsImplExt::RenderViewReady(RenderViewHost* rvh) {
                                std::nullopt);
   }
 #endif
+
 }
 void WebContentsImplExt::DidFinishNavigation(NavigationHandle* navigation_handle) {
   WebContentsImpl::DidFinishNavigation(navigation_handle);

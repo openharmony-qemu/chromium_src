@@ -121,7 +121,6 @@ void RenderFrameImpl::AddNamedObject(const std::string& name,
 RenderFrameImplUtils::RenderFrameImplUtils(RenderFrameImpl* impl) {
   this->renderFrameImpl = impl;
 }
-
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
 int64_t RenderFrameImplUtils::GetCurrentTimestampMS() {
   auto currentTime = std::chrono::system_clock::now().time_since_epoch();

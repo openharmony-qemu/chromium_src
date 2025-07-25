@@ -22,6 +22,7 @@
 #include "cc/trees/commit_state.h"
 
 namespace cc {
+// LCOV_EXCL_START
 LayerTreeHostExt::LayerTreeHostExt(InitParams params, CompositorMode mode)
     : LayerTreeHost(std::move(params), mode) {}
 
@@ -34,6 +35,7 @@ void LayerTreeHostExt::SetPinchSmoothMode(bool isEnable) {
   proxy_->SetPinchSmoothMode(isEnable);
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_MENU)
 void LayerTreeHostExt::RegisterClippedVisualViewportSelectionBounds(
@@ -49,12 +51,14 @@ void LayerTreeHostExt::RegisterClippedVisualViewportSelectionBounds(
 #endif
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
+// LCOV_EXCL_START
 void LayerTreeHostExt::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
   DCHECK(IsMainThread());
   if (auto* layer = LayerById(id)) {
     layer->OnLayerRectUpdate(rect);
   }
 }
+// LCOV_EXCL_STOP
 
 void LayerTreeHostExt::OnLayerRectVisibilityChange(int id, bool visibility) {
   DCHECK(IsMainThread());
@@ -83,6 +87,7 @@ void LayerTreeHostExt::CleanupVisibilityForRemovedLayer(Layer* layer) {
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 void LayerTreeHostExt::OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {
   DCHECK(IsMainThread());
@@ -91,4 +96,5 @@ void LayerTreeHostExt::OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {
   }
 }
 #endif  // ARKWEB_VIDEO_ASSISTANT
+// LCOV_EXCL_STOP
 }  // namespace cc

@@ -44,6 +44,7 @@ void ApplyOhosMediaPlayerEnabled(const web_pref::WebPreferences& prefs,
 #endif
 }  // namespace
 
+// LCOV_EXCL_START
 void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
                              WebView* web_view,
                              WebSettings* settings,
@@ -277,6 +278,7 @@ void WebViewImpl::EnterFullscreen(
 #endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
   );
 }
+// LCOV_EXCL_STOP
 
 void UpdateStyleAndLayoutTreeForInclude(Page* page) {
   if (page) {
@@ -287,6 +289,7 @@ void UpdateStyleAndLayoutTreeForInclude(Page* page) {
   }
 }
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
 void WebViewImpl::SetPinchSmoothMode(bool isEnable) {
   if (!MainFrame() || !GetPage() || !GetPage()->MainFrame() ||
@@ -348,3 +351,4 @@ void WebViewImpl::SetDelayDurationForBackgroundTabFreezing(
   }
 }
 #endif
+// LCOV_EXCL_STOP

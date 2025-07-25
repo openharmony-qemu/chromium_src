@@ -22,6 +22,7 @@
 
 namespace content {
 
+// LCOV_EXCL_START
 AgentSchedulingGroupHostUtils::AgentSchedulingGroupHostUtils(AgentSchedulingGroupHost* impl) {
   this->agentSchedulingGroupHost = impl;
 }
@@ -37,3 +38,4 @@ void AgentSchedulingGroupHostUtils::ReportCreateView(int32_t process_id) {
 }
 }
 #endif
+// LCOV_EXCL_STOP

@@ -245,11 +245,11 @@ class MEDIA_EXPORT VideoResourceUpdater
   // we can reduce the number of allocations and data transfers.
   std::vector<std::unique_ptr<PlaneResource>> all_resources_;
 
-  base::WeakPtrFactory<VideoResourceUpdater> weak_ptr_factory_{this};
-
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   bool has_native_layer_ = false;
 #endif
+
+  base::WeakPtrFactory<VideoResourceUpdater> weak_ptr_factory_{this};
 };
 
 }  // namespace media

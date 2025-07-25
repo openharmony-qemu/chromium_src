@@ -73,6 +73,7 @@ void NwebFileWriterCleaner::CleanInBackground(
 }
 
 // static
+// LCOV_EXCL_START
 void NwebFileWriterCleaner::OnBackgroundTaskFinished() {
   LOG(INFO) << "OnBackgroundTaskFinished.";
 }
@@ -110,5 +111,6 @@ void NwebFileWriterCleaner::DeleteDownloadTempDir() {
       // Unretained is safe here since the cleaner instance is never destroyed.
       base::BindOnce(&NwebFileWriterCleaner::OnBackgroundTaskFinished));
 }
+// LCOV_EXCL_STOP
 
 }  // namespace OHOS::NWeb

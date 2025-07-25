@@ -758,6 +758,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   void UpdateFavicon(CefRefPtr<CefBrowser> browser) override;
+  void SetMediaResumeFromBFCachePage(bool resume);
 #endif
 
   void SetFavicon(const void* icon_data,
@@ -1151,6 +1152,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   bool is_global_adblock_enabled_ = false;
 #endif
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  bool media_resume_from_bfcache_page_ = true;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   std::optional<bool> video_assistant_enabled_;

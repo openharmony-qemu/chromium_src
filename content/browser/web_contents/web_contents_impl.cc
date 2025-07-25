@@ -3613,6 +3613,9 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
   prefs.custom_media_player_enabled = AsWebContentsImplExt()->custom_media_player_enabled_;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  prefs.media_resume_from_bfcache_page = AsWebContentsImplExt()->media_resume_from_bfcache_page_;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
   return prefs;
 }
 

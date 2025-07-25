@@ -143,6 +143,14 @@ void GpuServiceImpl::DumpGpuInfo(DumpGpuInfoCallback callback) {
 void GpuServiceImpl::SetIsFling(bool is_fling_enabled) {
   base::ohos::DVsyncController::GetInstance().SetIsFling(is_fling_enabled);
 }
+
+void GpuServiceImpl::SetIsScroll(bool is_scroll_enabled) {
+  is_scroll_enabled_ = is_scroll_enabled;
+}
+
+bool GpuServiceImpl::GetIsScroll() {
+  return is_scroll_enabled_;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)

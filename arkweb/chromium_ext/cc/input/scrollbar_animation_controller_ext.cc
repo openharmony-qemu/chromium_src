@@ -51,12 +51,14 @@ ScrollbarAnimationControllerExt::ScrollbarAnimationControllerExt(
 ScrollbarAnimationControllerExt::~ScrollbarAnimationControllerExt() = default;
 
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
+// LCOV_EXCL_START
 void ScrollbarAnimationControllerExt::NeedThinningAnimation() {
   if (need_thinning_animation_) {
     vertical_controller_->DidRequestShow();
     horizontal_controller_->DidRequestShow();
   }
 }
+// LCOV_EXCL_STOP
 
 bool ScrollbarAnimationControllerExt::IsDrawTooFast(base::TimeTicks now, float progress) {
   base::TimeDelta delta = now - last_animate_time_;

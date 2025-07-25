@@ -114,6 +114,10 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceDependency {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   virtual GpuServiceImpl* gpu_service_impl() const = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  virtual bool GetIsScroll() = 0;
+#endif
 };
 
 }  // namespace viz

@@ -18,13 +18,70 @@
 #endif
 
 #include "components/viz/service/display_embedder/skia_output_surface_impl_on_gpu.h"
+#include "arkweb/build/features/features.h"
 
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+#include "arkweb/chromium_ext/base/ohos/d_vsync/include/d_vsync_controller.h"
+#include "content/browser/gpu/gpu_process_host.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "ohos_glue/base/include/ark_web_errno.h"
+#endif
 namespace viz {
 
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
 void SkiaOutputSurfaceImplOnGpu::SetBypassVsyncCondition(int32_t condition) {
   if (output_device_) {
     output_device_->SetBypassVsyncCondition(condition);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+void SkiaOutputSurfaceImplOnGpu::SetDVsyncIfNecessary() {
+  static int delay_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                      .GetSystemPropertiesInstance().GetIntParameter("web.dvsync.delay", -1);
+
+  if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+    LOG(DEBUG) << "SkiaOutputSurfaceImplOnGpu::SetDVsyncIfNecessary FAILED, cannot get delay_";
+    return;
+  }
+
+  if (delay_ == -1) {
+    return;
+  }
+
+  auto* host = content::GpuProcessHost::Get();
+  if (!host) {
+    return;
+  } 
+
+  auto* host_impl = host->gpu_host();
+  if (!host_impl) {
+    return;
+  }
+
+  if (!dependency_) {
+    LOG(DEBUG) << "SkiaOutputSurfaceImplOnGpu::SetDVsyncIfNecessary FAILED, dependency_ is null";
+    return;
+  }
+
+  bool is_scroll = dependency_->GetIsScroll();
+  if (is_scroll && !did_dvsync_on_) {
+    if (delay_num_ == delay_) {
+      TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::SetDVsyncIfNecessary::SetIsFling TRUE");
+      base::ohos::DVsyncController::GetInstance().SetIsFling(true);
+      did_dvsync_on_ = true;
+      delay_num_ = 0;
+    } else {
+      delay_num_++;
+    }
+  } else if (!is_scroll) {
+    delay_num_ = 0;
+    if (did_dvsync_on_) {
+      TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::SetDVsyncIfNecessary::SetIsFling FALSE");
+      base::ohos::DVsyncController::GetInstance().SetIsFling(false);
+      did_dvsync_on_ = false;
+    }
   }
 }
 #endif

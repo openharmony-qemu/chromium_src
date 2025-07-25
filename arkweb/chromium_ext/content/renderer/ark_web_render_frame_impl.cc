@@ -43,6 +43,7 @@ std::optional<blink::WebString> ArkWebUserAgentOverride(
   return std::nullopt;
 }
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_JSPROXY)
 void RenderFrameImpl::RunScriptsAtHeadReady() {
   if (!initialized_) {
@@ -54,8 +55,10 @@ void RenderFrameImpl::RunScriptsAtHeadReady() {
   }
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
+// LCOV_EXCL_START
 void RenderFrameImpl::DidSubresourceFiltered() {
   TRACE_EVENT1("navigation,benchmark,rail",
                "RenderFrameImpl::DidSubresourceFiltered", "frame_token",
@@ -68,6 +71,7 @@ void RenderFrameImpl::DidSubresourceFiltered() {
 bool RenderFrameImpl::GetGlobalAdblockEnabled() {
   return GetRendererPreferences().is_global_adblock_enabled;
 }
+// LCOV_EXCL_STOP
 
 void RenderFrameImpl::OnUpdateAdBlockEnabledToRender(
     bool site_adblock_enabled) {
@@ -102,6 +106,7 @@ void RenderFrameImpl::OnUpdateAdBlockEnabledToRender(
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
 void RenderFrameImpl::AddNamedObject(const std::string& name,
                                      int32_t object_id,
@@ -116,6 +121,7 @@ void RenderFrameImpl::AddNamedObject(const std::string& name,
 RenderFrameImplUtils::RenderFrameImplUtils(RenderFrameImpl* impl) {
   this->renderFrameImpl = impl;
 }
+
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
 int64_t RenderFrameImplUtils::GetCurrentTimestampMS() {
   auto currentTime = std::chrono::system_clock::now().time_since_epoch();
@@ -176,4 +182,5 @@ void RenderFrameImpl::SendBlanklessKeyToRenderFrame(uint32_t nweb_id,
   pref_hash_ = pref_hash;
 }
 #endif
+// LCOV_EXCL_STOP
 }  // namespace content

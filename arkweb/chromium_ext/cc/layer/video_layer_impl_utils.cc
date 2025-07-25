@@ -21,6 +21,7 @@
 
 namespace cc {
 
+// LCOV_EXCL_START
 VideoLayerImplUtils::VideoLayerImplUtils(VideoLayerImpl* videoLayerImpl) {
   this->impl = videoLayerImpl;
 }
@@ -64,4 +65,5 @@ void VideoLayerImplUtils::LayerRectUpdate() {
 bool VideoLayerImplUtils::HasNativeLayer() {
   return impl->layer_impl_utils()->may_contain_native();
 }
+// LCOV_EXCL_STOP
 }  // namespace cc

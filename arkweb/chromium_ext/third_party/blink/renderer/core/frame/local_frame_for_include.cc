@@ -23,12 +23,13 @@
 #endif
 
 namespace blink {
-
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 void LocalFrame::NotifyContextMenuWillShow() {
   GetLocalFrameHostRemote().NotifyContextMenuWillShow();
 }
 #endif
+// LCOV_EXCL_STOP
 
 bool LocalFrameUtil::SetLayoutAndTextZoomFactorsPage(
     raw_ptr<LocalFrame> LocalFrameObj,
@@ -75,6 +76,7 @@ void LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
   }
 }
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_ADBLOCK)
 void LocalFrame::DidSubresourceFiltered() {
   Client()->DispatchDidSubresourceFiltered();
@@ -102,5 +104,6 @@ void LocalFrame::SetHasGenericHideTypeOption(bool has_generichide_type_option) {
   has_generichide_type_option_ = has_generichide_type_option;
 }
 #endif
+// LCOV_EXCL_STOP
 
 }  // namespace blink

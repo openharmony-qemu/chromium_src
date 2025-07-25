@@ -24,6 +24,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 WebSettingsImplExt::WebSettingsImplExt(Settings* settings,
                                        DevToolsEmulator* dev_tools_emulator)
     : WebSettingsImpl(settings, dev_tools_emulator) {}
@@ -126,6 +127,7 @@ void WebSettingsImplExt::SetCustomMediaPlayerEnabled(bool enabled) {
   settings_->SetCustomMediaPlayerEnabled(enabled);
   MediaControlsResourceLoader::SetCustomMediaPlayerEnabled(enabled);
 }
+
 bool WebSettingsImplExt::GetCustomMediaPlayerEnabled() {
   return settings_->GetCustomMediaPlayerEnabled();
 }
@@ -181,5 +183,6 @@ bool WebSettingsImplExt::IsViewportScale()
   return settings_->IsViewportScale();
 }
 #endif  // BUILDFLAG(ARKWEB_MENU)
+// LCOV_EXCL_STOP
 
 }  // namespace blink

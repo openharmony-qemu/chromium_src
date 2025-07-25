@@ -9,7 +9,7 @@
 #include "ui/base/ui_base_features.h"
 
 namespace blink {
-
+// LCOV_EXCL_START
 scoped_refptr<LayoutTheme> LayoutThemeOhos::Create() {
   return base::AdoptRef(new LayoutThemeOhos());
 }
@@ -52,5 +52,6 @@ Color LayoutThemeOhos::PlatformTapHighlightColor() const {
   }
   return LayoutThemeMobile::PlatformTapHighlightColor();
 }
+// LCOV_EXCL_STOP
 
 }  // namespace blink

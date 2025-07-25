@@ -19,6 +19,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 ArkwebWidgetInputHandlerImplExt::ArkwebWidgetInputHandlerImplExt(
     scoped_refptr<WidgetInputHandlerManager> manager,
     scoped_refptr<MainThreadEventQueue> input_event_queue,
@@ -29,7 +30,6 @@ ArkwebWidgetInputHandlerImplExt::ArkwebWidgetInputHandlerImplExt(
                              input_event_queue,
                              widget,
                              frame_widget_input_handler) {}
-
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 void ArkwebWidgetInputHandlerImplExt::TryStartFling() {
@@ -81,4 +81,5 @@ void ArkwebWidgetInputHandlerImplExt::SetBypassVsyncCondition(int32_t condition)
   }
 }
 #endif
+// LCOV_EXCL_STOP
 }  // namespace blink

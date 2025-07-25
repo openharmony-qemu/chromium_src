@@ -29,6 +29,7 @@ namespace blink {
 
 extern bool IsSmallScreen(const gfx::Size& size);
 
+// LCOV_EXCL_START
 void AdjustMemoryLimitBasedOnScreenWidth(
     cc::ManagedMemoryPolicy& actual,
     const gfx::Size& initial_screen_size,
@@ -142,4 +143,5 @@ void SetEnableDeleteUnusedResourcesDelay(cc::LayerTreeSettings& settings)
 #endif
   }
 }
+// LCOV_EXCL_STOP
 }  // namespace blink

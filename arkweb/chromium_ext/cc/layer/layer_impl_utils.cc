@@ -71,6 +71,7 @@ void LayerImplUtils::SetInitScale(float scale) {
   init_scale_ = scale;
 }
 
+// LCOV_EXCL_START
 gfx::RectF LayerImplUtils::GetNativeRect() {
   if (!may_contain_native()) {
     return native_rect_;
@@ -83,8 +84,10 @@ gfx::RectF LayerImplUtils::GetNativeRect() {
   }
   return transform.MapRect(rf);
 }
+// LCOV_EXCL_STOP
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void LayerImplUtils::SetShouldInterceptTouchEvent(bool intercept) {
   should_intercept_touch_event_ = intercept;
@@ -94,4 +97,5 @@ bool LayerImplUtils::ShouldInterceptTouchEvent() const {
   return should_intercept_touch_event_;
 }
 #endif
+// LCOV_EXCL_STOP
 }  // namespace cc

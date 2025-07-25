@@ -38,6 +38,7 @@ using namespace OHOS::NWeb;
 namespace base {
 namespace ohos {
 const base::FilePath::CharType DUMP_FILE_PATH[] = FILE_PATH_LITERAL("snapshot");
+const std::string DATABASE_DIR = "/data/storage/el2/base/cache/web";
 const std::string DUMP_FILE_PRE = "/web_frame_";
 const std::string DUMP_FILE_TYPE = ".png";
 const double SSIM_THRESHOLD = 0.95;
@@ -371,9 +372,13 @@ BlanklessDataController& BlanklessDataController::GetInstance()
     return instance;
 }
 
-BlanklessDataController::BlanklessDataController()
-  :dbInstance_(OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance())
+BlanklessDataController::BlanklessDataController() : dbInstance_(OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance())
 {
+    base::FilePath databaseDir(DATABASE_DIR);
+    if (!base::PathExists(databaseDir)) {
+      base::CreateDirectory(databaseDir);
+    }
+    dbInstance_.Init(DATABASE_DIR.c_str());
     web_snapshot_db_callback_ = std::make_shared<OhosWebSnapshotDataBaseCallbackImpl>();
     if (web_snapshot_db_callback_) {
       dbInstance_.RegisterDataBaseCallback(web_snapshot_db_callback_);
@@ -389,7 +394,7 @@ std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::
     snapshotInfo = it->second;
   }
   if (snapshotInfo == nullptr) {
-    auto snapshotDataItem = OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance().GetSnapshotDataItem(blankless_key);
+    auto snapshotDataItem = dbInstance_.GetSnapshotDataItem(blankless_key);
     snapshotInfo = std::make_shared<SnapshotInfo>();
     snapshotInfo->path = snapshotDataItem.wholePath;
     SkBitmap bitmap;

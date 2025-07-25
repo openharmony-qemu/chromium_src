@@ -51,6 +51,7 @@ class OhosWebSnapshotDataBase {
 public:
     static OhosWebSnapshotDataBase& GetInstance();
     ~OhosWebSnapshotDataBase();
+    void Init(const char* databaseDir);
 
     /**
      * @brief Clear the screenshot data in the database.

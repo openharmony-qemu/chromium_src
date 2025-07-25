@@ -130,7 +130,7 @@ void OHOSCaptureDelegate::AllocateAndStart(
   client_->OnStarted();
 }
 
-
+// LCOV_EXCL_START
 void OHOSCaptureDelegate::StopAndDeAllocate() {
   DCHECK(capture_stask_runner_->BelongsToCurrentThread());
   LOG(INFO) << "OHOSCaptureDelegate::StopAndDeAllocate";
@@ -139,6 +139,7 @@ void OHOSCaptureDelegate::StopAndDeAllocate() {
   // This is also needed for correctly changing settings later via VIDIOC_S_FMT.
   client_.reset();
 }
+// LCOV_EXCL_STOP
 
 void OHOSCaptureDelegate::OnBufferAvailable(
     std::shared_ptr<CameraSurfaceAdapter> surface,

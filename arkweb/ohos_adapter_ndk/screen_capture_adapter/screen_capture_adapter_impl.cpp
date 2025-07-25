@@ -185,13 +185,13 @@ OH_AVScreenCaptureConfig ConvertScreenCaptureConfig(const std::shared_ptr<Screen
             sourceUrl.c_str(),
             sourceUrl.length()
         );
+        avConfig.recorderInfo.url[avConfig.recorderInfo.urlLen - 1] = '\0';
         if (err != 0) {
             delete[] avConfig.recorderInfo.url;
             avConfig.recorderInfo.url = nullptr;
             avConfig.recorderInfo.urlLen = 0;
             WVLOG_E("ConvertScreenCaptureConfig strncpy_c recorderInfo is error");
         };
-        avConfig.recorderInfo.url[avConfig.recorderInfo.urlLen - 1] = '\0';
         avConfig.recorderInfo.fileFormat = GetOHContainerFormatType(config->GetRecorderInfo()->GetFileFormat());
     } else {
         avConfig.recorderInfo = {};

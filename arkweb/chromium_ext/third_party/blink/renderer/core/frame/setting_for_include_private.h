@@ -56,6 +56,10 @@
   bool custom_media_player_enabled_ = false;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  bool media_resume_from_bfcache_page_ = true;
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
   double border_radius_top_left_ = 0.0;
   double border_radius_top_right_ = 0.0;

@@ -706,8 +706,12 @@ arkweb_cc_layer_unittest_sources = [
 arkweb_third_party_blink_renderer_core_unittest_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_view_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/web_frame_widget_impl_ext_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/html_plugin_element_utils_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/loader/native_loader_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/native_painter_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_theme_ohos_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_object_utils_unittest.cc",
+  "//arkweb/chromium_ext/third_party/ashmem/ohos_ashmem_unittests.cc",
 ]
 
 arkweb_cc_trees_unittest_sources = [
@@ -728,9 +732,10 @@ arkweb_ui_compositor_sources = [
   "//arkweb/chromium_ext/ui/compositor/compositor_utils.h",
 ]
 
-arkweb_third_party_blink_renderer_platform_widget_input_test_sources = [
+arkweb_third_party_blink_renderer_platform_widget_test_sources = [
   #"//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/software_compositor_proxy_ohos_unittest.cc",
   #"//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/widget_input_handler_manager_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils_unittest.cc",
 ]
 
 arkweb_content_common_sources = [
@@ -866,8 +871,6 @@ arkweb_components_viz_service_display_embedder_compositor_gpu_thread_sources = [
   "//arkweb/chromium_ext/components/viz/service/display_embedder/compositor_gpu_thread_utils.h",
   "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_dependency_impl_utils.cc",
   "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_dependency_impl_utils.h",
-  "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_utils.cc",
-  "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_utils.h"
 ]
 
 arkweb_components_viz_service_gl_gpu_service_sources = [

@@ -36,6 +36,10 @@
 #include "third_party/zlib/google/compression_utils.h"
 #include "ui/base/l10n/l10n_util.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/common/extension_l10n_util_ext.cc"
+#endif
+
 namespace errors = extensions::manifest_errors;
 namespace keys = extensions::manifest_keys;
 
@@ -403,6 +407,7 @@ bool AddLocale(const std::set<std::string>& chrome_locales,
   return true;
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 std::string CurrentLocaleOrDefault() {
   std::string current_locale = l10n_util::NormalizeLocale(GetProcessLocale());
   if (current_locale.empty())
@@ -410,6 +415,7 @@ std::string CurrentLocaleOrDefault() {
 
   return current_locale;
 }
+#endif
 
 void GetAllLocales(std::set<std::string>* all_locales) {
   const std::vector<std::string>& available_locales =
@@ -428,6 +434,7 @@ void GetAllFallbackLocales(const std::string& default_locale,
   DCHECK(all_fallback_locales);
   std::string application_locale = CurrentLocaleOrDefault();
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   // Use the preferred locale if available. Otherwise, fall back to the
   // application locale or the application locale's parent locales. Thus, a
   // preferred locale of "en_CA" with an application locale of "en_GB" will
@@ -438,6 +445,7 @@ void GetAllFallbackLocales(const std::string& default_locale,
       preferred_locale != application_locale) {
     all_fallback_locales->push_back(preferred_locale);
   }
+#endif
 
   if (!application_locale.empty() && application_locale != default_locale)
     l10n_util::GetParentLocales(application_locale, all_fallback_locales);

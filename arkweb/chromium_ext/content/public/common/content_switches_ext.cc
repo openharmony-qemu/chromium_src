@@ -38,6 +38,7 @@ const char kIgnoreLockdownMode[] = "ohos-enable-ignore-lockdown-mode";
 const char kEnablePrinting[] = "ohos-enable-printing";
 const char kOhosHttpCacheSimple[] = "ohos-enable-http-cache-simple";
 const char kCalcTabletMode[] = "ohos-enable-calc-tablet-mode";
+const char kDisableMobileStyleSheet[] = "ohos-disable-mobile-style-sheet";
 const char kDisableNonAdvancedSecurityMode[] =
     "disable-non-advanced-security-mode";
 

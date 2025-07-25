@@ -122,6 +122,7 @@ void NWebWebStorageImpl::GetSavedPasswords(int callback_id) {
 #endif  // ARKWEB_EXT_PASSWORD
 }
 
+// LCOV_EXCL_START
 void NWebWebStorageImpl::MigratePasswords() {
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
   if (delegate_ != nullptr) {
@@ -137,6 +138,7 @@ void NWebWebStorageImpl::ClearPassword() {
   }
 #endif  // ARKWEB_EXT_PASSWORD
 }
+// LCOV_EXCL_STOP
 
 void NWebWebStorageImpl::RemovePassword(const std::string& url,
                                         const std::string& username) {

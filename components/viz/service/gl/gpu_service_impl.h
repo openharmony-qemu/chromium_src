@@ -460,6 +460,8 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   void SetIsFling(bool is_fling_enabled) override;
+  void SetIsScroll(bool is_scroll_enabled) override;
+  bool GetIsScroll();
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -718,6 +720,9 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
   // out of the finch experiment as ::LoadedBlob() is not called in the next
   // browser start after the disk cache is cleared.
   const bool clear_shader_cache_;
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  bool is_scroll_enabled_ = false; 
+#endif
 
   base::WeakPtr<GpuServiceImpl> weak_ptr_;
   base::WeakPtrFactory<GpuServiceImpl> weak_ptr_factory_{this};

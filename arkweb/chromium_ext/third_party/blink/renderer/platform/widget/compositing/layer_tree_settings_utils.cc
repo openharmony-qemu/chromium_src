@@ -86,6 +86,13 @@ void SetMaxVisibleBytes(cc::ManagedMemoryPolicy& actual)
     actual.bytes_limit_when_visible =
         std::min(actual.bytes_limit_when_visible,
                  static_cast<size_t>(2000 * 1024 * 1024));
+#if BUILDFLAG(IS_ARKWEB)
+  } else if (base::SysInfo::AmountOfPhysicalMemoryMB() >= 2000) {
+    // It needs more tile memory for foldable phone.
+    actual.bytes_limit_when_visible =
+        std::max(actual.bytes_limit_when_visible,
+                 static_cast<size_t>(1000 * 1024 * 1024));
+#endif
   }
 }
 

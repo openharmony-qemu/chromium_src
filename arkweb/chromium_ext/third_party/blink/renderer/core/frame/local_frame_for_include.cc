@@ -23,6 +23,7 @@
 #endif
 
 namespace blink {
+  
 // LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 void LocalFrame::NotifyContextMenuWillShow() {

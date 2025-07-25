@@ -18,6 +18,7 @@
 #endif
 
 namespace blink {
+
 // LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_JSPROXY)
 void HTMLConstructionSite::RunScriptsAtHeadElementAvailable() {
@@ -32,4 +33,5 @@ void HTMLConstructionSite::RunScriptsAtHeadElementAvailable() {
 }
 #endif
 // LCOV_EXCL_STOP
+
 }  // namespace blink

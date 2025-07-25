@@ -18,12 +18,14 @@
 #include "third_party/skia/include/core/SkRegion.h"
 
 namespace blink {
+
 // LCOV_EXCL_START
 SoftwareCompositorProxyOhos::SoftwareCompositorProxyOhos() {}
 
 SoftwareCompositorProxyOhos::~SoftwareCompositorProxyOhos() {
   software_draw_shm_.reset();
 }
+
 struct SoftwareCompositorProxyOhos::SharedMemoryWithSize {
   base::WritableSharedMemoryMapping shared_memory;
   const size_t buffer_size;

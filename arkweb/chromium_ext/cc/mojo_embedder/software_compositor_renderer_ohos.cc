@@ -203,6 +203,7 @@ void SoftwareCompositorRendererOhos::SendCompositorFrameAckToClient() {
   client_->DidReceiveCompositorFrameAck();
 }
 // LCOV_EXCL_STOP
+
 }  // namespace mojo_embedder
 }  // namespace cc
                   

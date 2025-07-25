@@ -19,6 +19,7 @@
 #include "cc/metrics/event_metrics.h"
 
 namespace blink {
+
 // LCOV_EXCL_START
 NativeEmbedEventQueue::NativeEmbedEventQueue() {}
 
@@ -37,5 +38,6 @@ std::unique_ptr<EventWithCallback> NativeEmbedEventQueue::Pop() {
   return result;
 }
 // LCOV_EXCL_STOP
+
 }  // namespace blink
                      

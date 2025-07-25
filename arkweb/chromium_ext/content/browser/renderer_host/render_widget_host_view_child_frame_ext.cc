@@ -33,6 +33,7 @@ bool RenderWidgetHostViewChildFrameExt::GetScrollable() {
   }
   return true;
 }
+
 bool RenderWidgetHostViewChildFrameExt::IsMarkedConsumed(
     blink::WebInputEvent::Type type) {
   if (!GetScrollable() &&
@@ -41,6 +42,7 @@ bool RenderWidgetHostViewChildFrameExt::IsMarkedConsumed(
   }
   return false;
 }
+
 #endif
 // LCOV_EXCL_STOP
 }  // namespace content

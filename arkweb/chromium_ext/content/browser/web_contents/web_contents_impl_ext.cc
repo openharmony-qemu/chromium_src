@@ -337,6 +337,7 @@ void WebContentsImplExt::ShowFreeCopyMenu() {
   }
   input_handler->ShowFreeCopyMenu();
 }
+
 #endif  // BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 // LCOV_EXCL_STOP
 
@@ -808,7 +809,6 @@ void WebContentsImplExt::ShowAutofillPopup(
                                    is_password_popup_type);
   }
 }
-
 void WebContentsImplExt::HideAutofillPopup() {
   // notify ui to dismiss hideAutofillPopup
   if (delegate_) {
@@ -816,7 +816,6 @@ void WebContentsImplExt::HideAutofillPopup() {
   }
 }
 #endif
-
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 void WebContentsImplExt::OnShareFile(const std::string& filePath,
                                   const std::string& utdTypeId) {
@@ -825,7 +824,6 @@ void WebContentsImplExt::OnShareFile(const std::string& filePath,
   }
 }
 #endif
-
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
 void WebContentsImplExt::CollapseAllFramesSelection() {
   for (FrameTreeNode* node : primary_frame_tree_.Nodes()) {
@@ -848,7 +846,6 @@ void WebContentsImplExt::CollapseAllFramesSelection() {
   }
 }
 #endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)
-
 #if BUILDFLAG(ARKWEB_MENU)
 void WebContentsImplExt::SelectRangeV2(const gfx::Point& position,
                                     bool is_base) {
@@ -861,7 +858,6 @@ void WebContentsImplExt::SelectRangeV2(const gfx::Point& position,
   input_handler->SelectRangeV2(position, is_base);
 }
 #endif
-
 #if BUILDFLAG(ARKWEB_USERAGENT)
 void WebContentsImplExt::SetCustomUA(std::string custom_user_agent) {
   custom_user_agent_ = custom_user_agent;
@@ -871,13 +867,11 @@ std::string WebContentsImplExt::GetCustomUA() {
   return custom_user_agent_;
 }
 #endif
-
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
 void WebContentsImplExt::OneShotMediaPlayerStopped() {
   observers_.NotifyObservers(&WebContentsObserver::OneShotMediaPlayerStopped);
 }
 #endif
-
 #if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
 void WebContentsImplExt::OnBeforeUnloadFired(bool proceed) {
   if (delegate_) {
@@ -885,7 +879,6 @@ void WebContentsImplExt::OnBeforeUnloadFired(bool proceed) {
   }
 }
 #endif  // ARKWEB_DISATCH_BEFORE_UNLOAD
-
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
 void WebContentsImplExt::StopScreenCapture(int32_t nweb_id,
                                         const std::string& session_id) {
@@ -978,7 +971,6 @@ void WebContentsImplExt::RenderViewReady(RenderViewHost* rvh) {
                                std::nullopt);
   }
 #endif
-
 }
 void WebContentsImplExt::DidFinishNavigation(NavigationHandle* navigation_handle) {
   WebContentsImpl::DidFinishNavigation(navigation_handle);
@@ -988,14 +980,12 @@ void WebContentsImplExt::DidFinishNavigation(NavigationHandle* navigation_handle
   }
 #endif
 }
-
 void WebContentsImplExt::RenderWidgetCreated(
     RenderWidgetHostImpl* render_widget_host) {
   WebContentsImpl::RenderWidgetCreated(render_widget_host);
   observers_.NotifyObservers(&WebContentsObserver::RenderWidgetCreated,
                              render_widget_host);
 }
-
 RenderViewHostImpl* WebContentsImplExt::GetRenderViewHost() {
 #if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
   if (GetRenderManager() && GetRenderManager()->current_frame_host()) {
@@ -1008,7 +998,6 @@ RenderViewHostImpl* WebContentsImplExt::GetRenderViewHost() {
   return WebContentsImpl::GetRenderViewHost();
 #endif
 }
-
 void WebContentsImplExt::UpdateBrowserControlsState(
     cc::BrowserControlsState constraints,
     cc::BrowserControlsState current,
@@ -1030,6 +1019,7 @@ MediaPlayerId WebContentsImpl::GetMediaPlayerId(int delegate_id,
                                                         frame_routing_id,
                                                         status);
 }
+
 void WebContentsImpl::OnPip(int status,
                             int delegate_id,
                             int child_id,

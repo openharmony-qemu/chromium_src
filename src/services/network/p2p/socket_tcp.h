@@ -77,7 +77,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) P2PSocketTcpBase : public P2PSocket {
   // Derived classes will provide the implementation.
   virtual bool ProcessInput(base::span<const uint8_t> input,
                             size_t* bytes_consumed) = 0;
-  
+
   [[nodiscard]] virtual bool DoSend(
       const net::IPEndPoint& to,
       base::span<const uint8_t> data,

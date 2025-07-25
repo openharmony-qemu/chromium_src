@@ -20,6 +20,7 @@ namespace cc {
 
 LayerTreeImplUtils::LayerTreeImplUtils(LayerTreeImpl* layer_tree_impl) : layer_tree_impl_(layer_tree_impl) {}
 
+// LCOV_EXCL_START
 LayerTreeImplUtils::~LayerTreeImplUtils() {}
 
 #if BUILDFLAG(ARKWEB_MENU)
@@ -47,6 +48,7 @@ void LayerTreeImplUtils::OnLayerRectVisibilityChange(int id, bool visibility) {
   layer_tree_impl_->host_impl_->OnLayerRectVisibilityChange(id, visibility);
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
 gfx::Rect LayerTreeImplUtils::ViewportRectForTilePriority(const gfx::Rect& viewport_rect_for_tile_priority) {
@@ -61,9 +63,11 @@ gfx::Rect LayerTreeImplUtils::ViewportRectForTilePriority(const gfx::Rect& viewp
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 void LayerTreeImplUtils::OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {
   layer_tree_impl_->host_impl_->OnLayerBoundsUpdate(id, bounds);
 }
 #endif  // ARKWEB_VIDEO_ASSISTANT
+// LCOV_EXCL_STOP
 }

@@ -75,7 +75,6 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
     // the message call name (eg. MouseCaptureLost) or the name of an
     // input event (eg. GestureScrollBegin).
     const std::string& name() const { return name_; }
-
    private:
     std::string name_;
   };
@@ -296,6 +295,7 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
     compositor_request) override {}
   void ScrollBy(float delta_x, float delta_y) override {}
   void SetMouseEventResult(bool result, bool stopPropagation) override {}
+  void SetBypassVsyncCondition(int32_t condition) override {}
 #endif
   using MessageVector = std::vector<std::unique_ptr<DispatchedMessage>>;
   MessageVector GetAndResetDispatchedMessages();

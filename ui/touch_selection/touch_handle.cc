@@ -194,7 +194,7 @@ bool TouchHandle::WillHandleTouchEvent(const MotionEvent& event) {
       if (touch_point.y() < drawable_bounds.y() ||
 #if BUILDFLAG(ARKWEB_MENU)
           !RectIntersectsCircle(drawable_bounds, touch_point, touch_radius) ||
-          !event.FromOverlay()) {
+          (continuous_touch_nums_ > 1)) {
 #else
           !RectIntersectsCircle(drawable_bounds, touch_point, touch_radius)) {
 #endif  // #if BUILDFLAG(ARKWEB_MENU)

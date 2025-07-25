@@ -1004,6 +1004,9 @@ class CONTENT_EXPORT RenderProcessHostImpl
     const std::vector<int32_t>& thread_ids, int32_t role) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    void ReportHisyevent(int64_t block_time, const std::string& mode) override;
+#endif
     const int render_process_id_;
     const base::WeakPtr<RenderProcessHostImpl> weak_host_;
     std::unique_ptr<service_manager::BinderRegistry> binders_;

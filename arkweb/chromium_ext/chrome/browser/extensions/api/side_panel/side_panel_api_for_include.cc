@@ -13,10 +13,14 @@
  * limitations under the License.
  */
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "ohos_nweb_ex/core/extension/nweb_extension_side_panel_dispatcher.h"
+#endif
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/ohos_nweb/src/nweb_common.h"
 #include "base/logging.h"
 #include "chrome/browser/extensions/extension_tab_util.h"
-#include "ohos_nweb/src/cef_delegate/nweb_extension_side_panel_cef_delegate.h"
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 namespace extensions {
@@ -25,25 +29,21 @@ void RunFunctionForInclude(
     raw_ptr<SidePanelSetOptionsFunction> obj,
     std::optional<api::side_panel::SetOptions::Params>& params) {
   LOG(INFO) << "SidePanelSetOptionsFunction::RunFunction";
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_NWEB_EX)
   std::optional<std::string> absolute_path;
-  std::optional<bool> enabled;
-  std::optional<int> tab_id;
   if (params->options.path.has_value()) {
     absolute_path =
         obj->extension()->GetResourceURL(*params->options.path).spec();
   }
-  if (params->options.enabled.has_value()) {
-    enabled = *params->options.enabled;
+  if (IsNativeApiEnable()) {
+    NWebExtensionSidePanelDispatcher::OnSetOptionsNative(
+        obj->extension()->id(), params->options.enabled, params->options.tab_id,
+        absolute_path);
+  } else {
+    NWebExtensionSidePanelDispatcher::OnSetOptions(
+        obj->extension()->id(), params->options.enabled, params->options.tab_id,
+        absolute_path);
   }
-  if (params->options.tab_id.has_value()) {
-    tab_id = *params->options.tab_id;
-  }
-#endif
-
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  OHOS::NWeb::NWebExtensionSidePanelCefDelegate::OnSetOptions(
-      obj->extension()->id(), enabled, tab_id, absolute_path);
 #endif
 }
 

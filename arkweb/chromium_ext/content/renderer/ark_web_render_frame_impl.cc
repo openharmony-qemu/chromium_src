@@ -14,6 +14,7 @@
  */
 
 #include "arkweb/chromium_ext/content/renderer/ark_web_render_frame_impl.h"
+#include "content/child/child_process.h"
 
 #include "arkweb/build/features/features.h"
 #include "content/public/common/content_client.h"
@@ -23,6 +24,10 @@
 #include "third_party/blink/public/web/web_document_loader.h"
 #include "third_party/blink/public/web/web_navigation_control.h"
 #include "third_party/blink/public/web/web_view.h"
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "third_party/blink/public/web/web_performance_metrics_for_reporting.h"
+#endif
 
 namespace content {
 
@@ -38,6 +43,7 @@ std::optional<blink::WebString> ArkWebUserAgentOverride(
   return std::nullopt;
 }
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_JSPROXY)
 void RenderFrameImpl::RunScriptsAtHeadReady() {
   if (!initialized_) {
@@ -49,8 +55,10 @@ void RenderFrameImpl::RunScriptsAtHeadReady() {
   }
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
+// LCOV_EXCL_START
 void RenderFrameImpl::DidSubresourceFiltered() {
   TRACE_EVENT1("navigation,benchmark,rail",
                "RenderFrameImpl::DidSubresourceFiltered", "frame_token",
@@ -63,6 +71,7 @@ void RenderFrameImpl::DidSubresourceFiltered() {
 bool RenderFrameImpl::GetGlobalAdblockEnabled() {
   return GetRendererPreferences().is_global_adblock_enabled;
 }
+// LCOV_EXCL_STOP
 
 void RenderFrameImpl::OnUpdateAdBlockEnabledToRender(
     bool site_adblock_enabled) {
@@ -97,6 +106,7 @@ void RenderFrameImpl::OnUpdateAdBlockEnabledToRender(
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
 void RenderFrameImpl::AddNamedObject(const std::string& name,
                                      int32_t object_id,
@@ -108,4 +118,68 @@ void RenderFrameImpl::AddNamedObject(const std::string& name,
 }
 #endif  // BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
 
+RenderFrameImplUtils::RenderFrameImplUtils(RenderFrameImpl* impl) {
+  this->renderFrameImpl = impl;
+}
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+int64_t RenderFrameImplUtils::GetCurrentTimestampMS() {
+  auto currentTime = std::chrono::system_clock::now().time_since_epoch();
+  return std::chrono::duration_cast<std::chrono::microseconds>(currentTime)
+              .count() /
+          kMicrosecondsPerMillisecond;
+}
+
+void RenderFrameImplUtils::ReportRenderInitBlock() {
+  int64_t initialize_time = GetCurrentTimestampMS();
+  std::string mode = "ReportRenderInitBlock";
+  if (is_complete_initialize) {
+    is_complete_initialize = false;
+    int64_t block_time = initialize_time - commit_navigation_time_;
+    if(ChildProcess::current()) {
+      ChildProcess::current()->ReportHisyevent(block_time, mode);
+    }
+  }
+}
+
+void RenderFrameImplUtils::ChangeCommitNavigationTime(int64_t time) {
+  commit_navigation_time_ = time;
+}
+
+void RenderFrameImplUtils::ChangeCompleteInitialize(bool complete) {
+  is_complete_initialize = complete;
+}
+
+void RenderFrameImpl::SendCommitNavigationTime(int64_t start_time) {
+  implUtils->ChangeCommitNavigationTime(start_time);
+  implUtils->ChangeCompleteInitialize(true);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void RenderFrameImpl::NotifyLcpForBlankless() {
+  if (blankless_key_ == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
+    return;
+  }
+  if (RenderThreadImpl* render_thread = RenderThreadImpl::current()) {
+    const blink::WebPerformanceMetricsForReporting& perf = GetWebFrame()->PerformanceMetricsForReporting();
+    double start = perf.NavigationStart();
+    blink::LargestContentfulPaintDetailsForReporting lcp_details = perf.LargestContentfulDetailsForMetrics();
+    double ms = (std::max(lcp_details.image_paint_time, lcp_details.text_paint_time) - start) * 1000;
+    int32_t lcp_time = ms > INT32_MAX ? INT32_MAX : static_cast<int32_t>(ms);
+    render_thread->SetBlanklessDumpInfo(nweb_id_, blankless_key_, frame_sink_id_, lcp_time, pref_hash_);
+  }
+}
+
+void RenderFrameImpl::SendBlanklessKeyToRenderFrame(uint32_t nweb_id,
+                                                    uint64_t blankless_key,
+                                                    uint64_t frame_sink_id,
+                                                    int64_t pref_hash)
+{
+  nweb_id_ = nweb_id;
+  blankless_key_ = blankless_key;
+  frame_sink_id_ = frame_sink_id;
+  pref_hash_ = pref_hash;
+}
+#endif
+// LCOV_EXCL_STOP
 }  // namespace content

@@ -23,22 +23,22 @@
 #include "ohos_nweb/src/capi/nweb_context_menus_item.h"
 
 typedef enum {
-  EM_ZERO = 0,
-  EM_ONE = 1,
-  EM_TWO = 2,
-  EM_THREE = 3,
-  EM_MAX = 4,
-} ExtensionManagerNum;
+  EXT_COLOR_RED = 0,
+  EXT_COLOR_GREEN = 1,
+  EXT_COLOR_BLUE = 2,
+  EXT_COLOR_ALPHA = 3,
+  EXT_COLOR_MAX = 4,
+} ExtensionColorIndex;
 
 struct WebExtensionActionInfo {
   std::string extensionId;
   std::optional<bool> isEnabled;
-  std::optional<std::array<int32_t, EM_MAX>> badgeBackgroundColor;
+  std::optional<std::array<int32_t, EXT_COLOR_MAX>> badgeBackgroundColor;
   std::optional<std::string> badgeText;
-  std::optional<std::array<int32_t, EM_MAX>> badgeTextColor;
+  std::optional<std::array<int32_t, EXT_COLOR_MAX>> badgeTextColor;
   std::optional<std::string> popup;
   std::optional<std::string> title;
-  std::optional<OHOS::NWeb::NWebExtensionActionIcon*> icon;
+  std::optional<NWebExtensionActionIcon*> icon;
 };
 
 struct WebExtensionSidePanelInfo {
@@ -72,6 +72,72 @@ struct WebExtensionInfo {
    * contextMenus of extension.
    */
   std::vector<NWebContextMenusItem> contextMenus;
+
+  /**
+   * extension's action icon is visible on toolbar.
+   */
+  bool isOnToolbar;
+};
+
+struct WebExtensionManifestSearchProvider {
+  std::optional<std::string> name;
+  std::optional<std::string> keyword;
+  std::optional<std::string> favicon_url;
+  std::string search_url;
+  std::optional<std::string> encoding;
+  std::optional<std::string> suggest_url;
+  std::optional<std::string> image_url;
+  std::optional<std::string> search_url_post_params;
+  std::optional<std::string> suggest_url_post_params;
+  std::optional<std::string> image_url_post_params;
+  std::vector<std::string> alternate_urls;
+  std::optional<int32_t> prepopulated_id;
+  bool is_default;
+};
+ 
+struct WebExtensionManifestSettingsOverrides {
+  std::optional<std::string> homepage;
+  std::vector<std::string> startup_pages;
+  std::optional<WebExtensionManifestSearchProvider> search_provider;
+};
+ 
+struct WebExtensionManifestOptionsPageInfo {
+  std::string options_page;
+  bool open_in_tab;
+};
+
+typedef enum {
+  EXT_INCOGNITO_NONE = 0,
+  EXT_INCOGNITO_SPLIT = 1,
+  EXT_INCOGNITO_SPANNING = 2,
+  EXT_INCOGNITO_NOT_ALLOWED = 3,
+} ExtensionIncognitoMode;
+
+struct WebExtensionManifestInfo {
+  std::optional<std::string> name;
+  std::optional<std::string> homepage_url;
+  std::optional<WebExtensionManifestSettingsOverrides> settings_overrides;
+  std::optional<WebExtensionManifestOptionsPageInfo> options_page;
+  std::optional<ExtensionIncognitoMode> incognito_mode;
+};
+ 
+struct WebExtensionInfoV2 {
+  void FreeBuffers() {
+    if (buffers_needs_free) {
+      if (info.action.icon.has_value()) {
+        for (auto& it: info.action.icon.value()->bitmaps) {
+          free(it.second->bitmap);
+          it.second->bitmap = nullptr;
+        }
+      }
+      buffers_needs_free = false;
+    }
+  }
+ 
+  bool buffers_needs_free;
+  WebExtensionInfo info;
+  WebExtensionManifestInfo manifest_info;
+  bool is_incognito_enabled = false;
 };
 
 typedef void (*OnWebExtensionLoadedFun)(const WebExtensionInfo& load_info);
@@ -84,5 +150,7 @@ struct NWebExtensionManagerCallBack {
   void (*OnWebExtensionUnLoaded)(std::string extensionId);
   void (*OnWebExtensionOpenUrlFun)(std::string url);
 };
+
+typedef void (*OnExtensionInstallCallback)(int code, const char* message);
 
 #endif  // OHOS_NWEB_SRC_NWEB_EXTENSION_MANAGER_CALLBACK_H_

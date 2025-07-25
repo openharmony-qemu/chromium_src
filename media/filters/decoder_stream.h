@@ -167,6 +167,10 @@ class MEDIA_EXPORT DecoderStream {
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable);
 #endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer();
+  void ResumeDmaBuffer();
+#endif  // ARKWEB_MEDIA_DMABUF
 
  private:
   enum class State {

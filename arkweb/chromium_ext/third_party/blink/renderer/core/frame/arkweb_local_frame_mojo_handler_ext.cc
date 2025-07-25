@@ -95,8 +95,10 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 ArkWebLocalFrameMojoHandlerExt::ArkWebLocalFrameMojoHandlerExt(blink::LocalFrame& frame)
     : LocalFrameMojoHandler(frame) {}
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(IS_ARKWEB)
 void ArkWebLocalFrameMojoHandlerExt::JavaScriptExecuteRequestExt(

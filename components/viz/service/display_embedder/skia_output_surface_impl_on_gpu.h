@@ -306,6 +306,14 @@ class SkiaOutputSurfaceImplOnGpu
   void SetNativeInnerWeb(bool isInnerWeb);
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition);
+#endif
+
+  SkiaOutputSurfaceDependency* dependency() {
+    return dependency_;
+  }
+
  private:
   struct MailboxAccessData {
     MailboxAccessData();
@@ -473,6 +481,10 @@ class SkiaOutputSurfaceImplOnGpu
   // returns a newly produced one and caches it.
   gpu::SkiaImageRepresentation* GetSkiaRepresentation(gpu::Mailbox mailbox);
 
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  void SetDVsyncIfNecessary();
+#endif
+
   class ReleaseCurrent {
    public:
     ReleaseCurrent(scoped_refptr<gl::GLSurface> gl_surface,
@@ -589,6 +601,10 @@ class SkiaOutputSurfaceImplOnGpu
   int num_readbacks_pending_ = 0;
   bool readback_poll_pending_ = false;
 
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  bool did_dvsync_on_ = false;
+  int delay_num_ = 0;
+#endif
   // Lock for |async_read_result_helpers_|.
   scoped_refptr<AsyncReadResultLock> async_read_result_lock_;
 
@@ -622,6 +638,7 @@ class SkiaOutputSurfaceImplOnGpu
 
   base::WeakPtr<SkiaOutputSurfaceImplOnGpu> weak_ptr_;
   base::WeakPtrFactory<SkiaOutputSurfaceImplOnGpu> weak_ptr_factory_{this};
+
 };
 
 }  // namespace viz

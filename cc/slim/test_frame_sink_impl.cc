@@ -32,6 +32,7 @@ class TestFrameSinkImpl::TestMojoCompositorFrameSink
   void ReportKeyThreadIds(const std::vector<int32_t>& thread_ids,
                           int32_t process_id,
                           bool is_created) override {}
+  void OnSetBypassVsyncCondition(int32_t condition) override {}
 #endif
   void SetAutoNeedsBeginFrame() override {}
   void SubmitCompositorFrame(

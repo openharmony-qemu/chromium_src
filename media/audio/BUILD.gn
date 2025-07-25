@@ -552,6 +552,11 @@ source_set("unit_tests") {
   if (enable_arkweb) {
     deps += [ "//arkweb/build/features" ]
   }
+
+  if (arkweb_unittests) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_media_audio_unittest_sources
+  }
 }
 
 fuzzer_test("wav_audio_handler_fuzzer") {

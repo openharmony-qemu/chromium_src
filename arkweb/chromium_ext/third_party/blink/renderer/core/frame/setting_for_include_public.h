@@ -106,6 +106,16 @@
   bool GetCustomMediaPlayerEnabled() { return custom_media_player_enabled_; }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  void SetMediaResumeFromBFCachePage(bool resume) {
+    media_resume_from_bfcache_page_ = resume;
+  }
+
+  bool GetMediaResumeFromBFCachePage() {
+    return media_resume_from_bfcache_page_;
+  }
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
   void SetBorderRadiusFromWeb(double borderRadiusTopLeft,
                               double borderRadiusTopRight,
@@ -122,5 +132,20 @@
   double GetBorderRadiusBottomLeft() { return border_radius_bottom_left_; }
   double GetBorderRadiusBottomRight() { return border_radius_bottom_right_; }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+  void SetTouchHandleExistState(bool touchHandleExist) {
+    touch_handle_exist_ = touchHandleExist;
+  }
+  bool IsTouchHandleExist() {
+    return touch_handle_exist_;
+  }
+  void SetViewportScaleState(bool viewportScale) {
+    viewport_scale_ = viewportScale;
+  }
+  bool IsViewportScale() {
+    return viewport_scale_;
+  }
+#endif  // BUILDFLAG(ARKWEB_MENU)
 
 #endif

@@ -26,6 +26,10 @@ class MEDIA_EXPORT OHOSMediaCryptoContext {
 
   virtual void SetOHOSMediaCryptoReadyCB(
       OHOSMediaCryptoReadyCB media_crypto_ready_cb) = 0;
+
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  virtual void ReleaseInnerResource() = 0;
+#endif
 };
 
 }  // namespace media

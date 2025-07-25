@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//gpu/vulkan/features.gni")
+import("//testing/test.gni")
 
 visibility = [ "//ui/ozone/*" ]
 

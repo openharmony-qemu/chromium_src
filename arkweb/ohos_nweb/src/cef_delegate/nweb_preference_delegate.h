@@ -19,6 +19,7 @@
 #include <tuple>
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 #include "cef/include/cef_browser.h"
 #if BUILDFLAG(ARKWEB_JSPROXY)
 #include "ohos_nweb/include/nweb.h"
@@ -62,6 +63,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutSerifFontFamilyName(const std::string& font) override;
   void PutStandardFontFamilyName(const std::string& font) override;
   void PutUserAgent(const std::string& ua) override;
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool HasSetUserAgent() { return has_set_user_agent_; }
+#endif
   void PutZoomingForTextFactor(int textZoom) override;
   void PutGeolocationAllowed(bool flag) override;
   void PutAccessModeForSecureOriginLoadFromInsecure(AccessMode mode) override;
@@ -140,6 +144,12 @@ class NWebPreferenceDelegate : public NWebPreference {
                               double borderRadiusBottomLeft,
                               double borderRadiusBottomRight);
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+  void SetTouchHandleExistState(bool touchHandleExist);
+  void SetViewportScaleState(bool viewportScale);
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
 #if BUILDFLAG(ARKWEB_CSS_FONT)
   void SetFontWeightScale(float size) override;
   float GetFontWeightScale() const;
@@ -169,6 +179,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   int GetBlurEnable();
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   void SetNativeEmbedMode(bool flag) override;
   bool GetNativeEmbedMode() override;
@@ -190,11 +204,18 @@ class NWebPreferenceDelegate : public NWebPreference {
   CopyOptionMode GetCopyOptionMode() override;
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 
+#if BUILDFLAG(ARKWEB_FOCUS)
+  void SetGestureFocusMode(int32_t mode) override;
+  int32_t GetGestureFocusMode() const;
+#endif  // BUILDFLAG(ARKWEB_FOCUS)
+
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   void PutAudioExclusive(bool audioExclusive);
   bool GetAudioExclusive();
   void PutAudioResumeInterval(int32_t resumeInterval);
   int32_t GetAudioResumeInterval();
+  void PutAudioSessionType(int32_t audioSessionType);
+  int32_t GetAudioSessionType();
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   void SetNativeVideoPlayerConfig(bool enable, bool shouldOverlay) override;
@@ -268,6 +289,15 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutWebMediaAVSessionEnabled(bool enable) override;
 #endif  // ARKWEB_MEDIA_AVSESSION
 
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  bool ErrorPageEnabled();
+  void PutErrorPageEnabled(bool enable);
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  int64_t GetPreferenceHash();
+#endif
+
  private:
   CefRefPtr<CefBrowser> browser_ = nullptr;
 
@@ -292,6 +322,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool raw_file_access_{false};
   bool universal_access_from_file_urls_{false};
   bool raw_file_access_from_file_urls_{false};
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  bool error_page_enabled_{false};
+#endif
 #if BUILDFLAG(ARKWEB_DARKMODE)
   bool force_dark_mode_enabled_{false};
   bool dark_prefer_color_scheme_enabled_{false};
@@ -302,6 +335,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   /* Web preferences end*/
   bool create_windows_by_javascript_allowed_{false};
   std::string user_agent_{""};
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool has_set_user_agent_{false};
+#endif
   int zooming_for_text_factor_{100};
   bool geolocation_allowed_{true};
   AccessMode access_mode_{AccessMode::NEVER_ALLOW};
@@ -318,11 +354,15 @@ class NWebPreferenceDelegate : public NWebPreference {
   double border_radius_bottom_left_{0.0};
   double border_radius_bottom_right_{0.0};
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_MENU)
+  bool touch_handle_exist_{false};
+  bool viewport_scale_{false};
+#endif  // BUILDFLAG(ARKWEB_MENU)
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
   float virtual_pixel_ratio_ = 2.0;
 #endif
 #if BUILDFLAG(ARKWEB_PRINT)
-  void* token_ = nullptr;
+  raw_ptr<void> token_ = nullptr;
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool horizontal_scrollBar_access_{true};
@@ -356,6 +396,11 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(ARKWEB_COPY_OPTION)
   CopyOptionMode copy_option_{CopyOptionMode::CROSS_DEVICE};
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+
+#if BUILDFLAG(ARKWEB_FOCUS)
+  int32_t gesture_focus_mode_{0};
+#endif
+
   CacheModeFlag cache_mode_flag_{CacheModeFlag::USE_DEFAULT};
 #if BUILDFLAG(ARKWEB_BACKGROUND_COLOR)
   int32_t background_color_{0xffffffff};
@@ -364,6 +409,7 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   bool audio_exclusive_{true};
   int32_t resume_interval_{0};
+  int32_t audio_session_type_{5};
 #endif
 #if BUILDFLAG(ARKWEB_JSPROXY)
   ScriptItems script_items_start_{};
@@ -395,6 +441,11 @@ class NWebPreferenceDelegate : public NWebPreference {
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   CefRefPtr<CefWebMessageReceiver> autofill_callback_ = nullptr;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  bool pref_hash_cached_ = false;
+  int64_t pref_hash_ = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

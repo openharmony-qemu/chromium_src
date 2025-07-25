@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
 #include "base/base_switches.h"
 #include "base/check_op.h"
@@ -124,6 +125,13 @@
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
 #include "arkweb/chromium_ext/net/base/page_res_request_info.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
+#include "base/command_line.h"
 #endif
 
 namespace {
@@ -390,6 +398,20 @@ std::unique_ptr<URLRequestJob> URLRequestHttpJob::Create(URLRequest* request) {
                           /*is_secure=*/false, request->load_flags());
       return std::make_unique<URLRequestErrorJob>(request,
                                                   ERR_CLEARTEXT_NOT_PERMITTED);
+    }
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    if (base::ohos::ApplicationApiVersion() >= APP_API_LEVEL_20) {
+      auto NetConfigAdapter =
+          OHOS::NWeb::OhosAdapterHelper::GetInstance().GetNetConfigAdapter();
+      if (!NetConfigAdapter) {
+        LOG(ERROR) << "get netconfig adapter failed";
+      } else if (NetConfigAdapter->GetIsCleartextCfgByComponent(
+                     base::ohos::ComponentName()) &&
+                 !NetConfigAdapter->GetIsCleartextPermittedByHostName(url.host())) {
+        return std::make_unique<URLRequestErrorJob>(request, ERR_CLEARTEXT_NOT_PERMITTED);
+      }
     }
 #endif
   }

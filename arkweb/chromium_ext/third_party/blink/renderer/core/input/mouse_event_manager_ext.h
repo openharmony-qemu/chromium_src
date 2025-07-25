@@ -60,10 +60,6 @@ class MouseEventManagerExt
   void HandleGestureCreateOverlay(const WebGestureEvent& gesture_event);
   void CreateOverlayCallback();
   bool GetOverlayInProgress();
-  void ConverCoordinates(float& left, float& top, float& width, float& height, std::vector<gfx::PointF>& pointfs);
-  void SetOverlayStyle(Element* overlay_div, float left, float top, float width, float height);
-  void SetTextStyle(Element* text_div, float left, float top, float width, float height, float font_size);
-  void RemoveElementOnMouseOut(const std::string& id, blink::Event* event);
   template <typename T>
   void HandleCreateOverlay(T const& targeted_event);
   enum class FoldStatus : uint32_t {
@@ -90,9 +86,8 @@ class MouseEventManagerExt
 #if BUILDFLAG(IS_ARKWEB)
   bool overlay_in_progress_ = false;
   WebMouseEvent last_mouse_drag_;
-  Image* last_analyzed_image_ = nullptr;
+  raw_ptr<Image> last_analyzed_image_ = nullptr;
   base::RetainingOneShotTimer create_overlay_timer_;
-  WeakCellFactory<MouseEventManagerExt> weak_factory_{this};
   gfx::Rect image_rect_;
   gfx::Rect view_rect_;
   SkBitmap bm_;
@@ -109,6 +104,7 @@ class MouseEventManagerExt
    private:
     Member<blink::Element> element_;
   };
+  WeakCellFactory<MouseEventManagerExt> weak_factory_{this};
 #endif
 };
 }  // namespace blink

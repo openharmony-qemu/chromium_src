@@ -27,6 +27,9 @@ class MEDIA_EXPORT OHOSMediaCryptoContextImpl final
   void SetOHOSMediaCryptoReadyCB(
       OHOSMediaCryptoReadyCB media_crypto_ready_cb) override;
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  void ReleaseInnerResource() override;
+#endif
  private:
   const raw_ptr<OHOSMediaDrmBridge> media_drm_bridge_;
 };

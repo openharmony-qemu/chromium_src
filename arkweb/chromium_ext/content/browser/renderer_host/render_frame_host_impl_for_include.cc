@@ -26,7 +26,18 @@
 #include "arkweb/chromium_ext/content/browser/renderer_host/navigation_request_utils.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+#include "arkweb/chromium_ext/content/renderer/ark_web_render_frame_impl.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+#include "net/http/http_status_code.h"
+#endif
+
 namespace content {
+
+// ExecuteJavascriptInFrames need create new worldId, this is the min value;
+const int32_t kCreateIsolatedWorldIdMin = 10000;
 
 #if BUILDFLAG(IS_ARKWEB)
 void RenderFrameHostImpl::ExecuteJavaScriptExt(
@@ -62,11 +73,13 @@ void RenderFrameHostImpl::SendAccessibilityEvent(int64_t accessibilityId,
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 void RenderFrameHostImpl::NotifyContextMenuWillShow() {
   delegate_->NotifyContextMenuWillShow();
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
 void RenderFrameHostImpl::GetCreateNewWindow(
@@ -100,6 +113,7 @@ void RenderFrameHostImpl::GenerateCodeCache(
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(IS_ARKWEB_EXT)
 void RenderFrameHostImpl::GetImageFromCache(const std::string& url,
                                             ImageCacheCallback callback) {
@@ -116,6 +130,7 @@ void RenderFrameHostImpl::OnClearContextMenu() {
   delegate_->ClearContextMenu();
 }
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
 void RenderFrameHostImpl::UpdateAdBlockEnabledToRender(
@@ -147,6 +162,7 @@ void RenderFrameHostImpl::UpdateAdBlockEnabledToRender(
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
 void RenderFrameHostImpl::AddNamedObject(const std::string& name,
                                          int32_t object_id,
@@ -172,8 +188,10 @@ void RenderFrameHostImpl::ChangeVisibilityOfQuickMenu() {
     delegate_->ChangeVisibilityOfQuickMenu();
   }
 }
+// LCOV_EXCL_STOP
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_AI)
 void RenderFrameHostImpl::CloseImageOverlaySelection() {
   if (delegate_) {
@@ -181,6 +199,21 @@ void RenderFrameHostImpl::CloseImageOverlaySelection() {
   }
 }
 #endif  // BUILDFLAG(ARKWEB_AI)
+
+#if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
+bool RenderFrameHostImpl::IsJsDialogShowOrBeforeUnloadTimedOut() {
+  DCHECK(IsInPrimaryMainFrame());
+  if (!delegate_) {
+    return false;
+  }
+  page_close_state_ = PageCloseState::kNotClosing;
+  // If there is a JavaScript dialog up, don't bother sending the renderer the
+  // close event because it is known unresponsive, waiting for the reply from
+  // the dialog.
+  return delegate_->IsJavaScriptDialogShowing() || BeforeUnloadTimedOut();
+}
+#endif // ARKWEB_DISATCH_BEFORE_UNLOAD
+// LCOV_EXCL_STOP
 
 void CommitNavigationExt(
     const std::string& effective_scheme,
@@ -198,4 +231,151 @@ void CommitNavigationExt(
   }
 }
 
+bool RenderFrameHostImpl::GetWorldId(const std::string& worldName, int32_t* worldId) {
+  if (worldName.empty()) {
+    return false;
+  }
+  if (isolated_world_.empty()) {
+    *worldId = kCreateIsolatedWorldIdMin + 1;
+    isolated_world_.emplace(worldName, *worldId);
+    return true;
+  }
+ 
+  auto it = isolated_world_.find(worldName);
+  if (it != isolated_world_.end()) {
+    *worldId = it->second;
+    return true;
+ 
+  }
+ 
+  int32_t maxValue = INT_MIN;
+  for (const auto& pair : isolated_world_) {
+    if (pair.second > maxValue) {
+      maxValue = pair.second;
+    }
+  }
+  *worldId = maxValue + 1;
+  isolated_world_.emplace(worldName, *worldId);
+  return true;
+}
+ 
+void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
+    const std::u16string& javascript,
+    bool recursive,
+    const std::string& worldName,
+    JavaScriptResultCallback callback) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  CHECK(CanExecuteJavaScript());
+  AssertFrameWasCommitted();
+ 
+  const bool wants_result = !callback.is_null();
+  int32_t worldId = 0;
+  bool worldIdResult = GetWorldId(worldName, &worldId);
+  if (worldIdResult) {
+    GetAssociatedLocalFrame()->JavaScriptExecuteRequestInIsolatedWorld(
+      javascript, wants_result, worldId, std::move(callback));
+  } else {
+    GetAssociatedLocalFrame()->JavaScriptExecuteRequest(javascript, wants_result,
+                                                        std::move(callback));
+  }
+ 
+  if (!recursive) {
+    return;
+  }
+ 
+  RenderFrameHostImpl* initialFrame = this;
+  ForEachRenderFrameHost(
+    [&javascript, &worldName, &initialFrame](RenderFrameHostImpl* rfh) {
+    int32_t world_id = 0;
+    if (rfh == initialFrame) {
+      return;
+    }
+    bool worldId_result = rfh->GetWorldId(worldName, &world_id); 
+    if (worldId_result) {
+      rfh->GetAssociatedLocalFrame()->JavaScriptExecuteRequestInIsolatedWorld(
+        javascript, false, world_id, JavaScriptResultCallback {});
+    } else {
+      rfh->GetAssociatedLocalFrame()->JavaScriptExecuteRequest(javascript, false,
+                                                               JavaScriptResultCallback {});
+    }
+  });
+}
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+void RenderFrameHostImpl::CommitFailedNavigation(
+    mojom::NavigationClient* navigation_client,
+    NavigationRequest* navigation_request,
+    blink::mojom::CommonNavigationParamsPtr common_params,
+    blink::mojom::CommitNavigationParamsPtr commit_params,
+    bool has_stale_copy_in_cache,
+    int error_code,
+    int extended_error_code,
+    const net::ResolveErrorInfo& resolve_error_info,
+    const std::optional<std::string>& error_page_content,
+    std::unique_ptr<blink::PendingURLLoaderFactoryBundle> subresource_loaders,
+    const blink::DocumentToken& document_token,
+    blink::mojom::PolicyContainerPtr policy_container,
+    mojom::AlternativeErrorPageOverrideInfoPtr alternative_error_page_info,
+    mojom::NavigationClient::CommitFailedNavigationCallback callback) {
+  std::string html = "";
+  std::optional<std::string> override_error_page_content = std::nullopt;
+
+  int real_error_code = error_code;
+  std::string error_info = net::ErrorToShortString(error_code);
+  if (error_code == net::ERR_HTTP_RESPONSE_CODE_FAILURE) {
+    DCHECK_NE(commit_params->http_response_code, -1);
+    real_error_code = commit_params->http_response_code;
+    error_info = net::GetHttpReasonPhrase(
+      static_cast<net::HttpStatusCode>(real_error_code));
+  }
+
+  FrameTreeNode* tree_node = frame_tree_node();
+
+  if (GetOrCreateWebPreferences().error_page_enabled && tree_node->IsMainFrame()) {
+    GetContentClient()->browser()->OverrideErrorPage(
+      navigation_request->frame_tree_node()->frame_tree_node_id(),
+      commit_params->is_browser_initiated,
+      commit_params->original_url,
+      commit_params->original_method,
+      common_params->has_user_gesture,
+      false,
+      navigation_request->frame_tree_node()->IsOutermostMainFrame(),
+      real_error_code,
+      error_info,
+      navigation_request->frame_tree_node()->frame_tree().is_prerendering(),
+      ui::PageTransitionFromInt(common_params->transition),
+      &html);
+  }
+
+  if (html.empty()) {
+    override_error_page_content = error_page_content;
+  } else {
+    override_error_page_content.emplace(html);
+    common_params->is_override_error_page = true;
+  }
+
+  navigation_client->CommitFailedNavigation(
+      std::move(common_params), std::move(commit_params),
+      has_stale_copy_in_cache, error_code, extended_error_code,
+      resolve_error_info, override_error_page_content, std::move(subresource_loaders),
+      document_token, std::move(policy_container),
+      std::move(alternative_error_page_info), std::move(callback));
+}
+#endif
+
+// LCOV_EXCL_START
+#if BUILDFLAG(ARKWEB_PDF)
+void RenderFrameHostImpl::OnPdfScrollAtBottom(const std::string& url) {
+  if (delegate_) {
+    delegate_->OnPdfScrollAtBottom(url);
+  }
+}
+
+void RenderFrameHostImpl::OnPdfLoadEvent(int32_t result, const std::string& url) {
+  if (delegate_) {
+    delegate_->OnPdfLoadEvent(result, url);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_PDF)
+// LCOV_EXCL_STOP
 }  // namespace content

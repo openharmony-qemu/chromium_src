@@ -134,13 +134,6 @@ bool PRPPRequestLoaderFactoryImpl::IsInfoMatched(std::shared_ptr<PRRequestInfo>&
 	return false;
   }
 
-  if ((req_info->cache_type() == PRRequestCacheType::FORCE_CACHE) &&
-	  (base::Time::Now().ToInternalValue() < req_info->freshness_life_times()) &&
-	  (((req_info->load_flags() & net::LOAD_BYPASS_CACHE) == 0) &&
-	  ((req_info->load_flags() & net::LOAD_DISABLE_CACHE) == 0))) {
-	return true;
-  }
-
   return MatchRequestHeaders(req_info, resource_request, req_info_binding);
 }
 
@@ -150,8 +143,12 @@ bool PRPPRequestLoaderFactoryImpl::MatchRequestHeaders(std::shared_ptr<PRRequest
 {
   bool match = true;
   std::set<std::string> dynamic_header_keys;
+  net::HttpRequestHeaders extra_request_headers = req_info->extra_request_headers();
+  if (resource_request.headers.GetHeaderVector().size() != extra_request_headers.GetHeaderVector().size()) {
+	LOG(DEBUG) << "PRPPreload.PRPPRequestLoaderFactoryImpl::MatchRequestHeaders header size not match";
+	return false;
+  }
   for (auto item : resource_request.headers.GetHeaderVector()) {
-	net::HttpRequestHeaders extra_request_headers = req_info->extra_request_headers();
 	net::HttpRequestHeaders::HeaderVector::const_iterator iter =
 	  extra_request_headers.GetHeaderVector().end();
 	for (auto it = extra_request_headers.GetHeaderVector().begin();

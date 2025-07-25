@@ -157,6 +157,9 @@ class CompositorDelegateForInput {
   // removed.
   virtual LayerTreeHostImpl& GetImplDeprecated() = 0;
   virtual const LayerTreeHostImpl& GetImplDeprecated() const = 0;
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void ScheduledActionDraw() {}
+#endif
 };
 
 }  // namespace cc

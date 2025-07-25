@@ -72,6 +72,11 @@ ArkwebInputMethodControllerUtils::ArkwebInputMethodControllerUtils(
 
 ArkwebInputMethodControllerUtils::~ArkwebInputMethodControllerUtils() = default;
 
+// LCOV_EXCL_START
+void ArkwebInputMethodControllerUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(input_method_controller_);
+}
+
 Document& ArkwebInputMethodControllerUtils::GetDocument() const {
   return input_method_controller_->GetDocument();
 }
@@ -96,6 +101,7 @@ bool ArkwebInputMethodControllerUtils::IsAvailable() const {
 void ArkwebInputMethodControllerUtils::Clear() {
   input_method_controller_->Clear();
 }
+// LCOV_EXCL_STOP
 
 void ArkwebInputMethodControllerUtils::InsertTextDuringCompositionWithEvents(
     LocalFrame& frame,

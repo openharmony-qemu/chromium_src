@@ -18,10 +18,10 @@
 #include "components/viz/common/surfaces/surface_range.h"
 
 namespace cc {
-
 // This must match surface_layer.h's UpdateSubmissionStateCB.
 using UpdateSubmissionStateCB =
     base::RepeatingCallback<void(bool is_visible, base::WaitableEvent*)>;
+class SurfaceLayerImplUtils;
 
 class CC_EXPORT SurfaceLayerImpl : public LayerImpl {
  public:
@@ -73,7 +73,7 @@ class CC_EXPORT SurfaceLayerImpl : public LayerImpl {
                    AppendQuadsData* append_quads_data) override;
   bool is_surface_layer() const override;
   gfx::Rect GetEnclosingVisibleRectInTargetSpace() const override;
-
+  friend class SurfaceLayerImplUtils;
  protected:
   SurfaceLayerImpl(LayerTreeImpl* tree_impl, int id, UpdateSubmissionStateCB);
 
@@ -109,8 +109,12 @@ class CC_EXPORT SurfaceLayerImpl : public LayerImpl {
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   gfx::Rect visible_quad_rect_;
 #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  raw_ptr<SurfaceLayerImplUtils> surfaceLayerImplUtils_;
+#endif
 };
 
 }  // namespace cc
 
+#include "arkweb/chromium_ext/cc/layer/surface_layer_impl_utils.h"
 #endif  // CC_LAYERS_SURFACE_LAYER_IMPL_H_

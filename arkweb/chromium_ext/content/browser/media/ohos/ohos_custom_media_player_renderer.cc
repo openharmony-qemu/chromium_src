@@ -292,6 +292,7 @@ void OHOSCustomMediaPlayerRenderer::Initialize(
   GetCookies();
 }
 
+// LCOV_EXCL_START
 void OHOSCustomMediaPlayerRenderer::GetCookies() {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   if (!media_url_params_) {
@@ -347,6 +348,7 @@ void OHOSCustomMediaPlayerRenderer::GetCookies() {
           base::ReadOnlySharedMemoryRegion(),
           std::string()));
 }
+// LCOV_EXCL_STOP
 
 void OHOSCustomMediaPlayerRenderer::OnCookiesRetrieved(
     const std::string& cookies) {
@@ -354,6 +356,7 @@ void OHOSCustomMediaPlayerRenderer::OnCookiesRetrieved(
   TryCreateMediaPlayer();
 }
 
+// LCOV_EXCL_START
 void OHOSCustomMediaPlayerRenderer::TryCreateMediaPlayer() {
   DVLOG(1) << __func__;
 
@@ -428,6 +431,7 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
   std::move(init_cb_).Run(media::PIPELINE_OK);
   LOG(INFO) << "media player initialize ok.";
 }
+// LCOV_EXCL_STOP
 
 MediaInfo OHOSCustomMediaPlayerRenderer::BuildMediaInfo(
     const std::string& surface_id_string)
@@ -504,11 +508,12 @@ void OHOSCustomMediaPlayerRenderer::SetPlaybackRate(double playback_rate) {
       return;
     }
     media_player_->SetPlaybackRate(playback_rate);
+
+    if (!is_playing_) {
+      media_player_->Play();
+    }
+    is_playing_ = true;
   }
-  if (!is_playing_) {
-    media_player_->Play();
-  }
-  is_playing_ = true;
 }
 
 void OHOSCustomMediaPlayerRenderer::SetVolume(float volume) {

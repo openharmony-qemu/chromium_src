@@ -112,7 +112,7 @@ uint32_t NativeBufferAdapterImpl::GetSize()
 {
     if (windowHandle_ == nullptr) {
         WVLOG_E("windowHandle_ is nullptr");
-        return -1;
+        return 0;
     }
     return windowHandle_->size;
 }

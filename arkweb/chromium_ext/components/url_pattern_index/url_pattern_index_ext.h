@@ -8,7 +8,7 @@
 #include "components/url_pattern_index/url_pattern_index.h"
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-#include "components/url_pattern_index/flat/css_pattern_index_generated.h"
+#include "arkweb/chromium_ext/components/url_pattern_index/flat/css_pattern_index_generated.h"
 #endif
 
 class GURL;

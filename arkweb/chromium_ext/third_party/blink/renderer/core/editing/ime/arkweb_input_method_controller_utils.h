@@ -32,13 +32,15 @@
 #include "third_party/blink/renderer/core/execution_context/execution_context_lifecycle_observer.h"
 #include "third_party/blink/renderer/platform/graphics/dom_node_id.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+#include "third_party/blink/renderer/platform/heap/member.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 
 namespace blink {
 
 class InputMethodController;
 
-class ArkwebInputMethodControllerUtils {
+class ArkwebInputMethodControllerUtils final
+    : public GarbageCollected<ArkwebInputMethodControllerUtils> {
  public:
   friend class InputMethodController;
   explicit ArkwebInputMethodControllerUtils(
@@ -50,6 +52,8 @@ class ArkwebInputMethodControllerUtils {
   ArkwebInputMethodControllerUtils& operator=(
       const ArkwebInputMethodControllerUtils&) = delete;
 
+  void Trace(Visitor*) const;
+
   EphemeralRange CompositionEphemeralRange() const;
 
   bool HasComposition() const;
@@ -59,7 +63,7 @@ class ArkwebInputMethodControllerUtils {
   void GetInputElementAttributes(HashMap<String, String>& attributes) const;
 
  private:
-  const raw_ptr<InputMethodController> input_method_controller_;
+  const Member<InputMethodController> input_method_controller_;
   Document& GetDocument() const;
 
   LocalFrame& GetFrame() const;

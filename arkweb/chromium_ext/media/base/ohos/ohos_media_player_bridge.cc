@@ -699,4 +699,14 @@ void OHOSMediaPlayerBridge::PipEnable(bool enable) {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void OHOSMediaPlayerBridge::RecycleDmaBuffer() {
+  LOG(INFO) << "DMABUF::" << __func__;
+}
+
+void OHOSMediaPlayerBridge::ResumeDmaBuffer() {
+  LOG(INFO) << "DMABUF::" << __func__;
+}
+#endif  // ARKWEB_MEDIA_DMABUF
 }  // namespace media

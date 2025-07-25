@@ -289,6 +289,7 @@ DrmAdapterImpl::~DrmAdapterImpl()
     if (drmKeySystem_ != nullptr) {
         ReleaseMediaKeySystem();
     }
+    WVLOG_I("[DRM]DrmAdapterImpl::~DrmAdapterImpl exit.");
 }
 
 bool DrmAdapterImpl::IsSupported(const std::string& name)
@@ -381,6 +382,7 @@ int32_t DrmAdapterImpl::ReleaseMediaKeySystem()
     }
 
     Drm_ErrCode ret = OH_MediaKeySystem_Destroy(drmKeySystem_);
+    WVLOG_I("[DRM]DrmAdapterImpl::OH_MediaKeySystem_Destroy, ret = %{public}d.", ret);
     drmKeySystem_ = nullptr;
     if (ret != DRM_ERR_OK) {
         WVLOG_E("[DRM]Failed to release MediaKeySystem.");
@@ -405,6 +407,7 @@ int32_t DrmAdapterImpl::ReleaseMediaKeySession()
     }
 
     Drm_ErrCode ret = OH_MediaKeySession_Destroy(drmKeySession_);
+    WVLOG_I("[DRM]DrmAdapterImpl::OH_MediaKeySession_Destroy, ret = %{public}d.", ret);
     drmKeySession_ = nullptr;
     if (ret != DRM_ERR_OK) {
         WVLOG_E("[DRM]Failed to release MediaKeySession.");

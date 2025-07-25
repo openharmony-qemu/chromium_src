@@ -487,7 +487,7 @@ int HttpProxyConnectJob::DoBeginConnect() {
 int HttpProxyConnectJob::DoTransportConnect() {
   ProxyServer::Scheme scheme = GetProxyServerScheme();
   if (scheme == ProxyServer::SCHEME_HTTP) {
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
     nested_connect_job_ = std::make_unique<ArkWebTransportConnectJobExt>(
 #else
     nested_connect_job_ = std::make_unique<TransportConnectJob>(

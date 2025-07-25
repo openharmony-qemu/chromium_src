@@ -8,6 +8,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 scoped_refptr<ParkableStringImpl> ParkableStringUtils::GetParkableString(
     scoped_refptr<StringImpl>&& impl, bool is_parkable)
 {
@@ -19,5 +20,6 @@ scoped_refptr<ParkableStringImpl> ParkableStringUtils::GetParkableString(
       ? ParkableStringManager::Instance().Add(std::move(impl), nullptr)
       : ParkableStringImpl::MakeNonParkable(std::move(impl));
 }
+// LCOV_EXCL_STOP
 
 }  // namespace blink

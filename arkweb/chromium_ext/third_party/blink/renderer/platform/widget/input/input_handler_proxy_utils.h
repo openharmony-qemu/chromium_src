@@ -34,7 +34,9 @@ class InputHandlerProxyUtils {
 public:
   InputHandlerProxyUtils(InputHandlerProxy* proxy);
   ~InputHandlerProxyUtils();
-
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class InputHandlerProxyUtilsTest;
+#endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   std::unique_ptr<ScrollPredictor> CreateScrollPredictor();
 
@@ -69,6 +71,10 @@ public:
   gfx::Vector2dF GetOverScrollOffset();
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition);
+#endif
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   void DidNativeSendEvent(std::unique_ptr<EventWithCallback> event_with_callback);

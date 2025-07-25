@@ -12,12 +12,11 @@
 #include "cc/layers/surface_layer_impl.h"
 #include "cc/trees/layer_tree_host.h"
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_VIDEO_ASSISTANT) || BUILDFLAG(ARKWEB_SAME_LAYER)
 #include "arkweb/chromium_ext/cc/layer/surface_layer_for_include.cc"
 #endif
 
 namespace cc {
-
 scoped_refptr<SurfaceLayer> SurfaceLayer::Create() {
   return base::WrapRefCounted(new SurfaceLayer());
 }
@@ -210,5 +209,4 @@ void SurfaceLayer::PushPropertiesTo(
     callback_layer_tree_host_changed_.Write(*this) = false;
   }
 }
-
 }  // namespace cc

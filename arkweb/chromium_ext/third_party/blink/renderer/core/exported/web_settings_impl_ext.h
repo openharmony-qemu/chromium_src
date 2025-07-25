@@ -89,6 +89,11 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
   bool GetCustomMediaPlayerEnabled() override;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  void SetMediaResumeFromBFCachePage(bool resume) override;
+  bool GetMediaResumeFromBFCachePage() override;
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
   void SetBorderRadiusFromWeb(double borderRadiusTopLeft,
                               double borderRadiusTopRight,
@@ -99,6 +104,13 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
   double GetBorderRadiusBottomLeft() override;
   double GetBorderRadiusBottomRight() override;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+  void SetTouchHandleExistState(bool touchHandleExist) override;
+  bool IsTouchHandleExist() override;
+  void SetViewportScaleState(bool viewportScale) override;
+  bool IsViewportScale() override;
+#endif  // BUILDFLAG(ARKWEB_MENU)
 };
 }  // namespace blink
 

@@ -51,6 +51,13 @@ class ArkwebRenderProcessHostImplExt : public RenderProcessHostImpl {
   void InvokeRenderCrashDump() override;
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+  void ReportEngineEvent(const std::string& module,
+                         const std::string& resource,
+                         const std::string& error_code,
+                         const std::string& error_msg) override;
+#endif
+
  private:
 };
 

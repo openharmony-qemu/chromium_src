@@ -115,17 +115,17 @@ virtual void SetHtmlPlayEnabled(bool enabled) = 0;
 virtual bool IsHtmlPlayEnabled() = 0;
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+virtual void SetMediaResumeFromBFCachePage(bool resume) = 0;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
+
 #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
 virtual void SetWakeLockHandler(int32_t windowId,
                                 const SetKeepScreenOn& handler) = 0;
 #endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-virtual void WebExtensionUpdateTab(
-    int32_t tab_id,
-    const NWebExtensionTabUpdateProperties* update_properties) = 0;
-virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) = 0;
-virtual int32_t ExtensionGetTabId() const = 0;
+virtual int32_t ExtensionGetTabId() = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)

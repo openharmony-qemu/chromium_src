@@ -48,8 +48,10 @@
 #include "media/mojo/mojom/remoting.mojom.h"  // nogncheck
 #endif  // BUILDFLAG(ENABLE_MEDIA_REMOTING)
 
+
 namespace content {
 class MediaFactory;
+class RendererBlinkPlatformImpl;
 
 class ArkwebMediaFactoryExt : public MediaFactory {
 public:
@@ -60,14 +62,16 @@ public:
     return this;
   }
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  blink::WebNativeBridge* CreateWebNativeBridge(blink::WebNativeClient* client);
+  blink::WebNativeBridge* CreateWebNativeBridge(blink::WebNativeClient* client,
+    viz::FrameSinkId parent_frame_sink_id, scoped_refptr<base::SingleThreadTaskRunner>
+        main_thread_compositor_task_runner);
   media::RendererWebNativeDelegate* GetWebNativeDelegate();
 #endif
 
 private:
   raw_ptr<RenderFrameImpl> render_frame_;
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  media::RendererWebNativeDelegate* web_native_delegate_ = nullptr;
+  raw_ptr<media::RendererWebNativeDelegate> web_native_delegate_ = nullptr;
 #endif
 
 };

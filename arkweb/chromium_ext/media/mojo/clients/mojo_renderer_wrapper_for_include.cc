@@ -65,4 +65,22 @@ void MojoRendererWrapper::PipEnable(bool enable) {
   mojo_renderer_->PipEnable(enable);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+// LCOV_EXCL_START
+void MojoRendererWrapper::RecycleDmaBuffer() {
+  if (mojo_renderer_) {
+    LOG(INFO) << "DMABUF::MojoRendererWrapper, RecycleDmaBuffer";
+    mojo_renderer_->RecycleDmaBuffer();
+  }
+}
+
+void MojoRendererWrapper::ResumeDmaBuffer() {
+  if (mojo_renderer_) {
+    LOG(INFO) << "DMABUF::MojoRendererWrapper, ResumeDmaBuffer";
+    mojo_renderer_->ResumeDmaBuffer();
+  }
+}
+// LCOV_EXCL_STOP
+#endif  // ARKWEB_MEDIA_DMABUF
 }  // namespace media

@@ -57,6 +57,13 @@ const std::string GetContentDisposition(
 
     return origin_content_disposition;
 }
+
+std::string DesensitizeStr(const std::string& str) {
+    if (str.length() <= 2) {
+        return "**";
+    }
+    return str.substr(0, 2) + "**";
+}
 }
 
 NWebDownloadHandlerDelegate::NWebDownloadHandlerDelegate(
@@ -114,6 +121,17 @@ void NWebDownloadHandlerDelegate::OnDownloadUpdated(
       new NWebDownloadItemCallbackWrapper();
   web_download_item_callback_wrapper->callback_ = std::move(callback);
   struct NWebDownloadItem* item = CreateNWebDownloadItem(download_item);
+#if defined(REPORT_SYS_EVENT)
+  if (item != nullptr) {
+    LOG(DEBUG) << "NWebDownloadHandlerDelegate::OnDownloadUpdated code=" << item->last_error_code;
+    if (item->state == NWebDownloadItemState::INTERRUPTED ||
+        item->state == NWebDownloadItemState::CANCELED) {
+      ReportPageDownLoadErrorInfo(item->download_item_id, item->last_error_code);
+    } else if (item->state == NWebDownloadItemState::COMPLETE) {
+      ReportPageDownLoadErrorInfo(item->download_item_id, 0);
+    }
+  }
+#endif
   web_download_delegate_listener_->downloadDidUpdate(
       item, web_download_item_callback_wrapper);
 }
@@ -127,12 +145,12 @@ NWebDownloadItem* NWebDownloadHandlerDelegate::CreateNWebDownloadItem(
       strdup(GenerateSuggestedFilename(download_item).c_str());
   LOG(INFO) << "web_download_item params, nweb_id:" << item->nweb_id
             << ",id:" << item->download_item_id << ",guid:" << item->guid
-            << ",suggested:" << item->suggested_file_name
+            << ",suggested:" << DesensitizeStr(item->suggested_file_name)
             << ",current_speed:" << item->current_speed
             << ",percent_complete:" << item->percent_complete
             << ",total_bytes:" << item->total_bytes
             << ",received_bytes:" << item->received_bytes
-            << ",full_path:" << item->full_path << ",state:" << item->state
+            << ",full_path:" << DesensitizeStr(item->full_path) << ",state:" << item->state
             << ",received_slices:" << item->received_slices
             << ",last_modified:" << item->last_modified
             << ",etag:" << item->etag;
@@ -159,7 +177,7 @@ std::string NWebDownloadHandlerDelegate::GenerateSuggestedFilename(
   std::string default_charset =
       preference_delegate_
           ? preference_delegate_->DefaultTextEncodingFormat()
-          : (nweb ? nweb->GetPreference()->DefaultTextEncodingFormat()
+          : ((nweb && nweb->GetPreference()) ? nweb->GetPreference()->DefaultTextEncodingFormat()
                   : "utf-8");
   std::string content_disposition = GetContentDisposition(download_item,
                                                           default_charset);
@@ -170,7 +188,7 @@ std::string NWebDownloadHandlerDelegate::GenerateSuggestedFilename(
   LOG(INFO) << "GenerateSuggestedFilename mime_type: " << sniffed_mime_type
             << ", default_charset: " << default_charset
             << ", content-disposition: " << content_disposition
-            << ", generated_filename: " << generated_filename;
+            << ", generated_filename: " << DesensitizeStr(generated_filename.AsUTF8Unsafe());
 
   // If no mime type or explicitly specified a name, don't replace file
   // extension.

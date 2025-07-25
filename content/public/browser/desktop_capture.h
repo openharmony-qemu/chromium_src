@@ -30,7 +30,14 @@ CONTENT_EXPORT webrtc::DesktopCaptureOptions CreateDesktopCaptureOptions();
 
 // Creates specific DesktopCapturer with required settings.
 CONTENT_EXPORT std::unique_ptr<webrtc::DesktopCapturer> CreateScreenCapturer(
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    bool allow_wgc_screen_capturer = false,
+    int nweb_id = 0,
+    base::OnceCallback<void(uint64_t displayId)> callback =
+        base::BindOnce([](uint64_t value) {}));
+#else
     bool allow_wgc_screen_capturer = false);
+#endif
 CONTENT_EXPORT std::unique_ptr<webrtc::DesktopCapturer> CreateWindowCapturer();
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)

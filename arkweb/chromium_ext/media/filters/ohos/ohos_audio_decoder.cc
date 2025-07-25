@@ -20,6 +20,7 @@
 #include "media/formats/ac3/ac3_util.h"
 #include "media/formats/dts/dts_util.h"
 #include "media/media_buildflags.h"
+#include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
@@ -29,6 +30,7 @@ namespace media {
 namespace {
   constexpr base::TimeDelta TwoSecondTimeout = base::Seconds(2);
   constexpr int32_t MaxTimeOutCount = 2;
+  constexpr int DEFAULT_DRM_AUDIO_ERROR_CODE = 0;
 }  // namespace
 
 class AudioDecoderCallback;
@@ -155,6 +157,7 @@ OHOSAudioDecoder::OHOSAudioDecoder(scoped_refptr<base::SequencedTaskRunner> task
   io_timer_.SetTaskRunner(scoped_refptr<base::SingleThreadTaskRunner>());
 }
 
+// LCOV_EXCL_START
 OHOSAudioDecoder::~OHOSAudioDecoder() {
   TRACE_EVENT0("media", "OHOSAudioDecoder::~OHOSAudioDecoder");
   decoder_loop_.reset();
@@ -174,6 +177,7 @@ OHOSAudioDecoder::~OHOSAudioDecoder() {
   ClearInputQueue(DecoderStatus::Codes::kAborted);
   io_timer_.Stop();
 }
+// LCOV_EXCL_STOP
 
 AudioDecoderType OHOSAudioDecoder::GetDecoderType() const {
   return AudioDecoderType::kOhos;
@@ -199,6 +203,10 @@ void OHOSAudioDecoder::Initialize(const AudioDecoderConfig& config,
 
   if (state_ == ERROR) {
     LOG(INFO) << "OHOSAudioDecoder::Initialize state error";
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    std::string errorDesc = "OHOSAudioDecoder::Initialize state error";
+    ReportDrmAudioPlayErrorInfo(errorDesc);
+#endif
     base::BindPostTaskToCurrentDefault(std::move(init_cb)).Run(DecoderStatus::Codes::kFailed);
     return;
   }
@@ -224,6 +232,10 @@ void OHOSAudioDecoder::Initialize(const AudioDecoderConfig& config,
     if (!cdm_context || !cdm_context->GetOHOSMediaCryptoContext()) {
       LOG(ERROR) << "OHOSAudioDecoder::Initialize The stream is encrypted but there is no CdmContext "
         << "or MediaCryptoContext is not supported";
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+      std::string errorDesc = "OHOSAudioDecoder::Initialize config_.is_encrypted failed";
+      ReportDrmAudioPlayErrorInfo(errorDesc);
+#endif
       SetState(ERROR);
       base::BindPostTaskToCurrentDefault(std::move(init_cb))
         .Run(DecoderStatus::Codes::kUnsupportedEncryptionMode);
@@ -353,6 +365,10 @@ void OHOSAudioDecoder::OnMediaCryptoReady(InitCB init_cb, void* session, bool re
 
   if (!InitAudioDecoder(mime_type_)) {
     LOG(ERROR) << "OHOSAudioDecoder::OnMediaCryptoReady initAudioDecoder error";
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    std::string errorDesc = "OHOSAudioDecoder::OnMediaCryptoReady initAudioDecoder error";
+    ReportDrmAudioPlayErrorInfo(errorDesc);
+#endif
     base::BindPostTaskToCurrentDefault(std::move(init_cb))
       .Run(DecoderStatus::Codes::kFailed);
     return;
@@ -422,11 +438,13 @@ bool OHOSAudioDecoder::InitAudioDecoder(std::string mime_type) {
   return true;
 }
 
+// LCOV_EXCL_START
 bool OHOSAudioDecoder::CreateOhosDecoderLoop() {
   decoder_loop_.reset();
   decoder_loop_ = std::make_unique<OHOSAudioDecoderLoop>(this, scoped_refptr<base::SingleThreadTaskRunner>());
   return true;
 }
+// LCOV_EXCL_STOP
 
 void OHOSAudioDecoder::SetState(State new_state) {
   LOG(INFO)<< "OHOSAudioDecoder::SetState state_: " << static_cast<int32_t>(state_)
@@ -453,6 +471,10 @@ void OHOSAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer, DecodeCB deco
   DecodeCB cb = base::BindPostTaskToCurrentDefault(std::move(decode_cb));
   if (!DecoderBuffer::DoSubsamplesMatch(*buffer)) {
     LOG(ERROR) << "OHOSAudioDecoder::DoSubsamplesMatch error";
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    std::string errorDesc = "OHOSAudioDecoder::DoSubsamplesMatch error";
+    ReportDrmAudioPlayErrorInfo(errorDesc);
+#endif
     std::move(cb).Run(DecoderStatus::Codes::kFailed);
     return;
   }
@@ -460,6 +482,10 @@ void OHOSAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer, DecodeCB deco
   if (!buffer->end_of_stream() && buffer->timestamp() == kNoTimestamp) {
     LOG(ERROR) <<"OHOSAudioDecoder::Decode "<< buffer->AsHumanReadableString()
       << ": no timestamp, skipping this buffer";
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    std::string errorDesc = "OHOSAudioDecoder::no timestamp, skipping this buffer";
+    ReportDrmAudioPlayErrorInfo(errorDesc);
+#endif
     std::move(cb).Run(DecoderStatus::Codes::kFailed);
     return;
   }
@@ -467,6 +493,10 @@ void OHOSAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer, DecodeCB deco
   if (state_ == ERROR) {
     LOG(ERROR) << "OHOSAudioDecoder::Decode "<< buffer->AsHumanReadableString()
       << ": Error state, returning decode error for all buffers";
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    std::string errorDesc = "OHOSAudioDecoder::Error state, returning decode error for all buffers";
+    ReportDrmAudioPlayErrorInfo(errorDesc);
+#endif
     ClearInputQueue(DecoderStatus::Codes::kFailed);
     std::move(cb).Run(DecoderStatus::Codes::kFailed);
     return;
@@ -479,6 +509,14 @@ void OHOSAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer, DecodeCB deco
   LOG(DEBUG) << "OHOSAudioDecoder::Decode add input_queue_ success";
   decoder_loop_->ExpectWork();
   LOG(DEBUG) << "OHOSAudioDecoder::Decode loop start success";
+}
+
+void OHOSAudioDecoder::ReportDrmAudioPlayErrorInfo(const std::string& errorDesc) {
+  if (!ohos_crypto_context_) {
+      std::string errorType = "drm audio play error";
+      int errorCode = DEFAULT_DRM_AUDIO_ERROR_CODE;
+      ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
+  }
 }
 
 void OHOSAudioDecoder::Reset(base::OnceClosure closure) {
@@ -581,6 +619,7 @@ static void SetCencInfoToInputData(OHOSAudioDecoderLoop::InputData& data, const 
   data.cenc_info->SetMode(uint32_t(DrmCencInfoModeAdapter::DRM_CENC_INFO_KEY_IV_SUBSAMPLES_SET));
 }
 
+// LCOV_EXCL_START
 OHOSAudioDecoderLoop::InputData OHOSAudioDecoder::ProvideInputData() {
   LOG(DEBUG) << "OHOSAudioDecoder::ProvideInputData";
   const DecoderBuffer* decoder_buffer = input_queue_.front().first.get();
@@ -612,6 +651,7 @@ OHOSAudioDecoderLoop::InputData OHOSAudioDecoder::ProvideInputData() {
   }
   return data;
 }
+// LCOV_EXCL_STOP
 
 bool OHOSAudioDecoder::OnDecodedEos(const OutputBufferData& out) {
   LOG(INFO) << "OHOSAudioDecoder::OnDecodedEos";
@@ -680,6 +720,7 @@ bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
   return true;
 }
 
+// LCOV_EXCL_START
 void OHOSAudioDecoder::OnCodecLoopError() {
   LOG(ERROR) << "OHOSAudioDecoder::OnCodecLoopError";
   SetState(ERROR);
@@ -698,6 +739,7 @@ int32_t OHOSAudioDecoder::DequeueInputBuffer(int64_t& buffer_index) {
   LOG(DEBUG) << "OHOSAudioDecoder::DequeueInputBuffer return index: -1";
   return -1;
 }
+// LCOV_EXCL_STOP
 
 void OHOSAudioDecoder::EnqueueInputBuffer(int64_t buffer_index) {
   LOG(DEBUG) << "OHOSAudioDecoder::EnqueueInputBuffer index: " << buffer_index;
@@ -718,6 +760,7 @@ int32_t OHOSAudioDecoder::DequeueOutputBuffer(OutputBufferData& out) {
   return -1;
 }
 
+// LCOV_EXCL_START
 AudioDecoderAdapterCode OHOSAudioDecoder::FlushDecoder() {
   return audio_decoder_->FlushDecoder();
 }
@@ -747,6 +790,7 @@ void OHOSAudioDecoder::WaitingForLicence()
     io_timer_.Start(FROM_HERE, TwoSecondTimeout, this, &OHOSAudioDecoder::WaitingForLicence);
   }
 }
+// LCOV_EXCL_STOP
 
 AudioDecoderAdapterCode OHOSAudioDecoder::QueueInputBufferDec(uint32_t index,
     int64_t presentationTimeUs, uint8_t* bufferData, int32_t bufferSize,
@@ -787,11 +831,13 @@ void OHOSAudioDecoder::AddOutputBuffer(uint32_t index, uint8_t* bufferData, uint
   output_buffer_queue_.push_back(data);
 }
 
+// LCOV_EXCL_START
 void OHOSAudioDecoder::UpdateOutputFormat() {
   AudioDecoderAdapterCode ret = audio_decoder_->GetOutputFormatDec(decoder_format_);
   if (ret != AudioDecoderAdapterCode::DECODER_OK) {
     LOG(ERROR) << "OHOSAudioDecoder::UpdateOutputFormat err";
   }
 }
+// LCOV_EXCL_STOP
 
 } // namespace media

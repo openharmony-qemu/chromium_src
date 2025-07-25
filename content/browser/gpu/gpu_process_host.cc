@@ -20,6 +20,9 @@
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
 #include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/crashpad_dfx.h"
+#endif
 #include "base/base64.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
@@ -1008,14 +1011,26 @@ void GpuProcessHost::OnProcessLaunched() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+const std::string process_type = "gpu";
+#endif
+
 void GpuProcessHost::OnProcessLaunchFailed(int error_code) {
   LOG(ERROR) << "GPU process launch failed: error_code=" << error_code;
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string error_msg = "gpu process launch failed, error code:" + std::to_string(error_code);
+  crashpad::CrashpadDfx::ProcessCrashReport(process_type, "", "", error_msg);
+#endif
   RecordProcessCrash();
 }
 
 void GpuProcessHost::OnProcessCrashed(int exit_code) {
   // Record crash before doing anything that could start a new GPU process.
   LOG(ERROR) << "GPU process exited unexpectedly: exit_code=" << exit_code;
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string error_msg = "gpu crashed, error code:" + std::to_string(exit_code);
+  crashpad::CrashpadDfx::ProcessCrashReport(process_type, "", "", error_msg);
+#endif
   RecordProcessCrash();
   gpu_host_->OnProcessCrashed();
   SendOutstandingReplies();
@@ -1220,6 +1235,8 @@ bool GpuProcessHost::GpuAccessAllowed() const {
 void GpuProcessHost::DisableGpuCompositing() {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS_ASH)
   DLOG(ERROR) << "Can't disable GPU compositing";
+#elif BUILDFLAG(IS_ARKWEB)
+  LOG(ERROR) << "Can't disable GPU compositing";
 #else
   // TODO(crbug.com/40565996): The switch from GPU to software compositing
   // should be handled here instead of by ImageTransportFactory.

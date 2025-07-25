@@ -68,4 +68,22 @@ void MediaSessionControllerExt::OnEndAVSession(const MediaPlayerId& id, bool is_
 }
 #endif // ARKWEB_MEDIA_AVSESSION
 
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+void MediaSessionControllerExt::OnNotifyMemoryLevel(int player_id, int32_t level) {
+  DCHECK_EQ(player_id_, player_id);
+  if (!web_contents_) {
+    LOG(ERROR) << "DMABUF::OnNotifyMemoryLevel, web_contents is null";
+    return;
+  }
+  auto web_contents_observer = web_contents_->media_web_contents_observer();
+  if (!web_contents_observer) {
+    LOG(ERROR) << "DMABUF::OnNotifyMemoryLevel, web_contents_observer is null";
+    return;
+  }
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
+    LOG(INFO) << "DMABUF::MediaSessionControllerExt:OnNotifyMemoryLevel, level = " << level;
+    web_contents_observer->GetMediaPlayerRemote(id_)->NotifyMemoryLevel(level);
+  }
+}
+#endif
 }

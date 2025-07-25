@@ -157,6 +157,14 @@ mojom("mojom") {
     enabled_features += ["arkweb_pip"]
   }
 
+  if (arkweb_media_dmabuf) {
+    enabled_features += ["arkweb_media_dmabuf"]
+  }
+
+  if (arkweb_media_memory_pressure) {
+    enabled_features += ["arkweb_media_memory_pressure"]
+  }
+
   # Help select ServiceSandbox for media_service.mojom.
   if (mojo_media_host == "browser") {
     enabled_features += [ "mojo_media_in_browser" ]

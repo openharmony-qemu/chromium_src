@@ -329,6 +329,7 @@ HTMLMediaElement::CollectMediaInfoAttributesForVAST() {
   mediaInfoAttr->id = WTF::String::FromUTF8(GetIdAttribute().Utf8());
   mediaInfoAttr->title = WTF::String::FromUTF8(html_media_element_utils_->GetTitle().Utf8());
   mediaInfoAttr->duration = duration();
+  mediaInfoAttr->volume = volume();
   mediaInfoAttr->current_time = media_player->CurrentTime();
   mediaInfoAttr->playback_rate = playbackRate();
   mediaInfoAttr->video_width = media_player->NaturalSize().width();
@@ -395,14 +396,23 @@ void HTMLMediaElement::OnSupportVideoSurfaceChanged(
   }
 }
 
-
-
-
 void HTMLMediaElement::SetVideoSurface(int32_t widget_id) {
   LOG(INFO) << "SetVideoSurface(" << widget_id << ")";
   if (GetWebMediaPlayer()) {
     GetWebMediaPlayer()->SetVideoSurface(widget_id);
   }
+}
+
+void HTMLMediaElement::SetVolume(double volume)
+{
+  LOG(INFO) << "HTMLMediaElement::SetVolume volume=" << volume;
+  setVolume(volume);
+}
+
+void HTMLMediaElement::GetVolume(GetVolumeCallback callback)
+{
+  LOG(INFO) << "HTMLMediaElement::GetVolume volume=" << EffectiveMediaVolume();
+  std::move(callback).Run(EffectiveMediaVolume());
 }
 
 void HTMLMediaElement::RequestExitFullscreenIfNeeded() {
@@ -433,4 +443,62 @@ void HTMLMediaElement::PipEnable(bool enable) {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+void HTMLMediaElement::OnDmaBufferSeekTo(base::TimeDelta dmabuf_pause_time) {
+  double time = dmabuf_pause_time.InSecondsF();
+  LOG(INFO) << "DMABUF::" << __func__ << "(" << *this << "),  time=" << time;
+  Seek(time);
+}
+
+void HTMLMediaElement::RecycleDmaBuffer() {
+  if (GetWebMediaPlayer()) {
+    LOG(INFO) << "DMABUF::" << __func__ << "(" << *this << ")";
+    GetWebMediaPlayer()->RecycleDmaBuffer();
+  }
+}
+
+void HTMLMediaElement::ResumeDmaBuffer() {
+  if (GetWebMediaPlayer()) {
+    LOG(INFO) << "DMABUF::" << __func__ << "(" << *this << ")";
+    GetWebMediaPlayer()->ResumeDmaBuffer();
+  }
+}
+#endif  // ARKWEB_MEDIA_DMABUF
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+bool HTMLMediaElement::IsMediaResumeFromBFCachePage() const {
+  if (GetDocument().GetSettings()) {
+    return GetDocument().GetSettings()->GetMediaResumeFromBFCachePage();
+  }
+  return true;
+}
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+void HTMLMediaElement::NotifyMemoryLevel(int32_t level) {
+  LOG(INFO) << "DMABUF::" << __func__ << "(" << *this << "),  level=" << level;
+  switch (level) {
+    case 0:
+      memory_pressure_level_ = base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE;
+      break;
+    case 1:
+      memory_pressure_level_ = base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_MODERATE;
+      break;
+    case 2:
+      memory_pressure_level_ = base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL;
+      break;
+    default:
+      LOG(WARNING) << "DMABUF::" << __func__ << ": Unknown memory level " << level;
+      memory_pressure_level_ = base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE;
+      break;
+  }
+  if (GetWebMediaPlayer()) {
+    GetWebMediaPlayer()->NotifyMemoryLevel(memory_pressure_level_);
+  }
+  if (memory_pressure_level_ >= base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_MODERATE) {
+    RecycleDmaBuffer();
+  }
+}
+#endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
 }  // namespace blink

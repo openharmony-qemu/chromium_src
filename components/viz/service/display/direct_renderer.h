@@ -89,6 +89,10 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
   void SetNativeInnerWeb(bool isInnerWeb);
 #endif
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition);
+#endif
+
   void SetOutputSurfaceClipRect(const gfx::Rect& clip_rect);
   void SetVisible(bool visible);
   void ReallocatedFrameBuffers();

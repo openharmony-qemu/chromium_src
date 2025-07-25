@@ -1033,6 +1033,11 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     base::ElapsedTimer draw_occlusion_timer;
     occlusion_culler_->RemoveOverdrawQuads(&frame, device_scale_factor_);
     DebugDrawFrameVisible(frame);
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+    display_utils_->DumpSnapshotForBlankLess(frame);
+#endif
+
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
     display_utils_->DrawAndSwapDump(frame);
 #endif
@@ -1565,5 +1570,11 @@ void Display::ResetDisplayClientForTesting(DisplayClient* old_client) {
   CHECK_EQ(client_, old_client);
   client_ = nullptr;
 }
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void Display::SetClientId(const uint32_t client_id) {
+  display_utils_->SetClientId(client_id);
+}
+#endif
 
 }  // namespace viz

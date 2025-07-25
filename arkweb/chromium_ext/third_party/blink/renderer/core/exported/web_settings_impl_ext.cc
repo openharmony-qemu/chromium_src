@@ -24,6 +24,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 WebSettingsImplExt::WebSettingsImplExt(Settings* settings,
                                        DevToolsEmulator* dev_tools_emulator)
     : WebSettingsImpl(settings, dev_tools_emulator) {}
@@ -131,6 +132,16 @@ bool WebSettingsImplExt::GetCustomMediaPlayerEnabled() {
 }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+void WebSettingsImplExt::SetMediaResumeFromBFCachePage(bool resume) {
+  settings_->SetMediaResumeFromBFCachePage(resume);
+}
+
+bool WebSettingsImplExt::GetMediaResumeFromBFCachePage() {
+  return settings_->GetMediaResumeFromBFCachePage();
+}
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
 void WebSettingsImplExt::SetBorderRadiusFromWeb(
     double borderRadiusTopLeft,
@@ -159,4 +170,28 @@ double WebSettingsImplExt::GetBorderRadiusBottomRight()
   return settings_->GetBorderRadiusBottomRight();
 }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+void WebSettingsImplExt::SetTouchHandleExistState(bool touchHandleExist)
+{
+  settings_->SetTouchHandleExistState(touchHandleExist);
+}
+
+bool WebSettingsImplExt::IsTouchHandleExist()
+{
+  return settings_->IsTouchHandleExist();
+}
+
+void WebSettingsImplExt::SetViewportScaleState(bool viewportScale)
+{
+  settings_->SetViewportScaleState(viewportScale);
+}
+
+bool WebSettingsImplExt::IsViewportScale()
+{
+  return settings_->IsViewportScale();
+}
+#endif  // BUILDFLAG(ARKWEB_MENU)
+// LCOV_EXCL_STOP
+
 }  // namespace blink

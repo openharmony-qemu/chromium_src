@@ -607,6 +607,9 @@ void SkiaOutputSurfaceImplOnGpu::SwapBuffers(OutputSurfaceFrame frame) {
   TRACE_EVENT0("viz", "SkiaOutputSurfaceImplOnGpu::SwapBuffers");
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  SetDVsyncIfNecessary();
+#endif
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   ReportLossFrame::GetInstance()->Record();
 #endif
@@ -2885,3 +2888,7 @@ void SkiaOutputSurfaceImplOnGpu::ReadbackForTesting(
 }
 
 }  // namespace viz
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_for_include.cc"
+#endif

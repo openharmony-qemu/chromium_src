@@ -32,6 +32,8 @@ struct NWebMediaPlayerControllerBase {
   void (T::*exit_fullscreen)() = nullptr;
   void (T::*set_video_surface)(void*) = nullptr;
   void (T::*download)() = nullptr;
+  void (T::*set_volume)(double) = nullptr;
+  double (T::*get_volume)() = nullptr;
 
   NWebMediaPlayerControllerBase() = default;
   NWebMediaPlayerControllerBase(
@@ -57,6 +59,8 @@ class NWebMediaPlayerController : public NWebMediaPlayerControllerBase
     this->exit_fullscreen = &NWebMediaPlayerController::ExitFullscreen;
     this->set_video_surface = &NWebMediaPlayerController::SetVideoSurface;
     this->download = &NWebMediaPlayerController::Download;
+    this->set_volume = &NWebMediaPlayerController::SetVolume;
+    this->get_volume = &NWebMediaPlayerController::GetVolume;
   }
   virtual ~NWebMediaPlayerController() = default;
 
@@ -69,6 +73,8 @@ class NWebMediaPlayerController : public NWebMediaPlayerControllerBase
   virtual void ExitFullscreen() {}
   virtual void SetVideoSurface(void* native_window) {}
   virtual void Download() {}
+  virtual void SetVolume(double volume) {}
+  virtual double GetVolume() { return 1.0; }
 
  private:
   static_assert(offsetof(Base, struct_size) == 0,
@@ -104,6 +110,14 @@ class NWebMediaPlayerController : public NWebMediaPlayerControllerBase
   static_assert(
       (offsetof(Base, download) - offsetof(Base, set_video_surface))
           == sizeof(Base::set_video_surface),
+      "Must NOT break the order of Base members.");
+  static_assert(
+      (offsetof(Base, set_volume) - offsetof(Base, download))
+          == sizeof(Base::download),
+      "Must NOT break the order of Base members.");
+  static_assert(
+      (offsetof(Base, get_volume) - offsetof(Base, set_volume))
+          == sizeof(Base::set_volume),
       "Must NOT break the order of Base members.");
 };
 

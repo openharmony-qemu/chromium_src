@@ -138,6 +138,11 @@ class CC_EXPORT InputHandlerClient {
     // `kUseScrollPredictorForEmptyQueue`. After which we will resume frame
     // production and enqueuing input.
     kUseScrollPredictorForDeadline,
+
+    // Will perform as `kDispatchScrollEventsImmediately` until the deadline.
+    // However no input arriving after the deadline will dispatch. Event if
+    // frame production has yet to complete.
+    kDispatchScrollEventsUntilDeadline,
   };
 
   InputHandlerClient(const InputHandlerClient&) = delete;
@@ -164,7 +169,8 @@ class CC_EXPORT InputHandlerClient {
   virtual void DeliverInputForDeadline() = 0;
   virtual void DidFinishImplFrame() = 0;
   virtual bool HasQueuedInput() const = 0;
-  virtual void SetScrollEventDispatchMode(ScrollEventDispatchMode mode) = 0;
+  virtual void SetScrollEventDispatchMode(ScrollEventDispatchMode mode,
+                                          double scroll_deadline_ratio) = 0;
 
  protected:
   InputHandlerClient() = default;
@@ -381,6 +387,8 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   // is expected in "content/page coordinates".
   virtual void SetSynchronousInputHandlerRootScrollOffset(
       const gfx::PointF& root_content_offset);
+
+  virtual void SetBypassVsyncCondition(int32_t condition);
 
   virtual void PinchGestureBegin(const gfx::Point& anchor,
                                  ui::ScrollInputType source);
@@ -893,6 +901,10 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   bool has_scrolled_by_scrollbar_ = false;
 
   bool prefers_reduced_motion_ = false;
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  int32_t condition_ = 0;
+#endif
 
   bool is_handling_touch_sequence_ = false;
 

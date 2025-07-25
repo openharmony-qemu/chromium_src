@@ -1513,10 +1513,14 @@ NavigationRequest::CreateForSynchronousRendererCommit(
           false /* is_history_navigation_in_new_child_frame */,
           base::TimeTicks::Now() /* input_start */,
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-          network::mojom::RequestDestination::kEmpty, "");
+          network::mojom::RequestDestination::kEmpty, ""
 #else
-          network::mojom::RequestDestination::kEmpty);
+          network::mojom::RequestDestination::kEmpty
 #endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+          , false
+#endif
+          );
   // Note that some params are set to default values (e.g. page_state set to
   // the default blink::PageState()) even if the DidCommit message that came
   // from the renderer contained relevant info that can be used to fill the
@@ -2931,19 +2935,21 @@ bool NavigationRequest::ShouldAddCookieChangeListener() {
   // The `CookieChangeListener` will only be set up if all of these are true:
   // (1) the navigation's protocol is HTTP(s).
   // (2) we allow a document with `Cache-control: no-store` header to
-  // enter BFCache.
+  // enter back/forward.
   // (3) the navigation is neither a same-document navigation nor a page
   // activation, since in these cases, an existing `RenderFrameHost` will be
   // used, and it would already have an existing listener, so we should skip the
   // initialization.
-  // (4) the navigation is a primary main frame navigation, as the cookie
-  // change information will only be used in the inactive document control
-  // logic.
+  // (4) the navigation is a primary main frame navigation or it's for
+  // prerendering a main frame, as the cookie change information will only be
+  // used to determined if a page can be restored from back/forward cache, so
+  // subframe navigation can be ignored.
   return frame_tree_node_->navigator()
              .controller()
              .GetBackForwardCache()
              .should_allow_storing_pages_with_cache_control_no_store() &&
-         !IsPageActivation() && !IsSameDocument() && IsInPrimaryMainFrame() &&
+         !IsPageActivation() && !IsSameDocument() &&
+         (IsInPrimaryMainFrame() || IsInPrerenderedMainFrame()) &&
          common_params_->url.SchemeIsHTTPOrHTTPS();
 }
 
@@ -6997,11 +7003,17 @@ NavigationRequest::CheckCredentialedSubresource() const {
   }
 
   // Warn the user about the request being blocked.
+#if !BUILDFLAG(ARKWEB_DEVTOOLS)
   const char* console_message =
       "Subresource requests whose URLs contain embedded credentials (e.g. "
       "`https://user:pass@host/`) are blocked. See "
       "https://www.chromestatus.com/feature/5669008342777856 for more "
       "details.";
+#else
+  const char* console_message =
+      "Subresource requests whose URLs contain embedded credentials (e.g. "
+      "`https://user:pass@host/`) are blocked.";
+#endif // ARKWEB_DEVTOOLS
   parent->AddMessageToConsole(blink::mojom::ConsoleMessageLevel::kWarning,
                               console_message);
   return CredentialedSubresourceCheckResult::BLOCK_REQUEST;

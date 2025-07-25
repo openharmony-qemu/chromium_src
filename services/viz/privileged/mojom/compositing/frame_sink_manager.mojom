@@ -247,6 +247,10 @@ interface FrameSinkManager {
     uint32 grouping_id,
     pending_remote<input.mojom.RenderInputRouterDelegateClient>
       rir_delegate_client_remote);
+
+  // set url
+  [EnableIf=arkweb_blank_optimize]
+  ClearBlanklessSnapshotInfo(uint64 blankless_key);
 };
 
 // The FrameSinkManagerClient interface is implemented by the Display

@@ -5,4 +5,7 @@
 <translation id="IDS_OHOS_MEDIA_VIDEO_PLAYBACK_SPEED_BUTTON">倍速</translation>
 <translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">已启用未成年人保护，此网页被限制访问。</translation>
 <translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">设置</translation>
+<translation id="IDS_OHOS_MEDIA_OVERFLOW_MENU_EXIT_PICTURE_IN_PICTURE">退出画中画</translation>
+<translation id="IDS_OHOS_MEDIA_OVERFLOW_MENU_ENTER_PICTURE_IN_PICTURE">画中画</translation>
+<translation id="IDS_OHOS_MEDIA_OVERFLOW_MENU_DOWNLOAD">下载</translation>
 </translationbundle>

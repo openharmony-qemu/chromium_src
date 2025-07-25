@@ -14,9 +14,9 @@
 #include "base/location.h"
 #include "base/logging.h"
 #include "base/metrics/histogram_macros.h"
+#include "base/numerics/safe_conversions.h"
 #include "base/rand_util.h"
 #include "base/ranges/algorithm.h"
-#include "base/numerics/safe_conversions.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "base/system/sys_info.h"
@@ -29,6 +29,7 @@
 #include "media/base/ohos/ohos_media_drm_bridge_delegate.h"
 #include "media/base/provision_fetcher.h"
 #include "media/cdm/clear_key_cdm_common.h"
+#include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "third_party/widevine/cdm/widevine_cdm_common.h"
 #if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
 #include "media/cdm/wiseplay_cdm_common.h"
@@ -45,7 +46,7 @@ constexpr int32_t MEDIA_KEY_REQUEST_TYPE_NONE = 4;
 constexpr int32_t MEDIA_KEY_REQUEST_TYPE_UPDATE = 5;
 constexpr size_t HEX_STRING_OFFSET = 2;
 constexpr int32_t SESSION_ID_LENGTH = 16;
-constexpr double  MS_IN_SECOND = 1000.0;
+constexpr double MS_IN_SECOND = 1000.0;
 
 namespace {
 
@@ -303,6 +304,8 @@ bool IsKeySystemSupportedWithTypeImpl(const std::string& key_system,
   }
   return supported;
 }
+
+constexpr int DEFAULT_DRM_AUDIO_ERROR_CODE = 0;
 }  // namespace
 
 OHOSDrmCallback::OHOSDrmCallback(
@@ -543,8 +546,8 @@ void OHOSMediaDrmBridge::SetServerCertificate(
       cdm_promise_adapter_.SavePromise(std::move(promise), __func__);
   if (ohos_drm_adapter_) {
     std::string SERVER_CERTIFICATE = "serviceCertificate";
-    int32_t ret = ohos_drm_adapter_->SetConfigurationByteArray(SERVER_CERTIFICATE,
-        certificate.data(), certificate.size());
+    int32_t ret = ohos_drm_adapter_->SetConfigurationByteArray(
+        SERVER_CERTIFICATE, certificate.data(), certificate.size());
     LOG(INFO) << "[DRM]" << __func__ << ", ret: " << ret;
     if (ret == 0) {
       ResolvePromise(promise_id);
@@ -600,6 +603,20 @@ void OHOSMediaDrmBridge::CreateSessionAndGenerateRequest(
   LOG(INFO) << "[DRM]" << __func__ << ", session_id:" << session_id
             << ", mime_type:" << mime_type;
   if (ohos_drm_adapter_) {
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+    if (base::ranges::equal(scheme_uuid_, kWiseplayUuid)) {
+      drm_status_ = DRM_STATUS_DEFAULT;
+      is_license_ready_ = false;
+      if (properties_ == nullptr) {
+        properties_ = std::make_unique<DrmProperties>(
+            session_id, mime_type, key_type, promise_id,
+            session_type == CdmSessionType::kPersistentLicense, init_data);
+      } else {
+        properties_->update(session_id, mime_type, key_type, promise_id,
+                            init_data);
+      }
+    }
+#endif
     ohos_drm_adapter_->GenerateMediaKeyRequest(session_id, key_type,
                                                init_data.size(), init_data,
                                                mime_type, promise_id);
@@ -624,6 +641,17 @@ void OHOSMediaDrmBridge::LoadSession(
   }
 
   if (ohos_drm_adapter_) {
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+    if (base::ranges::equal(scheme_uuid_, kWiseplayUuid)) {
+      drm_status_ = DRM_STATUS_DEFAULT;
+      is_license_ready_ = false;
+      if (properties_ == nullptr) {
+        properties_ = std::make_unique<DrmProperties>(session_id, promise_id);
+      } else {
+        properties_->update(session_id, promise_id);
+      }
+    }
+#endif
     ohos_drm_adapter_->LoadSession(promise_id, session_id);
   } else {
     RejectPromise(promise_id, CdmPromise::Exception::INVALID_STATE_ERROR,
@@ -679,6 +707,65 @@ void OHOSMediaDrmBridge::RemoveSession(
   }
 }
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+void OHOSMediaDrmBridge::SuspendSession() {
+  LOG(INFO) << "[DRM]" << __func__ << ", drm_status: " << drm_status_;
+  if (!base::ranges::equal(scheme_uuid_, kWiseplayUuid)) {
+    return;
+  }
+  if (!task_runner_->BelongsToCurrentThread()) {
+    task_runner_->PostTask(FROM_HERE,
+                           base::BindOnce(&OHOSMediaDrmBridge::SuspendSession,
+                                          weak_factory_.GetWeakPtr()));
+    return;
+  }
+  drm_status_ = DRM_STATUS_SUSPEND;
+}
+
+void OHOSMediaDrmBridge::ResumeSession() {
+  LOG(INFO) << "[DRM]" << __func__ << ", drm_status: " << drm_status_;
+  if (!base::ranges::equal(scheme_uuid_, kWiseplayUuid)) {
+    return;
+  }
+  if (!task_runner_->BelongsToCurrentThread()) {
+    task_runner_->PostTask(FROM_HERE,
+                           base::BindOnce(&OHOSMediaDrmBridge::ResumeSession,
+                                          weak_factory_.GetWeakPtr()));
+    return;
+  }
+  if (drm_status_ == DRM_STATUS_SUSPEND_RELEASE_RESOURCE) {
+    drm_status_ = DRM_STATUS_RESUME_CREATE_KEYSYSTEM;
+    InitDrmKeySystem();
+  }
+}
+
+void OHOSMediaDrmBridge::ReleaseInnerResource() {
+  LOG(INFO) << "[DRM]" << __func__ << ", drm_status: " << drm_status_;
+  if (!base::ranges::equal(scheme_uuid_, kWiseplayUuid)) {
+    return;
+  }
+
+  if (!task_runner_->BelongsToCurrentThread()) {
+    task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OHOSMediaDrmBridge::ReleaseInnerResource,
+                                  weak_factory_.GetWeakPtr()));
+    return;
+  }
+
+  if (drm_status_ != DRM_STATUS_SUSPEND) {
+    LOG(WARNING) << "[DRM]" << __func__ << "Only when in SUSPEND status"
+                 << " can resources be actively released.";
+    return;
+  }
+
+  drm_status_ = DRM_STATUS_SUSPEND_RELEASE_RESOURCE;
+  if (ohos_drm_adapter_) {
+    ohos_drm_adapter_ = nullptr;
+    ohos_media_key_session_ = nullptr;
+  }
+}
+#endif
+
 CdmContext* OHOSMediaDrmBridge::GetCdmContext() {
   return this;
 }
@@ -732,7 +819,14 @@ void OHOSMediaDrmBridge::ResolvePromiseWithSession(
 void OHOSMediaDrmBridge::RejectPromise(uint32_t promise_id,
                                        CdmPromise::Exception exception_code,
                                        const std::string& error_message) {
-  LOG(INFO) << "[DRM]" << __func__;
+  LOG(ERROR) << "[DRM]" << __func__ << ", error_message: " << error_message;
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string errorType = "drm certificate verification failed";
+  int errorCode = DEFAULT_DRM_AUDIO_ERROR_CODE;
+  std::string errorDesc = "OHOSMediaDrmBridge::reject promise";
+  ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
+#endif
+
   cdm_promise_adapter_.RejectPromise(promise_id, exception_code, 0,
                                      error_message);
 }
@@ -798,8 +892,12 @@ void OHOSMediaDrmBridge::SetOHOSMediaCryptoAndLicenseReadyCB(
     LOG(INFO) << "[DRM]" << __func__ << ", license not ready.";
     return;
   }
-  LOG(INFO) << "[DRM]" << __func__;
-  is_license_ready_ = false;
+  if (drm_status_ != DRM_STATUS_DEFAULT &&
+      drm_status_ != DRM_STATUS_RESUME_LICENSE_READY) {
+    LOG(INFO) << "[DRM]" << __func__ << ", license resume in progress.";
+    return;
+  }
+  LOG(INFO) << "[DRM]" << __func__ << ", notify license ready.";
   std::move(media_crypto_and_license_ready_cb_)
       .Run(ohos_media_key_session_, IsSecureCodecRequired());
 }
@@ -807,7 +905,14 @@ void OHOSMediaDrmBridge::SetOHOSMediaCryptoAndLicenseReadyCB(
 
 void OHOSMediaDrmBridge::OnOHOSMediaCryptoReady(void* session) {
   DCHECK(task_runner_->BelongsToCurrentThread());
-  LOG(INFO) << "[DRM]" << __func__ << ", session:" << session;
+  LOG(INFO) << "[DRM]" << __func__ << ", drm_status_:" << drm_status_;
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  if (base::ranges::equal(scheme_uuid_, kWiseplayUuid)) {
+    if (drm_status_ == DRM_STATUS_RESUME_CREATE_KEYSYSTEM) {
+      drm_status_ = DRM_STATUS_RESUME_MEDIA_KEY_SESSION_READY;
+    }
+  }
+#endif
   ohos_media_key_session_ = session;
   task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&OHOSMediaDrmBridge::NotifyMediaCryptoReady,
@@ -1047,13 +1152,16 @@ void OHOSMediaDrmBridge::OnSessionExpirationUpdate(
 void OHOSMediaDrmBridge::OnMediaLicenseReady(bool success) {
   LOG(INFO) << "[DRM]" << __func__;
   DCHECK(task_runner_->BelongsToCurrentThread());
+  is_license_ready_ = true;
+  if (drm_status_ == DRM_STATUS_RESUME_GENERATE_REQUEST ||
+      drm_status_ == DRM_STATUS_RESUME_LOAD_SESSION) {
+    drm_status_ = DRM_STATUS_RESUME_LICENSE_READY;
+  }
   if (!media_crypto_and_license_ready_cb_) {
-    is_license_ready_ = true;
     LOG(INFO) << "[DRM]" << __func__ << ", cb not set.";
     return;
   }
   LOG(INFO) << "[DRM]" << __func__ << ", session:" << ohos_media_key_session_;
-  is_license_ready_ = false;
   std::move(media_crypto_and_license_ready_cb_)
       .Run(ohos_media_key_session_, IsSecureCodecRequired());
 }
@@ -1071,6 +1179,10 @@ OHOSMediaDrmBridge::OHOSMediaDrmBridge(
     const SessionKeysChangeCB& session_keys_change_cb,
     const SessionExpirationUpdateCB& session_expiration_update_cb)
     : scheme_uuid_(scheme_uuid),
+      security_level_(security_level),
+      origin_id_(origin_id),
+      properties_(nullptr),
+      drm_status_(DRM_STATUS_DEFAULT),
       storage_(std::move(storage)),
       create_fetcher_cb_(create_fetcher_cb),
       session_message_cb_(session_message_cb),
@@ -1079,28 +1191,10 @@ OHOSMediaDrmBridge::OHOSMediaDrmBridge(
       session_expiration_update_cb_(session_expiration_update_cb),
       task_runner_(base::SingleThreadTaskRunner::GetCurrentDefault()),
       media_crypto_context_(this),
+      ohos_drm_adapter_(nullptr),
       ohos_media_key_session_(nullptr) {
   LOG(INFO) << "[DRM]" << __func__;
-  ohos_drm_adapter_ =
-      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDrmAdapter();
-  if (ohos_drm_adapter_) {
-    auto drmCallback =
-        std::make_unique<OHOSDrmCallback>(task_runner_,
-                                          weak_factory_.GetWeakPtr());
-    ohos_drm_adapter_->RegistDrmCallback(std::move(drmCallback));
-
-    if (scheme_uuid == GetKeySystemManager()->GetUUID(kWidevineKeySystem)) {
-      ohos_drm_adapter_->CreateKeySystem(kWidevineKeySystem, origin_id,
-                                         security_level);
-#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
-    } else if (scheme_uuid ==
-               GetKeySystemManager()->GetUUID(kWiseplayKeySystem)) {
-      LOG(INFO) << "[DRM]" << __func__ << ", Create wiseplay,";
-      ohos_drm_adapter_->CreateKeySystem(kWiseplayKeySystem, "",
-                                         security_level);
-#endif
-    }
-  }
+  InitDrmKeySystem();
 }
 
 OHOSMediaDrmBridge::~OHOSMediaDrmBridge() {
@@ -1122,8 +1216,15 @@ OHOSMediaDrmBridge::SecurityLevel OHOSMediaDrmBridge::GetSecurityLevel() {
 }
 
 void OHOSMediaDrmBridge::NotifyMediaCryptoReady() {
-  LOG(INFO) << "[DRM]" << __func__;
+  LOG(INFO) << "[DRM]" << __func__ << ", drm_status: " << drm_status_;
   DCHECK(task_runner_->BelongsToCurrentThread());
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  if (base::ranges::equal(scheme_uuid_, kWiseplayUuid) &&
+      (drm_status_ == DRM_STATUS_RESUME_MEDIA_KEY_SESSION_READY)) {
+    ResumeMediaLicense();
+    return;
+  }
+#endif
   if (!media_crypto_ready_cb_) {
     LOG(INFO) << "[DRM]" << __func__ << ", cb is not set.";
     return;
@@ -1181,4 +1282,52 @@ void OHOSMediaDrmBridge::OnHasAdditionalUsableKey() {
   LOG(INFO) << "[DRM]" << __func__;
   event_callbacks_.Notify(Event::kHasAdditionalUsableKey);
 }
+
+void OHOSMediaDrmBridge::InitDrmKeySystem() {
+  if (ohos_drm_adapter_) {
+    LOG(WARNING) << "[DRM]" << __func__
+                 << ", drm adapter initlalization completed.";
+    return;
+  }
+  ohos_drm_adapter_ =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDrmAdapter();
+  if (!ohos_drm_adapter_) {
+    LOG(ERROR) << "[DRM]" << __func__ << ", drm adapter create failed.";
+    return;
+  }
+  auto drmCallback = std::make_unique<OHOSDrmCallback>(
+      task_runner_, weak_factory_.GetWeakPtr());
+  ohos_drm_adapter_->RegistDrmCallback(std::move(drmCallback));
+  if (scheme_uuid_ == GetKeySystemManager()->GetUUID(kWidevineKeySystem)) {
+    ohos_drm_adapter_->CreateKeySystem(kWidevineKeySystem, origin_id_,
+                                       security_level_);
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  } else if (scheme_uuid_ ==
+             GetKeySystemManager()->GetUUID(kWiseplayKeySystem)) {
+    LOG(INFO) << "[DRM]" << __func__ << ", Create wiseplay,";
+    ohos_drm_adapter_->CreateKeySystem(kWiseplayKeySystem, "", security_level_);
+#endif
+  }
+}
+
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+void OHOSMediaDrmBridge::ResumeMediaLicense() {
+  if (!ohos_drm_adapter_ || !properties_) {
+    LOG(ERROR) << "[DRM]" << __func__
+               << ", drm adapter or properties is nullptr.";
+    return;
+  }
+  if (properties_->persistent_license() && is_license_ready_) {
+    drm_status_ = DRM_STATUS_RESUME_LOAD_SESSION;
+    ohos_drm_adapter_->LoadSession(properties_->promise_id(),
+                                   properties_->session_id());
+  } else {
+    drm_status_ = DRM_STATUS_RESUME_GENERATE_REQUEST;
+    ohos_drm_adapter_->GenerateMediaKeyRequest(
+        properties_->session_id(), properties_->key_type(),
+        properties_->init_data().size(), properties_->init_data(),
+        properties_->mime_type(), properties_->promise_id());
+  }
+}
+#endif
 }  // namespace media

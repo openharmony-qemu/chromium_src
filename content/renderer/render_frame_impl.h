@@ -137,6 +137,14 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/web_native_bridge.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+#include "arkweb/chromium_ext/content/renderer/ark_web_render_frame_impl.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#endif
+
 namespace blink {
 namespace scheduler {
 class WebAgentGroupScheduler;
@@ -182,6 +190,7 @@ class RendererPpapiHost;
 class RenderAccessibilityManager;
 class RenderFrameObserver;
 class ArkwebMediaFactoryExt;
+class RenderFrameImplUtils;
 
 class CONTENT_EXPORT RenderFrameImpl
     : public RenderFrame,
@@ -197,6 +206,7 @@ class CONTENT_EXPORT RenderFrameImpl
 #endif
       service_manager::mojom::InterfaceProvider {
  public:
+  friend class RenderFrameImplUtils;
   // Creates a new RenderFrame as the main frame of `web_view`. Note that not
   // all main RenderFrame creation uses this function. `CreateMainFrame()`
   // is used to create a RenderFrame that is immediately attached as the main
@@ -418,6 +428,9 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_AI)
   void CloseImageOverlaySelection() override;
 #endif  // BUILDFLAG(ARKWEB_AI)
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  void SendCommitNavigationTime(int64_t start_time) override;
+#endif  // BUILDFLAG(ARKWEB_DFX_TRACING)
 
   void AddMessageToConsole(blink::mojom::ConsoleMessageLevel level,
                            const std::string& message) override;
@@ -444,6 +457,11 @@ class CONTENT_EXPORT RenderFrameImpl
       const gfx::Rect& rect) override;
   float GetDeviceScaleFactor() override;
   blink::scheduler::WebAgentGroupScheduler& GetAgentGroupScheduler() override;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnPdfScrollAtBottom(const std::string& url) override;
+  void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   void ClearContextMenu() override;
@@ -884,6 +902,14 @@ class CONTENT_EXPORT RenderFrameImpl
                       int32_t object_id,
                       base::Value::List async_method_list,
                       bool need_update) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void NotifyLcpForBlankless() override;
+  void SendBlanklessKeyToRenderFrame(uint32_t nweb_id,
+                                     uint64_t blankless_key,
+                                     uint64_t frame_sink_id,
+                                     int64_t pref_hash) override;
 #endif
  protected:
   explicit RenderFrameImpl(CreateParams params);
@@ -1713,6 +1739,19 @@ class CONTENT_EXPORT RenderFrameImpl
 
   // Set if this RenderFrameImpl is for a main frame which is not top-level.
   const bool is_for_nested_main_frame_;
+
+  RenderFrameImplUtils* implUtils;
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  uint32_t nweb_id_ = 0;
+  uint64_t blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
+  uint64_t frame_sink_id_ = 0;
+  int64_t pref_hash_ = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool viewport_meta_enabled_{false};
+#endif
 
   base::WeakPtrFactory<RenderFrameImpl> weak_factory_{this};
 };

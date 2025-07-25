@@ -20,6 +20,8 @@ class MediaPlayerController {
   virtual void ExitFullscreen() {}
   virtual bool SetVideoSurface(void* native_window) { return false; }
   virtual void Download() {}
+  virtual void SetVolume(double volume) {}
+  virtual double GetVolume() { return 1.0; }
 };
 
 } // namespace content

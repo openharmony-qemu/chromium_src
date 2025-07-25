@@ -31,6 +31,22 @@ class LayerExt {
   virtual void OnLayerRectVisibilityChange(bool visibility) {}
 
   virtual void CleanupVisibilityForRemovedLayer(bool visibility) {}
+
+  virtual bool NativeEmbedOverlay() {
+    return native_embed_overlay_;
+  }
+
+  virtual void SetNativeEmbedOverlay(bool native_embed_overlay) {
+    native_embed_overlay_ = native_embed_overlay;
+  }
+
+  virtual bool NativeEmbedOverlayInfinity() {
+    return native_embed_overlay_;
+  }
+
+  virtual void SetNativeEmbedOverlayInfinity(bool native_embed_overlay_infinity) {
+    native_embed_overlay_infinity_ = native_embed_overlay_infinity;
+  }
 #endif
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   virtual void OnLayerBoundsUpdate(const gfx::Rect& bounds) {}
@@ -46,6 +62,11 @@ class LayerExt {
  private:
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   bool should_overlay_{false};
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool native_embed_overlay_{false};
+  bool native_embed_overlay_infinity_{false};
 #endif
 };
 }  // namespace cc

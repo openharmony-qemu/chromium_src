@@ -224,6 +224,14 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
     // Notifies the frame's client that the plugin stopped loading.
     virtual void DidStopLoading() = 0;
 
+#if BUILDFLAG(ARKWEB_PDF)
+    // Notifies the frame's client that the pdf plugin scroll at bottom.
+    virtual void OnPdfScrollAtBottom(const std::string& url) = 0;
+
+    // Notifies the frame's client that the pdf plugin load status.
+    virtual void OnPdfLoadEvent(int32_t result, const std::string& url) = 0;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
     // Prints the plugin element.
     virtual void Print() {}
 
@@ -366,6 +374,10 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   std::vector<SearchStringResult> SearchString(const std::u16string& needle,
                                                const std::u16string& haystack,
                                                bool case_sensitive) override;
+#if BUILDFLAG(ARKWEB_PDF)
+  void NotifyPdfScrollAtBottom(float scroll_position_y, float max_y);
+  static int32_t CastFpdfErrorToPdfLoadEvent(int pdf_error);
+#endif  // BUILDFLAG(ARKWEB_PDF)
   void DocumentLoadComplete() override;
   void DocumentLoadFailed() override;
   void DocumentHasUnsupportedFeature(const std::string& feature) override;
@@ -418,6 +430,9 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   void UpdateLayerTransform(float scale,
                             const gfx::Vector2dF& translate) override;
 
+#if BUILDFLAG(ARKWEB_PDF)
+  gfx::Rect GetAvailableArea() override;
+#endif
   // PdfAccessibilityActionHandler:
   void EnableAccessibility() override;
   void HandleAccessibilityAction(
@@ -931,6 +946,10 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 #if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
   bool show_searchify_in_progress_ = false;
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+  bool scroll_at_bottom_status_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   base::WeakPtrFactory<PdfViewWebPlugin> weak_factory_{this};
 };

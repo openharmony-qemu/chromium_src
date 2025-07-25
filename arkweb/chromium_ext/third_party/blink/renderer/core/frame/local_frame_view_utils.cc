@@ -27,6 +27,7 @@
 #include "ui/gfx/geometry/rect_f.h"
 
 namespace blink {
+// LCOV_EXCL_START
 LocalFrameViewUtils::LocalFrameViewUtils(LocalFrameView* local_frame_view)
     : local_frame_view_(local_frame_view) {}
 
@@ -56,6 +57,7 @@ void LocalFrameViewUtils::UpdateCompositedSelectionIfNeed() {
   }
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
 void LocalFrameViewUtils::PerformLayoutOnPreload(Document* document) {

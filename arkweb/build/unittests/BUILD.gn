@@ -15,7 +15,9 @@
 group("oh_base_unittests") {
   testonly = true
   deps = [
+    "//arkweb/chromium_ext/sandbox:arkweb_sandbox_unittests",
     "//base:base_unittests",
+    "//cc:cc_unittests",
     "//components:components_unittests",
     "//cef:libcef_static_unittests",
     "//components/viz:viz_unittests",
@@ -32,6 +34,7 @@ group("oh_base_unittests") {
     "//ui/compositor:compositor_unittests",
     "//ui/gl:gl_unittests",
     "//ui/events:events_unittests",
+    "//ui/ozone:ozone_headless_unittests",
   ]
 }
 
@@ -48,6 +51,7 @@ group("oh_core_unittests") {
     "//media/capture:capture_unittests",
     "//media/learning/mojo:media_learning_mojo_unittests",
     "//mojo:mojo_unittests",
+    "//third_party/blink/renderer/controller:blink_unittests",
     "//third_party/blink/renderer/platform/heap:blink_heap_unittests",
     "//third_party/catapult/tracing/tracing:histogram_unittests",
     "//third_party/ced:ced_unittests",

@@ -16,11 +16,18 @@
 #ifndef OHOS_NWEB_SRC_NWEB_PERMISSION_STATUS_QUERY_DELEGATE_CALLBACK_H
 #define OHOS_NWEB_SRC_NWEB_PERMISSION_STATUS_QUERY_DELEGATE_CALLBACK_H
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/public/capi/arkweb_permission_status_query.h"
+#endif
+
 struct NWebPermissionStatusQuery;
 
 struct NWebPermissionStatusQueryDelegateCallback {
-  void (*onPermissionStatusQuery)(
-      struct NWebPermissionStatusQuery* query);
+  void (*onPermissionStatusQuery)(struct NWebPermissionStatusQuery* query);
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  void (*onArkPermissionStatusQuery)(ArkWebPermissionStatusQuery* query);
+#endif
 };
 
-#endif // OHOS_NWEB_SRC_NWEB_PERMISSION_STATUS_QUERY_DELEGATE_CALLBACK_H
+#endif  // OHOS_NWEB_SRC_NWEB_PERMISSION_STATUS_QUERY_DELEGATE_CALLBACK_H

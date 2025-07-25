@@ -31,6 +31,9 @@
 #include "third_party/blink/renderer/core/geometry/dom_rect.h"
 #include "third_party/blink/renderer/core/html/html_element.h"
 #include "third_party/blink/renderer/core/html/media/html_media_element.h"
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace blink {
 
@@ -53,12 +56,42 @@ static constexpr int kPopupMenuPaddingPx = 4;
 static constexpr int kPopupMenuBottomSpaceLeft = 358;
 // 216+4+4+8=232
 static constexpr int kPopupMenuLeftSpaceLeft = 232;
+
+// 216 + 4 + 4
+static constexpr int kOverflowPopupMenuLeftSpaceLeft = 224;
+static constexpr int kOverflowPopupMenuBorderPx = 2;
+
 static const char kImportant[] = "important";
 static const char kPx[] = "px";
 
 void MediaControlPopupMenuElementUtils::SetPopupAnchorHM(
     DOMRect* bounding_client_rect, LocalDOMWindow* dom_window) {
   element->style()->removeProperty("max-height", ASSERT_NO_EXCEPTION);
+
+  if (IsOverflowMenuPopup()) {
+    WTF::String top_str_value =
+        WTF::String::Number(bounding_client_rect->bottom() + kPopupMenuMarginPxOhos) +
+        kPx;
+    WTF::String left_str_value;
+    if (!element->MediaElement().html_media_element_utils_->IsRTL()) {
+      if (base::ohos::IsPcDevice()) {
+        left_str_value = WTF::String::Number(bounding_client_rect->right() -
+            kOverflowPopupMenuLeftSpaceLeft - kOverflowPopupMenuBorderPx) + kPx;
+      } else {
+        left_str_value = WTF::String::Number(bounding_client_rect->right() -
+            kOverflowPopupMenuLeftSpaceLeft) + kPx;
+      }
+    } else {
+      left_str_value = WTF::String::Number(bounding_client_rect->left()) + kPx;
+    }
+    element->style()->setProperty(dom_window, "top", top_str_value, kImportant,
+                                  ASSERT_NO_EXCEPTION);
+    element->style()->setProperty(dom_window, "left", left_str_value, kImportant,
+                                  ASSERT_NO_EXCEPTION);
+
+    return;
+  }
+
   if (kPopupMenuBottomSpaceLeft <= dom_window->innerHeight() -
       bounding_client_rect->bottom() + kPopupMenuMarginPxOhos) {
     WTF::String top_str_value = WTF::String::Number(bounding_client_rect->bottom() - kPopupMenuPaddingPx) + kPx;
@@ -99,6 +132,14 @@ void MediaControlPopupMenuElementUtils::SetPopupAnchorHM(
       element->style()->setProperty(dom_window, "left", left_str_value, kImportant, ASSERT_NO_EXCEPTION);
     }
   }
+}
+
+bool MediaControlPopupMenuElementUtils::IsOverflowMenuPopup() {
+  if (element) {
+    return (element->ShadowPseudoId() ==
+        AtomicString("-internal-media-controls-overflow-menu-list"));
+  }
+  return false;
 }
 #endif
 

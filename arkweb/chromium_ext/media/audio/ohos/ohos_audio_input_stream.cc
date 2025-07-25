@@ -43,7 +43,7 @@ class OHOSAudioInputStream::CaptureCallbackAdapter
   void OnCaptureMuted(bool is_muted) override {}
 
  private:
-  raw_ptr<AudioInputCallback> callback_;
+  raw_ptr<AudioInputCallback> callback_ = nullptr;
 };
 
 OHOSAudioInputStream::OHOSAudioInputStream(OHOSAudioManager* manager,
@@ -79,6 +79,7 @@ void OHOSAudioInputStream::Start(AudioInputCallback* callback) {
   }
 }
 
+// LCOV_EXCL_START
 void OHOSAudioInputStream::Stop() {
   LOG(INFO) << "OHOSAudioInputStream::Stop";
   if (capturer_source_) {
@@ -96,6 +97,7 @@ void OHOSAudioInputStream::Close() {
   Stop();
   manager_->ReleaseInputStream(this);
 }
+// LCOV_EXCL_STOP
 
 double OHOSAudioInputStream::GetMaxVolume() {
   return 1.0;

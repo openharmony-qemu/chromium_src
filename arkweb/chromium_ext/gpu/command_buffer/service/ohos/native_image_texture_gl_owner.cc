@@ -180,8 +180,9 @@ bool NativeImageTextureGlOwner::GetCodedSizeAndVisibleRect(
                << "visible: " << visible_rect_for_debug.ToString()
                << "matrix: " << mtx[0] << ", " << mtx[1] << ", " << mtx[4]
                << ", " << mtx[5] << ", " << mtx[12] << ", " << mtx[13];
-
+#if !BUILDFLAG(ARKWEB_DFX_DUMP)
     base::debug::DumpWithoutCrashing();
+#endif
   }
 
   return true;

@@ -87,6 +87,15 @@ void HostFrameSinkManagerUtils::SetPipActive(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void HostFrameSinkManagerUtils::ClearBlanklessSnapshotInfo(uint64_t blankless_key)
+{
+  if (hostFrameSinkManager->frame_sink_manager_) {
+    hostFrameSinkManager->frame_sink_manager_->ClearBlanklessSnapshotInfo(blankless_key);
+  }
+}
+#endif
+
 void HostFrameSinkManagerUtils::UtilsRestoreRenderFit(uint32_t client_id,
                                                       uint32_t sink_id)
 {

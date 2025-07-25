@@ -36,11 +36,11 @@ public:
           manager_(manager)
     {
     }
-    void EnqueueEvent(int64_t accessibilityId, int32_t eventType);
+    void EnqueueEvent(int64_t accessibilityId, int32_t eventType, const std::string& argument);
 
 private:
     int64_t Uuid(int64_t accessibilityId, int32_t eventType);
-    void RunTask(int64_t accessibilityId, int32_t eventType, int64_t uuid);
+    void RunTask(int64_t accessibilityId, int32_t eventType, int64_t uuid, const std::string& argument);
 
     std::unordered_map<int32_t, int32_t> eventThrottleDelays_;
     std::unordered_set<int32_t> viewIndependentEvents_;

@@ -19,6 +19,11 @@
 #include "gpu/ipc/common/surface_handle.h"
 #include "ui/gl/gl_surface_format.h"
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "third_party/skia/include/core/SkBitmap.h"
+#include "ui/gfx/geometry/rect.h"
+#endif
+
 class GURL;
 
 namespace gl {
@@ -45,6 +50,7 @@ class GrShaderCache;
 
 namespace viz {
 
+class GpuServiceImpl;
 class VulkanContextProvider;
 
 // This class exists to allow SkiaOutputSurfaceImpl to ignore differences
@@ -104,6 +110,14 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceDependency {
 
   // This returns true if CompositorGpuThread(aka DrDc thread) is enabled.
   virtual bool IsUsingCompositorGpuThread() = 0;
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  virtual GpuServiceImpl* gpu_service_impl() const = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  virtual bool GetIsScroll() = 0;
+#endif
 };
 
 }  // namespace viz

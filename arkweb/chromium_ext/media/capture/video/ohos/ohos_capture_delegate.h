@@ -41,6 +41,10 @@ using media::mojom::MeteringMode;
 static const int kSuccessReturnValue = 0;
 static const int kErrorReturnValue = -1;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class OHOSCaptureDelegateTest;
+#endif
+
 class CAPTURE_EXPORT OHOSCaptureDelegate final {
  public:
   OHOSCaptureDelegate(
@@ -117,6 +121,10 @@ class CAPTURE_EXPORT OHOSCaptureDelegate final {
   const VideoCaptureParams capture_params_;
 
   base::WeakPtrFactory<OHOSCaptureDelegate> weak_factory_{this};
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class OHOSCaptureDelegateTest;
+#endif
 };
 
 }  // namespace media

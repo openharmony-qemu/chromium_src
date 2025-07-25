@@ -440,6 +440,7 @@ class CONTENT_EXPORT WebContentsImpl
   bool IsWebContentsOnlyAccessibilityModeForTesting() override;
   bool IsFullAccessibilityModeForTesting() override;
   const std::u16string& GetTitle() override;
+  bool GetIsRealTitle() override;
   const std::optional<std::u16string>& GetAppTitle() override;
   void UpdateTitleForEntry(NavigationEntry* entry,
                            const std::u16string& title) override;

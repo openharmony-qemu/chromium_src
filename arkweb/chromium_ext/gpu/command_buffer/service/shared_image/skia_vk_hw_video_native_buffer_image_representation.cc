@@ -235,20 +235,6 @@ bool SkiaVkHWVideoNBImageRepresentation::BeginAccess(
     }
   }
 
-  if (end_semaphores) {
-    end_access_semaphore_ =
-        vk_implementation()->CreateExternalSemaphore(vk_device());
-    if (end_access_semaphore_ == VK_NULL_HANDLE) {
-      DLOG(ERROR) << "Failed to create the external semaphore.";
-      if (begin_access_semaphore_ != VK_NULL_HANDLE) {
-        vkDestroySemaphore(vk_device(), begin_access_semaphore_,
-                           nullptr /*pAllocator=*/);
-        begin_access_semaphore_ = VK_NULL_HANDLE;
-      }
-      return false;
-    }
-  }
-
   if (begin_access_semaphore_ != VK_NULL_HANDLE) {
     begin_semaphores->emplace_back(
         GrBackendSemaphores::MakeVk(begin_access_semaphore_));

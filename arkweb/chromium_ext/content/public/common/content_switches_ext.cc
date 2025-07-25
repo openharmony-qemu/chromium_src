@@ -38,6 +38,7 @@ const char kIgnoreLockdownMode[] = "ohos-enable-ignore-lockdown-mode";
 const char kEnablePrinting[] = "ohos-enable-printing";
 const char kOhosHttpCacheSimple[] = "ohos-enable-http-cache-simple";
 const char kCalcTabletMode[] = "ohos-enable-calc-tablet-mode";
+const char kDisableMobileStyleSheet[] = "ohos-disable-mobile-style-sheet";
 const char kDisableNonAdvancedSecurityMode[] =
     "disable-non-advanced-security-mode";
 
@@ -95,4 +96,15 @@ const char kEnableCacheMediaTakeOver[] = "enable-cache-media-take-over";
 const char kOhosEnableVulkan[] = "ohos-enable-vulkan";
 #endif
 
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+const char kAdSecValue[] = "advanced_sec_value";
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+const char kSetExtensionName[] = "set-extension-name";
+#endif
+
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+const char  kOhosEnableGwpAsanType[] = "ohos-enable-gwp-asan-type";
+#endif
 }  // namespace switches

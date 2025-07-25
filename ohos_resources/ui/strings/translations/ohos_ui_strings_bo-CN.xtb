@@ -5,4 +5,7 @@
 <translation id="IDS_OHOS_MEDIA_VIDEO_PLAYBACK_SPEED_BUTTON">མྱུར་ཚད།</translation>
 <translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">ནར་མ་སོན་པའི་མིའི་སྲུང་སྐྱོབ་སྤྱོད་འགོ་བཙུགས་ཟིན། དྲ་ངོས་འདིར་ལྟ་སྤྱོད་བྱ་རྒྱུར་བཀག་རྒྱ་ཐེབས།</translation>
 <translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">སྒྲིག་འགོད།</translation>
+<translation id="IDS_OHOS_MEDIA_OVERFLOW_MENU_EXIT_PICTURE_IN_PICTURE">པར་རིས་ནང་གི་པར་རིས་ལས་ཕྱིར་འཐེན།</translation>
+<translation id="IDS_OHOS_MEDIA_OVERFLOW_MENU_ENTER_PICTURE_IN_PICTURE">པར་རིས་ནང་གི་པར་རིས།</translation>
+<translation id="IDS_OHOS_MEDIA_OVERFLOW_MENU_DOWNLOAD">ཕབ་ལེན།</translation>
 </translationbundle>

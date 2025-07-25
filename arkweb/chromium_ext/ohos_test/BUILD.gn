@@ -54,6 +54,24 @@ group("ohos_fuzz") {
     ]
 }
 
+fuzzer_test("nweb_impl_fuzzer") {
+  sources = [
+    "fuzztest/ohos_nweb/src/nweb_impl_fuzzer.cc",
+  ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//ohos_nweb/src/cef_delegate",
+  ]
+  deps = [
+    "//arkweb/ohos_adapter_ndk:adapter_ndk_stub",
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
 fuzzer_test("nweb_impl_createweb") {
   sources = [
     "fuzztest/nweb_impl_createweb_fuzzer.cc",

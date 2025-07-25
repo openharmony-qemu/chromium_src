@@ -13,7 +13,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h"
 #include "base/files/file.h"
 #include "base/files/file_path.h"
 #include "base/files/file_path_watcher.h"
@@ -169,7 +168,7 @@ class DnsConfigServiceOhos::ConfigReader : public SerialWorker {
     void DoWork() override {
       dns_config_.emplace();
       dns_config_->unhandled_options = false;
-      std::vector<std::string> servers = ArkwebNetworkChangeNotifierExt::GetDnsServers();
+      std::vector<std::string> servers = NetworkChangeNotifier::GetDnsServers();
       for (auto& server : servers) {
         if (server.empty()) {
           continue;

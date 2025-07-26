@@ -95,17 +95,6 @@ typedef struct {
 } ExDownloadsHeaderNameValuePair;
 
 typedef struct {
-  char* body;
-  int* conflictAction;
-  char* filename;
-  int* headerCount;
-  ExDownloadsHeaderNameValuePair* headers;
-  int* method;
-  bool* saveAs;
-  char* url;
-} ExDownloadsOptions;
-
-typedef struct {
   int* downloadId;
   int* size;
 } ExDownloadsGetFileIcon;

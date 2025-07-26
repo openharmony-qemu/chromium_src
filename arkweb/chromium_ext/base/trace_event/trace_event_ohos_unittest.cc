@@ -89,3 +89,6 @@ TEST(TraceEventOhosTest, ScopedOHOSBytrace_02) {
   EXPECT_EQ(scopedOHOSBytrace, nullptr);
 }
  
+TEST(TraceEventOhosTest, StartObserveTraceEnable){
+  StartObserveTraceEnable();
+}

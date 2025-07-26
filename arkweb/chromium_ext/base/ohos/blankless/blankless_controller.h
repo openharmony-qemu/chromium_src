@@ -16,6 +16,8 @@
 #ifndef BASE_OHOS_BLANK_OPT_CONTROLLER_H_
 #define BASE_OHOS_BLANK_OPT_CONTROLLER_H_
 
+#include <atomic>
+#include <functional>
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
@@ -33,6 +35,14 @@ struct BlanklessDumpInfo {
 class BlanklessController {
 public:
   using Callback = std::function<void()>;
+  enum class StatusCode {
+    ALLOWED,                // Operation is permitted
+    NOT_ALLOWED,            // Operation is not permitted
+    DUMPED,                 // Static frame has been dumped
+    CALL_MULTIPLED_TIMES,   // Function called multiple times
+    INSERTED,               // Static frame has been inserted
+    KEY_NOT_MATCH           // Key does not match the expected value
+  };
 
   static constexpr uint64_t INVALID_BLANKLESS_KEY = UINT64_MAX;
   static constexpr double CALLBACK_SIMILARITY_THRESHOLD = 0.75;
@@ -48,12 +58,7 @@ public:
 
   static BlanklessController& GetInstance();
 
-  static bool CheckEnableForDeviceType();
   static bool CheckGlobalProperty();
-
-  static bool SimpleCheck();
-
-  uint64_t GetBlanklessLoadingKey(const std::string& url, int32_t nweb_id);
 
   void RegisterFrameRemoveCallback(uint64_t blankless_key, Callback&& callback);
   void FireFrameRemoveCallback(uint64_t blankless_key);
@@ -62,34 +67,69 @@ public:
   int32_t FireFrameInsertCallback(uint64_t blankless_key);
   void CancelFrameInsertCallback(uint64_t blankless_key);
 
-  void SetCapacity(int32_t capacity);
-  int32_t GetCapacity() const;
+  /**
+   * Resets the status of a specified web instance.
+   * 
+   * @param nweb_id         Unique identifier for the web instance
+   * @param is_main_frame   Indicates whether it is the main frame
+   * @param is_redirect     Indicates whether it is a redirect request
+   * @return Status code indicating the result of the operation
+   */
+  StatusCode ResetStatus(int32_t nweb_id, bool is_main_frame, bool is_redirect);
 
-  void RecordBlanklessKey(int32_t nweb_id, uint64_t blankless_key);
-  bool CheckBlanklessKey(int32_t nweb_id, uint64_t blankless_key);
-  bool SetLoadingEnabled(int32_t nweb_id, uint64_t blankless_key, bool enabled);
+  /**
+   * Removes the status of a specified web instance.
+   * 
+   * @param nweb_id        Unique identifier for the web instance
+   */
+  void RemoveStatus(int32_t nweb_id);
 
-  uint32_t AddEnabledUrlList(const std::vector<std::string>& url_list);
-  void RemoveEnabledUrlList(const std::vector<std::string>& url_list);
-  void ClearEnabledUrlList();
+  /**
+   * Records a key value for a specified web instance.
+   * 
+   * @param nweb_id        Unique identifier for the web instance
+   * @param blankless_key  Key value without whitespace
+   * @return Status code indicating the result of the operation
+   */
+  StatusCode RecordKey(int32_t nweb_id, uint64_t blankless_key);
+
+  /**
+   * Matches a key value against the recorded value for a specified web instance.
+   * 
+   * @param nweb_id        Unique identifier for the web instance
+   * @param blankless_key  Key value without whitespace to match
+   * @return Status code indicating the result of the match operation
+   */
+  StatusCode MatchKey(int32_t nweb_id, uint64_t blankless_key);
+
   bool CheckEnableForUrl(const std::string& url);
 
 private:
-  enum class LoadingStatus {
-    LOADING_UNSET,
-    LOADING_CAN_SET,
-    LOADING_ENABLE,
-    LOADING_DISABLE
-  };
+  /**
+   * Structure to track and manage the status information of a web instance.
+   * Maintains the status code, key values, permission state, and a history of keys.
+   */
+  struct StatusInfo {
+    // Current status code, initialized to allowed state
+    StatusCode status_code = StatusCode::ALLOWED;
 
-  struct NWebInfo {
+    // Current blankless key value, initialized to an invalid value
     uint64_t blankless_key = INVALID_BLANKLESS_KEY;
-    LoadingStatus status = LoadingStatus::LOADING_UNSET;
+
+    // Flag indicating whether operations are allowed
+    bool allowed = true;
+
+    // Set of all historical dumped blankless key values (unique entries)
+    std::unordered_set<uint64_t> blankless_key_dumped_history;
+
+    // Set of all historical inserted blankless key values (unique entries)
+    std::unordered_set<uint64_t> blankless_key_inserted_history;
   };
 
   BlanklessController() = default;
 
-  uint64_t GetKeyAndResetLoadingStatus(int32_t nweb_id);
+  void ResetForTest();
+  bool CheckStatusForTest(int32_t nweb_id, const StatusInfo& expected_status, bool expected_found = true);
 
   /* This Class is designed for testing and will be delete someday. */
   class BlankOptWhiteList {
@@ -110,12 +150,8 @@ private:
   };
   BlankOptWhiteList m_white_list_;
 
-  std::mutex m_enabled_url_set_mtx_;
-  std::unordered_set<std::string> m_enabled_url_set_;
-
-  std::mutex m_nweb_info_map_mtx_;
-  std::unordered_map<int32_t, uint64_t> m_nweb_key_map_;
-  std::unordered_map<int32_t, NWebInfo> m_nweb_info_map_;
+  std::mutex m_nweb_status_map_mtx_;
+  std::unordered_map<int32_t, StatusInfo> m_nweb_status_map_;
 
   std::mutex m_frame_remove_callback_map_mtx_;
   std::unordered_map<uint64_t, Callback> m_frame_remove_callback_map_;

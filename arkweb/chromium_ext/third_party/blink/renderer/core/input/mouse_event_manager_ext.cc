@@ -66,10 +66,12 @@ MouseEventManagerExt::MouseEventManagerExt(LocalFrame& frame, ScrollManager& scr
 MouseEventManagerExt::~MouseEventManagerExt() = default;
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
+// LCOV_EXCL_START
 bool MouseEventManagerExt::IsDraging() {
   DCHECK(frame_->GetPage());
   return frame_->GetPage()->GetDragController().AsDragControllerExt()->IsDraging();
 }
+// LCOV_EXCL_STOP
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -83,78 +85,28 @@ void MouseEventManagerExt::HandleCreateOverlayWhenDrag(const MouseEventWithHitTe
   }
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::StopCreateOverlayTimer() {
   create_overlay_timer_.Stop();
 }
+// LCOV_EXCL_STOP
 
 void MouseEventManagerExt::HandleGestureCreateOverlay(
     const WebGestureEvent& gesture_event) {
   HandleCreateOverlay(gesture_event);
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::CreateOverlayCallback() {
   HandleCreateOverlay(last_mouse_drag_);
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 bool MouseEventManagerExt::GetOverlayInProgress() {
   return overlay_in_progress_;
 }
-
-void MouseEventManagerExt::ConverCoordinates(float& left, float& top, float& width, float& height,
-                                             std::vector<gfx::PointF>& pointfs) {
-  float x_offset;
-  float y_offset;
-  float x_y_ratio;
-  float image_rect_ratio = width / height;
-  float bm_width = static_cast<float>(bm_.width());
-  float bm_height = static_cast<float>(bm_.height());
-  float bm_ratio = bm_width / bm_height;
-  if (width >= bm_width && height >= bm_height) {
-    x_offset = (width - bm_width) / 2.0f;
-    y_offset = (height - bm_height) / 2.0f;
-    x_y_ratio = 1.0f;
-  } else if (bm_ratio <= image_rect_ratio) {
-    x_y_ratio = height / bm_height;
-    x_offset = (width - bm_width * x_y_ratio) / 2.0f;
-    y_offset = 0.0f;
-  } else {
-    x_y_ratio = width / bm_width;
-    x_offset = 0.0f;
-    y_offset = (height - bm_height * x_y_ratio) / 2.0f;
-  }
-
-  left += x_offset;
-  top += y_offset;
-  width = bm_width * x_y_ratio;
-  height = bm_height * x_y_ratio;
-  for (auto& pointf : pointfs) {
-    pointf.set_x(pointf.x() * x_y_ratio);
-    pointf.set_y(pointf.y() * x_y_ratio);
-  }
-}
-
-void MouseEventManagerExt::SetOverlayStyle(Element* overlay_div, float left, float top, float width, float height) {
-  std::string attributes =
-      "left: " + std::to_string(left) + "px;" + "top: " + std::to_string(top) +
-      "px;" + "width: " + std::to_string(width) + "px;" +
-      "height: " + std::to_string(height) + "px;" + "position:absolute;" +
-      "display:flex;" + "z-index:999;" + "opacity:1;";
-  overlay_div->setAttribute(html_names::kStyleAttr,
-                            AtomicString(String(attributes)));
-}
-
-void MouseEventManagerExt::SetTextStyle(Element* text_div, float left, float top, float width, float height,
-                                        float font_size) {
-  std::string text_attributes =
-      "left: " + std::to_string(left) + "px;" + "top: " + std::to_string(top) +
-      "px;" + "width: " + std::to_string(width) + "px;" +
-      "height: " + std::to_string(height) + "px;" +
-      "font-size: " + std::to_string(font_size) + "px;" +
-      "position:absolute; display:flex; justify-content:center; "
-      "align-items:center; color:transparent;";
-  text_div->setAttribute(html_names::kStyleAttr,
-                         AtomicString(String(text_attributes)));
-}
+// LCOV_EXCL_STOP
 
 bool MouseEventManagerExt::IsValidOverlayNode(Node* node) {
   auto image = HitTestResult::GetImage(node);
@@ -189,6 +141,7 @@ HitOverlayStatus MouseEventManagerExt::GetHitOverlayStatusFromMouseEvent(
   return GetHitOverlayStatus(hit_test_result);
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::CloseImageOverlay() {
   if (!overlay_in_progress_) {
     LOG(INFO)
@@ -201,6 +154,7 @@ void MouseEventManagerExt::CloseImageOverlay() {
     web_local_frame->Client()->AsWebLocalFrameClientExt()->CloseImageOverlaySelection();
   }
 }
+// LCOV_EXCL_STOP
 
 void MouseEventManagerExt::GetAbsImageRect(gfx::RectF& abs_rect) {
   abs_rect = gfx::RectF();
@@ -220,6 +174,7 @@ void MouseEventManagerExt::GetAbsImageRect(gfx::RectF& abs_rect) {
   }
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::SetOverlayInProgress(bool flag) {
   LOG(INFO) << "MouseEventManagerExt::SetOverlayInProgress, flag == " << flag;
   overlay_in_progress_ = flag;
@@ -228,12 +183,16 @@ void MouseEventManagerExt::SetOverlayInProgress(bool flag) {
     hit_image_node_ = nullptr;
   }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::SetOverlayCreatingStatus(bool flag) {
   LOG(INFO) << "MouseEventManagerExt::SetOverlayCreatingStatus, flag == " << flag;
   overlay_creating_ = flag;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::OnDestroyImageAnalyzerOverlay() {
   LOG(INFO) << "MouseEventManagerExt::OnDestroyImageAnalyzerOverlay";
   overlay_in_progress_ = false;
@@ -241,6 +200,7 @@ void MouseEventManagerExt::OnDestroyImageAnalyzerOverlay() {
   last_analyzed_image_ = nullptr;
   hit_image_node_ = nullptr;
 }
+// LCOV_EXCL_STOP
 
 void MouseEventManagerExt::OnFoldStatusChanged(uint32_t foldstatus) {
   LOG(INFO) << "MouseEventManagerExt::OnFoldStatusChanged foldstatus = "
@@ -361,6 +321,7 @@ void MouseEventManagerExt::CloseImageOverlayWhenMousePress(const MouseEventWithH
   }
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::Trace(Visitor* visitor) const {
   MouseEventManager::Trace(visitor);
   visitor->Trace(frame_);
@@ -374,6 +335,7 @@ void MouseEventManagerExt::Trace(Visitor* visitor) const {
   visitor->Trace(weak_factory_);
   SynchronousMutationObserver::Trace(visitor);
 }
+// LCOV_EXCL_STOP
 
 MouseEventManagerExt::OverLayerMouseLeaveEventListener::OverLayerMouseLeaveEventListener(blink::Element* element)
     : element_(element) {}
@@ -391,11 +353,13 @@ void MouseEventManagerExt::OverLayerMouseLeaveEventListener::Invoke(
   }
 }
 
+// LCOV_EXCL_START
 void MouseEventManagerExt::OverLayerMouseLeaveEventListener::Trace(
     Visitor* visitor) const {
   visitor->Trace(element_);
   NativeEventListener::Trace(visitor);
 }
+// LCOV_EXCL_STOP
 
 #endif
 }

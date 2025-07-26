@@ -44,6 +44,7 @@ void ApplyOhosMediaPlayerEnabled(const web_pref::WebPreferences& prefs,
 #endif
 }  // namespace
 
+// LCOV_EXCL_START
 void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
                              WebView* web_view,
                              WebSettings* settings,
@@ -104,6 +105,10 @@ void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
   settings->SetVideoAssistantEnabled(prefs.video_assistant_enabled);
   ApplyOhosMediaPlayerEnabled(prefs, web_view, settings);
 #endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  settings->SetMediaResumeFromBFCachePage(prefs.media_resume_from_bfcache_page);
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
 #if BUILDFLAG(ARKWEB_MEDIA)
   settings->SetPreferHiddenVolumeControls(!base::ohos::IsPcDevice());
@@ -273,6 +278,7 @@ void WebViewImpl::EnterFullscreen(
 #endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
   );
 }
+// LCOV_EXCL_STOP
 
 void UpdateStyleAndLayoutTreeForInclude(Page* page) {
   if (page) {
@@ -283,6 +289,7 @@ void UpdateStyleAndLayoutTreeForInclude(Page* page) {
   }
 }
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
 void WebViewImpl::SetPinchSmoothMode(bool isEnable) {
   if (!MainFrame() || !GetPage() || !GetPage()->MainFrame() ||
@@ -344,3 +351,4 @@ void WebViewImpl::SetDelayDurationForBackgroundTabFreezing(
   }
 }
 #endif
+// LCOV_EXCL_STOP

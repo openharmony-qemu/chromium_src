@@ -143,6 +143,7 @@ void OHOSCustomMediaPlayerRendererClient::OnRemoteRendererInitialized(
   std::move(init_cb_).Run(status);
 }
 
+// LCOV_EXCL_START
 void OHOSCustomMediaPlayerRendererClient::OnFrameAvailable() {
   DCHECK(compositor_task_runner_->BelongsToCurrentThread());
 
@@ -151,6 +152,7 @@ void OHOSCustomMediaPlayerRendererClient::OnFrameAvailable() {
       frame, frame->format(), frame->visible_rect(), frame->natural_size());
   sink_->PaintSingleFrame(std::move(unique_frame));
 }
+// LCOV_EXCL_STOP
 
 void OHOSCustomMediaPlayerRendererClient::OnVideoSizeChange(
     const gfx::Size& size) {

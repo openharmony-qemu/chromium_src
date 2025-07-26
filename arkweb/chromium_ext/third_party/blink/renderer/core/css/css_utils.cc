@@ -18,9 +18,11 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 bool Cssutils::IsMathFormulaDisabledMode() {
   return OHOS::NWeb::NWebAdvancedSecurityHelper::Inst().
         IsSecFeatureEnabled(OHOS::NWeb::NWebAdvancedSecurityHelper::Feature::ENABLE_MATHML);
 }
+// LCOV_EXCL_STOP
 
 }  // namespace

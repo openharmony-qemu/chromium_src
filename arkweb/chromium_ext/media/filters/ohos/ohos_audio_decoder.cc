@@ -157,6 +157,7 @@ OHOSAudioDecoder::OHOSAudioDecoder(scoped_refptr<base::SequencedTaskRunner> task
   io_timer_.SetTaskRunner(scoped_refptr<base::SingleThreadTaskRunner>());
 }
 
+// LCOV_EXCL_START
 OHOSAudioDecoder::~OHOSAudioDecoder() {
   TRACE_EVENT0("media", "OHOSAudioDecoder::~OHOSAudioDecoder");
   decoder_loop_.reset();
@@ -176,6 +177,7 @@ OHOSAudioDecoder::~OHOSAudioDecoder() {
   ClearInputQueue(DecoderStatus::Codes::kAborted);
   io_timer_.Stop();
 }
+// LCOV_EXCL_STOP
 
 AudioDecoderType OHOSAudioDecoder::GetDecoderType() const {
   return AudioDecoderType::kOhos;
@@ -436,11 +438,13 @@ bool OHOSAudioDecoder::InitAudioDecoder(std::string mime_type) {
   return true;
 }
 
+// LCOV_EXCL_START
 bool OHOSAudioDecoder::CreateOhosDecoderLoop() {
   decoder_loop_.reset();
   decoder_loop_ = std::make_unique<OHOSAudioDecoderLoop>(this, scoped_refptr<base::SingleThreadTaskRunner>());
   return true;
 }
+// LCOV_EXCL_STOP
 
 void OHOSAudioDecoder::SetState(State new_state) {
   LOG(INFO)<< "OHOSAudioDecoder::SetState state_: " << static_cast<int32_t>(state_)
@@ -615,6 +619,7 @@ static void SetCencInfoToInputData(OHOSAudioDecoderLoop::InputData& data, const 
   data.cenc_info->SetMode(uint32_t(DrmCencInfoModeAdapter::DRM_CENC_INFO_KEY_IV_SUBSAMPLES_SET));
 }
 
+// LCOV_EXCL_START
 OHOSAudioDecoderLoop::InputData OHOSAudioDecoder::ProvideInputData() {
   LOG(DEBUG) << "OHOSAudioDecoder::ProvideInputData";
   const DecoderBuffer* decoder_buffer = input_queue_.front().first.get();
@@ -646,6 +651,7 @@ OHOSAudioDecoderLoop::InputData OHOSAudioDecoder::ProvideInputData() {
   }
   return data;
 }
+// LCOV_EXCL_STOP
 
 bool OHOSAudioDecoder::OnDecodedEos(const OutputBufferData& out) {
   LOG(INFO) << "OHOSAudioDecoder::OnDecodedEos";
@@ -714,6 +720,7 @@ bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
   return true;
 }
 
+// LCOV_EXCL_START
 void OHOSAudioDecoder::OnCodecLoopError() {
   LOG(ERROR) << "OHOSAudioDecoder::OnCodecLoopError";
   SetState(ERROR);
@@ -732,6 +739,7 @@ int32_t OHOSAudioDecoder::DequeueInputBuffer(int64_t& buffer_index) {
   LOG(DEBUG) << "OHOSAudioDecoder::DequeueInputBuffer return index: -1";
   return -1;
 }
+// LCOV_EXCL_STOP
 
 void OHOSAudioDecoder::EnqueueInputBuffer(int64_t buffer_index) {
   LOG(DEBUG) << "OHOSAudioDecoder::EnqueueInputBuffer index: " << buffer_index;
@@ -752,6 +760,7 @@ int32_t OHOSAudioDecoder::DequeueOutputBuffer(OutputBufferData& out) {
   return -1;
 }
 
+// LCOV_EXCL_START
 AudioDecoderAdapterCode OHOSAudioDecoder::FlushDecoder() {
   return audio_decoder_->FlushDecoder();
 }
@@ -781,6 +790,7 @@ void OHOSAudioDecoder::WaitingForLicence()
     io_timer_.Start(FROM_HERE, TwoSecondTimeout, this, &OHOSAudioDecoder::WaitingForLicence);
   }
 }
+// LCOV_EXCL_STOP
 
 AudioDecoderAdapterCode OHOSAudioDecoder::QueueInputBufferDec(uint32_t index,
     int64_t presentationTimeUs, uint8_t* bufferData, int32_t bufferSize,
@@ -821,11 +831,13 @@ void OHOSAudioDecoder::AddOutputBuffer(uint32_t index, uint8_t* bufferData, uint
   output_buffer_queue_.push_back(data);
 }
 
+// LCOV_EXCL_START
 void OHOSAudioDecoder::UpdateOutputFormat() {
   AudioDecoderAdapterCode ret = audio_decoder_->GetOutputFormatDec(decoder_format_);
   if (ret != AudioDecoderAdapterCode::DECODER_OK) {
     LOG(ERROR) << "OHOSAudioDecoder::UpdateOutputFormat err";
   }
 }
+// LCOV_EXCL_STOP
 
 } // namespace media

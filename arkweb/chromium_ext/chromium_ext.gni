@@ -568,6 +568,10 @@ arkweb_native_event_queue_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/widget_input_handler_manager_utils.h",
 ]
 
+arkweb_native_event_queue_test_sources = [
+  "//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/input_handler_proxy_utils_unittest.cc",
+]
+
 arkweb_third_party_blink_renderer_platform_widget_input_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/elastic_overscroll_controller_utils.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/elastic_overscroll_controller_utils.h",
@@ -706,8 +710,12 @@ arkweb_cc_layer_unittest_sources = [
 arkweb_third_party_blink_renderer_core_unittest_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_view_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/web_frame_widget_impl_ext_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/html/html_plugin_element_utils_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/loader/native_loader_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/native_painter_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_theme_ohos_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_object_utils_unittest.cc",
+  "//arkweb/chromium_ext/third_party/ashmem/ohos_ashmem_unittests.cc",
 ]
 
 arkweb_cc_trees_unittest_sources = [
@@ -723,14 +731,28 @@ arkweb_ui_compositor_test_sources = [
   "//arkweb/chromium_ext/ui/compositor/compositor_unittests.cc",
 ]
 
+arkweb_storage_browser_database_unittests_sources = [
+  "//arkweb/chromium_ext/storage/browser/database/database_tracker_for_include_unittest.cc",
+  "//arkweb/chromium_ext/storage/browser/database/database_util_for_include_unittest.cc",
+]
+arkweb_components_web_cache_browser_unittest_sources = [
+  "//arkweb/chromium_ext/components/web_cache/browser/web_cache_manager_utils_unittest.cc",
+]
+arkweb_storage_monitor_unittest_source = [
+  "//arkweb/chromium_ext/components/storage_monitor/storage_monitor_ohos_unittest.cc"
+]
+arkweb_field_trial_utils_unittest_source = [
+  "//arkweb/chromium_ext/components/content_settings/core/browser/content_settings_default_provider_for_include_unittest.cc",
+]
 arkweb_ui_compositor_sources = [
   "//arkweb/chromium_ext/ui/compositor/compositor_utils.cc",
   "//arkweb/chromium_ext/ui/compositor/compositor_utils.h",
 ]
 
-arkweb_third_party_blink_renderer_platform_widget_input_test_sources = [
+arkweb_third_party_blink_renderer_platform_widget_test_sources = [
   #"//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/software_compositor_proxy_ohos_unittest.cc",
   #"//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/widget_input_handler_manager_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils_unittest.cc",
 ]
 
 arkweb_content_common_sources = [
@@ -866,8 +888,6 @@ arkweb_components_viz_service_display_embedder_compositor_gpu_thread_sources = [
   "//arkweb/chromium_ext/components/viz/service/display_embedder/compositor_gpu_thread_utils.h",
   "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_dependency_impl_utils.cc",
   "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_dependency_impl_utils.h",
-  "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_utils.cc",
-  "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_utils.h"
 ]
 
 arkweb_components_viz_service_gl_gpu_service_sources = [
@@ -948,11 +968,6 @@ arkweb_blink_unittests_sources = [
   "//cef/libcef/common/mojom:mojom",
 ]
 
-arkweb_net_base_ext_chanege_sources = [
-  "//arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.cc",
-  "//arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h"
-]
-
 arkweb_network_service_network_delegate_sources = [
   "//arkweb/chromium_ext/services/network/network_service_network_delegate_ext.cc",
   "//arkweb/chromium_ext/services/network/network_service_network_delegate_ext.h",
@@ -988,7 +1003,7 @@ arkweb_performance_manager_graph_page_node_impl = [
 # For sources and deps used in net/BUILD.gn
 arkweb_net_gn_sources =
     arkweb_net_socket_sources + arkweb_net_url_request_sources +
-    arkweb_net_http_sources + arkweb_net_base_ext_chanege_sources +
+    arkweb_net_http_sources +
     arkweb_net_proxy_resolution_sources + arkweb_net_cert_sources +
     arkweb_net_http_cache_sources
 arkweb_net_gn_deps = [

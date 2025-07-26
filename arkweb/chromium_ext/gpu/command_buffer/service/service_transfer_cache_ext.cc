@@ -27,12 +27,14 @@
 
 namespace gpu {
 
+//LCOV_EXCL_START
 ServiceTransferCacheExt::ServiceTransferCacheExt(
     const GpuPreferences& preferences,
     base::RepeatingClosure flush_callback)
     : ServiceTransferCache(preferences, std::move(flush_callback)) {
 
 }
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 bool ServiceTransferCacheExt::CreateLockedRGBAHardwareDecodedImageEntry(

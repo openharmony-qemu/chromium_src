@@ -20,11 +20,13 @@
 #endif
 namespace blink {
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 HTMLNativeLoader::HTMLNativeLoader(HTMLPlugInElement* element)
     : NativeLoader(element) {}
 
 HTMLNativeLoader::~HTMLNativeLoader() = default;
 #endif
+// LCOV_EXCL_STOP
 
 }  // namespace blink

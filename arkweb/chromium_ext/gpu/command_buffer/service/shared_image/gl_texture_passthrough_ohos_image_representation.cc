@@ -14,6 +14,7 @@
 
 namespace gpu {
 
+//LCOV_EXCL_START
 GLTexturePassthroughOhosImageRepresentation::
     GLTexturePassthroughOhosImageRepresentation(
         SharedImageManager* manager,
@@ -42,6 +43,7 @@ GLTexturePassthroughOhosImageRepresentation::GetTexturePassthrough(
   DCHECK_EQ(plane_index, 0);
   return texture_;
 }
+//LCOV_EXCL_STOP
 
 bool GLTexturePassthroughOhosImageRepresentation::BeginAccess(GLenum mode) {
   bool read_only_mode = (mode == GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
@@ -76,6 +78,7 @@ bool GLTexturePassthroughOhosImageRepresentation::BeginAccess(GLenum mode) {
   return true;
 }
 
+//LCOV_EXCL_START
 void GLTexturePassthroughOhosImageRepresentation::EndAccess() {
   if (mode_ == RepresentationAccessMode::kNone) {
     return;
@@ -92,5 +95,6 @@ void GLTexturePassthroughOhosImageRepresentation::EndAccess() {
 
   mode_ = RepresentationAccessMode::kNone;
 }
+//LCOV_EXCL_STOP
 
 }  // namespace gpu

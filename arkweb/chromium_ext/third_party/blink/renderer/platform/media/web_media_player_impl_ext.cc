@@ -435,4 +435,21 @@ void WebMediaPlayerImplExt::NotifyMemoryLevel(
   memory_pressure_level_ = memory_pressure_level;
 }
 #endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+void WebMediaPlayerImplExt::MediaResumeFromBFCachePage(bool restoring_in_bfcache) {
+  LOG(INFO) << "MediaResumeFromBFCachePage restoring_in_bfcache" << restoring_in_bfcache;
+  if (!client_) {
+    LOG(ERROR) << "OhMedia::media_player_client is nullptr";
+    return;
+  }
+  bool is_media_resume = client_->IsMediaResumeFromBFCachePage();
+  LOG(INFO) << "MediaResumeFromBFCachePage is_media_resume: " << is_media_resume;
+  if (restoring_in_bfcache && !is_media_resume) {
+    LOG(INFO) << "OhMedia::WebPage is restored from BFCACHE without resuming playback.";
+  } else {
+    client_->ResumePlayback();  // Calls UpdatePlayState() so return afterwards.
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
 }

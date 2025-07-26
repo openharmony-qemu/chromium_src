@@ -713,6 +713,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void FindEx(const CefString &searchText, bool forward, bool matchCase, bool findNext, bool newSession) override {}
   void SetFocusOnWeb() override {}
   void UpdateSecurityLayer(bool isNeedSecurityLayer) override {}
+  void SetHasComposition(bool has_composition) override {}
+  bool GetHasComposition() override {}
   CefString GetCustomUserAgent() override { return CefString(); }
   void GetLastHitData(int& type, CefString& extra_data) override {}
   std::string GetSelectedTextFromContextParam() override { return ""; }

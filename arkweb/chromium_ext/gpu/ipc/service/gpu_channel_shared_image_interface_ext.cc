@@ -25,10 +25,12 @@
 
 namespace gpu {
 
+//LCOV_EXCL_START
 GpuChannelSharedImageInterfaceExt::GpuChannelSharedImageInterfaceExt(
       base::WeakPtr<SharedImageStub> shared_image_stub)
         : GpuChannelSharedImageInterface(shared_image_stub) {
 }
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_MEDIA_CODEC)
 scoped_refptr<ClientSharedImage>

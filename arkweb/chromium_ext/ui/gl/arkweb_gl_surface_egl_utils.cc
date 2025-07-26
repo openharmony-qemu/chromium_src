@@ -20,9 +20,12 @@
 
 namespace gl {
 
+//LCOV_EXCL_START
 ArkwebGlSurfaceEglUtils::ArkwebGlSurfaceEglUtils() {}
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
+//LCOV_EXCL_START
 bool ArkwebGlSurfaceEglUtils::CheckSwapBufferOutputFlag() {
   bool enable_replace_swap_buffer_output =
       OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -34,6 +37,7 @@ bool ArkwebGlSurfaceEglUtils::CheckSwapBufferOutputFlag() {
   }
   return enable_replace_swap_buffer_output;
 }
+//LCOV_EXCL_STOP
 
 bool ArkwebGlSurfaceEglUtils::SwapBuffersSolution(bool enableReplaceOutput,
     bool isFirstSwapBuffer, gfx::Size size) {

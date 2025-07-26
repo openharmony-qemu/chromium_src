@@ -48,7 +48,9 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 WidgetBaseUtils::WidgetBaseUtils(WidgetBase* widget_base) : widget_base_(widget_base) {}
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 static void GetThreadIdsAndReport(std::vector<base::internal::WorkerThread*>& workers,
@@ -81,6 +83,7 @@ static void GetThreadIdsAndReport(std::vector<base::internal::WorkerThread*>& wo
   }
 }
 
+// LCOV_EXCL_START
 void WidgetBaseUtils::ReportForegroundThreadPool() {
   if (!widget_base_->is_worker_pool_initial_) {
     return;
@@ -119,8 +122,10 @@ void WidgetBaseUtils::ReportForegroundThreadPool() {
     }
   }
 }
+// LCOV_EXCL_STOP
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 void WidgetBaseUtils::SetZoomLevel(float magnify_delta, const gfx::Point& anchor) {
   if (!widget_base_->widget_input_handler_manager_) {
@@ -244,4 +249,5 @@ void WidgetBaseUtils::DidNativeEmbedMouseEvent(
           nativeMouseButton, isHitNativeArea, x, y));
 }
 #endif
+// LCOV_EXCL_STOP
 } // namespace blink

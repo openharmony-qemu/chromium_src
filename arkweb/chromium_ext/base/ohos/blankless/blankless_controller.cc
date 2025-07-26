@@ -107,20 +107,6 @@ BlanklessController& BlanklessController::GetInstance()
   return instance;
 }
 
-uint64_t BlanklessController::GetBlanklessLoadingKey(const std::string& url, int32_t nweb_id)
-{
-  if (m_capacity_ == 0) {
-    return INVALID_BLANKLESS_KEY;
-  }
-  if (uint64_t key = GetKeyAndResetLoadingStatus(nweb_id); key != INVALID_BLANKLESS_KEY) {
-    return key;
-  }
-  if (CheckEnableForUrl(url)) {
-    return std::hash<std::string>{}(url);
-  }
-  return INVALID_BLANKLESS_KEY;
-}
-
 void BlanklessController::RegisterFrameRemoveCallback(uint64_t blankless_key, Callback&& callback)
 {
   std::lock_guard<std::mutex> lck(m_frame_remove_callback_map_mtx_);
@@ -172,98 +158,63 @@ void BlanklessController::CancelFrameInsertCallback(uint64_t blankless_key)
   m_frame_insert_callback_map_.erase(blankless_key);
 }
 
-void BlanklessController::SetCapacity(int32_t capacity)
+BlanklessController::StatusCode BlanklessController::ResetStatus(int32_t nweb_id, bool is_main_frame, bool is_redirect)
 {
-  m_capacity_.store(capacity);
+  bool allowed = (is_main_frame && !is_redirect);
+  std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
+  auto& info = m_nweb_status_map_[nweb_id];
+  info.blankless_key = INVALID_BLANKLESS_KEY;
+  info.allowed = allowed;
+  info.status_code = allowed ? StatusCode::ALLOWED : StatusCode::NOT_ALLOWED;
+  return info.status_code;
 }
 
-int32_t BlanklessController::GetCapacity() const
+void BlanklessController::RemoveStatus(int32_t nweb_id)
 {
-  return m_capacity_.load();
+  std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
+  m_nweb_status_map_.erase(nweb_id);
 }
 
-void BlanklessController::RecordBlanklessKey(int32_t nweb_id, uint64_t blankless_key)
+BlanklessController::StatusCode BlanklessController::RecordKey(int32_t nweb_id, uint64_t blankless_key)
 {
-  std::lock_guard<std::mutex> lck(m_nweb_info_map_mtx_);
-  m_nweb_key_map_[nweb_id] = blankless_key;
-  m_nweb_info_map_[nweb_id] = {blankless_key, LoadingStatus::LOADING_CAN_SET};
-}
-
-bool BlanklessController::CheckBlanklessKey(int32_t nweb_id, uint64_t blankless_key)
-{
-  std::lock_guard<std::mutex> lck(m_nweb_info_map_mtx_);
-  auto it = m_nweb_key_map_.find(nweb_id);
-  if (it == m_nweb_key_map_.end()) {
-    LOG(DEBUG) << "blankless CheckBlanklessKey key not found";
-    return false;
+  std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
+  auto& info = m_nweb_status_map_[nweb_id];
+  info.blankless_key = blankless_key;
+  if (!info.allowed) {
+    return info.status_code = StatusCode::NOT_ALLOWED;
   }
-  if (it->second != blankless_key) {
-    LOG(ERROR) << "blankless CheckBlanklessKey key not match";
-    return false;
+  if (info.blankless_key_dumped_history.find(blankless_key) != info.blankless_key_dumped_history.end()) {
+    return info.status_code = StatusCode::CALL_MULTIPLED_TIMES;
   }
-  m_nweb_key_map_.erase(it);
-  return true;
+  info.blankless_key_dumped_history.insert(blankless_key);
+  return info.status_code = StatusCode::DUMPED;
 }
 
-bool BlanklessController::SetLoadingEnabled(int32_t nweb_id, uint64_t blankless_key, bool enabled)
+BlanklessController::StatusCode BlanklessController::MatchKey(int32_t nweb_id, uint64_t blankless_key)
 {
-  std::lock_guard<std::mutex> lck(m_nweb_info_map_mtx_);
-  auto it = m_nweb_info_map_.find(nweb_id);
-  if (it == m_nweb_info_map_.end()) {
-    return false;
+  std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
+  auto it = m_nweb_status_map_.find(nweb_id);
+  if (it == m_nweb_status_map_.end()) {
+    return StatusCode::KEY_NOT_MATCH;
   }
-  if (it->second.blankless_key != blankless_key || it->second.status != LoadingStatus::LOADING_CAN_SET) {
-    return false;
+  auto& info = it->second;
+  if (info.blankless_key != blankless_key) {
+    return info.status_code = StatusCode::KEY_NOT_MATCH;
   }
-  it->second.status = enabled ? LoadingStatus::LOADING_ENABLE : LoadingStatus::LOADING_DISABLE;
-  return true;
-}
-
-uint32_t BlanklessController::AddEnabledUrlList(const std::vector<std::string>& url_list)
-{
-  std::lock_guard<std::mutex> lck(m_enabled_url_set_mtx_);
-  std::unordered_set<std::string> enabled_url_set;
-  for (const std::string& url : url_list) {
-    if (m_enabled_url_set_.find(url) != m_enabled_url_set_.end()) {
-      enabled_url_set.insert(url);
-      continue;
-    }
-    if (m_enabled_url_set_.size() >= MAX_ENABLED_URL_COUNT) {
-      continue;
-    }
-    m_enabled_url_set_.insert(url);
-    enabled_url_set.insert(url);
+  if (!info.allowed) {
+    return info.status_code = StatusCode::NOT_ALLOWED;
   }
-  return static_cast<uint32_t>(enabled_url_set.size());
-}
-
-void BlanklessController::RemoveEnabledUrlList(const std::vector<std::string>& url_list)
-{
-  std::lock_guard<std::mutex> lck(m_enabled_url_set_mtx_);
-  for (const std::string& url : url_list) {
-    m_enabled_url_set_.erase(url);
+  info.blankless_key = INVALID_BLANKLESS_KEY;
+  if (info.blankless_key_inserted_history.find(blankless_key) != info.blankless_key_inserted_history.end()) {
+    return info.status_code = StatusCode::CALL_MULTIPLED_TIMES;
   }
-}
-
-void BlanklessController::ClearEnabledUrlList()
-{
-  std::lock_guard<std::mutex> lck(m_enabled_url_set_mtx_);
-  m_enabled_url_set_.clear();
+  info.blankless_key_inserted_history.insert(blankless_key);
+  return info.status_code = StatusCode::INSERTED;
 }
 
 bool BlanklessController::CheckEnableForUrl(const std::string& url)
 {
-  if (m_white_list_.CheckWhiteList(url)) {
-    return true;
-  }
-  std::lock_guard<std::mutex> lck(m_enabled_url_set_mtx_);
-  return (m_enabled_url_set_.find(url) != m_enabled_url_set_.end());
-}
-
-bool BlanklessController::CheckEnableForDeviceType()
-{
-  static auto type = OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetProductDeviceType();
-  return type == ProductDeviceType::DEVICE_TYPE_MOBILE;
+  return m_white_list_.CheckWhiteList(url);
 }
 
 bool BlanklessController::CheckGlobalProperty()
@@ -273,20 +224,36 @@ bool BlanklessController::CheckGlobalProperty()
   return BlankOptEnableFlag;
 }
 
-bool BlanklessController::SimpleCheck()
+void BlanklessController::ResetForTest()
 {
-  return CheckGlobalProperty() && CheckEnableForDeviceType();
+  {
+    std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
+    m_nweb_status_map_.clear();
+  }
+  {
+    std::lock_guard<std::mutex> lck(m_frame_insert_callback_map_mtx_);
+    m_frame_insert_callback_map_.clear();
+  }
+  {
+    std::lock_guard<std::mutex> lck(m_frame_remove_callback_map_mtx_);
+    m_frame_remove_callback_map_.clear();
+  }
 }
 
-uint64_t BlanklessController::GetKeyAndResetLoadingStatus(int32_t nweb_id)
+bool BlanklessController::CheckStatusForTest(
+  int32_t nweb_id, const BlanklessController::StatusInfo& expected_status, bool expected_found)
 {
-  std::lock_guard<std::mutex> lck(m_nweb_info_map_mtx_);
-  auto it = m_nweb_info_map_.find(nweb_id);
-  if (it == m_nweb_info_map_.end()) {
-    return INVALID_BLANKLESS_KEY;
+  std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
+  auto it = m_nweb_status_map_.find(nweb_id);
+  if (it == m_nweb_status_map_.end()) {
+    return !expected_found;
   }
-  uint64_t ret = it->second.status == LoadingStatus::LOADING_ENABLE ? it->second.blankless_key : INVALID_BLANKLESS_KEY;
-  it->second.status = LoadingStatus::LOADING_UNSET;
+  auto& info = it->second;
+  bool ret = expected_status.allowed == info.allowed &&
+             expected_status.blankless_key == info.blankless_key &&
+             expected_status.status_code == info.status_code &&
+             expected_status.blankless_key_dumped_history == info.blankless_key_dumped_history &&
+             expected_status.blankless_key_inserted_history == info.blankless_key_inserted_history;
   return ret;
 }
 }  // namespace ohos

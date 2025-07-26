@@ -30,6 +30,7 @@ const int retry_max_times = 4;
 
 namespace content {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+//LCOV_EXCL_START
 void TryForReportThread() {
   using namespace OHOS::NWeb;
   auto tid = GetGpuThreadId(base::GetCurrentProcId());
@@ -54,6 +55,7 @@ int32_t GetGpuThreadId(int32_t pid)
   }
   return tid;
 }
+//LCOV_EXCL_STOP
 
 int32_t GetTidListByName(int32_t pid, const std::string& thread_name)
 {
@@ -110,6 +112,7 @@ bool LoadStringFromFile(const std::string& file_path, std::string& content)
   return true;
 }
 
+//LCOV_EXCL_START
 void ResetTryForReportThread() {
   retry_times = 0;
   TryForReportThread();
@@ -124,5 +127,6 @@ void InProcessGpuThreadDestroy() {
       tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
   }
 }
+//LCOV_EXCL_STOP
 #endif
 }

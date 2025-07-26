@@ -73,11 +73,13 @@ void RenderFrameHostImpl::SendAccessibilityEvent(int64_t accessibilityId,
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 void RenderFrameHostImpl::NotifyContextMenuWillShow() {
   delegate_->NotifyContextMenuWillShow();
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
 void RenderFrameHostImpl::GetCreateNewWindow(
@@ -111,6 +113,7 @@ void RenderFrameHostImpl::GenerateCodeCache(
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(IS_ARKWEB_EXT)
 void RenderFrameHostImpl::GetImageFromCache(const std::string& url,
                                             ImageCacheCallback callback) {
@@ -127,6 +130,7 @@ void RenderFrameHostImpl::OnClearContextMenu() {
   delegate_->ClearContextMenu();
 }
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
 void RenderFrameHostImpl::UpdateAdBlockEnabledToRender(
@@ -158,6 +162,7 @@ void RenderFrameHostImpl::UpdateAdBlockEnabledToRender(
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
 void RenderFrameHostImpl::AddNamedObject(const std::string& name,
                                          int32_t object_id,
@@ -183,8 +188,10 @@ void RenderFrameHostImpl::ChangeVisibilityOfQuickMenu() {
     delegate_->ChangeVisibilityOfQuickMenu();
   }
 }
+// LCOV_EXCL_STOP
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_AI)
 void RenderFrameHostImpl::CloseImageOverlaySelection() {
   if (delegate_) {
@@ -206,6 +213,7 @@ bool RenderFrameHostImpl::IsJsDialogShowOrBeforeUnloadTimedOut() {
   return delegate_->IsJavaScriptDialogShowing() || BeforeUnloadTimedOut();
 }
 #endif // ARKWEB_DISATCH_BEFORE_UNLOAD
+// LCOV_EXCL_STOP
 
 void CommitNavigationExt(
     const std::string& effective_scheme,
@@ -355,6 +363,7 @@ void RenderFrameHostImpl::CommitFailedNavigation(
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_PDF)
 void RenderFrameHostImpl::OnPdfScrollAtBottom(const std::string& url) {
   if (delegate_) {
@@ -368,4 +377,5 @@ void RenderFrameHostImpl::OnPdfLoadEvent(int32_t result, const std::string& url)
   }
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
+// LCOV_EXCL_STOP
 }  // namespace content

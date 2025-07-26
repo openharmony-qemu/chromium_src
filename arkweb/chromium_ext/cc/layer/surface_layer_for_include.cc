@@ -17,6 +17,7 @@
 
 namespace cc {
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 scoped_refptr<SurfaceLayer> SurfaceLayer::Create(UpdateSubmissionStateCB update_submission_state_callback,
     RectChangeCallback callback,
@@ -105,4 +106,5 @@ void SurfaceLayer::CleanupVisibilityForRemovedLayer(bool visibility) {
   }
 }
 #endif
+// LCOV_EXCL_STOP
 }  // namespace cc

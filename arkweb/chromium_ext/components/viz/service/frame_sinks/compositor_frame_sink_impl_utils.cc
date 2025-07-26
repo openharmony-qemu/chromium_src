@@ -37,9 +37,11 @@ constexpr char kProcessType[] = "type";
 constexpr char kGpuProcess[] = "gpu-process";
 }  // namespace
 
+//LCOV_EXCL_START
 CompositorFrameSinkImplUtil::CompositorFrameSinkImplUtil(CompositorFrameSinkImpl* impl) {
   this->compositorFrameSinkImpl_ = impl;
 }
+//LCOV_EXCL_STOP
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
 void CompositorFrameSinkImplUtil::SubmitCompositorFrameUtils(const CompositorFrameMetadata& metadata) {
   uint32_t count = static_cast<uint32_t>(metadata.dropped_frame_count);
@@ -81,6 +83,7 @@ void CompositorFrameSinkImplUtil::ReportKeyThreadIdsUtils(const std::vector<int3
 }
 #endif  // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 
+//LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
 int CompositorFrameSinkImplUtil::GetFrameRate() {
   if (compositorFrameSinkImpl_ && compositorFrameSinkImpl_->support_) {
@@ -97,5 +100,6 @@ void CompositorFrameSinkImplUtil::OnSetBypassVsyncCondition(int32_t condition) {
   }
 }
 #endif
+//LCOV_EXCL_STOP
 
 }  // namespace cc

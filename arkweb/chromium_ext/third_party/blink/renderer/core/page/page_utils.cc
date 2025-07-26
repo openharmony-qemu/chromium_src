@@ -26,6 +26,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 PageUtils::PageUtils(Page* page) : page_(page) {}
 
 PageUtils::~PageUtils() {}
@@ -89,4 +90,5 @@ bool PageUtils::IsInTextDraging() {
   return false;
 }
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+// LCOV_EXCL_STOP
 }

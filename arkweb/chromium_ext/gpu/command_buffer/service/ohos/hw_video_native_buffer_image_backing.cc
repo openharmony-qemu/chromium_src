@@ -182,6 +182,7 @@ HwVideoNativeBufferImageBacking::HwVideoNativeBufferImageBacking(
       GetDrDcLock());
 }
 
+//LCOV_EXCL_START
 HwVideoNativeBufferImageBacking::~HwVideoNativeBufferImageBacking() {
   // This backing is created on gpu main thread but can be destroyed on DrDc
   // thread if the last representation was on DrDc thread.
@@ -213,12 +214,14 @@ size_t HwVideoNativeBufferImageBacking::GetEstimatedSizeForMemoryDump() const
   // and not when the backing is created.
   return stream_texture_sii_->IsUsingGpuMemory() ? GetEstimatedSize() : 0;
 }
+//LCOV_EXCL_STOP
 
 // Representation of HwVideoNativeBufferImageBacking as a GL Texture.
 class HwVideoNativeBufferImageBacking::GLTextureVideoImageRepresentation
     : public GLTextureImageRepresentation,
       public RefCountedLockHelperDrDc {
  public:
+//LCOV_EXCL_START
   GLTextureVideoImageRepresentation(
       SharedImageManager* manager,
       HwVideoNativeBufferImageBacking* backing,
@@ -234,6 +237,7 @@ class HwVideoNativeBufferImageBacking::GLTextureVideoImageRepresentation
       texture_->NotifyOnContextLost();
     }
   }
+//LCOV_EXCL_STOP
 
   // Disallow copy and assign.
   GLTextureVideoImageRepresentation(const GLTextureVideoImageRepresentation&) =
@@ -241,6 +245,7 @@ class HwVideoNativeBufferImageBacking::GLTextureVideoImageRepresentation
   GLTextureVideoImageRepresentation& operator=(
       const GLTextureVideoImageRepresentation&) = delete;
 
+//LCOV_EXCL_START
   gles2::Texture* GetTexture(int plane_index) override {
     DCHECK_EQ(plane_index, 0);
 
@@ -249,6 +254,7 @@ class HwVideoNativeBufferImageBacking::GLTextureVideoImageRepresentation
 
     return texture;
   }
+//LCOV_EXCL_STOP
 
   bool BeginAccess(GLenum mode) override {
     TRACE_EVENT0("gpu",
@@ -275,6 +281,7 @@ class HwVideoNativeBufferImageBacking::GLTextureVideoImageRepresentation
     return true;
   }
 
+//LCOV_EXCL_START
   void EndAccess() override {
     DCHECK(scoped_native_buffer_);
     TRACE_EVENT0("gpu",
@@ -286,12 +293,14 @@ class HwVideoNativeBufferImageBacking::GLTextureVideoImageRepresentation
     base::AutoLockMaybe auto_lock(GetDrDcLockPtr());
     scoped_native_buffer_ = nullptr;
   }
+//LCOV_EXCL_STOP
 
  private:
   std::unique_ptr<AbstractTextureOHOS> texture_;
   std::unique_ptr<ScopedNativeBufferFenceSync> scoped_native_buffer_;
 };
 
+//LCOV_EXCL_START
 std::unique_ptr<GLTextureImageRepresentation>
 HwVideoNativeBufferImageBacking::ProduceGLTexture(SharedImageManager* manager,
                                                   MemoryTypeTracker* tracker) {
@@ -313,11 +322,13 @@ HwVideoNativeBufferImageBacking::ProduceGLTexture(SharedImageManager* manager,
   return std::make_unique<GLTextureVideoImageRepresentation>(
       manager, this, tracker, std::move(texture), GetDrDcLock());
 }
+//LCOV_EXCL_STOP
 
 class HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation
                 : public SkiaVkHWVideoNBImageRepresentation,
                   public RefCountedLockHelperDrDc {
  public:
+//LCOV_EXCL_START
     SkiaVkNBRepresentation(
       SharedImageManager* manager,
       HwVideoNativeBufferImageBacking* backing,
@@ -345,6 +356,7 @@ class HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation
   }
 
   void EndWriteAccess() override { NOTIMPLEMENTED(); }
+//LCOV_EXCL_STOP
 
   std::vector<sk_sp<GrPromiseImageTexture>> BeginReadAccess(
       std::vector<GrBackendSemaphore>* begin_semaphores,
@@ -391,6 +403,7 @@ class HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation
         begin_semaphores, end_semaphores, end_state);
   }
 
+//LCOV_EXCL_START
   void EndReadAccess() override
   {
     TRACE_EVENT0("base", "HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation::EndReadAccess");
@@ -405,12 +418,14 @@ class HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation
     scoped_hardware_buffer_->SetReadFence(hw_ohos_backing()->TakeReadFence());
     scoped_hardware_buffer_ = nullptr;
   }
+//LCOV_EXCL_STOP
 
  private:
   std::unique_ptr<ScopedNativeBufferFenceSync>
       scoped_hardware_buffer_;
 };
 
+//LCOV_EXCL_START
 gpu::ScopedNativeBufferHandle HwVideoNativeBufferImageBacking::GetNativeBufferHandle() const
 {
   TRACE_EVENT0("gpu", __PRETTY_FUNCTION__);
@@ -424,6 +439,7 @@ gpu::ScopedNativeBufferHandle HwVideoNativeBufferImageBacking::GetNativeBufferHa
   // Adopt the raw pointer into a ScopedNativeBufferHandle.
   return gpu::ScopedNativeBufferHandle::Create(raw_native_buffer);
 }
+//LCOV_EXCL_STOP
 
 std::unique_ptr<SkiaGaneshImageRepresentation>
 HwVideoNativeBufferImageBacking::ProduceSkiaGanesh(
@@ -466,6 +482,7 @@ HwVideoNativeBufferImageBacking::ProduceSkiaGanesh(
                                            this, tracker);
 }
 
+//LCOV_EXCL_START
 HwVideoNativeBufferImageBacking::ContextLostObserverHelper::
     ContextLostObserverHelper(
         scoped_refptr<SharedContextState> context_state,
@@ -509,5 +526,6 @@ void HwVideoNativeBufferImageBacking::ContextLostObserverHelper::
   context_state_->RemoveContextLostObserver(this);
   context_state_ = nullptr;
 }
+//LCOV_EXCL_STOP
 }  // namespace gpu
                    

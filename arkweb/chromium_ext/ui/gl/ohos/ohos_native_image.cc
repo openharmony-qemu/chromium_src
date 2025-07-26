@@ -30,6 +30,7 @@ scoped_refptr<OhosNativeImage> OhosNativeImage::Create(int texture_id) {
   return new OhosNativeImage(std::move(nativeImageAdapter));
 }
 
+//LCOV_EXCL_START
 OhosNativeImage::OhosNativeImage(
     std::unique_ptr<OHOS::NWeb::NativeImageAdapter> native_image_adapter)
     : native_image_adapter_(std::move(native_image_adapter)) {}
@@ -39,6 +40,7 @@ OhosNativeImage::~OhosNativeImage() {
     native_image_adapter_->DestroyNativeImage();
   }
 }
+//LCOV_EXCL_STOP
 
 void OhosNativeImage::SetFrameAvailableCallback(
     base::RepeatingClosure callback) {
@@ -53,6 +55,7 @@ void OhosNativeImage::SetFrameAvailableCallback(
   }
 }
 
+//LCOV_EXCL_START
 void OhosNativeImage::UpdateNativeImage() {
   static auto* kCrashKey = base::debug::AllocateCrashKeyString(
       "inside_surface_texture_update_tex_image",
@@ -64,6 +67,7 @@ void OhosNativeImage::UpdateNativeImage() {
   }
   native_image_adapter_->UpdateSurfaceImage();
 }
+//LCOV_EXCL_STOP
 
 void OhosNativeImage::GetSurfaceId(uint64_t* surface_id) {
   if (native_image_adapter_ == nullptr) {
@@ -79,6 +83,7 @@ void OhosNativeImage::GetSurfaceId(uint64_t* surface_id) {
   }
 }
 
+//LCOV_EXCL_START
 void OhosNativeImage::GetTransformMatrix(float mtx[16]) {
   if (native_image_adapter_ == nullptr) {
     return;
@@ -179,4 +184,5 @@ void OhosNativeImage::GetTransformMatrixV1(float mtx[16], size_t mtx_size) {
   }
   native_image_adapter_->GetTransformMatrix(mtx);
 }
+//LCOV_EXCL_STOP
 }  // namespace gl

@@ -1046,10 +1046,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   bool is_enhance_surface_ = false;
-  void* window_ = nullptr;
+  raw_ptr<void> window_ = nullptr;
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
-  void* popup_window_ = nullptr;
+  raw_ptr<void> popup_window_ = nullptr;
 #endif
 
 #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
@@ -1061,7 +1061,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
   // the received icon
   base::Lock state_lock_;
-  const void* data_ = nullptr;
+  raw_ptr<const void> data_ = nullptr;
   size_t width_ = 0;
   size_t height_ = 0;
   ImageColorType color_type_ = ImageColorType::COLOR_TYPE_UNKNOWN;

@@ -14,6 +14,7 @@
  */
 
 #include "hilog_adapter.h"
+#include "securec.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <hilog/log.h>
@@ -66,7 +67,7 @@ int HiLogAdapterPrintLog(uint32_t level, const char* tag, const char* fmt, va_li
     std::string fmtStr(fmt);
     Format(fmtStr);
     char buffer[MAX_LENGTH];
-    vsnprintf(buffer, MAX_LENGTH, fmtStr.c_str(), ap);
+    vsnprintf_s(buffer, MAX_LENGTH, MAX_LENGTH - 1, fmtStr.c_str(), ap);
     return OH_LOG_Print(LOG_APP, LOG_LEVELS[level], domain, tag, STD_FORMAT.c_str(), buffer);
 }
 
@@ -75,7 +76,7 @@ int HiLogAdapterConsoleLog(uint32_t level, const char* tag, const char* fmt, va_
     std::string fmtStr(fmt);
     Format(fmtStr);
     char buffer[MAX_LENGTH];
-    vsnprintf(buffer, MAX_LENGTH, fmtStr.c_str(), ap);
+    vsnprintf_s(buffer, MAX_LENGTH, MAX_LENGTH - 1, fmtStr.c_str(), ap);
     return OH_LOG_Print(LOG_APP, LOG_LEVELS[level], LOG_CONSOLE_DOMAIN, tag, STD_FORMAT.c_str(), buffer);
 }
 }

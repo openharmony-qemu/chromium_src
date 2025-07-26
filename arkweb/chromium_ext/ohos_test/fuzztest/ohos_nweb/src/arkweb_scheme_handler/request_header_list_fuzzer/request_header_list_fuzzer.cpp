@@ -46,8 +46,27 @@ void FuzzApi(const uint8_t* data, size_t size) {
   char* value = nullptr;
   OH_ArkWebRequestHeaderList_GetHeader(request_header_list, index, &key,
                                        &value);
+  OH_ArkWebResourceRequest_SetUserData(resource_request, nullptr);
+  OH_ArkWebResourceRequest_GetUserData(resource_request);
+  char* method = nullptr;
+  OH_ArkWebResourceRequest_GetMethod(resource_request, &method);
+  char* url = nullptr;
+  OH_ArkWebResourceRequest_GetUrl(resource_request, &url);
+  ArkWeb_HttpBodyStream* http_body_stream = nullptr;
+  OH_ArkWebResourceRequest_GetHttpBodyStream(resource_request,
+                                             &http_body_stream);
+  OH_ArkWebResourceRequest_DestroyHttpBodyStream(http_body_stream);
+  OH_ArkWebResourceRequest_GetResourceType(resource_request);
+  char* frame_url = nullptr;
+  OH_ArkWebResourceRequest_GetFrameUrl(resource_request, &frame_url);
+  char* referrer = nullptr;
+  OH_ArkWebResourceRequest_GetReferrer(resource_request, &referrer);
+  ArkWeb_RequestHeaderList* head_list = nullptr;
+  OH_ArkWebResourceRequest_GetRequestHeaders(resource_request, &head_list);
+  OH_ArkWebResourceRequest_IsRedirect(resource_request);
+  OH_ArkWebResourceRequest_IsMainFrame(resource_request);
+  OH_ArkWebResourceRequest_HasGesture(resource_request);
   OH_ArkWebRequestHeaderList_Destroy(request_header_list);
-  delete resource_request;
 }
 }  // namespace OHOS::NWeb
 

@@ -81,10 +81,12 @@ public:
     {
         return 100;
     }
+
     int32_t GetSize() override
     {
         return 1;
     }
+
     int32_t GetOffset() override
     {
         return 0;
@@ -103,6 +105,7 @@ public:
     {
         return nullptr;
     }
+
     uint32_t GetBufferSize() override
     {
         return 8;
@@ -139,10 +142,12 @@ public:
     {
         bridge_impl.keyframe_addr_ = nullptr;
     }
+
     void UpdateStatusAndClearCache(bool is_running)
     {
         bridge_impl.UpdateStatusAndClearCache(is_running);
     }
+
     void ClearConfigDataCache()
     {
         bridge_impl.ClearConfigDataCache();
@@ -162,40 +167,50 @@ protected:
         signal_ = std::make_shared<CodecBridgeSignal>();
         callback_ = std::make_shared<CodecEncodeBridgeCallback>(signal_);
     }
+
     void SetCodecAdapter(std::unique_ptr<MediaCodecAdapter> adapter)
     {
         bridge_impl.codec_adapter_ = std::move(adapter);
     }
+
     void SetSignal(std::shared_ptr<CodecBridgeSignal> signal)
     {
         bridge_impl.signal_ = signal;
     }
+
     void SetIsRunning(bool is_running)
     {
         bridge_impl.is_running_.store(is_running);
     }
+
     void SetCodecEncodeBridgeCallback(std::shared_ptr<CodecEncodeBridgeCallback> cb) {
         bridge_impl.cb_ = cb;
     }
+
     void SetKeyFrameAddr(uint8_t* addr)
     {
         bridge_impl.keyframe_addr_ = addr;
     }
+
     void SetSurface(std::shared_ptr<ProducerSurfaceAdapter> surface)
     {
         bridge_impl.surface_ = surface;
     }
+
     void SetConfigDataCache(EncodeConfigDataCache config_data_cache)
     {
         bridge_impl.config_data_cache_ = config_data_cache;
     }
+
     void SetBufferAdapter(std::shared_ptr<SurfaceBufferAdapter> buffer_adapter)
     {
         bridge_impl.buffer_adapter_ = buffer_adapter;
     }
+
     void SetData(size_t plane, const uint8_t* ptr) {
         video_frame->data_[plane] = ptr;
     }
+
     void SetStorageType(VideoFrame::StorageType storage_type) {
         video_frame->storage_type_ = storage_type;
     }
@@ -204,33 +219,41 @@ protected:
     {
         return std::move(bridge_impl.codec_adapter_);
     }
+
     std::shared_ptr<CodecBridgeSignal> GetSignal()
     {
         return bridge_impl.signal_;
     }
+
     bool GetIsRunning()
     {
         return bridge_impl.is_running_.load();
     }
+
     std::shared_ptr<CodecEncodeBridgeCallback> GetCodecEncodeBridgeCallback()
     {
         return bridge_impl.cb_;
     }
+
     scoped_refptr<base::SequencedTaskRunner> GetTaskRunner() {
         return bridge_impl.codec_task_runner_;
     }
+
     uint8_t* GetKeyFrameAddr()
     {
         return bridge_impl.keyframe_addr_;
     }
+
     std::shared_ptr<ProducerSurfaceAdapter> GetSurface()
     {
         return bridge_impl.surface_;
     }
+
     EncodeConfigDataCache GetConfigDataCache()
     {
         return bridge_impl.config_data_cache_;
     }
+
     std::shared_ptr<SurfaceBufferAdapter> GetBufferAdapter()
     {
         return bridge_impl.buffer_adapter_;
@@ -251,10 +274,12 @@ protected:
         signal_ = std::make_shared<CodecBridgeSignal>();
         callback_ = std::make_shared<CodecEncodeBridgeCallback>(signal_);
     }
+
     void SetConfigDataBufferSize(const int32_t buffer_size)
     {
         callback_->config_data_.buffer_data.bufferSize = buffer_size;
     }
+
     std::shared_ptr<CodecBridgeSignal> signal_;
     std::shared_ptr<CodecEncodeBridgeCallback> callback_;
     std::shared_ptr<CodecEncodeBridgeCallback> cb_ = nullptr;

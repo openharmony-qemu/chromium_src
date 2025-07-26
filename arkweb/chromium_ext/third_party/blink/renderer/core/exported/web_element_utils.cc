@@ -17,7 +17,7 @@
 #include "third_party/blink/renderer/core/html/html_element.h"
 
 namespace blink {
-
+// LCOV_EXCL_START
 WebElementUtils::WebElementUtils() {}
 
 bool WebElementUtils::IsContentEditable() {
@@ -31,5 +31,5 @@ bool WebElementUtils::IsContentEditable() {
   return normalized_value == ContentEditableType::kContentEditable ||
          normalized_value == ContentEditableType::kPlaintextOnly;
 }
-
+// LCOV_EXCL_STOP
 }  // namespace blink

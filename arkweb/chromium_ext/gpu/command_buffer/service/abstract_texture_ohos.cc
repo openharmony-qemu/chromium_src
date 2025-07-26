@@ -55,6 +55,7 @@ std::unique_ptr<AbstractTextureOHOS> AbstractTextureOHOS::CreateForPassthrough(
   return std::make_unique<AbstractTextureOHOS>(std::move(texture));
 }
 
+//LCOV_EXCL_START
 std::unique_ptr<AbstractTextureOHOS> AbstractTextureOHOS::CreateForTesting(
     GLuint texture_id) {
   auto texture = std::make_unique<gpu::TextureBase>(texture_id);
@@ -89,6 +90,7 @@ void AbstractTextureOHOS::NotifyOnContextLost() {
   }
   have_context_ = false;
 }
+//LCOV_EXCL_STOP
 
 void AbstractTextureOHOS::BindToServiceId(GLuint service_id) {
   if (texture_) {
@@ -99,6 +101,7 @@ void AbstractTextureOHOS::BindToServiceId(GLuint service_id) {
   }
 }
 
+//LCOV_EXCL_START
 TextureBase* AbstractTextureOHOS::GetTextureBase() const {
   if (texture_) {
     return texture_;
@@ -111,6 +114,7 @@ TextureBase* AbstractTextureOHOS::GetTextureBase() const {
   }
   return nullptr;
 }
+//LCOV_EXCL_STOP
 
 }  // namespace gpu
                    

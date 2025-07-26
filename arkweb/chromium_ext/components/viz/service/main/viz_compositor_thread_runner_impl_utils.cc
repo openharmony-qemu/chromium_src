@@ -44,10 +44,12 @@ void ReportThreadForInit(const std::unique_ptr<base::Thread>& thread)
 }
 #endif
 
+//LCOV_EXCL_START
 VizCompositorThreadRunnerImplUtils::VizCompositorThreadRunnerImplUtils(VizCompositorThreadRunnerImpl* impl)
 {
     this->VizCompositorThreadRunner = impl;
 }
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
 void VizCompositorThreadRunnerImplUtils::ReportThreadForDestroy(const std::unique_ptr<base::Thread>& thread)

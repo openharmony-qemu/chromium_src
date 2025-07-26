@@ -33,12 +33,14 @@
 static pthread_once_t s_ashmem_dev_once = PTHREAD_ONCE_INIT;
 static dev_t s_ashmem_dev;
 
+// LCOV_EXCL_START
 static void get_ashmem_dev() {
   struct stat st;
   if (stat(ASHMEM_DEVICE, &st) == 0 && S_ISCHR(st.st_mode)) {
     s_ashmem_dev = st.st_dev;
   }
 }
+// LCOV_EXCL_STOP
 
 static int ashmem_dev_fd_check(int fd) {
   pthread_once(&s_ashmem_dev_once, get_ashmem_dev);
@@ -52,6 +54,7 @@ static int ashmem_dev_fd_check(int fd) {
   return 0;
 }
 
+// LCOV_EXCL_START
 static int ashmem_check_failure(int fd, int result) {
   if (result == -1 && errno == ENOTTY) {
     return ashmem_dev_fd_check(fd);
@@ -62,6 +65,7 @@ static int ashmem_check_failure(int fd, int result) {
 int ashmem_device_is_supported(void) {
   return 1;
 }
+// LCOV_EXCL_STOP
 
 int ashmem_create_region(const char* name, size_t size) {
   int fd = open(ASHMEM_DEVICE, O_RDWR);
@@ -90,6 +94,7 @@ error:
   return ret;
 }
 
+// LCOV_EXCL_START
 int ashmem_set_prot_region(int fd, int prot) {
   return ashmem_check_failure(
       fd, TEMP_FAILURE_RETRY(ioctl(fd, ASHMEM_SET_PROT_MASK, prot)));
@@ -99,6 +104,7 @@ int ashmem_get_prot_region(int fd) {
   return ashmem_check_failure(
       fd, TEMP_FAILURE_RETRY(ioctl(fd, ASHMEM_GET_PROT_MASK)));
 }
+// LCOV_EXCL_STOP
 
 int ashmem_pin_region(int fd, size_t offset, size_t len) {
   LOG(DEBUG) << "ashmem_pin_region";
@@ -116,7 +122,9 @@ int ashmem_unpin_region(int fd, size_t offset, size_t len) {
       fd, TEMP_FAILURE_RETRY(ioctl(fd, ASHMEM_UNPIN, &pin)));
 }
 
+// LCOV_EXCL_START
 int ashmem_get_size_region(int fd) {
   return ashmem_check_failure(
       fd, TEMP_FAILURE_RETRY(ioctl(fd, ASHMEM_GET_SIZE, NULL)));
 }
+// LCOV_EXCL_STOP

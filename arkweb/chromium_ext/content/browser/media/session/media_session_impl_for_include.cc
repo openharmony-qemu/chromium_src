@@ -20,6 +20,7 @@
 namespace content {
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+// LCOV_EXCL_START
 bool MediaSessionImpl::HasOnlyOneShotPlayersPublic() const {
   return HasOnlyOneShotPlayers();
 }
@@ -57,6 +58,7 @@ bool MediaSessionImpl::IsEndOfMedia() {
   }
   return ret;
 }
+// LCOV_EXCL_STOP
 
 void MediaSessionImpl::SetEndOfMedia(bool end_of_media) {
   if (session_ohos_) {

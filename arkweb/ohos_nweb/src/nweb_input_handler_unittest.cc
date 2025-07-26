@@ -889,6 +889,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, EnableVideoAssistant, (bool enable), (override));
   MOCK_METHOD(void, ExecuteVideoAssistantFunction, (const std::string& cmd_id), (override));
   MOCK_METHOD(void, CustomWebMediaPlayer, (bool enable), (override));
+  MOCK_METHOD(void, SetMediaResumeFromBFCachePage, (bool resume), (override));
   MOCK_METHOD(void, WebMediaPlayerControllerPlay, (), (override));
   MOCK_METHOD(void, WebMediaPlayerControllerPause, (), (override));
   MOCK_METHOD(void, WebMediaPlayerControllerSeek, (double time), (override));

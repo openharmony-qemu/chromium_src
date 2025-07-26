@@ -464,16 +464,6 @@ NavigationEntryImpl::~NavigationEntryImpl() {
             .same_document_navigation_entry_screenshot_token()
             .value());
   }
-
-#if BUILDFLAG(ARKWEB_NAVIGATION)
-  static constexpr base::TimeDelta kDelayInterval = base::Seconds(5);
-  auto delayed_image = std::make_shared<gfx::Image>(std::move(favicon_.image));
-  base::SequencedTaskRunner::GetCurrentDefault()->PostDelayedTask(
-    FROM_HERE,
-    base::BindOnce([](std::shared_ptr<gfx::Image>){}, std::move(delayed_image)),
-    kDelayInterval
-  );
-#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
 }
 
 int NavigationEntryImpl::GetUniqueID() {

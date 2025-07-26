@@ -41,6 +41,7 @@
 #include "net/base/network_change_notifier_passive.h"
 #elif BUILDFLAG(IS_ARKWEB)
 #include "net/base/network_change_notifier_passive.h"
+#include "arkweb/chromium_ext/net/base/network_change_notifier_for_include.cc"
 #elif BUILDFLAG(IS_FUCHSIA)
 #include "net/base/network_change_notifier_fuchsia.h"
 #endif

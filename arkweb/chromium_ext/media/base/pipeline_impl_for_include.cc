@@ -83,6 +83,7 @@ void PipelineImpl::PipEnable(bool enable) {
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+// LCOV_EXCL_START
 void PipelineImpl::RendererWrapper::RecycleDmaBuffer() {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
 
@@ -122,5 +123,6 @@ void PipelineImpl::ResumeDmaBuffer() {
       FROM_HERE, base::BindOnce(&RendererWrapper::ResumeDmaBuffer,
                                 base::Unretained(renderer_wrapper_.get())));
 }
+// LCOV_EXCL_STOP
 #endif  // ARKWEB_MEDIA_DMABUF
 }

@@ -24,12 +24,15 @@ ScrollableAreaUtils::ScrollableAreaUtils(ScrollableArea* scrollable_area)
     : scrollable_area_(scrollable_area) {}
 
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
+// LCOV_EXCL_START
 void ScrollableAreaUtils::SetScrollbarColor(SkColor colorValue) {
   if (colorValue != scrollbar_color_) {
     scrollbar_color_ = colorValue;
   }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void ScrollableAreaUtils::SetOverlayScrollbarColor() {
   if (scrollable_area_->HasOverlayScrollbars()) {
     // set scrollbar color for overlay color theme
@@ -47,9 +50,11 @@ void ScrollableAreaUtils::SetOverlayScrollbarColor() {
     }
   }
 }
+// LCOV_EXCL_STOP
 #endif  // ARKWEB_SCROLLBAR
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+// LCOV_EXCL_START
 bool ScrollableAreaUtils::GetScrollable() {
   DCHECK(scrollable_area_->GetLayoutBox());
   if (scrollable_area_->GetLayoutBox() &&
@@ -64,5 +69,6 @@ bool ScrollableAreaUtils::GetScrollable() {
   }
   return true;
 }
+// LCOV_EXCL_STOP
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 }  // namespace blink

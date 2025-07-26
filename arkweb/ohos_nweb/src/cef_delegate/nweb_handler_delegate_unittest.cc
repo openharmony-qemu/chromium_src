@@ -244,7 +244,6 @@ class NWebHandlerDelegateTest : public ::testing::Test {
   void TearDown();
 
   CefRefPtr<NWebHandlerDelegate> delegate;
-  CefRefPtr<NWebInputMethodClient> mock_client;
   MockNWebHandler* mock_handler_;
   MockEventHandler* mock_event_handler_;
   MockRenderHandler* mock_render_handler_;
@@ -262,7 +261,6 @@ class NWebHandlerDelegateTest : public ::testing::Test {
 void NWebHandlerDelegateTest::SetUp() {
   delegate = new NWebHandlerDelegate(nullptr, nullptr, nullptr, nullptr, false,
                                      nullptr);
-  mock_client = CefRefPtr<MockNWebInputMethodClient>();
 
   mock_handler_ = new MockNWebHandler();
   mock_event_handler_ = new MockEventHandler();
@@ -284,16 +282,6 @@ void NWebHandlerDelegateTest::TearDown() {
 }
 
 // Test cases
-TEST_F(NWebHandlerDelegateTest, SetInputMethodClient_TEST001) {
-  delegate->SetInputMethodClient(mock_client);
-  EXPECT_EQ(delegate->input_method_client_, mock_client);
-}
-
-TEST_F(NWebHandlerDelegateTest, SetInputMethodClient_TEST002) {
-  delegate->SetInputMethodClient(nullptr);
-  EXPECT_EQ(delegate->input_method_client_, nullptr);
-}
-
 TEST_F(NWebHandlerDelegateTest, GetFocusHandler) {
   CefRefPtr<CefFocusHandler> focusHandler = delegate->GetFocusHandler();
   EXPECT_EQ(focusHandler.get(), delegate);

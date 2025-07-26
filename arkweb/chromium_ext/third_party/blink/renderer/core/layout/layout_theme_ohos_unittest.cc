@@ -15,6 +15,8 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
 #include "third_party/blink/renderer/core/layout/layout_theme_mobile.h"
 #include "third_party/blink/renderer/core/style/computed_style.h"
 #define private public
@@ -103,6 +105,18 @@ TEST_F(LayoutThemeOhosTest, PlatformTapHighlightColor) {
   MockSysInfoUtils::SetIsPcDevice(true);
   Color pc_color = theme()->PlatformTapHighlightColor();
   EXPECT_NE(pc_color, Color());
+}
+
+TEST_F(LayoutThemeOhosTest, ExtraDefaultStyleSheet) {
+  const CommandLine::CharType* argv[] = {switches::kDisableMobileStyleSheet};
+  
+  base::CommandLine::Reset();
+  theme()->ExtraDefaultStyleSheet();
+  EXPECT_EQ(base::CommandLine::ForCurrentProcess(), nullptr);
+
+  base::CommandLine::Init(std::size(argv), argv);
+  theme()->ExtraDefaultStyleSheet();
+  EXPECT_NE(base::CommandLine::ForCurrentProcess(), nullptr);
 }
 
 }  // namespace blink

@@ -47,6 +47,10 @@ arkweb_metrics_sources = [
   "//arkweb/chromium_ext/base/metrics/field_trial_utils.h",
 ]
 
+arkweb_metrics_unittests_sources = [
+  "//arkweb/chromium_ext/base/metrics/field_trial_utils_unittest.cc",
+]
+
 arkweb_base_ohos_ltpo_sources = [
   "//arkweb/chromium_ext/base/ohos/ltpo/src/dynamic_frame_rate_decision.cc",
   "//arkweb/chromium_ext/base/ohos/ltpo/include/dynamic_frame_rate_decision.h",

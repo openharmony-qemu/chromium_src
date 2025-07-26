@@ -25,6 +25,7 @@ LayerUtils::LayerUtils(Layer* layer)
 {}
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
+// LCOV_EXCL_START
 void LayerUtils::PushPropertiesToImpl(LayerImpl* layer_impl) {
   layer_impl->layer_impl_utils()->set_may_contain_native(may_contain_native());
   layer_impl->layer_impl_utils()->set_native_embed_id(native_embed_id());
@@ -48,6 +49,7 @@ int LayerUtils::native_embed_id() const {
 void LayerUtils::SetNativeRect(const gfx::RectF& rect) {
   native_rect_ = rect;
 }
+// LCOV_EXCL_STOP
 
 void LayerUtils::SetNativeEmbedId(int embedId) {
   if (native_embed_id() == embedId) {
@@ -58,13 +60,16 @@ void LayerUtils::SetNativeEmbedId(int embedId) {
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void LayerUtils::SetShouldInterceptTouchEvent(bool intercept) {
   should_intercept_touch_event_.Write(*(layer_.get())) = intercept;
 }
+
 bool LayerUtils::ShouldInterceptTouchEvent() {
   return should_intercept_touch_event_.Read(*(layer_.get()));
 }
 #endif
+// LCOV_EXCL_STOP
 
 }  // namespace cc

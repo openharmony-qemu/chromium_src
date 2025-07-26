@@ -21,10 +21,14 @@
 #include <string>
 #include <vector>
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
+
 typedef struct {
   uint32_t count;
   char** strs;
-} NWebDownloadsVectorCharType;
+} ExDownloadsVectorCharType;
 
 typedef struct {
   double* bytesReceived;
@@ -42,9 +46,9 @@ typedef struct {
   int* id;
   int* limit;
   char* mime;
-  NWebDownloadsVectorCharType* orderBy;
+  ExDownloadsVectorCharType* orderBy;
   bool* paused;
-  NWebDownloadsVectorCharType* query;
+  ExDownloadsVectorCharType* query;
   char* startTime;
   char* startedAfter;
   char* startedBefore;
@@ -54,10 +58,69 @@ typedef struct {
   double* totalBytesLess;
   char* url;
   char* urlRegex;
-} NWebDownloadsQueryInfo;
+} ExDownloadsQueryInfo;
 
 typedef struct {
+  char* extensionsId;
   bool* enabled;
-} NWebExtensionUiOptions;
+} ExDownloadsUiOptions;
+
+typedef struct {
+  char* byExtensionId;
+  char* byExtensionName;
+  double* bytesReceived;
+  bool* canResume;
+  int* danger;
+  char* endTime;
+  int* error;
+  char* estimatedEndTime;
+  bool* exists;
+  double* fileSize;
+  char* filename;
+  char* finalUrl;
+  int* id;
+  bool* incognito;
+  char* mime;
+  bool* paused;
+  char* referrer;
+  char* startTime;
+  int* state;
+  double* totalBytes;
+  char* url;
+} ExDownloadsItem;
+
+typedef struct {
+  char* name;
+  char* value;
+} ExDownloadsHeaderNameValuePair;
+
+typedef struct {
+  char* body;
+  int* conflictAction;
+  char* filename;
+  int* headerCount;
+  ExDownloadsHeaderNameValuePair* headers;
+  int* method;
+  bool* saveAs;
+  char* url;
+} ExDownloadsOptions;
+
+typedef struct {
+  int* downloadId;
+  int* size;
+} ExDownloadsGetFileIcon;
+
+typedef struct {
+  int* colorType;
+  int* alphaType;
+  int* width;
+  int* height;
+  size_t bitmapSize;
+  uint8_t* bitmap;
+} ExDownloadsIconBitmap;
+
+#ifdef __cplusplus
+}
+#endif  // __cplusplus
 
 #endif

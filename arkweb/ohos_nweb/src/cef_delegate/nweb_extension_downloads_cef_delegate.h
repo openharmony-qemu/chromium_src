@@ -24,58 +24,90 @@ using DownloadEraseCallback = base::RepeatingCallback<
     void(const char* error, const uint32_t size, const int* eraseIds)>;
 
 using DownloadsOpenCallback = base::RepeatingCallback<void(const char* error)>;
-using DownloadsRemoveFileCallback = base::RepeatingCallback<void(const char* error)>;
+using DownloadsRemoveFileCallback =
+    base::RepeatingCallback<void(const char* error)>;
 using DownloadsPauseCallback = base::RepeatingCallback<void(const char* error)>;
-using DownloadsResumeCallback = base::RepeatingCallback<void(const char* error)>;
-using DownloadsCancelCallback = base::RepeatingCallback<void(const char* error)>;
-using DownloadsAcceptDangerCallback = base::RepeatingCallback<void(const char* error)>;
-using DownloadsSetUiOptionsCallback = base::RepeatingCallback<void(const char* error)>;
+using DownloadsResumeCallback =
+    base::RepeatingCallback<void(const char* error)>;
+using DownloadsCancelCallback =
+    base::RepeatingCallback<void(const char* error)>;
+using DownloadsAcceptDangerCallback =
+    base::RepeatingCallback<void(const char* error)>;
+using DownloadsSetUiOptionsCallback =
+    base::RepeatingCallback<void(const char* error)>;
+using DownloadsShowCallback = base::RepeatingCallback<void(const char* error)>;
+using DownloadSearchCallback =
+    base::RepeatingCallback<void(const char* error,
+                                 const uint32_t size,
+                                 const ExDownloadsItem* downloadItems)>;
+using DownloadGetFileIconCallback =
+    base::RepeatingCallback<void(const char* error,
+                                 const ExDownloadsIconBitmap& bitmap)>;
 
 namespace OHOS::NWeb {
 class NWebExtensionDownloadCefDelegate {
  public:
   static NWebExtensionDownloadCefDelegate& GetInstance();
 
-  // chrome.downloads.erase
-  bool Erase(NWebDownloadsQueryInfo* query, DownloadEraseCallback callback);
+  // downloads.erase
+  bool Erase(ExDownloadsQueryInfo* query, DownloadEraseCallback callback);
   void EraseCallback(int requestId,
                      const char* error,
                      const uint32_t size,
                      const int* eraseIds);
 
-  // chrome.downloads.open
+  // downloads.open
   bool Open(int downloadId, DownloadsOpenCallback callback);
   void OpenCallback(int requestId, const char* error);
 
-  // chrome.downloads.removeFile
+  // downloads.removeFile
   bool RemoveFile(int downloadId, DownloadsOpenCallback callback);
   void RemoveFileCallback(int requestId, const char* error);
 
-  // chrome.downloads.pause
+  // downloads.pause
   bool Pause(int downloadId, DownloadsPauseCallback callback);
   void PauseCallback(int requestId, const char* error);
 
-  // chrome.downloads.resume
+  // downloads.resume
   bool Resume(int downloadId, DownloadsResumeCallback callback);
   void ResumeCallback(int requestId, const char* error);
 
-  // chrome.downloads.cancel
+  // downloads.cancel
   bool Cancel(int downloadId, DownloadsCancelCallback callback);
   void CancelCallback(int requestId, const char* error);
 
-  // chrome.downloads.acceptDanger
+  // downloads.acceptDanger
   bool AcceptDanger(int downloadId, DownloadsAcceptDangerCallback callback);
   void AcceptDangerCallback(int requestId, const char* error);
 
-  // chrome.downloads.setUiOptions
-  bool SetUiOptions(NWebExtensionUiOptions* options , DownloadsSetUiOptionsCallback callback);
+  // downloads.setUiOptions
+  bool SetUiOptions(ExDownloadsUiOptions* options,
+                    DownloadsSetUiOptionsCallback callback);
   void SetUiOptionsCallback(int requestId, const char* error);
 
-  // chrome.downloads.show
-  void Show(int downloadId);
+  // downloads.show
+  bool Show(int downloadId, DownloadsShowCallback callback);
+  void ShowCallback(int requestId, const char* error);
 
-  // chrome.downloads.showDefaultFolder
+  // downloads.showDefaultFolder
   void ShowDefaultFolder();
+
+  // downloads.search
+  bool Search(ExDownloadsQueryInfo* query, DownloadSearchCallback callback);
+  void SearchCallback(int requestId,
+                      const char* error,
+                      const uint32_t size,
+                      const ExDownloadsItem* downloadItems);
+
+  // downloads.download
+  int GetDownloadId(const std::string& guid);
+
+  // downloads.getFileIcon
+  bool GetFileIcon(ExDownloadsGetFileIcon* iconOption,
+                   DownloadGetFileIconCallback callback);
+  void GetFileIconCallback(int requestId,
+                           const char* error,
+                           const ExDownloadsIconBitmap& bitmap);
 };
 
 }  // namespace OHOS::NWeb

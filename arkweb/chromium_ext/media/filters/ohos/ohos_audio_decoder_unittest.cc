@@ -9,7 +9,6 @@
 #include "arkweb/ohos_adapter_ndk/media_adapter/audio_codec_decoder_adapter_impl.h"
 #undef private
 
-
 namespace media {
 
 class OHOSAudioCencInfoTest : public testing::Test {

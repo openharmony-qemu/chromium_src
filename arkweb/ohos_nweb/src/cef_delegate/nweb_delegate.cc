@@ -3955,9 +3955,6 @@ void NWebDelegate::OnSafeBrowsingDetectionResult(int code,
   if (handler_delegate_ == nullptr) {
     return;
   }
-
-  handler_delegate_->OnSafeBrowsingDetectionResult(code, policy, mappingType,
-                                                   url);
 }
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 

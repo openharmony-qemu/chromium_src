@@ -1355,6 +1355,20 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
 #endif
   delete[] argv;
   bool isReady = nweb_delegate_->IsReady();
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (isReady && base::ohos::BlanklessController::CheckGlobalProperty()) {
+    static bool initInstance = false;
+    if (!initInstance) {
+      base::ThreadPool::PostTask(FROM_HERE,
+        {base::MayBlock(), base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN, base::TaskPriority::USER_BLOCKING},
+        base::BindOnce([]() {
+          base::ohos::BlanklessDataController::GetInstance();
+          WVLOG_D("BlanklessDataController instance init");
+      }));
+      initInstance = true;
+    }
+  }
+#endif
   LOG(INFO) << "NWebImpl::InitWebEngine, isReady:" << isReady;
   return isReady;
 }

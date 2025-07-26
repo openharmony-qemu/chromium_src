@@ -731,6 +731,19 @@ arkweb_ui_compositor_test_sources = [
   "//arkweb/chromium_ext/ui/compositor/compositor_unittests.cc",
 ]
 
+arkweb_storage_browser_database_unittests_sources = [
+  "//arkweb/chromium_ext/storage/browser/database/database_tracker_for_include_unittest.cc",
+  "//arkweb/chromium_ext/storage/browser/database/database_util_for_include_unittest.cc",
+]
+arkweb_components_web_cache_browser_unittest_sources = [
+  "//arkweb/chromium_ext/components/web_cache/browser/web_cache_manager_utils_unittest.cc",
+]
+arkweb_storage_monitor_unittest_source = [
+  "//arkweb/chromium_ext/components/storage_monitor/storage_monitor_ohos_unittest.cc"
+]
+arkweb_field_trial_utils_unittest_source = [
+  "//arkweb/chromium_ext/components/content_settings/core/browser/content_settings_default_provider_for_include_unittest.cc",
+]
 arkweb_ui_compositor_sources = [
   "//arkweb/chromium_ext/ui/compositor/compositor_utils.cc",
   "//arkweb/chromium_ext/ui/compositor/compositor_utils.h",

@@ -148,8 +148,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       const char* objName,
       const std::vector<std::shared_ptr<NWebJsProxyCallback>>& callbacks);
 
-  void SetInputMethodClient(CefRefPtr<NWebInputMethodClient> client);
-
   using NativeJSProxyCallbackFunc =
       std::function<char*(std::vector<std::vector<uint8_t>>&,
                           std::vector<size_t>&)>;
@@ -758,6 +756,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   void UpdateFavicon(CefRefPtr<CefBrowser> browser) override;
+  void SetMediaResumeFromBFCachePage(bool resume);
 #endif
 
   void SetFavicon(const void* icon_data,
@@ -1032,7 +1031,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   std::shared_ptr<NWebFindDelegate> find_delegate_ = nullptr;
   std::shared_ptr<NWebAppClientExtensionCallback>
       web_app_client_extension_listener_ = nullptr;
-  CefRefPtr<NWebInputMethodClient> input_method_client_ = nullptr;
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   void OnGetImageData(CefRefPtr<CefImage> image);
   void OnGetImageFromCacheEx(int command_id,
@@ -1151,6 +1149,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   bool is_global_adblock_enabled_ = false;
 #endif
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  bool media_resume_from_bfcache_page_ = true;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   std::optional<bool> video_assistant_enabled_;

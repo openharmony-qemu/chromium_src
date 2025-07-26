@@ -249,5 +249,26 @@ TEST_F(NWebNativeWindowTrackerTest,
   EXPECT_EQ(nativeWindow, nullptr);
 }
 
+TEST_F(NWebNativeWindowTrackerTest, CheckNativeWindowNull) {
+  auto nativeWindowTrackerPtr = NWebNativeWindowTracker::GetInstance();
+  ASSERT_NE(nativeWindowTrackerPtr, nullptr);
+
+  auto window = VoidClassTest().Get();
+  auto result = nativeWindowTrackerPtr->CheckNativeWindow(window);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(NWebNativeWindowTrackerTest, CheckNativeWindowNotNull) {
+  auto nativeWindowTrackerPtr = NWebNativeWindowTracker::GetInstance();
+  ASSERT_NE(nativeWindowTrackerPtr, nullptr);
+
+  auto window = VoidClassTest().Get();
+  auto native_window_id = nativeWindowTrackerPtr->AddNativeWindow(window);
+  ASSERT_NE(native_window_id, 0);
+
+  auto result = nativeWindowTrackerPtr->CheckNativeWindow(window);
+  EXPECT_TRUE(result);
+}
+
 }  // namespace gpu
 #endif

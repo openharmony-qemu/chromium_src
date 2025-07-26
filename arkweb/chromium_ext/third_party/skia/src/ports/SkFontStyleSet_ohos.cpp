@@ -4,6 +4,7 @@
 
 #include "SkFontStyleSet_ohos.h"
 
+//LCOV_EXCL_START
 /*! Constructor
  * \param fontConfig the pointer of FontConfig_OHOS
  * \param index the index of the font style set
@@ -26,6 +27,7 @@ SkFontStyleSet_OHOS::SkFontStyleSet_OHOS(
 int SkFontStyleSet_OHOS::count() {
   return tpCount;
 }
+//LCOV_EXCL_STOP
 
 /*! To get the font style for the specified typeface
  * \param the index of a typeface

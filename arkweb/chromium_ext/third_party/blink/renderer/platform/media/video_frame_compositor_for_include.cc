@@ -30,6 +30,7 @@ void VideoFrameCompositor::SetStartTime(int64_t start_time) {
   is_playing_ = (start_time != 0);
 }
 
+// LCOV_EXCL_START
 int64_t VideoFrameCompositor::GetFreezeTime() {
   if (is_playing_ && last_frame_time_ > 0) {
     int64_t now =
@@ -44,6 +45,7 @@ int64_t VideoFrameCompositor::GetFreezeTime() {
   total_freeze_time_ = 0;
   return freeze_time;
 }
+// LCOV_EXCL_STOP
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)

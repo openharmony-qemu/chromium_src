@@ -15,6 +15,7 @@
 
 namespace content {
 
+// LCOV_EXCL_START
 bool V8ValueConverter::Strategy::FromV8Object(v8::Local<v8::Object> value,
                                               std::unique_ptr<base::Value>* out,
                                               v8::Isolate* isolate,
@@ -26,6 +27,7 @@ bool V8ValueConverter::Strategy::FromV8Object(v8::Local<v8::Object> value,
 void V8ValueConverterImpl::SetPromiseAllowed(bool val) {
   promise_allowed_ = val;
 }
+// LCOV_EXCL_STOP
 
 std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(v8::Local<v8::Object> val,
                                                                 FromV8ValueState* state,

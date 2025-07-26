@@ -749,6 +749,7 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   virtual void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) = 0;
+  virtual void SetMediaResumeFromBFCachePage(bool resume) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)

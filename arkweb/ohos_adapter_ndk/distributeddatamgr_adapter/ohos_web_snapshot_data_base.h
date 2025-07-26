@@ -51,6 +51,7 @@ class OhosWebSnapshotDataBase {
 public:
     static OhosWebSnapshotDataBase& GetInstance();
     ~OhosWebSnapshotDataBase();
+    void Init(const char* databaseDir);
 
     /**
      * @brief Clear the screenshot data in the database.
@@ -62,7 +63,7 @@ public:
     SnapshotDataItem GetSnapshotDataItem(int64_t blankless_key);
     void RegisterDataBaseCallback(std::shared_ptr<OhosWebSnapshotDataBaseCallback> callback);
     int32_t SetBlanklessLoadingCacheCapacity(int32_t capacity);
-    int32_t GetCapacityInByte() const;
+    int32_t GetCapacityInByte();
 
 private:
     OhosWebSnapshotDataBase();
@@ -79,7 +80,7 @@ private:
     int64_t GetCurrentTime();
     void GetOrOpen(const OH_Rdb_Config& config);
     void InsertDataBaseDataItem(int64_t blankless_key, const DataBaseDataItem& data);
-    bool IsKeyExist(int64_t blankless_key);
+    void ClearSnapshotDataItemInnerWithoutLock();
     void NotifyDataBaseDeletePath(const std::string& path);
 
     int32_t DataClear();
@@ -100,7 +101,7 @@ private:
     std::vector<std::shared_ptr<OhosWebSnapshotDataBaseCallback>> dataBaseDeleteCallbacks_;
     int32_t totalSnapShotFileBytes_ = 0;
 
-    std::atomic<int32_t> capacityInByte_;
+    int32_t capacityInByte_;
 };
 } // namespace
 #endif // OHOS_WEB_SNAPSHOT_DATA_BASE_H

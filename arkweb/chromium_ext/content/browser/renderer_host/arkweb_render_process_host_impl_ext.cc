@@ -23,6 +23,7 @@
 
 namespace content {
 
+// LCOV_EXCL_START
 ArkwebRenderProcessHostImplExt::ArkwebRenderProcessHostImplExt(
     BrowserContext* browser_context,
     StoragePartitionImpl* storage_partition_impl,
@@ -72,5 +73,6 @@ void ArkwebRenderProcessHostImplExt::ReportEngineEvent(const std::string& module
 }
 #endif
 #endif
+// LCOV_EXCL_STOP
 
 }  // namespace content

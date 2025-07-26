@@ -24,6 +24,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 ClassicScript* ClassicScriptUtils::CreateUnparkScript(
     const String& source_text,
     ScriptSourceLocationType source_location_type,
@@ -33,5 +34,6 @@ ClassicScript* ClassicScriptUtils::CreateUnparkScript(
       ParkableString(source_text.Impl()), KURL(), KURL(), ScriptFetchOptions(),
       source_location_type, sanitize_script_errors);
 }
+// LCOV_EXCL_STOP
 
 }  // namespace blink

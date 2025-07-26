@@ -156,6 +156,10 @@
 #include "content/browser/media/media_web_contents_observer.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#endif
+
 namespace OHOS::NWeb {
 namespace {
 
@@ -622,12 +626,6 @@ void NWebHandlerDelegate::RegisterNWebHandler(
   if (render_handler_ != nullptr) {
     render_handler_->RegisterNWebHandler(handler);
   }
-}
-
-void NWebHandlerDelegate::SetInputMethodClient(
-    CefRefPtr<NWebInputMethodClient> client) {
-  LOG(INFO) << "SetInputMethodClient";
-  input_method_client_ = client;
 }
 
 void NWebHandlerDelegate::RegisterNWebJavaScriptCallBack(
@@ -1778,6 +1776,14 @@ bool NWebHandlerDelegate::OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  std::optional<int32_t> nweb_id;
+  if (base::ohos::BlanklessController::CheckGlobalProperty() && GetBrowser() && frame) {
+    nweb_id = GetBrowser()->GetNWebId();
+    base::ohos::BlanklessController::GetInstance().ResetStatus(nweb_id.value(), frame->IsMain(), is_redirect);
+  }
+#endif
+
   CefRequest::HeaderMap cef_request_headers;
   request->GetHeaderMap(cef_request_headers);
   std::map<std::string, std::string> request_headers;
@@ -1793,9 +1799,14 @@ bool NWebHandlerDelegate::OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
     LOG(DEBUG) << "NWebHandlerDelegate::OnBeforeBrowse "
                   "OnHandleInterceptUrlLoading result: "
                << result;
-    return result;
+  } else {
+    LOG(DEBUG) << "NWebHandlerDelegate::OnBeforeBrowse result: " << result;
   }
-  LOG(DEBUG) << "NWebHandlerDelegate::OnBeforeBrowse result: " << result;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (nweb_id.has_value()) {
+    base::ohos::BlanklessController::GetInstance().ResetStatus(nweb_id.value(), true, false);
+  }
+#endif
   return result;
 }
 
@@ -3552,8 +3563,8 @@ bool NWebHandlerDelegate::RunContextMenu(
           params, render_handler_->GetVirtualPixelRatio(), view_port_height);
   std::shared_ptr<NWebContextMenuCallback> nweb_callback =
       std::make_shared<NWebContextMenuCallbackImpl>(callback);
-  if (input_method_client_) {
-    bool has_composition = input_method_client_->HasComposition();
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    bool has_composition = GetBrowser()->GetHost()->GetHasComposition();
     LOG(INFO) << "NWebHandlerDelegate has_composition " << has_composition;
     if (has_composition) {
       LOG(INFO) << "NWebHandlerDelegate input has composition";
@@ -3626,8 +3637,8 @@ bool NWebHandlerDelegate::RunQuickMenu(
   }
 
   LOG(INFO) << "NWebHandlerDelegate RunQuickMenu ";
-  if (input_method_client_) {
-    bool has_composition = input_method_client_->HasComposition();
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    bool has_composition = GetBrowser()->GetHost()->GetHasComposition();
     LOG(INFO) << "NWebHandlerDelegate has_composition " << has_composition;
     if (has_composition) {
       LOG(INFO) << "NWebHandlerDelegate input has composition";

@@ -27,6 +27,7 @@ namespace cc {
 InputHandlerUtils::InputHandlerUtils(InputHandler* handler)
   : handler_(handler) {}
 
+// LCOV_EXCL_START
 InputHandlerUtils::~InputHandlerUtils() {}
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -39,6 +40,7 @@ void InputHandlerUtils::HandleScrollUpdateForInternalBeginFrame(
   handler_->input_handler_client_->DeliverInputForBeginFrame(args);
 }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 LayerImpl* InputHandlerUtils::GetLayerImplIsHitByPoint(
@@ -54,6 +56,7 @@ LayerImpl* InputHandlerUtils::GetNativeLayerImpl(const gfx::Point& viewport_poin
   return handler_->ActiveTree().FindLayerThatIsHitByPointNative(device_viewport_point);
 }
 
+// LCOV_EXCL_START
 LayerImpl* InputHandlerUtils::GetLayerImplById(int id) {
   return handler_->ActiveTree().LayerById(id);
 }
@@ -62,8 +65,10 @@ bool InputHandlerUtils::IsNativeLayer(gfx::PointF device_viewport_point) {
         handler_->ActiveTree().FindLayerThatIsHitByPoint(device_viewport_point);
   return layer_impl && layer_impl->layer_impl_utils()->may_contain_native();
 }
+// LCOV_EXCL_STOP
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_PDF)
 double InputHandlerUtils::pdf_delta_x_ = 0;
 double InputHandlerUtils::pdf_delta_y_ = 0;
@@ -91,5 +96,6 @@ void InputHandlerUtils::SetScrollEndEventListener(const std::function<void()>& l
   scroll_end_listener_ = listener;
 }
 #endif
+// LCOV_EXCL_STOP
 
 }

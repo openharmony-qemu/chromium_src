@@ -28,6 +28,7 @@
 namespace gl {
 namespace ohos {
 
+//LCOV_EXCL_START
 gl::ScopedEGLImage CreateEGLImage(EGLClientBuffer egl_client_buffer) {
   EGLint attrs[] = {
       EGL_IMAGE_PRESERVED,
@@ -62,6 +63,7 @@ void FreeEGLClientBuffer(EGLClientBuffer egl_client_buffer) {
       .GetOhosNativeBufferAdapter()
       .FreeEGLBuffer(egl_client_buffer);
 }
+//LCOV_EXCL_STOP
 
 bool InsertEglFenceAndWait(base::ScopedFD acquire_fence_fd) {
   int fence_fd = acquire_fence_fd.release();

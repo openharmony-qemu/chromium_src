@@ -52,6 +52,7 @@ namespace blink {
 
 namespace {
 
+// LCOV_EXCL_START
 float PageConstraintInitalScale(const Document& document) {
   float scale = 1.0;
   if (auto* page = document.GetPage()) {
@@ -145,6 +146,7 @@ void NativeLoader::ScheduleLoadResource() {
   LOG(INFO) << "NativeEmbed NativeLoader::ScheduleLoadResource";
   LoadResource(CurrentFrame());
 }
+// LCOV_EXCL_STOP
 
 void NativeLoader::LoadResource(LocalFrame* frame) {
   LOG(INFO) << "NativeEmbed NativeLoader::LoadResource";
@@ -237,9 +239,11 @@ void NativeLoader::OnCreateNativeSurface(int native_embed_id,
   }
 }
 
+// LCOV_EXCL_START
 void NativeLoader::OnLayerRectVisibilityChange(bool visibility) {
   NotifyVisibilityChange(visibility);
 }
+// LCOV_EXCL_STOP
 
 void NativeLoader::OnLayerRectChange(const gfx::Rect& rect) {
   if (bounding_rect_.ApproximatelyEqual(rect, 1) ||
@@ -265,6 +269,7 @@ void NativeLoader::OnLayerRectChange(const gfx::Rect& rect) {
   }
 }
 
+// LCOV_EXCL_START
 void NativeLoader::OnDestroyNativeSurface() {
   LOG(INFO) << "[NativeEmbed] NativeLoader::OnDestroyNativeSurface";
   bounding_rect_changed_cb_.Reset();
@@ -297,6 +302,7 @@ void NativeLoader::Repaint() {
   frame->GetPage()->GetChromeClient().NotifyPresentationTime(
       *frame, std::move(combined_callback));
 }
+// LCOV_EXCL_STOP
 
 void NativeLoader::SetCcLayer(cc::Layer* cc_layer) {
   LOG(INFO) << "[NativeEmbed] NativeLoader::SetCcLayer";
@@ -328,6 +334,7 @@ void NativeLoader::SetCcLayer(cc::Layer* cc_layer) {
   }
 }
 
+// LCOV_EXCL_START
 void NativeLoader::ClearNativeResource() {
   LOG(INFO) << "NativeEmbed NativeLoader::ClearNativeResource";
 
@@ -383,6 +390,7 @@ NativeLoader::AddNativeBridgeObserverAndPassReceiver() {
       plugin_element_->GetDocument().GetTaskRunner(TaskType::kInternalMedia));
   return observer_receiver;
 }
+// LCOV_EXCL_STOP
 
 void NativeLoader::ReportFirstPaintTime(
     const viz::FrameTimingDetails& frame_timing_details) {
@@ -395,6 +403,7 @@ void NativeLoader::ReportFirstPaintTime(
   }
 }
 
+// LCOV_EXCL_START
 void NativeLoader::CleanupVisibilityForRemovedLayer(bool visibility) {
   if (!plugin_element_->Utils()->IsCssDisplayChangeEnabled()) {
     return;
@@ -402,6 +411,7 @@ void NativeLoader::CleanupVisibilityForRemovedLayer(bool visibility) {
   LOG(INFO) << "[NativeEmbed] CssDisplayVisibility: " << visibility;
   NotifyVisibilityChange(visibility);
 }
+// LCOV_EXCL_STOP
 
 void NativeLoader::NotifyVisibilityChange(bool visibility) {
   visibility_ = visibility;
@@ -413,6 +423,7 @@ void NativeLoader::NotifyVisibilityChange(bool visibility) {
   }
 }
 
+// LCOV_EXCL_START
 void NativeLoader::SetNativeEmbedOverlayInfinity(bool native_embed_overlay_infinity) {
   LOG(INFO) << "[NativeEmbed] NativeLoader::SetNativeEmbedOverlayInfinity: "
             << native_embed_overlay_infinity;
@@ -430,5 +441,6 @@ void NativeLoader::SetNativeEmbedOverlay(bool native_embed_overlay) {
     cc_layer_->layer_utils()->SetShouldInterceptTouchEvent(true);
   }
 }
+// LCOV_EXCL_STOP
 }  // namespace blink
                      

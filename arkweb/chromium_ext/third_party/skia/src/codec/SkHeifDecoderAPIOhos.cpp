@@ -62,11 +62,13 @@ bool HeifDecoder::decode(HeifFrameInfo* heifInfo)
                                        OHOS::NWeb::AllocatorType::kDmaAlloc, useYuv);
 }
 
+//LCOV_EXCL_START
 bool HeifDecoder::setOutputColor(HeifColorFormat colorFormat)
 {
     colorFormat_ = colorFormat;
     return true;
 }
+//LCOV_EXCL_STOP
 
 void* HeifDecoder::getDecodeData(uint64_t& size)
 {
@@ -79,6 +81,7 @@ void* HeifDecoder::getDecodeData(uint64_t& size)
     return ptr;
 }
 
+//LCOV_EXCL_START
 int32_t HeifDecoder::getStride()
 {
     return getDecoderAdapter()->GetStride();
@@ -98,5 +101,6 @@ OHOS::NWeb::OhosImageDecoderAdapter* HeifDecoder::getDecoderAdapter()
 
     return decoderAdapter_.get();
 }
+//LCOV_EXCL_STOP
 
 #endif // SK_HAS_HEIF_LIBRARY

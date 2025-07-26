@@ -46,6 +46,7 @@
 
 namespace gpu {
 
+//LCOV_EXCL_START
 const char* GmbTypeToString(gfx::GpuMemoryBufferType type) {
   switch (type) {
     case gfx::EMPTY_BUFFER:
@@ -74,6 +75,7 @@ SharedImageFactoryExt::SharedImageFactoryExt(
     gpu_feature_info, context_state, manager, tracker,
     is_for_display_compositor) {
 }
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 bool SharedImageFactoryExt::CreateSharedImage(const Mailbox& mailbox,

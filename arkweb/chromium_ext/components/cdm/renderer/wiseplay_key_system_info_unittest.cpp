@@ -10,8 +10,6 @@
 #include "arkweb/chromium_ext/media/cdm/wiseplay_cdm_common.h"
 
 namespace cdm {
-
-
 using media::CdmSessionType;
 using media::EmeConfig;
 using media::EmeConfigRuleState;

@@ -164,7 +164,7 @@ void NWebExtensionContentSettingsCefDelegate::OnSetCallback(const NWebExtensionC
 bool NWebExtensionContentSettingsCefDelegate::OnClear(
     const NWebExtensionContentSettingsClearParam* clearParam, ContentSettingsSetCallback callback) 
 {
-    LOG(INFO)<<"OnClear NWebExtensionContentSettingsCefDelegate is call" << clearParam->extensionId;
+    LOG(INFO)<<"OnClear NWebExtensionContentSettingsCefDelegate is call";
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else

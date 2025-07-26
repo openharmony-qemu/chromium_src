@@ -127,19 +127,25 @@ void AudioDecoderCallback::OnError(int32_t errorCode) {
 
 void AudioDecoderCallback::OnOutputFormatChanged() {
   LOG(DEBUG) << "OHOSAudioDecoder::AudioDecoderCallback::OnOutputFormatChanged";
-  client_->UpdateOutputFormat();
+  if (client_) {
+    client_->UpdateOutputFormat();
+  }
 }
 
 void AudioDecoderCallback::OnInputBufferAvailable(uint32_t index) {
   LOG(DEBUG) << "OHOSAudioDecoder::AudioDecoderCallback::OnInputBufferAvailable"
     << " inputbuffer available index " << index;
-  client_->AddInputBuffer(index);
+  if (client_) {
+    client_->AddInputBuffer(index);
+  }
 }
 
 void AudioDecoderCallback::OnOutputBufferAvailable(uint32_t index, uint8_t* bufferData,
     int32_t size, int64_t pts, int32_t offset, uint32_t flags) {
   LOG(DEBUG) << "OHOSAudioDecoder outputbuffer available index " << index << " size " << size;
-  client_->AddOutputBuffer(index, bufferData, size, pts, static_cast<BufferFlag>(flags));
+  if (client_) {
+    client_->AddOutputBuffer(index, bufferData, size, pts, static_cast<BufferFlag>(flags));
+  }
 }
 
 OHOSAudioCencInfo::~OHOSAudioCencInfo() {}

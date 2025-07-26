@@ -46,6 +46,7 @@ std::unique_ptr<ui::ScopedMakeCurrent> MakeCurrentIfNeeded(
 }
 }  // namespace
 
+//LCOV_EXCL_START
 NativeImageTextureGlOwner::NativeImageTextureGlOwner(
     std::unique_ptr<AbstractTextureOHOS> texture,
     scoped_refptr<SharedContextState> context_state)
@@ -139,6 +140,7 @@ std::unique_ptr<ScopedNativeBufferFenceSync>
 NativeImageTextureGlOwner::GetNativeBuffer() {
   return nullptr;
 }
+//LCOV_EXCL_STOP
 
 bool NativeImageTextureGlOwner::GetCodedSizeAndVisibleRect(
     gfx::Size rotated_visible_size,

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include <gmock/gmock.h>
 
 #include "arkweb/chromium_ext/media/filters/ohos/ohos_audio_decoder.h"
 #define private public

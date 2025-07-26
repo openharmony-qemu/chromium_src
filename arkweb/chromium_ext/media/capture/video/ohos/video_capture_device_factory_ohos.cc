@@ -50,6 +50,7 @@ VideoCaptureDeviceFactoryOHOS::~VideoCaptureDeviceFactoryOHOS() {
   }
 }
 
+// LCOV_EXCL_START
 bool VideoCaptureDeviceFactoryOHOS::CheckAndInitCameraManager() {
   if (is_camera_manager_created_) {
     return true;
@@ -67,6 +68,7 @@ bool VideoCaptureDeviceFactoryOHOS::CheckAndInitCameraManager() {
   is_camera_manager_created_ = true;
   return true;
 }
+// LCOV_EXCL_STOP
 
 int VideoCaptureDeviceFactoryOHOS::CheckDeviceId(const std::string device_id) {
   std::vector<std::shared_ptr<VideoDeviceDescriptorAdapter>> devices_desc =

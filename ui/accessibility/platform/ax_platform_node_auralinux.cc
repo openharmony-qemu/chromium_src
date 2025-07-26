@@ -3478,7 +3478,6 @@ void AXPlatformNodeAuraLinux::OnMenuPopupEnd() {
   // this particular menu from the stack even if it's not topmost.
   std::erase(active_menus, atk_object);
 
-  active_menus.pop_back();
   AtkObject* new_active_item = ComputeActiveTopLevelFrame();
   if (new_active_item != parent_frame) {
     // Newly activated menu has the different AtkWindow as the previous one.

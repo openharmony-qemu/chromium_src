@@ -949,15 +949,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                                    int detectSwitch,
                                    const CefString& url) override;
 
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-  void OnSafeBrowsingDetectionResult(int code,
-                                     int policy,
-                                     const std::string& mappingType,
-                                     const std::string& url);
-#endif
-
-  void SetSafeBrowsingDetectionCallback(
-      CefRefPtr<CefSafeBrowsingDetectionCallback> callback) override;
 #if BUILDFLAG(ARKWEB_PIP)
   bool OnPip(CefRefPtr<CefBrowser> browser,
              int status,

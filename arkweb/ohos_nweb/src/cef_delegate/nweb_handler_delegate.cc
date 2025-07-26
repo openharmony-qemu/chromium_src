@@ -4977,33 +4977,6 @@ void NWebHandlerDelegate::HandleSafeBrowsingDetection(int detectMode,
 #endif
 }
 
-//#if BUILDFLAG(IS_ARKWEB_EXT)
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-void NWebHandlerDelegate::OnSafeBrowsingDetectionResult(
-    int code,
-    int policy,
-    const std::string& mappingType,
-    const std::string& url) {
-  LOG(INFO) << "code is " << code << ",policy is " << policy
-            << ",mapping type is " << mappingType << ",nweb id is " << nweb_id_;
-  if (safe_browsing_detection_callback_ == nullptr) {
-    return;
-  }
-
-  safe_browsing_detection_callback_->OnDetectionResult(code, policy,
-                                                       mappingType, url);
-}
-#endif
-
-void NWebHandlerDelegate::SetSafeBrowsingDetectionCallback(
-    CefRefPtr<CefSafeBrowsingDetectionCallback> callback) {
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-  safe_browsing_detection_callback_ = callback;
-#endif
-#endif
-}
-
 #if BUILDFLAG(ARKWEB_PIP)
 bool NWebHandlerDelegate::OnPip(CefRefPtr<CefBrowser> browser,
                                 int status,

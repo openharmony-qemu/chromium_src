@@ -37,6 +37,10 @@ class MouseEventManager;
 class NativeEventListener;
 class LayoutObject;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class MouseEventManagerExtTest;
+#endif
+
 #if BUILDFLAG(ARKWEB_AI)
 enum class HitOverlayStatus { kNone, kCreating, kCreated };
 #endif
@@ -49,6 +53,9 @@ class MouseEventManagerExt
   MouseEventManagerExt& operator=(const MouseEventManagerExt&) = delete;
   virtual ~MouseEventManagerExt();
   MouseEventManagerExt* AsMouseEventManagerExt() override { return this; }
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class MouseEventManagerExtTest;
+#endif
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   bool IsDraging();

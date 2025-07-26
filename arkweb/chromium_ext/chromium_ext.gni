@@ -982,6 +982,11 @@ arkweb_blink_unittests_sources = [
   "//cef/libcef/common/mojom:mojom",
 ]
 
+arkweb_third_party_blink_renderer_core_unittests_sources = [
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/testing/sim/sim_test_ext.h",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/testing/sim/sim_test_ext.cc",
+]
+
 arkweb_network_service_network_delegate_sources = [
   "//arkweb/chromium_ext/services/network/network_service_network_delegate_ext.cc",
   "//arkweb/chromium_ext/services/network/network_service_network_delegate_ext.h",

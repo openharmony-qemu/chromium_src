@@ -127,7 +127,7 @@ void AudioDecoderCallback::OnError(int32_t errorCode) {
 
 void AudioDecoderCallback::OnOutputFormatChanged() {
   LOG(DEBUG) << "OHOSAudioDecoder::AudioDecoderCallback::OnOutputFormatChanged";
-  if (client) {
+  if (client_) {
     client_->UpdateOutputFormat();
   }
 }
@@ -135,7 +135,7 @@ void AudioDecoderCallback::OnOutputFormatChanged() {
 void AudioDecoderCallback::OnInputBufferAvailable(uint32_t index) {
   LOG(DEBUG) << "OHOSAudioDecoder::AudioDecoderCallback::OnInputBufferAvailable"
     << " inputbuffer available index " << index;
-  if (client) {
+  if (client_) {
     client_->AddInputBuffer(index);
   }
 }

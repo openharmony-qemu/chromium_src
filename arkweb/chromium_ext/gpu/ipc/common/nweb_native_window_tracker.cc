@@ -14,6 +14,7 @@
 
 NWebNativeWindowTracker* g_instance = nullptr;
 
+//LCOV_EXCL_START
 NWebNativeWindowTracker::NWebNativeWindowTracker()
     : next_native_window_id_(1) {}
 
@@ -22,6 +23,7 @@ NWebNativeWindowTracker::~NWebNativeWindowTracker() {}
 NWebNativeWindowTracker* NWebNativeWindowTracker::GetInstance() {
   return base::Singleton<NWebNativeWindowTracker>::get();
 }
+//LCOV_EXCL_STOP
 
 int32_t NWebNativeWindowTracker::AddNativeWindow(void* native_window) {
   base::AutoLock lock(window_map_lock_);

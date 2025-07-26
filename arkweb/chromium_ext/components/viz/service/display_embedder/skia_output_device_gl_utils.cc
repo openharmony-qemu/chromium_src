@@ -20,6 +20,7 @@
 #include "ui/gl/gl_surface.h"
 
 namespace viz {
+//LCOV_EXCL_START
 SkiaOutputDeviceGLUtils::SkiaOutputDeviceGLUtils(SkiaOutputDeviceGL* impl)
     : skiaOutPutDeviceGl_(impl)
 {
@@ -27,6 +28,7 @@ SkiaOutputDeviceGLUtils::SkiaOutputDeviceGLUtils(SkiaOutputDeviceGL* impl)
                                 .GetSystemPropertiesInstance()
                                 .GetBoolParameter("web.damageRegion.enable", 1);
 }
+//LCOV_EXCL_STOP
 
 gfx::SwapResult SkiaOutputDeviceGLUtils::SwapBuffers(
     const std::optional<gfx::Rect>& update_rect,

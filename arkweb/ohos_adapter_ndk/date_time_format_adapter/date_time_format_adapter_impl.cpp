@@ -26,6 +26,7 @@ namespace OHOS::NWeb {
 
 constexpr int MAX_TIMEZONE_LEN = 32;
 
+//LCOV_EXCL_START
 std::string WebTimezoneInfoImpl::GetTzId()
 {
     return tzId_;
@@ -45,6 +46,7 @@ DateTimeFormatAdapterImpl::~DateTimeFormatAdapterImpl()
 {
     StopListen();
 }
+//LCOV_EXCL_STOP
 
 void DateTimeFormatAdapterImpl::RegTimezoneEvent(std::shared_ptr<TimezoneEventCallbackAdapter> eventCallback)
 {

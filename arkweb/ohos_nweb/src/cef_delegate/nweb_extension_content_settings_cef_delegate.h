@@ -51,8 +51,6 @@ class NWebExtensionContentSettingsCefDelegate {
 
   void OnClearCallback(const NWebExtensionContentSettingsCallbackSetResult* result);
 
-  bool OnCreateCallback(const NWebExtensionContentSettingsCallbackResult* result);
-
  private:
   NWebExtensionContentSettingsCefDelegate() = default;
   ~NWebExtensionContentSettingsCefDelegate() = default;

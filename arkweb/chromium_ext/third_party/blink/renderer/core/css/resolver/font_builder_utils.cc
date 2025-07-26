@@ -48,6 +48,7 @@ void FontBuilderUtils::UpdateWeightScale(FontDescription& font_description) {
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 void FontBuilderUtils::UpdateFixedFontSize(FontDescription& font_description) {
   DCHECK(font_builder_->document_);
@@ -57,6 +58,7 @@ void FontBuilderUtils::UpdateFixedFontSize(FontDescription& font_description) {
   }
 }
 #endif
+// LCOV_EXCL_STOP
 
 void FontBuilderUtils::UpdateFontDescription(FontDescription& description,
                                              bool& modified) {

@@ -982,6 +982,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
   double WebMediaPlayerControllerGetVolume() override { return 1.0; }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  void SetMediaResumeFromBFCachePage(bool resume) override {}
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
 #if BUILDFLAG(ARKWEB_AI)
   void OnDestroyImageAnalyzerOverlay() override {}
   void OnFoldStatusChanged(FoldStatus foldstatus) override {}

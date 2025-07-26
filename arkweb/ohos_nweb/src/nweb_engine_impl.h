@@ -114,10 +114,7 @@ class NWebEngineImpl : public NWebEngine {
   void SetWebDebuggingAccessAndPort(bool isEnableDebug, int32_t port) override;
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  uint32_t AddBlanklessLoadingUrls(const std::vector<std::string>& urls) override;
-  void RemoveBlanklessLoadingUrls(const std::vector<std::string>& urls) override;
   void ClearBlanklessLoadingCache(const std::vector<std::string>& urls) override;
-  std::string CheckBlankOptEnable(const std::string& key, int32_t nweb_id) override;
   void SetBlanklessLoadingCacheCapacity(int32_t capacity) override;
 #endif
 

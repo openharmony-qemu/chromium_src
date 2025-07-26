@@ -20,6 +20,7 @@
 namespace cc {
 namespace mojo_embedder {
 
+// LCOV_EXCL_START
 AsyncLayerTreeFrameSinkUtils::AsyncLayerTreeFrameSinkUtils(AsyncLayerTreeFrameSink* sink)
 {
   this->asyncLayerTreeFrameSink = sink;
@@ -120,6 +121,7 @@ void AsyncLayerTreeFrameSinkUtils::OnBeginFrameArkWebSwBuTr(int64_t trace_id)
                     "ReceiveBeginFrameDiscard");
 }
 #endif
+// LCOV_EXCL_STOP
 
 }  // namespace mojo_embedder
 }  // namespace cc

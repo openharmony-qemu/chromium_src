@@ -13,9 +13,9 @@
  * limitations under the License.	
  */
 #define protected public
-
-#include <gtest/gtest.h>
 #include "SkTypeface_ohos.h"
+#undef protected
+#include <gtest/gtest.h>
 #include <memory>
 #include <fstream>
 

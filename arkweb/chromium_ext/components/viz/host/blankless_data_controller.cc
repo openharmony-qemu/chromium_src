@@ -38,6 +38,7 @@ using namespace OHOS::NWeb;
 namespace base {
 namespace ohos {
 const base::FilePath::CharType DUMP_FILE_PATH[] = FILE_PATH_LITERAL("snapshot");
+const std::string DATABASE_DIR = "/data/storage/el2/base/cache/web";
 const std::string DUMP_FILE_PRE = "/web_frame_";
 const std::string DUMP_FILE_TYPE = ".png";
 const double SSIM_THRESHOLD = 0.95;
@@ -177,49 +178,7 @@ static double CalculateSnapshotSimilarity(std::vector<double>& pixels1,
     return 0.0;
   }
 
-  std::vector<double> samePixels;
-  samePixels.resize(width * height, 0);
-  int samePixelsNum = 0;
-  for (int i = 0; i < quad_list.size(); i++) {
-    int rectWidth = quad_list[i].w / 2;
-    int rectHeight = quad_list[i].h / 2;
-    if (rectWidth <= 0 || rectHeight <= 0) {
-      continue;
-    }
-    int x0 = quad_list[i].x / 2;
-    int y0 = quad_list[i].y / 2;
-    if (x0 < 0) {
-      x0 = 0;
-    }
-    if (y0 < 0) {
-      y0 = 0;
-    }
-    std::vector<double> rectPixels1;
-    std::vector<double> rectPixels2;
-    rectPixels1.resize(rectWidth * rectHeight);
-    rectPixels2.resize(rectWidth * rectHeight);
-    for (int y = y0; y < height && y < y0 + rectHeight; y++) {
-      for (int x = x0; x < width && x < x0 + rectWidth; x++) {
-        rectPixels1[(y - y0) * rectWidth + x - x0] = pixels1[y * width + x];
-        rectPixels2[(y - y0) * rectWidth + x - x0] = pixels2[y * width + x];
-      }
-    }
-    double SSIM = CalculateSSIM(rectPixels1, rectPixels2, depth);
-    if (SSIM < SSIM_THRESHOLD) {
-      continue;
-    }
-    for (int y = y0; y < height && y < y0 + rectHeight; y++) {
-      for (int x = x0; x < width && x < x0 + rectWidth; x++) {
-        samePixelsNum += (samePixels[y * width + x] == 0);
-        samePixels[y * width + x] = 1;
-      }
-    }
-    LOG(DEBUG) << "blankless CalculateSnapshotSimilarity SSIM[" << i << "]=" << SSIM;
-  }
-
-  double percent = (double)samePixelsNum / (double)(width * height);
-  LOG(DEBUG) << "blankless CalculateSnapshotSimilarity percent:" << percent;
-  return percent;
+  return CalculateSSIM(pixels1, pixels2, depth);
 }
 
 static bool LoadBitmap(const char* path, SkBitmap& bitmap) {
@@ -371,9 +330,13 @@ BlanklessDataController& BlanklessDataController::GetInstance()
     return instance;
 }
 
-BlanklessDataController::BlanklessDataController()
-  :dbInstance_(OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance())
+BlanklessDataController::BlanklessDataController() : dbInstance_(OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance())
 {
+    base::FilePath databaseDir(DATABASE_DIR);
+    if (!base::PathExists(databaseDir)) {
+      base::CreateDirectory(databaseDir);
+    }
+    dbInstance_.Init(DATABASE_DIR.c_str());
     web_snapshot_db_callback_ = std::make_shared<OhosWebSnapshotDataBaseCallbackImpl>();
     if (web_snapshot_db_callback_) {
       dbInstance_.RegisterDataBaseCallback(web_snapshot_db_callback_);
@@ -389,7 +352,7 @@ std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::
     snapshotInfo = it->second;
   }
   if (snapshotInfo == nullptr) {
-    auto snapshotDataItem = OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance().GetSnapshotDataItem(blankless_key);
+    auto snapshotDataItem = dbInstance_.GetSnapshotDataItem(blankless_key);
     snapshotInfo = std::make_shared<SnapshotInfo>();
     snapshotInfo->path = snapshotDataItem.wholePath;
     SkBitmap bitmap;
@@ -510,5 +473,9 @@ int32_t BlanklessDataController::SetBlanklessLoadingCacheCapacity(int capacity)
   return dbInstance_.SetBlanklessLoadingCacheCapacity(capacity);
 }
 
+int32_t BlanklessDataController::GetBlanklessLoadingCacheCapacity() const
+{
+  return dbInstance_.GetCapacityInByte();
+}
 }  // namespace ohos
 }  // namespace base

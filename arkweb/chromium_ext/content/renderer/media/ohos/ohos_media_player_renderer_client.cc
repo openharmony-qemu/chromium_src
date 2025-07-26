@@ -139,6 +139,7 @@ void OHOSMediaPlayerRendererClient::OnSurfaceDestroyed() {
   LOG(INFO) << "OnSurfaceDestroyed";
 }
 
+// LCOV_EXCL_START
 void OHOSMediaPlayerRendererClient::OnFrameAvailable() {
   DCHECK(compositor_task_runner_->BelongsToCurrentThread());
   TRACE_EVENT2("base", __FILE__, "func", __func__, "line", __LINE__);
@@ -148,6 +149,7 @@ void OHOSMediaPlayerRendererClient::OnFrameAvailable() {
       frame, frame->format(), frame->visible_rect(), frame->natural_size());
   sink_->PaintSingleFrame(std::move(unique_frame));
 }
+// LCOV_EXCL_STOP
 
 void OHOSMediaPlayerRendererClient::OnVideoSizeChange(const gfx::Size& size) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());

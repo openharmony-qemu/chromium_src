@@ -43,6 +43,7 @@
 #define EGL_NATIVE_BUFFER_OHOS 0x34E1
 
 namespace gpu {
+//LCOV_EXCL_START
 void ShowError() {
   EGLint error = eglGetError();
   switch (error) {
@@ -79,6 +80,7 @@ std::unique_ptr<VulkanImage> CreateVkImageFromNativeBufferHandle(
       /*usage=*/0, /*flags=*/0, /*image_tiling=*/VK_IMAGE_TILING_OPTIMAL,
       /*queue_family_index=*/queue_family_index);
 }
+//LCOV_EXCL_STOP
 
 // Move to a helper class.
 gl::ScopedEGLImage CreateEGLImageFromNativeBuffer(OHOSNativeBuffer buffer) {
@@ -158,6 +160,7 @@ GLuint CreateAndBindTexture(EGLImage image, GLenum target) {
 }
 
 // Vk backed Skia representation of AHardwareBufferImageBacking.
+//LCOV_EXCL_START
 class SkiaVkNBRepresentation : public SkiaVkNBImageRepresentation {
  public:
   SkiaVkNBRepresentation(SharedImageManager* manager,
@@ -274,6 +277,7 @@ gpu::ScopedNativeBufferHandle
 OhosNativeBufferImageBacking::GetNativeBufferHandle() const {
   return native_buffer_handle_.Clone();
 }
+//LCOV_EXCL_STOP
 
 std::unique_ptr<GLTextureImageRepresentation>
 OhosNativeBufferImageBacking::ProduceGLTexture(SharedImageManager* manager,

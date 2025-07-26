@@ -1749,7 +1749,7 @@ class CONTENT_EXPORT RenderFrameImpl
   int64_t pref_hash_ = 0;
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_UA)
+#if BUILDFLAG(ARKWEB_USERAGENT)
   bool viewport_meta_enabled_{false};
 #endif
 

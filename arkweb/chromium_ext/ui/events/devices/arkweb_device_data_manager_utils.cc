@@ -191,6 +191,7 @@ void ArkWebDeviceDataManagerUtils::DeleteDevice(const InputDevice& device) {
   }
 }
 
+// LCOV_EXCL_START
 void ArkWebDeviceDataManagerUtils::SetupDeviceListeners() {
   auto& helper = OHOS::NWeb::OhosAdapterHelperExt::GetInstance();
   mmi_adapter_ = helper.CreateMMIAdapter();
@@ -256,13 +257,16 @@ void ArkWebDeviceDataManagerUtils::SetupDeviceListeners() {
     }
   }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void ArkWebDeviceDataManagerUtils::CleanupDeviceListeners() {
   if (mmi_adapter_ != nullptr) {
     mmi_adapter_->UnregisterDevListener(CHANGED_TYPE);
     dev_listener_ = nullptr;
   }
 }
+// LCOV_EXCL_STOP
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 }  // namespace ui

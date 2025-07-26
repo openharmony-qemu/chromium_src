@@ -106,6 +106,16 @@
   bool GetCustomMediaPlayerEnabled() { return custom_media_player_enabled_; }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  void SetMediaResumeFromBFCachePage(bool resume) {
+    media_resume_from_bfcache_page_ = resume;
+  }
+
+  bool GetMediaResumeFromBFCachePage() {
+    return media_resume_from_bfcache_page_;
+  }
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
   void SetBorderRadiusFromWeb(double borderRadiusTopLeft,
                               double borderRadiusTopRight,

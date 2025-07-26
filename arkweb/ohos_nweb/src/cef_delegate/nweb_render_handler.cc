@@ -895,9 +895,11 @@ void NWebRenderHandler::GetTouchHandleSize(
     if (hot_zone->GetWidth() > 0 && hot_zone->GetHeight() > 0) {
       size.width = static_cast<int>(hot_zone->GetWidth()) + 1;
       size.height = static_cast<int>(hot_zone->GetHeight()) + 1;
+#if BUILDFLAG(ARKWEB_MENU)
     } else if (hot_zone->GetWidth() > 0 && hot_zone->GetHeight() == 0) {
       size.width = static_cast<int>(hot_zone->GetWidth()) + 1;
       size.height = 0;
+#endif
     }
   }
   LOG(INFO) << "GetTouchHandleSize " << size.width << " " << size.height;

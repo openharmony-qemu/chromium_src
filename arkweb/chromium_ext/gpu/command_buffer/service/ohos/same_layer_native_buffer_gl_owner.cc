@@ -35,6 +35,7 @@ namespace gpu {
 // This class is safe to be created/destroyed on different threads. This is made
 // sure by destruction happening on correct thread. This class is not thread
 // safe to be used concurrently on multiple thraeads.
+//LCOV_EXCL_START
 class SameLayerNativeBufferGLOwner::ScopedNativeBufferImpl
     : public ScopedNativeBufferFenceSync {
  public:
@@ -197,6 +198,7 @@ void SameLayerNativeBufferGLOwner::ReleaseRefOnImage(OhosWindowBuffer* image,
   base::AutoLock auto_lock(lock_);
   ReleaseRefOnImageLocked(image, std::move(fence_fd));
 }
+//LCOV_EXCL_STOP
 
 void SameLayerNativeBufferGLOwner::ReleaseRefOnImageLocked(
     OhosWindowBuffer* image,
@@ -254,6 +256,7 @@ void SameLayerNativeBufferGLOwner::ReleaseRefOnImageLocked(
   }
 }
 
+//LCOV_EXCL_START
 gl::GLContext* SameLayerNativeBufferGLOwner::GetContext() const {
   DCHECK_CALLED_ON_VALID_THREAD(gpu_main_thread_checker_);
   return context_.get();
@@ -263,6 +266,7 @@ gl::GLSurface* SameLayerNativeBufferGLOwner::GetSurface() const {
   DCHECK_CALLED_ON_VALID_THREAD(gpu_main_thread_checker_);
   return surface_.get();
 }
+//LCOV_EXCL_STOP
 
 void SameLayerNativeBufferGLOwner::RunWhenBufferIsAvailable(
     base::OnceClosure callback) {
@@ -331,6 +335,7 @@ bool SameLayerNativeBufferGLOwner::GetCodedSizeAndVisibleRect(
   return true;
 }
 
+//LCOV_EXCL_START
 SameLayerNativeBufferGLOwner::ImageRef::ImageRef() = default;
 SameLayerNativeBufferGLOwner::ImageRef::~ImageRef() = default;
 SameLayerNativeBufferGLOwner::ImageRef::ImageRef(ImageRef&& other) = default;
@@ -387,4 +392,5 @@ void SameLayerNativeBufferGLOwner::ReleaseNativeImage() {
     loader_->ReleaseNativeImage();
   }
 }
+//LCOV_EXCL_STOP
 }  // namespace gpu

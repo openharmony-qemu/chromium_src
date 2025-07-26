@@ -14,7 +14,10 @@
  */
 
 #include "buffer_request_config_adapter_impl.h"
+#include "third_party/libc++/src/include/__ranges/lazy_split_view.h"
+#define private public
 #include "ohos_media_codec_bridge_impl.h"
+#undef private
 
 #include <cstddef>
 #include <memory>
@@ -192,6 +195,9 @@ protected:
     }
     void SetData(size_t plane, const uint8_t* ptr) {
         video_frame->data_[plane] = ptr;
+    }
+    void SetStorageType(VideoFrame::StorageType storage_type) {
+        video_frame->storage_type_ = storage_type;
     }
 
     std::unique_ptr<MediaCodecAdapter> GetCodecAdapter()
@@ -619,6 +625,139 @@ TEST_F(OHOSMediaCodecBridgeImplTest, DequeueOutputBufferTest003)
     EXPECT_EQ(bridge_impl.DequeueOutputBuffer(index, info, flag, buffer), CodecCodeAdapter::OK);
 }
 
+TEST_F(OHOSMediaCodecBridgeImplTest, DequeueOutputBufferTest004)
+{
+    auto signal = std::make_shared<CodecBridgeSignal>();
+    EncodeOutputBuffer keyframe_buffer;
+    keyframe_buffer.flag = BufferFlag::CODEC_BUFFER_FLAG_SYNC_FRAME;
+    signal->out_buffer_queue_.push(keyframe_buffer);
+    SetSignal(signal);
+    uint32_t index;
+    BufferInfo info;
+    BufferFlag flag;
+    OhosBuffer buffer;
+    EXPECT_EQ(bridge_impl.DequeueOutputBuffer(index, info, flag, buffer), CodecCodeAdapter::ERROR);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, DequeueOutputBufferTest005)
+{
+    auto signal = std::make_shared<CodecBridgeSignal>();
+    EncodeOutputBuffer keyframe_buffer;
+    keyframe_buffer.flag = BufferFlag::CODEC_BUFFER_FLAG_SYNC_FRAME;
+    keyframe_buffer.is_contain_config_data = false;
+    keyframe_buffer.index = 1;
+    keyframe_buffer.is_contain_config_data = false;  
+    keyframe_buffer.buffer_info.size = 50;
+    keyframe_buffer.buffer_data.addr = new uint8_t[50];
+    keyframe_buffer.buffer_info.presentationTimeUs = 1000;
+    keyframe_buffer.buffer_data.bufferSize = 50;
+    signal->out_buffer_queue_.push(keyframe_buffer);
+    SetSignal(signal);
+    uint32_t index;
+    BufferInfo info;
+    BufferFlag flag;
+    OhosBuffer buffer;
+    EXPECT_EQ(bridge_impl.DequeueOutputBuffer(index, info, flag, buffer), CodecCodeAdapter::ERROR);
+    delete[] bridge_impl.config_data_cache_.config_data_addr;
+    delete[] keyframe_buffer.buffer_data.addr;
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, DequeueOutputBufferTest006)
+{
+    auto signal = std::make_shared<CodecBridgeSignal>();
+    EncodeOutputBuffer keyframe_buffer;
+    keyframe_buffer.flag = BufferFlag::CODEC_BUFFER_FLAG_SYNC_FRAME;
+    keyframe_buffer.buffer_info.presentationTimeUs = 1000;
+    keyframe_buffer.buffer_info.size = 50;
+    keyframe_buffer.is_contain_config_data = false;
+    keyframe_buffer.index = 1;
+    keyframe_buffer.buffer_data.addr = new uint8_t[50];
+    keyframe_buffer.buffer_data.bufferSize = 50;
+    signal->out_buffer_queue_.push(keyframe_buffer);
+    SetSignal(signal);
+    bridge_impl.config_data_cache_.config_data_addr = nullptr;
+    bridge_impl.config_data_cache_.config_data_size = 0;
+    uint32_t index;
+    BufferInfo info;
+    BufferFlag flag;
+    OhosBuffer buffer;
+    EXPECT_EQ(bridge_impl.DequeueOutputBuffer(index, info, flag, buffer), CodecCodeAdapter::ERROR);
+    delete[] bridge_impl.config_data_cache_.config_data_addr;
+    delete[] keyframe_buffer.buffer_data.addr;
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, DequeueOutputBufferTest007)
+{
+    auto signal = std::make_shared<CodecBridgeSignal>();
+    EncodeOutputBuffer keyframe_buffer;
+    keyframe_buffer.is_contain_config_data = false;
+    keyframe_buffer.flag = BufferFlag::CODEC_BUFFER_FLAG_SYNC_FRAME;
+    keyframe_buffer.buffer_data.addr = new uint8_t[50];  
+    keyframe_buffer.index = 1;
+    keyframe_buffer.buffer_info.size = 50;
+    keyframe_buffer.buffer_info.presentationTimeUs = 1000;
+    keyframe_buffer.buffer_data.bufferSize = 50;
+    bridge_impl.config_data_cache_.config_data_addr = nullptr;
+    signal->out_buffer_queue_.push(keyframe_buffer);
+    bridge_impl.config_data_cache_.config_data_size = 1;
+    SetSignal(signal);
+    uint32_t index;
+    BufferInfo info;
+    BufferFlag flag;
+    OhosBuffer buffer;
+    EXPECT_EQ(bridge_impl.DequeueOutputBuffer(index, info, flag, buffer), CodecCodeAdapter::ERROR);
+    delete[] bridge_impl.config_data_cache_.config_data_addr;
+    delete[] keyframe_buffer.buffer_data.addr;
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, DequeueOutputBufferTest008)
+{
+    auto signal = std::make_shared<CodecBridgeSignal>();
+    EncodeOutputBuffer keyframe_buffer;
+    keyframe_buffer.index = 1;
+    keyframe_buffer.buffer_info.size = 50;
+    keyframe_buffer.buffer_data.bufferSize = 50;
+    keyframe_buffer.is_contain_config_data = false;
+    keyframe_buffer.flag = BufferFlag::CODEC_BUFFER_FLAG_SYNC_FRAME;
+    keyframe_buffer.buffer_info.presentationTimeUs = 1000;
+    keyframe_buffer.buffer_data.addr = new uint8_t[50];
+    signal->out_buffer_queue_.push(keyframe_buffer);
+    SetSignal(signal);
+    SimulateKeyFrameMemoryFailure();
+    uint32_t index;
+    BufferInfo info;
+    BufferFlag flag;
+    OhosBuffer buffer;
+    EXPECT_EQ(bridge_impl.DequeueOutputBuffer(index, info, flag, buffer), CodecCodeAdapter::ERROR);
+    delete[] bridge_impl.config_data_cache_.config_data_addr;
+    delete[] keyframe_buffer.buffer_data.addr;
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, DequeueOutputBufferTest009)
+{
+    auto signal = std::make_shared<CodecBridgeSignal>();
+    EncodeOutputBuffer keyframe_buffer;
+    keyframe_buffer.index = 1;
+    keyframe_buffer.flag = BufferFlag::CODEC_BUFFER_FLAG_SYNC_FRAME;
+    keyframe_buffer.buffer_data.addr = new uint8_t[50];
+    keyframe_buffer.is_contain_config_data = false;
+    keyframe_buffer.buffer_data.bufferSize = 50;
+    keyframe_buffer.buffer_info.presentationTimeUs = 1000;
+    keyframe_buffer.buffer_info.size = 50;
+    bridge_impl.config_data_cache_.config_data_addr = new uint8_t[30];
+    bridge_impl.config_data_cache_.config_data_size = 20;
+    bridge_impl.config_data_cache_.config_info_size = 40;
+    signal->out_buffer_queue_.push(keyframe_buffer);
+    SetSignal(signal);
+    uint32_t index;
+    BufferInfo info;
+    BufferFlag flag;
+    OhosBuffer buffer;
+    EXPECT_EQ(bridge_impl.DequeueOutputBuffer(index, info, flag, buffer), CodecCodeAdapter::OK);
+    delete[] bridge_impl.config_data_cache_.config_data_addr;
+    delete[] keyframe_buffer.buffer_data.addr;
+}
+
 TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenSurfaceIsNull)
 {
     SetSurface(nullptr);
@@ -655,6 +794,122 @@ TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenDst
     EXPECT_EQ(result, CodecCodeAdapter::ERROR);
 }
 
+TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenYSrcIsNull)
+{
+    std::shared_ptr<MockProducerSurfaceAdapter> mock_producer_surface_adapter =
+    std::make_shared<MockProducerSurfaceAdapter>();
+    auto buffer_adapter = std::make_shared<MockSurfaceBufferAdapter>();
+    EXPECT_CALL(*mock_producer_surface_adapter, RequestBuffer).WillOnce(testing::Return(buffer_adapter));
+    std::unique_ptr<uint8_t> dst_data = std::make_unique<uint8_t>(1);
+    EXPECT_CALL(*buffer_adapter, GetVirAddr()).WillOnce(testing::Return(dst_data.get()));
+    EXPECT_CALL(*buffer_adapter, GetStride()).WillOnce(testing::Return(1));
+    SetSurface(mock_producer_surface_adapter);
+    std::unique_ptr<uint8_t> data_ptr = std::make_unique<uint8_t>(1);
+    SetStorageType(VideoFrame::STORAGE_UNOWNED_MEMORY);
+    SetData(VideoFrame::kYPlane, nullptr);
+    SetData(VideoFrame::kUPlane, data_ptr.get());
+    SetData(VideoFrame::kVPlane, data_ptr.get());
+    CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(video_frame, 1);
+    EXPECT_EQ(result, CodecCodeAdapter::ERROR);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenUSrcIsNull)
+{
+    std::shared_ptr<MockProducerSurfaceAdapter> mock_producer_surface_adapter =
+    std::make_shared<MockProducerSurfaceAdapter>();
+    auto buffer_adapter = std::make_shared<MockSurfaceBufferAdapter>();
+    EXPECT_CALL(*mock_producer_surface_adapter, RequestBuffer).WillOnce(testing::Return(buffer_adapter));
+    std::unique_ptr<uint8_t> dst_data = std::make_unique<uint8_t>(1);
+    EXPECT_CALL(*buffer_adapter, GetVirAddr()).WillOnce(testing::Return(dst_data.get()));
+    EXPECT_CALL(*buffer_adapter, GetStride()).WillOnce(testing::Return(1));
+    SetSurface(mock_producer_surface_adapter);
+    std::unique_ptr<uint8_t> data_ptr = std::make_unique<uint8_t>(1);
+    SetStorageType(VideoFrame::STORAGE_UNOWNED_MEMORY);
+    SetData(VideoFrame::kYPlane, data_ptr.get());
+    SetData(VideoFrame::kUPlane, nullptr);
+    SetData(VideoFrame::kVPlane, data_ptr.get());
+    CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(video_frame, 1);
+    EXPECT_EQ(result, CodecCodeAdapter::ERROR);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenVSrcIsNull)
+{
+    std::shared_ptr<MockProducerSurfaceAdapter> mock_producer_surface_adapter =
+    std::make_shared<MockProducerSurfaceAdapter>();
+    auto buffer_adapter = std::make_shared<MockSurfaceBufferAdapter>();
+    EXPECT_CALL(*mock_producer_surface_adapter, RequestBuffer).WillOnce(testing::Return(buffer_adapter));
+    std::unique_ptr<uint8_t> dst_data = std::make_unique<uint8_t>(1);
+    EXPECT_CALL(*buffer_adapter, GetVirAddr()).WillOnce(testing::Return(dst_data.get()));
+    EXPECT_CALL(*buffer_adapter, GetStride()).WillOnce(testing::Return(1));
+    SetSurface(mock_producer_surface_adapter);
+    std::unique_ptr<uint8_t> data_ptr = std::make_unique<uint8_t>(1);
+    SetStorageType(VideoFrame::STORAGE_UNOWNED_MEMORY);
+    SetData(VideoFrame::kYPlane, data_ptr.get());
+    SetData(VideoFrame::kUPlane, data_ptr.get());
+    SetData(VideoFrame::kVPlane, nullptr);
+    CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(video_frame, 1);
+    EXPECT_EQ(result, CodecCodeAdapter::ERROR);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenSrcIsNotNull)
+{
+    std::shared_ptr<MockProducerSurfaceAdapter> mock_producer_surface_adapter =
+    std::make_shared<MockProducerSurfaceAdapter>();
+    auto buffer_adapter = std::make_shared<MockSurfaceBufferAdapter>();
+    EXPECT_CALL(*mock_producer_surface_adapter, RequestBuffer).WillOnce(testing::Return(buffer_adapter));
+    std::unique_ptr<uint8_t> dst_data = std::make_unique<uint8_t>(1);
+    EXPECT_CALL(*buffer_adapter, GetVirAddr()).WillOnce(testing::Return(dst_data.get()));
+    EXPECT_CALL(*buffer_adapter, GetStride()).WillOnce(testing::Return(1));
+    SetSurface(mock_producer_surface_adapter);
+    std::unique_ptr<uint8_t> data_ptr = std::make_unique<uint8_t>(1);
+    SetStorageType(VideoFrame::STORAGE_UNOWNED_MEMORY);
+    SetData(VideoFrame::kYPlane, data_ptr.get());
+    SetData(VideoFrame::kUPlane, data_ptr.get());
+    SetData(VideoFrame::kVPlane, data_ptr.get());
+    CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(video_frame, 1);
+    EXPECT_EQ(result, CodecCodeAdapter::OK);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenFlushBufferIsError)
+{
+    std::shared_ptr<MockProducerSurfaceAdapter> mock_producer_surface_adapter =
+    std::make_shared<MockProducerSurfaceAdapter>();
+    auto buffer_adapter = std::make_shared<MockSurfaceBufferAdapter>();
+    EXPECT_CALL(*mock_producer_surface_adapter, RequestBuffer).WillOnce(testing::Return(buffer_adapter));
+    std::unique_ptr<uint8_t> dst_data = std::make_unique<uint8_t>(1);
+    EXPECT_CALL(*buffer_adapter, GetVirAddr()).WillOnce(testing::Return(dst_data.get()));
+    EXPECT_CALL(*buffer_adapter, GetStride()).WillOnce(testing::Return(1));
+    SetSurface(mock_producer_surface_adapter);
+    std::unique_ptr<uint8_t> data_ptr = std::make_unique<uint8_t>(1);
+    SetStorageType(VideoFrame::STORAGE_UNOWNED_MEMORY);
+    SetData(VideoFrame::kYPlane, data_ptr.get());
+    SetData(VideoFrame::kUPlane, data_ptr.get());
+    SetData(VideoFrame::kVPlane, data_ptr.get());
+    EXPECT_CALL(*mock_producer_surface_adapter, FlushBuffer).WillOnce(testing::Return(1));
+    CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(video_frame, 1);
+    EXPECT_EQ(result, CodecCodeAdapter::ERROR);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenFlushBufferIsOk)
+{
+    std::shared_ptr<MockProducerSurfaceAdapter> mock_producer_surface_adapter =
+    std::make_shared<MockProducerSurfaceAdapter>();
+    auto buffer_adapter = std::make_shared<MockSurfaceBufferAdapter>();
+    EXPECT_CALL(*mock_producer_surface_adapter, RequestBuffer).WillOnce(testing::Return(buffer_adapter));
+    std::unique_ptr<uint8_t> dst_data = std::make_unique<uint8_t>(1);
+    EXPECT_CALL(*buffer_adapter, GetVirAddr()).WillOnce(testing::Return(dst_data.get()));
+    EXPECT_CALL(*buffer_adapter, GetStride()).WillOnce(testing::Return(1));
+    SetSurface(mock_producer_surface_adapter);
+    std::unique_ptr<uint8_t> data_ptr = std::make_unique<uint8_t>(1);
+    SetStorageType(VideoFrame::STORAGE_UNOWNED_MEMORY);
+    SetData(VideoFrame::kYPlane, data_ptr.get());
+    SetData(VideoFrame::kUPlane, data_ptr.get());
+    SetData(VideoFrame::kVPlane, data_ptr.get());
+    EXPECT_CALL(*mock_producer_surface_adapter, FlushBuffer).WillOnce(testing::Return(0));
+    CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(video_frame, 1);
+    EXPECT_EQ(result, CodecCodeAdapter::OK);
+}
+
 TEST_F(CodecEncodeBridgeCallbackTest, OnNeedOutputData_NullBuffer)
 {
     testing::internal::CaptureStderr();
@@ -666,7 +921,7 @@ TEST_F(CodecEncodeBridgeCallbackTest, OnNeedOutputData_NullBuffer)
     EXPECT_NE(log_output1.find("Output is invalid"), std::string::npos);
 }
 
-TEST_F(CodecEncodeBridgeCallbackTest, OnNeedOutputData_Valid)
+TEST_F(CodecEncodeBridgeCallbackTest, OnNeedOutputData_ShouldReturn_WhenIsRunningIsFalse)
 {
     testing::internal::CaptureStderr();
     std::shared_ptr<BufferInfoAdapter> valid_info = std::make_shared<InheritBufferInfoAdapter>();
@@ -675,5 +930,71 @@ TEST_F(CodecEncodeBridgeCallbackTest, OnNeedOutputData_Valid)
     callback_->OnNeedOutputData(0, valid_info, BufferFlag::CODEC_BUFFER_FLAG_NONE, valid_buffer);
     std::string log_output1 = testing::internal::GetCapturedStderr();
     EXPECT_NE(log_output1.find("encoder is not running"), std::string::npos);
+}
+
+TEST_F(CodecEncodeBridgeCallbackTest, OnNeedOutputData_ShouldReturn_WhenRunsTasksInCurrentSequenceFalse)
+{
+    testing::internal::CaptureStderr();
+    std::shared_ptr<BufferInfoAdapter> valid_info = std::make_shared<InheritBufferInfoAdapter>();
+    std::shared_ptr<OhosBufferAdapter> valid_buffer = std::make_shared<InheritOhosBufferAdapter>();
+    callback_->is_running_.store(true);
+    MockSequencedTaskRunner mock_task_runner_;
+    EXPECT_CALL(mock_task_runner_, RunsTasksInCurrentSequence())
+      .WillOnce(testing::Return(false));
+    EXPECT_CALL(mock_task_runner_,
+              PostDelayedTask(testing::_, testing::_, testing::_))
+      .WillOnce(testing::Return(false));
+    callback_->codec_callback_task_runner_ = &mock_task_runner_;
+    callback_->OnNeedOutputData(0, valid_info, BufferFlag::CODEC_BUFFER_FLAG_NONE, valid_buffer);
+    std::string log_output1 = testing::internal::GetCapturedStderr();
+    EXPECT_EQ(log_output1.find("encoder is not running"),
+            std::string::npos);
+}
+
+TEST_F(CodecEncodeBridgeCallbackTest, OnNeedOutputData_ShouldReturn_WhenFlagIsCodecData)
+{
+    testing::internal::CaptureStderr();
+    std::shared_ptr<BufferInfoAdapter> valid_info = std::make_shared<InheritBufferInfoAdapter>();
+    std::shared_ptr<OhosBufferAdapter> valid_buffer = std::make_shared<InheritOhosBufferAdapter>();
+    callback_->is_running_.store(true);
+    MockSequencedTaskRunner mock_task_runner_;
+    EXPECT_CALL(mock_task_runner_, RunsTasksInCurrentSequence())
+      .WillOnce(testing::Return(true));
+    callback_->codec_callback_task_runner_ = &mock_task_runner_;
+    callback_->OnNeedOutputData(0, valid_info, BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA, valid_buffer);
+    std::string log_output1 = testing::internal::GetCapturedStderr();
+    EXPECT_NE(log_output1.find("flag is codec_data, handle with keyframe later"),
+            std::string::npos);
+}
+
+TEST_F(CodecEncodeBridgeCallbackTest, OnNeedOutputData_ShouldReturn_WhenFlagIsSyncFrame)
+{
+    testing::internal::CaptureStderr();
+    std::shared_ptr<BufferInfoAdapter> valid_info = std::make_shared<InheritBufferInfoAdapter>();
+    std::shared_ptr<OhosBufferAdapter> valid_buffer = std::make_shared<InheritOhosBufferAdapter>();
+    callback_->is_running_.store(true);
+    MockSequencedTaskRunner mock_task_runner_;
+    EXPECT_CALL(mock_task_runner_, RunsTasksInCurrentSequence())
+      .WillOnce(testing::Return(true));
+    callback_->codec_callback_task_runner_ = &mock_task_runner_;
+    callback_->OnNeedOutputData(0, valid_info, BufferFlag::CODEC_BUFFER_FLAG_SYNC_FRAME, valid_buffer);
+    std::string log_output1 = testing::internal::GetCapturedStderr();
+    EXPECT_EQ(log_output1.find("handle keyframe now"), std::string::npos);
+}
+
+TEST_F(CodecEncodeBridgeCallbackTest, OnNeedOutputData_ShouldReturn_WhenFlagIsSyncFrame2)
+{
+    testing::internal::CaptureStderr();
+    std::shared_ptr<BufferInfoAdapter> valid_info = std::make_shared<InheritBufferInfoAdapter>();
+    std::shared_ptr<OhosBufferAdapter> valid_buffer = std::make_shared<InheritOhosBufferAdapter>();
+    callback_->is_running_.store(true);
+    MockSequencedTaskRunner mock_task_runner_;
+    EXPECT_CALL(mock_task_runner_, RunsTasksInCurrentSequence())
+      .WillOnce(testing::Return(true));
+    callback_->codec_callback_task_runner_ = &mock_task_runner_;
+    callback_->config_data_.buffer_data.bufferSize = 8;
+    callback_->OnNeedOutputData(0, valid_info, BufferFlag::CODEC_BUFFER_FLAG_SYNC_FRAME, valid_buffer);
+    std::string log_output1 = testing::internal::GetCapturedStderr();
+    EXPECT_NE(log_output1.find("handle keyframe now"), std::string::npos);
 }
 }  // namespace media

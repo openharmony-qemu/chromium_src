@@ -151,6 +151,32 @@ bool NWebExtensionPromptCefDelegate::ShowExtensionPrompt(
   return false;
 }
 
+bool NWebExtensionPromptCefDelegate::ShowExtensionUninstallPrompt(
+    const std::string& extensionId,
+    const gfx::Image& icon_image,
+    ShowPromptCallbackFunc showPromptFunc,
+    GetPromptDataCallbackFunc getPromptDataFunc) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  int id = g_request_id++;
+  NWebExtensionActionIcon* icon = CreateActionIcon(icon_image);
+  g_show_prompt_callbacks[id] = showPromptFunc;
+  g_get_prompt_data_callbacks[id] = getPromptDataFunc;
+  if (NWebExtensionPromptDispatcher::GetInstance().ShowExtensionPrompt(
+          id, PROMPT_UNINSTALLATION, extensionId.c_str(), icon)) {
+    LOG(INFO) << "succeed to call show extension uninstall prompt,id is " << id;
+    ReleaseActionIcon(icon);
+    return true;
+  }
+
+  LOG(WARNING) << "failed to call show extension uninstall prompt,id is " << id;
+  ReleaseActionIcon(icon);
+
+  g_show_prompt_callbacks.erase(id);
+  g_get_prompt_data_callbacks.erase(id);
+#endif
+  return false;
+}
+
 bool NWebExtensionPromptCefDelegate::ShowMultiExtensionUninstallPrompt(
     const std::vector<std::string>& extension_ids,
     ShowPromptCallbackFunc show_prompt_func) {

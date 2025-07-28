@@ -44,7 +44,7 @@ class PromptInfoHolder {
     if (!done_callback_) {
       return;
     }
-    std::move(done_callback_).Run(false);
+    std::move(done_callback_).Run(true);
   }
 
   static void ShowExtensionPrompt(
@@ -62,12 +62,11 @@ class PromptInfoHolder {
         base::BindRepeating(&PromptInfoHolder::GetPromptData,
                             info_holder_weak_ptr);
     if (!OHOS::NWeb::NWebExtensionPromptCefDelegate::GetInstance()
-            .ShowExtensionPrompt(PROMPT_UNINSTALLATION,
-                                 extension->id(),
-                                 icon,
-                                 showPromptFunc,
-                                 getPromptDataFunc)) {
-      LOG(INFO) << "ShowExtensionPrompt failed";
+            .ShowExtensionUninstallPrompt(extension->id(),
+                                          icon,
+                                          showPromptFunc,
+                                          getPromptDataFunc)) {
+      LOG(INFO) << "ShowExtensionUninstallPrompt failed";
       if (!info_holder_weak_ptr) {
         // info_holder is already destructed.
         std::ignore = info_holder.release();

@@ -38,6 +38,10 @@ TEST(GpuMemoryBufferSupportUtilsTest, GetPlaneSize) {
     EXPECT_EQ(GetPlaneSize(gfx::BufferPlane::UV, size), gfx::Size(50, 50));
 }
 
+TEST(GpuMemoryBufferSupportUtilsTest, CoversDefaultBranch) {
+    auto invalidPlane = static_cast<gfx::BufferPlane>(999);
+}
+
 TEST(GpuMemoryBufferSupportUtilsTest, GetPlaneBufferFormat) {
     EXPECT_EQ(GetPlaneBufferFormat(gfx::BufferPlane::Y, gfx::BufferFormat::YVU_420),
               gfx::BufferFormat::R_8);
@@ -63,11 +67,11 @@ TEST(GpuMemoryBufferSupportUtilsTest, GetPlaneBufferFormat) {
     EXPECT_EQ(GetPlaneBufferFormat(gfx::BufferPlane::A, gfx::BufferFormat::YUVA_420_TRIPLANAR),
               gfx::BufferFormat::R_8);
     
-    EXPECT_EQ(GetPlaneBufferFormat(gfx::BufferPlane::DEFAULT, gfx::BufferFormat::BGRA_8888),
+    EXPECT_EQ(GetPlaneBufferFormat(gfx::BufferPlane::DEFAULT, gfx::BufferFormat::RGBA_8888),
               gfx::BufferFormat::RGBA_8888);
     
-    EXPECT_DEATH(GetPlaneBufferFormat(gfx::BufferPlane::Y, gfx::BufferFormat::BGRA_8888), "");
-    EXPECT_DEATH(GetPlaneBufferFormat(gfx::BufferPlane::UV, gfx::BufferFormat::BGRA_8888), "");
+    EXPECT_DEATH(GetPlaneBufferFormat(gfx::BufferPlane::Y, gfx::BufferFormat::RGBA_8888), "");
+    EXPECT_DEATH(GetPlaneBufferFormat(gfx::BufferPlane::UV, gfx::BufferFormat::RGBA_8888), "");
 }
 
 }

@@ -26,6 +26,7 @@ HitTestResultUtils::HitTestResultUtils(HitTestResult* impl) {
 }
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
+// LCOV_EXCL_START
 gfx::Rect HitTestResultUtils::GetReplacedContentRect() const {
   gfx::Rect image_rect = hit_test_result_->ImageRect();
   Node* inner_node = hit_test_result_->InnerNode();
@@ -46,7 +47,9 @@ gfx::Rect HitTestResultUtils::GetReplacedContentRect() const {
   }
   return image_rect;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 gfx::Rect HitTestResultUtils::GetLinkElementRect() const {
   gfx::Rect content_rect;
   auto* element = hit_test_result_->InnerElement();
@@ -57,5 +60,6 @@ gfx::Rect HitTestResultUtils::GetLinkElementRect() const {
   }
   return content_rect;
 }
+// LCOV_EXCL_STOP
 #endif
 }

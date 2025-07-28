@@ -433,7 +433,7 @@ void NotificationPlatformBridgeOhos::OnClosed(const std::string id) {
 
   const message_center::Notification& notification = FindProfileNotification(id)->notification();
   PassThroughDelegate* delegate = static_cast<PassThroughDelegate*>(notification.delegate());
-  delegate->Close(false);
+  delegate->Close(true);
 
   CancelById(id, ProfileNotification::GetProfileID(delegate->GetProfile()));
 }

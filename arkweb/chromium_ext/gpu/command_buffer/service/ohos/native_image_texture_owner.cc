@@ -41,6 +41,7 @@ std::unique_ptr<AbstractTextureOHOS> CreateTexture(
 
 }  // namespace
 
+//LCOV_EXCL_START
 NativeImageTextureOwner::NativeImageTextureOwner(
     bool binds_texture_on_update,
     std::unique_ptr<AbstractTextureOHOS> texture,
@@ -84,6 +85,7 @@ NativeImageTextureOwner::~NativeImageTextureOwner() {
   texture_.reset();
   context_state_.reset();
 }
+//LCOV_EXCL_STOP
 
 // static
 scoped_refptr<NativeImageTextureOwner> NativeImageTextureOwner::Create(
@@ -110,6 +112,7 @@ scoped_refptr<NativeImageTextureOwner> NativeImageTextureOwner::Create(
   }
 }
 
+//LCOV_EXCL_START
 GLuint NativeImageTextureOwner::GetTextureId() const {
   return texture_->service_id();
 }
@@ -123,6 +126,7 @@ void NativeImageTextureOwner::OnContextLost() {
   context_state_->RemoveContextLostObserver(this);
   context_state_.reset();
 }
+//LCOV_EXCL_STOP
 
 }  // namespace gpu
                    

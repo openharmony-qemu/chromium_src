@@ -21,13 +21,14 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 
 namespace web_cache {
 class WebCacheManager;
 
 class WebCacheManagerUtils {
  public:
-  WebCacheManager* webCacheManager;
+  raw_ptr<WebCacheManager> webCacheManager;
   WebCacheManagerUtils(WebCacheManager* impl);
 
 #if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)

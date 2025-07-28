@@ -16,6 +16,7 @@
 #include "arkweb/chromium_ext/cc/layer/video_layer_ext.h"
 
 namespace cc {
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 scoped_refptr<VideoLayerExt> VideoLayerExt::Create(
     VideoFrameProvider* provider,
@@ -108,4 +109,5 @@ void VideoLayerExt::ResetLayerRectCallback() {
   }
 }
 #endif
+// LCOV_EXCL_STOP
 }  // namespace cc

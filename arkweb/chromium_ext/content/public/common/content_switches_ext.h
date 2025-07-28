@@ -42,6 +42,7 @@ CONTENT_EXPORT extern const char kIgnoreLockdownMode[];
 CONTENT_EXPORT extern const char kEnablePrinting[];
 CONTENT_EXPORT extern const char kOhosHttpCacheSimple[];
 CONTENT_EXPORT extern const char kCalcTabletMode[];
+CONTENT_EXPORT extern const char kDisableMobileStyleSheet[];
 CONTENT_EXPORT extern const char kDisableNonAdvancedSecurityMode[];
 #endif
 

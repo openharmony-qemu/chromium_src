@@ -214,6 +214,10 @@ public:
     base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE;
 #endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  void MediaResumeFromBFCachePage(bool restoring_in_bfcache) override;
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
+
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   int64_t GetFreezeTime() const override;
   int64_t GetPlayedTime() override;

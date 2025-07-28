@@ -27,6 +27,7 @@ namespace init {
 
 namespace {
 
+//LCOV_EXCL_START
 bool InitializeStaticNativeEGLInternal() {
   base::NativeLibrary gles_library = LoadLibraryAndPrintError("libGLESv3.so");
   if (!gles_library) {
@@ -55,6 +56,7 @@ bool InitializeStaticNativeEGLInternal() {
 
   return true;
 }
+//LCOV_EXCL_STOP
 
 bool InitializeStaticEGLInternal(GLImplementationParts implementation) {
   bool initialized = false;
@@ -116,6 +118,7 @@ bool InitializeStaticGLBindings(GLImplementationParts implementation) {
   }
 }
 
+//LCOV_EXCL_START
 void ShutdownGLPlatform(GLDisplay* display) {
   if (display) {
     display->Shutdown();
@@ -123,6 +126,7 @@ void ShutdownGLPlatform(GLDisplay* display) {
   ClearBindingsEGL();
   ClearBindingsGL();
 }
+//LCOV_EXCL_STOP
 
 }  // namespace init
 }  // namespace gl

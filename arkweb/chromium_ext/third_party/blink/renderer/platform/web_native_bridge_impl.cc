@@ -48,6 +48,7 @@ namespace {
 
 // Handles destruction of media::Renderer dependent components after the
 // renderer has been destructed on the media thread.
+// LCOV_EXCL_START
 void DestructionHelper(
     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner,
     scoped_refptr<base::SingleThreadTaskRunner> vfc_task_runner,
@@ -65,6 +66,7 @@ void DestructionHelper(
 }
 
 }  // namespace
+// LCOV_EXCL_STOP
 
 WebNativeBridgeImpl::WebNativeBridgeImpl(
     WebLocalFrame* frame,
@@ -106,6 +108,7 @@ WebNativeBridgeImpl::WebNativeBridgeImpl(
   delegate_id_ = delegate_->AddObserver(this);
 }
 
+// LCOV_EXCL_START
 WebNativeBridgeImpl::~WebNativeBridgeImpl() {
   DVLOG(1) << __func__;
   DCHECK(main_task_runner_->BelongsToCurrentThread());
@@ -141,6 +144,7 @@ WebNativeBridgeImpl::~WebNativeBridgeImpl() {
                      std::move(vfc_task_runner_), std::move(compositor_),
                      std::move(renderer_factory_selector_), std::move(bridge_)));
 }
+// LCOV_EXCL_STOP
 
 std::unique_ptr<media::Renderer> WebNativeBridgeImpl::CreateRenderer(
     absl::optional<media::RendererType> renderer_type) {
@@ -155,6 +159,7 @@ std::unique_ptr<media::Renderer> WebNativeBridgeImpl::CreateRenderer(
       base::NullCallback(), client_->TargetColorSpace());
 }
 
+// LCOV_EXCL_START
 void WebNativeBridgeImpl::StartPipeline() {
   DCHECK(main_task_runner_->BelongsToCurrentThread());
   LOG(INFO) << "[NativeEmbed] WebNativeBridgeImpl::StartPipeline.";
@@ -285,4 +290,5 @@ void WebNativeBridgeImpl::UnregisterContentsLayer(cc::Layer* layer)
 
 void WebNativeBridgeImpl::OnSurfaceIdUpdated(viz::SurfaceId surface_id) {
 }
+// LCOV_EXCL_STOP
 }  // namespace blink

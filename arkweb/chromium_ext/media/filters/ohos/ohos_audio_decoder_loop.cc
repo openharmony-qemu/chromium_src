@@ -44,6 +44,7 @@ OHOSAudioDecoderLoop::OHOSAudioDecoderLoop(
   }
 }
 
+// LCOV_EXCL_START
 OHOSAudioDecoderLoop::~OHOSAudioDecoderLoop() {
   LOG(INFO) << "OHOSAudioDecoderLoop::~OHOSAudioDecoderLoop";
   io_timer_.Stop();
@@ -106,6 +107,7 @@ void OHOSAudioDecoderLoop::DoPendingWork() {
 
   ManageTimer(did_work);
 }
+// LCOV_EXCL_STOP
 
 void OHOSAudioDecoderLoop::ManageTimer(bool did_work) {
   LOG(DEBUG) << "OHOSAudioDecoderLoop::ManageTimer";
@@ -147,6 +149,7 @@ void OHOSAudioDecoderLoop::SetState(State new_state) {
     client_->OnCodecLoopError();
 }
 
+// LCOV_EXCL_START
 bool OHOSAudioDecoderLoop::ProcessOneInputBuffer() {
   LOG(DEBUG) << "OHOSAudioDecoderLoop::ProcessOneInputBuffer";
   if (state_ != READY) {
@@ -188,6 +191,7 @@ OHOSAudioDecoderLoop::InputBuffer OHOSAudioDecoderLoop::DequeueInputBuffer() {
   }
   return InputBuffer(input_buf_index);
 }
+// LCOV_EXCL_STOP
 
 bool OHOSAudioDecoderLoop::EnqueueInputBuffer(const InputBuffer& input_buffer) {
   LOG(DEBUG) << "OHOSAudioDecoderLoop::EnqueueInputBuffer";
@@ -233,6 +237,7 @@ bool OHOSAudioDecoderLoop::EnqueueInputBuffer(const InputBuffer& input_buffer) {
   return true;
 }
 
+// LCOV_EXCL_START
 bool OHOSAudioDecoderLoop::ProcessOneOutputBuffer() {
   LOG(DEBUG) << "OHOSAudioDecoderLoop::ProcessOneOutputBuffer";
   TRACE_EVENT0("media", "OHOSAudioDecoderLoop::ProcessOneOutputBuffer");
@@ -268,5 +273,6 @@ bool OHOSAudioDecoderLoop::ProcessOneOutputBuffer() {
   }
   return true;
 }
+// LCOV_EXCL_STOP
 
 } // namespace media

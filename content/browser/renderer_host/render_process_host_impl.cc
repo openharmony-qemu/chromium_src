@@ -3538,6 +3538,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
       switches::kPixelRatio,
       switches::kOhSchemeHandlerCustomScheme,
       switches::kOhosEnableVulkan,
+      switches::kDisableMobileStyleSheet,
 #endif
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
       switches::kAdSecValue,

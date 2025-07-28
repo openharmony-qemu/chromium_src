@@ -168,6 +168,13 @@ void NWebExtensionActionCefDelegate::WebExtensionActionClicked(
   AlloyBrowserHostImplExt::WebExtensionActionClicked(extension_id, tab);
 }
 
+// static
+void NWebExtensionActionCefDelegate::WebExtensionActionShowPopup(
+    int tabId,
+    std::string extensionId) {
+  AlloyBrowserHostImplExt::WebExtensionActionShowPopup(tabId, extensionId);
+}
+
 //  static
 void NWebExtensionActionCefDelegate::WebExtensionErasePopupWindowId(
     int popupNwebId) {

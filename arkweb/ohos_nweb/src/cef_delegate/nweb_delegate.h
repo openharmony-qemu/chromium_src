@@ -850,7 +850,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 
  public:
   int argc_;
-  const char** argv_;
+  RAW_PTR_EXCLUSION const char** argv_;
 
  private:
   void RunMessageLoop();

@@ -17,6 +17,7 @@
 #define ARKWEB_CHROMIUM_EXT_BASE_FEATURE_LIST_UTILS_H
 
 #include "base/feature_list.h"
+#include "base/memory/raw_ptr.h"
 #include "arkweb/build/features/features.h"
 
 namespace base {
@@ -38,7 +39,7 @@ class FeatureListUtils {
   static void SetScrollbarEnable(bool enable);
 #endif
 
-  FeatureList* feature_list_;
+  raw_ptr<FeatureList> feature_list_;
 };
 }  // namespace base
 #endif  // ARKWEB_CHROMIUM_EXT_BASE_FEATURE_LIST_UTILS_H

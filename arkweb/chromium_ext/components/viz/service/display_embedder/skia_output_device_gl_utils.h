@@ -17,6 +17,7 @@
 #define COMPONENTS_VIZ_SERVICE_DISPLAY_EMBEDDER_SKIA_OUTPUT_DEVICE_GL_UTILS_H
 
 #include "components/viz/service/display_embedder/skia_output_device_gl.h"
+#include "base/memory/raw_ptr.h"
 
 namespace viz {
 
@@ -28,7 +29,7 @@ class SkiaOutputDeviceGLUtils {
                               OutputSurfaceFrame& frame);
 
  private:
-  SkiaOutputDeviceGL* skiaOutPutDeviceGl_;
+  raw_ptr<SkiaOutputDeviceGL> skiaOutPutDeviceGl_;
   bool supports_damage_region_;
 };
 }  // namespace viz

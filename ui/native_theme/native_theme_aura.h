@@ -5,6 +5,7 @@
 #ifndef UI_NATIVE_THEME_NATIVE_THEME_AURA_H_
 #define UI_NATIVE_THEME_NATIVE_THEME_AURA_H_
 
+#include "base/memory/raw_ptr.h"
 #include "base/no_destructor.h"
 #include "ui/native_theme/native_theme_base.h"
 #if BUILDFLAG(IS_ARKWEB)
@@ -116,7 +117,7 @@ class NATIVE_THEME_EXPORT NativeThemeAura : public NativeThemeBase {
       color_scheme_observer_;
 
 #if BUILDFLAG(IS_ARKWEB)
-  NativeThemeAuraUtils* native_theme_aura_utils_;
+  raw_ptr<NativeThemeAuraUtils> native_theme_aura_utils_;
 #endif
 };
 

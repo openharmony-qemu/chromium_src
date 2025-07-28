@@ -49,7 +49,7 @@ public:
   void SetSafeArea(gfx::Insets safe_area) { safe_area_ = safe_area; }
 #endif
 private:
-  raw_ptr<Page> page_;
+  Persistent<Page> page_;
 #if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
   gfx::Insets safe_area_;
 #endif

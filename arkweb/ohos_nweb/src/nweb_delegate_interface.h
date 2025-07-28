@@ -479,6 +479,8 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   virtual void SetNativeInnerWeb(bool isInnerWeb) = 0;
+  virtual bool GetNativeEmbedMode() = 0;
+  virtual bool IsEnableCustomVideoPlayer() = 0;
 #endif
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   virtual void SetAudioResumeInterval(int32_t resumeInterval) = 0;

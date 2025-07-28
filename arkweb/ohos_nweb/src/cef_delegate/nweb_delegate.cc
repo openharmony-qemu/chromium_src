@@ -3523,6 +3523,20 @@ void NWebDelegate::SetNativeInnerWeb(bool isInnerWeb) {
     GetBrowser()->GetHost()->SetNativeInnerWeb(isInnerWeb);
   }
 }
+
+bool NWebDelegate::GetNativeEmbedMode() {
+  if (preference_delegate_) {
+    return preference_delegate_->GetNativeEmbedMode();
+  }
+  return false;
+}
+
+bool NWebDelegate::IsEnableCustomVideoPlayer() {
+  if (preference_delegate_) {
+    return preference_delegate_->IsEnableCustomVideoPlayer();
+  }
+  return false;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)

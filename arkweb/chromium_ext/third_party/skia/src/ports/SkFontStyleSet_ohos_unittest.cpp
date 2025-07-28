@@ -54,8 +54,6 @@ TEST_F(SkFontStyleSet_OHOSTest, Constructor_WithNullConfig) {
 
 TEST_F(SkFontStyleSet_OHOSTest, Constructor_WithValidConfig) {
     auto localMockConfig = std::make_shared<MockFontConfig>(fontScanner, nullptr);
-    // EXPECT_CALL(*localMockConfig, getTypefaceCount(testing::_, testing::_))
-    //     .WillOnce(Return(5));
 
     SkFontStyleSet_OHOS styleSet(localMockConfig, 1, false);
     testing::Mock::VerifyAndClearExpectations(localMockConfig.get());

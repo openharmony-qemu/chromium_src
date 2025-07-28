@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-
-#include "nweb_web_storage_impl.h"
-
 #include <gmock/gmock.h>
 
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "nweb_hilog.h"
 #include "nweb_web_storage_delegate.h"
 #include "gtest/gtest.h"
+
+#define private public
+#include "nweb_web_storage_impl.h"
 
 using namespace OHOS::NWeb;
 
@@ -34,6 +34,13 @@ TEST(NWebWebStorageImplTEST, DeleteOrigin) {
     auto web_storage = std::make_shared<NWebWebStorageImpl>();
     std::string origin = "";
     EXPECT_EQ(web_storage->DeleteOrigin(origin), OHOS::NWeb::NWEB_INVALID_ORIGIN);
+}
+
+TEST(NWebWebStorageImplTEST, DeleteOrigin_DelegateNotNull) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  std::string origin = "";
+  web_storage->delegate_ = nullptr;
+  EXPECT_EQ(web_storage->DeleteOrigin(origin), OHOS::NWeb::NWEB_ERR);
 }
 
 TEST(NWebWebStorageImplTEST, GetOrigins001) {
@@ -61,12 +68,18 @@ TEST(NWebWebStorageImplTEST, GetOriginQuota002) {
 
 TEST(NWebWebStorageImplTEST, GetOriginUsage001) {
     auto web_storage = std::make_shared<NWebWebStorageImpl>();
-    web_storage->GetOriginQuota("", nullptr);
+    web_storage->GetOriginUsage("", nullptr);
 }
 
 TEST(NWebWebStorageImplTEST, GetOriginUsage002) {
     auto web_storage = std::make_shared<NWebWebStorageImpl>();
-    EXPECT_EQ(web_storage->GetOriginQuota(""), -1);
+    EXPECT_EQ(web_storage->GetOriginUsage(""), -1);
+}
+
+TEST(NWebWebStorageImplTEST, GetOriginUsage003) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  web_storage->delegate_ = nullptr;
+  EXPECT_EQ(web_storage->GetOriginUsage(""), -1);
 }
 
 TEST(NWebWebStorageImplTEST, PutWebStorageCallback) {
@@ -79,6 +92,14 @@ TEST(NWebWebStorageImplTEST, GetPassword) {
     const std::string url = "";
     const std::string username = "";
     EXPECT_EQ(web_storage->GetPassword(url, username, 1), "");
+}
+
+TEST(NWebWebStorageImplTEST, GetPassword002) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  const std::string url = "";
+  const std::string username = "";
+  web_storage->delegate_ = nullptr;
+  EXPECT_EQ(web_storage->GetPassword(url, username, 1), "");
 }
 
 TEST(NWebWebStorageImplTEST, GetSavedPasswords) {

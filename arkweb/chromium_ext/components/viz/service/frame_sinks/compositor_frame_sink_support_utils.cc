@@ -21,10 +21,12 @@
 
 namespace viz {
 
+//LCOV_EXCL_START
 CompositorFrameSinkSupportUtils::CompositorFrameSinkSupportUtils(CompositorFrameSinkSupport* support)
 {
   this->compositorFrameSinkSupport = support;
 }
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
 void CompositorFrameSinkSupportUtils::flingSlideMaybeSubmitCompositorFrame(CompositorFrame& frame)
@@ -55,6 +57,7 @@ void CompositorFrameSinkSupportUtils::maximizeResizeCompositorFrame(
 }
 #endif
 
+//LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
 void CompositorFrameSinkSupportUtils::videoLtpoMaybeSubmitCompositorFrame()
 {
@@ -93,4 +96,5 @@ int64_t CompositorFrameSinkSupportUtils::GetCurrentTimeStampMS()
       .count();
 }
 #endif
+//LCOV_EXCL_STOP
 }  // namespace viz

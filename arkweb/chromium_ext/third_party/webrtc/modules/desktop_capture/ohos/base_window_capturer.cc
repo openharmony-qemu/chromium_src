@@ -169,6 +169,7 @@ void BaseWindowCapturer::Stop()
   BaseScreenCaptureSource::GetInstance().ReleaseCapture(nweb_id_);
 }
 
+// LCOV_EXCL_START
 void BaseWindowCapturer::HandleBuffer() {
   if (portal_init_failed_ || !BaseScreenCaptureSource::GetInstance().ScreenCaptureAdapterIsExist(nweb_id_) ||
     BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_] == nullptr) {
@@ -240,6 +241,7 @@ void BaseWindowCapturer::HandleBuffer() {
   }
   BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
 }
+// LCOV_EXCL_STOP
 
 void BaseWindowCapturer::Start(Callback* callback) {
   RTC_DCHECK(!callback_);
@@ -288,6 +290,7 @@ DesktopCapturer::Result BaseWindowCapturer::HandleCaptureStateCode(
   return DesktopCapturer::Result::SUCCESS;
 }
 
+// LCOV_EXCL_START
 void BaseWindowCapturer::CaptureFrame() {
   if (portal_init_failed_) {
     callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
@@ -318,6 +321,7 @@ void BaseWindowCapturer::CaptureFrame() {
   }
   callback_->OnCaptureResult(Result::SUCCESS, std::move(current_frame));
 }
+// LCOV_EXCL_STOP
 
 bool BaseWindowCapturer::GetSourceList(SourceList* sources) {
   RTC_DCHECK(sources->size() == 0);

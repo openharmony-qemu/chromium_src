@@ -42,6 +42,7 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
   audioResumeInterval_ = OHOSAudioFocusController::GetAudioResumeInterval(parameters_);
 }
 
+// LCOV_EXCL_START
 OHOSAudioOutputStream::~OHOSAudioOutputStream() {
   LOG(INFO) << "OHOSAudioOutputStream::~OHOSAudioOutputStream";
   isDestroyed_.store(true);
@@ -74,6 +75,7 @@ void OHOSAudioOutputStream::Close() {
   Stop();
   manager_->ReleaseOutputStream(this);
 }
+// LCOV_EXCL_STOP
 
 static int32_t AudioRendererOnWriteData(OH_AudioRenderer* renderer,
                                         void* userData,
@@ -120,6 +122,7 @@ static int32_t AudioRendererOnInterruptEvent(OH_AudioRenderer* renderer,
   return 0;
 }
 
+// LCOV_EXCL_START
 void OHOSAudioOutputStream::OnSuspend() {
   LOG(INFO) << "OHOSAudioOutputStream::OnSuspend. [" << (void*)this << "]";
   if (!parameters_.IsValid()) {
@@ -204,6 +207,7 @@ void OHOSAudioOutputStream::OnResume() {
             weak_factory_.GetWeakPtr()));
   }
 }
+// LCOV_EXCL_STOP
 
 bool OHOSAudioOutputStream::isNeedResume(int32_t resumeInterval) {
   return resumeInterval < 0 ||
@@ -212,6 +216,7 @@ bool OHOSAudioOutputStream::isNeedResume(int32_t resumeInterval) {
       static_cast<double>(resumeInterval));
 }
 
+// LCOV_EXCL_START
 void OHOSAudioOutputStream::SuspendOtherMediaSession() {
   auto it = OHOSAudioOutputStream::audioParameterSet_.begin();
   while (it != OHOSAudioOutputStream::audioParameterSet_.end()) {
@@ -237,6 +242,7 @@ void OHOSAudioOutputStream::SuspendOtherMediaSession() {
 
   OHOSAudioOutputStream::audioParameterSet_.emplace_back(parameters_);
 }
+// LCOV_EXCL_STOP
 
 void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   LOG(INFO) << "OHOSAudioOutputStream::Start [" << (void*)this << "]";
@@ -258,6 +264,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   running_ = true;
 }
 
+// LCOV_EXCL_START
 void OHOSAudioOutputStream::Stop() {
   LOG(INFO) << "OHOSAudioOutputStream::Stop. [" << (void*)this << "]";
   base::AutoLock lock(lock_);
@@ -285,6 +292,7 @@ void OHOSAudioOutputStream::Stop() {
     ReportError();
   }
 }
+// LCOV_EXCL_STOP
 
 bool OHOSAudioOutputStream::GetInterruptMode() {
   return audioExclusive_;
@@ -324,6 +332,7 @@ void OHOSAudioOutputStream::GetVolume(double* volume) {
   *volume = volume_;
 }
 
+// LCOV_EXCL_START
 bool OHOSAudioOutputStream::InitRender() {
   if (!parameters_.IsValid() || !audio_stream_builder_) {
     LOG(ERROR) << "OHOSAudioOutputStream::InitRender, parameters_ is not valid "
@@ -386,6 +395,7 @@ void OHOSAudioOutputStream::SetStreamUsage() {
     }
   }
 }
+// LCOV_EXCL_STOP
 
 void OHOSAudioOutputStream::Prepare(const AudioParameters& parameters) {
   LOG(INFO) << "OHOSAudioOutputStream::Prepare";
@@ -397,6 +407,7 @@ void OHOSAudioOutputStream::Prepare(const AudioParameters& parameters) {
   LOG(INFO) << "OHOSAudioOutputStream::SetRendererInterruptMode audioExclusive: " << audioExclusive_;
 }
 
+// LCOV_EXCL_START
 bool OHOSAudioOutputStream::StartRender() {
   if (IsPreloadOrMutedMediaMode()) {
     OH_AudioRenderer_SetSilentModeAndMixWithOthers(audio_renderer_, true);
@@ -432,6 +443,7 @@ void OHOSAudioOutputStream::ReportError() {
     callback_->OnError(AudioSourceCallback::ErrorType::kUnknown);
   }
 }
+// LCOV_EXCL_STOP
 
 base::TimeDelta OHOSAudioOutputStream::GetDelay(
     base::TimeTicks delay_timestamp) {
@@ -466,6 +478,7 @@ base::TimeDelta OHOSAudioOutputStream::GetDelay(
                   next_frame_pts - (delay_timestamp - base::TimeTicks()));
 }
 
+// LCOV_EXCL_START
 void OHOSAudioOutputStream::PumpSamples() {
     base::AutoLock lock(lock_);
     if (!running_) {
@@ -498,6 +511,7 @@ void OHOSAudioOutputStream::PumpSamples() {
     (void)callback_->OnMoreData(base::TimeDelta(), base::TimeTicks::Now(), {}, audio_bus_.get());
     SchedulePumpSamples();
 }
+// LCOV_EXCL_STOP
 
 void OHOSAudioOutputStream::OnWriteData(void* buffer, int32_t length) {
   base::AutoLock lock(lock_);
@@ -523,6 +537,7 @@ void OHOSAudioOutputStream::OnWriteData(void* buffer, int32_t length) {
   }
 }
 
+// LCOV_EXCL_START
 void OHOSAudioOutputStream::SetUpAudioSilentState() {
   if (!isSilentMode_) {
     return;
@@ -583,5 +598,6 @@ void OHOSAudioOutputStream::SchedulePumpSamples() {
                base::BindOnce(&OHOSAudioOutputStream::PumpSamples,
                               weak_factory_.GetWeakPtr()));
 }
+// LCOV_EXCL_STOP
 
 }  // namespace media

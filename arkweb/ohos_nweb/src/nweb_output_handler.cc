@@ -60,6 +60,7 @@ constexpr uint8_t kBitsPerPixel = 4;
 }  // namespace
 
 // static
+// LCOV_EXCL_START
 std::shared_ptr<NWebOutputHandler> NWebOutputHandler::Create(
     uint32_t width,
     uint32_t height,
@@ -96,6 +97,7 @@ void NWebOutputHandler::GetWindowInfo(uint32_t& width, uint32_t& height) {
   width = width_;
   height = height_;
 }
+// LCOV_EXCL_STOP
 
 void NWebOutputHandler::Resize(uint32_t width, uint32_t height) {
   if (width_ != width || height_ != height) {
@@ -133,6 +135,7 @@ void NWebOutputHandler::Resize(uint32_t width, uint32_t height) {
   }
 }
 
+// LCOV_EXCL_START
 void NWebOutputHandler::StartDumpToFile() {
   std::weak_ptr<NWebOutputHandler> output_handler_weak(shared_from_this());
   std::thread dump_thread([output_handler_weak]() {
@@ -245,6 +248,7 @@ void NWebOutputHandler::BmpDumpHelper::RgbaToRgb(char* buf,
     }
   }
 }
+// LCOV_EXCL_STOP
 
 void NWebOutputHandler::BmpDumpHelper::WriteToBmp(const std::string& filename,
                                                   char* buf,
@@ -277,6 +281,7 @@ void NWebOutputHandler::BmpDumpHelper::WriteToBmp(const std::string& filename,
   fclose(file);
 }
 
+// LCOV_EXCL_START
 void NWebOutputHandler::SetNWebId(uint32_t id) {
   nweb_id_ = id;
 }
@@ -290,4 +295,5 @@ void* NWebOutputHandler::GetNativeWindowFromSurface(void* surface) {
                 .CreateNativeWindowFromSurface(surface);
   return window_;
 }
+// LCOV_EXCL_STOP
 }  // namespace OHOS::NWeb

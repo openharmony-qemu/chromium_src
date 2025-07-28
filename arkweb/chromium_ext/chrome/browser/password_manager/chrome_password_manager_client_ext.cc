@@ -357,12 +357,6 @@ void ChromePasswordManagerClientExt::NotifyAutofillPopupShow(bool is_show) {
     return;
   }
   autofill_manager->SetPasswordPopupShow(is_show);
-
-  auto autofill_client =
-      autofill::OhAutofillClient::FromWebContents(web_contents());
-  if (autofill_client) {
-    autofill_client->SetPasswordPopupStatus(is_show);
-  }
 }
 
 void ChromePasswordManagerClientExt::FillAccountSuggestion(

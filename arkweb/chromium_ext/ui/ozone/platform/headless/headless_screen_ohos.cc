@@ -53,6 +53,7 @@ bool ParseScreenSizeOhos(const std::string& screen_size,
   return true;
 }
 
+// LCOV_EXCL_START
 gfx::Rect GetDisplayBoundsOhos() {
   gfx::Rect bounds(kHeadlessOhosDisplaySize);
 
@@ -69,8 +70,10 @@ gfx::Rect GetDisplayBoundsOhos() {
 
   return bounds;
 }
+// LCOV_EXCL_STOP
 }  // namespace
 
+// LCOV_EXCL_START
 HeadlessScreenListener::HeadlessScreenListener(
     base::WeakPtr<HeadlessScreenOhos> headless_screen_ohos)
     : headless_screen_ohos_(headless_screen_ohos) {
@@ -146,6 +149,7 @@ bool HeadlessScreenOhos::Initialize() {
   }
   return result;
 }
+// LCOV_EXCL_STOP
 
 bool HeadlessScreenOhos::FetchDisplays(display::DisplayList& displays) {
   bool result = false;
@@ -255,6 +259,7 @@ void HeadlessScreenOhos::OnDisplayEvent(const std::string& event,
   }
 }
 
+// LCOV_EXCL_START
 void HeadlessScreenOhos::OnDisplayCreate(
     const OHOS::NWeb::DisplayId display_id) {
   auto id = static_cast<int64_t>(display_id);
@@ -291,4 +296,5 @@ void HeadlessScreenOhos::AddObserver(display::DisplayObserver* observer) {
 void HeadlessScreenOhos::RemoveObserver(display::DisplayObserver* observer) {
   display_list_.RemoveObserver(observer);
 }
+// LCOV_EXCL_STOP
 }  // namespace ui

@@ -955,13 +955,6 @@ void NWebDelegate::SetInputMethodClient(
     return;
   }
   render_handler_->SetInputMethodClient(client);
-
-  if (handler_delegate_ == nullptr) {
-    LOG(ERROR)
-        << "fail to register inputmethod client, delegate handler is nullptr";
-    return;
-  }
-  handler_delegate_->SetInputMethodClient(client);
 }
 
 void NWebDelegate::RegisterRenderCb(
@@ -5405,6 +5398,19 @@ void NWebDelegate::SetBackForwardCacheOptions(int32_t size,
   }
 
   GetBrowser()->SetBackForwardCacheOptions(size, timeToLive);
+}
+
+void NWebDelegate::SetMediaResumeFromBFCachePage(bool resume) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    if (!handler_delegate_) {
+      LOG(ERROR)
+          << "failed to set media resume from bfcache page, handler delegate is null";
+      return;
+    }
+    handler_delegate_->SetMediaResumeFromBFCachePage(resume);
+    return;
+  }
+  GetBrowser()->GetHost()->SetMediaResumeFromBFCachePage(resume);
 }
 #endif
 

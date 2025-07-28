@@ -23,12 +23,12 @@
 
 #include "base/logging.h"
 #include "cef/include/cef_browser.h"
+#include "cef_devtools_message_handler_delegate.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include "nweb_devtools_message_handler_impl.h"
-#include "cef_devtools_message_handler_delegate.h"
 #include "nweb_devtools_message_handler.h"
+#include "nweb_devtools_message_handler_impl.h"
+
 
 using namespace OHOS::NWeb;
 
@@ -38,7 +38,8 @@ bool LLVMFuzzerTestSetup() {
 }
 
 void FuzzApi(const uint8_t* data, size_t size) {
-  std::unique_ptr<NWebDevtoolsMessageHandler> handler = std::make_unique<NWebDevtoolsMessageHandler>();
+  std::unique_ptr<NWebDevtoolsMessageHandler> handler =
+      std::make_unique<NWebDevtoolsMessageHandler>();
   NWebDevToolsMessageHandlerImpl handleImp(std::move(handler));
   FuzzedDataProvider fdp(data, size);
 

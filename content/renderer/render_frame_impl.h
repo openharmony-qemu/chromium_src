@@ -1579,7 +1579,7 @@ class CONTENT_EXPORT RenderFrameImpl
   // false, but set to true by some tests.
   bool send_content_state_immediately_ = false;
 
-#if BUILDFLAG(IS_OHOS) && defined(OHOS_NWEB_EX)
+#if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
   bool viewport_meta_enabled_ = false;
 #endif
 

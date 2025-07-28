@@ -39,6 +39,11 @@
 #include "services/metrics/public/cpp/ukm_source_id.h"
 #include "third_party/blink/public/mojom/input/input_event.mojom-shared.h"
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace page_load_metrics {
 
 namespace internal {
@@ -150,7 +155,12 @@ void DispatchEventsAfterBackForwardCacheRestore(
 
 void DispatchObserverTimingCallbacks(PageLoadMetricsObserverInterface* observer,
                                      const mojom::PageLoadTiming& last_timing,
-                                     const mojom::PageLoadTiming& new_timing) {
+                                     const mojom::PageLoadTiming& new_timing
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+                                     bool is_prerendered_page_activation
+#endif
+                                     ) {
   if (!last_timing.Equals(new_timing)) {
     observer->OnTimingUpdate(nullptr, new_timing);
   }
@@ -186,6 +196,18 @@ void DispatchObserverTimingCallbacks(PageLoadMetricsObserverInterface* observer,
   if (new_timing.paint_timing->first_contentful_paint &&
       !last_timing.paint_timing->first_contentful_paint) {
     observer->OnFirstContentfulPaintInPage(new_timing);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    // OnFirstMeaningfulPaint will not be trigger by renderer message,
+    // so it needs to be triggered actively after OnFirstContentfulPaintInPage.
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+        ::switches::kEnableNwebEx) && is_prerendered_page_activation) {
+      new_timing.paint_timing->first_meaningful_paint =
+        new_timing.paint_timing->first_contentful_paint;
+      observer->OnFirstMeaningfulPaintInMainFrameDocument(new_timing);
+      new_timing.paint_timing->first_meaningful_paint = std::nullopt;
+    }
+#endif
   }
   if (new_timing.paint_timing->first_meaningful_paint &&
       !last_timing.paint_timing->first_meaningful_paint) {
@@ -619,6 +641,13 @@ void PageLoadTracker::DidActivatePrerenderedPage(
   base::UmaHistogramEnumeration(
       internal::kPageLoadPrerender2Event,
       internal::PageLoadPrerenderEvent::kPrerenderActivationNavigation);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+    is_prerendered_page_activation_ = true;
+  }
+#endif
 }
 
 void PageLoadTracker::DidActivatePreviewedPage(
@@ -1037,7 +1066,12 @@ void PageLoadTracker::OnTimingChanged() {
 
   for (const auto& observer : observers_) {
     DispatchObserverTimingCallbacks(
-        observer.get(), *last_dispatched_merged_page_timing_, new_timing);
+        observer.get(), *last_dispatched_merged_page_timing_, new_timing
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+        is_prerendered_page_activation_
+#endif
+        );
   }
   last_dispatched_merged_page_timing_ =
       metrics_update_dispatcher_.timing().Clone();

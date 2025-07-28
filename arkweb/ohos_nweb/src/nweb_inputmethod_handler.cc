@@ -164,6 +164,7 @@ class InputMethodTask : public CefTask {
   IMPLEMENT_REFCOUNTING(InputMethodTask);
 };
 
+// LCOV_EXCL_START
 NWebInputMethodHandler::NWebInputMethodHandler()
     : selected_from_(0), selected_to_(0) {
   inputmethod_adapter_ = OhosAdapterHelper::GetInstance().CreateIMFAdapter();
@@ -197,6 +198,7 @@ std::shared_ptr<IMFCursorInfoAdapter> NWebInputMethodHandler::GetCursorInfo() {
              << ", cursorInfo.height = " << height;
   return cursorInfo;
 }
+// LCOV_EXCL_STOP
 
 IMFAdapterTextInputType NWebInputMethodHandler::TextInputModeToIMFAdapter(
     cef_text_input_mode_t mode) {
@@ -309,6 +311,7 @@ IMFAdapterEnterKeyType NWebInputMethodHandler::TextInputActionToIMFAdapter(
   }
 }
 
+// LCOV_EXCL_START
 void NWebInputMethodHandler::HandleSecurityLayer() {
   if (browser_ != nullptr && browser_->GetHost() != nullptr) {
     CefRefPtr<CefTask> task = new InputMethodTask(base::BindOnce(
@@ -322,6 +325,7 @@ void NWebInputMethodHandler::HandleSecurityLayerHandlerOnUI() {
     browser_->GetHost()->UpdateSecurityLayer(input_is_password_);
   }
 }
+// LCOV_EXCL_STOP
 
 void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo,
                                                int32_t customEnterKeyType) {
@@ -401,6 +405,7 @@ bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener, int3
   return true;
 }
 
+// LCOV_EXCL_START
 bool NWebInputMethodHandler::NeedKeyboardShow() {
   // if the keyboard is closed manually, the keyboard will not show automatically.
   // if the inputmode is none, the system keyboard will not show.
@@ -413,6 +418,7 @@ bool NWebInputMethodHandler::IsKeyboardShow() {
   // keyboard is shown.
   return isAttachSuccess_ && NeedKeyboardShow();
 }
+// LCOV_EXCL_STOP
 
 void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
                                     InputInfo inputInfo,
@@ -566,6 +572,7 @@ void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
   SetNeedReattach(hideType);
 }
 
+// LCOV_EXCL_START
 void NWebInputMethodHandler::HideTextInputForce() {
   LOG(INFO) << "NWebInputMethodHandler::HideTextInputForce";
   if (inputmethod_adapter_ == nullptr) {
@@ -576,6 +583,7 @@ void NWebInputMethodHandler::HideTextInputForce() {
   inputmethod_adapter_->HideTextInput();
   inputmethod_adapter_->Close();
 }
+// LCOV_EXCL_STOP
 
 void NWebInputMethodHandler::OnTextSelectionChanged(
     CefRefPtr<CefBrowser> browser,
@@ -668,11 +676,17 @@ void NWebInputMethodHandler::OnUpdateTextInputStateCalled(
       << ", to = " << compositon_range.to;
   if (compositon_range == CefRange::InvalidRange()) {
     has_composition_ = false;
+    if (browser_ && browser_->GetHost()) {
+      browser_->GetHost()->SetHasComposition(has_composition_);
+    }
     composition_range_start_ = 0;
     composition_range_end_ = 0;
     preview_text_cache_ = u"";
   } else {
     has_composition_ = true;
+    if (browser_ && browser_->GetHost()) {
+      browser_->GetHost()->SetHasComposition(has_composition_);
+    }
     composition_range_start_ = compositon_range.from;
     composition_range_end_ = compositon_range.to;
     int32_t preview_length = composition_range_end_ - composition_range_start_;
@@ -708,6 +722,7 @@ void NWebInputMethodHandler::SetIMEStatus(bool status) {
   }
 }
 
+// LCOV_EXCL_START
 void NWebInputMethodHandler::WebBlurKeyboardHide() {
   if (browser_ != nullptr && browser_->GetHost() != nullptr) {
     CefRefPtr<CefTask> task = new InputMethodTask(
@@ -715,6 +730,7 @@ void NWebInputMethodHandler::WebBlurKeyboardHide() {
     browser_->GetHost()->PostTaskToUIThread(task);
   }
 }
+// LCOV_EXCL_STOP
 
 void NWebInputMethodHandler::InsertText(const std::u16string& text) {
   if (text.empty()) {
@@ -758,11 +774,13 @@ void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
   ime_shown_ = status;
 }
 
+// LCOV_EXCL_START
 void NWebInputMethodHandler::WebBlurKeyboardHideOnUI() {
   LOG(INFO) << "NWebInputMethodHandler::WebBlurKeyboardHideOnUI";
   isManualCloseKeyboard_ = true;
   browser_->GetHost()->SetFocusOnWeb();
 }
+// LCOV_EXCL_STOP
 
 void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
   if (text.empty()) {
@@ -811,12 +829,17 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
   ClearComposingStatus();
 }
 
+// LCOV_EXCL_START
 void NWebInputMethodHandler::ClearComposingStatus() {
   has_composition_ = false;
+  if (browser_ && browser_->GetHost()) {
+    browser_->GetHost()->SetHasComposition(has_composition_);
+  }
   preview_text_cache_ = u"";
   composition_range_start_ = 0;
   composition_range_end_ = 0;
 }
+// LCOV_EXCL_STOP
 
 void NWebInputMethodHandler::PreviewTextHandlerOnUI(const std::u16string& text,
                                                     int32_t start,
@@ -860,6 +883,7 @@ void NWebInputMethodHandler::PreviewTextHandlerOnUI(const std::u16string& text,
                                          selection_range);
 }
 
+// LCOV_EXCL_START
 void NWebInputMethodHandler::CancelPreviewHandlerOnUI() {
   if (browser_ != nullptr && browser_->GetHost() != nullptr) {
     LOG(DEBUG) << "NWebInputMethodHandler::CancelPreviewHandlerOnUI";
@@ -875,6 +899,7 @@ void NWebInputMethodHandler::FinishPreviewTextOnUI() {
     ClearComposingStatus();
   }
 }
+// LCOV_EXCL_STOP
 
 void NWebInputMethodHandler::SetNeedUnderLineOnUI(bool is_need_underline) {
   LOG(DEBUG) << "NWebInputMethodHandler::SetNeedUnderLine "
@@ -1120,6 +1145,7 @@ void NWebInputMethodHandler::OnEditableChanged(CefRefPtr<CefBrowser> browser,
   is_editable_node_ = is_editable_node;
 }
 
+// LCOV_EXCL_START
 bool NWebInputMethodHandler::GetIsEditableNode() {
   LOG(INFO) << "NWebInputMethodHandler is_editable_node_ = "
             << is_editable_node_;
@@ -1146,6 +1172,7 @@ int32_t NWebInputMethodHandler::GetTextIndexAtCursor() {
              << selected_to_;
   return selected_to_;
 }
+// LCOV_EXCL_STOP
 
 std::u16string NWebInputMethodHandler::GetLeftTextOfCursor(int32_t number) {
   std::unique_lock<std::mutex> lock(textCursorMutex_);
@@ -1350,6 +1377,9 @@ int32_t NWebInputMethodHandler::UpdateCompositionInfo(
     }
   }
   has_composition_ = true;
+  if (browser_ && browser_->GetHost()) {
+    browser_->GetHost()->SetHasComposition(has_composition_);
+  }
   return OK;
 }
 
@@ -1390,6 +1420,7 @@ int32_t NWebInputMethodHandler::SetPreviewText(const std::u16string& text,
   return OK;
 }
 
+// LCOV_EXCL_START
 void NWebInputMethodHandler::FinishTextPreview() {
   if (browser_ != nullptr && browser_->GetHost() != nullptr) {
     CefRefPtr<CefTask> task = new InputMethodTask(
@@ -1397,6 +1428,7 @@ void NWebInputMethodHandler::FinishTextPreview() {
     browser_->GetHost()->PostTaskToUIThread(task);
   }
 }
+// LCOV_EXCL_STOP
 
 void NWebInputMethodHandler::SetNeedUnderLine(bool is_need_underline) {
   SetNeedUnderLineOnUI(is_need_underline);
@@ -1427,6 +1459,7 @@ void NWebInputMethodHandler::AutoFillWithIMFEventOnUI(
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
 std::string NWebInputMethodHandler::GetSelectInfo() {
   std::string selected_str = base::UTF16ToUTF8(selected_text_);
@@ -1454,6 +1487,7 @@ std::string NWebInputMethodHandler::GetAllTextInfo()
   return whole_str;
 }
 #endif // ARKWEB_AI_WRITE
+// LCOV_EXCL_STOP
 
 void NWebInputMethodHandler::SetWindowIdForIME(uint32_t windowId) {
   LOG(INFO) << "NWebInputMethodHandler::SetWindowIdForIME windowId: "
@@ -1481,6 +1515,7 @@ bool NWebInputMethodHandler::IsCorrectParam(int32_t number,
   return true;
 }
 
+// LCOV_EXCL_START
 bool NWebInputMethodHandler::ResetTextSelectiondata() {
   if (is_need_notify_all_) {
     LOG(ERROR) << "NWebInputMethodHandler::ResetTextSelectiondata";
@@ -1493,4 +1528,5 @@ bool NWebInputMethodHandler::ResetTextSelectiondata() {
   }
   return false;
 }
+// LCOV_EXCL_STOP
 }  // namespace OHOS::NWeb

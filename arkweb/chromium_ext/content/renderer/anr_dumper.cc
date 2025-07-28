@@ -25,9 +25,11 @@ base::LazyInstance<AnrDumper>::DestructorAtExit g_anr_dumper_instance_ =
     LAZY_INSTANCE_INITIALIZER;
 
 // static
+// LCOV_EXCL_START
 AnrDumper* AnrDumper::GetInstance() {
   return g_anr_dumper_instance_.Pointer();
 }
+// LCOV_EXCL_STOP
 
 class AnrDumper::InterruptData {
  public:

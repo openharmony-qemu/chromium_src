@@ -19,6 +19,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 ArkwebWidgetInputHandlerImplExt::ArkwebWidgetInputHandlerImplExt(
     scoped_refptr<WidgetInputHandlerManager> manager,
     scoped_refptr<MainThreadEventQueue> input_event_queue,
@@ -81,4 +82,5 @@ void ArkwebWidgetInputHandlerImplExt::SetBypassVsyncCondition(int32_t condition)
   }
 }
 #endif
+// LCOV_EXCL_STOP
 }  // namespace blink

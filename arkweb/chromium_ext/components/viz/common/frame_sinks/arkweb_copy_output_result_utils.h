@@ -21,6 +21,7 @@
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include <string>
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#include "components/viz/service/gl/gpu_service_impl.h"
 #include "ui/gfx/geometry/rect.h"
 #endif
 namespace viz {
@@ -32,9 +33,9 @@ class ArkwebCopyOutputResultUtils {
   ArkwebCopyOutputResultUtils(CopyOutputResult* copyOutputResult);
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  void SetImplOnGpu(SkiaOutputSurfaceImplOnGpu* impl_on_gpu);
+  void SetGpuServiceImpl(GpuServiceImpl* gpu_service_impl);
 
-  SkiaOutputSurfaceImplOnGpu* ImplOnGpu() const;
+  GpuServiceImpl* GetGpuServiceImpl() const;
 
   void SetBlanklessKey(uint64_t blankless_key);
 
@@ -54,10 +55,10 @@ class ArkwebCopyOutputResultUtils {
 #endif
 
  private:
-  CopyOutputResult* copyOutputResult_;
+  raw_ptr<CopyOutputResult> copyOutputResult_;
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  SkiaOutputSurfaceImplOnGpu* impl_on_gpu_ = nullptr;
+  raw_ptr<GpuServiceImpl> gpu_service_impl_ = nullptr;
   uint64_t blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
   int32_t lcp_time_ = 0;
   int64_t pref_hash_ = 0;

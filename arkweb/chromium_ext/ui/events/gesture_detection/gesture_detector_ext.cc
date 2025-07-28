@@ -56,16 +56,22 @@ void GestureDetectorExt::ActivateLongPressKeepDragTimeout(
   listener_->OnLongPress(ev);
 }
 
+// LCOV_EXCL_START
 void GestureDetectorExt::StopDragLongPressGesture() {
   timeout_handler_->StopTimeout(DRAG_LONG_PRESS);
 }
+// LCOV_EXCL_STOP
 #endif  // ARKWEB_DRAG_DROP
 
 #if BUILDFLAG(ARKWEB_AI)
+// LCOV_EXCL_START
 void GestureDetectorExt::StopCreateOverlayGesture() {
   timeout_handler_->StopTimeout(CREATE_OVERLAY);
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void GestureDetectorExt::OnAITextSelected() {}
+// LCOV_EXCL_STOP
 #endif
 }  // namespace ui

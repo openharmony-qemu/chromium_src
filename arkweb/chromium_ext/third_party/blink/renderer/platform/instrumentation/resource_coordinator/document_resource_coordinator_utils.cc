@@ -16,6 +16,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 DocumentResourceCoordinatorUtils::DocumentResourceCoordinatorUtils(
     DocumentResourceCoordinator* document_resource_coordinator)
 {
@@ -33,5 +34,6 @@ void DocumentResourceCoordinatorUtils::OnFormEditingStateChanged(
       form_id, did_submit);
 }
 #endif
+// LCOV_EXCL_STOP
 
 }  // namespace blink

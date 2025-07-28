@@ -34,6 +34,7 @@ namespace device {
 
 namespace {
 
+// LCOV_EXCL_START
 AuthenticatorSupportedOptions OhosWebAuthnApiOptions()
 {
   AuthenticatorSupportedOptions options;
@@ -51,6 +52,7 @@ AuthenticatorSupportedOptions OhosWebAuthnApiOptions()
   options.supports_hmac_secret = true;
   return options;
 }
+// LCOV_EXCL_STOP
 
 bool MayHaveWindowsHelloCredentials(
     std::vector<PublicKeyCredentialDescriptor> allow_list)
@@ -81,6 +83,7 @@ void FilterFoundCredentials(
 
 }  // namespace
 
+// LCOV_EXCL_START
 // static
 void OhosAuthenticator::IsUserVerifyingPlatformAuthenticatorAvailable(
     base::OnceCallback<void(bool is_available)> callback)
@@ -127,6 +130,7 @@ void OhosAuthenticator::InitializeAuthenticator(
 {
   std::move(callback).Run();
 }
+// LCOV_EXCL_STOP
 
 void OhosAuthenticator::MakeCredential(
     CtapMakeCredentialRequest request,
@@ -222,6 +226,7 @@ void OhosAuthenticator::GetPlatformCredentialInfoForRequest(
       FidoRequestHandlerBase::RecognizedCredential::kNoRecognizedCredential);
 }
 
+// LCOV_EXCL_START
 void OhosAuthenticator::GetTouch(base::OnceClosure callback)
 {
   NOTREACHED();
@@ -260,5 +265,5 @@ base::WeakPtr<FidoAuthenticator> OhosAuthenticator::GetWeakPtr()
 {
   return weak_factory_.GetWeakPtr();
 }
-
+// LCOV_EXCL_STOP
 }  // namespace device

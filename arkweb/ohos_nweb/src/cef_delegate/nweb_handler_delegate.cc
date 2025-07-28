@@ -156,6 +156,10 @@
 #include "content/browser/media/media_web_contents_observer.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#endif
+
 namespace OHOS::NWeb {
 namespace {
 
@@ -622,12 +626,6 @@ void NWebHandlerDelegate::RegisterNWebHandler(
   if (render_handler_ != nullptr) {
     render_handler_->RegisterNWebHandler(handler);
   }
-}
-
-void NWebHandlerDelegate::SetInputMethodClient(
-    CefRefPtr<NWebInputMethodClient> client) {
-  LOG(INFO) << "SetInputMethodClient";
-  input_method_client_ = client;
 }
 
 void NWebHandlerDelegate::RegisterNWebJavaScriptCallBack(
@@ -1102,6 +1100,9 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
         GetBrowser()->SetBackForwardCacheOptions(cache_size,
                                                  cache_time_to_live);
       }
+    }
+    if (main_browser_ && main_browser_->GetHost()) {
+      main_browser_->GetHost()->SetMediaResumeFromBFCachePage(media_resume_from_bfcache_page_);
     }
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
@@ -1775,6 +1776,14 @@ bool NWebHandlerDelegate::OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  std::optional<int32_t> nweb_id;
+  if (base::ohos::BlanklessController::CheckGlobalProperty() && GetBrowser() && frame) {
+    nweb_id = GetBrowser()->GetNWebId();
+    base::ohos::BlanklessController::GetInstance().ResetStatus(nweb_id.value(), frame->IsMain(), is_redirect);
+  }
+#endif
+
   CefRequest::HeaderMap cef_request_headers;
   request->GetHeaderMap(cef_request_headers);
   std::map<std::string, std::string> request_headers;
@@ -1790,9 +1799,14 @@ bool NWebHandlerDelegate::OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
     LOG(DEBUG) << "NWebHandlerDelegate::OnBeforeBrowse "
                   "OnHandleInterceptUrlLoading result: "
                << result;
-    return result;
+  } else {
+    LOG(DEBUG) << "NWebHandlerDelegate::OnBeforeBrowse result: " << result;
   }
-  LOG(DEBUG) << "NWebHandlerDelegate::OnBeforeBrowse result: " << result;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (nweb_id.has_value()) {
+    base::ohos::BlanklessController::GetInstance().ResetStatus(nweb_id.value(), true, false);
+  }
+#endif
   return result;
 }
 
@@ -2149,10 +2163,6 @@ void NWebHandlerDelegate::KeyboardReDispatch(const CefKeyEvent& event,
     if (keyCode == -1) {
       return;
     }
-    if (keyCode == NWebInputDelegate::CefConverter("ohoskeycode", static_cast<int32_t>(ui::VKEY_TAB)) &&
-        action == static_cast<int32_t>(OHOS::NWeb::NWebKeyEvent::KeyEventAction::KEY_DOWN_ACTION) && isUsed) {
-        return;
-    }
     std::shared_ptr<NWebKeyEvent> nwebEvent =
         std::make_shared<NWebKeyEventImpl>(action, keyCode);
     return nweb_handler_->KeyboardReDispatch(nwebEvent, isUsed);
@@ -2167,7 +2177,7 @@ void NWebHandlerDelegate::OnTakeFocus(CefRefPtr<CefBrowser> browser,
       "ohoskeycode", static_cast<int32_t>(ui::VKEY_TAB));
   std::shared_ptr<NWebKeyEvent> nwebEvent =
       std::make_shared<NWebKeyEventImpl>(0, keyCode);
-  return nweb_handler_->KeyboardReDispatch(nwebEvent, false);
+  return nweb_handler_->OnTakeFocus(nwebEvent);
 }
 
 bool NWebHandlerDelegate::IsCurrentFocus() {
@@ -2661,6 +2671,19 @@ void NWebHandlerDelegate::UpdateFavicon(CefRefPtr<CefBrowser> browser) {
       &data, color_type, alpha_type, width, height);
   SetFavicon(data, width, height, ImageColorType(color_type),
              ImageAlphaType(alpha_type));
+  if (data == nullptr) {
+    LOG(ERROR) << "data is null";
+    return;
+  }
+  if (nweb_handler_) {
+    nweb_handler_->OnPageIcon(data, width, height,
+                              ImageColorType(color_type),
+                              ImageAlphaType(alpha_type));
+  }
+}
+
+void NWebHandlerDelegate::SetMediaResumeFromBFCachePage(bool resume) {
+  media_resume_from_bfcache_page_ = resume;
 }
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
@@ -3536,8 +3559,8 @@ bool NWebHandlerDelegate::RunContextMenu(
           params, render_handler_->GetVirtualPixelRatio(), view_port_height);
   std::shared_ptr<NWebContextMenuCallback> nweb_callback =
       std::make_shared<NWebContextMenuCallbackImpl>(callback);
-  if (input_method_client_) {
-    bool has_composition = input_method_client_->HasComposition();
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    bool has_composition = GetBrowser()->GetHost()->GetHasComposition();
     LOG(INFO) << "NWebHandlerDelegate has_composition " << has_composition;
     if (has_composition) {
       LOG(INFO) << "NWebHandlerDelegate input has composition";
@@ -3610,8 +3633,8 @@ bool NWebHandlerDelegate::RunQuickMenu(
   }
 
   LOG(INFO) << "NWebHandlerDelegate RunQuickMenu ";
-  if (input_method_client_) {
-    bool has_composition = input_method_client_->HasComposition();
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    bool has_composition = GetBrowser()->GetHost()->GetHasComposition();
     LOG(INFO) << "NWebHandlerDelegate has_composition " << has_composition;
     if (has_composition) {
       LOG(INFO) << "NWebHandlerDelegate input has composition";
@@ -4946,33 +4969,6 @@ void NWebHandlerDelegate::HandleSafeBrowsingDetection(int detectMode,
       nweb_id_, detectMode, detectSwitch, url);
 #else
   OnSafeBrowsingDetectionResult(-1, -1, "", url);
-#endif
-#endif
-}
-
-//#if BUILDFLAG(IS_ARKWEB_EXT)
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-void NWebHandlerDelegate::OnSafeBrowsingDetectionResult(
-    int code,
-    int policy,
-    const std::string& mappingType,
-    const std::string& url) {
-  LOG(INFO) << "code is " << code << ",policy is " << policy
-            << ",mapping type is " << mappingType << ",nweb id is " << nweb_id_;
-  if (safe_browsing_detection_callback_ == nullptr) {
-    return;
-  }
-
-  safe_browsing_detection_callback_->OnDetectionResult(code, policy,
-                                                       mappingType, url);
-}
-#endif
-
-void NWebHandlerDelegate::SetSafeBrowsingDetectionCallback(
-    CefRefPtr<CefSafeBrowsingDetectionCallback> callback) {
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-  safe_browsing_detection_callback_ = callback;
 #endif
 #endif
 }

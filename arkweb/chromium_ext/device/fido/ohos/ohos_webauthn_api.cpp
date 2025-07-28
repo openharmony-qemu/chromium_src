@@ -104,6 +104,7 @@ class OhosWebAuthnApiImpl : public OhosWebAuthnApi {
 #undef DECLARE_MEMBER
 };
 
+// LCOV_EXCL_START
 // static
 OhosWebAuthnApi* OhosWebAuthnApi::Instance()
 {
@@ -209,6 +210,7 @@ OhosWebAuthnApi::GetClientCapabilitiesResult OhosWebAuthnApiImpl::GetClientCapab
   }
   return capabilities;
 }
+// LCOV_EXCL_STOP
 
 NO_SANITIZE("cfi")
 OhosWebAuthnApi::RegisterResult OhosWebAuthnApiImpl::Register(

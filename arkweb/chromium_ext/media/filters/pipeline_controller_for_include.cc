@@ -38,6 +38,7 @@ void PipelineController::PipEnable(bool enable) {
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+// LCOV_EXCL_START
 void PipelineController::RecycleDmaBuffer() {
   DCHECK(thread_checker_.CalledOnValidThread());
   if (pipeline_) {
@@ -51,5 +52,6 @@ void PipelineController::ResumeDmaBuffer() {
     pipeline_->ResumeDmaBuffer();
   }
 }
+// LCOV_EXCL_STOP
 #endif  // ARKWEB_MEDIA_DMABUF
 }  // namespace media

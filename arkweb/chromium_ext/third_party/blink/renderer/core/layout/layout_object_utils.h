@@ -16,10 +16,12 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_LAYOUT_LAYOUT_OBJECT_UTILS_H_
 
 #include "third_party/blink/renderer/core/layout/layout_object.h"
+#include "third_party/blink/renderer/platform/heap/persistent.h"
+
 namespace blink {
 class CORE_EXPORT LayoutObjectUtils {
  public:
-  LayoutObject* layout_object_;
+  Persistent<LayoutObject> layout_object_;
   LayoutObjectUtils(LayoutObject* impl);
 
 #if BUILDFLAG(ARKWEB_MENU)

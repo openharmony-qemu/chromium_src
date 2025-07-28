@@ -14,7 +14,9 @@
  */
 
 #include "base/functional/callback_helpers.h"
+#define private public
 #include "ohos_media_decoder_bridge_impl.h"
+#undef private
 #include "ohos_adapter_helper.h" 
 #include "testing/gmock/include/gmock/gmock.h"
 #include <memory>
@@ -1213,5 +1215,246 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBufferEOS_ShouldReturnError_Wh
   auto expected_result = DecoderAdapterCode::DECODER_ERROR;
   auto actual_result = bridge_->QueueInputBufferEOS();
   ASSERT_EQ(expected_result, actual_result);
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, ReleaseOutputBuffer_ShoulReturnError_WhenDecoderIsNull) {
+  SetVideoDecoder(nullptr);
+  auto expected_result = DecoderAdapterCode::DECODER_ERROR;
+  auto actual_result = bridge_->ReleaseOutputBuffer(0, true);
+  ASSERT_EQ(expected_result, actual_result);
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, PopOutqueueDec_ShoulReturn_WhenSignalIsNull) {
+  SetSignal(nullptr);
+  auto expected_result = DecoderAdapterCode::DECODER_ERROR;
+  PopOutqueueDec();
+  auto actual_result = DecoderAdapterCode::DECODER_OK;
+  ASSERT_NE(expected_result, actual_result);
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, DequeueOutputBuffer_ShouldReturnError_WhenSignalIsNull) {
+  SetSignal(nullptr);
+  base::TimeDelta presentation_time;
+  uint32_t index = 1;
+  bool eos = true;
+  auto expected_result = DecoderAdapterCode::DECODER_ERROR;
+  auto actual_result = bridge_->DequeueOutputBuffer(&presentation_time, index, eos);
+  ASSERT_EQ(expected_result, actual_result);
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, DequeueOutputBuffer_ShouldReturnError_WhenIsOnErrorIsTrue) {
+  auto mock_signal = make_shared<NiceMock<MockDecoderBridgeSignal>>();
+  mock_signal->isOnError_ = true;
+  SetSignal(mock_signal);
+  base::TimeDelta presentation_time;
+  uint32_t index = 1;
+  bool eos = true;
+  auto expected_result = DecoderAdapterCode::DECODER_ERROR;
+  auto actual_result = bridge_->DequeueOutputBuffer(&presentation_time, index, eos);
+  ASSERT_EQ(expected_result, actual_result);
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, DequeueOutputBuffer_ShouldReturnRetry_WhenIsDecoderFlushingIsTrue) {
+  auto mock_signal = make_shared<NiceMock<MockDecoderBridgeSignal>>();
+  mock_signal->isOnError_ = false;
+  mock_signal->isDecoderFlushing_.store(true);
+  SetSignal(mock_signal);
+  base::TimeDelta presentation_time;
+  uint32_t index = 1;
+  bool eos = true;
+  auto expected_result = DecoderAdapterCode::DECODER_RETRY;
+  auto actual_result = bridge_->DequeueOutputBuffer(&presentation_time, index, eos);
+  ASSERT_EQ(expected_result, actual_result);
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, DequeueOutputBuffer_ShouldReturnRetry_WhenOuputQueueIsEmpty) {
+  auto mock_signal = make_shared<NiceMock<MockDecoderBridgeSignal>>();
+  mock_signal->isOnError_ = false;
+  mock_signal->isDecoderFlushing_.store(false);
+  SetSignal(mock_signal);
+  base::TimeDelta presentation_time;
+  uint32_t index = 1;
+  bool eos = true;
+  auto expected_result = DecoderAdapterCode::DECODER_RETRY;
+  auto actual_result = bridge_->DequeueOutputBuffer(&presentation_time, index, eos);
+  ASSERT_EQ(expected_result, actual_result);
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, DequeueOutputBuffer_ShouldReturnError_WhenDecoderIsNull) {
+  auto mock_signal = make_shared<NiceMock<MockDecoderBridgeSignal>>();
+  mock_signal->isOnError_ = false;
+  mock_signal->isDecoderFlushing_.store(false);
+  base::TimeDelta presentation_time;
+  uint32_t index = 0;
+  bool eos = true;
+  BufferFlag outputBufferFlag = BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA;
+  BufferInfo outputBufferInfo = {0, 0, 0};
+  VideoBridgeDecoderOutputBuffer buffer = {10, outputBufferFlag,
+                                           outputBufferInfo};
+  mock_signal->outputQueue_.push(buffer);
+  SetSignal(mock_signal);
+  SetVideoDecoder(nullptr);
+  auto expected_result = DecoderAdapterCode::DECODER_ERROR;
+  auto actual_result = bridge_->DequeueOutputBuffer(&presentation_time, index, eos);
+  ASSERT_EQ(expected_result, actual_result);
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, DequeueOutputBuffer_ShouldReturnOk_WhenPushInbufferDecSucceeds) {
+  auto mock_signal = make_shared<NiceMock<MockDecoderBridgeSignal>>();
+  mock_signal->isOnError_ = false;
+  mock_signal->isDecoderFlushing_.store(false);
+  const uint8_t* data = reinterpret_cast<const uint8_t*>("testdata");
+  size_t data_size = strlen(reinterpret_cast<const char*>(data));
+  base::TimeDelta presentation_time;
+  uint32_t index = 0;
+  bool eos = true;
+  BufferFlag outputBufferFlag = BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA;
+  BufferInfo outputBufferInfo = {0, 0, 0};
+  VideoBridgeDecoderOutputBuffer buffer = {10, outputBufferFlag,
+                                           outputBufferInfo};
+  mock_signal->outputQueue_.push(buffer);
+  SetSignal(mock_signal);
+  auto mock_video_decoder = std::make_unique<MockMediaCodecDecoderAdapter>();
+  SetVideoDecoder(std::move(mock_video_decoder));
+
+  auto expected_result = DecoderAdapterCode::DECODER_OK;
+  auto actual_result = bridge_->DequeueOutputBuffer(&presentation_time, index, eos);
+  ASSERT_EQ(expected_result, actual_result);
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, DestoryNativeWindow_ShouldReturn_WhenWindowIsNull) {
+  void* window = nullptr;
+  bridge_->DestoryNativeWindow(window);
+  ASSERT_FALSE(window);
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, OnError_ShouldReturn_WhenSignalIsNull) {
+  SetSignal(nullptr);
+  ErrorType errorType = ErrorType::CODEC_ERROR_INTERNAL;
+  int32_t errorCode = 12;
+  callback_->signal_ = nullptr;
+  callback_->OnError(errorType, errorCode);
+  ASSERT_EQ(callback_->signal_, nullptr);
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedInputData) {
+  base::Thread thread("ExampleThread");
+  CHECK(thread.Start());
+  scoped_refptr<base::SequencedTaskRunner> task_runner = thread.task_runner();
+  callback_->decoder_callback_task_runner_ = task_runner;
+  callback_->on_buffers_available_cb_ = base::DoNothing();
+  uint32_t index = 1;
+  auto mock_buffer = make_shared<InheritOhosBufferAdapter>();
+
+  callback_->OnNeedInputData(index, mock_buffer);
+  thread.Stop();
+  ASSERT_FALSE(signal_->inputQueue_.empty());
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedInputData_ShouldReturn_WhenSignalIsNull) {
+  base::Thread thread("ExampleThread");
+  CHECK(thread.Start());
+  scoped_refptr<base::SequencedTaskRunner> task_runner = thread.task_runner();
+  callback_->decoder_callback_task_runner_ = task_runner;
+  callback_->on_buffers_available_cb_ = base::DoNothing();
+  uint32_t index = 1;
+  auto mock_buffer = make_shared<NiceMock<OHOS::NWeb::OhosBufferAdapter>>();
+  callback_->signal_ = nullptr;
+
+  callback_->OnNeedInputData(index, mock_buffer);
+  thread.Stop();
+  ASSERT_TRUE(signal_->inputQueue_.empty());
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedInputData_ShouldReturn_WhenDecoderFlushingIsTrue) {
+  base::Thread thread("ExampleThread");
+  CHECK(thread.Start());
+  scoped_refptr<base::SequencedTaskRunner> task_runner = thread.task_runner();
+  callback_->decoder_callback_task_runner_ = task_runner;
+  callback_->on_buffers_available_cb_ = base::DoNothing();
+  uint32_t index = 1;
+  auto mock_buffer = make_shared<NiceMock<OHOS::NWeb::OhosBufferAdapter>>();
+  callback_->signal_->isDecoderFlushing_.store(true);
+
+  callback_->OnNeedInputData(index, mock_buffer);
+  thread.Stop();
+  ASSERT_TRUE(signal_->inputQueue_.empty());
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedInputData_ShouldReturn_WhenBufferIsNull) {
+  base::Thread thread("ExampleThread");
+  CHECK(thread.Start());
+  scoped_refptr<base::SequencedTaskRunner> task_runner = thread.task_runner();
+  callback_->decoder_callback_task_runner_ = task_runner;
+  callback_->on_buffers_available_cb_ = base::DoNothing();
+  uint32_t index = 1;
+  auto mock_buffer = nullptr;
+
+  callback_->OnNeedInputData(index, mock_buffer);
+  thread.Stop();
+  ASSERT_TRUE(signal_->inputQueue_.empty());
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedOutputData) {
+  base::Thread thread("ExampleThread");
+  CHECK(thread.Start());
+  scoped_refptr<base::SequencedTaskRunner> task_runner = thread.task_runner();
+  callback_->decoder_callback_task_runner_ = task_runner;
+  callback_->on_buffers_available_cb_ = base::DoNothing();
+  uint32_t index = 1;
+  BufferFlag flag = BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA;
+  auto mock_info = make_shared<InheritBufferInfoAdapter>();
+
+  callback_->OnNeedOutputData(index, mock_info, flag);
+  thread.Stop();
+  ASSERT_FALSE(signal_->outputQueue_.empty());
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedOutputData_ShouldReturn_WhenInfoIsNull) {
+  base::Thread thread("ExampleThread");
+  CHECK(thread.Start());
+  scoped_refptr<base::SequencedTaskRunner> task_runner = thread.task_runner();
+  callback_->decoder_callback_task_runner_ = task_runner;
+  callback_->on_buffers_available_cb_ = base::DoNothing();
+  uint32_t index = 1;
+  BufferFlag flag = BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA;
+  auto mock_info = nullptr;
+
+  callback_->OnNeedOutputData(index, mock_info, flag);
+  thread.Stop();
+  ASSERT_TRUE(signal_->outputQueue_.empty());
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedOutputData_ShouldReturn_WhenSignalIsNull) {
+  base::Thread thread("ExampleThread");
+  CHECK(thread.Start());
+  scoped_refptr<base::SequencedTaskRunner> task_runner = thread.task_runner();
+  callback_->decoder_callback_task_runner_ = task_runner;
+  callback_->on_buffers_available_cb_ = base::DoNothing();
+  uint32_t index = 1;
+  BufferFlag flag = BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA;
+  auto mock_info = make_shared<InheritBufferInfoAdapter>();
+  callback_->signal_ = nullptr;
+
+  callback_->OnNeedOutputData(index, mock_info, flag);
+  thread.Stop();
+  ASSERT_TRUE(signal_->outputQueue_.empty());
+}
+
+TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedOutputData_ShouldReturn_WhenDecoderFlushingIsTrue) {
+  base::Thread thread("ExampleThread");
+  CHECK(thread.Start());
+  scoped_refptr<base::SequencedTaskRunner> task_runner = thread.task_runner();
+  callback_->decoder_callback_task_runner_ = task_runner;
+  callback_->on_buffers_available_cb_ = base::DoNothing();
+  uint32_t index = 1;
+  BufferFlag flag = BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA;
+  auto mock_info = make_shared<InheritBufferInfoAdapter>();
+
+  callback_->signal_->isDecoderFlushing_.store(true);
+
+  callback_->OnNeedOutputData(index, mock_info, flag);
+  thread.Stop();
+  ASSERT_TRUE(signal_->outputQueue_.empty());
 }
 }  // namespace media

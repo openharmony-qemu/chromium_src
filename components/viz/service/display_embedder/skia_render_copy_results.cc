@@ -113,7 +113,10 @@ void CopyOutputResultSkiaRGBA::OnReadbackDone(
       context->color_space);
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  result->copy_output_result_utils()->SetImplOnGpu(impl_on_gpu);
+  if (impl_on_gpu->dependency()) {
+    result->copy_output_result_utils()->SetGpuServiceImpl(impl_on_gpu->dependency()->gpu_service_impl());
+    LOG(DEBUG) << "blankless copy_output_result_utils Set gpu_service_impl";
+  }
 #endif
   context->request->SendResult(std::move(result));
 }

@@ -16,11 +16,12 @@
 #define CONTENT_BROWSER_RENDERER_HOST_TEXT_INPUT_MANAGER_UTILS_H__
 
 #include "content/browser/renderer_host/text_input_manager.h"
+#include "base/memory/raw_ptr.h"
 
 namespace content {
 class CONTENT_EXPORT TextInputManagerUtils {
  public:
-  TextInputManager* text_input_manager_;
+  raw_ptr<TextInputManager> text_input_manager_;
   TextInputManagerUtils(TextInputManager* impl);
 
 #if BUILDFLAG(ARKWEB_MENU)

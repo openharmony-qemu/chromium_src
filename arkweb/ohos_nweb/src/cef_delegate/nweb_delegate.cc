@@ -249,23 +249,18 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
       std::shared_ptr<NWebDelegateInterface> delegate)
       : callback_(callback),
         callbackId_(callbackId),
-        weakNWebDelegate_(std::weak_ptr<NWebDelegateInterface>(delegate)) {}
+        nwebDelegate_(delegate) {}
   ~JavaScriptResultCallbackImpl() {}
   void CallbackOnReceiveThread(std::shared_ptr<OHOS::NWeb::NWebMessage> data) {
     if (callback_) {
       callback_->OnReceiveValue(data);
     }
-    if (weakNWebDelegate_.expired()) {
-      LOG(INFO) << "weakNWebDelegate_ expired";
-      return;
-    }
     // post this instance to ui to destroy
-    auto delegate = weakNWebDelegate_.lock();
-    if (delegate) {
+    if (nwebDelegate_) {
       CEF_POST_TASK(
           CEF_UIT,
           base::BindOnce(&NWebDelegateInterface::EraseJavaScriptCallbackImpl,
-                         delegate, callbackId_));
+                         nwebDelegate_, callbackId_));
     }
   }
 
@@ -285,7 +280,7 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
  private:
   std::shared_ptr<NWebMessageValueCallback> callback_;
   uint32_t callbackId_;
-  std::weak_ptr<NWebDelegateInterface> weakNWebDelegate_;
+  std::shared_ptr<NWebDelegateInterface> nwebDelegate_;
 
   IMPLEMENT_REFCOUNTING(JavaScriptResultCallbackImpl);
 };
@@ -960,13 +955,6 @@ void NWebDelegate::SetInputMethodClient(
     return;
   }
   render_handler_->SetInputMethodClient(client);
-
-  if (handler_delegate_ == nullptr) {
-    LOG(ERROR)
-        << "fail to register inputmethod client, delegate handler is nullptr";
-    return;
-  }
-  handler_delegate_->SetInputMethodClient(client);
 }
 
 void NWebDelegate::RegisterRenderCb(
@@ -1088,14 +1076,6 @@ void NWebDelegate::OnTouchRelease(int32_t id,
                                    y / default_virtual_pixel_ratio_,
                                    from_overlay);
   }
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  if (accessibility_state_) {
-    auto* accessibilityManager = GetAccessibilityManager();
-    if (accessibilityManager != nullptr) {
-      accessibilityManager->HitTest(gfx::Point(0, 0), 0);
-    }
-  }
-#endif
 }
 
 void NWebDelegate::OnTouchMove(
@@ -3975,9 +3955,6 @@ void NWebDelegate::OnSafeBrowsingDetectionResult(int code,
   if (handler_delegate_ == nullptr) {
     return;
   }
-
-  handler_delegate_->OnSafeBrowsingDetectionResult(code, policy, mappingType,
-                                                   url);
 }
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
@@ -5418,6 +5395,19 @@ void NWebDelegate::SetBackForwardCacheOptions(int32_t size,
   }
 
   GetBrowser()->SetBackForwardCacheOptions(size, timeToLive);
+}
+
+void NWebDelegate::SetMediaResumeFromBFCachePage(bool resume) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    if (!handler_delegate_) {
+      LOG(ERROR)
+          << "failed to set media resume from bfcache page, handler delegate is null";
+      return;
+    }
+    handler_delegate_->SetMediaResumeFromBFCachePage(resume);
+    return;
+  }
+  GetBrowser()->GetHost()->SetMediaResumeFromBFCachePage(resume);
 }
 #endif
 

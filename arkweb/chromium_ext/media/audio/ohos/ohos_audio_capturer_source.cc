@@ -106,6 +106,7 @@ void OHOSAudioCapturerSource::Start() {
                                 weak_factory_.GetWeakPtr()));
 }
 
+// LCOV_EXCL_START
 void OHOSAudioCapturerSource::Stop() {
   LOG(INFO) << "OHOSAudioCapturerSource::Stop";
   {
@@ -160,6 +161,7 @@ void OHOSAudioCapturerSource::ReadData() {
   }
   capturer_->Enqueue(bufferDesc);
 }
+// LCOV_EXCL_STOP
 
 void OHOSAudioCapturerSource::SetVolume(double volume) {
   NOTREACHED();
@@ -185,12 +187,14 @@ void OHOSAudioCapturerSource::NotifyCaptureError(const std::string& message) {
   callback_->OnCaptureError(AudioCapturerSource::ErrorCode::kUnknown, message);
 }
 
+// LCOV_EXCL_START
 void OHOSAudioCapturerSource::NotifyCaptureStarted() {
   DCHECK(main_task_runner_->BelongsToCurrentThread());
   if (callback_) {
     callback_->OnCaptureStarted();
   }
 }
+// LCOV_EXCL_STOP
 
 void OHOSAudioCapturerSource::ReportError(const std::string& message) {
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());

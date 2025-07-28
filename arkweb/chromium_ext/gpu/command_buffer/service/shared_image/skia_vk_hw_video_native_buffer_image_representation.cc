@@ -36,6 +36,7 @@ namespace {
 const uint32_t kSemaphoresVectorSize = 2;
 }
 
+//LCOV_EXCL_START
 SkiaVkHWVideoNBImageRepresentation::SkiaVkHWVideoNBImageRepresentation(
     SharedImageManager* manager,
     OhosImageBacking* backing,
@@ -64,6 +65,7 @@ SkiaVkHWVideoNBImageRepresentation::~SkiaVkHWVideoNBImageRepresentation()
         std::move(vulkan_image_));
   }
 }
+//LCOV_EXCL_STOP
 
 std::vector<sk_sp<SkSurface>> SkiaVkHWVideoNBImageRepresentation::BeginWriteAccess(
     int final_msaa_count,
@@ -133,6 +135,7 @@ std::vector<sk_sp<GrPromiseImageTexture>> SkiaVkHWVideoNBImageRepresentation::Be
   return {promise_texture_};
 }
 
+//LCOV_EXCL_START
 void SkiaVkHWVideoNBImageRepresentation::EndWriteAccess()
 {
   DCHECK_EQ(mode_, RepresentationAccessMode::kWrite);
@@ -141,6 +144,7 @@ void SkiaVkHWVideoNBImageRepresentation::EndWriteAccess()
 
   EndAccess(false /*readonly=*/);
 }
+//LCOV_EXCL_STOP
 
 std::vector<sk_sp<GrPromiseImageTexture>> SkiaVkHWVideoNBImageRepresentation::BeginReadAccess(
     std::vector<GrBackendSemaphore>* begin_semaphores,
@@ -166,6 +170,7 @@ std::vector<sk_sp<GrPromiseImageTexture>> SkiaVkHWVideoNBImageRepresentation::Be
   return {promise_texture_};
 }
 
+//LCOV_EXCL_START
 void SkiaVkHWVideoNBImageRepresentation::EndReadAccess()
 {
   DCHECK_EQ(mode_, RepresentationAccessMode::kRead);
@@ -199,6 +204,7 @@ VkQueue SkiaVkHWVideoNBImageRepresentation::vk_queue()
       ->GetDeviceQueue()
       ->GetVulkanQueue();
 }
+//LCOV_EXCL_STOP
 
 bool SkiaVkHWVideoNBImageRepresentation::BeginAccess(
     bool readonly,
@@ -249,6 +255,7 @@ bool SkiaVkHWVideoNBImageRepresentation::BeginAccess(
   return true;
 }
 
+//LCOV_EXCL_START
 void SkiaVkHWVideoNBImageRepresentation::EndAccess(bool readonly)
 {
   TRACE_EVENT0("gpu", "SkiaVkHWVideoNBImageRepresentation::EndAccess");
@@ -314,5 +321,6 @@ std::unique_ptr<skgpu::MutableTextureState> SkiaVkHWVideoNBImageRepresentation::
   }
   return nullptr;
 }
+//LCOV_EXCL_STOP
 
 }  // namespace gpu

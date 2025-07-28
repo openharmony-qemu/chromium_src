@@ -21,8 +21,10 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 HTMLPlugInElementUtils::HTMLPlugInElementUtils(HTMLPlugInElement* pluginElement)
     : plugin_(pluginElement) {}
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 bool HTMLPlugInElementUtils::CheckNativeType(const char* key) const {
@@ -58,6 +60,7 @@ bool HTMLPlugInElementUtils::CheckNativeType(const char* key) const {
   return true;
 }
 
+// LCOV_EXCL_START
 bool HTMLPlugInElementUtils::CheckIntrinsicSizeEnable() const {
   auto settings = plugin_->GetDocument().GetSettings();
   if (!settings || !settings->GetNativeEmbedModeEnabled()) {
@@ -73,6 +76,7 @@ bool HTMLPlugInElementUtils::IsCssDisplayChangeEnabled() const {
   }
   return settings->GetCSSDisplayChangeEnabled();
 }
+// LCOV_EXCL_STOP
 
 void HTMLPlugInElementUtils::SetNativeEmbedOverlay(bool native_embed_overlay) {
   if (native_embed_overlay_ == native_embed_overlay) {

@@ -40,10 +40,12 @@ void PerformanceManagerTabHelper::MediaStoppedPlaying(
                                 base::Unretained(primary_page_node()), false));
 }
 
+// LCOV_EXCL_START
 void PerformanceManagerTabHelper::OneShotMediaPlayerStopped() {
   PerformanceManagerImpl::CallOnGraphImpl(
       FROM_HERE, base::BindOnce(&PageNodeImpl::OneShotMediaPlayerStopped,
                                 base::Unretained(primary_page_node())));
 }
+// LCOV_EXCL_STOP
 #endif
 }

@@ -39,7 +39,7 @@ public:
   const std::string ORIGIN = "origin.DEFAULT";
   uint64_t GetAddrWebHandle() { return addr_web_handle_; }
   network::mojom::NetworkContext* GetNetworkContext() const;
-  void StartPage(const net::NetworkAnonymizationKey& networkAnonymizationKey, uint64_t addr_web_handle);
+  void StartPage(const net::NetworkAnonymizationKey networkAnonymizationKey, uint64_t addr_web_handle);
   void OnGetIsolation(const std::string& origin);
 #endif
 

@@ -4323,6 +4323,15 @@ test("base_unittests") {
     sources += arkweb_metrics_unittests_sources
     sources += arkweb_field_trial_utils_unittest_source
   }
+
+  if (arkweb_unittests) {
+    deps += [
+      "//arkweb/ohos_adapter_ndk:adapter_ndk",
+    ]
+    include_dirs = [
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+    ]
+  }
 }
 
 # Test that CFG is enabled in Rust code.

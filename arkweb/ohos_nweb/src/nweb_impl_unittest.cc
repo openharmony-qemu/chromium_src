@@ -113,6 +113,15 @@ class MockNWebCreateInfo : public NWebCreateInfo {
   MOCK_METHOD(bool, GetIsIncognitoMode, (), (override));
 };
 
+class MockNWebAccessRequest : public NWebAccessRequest {
+  public:
+   ~MockNWebAccessRequest() = default;
+   MOCK_METHOD(std::string, Origin, (), (override));
+   MOCK_METHOD(int, ResourceAcessId, (), (override));
+   MOCK_METHOD(void, Agree, (int), (override));
+   MOCK_METHOD(void, Refuse, (), (override));
+}
+
 class NWebImplTest : public ::testing::Test {
  public:
   static void SetUpTestCase(void);
@@ -781,5 +790,100 @@ TEST_F(NWebImplTest, OnDestroyWithNullInitArgs) {
   nweb_impl_->OnDestroy();
   EXPECT_EQ(nweb_impl_->destroyCallback_, nullptr);
 }
+
+#if BUILDFLAG(ARKWEB_EXT_PERMISSION)
+TEST_F(NWebImplTest, GetOrigin001) {
+  NWebPermissionRequest* request = nullptr;
+  auto res = nweb_impl_->GetOrigin(request);
+  EXPECT_EQ(res, "");
+}
+
+TEST_F(NWebImplTest, GetOrigin002) {
+  NWebPermissionRequest* request = new NWebPermissionRequest(0, nullptr);
+  auto res = nweb_impl_->GetOrigin(request);
+  EXPECT_EQ(res, "");
+  delete request;
+}
+
+TEST_F(NWebImplTest, GetOrigin003) {
+  auto temp = std::make_shared<MockNWebAccessRequest>();
+  NWebPermissionRequest* request = new NWebPermissionRequest(0, temp);
+  EXPECT_CALL(*temp, Origin())
+    .WillOnce(::testing::Return("https://example.com"));
+  auto res = nweb_impl_->GetOrigin(request);
+  EXPECT_EQ(res, "https://example.com");
+  delete request;
+}
+
+TEST_F(NWebImplTest, GetResouceId001) {
+  NWebPermissionRequest* request = nullptr;
+  auto res = nweb_impl_->GetResourceId(request);
+  EXPECT_EQ(res, -1);
+}
+
+TEST_F(NWebImplTest, GetResouceId002) {
+  NWebPermissionRequest* request = new NWebPermissionRequest(0, nullptr);
+  auto res = nweb_impl_->GetResourceId(request);
+  EXPECT_EQ(res, -1);
+  delete request;
+}
+
+TEST_F(NWebImplTest, GetResouceId003) {
+  auto temp = std::make_shared<MockNWebAccessRequest>();
+  NWebPermissionRequest* request = new NWebPermissionRequest(0, temp);
+  EXPECT_CALL(*temp, ResourceAcessId())
+    .WillOnce(::testing::Return(999));
+  auto res = nweb_impl_->GetResourceId(request);
+  EXPECT_EQ(res, 999);
+  delete request;
+}
+
+TEST_F(NWebImplTest, Grant001) {
+  NWebPermissionRequest* request = nullptr;
+  int32_t resourse_id = -1;
+  nweb_impl_->Grant(request, resourse_id);
+  EXPECT_NE(nweb_impl_, nullptr);
+}
+
+TEST_F(NWebImplTest, Grant002) {
+  NWebPermissionRequest* request = new NWebPermissionRequest(0, nullptr);
+  int32_t resourse_id = -1;
+  nweb_impl_->Grant(request, resourse_id);
+  EXPECT_NE(nweb_impl_, nullptr);
+  delete request;
+}
+
+TEST_F(NWebImplTest, Grant003) {
+  auto temp = std::make_shared<MockNWebAccessRequest>();
+  NWebPermissionRequest* request = new NWebPermissionRequest(0, temp);
+  int32_t resourse_id = -1;
+  EXPECT_CALL(*temp, Agree(resourse_id)).Times(1);
+  nweb_impl_->Grant(request, resourse_id);
+  EXPECT_NE(nweb_impl_, nullptr);
+  delete request;
+}
+
+TEST_F(NWebImplTest, Deny001) {
+  NWebPermissionRequest* request = nullptr;
+  nweb_impl_->Deny(request);
+  EXPECT_NE(nweb_impl_, nullptr);
+}
+
+TEST_F(NWebImplTest, Deny002) {
+  NWebPermissionRequest* request = new NWebPermissionRequest(0, nullptr);
+  nweb_impl_->Deny(request);
+  EXPECT_NE(nweb_impl_, nullptr);
+  delete request;
+}
+
+TEST_F(NWebImplTest, Deny003) {
+  auto temp = std::make_shared<MockNWebAccessRequest>();
+  NWebPermissionRequest* request = new NWebPermissionRequest(0, temp);
+  EXPECT_CALL(*temp, Refuse()).Times(1);
+  nweb_impl_->Deny(request);
+  EXPECT_NE(nweb_impl_, nullptr);
+  delete request;
+}
+#endif
 }  // namespace OHOS::NWeb
                           

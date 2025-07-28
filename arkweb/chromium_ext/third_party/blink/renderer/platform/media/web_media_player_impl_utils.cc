@@ -140,6 +140,7 @@ WebMediaPlayerImplUtils::WebMediaPlayerImplUtils(WebMediaPlayerImpl* WebMediaPla
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 }
 
+// LCOV_EXCL_START
 void WebMediaPlayerImplUtils::ExitedFullscreenExt() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   bool surface_changed = impl->video_surface_id_ != -1;
@@ -152,6 +153,7 @@ void WebMediaPlayerImplUtils::ExitedFullscreenExt() {
   }
 #endif // ARKWEB_VIDEO_ASSISTANT
 }
+// LCOV_EXCL_STOP
 
 bool WebMediaPlayerImplUtils::DoLoadExt(WebMediaPlayer::CorsMode cors_mode, bool is_cache_disabled) {
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
@@ -173,6 +175,7 @@ bool WebMediaPlayerImplUtils::DoLoadExt(WebMediaPlayer::CorsMode cors_mode, bool
 return false;
 }
 
+// LCOV_EXCL_START
 void WebMediaPlayerImplUtils::PlayExt() {
   impl->pipeline_controller_->SetMediaPlayerState(false);
   if (impl->action_reason_ != media::ActionReason::kNormal) {
@@ -233,6 +236,7 @@ void WebMediaPlayerImplUtils::OnMetadataExt() {
       }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 }
+// LCOV_EXCL_STOP
 
 void WebMediaPlayerImplUtils::OnPageHiddenExt(bool storing_in_bfcache) {
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
@@ -247,6 +251,7 @@ void WebMediaPlayerImplUtils::OnPageHiddenExt(bool storing_in_bfcache) {
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 }
 
+// LCOV_EXCL_START
 void WebMediaPlayerImplUtils::CreateRendererExtSetRendererType() {
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   impl->primitive_renderer_type_ =
@@ -257,6 +262,7 @@ void WebMediaPlayerImplUtils::CreateRendererExtSetRendererType() {
   }
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 }
+// LCOV_EXCL_STOP
 
 std::unique_ptr<media::Renderer> WebMediaPlayerImplUtils::CreateRendererExtConfigRenderer(
     media::RequestOverlayInfoCB request_overlay_info_cb) {
@@ -308,6 +314,7 @@ std::unique_ptr<media::Renderer> WebMediaPlayerImplUtils::CreateRendererExtConfi
   return nullptr;
 }
 
+// LCOV_EXCL_START
 void WebMediaPlayerImplUtils::SetSuspendStateExt() {
   media::RequestSurfaceCB request_surface_cb =
       base::BindPostTaskToCurrentDefault(
@@ -336,6 +343,7 @@ void WebMediaPlayerImplUtils::PauseExt() {
     impl->pipeline_controller_->SetPlaybackRate(0.0);
   }
 }
+// LCOV_EXCL_STOP
 
 void WebMediaPlayerImplUtils::DoSeekExt(base::TimeDelta time) {
 #if BUILDFLAG(ARKWEB_MEDIA)
@@ -385,6 +393,7 @@ bool WebMediaPlayerImplUtils::UpdatePlayStateExt(bool can_auto_suspend) {
   return can_auto_suspend;
 }
 
+// LCOV_EXCL_START
 void WebMediaPlayerImplUtils::SetDelegateStateExt() {
 #if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
   impl->client_->DidPlayerPaused(impl->ended_);
@@ -445,4 +454,5 @@ void WebMediaPlayerImplUtils::ResumeCdmSessionExt() {
   }
 #endif
 }
+// LCOV_EXCL_STOP
 }

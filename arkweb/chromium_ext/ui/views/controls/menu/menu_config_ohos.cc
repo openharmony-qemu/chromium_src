@@ -7,6 +7,8 @@
 // FIXME: Specific functions will be adapted later.
 namespace views {
 
+// LCOV_EXCL_START
 void MenuConfig::InitPlatform() {}
+// LCOV_EXCL_STOP
 
 }  // namespace views

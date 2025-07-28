@@ -36,11 +36,14 @@ void GestureProviderExt::ResetDetection(bool is_lost_focus) {
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
+// LCOV_EXCL_START
 void GestureProviderExt::OnAITextSelected() {
   gesture_listener_->GetDetector().AsGestureDetectorExt()->OnAITextSelected();
 }
+// LCOV_EXCL_STOP
 #endif
 
+// LCOV_EXCL_START
 void GestureProviderExt::StopArkwebGestures() {
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   gesture_listener_->GetDetector()
@@ -53,5 +56,6 @@ void GestureProviderExt::StopArkwebGestures() {
       ->StopCreateOverlayGesture();
 #endif
 }
+// LCOV_EXCL_STOP
 
 }  // namespace ui

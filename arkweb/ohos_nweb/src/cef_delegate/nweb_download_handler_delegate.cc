@@ -150,7 +150,7 @@ NWebDownloadItem* NWebDownloadHandlerDelegate::CreateNWebDownloadItem(
             << ",percent_complete:" << item->percent_complete
             << ",total_bytes:" << item->total_bytes
             << ",received_bytes:" << item->received_bytes
-            << ",full_path:" << item->full_path << ",state:" << item->state
+            << ",full_path:" << DesensitizeStr(item->full_path) << ",state:" << item->state
             << ",received_slices:" << item->received_slices
             << ",last_modified:" << item->last_modified
             << ",etag:" << item->etag;

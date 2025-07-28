@@ -22,7 +22,9 @@
 #include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
 namespace ui {
 
+//LCOV_EXCL_START
 CompositorUtils::CompositorUtils(Compositor* compositor) : compositor_(compositor) {}
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
 void CompositorUtils::SetDrawRect(const gfx::Rect& new_rect) {
@@ -43,6 +45,7 @@ void CompositorUtils::SetDrawMode(const int32_t& mode) {
 }
 #endif
 
+//LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 void CompositorUtils::SetNativeInnerWeb(bool isInnerWeb) {
   isInnerWeb_ = isInnerWeb;
@@ -51,6 +54,7 @@ void CompositorUtils::SetNativeInnerWeb(bool isInnerWeb) {
   }
 }
 #endif
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
 void CompositorUtils::SetBypassVsyncCondition(int32_t condition) {
@@ -61,6 +65,7 @@ void CompositorUtils::SetBypassVsyncCondition(int32_t condition) {
 }
 #endif
 
+//LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 void CompositorUtils::SetShouldFrameSubmissionBeforeDraw(bool should) {
   if (compositor_->display_private_) {
@@ -105,6 +110,7 @@ void CompositorUtils::ResetVSyncFrequency() {
       compositor_->frame_sink_id());
 }
 #endif
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
 void CompositorUtils::SetCurrentFrameSinkId(const viz::FrameSinkId& id) {
@@ -116,6 +122,7 @@ void CompositorUtils::SetCurrentFrameSinkId(const viz::FrameSinkId& id) {
 }
 #endif
 
+//LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
 void CompositorUtils::DisableSwapUntilMaximized() {
   if (compositor_->display_private_) {
@@ -132,5 +139,6 @@ void CompositorUtils::SetPipActive(bool active) {
     active, compositor_->frame_sink_id());
 }
 #endif
+//LCOV_EXCL_STOP
 
 } // namespace ui

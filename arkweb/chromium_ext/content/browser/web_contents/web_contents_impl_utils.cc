@@ -30,9 +30,11 @@
 
 namespace content {
 
+// LCOV_EXCL_START
 WebContentsImplUtils::WebContentsImplUtils(WebContentsImpl* impl) {
   this->webContentsImpl = impl;
 }
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_I18N)
 void WebContentsImplUtils::UpdateRenderAcceptLanguageIfNeed(

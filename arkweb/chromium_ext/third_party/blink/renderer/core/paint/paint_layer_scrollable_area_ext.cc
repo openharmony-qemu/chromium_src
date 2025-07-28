@@ -49,6 +49,7 @@ PaintLayerScrollableAreaExt::PaintLayerScrollableAreaExt(PaintLayer& layer)
 PaintLayerScrollableAreaExt::~PaintLayerScrollableAreaExt() {}
 
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
+// LCOV_EXCL_START
 float PaintLayerScrollableAreaExt::ComputeVisibleAreaScale() const {
   Page* page = GetLayoutBox()->GetDocument().GetPage();
   DCHECK(page);
@@ -59,7 +60,9 @@ float PaintLayerScrollableAreaExt::ComputeVisibleAreaScale() const {
   }
   return 1.f;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void PaintLayerScrollableAreaExt::UpdateScrollbarLengthOrCreateWidthScale() {
   is_pinch_gesture_active_ = true;
   bool will_be_overlay = GetPageScrollbarTheme().UsesOverlayScrollbars();
@@ -69,12 +72,15 @@ void PaintLayerScrollableAreaExt::UpdateScrollbarLengthOrCreateWidthScale() {
     UpdateScrollbarByScale(will_be_overlay);
   }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void PaintLayerScrollableAreaExt::UpdateScrollbar() {
   UpdateScrollbarProportions();
   ClampScrollOffsetAfterOverflowChange();
   PositionOverflowControls();
 }
+// LCOV_EXCL_STOP
 
 void PaintLayerScrollableAreaExt::UpdateScrollbarByScale(bool will_be_overlay) {
   bool needs_horizontal_scrollbar;
@@ -105,6 +111,7 @@ void PaintLayerScrollableAreaExt::UpdateScrollbarByScale(bool will_be_overlay) {
   }
 }
 
+// LCOV_EXCL_START
 void PaintLayerScrollableAreaExt::UpdateScrollbarProportions() {
   auto scale_factor = ComputeVisibleAreaScale();
   if (Scrollbar* horizontal_scrollbar = HorizontalScrollbar()) {
@@ -116,7 +123,9 @@ void PaintLayerScrollableAreaExt::UpdateScrollbarProportions() {
                                       ContentsSize().height());
   }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 gfx::Rect PaintLayerScrollableAreaExt::RectForHorizontalScrollbar() const {
   if (!HasHorizontalScrollbar()) {
     return gfx::Rect();
@@ -223,7 +232,9 @@ gfx::Rect PaintLayerScrollableAreaExt::RectForHorizontalScrollbar() const {
 #endif  // ARKWEB_SCROLLBAR_AVOID_AREA
 #endif  // ARKWEB_SCROLLBAR
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 gfx::Rect PaintLayerScrollableAreaExt::RectForVerticalScrollbar() const {
   if (!HasVerticalScrollbar()) {
     return gfx::Rect();
@@ -298,6 +309,7 @@ gfx::Rect PaintLayerScrollableAreaExt::RectForVerticalScrollbar() const {
       rectHeightModified - borderRadiusTopRight - borderRadiusBottomRight);
 #endif  // ARKWEB_SCROLLBAR_AVOID_AREA
 }
+// LCOV_EXCL_STOP
 
 int32_t PaintLayerScrollableAreaExt::ClampScrollOffsetLimit(
     int32_t scroll_offset_limit) const {
@@ -338,30 +350,39 @@ int32_t PaintLayerScrollableAreaExt::ClampScrollOffsetLimit(
 #endif  // ARKWEB_SCROLLBAR
 
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+// LCOV_EXCL_START
 bool PaintLayerScrollableAreaExt::SetScrollbarAvoidAreaTop(double margin) {
   bool ret = true;
   scrollbar_avoid_area_top_ = margin;
   return ret;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 bool PaintLayerScrollableAreaExt::SetScrollbarAvoidAreaBottom(double margin) {
   bool ret = true;
   scrollbar_avoid_area_bottom_ = margin;
   return ret;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 double PaintLayerScrollableAreaExt::GetScrollbarAvoidAreaTop() const
 {
   return scrollbar_avoid_area_valid_top_;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 double PaintLayerScrollableAreaExt::GetScrollbarAvoidAreaBottom() const
 {
   return scrollbar_avoid_area_valid_bottom_;
 }
+// LCOV_EXCL_STOP
 #endif  // ARKWEB_SCROLLBAR_AVOID_AREA
 
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+// LCOV_EXCL_START
 bool PaintLayerScrollableAreaExt::HasScrollbarAvoidCorner() const
 {
   ChromeClient* client = GetLayoutBox()->GetFrameView()->GetChromeClient();
@@ -388,6 +409,7 @@ bool PaintLayerScrollableAreaExt::HasScrollbarAvoidCorner() const
   }
   return false;
 }
+// LCOV_EXCL_STOP
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

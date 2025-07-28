@@ -45,7 +45,7 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/migration_manager_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/audio_codec_decoder_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/mmi_adapter.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/net_connect_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/net_connect_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/net_proxy_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_drawing_text_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_image_decoder_adapter.h"

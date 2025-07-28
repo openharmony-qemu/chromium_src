@@ -27,6 +27,10 @@
 #include "net/disk_cache/simple/simple_util.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#define private public
+#endif
+
 namespace oh_code_cache {
 
 using HeaderMap = std::multimap<std::string, std::string>;
@@ -168,4 +172,8 @@ class InputStream : public net_service::InputStream {
   std::string data_;
   size_t offset_ = 0;
 };
-}  // namespace oh_code_cache
+}  // namespace oh_code_caches
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#undef private
+#endif

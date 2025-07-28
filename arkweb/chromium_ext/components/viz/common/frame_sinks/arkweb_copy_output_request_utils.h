@@ -49,7 +49,7 @@ class ArkwebCopyOutputRequestUtils {
 #endif
 
  private:
-  CopyOutputRequest* copyOutputRequest_;
+  raw_ptr<CopyOutputRequest> copyOutputRequest_;
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   uint64_t blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;

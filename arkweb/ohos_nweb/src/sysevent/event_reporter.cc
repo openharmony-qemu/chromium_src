@@ -177,6 +177,7 @@ void ReportJankStats(int64_t startTime,
        JANK_STATS_VER, jankStatsVer});
 }
 
+// LOVC_EXCL_START
 void ReportLockdownModeStatus(void) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       RENDER_JIT_LOCKDOWN, HiSysEventAdapter::EventType::BEHAVIOR,
@@ -194,6 +195,7 @@ void ReportOpenPrivateMode(void) {
       OPEN_PRIVATE_MODE, HiSysEventAdapter::EventType::BEHAVIOR,
       {OPEN_PRIVATE_STATUS, "true"});
 }
+// LOVC_EXCL_STOP
 
 void ReportPageDownLoadErrorInfo(long downloadId, int errorCode) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
@@ -391,9 +393,10 @@ void ReportGpuProcessEvent(CrashType type, std::string eventcontent) {
       break;
   }
 }
-
+// LOVC_EXCL_START
 void ReportAppfreeze() {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       PROCESS_FREEZE_WARNING, HiSysEventAdapter::EventType::FAULT,
       {"", std::string()});
 }
+// LOVC_EXCL_STOP

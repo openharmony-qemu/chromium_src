@@ -38,6 +38,7 @@ sk_sp<SkTypeface> FontUniqueNameLookupOhos::MatchUniqueName(
                                               match_result->ttc_index);
 }
 
+// LCOV_EXCL_START
 void FontUniqueNameLookupOhos::Init() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
@@ -76,6 +77,7 @@ bool FontUniqueNameLookupOhos::IsFontUniqueNameLookupReadyForSyncLookup() {
 
   return *sync_available_;
 }
+// LCOV_EXCL_STOP
 
 void FontUniqueNameLookupOhos::PrepareFontUniqueNameLookup(
     NotifyFontUniqueNameLookupReady callback) {
@@ -95,12 +97,14 @@ void FontUniqueNameLookupOhos::PrepareFontUniqueNameLookup(
       base::Unretained(this)));
 }
 
+// LCOV_EXCL_START
 void FontUniqueNameLookupOhos::EnsureServiceConnected() {
   if (!ohos_font_lookup_service_) {
     Platform::Current()->GetBrowserInterfaceBroker()->GetInterface(
         ohos_font_lookup_service_.BindNewPipeAndPassReceiver());
   }
 }
+// LCOV_EXCL_STOP
 
 void FontUniqueNameLookupOhos::ReceiveReadOnlySharedMemoryRegion(
     base::ReadOnlySharedMemoryRegion shared_memory_region) {

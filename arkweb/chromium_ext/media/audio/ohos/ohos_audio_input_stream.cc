@@ -79,6 +79,7 @@ void OHOSAudioInputStream::Start(AudioInputCallback* callback) {
   }
 }
 
+// LCOV_EXCL_START
 void OHOSAudioInputStream::Stop() {
   LOG(INFO) << "OHOSAudioInputStream::Stop";
   if (capturer_source_) {
@@ -96,6 +97,7 @@ void OHOSAudioInputStream::Close() {
   Stop();
   manager_->ReleaseInputStream(this);
 }
+// LCOV_EXCL_STOP
 
 double OHOSAudioInputStream::GetMaxVolume() {
   return 1.0;

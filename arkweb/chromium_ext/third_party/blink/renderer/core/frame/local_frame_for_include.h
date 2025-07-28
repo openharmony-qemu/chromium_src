@@ -27,11 +27,11 @@ namespace blink {
 
 class LocalFrameUtil {
  public:
-  static bool SetLayoutAndTextZoomFactorsPage(raw_ptr<LocalFrame> LocalFrameObj,
+  static bool SetLayoutAndTextZoomFactorsPage(LocalFrame* LocalFrameObj,
                                               float& layout_zoom_factor,
                                               float& text_zoom_factor,
                                               Page* page);
-  static void SetLayoutAndTextZoomFactorsExt(raw_ptr<LocalFrame> LocalFrameObj,
+  static void SetLayoutAndTextZoomFactorsExt(LocalFrame* LocalFrameObj,
                                              float& layout_zoom_factor,
                                              float& text_zoom_factor,
                                              bool& layout_zoom_changed,

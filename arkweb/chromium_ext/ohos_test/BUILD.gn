@@ -50,6 +50,11 @@ group("ohos_fuzz") {
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/datashare_adapter:datashare_adapter_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/event_handler_adapter:event_handler_adapter_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/sensor_adapter:sensor_adapter_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/arkweb_scheme_handler",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/nweb_storage_impl_other_fuzzer:nweb_storage_impl_other_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/nweb_data_base_impl_secondary_fuzzer:nweb_data_base_impl_secondary_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/capi_fuzzer",
     ]
 }
 
@@ -350,6 +355,39 @@ fuzzer_test("nweb_find_delegate_fuzzer") {
     "//ohos_nweb/src",
   ]
   deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("nweb_input_delegate_fuzzer") {
+  sources = [ "fuzztest/ohos_nweb/src/cef_delegate/nweb_input_delegate_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("nweb_input_handler_fuzzer") {
+  sources = [ "fuzztest/ohos_nweb/src/nweb_input_handler_fuzzer.cc" ]
+  include_dirs = [
+    "//arkweb/ohos_adapter_ndk/interfaces",
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
+  ]
+  deps = [
+    "//arkweb/ohos_adapter_ndk:adapter_ndk_stub",
     "//cef:libcef_static",
     "//ohos_nweb:cef_nweb",
     "//ohos_nweb:nweb_sources",
@@ -778,6 +816,24 @@ fuzzer_test("alloy_native_embed_first_frame_paint_event_fuzzer") {
 
 fuzzer_test("audio_cenc_info_adapter_impl_fuzzer") {
   sources = [ "fuzztest/ohos_adapter_ndk/media_adapter/audio_cenc_info_adapter_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//arkweb/ohos_adapter_ndk/media_adapter",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gmock",
+    "//arkweb/ohos_adapter_ndk:adapter_ndk",
+  ]
+}
+
+fuzzer_test("audio_codec_decoder_adapter_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_adapter_ndk/media_adapter/audio_codec_decoder_adapter_impl_fuzzer.cc" ]
   include_dirs = [
     "//cef",
     "//cef/include",

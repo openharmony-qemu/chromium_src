@@ -771,6 +771,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
+  void SetMediaResumeFromBFCachePage(bool resume) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
@@ -849,7 +850,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 
  public:
   int argc_;
-  const char** argv_;
+  RAW_PTR_EXCLUSION const char** argv_;
 
  private:
   void RunMessageLoop();

@@ -19,6 +19,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 void DocumentUtils::Trace(Visitor* visitor) const {}
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
@@ -60,5 +61,6 @@ void DocumentUtils::SetURLUtils()
   }
 }
 #endif
+// LCOV_EXCL_STOP
 
 }

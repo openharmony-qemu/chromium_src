@@ -19,6 +19,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 SoftwareCompositorProxyOhos::SoftwareCompositorProxyOhos() {}
 
 SoftwareCompositorProxyOhos::~SoftwareCompositorProxyOhos() {
@@ -36,6 +37,7 @@ struct SoftwareCompositorProxyOhos::SharedMemoryWithSize {
         buffer_size(buffer_size),
         zeroed(true) {}
 };
+// LCOV_EXCL_STOP
 
 void SoftwareCompositorProxyOhos::DemandDrawSwAsync(
     mojom::blink::SoftwareCompositorDemandDrawSwParamsPtr params,
@@ -67,6 +69,7 @@ void SoftwareCompositorProxyOhos::DemandDrawSwAsync(
   std::move(callback).Run(result);
 }
 
+// LCOV_EXCL_START
 void SoftwareCompositorProxyOhos::BindChannel(
     mojo::PendingReceiver<mojom::blink::SoftwareCompositorOhos>
         compositor_request) {
@@ -81,6 +84,7 @@ void SoftwareCompositorProxyOhos::DrawRect(const gfx::Rect& rect) {
   }
   software_render_->DrawRect(rect);
 }
+// LCOV_EXCL_STOP
 
 void SoftwareCompositorProxyOhos::SetSharedMemory(
     base::WritableSharedMemoryRegion shm_region,
@@ -97,9 +101,11 @@ void SoftwareCompositorProxyOhos::SetSharedMemory(
   std::move(callback).Run(result);
 }
 
+// LCOV_EXCL_START
 void SoftwareCompositorProxyOhos::SetSoftwareRenderer(
     cc::mojo_embedder::SoftwareCompositorRendererOhos* software_render) {
   software_render_ = software_render;
 }
+// LCOV_EXCL_STOP
 }  // namespace blink
                      

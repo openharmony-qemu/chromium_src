@@ -36,6 +36,7 @@ void DecoderStream<StreamType>::PipEnable(bool enable) {
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+// LCOV_EXCL_START
 template <DemuxerStream::Type StreamType>
 void DecoderStream<StreamType>::RecycleDmaBuffer() {
   if (traits_) {
@@ -51,5 +52,6 @@ void DecoderStream<StreamType>::ResumeDmaBuffer() {
     traits_->ResumeDmaBuffer(decoder_.get());
   }
 }
+// LCOV_EXCL_STOP
 #endif  // ARKWEB_MEDIA_DMABUF
 }

@@ -110,7 +110,7 @@ NWebDevToolsMessageHandlerImpl::~NWebDevToolsMessageHandlerImpl() {
 }
 
 const char** ConvertToCharPtrArray(const std::vector<CefString>& filters) {
-  const char** result = new const char*[filters.size() + 1];
+  const char** result = new const char *[filters.size() + 1];
   for (size_t i = 0; i < filters.size(); ++i) {
     std::string str = filters[i].ToString();
     char* tmp = new char[str.size() + 1];

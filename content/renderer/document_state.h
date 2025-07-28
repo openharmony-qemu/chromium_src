@@ -12,10 +12,6 @@
 #include "third_party/blink/public/web/web_document_loader.h"
 #include "url/gurl.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 namespace content {
 
 class NavigationState;
@@ -76,7 +72,7 @@ class CONTENT_EXPORT DocumentState
   void set_navigation_state(std::unique_ptr<NavigationState> navigation_state);
   void clear_navigation_state() { navigation_state_.reset(); }
 
-#if BUILDFLAG(ARKWEB_EXT_UA)
+#if BUILDFLAG(ARKWEB_USERAGENT)
   bool must_reset_scroll_and_scale_state() {
     return must_reset_scroll_and_scale_state_;
   }
@@ -91,7 +87,7 @@ class CONTENT_EXPORT DocumentState
   bool is_overriding_user_agent_ = false;
   int request_id_ = -1;
   std::unique_ptr<NavigationState> navigation_state_;
-#if BUILDFLAG(ARKWEB_EXT_UA)
+#if BUILDFLAG(ARKWEB_USERAGENT)
   bool must_reset_scroll_and_scale_state_{false};
 #endif
 };

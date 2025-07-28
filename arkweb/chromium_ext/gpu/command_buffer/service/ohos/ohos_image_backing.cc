@@ -17,6 +17,7 @@
 
 namespace gpu {
 
+//LCOV_EXCL_START
 OhosImageBacking::OhosImageBacking(const Mailbox& mailbox,
                                    viz::SharedImageFormat format,
                                    const gfx::Size& size,
@@ -41,6 +42,7 @@ OhosImageBacking::OhosImageBacking(const Mailbox& mailbox,
       write_sync_fd_(std::move(initial_upload_fd)) {}
 
 OhosImageBacking::~OhosImageBacking() = default;
+//LCOV_EXCL_STOP
 
 bool OhosImageBacking::BeginWrite(base::ScopedFD* fd_to_wait_on) {
   AutoLock auto_lock(this);
@@ -123,10 +125,12 @@ void OhosImageBacking::EndRead(const SharedImageRepresentation* reader,
       gl::MergeFDs(std::move(read_sync_fd_), std::move(end_read_fd));
 }
 
+//LCOV_EXCL_START
 base::ScopedFD OhosImageBacking::TakeReadFence() {
   AutoLock auto_lock(this);
 
   return std::move(read_sync_fd_);
 }
+//LCOV_EXCL_STOP
 
 }  // namespace gpu

@@ -17,6 +17,7 @@
 #define CONTENT_BROWSER_RENDER_HOST_NAIGATION_UTILS_H_
 
 #include "content/browser/renderer_host/navigator.h"
+#include "base/memory/raw_ptr.h"
 
 namespace content {
 
@@ -29,7 +30,7 @@ class NavigatorUtils {
       NavigationRequest* navigation_request);
 
  private:
-  Navigator* navigator_;
+  raw_ptr<Navigator> navigator_;
 };
 }  // namespace content
 #endif  // CONTENT_BROWSER_RENDER_HOST_NAIGATION_UTILS_H_

@@ -231,7 +231,7 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   bool use_begin_frame_presentation_feedback_ = false;
 
 #if BUILDFLAG(IS_ARKWEB)
-  AsyncLayerTreeFrameSinkUtils* async_layer_tree_frame_sink_utils_;
+  raw_ptr<AsyncLayerTreeFrameSinkUtils> async_layer_tree_frame_sink_utils_;
 #endif
 
   base::WeakPtrFactory<AsyncLayerTreeFrameSink> weak_factory_{this};

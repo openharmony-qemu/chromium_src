@@ -17,6 +17,7 @@
 #define UI_NATIVE_THEME_NATIVE_THEME_AURA_UTILS_H_
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 #include "ui/native_theme/native_theme.h"
 #include "ui/native_theme/native_theme_aura.h"
 #include "ui/native_theme/overlay_scrollbar_constants_aura.h"
@@ -52,7 +53,7 @@ class NativeThemeAuraUtils {
   gfx::Size GetNinePatchCanvasSize(NativeTheme::Part part) const;
   gfx::Rect GetNinePatchAperture(NativeTheme::Part part) const;
 
-  NativeThemeAura* native_theme_aura_;
+  raw_ptr<NativeThemeAura> native_theme_aura_;
 };
 }  // namespace ui
 #endif  // UI_NATIVE_THEME_NATIVE_THEME_AURA_UTILS_H_

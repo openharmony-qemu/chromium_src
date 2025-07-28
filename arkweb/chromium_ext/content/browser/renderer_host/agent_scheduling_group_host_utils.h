@@ -17,6 +17,7 @@
 #define CONTENT_BROWSER_RENDERER_HOST_AGENT_SCHEDULING_GROUP_HOST_UTILS_H_
 
 #include "content/browser/renderer_host/agent_scheduling_group_host.h"
+#include "base/memory/raw_ptr.h"
 
 namespace content {
 
@@ -24,7 +25,7 @@ class AgentSchedulingGroupHost;
 
 class AgentSchedulingGroupHostUtils {
 public:
-  AgentSchedulingGroupHost* agentSchedulingGroupHost;
+  raw_ptr<AgentSchedulingGroupHost> agentSchedulingGroupHost;
   AgentSchedulingGroupHostUtils(AgentSchedulingGroupHost* impl);
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)

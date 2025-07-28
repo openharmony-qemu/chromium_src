@@ -33,7 +33,7 @@ void LocalFrame::NotifyContextMenuWillShow() {
 // LCOV_EXCL_STOP
 
 bool LocalFrameUtil::SetLayoutAndTextZoomFactorsPage(
-    raw_ptr<LocalFrame> LocalFrameObj,
+    LocalFrame* LocalFrameObj,
     float& layout_zoom_factor,
     float& text_zoom_factor,
     Page* page) {
@@ -50,7 +50,7 @@ bool LocalFrameUtil::SetLayoutAndTextZoomFactorsPage(
 }
 
 void LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
-    raw_ptr<LocalFrame> LocalFrameObj,
+    LocalFrame* LocalFrameObj,
     float& layout_zoom_factor,
     float& text_zoom_factor,
     bool& layout_zoom_changed,

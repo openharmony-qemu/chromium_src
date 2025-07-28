@@ -147,11 +147,6 @@
 #include "ohos_nweb/src/cef_delegate/nweb_media_player_for_vast.h"
 #include "ohos_nweb/src/video_assistant/nweb_media_player_controller_impl.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-#include "ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/nweb_safe_browsing_detection_handler.h"
-#endif
-#endif
 #if BUILDFLAG(ARKWEB_PIP)
 #include "content/browser/media/media_web_contents_observer.h"
 #endif
@@ -1557,13 +1552,6 @@ void NWebHandlerDelegate::OnLargestContentfulPaint(
             details->GetLargestImageLoadStartTime(),
             details->GetLargestImageLoadEndTime(), details->GetImageBPP());
     nweb_handler_->OnLargestContentfulPaint(web_details);
-  }
-}
-
-void NWebHandlerDelegate::OnSafeBrowsingCheckResult(int threat_type) {
-  LOG(INFO) << "NWebHandlerDelegate::OnSafeBrowsingCheckResult";
-  if (nweb_handler_ != nullptr) {
-    nweb_handler_->OnSafeBrowsingCheckResult(threat_type);
   }
 }
 
@@ -4960,22 +4948,6 @@ void NWebHandlerDelegate::CustomWebMediaPlayer(bool enable) {
   custom_web_media_player_enabled_ = enable;
 }
 #endif // ARKWEB_VIDEO_ASSISTANT
-
-void NWebHandlerDelegate::HandleSafeBrowsingDetection(int detectMode,
-                                                      int detectSwitch,
-                                                      const CefString& url) {
-  LOG(INFO) << "begin to handle safe browsing detection,"
-            << "nweb id is " << nweb_id_ << ",detect mode is " << detectMode
-            << ",detect switch is " << detectSwitch;
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-  NWebSafeBrowsingDetectionHandler::GetInstance().HandleSafeBrowsingDetection(
-      nweb_id_, detectMode, detectSwitch, url);
-#else
-  OnSafeBrowsingDetectionResult(-1, -1, "", url);
-#endif
-#endif
-}
 
 #if BUILDFLAG(ARKWEB_PIP)
 bool NWebHandlerDelegate::OnPip(CefRefPtr<CefBrowser> browser,

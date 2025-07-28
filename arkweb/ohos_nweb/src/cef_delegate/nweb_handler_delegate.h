@@ -381,8 +381,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void OnDataResubmission(CefRefPtr<CefBrowser> browser,
                           CefRefPtr<CefCallback> callback) override;
 
-  void OnSafeBrowsingCheckResult(int threat_type) override;
-
   void OnNavigationEntryCommitted(
       CefRefPtr<CefLoadCommittedDetails> details) override;
 
@@ -945,10 +943,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
   void Discard();
 
-  void HandleSafeBrowsingDetection(int detectMode,
-                                   int detectSwitch,
-                                   const CefString& url) override;
-
 #if BUILDFLAG(ARKWEB_PIP)
   bool OnPip(CefRefPtr<CefBrowser> browser,
              int status,
@@ -1153,11 +1147,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   NWebAppClientExtensionDispatcher dispatcher_;
-#endif
-
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-  CefRefPtr<CefSafeBrowsingDetectionCallback>
-      safe_browsing_detection_callback_ = nullptr;
 #endif
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)

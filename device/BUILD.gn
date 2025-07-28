@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//arkweb/build/features/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//device/vr/buildflags/buildflags.gni")
@@ -491,6 +492,10 @@ test("device_unittests") {
       "//ui/display",
       "//ui/display:test_support",
     ]
+  }
+
+  if (arkweb_unittests) {
+    sources += arkweb_device_sources
   }
 
   # Some gamepad tests require the HID service. Only build these tests on

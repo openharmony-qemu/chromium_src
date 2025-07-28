@@ -51,6 +51,7 @@ group("ohos_fuzz") {
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/event_handler_adapter:event_handler_adapter_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/sensor_adapter:sensor_adapter_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/arkweb_scheme_handler",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/nweb_storage_impl_other_fuzzer:nweb_storage_impl_other_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/nweb_data_base_impl_secondary_fuzzer:nweb_data_base_impl_secondary_fuzzer",
     ]

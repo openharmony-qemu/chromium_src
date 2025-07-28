@@ -13,7 +13,6 @@
 
 group("arkweb_scheme_handler") {
     testonly = true
-    deps = []
     deps += [
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/arkweb_scheme_handler/request_header_list_fuzzer",
     ]

@@ -1578,8 +1578,25 @@ void NWebImpl::OnTouchMove(
   if (input_handler_ == nullptr) {
     return;
   }
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool nativeEmbedMode = false;
+  bool isEnableCustomVideoPlayer = false;
+  if (nweb_delegate_) {
+    nativeEmbedMode = nweb_delegate_->GetNativeEmbedMode();
+    isEnableCustomVideoPlayer = nweb_delegate_->IsEnableCustomVideoPlayer();
+  }
+  if (nativeEmbedMode || isEnableCustomVideoPlayer) {
+    for (const auto& touch : touch_point_infos) {
+      std::vector<std::shared_ptr<NWebTouchPointInfo>> single_touch_point_info;
+      single_touch_point_info.emplace_back(touch);
+      input_handler_->OnTouchMove(single_touch_point_info, from_overlay);
+    }
+  } else {
+    input_handler_->OnTouchMove(touch_point_infos, from_overlay);
+  }
+#else
   input_handler_->OnTouchMove(touch_point_infos, from_overlay);
+#endif
 }
 
 void NWebImpl::OnTouchCancel() {

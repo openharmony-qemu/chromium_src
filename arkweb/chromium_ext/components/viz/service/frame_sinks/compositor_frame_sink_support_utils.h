@@ -20,6 +20,7 @@
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
 #include "base/containers/queue.h"
 #endif
+#include "base/memory/raw_ptr.h"
 
 namespace viz {
 
@@ -34,7 +35,7 @@ class CompositorFrameSinkSupport;
 
 class CompositorFrameSinkSupportUtils {
 public:
-	CompositorFrameSinkSupport* compositorFrameSinkSupport;
+	raw_ptr<CompositorFrameSinkSupport> compositorFrameSinkSupport;
 	CompositorFrameSinkSupportUtils(CompositorFrameSinkSupport* support);
 
 #if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)

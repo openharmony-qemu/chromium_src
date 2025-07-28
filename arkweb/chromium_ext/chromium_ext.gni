@@ -957,6 +957,10 @@ arkweb_third_party_blink_renderer_core_ohos_adblock_util_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/ohos_adblock/ohos_adblock_util.h"
 ]
 
+arkweb_third_party_blink_renderer_core_ohos_adblock_util_test_sources = [
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/ohos_adblock/ohos_adblock_util_unittest.cc",
+]
+
 arkweb_document_subresource_filter_sources = [
   "//arkweb/chromium_ext/components/subresource_filter/core/common/document_subresource_filter_ext.cc",
   "//arkweb/chromium_ext/components/subresource_filter/core/common/document_subresource_filter_ext.h",

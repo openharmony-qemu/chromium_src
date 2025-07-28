@@ -43,6 +43,11 @@ class NWebExtensionPromptCefDelegate {
                            const gfx::Image& icon_image,
                            ShowPromptCallbackFunc showPromptFunc,
                            GetPromptDataCallbackFunc getPromptDataFunc);
+  bool ShowExtensionUninstallPrompt(
+      const std::string& extensionId,
+      const gfx::Image& icon_image,
+      ShowPromptCallbackFunc showPromptFunc,
+      GetPromptDataCallbackFunc getPromptDataFunc);
 
   bool ShowMultiExtensionUninstallPrompt(
       const std::vector<std::string>& extension_ids,

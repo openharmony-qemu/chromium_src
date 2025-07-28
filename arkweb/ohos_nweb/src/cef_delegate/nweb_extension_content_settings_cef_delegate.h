@@ -47,7 +47,7 @@ class NWebExtensionContentSettingsCefDelegate {
   void OnSetCallback(const NWebExtensionContentSettingsCallbackSetResult* result);
 
   // ContentSettings.clear
-  bool OnClear(const NWebExtensionContentSettingsClearParam* clearParam, ContentSettingsSetCallback callback);
+  bool OnClear(const NWebExtensionContentSettingsClearParam* setParam, ContentSettingsClearCallback callback);
 
   void OnClearCallback(const NWebExtensionContentSettingsCallbackSetResult* result);
 

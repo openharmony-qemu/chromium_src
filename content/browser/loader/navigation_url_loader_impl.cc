@@ -1400,10 +1400,26 @@ NavigationURLLoaderImpl::CreateURLLoaderThrottles() {
                          "NavigationURLLoaderImpl::CreateURLLoaderThrottles",
                          TRACE_ID_LOCAL(this),
                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool is_prerendering = false;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) &&
+      request_info_) {
+    is_prerendering =
+        request_info_->is_main_frame && !request_info_->is_primary_main_frame;
+  }
+#endif
+
   auto throttles = CreateContentBrowserURLLoaderThrottles(
       *resource_request_, browser_context_, web_contents_getter_,
       navigation_ui_data_.get(), frame_tree_node_id_,
-      request_info_->navigation_id);
+      request_info_->navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+      is_prerendering
+#endif
+      );
   throttles.push_back(std::make_unique<NavigationTimingThrottle>(
       resource_request_->is_outermost_main_frame, loader_creation_time_));
   return throttles;

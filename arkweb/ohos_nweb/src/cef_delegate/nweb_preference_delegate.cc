@@ -26,6 +26,7 @@
 #include "base/trace_event/trace_event.h"
 #endif
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "base/command_line.h"
 #include "base/feature_list.h"
 #include "cef/include/cef_command_line.h"
 #include "cef/include/internal/cef_string.h"
@@ -457,12 +458,19 @@ void NWebPreferenceDelegate::PutUserAgent(const std::string& ua) {
   } else {
     user_agent_ = ua;
   }
-  if (!browser_) {
+  if (!browser_ || !(browser_->GetHost())) {
     return;
   }
   if (old_user_agent != user_agent_) {
     browser_->GetHost()->PutUserAgent(ua, has_set_user_agent_);
   }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+    browser_->GetHost()->CancelAllPrerendering();
+  }
+#endif
 }
 
 void NWebPreferenceDelegate::PutZoomingForTextFactor(int textZoom) {

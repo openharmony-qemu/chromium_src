@@ -919,6 +919,9 @@ class NWebImpl : public NWeb {
       const std::vector<std::string>& pathList,
       const std::vector<std::string>& moduleName,
       std::string& errorPath) override;
+  int PrerenderPage(const std::string& url,
+                    const std::string& additional_headers);
+  void CancelAllPrerendering();
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)

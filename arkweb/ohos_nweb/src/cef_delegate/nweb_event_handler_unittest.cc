@@ -25,6 +25,10 @@
 #include "ui/events/keycodes/keyboard_code_conversion_x.h"
 #include "ui/events/keycodes/keysym_to_unicode.h"
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "ohos_nweb/include/nweb_errors.h"
+#endif
+
 #define private public
 #include "nweb_event_handler.h"
 
@@ -298,6 +302,13 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   CefString GetOriginalUrl() override { return CefString(); }
 
   void PutNetworkAvailable(bool available) override {}
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  int PrerenderPage(const CefString& url,
+                    const CefString& additional_headers) { return OHOS::NWeb::NWEB_OK; };
+
+  void CancelAllPrerendering() {};
+#endif
 
   void RemoveCache(bool include_disk_files) override {}
 
@@ -838,6 +849,11 @@ class MockCefBrowser : public ArkWebBrowserExt {
   void SetAdBlockEnabledForSite(bool is_adblock_enabled, int main_frame_tree_node_id) override {}
   CefRefPtr<CefFrame> GetFrameByIdentifier(
       const CefString& identifier) override {  return nullptr; }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  int PrerenderPage(const CefString& url,
+                    const CefString& additional_headers) override { return OHOS::NWeb::NWEB_OK; };
+  void CancelAllPrerendering() override {};
+#endif
 #endif  // BUILDFLAG(IS_OHOS)
  private:
   CefRefPtr<CefBrowserHost> host_;

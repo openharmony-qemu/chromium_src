@@ -93,6 +93,10 @@ void WriteUint32(uint32_t value, std::vector<uint8_t>* buffer) {
     WriteUint8(b | (1 << kVarIntShift), buffer);
   }
 }
+
+void WriteBytes(base::span<const uint8_t> bytes, std::vector<uint8_t>* buffer) {
+  buffer->insert(buffer->end(), bytes.begin(), bytes.end());
+}
 }
 
 extern void WriteString(const std::string& str, std::vector<uint8_t>* buffer);
@@ -770,5 +774,152 @@ TEST(StringMessageCodecExtTest, DecodeToWebMessagePayload_002) {
     result = DecodeToWebMessagePayload(msg, decoded_msg);
     EXPECT_EQ(result , false);
     msg.owned_encoded_message.clear();
+}
+
+TEST(StringMessageCodecExtTest, ReadArray_002) {
+    std::vector<uint8_t> buffer;
+    std::vector<uint8_t> temp;
+    struct WebMessagePort::Message decoded_msg;
+
+    WriteUint32(sizeof(int32_t), &buffer);
+    base::BufferIterator<const uint8_t> iter1(buffer);
+    auto result = ReadArray(iter1, decoded_msg);
+    EXPECT_EQ(result, false);
+    buffer.clear();
+    std::string data_latin1("test");
+    auto data_latin1_as_bytes = base::as_byte_span(data_latin1);
+    WriteUint32(
+        2 * sizeof(int32_t) + sizeof(uint8_t) + data_latin1.length(),
+        &buffer);
+    WriteUint8(kOneByteStringTag, &buffer);
+    WriteUint32(data_latin1.size(), &buffer);
+    WriteBytes(data_latin1_as_bytes, &buffer);
+    base::BufferIterator<const uint8_t> iter2(buffer);
+    result = ReadArray(iter2, decoded_msg);
+    EXPECT_EQ(result, false);
+    buffer.clear();
+    const double value = 0.0;
+    WriteDouble(value, &temp);
+    WriteUint32(sizeof(int32_t) + temp.size(), &buffer);
+    WriteDouble(value, &buffer);
+    base::BufferIterator<const uint8_t> iter3(buffer);
+    result = ReadArray(iter3, decoded_msg);
+    EXPECT_EQ(result, false);
+    buffer.clear();
+    temp.clear();
+    WriteUint32(sizeof(int32_t) + 1, &buffer);
+    WriteUint8(kDouble, &buffer);
+    base::BufferIterator<const uint8_t> iter6(buffer);
+    result = ReadArray(iter6, decoded_msg);
+    EXPECT_EQ(result, false);
+    buffer.clear();
+    temp.clear();
+    WriteUint32(sizeof(int32_t) + 3 * sizeof(uint8_t), &buffer);
+    WriteUint8(kInt32, &buffer);
+    WriteUint8(kEndDenseJSArray, &buffer);
+    WriteUint8(kEndDenseJSArray, &buffer);
+    base::BufferIterator<const uint8_t> iter4(buffer);
+    result = ReadArray(iter4, decoded_msg);
+    EXPECT_EQ(result, true);
+    buffer.clear();
+    temp.clear();
+    WriteUint32(sizeof(int32_t) + 1, &buffer);
+    WriteUint8(kInt32, &buffer);
+    base::BufferIterator<const uint8_t> iter7(buffer);
+    result = ReadArray(iter7, decoded_msg);
+    EXPECT_EQ(result, false);
+    buffer.clear();
+    WriteInt64(UINT_MAX, &temp);
+    WriteUint32(sizeof(int32_t) + temp.size(), &buffer);
+    WriteInt64(UINT_MAX, &buffer);
+    base::BufferIterator<const uint8_t> iter5(buffer);
+    result = ReadArray(iter5, decoded_msg);
+    EXPECT_EQ(result, false);
+    buffer.clear();
+    temp.clear();
+    WriteUint32(sizeof(int32_t) + 1, &buffer);
+    WriteUint8(kUint32, &buffer);
+    base::BufferIterator<const uint8_t> iter8(buffer);
+    result = ReadArray(iter8, decoded_msg);
+    EXPECT_EQ(result, false);
+    buffer.clear();
+}
+
+
+TEST(StringMessageCodecExtTest, ReadArray_003) {
+    std::vector<uint8_t> buffer;
+    struct WebMessagePort::Message decoded_msg;
+    WriteUint32(1, &buffer);
+    WriteUint8(kInt32, &buffer);
+    WriteUint8(kEndDenseJSArray, &buffer);
+    WriteUint8(kEndDenseJSArray, &buffer);
+    base::BufferIterator<const uint8_t> iter1(buffer);
+    auto result = ReadArray(iter1, decoded_msg);
+    EXPECT_EQ(result, true);
+    buffer.clear();
+    WriteUint32(1, &buffer);
+    WriteUint8(kUint32, &buffer);
+    WriteUint8(kUint32, &buffer);
+    WriteUint8(kUint32, &buffer);
+    base::BufferIterator<const uint8_t> iter2(buffer);
+    result = ReadArray(iter2, decoded_msg);
+    EXPECT_EQ(result, true);
+    buffer.clear();
+    WriteUint32(1, &buffer);
+    WriteUint8(kOneByteStringTag, &buffer);
+    WriteUint8(kEndDenseJSArray, &buffer);
+    WriteUint8(kEndDenseJSArray, &buffer);
+    base::BufferIterator<const uint8_t> iter3(buffer);
+    result = ReadArray(iter3, decoded_msg);
+    EXPECT_EQ(result, true);
+    buffer.clear();
+    WriteUint32(1, &buffer);
+    WriteUint8(kTwoByteStringTag, &buffer);
+    WriteUint8(kEndDenseJSArray, &buffer);
+    WriteUint8(kEndDenseJSArray, &buffer);
+    base::BufferIterator<const uint8_t> iter4(buffer);
+    result = ReadArray(iter4, decoded_msg);
+    EXPECT_EQ(result, true);
+    buffer.clear();
+    const double value = 0.0;
+    WriteUint32(1, &buffer);
+    WriteDouble(value, &buffer);
+    base::BufferIterator<const uint8_t> iter5(buffer);
+    result = ReadArray(iter5, decoded_msg);
+    EXPECT_EQ(result, true);
+    buffer.clear();
+}
+
+TEST(StringMessageCodecExtTest, EncodeWebMessagePayload_001) {
+    const int typeOther = 255;
+    struct WebMessagePort::Message original;
+    original.data = u"test";
+    original.bool_value_ = true;
+    original.double_value_ = 0.0;
+    original.int64_value_ = 1;
+    original.string_arr_.push_back(u"t");
+    original.bool_arr_.push_back(true);
+    original.double_arr_.push_back(0.0);
+    original.int64_arr_.push_back(1);
+    original.err_name_ = u"err";
+    original.err_msg_ = u"msg";
+    original.type_ =
+        static_cast<WebMessagePort::Message::MessageType>(typeOther);
+    auto message = EncodeWebMessagePayload(original);
+    EXPECT_EQ(message.owned_encoded_message[0], kVersionTag);
+}
+
+TEST(StringMessageCodecExtTest, WriteInt64_001) {
+    const int64_t valueMin = INT_MIN;
+    const int64_t valueMax = INT_MAX;
+    const int64_t valueUMax = UINT_MAX;
+    const int64_t valueUMaxOver = 0x1FFFFFFFF;
+    std::vector<uint8_t> buffer;
+    WriteInt64(valueMin - 1, &buffer);
+    EXPECT_EQ(buffer[0], kDouble);
+    buffer.clear();
+    WriteInt64(valueMax + 1, &buffer);
+    EXPECT_EQ(buffer[0], kUint32);
+    buffer.clear();
 }
 }

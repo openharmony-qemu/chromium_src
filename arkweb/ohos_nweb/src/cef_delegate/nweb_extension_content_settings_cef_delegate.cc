@@ -46,12 +46,12 @@ content::BrowserContext *GetBrowserContext()
   CefRequestContextImpl *request_context =
     static_cast<CefRequestContextImpl *>(CefRequestContext::GetGlobalContext().get());
   if (!request_context) {
-    LOG(ERROR) << "request context is null";
+    LOG(ERROR) << "request_context is null";
     return nullptr;
   }
   CefBrowserContext *cef_browser_context = request_context->GetBrowserContext();
   if (!cef_browser_context) {
-    LOG(ERROR) << "cef browser context is null";
+    LOG(ERROR) << "cef_browser_context is null";
     return nullptr;
   }      
   return cef_browser_context->AsBrowserContext();

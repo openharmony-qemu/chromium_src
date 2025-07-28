@@ -1210,6 +1210,7 @@ class NWebImplTest : public ::testing::Test {
   std::shared_ptr<NWebImpl> nweb_impl_;
   std::shared_ptr<MockNWebDelegate> mock_delegate_;
   std::shared_ptr<MockNWebInputHandler> input_handler_;
+  static bool MockFrameCallback(const char*, uint32_t, uint32_t) { return true; }
 };
 
 void NWebImplTest::SetUpTestCase(void) {}
@@ -1868,5 +1869,482 @@ TEST_F(NWebImplTest, OnDestroyWithNullInitArgs) {
   nweb_impl_->OnDestroy();
   EXPECT_EQ(nweb_impl_->destroyCallback_, nullptr);
 }
+
+TEST_F(NWebImplTest, OnDestroyWithNativeDestroyCallback) {
+  nweb_impl_->destroyCallback_ = nullptr;
+  EXPECT_EQ(nweb_impl_->destroyCallback_, nullptr);
+  nweb_impl_->nativeDestroyCallback_ = []() {};
+  EXPECT_NE(nweb_impl_->nativeDestroyCallback_, nullptr);
+  nweb_impl_->OnDestroy();
+}
+
+TEST_F(NWebImplTest, OnDestroyWithNullNativeCallback) {
+  nweb_impl_->destroyCallback_ = nullptr;
+  EXPECT_EQ(nweb_impl_->destroyCallback_, nullptr);
+  nweb_impl_->nativeDestroyCallback_ = nullptr;
+  EXPECT_EQ(nweb_impl_->nativeDestroyCallback_, nullptr);
+  nweb_impl_->OnDestroy();
+}
+
+TEST_F(NWebImplTest, TestCreateNWebWithCreateInfo) {
+  std::shared_ptr<MockNWebCreateInfo> createInfo = std::make_shared<MockNWebCreateInfo>();
+  auto result = NWebImpl::CreateNWeb(createInfo);
+  EXPECT_NE(createInfo, nullptr);
+}
+
+TEST_F(NWebImplTest, AddNWebToMap001) {
+  uint32_t id = 0;
+  std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(id);
+  EXPECT_NE(nweb, nullptr);
+  nweb->AddNWebToMap(id, nweb);
+}
+
+TEST_F(NWebImplTest, AddNWebToMap002) {
+  uint32_t id = 0;
+  std::shared_ptr<NWebImpl> nweb = nullptr;
+  EXPECT_EQ(nweb, nullptr);
+  nweb->AddNWebToMap(id, nweb);
+}
+
+TEST_F(NWebImplTest, FromID001) {
+  int32_t id = 0;
+  std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(id);
+  EXPECT_NE(nweb, nullptr);
+  nweb->AddNWebToMap(id, nweb);
+  auto result = NWebImpl::FromID(id);
+  EXPECT_NE(result, nullptr);
+}
+
+TEST_F(NWebImplTest, FromID002) {
+  int32_t id = 0;
+  int32_t nweb_id = 2;
+  std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(id);
+  EXPECT_NE(nweb, nullptr);
+  nweb->AddNWebToMap(id, nweb);
+  auto result = NWebImpl::FromID(nweb_id);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(NWebImplTest, GetNWebSharedPtr001) {
+  int32_t id = 0;
+  std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(id);
+  EXPECT_NE(nweb, nullptr);
+  nweb->AddNWebToMap(id, nweb);
+  auto result = NWebImpl::GetNWebSharedPtr(id);
+  EXPECT_NE(result, nullptr);
+}
+
+TEST_F(NWebImplTest, GetNWebSharedPtr002) {
+  int32_t id = 0;
+  int32_t nweb_id = 2;
+  std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(id);
+  EXPECT_NE(nweb, nullptr);
+  nweb->AddNWebToMap(id, nweb);
+  auto result = NWebImpl::GetNWebSharedPtr(nweb_id);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(NWebImplTest, PutDownloadCallback001) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  std::shared_ptr<NWebDownloadCallback> downloadListener = nullptr;
+  nweb_impl_->PutDownloadCallback(downloadListener);
+}
+
+TEST_F(NWebImplTest, PutDownloadCallback002) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  std::shared_ptr<NWebDownloadCallback> downloadListener = nullptr;
+  nweb_impl_->PutDownloadCallback(downloadListener);
+}
+
+TEST_F(NWebImplTest, SetNWebHandler001) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  std::shared_ptr<NWebHandler> client = std::make_shared<NWebHandler>();
+  nweb_impl_->SetNWebHandler(client);
+  EXPECT_EQ(nweb_impl_->nweb_handle_, client);
+}
+
+TEST_F(NWebImplTest, SetNWebHandler002) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  std::shared_ptr<NWebHandler> client = std::make_shared<NWebHandler>();
+  nweb_impl_->SetNWebHandler(client);
+  EXPECT_NE(nweb_impl_->nweb_handle_, client);
+}
+
+TEST_F(NWebImplTest, Resize001) {
+  uint32_t width = 100;
+  uint32_t height = 200;
+  bool isKeyboard = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->OnPause();
+  nweb_impl_->input_handler_ = nullptr;
+  nweb_impl_->output_handler_ = nullptr;
+  nweb_impl_->Resize(width, height, isKeyboard);
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, Resize002) {
+  uint32_t width = 100;
+  uint32_t height = 200;
+  bool isKeyboard = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+  nweb_impl_->output_handler_ = nullptr;
+  EXPECT_EQ(nweb_impl_->output_handler_, nullptr);
+  nweb_impl_->Resize(width, height, isKeyboard);
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, Resize003) {
+  uint32_t width = 100;
+  uint32_t height = 200;
+  bool isKeyboard = true;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+  nweb_impl_->output_handler_ = std::make_shared<NWebOutputHandler>(MockFrameCallback);
+  EXPECT_NE(nweb_impl_->output_handler_, nullptr);
+  nweb_impl_->Resize(width, height, isKeyboard);
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, Resize004) {
+  uint32_t width = 100;
+  uint32_t height = 8000;
+  bool isKeyboard = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+  nweb_impl_->output_handler_ = std::make_shared<NWebOutputHandler>(MockFrameCallback);
+  EXPECT_NE(nweb_impl_->output_handler_, nullptr);
+  int32_t mode = 0;
+  nweb_impl_->SetDrawMode(mode);
+  nweb_impl_->Resize(width, height, isKeyboard);
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetDrawRect001) {
+  int x = 0;
+  int y = 0;
+  int width = 0;
+  int height = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->SetDrawRect(x, y, width, height);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetDrawMode001) {
+  int32_t mode = 1;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->SetDrawMode(mode);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetDrawMode002) {
+  int32_t mode = 1;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->SetDrawMode(mode);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetPendingSizeStatus001) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  auto result = nweb_impl_->GetPendingSizeStatus();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, false);
+}
+
+TEST_F(NWebImplTest, GetPendingSizeStatus002) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  auto result = nweb_impl_->GetPendingSizeStatus();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, nweb_impl_->nweb_delegate_->GetPendingSizeStatus());
+}
+
+TEST_F(NWebImplTest, SetFitContentMode001) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  int mode = 0;
+  nweb_impl_->SetFitContentMode(mode);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetFitContentMode002) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  int mode = 0;
+  nweb_impl_->SetFitContentMode(mode);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnTouchRelease001) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  int32_t id = 0;
+  double x = 0.2;
+  double y = 0.1;
+  bool from_overlay = false;
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->OnTouchRelease(id, x, y, from_overlay);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnTouchRelease002) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  int32_t id = 0;
+  double x = 0.2;
+  double y = 0.1;
+  bool from_overlay = false;
+  nweb_impl_->input_handler_ = nullptr;
+  nweb_impl_->OnTouchRelease(id, x, y, from_overlay);
+  EXPECT_EQ(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnTouchMove001) {
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  int32_t id = 1;
+  double x = 2.0;
+  double y = 3.0;
+  bool from_overlay = true;
+  nweb_impl_->OnTouchMove(id, x, y, from_overlay);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnTouchCancel001) {
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->OnTouchCancel();
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnNavigateBack001) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->OnNavigateBack();
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnNavigateBack002) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->input_handler_ = nullptr;
+  nweb_impl_->OnNavigateBack();
+  EXPECT_EQ(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, SendKeyEvent001) {
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  int32_t keyCode = 1;
+  int32_t keyAction = 2;
+  auto result = nweb_impl_->SendKeyEvent(keyCode, keyAction);
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+  EXPECT_EQ(result, nweb_impl_->input_handler_->SendKeyEvent(keyCode, keyAction));
+}
+
+TEST_F(NWebImplTest, SendTouchpadFlingEvent001) {
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  double x = 1.0;
+  double y = 1.0;
+  double vx = 1.0;
+  double vy = 1.0;
+  nweb_impl_->SendTouchpadFlingEvent(x, y, vx, vy);
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, SendMouseWheelEvent001) {
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  double x = 1.0;
+  double y = 1.0;
+  double deltaX = 1.0;
+  double deltaY = 1.0;
+  nweb_impl_->SendMouseWheelEvent(x, y, deltaX, deltaY);
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, SendMouseEvent001) {
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  int x = 1;
+  int y = 1;
+  int button = 1;
+  int action = 1;
+  int count = 1;
+  nweb_impl_->SendMouseEvent(x, y, button, action, count);
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, SendMouseEvent002) {
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  int x = 1;
+  int y = 1;
+  int button = 1;
+  int action = 3;
+  int count = 1;
+  nweb_impl_->SendMouseEvent(x, y, button, action, count);
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, Load001) {
+  std::string url = "https://example.com";
+  auto temp = OHOS::NWeb::NWEB_ERR;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->input_handler_ = nullptr;
+  nweb_impl_->output_handler_ = nullptr;
+  int ret = nweb_impl_->Load(url);
+  EXPECT_EQ(ret, temp);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->input_handler_, nullptr);
+  EXPECT_EQ(nweb_impl_->output_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, Load002) {
+  std::string url = "https://example.com";
+  auto temp = OHOS::NWeb::NWEB_ERR;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->input_handler_ = nullptr;
+  nweb_impl_->output_handler_ = nullptr;
+  int ret = nweb_impl_->Load(url);
+  EXPECT_EQ(ret, temp);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->input_handler_, nullptr);
+  EXPECT_EQ(nweb_impl_->output_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, Load003) {
+  std::string url = "https://example.com";
+  auto temp = OHOS::NWeb::NWEB_ERR;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->input_handler_ = nullptr;
+  nweb_impl_->output_handler_ = std::make_shared<NWebOutputHandler>(MockFrameCallback);
+  int ret = nweb_impl_->Load(url);
+  EXPECT_EQ(ret, temp);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->input_handler_, nullptr);
+  EXPECT_NE(nweb_impl_->output_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, Load004) {
+  std::string url = "https://example.com";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->input_handler_ = nullptr;
+  nweb_impl_->output_handler_ = std::make_shared<NWebOutputHandler>(MockFrameCallback);
+  uint32_t width = 100;
+  uint32_t height = 100;
+  nweb_impl_->output_handler_->Resize(width, height);
+  int ret = nweb_impl_->Load(url);
+  EXPECT_EQ(ret, nweb_impl_->nweb_delegate_->Load(url));
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->input_handler_, nullptr);
+  EXPECT_NE(nweb_impl_->output_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, IsNavigatebackwardAllowed001) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  auto result = nweb_impl_->IsNavigatebackwardAllowed();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, false);
+}
+
+TEST_F(NWebImplTest, IsNavigatebackwardAllowed002) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->IsNavigatebackwardAllowed();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, CanNavigateBackOrForward001) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  int numSteps = 1;
+  auto result = nweb_impl_->CanNavigateBackOrForward(numSteps);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, false);
+}
+
+TEST_F(NWebImplTest, CanNavigateBackOrForward002) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  int numSteps = 1;
+  nweb_impl_->CanNavigateBackOrForward(numSteps);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, NavigateBack001) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->NavigateBack();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, NavigateBack002) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->NavigateBack();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, NavigateForward001) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->NavigateForward();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, NavigateForward002) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->NavigateForward();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, NavigateBackOrForward001) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  int step = 1;
+  nweb_impl_->NavigateBackOrForward(step);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, NavigateBackOrForward002) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  int step = 1;
+  nweb_impl_->NavigateBackOrForward(step);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, DeleteNavigateHistory001) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->DeleteNavigateHistory();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, DeleteNavigateHistory002) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->DeleteNavigateHistory();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
 }  // namespace OHOS::NWeb
                           

@@ -31,12 +31,7 @@
                 "OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder, OH_AudioStream_Usage usage)"
             ]
         },
-        "includes": [
-            "ohaudio/native_audio_device_base.h",
-            "ohaudio/native_audio_manager.h",
-            "ohaudio/native_audio_routing_manager.h",
-            "ohaudio/native_audiostreambuilder.h"
-        ]
+        "includes": []
     },
     "native_avscreen_capture": {
         "apiList": {

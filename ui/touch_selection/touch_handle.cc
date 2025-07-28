@@ -194,7 +194,8 @@ bool TouchHandle::WillHandleTouchEvent(const MotionEvent& event) {
       if (touch_point.y() < drawable_bounds.y() ||
 #if BUILDFLAG(ARKWEB_MENU)
           !RectIntersectsCircle(drawable_bounds, touch_point, touch_radius) ||
-          (continuous_touch_nums_ > 1)) {
+          !(event.FromOverlay() || is_single_handle_) || (continuous_touch_nums_ > 1)) {
+        is_single_handle_ = false;
 #else
           !RectIntersectsCircle(drawable_bounds, touch_point, touch_radius)) {
 #endif  // #if BUILDFLAG(ARKWEB_MENU)
@@ -205,6 +206,7 @@ bool TouchHandle::WillHandleTouchEvent(const MotionEvent& event) {
       touch_drag_offset_ = focus_bottom_ - touch_down_position_;
       touch_down_time_ = event.GetEventTime();
 #if BUILDFLAG(ARKWEB_MENU)
+      is_single_handle_ = false;
       if (orientation_ == TouchHandleOrientation::LEFT) {
         touch_drag_offset_ = focus_top_ - touch_down_position_;
       }

@@ -440,12 +440,14 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                           const CefString& scheme,
                           CefRefPtr<CefAuthCallback> callback) override;
 
-  bool ShouldOverrideUrlLoading(CefRefPtr<CefBrowser> browser,
-                                const CefString& url,
-                                const CefString& method,
-                                bool user_gesture,
-                                bool is_redirect,
-                                bool is_outermost_main_frame) override;
+  bool ShouldOverrideUrlLoading(
+      CefRefPtr<CefBrowser> browser,
+      const CefString& url,
+      const CefString& method,
+      bool user_gesture,
+      bool is_redirect,
+      bool is_outermost_main_frame,
+      const CefString& extra_request_headers_str) override;
   bool OnOpenAppLink(const CefString& url,
                      CefRefPtr<CefOpenAppLinkCallback> callback) override;
   /* CefRequestHandler methods end */

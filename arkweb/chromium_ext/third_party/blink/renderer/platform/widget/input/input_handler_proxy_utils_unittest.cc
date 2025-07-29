@@ -338,17 +338,6 @@ class InputHandlerProxyUtilsTest : public ::testing::Test {
                                 int32_t hit_testing_number) {
     utils->mouse_hit_testing_number_ = hit_testing_number;
   }
-  void SetEvent(InputHandlerProxyUtils* utils,
-                const WebInputEvent& event,
-                const ui::LatencyInfo& info,
-                std::unique_ptr<cc::EventMetrics> metrics,
-                WebMouseEvent& start_touch_event) {
-    auto webEvent = std::make_unique<EventWithCallback>(
-        std::make_unique<WebCoalescedInputEvent>(event, info),
-        base::DoNothing(), std::move(metrics));
-    utils->native_mouse_event_queue_->Queue(std::move(webEvent));
-    utils->start_mouse_event_ = start_touch_event;
-  }
   void SetMouseEvent(InputHandlerProxyUtils* utils,
                      const WebInputEvent& event,
                      const ui::LatencyInfo& info,
@@ -377,12 +366,20 @@ class InputHandlerProxyUtilsTest : public ::testing::Test {
   void SetNativeEnabled(InputHandlerProxyUtils* utils, bool enable) {
     utils->native_enabled_ = enable;
   }
+  bool GetNativeEnabled(InputHandlerProxyUtils* utils) {
+    return utils->native_enabled_;
+  }
   void SetNeedFlushScrollUpdateGesture(InputHandlerProxyUtils* utils,
                                        bool status) {
     utils->need_flush_scroll_update_gesture_ = status;
   }
   bool GetNeedFlushScrollUpdateGesture(InputHandlerProxyUtils* utils) {
     return utils->need_flush_scroll_update_gesture_;
+  }
+  void SetMouseNativeMap(InputHandlerProxyUtils* utils,
+                         int32_t button,
+                         bool value) {
+    utils->mouse_native_map_[button] = value;
   }
 
  protected:
@@ -769,6 +766,204 @@ TEST_F(InputHandlerProxyUtilsTest, DidMouseEmbedEvent_003) {
                            WebInputEvent::Modifiers::kIsAutoRepeat);
   result = utils.DidMouseEmbedEvent(mouse_event);
   EXPECT_EQ(result, InputHandlerProxyUtils::NativeEventDisposition::NORMAL);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidMouseEmbedEvent_004) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  blink::WebMouseEvent mouse_event(
+      blink::WebInputEvent::Type::kMouseMove,
+      blink::WebInputEvent::kNoModifiers,
+      blink::WebInputEvent::GetStaticTimeStampForTests());
+  mouse_event.SetModifiers(WebInputEvent::Modifiers::kLeftButtonDown);
+  SetMouseNativeMap(&utils, WebInputEvent::Modifiers::kLeftButtonDown, true);
+  auto result = utils.DidMouseEmbedEvent(mouse_event);
+  EXPECT_EQ(result,
+            InputHandlerProxyUtils::NativeEventDisposition::SEND_NATIVE);
+  mouse_event.SetModifiers(WebInputEvent::Modifiers::kLeftButtonDown |
+                           WebInputEvent::Modifiers::kIsAutoRepeat);
+  SetMouseNativeMap(&utils,
+                    WebInputEvent::Modifiers::kLeftButtonDown |
+                        WebInputEvent::Modifiers::kIsAutoRepeat,
+                    true);
+  result = utils.DidMouseEmbedEvent(mouse_event);
+  EXPECT_EQ(result,
+            InputHandlerProxyUtils::NativeEventDisposition::SEND_NATIVE);
+  mouse_event.SetModifiers(WebInputEvent::Modifiers::kRightButtonDown);
+  SetMouseNativeMap(&utils, WebInputEvent::Modifiers::kRightButtonDown, true);
+  result = utils.DidMouseEmbedEvent(mouse_event);
+  EXPECT_EQ(result,
+            InputHandlerProxyUtils::NativeEventDisposition::SEND_NATIVE);
+  mouse_event.SetModifiers(WebInputEvent::Modifiers::kRightButtonDown |
+                           WebInputEvent::Modifiers::kIsAutoRepeat);
+  SetMouseNativeMap(&utils,
+                    WebInputEvent::Modifiers::kRightButtonDown |
+                        WebInputEvent::Modifiers::kIsAutoRepeat,
+                    true);
+  result = utils.DidMouseEmbedEvent(mouse_event);
+  EXPECT_EQ(result,
+            InputHandlerProxyUtils::NativeEventDisposition::SEND_NATIVE);
+  mouse_event.SetModifiers(WebInputEvent::Modifiers::kMiddleButtonDown);
+  SetMouseNativeMap(&utils, WebInputEvent::Modifiers::kMiddleButtonDown, true);
+  result = utils.DidMouseEmbedEvent(mouse_event);
+  EXPECT_EQ(result,
+            InputHandlerProxyUtils::NativeEventDisposition::SEND_NATIVE);
+  mouse_event.SetModifiers(WebInputEvent::Modifiers::kMiddleButtonDown |
+                           WebInputEvent::Modifiers::kIsAutoRepeat);
+  SetMouseNativeMap(&utils,
+                    WebInputEvent::Modifiers::kMiddleButtonDown |
+                        WebInputEvent::Modifiers::kIsAutoRepeat,
+                    true);
+  result = utils.DidMouseEmbedEvent(mouse_event);
+  EXPECT_EQ(result,
+            InputHandlerProxyUtils::NativeEventDisposition::SEND_NATIVE);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, SetGestureEventResult_001) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  utils.SetGestureEventResult(false, false);
+  WebTouchEvent touch_event;
+  WebTouchEvent event;
+  const ui::LatencyInfo info;
+  std::unique_ptr<cc::EventMetrics> metrics;
+  SetEvent(&utils, touch_event, info, std::move(metrics), event);
+  utils.SetGestureEventResult(false, false);
+  EXPECT_EQ(GetHitTestNumber(&utils), 0);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, SetGestureEventResult_002) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  WebTouchEvent touch_event;
+  WebTouchEvent event;
+  const ui::LatencyInfo info;
+  std::unique_ptr<cc::EventMetrics> metrics;
+  SetEvent(&utils, touch_event, info, std::move(metrics), event);
+  utils.SetGestureEventResult(true, true);
+  EXPECT_EQ(GetHitTestNumber(&utils), 0);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, SetGestureEventResult_003) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  WebTouchEvent touch_event;
+  WebTouchEvent event;
+  const ui::LatencyInfo info;
+  std::unique_ptr<cc::EventMetrics> metrics;
+  SetEvent(&utils, touch_event, info, std::move(metrics), event);
+  utils.SetGestureEventResult(false, true);
+  EXPECT_EQ(GetHitTestNumber(&utils), 0);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, SetMouseEventResult_003) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  WebMouseEvent touch_event;
+  WebMouseEvent event;
+  const ui::LatencyInfo info;
+  std::unique_ptr<cc::EventMetrics> metrics;
+  SetMouseEvent(&utils, touch_event, info, std::move(metrics), event);
+  utils.SetMouseEventResult(false, true);
+  EXPECT_EQ(GetHitTestNumber(&utils), 0);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, SetMouseEventResult_004) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  WebMouseEvent touch_event;
+  WebMouseEvent event;
+  const ui::LatencyInfo info;
+  std::unique_ptr<cc::EventMetrics> metrics;
+  SetMouseEvent(&utils, touch_event, info, std::move(metrics), event);
+  utils.SetMouseEventResult(true, false);
+  EXPECT_EQ(GetHitTestNumber(&utils), 0);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, SetNativeEmbedMode_001) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  utils.SetNativeEmbedMode(true);
+  EXPECT_EQ(GetNativeEnabled(&utils), true);
+  utils.SetNativeEmbedMode(false);
+  EXPECT_EQ(GetNativeEnabled(&utils), false);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, NeedFlushScrollUpdateGesture_001) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  SetNeedFlushScrollUpdateGesture(&utils, true);
+  WebGestureEvent gesture_event;
+  gesture_event.SetType(WebGestureEvent::Type::kGestureScrollUpdate);
+  utils.NeedFlushScrollUpdateGesture(gesture_event);
+  SetNeedFlushScrollUpdateGesture(&utils, true);
+  gesture_event.SetType(WebGestureEvent::Type::kGestureFlingStart);
+  utils.NeedFlushScrollUpdateGesture(gesture_event);
+  SetNeedFlushScrollUpdateGesture(&utils, false);
+  gesture_event.SetType(WebGestureEvent::Type::kGestureFlingStart);
+  utils.NeedFlushScrollUpdateGesture(gesture_event);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, SetBypassVsyncCondition_001) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  utils.SetBypassVsyncCondition(0);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, GetOverScrollOffset_001) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  utils.GetOverScrollOffset();
 }
 #pragma clang diagnostic pop
 }  // namespace blink

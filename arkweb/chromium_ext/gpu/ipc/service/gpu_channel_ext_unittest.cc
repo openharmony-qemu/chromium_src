@@ -1,0 +1,107 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_channel_ext.h"
+#include "gtest/gtest.h"
+#include "base/test/task_environment.h"
+#include "gpu/ipc/service/gpu_channel_manager.h"
+#include "testing/gmock/include/gmock/gmock.h"
+
+#include <stdint.h>
+#include "gpu/ipc/service/gpu_channel.h"
+#include "base/run_loop.h"
+#include "base/test/test_simple_task_runner.h"
+#include "build/build_config.h"
+#include "gpu/ipc/common/command_buffer_id.h"
+#include "gpu/ipc/common/gpu_channel.mojom.h"
+#include "gpu/ipc/service/gpu_channel_manager.h"
+#include "gpu/ipc/service/gpu_channel_test_common.h"
+#include "base/threading/thread.h"
+#include "base/logging.h"
+
+#define invalidNativeId -10000
+#define validNativeId 1
+
+namespace gpu {
+
+class GpuChannelOHOSTest : public GpuChannelTestCommon {
+ public:
+  GpuChannelOHOSTest() : GpuChannelTestCommon(true /* use_stub_bindings */) {}
+  ~GpuChannelOHOSTest() override = default;
+
+  void SetUp() {
+    channel_ = CreateChannel(kDefaultClientId, true /* is_gpu_host */);
+    ASSERT_TRUE(channel_);
+  }
+
+  void TearDown() {
+    channel_ = nullptr;
+  }
+
+  static constexpr int32_t kDefaultClientId = 1;
+  GpuChannel* channel_ = nullptr;
+};
+
+class GpuChannelExtOHOSTest : public GpuChannelOHOSTest {
+protected:
+    void SetUp() {
+        GpuChannelOHOSTest::SetUp();
+        context_state_ = channel_->gpu_channel_manager()->GetSharedContextState(&result_);
+        ASSERT_EQ(result_, ContextResult::kSuccess);
+        gpu_channel_ext_ = static_cast<GpuChannelExt*>(channel_);
+    }
+
+    void TearDown() {
+        gpu_channel_ext_ = nullptr;
+        GpuChannelOHOSTest::TearDown();
+    }
+    
+    ContextResult result_;
+    scoped_refptr<SharedContextState> context_state_;
+    GpuChannelExt* gpu_channel_ext_;
+};
+
+TEST_F(GpuChannelExtOHOSTest, test001) {
+    mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+    int32_t result = gpu_channel_ext_->CreateNativeTexture(
+        validNativeId, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
+    EXPECT_NE(result, -1);
+}
+
+TEST_F(GpuChannelExtOHOSTest, test002) {
+  auto ret = gpu_channel_ext_->AsGpuChannelExt();
+  EXPECT_NE(ret, nullptr);
+}
+
+TEST_F(GpuChannelExtOHOSTest, test003) {
+  gpu_channel_ext_->DestroyNativeTexture(invalidNativeId);
+}
+
+TEST_F(GpuChannelExtOHOSTest, test004) {
+  gpu_channel_ext_->DestroyNativeTexture(validNativeId);
+}
+
+TEST_F(GpuChannelExtOHOSTest, test005) {
+    base::ohos::BlanklessDumpInfo valid_info;
+    base::ohos::BlanklessDumpInfo info;
+    std::unordered_map<uint64_t, base::ohos::BlanklessDumpInfo> blankless_dump_info_map_;
+    const uint64_t kValidFrameSinkId = 12345;
+    valid_info.dump_enabled = true;
+    blankless_dump_info_map_[kValidFrameSinkId] = valid_info;
+    bool result = gpu_channel_ext_->GetBlanklessDumpInfoAndDisableDump(kValidFrameSinkId, info);
+    EXPECT_FALSE(result);
+}
+
+}

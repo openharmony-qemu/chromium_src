@@ -28,6 +28,7 @@
 #include "gpu/ipc/service/command_buffer_stub.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
+#include "base/gtest_prod_util.h"
 
 namespace gfx {
 class Size;
@@ -59,6 +60,12 @@ class StreamTexture : public RefCountedLockHelperDrDc,
   int NativeEmbedID();
 
  private:
+  FRIEND_TEST(StreamTextureOHOSTest, RunCallback);
+  FRIEND_TEST(StreamTextureOHOSTest, OnFrameAvailable);
+  FRIEND_TEST(StreamTextureOHOSTest, UpdatesSize);
+  FRIEND_TEST(StreamTextureOHOSTest, FailsIfChannelNull);
+  FRIEND_TEST(StreamTextureOHOSTest, ReturnsCachedValue);
+  FRIEND_TEST(StreamTextureOHOSTest, GeneratesNewIdWhenUnset);
   StreamTexture(GpuChannel* channel,
                 int32_t route_id,
                 gl::ohos::TextureOwnerMode texture_owner_mode,

@@ -44,6 +44,11 @@ public:
     void CountOHOSTrace(const std::string& name, int64_t count) override;
 
     bool IsACETraceEnable() override;
+    
+    uint64_t ConvertToInt64(const char *originValue, uint64_t defaultValue);
+private:
+    int decimal_numeral_system_ = 10;
+    uint64_t arkweb_hitrace_enable_ = (1ULL << 24);
 };
 } // namespace OHOS::NWeb
 

@@ -16,6 +16,7 @@
 #define THIRD_PARTY_BLINK_RENDERER_PLATFORM_EXPORTED_WE_CACHE_H_
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 #include "build/build_config.h"
 #include "third_party/blink/public/platform/web_cache.h"
 #if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
@@ -34,7 +35,7 @@ class ResourceResponse;
 
 class WebCacheUtils {
   public:
-  WebCache* web_cache_;
+  raw_ptr<WebCache> web_cache_;
   WebCacheUtils(WebCache* web_cache);
 #if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
   // Add resource into MemoryCache

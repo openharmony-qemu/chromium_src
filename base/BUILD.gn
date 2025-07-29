@@ -4321,7 +4321,6 @@ test("base_unittests") {
   if (enable_arkweb) {
     deps += [ "//arkweb/build/features" ]
     sources += arkweb_metrics_unittests_sources
-    sources += arkweb_field_trial_utils_unittest_source
   }
 }
 

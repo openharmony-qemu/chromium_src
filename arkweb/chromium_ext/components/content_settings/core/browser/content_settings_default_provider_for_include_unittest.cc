@@ -13,7 +13,6 @@
  * limitations under the License.
 */
 
-#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
 #include "base/command_line.h"
 #include "base/test/scoped_command_line.h"
 #include "content/public/common/content_switches.h"
@@ -50,5 +49,3 @@ TEST(ContentSettingsDefaultProviderForIncludeTest, ShouldSkipSettingForContentTy
 }
 
 } // namespace content_settings
-
-#endif // BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)

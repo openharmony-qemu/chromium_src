@@ -620,7 +620,7 @@ source_set("unittests") {
     ":cef_nweb_config",
   ]
 
-  include_dirs = [ "//ppapi/lib/gl/include" ]
+  include_dirs = [ "//ppapi/lib/gl/include", "//third_party/webrtc" ]
 
   sources = [
     "src/cef_delegate/nweb_access_request_delegate_unittest.cc",
@@ -631,7 +631,7 @@ source_set("unittests") {
     "src/cef_delegate/nweb_pipe_resource_handler_unittest.cc",
     "src/cef_delegate/nweb_preference_delegate_unittest.cc",
     "src/cef_delegate/nweb_web_storage_delegate_unittest.cc",
-    "src/cef_delegate/nweb_data_base_delegate_unittest.cc",
+    "src/cef_delegate/nweb_data_base_delegate_unittes.cc",
     "src/cef_delegate/nweb_render_handler_unittest.cc",
     "src/cef_delegate/nweb_scheme_handler_factory_unittest.cc",
     "src/ndk/scheme_handler/http_body_stream_unittest.cc",

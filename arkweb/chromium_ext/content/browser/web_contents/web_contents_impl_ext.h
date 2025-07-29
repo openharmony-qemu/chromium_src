@@ -321,6 +321,10 @@ public:
   void SetMediaResumeFromBFCachePage(bool resume) override;
   bool media_resume_from_bfcache_page_ = true;
 #endif // BUILDFLAG(ARKWEB_BFCACHE)
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void OnBrowserForeground() override;
+  void OnBrowserBackground() override;
+#endif
 
 private:
   std::string custom_user_agent_;

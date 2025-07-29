@@ -847,7 +847,10 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) override;
   int64_t GetPreferenceHash() override;
 #endif
-
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void OnBrowserForeground() override;
+  void OnBrowserBackground() override;
+#endif
  public:
   int argc_;
   RAW_PTR_EXCLUSION const char** argv_;

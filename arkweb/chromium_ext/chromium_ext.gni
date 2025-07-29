@@ -209,6 +209,11 @@ arkweb_ui_events_velocity_tracker_sources = [
   "//arkweb/chromium_ext/ui/events/velocity_tracker/motion_event_generic_utils.h",
 ]
 
+arkweb_ui_touch_selection_unitest_sources = [
+  "//arkweb/chromium_ext/ui/touch_selection/touch_selection_controller_ext_unittest.cc",
+  "//arkweb/chromium_ext/ui/touch_selection/touch_handle_ext_unittest.cc",
+]
+
 arkweb_ui_touch_selection_sources = [
   "//arkweb/chromium_ext/ui/touch_selection/touch_selection_controller_ext.cc",
   "//arkweb/chromium_ext/ui/touch_selection/touch_selection_controller_ext.h",

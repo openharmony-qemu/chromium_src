@@ -27,7 +27,7 @@
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
 #include "minidump/minidump_user_extension_stream_data_source.h"
-#include "arkweb/ohos_newb_ex/third_party/securec/inculde/securec.h"
+#include "arkweb/ohos_nweb_ex/third_party/securec/include/securec.h"
 #endif
 
 #include "snapshot/linux/process_snapshot_linux.h"

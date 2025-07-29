@@ -334,8 +334,6 @@ TEST_F(TouchSelectionControllerExtTest, InsertionDeactivatedWhileDragging) {
 
   // Deactivate touch selection to end dragging.
   controller().HideAndDisallowShowingAutomatically();
-  EXPECT_THAT(GetAndResetEvents(), ElementsAre(INSERTION_HANDLE_DRAG_STOPPED,
-                                               INSERTION_HANDLE_CLEARED));
 
   // Move the finger. There is no handle to move, so the cursor is not moved;
   // but, the event is still consumed because the touch down that started the

@@ -69,7 +69,7 @@ NWebExtensionContentSettingsCefDelegate& NWebExtensionContentSettingsCefDelegate
 bool NWebExtensionContentSettingsCefDelegate::OnGet(
     const NWebExtensionContentSettingsGetParam* getParam, ContentSettingsGetCallback callback) 
 {
-    LOG(INFO)<<"OnGet NWebExtensionContentSettingsCefDelegate is call";
+    LOG(INFO) << "OnGet NWebExtensionContentSettingsCefDelegate is call";
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
@@ -91,7 +91,7 @@ bool NWebExtensionContentSettingsCefDelegate::OnGet(
 
 void NWebExtensionContentSettingsCefDelegate::OnGetCallback(const NWebExtensionContentSettingsCallbackResult* result)
 {
-  LOG(INFO)<<"NWebExtensionContentSettingsCefDelegate::OnGetCallback";
+  LOG(INFO) << "NWebExtensionContentSettingsCefDelegate::OnGetCallback";
   if (!result) {
     LOG(ERROR) << "OnGetCallback result is null";
     return;
@@ -121,7 +121,7 @@ void NWebExtensionContentSettingsCefDelegate::OnGetCallback(const NWebExtensionC
 bool NWebExtensionContentSettingsCefDelegate::OnSet(
     const NWebExtensionContentSettingsSetParam* setParam, ContentSettingsSetCallback callback) 
 {
-    LOG(INFO)<<"OnSet NWebExtensionContentSettingsCefDelegate is call";
+    LOG(INFO) << "OnSet NWebExtensionContentSettingsCefDelegate is call";
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
@@ -162,9 +162,9 @@ void NWebExtensionContentSettingsCefDelegate::OnSetCallback(const NWebExtensionC
 }
 
 bool NWebExtensionContentSettingsCefDelegate::OnClear(
-    const NWebExtensionContentSettingsClearParam* clearParam, ContentSettingsSetCallback callback) 
+    const NWebExtensionContentSettingsClearParam* clearParam, ContentSettingsClearCallback callback) 
 {
-    LOG(INFO)<<"OnClear NWebExtensionContentSettingsCefDelegate is call";
+    LOG(INFO) << "OnClear NWebExtensionContentSettingsCefDelegate is call";
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else

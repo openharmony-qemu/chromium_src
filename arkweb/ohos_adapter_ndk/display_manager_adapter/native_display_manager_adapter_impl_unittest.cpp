@@ -28,7 +28,7 @@ public:
 
     ~FoldStatusListenerAdapterMock() override = default;
 
-    void onFoldStatusChanged(FoldSatus foldstatus) override {}
+    void onFoldStatusChanged(FoldStatus foldstatus) override {}
 };
 
 class NativeDisplayManagerAdapterImplTest : public testing::Test {
@@ -45,7 +45,7 @@ protected:
     std::unique_ptr<NativeDisplayAdapterImpl> display_adapter_;
     std::unique_ptr<NativeDisplayManagerAdapterImpl> manager_adapter_;
 
-}
+};
 
 TEST_F(NativeDisplayManagerAdapterImplTest, FoldStatusListenerAdapterTest)
 {
@@ -56,14 +56,14 @@ TEST_F(NativeDisplayManagerAdapterImplTest, FoldStatusListenerAdapterTest)
     listener_adapter_->OnFoldStatusChanged(DISPLAY_MANAGER_FOLD_DISPLAY_MODE_COORDINATION);
     listener_adapter_->OnFoldStatusChanged(static_cast<NativeDisplayManager_FoldDisplayMode>(999));
 
-    std::shared_ptr<NativeFoldStatusListenerAdapterImpl> null_adapter_ = std::make_unique<NativeFoldStatusListenerAdapterImpl>(nullptr);
+    std::shared_ptr<NativeFoldStatusListenerAdapterImpl> null_adapter_ = 
+                                        std::make_unique<NativeFoldStatusListenerAdapterImpl>(nullptr);
     null_adapter_->OnFoldStatusChanged(DISPLAY_MANAGER_FOLD_DISPLAY_MODE_FULL);
 }
 
 TEST_F(NativeDisplayManagerAdapterImplTest, DisplayAdapterTest)
 {
-    RotationType rotation_type;
-    rotation_type = display_adapter_->ConvertRotationType(DISPLAY_MANAGER_ROTATION_0);
+    RotationType rotation_type = display_adapter_->ConvertRotationType(DISPLAY_MANAGER_ROTATION_0);
     EXPECT_EQ(rotation_type, RotationType::ROTATION_0);
     rotation_type = display_adapter_->ConvertRotationType(DISPLAY_MANAGER_ROTATION_90);
     EXPECT_EQ(rotation_type, RotationType::ROTATION_90);
@@ -74,12 +74,12 @@ TEST_F(NativeDisplayManagerAdapterImplTest, DisplayAdapterTest)
     rotation_type = display_adapter_->ConvertRotationType(static_cast<NativeDisplayManager_Rotation>(999));
     EXPECT_EQ(rotation_type, RotationType::ROTATION_BUTT);
 
-    OrientationType orientation_type;
-    orientation_type = display_adapter_->ConvertOrientationType(static_cast<NativeDisplayManager_Orientation>(999));
+    OrientationType orientation_type = display_adapter_
+                                        ->ConvertOrientationType(static_cast<NativeDisplayManager_Orientation>(999));
     EXPECT_EQ(orientation_type, OrientationType::BUTT);
 
-    DisplayOrientation display_orientation;
-    display_orientation = display_adapter_->ConvertDisplayOrientationType(DISPLAY_MANAGER_PORTRAIT);
+    DisplayOrientation display_orientation = display_adapter_
+                                              ->ConvertDisplayOrientationType(DISPLAY_MANAGER_PORTRAIT);
     EXPECT_EQ(display_orientation, DisplayOrientation::PORTRAIT);
     display_orientation = display_adapter_->ConvertDisplayOrientationType(DISPLAY_MANAGER_LANDSCAPE);
     EXPECT_EQ(display_orientation, DisplayOrientation::LANDSCAPE);
@@ -87,11 +87,11 @@ TEST_F(NativeDisplayManagerAdapterImplTest, DisplayAdapterTest)
     EXPECT_EQ(display_orientation, DisplayOrientation::PORTRAIT_INVERTED);
     display_orientation = display_adapter_->ConvertDisplayOrientationType(DISPLAY_MANAGER_LANDSCAPE_INVERTED);
     EXPECT_EQ(display_orientation, DisplayOrientation::LANDSCAPE_INVERTED);
-    display_orientation = display_adapter_->ConvertDisplayOrientationType(static_cast<NativeDisplayManager_Orientation>(999));
+    display_orientation = display_adapter_
+                            ->ConvertDisplayOrientationType(static_cast<NativeDisplayManager_Orientation>(999));
     EXPECT_EQ(display_orientation, DisplayOrientation::UNKNOWN);
 
-    FoldStatus fold_status;
-    fold_status = display_adapter_->ConvertFoldStatus(DISPLAY_MANAGER_FOLD_DISPLAY_MODE_FULL);
+    FoldStatus fold_status = display_adapter_->ConvertFoldStatus(DISPLAY_MANAGER_FOLD_DISPLAY_MODE_FULL);
     EXPECT_EQ(fold_status, FoldStatus::FULL);
     fold_status = display_adapter_->ConvertFoldStatus(DISPLAY_MANAGER_FOLD_DISPLAY_MODE_MAIN);
     EXPECT_EQ(fold_status, FoldStatus::MAIN);
@@ -102,7 +102,7 @@ TEST_F(NativeDisplayManagerAdapterImplTest, DisplayAdapterTest)
     fold_status = display_adapter_->ConvertFoldStatus(static_cast<NativeDisplayManager_FoldDisplayMode>(999));
     EXPECT_EQ(fold_status, FoldStatus::UNKNOWN);
 
-    displayId display_id = display_adapter_->GetId();
+    DisplayId display_id = display_adapter_->GetId();
     EXPECT_NE(display_id, static_cast<DisplayId>(-1));
 
     int32_t width = display_adapter_->GetWidth();
@@ -115,13 +115,9 @@ TEST_F(NativeDisplayManagerAdapterImplTest, DisplayAdapterTest)
     EXPECT_NE(virtual_pixel, -1);
 
     rotation_type = display_adapter_->GetRotation();
-
     int32_t ppi = display_adapter_->GetDpi();
-
     display_orientation = display_adapter_->GetDisplayOrientation();
-
     fold_status = display_adapter_->GetFoldStatus();
-
     int32_t density_dpi = display_adapter_->GetDensityDpi();
     EXPECT_NE(density_dpi, -1);
 }
@@ -133,10 +129,8 @@ TEST_F(NativeDisplayManagerAdapterImplTest, DisplayManagerAdapterTest)
 
     bool is_default_portrait = manager_adapter_->IsDefaultPortrait();
 
-    uint32_t reg_id;
-    reg_id = manager_adapter_->RegisterFoldStatusListener(listener_);
-    bool is_unregistered;
-    is_unregistered = manager_adapter_->UnregisterFoldStatusListener(reg_id);
+    uint32_t reg_id = manager_adapter_->RegisterFoldStatusListener(listener_);
+    bool is_unregistered = manager_adapter_->UnregisterFoldStatusListener(reg_id);
 
     reg_id = manager_adapter_->RegisterFoldStatusListener(nullptr);
     is_unregistered = manager_adapter_->UnregisterFoldStatusListener(reg_id);

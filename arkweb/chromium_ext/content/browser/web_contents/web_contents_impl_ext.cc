@@ -1078,4 +1078,18 @@ void WebContentsImplExt::SetMediaResumeFromBFCachePage(bool resume) {
 }
 #endif // BUILDFLAG(ARKWEB_BFCACHE)
 
+#if BUILDFLAG(ARKWEB_BGTASK)
+void WebContentsImplExt::OnBrowserForeground()
+{
+  LOG(INFO) << "WebContentsImplExt::OnBrowserForeground";
+  observers_.NotifyObservers(&WebContentsObserver::OnBrowserForeground);
+}
+
+void WebContentsImplExt::OnBrowserBackground()
+{
+  LOG(INFO) << "WebContentsImplExt::OnBrowserBackground";
+  observers_.NotifyObservers(&WebContentsObserver::OnBrowserBackground);
+}
+#endif
+
 }  // namespace content

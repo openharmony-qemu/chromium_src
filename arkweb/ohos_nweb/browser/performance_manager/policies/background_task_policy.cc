@@ -192,5 +192,31 @@ void BackgroundTaskPolicy::MaybeChangeBackgroundTask(
     LOG(INFO) << BG_TASK_TAG << " request bg task failed";
   }
 }
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+void BackgroundTaskPolicy::SetBrowserForeground(const PageNode* page_node)
+{
+  LOG(INFO) << BG_TASK_TAG << "BackgroundTaskPolicy::" << __FUNCTION__;
+  bool ret = background_task_holder_->MaybeRequestBackgroundRunning(false, BackgroundModeAdapter::AUDIO_PLAYBACK);
+  if (ret) {
+    LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << "request bg task success";
+
+  } else {
+    LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << "request bg task failed";
+  }
+}
+
+void BackgroundTaskPolicy::SetBrowserBackground(const PageNode* page_node)
+{
+  LOG(INFO) << BG_TASK_TAG << "BackgroundTaskPolicy::" << __FUNCTION__;
+  if (media_playing_num_ > 0 || audio_state_num_ > 0) {
+    bool ret = background_task_holder_->MaybeRequestBackgroundRunning(true, BackgroundModeAdapter::AUDIO_PLAYBACK);
+    if (ret) {
+      LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << "request bg task success";
+    } else {
+      LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << "request bg task failed";
+    }
+  }
+}
+#endif
 }  // namespace performance_manager::policies
-                                             

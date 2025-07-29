@@ -17,6 +17,7 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_PAINT_TIMING_PAINT_TIMING_DETECTOR_UTILS_H_
 
 #include "arkweb/build/features/features.h"
+#include "third_party/blink/renderer/platform/heap/persistent.h"
 
 namespace blink {
 
@@ -24,7 +25,7 @@ class PaintTimingDetector;
 
 class PaintTimingDetectorUtils {
  public:
-  PaintTimingDetector* paint_timing_detector_;
+  Persistent<PaintTimingDetector> paint_timing_detector_;
   PaintTimingDetectorUtils(PaintTimingDetector* paint_timing_detector);
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)

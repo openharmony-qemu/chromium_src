@@ -95,6 +95,7 @@ PlatformSensorOHOS::PlatformSensorOHOS(
   }
 }
 
+// LCOV_EXCL_START
 PlatformSensorOHOS::~PlatformSensorOHOS() {
 }
 
@@ -147,6 +148,7 @@ double PlatformSensorOHOS::GetMinimumSupportedFrequency() {
   LOG(INFO) << "GetMinimumSupportedFrequency. frequency: " << frequency;
   return frequency;
 }
+// LCOV_EXCL_STOP
 
 bool PlatformSensorOHOS::StartSensor(
     const PlatformSensorConfiguration& configuration) {
@@ -199,6 +201,7 @@ bool PlatformSensorOHOS::StartSensor(
   return true;
 }
 
+// LCOV_EXCL_START
 void PlatformSensorOHOS::StopSensor() {
   if (!sensor_adapter_) {
     LOG(ERROR) << "StopSensor Error, sensor_adapter_ is null, "
@@ -214,6 +217,7 @@ void PlatformSensorOHOS::StopSensor() {
   current_sampling_interval_ = 0;
   LOG(INFO) << "StopSensor. Type: " << GetType();
 }
+// LCOV_EXCL_STOP
 
 bool PlatformSensorOHOS::CheckSensorConfiguration(
     const PlatformSensorConfiguration& configuration) {
@@ -236,12 +240,13 @@ bool PlatformSensorOHOS::CheckSensorConfiguration(
   return true;
 }
 
+// LCOV_EXCL_START
 void PlatformSensorOHOS::NotifyPlatformSensorError(){
   PostTaskToMainSequence(
     FROM_HERE,
     base::BindOnce(&PlatformSensorOHOS::NotifySensorError, this));
 }
-
+// LCOV_EXCL_STOP
 
 void PlatformSensorOHOS::UpdatePlatformSensorReading(double timestamp,
     double value1, double value2, double value3, double value4) {

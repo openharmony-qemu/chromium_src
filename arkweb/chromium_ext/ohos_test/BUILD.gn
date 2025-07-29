@@ -35,6 +35,7 @@ group("ohos_fuzz") {
     deps = [
       ":nweb_cookie_manager_imp_fuzzers",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/date_time_format_adapter_impl_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/graphic_adapter/ashmem_adapter_impl_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/graphic_adapter/window_adapter_impl_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/graphic_adapter/native_image_adapter_impl_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl_fuzzer",

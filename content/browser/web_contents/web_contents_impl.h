@@ -1005,7 +1005,12 @@ class CONTENT_EXPORT WebContentsImpl
       PreloadingAttempt* preloading_attempt,
       base::RepeatingCallback<bool(const GURL&,
                                    const std::optional<UrlMatchType>&)>,
-      base::RepeatingCallback<void(NavigationHandle&)>) override;
+      base::RepeatingCallback<void(NavigationHandle&)>
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+      const char* extra_headers = nullptr
+#endif
+      ) override;
   void CancelAllPrerendering() override;
   void BackNavigationLikely(PreloadingPredictor predictor,
                             WindowOpenDisposition disposition) override;

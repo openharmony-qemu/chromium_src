@@ -31,7 +31,7 @@ using namespace OHOS::NWeb;
 
 namespace OHOS::NWeb {
 namespace {
-const int32_t RDB_VERSION = 3;
+const int32_t RDB_VERSION = 4;
 const std::string WEB_SNAPSHOT_DATABASE_FILE = "web_snapshot.db";
 
 const int DEFAULT_CAPACITY = 30; // in MB
@@ -45,6 +45,8 @@ const std::string SNAPSHOT_KEY_COL = "key";
 const std::string WHOLE_SNAPSHOT_COL = "wholeSnapshotpath";
 const std::string STATIC_SNAPSHOT_COL = "staticSnapshotpath";
 const std::string SNAPSHOT_TIME_COL = "snapshotTime";
+const std::string SNAPSHOT_WIDTH = "width";
+const std::string SNAPSHOT_HEIGHT = "height";
 const std::string SIMILARITY_COL = "similarity";
 const std::string LCP_TIME_COL = "lcpTime";
 const std::string SNAPSHOT_FILE_SIZE_COL = "snapshotFileSize";
@@ -62,6 +64,7 @@ const std::string CREATE_TABLE = "CREATE TABLE " + SNAPSHOT_TABLE_NAME
     + " (" + ID_COL + " INTEGER PRIMARY KEY, "
     + SNAPSHOT_KEY_COL + " INTEGER, " + WHOLE_SNAPSHOT_COL + " TEXT, "
     + STATIC_SNAPSHOT_COL + " TEXT, " + SNAPSHOT_TIME_COL + " INTEGER, "
+    + SNAPSHOT_WIDTH + " INTEGER, " + SNAPSHOT_HEIGHT + " INTEGER, "
     + SIMILARITY_COL + " REAL, " + LCP_TIME_COL + " INTEGER, "
     + SNAPSHOT_FILE_SIZE_COL + " INTEGER, " + SNAPSHOT_FILE_TIME_COL + " INTEGER, "
     + PREFERENCE_HASH_COL + " INTEGER, "
@@ -390,6 +393,10 @@ __attribute__((no_sanitize("cfi", "cfi-icall"))) void OhosWebSnapshotDataBase::G
     cursor->getColumnIndex(cursor, STATIC_SNAPSHOT_COL.c_str(), &staticPathColumnIndex);
     int32_t snapshotTimeColumnIndex;
     cursor->getColumnIndex(cursor, SNAPSHOT_TIME_COL.c_str(), &snapshotTimeColumnIndex);
+    int32_t widthIndex;
+    cursor->getColumnIndex(cursor, SNAPSHOT_WIDTH.c_str(), &widthIndex);
+    int32_t heightIndex;
+    cursor->getColumnIndex(cursor, SNAPSHOT_HEIGHT.c_str(), &heightIndex);
     int32_t similarityColumnIndex;
     cursor->getColumnIndex(cursor, SIMILARITY_COL.c_str(), &similarityColumnIndex);
     int32_t lcpTimeColumnIndex;
@@ -420,6 +427,13 @@ __attribute__((no_sanitize("cfi", "cfi-icall"))) void OhosWebSnapshotDataBase::G
             invalidKeys.push_back(blankless_key);
             continue;
         }
+        int64_t width;
+        cursor->getInt64(cursor, widthIndex, &width);
+        dataItem.width = static_cast<int32_t>(width);
+        int64_t height;
+        cursor->getInt64(cursor, heightIndex, &height);
+        dataItem.height = static_cast<int32_t>(height);
+
         cursor->getSize(cursor, wholePathColumnIndex, &size);
         auto wholePath = std::make_unique<char[]>(size + 1);
         cursor->getText(cursor, wholePathColumnIndex, wholePath.get(), size + 1);
@@ -532,6 +546,8 @@ __attribute__((no_sanitize("cfi", "cfi-icall"))) int32_t OhosWebSnapshotDataBase
     valueBucket->putInt64(valueBucket, SNAPSHOT_FILE_TIME_COL.c_str(), data.snapshotData.snapShotFileTime);
     valueBucket->putInt64(valueBucket, PREFERENCE_HASH_COL.c_str(), data.snapshotData.preferenceHash);
     valueBucket->putInt64(valueBucket, SNAPSHOT_TIME_COL.c_str(), data.time);
+    valueBucket->putInt64(valueBucket, SNAPSHOT_WIDTH.c_str(), data.snapshotData.width);
+    valueBucket->putInt64(valueBucket, SNAPSHOT_HEIGHT.c_str(), data.snapshotData.height);
     int32_t errCode = OH_Rdb_Insert(rdbStore_, SNAPSHOT_TABLE_NAME.c_str(), valueBucket);
     valueBucket->destroy(valueBucket);
     return errCode;

@@ -56,6 +56,10 @@
 #include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "ui/gfx/geometry/size.h"
+#endif
+
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -865,6 +869,9 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   virtual void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) = 0;
   virtual int64_t GetPreferenceHash() = 0;
+  virtual void SetNearestSnapshotSize(int32_t width, int32_t height) = 0;
+  virtual gfx::Size GetNearestSnapshotSize() = 0;
+  virtual gfx::Size GetSize() = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_MENU)

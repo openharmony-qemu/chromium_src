@@ -1227,12 +1227,27 @@ int64_t NWebPreferenceDelegate::GetPreferenceHash()
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
     << GetNativeEmbedMode() << ", "
 #endif
+    << GetRotationType() << ", "
     << GetScrollBarColor();
   pref_hash_ = std::hash<std::string>{}(str.str());
 
   LOG(DEBUG) << "NWebPreferenceDelegate::GetPreferenceHash() hash = " << pref_hash_;
 
   return pref_hash_;
+}
+
+bool NWebPreferenceDelegate::SetRotationType(uint32_t type) {
+  if (rotationType_ == type) {
+    return false;
+  }
+  rotationType_ = type;
+  pref_hash_cached_ = false;
+  pref_hash_ = 0;
+  return true;
+}
+
+uint32_t NWebPreferenceDelegate::GetRiotationType() {
+  return rotationType_;
 }
 #endif
 }  // namespace OHOS::NWeb

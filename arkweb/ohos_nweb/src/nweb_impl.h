@@ -1015,6 +1015,7 @@ class NWebImpl : public NWeb {
   int32_t SetBlanklessLoadingWithKey(const std::string& key, bool isStart) override;
   int64_t GetPreferenceHash();
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
+  void RemoveBlanklessFrame();
 #endif
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)

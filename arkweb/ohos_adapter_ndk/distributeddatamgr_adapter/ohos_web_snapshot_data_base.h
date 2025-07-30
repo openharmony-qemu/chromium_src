@@ -32,6 +32,8 @@ struct SnapshotDataItem {
     int64_t snapShotFileSize = 0;
     int64_t snapShotFileTime = 0;
     int64_t preferenceHash = 0;
+    int32_t width = 0;
+    int32_t height = 0;
 };
 
 class OhosWebSnapshotDataBaseCallback {

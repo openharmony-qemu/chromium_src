@@ -849,6 +849,9 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) override;
   int64_t GetPreferenceHash() override;
+  void SetNearestSnapshotSize(int32_t width, int32_t height) override;
+  gfx::Size GetNearestSnapshotSize() override;
+  gfx::Size GetSize() override;
 #endif
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override;

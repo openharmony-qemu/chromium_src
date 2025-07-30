@@ -1459,6 +1459,12 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 #endif
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (nweb_delegate_->GetNearestSnapshotSize() != gfx::Size(width, height)) {
+    RemoveBlanklessFrame();
+  }
+#endif
 }
 
 void NWebImpl::ResizeVisibleViewport(uint32_t width,
@@ -5989,9 +5995,22 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
       LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey similarity < 0.33";
       return -5;    // ERR_SIGNIFICANT_CHANGE
     }
+    if (gfx::Size(dataItem.width, dataItem.height) != nweb_delegate_->GetSize()) {
+      LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey snapshot resolution is different from webPattern";
+      return -5;
+    }
+    nweb_delegate_->SetNearestSnapshotSize(dataItem.width, dataItem.height);
     CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath);
   }
   return 0;   // SUCCESS
+}
+
+void NWebImpl::RemoveBlanklessFrame() {
+  if (nweb_delegate_->GetNearestSnapshotSize().IsEmpty()) {
+    return;
+  }
+  nweb_handle_->OnRemoveBlanklessFrame(0);
+  nweb_delegate_->SetNearestSnapshotSize(0, 0);
 }
 
 void NWebImpl::TriggerBlanklessForUrl(const std::string& url) {

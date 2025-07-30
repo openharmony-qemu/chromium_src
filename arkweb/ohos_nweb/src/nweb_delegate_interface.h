@@ -883,6 +883,10 @@ class NWebDelegateInterface
   virtual void SetErrorPageEnabled(bool enable) = 0;
   virtual bool GetErrorPageEnabled() = 0;
 #endif
+#if BUILDFLAG(ARKWEB_BGTASK)
+  virtual void OnBrowserForeground() = 0;
+  virtual void OnBrowserBackground() = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

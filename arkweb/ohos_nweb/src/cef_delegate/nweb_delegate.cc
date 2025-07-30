@@ -5809,4 +5809,24 @@ bool NWebDelegate::GetErrorPageEnabled() {
   return preference_delegate_->ErrorPageEnabled();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+void NWebDelegate::OnBrowserForeground() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "OnBrowserForeground can not get browser";
+    return;
+  }
+  LOG(INFO) << "NWebDelegate::OnBrowserForeground";
+  GetBrowser()->GetHost()->OnBrowserForeground();
+}
+
+void NWebDelegate::OnBrowserBackground() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "OnBrowserBackground can not get browser";
+    return;
+  }
+  LOG(INFO) << "NWebDelegate::OnBrowserBackground";
+  GetBrowser()->GetHost()->OnBrowserBackground();
+}
+#endif
 }  // namespace OHOS::NWeb

@@ -760,6 +760,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                              bool recursive, IsolatedWorld world,
                              CefRefPtr<CefJavaScriptResultCallback> callback) override {}
 #endif
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void OnBrowserForeground() override {}
+  void OnBrowserBackground() override {}
+#endif
 #endif  // BUILDFLAG(IS_OHOS)
 };
 

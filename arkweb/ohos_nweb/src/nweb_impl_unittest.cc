@@ -1363,6 +1363,20 @@ TEST_F(NWebImplTest, DeleteNavigateHistory002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
+#if BUILDFLAG(ARKWEB_BGTASK)
+TEST_F(NWebImplTest, OnBrowserForegroundWithNullInitArgs)
+{
+  nweb_impl_->OnBrowserForeground();
+  EXPECT_NE(nweb_impl_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnBrowserBackgroundWithNullInitArgs)
+{
+  nweb_impl_->OnBrowserBackground();
+  EXPECT_NE(nweb_impl_, nullptr);
+}
+#endif
+
 TEST_F(NWebImplTest, Zoom001) {
   float zoomFactor = 1.0f;
   auto temp = OHOS::NWeb::NWEB_ERR;
@@ -1877,6 +1891,6 @@ TEST_F(NWebImplTest, PostUrl002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_EQ(result, nweb_impl_->nweb_delegate_->PostUrl(url, postData));
 }
-#endif
+
 }  // namespace OHOS::NWeb
                           

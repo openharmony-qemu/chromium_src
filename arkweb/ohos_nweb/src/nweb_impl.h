@@ -1026,6 +1026,10 @@ class NWebImpl : public NWeb {
   static void EnablePrivateNetworkAccess(bool enable);
   static bool IsPrivateNetworkAccessEnabled();
 #endif
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void OnBrowserForeground() override;
+  void OnBrowserBackground() override;
+#endif
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

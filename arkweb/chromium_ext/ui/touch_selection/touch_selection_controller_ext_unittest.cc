@@ -472,7 +472,7 @@ TEST_F(TouchSelectionControllerExtTest, InsertionDeactivatedWhileDragging) {
 
   // Deactivate touch selection to end dragging.
   controller().HideAndDisallowShowingAutomatically();
-  
+
   // Move the finger. There is no handle to move, so the cursor is not moved;
   // but, the event is still consumed because the touch down that started the
   // touch sequence was consumed.

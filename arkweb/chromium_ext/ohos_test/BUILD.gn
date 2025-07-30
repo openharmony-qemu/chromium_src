@@ -232,6 +232,24 @@ fuzzer_test("nweb_accessibility_node_info_impl_fuzzer") {
   ]
 }
 
+fuzzer_test("pasteboard_client_adapter_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_adapter_ndk/pasteboard_adapter/src/pasteboard_client_adapter_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//arkweb/ohos_adapter_ndk/pasteboard_adapter/include",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+    "//arkweb/ohos_adapter_ndk:adapter_ndk",
+  ]
+}
+
 fuzzer_test("nweb_delegate_fuzzer") {
   sources = [ "fuzztest/ohos_nweb/cef_delegate/nweb_delegate_fuzzer.cc" ]
   include_dirs = [

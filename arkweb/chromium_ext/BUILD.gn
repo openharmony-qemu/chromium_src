@@ -1,0 +1,3 @@
+config("arkweb_system_properties_config") {
+  ldflags = [ "-Wl,--wrap=IsPcDevice" ]
+}

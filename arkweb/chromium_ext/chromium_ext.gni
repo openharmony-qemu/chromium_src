@@ -872,6 +872,10 @@ arkweb_chrome_browser_password_manager_sources = [
   "//arkweb/chromium_ext/chrome/browser/password_manager/keyboard_suppressor_ohos.h",
 ]
 
+arkweb_third_party_blink_common_event_test_sources = [
+  "arkweb/chromium_ext/third_party/blink/common/event/input_event_ohos_unittest.cc"
+]
+
 arkweb_third_party_blink_common_event_sources = [
   "//arkweb/chromium_ext/third_party/blink/common/event/input_event_ohos.cc",
   "//arkweb/chromium_ext/third_party/blink/common/event/input_event_ohos.h"

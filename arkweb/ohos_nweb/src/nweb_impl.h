@@ -621,11 +621,8 @@ class NWebImpl : public NWeb {
 
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   static void SetConnectTimeout(int32_t seconds);
-  static void SetConnectionTimeout(int32_t timeout);
-#endif
-
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   static void BindToNetwork(int network_id);
+  static void SetConnectionTimeout(int32_t timeout);
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_UA)

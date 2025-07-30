@@ -4154,7 +4154,7 @@ bool NWebImpl::GetAccessibilityNodeRectById(int64_t accessibilityId,
   return false;
 }
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 // static
 void NWebImpl::BindToNetwork(int network) {
   net_service::NetHelpers::network = network;
@@ -4163,8 +4163,8 @@ void NWebImpl::BindToNetwork(int network) {
         content::GetNetworkService();
     if (network_service) {
       network_service->BindDnsToNetwork(network);
-      WVLOG_I("bind to network %{public}d", net_service::NetHelpers::network);
-      net::NetworkChangeNotifier::BindToNetwork(network);
+      WVLOG_I("bint to network %{public}d", net_service::NetHelpers::network);
+      // net::NetworkChangeNotifier::BindToNetwork(network);
     } else {
       WVLOG_E("net_work_service is nullptr");
     }

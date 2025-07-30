@@ -106,7 +106,6 @@ void FuzzApi(const uint8_t* data, size_t size) {
   NetConnectionPropertiesAdapterImpl conProb;
   conProb.SetNetId(netId);
   conProb.GetNetId();
-  NetConnectAdapterImpl::OnReceiveEvent(nullptr);
   FuzzNetConnectUtils(fdp);
 }
 }  // namespace OHOS::NWeb

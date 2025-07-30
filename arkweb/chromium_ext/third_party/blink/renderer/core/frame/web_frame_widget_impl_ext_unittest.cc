@@ -14,7 +14,9 @@
  */
 
 #include "arkweb/chromium_ext/third_party/blink/public/mojom/page/text_recognize_result.mojom-blink.h"
+#define private public
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/web_frame_widget_impl_ext.h"
+#undef private
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -24,6 +26,7 @@
 #include "third_party/blink/renderer/core/testing/sim/sim_test.h"
 
 using testing::_;
+using testing::Return;
 
 namespace blink {
 namespace {
@@ -110,6 +113,12 @@ class WebFrameWidgetImplExtSimTest : public SimTest {
 
 TEST_F(WebFrameWidgetImplExtSimTest, SetZoomLevel_WithWidgetBase) {
   MockMainFrameWidget()->SetZoomLevel(1.5, gfx::Point(10, 20));
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SetOverscrollMode_WithWidgetBase) {
+  int mode = 42;
+  EXPECT_TRUE(MockMainFrameWidget()->widget_base_);
+  MockMainFrameWidget()->SetOverscrollMode(mode);
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, ArkWebHandleTouchEvent_RawKeyDown) {
@@ -209,6 +218,13 @@ TEST_F(WebFrameWidgetImplExtSimTest, GetWordSelection_Valid) {
   EXPECT_EQ(selection.size(), 2u);
 }
 
+TEST_F(WebFrameWidgetImplExtSimTest, GetWordSelection_FailCase) {
+  auto selection = MockMainFrameWidget()->GetWordSelection("测试文本", 3);
+  ASSERT_EQ(selection.size(), 2u);
+  EXPECT_EQ(selection[0], -1);
+  EXPECT_EQ(selection[1], -1);
+}
+
 TEST_F(WebFrameWidgetImplExtSimTest, OnTextSelected) {
   MockMainFrameWidget()->on_text_selected_callback_ = base::BindRepeating([](bool) {});
   MockMainFrameWidget()->OnTextSelected(true);
@@ -304,5 +320,13 @@ TEST_F(WebFrameWidgetImplExtSimTest, ReportBlank) {
   MockMainFrameWidget()->ReportBlank(start, end);
 }
 
+TEST_F(WebFrameWidgetImplExtSimTest, ReportBlank_Branches) {
+  int64_t start = MockMainFrameWidget()->GetCurrentTimestampMS();
+  int64_t end = start + 10;
+  int64_t duration = end - start;
+  int64_t kDragBlankTime = 80;
+  EXPECT_FALSE(duration > kDragBlankTime);
+  MockMainFrameWidget()->ReportBlank(start, end);
+}
 }  // namespace
 }  // namespace blink

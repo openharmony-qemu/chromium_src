@@ -21,7 +21,7 @@ import("//cef/libcef/features/features.gni")
 import("//arkweb/build/features/features.gni")
 
 if (defined(is_arkweb_ext) && is_arkweb_ext) {
-import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 }
 
 if (is_arkweb) {
@@ -273,7 +273,7 @@ component("cef_nweb") {
     "src/ndk/arkweb_native_object.h",
     "src/ndk/arkweb_native_web_message_callback.cc",
     "src/ndk/arkweb_native_web_message_callback.h",
-      ]
+  ]
 
   sources += [
     "src/cef_delegate/nweb_value_convert.cc",
@@ -331,9 +331,9 @@ component("cef_nweb") {
     "//base:base",
     "//chrome:strings",
     "//content/public/common",
-"//ui/events/keycodes:x11",
+    "//ui/events/keycodes:x11",
   ]
-    if (defined(ozone_platform_x11) && ozone_platform_x11) {
+  if (defined(ozone_platform_x11) && ozone_platform_x11) {
     deps += [ "//ui/events/keycodes:x11" ]
   }
 
@@ -405,7 +405,7 @@ component("nweb_sources") {
     "src/capi/browser_service/nweb_basic_pub.h",
     "src/capi/browser_service/nweb_extension_bookmarks_types.h",
     "src/capi/browser_service/nweb_extension_content_settings_types.h",
-"src/capi/browser_service/nweb_extension_downloads_types.h",
+    "src/capi/browser_service/nweb_extension_downloads_types.h",
     "src/capi/browser_service/nweb_extension_prompt_types.h",
     "src/capi/nweb_app_client_extension_callback.h",
     "src/capi/nweb_devtools_message_handler.h",
@@ -415,7 +415,7 @@ component("nweb_sources") {
     "src/capi/nweb_statistic_callback.h",
     "src/nweb_adsblock_manager_impl.cc",
     "src/nweb_adsblock_manager_impl.h",
-"src/nweb_advanced_security.cc",
+    "src/nweb_advanced_security.cc",
     "src/nweb_advanced_security.h",
     "src/nweb_common.cc",
     "src/nweb_common.h",
@@ -474,7 +474,7 @@ component("nweb_sources") {
     ]
   }
 
-    if (defined(arkweb_notification) && arkweb_notification) {
+  if (defined(arkweb_notification) && arkweb_notification) {
     sources += [
       "src/nweb_access_query.h",
       "src/nweb_permission_status_query_manager.cc",
@@ -570,11 +570,11 @@ config("ohosnweb_core_config") {
 
 action("check_ndk_symbol") {
   script = "//arkweb/ohos_adapter_ndk/ndk_tools/check_ndk.py"
-  
+
   inputs = [
     "//arkweb/ohos_adapter_ndk/ndk_tools/adapter_ndk_api.json",
   ]
-  
+
   outputs = [
     "$target_out_dir/check_ndk_symbol.stamp",
   ]
@@ -628,7 +628,7 @@ source_set("unittests") {
     "src/cef_delegate/nweb_access_request_delegate_unittest.cc",
     "src/cef_delegate/nweb_delegate_unittest.cc",
     "src/cef_delegate/nweb_event_handler_unittest.cc",
-"src/cef_delegate/nweb_find_delegate_unittest.cc",
+    "src/cef_delegate/nweb_find_delegate_unittest.cc",
     "src/cef_delegate/nweb_handler_delegate_unittest.cc",
     "src/cef_delegate/nweb_pipe_resource_handler_unittest.cc",
     "src/cef_delegate/nweb_preference_delegate_unittest.cc",
@@ -643,13 +643,13 @@ source_set("unittests") {
     "src/nweb_impl_unittest.cc",
     "src/nweb_input_handler_unittest.cc",
     "src/nweb_inputmethod_handler_unittest.cc",
-"src/nweb_notification_manager_delegate_unittest.cc",
+    "src/nweb_notification_manager_delegate_unittest.cc",
     "src/nweb_output_handler_unittest.cc",
     "src/set_renderer_seccomp_policy_unittest.cc",
     "src/nweb_web_storage_impl_unittest.cc",
     "src/nweb_file_writer_cleaner_unittest.cc",
     "src/nweb_data_base_impl_unittest.cc",
-"browser/performance_manager/policies/ohos_bfcache_policy_unittest.cc",
+    "browser/performance_manager/policies/ohos_bfcache_policy_unittest.cc",
     "browser/performance_manager/policies/background_task_policy_unittest.cc",
     "src/nweb_resize_helper_unittests.cc",
   ]

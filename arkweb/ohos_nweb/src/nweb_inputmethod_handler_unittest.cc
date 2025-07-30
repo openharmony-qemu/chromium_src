@@ -67,6 +67,11 @@ class MockCefBrowser : public CefBrowser {
   void GetFrameNames(std::vector<CefString>& names) override {}
   bool NeedToFireBeforeUnloadOrUnloadEvents() override { return false; }
   void DispatchBeforeUnload() override {}
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  int PrerenderPage(const CefString& url,
+                    const CefString& additional_headers) override { return OHOS::NWeb::NWEB_OK; };
+  void CancelAllPrerendering() override {};
+#endif
   MOCK_METHOD(CefRefPtr<ArkWebBrowserHostExt>, GetHost, (), (override));
 };
 

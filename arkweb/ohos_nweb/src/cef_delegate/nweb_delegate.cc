@@ -22,10 +22,12 @@
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "base/command_line.h"
 #include "base/check.h"
+#include "base/command_line.h"
 #include "base/logging.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/thread_pool.h"
 #include "base/trace_event/trace_event.h"
+#include "capi/arkweb_error_code.h"
 #include "cef/include/base/cef_logging.h"
 #include "cef/include/cef_app.h"
 #include "cef/include/cef_base.h"
@@ -68,7 +70,6 @@
 
 #include "base/strings/escape.h"
 #include "cef/include/internal/cef_string_types.h"
-#include "content/public/common/content_switches.h"
 #include "libcef/common/net/url_util_ex.h"
 #include "net/base/filename_util.h"
 #include "nweb_download_handler_delegate.h"
@@ -5136,7 +5137,32 @@ void NWebDelegate::SetPathAllowingUniversalAccess(
                 });
   GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list);
 }
-#endif
+
+int NWebDelegate::PrerenderPage(const std::string& url,
+                                const std::string& additional_headers) {
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "NWebDelegate::PrerenderPage failed, get browser failed";
+    return ARKWEB_INIT_ERROR;
+  }
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    return GetBrowser()->GetHost()->PrerenderPage(url, additional_headers);
+  }
+  return ARKWEB_INIT_ERROR;
+}
+ 
+void NWebDelegate::CancelAllPrerendering() {
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(ERROR)
+        << "NWebDelegate::CancelAllPrerendering failed, get browser failed";
+    return;
+  }
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    GetBrowser()->GetHost()->CancelAllPrerendering();
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
 void NWebDelegate::DisallowSandboxFileAccessFromFileUrl(bool disallow) {

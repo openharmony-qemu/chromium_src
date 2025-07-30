@@ -103,6 +103,10 @@ test("ui_touch_selection_unittests") {
     "touch_selection_metrics_unittest.cc",
   ]
 
+  if (is_arkweb) {
+    sources += arkweb_ui_touch_selection_unitest_sources
+  }
+
   deps = [
     ":test_support",
     ":touch_selection",

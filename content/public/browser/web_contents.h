@@ -1605,7 +1605,12 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
                                    const std::optional<UrlMatchType>&)>
           url_match_predicate,
       base::RepeatingCallback<void(NavigationHandle&)>
-          prerender_navigation_handle_callback) = 0;
+          prerender_navigation_handle_callback
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+      const char* extra_headers = nullptr
+#endif
+      ) = 0;
 
   // Cancels all prerendering hosted on this WebContents.
   virtual void CancelAllPrerendering() = 0;

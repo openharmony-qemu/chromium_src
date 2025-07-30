@@ -2569,6 +2569,13 @@ void NWebImpl::RemoveCache(bool include_disk_files) {
   }
 
   nweb_delegate_->RemoveCache(include_disk_files);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+    nweb_delegate_->CancelAllPrerendering();
+  }
+#endif
 }
 
 std::shared_ptr<NWebHistoryList> NWebImpl::GetHistoryList() {
@@ -4525,6 +4532,18 @@ void NWebImpl::PrepareForPageLoad(const std::string& url,
 void NWebImpl::RemoveAllCache(bool include_disk_files) {
   auto manager = web_cache::WebCacheManager::GetInstance();
   manager->ClearCache();
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+    for (std::pair<const int, std::weak_ptr<NWebImpl>>& elem : g_nweb_map.Get()) {
+      if (std::shared_ptr nweb_impl = elem.second.lock()) {
+        nweb_impl->CancelAllPrerendering();
+      }
+    }
+  }
+#endif
+
   if (!include_disk_files) {
     WVLOG_I("no need remove all disk cache");
     return;
@@ -5292,7 +5311,22 @@ void NWebImpl::SetPathAllowingUniversalAccess(
   }
   nweb_delegate_->SetPathAllowingUniversalAccess(pathList);
 }
-#endif
+
+int NWebImpl::PrerenderPage(const std::string& url,
+                            const std::string& additional_headers) {
+  if (nweb_delegate_ == nullptr) {
+    return ARKWEB_INIT_ERROR;
+  }
+  return nweb_delegate_->PrerenderPage(url, additional_headers);
+}
+ 
+void NWebImpl::CancelAllPrerendering() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->CancelAllPrerendering();
+}
+#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
 void NWebImpl::DisallowSandboxFileAccessFromFileUrl(bool disallow) const {

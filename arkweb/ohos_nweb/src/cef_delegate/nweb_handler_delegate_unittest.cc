@@ -27,6 +27,7 @@
 #include "nweb_file_selector_params_impl.h"
 #include "nweb_handler.h"
 #include "nweb_js_dialog_result_impl.h"
+#include "ohos_nweb/include/nweb_errors.h"
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
@@ -236,6 +237,11 @@ class MockCefBrowser : public ArkWebBrowserExt {
   uint32_t GetAcceleratedWidget(bool isPopup) override {}
   void SetAdBlockEnabledForSite(bool is_adblock_enabled,
                                         int main_frame_tree_node_id) override {}
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  int PrerenderPage(const CefString& url,
+                    const CefString& additional_headers) override { return OHOS::NWeb::NWEB_OK; };
+  void CancelAllPrerendering() override {};
+#endif
 };
 
 class NWebHandlerDelegateTest : public ::testing::Test {

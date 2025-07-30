@@ -571,6 +571,12 @@ class NWebDelegateInterface
       std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  virtual int PrerenderPage(const std::string& url,
+                            const std::string& additional_headers) = 0;
+  virtual void CancelAllPrerendering() = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_SECURITY_STATE)
   virtual int GetSecurityLevel() = 0;
 #endif

@@ -709,6 +709,9 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   void SetPathAllowingUniversalAccess(
       const std::vector<std::string>& pathList) override;
+  int PrerenderPage(const std::string& url,
+                    const std::string& additional_headers) override;
+  void CancelAllPrerendering() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)

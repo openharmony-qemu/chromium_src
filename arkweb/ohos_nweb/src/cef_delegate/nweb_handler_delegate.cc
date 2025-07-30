@@ -37,6 +37,7 @@
 #include "net/base/net_errors.h"
 #include "net/cookies/site_for_cookies.h"
 #include "net/cookies/static_cookie_policy.h"
+#include "net/http/http_request_headers.h"
 #include "nweb_access_request_delegate.h"
 #include "nweb_common.h"
 #include "nweb_console_log_impl.h"
@@ -158,6 +159,14 @@
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "cef/libcef/browser/frame_host_impl.h"
+#include "content/browser/renderer_host/frame_tree.h"
+#include "content/browser/renderer_host/render_frame_host_impl.h"
+#include "content/public/browser/render_frame_host.h"
 #endif
 
 namespace OHOS::NWeb {
@@ -447,6 +456,33 @@ void ParseNativeProxyArgs(CefRefPtr<CefListValue> args,
     }
   }
 }
+
+bool IsPrerendering(const CefRefPtr<CefFrame> frame) {
+  if (!frame) {
+    return false;
+  }
+
+  if (!frame->IsValid()) {
+    return false;
+  }
+
+  if (!frame.get()) {
+    return false;
+  }
+
+  if (!static_cast<CefFrameHostImpl*>(frame.get())->GetRenderFrameHost()) {
+    return false;
+  }
+
+  if (!static_cast<content::RenderFrameHostImpl*>(static_cast<CefFrameHostImpl*>(
+        frame.get())->GetRenderFrameHost())->frame_tree()) {
+    return false;
+  }
+
+  return static_cast<content::RenderFrameHostImpl*>(static_cast<CefFrameHostImpl*>(
+    frame.get())->GetRenderFrameHost())->frame_tree()->is_prerendering();
+}
+
 }  // namespace
 
 class NWebDateTimeSuggestionImpl : public NWebDateTimeSuggestion {
@@ -1324,6 +1360,15 @@ bool NWebHandlerDelegate::OnPreBeforePopup(
   if (nweb_handler_ == nullptr) {
     return true;
   }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) &&
+      IsPrerendering(frame)) {
+    return true;
+  }
+#endif
+
   switch (target_disposition) {
     case CEF_WOD_NEW_WINDOW:
     case CEF_WOD_NEW_POPUP: {
@@ -1450,6 +1495,15 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
   if (frame == nullptr || !frame->IsMain()) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) &&
+      IsPrerendering(frame)) {
+    return;
+  }
+#endif
+
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   if (!setWebPaintedTask_.IsCancelled()) {
     setWebPaintedTask_.Cancel();
@@ -1475,6 +1529,14 @@ void NWebHandlerDelegate::OnLoadEnd(CefRefPtr<CefBrowser> browser,
     return;
   }
   LOG(INFO) << "NWebHandlerDelegate:: Mainframe OnLoadEnd";
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) &&
+      IsPrerendering(frame)) {
+    return;
+  }
+#endif
 
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   setWebPaintedTask_.Reset(
@@ -1716,6 +1778,15 @@ void NWebHandlerDelegate::OnRefreshAccessedHistory(
     LOG(ERROR) << "nweb handler is null";
     return;
   }
+
+#ifdef OHOS_NETWORK_LOAD
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) &&
+      IsPrerendering(frame)) {
+    return;
+  }
+#endif
+
   edited_forms_id_.clear();
   nweb_handler_->OnRefreshAccessedHistory(url.ToString(), isReload);
 }
@@ -1787,6 +1858,11 @@ bool NWebHandlerDelegate::OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
   CefRequest::HeaderMap cef_request_headers;
   request->GetHeaderMap(cef_request_headers);
   std::map<std::string, std::string> request_headers;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebEx) &&
+      IsPrerendering(frame)) {
+    request_headers["Sec-Purpose"] = "prefetch;prerender";
+  }
+
   ConvertMapToHeaderMap(cef_request_headers, request_headers);
   std::shared_ptr<NWebUrlResourceRequest> nweb_request =
       std::make_shared<NWebUrlResourceRequestImpl>(
@@ -1984,10 +2060,19 @@ bool NWebHandlerDelegate::ShouldOverrideUrlLoading(
     const CefString& method,
     bool user_gesture,
     bool is_redirect,
-    bool is_outermost_main_frame) {
+    bool is_outermost_main_frame,
+    const CefString& extra_request_headers_str) {
   LOG(INFO) << "NWebHandlerDelegate::ShouldOverrideUrlLoading";
 
   std::map<std::string, std::string> request_headers;
+  net::HttpRequestHeaders extra_request_headers;
+  extra_request_headers.AddHeadersFromString(
+      extra_request_headers_str.ToString());
+  for (const net::HttpRequestHeaders::HeaderKeyValuePair& header_key_value :
+       extra_request_headers.GetHeaderVector()) {
+    request_headers[header_key_value.key] = header_key_value.value;
+  }
+
   std::shared_ptr<NWebUrlResourceRequest> nweb_request =
       std::make_shared<NWebUrlResourceRequestImpl>(
           method.ToString(), request_headers, url.ToString(), user_gesture,

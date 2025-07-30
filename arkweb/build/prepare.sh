@@ -167,10 +167,7 @@ handle_copy_files() {
     sed -i '/ark_ohos_image_decoder_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
 
     #由于已经依赖adapter_ndk且adapter_ndk已实现dataBase，胶水层ark_ohos_net_connect_adapter_wrapper不参与编译
-    sed -i '/ark_net_connect_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
-    sed -i '/ark_vpn_listener_impl.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
-    sed -i '/ark_net_connect_adapter_impl.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
-    sed -i '/ark_vpn_listener_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
+    # sed -i '/ark_net_connect_adapter_impl_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
 
     # 由于已实现system_properties_adapter，胶水层ark_system_properties_adapter_wrapper.cpp不参与编译
     # sed -i '/ark_system_properties_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn

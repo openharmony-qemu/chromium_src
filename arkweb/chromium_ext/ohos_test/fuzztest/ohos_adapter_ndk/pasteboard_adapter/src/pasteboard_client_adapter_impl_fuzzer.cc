@@ -243,10 +243,6 @@ void PasteDataAdapterImplFuzzTest(FuzzedDataProvider* fdp) {
 }
 
 void PasteBoardClientAdapterImplFuzzTest(FuzzedDataProvider* fdp) {
-  std::string html = fdp->ConsumeRandomLengthString(256);
-  std::string text = fdp->ConsumeRandomLengthString(256);
-  std::size_t index = fdp->ConsumeIntegralInRange<std::size_t>(0, 10);
-
   PasteRecordVector data;
   std::string mimeType = fdp->ConsumeRandomLengthString(256);
   std::shared_ptr<PasteDataRecordAdapter> record =

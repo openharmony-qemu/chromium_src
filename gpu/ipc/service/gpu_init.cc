@@ -334,13 +334,6 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
   // need more context based GPUInfo. In such situations, switching to
   // SwiftShader needs to wait until creating a context.
   bool needs_more_info = true;
-#if BUILDFLAG(IS_OHOS)
-  // Set the default configuration file lookup address of vulkan
-  // used by local libvulkan
-  if (setenv("OHOS_VULKAN_ICD_OVERIDE", "vendor/etc/", 1) != 0) {
-    LOG(ERROR) << "set env OHOS_VULKAN_ICD_OVERIDE fail";
-  }
-#endif
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CASTOS)
   needs_more_info = false;
   CollectBasicGraphicsInfo(command_line, &gpu_info_);
@@ -975,13 +968,6 @@ void GpuInit::InitializeInProcess(base::CommandLine* command_line,
 #endif
   gpu_preferences_ = gpu_preferences;
   init_successful_ = true;
-#if BUILDFLAG(IS_OHOS)
-  // Set the default configuration file lookup address of vulkan
-  // used by local libvulkan
-  if (setenv("OHOS_VULKAN_ICD_OVERIDE", "vendor/etc/", 1) != 0) {
-    LOG(ERROR) << "set env OHOS_VULKAN_ICD_OVERIDE fail";
-  }
-#endif
 #if BUILDFLAG(IS_OZONE)
   ui::OzonePlatform::InitParams params;
   params.single_process = true;

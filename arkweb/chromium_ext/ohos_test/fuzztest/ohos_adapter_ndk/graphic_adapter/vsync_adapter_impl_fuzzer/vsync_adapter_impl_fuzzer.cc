@@ -14,7 +14,7 @@
  */
 
 #define private public
-#include "parkweb/ohos_adapter_ndk/graphic_adapter/vsync_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/vsync_adapter_impl.h"
 #undef private
 
 #include <cstring>

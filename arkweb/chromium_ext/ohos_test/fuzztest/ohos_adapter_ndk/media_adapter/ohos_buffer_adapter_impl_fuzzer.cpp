@@ -18,7 +18,8 @@
 #include <cstdlib>
 
 #include "ohos_buffer_adapter_impl.h"
-
+#include "buffer_info_adapter_impl.h"
+#include "capability_data_adapter_impl.h"
 using namespace OHOS::NWeb;
 
 namespace OHOS {
@@ -39,6 +40,15 @@ bool OhosBufferAdapterImplFuzzTest(const uint8_t* data, size_t size)
     bufferAdapter.GetAddr();
     bufferAdapter.GetBufferSize();
 
+    BufferInfoAdapterImpl buffer;
+    buffer.GetPresentationTimeUs();
+    buffer.GetOffset();
+
+    CapabilityDataAdapterImpl capability;
+
+    capability.GetMaxWidth();
+    capability.GetMaxHeight();
+    capability.GetMaxframeRate();
     return true;
 }
 } // namespace OHOS

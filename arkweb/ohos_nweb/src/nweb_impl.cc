@@ -326,9 +326,8 @@ static void HandleExtensionInstallResult(
   }
 
   if (error.has_value()) {
-    auto error_message =
-        std::make_shared<std::string>(base::UTF16ToUTF8(error->message()));
-    callback(static_cast<int>(error->type()), error_message->c_str());
+    std::string error_message = base::UTF16ToUTF8(error->message());
+    callback(static_cast<int>(error->type()), error_message.c_str());
   } else {
     callback(0, "Success");
   }

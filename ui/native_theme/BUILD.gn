@@ -172,6 +172,7 @@ test("native_theme_unittests") {
     sources += [
       "//arkweb/chromium_ext/ui/native_theme/native_theme_aura_utils_unittest.cc",
     ]
+    configs += ["//arkweb/chromium_ext:arkweb_system_properties_config"]
   }
 
   deps = [
@@ -181,6 +182,7 @@ test("native_theme_unittests") {
     "//base/test:run_all_unittests",
     "//base/test:test_support",
     "//skia",
+    "//testing/gmock",
     "//testing/gtest",
     "//ui/base",
     "//ui/color",

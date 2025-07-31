@@ -1459,6 +1459,12 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 #endif
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (nweb_delegate_->GetNearestSnapshotSize() != gfx::Size(width, height)) {
+    RemoveBlanklessFrame();
+  }
+#endif
 }
 
 void NWebImpl::ResizeVisibleViewport(uint32_t width,
@@ -1572,8 +1578,25 @@ void NWebImpl::OnTouchMove(
   if (input_handler_ == nullptr) {
     return;
   }
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool nativeEmbedMode = false;
+  bool isEnableCustomVideoPlayer = false;
+  if (nweb_delegate_) {
+    nativeEmbedMode = nweb_delegate_->GetNativeEmbedMode();
+    isEnableCustomVideoPlayer = nweb_delegate_->IsEnableCustomVideoPlayer();
+  }
+  if (nativeEmbedMode || isEnableCustomVideoPlayer) {
+    for (const auto& touch : touch_point_infos) {
+      std::vector<std::shared_ptr<NWebTouchPointInfo>> single_touch_point_info;
+      single_touch_point_info.emplace_back(touch);
+      input_handler_->OnTouchMove(single_touch_point_info, from_overlay);
+    }
+  } else {
+    input_handler_->OnTouchMove(touch_point_infos, from_overlay);
+  }
+#else
   input_handler_->OnTouchMove(touch_point_infos, from_overlay);
+#endif
 }
 
 void NWebImpl::OnTouchCancel() {
@@ -4148,7 +4171,7 @@ bool NWebImpl::GetAccessibilityNodeRectById(int64_t accessibilityId,
   return false;
 }
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 // static
 void NWebImpl::BindToNetwork(int network) {
   net_service::NetHelpers::network = network;
@@ -4157,8 +4180,8 @@ void NWebImpl::BindToNetwork(int network) {
         content::GetNetworkService();
     if (network_service) {
       network_service->BindDnsToNetwork(network);
-      WVLOG_I("bind to network %{public}d", net_service::NetHelpers::network);
-      net::NetworkChangeNotifier::BindToNetwork(network);
+      WVLOG_I("bint to network %{public}d", net_service::NetHelpers::network);
+      // net::NetworkChangeNotifier::BindToNetwork(network);
     } else {
       WVLOG_E("net_work_service is nullptr");
     }
@@ -5989,9 +6012,22 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
       LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey similarity < 0.33";
       return -5;    // ERR_SIGNIFICANT_CHANGE
     }
+    if (gfx::Size(dataItem.width, dataItem.height) != nweb_delegate_->GetSize()) {
+      LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey snapshot resolution is different from webPattern";
+      return -5;
+    }
+    nweb_delegate_->SetNearestSnapshotSize(dataItem.width, dataItem.height);
     CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath);
   }
   return 0;   // SUCCESS
+}
+
+void NWebImpl::RemoveBlanklessFrame() {
+  if (nweb_delegate_->GetNearestSnapshotSize().IsEmpty()) {
+    return;
+  }
+  nweb_handle_->OnRemoveBlanklessFrame(0);
+  nweb_delegate_->SetNearestSnapshotSize(0, 0);
 }
 
 void NWebImpl::TriggerBlanklessForUrl(const std::string& url) {

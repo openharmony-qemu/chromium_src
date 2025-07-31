@@ -440,7 +440,10 @@ void BlanklessDataController::DumpBlanklessSnapshot(int64_t blankless_key,
     .lcpTime = lcp_time,
     .snapShotFileSize = snapShotFileSize,
     .snapShotFileTime = snapShotFileTime,
-    .preferenceHash = pref_hash
+    .preferenceHash = pref_hash,
+    .width = bitmap.width(),
+    .height = bitmap.height(),
+
   };
   std::shared_ptr<SnapshotInfo> snapshotInfo = GetHistorySnapshotInfo(blankless_key);
   if (!snapshotInfo || snapshotInfo->path.size() == 0 || snapshotInfo->bitmap.empty() ||

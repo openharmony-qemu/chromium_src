@@ -19,21 +19,19 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
-#include <mutex>
-#include "arkweb/ohos_adapter_ndk/interfaces/net_connect_adapter.h"
 
-#include <BasicServicesKit/oh_commonevent.h>
-#include <BasicServicesKit/oh_commonevent_support.h>
+#include "net_connect_adapter.h"
+
 #include <network/netmanager/net_connection.h>
 #include <network/netmanager/net_connection_type.h>
 #include <telephony/core_service/telephony_radio_type.h>
- 
+
 namespace OHOS::NWeb {
 class NetConnectAdapterImpl : public NetConnectAdapter {
 public:
     NetConnectAdapterImpl() = default;
 
-    ~NetConnectAdapterImpl() override;
+    ~NetConnectAdapterImpl() override = default;
 
     int32_t RegisterNetConnCallback(std::shared_ptr<NetConnCallback> cb) override;
 
@@ -45,32 +43,10 @@ public:
 
     std::vector<std::string> GetDnsServersByNetId(int32_t netId) override;
 
-    std::vector<std::string> GetDnsServersForVpn() override;
- 
-    void RegisterVpnListener(std::shared_ptr<VpnListener> cb) override;
- 
-    void UnRegisterVpnListener() override;
-
-    std::vector<std::string> GetNetAddrListByNetId(int32_t netId) override;
-
-    std::vector<std::string> GetNetAddrListForVpn() override;
-
-    static void OnReceiveEvent(const CommonEvent_RcvData *data);
-
 private:
     static std::unordered_map<int32_t, std::shared_ptr<NetConnCallback>> netConnCallbackMap_;
 
-    static CommonEvent_SubscribeInfo *commonEventSubscribeInfo_;
-    static CommonEvent_Subscriber *commonEventSubscriber_;
-    static std::shared_ptr<VpnListener> cb_;
-    static std::shared_ptr<NetConnCallback> pendingNetConnCb_;
-    std::mutex mutex_;
-    
     std::vector<std::string> GetDnsServersInternal(NetConn_NetHandle &netHandle);
-
-    bool HasVpnTransport();
-
-    std::vector<std::string> GetNetAddrListInternal(NetConn_NetHandle &netHandle);
 
     static int32_t NetAvailable(std::shared_ptr<NetConnCallback> cb,
                                             NetConn_NetHandle *netHandle);

@@ -722,6 +722,7 @@ if (use_blink) {
     if (arkweb_unittests) {
       import("//arkweb/chromium_ext/ui/events/build.gni")
       sources += events_unittests_sources
+      configs += ["//arkweb/chromium_ext:arkweb_system_properties_config"]
     }
 
     if (is_android) {

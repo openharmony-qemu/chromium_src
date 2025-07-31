@@ -134,6 +134,7 @@ void RenderRemoteProxy::CreateAndRegist(const base::CommandLine& command_line) {
   }
 }
 
+// LCOV_EXCL_START
 bool RenderRemoteProxy::WaitForBrowserFd() {
   if (is_for_test_) {
     return true;
@@ -160,6 +161,7 @@ bool RenderRemoteProxy::WaitForBrowserFd() {
       << (kTimeOutDur * kMaxWaitCount) << "ms)";
   return false;
 }
+// LCOV_EXCL_STOP
 
 }  // namespace content
 #endif

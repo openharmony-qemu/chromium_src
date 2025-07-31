@@ -137,7 +137,9 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
     NOTREACHED() << "Input request on unbound interface";
   }
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void SetGestureEventResult(bool result, bool stopPropagation) override {
+  void SetGestureEventResult(bool result,
+                             bool stopPropagation,
+                             int32_t fingerId) override {
     DLOG(WARNING) << "Input request on unbound interface";
   }
 
@@ -146,6 +148,10 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
   }
 
   void SetNativeEmbedMode(bool flag) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+
+  void SetEnableCustomVideoPlayer(bool flag) override {
     DLOG(WARNING) << "Input request on unbound interface";
   }
 #endif

@@ -885,6 +885,10 @@ arkweb_chrome_browser_password_manager_sources = [
   "//arkweb/chromium_ext/chrome/browser/password_manager/keyboard_suppressor_ohos.h",
 ]
 
+arkweb_third_party_blink_common_event_test_sources = [
+  "arkweb/chromium_ext/third_party/blink/common/event/input_event_ohos_unittest.cc"
+]
+
 arkweb_third_party_blink_common_event_sources = [
   "//arkweb/chromium_ext/third_party/blink/common/event/input_event_ohos.cc",
   "//arkweb/chromium_ext/third_party/blink/common/event/input_event_ohos.h"
@@ -915,6 +919,10 @@ arkweb_crashpad_sources = [
   "//arkweb/chromium_ext/third_party/crashpad/crashpad/handler/linux/crash_report_exception_handler_ext.h",
   "//arkweb/chromium_ext/third_party/crashpad/crashpad/handler/linux/crash_report_exception_handler_utils.h",
   "//arkweb/chromium_ext/third_party/crashpad/crashpad/handler/linux/crash_report_exception_handler_utils.cc"
+]
+
+arkweb_crashpad_unittest_sources = [
+  "//arkweb/chromium_ext/ohos_test/unittest/crash_report_exception_handler/crash_report_exception_handler_ext_unittest.cc",
 ]
 
 arkweb_chromium_components_viz_service_frame_sinks_sources = [
@@ -1042,6 +1050,11 @@ arkweb_third_party_blink_renderer_core_unittests_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/testing/sim/sim_test_ext.cc",
 ]
 
+arkweb_net_base_ext_chanege_sources = [
+  "//arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.cc",
+  "//arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h"
+]
+
 arkweb_network_service_network_delegate_sources = [
   "//arkweb/chromium_ext/services/network/network_service_network_delegate_ext.cc",
   "//arkweb/chromium_ext/services/network/network_service_network_delegate_ext.h",
@@ -1077,7 +1090,7 @@ arkweb_performance_manager_graph_page_node_impl = [
 # For sources and deps used in net/BUILD.gn
 arkweb_net_gn_sources =
     arkweb_net_socket_sources + arkweb_net_url_request_sources +
-    arkweb_net_http_sources +
+    arkweb_net_http_sources + arkweb_net_base_ext_chanege_sources +
     arkweb_net_proxy_resolution_sources + arkweb_net_cert_sources +
     arkweb_net_http_cache_sources
 arkweb_net_gn_deps = [

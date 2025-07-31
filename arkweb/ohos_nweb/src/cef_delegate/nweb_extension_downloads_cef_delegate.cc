@@ -54,6 +54,16 @@ static std::map<int, DownloadsSetUiOptionsCallback>
     g_downloads_set_ui_options_callback_map_;
 std::mutex g_downloads_set_ui_options_callback_map_mutex;
 
+static std::map<int, DownloadsShowCallback> g_downloads_show_callback_map_;
+std::mutex g_downloads_show_callback_map_mutex;
+
+static std::map<int, DownloadSearchCallback> g_downloads_search_callback_map_;
+std::mutex g_downloads_search_callback_map_mutex;
+
+static std::map<int, DownloadGetFileIconCallback>
+    g_downloads_get_fileicon_callback_map_;
+std::mutex g_downloads_get_fileicon_callback_map_mutex;
+
 }  // namespace
 
 // static
@@ -63,7 +73,8 @@ NWebExtensionDownloadCefDelegate::GetInstance() {
   return instance;
 }
 
-bool NWebExtensionDownloadCefDelegate::Erase(NWebDownloadsQueryInfo* query,
+// downloads.erase
+bool NWebExtensionDownloadCefDelegate::Erase(ExDownloadsQueryInfo* query,
                                              DownloadEraseCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
@@ -105,6 +116,7 @@ void NWebExtensionDownloadCefDelegate::EraseCallback(int requestId,
   std::move(callback).Run(error, size, eraseIds);
 }
 
+// downloads.open
 bool NWebExtensionDownloadCefDelegate::Open(const int downloadId,
                                             DownloadsOpenCallback callback) {
   LOG(INFO) << "NWebExtensionDownloadCefDelegate::Open downloadId: "
@@ -137,7 +149,7 @@ void NWebExtensionDownloadCefDelegate::OpenCallback(int requestId,
     std::lock_guard<std::mutex> lock(g_downloads_open_callback_map_mutex);
     auto it = g_downloads_open_callback_map_.find(requestId);
     if (it == g_downloads_open_callback_map_.end()) {
-      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::EraseCallback"
+      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::OpenCallback"
                  << "requestId not found: " << requestId;
       return;
     }
@@ -147,6 +159,7 @@ void NWebExtensionDownloadCefDelegate::OpenCallback(int requestId,
   std::move(callback).Run(error);
 }
 
+// downloads.remove
 bool NWebExtensionDownloadCefDelegate::RemoveFile(
     const int downloadId,
     DownloadsOpenCallback callback) {
@@ -181,7 +194,7 @@ void NWebExtensionDownloadCefDelegate::RemoveFileCallback(int requestId,
     std::lock_guard<std::mutex> lock(g_downloads_removefile_callback_map_mutex);
     auto it = g_downloads_removefile_callback_map_.find(requestId);
     if (it == g_downloads_removefile_callback_map_.end()) {
-      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::EraseCallback"
+      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::RemoveFileCallback"
                  << "requestId not found: " << requestId;
       return;
     }
@@ -191,6 +204,7 @@ void NWebExtensionDownloadCefDelegate::RemoveFileCallback(int requestId,
   std::move(callback).Run(error);
 }
 
+// downloads.pause
 bool NWebExtensionDownloadCefDelegate::Pause(const int downloadId,
                                              DownloadsPauseCallback callback) {
   LOG(INFO) << "NWebExtensionDownloadCefDelegate::Pause downloadId: "
@@ -223,7 +237,7 @@ void NWebExtensionDownloadCefDelegate::PauseCallback(int requestId,
     std::lock_guard<std::mutex> lock(g_downloads_pause_callback_map_mutex);
     auto it = g_downloads_pause_callback_map_.find(requestId);
     if (it == g_downloads_pause_callback_map_.end()) {
-      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::EraseCallback"
+      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::PauseCallback"
                  << "requestId not found: " << requestId;
       return;
     }
@@ -233,6 +247,7 @@ void NWebExtensionDownloadCefDelegate::PauseCallback(int requestId,
   std::move(callback).Run(error);
 }
 
+// downloads.resume
 bool NWebExtensionDownloadCefDelegate::Resume(
     const int downloadId,
     DownloadsResumeCallback callback) {
@@ -266,7 +281,7 @@ void NWebExtensionDownloadCefDelegate::ResumeCallback(int requestId,
     std::lock_guard<std::mutex> lock(g_downloads_resume_callback_map_mutex);
     auto it = g_downloads_resume_callback_map_.find(requestId);
     if (it == g_downloads_resume_callback_map_.end()) {
-      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::EraseCallback"
+      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::ResumeCallback"
                  << "requestId not found: " << requestId;
       return;
     }
@@ -276,6 +291,7 @@ void NWebExtensionDownloadCefDelegate::ResumeCallback(int requestId,
   std::move(callback).Run(error);
 }
 
+// downloads.cancel
 bool NWebExtensionDownloadCefDelegate::Cancel(
     const int downloadId,
     DownloadsCancelCallback callback) {
@@ -309,7 +325,7 @@ void NWebExtensionDownloadCefDelegate::CancelCallback(int requestId,
     std::lock_guard<std::mutex> lock(g_downloads_cancel_callback_map_mutex);
     auto it = g_downloads_cancel_callback_map_.find(requestId);
     if (it == g_downloads_cancel_callback_map_.end()) {
-      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::EraseCallback"
+      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::CancelCallback"
                  << "requestId not found: " << requestId;
       return;
     }
@@ -319,6 +335,7 @@ void NWebExtensionDownloadCefDelegate::CancelCallback(int requestId,
   std::move(callback).Run(error);
 }
 
+// downloads.acceptDanger
 bool NWebExtensionDownloadCefDelegate::AcceptDanger(
     const int downloadId,
     DownloadsAcceptDangerCallback callback) {
@@ -356,7 +373,7 @@ void NWebExtensionDownloadCefDelegate::AcceptDangerCallback(int requestId,
         g_downloads_accept_danger_callback_map_mutex);
     auto it = g_downloads_accept_danger_callback_map_.find(requestId);
     if (it == g_downloads_accept_danger_callback_map_.end()) {
-      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::EraseCallback"
+      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::AcceptDangerCallback"
                  << "requestId not found: " << requestId;
       return;
     }
@@ -366,8 +383,9 @@ void NWebExtensionDownloadCefDelegate::AcceptDangerCallback(int requestId,
   std::move(callback).Run(error);
 }
 
+// downloads.setUiOptions
 bool NWebExtensionDownloadCefDelegate::SetUiOptions(
-    NWebExtensionUiOptions* options,
+    ExDownloadsUiOptions* options,
     DownloadsSetUiOptionsCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
@@ -401,7 +419,7 @@ void NWebExtensionDownloadCefDelegate::SetUiOptionsCallback(int requestId,
         g_downloads_set_ui_options_callback_map_mutex);
     auto it = g_downloads_set_ui_options_callback_map_.find(requestId);
     if (it == g_downloads_set_ui_options_callback_map_.end()) {
-      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::EraseCallback"
+      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::SetUiOptionsCallback"
                  << "requestId not found: " << requestId;
       return;
     }
@@ -411,22 +429,156 @@ void NWebExtensionDownloadCefDelegate::SetUiOptionsCallback(int requestId,
   std::move(callback).Run(error);
 }
 
-void NWebExtensionDownloadCefDelegate::Show(const int downloadId) {
+// downloads.show
+bool NWebExtensionDownloadCefDelegate::Show(const int downloadId,
+                                            DownloadsShowCallback callback) {
   LOG(INFO) << "NWebExtensionDownloadCefDelegate::Show downloadId: "
             << downloadId;
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
-  return;
+  return false;
 #else
-  NWebExtensionDownloadsDispatcher::GetInstance().Show(downloadId);
+  static std::atomic<int> requestId = 0;
+  int currentRequestId;
+  {
+    std::lock_guard<std::mutex> lock(g_downloads_show_callback_map_mutex);
+    currentRequestId = ++requestId;
+    g_downloads_show_callback_map_[currentRequestId] = std::move(callback);
+  }
+  bool result = NWebExtensionDownloadsDispatcher::GetInstance().Show(
+      currentRequestId, downloadId);
+  if (!result) {
+    std::lock_guard<std::mutex> lock(g_downloads_show_callback_map_mutex);
+    g_downloads_show_callback_map_.erase(currentRequestId);
+  }
+  return result;
 #endif
 }
 
+void NWebExtensionDownloadCefDelegate::ShowCallback(int requestId,
+                                                    const char* error) {
+  DownloadsShowCallback callback;
+  {
+    std::lock_guard<std::mutex> lock(g_downloads_show_callback_map_mutex);
+    auto it = g_downloads_show_callback_map_.find(requestId);
+    if (it == g_downloads_show_callback_map_.end()) {
+      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::ShowCallback"
+                 << "requestId not found: " << requestId;
+      return;
+    }
+    callback = std::move(it->second);
+    g_downloads_show_callback_map_.erase(it);
+  }
+  std::move(callback).Run(error);
+}
+
+// downloads.showDefaultFolder
 void NWebExtensionDownloadCefDelegate::ShowDefaultFolder() {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return;
 #else
   NWebExtensionDownloadsDispatcher::GetInstance().ShowDefaultFolder();
 #endif
+}
+
+// downloads.search
+bool NWebExtensionDownloadCefDelegate::Search(ExDownloadsQueryInfo* query,
+                                              DownloadSearchCallback callback) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  static std::atomic<int> requestId = 0;
+  int currentRequestId;
+  {
+    std::lock_guard<std::mutex> lock(g_downloads_search_callback_map_mutex);
+    currentRequestId = ++requestId;
+    g_downloads_search_callback_map_[currentRequestId] = std::move(callback);
+  }
+  bool result = NWebExtensionDownloadsDispatcher::GetInstance().Search(
+      currentRequestId, query);
+  if (!result) {
+    std::lock_guard<std::mutex> lock(g_downloads_search_callback_map_mutex);
+    g_downloads_search_callback_map_.erase(currentRequestId);
+  }
+  return result;
+
+#endif
+}
+
+void NWebExtensionDownloadCefDelegate::SearchCallback(
+    int requestId,
+    const char* error,
+    const uint32_t size,
+    const ExDownloadsItem* downloadItems) {
+  DownloadSearchCallback callback;
+  {
+    std::lock_guard<std::mutex> lock(g_downloads_search_callback_map_mutex);
+    auto it = g_downloads_search_callback_map_.find(requestId);
+    if (it == g_downloads_search_callback_map_.end()) {
+      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::SearchCallback"
+                 << "requestId not found: " << requestId;
+      return;
+    }
+    callback = std::move(it->second);
+    g_downloads_search_callback_map_.erase(it);
+  }
+  std::move(callback).Run(error, size, downloadItems);
+}
+
+// downloads.download
+int NWebExtensionDownloadCefDelegate::GetDownloadId(const std::string& guid) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return -1;
+#else
+  return NWebExtensionDownloadsDispatcher::GetInstance().GetDownloadId(guid);
+#endif
+}
+
+// downloads.getFileIcon
+bool NWebExtensionDownloadCefDelegate::GetFileIcon(
+    ExDownloadsGetFileIcon* iconOption,
+    DownloadGetFileIconCallback callback) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  static std::atomic<int> requestId = 0;
+  int currentRequestId;
+  {
+    std::lock_guard<std::mutex> lock(
+        g_downloads_get_fileicon_callback_map_mutex);
+    currentRequestId = ++requestId;
+    g_downloads_get_fileicon_callback_map_[currentRequestId] =
+        std::move(callback);
+  }
+  bool result = NWebExtensionDownloadsDispatcher::GetInstance().GetFileIcon(
+      currentRequestId, iconOption);
+  if (!result) {
+    std::lock_guard<std::mutex> lock(
+        g_downloads_get_fileicon_callback_map_mutex);
+    g_downloads_get_fileicon_callback_map_.erase(currentRequestId);
+  }
+  return result;
+
+#endif
+}
+
+void NWebExtensionDownloadCefDelegate::GetFileIconCallback(
+    int requestId,
+    const char* error,
+    const ExDownloadsIconBitmap& iconBitmap) {
+  DownloadGetFileIconCallback callback;
+  {
+    std::lock_guard<std::mutex> lock(
+        g_downloads_get_fileicon_callback_map_mutex);
+    auto it = g_downloads_get_fileicon_callback_map_.find(requestId);
+    if (it == g_downloads_get_fileicon_callback_map_.end()) {
+      LOG(ERROR) << "NWebExtensionDownloadCefDelegate::GetFileIconCallback"
+                 << "requestId not found: " << requestId;
+      return;
+    }
+    callback = std::move(it->second);
+    g_downloads_get_fileicon_callback_map_.erase(it);
+  }
+  std::move(callback).Run(error, iconBitmap);
 }
 
 }  // namespace OHOS::NWeb

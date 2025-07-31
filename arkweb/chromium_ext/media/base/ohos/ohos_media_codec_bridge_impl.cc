@@ -311,7 +311,6 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
   configAdapter->SetWidth(frame->coded_size().width());
   configAdapter->SetHeight(frame->coded_size().height());
   configAdapter->SetStrideAlignment(DEFAULT_STRIDE);
-  configAdapter->SetTimestamp(timestamp_ms);
   buffer_adapter_ = surface_->RequestBuffer(fence, configAdapter);
   if (buffer_adapter_ == nullptr) {
     LOG(DEBUG) << "fail to RequestBuffer";
@@ -335,6 +334,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
   flush_config_adapter->SetY(0);
   flush_config_adapter->SetW(configAdapter->GetWidth());
   flush_config_adapter->SetH(configAdapter->GetHeight());
+  flush_config_adapter->SetTimestamp(timestamp_ms);
   LOG(DEBUG) << "flush_config_adapter x " << flush_config_adapter->GetX()
              << ", y " << flush_config_adapter->GetY() << ", w "
              << flush_config_adapter->GetW() << ", h "

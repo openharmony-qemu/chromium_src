@@ -180,4 +180,137 @@ TEST_F(OhosAdblockUtilTest, GetDomPathStep_003) {
   host->CreateUserAgentShadowRoot();
   GetDomPathStep(*host, false, true, true);
 }
+
+TEST_F(OhosAdblockUtilTest, GetDomPathStep_004) {
+  SetBodyContent("Text");
+  Node* node = GetDocument().body()->firstChild();
+  GetDomPathStep(*node, false, true, true);
+  EXPECT_TRUE(node->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPathStep_005) {
+  SetBodyContent("<input id=\"text\">\"hello\"</input>");
+  Node* node = GetDocument().body()->firstChild();
+  Element* root = To<Element>(node);
+  root->CreateUserAgentShadowRoot();
+  GetDomPathStep(*root, false, true, true);
+  EXPECT_TRUE(node->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPathStep_006) {
+  SetBodyContent("<input id=\"text\">\"hello\"</input>");
+  Node* node = GetDocument().body()->firstChild();
+  Element* root = To<Element>(node);
+  root->CreateUserAgentShadowRoot();
+  GetDomPathStep(*root, true, true, true);
+  EXPECT_TRUE(node->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPathStep_060) {
+  SetBodyContent(
+      "<html><head>o</head><body><b id=\"root\">one</b></body></html>");
+  Node* node = GetDocument().getElementById(AtomicString("root"));
+  Node* body = node->parentNode();
+  Node* html = body->parentNode();
+  GetDomPathStep(*html, true, true, true);
+  EXPECT_TRUE(node->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPathStep_061) {
+  SetBodyContent("<html><body id=\"root\">\"hello\"</body></html>");
+  Node* node = GetDocument().body()->firstChild();
+  Node* root = node->parentNode();
+  Node* root1 = root->parentNode();
+  GetDomPathStep(*root, true, true, true);
+  EXPECT_TRUE(node->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPathStep_062) {
+  SetBodyContent(
+      "<html><head>o</head><body><b id=\"root\">one</b></body></html>");
+  Node* node = GetDocument().getElementById(AtomicString("root"));
+  Node* up = node->parentNode();
+  Node* root = up->parentNode();
+  Node* child = root->firstChild();
+  GetDomPathStep(*child, true, true, true);
+  EXPECT_TRUE(node->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPathStep_007) {
+  SetBodyContent(
+      "<html><head>o</head><body><b id=\"root\">one</b></body></html>");
+  Node* node = GetDocument().getElementById(AtomicString("root"));
+  Node* up = node->parentNode();
+  Node* html = up->parentNode();
+  GetDomPathStep(*html, false, true, true);
+  EXPECT_TRUE(node->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPathStep_008) {
+  SetBodyContent(
+      "<div id=\"root\"><b id=\"one\"></b><b id=\"two\"></b></div>");
+  Element* root = GetDocument().getElementById(AtomicString("one"));
+  root->CreateUserAgentShadowRoot();
+  Element* root1 = GetDocument().getElementById(AtomicString("two"));
+  root1->CreateUserAgentShadowRoot();
+  GetDomPathStep(*root, false, true, true);
+  EXPECT_TRUE(root->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPathStep_009) {
+  SetBodyContent(
+      "<div id=\"root\"><div id=\"one\"></div><div id=\"two\"></div></div>");
+  Element* root = GetDocument().getElementById(AtomicString("two"));
+  root->AttachShadowRootForTesting(ShadowRootMode::kOpen);
+  Element* root1 = GetDocument().getElementById(AtomicString("one"));
+  root1->AttachShadowRootForTesting(ShadowRootMode::kOpen);
+  GetDomPathStep(*root, false, true, true);
+  EXPECT_TRUE(root->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPath_001) {
+  SetBodyContent(
+      "<html><head>o</head><body><b id=\"root\">one</b></body></html>");
+  Node* node = GetDocument().getElementById(AtomicString("root"));
+  Node* up = node->parentNode();
+  Node* html = up->parentNode();
+  GetDomPath(*html, false, true);
+  EXPECT_TRUE(node->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPath_002) {
+  SetBodyContent(
+      "<html><head>o</head><body><b id=\"root\">one</b></body></html>");
+  Node* node = GetDocument().body()->firstChild();
+  GetDomPath(*node, false, true);
+  EXPECT_TRUE(node->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPath_003) {
+  SetBodyContent(
+      "<html><head>o</head><body><b id=\"root\">one</b></body></html>");
+  Node* node = GetDocument().getElementById(AtomicString("root"));
+  Node* up = node->parentNode();
+  Node* html = up->parentNode();
+  GetDomPath(*html, false, true);
+  EXPECT_TRUE(node->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPath_004) {
+  SetBodyContent("<input id=\"text\">\"hello\"</input>");
+  Node* node = GetDocument().body()->firstChild();
+  Element* root = To<Element>(node);
+  root->CreateUserAgentShadowRoot();
+  GetDomPath(*root, false, true);
+  EXPECT_TRUE(node->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPath_005) {
+  SetBodyContent("<input id=\"text\">\"hello\"</input>");
+  Node* node = GetDocument().body()->firstChild();
+  Element* root = To<Element>(node);
+  root->CreateUserAgentShadowRoot();
+  GetDomPath(*root, false, true);
+  EXPECT_TRUE(node->CanStartSelection());
+}
 }  // namespace blink

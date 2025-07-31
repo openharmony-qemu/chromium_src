@@ -283,6 +283,10 @@ void PasteBoardClientAdapterImplFuzzTest(FuzzedDataProvider* fdp) {
 
   impl.GetTokenId();
 
+  impl.AddPasteboardChangedObserver(nullptr);
+
+  impl.RemovePasteboardChangedObserver(-1);
+
   int32_t callbackId = impl.AddPasteboardChangedObserver(observer);
 
   impl.RemovePasteboardChangedObserver(callbackId);

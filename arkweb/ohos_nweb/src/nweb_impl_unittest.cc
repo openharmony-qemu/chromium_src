@@ -1891,6 +1891,6 @@ TEST_F(NWebImplTest, PostUrl002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_EQ(result, nweb_impl_->nweb_delegate_->PostUrl(url, postData));
 }
-
+#endif
 }  // namespace OHOS::NWeb
                           

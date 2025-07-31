@@ -16,7 +16,7 @@
 #ifndef NET_CONNECTION_PROPERTIES_ADAPTER_IMPL_H
 #define NET_CONNECTION_PROPERTIES_ADAPTER_IMPL_H
 
-#include "arkweb/ohos_adapter_ndk/interfaces/net_connect_adapter.h"
+#include "net_connect_adapter.h"
 
 namespace OHOS::NWeb {
 

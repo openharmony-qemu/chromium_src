@@ -285,6 +285,9 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
  private:
   friend class HostFrameSinkManagerTest;
   friend class HostFrameSinkManagerTestApi;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class HostFrameSinkManagerUtilsTest;
+#endif
 
   struct FrameSinkData {
     FrameSinkData();

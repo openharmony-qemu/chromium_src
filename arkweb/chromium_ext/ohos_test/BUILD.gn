@@ -609,6 +609,7 @@ fuzzer_test("ohos_buffer_adapter_impl_fuzzer") {
     "//cef/include",
     "//ohos_nweb/include",
     "//arkweb/ohos_adapter_ndk/media_adapter",
+    "//arkweb/ohos_adapter_ndk/media_adapter/include",
     "//third_party/ohos_ndk/includes/ohos_adapter",
   ]
   deps = [
@@ -627,6 +628,7 @@ fuzzer_test("player_framework_adapter_impl_fuzzer") {
     "//cef/include",
     "//ohos_nweb/include",
     "//arkweb/ohos_adapter_ndk/media_adapter",
+    "//arkweb/ohos_adapter_ndk/graphic_adapter",
     "//third_party/ohos_ndk/includes/ohos_adapter",
   ]
   deps = [

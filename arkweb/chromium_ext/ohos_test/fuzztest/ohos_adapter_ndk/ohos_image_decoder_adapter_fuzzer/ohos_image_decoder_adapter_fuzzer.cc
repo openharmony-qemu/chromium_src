@@ -31,7 +31,7 @@ bool ProcessImageSource(const uint8_t* data, size_t size)
 {
     FuzzedDataProvider dataProvider(data, size);
 
-    constexpr uint32_t MIN_VALID_SIZE = 16;
+    constexpr uint32_t MIN_VALID_SIZE = 4;
     auto validData = std::make_unique<uint8_t[]>(MIN_VALID_SIZE);
     validData[0] = 0x89; 
     validData[1] = 0x50;

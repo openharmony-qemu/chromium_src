@@ -637,8 +637,8 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
                 return;
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
               }
-              if (input_router &&
-              (input_router->GetNativeResult() || input_router->GetMouseNativeResult())) {
+              if (latency.is_stop_propagation() ||
+                  (input_router && input_router->GetMouseNativeResult())) {
                 state = blink::mojom::InputEventResultState::kConsumed;
 #endif
               }

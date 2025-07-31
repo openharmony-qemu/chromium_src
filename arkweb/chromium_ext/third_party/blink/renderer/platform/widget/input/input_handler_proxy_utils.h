@@ -24,6 +24,9 @@
 
 namespace blink {
 
+#define MAX_FINGER_NUMBER 20
+#define MIN_FINGER_NUMBER 0
+
 class WebInputEventAttribution;
 class InputHandlerProxy;
 class EventWithCallback;
@@ -47,8 +50,19 @@ public:
     SEND_NATIVE,
     SEND_VIDEO,
     END_QUEUE,
+    DROP,
   };
-  using GestureEventCallback = base::OnceCallback<void(bool, bool)>;
+  enum NativeEventState {
+    INIT,
+    PEND_HITTEST,
+    SEND_BLINK,
+    PEND_NATIVE,
+    SEND_NATIVE_BLINK,
+    SEND_TO_NATIVE,
+    SEND_NATIVE_BLINK_CONSUMER,
+  };
+  std::shared_ptr<NativeEmbedEventQueue> NativeTouchEventQueues_[MAX_FINGER_NUMBER];
+  using GestureEventCallback = base::OnceCallback<void(bool, bool, int32_t)>;
   using MouseEventCallback = base::OnceCallback<void(bool, bool)>;
 #endif
 
@@ -92,6 +106,37 @@ public:
     const WebInputEvent& event);
   void SetMouseEventResult(bool result, bool stopPropagation);
   void SendMouseNativeEvent(const WebMouseEvent& mouse_event, WebInputEvent::Type type, bool result = true);
+  void SendToBlink(std::unique_ptr<EventWithCallback> event_with_callback,
+                   bool isDrop = false, bool result = false);
+  void FlushNativeTouchQueue(size_t fingerId);
+  void NativeEventProcess(
+      std::unique_ptr<EventWithCallback> event_with_callback);
+  bool NativeTouchEventProcess(
+      std::unique_ptr<EventWithCallback> event_with_callback, bool isStartInQueue);
+  void NativeTouchStartProcess(
+      std::unique_ptr<EventWithCallback> event_with_callback);
+  bool NativeTouchStartProcessInQueue(
+      std::unique_ptr<EventWithCallback> event_with_callback);
+  void NativeTouchCancelProcess(
+      std::unique_ptr<EventWithCallback> event_with_callback);
+  void NativeTouchEndProcess(
+      std::unique_ptr<EventWithCallback> event_with_callback);
+  void NativeTouchMoveProcess(
+      std::unique_ptr<EventWithCallback> event_with_callback);
+  bool HandleTouchStartIfHitNative(const WebTouchEvent& touch_event);
+  bool HandleTouchStartIfHitVideo(const WebTouchEvent& touch_event);
+  size_t GetTouchChangeIndex(const WebTouchEvent& event);
+  void NativeHitTestResultV2(bool native, size_t finger_Id, int layer_Id);
+  void SetGestureEventResult(bool result,
+                             bool stopPropagation,
+                             int32_t fingerId);
+  void SetEnableCustomVideoPlayer(bool flag);
+  void CheckTouchEventSequence(WebInputEvent::Type type, int32_t finger_id);
+  void NotifyEventNativeFocusResult(size_t fingerId);
+  void SendEventToNative(const WebTouchEvent& touch_event);
+  void NativeMouseEventProcess(
+      std::unique_ptr<EventWithCallback> event_with_callback);
+  void ResetTouchSequence();
 #endif
  private:
  raw_ptr<InputHandlerProxy> proxy_;
@@ -118,6 +163,9 @@ public:
   std::unordered_map<size_t, int> mouse_native_layer_map_;
   int mouse_native_layer_id_ = 0;
   int32_t mouse_hit_testing_number_ = 0;
+  WebInputEvent::Type gesture_status_[MAX_FINGER_NUMBER];
+  bool enable_custom_video_player_ = false;
+  gfx::RectF nativeRects_[MAX_FINGER_NUMBER];
 #endif
 };
 

@@ -113,9 +113,12 @@ class InputRouter {
   // been submitted to the browser.
   virtual void WaitForInputProcessed(base::OnceClosure callback) = 0;
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  virtual void SetGestureEventResult(bool result, bool stopPropagation) = 0;
+  virtual void SetGestureEventResult(bool result,
+                                     bool stopPropagation,
+                                     int32_t fingerId) = 0;
   virtual void SetNativeEmbedMode(bool flag) = 0;
   virtual void SetMouseEventResult(bool result, bool stopPropagation) = 0;
+  virtual void SetEnableCustomVideoPlayer(bool flag) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

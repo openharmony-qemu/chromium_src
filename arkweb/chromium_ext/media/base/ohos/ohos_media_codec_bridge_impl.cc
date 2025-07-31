@@ -36,34 +36,6 @@ struct YUVMemcpyData {
   size_t src_size[MAXPLANES];
 };
 
-CodecCodeAdapter FlushBufferWithConfig(
-    scoped_refptr<VideoFrame> frame,
-    std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter,
-    const int64_t timestamp_ms,
-    int32_t fence) {
-  LOG(DEBUG) << __FUNCTION__ << " enter";
-  std::shared_ptr<BufferFlushConfigAdapterImpl> flush_config_adapter =
-      std::make_shared<BufferFlushConfigAdapterImpl>();
-  flush_config_adapter->SetX(0);
-  flush_config_adapter->SetY(0);
-  flush_config_adapter->SetW(configAdapter->GetWidth());
-  flush_config_adapter->SetH(configAdapter->GetHeight());
-  flush_config_adapter->SetTimestamp(timestamp_ms);
-  LOG(DEBUG) << "flush_config_adapter x " << flush_config_adapter->GetX()
-             << ", y " << flush_config_adapter->GetY() << ", w "
-             << flush_config_adapter->GetW() << ", h "
-             << flush_config_adapter->GetH() << ", timestamp "
-             << flush_config_adapter->GetTimestamp()
-             << ", intput real frame time stamp: "
-             << frame->timestamp().InMicroseconds();
-  if (surface_->FlushBuffer(buffer_adapter_, fence, flush_config_adapter) != 0) {
-    LOG(DEBUG) << "fail to FlushBuffer";
-    return CodecCodeAdapter::ERROR;
-  }
-  LOG(DEBUG) << __FUNCTION__ << " succeed";
-  return CodecCodeAdapter::OK;
-}
-
 CodecCodeAdapter FillSurfaceBufferDataCheck(
     scoped_refptr<VideoFrame> frame, std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter, YUVMemcpyData &data)
 {
@@ -357,7 +329,25 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
       (CopyYUVData(data, VideoFrame::kVPlane, &dst) != CodecCodeAdapter::OK)) {
     return CodecCodeAdapter::ERROR;
   }
-  return FlushBufferWithConfig(frame, configAdapter, timestamp_ms, fence);
+  std::shared_ptr<BufferFlushConfigAdapterImpl> flush_config_adapter =
+      std::make_shared<BufferFlushConfigAdapterImpl>();
+  flush_config_adapter->SetX(0);
+  flush_config_adapter->SetY(0);
+  flush_config_adapter->SetW(configAdapter->GetWidth());
+  flush_config_adapter->SetH(configAdapter->GetHeight());
+  flush_config_adapter->SetTimestamp(timestamp_ms);
+  LOG(DEBUG) << "flush_config_adapter x " << flush_config_adapter->GetX()
+             << ", y " << flush_config_adapter->GetY() << ", w "
+             << flush_config_adapter->GetW() << ", h "
+             << flush_config_adapter->GetH() << ", timestamp "
+             << flush_config_adapter->GetTimestamp()
+             << ", intput real frame time stamp: "
+             << frame->timestamp().InMicroseconds();
+  if (surface_->FlushBuffer(buffer_adapter_, fence, flush_config_adapter) != 0) {
+    LOG(DEBUG) << "fail to FlushBuffer";
+    return CodecCodeAdapter::ERROR;
+  }
+  return CodecCodeAdapter::OK;
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::RequestKeyFrameSoon() {

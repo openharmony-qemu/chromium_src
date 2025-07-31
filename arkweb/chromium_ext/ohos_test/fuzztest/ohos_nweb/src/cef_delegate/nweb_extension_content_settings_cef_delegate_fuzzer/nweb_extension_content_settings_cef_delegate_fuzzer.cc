@@ -24,7 +24,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "base/logging.h"
 #include "cef/include/cef_browser.h"

@@ -23,7 +23,8 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
-#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
+#include "arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 namespace net {
 
@@ -33,7 +34,7 @@ namespace net {
 // state changes, but other processes want to add observers for network state.
 // It's also useful on Linux where listening for network state changes in a
 // sandboxed process requires loosening the sandbox policy too much.
-class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier  {
+class NET_EXPORT NetworkChangeNotifierPassive : public ArkwebNetworkChangeNotifierExt {
  public:
   NetworkChangeNotifierPassive(
       NetworkChangeNotifier::ConnectionType initial_connection_type,
@@ -57,11 +58,8 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier  {
   const std::vector<std::string> GetCurrentDnsServers() override;
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   void BindDnsToNetwork(int network_for_dns) override;
-  const std::vector<std::string> GetCurrentNetAddrList() override;
-  const std::vector<std::string> GetNetAddrListByNetId(int32_t netId) override;
-  void SetNetAddrList(std::vector<std::string> newNetAddrList) override;
 #endif
 
  protected:
@@ -114,10 +112,6 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier  {
   int32_t network_for_dns_ = -1;
   mutable base::Lock dns_server_lock_;
   std::vector<std::string> dns_servers_;
-#endif
-
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
-  std::vector<std::string> netAddrList_;
 #endif
 
 };

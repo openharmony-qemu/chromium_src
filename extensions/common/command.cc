@@ -506,6 +506,11 @@ bool Command::Parse(const base::Value::Dict& command,
   if (suggestions.find(key) == suggestions.end()) {
     key = values::kKeybindingPlatformDefault;
   }
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (suggestions.find(key) == suggestions.end()) {
+    key = values::kKeybindingPlatformWin;
+  }
+#endif
   if (suggestions.find(key) == suggestions.end()) {
     *error = ErrorUtils::FormatErrorMessageUTF16(
         errors::kInvalidKeyBindingMissingPlatform, base::NumberToString(index),

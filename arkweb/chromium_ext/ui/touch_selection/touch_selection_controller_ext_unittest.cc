@@ -16,6 +16,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <queue>
 #include <vector>
 
 #include "arkweb/build/features/features.h"
@@ -24,12 +25,10 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/events/test/motion_event_test_utils.h"
-#include "ui/touch_selection/touch_selection_controller_test_api.h"
-#include "ui/touch_selection/touch_selection_controller.h"
 #include "ui/touch_selection/ui_touch_selection_export.h"
-#include <queue>
 #define private public
 #include "arkweb/chromium_ext/ui/touch_selection/touch_selection_controller_ext.h"
+#include "ui/touch_selection/touch_selection_controller.h"
 
 using testing::ElementsAre;
 using testing::IsEmpty;
@@ -40,9 +39,22 @@ namespace {
 constexpr int kDefaultTapTimeoutMs = 200;
 constexpr float kDefaultTapSlop = 10.f;
 constexpr gfx::PointF kIgnoredPoint(0, 0);
+const gfx::RectF kDefaultViewportRect(0, 0, 560, 1200);
+const int kDefaultTapDurationMs = 200;
+const float kDefaultDrawableSize = 10.f;
 constexpr TouchSelectionController::Config kDefaultConfig = {
     .max_tap_duration = base::Milliseconds(kDefaultTapTimeoutMs),
     .tap_slop = kDefaultTapSlop,
+};
+
+struct MockDrawableData {
+  TouchHandleOrientation orientation = TouchHandleOrientation::UNDEFINED;
+  float alpha = 0.f;
+  bool mirror_horizontal = false;
+  bool mirror_vertical = false;
+  bool enabled = false;
+  bool visible = false;
+  gfx::RectF rect{0, 0, kDefaultDrawableSize, kDefaultDrawableSize};
 };
 
 class MockTouchHandleDrawableExt : public TouchHandleDrawable {
@@ -72,6 +84,125 @@ class MockTouchHandleDrawableExt : public TouchHandleDrawable {
   bool intersects_rect_;
 };
 
+class MockTouchHandleClient : public TouchHandleClient {
+ public:
+  MockTouchHandleClient()
+      : dragging_(false),
+        dragged_(false),
+        tapped_(false),
+        needs_animate_(false) {}
+
+  ~MockTouchHandleClient() override {}
+
+  // TouchHandleClient implementation.
+  void OnDragBegin(const TouchSelectionDraggable& handler,
+                   const gfx::PointF& drag_position) override {
+    dragging_ = true;
+  }
+
+  void OnDragUpdate(const TouchSelectionDraggable& handler,
+                    const gfx::PointF& drag_position) override {
+    dragged_ = true;
+    drag_position_ = drag_position;
+  }
+
+  void OnDragEnd(const TouchSelectionDraggable& handler) override {
+    dragging_ = false;
+  }
+
+  void UpdateSelectionChanged(
+      const TouchSelectionDraggable& draggable) override {
+  }
+
+  bool IsWithinTapSlop(const gfx::Vector2dF& delta) const override {
+    return delta.LengthSquared() < (kDefaultTapSlop * kDefaultTapSlop);
+  }
+
+  void OnHandleTapped(const TouchHandle& handle) override { tapped_ = true; }
+
+  void SetNeedsAnimate() override { needs_animate_ = true; }
+
+  std::unique_ptr<TouchHandleDrawable> CreateDrawable() override {
+    return std::make_unique<MockTouchHandleDrawableExt>(true);
+  }
+
+  base::TimeDelta GetMaxTapDuration() const override {
+    return base::Milliseconds(kDefaultTapDurationMs);
+  }
+
+  bool IsAdaptiveHandleOrientationEnabled() const override {
+    // Enable adaptive handle orientation by default for unittests
+    return true;
+  }
+
+  void Animate(TouchHandle& handle) {
+    needs_animate_ = false;
+    base::TimeTicks now = base::TimeTicks::Now();
+    while (handle.Animate(now))
+      now += base::Milliseconds(16);
+  }
+
+  bool GetAndResetHandleDragged() {
+    bool dragged = dragged_;
+    dragged_ = false;
+    return dragged;
+  }
+
+  bool GetAndResetHandleTapped() {
+    bool tapped = tapped_;
+    tapped_ = false;
+    return tapped;
+  }
+
+  bool GetAndResetNeedsAnimate() {
+    bool needs_animate = needs_animate_;
+    needs_animate_ = false;
+    return needs_animate;
+  }
+
+  void UpdateHandleFocus(TouchHandle& handle,
+                         gfx::PointF& top,
+                         gfx::PointF& bottom) {
+    handle.SetFocus(top, bottom);
+    handle.UpdateHandleLayout();
+  }
+
+  void UpdateHandleOrientation(TouchHandle& handle,
+                               TouchHandleOrientation orientation) {
+    handle.SetOrientation(orientation);
+    handle.UpdateHandleLayout();
+  }
+
+  void UpdateHandleVisibility(TouchHandle& handle,
+                              bool visible,
+                              TouchHandle::AnimationStyle animation_style) {
+    handle.SetVisible(visible, animation_style);
+    handle.UpdateHandleLayout();
+  }
+
+  void UpdateViewportRect(TouchHandle& handle, gfx::RectF viewport_rect) {
+    handle.SetViewportRect(viewport_rect);
+    handle.UpdateHandleLayout();
+  }
+
+  bool IsDragging() const { return dragging_; }
+  const gfx::PointF& DragPosition() const { return drag_position_; }
+  bool NeedsAnimate() const { return needs_animate_; }
+
+  const MockDrawableData& drawable() { return drawable_data_; }
+
+  void SetEnalbeDrawable(bool enabled) { enable_drawable_ = enabled; }
+
+ private:
+  gfx::PointF drag_position_;
+  bool dragging_;
+  bool dragged_;
+  bool tapped_;
+  bool needs_animate_;
+  bool enable_drawable_ = false;
+  MockDrawableData drawable_data_;
+};
+
 class TouchSelectionControllerExtTest : public testing::Test,
                                      public TouchSelectionControllerClient {
  public:
@@ -88,6 +219,12 @@ class TouchSelectionControllerExtTest : public testing::Test,
   }
 
   void TearDown() override { controller_.reset(); }
+
+  void SelectBetweenCoordinatesV2(const gfx::PointF& position, bool is_base) override {
+    is_base_ = is_base;
+  }
+
+  bool IsBase() { return is_base_; }
 
   bool SupportsAnimation() const override { return animation_enabled_; }
 
@@ -271,6 +408,7 @@ class TouchSelectionControllerExtTest : public testing::Test,
   bool needs_animate_ = false;
   bool animation_enabled_ = true;
   bool dragging_enabled_ = false;
+  bool is_base_ = false;
   std::unique_ptr<TouchSelectionControllerExt> controller_;
 };
 
@@ -538,6 +676,102 @@ TEST_F(TouchSelectionControllerExtTest, ArkSelectBetweenCoordinates) {
   controller().ArkSelectBetweenCoordinates(base, extent);
   EXPECT_FALSE(GetAndResetSelectionMoved());
   ClearSelection();
+}
+
+TEST_F(TouchSelectionControllerExtTest, UpdateSelectionChanged) {
+  std::shared_ptr<TouchHandleClient> touchHandleClient = std::make_shared<MockTouchHandleClient>();
+  MockMotionEvent event(MockMotionEvent::Action::DOWN, base::TimeTicks::Now(), 1, 0);
+  gfx::SelectionBound start_bound;
+  gfx::SelectionBound end_bound;
+  controller().insertion_handle_ =
+    std::make_unique<TouchHandleExt>(touchHandleClient.get(), TouchHandleOrientation::CENTER, kDefaultViewportRect);
+  controller().start_selection_handle_ =
+    std::make_unique<TouchHandleExt>(touchHandleClient.get(), TouchHandleOrientation::LEFT, kDefaultViewportRect);
+  controller().end_selection_handle_ =
+    std::make_unique<TouchHandleExt>(touchHandleClient.get(), TouchHandleOrientation::RIGHT, kDefaultViewportRect);
+  controller().SetTouchNumsForHandle(event);
+  EXPECT_EQ(controller().gestureTouchQueue_.size(), 1);
+  controller().UpdateSelectionChanged(*controller().insertion_handle_);
+  controller().UpdateSelectionChanged(*controller().start_selection_handle_);
+  controller().ResetPositionAfterDragEnd(*controller().start_selection_handle_);
+  controller().ResetPositionAfterDragEnd(*controller().end_selection_handle_);
+  controller().OnInsertionChangedExt(start_bound, end_bound);
+  controller().active_status_ = TouchSelectionController::ActiveStatus::INACTIVE;
+  EXPECT_EQ(controller().SelectOverImg(), false);
+  controller().active_status_ = TouchSelectionController::ActiveStatus::SELECTION_ACTIVE;
+  controller().show_touch_handles_ = false;
+  EXPECT_EQ(controller().SelectOverImg(), false);
+  controller().show_touch_handles_ = true;
+  EXPECT_EQ(controller().SelectOverImg(), false);
+  controller().end_selection_handle_->SetVisible(true, TouchHandle::AnimationStyle::ANIMATION_NONE);
+  controller().HandleIfEndNotVisible(event);
+  EXPECT_EQ(controller().end_selection_handle_->AsTouchHandleExt()->GetVisible(), true);
+  controller().end_selection_handle_->SetVisible(false, TouchHandle::AnimationStyle::ANIMATION_NONE);
+  controller().HandleIfEndNotVisible(event);
+  EXPECT_EQ(controller().end_selection_handle_->AsTouchHandleExt()->GetVisible(), false);
+  controller().start_selection_handle_->SetVisible(false, TouchHandle::AnimationStyle::ANIMATION_NONE);
+  controller().HandleIfEndNotVisible(event);
+  EXPECT_EQ(controller().start_selection_handle_->AsTouchHandleExt()->GetVisible(), false);
+  controller().start_selection_handle_->SetVisible(true, TouchHandle::AnimationStyle::ANIMATION_NONE);
+  controller().HandleIfEndNotVisible(event);
+  EXPECT_EQ(controller().start_selection_handle_->AsTouchHandleExt()->GetVisible(), true);
+  controller().insertion_handle_ = nullptr;
+  controller().start_selection_handle_ = nullptr;
+  controller().end_selection_handle_ = nullptr;
+  controller().SetTouchNumsForHandle(event);
+  EXPECT_EQ(controller().gestureTouchQueue_.size(), 2);
+}
+
+TEST_F(TouchSelectionControllerExtTest, ArkSelectBetweenCoordinates002) {
+  gfx::RectF rect(5, 5, 0, 10);
+  gfx::RectF line_rect(50, 5, 10, 0);
+  gfx::SelectionBound start_bound;
+  gfx::SelectionBound end_bound;
+  gfx::PointF base(7.5f, 5.0f);
+  gfx::PointF extent(50.0f, 5.0f);
+  start_bound.set_type(gfx::SelectionBound::LEFT);
+  end_bound.set_type(gfx::SelectionBound::RIGHT);
+  std::shared_ptr<TouchHandleClient> touchHandleClient = std::make_shared<MockTouchHandleClient>();
+  controller().insertion_handle_ =
+    std::make_unique<TouchHandle>(touchHandleClient.get(), TouchHandleOrientation::CENTER, kDefaultViewportRect);
+  controller().start_selection_handle_ =
+    std::make_unique<TouchHandleExt>(touchHandleClient.get(), TouchHandleOrientation::LEFT, kDefaultViewportRect);
+  controller().end_selection_handle_ =
+    std::make_unique<TouchHandleExt>(touchHandleClient.get(), TouchHandleOrientation::RIGHT, kDefaultViewportRect);
+  controller().end_selection_handle_->SetVisible(true, TouchHandle::AnimationStyle::ANIMATION_NONE);
+  controller().start_selection_handle_->SetVisible(true, TouchHandle::AnimationStyle::ANIMATION_NONE);
+  SelectBetweenCoordinatesV2(extent, true);
+  controller().ArkSelectBetweenCoordinates(base, extent);
+  controller().start_selection_handle_->SetVisible(false, TouchHandle::AnimationStyle::ANIMATION_NONE);
+  controller().ArkSelectBetweenCoordinates(base, extent);
+  start_bound.SetEdge(rect.origin(), rect.bottom_left());
+  controller().start_ = start_bound;
+  controller().ArkSelectBetweenCoordinates(base, extent);
+  start_bound.SetEdge(line_rect.origin(), line_rect.bottom_left());
+  controller().start_ = start_bound;
+  controller().ArkSelectBetweenCoordinates(base, extent);
+  end_bound.SetEdge(line_rect.origin(), line_rect.bottom_left());
+  controller().end_ = end_bound;
+  controller().ArkSelectBetweenCoordinates(base, extent);
+  EXPECT_TRUE(IsBase());
+  end_bound.SetEdge(rect.origin(), rect.bottom_left());
+  controller().end_ = end_bound;
+  controller().ArkSelectBetweenCoordinates(base, extent);
+  EXPECT_FALSE(IsBase());
+  controller().end_selection_handle_->SetVisible(false, TouchHandle::AnimationStyle::ANIMATION_NONE);
+  controller().ArkSelectBetweenCoordinates(base, extent);
+  end_bound.SetEdge(line_rect.origin(), line_rect.bottom_left());
+  controller().end_ = end_bound;
+  controller().ArkSelectBetweenCoordinates(base, extent);
+  EXPECT_FALSE(IsBase());
+  start_bound.SetEdge(rect.origin(), rect.bottom_left());
+  controller().start_ = start_bound;
+  controller().ArkSelectBetweenCoordinates(base, extent);
+  EXPECT_TRUE(IsBase());
+  controller().insertion_handle_ = nullptr;
+  controller().start_selection_handle_ = nullptr;
+  controller().end_selection_handle_ = nullptr;
+  controller().OnInsertionChangedExt(start_bound, end_bound);
 }
 }
 }  // namespace ui

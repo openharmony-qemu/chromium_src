@@ -240,5 +240,15 @@ TEST_F(TouchHandleExtTest, SetFocus) {
   handle->focus_bottom_= focus_top;
   EXPECT_TRUE(handle->AsTouchHandleExt()->SetFocus(focus_top, focus_bottom2));
 }
+
+TEST_F(TouchHandleExtTest, SetInsertHandleAlpha) {
+  TouchHandleExt handle(this, TouchHandleOrientation::CENTER,
+                     kDefaultViewportRect);
+  handle.SetInsertHandleAlpha(0.3f);
+  handle.SetInsertHandleAlpha(0.3f);
+  EXPECT_EQ(handle.alpha_, 0.3f);
+  handle.SetInsertHandleAlpha(0.7f);
+  EXPECT_EQ(handle.alpha_, 0.7f);
+}
 }  // namespace
 }  // namespace ui

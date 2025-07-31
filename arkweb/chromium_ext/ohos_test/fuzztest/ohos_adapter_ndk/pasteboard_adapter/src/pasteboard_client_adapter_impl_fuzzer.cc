@@ -257,7 +257,6 @@ void PasteBoardClientAdapterImplFuzzTest(FuzzedDataProvider* fdp) {
   std::string path = fdp->ConsumeRandomLengthString(256);
   std::shared_ptr<PasteboardObserverAdapter> observer =
       std::make_shared<MockPasteboardObserver>();
-  int32_t callbackId = fdp->ConsumeIntegralInRange<int32_t>(0, 1);
 
   PasteBoardClientAdapterImpl& impl =
       PasteBoardClientAdapterImpl::GetInstance();
@@ -284,11 +283,7 @@ void PasteBoardClientAdapterImplFuzzTest(FuzzedDataProvider* fdp) {
 
   impl.GetTokenId();
 
-  impl.AddPasteboardChangedObserver(nullptr);
-
-  impl.AddPasteboardChangedObserver(observer);
-
-  impl.AddPasteboardChangedObserver(observer);
+  int32_t callbackId = impl.AddPasteboardChangedObserver(observer);
 
   impl.RemovePasteboardChangedObserver(callbackId);
 

@@ -52,9 +52,12 @@ void ArkwebWidgetInputHandlerImplExt::AttachSoftwareCompositorOhos(
 #endif
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-void ArkwebWidgetInputHandlerImplExt::SetGestureEventResult(bool result,
-                                                   bool stopPropagation) {
-  input_handler_manager_->manager_utils()->SetGestureEventResult(result, stopPropagation);
+void ArkwebWidgetInputHandlerImplExt::SetGestureEventResult(
+    bool result,
+    bool stopPropagation,
+    int32_t fingerId) {
+  input_handler_manager_->manager_utils()->SetGestureEventResult(
+      result, stopPropagation, fingerId);
 }
 
 void ArkwebWidgetInputHandlerImplExt::SetNativeEmbedMode(bool flag) {
@@ -66,6 +69,12 @@ void ArkwebWidgetInputHandlerImplExt::SetNativeEmbedMode(bool flag) {
 void ArkwebWidgetInputHandlerImplExt::SetMouseEventResult(bool result,
                                                    bool stopPropagation) {
   input_handler_manager_->manager_utils()->SetMouseEventResult(result, stopPropagation);
+}
+
+void ArkwebWidgetInputHandlerImplExt::SetEnableCustomVideoPlayer(bool flag) {
+  if (input_handler_manager_) {
+    input_handler_manager_->manager_utils()->SetEnableCustomVideoPlayer(flag);
+  }
 }
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

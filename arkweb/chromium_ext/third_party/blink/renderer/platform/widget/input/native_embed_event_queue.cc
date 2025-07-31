@@ -37,7 +37,18 @@ std::unique_ptr<EventWithCallback> NativeEmbedEventQueue::Pop() {
 
   return result;
 }
-// LCOV_EXCL_STOP
 
+void NativeEmbedEventQueue::PushFront(
+  std::unique_ptr<EventWithCallback> event) {
+  queue_.push_front(std::move(event));
+}
+
+const WebInputEvent& NativeEmbedEventQueue::Front() {
+  DCHECK(!queue_.empty());
+  const WebInputEvent& result = queue_.front()->event();
+
+  return result;
+}
+// LCOV_EXCL_STOP
 }  // namespace blink
                      

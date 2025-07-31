@@ -50,7 +50,7 @@ NetworkChangeNotifierPassive::NetworkChangeNotifierPassive(
     NetworkChangeNotifier::ConnectionType initial_connection_type,
     NetworkChangeNotifier::ConnectionSubtype initial_connection_subtype,
     SystemDnsConfigChangeNotifier* system_dns_config_notifier)
-    : NetworkChangeNotifier(NetworkChangeCalculatorParamsPassive(),
+    : ArkwebNetworkChangeNotifierExt(NetworkChangeCalculatorParamsPassive(),
                                      system_dns_config_notifier),
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
       ohos_net_conn_adapter_(OHOS::NWeb::OhosAdapterHelper::GetInstance()

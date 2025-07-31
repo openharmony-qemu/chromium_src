@@ -999,9 +999,11 @@ void NWebDelegate::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 
   TRACE_EVENT2("base", "NWebDelegate::Resize", "width", width, "height",
                height);
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   width_ = width;
   height_ = height;
-#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#endif
 
   if (render_handler_ != nullptr) {
     render_handler_->Resize(width, height);
@@ -1174,6 +1176,18 @@ void NWebDelegate::SendMouseEvent(int x,
 
 void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
                                            DisplayOrientation orientation) {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (preference_delegate_ != nullptr) {
+    bool has_rotation = preference_delegate_->SetRotationType(static_cast<uint32_t>(rotation));
+    if (has_ratation && !GetNearestSnapshotSize.IsEmpty()) {
+      std::shared_ptr<NWebImpl> nwebShared = NWebImpl::GetNwebSharedPtr(nweb_id_);
+      if (nwebShared != nullptr) {
+        LOG(DEBUG) << "Remove this Blankless Frame due to screen rotation";
+        nwebShared->RemoveBlanklessFrame();
+      }
+    }
+  }
+#endif
   if (render_handler_ != nullptr) {
     if (display_manager_adapter_ == nullptr) {
       LOG(ERROR) << "Get display_manager_adapter_ failed";
@@ -3509,6 +3523,20 @@ void NWebDelegate::SetNativeInnerWeb(bool isInnerWeb) {
     GetBrowser()->GetHost()->SetNativeInnerWeb(isInnerWeb);
   }
 }
+
+bool NWebDelegate::GetNativeEmbedMode() {
+  if (preference_delegate_) {
+    return preference_delegate_->GetNativeEmbedMode();
+  }
+  return false;
+}
+
+bool NWebDelegate::IsEnableCustomVideoPlayer() {
+  if (preference_delegate_) {
+    return preference_delegate_->IsEnableCustomVideoPlayer();
+  }
+  return false;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
@@ -5753,6 +5781,19 @@ int64_t NWebDelegate::GetPreferenceHash() {
     return base::ohos::BlanklessDataController::INVALID_PREF_HASH;
   }
   return preference_delegate_->GetPreferenceHash();
+}
+
+gfx::Size NWwebDelegate::GetNearestSnapshotSize() {
+  return gfx::Size(nearest_snapshot_width_, nearest_snapshot_height_);
+}
+
+void NWebDelegate::SetNearestSnapshotSize(int width, int height) {
+  nearest_snapshot_width_ = width;
+  nearest_snapshot_height_ = height;
+}
+
+gfx::Size NWebDelegate::GetSize() {
+  return gfx::Size(width_, height_);
 }
 #endif
 

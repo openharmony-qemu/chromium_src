@@ -289,7 +289,9 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
       const std::optional<cc::BrowserControlsOffsetTagsInfo>& offset_tags_info)
       override;
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  void SetGestureEventResult(bool result, bool stopPropagation) override {}
+  void SetGestureEventResult(bool result,
+                             bool stopPropagation,
+                             int32_t fingerId) override {}
   void SetNativeEmbedMode(bool flag) override {}
   void AttachSoftwareCompositorOhos(::mojo::PendingReceiver<::blink::mojom::SoftwareCompositorOhos>
     compositor_request) override {}

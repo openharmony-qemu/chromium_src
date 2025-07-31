@@ -3688,6 +3688,8 @@ test("base_unittests") {
     sources += arkweb_storage_browser_database_unittests_sources
     sources += arkweb_components_web_cache_browser_unittest_sources
     sources += arkweb_storage_monitor_unittest_source
+    sources += arkweb_crashpad_unittest_sources
+    sources += arkweb_crashpad_sources
     sources += [
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
     ]
@@ -3747,6 +3749,15 @@ test("base_unittests") {
     # TODO(crbug.com/40158212): Move partition_alloc tests into its repository.
     "allocator/partition_allocator/src/partition_alloc:test_support",
   ]
+
+  if (arkweb_unittests) {
+    deps += [
+      "//third_party/crashpad/crashpad/client",
+      "//third_party/crashpad/crashpad/util",
+      "//third_party/crashpad/crashpad/minidump",
+      "//third_party/crashpad/crashpad/snapshot",
+    ]
+  }
 
   # TODO(crbug.com/40158212): Move partition_alloc tests into its repository.
   #
@@ -4321,7 +4332,6 @@ test("base_unittests") {
   if (enable_arkweb) {
     deps += [ "//arkweb/build/features" ]
     sources += arkweb_metrics_unittests_sources
-    sources += arkweb_field_trial_utils_unittest_source
   }
 
   if (arkweb_unittests) {

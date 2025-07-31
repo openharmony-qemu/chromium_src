@@ -29,9 +29,26 @@ class PLATFORM_EXPORT NativeEmbedEventQueue {
 
   size_t size() const { return queue_.size(); }
 
+  const WebInputEvent& Front();
+
+  void SetStatus(InputHandlerProxyUtils::NativeEventState status) {
+    status_ = status;
+  }
+
+  int GetStatus() const { return status_; }
+
+  void SetLayerId(int32_t layer_id) { layer_id_ = layer_id; }
+
+  int32_t GetLayerId() const { return layer_id_; }
+
+  void PushFront(std::unique_ptr<EventWithCallback> event);
+
  private:
   using EventQueue = base::circular_deque<std::unique_ptr<EventWithCallback>>;
   EventQueue queue_;
+  InputHandlerProxyUtils::NativeEventState status_ =
+      InputHandlerProxyUtils::NativeEventState::INIT;
+  int32_t layer_id_ = 0;
 };
 
 }  // namespace blink

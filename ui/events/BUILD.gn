@@ -714,9 +714,15 @@ if (use_blink) {
       "//ui/gfx/ipc/geometry",
     ]
 
+    if (arkweb_pdf) {
+      import("//arkweb/chromium_ext/base/arkweb_base_ext.gni")
+      sources += arkweb_base_ohos_ltpo_sources
+    }
+
     if (arkweb_unittests) {
       import("//arkweb/chromium_ext/ui/events/build.gni")
       sources += events_unittests_sources
+      configs += ["//arkweb/chromium_ext:arkweb_system_properties_config"]
     }
 
     if (is_android) {

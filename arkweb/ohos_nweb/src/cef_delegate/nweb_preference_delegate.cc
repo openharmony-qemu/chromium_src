@@ -26,6 +26,7 @@
 #include "base/trace_event/trace_event.h"
 #endif
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "base/command_line.h"
 #include "base/feature_list.h"
 #include "cef/include/cef_command_line.h"
 #include "cef/include/internal/cef_string.h"
@@ -451,17 +452,25 @@ void NWebPreferenceDelegate::PutStandardFontFamilyName(
 
 void NWebPreferenceDelegate::PutUserAgent(const std::string& ua) {
   std::string old_user_agent = user_agent_;
+  has_set_user_agent_ = true;
   if (ua.empty() || ua.length() == 0) {
     user_agent_ = DefaultUserAgent();
   } else {
     user_agent_ = ua;
   }
-  if (!browser_) {
+  if (!browser_ || !(browser_->GetHost())) {
     return;
   }
   if (old_user_agent != user_agent_) {
-    browser_->GetHost()->PutUserAgent(ua);
+    browser_->GetHost()->PutUserAgent(ua, has_set_user_agent_);
   }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+    browser_->GetHost()->CancelAllPrerendering();
+  }
+#endif
 }
 
 void NWebPreferenceDelegate::PutZoomingForTextFactor(int textZoom) {
@@ -1218,12 +1227,27 @@ int64_t NWebPreferenceDelegate::GetPreferenceHash()
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
     << GetNativeEmbedMode() << ", "
 #endif
+    << GetRotationType() << ", "
     << GetScrollBarColor();
   pref_hash_ = std::hash<std::string>{}(str.str());
 
   LOG(DEBUG) << "NWebPreferenceDelegate::GetPreferenceHash() hash = " << pref_hash_;
 
   return pref_hash_;
+}
+
+bool NWebPreferenceDelegate::SetRotationType(uint32_t type) {
+  if (rotationType_ == type) {
+    return false;
+  }
+  rotationType_ = type;
+  pref_hash_cached_ = false;
+  pref_hash_ = 0;
+  return true;
+}
+
+uint32_t NWebPreferenceDelegate::GetRiotationType() {
+  return rotationType_;
 }
 #endif
 }  // namespace OHOS::NWeb

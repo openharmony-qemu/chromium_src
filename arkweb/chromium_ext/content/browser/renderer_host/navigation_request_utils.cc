@@ -67,7 +67,7 @@ network::mojom::NetworkContext* NavigationRequestUtils::GetNetworkContext() cons
 }
 
 using StartPageCallback__ = base::OnceCallback<void(const std::string&)>;
-void NavigationRequestUtils::StartPage(const net::NetworkAnonymizationKey& networkAnonymizationKey,
+void NavigationRequestUtils::StartPage(const net::NetworkAnonymizationKey networkAnonymizationKey,
                                        uint64_t addr_web_handle)
 {
   network::mojom::NetworkContext* network_context = GetNetworkContext();

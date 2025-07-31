@@ -5,11 +5,14 @@
 #include "third_party/blink/renderer/core/layout/layout_theme_ohos.h"
 
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
 #include "third_party/blink/renderer/platform/wtf/std_lib_extras.h"
 #include "ui/base/ui_base_features.h"
 
 namespace blink {
-
+  
+// LCOV_EXCL_START
 scoped_refptr<LayoutTheme> LayoutThemeOhos::Create() {
   return base::AdoptRef(new LayoutThemeOhos());
 }
@@ -20,6 +23,18 @@ LayoutTheme& LayoutTheme::NativeTheme() {
 }
 
 LayoutThemeOhos::~LayoutThemeOhos() {}
+
+String LayoutThemeOhos::ExtraDefaultStyleSheet() {
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  bool cmd_value = false;
+  if (command_line) {
+    cmd_value = command_line->HasSwitch(switches::kDisableMobileStyleSheet);
+  }
+  if (cmd_value) {
+    return LayoutThemeDefault::ExtraDefaultStyleSheet();
+  }
+  return LayoutThemeMobile::ExtraDefaultStyleSheet();
+}
 
 Color LayoutThemeOhos::PlatformActiveSelectionBackgroundColor(
     mojom::blink::ColorScheme color_scheme) const {
@@ -52,5 +67,6 @@ Color LayoutThemeOhos::PlatformTapHighlightColor() const {
   }
   return LayoutThemeMobile::PlatformTapHighlightColor();
 }
+// LCOV_EXCL_STOP
 
 }  // namespace blink

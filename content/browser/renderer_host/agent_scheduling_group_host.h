@@ -125,7 +125,7 @@ class CONTENT_EXPORT AgentSchedulingGroupHost
 
   friend class AgentSchedulingGroupHostUtils;
 
-  AgentSchedulingGroupHostUtils* implUtils;
+  raw_ptr<AgentSchedulingGroupHostUtils> implUtils;
 
  private:
   enum class LifecycleState {

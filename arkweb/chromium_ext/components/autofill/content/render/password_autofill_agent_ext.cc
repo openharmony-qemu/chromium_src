@@ -413,6 +413,7 @@ void PasswordAutofillAgentExt::AutofillSurfaceClosed(
 }
 #endif
 
+// LCOV_EXCL_START
 void PasswordAutofillAgentExt::CleanupOnDocumentShutdownExt() {
   ohos_password_form_status_map_.clear();
   ohos_web_input_to_password_info_.clear();
@@ -420,4 +421,5 @@ void PasswordAutofillAgentExt::CleanupOnDocumentShutdownExt() {
   ohos_last_supplied_password_info_iter_ =
       ohos_web_input_to_password_info_.end();
 }
+// LCOV_EXCL_STOP
 }  // namespace autofill

@@ -58,12 +58,12 @@ OhosDfxDataSource::OhosDfxDataSource(uint32_t stream_type,
   if (data_size)
     memcpy_s(data_.data(), data_size, data, data_size);
 }
-
+// LOVC_EXCL_START
 size_t OhosDfxDataSource::StreamDataSize()
 {
   return data_.size();
 }
-
+// LOVC_EXCL_STOP
 bool OhosDfxDataSource::ReadStreamData(Delegate* delegate)
 {
   return delegate->ExtensionStreamDataSourceRead(

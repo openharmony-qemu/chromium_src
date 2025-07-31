@@ -28,6 +28,7 @@
 #include "cef/include/cef_devtools_message_handler_delegate.h"
 #include "gtest/gtest.h"
 #include "nweb.h"
+#include "ohos_nweb/include/nweb_errors.h"
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
@@ -222,6 +223,14 @@ class MockCefBrowser : public CefBrowser, public CefBrowserHost {
                     int frame_routing_id,
                     int event) override {}
 #endif
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  int PrerenderPage(const CefString& url,
+                    const CefString& additional_headers) override { return OHOS::NWeb::NWEB_OK; };
+  void CancelAllPrerendering() override {};
+#endif
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  void SetMediaResumeFromBFCachePage(bool resume) override {}
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
   CefBrowserSettings settings_;
   std::unique_ptr<CefBrowserContentsDelegate> contents_delegate_;
 };

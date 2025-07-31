@@ -34,7 +34,9 @@ class InputHandlerProxyUtils {
 public:
   InputHandlerProxyUtils(InputHandlerProxy* proxy);
   ~InputHandlerProxyUtils();
-
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class InputHandlerProxyUtilsTest;
+#endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   std::unique_ptr<ScrollPredictor> CreateScrollPredictor();
 

@@ -63,6 +63,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutSerifFontFamilyName(const std::string& font) override;
   void PutStandardFontFamilyName(const std::string& font) override;
   void PutUserAgent(const std::string& ua) override;
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool HasSetUserAgent() { return has_set_user_agent_; }
+#endif
   void PutZoomingForTextFactor(int textZoom) override;
   void PutGeolocationAllowed(bool flag) override;
   void PutAccessModeForSecureOriginLoadFromInsecure(AccessMode mode) override;
@@ -293,6 +296,8 @@ class NWebPreferenceDelegate : public NWebPreference {
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   int64_t GetPreferenceHash();
+  uint32_t GetRotationType();
+  bool SetRotationType(uint32_t type);
 #endif
 
  private:
@@ -332,6 +337,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   /* Web preferences end*/
   bool create_windows_by_javascript_allowed_{false};
   std::string user_agent_{""};
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool has_set_user_agent_{false};
+#endif
   int zooming_for_text_factor_{100};
   bool geolocation_allowed_{true};
   AccessMode access_mode_{AccessMode::NEVER_ALLOW};
@@ -440,6 +448,7 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   bool pref_hash_cached_ = false;
   int64_t pref_hash_ = 0;
+  uint32_t rotationType_ = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

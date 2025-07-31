@@ -43,7 +43,7 @@ class PaintLayerScrollableAreaUtils {
       const PhysicalBoxStrut& scroll_margin);
 
  private:
-  PaintLayerScrollableArea* scrollable_area_;
+  Persistent<PaintLayerScrollableArea> scrollable_area_;
 };
 
 }  // namespace blink

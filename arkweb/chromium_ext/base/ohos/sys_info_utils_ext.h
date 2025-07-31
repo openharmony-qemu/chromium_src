@@ -34,7 +34,15 @@ BASE_EXPORT bool IsMobileDevice();
 
 BASE_EXPORT bool IsTabletDevice();
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 BASE_EXPORT bool IsPcDevice();
+
+#ifdef __cplusplus
+}
+#endif
 
 BASE_EXPORT bool IsEmulator();
 

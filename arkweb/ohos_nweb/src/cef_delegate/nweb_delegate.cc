@@ -22,10 +22,12 @@
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "base/command_line.h"
 #include "base/check.h"
+#include "base/command_line.h"
 #include "base/logging.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/thread_pool.h"
 #include "base/trace_event/trace_event.h"
+#include "capi/arkweb_error_code.h"
 #include "cef/include/base/cef_logging.h"
 #include "cef/include/cef_app.h"
 #include "cef/include/cef_base.h"
@@ -68,7 +70,6 @@
 
 #include "base/strings/escape.h"
 #include "cef/include/internal/cef_string_types.h"
-#include "content/public/common/content_switches.h"
 #include "libcef/common/net/url_util_ex.h"
 #include "net/base/filename_util.h"
 #include "nweb_download_handler_delegate.h"
@@ -249,23 +250,18 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
       std::shared_ptr<NWebDelegateInterface> delegate)
       : callback_(callback),
         callbackId_(callbackId),
-        weakNWebDelegate_(std::weak_ptr<NWebDelegateInterface>(delegate)) {}
+        nwebDelegate_(delegate) {}
   ~JavaScriptResultCallbackImpl() {}
   void CallbackOnReceiveThread(std::shared_ptr<OHOS::NWeb::NWebMessage> data) {
     if (callback_) {
       callback_->OnReceiveValue(data);
     }
-    if (weakNWebDelegate_.expired()) {
-      LOG(INFO) << "weakNWebDelegate_ expired";
-      return;
-    }
     // post this instance to ui to destroy
-    auto delegate = weakNWebDelegate_.lock();
-    if (delegate) {
+    if (nwebDelegate_) {
       CEF_POST_TASK(
           CEF_UIT,
           base::BindOnce(&NWebDelegateInterface::EraseJavaScriptCallbackImpl,
-                         delegate, callbackId_));
+                         nwebDelegate_, callbackId_));
     }
   }
 
@@ -285,7 +281,7 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
  private:
   std::shared_ptr<NWebMessageValueCallback> callback_;
   uint32_t callbackId_;
-  std::weak_ptr<NWebDelegateInterface> weakNWebDelegate_;
+  std::shared_ptr<NWebDelegateInterface> nwebDelegate_;
 
   IMPLEMENT_REFCOUNTING(JavaScriptResultCallbackImpl);
 };
@@ -960,13 +956,6 @@ void NWebDelegate::SetInputMethodClient(
     return;
   }
   render_handler_->SetInputMethodClient(client);
-
-  if (handler_delegate_ == nullptr) {
-    LOG(ERROR)
-        << "fail to register inputmethod client, delegate handler is nullptr";
-    return;
-  }
-  handler_delegate_->SetInputMethodClient(client);
 }
 
 void NWebDelegate::RegisterRenderCb(
@@ -1010,9 +999,11 @@ void NWebDelegate::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 
   TRACE_EVENT2("base", "NWebDelegate::Resize", "width", width, "height",
                height);
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   width_ = width;
   height_ = height;
-#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#endif
 
   if (render_handler_ != nullptr) {
     render_handler_->Resize(width, height);
@@ -1088,14 +1079,6 @@ void NWebDelegate::OnTouchRelease(int32_t id,
                                    y / default_virtual_pixel_ratio_,
                                    from_overlay);
   }
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  if (accessibility_state_) {
-    auto* accessibilityManager = GetAccessibilityManager();
-    if (accessibilityManager != nullptr) {
-      accessibilityManager->HitTest(gfx::Point(0, 0), 0);
-    }
-  }
-#endif
 }
 
 void NWebDelegate::OnTouchMove(
@@ -1193,6 +1176,18 @@ void NWebDelegate::SendMouseEvent(int x,
 
 void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
                                            DisplayOrientation orientation) {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (preference_delegate_ != nullptr) {
+    bool has_rotation = preference_delegate_->SetRotationType(static_cast<uint32_t>(rotation));
+    if (has_ratation && !GetNearestSnapshotSize.IsEmpty()) {
+      std::shared_ptr<NWebImpl> nwebShared = NWebImpl::GetNwebSharedPtr(nweb_id_);
+      if (nwebShared != nullptr) {
+        LOG(DEBUG) << "Remove this Blankless Frame due to screen rotation";
+        nwebShared->RemoveBlanklessFrame();
+      }
+    }
+  }
+#endif
   if (render_handler_ != nullptr) {
     if (display_manager_adapter_ == nullptr) {
       LOG(ERROR) << "Get display_manager_adapter_ failed";
@@ -3975,9 +3970,6 @@ void NWebDelegate::OnSafeBrowsingDetectionResult(int code,
   if (handler_delegate_ == nullptr) {
     return;
   }
-
-  handler_delegate_->OnSafeBrowsingDetectionResult(code, policy, mappingType,
-                                                   url);
 }
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
@@ -5159,7 +5151,32 @@ void NWebDelegate::SetPathAllowingUniversalAccess(
                 });
   GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list);
 }
-#endif
+
+int NWebDelegate::PrerenderPage(const std::string& url,
+                                const std::string& additional_headers) {
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "NWebDelegate::PrerenderPage failed, get browser failed";
+    return ARKWEB_INIT_ERROR;
+  }
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    return GetBrowser()->GetHost()->PrerenderPage(url, additional_headers);
+  }
+  return ARKWEB_INIT_ERROR;
+}
+ 
+void NWebDelegate::CancelAllPrerendering() {
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(ERROR)
+        << "NWebDelegate::CancelAllPrerendering failed, get browser failed";
+    return;
+  }
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebEx)) {
+    GetBrowser()->GetHost()->CancelAllPrerendering();
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
 void NWebDelegate::DisallowSandboxFileAccessFromFileUrl(bool disallow) {
@@ -5418,6 +5435,19 @@ void NWebDelegate::SetBackForwardCacheOptions(int32_t size,
   }
 
   GetBrowser()->SetBackForwardCacheOptions(size, timeToLive);
+}
+
+void NWebDelegate::SetMediaResumeFromBFCachePage(bool resume) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    if (!handler_delegate_) {
+      LOG(ERROR)
+          << "failed to set media resume from bfcache page, handler delegate is null";
+      return;
+    }
+    handler_delegate_->SetMediaResumeFromBFCachePage(resume);
+    return;
+  }
+  GetBrowser()->GetHost()->SetMediaResumeFromBFCachePage(resume);
 }
 #endif
 
@@ -5738,6 +5768,19 @@ int64_t NWebDelegate::GetPreferenceHash() {
   }
   return preference_delegate_->GetPreferenceHash();
 }
+
+gfx::Size NWwebDelegate::GetNearestSnapshotSize() {
+  return gfx::Size(nearest_snapshot_width_, nearest_snapshot_height_);
+}
+
+void NWebDelegate::SetNearestSnapshotSize(int width, int height) {
+  nearest_snapshot_width_ = width;
+  nearest_snapshot_height_ = height;
+}
+
+gfx::Size NWebDelegate::GetSize() {
+  return gfx::Size(width_, height_);
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_MENU)
@@ -5791,6 +5834,26 @@ bool NWebDelegate::GetErrorPageEnabled() {
     return false;
   }
   return preference_delegate_->ErrorPageEnabled();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+void NWebDelegate::OnBrowserForeground() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "OnBrowserForeground can not get browser";
+    return;
+  }
+  LOG(INFO) << "NWebDelegate::OnBrowserForeground";
+  GetBrowser()->GetHost()->OnBrowserForeground();
+}
+
+void NWebDelegate::OnBrowserBackground() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "OnBrowserBackground can not get browser";
+    return;
+  }
+  LOG(INFO) << "NWebDelegate::OnBrowserBackground";
+  GetBrowser()->GetHost()->OnBrowserBackground();
 }
 #endif
 }  // namespace OHOS::NWeb

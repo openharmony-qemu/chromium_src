@@ -727,6 +727,7 @@ source_set("unit_tests") {
     sources += [ "demuxer_memory_limit_cast_unittest.cc" ]
   }
 
+  defines = []
   if (arkweb_unittests) {
     import("//arkweb/chromium_ext/chromium_ext.gni")
     include_dirs = [
@@ -736,9 +737,12 @@ source_set("unit_tests") {
     sources += arkweb_media_base_unittest_sources
     sources += arkweb_media_adapter_unittest_sources
     sources += arkweb_media_gpu_unittest_sources
+    sources += arkweb_components_cdm_render_unittest_sources
+    sources += arkweb_media_filters_ohos_unittest_sources
     deps += [
       "//arkweb/ohos_adapter_ndk:adapter_ndk"
     ]
+    defines += [ "IS_MEDIA_IMPL" ]
   }
 }
 

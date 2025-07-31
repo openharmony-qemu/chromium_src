@@ -168,6 +168,12 @@ test("native_theme_unittests") {
     ]
   }
 
+  if (arkweb_unittests) {
+    sources += [
+      "//arkweb/chromium_ext/ui/native_theme/native_theme_aura_utils_unittest.cc",
+    ]
+  }
+
   deps = [
     ":native_theme",
     ":native_theme_browser",

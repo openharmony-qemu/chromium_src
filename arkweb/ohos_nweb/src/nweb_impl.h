@@ -845,6 +845,9 @@ class NWebImpl : public NWeb {
   static void GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionInfo>& extensionInfo);
   static void SetExtensionName(const std::string& extension_name);
   static bool GetExtensionName(std::string& extension_name);
+  static std::string GetExtensionVersion(const std::string& extension_id);
+  static void InstallExtensionFile(const std::string& file_path,
+                                   OnExtensionInstallCallback callback);
   //old version
   void WebExtensionTabCreated(int tab_id);
   void WebExtensionTabUpdated(
@@ -913,6 +916,9 @@ class NWebImpl : public NWeb {
       const std::vector<std::string>& pathList,
       const std::vector<std::string>& moduleName,
       std::string& errorPath) override;
+  int PrerenderPage(const std::string& url,
+                    const std::string& additional_headers);
+  void CancelAllPrerendering();
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
@@ -921,6 +927,7 @@ class NWebImpl : public NWeb {
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
+  void SetMediaResumeFromBFCachePage(bool resume);
 #endif
 
 #if BUILDFLAG(ARKWEB_MIXED_CONTENT)
@@ -1005,6 +1012,7 @@ class NWebImpl : public NWeb {
   int32_t SetBlanklessLoadingWithKey(const std::string& key, bool isStart) override;
   int64_t GetPreferenceHash();
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
+  void RemoveBlanklessFrame();
 #endif
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
@@ -1015,6 +1023,10 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   static void EnablePrivateNetworkAccess(bool enable);
   static bool IsPrivateNetworkAccessEnabled();
+#endif
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void OnBrowserForeground() override;
+  void OnBrowserBackground() override;
 #endif
 
  private:

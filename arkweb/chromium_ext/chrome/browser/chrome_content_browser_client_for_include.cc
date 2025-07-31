@@ -370,7 +370,7 @@ bool ChromeContentBrowserClient::ShouldOverrideUrlLoading(
       *ignore_navigation =
           handler->AsCefRequestHandlerExt()->ShouldOverrideUrlLoading(
               browser_host.get(), gurl.possibly_invalid_spec(), request_method,
-              has_user_gesture, is_redirect, is_outermost_main_frame);
+              has_user_gesture, is_redirect, is_outermost_main_frame, "");
       return true;
     }
   }

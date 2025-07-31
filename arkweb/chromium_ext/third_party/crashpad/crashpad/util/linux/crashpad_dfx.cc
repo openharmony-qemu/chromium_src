@@ -74,6 +74,7 @@ int CrashpadDfx::GetAndUpdateRenderProcessCrashCount(
   return ++render_crash_count;
 }
 
+// LOVC_EXCL_START
 // for get process_crash happen_time
 std::string CrashpadDfx::GetCurrentTime() {
   auto now = std::chrono::system_clock::now();
@@ -90,6 +91,7 @@ uid_t CrashpadDfx::GetEffectiveProcessUID() {
   }
   return g_process_uid;
 }
+// LOVC_EXCL_STOP
 
 // for get process_crash BUILDID
 std::string CrashpadDfx::GetBuildId(const uint64_t noteAddr,
@@ -224,6 +226,7 @@ std::string CrashpadDfx::GetBuildIdFromSO(const std::string& soFilePath) {
   return buildId;
 }
 
+// LOVC_EXCL_START
 std::string CrashpadDfx::RetrieveBuildId() {
   static std::string cachedBuildID;
   if (!cachedBuildID.empty()) {
@@ -282,6 +285,7 @@ std::string CrashpadDfx::GetProcessBundleName() {
     return "";
   }
 }
+// LOVC_EXCL_STOP
 
 void CrashpadDfx::ProcessCrashReport(const std::string process_type,
                                      const std::string happen_time,
@@ -338,6 +342,7 @@ std::string CrashpadDfx::GetProcessTypeByPid(pid_t pid) {
   return "unknown";
 }
 
+// LOVC_EXCL_START
 std::string CrashpadDfx::UpdateCrashDumpPathSuffix() {
   const std::string crashpad = "crashpad";
   const std::string delimiter = "-";
@@ -351,5 +356,6 @@ std::string CrashpadDfx::UpdateCrashDumpPathSuffix() {
       happen_time;
   return dump_path_suffix;
 }
+// LOVC_EXCL_STOP
 #endif  // BUILDFLAG(ARKWEB_CRASHPAD)
 }  // namespace Crashpad

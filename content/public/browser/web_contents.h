@@ -1605,7 +1605,12 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
                                    const std::optional<UrlMatchType>&)>
           url_match_predicate,
       base::RepeatingCallback<void(NavigationHandle&)>
-          prerender_navigation_handle_callback) = 0;
+          prerender_navigation_handle_callback
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+      const char* extra_headers = nullptr
+#endif
+      ) = 0;
 
   // Cancels all prerendering hosted on this WebContents.
   virtual void CancelAllPrerendering() = 0;
@@ -1653,6 +1658,10 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // `kInvalidNetworkHandle` indicates that the current default network will
   // be bound.
   virtual net::handles::NetworkHandle GetTargetNetwork() = 0;
+#if BUILDFLAG(ARKWEB_BGTASK)
+  virtual void OnBrowserForeground() = 0;
+  virtual void OnBrowserBackground() = 0;
+#endif
 #include "arkweb/chromium_ext/content/public/browser/web_contents_for_include.cc"
 
 #if BUILDFLAG(ARKWEB_PIP)

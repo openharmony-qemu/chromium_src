@@ -239,6 +239,8 @@ extern bool g_siteIsolationMode;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "chrome/common/webui_url_constants.h"
 #include "url/url_constants.h"
+#include "chrome/browser/extensions/crx_installer.h"
+#include "extensions/browser/install/crx_install_error.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
@@ -315,6 +317,64 @@ int32_t g_browser_service_sdk_api_level = 0;
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 std::optional<std::string> g_extension_name;
+
+static void HandleExtensionInstallResult(
+    OnExtensionInstallCallback callback,
+    const std::optional<extensions::CrxInstallError>& error) {
+  if (!callback) {
+    return;
+  }
+
+  if (error.has_value()) {
+    auto error_message =
+        std::make_shared<std::string>(base::UTF16ToUTF8(error->message()));
+    callback(static_cast<int>(error->type()), error_message->c_str());
+  } else {
+    callback(0, "Success");
+  }
+}
+
+static void ConfigureCrxInstaller(
+    scoped_refptr<extensions::CrxInstaller> installer) {
+  installer->set_off_store_install_allow_reason(
+      extensions::CrxInstaller::OffStoreInstallAllowedFromSettingsPage);
+  installer->set_install_cause(extension_misc::INSTALL_CAUSE_USER_DOWNLOAD);
+  installer->set_install_immediately(true);
+  installer->set_allow_silent_install(true);
+  installer->set_grant_permissions(true);
+}
+
+static void PerformCrxInstallation(const std::string& file_path,
+                                   OnExtensionInstallCallback callback,
+                                   content::BrowserContext* context,
+                                   bool file_exists) {
+  if (!file_exists) {
+    if (callback) {
+      callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
+               "File not found");
+    }
+    return;
+  }
+
+  extensions::ExtensionService* service =
+      extensions::ExtensionSystem::Get(context)->extension_service();
+  if (!service) {
+    if (callback) {
+      callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
+               "Extension service not available");
+    }
+    return;
+  }
+
+  scoped_refptr<extensions::CrxInstaller> installer =
+      extensions::CrxInstaller::Create(service, nullptr);
+
+  ConfigureCrxInstaller(installer);
+
+  installer->AddInstallerCallback(
+      base::BindOnce(&HandleExtensionInstallResult, callback));
+  installer->InstallCrx(base::FilePath(file_path));
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
@@ -504,6 +564,15 @@ float GetVirtualPixelRatioForScrollbar() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+std::string GetGwpAsanEnable()
+{
+  auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                        .GetSystemPropertiesInstance();
+  return system_properties_adapter.GetStringParameter("web.gwpasan.enable", "none");
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 void InitialWebEngineArgs(
     std::list<std::string>& web_engine_args,
@@ -528,7 +597,6 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back(
       "--browser-subprocess-path=/system/bin/web_render");
   web_engine_args.emplace_back("--zygote-cmd-prefix=/system/bin/web_render");
-  web_engine_args.emplace_back("--remote-debugging-port=9222");
   web_engine_args.emplace_back("--enable-touch-drag-drop");
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
   static float ratio = -1.0f;
@@ -608,6 +676,11 @@ void InitialWebEngineArgs(
   for (auto arg : args_to_add) {
     web_engine_args.emplace_back(arg);
   }
+
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+  std::string gwpEnable = "--ohos-enable-gwp-asan-type=" + GetGwpAsanEnable();
+  web_engine_args.emplace_back(gwpEnable);
+#endif
 
   std::string oop_gpu_enable = GetOOPGPUStatus();
   if ((xml_gpu && oop_gpu_enable != "false") ||
@@ -948,6 +1021,11 @@ NWebImpl::~NWebImpl() {
                                         nweb_id_);
   ReportLossFrame::GetInstance()->Reset();
   ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::STOP);
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
+    base::ohos::BlanklessController::GetInstance().RemoveStatus(nweb_id_);
+  }
+#endif
   base::AutoLock lock_scope(nweb_map_lock_);
   g_nweb_map.Get().erase(nweb_id_);
 }
@@ -1277,6 +1355,20 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
 #endif
   delete[] argv;
   bool isReady = nweb_delegate_->IsReady();
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (isReady && base::ohos::BlanklessController::CheckGlobalProperty()) {
+    static bool initInstance = false;
+    if (!initInstance) {
+      base::ThreadPool::PostTask(FROM_HERE,
+        {base::MayBlock(), base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN, base::TaskPriority::USER_BLOCKING},
+        base::BindOnce([]() {
+          base::ohos::BlanklessDataController::GetInstance();
+          WVLOG_D("BlanklessDataController instance init");
+      }));
+      initInstance = true;
+    }
+  }
+#endif
   LOG(INFO) << "NWebImpl::InitWebEngine, isReady:" << isReady;
   return isReady;
 }
@@ -1367,6 +1459,12 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 #endif
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (nweb_delegate_->GetNearestSnapshotSize() != gfx::Size(width, height)) {
+    RemoveBlanklessFrame();
+  }
+#endif
 }
 
 void NWebImpl::ResizeVisibleViewport(uint32_t width,
@@ -1580,13 +1678,6 @@ int NWebImpl::Load(const std::string& url) {
 #endif
 
   int result = nweb_delegate_->Load(url);
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (result == NWEB_OK && base::ohos::BlanklessController::CheckGlobalProperty() && !is_private_ &&
-      base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
-    blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
-    nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
-  }
-#endif
   output_handler_->StartRenderOutput();
   return result;
 }
@@ -2029,15 +2120,7 @@ int NWebImpl::Load(
   if (nweb_delegate_ == nullptr) {
     return NWEB_ERR;
   }
-  int ret = nweb_delegate_->Load(url, additionalHttpHeaders);
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (ret == NWEB_OK && base::ohos::BlanklessController::CheckGlobalProperty() && !is_private_ &&
-      base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
-    blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
-    nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
-  }
-#endif
-  return ret;
+  return nweb_delegate_->Load(url, additionalHttpHeaders);
 }
 
 int NWebImpl::PostUrl(const std::string& url,
@@ -2492,6 +2575,13 @@ void NWebImpl::RemoveCache(bool include_disk_files) {
   }
 
   nweb_delegate_->RemoveCache(include_disk_files);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+    nweb_delegate_->CancelAllPrerendering();
+  }
+#endif
 }
 
 std::shared_ptr<NWebHistoryList> NWebImpl::GetHistoryList() {
@@ -3550,6 +3640,67 @@ bool NWebImpl::GetExtensionName(std::string& extension_name) {
   }
 }
 
+std::string NWebImpl::GetExtensionVersion(const std::string& extension_id) {
+  WVLOG_I("NWebImpl::GetExtensionVersion for extension: %s",
+          extension_id.c_str());
+
+  if (extension_id.empty()) {
+    return "";
+  }
+
+  content::BrowserContext* browser_context = NWebImplGetGlobalBrowserContext();
+  if (!browser_context) {
+    WVLOG_E("Failed to get global browser context");
+    return "";
+  }
+
+  extensions::ExtensionRegistry* registry =
+      extensions::ExtensionRegistry::Get(browser_context);
+  if (!registry) {
+    WVLOG_E("Failed to get extension registry");
+    return "";
+  }
+
+  const extensions::Extension* extension = registry->GetExtensionById(
+      extension_id, extensions::ExtensionRegistry::ENABLED);
+
+  return extension ? extension->version().GetString() : "";
+}
+
+void NWebImpl::InstallExtensionFile(const std::string& file_path,
+                                    OnExtensionInstallCallback callback) {
+  WVLOG_I("NWebImpl::InstallExtensionFile: %s", file_path.c_str());
+
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&NWebImpl::InstallExtensionFile, file_path, callback));
+    return;
+  }
+
+  if (file_path.empty()) {
+    if (callback) {
+      callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
+               "Invalid file path");
+    }
+    return;
+  }
+
+  content::BrowserContext* browser_context = NWebImplGetGlobalBrowserContext();
+  if (!browser_context) {
+    WVLOG_E("Failed to get global browser context");
+    if (callback) {
+      callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
+               "Browser context not available");
+    }
+  }
+
+  base::FilePath crx_path(file_path);
+  base::ThreadPool::PostTaskAndReplyWithResult(
+      FROM_HERE, {base::MayBlock()},
+      base::BindOnce(&base::PathExists, crx_path),
+      base::BindOnce(&PerformCrxInstallation, file_path, callback, browser_context));
+}
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
@@ -4387,6 +4538,18 @@ void NWebImpl::PrepareForPageLoad(const std::string& url,
 void NWebImpl::RemoveAllCache(bool include_disk_files) {
   auto manager = web_cache::WebCacheManager::GetInstance();
   manager->ClearCache();
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+    for (std::pair<const int, std::weak_ptr<NWebImpl>>& elem : g_nweb_map.Get()) {
+      if (std::shared_ptr nweb_impl = elem.second.lock()) {
+        nweb_impl->CancelAllPrerendering();
+      }
+    }
+  }
+#endif
+
   if (!include_disk_files) {
     WVLOG_I("no need remove all disk cache");
     return;
@@ -5154,7 +5317,22 @@ void NWebImpl::SetPathAllowingUniversalAccess(
   }
   nweb_delegate_->SetPathAllowingUniversalAccess(pathList);
 }
-#endif
+
+int NWebImpl::PrerenderPage(const std::string& url,
+                            const std::string& additional_headers) {
+  if (nweb_delegate_ == nullptr) {
+    return ARKWEB_INIT_ERROR;
+  }
+  return nweb_delegate_->PrerenderPage(url, additional_headers);
+}
+ 
+void NWebImpl::CancelAllPrerendering() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->CancelAllPrerendering();
+}
+#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
 void NWebImpl::DisallowSandboxFileAccessFromFileUrl(bool disallow) const {
@@ -5359,6 +5537,17 @@ void NWebImpl::SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) {
 
   nweb_delegate_->SetBackForwardCacheOptions(size, timeToLive);
 #endif
+}
+
+void NWebImpl::SetMediaResumeFromBFCachePage(bool resume) {
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("fail to set media resume from bfcache page. nweb_delegate is nullptr.");
+    return;
+  }
+  WVLOG_I("NWebImpl SetMediaResumeFromBFCachePage value: %{public}d.", resume);
+  nweb_delegate_->SetMediaResumeFromBFCachePage(resume);
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
 }
 
 #if BUILDFLAG(IS_ARKWEB)
@@ -5767,15 +5956,16 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
   uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
-  instance.RecordBlanklessKey(nweb_id_, blankless_key);
-  if (instance.GetCapacity() == 0) {
+  auto status_code = instance.RecordKey(nweb_id_, blankless_key);
+  auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
+  if (status_code != base::ohos::BlanklessController::StatusCode::DUMPED ||
+      databaseInstance.GetBlanklessLoadingCacheCapacity() == 0) {
     *similarity = 0;
     *loadingTime = 0;
   } else {
     blankless_key_ = blankless_key;
     nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key);
-    auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
-    OHOS::NWeb::SnapshotDataItem dataItem = databaseAdapter.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
+    OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
     *similarity = dataItem.historySimilarity;
     *loadingTime = dataItem.lcpTime;
     LOG(DEBUG) << "blankless GetBlanklessInfoWithKey similarity: " << dataItem.historySimilarity
@@ -5790,23 +5980,37 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
   uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
-  if (!instance.CheckBlanlessKey(nweb_id_, blankless_key)) {
+  auto status_code = instance.MatchKey(nweb_id_, blankless_key);
+  if (status_code == base::ohos::BlanklessController::StatusCode::KEY_NOT_MATCH) {
     return -4;    // ERR_KEY_NOT_MATCH
   }
-  if (instance.GetCapacity() == 0) {
+  auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
+  if (status_code != base::ohos::BlanklessController::StatusCode::INSERTED ||
+      databaseInstance.GetBlanklessLoadingCacheCapacity() == 0) {
     return (isStart ? -5 : 0);  // ERR_SIGNIFICANT_CHANGE(true) or SUCCESS(false)
   }
   if (isStart) {
-    auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
-    OHOS::NWeb::SnapshotDataItem dataItem = databaseAdapter.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
+    OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
     if (dataItem.historySimilarity < 0.33) {
       LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey similarity < 0.33";
       return -5;    // ERR_SIGNIFICANT_CHANGE
     }
+    if (gfx::Size(dataItem.width, dataItem.height) != nweb_delegate_->GetSize()) {
+      LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey snapshot resolution is different from webPattern";
+      return -5;
+    }
+    nweb_delegate_->SetNearestSnapshotSize(dataItem.width, dataItem.height);
     CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath);
   }
-  instance.SetLoadingEnabled(nweb_id_, blankless_key, isStart);
   return 0;   // SUCCESS
+}
+
+void NWebImpl::RemoveBlanklessFrame() {
+  if (nweb_delegate_->GetNearestSnapshotSize().IsEmpty()) {
+    return;
+  }
+  nweb_handle_->OnRemoveBlanklessFrame(0);
+  nweb_delegate_->SetNearestSnapshotSize(0, 0);
 }
 
 void NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
@@ -5952,5 +6156,25 @@ bool NWebImpl::IsPrivateNetworkAccessEnabled() {
   LOG(DEBUG) << "PrivateNetworkAccess is "
              << (net_service::NetHelpers::GetPrivateNetworkAccess() ? "enable" : "false");
   return net_service::NetHelpers::GetPrivateNetworkAccess();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+void NWebImpl::OnBrowserForeground() {
+  LOG(INFO) << "NWebImpl::OnBrowserForeground.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnBrowserForeground nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->OnBrowserForeground();
+}
+
+void NWebImpl::OnBrowserBackground() {
+  LOG(INFO) << "NWebImpl::OnBrowserBackground.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnBrowserBackground nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->OnBrowserBackground();
 }
 #endif

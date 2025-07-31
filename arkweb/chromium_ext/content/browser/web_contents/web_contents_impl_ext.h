@@ -317,6 +317,15 @@ public:
   void OnPdfScrollAtBottom(const std::string& url) override;
   void OnPdfLoadEvent(int32_t result, const std::string& url) override;
 #endif  // BUILDFLAG(ARKWEB_PDF)
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  void SetMediaResumeFromBFCachePage(bool resume) override;
+  bool media_resume_from_bfcache_page_ = true;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void OnBrowserForeground() override;
+  void OnBrowserBackground() override;
+#endif
+
 private:
   std::string custom_user_agent_;
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)

@@ -48,6 +48,10 @@ class BackgroundTaskPolicy : public GraphOwnedDefaultImpl,
   void OnDecrementAudioNum(const PageNode* page_node) override;
 #endif
   void MaybeChangeBackgroundTask(const PageNode* page_node);
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void SetBrowserForeground(const PageNode* page_node) override;
+  void SetBrowserBackground(const PageNode* page_node) override;
+#endif
   raw_ptr<const PageNode> page_node_being_removed_ = nullptr;
   std::unique_ptr<mechanism::BackgroundTaskHolder> background_task_holder_;
   bool is_request_background_task_;

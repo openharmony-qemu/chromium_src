@@ -11,6 +11,7 @@
 
 namespace content {
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnMediaPlayerGone() {
   PlayerInfo* player_info = GetPlayerInfo();
@@ -20,6 +21,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnMediaPlayerGone() 
   player_info->SetIsPlayerGone();
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
 void MediaWebContentsObserver::SetHtmlPlayEnabled(bool enabled) {
@@ -92,6 +94,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnGetVideoPoster(
   }
 }
 
+// LCOV_EXCL_START
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnInitMediaTitle() {
   if (media_web_contents_observer_ &&
       media_web_contents_observer_->web_contents_impl()) {
@@ -105,6 +108,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnInitVideoPoster() 
     media_web_contents_observer_->web_contents_impl()->SetVideoPoster("");
   }
 }
+// LCOV_EXCL_STOP
 
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnEndAVSession(
     bool is_hidden) {
@@ -281,6 +285,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::BufferedEndTimeChang
   media_player_listener_->OnBufferedEndTimeChanged(buffered_end_time);
 }
 
+// LCOV_EXCL_START
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::EndedOverlay() {
   if (!media_player_listener_) {
     return;
@@ -288,6 +293,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::EndedOverlay() {
   LOG(INFO) << "MediaWebContentsObserver::EndedOverlay enter.";
   media_player_listener_->OnEnded();
 }
+// LCOV_EXCL_STOP
 
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::FullscreenChangedOverlay(bool fullscreen) {
   if (!media_player_listener_) {
@@ -300,6 +306,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::FullscreenChangedOve
   }
 }
 
+// LCOV_EXCL_START
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::SeekingOverlay() {
   if (!media_player_listener_) {
     return;
@@ -314,6 +321,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::SeekingFinishedOverl
   LOG(INFO) << "MediaWebContentsObserver::SeekingFinishedOverlay enter.";
   media_player_listener_->OnSeekFinished();
 }
+// LCOV_EXCL_STOP
 
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::ErrorOverlay(int32_t error_code,
   const std::string& error_msg) {

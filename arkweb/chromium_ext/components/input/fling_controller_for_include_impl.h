@@ -36,6 +36,8 @@
 #endif
 #if BUILDFLAG(ARKWEB_D_VSYNC)
 #include "base/ohos/sys_info_utils_ext.h"
+#include "ohos_glue/base/include/ark_web_errno.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 
 namespace {
@@ -87,6 +89,16 @@ void FlingController::SetIsFlingFalse(const bool flag) {
 }
 
 void FlingController::SetIsScroll(blink::WebInputEvent::Type scrollType) {
+  static int delay_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                      .GetSystemPropertiesInstance().GetIntParameter("web.dvsync.delay", -1);
+  if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+    LOG(DEBUG) << "FlingController::SetIsScroll FAILED, cannot get delay_";
+    return;
+  }
+  if (delay_ == -1) {
+    LOG(DEBUG) << "FlingController::SetIsScroll FAILED, delay_ == -1";
+    return;
+  }
   auto* host = content::GpuProcessHost::Get();
   if (!host) {
     return;

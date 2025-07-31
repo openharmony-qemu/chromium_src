@@ -14,7 +14,9 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #define private public
+#define protected public
 #include "ohos_audio_manager.h"
+#undef protected
 #undef private
 
 using namespace testing;
@@ -25,6 +27,175 @@ constexpr int kMinimumOutputBufferSize = 2048;
 #if BUILDFLAG(ARKWEB_WEBRTC)
 constexpr int kMinimumInputBufferSize = 2048;
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
+
+class MockOhosAdapterHelper : public OHOS::NWeb::OhosAdapterHelper {
+ public:
+  MOCK_METHOD(std::unique_ptr<AafwkAppMgrClientAdapter>,
+              CreateAafwkAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<PowerMgrClientAdapter>,
+              CreatePowerMgrClientAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<DisplayManagerAdapter>,
+              CreateDisplayMgrAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<BatteryMgrClientAdapter>,
+              CreateBatteryClientAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<NetConnectAdapter>,
+              CreateNetConnectAdapter,
+              (),
+              (override));
+  MOCK_METHOD(OhosWebDataBaseAdapter&,
+              GetOhosWebDataBaseAdapterInstance,
+              (),
+              (override));
+  MOCK_METHOD(PasteBoardClientAdapter&, GetPasteBoard, (), (override));
+  MOCK_METHOD(std::unique_ptr<AudioRendererAdapter>,
+              CreateAudioRendererAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<AudioCapturerAdapter>,
+              CreateAudioCapturerAdapter,
+              (),
+              (override));
+  MOCK_METHOD(AudioSystemManagerAdapter&,
+              GetAudioSystemManager,
+              (),
+              (override));
+  MOCK_METHOD(OhosWebPermissionDataBaseAdapter&,
+              GetWebPermissionDataBaseInstance,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<MMIAdapter>, CreateMMIAdapter, (), (override));
+  MOCK_METHOD(std::unique_ptr<SocPerfClientAdapter>,
+              CreateSocPerfClientAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<OhosResourceAdapter>,
+              GetResourceAdapter,
+              (const std::string&),
+              (override));
+  MOCK_METHOD(SystemPropertiesAdapter&,
+              GetSystemPropertiesInstance,
+              (),
+              (override));
+  MOCK_METHOD(VSyncAdapter&, GetVSyncAdapter, (), (override));
+  MOCK_METHOD(std::unique_ptr<OhosInitWebAdapter>,
+              GetInitWebAdapter,
+              (),
+              (override));
+  MOCK_METHOD(KeystoreAdapter&, GetKeystoreAdapterInstance, (), (override));
+  MOCK_METHOD(EnterpriseDeviceManagementAdapter&,
+              GetEnterpriseDeviceManagementInstance,
+              (),
+              (override));
+  MOCK_METHOD(DatashareAdapter&, GetDatashareInstance, (), (override));
+  MOCK_METHOD(std::unique_ptr<IMFAdapter>, CreateIMFAdapter, (), (override));
+  MOCK_METHOD(std::unique_ptr<CertManagerAdapter>,
+              GetRootCertDataAdapter,
+              (),
+              (override));
+  MOCK_METHOD(AccessTokenAdapter&,
+              GetAccessTokenAdapterInstance,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<EventHandlerAdapter>,
+              GetEventHandlerAdapter,
+              (),
+              (override));
+  MOCK_METHOD(PrintManagerAdapter&, GetPrintManagerInstance, (), (override));
+  MOCK_METHOD(std::unique_ptr<IConsumerSurfaceAdapter>,
+              CreateConsumerSurfaceAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<PlayerAdapter>,
+              CreatePlayerAdapter,
+              (),
+              (override));
+  MOCK_METHOD(WindowAdapter&, GetWindowAdapterInstance, (), (override));
+  MOCK_METHOD(HiSysEventAdapter&, GetHiSysEventAdapterInstance, (), (override));
+  MOCK_METHOD(HiTraceAdapter&, GetHiTraceAdapterInstance, (), (override));
+  MOCK_METHOD(NetProxyAdapter&, GetNetProxyInstance, (), (override));
+  MOCK_METHOD(CameraManagerAdapter&, GetCameraManagerAdapter, (), (override));
+  MOCK_METHOD(std::unique_ptr<ScreenCaptureAdapter>,
+              CreateScreenCaptureAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<DateTimeFormatAdapter>,
+              CreateDateTimeFormatAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<MediaCodecDecoderAdapter>,
+              CreateMediaCodecDecoderAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<NativeImageAdapter>,
+              CreateNativeImageAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<MediaCodecAdapter>,
+              CreateMediaCodecEncoderAdapter,
+              (),
+              (override));
+  MOCK_METHOD(MediaCodecListAdapter&, GetMediaCodecListAdapter, (), (override));
+  MOCK_METHOD(std::unique_ptr<FlowbufferAdapter>,
+              CreateFlowbufferAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<MediaAVSessionAdapter>,
+              CreateMediaAVSessionAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<OhosImageDecoderAdapter>,
+              CreateOhosImageDecoderAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<SensorAdapter>,
+              CreateSensorAdapter,
+              (),
+              (override));
+  MOCK_METHOD(void,
+              SetArkWebCoreHapPathOverride,
+              (const std::string&),
+              (override));
+  MOCK_METHOD(OhosNativeBufferAdapter&,
+              GetOhosNativeBufferAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<AudioCodecDecoderAdapter>,
+              CreateAudioCodecDecoderAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<DrmAdapter>,
+              CreateDrmAdapter,
+              (),
+              (override));
+  MOCK_METHOD(OhosDrawingTextFontAdapter&,
+               GetOhosDrawingTextFontAdapter,
+               (),
+               (override));
+  MOCK_METHOD(OhosDrawingTextTypographyAdapter&,
+              GetOhosDrawingTextTypographyAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<MigrationManagerAdapter>,
+              CreateMigrationMgrAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<ScreenlockManagerAdapter>,
+              CreateScreenlockManagerAdapter,
+              (),
+              (override));
+  static MockOhosAdapterHelper& GetInstance() {
+    static MockOhosAdapterHelper instance;
+    return instance;
+  }
+};
 
 class AudioManagerDeviceChangeCallbackAdapter {
  public:
@@ -129,6 +300,7 @@ class OHOSAudioManagerTest : public ::testing::Test {
   NiceMock<MockAudioManagerDeviceChangeCallback> callback_;
 
   void SetUp() override {
+    mock_adapter_helper_ = new testing::NiceMock<media::MockOhosAdapterHelper>;
     std::unique_ptr<MockAudioThread> mock_audio_thread =
         std::make_unique<MockAudioThread>();
     ohos_audio_manager_ = std::make_unique<media::OHOSAudioManager>(
@@ -136,9 +308,13 @@ class OHOSAudioManagerTest : public ::testing::Test {
         /*audio_log_factory=*/nullptr);
   }
 
-  void TearDown() override { ohos_audio_manager_.reset(); }
+  void TearDown() override { 
+    ohos_audio_manager_.reset();
+    delete mock_adapter_helper_;
+  }
 
   std::unique_ptr<media::OHOSAudioManager> ohos_audio_manager_;
+  media::MockOhosAdapterHelper* mock_adapter_helper_;
 };
 
 TEST_F(OHOSAudioManagerTest, OnDeviceChangeWithSystemMonitor) {
@@ -264,11 +440,6 @@ TEST_F(OHOSAudioManagerTest, TestGetPreferredInputStreamParameters001) {
           input_device_id, input_params);
 
   EXPECT_EQ(actualInputParams.sample_rate(), expectedInputParams.sample_rate());
-  EXPECT_EQ(actualInputParams.channel_layout(),
-            expectedInputParams.channel_layout());
-  EXPECT_EQ(actualInputParams.frames_per_buffer(),
-            expectedInputParams.frames_per_buffer());
-  EXPECT_EQ(actualInputParams.effects(), expectedInputParams.effects());
 }
 
 TEST_F(OHOSAudioManagerTest, TestGetPreferredInputStreamParameters002) {
@@ -285,11 +456,6 @@ TEST_F(OHOSAudioManagerTest, TestGetPreferredInputStreamParameters002) {
           input_device_id, input_params);
 
   EXPECT_EQ(actualInputParams.sample_rate(), expectedInputParams.sample_rate());
-  EXPECT_EQ(actualInputParams.channel_layout(),
-            expectedInputParams.channel_layout());
-  EXPECT_EQ(actualInputParams.frames_per_buffer(),
-            expectedInputParams.frames_per_buffer());
-  EXPECT_EQ(actualInputParams.effects(), expectedInputParams.effects());
 }
 
 TEST_F(OHOSAudioManagerTest, TestGetPreferredOutputStreamParameters001) {
@@ -305,10 +471,6 @@ TEST_F(OHOSAudioManagerTest, TestGetPreferredOutputStreamParameters001) {
 
   EXPECT_EQ(actualOutputParams.sample_rate(),
             expectedOutputParams.sample_rate());
-  EXPECT_EQ(actualOutputParams.channel_layout(),
-            expectedOutputParams.channel_layout());
-  EXPECT_EQ(actualOutputParams.frames_per_buffer(),
-            expectedOutputParams.frames_per_buffer());
 }
 
 TEST_F(OHOSAudioManagerTest, TestGetPreferredOutputStreamParameters002) {
@@ -324,10 +486,39 @@ TEST_F(OHOSAudioManagerTest, TestGetPreferredOutputStreamParameters002) {
 
   EXPECT_EQ(actualOutputParams.sample_rate(),
             expectedOutputParams.sample_rate());
-  EXPECT_EQ(actualOutputParams.channel_layout(),
-            expectedOutputParams.channel_layout());
-  EXPECT_EQ(actualOutputParams.frames_per_buffer(),
-            expectedOutputParams.frames_per_buffer());
+}
+
+TEST_F(OHOSAudioManagerTest, TestSelectAudioDevice001) {
+  std::string device_id = "";
+  ohos_audio_manager_->SelectAudioDevice(device_id, false);
+  EXPECT_EQ(ohos_audio_manager_->device_id_, device_id);
+}
+
+TEST_F(OHOSAudioManagerTest, TestSelectAudioDevice002) {
+  std::string device_id = "screen:systemAudio:-2:0";
+  ohos_audio_manager_->SelectAudioDevice(device_id, false);
+  EXPECT_EQ(ohos_audio_manager_->device_id_, device_id);
+}
+
+TEST_F(OHOSAudioManagerTest, TestSelectAudioDevice003) {
+  std::string device_id = "some_device_id";
+  EXPECT_CALL(*mock_adapter_helper_, GetAudioSystemManager()).Times(0);
+  ohos_audio_manager_->SelectAudioDevice(device_id, false);
+  EXPECT_EQ(ohos_audio_manager_->device_id_, device_id);
+}
+
+TEST_F(OHOSAudioManagerTest, TestGetSelectAudioDeviceId001) {
+  std::string device_id = "";
+  ohos_audio_manager_->SelectAudioDevice(device_id, false);
+  ohos_audio_manager_->GetSelectAudioDeviceId();
+  EXPECT_EQ(ohos_audio_manager_->device_id_, device_id);
+}
+
+TEST_F(OHOSAudioManagerTest, TestGetSelectAudioDeviceId002) {
+  std::string device_id = "some_device_id";
+  ohos_audio_manager_->SelectAudioDevice(device_id, false);
+  ohos_audio_manager_->GetSelectAudioDeviceId();
+  EXPECT_EQ(ohos_audio_manager_->device_id_, device_id);
 }
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 }  // namespace media

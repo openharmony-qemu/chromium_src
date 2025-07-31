@@ -82,7 +82,12 @@ class ArkwebDisplayUtils {
 
   void SetGpuChannelManager(gpu::GpuChannelManager* gpu_channel_manager);
 #endif
+
  private:
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class ArkwebDisplayUtilsTest;
+#endif
+
   raw_ptr<Display> display_;
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
   gfx::Rect draw_rect_;

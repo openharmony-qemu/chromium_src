@@ -33,29 +33,29 @@ using ContentSettingsClearCallback =
 namespace OHOS::NWeb {
 
 class NWebExtensionContentSettingsCefDelegate {
- public:
-  static NWebExtensionContentSettingsCefDelegate &GetInstance();
+public:
+    static NWebExtensionContentSettingsCefDelegate &GetInstance();
 
-  // ContentSettings.get
-  bool OnGet(const NWebExtensionContentSettingsGetParam* getParam, ContentSettingsGetCallback callback);
+    // ContentSettings.get
+    bool OnGet(const NWebExtensionContentSettingsGetParam* getParam, ContentSettingsGetCallback callback);
 
-  void OnGetCallback(const NWebExtensionContentSettingsCallbackResult* result);
+    void OnGetCallback(const NWebExtensionContentSettingsCallbackResult* result);
 
-  // ContentSettings.set
-  bool OnSet(const NWebExtensionContentSettingsSetParam* setParam, ContentSettingsSetCallback callback);
+    // ContentSettings.set
+    bool OnSet(const NWebExtensionContentSettingsSetParam* setParam, ContentSettingsSetCallback callback);
 
-  void OnSetCallback(const NWebExtensionContentSettingsCallbackSetResult* result);
+    void OnSetCallback(const NWebExtensionContentSettingsCallbackSetResult* result);
 
-  // ContentSettings.clear
-  bool OnClear(const NWebExtensionContentSettingsClearParam* clearParam, ContentSettingsSetCallback callback);
+    // ContentSettings.clear
+    bool OnClear(const NWebExtensionContentSettingsClearParam* setParam, ContentSettingsClearCallback callback);
 
-  void OnClearCallback(const NWebExtensionContentSettingsCallbackSetResult* result);
+    void OnClearCallback(const NWebExtensionContentSettingsCallbackSetResult* result);
 
- private:
-  NWebExtensionContentSettingsCefDelegate() = default;
-  ~NWebExtensionContentSettingsCefDelegate() = default;
-  NWebExtensionContentSettingsCefDelegate(const NWebExtensionContentSettingsCefDelegate &) = delete;
-  NWebExtensionContentSettingsCefDelegate& operator=(const NWebExtensionContentSettingsCefDelegate &) = delete;
+private:
+    NWebExtensionContentSettingsCefDelegate() = default;
+    ~NWebExtensionContentSettingsCefDelegate() = default;
+    NWebExtensionContentSettingsCefDelegate(const NWebExtensionContentSettingsCefDelegate &) = delete;
+    NWebExtensionContentSettingsCefDelegate& operator=(const NWebExtensionContentSettingsCefDelegate &) = delete;
 };
 
 }  // namespace OHOS::NWeb

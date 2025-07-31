@@ -3538,9 +3538,13 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
       switches::kPixelRatio,
       switches::kOhSchemeHandlerCustomScheme,
       switches::kOhosEnableVulkan,
+      switches::kDisableMobileStyleSheet,
 #endif
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
       switches::kAdSecValue,
+#endif
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+      switches::kOhosEnableGwpAsanType,
 #endif
   };
   renderer_cmd->CopySwitchesFrom(browser_cmd, kSwitchNames);

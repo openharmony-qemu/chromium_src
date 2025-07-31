@@ -56,6 +56,10 @@
 #include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "ui/gfx/geometry/size.h"
+#endif
+
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -571,6 +575,12 @@ class NWebDelegateInterface
       std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  virtual int PrerenderPage(const std::string& url,
+                            const std::string& additional_headers) = 0;
+  virtual void CancelAllPrerendering() = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_SECURITY_STATE)
   virtual int GetSecurityLevel() = 0;
 #endif
@@ -749,6 +759,7 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   virtual void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) = 0;
+  virtual void SetMediaResumeFromBFCachePage(bool resume) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
@@ -858,6 +869,9 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   virtual void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) = 0;
   virtual int64_t GetPreferenceHash() = 0;
+  virtual void SetNearestSnapshotSize(int32_t width, int32_t height) = 0;
+  virtual gfx::Size GetNearestSnapshotSize() = 0;
+  virtual gfx::Size GetSize() = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_MENU)
@@ -875,6 +889,10 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   virtual void SetErrorPageEnabled(bool enable) = 0;
   virtual bool GetErrorPageEnabled() = 0;
+#endif
+#if BUILDFLAG(ARKWEB_BGTASK)
+  virtual void OnBrowserForeground() = 0;
+  virtual void OnBrowserBackground() = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

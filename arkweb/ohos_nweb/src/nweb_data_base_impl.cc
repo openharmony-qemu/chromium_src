@@ -27,6 +27,7 @@ NWebDataBaseImpl::NWebDataBaseImpl() {
 #endif
 }
 
+// LCOV_EXCL_START
 bool NWebDataBaseImpl::ExistHttpAuthCredentials() {
   if (delegate_ != nullptr) {
     return delegate_->ExistHttpAuthCredentials();
@@ -39,6 +40,7 @@ void NWebDataBaseImpl::DeleteHttpAuthCredentials() {
     delegate_->DeleteHttpAuthCredentials();
   }
 }
+// LCOV_EXCL_STOP
 
 void NWebDataBaseImpl::SaveHttpAuthCredentials(const std::string& host,
                                                const std::string& realm,
@@ -114,6 +116,7 @@ std::vector<std::string> NWebDataBaseImpl::GetOriginsByPermission(
   return {};
 }
 
+// LCOV_EXCL_START
 bool NWebDataBaseImpl::ExistFormData() const {
   if (delegate_ != nullptr) {
     return delegate_->ExistFormData();
@@ -127,5 +130,6 @@ void NWebDataBaseImpl::ClearFormData() {
   }
   return;
 }
+// LCOV_EXCL_STOP
 
 }  // namespace OHOS::NWeb

@@ -676,11 +676,17 @@ void NWebInputMethodHandler::OnUpdateTextInputStateCalled(
       << ", to = " << compositon_range.to;
   if (compositon_range == CefRange::InvalidRange()) {
     has_composition_ = false;
+    if (browser_ && browser_->GetHost()) {
+      browser_->GetHost()->SetHasComposition(has_composition_);
+    }
     composition_range_start_ = 0;
     composition_range_end_ = 0;
     preview_text_cache_ = u"";
   } else {
     has_composition_ = true;
+    if (browser_ && browser_->GetHost()) {
+      browser_->GetHost()->SetHasComposition(has_composition_);
+    }
     composition_range_start_ = compositon_range.from;
     composition_range_end_ = compositon_range.to;
     int32_t preview_length = composition_range_end_ - composition_range_start_;
@@ -826,6 +832,9 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
 // LCOV_EXCL_START
 void NWebInputMethodHandler::ClearComposingStatus() {
   has_composition_ = false;
+  if (browser_ && browser_->GetHost()) {
+    browser_->GetHost()->SetHasComposition(has_composition_);
+  }
   preview_text_cache_ = u"";
   composition_range_start_ = 0;
   composition_range_end_ = 0;
@@ -1368,6 +1377,9 @@ int32_t NWebInputMethodHandler::UpdateCompositionInfo(
     }
   }
   has_composition_ = true;
+  if (browser_ && browser_->GetHost()) {
+    browser_->GetHost()->SetHasComposition(has_composition_);
+  }
   return OK;
 }
 

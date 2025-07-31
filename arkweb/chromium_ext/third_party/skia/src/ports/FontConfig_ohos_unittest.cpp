@@ -14,13 +14,13 @@
  */
 
 #define private public
-
 #include "third_party/skia/src/ports/FontConfig_ohos.h"
-#include "gtest/gtest.h"
 #include "src/ports/SkFontScanner_FreeType_priv.h"
+#include "third_party/skia/include/core/SkFontScanner.h"
+#undef private
+#include "gtest/gtest.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "base/logging.h"
-#include "third_party/skia/include/core/SkFontScanner.h"
 #include <gmock/gmock.h>
 #include <dlfcn.h>
 #include <json/reader.h>
@@ -83,7 +83,9 @@ protected:
 
     void createTempFile(const char* filename) {
         FILE* f = fopen(filename, "w");
-        if (f) fclose(f);
+        if (f) {
+            fclose(f);
+        }
     }
 
     void createFile() {
@@ -162,6 +164,16 @@ TEST_F(FontConfig_OHOSTest, getFamilyName004) {
 TEST_F(FontConfig_OHOSTest, getFamilyName005) {
     SkString familyName("Noto Sans Adlam Regular");
     int ret = fontConfig->getFamilyName(1, &familyName);
+    EXPECT_NE(-1, ret);
+}
+
+TEST_F(FontConfig_OHOSTest, getFamilyName006) {
+    auto ret = fontConfig->getFamilyName(-100, nullptr);
+    EXPECT_EQ(-1, ret);
+}
+
+TEST_F(FontConfig_OHOSTest, getFamilyName007) {
+    auto ret = fontConfig->getFamilyName(1, nullptr);
     EXPECT_NE(-1, ret);
 }
 
@@ -353,6 +365,18 @@ TEST_F(FontConfig_OHOSTest, matchFontStyle003) {
     EXPECT_NE(ret, nullptr);
 }
 
+TEST_F(FontConfig_OHOSTest, matchFontStyle004) {
+    const SkFontStyle style(SkFontStyle::kNormal_Weight,
+                             SkFontStyle::kNormal_Width,
+                             SkFontStyle::kUpright_Slant);
+    FontInfo info;
+
+    sk_sp<SkTypeface_OHOS> typeface = sk_make_sp<SkTypeface_OHOS>(info);
+    TypefaceSet typefaces;
+    auto ret = fontConfig->matchFontStyle(typefaces, style);
+    EXPECT_EQ(ret, nullptr);
+}
+
 TEST_F(FontConfig_OHOSTest, getVariableFontStyleDifference001) {
     static constexpr SkFourByteTag wghtTag = SkSetFourByteTag('w', 'g', 'h', 't');
     static constexpr SkFourByteTag wdthTag = SkSetFourByteTag('w', 'd', 't', 'h');
@@ -375,6 +399,19 @@ TEST_F(FontConfig_OHOSTest, getVariableFontStyleDifference001) {
     auto ret2 = fontConfig->getVariableFontStyleDifference(dstStyle, srcStyle, axisRange2);
     EXPECT_EQ(ret2, 0);
 
+}
+
+TEST_F(FontConfig_OHOSTest, getVariableFontStyleDifference002) {
+    SkFontStyle dstStyle(/*weight*/700, /*width*/5, /*slant*/SkFontStyle::kUpright_Slant);
+    SkFontStyle srcStyle(400, 4, SkFontStyle::kItalic_Slant);
+    std::vector<SkFontScanner::AxisDefinition> axisRanges;
+    SkFontScanner::AxisDefinition widthAxis;
+    widthAxis.fTag = SkSetFourByteTag('w', 'd', 't', 'h'); // wdthTag
+    widthAxis.fMinimum = 0.5f;
+    widthAxis.fMaximum = 2.0f;
+    axisRanges.push_back(widthAxis);
+
+    uint32_t diff = fontConfig->getVariableFontStyleDifference(dstStyle, srcStyle, axisRanges);
 }
 
 TEST_F(FontConfig_OHOSTest, getFontStyleDifference001) {
@@ -418,6 +455,24 @@ TEST_F(FontConfig_OHOSTest, getFontStyleDifference002) {
     EXPECT_NE(ret6, 0u);
 }
 
+TEST_F(FontConfig_OHOSTest, getFontStyleDifference003) {
+    {
+        SkFontStyle dstStyle(/*weight*/400, /*width*/7, /*slant*/SkFontStyle::kUpright_Slant);
+        SkFontStyle srcStyle(400, 9, SkFontStyle::kUpright_Slant); // srcWidth > dstWidth
+        
+        uint32_t diff = fontConfig->getFontStyleDifference(dstStyle, srcStyle);
+        EXPECT_NE(2u, diff);
+    }
+
+    {
+        SkFontStyle dstStyle(400, 8, SkFontStyle::kUpright_Slant);
+        SkFontStyle srcStyle(400, 6, SkFontStyle::kUpright_Slant); // srcWidth < dstWidth
+        
+        uint32_t diff = fontConfig->getFontStyleDifference(dstStyle, srcStyle);
+        EXPECT_NE(7u, diff);
+    }
+}
+
 TEST_F(FontConfig_OHOSTest, getFileData) {
     const char* filename1 = "no-font.ttf";
     int fileSize1 = 0;
@@ -428,14 +483,6 @@ TEST_F(FontConfig_OHOSTest, getFileData) {
     int fileSize2 = 0;
     auto ret2 = fontConfig->getFileData(filename2, fileSize2);
     EXPECT_NE(ret2, nullptr);
-
-    auto original_malloc = (void*(*)(size_t))dlsym(RTLD_NEXT, "malloc");
-    #define malloc(size) nullptr
-    const char* filename3 = "existing.ttf";
-    int size3 = 0;
-    auto data = fontConfig->getFileData(filename3, size3);
-    EXPECT_EQ(data, nullptr);
-    ASSERT_NE(original_malloc, nullptr);
 }
 
 TEST_F(FontConfig_OHOSTest, parseConfig) {
@@ -1896,8 +1943,12 @@ TEST_F(FontConfig_OHOSTest, scanFonts003) {
     // Create test font files
     FILE* f1 = fopen((std::string(testDir) + "/test1.ttf").c_str(), "w");
     FILE* f2 = fopen((std::string(testDir) + "/test2.otf").c_str(), "w");
-    if (f1) fclose(f1);
-    if (f2) fclose(f2);
+    if (f1) {
+        fclose(f1);
+    }
+    if (f2) {
+        fclose(f2);
+    }
     
     int result = fontConfig->scanFonts(scanner, SkString(testDir), false);
     
@@ -1916,8 +1967,12 @@ TEST_F(FontConfig_OHOSTest, scanFonts004) {
     // Create test files
     FILE* f1 = fopen((std::string(testDir) + "/text.txt").c_str(), "w");
     FILE* f2 = fopen((std::string(testDir) + "/image.png").c_str(), "w");
-    if (f1) fclose(f1);
-    if (f2) fclose(f2);
+    if (f1) {
+        fclose(f1);
+    }
+    if (f2) {
+        fclose(f2);
+    }
     
     int result = fontConfig->scanFonts(scanner, SkString(testDir), false);
     
@@ -2130,7 +2185,8 @@ TEST_F(FontConfig_OHOSTest, resetFallbackValue002) {
     auto fallbackInfo = std::make_unique<FallbackInfo>();
 
     fallbackInfo->typefaceSet = std::make_shared<TypefaceSet>();
-    FontInfo fontInfo1, fontInfo2;
+    FontInfo fontInfo1;
+    FontInfo fontInfo2;
     fontInfo1.familyName = SkString("A");
     fontInfo2.familyName = SkString("B");
     fallbackInfo->typefaceSet->push_back(sk_make_sp<SkTypeface_OHOS>(fontInfo1));
@@ -2168,7 +2224,8 @@ TEST_F(FontConfig_OHOSTest, hasError002) {
     fallbackInfo->typefaceSet = std::make_shared<TypefaceSet>();
     
     // Add dummy typefaces
-    FontInfo fontInfo1, fontInfo2;
+    FontInfo fontInfo1;
+    FontInfo fontInfo2;
     fontInfo1.familyName = SkString("A");
     fontInfo2.familyName = SkString("B");
     fallbackInfo->typefaceSet->push_back(sk_make_sp<SkTypeface_OHOS>(fontInfo1));

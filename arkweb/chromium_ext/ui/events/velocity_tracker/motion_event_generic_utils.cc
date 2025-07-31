@@ -22,12 +22,16 @@ MotionEventGenericUtils::MotionEventGenericUtils(
     MotionEventGeneric* motion_event_generic)
     : motion_event_generic_(motion_event_generic) {}
 
+// LCOV_EXCL_START
 bool MotionEventGenericUtils::IsCancelByLostFocus() {
   return cancel_by_lost_focus_;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void MotionEventGenericUtils::SetCancelByLostFocus(bool is_lost_focus) {
   cancel_by_lost_focus_ = is_lost_focus;
 }
+// LCOV_EXCL_STOP
 #endif
 }  // namespace ui

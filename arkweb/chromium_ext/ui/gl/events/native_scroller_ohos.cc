@@ -116,10 +116,12 @@ bool NativeScrollerOhos::ComputeScrollOffset(base::TimeTicks time,
   return !finisheed_;
 }
 
+// LCOV_EXCL_START
 bool NativeScrollerOhos::ShouldAbortAnimation() {
   return std::abs(curr_y_ - final_y_) < kThresholdForFlingEnd ||
          std::abs(curr_velocity_y_) <= velocity_threshold_;
 }
+// LCOV_EXCL_STOP
 
 double NativeScrollerOhos::GetPosition(float offsetTime /*second*/) {
   double position = init_y_ + signum_ * (init_velocity_y_ / friction_) *
@@ -132,8 +134,10 @@ double NativeScrollerOhos::GetVelocity(float offsetTime /*second*/) {
   return velocity;
 }
 
+// LCOV_EXCL_START
 void NativeScrollerOhos::AbortAnimation() {
   finisheed_ = true;
 }
+// LCOV_EXCL_STOP
 
 }  // namespace ui

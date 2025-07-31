@@ -709,6 +709,9 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   void SetPathAllowingUniversalAccess(
       const std::vector<std::string>& pathList) override;
+  int PrerenderPage(const std::string& url,
+                    const std::string& additional_headers) override;
+  void CancelAllPrerendering() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
@@ -771,6 +774,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
+  void SetMediaResumeFromBFCachePage(bool resume) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
@@ -845,11 +849,17 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) override;
   int64_t GetPreferenceHash() override;
+  void SetNearestSnapshotSize(int32_t width, int32_t height) override;
+  gfx::Size GetNearestSnapshotSize() override;
+  gfx::Size GetSize() override;
 #endif
-
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void OnBrowserForeground() override;
+  void OnBrowserBackground() override;
+#endif
  public:
   int argc_;
-  const char** argv_;
+  RAW_PTR_EXCLUSION const char** argv_;
 
  private:
   void RunMessageLoop();

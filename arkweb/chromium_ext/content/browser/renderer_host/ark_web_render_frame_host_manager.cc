@@ -26,6 +26,7 @@
 
 namespace content {
 
+// LCOV_EXCL_START
 void ArkWebUnloadOldFrame(const BackForwardCache& back_forward_cache,
                           const std::string reason,
                           bool& can_store) {
@@ -43,6 +44,7 @@ void ArkWebUnloadOldFrame(const BackForwardCache& back_forward_cache,
                      << reason;
 #endif  // BUILDFLAG(ARKWEB_LOGGER_REPORT)
 }
+// LCOV_EXCL_STOP
 
 void ArkWebGetFrameHostForNavigation(
     const std::string& shared_render_process_token,

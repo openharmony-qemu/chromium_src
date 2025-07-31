@@ -98,6 +98,7 @@
 #include "ui/gfx/geometry/size.h"
 
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/web_media_player_impl_ext.h"
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 
 namespace blink {
 
@@ -383,7 +384,7 @@ void WebMediaPlayerImplExt::RecycleDmaBuffer() {
 #endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
 
   if (IsPageHidden() || (IsHidden() && should_pause_when_frame_is_hidden_)) {
-    if (ShouldPausePlaybackWhenHidden()) {
+    if (ShouldPausePlaybackWhenHidden() || !base::ohos::IsPcDevice()) {
       LOG(INFO) << "DMABUF::The device is not a PC or not have media player, No need RecycleDmaBuffer";
       return;
     }
@@ -434,4 +435,21 @@ void WebMediaPlayerImplExt::NotifyMemoryLevel(
   memory_pressure_level_ = memory_pressure_level;
 }
 #endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+void WebMediaPlayerImplExt::MediaResumeFromBFCachePage(bool restoring_in_bfcache) {
+  LOG(INFO) << "MediaResumeFromBFCachePage restoring_in_bfcache" << restoring_in_bfcache;
+  if (!client_) {
+    LOG(ERROR) << "OhMedia::media_player_client is nullptr";
+    return;
+  }
+  bool is_media_resume = client_->IsMediaResumeFromBFCachePage();
+  LOG(INFO) << "MediaResumeFromBFCachePage is_media_resume: " << is_media_resume;
+  if (restoring_in_bfcache && !is_media_resume) {
+    LOG(INFO) << "OhMedia::WebPage is restored from BFCACHE without resuming playback.";
+  } else {
+    client_->ResumePlayback();  // Calls UpdatePlayState() so return afterwards.
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
 }

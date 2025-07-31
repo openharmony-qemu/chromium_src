@@ -151,4 +151,6 @@ struct NWebExtensionManagerCallBack {
   void (*OnWebExtensionOpenUrlFun)(std::string url);
 };
 
+typedef void (*OnExtensionInstallCallback)(int code, const char* message);
+
 #endif  // OHOS_NWEB_SRC_NWEB_EXTENSION_MANAGER_CALLBACK_H_

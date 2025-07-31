@@ -570,6 +570,7 @@ bool PermissionsData::CanCaptureVisiblePage(
   bool allowed_with_active_tab =
       origin_url.SchemeIs(content::kChromeUIScheme) ||
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      origin_url.SchemeIs(content::kArkWebUIScheme) ||
       origin_url.SchemeIs(kArkwebExtensionScheme) ||
 #endif
       origin_url.SchemeIs(kExtensionScheme) ||

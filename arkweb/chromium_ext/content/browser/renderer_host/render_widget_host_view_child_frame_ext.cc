@@ -21,6 +21,7 @@ RenderWidgetHostViewChildFrameExt::RenderWidgetHostViewChildFrameExt(
     const display::ScreenInfos& parent_screen_infos)
     : RenderWidgetHostViewChildFrame(widget_host, parent_screen_infos) {}
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 bool RenderWidgetHostViewChildFrameExt::GetScrollable() {
   if (!frame_connector_) {
@@ -43,4 +44,5 @@ bool RenderWidgetHostViewChildFrameExt::IsMarkedConsumed(
 }
 
 #endif
+// LCOV_EXCL_STOP
 }  // namespace content

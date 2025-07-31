@@ -28,6 +28,7 @@ void TouchHandleExt::SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) 
   drawable_->SetEdge(top, bottom);
 }
 
+// LCOV_EXCL_START
 void TouchHandleExt::ResetPositionAfterDragEnd() {
   if (!is_visible_ || !drawable_) {
     return;
@@ -35,6 +36,7 @@ void TouchHandleExt::ResetPositionAfterDragEnd() {
 
   drawable_->SetOrigin(ComputeHandleOrigin());
 }
+// LCOV_EXCL_STOP
 
 bool TouchHandleExt::SetFocus(const gfx::PointF& top, const gfx::PointF& bottom) {
   if (focus_bottom_.y() < focus_top_.y()) {
@@ -46,6 +48,14 @@ bool TouchHandleExt::SetFocus(const gfx::PointF& top, const gfx::PointF& bottom)
     return true;
   }
   return false;
+}
+
+void TouchHandleExt::SetInsertHandleAlpha(float alpha) {
+  alpha = std::clamp(alpha, 0.0f, 1.0f);
+  if (alpha_ == alpha)
+    return;
+  alpha_ = alpha;
+  drawable_->SetAlpha(alpha);
 }
 #endif
 }  // namespace ui

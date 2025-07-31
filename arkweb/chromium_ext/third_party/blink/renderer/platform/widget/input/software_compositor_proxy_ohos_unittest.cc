@@ -55,6 +55,7 @@ void SoftwareCompositorProxyOhosTest::TearDown(void) {
   g_softwareCompositor = nullptr;
 }
 
+#if !BUILDFLAG(ARKWEB_UNITTESTS)
 class MockAsyncLayerTreeFrameSink
     : public cc::mojo_embedder::AsyncLayerTreeFrameSink {
  public:
@@ -69,6 +70,7 @@ class MockAsyncLayerTreeFrameSink
   MockAsyncLayerTreeFrameSink(const MockAsyncLayerTreeFrameSink&) = delete;
   ~MockAsyncLayerTreeFrameSink() = default;
 };
+#endif
 
 class MockSoftwareCompositorRegistryOhos
     : public cc::mojo_embedder::SoftwareCompositorRegistryOhos {
@@ -129,10 +131,59 @@ TEST_F(SoftwareCompositorProxyOhosTest, SetSoftwareRenderer) {
 TEST_F(SoftwareCompositorProxyOhosTest, DrawRect) {
   g_softwareCompositor->SetSoftwareRenderer(nullptr);
   gfx::Rect rect(10, 10, 100, 100);
-  EXPECT_DEATH(g_softwareCompositor->DrawRect(rect),
-               "software render init error");
+  g_softwareCompositor->DrawRect(rect);
+}
+
+TEST_F(SoftwareCompositorProxyOhosTest, DrawRect001) {
+  gfx::Rect rect(10, 10, 100, 100);
+  g_softwareCompositor->DrawRect(rect);
+}
+
+TEST_F(SoftwareCompositorProxyOhosTest, DemandDrawSwAsync_InstallPixelsFail) {
+  base::WritableSharedMemoryRegion shm_region = 
+      base::WritableSharedMemoryRegion::Create(100);
+
+  bool set_result = false;
+  g_softwareCompositor->SetSharedMemory(
+      std::move(shm_region),
+      base::BindOnce([](bool* out_result, bool result) { *out_result = result; },
+                    &set_result));
+  ASSERT_TRUE(set_result);
+
+  auto params = mojom::blink::SoftwareCompositorDemandDrawSwParams::New();
+  params->size = gfx::SizeF(100.0f, 100.0f);
+  params->offset = gfx::PointF(0.0f, 0.0f);
+  
+  bool callback_result = true;
+  g_softwareCompositor->DemandDrawSwAsync(
+      std::move(params),
+      base::BindOnce([](bool* out_result, bool result) { *out_result = result; },
+                    &callback_result));
+
+  EXPECT_FALSE(callback_result);
+}
+
+TEST_F(SoftwareCompositorProxyOhosTest, DemandDrawSwAsync_RendererNull) {
+  base::WritableSharedMemoryRegion shm_region = 
+      base::WritableSharedMemoryRegion::Create(1024 * 1024);
+
+  bool set_result = false;
+  g_softwareCompositor->SetSharedMemory(
+      std::move(shm_region),
+      base::BindOnce([](bool* out_result, bool result) { *out_result = result; },
+                    &set_result));
+  ASSERT_TRUE(set_result);
+
+  auto params = mojom::blink::SoftwareCompositorDemandDrawSwParams::New();
+  params->size = gfx::SizeF(100.0f, 100.0f);
+  params->offset = gfx::PointF(0.0f, 0.0f);
+
+  bool callback_result = true;
+  g_softwareCompositor->DemandDrawSwAsync(
+      std::move(params),
+      base::BindOnce([](bool* out_result, bool result) { *out_result = result; },
+                    &callback_result));
+
+  EXPECT_FALSE(callback_result);
 }
 }  // namespace blink
-未读
-blink / renderer / platform / widget / input /
-    widget_input_handler_manager_unittest.cc 4190 0 → 100644

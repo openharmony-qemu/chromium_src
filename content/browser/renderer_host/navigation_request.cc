@@ -2464,8 +2464,14 @@ bool NavigationRequest::MaybeStartPrerenderingActivationChecks() {
   FrameTreeNodeId candidate_prerender_frame_tree_node_id =
       GetPrerenderHostRegistry().FindPotentialHostToActivate(*this);
   if (candidate_prerender_frame_tree_node_id.is_null()) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    LOG(DEBUG) << "No matching Prerendered host found.";
+#endif
     return false;
   }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  LOG(DEBUG) << "Found a matching Prerendered host.";
+#endif
 
   // Run CommitDeferringConditions before activating the prerendered page. See
   // the comemnt on RunCommitDeferringConditions() for details.

@@ -50,6 +50,7 @@ class GrShaderCache;
 
 namespace viz {
 
+class GpuServiceImpl;
 class VulkanContextProvider;
 
 // This class exists to allow SkiaOutputSurfaceImpl to ignore differences
@@ -111,10 +112,11 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceDependency {
   virtual bool IsUsingCompositorGpuThread() = 0;
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  virtual void SendBlanklessSnapshotInfo(uint64_t blankless_key,
-                                         int32_t lcp_time,
-                                         int64_t pref_hash,
-                                         const std::vector<gfx::Rect>& quad_list) = 0;
+  virtual GpuServiceImpl* gpu_service_impl() const = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  virtual bool GetIsScroll() = 0;
 #endif
 };
 

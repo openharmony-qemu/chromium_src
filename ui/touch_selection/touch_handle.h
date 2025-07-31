@@ -195,6 +195,7 @@ friend class TouchHandleExt;
   float handle_horizontal_padding_;
 #if BUILDFLAG(ARKWEB_AI)
   int32_t continuous_touch_nums_ = 0;
+  bool is_single_handle_ = false;
 #endif
 };
 

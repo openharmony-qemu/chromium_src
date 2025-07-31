@@ -27,6 +27,7 @@
 #include "nweb_file_selector_params_impl.h"
 #include "nweb_handler.h"
 #include "nweb_js_dialog_result_impl.h"
+#include "ohos_nweb/include/nweb_errors.h"
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
@@ -236,6 +237,11 @@ class MockCefBrowser : public ArkWebBrowserExt {
   uint32_t GetAcceleratedWidget(bool isPopup) override {}
   void SetAdBlockEnabledForSite(bool is_adblock_enabled,
                                         int main_frame_tree_node_id) override {}
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  int PrerenderPage(const CefString& url,
+                    const CefString& additional_headers) override { return OHOS::NWeb::NWEB_OK; };
+  void CancelAllPrerendering() override {};
+#endif
 };
 
 class NWebHandlerDelegateTest : public ::testing::Test {
@@ -244,7 +250,6 @@ class NWebHandlerDelegateTest : public ::testing::Test {
   void TearDown();
 
   CefRefPtr<NWebHandlerDelegate> delegate;
-  CefRefPtr<NWebInputMethodClient> mock_client;
   MockNWebHandler* mock_handler_;
   MockEventHandler* mock_event_handler_;
   MockRenderHandler* mock_render_handler_;
@@ -262,7 +267,6 @@ class NWebHandlerDelegateTest : public ::testing::Test {
 void NWebHandlerDelegateTest::SetUp() {
   delegate = new NWebHandlerDelegate(nullptr, nullptr, nullptr, nullptr, false,
                                      nullptr);
-  mock_client = CefRefPtr<MockNWebInputMethodClient>();
 
   mock_handler_ = new MockNWebHandler();
   mock_event_handler_ = new MockEventHandler();
@@ -284,16 +288,6 @@ void NWebHandlerDelegateTest::TearDown() {
 }
 
 // Test cases
-TEST_F(NWebHandlerDelegateTest, SetInputMethodClient_TEST001) {
-  delegate->SetInputMethodClient(mock_client);
-  EXPECT_EQ(delegate->input_method_client_, mock_client);
-}
-
-TEST_F(NWebHandlerDelegateTest, SetInputMethodClient_TEST002) {
-  delegate->SetInputMethodClient(nullptr);
-  EXPECT_EQ(delegate->input_method_client_, nullptr);
-}
-
 TEST_F(NWebHandlerDelegateTest, GetFocusHandler) {
   CefRefPtr<CefFocusHandler> focusHandler = delegate->GetFocusHandler();
   EXPECT_EQ(focusHandler.get(), delegate);

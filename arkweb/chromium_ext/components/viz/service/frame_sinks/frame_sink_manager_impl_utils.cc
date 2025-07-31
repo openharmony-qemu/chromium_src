@@ -17,10 +17,12 @@
 #include "arkweb/chromium_ext/components/viz/service/frame_sinks/root_compositor_frame_sink_impl_ext.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 namespace viz {
+//LCOV_EXCL_START
 FrameSinkManagerImplUtils::FrameSinkManagerImplUtils(FrameSinkManagerImpl* managerimpl)
 {
     this->frameSinkManagerImpl = managerimpl;
 }
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
 void FrameSinkManagerImplUtils::EvictFrameBackBuffers(
@@ -101,6 +103,7 @@ void FrameSinkManagerImplUtils::ResetVSyncFrequency(
 #endif
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+//LCOV_EXCL_START
 void FrameSinkManagerImplUtils::RestoreRenderFit(const FrameSinkId& frame_sink_id)
 {
   if (frameSinkManagerImpl->client_) {
@@ -108,6 +111,7 @@ void FrameSinkManagerImplUtils::RestoreRenderFit(const FrameSinkId& frame_sink_i
                                                     frame_sink_id.sink_id());
   }
 }
+//LCOV_EXCL_STOP
 #endif  // ARKWEB_MAXIMIZE_RESIZE
 
 #if BUILDFLAG(ARKWEB_PIP)
@@ -124,6 +128,7 @@ void FrameSinkManagerImplUtils::SetPipActive(
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+//LCOV_EXCL_START
 GpuServiceImpl* FrameSinkManagerImplUtils::gpu_service() {
   return frameSinkManagerImpl->gpu_service_;
 }
@@ -133,5 +138,6 @@ void FrameSinkManagerImplUtils::ClearBlanklessSnapshotInfo(uint64_t blankless_ke
     gpu_device->ClearBlanklessSnapshotInfo(blankless_key);
   }
 }
+//LCOV_EXCL_STOP
 #endif
 }

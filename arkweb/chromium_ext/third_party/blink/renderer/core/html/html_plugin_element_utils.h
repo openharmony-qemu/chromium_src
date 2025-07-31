@@ -18,6 +18,7 @@
 #include "arkweb/build/features/features.h"
 #include "base/logging.h"
 #include "third_party/blink/renderer/core/frame/settings.h"
+#include "third_party/blink/renderer/platform/heap/persistent.h"
 
 namespace blink {
 class HTMLPlugInElement;
@@ -39,7 +40,7 @@ class HTMLPlugInElementUtils {
   }
 #endif
  private:
-  raw_ptr<HTMLPlugInElement> plugin_;
+  Persistent<HTMLPlugInElement> plugin_;
   bool native_embed_overlay_{false};
   bool native_embed_overlay_infinity_{false};
 };

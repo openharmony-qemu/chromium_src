@@ -231,6 +231,7 @@ def main():
     proxyConfig = ''
     if g_run_in_os == "linux": #本脚本在linux下运行
         proxyConfig = f' -s {g_run_proxy_ip}:{g_run_proxy_port}'
+    RunCommand(f'hdc {proxyConfig} target mount', timeout=25)
     RunCommand(f'hdc {proxyConfig} shell mount -o remount,rw /', timeout=25)
     RunCommand(f'hdc {proxyConfig} file send {g_chromium_src_path}/{device_name}/{libso_name} {device_path}', timeout=50)
     #遍历文件夹中的所有JSON文件

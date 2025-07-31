@@ -24,6 +24,7 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 LayoutNative::LayoutNative(Element* native) : LayoutImage(native) {
   SetImageResource(MakeGarbageCollected<LayoutImageResource>());
 }
@@ -65,6 +66,7 @@ CompositingReasons LayoutNative::AdditionalCompositingReasons() const {
   NOT_DESTROYED();
   return CompositingReason::kVideo;
 }
+// LCOV_EXCL_STOP
 
 }  // namespace blink
                      

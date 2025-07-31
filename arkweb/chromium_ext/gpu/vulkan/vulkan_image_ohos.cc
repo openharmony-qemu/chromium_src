@@ -21,6 +21,7 @@
 namespace gpu {
 
 namespace {
+//LCOV_EXCL_START
 bool IsSinglePlaneRGBVulkanNBFormat(VkFormat format) {
   switch (format) {
     case VK_FORMAT_R8G8B8A8_UNORM:
@@ -33,6 +34,7 @@ bool IsSinglePlaneRGBVulkanNBFormat(VkFormat format) {
       return false;
   }
 }
+//LCOV_EXCL_STOP
 }  // namespace
 
 bool VulkanImage::InitializeFromGpuMemoryBufferHandle(

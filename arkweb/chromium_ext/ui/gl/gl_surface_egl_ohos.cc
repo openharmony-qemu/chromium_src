@@ -62,6 +62,7 @@ NativeViewGLSurfaceEGLOhos::CreateNativeViewGLSurfaceEGLOhos(
   return nullptr;
 }
 
+//LCOV_EXCL_START
 NativeViewGLSurfaceEGLOhos::NativeViewGLSurfaceEGLOhos(
     GLDisplayEGL* display,
     EGLNativeWindowType window)
@@ -71,6 +72,7 @@ NativeViewGLSurfaceEGLOhos::NativeViewGLSurfaceEGLOhos(
       .AddNativeWindowRef(reinterpret_cast<void*>(window_));
   LOG(INFO) << "NativeViewGLSurfaceEGLOhos add window ref.";
 }
+//LCOV_EXCL_STOP
 
 gfx::SwapResult NativeViewGLSurfaceEGLOhos::SwapBuffers(
     PresentationCallback callback,
@@ -145,6 +147,7 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
   return true;
 }
 
+//LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
 bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
   TRACE_EVENT1("gpu", "NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation",
@@ -187,6 +190,7 @@ void NativeViewGLSurfaceEGLOhos::SetNativeInnerWeb(bool isInnerWeb) {
   isInnerWeb_ = isInnerWeb;
 }
 #endif
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
 void NativeViewGLSurfaceEGLOhos::SetBypassVsyncCondition(int32_t condition) {

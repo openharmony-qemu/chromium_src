@@ -16,6 +16,7 @@
 #ifndef DFX_APPFREEZE_MONITOR_RENDER_IMPL_H_
 #define DFX_APPFREEZE_MONITOR_RENDER_IMPL_H_
 
+#include <mutex>
 #include <string>
 #include "arkweb/chromium_ext/content/browser/dfx/mojom/dfx_reporting.mojom.h"
 #include "mojo/public/cpp/bindings/remote.h"
@@ -38,6 +39,7 @@ public:
   bool IsInitialized() { return initialized_; }
   void HasInitialized() { initialized_ = true; }
   bool reported_ = false;
+  std::mutex appfreeze_monitor_lock_;
 private:
   bool initialized_ = false;
   mojo::Remote<dfx::mojom::DfxReporter> remote_;

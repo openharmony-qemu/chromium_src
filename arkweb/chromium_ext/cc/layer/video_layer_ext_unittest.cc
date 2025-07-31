@@ -45,7 +45,7 @@ class VideoLayerExtTest : public testing::Test {
                            base::Unretained(&callbacks_)));
   }
 
-  scoped_refptr<SurfaceLayer> layer_;
+  scoped_refptr<VideoLayerExt> layer_;
   testing::StrictMock<MockCallbacks> callbacks_;
 };
 

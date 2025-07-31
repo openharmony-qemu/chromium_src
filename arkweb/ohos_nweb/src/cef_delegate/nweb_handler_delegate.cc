@@ -37,6 +37,7 @@
 #include "net/base/net_errors.h"
 #include "net/cookies/site_for_cookies.h"
 #include "net/cookies/static_cookie_policy.h"
+#include "net/http/http_request_headers.h"
 #include "nweb_access_request_delegate.h"
 #include "nweb_common.h"
 #include "nweb_console_log_impl.h"
@@ -154,6 +155,18 @@
 #endif
 #if BUILDFLAG(ARKWEB_PIP)
 #include "content/browser/media/media_web_contents_observer.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "cef/libcef/browser/frame_host_impl.h"
+#include "content/browser/renderer_host/frame_tree.h"
+#include "content/browser/renderer_host/render_frame_host_impl.h"
+#include "content/public/browser/render_frame_host.h"
 #endif
 
 namespace OHOS::NWeb {
@@ -443,6 +456,33 @@ void ParseNativeProxyArgs(CefRefPtr<CefListValue> args,
     }
   }
 }
+
+bool IsPrerendering(const CefRefPtr<CefFrame> frame) {
+  if (!frame) {
+    return false;
+  }
+
+  if (!frame->IsValid()) {
+    return false;
+  }
+
+  if (!frame.get()) {
+    return false;
+  }
+
+  if (!static_cast<CefFrameHostImpl*>(frame.get())->GetRenderFrameHost()) {
+    return false;
+  }
+
+  if (!static_cast<content::RenderFrameHostImpl*>(static_cast<CefFrameHostImpl*>(
+        frame.get())->GetRenderFrameHost())->frame_tree()) {
+    return false;
+  }
+
+  return static_cast<content::RenderFrameHostImpl*>(static_cast<CefFrameHostImpl*>(
+    frame.get())->GetRenderFrameHost())->frame_tree()->is_prerendering();
+}
+
 }  // namespace
 
 class NWebDateTimeSuggestionImpl : public NWebDateTimeSuggestion {
@@ -622,12 +662,6 @@ void NWebHandlerDelegate::RegisterNWebHandler(
   if (render_handler_ != nullptr) {
     render_handler_->RegisterNWebHandler(handler);
   }
-}
-
-void NWebHandlerDelegate::SetInputMethodClient(
-    CefRefPtr<NWebInputMethodClient> client) {
-  LOG(INFO) << "SetInputMethodClient";
-  input_method_client_ = client;
 }
 
 void NWebHandlerDelegate::RegisterNWebJavaScriptCallBack(
@@ -1015,7 +1049,8 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
         main_browser_->GetHost()->SetVirtualPixelRatio(
             preference_delegate_->GetVirtualPixelRatio());
         main_browser_->GetHost()->PutUserAgent(
-            preference_delegate_->UserAgent());
+            preference_delegate_->UserAgent(),
+            preference_delegate_->HasSetUserAgent());
 #if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
         main_browser_->GetHost()->SetFileAccess(
             preference_delegate_->EnableRawFileAccess());
@@ -1101,6 +1136,9 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
         GetBrowser()->SetBackForwardCacheOptions(cache_size,
                                                  cache_time_to_live);
       }
+    }
+    if (main_browser_ && main_browser_->GetHost()) {
+      main_browser_->GetHost()->SetMediaResumeFromBFCachePage(media_resume_from_bfcache_page_);
     }
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
@@ -1322,6 +1360,15 @@ bool NWebHandlerDelegate::OnPreBeforePopup(
   if (nweb_handler_ == nullptr) {
     return true;
   }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) &&
+      IsPrerendering(frame)) {
+    return true;
+  }
+#endif
+
   switch (target_disposition) {
     case CEF_WOD_NEW_WINDOW:
     case CEF_WOD_NEW_POPUP: {
@@ -1448,6 +1495,15 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
   if (frame == nullptr || !frame->IsMain()) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) &&
+      IsPrerendering(frame)) {
+    return;
+  }
+#endif
+
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   if (!setWebPaintedTask_.IsCancelled()) {
     setWebPaintedTask_.Cancel();
@@ -1473,6 +1529,14 @@ void NWebHandlerDelegate::OnLoadEnd(CefRefPtr<CefBrowser> browser,
     return;
   }
   LOG(INFO) << "NWebHandlerDelegate:: Mainframe OnLoadEnd";
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) &&
+      IsPrerendering(frame)) {
+    return;
+  }
+#endif
 
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   setWebPaintedTask_.Reset(
@@ -1714,6 +1778,15 @@ void NWebHandlerDelegate::OnRefreshAccessedHistory(
     LOG(ERROR) << "nweb handler is null";
     return;
   }
+
+#ifdef OHOS_NETWORK_LOAD
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) &&
+      IsPrerendering(frame)) {
+    return;
+  }
+#endif
+
   edited_forms_id_.clear();
   nweb_handler_->OnRefreshAccessedHistory(url.ToString(), isReload);
 }
@@ -1774,9 +1847,22 @@ bool NWebHandlerDelegate::OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  std::optional<int32_t> nweb_id;
+  if (base::ohos::BlanklessController::CheckGlobalProperty() && GetBrowser() && frame) {
+    nweb_id = GetBrowser()->GetNWebId();
+    base::ohos::BlanklessController::GetInstance().ResetStatus(nweb_id.value(), frame->IsMain(), is_redirect);
+  }
+#endif
+
   CefRequest::HeaderMap cef_request_headers;
   request->GetHeaderMap(cef_request_headers);
   std::map<std::string, std::string> request_headers;
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebEx) &&
+      IsPrerendering(frame)) {
+    request_headers["Sec-Purpose"] = "prefetch;prerender";
+  }
+
   ConvertMapToHeaderMap(cef_request_headers, request_headers);
   std::shared_ptr<NWebUrlResourceRequest> nweb_request =
       std::make_shared<NWebUrlResourceRequestImpl>(
@@ -1789,9 +1875,14 @@ bool NWebHandlerDelegate::OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
     LOG(DEBUG) << "NWebHandlerDelegate::OnBeforeBrowse "
                   "OnHandleInterceptUrlLoading result: "
                << result;
-    return result;
+  } else {
+    LOG(DEBUG) << "NWebHandlerDelegate::OnBeforeBrowse result: " << result;
   }
-  LOG(DEBUG) << "NWebHandlerDelegate::OnBeforeBrowse result: " << result;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (nweb_id.has_value()) {
+    base::ohos::BlanklessController::GetInstance().ResetStatus(nweb_id.value(), true, false);
+  }
+#endif
   return result;
 }
 
@@ -1969,10 +2060,19 @@ bool NWebHandlerDelegate::ShouldOverrideUrlLoading(
     const CefString& method,
     bool user_gesture,
     bool is_redirect,
-    bool is_outermost_main_frame) {
+    bool is_outermost_main_frame,
+    const CefString& extra_request_headers_str) {
   LOG(INFO) << "NWebHandlerDelegate::ShouldOverrideUrlLoading";
 
   std::map<std::string, std::string> request_headers;
+  net::HttpRequestHeaders extra_request_headers;
+  extra_request_headers.AddHeadersFromString(
+      extra_request_headers_str.ToString());
+  for (const net::HttpRequestHeaders::HeaderKeyValuePair& header_key_value :
+       extra_request_headers.GetHeaderVector()) {
+    request_headers[header_key_value.key] = header_key_value.value;
+  }
+
   std::shared_ptr<NWebUrlResourceRequest> nweb_request =
       std::make_shared<NWebUrlResourceRequestImpl>(
           method.ToString(), request_headers, url.ToString(), user_gesture,
@@ -2148,10 +2248,6 @@ void NWebHandlerDelegate::KeyboardReDispatch(const CefKeyEvent& event,
     if (keyCode == -1) {
       return;
     }
-    if (keyCode == NWebInputDelegate::CefConverter("ohoskeycode", static_cast<int32_t>(ui::VKEY_TAB)) &&
-        action == static_cast<int32_t>(OHOS::NWeb::NWebKeyEvent::KeyEventAction::KEY_DOWN_ACTION) && isUsed) {
-        return;
-    }
     std::shared_ptr<NWebKeyEvent> nwebEvent =
         std::make_shared<NWebKeyEventImpl>(action, keyCode);
     return nweb_handler_->KeyboardReDispatch(nwebEvent, isUsed);
@@ -2166,7 +2262,7 @@ void NWebHandlerDelegate::OnTakeFocus(CefRefPtr<CefBrowser> browser,
       "ohoskeycode", static_cast<int32_t>(ui::VKEY_TAB));
   std::shared_ptr<NWebKeyEvent> nwebEvent =
       std::make_shared<NWebKeyEventImpl>(0, keyCode);
-  return nweb_handler_->KeyboardReDispatch(nwebEvent, false);
+  return nweb_handler_->OnTakeFocus(nwebEvent);
 }
 
 bool NWebHandlerDelegate::IsCurrentFocus() {
@@ -2660,6 +2756,19 @@ void NWebHandlerDelegate::UpdateFavicon(CefRefPtr<CefBrowser> browser) {
       &data, color_type, alpha_type, width, height);
   SetFavicon(data, width, height, ImageColorType(color_type),
              ImageAlphaType(alpha_type));
+  if (data == nullptr) {
+    LOG(ERROR) << "data is null";
+    return;
+  }
+  if (nweb_handler_) {
+    nweb_handler_->OnPageIcon(data, width, height,
+                              ImageColorType(color_type),
+                              ImageAlphaType(alpha_type));
+  }
+}
+
+void NWebHandlerDelegate::SetMediaResumeFromBFCachePage(bool resume) {
+  media_resume_from_bfcache_page_ = resume;
 }
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
@@ -3535,8 +3644,8 @@ bool NWebHandlerDelegate::RunContextMenu(
           params, render_handler_->GetVirtualPixelRatio(), view_port_height);
   std::shared_ptr<NWebContextMenuCallback> nweb_callback =
       std::make_shared<NWebContextMenuCallbackImpl>(callback);
-  if (input_method_client_) {
-    bool has_composition = input_method_client_->HasComposition();
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    bool has_composition = GetBrowser()->GetHost()->GetHasComposition();
     LOG(INFO) << "NWebHandlerDelegate has_composition " << has_composition;
     if (has_composition) {
       LOG(INFO) << "NWebHandlerDelegate input has composition";
@@ -3609,8 +3718,8 @@ bool NWebHandlerDelegate::RunQuickMenu(
   }
 
   LOG(INFO) << "NWebHandlerDelegate RunQuickMenu ";
-  if (input_method_client_) {
-    bool has_composition = input_method_client_->HasComposition();
+  if (GetBrowser() && GetBrowser()->GetHost()) {
+    bool has_composition = GetBrowser()->GetHost()->GetHasComposition();
     LOG(INFO) << "NWebHandlerDelegate has_composition " << has_composition;
     if (has_composition) {
       LOG(INFO) << "NWebHandlerDelegate input has composition";
@@ -4945,33 +5054,6 @@ void NWebHandlerDelegate::HandleSafeBrowsingDetection(int detectMode,
       nweb_id_, detectMode, detectSwitch, url);
 #else
   OnSafeBrowsingDetectionResult(-1, -1, "", url);
-#endif
-#endif
-}
-
-//#if BUILDFLAG(IS_ARKWEB_EXT)
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-void NWebHandlerDelegate::OnSafeBrowsingDetectionResult(
-    int code,
-    int policy,
-    const std::string& mappingType,
-    const std::string& url) {
-  LOG(INFO) << "code is " << code << ",policy is " << policy
-            << ",mapping type is " << mappingType << ",nweb id is " << nweb_id_;
-  if (safe_browsing_detection_callback_ == nullptr) {
-    return;
-  }
-
-  safe_browsing_detection_callback_->OnDetectionResult(code, policy,
-                                                       mappingType, url);
-}
-#endif
-
-void NWebHandlerDelegate::SetSafeBrowsingDetectionCallback(
-    CefRefPtr<CefSafeBrowsingDetectionCallback> callback) {
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-  safe_browsing_detection_callback_ = callback;
 #endif
 #endif
 }

@@ -165,7 +165,7 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_gesture_event_result_impl.cc",
     "src/cef_delegate/nweb_gesture_event_result_impl.h",
     "src/cef_delegate/nweb_mouse_event_result_impl.cc",
-    "src/cef_delegate/nweb_mouse_event_result_impl.h",    
+    "src/cef_delegate/nweb_mouse_event_result_impl.h",
     "src/cef_delegate/nweb_icon_utils.cc",
     "src/cef_delegate/nweb_icon_utils.h",
     "src/cef_delegate/nweb_key_event_impl.cc",
@@ -209,12 +209,16 @@ component("cef_nweb") {
       "src/cef_delegate/nweb_extension_action_cef_delegate.h",
       "src/cef_delegate/nweb_extension_bookmarks_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_bookmarks_cef_delegate.h",
+      "src/cef_delegate/nweb_extension_content_settings_cef_delegate.cc",
+      "src/cef_delegate/nweb_extension_content_settings_cef_delegate.h",
       "src/cef_delegate/nweb_extension_downloads_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_downloads_cef_delegate.h",
       "src/cef_delegate/nweb_extension_prompt_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_prompt_cef_delegate.h",
       "src/cef_delegate/nweb_extension_side_panel_cef_controller.cc",
       "src/cef_delegate/nweb_extension_side_panel_cef_controller.h",
+      "src/cef_delegate/nweb_extension_history_cef_delegate.cc",
+      "src/cef_delegate/nweb_extension_history_cef_delegate.h",
       "src/cef_delegate/nweb_extension_tab_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_tab_cef_delegate.h",
       "src/cef_delegate/nweb_extension_utils.cc",
@@ -223,6 +227,8 @@ component("cef_nweb") {
       "src/cef_delegate/nweb_extension_window_delegate_handler.cc",
       "src/cef_delegate/nweb_extension_window_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_window_cef_delegate.h",
+      "src/cef_delegate/nweb_extension_top_sites_cef_delegate.cc",
+      "src/cef_delegate/nweb_extension_top_sites_cef_delegate.h",
     ]
 
     if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
@@ -398,8 +404,10 @@ component("nweb_sources") {
     "include/nweb_value_callback.h",
     "src/capi/browser_service/nweb_basic_pub.h",
     "src/capi/browser_service/nweb_extension_bookmarks_types.h",
+    "src/capi/browser_service/nweb_extension_content_settings_types.h",
     "src/capi/browser_service/nweb_extension_downloads_types.h",
     "src/capi/browser_service/nweb_extension_prompt_types.h",
+    "src/capi/browser_service/nweb_extension_history_types.h",
     "src/capi/nweb_app_client_extension_callback.h",
     "src/capi/nweb_devtools_message_handler.h",
     "src/capi/nweb_extension_javascript_item.h",
@@ -615,17 +623,18 @@ source_set("unittests") {
     ":cef_nweb_config",
   ]
 
-  include_dirs = [ "//ppapi/lib/gl/include" ]
+  include_dirs = [ "//ppapi/lib/gl/include", "//third_party/webrtc" ]
 
   sources = [
     "src/cef_delegate/nweb_access_request_delegate_unittest.cc",
     "src/cef_delegate/nweb_delegate_unittest.cc",
     "src/cef_delegate/nweb_event_handler_unittest.cc",
+    "src/cef_delegate/nweb_find_delegate_unittest.cc",
     "src/cef_delegate/nweb_handler_delegate_unittest.cc",
     "src/cef_delegate/nweb_pipe_resource_handler_unittest.cc",
     "src/cef_delegate/nweb_preference_delegate_unittest.cc",
     "src/cef_delegate/nweb_web_storage_delegate_unittest.cc",
-    "src/cef_delegate/nweb_data_base_delegate_unittest.cc",
+    "src/cef_delegate/nweb_data_base_delegate_unittes.cc",
     "src/cef_delegate/nweb_render_handler_unittest.cc",
     "src/cef_delegate/nweb_scheme_handler_factory_unittest.cc",
     "src/ndk/scheme_handler/http_body_stream_unittest.cc",
@@ -635,8 +644,15 @@ source_set("unittests") {
     "src/nweb_impl_unittest.cc",
     "src/nweb_input_handler_unittest.cc",
     "src/nweb_inputmethod_handler_unittest.cc",
+    "src/nweb_notification_manager_delegate_unittest.cc",
+    "src/nweb_output_handler_unittest.cc",
     "src/set_renderer_seccomp_policy_unittest.cc",
     "src/nweb_web_storage_impl_unittest.cc",
+    "src/nweb_file_writer_cleaner_unittest.cc",
+    "src/nweb_data_base_impl_unittest.cc",
+    "browser/performance_manager/policies/ohos_bfcache_policy_unittest.cc",
+    "browser/performance_manager/policies/background_task_policy_unittest.cc",
+    "src/nweb_resize_helper_unittests.cc",
   ]
 
   deps = [

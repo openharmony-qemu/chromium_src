@@ -465,7 +465,9 @@ void ExtensionFrameHelper::WillReleaseScriptContext(
 }
 
 void ExtensionFrameHelper::SetTabId(int32_t tab_id) {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   CHECK_EQ(tab_id_, -1);
+#endif
   CHECK_GE(tab_id, 0);
   tab_id_ = tab_id;
 }

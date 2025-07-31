@@ -19,6 +19,7 @@
 #include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/frame/local_frame_view.h"
+#include "third_party/blink/renderer/platform/heap/persistent.h"
 
 namespace blink {
 class LocalFrameView;
@@ -33,7 +34,7 @@ class LocalFrameViewUtils {
   void PerformLayoutOnPreload(Document* document);
 #endif
 
-  LocalFrameView* local_frame_view_;
+  Persistent<LocalFrameView> local_frame_view_;
 };
 }  // namespace blink
 

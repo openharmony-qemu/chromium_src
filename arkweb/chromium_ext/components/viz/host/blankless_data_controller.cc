@@ -38,10 +38,10 @@ using namespace OHOS::NWeb;
 namespace base {
 namespace ohos {
 const base::FilePath::CharType DUMP_FILE_PATH[] = FILE_PATH_LITERAL("snapshot");
+const std::string DATABASE_DIR = "/data/storage/el2/base/cache/web";
 const std::string DUMP_FILE_PRE = "/web_frame_";
 const std::string DUMP_FILE_TYPE = ".png";
 const double SSIM_THRESHOLD = 0.95;
-const double SIMILARITY_THRESHOLD = 0.33;
 
 
 static double Mean(const std::vector<double>& data) {
@@ -259,25 +259,39 @@ static std::string GetDumpFilePath() {
   return dump_cache_path.value();
 }
 
-static bool SaveImage(const SkBitmap& bitmap, std::string& filename) {
+static bool EncodeSnapShotImage(const SkBitmap& bitmap, SkDynamicMemoryWStream& stream)
+{
+  SkPngEncoder::Options opts;
+  opts.fFilterFlags = SkPngEncoder::FilterFlag::kAll;
+  opts.fZLibLevel = 6; // 6 is the default compression ratio for PNG
+  return SkPngEncoder::Encode(&stream, bitmap.pixmap(), opts);
+}
+
+static bool SaveImage(std::string& filename, SkDynamicMemoryWStream& stream) {
   std::string dumpFilePath = GetDumpFilePath();
   if (dumpFilePath.empty()) {
     LOG(ERROR) << "blankless get dumpFilePath error!";
     return false;
   }
+
+  sk_sp<SkData> skData = stream.detachAsData();
+  if (!skData) {
+    LOG(ERROR) << "blankless snapshot stream data is invalid!";
+    return false;
+  }
+
   filename.append(dumpFilePath);
   filename.append(DUMP_FILE_PRE);
   filename.append(base::NumberToString(base::TimeTicks::Now().since_origin().InMicroseconds()));
   filename.append(DUMP_FILE_TYPE);
-  SkFILEWStream fileStream(filename.c_str());
-  SkPngEncoder::Options opts;
-  opts.fFilterFlags = SkPngEncoder::FilterFlag::kAll;
-  opts.fZLibLevel = 6; //6为png默认压缩率
-  bool res = SkPngEncoder::Encode(&fileStream, bitmap.pixmap(), opts);
+  base::FilePath filePath(filename);
+  std::string_view sv(static_cast<const char*>(skData->data()), skData->size());
+  bool res = base::WriteFile(filePath, sv);
   if (!res) {
-    LOG(ERROR) << "blankless save snapshot img error!";
+    LOG(ERROR) << "blankless write snapshot file error!";
+  } else {
+    LOG(DEBUG) << "blankless save snapshot img:" << filename.c_str();
   }
-  LOG(DEBUG) << "blankless save snapshot img:" << filename.c_str();
   return res;
 }
 
@@ -358,9 +372,13 @@ BlanklessDataController& BlanklessDataController::GetInstance()
     return instance;
 }
 
-BlanklessDataController::BlanklessDataController()
-  :dbInstance_(OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance())
+BlanklessDataController::BlanklessDataController() : dbInstance_(OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance())
 {
+    base::FilePath databaseDir(DATABASE_DIR);
+    if (!base::PathExists(databaseDir)) {
+      base::CreateDirectory(databaseDir);
+    }
+    dbInstance_.Init(DATABASE_DIR.c_str());
     web_snapshot_db_callback_ = std::make_shared<OhosWebSnapshotDataBaseCallbackImpl>();
     if (web_snapshot_db_callback_) {
       dbInstance_.RegisterDataBaseCallback(web_snapshot_db_callback_);
@@ -376,7 +394,7 @@ std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::
     snapshotInfo = it->second;
   }
   if (snapshotInfo == nullptr) {
-    auto snapshotDataItem = OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance().GetSnapshotDataItem(blankless_key);
+    auto snapshotDataItem = dbInstance_.GetSnapshotDataItem(blankless_key);
     snapshotInfo = std::make_shared<SnapshotInfo>();
     snapshotInfo->path = snapshotDataItem.wholePath;
     SkBitmap bitmap;
@@ -397,7 +415,16 @@ void BlanklessDataController::DumpBlanklessSnapshot(int64_t blankless_key,
 {
   SkBitmap bitmapNew = DownscaleToLowRes(bitmap, bitmap.width() / 2, bitmap.height() / 2);
   std::string newFile;
-  if (!SaveImage(bitmapNew, newFile)) {
+  SkDynamicMemoryWStream stream;
+  if (!EncodeSnapShotImage(bitmapNew, stream)) {
+    LOG(ERROR) << "blankless encode snapShot image failed!";
+    return;
+  }
+  if (stream.bytesWritten() > dbInstance_.GetCapacityInByte()) {
+    LOG(ERROR) << "blankless no capacity to save img";
+    return;
+  }
+  if (!SaveImage(newFile, stream)) {
     LOG(ERROR) << "blankless save snapshot img failed!";
     return;
   }
@@ -413,7 +440,10 @@ void BlanklessDataController::DumpBlanklessSnapshot(int64_t blankless_key,
     .lcpTime = lcp_time,
     .snapShotFileSize = snapShotFileSize,
     .snapShotFileTime = snapShotFileTime,
-    .preferenceHash = pref_hash
+    .preferenceHash = pref_hash,
+    .width = bitmap.width(),
+    .height = bitmap.height(),
+
   };
   std::shared_ptr<SnapshotInfo> snapshotInfo = GetHistorySnapshotInfo(blankless_key);
   if (!snapshotInfo || snapshotInfo->path.size() == 0 || snapshotInfo->bitmap.empty() ||
@@ -434,9 +464,7 @@ void BlanklessDataController::DumpBlanklessSnapshot(int64_t blankless_key,
     base::ohos::BlanklessController::GetInstance().CancelFrameInsertCallback(blankless_key);
     base::ohos::BlanklessController::GetInstance().FireFrameRemoveCallback(blankless_key);
   }
-  if (similarity > SIMILARITY_THRESHOLD) {
-    snapshotDataItem.staticPath = newFile;
-  }
+  snapshotDataItem.staticPath = newFile;
   dbInstance_.InsertSnapshotDataItem(blankless_key, snapshotDataItem);
 }
 
@@ -490,5 +518,9 @@ int32_t BlanklessDataController::SetBlanklessLoadingCacheCapacity(int capacity)
   return dbInstance_.SetBlanklessLoadingCacheCapacity(capacity);
 }
 
+int32_t BlanklessDataController::GetBlanklessLoadingCacheCapacity() const
+{
+  return dbInstance_.GetCapacityInByte();
+}
 }  // namespace ohos
 }  // namespace base

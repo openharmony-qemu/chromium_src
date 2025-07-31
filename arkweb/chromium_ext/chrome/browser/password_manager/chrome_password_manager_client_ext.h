@@ -95,7 +95,6 @@ public:
       const password_manager::PasswordForm& form);
 
   void SuppressKeyboard();
-  void UnsuppressKeyboard();
 
   bool IsLoginInfoConsistentWithFilled(
       const password_manager::PasswordForm& info);

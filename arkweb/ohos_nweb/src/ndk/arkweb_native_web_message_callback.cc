@@ -53,7 +53,7 @@ void ArkWebNativeWebMessageCallback::OnReceiveValue(
   }
 }
 
-void ArkWebNativeJavaScriptExecuteCallback::OnReceiveValueV2(
+void ArkWebNativeWebMessageCallback::OnReceiveValueV2(
     std::shared_ptr<NWebHapValue> result) {
   std::shared_ptr<NWebMessage> message = ConvertNwebHap2NwebMessage(result);
   OnReceiveValue(message);

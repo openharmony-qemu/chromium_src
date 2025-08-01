@@ -560,7 +560,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   std::string GetCurrentLanguage() override;
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-void SetNativeInnerWeb(bool isInnerWeb) override;
+  void SetNativeInnerWeb(bool isInnerWeb) override;
+  bool GetNativeEmbedMode() override;
+  bool IsEnableCustomVideoPlayer() override;
 #endif
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
   void NotifyPopupWindowResult(bool result) override;

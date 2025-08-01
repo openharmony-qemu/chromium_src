@@ -19,6 +19,7 @@
 
 namespace {
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 constexpr base::FilePath::CharType kNWebAssetHandleDir[] =
     FILE_PATH_LITERAL("migrate");
@@ -116,6 +117,7 @@ std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKeyForOtaFail() {
   return encryption_key;
 }
 #endif  // BUILDFLAG(ARKWEB_ENCRYPT)
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_ENCRYPT)
 bool DecryptWithIv(const std::string& ciphertext,
@@ -198,6 +200,7 @@ bool OSCryptImpl::DecryptStringForMigrate(const std::string& ciphertext,
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_ENCRYPT)
 crypto::SymmetricKey* OSCryptImpl::GetPasswordForOtaFail() {
   base::AutoLock auto_lock(OSCryptImpl::GetLock());
@@ -219,6 +222,7 @@ crypto::SymmetricKey* OSCryptImpl::GetPasswordV10ForMigrate() {
   return password_migrate_cache_.get();
 }
 #endif
+// LCOV_EXCL_STOP
 
 bool DecryptWithIvForInclude(const std::string& raw_ciphertext,
                              crypto::SymmetricKey* encryption_key,

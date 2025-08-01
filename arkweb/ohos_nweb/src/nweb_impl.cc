@@ -1527,9 +1527,8 @@ void NWebImpl::SetFitContentMode(int mode) {
 
 void NWebImpl::OnTouchPress(int32_t id, double x, double y, bool from_overlay) {
   WVLOG_I(
-      "NWebImpl::OnTouchPress id=%{public}d, x=%{public}f, y=%{public}f, "
-      "from_overlay=%{public}, nweb_id = %{public}u",
-      id, x, y, from_overlay, nweb_id_);
+      "NWebImpl::OnTouchPress id=%{public}d, from_overlay=%{public}d, "
+      "nweb_id = %{public}u", id, from_overlay, nweb_id_);
   if (input_handler_ == nullptr) {
     return;
   }
@@ -1554,9 +1553,8 @@ void NWebImpl::OnTouchRelease(int32_t id,
                               double y,
                               bool from_overlay) {
   WVLOG_I(
-      "NWebImpl::OnTouchRelease id=%{public}d, x=%{public}f, y=%{public}f, "
-      "from_overlay=%{public}d, nweb_id = %{public}u",
-      id, x, y, from_overlay, nweb_id_);
+      "NWebImpl::OnTouchRelease id=%{public}d, from_overlay=%{public}d, "
+      "nweb_id = %{public}u", id, from_overlay, nweb_id_);
   if (input_handler_ == nullptr) {
     return;
   }
@@ -1578,8 +1576,25 @@ void NWebImpl::OnTouchMove(
   if (input_handler_ == nullptr) {
     return;
   }
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool nativeEmbedMode = false;
+  bool isEnableCustomVideoPlayer = false;
+  if (nweb_delegate_) {
+    nativeEmbedMode = nweb_delegate_->GetNativeEmbedMode();
+    isEnableCustomVideoPlayer = nweb_delegate_->IsEnableCustomVideoPlayer();
+  }
+  if (nativeEmbedMode || isEnableCustomVideoPlayer) {
+    for (const auto& touch : touch_point_infos) {
+      std::vector<std::shared_ptr<NWebTouchPointInfo>> single_touch_point_info;
+      single_touch_point_info.emplace_back(touch);
+      input_handler_->OnTouchMove(single_touch_point_info, from_overlay);
+    }
+  } else {
+    input_handler_->OnTouchMove(touch_point_infos, from_overlay);
+  }
+#else
   input_handler_->OnTouchMove(touch_point_infos, from_overlay);
+#endif
 }
 
 void NWebImpl::OnTouchCancel() {

@@ -5365,23 +5365,6 @@ void NWebDelegate::WebExtensionTabReplaced(int32_t addedTabId,
   }
   GetBrowser()->GetHost()->WebExtensionTabReplaced(addedTabId, removedTabId);
 }
- 
-void NWebDelegate::WebExtensionTabZoomChange(
-    std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) {
-  if (!tabZoomChangeInfo) {
-    LOG(ERROR) << "WebExtensionTabZoomChange tabZoomChangeInfo is null";
-    return;
-  }
-  LOG(INFO) << "WebExtensionTabZoomChange, tab_id: "
-            << tabZoomChangeInfo->tabId
-            << " newZoomFactor: " << tabZoomChangeInfo->newZoomFactor
-            << " oldZoomFactor: " << tabZoomChangeInfo->oldZoomFactor;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabZoomChange failed, get browser failed";
-    return;
-  }
-  GetBrowser()->GetHost()->WebExtensionTabZoomChange(std::move(tabZoomChangeInfo));
-}
 
 void NWebDelegate::WebExtensionSetViewType(int32_t type) {
   if (!GetBrowser().get() || !GetBrowser()->GetHost()) {

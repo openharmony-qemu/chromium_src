@@ -29,6 +29,14 @@ class SkiaOutputSurfaceDependencyImplUtils {
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   bool GetIsScroll();
 #endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SendBlanklessSnapshotInfo(uint64_t blankless_key,
+                                 int32_t lcp_time,
+                                 int64_t pref_hash,
+                                 const SkBitmap& bitmap,
+                                 const std::vector<gfx::Rect>& quad_list);
+#endif
 };
 
 } // namespace viz

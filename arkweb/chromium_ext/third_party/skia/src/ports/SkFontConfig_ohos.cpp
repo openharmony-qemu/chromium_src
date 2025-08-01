@@ -413,9 +413,6 @@ int FontConfig_OHOS::checkConfigFile(const char* fname, Json::Value& root) {
  * \param font the font object to be printed
  */
 void FontConfig_OHOS::dumpFont(const FontInfo& font) const {
-    LOGI("name=%s, family=%s, weight=%d, width=%d, slant=%d, index=%d, stream=%p\n",
-        font.fname.c_str(), font.familyName.c_str(), font.style.weight(), font.style.width(), font.style.slant(),
-        font.index, font.stream.get());
     int count = font.axisSet.axis.size();
     if (count > 0) {
         SkString str;

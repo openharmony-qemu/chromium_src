@@ -119,7 +119,7 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
   std::string product_model =
       system_properties_adapter.GetDeviceInfoProductModel();
 
-  if (base::ohos::IsMobileDevice() && product_model != PRODUCT_MODEL_EMULATOR) {
+  if (base::ohos::IsMobileDevice() && product_model != PRODUCT_MODEL_EMULATOR && !isInnerWeb_) {
     if (NativeViewGLSurfaceEGL::Resize(size, scale_factor, color_space,
                                        has_alpha)) {
       OHOS::NWeb::OhosAdapterHelper::GetInstance()

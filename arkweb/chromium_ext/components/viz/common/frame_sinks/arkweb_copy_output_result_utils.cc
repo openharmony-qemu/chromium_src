@@ -23,12 +23,12 @@ ArkwebCopyOutputResultUtils::ArkwebCopyOutputResultUtils(CopyOutputResult* copyO
     : copyOutputResult_(copyOutputResult) {}
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-void ArkwebCopyOutputResultUtils::SetGpuServiceImpl(GpuServiceImpl* gpu_service_impl) {
-  gpu_service_impl_ = gpu_service_impl;
+void ArkwebCopyOutputResultUtils::SetImplOnGpu(SkiaOutputSurfaceImplOnGpu* impl_on_gpu) {	
+  impl_on_gpu_ = impl_on_gpu;	
 }
 
-GpuServiceImpl* ArkwebCopyOutputResultUtils::GetGpuServiceImpl() const {
-  return gpu_service_impl_;
+SkiaOutputSurfaceImplOnGpu* ArkwebCopyOutputResultUtils::ImplOnGpu() const {	
+  return impl_on_gpu_;	
 }
 
 void ArkwebCopyOutputResultUtils::SetBlanklessKey(uint64_t blankless_key) {

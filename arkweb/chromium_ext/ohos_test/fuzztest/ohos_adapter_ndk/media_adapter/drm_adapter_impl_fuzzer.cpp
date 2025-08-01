@@ -857,6 +857,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::DrmAdapterImpl__IsSupported(&fdp);
     OHOS::DrmAdapterImpl__StorageProvisionedResult(&fdp);
     OHOS::DrmAdapterImpl__StorageSaveInfoResult(&fdp);
+    OHOS::DrmAdapterImpl__StorageClearInfoResult(&fdp);
     OHOS::DrmAdapterImpl__ProcessKeySystemResponse(&fdp);
     OHOS::DrmAdapterImpl__StorageLoadInfoResult(&fdp);
     OHOS::DrmAdapterImpl__CreateKeySystem(&fdp);

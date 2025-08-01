@@ -1319,6 +1319,13 @@ component("net") {
       import("//arkweb/chromium_ext/net/base/arkweb_net_base_ext.gni")
       sources += arkweb_net_base_ext_sources
     }
+
+    if (arkweb_file_upload) {
+      sources += [
+        "//arkweb/chromium_ext/third_party/xdg_shared_mime_info/mime_cache.cc",
+        "//arkweb/chromium_ext/third_party/xdg_shared_mime_info/mime_cache.h",
+      ]
+    }
   }
 
   if (is_linux || is_ohos) {

@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
+#include "base/memory/ref_counted.h"
+#define private public
 #include "gpu/command_buffer/service/ohos/native_image_texture_owner.h"
+#undef private
 
 #include <gmock/gmock.h>
 

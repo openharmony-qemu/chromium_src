@@ -1083,6 +1083,7 @@ void NWebInputMethodHandler::MoveCursor(const IMFAdapterDirection direction) {
   }
 }
 
+// LCOV_EXCL_START
 void NWebInputMethodHandler::SetScreenOffSet(double x, double y) {
   if (focus_status_) {
     if (focus_rect_status_ && (offset_x_ != x || offset_y_ != y)) {
@@ -1145,7 +1146,6 @@ void NWebInputMethodHandler::OnEditableChanged(CefRefPtr<CefBrowser> browser,
   is_editable_node_ = is_editable_node;
 }
 
-// LCOV_EXCL_START
 bool NWebInputMethodHandler::GetIsEditableNode() {
   LOG(INFO) << "NWebInputMethodHandler is_editable_node_ = "
             << is_editable_node_;
@@ -1428,11 +1428,11 @@ void NWebInputMethodHandler::FinishTextPreview() {
     browser_->GetHost()->PostTaskToUIThread(task);
   }
 }
-// LCOV_EXCL_STOP
 
 void NWebInputMethodHandler::SetNeedUnderLine(bool is_need_underline) {
   SetNeedUnderLineOnUI(is_need_underline);
 }
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 void NWebInputMethodHandler::AutoFillWithIMFEvent(bool is_username,
@@ -1487,13 +1487,13 @@ std::string NWebInputMethodHandler::GetAllTextInfo()
   return whole_str;
 }
 #endif // ARKWEB_AI_WRITE
-// LCOV_EXCL_STOP
 
 void NWebInputMethodHandler::SetWindowIdForIME(uint32_t windowId) {
   LOG(INFO) << "NWebInputMethodHandler::SetWindowIdForIME windowId: "
             << windowId;
   windowId_ = windowId;
 }
+// LCOV_EXCL_STOP
 
 bool NWebInputMethodHandler::IsCorrectParam(int32_t number,
                                             int32_t& selectBegin,

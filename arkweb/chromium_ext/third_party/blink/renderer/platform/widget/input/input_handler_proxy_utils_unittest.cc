@@ -381,6 +381,9 @@ class InputHandlerProxyUtilsTest : public ::testing::Test {
                          bool value) {
     utils->mouse_native_map_[button] = value;
   }
+  bool GetEnableCustomVideoPlayer(InputHandlerProxyUtils* utils) {
+    return utils->enable_custom_video_player_;
+  }
 
  protected:
   base::test::SingleThreadTaskEnvironment task_environment_;
@@ -964,6 +967,18 @@ TEST_F(InputHandlerProxyUtilsTest, GetOverScrollOffset_001) {
   proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
   InputHandlerProxyUtils utils(&proxy);
   utils.GetOverScrollOffset();
+}
+
+TEST_F(InputHandlerProxyUtilsTest, SetEnableCustomVideoPlayer_001) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  utils.SetEnableCustomVideoPlayer(true);
+  EXPECT_EQ(GetEnableCustomVideoPlayer(&utils), true);
 }
 #pragma clang diagnostic pop
 }  // namespace blink

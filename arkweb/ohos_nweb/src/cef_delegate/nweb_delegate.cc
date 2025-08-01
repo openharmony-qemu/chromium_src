@@ -264,7 +264,7 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
       if (ArkWebGetErrno() != RESULT_OK) {
         auto data2 =
             std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
-        ConvertCefValueToNWebMessage(result, data);
+        ConvertCefValueToNWebMessage(result, data2);
         callback_->OnReceiveValue(data2);
       }
     }
@@ -3686,6 +3686,20 @@ void NWebDelegate::SetNativeInnerWeb(bool isInnerWeb) {
   if (GetBrowser().get()) {
     GetBrowser()->GetHost()->SetNativeInnerWeb(isInnerWeb);
   }
+}
+
+bool NWebDelegate::GetNativeEmbedMode() {
+  if (preference_delegate_) {
+    return preference_delegate_->GetNativeEmbedMode();
+  }
+  return false;
+}
+
+bool NWebDelegate::IsEnableCustomVideoPlayer() {
+  if (preference_delegate_) {
+    return preference_delegate_->IsEnableCustomVideoPlayer();
+  }
+  return false;
 }
 #endif
 

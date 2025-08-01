@@ -17,7 +17,9 @@
 
 #include "base/logging.h"
 #include "cef/include/cef_task.h"
+#include "nweb_core_value.h"
 #include "ohos_adapter_helper.h"
+#include "securec.h"
 
 namespace OHOS::NWeb {
 std::shared_ptr<NWebValue> AddNWebValueCef(CefRefPtr<CefValue> argument) {

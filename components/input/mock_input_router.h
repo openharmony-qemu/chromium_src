@@ -65,7 +65,7 @@ class MockInputRouter : public InputRouter {
   void WaitForInputProcessed(base::OnceClosure callback) override {}
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void SetGestureEventResult(bool result, bool stopPropagation) override {}
+  void SetGestureEventResult(bool result, bool stopPropagation, int32_t fingerId) override {}
   void SetNativeEmbedMode(bool flag) override {}
   void SetMouseEventResult(bool result, bool stopPropagation) override {}
 #endif

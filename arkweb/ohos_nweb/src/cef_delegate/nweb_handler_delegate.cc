@@ -43,6 +43,7 @@
 #include "nweb_console_log_impl.h"
 #include "nweb_context_menu_params_impl.h"
 #include "nweb_controller_handler_impl.h"
+#include "nweb_core_value.h"
 #include "nweb_cursor_info_impl.h"
 #include "nweb_data_resubmission_callback_impl.h"
 #include "nweb_date_time_chooser_impl.h"
@@ -4578,7 +4579,6 @@ void NWebHandlerDelegate::GetJavaScriptObjectMethods(
   } else {
     returned_method_names = ParseHapValueToValueHelper(hap_result);
   }
-  returned_method_names = ParseNWebValueToValueHelper(ark_result);
 }
 
 void NWebHandlerDelegate::RemoveJavaScriptObjectHolder(int32_t holder,

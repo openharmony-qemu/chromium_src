@@ -195,11 +195,13 @@ void WidgetInputHandlerManagerUtils::DidNativeEmbedEvent(
 }
 
 void WidgetInputHandlerManagerUtils::SetGestureEventResult(bool result,
-                                                      bool stopPropagation) {
+                                                           bool stopPropagation,
+                                                           int32_t fingerId) {
   if (!manager_->input_handler_proxy_) {
     return;
   }
-  manager_->input_handler_proxy_->proxy_utils()->SetGestureEventResult(result, stopPropagation);
+  manager_->input_handler_proxy_->proxy_utils()->SetGestureEventResult(
+      result, stopPropagation, fingerId);
 }
 
 void WidgetInputHandlerManagerUtils::TouchHitTest(const WebPointerEvent& event,
@@ -223,7 +225,7 @@ void WidgetInputHandlerManagerUtils::AsyncNativeHitTestResult(bool isNative,
                                                          size_t fingerId,
                                                          int layerId) {
   if (manager_->input_handler_proxy_) {
-    manager_->input_handler_proxy_->proxy_utils()->NativeHitTestResult(isNative, fingerId, layerId);
+    manager_->input_handler_proxy_->proxy_utils()->NativeHitTestResultV2(isNative, fingerId, layerId);
   }
 }
 
@@ -272,6 +274,14 @@ void WidgetInputHandlerManagerUtils::AsyncNativeMouseHitTestResult(bool isNative
   if (manager_->input_handler_proxy_) {
     manager_->input_handler_proxy_->proxy_utils()->NativeMouseHitTestResult(isNative, layerId);
   }
+}
+
+void WidgetInputHandlerManagerUtils::SetEnableCustomVideoPlayer(bool flag) {
+  if (!manager_->input_handler_proxy_) {
+    return;
+  }
+  manager_->input_handler_proxy_->proxy_utils()->SetEnableCustomVideoPlayer(
+      flag);
 }
 #endif
 // LCOV_EXCL_STOP

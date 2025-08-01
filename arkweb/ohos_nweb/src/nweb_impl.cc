@@ -338,9 +338,6 @@ static void ConfigureCrxInstaller(
   installer->set_off_store_install_allow_reason(
       extensions::CrxInstaller::OffStoreInstallAllowedFromSettingsPage);
   installer->set_install_cause(extension_misc::INSTALL_CAUSE_USER_DOWNLOAD);
-  installer->set_install_immediately(true);
-  installer->set_allow_silent_install(true);
-  installer->set_grant_permissions(true);
 }
 
 static void PerformCrxInstallation(const std::string& file_path,
@@ -365,8 +362,11 @@ static void PerformCrxInstallation(const std::string& file_path,
     return;
   }
 
+  Profile* profile = Profile::FromBrowserContext(context);
+  auto prompt = std::make_unique<ExtensionInstallPrompt>(profile, nullptr);
+
   scoped_refptr<extensions::CrxInstaller> installer =
-      extensions::CrxInstaller::Create(service, nullptr);
+      extensions::CrxInstaller::Create(service, std::move(prompt));
 
   ConfigureCrxInstaller(installer);
 

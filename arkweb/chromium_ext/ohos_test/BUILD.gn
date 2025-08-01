@@ -52,6 +52,7 @@ group("ohos_fuzz") {
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/multimodalinputnew_adapter:mmi_new_adapter_impl_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/battery_mgr_adapter:battery_mgr_adapter_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/datashare_adapter:datashare_adapter_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_snapshot_data_base:ohos_web_snapshot_data_base_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/event_handler_adapter:event_handler_adapter_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/location_adapter:location_adapter_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/print_manager_adapter:print_manager_adapter_fuzzer",

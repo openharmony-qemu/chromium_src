@@ -26,7 +26,7 @@ constexpr float kMaxBoostFlingSpeed = 9000;
 constexpr float kMaxBoostFlingSpeedPdf = 5000;
 using testing::Return;
 TEST_F(FlingBoosterTest, LimitVelocityPDF) {
-  auto& system_properties_mock = SystemPropertiesMock::getInstance();
+  auto& system_properties_mock = base::ohos::SystemPropertiesMock::getInstance();
   EXPECT_CALL(system_properties_mock, IsPcDeviceMock())
       .WillOnce(Return(false))
       .WillRepeatedly(Return(false));
@@ -38,10 +38,14 @@ TEST_F(FlingBoosterTest, LimitVelocityPDF) {
   fling_velocity.set_y(-10000);
   LimitVelocity(fling_velocity);
   EXPECT_GE(fling_velocity.y(), -kMaxBoostFlingSpeedPdf);
+  fling_velocity.set_x(kMaxBoostFlingSpeedPdf);
+  fling_velocity.set_y(kMaxBoostFlingSpeedPdf);
+  LimitVelocity(fling_velocity);
+  EXPECT_EQ(fling_velocity.y(), kMaxBoostFlingSpeedPdf);
 }
 
 TEST_F(FlingBoosterTest, LimitVelocityForPC) {
-  auto& system_properties_mock = SystemPropertiesMock::getInstance();
+  auto& system_properties_mock = base::ohos::SystemPropertiesMock::getInstance();
     EXPECT_CALL(system_properties_mock, IsPcDeviceMock())
       .WillOnce(Return(true))
       .WillRepeatedly(Return(true));
@@ -52,6 +56,10 @@ TEST_F(FlingBoosterTest, LimitVelocityForPC) {
   fling_velocity.set_y(-10000);
   LimitVelocity(fling_velocity);
   EXPECT_GE(fling_velocity.y(), -kMaxBoostFlingSpeed);
+  fling_velocity.set_x(kMaxBoostFlingSpeed);
+  fling_velocity.set_y(kMaxBoostFlingSpeed);
+  LimitVelocity(fling_velocity);
+  EXPECT_EQ(fling_velocity.y(), kMaxBoostFlingSpeed);
 }
 
 }  // namespace test

@@ -29,7 +29,7 @@ TEST_P(InputEventOhosTestForGetWebEventName, GetWebEventName) {
   EXPECT_EQ(InputEventOhos::GetWebEventName(event), std::get<2>(GetParam()));
 }
 
-TEST_F(InputEventOhosTest, FilterLogEvent_ExpectTrue) {
+TEST(InputEventOhosTest, FilterLogEvent_ExpectTrue) {
   auto event = WebTouchEvent();
   event.SetType(WebInputEvent::Type::kMouseUp);
   EXPECT_TRUE(InputEventOhos::FilterLogEvent(event));

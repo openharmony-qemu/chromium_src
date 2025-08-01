@@ -4219,19 +4219,31 @@ int NWebHandlerDelegate::NotifyJavaScriptResult(CefRefPtr<CefListValue> args,
     return 0;
   }  // ets proxy object
 
-  std::vector<std::shared_ptr<NWebValue>> value_vector = ParseCefValueTONWebValue(args, args->GetSize());
   if (!nweb_javascript_callback_) {
     return 1;
   }
 
-  std::shared_ptr<NWebValue> ark_result =
-      nweb_javascript_callback_->GetJavaScriptResult(value_vector, method, object_name, routing_id, object_id);
-  if (!ark_result) {
+  std::shared_ptr<NWebHapValue> hap_result =
+      std::make_shared<NWebCoreValue>(NWebHapValue::Type::NONE);
+  std::vector<std::shared_ptr<NWebHapValue>> hap_value_vector =
+      ParseCefValueToHapValue(args, args->GetSize());
+  nweb_javascript_callback_->GetJavaScriptResultV2(
+      hap_value_vector, method, object_name, routing_id, object_id, hap_result);
+  if (ArkWebGetErrno() != RESULT_OK) {
+    std::vector<std::shared_ptr<NWebValue>> value_vector =
+        ParseCefValueTONWebValue(args, args->GetSize());
+    std::shared_ptr<NWebValue> ark_result =
+        nweb_javascript_callback_->GetJavaScriptResult(
+            value_vector, method, object_name, routing_id, object_id);
+    if (!ark_result) {
       return 1;
+    }
+    ParseNWebValueToValue(ark_result, result);
+    return 0;
   }
  
-  ParseNWebValueToValue(ark_result, result);
-  return ark_result->error_;
+  ParseNWebValueToHapValue(hap_result, result);
+  return 0;
 }
 
 // flowbuf sketch diagram
@@ -4486,19 +4498,31 @@ int NWebHandlerDelegate::NotifyJavaScriptResultFlowbuf(
     return 0;
   }  // ets proxy object
 
-  std::vector<std::shared_ptr<NWebValue>> value_vector = ParseCefValueTONWebValue(args, args->GetSize());
   if (!nweb_javascript_callback_) {
     return 1;
   }
 
-  std::shared_ptr<NWebValue> ark_result =
-      nweb_javascript_callback_->GetJavaScriptResultFlowbuf(value_vector, method, object_name, fd,routing_id, object_id);
-  if (!ark_result) {
+  std::shared_ptr<NWebHapValue> hap_result =
+      std::make_shared<NWebCoreValue>(NWebHapValue::Type::NONE);
+  std::vector<std::shared_ptr<NWebHapValue>> hap_value_vector =
+      ParseCefValueToHapValue(args, args->GetSize());
+  nweb_javascript_callback_->GetJavaScriptResultFlowbufV2(
+      hap_value_vector, method, object_name, fd, routing_id, object_id,
+      hap_result);
+  if (ArkWebGetErrno() != RESULT_OK) {
+    std::vector<std::shared_ptr<NWebValue>> value_vector =
+        ParseCefValueTONWebValue(args, args->GetSize());
+    std::shared_ptr<NWebValue> ark_result =
+        nweb_javascript_callback_->GetJavaScriptResultFlowbuf(
+            value_vector, method, object_name, fd, routing_id, object_id);
+    if (!ark_result) {
       return 1;
+    }
+    ParseNWebValueToValue(ark_result, result);
+    return 0;
   }
- 
-  ParseNWebValueToValue(ark_result, result);
-  return ark_result->error_;
+  ParseNWebValueToHapValue(hap_result, result);
+  return 0;
 }
 
 bool NWebHandlerDelegate::HasJavaScriptObjectMethods(
@@ -4537,11 +4561,22 @@ void NWebHandlerDelegate::GetJavaScriptObjectMethods(
                   "nweb_javascript_callback_ is null";
     return;
   }
-
-  std::shared_ptr<NWebValue> ark_result =
-      nweb_javascript_callback_->GetJavaScriptObjectMethods(object_id);
-  if (!ark_result) {
+  
+  std::shared_ptr<NWebHapValue> hap_result =
+      std::make_shared<NWebCoreValue>(NWebHapValue::Type::NONE);
+  nweb_javascript_callback_->GetJavaScriptObjectMethodsV2(object_id,
+                                                          hap_result);
+  if (ArkWebGetErrno() != RESULT_OK) {
+    std::shared_ptr<NWebValue> ark_result =
+        nweb_javascript_callback_->GetJavaScriptObjectMethods(object_id);
+    if (!ark_result) {
+      LOG(ERROR)
+          << "NWebHandlerDelegate::GetJavaScriptObjectMethods result is null";
       return;
+    }
+    returned_method_names = ParseNWebValueToValueHelper(ark_result);
+  } else {
+    returned_method_names = ParseHapValueToValueHelper(hap_result);
   }
   returned_method_names = ParseNWebValueToValueHelper(ark_result);
 }

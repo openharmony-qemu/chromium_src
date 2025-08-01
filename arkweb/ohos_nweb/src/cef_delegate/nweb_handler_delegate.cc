@@ -5098,7 +5098,7 @@ void NWebHandlerDelegate::OnPipEvent(CefRefPtr<CefBrowser> browser,
   if (web_app_client_extension_listener_ != nullptr &&
       web_app_client_extension_listener_->OnPipEvent != nullptr) {
     web_app_client_extension_listener_->OnPipEvent(
-        event, web_app_client_extension_listener_->nweb_id);
+        web_app_client_extension_listener_->nweb_id, event);
   }
 }
 #endif

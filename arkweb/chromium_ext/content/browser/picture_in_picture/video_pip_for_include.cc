@@ -72,7 +72,9 @@ PictureInPictureResult VideoPictureInPictureWindowControllerImpl::StartSessionEx
   // will end. The renderer must call `StartSession()` again.
   EmbedSurface(surface_id, natural_size);
   SetShowPlayPauseButton(show_play_pause_button);
-
+  if (GetWebContentsImpl() && GetWebContentsImpl()->AsWebContentsImplExt()) {
+    GetWebContentsImpl()->AsWebContentsImplExt()->OnPipEvent(PIP_STATE_ENTER);
+  }
   return result;
 }
 
@@ -97,7 +99,9 @@ void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPictureExt(
     active_session_->GetMediaPlayerRemote()->RequestPause(
         /*triggered_by_user=*/false);
   }
-
+  if (GetWebContentsImpl() && GetWebContentsImpl()->AsWebContentsImplExt()) {
+    GetWebContentsImpl()->AsWebContentsImplExt()->OnPipEvent(PIP_STATE_EXIT);
+  }
   active_session_->Shutdown();
   active_session_ = nullptr;
 }
@@ -105,7 +109,6 @@ void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPictureExt(
 void VideoPictureInPictureWindowControllerImpl::OnPictureInPictureStateChanged(
     const MediaPlayerId& id, uint32_t state) {
   DCHECK(active_session_);
-  LOG(INFO) << "PIC ------------" << __func__ << " state:" << state <<  " " << id.delegate_id << " " <<  id.frame_routing_id.child_id << " " << id.frame_routing_id.frame_routing_id;
   GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(state, id.delegate_id,
                               id.frame_routing_id.child_id,
                               id.frame_routing_id.frame_routing_id, 0, 0);

@@ -1010,7 +1010,7 @@ void WebContentsImplExt::UpdateBrowserControlsState(
 }
 
 #if BUILDFLAG(ARKWEB_PIP)
-MediaPlayerId WebContentsImpl::GetMediaPlayerId(int delegate_id,
+MediaPlayerId WebContentsImplExt::GetMediaPlayerId(int delegate_id,
                                                 int child_id,
                                                 int frame_routing_id,
                                                 bool& status) {
@@ -1020,7 +1020,7 @@ MediaPlayerId WebContentsImpl::GetMediaPlayerId(int delegate_id,
                                                         status);
 }
 
-void WebContentsImpl::OnPip(int status,
+void WebContentsImplExt::OnPip(int status,
                             int delegate_id,
                             int child_id,
                             int frame_routing_id,
@@ -1028,15 +1028,27 @@ void WebContentsImpl::OnPip(int status,
                             int height) {
 
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::OnPip");
-  if (delegate_)
+  if (delegate_) {
     delegate_->OnPip(status, delegate_id, child_id,
                      frame_routing_id, width, height);
+    if (status == PIP_STATE_ENTER || status == PIP_STATE_HLS_ENTER) {
+      pip_status_ = true;
+    }
+  }
 }
 
-void WebContentsImpl::OnPipEvent(int event) {
+void WebContentsImplExt::OnPipEvent(int event) {
   LOG(INFO) << __func__ << " Pip event:" << event;
   if (delegate_) {
+    if ((event == PIP_STATE_EXIT || event == PIP_STATE_HLS_EXIT) &&
+         !pip_status_) {
+      return;
+    }
     delegate_->OnPipEvent(event);
+    if ((event == PIP_STATE_EXIT || event == PIP_STATE_HLS_EXIT) &&
+         pip_status_) {
+      pip_status_ = false;
+    }
   }
 }
 #endif

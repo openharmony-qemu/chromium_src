@@ -6,6 +6,9 @@
 
 #include <utility>
 
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/logging.h"
+#endif  // BUILDFLAG(ARKWEB_PDF)
 #include "base/memory/ptr_util.h"
 #include "base/notreached.h"
 #include "components/pdf/browser/pdf_document_helper_client.h"
@@ -122,6 +125,14 @@ void PDFDocumentHelper::SelectionChanged(const gfx::PointF& left,
 
   DidScroll();
 }
+
+#if BUILDFLAG(ARKWEB_PDF)
+void PDFDocumentHelper::UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) {
+  LOG(DEBUG) << "pdf clipped selection bounds: " << clipped_selection_bounds.ToString();
+  touch_selection_controller_client_manager_->
+    UpdateClientClippedSelectionBounds(clipped_selection_bounds);
+}
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
 void PDFDocumentHelper::SetPluginCanSave(bool can_save) {
   client_->SetPluginCanSave(pdf_host_receivers_.GetCurrentTargetFrame(),

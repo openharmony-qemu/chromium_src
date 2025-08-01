@@ -69,4 +69,9 @@ interface PdfHost {
   // completed or canceled.
   [EnableIf=enable_screen_ai_service]
   OnSearchifyStateChange(bool busy);
+
+  // #if BUILDFLAG(ARKWEB_PDF)
+  [EnableIf=arkweb_pdf]
+  UpdateClientClippedSelectionBoundsForPDF(gfx.mojom.Rect clipped_selection_bounds);
+  // #endif
 };

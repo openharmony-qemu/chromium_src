@@ -438,15 +438,15 @@ void DrmAdapterImpl__UpdateSession(FuzzedDataProvider* fdp)
     response = { 0x01, 0x02, 0x03 };                         // Example response data
     auto validSessionId = std::make_shared<SessionId>("test_eme_id", nullptr, 0); // Assume this constructor exists
     std::string mimeType = "video/mp4";
-    int32_t result = drmAdapter.UpdateSession(promiseId, emeId, response);
+    drmAdapter.UpdateSession(promiseId, emeId, response);
     drmAdapter.CreateKeySystem(GetKeySystemName(), "origin_id", SECURITY_LEVEL_3);
-    result = drmAdapter.UpdateSession(promiseId, emeId, response);
+    drmAdapter.UpdateSession(promiseId, emeId, response);
     drmAdapter.RegistDrmCallback(mockCallback_);
     drmAdapter.PutSessionInfo(validSessionId, mimeType, static_cast<int32_t>(MediaKeyType::MEDIA_KEY_TYPE_ONLINE));
-    result = drmAdapter.UpdateSession(promiseId, emeId, response);
+    drmAdapter.UpdateSession(promiseId, emeId, response);
     drmAdapter.PutSessionInfo(validSessionId, mimeType, static_cast<int32_t>(MediaKeyType::MEDIA_KEY_TYPE_RELEASE));
-    result = drmAdapter.UpdateSession(promiseId, emeId, response);
-    result = drmAdapter.UpdateSession(promiseId, "invalid_eme_id", response);
+    drmAdapter.UpdateSession(promiseId, emeId, response);
+    drmAdapter.UpdateSession(promiseId, "invalid_eme_id", response);
     drmAdapter.RemoveSessionInfo(validSessionId);
     drmAdapter.ReleaseMediaKeySession();
     drmAdapter.ReleaseMediaKeySystem();
@@ -461,18 +461,18 @@ void DrmAdapterImpl__CloseSession(FuzzedDataProvider* fdp)
     auto validSessionId = std::make_shared<SessionId>("test_eme_id", nullptr, 0);
     promiseId = 1;
     emeId = "test_eme_id";
-    int32_t result = drmAdapter.CloseSession(promiseId, emeId);
+    drmAdapter.CloseSession(promiseId, emeId);
     if (g_isSupportDrm) {
         drmAdapter.CreateKeySystem(GetKeySystemName(), "origin_id", SECURITY_LEVEL_3);
-        result = drmAdapter.CloseSession(promiseId, emeId);
+        drmAdapter.CloseSession(promiseId, emeId);
         std::string mimeType = "video/mp4";
         int32_t sessionType = 1;
         drmAdapter.PutSessionInfo(validSessionId, mimeType, sessionType);
-        result = drmAdapter.CloseSession(promiseId, emeId);
+        drmAdapter.CloseSession(promiseId, emeId);
         drmAdapter.RemoveSessionInfo(validSessionId);
         drmAdapter.PutSessionInfo(validSessionId, mimeType, sessionType);
         drmAdapter.keySystemType_ = KeySystemType::WIDEVINE;
-        result = drmAdapter.CloseSession(promiseId, emeId);
+        drmAdapter.CloseSession(promiseId, emeId);
         drmAdapter.ReleaseMediaKeySession();
         drmAdapter.ReleaseMediaKeySystem();
     }
@@ -487,18 +487,18 @@ void DrmAdapterImpl__RemoveSession(FuzzedDataProvider* fdp)
     auto validSessionId = std::make_shared<SessionId>("test_eme_id", nullptr, 0);
     promiseId = 1;
     emeId = "test_eme_id";
-    int32_t result = drmAdapter.CloseSession(promiseId, emeId);
+    drmAdapter.CloseSession(promiseId, emeId);
     if (g_isSupportDrm) {
         drmAdapter.CreateKeySystem(GetKeySystemName(), "origin_id", SECURITY_LEVEL_3);
-        result = drmAdapter.CloseSession(promiseId, emeId);
+        drmAdapter.CloseSession(promiseId, emeId);
         std::string mimeType = "video/mp4";
         int32_t sessionType = 1;
         drmAdapter.PutSessionInfo(validSessionId, mimeType, sessionType);
-        result = drmAdapter.CloseSession(promiseId, emeId);
+        drmAdapter.CloseSession(promiseId, emeId);
         drmAdapter.RemoveSessionInfo(validSessionId);
         drmAdapter.PutSessionInfo(validSessionId, mimeType, sessionType);
         drmAdapter.keySystemType_ = KeySystemType::WIDEVINE;
-        result = drmAdapter.CloseSession(promiseId, emeId);
+        drmAdapter.CloseSession(promiseId, emeId);
         drmAdapter.ReleaseMediaKeySession();
         drmAdapter.ReleaseMediaKeySystem();
     }
@@ -512,10 +512,10 @@ void DrmAdapterImpl__LoadSession(FuzzedDataProvider* fdp)
     drmAdapter.LoadSession(promiseId, sessionId);
     promiseId = 1;
     sessionId = "sessionId";
-    int32_t result = drmAdapter.LoadSession(promiseId, sessionId);
+    drmAdapter.LoadSession(promiseId, sessionId);
     drmAdapter.RegistDrmCallback(mockCallback_);
     drmAdapter.CreateKeySystem(GetKeySystemName(), "origin_id", SECURITY_LEVEL_3);
-    result = drmAdapter.LoadSession(promiseId, sessionId);
+    drmAdapter.LoadSession(promiseId, sessionId);
     drmAdapter.ReleaseMediaKeySession();
     drmAdapter.ReleaseMediaKeySystem();
 }

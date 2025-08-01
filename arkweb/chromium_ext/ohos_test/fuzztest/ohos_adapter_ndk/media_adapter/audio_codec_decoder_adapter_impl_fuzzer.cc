@@ -431,6 +431,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
   OHOS::AudioCodecDecoderImpl__DecoderCallback(&fdp);
   OHOS::AudioCodecDecoderImpl__DecoderCallback2(&fdp);
   OHOS::AudioCodecDecoderImpl__CreateAudioDecoder(&fdp);
+  OHOS::AudioCodecDecoderImpl__QueueInputBufferDec(&fdp);
   OHOS::AudioCodecDecoderImpl__DecoderFunctions(&fdp);
   OHOS::AudioCodecDecoderImpl__DecoderFunctions02(&fdp);
   OHOS::AudioCodecDecoderImpl__DecoderFunctions03(&fdp);

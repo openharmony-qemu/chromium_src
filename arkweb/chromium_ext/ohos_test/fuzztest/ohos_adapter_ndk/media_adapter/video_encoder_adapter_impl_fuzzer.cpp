@@ -20,6 +20,9 @@
 #include <vector>
 #include <string>
 #include <fuzzer/FuzzedDataProvider.h>
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "ohos_adapter_helper.h"
 
 using namespace OHOS::NWeb;
 
@@ -101,6 +104,11 @@ public:
     double frameRate_ = 0.0;
 };
 
+std::unique_ptr<OHOS::NWeb::MediaCodecAdapter> CreateMediaCodecEncoderAdapterMock()
+{
+    return OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateMediaCodecEncoderAdapter();
+}
+
 bool VideoEncoderAdapterImplFuzzTest(FuzzedDataProvider* fdp)
 {
     VideoEncoderAdapterImpl videoEncoderAdapterImpl;
@@ -111,6 +119,8 @@ bool VideoEncoderAdapterImplFuzzTest(FuzzedDataProvider* fdp)
 
     std::string mimeParam = fdp->ConsumeRandomLengthString(MAX_STRING_LENGTH);
     videoEncoderAdapterImpl.CreateVideoCodecByMime(mimeParam);
+    std::string name = fdp->ConsumeRandomLengthString(MAX_STRING_LENGTH);
+    videoEncoderAdapterImpl.CreateVideoCodecByName(name);
     videoEncoderAdapterImpl.SetCodecCallback(nullptr);
     videoEncoderAdapterImpl.SetCodecCallback(callbackImpl);
     videoEncoderAdapterImpl.Configure(nullptr);
@@ -146,6 +156,49 @@ bool VideoEncoderAdapterImplFuzzTest(FuzzedDataProvider* fdp)
     return true;
 }
 
+bool VideoAvcEncoderAdapterImplFuzzTest(FuzzedDataProvider* fdp)
+{
+    auto videoEncoderAdapter = CreateMediaCodecEncoderAdapterMock();
+    if (!videoEncoderAdapter) {
+        return false;
+    }
+
+    std::shared_ptr<CodecCallbackAdapterMock> callbackImpl =
+        std::make_shared<CodecCallbackAdapterMock>();
+    std::shared_ptr<CodecConfigParaAdapterMock> config =
+        std::make_shared<CodecConfigParaAdapterMock>();
+    
+    videoEncoderAdapter->CreateVideoCodecByMime("video/avc");
+    videoEncoderAdapter->SetCodecCallback(callbackImpl);
+    videoEncoderAdapter->Configure(config);
+    videoEncoderAdapter->Prepare();
+    videoEncoderAdapter->Start();
+    videoEncoderAdapter->Stop();
+    videoEncoderAdapter->Reset();
+    videoEncoderAdapter->Release();
+    videoEncoderAdapter->CreateInputSurface();
+    videoEncoderAdapter->ReleaseOutputBuffer(0, true);
+    videoEncoderAdapter->RequestKeyFrameSoon();
+
+    std::shared_ptr<CodecCallbackAdapterMock> cb = std::make_shared<CodecCallbackAdapterMock>();
+    NWeb::EncoderCallbackImpl encoderCallback(cb);
+    int32_t errorCode = fdp->ConsumeIntegralInRange<int32_t>(0, 1);
+    encoderCallback.OnError(errorCode);
+
+    OH_AVFormat* format = OH_AVFormat_Create();
+    encoderCallback.OnOutputFormatChanged(format);
+    OH_AVFormat_Destroy(format);
+
+    int32_t capacity = fdp->ConsumeIntegralInRange<int32_t>(1, 8);
+    int32_t bufferIndex = fdp->ConsumeIntegralInRange<int32_t>(1, 100);
+    OH_AVBuffer* buffer = OH_AVBuffer_Create(capacity);
+    encoderCallback.OnInputBufferAvailable(bufferIndex, buffer);
+    encoderCallback.OnOutputBufferAvailable(bufferIndex, buffer);
+    OH_AVBuffer_Destroy(buffer);
+
+    return true;
+}
+
 }  // namespace OHOS
 
 /* Fuzzer entry point */
@@ -158,6 +211,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     /* Run your code on data */
     FuzzedDataProvider fdp(data, size);
     OHOS::VideoEncoderAdapterImplFuzzTest(&fdp);
+    OHOS::VideoAvcEncoderAdapterImplFuzzTest(&fdp);
  
     return 0;
 }

@@ -745,8 +745,6 @@ class NWebDelegateInterface
       std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) = 0;
   virtual void WebExtensionTabReplaced(int32_t addedTabId,
                                        int32_t removedTabId) = 0;
-  virtual void WebExtensionTabZoomChange(
-      std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) = 0;
   virtual void WebExtensionSetViewType(int32_t type) = 0;
 #endif
 

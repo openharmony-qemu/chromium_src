@@ -5525,14 +5525,6 @@ void NWebImpl::WebExtensionTabReplaced(int32_t addedTabId,
   nweb_delegate_->WebExtensionTabReplaced(addedTabId, removedTabId);
 }
 
-void NWebImpl::WebExtensionTabZoomChange(
-    std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->WebExtensionTabZoomChange(std::move(tabZoomChangeInfo));
-}
-
 void NWebImpl::WebExtensionSetViewType(int32_t type) {
   if (nweb_delegate_ == nullptr) {
     return;

@@ -3605,7 +3605,7 @@ void NWebImpl::UnLoadWebExtension(const std::string& eid) {
 
     bool result = extensions::ExtensionSystem::Get(browser_context)
         ->extension_service()
-        ->UninstallExtension(eid, extensions::UNINSTALL_REASON_COMPONENT_REMOVED, error);
+        ->UninstallExtension(eid, extensions::UNINSTALL_REASON_USER_INITIATED, error);
     WVLOG_I("NWebImpl::UnLoadWebExtension result:%{public}d, error:%{public}s", result, error);
     return;
   }

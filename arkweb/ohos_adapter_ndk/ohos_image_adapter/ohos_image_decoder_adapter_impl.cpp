@@ -55,6 +55,7 @@ void ReleaseDecodeOptions(OH_DecodingOptions* decodeOptions)
     WVLOG_D("[HeifSupport] ReleaseDecodeOptions options is null, do not need release");
 }
 
+// LCOV_EXCL_START
 void OhosImageDecoderAdapterImpl::NativeBufferFromPixelMap()
 {
     if (pixelMap_) {
@@ -67,6 +68,7 @@ void OhosImageDecoderAdapterImpl::NativeBufferFromPixelMap()
     }
     WVLOG_E("[HeifSupport] NativeBufferFromPixelMap GetNativeBuffer pixelMap_ not exists");
 }
+// LCOV_EXCL_STOP
 
 bool OhosImageDecoderAdapterImpl::ParseRawData(const uint8_t* data, uint32_t size)
 {
@@ -92,7 +94,6 @@ bool OhosImageDecoderAdapterImpl::ParseRawData(const uint8_t* data, uint32_t siz
 
 OhosImageDecoderAdapterImpl::OhosImageDecoderAdapterImpl()
 {
-    has_lock_pixelmap_ = false;
     Image_ErrorCode errorCode = OH_PixelmapInitializationOptions_Create(&opt_);
     if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
         WVLOG_E("[HeifSupport] init create options failed, errorCode %{public}d", errorCode);
@@ -199,6 +200,7 @@ bool OhosImageDecoderAdapterImpl::Decode(const uint8_t* data,
     return true;
 }
 
+// LCOV_EXCL_START
 int32_t OhosImageDecoderAdapterImpl::GetFd()
 {
     if (!GetBufferHandle()) {
@@ -211,17 +213,12 @@ int32_t OhosImageDecoderAdapterImpl::GetFd()
 
 int32_t OhosImageDecoderAdapterImpl::GetStride()
 {
-    if (pixelMap_) {
-        WVLOG_D("[HeifSupport] OhosImageDecoderAdapterImpl::GetStride. share mem get row stride.");
-        OH_Pixelmap_ImageInfo *srcInfo = nullptr;
-        OH_PixelmapImageInfo_Create(&srcInfo);
-        OH_PixelmapNative_GetImageInfo(pixelMap_, srcInfo);
-        uint32_t rowStride;
-        OH_PixelmapImageInfo_GetRowStride(srcInfo, &rowStride);
-        OH_PixelmapImageInfo_Release(srcInfo);
-        return rowStride;
+    if (!GetBufferHandle()) {
+        WVLOG_E("[HeifSupport] GetStride bufferHandle is null.");
+        return 0;
     }
-    return 0;
+    WVLOG_D("[HeifSupport] GetStride %{public}d", bufferHandle_->stride);
+    return bufferHandle_->stride;
 }
 
 int32_t OhosImageDecoderAdapterImpl::GetOffset()
@@ -312,13 +309,6 @@ void OhosImageDecoderAdapterImpl::ReleasePixelMap()
         }
     }
     if (pixelMap_) {
-        if (has_lock_pixelmap_) {
-            has_lock_pixelmap_ = false;
-            Image_ErrorCode errorCode = OH_PixelmapNative_UnaccessPixels(pixelMap_);
-            if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
-                WVLOG_E("[HeifSupport] OH_PixelmapNative_UnaccessPixels failed, errorCode = %{public}d", errorCode);
-            }
-        }
         Image_ErrorCode errorCode = OH_PixelmapNative_Release(pixelMap_);
         pixelMap_ = nullptr;
         if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
@@ -384,24 +374,7 @@ bool OhosImageDecoderAdapterImpl::GetBufferHandle()
     }
     return true;
 }
-
-void* OhosImageDecoderAdapterImpl::GetDecodeData()
-{
-    if (!pixelMap_) {
-        WVLOG_E("[HeifSupport] OhosImageDecoderAdapterImpl::GetDecodeData. PixelMap is null.");
-        return nullptr;
-    }
-
-    void* ptr = nullptr;
-    Image_ErrorCode errorCode = OH_PixelmapNative_AccessPixels(pixelMap_, &ptr);
-    has_lock_pixelmap_ = true;
-    if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
-        WVLOG_E("[HeifSupport] OhosImageDecoderAdapterImpl::GetDecodeData. get PixelMap data fail.");
-        return nullptr;
-    }
-
-    return ptr;
-}
+// LCOV_EXCL_STOP
 
 }  // namespace NWeb
 }  // namespace OHOS

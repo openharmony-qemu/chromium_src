@@ -38,10 +38,10 @@ FrameSnapshotCopyOutputRequest::FrameSnapshotCopyOutputRequest() : CopyOutputReq
     TRACE_EVENT0("viz", "blankless FrameSnapshotCopyOutputRequest callback");
     ArkwebCopyOutputResultUtils* utils = result->copy_output_result_utils();
     if (utils && utils->GetBlanklessKey() != base::ohos::BlanklessController::INVALID_BLANKLESS_KEY &&
-        utils->GetGpuServiceImpl()) {
+      utils->ImplOnGpu() && utils->ImplOnGpu()->impl_utils()) {
       SkBitmap bitmap = result->ScopedAccessSkBitmap().bitmap();
       LOG(DEBUG) << "blankless Send SnapShot Info";
-      utils->GetGpuServiceImpl()->SendBlanklessSnapshotInfo(
+      utils->ImplOnGpu()->impl_utils()->SendBlanklessSnapshotInfo(
           utils->GetBlanklessKey(), utils->GetLcpTime(), utils->GetPreferenceHash(), bitmap, utils->GetQuadList());
     }
 #endif

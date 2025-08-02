@@ -171,10 +171,12 @@ class MediaCodecDecoderBridgeImpl {
   void* window_from_surface_ = nullptr;
   int32_t video_surface_id_ = -1;
 #endif // ARKWEB_VIDEO_ASSISTANT
-  base::WeakPtrFactory<MediaCodecDecoderBridgeImpl> weak_factory_{this};
+
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   friend class MediaCodecDecoderBridgeImplTest;
 #endif
+
+  base::WeakPtrFactory<MediaCodecDecoderBridgeImpl> weak_factory_{this};
 };
 
 }  // namespace media

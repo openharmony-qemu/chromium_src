@@ -133,6 +133,12 @@ TEST(NWebDataBaseImplTEST, DeleteHttpAuthCredentials) {
     nweb_data_base_impl->DeleteHttpAuthCredentials();
 }
 
+TEST(NWebDataBaseImplTEST, DeleteHttpAuthCredentials_DelegateNull) {
+  auto nweb_data_base_impl = std::make_shared<NWebDataBaseImpl>();
+  nweb_data_base_impl->delegate_ = nullptr;
+  nweb_data_base_impl->DeleteHttpAuthCredentials();
+}
+
 TEST(NWebDataBaseImplTEST, SaveHttpAuthCredentials) {
     auto nweb_data_base_impl = std::make_shared<NWebDataBaseImpl>();
     const std::string host = "";
@@ -142,6 +148,16 @@ TEST(NWebDataBaseImplTEST, SaveHttpAuthCredentials) {
     nweb_data_base_impl->SaveHttpAuthCredentials(host, realm, username, pw);  
 }
 
+TEST(NWebDataBaseImplTEST, SaveHttpAuthCredentials_DelegateNull) {
+  auto nweb_data_base_impl = std::make_shared<NWebDataBaseImpl>();
+  nweb_data_base_impl->delegate_ = nullptr;
+  const std::string host = "";
+  const std::string realm = "";
+  const std::string username = "";
+  char pw[32];
+  nweb_data_base_impl->SaveHttpAuthCredentials(host, realm, username, pw);
+}
+
 TEST(NWebDataBaseImplTEST, GetHttpAuthCredentials) {
     auto nweb_data_base_impl = std::make_shared<NWebDataBaseImpl>();
     const std::string host = "";
@@ -149,6 +165,16 @@ TEST(NWebDataBaseImplTEST, GetHttpAuthCredentials) {
     std::string username = "";
     char pw[32];
     nweb_data_base_impl->GetHttpAuthCredentials(host, realm, username, pw, 1);  
+}
+
+TEST(NWebDataBaseImplTEST, GetHttpAuthCredentials_DelegateNull) {
+  auto nweb_data_base_impl = std::make_shared<NWebDataBaseImpl>();
+  nweb_data_base_impl->delegate_ = nullptr;
+  const std::string host = "";
+  const std::string realm = "";
+  std::string username = "";
+  char pw[32];
+  nweb_data_base_impl->GetHttpAuthCredentials(host, realm, username, pw, 1);
 }
 
 TEST(NWebDataBaseImplTEST, ExistPermissionByOrigin001) {
@@ -225,9 +251,13 @@ TEST(NWebDataBaseImplTEST, ClearAllPermission) {
     auto nweb_data_base_impl = std::make_shared<NWebDataBaseImplMock>();
     auto delegate_mock = std::make_shared<NWebDataBaseDelegateMock>();
     nweb_data_base_impl->SetDelegate(delegate_mock);
-    const std::string origin = "";
-    bool result = false;
     nweb_data_base_impl->ClearAllPermission(1, false);
+}
+
+TEST(NWebDataBaseImplTEST, ClearAllPermission_DelegateNull) {
+  auto nweb_data_base_impl = std::make_shared<NWebDataBaseImplMock>();
+  nweb_data_base_impl->delegate_ = nullptr;
+  nweb_data_base_impl->ClearAllPermission(1, false);
 }
 
 TEST(NWebDataBaseImplTEST, GetOriginsByPermission001) {

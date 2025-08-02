@@ -33,7 +33,7 @@
 #include "build/build_config.h"
 #include "gtest/gtest.h"
 
-using namespace OHOS:NWeb;
+using namespace OHOS::NWeb;
 
 TEST(NwebFileWriterCleanerTEST, CleanInBackground) {
     std::vector<base::FilePath> pending_files;
@@ -53,5 +53,6 @@ TEST(NwebFileWriterCleanerTEST, GetDeletePendingFiles) {
 }
 
 TEST(NwebFileWriterCleanerTEST, DeleteDownloadTempDir) {
+    NwebFileWriterCleaner::DeleteDownloadTempDir();
     NwebFileWriterCleaner::DeleteDownloadTempDir();
 }

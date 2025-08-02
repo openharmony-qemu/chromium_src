@@ -3760,7 +3760,8 @@ void PDFiumEngine::OnSelectionPositionChanged() {
                  std::numeric_limits<int32_t>::max(), 0, 0);
   gfx::Rect right;
 #if BUILDFLAG(ARKWEB_PDF)
-  OnSelectionPositionChangedForPDF(left, right, selection_);
+  gfx::Rect clipped_selection_bounds(0, 0, 0, 0);
+  OnSelectionPositionChangedForPDF(left, right, clipped_selection_bounds, selection_);
 #else
   for (const auto& sel : selection_) {
     const std::vector<gfx::Rect>& screen_rects =
@@ -3773,13 +3774,16 @@ void PDFiumEngine::OnSelectionPositionChanged() {
         right = rect;
     }
   }
-#endif
+#endif  // BUILDFLAG(ARKWEB_PDF)
   right.set_x(right.x() + right.width());
   if (left.IsEmpty()) {
     left.set_x(0);
     left.set_y(0);
   }
   client_->SelectionChanged(left, right);
+#if BUILDFLAG(ARKWEB_PDF)
+  client_->UpdateClientClippedSelectionBoundsForPDF(clipped_selection_bounds);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 gfx::Size PDFiumEngine::ApplyDocumentLayout(

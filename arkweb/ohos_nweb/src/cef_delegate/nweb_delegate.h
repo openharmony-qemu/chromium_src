@@ -760,8 +760,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) override;
   void WebExtensionTabReplaced(int32_t addedTabId,
                                int32_t removedTabId) override;
-  void WebExtensionTabZoomChange(std::unique_ptr<NWebExtensionTabZoomChangeInfo>
-                                     tabZoomChangeInfo) override;
   void WebExtensionSetViewType(int32_t type) override;
 #endif
 

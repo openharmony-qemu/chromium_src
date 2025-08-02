@@ -1088,11 +1088,6 @@ class MockNWebDelegate : public NWebDelegateInterface {
               WebExtensionTabReplaced,
               (int32_t addedTabId, int32_t removedTabId),
               (override));
-  MOCK_METHOD(
-      void,
-      WebExtensionTabZoomChange,
-      (std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo),
-      (override));
   MOCK_METHOD(void,
               WebExtensionTabRemoved,
               (int32_t tab_id, bool isWindowClosing, int32_t windowId),

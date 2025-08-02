@@ -124,7 +124,7 @@ class CAPTURE_EXPORT OHOSCaptureDelegate final {
   friend class OHOSCaptureDelegateTest;
 #endif
 
-  base::WeakPtrFactory<MediaCodecDecoderBridgeImpl> weak_factory_{this};
+  base::WeakPtrFactory<OHOSCaptureDelegate> weak_factory_{this};
 };
 
 }  // namespace media

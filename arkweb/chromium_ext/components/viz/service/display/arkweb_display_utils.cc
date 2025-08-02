@@ -38,6 +38,7 @@
 #include "arkweb/chromium_ext/components/viz/service/display/frame_snapshot_copy_output_request.h"
 #include "arkweb/chromium_ext/gpu/ipc/service/gpu_channel_ext.h"
 #include "gpu/ipc/service/gpu_channel.h"
+#include "gpu/ipc/service/gpu_channel_manager.h"
 #endif
 
 namespace viz {
@@ -362,11 +363,17 @@ void ArkwebDisplayUtils::removeDuplicatesRect(std::vector<gfx::Rect>& quad_list)
 
 //LCOV_EXCL_START
 void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
-  if (!gpu_channel_manager_) {
-    LOG(ERROR) << "blankless DumpSnapshotForBlankLess, gpu_channel_manager_ is nullptr";
+  if (!gpu_service_impl_) {
+    LOG(ERROR) << "blankless DumpSnapshotForBlankLess, gpu_service_impl_ is nullptr";
     return;
   }
-  gpu::GpuChannel* gpu_channel = gpu_channel_manager_->LookupChannel(client_id_);
+  const raw_ptr<gpu::GpuChannelManager> gpu_channel_manager = gpu_service_impl_->gpu_channel_manager();
+  if (!gpu_channel_manager) {
+    LOG(ERROR) << "blankless DumpSnapshotForBlankLess, gpu_channel_manager is nullptr";
+    return;
+  }
+
+  gpu::GpuChannel* gpu_channel = gpu_channel_manager->LookupChannel(client_id_);
   if (!gpu_channel) {
     LOG(DEBUG) << "blankless DumpSnapshotForBlankLess, dump is disable now";
     return;
@@ -381,7 +388,12 @@ void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
     return;
   }
   LOG(DEBUG) << "blankless create FrameSnapshotCopyOutputRequest";
-  auto snapshot_request = std::make_unique<FrameSnapshotCopyOutputRequest>();
+  auto snapshot_request = std::make_unique<FrameSnapshotCopyOutputRequest>(
+      base::BindOnce(&GpuServiceImpl::OnFrameSnapshotCopyOutputResult, gpu_service_impl_->GetWeakPtr()));
+  if (!snapshot_request || !snapshot_request->copy_output_request_utils()) {
+    LOG(ERROR) << "blankless snapshot_request is null";
+    return;
+  }
   snapshot_request->copy_output_request_utils()->SetBlanklessKey(info.blankless_key);
   snapshot_request->copy_output_request_utils()->SetLcpTime(info.lcp_time);
   snapshot_request->copy_output_request_utils()->SetPreferenceHash(info.pref_hash);
@@ -407,8 +419,8 @@ void ArkwebDisplayUtils::SetClientId(const uint32_t client_id) {
   client_id_ = client_id;
 }
 
-void ArkwebDisplayUtils::SetGpuChannelManager(gpu::GpuChannelManager* gpu_channel_manager) {
-  gpu_channel_manager_ = gpu_channel_manager;
+void ArkwebDisplayUtils::SetGpuServiceImpl(GpuServiceImpl* gpu_service_impl) {
+  gpu_service_impl_ = gpu_service_impl;
 }
 //LCOV_EXCL_STOP
 #endif

@@ -20,6 +20,15 @@ import "url/mojom/url.mojom";
 [EnableIf=is_win]
 import "ui/gfx/mojom/dxgi_info.mojom";
 
+[EnableIf=arkweb_blank_optimize]
+struct BlanklessBitmapMetadata {
+  int32 width;
+  int32 height;
+  int32 color_type;
+  int32 alpha_type;
+  uint64 size;
+};
+
 // Communication channel from the gpu process to the gpu host. This interface
 // should never have any sync function calls.
 interface GpuHost {
@@ -84,8 +93,9 @@ interface GpuHost {
 
   // send snapshot to save
   [EnableIf=arkweb_blank_optimize]
-  SendBlanklessSnapshotInfo(uint64 blankless_key, int32 lcp_time, int64 pref_hash, skia.mojom.BitmapN32 bitmap,
-                            array<gfx.mojom.Rect> quad_list);
+  SendBlanklessSnapshotInfo(uint64 blankless_key, int32 lcp_time, int64 pref_hash,
+                            array<gfx.mojom.Rect> quad_list, handle<shared_buffer> buffer,
+                            BlanklessBitmapMetadata metadata);
 
   // clear snapshot
   [EnableIf=arkweb_blank_optimize]

@@ -211,6 +211,10 @@ class PDFiumEngineClient {
   // Notifies that at least one page is searchified.
   virtual void OnHasSearchifyText() = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+ virtual void UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) {}
+#endif  // BUILDFLAG(ARKWEB_PDF)
 };
 
 }  // namespace chrome_pdf

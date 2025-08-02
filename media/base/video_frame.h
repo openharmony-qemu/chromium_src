@@ -788,6 +788,8 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
     ycbcr_info_ = ycbcr_info;
   }
 
+  std::vector<size_t> GetPlaneSize() { return CalculatePlaneSize(); }
+
  protected:
   friend class base::RefCountedThreadSafe<VideoFrame>;
 

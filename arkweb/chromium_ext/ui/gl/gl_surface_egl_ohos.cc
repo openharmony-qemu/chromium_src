@@ -152,7 +152,7 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
 bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
   TRACE_EVENT1("gpu", "NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation",
                "allocated", allocated);
-  if (base::ohos::IsEmulator()) {
+  if (base::ohos::IsEmulator() || isInnerWeb_) {
     return true;
   }
 

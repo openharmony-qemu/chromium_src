@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
 #include "cef_delegate/nweb_inputmethod_client.h"
 #include "condition_variable"
 #define private public
@@ -21,11 +24,8 @@
 #include "cef_client.h"
 #include "imf_adapter.h"
 #include "nweb_inputmethod_handler.h"
+#include "nweb_inputmethod_handler.cc"
 #include "ohos_nweb/include/nweb_errors.h"
-
-#include <gmock/gmock.h>
-
-#include "gtest/gtest.h"
 
 namespace OHOS::NWeb {
 
@@ -39,7 +39,6 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                      CefRefPtr<CefRequestContext> request_context) {
     return false;
   }
-
   CefRefPtr<CefBrowser> CreateBrowserSync(
       const CefWindowInfo& windowInfo,
       CefRefPtr<CefClient> client,
@@ -49,180 +48,118 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       CefRefPtr<CefRequestContext> request_context) {
     return nullptr;
   }
-
   CefRefPtr<CefBrowser> GetBrowser() override { return nullptr; }
-
   void CloseBrowser(bool force_close) override {}
-
   void SetDisallowSandboxFileAccessFromFileUrl(bool disallow) override {}
-
   bool TryCloseBrowser() override { return false; }
-
   MOCK_METHOD(void, SetFocus, (bool), (override));
-
   CefWindowHandle GetWindowHandle() { return 0; }
   CefWindowHandle GetOpenerWindowHandle() { return 0; }
-
   bool HasView() override { return false; }
-
   CefRefPtr<CefClient> GetClient() override { return nullptr; }
-
   CefRefPtr<CefRequestContext> GetRequestContext() override { return nullptr; }
-
   double GetZoomLevel() override { return 0.0; }
-
   void SetZoomLevel(double zoomLevel) override {}
-
   void RunFileDialog(FileDialogMode mode,
                      const CefString& title,
                      const CefString& default_file_path,
                      const std::vector<CefString>& accept_filters,
                      CefRefPtr<CefRunFileDialogCallback> callback) override {}
-
   void StartDownload(const CefString& url) override {}
-
   void DownloadImage(const CefString& image_url,
                      bool is_favicon,
                      uint32_t max_image_size,
                      bool bypass_cache,
                      CefRefPtr<CefDownloadImageCallback> callback) override {}
-
   void Print() override {}
-
   void PrintToPDF(const CefString& path,
                   const CefPdfPrintSettings& settings,
                   CefRefPtr<CefPdfPrintCallback> callback) override {}
-
   void Find(const CefString& searchText,
             bool forward,
             bool matchCase,
             bool findNext) override {}
-
   void StopFinding(bool clearSelection) override {}
-
   void ShowDevTools(const CefWindowInfo& windowInfo,
                     CefRefPtr<CefClient> client,
                     const CefBrowserSettings& settings,
                     const CefPoint& inspect_element_at) override {}
-
   void CloseDevTools() override {}
-
   bool HasDevTools() override { return false; }
-
   bool SendDevToolsMessage(const void* message, size_t message_size) override {
     return false;
   }
-
   int ExecuteDevToolsMethod(int message_id,
                             const CefString& method,
                             CefRefPtr<CefDictionaryValue> params) override {
     return 0;
   }
-
   CefRefPtr<CefRegistration> AddDevToolsMessageObserver(
       CefRefPtr<CefDevToolsMessageObserver> observer) override {
     return nullptr;
   }
-
   void GetNavigationEntries(CefRefPtr<CefNavigationEntryVisitor> visitor,
                             bool current_only) override {}
-
   void ReplaceMisspelling(const CefString& word) override {}
-
   void AddWordToDictionary(const CefString& word) override {}
-
   bool IsWindowRenderingDisabled() override { return false; }
-
   void WasResized() override {}
-
   void WasHidden(bool hidden) override {}
-
   void WasOccluded(bool occluded) override {}
-
   void OnWindowShow() override {}
-
   void OnWindowHide() override {}
-
   void OnOnlineRenderToForeground() override {}
-
   MOCK_METHOD(void,
               SendTouchEventList,
               (const std::vector<CefTouchEvent>&),
               (override));
-
   void NotifyScreenInfoChanged() override {}
-
   void Invalidate(PaintElementType type) override {}
-
   void SendExternalBeginFrame() override {}
-
   MOCK_METHOD(void, SendKeyEvent, (const CefKeyEvent& event), (override));
-
   MOCK_METHOD(void,
               SendMouseClickEvent,
               (const CefMouseEvent&, cef_mouse_button_type_t, bool, int),
               (override));
-
   MOCK_METHOD(void,
               SendMouseMoveEvent,
               (const CefMouseEvent&, bool),
               (override));
-
   MOCK_METHOD(void,
               SendMouseWheelEvent,
               (const CefMouseEvent&, int, int),
               (override));
-
   MOCK_METHOD(void, SendTouchEvent, (const CefTouchEvent&), (override));
-
   void SendCaptureLostEvent() override {}
-
   void NotifyMoveOrResizeStarted() override {}
-
   int GetWindowlessFrameRate() override { return 0; }
-
   void SetWindowlessFrameRate(int frame_rate) override {}
-
   void ImeSetComposition(const CefString& text,
                          const std::vector<CefCompositionUnderline>& underlines,
                          const CefRange& replacement_range,
                          const CefRange& selection_range) override {}
-
   void ImeCommitText(const CefString& text,
                      const CefRange& replacement_range,
                      int relative_cursor_pos) override {}
-
   void ImeFinishComposingText(bool keep_selection) override {}
-
   void ImeCancelComposition() override {}
-
   void DragTargetDragEnter(CefRefPtr<CefDragData> drag_data,
                            const CefMouseEvent& event,
                            DragOperationsMask allowed_ops) override {}
-
   void DragTargetDragOver(const CefMouseEvent& event,
                           DragOperationsMask allowed_ops) override {}
-
   void DragTargetDragLeave() override {}
-
   void DragTargetDrop(const CefMouseEvent& event) override {}
-
   void DragSourceEndedAt(int x, int y, DragOperationsMask op) override {}
-
   void DragSourceSystemDragEnded() override {}
-
   CefRefPtr<CefNavigationEntry> GetVisibleNavigationEntry() override {
     return nullptr;
   }
-
   void SetAccessibilityState(cef_state_t accessibility_state) override {}
-
   void SetAutoResizeEnabled(bool enabled,
                             const CefSize& min_size,
                             const CefSize& max_size) override {}
-
   void SetAudioMuted(bool mute) override {}
-
   bool IsAudioMuted() override { return false; }
   void AddRef() const override {}
   bool Release() const override { return false; }
@@ -230,124 +167,79 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   bool HasAtLeastOneRef() const override { return false; }
 #if BUILDFLAG(IS_OHOS)
   void GetRootBrowserAccessibilityManager(void** manager) override {}
-
   void ExecuteJavaScript(const std::string& code,
                          CefRefPtr<CefJavaScriptResultCallback> callback,
                          bool extention) override {}
-
   void ExecuteJavaScriptExt(const int fd,
                             const uint64_t scriptLength,
                             CefRefPtr<CefJavaScriptResultCallback> callback,
                             bool extention) override {}
-
   void SetNativeWindow(cef_native_window_t window) override {}
-
   void SetWebDebuggingAccess(bool isEnableDebug) override {}
-
   bool GetWebDebuggingAccess() override { return false; }
-
   void GetImageForContextNode(int command_id) override {}
-
   void GetImageFromCache(const CefString& url, int command_id) override {}
-
   void GetImageFromCacheEx(const CefString& url, int command_id) override {}
-
   void ExitFullScreen() override {}
-
   void UpdateLocale(const CefString& locale) override {}
-
   CefString GetOriginalUrl() override { return CefString(); }
-
   void PutNetworkAvailable(bool available) override {}
-
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   int PrerenderPage(const CefString& url,
                     const CefString& additional_headers) { return OHOS::NWeb::NWEB_OK; };
-
   void CancelAllPrerendering() {};
 #endif
-
   void RemoveCache(bool include_disk_files) override {}
-
   void PostTaskToUIThread(CefRefPtr<CefTask> task) override {}
-
   void SetVirtualPixelRatio(float ratio) override {}
-
   float GetVirtualPixelRatio() override { return 0.0f; }
-
   void SetWebPreferences(const CefBrowserSettings& browser_settings) override {}
-
-  void PutUserAgent(const CefString& ua) override {}
-
+  void PutUserAgent(const CefString& ua, bool from_app) override {}
   CefString DefaultUserAgent() override { return CefString(); }
-
   void SetBackgroundColor(int color) override {}
-
   void UpdateAdblockEasyListRules(long adBlockEasyListVersion) override {}
-
   void RegisterArkJSfunction(const CefString& object_name,
                              const std::vector<CefString>& method_list,
                              const std::vector<CefString>& async_method_list,
                              const int32_t object_id,
                              const CefString& permission) override {}
-
   void UnregisterArkJSfunction(
       const CefString& object_name,
       const std::vector<CefString>& method_list) override {}
-
   void CallH5Function(int32_t routing_id,
                       int32_t h5_object_id,
                       const CefString& h5_method_name,
                       const std::vector<CefRefPtr<CefValue>>& args) override {}
-
   void StoreWebArchive(
       const CefString& base_name,
       bool auto_name,
       CefRefPtr<CefStoreWebArchiveResultCallback> callback) override {}
-
   void WasKeyboardResized() override {}
-
   void SetEnableLowerFrameRate(bool enabled) override {}
-  /* ---------- ohos webview add end --------- */
-
   CefString Title() override { return CefString(); }
-
   void CreateWebMessagePorts(std::vector<CefString>& ports) override {}
-
   void PostWebMessage(CefString& message,
                       std::vector<CefString>& ports,
                       CefString& targetUri) override {}
-
   void ClosePort(const CefString& port_handle) override {}
-
   void DestroyAllWebMessagePorts() override {}
-
   void PostPortMessage(const CefString &port_handle, CefRefPtr<CefValue> message) override {}
-
   void SetPortMessageCallback(
       const CefString& port_handle,
       CefRefPtr<CefWebMessageReceiver> callback) override {}
-
   void GetHitData(int& type, CefString& extra_data) override {}
-
   void SetInitialScale(float scale) override {}
-
   int PageLoadProgress() override { return 0; }
-
   float Scale() override { return 0.0f; }
-
   void LoadWithDataAndBaseUrl(const CefString& baseUrl,
                               const CefString& data,
                               const CefString& mimeType,
                               const CefString& encoding,
                               const CefString& historyUrl) override {}
-
   void LoadWithData(const CefString& data,
                     const CefString& mimeType,
                     const CefString& encoding) override {}
-
   void AddVisitedLinks(const std::vector<CefString>& urls) override {}
-
   void ResumeDownload(const CefString& url,
                       const CefString& full_path,
                       int64_t received_bytes,
@@ -357,256 +249,157 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                       const CefString& last_modified,
                       const CefString& received_slices_string) override {}
   void SetAudioResumeInterval(int resumeInterval) override {}
-
   void SetAudioExclusive(bool audioExclusive) override {}
-
   void SetAudioSessionType(int audioSessionType) override {}
-
   void CloseMedia() override {}
-
   void StopMedia() override {}
-
   void ResumeMedia() override {}
-
   void PauseMedia() override {}
-
   int GetMediaPlaybackState() override { return 0; }
-
   void ScrollPageUpDown(bool is_up, bool is_half, float view_height) override {}
-
   CefRefPtr<CefBinaryValue> GetWebState() override { return nullptr; }
-
   bool RestoreWebState(const CefRefPtr<CefBinaryValue> state) override {
     return false;
   }
-
   void ScrollTo(float x, float y) override {}
-
   void ScrollBy(float delta_x, float delta_y) override {}
-
   void SlideScroll(float vx, float vy) override {}
-
   void SetFileAccess(bool falg) override {}
-
   void SetBlockNetwork(bool falg) override {}
-
   void SetCacheMode(int falg) override {}
-
   void SetShouldFrameSubmissionBeforeDraw(bool should) override {}
-
   void ZoomBy(float delta, float width, float height) override {}
-
   void SetWindowId(int window_id, int nweb_id) override {}
-
   void SetToken(void* token) override {}
-
   void SetVirtualKeyBoardArg(int32_t width,
                              int32_t height,
                              double keyboard) override {}
-
   bool ShouldVirtualKeyboardOverlay() override { return false; }
-
   void JavaScriptOnDocumentStart(
       const CefString& script,
       const std::vector<CefString>& script_rules,
       bool is_transfer_finished) override {}
-
   void RemoveJavaScriptOnDocumentStart() override {}
-
   void JavaScriptOnDocumentEnd(
       const CefString& script,
       const std::vector<CefString>& script_rules,
       bool is_transfer_finished) override {}
-
   void RemoveJavaScriptOnDocumentEnd() override {}
-
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void OnDataDetectorSelectText() override {}
   std::string GetDataDetectorSelectText() override { return std::string(); }
 #endif
-
 #if BUILDFLAG(ARKWEB_JSPROXY)
   void JavaScriptOnHeadReady(
       const CefString& script,
       const std::vector<CefString>& script_rules,
       bool is_transfer_finished) override {}
-
   void RemoveJavaScriptOnHeadReady() override {}
 #endif
-
   void SetDrawRect(int x, int y, int width, int height) override {}
-
   void SetDrawMode(int mode) override {}
-
   void CreateWebPrintDocumentAdapter(const CefString& jobName,
                                      void** webPrintDocumentAdapter) override {}
-
   void CreateWebPrintDocumentAdapterV2(const CefString& jobName,
                                        void** adapter) override {}
-
   void SetOverscrollMode(int mode) override {}
-
   bool Discard() override { return false; }
-
   bool Restore() override { return false; }
-
   void SetBrowserZoomLevel(double zoomFactor) override {}
-
   int GetTopControlsOffset() override { return 0; }
-
   MOCK_METHOD0(GetShrinkViewportHeight, int());
-
   void SetPrintBackground(bool enable) override {}
-
   bool GetPrintBackground() override { return false; }
-
   void SetScrollable(bool enable, int scrollType) override {}
-
   void StartCamera() override {}
-
   void StopCamera() override {}
-
   void CloseCamera() override {}
-
   CefString GetLastJavascriptProxyCallingFrameUrl() override {
     return CefString();
   }
-
   void SetNWebId(int nWebId) override {}
-
   bool GetPendingSizeStatus() override { return false; }
-
   void PrecompileJavaScript(
       const std::string& url,
       const std::string& script,
       CefRefPtr<CefCacheOptions> cacheOptions,
       CefRefPtr<CefPrecompileCallback> callback) override {}
-
   void SetWakeLockHandler(int32_t windowId,
                           CefRefPtr<CefSetLockCallback> callback) override {}
-
   CefRefPtr<CefDownloadItem> GetDownloadItem(uint32_t item_id) override { return nullptr; }
-
   bool NeedsReload() override { return false; }
-
   bool TerminateRenderProcess() override { return false; }
-
   void RegisterNativeJSProxy(const CefString& object_name,
                              const std::vector<CefString>& method_list,
                              const int32_t object_id,
                              bool is_async,
                              const CefString& permission) override {}
-
   MOCK_METHOD(void,
               SendTouchpadFlingEvent,
               (const CefMouseEvent&, double, double),
               (override));
-
   void SetFitContentMode(int mode) override {}
-
   void UpdateDrawRect() override {}
-
   void OnTextSelected(bool flag) override {}
-
   float GetPageScaleFactor() override { return 0.0f; }
-
   bool WebPageSnapshot(const char* id,
                        int width,
                        int height,
                        cef_web_snapshot_callback_t callback) override {
     return false;
   }
-
   void AdvanceFocusForIME(int focusType) override {}
-
   void ScrollToWithAnime(float x, float y, int32_t duration) override {}
-
   void ScrollByWithAnime(float delta_x,
                          float delta_y,
                          int32_t duration) override {}
-
 #if defined(OHOS_GET_SCROLL_OFFSET)
   void GetScrollOffset(float* offset_x, float* offset_y) override {}
-
   void GetOverScrollOffset(float* offset_x, float* offset_y) override {}
 #endif
 #endif  // BUILDFLAG(IS_OHOS)
-
   void OnSafeInsetsChange(int left, int top, int right, int bottom) override {}
-
   MOCK_METHOD(void, NotifyForNextTouchEvent, (), (override));
-
-  void SetGrantFileAccessDirs(const std::vector<CefString>& dir_list) override {
-  }
-
-  void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback) override {
-  }
-
+  void SetGrantFileAccessDirs(const std::vector<CefString>& dir_list) override {}
+  void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback) override {}
   void FillAutofillData(CefRefPtr<CefValue> message) override {}
-
   void ScrollFocusedEditableNodeIntoView() override {}
-
   void ProcessAutofillCancel(const CefString& fillContent) override {}
-
   void AutoFillWithIMFEvent(bool is_username,
                             bool is_other_account,
                             bool is_new_password,
                             const CefString& content) override {}
   void CreateToPDF(const CefPdfPrintSettings& settings,
                    CefRefPtr<CefPdfValueCallback> callback) override {}
-
   void SetPopupWindow(cef_native_window_t window) override {}
-
   bool IsReadyToBeClosed() override { return false; }
-
   int GetOpenerIdentifier() override { return 0; }
-
   bool CanZoom(cef_zoom_command_t command) override { return true; }
-
   void Zoom(cef_zoom_command_t command) override {}
-
   double GetDefaultZoomLevel() override { return 0.0f; }
-
   void ShowDevToolsWith(
       CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
       CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
       const CefPoint& inspect_element_at) override {}
-
   bool IsFullscreen() override { return false; }
-
   void ExitFullscreen(bool will_cause_resize) override {}
-
   bool CanExecuteChromeCommand(int command_id) override { return false; }
-
   void ExecuteChromeCommand(
       int command_id,
       cef_window_open_disposition_t disposition) override {}
-
   bool IsRenderProcessUnresponsive() override { return false; }
-
   cef_runtime_style_t GetRuntimeStyle() override { return CEF_RUNTIME_STYLE_DEFAULT; }
-
   void EnableVideoAssistant(bool enable) override { return false; }
-
   void ExecuteVideoAssistantFunction(const CefString& cmdId) override {}
-
   bool IsIframe() override { return false; }
-
   void ReloadFocusedFrame() override {}
-
   void StopScreenCapture(int32_t nweb_id, const CefString &session_id) override {}
-
   void SetScreenCapturePickerShow() override {}
-
   void DisableSessionReuse() override {}
-
   void RegisterScreenCaptureDelegateListener(
       CefRefPtr<CefScreenCaptureCallback> listener) override {}
-
   void CustomWebMediaPlayer(bool enable) override {}
-
   bool IsValid() override { return false; }
-
   MOCK_METHOD(CefRefPtr<ArkWebBrowserHostExt>, GetHost, (), (override));
   bool CanGoBack() override { return false; }
   void GoBack() override {}
@@ -675,7 +468,6 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   int UpdateNavigationEntryUrl(int index, const CefString& url) override { return 0; }
   void ClearForwardList() override {}
   void ExtensionSetTabId(int tab_id) override {}
-  int ExtensionGetTabId() const override { return 0; }
   uint32_t GetAcceleratedWidget(bool isPopup) { return 0; }
   void SetAdBlockEnabledForSite(bool is_adblock_enabled, int main_frame_tree_node_id) override {}
   void FindEx(const CefString &searchText, bool forward, bool matchCase, bool findNext, bool newSession) override {}
@@ -698,6 +490,20 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void PutWebMediaAVSessionEnabled(bool enable) override {}
   void SetEnableHalfFrameRate(bool enabled) override {}
   bool SetFocusByPosition(float x, float y) override { return false; }
+  void OnSafeBrowsingDetectionResult(int code,
+                                     int policy,
+                                     const std::string& mappingType,
+                                     const std::string& url) override {}
+  int ExtensionGetTabId() override {}
+  void SetHasComposition(bool has_composition) override {}
+  bool GetHasComposition() override {}
+  void SetMediaResumeFromBFCachePage(bool resume) override {}
+#if BUILDFLAG(ARKWEB_SCREEN_OFFSET)
+  void NotifyScreenInfoChangedV2() override {}
+#endif  // BUILDFLAG(ARKWEB_SCREEN_OFFSET)
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override {}
+#endif
 #if BUILDFLAG(ARKWEB_PIP)
   void SetPipNativeWindow(int delegate_id,
                           int child_id,
@@ -726,57 +532,6 @@ class MockIMFAdapterFunctionKeyAdapter : public IMFAdapterFunctionKeyAdapter {
   ~MockIMFAdapterFunctionKeyAdapter() override = default;
 
   MOCK_METHOD(IMFAdapterEnterKeyType, GetEnterKeyType, (), (override));
-};
-
-class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
- public:
-  OnTextChangedListenerImpl(NWebInputMethodHandler* handler)
-      : handler_(handler) {}
-  ~OnTextChangedListenerImpl() = default;
-
-  void InsertText(const std::u16string& text) {}
-
-  void DeleteForward(int32_t length) override {}
-
-  void DeleteBackward(int32_t length) override {}
-
-  void SendKeyEventFromInputMethod() override {}
-
-  void SendKeyboardStatus(const IMFAdapterKeyboardStatus& status) override {}
-
-  void SendFunctionKey(
-      std::shared_ptr<IMFAdapterFunctionKeyAdapter> functionKey) override {}
-
-  void SetKeyboardStatus(bool status) override {}
-
-  void KeyboardUpperRightCornerHide() override {}
-
-  void MoveCursor(const IMFAdapterDirection direction) override {}
-
-  void HandleSetSelection(int32_t start, int32_t end) override {}
-  void HandleExtendAction(int32_t action) override {}
-  void HandleSelect(int32_t keyCode, int32_t cursorMoveSkip) override {}
-
-  int32_t GetTextIndexAtCursor() override {}
-
-  std::u16string GetLeftTextOfCursor(int32_t number) override {}
-
-  std::u16string GetRightTextOfCursor(int32_t number) override {}
-
-  int32_t SetPreviewText(const std::u16string& text,
-                         int32_t start,
-                         int32_t end) override {}
-
-  void FinishTextPreview() override {}
-
-  void SetNeedUnderLine(bool is_need_underline) override {}
-
-  void AutoFillWithIMFEvent(bool is_username,
-                            bool is_other_account,
-                            bool is_new_password,
-                            const std::string& content) override {}
- private:
-  raw_ptr<NWebInputMethodHandler> handler_;
 };
 
 class MockNWebInputMethodHandler : public NWebInputMethodHandler {
@@ -1771,7 +1526,7 @@ TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_22) {
 
 TEST_F(NWebInputMethodHandlerTest, HideTextInput_isAttached_False) {
   inputmethod_handler_->isAttached_ = false;
-
+  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
   uint32_t nwebId = 0;
   NWebInputMethodClient::HideTextinputType hideType =
       NWebInputMethodClient::HideTextinputType::FROM_KERNEL;
@@ -1796,7 +1551,7 @@ TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_23) {
 
 TEST_F(NWebInputMethodHandlerTest, HideTextInput_isAttached_False2) {
   inputmethod_handler_->isAttached_ = false;
-
+  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
   uint32_t nwebId = 0;
   NWebInputMethodClient::HideTextinputType hideType =
       NWebInputMethodClient::HideTextinputType::FROM_ONPAUSE;
@@ -1825,6 +1580,7 @@ TEST_F(NWebInputMethodHandlerTest, HideTextInput_isAttached_False3) {
       NWebInputMethodClient::HideTextinputType::FROM_ONPAUSE;
   inputmethod_handler_->lastCloseInputMethodTime_ =
       std::chrono::high_resolution_clock::now();
+  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
   inputmethod_handler_->HideTextInput(nwebId, hideType);
   EXPECT_EQ(inputmethod_handler_->isAttached_, false);
 }
@@ -1851,7 +1607,7 @@ TEST_F(NWebInputMethodHandlerTest, HideTextInput_Normal) {
   inputmethod_handler_->lastCloseInputMethodTime_ =
       std::chrono::high_resolution_clock::now();
   inputmethod_handler_->lastAttachNWebId_ = 0;
-
+  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
   inputmethod_handler_->HideTextInput(nwebId, hideType);
   EXPECT_EQ(inputmethod_handler_->isAttached_, false);
 }
@@ -1879,7 +1635,7 @@ TEST_F(NWebInputMethodHandlerTest, HideTextInput_Normal02) {
   inputmethod_handler_->lastCloseInputMethodTime_ =
       std::chrono::high_resolution_clock::now();
   inputmethod_handler_->lastAttachNWebId_ = 0;
-
+  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
   inputmethod_handler_->HideTextInput(nwebId, hideType);
   EXPECT_EQ(inputmethod_handler_->isAttached_, false);
 }
@@ -1920,6 +1676,39 @@ TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEvent) {
 
   inputmethod_handler_->browser_ = nullptr;
   inputmethod_handler_->SendEnterKeyEvent(1);
+}
+
+TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEventOnUI) {
+  inputmethod_handler_->browser_ = nullptr;
+  inputmethod_handler_->SendEnterKeyEventOnUI(static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED));
+
+  CefRefPtr<CefBrowser> browser = new MockCefBrowser();
+  inputmethod_handler_->browser_ = browser;
+  EXPECT_FALSE(base::ohos::IsPcDevice());
+  inputmethod_handler_->input_flags_ |= CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT;
+  int32_t enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT);
+  inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
+
+  enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED);
+  inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
+
+  enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT);
+  inputmethod_handler_->input_flags_ |= CEF_TEXT_INPUT_FLAG_HAS_BEEN_PASSWORD;
+  inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
+
+  enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED);
+  inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
+
+  inputmethod_handler_->input_flags_ |= CEF_TEXT_INPUT_FLAG_HAVE_PREVIOUS_FOCUSABLE_ELEMENT;
+  enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS);
+  inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
+
+  enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT);
+  inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
+
+  inputmethod_handler_->input_flags_ |= CEF_TEXT_INPUT_FLAG_HAS_BEEN_PASSWORD;
+  enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS);
+  inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
 }
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
@@ -2317,10 +2106,12 @@ TEST_F(NWebInputMethodHandlerTest, SetFocusStatus) {
   inputmethod_handler_->focus_rect_status_ = true;
   inputmethod_handler_->SetFocusStatus(true);
   EXPECT_TRUE(inputmethod_handler_->focus_status_);
-  inputmethod_handler_->focus_status_ = true;
   inputmethod_handler_->SetFocusStatus(true);
   EXPECT_TRUE(inputmethod_handler_->focus_status_);
 
+  inputmethod_handler_->SetFocusStatus(false);
+  inputmethod_handler_->focus_rect_status_ = false;
+  inputmethod_handler_->inputmethod_adapter_ = std::make_unique<MockIMFAdapterImpl>();
   inputmethod_handler_->SetFocusStatus(false);
 }
 
@@ -2430,9 +2221,17 @@ TEST_F(NWebInputMethodHandlerTest, DeleteForwardHandlerOnUI) {
   inputmethod_handler_->DeleteForwardHandlerOnUI(2);
   EXPECT_EQ(inputmethod_handler_->textCursorReady_, 2);
 
+  inputmethod_handler_->whole_text_ = u"test";
+  inputmethod_handler_->selected_from_ = 6;
+  inputmethod_handler_->DeleteForwardHandlerOnUI(2);
+  EXPECT_EQ(inputmethod_handler_->textCursorReady_, 2);
+
   inputmethod_handler_->preview_text_cache_ = u"a";
   inputmethod_handler_->DeleteForwardHandlerOnUI(1);
   EXPECT_TRUE(inputmethod_handler_->preview_text_cache_.empty());
+
+  inputmethod_handler_->preview_text_cache_ = u"abc";
+  inputmethod_handler_->DeleteForwardHandlerOnUI(1);
 }
 
 TEST_F(NWebInputMethodHandlerTest, SetNeedUnderLineOnUI) {
@@ -2516,10 +2315,8 @@ TEST_F(NWebInputMethodHandlerTest, InsertTextHandlerOnUI) {
   inputmethod_handler_->InsertTextHandlerOnUI(text);
 
   text = u"test";
-
   inputmethod_handler_->InsertTextHandlerOnUI(text);
-
-  text = u"A";
+  inputmethod_handler_->ime_text_composing_ = false;
   inputmethod_handler_->InsertTextHandlerOnUI(text);
 }
 
@@ -2618,26 +2415,48 @@ TEST_F(NWebInputMethodHandlerTest, SetIMEStatus) {
 
 TEST_F(NWebInputMethodHandlerTest, OnUpdateTextInputStateCalled) {
   CefRefPtr<CefBrowser> browser = new MockCefBrowser();
-  CefString text = "test";
-  testing::internal::CaptureStderr();
+  CefString text = u"test";
+  inputmethod_handler_->whole_text_ = u"test";
+  inputmethod_handler_->selected_from_ = 0;
+  inputmethod_handler_->selected_to_ = 4;
+  inputmethod_handler_->composition_range_start_ = 0;
+  inputmethod_handler_->composition_range_end_ = 4;
   inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), CefRange(0, 4));
 
+  inputmethod_handler_->composition_range_start_ = 0;
+  inputmethod_handler_->composition_range_end_ = 5;
+  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), CefRange(0, 5));
+
+  text = u"";
+  inputmethod_handler_->whole_text_ = u"";
+  inputmethod_handler_->composition_range_start_ = 0;
+  inputmethod_handler_->composition_range_end_ = 4;
+  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), CefRange(0, 4));
+
+  inputmethod_handler_->composition_range_start_ = 0;
+  inputmethod_handler_->composition_range_end_ = 0;
+  inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), CefRange(0, 0));
+
   CefRange compositon_range = CefRange::InvalidRange();
+  inputmethod_handler_->composition_range_start_ = compositon_range.from;
+  inputmethod_handler_->composition_range_end_ = compositon_range.to;
   inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), compositon_range);
   EXPECT_FALSE(inputmethod_handler_->has_composition_);
-  EXPECT_EQ(inputmethod_handler_->composition_range_start_, 0);
-  EXPECT_EQ(inputmethod_handler_->composition_range_end_, 0);
+  EXPECT_EQ(inputmethod_handler_->composition_range_start_, -1);
+  EXPECT_EQ(inputmethod_handler_->composition_range_end_, -1);
   EXPECT_EQ(inputmethod_handler_->preview_text_cache_, u"");
 
+  inputmethod_handler_->composition_range_start_ = 1;
+  inputmethod_handler_->composition_range_end_ = 3;
   inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), CefRange(1, 3));
-  EXPECT_TRUE(inputmethod_handler_->has_composition_);
+  EXPECT_FALSE(inputmethod_handler_->has_composition_);
   EXPECT_EQ(inputmethod_handler_->composition_range_start_, 1);
   EXPECT_EQ(inputmethod_handler_->composition_range_end_, 3);
-  EXPECT_EQ(inputmethod_handler_->preview_text_cache_, u"es");
+  EXPECT_EQ(inputmethod_handler_->preview_text_cache_, u"");
 
   inputmethod_handler_->inputmethod_adapter_ = nullptr;
   inputmethod_handler_->OnUpdateTextInputStateCalled(browser, text, CefRange(0, 4), CefRange(1, 3));
-  EXPECT_EQ(inputmethod_handler_->whole_text_, u"test");
+  EXPECT_EQ(inputmethod_handler_->whole_text_, u"");
 
   std::unique_lock<std::mutex> lock(inputmethod_handler_->textCursorMutex_);
   inputmethod_handler_->textCursorReady_ = 1;
@@ -2686,8 +2505,9 @@ TEST_F(NWebInputMethodHandlerTest, IsTextInputStateChange) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, OnImeCompositionRangeChanged) {
-
   CefRange selected_range = CefRange(0, 0);
+  selected_range.from = std::numeric_limits<uint32_t>::max();
+  selected_range.to = std::numeric_limits<uint32_t>::max();
   testing::internal::CaptureStderr();
   CefRefPtr<CefBrowser> browser = new MockCefBrowser();
   inputmethod_handler_->OnImeCompositionRangeChanged(browser, selected_range);
@@ -2978,6 +2798,12 @@ TEST_F(NWebInputMethodHandlerTest, TestInsertNormalText) {
   const std::u16string newline = u"\n";
   EXPECT_CALL(*handler_, InsertText(newline)).Times(0);
   listener_->InsertText(newline);
+
+  const std::u16string textH = u"H";
+  listener_->InsertText(textH);
+
+  const std::u16string textspace = u" \n";
+  listener_->InsertText(textspace);
 }
 
 TEST_F(NWebInputMethodHandlerTest, TestDeleteForward) {
@@ -3010,6 +2836,12 @@ TEST_F(NWebInputMethodHandlerTest, TestSendFunctionKeyEnter) {
   const IMFAdapterEnterKeyType enterKeyType = IMFAdapterEnterKeyType::NONE;
   EXPECT_CALL(*handler_, SendEnterKeyEvent(static_cast<int32_t>(enterKeyType)));
   listener_->SendFunctionKey(functionKey);
+  functionKey  = nullptr;
+  listener_->SendFunctionKey(functionKey);
+  handler_ = nullptr;
+  listener_->SendFunctionKey(functionKey);
+  functionKey = std::make_shared<MockIMFAdapterFunctionKeyAdapter>();
+  listener_->SendFunctionKey(functionKey);
 }
 
 TEST_F(NWebInputMethodHandlerTest, TestSetKeyboardStatusFalse) {
@@ -3033,5 +2865,8 @@ TEST_F(NWebInputMethodHandlerTest, TestMoveCursorNone) {
   const IMFAdapterDirection direction = IMFAdapterDirection::NONE;
   EXPECT_CALL(*handler_, MoveCursor(direction)).Times(0);
   listener_->MoveCursor(direction);
+  listener_->SendKeyEventFromInputMethod();
+  std::string content = "test";
+  listener_->AutoFillWithIMFEvent(true, true, true, content);
 }
 }  // namespace OHOS::NWeb

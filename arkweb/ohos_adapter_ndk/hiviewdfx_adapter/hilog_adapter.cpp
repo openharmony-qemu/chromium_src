@@ -23,8 +23,8 @@
 namespace OHOS::NWeb {
 namespace {
 constexpr uint32_t BROWSER_UID_BASE = 20000000;
-constexpr uint32_t LOG_APP_DOMAIN = 0x004500;
-constexpr uint32_t LOG_RENDER_DOMAIN = 0x004501;
+constexpr uint32_t LOG_APP_DOMAIN = 0x004510;
+constexpr uint32_t LOG_RENDER_DOMAIN = 0x004511;
 constexpr uint32_t LOG_CONSOLE_DOMAIN = 0x001194;
 constexpr uint32_t MAX_LENGTH = 1024;
 const std::string PUBLIC_STR = "{public}";

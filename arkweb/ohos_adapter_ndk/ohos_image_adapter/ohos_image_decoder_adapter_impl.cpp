@@ -196,8 +196,8 @@ void OhosImageDecoderAdapterImpl::SetMemoryName(AllocatorType type) {
         WVLOG_E("[HeifSupport] Error: Name Size is too large to set");
         return;
     }
-    errno_t err = strncpy_s(memoryName, OHMEDIA_NAME_SIZE - 1, memorySize.c_str(), NameLen);
-    if (err != 0) {
+    errno_t err = strncpy_s(memoryName, OHMEDIA_NAME_SIZE - 1, memoryNameSrc.c_str(), NameLen);
+    if (err != EOK) {
         WVLOG_E("[HeifSupport] Copy name error!");
         return;
     } else {

@@ -52,3 +52,9 @@ TEST_F(OhosAshmemTest, GetSize) {
 TEST_F(OhosAshmemTest, DeviceSupportCheck) {
   ASSERT_EQ(1, ashmem_device_is_supported());
 }
+
+TEST_F(OhosAshmemTest, ashmem_create_region) {
+  size_t size = 1;
+  auto result = ashmem_create_region(nullptr, size);
+  ASSERT_EQ(12, result);
+}

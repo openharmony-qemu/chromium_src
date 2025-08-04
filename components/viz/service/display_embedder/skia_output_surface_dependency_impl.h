@@ -68,13 +68,6 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceDependencyImpl
   SkiaOutputSurfaceDependencyImplUtils* impl_utils() {
     return impl_utils_.get();
   }
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  void SendBlanklessSnapshotInfo(uint64_t blankless_key,	
-                                 int32_t lcp_time,	
-                                 int64_t pref_hash,	
-                                 const SkBitmap& bitmap,
-                                 const std::vector<gfx::Rect>& quad_list) override;
-#endif
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   bool GetIsScroll() override;
 #endif

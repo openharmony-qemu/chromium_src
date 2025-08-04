@@ -45,9 +45,8 @@ RootCompositorFrameSinkImplExt::RootCompositorFrameSinkImplExt(
                                   std::move(display),
                                   hw_support_for_multiple_refresh_rates) {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (display_) {
-    auto gpu_service = managerImplUtils->gpu_service();
-    display_->display_utils()->SetGpuChannelManager(gpu_service ? gpu_service->gpu_channel_manager() : nullptr);
+  if (display_ && display_->display_utils() && managerImplUtils.get()) {
+    display_->display_utils()->SetGpuServiceImpl(managerImplUtils->gpu_service());
   }
 #endif
 }

@@ -1582,19 +1582,6 @@ class CONTENT_EXPORT WebContentsImpl
 
   WebContents* GetOpenedPartitionedPopin() const override;
 
-#if BUILDFLAG(ARKWEB_PIP)
-  MediaPlayerId GetMediaPlayerId(int delegate_id,
-                                 int child_id,
-                                 int frame_routing_id,
-                                 bool& status);
-  void OnPip(int status,
-             int delegate_id,
-             int child_id,
-             int frame_routing_id,
-             int width,
-             int height);
-  void OnPipEvent(int event) override;
-#endif
  private:
   using FrameTreeIterationCallback = base::FunctionRef<void(FrameTree&)>;
   using RenderViewHostIterationCallback =

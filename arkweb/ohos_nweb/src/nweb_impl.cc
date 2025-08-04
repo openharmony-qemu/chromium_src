@@ -1462,6 +1462,7 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   if ((nweb_delegate_->NearestSnapshotWidth() != static_cast<int32_t>(width)) ||
   (nweb_delegate_->NearestSnapshotHeight() != static_cast<int32_t>(height))) {
+    LOG(DEBUG) << "RemoveBlanklessFrame due to resolution inconsistency between webPattern and snapshot";
     RemoveBlanklessFrame();
   }
 #endif
@@ -6033,7 +6034,7 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
       LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey similarity < 0.33";
       return -5;    // ERR_SIGNIFICANT_CHANGE
     }
-    if (gfx::Size(dataItem.width, dataItem.height) != nweb_delegate_->GetSize()) {
+    if ((dataItem.width != nweb_delegate_->GetWidth()) || (dataItem.height != nweb_delegate_->GetHeight())) {
       LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey snapshot resolution is different from webPattern";
       return -5;
     }
@@ -6051,7 +6052,7 @@ void NWebImpl::RemoveBlanklessFrame() {
   nweb_delegate_->SetNearestSnapshotSize(0, 0);
 }
 
-void NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
+bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   if (!base::ohos::BlanklessController::CheckGlobalProperty() || is_private_ || !nweb_delegate_ ||
       !base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
     return false;
@@ -6060,6 +6061,11 @@ void NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
   auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
   OHOS::NWeb::SnapshotDataItem dataItem = databaseAdapter.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
+  if ((dataItem.width != nweb_delegate_->GetWidth()) || (dataItem.height != nweb_delegate_->GetHeight())) {
+    LOG(DEBUG) << "blankless TriggerBlanklessForUrl snapshot resolution is differnet webPattern";
+    return false;
+  }
+  nweb_delegate_->SetNearestSnapshotSize(dataItem.width, dataItem.height);
   CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath);
   return true;
 }

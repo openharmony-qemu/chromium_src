@@ -23,6 +23,10 @@ arkweb_base_sources = [
   "//arkweb/chromium_ext/base/report_loss_frame_ext.h",
 ]
 
+arkweb_native_scroller_test_source = [
+  "//arkweb/chromium_ext/ui/gl/events/native_scroller_ohos_unittest.cc"
+]
+
 arkweb_content_public_common_sources = [
   "//arkweb/chromium_ext/content/public/common/content_switches_ext.cc",
   "//arkweb/chromium_ext/content/public/common/content_switches_ext.h",

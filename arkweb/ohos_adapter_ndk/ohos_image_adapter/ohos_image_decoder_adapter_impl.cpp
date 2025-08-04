@@ -191,7 +191,7 @@ bool OhosImageDecoderAdapterImpl::SetMemoryName(AllocatorType type) {
     std::string memoryNameSrc = "web-";
     memoryNameSrc.append(width + "x" + height + "-heif");
     size_t NameLen = memoryNameSrc.length();
-    char  memoryName[OHMEDIA_NAME_SIZE];
+    char memoryName[OHMEDIA_NAME_SIZE];
     if (NameLen > OHMEDIA_NAME_SIZE - 1) {
         WVLOG_E("[HeifSupport] Error: Name Size is too large to set");
         return false;

@@ -858,8 +858,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) override;
   int64_t GetPreferenceHash() override;
   void SetNearestSnapshotSize(int32_t width, int32_t height) override;
-  gfx::Size GetNearestSnapshotSize() override;
-  gfx::Size GetSize() override;
+  int32_t NearestSnapshotWidth() override;
+  int32_t NearestSnapshotHeight() override;
+  int32_t GetWidth() override;
+  int32_t GetHeight() override;
+  void RemoveBlanklessFrameIfNeed(RotationType rotation);
 #endif
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override;
@@ -1007,7 +1010,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool hidden_ = false;
   bool occluded_ = false;
   bool is_popup_ready_ = false;
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PAGE_UP_DOWN) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PAGE_UP_DOWN) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID) || \
+    BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   uint32_t width_ = 0;
   uint32_t height_ = 0;
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
@@ -1043,6 +1047,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   int32_t avoid_height_ = 0;
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  int32_t nearest_snapshot_width_ = 0;
+  int32_t nearest_snapshot_height_ = 0;
+  base::WeakPtrFactory<NWebDelegate> weak_factory_{this};
 #endif
 };
 }  // namespace OHOS::NWeb

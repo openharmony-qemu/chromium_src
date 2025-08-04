@@ -33,8 +33,12 @@ namespace ui {
 
 class DataTransferEndpoint;
 
-// Controls whether or not filenames should be converted to file: URLs when
-// getting a URL.
+// Controls whether or not filenames are converted to file: URLs when getting a
+// URL. Some callers, e.g. when populating the DataTransfer object for the web
+// platform, need to suppress this conversion, as this:
+// - leaks filesystem paths to the web
+// - results in duplicate entries for the same logical entity
+// See crbug.com/40078641 for more historical context.
 enum class FilenameToURLPolicy {
   CONVERT_FILENAMES,
   DO_NOT_CONVERT_FILENAMES,
@@ -62,7 +66,11 @@ class COMPONENT_EXPORT(UI_BASE_DATA_EXCHANGE) OSExchangeDataProvider {
   virtual void SetFilenames(const std::vector<FileInfo>& file_names) = 0;
   virtual void SetPickledData(const ClipboardFormatType& format,
                               const base::Pickle& data) = 0;
-
+  // Even if there is no URL data present, many implementations will coerce text
+  // content into URLs if the text is a valid URL. This coercion should only
+  // happen for HTTP-like URLs (i.e. http or https) if the data originates from
+  // a renderer (i.e. `IsRendererTainted()` is true) to avoid bypassing the URL
+  // filtering applied when a drag is started.
   virtual std::optional<std::u16string> GetString() const = 0;
   struct UrlInfo {
     GURL url;

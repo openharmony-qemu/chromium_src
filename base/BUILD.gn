@@ -3690,6 +3690,8 @@ test("base_unittests") {
     sources += arkweb_storage_monitor_unittest_source
     sources += arkweb_crashpad_unittest_sources
     sources += arkweb_crashpad_sources
+    sources += arkweb_crashpad_dfx_sources
+    sources += arkweb_crashpad_dfx_unittest_sources
     sources += [
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
     ]

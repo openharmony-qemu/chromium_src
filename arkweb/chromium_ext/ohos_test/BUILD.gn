@@ -250,6 +250,51 @@ fuzzer_test("pasteboard_client_adapter_impl_fuzzer") {
   ]
 }
 
+fuzzer_test("input_event_ohos_fuzzer") {
+  sources = [ "fuzztest/third_party/blink/common/event/input_event_ohos_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("gesture_detector_utils_fuzzer") {
+  sources = [ "fuzztest/ui/events/gesture_detection/gesture_detector_utils_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("gesture_detector_ext_fuzzer") {
+  sources = [ "fuzztest/ui/events/gesture_detection/gesture_detector_ext_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
 fuzzer_test("nweb_delegate_fuzzer") {
   sources = [ "fuzztest/ohos_nweb/cef_delegate/nweb_delegate_fuzzer.cc" ]
   include_dirs = [

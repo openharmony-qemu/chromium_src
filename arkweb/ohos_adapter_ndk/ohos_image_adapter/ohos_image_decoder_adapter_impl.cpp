@@ -13,16 +13,18 @@
  * limitations under the License.
  */
 
+#include "ohos_image_decoder_adapter_impl.h"
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 #include "fstream"
 #include "istream"
-#include "ohos_image_decoder_adapter_impl.h"
 #include "sstream"
 #include "string"
+#include "third_party/bounds_checking_function/include/securec.h"
 
 namespace OHOS {
 namespace NWeb {
 
+const int64_t OHMEDIA_NAME_SIZE = 32;
 const std::unordered_map<AllocatorType, IMAGE_ALLOCATOR_TYPE> ALLOC_TYPE_MAP = {
     { AllocatorType::kDmaAlloc, IMAGE_ALLOCATOR_TYPE_DMA },
     { AllocatorType::kShareMemAlloc, IMAGE_ALLOCATOR_TYPE_SHARE_MEMORY },
@@ -178,8 +180,35 @@ bool OhosImageDecoderAdapterImpl::Decode(const uint8_t* data,
         ReleaseDecodeOptions(decodeOptions);
         return false;
     }
+    SetMemoryName(type);
     ReleaseDecodeOptions(decodeOptions);
     return true;
+}
+
+void OhosImageDecoderAdapterImpl::SetMemoryName(AllocatorType type) {
+    std::string width = std::to_string(GetImageWidth());
+    std::string height = std::to_string(GetImageHeight());
+    std::string memoryNameSrc = "web-";
+    memoryNameSrc.append(width + "x" + height + "-heif");
+    size_t NameLen = memoryNameSrc.length();
+    char memoryName[OHMEDIA_NAME_SIZE];
+    if (NameLen > OHMEDIA_NAME_SIZE - 1) {
+        WVLOG_E("[HeifSupport] Error: Name Size is too large to set");
+        return;
+    }
+    errno_t err = strncpy_s(memoryName, OHMEDIA_NAME_SIZE - 1, memoryNameSrc.c_str(), NameLen);
+    if (err != EOK) {
+        WVLOG_E("[HeifSupport] Copy name error!");
+        return;
+    } else {
+        memoryName[NameLen] = '\0';
+        auto errorCode = OH_PixelmapNative_SetMemoryName(pixelMap_, memoryName, &NameLen);
+        WVLOG_I("[HeifSupport] pixel map type: %{public}d. Name is %{public}s", GetImageAllocType(type), memoryName);
+        if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+            WVLOG_E("[HeifSupport] set memory name failed, errorCode %{public}d", errorCode);
+            return;
+        }
+    }
 }
 
 // LCOV_EXCL_START

@@ -293,6 +293,14 @@ TEST_F(WebFrameWidgetImplExtSimTest, GetInputElementAttributes) {
   MockMainFrameWidget()->GetInputElementAttributes(attributes);
 }
 
+TEST_F(WebFrameWidgetImplExtSimTest, SetOverscrollMode) {
+  MockMainFrameWidget()->SetOverscrollMode(1);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SelectRangeV2) {
+  MockMainFrameWidget()->SelectRangeV2(gfx::Point(10, 10), false);
+}
+
 TEST_F(WebFrameWidgetImplExtSimTest, ParseLanguage) {
   MockMainFrameWidget()->ParseLanguage();
 }

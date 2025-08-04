@@ -94,6 +94,31 @@ class NativeLoaderTest : public PageTestBase {
     loader_->ClearNativeResource();
   }
 
+  void SetFirstUpdateVisibility(bool value) {
+    loader_->first_update_visibility_ = value;
+  }
+
+  void AddNativeBridgeObserverAndPassReceiver() {
+    loader_->AddNativeBridgeObserverAndPassReceiver();
+  }
+
+  void ResetMojoState() {
+    loader_->ResetMojoState();
+  }
+
+  void ContextDestroyed() {
+    loader_->ContextDestroyed();
+  }
+
+  void GetNativeBridgeHostRemote() {
+    loader_->GetNativeBridgeHostRemote();
+  }
+
+  void ReportFirstPaintTime(
+    const viz::FrameTimingDetails& frame_timing_details) {
+    loader_->ReportFirstPaintTime(frame_timing_details);
+  }
+
   HTMLPlugInElement* plugin_element;
   Persistent<HTMLNativeLoader> loader_;
   MockCcLayer mock_cc_layer_;
@@ -120,6 +145,12 @@ TEST_F(NativeLoaderTest, TransformRect_WithoutLayoutObject) {
 
 TEST_F(NativeLoaderTest, OnCreateNativeSurface_WithCcLayer) {
   loader_->SetCcLayer(&mock_cc_layer_);
+  loader_->OnCreateNativeSurface(123, base::DoNothing());
+}
+
+TEST_F(NativeLoaderTest, OnCreateNativeSurface_WithCcLayer001) {
+  loader_->SetCcLayer(&mock_cc_layer_);
+  SetFirstUpdateVisibility(true);
   loader_->OnCreateNativeSurface(123, base::DoNothing());
 }
 
@@ -208,6 +239,24 @@ TEST_F(NativeLoaderTest, SetNativeEmbedOverlay_WithCcLayer) {
   loader_->SetCcLayer(&mock_cc_layer_);
   EXPECT_CALL(mock_cc_layer_, SetNativeEmbedOverlay(true));
   loader_->SetNativeEmbedOverlay(true);
+}
+
+TEST_F(NativeLoaderTest, ResetMojoState) {
+  AddNativeBridgeObserverAndPassReceiver();
+  ResetMojoState();
+}
+
+TEST_F(NativeLoaderTest, ContextDestroyed) {
+  ContextDestroyed();
+}
+
+TEST_F(NativeLoaderTest, GetNativeBridgeHostRemote) {
+  GetNativeBridgeHostRemote();
+}
+
+TEST_F(NativeLoaderTest, ReportFirstPaintTime) {
+  viz::FrameTimingDetails frame_timing_details;
+  ReportFirstPaintTime(frame_timing_details);
 }
 
 }  // namespace blink

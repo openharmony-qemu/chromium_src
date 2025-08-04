@@ -98,16 +98,16 @@ void OhosWebSnapshotDataBase::GetOrOpen(const OH_Rdb_Config& config)
     int32_t errCode = RDB_OK;
     rdbStore_ = OH_Rdb_GetOrOpen(&config, &errCode);
     if (rdbStore_ == nullptr) {
-        WVLOG_E("web snapshot database get rdb store failed, errCode=%{public}d", errCode);
+        WVLOG_E("blankless web snapshot database get rdb store failed, errCode=%{public}d", errCode);
         return;
     }
 
     int version = 0;
     if (OH_Rdb_GetVersion(rdbStore_, &version) != RDB_OK) {
-        WVLOG_E("web snapshot database get rdb version failed");
+        WVLOG_E("blankless web snapshot database get rdb version failed");
         return;
     }
-    WVLOG_I("web snapshot database rdb version = %{public}d, current version = %{public}d", RDB_VERSION, version);
+    WVLOG_I("blankless web snapshot database rdb version = %{public}d, current version = %{public}d", RDB_VERSION, version);
 
     if (version == RDB_VERSION) {
         return;
@@ -116,24 +116,24 @@ void OhosWebSnapshotDataBase::GetOrOpen(const OH_Rdb_Config& config)
     if (version != 0) {
         // The table may not exist in the old version, and delete table may be failed. should not return.
         if (OH_Rdb_Execute(rdbStore_, DELETE_TABLE.c_str()) != RDB_OK) {
-            WVLOG_E("web snapshot database delete table failed");
+            WVLOG_E("blankless web snapshot database delete table failed");
         }
         if (OH_Rdb_Execute(rdbStore_, DELETE_DATABAS_INFO_TABLE.c_str()) != RDB_OK) {
-            WVLOG_E("web snapshot database delete database info table failed");
+            WVLOG_E("blankless web snapshot database delete database info table failed");
         }
     }
 
     if (OH_Rdb_Execute(rdbStore_, CREATE_TABLE.c_str()) != RDB_OK) {
-        WVLOG_E("web snapshot database create table failed");
+        WVLOG_E("blankless web snapshot database create table failed");
         return;
     }
     if (OH_Rdb_Execute(rdbStore_, CREATE_DATABAS_INFO_TABLE.c_str()) != RDB_OK) {
-        WVLOG_E("web snapshot database create database info table failed");
+        WVLOG_E("blankless web snapshot database create database info table failed");
         return;
     }
 
     if (OH_Rdb_SetVersion(rdbStore_, RDB_VERSION) != RDB_OK) {
-        WVLOG_E("web snapshot database set version failed");
+        WVLOG_E("blankless web snapshot database set version failed");
         return;
     }
 }
@@ -143,7 +143,7 @@ OhosWebSnapshotDataBase::OhosWebSnapshotDataBase() : capacityInByte_(DEFAULT_CAP
 void OhosWebSnapshotDataBase::Init(const char* databaseDir)
 {
     if (access(databaseDir, F_OK) != 0) {
-        WVLOG_E("web snapshot fail to access cache web dir:%{public}s", databaseDir);
+        WVLOG_E("blankless web snapshot fail to access cache web dir:%{public}s", databaseDir);
         return;
     }
 
@@ -152,7 +152,7 @@ void OhosWebSnapshotDataBase::Init(const char* databaseDir)
     int32_t bundleNameLength = 0;
     auto code = OH_AbilityRuntime_ApplicationContextGetBundleName(bundleName, NATIVE_BUFFER_SIZE, &bundleNameLength);
     if (code != ABILITY_RUNTIME_ERROR_CODE_NO_ERROR) {
-        WVLOG_E("OH_AbilityRuntime_ApplicationContextGetBundleName failed:err=%{public}d", code);
+        WVLOG_E("blankless OH_AbilityRuntime_ApplicationContextGetBundleName failed:err=%{public}d", code);
         return;
     }
 
@@ -160,7 +160,7 @@ void OhosWebSnapshotDataBase::Init(const char* databaseDir)
     code = OH_AbilityRuntime_ApplicationContextGetAreaMode(&areaMode);
     auto it = AREA_MODE_MAP.find(areaMode);
     if (code != ABILITY_RUNTIME_ERROR_CODE_NO_ERROR || it == AREA_MODE_MAP.end()) {
-        WVLOG_E("OH_AbilityRuntime_ApplicationContextGetAreaMode failed:err=%{public}d", code);
+        WVLOG_E("blankless OH_AbilityRuntime_ApplicationContextGetAreaMode failed:err=%{public}d", code);
         return;
     }
 
@@ -179,21 +179,21 @@ void OhosWebSnapshotDataBase::Init(const char* databaseDir)
 OhosWebSnapshotDataBase::~OhosWebSnapshotDataBase()
 {
     if (rdbStore_ == nullptr) {
-        WVLOG_E("web snapshot database delete rdb is null");
+        WVLOG_E("blankless web snapshot database delete rdb is null");
         return;
     }
     int errCode = OH_Rdb_CloseStore(rdbStore_);
     if (errCode == RDB_OK) {
-        WVLOG_I("web snapshot database delete rdb succeed");
+        WVLOG_I("blankless web snapshot database delete rdb succeed");
     } else {
-        WVLOG_E("web snapshot database delete rdb failed");
+        WVLOG_E("blankless web snapshot database delete rdb failed");
     }
 }
 
 int32_t OhosWebSnapshotDataBase::GetCapacityInByte()
 {
     if (rdbStore_ == nullptr) {
-        WVLOG_E("web snapshot database get capacity rdb is null");
+        WVLOG_E("blankless web snapshot database get capacity rdb is null");
         return 0;
     }
 
@@ -204,7 +204,7 @@ int32_t OhosWebSnapshotDataBase::GetCapacityInByte()
 int32_t OhosWebSnapshotDataBase::SetBlanklessLoadingCacheCapacity(int32_t capacity)
 {
     if (rdbStore_ == nullptr) {
-        WVLOG_E("web snapshot database set capacity rdb is null");
+        WVLOG_E("blankless web snapshot database set capacity rdb is null");
         return 0;
     }
 
@@ -215,7 +215,7 @@ int32_t OhosWebSnapshotDataBase::SetBlanklessLoadingCacheCapacity(int32_t capaci
         capacity = MAX_CAPACITY;
     }
     int32_t ret = DataUpdateCapacity(capacity);
-    WVLOG_I("web snapshot database insert capacity:%{public}d, ret:%{public}d", capacity, ret);
+    WVLOG_I("blankless web snapshot database insert capacity:%{public}d, ret:%{public}d", capacity, ret);
     capacityInByte_ = capacity * BYTE_PER_MB;
 
     if (capacity == MIN_CAPACITY) {
@@ -236,7 +236,7 @@ int32_t OhosWebSnapshotDataBase::SetBlanklessLoadingCacheCapacity(int32_t capaci
 void OhosWebSnapshotDataBase::ClearSnapshotDataItem(const std::vector<int64_t>& blankless_keys)
 {
     if (rdbStore_ == nullptr) {
-        WVLOG_E("web snapshot database clear data rdb is null");
+        WVLOG_E("blankless web snapshot database clear data rdb is null");
         return;
     }
 
@@ -250,20 +250,20 @@ void OhosWebSnapshotDataBase::ClearSnapshotDataItem(const std::vector<int64_t>& 
     for (int64_t blankless_key : blankless_keys) {
         DataMapErase(blankless_key);
         ret = DataDelete(blankless_key);
-        WVLOG_I("web snapshot database clear data key:%{public}ld, ret:%{public}d", blankless_key, ret);
+        WVLOG_I("blankless web snapshot database clear data key:%{public}ld, ret:%{public}d", blankless_key, ret);
     }
 }
 
 void OhosWebSnapshotDataBase::InsertSnapshotDataItem(int64_t blankless_key, const SnapshotDataItem& data)
 {
     if (rdbStore_ == nullptr) {
-        WVLOG_E("web snapshot database insert data rdb is null");
+        WVLOG_E("blankless web snapshot database insert data rdb is null");
         return;
     }
 
     std::lock_guard<std::mutex> lock(dataBaseMapMtx_);
     if (data.snapShotFileSize <= 0 || data.snapShotFileSize > capacityInByte_) {
-        WVLOG_E("web snapshot database insert failed, fileSize:%{public}ld, capacityInByte_:%{public}d",
+        WVLOG_E("blankless web snapshot database insert failed, fileSize:%{public}ld, capacityInByte_:%{public}d",
             data.snapShotFileSize, capacityInByte_);
         return;
     }
@@ -274,19 +274,19 @@ void OhosWebSnapshotDataBase::InsertSnapshotDataItem(int64_t blankless_key, cons
 SnapshotDataItem OhosWebSnapshotDataBase::GetSnapshotDataItem(int64_t blankless_key)
 {
     if (rdbStore_ == nullptr) {
-        WVLOG_E("web snapshot database get data rdb is null");
+        WVLOG_E("blankless web snapshot database get data rdb is null");
         return SnapshotDataItem{};
     }
 
     std::lock_guard<std::mutex> lock(dataBaseMapMtx_);
     auto it = dataBaseMap_.find(blankless_key);
     if (it == dataBaseMap_.end()) {
-        WVLOG_E("web snapshot database get data failed");
+        WVLOG_E("blankless web snapshot database get data failed");
         return SnapshotDataItem{};
     }
 
     if (GetCurrentTime() - MAXIMUM_TIME_LIMIT_MICRO_SECONDS >= it->second.time) {
-        WVLOG_E("web snapshot database get data timeout");
+        WVLOG_E("blankless web snapshot database get data timeout");
         return SnapshotDataItem{};
     }
     return it->second.snapshotData;
@@ -295,7 +295,7 @@ SnapshotDataItem OhosWebSnapshotDataBase::GetSnapshotDataItem(int64_t blankless_
 void OhosWebSnapshotDataBase::RegisterDataBaseCallback(std::shared_ptr<OhosWebSnapshotDataBaseCallback> callback)
 {
     if (callback == nullptr) {
-        WVLOG_E("web snapshot database register callback is null");
+        WVLOG_E("blankless web snapshot database register callback is null");
         return;
     }
     dataBaseDeleteCallbacks_.push_back(callback);
@@ -336,19 +336,19 @@ __attribute__((no_sanitize("cfi", "cfi-icall"))) void OhosWebSnapshotDataBase::G
     int32_t capacityColumnIndex;
     int32_t errCode = cursor->getColumnIndex(cursor, CAPACITY_KEY_COL.c_str(), &capacityColumnIndex);
     if (errCode != RDB_OK) {
-        WVLOG_E("web snapshot database GetDatabaseInfo get capacity column index failed, errCode:%{public}d", errCode);
+        WVLOG_E("blankless web snapshot database GetDatabaseInfo get capacity column index failed, errCode:%{public}d", errCode);
         cursor->destroy(cursor);
         return;
     }
     int64_t capacity;
     errCode = cursor->getInt64(cursor, capacityColumnIndex, &capacity);
     if (errCode != RDB_OK) {
-        WVLOG_E("web snapshot database GetDatabaseInfo get capacity value failed, errCode:%{public}d", errCode);
+        WVLOG_E("blankless web snapshot database GetDatabaseInfo get capacity value failed, errCode:%{public}d", errCode);
         cursor->destroy(cursor);
         return;
     }
     if (capacity < MIN_CAPACITY || capacity > MAX_CAPACITY) {
-        WVLOG_E("web snapshot database GetDatabaseInfo get capacity invalid, capacity:%{public}ld", capacity);
+        WVLOG_E("blankless web snapshot database GetDatabaseInfo get capacity invalid, capacity:%{public}ld", capacity);
         cursor->destroy(cursor);
         return;
     }
@@ -460,7 +460,7 @@ __attribute__((no_sanitize("cfi", "cfi-icall"))) void OhosWebSnapshotDataBase::G
 
     for (int64_t key : invalidKeys) {
         int32_t ret = DataDelete(key);
-        WVLOG_I("web snapshot database invalid key:%{public}ld, ret:%{public}d", key, ret);
+        WVLOG_I("blankless web snapshot database invalid key:%{public}ld, ret:%{public}d", key, ret);
     }
 }
 
@@ -476,7 +476,7 @@ void OhosWebSnapshotDataBase::InsertDataBaseDataItem(int64_t blankless_key, cons
     bool isSuccess = dataBaseMap_.find(blankless_key) != dataBaseMap_.end() ?
         DataMapUpdate(blankless_key, data, needDeleteKeys) : DataMapInsert(blankless_key, data, needDeleteKeys);
     if (!isSuccess) {
-        WVLOG_E("web snapshot database insert data failed");
+        WVLOG_E("blankless web snapshot database insert data failed");
         return;
     }
 
@@ -484,26 +484,26 @@ void OhosWebSnapshotDataBase::InsertDataBaseDataItem(int64_t blankless_key, cons
         DataDelete(key);
     }
     int32_t ret = DataInsert(blankless_key, data);
-    WVLOG_I("web snapshot database insert key:%{public}ld, ret:%{public}d", blankless_key, ret);
+    WVLOG_I("blankless web snapshot database insert key:%{public}ld, ret:%{public}d", blankless_key, ret);
 }
 
 void OhosWebSnapshotDataBase::ClearSnapshotDataItemInnerWithoutLock()
 {
     DataMapClear();
     int32_t ret = DataClear();
-    WVLOG_I("web snapshot database clear all data, ret:%{public}d", ret);
+    WVLOG_I("blankless web snapshot database clear all data, ret:%{public}d", ret);
     return;
 }
 
 void OhosWebSnapshotDataBase::NotifyDataBaseDeletePath(const std::string& path)
 {
     if (path.empty()) {
-        WVLOG_W("web snapshot database notify callback path is empty");
+        WVLOG_W("blankless web snapshot database notify callback path is empty");
         return;
     }
     for (const auto& callback : dataBaseDeleteCallbacks_) {
         callback->OnDataDelete(path);
-        WVLOG_I("web snapshot database notify callback path:%{public}s", path.c_str());
+        WVLOG_I("blankless web snapshot database notify callback path:%{public}s", path.c_str());
     }
 }
 
@@ -563,7 +563,7 @@ void OhosWebSnapshotDataBase::DataMapErase(int64_t blankless_key)
 {
     auto it = dataBaseMap_.find(blankless_key);
     if (it == dataBaseMap_.end()) {
-        WVLOG_E("web snapshot database delete can not find key:%{public}ld", blankless_key);
+        WVLOG_E("blankless web snapshot database delete can not find key:%{public}ld", blankless_key);
         return;
     }
     DataMapEraseInnerWithoutLock(blankless_key);
@@ -599,7 +599,7 @@ bool OhosWebSnapshotDataBase::DataMapInsert(int64_t blankless_key, const DataBas
     std::vector<int64_t>& needDeleteKeys)
 {
     if (data.snapshotData.snapShotFileSize <= 0 || data.snapshotData.snapShotFileSize > capacityInByte_) {
-        WVLOG_E("web snapshot database map insert failed, fileSize:%{public}ld, capacityInByte_:%{public}d",
+        WVLOG_E("blankless web snapshot database map insert failed, fileSize:%{public}ld, capacityInByte_:%{public}d",
             data.snapshotData.snapShotFileSize, capacityInByte_);
         return false;
     }
@@ -617,7 +617,7 @@ bool OhosWebSnapshotDataBase::DataMapUpdate(int64_t blankless_key, const DataBas
     std::vector<int64_t>& needDeleteKeys)
 {
     if (data.snapshotData.snapShotFileSize <= 0 || data.snapshotData.snapShotFileSize > capacityInByte_) {
-        WVLOG_E("web snapshot database map update failed, fileSize:%{public}ld, capacityInByte_:%{public}d",
+        WVLOG_E("blankless web snapshot database map update failed, fileSize:%{public}ld, capacityInByte_:%{public}d",
             data.snapshotData.snapShotFileSize, capacityInByte_);
         return false;
     }

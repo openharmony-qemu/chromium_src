@@ -947,3 +947,20 @@ fuzzer_test("nweb_native_media_player_handler_impl_fuzzer") {
     "//ohos_nweb:nweb_sources",
   ]
 }
+
+fuzzer_test("html_embed_element_for_include_fuzzer") {
+  sources = [ "fuzztest/third_party/blink/renderer/core/html/html_embed_element_for_include_fuzzer.cpp" ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+    "//v8/include",
+    "//third_party/blink",
+  ]
+  deps = [
+    "//arkweb/ohos_adapter_ndk:adapter_ndk_stub",
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}

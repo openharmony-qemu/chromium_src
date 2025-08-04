@@ -23,16 +23,16 @@ import("//arkweb/build/features/features.gni")
 
 fuzzer_test("ashmem_fuzzer") {
     sources = [
-        "ashmem_fuzzer.cc",
+        "ashmem_fuzzer.cpp",
     ]
     include_dirs = [
         "//ohos_nweb/include",
         "//third_party/ohos_ndk/includes/ohos_adapter",
     ]
     deps = [
+        "//arkweb/ohos_adapter_ndk:adapter_ndk_stub",
         "//cef:libcef_static",
         "//ohos_nweb:nweb_sources",
-        "//arkweb/ohos_adapter_ndk:adapter_ndk",
     ]
 }
 

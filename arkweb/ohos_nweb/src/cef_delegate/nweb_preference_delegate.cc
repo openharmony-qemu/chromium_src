@@ -1257,7 +1257,7 @@ bool NWebPreferenceDelegate::SetRotationType(uint32_t type) {
   return true;
 }
 
-uint32_t NWebPreferenceDelegate::GetRiotationType() {
+uint32_t NWebPreferenceDelegate::GetRotationType() {
   return rotationType_;
 }
 #endif

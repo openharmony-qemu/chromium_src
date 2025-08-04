@@ -1460,7 +1460,8 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
   output_handler_->Resize(width, height);
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (nweb_delegate_->GetNearestSnapshotSize() != gfx::Size(width, height)) {
+  if ((nweb_delegate_->NearestSnapshotWidth() != static_cast<int32_t>(width)) ||
+  (nweb_delegate_->NearestSnapshotHeight() != static_cast<int32_t>(height))) {
     RemoveBlanklessFrame();
   }
 #endif
@@ -6012,7 +6013,7 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
 }
 
 void NWebImpl::RemoveBlanklessFrame() {
-  if (nweb_delegate_->GetNearestSnapshotSize().IsEmpty()) {
+  if ((nweb_delegate_->NearestSnapshotWidth() == 0) || (nweb_delegate_->NearestSnapshotHeight() == 0)) {
     return;
   }
   nweb_handle_->OnRemoveBlanklessFrame(0);

@@ -132,6 +132,21 @@ TEST_F(AsyncLayerTreeFrameSinkUtilsTest, DfxDumpLogFirstAndSubsequentCalls) {
   utils_->SubmitCompositorFrameDfxDumpLog(id);
 }
 
+TEST_F(AsyncLayerTreeFrameSinkUtilsTest, OnBeginFrameArkWebDfxTrace) {
+  int64_t id = 1;
+  utils_->OnBeginFrameArkWebDfxTrace(id);
+}
+
+TEST_F(AsyncLayerTreeFrameSinkUtilsTest, OnBeginFrameArkWebSwBuTr) {
+  int64_t id = 1;
+  utils_->OnBeginFrameArkWebSwBuTr(id);
+}
+
+TEST_F(AsyncLayerTreeFrameSinkUtilsTest, SubmitCompositorFrameArkWebSwapBuTr) {
+  int64_t id = 1;
+  utils_->SubmitCompositorFrameArkWebSwapBuTr(id, FrameSkippedReason::kRecoverLatency);
+}
+
 }  // namespace
 }  // namespace mojo_embedder
 }  // namespace cc

@@ -39,21 +39,21 @@ void BlanklessController::BlankOptWhiteList::LoadWhiteList()
   base::FilePath data_path = base::FilePath("/etc/web/blank_opt_white_list.json");
   base::File tfile(data_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
   if (!tfile.IsValid()) {
-    LOG(WARNING) << "BlankOptWhiteList file is invalid or not exist.";
+    LOG(WARNING) << "blankless BlankOptWhiteList file is invalid or not exist.";
     return;
   }
 
   std::vector<char> buffer(tfile.GetLength());
   int bytes_read = tfile.Read(0, buffer.data(), buffer.size());
   if (bytes_read == -1) {
-    LOG(WARNING) << "BlankOptWhiteList read file failed.";
+    LOG(WARNING) << "blankless BlankOptWhiteList read file failed.";
     return;
   }
 
   auto buffer_str = std::string_view(buffer.data(), buffer.size());
   std::optional<base::Value> json = base::JSONReader::Read(buffer_str, base::JSON_ALLOW_TRAILING_COMMAS);
   if (!json.has_value() || !json->is_dict()) {
-    LOG(WARNING) << "BlankOptWhiteList parse file as invalid json format failed.";
+    LOG(WARNING) << "blankless BlankOptWhiteList parse file as invalid json format failed.";
     return;
   }
 
@@ -61,7 +61,7 @@ void BlanklessController::BlankOptWhiteList::LoadWhiteList()
   base::Value* exactMatch = dict.Find("exact-match");
   base::Value* fuzzyMatch = dict.Find("fuzzy-match");
   if (!exactMatch || !fuzzyMatch || !exactMatch->is_list() || !fuzzyMatch->is_list()) {
-    LOG(WARNING) << "BlankOptWhiteList read white list failed.";
+    LOG(WARNING) << "blankless BlankOptWhiteList read white list failed.";
     return;
   }
   base::Value::List& exactMatchList = exactMatch->GetList();
@@ -72,7 +72,7 @@ void BlanklessController::BlankOptWhiteList::LoadWhiteList()
   for (const auto& item : fuzzyMatchList) {
     m_fuzzy_match_set_.insert(item.GetString());
   }
-  LOG(DEBUG) << "BlankOptWhiteList read white list success.";
+  LOG(DEBUG) << "blankless BlankOptWhiteList read white list success.";
 }
 
 bool BlanklessController::BlankOptWhiteList::CheckWhiteList(const std::string& url)

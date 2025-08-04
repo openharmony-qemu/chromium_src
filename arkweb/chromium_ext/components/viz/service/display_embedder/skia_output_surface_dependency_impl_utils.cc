@@ -36,16 +36,4 @@ bool SkiaOutputSurfaceDependencyImplUtils::GetIsScroll() {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-void SkiaOutputSurfaceDependencyImplUtils::SendBlanklessSnapshotInfo(
-    uint64_t blankless_key,
-    int32_t lcp_time,
-    int64_t pref_hash,
-    const SkBitmap& bitmap,
-    const std::vector<gfx::Rect>& quad_list) {
-  return skiaOutputSurfaceDependencyImpl->gpu_service_impl_->SendBlanklessSnapshotInfo(
-                                                              blankless_key, lcp_time, pref_hash, bitmap, quad_list);
-}
-#endif
-
 } // namespace viz

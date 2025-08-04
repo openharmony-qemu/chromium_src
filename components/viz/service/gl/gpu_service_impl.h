@@ -65,6 +65,7 @@
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "third_party/skia/include/core/SkPixmap.h"
 #include "ui/gfx/geometry/rect.h"
+#include "components/viz/common/frame_sinks/copy_output_result.h"
 #endif
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
@@ -468,10 +469,13 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
   void SendBlanklessSnapshotInfo(uint64_t blankless_key,
                                  int32_t lcp_time,
                                  int64_t pref_hash,
-                                 const SkBitmap& bitmap,
-                                 const std::vector<gfx::Rect>& quad_list);
+                                 const std::vector<gfx::Rect>& quad_list,
+                                 mojo::ScopedSharedBufferHandle buffer,
+                                 mojom::BlanklessBitmapMetadataPtr metadata);
 
   void ClearBlanklessSnapshotInfo(uint64_t blankless_key);
+  void OnFrameSnapshotCopyOutputResult(std::unique_ptr<CopyOutputResult> result);
+  base::WeakPtr<GpuServiceImpl> GetWeakPtr() const;
 #endif
 
  private:

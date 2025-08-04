@@ -1773,7 +1773,7 @@ void DownloadItemImpl::Start(
 
   TransitionTo(TARGET_PENDING_INTERNAL);
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  LOG(INFO) << "DownloadItemImpl::Start download_file_";
+  LOG(INFO) << "DownloadItemImpl::Start";
 #endif // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   job_->Start(download_file_.get(),
               base::BindRepeating(&DownloadItemImpl::OnDownloadFileInitialized,

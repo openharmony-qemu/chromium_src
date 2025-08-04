@@ -60,6 +60,7 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "arkweb/chromium_ext/content/browser/renderer_host/ark_web_back_forward_cache_impl.h"
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
@@ -1749,6 +1750,10 @@ bool BackForwardCacheImpl::IsMediaSessionServiceAllowed() {
 
 // Static
 bool BackForwardCacheImpl::IsUnloadAllowed() {
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  if (base::ohos::IsPcDevice())
+    return false;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
   return base::FeatureList::IsEnabled(kBackForwardCacheUnloadAllowed);
 }
 

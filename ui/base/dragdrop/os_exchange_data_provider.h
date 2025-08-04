@@ -66,16 +66,17 @@ class COMPONENT_EXPORT(UI_BASE_DATA_EXCHANGE) OSExchangeDataProvider {
   virtual void SetFilenames(const std::vector<FileInfo>& file_names) = 0;
   virtual void SetPickledData(const ClipboardFormatType& format,
                               const base::Pickle& data) = 0;
-  // Even if there is no URL data present, many implementations will coerce text
-  // content into URLs if the text is a valid URL. This coercion should only
-  // happen for HTTP-like URLs (i.e. http or https) if the data originates from
-  // a renderer (i.e. `IsRendererTainted()` is true) to avoid bypassing the URL
-  // filtering applied when a drag is started.
+
   virtual std::optional<std::u16string> GetString() const = 0;
   struct UrlInfo {
     GURL url;
     std::u16string title;
   };
+  // Even if there is no URL data present, many implementations will coerce text
+  // content into URLs if the text is a valid URL. This coercion should only
+  // happen for HTTP-like URLs (i.e. http or https) if the data originates from
+  // a renderer (i.e. `IsRendererTainted()` is true) to avoid bypassing the URL
+  // filtering applied when a drag is started.
   virtual std::optional<UrlInfo> GetURLAndTitle(
       FilenameToURLPolicy policy) const = 0;
   virtual std::optional<std::vector<GURL>> GetURLs(

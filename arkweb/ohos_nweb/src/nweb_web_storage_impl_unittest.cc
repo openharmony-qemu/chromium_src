@@ -30,6 +30,12 @@ TEST(NWebWebStorageImplTEST, DeleteAllData) {
     web_storage->DeleteAllData(false);
 }
 
+TEST(NWebWebStorageImplTEST, DeleteAllData_DelegateNull) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  web_storage->delegate_ = nullptr;
+  web_storage->DeleteAllData(false);
+}
+
 TEST(NWebWebStorageImplTEST, DeleteOrigin) {
     auto web_storage = std::make_shared<NWebWebStorageImpl>();
     std::string origin = "";
@@ -48,6 +54,12 @@ TEST(NWebWebStorageImplTEST, GetOrigins001) {
     web_storage->GetOrigins(nullptr);
 }
 
+TEST(NWebWebStorageImplTEST, GetOrigins001_DelegateNull) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  web_storage->delegate_ = nullptr;
+  web_storage->GetOrigins(nullptr);
+}
+
 TEST(NWebWebStorageImplTEST, GetOrigins002) {
     auto web_storage = std::make_shared<NWebWebStorageImpl>();
     std::vector<std::shared_ptr<NWebWebStorageOrigin>> origins 
@@ -55,15 +67,34 @@ TEST(NWebWebStorageImplTEST, GetOrigins002) {
     EXPECT_TRUE(origins.empty());
 }
 
+TEST(NWebWebStorageImplTEST, GetOrigins002_DelegateNull) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  web_storage->delegate_ = nullptr;
+  std::vector<std::shared_ptr<NWebWebStorageOrigin>> origins
+                                  = web_storage->GetOrigins();
+  EXPECT_TRUE(origins.empty());
+}
+
 TEST(NWebWebStorageImplTEST, GetOriginQuota001) {
     auto web_storage = std::make_shared<NWebWebStorageImpl>();
     web_storage->GetOriginQuota("", nullptr);
+}
 
+TEST(NWebWebStorageImplTEST, GetOriginQuota001_DelegateNull) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  web_storage->delegate_ = nullptr;
+  web_storage->GetOriginQuota("", nullptr);
 }
 
 TEST(NWebWebStorageImplTEST, GetOriginQuota002) {
     auto web_storage = std::make_shared<NWebWebStorageImpl>();
     EXPECT_EQ(web_storage->GetOriginQuota(""), -1);
+}
+
+TEST(NWebWebStorageImplTEST, GetOriginQuota002_DelegateNull) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  web_storage->delegate_ = nullptr;
+  EXPECT_EQ(web_storage->GetOriginQuota(""), -1);
 }
 
 TEST(NWebWebStorageImplTEST, GetOriginUsage001) {
@@ -87,6 +118,12 @@ TEST(NWebWebStorageImplTEST, PutWebStorageCallback) {
     web_storage->PutWebStorageCallback(nullptr);
 }
 
+TEST(NWebWebStorageImplTEST, PutWebStorageCallback_DelegateNull) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  web_storage->delegate_ = nullptr;
+  web_storage->PutWebStorageCallback(nullptr);
+}
+
 TEST(NWebWebStorageImplTEST, GetPassword) {
     auto web_storage = std::make_shared<NWebWebStorageImpl>();
     const std::string url = "";
@@ -107,9 +144,21 @@ TEST(NWebWebStorageImplTEST, GetSavedPasswords) {
     web_storage->GetSavedPasswords(1);
 }
 
+TEST(NWebWebStorageImplTEST, GetSavedPasswords_DelegateNull) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  web_storage->delegate_ = nullptr;
+  web_storage->GetSavedPasswords(1);
+}
+
 TEST(NWebWebStorageImplTEST, MigratePasswords) {
     auto web_storage = std::make_shared<NWebWebStorageImpl>();
     web_storage->MigratePasswords();
+}
+
+TEST(NWebWebStorageImplTEST, MigratePasswords_DelegateNull) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  web_storage->delegate_ = nullptr;
+  web_storage->MigratePasswords();
 }
 
 TEST(NWebWebStorageImplTEST, ClearPassword) {
@@ -117,11 +166,25 @@ TEST(NWebWebStorageImplTEST, ClearPassword) {
     web_storage->ClearPassword();
 }
 
+TEST(NWebWebStorageImplTEST, ClearPassword_DelegateNull) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  web_storage->delegate_ = nullptr;
+  web_storage->ClearPassword();
+}
+
 TEST(NWebWebStorageImplTEST, RemovePassword) {
     auto web_storage = std::make_shared<NWebWebStorageImpl>();
     const std::string url = "";
     const std::string username = "";
     web_storage->RemovePassword(url, username);
+}
+
+TEST(NWebWebStorageImplTEST, RemovePassword_DelegateNull) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  const std::string url = "";
+  const std::string username = "";
+  web_storage->delegate_ = nullptr;
+  web_storage->RemovePassword(url, username);
 }
 
 TEST(NWebWebStorageImplTEST, ModifyPassword) {
@@ -133,8 +196,25 @@ TEST(NWebWebStorageImplTEST, ModifyPassword) {
     web_storage->ModifyPassword(url, old1, new1, new2);
 }
 
+TEST(NWebWebStorageImplTEST, ModifyPassword_DelegateNull) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  const std::string url = "";
+  const std::string old1 = "";
+  const std::string new1 = "";
+  const std::string new2 = "";
+  web_storage->delegate_ = nullptr;
+  web_storage->ModifyPassword(url, old1, new1, new2);
+}
+
 TEST(NWebWebStorageImplTEST, RemovePasswordByUrl) {
     auto web_storage = std::make_shared<NWebWebStorageImpl>();
     const std::string url = "";
     web_storage->RemovePasswordByUrl(url);
+}
+
+TEST(NWebWebStorageImplTEST, RemovePasswordByUrl_DelegateNull) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  web_storage->delegate_ = nullptr;
+  const std::string url = "";
+  web_storage->RemovePasswordByUrl(url);
 }

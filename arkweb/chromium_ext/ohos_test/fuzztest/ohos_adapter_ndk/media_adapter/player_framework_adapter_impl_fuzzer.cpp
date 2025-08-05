@@ -14,7 +14,7 @@
  */
 
 #include "arkweb/ohos_adapter_ndk/media_adapter/player_framework_adapter_impl.h"
-
+#include "arkweb/ohos_adapter_ndk/media_adapter/player_framework_adapter_impl.cpp"
 #include "ohos_adapter_helper.h"
 #include "player_framework_adapter_impl.h"
 #include <fuzzer/FuzzedDataProvider.h>
@@ -22,6 +22,11 @@ using namespace OHOS::NWeb;
 
 namespace OHOS {
 constexpr int MAX_SET_NUMBER = 1000;
+
+class PlayerAdapterImplTest : public PlayerAdapterImpl {
+public:
+    PlayerAdapterImplTest () = default;
+};
 
 class PlayerCallbackTest : public PlayerCallbackAdapter {
 public:
@@ -38,6 +43,55 @@ public:
     PlayerOnInfoType infoType_ = PlayerOnInfoType::INFO_TYPE_UNSET;
     PlayerAdapterErrorType errorType_ = PlayerAdapterErrorType::INVALID_CODE;
 };
+
+bool PlayerFrameworkAdapterImpl_NullFuzzTest(FuzzedDataProvider* fdp) {
+    PlayerAdapterImplTest playerAdapter;
+    auto callbackTest = std::make_unique<PlayerCallbackTest>();
+    playerAdapter.SetPlayerCallback(std::move(callbackTest));
+    auto surfaceAdapter = NWeb::OhosAdapterHelper::GetInstance().CreateConsumerSurfaceAdapter();
+    playerAdapter.SetVideoSurface(std::move(surfaceAdapter));
+
+    std::string sourceUrl = fdp->ConsumeRandomLengthString(32);
+    playerAdapter.SetSource(sourceUrl);
+
+    int32_t fd = fdp->ConsumeIntegralInRange<int32_t>(0, MAX_SET_NUMBER);
+    int32_t offset = fdp->ConsumeIntegralInRange<int32_t>(0, MAX_SET_NUMBER);
+    int32_t size = fdp->ConsumeIntegralInRange<int32_t>(offset, MAX_SET_NUMBER+1);
+    playerAdapter.SetSource(fd, offset, size);
+
+    auto leftVolume = fdp->ConsumeFloatingPoint<float>();
+    auto rightVolume = fdp->ConsumeFloatingPoint<float>();
+    playerAdapter.SetVolume(leftVolume, rightVolume);
+
+    int32_t rawValue = fdp->ConsumeIntegralInRange<int32_t>(0, 3);
+    auto playerseekmode = static_cast<PlayerSeekMode>(rawValue);
+    int32_t seekpoint = fdp->ConsumeIntegralInRange(0, MAX_SET_NUMBER);
+    playerAdapter.Seek(seekpoint, playerseekmode);
+    playerAdapter.Play();
+    playerAdapter.Pause();
+    playerAdapter.PrepareAsync();
+    int32_t currentTime = fdp->ConsumeIntegralInRange<int32_t>(0, MAX_SET_NUMBER);
+    playerAdapter.GetCurrentTime(currentTime);
+
+    int32_t duration = fdp->ConsumeIntegralInRange<int32_t>(0, MAX_SET_NUMBER);
+    playerAdapter.GetDuration(duration);
+
+    playerAdapter.Seek(seekpoint, PlayerSeekMode::SEEK_NEXT_SYNC);
+    playerAdapter.SetVideoSurfaceNew(nullptr);
+
+    int32_t randState = fdp->ConsumeIntegralInRange<int32_t>(0, 9);
+    ConverterState(randState);
+    int32_t randState1 = fdp->ConsumeIntegralInRange<int32_t>(200, 301);
+    IsUnsupportType(randState);
+    int32_t randState2 = fdp->ConsumeIntegralInRange<int32_t>(0, 5411011);
+    IsFatalError(randState);
+    PlayerErrorCallback(nullptr, randState1, nullptr, nullptr);
+    PlayerErrorCallback(nullptr, randState2, nullptr, nullptr);
+    randState = fdp->ConsumeIntegralInRange<int32_t>(0, 10);
+    auto info = static_cast<AVPlayerOnInfoType>(randState);
+    PlayerInfoCallback(nullptr, info, nullptr, nullptr);
+    return true;
+}
 
 bool PlayerFrameworkAdapterImpl_SetSourceFuzzTest(FuzzedDataProvider* fdp) {
     PlayerAdapterImpl playerAdapter;
@@ -114,7 +168,6 @@ bool PlayerFrameworkAdapterImpl_SetPlaybackSpeedFuzzTest(FuzzedDataProvider* fdp
     return true;
 }
 
-
 bool PlayerFrameworkAdapterImpl_SetMediaSourceHeaderFuzzTest(FuzzedDataProvider* fdp) {
     PlayerAdapterImpl playerAdapter;
     auto callbackTest = std::make_unique<PlayerCallbackTest>();
@@ -128,7 +181,6 @@ bool PlayerFrameworkAdapterImpl_SetMediaSourceHeaderFuzzTest(FuzzedDataProvider*
     return true;
 }
 
-
 } // namespace OHOS
 
 /* Fuzzer entry point */
@@ -136,6 +188,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
     FuzzedDataProvider fdp(data, size);
+    OHOS::PlayerFrameworkAdapterImpl_NullFuzzTest(&fdp);
     OHOS::PlayerFrameworkAdapterImpl_SetSourceFuzzTest(&fdp);
     OHOS::PlayerFrameworkAdapterImpl_SetVolumeFuzzTest(&fdp);
     OHOS::PlayerFrameworkAdapterImpl_SeekFuzzTest(&fdp);

@@ -33,6 +33,7 @@ namespace blink {
 
 #define NO_NATIVE_TYPE 100
 
+// LCOV_EXCL_START
 InputHandlerProxyUtils::InputHandlerProxyUtils(InputHandlerProxy* proxy)
     : proxy_(proxy) {
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
@@ -40,6 +41,10 @@ InputHandlerProxyUtils::InputHandlerProxyUtils(InputHandlerProxy* proxy)
   native_touch_end_queue_ = std::make_unique<NativeEmbedEventQueue>();
   native_mouse_event_queue_ = std::make_unique<NativeEmbedEventQueue>();
   native_mouse_end_queue_ = std::make_unique<NativeEmbedEventQueue>();
+  for (int i = 0; i < MAX_FINGER_NUMBER; ++i) {
+    NativeTouchEventQueues_[i] = std::make_shared<NativeEmbedEventQueue>();
+    gesture_status_[i] = WebInputEvent::Type::kTouchEnd;
+  }
 #endif
 }
 
@@ -83,6 +88,7 @@ bool IsSameEventType(WebInputEvent::Type type, WebTouchPoint::State state) {
       return false;
   }
 }
+// LCOV_EXCL_STOP
 
 void InputHandlerProxyUtils::NativeHitTestResult(bool native,
                                             size_t fingerId,
@@ -425,14 +431,692 @@ void InputHandlerProxyUtils::SetMouseEventResult(bool result, bool stopPropagati
   }
 }
 
+// LCOV_EXCL_START
 void InputHandlerProxyUtils::SetNativeEmbedMode(bool flag) {
   native_enabled_ = flag;
   LOG(DEBUG) << "[NativeEmbed] SetNativeEmbedMode native_enabled_ is : "
              << native_enabled_;
 }
+// LCOV_EXCL_STOP
+
+void InputHandlerProxyUtils::SetEnableCustomVideoPlayer(bool flag) {
+  enable_custom_video_player_ = flag;
+  LOG(DEBUG) << "[NativeEmbed] SetEnableCustomVideoPlayer "
+                "enable_custom_video_player_ is : "
+             << enable_custom_video_player_;
+}
+
+void InputHandlerProxyUtils::NativeEventProcess(
+    std::unique_ptr<EventWithCallback> event_with_callback) {
+  if (native_enabled_ || enable_custom_video_player_) {
+    auto& input_event = event_with_callback->event();
+    TRACE_EVENT1("input", "InputHandlerProxyUtils::NativeEventProcess", "type",
+                 input_event.GetType());
+    if (IsMouseEventType(input_event.GetType())) {
+      NativeMouseEventProcess(std::move(event_with_callback));
+      return;
+    }
+    if (IsTouchEventType(input_event.GetType())) {
+      NativeTouchEventProcess(std::move(event_with_callback), false);
+      return;
+    }
+  }
+  proxy_->DispatchSingleInputEvent(std::move(event_with_callback));
+}
+
+bool InputHandlerProxyUtils::NativeTouchEventProcess(
+    std::unique_ptr<EventWithCallback> event_with_callback, bool isStartInQueue) {
+  const WebInputEvent& input_event = event_with_callback->event();
+  auto type = input_event.GetType();
+  TRACE_EVENT1("input", "InputHandlerProxyUtils::NativeTouchEventProcess",
+               "type", type);
+  switch (type) {
+    case WebInputEvent::Type::kTouchStart: 
+      if (isStartInQueue) {
+        return NativeTouchStartProcessInQueue(std::move(event_with_callback));
+      } else {
+        NativeTouchStartProcess(std::move(event_with_callback));
+      }
+      break;
+    case WebInputEvent::Type::kTouchMove:
+      NativeTouchMoveProcess(std::move(event_with_callback));
+      break;
+    case WebInputEvent::Type::kTouchEnd:
+      NativeTouchEndProcess(std::move(event_with_callback));
+      break;
+    case WebInputEvent::Type::kTouchCancel:
+      NativeTouchCancelProcess(std::move(event_with_callback));
+      break;
+    default:
+      break;
+  }
+  return false;
+}
+
+void InputHandlerProxyUtils::NativeMouseEventProcess(
+    std::unique_ptr<EventWithCallback> event_with_callback) {
+  NativeEventDisposition result = NORMAL;
+  auto& input_event = event_with_callback->event();
+  result = DidMouseEmbedEvent(input_event);
+  LOG(DEBUG) << "[NativeEmbedMouse] DidNativeEmbedEvent return result is : "
+             << result;
+  if (result == SEND_NATIVE || result == SEND_VIDEO) {
+    TRACE_EVENT1("input",
+                 "InputHandlerProxy::HandleInputEventWithLatencyInfo::"
+                 "NativeMouseEventProcess",
+                 "NativeEventDisposition", result);
+    native_mouse_event_queue_->Queue(std::move(event_with_callback));
+  } else if (result == END_QUEUE) {
+    TRACE_EVENT1("input",
+                 "InputHandlerProxy::HandleInputEventWithLatencyInfo::"
+                 "NativeMouseEventProcess",
+                 "NativeEventDisposition", result);
+    native_mouse_end_queue_->Queue(std::move(event_with_callback));
+  } else {
+    proxy_->DispatchSingleInputEvent(std::move(event_with_callback));
+  }
+}
+
+void InputHandlerProxyUtils::NativeHitTestResultV2(bool native,
+                                                   size_t finger_id,
+                                                   int layer_Id) {
+  LOG(DEBUG) << "[NativeEmbed] NativeHitTestResultV2 finger_id is : " << finger_id
+             << " and native is : " << native;
+  if (finger_id < MIN_FINGER_NUMBER || finger_id >= MAX_FINGER_NUMBER) {
+    LOG(ERROR) << "[NativeEmbedGesture] finger_id is out of index. fingerId =" << finger_id;
+    ResetTouchSequence();
+    return;
+  }
+  std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+      NativeTouchEventQueues_[finger_id];
+  std::string trace_name =
+      "[NativeEmbedGesture] InputHandlerProxyUtils::NativeHitTestResultV2";
+  TRACE_EVENT2(
+      "input",
+      trace_name.append(", fingerId:").append(std::to_string(finger_id)).c_str(),
+      "native", native, "queue is empty:", touchEventQueue->empty());
+  if (touchEventQueue->empty()) {
+    LOG(ERROR) << "[NativeEmbed] touchEventQueue is empty";
+    ResetTouchSequence();
+    return;
+  }
+
+  if (native) {
+    touchEventQueue->SetLayerId(layer_Id);
+    touchEventQueue->SetStatus(PEND_NATIVE);
+    auto& event = touchEventQueue->Front();
+    const WebTouchEvent& touch_event = static_cast<const WebTouchEvent&>(event);
+    SendEventToNative(touch_event);
+  } else {
+    touchEventQueue->SetStatus(SEND_BLINK);
+    NotifyEventNativeFocusResult(finger_id);
+    FlushNativeTouchQueue(finger_id);
+  }
+}
+
+bool InputHandlerProxyUtils::HandleTouchStartIfHitVideo(
+    const WebTouchEvent& touch_event) {
+  int changeIndex = GetTouchChangeIndex(touch_event);
+
+  float x = touch_event.touches[changeIndex].PositionInWidget().x();
+  float y = touch_event.touches[changeIndex].PositionInWidget().y();
+  int32_t finger_id = touch_event.touches[changeIndex].id;
+  if (finger_id < MIN_FINGER_NUMBER || finger_id >= MAX_FINGER_NUMBER) {
+    LOG(ERROR) << "[NativeEmbedGesture] finger_id is out of index. fingerId =" << finger_id;
+    ResetTouchSequence();
+    return false;
+  }
+  std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+      NativeTouchEventQueues_[finger_id];
+
+  cc::LayerImpl* video_layer_impl =
+      proxy_->input_handler_->handler_utils()->GetLayerImplIsHitByPoint(
+          gfx::Point(x, y));
+  if (video_layer_impl &&
+      video_layer_impl->layer_impl_utils()->ShouldInterceptTouchEvent()) {
+    touchEventQueue->SetLayerId(video_layer_impl->id());
+    SendEventToNative(touch_event);
+    touchEventQueue->SetStatus(PEND_NATIVE);
+    return true;
+  }
+  return false;
+}
+
+bool InputHandlerProxyUtils::HandleTouchStartIfHitNative(
+    const WebTouchEvent& touch_event) {
+  int changeIndex = GetTouchChangeIndex(touch_event);
+  float x = touch_event.touches[changeIndex].PositionInWidget().x();
+  float y = touch_event.touches[changeIndex].PositionInWidget().y();
+  int32_t finger_id = touch_event.touches[changeIndex].id;
+  if (finger_id < MIN_FINGER_NUMBER || finger_id >= MAX_FINGER_NUMBER) {
+    LOG(ERROR) << "[NativeEmbedGesture] finger_id is out of index. fingerId =" << finger_id;
+    ResetTouchSequence();
+    return false;
+  }
+  std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+      NativeTouchEventQueues_[finger_id];
+  auto status = touchEventQueue->GetStatus();
+  cc::LayerImpl* native_layer_impl =
+      proxy_->input_handler_->handler_utils()->GetNativeLayerImpl(
+          gfx::Point(x, y));
+  if (native_layer_impl) {
+    const WebTouchPoint& touch_point = touch_event.touches[changeIndex];
+    WebPointerEvent pointer_event = WebPointerEvent(touch_event, touch_point);
+    std::string trace_name = "InputHandlerProxyUtils::NativeTouchStartProcess";
+    TRACE_EVENT2(
+        "input",
+        trace_name.append(", fingerId:").append(std::to_string(finger_id)).c_str(),
+        "isHitNative", "True", "status", status);
+    touchEventQueue->SetStatus(PEND_HITTEST);
+    proxy_->client_->TouchHitTest(pointer_event, finger_id);
+    return true;
+  } else {
+    std::string trace_name = "InputHandlerProxyUtils::NativeTouchStartProcess";
+    TRACE_EVENT2(
+        "input",
+        trace_name.append(", fingerId:").append(std::to_string(finger_id)).c_str(),
+        "isHitNative", "False", "status", status);
+    NotifyEventNativeFocusResult(finger_id);
+    touchEventQueue->SetStatus(SEND_BLINK);
+    return false;
+  }
+}
+
+void InputHandlerProxyUtils::NativeTouchStartProcess(
+    std::unique_ptr<EventWithCallback> event_with_callback) {
+  const WebTouchEvent& touch_event =
+    static_cast<const WebTouchEvent&>(event_with_callback->event());
+  int changeIndex = GetTouchChangeIndex(touch_event);
+  int32_t finger_id = touch_event.touches[changeIndex].id;
+  if (finger_id < MIN_FINGER_NUMBER || finger_id >= MAX_FINGER_NUMBER) {
+    LOG(ERROR) << "[NativeEmbedGesture] finger_id is out of index. fingerId =" << finger_id;
+    SendToBlink(std::move(event_with_callback));
+    ResetTouchSequence();
+    return;
+  }
+  std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+  NativeTouchEventQueues_[finger_id];
+  auto status = touchEventQueue->GetStatus();
+  switch (status) {
+    case INIT:
+    {
+      // customVideoPlayer
+      if (enable_custom_video_player_) {
+        bool isHitLayer = HandleTouchStartIfHitVideo(touch_event);
+        if (isHitLayer) {
+          touchEventQueue->Queue(std::move(event_with_callback));
+          return true;
+        }
+      }
+      // nativeEmbedGesture
+      if (native_enabled_) {
+        bool isHitLayer = HandleTouchStartIfHitNative(touch_event);
+        if (isHitLayer) {
+          touchEventQueue->Queue(std::move(event_with_callback));
+          return true;
+        }
+      }
+      touchEventQueue->SetStatus(SEND_BLINK);
+      SendToBlink(std::move(event_with_callback));
+    }
+    break;
+    case PEND_NATIVE:
+    case PEND_HITTEST:
+      touchEventQueue->Queue(std::move(event_with_callback));
+      break;
+    case SEND_BLINK:
+    case SEND_NATIVE_BLINK:
+    case SEND_TO_NATIVE:
+    case SEND_NATIVE_BLINK_CONSUMER:
+      LOG(ERROR) << "[NativeEmbedGesture] InputHandlerProxyUtils::NativeTouchStartProcess, status error, status = " << status;
+      SendToBlink(std::move(event_with_callback));
+      ResetTouchSequence();
+      break;
+    default:
+      break;
+  }
+}
+
+bool InputHandlerProxyUtils::NativeTouchStartProcessInQueue(
+    std::unique_ptr<EventWithCallback> event_with_callback) {
+  const WebTouchEvent& touch_event =
+  static_cast<const WebTouchEvent&>(event_with_callback->event());
+  int changeIndex = GetTouchChangeIndex(touch_event);
+  int32_t finger_id = touch_event.touches[changeIndex].id;
+  if (finger_id < MIN_FINGER_NUMBER || finger_id >= MAX_FINGER_NUMBER) {
+    LOG(ERROR) << "[NativeEmbedGesture] finger_id is out of index. fingerId =" << finger_id;
+    SendToBlink(std::move(event_with_callback));
+    ResetTouchSequence();
+    return true;
+  }
+  std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+  NativeTouchEventQueues_[finger_id];
+  auto status = touchEventQueue->GetStatus();
+  switch (status) {
+    case INIT:
+    {
+      // customVideoPlayer
+      if (enable_custom_video_player_) {
+        bool isHitLayer = HandleTouchStartIfHitVideo(touch_event);
+        if (isHitLayer) {
+          touchEventQueue->PushFront(std::move(event_with_callback));
+          return true;
+        }
+      }
+      // nativeEmbedGesture
+      if (native_enabled_) {
+        bool isHitLayer = HandleTouchStartIfHitNative(touch_event);
+        if (isHitLayer) {
+          touchEventQueue->PushFront(std::move(event_with_callback));
+          return true;
+        }
+      }
+      touchEventQueue->SetStatus(SEND_BLINK);
+      SendToBlink(std::move(event_with_callback));
+    }
+    break;
+    case PEND_NATIVE:
+    case PEND_HITTEST:
+      LOG(ERROR) << "[NativeEmbedGesture] InputHandlerProxyUtils::NativeTouchStartProcessInQueue, status error, status = " << status;
+      SendToBlink(std::move(event_with_callback));
+      ResetTouchSequence();
+      break;
+    case SEND_BLINK:
+    case SEND_NATIVE_BLINK:
+      SendToBlink(std::move(event_with_callback));
+      break;
+    case SEND_TO_NATIVE:
+      SendToBlink(std::move(event_with_callback), true);
+      break;
+    case SEND_NATIVE_BLINK_CONSUMER:
+      SendToBlink(std::move(event_with_callback), false, true);
+      break;
+    default:
+      break;
+  }
+  return false;
+}
+
+void InputHandlerProxyUtils::NativeTouchMoveProcess(
+    std::unique_ptr<EventWithCallback> event_with_callback) {
+  const WebInputEvent& event = event_with_callback->event();
+  const WebTouchEvent& touch_event = static_cast<const WebTouchEvent&>(event);
+  auto type = event.GetType();
+  int changeIndex = GetTouchChangeIndex(touch_event);
+  int32_t finger_id = touch_event.touches[changeIndex].id;
+  if (finger_id < MIN_FINGER_NUMBER || finger_id >= MAX_FINGER_NUMBER) {
+    LOG(ERROR) << "[NativeEmbedGesture] finger_id is out of index. fingerId =" << finger_id;
+    SendToBlink(std::move(event_with_callback));
+    ResetTouchSequence();
+    return;
+  }
+  std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+      NativeTouchEventQueues_[finger_id];
+  auto status = touchEventQueue->GetStatus();
+  std::string trace_name =
+      "InputHandlerProxyUtils::NativeTouchMoveProcess, fingerId:";
+  trace_name = trace_name + std::to_string(finger_id) +
+               ", changeid:" + std::to_string(changeIndex) +
+               ", type: " + WebInputEvent::GetName(type);
+  TRACE_EVENT1("input", trace_name.c_str(), "status", status);
+  switch (status) {
+    case INIT:
+    case SEND_BLINK:
+      SendToBlink(std::move(event_with_callback));
+      break;
+    case PEND_HITTEST:
+      touchEventQueue->Queue(std::move(event_with_callback));
+      break;
+    case SEND_NATIVE_BLINK:
+      SendEventToNative(touch_event);
+      SendToBlink(std::move(event_with_callback));
+      break;
+    case SEND_TO_NATIVE:
+      SendEventToNative(touch_event);
+      SendToBlink(std::move(event_with_callback), true);
+      break;
+    case SEND_NATIVE_BLINK_CONSUMER:
+      SendEventToNative(touch_event);
+      SendToBlink(std::move(event_with_callback), false, true);
+      break;
+    case PEND_NATIVE:
+      touchEventQueue->Queue(std::move(event_with_callback));
+      SendEventToNative(touch_event);
+      break;
+    default:
+      break;
+  }
+}
+
+void InputHandlerProxyUtils::NativeTouchEndProcess(
+    std::unique_ptr<EventWithCallback> event_with_callback) {
+  const WebInputEvent& event = event_with_callback->event();
+  const WebTouchEvent& touch_event = static_cast<const WebTouchEvent&>(event);
+  auto type = event.GetType();
+  int changeIndex = GetTouchChangeIndex(touch_event);
+  int32_t finger_id = touch_event.touches[changeIndex].id;
+  if (finger_id < MIN_FINGER_NUMBER || finger_id >= MAX_FINGER_NUMBER) {
+    LOG(ERROR) << "[NativeEmbedGesture] finger_id is out of index. fingerId =" << finger_id;
+    SendToBlink(std::move(event_with_callback));
+    ResetTouchSequence();
+    return;
+  }
+  std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+      NativeTouchEventQueues_[finger_id];
+  auto status = touchEventQueue->GetStatus();
+  std::string trace_name =
+      "InputHandlerProxyUtils::NativeTouchEndProcess, fingerId:";
+  trace_name = trace_name + std::to_string(finger_id) +
+               ", changeid:" + std::to_string(changeIndex) +
+               ", type: " + WebInputEvent::GetName(type);
+  TRACE_EVENT1("input", trace_name.c_str(), "status", status);
+  switch (status) {
+    case INIT:
+    case SEND_BLINK:
+      touchEventQueue->SetStatus(INIT);
+      SendToBlink(std::move(event_with_callback));
+      break;
+    case PEND_HITTEST:
+      touchEventQueue->Queue(std::move(event_with_callback));
+      break;
+    case SEND_NATIVE_BLINK:
+      touchEventQueue->SetStatus(INIT);
+      SendEventToNative(touch_event);
+      SendToBlink(std::move(event_with_callback));
+      break;
+    case SEND_TO_NATIVE:
+      touchEventQueue->SetStatus(INIT);
+      SendEventToNative(touch_event);
+      SendToBlink(std::move(event_with_callback), true);
+      break;
+    case SEND_NATIVE_BLINK_CONSUMER:
+      touchEventQueue->SetStatus(INIT);
+      SendEventToNative(touch_event);
+      SendToBlink(std::move(event_with_callback), false, true);
+      break;
+    case PEND_NATIVE:
+      touchEventQueue->Queue(std::move(event_with_callback));
+      SendEventToNative(touch_event);
+      break;
+    default:
+      break;
+  }
+}
+
+void InputHandlerProxyUtils::NativeTouchCancelProcess(
+    std::unique_ptr<EventWithCallback> event_with_callback) {
+  const WebInputEvent& event = event_with_callback->event();
+  const WebTouchEvent& touch_event = static_cast<const WebTouchEvent&>(event);
+  auto type = event.GetType();
+  int changeIndex = GetTouchChangeIndex(touch_event);
+  int32_t finger_id = touch_event.touches[changeIndex].id;
+  if (finger_id < MIN_FINGER_NUMBER || finger_id >= MAX_FINGER_NUMBER) {
+    LOG(ERROR) << "[NativeEmbedGesture] finger_id is out of index. fingerId =" << finger_id;
+    SendToBlink(std::move(event_with_callback));
+    ResetTouchSequence();
+    return;
+  }
+  std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+      NativeTouchEventQueues_[finger_id];
+  auto status = touchEventQueue->GetStatus();
+  std::string trace_name =
+      "InputHandlerProxyUtils::NativeTouchCancelProcess, fingerId:";
+  trace_name = trace_name + std::to_string(finger_id) +
+               ", changeid:" + std::to_string(changeIndex) +
+               ", type: " + WebInputEvent::GetName(type);
+  TRACE_EVENT1("input", trace_name.c_str(), "status", status);
+  switch (status) {
+    case INIT:
+    case SEND_BLINK:
+      touchEventQueue->SetStatus(INIT);
+      SendToBlink(std::move(event_with_callback));
+      break;
+    case PEND_HITTEST:
+      touchEventQueue->Queue(std::move(event_with_callback));
+      break;
+    case SEND_NATIVE_BLINK:
+      touchEventQueue->SetStatus(INIT);
+      SendEventToNative(touch_event);
+      SendToBlink(std::move(event_with_callback));
+      break;
+    case SEND_TO_NATIVE:
+      touchEventQueue->SetStatus(INIT);
+      SendEventToNative(touch_event);
+      SendToBlink(std::move(event_with_callback), true);
+      break;
+    case SEND_NATIVE_BLINK_CONSUMER:
+      touchEventQueue->SetStatus(INIT);
+      SendEventToNative(touch_event);
+      SendToBlink(std::move(event_with_callback), false, true);
+      break;
+    case PEND_NATIVE:
+      touchEventQueue->Queue(std::move(event_with_callback));
+      SendEventToNative(touch_event);
+      break;
+    default:
+      break;
+  }
+}
+
+void InputHandlerProxyUtils::SetGestureEventResult(bool result,
+                                                   bool stopPropagation,
+                                                   int32_t fingerId) {
+  LOG(DEBUG) << "[NativeEmbedGesture] SetGestureEventResult result is : "
+             << result << ",stopPropagation is " << stopPropagation
+             << ",fingerId: " << fingerId;
+  std::string trace_name = "InputHandlerProxyUtils::SetGestureEventResult";
+  TRACE_EVENT2(
+      "input",
+      trace_name.append(", fingerId:").append(std::to_string(fingerId)).c_str(),
+      "result", result, "stopPropagation", stopPropagation);
+  if (fingerId < MIN_FINGER_NUMBER || fingerId >= MAX_FINGER_NUMBER) {
+    LOG(ERROR) << "[NativeEmbedGesture] finger_id is out of index. fingerId =" << fingerId;
+    ResetTouchSequence();
+    return;
+  }
+  std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+      NativeTouchEventQueues_[fingerId];
+  if (touchEventQueue->GetStatus() != PEND_NATIVE) {
+    LOG(ERROR) << "[NativeEmbedGesture] "
+                  "InputHandlerProxyUtils::SetGestureEventResult, Wrong status "
+                  "PEND_NATIVE != "
+               << touchEventQueue->GetStatus();
+    ResetTouchSequence();
+    return;
+  }
+  if (result && stopPropagation) {
+    touchEventQueue->SetStatus(SEND_TO_NATIVE);
+  } else if (result && !stopPropagation) {
+    touchEventQueue->SetStatus(SEND_NATIVE_BLINK_CONSUMER);
+  } else {
+    touchEventQueue->SetStatus(SEND_NATIVE_BLINK);
+  }
+  FlushNativeTouchQueue(fingerId);
+}
+
+size_t InputHandlerProxyUtils::GetTouchChangeIndex(
+    const WebTouchEvent& touch_event) {
+  int changeIndex = -1;
+  auto type = touch_event.GetType();
+  for (size_t i = 0; i < touch_event.touches_length; ++i) {
+    WebTouchPoint::State state = touch_event.touches[i].state;
+    if (IsSameEventType(type, state)) {
+      changeIndex = i;
+    }
+  }
+  if (changeIndex == -1) {
+    std::string str = "Array data:";
+    for (size_t i = 0; i < touch_event.touches_length; ++i) {
+      int32_t state = static_cast<int32_t>(touch_event.touches[i].state);
+      str = str + "{type: " + WebInputEvent::GetName(type) + ", state" +
+            std::to_string(state) + "}";
+    }
+    LOG(ERROR)
+        << "[NativeEmbedGesture] InputHandlerProxyUtils::GetTouchChangeIndex, "
+           "touches do not satisfy sameEventType:"
+        << str;
+  }
+  return changeIndex;
+}
+
+void InputHandlerProxyUtils::FlushNativeTouchQueue(size_t fingerId) {
+  std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+      NativeTouchEventQueues_[fingerId];
+  auto status = touchEventQueue->GetStatus();
+  std::string trace_name = "InputHandlerProxyUtils::FlushNativeTouchQueue";
+  TRACE_EVENT1(
+      "input",
+      trace_name.append(", fingerId:").append(std::to_string(fingerId)).c_str(),
+      "status", status);
+  while (!touchEventQueue->empty()) {
+    auto event_with_callback = touchEventQueue->Pop();
+    const WebTouchEvent& touch_event =
+        static_cast<const WebTouchEvent&>(event_with_callback->event());
+    const WebInputEvent::Type type = touch_event.GetType();
+
+    std::string trace_name2 =
+        "InputHandlerProxyUtils::FlushNativeTouchQueue LOOP";
+    TRACE_EVENT2("input",
+                 trace_name2.append(", fingerId:")
+                     .append(std::to_string(fingerId))
+                     .c_str(),
+                 "status", status, "type", type);
+    bool isNeedStopPop = NativeTouchEventProcess(std::move(event_with_callback), true);
+    if (isNeedStopPop) {
+      break;
+    }
+  }
+}
+
+void InputHandlerProxyUtils::SendToBlink(
+    std::unique_ptr<EventWithCallback> event_with_callback,
+    bool isDrop, bool result) {
+  TRACE_EVENT1("input", "InputHandlerProxyUtils::SendToBlink", "isDrop",
+               isDrop);
+  const WebInputEvent& input_event = event_with_callback->event();
+  auto type = input_event.GetType();
+  if (IsTouchEventType(type)) {
+    const WebTouchEvent& touch_event =
+        static_cast<const WebTouchEvent&>(input_event);
+    int changeIndex = GetTouchChangeIndex(touch_event);
+    int32_t finger_id = touch_event.touches[changeIndex].id;
+    std::string trace_name = "InputHandlerProxyUtils::SendToBlink";
+    TRACE_EVENT1(
+        "input",
+        trace_name.append(", fingerId:").append(std::to_string(finger_id)).c_str(),
+        "type", WebInputEvent::GetName(type));
+    if (finger_id >= MIN_FINGER_NUMBER && finger_id < MAX_FINGER_NUMBER) {
+      CheckTouchEventSequence(type, finger_id);
+    }
+  }
+  proxy_->DispatchSingleInputEvent(std::move(event_with_callback), isDrop, result);
+}
+
+void InputHandlerProxyUtils::CheckTouchEventSequence(WebInputEvent::Type type,
+                                                     int32_t finger_id) {
+  bool isStartError = type == WebInputEvent::Type::kTouchStart &&
+                      gesture_status_[finger_id] != WebInputEvent::Type::kTouchEnd;
+  bool isMoveError = type == WebInputEvent::Type::kTouchMove &&
+                     gesture_status_[finger_id] != WebInputEvent::Type::kTouchStart;
+  bool isEndError = type == WebInputEvent::Type::kTouchEnd &&
+                    gesture_status_[finger_id] != WebInputEvent::Type::kTouchStart;
+  bool isCancelError = type == WebInputEvent::Type::kTouchCancel &&
+                       gesture_status_[finger_id] != WebInputEvent::Type::kTouchStart;
+  bool isError = isStartError || isMoveError || isEndError || isCancelError;
+  if (isError) {
+    LOG(ERROR) << "[NativeEmbedGesture] touch sequence error. the status:"
+               << WebInputEvent::GetName(type) << ", last status: "
+               << WebInputEvent::GetName(gesture_status_[finger_id])
+               << ", fingerId = " << finger_id;
+    std::string trace_error_name =
+        "InputHandlerProxyUtils::CheckTouchEventSequence, sequence error";
+    TRACE_EVENT2("input",
+                 trace_error_name.append(", fingerId:")
+                     .append(std::to_string(finger_id))
+                     .c_str(),
+                 "last_type", WebInputEvent::GetName(gesture_status_[finger_id]),
+                 "type", WebInputEvent::GetName(type));
+  }
+  switch (type) {
+    case WebInputEvent::Type::kTouchStart:
+      gesture_status_[finger_id] = WebInputEvent::Type::kTouchStart;
+      break;
+    case WebInputEvent::Type::kTouchEnd:
+    case WebInputEvent::Type::kTouchCancel:
+      gesture_status_[finger_id] = WebInputEvent::Type::kTouchEnd;
+      break;
+    default:
+      break;
+  }
+}
+
+void InputHandlerProxyUtils::SendEventToNative(const WebTouchEvent& touch_event) {
+  auto type = touch_event.GetType();
+  int changeIndex = GetTouchChangeIndex(touch_event);
+  float x = touch_event.touches[changeIndex].PositionInWidget().x();
+  float y = touch_event.touches[changeIndex].PositionInWidget().y();
+  int32_t finger_id = touch_event.touches[changeIndex].id;
+  if (finger_id < MIN_FINGER_NUMBER || finger_id >= MAX_FINGER_NUMBER) {
+    ResetTouchSequence();
+    return;
+  }
+  std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+      NativeTouchEventQueues_[finger_id];
+  int32_t layer_id = touchEventQueue->GetLayerId();
+  cc::LayerImpl* layer_impl =
+      proxy_->input_handler_->handler_utils()->GetLayerImplById(layer_id);
+  if (layer_impl) {
+    if (type == WebInputEvent::Type::kTouchStart) {
+      nativeRects_[finger_id] = layer_impl->layer_impl_utils()->GetNativeRect();
+    }
+    embed_id_ =
+        std::to_string(layer_impl->layer_impl_utils()->native_embed_id());
+    x = x - nativeRects_[finger_id].x();
+    y = y - nativeRects_[finger_id].y();
+    LOG(DEBUG) << "[NativeEmbedGesture] SendNativeEvent x = " << x
+               << ",y = " << y;
+    std::string trace_name = "InputHandlerProxyUtils::SendEventToNative";
+    TRACE_EVENT1(
+        "input",
+        trace_name.append(", fingerId:").append(std::to_string(finger_id)).c_str(),
+        "type", WebInputEvent::GetName(type));
+    TRACE_EVENT2(
+        "input",
+        trace_name.append(", fingerId:").append(std::to_string(finger_id)).c_str(),
+        "x", x, "y", y);
+    proxy_->client_->DidNativeEmbedEvent(type, embed_id_, finger_id, x, y);
+  } else {
+    LOG(ERROR)
+        << "[NativeEmbedGesture] SendNativeEvent error layer_impl is null."
+        << "fingerId " << finger_id << ", type: " << type << ", x: " << x
+        << ", y: " << y;
+  }
+}
+
+void InputHandlerProxyUtils::NotifyEventNativeFocusResult(size_t fingerId) {
+  TRACE_EVENT1("input", "InputHandlerProxyUtils::NotifyEventNativeFocusResult",
+               "fingerId", fingerId);
+  proxy_->client_->DidNativeEmbedEvent(WebInputEvent::Type::kTouchMove,
+                                       embed_id_, NO_NATIVE_TYPE, 0, 0);
+}
+
+void InputHandlerProxyUtils::ResetTouchSequence() {
+  TRACE_EVENT("input", "InputHandlerProxyUtils::ResetTouchSequence");
+  for (int i = 0; i < MAX_FINGER_NUMBER; i++) {
+    std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+      NativeTouchEventQueues_[i];
+    touchEventQueue->SetStatus(INIT);
+    touchEventQueue->SetLayerId(0);
+    while (!touchEventQueue->empty()) {
+      auto event_with_callback = touchEventQueue->Pop();
+      proxy_->DispatchSingleInputEvent(std::move(event_with_callback));
+    }
+  }
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+// LCOV_EXCL_START
 void InputHandlerProxyUtils::ScrollBy(float delta_x, float delta_y) {
   TRACE_EVENT_INSTANT2(
       "input", "ScrollBy", TRACE_EVENT_SCOPE_THREAD, "delta_x",
@@ -450,6 +1134,7 @@ void InputHandlerProxyUtils::SetOverscrollMode(int mode) {
   }
   proxy_->elastic_overscroll_controller_->GetUtils()->SetOverscrollMode(mode);
 }
+// LCOV_EXCL_STOP
 
 void InputHandlerProxyUtils::NeedFlushScrollUpdateGesture(
   const WebGestureEvent& gesture_event) {
@@ -460,6 +1145,7 @@ void InputHandlerProxyUtils::NeedFlushScrollUpdateGesture(
   }
 }
 
+// LCOV_EXCL_START
 void InputHandlerProxyUtils::ResetNeedFlushScrollUpdateGesture() {
   if (need_flush_scroll_update_gesture_) {
     LOG(INFO) << "InputHandlerProxy::HandleGestureScrollUpdate "
@@ -467,6 +1153,7 @@ void InputHandlerProxyUtils::ResetNeedFlushScrollUpdateGesture() {
     need_flush_scroll_update_gesture_ = false;
   }
 }
+// LCOV_EXCL_STOP
 
 std::unique_ptr<EventWithCallback> InputHandlerProxyUtils::OverScrollRunCallback(
   std::unique_ptr<EventWithCallback> event_with_callback,
@@ -486,6 +1173,7 @@ std::unique_ptr<EventWithCallback> InputHandlerProxyUtils::OverScrollRunCallback
   return event_with_callback;
 }
 
+// LCOV_EXCL_START
 std::unique_ptr<ScrollPredictor>
 InputHandlerProxyUtils::CreateScrollPredictor() {
   return (base::FeatureList::IsEnabled(blink::features::kResamplingScrollEvents) &&
@@ -507,8 +1195,10 @@ gfx::Vector2dF InputHandlerProxyUtils::GetOverScrollOffset() {
   return proxy_->elastic_overscroll_controller_->GetUtils()->GetOverScrollOffset();
 }
 #endif
+// LCOV_EXCL_STOP
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
 void InputHandlerProxyUtils::SetBypassVsyncCondition(int32_t condition) {
   LOG(INFO) << "InputHandlerProxyUtils::SetBypassVsyncCondition condition:"
@@ -516,5 +1206,6 @@ void InputHandlerProxyUtils::SetBypassVsyncCondition(int32_t condition) {
   proxy_->SetBypassVsyncCondition(condition);
 }
 #endif
+// LCOV_EXCL_STOP
 
 }

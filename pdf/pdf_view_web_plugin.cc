@@ -1384,7 +1384,7 @@ void PdfViewWebPlugin::DocumentLoadProgress(uint32_t available,
       progress =
           std::min(std::log(static_cast<double>(available)) / kFactor, 100.0);
   }
-  LOG(INFO) << __func__ << ", PDF load progress: " << progress << "%";
+  LOG(DEBUG) << __func__ << ", PDF load progress: " << progress << "%";
   // DocumentLoadComplete() will send the 100% load progress.
   if (progress >= 100)
     return;

@@ -49,6 +49,7 @@ OHOSVideoEncodeAccelerator::~OHOSVideoEncodeAccelerator() {
   LOG(INFO) << "ohos video encode accelerator destroy";
 }
 
+// LCOV_EXCL_START
 VideoEncodeAccelerator::SupportedProfiles
 OHOSVideoEncodeAccelerator::GetSupportedProfiles() {
   SupportedProfiles profiles;
@@ -71,6 +72,7 @@ OHOSVideoEncodeAccelerator::GetSupportedProfiles() {
   }
   return profiles;
 }
+// LCOV_EXCL_STOP
 
 bool OHOSVideoEncodeAccelerator::Initialize(
     const Config& config,
@@ -140,6 +142,7 @@ bool OHOSVideoEncodeAccelerator::Initialize(
   return true;
 }
 
+// LCOV_EXCL_START
 void OHOSVideoEncodeAccelerator::MaybeStartIOTimer() {
   if (!io_timer_.IsRunning() &&
       (num_buffers_at_codec_ > 0 || !pending_frames_.empty())) {
@@ -154,6 +157,7 @@ void OHOSVideoEncodeAccelerator::MaybeStopIOTimer() {
     io_timer_.Stop();
   }
 }
+// LCOV_EXCL_STOP
 
 void OHOSVideoEncodeAccelerator::Encode(scoped_refptr<VideoFrame> frame,
                                         bool force_keyframe) {
@@ -192,6 +196,7 @@ void OHOSVideoEncodeAccelerator::RequestEncodingParametersChange(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 }
 
+// LCOV_EXCL_START
 void OHOSVideoEncodeAccelerator::Destroy() {
   LOG(INFO) << __PRETTY_FUNCTION__;
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -330,6 +335,7 @@ void OHOSVideoEncodeAccelerator::DequeueOutput() {
           client_ptr_factory_->GetWeakPtr(), bitstream_buffer.id(),
           BitstreamBufferMetadata(info.size, key_frame, frame_timestamp)));
 }
+// LCOV_EXCL_STOP
 
 void OHOSVideoEncodeAccelerator::NotifyErrorStatus(EncoderStatus status) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);

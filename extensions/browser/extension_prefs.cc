@@ -1331,6 +1331,9 @@ ExtensionIdList ExtensionPrefs::GetPinnedExtensions() const {
 
 void ExtensionPrefs::SetPinnedExtensions(const ExtensionIdList& extension_ids) {
   SetExtensionPrefFromContainer(pref_names::kPinnedExtensions, extension_ids);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  prefs_->CommitPendingWrite();
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void ExtensionPrefs::OnExtensionInstalled(
@@ -1395,6 +1398,10 @@ void ExtensionPrefs::SetExtensionEnabled(const ExtensionId& extension_id) {
   UpdateExtensionPref(extension_id, kPrefDisableReasons, std::nullopt);
   for (auto& observer : observer_list_)
     observer.OnExtensionStateChanged(extension_id, true);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  prefs_->CommitPendingWrite();
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void ExtensionPrefs::SetExtensionDisabled(const ExtensionId& extension_id,
@@ -1406,6 +1413,10 @@ void ExtensionPrefs::SetExtensionDisabled(const ExtensionId& extension_id,
                       base::Value(disable_reasons));
   for (auto& observer : observer_list_)
     observer.OnExtensionStateChanged(extension_id, false);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  prefs_->CommitPendingWrite();
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 std::string ExtensionPrefs::GetVersionString(

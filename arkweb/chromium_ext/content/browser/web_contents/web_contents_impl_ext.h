@@ -282,6 +282,19 @@ class WebContentsImplExt : public WebContentsImpl {
     bool animate,
     const std::optional<cc::BrowserControlsOffsetTagsInfo>& offset_tags_info)
     override;
+#if BUILDFLAG(ARKWEB_PIP)
+  MediaPlayerId GetMediaPlayerId(int delegate_id,
+                                 int child_id,
+                                 int frame_routing_id,
+                                 bool& status);
+  void OnPip(int status,
+             int delegate_id,
+             int child_id,
+             int frame_routing_id,
+             int width,
+             int height);
+  void OnPipEvent(int event) override;
+#endif
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 friend class WebContentsImpl;
 friend class WebContentsImplUtils;
@@ -317,6 +330,15 @@ public:
   void OnPdfScrollAtBottom(const std::string& url) override;
   void OnPdfLoadEvent(int32_t result, const std::string& url) override;
 #endif  // BUILDFLAG(ARKWEB_PDF)
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  void SetMediaResumeFromBFCachePage(bool resume) override;
+  bool media_resume_from_bfcache_page_ = true;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void OnBrowserForeground() override;
+  void OnBrowserBackground() override;
+#endif
+
 private:
   std::string custom_user_agent_;
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
@@ -342,6 +364,9 @@ private:
 #endif
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
   std::string shared_render_process_token_;
+#endif
+#if BUILDFLAG(ARKWEB_PIP)
+  bool pip_status_ = false;
 #endif
 };
 }  // namespace content

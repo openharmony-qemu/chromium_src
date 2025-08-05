@@ -205,14 +205,10 @@ bool SkiaOutputSurfaceDependencyImpl::IsUsingCompositorGpuThread() {
   return !!gpu_service_impl_->compositor_gpu_thread();
 }
 
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-void SkiaOutputSurfaceDependencyImpl::SendBlanklessSnapshotInfo(
-    uint64_t blankless_key,
-    int32_t lcp_time,
-    int64_t pref_hash,
-    const SkBitmap& bitmap,
-    const std::vector<gfx::Rect>& quad_list) {
-  return impl_utils_->SendBlanklessSnapshotInfo(blankless_key, lcp_time, pref_hash, bitmap, quad_list);
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+bool SkiaOutputSurfaceDependencyImpl::GetIsScroll() {
+  return impl_utils_->GetIsScroll();
 }
 #endif
+
 }  // namespace viz

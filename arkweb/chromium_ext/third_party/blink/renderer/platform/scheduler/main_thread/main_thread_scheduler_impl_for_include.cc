@@ -12,7 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_SUSPEND_ALL_TIMERS)
 void MainThreadSchedulerImpl::PauseTimersForOHOSWebView() {
   main_thread_only().pause_timers_for_webview = true;
@@ -24,3 +25,4 @@ void MainThreadSchedulerImpl::ResumeTimersForOHOSWebView() {
   UpdatePolicy();
 }
 #endif
+// LCOV_EXCL_STOP

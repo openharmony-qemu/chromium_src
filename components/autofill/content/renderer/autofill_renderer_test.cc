@@ -67,7 +67,11 @@ std::unique_ptr<AutofillAgent> AutofillRendererTest::CreateAutofillAgent(
     std::unique_ptr<PasswordAutofillAgent> password_autofill_agent,
     std::unique_ptr<PasswordGenerationAgent> password_generation_agent,
     blink::AssociatedInterfaceRegistry* associated_interfaces) {
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  return std::make_unique<AutofillAgentExt>(
+#else
   return std::make_unique<AutofillAgent>(
+#endif
       render_frame, config, std::move(password_autofill_agent),
       std::move(password_generation_agent), associated_interfaces);
 }

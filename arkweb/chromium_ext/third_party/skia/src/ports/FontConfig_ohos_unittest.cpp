@@ -14,13 +14,13 @@
  */
 
 #define private public
-
 #include "third_party/skia/src/ports/FontConfig_ohos.h"
-#include "gtest/gtest.h"
 #include "src/ports/SkFontScanner_FreeType_priv.h"
+#include "third_party/skia/include/core/SkFontScanner.h"
+#undef private
+#include "gtest/gtest.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "base/logging.h"
-#include "third_party/skia/include/core/SkFontScanner.h"
 #include <gmock/gmock.h>
 #include <dlfcn.h>
 #include <json/reader.h>
@@ -164,6 +164,16 @@ TEST_F(FontConfig_OHOSTest, getFamilyName004) {
 TEST_F(FontConfig_OHOSTest, getFamilyName005) {
     SkString familyName("Noto Sans Adlam Regular");
     int ret = fontConfig->getFamilyName(1, &familyName);
+    EXPECT_NE(-1, ret);
+}
+
+TEST_F(FontConfig_OHOSTest, getFamilyName006) {
+    auto ret = fontConfig->getFamilyName(-100, nullptr);
+    EXPECT_EQ(-1, ret);
+}
+
+TEST_F(FontConfig_OHOSTest, getFamilyName007) {
+    auto ret = fontConfig->getFamilyName(1, nullptr);
     EXPECT_NE(-1, ret);
 }
 
@@ -355,6 +365,18 @@ TEST_F(FontConfig_OHOSTest, matchFontStyle003) {
     EXPECT_NE(ret, nullptr);
 }
 
+TEST_F(FontConfig_OHOSTest, matchFontStyle004) {
+    const SkFontStyle style(SkFontStyle::kNormal_Weight,
+                             SkFontStyle::kNormal_Width,
+                             SkFontStyle::kUpright_Slant);
+    FontInfo info;
+
+    sk_sp<SkTypeface_OHOS> typeface = sk_make_sp<SkTypeface_OHOS>(info);
+    TypefaceSet typefaces;
+    auto ret = fontConfig->matchFontStyle(typefaces, style);
+    EXPECT_EQ(ret, nullptr);
+}
+
 TEST_F(FontConfig_OHOSTest, getVariableFontStyleDifference001) {
     static constexpr SkFourByteTag wghtTag = SkSetFourByteTag('w', 'g', 'h', 't');
     static constexpr SkFourByteTag wdthTag = SkSetFourByteTag('w', 'd', 't', 'h');
@@ -377,6 +399,19 @@ TEST_F(FontConfig_OHOSTest, getVariableFontStyleDifference001) {
     auto ret2 = fontConfig->getVariableFontStyleDifference(dstStyle, srcStyle, axisRange2);
     EXPECT_EQ(ret2, 0);
 
+}
+
+TEST_F(FontConfig_OHOSTest, getVariableFontStyleDifference002) {
+    SkFontStyle dstStyle(/*weight*/700, /*width*/5, /*slant*/SkFontStyle::kUpright_Slant);
+    SkFontStyle srcStyle(400, 4, SkFontStyle::kItalic_Slant);
+    std::vector<SkFontScanner::AxisDefinition> axisRanges;
+    SkFontScanner::AxisDefinition widthAxis;
+    widthAxis.fTag = SkSetFourByteTag('w', 'd', 't', 'h'); // wdthTag
+    widthAxis.fMinimum = 0.5f;
+    widthAxis.fMaximum = 2.0f;
+    axisRanges.push_back(widthAxis);
+
+    uint32_t diff = fontConfig->getVariableFontStyleDifference(dstStyle, srcStyle, axisRanges);
 }
 
 TEST_F(FontConfig_OHOSTest, getFontStyleDifference001) {
@@ -418,6 +453,24 @@ TEST_F(FontConfig_OHOSTest, getFontStyleDifference002) {
     const SkFontStyle srcStyle6(800, 6, SkFontStyle::kUpright_Slant);
     auto ret6 = fontConfig->getFontStyleDifference(dstStyle6, srcStyle6);
     EXPECT_NE(ret6, 0u);
+}
+
+TEST_F(FontConfig_OHOSTest, getFontStyleDifference003) {
+    {
+        SkFontStyle dstStyle(/*weight*/400, /*width*/7, /*slant*/SkFontStyle::kUpright_Slant);
+        SkFontStyle srcStyle(400, 9, SkFontStyle::kUpright_Slant); // srcWidth > dstWidth
+        
+        uint32_t diff = fontConfig->getFontStyleDifference(dstStyle, srcStyle);
+        EXPECT_NE(2u, diff);
+    }
+
+    {
+        SkFontStyle dstStyle(400, 8, SkFontStyle::kUpright_Slant);
+        SkFontStyle srcStyle(400, 6, SkFontStyle::kUpright_Slant); // srcWidth < dstWidth
+        
+        uint32_t diff = fontConfig->getFontStyleDifference(dstStyle, srcStyle);
+        EXPECT_NE(7u, diff);
+    }
 }
 
 TEST_F(FontConfig_OHOSTest, getFileData) {

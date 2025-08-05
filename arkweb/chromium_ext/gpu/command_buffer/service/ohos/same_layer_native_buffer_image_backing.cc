@@ -40,6 +40,7 @@
 
 namespace gpu {
 
+//LCOV_EXCL_START
 class SkiaVkNBRepresentation : public SkiaVkNBImageRepresentation {
  public:
   SkiaVkNBRepresentation(SharedImageManager* manager,
@@ -65,8 +66,10 @@ class SkiaVkNBRepresentation : public SkiaVkNBImageRepresentation {
     DCHECK(promise_texture_);
   }
 };
+//LCOV_EXCL_STOP
 
 namespace {
+//LCOV_EXCL_START
 std::unique_ptr<VulkanImage> CreateVkImageFromNativeBufferHandle(
     gpu::ScopedNativeBufferHandle nb_handle,
     SharedContextState* context_state,
@@ -83,6 +86,7 @@ std::unique_ptr<VulkanImage> CreateVkImageFromNativeBufferHandle(
       /*usage=*/0, /*flags=*/0, /*image_tiling=*/VK_IMAGE_TILING_OPTIMAL,
       /*queue_family_index=*/queue_family_index);
 }
+//LCOV_EXCL_STOP
 
 void CreateAndBindEglImageFromNativeBuffer(OHOSNativeBuffer buffer,
                                            GLuint service_id) {
@@ -112,6 +116,7 @@ void CreateAndBindEglImageFromNativeBuffer(OHOSNativeBuffer buffer,
 }
 }  // namespace
 
+//LCOV_EXCL_START
 SameLayerNativeBufferImageBacking::SameLayerNativeBufferImageBacking(
     const Mailbox& mailbox,
     const gfx::Size& size,
@@ -161,12 +166,14 @@ SameLayerNativeBufferImageBacking::~SameLayerNativeBufferImageBacking() {
         .Run(std::move(context_lost_helper_), std::move(stream_texture_sii_));
   }
 }
+//LCOV_EXCL_STOP
 
 // Representation of SameLayerNativeBufferImageBacking as a GL Texture.
 class SameLayerNativeBufferImageBacking::GLTextureVideoImageRepresentation
     : public GLTextureImageRepresentation,
       public RefCountedLockHelperDrDc {
  public:
+//LCOV_EXCL_START
   GLTextureVideoImageRepresentation(
       SharedImageManager* manager,
       SameLayerNativeBufferImageBacking* backing,
@@ -197,6 +204,7 @@ class SameLayerNativeBufferImageBacking::GLTextureVideoImageRepresentation
 
     return texture;
   }
+//LCOV_EXCL_STOP
 
   bool BeginAccess(GLenum mode) override {
     TRACE_EVENT0("gpu",
@@ -223,6 +231,7 @@ class SameLayerNativeBufferImageBacking::GLTextureVideoImageRepresentation
     return true;
   }
 
+//LCOV_EXCL_START
   void EndAccess() override {
     DCHECK(scoped_native_buffer_);
     TRACE_EVENT0("gpu",
@@ -234,6 +243,7 @@ class SameLayerNativeBufferImageBacking::GLTextureVideoImageRepresentation
     base::AutoLockMaybe auto_lock(GetDrDcLockPtr());
     scoped_native_buffer_ = nullptr;
   }
+//LCOV_EXCL_STOP
 
  private:
   std::unique_ptr<AbstractTextureOHOS> texture_;
@@ -244,6 +254,7 @@ class SameLayerNativeBufferImageBacking::SkiaVkSameLayerRepresentation
     : public SkiaVkNBImageRepresentation,
       public RefCountedLockHelperDrDc {
  public:
+//LCOV_EXCL_START
   SkiaVkSameLayerRepresentation(SharedImageManager* manager,
                                 OhosImageBacking* backing,
                                 scoped_refptr<SharedContextState> context_state,
@@ -270,6 +281,7 @@ class SameLayerNativeBufferImageBacking::SkiaVkSameLayerRepresentation
   }
 
   void EndWriteAccess() override { NOTIMPLEMENTED(); }
+//LCOV_EXCL_STOP
 
   std::vector<sk_sp<GrPromiseImageTexture>> BeginReadAccess(
       std::vector<GrBackendSemaphore>* begin_semaphores,
@@ -331,6 +343,7 @@ class SameLayerNativeBufferImageBacking::SkiaVkSameLayerRepresentation
         begin_semaphores, end_semaphores, end_state);
   }
 
+//LCOV_EXCL_START
   void EndReadAccess() override {
     base::AutoLockMaybe auto_lock(GetDrDcLockPtr());
     DCHECK(scoped_native_buffer_);
@@ -344,11 +357,13 @@ class SameLayerNativeBufferImageBacking::SkiaVkSameLayerRepresentation
     scoped_native_buffer_->SetReadFence(ohos_backing()->TakeReadFence());
     scoped_native_buffer_ = nullptr;
   }
+//LCOV_EXCL_STOP
 
  private:
   std::unique_ptr<ScopedNativeBufferFenceSync> scoped_native_buffer_;
 };
 
+//LCOV_EXCL_START
 std::unique_ptr<GLTextureImageRepresentation>
 SameLayerNativeBufferImageBacking::ProduceGLTexture(
     SharedImageManager* manager,
@@ -453,4 +468,5 @@ void SameLayerNativeBufferImageBacking::ContextLostObserverHelper::
   context_state_->RemoveContextLostObserver(this);
   context_state_ = nullptr;
 }
+//LCOV_EXCL_STOP
 }  // namespace gpu

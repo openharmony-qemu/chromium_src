@@ -52,11 +52,12 @@ namespace {
 
 class AllowedMemoryRanges {
  public:
+// LOVC_EXCL_START
   AllowedMemoryRanges() {
     allowed_memory_ranges_.entries = 0;
     allowed_memory_ranges_.size = 0;
   }
-
+// LOVC_EXCL_STOP
   AllowedMemoryRanges(const AllowedMemoryRanges&) = delete;
   AllowedMemoryRanges& operator=(const AllowedMemoryRanges&) = delete;
 
@@ -73,7 +74,7 @@ class AllowedMemoryRanges {
     allowed_memory_ranges_.size += 1;
     array_ = std::move(new_array);
   }
-
+// LOVC_EXCL_START
   SanitizationAllowedMemoryRanges* GetSanitizationAddress() {
     return &allowed_memory_ranges_;
   }
@@ -82,7 +83,7 @@ class AllowedMemoryRanges {
     static base::NoDestructor<AllowedMemoryRanges> singleton;
     return singleton.get();
   }
-
+// LOVC_EXCL_STOP
  private:
   base::Lock lock_;
   SanitizationAllowedMemoryRanges allowed_memory_ranges_;
@@ -153,11 +154,12 @@ void SetClientInformation(ExceptionInformation* exception,
 // Sends a message to a crashpad::CrashHandlerHost to handle the crash.
 class SandboxedHandler {
  public:
+// LOVC_EXCL_START
   static SandboxedHandler* Get() {
     static SandboxedHandler* instance = new SandboxedHandler();
     return instance;
   }
-
+// LOVC_EXCL_STOP
   SandboxedHandler(const SandboxedHandler&) = delete;
   SandboxedHandler& operator=(const SandboxedHandler&) = delete;
 
@@ -399,11 +401,12 @@ bool SetLdLibraryPath(const base::FilePath& lib_path) {
 
 class HandlerStarter {
  public:
+// LOVC_EXCL_START
   static HandlerStarter* Get() {
     static HandlerStarter* instance = new HandlerStarter();
     return instance;
   }
-
+// LOVC_EXCL_STOP
   HandlerStarter(const HandlerStarter&) = delete;
   HandlerStarter& operator=(const HandlerStarter&) = delete;
 
@@ -527,6 +530,7 @@ bool g_is_browser = false;
 // TODO(jperaza): This might be simplified to have both the browser and child
 // processes use CRASHPAD_SIMULATE_CRASH() if CrashpadClient allows injecting
 // the Chromium specific SandboxedHandler.
+// LOVC_EXCL_START
 NO_SANITIZE("cfi-icall") void DumpWithoutCrashing() {
   if (g_is_browser) {
     CRASHPAD_SIMULATE_CRASH();
@@ -543,7 +547,7 @@ NO_SANITIZE("cfi-icall") void DumpWithoutCrashing() {
                                                            &siginfo, &context);
   }
 }
-
+// LOVC_EXCL_STOP
 bool GetHandlerSocket(int* fd, pid_t* pid) {
   return crashpad::CrashpadClient::GetHandlerSocket(fd, pid);
 }

@@ -249,12 +249,12 @@ bool SelectionController::ShowSelectionByLastLinkHitTestResult() {
 #endif
 
 void SelectionControllerUtils::HandleMouseReleaseEventWithAIExt(
-    raw_ptr<SelectionController> obj,
+    SelectionController* obj,
     const MouseEventWithHitTestResults& event) {
   obj->SetDataDetectorHitTest(event);
 }
 
-void SelectionControllerUtils::HandleMouseReleaseEventWithMenuExt(raw_ptr<SelectionController> obj,
+void SelectionControllerUtils::HandleMouseReleaseEventWithMenuExt(SelectionController* obj,
                                                                   const MouseEventWithHitTestResults& event) {
   bool is_rang = obj->Selection().ComputeVisibleSelectionInDOMTree().IsRange();
   if (obj->mouse_down_was_single_click_in_selection_ || !is_rang ||
@@ -269,7 +269,7 @@ void SelectionControllerUtils::HandleMouseReleaseEventWithMenuExt(raw_ptr<Select
   obj->mouse_click_down_allows_ = false;
 }
 
-SelectionInFlatTree SelectionControllerUtils::HandleArkWebAISelectionExt(raw_ptr<SelectionController> obj,
+SelectionInFlatTree SelectionControllerUtils::HandleArkWebAISelectionExt(SelectionController* obj,
                                                                          const HitTestResult& result,
                                                                          Node* inner_node,
                                                                          const PositionInFlatTreeWithAffinity& pos,

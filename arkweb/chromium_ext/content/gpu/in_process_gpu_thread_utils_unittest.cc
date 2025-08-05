@@ -20,6 +20,8 @@
 #include <fstream>
 #include <sys/stat.h>
 #include "gmock/gmock.h"
+#include <unistd.h>
+#include <fcntl.h>
 
 #define private public
 #define UNIT_TESTING
@@ -67,7 +69,7 @@ struct MockFile {
 
 class MockResSchedClientAdapter {
  public:
-   static void ReportKeyThread(int status, iunt pid, int tid, int role) {
+   static void ReportKeyThread(int status, int pid, int tid, int role) {
       last_status = status;
       last_pid = pid;
       last_tid = tid;
@@ -104,7 +106,7 @@ DIR* opendir(const char* path) {
     return reinterpret_cast<DIR*>(1);
 }
 
-struct dirent* readir(DIR* dirp) {
+struct dirent* readdir(DIR* dirp) {
     if (simulate_non_digit) {
         static struct dirent entry;
         strcpy(entry.d_name, "abc");
@@ -138,12 +140,12 @@ class InProcessGpuThreadUtilsTest : public testing::Test {
    bool simulate_file_read_fail_ = false;
    void SetUp() {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-    RestRetryTimes();
+    ResetRetryTimes();
     MockResSchedClientAdapter::Reset();
 #endif
    }
 
-  void RestRetryTimes() {
+  void ResetRetryTimes() {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
     *GetRetryTimesPtr() = 0;
 #endif
@@ -206,10 +208,10 @@ class InProcessGpuThreadUtilsTest : public testing::Test {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 
 #ifdef UNIT_TESTING
-#define opendir posix_mock::opendir;
-#define readdir posix_mock::readdir;
-#define closedir posix_mock::closedir;
-#define LoadStringFromFile LoadMockFile;
+#define opendir posix_mock::opendir
+#define readdir posix_mock::readdir
+#define closedir posix_mock::closedir
+#define LoadStringFromFile LoadMockFile
 #endif
 
 TEST_F(InProcessGpuThreadUtilsTest, GetTidListByName_InvalidPid) {
@@ -219,7 +221,7 @@ TEST_F(InProcessGpuThreadUtilsTest, GetTidListByName_InvalidPid) {
 
 TEST_F(InProcessGpuThreadUtilsTest, GetTidListByName_FindGpuThread) {
     MockFileContent("/proc/1234/task/1234/comm", "gpu-work-server\n");
-    int result = GetTidListByName(1234, "gpu-work-server");
+    int result = GetTidListByName(INVALID_PID, "gpu-work-server");
     EXPECT_EQ(-1, result);
 }
 
@@ -273,6 +275,21 @@ TEST_F(InProcessGpuThreadUtilsTest, LoadStringFromFile_FileNotExist) {
     EXPECT_FALSE(LoadStringFromFile("/nonexistent/path", result));
 }
 
+TEST_F(InProcessGpuThreadUtilsTest, InvalidFileLength_SparseFile) {
+    std::string tempPath = "/tmp/sparse_file.txt";
+
+    int fd = open(tempPath.c_str(), O_CREAT | O_WRONLY, 0644);
+    ftruncate(fd, kMaxFileLength + 1);
+    close(fd);
+    
+    std::string content;
+    bool result = LoadStringFromFile(tempPath, content);
+    
+    EXPECT_FALSE(result);
+    EXPECT_TRUE(content.empty());
+    std::remove(tempPath.c_str());
+}
+
 TEST_F(InProcessGpuThreadUtilsTest, GetTidListByName_NonDigitDirEntry) {
     posix_mock::simulate_non_digit = true;
 
@@ -307,7 +324,7 @@ TEST_F(InProcessGpuThreadUtilsTest, ResetTryForReportThread_ResetsCounter) {
     EXPECT_EQ(2, GetRetryTimes());
 }
 
-TEST_F(InProcessGpuThreadUtilsTest, InProcessGpuThreadDestory_ReportsDestory) {
+TEST_F(InProcessGpuThreadUtilsTest, InProcessGpuThreadDestroy_ReportsDestory) {
     MockFileContent("/proc/1234/task/1234/comm", "gpu-work-server\n");
     MockThreadReporting();
 
@@ -320,7 +337,7 @@ TEST_F(InProcessGpuThreadUtilsTest, InProcessGpuThreadDestory_ReportsDestory) {
     RestoreThreadReporting();
 }
 
-TEST_F(InProcessGpuThreadUtilsTest, LoadStringFromFile_ExceedMaxLength) {
+TEST_F(InProcessGpuThreadUtilsTest, LoadStringFromFile_ExceedsMaxLength) {
     std::string large_content(kMaxFileLength + 1, 'a');
     MockFileContent("/large/file", large_content);
 

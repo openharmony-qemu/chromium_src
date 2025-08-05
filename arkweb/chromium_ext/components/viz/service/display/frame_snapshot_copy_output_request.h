@@ -22,7 +22,8 @@
 namespace viz {
 class VIZ_SERVICE_EXPORT FrameSnapshotCopyOutputRequest : public CopyOutputRequest {
  public:
-  FrameSnapshotCopyOutputRequest();
+  explicit FrameSnapshotCopyOutputRequest(CopyOutputRequest::CopyOutputRequestCallback res_callback);
+  FrameSnapshotCopyOutputRequest() = delete;
   ~FrameSnapshotCopyOutputRequest() override = default;
 };
 }  // namespace viz

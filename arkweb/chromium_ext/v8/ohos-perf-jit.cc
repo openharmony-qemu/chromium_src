@@ -80,8 +80,6 @@ void LinuxPerfJitLogger::OpenJitDumpFile() {
     marker_address_base_ = nullptr;
     HilogPrint(ERROR, "Failed to map shared memory.");
   } else {
-    HilogPrint(INFO, "Success to map shared memory. Adderss is %{public}p",
-               marker_address_base_);
     std::string tagName = JitSymbolMemTagName(process_id_);
     if (prctl(PR_SET_VMA, 0, marker_address_base_, SHM_SIZE, tagName.c_str()) ==
         -1) {

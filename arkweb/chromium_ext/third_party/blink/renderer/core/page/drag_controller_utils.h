@@ -44,6 +44,10 @@ class DragControllerUtils {
                                 LocalFrame* frame, const gfx::Rect& image_rect, const DragState& state,
                                 const gfx::RectF& visibleRect,
                                 const gfx::Point& effective_drag_initiation_location);
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  gfx::Rect DragRectForSelectionDrag(const LocalFrame& frame,
+                                     const gfx::RectF& visibleRect);
+#endif
 }  // namespace blink
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_DRAG_CONTROLLER_UTILS_H_

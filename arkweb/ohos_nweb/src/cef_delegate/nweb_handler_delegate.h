@@ -148,8 +148,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       const char* objName,
       const std::vector<std::shared_ptr<NWebJsProxyCallback>>& callbacks);
 
-  void SetInputMethodClient(CefRefPtr<NWebInputMethodClient> client);
-
   using NativeJSProxyCallbackFunc =
       std::function<char*(std::vector<std::vector<uint8_t>>&,
                           std::vector<size_t>&)>;
@@ -442,12 +440,14 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                           const CefString& scheme,
                           CefRefPtr<CefAuthCallback> callback) override;
 
-  bool ShouldOverrideUrlLoading(CefRefPtr<CefBrowser> browser,
-                                const CefString& url,
-                                const CefString& method,
-                                bool user_gesture,
-                                bool is_redirect,
-                                bool is_outermost_main_frame) override;
+  bool ShouldOverrideUrlLoading(
+      CefRefPtr<CefBrowser> browser,
+      const CefString& url,
+      const CefString& method,
+      bool user_gesture,
+      bool is_redirect,
+      bool is_outermost_main_frame,
+      const CefString& extra_request_headers_str) override;
   bool OnOpenAppLink(const CefString& url,
                      CefRefPtr<CefOpenAppLinkCallback> callback) override;
   /* CefRequestHandler methods end */
@@ -758,6 +758,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   void UpdateFavicon(CefRefPtr<CefBrowser> browser) override;
+  void SetMediaResumeFromBFCachePage(bool resume);
 #endif
 
   void SetFavicon(const void* icon_data,
@@ -950,15 +951,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                                    int detectSwitch,
                                    const CefString& url) override;
 
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-  void OnSafeBrowsingDetectionResult(int code,
-                                     int policy,
-                                     const std::string& mappingType,
-                                     const std::string& url);
-#endif
-
-  void SetSafeBrowsingDetectionCallback(
-      CefRefPtr<CefSafeBrowsingDetectionCallback> callback) override;
 #if BUILDFLAG(ARKWEB_PIP)
   bool OnPip(CefRefPtr<CefBrowser> browser,
              int status,
@@ -1032,7 +1024,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   std::shared_ptr<NWebFindDelegate> find_delegate_ = nullptr;
   std::shared_ptr<NWebAppClientExtensionCallback>
       web_app_client_extension_listener_ = nullptr;
-  CefRefPtr<NWebInputMethodClient> input_method_client_ = nullptr;
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   void OnGetImageData(CefRefPtr<CefImage> image);
   void OnGetImageFromCacheEx(int command_id,
@@ -1048,10 +1039,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   bool is_enhance_surface_ = false;
-  void* window_ = nullptr;
+  raw_ptr<void> window_ = nullptr;
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
-  void* popup_window_ = nullptr;
+  raw_ptr<void> popup_window_ = nullptr;
 #endif
 
 #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
@@ -1063,7 +1054,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
   // the received icon
   base::Lock state_lock_;
-  const void* data_ = nullptr;
+  raw_ptr<const void> data_ = nullptr;
   size_t width_ = 0;
   size_t height_ = 0;
   ImageColorType color_type_ = ImageColorType::COLOR_TYPE_UNKNOWN;
@@ -1151,6 +1142,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   bool is_global_adblock_enabled_ = false;
 #endif
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  bool media_resume_from_bfcache_page_ = true;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   std::optional<bool> video_assistant_enabled_;

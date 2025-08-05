@@ -25,6 +25,10 @@
 #include "ui/events/keycodes/keyboard_code_conversion_x.h"
 #include "ui/events/keycodes/keysym_to_unicode.h"
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "ohos_nweb/include/nweb_errors.h"
+#endif
+
 #define private public
 #include "nweb_event_handler.h"
 
@@ -298,6 +302,13 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   CefString GetOriginalUrl() override { return CefString(); }
 
   void PutNetworkAvailable(bool available) override {}
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  int PrerenderPage(const CefString& url,
+                    const CefString& additional_headers) { return OHOS::NWeb::NWEB_OK; };
+
+  void CancelAllPrerendering() {};
+#endif
 
   void RemoveCache(bool include_disk_files) override {}
 
@@ -635,6 +646,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void CustomWebMediaPlayer(bool enable) override {}
 
+  void SetMediaResumeFromBFCachePage(bool resume) override {}
+
   bool IsValid() override { return false; }
 
   MOCK_METHOD(CefRefPtr<ArkWebBrowserHostExt>, GetHost, (), (override));
@@ -711,6 +724,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void FindEx(const CefString &searchText, bool forward, bool matchCase, bool findNext, bool newSession) override {}
   void SetFocusOnWeb() override {}
   void UpdateSecurityLayer(bool isNeedSecurityLayer) override {}
+  void SetHasComposition(bool has_composition) override {}
+  bool GetHasComposition() override {}
   CefString GetCustomUserAgent() override { return CefString(); }
   void GetLastHitData(int& type, CefString& extra_data) override {}
   std::string GetSelectedTextFromContextParam() override { return ""; }
@@ -744,6 +759,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
                              bool recursive, IsolatedWorld world,
                              CefRefPtr<CefJavaScriptResultCallback> callback) override {}
+#endif
+#if BUILDFLAG(ARKWEB_BGTASK)
+  void OnBrowserForeground() override {}
+  void OnBrowserBackground() override {}
 #endif
 #endif  // BUILDFLAG(IS_OHOS)
 };
@@ -834,6 +853,11 @@ class MockCefBrowser : public ArkWebBrowserExt {
   void SetAdBlockEnabledForSite(bool is_adblock_enabled, int main_frame_tree_node_id) override {}
   CefRefPtr<CefFrame> GetFrameByIdentifier(
       const CefString& identifier) override {  return nullptr; }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  int PrerenderPage(const CefString& url,
+                    const CefString& additional_headers) override { return OHOS::NWeb::NWEB_OK; };
+  void CancelAllPrerendering() override {};
+#endif
 #endif  // BUILDFLAG(IS_OHOS)
  private:
   CefRefPtr<CefBrowserHost> host_;

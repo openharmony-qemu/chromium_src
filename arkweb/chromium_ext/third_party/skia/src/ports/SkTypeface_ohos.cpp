@@ -9,6 +9,7 @@
 #include "src/core/SkFontDescriptor.h"
 #include "src/ports/SkFontScanner_FreeType_priv.h"
 
+//LCOV_EXCL_START
 /*! Constructor
  * \param familyName the specified family name for the typeface
  * \param info the font information for the typeface
@@ -27,6 +28,7 @@ SkTypeface_OHOS::SkTypeface_OHOS(FontInfo& info)
   specifiedName.reset();
   fontInfo = std::make_unique<FontInfo>(std::move(info));
 }
+//LCOV_EXCL_STOP
 
 /*! To get stream of the typeface
  * \param[out] ttcIndex the index of the typeface in a ttc file returned to the
@@ -48,6 +50,7 @@ std::unique_ptr<SkStreamAsset> SkTypeface_OHOS::onOpenStream(
   return nullptr;
 }
 
+//LCOV_EXCL_START
 /*! To make font data from the typeface
  * \return The object of SkFontData
  */
@@ -68,6 +71,7 @@ std::unique_ptr<SkFontData> SkTypeface_OHOS::onMakeFontData() const {
       fontInfo->stream->duplicate(), fontInfo->index, 0,
       fontInfo->axisSet.axis.data(), fontInfo->axisSet.axis.size(), nullptr, 0);
 }
+//LCOV_EXCL_STOP
 
 /*! To get the font descriptor of the typeface
  * \param[out] descriptor the font descriptor returned to the caller
@@ -134,9 +138,11 @@ sk_sp<SkTypeface> SkTypeface_OHOS::onMakeClone(
   return sk_ref_sp(this);
 }
 
+//LCOV_EXCL_START
 /*! To get the font information of the typeface
  * \return The object of FontInfo
  */
 const FontInfo* SkTypeface_OHOS::getFontInfo() const {
   return fontInfo.get();
 }
+//LCOV_EXCL_STOP

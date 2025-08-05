@@ -3613,6 +3613,9 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
   prefs.custom_media_player_enabled = AsWebContentsImplExt()->custom_media_player_enabled_;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  prefs.media_resume_from_bfcache_page = AsWebContentsImplExt()->media_resume_from_bfcache_page_;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
   return prefs;
 }
 
@@ -11536,7 +11539,12 @@ std::unique_ptr<PrerenderHandle> WebContentsImpl::StartPrerendering(
                                  const std::optional<UrlMatchType>&)>
         url_match_predicate,
     base::RepeatingCallback<void(NavigationHandle&)>
-        prerender_navigation_handle_callback) {
+        prerender_navigation_handle_callback
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    ,
+    const char* extra_headers
+#endif
+    ) {
   PrerenderAttributes attributes(
       prerendering_url, trigger_type, embedder_histogram_suffix,
       /*target_hint=*/std::nullopt, content::Referrer(),
@@ -11547,6 +11555,11 @@ std::unique_ptr<PrerenderHandle> WebContentsImpl::StartPrerendering(
       std::move(url_match_predicate),
       std::move(prerender_navigation_handle_callback),
       base::MakeRefCounted<PreloadPipelineInfo>());
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (extra_headers) {
+    attributes.extra_headers = extra_headers;
+  }
+#endif
   attributes.holdback_status_override = holdback_status_override;
 
   FrameTreeNodeId frame_tree_node_id =

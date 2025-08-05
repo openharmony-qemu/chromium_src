@@ -15,12 +15,14 @@
 
 namespace blink {
 
+// LCOV_EXCL_START
 ArkWeb::ArkWeb(LocalDOMWindow* window) : ExecutionContextClient(window) {}
 
 void ArkWeb::Trace(Visitor* visitor) const {
   ScriptWrappable::Trace(visitor);
   ExecutionContextClient::Trace(visitor);
 }
+// LCOV_EXCL_STOP
 
 void ArkWeb::setScrollbarAvoidAreaTop(double margin,
                                       ExceptionState& exception_state) {

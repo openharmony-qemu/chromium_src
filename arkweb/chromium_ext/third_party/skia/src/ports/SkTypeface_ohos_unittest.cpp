@@ -13,9 +13,9 @@
  * limitations under the License.	
  */
 #define protected public
-
-#include <gtest/gtest.h>
 #include "SkTypeface_ohos.h"
+#undef protected
+#include <gtest/gtest.h>
 #include <memory>
 #include <fstream>
 
@@ -110,6 +110,13 @@ TEST_F(SkTypeface_OHOSTest, OnMakeFontData_InvalidFont) {
     
     auto fontData = typeface.onMakeFontData();
     EXPECT_EQ(fontData, nullptr);
+}
+
+TEST_F(SkTypeface_OHOSTest, OnMakeFontData_Nullptr) {
+    FontInfo info;
+    SkTypeface_OHOS typeface(info);
+    std::unique_ptr<SkFontData> fontData = typeface.onMakeFontData();
+    EXPECT_EQ(nullptr, fontData);
 }
 
 TEST_F(SkTypeface_OHOSTest, OnGetFontDescriptor) {

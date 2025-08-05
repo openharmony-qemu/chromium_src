@@ -21,6 +21,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "ui/gfx/geometry/rect.h"
 
 namespace cc {
@@ -28,7 +29,7 @@ class SurfaceLayerImpl;
 
 class SurfaceLayerImplUtils {
 public:
-  SurfaceLayerImpl* impl;
+  raw_ptr<SurfaceLayerImpl> impl;
   SurfaceLayerImplUtils(SurfaceLayerImpl* surfaceLayerImpl);
 
   void VisbilityChange();

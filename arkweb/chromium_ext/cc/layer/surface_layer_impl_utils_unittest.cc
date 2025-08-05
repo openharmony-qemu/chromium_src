@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
+#include "arkweb/build/features/features.h"
+#include "ui/gfx/geometry/rect.h"
+#define private public
 #include "arkweb/chromium_ext/cc/layer/surface_layer_impl_utils.h"
+#undef private
 #include "cc/test/layer_tree_impl_test_base.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -71,6 +75,33 @@ TEST_F(SurfaceLayerImplUtilsTest, VisbilityChange003) {
   surface_layer_impl_->layer_impl_utils()->set_may_contain_native(true);
   surface_layer_impl_->draw_properties().visible_layer_rect = gfx::Rect(0, 0);
   utils_->VisbilityChange();
+}
+
+TEST_F(SurfaceLayerImplUtilsTest, VisbilityChange004) {
+  surface_layer_impl_->set_may_contain_video(false);
+  surface_layer_impl_->layer_impl_utils()->set_may_contain_native(true);
+  surface_layer_impl_->draw_properties().visible_layer_rect = gfx::Rect(0, 0);
+  utils_->visibility_ = true;
+  utils_->VisbilityChange();
+  EXPECT_FALSE(utils_->visibility_);
+}
+
+TEST_F(SurfaceLayerImplUtilsTest, VisbilityChange005) {
+  surface_layer_impl_->set_may_contain_video(false);
+  surface_layer_impl_->layer_impl_utils()->set_may_contain_native(true);
+  surface_layer_impl_->draw_properties().visible_layer_rect = gfx::Rect(50, 50);
+  utils_->visibility_ = true;
+  utils_->VisbilityChange();
+  EXPECT_TRUE(utils_->visibility_);
+}
+
+TEST_F(SurfaceLayerImplUtilsTest, VisbilityChange006) {
+  surface_layer_impl_->set_may_contain_video(false);
+  surface_layer_impl_->layer_impl_utils()->set_may_contain_native(true);
+  surface_layer_impl_->draw_properties().visible_layer_rect = gfx::Rect(50, 50);
+  utils_->visibility_ = false;
+  utils_->VisbilityChange();
+  EXPECT_TRUE(utils_->visibility_);
 }
 
 TEST_F(SurfaceLayerImplUtilsTest, LayerRectUpdate001) {

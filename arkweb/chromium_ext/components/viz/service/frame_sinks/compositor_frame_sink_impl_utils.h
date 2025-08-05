@@ -21,13 +21,14 @@
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
 #include "components/viz/service/frame_sinks/compositor_frame_sink_support.h"
 #endif
+#include "base/memory/raw_ptr.h"
 
 namespace viz {
 class CompositorFrameSinkImpl;
 
 class CompositorFrameSinkImplUtil {
  public:
- CompositorFrameSinkImpl* compositorFrameSinkImpl_;
+ raw_ptr<CompositorFrameSinkImpl> compositorFrameSinkImpl_;
  CompositorFrameSinkImplUtil(CompositorFrameSinkImpl* impl);
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   void SubmitCompositorFrameUtils(const CompositorFrameMetadata& metadata);

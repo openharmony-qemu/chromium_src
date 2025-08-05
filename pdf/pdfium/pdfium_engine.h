@@ -490,8 +490,12 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
 
  private:
 #if BUILDFLAG(ARKWEB_PDF)
-  void OnSelectionPositionChangedForPDF(gfx::Rect& left, gfx::Rect& right, const std::vector<PDFiumRange>& selections);
-#endif
+  void OnSelectionPositionChangedForPDF(gfx::Rect& left,
+                                        gfx::Rect& right,
+                                        gfx::Rect& clipped_selection_bounds,
+                                        const std::vector<PDFiumRange>& selections);
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   // This helper class is used to detect the difference in selection between
   // construction and destruction.  At destruction, it invalidates all the
   // parts that are newly selected, along with all the parts that used to be

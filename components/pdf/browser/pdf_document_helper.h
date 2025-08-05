@@ -96,6 +96,9 @@ class PDFDocumentHelper
 
   void GetPageText(int32_t page_index,
                    pdf::mojom::PdfListener::GetPageTextCallback callback);
+#if BUILDFLAG(ARKWEB_PDF)
+  void UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
  private:
   friend class content::DocumentUserData<PDFDocumentHelper>;

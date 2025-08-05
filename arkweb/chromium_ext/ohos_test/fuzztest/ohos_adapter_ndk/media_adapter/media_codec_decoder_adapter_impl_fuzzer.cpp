@@ -128,6 +128,55 @@ bool MediaCodecDecoderAdapterImplFuzzTest(const uint8_t* data, size_t size)
     return true;
 }
 
+bool MediaCodecDecoderAdapterImplNullFuzzTest(const uint8_t* data, size_t size)
+{
+    NWeb::MediaCodecDecoderAdapterImpl mediaCodecDecoderAdapterImpl;
+    NWeb::DecoderAdapterCode code = mediaCodecDecoderAdapterImpl.CreateVideoDecoderByMime("test");
+    std::shared_ptr<NWeb::DecoderFormatAdapter> format = std::make_unique<DecoderFormatAdapterMock>();
+    FuzzedDataProvider dataProvider(data, size);
+    std::string stringParam = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
+    int32_t intParam = dataProvider.ConsumeIntegralInRange<int32_t>(0, 10000);
+    uint32_t uintParam = dataProvider.ConsumeIntegralInRange<uint32_t>(0, 10000);
+
+    mediaCodecDecoderAdapterImpl.SetCallbackDec(nullptr);
+    code = mediaCodecDecoderAdapterImpl.CreateVideoDecoderByName(stringParam);
+    code = mediaCodecDecoderAdapterImpl.ConfigureDecoder(format);
+    code = mediaCodecDecoderAdapterImpl.SetParameterDecoder(format);
+
+    void* window = nullptr;
+    code = mediaCodecDecoderAdapterImpl.SetOutputSurface(window);
+    code = mediaCodecDecoderAdapterImpl.PrepareDecoder();
+    code = mediaCodecDecoderAdapterImpl.StartDecoder();
+    code = mediaCodecDecoderAdapterImpl.StopDecoder();
+    code = mediaCodecDecoderAdapterImpl.FlushDecoder();
+    code = mediaCodecDecoderAdapterImpl.ResetDecoder();
+    code = mediaCodecDecoderAdapterImpl.ReleaseDecoder();
+    code = mediaCodecDecoderAdapterImpl.SetAVCencInfo(uintParam, nullptr);
+    code = mediaCodecDecoderAdapterImpl.SetDecryptionConfig(nullptr, true);
+    code = mediaCodecDecoderAdapterImpl.SetDecryptionConfig(nullptr, false);
+
+    code = mediaCodecDecoderAdapterImpl.QueueInputBufferDec(
+        uintParam, 0, intParam, intParam, BufferFlag::CODEC_BUFFER_FLAG_NONE);
+    code = mediaCodecDecoderAdapterImpl.GetOutputFormatDec(format);
+    code = mediaCodecDecoderAdapterImpl.ReleaseOutputBufferDec(uintParam, true);
+
+    constexpr int32_t MEMSIZE = 1024 * 1024;
+    OH_AVFormat* codecFormat = OH_AVFormat_Create();
+    OH_AVBuffer* buffer = OH_AVBuffer_Create(MEMSIZE);
+    mediaCodecDecoderAdapterImpl.OnError(uintParam);
+    mediaCodecDecoderAdapterImpl.OnOutputFormatChanged(nullptr);
+    mediaCodecDecoderAdapterImpl.OnInputBufferAvailable(uintParam, nullptr);
+    mediaCodecDecoderAdapterImpl.OnOutputBufferAvailable(uintParam, nullptr);
+    mediaCodecDecoderAdapterImpl.OnInputBufferAvailable(uintParam, buffer);
+    mediaCodecDecoderAdapterImpl.OnOutputBufferAvailable(uintParam, buffer);
+
+    OH_AVFormat_Destroy(codecFormat);
+    OH_AVBuffer_Destroy(buffer);
+    codecFormat = nullptr;
+    buffer = nullptr;
+    return true;
+}
+
 } // namespace OHOS
 
 /* Fuzzer entry point */
@@ -135,5 +184,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
     OHOS::MediaCodecDecoderAdapterImplFuzzTest(data, size);
+    OHOS::MediaCodecDecoderAdapterImplNullFuzzTest(data, size);
     return 0;
 }

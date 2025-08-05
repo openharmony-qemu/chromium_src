@@ -283,7 +283,7 @@ void NetProxyAdapterImpl::AppProxyChange(NetConn_HttpProxy *receiveHttpProxy)
         WVLOG_E("receiveHttpProxy null.");
         return;
     }
-    WVLOG_D("App netproxy config change, receive host is %{public}s, port is %{public}d.",
+    WVLOG_D("App netproxy config change, receive host is %{private}s, port is %{private}d.",
         receiveHttpProxy->host, receiveHttpProxy->port);
 
     NetConn_HttpProxy *httpProxy = receiveHttpProxy;
@@ -311,10 +311,10 @@ void NetProxyAdapterImpl::AppProxyChange(NetConn_HttpProxy *receiveHttpProxy)
 
     uint16_t port = httpProxy->port;
     for (auto it : exclusionList) {
-        WVLOG_D("App netproxy config change, exclusion is %{public}s.", it.c_str());
+        WVLOG_D("App netproxy config change, exclusion is %{private}s.", it.c_str());
     }
     if (cb_) {
-        WVLOG_D("App netproxy config change, host is %{public}s, port is %{public}d.", host.c_str(), port);
+        WVLOG_D("App netproxy config change, host is %{private}s, port is %{private}d.", host.c_str(), port);
         cb_->Changed(host, port, "", exclusionList);
     }
 }
@@ -403,7 +403,7 @@ void NetProxyAdapterImpl::GetProperty(std::string& host, uint16_t& port, std::st
 
     port = httpProxy.port;
 
-    WVLOG_D("get netproxy property, host is %{public}s, port is %{public}d, exclusion is %{public}s", host.c_str(),
+    WVLOG_D("get netproxy property, host is %{private}s, port is %{private}d, exclusion is %{private}s", host.c_str(),
         port, exclusion.c_str());
 }
 } // namespace OHOS::NWeb

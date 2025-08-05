@@ -82,7 +82,6 @@
 #include "arkweb/ohos_adapter_ndk/media_avsession_adapter/media_avsession_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/audio_capturer_adapter/audio_capturer_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/screen_capture_adapter/screen_capture_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/audio_capturer_adapter/audio_system_manager_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/access_token_adapter/access_token_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/media_adapter/player_framework_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
@@ -193,7 +192,9 @@ ArkOhosAdapterHelperWrapper::CreateAudioCapturerAdapter() {
 
 NWeb::AudioSystemManagerAdapter&
 ArkOhosAdapterHelperWrapper::GetAudioSystemManager() {
-  return AudioSystemManagerAdapterImpl::GetInstance();
+  static ArkAudioSystemManagerAdapterWrapper instance(
+      ctocpp_->GetAudioSystemManager());
+  return instance;
 }
 
 NWeb::OhosWebPermissionDataBaseAdapter&

@@ -52,6 +52,7 @@ public:
   void InsertSnapshotDataItem(int64_t key, const OHOS::NWeb::SnapshotDataItem& data);
   OHOS::NWeb::SnapshotDataItem GetSnapshotDataItem(int64_t key, int64_t pref_hash);
   int32_t SetBlanklessLoadingCacheCapacity(int capacity);
+  int32_t GetBlanklessLoadingCacheCapacity() const;
 
 private:
   BlanklessDataController();

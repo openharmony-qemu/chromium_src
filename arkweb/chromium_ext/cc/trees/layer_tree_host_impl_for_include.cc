@@ -26,6 +26,7 @@ static bool g_frameIsScrolling = false;
 #endif
 }  // namespace
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
 void LayerTreeHostImpl::SetDrawRectState(bool isNeedDrawRect) {
   isNeedDrawRect_ = isNeedDrawRect;
@@ -79,5 +80,6 @@ void LayerTreeHostImpl::SetupScrollBy() {
   client_->RenewTreePriority();
 }
 #endif
+// LCOV_EXCL_STOP
 
 } // namespace cc

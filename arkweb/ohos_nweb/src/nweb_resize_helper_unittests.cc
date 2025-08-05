@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
+#define private public
 #include "nweb_resize_helper.h"
+#undef private
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -71,5 +73,55 @@ TEST_F(NWebResizeHelperTest, ParameterRefresh) {
 
 TEST_F(NWebResizeHelperTest, RefreshStartTimeStamp) {
   helper_->RefreshStartTimeStamp();
+}
+
+TEST_F(NWebResizeHelperTest, HeightNegativeResult) {
+  helper_->GetResizeAdjustValue(100, -60, true);
+}
+
+TEST_F(NWebResizeHelperTest, HeightBelowLastValue) {
+  helper_->GetResizeAdjustValue(100, -30, true);
+}
+
+TEST_F(NWebResizeHelperTest, WidthFirstTimeResize) {
+  helper_->GetResizeAdjustValue(200, 0, false);
+}
+
+TEST_F(NWebResizeHelperTest, WidthNegativeResult) {
+  helper_->GetResizeAdjustValue(200, -60, false);
+}
+
+TEST_F(NWebResizeHelperTest, WidthBelowLastValue) {
+  helper_->GetResizeAdjustValue(200, -30, false);
+}
+
+TEST_F(NWebResizeHelperTest, GetResizeAdjustValue_001) {
+  uint32_t target_length = 200;
+  int64_t resize_pre_length = -30;
+  bool isHeight = true;
+  helper_->resize_last_height_ = 500;
+  int64_t result =
+      helper_->GetResizeAdjustValue(target_length, resize_pre_length, isHeight);
+  EXPECT_EQ(result, 500);
+}
+
+TEST_F(NWebResizeHelperTest, GetResizeAdjustValue_002) {
+  uint32_t target_length = 200;
+  int64_t resize_pre_length = -30;
+  bool isHeight = false;
+  helper_->resize_last_width_ = 500;
+  int64_t result =
+      helper_->GetResizeAdjustValue(target_length, resize_pre_length, isHeight);
+  EXPECT_EQ(result, 500);
+}
+
+TEST_F(NWebResizeHelperTest, GetResizeAdjustValue_003) {
+  uint32_t target_length = 200;
+  int64_t resize_pre_length = -30;
+  bool isHeight = false;
+  helper_->resize_last_width_ = 100;
+  int64_t result =
+      helper_->GetResizeAdjustValue(target_length, resize_pre_length, isHeight);
+  EXPECT_EQ(result, 270);
 }
 }

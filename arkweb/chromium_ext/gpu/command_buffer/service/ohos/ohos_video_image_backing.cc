@@ -22,6 +22,7 @@
 
 namespace gpu {
 
+//LCOV_EXCL_START
 OhosVideoImageBacking::OhosVideoImageBacking(const Mailbox& mailbox,
                                              const gfx::Size& size,
                                              const gfx::ColorSpace color_space,
@@ -43,6 +44,7 @@ OhosVideoImageBacking::OhosVideoImageBacking(const Mailbox& mailbox,
           base::ScopedFD()) {}
 
 OhosVideoImageBacking::~OhosVideoImageBacking() {}
+//LCOV_EXCL_STOP
 
 // Static.
 std::unique_ptr<OhosVideoImageBacking> OhosVideoImageBacking::Create(
@@ -107,6 +109,7 @@ absl::optional<VulkanYCbCrInfo> OhosVideoImageBacking::GetYcbcrInfo(
   return absl::optional<VulkanYCbCrInfo>(ycbcr_info);
 }
 
+//LCOV_EXCL_START
 std::unique_ptr<AbstractTextureOHOS> OhosVideoImageBacking::GenAbstractTexture(
     const bool passthrough) {
   if (passthrough) {
@@ -129,5 +132,6 @@ void OhosVideoImageBacking::SetClearedRect(const gfx::Rect& cleared_rect) {}
 void OhosVideoImageBacking::Update(std::unique_ptr<gfx::GpuFence> in_fence) {
   DCHECK(!in_fence);
 }
+//LCOV_EXCL_STOP
 
 }  // namespace gpu

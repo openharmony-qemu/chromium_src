@@ -252,20 +252,21 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   void SetIsFling(bool is_fling_enabled);
   void SetIsScroll(bool is_scroll_enabled);
-  bool GetIsScroll();
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SendBlanklessSnapshotInfo(uint64_t blankless_key,
                                  int32_t lcp_time,
                                  int64_t pref_hash,
-                                 const SkBitmap& bitmap,
-                                 const std::vector<gfx::Rect>& quad_list) override;
+                                 const std::vector<gfx::Rect> &quad_list,
+                                 mojo::ScopedSharedBufferHandle buffer,
+                                 mojom::BlanklessBitmapMetadataPtr metadata) override;
   static void DumpBlanklessSnapshot(uint64_t blankless_key,
                                     int32_t lcp_time,
                                     int64_t pref_hash,
-                                    const SkBitmap& bitmap,
-                                    const std::vector<gfx::Rect>& quad_list);
+                                    const std::vector<gfx::Rect>& quad_list,
+                                    mojo::ScopedSharedBufferHandle buffer,
+                                    mojom::BlanklessBitmapMetadataPtr metadata);
   void ClearBlanklessSnapshotInfo(uint64_t blankless_key) override;
 #endif
 
@@ -374,9 +375,6 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
 
   base::WeakPtrFactory<GpuHostImpl> weak_ptr_factory_{this};
 
-#if BUILDFLAG(ARKWEB_D_VSYNC)
-  bool is_scroll_enabled_ = false; 
-#endif
 };
 
 }  // namespace viz

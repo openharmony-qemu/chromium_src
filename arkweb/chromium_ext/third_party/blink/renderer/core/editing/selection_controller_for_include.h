@@ -28,14 +28,14 @@ namespace blink {
 class SelectionControllerUtils {
  public:
   static void HandleMouseReleaseEventWithAIExt(
-      raw_ptr<SelectionController> obj,
+      SelectionController* obj,
       const MouseEventWithHitTestResults& event);
 
   static void HandleMouseReleaseEventWithMenuExt(
-      raw_ptr<SelectionController> obj,
+      SelectionController* obj,
       const MouseEventWithHitTestResults& event);
 
-  static SelectionInFlatTree HandleArkWebAISelectionExt(raw_ptr<SelectionController> obj,
+  static SelectionInFlatTree HandleArkWebAISelectionExt(SelectionController* obj,
                                                         const HitTestResult& result,
                                                         Node* inner_node,
                                                         const PositionInFlatTreeWithAffinity& pos,

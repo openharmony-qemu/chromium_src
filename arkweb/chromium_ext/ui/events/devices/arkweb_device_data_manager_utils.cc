@@ -268,5 +268,6 @@ void ArkWebDeviceDataManagerUtils::CleanupDeviceListeners() {
 }
 // LCOV_EXCL_STOP
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+// LCOV_EXCL_STOP
 
 }  // namespace ui

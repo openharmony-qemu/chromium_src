@@ -186,28 +186,30 @@ bool OhosImageDecoderAdapterImpl::Decode(const uint8_t* data,
 }
 
 void OhosImageDecoderAdapterImpl::SetMemoryName(AllocatorType type) {
+    if (!pixelMap_) {
+        WVLOG_E("[HeifSupport] SetMemoryName pixelMap_ is null.");
+        return;
+    }
     std::string width = std::to_string(GetImageWidth());
     std::string height = std::to_string(GetImageHeight());
     std::string memoryNameSrc = "web-";
     memoryNameSrc.append(width + "x" + height + "-heif");
-    size_t NameLen = memoryNameSrc.length();
-    char memoryName[OHMEDIA_NAME_SIZE];
-    if (NameLen > OHMEDIA_NAME_SIZE - 1) {
+    size_t nameLen = memoryNameSrc.length();
+    if (nameLen > OHMEDIA_NAME_SIZE - 1) {
         WVLOG_E("[HeifSupport] Error: Name Size is too large to set");
         return;
     }
-    errno_t err = strncpy_s(memoryName, OHMEDIA_NAME_SIZE - 1, memoryNameSrc.c_str(), NameLen);
+    char memoryName[OHMEDIA_NAME_SIZE];
+    errno_t err = strncpy_s(memoryName, OHMEDIA_NAME_SIZE, memoryNameSrc.c_str(), nameLen);
     if (err != EOK) {
         WVLOG_E("[HeifSupport] Copy name error!");
         return;
-    } else {
-        memoryName[NameLen] = '\0';
-        auto errorCode = OH_PixelmapNative_SetMemoryName(pixelMap_, memoryName, &NameLen);
-        WVLOG_I("[HeifSupport] pixel map type: %{public}d. Name is %{public}s", GetImageAllocType(type), memoryName);
-        if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
-            WVLOG_E("[HeifSupport] set memory name failed, errorCode %{public}d", errorCode);
-            return;
-        }
+    }
+    auto errorCode = OH_PixelmapNative_SetMemoryName(pixelMap_, memoryName, &nameLen);
+    WVLOG_I("[HeifSupport] pixel map type: %{public}d. Name is %{public}s", GetImageAllocType(type), memoryName);
+    if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+        WVLOG_E("[HeifSupport] set memory name failed, errorCode %{public}d", errorCode);
+        return;
     }
 }
 

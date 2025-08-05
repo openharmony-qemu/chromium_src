@@ -32,6 +32,7 @@
 
 #define private public
 #include "media/gpu/ohos/codec_allocator.h"
+#undef private
 #include "media/gpu/ohos/codec_allocator.cc"
 
 using namespace testing;

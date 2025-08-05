@@ -36,17 +36,17 @@ class NWebExtensionContentSettingsCefDelegate {
 public:
     static NWebExtensionContentSettingsCefDelegate &GetInstance();
 
-    // ContentSettings.get
+    // contentsettings.get
     bool OnGet(const NWebExtensionContentSettingsGetParam* getParam, ContentSettingsGetCallback callback);
 
     void OnGetCallback(const NWebExtensionContentSettingsCallbackResult* result);
 
-    // ContentSettings.set
+    // contentsettings.set
     bool OnSet(const NWebExtensionContentSettingsSetParam* setParam, ContentSettingsSetCallback callback);
 
     void OnSetCallback(const NWebExtensionContentSettingsCallbackSetResult* result);
 
-    // ContentSettings.clear
+    // contentsettings.clear
     bool OnClear(const NWebExtensionContentSettingsClearParam* setParam, ContentSettingsClearCallback callback);
 
     void OnClearCallback(const NWebExtensionContentSettingsCallbackSetResult* result);

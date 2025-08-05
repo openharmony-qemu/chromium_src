@@ -40,6 +40,7 @@ group("ohos_fuzz") {
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/graphic_adapter/vsync_adapter_impl_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/ohos_native_buffer_adapter_impl_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/pasteboard_adapter:pasteboard_client_adapter_impl_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/nweb_inputmethod_fuzzer:nweb_inputmethod_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/nweb_imf_cursor_info_adapter_fuzzer:nweb_imf_cursor_info_adapter_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/cef_delegate/nweb_access_request_delegate_fuzzer:nweb_access_request_delegate_fuzzer",
@@ -229,24 +230,6 @@ fuzzer_test("nweb_accessibility_node_info_impl_fuzzer") {
     "//cef:libcef_static",
     "//ohos_nweb:cef_nweb",
     "//ohos_nweb:nweb_sources",
-  ]
-}
-
-fuzzer_test("pasteboard_client_adapter_impl_fuzzer") {
-  sources = [ "fuzztest/ohos_adapter_ndk/pasteboard_adapter/src/pasteboard_client_adapter_impl_fuzzer.cc" ]
-  include_dirs = [
-    "//cef",
-    "//cef/include",
-    "//ohos_nweb/include",
-    "//ohos_nweb/src",
-    "//arkweb/ohos_adapter_ndk/pasteboard_adapter/include",
-    "//third_party/ohos_ndk/includes/ohos_adapter",
-  ]
-  deps = [
-    "//cef:libcef_static",
-    "//ohos_nweb:cef_nweb",
-    "//ohos_nweb:nweb_sources",
-    "//arkweb/ohos_adapter_ndk:adapter_ndk",
   ]
 }
 

@@ -50,7 +50,6 @@ public:
     void ReleasePixelMap() override;
     OH_PixelmapNative* GetPixelMap() { return pixelMap_; }
     void* GetDecodeData() override {}
-    void SetMemoryName(AllocatorType type);
 private:
     OH_ImageSourceNative* imageSource_ = nullptr;
     OH_ImageSource_Info* imageInfo_ = nullptr;
@@ -63,6 +62,7 @@ private:
     bool GetBufferHandle();
     bool ParseRawData(const uint8_t* data, uint32_t size);
     void NativeBufferFromPixelMap();
+    void SetMemoryName(AllocatorType type);
 };
 
 }  // namespace NWeb

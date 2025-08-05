@@ -864,7 +864,20 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void OnShowToast(double duration, const CefString& toast) override;
   void OnShowVideoAssistant(const CefString& videoAssistantItems) override;
   void OnReportStatisticLog(const CefString& content) override;
-
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void OnShowConfirmInfoBar(const CefString& title,
+                            const CefString& infoId,
+                            const CefString& message,
+                            int buttons,
+                            const CefString& buttonLabelOK,
+                            const CefString& buttonLabelCancel) override;
+  void OnHideConfirmInfoBar(const CefString& title,
+                            const CefString& infoId,
+                            const CefString& message,
+                            int buttons,
+                            const CefString& buttonLabelOK,
+                            const CefString& buttonLabelCancel) override;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   CefOwnPtr<CefMediaPlayerListenerForVAST> OnFullScreenOverlayEnter(
       CefOwnPtr<CefMediaPlayerController> media_player_controller,

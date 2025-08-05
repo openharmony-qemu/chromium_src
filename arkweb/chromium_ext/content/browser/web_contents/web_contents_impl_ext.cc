@@ -501,7 +501,35 @@ int32_t WebContentsImplExt::ExtensionGetTabId() {
   }
   return -1;
 }
-#endif
+
+void WebContentsImplExt::OnShowConfirmInfoBar(const std::string& title,
+                                              const std::string& infoId,
+                                              const std::string& message,
+                                              int buttons,
+                                              const std::string& buttonLabelOK,
+                                              const std::string& buttonLabelCancel) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  if (!delegate_) {
+    LOG(ERROR) << "delegate is nullptr when notify to report statistic log";
+    return;
+  }
+  delegate_->OnShowConfirmInfoBar(title, infoId, message, buttons, buttonLabelOK, buttonLabelCancel);
+}
+
+void WebContentsImplExt::OnHideConfirmInfoBar(const std::string& title,
+                                              const std::string& infoId,
+                                              const std::string& message,
+                                              int buttons,
+                                              const std::string& buttonLabelOK,
+                                              const std::string& buttonLabelCancel) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  if (!delegate_) {
+    LOG(ERROR) << "delegate is nullptr when notify to report statistic log";
+    return;
+  }
+  delegate_->OnHideConfirmInfoBar(title, infoId, message, buttons, buttonLabelOK, buttonLabelCancel);
+}
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
 void WebContentsImplExt::OnFormEditingStateChanged(uint64_t form_id,

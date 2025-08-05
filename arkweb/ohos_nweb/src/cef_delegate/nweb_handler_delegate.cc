@@ -2994,8 +2994,10 @@ void NWebHandlerDelegate::OnPermissionRequest(
             std::make_shared<NWebPermissionRequest>(GetNWebId(),
                                                     access_request);
         int nweb_request_key = InsertPermissionRequest(nweb_request);
-        dispatcher_.OnPermissionRequest(nweb_request_key);
-        return;
+        if (dispatcher_.OnPermissionRequest(nweb_request_key)) {
+          return;
+        }
+        PermissionRequestDelete(nweb_request_key);
       }
 #endif  // ARKWEB_NWEB_EX
 

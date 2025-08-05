@@ -30,7 +30,6 @@
 #include "gpu/ipc/service/gpu_channel.h"
 #include "gpu/ipc/service/gpu_channel_manager.h"
 #include "gpu/ipc/service/gpu_channel_shared_image_interface.h"
-#include "arkweb/chromium_ext/gpu/ipc/service/shared_image_stub_ext.h",
 #include "media/base/media_switches.h"
 #include "mojo/public/cpp/bindings/callback_helpers.h"
 #include "ui/gl/gl_bindings.h"
@@ -150,13 +149,12 @@ void GpuSharedImageVideoFactory::CreateImage(
 
   TRACE_EVENT1("base", "DirectSharedImageVideoProvider::CreateImage", "texture_owner_mode", texture_owner_mode);
 
-  scoped_refptr<gpu::GpuChannelSharedImageInterfaceExt>
-      gpu_channel_shared_image_interface = stub_->channel()->
-        shared_image_stub()->AsSharedImageStubExt()->shared_image_interface_ext();
+  scoped_refptr<gpu::GpuChannelSharedImageInterface>
+      gpu_channel_shared_image_interface =
+          stub_->channel()->shared_image_stub()->shared_image_interface();
   scoped_refptr<gpu::ClientSharedImage> shared_image =
-      gpu_channel_shared_image_interface->AsGpuChannelSharedImageInterfaceExt()->
-      CreateSharedImageForOhosVideo(spec.coded_size, spec.color_space,
-        codec_image, drdc_lock, texture_owner_mode);
+      gpu_channel_shared_image_interface->CreateSharedImageForOhosVideo(
+          spec.coded_size, spec.color_space, codec_image, drdc_lock, texture_owner_mode);
   if (!shared_image) {
     return;
   }

@@ -21,6 +21,10 @@ import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
 import("//arkweb/build/features/features.gni")
 
+shared_library("net_connect_fuzz_mock") {
+  sources = ["net_connect_fuzz_mock.cpp"]
+}
+
 fuzzer_test("net_connect_adapter_fuzzer") {
   sources = [ "net_connect_adapter_fuzzer.cpp" ]
   include_dirs = [
@@ -35,6 +39,7 @@ fuzzer_test("net_connect_adapter_fuzzer") {
     "//third_party/ohos_ndk/includes/ohos_adapter",
   ]
   deps = [
+    ":net_connect_fuzz_mock",
     "//base",
     "//net",
     "//ui/base",

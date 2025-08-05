@@ -80,6 +80,10 @@ int OhosNativeBufferAdapterImpl::GetEGLBuffer(void* buffer, void** eglBuffer)
         WVLOG_E("native buffer get egl buffer, buffer is null.");
         return -1;
     }
+    if (eglBuffer == nullptr) {
+        WVLOG_E("native buffer get egl buffer, eglBuffer pointer is null.");
+        return -1;
+    }
     WVLOG_D("native buffer GetEGLBuffer %{private}p.", buffer);
 
     OHNativeWindowBuffer* nativeWindowBuffer =
@@ -108,7 +112,25 @@ int OhosNativeBufferAdapterImpl::FreeEGLBuffer(void* eglBuffer)
 
 int OhosNativeBufferAdapterImpl::NativeBufferFromNativeWindowBuffer(void* nativeWindowBuffer, void** nativeBuffer)
 {
-    WVLOG_D("native buffer NativeBufferFromNativeWindowBuffer");
+    if (nativeWindowBuffer == nullptr) {
+        WVLOG_E("input nativeWindowBuffer is null");
+        return -1;
+    }
+
+    if (nativeBuffer == nullptr) {
+        WVLOG_E("output nativeBuffer pointer is null");
+        return -1;
+    }
+
+    OH_NativeBuffer* buffer = nullptr;
+    int32_t ret =
+        OH_NativeBuffer_FromNativeWindowBuffer(static_cast<OHNativeWindowBuffer*>(nativeWindowBuffer), &buffer);
+    if (ret != 0 || !buffer) {
+        WVLOG_E("getNativeBuffer fail. ret = %{public}d or buffer is nullptr", ret);
+        return ret;
+    }
+    
+    *nativeBuffer = buffer;
     return 0;
 }
 
@@ -125,6 +147,10 @@ void OhosNativeBufferAdapterImpl::Allocate(
     const std::shared_ptr<NativeBufferConfigAdapter> bufferConfig, void** outBuffer)
 {
     if (bufferConfig == nullptr) {
+        return;
+    }
+    if (outBuffer == nullptr) {
+        WVLOG_E("Output buffer pointer is null");
         return;
     }
     int width = bufferConfig->GetBufferWidth();
@@ -174,6 +200,11 @@ int OhosNativeBufferAdapterImpl::Lock(void* buffer, uint64_t usage, int32_t fenc
     WVLOG_D("native buffer waiting for lock.");
     if (buffer == nullptr) {
         WVLOG_E("native buffer lock, buffer is null.");
+        return -1;
+    }
+
+    if (out_virtual_address == nullptr) {
+        WVLOG_E("output address pointer is null.");
         return -1;
     }
 

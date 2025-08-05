@@ -69,6 +69,7 @@ class HeadlessScreenOhos : public HeadlessScreen {
   bool ConvertDisplay(std::shared_ptr<OHOS::NWeb::DisplayAdapter> src_display,
                       display::Display& dst_display);
   void OnDisplayEvent(const std::string& event, const int64_t display_id);
+  void LayoutDisplays(std::vector<display::Display>& displays);
 
  private:
   display::DisplayList display_list_;

@@ -9,6 +9,7 @@
 
 #define private public
 #include "media/gpu/ohos/codec_output_buffer_renderer.h"
+#undef private
 
 namespace media {
 class CodecOutputBufferRendererTest : public testing::Test {

@@ -651,6 +651,11 @@ class NWebImpl : public NWeb {
                                         const std::string& version);
 #endif
 
+#if BUILDFLAG(ARKWEB_CLOUD_CONTROL)
+  static void UpdateBrowserEngineGlobalConfig(const std::string& file_path,
+                                              const std::string& version);
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   void SetForceEnableZoom(bool forceEnableZoom) const;
   bool GetForceEnableZoom() const;

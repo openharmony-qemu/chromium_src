@@ -37,6 +37,10 @@ class MouseEventManager;
 class NativeEventListener;
 class LayoutObject;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class MouseEventManagerExtTest;
+#endif
+
 #if BUILDFLAG(ARKWEB_AI)
 enum class HitOverlayStatus { kNone, kCreating, kCreated };
 #endif
@@ -49,6 +53,9 @@ class MouseEventManagerExt
   MouseEventManagerExt& operator=(const MouseEventManagerExt&) = delete;
   virtual ~MouseEventManagerExt();
   MouseEventManagerExt* AsMouseEventManagerExt() override { return this; }
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class MouseEventManagerExtTest;
+#endif
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   bool IsDraging();
@@ -60,10 +67,6 @@ class MouseEventManagerExt
   void HandleGestureCreateOverlay(const WebGestureEvent& gesture_event);
   void CreateOverlayCallback();
   bool GetOverlayInProgress();
-  void ConverCoordinates(float& left, float& top, float& width, float& height, std::vector<gfx::PointF>& pointfs);
-  void SetOverlayStyle(Element* overlay_div, float left, float top, float width, float height);
-  void SetTextStyle(Element* text_div, float left, float top, float width, float height, float font_size);
-  void RemoveElementOnMouseOut(const std::string& id, blink::Event* event);
   template <typename T>
   void HandleCreateOverlay(T const& targeted_event);
   enum class FoldStatus : uint32_t {

@@ -55,7 +55,7 @@ public:
 
     TransformTypeAdapter GetTransformType() override { return TransformTypeAdapter::ROTATE_90; }
 
-    int64 GetTimestamp() override { return 1; }
+    int64_t GetTimestamp() override { return 1; }
 };
 
 constexpr int INVALID_VALUE = -2;
@@ -157,7 +157,7 @@ bool ProducerNativeAdapterImplFuzzTest(const uint8_t* data, size_t size)
     TransformTypeAdapter type = static_cast<TransformTypeAdapter>(random);
     impl.TransToTransformType(type);
     ColorGamutAdapter colorGamut = static_cast<ColorGamutAdapter>(random);
-    impl.TransToColorGamut(colorGamut);
+    impl.TransToGraphicColorGamut(colorGamut);
     impl.TransToBufferConfig(nullptr);
     int32_t fence = dataProvider.ConsumeIntegralInRange<int32_t>(-1, MAX_SIZE);
     impl.RequestBuffer(fence, nullptr);

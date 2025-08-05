@@ -1005,7 +1005,12 @@ class CONTENT_EXPORT WebContentsImpl
       PreloadingAttempt* preloading_attempt,
       base::RepeatingCallback<bool(const GURL&,
                                    const std::optional<UrlMatchType>&)>,
-      base::RepeatingCallback<void(NavigationHandle&)>) override;
+      base::RepeatingCallback<void(NavigationHandle&)>
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+      const char* extra_headers = nullptr
+#endif
+      ) override;
   void CancelAllPrerendering() override;
   void BackNavigationLikely(PreloadingPredictor predictor,
                             WindowOpenDisposition disposition) override;
@@ -1577,19 +1582,6 @@ class CONTENT_EXPORT WebContentsImpl
 
   WebContents* GetOpenedPartitionedPopin() const override;
 
-#if BUILDFLAG(ARKWEB_PIP)
-  MediaPlayerId GetMediaPlayerId(int delegate_id,
-                                 int child_id,
-                                 int frame_routing_id,
-                                 bool& status);
-  void OnPip(int status,
-             int delegate_id,
-             int child_id,
-             int frame_routing_id,
-             int width,
-             int height);
-  void OnPipEvent(int event) override;
-#endif
  private:
   using FrameTreeIterationCallback = base::FunctionRef<void(FrameTree&)>;
   using RenderViewHostIterationCallback =
@@ -1804,7 +1796,7 @@ class CONTENT_EXPORT WebContentsImpl
     bool is_notifying_observers_ = false;
     base::ObserverList<WebContentsObserver> observers_;
   };
-  WebContentsImplUtils* implUtils_;
+  raw_ptr<WebContentsImplUtils> implUtils_;
   // See WebContents::Create for a description of these parameters.
   explicit WebContentsImpl(BrowserContext* browser_context);
 

@@ -78,9 +78,6 @@ void NWebEventHandler::OnTouchPress(int32_t id,
 #if BUILDFLAG(ARKWEB_SLIDE) || BUILDFLAG(ARKWEB_PER_DFX)
   TRACE_EVENT0("input",
                "NWebEventHandler::OnTouchPress sliding response begin");
-  LOG(DEBUG) << "NWebEventHandler::OnTouchPress sliding response begin. id = "
-             << id << ", x = " << x << ", y = " << y
-             << ", from_overlay = " << from_overlay;
 #endif
   CefTouchEvent touch_pressed;
   touch_pressed.type = CEF_TET_PRESSED;
@@ -99,8 +96,8 @@ void NWebEventHandler::OnTouchMove(int32_t id,
                                    double x,
                                    double y,
                                    bool from_overlay) {
-  LOG(DEBUG) << "NWebEventHandler::OnTouchMove id = " << id << ", x = " << x
-             << ", y = " << y << ", from_overlay = " << from_overlay;
+  LOG(DEBUG) << "NWebEventHandler::OnTouchMove id = " << id 
+      << ", from_overlay = " << from_overlay;
   CefTouchEvent touch_move;
   touch_move.type = CEF_TET_MOVED;
   touch_move.pointer_type = CEF_POINTER_TYPE_TOUCH;
@@ -130,9 +127,7 @@ void NWebEventHandler::OnTouchMove(
     touch_move.y = touch_point->GetY() / virtual_pixel_ratio;
     touch_move.modifiers = EVENTFLAG_NONE;
     touch_move.from_overlay = from_overlay;
-    touch_point_info_str += " id = " + std::to_string(touch_point->GetId()) +
-                            ", x = " + std::to_string(touch_move.x) +
-                            ", y = " + std::to_string(touch_move.y);
+    touch_point_info_str += " id = " + std::to_string(touch_point->GetId());
     event_list.emplace_back(touch_move);
   }
   LOG(DEBUG) << touch_point_info_str << ", from_overlay = " << from_overlay;
@@ -190,8 +185,7 @@ void NWebEventHandler::SendKeyEventFromMMI(int32_t keyCode, int32_t keyAction) {
   if (!isFocus_ || !NWebInputDelegate::IsMMIKeyEvent(keyCode)) {
     return;
   }
-  LOG(DEBUG) << "SendKeyEventFromMMI keyCode = " << keyCode
-             << " keyAction = " << keyAction;
+  LOG(DEBUG) << "SendKeyEventFromMMI keyAction = " << keyAction;
   SendKeyEvent(keyCode, keyAction);
 }
 
@@ -199,8 +193,7 @@ bool NWebEventHandler::SendKeyEventFromAce(int32_t keyCode, int32_t keyAction) {
   if (mmi_id_ >= 0 && NWebInputDelegate::IsMMIKeyEvent(keyCode)) {
     return true;
   }
-  LOG(DEBUG) << "SendKeyEventFromAce keyCode = " << keyCode
-             << " keyAction = " << keyAction;
+  LOG(DEBUG) << "SendKeyEventFromAce keyAction = " << keyAction;
   return SendKeyEvent(keyCode, keyAction);
 }
 
@@ -211,8 +204,7 @@ bool NWebEventHandler::WebSendKeyEventFromAce(
   if (mmi_id_ >= 0 && NWebInputDelegate::IsMMIKeyEvent(keyCode)) {
     return true;
   }
-  LOG(DEBUG) << "WebSendKeyEventFromAce keyCode = " << keyCode
-             << " keyAction = " << keyAction;
+  LOG(DEBUG) << "WebSendKeyEventFromAce keyAction = " << keyAction;
   return WebSendKeyEvent(keyCode, keyAction, pressedCodes);
 }
 
@@ -284,8 +276,7 @@ bool NWebEventHandler::WebSendKeyEvent(
     int32_t keyCode,
     int32_t keyAction,
     const std::vector<int32_t>& pressedCodes) {
-  LOG(DEBUG) << "WebSendKeyEvent keyCode = " << keyCode
-             << " keyAction = " << keyAction;
+  LOG(DEBUG) << "WebSendKeyEvent keyAction = " << keyAction;
   if (keyCode < 0) {
     LOG(ERROR) << "WebSendKeyEvent obtaining invalid keyCode";
     return false;
@@ -330,8 +321,6 @@ void NWebEventHandler::SendCefMouseWheelEvent(double x,
     horizontalDelta = deltaX * input_delegate_.GetMouseWheelRatio();
     verticalDelta = deltaY * input_delegate_.GetMouseWheelRatio();
   }
-  LOG(DEBUG) << "SendCefMouseWheelEvent Axis deltaX: " << horizontalDelta
-             << " deltaY: " << verticalDelta;
   browser_->GetHost()->SendMouseWheelEvent(mouseEvent, horizontalDelta,
                                            verticalDelta);
 }
@@ -436,8 +425,7 @@ void NWebEventHandler::WebSendMouseEvent(
       NWebInputDelegate::CefConverter("mousebutton", mouseEvent->GetButton()));
   mouseInfo.modifiers = NWebInputDelegate::GetWebMouseModifiersByPressedCode(
       buttonType, mouseEvent->GetPressKeyCodes());
-  LOG(DEBUG) << "WebSendMouseEvent x: " << mouseInfo.x << " y: " << mouseInfo.y
-             << " modifiers: " << mouseInfo.modifiers;
+  LOG(DEBUG) << "WebSendMouseEvent modifiers: " << mouseInfo.modifiers;
   if (NWebInputDelegate::IsMouseLeave(mouseEvent->GetAction())) {
     is_in_web_ = false;
   } else if (NWebInputDelegate::IsMouseEnter(mouseEvent->GetAction())) {
@@ -479,8 +467,7 @@ void NWebEventHandler::WebSendMouseEvent(
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 bool NWebEventHandler::SendKeyEvent(int32_t keyCode, int32_t keyAction) {
-  LOG(DEBUG) << "SendKeyEvent keyCode = " << keyCode
-             << " keyAction = " << keyAction;
+  LOG(DEBUG) << "SendKeyEvent keyAction = " << keyAction;
   if (keyCode < 0) {
     LOG(ERROR) << "SendKeyEvent obtaining invalid keyCode";
     return false;

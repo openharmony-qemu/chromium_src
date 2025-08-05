@@ -82,6 +82,7 @@ void RenderWidgetHostImplExt::GetWordSelection(const std::string& text,
   std::move(callback).Run(select);
 }
 
+// LCOV_EXCL_START
 gfx::Rect RenderWidgetHostImplExt::GetImageRect() {
   gfx::Rect image_rect;
   blink_frame_widget_->GetImageRect(&image_rect);
@@ -103,6 +104,7 @@ void RenderWidgetHostImplExt::OnFoldStatusChanged(uint32_t foldstatus) {
 void RenderWidgetHostImplExt::NotifyOverlayStateChanged() {
   blink_frame_widget_->NotifyOverlayStateChanged();
 }
+// LCOV_EXCL_STOP
 
 void RenderWidgetHostImplExt::OnOverlayStateChanged(const gfx::Rect& image_rect) {
   RenderViewHostDelegateView* view = delegate_->GetDelegateView();
@@ -113,9 +115,11 @@ void RenderWidgetHostImplExt::OnOverlayStateChanged(const gfx::Rect& image_rect)
   view->OnOverlayStateChanged(image_rect);
 }
 
+// LCOV_EXCL_START
 void RenderWidgetHostImplExt::OnDataDetectorSelectText() {
   blink_frame_widget_->OnDataDetectorSelectText();
 }
+// LCOV_EXCL_STOP
 #endif
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
@@ -164,6 +168,7 @@ void RenderWidgetHostImplExt::ReportSlidingFrameRate(
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
 void RenderWidgetHostImplExt::DynamicFrameLossEvent(const std::string& sceneId,
                                                     bool isStart) {
@@ -196,5 +201,6 @@ void RenderWidgetHostImplExt::SendCurrentLanguage(const std::string& ans) {
   }
 }
 #endif
+// LCOV_EXCL_STOP
 
 }  // namespace content

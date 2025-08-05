@@ -18,6 +18,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "content/browser/renderer_host/navigation_request.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 
 namespace content {
@@ -26,7 +27,7 @@ class NavigationRequest;
 
 class NavigationRequestUtils {
 public:
-  NavigationRequest* nav_request_;
+  raw_ptr<NavigationRequest> nav_request_;
   NavigationRequestUtils(NavigationRequest* nav_request);
   base::WeakPtr<NavigationRequestUtils> GetWeakPtr();
 
@@ -39,7 +40,7 @@ public:
   const std::string ORIGIN = "origin.DEFAULT";
   uint64_t GetAddrWebHandle() { return addr_web_handle_; }
   network::mojom::NetworkContext* GetNetworkContext() const;
-  void StartPage(const net::NetworkAnonymizationKey& networkAnonymizationKey, uint64_t addr_web_handle);
+  void StartPage(const net::NetworkAnonymizationKey networkAnonymizationKey, uint64_t addr_web_handle);
   void OnGetIsolation(const std::string& origin);
 #endif
 

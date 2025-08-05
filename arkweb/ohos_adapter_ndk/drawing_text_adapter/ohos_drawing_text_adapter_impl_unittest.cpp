@@ -41,7 +41,8 @@ TEST_F(OhosDrawingTextAdapterImplTest, GetSystemFontInfoTest)
         EXPECT_EQ(get_font_name_result, 0);
 
         void* font_discriptor = nullptr;
-        int get_font_disc_result = font_adapter.GetFontDescriptorByFullName(const_cast<void*>(font_name), 1, &font_discriptor);
+        int get_font_disc_result = font_adapter.GetFontDescriptorByFullName(const_cast<void*>(font_name),
+                                                                            1, &font_discriptor);
         EXPECT_EQ(get_font_name_result, 0);
 
         font_adapter.DestroyFontDescriptor(font_discriptor);
@@ -54,11 +55,11 @@ TEST_F(OhosDrawingTextAdapterImplTest, GetSystemFontInfoTest)
 TEST_F(OhosDrawingTextAdapterImplTest, GetSystemFontConfigInfoSuccess)
 {
     auto& typo_adapter = OhosDrawingTextTypographyAdapterImpl::GetInstance();
-    OH_Drawing_FontConfigInfoErrorCode success_code = OH_Drawing_FontConfigInfoErrorCode::SUCCESS_FONT_CONFIG_INFO;
+    OH_Drawing_FontConfigInfoErrorCode success_code =
+                                        OH_Drawing_FontConfigInfoErrorCode::SUCCESS_FONT_CONFIG_INFO;
     void* font_config = nullptr;
 
-    int get_config_result;
-    get_config_result = typo_adapter.GetSystemFontConfigInfo(&success_code, &font_config);
+    int get_config_result = typo_adapter.GetSystemFontConfigInfo(&success_code, &font_config);
     EXPECT_EQ(get_config_result, 0);
     typo_adapter.DestroySystemFontConfigInfo(font_config);
 

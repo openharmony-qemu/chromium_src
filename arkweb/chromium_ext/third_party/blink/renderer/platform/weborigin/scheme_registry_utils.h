@@ -16,6 +16,7 @@
 #define ARKWEB_THIRD_PARTY_BLINK_RENDERER_PLATFORM_WEBORIGIN_SCHEME_REGISTRY_UTILS_H_
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 #include "third_party/blink/renderer/platform/weborigin/scheme_registry.h"
 
 namespace blink {
@@ -23,7 +24,7 @@ class SchemeRegistry;
 
 class SchemeRegistryUtils {
  public:
-  SchemeRegistry* scheme_registry_;
+  raw_ptr<SchemeRegistry> scheme_registry_;
 
   SchemeRegistryUtils(SchemeRegistry* scheme_registry);
 

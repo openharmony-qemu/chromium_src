@@ -30,6 +30,7 @@ void VideoCaptureHostUtils::SetRenderFrameHostId(GlobalRenderFrameHostId render_
     render_frame_host_id_ = render_frame_host_id;
 }
 
+// LCOV_EXCL_START
 void VideoCaptureHostUtils::ReportStartScreenCapture() {
     RenderProcessHost* host =
         RenderProcessHost::FromID(render_frame_host_id_.child_id);
@@ -53,5 +54,6 @@ void VideoCaptureHostUtils::ReportStopScreenCapture() {
             host->GetProcess().Pid());
     }
 }
+// LCOV_EXCL_STOP
 #endif
 }

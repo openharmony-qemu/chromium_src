@@ -39,8 +39,8 @@ class PromptInfoHolder final {
       cancel_callback_(std::move(cancel_callback)) {}
 
   ~PromptInfoHolder() {
-    if (cancel_callback_) {
-      std::move(cancel_callback_).Run();
+    if (accept_callback_) {
+      std::move(accept_callback_).Run();
     }
   }
 

@@ -50,6 +50,7 @@ constexpr int kDisableDelayTime = 300;
 constexpr int kDragBlankTime = 80;
 #endif
 
+// LCOV_EXCL_START
 WebFrameWidgetImplExt::WebFrameWidgetImplExt(
     base::PassKey<WebLocalFrame> pass_key,
     CrossVariantMojoAssociatedRemote<mojom::blink::FrameWidgetHostInterfaceBase>
@@ -96,6 +97,7 @@ void WebFrameWidgetImplExt::SetOverscrollMode(int mode) {
   widget_base_->utils()->SetOverscrollMode(mode);
 }
 #endif
+// LCOV_EXCL_STOP
 
 void WebFrameWidgetImplExt::ArkWebHandleTouchEvent(
     const WebInputEvent& input_event) {
@@ -135,6 +137,7 @@ void WebFrameWidgetImplExt::ArkWebHandleTouchEvent(
 #endif
 }
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_MENU)
 void WebFrameWidgetImplExt::SelectRangeV2(const gfx::Point& position,
                                           bool is_base) {
@@ -168,8 +171,10 @@ gfx::Vector2dF WebFrameWidgetImplExt::GetOverScrollOffset() {
   return widget_base_->utils()->GetOverScrollOffset();
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_AI)
+// LCOV_EXCL_START
 void WebFrameWidgetImplExt::CreateOverlay(
     const SkBitmap& image,
     const gfx::Point& touch_point,
@@ -186,6 +191,7 @@ void WebFrameWidgetImplExt::CreateOverlay(
   }
   GetAssociatedFrameWidgetHost()->CreateOverlay(image, image_rect, touch_point);
 }
+// LCOV_EXCL_STOP
 
 void WebFrameWidgetImplExt::OnTextRecognized(
     WTF::Vector<mojom::blink::TextRecognizeResultPtr> res,
@@ -219,6 +225,7 @@ WTF::Vector<int8_t> WebFrameWidgetImplExt::GetWordSelection(
   return select;
 }
 
+// LCOV_EXCL_START
 void WebFrameWidgetImplExt::OnTextSelected(bool flag) {
   if (on_text_selected_callback_) {
     on_text_selected_callback_.Run(flag);
@@ -281,8 +288,10 @@ gfx::Rect WebFrameWidgetImplExt::GetImageRectInner() {
     return gfx::Rect();
   }
 }
+// LCOV_EXCL_STOP
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_MENU)
 void WebFrameWidgetImplExt::RegisterClippedVisualViewportSelectionBounds(
     gfx::Rect clipped_selection_bounds) {
@@ -342,6 +351,7 @@ void WebFrameWidgetImplExt::SetPinchSmoothMode(bool enable) {
       enable);
 }
 #endif
+// LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 void WebFrameWidgetImplExt::TouchHitTest(const WebPointerEvent& event,
@@ -403,6 +413,7 @@ void WebFrameWidgetImplExt::MouseHitTest(const WebMouseEvent& event) {
 }
 #endif
 
+// LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 void WebFrameWidgetImplExt::GetInputElementAttributes(
     HashMap<String, String>& attributes) const {
@@ -449,13 +460,18 @@ void WebFrameWidgetImplExt::DeterminePageLanguage() {
   }
 }
 #endif
+// LCOV_EXCL_STOP
+
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
+// LCOV_EXCL_START
 int64_t WebFrameWidgetImplExt::GetCurrentTimestampMS() {
   auto currentTime = std::chrono::system_clock::now().time_since_epoch();
   return std::chrono::duration_cast<std::chrono::microseconds>(currentTime)
               .count() /
           kMicrosecondsPerMillisecond;
 }
+// LCOV_EXCL_STOP
+
 void WebFrameWidgetImplExt::ReportBlank(int64_t startTime, int64_t endTime) {
   int64_t duration = endTime - startTime;
   std::string mode = "ReportDragBlank";

@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
+#include "base/memory/weak_ptr.h"
+#define private public
 #include "gpu/command_buffer/service/abstract_texture_ohos.h"
+#undef private
 
 #include <memory>
 #include <utility>

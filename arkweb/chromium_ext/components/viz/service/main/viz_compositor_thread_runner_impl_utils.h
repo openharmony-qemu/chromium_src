@@ -26,6 +26,7 @@
 #include "content/public/common/content_switches.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
+#include "base/memory/raw_ptr.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/thread.h"
 
@@ -42,7 +43,7 @@ void ReportThreadForInit(const std::unique_ptr<base::Thread>& thread);
 
 class VizCompositorThreadRunnerImplUtils {
 public:
-  VizCompositorThreadRunnerImpl* VizCompositorThreadRunner;
+  raw_ptr<VizCompositorThreadRunnerImpl> VizCompositorThreadRunner;
   VizCompositorThreadRunnerImplUtils(VizCompositorThreadRunnerImpl* impl);
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
   void ReportThreadForDestroy(const std::unique_ptr<base::Thread>& thread);

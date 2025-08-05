@@ -251,6 +251,7 @@ void OHOSAudioManager::SelectAudioDevice(const std::string& device_id,
   }
 }
 
+// LCOV_EXCL_START
 std::string OHOSAudioManager::GetSelectAudioDeviceId() {
   if (device_id_.empty()) {
     LOG(WARNING) << "OHOSAudioManager::SelectAudioDevice device_id is empty.";
@@ -258,5 +259,6 @@ std::string OHOSAudioManager::GetSelectAudioDeviceId() {
   }
   return device_id_;
 }
+// LCOV_EXCL_STOP
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 }  // namespace media

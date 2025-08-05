@@ -18,12 +18,6 @@
 
 #include "arkweb/build/features/features.h"
 
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-#include <vector>
-#include "third_party/skia/include/core/SkBitmap.h"
-#include "ui/gfx/geometry/rect.h"
-#endif
-
 namespace viz {
 class SkiaOutputSurfaceDependencyImpl;
 
@@ -32,13 +26,10 @@ class SkiaOutputSurfaceDependencyImplUtils {
   SkiaOutputSurfaceDependencyImpl* skiaOutputSurfaceDependencyImpl;
   SkiaOutputSurfaceDependencyImplUtils(SkiaOutputSurfaceDependencyImpl* impl);
 
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  void SendBlanklessSnapshotInfo(uint64_t blankless_key,
-                                 int32_t lcp_time,
-                                 int64_t pref_hash,
-                                 const SkBitmap& bitmap,
-                                 const std::vector<gfx::Rect>& quad_list);
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  bool GetIsScroll();
 #endif
+
 };
 
 } // namespace viz

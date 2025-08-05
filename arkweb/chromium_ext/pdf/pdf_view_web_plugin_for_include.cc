@@ -68,6 +68,10 @@ int32_t PdfViewWebPlugin::CastFpdfErrorToPdfLoadEvent(int pdf_error) {
   }
   return static_cast<int32_t>(load_event);
 }
+
+void PdfViewWebPlugin::UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) {
+  pdf_host_->UpdateClientClippedSelectionBoundsForPDF(clipped_selection_bounds);
+}
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
 }  // namespace chrome_pdf

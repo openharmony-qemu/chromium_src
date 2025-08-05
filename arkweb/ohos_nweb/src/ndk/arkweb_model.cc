@@ -1117,13 +1117,13 @@ ARKWEB_NDK_EXPORT ArkWeb_BlanklessInfo OH_NativeArkWeb_GetBlanklessInfoWithKey(c
 {
     auto webObjectPtr = OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
     if (webObjectPtr == nullptr) {
-        LOG(ERROR) << "OH_NativeArkWeb_GetBlanklessInfoWithKey web object pointer is nullptr";
+        LOG(ERROR) << "blankless OH_NativeArkWeb_GetBlanklessInfoWithKey web object pointer is nullptr";
         return { ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_CONTROLLER_NOT_INITED, 0.0, 0 };
     }
 
     auto nwebSharedPtr = webObjectPtr->GetWebSharedPtr();
     if (nwebSharedPtr == nullptr) {
-        LOG(ERROR) << "OH_NativeArkWeb_GetBlanklessInfoWithKey get nweb null for webTag: " << webTag;
+        LOG(ERROR) << "blankless OH_NativeArkWeb_GetBlanklessInfoWithKey get nweb null for webTag: " << webTag;
         return { ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_CONTROLLER_NOT_INITED, 0.0, 0 };
     }
 
@@ -1139,13 +1139,13 @@ ARKWEB_NDK_EXPORT ArkWeb_BlanklessErrorCode OH_NativeArkWeb_SetBlanklessLoadingW
 {
     auto webObjectPtr = OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
     if (webObjectPtr == nullptr) {
-        LOG(ERROR) << "OH_NativeArkWeb_SetBlanklessLoadingWithKey web object pointer is nullptr";
+        LOG(ERROR) << "blankless OH_NativeArkWeb_SetBlanklessLoadingWithKey web object pointer is nullptr";
         return ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_CONTROLLER_NOT_INITED;
     }
 
     auto nwebSharedPtr = webObjectPtr->GetWebSharedPtr();
     if (nwebSharedPtr == nullptr) {
-        LOG(ERROR) << "OH_NativeArkWeb_SetBlanklessLoadingWithKey get nweb null for webTag: " << webTag;
+        LOG(ERROR) << "blankless OH_NativeArkWeb_SetBlanklessLoadingWithKey get nweb null for webTag: " << webTag;
         return ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_CONTROLLER_NOT_INITED;
     }
 

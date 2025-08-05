@@ -22,6 +22,7 @@
 
 namespace gpu {
 
+//LCOV_EXCL_START
 GpuChannelExt::GpuChannelExt(GpuChannelManager* gpu_channel_manager,
                              const base::UnguessableToken& channel_token,
                              Scheduler* scheduler,
@@ -58,6 +59,7 @@ GpuChannelExt::~GpuChannelExt() {
   native_textures_.clear();
 #endif
 }
+//LCOV_EXCL_STOP
 
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
@@ -93,16 +95,20 @@ void GpuChannelExt::DestroyNativeTexture(int32_t native_id) {
   native_textures_.erase(native_id);
 }
 
+//LCOV_EXCL_START
 int32_t GpuChannelExt::current_native_embed_id(int32_t native_id) {
   return native_textures_[native_id]->NativeEmbedID();
 }
+//LCOV_EXCL_STOP
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+//LCOV_EXCL_START
 void GpuChannelExt::SetBlanklessDumpInfo(uint64_t frame_sink_id, const base::ohos::BlanklessDumpInfo& info) {
   std::lock_guard<std::mutex> lck(dump_info_map_mtx_);
   blankless_dump_info_map_[frame_sink_id] = std::move(info);
 }
+//LCOV_EXCL_STOP
 
 bool GpuChannelExt::GetBlanklessDumpInfoAndDisableDump(uint64_t frame_sink_id, base::ohos::BlanklessDumpInfo& info) {
   std::lock_guard<std::mutex> lck(dump_info_map_mtx_);

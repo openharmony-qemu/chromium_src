@@ -108,62 +108,6 @@ bool MouseEventManagerExt::GetOverlayInProgress() {
 }
 // LCOV_EXCL_STOP
 
-void MouseEventManagerExt::ConverCoordinates(float& left, float& top, float& width, float& height,
-                                             std::vector<gfx::PointF>& pointfs) {
-  float x_offset;
-  float y_offset;
-  float x_y_ratio;
-  float image_rect_ratio = width / height;
-  float bm_width = static_cast<float>(bm_.width());
-  float bm_height = static_cast<float>(bm_.height());
-  float bm_ratio = bm_width / bm_height;
-  if (width >= bm_width && height >= bm_height) {
-    x_offset = (width - bm_width) / 2.0f;
-    y_offset = (height - bm_height) / 2.0f;
-    x_y_ratio = 1.0f;
-  } else if (bm_ratio <= image_rect_ratio) {
-    x_y_ratio = height / bm_height;
-    x_offset = (width - bm_width * x_y_ratio) / 2.0f;
-    y_offset = 0.0f;
-  } else {
-    x_y_ratio = width / bm_width;
-    x_offset = 0.0f;
-    y_offset = (height - bm_height * x_y_ratio) / 2.0f;
-  }
-
-  left += x_offset;
-  top += y_offset;
-  width = bm_width * x_y_ratio;
-  height = bm_height * x_y_ratio;
-  for (auto& pointf : pointfs) {
-    pointf.set_x(pointf.x() * x_y_ratio);
-    pointf.set_y(pointf.y() * x_y_ratio);
-  }
-}
-
-void MouseEventManagerExt::SetOverlayStyle(Element* overlay_div, float left, float top, float width, float height) {
-  std::string attributes =
-      "left: " + std::to_string(left) + "px;" + "top: " + std::to_string(top) +
-      "px;" + "width: " + std::to_string(width) + "px;" +
-      "height: " + std::to_string(height) + "px;" + "position:absolute;" +
-      "display:flex;" + "z-index:999;" + "opacity:1;";
-  overlay_div->setAttribute(html_names::kStyleAttr,
-                            AtomicString(String(attributes)));
-}
-
-void MouseEventManagerExt::SetTextStyle(Element* text_div, float left, float top, float width, float height,
-                                        float font_size) {
-  std::string text_attributes =
-      "left: " + std::to_string(left) + "px;" + "top: " + std::to_string(top) +
-      "px;" + "width: " + std::to_string(width) + "px;" +
-      "height: " + std::to_string(height) + "px;" +
-      "font-size: " + std::to_string(font_size) + "px;" +
-      "position:absolute; display:flex; justify-content:center; "
-      "align-items:center; color:transparent;";
-  text_div->setAttribute(html_names::kStyleAttr,
-                         AtomicString(String(text_attributes)));
-}
-
 bool MouseEventManagerExt::IsValidOverlayNode(Node* node) {
   auto image = HitTestResult::GetImage(node);
   if (!image || image->IsNull()) {

@@ -25,7 +25,7 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-#include "gpu/ipc/service/gpu_channel_manager.h"
+#include "components/viz/service/gl/gpu_service_impl.h"
 #endif
 namespace viz {
 
@@ -80,9 +80,14 @@ class ArkwebDisplayUtils {
 
   void SetClientId(const uint32_t client_id);
 
-  void SetGpuChannelManager(gpu::GpuChannelManager* gpu_channel_manager);
+  void SetGpuServiceImpl(GpuServiceImpl* gpu_service_impl);
 #endif
+
  private:
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class ArkwebDisplayUtilsTest;
+#endif
+
   raw_ptr<Display> display_;
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
   gfx::Rect draw_rect_;
@@ -106,7 +111,7 @@ class ArkwebDisplayUtils {
 #endif  // ARKWEB_MAXIMIZE_RESIZE
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  raw_ptr<gpu::GpuChannelManager> gpu_channel_manager_;
+  GpuServiceImpl* gpu_service_impl_ {nullptr};
   uint32_t client_id_ = 0;
 #endif
 };

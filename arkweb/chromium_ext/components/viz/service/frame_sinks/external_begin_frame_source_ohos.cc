@@ -49,6 +49,7 @@ constexpr int VSYNC_30HZ = 30;
 constexpr int VSYNC_60HZ = 60;
 #endif
 
+//LCOV_EXCL_START
 class ExternalBeginFrameSourceOHOS::VSyncUserData {
  public:
   VSyncUserData(const scoped_refptr<base::SingleThreadTaskRunner>& current,
@@ -63,6 +64,7 @@ class ExternalBeginFrameSourceOHOS::VSyncUserData {
   const scoped_refptr<base::SingleThreadTaskRunner>& current_;
   base::WeakPtr<viz::ExternalBeginFrameSourceOHOS> weak_ptr_;
 };
+//LCOV_EXCL_STOP
 
 ExternalBeginFrameSourceOHOS::ExternalBeginFrameSourceOHOS(
     uint32_t restart_id,
@@ -96,6 +98,7 @@ ExternalBeginFrameSourceOHOS::ExternalBeginFrameSourceOHOS(
   managerImplUtils = std::make_unique<FrameSinkManagerImplUtils>(frame_sink_manager);
 }
 
+//LCOV_EXCL_START
 void ExternalBeginFrameSourceOHOS::SendInternalBeginFrame() {
   TRACE_EVENT0("viz", "ExternalBeginFrameSourceOHOS::SendInternalBeginFrame");
   base::TimeDelta vsync_period(base::Nanoseconds(vsync_period_));
@@ -111,6 +114,7 @@ ExternalBeginFrameSourceOHOS::~ExternalBeginFrameSourceOHOS() {
   LOG(INFO) << "ExternalBeginFrameSourceOHOS destructor!!!";
   SetEnabled(false);
 }
+//LCOV_EXCL_STOP
 
 void ExternalBeginFrameSourceOHOS::OnVSync(int64_t timestamp, void* data) {
   if (data == nullptr) {
@@ -259,6 +263,7 @@ if (last_dvsync_state_ != currentDysyncState) {
 #endif
 }
 
+//LCOV_EXCL_START
 void ExternalBeginFrameSourceOHOS::OnNeedsBeginFrames(bool needs_begin_frames) {
   SetEnabled(needs_begin_frames);
 }
@@ -296,6 +301,7 @@ void ExternalBeginFrameSourceOHOS::OnSetBypassVsyncCondition(int32_t condition) 
   condition_ = condition;
 }
 #endif
+//LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
 void ExternalBeginFrameSourceOHOS::UpdateVSyncFrequency(int frame_rate) {
@@ -309,16 +315,20 @@ void ExternalBeginFrameSourceOHOS::UpdateVSyncFrequency(int frame_rate) {
   }
 }
 
+//LCOV_EXCL_START
 void ExternalBeginFrameSourceOHOS::ResetVSyncFrequency() {
   reset_vsync_frequency_ = true;
   update_vsync_frequency_ = false;
   base::ohos::DynamicFrameRateDecision::GetInstance().ReportVideoFrameRate(0);
 }
+//LCOV_EXCL_STOP
 #endif
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+//LCOV_EXCL_START
 void ExternalBeginFrameSourceOHOS::OnVSyncCallback() {
   base::ohos::DynamicFrameLossMonitor::GetInstance().OnVsync();
 }
+//LCOV_EXCL_STOP
 #endif
 }  // namespace viz

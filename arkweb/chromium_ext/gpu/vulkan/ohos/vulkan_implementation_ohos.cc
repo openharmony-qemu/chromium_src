@@ -29,6 +29,7 @@
 
 namespace gpu {
 
+//LCOV_EXCL_START
 VulkanImplementationOhos::VulkanImplementationOhos() = default;
 
 VulkanImplementationOhos::~VulkanImplementationOhos() = default;
@@ -50,6 +51,7 @@ bool VulkanImplementationOhos::InitializeVulkanInstance(bool using_surface) {
 VulkanInstance* VulkanImplementationOhos::GetVulkanInstance() {
   return &vulkan_instance_;
 }
+//LCOV_EXCL_STOP
 
 std::unique_ptr<VulkanSurface> VulkanImplementationOhos::CreateViewSurface(
     gfx::AcceleratedWidget window) {
@@ -75,6 +77,7 @@ std::unique_ptr<VulkanSurface> VulkanImplementationOhos::CreateViewSurface(
                                          surface);
 }
 
+//LCOV_EXCL_START
 bool VulkanImplementationOhos::GetPhysicalDevicePresentationSupport(
     VkPhysicalDevice device,
     const std::vector<VkQueueFamilyProperties>& queue_family_properties,
@@ -144,6 +147,7 @@ VulkanImplementationOhos::CreateImageFromGpuMemoryHandle(
   NOTIMPLEMENTED();
   return nullptr;
 }
+//LCOV_EXCL_STOP
 
 bool VulkanImplementationOhos::GetSamplerYcbcrConversionInfo(
     const VkDevice& vk_device,

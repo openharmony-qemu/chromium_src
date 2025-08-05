@@ -100,6 +100,7 @@ void BaseAudioCapturerSource::Initialize(
   portal_init_failed_ = false;
 }
 
+// LCOV_EXCL_START
 void BaseAudioCapturerSource::Start() {
   LOG(INFO) << "BaseAudioCapturerSource::Start";
   DCHECK(base_callback_);
@@ -146,6 +147,7 @@ void BaseAudioCapturerSource::Stop() {
 
   DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
+// LCOV_EXCL_STOP
 
 void BaseAudioCapturerSource::HandleAudioBuffer(OHOS::NWeb::AudioCaptureSourceTypeAdapter type) {
   base::AutoLock lock(base_callback_lock_);

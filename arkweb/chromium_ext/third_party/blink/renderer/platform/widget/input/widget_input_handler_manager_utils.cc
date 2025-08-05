@@ -38,6 +38,7 @@ class SoftwareCompositorProxyRegistryOhos
       : compositor_thread_default_task_runner_(
             std::move(compositor_task_runner)) {}
 
+// LCOV_EXCL_START
   ~SoftwareCompositorProxyRegistryOhos() {
     // Ensure the proxy has already been release on the compositor thread
     // before destroying this object.
@@ -78,6 +79,7 @@ class SoftwareCompositorProxyRegistryOhos
     DCHECK(compositor_thread_default_task_runner_->BelongsToCurrentThread());
     proxy_.reset();
   }
+// LCOV_EXCL_STOP
 
  private:
   scoped_refptr<base::SingleThreadTaskRunner>
@@ -88,6 +90,7 @@ class SoftwareCompositorProxyRegistryOhos
 #endif
 
 
+// LCOV_EXCL_START
 WidgetInputHandlerManagerUtils::WidgetInputHandlerManagerUtils(
     WidgetInputHandlerManager* manager) : manager_(manager) {
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
@@ -192,11 +195,13 @@ void WidgetInputHandlerManagerUtils::DidNativeEmbedEvent(
 }
 
 void WidgetInputHandlerManagerUtils::SetGestureEventResult(bool result,
-                                                      bool stopPropagation) {
+                                                           bool stopPropagation,
+                                                           int32_t fingerId) {
   if (!manager_->input_handler_proxy_) {
     return;
   }
-  manager_->input_handler_proxy_->proxy_utils()->SetGestureEventResult(result, stopPropagation);
+  manager_->input_handler_proxy_->proxy_utils()->SetGestureEventResult(
+      result, stopPropagation, fingerId);
 }
 
 void WidgetInputHandlerManagerUtils::TouchHitTest(const WebPointerEvent& event,
@@ -220,7 +225,7 @@ void WidgetInputHandlerManagerUtils::AsyncNativeHitTestResult(bool isNative,
                                                          size_t fingerId,
                                                          int layerId) {
   if (manager_->input_handler_proxy_) {
-    manager_->input_handler_proxy_->proxy_utils()->NativeHitTestResult(isNative, fingerId, layerId);
+    manager_->input_handler_proxy_->proxy_utils()->NativeHitTestResultV2(isNative, fingerId, layerId);
   }
 }
 
@@ -270,6 +275,15 @@ void WidgetInputHandlerManagerUtils::AsyncNativeMouseHitTestResult(bool isNative
     manager_->input_handler_proxy_->proxy_utils()->NativeMouseHitTestResult(isNative, layerId);
   }
 }
+
+void WidgetInputHandlerManagerUtils::SetEnableCustomVideoPlayer(bool flag) {
+  if (!manager_->input_handler_proxy_) {
+    return;
+  }
+  manager_->input_handler_proxy_->proxy_utils()->SetEnableCustomVideoPlayer(
+      flag);
+}
 #endif
+// LCOV_EXCL_STOP
 
 }

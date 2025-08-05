@@ -119,9 +119,7 @@ struct NWebAppClientExtensionCallback {
 
   void (*OnShowVideoAssistant)(int32_t nweb_id,
                                const char* video_assistant_items);
-#if BUILDFLAG(ARKWEB_PIP)
-  void (*OnPipEvent)(int event, int nweb_id);
-#endif
+  void (*OnPipEvent)(int32_t nweb_id, int event);
   void (*OnFrameCreated)(int32_t nweb_id, const FrameInfos& frame);
 };
 

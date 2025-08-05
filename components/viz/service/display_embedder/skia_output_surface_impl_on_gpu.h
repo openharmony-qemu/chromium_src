@@ -91,6 +91,7 @@ class SkiaOutputSurfaceDependency;
 class VulkanContextProvider;
 class SkiaOutputSurfaceImplOnGpuUtils;
 
+
 namespace copy_output {
 struct RenderPassGeometry;
 }  // namespace copy_output
@@ -100,7 +101,7 @@ struct RenderPassGeometry;
 class SkiaOutputSurfaceImplOnGpu
     : public gpu::SharedContextState::ContextLostObserver {
  public:
-  friend class SkiaOutputSurfaceImplOnGpuUtils;
+   friend class SkiaOutputSurfaceImplOnGpuUtils;
   using DidSwapBufferCompleteCallback =
       base::RepeatingCallback<void(gpu::SwapBuffersCompleteParams,
                                    const gfx::Size& pixel_size,
@@ -314,8 +315,8 @@ class SkiaOutputSurfaceImplOnGpu
   void SetBypassVsyncCondition(int32_t condition);
 #endif
 
-  std::shared_ptr<SkiaOutputSurfaceImplOnGpuUtils> impl_utils() {
-    return impl_utils_;
+  std::shared_ptr<SkiaOutputSurfaceImplOnGpuUtils> impl_utils() {	
+    return impl_utils_;	
   }
 
  private:
@@ -605,6 +606,10 @@ class SkiaOutputSurfaceImplOnGpu
   int num_readbacks_pending_ = 0;
   bool readback_poll_pending_ = false;
 
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  bool did_dvsync_on_ = false;
+  int delay_num_ = 0;
+#endif
   // Lock for |async_read_result_helpers_|.
   scoped_refptr<AsyncReadResultLock> async_read_result_lock_;
 
@@ -635,16 +640,11 @@ class SkiaOutputSurfaceImplOnGpu
   std::unique_ptr<media::VulkanOverlayAdaptor> vulkan_overlay_adaptor_ =
       nullptr;
 #endif
-
   std::shared_ptr<SkiaOutputSurfaceImplOnGpuUtils> impl_utils_ = nullptr;
 
   base::WeakPtr<SkiaOutputSurfaceImplOnGpu> weak_ptr_;
   base::WeakPtrFactory<SkiaOutputSurfaceImplOnGpu> weak_ptr_factory_{this};
 
-#if BUILDFLAG(ARKWEB_D_VSYNC)
-  bool did_dvsync_on_ = false;
-  int delay_num_ = 0;
-#endif
 };
 
 }  // namespace viz

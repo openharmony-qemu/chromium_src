@@ -34,7 +34,7 @@ class ArkwebCopyOutputResultUtils {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SetImplOnGpu(SkiaOutputSurfaceImplOnGpu* impl_on_gpu);
 
-  SkiaOutputSurfaceImplOnGpu* ImplOnGpu() const;
+  SkiaOutputSurfaceImplOnGpu* ImplOnGpu() const;	
 
   void SetBlanklessKey(uint64_t blankless_key);
 

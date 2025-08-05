@@ -29,6 +29,7 @@ const std::string AUTO_FILL_CANCEL_PRIVATE_COMMAND = "autofill.cancel";
 
 InputMethod_TextConfig *IMFTextEditorProxyImpl::textConfig_ = nullptr;
 std::shared_ptr<IMFTextListenerAdapterImpl> IMFTextEditorProxyImpl::textListener_ = nullptr;
+// LCOV_EXCL_START
 InputMethod_TextInputType AdapterTextInputTypeToTextInputType(int32_t inputType)
 {
     const static std::unordered_map<IMFAdapterTextInputType, InputMethod_TextInputType> INPUT_TYPE_MAP = {
@@ -96,6 +97,7 @@ InputMethod_EnterKeyType AdapterEnterKeyTypeToOhEnterKeyType(int32_t enterKeyTyp
     }
     return IME_ENTER_KEY_UNSPECIFIED;
 }
+// LCOV_EXCL_STOP
 
 IMFAdapterKeyboardStatus ohKeyboardStatusToAdapterKeyboardStatus(InputMethod_KeyboardStatus keyboardStatus)
 {

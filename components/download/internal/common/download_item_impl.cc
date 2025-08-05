@@ -691,8 +691,13 @@ void DownloadItemImpl::Resume(bool user_resume) {
     case COMPLETING_INTERNAL:
     case INITIAL_INTERNAL:
     case INTERRUPTED_TARGET_PENDING_INTERNAL:
-    case RESUMING_INTERNAL:  // Resumption in progress.
       return;
+    case RESUMING_INTERNAL:  // Resumption in progress.
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+      if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+              switches::kEnableNwebExDownload))
+#endif
+        return;
 
     case TARGET_PENDING_INTERNAL:
     case IN_PROGRESS_INTERNAL:
@@ -896,10 +901,14 @@ bool DownloadItemImpl::CanResume() const {
     case COMPLETING_INTERNAL:
     case COMPLETE_INTERNAL:
     case CANCELLED_INTERNAL:
-    case RESUMING_INTERNAL:
     case INTERRUPTED_TARGET_PENDING_INTERNAL:
       return false;
-
+    case RESUMING_INTERNAL:
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+      if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+              switches::kEnableNwebExDownload))
+#endif
+        return false;
     case TARGET_PENDING_INTERNAL:
     case TARGET_RESOLVED_INTERNAL:
     case IN_PROGRESS_INTERNAL:
@@ -1764,7 +1773,7 @@ void DownloadItemImpl::Start(
 
   TransitionTo(TARGET_PENDING_INTERNAL);
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  LOG(INFO) << "DownloadItemImpl::Start download_file_: " << download_file_.get();
+  LOG(INFO) << "DownloadItemImpl::Start";
 #endif // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   job_->Start(download_file_.get(),
               base::BindRepeating(&DownloadItemImpl::OnDownloadFileInitialized,

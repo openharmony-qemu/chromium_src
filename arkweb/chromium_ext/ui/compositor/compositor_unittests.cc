@@ -83,5 +83,80 @@ TEST_F(CompositorTest, SetDrawRect) {
   g_compositor->Utils()->SetDrawRect(rect);
 }
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+
+TEST_F(CompositorTest, SetDrawMode) {
+  ASSERT_NE(g_compositor, nullptr);
+  g_compositor->Utils()->SetDrawMode(0);
+  g_compositor->Utils()->SetDrawMode(1);
+}
+
+TEST_F(CompositorTest, SetNativeInnerWeb) {
+  ASSERT_NE(g_compositor, nullptr);
+  g_compositor->Utils()->SetNativeInnerWeb(true);
+  g_compositor->Utils()->SetDrawMode(false);
+}
+
+TEST_F(CompositorTest, SetBypassVsyncCondition) {
+  ASSERT_NE(g_compositor, nullptr);
+  g_compositor->Utils()->SetBypassVsyncCondition(0);
+  g_compositor->Utils()->SetBypassVsyncCondition(1);
+}
+
+TEST_F(CompositorTest, SetShouldFrameSubmissionBeforeDraw) {
+  ASSERT_NE(g_compositor, nullptr);
+  g_compositor->Utils()->SetShouldFrameSubmissionBeforeDraw(false);
+  g_compositor->Utils()->SetShouldFrameSubmissionBeforeDraw(true);
+}
+
+TEST_F(CompositorTest, SendInternalBeginFrame) {
+  ASSERT_NE(g_compositor, nullptr);
+  g_compositor->Utils()->SendInternalBeginFrame();
+}
+
+TEST_F(CompositorTest, SetEnableLowerFrameRate) {
+  ASSERT_NE(g_compositor, nullptr);
+  g_compositor->Utils()->SetEnableLowerFrameRate(false);
+  g_compositor->Utils()->SetEnableLowerFrameRate(true);
+}
+
+TEST_F(CompositorTest, SetEnableHalfFrameRate) {
+  ASSERT_NE(g_compositor, nullptr);
+  g_compositor->Utils()->SetEnableHalfFrameRate(false);
+  g_compositor->Utils()->SetEnableHalfFrameRate(true);
+}
+
+TEST_F(CompositorTest, EvictFrameBackBuffers) {
+  ASSERT_NE(g_compositor, nullptr);
+  g_compositor->Utils()->EvictFrameBackBuffers(false);
+  g_compositor->Utils()->EvictFrameBackBuffers(true);
+}
+
+TEST_F(CompositorTest, UpdateVSyncFrequency) {
+  ASSERT_NE(g_compositor, nullptr);
+  g_compositor->Utils()->UpdateVSyncFrequency();
+}
+
+TEST_F(CompositorTest, ResetVSyncFrequency) {
+  ASSERT_NE(g_compositor, nullptr);
+  g_compositor->Utils()->ResetVSyncFrequency();
+}
+
+TEST_F(CompositorTest, SetCurrentFrameSinkId) {
+  ASSERT_NE(g_compositor, nullptr);
+  const viz::FrameSinkId id(0, 0);
+  g_compositor->Utils()->ResetVSyncFrequency();
+}
+
+TEST_F(CompositorTest, DisableSwapUntilMaximized) {
+  ASSERT_NE(g_compositor, nullptr);
+  g_compositor->Utils()->DisableSwapUntilMaximized();
+}
+
+TEST_F(CompositorTest, SetPipActive) {
+  ASSERT_NE(g_compositor, nullptr);
+  g_compositor->Utils()->SetPipActive(false);
+  g_compositor->Utils()->SetPipActive(true);
+}
+
 }  // namespace ui
                   

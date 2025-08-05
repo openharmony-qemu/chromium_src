@@ -14,8 +14,6 @@
  */
 #include "net_connect_fuzz_mock.h"
 
-#include <iostream>
-
 static const char* const COMMON_EVENT_CONNECTIVITY_CHANGE =
     "usual.event.CONNECTIVITY_CHANGE";
 

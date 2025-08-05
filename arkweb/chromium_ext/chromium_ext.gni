@@ -297,6 +297,7 @@ arkweb_media_base_unittest_sources = [
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_codec_bridge_impl_unittest.cc",
   "//arkweb/chromium_ext/media/base/video_util_ext_unittest.cc",
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_decoder_bridge_impl_unittest.cc",
+  "//arkweb/chromium_ext/media/base/ohos/ohos_media_codec_bridge_impl_unittest.cc",
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_player_bridge_unittest.cc",
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_codec_util_unittest.cc",
   "//arkweb/chromium_ext/media/base/ohos/ohos_cdm_factory_unittests.cc",
@@ -306,6 +307,11 @@ arkweb_media_base_unittest_sources = [
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_drm_bridge_factory_unittest.cc",
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_drm_bridge_unittest.cc",
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_drm_storage_bridge_unittest.cc",
+  "//arkweb/chromium_ext/media/gpu/ohos/ohos_heif_image_decoder_unittest.cc",
+  "//arkweb/chromium_ext/media/gpu/ohos/ohos_image_decoder_unittest.cc",
+  "//arkweb/chromium_ext/media/gpu/ohos/codec_output_buffer_renderer_unittest.cc",
+  "//arkweb/chromium_ext/media/gpu/ohos/codec_image_unittest.cc",
+  "//arkweb/chromium_ext/media/gpu/ohos/codec_allocator_unittest.cc",
 ]
 
 arkweb_media_mojo_services_unittest_sources = [

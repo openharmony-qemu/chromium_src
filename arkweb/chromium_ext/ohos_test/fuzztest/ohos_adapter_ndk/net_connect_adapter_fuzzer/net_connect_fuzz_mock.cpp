@@ -16,7 +16,6 @@
 
 #include <iostream>
 
-
 static const char* const COMMON_EVENT_CONNECTIVITY_CHANGE =
     "usual.event.CONNECTIVITY_CHANGE";
 
@@ -51,7 +50,8 @@ std::shared_ptr<NetConn_NetConnCallback> g_netConnCallback;
 int32_t OH_NetConn_RegisterDefaultNetConnCallback(
     NetConn_NetConnCallback* netConnCallback,
     uint32_t* callbackId) {
-  g_netConnCallback = std::make_shared<NetConn_NetConnCallback>(*netConnCallback);
+  g_netConnCallback =
+      std::make_shared<NetConn_NetConnCallback>(*netConnCallback);
   return 0;
 }
 

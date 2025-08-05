@@ -63,7 +63,8 @@ FUZZ_MOCK_EXPORT int32_t OH_NetConn_RegisterDefaultNetConnCallback(
     NetConn_NetConnCallback* netConnCallback,
     uint32_t* callbackId);
 
-FUZZ_MOCK_EXPORT int32_t OH_NetConn_UnregisterNetConnCallback(uint32_t callBackId);
+FUZZ_MOCK_EXPORT int32_t
+OH_NetConn_UnregisterNetConnCallback(uint32_t callBackId);
 
 FUZZ_MOCK_EXPORT int32_t OH_NetConn_GetDefaultNet(NetConn_NetHandle* netHandle);
 

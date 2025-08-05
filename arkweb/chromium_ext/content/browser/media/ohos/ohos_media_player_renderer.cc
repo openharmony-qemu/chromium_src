@@ -153,7 +153,8 @@ void OHOSMediaPlayerRenderer::StartPlayingFrom(base::TimeDelta time) {
 }
 
 void OHOSMediaPlayerRenderer::SetPlaybackRate(double playback_rate) {
-  if (has_error_) {
+  if (has_error_ || !media_player_) {
+    LOG(INFO) << "SetPlaybackRate, has_error or no media_player_";
     return;
   }
   if (playback_rate <= kPlaybackRateLevel0) {

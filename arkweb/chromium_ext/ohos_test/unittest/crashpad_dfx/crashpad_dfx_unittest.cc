@@ -24,7 +24,6 @@ extern uid_t g_process_uid;
 extern std::string g_bundle_name;
 extern std::string g_happen_time;
 
-//模拟全局变量
 uid_t g_process_uid = 0;
 std::string g_bundle_name = "test_bundle";
 std::string g_happen_time = "20250804123456";
@@ -64,10 +63,8 @@ TEST_F(CrashpadDfxTest, CrashpadDfxTest002){
     auto dfxtest = std::make_shared<CrashpadDfx>();
     EXPECT_NE(dfxtest,nullptr);
 
-    //传入无效PID -1
     std::string process_type = dfxtest->GetProcessTypeByPid(-1);
 
-    //预期：无法打开文件，返回“unknown”
     EXPECT_EQ(process_type, "unknown");
 }
 
@@ -91,7 +88,6 @@ TEST_F(CrashpadDfxTest,  CrashpadDfxTest004){
 TEST_F(CrashpadDfxTest,  CrashpadDfxTest005){
     std::string current_time = CrashpadDfx::GetCurrentTime();
     EXPECT_EQ(current_time.length(),14);
-    // 验证格式是否正确，4y2m2d2h2m2s
 }
 
 TEST_F(CrashpadDfxTest,  CrashpadDfxTest006){

@@ -68,6 +68,7 @@ class MockInputRouter : public InputRouter {
   void SetGestureEventResult(bool result, bool stopPropagation, int32_t fingerId) override {}
   void SetNativeEmbedMode(bool flag) override {}
   void SetMouseEventResult(bool result, bool stopPropagation) override {}
+  void SetEnableCustomVideoPlayer(bool flag) override {}
 #endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

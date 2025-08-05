@@ -212,7 +212,7 @@ void WidgetBaseUtils::DidNativeEmbedEvent(blink::WebInputEvent::Type type,
   LOG(DEBUG) << "[NativeEmbed] DidNativeEmbedEvent type is : " << nativeType
              << " x: " << x << " y: " << y;
   widget_base_->widget_host_->DidNativeEmbedEvent(mojom::blink::NativeEmbedTouchEvent::New(
-      static_cast<String>(embedId), id, x, y, x, y, nativeType, x, y));
+      String(embedId.c_str()), id, x, y, x, y, nativeType, x, y));
 }
 
 void WidgetBaseUtils::MouseHitTest(const WebMouseEvent& event) {

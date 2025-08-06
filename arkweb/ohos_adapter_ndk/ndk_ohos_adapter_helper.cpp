@@ -65,6 +65,7 @@
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/vsync_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/print_manager_adapter/print_manager_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/soc_perf_adapter/soc_perf_client_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -142,7 +143,7 @@ NDKOhosAdapterHelper::CreateMMIAdapter() {
 
 std::unique_ptr<NWeb::SocPerfClientAdapter>
 NDKOhosAdapterHelper::CreateSocPerfClientAdapter() {
-  return nullptr;
+  return std::make_unique<SocPerfClientAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::OhosResourceAdapter>

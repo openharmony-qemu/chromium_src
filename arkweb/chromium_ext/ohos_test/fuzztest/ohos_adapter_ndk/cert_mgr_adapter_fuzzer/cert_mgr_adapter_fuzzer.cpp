@@ -15,7 +15,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
-#include "net_proxy_adapter_impl/net_proxy_adapter_impl.h"
+#include "cert_mgr_adapter/cert_mgr_adapter_impl.h"
 
 namespace OHOS::NWeb {
 bool LLVMFuzzerTestSetup() {

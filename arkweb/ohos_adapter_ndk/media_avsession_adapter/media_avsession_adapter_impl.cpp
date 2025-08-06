@@ -16,7 +16,7 @@
 
 #include <bundle/native_interface_bundle.h>
 
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 #include <unistd.h>
 
 namespace OHOS::NWeb {
@@ -154,6 +154,10 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::AVSessionOnCommandCallback(O
     AVSession_ControlCommand command, void *userData) {
     MediaAVSessionCallbackAdapter *media = reinterpret_cast<MediaAVSessionCallbackAdapter *>(userData);
 
+    if (!media) {
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
+    }
+
     switch (command) {
         case CONTROL_CMD_PLAY:
             media->Play();
@@ -178,6 +182,9 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::AVSessionOnSeekCallback(OH_A
     uint64_t seekTime, void *userData) {
     WVLOG_I("SeekCallback seekTime: %{public}lu", seekTime);
     MediaAVSessionCallbackAdapter *media = reinterpret_cast<MediaAVSessionCallbackAdapter *>(userData);
+    if (!media) {
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
+    }
 
     media->SeekTo(seekTime);
     return AVSESSION_CALLBACK_RESULT_SUCCESS;

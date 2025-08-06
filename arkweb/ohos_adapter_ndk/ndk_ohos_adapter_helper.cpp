@@ -211,7 +211,7 @@ NDKOhosAdapterHelper::CreateConsumerSurfaceAdapter() {
 
 std::unique_ptr<NWeb::PlayerAdapter>
 NDKOhosAdapterHelper::CreatePlayerAdapter() {
-  return nullptr;
+  return std::make_unique<PlayerAdapterImpl>();
 }
 
 NWeb::WindowAdapter& NDKOhosAdapterHelper::GetWindowAdapterInstance() {

@@ -136,7 +136,7 @@ class OHOSMediaCodecBridgeImpl : public OHOSMediaCodecBridge {
   std::shared_ptr<CodecEncodeBridgeCallback> cb_;
   scoped_refptr<base::SequencedTaskRunner> codec_task_runner_ = nullptr;
   std::atomic<bool> is_running_ = false;
-  uint8_t* keyframe_addr_ = nullptr;
+  raw_ptr<uint8_t> keyframe_addr_ = nullptr;
   EncodeConfigDataCache config_data_cache_;
   std::shared_ptr<ProducerSurfaceAdapter> surface_;
   std::shared_ptr<SurfaceBufferAdapter> buffer_adapter_;

@@ -425,7 +425,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::DequeueOutputBuffer(
     merge_frame_data.bufferSize = config_data_size + buffer.bufferSize;
     merge_frame_info.offset = 0;
     keyframe_addr_ = new uint8_t[merge_frame_data.bufferSize];
-    if (keyframe_addr_ == nullptr) {
+    if (!keyframe_addr_) {
       LOG(ERROR) << "new key frame failed";
       ClearConfigDataCache();
       PopOutQueue();
@@ -434,14 +434,14 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::DequeueOutputBuffer(
     LOG(DEBUG) << "DequeueOutputBuffer handle keyframe : configSize: "
                << config_data_size << ", buffersize: " << buffer.bufferSize
                << ", mergeFrame Size: " << merge_frame_data.bufferSize;
-    if (memcpy_s(keyframe_addr_, merge_frame_data.bufferSize, config_data_addr,
+    if (memcpy_s(keyframe_addr_.get(), merge_frame_data.bufferSize, config_data_addr,
                  config_data_size) != EOK) {
       LOG(ERROR) << "keyframe_addr_ memcpy_s failed";
       ClearConfigDataCache();
       PopOutQueue();
       return CodecCodeAdapter::ERROR;
     }
-    if (memcpy_s(keyframe_addr_ + config_data_size, buffer.bufferSize,
+    if (memcpy_s(keyframe_addr_.get() + config_data_size, buffer.bufferSize,
                  buffer.addr, buffer.bufferSize) != EOK) {
       LOG(ERROR) << "keyframe_addr_ + config_data_size memcpy_s failed";
       ClearConfigDataCache();

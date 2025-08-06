@@ -477,7 +477,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::ReleaseOutputBuffer(uint32_t index,
 void OHOSMediaCodecBridgeImpl::ClearKeyFrameCache() {
   if (keyframe_addr_) {
     LOG(DEBUG) << "OHOSMediaCodecBridgeImpl::ClearKeyFrameCache enter.";
-    delete[] keyframe_addr_;
+    delete[] keyframe_addr_.get();
     keyframe_addr_ = nullptr;
   }
 }

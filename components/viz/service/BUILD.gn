@@ -750,6 +750,11 @@ viz_source_set("unit_tests") {
       "//gpu/vulkan/init",
     ]
   }
+
+  import("//arkweb/chromium_ext/components/viz/service/arkweb_viz_service_ext.gni")
+  sources += components_viz_service_unittests_ext.sources
+  sources -= components_viz_service_unittests_ext.sources_del
+  deps += components_viz_service_unittests_ext.deps
 }
 
 viz_source_set("perf_tests") {

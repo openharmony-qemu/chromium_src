@@ -103,6 +103,7 @@ struct NWebDownloadItem {
 
   NWebDownloadItem(CefRefPtr<CefDownloadItem> download_item) {
     WVLOG_I("NWebDownloadItem() is called");
+    CHECK(download_item);
     nweb_id = download_item->AsArkDownloadItem()->GetNWebId();
     download_item_id = (long)download_item->GetId();
     current_speed = (long)download_item->GetCurrentSpeed();
@@ -142,6 +143,7 @@ struct NWebDownloadItem {
 
   static NWebDownloadItemState GetNWebState(
       CefRefPtr<CefDownloadItem> download_item) {
+    CHECK(download_item);
     int cef_download_item_state_ =
         download_item->AsArkDownloadItem()->GetState();
     bool is_interrupted = (cef_download_item_state_ == INTERRUPTED_STATE);

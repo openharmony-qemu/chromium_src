@@ -1331,6 +1331,9 @@ ExtensionIdList ExtensionPrefs::GetPinnedExtensions() const {
 
 void ExtensionPrefs::SetPinnedExtensions(const ExtensionIdList& extension_ids) {
   SetExtensionPrefFromContainer(pref_names::kPinnedExtensions, extension_ids);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  prefs_->CommitPendingWrite();
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void ExtensionPrefs::OnExtensionInstalled(

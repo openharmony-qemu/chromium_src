@@ -280,6 +280,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       int32_t h5_object_id,
       const std::string& h5_method_name,
       const std::vector<std::shared_ptr<NWebValue>>& args) const override;
+  void CallH5FunctionV2(
+      int32_t routing_id,
+      int32_t h5_object_id,
+      const std::string& h5_method_name,
+      const std::vector<std::shared_ptr<NWebRomValue>>& args) const override;
 
   void RegisterNWebJavaScriptCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) override;
@@ -345,6 +350,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                       const std::string& targetUri) override;
   void PostPortMessage(const std::string& port_handle,
                        std::shared_ptr<NWebMessage> data) override;
+  void PostPortMessageV2(const std::string& port_handle,
+                       std::shared_ptr<NWebRomValue> data) override;
   void SetPortMessageCallback(
       const std::string& port_handle,
       std::shared_ptr<NWebMessageValueCallback> callback) override;
@@ -553,7 +560,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   std::string GetCurrentLanguage() override;
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-void SetNativeInnerWeb(bool isInnerWeb) override;
+  void SetNativeInnerWeb(bool isInnerWeb) override;
+  bool GetNativeEmbedMode() override;
+  bool IsEnableCustomVideoPlayer() override;
 #endif
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
   void NotifyPopupWindowResult(bool result) override;
@@ -626,6 +635,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   void SetAutofillCallback(
       std::shared_ptr<NWebMessageValueCallback> callback) override;
   void FillAutofillData(std::shared_ptr<NWebMessage> data) override;
+  void FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) override;
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
   void StartCamera() override;
@@ -758,8 +768,6 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
       std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) override;
   void WebExtensionTabReplaced(int32_t addedTabId,
                                int32_t removedTabId) override;
-  void WebExtensionTabZoomChange(std::unique_ptr<NWebExtensionTabZoomChangeInfo>
-                                     tabZoomChangeInfo) override;
   void WebExtensionSetViewType(int32_t type) override;
 #endif
 
@@ -850,8 +858,11 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) override;
   int64_t GetPreferenceHash() override;
   void SetNearestSnapshotSize(int32_t width, int32_t height) override;
-  gfx::Size GetNearestSnapshotSize() override;
-  gfx::Size GetSize() override;
+  int32_t NearestSnapshotWidth() override;
+  int32_t NearestSnapshotHeight() override;
+  int32_t GetWidth() override;
+  int32_t GetHeight() override;
+  void RemoveBlanklessFrameIfNeed(RotationType rotation);
 #endif
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override;
@@ -905,6 +916,7 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 #if BUILDFLAG(ARKWEB_MSGPORT)
   void ConvertNWebMsgToCefValue(std::shared_ptr<NWebMessage> data,
                                 CefRefPtr<CefValue> message);
+  CefRefPtr<CefValue> ConvertRomValueToCefValue(std::shared_ptr<NWebRomValue> data);
 #endif
 #if BUILDFLAG(ARKWEB_CA)
   bool GetCertChainDerDataInner(CefRefPtr<CefX509Certificate> cert,
@@ -998,7 +1010,8 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
   bool hidden_ = false;
   bool occluded_ = false;
   bool is_popup_ready_ = false;
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PAGE_UP_DOWN) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PAGE_UP_DOWN) || BUILDFLAG(ARKWEB_VIEWPORT_AVOID) || \
+    BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   uint32_t width_ = 0;
   uint32_t height_ = 0;
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
@@ -1034,6 +1047,11 @@ void SetNativeInnerWeb(bool isInnerWeb) override;
 
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   int32_t avoid_height_ = 0;
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  int32_t nearest_snapshot_width_ = 0;
+  int32_t nearest_snapshot_height_ = 0;
+  base::WeakPtrFactory<NWebDelegate> weak_factory_{this};
 #endif
 };
 }  // namespace OHOS::NWeb

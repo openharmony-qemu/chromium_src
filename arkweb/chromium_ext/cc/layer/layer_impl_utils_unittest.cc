@@ -13,6 +13,12 @@
  * limitations under the License.
  */
 
+#include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
+#include "ui/gfx/geometry/rect_f.h"
+#define private public
+#include "arkweb/chromium_ext/cc/layer/layer_impl_utils.h"
+#undef private
 #include "arkweb/chromium_ext/cc/layer/layer_utils.h"
 #include "cc/layers/layer_impl.h"
 #include "cc/test/layer_tree_impl_test_base.h"
@@ -76,5 +82,30 @@ TEST_F(LayerImplUtilsTest, GetNativeRect001) {
   EXPECT_EQ(utils_->GetNativeRect(), test_rect);
 }
 
+TEST_F(LayerImplUtilsTest, GetNativeRect002) {
+  gfx::RectF test_rect(5, 10, 15, 20);
+  utils_->native_rect_ = test_rect;
+  utils_->may_contain_native_ = true;
+  gfx::RectF result = utils_->GetNativeRect();
+  EXPECT_EQ(result, utils_->native_rect_);
+}
+
+TEST_F(LayerImplUtilsTest, GetNativeRect003) {
+  gfx::RectF test_empty_rect(0, 0, 0, 0);
+  utils_->native_rect_ = test_empty_rect;
+  utils_->may_contain_native_ = true;
+  test_rect.set_width(utils_->layer_impl_->bounds().width());
+  test_rect.set_height(utils_->layer_impl_->bounds().height());
+  gfx::RectF result = utils_->GetNativeRect();
+  EXPECT_EQ(result, test_rect);
+}
+
+TEST_F(LayerImplUtilsTest, NativeRect002) {
+  gfx::RectF test_rect(5, 10, 15, 20);
+  utils_->native_rect_ = test_rect;
+  utils_->may_contain_native_ = true;
+  gfx::RectF result = utils_->NativeRect();
+  EXPECT_EQ(result, utils_->native_rect_);
+}
 }  // namespace
 }  // namespace cc

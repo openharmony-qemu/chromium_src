@@ -860,6 +860,10 @@ void NWebPreferenceDelegate::RegisterNativeEmbedRule(const std::string& tag,
   embed_tag_type_ = type;
   WebPreferencesChanged();
 }
+
+bool NWebPreferenceDelegate::IsEnableCustomVideoPlayer() {
+  return std::get<0>(native_video_player_config_);
+}
 #endif
 #if BUILDFLAG(ARKWEB_VIEWPORT)
 void NWebPreferenceDelegate::SetViewportEnable(bool enable) {
@@ -972,6 +976,13 @@ void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
   }
   native_video_player_config_ = {enable, shouldOverlay};
   WebPreferencesChanged();
+  if (!browser_) {
+    LOG(ERROR) << "SetNativeVideoPlayerConfig failed, browser is null";
+    return;
+  }
+  LOG(INFO) << "NWebPreferenceDelegate::SetNativeVideoPlayerConfig enable:"
+            << enable;
+  browser_->GetHost()->SetEnableCustomVideoPlayer(enable);
 }
 
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
@@ -1246,7 +1257,7 @@ bool NWebPreferenceDelegate::SetRotationType(uint32_t type) {
   return true;
 }
 
-uint32_t NWebPreferenceDelegate::GetRiotationType() {
+uint32_t NWebPreferenceDelegate::GetRotationType() {
   return rotationType_;
 }
 #endif

@@ -28,10 +28,12 @@ ArkwebInputRouterImplExt::ArkwebInputRouterImplExt(
                       config) {}
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-void ArkwebInputRouterImplExt::SetGestureEventResult(bool result, bool stopPropagation) {
+void ArkwebInputRouterImplExt::SetGestureEventResult(bool result,
+                                                     bool stopPropagation,
+                                                     int32_t fingerId) {
   native_result_ = result;
-  client_->GetWidgetInputHandler()->SetGestureEventResult(result,
-                                                          stopPropagation);
+  client_->GetWidgetInputHandler()->SetGestureEventResult(
+      result, stopPropagation, fingerId);
 }
 
 void ArkwebInputRouterImplExt::SetNativeEmbedMode(bool flag) {
@@ -41,6 +43,10 @@ void ArkwebInputRouterImplExt::SetNativeEmbedMode(bool flag) {
 void ArkwebInputRouterImplExt::SetMouseEventResult(bool result, bool stopPropagation) {
   mouse_native_result_ = result;
   client_->GetWidgetInputHandler()->SetMouseEventResult(result, stopPropagation);
+}
+
+void ArkwebInputRouterImplExt::SetEnableCustomVideoPlayer(bool flag) {
+  client_->GetWidgetInputHandler()->SetEnableCustomVideoPlayer(flag);
 }
 #endif
 

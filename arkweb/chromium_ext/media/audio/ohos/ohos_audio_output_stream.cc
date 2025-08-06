@@ -124,6 +124,10 @@ static int32_t AudioRendererOnInterruptEvent(OH_AudioRenderer* renderer,
 
 // LCOV_EXCL_START
 void OHOSAudioOutputStream::OnSuspend() {
+  if (isDestroyed_.load()) {
+    LOG(INFO) << "OHOSAudioOutputStream::OnSuspend during destroyed";
+    return;
+  }
   LOG(INFO) << "OHOSAudioOutputStream::OnSuspend. [" << (void*)this << "]";
   if (!parameters_.IsValid()) {
     LOG(ERROR) << "OHOSAudioOutputStream::OnSuspend parameters_ is not valid.";
@@ -153,9 +157,7 @@ void OHOSAudioOutputStream::OnSuspend() {
   } else {
     LOG(INFO) << "media session is not active. [" << (void*)this << "]";
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-    if (OHOSAudioFocusController::HasOnlyOneShotPlayersPublic(parameters_) ||
-        OHOSAudioFocusController::GetSessionState(parameters_) ==
-            content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL) {
+    if (OHOSAudioFocusController::HasOnlyOneShotPlayersPublic(parameters_)) {
       OneShotMediaPlayerStopped();
     }
 #endif
@@ -184,6 +186,10 @@ void OHOSAudioOutputStream::OneShotMediaPlayerStopped() {
 }
 
 void OHOSAudioOutputStream::OnResume() {
+  if (isDestroyed_.load()) {
+    LOG(INFO) << "OHOSAudioOutputStream::OnResume during destroyed";
+    return;
+  }
   LOG(INFO) << "OHOSAudioOutputStream::OnResume audioResumeInterval is: "
             << std::time(nullptr) - intervalSinceLastSuspend_;
   if (!parameters_.IsValid()) {
@@ -494,6 +500,10 @@ void OHOSAudioOutputStream::PumpSamples() {
     if (!callback_) {
       LOG(INFO) << "PumpSample failed, callback_ is nullptr";
       ReportError();
+      return;
+    }
+    if (!audio_renderer_) {
+      LOG(INFO) << "AudioRender is nullptr";
       return;
     }
 

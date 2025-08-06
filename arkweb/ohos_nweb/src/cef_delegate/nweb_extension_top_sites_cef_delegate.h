@@ -31,10 +31,6 @@ class NWebExtensionTopSitesCefDelegate {
 
   static void GetCallback(const std::vector<NWebExtensionTopSitesMostVisitedURL>& data,
                           const std::optional<std::string>& error);
-
- private:
-  static std::unique_ptr<NWebExtensionTopSitesCefDelegate> instance_;
-  static std::mutex mutex_;
 };
 
 }  // namespace OHOS::NWeb

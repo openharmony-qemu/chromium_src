@@ -75,7 +75,7 @@ public:
                            int32_t id,
                            float x,
                            float y);
-  void SetGestureEventResult(bool result, bool stopPropagation);
+  void SetGestureEventResult(bool result, bool stopPropagation, int32_t fingerId);
   void NativeHitTestResult(bool isNative, size_t fingerId, int layerId);
   void AsyncNativeHitTestResult(bool isNative, size_t fingerId, int layerId);
   void TouchHitTest(const WebPointerEvent& event, size_t fingerId);
@@ -90,6 +90,7 @@ public:
   void NativeMouseHitTestResult(bool isNative, int layerId);
   void AsyncNativeMouseHitTestResult(bool isNative, int layerId);
   void MouseHitTest(const WebMouseEvent& event);
+  void SetEnableCustomVideoPlayer(bool flag);
 #endif
 
 private:

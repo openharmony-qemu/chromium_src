@@ -122,6 +122,10 @@ void OHOSMediaPlayerRenderer::CreateMediaPlayer() {
         url_params_->storage_access_api_status,
         false,  // hide_url_log
         this, url_params_->allow_credentials, url_params_->is_hls, url_params_->headers, grantMediaFileAccessDirs));
+    if (!media_player_) {
+      LOG(ERROR) << "CreateMediaPlayer, no media_player_";
+      return;
+    }
     media_player_->SetNativeWindowSurface(native_window_id_);
     int32_t ret = media_player_->Initialize();
     if (ret != 0) {
@@ -153,7 +157,8 @@ void OHOSMediaPlayerRenderer::StartPlayingFrom(base::TimeDelta time) {
 }
 
 void OHOSMediaPlayerRenderer::SetPlaybackRate(double playback_rate) {
-  if (has_error_) {
+  if (has_error_ || !media_player_) {
+    LOG(ERROR) << "SetPlaybackRate, has_error or no media_player_";
     return;
   }
   if (playback_rate <= kPlaybackRateLevel0) {

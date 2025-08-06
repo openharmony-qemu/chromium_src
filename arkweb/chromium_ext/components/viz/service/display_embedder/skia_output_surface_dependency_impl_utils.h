@@ -29,6 +29,7 @@ class SkiaOutputSurfaceDependencyImplUtils {
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   bool GetIsScroll();
 #endif
+
 };
 
 } // namespace viz

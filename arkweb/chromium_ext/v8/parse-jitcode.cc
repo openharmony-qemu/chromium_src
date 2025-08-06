@@ -91,7 +91,6 @@ JSVMSymbolExtractor::JSVMSymbolExtractor(uint32_t pid) {
   if (dfxAddress == nullptr) {
     return;
   }
-  HilogPrint(INFO, "FindJITSymbolAddress is %{public}p", dfxAddress);
   void* address = mmap(nullptr, SHM_SIZE, PROT_READ | PROT_WRITE,
                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
@@ -158,10 +157,9 @@ bool JSVMSymbolExtractor::ReadMem(const uint64_t addr,
 
 void* JSVMSymbolExtractor::FindJITSymbolAddress() {
   std::string maps_path = "/proc/" + std::to_string(process_id_) + "/maps";
-  HilogPrint(INFO, "map file: %{public}s", maps_path.c_str());
   std::ifstream maps_file(maps_path);
   if (!maps_file.is_open()) {
-    HilogPrint(ERROR, "cant open map file: %{public}s", maps_path.c_str());
+    HilogPrint(ERROR, "can not open map file!");
     return nullptr;
   }
   std::string line;

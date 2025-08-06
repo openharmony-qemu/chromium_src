@@ -20,10 +20,13 @@
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/logging.h"
+#include "base/numerics/safe_conversions.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
 #include "base/task/single_thread_task_runner.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "ui/display/display_layout.h"
+#include "ui/display/display_layout_builder.h"
 #include "ui/display/util/display_util.h"
 #include "ui/ozone/public/ozone_switches.h"
 
@@ -71,6 +74,139 @@ gfx::Rect GetDisplayBoundsOhos() {
   return bounds;
 }
 // LCOV_EXCL_STOP
+
+bool DisplayInfosTouch(const display::Display& a, const display::Display& b) {
+  const gfx::Rect a_rect(a.native_origin(), a.GetSizeInPixel());
+  const gfx::Rect b_rect(b.native_origin(), b.GetSizeInPixel());
+  int max_left = std::max(a_rect.x(), b_rect.x());
+  int max_top = std::max(a_rect.y(), b_rect.y());
+  int min_right = std::min(a_rect.right(), b_rect.right());
+  int min_bottom = std::min(a_rect.bottom(), b_rect.bottom());
+  return (max_left == min_right && a_rect.y() <= b_rect.bottom() &&
+          b_rect.y() <= a_rect.bottom()) ||
+         (max_top == min_bottom && a_rect.x() <= b_rect.right() &&
+          b_rect.x() <= a_rect.right());
+}
+
+std::vector<display::Display> FindAndRemoveTouchingDisplayInfos(
+    const display::Display& parent_info,
+    std::vector<display::Display>* display_infos) {
+  const auto first_touching_it = std::partition(
+      display_infos->begin(), display_infos->end(),
+      [&](const auto& info) { return !DisplayInfosTouch(parent_info, info); });
+  std::vector<display::Display> touching_display_infos(first_touching_it,
+                                                       display_infos->end());
+  display_infos->erase(first_touching_it, display_infos->end());
+  return touching_display_infos;
+}
+
+int ScaleOffset(int unscaled_length, float scale_factor, int unscaled_offset) {
+  if (unscaled_length == 0 || scale_factor == 0) {
+    return 0;
+  }
+  float scaled_length = static_cast<float>(unscaled_length) / scale_factor;
+  float percent =
+      static_cast<float>(unscaled_offset) / static_cast<float>(unscaled_length);
+  return base::ClampFloor(scaled_length * percent);
+}
+
+display::DisplayPlacement::Position CalculateDisplayPosition(
+    const display::Display& parent,
+    const display::Display& current) {
+  const gfx::Rect parent_rect(parent.native_origin(), parent.GetSizeInPixel());
+  const gfx::Rect current_rect(current.native_origin(),
+                               current.GetSizeInPixel());
+  int max_left = std::max(parent_rect.x(), current_rect.x());
+  int max_top = std::max(parent_rect.y(), current_rect.y());
+  int min_right = std::min(parent_rect.right(), current_rect.right());
+  int min_bottom = std::min(parent_rect.bottom(), current_rect.bottom());
+  if (max_left == min_right && max_top == min_bottom) {
+    // Corner touching.
+    if (parent_rect.bottom() == max_top) {
+      return display::DisplayPlacement::Position::BOTTOM;
+    }
+    if (parent_rect.x() == max_left) {
+      return display::DisplayPlacement::Position::LEFT;
+    }
+
+    return display::DisplayPlacement::Position::TOP;
+  }
+  if (max_left == min_right && parent_rect.y() <= current_rect.bottom() &&
+      current_rect.y() <= parent_rect.bottom()) {
+    // Vertical edge touching.
+    return parent_rect.x() == max_left
+               ? display::DisplayPlacement::Position::LEFT
+               : display::DisplayPlacement::Position::RIGHT;
+  }
+  if (max_top == min_bottom && parent_rect.x() <= current_rect.right() &&
+      current_rect.x() <= parent_rect.right()) {
+    // Horizontal edge touching.
+    return parent_rect.y() == max_top
+               ? display::DisplayPlacement::Position::TOP
+               : display::DisplayPlacement::Position::BOTTOM;
+  }
+  NOTREACHED() << "CalculateDisplayPosition relies on touching DisplayInfos.";
+}
+
+display::DisplayPlacement CalculateDisplayPlacement(
+    const display::Display& parent,
+    const display::Display& current) {
+  DCHECK(DisplayInfosTouch(parent, current)) << "DisplayInfos must touch.";
+
+  display::DisplayPlacement placement;
+  placement.parent_display_id = parent.id();
+  placement.display_id = current.id();
+  placement.position = CalculateDisplayPosition(parent, current);
+
+  int parent_begin = 0;
+  int parent_end = 0;
+  int current_begin = 0;
+  int current_end = 0;
+  const gfx::Rect parent_rect(parent.native_origin(), parent.GetSizeInPixel());
+  const gfx::Rect current_rect(current.native_origin(),
+                               current.GetSizeInPixel());
+  switch (placement.position) {
+    case display::DisplayPlacement::Position::TOP:
+    case display::DisplayPlacement::Position::BOTTOM:
+      parent_begin = parent_rect.x();
+      parent_end = parent_rect.right();
+      current_begin = current_rect.x();
+      current_end = current_rect.right();
+      break;
+    case display::DisplayPlacement::Position::LEFT:
+    case display::DisplayPlacement::Position::RIGHT:
+      parent_begin = parent_rect.y();
+      parent_end = parent_rect.bottom();
+      current_begin = current_rect.y();
+      current_end = current_rect.bottom();
+      break;
+  }
+
+  parent_end -= parent_begin;
+  current_begin -= parent_begin;
+  current_end -= parent_begin;
+  parent_begin = 0;
+
+  if (parent_end == current_end) {
+    placement.offset_reference =
+        display::DisplayPlacement::OffsetReference::BOTTOM_RIGHT;
+    placement.offset = 0;
+  } else if (current_begin >= parent_begin && current_begin <= parent_end) {
+    placement.offset =
+        ScaleOffset(parent_end, parent.device_scale_factor(), current_begin);
+  } else if (current_end >= parent_begin && current_end <= parent_end) {
+    placement.offset_reference =
+        display::DisplayPlacement::OffsetReference::BOTTOM_RIGHT;
+    placement.offset = ScaleOffset(parent_end, parent.device_scale_factor(),
+                                   parent_end - current_end);
+  } else {
+    DCHECK((parent_begin >= current_begin && parent_begin <= current_end));
+    placement.offset =
+        ScaleOffset(current_end - current_begin, current.device_scale_factor(),
+                    current_begin);
+  }
+  return placement;
+}
 }  // namespace
 
 // LCOV_EXCL_START
@@ -151,10 +287,35 @@ bool HeadlessScreenOhos::Initialize() {
 }
 // LCOV_EXCL_STOP
 
+void HeadlessScreenOhos::LayoutDisplays(std::vector<display::Display>& displays) {
+  std::vector<display::Display> displays_remaining = displays;
+  auto primary_display_iter = base::ranges::find_if(
+      displays_remaining, [](const display::Display& display) {
+        return display.native_origin().IsOrigin();
+      });
+  if (primary_display_iter == displays_remaining.end()) {
+    return;
+  }
+
+  display::DisplayLayoutBuilder builder(primary_display_iter->id());
+  std::vector<display::Display> available_parents = {
+      *primary_display_iter};
+  displays_remaining.erase(primary_display_iter);
+  while (!available_parents.empty()) {
+    const display::Display parent = available_parents.back();
+    available_parents.pop_back();
+    for (const auto& child :
+         FindAndRemoveTouchingDisplayInfos(parent, &displays_remaining)) {
+      builder.AddDisplayPlacement(CalculateDisplayPlacement(parent, child));
+      available_parents.push_back(child);
+    }
+  }
+  builder.Build()->ApplyToDisplayList(&displays, nullptr, 0);
+}
+
 bool HeadlessScreenOhos::FetchDisplays(display::DisplayList& displays) {
-  bool result = false;
   if (!display_manager_adapter_) {
-    return result;
+    return false;
   }
   OHOS::NWeb::DisplayId default_id =
       display_manager_adapter_->GetDefaultDisplayId();
@@ -164,21 +325,28 @@ bool HeadlessScreenOhos::FetchDisplays(display::DisplayList& displays) {
     primary_id = primary_display->GetId();
   }
   auto ohos_displays = display_manager_adapter_->GetAllDisplays();
+  std::vector<display::Display> display_list;
   for (auto& ohos_display : ohos_displays) {
     display::Display dst_display;
     if (!ConvertDisplay(ohos_display, dst_display)) {
       continue;
     }
-    if (primary_id == ohos_display->GetId()) {
-      displays.AddOrUpdateDisplay(dst_display,
+    display_list.push_back(dst_display);
+  }
+  if (display_list.empty()) {
+    return false;
+  }
+  LayoutDisplays(display_list);
+  for (auto& display : display_list) {
+    if (static_cast<int64_t>(primary_id) == display.id()) {
+      displays.AddOrUpdateDisplay(display,
                                   display::DisplayList::Type::PRIMARY);
     } else {
-      displays.AddOrUpdateDisplay(dst_display,
+      displays.AddOrUpdateDisplay(display,
                                   display::DisplayList::Type::NOT_PRIMARY);
     }
-    result = true;
   }
-  return result;
+  return true;
 }
 
 bool HeadlessScreenOhos::ConvertDisplay(

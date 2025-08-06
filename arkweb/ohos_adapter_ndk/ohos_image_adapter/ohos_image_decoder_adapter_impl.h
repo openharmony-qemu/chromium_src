@@ -62,6 +62,7 @@ private:
     bool GetBufferHandle();
     bool ParseRawData(const uint8_t* data, uint32_t size);
     void NativeBufferFromPixelMap();
+    void SetMemoryName(AllocatorType type);
 };
 
 }  // namespace NWeb

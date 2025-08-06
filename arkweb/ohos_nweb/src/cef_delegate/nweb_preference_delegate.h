@@ -192,6 +192,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool GetIntrinsicSizeEnable();
   void SetCssDisplayChangeEnabled(bool enable) override;
   bool GetCssDisplayChangeEnabled();
+  bool IsEnableCustomVideoPlayer();
 #endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
 
 #if BUILDFLAG(ARKWEB_VIEWPORT)

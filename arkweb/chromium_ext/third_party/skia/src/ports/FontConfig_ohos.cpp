@@ -984,11 +984,6 @@ int FontConfig_OHOS::parseTtcIndex(const Json::Value& root, const SkString& fami
  * \param font the font object to be printed
  */
 void FontConfig_OHOS::dumpFont(const FontInfo& font) const {
-  LOGI(
-      "name=%s, family=%s, weight=%d, width=%d, slant=%d, index=%d, "
-      "stream=%p\n",
-      font.fname.c_str(), font.familyName.c_str(), font.style.weight(),
-      font.style.width(), font.style.slant(), font.index, font.stream.get());
   int count = font.axisSet.axis.size();
   if (count > 0) {
     SkString str;
@@ -1641,8 +1636,6 @@ void FontConfig_OHOS::InvalidateThemeFont(const SkFontScanner& fontScanner,
       !fontScanner.scanInstance(stream.get(), 0, 0, &font.familyName,
                                 &font.style, &font.isFixedWidth, nullptr)) {
     themeFontTypeface.reset();
-    LOGE("[themefont] InvalidateThemeFont failed, stream(%p) count(%d).\n",
-         stream.get(), count);
     return;
   }
 

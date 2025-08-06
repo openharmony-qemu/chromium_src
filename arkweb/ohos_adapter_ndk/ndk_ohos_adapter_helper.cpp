@@ -137,7 +137,7 @@ NDKOhosAdapterHelper::GetWebPermissionDataBaseInstance() {
 
 std::unique_ptr<NWeb::MMIAdapter>
 NDKOhosAdapterHelper::CreateMMIAdapter() {
-  return nullptr;
+  return std::make_unique<MMINewAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::SocPerfClientAdapter>

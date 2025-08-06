@@ -17,7 +17,7 @@
 
 #include <vector>
 
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 
 namespace OHOS::NWeb {
 static constexpr const char* DEFAULT_HTTP_PROXY_HOST = "NONE";
@@ -293,7 +293,8 @@ void NetProxyAdapterImpl::AppProxyChange(NetConn_HttpProxy *receiveHttpProxy)
         NetConn_HttpProxy tempHttpProxy;
         int32_t ret = OH_NetConn_GetDefaultHttpProxy(&tempHttpProxy);
         if (ret != 0) {
-            WVLOG_E("NetProxyAdapter::OH_NetConn_GetDefaultHttpProxy failed.");
+            WVLOG_E("NetProxyAdapter::OH_NetConn_GetDefaultHttpProxy failed, errorCode = %{public}d", ret);
+            return;
         }
         httpProxy = &tempHttpProxy;
         host.assign(httpProxy->host);
@@ -357,7 +358,8 @@ void NetProxyAdapterImpl::OnReceiveEvent(const CommonEvent_RcvData *data)
     NetConn_HttpProxy httpProxy;
     int32_t ret = OH_NetConn_GetDefaultHttpProxy(&httpProxy);
     if (ret != 0) {
-        WVLOG_E("NetProxyAdapter::OH_NetConn_GetDefaultHttpProxy failed");
+        WVLOG_E("NetProxyAdapter::OH_NetConn_GetDefaultHttpProxy failed, errorCode = %{public}d", ret);
+        return;
     }
 
     std::string host;
@@ -378,6 +380,7 @@ void NetProxyAdapterImpl::GetProperty(std::string& host, uint16_t& port, std::st
     int32_t ret = OH_NetConn_GetDefaultHttpProxy(&httpProxy);
     if (ret != 0) {
         WVLOG_E("NetProxyAdapter::OH_NetConn_GetDefaultHttpProxy failed, errorCode = %{public}d", ret);
+        return;
     }
 
     host = httpProxy.host;

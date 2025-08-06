@@ -22,7 +22,6 @@
 #include "base/bridge/ark_web_bridge_macros.h"
 #include "ohos_adapter/bridge/ark_enterprise_device_management_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_hisysevent_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_net_proxy_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_ohos_drawing_text_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_print_manager_adapter_wrapper.h"
 
@@ -66,7 +65,6 @@
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/vsync_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/net_connect_adapter/net_connect_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -232,8 +230,7 @@ NWeb::HiTraceAdapter& NDKOhosAdapterHelper::GetHiTraceAdapterInstance() {
 }
 
 NWeb::NetProxyAdapter& NDKOhosAdapterHelper::GetNetProxyInstance() {
-  static ArkNetProxyAdapterWrapper instance(nullptr);
-  return instance;
+  return NetProxyAdapterImpl::GetInstance();
 }
 
 NWeb::CameraManagerAdapter&

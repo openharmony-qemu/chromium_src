@@ -65,6 +65,7 @@
 #include "arkweb/ohos_adapter_ndk/drawing_text_adapter/ohos_drawing_text_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/ohos_resource_adapter/ohos_resource_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/system_properties_adapter/system_properties_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/aafwk_adapter/aafwk_app_mgr_client_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -82,7 +83,7 @@ NDKOhosAdapterHelper::NDKOhosAdapterHelper()
 
 std::unique_ptr<NWeb::AafwkAppMgrClientAdapter>
 NDKOhosAdapterHelper::CreateAafwkAdapter() {
-  return nullptr;
+  return std::make_unique<AafwkAppMgrClientAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::PowerMgrClientAdapter>

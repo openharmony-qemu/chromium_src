@@ -123,7 +123,8 @@ void OHOSMediaPlayerRenderer::CreateMediaPlayer() {
         false,  // hide_url_log
         this, url_params_->allow_credentials, url_params_->is_hls, url_params_->headers, grantMediaFileAccessDirs));
     if (!media_player_) {
-      LOG(ERROR) << "CreateMediaPlayer, no media_player_";
+      LOG(ERROR) << "CreateMediaPlayer failed, no media_player_";
+      std::move(init_cb_).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
       return;
     }
     media_player_->SetNativeWindowSurface(native_window_id_);

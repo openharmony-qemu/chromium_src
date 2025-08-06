@@ -10,6 +10,7 @@ _args = [
 exec_script(_script,  _args)
 
 import(_auto_gni_path)
+import("//arkweb/build/features/features.gni")
 
 action("adapter_ndk_gen") {
   script = _script
@@ -113,7 +114,7 @@ component("adapter_ndk") {
 
   sources = [
     "ohos_adapter_helper_ext.h",
-    "ndk_ohos_adapter_helper.cpp",
+    "ohos_adapter_helper_decouple.cpp",
     "event_handler_adapter/event_handler_adapter_impl.h",
     "event_handler_adapter/event_handler_adapter_impl.cpp",
     "inputmethodframework_adapter/imf_adapter_impl.h",
@@ -196,6 +197,16 @@ component("adapter_ndk") {
     "ohos_resource_adapter/ohos_resource_adapter_impl.h",
     "ohos_resource_adapter/ohos_resource_adapter_impl.cpp",
   ]
+
+  if (arkweb_ndk_adapter) {
+    sources -= [
+      "ohos_adapter_helper_decouple.cpp",
+    ]
+
+    sources += [
+      "ndk_ohos_adapter_helper.cpp",
+    ]
+  }
 
   include_dirs = [
     "//third_party/ohos_ndk/includes/ohos_adapter",

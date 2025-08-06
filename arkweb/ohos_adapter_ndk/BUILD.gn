@@ -204,6 +204,8 @@ component("adapter_ndk") {
     "camera_adapter/video_control_support_adapter_impl.cpp",
     "camera_adapter/video_device_descriptor_adapter_impl.cpp",
     "aafwk_adapter/aafwk_app_mgr_client_adapter_impl.cpp",
+    "distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.cpp",
+    "distributeddatamgr_adapter/ohos_web_permission_data_base_adapter_impl.cpp",
   ]
 
   if (arkweb_ndk_adapter) {

@@ -24,14 +24,14 @@
 #include "ohos_adapter/bridge/ark_hisysevent_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_net_proxy_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_ohos_drawing_text_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_ohos_web_data_base_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_print_manager_adapter_wrapper.h"
 
 #include "ohos_adapter/bridge/ark_vsync_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_window_adapter_wrapper.h"
 #include "arkweb/ohos_adapter_ndk/event_handler_adapter/event_handler_adapter_impl.h"
 #include "datashare_adapter/datashare_adapter_impl.h"
-#include "distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_permission_data_base_adapter_impl.h"
 
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_image_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/ohos_native_buffer_adapter/ohos_native_buffer_adapter_impl.h"
@@ -108,8 +108,7 @@ NDKOhosAdapterHelper::CreateNetConnectAdapter() {
 
 NWeb::OhosWebDataBaseAdapter&
 NDKOhosAdapterHelper::GetOhosWebDataBaseAdapterInstance() {
-  static ArkOhosWebDataBaseAdapterWrapper instance(nullptr);
-  return instance;
+  return OhosWebDataBaseAdapterImpl::GetInstance();
 }
 
 NWeb::PasteBoardClientAdapter& NDKOhosAdapterHelper::GetPasteBoard() {
@@ -134,8 +133,7 @@ NDKOhosAdapterHelper::GetAudioSystemManager() {
 
 NWeb::OhosWebPermissionDataBaseAdapter&
 NDKOhosAdapterHelper::GetWebPermissionDataBaseInstance() {
-  static ArkOhosWebPermissionDataBaseAdapterWrapper instance(nullptr);
-  return instance;
+  return OhosWebPermissionDataBaseAdapterImpl::GetInstance();
 }
 
 std::unique_ptr<NWeb::MMIAdapter>

@@ -14,6 +14,10 @@ std::unique_ptr<ProvisionFetcher> CreateProvisionFetcher(
     media::mojom::FrameInterfaceFactory* frame_interfaces) {
   LOG(INFO) << "[DRM]" << __func__;
   DCHECK(frame_interfaces);
+  if (frame_interfaces == nullptr) {
+    LOG(ERROR) << "[DRM]" << __func__ << "frame_interfaces is nullptr";
+    return nullptr;
+  }
   mojo::PendingRemote<mojom::ProvisionFetcher> provision_fetcher;
   frame_interfaces->CreateProvisionFetcher(
       provision_fetcher.InitWithNewPipeAndPassReceiver());
@@ -25,6 +29,10 @@ std::unique_ptr<MediaDrmStorage> CreateMediaDrmStorage(
     media::mojom::FrameInterfaceFactory* frame_interfaces) {
   LOG(INFO) << "[DRM]" << __func__;
   DCHECK(frame_interfaces);
+  if (frame_interfaces == nullptr) {
+    LOG(ERROR) << "[DRM]" << __func__ << "frame_interfaces is nullptr";
+    return nullptr;
+  }
   mojo::PendingRemote<mojom::MediaDrmStorage> media_drm_storage;
   frame_interfaces->BindEmbedderReceiver(mojo::GenericPendingReceiver(
       media_drm_storage.InitWithNewPipeAndPassReceiver()));

@@ -788,7 +788,9 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
     ycbcr_info_ = ycbcr_info;
   }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
   std::vector<size_t> GetPlaneSize() { return CalculatePlaneSize(); }
+#endif
 
  protected:
   friend class base::RefCountedThreadSafe<VideoFrame>;

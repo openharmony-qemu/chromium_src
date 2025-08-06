@@ -39,6 +39,14 @@ public:
   MediaStreamManagerExt* AsMediaStreamManagerExt() override {
     return this;
   }
+
+private:
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  int GetNWebIdMatchStreamType(GlobalRenderFrameHostId grfhid);
+#endif
+
+  base::WeakPtrFactory<MediaStreamManagerExt> weak_factory_{this};
+  
 };
 } // namespace content
 

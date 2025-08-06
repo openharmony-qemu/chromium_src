@@ -196,6 +196,7 @@ component("adapter_ndk") {
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.cpp",
     "ohos_resource_adapter/ohos_resource_adapter_impl.h",
     "ohos_resource_adapter/ohos_resource_adapter_impl.cpp",
+    "system_properties_adapter/system_properties_adapter_impl.cpp",
   ]
 
   if (arkweb_ndk_adapter) {
@@ -218,6 +219,8 @@ component("adapter_ndk") {
     "utils/include/",
     "interfaces/",
     "graphic_adapter/",
+    "hiviewdfx_adapter/",
+    "system_properties_adapter",
     "third_party/bounds_checking_function/include",
     "ohos_sdk/openharmony/native/sysroot/usr/include/",
   ]

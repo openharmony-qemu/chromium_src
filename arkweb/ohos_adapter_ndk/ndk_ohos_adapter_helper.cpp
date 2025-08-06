@@ -27,7 +27,7 @@
 #include "ohos_adapter/bridge/ark_ohos_drawing_text_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_ohos_web_data_base_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_print_manager_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_system_properties_adapter_wrapper.h"
+
 #include "ohos_adapter/bridge/ark_vsync_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_window_adapter_wrapper.h"
 #include "arkweb/ohos_adapter_ndk/event_handler_adapter/event_handler_adapter_impl.h"
@@ -65,6 +65,7 @@
 
 #include "arkweb/ohos_adapter_ndk/drawing_text_adapter/ohos_drawing_text_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/ohos_resource_adapter/ohos_resource_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/system_properties_adapter/system_properties_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -154,8 +155,7 @@ NDKOhosAdapterHelper::GetResourceAdapter(const std::string& hapPath) {
 
 NWeb::SystemPropertiesAdapter&
 NDKOhosAdapterHelper::GetSystemPropertiesInstance() {
-  static ArkSystemPropertiesAdapterWrapper instance(nullptr);
-  return instance;
+  return SystemPropertiesAdapterImpl::GetInstance();
 }
 
 NWeb::VSyncAdapter& NDKOhosAdapterHelper::GetVSyncAdapter() {

@@ -62,6 +62,8 @@ public:
 
     bool GetTraceDebugEnable() override;
 
+    void SetTraceDebugEnable(bool isEnable);
+
     std::string GetSiteIsolationMode() override;
 
     int32_t GetFlowBufMaxFd() override;
@@ -109,6 +111,7 @@ private:
 
     void InitPreferences();
     bool GetBoolParameter(const char *key, bool defaultValue);
+    void SetBoolParameter(const char *key, const bool value);
     int GetIntParameter(const char *key, int defaultValue);
     std::string GetStringParameter(const char *key, std::string defaultValue);
     void SetStringParameter(const char *key, const char *value);

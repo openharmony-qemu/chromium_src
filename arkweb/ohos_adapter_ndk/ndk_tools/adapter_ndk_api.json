@@ -1102,6 +1102,16 @@
             ]
         },
         "includes": []
+    },
+    "database":{
+        "apiList": {
+            "14": [
+                "int OH_PreferencesValue_GetBool(const OH_PreferencesValue *object, bool *value)"
+            ]
+        },
+        "includes": [
+            "database/preferences/oh_preferences_value.h"
+        ]
     }
 
 

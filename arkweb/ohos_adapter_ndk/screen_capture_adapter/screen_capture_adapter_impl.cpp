@@ -127,6 +127,58 @@ OH_ContainerFormatType GetOHContainerFormatType(const ContainerFormatTypeAdapter
     return OH_ContainerFormatType::CFT_MPEG_4;
 }
 
+void SetAudioInfo(std::shared_ptr<AudioInfoAdapter> audio_info) {
+    if (!audio_info) {
+        WVLOG_I("SetAudioInfo audio_info is null");
+        return;
+    }
+
+    if (audio_info->GetMicCapInfo()) {
+        avConfig_.audioInfo.micCapInfo.audioSampleRate = audio_info->GetMicCapInfo()->GetAudioSampleRate();
+        avConfig_.audioInfo.micCapInfo.audioChannels = audio_info->GetMicCapInfo()->GetAudioChannels();
+        avConfig_.audioInfo.micCapInfo.audioSource =
+            GetOHAudioCaptureSourceType(audio_info->GetMicCapInfo()->GetAudioSource());
+    }
+
+    if (audio_info->GetInnerCapInfo()) {
+        avConfig_.audioInfo.innerCapInfo.audioSampleRate =
+            audio_info->GetInnerCapInfo()->GetAudioSampleRate();
+        avConfig_.audioInfo.innerCapInfo.audioChannels = audio_info->GetInnerCapInfo()->GetAudioChannels();
+        avConfig_.audioInfo.innerCapInfo.audioSource =
+            GetOHAudioCaptureSourceType(audio_info->GetInnerCapInfo()->GetAudioSource());
+    }
+
+    if (audio_info->GetAudioEncInfo()) {
+        avConfig_.audioInfo.audioEncInfo.audioBitrate = audio_info->GetAudioEncInfo()->GetAudioBitrate();
+        avConfig_.audioInfo.audioEncInfo.audioCodecformat =
+            GetOHAudioCodecFormat(audio_info->GetAudioEncInfo()->GetAudioCodecformat());
+    }
+}
+
+void SetVideoInfo(std::shared_ptr<VideoInfoAdapter> video_info) {
+    if (!video_info) {
+        WVLOG_I("SetVideoInfo audio_info is null");
+        return;
+    }
+
+    if (video_info->GetVideoCapInfo()) {
+        avConfig_.videoInfo.videoCapInfo.displayId = video_info->GetVideoCapInfo()->GetDisplayId();
+        avConfig_.videoInfo.videoCapInfo.videoFrameWidth =
+            video_info->GetVideoCapInfo()->GetVideoFrameWidth();
+        avConfig_.videoInfo.videoCapInfo.videoFrameHeight =
+            video_info->GetVideoCapInfo()->GetVideoFrameHeight();
+        avConfig_.videoInfo.videoCapInfo.videoSource =
+            GetOHVideoSourceType(video_info->GetVideoCapInfo()->GetVideoSourceType());
+    }
+
+    if (video_info->GetVideoEncInfo()) {
+        avConfig_.videoInfo.videoEncInfo.videoCodec =
+            GetOHVideoCodecFormat(video_info->GetVideoEncInfo()->GetVideoCodecFormat());
+        avConfig_.videoInfo.videoEncInfo.videoBitrate = video_info->GetVideoEncInfo()->GetVideoBitrate();
+        avConfig_.videoInfo.videoEncInfo.videoFrameRate = video_info->GetVideoEncInfo()->GetVideoFrameRate();
+    }
+}
+
 OH_AVScreenCaptureConfig ConvertScreenCaptureConfig(const std::shared_ptr<ScreenCaptureConfigAdapter> config)
 {
     if (!config) {
@@ -136,44 +188,8 @@ OH_AVScreenCaptureConfig ConvertScreenCaptureConfig(const std::shared_ptr<Screen
 
     avConfig_.captureMode = GetOHCaptureMode(config->GetCaptureMode());
     avConfig_.dataType = GetOHDataType(config->GetDataType());
-
-    if (config->GetAudioInfo() && config->GetAudioInfo()->GetMicCapInfo()) {
-        avConfig_.audioInfo.micCapInfo.audioSampleRate = config->GetAudioInfo()->GetMicCapInfo()->GetAudioSampleRate();
-        avConfig_.audioInfo.micCapInfo.audioChannels = config->GetAudioInfo()->GetMicCapInfo()->GetAudioChannels();
-        avConfig_.audioInfo.micCapInfo.audioSource =
-            GetOHAudioCaptureSourceType(config->GetAudioInfo()->GetMicCapInfo()->GetAudioSource());
-    }
-
-    if (config->GetAudioInfo() && config->GetAudioInfo()->GetInnerCapInfo()) {
-        avConfig_.audioInfo.innerCapInfo.audioSampleRate =
-            config->GetAudioInfo()->GetInnerCapInfo()->GetAudioSampleRate();
-        avConfig_.audioInfo.innerCapInfo.audioChannels = config->GetAudioInfo()->GetInnerCapInfo()->GetAudioChannels();
-        avConfig_.audioInfo.innerCapInfo.audioSource =
-            GetOHAudioCaptureSourceType(config->GetAudioInfo()->GetInnerCapInfo()->GetAudioSource());
-    }
-
-    if (config->GetAudioInfo() && config->GetAudioInfo()->GetAudioEncInfo()) {
-        avConfig_.audioInfo.audioEncInfo.audioBitrate = config->GetAudioInfo()->GetAudioEncInfo()->GetAudioBitrate();
-        avConfig_.audioInfo.audioEncInfo.audioCodecformat =
-            GetOHAudioCodecFormat(config->GetAudioInfo()->GetAudioEncInfo()->GetAudioCodecformat());
-    }
-
-    if (config->GetVideoInfo() && config->GetVideoInfo()->GetVideoCapInfo()) {
-        avConfig_.videoInfo.videoCapInfo.displayId = config->GetVideoInfo()->GetVideoCapInfo()->GetDisplayId();
-        avConfig_.videoInfo.videoCapInfo.videoFrameWidth =
-            config->GetVideoInfo()->GetVideoCapInfo()->GetVideoFrameWidth();
-        avConfig_.videoInfo.videoCapInfo.videoFrameHeight =
-            config->GetVideoInfo()->GetVideoCapInfo()->GetVideoFrameHeight();
-        avConfig_.videoInfo.videoCapInfo.videoSource =
-            GetOHVideoSourceType(config->GetVideoInfo()->GetVideoCapInfo()->GetVideoSourceType());
-    }
-
-    if (config->GetVideoInfo() && config->GetVideoInfo()->GetVideoEncInfo()) {
-        avConfig_.videoInfo.videoEncInfo.videoCodec =
-            GetOHVideoCodecFormat(config->GetVideoInfo()->GetVideoEncInfo()->GetVideoCodecFormat());
-        avConfig_.videoInfo.videoEncInfo.videoBitrate = config->GetVideoInfo()->GetVideoEncInfo()->GetVideoBitrate();
-        avConfig_.videoInfo.videoEncInfo.videoFrameRate = config->GetVideoInfo()->GetVideoEncInfo()->GetVideoFrameRate();
-    }
+    SetAudioInfo(config->GetAudioInfo());
+    SetVideoInfo(config->GetVideoInfo());
 
     if (config->GetDataType() == DataTypeAdapter::CAPTURE_FILE_DATA_TYPE && config->GetRecorderInfo()) {
         const std::string& sourceUrl = config->GetRecorderInfo()->GetUrl();

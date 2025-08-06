@@ -764,6 +764,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
 #endif
+#if BUILDFLAG(IS_ARKWEB)
+  void EnableAppLinking(bool enable) override {}
+  bool IsAppLinkingEnabled() const override { return false; }
+#endif
 #endif  // BUILDFLAG(IS_OHOS)
 };
 

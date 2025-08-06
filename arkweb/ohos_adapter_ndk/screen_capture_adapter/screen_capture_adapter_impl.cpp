@@ -157,7 +157,7 @@ void SetAudioInfo(std::shared_ptr<AudioInfoAdapter> audio_info) {
 
 void SetVideoInfo(std::shared_ptr<VideoInfoAdapter> video_info) {
     if (!video_info) {
-        WVLOG_I("SetVideoInfo audio_info is null");
+        WVLOG_I("SetVideoInfo video_info is null");
         return;
     }
 

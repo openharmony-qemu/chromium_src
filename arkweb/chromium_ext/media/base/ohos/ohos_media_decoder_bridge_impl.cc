@@ -557,7 +557,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::DequeueOutputBuffer(
     uint32_t& index,
     bool& eos) {
   LOG(DEBUG) << "MediaCodecDecoderBridgeImpl::DequeueOutputBuffer.";
-  if (signal_ == nullptr || signal_->isOnError_) {
+  if (signal_ == nullptr || signal_->isOnError_ || presentation_time == nullptr) {
     return DecoderAdapterCode::DECODER_ERROR;
   }
   if (signal_->isDecoderFlushing_.load() || signal_->outputQueue_.empty()) {

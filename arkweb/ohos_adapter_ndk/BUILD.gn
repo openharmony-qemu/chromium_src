@@ -206,6 +206,7 @@ component("adapter_ndk") {
     "aafwk_adapter/aafwk_app_mgr_client_adapter_impl.cpp",
     "distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.cpp",
     "distributeddatamgr_adapter/ohos_web_permission_data_base_adapter_impl.cpp",
+    "print_manager_adapter/print_manager_adapter_impl.cpp",
   ]
 
   if (arkweb_ndk_adapter) {
@@ -297,6 +298,7 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libipc_capi.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libchild_process.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_vsync.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libohprint.so",
     ]
   } else if (target_cpu == "arm") {
     libs = [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libffrt.z.so",
@@ -356,6 +358,7 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libipc_capi.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libchild_process.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_vsync.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libohprint.so",
     ]
   } else if (target_cpu == "x86_64" || target_cpu == "x64") {
     libs = [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libffrt.z.so",
@@ -415,6 +418,7 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libipc_capi.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libchild_process.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_vsync.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libohprint.so",
     ]
   }
 

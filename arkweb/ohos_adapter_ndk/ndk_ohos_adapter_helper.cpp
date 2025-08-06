@@ -23,7 +23,6 @@
 #include "ohos_adapter/bridge/ark_enterprise_device_management_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_hisysevent_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_ohos_drawing_text_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_print_manager_adapter_wrapper.h"
 
 #include "arkweb/ohos_adapter_ndk/event_handler_adapter/event_handler_adapter_impl.h"
 #include "datashare_adapter/datashare_adapter_impl.h"
@@ -65,6 +64,7 @@
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/vsync_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/print_manager_adapter/print_manager_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -201,8 +201,7 @@ NDKOhosAdapterHelper::GetEventHandlerAdapter() {
 
 NWeb::PrintManagerAdapter&
 NDKOhosAdapterHelper::GetPrintManagerInstance() {
-  static ArkPrintManagerAdapterWrapper instance(nullptr);
-  return instance;
+  return PrintManagerAdapterImpl::GetInstance();
 }
 
 std::unique_ptr<NWeb::IConsumerSurfaceAdapter>

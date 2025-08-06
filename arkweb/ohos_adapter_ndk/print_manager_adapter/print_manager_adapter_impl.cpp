@@ -15,7 +15,7 @@
 
 #include "print_manager_adapter_impl.h"
 
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 
 namespace OHOS::NWeb {
 // static

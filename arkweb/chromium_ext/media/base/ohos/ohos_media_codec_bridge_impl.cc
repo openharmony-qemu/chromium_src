@@ -73,12 +73,12 @@ CodecCodeAdapter FillSurfaceBufferDataCheck(
       return CodecCodeAdapter::ERROR;
   }
   // check addr size.
-  uint32_t required_dst_space = data.planes_cnt[VideoFrame::kYPlane] * data.stride +
+  uiuint64_tnt32_t required_dst_space = data.planes_cnt[VideoFrame::kYPlane] * data.stride +
       data.planes_cnt[VideoFrame::kUPlane] * data.stride / SAMPLE_RATIO +
       data.planes_cnt[VideoFrame::kVPlane] * data.stride / SAMPLE_RATIO;
-  uint32_t required_y_src_space = data.planes_cnt[VideoFrame::kYPlane] * data.planes_stride[VideoFrame::kYPlane];
-  uint32_t required_u_src_space = data.planes_cnt[VideoFrame::kUPlane] * data.planes_stride[VideoFrame::kUPlane];
-  uint32_t required_v_src_space = data.planes_cnt[VideoFrame::kVPlane] * data.planes_stride[VideoFrame::kVPlane];
+  uint64_t required_y_src_space = data.planes_cnt[VideoFrame::kYPlane] * data.planes_stride[VideoFrame::kYPlane];
+  uint64_t required_u_src_space = data.planes_cnt[VideoFrame::kUPlane] * data.planes_stride[VideoFrame::kUPlane];
+  uint64_t required_v_src_space = data.planes_cnt[VideoFrame::kVPlane] * data.planes_stride[VideoFrame::kVPlane];
   if (required_dst_space > data.dst_size || required_y_src_space > data.src_size[VideoFrame::kYPlane] ||
       required_u_src_space > data.src_size[VideoFrame::kUPlane] ||
       required_v_src_space > data.src_size[VideoFrame::kVPlane]) {
@@ -305,7 +305,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
     return CodecCodeAdapter::ERROR;
   }
   YUVMemcpyData data;
-  memset_s(&data, sizeof(data), 0, sizeof(data)); 
+  (void)memset_s(&data, sizeof(data), 0, sizeof(data)); 
   int32_t fence;
   std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter = std::make_shared<BufferRequestConfigAdapterImpl>();
   configAdapter->SetWidth(frame->coded_size().width());
@@ -320,12 +320,14 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
   data.dst_addr = reinterpret_cast<uint8_t*>(buffer_adapter_->GetVirAddr());
   data.dst_size = buffer_adapter_->GetSize();
   if (FillSurfaceBufferDataCheck(frame, configAdapter, data) != CodecCodeAdapter::OK) {
+    buffer_adapter_ = nullptr;
     return CodecCodeAdapter::ERROR;
   }
   uint8_t *dst = data.dst_addr;
   if ((CopyYUVData(data, VideoFrame::kYPlane, &dst) != CodecCodeAdapter::OK) ||
       (CopyYUVData(data, VideoFrame::kUPlane, &dst) != CodecCodeAdapter::OK) ||
       (CopyYUVData(data, VideoFrame::kVPlane, &dst) != CodecCodeAdapter::OK)) {
+    buffer_adapter_ = nullptr;
     return CodecCodeAdapter::ERROR;
   }
   std::shared_ptr<BufferFlushConfigAdapterImpl> flush_config_adapter =
@@ -343,6 +345,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
              << ", intput real frame time stamp: "
              << frame->timestamp().InMicroseconds();
   if (surface_->FlushBuffer(buffer_adapter_, fence, flush_config_adapter) != 0) {
+    buffer_adapter_ = nullptr;
     LOG(DEBUG) << "fail to FlushBuffer";
     return CodecCodeAdapter::ERROR;
   }

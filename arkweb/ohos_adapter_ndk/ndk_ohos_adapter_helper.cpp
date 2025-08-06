@@ -181,7 +181,7 @@ NWeb::DatashareAdapter& NDKOhosAdapterHelper::GetDatashareInstance() {
 
 std::unique_ptr<NWeb::IMFAdapter>
 NDKOhosAdapterHelper::CreateIMFAdapter() {
-  return nullptr;
+  return std::make_unique<IMFAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::CertManagerAdapter>

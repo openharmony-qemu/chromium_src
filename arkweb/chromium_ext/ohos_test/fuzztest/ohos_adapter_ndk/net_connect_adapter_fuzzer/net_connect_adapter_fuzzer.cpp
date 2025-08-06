@@ -27,7 +27,6 @@ using ::testing::NiceMock;
 
 namespace OHOS::NWeb {
 bool LLVMFuzzerTestSetup() {
-  // setenv("LD_PRELOAD", "libnet_connect_fuzz_mock.so", 1);
   return true;
 }
 

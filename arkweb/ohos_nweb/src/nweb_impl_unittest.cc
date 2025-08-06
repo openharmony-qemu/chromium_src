@@ -3778,5 +3778,599 @@ TEST_F(NWebImplTest, WebMediaPlayerControllerGetVolume002) {
   EXPECT_EQ(result, temp);
 }
 #endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+TEST_F(NWebImplTest, GetExtensionName001) {
+  std::string name;
+  bool temp = false;
+  auto result = NWebImpl::GetExtensionName(name);
+  EXPECT_EQ(result, temp);
+  EXPECT_TRUE(name.empty());
+}
+
+TEST_F(NWebImplTest, GetExtensionName002) {
+  const std::string extension_name = "test";
+  NWebImpl::SetExtensionName(extension_name);
+  std::string name;
+  bool temp = true;
+  auto result = NWebImpl::GetExtensionName(name);
+  EXPECT_EQ(result, temp);
+  EXPECT_EQ(name, extension_name);
+}
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+TEST_F(NWebImplTest, GetSelectedTextFromContextParam001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetSelectedTextFromContextParam()).Times(0);
+  auto result = nweb_impl_->GetSelectedTextFromContextParam();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_TRUE(result.empty());
+}
+
+TEST_F(NWebImplTest, GetSelectedTextFromContextParam002) {
+  std::string temp = "test";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetSelectedTextFromContextParam()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->GetSelectedTextFromContextParam();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, ShowFreeCopyMenu001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ShowFreeCopyMenu()).Times(0);
+  nweb_impl_->ShowFreeCopyMenu();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, ShowFreeCopyMenu002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ShowFreeCopyMenu()).Times(1);
+  nweb_impl_->ShowFreeCopyMenu();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, ShouldShowFreeCopyMenu001) {
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ShouldShowFreeCopyMenu()).Times(0);
+  auto result = nweb_impl_->ShouldShowFreeCopyMenu();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, ShouldShowFreeCopyMenu002) {
+  bool temp = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ShouldShowFreeCopyMenu()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->ShouldShowFreeCopyMenu();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+#endif  // BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+TEST_F(NWebImplTest, AddAdsBlockDisallowList001) {
+  const std::vector<std::string> domainSuffixes = {"Default", "IncludeSensitive", "Everything"};
+  NWebImpl::AddAdsBlockDisallowList(domainSuffixes);
+  NWebImpl::AddAdsBlockAllowList(domainSuffixes);
+  NWebImpl::RemoveAdsBlockDisallowedList(domainSuffixes);
+  NWebImpl::RemoveAdsBlockAllowedList(domainSuffixes);
+  NWebImpl::ClearAdsBlockDisallowedList();
+  NWebImpl::ClearAdsBlockAllowedList();
+  EXPECT_NE(nweb_impl_, nullptr);
+}
+
+TEST_F(NWebImplTest, IsAdsBlockEnabledForCurPage001) {
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, IsAdsBlockEnabledForCurPage()).Times(0);
+  auto result = nweb_impl_->IsAdsBlockEnabledForCurPage();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, IsAdsBlockEnabledForCurPage002) {
+  bool temp = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, IsAdsBlockEnabledForCurPage()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->IsAdsBlockEnabledForCurPage();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, IsAdsBlockEnabled001) {
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, IsAdsBlockEnabled()).Times(0);
+  auto result = nweb_impl_->IsAdsBlockEnabled();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, IsAdsBlockEnabled002) {
+  bool temp = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, IsAdsBlockEnabled()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->IsAdsBlockEnabled();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, EnableAdsBlock001) {
+  bool enable = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, EnableAdsBlock(enable)).Times(0);
+  nweb_impl_->EnableAdsBlock(enable);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, EnableAdsBlock002) {
+  bool enable = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, EnableAdsBlock(enable)).Times(1);
+  nweb_impl_->EnableAdsBlock(enable);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetAdBlockEnabledForSite001) {
+  bool is_adblock_enabled = false;
+  int main_frame_tree_node_id = 1;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SetAdBlockEnabledForSite(is_adblock_enabled, main_frame_tree_node_id)).Times(0);
+  nweb_impl_->SetAdBlockEnabledForSite(is_adblock_enabled, main_frame_tree_node_id);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetAdBlockEnabledForSite002) {
+  bool is_adblock_enabled = false;
+  int main_frame_tree_node_id = 1;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SetAdBlockEnabledForSite(is_adblock_enabled, main_frame_tree_node_id)).Times(1);
+  nweb_impl_->SetAdBlockEnabledForSite(is_adblock_enabled, main_frame_tree_node_id);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, IsAnyNWebAdblockEnabled001) {
+  bool temp = false;
+  auto result = NWebImpl::IsAnyNWebAdblockEnabled();
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, IsAnyNWebAdblockEnabled002) {
+  uint32_t id = 0;
+  bool temp = false;
+  std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(id);
+  nweb->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, IsAdsBlockEnabled()).WillOnce(::testing::Return(temp));
+  EXPECT_NE(nweb, nullptr);
+  nweb->AddNWebToMap(id, nweb);
+  auto result = NWebImpl::IsAnyNWebAdblockEnabled();
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, IsAnyNWebAdblockEnabled003) {
+  uint32_t id = 0;
+  bool temp = true;
+  std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(id);
+  nweb->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, IsAdsBlockEnabled()).WillOnce(::testing::Return(temp));
+  EXPECT_NE(nweb, nullptr);
+  nweb->AddNWebToMap(id, nweb);
+  NWebImpl::IsAnyNWebAdblockEnabled();
+}
+#endif  // BUILDFLAG(ARKWEB_ADBLOCK)
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+TEST_F(NWebImplTest, GetSavePasswordAutomatically001) {
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetSavePasswordAutomatically()).Times(0);
+  auto result = nweb_impl_->GetSavePasswordAutomatically();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetSavePasswordAutomatically002) {
+  bool temp = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetSavePasswordAutomatically()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->GetSavePasswordAutomatically();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, SetSavePasswordAutomatically001) {
+  bool enable = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SetSavePasswordAutomatically(enable)).Times(0);
+  nweb_impl_->SetSavePasswordAutomatically(enable);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetSavePasswordAutomatically002) {
+  bool enable = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SetSavePasswordAutomatically(enable)).Times(1);
+  nweb_impl_->SetSavePasswordAutomatically(enable);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetSavePassword001) {
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetSavePassword()).Times(0);
+  auto result = nweb_impl_->GetSavePassword();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetSavePassword002) {
+  bool temp = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetSavePassword()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->GetSavePassword();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, SetSavePassword001) {
+  bool enable = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SetSavePassword(enable)).Times(0);
+  nweb_impl_->SetSavePassword(enable);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetSavePassword002) {
+  bool enable = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SetSavePassword(enable)).Times(1);
+  nweb_impl_->SetSavePassword(enable);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SaveOrUpdatePassword001) {
+  bool is_update = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SaveOrUpdatePassword(is_update)).Times(0);
+  nweb_impl_->SaveOrUpdatePassword(is_update);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SaveOrUpdatePassword002) {
+  bool is_update = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SaveOrUpdatePassword(is_update)).Times(1);
+  nweb_impl_->SaveOrUpdatePassword(is_update);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif  // BUILDFLAG(ARKWEB_EXT_PASSWORD)
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD) || BUILDFLAG(ARKWEB_DATALIST)
+TEST_F(NWebImplTest, PasswordSuggestionSelected001) {
+  int list_index = 1;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, PasswordSuggestionSelected(list_index)).Times(0);
+  nweb_impl_->PasswordSuggestionSelected(list_index);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, PasswordSuggestionSelected002) {
+  int list_index = 1;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, PasswordSuggestionSelected(list_index)).Times(1);
+  nweb_impl_->PasswordSuggestionSelected(list_index);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif  // BUILDFLAG(ARKWEB_EXT_PASSWORD) || BUILDFLAG(ARKWEB_DATALIST)
+
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+TEST_F(NWebImplTest, SetForceEnableZoom001) {
+  bool forceEnableZoom = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SetForceEnableZoom(forceEnableZoom)).Times(0);
+  nweb_impl_->SetForceEnableZoom(forceEnableZoom);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetForceEnableZoom002) {
+  bool forceEnableZoom = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SetForceEnableZoom(forceEnableZoom)).Times(1);
+  nweb_impl_->SetForceEnableZoom(forceEnableZoom);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetForceEnableZoom001) {
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetForceEnableZoom()).Times(0);
+  auto result = nweb_impl_->GetForceEnableZoom();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetForceEnableZoom002) {
+  bool temp = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetForceEnableZoom()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->GetForceEnableZoom();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+#endif  // ARKWEB_EXT_FORCE_ZOOM
+
+TEST_F(NWebImplTest, PutWebDownloadDelegateCallback001) {
+  std::shared_ptr<NWebDownloadDelegateCallback> web_download_delegate_listener = nullptr;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, RegisterWebDownloadDelegateListener(web_download_delegate_listener)).Times(0);
+  nweb_impl_->PutWebDownloadDelegateCallback(web_download_delegate_listener);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, PutWebDownloadDelegateCallback002) {
+  std::shared_ptr<NWebDownloadDelegateCallback> web_download_delegate_listener = nullptr;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, RegisterWebDownloadDelegateListener(web_download_delegate_listener)).Times(1);
+  nweb_impl_->PutWebDownloadDelegateCallback(web_download_delegate_listener);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, StartDownload001) {
+  const char* url = "test_url";
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, StartDownload(url)).Times(0);
+  nweb_impl_->StartDownload(url);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, StartDownload002) {
+  const char* url = "test_url";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, StartDownload(url)).Times(1);
+  nweb_impl_->StartDownload(url);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, ResumeDownload001) {
+  std::shared_ptr<NWebDownloadItem> web_download = nullptr;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ResumeDownload(web_download)).Times(0);
+  nweb_impl_->ResumeDownload(web_download);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, ResumeDownload002) {
+  std::shared_ptr<NWebDownloadItem> web_download = nullptr;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ResumeDownload(web_download)).Times(1);
+  nweb_impl_->ResumeDownload(web_download);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+TEST_F(NWebImplTest, GetDownloadItemState001) {
+  long item_id = 1;
+  auto temp = NWebDownloadItemState::MAX_DOWNLOAD_STATE;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetDownloadItemState(item_id)).Times(0);
+  auto result = nweb_impl_->GetDownloadItemState(item_id);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetDownloadItemState002) {
+  long item_id = 1;
+  auto temp = NWebDownloadItemState::PAUSED;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetDownloadItemState(item_id)).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->GetDownloadItemState(item_id);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+#endif // BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+
+TEST_F(NWebImplTest, GetFocusedAccessibilityNodeInfo001) {
+  int64_t accessibilityId = 0;
+  bool isAccessibilityFocus = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetFocusedAccessibilityNodeInfo(accessibilityId, isAccessibilityFocus)).Times(0);
+  nweb_impl_->GetFocusedAccessibilityNodeInfo(accessibilityId, isAccessibilityFocus);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetFocusedAccessibilityNodeInfo002) {
+  int64_t accessibilityId = 0;
+  bool isAccessibilityFocus = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  EXPECT_CALL(*mock_delegate_, GetFocusedAccessibilityNodeInfo(accessibilityId, isAccessibilityFocus)).Times(1);
+#endif
+  nweb_impl_->GetFocusedAccessibilityNodeInfo(accessibilityId, isAccessibilityFocus);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetAccessibilityNodeInfoById001) {
+  int64_t accessibilityId = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetAccessibilityNodeInfoById(accessibilityId)).Times(0);
+  nweb_impl_->GetAccessibilityNodeInfoById(accessibilityId);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetAccessibilityNodeInfoById002) {
+  int64_t accessibilityId = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  EXPECT_CALL(*mock_delegate_, GetAccessibilityNodeInfoById(accessibilityId)).Times(1);
+#endif
+  nweb_impl_->GetAccessibilityNodeInfoById(accessibilityId);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetWebAccessibilityIdByHtmlElementId001) {
+  const std::string htmlElementId = "1";
+  int64_t temp = -1;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetWebAccessibilityIdByHtmlElementId(htmlElementId)).Times(0);
+  auto result = nweb_impl_->GetWebAccessibilityIdByHtmlElementId(htmlElementId);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetWebAccessibilityIdByHtmlElementId002) {
+  const std::string htmlElementId = "1";
+  int64_t temp = -1;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  temp = 1;
+  EXPECT_CALL(*mock_delegate_, GetWebAccessibilityIdByHtmlElementId(htmlElementId)).WillOnce(::testing::Return(temp));
+#endif
+  auto result = nweb_impl_->GetWebAccessibilityIdByHtmlElementId(htmlElementId);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetAccessibilityVisible001) {
+  int64_t accessibilityId = 0;
+  bool temp = true;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetAccessibilityVisible(accessibilityId)).Times(0);
+  auto result = nweb_impl_->GetAccessibilityVisible(accessibilityId);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetAccessibilityVisible002) {
+  int64_t accessibilityId = 0;
+  bool temp = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  temp = false;
+  EXPECT_CALL(*mock_delegate_, GetAccessibilityVisible(accessibilityId)).WillOnce(::testing::Return(temp));
+#endif
+  auto result = nweb_impl_->GetAccessibilityVisible(accessibilityId);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetAccessibilityNodeInfoByFocusMove001) {
+  int64_t accessibilityId = 0;
+  int32_t direction = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetAccessibilityNodeInfoByFocusMove(accessibilityId, direction)).Times(0);
+  nweb_impl_->GetAccessibilityNodeInfoByFocusMove(accessibilityId, direction);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetAccessibilityNodeInfoByFocusMove002) {
+  int64_t accessibilityId = 0;
+  int32_t direction = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  EXPECT_CALL(*mock_delegate_, GetAccessibilityNodeInfoByFocusMove(accessibilityId, direction)).Times(1);
+#endif
+  nweb_impl_->GetAccessibilityNodeInfoByFocusMove(accessibilityId, direction);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetAccessibilityState001) {
+  bool state = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SetAccessibilityState(::testing::_)).Times(0);
+  nweb_impl_->SetAccessibilityState(state);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetAccessibilityState002) {
+  bool state = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  EXPECT_CALL(*mock_delegate_, SetAccessibilityState(::testing::_)).Times(1);
+#endif
+  nweb_impl_->SetAccessibilityState(state);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetAccessibilityState003) {
+  bool state = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  EXPECT_CALL(*mock_delegate_, SetAccessibilityState(::testing::_)).Times(1);
+#endif
+  nweb_impl_->SetAccessibilityState(state);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetAccessibilityNodeRectById001) {
+  int64_t accessibilityId = 0;
+  int32_t width = 0;
+  int32_t height = 0;
+  int32_t offsetX = 0;
+  int32_t offsetY = 0;
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetAccessibilityNodeRectById(accessibilityId, &width, &height, &offsetX, &offsetY))
+      .Times(0);
+  auto result = nweb_impl_->GetAccessibilityNodeRectById(accessibilityId, &width, &height, &offsetX, &offsetY);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetAccessibilityNodeRectById002) {
+  int64_t accessibilityId = 0;
+  int32_t width = 0;
+  int32_t height = 0;
+  int32_t offsetX = 0;
+  int32_t offsetY = 0;
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  temp = true;
+  EXPECT_CALL(*mock_delegate_, GetAccessibilityNodeRectById(accessibilityId, &width, &height, &offsetX, &offsetY))
+      .WillOnce(::testing::Return(temp));
+#endif
+  auto result = nweb_impl_->GetAccessibilityNodeRectById(accessibilityId, &width, &height, &offsetX, &offsetY);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+#if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
+TEST_F(NWebImplTest, SetBrowserZoomLevel001) {
+  double zoom_factor = 1.0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SetBrowserZoomLevel(zoom_factor)).Times(0);
+  nweb_impl_->SetBrowserZoomLevel(zoom_factor);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetBrowserZoomLevel002) {
+  double zoom_factor = 1.0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SetBrowserZoomLevel(zoom_factor)).Times(1);
+  nweb_impl_->SetBrowserZoomLevel(zoom_factor);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetBrowserZoomLevel001) {
+  double temp = 1.0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetBrowserZoomLevel()).Times(0);
+  auto result = nweb_impl_->GetBrowserZoomLevel();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetBrowserZoomLevel002) {
+  double temp = 2.0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetBrowserZoomLevel()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->GetBrowserZoomLevel();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+#endif // BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
 }  // namespace OHOS::NWeb
                           

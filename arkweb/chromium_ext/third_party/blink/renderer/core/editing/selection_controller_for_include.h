@@ -39,7 +39,8 @@ class SelectionControllerUtils {
                                                         const HitTestResult& result,
                                                         Node* inner_node,
                                                         const PositionInFlatTreeWithAffinity& pos,
-                                                        bool isDoubleClick = false);
+                                                        bool is_double_click = false,
+                                                        bool layout_change = false);
 
   static PositionInFlatTree HandleEmptyLine(Node* inner_node,
                                             const PositionInFlatTree& pos,

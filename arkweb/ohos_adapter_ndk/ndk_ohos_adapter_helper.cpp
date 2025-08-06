@@ -92,7 +92,7 @@ NDKOhosAdapterHelper::CreatePowerMgrClientAdapter() {
 
 std::unique_ptr<NWeb::DisplayManagerAdapter>
 NDKOhosAdapterHelper::CreateDisplayMgrAdapter() {
-  return nullptr;
+  return std::make_unique<NativeDisplayManagerAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::BatteryMgrClientAdapter>

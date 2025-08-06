@@ -14,6 +14,7 @@
 #include "base/logging.h"
 #include "base/task/task_runner.h"
 #include "base/trace_event/trace_event.h"
+#include "base/memory/safe_ref.h"
 #include "decoder_format_adapter_impl.h"
 #include "audio_cenc_info_adapter.h"
 #include "media/filters/ohos/ohos_audio_decoder.h"
@@ -305,7 +306,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::FlushBridgeDecoder() {
   decoder_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&MediaCodecDecoderBridgeImpl::UpdateFlushToFalse,
-                     base::Unretained(this)));
+                     weak_factory_.GetSafeRef()));
   return StartBridgeDecoder();
 }
 
@@ -337,7 +338,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::ResetBridgeDecoder() {
   decoder_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&MediaCodecDecoderBridgeImpl::UpdateFlushToFalse,
-                     base::Unretained(this)));
+                     weak_factory_.GetSafeRef()));
   return ret;
 }
 

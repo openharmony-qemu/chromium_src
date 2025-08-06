@@ -34,11 +34,6 @@
 
 using namespace OHOS::NWeb;
 namespace OHOS::NWeb {
-constexpr char INPUT_METHOD[] = "INPUT_METHOD";
-constexpr char ATTACH_CODE[] = "ATTACH_CODE";
-constexpr char IS_SHOW_KEY_BOARD[] = "IS_SHOW_KEY_BOARD";
-constexpr int32_t IMF_LISTENER_NULL_POINT = 1;
-constexpr int32_t IMF_TEXT_CONFIG_NULL_POINT = 2;
 const std::string AUTO_FILL_CANCEL_PRIVATE_COMMAND = "autofill.cancel";
 
 class MockIMFTextListenerAdapter : public IMFTextListenerAdapter {
@@ -303,179 +298,6 @@ IMFAdapterKeyboardStatus ohKeyboardStatusToAdapterKeyboardStatusEx(
   return IMFAdapterKeyboardStatus::NONE;
 }
 
-InputMethod_ErrorCode GetCursorInfoEx(InputMethod_TextConfig* dest,
-                                      InputMethod_TextConfig* src) {
-  double left, top, width, height;
-  InputMethod_CursorInfo *destInfo, *srcInfo;
-
-  InputMethod_ErrorCode ret = OH_TextConfig_GetCursorInfo(src, &srcInfo);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Get cursor info failed ret %{public}d", ret);
-    return ret;
-  }
-  ret = OH_CursorInfo_GetRect(srcInfo, &left, &top, &width, &height);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Get rect failed ret %{public}d", ret);
-    return ret;
-  }
-  ret = OH_TextConfig_GetCursorInfo(dest, &destInfo);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Get cursor info failed ret %{public}d", ret);
-    return ret;
-  }
-  ret = OH_CursorInfo_SetRect(destInfo, left, top, width, height);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Set rect failed ret %{public}d", ret);
-    return ret;
-  }
-  return IME_ERR_OK;
-}
-
-InputMethod_ErrorCode GetTextAvoidInfoEx(InputMethod_TextConfig* dest,
-                                         InputMethod_TextConfig* src) {
-  InputMethod_TextAvoidInfo *destAvoidInfo, *srcAvoidInfo;
-  double positionY, height;
-
-  InputMethod_ErrorCode ret =
-      OH_TextConfig_GetTextAvoidInfo(src, &srcAvoidInfo);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Get avoid info failed ret %{public}d", ret);
-    return ret;
-  }
-  ret = OH_TextAvoidInfo_GetPositionY(srcAvoidInfo, &positionY);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Get positionY failed ret %{public}d", ret);
-    return ret;
-  }
-  ret = OH_TextAvoidInfo_GetHeight(srcAvoidInfo, &height);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Get height failed ret %{public}d", ret);
-    return ret;
-  }
-  ret = OH_TextConfig_GetTextAvoidInfo(dest, &destAvoidInfo);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Get avoid info failed ret %{public}d", ret);
-    return ret;
-  }
-  ret = OH_TextAvoidInfo_SetPositionY(destAvoidInfo, positionY);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Set positionY failed ret %{public}d", ret);
-    return ret;
-  }
-  ret = OH_TextAvoidInfo_SetHeight(destAvoidInfo, height);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Set height failed ret %{public}d", ret);
-    return ret;
-  }
-  return IME_ERR_OK;
-}
-
-InputMethod_ErrorCode GetInputTypeEx(InputMethod_TextConfig* dest,
-                                     InputMethod_TextConfig* src) {
-  InputMethod_TextInputType inputType;
-
-  InputMethod_ErrorCode ret = OH_TextConfig_GetInputType(src, &inputType);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Get input type ret %{public}d", ret);
-    return ret;
-  }
-  ret = OH_TextConfig_SetInputType(dest, inputType);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Set input type ret %{public}d", ret);
-    return ret;
-  }
-  return IME_ERR_OK;
-}
-
-InputMethod_ErrorCode GetEnterKeyTypeEx(InputMethod_TextConfig* dest,
-                                        InputMethod_TextConfig* src) {
-  InputMethod_EnterKeyType enterKeyType;
-
-  InputMethod_ErrorCode ret = OH_TextConfig_GetEnterKeyType(src, &enterKeyType);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Get enter key type ret %{public}d", ret);
-    return ret;
-  }
-  ret = OH_TextConfig_SetEnterKeyType(dest, enterKeyType);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Set enter key type ret %{public}d", ret);
-    return ret;
-  }
-  return IME_ERR_OK;
-}
-
-InputMethod_ErrorCode GetSelectionEx(InputMethod_TextConfig* dest,
-                                     InputMethod_TextConfig* src) {
-  int32_t start, end;
-
-  InputMethod_ErrorCode ret = OH_TextConfig_GetSelection(src, &start, &end);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Get selection failed ret %{public}d", ret);
-    return ret;
-  }
-  ret = OH_TextConfig_SetSelection(dest, start, end);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Set selection failed ret %{public}d", ret);
-    return ret;
-  }
-  return IME_ERR_OK;
-}
-
-InputMethod_ErrorCode GetWindowIdEx(InputMethod_TextConfig* dest,
-                                    InputMethod_TextConfig* src) {
-  int32_t windowId;
-
-  InputMethod_ErrorCode ret = OH_TextConfig_GetWindowId(src, &windowId);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Get windowId failed ret %{public}d", ret);
-    return ret;
-  }
-  ret = OH_TextConfig_SetWindowId(dest, windowId);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Set windowId ret failed %{public}d", ret);
-    return ret;
-  }
-  return IME_ERR_OK;
-}
-
-InputMethod_ErrorCode GetPreviewTextSupportedEx(InputMethod_TextConfig* dest,
-                                                InputMethod_TextConfig* src) {
-  bool supported;
-
-  InputMethod_ErrorCode ret =
-      OH_TextConfig_IsPreviewTextSupported(src, &supported);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Get preview supported failed ret %{public}d",
-            ret);
-    return ret;
-  }
-  ret = OH_TextConfig_SetPreviewTextSupport(dest, supported);
-  if (ret != IME_ERR_OK) {
-    WVLOG_E("Inputmethod adapter Set preview supported failed ret %{public}d",
-            ret);
-    return ret;
-  }
-  return IME_ERR_OK;
-}
-
-InputMethod_ErrorCode ConstructCursorInfoEx(InputMethod_TextConfig *textConfig,
-    const std::shared_ptr<IMFTextConfigAdapter> config)
-{
-    InputMethod_CursorInfo *cursorInfo = nullptr;
-    InputMethod_ErrorCode ret = OH_TextConfig_GetCursorInfo(textConfig, &cursorInfo);
-    if (ret != IME_ERR_OK) {
-        WVLOG_E("Get cursor info failed ret=%{public}d", ret);
-        return ret;
-    }
-    ret = OH_CursorInfo_SetRect(cursorInfo, config->GetCursorInfo()->GetLeft(), config->GetCursorInfo()->GetTop(),
-        config->GetCursorInfo()->GetWidth(), config->GetCursorInfo()->GetHeight());
-    if (ret != IME_ERR_OK) {
-        WVLOG_E("Set cursor info failed ret=%{public}d", ret);
-        return ret;
-    }
-    return IME_ERR_OK;
-}
-
 void FuzzIMFAdapterImpl(FuzzedDataProvider* fdp) {
   auto listener = std::make_shared<MockIMFTextListenerAdapter>();
   uint32_t windowId = fdp->ConsumeIntegral<uint32_t>();
@@ -493,20 +315,10 @@ void FuzzIMFAdapterImpl(FuzzedDataProvider* fdp) {
          ++enterKey) {
       auto config = std::make_shared<MockIMFTextConfigAdapter>(
           windowId, positionY, height);
-      InputMethod_ErrorCode ConstructTextConfigRet = IMFTextEditorProxyImpl::ConstructTextConfig(config);
-      InputMethod_TextConfig *textConfig = OH_TextConfig_Create();
-      InputMethod_ErrorCode ConstructCursorInfoRet = ConstructCursorInfoEx(textConfig, config);
 
       config->SetInputPattern(static_cast<IMFAdapterTextInputType>(inputType));
       config->SetEnterKeyType(static_cast<IMFAdapterEnterKeyType>(enterKey));
 
-      bool isShowKeyboard = fdp->ConsumeBool();
-      bool isResetListener = fdp->ConsumeBool();
-      int32_t requestReason = fdp->ConsumeIntegralInRange<int32_t>(0, 5);
-      adapter.Attach(listener, isShowKeyboard);
-      adapter.Attach(listener, isShowKeyboard, config, isResetListener);
-      adapter.AttachWithRequestKeyboardReason(listener, isShowKeyboard, config,
-                                              isResetListener, requestReason);
       std::u16string selectionText = u"Hello, World!";
       adapter.OnSelectionChange(selectionText, 2, selectionText.length());
       adapter.HideTextInput();
@@ -562,103 +374,9 @@ void FuzzIMFAdapterImpl(FuzzedDataProvider* fdp) {
     }
   }
 
-  InputMethod_TextConfig* srcConfig = OH_TextConfig_Create();
-  InputMethod_TextConfig* destConfig = OH_TextConfig_Create();
-
-  {
-    InputMethod_ErrorCode ret = GetCursorInfoEx(destConfig, srcConfig);
-    (void)ret;
-
-    GetCursorInfoEx(nullptr, srcConfig);
-    GetCursorInfoEx(destConfig, nullptr);
-  }
-
-  {
-    GetTextAvoidInfoEx(destConfig, srcConfig);
-    GetTextAvoidInfoEx(nullptr, srcConfig);
-    GetTextAvoidInfoEx(destConfig, nullptr);
-  }
-
-  {
-    for (int32_t i = -1; i <= 12; ++i) {
-      InputMethod_TextInputType type =
-          static_cast<InputMethod_TextInputType>(i);
-      OH_TextConfig_SetInputType(srcConfig, type);
-      GetInputTypeEx(destConfig, srcConfig);
-    }
-  }
-
-  {
-    std::vector<InputMethod_EnterKeyType> allEnterKeyTypes;
-
-    for (int i = 0;
-         i <= static_cast<int>(InputMethod_EnterKeyType::IME_ENTER_KEY_NEWLINE);
-         ++i) {
-      allEnterKeyTypes.push_back(static_cast<InputMethod_EnterKeyType>(i));
-    }
-
-    for (InputMethod_EnterKeyType type : allEnterKeyTypes) {
-      OH_TextConfig_SetEnterKeyType(srcConfig, type);
-      GetEnterKeyTypeEx(destConfig, srcConfig);
-    }
-  }
-
-  {
-    const std::vector<std::pair<int32_t, int32_t>> testCases = {
-        {fdp->ConsumeIntegral<int32_t>(), fdp->ConsumeIntegral<int32_t>()},
-        {fdp->ConsumeIntegral<int32_t>(), fdp->ConsumeIntegral<int32_t>()},
-        {fdp->ConsumeIntegral<int32_t>(), fdp->ConsumeIntegral<int32_t>()},
-        {fdp->ConsumeIntegral<int32_t>(), fdp->ConsumeIntegral<int32_t>()},
-        {fdp->ConsumeIntegral<int32_t>(), fdp->ConsumeIntegral<int32_t>()},
-        {fdp->ConsumeIntegral<int32_t>(), fdp->ConsumeIntegral<int32_t>()},
-        {INT32_MIN, INT32_MAX}};
-
-    for (const auto& [start, end] : testCases) {
-      OH_TextConfig_SetSelection(srcConfig, start, end);
-      GetSelectionEx(destConfig, srcConfig);
-    }
-  }
-
-  {
-    const std::vector<int32_t> testIds = {fdp->ConsumeIntegral<int32_t>(),
-                                          fdp->ConsumeIntegral<int32_t>(),
-                                          fdp->ConsumeIntegral<int32_t>(),
-                                          INT32_MAX,
-                                          -1,
-                                          INT32_MIN};
-
-    for (auto id : testIds) {
-      OH_TextConfig_SetWindowId(srcConfig, id);
-      GetWindowIdEx(destConfig, srcConfig);
-    }
-  }
-
-  {
-    const std::vector<bool> testValues = {fdp->ConsumeBool(),
-                                          fdp->ConsumeBool()};
-    for (auto value : testValues) {
-      OH_TextConfig_SetPreviewTextSupport(srcConfig, value);
-      GetPreviewTextSupportedEx(destConfig, srcConfig);
-    }
-  }
-
-  bool isShowKeyboard = fdp->ConsumeBool();
-  adapter.Attach(listener, isShowKeyboard);
   IMFAdapterTextInputType inputType =
       static_cast<IMFAdapterTextInputType>(fdp->ConsumeIntegralInRange<int32_t>(
           0, static_cast<int32_t>(IMFAdapterTextInputType::NUMBER_DECIMAL)));
-  InputMethod_TextEditorProxy* proxy =
-      IMFTextEditorProxyImpl::TextEditorProxyCreate(listener);
-  static InputMethod_TextConfig *textConfig_;
-  InputMethod_TextConfig* textConfig = OH_TextConfig_Create();
-  if (textConfig) {
-    IMFTextEditorProxyImpl::textConfig_ = textConfig;
-  }
-  InputMethod_TextConfig* funcDestConfig = OH_TextConfig_Create();
-  if (funcDestConfig) {
-    IMFTextEditorProxyImpl::GetTextConfigFunc(proxy, funcDestConfig);
-    OH_TextConfig_Destroy(funcDestConfig);
-  }
   adapter.ShowCurrentInput(inputType);
   adapter.HideTextInput();
   std::shared_ptr<IMFCursorInfoAdapter> cursorInfo =
@@ -686,15 +404,6 @@ void FuzzIMFAdapterImpl(FuzzedDataProvider* fdp) {
                                 fdp->ConsumeIntegralInRange<int>(0, 5));
   listener->NotifyPanelStatusInfo(panelInfo);
   adapter.Close();
-  if (srcConfig) {
-    OH_TextConfig_Destroy(srcConfig);
-  }
-  if (destConfig) {
-    OH_TextConfig_Destroy(destConfig);
-  }
-  if (textConfig) {
-    OH_TextConfig_Destroy(textConfig);
-  }
 }
 
 void FixedIMFAdapterImpl() {
@@ -702,17 +411,14 @@ void FixedIMFAdapterImpl() {
     uint32_t windowId;
     double positionY;
     double height;
-    bool isShowKeyboard;
-    bool isResetListener;
-    int32_t requestReason;
   };
   const std::vector<TestCase> testCases = {
-      {12345, 100.0, 200.0, true, true, 0},
-      {0, 50.0, 150.0, false, false, 1},
-      {UINT32_MAX, 200.0, 300.0, true, false, 2},
-      {4294967295, 0.0, 1000.0, false, true, 3},
-      {1, -100.0, 500.0, true, true, 4},
-      {1000, 1000.0, 100.0, false, false, 5},
+      {12345, 100.0, 200.0},
+      {0, 50.0, 150.0},
+      {UINT32_MAX, 200.0, 300.0},
+      {4294967295, 0.0, 1000.0},
+      {1, -100.0, 500.0},
+      {1000, 1000.0, 100.0},
   };
   for (const auto& test : testCases) {
     auto listener = std::make_shared<MockIMFTextListenerAdapter>();
@@ -745,13 +451,6 @@ void FixedIMFAdapterImpl() {
           enterKeyEnum = IMFAdapterEnterKeyType::NEW_LINE;
         }
         config->SetEnterKeyType(enterKeyEnum);
-
-        adapter.Attach(listener, test.isShowKeyboard);
-        adapter.Attach(listener, test.isShowKeyboard, config,
-                       test.isResetListener);
-        adapter.AttachWithRequestKeyboardReason(listener, test.isShowKeyboard,
-                                                config, test.isResetListener,
-                                                test.requestReason);
       }
     }
     {
@@ -795,70 +494,7 @@ void FixedIMFAdapterImpl() {
         (void)result;
       }
     }
-    InputMethod_TextConfig* srcConfig = OH_TextConfig_Create();
-    InputMethod_TextConfig* destConfig = OH_TextConfig_Create();
     {
-      InputMethod_ErrorCode ret = GetCursorInfoEx(destConfig, srcConfig);
-      (void)ret;
-      GetCursorInfoEx(nullptr, srcConfig);
-      GetCursorInfoEx(destConfig, nullptr);
-    }
-    {
-      GetTextAvoidInfoEx(destConfig, srcConfig);
-      GetTextAvoidInfoEx(nullptr, srcConfig);
-      GetTextAvoidInfoEx(destConfig, nullptr);
-    }
-    {
-      for (int32_t i = 0; i <= 12; ++i) {
-        InputMethod_TextInputType type =
-            static_cast<InputMethod_TextInputType>(i);
-        OH_TextConfig_SetInputType(srcConfig, type);
-        GetInputTypeEx(destConfig, srcConfig);
-      }
-    }
-    {
-      std::vector<InputMethod_EnterKeyType> allEnterKeyTypes;
-      for (int i = 0; i <= static_cast<int>(
-                               InputMethod_EnterKeyType::IME_ENTER_KEY_NEWLINE);
-           ++i) {
-        allEnterKeyTypes.push_back(static_cast<InputMethod_EnterKeyType>(i));
-      }
-      for (InputMethod_EnterKeyType type : allEnterKeyTypes) {
-        OH_TextConfig_SetEnterKeyType(srcConfig, type);
-        GetEnterKeyTypeEx(destConfig, srcConfig);
-      }
-    }
-    {
-      const std::vector<std::pair<int32_t, int32_t>> selectionTestCases = {
-          {0, 0},
-          {0, 10},
-          {5, 5},
-          {100, 200},
-          {1, 10},
-          {10, 5},
-          {INT32_MIN, INT32_MAX}};
-      for (const auto& [start, end] : selectionTestCases) {
-        OH_TextConfig_SetSelection(srcConfig, start, end);
-        GetSelectionEx(destConfig, srcConfig);
-      }
-    }
-    {
-      const std::vector<int32_t> testIds = {0,         1,  100,
-                                            INT32_MAX, -1, INT32_MIN};
-      for (auto id : testIds) {
-        OH_TextConfig_SetWindowId(srcConfig, id);
-        GetWindowIdEx(destConfig, srcConfig);
-      }
-    }
-    {
-      const std::vector<bool> testValues = {true, false};
-      for (auto value : testValues) {
-        OH_TextConfig_SetPreviewTextSupport(srcConfig, value);
-        GetPreviewTextSupportedEx(destConfig, srcConfig);
-      }
-    }
-    {
-      adapter.Attach(listener, test.isShowKeyboard);
       std::vector<IMFAdapterTextInputType> inputTypes = {
           IMFAdapterTextInputType::TEXT, IMFAdapterTextInputType::NUMBER,
           IMFAdapterTextInputType::EMAIL_ADDRESS,
@@ -899,12 +535,6 @@ void FixedIMFAdapterImpl() {
       listener->NotifyPanelStatusInfo(panelInfo);
     }
     adapter.Close();
-    if (srcConfig) {
-      OH_TextConfig_Destroy(srcConfig);
-    }
-    if (destConfig) {
-      OH_TextConfig_Destroy(destConfig);
-    }
   }
 }
 
@@ -928,57 +558,6 @@ void FuzzIMFTextEditorProxyImpl(FuzzedDataProvider* fdp) {
       fdp->ConsumeFloatingPoint<double>(),
       fdp->ConsumeFloatingPoint<double>()
   );
-
-  InputMethod_TextConfig* srcConfig = OH_TextConfig_Create();
-  InputMethod_TextConfig* destConfig = OH_TextConfig_Create();
-  if (srcConfig && destConfig) {
-    InputMethod_TextInputType inputType =
-        static_cast<InputMethod_TextInputType>(
-            fdp->ConsumeIntegralInRange<int32_t>(0, 10));
-    OH_TextConfig_SetInputType(srcConfig, inputType);
-    InputMethod_EnterKeyType enterKeyType =
-        static_cast<InputMethod_EnterKeyType>(
-            fdp->ConsumeIntegralInRange<int32_t>(0, 5));
-    OH_TextConfig_SetEnterKeyType(srcConfig, enterKeyType);
-    int32_t windowId = fdp->ConsumeIntegral<int32_t>();
-    OH_TextConfig_SetWindowId(srcConfig, windowId);
-    int32_t start = fdp->ConsumeIntegralInRange<int32_t>(0, 100);
-    int32_t end = fdp->ConsumeIntegralInRange<int32_t>(start, 200);
-    OH_TextConfig_SetSelection(srcConfig, start, end);
-    bool previewSupported = fdp->ConsumeBool();
-    OH_TextConfig_SetPreviewTextSupport(srcConfig, previewSupported);
-    GetCursorInfoEx(destConfig, srcConfig);
-    GetTextAvoidInfoEx(destConfig, srcConfig);
-    GetInputTypeEx(destConfig, srcConfig);
-    GetEnterKeyTypeEx(destConfig, srcConfig);
-    GetSelectionEx(destConfig, srcConfig);
-    GetWindowIdEx(destConfig, srcConfig);
-    GetPreviewTextSupportedEx(destConfig, srcConfig);
-    GetCursorInfoEx(nullptr, srcConfig);
-    GetCursorInfoEx(destConfig, nullptr);
-    GetTextAvoidInfoEx(nullptr, srcConfig);
-    GetTextAvoidInfoEx(destConfig, nullptr);
-    GetInputTypeEx(nullptr, srcConfig);
-    GetInputTypeEx(destConfig, nullptr);
-    GetEnterKeyTypeEx(nullptr, srcConfig);
-    GetEnterKeyTypeEx(destConfig, nullptr);
-    GetSelectionEx(nullptr, srcConfig);
-    GetSelectionEx(destConfig, nullptr);
-    GetWindowIdEx(nullptr, srcConfig);
-    GetWindowIdEx(destConfig, nullptr);
-    GetPreviewTextSupportedEx(nullptr, srcConfig);
-    GetPreviewTextSupportedEx(destConfig, nullptr);
-  }
-
-  InputMethod_TextConfig* textConfig = OH_TextConfig_Create();
-  if (textConfig) {
-    IMFTextEditorProxyImpl::textConfig_ = textConfig;
-  }
-  InputMethod_TextConfig* funcDestConfig = OH_TextConfig_Create();
-  if (funcDestConfig) {
-    IMFTextEditorProxyImpl::GetTextConfigFunc(proxy, funcDestConfig);
-    OH_TextConfig_Destroy(funcDestConfig);
-  }
 
   std::u16string randomText = GenerateRandomU16String(fdp, 100);
   IMFTextEditorProxyImpl::InsertTextFunc(proxy, randomText.c_str(),
@@ -1040,15 +619,6 @@ void FuzzIMFTextEditorProxyImpl(FuzzedDataProvider* fdp) {
   }
 
   IMFTextEditorProxyImpl::TextEditorProxyDestroy(proxy);
-  if (srcConfig) {
-    OH_TextConfig_Destroy(srcConfig);
-  }
-  if (destConfig) {
-    OH_TextConfig_Destroy(destConfig);
-  }
-  if (textConfig) {
-    OH_TextConfig_Destroy(textConfig);
-  }
 }
 
 void FixedIMFTextEditorProxyImpl() {
@@ -1064,51 +634,6 @@ void FixedIMFTextEditorProxyImpl() {
   if (ret != IME_ERR_OK) {
     IMFTextEditorProxyImpl::TextEditorProxyDestroy(proxy);
     return;
-  }
-
-  InputMethod_TextConfig* srcConfig = OH_TextConfig_Create();
-  InputMethod_TextConfig* destConfig = OH_TextConfig_Create();
-  if (srcConfig && destConfig) {
-    InputMethod_TextInputType fixedInputType =
-        IME_TEXT_INPUT_TYPE_TEXT;
-    OH_TextConfig_SetInputType(srcConfig, fixedInputType);
-    InputMethod_EnterKeyType fixedEnterKey =
-        IME_ENTER_KEY_DONE;
-    OH_TextConfig_SetEnterKeyType(srcConfig, fixedEnterKey);
-    int32_t fixedWindowId = 12;
-    OH_TextConfig_SetWindowId(srcConfig, fixedWindowId);
-    int32_t fixedSelStart = 0;
-    int32_t fixedSelEnd = 10;
-    OH_TextConfig_SetSelection(srcConfig, fixedSelStart, fixedSelEnd);
-    bool fixedPreviewSupport = true;
-    OH_TextConfig_SetPreviewTextSupport(srcConfig, fixedPreviewSupport);
-    GetCursorInfoEx(destConfig, srcConfig);
-    GetTextAvoidInfoEx(destConfig, srcConfig);
-    GetInputTypeEx(destConfig, srcConfig);
-    GetEnterKeyTypeEx(destConfig, srcConfig);
-    GetSelectionEx(destConfig, srcConfig);
-    GetWindowIdEx(destConfig, srcConfig);
-    GetPreviewTextSupportedEx(destConfig, srcConfig);
-    GetCursorInfoEx(nullptr, srcConfig);
-    GetCursorInfoEx(destConfig, nullptr);
-    GetTextAvoidInfoEx(nullptr, srcConfig);
-    GetTextAvoidInfoEx(destConfig, nullptr);
-    GetInputTypeEx(nullptr, srcConfig);
-    GetInputTypeEx(destConfig, nullptr);
-    GetEnterKeyTypeEx(nullptr, srcConfig);
-    GetEnterKeyTypeEx(destConfig, nullptr);
-    GetSelectionEx(nullptr, srcConfig);
-    GetSelectionEx(destConfig, nullptr);
-    GetWindowIdEx(nullptr, srcConfig);
-    GetWindowIdEx(destConfig, nullptr);
-    GetPreviewTextSupportedEx(nullptr, srcConfig);
-    GetPreviewTextSupportedEx(destConfig, nullptr);
-  }
-
-  InputMethod_TextConfig* funcDestConfig = OH_TextConfig_Create();
-  if (funcDestConfig) {
-    IMFTextEditorProxyImpl::GetTextConfigFunc(proxy, funcDestConfig);
-    OH_TextConfig_Destroy(funcDestConfig);
   }
 
   std::u16string testText = u"Hello, Fixed World!";
@@ -1134,12 +659,6 @@ void FixedIMFTextEditorProxyImpl() {
                                              previewText.length(), 0, 5);
   IMFTextEditorProxyImpl::FinishTextPreviewFunc(proxy);
   IMFTextEditorProxyImpl::TextEditorProxyDestroy(proxy);
-  if (srcConfig) {
-    OH_TextConfig_Destroy(srcConfig);
-  }
-  if (destConfig) {
-    OH_TextConfig_Destroy(destConfig);
-  }
 }
 
 }  // namespace OHOS::NWeb

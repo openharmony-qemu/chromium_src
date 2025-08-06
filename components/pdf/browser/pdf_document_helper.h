@@ -98,6 +98,7 @@ class PDFDocumentHelper
                    pdf::mojom::PdfListener::GetPageTextCallback callback);
 #if BUILDFLAG(ARKWEB_PDF)
   void UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) override;
+  void HideHandleAndQuickMenuForPDF(bool hide_handles) override;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
  private:

@@ -132,6 +132,12 @@ void PDFDocumentHelper::UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect
   touch_selection_controller_client_manager_->
     UpdateClientClippedSelectionBounds(clipped_selection_bounds);
 }
+
+void PDFDocumentHelper::HideHandleAndQuickMenuForPDF(bool hide_handles) {
+  LOG(DEBUG) << "pdf hide handle and quick nenu: " << hide_handles;
+  touch_selection_controller_client_manager_->
+    HideHandleAndQuickMenuIfNecessary(hide_handles);
+}
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
 void PDFDocumentHelper::SetPluginCanSave(bool can_save) {

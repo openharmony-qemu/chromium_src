@@ -270,10 +270,6 @@ OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "cef/ohos_cef_ext/libcef/browser/net/ohos_enable_applinking_util.h"
-#endif
-
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
@@ -5591,7 +5587,12 @@ void NWebImpl::SetMediaResumeFromBFCachePage(bool resume) {
 
 #if BUILDFLAG(IS_ARKWEB)
 void NWebImpl::EnableAppLinking(bool enable) {
-  OhosEnableApplinkingUtil::EnableAppLinking(enable);
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "EnableAppLinking failed"
+                  "for nweb_delegate_ is nullptr.";
+    return;
+  }
+  nweb_delegate_->EnableAppLinking(enable);
 }
 #endif
 

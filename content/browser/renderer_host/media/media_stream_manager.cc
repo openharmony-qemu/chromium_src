@@ -3660,18 +3660,13 @@ void MediaStreamManager::HandleAccessRequestResponse(
       device.set_session_id(GetDeviceManager(device.type)->Open(device));
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
+      int nweb_id = AsMediaStreamManagerExt()->GetNWebIDMatchStreamType(request->GetTargetRenderFrameHostId());
       if (device.type == MediaStreamType::DEVICE_VIDEO_CAPTURE ||
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
         device.type == MediaStreamType::GUM_DESKTOP_VIDEO_CAPTURE ||
 #endif
         device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE) {
-        auto* web_contents = static_cast<WebContentsImpl*>(
-            WebContentsImpl::FromRenderFrameHostID(
-                request->GetTargetRenderFrameHostId()));
-        if (web_contents) {
-          video_capture_manager()->AsVideoCaptureManagerExt()->BindSessionIdToNWebId(
-              device.session_id(), web_contents->GetNWebId());
-        }
+          video_capture_manager()->AsVideoCaptureManagerExt()->BindSessionIdToNWebId(device.session_id(), nweb_id);
       }
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
@@ -3679,18 +3674,13 @@ void MediaStreamManager::HandleAccessRequestResponse(
       if (device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE ||
           device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB ||
           device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET) {
-        auto* web_contents = static_cast<WebContentsImpl*>(
-            WebContentsImpl::FromRenderFrameHostID(
-                request->GetTargetRenderFrameHostId()));
-        if (web_contents) {
-          std::lock_guard<std::mutex> lock(nweb_id_mutex_);
-          std::string session_id_str = device.session_id().ToString();
-          auto nweb_id_it = nweb_id_maps_.find(session_id_str);
-          if (nweb_id_it == nweb_id_maps_.end()) {
-            AsMediaStreamManagerExt()->PopSessionIdState(web_contents->GetNWebId(), session_id_str);
-          }
-          nweb_id_maps_[session_id_str] = web_contents->GetNWebId();
+        std::lock_guard<std::mutex> lock(nweb_id_mutex_);
+        std::string session_id_str = device.session_id().ToString();
+        auto nweb_id_it = nweb_id_maps_.find(session_id_str);
+        if (nweb_id_it == nweb_id_maps_.end()) {
+          AsMediaStreamManagerExt()->PopSessionIdState(nweb_id, session_id_str);
         }
+        nweb_id_maps_[session_id_str] = nweb_id;
       }
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 

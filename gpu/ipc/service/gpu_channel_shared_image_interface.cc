@@ -129,6 +129,11 @@ GpuChannelSharedImageInterface::CreateSharedImageForOhosVideo(
 
   scoped_refptr<SharedContextState> shared_context =
       shared_image_stub_->shared_context_state();
+  
+  if (!shared_context) {
+    LOG(WARNING) << "shared_context is null.";
+    return nullptr;
+  }
 
   if (shared_context->context_lost()) {
     LOG(DEBUG) << "GpuChannelSharedImageInterface::"

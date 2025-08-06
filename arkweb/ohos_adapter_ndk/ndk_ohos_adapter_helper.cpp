@@ -66,6 +66,7 @@
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/vsync_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/net_connect_adapter/net_connect_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -103,7 +104,7 @@ NDKOhosAdapterHelper::CreateBatteryClientAdapter() {
 
 std::unique_ptr<NWeb::NetConnectAdapter>
 NDKOhosAdapterHelper::CreateNetConnectAdapter() {
-  return nullptr;
+  return std::make_unique<NetConnectAdapterImpl>();
 }
 
 NWeb::OhosWebDataBaseAdapter&

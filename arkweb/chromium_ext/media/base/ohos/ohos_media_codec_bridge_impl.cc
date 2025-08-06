@@ -73,7 +73,7 @@ CodecCodeAdapter FillSurfaceBufferDataCheck(
       return CodecCodeAdapter::ERROR;
   }
   // check addr size.
-  uiuint64_tnt32_t required_dst_space = data.planes_cnt[VideoFrame::kYPlane] * data.stride +
+  uint64_t required_dst_space = data.planes_cnt[VideoFrame::kYPlane] * data.stride +
       data.planes_cnt[VideoFrame::kUPlane] * data.stride / SAMPLE_RATIO +
       data.planes_cnt[VideoFrame::kVPlane] * data.stride / SAMPLE_RATIO;
   uint64_t required_y_src_space = data.planes_cnt[VideoFrame::kYPlane] * data.planes_stride[VideoFrame::kYPlane];

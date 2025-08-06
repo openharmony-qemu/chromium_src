@@ -347,7 +347,8 @@
                 "void OH_NativeVSync_Destroy(OH_NativeVSync* nativeVsync)",
                 "OH_NativeVSync* OH_NativeVSync_Create(const char* name, unsigned int length)",
                 "int OH_NativeVSync_RequestFrame(OH_NativeVSync* nativeVsync, OH_NativeVSync_FrameCallback callback, void* data)",
-                "int OH_NativeVSync_GetPeriod(OH_NativeVSync* nativeVsync, long long* period)"
+                "int OH_NativeVSync_GetPeriod(OH_NativeVSync* nativeVsync, long long* period)",
+                "int OH_NativeVSync_DVSyncSwitch(OH_NativeVSync* nativeVsync, bool enable)"
             ]
         },
         "includes": [

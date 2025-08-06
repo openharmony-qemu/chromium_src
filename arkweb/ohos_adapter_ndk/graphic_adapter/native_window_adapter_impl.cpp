@@ -19,7 +19,7 @@
 #include <sys/mman.h>
 #include <unordered_map>
 
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 
 
 namespace OHOS::NWeb {

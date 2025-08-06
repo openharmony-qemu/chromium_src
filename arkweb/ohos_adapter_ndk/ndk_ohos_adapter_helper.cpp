@@ -26,14 +26,11 @@
 #include "ohos_adapter/bridge/ark_ohos_drawing_text_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_print_manager_adapter_wrapper.h"
 
-#include "ohos_adapter/bridge/ark_vsync_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_window_adapter_wrapper.h"
 #include "arkweb/ohos_adapter_ndk/event_handler_adapter/event_handler_adapter_impl.h"
 #include "datashare_adapter/datashare_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_permission_data_base_adapter_impl.h"
 
-#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_image_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/ohos_native_buffer_adapter/ohos_native_buffer_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/cert_mgr_adapter/cert_mgr_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/media_avsession_adapter/media_avsession_adapter_impl.h"
@@ -42,7 +39,6 @@
 #include "arkweb/ohos_adapter_ndk/audio_capturer_adapter/audio_system_manager_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/access_token_adapter/access_token_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/media_adapter/player_framework_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl.h"
 #include "pasteboard_adapter/include/pasteboard_client_adapter_impl.h"
 
@@ -66,6 +62,10 @@
 #include "arkweb/ohos_adapter_ndk/ohos_resource_adapter/ohos_resource_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/system_properties_adapter/system_properties_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/aafwk_adapter/aafwk_app_mgr_client_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_image_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/vsync_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -157,8 +157,7 @@ NDKOhosAdapterHelper::GetSystemPropertiesInstance() {
 }
 
 NWeb::VSyncAdapter& NDKOhosAdapterHelper::GetVSyncAdapter() {
-  static ArkVSyncAdapterWrapper instance(nullptr);
-  return instance;
+  return VSyncAdapterNdkImpl::GetInstance();
 }
 
 std::unique_ptr<NWeb::OhosInitWebAdapter>
@@ -218,8 +217,7 @@ NDKOhosAdapterHelper::CreatePlayerAdapter() {
 }
 
 NWeb::WindowAdapter& NDKOhosAdapterHelper::GetWindowAdapterInstance() {
-  static ArkWindowAdapterWrapper instance(nullptr);
-  return instance;
+  return WindowAdapterNdkImpl::GetInstance();
 }
 
 NWeb::HiSysEventAdapter&

@@ -15,7 +15,7 @@
 
 #include "vsync_adapter_impl.h"
 
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 #include <unistd.h>
 #include <native_vsync/graphic_error_code.h>
 
@@ -154,7 +154,22 @@ void VSyncAdapterNdkImpl::SetScene(const std::string& sceneName, uint32_t state)
 
 void VSyncAdapterNdkImpl::SetDVSyncSwitch(bool dvsyncSwitch)
 {
-    WVLOG_D("[adapter mock] SetDVSyncSwitch");
+    if (Init() != VSyncErrorCode::SUCCESS) {
+        WVLOG_E("NWebWindowAdatrper init fail!");
+        return;
+    }
+
+    if (!vsyncReceiver_) {
+        WVLOG_E("NWebWindowAdatrper SetDVSyncSwitch: receiver_ is nullptr!");
+        return;
+    }
+
+    WVLOG_D("NWebWindowAdatrper SetDVSyncSwitch: dvsyncSwitch = %{public}d", dvsyncSwitch);
+    int ret = OH_NativeVSync_DVSyncSwitch(vsyncReceiver_, dvsyncSwitch);
+    if (ret != 0) {
+        WVLOG_E("SetNativeDVSyncSwitch failed, ret = %{public}d", ret);
+        return;
+    }
 }
 
 } // namespace OHOS::NWeb

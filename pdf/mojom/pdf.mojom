@@ -73,5 +73,8 @@ interface PdfHost {
   // #if BUILDFLAG(ARKWEB_PDF)
   [EnableIf=arkweb_pdf]
   UpdateClientClippedSelectionBoundsForPDF(gfx.mojom.Rect clipped_selection_bounds);
+
+  [EnableIf=arkweb_pdf]
+  HideHandleAndQuickMenuForPDF(bool hide_handles);
   // #endif
 };

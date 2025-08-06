@@ -273,13 +273,15 @@ SelectionInFlatTree SelectionControllerUtils::HandleArkWebAISelectionExt(Selecti
                                                                          const HitTestResult& result,
                                                                          Node* inner_node,
                                                                          const PositionInFlatTreeWithAffinity& pos,
-                                                                         bool isDoubleClick) {
+                                                                         bool is_double_click,
+                                                                         bool layout_change) {
 #if BUILDFLAG(ARKWEB_AI)
   if (!inner_node) {
     return;
   }
   WTF::String str;
-  bool after_line_select_tail = isDoubleClick || !IsEditable(*inner_node);
+  bool after_line_select_tail =
+      is_double_click || !(IsEditable(*inner_node) || layout_change);
   if (after_line_select_tail) {
     if (pos.IsNotNull()) {
       str = pos.AnchorNode()->textContent(true);
@@ -295,7 +297,7 @@ SelectionInFlatTree SelectionControllerUtils::HandleArkWebAISelectionExt(Selecti
     if(str.ContainsOnlyWhitespaceOrEmpty() && new_pos.IsNotNull() &&
        !new_pos.AnchorNode()->textContent().ContainsOnlyWhitespaceOrEmpty()) {
         return HandleArkWebAISelectionExt(obj, result, new_pos.AnchorNode(),
-                                          new_pos, isDoubleClick);
+                                          new_pos, is_double_click);
     }
   } else {
     str = inner_node->textContent();

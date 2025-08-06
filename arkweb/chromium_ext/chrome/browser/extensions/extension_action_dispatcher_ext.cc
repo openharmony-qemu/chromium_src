@@ -80,6 +80,33 @@ void ExtensionActionDispatcher::WebExtensionActionShowPopup(
     std::string extension_id) {
   ExtensionActionInvokeActiveTab(context, tab_id, extension_id);
 }
+
+void ExtensionActionDispatcher::ClearAllValuesForTab(
+    content::WebContents* web_contents) {
+  DCHECK(web_contents);
+  int tab_id = ExtensionTabUtil::GetTabId(web_contents);
+  if (tab_id < 0) {
+    LOG(ERROR) << "invalid tab_id for ClearAllValuesForTab";
+    return;
+  }
+
+  content::BrowserContext* browser_context = web_contents->GetBrowserContext();
+  const ExtensionSet& enabled_extensions =
+      ExtensionRegistry::Get(browser_context_)->enabled_extensions();
+  ExtensionActionManager* action_manager =
+      ExtensionActionManager::Get(browser_context_);
+
+  for (const auto& extension : enabled_extensions) {
+    ExtensionAction* extension_action =
+        action_manager->GetExtensionAction(*extension);
+    if (extension_action) {
+      extension_action->ClearAllValuesForTab(tab_id);
+      LOG(INFO) << "clearing all action values for extension "
+                << extension_action->extension_id() << ", tab_id: " << tab_id;
+      NotifyChange(extension_action, web_contents, browser_context);
+    }
+  }
+}
 #endif  // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 }  // namespace extensions

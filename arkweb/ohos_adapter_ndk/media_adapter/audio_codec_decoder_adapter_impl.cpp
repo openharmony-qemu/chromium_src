@@ -568,16 +568,19 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::SetBufferCencInfo(
 
     AudioDecoderAdapterCode ret = SetAVCencInfo(avCencInfo, cencInfo);
     if (ret != AudioDecoderAdapterCode::DECODER_OK) {
+        (void)OH_AVCencInfo_Destroy(avCencInfo);
         return ret;
     }
     // set CencInfo to AVBuffer
     OH_AVBuffer *avBuffer = GetInputBuffer(index);
     if (avBuffer == nullptr) {
+        (void)OH_AVCencInfo_Destroy(avCencInfo);
         WVLOG_E("set AVCencInfo fail, not find inputbuffererr[%{public}u]", index);
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
     OH_AVErrCode errNo = OH_AVCencInfo_SetAVBuffer(avCencInfo, avBuffer);
     if (errNo != AV_ERR_OK) {
+        (void)OH_AVCencInfo_Destroy(avCencInfo);
         WVLOG_E("set AVCencInfo fail, errNo = %{public}u", static_cast<uint32_t>(errNo));
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }

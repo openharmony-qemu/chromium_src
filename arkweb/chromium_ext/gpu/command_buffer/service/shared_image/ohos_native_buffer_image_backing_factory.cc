@@ -350,8 +350,7 @@ OHOSNativeBufferImageBackingFactory::MakeBackingWithValidateConfig(
   }
 
   if (backing) {
-    LOG(INFO) << "NativeBuffer backing created:(OhosNativeBufferImageBacking) "
-              << backing;
+    LOG(INFO) << "NativeBuffer backing created:(OhosNativeBufferImageBacking) ";
   }
 
   return backing;

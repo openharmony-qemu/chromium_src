@@ -15,10 +15,18 @@
 
 namespace chrome_pdf {
 
-void PDFiumEngine::OnSelectionPositionChangedForPDF(gfx::Rect& left, gfx::Rect& right, const std::vector<PDFiumRange>& selections) {
-    if (!selections.empty()) {
+void PDFiumEngine::OnSelectionPositionChangedForPDF(gfx::Rect& left,
+                                                    gfx::Rect& right,
+                                                    gfx::Rect& clipped_selection_bounds,
+                                                    const std::vector<PDFiumRange>& selections) {
+  if (!selections.empty()) {
+    int rect_left = std::numeric_limits<int32_t>::max();
+    int rect_top = std::numeric_limits<int32_t>::max();
+    int rect_right = 0;
+    int rect_bottom = 0;
     PDFiumRange fitst_selection = selections[0];
     PDFiumRange last_selection = selections.back();
+
     for (const auto& sel : selections) {
       if (fitst_selection.page_index() > sel.page_index() ||
           (fitst_selection.page_index() == sel.page_index() &&
@@ -30,7 +38,19 @@ void PDFiumEngine::OnSelectionPositionChangedForPDF(gfx::Rect& left, gfx::Rect& 
           last_selection.char_index() < sel.char_index())) {
         last_selection = sel;
       }
+      const std::vector<gfx::Rect>& screen_rects =
+        sel.GetScreenRects(GetVisibleRect().origin(), current_zoom_,
+                           layout_.options().default_page_orientation());
+      for (const auto& rect : screen_rects) {
+        rect_left = std::min(rect_left, rect.x());
+        rect_top = std::min(rect_top, rect.y());
+        rect_right = std::max(rect_right, rect.x() + rect.width());
+        rect_bottom = std::max(rect_bottom, rect.y() + rect.height());
+      }
     }
+
+    clipped_selection_bounds = gfx::Rect(rect_left, rect_top,
+                                         rect_right - rect_left, rect_bottom - rect_top);
     const std::vector<gfx::Rect>& left_screen_rects =
         fitst_selection.GetScreenRects(GetVisibleRect().origin(), current_zoom_,
                            layout_.options().default_page_orientation());

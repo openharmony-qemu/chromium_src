@@ -36,6 +36,7 @@
 #include "nweb_find_callback.h"
 #include "nweb_handler.h"
 #include "nweb_preference.h"
+#include "nweb_rom_value.h"
 #include "nweb_web_message.h"
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
@@ -123,6 +124,7 @@ class NWebDelegateInterface
   virtual void SetAutofillCallback(
       std::shared_ptr<NWebMessageValueCallback> callback) = 0;
   virtual void FillAutofillData(std::shared_ptr<NWebMessage> data) = 0;
+  virtual void FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) = 0;
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void SetNWebDelegateInterface(
@@ -325,6 +327,11 @@ class NWebDelegateInterface
       int32_t h5_object_id,
       const std::string& h5_method_name,
       const std::vector<std::shared_ptr<NWebValue>>& args) const = 0;
+  virtual void CallH5FunctionV2(
+      int32_t routing_id,
+      int32_t h5_object_id,
+      const std::string& h5_method_name,
+      const std::vector<std::shared_ptr<NWebRomValue>>& args) const = 0;
   virtual void RegisterNWebJavaScriptCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) = 0;
   virtual bool OnFocus(
@@ -362,6 +369,8 @@ class NWebDelegateInterface
   virtual void ClosePort(const std::string& portHandle) = 0;
   virtual void PostPortMessage(const std::string& portHandle,
                                std::shared_ptr<NWebMessage> data) = 0;
+  virtual void PostPortMessageV2(const std::string& portHandle,
+                                 std::shared_ptr<NWebRomValue> data) = 0;
   virtual void SetPortMessageCallback(
       const std::string& portHandle,
       std::shared_ptr<NWebMessageValueCallback> callback) = 0;
@@ -479,6 +488,8 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   virtual void SetNativeInnerWeb(bool isInnerWeb) = 0;
+  virtual bool GetNativeEmbedMode() = 0;
+  virtual bool IsEnableCustomVideoPlayer() = 0;
 #endif
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   virtual void SetAudioResumeInterval(int32_t resumeInterval) = 0;
@@ -743,8 +754,6 @@ class NWebDelegateInterface
       std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo) = 0;
   virtual void WebExtensionTabReplaced(int32_t addedTabId,
                                        int32_t removedTabId) = 0;
-  virtual void WebExtensionTabZoomChange(
-      std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) = 0;
   virtual void WebExtensionSetViewType(int32_t type) = 0;
 #endif
 
@@ -870,8 +879,10 @@ class NWebDelegateInterface
   virtual void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) = 0;
   virtual int64_t GetPreferenceHash() = 0;
   virtual void SetNearestSnapshotSize(int32_t width, int32_t height) = 0;
-  virtual gfx::Size GetNearestSnapshotSize() = 0;
-  virtual gfx::Size GetSize() = 0;
+  virtual int32_t NearestSnapshotWidth() = 0;
+  virtual int32_t NearestSnapshotHeight() = 0;
+  virtual int32_t GetWidth() = 0;
+  virtual int32_t GetHeight() = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_MENU)

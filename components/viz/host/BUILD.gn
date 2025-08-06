@@ -103,4 +103,9 @@ viz_source_set("unit_tests") {
   if (use_ozone) {
     deps += [ "//ui/ozone" ]
   }
+
+  import("//arkweb/chromium_ext/components/viz/host/arkweb_viz_host_ext.gni")
+  sources += components_viz_host_unittests_ext.sources
+  sources -= components_viz_host_unittests_ext.sources_del
+  deps += components_viz_host_unittests_ext.deps
 }

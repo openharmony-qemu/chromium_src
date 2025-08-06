@@ -22,7 +22,10 @@ import("//testing/test.gni")
 import("//arkweb/build/features/features.gni")
 
 fuzzer_test("net_connect_adapter_fuzzer") {
-  sources = [ "net_connect_adapter_fuzzer.cpp" ]
+  sources = [
+    "net_connect_adapter_fuzzer.cpp",
+    "net_connect_fuzz_mock.cpp",
+  ]
   include_dirs = [
     "//cef",
     "//cef/include",

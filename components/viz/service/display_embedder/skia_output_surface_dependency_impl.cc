@@ -210,4 +210,5 @@ bool SkiaOutputSurfaceDependencyImpl::GetIsScroll() {
   return impl_utils_->GetIsScroll();
 }
 #endif
+
 }  // namespace viz

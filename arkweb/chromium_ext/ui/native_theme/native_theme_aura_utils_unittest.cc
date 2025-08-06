@@ -21,6 +21,7 @@
 #include "base/containers/flat_map.h"
 #define private public
 #define protected public
+#include "arkweb/chromium_ext/base/ohos/mock_sys_info_utils_ext.h"
 #include "arkweb/chromium_ext/ui/native_theme/native_theme_aura_utils.h"
 #include "cc/paint/record_paint_canvas.h"
 #include "ui/native_theme/native_theme.h"
@@ -29,6 +30,7 @@
 using namespace testing;
 
 namespace ui {
+using testing::Return;
 class NativeThemeAuraUtilsTest : public testing::Test {
  public:
   void SetUp() override;
@@ -144,5 +146,30 @@ TEST_F(NativeThemeAuraUtilsTest, GetNinePatchAperture_001) {
 
   part = NativeTheme::kScrollbarVerticalThumb;
   native_theme_aura_utils_->GetNinePatchAperture(part);
+}
+
+TEST_F(NativeThemeAuraUtilsTest, PCDeviceTest_001) {
+  auto& system_properties_mock = SystemPropertiesMock::getInstance();
+  EXPECT_CALL(system_properties_mock, IsPcDeviceMock())
+      .WillOnce(Return(true))
+      .WillRepeatedly(Return(true));
+
+  native_theme_aura_utils_->SetScrollbarThumbWidth();
+  EXPECT_EQ(native_theme_aura_->scrollbar_width_,
+            kOverlayScrollbarThumbWidthPressedPc);
+
+  cc::RecordPaintCanvas canvas;
+  const gfx::Rect rect;
+  SkColor scrollbar_color = SK_ColorLTGRAY;
+  NativeTheme::Part part = NativeTheme::kScrollbarHorizontalThumb;
+  SkColor thumb_color;
+  cc::PaintFlags fill_flags;
+
+  native_theme_aura_utils_->PaintOverlayScrollbarThumb(
+      &canvas, rect, scrollbar_color, part, thumb_color, fill_flags);
+
+  part = NativeTheme::kScrollbarVerticalThumb;
+  native_theme_aura_utils_->PaintOverlayScrollbarThumb(
+      &canvas, rect, scrollbar_color, part, thumb_color, fill_flags);
 }
 }  // namespace ui

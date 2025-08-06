@@ -120,11 +120,11 @@ class CAPTURE_EXPORT OHOSCaptureDelegate final {
 
   const VideoCaptureParams capture_params_;
 
-  base::WeakPtrFactory<OHOSCaptureDelegate> weak_factory_{this};
-
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   friend class OHOSCaptureDelegateTest;
 #endif
+
+  base::WeakPtrFactory<OHOSCaptureDelegate> weak_factory_{this};
 };
 
 }  // namespace media

@@ -126,6 +126,7 @@ class DomLabelTest : public content::RenderViewTest,
       base::MakeRefCounted<FieldDataManager>();
 };
 
+#if !BUILDFLAG(ARKWEB_UNITTESTS)
 TEST_P(DomLabelTest, DataDrivenLabels) {
   const TestCase& test = GetParam();
   std::string dom;
@@ -179,7 +180,7 @@ INSTANTIATE_TEST_SUITE_P(,
                          DomLabelTest,
                          testing::ValuesIn(GetTests()),
                          GenerateTestName);
-
+#endif  // !BUILDFLAG(ARKWEB_UNITTESTS)
 }  // namespace
 
 }  // namespace autofill

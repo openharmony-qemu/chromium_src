@@ -68,11 +68,6 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceDependencyImpl
   SkiaOutputSurfaceDependencyImplUtils* impl_utils() {
     return impl_utils_.get();
   }
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  GpuServiceImpl* gpu_service_impl() const override {
-    return gpu_service_impl_;
-  }
-#endif
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   bool GetIsScroll() override;
 #endif

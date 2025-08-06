@@ -15,7 +15,8 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
+#include "base/logging.h"
+#include <inputmethod/inputmethod_controller_capi.h>
 #define private public
 #include "arkweb/ohos_adapter_ndk/inputmethodframework_adapter/imf_adapter_impl.h"
 #undef private
@@ -120,6 +121,19 @@ class IMFTextEditorProxyImplTest : public ::testing::Test {
 TEST_F(IMFTextEditorProxyImplTest, AdapterTextInputTypeToTextInputType) {
   InputMethod_TextInputType result = AdapterTextInputTypeToTextInputType(1);
   EXPECT_EQ(result, InputMethod_TextInputType::IME_TEXT_INPUT_TYPE_MULTILINE);
+  result = AdapterTextInputTypeToTextInputType(-1);
+  result = AdapterTextInputTypeToTextInputType(0);
+  result = AdapterTextInputTypeToTextInputType(2);
+  result = AdapterTextInputTypeToTextInputType(3);
+  result = AdapterTextInputTypeToTextInputType(4);
+  result = AdapterTextInputTypeToTextInputType(5);
+  result = AdapterTextInputTypeToTextInputType(6);
+  result = AdapterTextInputTypeToTextInputType(7);
+  result = AdapterTextInputTypeToTextInputType(8);
+  result = AdapterTextInputTypeToTextInputType(9);
+  result = AdapterTextInputTypeToTextInputType(10);
+  result = AdapterTextInputTypeToTextInputType(11);
+  result = AdapterTextInputTypeToTextInputType(12);
   result = AdapterTextInputTypeToTextInputType(20);
   EXPECT_EQ(result, InputMethod_TextInputType::IME_TEXT_INPUT_TYPE_NONE);
 }
@@ -127,6 +141,14 @@ TEST_F(IMFTextEditorProxyImplTest, AdapterTextInputTypeToTextInputType) {
 TEST_F(IMFTextEditorProxyImplTest, AdapterEnterKeyTypeToOhEnterKeyType) {
   InputMethod_EnterKeyType result = AdapterEnterKeyTypeToOhEnterKeyType(1);
   EXPECT_EQ(result, InputMethod_EnterKeyType::IME_ENTER_KEY_NONE);
+  result = AdapterEnterKeyTypeToOhEnterKeyType(0);
+  result = AdapterEnterKeyTypeToOhEnterKeyType(2);
+  result = AdapterEnterKeyTypeToOhEnterKeyType(3);
+  result = AdapterEnterKeyTypeToOhEnterKeyType(4);
+  result = AdapterEnterKeyTypeToOhEnterKeyType(5);
+  result = AdapterEnterKeyTypeToOhEnterKeyType(6);
+  result = AdapterEnterKeyTypeToOhEnterKeyType(7);
+  result = AdapterEnterKeyTypeToOhEnterKeyType(8);
   result = AdapterEnterKeyTypeToOhEnterKeyType(20);
   EXPECT_EQ(result, InputMethod_EnterKeyType::IME_ENTER_KEY_UNSPECIFIED);
 }
@@ -135,6 +157,10 @@ TEST_F(IMFTextEditorProxyImplTest, ohKeyboardStatusToAdapterKeyboardStatus) {
   IMFAdapterKeyboardStatus result = ohKeyboardStatusToAdapterKeyboardStatus(
       InputMethod_KeyboardStatus::IME_KEYBOARD_STATUS_HIDE);
   EXPECT_EQ(result, IMFAdapterKeyboardStatus::HIDE);
+  result = ohKeyboardStatusToAdapterKeyboardStatus(
+    InputMethod_KeyboardStatus::IME_KEYBOARD_STATUS_NONE);
+  result = ohKeyboardStatusToAdapterKeyboardStatus(
+    InputMethod_KeyboardStatus::IME_KEYBOARD_STATUS_SHOW);
 }
 
 TEST_F(IMFTextEditorProxyImplTest, GetCursorInfo) {
@@ -144,12 +170,13 @@ TEST_F(IMFTextEditorProxyImplTest, GetCursorInfo) {
   EXPECT_EQ(result, IME_ERR_NULL_POINTER);
   src = OH_TextConfig_Create();
   ASSERT_NE(nullptr, src);
-  result = GetCursorInfo(dest, src);
-  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
   dest = OH_TextConfig_Create();
   ASSERT_NE(nullptr, dest);
   result = GetCursorInfo(dest, src);
   EXPECT_EQ(result, IME_ERR_OK);
+  src = OH_TextConfig_Create();
+  result = GetCursorInfo(nullptr, src);
+  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
 }
 
 TEST_F(IMFTextEditorProxyImplTest, GetTextAvoidInfo) {
@@ -159,12 +186,12 @@ TEST_F(IMFTextEditorProxyImplTest, GetTextAvoidInfo) {
   EXPECT_EQ(result, IME_ERR_NULL_POINTER);
   src = OH_TextConfig_Create();
   ASSERT_NE(nullptr, src);
-  result = GetTextAvoidInfo(dest, src);
-  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
   dest = OH_TextConfig_Create();
   ASSERT_NE(nullptr, dest);
   result = GetTextAvoidInfo(dest, src);
   EXPECT_EQ(result, IME_ERR_OK);
+  result = GetTextAvoidInfo(dest, nullptr);
+  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
 }
 
 TEST_F(IMFTextEditorProxyImplTest, GetInputType) {
@@ -180,6 +207,8 @@ TEST_F(IMFTextEditorProxyImplTest, GetInputType) {
   ASSERT_NE(nullptr, dest);
   result = GetInputType(dest, src);
   EXPECT_EQ(result, IME_ERR_OK);
+  result = GetInputType(dest, nullptr);
+  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
 }
 
 TEST_F(IMFTextEditorProxyImplTest, GetEnterKeyType) {
@@ -195,6 +224,8 @@ TEST_F(IMFTextEditorProxyImplTest, GetEnterKeyType) {
   ASSERT_NE(nullptr, dest);
   result = GetEnterKeyType(dest, src);
   EXPECT_EQ(result, IME_ERR_OK);
+  result = GetEnterKeyType(dest, nullptr);
+  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
 }
 
 TEST_F(IMFTextEditorProxyImplTest, GetSelection) {
@@ -210,6 +241,8 @@ TEST_F(IMFTextEditorProxyImplTest, GetSelection) {
   ASSERT_NE(nullptr, dest);
   result = GetSelection(dest, src);
   EXPECT_EQ(result, IME_ERR_OK);
+  result = GetSelection(dest, nullptr);
+  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
 }
 
 TEST_F(IMFTextEditorProxyImplTest, GetWindowId) {
@@ -225,6 +258,8 @@ TEST_F(IMFTextEditorProxyImplTest, GetWindowId) {
   ASSERT_NE(nullptr, dest);
   result = GetWindowId(dest, src);
   EXPECT_EQ(result, IME_ERR_OK);
+  result = GetWindowId(dest, nullptr);
+  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
 }
 
 TEST_F(IMFTextEditorProxyImplTest, GetPreviewTextSupported) {
@@ -240,6 +275,8 @@ TEST_F(IMFTextEditorProxyImplTest, GetPreviewTextSupported) {
   ASSERT_NE(nullptr, dest);
   result = GetPreviewTextSupported(dest, src);
   EXPECT_EQ(result, IME_ERR_OK);
+  result = GetPreviewTextSupported(dest, nullptr);
+  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
 }
 
 TEST_F(IMFTextEditorProxyImplTest, GetTextConfigFunc) {
@@ -1206,6 +1243,15 @@ TEST_F(IMFAdapterImplTest, HideTextInput) {
   imf_adapter_->HideTextInput();
   imf_adapter_->Close();
   EXPECT_EQ(imf_adapter_->inputMethodProxy_, nullptr);
+
+  InputMethod_TextEditorProxy *textEditorProxy = OH_TextEditorProxy_Create();
+  bool showKeyboard = true;
+  InputMethod_AttachOptions *options = OH_AttachOptions_Create(showKeyboard);
+  InputMethod_InputMethodProxy *inputMethodProxy = nullptr;
+  OH_InputMethodController_Attach(textEditorProxy, options, &inputMethodProxy);
+  imf_adapter_->inputMethodProxy_ = inputMethodProxy;
+  imf_adapter_->HideTextInput();
+  imf_adapter_->Close();
 }
 
 TEST_F(IMFAdapterImplTest, OnCursorUpdate_001) {
@@ -1257,15 +1303,127 @@ TEST_F(IMFAdapterImplTest, SendPrivateCommand) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(IMFAdapterImplTest, ParseFillContentJsonValue_WithBadJson) {
-  std::string jsonInput = R"({"userName":})";
-  std::vector<InputMethod_PrivateCommand*> privateCommands;
-  bool result =
-      imf_adapter_->ParseFillContentJsonValue(jsonInput, privateCommands);
-  EXPECT_FALSE(result);
+  TEST_F(IMFAdapterImplTest, ParseFillContentJsonValue_001) {
+    std::string jsonInput = R"({"userName":})";
+    std::vector<InputMethod_PrivateCommand*> privateCommands;
+    bool result = imf_adapter_->ParseFillContentJsonValue(jsonInput, privateCommands);
+    EXPECT_FALSE(result);
 
-  jsonInput = "null";
-  result = imf_adapter_->ParseFillContentJsonValue(jsonInput, privateCommands);
-  EXPECT_FALSE(result);
-}
+    jsonInput = "null";
+    result = imf_adapter_->ParseFillContentJsonValue(jsonInput, privateCommands);
+    EXPECT_FALSE(result);
+  }
+
+  TEST_F(IMFAdapterImplTest, ParseFillContentJsonValue_002) {
+    std::vector<InputMethod_PrivateCommand*> privateCommands;
+    std::string jsonInput = R"({"otherName":"","hasnoAccount":""})";
+    bool result = imf_adapter_->ParseFillContentJsonValue(jsonInput, privateCommands);
+    EXPECT_TRUE(result);
+
+    jsonInput = R"({"userName":111,"hasAccount":111})";
+    result = imf_adapter_->ParseFillContentJsonValue(jsonInput, privateCommands);
+    EXPECT_TRUE(result);
+
+    jsonInput = R"({"userName":"name","hasAccount":"account"})";
+    result = imf_adapter_->ParseFillContentJsonValue(jsonInput, privateCommands);
+    EXPECT_TRUE(result);
+  }
+
+  TEST_F(IMFAdapterImplTest, AttachParamsCheck_001) {
+    std::shared_ptr<MockIMFTextListenerAdapter> listener = nullptr;
+    bool isShowKeyboard = false;
+    std::shared_ptr<MockIMFTextConfigAdapter> config = nullptr;
+    bool isResetListener = false;
+    bool result = imf_adapter_->AttachParamsCheck(listener, isShowKeyboard,
+                                                  config, isResetListener);
+    EXPECT_FALSE(result);
+
+    listener = std::make_shared<MockIMFTextListenerAdapter>();
+    result = imf_adapter_->AttachParamsCheck(listener, isShowKeyboard,
+                                                  config, isResetListener);
+    EXPECT_FALSE(result);
+    config = std::make_shared<MockIMFTextConfigAdapter>();
+    std::shared_ptr<MockIMFInputAttributeAdapter> attribute = nullptr;
+    EXPECT_CALL(*config, GetInputAttribute())
+        .WillOnce(testing::Return(attribute));
+    result = imf_adapter_->AttachParamsCheck(listener, isShowKeyboard,
+                                                  config, isResetListener);
+    EXPECT_FALSE(result);
+
+    attribute = std::make_shared<MockIMFInputAttributeAdapter>();
+    EXPECT_CALL(*config, GetInputAttribute())
+      .WillOnce(testing::Return(attribute));
+    std::shared_ptr<MockIMFCursorInfoAdapter> cursor = nullptr;
+    EXPECT_CALL(*config, GetCursorInfo()).WillOnce(testing::Return(cursor));
+    result = imf_adapter_->AttachParamsCheck(listener, isShowKeyboard,
+                                                  config, isResetListener);
+    EXPECT_FALSE(result);
+  }
+
+  TEST_F(IMFAdapterImplTest, AttachParamsCheck_002) {
+    std::shared_ptr<MockIMFTextListenerAdapter> listener =
+        std::make_shared<MockIMFTextListenerAdapter>();
+    std::shared_ptr<MockIMFTextConfigAdapter> config =
+        std::make_shared<MockIMFTextConfigAdapter>();
+    bool isShowKeyboard = false;
+    bool isResetListener = false;
+    std::shared_ptr<MockIMFInputAttributeAdapter> attribute =
+        std::make_shared<MockIMFInputAttributeAdapter>();
+    EXPECT_CALL(*config, GetInputAttribute())
+        .WillRepeatedly(testing::Return(attribute));
+    std::shared_ptr<MockIMFCursorInfoAdapter> cursor =
+        std::make_shared<MockIMFCursorInfoAdapter>();
+    EXPECT_CALL(*config, GetCursorInfo())
+        .WillRepeatedly(testing::Return(cursor));
+
+    IMFTextEditorProxyImpl::textListener_.reset();
+    bool result = imf_adapter_->AttachParamsCheck(listener, isShowKeyboard,
+                                                  config, isResetListener);
+    EXPECT_TRUE(result);
+
+    IMFTextEditorProxyImpl::textListener_ = std::make_shared<IMFTextListenerAdapterImpl>(listener);
+    result = imf_adapter_->AttachParamsCheck(listener, isShowKeyboard,
+                                                  config, isResetListener);
+    EXPECT_TRUE(result);
+
+    isResetListener = true;
+    result = imf_adapter_->AttachParamsCheck(listener, isShowKeyboard,
+                                                  config, isResetListener);
+    EXPECT_TRUE(result);
+  }
+
+  TEST_F(IMFTextListenerAdapterImplTest, NotifyPanelStatusInfo) {
+    MiscServices::PanelStatusInfo panelStatus;
+    listener_adapter_->listener_ = mock_listener_adapter_;
+    listener_adapter_->NotifyPanelStatusInfo(panelStatus);
+
+    panelStatus.trigger = MiscServices::Trigger::IME_APP;
+    listener_adapter_->NotifyPanelStatusInfo(panelStatus);
+
+    listener_adapter_->listener_ = nullptr;
+    listener_adapter_->NotifyPanelStatusInfo(panelStatus);
+    EXPECT_EQ(listener_adapter_->listener_, nullptr);
+  }
+
+  TEST_F(IMFTextListenerAdapterImplTest, PrivateCommandGetStrValue) {
+    InputMethod_PrivateCommand* privateCommand = nullptr;
+    std::shared_ptr<std::string> result = PrivateCommandGetStrValue(privateCommand);
+    EXPECT_EQ(result, nullptr);
+
+    char key[] = "example key";
+    size_t keyLength = strlen(key);
+    InputMethod_PrivateCommand *command = OH_PrivateCommand_Create(key, keyLength);
+    EXPECT_EQ(IME_ERR_OK, OH_PrivateCommand_SetStrValue(command, const_cast<char *>(key), keyLength));
+    result = PrivateCommandGetStrValue(command);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(*result, "example key");
+    std::vector<InputMethod_PrivateCommand *> commands;
+    commands.push_back(command);
+    DestroyPrivateCommand(commands);
+
+    int32_t ret = 0;
+    bool isShowKeyboard = true;
+    ReportImfErrorEvent(ret, isShowKeyboard);
+  }
+
 }  // namespace OHOS::NWeb

@@ -12,10 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include "base/memory/weak_ptr.h"
+#define private public
 #include "ui/ozone/platform/headless/headless_screen_ohos.h"
+#undef private
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <memory>
+#include <vector>
+
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/test/task_environment.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/display_manager_adapter.h"
@@ -27,6 +34,7 @@
 #include "mojo/core/embedder/configuration.h"
 #include "mojo/core/embedder/embedder.h"
 
+using ::testing::Return;
 int main(int argc, char** argv) {
   base::TestSuite test_suite(argc, argv);
   mojo::core::Init(mojo::core::Configuration());
@@ -39,8 +47,45 @@ int main(int argc, char** argv) {
 namespace ui {
 
 using ::testing::_;
+using namespace OHOS::NWeb;
 
 namespace {
+struct MockDisplayManagerAdapter : public OHOS::NWeb::DisplayManagerAdapter {
+  MockDisplayManagerAdapter() = default;
+  ~MockDisplayManagerAdapter() override = default;
+
+  MOCK_METHOD(std::shared_ptr<OHOS::NWeb::DisplayAdapter>,
+              GetPrimaryDisplay,
+              (),
+              (override));
+};
+
+class MockDisplayAdapter : public DisplayAdapter {
+ public:
+  MOCK_METHOD(DisplayId, GetId, (), (override));
+  MOCK_METHOD(int32_t, GetWidth, (), (override));
+  MOCK_METHOD(int32_t, GetHeight, (), (override));
+  MOCK_METHOD(float, GetVirtualPixelRatio, (), (override));
+  MOCK_METHOD(RotationType, GetRotation, (), (override));
+  MOCK_METHOD(OrientationType, GetOrientation, (), (override));
+  MOCK_METHOD(int32_t, GetDpi, (), (override));
+  MOCK_METHOD(DisplayOrientation, GetDisplayOrientation, (), (override));
+  MOCK_METHOD(FoldStatus, GetFoldStatus, (), (override));
+  MOCK_METHOD(bool, IsFoldable, (), (override));
+  MOCK_METHOD(std::string, GetName, (), (override));
+  MOCK_METHOD(int32_t, GetAvailableWidth, (), (override));
+  MOCK_METHOD(int32_t, GetAvailableHeight, (), (override));
+  MOCK_METHOD(bool, GetAliveStatus, (), (override));
+  MOCK_METHOD(DisplayState, GetDisplayState, (), (override));
+  MOCK_METHOD(int32_t, GetDensityDpi, (), (override));
+  MOCK_METHOD(int32_t, GetX, (), (override));
+  MOCK_METHOD(int32_t, GetY, (), (override));
+  MOCK_METHOD(DisplaySourceMode, GetDisplaySourceMode, (), (override));
+  MOCK_METHOD(int32_t, GetPhysicalWidth, (), (override));
+  MOCK_METHOD(int32_t, GetPhysicalHeight, (), (override));
+  MOCK_METHOD(float, GetDefaultVirtualPixelRatio, (), (override));
+};
+
 struct MockDisplayObserver : public display::DisplayObserver {
   MockDisplayObserver() = default;
   ~MockDisplayObserver() override = default;
@@ -65,6 +110,7 @@ protected:
   base::test::SingleThreadTaskEnvironment task_environment_;
   std::unique_ptr<HeadlessScreenOhos> screen_;
   std::shared_ptr<HeadlessScreenListener> listener_;
+  display::Display dst_display{1, gfx::Rect(0, 0, 800, 600)};
 };
 
 TEST_F(HeadlessScreenOhosTest, GetAllDisplaysReturnsEmptyInitially) {
@@ -122,4 +168,114 @@ TEST_F(HeadlessScreenOhosTest, ListenerOnChangeForwardsToScreen) {
   listener_->OnChange(test_id);
 }
 
+TEST_F(HeadlessScreenOhosTest, FetchDisplays) {
+  display::DisplayList displays;
+  screen_->display_manager_adapter_ = nullptr;
+  bool result = screen_->FetchDisplays(displays);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, HeadlessScreenOhos_001) {
+  std::unique_ptr<HeadlessScreenOhos> headless_screen_ =
+      std::make_unique<HeadlessScreenOhos>();
+  headless_screen_->display_listener_ = nullptr;
+  headless_screen_.reset();
+}
+
+TEST_F(HeadlessScreenOhosTest, ConvertDisplay_NullSrcDisplay) {
+  bool result = screen_->ConvertDisplay(nullptr, dst_display);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, ConvertDisplay_ModeIsNone) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::NONE));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, ConvertDisplay_ModeIsEXTEND) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::EXTEND));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, ConvertDisplay_Scale) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetVirtualPixelRatio())
+      .WillRepeatedly(Return(1));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, ConvertDisplay_ROTATION_0) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::MAIN));
+  EXPECT_CALL(*display_adapter, GetRotation())
+      .WillRepeatedly(Return(OHOS::NWeb::RotationType::ROTATION_0));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, ConvertDisplay_ROTATION_90) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::MAIN));
+  EXPECT_CALL(*display_adapter, GetRotation())
+      .WillRepeatedly(Return(OHOS::NWeb::RotationType::ROTATION_90));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, ConvertDisplay_ROTATION_180) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::MAIN));
+  EXPECT_CALL(*display_adapter, GetRotation())
+      .WillRepeatedly(Return(OHOS::NWeb::RotationType::ROTATION_180));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, ConvertDisplay_ROTATION_270) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::MAIN));
+  EXPECT_CALL(*display_adapter, GetRotation())
+      .WillRepeatedly(Return(OHOS::NWeb::RotationType::ROTATION_270));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, ConvertDisplay_ROTATION_BUTT) {
+  std::shared_ptr<MockDisplayAdapter> display_adapter =
+      std::make_shared<MockDisplayAdapter>();
+  EXPECT_CALL(*display_adapter, GetDisplaySourceMode())
+      .WillRepeatedly(Return(OHOS::NWeb::DisplaySourceMode::MAIN));
+  EXPECT_CALL(*display_adapter, GetRotation())
+      .WillRepeatedly(Return(OHOS::NWeb::RotationType::ROTATION_BUTT));
+  bool result = screen_->ConvertDisplay(display_adapter, dst_display);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(HeadlessScreenOhosTest, OnDisplayEvent) {
+  constexpr OHOS::NWeb::DisplayId test_id = 1;
+  const std::string& event = "create";
+  screen_->display_manager_adapter_ = nullptr;
+  display::DisplayList current_displays;
+  bool result = screen_->FetchDisplays(current_displays);
+  EXPECT_FALSE(result);
+  screen_->OnDisplayEvent(event, test_id);
+}
 } // namespace ui

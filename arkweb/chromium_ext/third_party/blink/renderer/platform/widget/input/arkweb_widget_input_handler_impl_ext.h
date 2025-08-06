@@ -55,9 +55,12 @@ class ArkwebWidgetInputHandlerImplExt : public WidgetInputHandlerImpl {
           compositor_receiver) override;
 #endif
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void SetGestureEventResult(bool result, bool stopPropagation) override;
+  void SetGestureEventResult(bool result,
+                             bool stopPropagation,
+                             int32_t fingerId) override;
   void SetMouseEventResult(bool result, bool stopPropagation) override;
   void SetNativeEmbedMode(bool flag) override;
+  void SetEnableCustomVideoPlayer(bool flag) override;
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void ScrollBy(float delta_x, float delta_y) override;

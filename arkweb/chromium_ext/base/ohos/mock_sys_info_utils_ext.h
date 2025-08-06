@@ -12,9 +12,14 @@
  * limitations under the License.
  */
 
+#ifndef BASE_OHOS_MOCK_SYS_INFO_UTILS_EXT_H_
+#define BASE_OHOS_MOCK_SYS_INFO_UTILS_EXT_H_ 
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+namespace base {
+namespace ohos {
 class SystemPropertiesMock {
 public:
     static SystemPropertiesMock& getInstance() {
@@ -33,3 +38,7 @@ bool __wrap_IsPcDevice() {
 #ifdef __cplusplus
 }
 #endif
+}
+}
+
+#endif // BASE_OHOS_NWEB_ENGINE_EVENT_LOGGER_CODE_H_

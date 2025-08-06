@@ -45,10 +45,10 @@ class CAPTURE_EXPORT VideoCaptureDeviceFactoryOHOS
   scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner_;
   std::shared_ptr<CameraManagerAdapter> camera_manager_adapter_;
   bool is_camera_manager_created_{false};
-  base::WeakPtrFactory<VideoCaptureDeviceFactoryOHOS> weak_factory_{this};
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   friend class VideoCaptureDeviceFactoryOHOSTest;
 #endif
+  base::WeakPtrFactory<VideoCaptureDeviceFactoryOHOS> weak_factory_{this};
 };
 
 }  // namespace media

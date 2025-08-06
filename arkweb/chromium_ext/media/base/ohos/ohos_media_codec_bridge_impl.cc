@@ -19,6 +19,105 @@
 namespace media {
 using namespace OHOS::NWeb;
 
+namespace {
+constexpr int32_t SAMPLE_RATIO = 2;
+constexpr int32_t DEFAULT_STRIDE = 16;
+constexpr int32_t MAXPLANES = 3;
+
+struct YUVMemcpyData {
+  int32_t stride;
+  int32_t width;
+  int32_t height;
+  int32_t planes_cnt[MAXPLANES];
+  int32_t planes_stride[MAXPLANES];
+  uint8_t* dst_addr;
+  int32_t dst_size = 0;
+  const uint8_t* src_addr[MAXPLANES];
+  size_t src_size[MAXPLANES];
+};
+
+CodecCodeAdapter FillSurfaceBufferDataCheck(
+    scoped_refptr<VideoFrame> frame, std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter, YUVMemcpyData &data)
+{
+  LOG(DEBUG) << __FUNCTION__ << " enter";
+  std::vector<size_t> frame_planes_size = frame->GetPlaneSize();
+  if (frame_planes_size.size() < MAXPLANES) {
+    LOG(DEBUG) << "frame planes cnt < " << MAXPLANES;
+    return CodecCodeAdapter::ERROR;
+  }
+  data.width = configAdapter->GetWidth();
+  data.height = configAdapter->GetHeight();
+  data.planes_cnt[VideoFrame::kYPlane] = data.height;
+  data.planes_cnt[VideoFrame::kUPlane] = data.height / SAMPLE_RATIO;
+  data.planes_cnt[VideoFrame::kVPlane] = data.height / SAMPLE_RATIO;
+  data.planes_stride[VideoFrame::kYPlane] = frame->stride(VideoFrame::kYPlane);
+  data.planes_stride[VideoFrame::kUPlane] = frame->stride(VideoFrame::kUPlane);
+  data.planes_stride[VideoFrame::kVPlane] = frame->stride(VideoFrame::kVPlane);
+  data.src_addr[VideoFrame::kYPlane] = frame->data(VideoFrame::kYPlane);
+  data.src_addr[VideoFrame::kUPlane] = frame->data(VideoFrame::kUPlane);
+  data.src_addr[VideoFrame::kVPlane] = frame->data(VideoFrame::kVPlane);
+  data.src_size[VideoFrame::kYPlane] = frame_planes_size[VideoFrame::kYPlane];
+  data.src_size[VideoFrame::kUPlane] = frame_planes_size[VideoFrame::kUPlane];
+  data.src_size[VideoFrame::kVPlane] = frame_planes_size[VideoFrame::kVPlane];
+  // check addr.
+  if (data.dst_addr == nullptr || nullptr == data.src_addr[VideoFrame::kYPlane] ||
+      nullptr == data.src_addr[VideoFrame::kUPlane] || nullptr == data.src_addr[VideoFrame::kVPlane]) {
+    LOG(DEBUG) << "addr is nullptr";
+    return CodecCodeAdapter::ERROR;
+  }
+  // check stride and width
+  if (data.width > data.planes_stride[VideoFrame::kYPlane] ||
+      data.width / SAMPLE_RATIO > data.planes_stride[VideoFrame::kUPlane] ||
+      data.width / SAMPLE_RATIO > data.planes_stride[VideoFrame::kVPlane]) {
+      LOG(DEBUG) << "width less than stride";
+      return CodecCodeAdapter::ERROR;
+  }
+  // check addr size.
+  uint32_t required_dst_space = data.planes_cnt[VideoFrame::kYPlane] * data.stride +
+      data.planes_cnt[VideoFrame::kUPlane] * data.stride / SAMPLE_RATIO +
+      data.planes_cnt[VideoFrame::kVPlane] * data.stride / SAMPLE_RATIO;
+  uint32_t required_y_src_space = data.planes_cnt[VideoFrame::kYPlane] * data.planes_stride[VideoFrame::kYPlane];
+  uint32_t required_u_src_space = data.planes_cnt[VideoFrame::kUPlane] * data.planes_stride[VideoFrame::kUPlane];
+  uint32_t required_v_src_space = data.planes_cnt[VideoFrame::kVPlane] * data.planes_stride[VideoFrame::kVPlane];
+  if (required_dst_space > data.dst_size || required_y_src_space > data.src_size[VideoFrame::kYPlane] ||
+      required_u_src_space > data.src_size[VideoFrame::kUPlane] ||
+      required_v_src_space > data.src_size[VideoFrame::kVPlane]) {
+    LOG(ERROR) << __FUNCTION__ << "failed, plane size error";
+    return CodecCodeAdapter::ERROR;
+  }
+  return CodecCodeAdapter::OK;
+}
+
+CodecCodeAdapter CopyYUVData(const YUVMemcpyData &data, int32_t plane, uint8_t **dst) {
+  LOG(DEBUG) << "CopyYUVData enter";
+  if (plane < 0 || plane >= MAXPLANES) {
+      LOG(ERROR) << "Invalid plane index: " << plane;
+      return CodecCodeAdapter::ERROR;
+  }
+  int32_t width = data.width;
+  int32_t stride = data.stride;
+  const uint8_t *src = data.src_addr[plane];
+  if (plane == VideoFrame::kUPlane || plane == VideoFrame::kVPlane) {
+    width = width / SAMPLE_RATIO;
+    stride = stride / SAMPLE_RATIO;
+  }
+  if (data.planes_cnt[plane] < 0) {
+    LOG(ERROR) << "CopyYUVData check data.planes_cnt[plane] < 0";
+    return CodecCodeAdapter::ERROR;
+  }
+  for (int32_t i = 0; i < data.planes_cnt[plane]; i++) {
+    if (stride < width || (memcpy_s(*dst, stride, src, width) != EOK)) {
+      LOG(ERROR) << "memcpy_s failed";
+      return CodecCodeAdapter::ERROR;
+    }
+    *dst += stride;
+    src += data.planes_stride[plane];
+  }
+
+  return CodecCodeAdapter::OK;
+}
+}
+
 void ClearOutputCache(std::queue<EncodeOutputBuffer>& q) {
   std::queue<EncodeOutputBuffer> empty;
   std::swap(empty, q);
@@ -199,82 +298,36 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::CreateInputSurface() {
 }
 
 CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
-    scoped_refptr<VideoFrame> frame,
-    const int64_t timestamp_ms) {
+    scoped_refptr<VideoFrame> frame, const int64_t timestamp_ms) {
+  LOG(DEBUG) << __FUNCTION__ << " enter";
   if ((surface_ == nullptr) || (frame == nullptr)) {
     LOG(DEBUG) << "surface_ is null when QueueInput";
     return CodecCodeAdapter::ERROR;
   }
-  std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter =
-      std::make_shared<BufferRequestConfigAdapterImpl>();
-
+  YUVMemcpyData data;
+  memset_s(&data, sizeof(data), 0, sizeof(data)); 
   int32_t fence;
-  constexpr int32_t SAMPLE_RATIO = 2;
-  constexpr int32_t DEFAULT_STRIDE = 16;
+  std::shared_ptr<BufferRequestConfigAdapterImpl> configAdapter = std::make_shared<BufferRequestConfigAdapterImpl>();
   configAdapter->SetWidth(frame->coded_size().width());
   configAdapter->SetHeight(frame->coded_size().height());
   configAdapter->SetStrideAlignment(DEFAULT_STRIDE);
-
   buffer_adapter_ = surface_->RequestBuffer(fence, configAdapter);
   if (buffer_adapter_ == nullptr) {
     LOG(DEBUG) << "fail to RequestBuffer";
     return CodecCodeAdapter::ERROR;
   }
-
-  int32_t stride = buffer_adapter_->GetStride();
-  int32_t width = configAdapter->GetWidth();
-  int32_t height = configAdapter->GetHeight();
-  uint8_t* dst = reinterpret_cast<uint8_t*>(buffer_adapter_->GetVirAddr());
-  if (dst == nullptr) {
-    LOG(DEBUG) << "dst is nullptr";
+  data.stride = buffer_adapter_->GetStride();
+  data.dst_addr = reinterpret_cast<uint8_t*>(buffer_adapter_->GetVirAddr());
+  data.dst_size = buffer_adapter_->GetSize();
+  if (FillSurfaceBufferDataCheck(frame, configAdapter, data) != CodecCodeAdapter::OK) {
     return CodecCodeAdapter::ERROR;
   }
-
-  const uint8_t* y_src = frame->data(VideoFrame::kYPlane);
-  const uint8_t* u_src = frame->data(VideoFrame::kUPlane);
-  const uint8_t* v_src = frame->data(VideoFrame::kVPlane);
-  const int32_t src_y_stride = frame->stride(VideoFrame::kYPlane);
-  const int32_t src_u_stride = frame->stride(VideoFrame::kUPlane);
-  const int32_t src_v_stride = frame->stride(VideoFrame::kVPlane);
-
-  if ((y_src == nullptr) || (u_src == nullptr) || (v_src == nullptr)) {
-    LOG(DEBUG) << "src is nullptr";
+  uint8_t *dst = data.dst_addr;
+  if ((CopyYUVData(data, VideoFrame::kYPlane, &dst) != CodecCodeAdapter::OK) ||
+      (CopyYUVData(data, VideoFrame::kUPlane, &dst) != CodecCodeAdapter::OK) ||
+      (CopyYUVData(data, VideoFrame::kVPlane, &dst) != CodecCodeAdapter::OK)) {
     return CodecCodeAdapter::ERROR;
   }
-  int32_t y_cnt = height;
-  int32_t u_cnt = height / SAMPLE_RATIO;
-  int32_t v_cnt = height / SAMPLE_RATIO;
-
-  // copy Y
-  for (int32_t i = 0; i < y_cnt; i++) {
-    if (memcpy_s(dst, stride, y_src, width) != EOK) {
-      LOG(ERROR) << "copy Y memcpy_s failed";
-      return CodecCodeAdapter::ERROR;
-    }
-    dst += stride;
-    y_src += src_y_stride;
-  }
-  // copy U
-  for (int32_t i = 0; i < u_cnt; i++) {
-    if (memcpy_s(dst, stride / SAMPLE_RATIO, u_src, width / SAMPLE_RATIO) !=
-        EOK) {
-      LOG(ERROR) << "copy U memcpy_s failed";
-      return CodecCodeAdapter::ERROR;
-    }
-    dst += stride / SAMPLE_RATIO;
-    u_src += src_u_stride;
-  }
-  // copy V
-  for (int32_t i = 0; i < v_cnt; i++) {
-    if (memcpy_s(dst, stride / SAMPLE_RATIO, v_src, width / SAMPLE_RATIO) !=
-        EOK) {
-      LOG(ERROR) << "copy V memcpy_s failed";
-      return CodecCodeAdapter::ERROR;
-    }
-    dst += stride / SAMPLE_RATIO;
-    v_src += src_v_stride;
-  }
-
   std::shared_ptr<BufferFlushConfigAdapterImpl> flush_config_adapter =
       std::make_shared<BufferFlushConfigAdapterImpl>();
   flush_config_adapter->SetX(0);
@@ -289,8 +342,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
              << flush_config_adapter->GetTimestamp()
              << ", intput real frame time stamp: "
              << frame->timestamp().InMicroseconds();
-  if (surface_->FlushBuffer(buffer_adapter_, fence, flush_config_adapter) !=
-      0) {
+  if (surface_->FlushBuffer(buffer_adapter_, fence, flush_config_adapter) != 0) {
     LOG(DEBUG) << "fail to FlushBuffer";
     return CodecCodeAdapter::ERROR;
   }
@@ -447,6 +499,13 @@ CodecEncodeBridgeCallback::CodecEncodeBridgeCallback(
 void CodecEncodeBridgeCallback::OnError(ErrorType errorType,
                                         int32_t errorCode) {
   LOG(DEBUG) << "Error errorCode=" << errorCode;
+  if (!codec_callback_task_runner_->RunsTasksInCurrentSequence()) {
+    codec_callback_task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(&CodecEncodeBridgeCallback::OnError,
+                       shared_from_this(), errorType, errorCode));
+    return;
+  }
   signal_->isOnError_ = true;
   ClearOutputCache(signal_->out_buffer_queue_);
 }

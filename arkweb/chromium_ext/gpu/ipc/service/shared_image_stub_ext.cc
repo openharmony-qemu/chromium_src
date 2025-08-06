@@ -83,14 +83,4 @@ bool SharedImageStubExt::CreateSharedImage(const Mailbox& mailbox,
 }
 #endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 
-//LCOV_EXCL_START
-const scoped_refptr<gpu::GpuChannelSharedImageInterfaceExt>&
-SharedImageStubExt::shared_image_interface_ext() {
-  gpu_channel_shared_image_interface_ext_ =
-    base::MakeRefCounted<GpuChannelSharedImageInterfaceExt>(
-        weak_factory_.GetWeakPtr());
-  return gpu_channel_shared_image_interface_ext_;
-}
-//LCOV_EXCL_STOP
-
 }

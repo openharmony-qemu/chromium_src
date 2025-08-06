@@ -326,9 +326,8 @@ static void HandleExtensionInstallResult(
   }
 
   if (error.has_value()) {
-    auto error_message =
-        std::make_shared<std::string>(base::UTF16ToUTF8(error->message()));
-    callback(static_cast<int>(error->type()), error_message->c_str());
+    std::string error_message = base::UTF16ToUTF8(error->message());
+    callback(static_cast<int>(error->type()), error_message.c_str());
   } else {
     callback(0, "Success");
   }
@@ -339,9 +338,6 @@ static void ConfigureCrxInstaller(
   installer->set_off_store_install_allow_reason(
       extensions::CrxInstaller::OffStoreInstallAllowedFromSettingsPage);
   installer->set_install_cause(extension_misc::INSTALL_CAUSE_USER_DOWNLOAD);
-  installer->set_install_immediately(true);
-  installer->set_allow_silent_install(true);
-  installer->set_grant_permissions(true);
 }
 
 static void PerformCrxInstallation(const std::string& file_path,
@@ -366,8 +362,11 @@ static void PerformCrxInstallation(const std::string& file_path,
     return;
   }
 
+  Profile* profile = Profile::FromBrowserContext(context);
+  auto prompt = std::make_unique<ExtensionInstallPrompt>(profile, nullptr);
+
   scoped_refptr<extensions::CrxInstaller> installer =
-      extensions::CrxInstaller::Create(service, nullptr);
+      extensions::CrxInstaller::Create(service, std::move(prompt));
 
   ConfigureCrxInstaller(installer);
 
@@ -1461,7 +1460,9 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
   output_handler_->Resize(width, height);
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (nweb_delegate_->GetNearestSnapshotSize() != gfx::Size(width, height)) {
+  if ((nweb_delegate_->NearestSnapshotWidth() != static_cast<int32_t>(width)) ||
+  (nweb_delegate_->NearestSnapshotHeight() != static_cast<int32_t>(height))) {
+    LOG(DEBUG) << "RemoveBlanklessFrame due to resolution inconsistency between webPattern and snapshot";
     RemoveBlanklessFrame();
   }
 #endif
@@ -1527,9 +1528,8 @@ void NWebImpl::SetFitContentMode(int mode) {
 
 void NWebImpl::OnTouchPress(int32_t id, double x, double y, bool from_overlay) {
   WVLOG_I(
-      "NWebImpl::OnTouchPress id=%{public}d, x=%{public}f, y=%{public}f, "
-      "from_overlay=%{public}, nweb_id = %{public}u",
-      id, x, y, from_overlay, nweb_id_);
+      "NWebImpl::OnTouchPress id=%{public}d, from_overlay=%{public}d, "
+      "nweb_id = %{public}u", id, from_overlay, nweb_id_);
   if (input_handler_ == nullptr) {
     return;
   }
@@ -1554,9 +1554,8 @@ void NWebImpl::OnTouchRelease(int32_t id,
                               double y,
                               bool from_overlay) {
   WVLOG_I(
-      "NWebImpl::OnTouchRelease id=%{public}d, x=%{public}f, y=%{public}f, "
-      "from_overlay=%{public}d, nweb_id = %{public}u",
-      id, x, y, from_overlay, nweb_id_);
+      "NWebImpl::OnTouchRelease id=%{public}d, from_overlay=%{public}d, "
+      "nweb_id = %{public}u", id, from_overlay, nweb_id_);
   if (input_handler_ == nullptr) {
     return;
   }
@@ -1578,8 +1577,25 @@ void NWebImpl::OnTouchMove(
   if (input_handler_ == nullptr) {
     return;
   }
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool nativeEmbedMode = false;
+  bool isEnableCustomVideoPlayer = false;
+  if (nweb_delegate_) {
+    nativeEmbedMode = nweb_delegate_->GetNativeEmbedMode();
+    isEnableCustomVideoPlayer = nweb_delegate_->IsEnableCustomVideoPlayer();
+  }
+  if (nativeEmbedMode || isEnableCustomVideoPlayer) {
+    for (const auto& touch : touch_point_infos) {
+      std::vector<std::shared_ptr<NWebTouchPointInfo>> single_touch_point_info;
+      single_touch_point_info.emplace_back(touch);
+      input_handler_->OnTouchMove(single_touch_point_info, from_overlay);
+    }
+  } else {
+    input_handler_->OnTouchMove(touch_point_infos, from_overlay);
+  }
+#else
   input_handler_->OnTouchMove(touch_point_infos, from_overlay);
+#endif
 }
 
 void NWebImpl::OnTouchCancel() {
@@ -2030,6 +2046,15 @@ void NWebImpl::PostPortMessage(const std::string& portHandle,
   nweb_delegate_->PostPortMessage(portHandle, data);
 }
 
+void NWebImpl::PostPortMessageV2(const std::string& portHandle,
+                                 std::shared_ptr<NWebRomValue> data) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("JSAPI nweb_delegate_ its null");
+    return;
+  }
+  nweb_delegate_->PostPortMessageV2(portHandle, data);
+}
+
 void NWebImpl::SetPortMessageCallback(
     const std::string& portHandle,
     std::shared_ptr<NWebMessageValueCallback> callback) {
@@ -2057,6 +2082,15 @@ void NWebImpl::FillAutofillData(std::shared_ptr<NWebMessage> data) {
     return;
   }
   nweb_delegate_->FillAutofillData(data);
+}
+
+void NWebImpl::FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) {
+  LOG(INFO) << "NWebImpl::FillAutofillDataV2";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("JSAPI nweb_delegate_ its null");
+    return;
+  }
+  nweb_delegate_->FillAutofillDataV2(data);
 }
 
 void NWebImpl::OnAutofillCancel(const std::string& fillContent) {
@@ -2366,6 +2400,19 @@ void NWebImpl::CallH5Function(
   }
   nweb_delegate_->CallH5Function(routing_id, h5_object_id, h5_method_name,
                                  args);
+}
+
+void NWebImpl::CallH5FunctionV2(
+    int32_t routing_id,
+    int32_t h5_object_id,
+    const std::string& h5_method_name,
+    const std::vector<std::shared_ptr<NWebRomValue>>& args) {
+  if (nweb_delegate_ == nullptr || h5_object_id < 0) {
+    WVLOG_E("fail to call h5 function");
+    return;
+  }
+  nweb_delegate_->CallH5FunctionV2(routing_id, h5_object_id, h5_method_name,
+                                   args);
 }
 
 void NWebImpl::SetNWebJavaScriptResultCallBack(
@@ -3591,7 +3638,7 @@ void NWebImpl::UnLoadWebExtension(const std::string& eid) {
 
     bool result = extensions::ExtensionSystem::Get(browser_context)
         ->extension_service()
-        ->UninstallExtension(eid, extensions::UNINSTALL_REASON_COMPONENT_REMOVED, error);
+        ->UninstallExtension(eid, extensions::UNINSTALL_REASON_USER_INITIATED, error);
     WVLOG_I("NWebImpl::UnLoadWebExtension result:%{public}d, error:%{public}s", result, error);
     return;
   }
@@ -5511,14 +5558,6 @@ void NWebImpl::WebExtensionTabReplaced(int32_t addedTabId,
   nweb_delegate_->WebExtensionTabReplaced(addedTabId, removedTabId);
 }
 
-void NWebImpl::WebExtensionTabZoomChange(
-    std::unique_ptr<NWebExtensionTabZoomChangeInfo> tabZoomChangeInfo) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->WebExtensionTabZoomChange(std::move(tabZoomChangeInfo));
-}
-
 void NWebImpl::WebExtensionSetViewType(int32_t type) {
   if (nweb_delegate_ == nullptr) {
     return;
@@ -5995,7 +6034,7 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
       LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey similarity < 0.33";
       return -5;    // ERR_SIGNIFICANT_CHANGE
     }
-    if (gfx::Size(dataItem.width, dataItem.height) != nweb_delegate_->GetSize()) {
+    if ((dataItem.width != nweb_delegate_->GetWidth()) || (dataItem.height != nweb_delegate_->GetHeight())) {
       LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey snapshot resolution is different from webPattern";
       return -5;
     }
@@ -6006,14 +6045,14 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
 }
 
 void NWebImpl::RemoveBlanklessFrame() {
-  if (nweb_delegate_->GetNearestSnapshotSize().IsEmpty()) {
+  if ((nweb_delegate_->NearestSnapshotWidth() == 0) || (nweb_delegate_->NearestSnapshotHeight() == 0)) {
     return;
   }
   nweb_handle_->OnRemoveBlanklessFrame(0);
   nweb_delegate_->SetNearestSnapshotSize(0, 0);
 }
 
-void NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
+bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   if (!base::ohos::BlanklessController::CheckGlobalProperty() || is_private_ || !nweb_delegate_ ||
       !base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
     return false;
@@ -6022,6 +6061,11 @@ void NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
   auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
   OHOS::NWeb::SnapshotDataItem dataItem = databaseAdapter.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
+  if ((dataItem.width != nweb_delegate_->GetWidth()) || (dataItem.height != nweb_delegate_->GetHeight())) {
+    LOG(DEBUG) << "blankless TriggerBlanklessForUrl snapshot resolution is differnet webPattern";
+    return false;
+  }
+  nweb_delegate_->SetNearestSnapshotSize(dataItem.width, dataItem.height);
   CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath);
   return true;
 }

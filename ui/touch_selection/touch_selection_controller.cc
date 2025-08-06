@@ -83,9 +83,11 @@ TouchSelectionController::~TouchSelectionController() {
 void TouchSelectionController::OnSelectionBoundsChanged(
     const gfx::SelectionBound& start,
     const gfx::SelectionBound& end) {
-  if (start == start_ && end_ == end) {
 #if BUILDFLAG(ARKWEB_MENU)
+  if (start == start_ && end_ == end && start.type() != gfx::SelectionBound::CENTER) {
     utils_->SetResetSelectionTemporarily(false);
+#else
+  if (start == start_ && end_ == end) {
 #endif
     return;
   }

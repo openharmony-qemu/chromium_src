@@ -29,6 +29,7 @@
 #include "ui/gl/gl_utils.h"
 #include "ui/gl/scoped_binders.h"
 #include "ui/gl/scoped_make_current.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
 
 namespace gpu {
 
@@ -101,9 +102,15 @@ void HwVideoNativeBufferGLOwner::ReleaseResources() {
     return;
   }
 
+  TRACE_EVENT0("gpu", "HwVideoNativeBufferGLOwner::ReleaseResources");
   // Delete all images before closing the associated image reader.
   for (auto& image_ref : image_refs_) {
-    loader_->ReleaseNativeWindowBuffer(image_ref.first->rawbuffer, -1);
+    int32_t return_code =
+      loader_->ReleaseNativeWindowBuffer(image_ref.first->rawbuffer, -1);
+    if (return_code != 0) {
+      OHOS::NWeb::WindowAdapterNdkImpl::GetInstance()
+        .NativeWindowUnRef(image_ref.first->rawbuffer);
+    }
     image_ref.first = nullptr;
   }
 
@@ -392,9 +399,7 @@ void HwVideoNativeBufferGLOwner::EnsureNativeImageBound(GLuint service_id) {
 
 void HwVideoNativeBufferGLOwner::ReleaseNativeImage() {
   DCHECK_CALLED_ON_VALID_THREAD(gpu_main_thread_checker_);
-  if (loader_) {
-    loader_->ReleaseNativeImage();
-  }
+  // ReleaseNativeImage() call is not required with HwVideoNativeBuffer.
 }
 //LCOV_EXCL_STOP
 }  // namespace gpu

@@ -15,7 +15,6 @@
 #include "gpu/ipc/service/gpu_ipc_service_export.h"
 #include "ui/gfx/gpu_extra_info.h"
 #include "gpu/ipc/service/shared_image_stub.h"
-#include "arkweb/chromium_ext/gpu/ipc/service/gpu_channel_shared_image_interface_ext.h",
 
 namespace gpu {
 class SharedImageStub;
@@ -40,11 +39,6 @@ public:
                          void* window_buffer);
 #endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 
-  const scoped_refptr<gpu::GpuChannelSharedImageInterfaceExt>&
-  shared_image_interface_ext();
-
-  scoped_refptr<GpuChannelSharedImageInterfaceExt>
-      gpu_channel_shared_image_interface_ext_;
 };
 
 }

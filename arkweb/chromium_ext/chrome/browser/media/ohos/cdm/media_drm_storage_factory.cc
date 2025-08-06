@@ -74,6 +74,10 @@ void CreateMediaDrmStorage(
 
   Profile* profile = Profile::FromBrowserContext(browser_context);
   DCHECK(profile) << "Profile not available.";
+  if (profile) {
+    LOG(ERROR) << "[DRM]" << __func__ << "profile is nullptr";
+    return;
+  }
 
   PrefService* pref_service = profile->GetPrefs();
   DCHECK(pref_service) << "PrefService not available.";

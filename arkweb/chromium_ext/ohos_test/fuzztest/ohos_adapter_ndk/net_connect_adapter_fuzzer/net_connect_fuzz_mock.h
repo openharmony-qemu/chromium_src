@@ -78,6 +78,9 @@ FUZZ_MOCK_EXPORT Telephony_RadioResult
 OH_Telephony_GetNetworkStateForSlot(int32_t slotId,
                                     Telephony_NetworkState* state);
 
+FUZZ_MOCK_EXPORT int32_t
+OH_NetConn_GetAllNets(NetConn_NetHandleList* netHandleList);
+
 #ifdef __cplusplus
 }
 #endif

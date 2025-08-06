@@ -60,6 +60,8 @@ int32_t OH_NetConn_UnregisterNetConnCallback(uint32_t callBackId) {
   }
   g_netConnCallback->onNetworkAvailable(&netHandle);
   NetConn_NetCapabilities netCap;
+  netCap.bearerTypesSize = 1;
+  netCap.bearerTypes[0] = NETCONN_BEARER_CELLULAR;
   g_netConnCallback->onNetCapabilitiesChange(&netHandle, &netCap);
   NetConn_ConnectionProperties connProp;
   g_netConnCallback->onConnetionProperties(&netHandle, &connProp);
@@ -87,4 +89,10 @@ Telephony_RadioResult OH_Telephony_GetNetworkStateForSlot(
     Telephony_NetworkState* state) {
   state->cfgTech_ = TEL_RADIO_TECHNOLOGY_GSM;
   return TEL_RADIO_SUCCESS;
+}
+
+int32_t OH_NetConn_GetAllNets(NetConn_NetHandleList* netHandleList) {
+  netHandleList->netHandleListSize = 1;
+  netHandleList->netHandles[0].netId = 0;
+  return 0;
 }

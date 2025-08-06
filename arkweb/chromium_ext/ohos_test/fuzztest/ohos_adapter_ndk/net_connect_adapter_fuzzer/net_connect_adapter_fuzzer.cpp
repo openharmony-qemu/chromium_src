@@ -15,14 +15,13 @@
 #include "net_connect_adapter.h"
 
 #include <fuzzer/FuzzedDataProvider.h>
-
+#include "net_connect_fuzz_mock.h"
 #include "net_connect_adapter/net_capabilities_adapter_impl.h"
 #include "net_connect_adapter/net_connect_adapter_impl.h"
 #include "net_connect_adapter/net_connect_utils.h"
 #include "net_connect_adapter/net_connection_properties_adapter_impl.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-
 
 using ::testing::NiceMock;
 
@@ -74,13 +73,23 @@ void FuzzNetConnectUtils(FuzzedDataProvider& fdp) {
   NetConnectUtils::ConnectTypeToString(type);
 }
 
+void FuzzOnReceiveEvent(FuzzedDataProvider& fdp) {
+  CArrParameters parameters;
+  parameters.netType = fdp.ConsumeIntegralInRange<int32_t>(-1, 5);
+  CommonEvent_RcvData eventData;
+  eventData.event = "usual.event.CONNECTIVITY_CHANGE";
+  eventData.code = fdp.ConsumeIntegralInRange<int32_t>(2, 6);
+  eventData.parameters = &parameters;
+  NetConnectAdapterImpl::OnReceiveEvent(&eventData);
+}
+
 void FuzzApi(const uint8_t* data, size_t size) {
   FuzzedDataProvider fdp(data, size);
   NetConnectAdapterImpl ins;
   std::shared_ptr<NiceMock<NetConnCallbackMock>> callback =
       std::make_shared<NiceMock<NetConnCallbackMock>>();
-  int32_t id = ins.RegisterNetConnCallback(callback);
-  ins.UnregisterNetConnCallback(id);
+  int32_t id = ins.RegisterNetConnCallback(nullptr);
+  id = ins.RegisterNetConnCallback(callback);
   NetConnectType type =
       static_cast<NetConnectType>(fdp.ConsumeIntegralInRange<uint32_t>(0, 9));
   NetConnectSubtype netConnectSubtype = static_cast<NetConnectSubtype>(
@@ -93,7 +102,6 @@ void FuzzApi(const uint8_t* data, size_t size) {
   std::shared_ptr<NiceMock<VpnListenerMock>> vpnListener =
       std::make_shared<NiceMock<VpnListenerMock>>();
   ins.RegisterVpnListener(vpnListener);
-  ins.UnRegisterVpnListener();
   ins.GetNetAddrListByNetId(netId);
   ins.GetNetAddrListForVpn();
   NetCapabilitiesAdapterImpl cap;
@@ -107,6 +115,9 @@ void FuzzApi(const uint8_t* data, size_t size) {
   conProb.SetNetId(netId);
   conProb.GetNetId();
   FuzzNetConnectUtils(fdp);
+  FuzzOnReceiveEvent(fdp);
+  ins.UnRegisterVpnListener();
+  ins.UnregisterNetConnCallback(id);
 }
 }  // namespace OHOS::NWeb
 

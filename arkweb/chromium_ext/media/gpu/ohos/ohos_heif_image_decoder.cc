@@ -37,8 +37,8 @@ SkYUVColorSpace OhosHeifImageDecoder::GetYUVColorSpace() const {
 std::unique_ptr<media::NativePixmapAndSizeInfo>
 OhosHeifImageDecoder::ExportAsNativePixmapDmaBuf(
     OhosImageDecodeStatus* status) {
-  if (GetOhosImageDecoderAdapter() == nullptr) {
-    LOG(ERROR) << "[HeifSupport]GetOhosImageDecoderAdapter() return nullptr";
+  if (!status || GetOhosImageDecoderAdapter() == nullptr) {
+    LOG(ERROR) << "[HeifSupport] ExportAsNativePixmapDmaBur: status or GetOhosImageDecoderAdapter is null";
     return nullptr;
   }
   auto* window_buffer = GetOhosImageDecoderAdapter()->GetNativeWindowBuffer();

@@ -74,7 +74,7 @@ void CreateMediaDrmStorage(
 
   Profile* profile = Profile::FromBrowserContext(browser_context);
   DCHECK(profile) << "Profile not available.";
-  if (profile) {
+  if (profile == nullptr) {
     LOG(ERROR) << "[DRM]" << __func__ << "profile is nullptr";
     return;
   }

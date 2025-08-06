@@ -27,6 +27,7 @@
 #include "build/build_config.h"
 #include "nweb.h"
 #include "capi/nweb_download_delegate_callback.h"
+#include "nweb_hit_test_result_impl.h"
 #define private public
 #include "nweb_impl.h"
 
@@ -108,6 +109,7 @@ class MockNWebInputMethodHandler : public NWebInputMethodHandler {
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   MOCK_METHOD0(GetSelectInfo, std::string());
 #endif
+  MOCK_METHOD0(GetIsEditableNode, bool());
 };
 
 class MockNWebCreateInfo : public NWebCreateInfo {
@@ -4372,5 +4374,476 @@ TEST_F(NWebImplTest, GetBrowserZoomLevel002) {
   EXPECT_EQ(result, temp);
 }
 #endif // BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+TEST_F(NWebImplTest, SetDefaultCrashpadLogPath001) {
+  const std::string crashpad_log_path = "test";
+  NWebImpl::SetDefaultCrashpadLogPath(crashpad_log_path);
+  const std::string feedbacklogs_crash_path = "test";
+  NWebImpl::SetDefaultFeedbacklogsCrashPath(feedbacklogs_crash_path);
+  EXPECT_NE(nweb_impl_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
+
+#if BUILDFLAG(ARKWEB_DISCARD)
+TEST_F(NWebImplTest, Discard001) {
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, Discard()).Times(0);
+  auto result = nweb_impl_->Discard();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, Discard002) {
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, Discard()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->Discard();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, Discard003) {
+  bool temp = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, Discard()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->Discard();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, Restore001) {
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, Restore()).Times(0);
+  auto result = nweb_impl_->Restore();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, Restore002) {
+  bool temp = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, Restore()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->Restore();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+#endif // BUILDFLAG(ARKWEB_DISCARD)
+
+#if BUILDFLAG(ARKWEB_EX_REFRESH_IFRAME)
+TEST_F(NWebImplTest, WebExtensionContextMenuIsIframe001) {
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionContextMenuIsIframe()).Times(0);
+  auto result = nweb_impl_->WebExtensionContextMenuIsIframe();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, WebExtensionContextMenuIsIframe002) {
+  bool temp = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionContextMenuIsIframe()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->WebExtensionContextMenuIsIframe();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, WebExtensionContextMenuReloadFocusedFrame001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionContextMenuReloadFocusedFrame()).Times(0);
+  nweb_impl_->WebExtensionContextMenuReloadFocusedFrame();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionContextMenuReloadFocusedFrame002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionContextMenuReloadFocusedFrame()).Times(1);
+  nweb_impl_->WebExtensionContextMenuReloadFocusedFrame();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_EX_REFRESH_IFRAME)
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+TEST_F(NWebImplTest, UpdateBrowserControlsState001) {
+  int constraints = 0;
+  int current = 0;
+  bool animate = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, UpdateBrowserControlsState(constraints, current, animate)).Times(0);
+  nweb_impl_->UpdateBrowserControlsState(constraints, current, animate);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, UpdateBrowserControlsState002) {
+  int constraints = 0;
+  int current = 0;
+  bool animate = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, UpdateBrowserControlsState(constraints, current, animate)).Times(1);
+  nweb_impl_->UpdateBrowserControlsState(constraints, current, animate);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, UpdateBrowserControlsHeight001) {
+  int height = 0;
+  bool animate = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, UpdateBrowserControlsHeight(height, animate)).Times(0);
+  nweb_impl_->UpdateBrowserControlsHeight(height, animate);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, UpdateBrowserControlsHeight002) {
+  int height = 0;
+  bool animate = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, UpdateBrowserControlsHeight(height, animate)).Times(1);
+  nweb_impl_->UpdateBrowserControlsHeight(height, animate);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+
+TEST_F(NWebImplTest, GetIsEditTextType001) {
+  bool temp = false;
+  std::shared_ptr<HitTestResult> hit = nullptr;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetLastHitTestResult()).WillOnce(::testing::Return(hit));
+  auto result = nweb_impl_->GetIsEditTextType();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetIsEditTextType002) {
+  std::shared_ptr<HitTestResult> hit = std::make_shared<HitTestResultImpl>();
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetLastHitTestResult()).WillOnce(::testing::Return(hit));
+  nweb_impl_->inputmethod_handler_ = nullptr;
+  auto result = nweb_impl_->GetIsEditTextType();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(NWebImplTest, GetIsEditTextType003) {
+  bool temp = true;
+  std::shared_ptr<HitTestResult> hit = std::make_shared<HitTestResultImpl>();
+  hit->SetType(HitTestResult::EDIT_TEXT_TYPE);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetLastHitTestResult()).WillOnce(::testing::Return(hit));
+  nweb_impl_->inputmethod_handler_ = new NWebInputMethodHandler();
+  auto result = nweb_impl_->GetIsEditTextType();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetIsEditTextType004) {
+  bool temp = false;
+  std::shared_ptr<HitTestResult> hit = std::make_shared<HitTestResultImpl>();
+  hit->SetType(HitTestResult::SRC_IMAGE_ANCHOR_TYPE);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetLastHitTestResult()).WillOnce(::testing::Return(hit));
+  nweb_impl_->inputmethod_handler_ = new NWebInputMethodHandler();
+  auto result = nweb_impl_->GetIsEditTextType();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, NeedSoftKeyboard001) {
+  CefRefPtr<MockNWebInputMethodHandler> inputmethod_handler = new MockNWebInputMethodHandler();
+  nweb_impl_->inputmethod_handler_ = nullptr;
+  EXPECT_CALL(*inputmethod_handler, GetIsEditableNode()).Times(0);
+  nweb_impl_->NeedSoftKeyboard();
+  EXPECT_EQ(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, NeedSoftKeyboard002) {
+  bool temp = false;
+  CefRefPtr<MockNWebInputMethodHandler> inputmethod_handler = new MockNWebInputMethodHandler();
+  nweb_impl_->inputmethod_handler_ = inputmethod_handler;
+  EXPECT_CALL(*inputmethod_handler, GetIsEditableNode()).WillOnce(::testing::Return(temp));
+  nweb_impl_->NeedSoftKeyboard();
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, NeedSoftKeyboard003) {
+  bool temp = true;
+  CefRefPtr<MockNWebInputMethodHandler> inputmethod_handler = new MockNWebInputMethodHandler();
+  nweb_impl_->inputmethod_handler_ = inputmethod_handler;
+  EXPECT_CALL(*inputmethod_handler, GetIsEditableNode()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->NeedSoftKeyboard();
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+#if BUILDFLAG(ARKWEB_EXT_PERMISSION)
+TEST_F(NWebImplTest, GrantV2001) {
+  int32_t resourse_id = 0;
+  int nweb_request_key = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, PermissionRequestGrant(resourse_id, nweb_request_key)).Times(0);
+  nweb_impl_->GrantV2(resourse_id, nweb_request_key);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GrantV2002) {
+  int32_t resourse_id = 0;
+  int nweb_request_key = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, PermissionRequestGrant(resourse_id, nweb_request_key)).Times(1);
+  nweb_impl_->GrantV2(resourse_id, nweb_request_key);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, DenyV2001) {
+  int nweb_request_key = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, PermissionRequestDeny(nweb_request_key)).Times(0);
+  nweb_impl_->DenyV2(nweb_request_key);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, DenyV2002) {
+  int nweb_request_key = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, PermissionRequestDeny(nweb_request_key)).Times(1);
+  nweb_impl_->DenyV2(nweb_request_key);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, PermissionRequestDelete001) {
+  int nweb_request_key = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, PermissionRequestDelete(nweb_request_key)).Times(0);
+  nweb_impl_->PermissionRequestDelete(nweb_request_key);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, PermissionRequestDelete002) {
+  int nweb_request_key = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, PermissionRequestDelete(nweb_request_key)).Times(1);
+  nweb_impl_->PermissionRequestDelete(nweb_request_key);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetOriginV2001) {
+  int nweb_request_key = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, PermissionRequestGetOrigin(nweb_request_key)).Times(0);
+  auto result = nweb_impl_->GetOriginV2(nweb_request_key);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_TRUE(result.empty());
+}
+
+TEST_F(NWebImplTest, GetOriginV2002) {
+  std::string temp = "test";
+  int nweb_request_key = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, PermissionRequestGetOrigin(nweb_request_key)).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->GetOriginV2(nweb_request_key);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetResourceIdV2001) {
+  int32_t temp = -1;
+  int nweb_request_key = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, PermissionRequestGetResourceId(nweb_request_key)).Times(0);
+  auto result = nweb_impl_->GetResourceIdV2(nweb_request_key);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetResourceIdV2002) {
+  int32_t temp = 1;
+  int nweb_request_key = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, PermissionRequestGetResourceId(nweb_request_key)).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->GetResourceIdV2(nweb_request_key);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+#endif // BUILDFLAG(ARKWEB_EXT_PERMISSION)
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+TEST_F(NWebImplTest, InsertBackForwardEntry001) {
+  int temp = -2;
+  int offset = 0;
+  const std::string url = "test";
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, InsertBackForwardEntry(offset, url)).Times(0);
+  auto result = nweb_impl_->InsertBackForwardEntry(offset, url);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, InsertBackForwardEntry002) {
+  int temp = 0;
+  int offset = 0;
+  const std::string url = "test";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, InsertBackForwardEntry(offset, url)).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->InsertBackForwardEntry(offset, url);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, UpdateNavigationEntryUrl001) {
+  int temp = -2;
+  int index = 0;
+  const std::string url = "test";
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, UpdateNavigationEntryUrl(index, url)).Times(0);
+  auto result = nweb_impl_->UpdateNavigationEntryUrl(index, url);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, UpdateNavigationEntryUrl002) {
+  int temp = 0;
+  int index = 0;
+  const std::string url = "test";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, UpdateNavigationEntryUrl(index, url)).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->UpdateNavigationEntryUrl(index, url);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, ClearForwardList001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ClearForwardList()).Times(0);
+  nweb_impl_->ClearForwardList();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, ClearForwardList002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ClearForwardList()).Times(1);
+  nweb_impl_->ClearForwardList();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+
+TEST_F(NWebImplTest, TestGetNWebExistingId) {
+  uint32_t id = 0;
+  std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(id);
+  EXPECT_NE(nweb, nullptr);
+  nweb->AddNWebToMap(id, nweb);
+  int32_t existingId = 0;
+  auto result = NWebImpl::GetNWeb(existingId);
+  EXPECT_NE(result, nullptr);
+}
+
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+TEST_F(NWebImplTest, SetWebTag001) {
+  uint32_t id = 0;
+  std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(id);
+  EXPECT_NE(nweb, nullptr);
+  nweb->AddNWebToMap(id, nweb);
+  int32_t nweb_id = 0;
+  const char* web_tag = "test_url";
+  NWebImpl::SetWebTag(nweb_id, web_tag);
+}
+
+TEST_F(NWebImplTest, SetWebTag002) {
+  uint32_t id = 0;
+  std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(id);
+  EXPECT_NE(nweb, nullptr);
+  nweb->AddNWebToMap(id, nweb);
+  int32_t nweb_id = 1;
+  const char* web_tag = "test_url";
+  NWebImpl::SetWebTag(nweb_id, web_tag);
+}
+
+TEST_F(NWebImplTest, SetWebTag003) {
+  uint32_t id = 0;
+  std::shared_ptr<NWebImpl> nweb = std::make_shared<NWebImpl>(id);
+  EXPECT_NE(nweb, nullptr);
+  nweb->AddNWebToMap(id, nweb);
+  int32_t nweb_id = -1;
+  const char* web_tag = "test_url";
+  NWebImpl::SetWebTag(nweb_id, web_tag);
+}
+#endif // BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+TEST_F(NWebImplTest, IsSafeBrowsingEnabled001) {
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, IsSafeBrowsingEnabled()).Times(0);
+  auto result = nweb_impl_->IsSafeBrowsingEnabled();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, IsSafeBrowsingEnabled002) {
+  bool temp = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, IsSafeBrowsingEnabled()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->IsSafeBrowsingEnabled();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, EnableSafeBrowsing001) {
+  bool enable = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, EnableSafeBrowsing(enable)).Times(0);
+  nweb_impl_->EnableSafeBrowsing(enable);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, EnableSafeBrowsing002) {
+  bool enable = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, EnableSafeBrowsing(enable)).Times(1);
+  nweb_impl_->EnableSafeBrowsing(enable);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, EnableSafeBrowsingDetection001) {
+  bool enable = false;
+  bool strictMode = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, EnableSafeBrowsingDetection(enable, strictMode)).Times(0);
+  nweb_impl_->EnableSafeBrowsingDetection(enable, strictMode);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, EnableSafeBrowsingDetection002) {
+  bool enable = false;
+  bool strictMode = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, EnableSafeBrowsingDetection(enable, strictMode)).Times(1);
+  nweb_impl_->EnableSafeBrowsingDetection(enable, strictMode);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnSafeBrowsingDetectionResult001) {
+  int code = 0;
+  int policy = 0;
+  const std::string mappingType = "type";
+  const std::string url = "url";
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, OnSafeBrowsingDetectionResult(code, policy, mappingType, url)).Times(0);
+  nweb_impl_->OnSafeBrowsingDetectionResult(code, policy, mappingType, url);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnSafeBrowsingDetectionResult002) {
+  int code = 0;
+  int policy = 0;
+  const std::string mappingType = "type";
+  const std::string url = "url";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, OnSafeBrowsingDetectionResult(code, policy, mappingType, url)).Times(1);
+  nweb_impl_->OnSafeBrowsingDetectionResult(code, policy, mappingType, url);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_SAFEBROWSING)
 }  // namespace OHOS::NWeb
                           

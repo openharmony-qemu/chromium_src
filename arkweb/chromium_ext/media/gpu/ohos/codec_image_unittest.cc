@@ -21,16 +21,16 @@
 #include "base/gtest_prod_util.h"
 #include "base/memory/ref_counted_delete_on_sequence.h"
 #include "gpu/command_buffer/service/ref_counted_lock.h"
-#define private public
-#define protected public
 #include "gpu/command_buffer/service/stream_texture_shared_image_interface.h"
 #include "gpu/config/gpu_preferences.h"
 #include "media/gpu/media_gpu_export.h"
+#define private public
+#define protected public
 #include "media/gpu/ohos/codec_image.h"
-#include "media/gpu/ohos/codec_output_buffer_renderer.h"
-#include "media/gpu/ohos/video_frame_factory_impl.h"
 #undef private
 #undef protected
+#include "media/gpu/ohos/codec_output_buffer_renderer.h"
+#include "media/gpu/ohos/video_frame_factory_impl.h"
 
 namespace media {
 namespace {

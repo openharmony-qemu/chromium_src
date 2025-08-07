@@ -127,4 +127,26 @@ void MediaStreamManagerExt::OnScreenCaptureOpened(const std::string& session_id)
 }
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+int MediaStreamManagerExt::GetNWebIdMatchStreamType(GlobalRenderFrameHostId host_id) {
+  if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
+    int result = 0;
+    base::WaitableEvent event;
+    GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            [](base::SafeRef<MediaStreamManagerExt> manager, GlobalRenderFrameHostId host_id,
+               base::WaitableEvent* out_event, int* out_result) {
+              *out_result = manager->GetNWebIdMatchStreamType(host_id);
+              out_event->Signal();
+            },
+            weak_factory_.GetSafeRef(), host_id, &event, &result));
+    event.Wait();
+    return result;
+  }
+  auto* web_contents = static_cast<WebContentsImpl*>(WebContentsImpl::FromRenderFrameHostID(host_id));
+  return web_contents ? web_contents->GetNWebId() : 0;
+}
+#endif
+
 }

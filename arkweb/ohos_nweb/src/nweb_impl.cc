@@ -287,6 +287,7 @@ OnReportStatisticLogFunc
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
 #include "arkweb/ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/nweb_safe_browsing_detection_handler.h"
+#include "base/base_switches.h"
 #include "base/strings/string_split.h"
 #include "base/strings/stringprintf.h"
 #include "base/task/task_traits.h"
@@ -761,7 +762,17 @@ void AddGlobalConfigFeaturesSwitchesToCommandLine() {
 
 void DealGlobalConfigInThread() {
   AddGlobalConfigFeaturesSwitchesToCommandLine();
- 
+
+  if (base::FeatureList::GetInstance()) {
+    base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+    base::FeatureList::GetInstance()->InitFromCommandLine(
+      command_line->GetSwitchValueASCII(switches::kEnableFeatures),
+      command_line->GetSwitchValueASCII(switches::kDisableFeatures));
+    base::FeatureList::GetInstance()->InitFromCommandLine(
+      command_line->GetSwitchValueASCII(switches::kEnableBlinkFeatures),
+      command_line->GetSwitchValueASCII(switches::kDisableBlinkFeatures));
+  }
+
   OHOS::NWeb::NWebSafeBrowsingDetectionHandler::GetInstance().HandleGlobalConfig();
 }
 #endif

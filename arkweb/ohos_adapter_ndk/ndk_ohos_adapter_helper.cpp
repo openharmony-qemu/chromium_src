@@ -19,9 +19,6 @@
 #include "arkweb/ohos_adapter_ndk/inputmethodframework_adapter/imf_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/media_adapter/include/media_codec_list_adapter_impl.h"
 
-#include "base/bridge/ark_web_bridge_macros.h"
-#include "ohos_adapter/bridge/ark_hisysevent_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_ohos_drawing_text_adapter_wrapper.h"
 #include "arkweb/ohos_adapter_ndk/enterprise_device_management_adapter/enterprise_device_management_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/event_handler_adapter/event_handler_adapter_impl.h"
 #include "datashare_adapter/datashare_adapter_impl.h"
@@ -53,7 +50,8 @@
 #include "arkweb/ohos_adapter_ndk/net_proxy_adapter_impl/net_proxy_adapter_impl.h"
 
 #include "arkweb/ohos_adapter_ndk/media_adapter/include/video_encoder_adapter_impl.h"
-#include "hiviewdfx_adapter/hitrace_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/hiviewdfx_adapter/hitrace_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/hiviewdfx_adapter/hisysevent_adapter_impl.h"
 
 #include "arkweb/ohos_adapter_ndk/drawing_text_adapter/ohos_drawing_text_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/ohos_resource_adapter/ohos_resource_adapter_impl.h"
@@ -76,7 +74,7 @@ OhosAdapterHelper& OhosAdapterHelper::GetInstance() {
 }  // namespace OHOS::NWeb
 
 namespace OHOS::ArkWeb {
-
+using namespace OHOS::NWeb;
 NDKOhosAdapterHelper::NDKOhosAdapterHelper()
     {}
 
@@ -219,8 +217,7 @@ NWeb::WindowAdapter& NDKOhosAdapterHelper::GetWindowAdapterInstance() {
 
 NWeb::HiSysEventAdapter&
 NDKOhosAdapterHelper::GetHiSysEventAdapterInstance() {
-  static ArkHiSysEventAdapterWrapper instance(nullptr);
-  return instance;
+  return HiSysEventAdapterImpl::GetInstance();
 }
 
 NWeb::HiTraceAdapter& NDKOhosAdapterHelper::GetHiTraceAdapterInstance() {

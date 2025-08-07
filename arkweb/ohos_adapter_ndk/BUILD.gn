@@ -192,6 +192,7 @@ component("adapter_ndk") {
     "net_connect_adapter/net_capabilities_adapter_impl.h",
     "net_connect_adapter/net_capabilities_adapter_impl.cpp",
     "hiviewdfx_adapter/hitrace_adapter_impl.cpp",
+    "hiviewdfx_adapter/hisysevent_adapter_impl.cpp",
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.h",
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.cpp",
     "ohos_resource_adapter/ohos_resource_adapter_impl.h",

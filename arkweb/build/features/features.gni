@@ -233,6 +233,7 @@ declare_args() {
   arkweb_ext_password=false
   arkweb_ex_free_copy=false
   arkweb_bgtask = true
+  arkweb_ndk_adapter = true
 }
 
 # Features enabled in mojom bindings.

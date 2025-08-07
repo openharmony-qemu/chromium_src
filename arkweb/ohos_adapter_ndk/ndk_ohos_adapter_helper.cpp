@@ -20,10 +20,9 @@
 #include "arkweb/ohos_adapter_ndk/media_adapter/include/media_codec_list_adapter_impl.h"
 
 #include "base/bridge/ark_web_bridge_macros.h"
-#include "ohos_adapter/bridge/ark_enterprise_device_management_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_hisysevent_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_ohos_drawing_text_adapter_wrapper.h"
-
+#include "arkweb/ohos_adapter_ndk/enterprise_device_management_adapter/enterprise_device_management_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/event_handler_adapter/event_handler_adapter_impl.h"
 #include "datashare_adapter/datashare_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.h"
@@ -172,8 +171,7 @@ NDKOhosAdapterHelper::GetKeystoreAdapterInstance() {
 
 NWeb::EnterpriseDeviceManagementAdapter&
 NDKOhosAdapterHelper::GetEnterpriseDeviceManagementInstance() {
-  static ArkEnterpriseDeviceManagementAdapterWrapper instance(nullptr);
-  return instance;
+  return EnterpriseDeviceManagementAdapterImpl::GetInstance();
 }
 
 NWeb::DatashareAdapter& NDKOhosAdapterHelper::GetDatashareInstance() {

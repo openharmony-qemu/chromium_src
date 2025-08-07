@@ -140,7 +140,7 @@ int MediaStreamManagerExt::GetNWebIdMatchStreamType(GlobalRenderFrameHostId grfh
               *out_result = manager->GetNWebIdMatchStreamType(grfhid);
               out_event->Signal();
             },
-            weak_factory_GetSafeRef(), grfhid, &event, &result));
+            weak_factory->GetSafeRef(), grfhid, &event, &result));
     event.Wait();
     return result;
   }

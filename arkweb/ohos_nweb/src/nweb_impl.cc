@@ -3642,6 +3642,31 @@ void NWebImpl::UnLoadWebExtension(const std::string& eid) {
 }
 
 // static
+void NWebImpl::DisableWebExtension(const std::string& eid) {
+  WVLOG_I("NWebImpl::DisableWebExtension %{public}s", eid.c_str());
+  content::BrowserContext* browser_context = NWebImplGetGlobalBrowserContext();
+  if (!browser_context) {
+    LOG(ERROR) << "NWebImpl::DisableWebExtension browser_context is null";
+    return;
+  }
+  const extensions::Extension* current_extension =
+      extensions::ExtensionRegistry::Get(browser_context)
+      ->GetExtensionById(eid, extensions::ExtensionRegistry::EVERYTHING);
+  if (current_extension) {
+    if (current_extension->was_installed_by_default()) {
+      WVLOG_I("NWebImpl::DisableWebExtension DisableDefaultInstalledExtension");
+    }
+
+    extensions::ExtensionSystem::Get(browser_context)
+        ->extension_service()
+        ->DisableExtension(eid, extensions::disable_reason::DISABLE_USER_ACTION);
+    WVLOG_I("NWebImpl::DisableWebExtension id:%{public}s", eid.c_str());
+    return;
+  }
+  WVLOG_I("NWebImpl::DisableWebExtension extension not exist: id:%{public}s", eid.c_str());
+}
+
+// static
 void NWebImpl::GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionInfo>& extensionsInfo) {
   WVLOG_I("NWebImpl::GetExtensionInfoByTabId, %{public}d", tabId);
   content::BrowserContext* browser_context = NWebImplGetGlobalBrowserContext();

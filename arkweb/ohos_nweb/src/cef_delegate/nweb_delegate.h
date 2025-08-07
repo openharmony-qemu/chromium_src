@@ -854,7 +854,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   int32_t NearestSnapshotHeight() override;
   int32_t GetWidth() override;
   int32_t GetHeight() override;
-  void RemoveBlanklessFrameIfNeed(RotationType rotation);
 #endif
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override;
@@ -1042,7 +1041,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   int32_t nearest_snapshot_width_ = 0;
   int32_t nearest_snapshot_height_ = 0;
-  base::WeakPtrFactory<NWebDelegate> weak_factory_{this};
 #endif
 };
 }  // namespace OHOS::NWeb

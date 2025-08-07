@@ -121,6 +121,10 @@
 #endif
 #endif
 
+#if BUILDFLAG(ARKWEB_CLOUD_CONTROL) && BUILDFLAG(IS_ARKWEB_EXT)
+#include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_engine_global_config.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
 #include "chrome/browser/ui/zoom/chrome_zoom_level_prefs.h"
 #include "third_party/blink/public/common/page/page_zoom.h"
@@ -3914,6 +3918,15 @@ void NWebImpl::UpdateBrowserEngineConfig(const std::string& file_path,
                                          const std::string& version) {
   nweb_ex::AlloyBrowserEngineCloudConfig::GetInstance()
       ->UpdateBrowserEngineCloudConfig(file_path, version);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_CLOUD_CONTROL) && BUILDFLAG(IS_ARKWEB_EXT)
+// static
+void NWebImpl::UpdateBrowserEngineGlobalConfig(const std::string& file_path,
+                                               const std::string& version) {
+  nweb_ex::AlloyBrowserEngineGlobalConfig::GetInstance()
+      ->UpdateBrowserEngineGlobalConfig(file_path, version);
 }
 #endif
 

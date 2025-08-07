@@ -19,7 +19,7 @@
 #include <ohaudio/native_audio_manager.h>
 #include <ohaudio/native_audiostreambuilder.h>
 #include <unordered_map>
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 
 namespace OHOS::NWeb {
 const std::string DEVICE_TYPE_NONE = "device/none";
@@ -189,8 +189,9 @@ std::vector<std::shared_ptr<AudioDeviceDescAdapter>> AudioSystemManagerAdapterIm
     OH_AudioScene audioScene;
     OH_GetAudioManager(&audioManager);
     OH_GetAudioScene(audioManager, &audioScene);
-    if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_VOICE_CHAT) isCallDevice = true;
-
+    if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_VOICE_CHAT) {
+        isCallDevice = true;
+    }
     std::vector<std::shared_ptr<AudioDeviceDescAdapter>> audioDeviceAdapterList;
     OH_AudioRoutingManager* audioRoutingManager;
     OH_AudioDeviceDescriptorArray* audioDeviceArray = nullptr;
@@ -205,13 +206,16 @@ std::vector<std::shared_ptr<AudioDeviceDescAdapter>> AudioSystemManagerAdapterIm
         OH_AudioRoutingManager_GetAvailableDevices(audioRoutingManager,
             isCallDevice ? AUDIO_DEVICE_USAGE_CALL_ALL : AUDIO_DEVICE_USAGE_MEDIA_ALL, &audioDeviceArray);
     }
-    if (audioDeviceArray == nullptr) return audioDeviceAdapterList;
 
+    if (audioDeviceArray == nullptr) {
+        return audioDeviceAdapterList;
+    }
     for (uint32_t i = 0; i < audioDeviceArray->size; i++) {
         OH_AudioDeviceDescriptor* ohAudioDeviceDescriptor = (OH_AudioDeviceDescriptor*)audioDeviceArray->descriptors[i];
         std::shared_ptr<AudioDeviceDescAdapterImpl> desc = std::make_shared<AudioDeviceDescAdapterImpl>();
-        if (!desc) return audioDeviceAdapterList;
-
+        if (!desc) {
+            return audioDeviceAdapterList;
+        }
         uint32_t currentDeviceId = 0;
         OH_AudioDeviceDescriptor_GetDeviceId(ohAudioDeviceDescriptor, &currentDeviceId);
         desc->SetDeviceId(currentDeviceId);

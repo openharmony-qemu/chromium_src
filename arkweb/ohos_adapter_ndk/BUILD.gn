@@ -214,6 +214,7 @@ component("adapter_ndk") {
     "flowbuffer_adapter/flowbuffer_adapter_impl.cpp",
     "migration_manager_adapter/migration_manager_adapter_impl.cpp",
     "power_mgr_adapter/power_mgr_client_adapter_impl.cpp",
+    "audio_capturer_adapter/audio_renderer_adapter_impl.cpp",
   ]
 
   if (arkweb_ndk_adapter) {
@@ -239,6 +240,7 @@ component("adapter_ndk") {
     "hiviewdfx_adapter/",
     "system_properties_adapter",
     "camera_adapter/include",
+    "audio_capturer_adapter",
     "third_party/bounds_checking_function/include",
     "ohos_sdk/openharmony/native/sysroot/usr/include/",
   ]

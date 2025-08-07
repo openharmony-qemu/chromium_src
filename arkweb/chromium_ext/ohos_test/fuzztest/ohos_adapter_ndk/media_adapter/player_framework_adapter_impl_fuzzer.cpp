@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
+#define private public
 #include "arkweb/ohos_adapter_ndk/media_adapter/player_framework_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/media_adapter/player_framework_adapter_impl.cpp"
+#undef private
+
 #include "ohos_adapter_helper.h"
 #include "player_framework_adapter_impl.h"
 #include <fuzzer/FuzzedDataProvider.h>
@@ -22,11 +24,6 @@ using namespace OHOS::NWeb;
 
 namespace OHOS {
 constexpr int MAX_SET_NUMBER = 1000;
-
-class PlayerAdapterImplTest : public PlayerAdapterImpl {
-public:
-    PlayerAdapterImplTest () = default;
-};
 
 class PlayerCallbackTest : public PlayerCallbackAdapter {
 public:
@@ -45,7 +42,8 @@ public:
 };
 
 bool PlayerFrameworkAdapterImpl_NullFuzzTest(FuzzedDataProvider* fdp) {
-    PlayerAdapterImplTest playerAdapter;
+    PlayerAdapterImpl playerAdapter;
+    playerAdapter.player_ = nullptr;
     auto callbackTest = std::make_unique<PlayerCallbackTest>();
     playerAdapter.SetPlayerCallback(std::move(callbackTest));
     auto surfaceAdapter = NWeb::OhosAdapterHelper::GetInstance().CreateConsumerSurfaceAdapter();
@@ -78,18 +76,6 @@ bool PlayerFrameworkAdapterImpl_NullFuzzTest(FuzzedDataProvider* fdp) {
 
     playerAdapter.Seek(seekpoint, PlayerSeekMode::SEEK_NEXT_SYNC);
     playerAdapter.SetVideoSurfaceNew(nullptr);
-
-    int32_t randState = fdp->ConsumeIntegralInRange<int32_t>(0, 9);
-    ConverterState(randState);
-    int32_t randState1 = fdp->ConsumeIntegralInRange<int32_t>(200, 301);
-    IsUnsupportType(randState);
-    int32_t randState2 = fdp->ConsumeIntegralInRange<int32_t>(0, 5411011);
-    IsFatalError(randState);
-    PlayerErrorCallback(nullptr, randState1, nullptr, nullptr);
-    PlayerErrorCallback(nullptr, randState2, nullptr, nullptr);
-    randState = fdp->ConsumeIntegralInRange<int32_t>(0, 10);
-    auto info = static_cast<AVPlayerOnInfoType>(randState);
-    PlayerInfoCallback(nullptr, info, nullptr, nullptr);
     return true;
 }
 

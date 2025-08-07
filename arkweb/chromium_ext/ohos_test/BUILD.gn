@@ -548,6 +548,24 @@ fuzzer_test("nweb_file_selector_params_impl_fuzzer") {
   ]
 }
 
+fuzzer_test("audio_capturer_adapter_impl_fuzzer") {
+  sources = [ "fuzztest/ohos_adapter_ndk/media_adapter/audio_capturer_adapter_impl_fuzzer.cpp" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//arkweb/ohos_adapter_ndk/audio_capturer_adapter",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gmock",
+    "//arkweb/ohos_adapter_ndk:adapter_ndk",
+  ]
+}
+
 fuzzer_test("screen_capture_adapter_impl_fuzzer") {
   sources = [
     "arkweb/ohos_adapter_ndk/interfaces/screen_capture_adapter.h",

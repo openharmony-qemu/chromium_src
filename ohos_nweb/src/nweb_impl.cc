@@ -1189,10 +1189,9 @@ void NWebImpl::SetFitContentMode(int mode) {
 }
 
 void NWebImpl::OnTouchPress(int32_t id, double x, double y, bool from_overlay) {
-  WVLOG_D(
-      "NWebImpl::OnTouchPress id=%{public}d, x=%{public}f, y=%{public}f, "
-      "from_overlay=%{public}d",
-      id, x, y, from_overlay);
+  WVLOG_I(
+      "NWebImpl::OnTouchPress id=%{public}d, from_overlay=%{public}d, "
+      "nweb_id = %{public}u", id, from_overlay, nweb_id_);
   if (input_handler_ == nullptr) {
     return;
   }
@@ -1210,10 +1209,9 @@ void NWebImpl::OnTouchRelease(int32_t id,
                               double x,
                               double y,
                               bool from_overlay) {
-  WVLOG_D(
-      "NWebImpl::OnTouchRelease id=%{public}d, x=%{public}f, y=%{public}f, "
-      "from_overlay=%{public}d",
-      id, x, y, from_overlay);
+  WVLOG_I(
+      "NWebImpl::OnTouchRelease id=%{public}d, from_overlay=%{public}d, "
+      "nweb_id = %{public}u", id, from_overlay, nweb_id_);
   if (input_handler_ == nullptr) {
     return;
   }

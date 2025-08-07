@@ -9,6 +9,11 @@
 
 #include "components/proxy_config/proxy_config_export.h"
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "chrome/browser/profiles/profile.h"
+#endif
+
 namespace net {
 class ProxyConfigService;
 }
@@ -36,6 +41,13 @@ class PROXY_CONFIG_EXPORT PrefProxyConfigTracker {
   virtual std::unique_ptr<net::ProxyConfigService>
   CreateTrackingProxyConfigService(
       std::unique_ptr<net::ProxyConfigService> base_service) = 0;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && !defined(COMPONENT_BUILD)
+  virtual std::unique_ptr<net::ProxyConfigService>
+  CreateTrackingProxyConfigService(
+      std::unique_ptr<net::ProxyConfigService> base_service,
+      Profile* profile) = 0;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
   // Releases the PrefService passed upon construction and the |base_service|
   // passed to CreateTrackingProxyConfigService. This must be called on the UI

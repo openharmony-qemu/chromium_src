@@ -407,12 +407,17 @@ std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::
   return snapshotInfo;
 }
 
-void BlanklessDataController::DumpBlanklessSnapshot(int64_t blankless_key,
-                                                    int64_t lcp_time,
-                                                    int64_t pref_hash,
+void BlanklessDataController::DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& info,
                                                     const SkBitmap& bitmap,
                                                     const std::vector<SnapShotRect>& quad_list)
 {
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  uint64_t recorded_time = instance.GetSystemTime(info.nweb_id, info.blankless_key);
+  int32_t corrected_time = static_cast<int32_t>(info.system_time - recorded_time);
+  if (corrected_time <= 0) {
+    LOG(ERROR) << "blankless corrected loading time error " << corrected_time << ", lcp: " << info.lcp_time;
+    return;
+  }
   SkBitmap bitmapNew = DownscaleToLowRes(bitmap, bitmap.width() / 2, bitmap.height() / 2);
   std::string newFile;
   SkDynamicMemoryWStream stream;
@@ -437,19 +442,19 @@ void BlanklessDataController::DumpBlanklessSnapshot(int64_t blankless_key,
     .wholePath = newFile,
     .staticPath = "",
     .historySimilarity = 0.0f,
-    .lcpTime = lcp_time,
+    .lcpTime = corrected_time,
     .snapShotFileSize = snapShotFileSize,
     .snapShotFileTime = snapShotFileTime,
-    .preferenceHash = pref_hash,
+    .preferenceHash = info.pref_hash,
     .width = bitmap.width(),
     .height = bitmap.height(),
   };
-  std::shared_ptr<SnapshotInfo> snapshotInfo = GetHistorySnapshotInfo(blankless_key);
+  std::shared_ptr<SnapshotInfo> snapshotInfo = GetHistorySnapshotInfo(info.blankless_key);
   if (!snapshotInfo || snapshotInfo->path.size() == 0 || snapshotInfo->bitmap.empty() ||
       snapshotInfo->bitmap.width() != bitmapNew.width() || snapshotInfo->bitmap.height() != bitmapNew.height() ||
       snapshotInfo->pixels.size() == 0) {
     LOG(DEBUG) << "blankless last snapshot error";
-    dbInstance_.InsertSnapshotDataItem(blankless_key, snapshotDataItem);
+    dbInstance_.InsertSnapshotDataItem(info.blankless_key, snapshotDataItem);
     return;
   }
 
@@ -460,11 +465,11 @@ void BlanklessDataController::DumpBlanklessSnapshot(int64_t blankless_key,
   snapshotDataItem.historySimilarity = similarity;
   LOG(DEBUG) << "blankless Insert Snapshot: " << newFile << " " << similarity;
   if (similarity >= base::ohos::BlanklessController::CALLBACK_SIMILARITY_THRESHOLD) {
-    base::ohos::BlanklessController::GetInstance().CancelFrameInsertCallback(blankless_key);
-    base::ohos::BlanklessController::GetInstance().FireFrameRemoveCallback(blankless_key);
+    instance.CancelFrameInsertCallback(info.blankless_key, info.nweb_id);
+    instance.FireFrameRemoveCallback(info.blankless_key, info.nweb_id);
   }
   snapshotDataItem.staticPath = newFile;
-  dbInstance_.InsertSnapshotDataItem(blankless_key, snapshotDataItem);
+  dbInstance_.InsertSnapshotDataItem(info.blankless_key, snapshotDataItem);
 }
 
 void BlanklessDataController::ClearSnapshot(int64_t blankless_key)

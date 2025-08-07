@@ -37,7 +37,7 @@ public:
 #endif  // BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
-  int GetNWebIdMatchStreamType(GlobalRenderFrameHostId grfhid);
+  int GetNWebIdMatchStreamType(GlobalRenderFrameHostId host_id);
 #endif
 
   MediaStreamManagerExt* AsMediaStreamManagerExt() override {

@@ -225,6 +225,7 @@ extern bool g_siteIsolationMode;
 #include "extensions/browser/extension_registry_info_manager.h"
 #include "extensions/browser/extension_system.h"
 #include "nweb_extension_action_cef_delegate.h"
+#include "chrome/browser/extensions/api/debugger/extension_dev_tools_infobar_delegate.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
@@ -270,6 +271,11 @@ OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+OnArkWebStaticShowConfirmInfoBarFunc OHOS::NWeb::NWebImpl::on_show_confirm_info_bar_callback_ = nullptr;
+OnArkWebStaticShowConfirmInfoBarFunc OHOS::NWeb::NWebImpl::on_hide_confirm_info_bar_callback_ = nullptr;
+ConfirmInfoBarMessage OHOS::NWeb::NWebImpl::confirm_info_bar_message_ = {};
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
@@ -3744,6 +3750,92 @@ void NWebImpl::InstallExtensionFile(const std::string& file_path,
       base::BindOnce(&base::PathExists, crx_path),
       base::BindOnce(&PerformCrxInstallation, file_path, callback, browser_context));
 }
+
+void NWebImpl::OnConfirmInfoBarConfigurationUpdated(
+    std::shared_ptr<NWebSystemConfiguration> configuration,
+    const std::string& language) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  static std::string lastLanguage = "";
+  if (lastLanguage == language) {
+    LOG(INFO) << " func:" << __FUNCTION__ << " same language:" << language;
+    return;
+  }
+  for (auto extension_id :
+       extensions::ExtensionDevToolsInfoBarDelegate::GetDelegateIds()) {
+    auto* infoBarDelegate =
+        extensions::ExtensionDevToolsInfoBarDelegate::GetDelegateById(
+            extension_id);
+    if (infoBarDelegate) {
+      NWebImpl::OnShowConfirmInfoBar(
+          base::UTF16ToUTF8(infoBarDelegate->GetTitleText()),
+          extension_id,
+          base::UTF16ToUTF8(infoBarDelegate->GetMessageText()),
+          infoBarDelegate->GetButtons(),
+          base::UTF16ToUTF8(infoBarDelegate->GetButtonLabel(
+              extensions::ExtensionDevToolsInfoBarDelegate::BUTTON_OK)),
+          base::UTF16ToUTF8(infoBarDelegate->GetButtonLabel(
+              extensions::ExtensionDevToolsInfoBarDelegate::BUTTON_CANCEL)));
+    }
+  }
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnShowConfirmInfoBar(const std::string& title,
+                                    const std::string& infoId,
+                                    const std::string& message,
+                                    int buttons,
+                                    const std::string& buttonLabelOK,
+                                    const std::string& buttonLabelCancel) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  if (on_show_confirm_info_bar_callback_) {
+    LOG(INFO) << " func:" << __FUNCTION__
+     << " title:" << title
+     << " infoId:" << infoId
+     << " message:" << message
+     << " buttons:" << buttons
+     << " buttonLabelOK:" << buttonLabelOK
+     << " buttonLabelCancel:" << buttonLabelCancel;
+    on_show_confirm_info_bar_callback_(
+        title.c_str(), infoId.c_str(), message.c_str(), buttons,
+        buttonLabelOK.c_str(), buttonLabelCancel.c_str());
+  }
+  confirm_info_bar_message_ = {title,   infoId,        message,
+                               buttons, buttonLabelOK, buttonLabelCancel};
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnHideConfirmInfoBar(const std::string& title,
+                                    const std::string& infoId,
+                                    const std::string& message,
+                                    int buttons,
+                                    const std::string& buttonLabelOK,
+                                    const std::string& buttonLabelCancel) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  if (on_hide_confirm_info_bar_callback_) {
+    LOG(INFO) << " func:" << __FUNCTION__;
+    on_hide_confirm_info_bar_callback_(
+        title.c_str(), infoId.c_str(), message.c_str(), buttons,
+        buttonLabelOK.c_str(), buttonLabelCancel.c_str());
+  }
+  confirm_info_bar_message_ = {title,   infoId,        message,
+                               buttons, buttonLabelOK, buttonLabelCancel};
+
+}
+
+void NWebImpl::SetOnShowConfirmInfoBarCallback(OnArkWebStaticShowConfirmInfoBarFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_show_confirm_info_bar_callback_ = func;
+}
+
+void NWebImpl::SetOnHideConfirmInfoBarCallback(OnArkWebStaticShowConfirmInfoBarFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_hide_confirm_info_bar_callback_ = func;
+}
+
+void NWebImpl::CancelConfirmInfoBar(const std::string& infoId) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  extensions::ExtensionDevToolsInfoBarDelegate::CancelConfirmInfoBar(infoId);
+}
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
@@ -5285,6 +5377,9 @@ void NWebImpl::OnConfigurationUpdated(
     }
 #endif  // ARKWEB_THEME_FONT
   }
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  NWebImpl::OnConfirmInfoBarConfigurationUpdated(configuration, GetCurrentLanguage());
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 #endif  //  IS_OHOS
 

@@ -4681,13 +4681,8 @@ void NWebDelegate::AddAccessibilityNodeInfoAttributes(
   nodeInfo->SetIsVisible(!node->IsInvisibleOrIgnored());
   nodeInfo->SetIsEnabled(node->IsEnabled());
   nodeInfo->SetIsFocusable(node->IsFocusable());
-  if (node->IsPasswordField()) {
-    nodeInfo->SetContent("*");
-    nodeInfo->SetDescriptionInfo("");
-  } else {
-    nodeInfo->SetContent(base::UTF16ToUTF8(node->GetTextContentUTF16()));
-    nodeInfo->SetDescriptionInfo("");
-  }
+  nodeInfo->SetContent(base::UTF16ToUTF8(node->GetTextContentUTF16()));
+  nodeInfo->SetDescriptionInfo("");
 
   nodeInfo->SetHint(node->GetHint());
   nodeInfo->SetIsHinting(node->IsHint());

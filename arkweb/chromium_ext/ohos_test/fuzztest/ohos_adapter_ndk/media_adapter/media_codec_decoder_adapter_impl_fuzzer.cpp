@@ -77,6 +77,57 @@ public:
     double frameRate;
 };
 
+class AudioCencInfoAdapterMock : public AudioCencInfoAdapter {
+public:
+    AudioCencInfoAdapterMock() = default;
+    ~AudioCencInfoAdapterMock() override = default;
+
+    uint8_t* GetKeyId() {}
+
+    uint32_t GetKeyIdLen() {}
+
+    uint8_t* GetIv() {}
+
+    uint32_t GetIvLen() {}
+
+    uint32_t GetEncryptedBlockCount() {}
+
+    uint32_t GetAlgo() {}
+
+    uint32_t GetSkippedBlockCount() {}
+
+    uint32_t GetFirstEncryptedOffset() {}
+
+    std::vector<uint32_t> GetClearHeaderLens() {}
+
+    std::vector<uint32_t> GetPayLoadLens() {}
+
+    uint32_t GetMode() {}
+
+    void SetKeyId(uint8_t* keyId) {}
+
+    void SetKeyIdLen(uint32_t keyIdLen) {}
+
+    void SetIv(uint8_t* iv) {}
+
+    void SetIvLen(uint32_t ivLen) {}
+
+    void SetAlgo(uint32_t algo) {}
+
+    void SetEncryptedBlockCount(uint32_t encryptedBlockCount) {}
+
+    void SetSkippedBlockCount(uint32_t skippedBlockCount) {}
+
+    void SetFirstEncryptedOffset(uint32_t firstEncryptedOffset) {}
+
+    void SetClearHeaderLens(const std::vector<uint32_t>& clearHeaderLens) {}
+
+    void SetPayLoadLens(const std::vector<uint32_t>& payLoadLens) {}
+
+    void SetMode(uint32_t mode) {}
+
+};
+
 bool MediaCodecDecoderAdapterImplFuzzTest(const uint8_t* data, size_t size)
 {
     NWeb::MediaCodecDecoderAdapterImpl mediaCodecDecoderAdapterImpl;
@@ -87,7 +138,11 @@ bool MediaCodecDecoderAdapterImplFuzzTest(const uint8_t* data, size_t size)
     int32_t intParam = dataProvider.ConsumeIntegralInRange<int32_t>(0, 10000);
     uint32_t uintParam = dataProvider.ConsumeIntegralInRange<uint32_t>(0, 10000);
     auto callback = std::make_shared<DecoderCallbackAdapterMock>();
+    mediaCodecDecoderAdapterImpl.SetCallbackDec(nullptr);
     mediaCodecDecoderAdapterImpl.SetCallbackDec(callback);
+    std::shared_ptr<AudioCencInfoAdapterMock> cencInfo = std::make_unique<AudioCencInfoAdapterMock>();
+    code = mediaCodecDecoderAdapterImpl.SetAVCencInfo(uintParam, cencInfo);
+
     code = mediaCodecDecoderAdapterImpl.CreateVideoDecoderByName(stringParam);
     code = mediaCodecDecoderAdapterImpl.ConfigureDecoder(format);
     code = mediaCodecDecoderAdapterImpl.SetParameterDecoder(format);
@@ -100,7 +155,6 @@ bool MediaCodecDecoderAdapterImplFuzzTest(const uint8_t* data, size_t size)
     code = mediaCodecDecoderAdapterImpl.FlushDecoder();
     code = mediaCodecDecoderAdapterImpl.ResetDecoder();
     code = mediaCodecDecoderAdapterImpl.ReleaseDecoder();
-    code = mediaCodecDecoderAdapterImpl.SetAVCencInfo(uintParam, nullptr);
     code = mediaCodecDecoderAdapterImpl.SetDecryptionConfig(nullptr, true);
     code = mediaCodecDecoderAdapterImpl.SetDecryptionConfig(nullptr, false);
 

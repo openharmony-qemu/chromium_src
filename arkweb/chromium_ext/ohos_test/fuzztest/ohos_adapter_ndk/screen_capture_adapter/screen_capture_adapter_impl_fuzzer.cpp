@@ -13,13 +13,16 @@
  * limitations under the License.
  */
 
+#define private public
 #include "arkweb/ohos_adapter_ndk/screen_capture_adapter/screen_capture_adapter_impl.h"
+#undef private
 
 #include <cstring>
 #include <fuzzer/FuzzedDataProvider.h>
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 
 using namespace OHOS::NWeb;
  
@@ -31,6 +34,12 @@ constexpr int MAX_SET_FRAME = 120;
 constexpr int MAX_SET_WIDTH = 1920;
 constexpr int MAX_SET_HEIGHT = 1080;
 constexpr int MAX_SET_TIMESTAMP = 10000000;
+constexpr int32_t kFuzzAudioSampleRate = 48000;
+constexpr int32_t kFuzzAudioChannels = 2;
+constexpr int32_t kFuzzInnerAudioSampleRate = 48000;
+constexpr int32_t kFuzzInnerAudioBitrate = 48000;
+constexpr int32_t kFuzzVideoBitrate = 2000000;
+constexpr int32_t kFuzzVideoFrameRate = 30;
 
 class AudioCaptureInfoAdapterMock : public AudioCaptureInfoAdapter {
 public:
@@ -528,6 +537,104 @@ bool ScreenCaptureAdapterImplFuzzTest(FuzzedDataProvider* fdp)
     return true;
 }
 
+bool ScreenCaptureAdapterImplNullFuzzTest(FuzzedDataProvider* fdp)
+{
+    auto screenCaptureAdapter = CreateScreenCaptureAdapterMock();
+    if (!screenCaptureAdapter) {
+        return false;
+    }
+
+    auto displayMgr =
+          OHOS::NWeb::OhosAdapterHelperExt::CreateDisplayMgrAdapter();
+    if (!displayMgr) {
+        return false;
+    }
+    auto display = displayMgr->GetDefaultDisplay();
+    if (!display) {
+        return false;
+    }
+    int32_t videoFrameWidth = display->GetWidth();
+    int32_t videoFrameHeight = display->GetHeight();
+    
+    //setting the microphone information
+    std::shared_ptr<AudioCaptureInfoAdapterMock> micCapInfo =
+        std::make_shared<AudioCaptureInfoAdapterMock>();
+    micCapInfo->SetAudioSampleRate(kFuzzAudioSampleRate);
+    micCapInfo->SetAudioChannels(kFuzzAudioChannels);
+    micCapInfo->SetAudioSource(
+          OHOS::NWeb::AudioCaptureSourceTypeAdapter::SOURCE_DEFAULT);
+
+    //setting the system audio information
+    std::shared_ptr<AudioCaptureInfoAdapterMock> innerCapInfo =
+        std::make_shared<AudioCaptureInfoAdapterMock>();
+    innerCapInfo->SetAudioSampleRate(kFuzzInnerAudioSampleRate);
+    innerCapInfo->SetAudioChannels(kFuzzAudioChannels);
+    innerCapInfo->SetAudioSource(
+          OHOS::NWeb::AudioCaptureSourceTypeAdapter::ALL_PLAYBACK);
+
+    //setting Audio Encoding Information
+    std::shared_ptr<AudioEncInfoAdapterMock> audioEncInfo =
+        std::make_shared<AudioEncInfoAdapterMock>();
+    audioEncInfo->SetAudioBitrate(kFuzzInnerAudioBitrate);
+    audioEncInfo->SetAudioCodecformat(
+          OHOS::NWeb::AudioCodecFormatAdapter::AUDIO_DEFAULT);
+
+    std::shared_ptr<AudioInfoAdapterMock> audioInfo = std::make_shared<AudioInfoAdapterMock>();
+    audioInfo->SetMicCapInfo(micCapInfo);
+    audioInfo->SetInnerCapInfo(innerCapInfo);
+    audioInfo->SetAudioEncInfo(audioEncInfo);
+
+    //setting video information
+    std::shared_ptr<VideoCaptureInfoAdapterMock> videoCapInfo =
+        std::make_shared<VideoCaptureInfoAdapterMock>();
+    videoCapInfo->SetVideoFrameWidth(videoFrameWidth);
+    videoCapInfo->SetVideoFrameHeight(videoFrameHeight);
+    videoCapInfo->SetVideoSourceType(
+          OHOS::NWeb::VideoSourceTypeAdapter::VIDEO_SOURCE_SURFACE_RGBA);
+
+    //setting Video Encoding Information
+    std::shared_ptr<VideoEncInfoAdapterMock> videoEncInfo =
+        std::make_shared<VideoEncInfoAdapterMock>();
+    videoEncInfo->SetVideoBitrate(kFuzzVideoBitrate);
+    videoEncInfo->SetVideoFrameRate(kFuzzVideoFrameRate);
+    videoEncInfo->SetVideoCodecFormat(
+          OHOS::NWeb::VideoCodecFormatAdapter::H264);
+
+    std::shared_ptr<VideoInfoAdapterMock> videoInfo =
+        std::make_shared<VideoInfoAdapterMock>();
+    videoInfo->SetVideoCapInfo(videoCapInfo);
+    videoInfo->SetVideoEncInfo(videoEncInfo);
+
+    std::shared_ptr<ScreenCaptureConfigAdapterMock> config =
+        std::make_shared<ScreenCaptureConfigAdapterMock>();
+    config->SetCaptureMode(OHOS::NWeb::CaptureModeAdapter::CAPTURE_HOME_SCREEN);
+    config->SetDataType(OHOS::NWeb::DataTypeAdapter::ORIGINAL_STREAM_DATA_TYPE);
+    config->SetAudioInfo(audioInfo);
+    config->SetVideoInfo(videoInfo);
+
+    int32_t nweb_id = fdp->ConsumeIntegralInRange<int32_t>(0, 100);
+    screenCaptureAdapter->InitV2(config, nweb_id);
+    // if (!screenCaptureAdapter->screenCapture_) {
+    //     screenCaptureAdapter->screenCapture_ = OH_AVScreenCapture_Create();
+    // }
+    screenCaptureAdapter->SetMicrophoneEnable(false);
+
+    auto callback = std::make_shared<OHOSScreenCaptureCallbackMock>();
+    screenCaptureAdapter->SetCaptureCallback(callback);
+    screenCaptureAdapter->StartCapture();
+    screenCaptureAdapter->AcquireVideoBuffer();
+    screenCaptureAdapter->ReleaseVideoBuffer();
+
+    std::shared_ptr<AudioBufferAdapterMock> audiobufferImpl =
+        std::make_shared<AudioBufferAdapterMock>();
+    screenCaptureAdapter->AcquireAudioBuffer(
+        audiobufferImpl, OHOS::NWeb::AudioCaptureSourceTypeAdapter::ALL_PLAYBACK);
+    screenCaptureAdapter->ReleaseAudioBuffer(OHOS::NWeb::AudioCaptureSourceTypeAdapter::ALL_PLAYBACK);
+    screenCaptureAdapter->StopCapture();
+    
+    return true;
+}
+
 bool OH_SurfaceBufferAdapterImplFuzzTest(FuzzedDataProvider* fdp)
 {
     int32_t capacity = fdp->ConsumeIntegralInRange<int32_t>(1, 8);
@@ -589,6 +696,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     /* Run your code on data */
     FuzzedDataProvider fdp(data, size);
     OHOS::ScreenCaptureAdapterImplFuzzTest(&fdp);
+    OHOS::ScreenCaptureAdapterImplNullFuzzTest(&fdp);
     OHOS::OH_SurfaceBufferAdapterImplFuzzTest(&fdp);
     OHOS::OH_AudioBufferAdapterImplFuzzTest(&fdp);
  

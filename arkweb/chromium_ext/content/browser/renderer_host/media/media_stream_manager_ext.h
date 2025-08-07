@@ -36,9 +36,17 @@ public:
   void OnScreenCaptureOpened(const std::string& session_id) override;
 #endif  // BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  int GetNWebIdMatchStreamType(GlobalRenderFrameHostId host_id);
+#endif
+
   MediaStreamManagerExt* AsMediaStreamManagerExt() override {
     return this;
   }
+
+private:
+  base::WeakPtrFactory<MediaStreamManagerExt> weak_factory_{this};
+  
 };
 } // namespace content
 

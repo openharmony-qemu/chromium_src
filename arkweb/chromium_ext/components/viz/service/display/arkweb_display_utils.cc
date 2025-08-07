@@ -394,9 +394,7 @@ void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
     LOG(ERROR) << "blankless snapshot_request is null";
     return;
   }
-  snapshot_request->copy_output_request_utils()->SetBlanklessKey(info.blankless_key);
-  snapshot_request->copy_output_request_utils()->SetLcpTime(info.lcp_time);
-  snapshot_request->copy_output_request_utils()->SetPreferenceHash(info.pref_hash);
+  snapshot_request->copy_output_request_utils()->SetBlanklessInfo(info.info);
   auto& root_render_pass = frame.render_pass_list.back();
   if (!root_render_pass) {
     LOG(ERROR) << "blankless no root render pass";

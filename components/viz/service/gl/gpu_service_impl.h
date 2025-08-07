@@ -466,9 +466,7 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  void SendBlanklessSnapshotInfo(uint64_t blankless_key,
-                                 int32_t lcp_time,
-                                 int64_t pref_hash,
+  void SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr info,
                                  const std::vector<gfx::Rect>& quad_list,
                                  mojo::ScopedSharedBufferHandle buffer,
                                  mojom::BlanklessBitmapMetadataPtr metadata);

@@ -37,6 +37,10 @@ SkYUVColorSpace OhosHeifImageDecoder::GetYUVColorSpace() const {
 std::unique_ptr<media::NativePixmapAndSizeInfo>
 OhosHeifImageDecoder::ExportAsNativePixmapDmaBuf(
     OhosImageDecodeStatus* status) {
+  if (!status || GetOhosImageDecoderAdapter() == nullptr) {
+    LOG(ERROR) << "[HeifSupport] ExportAsNativePixmapDmaBur: status or GetOhosImageDecoderAdapter is null";
+    return nullptr;
+  }
   auto* window_buffer = GetOhosImageDecoderAdapter()->GetNativeWindowBuffer();
   if (!window_buffer) {
     LOG(ERROR) << "OhosHeifImageDecoder::ExportAsNativePixmapDmaBuf windows "
@@ -59,6 +63,10 @@ OhosHeifImageDecoder::ExportAsNativePixmapDmaBuf(
 
   std::unique_ptr<media::NativePixmapAndSizeInfo> exported_pixmap =
       std::make_unique<media::NativePixmapAndSizeInfo>();
+  if (!exported_pixmap) {
+    LOG(ERROR) << "[HeifSupport]exported_pixmap is nullptr";
+    return nullptr;
+  }
   exported_pixmap->byte_size = GetOhosImageDecoderAdapter()->GetSize();
   // TODO: To support YUV(NV12) format.
   exported_pixmap->pixmap = base::MakeRefCounted<gfx::NativePixmapDmaBuf>(

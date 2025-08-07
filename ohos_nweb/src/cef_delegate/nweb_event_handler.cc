@@ -73,9 +73,6 @@ void NWebEventHandler::OnTouchPress(int32_t id,
 #if defined(OHOS_SLIDE) || defined(OHOS_PER_DFX)
   TRACE_EVENT0("input",
                "NWebEventHandler::OnTouchPress sliding response begin");
-  LOG(DEBUG) << "NWebEventHandler::OnTouchPress sliding response begin. id = "
-             << id << ", x = " << x << ", y = " << y
-             << ", from_overlay = " << from_overlay;
 #endif
   CefTouchEvent touch_pressed;
   touch_pressed.type = CEF_TET_PRESSED;
@@ -94,8 +91,8 @@ void NWebEventHandler::OnTouchMove(int32_t id,
                                    double x,
                                    double y,
                                    bool from_overlay) {
-  LOG(DEBUG) << "NWebEventHandler::OnTouchMove id = " << id << ", x = " << x
-             << ", y = " << y << ", from_overlay = " << from_overlay;
+  LOG(DEBUG) << "NWebEventHandler::OnTouchMove id = " << id 
+      << ", from_overlay = " << from_overlay;
   CefTouchEvent touch_move;
   touch_move.type = CEF_TET_MOVED;
   touch_move.pointer_type = CEF_POINTER_TYPE_TOUCH;
@@ -123,8 +120,7 @@ void NWebEventHandler::OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPo
     touch_move.y = touch_point->GetY() / virtual_pixel_ratio;
     touch_move.modifiers = EVENTFLAG_NONE;
     touch_move.from_overlay = from_overlay;
-    touch_point_info_str += " id = " + std::to_string(touch_point->GetId()) + ", x = " +
-        std::to_string(touch_move.x) + ", y = " + std::to_string(touch_move.y);
+    touch_point_info_str += " id = " + std::to_string(touch_point->GetId());
     event_list.emplace_back(touch_move);
   }
   LOG(DEBUG) << touch_point_info_str << ", from_overlay = " << from_overlay;

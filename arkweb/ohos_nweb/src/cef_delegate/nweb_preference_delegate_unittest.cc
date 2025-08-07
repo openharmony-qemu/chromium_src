@@ -60,6 +60,11 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
                      CefRefPtr<CefRequestContext> request_context) {
     return false;
   }
+  void OnSafeBrowsingDetectionResult(int code,
+                                   int policy,
+                                   const std::string& mappingType,
+                                   const std::string& url) {
+}
 
   CefRefPtr<CefBrowser> CreateBrowserSync(
       const CefWindowInfo& windowInfo,
@@ -707,6 +712,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void OnFoldStatusChanged(uint32_t foldStatus) override {}
   void SetNativeEmbedMode(bool flag) override {}
   void SetNativeInnerWeb(bool isInnerWeb) override {}
+  void SetEnableCustomVideoPlayer(bool flag) { }
   void ScaleGestureChangeV2(int type,
                             float scale,
                             float originScale,

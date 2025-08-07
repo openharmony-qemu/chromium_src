@@ -213,6 +213,7 @@ component("adapter_ndk") {
     "ohos_init_web_adapter/ohos_init_web_adapter_impl.cpp",
     "flowbuffer_adapter/flowbuffer_adapter_impl.cpp",
     "migration_manager_adapter/migration_manager_adapter_impl.cpp",
+    "power_mgr_adapter/power_mgr_client_adapter_impl.cpp",
   ]
 
   if (arkweb_ndk_adapter) {

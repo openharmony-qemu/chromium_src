@@ -66,6 +66,7 @@
 #include "arkweb/ohos_adapter_ndk/ohos_init_web_adapter/ohos_init_web_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/flowbuffer_adapter/flowbuffer_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/migration_manager_adapter/migration_manager_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/power_mgr_adapter/power_mgr_client_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -88,7 +89,7 @@ NDKOhosAdapterHelper::CreateAafwkAdapter() {
 
 std::unique_ptr<NWeb::PowerMgrClientAdapter>
 NDKOhosAdapterHelper::CreatePowerMgrClientAdapter() {
-  return nullptr;
+  return std::make_unique<PowerMgrClientAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::DisplayManagerAdapter>

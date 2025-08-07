@@ -437,6 +437,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::DequeueOutputBuffer(
     if (memcpy_s(keyframe_addr_.get(), merge_frame_data.bufferSize, config_data_addr,
                  config_data_size) != EOK) {
       LOG(ERROR) << "keyframe_addr_ memcpy_s failed";
+      ClearKeyFrameCache();
       ClearConfigDataCache();
       PopOutQueue();
       return CodecCodeAdapter::ERROR;
@@ -444,6 +445,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::DequeueOutputBuffer(
     if (memcpy_s(keyframe_addr_.get() + config_data_size, buffer.bufferSize,
                  buffer.addr, buffer.bufferSize) != EOK) {
       LOG(ERROR) << "keyframe_addr_ + config_data_size memcpy_s failed";
+      ClearKeyFrameCache();
       ClearConfigDataCache();
       PopOutQueue();
       return CodecCodeAdapter::ERROR;

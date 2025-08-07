@@ -3660,7 +3660,7 @@ void MediaStreamManager::HandleAccessRequestResponse(
       device.set_session_id(GetDeviceManager(device.type)->Open(device));
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
-      int nweb_id = AsMediaStreamManagerExt()->GetNWebIDMatchStreamType(request->GetTargetRenderFrameHostId());
+      int nweb_id = AsMediaStreamManagerExt()->GetNWebIdMatchStreamType(request->GetTargetRenderFrameHostId());
       if (device.type == MediaStreamType::DEVICE_VIDEO_CAPTURE ||
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
         device.type == MediaStreamType::GUM_DESKTOP_VIDEO_CAPTURE ||

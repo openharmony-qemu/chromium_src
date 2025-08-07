@@ -36,7 +36,7 @@ void OH_ArkWeb_JavaScript_FuzzTest(FuzzedDataProvider* fdp) {
   std::string permission = fdp->ConsumeRandomLengthString(64);
   const size_t max_methods = 20;
   size_t listSize = fdp->ConsumeIntegralInRange<size_t>(0, max_methods);
-  std::vector<ArkWeb_ProxyMethod> methodList(listSize);
+  std::vector<ArkWeb_ProxyMethod> methodList;
 
   for (size_t i = 0; i < listSize; ++i) {
     ArkWeb_ProxyMethod proxyMethod;
@@ -47,7 +47,8 @@ void OH_ArkWeb_JavaScript_FuzzTest(FuzzedDataProvider* fdp) {
   }
 
   ArkWeb_ProxyObject proxyObject;
-  proxyObject.objName = fdp->ConsumeRandomLengthString(64).c_str();
+  std::string objNameStr = fdp->ConsumeRandomLengthString(64);
+  proxyObject.objName = objNameStr.c_str();
   if (listSize == 0) {
     proxyObject.methodList = nullptr;
     proxyObject.size = 0;
@@ -64,7 +65,7 @@ void OH_ArkWeb_JavaScript_FuzzTest(FuzzedDataProvider* fdp) {
   OH_ArkWeb_DeleteJavaScriptProxy(webTag.c_str(), proxyObject.objName);
 
   for (auto& method : methodList) {
-    delete[] method.methodName;
+    free(const_cast<char*>(method.methodName));
     method.methodName = nullptr;
   }
 }
@@ -102,12 +103,9 @@ void OH_WebMessage_FuzzTest(FuzzedDataProvider* fdp) {
   webMessagePort.portHandle = const_cast<char*>(portHandle.c_str());
 
   ArkWeb_WebMessagePtr messagePtr = OH_WebMessage_CreateWebMessage();
-  if (messagePtr == nullptr) {
-    return;
-  }
-  
+
   std::string dataStr = fdp->ConsumeRandomLengthString(dataLength);
-  void* data = strdup(dataStr.c_str());
+  char* data = strdup(dataStr.c_str());
   size_t dataSize = dataStr.size();
   webMessageType = ARKWEB_STRING;
   OH_WebMessage_SetType(messagePtr, webMessageType);
@@ -118,6 +116,9 @@ void OH_WebMessage_FuzzTest(FuzzedDataProvider* fdp) {
   OH_WebMessage_Close(&webMessagePort, webTag.c_str());
   OH_WebMessage_SetMessageEventHandler(&webMessagePort, webTag.c_str(), nullptr, nullptr);
   OH_WebMessage_DestroyWebMessage(&messagePtr);
+
+  free(data);
+  data = nullptr;
 }
 
 void OH_CookieManager_FuzzTest(FuzzedDataProvider* fdp) {
@@ -128,10 +129,8 @@ void OH_CookieManager_FuzzTest(FuzzedDataProvider* fdp) {
   char* cookieValue = nullptr;
 
   OH_CookieManager_FetchCookieSync(url.c_str(), incognito, includeHttpOnly, &cookieValue);
-  if (cookieValue != nullptr) {
-    free(cookieValue);
-    cookieValue = nullptr;
-  }
+  free(cookieValue);
+  cookieValue = nullptr;
   OH_CookieManager_ConfigCookieSync(url.c_str(), value.c_str(), incognito, includeHttpOnly);
 }
 
@@ -142,7 +141,7 @@ void OH_ArkWeb_JavaScriptProxyEx_FuzzTest(FuzzedDataProvider* fdp) {
   bool isAsync = fdp->ConsumeBool();
 
   const size_t listSize = 20;
-  std::vector<ArkWeb_ProxyMethodWithResult> methodList(listSize);
+  std::vector<ArkWeb_ProxyMethodWithResult> methodList;
 
   for(size_t i = 0; i < listSize; ++i) {
     ArkWeb_ProxyMethodWithResult proxyMethod;
@@ -164,27 +163,20 @@ void OH_ArkWeb_JavaScriptProxyEx_FuzzTest(FuzzedDataProvider* fdp) {
     fdp->ConsumeIntegralInRange<uint32_t>(ARKWEB_JAVASCRIPT_NONE, ARKWEB_JAVASCRIPT_BOOL));
 
   size_t dataLength = fdp->ConsumeIntegralInRange<size_t>(0, 1024);
-  std::string randomStr = fdp->ConsumeRandomLengthString(dataLength);
-  size_t dataSize = randomStr.size() + 1;
-  char* data = new char[dataSize];
-  int cpyret = strcpy_s(data, dataSize, randomStr.c_str());
-  if (cpyret != 0) {
-    return;
-  }
+  std::string dataStr = fdp->ConsumeRandomLengthString(dataLength);
+  char* data = strdup(dataStr.c_str());
+  size_t dataSize = dataStr.size();
 
   ArkWeb_JavaScriptValuePtr javaScriptPtr = OH_JavaScript_CreateJavaScriptValue(type, data, dataSize);
-  if (javaScriptPtr != nullptr) {
-    free(javaScriptPtr);
-    javaScriptPtr = nullptr;
-  }
 
-  if (data != nullptr) {
-    delete [] data;
-    data = nullptr;
-  }
+  free(javaScriptPtr);
+  javaScriptPtr = nullptr;
+
+  free(data);
+  data = nullptr;
 
   for (auto& method: methodList) {
-    delete [] method.methodName;
+    free(const_cast<char*>(method.methodName));
     method.methodName = nullptr;
   }
 }

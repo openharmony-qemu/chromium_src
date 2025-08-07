@@ -210,6 +210,7 @@ component("adapter_ndk") {
     "print_manager_adapter/print_manager_adapter_impl.cpp",
     "soc_perf_adapter/soc_perf_client_adapter_impl.cpp",
     "enterprise_device_management_adapter/enterprise_device_management_adapter_impl.cpp",
+    "ohos_init_web_adapter/ohos_init_web_adapter_impl.cpp",
   ]
 
   if (arkweb_ndk_adapter) {

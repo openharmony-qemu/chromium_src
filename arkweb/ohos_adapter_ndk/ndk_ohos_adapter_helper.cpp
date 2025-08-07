@@ -63,6 +63,7 @@
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/print_manager_adapter/print_manager_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/soc_perf_adapter/soc_perf_client_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/ohos_init_web_adapter/ohos_init_web_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -159,7 +160,7 @@ NWeb::VSyncAdapter& NDKOhosAdapterHelper::GetVSyncAdapter() {
 
 std::unique_ptr<NWeb::OhosInitWebAdapter>
 NDKOhosAdapterHelper::GetInitWebAdapter() {
-  return nullptr;
+  return std::make_unique<OhosInitWebAdapterImpl>();
 }
 
 NWeb::KeystoreAdapter&

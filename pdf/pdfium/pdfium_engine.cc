@@ -1048,11 +1048,13 @@ bool PDFiumEngine::HandleInputEvent(const blink::WebInputEvent& event) {
     }
     case blink::WebInputEvent::Type::kTouchEnd:
       KillTouchTimer();
+      client_->HideHandleAndQuickMenuForPDF(false);
       break;
     case blink::WebInputEvent::Type::kTouchMove:
       // TODO(dsinclair): This should allow a little bit of movement (up to the
       // touch radii) to account for finger jiggle.
       KillTouchTimer();
+      client_->HideHandleAndQuickMenuForPDF(true);
       break;
     default:
       break;

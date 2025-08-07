@@ -433,6 +433,7 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 #if BUILDFLAG(ARKWEB_PDF)
   gfx::Rect GetAvailableArea() override;
   void UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) override;
+  void HideHandleAndQuickMenuForPDF(bool hide_handles) override;
 #endif
   // PdfAccessibilityActionHandler:
   void EnableAccessibility() override;

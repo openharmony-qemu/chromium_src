@@ -247,6 +247,13 @@ TEST(BackgroundTaskPolicyTEST, OnIsVisibleChanged002) {
     background_task_policy->OnIsVisibleChanged(&page_node_mock);
 }
 
+TEST(BackgroundTaskPolicyTEST, OnIsVisibleChanged003) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+	page_node_mock.SetIsVisible(true);
+    background_task_policy->OnIsVisibleChanged(&page_node_mock);
+}
+
 TEST(BackgroundTaskPolicyTEST, OnIsMediaPlayingChanged001) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     background_task_policy->OnIsMediaPlayingChanged(nullptr);
@@ -255,6 +262,14 @@ TEST(BackgroundTaskPolicyTEST, OnIsMediaPlayingChanged001) {
 TEST(BackgroundTaskPolicyTEST, OnIsMediaPlayingChanged002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     PageNodeMock page_node_mock;
+    background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
+}
+
+TEST(BackgroundTaskPolicyTEST, OnIsMediaPlayingChanged003) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+	page_node_mock.SetIsMediaPlaying(true);
+	page_node_mock.SetIsVisible(true);
     background_task_policy->OnIsMediaPlayingChanged(&page_node_mock);
 }
 
@@ -271,6 +286,14 @@ TEST(BackgroundTaskPolicyTEST, OnDecrementAudioNum002) {
     background_task_policy->OnDecrementAudioNum(&page_node_mock);
 }
 
+TEST(BackgroundTaskPolicyTEST, OnDecrementAudioNum003) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+    page_node_mock.SetIsMediaPlaying(false);
+    page_node_mock.SetIsAudible(false);
+    background_task_policy->OnDecrementAudioNum(&page_node_mock);
+}
+
 TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged001) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
     background_task_policy->OnIsAudibleChanged(nullptr);
@@ -281,3 +304,72 @@ TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged002) {
     PageNodeMock page_node_mock;
     background_task_policy->OnIsAudibleChanged(&page_node_mock);
 }
+
+TEST(BackgroundTaskPolicyTEST, OnIsAudibleChanged003) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+    PageNodeMock page_node_mock;
+	page_node_mock.SetIsAudible(true);
+    background_task_policy->OnIsAudibleChanged(&page_node_mock);
+}
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+TEST(BackgroundTaskPolicyTEST, SetBrowserForeground001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+	PageNodeMock page_node_mock;
+	std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    background_task_holder->back_ground = true;
+	background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->SetBrowserForeground(&page_node_mock);
+}
+
+TEST(BackgroundTaskPolicyTEST, SetBrowserForeground002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+	PageNodeMock page_node_mock;
+	std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    background_task_holder->back_ground = false;
+	background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->SetBrowserForeground(&page_node_mock);
+}
+
+TEST(BackgroundTaskPolicyTEST, SetBrowserBackground001) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+	PageNodeMock page_node_mock;
+	background_task_policy->media_playing_num_ = 1;
+	std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    background_task_holder->back_ground = true;
+	background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->SetBrowserBackground(&page_node_mock);
+}
+
+TEST(BackgroundTaskPolicyTEST, SetBrowserBackground002) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+	PageNodeMock page_node_mock;
+	background_task_policy->media_playing_num_ = 1;
+	std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    background_task_holder->back_ground = false;
+	background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->SetBrowserBackground(&page_node_mock);
+}
+
+TEST(BackgroundTaskPolicyTEST, SetBrowserBackground003) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+	PageNodeMock page_node_mock;
+	background_task_policy->media_playing_num_ = -1;
+	background_task_policy->audio_state_num_ = 1;
+	std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    background_task_holder->back_ground = false;
+	background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->SetBrowserBackground(&page_node_mock);
+}
+
+TEST(BackgroundTaskPolicyTEST, SetBrowserBackground004) {
+    auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
+	PageNodeMock page_node_mock;
+	background_task_policy->media_playing_num_ = -1;
+	background_task_policy->audio_state_num_ = -1;
+	std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    background_task_holder->back_ground = false;
+	background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->SetBrowserBackground(&page_node_mock);
+}
+#endif

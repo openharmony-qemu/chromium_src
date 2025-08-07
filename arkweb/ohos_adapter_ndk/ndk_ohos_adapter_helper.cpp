@@ -64,6 +64,7 @@
 #include "arkweb/ohos_adapter_ndk/print_manager_adapter/print_manager_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/soc_perf_adapter/soc_perf_client_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/ohos_init_web_adapter/ohos_init_web_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/flowbuffer_adapter/flowbuffer_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -266,7 +267,7 @@ NDKOhosAdapterHelper::GetMediaCodecListAdapter() {
 
 std::unique_ptr<NWeb::FlowbufferAdapter>
 NDKOhosAdapterHelper::CreateFlowbufferAdapter() {
-  return nullptr;
+  return std::make_unique<FlowbufferAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::MediaAVSessionAdapter>

@@ -30,6 +30,10 @@
 #include "ohos_nweb_ex/core/extension/nweb_extension_bookmarks_dispatcher.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/api/declarative_content/declarative_content_is_bookmarked_condition_delegate.h"
+#endif
+
 namespace OHOS::NWeb {
 
 namespace {
@@ -86,6 +90,10 @@ void NWebExtensionBookmarksCefDelegate::OnCreated(
     const NWebExtensionBookmarkTreeNode* bookmark) {
   extensions::CefBookmarksEventRouter::GetInstance()
       .DispatchBookmarksCreatedEvent(GetBrowserContext(), id, bookmark);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  extensions::DeclarativeContentIsBookmarkedConditionDelegate::GetInstance()
+      .OnBookmarksCreated(GetBrowserContext(), id, bookmark);
+#endif
 }
 
 void NWebExtensionBookmarksCefDelegate::OnChanged(
@@ -106,11 +114,19 @@ void NWebExtensionBookmarksCefDelegate::OnChildrenReordered(
 void NWebExtensionBookmarksCefDelegate::OnImportBegan() {
   extensions::CefBookmarksEventRouter::GetInstance()
       .DispatchBookmarksImportBeganEvent(GetBrowserContext());
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  extensions::DeclarativeContentIsBookmarkedConditionDelegate::GetInstance()
+      .OnBookmarksImportBegin(GetBrowserContext());
+#endif
 }
 
 void NWebExtensionBookmarksCefDelegate::OnImportEnded() {
   extensions::CefBookmarksEventRouter::GetInstance()
       .DispatchBookmarksImportEndedEvent(GetBrowserContext());
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  extensions::DeclarativeContentIsBookmarkedConditionDelegate::GetInstance()
+      .OnBookmarksImportEnd(GetBrowserContext());
+#endif
 }
 
 void NWebExtensionBookmarksCefDelegate::OnMoved(
@@ -125,6 +141,10 @@ void NWebExtensionBookmarksCefDelegate::OnRemoved(
     const NWebExtensionBookmarksRemoveInfo* removeInfo) {
   extensions::CefBookmarksEventRouter::GetInstance()
       .DispatchBookmarksRemovedEvent(GetBrowserContext(), id, removeInfo);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  extensions::DeclarativeContentIsBookmarkedConditionDelegate::GetInstance()
+      .OnBookmarksRemoved(GetBrowserContext(), id, removeInfo);
+#endif
 }
 
 bool NWebExtensionBookmarksCefDelegate::OnCreate(

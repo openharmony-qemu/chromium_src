@@ -14,6 +14,7 @@
  */
 
 #include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
+#include "arkweb/ohos_adapter_ndk/utils/include/ashmem_adapter.h"
 
 #include <cstring>
 #include <fuzzer/FuzzedDataProvider.h>
@@ -28,9 +29,11 @@ bool AshmemAdapterImplFuzzTest(const uint8_t* data, size_t size)
     if ((data == nullptr) || (size == 0)) {
         return false;
     }
-    const char* name = "fuzz_test";
-    size_t nameSize = std::strlen(name);
-    AshmemAdapter::AshmemCreate(name, nameSize);
+    FuzzedDataProvider dataProvider(data, size);
+    char* name = strdup((dataProvider.ConsumeRandomLengthString(MAX_SET_NUMBER)).c_str());
+    size_t nameSize = dataProvider.ConsumeIntegralInRange<size_t>(0, MAX_SET_NUMBER);
+    int fd = AshmemAdapter::AshmemCreate(name, nameSize);
+    ShmemAdapterClose(fd);
 
     return true;
 }

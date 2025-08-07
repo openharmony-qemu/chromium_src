@@ -220,6 +220,7 @@ extern bool g_siteIsolationMode;
 #include "ohos_cef_ext/libcef/browser/extensions/tab_extensions_util.h"
 #include "chrome/browser/extensions/extension_service.h"
 #include "extensions/common/extension.h"
+#include "extensions/browser/disable_reason.h"
 #include "extensions/browser/uninstall_reason.h"
 #include "extensions/browser/ui_util.h"
 #include "extensions/browser/extension_registry_info_manager.h"

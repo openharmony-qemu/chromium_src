@@ -18,10 +18,18 @@
 
 #include <memory>
 #include <string>
+#include <optional>
+
+#include "components/profile_metrics/browser_profile_type.h"
 
 struct NWebExtensionTopSitesMostVisitedURL {
   std::string title;
   std::string url;
+};
+
+struct NWebExtensionTopSitesQueryOptions {
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
 };
 
 #endif  // OHOS_NWEB_EX_BROWSER_WEB_EXTENSION_TOP_SITES_ITEMS_H_

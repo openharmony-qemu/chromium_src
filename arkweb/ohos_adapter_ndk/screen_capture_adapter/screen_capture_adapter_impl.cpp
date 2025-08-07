@@ -129,7 +129,7 @@ OH_ContainerFormatType GetOHContainerFormatType(const ContainerFormatTypeAdapter
 
 void SetAudioInfo(std::shared_ptr<AudioInfoAdapter> audio_info) {
     if (!audio_info) {
-        WVLOG_I("SetAudioInfo audio_info is null");
+        WVLOG_E("SetAudioInfo audio_info is null");
         return;
     }
 
@@ -157,7 +157,7 @@ void SetAudioInfo(std::shared_ptr<AudioInfoAdapter> audio_info) {
 
 void SetVideoInfo(std::shared_ptr<VideoInfoAdapter> video_info) {
     if (!video_info) {
-        WVLOG_I("SetVideoInfo video_info is null");
+        WVLOG_E("SetVideoInfo video_info is null");
         return;
     }
 
@@ -182,7 +182,7 @@ void SetVideoInfo(std::shared_ptr<VideoInfoAdapter> video_info) {
 OH_AVScreenCaptureConfig ConvertScreenCaptureConfig(const std::shared_ptr<ScreenCaptureConfigAdapter> config)
 {
     if (!config) {
-        WVLOG_I("ConvertScreenCaptureConfig config is null");
+        WVLOG_E("ConvertScreenCaptureConfig config is null");
         return avConfig_;
     }
 

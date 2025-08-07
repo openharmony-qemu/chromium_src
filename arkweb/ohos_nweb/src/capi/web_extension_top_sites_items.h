@@ -20,8 +20,6 @@
 #include <string>
 #include <optional>
 
-#include "components/profile_metrics/browser_profile_type.h"
-
 struct NWebExtensionTopSitesMostVisitedURL {
   std::string title;
   std::string url;

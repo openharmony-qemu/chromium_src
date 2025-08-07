@@ -1179,18 +1179,13 @@ void NWebDelegate::SetRotationType(RotationType rotation) {
   TRACE_EVENT1("base", "NWwebDelegate::RemoveBlanklessFrameIfNeed", "rotation", rotation);
   if (preference_delegate_ == nullptr) {
     return;
-  }        
-  preference_delegate_->SetRotationType(static_cast<uint32_t>(rotation));      
-}             
+  }
+  preference_delegate_->SetRotationType(static_cast<uint32_t>(rotation));
+}
 #endif
 
 void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
                                            DisplayOrientation orientation) {
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (preference_delegate_ != nullptr) {
-    preference_delegate_->SetRotationType(static_cast<uint32_t>(rotation));
-  }                              
-#endif
   if (render_handler_ != nullptr) {
     if (display_manager_adapter_ == nullptr) {
       LOG(ERROR) << "Get display_manager_adapter_ failed";

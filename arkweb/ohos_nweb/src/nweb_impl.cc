@@ -224,6 +224,7 @@ extern bool g_siteIsolationMode;
 #include "ohos_cef_ext/libcef/browser/extensions/tab_extensions_util.h"
 #include "chrome/browser/extensions/extension_service.h"
 #include "extensions/common/extension.h"
+#include "extensions/browser/disable_reason.h"
 #include "extensions/browser/uninstall_reason.h"
 #include "extensions/browser/ui_util.h"
 #include "extensions/browser/extension_registry_info_manager.h"
@@ -3660,6 +3661,31 @@ void NWebImpl::UnLoadWebExtension(const std::string& eid) {
     return;
   }
   WVLOG_I("NWebImpl::UnLoadWebExtension extension not exist!");
+}
+
+// static
+void NWebImpl::DisableWebExtension(const std::string& eid) {
+  WVLOG_I("NWebImpl::DisableWebExtension %{public}s", eid.c_str());
+  content::BrowserContext* browser_context = NWebImplGetGlobalBrowserContext();
+  if (!browser_context) {
+    LOG(ERROR) << "NWebImpl::DisableWebExtension browser_context is null";
+    return;
+  }
+  const extensions::Extension* current_extension =
+      extensions::ExtensionRegistry::Get(browser_context)
+      ->GetExtensionById(eid, extensions::ExtensionRegistry::EVERYTHING);
+  if (current_extension) {
+    if (current_extension->was_installed_by_default()) {
+      WVLOG_I("NWebImpl::DisableWebExtension DisableDefaultInstalledExtension");
+    }
+
+    extensions::ExtensionSystem::Get(browser_context)
+        ->extension_service()
+        ->DisableExtension(eid, extensions::disable_reason::DISABLE_USER_ACTION);
+    WVLOG_I("NWebImpl::DisableWebExtension id:%{public}s", eid.c_str());
+    return;
+  }
+  WVLOG_I("NWebImpl::DisableWebExtension extension not exist: id:%{public}s", eid.c_str());
 }
 
 // static

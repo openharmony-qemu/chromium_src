@@ -65,6 +65,7 @@
 #include "arkweb/ohos_adapter_ndk/soc_perf_adapter/soc_perf_client_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/ohos_init_web_adapter/ohos_init_web_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/flowbuffer_adapter/flowbuffer_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/migration_manager_adapter/migration_manager_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -316,7 +317,7 @@ NDKOhosAdapterHelper::GetOhosDrawingTextTypographyAdapter() {
 
 std::unique_ptr<NWeb::MigrationManagerAdapter>
 NDKOhosAdapterHelper::CreateMigrationMgrAdapter() {
-  return nullptr;
+  return std::make_unique<MigrationManagerAdapterImpl>();
 }
 
 }  // namespace OHOS::ArkWeb

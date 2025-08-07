@@ -854,6 +854,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   int32_t NearestSnapshotHeight() override;
   int32_t GetWidth() override;
   int32_t GetHeight() override;
+  void SetRotationType(RotationType rotation);
 #endif
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override;

@@ -78,6 +78,7 @@ class MockPasteboardObserver : public PasteboardObserverAdapter {
 
 void PasteDataRecordAdapterImplFuzzTest(FuzzedDataProvider* fdp) {
   std::string mimeType = fdp->ConsumeRandomLengthString(256);
+  std::string html = fdp->ConsumeRandomLengthString(256);
   std::shared_ptr<std::string> htmlText =
       std::make_shared<std::string>(fdp->ConsumeRandomLengthString(256));
   std::shared_ptr<std::string> plainText =
@@ -177,6 +178,8 @@ void PasteDataRecordAdapterImplFuzzTest(FuzzedDataProvider* fdp) {
 
   PasteDataRecordAdapterImpl impl2(nullptr);
 
+  impl2.HtmlToPlainText(html);
+
   impl2.GetMimeType();
 
   impl2.GetHtmlText();
@@ -250,9 +253,10 @@ void PasteBoardClientAdapterImplFuzzTest(FuzzedDataProvider* fdp) {
   std::shared_ptr<std::string> htmlText =
       std::make_shared<std::string>(fdp->ConsumeRandomLengthString(256));
   record->SetHtmlText(htmlText);
-  CopyOptionMode array[] = {CopyOptionMode::NONE, CopyOptionMode::IN_APP,
+  CopyOptionMode array[] = {CopyOptionMode::IN_APP,
                             CopyOptionMode::LOCAL_DEVICE,
-                            CopyOptionMode::CROSS_DEVICE};
+                            CopyOptionMode::CROSS_DEVICE,
+                            CopyOptionMode::NONE};
   CopyOptionMode copyOption = fdp->PickValueInArray<CopyOptionMode>(array);
   std::string path = fdp->ConsumeRandomLengthString(256);
   std::shared_ptr<PasteboardObserverAdapter> observer =

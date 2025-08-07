@@ -1174,6 +1174,16 @@ void NWebDelegate::SendMouseEvent(int x,
 #endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void NWebDelegate::SetRotationType(RotationType rotation) {
+  TRACE_EVENT1("base", "NWwebDelegate::RemoveBlanklessFrameIfNeed", "rotation", rotation);
+  if (preference_delegate_ == nullptr) {
+    return;
+  }        
+  preference_delegate_->SetRotationType(static_cast<uint32_t>(rotation));      
+}             
+#endif
+
 void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
                                            DisplayOrientation orientation) {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -1217,6 +1227,16 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
     auto browser = GetBrowser();
     if (browser != nullptr && browser->GetHost() != nullptr) {
       browser->GetHost()->NotifyScreenInfoChanged();
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+      if (!CEF_CURRENTLY_ON_UIT()) {
+        CEF_POST_TASK(
+          CEF_UIT,
+          base::BindOnce(&NWebDelegate::SetRotationType, weak_factory_.GetWeakPtr(), rotation)
+        );
+      } else {
+        SetRotationType(rotation);
+      }
+#endif
     }
   }
 }

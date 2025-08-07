@@ -54,6 +54,10 @@ constexpr net::NetworkTrafficAnnotationTag
 
 //============================= ProxyConfigServiceImpl =======================
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && !defined(COMPONENT_BUILD)
+#include "arkweb/chromium_ext/components/proxy_config/pref_proxy_config_tracker_impl_for_include_file.cc"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 ProxyConfigServiceImpl::ProxyConfigServiceImpl(
     std::unique_ptr<net::ProxyConfigService> base_service,
     ProxyPrefs::ConfigState initial_config_state,
@@ -113,6 +117,7 @@ bool ProxyConfigServiceImpl::UsesPolling() {
   return base_service_ && base_service_->UsesPolling();
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) || defined(COMPONENT_BUILD)
 void ProxyConfigServiceImpl::UpdateProxyConfig(
     ProxyPrefs::ConfigState config_state,
     const net::ProxyConfigWithAnnotation& config) {
@@ -140,6 +145,7 @@ void ProxyConfigServiceImpl::UpdateProxyConfig(
     }
   }
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 void ProxyConfigServiceImpl::OnProxyConfigChanged(
     const net::ProxyConfigWithAnnotation& config,
@@ -345,6 +351,7 @@ void PrefProxyConfigTrackerImpl::OnProxyConfigChanged(
                                 config_state, config));
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) || defined(COMPONENT_BUILD)
 bool PrefProxyConfigTrackerImpl::PrefConfigToNetConfig(
     const ProxyConfigDictionary& proxy_dict,
     net::ProxyConfigWithAnnotation* config) {
@@ -424,6 +431,7 @@ bool PrefProxyConfigTrackerImpl::PrefConfigToNetConfig(
       << "Unknown proxy mode, falling back to system settings.";
   return false;
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 void PrefProxyConfigTrackerImpl::OnProxyPrefChanged() {
   DCHECK(thread_checker_.CalledOnValidThread());

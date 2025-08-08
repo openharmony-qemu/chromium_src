@@ -1176,7 +1176,7 @@ void NWebDelegate::SendMouseEvent(int x,
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 void NWebDelegate::SetRotationType(RotationType rotation) {
-  TRACE_EVENT1("base", "NWwebDelegate::RemoveBlanklessFrameIfNeed", "rotation", rotation);
+  TRACE_EVENT1("base", "NWwebDelegate::SetRotationType", "rotation", rotation);
   if (preference_delegate_ == nullptr) {
     return;
   }

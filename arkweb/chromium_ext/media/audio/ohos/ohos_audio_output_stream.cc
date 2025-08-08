@@ -4,6 +4,7 @@
 
 #include "media/audio/ohos/ohos_audio_output_stream.h"
 
+#include "base/hash/hash.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "media/base/audio_timestamp_helper.h"
@@ -63,7 +64,7 @@ OHOSAudioOutputStream::~OHOSAudioOutputStream() {
 }
 
 bool OHOSAudioOutputStream::Open() {
-  LOG(INFO) << "OHOSAudioOutputStream::Open. [" << (void*)this << "]";
+  LOG(INFO) << "OHOSAudioOutputStream::Open. [hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   base::AutoLock lock(lock_);
   if (!InitRender()) {
     return false;
@@ -128,7 +129,7 @@ void OHOSAudioOutputStream::OnSuspend() {
     LOG(INFO) << "OHOSAudioOutputStream::OnSuspend during destroyed";
     return;
   }
-  LOG(INFO) << "OHOSAudioOutputStream::OnSuspend. [" << (void*)this << "]";
+  LOG(INFO) << "OHOSAudioOutputStream::OnSuspend. [hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   if (!parameters_.IsValid()) {
     LOG(ERROR) << "OHOSAudioOutputStream::OnSuspend parameters_ is not valid.";
     return;
@@ -155,7 +156,7 @@ void OHOSAudioOutputStream::OnSuspend() {
         FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::PumpSamples,
                                   weak_factory_.GetWeakPtr()));
   } else {
-    LOG(INFO) << "media session is not active. [" << (void*)this << "]";
+    LOG(INFO) << "media session is not active. [hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
     if (OHOSAudioFocusController::HasOnlyOneShotPlayersPublic(parameters_)) {
       OneShotMediaPlayerStopped();
@@ -165,7 +166,7 @@ void OHOSAudioOutputStream::OnSuspend() {
 }
 
 void OHOSAudioOutputStream::OneShotMediaPlayerStopped() {
-  LOG(INFO) << __func__ << "[" << (void*)this << "]";
+  LOG(INFO) << __func__ << "[hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     if (!main_task_runner_) {
       LOG(ERROR) << "main_task_runner is nullptr";
@@ -251,7 +252,7 @@ void OHOSAudioOutputStream::SuspendOtherMediaSession() {
 // LCOV_EXCL_STOP
 
 void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
-  LOG(INFO) << "OHOSAudioOutputStream::Start [" << (void*)this << "]";
+  LOG(INFO) << "OHOSAudioOutputStream::Start [hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   base::AutoLock lock(lock_);
   DCHECK(!callback_);
   DCHECK(reference_time_.is_null());
@@ -272,7 +273,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
 
 // LCOV_EXCL_START
 void OHOSAudioOutputStream::Stop() {
-  LOG(INFO) << "OHOSAudioOutputStream::Stop. [" << (void*)this << "]";
+  LOG(INFO) << "OHOSAudioOutputStream::Stop. [hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   base::AutoLock lock(lock_);
   timer_.Stop();
   running_ = false;

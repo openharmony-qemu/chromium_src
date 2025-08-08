@@ -3703,6 +3703,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
     switches::kBundleName,
     switches::kOhSchemeHandlerCustomScheme,
     switches::kEnablePrinting,
+    switches::kDisableMobileStyleSheet,
 #endif
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
     switches::kLacrosEnablePlatformHevc,

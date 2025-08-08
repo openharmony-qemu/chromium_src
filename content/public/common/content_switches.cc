@@ -1052,6 +1052,7 @@ const char kEnablePrinting[] = "ohos-enable-printing";
 const char kOhosHttpCacheSimple[] = "ohos-enable-http-cache-simple";
 const char kCalcTabletMode[] = "ohos-enable-calc-tablet-mode";
 const char kDisableNonAdvancedSecurityMode[] = "disable-non-advanced-security-mode";
+const char kDisableMobileStyleSheet[] = "ohos-disable-mobile-style-sheet";
 
 #ifdef OHOS_ARKWEB_ADBLOCK
 const char kOhosSubresourceFilter[] = "ohos-subresource-filter";

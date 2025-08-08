@@ -37,7 +37,11 @@ bool IsSupportFormat(int32_t format)
 }
 void OnBufferAvailableWapper(void *context)
 {
-    NativeBufferConsumerListenerImpl *callback = (NativeBufferConsumerListenerImpl*)(context);
+    if (context == nullptr) {
+        WVLOG_E("OnBufferAvailableWapper context is nullptr");
+        return;
+    }
+    NativeBufferConsumerListenerImpl *callback = static_cast<NativeBufferConsumerListenerImpl*>(context);
     callback->OnBufferAvailable();
 }
 } // namespace

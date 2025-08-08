@@ -95,4 +95,54 @@ struct WebExtensionWindow {
   std::optional<int32_t> width;
 };
 
+struct WebExtensionWindowQueryOptionsV2 {
+  static const int32_t NUM_PROPERTIES = 4;
+  std::optional<bool> populate;
+  std::optional<std::vector<std::string>> windowTypes;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct WebExtensionWindowCreateDataV2 {
+  static const int32_t NUM_PROPERTIES = 16;
+  std::optional<bool> focused;
+  std::optional<int32_t> height;
+  std::optional<bool> incognito;
+  std::optional<int32_t> left;
+  std::optional<bool> setSelfAsOpener;
+  std::optional<WebExtensionWindowState> state;
+  std::optional<std::string> stateStr;
+  std::optional<int32_t> tabId;
+  std::optional<int32_t> top;
+  std::optional<WebExtensionWindowCreateType> type;
+  std::optional<std::string> typeStr;
+  std::optional<std::vector<std::string>> urls;
+  std::optional<int32_t> width;
+  std::optional<std::string> extensionId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct WebExtensionWindowUpdateInfoV2 {
+  static const int32_t NUM_PROPERTIES = 11;
+  std::optional<bool> drawAttention;
+  std::optional<bool> focused;
+  std::optional<int32_t> height;
+  std::optional<int32_t> left;
+  std::optional<WebExtensionWindowState> state;
+  std::optional<std::string> stateStr;
+  std::optional<int32_t> top;
+  std::optional<int32_t> width;
+  std::optional<std::string> extensionId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct WebExtensionWindowRemoveInfoV2 {
+  static const int32_t NUM_PROPERTIES = 3;
+  std::optional<std::string> extensionId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
 #endif  // OHOS_NWEB_SRC_WEB_EXTENSION_WINDOW_ITEMS_H_

@@ -116,6 +116,96 @@ bool NweExtensionWindowCefDelegate::OnRemoveWindow(int windowId,
 }
 
 NO_SANITIZE("cfi-icall")
+bool NweExtensionWindowCefDelegate::HasOnCreateWindowV2CallBack() {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  return NWebExtensionWindowsDispathcher::HasOnCreateWindowV2CallBack();
+#endif
+}
+
+NO_SANITIZE("cfi-icall")
+bool NweExtensionWindowCefDelegate::HasOnUpdateWindowV2CallBack() {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  return NWebExtensionWindowsDispathcher::HasOnUpdateWindowV2CallBack();
+#endif
+}
+
+NO_SANITIZE("cfi-icall")
+bool NweExtensionWindowCefDelegate::HasOnRemoveWindowV2CallBack() {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  return NWebExtensionWindowsDispathcher::HasOnRemoveWindowV2CallBack();
+#endif
+}
+
+NO_SANITIZE("cfi-icall")
+bool NweExtensionWindowCefDelegate::OnCreateWindowV2(
+    const WebExtensionWindowCreateDataV2& create_date,
+    WindowCreatedCallback callback) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  static int request_id = 0;
+  request_id++;
+
+  g_window_created_map_[request_id] = std::move(callback);
+  if (!NWebExtensionWindowsDispathcher::OnCreateWindowV2(request_id, create_date)) {
+    g_window_created_map_.erase(request_id);
+    return false;
+  }
+
+  return true;
+#endif
+}
+
+NO_SANITIZE("cfi-icall")
+bool NweExtensionWindowCefDelegate::OnUpdateWindowV2(
+    int windowId,
+    const WebExtensionWindowUpdateInfoV2& update_info,
+    WindowUpdatedCallback callback) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  static int request_id = 0;
+  request_id++;
+
+  g_window_updated_map_[request_id] = std::move(callback);
+  if (!NWebExtensionWindowsDispathcher::OnUpdateWindowV2(request_id, windowId, update_info)) {
+    g_window_updated_map_.erase(request_id);
+    return false;
+  }
+
+  return true;
+#endif
+}
+
+NO_SANITIZE("cfi-icall")
+bool NweExtensionWindowCefDelegate::OnRemoveWindowV2(
+    int windowId,
+    const WebExtensionWindowRemoveInfoV2& remove_info,
+    WindowRemovedCallback callback) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  static int request_id = 0;
+  request_id++;
+
+  g_window_removed_map_[request_id] = std::move(callback);
+  if (!NWebExtensionWindowsDispathcher::OnRemoveWindowV2(request_id, windowId, remove_info)) {
+    g_window_removed_map_.erase(request_id);
+    return false;
+  }
+
+  return true;
+#endif
+}
+
+
+NO_SANITIZE("cfi-icall")
 std::optional<WebExtensionWindow> NweExtensionWindowCefDelegate::OnGetWindow(
       int windowId,
       const WebExtensionWindowQueryOptions& queryOptions) {
@@ -157,7 +247,85 @@ std::optional<WebExtensionWindow> NweExtensionWindowCefDelegate::OnGetLastFocuse
   return NWebExtensionWindowsDispathcher::OnGetLastFocusedWindow(queryOptions);
 #endif
 }
- 
+
+NO_SANITIZE("cfi-icall")
+bool NweExtensionWindowCefDelegate::HasOnGetWindowV2CallBack() {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  return NWebExtensionWindowsDispathcher::HasOnGetWindowV2CallBack();
+#endif
+}
+
+NO_SANITIZE("cfi-icall")
+bool NweExtensionWindowCefDelegate::HasOnGetAllWindowsV2CallBack() {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  return NWebExtensionWindowsDispathcher::HasOnGetAllWindowsV2CallBack();
+#endif
+}
+
+NO_SANITIZE("cfi-icall")
+bool NweExtensionWindowCefDelegate::HasOnGetCurrentWindowV2CallBack() {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  return NWebExtensionWindowsDispathcher::HasOnGetCurrentWindowV2CallBack();
+#endif
+}
+
+NO_SANITIZE("cfi-icall")
+bool NweExtensionWindowCefDelegate::HasOnGetLastFocusedWindowV2CallBack() {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  return NWebExtensionWindowsDispathcher::HasOnGetLastFocusedWindowV2CallBack();
+#endif
+}
+
+NO_SANITIZE("cfi-icall")
+std::optional<WebExtensionWindow> NweExtensionWindowCefDelegate::OnGetWindowV2(
+    int windowId,
+    const WebExtensionWindowQueryOptionsV2& queryOptions) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return std::nullopt;
+#else
+  return NWebExtensionWindowsDispathcher::OnGetWindowV2(windowId, queryOptions);
+#endif
+}
+
+NO_SANITIZE("cfi-icall")
+std::vector<WebExtensionWindow> NweExtensionWindowCefDelegate::OnGetAllWindowsV2(
+    const WebExtensionWindowQueryOptionsV2& queryOptions) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return std::vector<WebExtensionWindow>();
+#else
+  return NWebExtensionWindowsDispathcher::OnGetAllWindowsV2(queryOptions);
+#endif
+}
+
+NO_SANITIZE("cfi-icall")
+std::optional<WebExtensionWindow> NweExtensionWindowCefDelegate::OnGetCurrentWindowV2(
+      int currentWindowId,
+      const WebExtensionWindowQueryOptionsV2& queryOptions) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return std::nullopt;
+#else
+  return NWebExtensionWindowsDispathcher::OnGetCurrentWindowV2(currentWindowId, queryOptions);
+#endif
+}
+
+NO_SANITIZE("cfi-icall")
+std::optional<WebExtensionWindow> NweExtensionWindowCefDelegate::OnGetLastFocusedWindowV2(
+      const WebExtensionWindowQueryOptionsV2& queryOptions) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return std::nullopt;
+#else
+  return NWebExtensionWindowsDispathcher::OnGetLastFocusedWindowV2(queryOptions);
+#endif
+}
+
 void NweExtensionWindowCefDelegate::WindowCreateCallback(int request_id,
                                                              const std::optional<WebExtensionWindow>& window,
                                                              const std::optional<std::string>& error) {

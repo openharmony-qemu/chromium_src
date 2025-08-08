@@ -48,6 +48,18 @@ class NweExtensionWindowCefDelegate {
                         WindowUpdatedCallback callback);
     bool OnRemoveWindow(int windowId, WindowRemovedCallback callback);
  
+    bool OnCreateWindowV2(const WebExtensionWindowCreateDataV2& create_date,
+                          WindowCreatedCallback callback);
+    bool OnUpdateWindowV2(int windowId,
+                          const WebExtensionWindowUpdateInfoV2& update_info,
+                          WindowUpdatedCallback callback);
+    bool OnRemoveWindowV2(int windowId,
+                          const WebExtensionWindowRemoveInfoV2& remove_info,
+                          WindowRemovedCallback callback);
+    bool HasOnCreateWindowV2CallBack();
+    bool HasOnUpdateWindowV2CallBack();
+    bool HasOnRemoveWindowV2CallBack();
+
     std::optional<WebExtensionWindow> OnGetWindow(
       int windowId,
       const WebExtensionWindowQueryOptions& queryOptions);
@@ -59,6 +71,21 @@ class NweExtensionWindowCefDelegate {
     std::optional<WebExtensionWindow> OnGetLastFocusedWindow(
       const WebExtensionWindowQueryOptions& queryOptions);
  
+    std::optional<WebExtensionWindow> OnGetWindowV2(
+      int windowId,
+      const WebExtensionWindowQueryOptionsV2& queryOptions);
+    std::vector<WebExtensionWindow> OnGetAllWindowsV2(
+      const WebExtensionWindowQueryOptionsV2& queryOptions);
+    std::optional<WebExtensionWindow> OnGetCurrentWindowV2(
+      int currentWindowId,
+      const WebExtensionWindowQueryOptionsV2& queryOptions);
+    std::optional<WebExtensionWindow> OnGetLastFocusedWindowV2(
+      const WebExtensionWindowQueryOptionsV2& queryOptions);
+    bool HasOnGetWindowV2CallBack();
+    bool HasOnGetAllWindowsV2CallBack();
+    bool HasOnGetCurrentWindowV2CallBack();
+    bool HasOnGetLastFocusedWindowV2CallBack();
+
     void WindowCreateCallback(int request_id,
                               const std::optional<WebExtensionWindow>& window,
                               const std::optional<std::string>& error);

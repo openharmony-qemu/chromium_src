@@ -26,6 +26,7 @@
 #include "base/functional/callback_forward.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/raw_ptr.h"
+#include "base/synchronization/lock.h"
 #include "net/base/net_export.h"
 #include "net/proxy_resolution/proxy_config_service.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
@@ -134,6 +135,7 @@ class NetProxyEventCallback : public OHOS::NWeb::NetProxyEventCallbackAdapter {
 
  private:
   NetProxyEventCallback() = default;
+  base::Lock services_lock_;
   std::list<raw_ptr<ProxyConfigServiceOHOS>> services_;
 };
 

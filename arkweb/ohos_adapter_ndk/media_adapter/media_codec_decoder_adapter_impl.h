@@ -82,11 +82,11 @@ public:
 
     void OnOutputBufferAvailable(uint32_t index, OH_AVBuffer* buffer);
 
-    DecoderAdapterCode SetAVCencInfoStruct(OH_AVCencInfo *avCencInfo, std::shared_ptr<AudioCencInfoAdapter> cencInfo);
-
     OH_AVCodec* GetAVDecoder() { return decoder_; }
 
 private:
+    DecoderAdapterCode SetAVCencInfoStruct(OH_AVCencInfo *avCencInfo, std::shared_ptr<AudioCencInfoAdapter> cencInfo);
+
     OH_AVCodec* decoder_ = nullptr;
     std::shared_ptr<DecoderCallbackAdapter> callback_ = nullptr;
     std::map<uint32_t, OH_AVBuffer*> bufferMap_;

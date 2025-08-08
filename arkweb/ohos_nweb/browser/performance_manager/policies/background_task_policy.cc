@@ -16,7 +16,7 @@
 #include "background_task_policy.h"
 
 #include <memory>
-
+#include "base/hash/hash.h"
 #include "background_task_adapter.h"
 #include "content/browser/scheduler/browser_task_executor.h"
 #include "ohos_nweb/browser/performance_manager/mechanisms/background_task_holder.h"
@@ -106,7 +106,7 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__
             << ", OnIsMediaPlayingChanged "
             << (page_node->IsMediaPlaying() ? "true" : "false")
-            << " page_node=" << page_node
+            << " page_node hash=" << std::hex << base::FastHash(base::byte_span_from_ref(page_node))
             << ", media_playing_num: " << media_playing_num_
             << " page_node->IsVisible=" << (page_node->IsVisible() ? "true" : "false");
   MaybeChangeBackgroundTask(page_node);
@@ -114,7 +114,8 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
 void BackgroundTaskPolicy::OnDecrementAudioNum(const PageNode* page_node) {
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession page_node=" << page_node;
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession page_node hash="
+            << std::hex << base::FastHash(base::byte_span_from_ref(page_node));
   if (page_node == nullptr) {
     LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << " page_node is null return";
     return;
@@ -157,7 +158,7 @@ void BackgroundTaskPolicy::OnIsAudibleChanged(const PageNode* page_node) {
 void BackgroundTaskPolicy::MaybeChangeBackgroundTask(
     const PageNode* page_node) {
   LOG(INFO) << "BackgroundTaskPolicy::MaybeChangeBackgroundTask "
-            << " page_node=" << page_node
+            << " page_node hash=" << std::hex << base::FastHash(base::byte_span_from_ref(page_node))
             << " visible_page_num_: " << visible_page_num_
             << " media_playing_num_: " << media_playing_num_
             << " audio_state_num_: " << audio_state_num_

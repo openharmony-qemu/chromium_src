@@ -192,6 +192,11 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetOutputSurface(void* window)
         return DecoderAdapterCode::DECODER_ERROR;
     }
 
+    if (window == nullptr) {
+        WVLOG_E("MediaCodecDecoder window is nullptr.");
+        return DecoderAdapterCode::DECODER_ERROR;
+    }
+
     OHNativeWindow* window_ = reinterpret_cast<OHNativeWindow*>(window);
     if (window_ == nullptr) {
         WVLOG_E("Window is nullptr.");
@@ -409,34 +414,35 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetCallbackDec(const std::share
         WVLOG_E("MediaCodecDecoder decoder_ is nullptr.");
         return DecoderAdapterCode::DECODER_ERROR;
     }
-
     if (callback == nullptr) {
         WVLOG_E("Media Callback is NULL.");
         return DecoderAdapterCode::DECODER_ERROR;
     }
-
     callback_ = callback;
-    if (callback_ == nullptr) {
-        WVLOG_E("Create Callback failed.");
-        return DecoderAdapterCode::DECODER_ERROR;
-    }
-
     struct OH_AVCodecCallback cb;
     cb.onError = [] (OH_AVCodec *codec, int32_t errorCode, void *userData) {
         (void)codec;
-        static_cast<MediaCodecDecoderAdapterImpl*>(userData)->OnError(errorCode);
+        if (userData) {
+            static_cast<MediaCodecDecoderAdapterImpl*>(userData)->OnError(errorCode);
+        }
     };
     cb.onStreamChanged = [] (OH_AVCodec *codec, OH_AVFormat *format, void *userData) {
         (void)codec;
-        static_cast<MediaCodecDecoderAdapterImpl*>(userData)->OnOutputFormatChanged(format);
+        if (userData) {
+            static_cast<MediaCodecDecoderAdapterImpl*>(userData)->OnOutputFormatChanged(format);
+        }
     };
     cb.onNeedInputBuffer = [] (OH_AVCodec *codec, uint32_t index, OH_AVBuffer *buffer, void *userData) {
         (void)codec;
-        static_cast<MediaCodecDecoderAdapterImpl*>(userData)->OnInputBufferAvailable(index, buffer);
+        if (userData) {
+            static_cast<MediaCodecDecoderAdapterImpl*>(userData)->OnInputBufferAvailable(index, buffer);
+        }
     };
     cb.onNewOutputBuffer = [] (OH_AVCodec *codec, uint32_t index, OH_AVBuffer *buffer, void *userData) {
         (void)codec;
-        static_cast<MediaCodecDecoderAdapterImpl*>(userData)->OnOutputBufferAvailable(index, buffer);
+        if (userData) {
+            static_cast<MediaCodecDecoderAdapterImpl*>(userData)->OnOutputBufferAvailable(index, buffer);
+        }
     };
 
     OH_AVErrCode ret = OH_VideoDecoder_RegisterCallback(decoder_, cb, this);
@@ -486,6 +492,11 @@ void MediaCodecDecoderAdapterImpl::OnOutputFormatChanged(OH_AVFormat* format)
         return;
     }
 
+    if (format == nullptr) {
+        WVLOG_E("format is NULL.");
+        return;
+    }
+
     int32_t width = 0;
     int32_t height = 0;
     OH_AVFormat_GetIntValue(format, OH_MD_KEY_WIDTH, &width);
@@ -527,6 +538,11 @@ void MediaCodecDecoderAdapterImpl::OnOutputBufferAvailable(uint32_t index, OH_AV
     if (!callback_) {
         WVLOG_E("callback is NULL.");
         return;
+    }
+
+    if (buffer == nullptr) {
+        WVLOG_E("buffer is NULL.");
+        return; 
     }
 
     OH_AVCodecBufferAttr attr;
@@ -594,8 +610,13 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetDecryptionConfig(void *sessi
 {
     WVLOG_I("%{public}s, isSecure = %{public}u, session = %{public}d.",
         __FUNCTION__, static_cast<uint32_t>(isSecure), session ? 1 : 0);
+    if (decoder_ == nullptr) {
+        WVLOG_E("MediaCodecDecoder decoder_ is nullptr.");
+        return DecoderAdapterCode::DECODER_ERROR;
+    }
     isSecure_ = isSecure;
     if (session == nullptr) {
+        WVLOG_E("MediaCodecDecoder session is nullptr.");
         return DecoderAdapterCode::DECODER_OK;
     }
     OH_AVErrCode errCode = OH_VideoDecoder_SetDecryptionConfig(

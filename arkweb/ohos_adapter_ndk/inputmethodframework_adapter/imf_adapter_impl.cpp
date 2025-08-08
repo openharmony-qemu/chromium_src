@@ -409,7 +409,9 @@ void IMFTextEditorProxyImpl::GetLeftTextOfCursorFunc(
 
     if (textListener_) {
         left = textListener_->GetLeftTextOfCursor(number);
-        *length = left.copy(text, *length);
+        if (length) {
+            *length = left.copy(text, *length);
+        }
     }
 }
 
@@ -420,7 +422,9 @@ void IMFTextEditorProxyImpl::GetRightTextOfCursorFunc(
 
     if (textListener_) {
         right = textListener_->GetRightTextOfCursor(number);
-        *length = right.copy(text, *length);
+        if (length) {
+            *length = right.copy(text, *length);
+        }
     }
 }
 
@@ -808,7 +812,7 @@ int32_t IMFTextListenerAdapterImpl::ReceivePrivateCommand(
             std::shared_ptr<std::string> previewStyle = PrivateCommandGetStrValue(privateCommand[i]);
 
             bool isNeedUnderline = false;
-            if (*previewStyle == PREVIEW_TEXT_STYLE_UNDERLINE) {
+            if (previewStyle && *previewStyle == PREVIEW_TEXT_STYLE_UNDERLINE) {
                 isNeedUnderline = true;
             }
             if (listener_) {
@@ -816,7 +820,7 @@ int32_t IMFTextListenerAdapterImpl::ReceivePrivateCommand(
             }
         } else if (keyString == AUTO_FILL_PARAMS_USERNAME) {
             std::shared_ptr<std::string> content = PrivateCommandGetStrValue(privateCommand[i]);
-            if (listener_) {
+            if (listener_ && content) {
                 listener_->AutoFillWithIMFEvent(true, false, false, *content);
             }
         } else if (keyString == AUTO_FILL_PARAMS_OTHERACCOUNT) {
@@ -835,12 +839,16 @@ bool IMFAdapterImpl::Attach(std::shared_ptr<IMFTextListenerAdapter> listener, bo
         WVLOG_E("the listener is nullptr");
         return false;
     }
+
+    std::lock_guard<std::mutex> lock(textEditorProxyMutex_);
+
     if (!IMFTextEditorProxyImpl::textListener_) {
-        textEditorProxy_ = IMFTextEditorProxyImpl::TextEditorProxyCreate(listener);
-        if (!textEditorProxy_) {
+        InputMethod_TextEditorProxy* textEditorNewProxy = IMFTextEditorProxyImpl::TextEditorProxyCreate(listener);
+        if (!textEditorNewProxy) {
             WVLOG_E("new textListener failed");
             return false;
         }
+        textEditorProxy_ = textEditorNewProxy;
     }
     InputMethod_AttachOptions *options = OH_AttachOptions_Create(isShowKeyboard);
     InputMethod_ErrorCode ret = OH_InputMethodController_Attach(textEditorProxy_, options, &inputMethodProxy_);
@@ -873,17 +881,20 @@ bool IMFAdapterImpl::Attach(std::shared_ptr<IMFTextListenerAdapter> listener, bo
         return false;
     }
 
+    std::lock_guard<std::mutex> lock(textEditorProxyMutex_);
+
     if (textEditorProxy_ != nullptr && isResetListener) {
         IMFTextEditorProxyImpl::TextEditorProxyDestroy(textEditorProxy_);
         textEditorProxy_ = nullptr;
     }
     if (textEditorProxy_ == nullptr) {
-        textEditorProxy_ = IMFTextEditorProxyImpl::TextEditorProxyCreate(listener);
-        if (textEditorProxy_ == nullptr) {
+        InputMethod_TextEditorProxy* textEditorNewProxy = IMFTextEditorProxyImpl::TextEditorProxyCreate(listener);
+        if (textEditorNewProxy == nullptr) {
             WVLOG_E("new textListener failed");
             ReportImfErrorEvent(IMF_LISTENER_NULL_POINT, isShowKeyboard);
             return false;
         }
+        textEditorProxy_ = textEditorNewProxy;
     }
     InputMethod_ErrorCode ret = IMFTextEditorProxyImpl::ConstructTextConfig(config);
     if (ret != IME_ERR_OK) {
@@ -917,17 +928,20 @@ bool IMFAdapterImpl::AttachWithRequestKeyboardReason(std::shared_ptr<IMFTextList
         return false;
     }
 
+    std::lock_guard<std::mutex> lock(textEditorProxyMutex_);
+
     if (textEditorProxy_ != nullptr && isResetListener) {
         IMFTextEditorProxyImpl::TextEditorProxyDestroy(textEditorProxy_);
         textEditorProxy_ = nullptr;
     }
     if (textEditorProxy_ == nullptr) {
-        textEditorProxy_ = IMFTextEditorProxyImpl::TextEditorProxyCreate(listener);
-        if (textEditorProxy_ == nullptr) {
+        InputMethod_TextEditorProxy* textEditorNewProxy = IMFTextEditorProxyImpl::TextEditorProxyCreate(listener);
+        if (textEditorNewProxy == nullptr) {
             WVLOG_E("new textListener failed");
             ReportImfErrorEvent(IMF_LISTENER_NULL_POINT, isShowKeyboard);
             return false;
         }
+        textEditorProxy_ = textEditorNewProxy;
     }
     InputMethod_ErrorCode ret = IMFTextEditorProxyImpl::ConstructTextConfig(config);
     if (ret != IME_ERR_OK) {
@@ -1103,6 +1117,7 @@ bool IMFAdapterImpl::ParseFillContentJsonValue(const std::string& commandValue,
                 command, userName->valuestring, strlen(userName->valuestring));
             if (ret != IME_ERR_OK) {
                 WVLOG_E("Set private command string failed, errcode=%{public}d", ret);
+                cJSON_Delete(sourceJson);
                 return false;
             }
             privateCommands.push_back(command);
@@ -1117,6 +1132,7 @@ bool IMFAdapterImpl::ParseFillContentJsonValue(const std::string& commandValue,
                 command, hasAccount->valuestring, strlen(hasAccount->valuestring));
             if (ret != IME_ERR_OK) {
                 WVLOG_E("Set private command string failed, errcode=%{public}d", ret);
+                cJSON_Delete(sourceJson);
                 return false;
             }
             privateCommands.push_back(command);

@@ -478,6 +478,7 @@ std::shared_ptr<NetProxyEventCallback> NetProxyEventCallback::GetInstance() {
 }
  
 void NetProxyEventCallback::AddObserver(ProxyConfigServiceOHOS* observer) {
+  base::AutoLock auto_lock(services_lock_);
   services_.push_back(observer);
 }
 
@@ -486,6 +487,7 @@ void NetProxyEventCallback::Changed(
     const uint16_t& port,
     const std::string& pacUrl,
     const std::vector<std::string>& exclusionList) {
+  base::AutoLock auto_lock(services_lock_);
   for (auto service : services_) {
     if (service) {
       service->ProxySettingsChangedTo(host, port, pacUrl, exclusionList);

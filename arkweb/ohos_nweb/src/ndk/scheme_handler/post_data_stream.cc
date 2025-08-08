@@ -77,7 +77,8 @@ void ArkWeb_PostDataStream_::Read(void* buffer, int64_t buf_len) const {
   }
 
   if (!buffer) {
-    LOG(ERROR) << "scheme_hadnler read buffer is nullptr.";
+    LOG(ERROR) << "scheme_handler read buffer is nullptr.";
+    return;
   }
 
   post_data_stream->Read(buffer, buf_len,

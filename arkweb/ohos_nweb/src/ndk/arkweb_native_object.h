@@ -58,7 +58,7 @@ class ArkWebNativeObject final
   GetWebInstanceByWebTag(const char* webTag);
 
  private:
-  std::string webTag_ = std::string();
+  std::string webTag_;
   ArkWebLifeTimeFunc validCallback_ = nullptr;
   ArkWebLifeTimeFunc loadStartCallback_ = nullptr;
   ArkWebLifeTimeFunc loadEndCallback_ = nullptr;

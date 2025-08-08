@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <securec.h>
 #include "ohos_nweb/src/ndk/scheme_handler/resource_request.h"
 
 #include "base/logging.h"
@@ -56,7 +57,10 @@ void ArkWeb_ResourceRequest_::GetMethod(char** method) const {
   std::string cef_method = cef_request->GetMethod().ToString();
   const int length = cef_method.length();
   *method = new char[length + 1];
-  strcpy((*method), cef_method.c_str());
+  int ret = strcpy_s(*(method), length + 1, cef_method.c_str());
+  if (ret != 0) {
+    LOG(ERROR) << "GetMethod error, call strcpy_s ret = " << ret;
+  }
 }
 
 void ArkWeb_ResourceRequest_::GetUrl(char** url) const {
@@ -68,7 +72,10 @@ void ArkWeb_ResourceRequest_::GetUrl(char** url) const {
   std::string cef_url = cef_request->GetURL().ToString();
   const int length = cef_url.length();
   *url = new char[length + 1];
-  strcpy((*url), cef_url.c_str());
+  int ret = strcpy_s(*(url), length + 1, cef_url.c_str());
+  if (ret != 0) {
+    LOG(ERROR) << "GetUrl error, call strcpy_s ret = " << ret;
+  }
 }
 
 bool ArkWeb_ResourceRequest_::IsRedirect() const {
@@ -108,7 +115,10 @@ void ArkWeb_ResourceRequest_::GetReferrer(char** referrer) const {
   std::string cef_referrer = cef_request->GetReferrerURL().ToString();
   const int length = cef_referrer.length();
   *referrer = new char[length + 1];
-  strcpy((*referrer), cef_referrer.c_str());
+  int ret = strcpy_s(*(referrer), length + 1, cef_referrer.c_str());
+  if (ret != 0) {
+    LOG(ERROR) << "GetReferrer error, call strcpy_s ret = " << ret;
+  }
 }
 
 int32_t ArkWeb_ResourceRequest_::GetRequestResourceType() const {
@@ -130,7 +140,10 @@ void ArkWeb_ResourceRequest_::GetFrameUrl(char** frame_url) const {
       cef_request->AsArkWebRequestExt()->GetFrameUrl().ToString();
   const int length = cef_frame_url.length();
   *frame_url = new char[length + 1];
-  strcpy((*frame_url), cef_frame_url.c_str());
+  int ret = strcpy_s(*(frame_url), length + 1, cef_frame_url.c_str());
+  if (ret != 0) {
+    LOG(ERROR) << "GetFrameUrl error, call strcpy_s ret = " << ret;
+  }
 }
 
 HeaderValue::HeaderValue(const std::string& key, const std::string& value)
@@ -140,6 +153,7 @@ ArkWeb_RequestHeaderList_::ArkWeb_RequestHeaderList_(
     const ArkWeb_ResourceRequest* request) {
   CefRequest::HeaderMap headers;
   if (!request || !request->cef_request) {
+    LOG(ERROR) << "ArkWeb_ResourceRequest is null or scheme_handler resource request is nullptr.";
     return;
   }
   request->cef_request->GetHeaderMap(headers);
@@ -161,12 +175,18 @@ void ArkWeb_RequestHeaderList_::GetHeader(int index,
   std::string cef_key = header_value[index].key;
   int length = cef_key.length();
   *key = new char[length + 1];
-  strcpy((*key), cef_key.c_str());
+  int ret = strcpy_s(*(key), length + 1, cef_key.c_str());
+  if (ret != 0) {
+    LOG(ERROR) << "GetHeader key error, call strcpy_s ret = " << ret;
+  }
 
   std::string cef_value = header_value[index].value;
   length = cef_value.length();
   *value = new char[length + 1];
-  strcpy((*value), cef_value.c_str());
+  ret = strcpy_s(*(value), length + 1, cef_value.c_str());
+  if (ret != 0) {
+    LOG(ERROR) << "GetHeader value error, call strcpy_s ret = " << ret;
+  }
 }
 
 int32_t ArkWeb_RequestHeaderList_::GetSize() const {

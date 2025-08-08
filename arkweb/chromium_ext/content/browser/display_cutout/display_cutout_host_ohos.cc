@@ -52,7 +52,7 @@ void DisplayCutoutHostOhos::SetDisplayCutoutSafeArea(gfx::Insets insets) {
   }
 
   LOG(INFO) << __func__ << " " << insets_.ToString() << "->"
-            << insets.ToString() << " rfh:" << current_rfh_.get();
+            << insets.ToString();
 
   insets_ = insets;
 
@@ -68,9 +68,7 @@ void DisplayCutoutHostOhos::SetCurrentRenderFrameHost(
     return;
   }
 
-  LOG(INFO) << __func__ << " rfh:" << rfh
-            << " current_rfh_:" << current_rfh_.get()
-            << " value:" << (int)value;
+  LOG(INFO) << __func__ << " value:" << (int)value;
   if (rfh->IsInPrimaryMainFrame()) {
     web_contents_impl_->NotifyViewportFitChanged(value);
     mainFrameViewportFit_ = value;

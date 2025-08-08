@@ -94,7 +94,7 @@ NativeLoader::~NativeLoader() {
 }
 
 void NativeLoader::Dispose() {
-  LOG(INFO) << "[NativeEmbed] NativeLoader::Dispose " << this;
+  LOG(INFO) << "[NativeEmbed] NativeLoader::Dispose ";
   ClearNativeResource();
 }
 

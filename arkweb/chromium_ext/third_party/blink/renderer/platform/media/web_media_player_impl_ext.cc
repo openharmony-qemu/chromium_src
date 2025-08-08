@@ -369,7 +369,8 @@ bool WebMediaPlayerImplExt::IsDmaBufferRecycleEnabled() {
     return false;
   }
 
-  LOG(INFO) << "DMABUF::WebMediaPlayerImplExt(" << *this << "), IsDmaBufferRecycleEnabled = true";
+  LOG(INFO) << "DMABUF::WebMediaPlayerImplExt(), IsDmaBufferRecycleEnabled = true"
+            << " delegate_id_:" << delegate_id_;
   return dmabuf_recycled.value_or(true);
 }
 
@@ -401,7 +402,8 @@ void WebMediaPlayerImplExt::RecycleDmaBuffer() {
   }
   
   if (dma_state_ == kHaveExist) {
-    LOG(INFO) << "DMABUF::WebMediaPlayerImplExt, RecycleDmaBuffer(" << *this << ")";
+    LOG(INFO) << "DMABUF::WebMediaPlayerImplExt, RecycleDmaBuffer()"
+              << " delegate_id_:" << delegate_id_;
     pipeline_controller_->RecycleDmaBuffer();
     dma_state_ = kHaveRecycled;
   }
@@ -416,7 +418,8 @@ void WebMediaPlayerImplExt::ResumeDmaBuffer() {
   }
 
   if (dma_state_ == kHaveRecycled) {
-    LOG(INFO) << "DMABUF::WebMediaPlayerImplExt, ResumeDmaBuffer(" << *this << ")";
+    LOG(INFO) << "DMABUF::WebMediaPlayerImplExt, ResumeDmaBuffer()"
+              << " delegate_id_:" << delegate_id_;
     pipeline_controller_->ResumeDmaBuffer();
     dma_state_ = kHaveExist;
     if (client_) {

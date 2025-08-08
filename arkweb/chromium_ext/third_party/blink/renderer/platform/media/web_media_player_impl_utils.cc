@@ -347,13 +347,15 @@ void WebMediaPlayerImplUtils::PauseExt() {
 
 void WebMediaPlayerImplUtils::DoSeekExt(base::TimeDelta time) {
 #if BUILDFLAG(ARKWEB_MEDIA)
-  LOG(WARNING) << "OhMedia::DoSeek(" << (void*)this << "), seconds = " << time.InSecondsF() << "s)";
+  LOG(WARNING) << "OhMedia::DoSeek(), seconds = " << time.InSecondsF() << "s)"
+               << " delegate_id_:" << impl->delegate_id_;
 #endif // BUILDFLAG(ARKWEB_MEDIA)
 }
 
 void WebMediaPlayerImplUtils::SetVolumeExt(double volume) {
 #if BUILDFLAG(ARKWEB_MEDIA)
-  LOG(INFO) << "OhMedia:: " << __func__ << "(" << (void*)this  << "), volume =" << volume;
+  LOG(INFO) << "OhMedia:: " << __func__ << "(), volume =" << volume
+            << " delegate_id_:" << impl->delegate_id_;
 #endif // BUILDFLAG(ARKWEB_MEDIA)
 }
 

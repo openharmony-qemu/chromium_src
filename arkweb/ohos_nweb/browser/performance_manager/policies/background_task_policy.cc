@@ -158,7 +158,7 @@ void BackgroundTaskPolicy::OnIsAudibleChanged(const PageNode* page_node) {
 void BackgroundTaskPolicy::MaybeChangeBackgroundTask(
     const PageNode* page_node) {
   LOG(INFO) << "BackgroundTaskPolicy::MaybeChangeBackgroundTask "
-            << " page_node hash=" << std::hex << base::FastHash(base::byte_span_from_ref(page_node));
+            << " page_node hash=" << std::hex << base::FastHash(base::byte_span_from_ref(page_node))
             << " visible_page_num_: " << visible_page_num_
             << " media_playing_num_: " << media_playing_num_
             << " audio_state_num_: " << audio_state_num_

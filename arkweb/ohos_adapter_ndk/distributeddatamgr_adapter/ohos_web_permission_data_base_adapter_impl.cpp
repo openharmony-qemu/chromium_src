@@ -162,7 +162,7 @@ std::string OhosWebPermissionDataBaseAdapterImpl::KeyToTableName(const WebPermis
 bool OhosWebPermissionDataBaseAdapterImpl::ExistPermissionByOrigin(
     const std::string& origin, const WebPermissionType& key)
 {
-    WVLOG_I("web permission database check exist permissions origin=%{public}s info", origin.c_str());
+    WVLOG_I("web permission database check exist permissions");
     if (rdbStore_ == nullptr || origin.empty()) {
         return false;
     }
@@ -173,6 +173,10 @@ bool OhosWebPermissionDataBaseAdapterImpl::ExistPermissionByOrigin(
 
     OH_Predicates *dirAbsPred = OH_Rdb_CreatePredicates(tableName.c_str());
     OH_VObject *valueObject = OH_Rdb_CreateValueObject();
+    if (dirAbsPred == nullptr || valueObject == nullptr) {
+        WVLOG_E("pointer create failed!");
+        return false;
+    }
     valueObject->putText(valueObject, origin.c_str());
     dirAbsPred->equalTo(dirAbsPred, PERMISSION_ORIGIN_COL.c_str(), valueObject);
     valueObject->destroy(valueObject);
@@ -194,7 +198,7 @@ bool OhosWebPermissionDataBaseAdapterImpl::ExistPermissionByOrigin(
 bool OhosWebPermissionDataBaseAdapterImpl::GetPermissionResultByOrigin(const std::string& origin,
     const WebPermissionType& key, bool& result)
 {
-    WVLOG_I("web permission database get permissions origin=%{public}s info", origin.c_str());
+    WVLOG_I("web permission database get permissions");
     if (rdbStore_ == nullptr || origin.empty()) {
         return false;
     }
@@ -205,6 +209,10 @@ bool OhosWebPermissionDataBaseAdapterImpl::GetPermissionResultByOrigin(const std
 
     OH_Predicates *dirAbsPred = OH_Rdb_CreatePredicates(tableName.c_str());
     OH_VObject *valueObject = OH_Rdb_CreateValueObject();
+    if (dirAbsPred == nullptr || valueObject == nullptr) {
+        WVLOG_E("pointer create failed!");
+        return false;
+    }
     valueObject->putText(valueObject, origin.c_str());
     dirAbsPred->equalTo(dirAbsPred, PERMISSION_ORIGIN_COL.c_str(), valueObject);
     valueObject->destroy(valueObject);
@@ -232,7 +240,7 @@ bool OhosWebPermissionDataBaseAdapterImpl::GetPermissionResultByOrigin(const std
 void OhosWebPermissionDataBaseAdapterImpl::SetPermissionByOrigin(const std::string& origin,
     const WebPermissionType& key, bool result)
 {
-    WVLOG_I("web permission database set info origin:%{public}s key:%{public}d", origin.c_str(), key);
+    WVLOG_I("web permission database set info key:%{public}d", key);
     if (rdbStore_ == nullptr || origin.empty()) {
         return;
     }
@@ -260,13 +268,17 @@ void OhosWebPermissionDataBaseAdapterImpl::ClearPermissionByOrigin(const std::st
     if (rdbStore_ == nullptr || origin.empty()) {
         return;
     }
-    WVLOG_I("web permission database clear origin:%{public}s info", origin.c_str());
+    WVLOG_I("web permission database clear");
     std::string tableName = KeyToTableName(key);
     if (tableName.empty()) {
         return;
     }
     OH_Predicates *dirAbsPred = OH_Rdb_CreatePredicates(tableName.c_str());
     OH_VObject *valueObject = OH_Rdb_CreateValueObject();
+    if (dirAbsPred == nullptr || valueObject == nullptr) {
+        WVLOG_E("pointer create failed!");
+        return false;
+    }
     valueObject->putText(valueObject, origin.c_str());
     dirAbsPred->equalTo(dirAbsPred, PERMISSION_ORIGIN_COL.c_str(), valueObject);
     int ret = OH_Rdb_Delete(rdbStore_, dirAbsPred);
@@ -291,6 +303,10 @@ void OhosWebPermissionDataBaseAdapterImpl::ClearAllPermission(const WebPermissio
     WVLOG_I("web permission database clear all permission:%{public}s info", tableName.c_str());
 
     OH_Predicates *dirAbsPred = OH_Rdb_CreatePredicates(tableName.c_str());
+    if (dirAbsPred == nullptr) {
+        WVLOG_E("Pred ptr is null");
+        return;
+    }
     int ret = OH_Rdb_Delete(rdbStore_, dirAbsPred);
     if (ret != RDB_ERR && ret != RDB_E_INVALID_ARGS) {
         WVLOG_I("web permission database clear all succ: deleted rows=%{public}d", ret);

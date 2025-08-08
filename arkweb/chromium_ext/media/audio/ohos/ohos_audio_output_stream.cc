@@ -503,7 +503,7 @@ void OHOSAudioOutputStream::PumpSamples() {
       ReportError();
       return;
     }
-if (!audio_renderer_) {
+    if (!audio_renderer_) {
       LOG(INFO) << "AudioRender is nullptr";
       return;
     }

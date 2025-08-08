@@ -27,10 +27,11 @@ namespace {
 static TopSitesCallback g_top_sites_callback;
 } // namespace
 
-void NWebExtensionTopSitesCefDelegate::Get(TopSitesCallback callback) {
+void NWebExtensionTopSitesCefDelegate::Get(TopSitesCallback callback,
+                                           const std::optional<NWebExtensionTopSitesQueryOptions>& options) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   g_top_sites_callback = std::move(callback);
-  NWebExtensionTopSitesDispatcher::Get();
+  NWebExtensionTopSitesDispatcher::Get(options);
 #endif
 }
 

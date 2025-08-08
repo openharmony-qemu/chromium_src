@@ -33,7 +33,7 @@ struct ArkWeb_ResourceHandler_ {
   void DidFinish() const;
   void DidFailWithError(ArkWeb_NetError error_code) const;
 
-  CefRefPtr<OHOS::NWeb::NWebPipeResourceHandler> pipe_resource_handler;
+  CefRefPtr<OHOS::NWeb::NWebPipeResourceHandler> pipe_resource_handler_;
 };
 
 #endif  // OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_RESOURCE_HANDLER_H

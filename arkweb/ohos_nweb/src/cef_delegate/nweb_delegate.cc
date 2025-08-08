@@ -1206,35 +1206,17 @@ void NWebDelegate::SendMouseEvent(int x,
 }
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-void NWebDelegate::RemoveBlanklessFrameIfNeed(RotationType rotation) {
-  TRACE_EVENT1("base", "NWebDelegate::RemoveBlanklessFrameIfNeed", "rotation", rotation);
+void NWebDelegate::SetRotationType(RotationType rotation) {
+  TRACE_EVENT1("base", "NWwebDelegate::SetRotationType", "rotation", rotation);
   if (preference_delegate_ == nullptr) {
     return;
   }
-  bool has_rotation = preference_delegate_->SetRotationType(static_cast<uint32_t>(rotation));
-  if (!has_rotation || (NearestSnapshotWidth() == 0) || (NearestSnapshotHeight() == 0)) {
-    return;
-  }
-
-  std::shared_ptr<NWebImpl> nwebShared = NWebImpl::GetNwebSharedPtr(nweb_id_);
-  if (nwebShared != nullptr) {
-    LOG(DEBUG) << "Remove this Blankless Frame due to screen rotation";
-    nwebShared->RemoveBlanklessFrame();
-  }
+  preference_delegate_->SetRotationType(static_cast<uint32_t>(rotation));
 }
 #endif
 
 void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
                                            DisplayOrientation orientation) {
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (!CEF_CURRENTLY_ON_UIT()) {
-    CEF_POST_TASK(
-      CEF_UIT,
-      base::BindOnce(&NWebDelegate::RemoveBlanklessFrameIfNeed, weak_factory_.GetWeakPtr(), rotation));
-  } else {
-    RemoveBlanklessFrameIfNeed(rotation);
-  }                                 
-#endif
   if (render_handler_ != nullptr) {
     if (display_manager_adapter_ == nullptr) {
       LOG(ERROR) << "Get display_manager_adapter_ failed";
@@ -1271,6 +1253,16 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
     auto browser = GetBrowser();
     if (browser != nullptr && browser->GetHost() != nullptr) {
       browser->GetHost()->NotifyScreenInfoChanged();
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+      if (!CEF_CURRENTLY_ON_UIT()) {
+        CEF_POST_TASK(
+          CEF_UIT,
+          base::BindOnce(&NWebDelegate::SetRotationType, weak_factory_.GetWeakPtr(), rotation)
+        );
+      } else {
+        SetRotationType(rotation);
+      }
+#endif
     }
   }
 }

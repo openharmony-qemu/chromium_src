@@ -125,7 +125,7 @@ static int32_t AudioRendererOnInterruptEvent(OH_AudioRenderer* renderer,
 
 // LCOV_EXCL_START
 void OHOSAudioOutputStream::OnSuspend() {
-if (isDestroyed_.load()) {
+  if (isDestroyed_.load()) {
     LOG(INFO) << "OHOSAudioOutputStream::OnSuspend during destroyed";
     return;
   }
@@ -187,7 +187,7 @@ void OHOSAudioOutputStream::OneShotMediaPlayerStopped() {
 }
 
 void OHOSAudioOutputStream::OnResume() {
-if (isDestroyed_.load()) {
+  if (isDestroyed_.load()) {
     LOG(INFO) << "OHOSAudioOutputStream::OnResume during destroyed";
     return;
   }

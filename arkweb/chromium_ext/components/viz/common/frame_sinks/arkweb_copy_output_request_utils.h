@@ -31,19 +31,13 @@ class ArkwebCopyOutputRequestUtils {
   ArkwebCopyOutputRequestUtils(CopyOutputRequest* CopyOutputRequest);
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  void SetBlanklessKey(uint64_t key);
+  void SetBlanklessInfo(const base::ohos::BlanklessInfo& info);
 
-  void SetLcpTime(int32_t time);
+  const base::ohos::BlanklessInfo& GetBlanklessInfo() const;
 
-  void SetPreferenceHash(int64_t pref_hash);
+  bool IsBlanklessInfoValid() const;
 
   void SetQuadList(const std::vector<gfx::Rect>& quad_list);
-
-  uint64_t GetBlanklessKey() const;
-
-  int32_t GetLcpTime() const;
-
-  int64_t GetPreferenceHash() const;
 
   const std::vector<gfx::Rect>& GetQuadList() const;
 #endif
@@ -52,9 +46,7 @@ class ArkwebCopyOutputRequestUtils {
   raw_ptr<CopyOutputRequest> copyOutputRequest_;
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  uint64_t blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
-  int32_t lcp_time_ = 0;
-  int64_t pref_hash_ = 0;
+  base::ohos::BlanklessInfo info_;
   std::vector<gfx::Rect> quad_list_;
 #endif
 };

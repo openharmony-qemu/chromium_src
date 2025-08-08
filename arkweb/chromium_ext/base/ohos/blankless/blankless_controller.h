@@ -22,13 +22,20 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "base/containers/lru_cache.h"
+
 namespace base {
 namespace ohos {
-struct BlanklessDumpInfo {
-  uint64_t blankless_key = 0;
-  int64_t pref_hash = 0;
-  int32_t lcp_time = 0;
+struct BlanklessInfo {
+  uint64_t blankless_key = UINT64_MAX;
   uint32_t nweb_id = 0;
+  int32_t lcp_time = 0;
+  uint64_t system_time = 0;
+  int64_t pref_hash = 0;
+};
+
+struct BlanklessDumpInfo {
+  BlanklessInfo info;
   bool dump_enabled = false;
 };
 
@@ -39,13 +46,13 @@ public:
     ALLOWED,                // Operation is permitted
     NOT_ALLOWED,            // Operation is not permitted
     DUMPED,                 // Static frame has been dumped
-    CALL_MULTIPLED_TIMES,   // Function called multiple times
     INSERTED,               // Static frame has been inserted
     KEY_NOT_MATCH           // Key does not match the expected value
   };
 
   static constexpr uint64_t INVALID_BLANKLESS_KEY = UINT64_MAX;
   static constexpr double CALLBACK_SIMILARITY_THRESHOLD = 0.75;
+  static constexpr uint64_t INVALID_TIMESTAMP = UINT64_MAX;
 
   static uint64_t ConvertToBlanklessKey(const std::string& value);
 
@@ -60,12 +67,12 @@ public:
 
   static bool CheckGlobalProperty();
 
-  void RegisterFrameRemoveCallback(uint64_t blankless_key, Callback&& callback);
-  void FireFrameRemoveCallback(uint64_t blankless_key);
+  void RegisterFrameRemoveCallback(uint32_t nweb_id, uint64_t blankless_key, Callback&& callback);
+  void FireFrameRemoveCallback(uint32_t nweb_id, uint64_t blankless_key);
 
-  void RegisterFrameInsertCallback(uint64_t blankless_key, Callback&& callback, int32_t lcp_time);
-  int32_t FireFrameInsertCallback(uint64_t blankless_key);
-  void CancelFrameInsertCallback(uint64_t blankless_key);
+  void RegisterFrameInsertCallback(uint32_t nweb_id, uint64_t blankless_key, Callback&& callback, int32_t lcp_time);
+  int32_t FireFrameInsertCallback(uint32_t nweb_id, uint64_t blankless_key);
+  void CancelFrameInsertCallback(uint32_t nweb_id, uint64_t blankless_key);
 
   /**
    * Resets the status of a specified web instance.
@@ -75,14 +82,7 @@ public:
    * @param is_redirect     Indicates whether it is a redirect request
    * @return Status code indicating the result of the operation
    */
-  StatusCode ResetStatus(int32_t nweb_id, bool is_main_frame, bool is_redirect);
-
-  /**
-   * Removes the status of a specified web instance.
-   * 
-   * @param nweb_id        Unique identifier for the web instance
-   */
-  void RemoveStatus(int32_t nweb_id);
+  StatusCode ResetStatus(uint32_t nweb_id, bool is_main_frame, bool is_redirect);
 
   /**
    * Records a key value for a specified web instance.
@@ -91,7 +91,7 @@ public:
    * @param blankless_key  Key value without whitespace
    * @return Status code indicating the result of the operation
    */
-  StatusCode RecordKey(int32_t nweb_id, uint64_t blankless_key);
+  StatusCode RecordKey(uint32_t nweb_id, uint64_t blankless_key);
 
   /**
    * Matches a key value against the recorded value for a specified web instance.
@@ -100,7 +100,12 @@ public:
    * @param blankless_key  Key value without whitespace to match
    * @return Status code indicating the result of the match operation
    */
-  StatusCode MatchKey(int32_t nweb_id, uint64_t blankless_key);
+  StatusCode MatchKey(uint32_t nweb_id, uint64_t blankless_key);
+
+  void RecordSystemTime(uint32_t nweb_id, uint64_t blankless_key, uint64_t system_time);
+  uint64_t GetSystemTime(uint32_t nweb_id, uint64_t blankless_key);
+
+  void Clear(uint32_t nweb_id);
 
   bool CheckEnableForUrl(const std::string& url);
 
@@ -118,12 +123,6 @@ private:
 
     // Flag indicating whether operations are allowed
     bool allowed = true;
-
-    // Set of all historical dumped blankless key values (unique entries)
-    std::unordered_set<uint64_t> blankless_key_dumped_history;
-
-    // Set of all historical inserted blankless key values (unique entries)
-    std::unordered_set<uint64_t> blankless_key_inserted_history;
   };
 
   BlanklessController() = default;
@@ -153,13 +152,85 @@ private:
   std::mutex m_nweb_status_map_mtx_;
   std::unordered_map<int32_t, StatusInfo> m_nweb_status_map_;
 
-  std::mutex m_frame_remove_callback_map_mtx_;
-  std::unordered_map<uint64_t, Callback> m_frame_remove_callback_map_;
+  template<class InfoType>
+  class NWebRelatedInfoMap {
+  public:
+    NWebRelatedInfoMap() = default;
+    ~NWebRelatedInfoMap() = default;
 
-  std::mutex m_frame_insert_callback_map_mtx_;
-  std::unordered_map<uint64_t, std::pair<Callback, int32_t>> m_frame_insert_callback_map_;
+    void Insert(uint32_t nweb_id, uint64_t blankless_key, const InfoType& info)
+    {
+      std::lock_guard<std::mutex> lck(m_mtx_);
+      auto it = m_info_map_.find(nweb_id);
+      if (it == m_info_map_.end()) {
+        auto pair = m_info_map_.emplace(nweb_id, HashingLRUCache<uint64_t, InfoType>(LRU_CACHE_SIZE));
+        it = pair.first;
+      }
+      it->second.Put(blankless_key, info);
+    }
 
-  std::atomic<int32_t> m_capacity_ = 30; // default capacity is 30
+    std::optional<InfoType> Get(uint32_t nweb_id, uint64_t blankless_key, bool move)
+    {
+      std::optional<InfoType> info;
+      std::lock_guard<std::mutex> lck(m_mtx_);
+      auto it = m_info_map_.find(nweb_id);
+      if (it == m_info_map_.end()) {
+        return info;
+      }
+      auto& cache = it->second;
+      auto found = cache.Peek(blankless_key);
+      if (found == cache.end()) {
+        return info;
+      }
+      info = found->second;
+      if (move) {
+        cache.Erase(found);
+        if (cache.size() == 0) {
+          m_info_map_.erase(it);
+        }
+      }
+      return info;
+    }
+
+    void Erase(uint32_t nweb_id, uint64_t blankless_key)
+    {
+      std::lock_guard<std::mutex> lck(m_mtx_);
+      if (blankless_key == INVALID_BLANKLESS_KEY) {
+        m_info_map_.erase(nweb_id);
+        return;
+      }
+      auto it = m_info_map_.find(nweb_id);
+      if (it == m_info_map_.end()) {
+        return;
+      }
+      auto& cache = it->second;
+      auto found = cache.Peek(blankless_key);
+      if (found == cache.end()) {
+        return;
+      }
+      cache.Erase(found);
+      if (cache.size() == 0) {
+        m_info_map_.erase(it);
+      }
+    }
+
+    void Clear()
+    {
+      std::lock_guard<std::mutex> lck(m_mtx_);
+      m_info_map_.clear();
+    }
+
+  private:
+    constexpr static int LRU_CACHE_SIZE = 3;
+    std::mutex m_mtx_;
+    std::unordered_map<uint32_t, HashingLRUCache<uint64_t, InfoType>> m_info_map_;
+  };
+
+  NWebRelatedInfoMap<Callback> m_frame_remove_callback_map_;
+
+  NWebRelatedInfoMap<std::pair<Callback, int32_t>> m_frame_insert_callback_map_;
+
+  NWebRelatedInfoMap<uint64_t> m_system_time_map_;
 };
 }  // namespace ohos
 }  // namespace base

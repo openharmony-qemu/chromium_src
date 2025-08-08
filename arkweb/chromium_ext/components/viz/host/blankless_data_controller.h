@@ -17,6 +17,7 @@
 #define BASE_OHOS_BLANKLESS_DATA_CONTROLLER_H_
 #include <map>
 
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_snapshot_data_base.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
@@ -42,9 +43,7 @@ public:
   };
 
 
-  void DumpBlanklessSnapshot(int64_t key,
-                             int64_t lcp_time,
-                             int64_t pref_hash,
+  void DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& info,
                              const SkBitmap& bitmap,
                              const std::vector<SnapShotRect>& quad_list);
   void ClearSnapshot(int64_t key);

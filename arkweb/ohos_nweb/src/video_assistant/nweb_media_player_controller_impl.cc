@@ -62,7 +62,7 @@ void NWebMediaPlayerControllerImpl::ExitFullscreen() {
 }
 
 void NWebMediaPlayerControllerImpl::SetVideoSurface(void* native_window) {
-  LOG(INFO) << "NWebMediaPlayerControllerImpl::SetVideoSurface(" << native_window << ")";
+  LOG(INFO) << "NWebMediaPlayerControllerImpl::SetVideoSurface";
   bool success = false;
   if (cef_controller_) {
     success = cef_controller_->SetVideoSurface(native_window);

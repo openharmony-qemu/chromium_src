@@ -37,7 +37,10 @@ NWebNativeWindow WindowAdapterNdkImpl::CreateNativeWindowFromSurface(void* pSurf
         return nullptr;
     }
     int32_t usage = NATIVEBUFFER_USAGE_MEM_DMA;
-    OH_NativeWindow_NativeWindowHandleOpt(window, SET_USAGE, usage);
+    int32_t ret = OH_NativeWindow_NativeWindowHandleOpt(window, SET_USAGE, usage);
+    if (ret != 0) {
+        WVLOG_E("CreateNativeWindowFromSurface OH_NativeWindow set usage failed.");
+    }
     return reinterpret_cast<NWebNativeWindow>(window);
 }
 
@@ -109,6 +112,7 @@ int WindowAdapterNdkImpl::GetNativeWindowQueueSize(NWebNativeWindow window)
         GET_BUFFERQUEUE_SIZE, &bufferQueueSize);
     if (ret != 0) {
         WVLOG_E("OH_NativeWindow get buffer queue size failed.");
+        return 0;
     }
     return bufferQueueSize;
 }

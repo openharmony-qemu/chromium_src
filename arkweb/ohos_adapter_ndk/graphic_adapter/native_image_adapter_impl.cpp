@@ -126,6 +126,14 @@ int32_t NativeImageAdapterImpl::AcquireNativeWindowBuffer(
     void** windowBuffer,
     int* acquireFenceFd)
 {
+    if (windowBuffer == nullptr) {
+        WVLOG_E("windowBuffer is nullptr");
+        return NATIVE_ERROR_UNKNOWN;
+    }
+    if (acquireFenceFd == nullptr) {
+        WVLOG_E("acquireFenceFd is nullptr");
+        return NATIVE_ERROR_UNKNOWN;
+    }
     if (ohNativeImage_ == nullptr) {
         WVLOG_E("native image is null.");
         return NATIVE_ERROR_UNKNOWN;
@@ -145,6 +153,15 @@ int32_t NativeImageAdapterImpl::GetNativeBuffer(
     void* windowBuffer,
     void** nativeBuffer)
 {
+    if (windowBuffer == nullptr) {
+        WVLOG_E("Invalid input: windowBuffer is nullptr");
+        return NATIVE_ERROR_UNKNOWN;
+    }
+    if (nativeBuffer == nullptr) {
+        WVLOG_E("Invalid output: nativeBuffer is nullptr");
+        return NATIVE_ERROR_UNKNOWN;
+    }
+
     OH_NativeBuffer* buffer = nullptr;
     int32_t ret = OH_NativeBuffer_FromNativeWindowBuffer(static_cast<OHNativeWindowBuffer*>(windowBuffer), &buffer);
     if (ret != NATIVE_ERROR_OK || !buffer) {
@@ -159,6 +176,10 @@ int32_t NativeImageAdapterImpl::GetNativeBuffer(
 int32_t NativeImageAdapterImpl::ReleaseNativeWindowBuffer(void* windowBuffer, int fenceFd)
 {
     if (ohNativeImage_ == nullptr) {
+        return NATIVE_ERROR_UNKNOWN;
+    }
+    if (windowBuffer == nullptr) {
+        WVLOG_E("Release failed: windowBuffer is null");
         return NATIVE_ERROR_UNKNOWN;
     }
     return OH_NativeImage_ReleaseNativeWindowBuffer(ohNativeImage_,

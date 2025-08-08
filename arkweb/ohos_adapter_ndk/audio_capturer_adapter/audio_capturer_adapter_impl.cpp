@@ -225,7 +225,7 @@ int32_t AudioCapturerAdapterImpl::GetBufferDesc(std::shared_ptr<BufferDescAdapte
         return AUDIO_NULL_ERROR;
     }
 
-    WVLOG_D("GetBufferDesc %{public}p, %{public}zd", userDataCallBack_->buffer, userDataCallBack_->length);
+    WVLOG_D("GetBufferDesc buffer size: %{public}zu", userDataCallBack_->length);
     bufferDesc->SetBuffer(userDataCallBack_->buffer);
     bufferDesc->SetBufLength(userDataCallBack_->length);
     bufferDesc->SetDataLength(userDataCallBack_->length);

@@ -640,18 +640,16 @@ void InputHandlerProxyUtils::NativeTouchStartProcess(
   switch (status) {
     case INIT:
     {
-      // customVideoPlayer
-      if (enable_custom_video_player_) {
-        bool isHitLayer = HandleTouchStartIfHitVideo(touch_event);
-        if (isHitLayer) {
-          touchEventQueue->Queue(std::move(event_with_callback));
-          return true;
-        }
+      // customVideoPlayer and nativeEmbed overlay
+      bool isHitTopLayer = HandleTouchStartIfHitVideo(touch_event);
+      if (isHitTopLayer) {
+        touchEventQueue->Queue(std::move(event_with_callback));
+        return true;
       }
       // nativeEmbedGesture
       if (native_enabled_) {
-        bool isHitLayer = HandleTouchStartIfHitNative(touch_event);
-        if (isHitLayer) {
+        bool isHitNativeLayer = HandleTouchStartIfHitNative(touch_event);
+        if (isHitNativeLayer) {
           touchEventQueue->Queue(std::move(event_with_callback));
           return true;
         }
@@ -695,18 +693,16 @@ bool InputHandlerProxyUtils::NativeTouchStartProcessInQueue(
   switch (status) {
     case INIT:
     {
-      // customVideoPlayer
-      if (enable_custom_video_player_) {
-        bool isHitLayer = HandleTouchStartIfHitVideo(touch_event);
-        if (isHitLayer) {
-          touchEventQueue->PushFront(std::move(event_with_callback));
-          return true;
-        }
+      // customVideoPlayer and nativeEmbed overlay
+      bool isHitTopLayer = HandleTouchStartIfHitVideo(touch_event);
+      if (isHitTopLayer) {
+        touchEventQueue->PushFront(std::move(event_with_callback));
+        return true;
       }
       // nativeEmbedGesture
       if (native_enabled_) {
-        bool isHitLayer = HandleTouchStartIfHitNative(touch_event);
-        if (isHitLayer) {
+        bool isHitNativeLayer = HandleTouchStartIfHitNative(touch_event);
+        if (isHitNativeLayer) {
           touchEventQueue->PushFront(std::move(event_with_callback));
           return true;
         }

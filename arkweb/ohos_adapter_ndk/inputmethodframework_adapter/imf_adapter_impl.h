@@ -173,6 +173,7 @@ public:
     bool SendPrivateCommand(const std::string& commandKey, const std::string& commandValue) override;
 
 private:
+    std::mutex textEditorProxyMutex_;
     InputMethod_TextEditorProxy *textEditorProxy_ = nullptr;
     InputMethod_InputMethodProxy *inputMethodProxy_ = nullptr;
     bool ParseFillContentJsonValue(const std::string& jsonStr,

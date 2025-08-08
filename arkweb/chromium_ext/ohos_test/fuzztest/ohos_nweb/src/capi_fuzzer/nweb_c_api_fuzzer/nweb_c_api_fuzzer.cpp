@@ -18,6 +18,7 @@
 #include "base/logging.h"
 #include "arkweb/ohos_nweb/src/capi/nweb_c_api.h"
 #include "arkweb/ohos_nweb/src/capi/nweb_download_delegate_callback.h"
+#include "arkweb/ohos_nweb/src/capi/nweb_screencapture_delegate_callback.h"
 
 namespace OHOS::NWeb {
 
@@ -60,15 +61,14 @@ void WebDownloader_FuzzTest(FuzzedDataProvider* fdp) {
   downloadDelegateCallbackPtr->nweb_id = fdp->ConsumeIntegral<int32_t>();
   WebDownloader_SetDownloadBeforeStart(downloadDelegateCallbackPtr, DownloadBeforeStart);
   WebDownloader_SetDownloadDidUpdate(downloadDelegateCallbackPtr, DownloadDidUpdate);
-  if (downloadDelegateCallbackPtr != nullptr) {
-    delete downloadDelegateCallbackPtr;
-    downloadDelegateCallbackPtr = nullptr;
-  }
+  delete downloadDelegateCallbackPtr;
+  downloadDelegateCallbackPtr = nullptr;
+
   WebDownloadManager_PutDownloadCallback(nullptr);
 }
 
 void WebDownload_FuzzTest(FuzzedDataProvider* fdp) {
-  NWebBeforeDownloadCallbackWrapper * wrapperPtr1 = new NWebBeforeDownloadCallbackWrapper();
+  NWebBeforeDownloadCallbackWrapper* wrapperPtr1 = new NWebBeforeDownloadCallbackWrapper();
   CefRefPtr<MockCefBeforeDownloadCallback> callback1 = new MockCefBeforeDownloadCallback();
   wrapperPtr1->callback_ = std::move(callback1);
   WebDownload_Continue(wrapperPtr1, fdp->ConsumeRandomLengthString(64).c_str());
@@ -91,11 +91,8 @@ void WebDownload_FuzzTest(FuzzedDataProvider* fdp) {
 void WebDownloadItem_FuzzTest(FuzzedDataProvider* fdp) {
   NWebDownloadItem* downloadItemPtr = nullptr;
   WebDownloadItem_CreateWebDownloadItem(&downloadItemPtr);
-  if (downloadItemPtr == nullptr) {
-    return;
-  }
   WebDownloadItem_SetReceivedBytes(downloadItemPtr, fdp->ConsumeIntegral<int64_t>());
-  WebDownloadItem_SetTotalBytes(downloadItemPtr, fdp->ConsumeIntegral<long>());
+  WebDownloadItem_SetTotalBytes(downloadItemPtr, fdp->ConsumeIntegral<int64_t>());
   WebDownloadItem_SetGuid(downloadItemPtr, fdp->ConsumeRandomLengthString(64).c_str());
   WebDownloadItem_SetUrl(downloadItemPtr, fdp->ConsumeRandomLengthString(64).c_str());
   WebDownloadItem_SetFullPath(downloadItemPtr, fdp->ConsumeRandomLengthString(64).c_str());
@@ -127,12 +124,10 @@ void WebDownloadItem_FuzzTest(FuzzedDataProvider* fdp) {
 }
 
 void WebScreenCapture_FuzzTest(FuzzedDataProvider* fdp) {
-  NWebScreenCaptureDelegateCallback* delegateCallbackPtr = nullptr;
-  WebScreenCapture_CreateScreenCaptureDelegateCallback(&delegateCallbackPtr);
-  if (delegateCallbackPtr == nullptr) {
-    return;
-  }
-  WebScreenCapture_SetScreenCaptureOnStateChange(delegateCallbackPtr, OnStateChange);
+  NWebScreenCaptureDelegateCallback* rawPtr = nullptr;
+  WebScreenCapture_CreateScreenCaptureDelegateCallback(&rawPtr);
+  auto delegateCallback = std::unique_ptr<NWebScreenCaptureDelegateCallback>(rawPtr);
+  WebScreenCapture_SetScreenCaptureOnStateChange(delegateCallback.get(), OnStateChange);
   WebScreenCapture_PutScreenCaptureCallback(nullptr, fdp->ConsumeIntegral<int32_t>());
   WebTranslate_GetWebLanguage(fdp->ConsumeIntegral<int32_t>());
   WebScreenCapture_StopScreenCapture(fdp->ConsumeIntegral<int32_t>(),

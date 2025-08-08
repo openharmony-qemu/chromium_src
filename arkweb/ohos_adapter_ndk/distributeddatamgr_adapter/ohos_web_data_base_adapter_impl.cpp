@@ -177,7 +177,10 @@ void OhosWebDataBaseAdapterImpl::SaveHttpAuthCredentials(const std::string& host
     valueBucket->putText(valueBucket, HTTPAUTH_USERNAME_COL.c_str(), username.c_str());
     valueBucket->putBlob(valueBucket, HTTPAUTH_PASSWORD_COL.c_str(), passwordVector.data(),
         static_cast<uint32_t>(passwordVector.size()));
-    (void)memset(&passwordVector[0], 0, passwordVector.size());
+    errno_t ret = memset_s(&passwordVector[0], passwordVector.size(), 0, passwordVector.size());
+    if (ret != E_OK) {
+        WVLOG_E("memset failed， errCode=%{public}d", ret);
+    }
     errCode = OH_Rdb_Insert(rdbStore_, HTTPAUTH_TABLE_NAME.c_str(), valueBucket);
     valueBucket->destroy(valueBucket);
     if (errCode == RDB_ERR || errCode == RDB_E_INVALID_ARGS) {
@@ -236,8 +239,14 @@ void OhosWebDataBaseAdapterImpl::GetHttpAuthCredentials(const std::string& host,
     unsigned char *passwd = new unsigned char[size + 1]();
     cursor->getBlob(cursor, columnIndex, passwd, size);
     cursor->destroy(cursor);
-    (void)memcpy(password, passwd, size + 1);
-    (void)memset(passwd, 0, size + 1);
+    errno_t ret = memcpy_s(password, size + 1, passwd, size + 1);
+    if (ret != E_OK) {
+        WVLOG_E("memcpy failed， errCode=%{public}d", ret);
+    }
+    ret = memset_s(passwd, size + 1, 0, size + 1);
+    if (ret != E_OK) {
+        WVLOG_E("memset failed， errCode=%{public}d", ret);
+    }
     delete[] passwd;
 }
 
@@ -250,6 +259,10 @@ bool OhosWebDataBaseAdapterImpl::ExistHttpAuthCredentials()
 
     int64_t outValue = 0;
     OH_Predicates *dirAbsPred = OH_Rdb_CreatePredicates(HTTPAUTH_TABLE_NAME.c_str());
+    if (dirAbsPred == nullptr) {
+        WVLOG_E("Pred ptr is null");
+        return false;
+    }
     static const std::string SELECT_COUNT = "select count(1) from " + HTTPAUTH_TABLE_NAME;
     OH_Cursor *cursor = OH_Rdb_ExecuteQuery(rdbStore_, SELECT_COUNT.c_str());
     if (cursor == nullptr || cursor->goToNextRow(cursor) != RDB_OK ||
@@ -276,6 +289,10 @@ void OhosWebDataBaseAdapterImpl::DeleteHttpAuthCredentials()
         return;
     }
     OH_Predicates *dirAbsPred = OH_Rdb_CreatePredicates(HTTPAUTH_TABLE_NAME.c_str());
+    if (dirAbsPred == nullptr) {
+        WVLOG_E("Pred ptr is null");
+        return;
+    }
     int ret = OH_Rdb_Delete(rdbStore_, dirAbsPred);
     if (ret != RDB_ERR && ret != RDB_E_INVALID_ARGS) {
         WVLOG_I("webdatabase clear all http auth info succ: deleted rows=%{public}d", ret);

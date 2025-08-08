@@ -90,30 +90,33 @@ void GpuHostImpl::Discard(uint32_t native_window_id)
 }
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-void GpuHostImpl::SendBlanklessSnapshotInfo(uint64_t blankless_key,
-                                            int32_t lcp_time,
-                                            int64_t pref_hash,
+void GpuHostImpl::SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
                                             const std::vector<gfx::Rect>& quad_list,
                                             mojo::ScopedSharedBufferHandle buffer,
                                             mojom::BlanklessBitmapMetadataPtr metadata) {
-  TRACE_EVENT1("io", "blankless GpuHostImpl::SendBlanklessSnapshotInfo", "blankless_key", blankless_key);
+  TRACE_EVENT1("io", "blankless GpuHostImpl::SendBlanklessSnapshotInfo", "blankless_key", infoPtr->blankless_key);
+  base::ohos::BlanklessInfo info = {
+    .blankless_key = infoPtr->blankless_key,
+    .nweb_id = infoPtr->nweb_id,
+    .lcp_time = infoPtr->lcp_time,
+    .system_time = infoPtr->system_time,
+    .pref_hash = infoPtr->pref_hash
+  };
   base::ThreadPool::PostTask(
       FROM_HERE,
       {base::MayBlock(), base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN,
        base::TaskPriority::USER_BLOCKING},
-      base::BindOnce(&GpuHostImpl::DumpBlanklessSnapshot, blankless_key, lcp_time, pref_hash, quad_list,
+      base::BindOnce(&GpuHostImpl::DumpBlanklessSnapshot, std::move(info), quad_list,
         std::move(buffer), std::move(metadata)));
 }
 
-void GpuHostImpl::DumpBlanklessSnapshot(uint64_t blankless_key,
-                                        int32_t lcp_time,
-                                        int64_t pref_hash,
+void GpuHostImpl::DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& blankless_info,
                                         const std::vector<gfx::Rect>& quad_list,
                                         mojo::ScopedSharedBufferHandle buffer,
                                         mojom::BlanklessBitmapMetadataPtr metadata) {
-  TRACE_EVENT1("io", "blankless GpuHostImpl::DumpBlanklessSnapshot", "blankless_key", blankless_key);
-  LOG(DEBUG) << "GpuHostImpl::DumpBlanklessSnapshot url begin : key " << blankless_key
-    << ", lcp_time " << lcp_time << ", pref_hash " << pref_hash;
+  TRACE_EVENT1("io", "blankless GpuHostImpl::DumpBlanklessSnapshot", "blankless_key", blankless_info.blankless_key);
+  LOG(DEBUG) << "GpuHostImpl::DumpBlanklessSnapshot url begin : key " << blankless_info.blankless_key
+    << ", lcp_time " << blankless_info.lcp_time << ", pref_hash " << blankless_info.pref_hash;
   
   // the next all the process is sync, here we restore the skbitmap from mojo
   if (!buffer || !buffer.is_valid() ||
@@ -154,7 +157,7 @@ void GpuHostImpl::DumpBlanklessSnapshot(uint64_t blankless_key,
       quad.height(),
     });
   }
-  databaseAdapter.DumpBlanklessSnapshot(blankless_key, lcp_time, pref_hash, bitmap, rect_list);
+  databaseAdapter.DumpBlanklessSnapshot(std::move(blankless_info), bitmap, rect_list);
 }
 
 void GpuHostImpl::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {

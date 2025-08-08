@@ -1040,7 +1040,7 @@ NWebImpl::~NWebImpl() {
   ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::STOP);
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   if (base::ohos::BlanklessController::CheckGlobalProperty()) {
-    base::ohos::BlanklessController::GetInstance().RemoveStatus(nweb_id_);
+    base::ohos::BlanklessController::GetInstance().Clear(nweb_id_);
   }
 #endif
   base::AutoLock lock_scope(nweb_map_lock_);
@@ -6149,6 +6149,8 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
     *loadingTime = 0;
   } else {
     blankless_key_ = blankless_key;
+    auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
+    base::ohos::BlanklessController::GetInstance().RecordSystemTime(nweb_id_, blankless_key_, system_time);
     nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key);
     OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
     *similarity = dataItem.historySimilarity;
@@ -6204,6 +6206,8 @@ bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
     return false;
   }
   blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(url);
+  auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
+  base::ohos::BlanklessController::GetInstance().RecordSystemTime(nweb_id_, blankless_key_, system_time);
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
   auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
   OHOS::NWeb::SnapshotDataItem dataItem = databaseAdapter.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
@@ -6222,10 +6226,10 @@ void NWebImpl::SetVisibility(bool isVisible) {
     return;
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
-  int32_t lcp_time = instance.FireFrameInsertCallback(blankless_key_);
-  if (lcp_time > 0 && lcp_time != INT32_MAX) {
+  int32_t lcp_time = instance.FireFrameInsertCallback(nweb_id_, blankless_key_);
+  if (lcp_time > 0) {
     nweb_handle_->OnRemoveBlanklessFrame(lcp_time);
-    instance.RegisterFrameRemoveCallback(blankless_key_, [handle = this->nweb_handle_](){
+    instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_](){
       handle->OnRemoveBlanklessFrame(0);
     });
   }
@@ -6244,16 +6248,24 @@ void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, 
     return;
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
+  auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
+  uint64_t recorded_time = instance.GetSystemTime(nweb_id_, blankless_key_);
+  int32_t corrected_time = static_cast<int32_t>(system_time - recorded_time);
+  if (corrected_time < 0 || corrected_time >= lcp_time || lcp_time - corrected_time < 40) { // 40 ms
+    LOG(DEBUG) << "blankless CallBlanklessFrameFunc corrected time error " << corrected_time << " " << lcp_time;
+    return;
+  }
   lcp_time = std::min(lcp_time, 2000);  // 2000 ms
   if (is_visible_) {
     nweb_handle_->OnInsertBlanklessFrame(file);
     nweb_handle_->OnRemoveBlanklessFrame(lcp_time);
-    instance.RegisterFrameRemoveCallback(blankless_key_, [handle = this->nweb_handle_](){
+    instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_](){
       handle->OnRemoveBlanklessFrame(0);
     });
   } else {
-    instance.RegisterFrameInsertCallback(
-      blankless_key_, [handle = this->nweb_handle_, file](){ handle->OnInsertBlanklessFrame(file); }, lcp_time);
+    instance.RegisterFrameInsertCallback(	nweb_id_, blankless_key_, [handle = this->nweb_handle_, file](){
+      handle->OnInsertBlanklessFrame(file);
+    }, lcp_time);
   }
 }
 

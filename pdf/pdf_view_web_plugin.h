@@ -723,6 +723,10 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   void SetShowSearchifyInProgress(bool show);
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+  void ForceSelectionChanged();
+#endif
+
   bool initialized_ = false;
 
   bool plugin_can_save_ = false;
@@ -951,6 +955,8 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 
 #if BUILDFLAG(ARKWEB_PDF)
   bool scroll_at_bottom_status_ = false;
+  gfx::Rect current_left_;
+  gfx::Rect current_right_;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   base::WeakPtrFactory<PdfViewWebPlugin> weak_factory_{this};

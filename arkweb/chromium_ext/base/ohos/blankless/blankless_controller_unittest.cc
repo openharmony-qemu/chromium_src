@@ -440,5 +440,17 @@ TEST_F(BlanklessControllerTest, Status_RecordKey_Allowed_MatchKey)
   };
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info2));
 }
+
+TEST_F(BlanklessControllerTest, Check_Record_Window_Id)
+{
+  uint32_t window_id = 1;
+  controller.RecordWindowId(nweb_id1, window_id);
+  auto window_id1 = controller.GetWindowIdByNWebId(nweb_id1);
+  EXPECT_EQ(window_id1, window_id);
+
+  uint32_t nweb_id2 = 2;
+  auto window_id2 = controller.GetWindowIdByNWebId(nweb_id2);
+  EXPECT_EQ(window_id2, 0);
+}
 }  // namespace ohos
 }  // namespace base

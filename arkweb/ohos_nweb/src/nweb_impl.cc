@@ -284,6 +284,7 @@ ConfirmInfoBarMessage OHOS::NWeb::NWebImpl::confirm_info_bar_message_ = {};
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
+#include "arkweb/ohos_adapter_ndk/window_manager_adapter/window_manager_adapter_impl.h"
 #endif
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
@@ -3173,6 +3174,12 @@ void NWebImpl::SetWindowId(uint32_t window_id) {
     WVLOG_E("SetWindowId nweb delegate is null");
     return;
   }
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
+    auto& instance = base::ohos::BlanklessController::GetInstance();
+    instance.RecordWindowId(nweb_id_, window_id);
+  }
+#endif
   if (!base::ohos::IsMobileDevice()) {
     nweb_delegate_->SetWindowId(window_id);
   }
@@ -6136,15 +6143,28 @@ void NWebImpl::SetPrivacyStatus(bool isPrivate) {
 
 int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) {
   if (!base::ohos::BlanklessController::CheckGlobalProperty() ||
-      !nweb_delegate_ || !similarity || !loadingTime || is_private_) {
+      !nweb_delegate_ || !similarity || !loadingTime) {
+      if (similarity) {
+        *similarity = 0;
+      }
+      if (loadingTime) {
+        *loadingTime = 0;
+      }
     return 0;  // SUCCESS
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
+  auto window_id = instance.GetWindowIdByNWebId(nweb_id_);
   uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
   auto status_code = instance.RecordKey(nweb_id_, blankless_key);
   auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
+  auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
+  if (is_private) {
+    LOG(DEBUG) << "blankless this is a private window: "<< window_id;
+    databaseAdapter.ClearSnapshot(blankless_key);
+    databaseAdapter.ClearSnapshotDataItem({blankless_key});
+  }
   if (status_code != base::ohos::BlanklessController::StatusCode::DUMPED ||
-      databaseInstance.GetBlanklessLoadingCacheCapacity() == 0) {
+      databaseInstance.GetBlanklessLoadingCacheCapacity() == 0 || is_private) {
     *similarity = 0;
     *loadingTime = 0;
   } else {
@@ -6162,7 +6182,7 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
 }
 
 int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStart) {
-  if (!base::ohos::BlanklessController::CheckGlobalProperty() || is_private_) {
+  if (!base::ohos::BlanklessController::CheckGlobalProperty()) {
     return -5;  // ERR_SIGNIFICANT_CHANGE
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
@@ -6172,6 +6192,14 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
     return -4;    // ERR_KEY_NOT_MATCH
   }
   auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
+  auto window_id = instance.GetWindowIdByNWebId(nweb_id_);
+  auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
+  if (is_private) {
+    LOG(DEBUG) << "blankless this is a private window: "<< window_id;
+    databaseAdapter.ClearSnapshot(blankless_key);
+    databaseAdapter.ClearSnapshotDataItem({blankless_key});
+    return -5;
+  }  
   if (status_code != base::ohos::BlanklessController::StatusCode::INSERTED ||
       databaseInstance.GetBlanklessLoadingCacheCapacity() == 0) {
     return (isStart ? -5 : 0);  // ERR_SIGNIFICANT_CHANGE(true) or SUCCESS(false)
@@ -6201,15 +6229,24 @@ void NWebImpl::RemoveBlanklessFrame() {
 }
 
 bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
-  if (!base::ohos::BlanklessController::CheckGlobalProperty() || is_private_ || !nweb_delegate_ ||
+  if (!base::ohos::BlanklessController::CheckGlobalProperty() || !nweb_delegate_ ||
       !base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
     return false;
   }
   blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(url);
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  auto window_id = instance.GetWindowIdByNWebId(nweb_id_);
+  auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
+  auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
+  if (is_private) {
+    LOG(DEBUG) << "blankless this is a private window: "<< window_id;
+    databaseAdapter.ClearSnapshot(blankless_key_);
+    databaseAdapter.ClearSnapshotDataItem({blankless_key_});
+    return false;
+  }
   auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
   base::ohos::BlanklessController::GetInstance().RecordSystemTime(nweb_id_, blankless_key_, system_time);
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
-  auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
   OHOS::NWeb::SnapshotDataItem dataItem = databaseAdapter.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
   if ((dataItem.width != nweb_delegate_->GetWidth()) || (dataItem.height != nweb_delegate_->GetHeight())) {
     LOG(DEBUG) << "blankless TriggerBlanklessForUrl snapshot resolution is differnet webPattern";

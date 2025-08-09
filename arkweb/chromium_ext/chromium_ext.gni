@@ -306,6 +306,7 @@ arkweb_media_base_unittest_sources = [
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_drm_bridge_factory_unittest.cc",
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_drm_bridge_unittest.cc",
   "//arkweb/chromium_ext/media/base/ohos/ohos_media_drm_storage_bridge_unittest.cc",
+  "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_focus_controller_unittest.cc",
 ]
 
 arkweb_media_mojo_services_unittest_sources = [

@@ -912,6 +912,7 @@ void AudioDecoderCallbackManager::OnOutputFormatChanged(OH_AVCodec *codec, OH_AV
 void AudioDecoderCallbackManager::OnInputBufferAvailable(
     OH_AVCodec *codec, uint32_t index, OH_AVBuffer *data, void *userData)
 {
+    (void)userData;
     WVLOG_D("AudioDecoderCallbackManager %{public}s[%{public}u].", __FUNCTION__, index);
     if (codec == nullptr) {
         WVLOG_E("AudioDecoderCallbackManager::OnInputBufferAvailable avcodec is nullptr.");
@@ -944,6 +945,11 @@ void AudioDecoderCallbackManager::OnOutputBufferAvailable(
     WVLOG_I("AudioDecoderCallbackManager %{public}s.", __FUNCTION__);
     if (codec == nullptr) {
         WVLOG_E("AudioDecoderCallbackManager avcodec is nullptr.");
+        return;
+    }
+
+    if (data == nullptr) {
+        WVLOG_E("AudioDecoderCallbackManager::OnOutputBufferAvailable avbuffer is nullptr.");
         return;
     }
 

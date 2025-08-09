@@ -244,6 +244,7 @@ declare_args() {
   arkweb_error_page = true
   arkweb_gwp_asan = true
   arkweb_bgtask = false
+  arkweb_privacy_compliance = true
 }
 
 # Features enabled in mojom bindings.

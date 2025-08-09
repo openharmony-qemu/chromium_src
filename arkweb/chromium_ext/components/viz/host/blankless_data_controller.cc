@@ -408,7 +408,7 @@ std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::
   return snapshotInfo;
 }
 
-void BlanklessDataController::DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& info,
+void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessInfo& info,
                                                     const SkBitmap& bitmap,
                                                     const std::vector<SnapShotRect>& quad_list)
 {

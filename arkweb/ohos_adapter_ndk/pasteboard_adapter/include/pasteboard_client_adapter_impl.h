@@ -57,6 +57,12 @@ private:
     std::vector<std::string> GetMimeTypes();
     void DestoryOptions(int createResult, OH_Pixelmap_InitializationOptions *options, std::string type);
     void DestoryPixelmapNative(OH_PixelmapNative *pixelmapNative);
+    void ReleaseMemory(OH_UdsPixelMap* udsPixelMap = nullptr,
+                       OH_Pixelmap_InitializationOptions* options = nullptr,
+                       OH_PixelmapNative* pixelmapNative = nullptr,
+                       OH_Pixelmap_ImageInfo* imageInfo = nullptr,
+                       const std::string& optionType = "",
+                       int result = 0);
     std::string HtmlToPlainText(const std::string& html);
 };
 

@@ -52,10 +52,8 @@ void CreateOriginId(OriginIdReadyCB callback) {
 
 void AllowEmptyOriginId(content::RenderFrameHost* render_frame_host,
                         base::OnceCallback<void(bool)> callback) {
-  if (media::OHOSMediaDrmBridge::IsPerApplicationProvisioningSupported()) {
-    std::move(callback).Run(false);
-    return;
-  }
+  // Widevine dose not allow the use of empty origin Id and wiseplay
+  // dose not need origin Id, so false is always returned here.
   std::move(callback).Run(false);
 }
 

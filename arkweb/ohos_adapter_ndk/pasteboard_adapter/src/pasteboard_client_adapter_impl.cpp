@@ -189,6 +189,31 @@ void PasteDataRecordAdapterImpl::DestoryPixelmapNative(OH_PixelmapNative *pixelm
     }
 }
 
+void PasteDataRecordAdapterImpl::ReleaseMemory(
+    OH_UdsPixelMap* udsPixelMap,
+    OH_Pixelmap_InitializationOptions* options,
+    OH_PixelmapNative* pixelmapNative,
+    OH_Pixelmap_ImageInfo* imageInfo,
+    const std::string& optionType,
+    int result) {
+  if (udsPixelMap != nullptr) {
+    OH_UdsPixelMap_Destroy(udsPixelMap);
+  }
+  if (options != nullptr) {
+    DestoryOptions(result, options, optionType);
+  }
+  if (pixelmapNative != nullptr) {
+    DestoryPixelmapNative(pixelmapNative);
+  }
+  if (imageInfo != nullptr) {
+    int pixelmapImageInfoDestroy_res = OH_PixelmapImageInfo_Release(imageInfo);
+    if (pixelmapImageInfoDestroy_res != UDMF_E_OK) {
+      WVLOG_E("imageInfo destroy failed. error code is : %{public}d",
+              pixelmapImageInfoDestroy_res);
+    }
+  }
+}
+
 PIXEL_FORMAT PasteDataRecordAdapterImpl::ClipBoardToPixelColorType(ClipBoardImageColorType colorType)
 {
     switch (colorType) {
@@ -471,12 +496,13 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     OH_UdsPixelMap* udsPixelMap = OH_UdsPixelMap_Create();
     if (udsPixelMap == nullptr) {
         WVLOG_E("Create UdsPixelMap fail.");
+        return false;
     }
 
     int getPixelMap_res = OH_UdmfRecord_GetPixelMap(record_, udsPixelMap);
     if (getPixelMap_res != UDMF_E_OK) {
         WVLOG_E("GetPixelmap failed. error code is : %{public}d", getPixelMap_res);
-        OH_UdsPixelMap_Destroy(udsPixelMap);
+        ReleaseMemory(udsPixelMap);
         return false;
     }
 
@@ -484,6 +510,7 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     int createOptions_res = OH_PixelmapInitializationOptions_Create(&options);
     if (createOptions_res != IMAGE_SUCCESS) {
         WVLOG_E("create OH_Pixelmap_InitializationOptions failed. error code is : %{public}d", createOptions_res);
+        ReleaseMemory(udsPixelMap);
         return false;
     }
 
@@ -496,14 +523,14 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     int createPixelMap_res = OH_PixelmapNative_CreateEmptyPixelmap(options, &pixelmapNative);
     if (createPixelMap_res != IMAGE_SUCCESS) {
         WVLOG_E("create OH_PixelmapNative failed. error code is : %{public}d", createPixelMap_res);
-        DestoryOptions(createPixelMap_res, options, "create OH_PixelmapNative failed");
+        ReleaseMemory(udsPixelMap, options, nullptr, nullptr, "create OH_PixelmapNative failed", createPixelMap_res);
         return false;
     }
 
     OH_UdsPixelMap_GetPixelMap(udsPixelMap, pixelmapNative);
     if (pixelmapNative == nullptr) {
         WVLOG_E("GetPixelMapNative is null");
-        OH_UdsPixelMap_Destroy(udsPixelMap);
+        ReleaseMemory(udsPixelMap, options, nullptr, nullptr, "GetPixelMapNative is null");
         return false;
     }
 
@@ -511,14 +538,14 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     int createImageInfo_res = OH_PixelmapImageInfo_Create(&imageInfo);
     if (createImageInfo_res != IMAGE_SUCCESS) {
         WVLOG_E("CreateImageInfo failed. error code is : %{public}d", createImageInfo_res);
-        OH_UdsPixelMap_Destroy(udsPixelMap);
+        ReleaseMemory(udsPixelMap, options, pixelmapNative, nullptr, "CreateImageInfo failed", createImageInfo_res);
         return false;
     }
 
     int GetImageInfo_res = OH_PixelmapNative_GetImageInfo(pixelmapNative, imageInfo);
     if (GetImageInfo_res != IMAGE_SUCCESS) {
-        WVLOG_E("GetImageInfo failed. error code is : %{public}d", createImageInfo_res);
-        OH_UdsPixelMap_Destroy(udsPixelMap);
+        WVLOG_E("GetImageInfo failed. error code is : %{public}d", GetImageInfo_res);
+        ReleaseMemory(udsPixelMap, options, pixelmapNative, imageInfo, "GetImageInfo failed", GetImageInfo_res);
         return false;
     }
 
@@ -560,21 +587,31 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     uint8_t* dataBuffer = static_cast<uint8_t *>(calloc(dataSize, sizeof(uint8_t)));
     if (dataBuffer == nullptr) {
         WVLOG_E("calloc dataBuffer failed");
+        ReleaseMemory(udsPixelMap, options, pixelmapNative, imageInfo);
         return false;
     }
 
     uint32_t* data = static_cast<uint32_t *>(calloc(dataSize, sizeof(uint32_t)));
+    if (data == nullptr) {
+        WVLOG_E("calloc data failed");
+        ReleaseMemory(udsPixelMap, options, pixelmapNative, imageInfo);
+        free(dataBuffer);
+        return false;
+    }
     int readPixels_res = OH_PixelmapNative_ReadPixels(pixelmapNative, dataBuffer, &dataSize);
     if (readPixels_res != IMAGE_SUCCESS) {
         WVLOG_E("ReadPixels failed. error code is : %{public}d", readPixels_res);
     } else {
         if (memcpy_s(data, dataSize, dataBuffer, dataSize)) {
             WVLOG_E("memcpy_s failed");
+            ReleaseMemory(udsPixelMap, options, pixelmapNative, imageInfo);
+            free(dataBuffer);
+            free(data);
             return false;
         }
-        free(dataBuffer);
-        dataBuffer = nullptr;
     }
+    free(dataBuffer);
+    dataBuffer = nullptr;
 
     imageData->SetData(data);
     imageData->SetDataSize(dataSize);
@@ -584,13 +621,7 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     imageData->SetAlphaType(PixelToClipboardAlphaType(static_cast<PIXELMAP_ALPHA_TYPE>(alphaType)));
     imageData->SetColorType(PixelToClipBoardColorType(static_cast<PIXEL_FORMAT>(pixelFormat)));
 
-    DestoryOptions(0, options, "GetImgData ended");
-    DestoryPixelmapNative(pixelmapNative);
-    OH_UdsPixelMap_Destroy(udsPixelMap);
-    int pixelmapImageInfoDestroy_res = OH_PixelmapImageInfo_Release(imageInfo);
-    if (pixelmapImageInfoDestroy_res != UDMF_E_OK) {
-        WVLOG_E("imageInfo destroy failed. error code is : %{public}d", pixelmapImageInfoDestroy_res);
-    }
+    ReleaseMemory(udsPixelMap, options, pixelmapNative, imageInfo, "GetImgData ended");
     return true;
 }
 
@@ -794,7 +825,7 @@ std::shared_ptr<std::string> PasteDataAdapterImpl::GetPrimaryHtml()
     }
 
     const char* html = OH_UdsHtml_GetContent(udsHtml);
-    std::shared_ptr<std::string> primaryHtml = std::make_shared<std::string>(html);
+    std::shared_ptr<std::string> primaryHtml = html ? std::make_shared<std::string>(html) : nullptr;
     OH_UdsHtml_Destroy(udsHtml);
     return primaryHtml;
 }

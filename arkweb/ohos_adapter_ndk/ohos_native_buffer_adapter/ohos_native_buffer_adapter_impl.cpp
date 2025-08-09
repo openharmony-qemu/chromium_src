@@ -70,8 +70,6 @@ void OhosNativeBufferAdapterImpl::Release(void* buffer)
     if (OH_NativeBuffer_Unreference(static_cast<OH_NativeBuffer*>(buffer)) == 0) {
         WVLOG_D("native buffer release, unreference buffer.");
     }
-
-    buffer = nullptr;
 }
 
 int OhosNativeBufferAdapterImpl::GetEGLBuffer(void* buffer, void** eglBuffer)
@@ -92,7 +90,6 @@ int OhosNativeBufferAdapterImpl::GetEGLBuffer(void* buffer, void** eglBuffer)
         WVLOG_E("native buffer failed to create native window buffer from native buffer.");
         return -1;
     } else {
-        WVLOG_D("native buffer create native window buffer from native bufferL %{private}p.", *eglBuffer);
         *eglBuffer = nativeWindowBuffer;
         return 0;
     }

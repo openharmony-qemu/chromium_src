@@ -152,7 +152,7 @@ void DateTimeFormatAdapterImpl::StopListen()
 
 std::string DateTimeFormatAdapterImpl::GetTimezone()
 {
-    char timeZone[MAX_TIMEZONE_LEN];
+    char timeZone[MAX_TIMEZONE_LEN] = {0};
     TimeService_ErrCode ret = OH_TimeService_GetTimeZone(timeZone, sizeof(timeZone));
     if (ret != TIMESERVICE_ERR_OK) {
         WVLOG_I("get timezone error: %{public}d", ret);

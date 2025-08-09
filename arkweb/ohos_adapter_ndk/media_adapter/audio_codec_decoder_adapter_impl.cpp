@@ -966,15 +966,16 @@ void AudioDecoderCallbackManager::OnOutputBufferAvailable(
         return;
     }
 
-    uint8_t bufferData[attr.size];
-    if (memcpy_s(bufferData, sizeof(bufferData), reinterpret_cast<uint8_t *>(OH_AVBuffer_GetAddr(data)),
-        attr.size) != EOK) {
+    uint8_t *bufferData = new uint8_t[attr.size];
+    if (bufferData == nullptr || memcpy_s(bufferData, sizeof(bufferData),
+        reinterpret_cast<uint8_t *>(OH_AVBuffer_GetAddr(data)), attr.size) != EOK) {
         WVLOG_E(" memcpy_s buffer fail.");
         return;
     }
     // Copy the buffer data from the data.
     impl->GetAudioDecoderCallBack()->OnOutputBufferAvailable(
         index, bufferData, attr.size, attr.pts, attr.offset, attr.flags);
+    delete[] bufferData;
 }
 
 } // namespace OHOS::NWeb

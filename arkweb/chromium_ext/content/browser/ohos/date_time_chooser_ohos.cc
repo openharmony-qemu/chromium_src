@@ -50,6 +50,10 @@ void DateTimeChooserOHOS::OpenDateTimeDialog(
 }
 
 void DateTimeChooserOHOS::NotifyResult(bool success, double dialog_value) {
+  if (!open_date_time_response_callback_) {
+    LOG(ERROR) << "DateTimeCallback is null";
+    return;
+  }
   std::move(open_date_time_response_callback_).Run(success, dialog_value);
 }
 

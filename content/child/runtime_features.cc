@@ -533,6 +533,24 @@ void SetRuntimeFeaturesFromCommandLine(const base::CommandLine& command_line) {
       WebRuntimeFeatures::EnableAutomationControlled(true);
     }
   }
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  // Enable or disable SendMouseEventsDisabledFormControls for Enterprise
+  // Policy. This overrides any existing settings via base::Feature.
+  if (command_line.HasSwitch(
+          blink::switches::kSendMouseEventsDisabledFormControlsPolicy)) {
+    const std::string value = command_line.GetSwitchValueASCII(
+        blink::switches::kSendMouseEventsDisabledFormControlsPolicy);
+    if (value == blink::switches::
+                     kSendMouseEventsDisabledFormControlsPolicy_ForceEnable) {
+      WebRuntimeFeatures::EnableSendMouseEventsDisabledFormControls(true);
+    }
+    if (value == blink::switches::
+                     kSendMouseEventsDisabledFormControlsPolicy_ForceDisable) {
+      WebRuntimeFeatures::EnableSendMouseEventsDisabledFormControls(false);
+    }
+  }
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 }
 
 // Sets blink runtime features that depend on a combination

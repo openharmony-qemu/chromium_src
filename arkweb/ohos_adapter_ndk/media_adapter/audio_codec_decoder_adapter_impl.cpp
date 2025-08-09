@@ -15,12 +15,12 @@
 
 #include "audio_codec_decoder_adapter_impl.h"
 
-#include <multimedia/player_framework/native_avcodec_audiocodec.h>
-#include <multimedia/player_framework/native_avcapability.h>
-#include <multimedia/native_audio_channel_layout.h>
 #include <multimedia/drm_framework/native_drm_err.h>
 #include <multimedia/drm_framework/native_mediakeysession.h>
+#include <multimedia/native_audio_channel_layout.h>
 #include <multimedia/player_framework/native_avbuffer.h>
+#include <multimedia/player_framework/native_avcapability.h>
+#include <multimedia/player_framework/native_avcodec_audiocodec.h>
 
 #include "audio_cenc_info_adapter_impl.h"
 

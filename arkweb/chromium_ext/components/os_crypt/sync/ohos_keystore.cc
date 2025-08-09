@@ -13,8 +13,7 @@
 #include <openssl/conf.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
-
-#include <random>
+#include <openssl/rand.h>
 
 #include "base/feature_list.h"
 #include "base/files/file_path.h"
@@ -31,6 +30,9 @@ const int COUNT_FOR_RETRY = 3;
 const size_t KEY_LENGTH = 32;
 constexpr base::FilePath::CharType kNWebKeyStoreDir[] =
     FILE_PATH_LITERAL("nwebks");
+constexpr uint32_t IV_SIZE = 16;
+constexpr char V10[] = "V10";
+constexpr uint32_t V10_SIZE = 3;
 
 std::string GetKey(const std::string& alias) {
   base::FilePath cache_path;
@@ -52,6 +54,7 @@ std::string GetKey(const std::string& alias) {
     std::string encryptedData;
     bool res = base::ReadFileToString(key_file, &encryptedData);
     if (!res) {
+      PLOG(INFO) << "failed to read file: " << alias;
       return std::string();
     }
     std::string local_key;
@@ -105,6 +108,11 @@ std::string GetKeyForOta(const std::string& alias) {
     if (!res) {
       return std::string();
     }
+    if (encryptedData.starts_with(V10) &&
+        encryptedData.length() >= V10_SIZE + IV_SIZE) {
+      encryptedData = encryptedData.substr(
+          V10_SIZE + IV_SIZE, encryptedData.length() - V10_SIZE - IV_SIZE);
+    }
     std::string local_key;
     for (int i = 0; i < COUNT_FOR_RETRY; i++) {
       local_key = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -122,15 +130,11 @@ std::string GetKeyForOta(const std::string& alias) {
 }
 
 std::string GenerateLocalKey(size_t sz) {
-  std::random_device rd;
-  std::mt19937 gen{rd()};
-  std::uniform_int_distribution<> dis{0, 255};
-
   std::string rn(sz, 0);
-  for (size_t i = 0; i < sz; ++i) {
-    rn[i] = (std::string::value_type)dis(gen);
+  if (RAND_bytes(reinterpret_cast<unsigned char*>(rn.data()), sz) != 1) {
+    LOG(ERROR) << "Failed to generate random bytes";
+    return std::string();
   }
-
   return rn;
 }
 

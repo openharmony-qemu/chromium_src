@@ -8,8 +8,7 @@
 #include <openssl/conf.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
-
-#include <random>
+#include <openssl/rand.h>
 
 #include "base/lazy_instance.h"
 #include "base/logging.h"
@@ -132,15 +131,11 @@ static std::string _generate_key(const std::string& key_name) {
 }
 
 std::string _get_random(size_t sz) {
-  std::random_device rd;
-  std::mt19937 gen{rd()};
-  std::uniform_int_distribution<> dis{0, 255};
-
   std::string rn(sz, 0);
-  for (size_t i = 0; i < sz; ++i) {
-    rn[i] = (std::string::value_type)dis(gen);
+  if (RAND_bytes(reinterpret_cast<unsigned char*>(rn.data()), sz) != 1) {
+    LOG(ERROR) << "Failed to generate random bytes";
+    return std::string();
   }
-
   return rn;
 }
 
@@ -183,8 +178,7 @@ std::string get_symmetric_key_256_for_ota(const std::string& key_name) {
 }
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-std::string get_asset_handle_file_256(const std::string& key_name)
-{
+std::string get_asset_handle_file_256(const std::string& key_name) {
   std::string digest = crypto::SHA256HashString(key_name);
   return _hex_repr(digest);
 }

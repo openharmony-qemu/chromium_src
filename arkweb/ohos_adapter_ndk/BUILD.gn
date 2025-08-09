@@ -333,5 +333,6 @@ component("adapter_ndk") {
     "//third_party:huawei_securec",
     "//arkweb/build/features",
     "//base:tracing_buildflags",
+    "//third_party/boringssl",
   ]
 }

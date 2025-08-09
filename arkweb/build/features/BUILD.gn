@@ -313,6 +313,7 @@ if (!enable_arkweb) {
   arkweb_error_page = false
   arkweb_gwp_asan = false
   arkweb_bgtask = false
+  arkweb_privacy_compliance = true
 }
 
 buildflag_header("features") {
@@ -547,6 +548,7 @@ buildflag_header("features") {
     "ARKWEB_ERROR_PAGE=$arkweb_error_page",
     "ARKWEB_GWP_ASAN=$arkweb_gwp_asan",
     "ARKWEB_HWASAN=$is_hwasan",
+    "ARKWEB_PRIVACY_COMPLIANCE=$arkweb_privacy_compliance",
     "ARKWEB_BGTASK=$arkweb_bgtask",
 
     # ARKWEB_EXT dafault value

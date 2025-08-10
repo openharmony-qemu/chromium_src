@@ -1433,6 +1433,10 @@ SkColor PdfViewWebPlugin::GetBackgroundColor() const {
 
 void PdfViewWebPlugin::SelectionChanged(const gfx::Rect& left,
                                         const gfx::Rect& right) {
+#if BUILDFLAG(ARKWEB_PDF)
+  current_left_ = left;
+  current_right_ = right;
+#endif
   gfx::PointF left_point(left.x() + available_area_.x(), left.y());
   gfx::PointF right_point(right.x() + available_area_.x(), right.y());
 
@@ -2021,6 +2025,9 @@ void PdfViewWebPlugin::OnPaint(const std::vector<gfx::Rect>& paint_rects,
                                std::vector<gfx::Rect>& pending) {
   base::AutoReset<bool> auto_reset_in_paint(&in_paint_, true);
   DoPaint(paint_rects, ready, pending);
+#if BUILDFLAG(ARKWEB_PDF)
+  ForceSelectionChanged();
+#endif
 }
 
 gfx::PointF PdfViewWebPlugin::GetScrollPositionFromOffset(

@@ -76,6 +76,24 @@ void PdfViewWebPlugin::UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect&
 void PdfViewWebPlugin::HideHandleAndQuickMenuForPDF(bool hide_handles) {
   pdf_host_->HideHandleAndQuickMenuForPDF(hide_handles);
 }
+
+void PdfViewWebPlugin::ForceSelectionChanged() {
+  auto left = current_left_;
+  auto right = current_right_;
+
+  gfx::PointF left_point(left.x() + available_area_.x(), left.y());
+  gfx::PointF right_point(right.x() + available_area_.x(), right.y());
+
+  const float inverse_scale = 1.0f / device_scale_;
+  left_point.Scale(inverse_scale);
+  right_point.Scale(inverse_scale);
+
+  pdf_host_->SelectionChanged(left_point, left.height() * inverse_scale,
+                              right_point, right.height() * inverse_scale);
+
+  if (accessibility_state_ == AccessibilityState::kLoaded)
+    PrepareAndSetAccessibilityViewportInfo();
+}
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
 }  // namespace chrome_pdf

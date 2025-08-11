@@ -37,6 +37,9 @@ MediaDrmOriginIdManagerFactory::~MediaDrmOriginIdManagerFactory() = default;
 KeyedService* MediaDrmOriginIdManagerFactory::BuildServiceInstanceFor(
     content::BrowserContext* context) const {
   Profile* profile = Profile::FromBrowserContext(context);
+  if (profile == nullptr) {
+    return nullptr;
+  }
   return new MediaDrmOriginIdManager(profile->GetPrefs());
 }
 

@@ -18,7 +18,7 @@
 #include <cstdarg>
 #include <native_window/external_window.h>
 #include <native_buffer/native_buffer.h>
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 
 
 namespace OHOS::NWeb {

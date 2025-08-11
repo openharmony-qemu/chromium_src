@@ -18,9 +18,9 @@
 #include "arkweb/ohos_adapter_ndk/media_adapter/buffer_info_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/media_adapter/ohos_buffer_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/media_adapter/codec_format_adapter_impl.h"
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 
-#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
+#include "native_window_adapter_impl.h"
 
 using namespace OHOS::NWeb;
 
@@ -127,6 +127,8 @@ CodecCodeAdapter VideoEncoderAdapterImpl::Configure(const std::shared_ptr<CodecC
     WVLOG_I("Configure width: %{public}d, height: %{public}d, bitRate: %{public}d, framerate: %{public}lf,",
         config->GetWidth(), config->GetHeight(), (int32_t)config->GetBitRate(), config->GetFrameRate());
     OH_AVErrCode ret = OH_VideoEncoder_Configure(encoder_, format);
+    OH_AVFormat_Destroy(format);
+
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         return CodecCodeAdapter::ERROR;
     }
@@ -249,6 +251,8 @@ CodecCodeAdapter VideoEncoderAdapterImpl::RequestKeyFrameSoon()
     OH_AVFormat_SetIntValue(format, OH_MD_KEY_REQUEST_I_FRAME, true);
 
     OH_AVErrCode ret = OH_VideoEncoder_SetParameter(encoder_, format);
+    OH_AVFormat_Destroy(format);
+
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         return CodecCodeAdapter::ERROR;
     }

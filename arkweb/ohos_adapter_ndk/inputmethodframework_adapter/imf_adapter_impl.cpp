@@ -15,7 +15,7 @@
 
 #include "imf_adapter_impl.h"
 
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 #include "ohos_adapter_helper.h"
 #include "third_party/cJSON/cJSON.h"
 

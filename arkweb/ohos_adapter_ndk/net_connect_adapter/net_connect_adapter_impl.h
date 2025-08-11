@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <mutex>
 
 #include "net_connect_adapter.h"
 
@@ -43,6 +44,12 @@ public:
 
     std::vector<std::string> GetDnsServersByNetId(int32_t netId) override;
 
+    std::vector<std::string> GetDnsServersForVpn() override;
+
+    void RegisterVpnListener(std::shared_ptr<VpnListener> cb) override;
+
+    void UnRegisterVpnListener() override;
+
 private:
     static std::unordered_map<int32_t, std::shared_ptr<NetConnCallback>> netConnCallbackMap_;
 
@@ -60,6 +67,8 @@ private:
                                                     NetConn_ConnectionProperties *connConnetionProperties);
 
     static void InitNetConnCallback(NetConn_NetConnCallback *netConnCallback);
+
+    static std::mutex mutex_;
 };
 }  // namespace OHOS::NWeb
 

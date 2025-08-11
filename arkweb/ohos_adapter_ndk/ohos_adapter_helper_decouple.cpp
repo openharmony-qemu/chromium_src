@@ -15,7 +15,6 @@
 
 #include "arkweb/ohos_adapter_ndk/interfaces/ark_ohos_adapter_helper_wrapper.h"
 
-#include "arkweb/ohos_adapter_ndk/camera_adapter/include/camera_manager_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/inputmethodframework_adapter/imf_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/media_adapter/include/media_codec_list_adapter_impl.h"
 

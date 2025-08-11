@@ -26,11 +26,15 @@ namespace OHOS::NWeb {
 
 class NWebExtensionBrowsingDataCefDelegate {
  public:
-  static void RemoveDownloads(NWebExtensionBrowsingDataRemovalOptions& options, BrowsingDataRemoveCallback callback);
-  static void RemoveHistory(NWebExtensionBrowsingDataRemovalOptions& options, BrowsingDataRemoveCallback callback);
+  static void RemoveDownloads(const NWebExtensionBrowsingDataRemovalOptions& removalOptions,
+                              BrowsingDataRemoveCallback callback,
+                              const std::optional<NWebExtensionBrowsingDataQueryOptions>& queryOptions);
+  static void RemoveHistory(const NWebExtensionBrowsingDataRemovalOptions& removalOptions,
+                            BrowsingDataRemoveCallback callback,
+                            const std::optional<NWebExtensionBrowsingDataQueryOptions>& queryOptions);
 
-  static void RemoveDownloadsCallback(std::optional<std::string>& error);
-  static void RemoveHistoryCallback(std::optional<std::string>& error);
+  static void RemoveDownloadsCallback(int32_t request_id, std::optional<std::string>& error);
+  static void RemoveHistoryCallback(int32_t request_id, std::optional<std::string>& error);
 };
 
 }  // namespace OHOS::NWeb

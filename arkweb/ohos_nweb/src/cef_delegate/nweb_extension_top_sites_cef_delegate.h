@@ -29,7 +29,8 @@ class NWebExtensionTopSitesCefDelegate {
  public:
   static void Get(TopSitesCallback callback, const std::optional<NWebExtensionTopSitesQueryOptions>& options);
 
-  static void GetCallback(const std::vector<NWebExtensionTopSitesMostVisitedURL>& data,
+  static void GetCallback(int32_t request_id,
+                          const std::vector<NWebExtensionTopSitesMostVisitedURL>& data,
                           const std::optional<std::string>& error);
 };
 

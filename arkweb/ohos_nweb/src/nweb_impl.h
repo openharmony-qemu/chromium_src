@@ -59,9 +59,9 @@ struct FrameInfos;
 struct IsolatedWorld;
 struct OpenDevToolsParam;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "capi/nweb_confirm_info_bar_callback.h"
 #include "capi/nweb_extension_manager_callback.h"
 #include "capi/nweb_extension_context_menus_callback.h"
+#include "capi/nweb_confirm_info_bar_callback.h"
 #include "capi/web_extension_tab_items.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS

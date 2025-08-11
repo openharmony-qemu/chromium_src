@@ -5921,6 +5921,13 @@ int32_t NWebDelegate::GetVisibleViewportAvoidHeight() {
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 void NWebDelegate::SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+      CEF_UIT,
+      base::BindOnce(&NWebDelegate::SetBlanklessLoadingKey, weak_factory_.GetWeakPtr(), nweb_id, blankless_key)
+    );
+    return;
+  }
   auto& instance = base::ohos::BlanklessController::GetInstance();
   auto window_id = instance.GetWindowIdByNWebId(nweb_id);
   auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();

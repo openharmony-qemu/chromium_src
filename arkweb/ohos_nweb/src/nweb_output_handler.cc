@@ -28,7 +28,7 @@
 
 #include "base/trace_event/trace_event.h"
 #include "nweb_hilog.h"
-#include "ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 
 namespace OHOS::NWeb {

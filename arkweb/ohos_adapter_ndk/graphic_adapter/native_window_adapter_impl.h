@@ -16,11 +16,10 @@
 #ifndef NATIVE_WINDOW_ADAPTER_IMPL_H
 #define NATIVE_WINDOW_ADAPTER_IMPL_H
 
+#include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
 #include <native_image/native_image.h>
 #include <native_window/buffer_handle.h>
 #include <native_buffer/native_buffer.h>
-
-#include "third_party/ohos_ndk/includes/ohos_adapter/graphic_adapter.h"
 
 namespace OHOS::NWeb {
 class NativeBufferAdapterImpl : public SurfaceBufferAdapter {

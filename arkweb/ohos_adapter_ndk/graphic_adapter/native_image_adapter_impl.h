@@ -18,7 +18,7 @@
 
 #include <native_image/native_image.h>
 
-#include "graphic_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
 
 namespace OHOS::NWeb {
 class NativeImageAdapterImpl : public NativeImageAdapter {

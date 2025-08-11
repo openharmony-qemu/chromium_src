@@ -5,7 +5,7 @@
 #ifndef BUFFER_REQUEST_CONFIG_ADAPTER_IMPL_H
 #define BUFFER_REQUEST_CONFIG_ADAPTER_IMPL_H
 
-#include "graphic_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
 
 namespace OHOS::NWeb {
 
@@ -24,6 +24,8 @@ class BufferRequestConfigAdapterImpl : public BufferRequestConfigAdapter {
   uint64_t GetUsage() override;
 
   int32_t GetTimeout() override;
+
+  int64_t GetTimestamp() override;
 
   ColorGamutAdapter GetColorGamut() override;
 
@@ -45,6 +47,8 @@ class BufferRequestConfigAdapterImpl : public BufferRequestConfigAdapter {
 
   void SetTransformType(TransformTypeAdapter);
 
+  void SetTimestamp(int64_t);
+
  private:
   int32_t width_;
   int32_t height_;
@@ -53,6 +57,7 @@ class BufferRequestConfigAdapterImpl : public BufferRequestConfigAdapter {
   int32_t format_;        // GraphicPixelFormat
   uint64_t usage_;
   int32_t timeout_;
+  int64_t timestamp_;
   ColorGamutAdapter color_gamut_ = ColorGamutAdapter::SRGB;
   TransformTypeAdapter transform_type_ = TransformTypeAdapter::ROTATE_NONE;
 };

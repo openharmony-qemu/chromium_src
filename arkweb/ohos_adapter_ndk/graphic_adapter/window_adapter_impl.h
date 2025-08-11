@@ -16,7 +16,7 @@
 #ifndef WINDOW_ADAPTER_IMPL_H
 #define WINDOW_ADAPTER_IMPL_H
 
-#include "third_party/ohos_ndk/includes/ohos_adapter/graphic_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
 
 namespace OHOS::NWeb {
 class WindowAdapterNdkImpl : public WindowAdapter {

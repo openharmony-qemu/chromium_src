@@ -34,4 +34,9 @@ struct NWebExtensionBrowsingDataRemovalOptions {
   std::optional<NWebExtensionBrowsingDataOriginTypes> originTypes;
 };
 
+struct NWebExtensionBrowsingDataQueryOptions {
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
 #endif  // OHOS_NWEB_EX_BROWSER_WEB_EXTENSION_BROWSING_DATA_ITEMS_H_

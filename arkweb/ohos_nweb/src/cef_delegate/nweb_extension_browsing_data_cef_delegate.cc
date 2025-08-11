@@ -30,32 +30,48 @@
 namespace OHOS::NWeb {
 
 namespace {
-static BrowsingDataRemoveCallback g_browsing_data_remove_downloads_callback;
-static BrowsingDataRemoveCallback g_browsing_data_remove_history_callback;
+static std::map<int32_t, BrowsingDataRemoveCallback> g_browsing_data_remove_downloads_callback_map_;
+static std::map<int32_t, BrowsingDataRemoveCallback> g_browsing_data_remove_history_callback_map_;
 } // namespace
 
 void NWebExtensionBrowsingDataCefDelegate::RemoveDownloads(
-    NWebExtensionBrowsingDataRemovalOptions& options, BrowsingDataRemoveCallback callback) {
+    const NWebExtensionBrowsingDataRemovalOptions& removalOptions,
+    BrowsingDataRemoveCallback callback,
+    const std::optional<NWebExtensionBrowsingDataQueryOptions>& queryOptions) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  g_browsing_data_remove_downloads_callback = std::move(callback);
-  NWebExtensionBrowsingDataDispatcher::RemoveDownloads(options);
+  static int32_t request_id = 0;
+  request_id++;
+  g_browsing_data_remove_downloads_callback_map_[request_id] = std::move(callback);
+  NWebExtensionBrowsingDataDispatcher::RemoveDownloads(request_id, removalOptions, queryOptions);
 #endif
 }
 
 void NWebExtensionBrowsingDataCefDelegate::RemoveHistory(
-    NWebExtensionBrowsingDataRemovalOptions& options, BrowsingDataRemoveCallback callback) {
+    const NWebExtensionBrowsingDataRemovalOptions& removalOptions,
+    BrowsingDataRemoveCallback callback,
+    const std::optional<NWebExtensionBrowsingDataQueryOptions>& queryOptions) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  g_browsing_data_remove_history_callback = std::move(callback);
-  NWebExtensionBrowsingDataDispatcher::RemoveHistory(options);
+  static int32_t request_id = 0;
+  request_id++;
+  g_browsing_data_remove_history_callback_map_[request_id] = std::move(callback);
+  NWebExtensionBrowsingDataDispatcher::RemoveHistory(request_id, removalOptions, queryOptions);
 #endif
 }
 
-void NWebExtensionBrowsingDataCefDelegate::RemoveDownloadsCallback(std::optional<std::string>& error) {
-  std::move(g_browsing_data_remove_downloads_callback).Run(error);
+void NWebExtensionBrowsingDataCefDelegate::RemoveDownloadsCallback(int32_t request_id,
+    std::optional<std::string>& error) {
+  if (g_browsing_data_remove_downloads_callback_map_.count(request_id)) {
+    std::move(g_browsing_data_remove_downloads_callback_map_[request_id]).Run(error);
+    g_browsing_data_remove_downloads_callback_map_.erase(request_id);
+  }
 }
 
-void NWebExtensionBrowsingDataCefDelegate::RemoveHistoryCallback(std::optional<std::string>& error) {
-  std::move(g_browsing_data_remove_history_callback).Run(error);
+void NWebExtensionBrowsingDataCefDelegate::RemoveHistoryCallback(int32_t request_id,
+    std::optional<std::string>& error) {
+  if (g_browsing_data_remove_history_callback_map_.count(request_id)) {
+    std::move(g_browsing_data_remove_history_callback_map_[request_id]).Run(error);
+    g_browsing_data_remove_history_callback_map_.erase(request_id);
+  }
 }
 
 }  // namespace OHOS::NWeb

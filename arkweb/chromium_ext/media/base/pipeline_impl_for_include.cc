@@ -24,7 +24,7 @@ void PipelineImpl::SetMediaPlayerState(bool is_suspend,
 
   media_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&RendererWrapper::SetMediaPlayerState,
-                                base::Unretained(renderer_wrapper_.get()),
+                                renderer_wrapper_->AsWeakPtr(),
                                 is_suspend, suspend_type));
 }
 
@@ -57,7 +57,7 @@ void PipelineImpl::SetPlaybackRateWithReason(
   playback_rate_ = playback_rate;
   media_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&RendererWrapper::SetPlaybackRateWithReason,
-                                base::Unretained(renderer_wrapper_.get()),
+                                renderer_wrapper_->AsWeakPtr(),
                                 playback_rate_, reason));
 }
 #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
@@ -77,7 +77,7 @@ void PipelineImpl::PipEnable(bool enable) {
   DVLOG(2) << __func__  << "PIC PipelineImpl::PipEnable enable:" << enable;
   media_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&RendererWrapper::PipEnable,
-                                base::Unretained(renderer_wrapper_.get()),
+                                renderer_wrapper_->AsWeakPtr(),
                                 enable));
 }
 #endif
@@ -101,7 +101,7 @@ void PipelineImpl::RecycleDmaBuffer() {
 
  media_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&RendererWrapper::RecycleDmaBuffer,
-                                base::Unretained(renderer_wrapper_.get())));
+                                renderer_wrapper_->AsWeakPtr()));
 }
 
 void PipelineImpl::RendererWrapper::ResumeDmaBuffer() {
@@ -121,7 +121,7 @@ void PipelineImpl::ResumeDmaBuffer() {
 
   media_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&RendererWrapper::ResumeDmaBuffer,
-                                base::Unretained(renderer_wrapper_.get())));
+                                renderer_wrapper_->AsWeakPtr()));
 }
 // LCOV_EXCL_STOP
 #endif  // ARKWEB_MEDIA_DMABUF

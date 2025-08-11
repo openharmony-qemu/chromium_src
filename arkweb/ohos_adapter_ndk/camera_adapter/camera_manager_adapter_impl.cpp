@@ -19,10 +19,10 @@
 #include <unordered_map>
 #include <window_manager/oh_display_manager.h>
 
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
 #include "camera_rotation_info_adapter_impl.h"
 #include "format_adapter_impl.h"
-// ArkWeb_Media_Not_Implement 依赖Hisysevent接口
+#include "hisysevent_adapter.h"
+#include "nweb_log.h"
 #include "ohos_adapter_helper.h"
 #include "video_capture_range_adapter_impl.h"
 #include "video_control_support_adapter_impl.h"
@@ -979,10 +979,6 @@ int32_t CameraManagerAdapterImpl::ReleaseSessionResource(const std::string& devi
 int32_t CameraManagerAdapterImpl::DestroyNativeImageAndWindow()
 {
     if (nativeImage_ != nullptr) {
-        OHNativeWindow* window = OH_NativeImage_AcquireNativeWindow(nativeImage_);
-        if (window != nullptr) {
-            OH_NativeWindow_DestroyNativeWindow(window);
-        }
         OH_NativeImage_Destroy(&nativeImage_);
         nativeImage_ = nullptr;
     }

@@ -967,26 +967,25 @@ void AudioDecoderCallbackManager::OnOutputBufferAvailable(
 
     OH_AVCodecBufferAttr attr = {0};
     OH_AVErrCode errCode = OH_AVBuffer_GetBufferAttr(data, &attr);
+    int32_t capacity = OH_AVBuffer_GetCapacity(data);
     if (errCode != AV_ERR_OK || attr.size < 0) {
         WVLOG_E(" get buffer attr fail.");
         return;
     }
-
-    uint8_t *bufferData = new uint8_t[attr.size];
-    if (bufferData == nullptr) {
-        WVLOG_E(" new buffer fail.");
-        return;
+    if (attr.size > capacity) {
+        WVLOG_E("attr.size is larger than capacity.");
+        return;  
     }
-    if (memcpy_s(bufferData, sizeof(bufferData),
-        reinterpret_cast<uint8_t *>(OH_AVBuffer_GetAddr(data)), attr.size) != EOK) {
-        delete[] bufferData;
+
+    uint8_t bufferData[attr.size];
+    if (memcpy_s(bufferData, sizeof(bufferData),reinterpret_cast<uint8_t *>(OH_AVBuffer_GetAddr(data)),
+        attr.size) != EOK) {
         WVLOG_E(" memcpy_s buffer fail.");
         return;
     }
     // Copy the buffer data from the data.
     impl->GetAudioDecoderCallBack()->OnOutputBufferAvailable(
         index, bufferData, attr.size, attr.pts, attr.offset, attr.flags);
-    delete[] bufferData;
 }
 
 } // namespace OHOS::NWeb

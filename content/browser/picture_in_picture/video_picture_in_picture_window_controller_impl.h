@@ -160,7 +160,8 @@ class CONTENT_EXPORT VideoPictureInPictureWindowControllerImpl
       gfx::Size* window_size);
   void CloseExt(bool should_pause_video);
   void OnLeavingPictureInPictureExt(bool should_pause_video);
-  void OnPictureInPictureStateChanged(const MediaPlayerId& id, uint32_t state);
+  void OnPictureInPictureStateChanged(
+      const MediaPlayerId& id, uint32_t state, int32_t width, int32_t height);
   void WebContentsDestroyedExt();
 #endif
 

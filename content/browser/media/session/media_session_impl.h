@@ -417,7 +417,8 @@ class MediaSessionImpl : public MediaSession,
   NWebMediaSessionState sessionState_ = NWebMediaSessionState::NOINITIAL;
 #endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 #if BUILDFLAG(ARKWEB_PIP)
-  void OnPictureInPictureStateChanged(const MediaPlayerId& id, uint32_t state);
+  void OnPictureInPictureStateChanged(
+      const MediaPlayerId& id, uint32_t state, int32_t width, int32_t height);
 #endif
 #if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
   void OnNotifyMemoryLevel(int32_t level);

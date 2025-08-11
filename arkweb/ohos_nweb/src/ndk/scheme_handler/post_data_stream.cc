@@ -81,6 +81,11 @@ void ArkWeb_PostDataStream_::Read(void* buffer, int64_t buf_len) const {
     return;
   }
 
+  if (buf_len < 0) {
+    LOG(ERROR) << "buf_len smaller than zero.";
+    return;
+  }
+
   post_data_stream->Read(buffer, buf_len,
                          const_cast<ArkWeb_PostDataStream*>(this));
 }

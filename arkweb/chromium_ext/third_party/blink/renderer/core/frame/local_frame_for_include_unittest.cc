@@ -192,4 +192,28 @@ TEST_F(LocalFrameUtilTest, SetTextZoomFactorsExt) {
   LocalFrameUtil::SetTextZoomFactorsExt(local_frame_);
 }
 
+TEST_F(LocalFrameUtilTest, SetZoomFactorsExt_Tablet_ZoomGreaterThanOne_AlreadyChanged) {
+  MockDeviceUtils::SetIsTabletDevice(true);
+ 
+  float layout_zoom = 1.5f;
+  float text_zoom = 1.2f;
+  bool layout_zoom_changed = true;
+ 
+  local_frame_->scale_limits_min_changed_ = true;
+  local_frame_->scale_limits_max_changed_ = false;
+   
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
+ 
+  EXPECT_TRUE(local_frame_->scale_limits_min_changed_);
+  EXPECT_FALSE(local_frame_->scale_limits_max_changed_);
+}
+
+TEST_F(LocalFrameUtilTest, SetAdBlockEnableForSite) {
+  local_frame_->SetAdBlockEnableForSite(true);
+  EXPECT_TRUE(local_frame_->GetAdBlockEnableForSite());
+  local_frame_->SetAdBlockEnableForSite(false);
+  EXPECT_FALSE(local_frame_->GetAdBlockEnableForSite());
+}
+
 }  // namespace blink

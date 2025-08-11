@@ -538,6 +538,14 @@
         },
         "includes": []
     },
+    "oh_window_manager": {
+        "apiList": {
+            "15": [
+                "int32_t OH_WindowManager_GetWindowProperties(int32_t windowId, WindowManager_WindowProperties* windowProperties)"
+            ]
+        },
+        "includes": []
+    },
     "oh_media_codec_decoder":{
         "apiList": {
             "14": [

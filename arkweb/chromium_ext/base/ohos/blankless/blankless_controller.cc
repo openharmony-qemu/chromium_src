@@ -203,6 +203,8 @@ void BlanklessController::Clear(uint32_t nweb_id)
     m_system_time_map_.Clear();
     std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
     m_nweb_status_map_.clear();
+    std::lock_guard<std::mutex> window_id_map_lck(m_window_id_map_mtx_);
+    m_window_id_map_.clear();
     return;
   }
   m_frame_insert_callback_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
@@ -210,6 +212,8 @@ void BlanklessController::Clear(uint32_t nweb_id)
   m_system_time_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
   std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
   m_nweb_status_map_.erase(nweb_id);
+  std::lock_guard<std::mutex> window_id_map_lck(m_window_id_map_mtx_);
+  m_window_id_map_.erase(nweb_id);
 }
 
 bool BlanklessController::CheckEnableForUrl(const std::string& url)
@@ -237,6 +241,20 @@ bool BlanklessController::CheckStatusForTest(
              expected_status.blankless_key == info.blankless_key &&
              expected_status.status_code == info.status_code;
   return ret;
+}
+
+void BlanklessController::RecordWindowId(uint32_t nweb_id, uint32_t window_id) {
+  std::lock_guard<std::mutex> lck(m_window_id_map_mtx_);
+  m_window_id_map_.emplace(nweb_id, window_id);
+}
+
+uint32_t BlanklessController::GetWindowIdByNWebId(uint32_t nweb_id) {
+  std::lock_guard<std::mutex> lck(m_window_id_map_mtx_);
+  auto it = m_window_id_map_.find(nweb_id);
+  if (it == m_window_id_map_.end()) {
+    return 0;
+  }
+  return it->second;
 }
 }  // namespace ohos
 }  // namespace base

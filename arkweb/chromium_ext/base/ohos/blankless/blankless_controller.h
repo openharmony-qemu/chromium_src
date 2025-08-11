@@ -109,6 +109,9 @@ public:
 
   bool CheckEnableForUrl(const std::string& url);
 
+  void RecordWindowId(uint32_t nweb_id, uint32_t window_id);
+  uint32_t GetWindowIdByNWebId(uint32_t nweb_id);
+
 private:
   /**
    * Structure to track and manage the status information of a web instance.
@@ -231,6 +234,10 @@ private:
   NWebRelatedInfoMap<std::pair<Callback, int32_t>> m_frame_insert_callback_map_;
 
   NWebRelatedInfoMap<uint64_t> m_system_time_map_;
+
+  std::unordered_map<uint32_t, uint32_t> m_window_id_map_;
+
+  std::mutex m_window_id_map_mtx_;
 };
 }  // namespace ohos
 }  // namespace base

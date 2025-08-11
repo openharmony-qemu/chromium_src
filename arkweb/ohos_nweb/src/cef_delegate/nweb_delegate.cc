@@ -110,6 +110,7 @@
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
 #include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
+#include "arkweb/ohos_adapter_ndk/window_manager_adapter/window_manager_adapter_impl.h"
 #include "components/viz/host/host_frame_sink_manager.h"
 #include "content/public/browser/context_factory.h"
 #include "ui/compositor/compositor.h"
@@ -5920,6 +5921,16 @@ int32_t NWebDelegate::GetVisibleViewportAvoidHeight() {
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 void NWebDelegate::SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) {
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  auto window_id = instance.GetWindowIdByNWebId(nweb_id);
+  auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
+  auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
+  if (is_private && blankless_key != base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
+    LOG(DEBUG) << "blankless this is a private window: "<< window_id;
+    databaseAdapter.ClearSnapshot(blankless_key);
+    databaseAdapter.ClearSnapshotDataItem({blankless_key});
+    return;
+  }
   if (blankless_key != base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
     if (auto context_factory = content::GetContextFactory()) {
       if (auto frame_sinke_manager = context_factory->GetHostFrameSinkManager()) {

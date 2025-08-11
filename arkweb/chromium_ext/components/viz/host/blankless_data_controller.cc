@@ -17,6 +17,7 @@
 
 #include <mutex>
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#include "arkweb/ohos_adapter_ndk/window_manager_adapter/window_manager_adapter_impl.h"
 #include "base/files/file_enumerator.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
@@ -412,6 +413,14 @@ void BlanklessDataController::DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& 
                                                     const std::vector<SnapShotRect>& quad_list)
 {
   auto& instance = base::ohos::BlanklessController::GetInstance();
+  auto window_id = instance.GetWindowIdByNWebId(info.nweb_id);
+  auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetInstance().GetWindowPrivacyMode(window_id);
+  if (is_private) {
+    LOG(DEBUG) << "blankless this is a private window: "<< window_id;
+    ClearSnapshot(info.blankless_key);
+    ClearSnapshotDataItem({info.blankless_key});
+    return;
+  }
   uint64_t recorded_time = instance.GetSystemTime(info.nweb_id, info.blankless_key);
   int32_t corrected_time = static_cast<int32_t>(info.system_time - recorded_time);
   if (corrected_time <= 0) {

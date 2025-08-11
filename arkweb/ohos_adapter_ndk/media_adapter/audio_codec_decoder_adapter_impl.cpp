@@ -973,8 +973,13 @@ void AudioDecoderCallbackManager::OnOutputBufferAvailable(
     }
 
     uint8_t *bufferData = new uint8_t[attr.size];
-    if (bufferData == nullptr || memcpy_s(bufferData, sizeof(bufferData),
+    if (bufferData == nullptr) {
+        WVLOG_E(" new buffer fail.");
+        return;
+    }
+    if (memcpy_s(bufferData, sizeof(bufferData),
         reinterpret_cast<uint8_t *>(OH_AVBuffer_GetAddr(data)), attr.size) != EOK) {
+        delete[] bufferData;
         WVLOG_E(" memcpy_s buffer fail.");
         return;
     }

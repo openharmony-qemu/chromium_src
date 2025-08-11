@@ -17,6 +17,7 @@
 
 #include <ctime>
 
+#include "base/hash/hash.h"
 #include "base/command_line.h"
 #include "base/location.h"
 #include "base/logging.h"
@@ -58,7 +59,7 @@ void AudioScreenCapturerReadCallback::OnReadData(OHOS::NWeb::AudioCaptureSourceT
 BaseAudioCapturerSource::BaseAudioCapturerSource(
     scoped_refptr<base::SingleThreadTaskRunner> capturer_task_runner,
     int nwebId)
-    : capturer_task_runner_(capturer_task_runner) {  // 初始化新成员变量
+    : capturer_task_runner_(capturer_task_runner) {
   nwebId_ = nwebId;
   LOG(INFO) << "BaseAudioCapturerSource::BaseAudioCapturerSource, screen capture adapter init";
 }
@@ -115,8 +116,8 @@ void BaseAudioCapturerSource::Start() {
     return;
   }
 
-  LOG(INFO) << "BaseAudioCapturerSource, CreateBaseScreenCaptureSource: "
-            << &BaseScreenCaptureSource::GetInstance();
+  LOG(INFO) << "BaseAudioCapturerSource, CreateBaseScreenCaptureSource: hash="
+            << std::hex << base::FastHash(base::byte_span_from_ref(&BaseScreenCaptureSource::GetInstance()));
   AudioScreenCapturerReadCallback_ =
       std::make_shared<AudioScreenCapturerReadCallback>(base::BindRepeating(
           &BaseAudioCapturerSource::HandleAudioBuffer, weak_factory_.GetWeakPtr()));
@@ -171,10 +172,10 @@ void BaseAudioCapturerSource::HandleAudioBuffer(OHOS::NWeb::AudioCaptureSourceTy
     return;
   }
 
-  OHOS::NWeb::AudioCaptureSourceTypeAdapter sourcetype = audiobuffer->GetSourcetype();
-  if (sourcetype != type) {
-    LOG(ERROR) << "buffer type error, sourcetype: " << (int32_t)sourcetype;
-    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nwebId_]->ReleaseAudioBuffer(sourcetype);
+  OHOS::NWeb::AudioCaptureSourceTypeAdapter source_type = audiobuffer->GetSourcetype();
+  if (source_type != type) {
+    LOG(ERROR) << "buffer type error, source_type: " << (int32_t)source_type;
+    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nwebId_]->ReleaseAudioBuffer(source_type);
     return;
   }
 

@@ -85,5 +85,10 @@ TEST_F(SurfaceLayerForIncludeTest, CleanupVisibilityForRemovedLayer) {
   layer_->CleanupVisibilityForRemovedLayer(false);
 }
 
+TEST_F(SurfaceLayerForIncludeTest, OnLayerBoundsUpdate) {
+  gfx::Rect test_rect(10, 20, 30, 40);
+  layer_->OnLayerBoundsUpdate(test_rect);
+}
+
 }  // namespace
 }  // namespace cc

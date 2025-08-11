@@ -24,20 +24,26 @@
 namespace OHOS::NWeb {
 
 namespace {
-static TopSitesCallback g_top_sites_callback;
+static std::map<int32_t, TopSitesCallback> g_top_sites_callback_map_;
 } // namespace
 
 void NWebExtensionTopSitesCefDelegate::Get(TopSitesCallback callback,
                                            const std::optional<NWebExtensionTopSitesQueryOptions>& options) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  g_top_sites_callback = std::move(callback);
-  NWebExtensionTopSitesDispatcher::Get(options);
+  static int32_t request_id = 0;
+  request_id++;
+  g_top_sites_callback_map_[request_id] = std::move(callback);
+  NWebExtensionTopSitesDispatcher::Get(request_id, options);
 #endif
 }
 
-void NWebExtensionTopSitesCefDelegate::GetCallback(const std::vector<NWebExtensionTopSitesMostVisitedURL>& data,
+void NWebExtensionTopSitesCefDelegate::GetCallback(int32_t request_id,
+    const std::vector<NWebExtensionTopSitesMostVisitedURL>& data,
     const std::optional<std::string>& error) {
-  std::move(g_top_sites_callback).Run(data, error);
+  if (g_top_sites_callback_map_.count(request_id)) {
+    std::move(g_top_sites_callback_map_[request_id]).Run(data, error);
+    g_top_sites_callback_map_.erase(request_id);
+  }
 }
 
 }  // namespace OHOS::NWeb

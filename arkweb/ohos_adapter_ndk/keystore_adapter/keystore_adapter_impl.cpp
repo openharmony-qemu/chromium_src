@@ -30,6 +30,7 @@ static const uint32_t IV_SIZE = 16;
 static const uint8_t IV[IV_SIZE] = {0};
 const std::string V10 = "V10";
 const uint32_t V10_SIZE = 3;
+const uint32_t CIPHER_TEXT_SIZE = 32;
 
 std::string _get_random(size_t size) {
   std::string result(size, 0);
@@ -172,18 +173,17 @@ std::string KeystoreAdapterImpl::DecryptKey(const std::string alias,
 
   std::string iv_str;
   std::string cipher_str;
-  if (encryptedData.compare(0, V10_SIZE, V10) == 0) {
+  if (encryptedData.length() == V10_SIZE + IV_SIZE + CIPHER_TEXT_SIZE &&
+      encryptedData.compare(0, V10_SIZE, V10) == 0) {
     size_t prefix_size = V10_SIZE + IV_SIZE;
-    if (encryptedData.length() < prefix_size) {
-      WVLOG_E("encryptedData length is too short.");
-      return std::string();
-    }
     iv_str = encryptedData.substr(V10_SIZE, IV_SIZE);
-
     cipher_str =
         encryptedData.substr(prefix_size, encryptedData.length() - prefix_size);
-  } else {
+  } else if (encryptedData.length() == CIPHER_TEXT_SIZE) {
     cipher_str = encryptedData;
+  } else {
+    WVLOG_W("Invalid cipher text length: %{public}u", encryptedData.length());
+    return std::string();
   }
   struct OH_Huks_Param decrypt_params[] = {
       {.tag = OH_HUKS_TAG_ALGORITHM, .uint32Param = OH_HUKS_ALG_AES},

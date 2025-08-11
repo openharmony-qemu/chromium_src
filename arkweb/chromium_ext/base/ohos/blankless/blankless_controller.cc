@@ -201,8 +201,10 @@ void BlanklessController::Clear(uint32_t nweb_id)
     m_frame_insert_callback_map_.Clear();
     m_frame_remove_callback_map_.Clear();
     m_system_time_map_.Clear();
-    std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
-    m_nweb_status_map_.clear();
+    {
+      std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
+      m_nweb_status_map_.clear();
+    }
     std::lock_guard<std::mutex> window_id_map_lck(m_window_id_map_mtx_);
     m_window_id_map_.clear();
     return;
@@ -210,8 +212,10 @@ void BlanklessController::Clear(uint32_t nweb_id)
   m_frame_insert_callback_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
   m_frame_remove_callback_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
   m_system_time_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
-  std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
-  m_nweb_status_map_.erase(nweb_id);
+  {
+    std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
+    m_nweb_status_map_.erase(nweb_id);
+  }
   std::lock_guard<std::mutex> window_id_map_lck(m_window_id_map_mtx_);
   m_window_id_map_.erase(nweb_id);
 }

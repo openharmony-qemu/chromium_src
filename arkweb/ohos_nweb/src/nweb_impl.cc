@@ -6160,8 +6160,8 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
   auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
   if (is_private) {
     LOG(DEBUG) << "blankless this is a private window: "<< window_id;
-    databaseAdapter.ClearSnapshot(blankless_key);
-    databaseAdapter.ClearSnapshotDataItem({blankless_key});
+    databaseInstance.ClearSnapshot(blankless_key);
+    databaseInstance.ClearSnapshotDataItem({blankless_key});
   }
   if (status_code != base::ohos::BlanklessController::StatusCode::DUMPED ||
       databaseInstance.GetBlanklessLoadingCacheCapacity() == 0 || is_private) {
@@ -6196,8 +6196,8 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
   auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
   if (is_private) {
     LOG(DEBUG) << "blankless this is a private window: "<< window_id;
-    databaseAdapter.ClearSnapshot(blankless_key);
-    databaseAdapter.ClearSnapshotDataItem({blankless_key});
+    databaseInstance.ClearSnapshot(blankless_key);
+    databaseInstance.ClearSnapshotDataItem({blankless_key});
     return -5;
   }  
   if (status_code != base::ohos::BlanklessController::StatusCode::INSERTED ||
@@ -6236,18 +6236,18 @@ bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(url);
   auto& instance = base::ohos::BlanklessController::GetInstance();
   auto window_id = instance.GetWindowIdByNWebId(nweb_id_);
-  auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
+  auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
   auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
   if (is_private) {
     LOG(DEBUG) << "blankless this is a private window: "<< window_id;
-    databaseAdapter.ClearSnapshot(blankless_key_);
-    databaseAdapter.ClearSnapshotDataItem({blankless_key_});
+    databaseInstance.ClearSnapshot(blankless_key_);
+    databaseInstance.ClearSnapshotDataItem({blankless_key_});
     return false;
   }
   auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
   base::ohos::BlanklessController::GetInstance().RecordSystemTime(nweb_id_, blankless_key_, system_time);
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
-  OHOS::NWeb::SnapshotDataItem dataItem = databaseAdapter.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
+  OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
   if ((dataItem.width != nweb_delegate_->GetWidth()) || (dataItem.height != nweb_delegate_->GetHeight())) {
     LOG(DEBUG) << "blankless TriggerBlanklessForUrl snapshot resolution is differnet webPattern";
     return false;

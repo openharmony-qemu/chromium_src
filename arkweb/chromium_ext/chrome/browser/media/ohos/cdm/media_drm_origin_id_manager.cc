@@ -162,6 +162,10 @@ void StartProvisioning(
 
   auto* helper =
       new MediaDrmProvisionHelper(std::move(pending_shared_url_loader_factory));
+  if (helper == nullptr) {
+    std::move(callback).Run(absl::nullopt);
+    return;
+  }
   helper->Provision(std::move(callback));
 }
 

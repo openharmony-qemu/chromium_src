@@ -15,12 +15,12 @@
 
 #include "audio_codec_decoder_adapter_impl.h"
 
-#include <multimedia/player_framework/native_avcodec_audiocodec.h>
-#include <multimedia/player_framework/native_avcapability.h>
-#include <multimedia/native_audio_channel_layout.h>
 #include <multimedia/drm_framework/native_drm_err.h>
 #include <multimedia/drm_framework/native_mediakeysession.h>
+#include <multimedia/native_audio_channel_layout.h>
 #include <multimedia/player_framework/native_avbuffer.h>
+#include <multimedia/player_framework/native_avcapability.h>
+#include <multimedia/player_framework/native_avcodec_audiocodec.h>
 
 #include "audio_cenc_info_adapter_impl.h"
 
@@ -912,6 +912,7 @@ void AudioDecoderCallbackManager::OnOutputFormatChanged(OH_AVCodec *codec, OH_AV
 void AudioDecoderCallbackManager::OnInputBufferAvailable(
     OH_AVCodec *codec, uint32_t index, OH_AVBuffer *data, void *userData)
 {
+    (void)userData;
     WVLOG_D("AudioDecoderCallbackManager %{public}s[%{public}u].", __FUNCTION__, index);
     if (codec == nullptr) {
         WVLOG_E("AudioDecoderCallbackManager::OnInputBufferAvailable avcodec is nullptr.");
@@ -947,6 +948,11 @@ void AudioDecoderCallbackManager::OnOutputBufferAvailable(
         return;
     }
 
+    if (data == nullptr) {
+        WVLOG_E("AudioDecoderCallbackManager::OnOutputBufferAvailable avbuffer is nullptr.");
+        return;
+    }
+
     std::unique_lock<std::mutex> lock(AudioCodecDecoderAdapterImpl::GetDecoderMutex());
     OHOS::NWeb::AudioCodecDecoderAdapterImpl *impl = FindAudioDecoder(codec);
     if (impl == nullptr) {
@@ -961,9 +967,14 @@ void AudioDecoderCallbackManager::OnOutputBufferAvailable(
 
     OH_AVCodecBufferAttr attr = {0};
     OH_AVErrCode errCode = OH_AVBuffer_GetBufferAttr(data, &attr);
+    int32_t capacity = OH_AVBuffer_GetCapacity(data);
     if (errCode != AV_ERR_OK || attr.size < 0) {
         WVLOG_E(" get buffer attr fail.");
         return;
+    }
+    if (attr.size > capacity) {
+        WVLOG_E("attr.size is larger than capacity.");
+        return;  
     }
 
     uint8_t bufferData[attr.size];

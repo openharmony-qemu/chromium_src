@@ -327,6 +327,10 @@ void ScreenCaptureCallbackOnBufferAvailable(OH_AVScreenCapture *capture, OH_AVBu
         WVLOG_E("userData is null");
         return;
     }
+    if (buffer == nullptr) {
+        WVLOG_E("OH_AVBuffer is null");
+        return;
+    }
     CallbackInfo* callbackInfo = (CallbackInfo*)userData;
     if (callbackInfo->callback == nullptr) {
         WVLOG_E("callback is null");

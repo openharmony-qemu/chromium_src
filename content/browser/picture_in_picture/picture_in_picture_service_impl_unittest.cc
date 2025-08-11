@@ -147,6 +147,7 @@ class PictureInPictureMediaPlayerReceiver : public media::mojom::MediaPlayer {
   void PipDown(bool state) override {}
   void RequestExitPictureInPicture() override {}
   void NotifyPipResize() override {}
+  void PipRequestPlay() override {}
 #endif
 
  private:

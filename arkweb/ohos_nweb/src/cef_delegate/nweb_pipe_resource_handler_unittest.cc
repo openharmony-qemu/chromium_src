@@ -200,6 +200,6 @@ TEST_F(NWebPipeResourceHandlerTest, TestDidFinish) {
 TEST_F(NWebPipeResourceHandlerTest, TestDidFailWithError) {
   handler_->remain_read_ = false;
   int errorCode = 1;
-  handler_->DidFailWithError(errorCode);
+  handler_->DidFailWithError(errorCode, true);
   EXPECT_EQ(handler_->remain_read_, false);
 }

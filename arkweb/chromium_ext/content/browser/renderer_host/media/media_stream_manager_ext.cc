@@ -81,22 +81,17 @@ void MediaStreamManagerExt::DisableSessionReuse() {
 
 void MediaStreamManagerExt::SendScreenCaptureState(const std::string& session_id,
                                                    int32_t state) {
-  int nweb_id = -1;
-  {
-    std::lock_guard<std::mutex> lock(nweb_id_mutex_);
-    auto nweb_id_it = nweb_id_maps_.find(session_id);
-    if (nweb_id_it != nweb_id_maps_.end()) {
-      nweb_id = nweb_id_it->second;
-    }
-  }
-  if (nweb_id == -1) {
+  std::lock_guard<std::mutex> lock(nweb_id_mutex_);	
+  auto nweb_id_it = nweb_id_maps_.find(session_id);	
+  if (nweb_id_it == nweb_id_maps_.end()) {
     SessionIdState session_id_state;
     session_id_state.session_id = session_id;
     session_id_state.state = static_cast<ScreenCaptureState>(state);
     session_id_state_.push_back(session_id_state);
     return;
   }
-  MediaStreamManagerExt::SendScreenCaptureStateToNative(nweb_id, session_id, state);
+  MediaStreamManagerExt::SendScreenCaptureStateToNative(nweb_id_it->second,
+                                                        session_id, state);
 }
 
 // static
@@ -124,6 +119,7 @@ void MediaStreamManagerExt::SendScreenCaptureStateToNative(
 
 void MediaStreamManagerExt::PopSessionIdState(int32_t nweb_id,
                                               const std::string& session_id) {
+  std::lock_guard<std::mutex> lock(nweb_id_mutex_);
   for (auto state_it = session_id_state_.begin();
        state_it != session_id_state_.end();) {
     if (state_it->session_id == session_id) {

@@ -605,6 +605,9 @@ InputMethod_ErrorCode ConstructCursorInfo(InputMethod_TextConfig *textConfig,
 
 InputMethod_ErrorCode IMFTextEditorProxyImpl::ConstructTextConfig(const std::shared_ptr<IMFTextConfigAdapter> config)
 {
+    if(!config || !config->GetInputAttribute()) {
+        return IME_ERR_NULL_POINTER;
+    }
     if (textConfig_) {
         DestroyTextConfig();
     }

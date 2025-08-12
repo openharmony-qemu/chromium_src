@@ -251,6 +251,8 @@ CodecCodeAdapter VideoEncoderAdapterImpl::RequestKeyFrameSoon()
     OH_AVFormat_SetIntValue(format, OH_MD_KEY_REQUEST_I_FRAME, true);
 
     OH_AVErrCode ret = OH_VideoEncoder_SetParameter(encoder_, format);
+    OH_AVFormat_Destroy(format);
+    format = nullptr;
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         return CodecCodeAdapter::ERROR;
     }

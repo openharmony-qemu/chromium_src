@@ -81,8 +81,8 @@ void MediaStreamManagerExt::DisableSessionReuse() {
 
 void MediaStreamManagerExt::SendScreenCaptureState(const std::string& session_id,
                                                    int32_t state) {
-  std::lock_guard<std::mutex> lock(nweb_id_mutex_);	
-  auto nweb_id_it = nweb_id_maps_.find(session_id);	
+  std::lock_guard<std::mutex> lock(nweb_id_mutex_);
+  auto nweb_id_it = nweb_id_maps_.find(session_id);
   if (nweb_id_it == nweb_id_maps_.end()) {
     SessionIdState session_id_state;
     session_id_state.session_id = session_id;

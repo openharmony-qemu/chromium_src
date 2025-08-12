@@ -41,7 +41,6 @@ bool NetConfigAdapterImpl::GetIsCleartextPermittedByHostName(
   return is_cleartext_permitted;
 }
 
-NO_SANITIZE("cfi-icall")
 bool NetConfigAdapterImpl::GetIsCleartextCfgByComponent(
     const std::string& component) {
   bool is_cleartext_cfg = false;

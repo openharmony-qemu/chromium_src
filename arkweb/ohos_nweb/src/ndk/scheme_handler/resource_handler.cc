@@ -78,10 +78,10 @@ void ArkWeb_ResourceHandler_::DidFinish() const {
 void ArkWeb_ResourceHandler_::DidFailWithError(
     ArkWeb_NetError error_code,
     bool completeIfNoResponse) const {
-  if (!pipe_resource_handler) {
-    LOG(ERROR) << "scheme_handler pipe_resource_handler is nullptr.";
+  if (!pipe_resource_handler_) {
+    LOG(ERROR) << "scheme_handler pipe_resource_handler_ is nullptr.";
     return;
   }
  
-  pipe_resource_handler->DidFailWithError(error_code, completeIfNoResponse);
+  pipe_resource_handler_->DidFailWithError(error_code, completeIfNoResponse);
 }

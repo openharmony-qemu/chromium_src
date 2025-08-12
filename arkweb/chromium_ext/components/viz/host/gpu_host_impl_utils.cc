@@ -94,14 +94,11 @@ void GpuHostImpl::SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
                                             const std::vector<gfx::Rect>& quad_list,
                                             mojo::ScopedSharedBufferHandle buffer,
                                             mojom::BlanklessBitmapMetadataPtr metadata) {
+  if (!infoPtr) {
+    LOG(WARNING) << "blankless SendBlanklessSnapshotInfo invalid snapshot infoPtr.";
+    return;
+  }
   TRACE_EVENT1("io", "blankless GpuHostImpl::SendBlanklessSnapshotInfo", "blankless_key", infoPtr->blankless_key);
-  base::ohos::BlanklessInfo info = {
-    .blankless_key = infoPtr->blankless_key,
-    .nweb_id = infoPtr->nweb_id,
-    .lcp_time = infoPtr->lcp_time,
-    .system_time = infoPtr->system_time,
-    .pref_hash = infoPtr->pref_hash
-  };
   base::ThreadPool::PostTask(
       FROM_HERE,
       {base::MayBlock(), base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN,
@@ -110,10 +107,14 @@ void GpuHostImpl::SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
         std::move(buffer), std::move(metadata)));
 }
 
-void GpuHostImpl::DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& blankless_info,
+void GpuHostImpl::DumpBlanklessSnapshot(mojom::BlanklessSendInfoPtr infoPtr,
                                         const std::vector<gfx::Rect>& quad_list,
                                         mojo::ScopedSharedBufferHandle buffer,
                                         mojom::BlanklessBitmapMetadataPtr metadata) {
+  if (!infoPtr) {
+    LOG(WARNING) << "blankless DumpBlanklessSnapshot invalid snapshot infoPtr.";
+    return;
+  }
   TRACE_EVENT1("io", "blankless GpuHostImpl::DumpBlanklessSnapshot", "blankless_key", blankless_info.blankless_key);
   LOG(DEBUG) << "GpuHostImpl::DumpBlanklessSnapshot url begin : key " << blankless_info.blankless_key
     << ", lcp_time " << blankless_info.lcp_time << ", pref_hash " << blankless_info.pref_hash;
@@ -144,6 +145,14 @@ void GpuHostImpl::DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& blankless_in
     return;
   }
 
+  base::ohos::BlanklessInfo blankless_key = {
+    .blankless_key = infoPtr->blankless_key,
+    .nweb_id = infoPtr->nweb_id,
+    .lcp_time = infoPtr->lcp_time,
+    .system_time = infoPtr->system_time,
+    .pref_hash = infoPtr->pref_hash
+  };
+
   auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
   std::vector<base::ohos::BlanklessDataController::SnapShotRect> rect_list;
   if (quad_list.size() > 0) {
@@ -157,7 +166,7 @@ void GpuHostImpl::DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& blankless_in
       quad.height(),
     });
   }
-  databaseAdapter.DumpBlanklessSnapshot(std::move(blankless_info), bitmap, rect_list);
+  databaseAdapter.DumpBlanklessSnapshot(blankless_key, bitmap, rect_list);
 }
 
 void GpuHostImpl::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {

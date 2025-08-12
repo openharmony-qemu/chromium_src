@@ -45,9 +45,10 @@ void ExtensionActionInvokeActiveTab(
  
   content::WebContents* out_contents = nullptr;
   if (ExtensionTabUtil::GetTabById(tab_id, context, true, &out_contents)) {
-    TabHelper::FromWebContents(out_contents)
-        ->active_tab_permission_granter()
-        ->GrantIfRequested(extension);
+    auto tab_helper = TabHelper::FromWebContents(out_contents);
+    if (tab_helper) {
+      tab_helper->active_tab_permission_granter()->GrantIfRequested(extension);
+    }
   }
 }
  

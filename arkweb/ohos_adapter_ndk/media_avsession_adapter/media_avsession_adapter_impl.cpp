@@ -156,12 +156,12 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::AVSessionOnCommandCallback(O
     AVSession_ControlCommand command, void *userData) {
     if (!userData) {
         WVLOG_E("ohmedia: userData is null");
-        returnAVSESSION_CALLBACK_RESULT_FAILURE;
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
     }
     MediaAVSessionCallbackAdapter *media = reinterpret_cast<MediaAVSessionCallbackAdapter *>(userData);
     if (!media) {
         WVLOG_E("ohmedia: media is null");
-        returnAVSESSION_CALLBACK_RESULT_FAILURE;
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
     }
     switch (command) {
         case CONTROL_CMD_PLAY:
@@ -188,12 +188,12 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::AVSessionOnSeekCallback(OH_A
     WVLOG_I("SeekCallback seekTime: %{public}lu", seekTime);
     if (!userData) {
         WVLOG_E("ohmedia: userData is null");
-        returnAVSESSION_CALLBACK_RESULT_FAILURE;
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
     }
     MediaAVSessionCallbackAdapter *media = reinterpret_cast<MediaAVSessionCallbackAdapter *>(userData);
     if (!media) {
         WVLOG_E("ohmedia: media is null");
-        returnAVSESSION_CALLBACK_RESULT_FAILURE;
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
     }
     media->SeekTo(seekTime);
     return AVSESSION_CALLBACK_RESULT_SUCCESS;

@@ -85,8 +85,8 @@ void MediaStreamManagerExt::SendScreenCaptureState(const std::string& session_id
   {
     std::lock_guard<std::mutex> lock(nweb_id_mutex_);
     auto nweb_id_it = nweb_id_maps_.find(session_id);
-    if (it != nweb_id_maps_.end()) {
-      nweb_id = it->second;
+    if (nweb_id_it != nweb_id_maps_.end()) {
+      nweb_id = nweb_id_it->second;
     }
   }
   if (nweb_id == -1) {

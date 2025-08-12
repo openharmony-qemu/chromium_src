@@ -57,9 +57,11 @@ void ArkWeb_ResourceRequest_::GetMethod(char** method) const {
   std::string cef_method = cef_request->GetMethod().ToString();
   const int length = cef_method.length();
   *method = new char[length + 1];
-  int ret = strcpy_s(*(method), length + 1, cef_method.c_str());
+  int ret = strcpy_s(*method, length + 1, cef_method.c_str());
   if (ret != 0) {
     LOG(ERROR) << "GetMethod error, call strcpy_s ret = " << ret;
+    delete[] *method;
+    *method = nullptr;
   }
 }
 
@@ -72,9 +74,11 @@ void ArkWeb_ResourceRequest_::GetUrl(char** url) const {
   std::string cef_url = cef_request->GetURL().ToString();
   const int length = cef_url.length();
   *url = new char[length + 1];
-  int ret = strcpy_s(*(url), length + 1, cef_url.c_str());
+  int ret = strcpy_s(*url, length + 1, cef_url.c_str());
   if (ret != 0) {
     LOG(ERROR) << "GetUrl error, call strcpy_s ret = " << ret;
+    delete[] *url;
+    *url = nullptr;
   }
 }
 
@@ -115,9 +119,11 @@ void ArkWeb_ResourceRequest_::GetReferrer(char** referrer) const {
   std::string cef_referrer = cef_request->GetReferrerURL().ToString();
   const int length = cef_referrer.length();
   *referrer = new char[length + 1];
-  int ret = strcpy_s(*(referrer), length + 1, cef_referrer.c_str());
+  int ret = strcpy_s(*referrer, length + 1, cef_referrer.c_str());
   if (ret != 0) {
     LOG(ERROR) << "GetReferrer error, call strcpy_s ret = " << ret;
+    delete[] *referrer;
+    *referrer = nullptr;
   }
 }
 
@@ -140,9 +146,11 @@ void ArkWeb_ResourceRequest_::GetFrameUrl(char** frame_url) const {
       cef_request->AsArkWebRequestExt()->GetFrameUrl().ToString();
   const int length = cef_frame_url.length();
   *frame_url = new char[length + 1];
-  int ret = strcpy_s(*(frame_url), length + 1, cef_frame_url.c_str());
+  int ret = strcpy_s(*frame_url, length + 1, cef_frame_url.c_str());
   if (ret != 0) {
     LOG(ERROR) << "GetFrameUrl error, call strcpy_s ret = " << ret;
+    delete[] *frame_url;
+    *frame_url = nullptr;
   }
 }
 
@@ -175,17 +183,21 @@ void ArkWeb_RequestHeaderList_::GetHeader(int index,
   std::string cef_key = header_value[index].key;
   int length = cef_key.length();
   *key = new char[length + 1];
-  int ret = strcpy_s(*(key), length + 1, cef_key.c_str());
+  int ret = strcpy_s(*key, length + 1, cef_key.c_str());
   if (ret != 0) {
     LOG(ERROR) << "GetHeader key error, call strcpy_s ret = " << ret;
+    delete[] *key;
+    *key = nullptr;
   }
 
   std::string cef_value = header_value[index].value;
   length = cef_value.length();
   *value = new char[length + 1];
-  ret = strcpy_s(*(value), length + 1, cef_value.c_str());
+  ret = strcpy_s(*value, length + 1, cef_value.c_str());
   if (ret != 0) {
     LOG(ERROR) << "GetHeader value error, call strcpy_s ret = " << ret;
+    delete[] *value;
+    *value = nullptr;
   }
 }
 

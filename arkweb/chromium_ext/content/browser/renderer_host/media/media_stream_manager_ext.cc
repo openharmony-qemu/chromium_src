@@ -24,8 +24,13 @@ MediaStreamManagerExt::ScreenCaptureCallback
 // static
 void MediaStreamManagerExt::SetScreenCaptureDelegateCallback(
     ScreenCaptureCallback callback) {
-  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
-    GetIOThreadTaskRunner({})->PostTask(
+  if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
+    auto ui_task_runner = GetUIThreadTaskRunner({});
+    if (!ui_task_runner) {
+      LOG(ERROR) << "SetScreenCaptureDelegateCallback ui task runner is nullptr";
+      return;
+    }
+    ui_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(&MediaStreamManagerExt::SetScreenCaptureDelegateCallback,
                        std::move(callback)));
@@ -76,17 +81,22 @@ void MediaStreamManagerExt::DisableSessionReuse() {
 
 void MediaStreamManagerExt::SendScreenCaptureState(const std::string& session_id,
                                                    int32_t state) {
-  std::lock_guard<std::mutex> lock(nweb_id_mutex_);
-  auto nweb_id_it = nweb_id_maps_.find(session_id);
-  if (nweb_id_it == nweb_id_maps_.end()) {
+  int nweb_id = -1;
+  {
+    std::lock_guard<std::mutex> lock(nweb_id_mutex_);
+    auto nweb_id_it = nweb_id_maps_.find(session_id);
+    if (it != nweb_id_maps_.end()) {
+      nweb_id = it->second;
+    }
+  }
+  if (nweb_id == -1) {
     SessionIdState session_id_state;
     session_id_state.session_id = session_id;
     session_id_state.state = static_cast<ScreenCaptureState>(state);
     session_id_state_.push_back(session_id_state);
     return;
   }
-  MediaStreamManagerExt::SendScreenCaptureStateToNative(nweb_id_it->second,
-                                                        session_id, state);
+  MediaStreamManagerExt::SendScreenCaptureStateToNative(nweb_id, session_id, state);
 }
 
 // static
@@ -95,7 +105,12 @@ void MediaStreamManagerExt::SendScreenCaptureStateToNative(
     const std::string& session_id,
     int32_t state) {
   if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
-    GetUIThreadTaskRunner({})->PostTask(
+    auto ui_task_runner = GetUIThreadTaskRunner({});
+    if (!ui_task_runner) {
+      LOG(ERROR) << "SendScreenCaptureStateToNative ui task runner is nullptr";
+      return;
+    }
+    ui_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(&MediaStreamManagerExt::SendScreenCaptureStateToNative,
                        nweb_id, session_id, state));
@@ -132,7 +147,12 @@ int MediaStreamManagerExt::GetNWebIdMatchStreamType(GlobalRenderFrameHostId host
   if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
     int result = 0;
     base::WaitableEvent event;
-    GetUIThreadTaskRunner({})->PostTask(
+    auto ui_task_runner = GetUIThreadTaskRunner({});
+    if (!ui_task_runner) {
+      LOG(ERROR) << "GetNWebIdMatchStreamType ui task runner is nullptr";
+      return 0;
+    }
+    ui_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(
             [](base::SafeRef<MediaStreamManagerExt> manager, GlobalRenderFrameHostId host_id,

@@ -130,6 +130,8 @@ std::string GetPlatformString() {
   return "chromeos";
 #elif BUILDFLAG(IS_LINUX)
   return "linux";
+#elif BUILDFLAG(IS_OHOS)
+  return "ohos";
 #elif BUILDFLAG(IS_MAC)
   return "mac";
 #elif BUILDFLAG(IS_WIN)

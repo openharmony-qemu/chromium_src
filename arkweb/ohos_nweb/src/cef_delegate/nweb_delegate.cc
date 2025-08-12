@@ -5465,36 +5465,39 @@ void NWebDelegate::WebExtensionTabActivated(
 }
  
 void NWebDelegate::WebExtensionTabAttached(
+    int tab_id,
     std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) {
   if (!attachInfo) {
     LOG(ERROR) << "WebExtensionTabAttached attachInfo is null";
     return;
   }
-  LOG(INFO) << "WebExtensionTabAttached, newPosition: "
-            << attachInfo->newPosition
+  LOG(INFO) << "WebExtensionTabAttached, tab_id:" << tab_id
+            << " newPosition: " << attachInfo->newPosition
             << " newWindowId: " << attachInfo->newWindowId;
   if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
     LOG(ERROR) << "WebExtensionTabAttached failed, get browser failed";
     return;
   }
 
-  GetBrowser()->GetHost()->WebExtensionTabAttached(attachInfo->newPosition, attachInfo->newWindowId);
+  GetBrowser()->GetHost()->WebExtensionTabAttached(
+        tab_id, attachInfo->newPosition, attachInfo->newWindowId);
 }
  
 void NWebDelegate::WebExtensionTabDetached(
+    int tab_id,
     std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) {
   if (!detachInfo) {
     LOG(ERROR) << "WebExtensionTabDetached detachInfo is null";
     return;
   }
-  LOG(INFO) << "WebExtensionTabDetached, oldPosition: "
-            << detachInfo->oldPosition
+  LOG(INFO) << "WebExtensionTabDetached, tab_id:" << tab_id
+            << " oldPosition: " << detachInfo->oldPosition
             << " oldWindowId: " << detachInfo->oldWindowId;
   if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
     LOG(ERROR) << "WebExtensionTabDetached failed, get browser failed";
     return;
   }
-  GetBrowser()->GetHost()->WebExtensionTabDetached(std::move(detachInfo));
+  GetBrowser()->GetHost()->WebExtensionTabDetached(tab_id, std::move(detachInfo));
 }
  
 void NWebDelegate::WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) {

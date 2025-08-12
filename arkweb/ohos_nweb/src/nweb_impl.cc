@@ -5667,19 +5667,21 @@ void NWebImpl::WebExtensionTabActivated(
 }
 
 void NWebImpl::WebExtensionTabAttached(
+    int tab_id,
     std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) {
   if (nweb_delegate_ == nullptr) {
     return;
   }
-  nweb_delegate_->WebExtensionTabAttached(std::move(attachInfo));
+  nweb_delegate_->WebExtensionTabAttached(tab_id, std::move(attachInfo));
 }
 
 void NWebImpl::WebExtensionTabDetached(
+    int tab_id,
     std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) {
   if (nweb_delegate_ == nullptr) {
     return;
   }
-  nweb_delegate_->WebExtensionTabDetached(std::move(detachInfo));
+  nweb_delegate_->WebExtensionTabDetached(tab_id, std::move(detachInfo));
 }
 
 void NWebImpl::WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) {

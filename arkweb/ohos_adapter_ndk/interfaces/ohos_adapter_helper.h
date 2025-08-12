@@ -60,6 +60,7 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/soc_perf_client_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/system_properties_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/sensor_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/qos_manager_adapter.h"
 
 namespace OHOS::NWeb {
 
@@ -164,7 +165,10 @@ public:
     virtual OhosDrawingTextFontAdapter& GetOhosDrawingTextFontAdapter() = 0;
 
     virtual OhosDrawingTextTypographyAdapter& GetOhosDrawingTextTypographyAdapter() = 0;
+
     virtual std::unique_ptr<MigrationManagerAdapter> CreateMigrationMgrAdapter() = 0;
+
+    virtual QosManagerAdapter& GetQosManagerInstance() = 0;
 };
 
 } // namespace OHOS::NWeb

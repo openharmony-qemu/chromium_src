@@ -59,10 +59,38 @@ void ExtensionActionDispatcher::DispatchExtensionActionClickedWithCustomArgs(
     const NWebExtensionTab* custom_tab) {
   LOG(DEBUG) << "ExtensionActionAPI "
                 "DispatchExtensionActionClickedWithCustomArgs called";
-  events::HistogramValue histogram_value = events::ACTION_ON_CLICKED;
-  const char* event_name = "action.onClicked";
-  base::Value::List args;
+  events::HistogramValue histogram_value = events::UNKNOWN;
+  const char* event_name = nullptr;
 
+  ExtensionRegistry* registry = ExtensionRegistry::Get(browser_context_);
+  const Extension* extension =
+      registry ? registry->enabled_extensions().GetByID(extension_id) : nullptr;
+  const ExtensionAction* extension_action =
+      extension ? ExtensionActionManager::Get(browser_context_)
+                      ->GetExtensionAction(*extension)
+                : nullptr;
+  if (extension_action) {
+    switch (extension_action->action_type()) {
+      case ActionInfo::Type::kAction:
+        histogram_value = events::ACTION_ON_CLICKED;
+        event_name = "action.onClicked";
+        break;
+      case ActionInfo::Type::kBrowser:
+        histogram_value = events::BROWSER_ACTION_ON_CLICKED;
+        event_name = "browserAction.onClicked";
+        break;
+      case ActionInfo::Type::kPage:
+        histogram_value = events::PAGE_ACTION_ON_CLICKED;
+        event_name = "pageAction.onClicked";
+        break;
+    }
+  } else {
+    LOG(ERROR) << "onClicked type get failed, seen as action.onClicked";
+    histogram_value = events::ACTION_ON_CLICKED;
+    event_name = "action.onClicked";
+  }
+
+  base::Value::List args;
   args.Append(GetTabValue(*custom_tab));
 
   if (custom_tab->id.has_value()) {

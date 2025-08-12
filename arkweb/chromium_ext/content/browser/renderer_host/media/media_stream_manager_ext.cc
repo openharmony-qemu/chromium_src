@@ -24,13 +24,13 @@ MediaStreamManagerExt::ScreenCaptureCallback
 // static
 void MediaStreamManagerExt::SetScreenCaptureDelegateCallback(
     ScreenCaptureCallback callback) {
-  if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
-    auto ui_task_runner = GetUIThreadTaskRunner({});
-    if (!ui_task_runner) {
-      LOG(ERROR) << "SetScreenCaptureDelegateCallback ui task runner is nullptr";
+  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
+    auto io_task_runner = GetIOThreadTaskRunner({});
+    if (!io_task_runner) {
+      LOG(ERROR) << "SetScreenCaptureDelegateCallback io_task_runner is nullptr";
       return;
     }
-    ui_task_runner->PostTask(
+    io_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(&MediaStreamManagerExt::SetScreenCaptureDelegateCallback,
                        std::move(callback)));
@@ -99,13 +99,13 @@ void MediaStreamManagerExt::SendScreenCaptureStateToNative(
     int32_t nweb_id,
     const std::string& session_id,
     int32_t state) {
-  if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
-    auto ui_task_runner = GetUIThreadTaskRunner({});
-    if (!ui_task_runner) {
-      LOG(ERROR) << "SendScreenCaptureStateToNative ui task runner is nullptr";
+  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
+    auto io_task_runner = GetIOThreadTaskRunner({});
+    if (!io_task_runner) {
+      LOG(ERROR) << "SendScreenCaptureStateToNative io_task_runner is nullptr";
       return;
     }
-    ui_task_runner->PostTask(
+    io_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(&MediaStreamManagerExt::SendScreenCaptureStateToNative,
                        nweb_id, session_id, state));

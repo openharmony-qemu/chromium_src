@@ -37,6 +37,8 @@ public:
   void ScreenCaptureOpened(const std::string& session_id);
   void OnScreenCaptureOpened(const std::string& session_id);
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+
+  base::WeakPtrFactory<VideoCaptureManagerExt> weak_factory_{this};
 };
 }
 

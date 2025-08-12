@@ -108,7 +108,7 @@ void VideoCaptureManagerExt::ScreenCaptureOpened(const std::string& session_id) 
   // Notify listener asynchronously.
   base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
       FROM_HERE, base::BindOnce(&VideoCaptureManagerExt::OnScreenCaptureOpened,
-                                this, session_id));
+                                weak_factory_.GetWeakPtr(), session_id));
 }
 
 void VideoCaptureManagerExt::OnScreenCaptureOpened(const std::string& session_id) {

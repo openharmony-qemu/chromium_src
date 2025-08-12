@@ -43,7 +43,7 @@ std::function<
     std::shared_ptr<OHOS::NWeb::NWebValue>(std::vector<std::vector<uint8_t>>&,
                                            std::vector<size_t>&)>
 CreateProxyCallback(ArkWeb_OnJavaScriptProxyCallbackWithResult callback,
-                    std::string tag,
+                    const std::string& tag,
                     void* data) {
   return [cb = callback, webTag = std::string(tag), userData = data](
              std::vector<std::vector<uint8_t>>& dataList,
@@ -539,7 +539,7 @@ OH_ArkWeb_PostWebMessage(const char* webTag,
 
   std::vector<std::string> ports;
   for (unsigned int i = 0; i < size; i++) {
-    if (webMessagePorts[i]->portHandle) {
+    if (webMessagePorts[i] && webMessagePorts[i]->portHandle) {
       ports.push_back(std::string(webMessagePorts[i]->portHandle));
     }
   }
@@ -804,7 +804,17 @@ OH_CookieManager_FetchCookieSync(const char* url,
   *cookie_value = (char*)__real_malloc(cookie_content.length() + 1);
 #endif // ADDRESS_SANITIZER
 #endif
-  strcpy((*cookie_value), cookie_content.c_str());
+  if (!*cookie_value) {
+    LOG(ERROR) << "cookie value is nullptr";
+    return ARKWEB_ERROR_UNKNOWN;
+  }
+  int ret = strcpy_s(*cookie_value, cookie_content.length() + 1, cookie_content.c_str());
+  if (ret != 0) {
+    LOG(ERROR) << "OH_CookieManager_FetchCookieSync error, call strcpy_s ret = " << ret;
+    free(*cookie_value);
+    *cookie_value = nullptr;
+    return ARKWEB_ERROR_UNKNOWN;
+  }
   if (cookie_content == "" && !is_valid) {
     return ARKWEB_INVALID_URL;
   }
@@ -1018,34 +1028,24 @@ ARKWEB_NDK_EXPORT ArkWeb_JavaScriptValuePtr
 OH_JavaScript_CreateJavaScriptValue(ArkWeb_JavaScriptValueType type,
                                     void* data,
                                     size_t dataLength) {
-  ArkWeb_JavaScriptValuePtr value = new (std::nothrow) ArkWeb_JavaScriptValue();
-  if (!value) {
-    LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue malloc failed";
-    return nullptr;
-  }
-
   if (!data) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue nullptr error";
-    delete value;
     return nullptr;
   }
 
   if (dataLength == 0) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue data size error";
-    delete value;
     return nullptr;
   }
 
   if (type == ArkWeb_JavaScriptValueType::ARKWEB_JAVASCRIPT_NONE) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue type none";
-    delete value;
     return nullptr;
   }
 
   if (type == ArkWeb_JavaScriptValueType::ARKWEB_JAVASCRIPT_BOOL &&
       dataLength != 1) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue type bool length error";
-    delete value;
     return nullptr;
   }
 
@@ -1053,21 +1053,25 @@ OH_JavaScript_CreateJavaScriptValue(ArkWeb_JavaScriptValueType type,
 
   if (!destination) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue malloc failed";
-    delete value;
     return nullptr;
   }
 
   if (memcpy_s(destination, dataLength, (char*)data, dataLength) != EOK) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue memcpy failed";
     delete[] destination;
-    delete value;
     return nullptr;
   }
 
   if (memcpy_s(destination, dataLength, (char*)data, dataLength) != EOK) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue memcpy failed";
     delete[] destination;
-    delete value;
+    return nullptr;
+  }
+
+  ArkWeb_JavaScriptValuePtr value = new (std::nothrow) ArkWeb_JavaScriptValue();
+  if (!value) {
+    LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue malloc failed";
+    delete[] destination;
     return nullptr;
   }
 
@@ -1115,6 +1119,11 @@ OH_NativeArkWeb_LoadData(const char* webTag,
 
 ARKWEB_NDK_EXPORT ArkWeb_BlanklessInfo OH_NativeArkWeb_GetBlanklessInfoWithKey(const char* webTag, const char* key)
 {
+    if (key == nullptr) {
+      LOG(ERROR) << "blankless OH_NativeArkWeb_GetBlanklessInfoWithKey key pointer is nullptr";
+      return { ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_INVALID_ARGS, 0.0, 0 };
+    }
+
     auto webObjectPtr = OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
     if (webObjectPtr == nullptr) {
         LOG(ERROR) << "blankless OH_NativeArkWeb_GetBlanklessInfoWithKey web object pointer is nullptr";

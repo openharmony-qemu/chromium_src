@@ -243,22 +243,22 @@ bool NetProxyAdapterImpl::StartListen()
         WVLOG_E("start netproxy listen, callback is null");
         return false;
     }
-    if (commonEventSubscriber_ == NULL) {
+    if (commonEventSubscriber_ == nullptr) {
         const char *events[] = {
             COMMON_EVENT_HTTP_PROXY_CHANGE,
         };
         int count = sizeof(events) / sizeof(events[0]);
         commonEventSubscribeInfo_ = OH_CommonEvent_CreateSubscribeInfo(events, count);
-        if (commonEventSubscribeInfo_ == NULL) {
+        if (commonEventSubscribeInfo_ == nullptr) {
             WVLOG_E("Create SubscribeInfo failed.");
             return false;
         }
 
         commonEventSubscriber_ = OH_CommonEvent_CreateSubscriber(commonEventSubscribeInfo_,
             OnReceiveEvent);
-        if (commonEventSubscriber_ == NULL) {
+        if (commonEventSubscriber_ == nullptr) {
             OH_CommonEvent_DestroySubscribeInfo(commonEventSubscribeInfo_);
-            commonEventSubscribeInfo_ = NULL;
+            commonEventSubscribeInfo_ = nullptr;
             WVLOG_E("Create Subscriber failed.");
             return false;
         }
@@ -267,8 +267,8 @@ bool NetProxyAdapterImpl::StartListen()
         if (ret != COMMONEVENT_ERR_OK) {
             OH_CommonEvent_DestroySubscribeInfo(commonEventSubscribeInfo_);
             OH_CommonEvent_DestroySubscriber(commonEventSubscriber_);
-            commonEventSubscribeInfo_ = NULL;
-            commonEventSubscriber_ = NULL;
+            commonEventSubscribeInfo_ = nullptr;
+            commonEventSubscriber_ = nullptr;
             WVLOG_E("Subscribe failed. ret = %{public}d", ret);
             return false;
         }
@@ -358,6 +358,7 @@ void NetProxyAdapterImpl::OnReceiveEvent(const CommonEvent_RcvData *data)
     int32_t ret = OH_NetConn_GetDefaultHttpProxy(&httpProxy);
     if (ret != 0) {
         WVLOG_E("NetProxyAdapter::OH_NetConn_GetDefaultHttpProxy failed");
+        return;
     }
 
     std::string host;
@@ -368,7 +369,9 @@ void NetProxyAdapterImpl::OnReceiveEvent(const CommonEvent_RcvData *data)
     for (int i = 0; i < httpProxy.exclusionListSize; i++) {
         exclusionList.push_back(httpProxy.exclusionList[i]);
     }
-    cb_->Changed(host, port, "", exclusionList);
+    if (cb_) {
+        cb_->Changed(host, port, "", exclusionList);
+    }
 }
 
 void NetProxyAdapterImpl::GetProperty(std::string& host, uint16_t& port, std::string& pacUrl, std::string& exclusion)

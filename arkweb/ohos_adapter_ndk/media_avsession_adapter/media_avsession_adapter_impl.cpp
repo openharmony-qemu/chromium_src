@@ -105,11 +105,11 @@ MediaAVSessionAdapterImpl::~MediaAVSessionAdapterImpl() {
 
 bool MediaAVSessionAdapterImpl::CreateAVSession(MediaAVSessionType type) {
     WVLOG_I("CreateAVSession in, type=%{public}d", int32_t(type));
-    if (MediaAVSessionType::MEDIA_TYPE_INVALID == type) {
+    if (type == MediaAVSessionType::MEDIA_TYPE_INVALID) {
         WVLOG_E("CreateAVSession, type invalid return false");
         return false;
     }
-    if (avSession_ && (type != avSessionKey_->GetType())) {
+    if (avSession_ && avSessionKey_ &&(type != avSessionKey_->GetType())) {
         DestroyAVSession();
     }
     auto findIter = avSessionMap.find(avSessionKey_->ToString());

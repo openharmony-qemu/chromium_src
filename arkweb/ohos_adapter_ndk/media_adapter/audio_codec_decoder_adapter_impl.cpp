@@ -225,10 +225,10 @@ AudioCodecDecoderAdapterImpl::~AudioCodecDecoderAdapterImpl()
     if (decoder_ != nullptr) {
         AudioDecoderCallbackManager::DeleteAudioDecoder(decoder_);
         OH_AVErrCode errCode = OH_AudioCodec_Destroy(decoder_);
+        decoder_ = nullptr;
         if (errCode != AV_ERR_OK) {
             WVLOG_E("destroy decoder_ fail, errCode = %{public}u.", uint32_t(errCode));
         }
-        decoder_ = nullptr;
     }
 }
 
@@ -493,11 +493,11 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::ReleaseDecoder()
 
     AudioDecoderCallbackManager::DeleteAudioDecoder(decoder_);
     OH_AVErrCode errCode = OH_AudioCodec_Destroy(decoder_);
+    decoder_ = nullptr;
     if (errCode != AV_ERR_OK) {
         WVLOG_E("destroy decoder_ fail, errCode = %{public}u.", uint32_t(errCode));
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
-    decoder_ = nullptr;
 
     // clear input and output buffers
     {
@@ -585,6 +585,7 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::SetBufferCencInfo(
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
     errNo = OH_AVCencInfo_Destroy(avCencInfo);
+    avCencInfo = nullptr;
     if (errNo != AV_ERR_OK) {
         WVLOG_E("destroy cencInfo fail, errNo = %{public}u", static_cast<uint32_t>(errNo));
         return AudioDecoderAdapterCode::DECODER_ERROR;

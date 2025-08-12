@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "net_connect_adapter.h"
-#include <memory>
 
 #include <fuzzer/FuzzedDataProvider.h>
 #include "net_connect_fuzz_mock.h"

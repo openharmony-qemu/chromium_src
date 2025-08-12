@@ -298,11 +298,17 @@ void NWebPipeResourceHandler::DidFinish() {
   }
 }
 
-void NWebPipeResourceHandler::DidFailWithError(int error_code) {
+void NWebPipeResourceHandler::DidFailWithError(int error_code, bool completeIfNoResponse) {
+  LOG(DEBUG) << "scheme_handler NWebPipeResourceHandler::DidFailWithError error_code: " << error_code
+             << " completeIfNoResponse: " << completeIfNoResponse;
   base::AutoLock scoped_lock_(lock_);
   finished_ = true;
   finished_with_error_ = true;
   error_code_ = error_code;
+  if (!response_ && completeIfNoResponse) {
+    response_ = CefResponse::Create();
+    response_->SetError(static_cast<cef_errorcode_t>(ARKWEB_ERR_CONNECTION_FAILED));
+  }
   if (response_ && response_ready_callback_) {
     response_ready_callback_->Continue();
     response_ready_callback_ = nullptr;

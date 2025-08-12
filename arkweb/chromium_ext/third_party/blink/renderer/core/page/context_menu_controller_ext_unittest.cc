@@ -28,7 +28,6 @@
 #include "third_party/blink/renderer/core/style/computed_style_constants.h"
 #include "third_party/blink/renderer/core/style/computed_style_initial_values.h"
 
-
 #define private public
 #include "third_party/blink/renderer/core/layout/hit_test_result.h"
 #include "third_party/blink/renderer/core/layout/layout_text.h"
@@ -72,7 +71,7 @@ TEST_F(ContextMenuControllerTest, ShouldShowFreeCopyMenuTest_1stIf) {
   HitTestResult hit_test_result_;
   Node* node =
       GetDocument()->getElementById(AtomicString("first"))->firstChild();
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   hit_test_result_.SetInnerNode(node);
   const HitTestResult hit_test_result = hit_test_result_;
@@ -127,7 +126,7 @@ TEST_F(ContextMenuControllerTest, ShouldShowFreeCopyMenuTest_2ndIf) {
 
   Node* node =
       GetDocument()->getElementById(AtomicString("first"))->firstChild();
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   hit_test_result_.SetInnerNode(node);
   hit_test_result_.InnerNode()->SetLayoutObject(nullptr);
@@ -183,7 +182,7 @@ TEST_F(ContextMenuControllerTest, ShouldShowFreeCopyMenuTest_3rdIf) {
 
   Node* node =
       GetDocument()->getElementById(AtomicString("first"))->firstChild();
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   hit_test_result_.SetInnerNode(nullptr);
   const HitTestResult hit_test_result = hit_test_result_;
@@ -226,14 +225,17 @@ TEST_F(ContextMenuControllerTest, ShouldShowFreeCopyMenuTest_4thIf) {
   base::HistogramTester histograms;
 
   Document* document = GetDocument();
+  ASSERT_TRUE(document != nullptr);
   Element* input_element =
       document->getElementById(AtomicString("unselectable"));
+  ASSERT_TRUE(input_element != nullptr);
 
   HitTestResult hit_test_result_;
   Node* node = GetDocument()->getElementById(AtomicString("unselectable"));
+  ASSERT_TRUE(node != nullptr);
 
   auto* layout_text_ = MakeGarbageCollected<LayoutText>(node, String("sample"));
-  EXPECT_TRUE(layout_text_ != nullptr);
+  ASSERT_TRUE(layout_text_ != nullptr);
 
   auto* style = input_element->GetComputedStyle();
   layout_text_->SetStyle(style);
@@ -291,17 +293,17 @@ TEST_F(ContextMenuControllerTest, ShouldShowFreeCopyMenuTest_5thIf) {
   HitTestResult hit_test_result_;
   Node* node =
       GetDocument()->getElementById(AtomicString("linktarget"))->firstChild();
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   auto* layout_text_ =
       MakeGarbageCollected<LayoutText>(node, String("Content"));
-  EXPECT_TRUE(layout_text_ != nullptr);
+  ASSERT_TRUE(layout_text_ != nullptr);
 
   Element* link = GetDocument()->getElementById(AtomicString("linktarget"));
-  EXPECT_TRUE(link != nullptr);
+  ASSERT_TRUE(link != nullptr);
 
   auto* style = link->GetComputedStyle();
-  EXPECT_TRUE(style != nullptr);
+  ASSERT_TRUE(style != nullptr);
   layout_text_->SetStyle(style);
 
   hit_test_result_.SetInnerNode(node);
@@ -359,17 +361,17 @@ TEST_F(ContextMenuControllerTest, ShouldShowFreeCopyMenuTest_6thIf) {
   HitTestResult hit_test_result_;
   Node* node =
       GetDocument()->getElementById(AtomicString("linktarget"))->firstChild();
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   auto* layout_text_ =
       MakeGarbageCollected<LayoutText>(node, String("Content"));
-  EXPECT_TRUE(layout_text_ != nullptr);
+  ASSERT_TRUE(layout_text_ != nullptr);
 
   Element* link = GetDocument()->getElementById(AtomicString("linktarget"));
-  EXPECT_TRUE(link != nullptr);
+  ASSERT_TRUE(link != nullptr);
 
   auto* style = link->GetComputedStyle();
-  EXPECT_TRUE(style != nullptr);
+  ASSERT_TRUE(style != nullptr);
   layout_text_->SetStyle(style);
 
   hit_test_result_.SetInnerNode(node);
@@ -753,6 +755,7 @@ TEST_F(ContextMenuControllerTest, FindImgUrlTest_1stIf) {
 
   base::HistogramTester histograms;
   Document* document = GetDocument();
+  ASSERT_TRUE(document != nullptr);
 
   PhysicalOffset point(50, 50);
 
@@ -760,13 +763,13 @@ TEST_F(ContextMenuControllerTest, FindImgUrlTest_1stIf) {
 
   HitTestResult hit_test_result_;
   Node* node = GetDocument()->getElementById(AtomicString("target"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   Element* img = GetDocument()->getElementById(AtomicString("target"));
-  EXPECT_TRUE(img != nullptr);
+  ASSERT_TRUE(img != nullptr);
 
   auto* img_view_ = img->GetLayoutObject();
-  EXPECT_TRUE(img_view_ != nullptr);
+  ASSERT_TRUE(img_view_ != nullptr);
 
   hit_test_result_.SetInnerNode(node);
   hit_test_result_.InnerNode()->SetLayoutObject(img_view_);
@@ -812,6 +815,7 @@ TEST_F(ContextMenuControllerTest, FindImgUrlTest_2ndIf) {
 
   base::HistogramTester histograms;
   Document* document = GetDocument();
+  ASSERT_TRUE(document != nullptr);
 
   PhysicalOffset point(150, 150);
 
@@ -820,13 +824,13 @@ TEST_F(ContextMenuControllerTest, FindImgUrlTest_2ndIf) {
   HitTestResult hit_test_result_;
   Node* node =
       GetDocument()->getElementById(AtomicString("linktarget"))->firstChild();
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   auto* layout_view_ = MakeGarbageCollected<LayoutView>(document);
-  EXPECT_TRUE(layout_view_ != nullptr);
+  ASSERT_TRUE(layout_view_ != nullptr);
 
   Element* link = GetDocument()->getElementById(AtomicString("linktarget"));
-  EXPECT_TRUE(link != nullptr);
+  ASSERT_TRUE(link != nullptr);
   hit_test_result_.SetInnerNode(node);
   hit_test_result_.InnerNode()->SetLayoutObject(layout_view_);
   hit_test_result_.SetURLElement(link);
@@ -871,6 +875,7 @@ TEST_F(ContextMenuControllerTest, FindImgUrlTest_3rdIf) {
 
   base::HistogramTester histograms;
   Document* document = GetDocument();
+  ASSERT_TRUE(document != nullptr);
 
   PhysicalOffset point(200, 200);
 
@@ -918,6 +923,7 @@ TEST_F(ContextMenuControllerTest, FindImgUrlTest_4thIf) {
 
   base::HistogramTester histograms;
   Document* document = GetDocument();
+  ASSERT_TRUE(document != nullptr);
 
   PhysicalOffset point(10, 10);
 
@@ -927,13 +933,13 @@ TEST_F(ContextMenuControllerTest, FindImgUrlTest_4thIf) {
   HitTestResult hit_test_result_;
   Node* node =
       GetDocument()->getElementById(AtomicString("linktarget"))->firstChild();
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   auto* layout_view_ = MakeGarbageCollected<LayoutView>(document);
-  EXPECT_TRUE(layout_view_ != nullptr);
+  ASSERT_TRUE(layout_view_ != nullptr);
 
   Element* img = GetDocument()->getElementById(AtomicString("target"));
-  EXPECT_TRUE(img != nullptr);
+  ASSERT_TRUE(img != nullptr);
   hit_test_result_.SetInnerNode(node);
   hit_test_result_.InnerNode()->SetLayoutObject(layout_view_);
   hit_test_result_.SetURLElement(img);
@@ -1038,11 +1044,12 @@ TEST_F(ContextMenuControllerTest, IsHitTestStopNodeTest_1stIf) {
 
   base::HistogramTester histograms;
   Document* document = GetDocument();
+  ASSERT_TRUE(document != nullptr);
 
   HitTestResult hit_test_result_;
   Node* node =
       GetDocument()->getElementById(AtomicString("audioPlayer"))->firstChild();
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
   const Node& node_ = *node;
 
   bool result = IsHitTestStopNode(node_);
@@ -1141,10 +1148,11 @@ TEST_F(ContextMenuControllerTest, IsHitTestStopNodeTest_2ndIf) {
 
   base::HistogramTester histograms;
   Document* document = GetDocument();
+  ASSERT_TRUE(document != nullptr);
 
   HitTestResult hit_test_result_;
   Node* node = GetDocument()->getElementById(AtomicString("audioPlayer"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
   const Node& node_ = *node;
 
   bool result = IsHitTestStopNode(node_);
@@ -1243,10 +1251,11 @@ TEST_F(ContextMenuControllerTest, IsHitTestStopNodeTest_3rdIf) {
 
   base::HistogramTester histograms;
   Document* document = GetDocument();
+  ASSERT_TRUE(document != nullptr);
 
   HitTestResult hit_test_result_;
   Node* node = GetDocument()->getElementById(AtomicString("videoPlayer"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
   const Node& node_ = *node;
 
   bool result = IsHitTestStopNode(node_);
@@ -1345,10 +1354,11 @@ TEST_F(ContextMenuControllerTest, IsHitTestStopNodeTest_4thIf) {
 
   base::HistogramTester histograms;
   Document* document = GetDocument();
+  ASSERT_TRUE(document != nullptr);
 
   HitTestResult hit_test_result_;
   Node* node = GetDocument()->getElementById(AtomicString("pdfEmbed"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
   const Node& node_ = *node;
 
   bool result = IsHitTestStopNode(node_);
@@ -1447,10 +1457,11 @@ TEST_F(ContextMenuControllerTest, IsHitTestStopNodeTest_5thIf) {
 
   base::HistogramTester histograms;
   Document* document = GetDocument();
+  ASSERT_TRUE(document != nullptr);
 
   HitTestResult hit_test_result_;
   Node* node = GetDocument()->getElementById(AtomicString("flashObject"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
   const Node& node_ = *node;
 
   bool result = IsHitTestStopNode(node_);
@@ -1549,10 +1560,11 @@ TEST_F(ContextMenuControllerTest, IsHitTestStopNodeTest_6thIf) {
 
   base::HistogramTester histograms;
   Document* document = GetDocument();
+  ASSERT_TRUE(document != nullptr);
 
   HitTestResult hit_test_result_;
   Node* node = GetDocument()->getElementById(AtomicString("drawingCanvas"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
   const Node& node_ = *node;
 
   bool result = IsHitTestStopNode(node_);
@@ -1599,7 +1611,7 @@ TEST_F(ContextMenuControllerTest, IsAILinkTest_1stIf) {
 
   HitTestResult hit_test_result_;
   Node* node = GetDocument()->getElementById(AtomicString("linktarget"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   hit_test_result_.SetInnerNode(node);
 
@@ -1672,7 +1684,7 @@ TEST_F(ContextMenuControllerTest, IsAILinkTest_3rdIf) {
 
   HitTestResult hit_test_result_;
   Node* node = GetDocument()->getElementById(AtomicString("linktarget"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   hit_test_result_.SetInnerNode(node);
 
@@ -1711,7 +1723,7 @@ TEST_F(ContextMenuControllerTest, IsAILinkTest_4thIf) {
 
   HitTestResult hit_test_result_;
   Node* node = GetDocument()->getElementById(AtomicString("linktarget"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   hit_test_result_.SetInnerNode(node);
 
@@ -1747,7 +1759,7 @@ TEST_F(ContextMenuControllerTest, GetImgUrlTest_2ndIf) {
   GetDocument()->UpdateStyleAndLayout(DocumentUpdateReason::kTest);
 
   Node* node = GetDocument()->getElementById(AtomicString("container"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   ContextMenuData data_;
   HitTestResult hit_test_result_;
@@ -1776,6 +1788,7 @@ TEST_F(ContextMenuControllerTest, GetImgUrlTest_4thIf) {
   )HTML");
 
   Document* document = GetDocument();
+  ASSERT_TRUE(document != nullptr);
   ASSERT_TRUE(IsA<HTMLDocument>(document));
 
   Element* embed_element = document->getElementById(AtomicString("embed"));
@@ -1823,10 +1836,10 @@ TEST_F(ContextMenuControllerTest, GetImgUrlTest_5thIf) {
   GetDocument()->UpdateStyleAndLayout(DocumentUpdateReason::kTest);
 
   Node* node = GetDocument()->getElementById(AtomicString("target"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   Node* img_node = GetDocument()->getElementById(AtomicString("img"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   ContextMenuData data_;
   HitTestResult hit_test_result_;
@@ -1900,7 +1913,7 @@ TEST_F(ContextMenuControllerTest, GetImgUrlTest_6thIf) {
   EXPECT_TRUE(ShowContextMenu(location, kMenuSourceLongPress));
 
   Node* node = GetDocument()->getElementById(AtomicString("hiddenancestor"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   ContextMenuData data_;
   HitTestResult hit_test_result_;
@@ -1979,6 +1992,7 @@ TEST_F(ContextMenuControllerTest, SetImageRectFromPotentialImageNode_2ndIf) {
 
   Node* first_paragraph =
       GetDocument()->getElementById(AtomicString("first"))->firstChild();
+  ASSERT_TRUE(first_paragraph != nullptr);
 
   ContextMenuData data_;
   data_.has_image_contents = true;

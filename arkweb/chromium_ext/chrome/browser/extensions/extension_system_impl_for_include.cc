@@ -24,14 +24,16 @@ void InitForRegularProfileForInclude(
   ExtensionRegistry* registry = ExtensionRegistry::Get(profile);
   if (!registry) {
     LOG(ERROR) << "registry is null";
+  } else {
+    registry->AddObserver(extension_registry_info_manager);
   }
-  registry->AddObserver(extension_registry_info_manager);
 
   MenuManager* menu_manager = MenuManager::Get(profile);
   if (!menu_manager) {
     LOG(ERROR) << "menu_manager is null";
+  } else {
+    menu_manager->AddLoadObserver(extension_registry_info_manager);
   }
-  menu_manager->AddLoadObserver(extension_registry_info_manager);
 
   ExtensionActionBrowserNotifier::GetInstance()->StartObservingActionDispatcher(
       profile);

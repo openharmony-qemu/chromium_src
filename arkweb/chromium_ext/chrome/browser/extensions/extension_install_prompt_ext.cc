@@ -99,6 +99,9 @@ class PromptInfoHolder {
     if (0 < data->permissionCount) {
       data->permissions = (NWebExtensionPermission*)calloc(
           data->permissionCount, sizeof(NWebExtensionPermission));
+      if (!data->permissions) {
+        return;
+      }
 
       const std::string show_details_label =
           l10n_util::GetStringUTF8(IDS_EXTENSIONS_SHOW_DETAILS);

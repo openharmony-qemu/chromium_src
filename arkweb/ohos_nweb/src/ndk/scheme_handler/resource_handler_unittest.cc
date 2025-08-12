@@ -56,5 +56,5 @@ TEST_F(ArkWeb_ResourceHandler_Test, ArkWeb_ResourceHandler_Test_DidFinish) {
 }
 
 TEST_F(ArkWeb_ResourceHandler_Test, ArkWeb_ResourceHandler_Test_FailWithError) {
-  _awrhst->DidFailWithError(ArkWeb_NetError::ARKWEB_NET_OK);
+  _awrhst->DidFailWithError(ArkWeb_NetError::ARKWEB_NET_OK, true);
 }

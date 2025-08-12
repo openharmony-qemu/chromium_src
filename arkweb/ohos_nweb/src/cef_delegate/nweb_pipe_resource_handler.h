@@ -63,7 +63,7 @@ class NWebPipeResourceHandler : public CefResourceHandlerExt {
   void DidReceiveResponse(CefRefPtr<CefResponse> response);
   void DidReceiveData(const uint8_t* buffer, int64_t buf_len);
   void DidFinish();
-  void DidFailWithError(int error_code);
+  void DidFailWithError(int error_code, bool completeIfNoResponse);
 
   void AddRef() const override { ref_count_.AddRef(); }
   bool Release() const override;

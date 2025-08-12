@@ -43,7 +43,7 @@ public:
   };
 
 
-  void DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& info,
+  void DumpBlanklessSnapshot(const base::ohos::BlanklessInfo& info,
                              const SkBitmap& bitmap,
                              const std::vector<SnapShotRect>& quad_list);
   void ClearSnapshot(int64_t key);

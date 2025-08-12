@@ -71,5 +71,7 @@ class ContextMenuControllerExt : public ContextMenuController {
                                WebMenuSourceType source_type);
 #endif
 };
+
+bool IsHitTestStopNode(const Node& node);
 }  // namespace blink
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CONTEXT_MENU_CONTROLLER_EXT_H_

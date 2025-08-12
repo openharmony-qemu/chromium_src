@@ -41,6 +41,8 @@ public:
 
     void NativeWindowUnRef(NWebNativeWindow window) override;
 
+    void NativeWindowSetUsage(NWebNativeWindow window) override;
+
     int GetNativeWindowQueueSize(NWebNativeWindow window);
 };
 } // namespace OHOS::NWeb

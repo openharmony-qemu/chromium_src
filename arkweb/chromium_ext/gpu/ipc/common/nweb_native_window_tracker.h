@@ -12,7 +12,7 @@
 
 #include "base/memory/singleton.h"
 #include "base/synchronization/lock.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 
 class NWEB_EXPORT NWebNativeWindowTracker {
  public:

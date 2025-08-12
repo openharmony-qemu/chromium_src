@@ -327,6 +327,10 @@ void ScreenCaptureCallbackOnBufferAvailable(OH_AVScreenCapture *capture, OH_AVBu
         WVLOG_E("userData is null");
         return;
     }
+    if (buffer == nullptr) {
+        WVLOG_E("OH_AVBuffer is null");
+        return;
+    }
     CallbackInfo* callbackInfo = (CallbackInfo*)userData;
     if (callbackInfo->callback == nullptr) {
         WVLOG_E("callback is null");
@@ -560,17 +564,17 @@ std::shared_ptr<SurfaceBufferAdapter> ScreenCaptureAdapterImpl::AcquireVideoBuff
     }
 
     if (bufferAvailableQueueMap_.find(callback_info_.nweb_id) == bufferAvailableQueueMap_.end()) {
-        WVLOG_E("bufferAvailableQueue is not found");
+        WVLOG_E("bufferAvailableQueue is not found, nwebId=%{public}d", callback_info_.nweb_id);
         return nullptr;
     }
 
     if (bufferAvailableQueueMap_[callback_info_.nweb_id].empty()) {
-        WVLOG_E("bufferAvailableQueue is empty");
+        WVLOG_E("bufferAvailableQueue is empty, nwebId=%{public}d", callback_info_.nweb_id);
         return nullptr;
     }
     auto surfaceBufferImpl = std::move(bufferAvailableQueueMap_[callback_info_.nweb_id].front());
     if (!surfaceBufferImpl) {
-        WVLOG_E("buffer is nullptr");
+        WVLOG_E("surfaceBufferImpl is nullptr");
         return nullptr;
     }
     bufferAvailableQueueMap_[callback_info_.nweb_id].pop();
@@ -591,13 +595,18 @@ int32_t ScreenCaptureAdapterImpl::AcquireAudioBuffer(
         return -1;
     }
 
-    if (audioBufferAvailableQueueMap_.find(callback_info_.nweb_id) == audioBufferAvailableQueueMap_.end()) {
+    if (audiobuffer == nullptr) {
         WVLOG_E("audiobuffer is nullptr");
         return -1;
     }
 
+    if (audioBufferAvailableQueueMap_.find(callback_info_.nweb_id) == audioBufferAvailableQueueMap_.end()) {
+        WVLOG_E("audioBufferAvailableQueue is not found, nwebId=%{public}d", callback_info_.nweb_id);
+        return -1;
+    }
+
     if (audioBufferAvailableQueueMap_[callback_info_.nweb_id].empty()) {
-        WVLOG_E("audioBufferAvailableQueue is empty");
+        WVLOG_E("audioBufferAvailableQueue is empty, nwebId=%{public}d", callback_info_.nweb_id);
         return -1;
     }
 

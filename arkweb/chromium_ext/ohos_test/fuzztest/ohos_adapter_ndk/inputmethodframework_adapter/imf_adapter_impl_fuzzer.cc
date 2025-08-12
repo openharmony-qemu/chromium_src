@@ -298,6 +298,18 @@ IMFAdapterKeyboardStatus ohKeyboardStatusToAdapterKeyboardStatusEx(
   return IMFAdapterKeyboardStatus::NONE;
 }
 
+std::shared_ptr<std::string> PrivateCommandGetStrValueEx(InputMethod_PrivateCommand *privateCommand)
+{
+    const char *value = nullptr;
+    size_t length = 0;
+
+    InputMethod_ErrorCode ret = OH_PrivateCommand_GetStrValue(privateCommand, &value, &length);
+    if (ret != IME_ERR_OK) {
+        return nullptr;
+    }
+    return std::make_shared<std::string>(value);
+}
+
 void FuzzIMFAdapterImpl(FuzzedDataProvider* fdp) {
   auto listener = std::make_shared<MockIMFTextListenerAdapter>();
   uint32_t windowId = fdp->ConsumeIntegral<uint32_t>();
@@ -377,6 +389,26 @@ void FuzzIMFAdapterImpl(FuzzedDataProvider* fdp) {
   IMFAdapterTextInputType inputType =
       static_cast<IMFAdapterTextInputType>(fdp->ConsumeIntegralInRange<int32_t>(
           0, static_cast<int32_t>(IMFAdapterTextInputType::NUMBER_DECIMAL)));
+  InputMethod_TextEditorProxy* proxy = 
+      IMFTextEditorProxyImpl::TextEditorProxyCreate(listener);
+  static InputMethod_TextConfig *textConfig_;
+  InputMethod_TextConfig* textConfig = OH_TextConfig_Create();
+  if (textConfig) {
+    IMFTextEditorProxyImpl::textConfig_ = textConfig;
+  }
+  auto config = std::make_shared<MockIMFTextConfigAdapter>(
+          windowId, positionY, height);
+  InputMethod_ErrorCode ret = IMFTextEditorProxyImpl::ConstructTextConfig(config);
+  (void)ret;
+  InputMethod_TextConfig* funcDestConfig = OH_TextConfig_Create();
+  if (funcDestConfig) {
+    IMFTextEditorProxyImpl::GetTextConfigFunc(proxy, funcDestConfig);
+    OH_TextConfig_Destroy(funcDestConfig);
+  }
+  adapter.AttachParamsCheck(listener, true, config, true);
+  adapter.AttachParamsCheck(listener, true, config, false);
+  adapter.AttachParamsCheck(listener, false, config, true);
+  adapter.AttachParamsCheck(listener, false, config, false);
   adapter.ShowCurrentInput(inputType);
   adapter.HideTextInput();
   std::shared_ptr<IMFCursorInfoAdapter> cursorInfo =
@@ -397,6 +429,10 @@ void FuzzIMFAdapterImpl(FuzzedDataProvider* fdp) {
   privateCommands.push_back(cmd);
   std::string JsonValue = R"({"userName": "test_user", "hasAccount": "true"})";
   adapter.ParseFillContentJsonValue(JsonValue, privateCommands);
+  for (size_t i = 0; i < privateCommands.size(); ++i) {
+    std::shared_ptr<std::string> style = PrivateCommandGetStrValueEx(privateCommands[i]);
+    (void)style;
+  }
   MiscServices::PanelStatusInfo panelInfo{};
   panelInfo.trigger = fdp->ConsumeBool()
                           ? MiscServices::Trigger::IME_APP

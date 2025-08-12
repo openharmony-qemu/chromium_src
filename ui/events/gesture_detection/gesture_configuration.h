@@ -216,8 +216,11 @@ class GESTURE_DETECTION_EXPORT GestureConfiguration {
   float default_radius_ = 25;
 
   bool double_tap_enabled_ = false;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   int double_tap_timeout_in_ms_ = 400;
-
+#else
+  int double_tap_timeout_in_ms_ = 300;
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   // Whether to suppress touchscreen/touchpad taps that occur during a fling (
   // in particular, when such taps cancel the active fling).
   bool fling_touchpad_tap_suppression_enabled_ = false;

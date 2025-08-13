@@ -128,7 +128,6 @@ void OHOSAudioCapturerSource::Stop() {
 }
 
 void OHOSAudioCapturerSource::ReadData() {
-  
   if (!capturer_) {
     return;
   }

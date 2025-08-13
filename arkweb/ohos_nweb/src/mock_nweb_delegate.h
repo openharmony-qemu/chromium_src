@@ -864,6 +864,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
               SetBackForwardCacheOptions,
               (int32_t size, int32_t timeToLive),
               (override));
+  MOCK_METHOD(void,
+              SetMediaResumeFromBFCachePage,
+              (bool resume),
+              (override));
 #endif
 
   MOCK_METHOD(bool, IsCustomKeyboard, (), (const, override));

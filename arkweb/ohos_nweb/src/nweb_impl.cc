@@ -3836,13 +3836,6 @@ void NWebImpl::OnShowConfirmInfoBar(const std::string& title,
                                     const std::string& buttonLabelCancel) {
   LOG(INFO) << " func:" << __FUNCTION__;
   if (on_show_confirm_info_bar_callback_) {
-    LOG(INFO) << " func:" << __FUNCTION__
-     << " title:" << title
-     << " infoId:" << infoId
-     << " message:" << message
-     << " buttons:" << buttons
-     << " buttonLabelOK:" << buttonLabelOK
-     << " buttonLabelCancel:" << buttonLabelCancel;
     on_show_confirm_info_bar_callback_(
         title.c_str(), infoId.c_str(), message.c_str(), buttons,
         buttonLabelOK.c_str(), buttonLabelCancel.c_str());
@@ -3860,7 +3853,6 @@ void NWebImpl::OnHideConfirmInfoBar(const std::string& title,
                                     const std::string& buttonLabelCancel) {
   LOG(INFO) << " func:" << __FUNCTION__;
   if (on_hide_confirm_info_bar_callback_) {
-    LOG(INFO) << " func:" << __FUNCTION__;
     on_hide_confirm_info_bar_callback_(
         title.c_str(), infoId.c_str(), message.c_str(), buttons,
         buttonLabelOK.c_str(), buttonLabelCancel.c_str());

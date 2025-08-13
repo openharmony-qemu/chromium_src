@@ -212,10 +212,14 @@ EGLImageBacking::EGLImageBacking(
   // When we have pixel data, we want to initialize the texture with pixel data
   // first before creating eglimage from it. Hence using GenEGLImageSibling()
   // call to do that.
+#if !BUILDFLAG(IS_OHOS)
   if (workarounds.dont_delete_source_texture_for_egl_image)
     source_texture_holder_ = GenEGLImageSibling(pixel_data);
   else if (!pixel_data.empty())
     auto texture_holder = GenEGLImageSibling(pixel_data);
+#else
+  source_texture_holder_ = GenEGLImageSibling(pixel_data);
+#endif
 }
 
 EGLImageBacking::~EGLImageBacking() {

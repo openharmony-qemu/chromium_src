@@ -175,7 +175,11 @@ std::string ReplaceHtmlTemplateValues(const mojom::Theme theme,
   csp << "frame-src http://www.youtube.com; ";
   csp << "style-src 'unsafe-inline' https://fonts.googleapis.com; ";
   // Allows the fallback font-face from the main stylesheet.
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  csp << "font-src https://x.x.x.x; ";
+#else
   csp << "font-src https://fonts.gstatic.com; ";
+#endif
   // Images will be inlined as data-uri if they are valid.
   csp << "img-src data:; ";
   csp << "form-action 'none'; ";

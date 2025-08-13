@@ -24,10 +24,17 @@ inline constexpr std::string_view kNabCardIssuerId = "nab";
 inline constexpr std::string_view kNatwestCardIssuerId = "natwest";
 
 // The urls to the static card art images used by Capital One cards.
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+inline constexpr std::string_view kCapitalOneCardArtUrl =
+    "https://x.x.x.x";
+inline constexpr std::string_view kCapitalOneLargeCardArtUrl =
+    "https://x.x.x.x";
+#else
 inline constexpr std::string_view kCapitalOneCardArtUrl =
     "https://www.gstatic.com/autofill/virtualcard/icon/capitalone.png";
 inline constexpr std::string_view kCapitalOneLargeCardArtUrl =
     "https://www.gstatic.com/autofill/virtualcard/icon/capitalone_40_24.png";
+#endif
 
 }  // namespace autofill
 

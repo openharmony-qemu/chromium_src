@@ -29,8 +29,13 @@ namespace {
 using PaymentsRpcResult = PaymentsAutofillClient::PaymentsRpcResult;
 
 const char kTokenFetchId[] = "wallet_client";
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kPaymentsOAuth2Scope[] =
+    "https://x.x.x.x";
+#else
 const char kPaymentsOAuth2Scope[] =
     "https://www.googleapis.com/auth/wallet.chrome";
+#endif
 
 GURL GetRequestUrl(const std::string& path) {
   if (base::CommandLine::ForCurrentProcess()->HasSwitch("sync-url")) {

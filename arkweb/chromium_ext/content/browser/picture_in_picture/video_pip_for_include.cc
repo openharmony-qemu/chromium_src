@@ -33,7 +33,11 @@ PictureInPictureResult VideoPictureInPictureWindowControllerImpl::StartSessionEx
     const gfx::Rect& source_bounds,
     mojo::PendingRemote<blink::mojom::PictureInPictureSession>* session_remote,
     gfx::Size* window_size) {
-  auto result = GetWebContentsImpl()->EnterPictureInPicture();
+  PictureInPictureResult result = PictureInPictureResult::kNotSupported;
+  if (!GetWebContentsImpl() || GetWebContentsImpl()->AsWebContentsImplExt()) {
+    return result;
+  }
+  result = GetWebContentsImpl()->EnterPictureInPicture();
   LOG(INFO) << "PIC :" << __func__ << " result:" << (int)result << " size:" << natural_size.ToString()
            << " " << player_id.delegate_id << " " << player_id.frame_routing_id.child_id << " "
            << player_id.frame_routing_id.frame_routing_id;
@@ -75,6 +79,10 @@ PictureInPictureResult VideoPictureInPictureWindowControllerImpl::StartSessionEx
   if (GetWebContentsImpl() && GetWebContentsImpl()->AsWebContentsImplExt()) {
     GetWebContentsImpl()->AsWebContentsImplExt()->OnPipEvent(PIP_STATE_ENTER);
   }
+  if (window_size) {
+    *window_size = natural_size;
+  }
+  GetWebContentsImpl()->SetHasPictureInPictureVideo(true);
   return result;
 }
 
@@ -107,11 +115,11 @@ void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPictureExt(
 }
 
 void VideoPictureInPictureWindowControllerImpl::OnPictureInPictureStateChanged(
-    const MediaPlayerId& id, uint32_t state) {
+    const MediaPlayerId& id, uint32_t state, int32_t width, int32_t height) {
   DCHECK(active_session_);
   GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(state, id.delegate_id,
                               id.frame_routing_id.child_id,
-                              id.frame_routing_id.frame_routing_id, 0, 0);
+                              id.frame_routing_id.frame_routing_id, width, height);
 }
 
 void VideoPictureInPictureWindowControllerImpl::WebContentsDestroyedExt() {

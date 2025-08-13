@@ -294,6 +294,8 @@ class WebContentsImplExt : public WebContentsImpl {
              int width,
              int height);
   void OnPipEvent(int event) override;
+  void SetUpdateSurface(bool state);
+  bool IsUpdateSurface();
 #endif
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 friend class WebContentsImpl;
@@ -380,6 +382,7 @@ private:
   std::string shared_render_process_token_;
 #endif
 #if BUILDFLAG(ARKWEB_PIP)
+  bool pip_update_surface_ = false;
   bool pip_status_ = false;
 #endif
 };

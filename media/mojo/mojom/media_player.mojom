@@ -144,6 +144,9 @@ interface MediaPlayer {
   [EnableIf=arkweb_pip]
   NotifyPipResize();
 
+  [EnableIf=arkweb_pip]
+  PipRequestPlay();
+
   [EnableIf=arkweb_video_assistant]
   SetVolume(double volume);
 
@@ -297,7 +300,7 @@ interface MediaPlayerObserver {
   OnVolumeChanged(double volume);
 
   [EnableIf=arkweb_pip]
-  OnPictureInPictureStateChanged(uint32 state);
+  OnPictureInPictureStateChanged(uint32 state, int32 width, int32 height);
 };
 
 // Implemented by MediaWebContentsObserver::MediaPlayerHostImpl in the browser

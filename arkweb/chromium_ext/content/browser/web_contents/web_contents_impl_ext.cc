@@ -33,22 +33,22 @@
 #endif  // ARKWEB_CSS_INPUT_TIME
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 #include "content/browser/media/video_assistant/video_assistant.h"
 #include "content/public/browser/media_player_controller.h"
 #include "content/public/browser/media_player_listener.h"
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
-#include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #include "base/trace_event/optional_trace_event.h"
 #include "components/subresource_filter/content/browser/ohos_adblock_config.h"
 #include "content/browser/browser_main_loop.h"
+#include "content/browser/gpu/gpu_process_host.h"
 #include "content/browser/media/media_web_contents_observer.h"
 #include "content/browser/renderer_host/render_view_host_delegate_view.h"
 #include "content/browser/wake_lock/wake_lock_context_host.h"
 #include "content/browser/web_contents/web_contents_view.h"
 #include "content/public/browser/web_contents_delegate.h"
-#include "content/browser/gpu/gpu_process_host.h"
 
 namespace content {
 
@@ -719,11 +719,13 @@ void WebContentsImplExt::EnableVideoAssistant(bool enable) {
   OnWebPreferencesChanged();
 }
 
-void WebContentsImplExt::ExecuteVideoAssistantFunction(const std::string& cmdId) {
+void WebContentsImplExt::ExecuteVideoAssistantFunction(
+    const std::string& cmdId) {
   video_assistant_->ExecuteVideoAssistantFunction(cmdId);
 }
 
-void WebContentsImplExt::OnShowToast(double duration, const std::string& toast) {
+void WebContentsImplExt::OnShowToast(double duration,
+                                     const std::string& toast) {
   if (!delegate_) {
     LOG(ERROR) << "delegate is nullptr when notify to show toast";
     return;
@@ -742,7 +744,8 @@ void WebContentsImplExt::OnReportStatisticLog(const std::string& content) {
 }
 
 void WebContentsImplExt::CustomWebMediaPlayer(bool enable) {
-  LOG(INFO) << "WebContentsImplExt::CustomWebMediaPlayer enter. enable = " << enable;
+  LOG(INFO) << "WebContentsImplExt::CustomWebMediaPlayer enter. enable = "
+            << enable;
   if (custom_media_player_enabled_ == enable) {
     return;
   }
@@ -775,19 +778,20 @@ void WebContentsImplExt::OnVideoDestroyed(const MediaPlayerId& id) {
   video_assistant_->OnVideoDestroyed(id);
 }
 
-std::unique_ptr<MediaPlayerListener> WebContentsImplExt::OnFullScreenOverlayEnter(
+std::unique_ptr<MediaPlayerListener>
+WebContentsImplExt::OnFullScreenOverlayEnter(
     media::mojom::MediaInfoForVASTPtr media_info,
     const MediaPlayerId& media_player_id) {
   if (!delegate_) {
     return nullptr;
   }
-  return delegate_->OnFullScreenOverlayEnter(
-      std::move(media_info), media_player_id);
+  return delegate_->OnFullScreenOverlayEnter(std::move(media_info),
+                                             media_player_id);
 }
 // LCOV_EXCL_STOP
 
-void WebContentsImplExt::SetVideoSurface(
-    const MediaPlayerId& id, int32_t surface_widget) {
+void WebContentsImplExt::SetVideoSurface(const MediaPlayerId& id,
+                                         int32_t surface_widget) {
   auto [iter, success] = surface_widget_map_.insert({id, surface_widget});
   if (success) {
     return;
@@ -800,26 +804,28 @@ void WebContentsImplExt::SetVideoSurface(
 
 void WebContentsImplExt::DelVideoSurface(int32_t surface_id) {
   void* native_window =
-    NWebNativeWindowTracker::Get()->GetNativeWindow(surface_id);
+      NWebNativeWindowTracker::Get()->GetNativeWindow(surface_id);
   NWebNativeWindowTracker::Get()->DestroyNativeWindow(surface_id);
   OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
-    .DestroyNativeWindow(native_window);
+      .DestroyNativeWindow(native_window);
 
   content::GpuProcessHost* host = content::GpuProcessHost::Get();
   if ((host != nullptr) && (host->gpu_host() != nullptr)) {
-      host->gpu_host()->DestroyNativeWindow(surface_id);
+    host->gpu_host()->DestroyNativeWindow(surface_id);
   }
 }
 
 // LCOV_EXCL_START
 void WebContentsImplExt::DelAllVideoSurfaces() {
-  for (auto iter = surface_widget_map_.begin(); iter != surface_widget_map_.end();) {
+  for (auto iter = surface_widget_map_.begin();
+       iter != surface_widget_map_.end();) {
     DelVideoSurface(iter->second);
     surface_widget_map_.erase(iter++);
   }
 }
 
-void WebContentsImplExt::ReportVideoDecoderName(const std::string& decoder_name) {
+void WebContentsImplExt::ReportVideoDecoderName(
+    const std::string& decoder_name) {
   video_assistant_->ReportVideoDecoderName(decoder_name);
 }
 // LCOV_EXCL_STOP
@@ -846,7 +852,7 @@ void WebContentsImplExt::HideAutofillPopup() {
 #endif
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 void WebContentsImplExt::OnShareFile(const std::string& filePath,
-                                  const std::string& utdTypeId) {
+                                     const std::string& utdTypeId) {
   if (delegate_) {
     delegate_->OnShareFile(filePath, utdTypeId);
   }
@@ -876,7 +882,7 @@ void WebContentsImplExt::CollapseAllFramesSelection() {
 #endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)
 #if BUILDFLAG(ARKWEB_MENU)
 void WebContentsImplExt::SelectRangeV2(const gfx::Point& position,
-                                    bool is_base) {
+                                       bool is_base) {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImplExt::SelectRangeV2");
   auto* input_handler = GetFocusedFrameWidgetInputHandler();
   if (!input_handler) {
@@ -909,7 +915,7 @@ void WebContentsImplExt::OnBeforeUnloadFired(bool proceed) {
 #endif  // ARKWEB_DISATCH_BEFORE_UNLOAD
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
 void WebContentsImplExt::StopScreenCapture(int32_t nweb_id,
-                                        const std::string& session_id) {
+                                           const std::string& session_id) {
   if (!BrowserMainLoop::GetInstance()) {
     LOG(ERROR) << "BrowserMainLoop null";
     return;
@@ -920,7 +926,8 @@ void WebContentsImplExt::StopScreenCapture(int32_t nweb_id,
     LOG(ERROR) << "media_stream_manager null";
     return;
   }
-  media_stream_manager->AsMediaStreamManagerExt()->StopScreenCapture(nweb_id, session_id);
+  media_stream_manager->AsMediaStreamManagerExt()->StopScreenCapture(
+      nweb_id, session_id);
 }
 
 void WebContentsImplExt::SetScreenCapturePickerShow() {
@@ -961,7 +968,8 @@ void WebContentsImplExt::EnterFullscreenMode(
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebExTopControls)) {
-    AsWebContentsImplExt()->controls_state_current_fullscreen_ = cc::BrowserControlsState::kBoth;
+    AsWebContentsImplExt()->controls_state_current_fullscreen_ =
+        cc::BrowserControlsState::kBoth;
     if (auto* view = GetRenderWidgetHostView()) {
       int top_controls_offset =
           static_cast<RenderWidgetHostViewBase*>(view)->GetTopControlsOffset();
@@ -969,7 +977,8 @@ void WebContentsImplExt::EnterFullscreenMode(
           top_controls_offset < 0 ? cc::BrowserControlsState::kHidden
                                   : cc::BrowserControlsState::kShown;
     }
-    AsWebContentsImplExt()->controls_state_fullscreen_ = AsWebContentsImplExt()->browser_controls_state_;
+    AsWebContentsImplExt()->controls_state_fullscreen_ =
+        AsWebContentsImplExt()->browser_controls_state_;
     UpdateBrowserControlsState(cc::BrowserControlsState::kHidden,
                                cc::BrowserControlsState::kHidden, false,
                                std::nullopt);
@@ -983,9 +992,10 @@ void WebContentsImplExt::ExitFullscreenMode(bool will_cause_resize) {
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebExTopControls)) {
-    UpdateBrowserControlsState(AsWebContentsImplExt()->controls_state_fullscreen_,
-                               AsWebContentsImplExt()->controls_state_current_fullscreen_, false,
-                               std::nullopt);
+    UpdateBrowserControlsState(
+        AsWebContentsImplExt()->controls_state_fullscreen_,
+        AsWebContentsImplExt()->controls_state_current_fullscreen_, false,
+        std::nullopt);
   }
 #endif
 }
@@ -1000,7 +1010,8 @@ void WebContentsImplExt::RenderViewReady(RenderViewHost* rvh) {
   }
 #endif
 }
-void WebContentsImplExt::DidFinishNavigation(NavigationHandle* navigation_handle) {
+void WebContentsImplExt::DidFinishNavigation(
+    NavigationHandle* navigation_handle) {
   WebContentsImpl::DidFinishNavigation(navigation_handle);
 #if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
   if (navigation_handle->IsInPrimaryMainFrame() && view_) {
@@ -1034,31 +1045,29 @@ void WebContentsImplExt::UpdateBrowserControlsState(
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
   AsWebContentsImplExt()->browser_controls_state_ = constraints;
 #endif
-  WebContentsImpl::UpdateBrowserControlsState(constraints, current, animate, offset_tags_info);
+  WebContentsImpl::UpdateBrowserControlsState(constraints, current, animate,
+                                              offset_tags_info);
 }
 
 #if BUILDFLAG(ARKWEB_PIP)
 MediaPlayerId WebContentsImplExt::GetMediaPlayerId(int delegate_id,
-                                                int child_id,
-                                                int frame_routing_id,
-                                                bool& status) {
-  return media_web_contents_observer_->GetMediaPlayerId(delegate_id,
-                                                        child_id,
-                                                        frame_routing_id,
-                                                        status);
+                                                   int child_id,
+                                                   int frame_routing_id,
+                                                   bool& status) {
+  return media_web_contents_observer_->GetMediaPlayerId(
+      delegate_id, child_id, frame_routing_id, status);
 }
 
 void WebContentsImplExt::OnPip(int status,
-                            int delegate_id,
-                            int child_id,
-                            int frame_routing_id,
-                            int width,
-                            int height) {
-
+                               int delegate_id,
+                               int child_id,
+                               int frame_routing_id,
+                               int width,
+                               int height) {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::OnPip");
   if (delegate_) {
-    delegate_->OnPip(status, delegate_id, child_id,
-                     frame_routing_id, width, height);
+    delegate_->OnPip(status, delegate_id, child_id, frame_routing_id, width,
+                     height);
     if (status == PIP_STATE_ENTER || status == PIP_STATE_HLS_ENTER) {
       pip_status_ = true;
     }
@@ -1069,21 +1078,30 @@ void WebContentsImplExt::OnPipEvent(int event) {
   LOG(INFO) << __func__ << " Pip event:" << event;
   if (delegate_) {
     if ((event == PIP_STATE_EXIT || event == PIP_STATE_HLS_EXIT) &&
-         !pip_status_) {
+        !pip_status_) {
       return;
     }
     delegate_->OnPipEvent(event);
     if ((event == PIP_STATE_EXIT || event == PIP_STATE_HLS_EXIT) &&
-         pip_status_) {
+        pip_status_) {
       pip_status_ = false;
     }
   }
+}
+
+void WebContentsImplExt::SetUpdateSurface(bool state) {
+  pip_update_surface_ = state;
+}
+
+bool WebContentsImplExt::IsUpdateSurface() {
+  return pip_update_surface_;
 }
 #endif
 
 #if BUILDFLAG(ARKWEB_PDF)
 void WebContentsImplExt::OnPdfScrollAtBottom(const std::string& url) {
-  // Ensure that PdfScrollAtBottom event propagate from innermost to outermost WebContents.
+  // Ensure that PdfScrollAtBottom event propagate from innermost to outermost
+  // WebContents.
   if (GetOuterWebContents() && GetOuterWebContents()->AsWebContentsImplExt()) {
     GetOuterWebContents()->AsWebContentsImplExt()->OnPdfScrollAtBottom(url);
     return;
@@ -1093,8 +1111,10 @@ void WebContentsImplExt::OnPdfScrollAtBottom(const std::string& url) {
   }
 }
 
-void WebContentsImplExt::OnPdfLoadEvent(int32_t result, const std::string& url) {
-  // Ensure that PdfLoad event propagate from innermost to outermost WebContents.
+void WebContentsImplExt::OnPdfLoadEvent(int32_t result,
+                                        const std::string& url) {
+  // Ensure that PdfLoad event propagate from innermost to outermost
+  // WebContents.
   if (GetOuterWebContents() && GetOuterWebContents()->AsWebContentsImplExt()) {
     GetOuterWebContents()->AsWebContentsImplExt()->OnPdfLoadEvent(result, url);
     return;
@@ -1108,7 +1128,9 @@ void WebContentsImplExt::OnPdfLoadEvent(int32_t result, const std::string& url) 
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
 void WebContentsImplExt::SetMediaResumeFromBFCachePage(bool resume) {
-  LOG(INFO) << "WebContentsImplExt SetMediaResumeFromBFCachePage enter resume = " << resume;
+  LOG(INFO)
+      << "WebContentsImplExt SetMediaResumeFromBFCachePage enter resume = "
+      << resume;
   if (media_resume_from_bfcache_page_ == resume) {
     return;
   }
@@ -1116,17 +1138,15 @@ void WebContentsImplExt::SetMediaResumeFromBFCachePage(bool resume) {
   media_resume_from_bfcache_page_ = resume;
   OnWebPreferencesChanged();
 }
-#endif // BUILDFLAG(ARKWEB_BFCACHE)
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
 #if BUILDFLAG(ARKWEB_BGTASK)
-void WebContentsImplExt::OnBrowserForeground()
-{
+void WebContentsImplExt::OnBrowserForeground() {
   LOG(INFO) << "WebContentsImplExt::OnBrowserForeground";
   observers_.NotifyObservers(&WebContentsObserver::OnBrowserForeground);
 }
 
-void WebContentsImplExt::OnBrowserBackground()
-{
+void WebContentsImplExt::OnBrowserBackground() {
   LOG(INFO) << "WebContentsImplExt::OnBrowserBackground";
   observers_.NotifyObservers(&WebContentsObserver::OnBrowserBackground);
 }

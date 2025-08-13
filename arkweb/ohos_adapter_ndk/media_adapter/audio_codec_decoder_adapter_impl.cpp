@@ -39,17 +39,6 @@ static const std::unordered_map<OH_AVCodecBufferFlags, BufferFlag> BUFFER_FLAG_M
     { OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_CODEC_DATA, BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA }
 };
 
-static const std::unordered_map<const char *, AudioMimeType>  MIME_TYPE_MAP = {
-    { OH_AVCODEC_MIMETYPE_AUDIO_AAC, AudioMimeType::MIMETYPE_AUDIO_AAC },
-    { OH_AVCODEC_MIMETYPE_AUDIO_FLAC, AudioMimeType::MIMETYPE_AUDIO_FLAC },
-    { OH_AVCODEC_MIMETYPE_AUDIO_VORBIS, AudioMimeType::MIMETYPE_AUDIO_VORBIS },
-    { OH_AVCODEC_MIMETYPE_AUDIO_MPEG, AudioMimeType::MIMETYPE_AUDIO_MPEG },
-    { OH_AVCODEC_MIMETYPE_AUDIO_AMR_NB, AudioMimeType::MIMETYPE_AUDIO_AMR_NB },
-    { OH_AVCODEC_MIMETYPE_AUDIO_AMR_WB, AudioMimeType::MIMETYPE_AUDIO_AMR_WB },
-    { OH_AVCODEC_MIMETYPE_AUDIO_G711MU, AudioMimeType::MIMETYPE_AUDIO_G711MU },
-    { OH_AVCODEC_MIMETYPE_AUDIO_APE, AudioMimeType::MIMETYPE_AUDIO_APE }
-};
-
 AudioDecoderFormatAdapterImpl::~AudioDecoderFormatAdapterImpl() {}
 int32_t AudioDecoderFormatAdapterImpl::GetSampleRate()
 {
@@ -291,12 +280,6 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::CreateAudioDecoderByMime(c
     if (decoder_ == nullptr) {
         WVLOG_E("create decoder by mine[%{public}s] failed.", mimetype.c_str());
         return AudioDecoderAdapterCode::DECODER_ERROR;
-    }
-    mimeType_ = AudioMimeType::MIMETYPE_UNKNOW;
-    for (auto it = MIME_TYPE_MAP.begin(); it != MIME_TYPE_MAP.end(); it++) {
-        if (strcmp(it->first, mimetype.c_str()) == 0) {
-            mimeType_ = it->second;
-        }
     }
 
     AudioDecoderCallbackManager::AddAudioDecoder(this);

@@ -24,7 +24,11 @@ namespace {
 
 // VAPID header constants.
 const char kClaimsKeyAudience[] = "aud";
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kFCMServerAudience[] = "https://x.x.x.x";
+#else
 const char kFCMServerAudience[] = "https://fcm.googleapis.com";
+#endif
 
 const char kClaimsKeyExpirationTime[] = "exp";
 // It's 12 hours rather than 24 hours to avoid any issues with clock differences
@@ -34,7 +38,11 @@ constexpr base::TimeDelta kClaimsValidPeriod = base::Hours(12);
 const char kAuthorizationRequestHeaderFormat[] = "vapid t=%s, k=%s";
 
 // Endpoint constants.
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char kFCMServerUrlFormat[] = "https://x.x.x.x/%s";
+#else
 const char kFCMServerUrlFormat[] = "https://fcm.googleapis.com/fcm/send/%s";
+#endif
 
 // HTTP header constants.
 const char kTTL[] = "TTL";

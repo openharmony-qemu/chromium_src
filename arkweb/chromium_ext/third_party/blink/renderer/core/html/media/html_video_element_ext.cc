@@ -72,15 +72,15 @@ void HTMLVideoElement::RequestDownloadUrl() {
 // LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_PIP)
-void HTMLVideoElement::OnPictureInPictureStateChanged(uint32_t state) {
+void HTMLVideoElement::OnPictureInPictureStateChanged(
+    uint32_t state, int32_t width, int32_t height) {
   if (!web_media_player_ || !pip_down_) {
     pip_down_ = true;
     return;
   }
 
   for (auto& observer : GetMediaPlayerObserverRemoteSet()) {
-
-    observer->OnPictureInPictureStateChanged(state);
+    observer->OnPictureInPictureStateChanged(state, width, height);
   }
 }
 
@@ -98,6 +98,12 @@ void HTMLVideoElement::RequestExitPictureInPicture() {
 
 void HTMLVideoElement::NotifyPipResize() {
   DispatchEvent(*Event::Create(event_type_names::kResize));
+}
+
+void HTMLVideoElement::PipRequestPlay() {
+  if (!paused()) {
+    RequestPlay();
+  }
 }
 #endif
 }  // namespace blink

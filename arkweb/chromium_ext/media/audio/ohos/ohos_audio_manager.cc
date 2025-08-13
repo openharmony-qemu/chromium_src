@@ -88,7 +88,8 @@ void OHOSAudioManager::GetAudioOutputDeviceNames(
                                  .GetAudioSystemManager()
                                  .GetDefaultOutputDevice();
   for (auto audioDevice : audioDeviceList) {
-    if (!audioDevice) {
+    if (!audioDevice || !device_names) {
+      LOG(ERROR) << "GetAudioOutputDeviceNames audioDevice is nullptr.";
       return;
     }
     if (!defaultOutputDevice) {

@@ -25,7 +25,12 @@ MediaStreamManagerExt::ScreenCaptureCallback
 void MediaStreamManagerExt::SetScreenCaptureDelegateCallback(
     ScreenCaptureCallback callback) {
   if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
-    GetIOThreadTaskRunner({})->PostTask(
+    auto io_task_runner = GetIOThreadTaskRunner({});
+    if (!io_task_runner) {
+      LOG(ERROR) << "SetScreenCaptureDelegateCallback io_task_runner is nullptr";
+      return;
+    }
+    io_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(&MediaStreamManagerExt::SetScreenCaptureDelegateCallback,
                        std::move(callback)));
@@ -94,8 +99,13 @@ void MediaStreamManagerExt::SendScreenCaptureStateToNative(
     int32_t nweb_id,
     const std::string& session_id,
     int32_t state) {
-  if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
-    GetUIThreadTaskRunner({})->PostTask(
+  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
+    auto io_task_runner = GetIOThreadTaskRunner({});
+    if (!io_task_runner) {
+      LOG(ERROR) << "SendScreenCaptureStateToNative io_task_runner is nullptr";
+      return;
+    }
+    io_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(&MediaStreamManagerExt::SendScreenCaptureStateToNative,
                        nweb_id, session_id, state));
@@ -132,7 +142,12 @@ int MediaStreamManagerExt::GetNWebIdMatchStreamType(GlobalRenderFrameHostId host
   if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
     int result = 0;
     base::WaitableEvent event;
-    GetUIThreadTaskRunner({})->PostTask(
+    auto ui_task_runner = GetUIThreadTaskRunner({});
+    if (!ui_task_runner) {
+      LOG(ERROR) << "GetNWebIdMatchStreamType ui task runner is nullptr";
+      return 0;
+    }
+    ui_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(
             [](base::SafeRef<MediaStreamManagerExt> manager, GlobalRenderFrameHostId host_id,

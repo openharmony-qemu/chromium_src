@@ -24,8 +24,13 @@ namespace dom_distiller {
 
 namespace {
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+const char* const kFilterlist[] = {"x.x.x.x", "x.x.x.x",
+                                   "x.x.x.x"};
+#else
 const char* const kFilterlist[] = {"www.reddit.com", "tools.usps.com",
                                    "old.reddit.com"};
+#endif
 
 // Returns whether it is necessary to send updates back to the browser.
 // The number of updates can be from 0 to 2. See the tests in

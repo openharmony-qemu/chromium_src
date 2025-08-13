@@ -134,8 +134,7 @@ OhosWebPermissionDataBaseAdapterImpl::OhosWebPermissionDataBaseAdapterImpl()
     config.storeName = name.c_str();
     config.area = GetAreaMode(areaMode);
     config.securityLevel = OH_Rdb_SecurityLevel::S3;
-    WVLOG_I("web permission database databaseDir=%{public}s", databaseDir.c_str());
-    WVLOG_I("web permission database bundleName=%{public}s", bundleName);
+    WVLOG_I("web permission database databaseDir=%{public}s, bundleName=%{public}s", databaseDir.c_str(), bundleName);
 
     int errCode = static_cast<int>(RDB_OK);
     GetOrOpen(&config, &errCode);

@@ -147,6 +147,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::ConfigureDecoder(const std::sha
 
     OH_AVErrCode ret = OH_VideoDecoder_Configure(decoder_, codecFormat);
     OH_AVFormat_Destroy(codecFormat);
+    codecFormat = nullptr;
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         WVLOG_E("MediaCodecDecoder OH_VideoDecoder_Configure fail, ret=%{public}u.", static_cast<uint32_t>(ret));
         return DecoderAdapterCode::DECODER_ERROR;
@@ -177,6 +178,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetParameterDecoder(const std::
 
     OH_AVErrCode ret = OH_VideoDecoder_SetParameter(decoder_, codecFormat);
     OH_AVFormat_Destroy(codecFormat);
+    codecFormat = nullptr;
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         WVLOG_E("MediaCodecDecoder OH_VideoDecoder_SetParameter fail, ret=%{public}u.", static_cast<uint32_t>(ret));
         return DecoderAdapterCode::DECODER_ERROR;
@@ -660,6 +662,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfo(
         return DecoderAdapterCode::DECODER_ERROR;
     }
     ret = OH_AVCencInfo_Destroy(avCencInfo);
+    avCencInfo = nullptr;
     if (ret != AV_ERR_OK) {
         WVLOG_E("OH_AVCencInfo_Destroy fail, ret=%{public}u.", static_cast<uint32_t>(ret));
         return DecoderAdapterCode::DECODER_ERROR;

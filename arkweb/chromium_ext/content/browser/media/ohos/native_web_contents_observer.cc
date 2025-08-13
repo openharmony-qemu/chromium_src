@@ -133,6 +133,10 @@ void NativeWebContentsObserver::NativeBridgeHostImpl::OnNativeBridgeAdded(
     mojo::PendingAssociatedReceiver<media::mojom::NativeBridgeObserver>
         observer,
     int32_t bridge_id) {
+  if (!native_web_contents_observer_) {
+    return;
+  }
+
   LOG(INFO) << "NativeEmbed BFCache, "
                "NativeBridgeHostImpl::OnNativeBridgeAdded, frame_routing_id_ = "
             << frame_routing_id_;
@@ -167,7 +171,8 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
 
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
     OnCreateNativeSurface(media::mojom::NativeEmbedInfoPtr embed_info) {
-  if (!native_web_contents_observer_) {
+  if (!native_web_contents_observer_ ||
+      !(native_web_contents_observer_->web_contents_impl())) {
     return;
   }
 
@@ -190,9 +195,11 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
     OnNativeEmbedFirstFramePaint(int32_t native_embed_id,
                                  const std::string& embed_id_attribute) {
-  if (!native_web_contents_observer_) {
+  if (!native_web_contents_observer_ ||
+      !(native_web_contents_observer_->web_contents_impl())) {
     return;
   }
+
   native_web_contents_observer_->web_contents_impl()
       ->AsWebContentsImplExt()
       ->OnNativeEmbedFirstFramePaint(native_embed_id, embed_id_attribute);
@@ -200,7 +207,8 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
 
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
     OnDestroyNativeSurface() {
-  if (!native_web_contents_observer_) {
+  if (!native_web_contents_observer_ ||
+      !(native_web_contents_observer_->web_contents_impl())) {
     return;
   }
 
@@ -217,9 +225,11 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
 
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
     OnLayerRectVisibilityChange(bool visibility, int embed_id) {
-  if (!native_web_contents_observer_) {
+  if (!native_web_contents_observer_ ||
+      !(native_web_contents_observer_->web_contents_impl())) {
     return;
   }
+
   native_web_contents_observer_->web_contents_impl()
       ->AsWebContentsImplExt()
       ->OnLayerRectVisibilityChange(std::to_string(embed_id), visibility);
@@ -227,7 +237,8 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
 
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnEmbedRectChange(
     const gfx::Rect& new_rect) {
-  if (!native_web_contents_observer_) {
+  if (!native_web_contents_observer_ ||
+      !(native_web_contents_observer_->web_contents_impl())) {
     return;
   }
 

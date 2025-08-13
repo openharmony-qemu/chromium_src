@@ -51,6 +51,13 @@ void StyleCascadeUtil::LookupAndApplyDeclarationExt(
                 << " ) dom path:"
                 << GetDomPath(StyleCascadeObj->state_.GetElement(), false,
                               true);
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(INFO) << "[AdBlock] Element("
+                         << StyleCascadeObj->state_.GetElement().ToString()
+                         << " ) dom path:"
+                         << GetDomPath(StyleCascadeObj->state_.GetElement(),
+                                       false, true);
+#endif
     }
   }
 

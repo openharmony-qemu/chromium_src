@@ -142,6 +142,12 @@ bool WebSettingsImplExt::GetMediaResumeFromBFCachePage() {
 }
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+int32_t WebSettingsImplExt::GetUsageScenario() {
+  return settings_->GetUsageScenario();
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
 void WebSettingsImplExt::SetBorderRadiusFromWeb(
     double borderRadiusTopLeft,

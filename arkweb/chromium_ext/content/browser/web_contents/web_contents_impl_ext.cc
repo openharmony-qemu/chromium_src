@@ -80,12 +80,18 @@ void WebContentsImplExt::StartCamera(int nWebID) {
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
     LOG(ERROR) << "media_stream_manager null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "media_stream_manager null";
+#endif
     return;
   }
 
   auto videoCaptureManager = media_stream_manager->video_capture_manager();
   if (!videoCaptureManager) {
     LOG(ERROR) << "videoCaptureManager null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "videoCaptureManager null";
+#endif
     return;
   }
   videoCaptureManager->AsVideoCaptureManagerExt()->StartCamera(nWebID);
@@ -96,12 +102,18 @@ void WebContentsImplExt::StopCamera(int nWebID) {
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
     LOG(ERROR) << "media_stream_manager null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "media_stream_manager null";
+#endif
     return;
   }
 
   auto videoCaptureManager = media_stream_manager->video_capture_manager();
   if (!videoCaptureManager) {
     LOG(ERROR) << "videoCaptureManager null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "videoCaptureManager null";
+#endif
     return;
   }
   videoCaptureManager->AsVideoCaptureManagerExt()->StopCamera(nWebID);
@@ -112,12 +124,18 @@ void WebContentsImplExt::CloseCamera(int nWebID) {
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
     LOG(ERROR) << "media_stream_manager null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "media_stream_manager null";
+#endif
     return;
   }
 
   auto videoCaptureManager = media_stream_manager->video_capture_manager();
   if (!videoCaptureManager) {
     LOG(ERROR) << "videoCaptureManager null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "videoCaptureManager null";
+#endif
     return;
   }
   videoCaptureManager->AsVideoCaptureManagerExt()->CloseCamera(nWebID);
@@ -413,6 +431,11 @@ void WebContentsImplExt::OnNativeEmbedStatusUpdate(
     LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate " << " state is "
               << (int)state << ", " << native_embed_info
               << ", params: " << param_list;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
+                       << " state is " << (int)state << ", "
+                       << native_embed_info << ", params: " << param_list;
+#endif
   }
   if (delegate_) {
     delegate_->OnNativeEmbedStatusUpdate(native_embed_info, state);
@@ -425,6 +448,9 @@ void WebContentsImplExt::OnNativeEmbedFirstFramePaint(
     const std::string& embed_id_attribute) {
   if (!delegate_) {
     LOG(WARNING) << "OnNativeEmbedFirstFramePaint failed, no delegate";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "OnNativeEmbedFirstFramePaint failed, no delegate";
+#endif
     return;
   }
   delegate_->OnNativeEmbedFirstFramePaint(native_embed_id, embed_id_attribute);

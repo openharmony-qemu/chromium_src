@@ -292,6 +292,11 @@
 #include "content/public/browser/browser_message_filter.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/ohos/logger.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
@@ -3847,6 +3852,17 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
 #if BUILDFLAG(CLANG_PROFILING_INSIDE_SANDBOX)
   child_process_->SetProfilingFile(OpenProfilingFile());
 #endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableLoggerReport)) {
+    // LOG(URL) only be called at no privacy mode.The variable of whether the
+    // mode is private or not named g_is_strict_log_mode_ is passed to the
+    // child process to help child process judge whether the LOG(URL) can be
+    // called.
+    child_process_->SetStrictLogMode(GetBrowserContext()->IsOffTheRecord());
+  }
+#endif
 }
 
 void RenderProcessHostImpl::OnChannelError() {
@@ -5725,6 +5741,13 @@ void RenderProcessHostImpl::BindTracedProcess(
     mojo::PendingReceiver<tracing::mojom::TracedProcess> receiver) {
   BindReceiver(std::move(receiver));
 }
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+void RenderProcessHostImpl::ReportRendererLog(int policy,
+                                              const std::string& msg) {
+  ohos::logger::ReportRendererLog(policy, msg);
+}
+#endif
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 void RenderProcessHostImpl::ProvideStatusFileForRenderer() {

@@ -127,6 +127,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ArkWebNetworkContextExt : public Network
                  uint32_t alive_time) override;
   void ClearHostIP(const std::string& host_name) override;
 #endif
+
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   static void PRPPreloadCreateURLLoaderFactory(
       mojo::PendingReceiver<mojom::URLLoaderFactory> receiver,
@@ -140,6 +141,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ArkWebNetworkContextExt : public Network
   void StopPage(uint64_t addr_web_handle) override;
   void SetURLLoaderFactoryParam(mojom::URLLoaderFactoryParamsPtr params) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  bool IsStrictLogMode() const;
+#endif  // ARKWEB_LOGGER_REPORT
 };
 
 }  // namespace network

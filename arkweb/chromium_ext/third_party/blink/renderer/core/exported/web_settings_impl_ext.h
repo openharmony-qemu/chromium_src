@@ -83,6 +83,10 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
   void SetUsageScenario(int32_t usage_scenario) override;
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  int32_t GetUsageScenario() override;
+#endif
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void SetVideoAssistantEnabled(bool enabled) override;
   void SetCustomMediaPlayerEnabled(bool enabled) override;

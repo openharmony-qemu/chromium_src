@@ -1115,6 +1115,11 @@ component("net") {
     "//components/network_time/time_tracker",
     "//net/http:transport_security_state_generated_files",
   ]
+  if (defined(is_arkweb) && is_arkweb) {
+    deps += [
+      "//base:base_static",
+    ]
+  }
 
   public_deps = [
     ":net_export_header",

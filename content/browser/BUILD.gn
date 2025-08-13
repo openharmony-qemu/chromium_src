@@ -2425,6 +2425,13 @@ source_set("browser") {
     "worker_host/worker_script_loader_factory.h",
   ]
 
+  if (defined(arkweb_logger_report) && arkweb_logger_report) {
+    deps += [
+      "//base:base_static",
+      "//base:base",
+    ]
+  }
+
   if (arkweb_webrtc) {
     import("//arkweb/chromium_ext/content/browser/renderer_host/media/arkweb_content_browser_renderer_host_media.gni")
     sources += arkweb_content_browser_renderer_host_media_sources

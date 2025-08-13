@@ -418,6 +418,11 @@ class CONTENT_EXPORT RenderThreadImpl
   void NotifyLocaleChanged(const std::string& update_locale) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void OnChannelConnected(int32_t peer_pid) override;
+  void OnChannelListenError() override;
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   // ChildThreadImpl
   void OnMemoryPressureFromBrowserReceived(

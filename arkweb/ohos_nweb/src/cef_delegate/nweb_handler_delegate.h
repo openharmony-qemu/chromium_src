@@ -60,6 +60,11 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "capi/nweb_logger_callback.h"
+#include "cef/include/cef_logger_callback_api_handler.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 #include "custom_media_player_impl.h"
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
@@ -103,6 +108,9 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
                             public CefWebClientExtensionHandler,
 #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+                            public CefLoggerCallbackApiHandler,
+#endif  // defined(ARKWEB_LOGGER_REPORT)
 #if BUILDFLAG(ARKWEB_PRINT)
                             public CefCookieAccessFilter,
                             public CefPrintHandler {
@@ -926,6 +934,17 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
   void SetPopupSurface(void* popup_window);
+#endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  static void RegisterLoggerCallback(
+      std::shared_ptr<NWebLoggerCallback> logger_callback);
+  static void UnRegisterLoggerCallback();
+
+  // CefLoggerCallbackApiHandler implements
+  void logFeedback(const CefString& tag,
+                   int level,
+                   const CefString& message) override;
+  void logUrl(const CefString& url) override;
 #endif
 #if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
   void OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,

@@ -169,6 +169,9 @@
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/public/browser/render_frame_host.h"
 #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "arkweb/chromium_ext/base/ohos/logger.h"
+#endif
 
 namespace OHOS::NWeb {
 namespace {
@@ -189,6 +192,10 @@ const int WEB_CAN_SNAPSHOT_DELAY_TIME = 1500;
 #endif
 
 const int VIEW_PORT_DIFF = 5;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+std::shared_ptr<NWebLoggerCallback> g_logger_callback = nullptr;
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_PERMISSION)
 static std::atomic<int> nweb_request_new_key = 0;
@@ -785,6 +792,42 @@ void NWebHandlerDelegate::OnNativeEmbedFirstFramePaint(
             << request->GetSurfaceId().ToString().c_str();
   web_app_client_extension_listener_->OnNativeEmbedFirstFramePaint(
       web_app_client_extension_listener_->nweb_id, nweb_request);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+// static
+void NWebHandlerDelegate::RegisterLoggerCallback(
+    std::shared_ptr<NWebLoggerCallback> logger_callback) {
+  // TODO: Expected to be an instance of a profile
+  g_logger_callback = logger_callback;
+  ohos::logger::SetLoggerCallback(g_logger_callback);
+}
+
+// static
+void NWebHandlerDelegate::UnRegisterLoggerCallback() {
+  g_logger_callback = nullptr;
+}
+
+void NWebHandlerDelegate::logFeedback(const CefString& tag,
+                                      int level,
+                                      const CefString& message) {
+  if (!g_logger_callback) {
+    LOG(ERROR) << "No loggercallback logfeedback";
+    return;
+  }
+  std::string tagStr = tag.ToString();
+  std::string messageStr = message.ToString();
+  g_logger_callback->logFeedback(tagStr.c_str(), level, messageStr.c_str());
+}
+
+void NWebHandlerDelegate::logUrl(const CefString& url) {
+  if (!g_logger_callback) {
+    LOG(ERROR) << "No loggercallback logurl";
+    return;
+  }
+  std::string urlStr = url.ToString();
+  g_logger_callback->logUrl(urlStr.c_str());
 }
 #endif
 

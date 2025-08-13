@@ -4066,6 +4066,9 @@ void RenderFrameImpl::DidCommitNavigation(
   if (IsMainFrame()) {
     LOG(WARNING) << "event_message: page load start, routing_id: "
                  << GetRoutingID() << ", url: ***";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    PageLoadStartLoggerReport(document_loader);
+#endif
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
     if (!MemoryMonitorImpl::GetInstance()->IsInitialized()) {
@@ -4335,6 +4338,9 @@ void RenderFrameImpl::DidDispatchDOMContentLoadedEvent() {
                  << GetRoutingID() << ", url: ***";
   }
 #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  ContentLoadFailedLoggerReport();
+#endif  // ARKWEB_LOGGER_REPORT
 
   // Check whether we have new encoding name.
   UpdateEncoding(frame_, frame_->View()->PageEncoding().Utf8());
@@ -4357,6 +4363,9 @@ void RenderFrameImpl::DidHandleOnloadEvents() {
   if (IsMainFrame()) {
     LOG(WARNING) << "event_message: page load finished, routing_id: "
                  << GetRoutingID() << ", url: ***";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    PageLoadFinishedLoggerReport();
+#endif
   }
 #endif
 }
@@ -5851,6 +5860,12 @@ void RenderFrameImpl::BeginNavigation(
     SynchronouslyCommitAboutBlankForBug778318(std::move(info));
     return;
   }
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (IsMainFrame()) {
+    LOG_FEEDBACK(INFO) << "Begin navigation routing_id: " << routing_id_;
+  }
+#endif
 
   // Everything else is handled asynchronously by the browser process through
   // BeginNavigation.

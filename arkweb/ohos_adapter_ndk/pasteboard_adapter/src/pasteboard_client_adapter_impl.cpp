@@ -207,7 +207,7 @@ void PasteDataRecordAdapterImpl::ReleaseMemory(
   }
   if (imageInfo != nullptr) {
     int pixelmapImageInfoDestroy_res = OH_PixelmapImageInfo_Release(imageInfo);
-    if (pixelmapImageInfoDestroy_res != UDMF_E_OK) {
+    if (pixelmapImageInfoDestroy_res != IMAGE_SUCCESS) {
       WVLOG_E("imageInfo destroy failed. error code is : %{public}d",
               pixelmapImageInfoDestroy_res);
     }

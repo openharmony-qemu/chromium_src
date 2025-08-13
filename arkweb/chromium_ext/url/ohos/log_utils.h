@@ -1,5 +1,5 @@
-#ifndef OHOS_NWEB_EX_THIRD_PARTY_URL_LOG_UTILS_H_
-#define OHOS_NWEB_EX_THIRD_PARTY_URL_LOG_UTILS_H_
+#ifndef ARKWEB_NWEB_EX_THIRD_PARTY_URL_LOG_UTILS_H_
+#define ARKWEB_NWEB_EX_THIRD_PARTY_URL_LOG_UTILS_H_
 
 #include <string>
 
@@ -46,6 +46,9 @@ class COMPONENT_EXPORT(URL) LogUtils {
   FRIEND_TEST_ALL_PREFIXES(LogUtilsTest, ConvertUrl);
 
   static bool IsSupportScheme(const std::string& scheme);
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  static bool IsSupportParam(const std::string& param);
+#endif
 };
 }  // namespace url
 

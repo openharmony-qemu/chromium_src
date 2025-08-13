@@ -112,6 +112,20 @@ void ReportUrlQuicInfo(net::URLRequest* url_request, int error_code)
             << total_recv_bytes << ", " << kSendStartToOnComplete << ":"
             << send_start_to_on_complete << ".";
   LOG(DEBUG) << "event_message: " << kHost << ":" << host << ".";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "event_message: " << kLoadTimingInfoEvent << " "
+                     << kErrorCode << ":" << error_code << ", " << kProtocol
+                     << ":" << protocol << ", " << kUseQuic << ":" << use_quic
+                     << ", " << kSocketReused << ":" << socket_reused << ", "
+                     << kDnsDurationMs << ":" << dns_duration_ms << ", "
+                     << kConnectDurationMs << ":" << connect_duration_ms << ", "
+                     << kSendStartToReceiveHeadersEndMs << ":"
+                     << send_start_to_receive_headers_end_ms << ", "
+                     << kTotalSendBytes << ":" << total_send_bytes << ", "
+                     << kTotalRecvBytes << ":" << total_recv_bytes << ", "
+                     << kSendStartToOnComplete << ":"
+                     << send_start_to_on_complete << ".";
+#endif
 }
 #endif
 }  // namespace network

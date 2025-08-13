@@ -687,6 +687,10 @@ LogMessageHandlerFunction GetLogMessageHandler() {
   return g_log_message_handler;
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "arkweb/chromium_ext/base/logging_for_include.cc"
+#endif
+
 #if !defined(NDEBUG)
 // Displays a message box to the user with the error message in it.
 // Used for fatal messages, where we close the app simultaneously.
@@ -778,7 +782,11 @@ void LogMessage::Flush() {
     }
   };
 
-  if (severity_ == LOGGING_FATAL)
+  if (severity_ == LOGGING_FATAL
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      || priority_ == PRIORITY_FATAL
+#endif
+  )
     SetLogFatalCrashKey(this);
 
   // Give any log message handler first dibs on the message.
@@ -906,7 +914,13 @@ void LogMessage::Flush() {
     __android_log_write(priority, kAndroidLogTag, str_newline.c_str());
 #endif
 #elif BUILDFLAG(ARKWEB_DFX_LOGGING) && BUILDFLAG(IS_OHOS)
-
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    if ((severity_ == LOGGING_FEEDBACK || severity_ == LOGGING_URL) &&
+        IsEnableLoggerReport() && g_logger_callback != nullptr) {
+      ArkWebLoggingSeverity(str_newline);
+      return;
+    }
+#endif
     auto priority = (severity_ < 0) ? OHOS::NWeb::LogLevelAdapter::DEBUG
                                     : OHOS::NWeb::LogLevelAdapter::LEVEL_MAX;
     switch (severity_) {
@@ -996,12 +1010,12 @@ void LogMessage::Init(const char* file, int line) {
   if (tagStart == std::string_view::npos) {
     tag_ = std::string("chromium");
     filename = message;
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     ohos_tag_ = std::string("mainprocess");
 #endif
   } else {
     tag_ = std::string(message.substr(0, tagStart));
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     ohos_tag_ = std::string(message.substr(0, tagStart));
 #endif
     filename = message.substr(tagStart + 1, message.size() - tagStart);

@@ -308,6 +308,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
                    const GURL& url,
                    const net::SiteForCookies& site_for_cookies) const;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void SetStrictLogMode(bool value) { is_strict_log_mode_ = value; }
+  void SetUsageScenario(int32_t usage_scenario) {
+    usage_scenario_ = usage_scenario;
+  }
+#endif  // ARKWEB_LOGGER_REPORT
+
   const net::HttpRequestHeaders& custom_proxy_pre_cache_headers() const {
     return custom_proxy_pre_cache_headers_;
   }
@@ -398,6 +405,9 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       net::ReferrerPolicy referrer_policy,
       bool upgrade_if_insecure,
       bool is_ad_tagged,
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      int32_t usage_scenario,
+#endif
       std::optional<net::IsolationInfo> isolation_info,
       bool force_main_frame_for_same_site_cookies,
       net::SecureDnsPolicy secure_dns_policy,
@@ -861,6 +871,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   // Indicates |url_request_| is fetch upload request and that has streaming
   // body.
   const bool has_fetch_streaming_upload_body_;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  bool is_strict_log_mode_ = false;
+  int32_t usage_scenario_ = 99;
+#endif  // ARKWEB_LOGGER_REPORT
 
   bool emitted_devtools_raw_request_ = false;
   bool emitted_devtools_raw_response_ = false;

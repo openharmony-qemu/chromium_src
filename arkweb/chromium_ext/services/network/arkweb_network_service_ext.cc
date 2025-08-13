@@ -164,12 +164,10 @@ void ArkWebNetworkServiceExt::SetURLRequestContext(
   if (url_request_context) {
     LOG(INFO) << "Register network context and set network timeout "
               << timeout_override_ << " second(s)";
-    // TODO(ARKWEB)
-    // #ifdef OHOS_LOGGER_REPORT
-    //     LOG_FEEDBACK(INFO) << "Register network context and set network
-    //     timeout "
-    //               << timeout_override_ << " second(s)";
-    // #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Register network context and set network timeout "
+                       << timeout_override_ << " second(s)";
+#endif
     url_request_context->AsURLRequestContextExt()->SetConnectTimeout(
         timeout_override_);
     url_request_context->AsURLRequestContextExt()->BindDnsToNetwork(
@@ -185,6 +183,10 @@ void ArkWebNetworkServiceExt::SetURLRequestContext(
 void ArkWebNetworkServiceExt::SetConnectTimeout(int seconds) {
   LOG(INFO) << "Network service set network timeout " << seconds
             << " second(s)";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "Network service set network timeout " << seconds
+                     << " second(s)";
+#endif
   timeout_override_ = seconds;
   for (NetworkContext* network_context : network_contexts_) {
     net::URLRequestContext* url_request_context =
@@ -199,13 +201,19 @@ void ArkWebNetworkServiceExt::BindDnsToNetwork(int network) {
   if (network_for_dns_ == network) {
     LOG(INFO) << "bind dns to network return for network is same with "
               << network_for_dns_;
-    // TODO(ARKWEB_LOGGER_REPORT)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "bind dns to network return for network is same with "
+                       << network_for_dns_;
+#endif
     return;
   }
   network_for_dns_ = network;
   if (host_resolver_manager_) {
     LOG(INFO) << "bind dns to network " << network << " invalid dns cache.";
-    // TODO(ARKWEB_LOGGER_REPORT)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "bind dns to network " << network
+                       << " invalid dns cache.";
+#endif
     host_resolver_manager_->InvalidateCachesForTesting();
 
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)

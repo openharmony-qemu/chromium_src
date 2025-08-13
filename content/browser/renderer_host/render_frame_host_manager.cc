@@ -1693,11 +1693,25 @@ RenderFrameHostManager::GetFrameHostForNavigation(
       render_frame_host_->IsNavigationSameSite(request->GetUrlInfo());
 
   IsSameSiteGetter is_same_site_getter(is_same_site);
+
   std::string site_instance_reason;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  std::string valid_reason;
+  scoped_refptr<SiteInstanceImpl> dest_site_instance =
+      GetSiteInstanceForNavigationRequest(request, is_same_site_getter,
+                                          browsing_context_group_swap,
+                                          &valid_reason);
+  if (!valid_reason.empty()) {
+    LOG_FEEDBACK(INFO)
+        << "OHBFCACHE: GetSiteInstanceForNavigationRequest reason="
+        << valid_reason;
+  }
+#else
   scoped_refptr<SiteInstanceImpl> dest_site_instance =
       GetSiteInstanceForNavigationRequest(request, is_same_site_getter,
                                           browsing_context_group_swap,
                                           &site_instance_reason);
+#endif
   SCOPED_CRASH_KEY_STRING256("rvh-double", "si_reason", site_instance_reason);
   if (reason) {
     reason->append(site_instance_reason);

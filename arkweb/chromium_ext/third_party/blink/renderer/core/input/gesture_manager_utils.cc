@@ -53,6 +53,9 @@ void GestureManagerUtils::CloseAIOverlay(
 WebInputEventResult GestureManagerUtils::HandleGestureDragLongPress(
     const GestureEventWithHitTestResults& targeted_event) {
   LOG(INFO) << "DragDrop HandleGestureDragLongPress";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "DragDrop HandleGestureDragLongPress";
+#endif
   const WebGestureEvent& gesture_event = targeted_event.Event();
 
   // FIXME: Ideally we should try to remove the extra mouse-specific hit-tests

@@ -30,6 +30,119 @@
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "content/renderer/logger_report.h"
+#endif
+
+namespace {
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+const base::TimeDelta kMaxIPCLoginInterval = base::Milliseconds(5);
+base::TimeTicks g_last_renderer_log_sent_time[logging::LOGGING_MAX];
+bool g_has_renderer_log_dropped[logging::LOGGING_MAX] = {false};
+
+// Report renderer log on main thread because ReportRendererLog only can
+// be called on MainThread, we cann't get the RenderThreadImpl when
+// RenderThreadImpl::current() called from other threads due to it's a
+// pointer in tls.
+void ReportRendererLogOnMainThread(int policy, const std::string& msg) {
+  if (policy <= 0 || policy >= logging::LOGGING_MAX) {
+    return;
+  }
+  const base::TimeTicks now = base::TimeTicks::Now();
+  if ((now - g_last_renderer_log_sent_time[policy]) < kMaxIPCLoginInterval) {
+    if (!g_has_renderer_log_dropped[policy]) {
+      g_has_renderer_log_dropped[policy] = true;
+      std::string drop_info_msg;
+      drop_info_msg.append(
+          "Renderer ipc logging is too frequently, some subsequent logs will "
+          "be dropped. ");
+      drop_info_msg.append(msg);
+      content::EventLog::ReportRendererLog(policy, drop_info_msg);
+    }
+  } else {
+    g_has_renderer_log_dropped[policy] = false;
+    content::EventLog::ReportRendererLog(policy, msg);
+    g_last_renderer_log_sent_time[policy] = base::TimeTicks::Now();
+  }
+}
+
+// Handle the FATAL message before crash.
+bool HandleFatalMessageForCrashpad(int severity,
+                                   const char* file,
+                                   int line,
+                                   size_t message_start,
+                                   const std::string& string) {
+  // Only handle FATAL.
+  if (severity != logging::LOGGING_FATAL) {
+    return false;
+  }
+
+  // In case of an out-of-memory condition, this code could be reentered when
+  // constructing and storing the key. Using a static is not thread-safe, but if
+  // multiple threads are in the process of a fatal crash at the same time, this
+  // should work.
+  static bool guarded = false;
+  if (guarded) {
+    return false;
+  }
+  base::AutoReset<bool> guard(&guarded, true);
+
+  // Only log last path component.  This matches logging.cc.
+  if (file) {
+    const char* slash = strrchr(file, '/');
+    if (slash) {
+      file = slash + 1;
+    }
+  }
+
+  CHECK_LE(message_start, string.size());
+
+  // Rather than including the code to force the crash here, allow the caller to
+  // do it.
+  return false;
+}
+
+bool RenderProcessLogMessageHandler(int severity,
+                                    const char* file,
+                                    int line,
+                                    size_t message_start,
+                                    const std::string& str) {
+  logging::LogPriority priority = logging::LOGGING_VERBOSE;
+  switch (severity) {
+    case logging::LOGGING_FEEDBACK:
+      priority = logging::LOGGING_FEEDBACK;
+      break;
+    case logging::LOGGING_URL:
+      priority = logging::LOGGING_URL;
+      break;
+    default:
+      return false;
+  }
+
+  HandleFatalMessageForCrashpad(severity, file, line, message_start, str);
+
+#if DCHECK_IS_ON()
+  // For unittests.
+  //  Some threads are not allowed to access 'g_main_task_runner.Get()'.
+  //  See 'void AssertSingletonAllowed()' in file
+  //  'base/threading/thread_restrictions.cc'.
+#else
+  if (severity >= logging::LOGGING_WARNING &&
+      severity != logging::LOGGING_FATAL) {
+    content::RenderThreadImpl::DeprecatedGetMainTaskRunner()->PostTask(
+        FROM_HERE,
+        base::BindOnce(ReportRendererLogOnMainThread, priority, str));
+    return true;
+  }
+#endif
+  return false;
+}
+#endif  // ARKWEB_LOGGER_REPORT
+
+}  // anonymous namespace
+
 namespace content {
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
@@ -107,6 +220,40 @@ void RenderThreadImpl::SetBlanklessDumpInfo(uint32_t nweb_id, uint64_t blankless
                                                                     lcp_time,
                                                                     pref_hash);
   }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+void RenderThreadImpl::OnChannelListenError() {
+  if ((*base::CommandLine::ForCurrentProcess())
+          .HasSwitch(switches::kEnableLoggerReport)) {
+    if (logging::GetLogMessageHandler()) {
+      logging::SetLogMessageHandler(nullptr);
+      LOG(INFO) << "remove log message handler for "
+                << base::GetCurrentProcId();
+      LOG_FEEDBACK(INFO) << "remove log message handler for "
+                         << base::GetCurrentProcId();
+    }
+  }
+
+  ChildThreadImpl::OnChannelListenError();
+}
+
+void RenderThreadImpl::OnChannelConnected(int32_t peer_pid) {
+  if ((*base::CommandLine::ForCurrentProcess())
+          .HasSwitch(switches::kEnableLoggerReport)) {
+    if (!logging::GetLogMessageHandler()) {
+      logging::SetLogMessageHandler(RenderProcessLogMessageHandler);
+    } else {
+      LOG(INFO) << "maybe you runs in single process mode, log message handler "
+                   "had been setted by other";
+      LOG_FEEDBACK(INFO)
+          << "maybe you runs in single process mode, log message handler "
+             "had been setted by other";
+    }
+  }
+
+  ChildThreadImpl::OnChannelConnected(peer_pid);
 }
 #endif
 // LCOV_EXCL_STOP

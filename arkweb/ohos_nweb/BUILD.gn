@@ -197,6 +197,11 @@ component("cef_nweb") {
     "src/sysevent/oh_web_performance_timing.cc",
     "src/sysevent/oh_web_performance_timing.h",
   ]
+  if (defined(arkweb_logger_report) && arkweb_logger_report) {
+    sources += [
+      "//cef/ohos_cef_ext/include/cef_logger_callback_api_handler.h",
+    ]
+  }
 
   if (arkweb_drag_resize) {
     sources += [

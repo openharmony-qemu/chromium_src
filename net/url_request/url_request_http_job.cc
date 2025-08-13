@@ -471,6 +471,12 @@ void URLRequestHttpJob::Start() {
 #if BUILDFLAG(ENABLE_REPORTING)
   request_info_.reporting_upload_depth = request_->reporting_upload_depth();
 #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableLoggerReport)) {
+    request_info_.usage_scenario_ = request_->usage_scenario();
+  }
+#endif
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   request_info_.allow_preload_record = request_->allow_preload_record();
   request_info_.main_url = request_->main_url();
@@ -1257,10 +1263,9 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
   if (request_->isolation_info().request_type() !=
       IsolationInfo::RequestType::kMainFrame) {
     LOG(INFO) << "DOH-Fallback request is not mainframe";
-// TODO(ARKWEB)
-// #ifdef OHOS_LOGGER_REPORT
-//     LOG_FEEDBACK(INFO) << "DOH-Fallback request is not mainframe";
-// #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "DOH-Fallback request is not mainframe";
+#endif
     return false;
   }
 
@@ -1269,21 +1274,19 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
           ->resolve_error_info.is_secure_network_error) {
     LOG(INFO) << "DOH-Fallback won't retry for is_secure_network_error is "
                  "true";
-// TODO(ARKWEB)
-// #ifdef OHOS_LOGGER_REPORT
-//     LOG_FEEDBACK(INFO)
-//         << "DOH-Fallback won't retry for is_secure_network_error is "
-//            "true";
-// #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO)
+        << "DOH-Fallback won't retry for is_secure_network_error is "
+           "true";
+#endif
     return false;
   }
 
   if (!const_cast<URLRequestContext*>(request_->context())->AsURLRequestContextExt()->CanUseSecureDnsFallback()) {
     LOG(INFO) << "DOH-Fallback can't use secure dns fallback";
-// TODO(ARKWEB)
-// #ifdef OHOS_LOGGER_REPORT
-//     LOG_FEEDBACK(INFO) << "DOH-Fallback can't use secure dns fallback";
-// #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "DOH-Fallback can't use secure dns fallback";
+#endif
     return false;
   }
 
@@ -1309,16 +1312,15 @@ bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
       net_error == net::ERR_UNABLE_TO_REUSE_CONNECTION_FOR_PROXY_AUTH) {
     net::NetErrorDetails details;
     PopulateNetErrorDetails(&details);
-    // streamѾɹ֤dns׶ûз⣬ǲҪ.
+    // 如果stream已经创建成功。证明dns阶段没有发生问题，所以我们不需要重试.
     if (details.stream_created) {
       LOG(INFO) << "DOH-Fallback cann't retry with secure dns since the stream "
                    "is created.";
-// TODO(ARKWEB)
-// #ifdef OHOS_LOGGER_REPORT
-//       LOG_FEEDBACK(INFO)
-//           << "DOH-Fallback cann't retry with secure dns since the stream "
-//              "is created.";
-// #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(INFO)
+          << "DOH-Fallback cann't retry with secure dns since the stream "
+             "is created.";
+#endif
       return false;
     }
     return true;
@@ -1339,10 +1341,10 @@ void URLRequestHttpJob::RetryWithSecureDnsOnly() {
   ResetTimer();
 
   LOG(INFO) << "DOH-Fallback will retry with secure dns only";
-// TODO(ARKWEB)
-// #ifdef OHOS_LOGGER_REPORT
-//   LOG_FEEDBACK(INFO) << "DOH-Fallback will retry with secure dns only";
-// #endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "DOH-Fallback will retry with secure dns only";
+#endif
 
   request_info_.secure_dns_only = true;
   int rv = transaction_->RestartWithSecureDnsOnly(base::BindOnce(

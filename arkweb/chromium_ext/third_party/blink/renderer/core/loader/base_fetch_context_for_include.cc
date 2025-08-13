@@ -37,7 +37,7 @@ class BaseFetchContextUtil {
             ResourceRequestBlockedReason::kSubresourceFilter, type);
       }
       LOG(INFO) << "[User AdBlock] Subresource request blocked : ***";
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
       LOG_FEEDBACK(INFO) << "[User AdBlock] Subresource request blocked : "
                          << url::LogUtils::ConvertUrlWithMask(
                                 url.GetString().Utf8());

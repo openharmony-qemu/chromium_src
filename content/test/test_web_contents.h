@@ -151,7 +151,11 @@ class TestWebContents : public WebContentsImplExt, public WebContentsTester {
 
   base::UnguessableToken GetAudioGroupId() override;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void OnWebPreferencesChanged(int32_t usage_scenario_type = 99) override;
+#else
   void OnWebPreferencesChanged() override;
+#endif
 
   // If set, *web_preferences_changed_counter_ is incremented when
   // OnWebPreferencesChanged() is called.

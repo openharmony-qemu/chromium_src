@@ -23,11 +23,20 @@
 #include "content/renderer/render_frame_impl.h"
 #include "third_party/blink/public/web/web_document_loader.h"
 #include "third_party/blink/public/web/web_navigation_control.h"
+#include "third_party/blink/public/web/web_settings.h"
 #include "third_party/blink/public/web/web_view.h"
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "third_party/blink/public/web/web_performance_metrics_for_reporting.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "url/ohos/log_utils.h"
+#endif
+
+using blink::WebDocumentLoader;
 
 namespace content {
 
@@ -181,5 +190,75 @@ void RenderFrameImpl::SendBlanklessKeyToRenderFrame(uint32_t nweb_id,
   pref_hash_ = pref_hash;
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+void RenderFrameImpl::PageLoadStartLoggerReport(
+    WebDocumentLoader* document_loader) {
+  LOG_FEEDBACK(WARNING) << "event_message: page load start, routing_id: "
+                        << routing_id_ << ", url: "
+                        << url::LogUtils::ConvertUrlWithMask(
+                               document_loader->GetUrl().GetString().Utf8());
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableLoggerReport)) {
+    bool is_strict_log_mode = true;
+    if (GetWebView()) {
+      is_strict_log_mode = GetWebView()->IsStrictLogMode();
+    }
+    if (!is_strict_log_mode) {
+      int32_t usage_scenario = GetWebView()->GetSettings()->GetUsageScenario();
+      LOG(URL) << "event_message: page load start, routing_id: " << routing_id_
+               << ", url: "
+               << url::LogUtils::ConvertUrl(
+                      document_loader->GetUrl().GetString().Utf8(),
+                      usage_scenario);
+    }
+  }
+}
+
+void RenderFrameImpl::ContentLoadFailedLoggerReport() {
+  if (IsMainFrame()) {
+    LOG_FEEDBACK(WARNING)
+        << "event_message: content load finished, routing_id: " << routing_id_
+        << ", url: "
+        << url::LogUtils::ConvertUrlWithMask(GetLoadingUrl().spec());
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kEnableLoggerReport)) {
+      bool is_strict_log_mode = true;
+      if (GetWebView()) {
+        is_strict_log_mode = GetWebView()->IsStrictLogMode();
+      }
+      if (!is_strict_log_mode) {
+        int32_t usage_scenario =
+            GetWebView()->GetSettings()->GetUsageScenario();
+        LOG(URL) << "event_message: content load finished, routing_id: "
+                 << routing_id_ << ", url: "
+                 << url::LogUtils::ConvertUrl(GetLoadingUrl().spec(),
+                                              usage_scenario);
+      }
+    }
+  }
+}
+
+void RenderFrameImpl::PageLoadFinishedLoggerReport() {
+  LOG_FEEDBACK(WARNING)
+      << "event_message: page load finished, routing_id: " << routing_id_
+      << ", url: " << url::LogUtils::ConvertUrlWithMask(GetLoadingUrl().spec());
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableLoggerReport)) {
+    bool is_strict_log_mode = true;
+    if (GetWebView()) {
+      is_strict_log_mode = GetWebView()->IsStrictLogMode();
+    }
+    if (!is_strict_log_mode) {
+      int32_t usage_scenario = GetWebView()->GetSettings()->GetUsageScenario();
+      LOG(URL) << "event_message: page load finished, routing_id: "
+               << routing_id_ << ", url: "
+               << url::LogUtils::ConvertUrl(GetLoadingUrl().spec(),
+                                            usage_scenario);
+    }
+  }
+}
+#endif
+
 // LCOV_EXCL_STOP
 }  // namespace content

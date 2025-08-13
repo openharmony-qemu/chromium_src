@@ -750,6 +750,9 @@ int SSLClientSocketImpl::Init() {
 
   if (!SSL_set_strict_cipher_list(ssl_.get(), command.c_str())) {
     LOG(ERROR) << "SSL_set_cipher_list('" << command << "') failed";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "SSL_set_cipher_list('" << command << "') failed";
+#endif
     return ERR_UNEXPECTED;
   }
   // Disable SHA-1 server signatures.
@@ -885,6 +888,18 @@ int SSLClientSocketImpl::DoHandshake() {
 
     LOG(ERROR) << "handshake failed; returned " << rv << ", SSL error code "
                << ssl_error << ", net_error " << net_error;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "handshake failed; returned " << rv
+                        << ", SSL error code " << ssl_error << ", net_error "
+                        << net_error;
+    if (stream_socket_) {
+      IPEndPoint peer_address;
+      if (stream_socket_->GetPeerAddress(&peer_address) == OK) {
+        LOG_FEEDBACK(INFO) << "handshake failed, peer_address "
+                           << peer_address.ToString();
+      }
+    }
+#endif
     NetLogOpenSSLError(net_log_, NetLogEventType::SSL_HANDSHAKE_ERROR,
                        net_error, ssl_error, error_info);
   }

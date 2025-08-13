@@ -350,6 +350,10 @@ void WebMediaPlayerImplUtils::DoSeekExt(base::TimeDelta time) {
   LOG(WARNING) << "OhMedia::DoSeek(), seconds = " << time.InSecondsF() << "s)"
                << " delegate_id_:" << impl->delegate_id_;
 #endif // BUILDFLAG(ARKWEB_MEDIA)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(WARNING) << "OhMedia::DoSeek(" << (void*)this
+                        << "), seconds = " << time.InSecondsF() << "s)";
+#endif
 }
 
 void WebMediaPlayerImplUtils::SetVolumeExt(double volume) {
@@ -357,6 +361,10 @@ void WebMediaPlayerImplUtils::SetVolumeExt(double volume) {
   LOG(INFO) << "OhMedia:: " << __func__ << "(), volume =" << volume
             << " delegate_id_:" << impl->delegate_id_;
 #endif // BUILDFLAG(ARKWEB_MEDIA)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "OhMedia:: " << __func__ << "(" << (void*)this
+                     << "), volume =" << volume;
+#endif
 }
 
 void WebMediaPlayerImplUtils::OnFrameShownExt() {
@@ -374,6 +382,10 @@ void WebMediaPlayerImplUtils::OnFrameHiddenExt() {
   LOG(INFO) << "WebMediaPlayerImpl::OnFrameHidden()"
             << " delegate_id_:" << impl->delegate_id_;
 #endif  // BUILDFLAG(ARKWEB_MEDIA)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "WebMediaPlayerImpl::OnFrameHidden()"
+                     << " delegate_id_:" << impl->delegate_id_;
+#endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   impl->client_->OnPageVisibilityChanged();

@@ -235,6 +235,10 @@ void DrmCallbackImpl::OnMediaLicenseReady(bool success)
 void DrmCallbackImpl::UpdateMediaKeySessionInfoMap(MediaKeySession* keySession,
     std::shared_ptr<SessionInfo> sessionInfo)
 {
+    if (keySession == nullptr || sessionInfo == nullptr) {
+        WVLOG_E("keySession or sessionInfo is nullptr.");
+        return;
+    }
     WVLOG_I("[DRM]DrmCallbackImpl::UpdateMediaKeySessionInfoMap enter.");
     std::lock_guard<std::mutex> lock(mediaKeySessionInfoMutex_);
     mediaKeySessionInfoMap_[keySession] = sessionInfo;
@@ -260,7 +264,9 @@ void DrmCallbackImpl::RemoveMediaKeySessionInfo(MediaKeySession* keySession)
 {
     WVLOG_I("[DRM]DrmCallbackImpl::RemoveMediaKeySessionInfo enter.");
     std::lock_guard<std::mutex> lock(mediaKeySessionInfoMutex_);
-    mediaKeySessionInfoMap_.erase(keySession);
+    if (keySession) {
+        mediaKeySessionInfoMap_.erase(keySession);
+    }
 }
 
 void DrmCallbackImpl::ClearMediaKeySessionInfo()
@@ -1248,11 +1254,11 @@ int32_t DrmAdapterImpl::RequireSecureDecoderModule(const std::string& mimeType, 
     }
     bool stas = false;
     Drm_ErrCode ret = OH_MediaKeySession_RequireSecureDecoderModule(drmKeySession_, mimeType.c_str(), &stas);
-    status = stas;
     if (ret != DRM_ERR_OK) {
         WVLOG_E("[DRM]DrmAdapterImpl::RequireSecureDecoderModule failed.");
         return static_cast<int32_t>(DrmResult::DRM_RESULT_ERROR);
     }
+    status = stas;
     return static_cast<int32_t>(DrmResult::DRM_RESULT_OK);
 }
 

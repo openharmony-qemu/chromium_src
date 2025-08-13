@@ -5425,5 +5425,518 @@ TEST_F(NWebImplTest, IsMixedContentAutoUpgradesEnabled002) {
   EXPECT_EQ(result, temp);
 }
 #endif // BUILDFLAG(ARKWEB_MIXED_CONTENT)
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+TEST_F(NWebImplTest, SetUsageScenario001) {
+  int32_t usage_scenario = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SetUsageScenario(usage_scenario)).Times(1);
+  nweb_impl_->SetUsageScenario(usage_scenario);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, GetUsageScenario001) {
+  int32_t temp = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, GetUsageScenario()).Times(0);
+  auto result = nweb_impl_->GetUsageScenario();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, GetUsageScenario002) {
+  int32_t temp = 1;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetUsageScenario()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->GetUsageScenario();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+#endif // BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+TEST_F(NWebImplTest, WebExtensionTabCreated001) {
+  int tab_id = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabCreated(tab_id)).Times(0);
+  nweb_impl_->WebExtensionTabCreated(tab_id);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabCreated002) {
+  int tab_id = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabCreated(tab_id)).Times(1);
+  nweb_impl_->WebExtensionTabCreated(tab_id);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabUpdated001) {
+  int tab_id = 0;
+  const std::vector<std::string> changed_property_names = {"Default", "IncludeSensitive", "Everything"};
+  const std::string url = "test";
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabUpdated(tab_id, changed_property_names, url)).Times(0);
+  nweb_impl_->WebExtensionTabUpdated(tab_id, changed_property_names, url);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabUpdated002) {
+  int tab_id = 0;
+  const std::vector<std::string> changed_property_names = {"Default", "IncludeSensitive", "Everything"};
+  const std::string url = "test";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabUpdated(tab_id, changed_property_names, url)).Times(1);
+  nweb_impl_->WebExtensionTabUpdated(tab_id, changed_property_names, url);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabUpdated003) {
+  int tab_id = 0;
+  const std::vector<std::string> changed_property_names = {"Default", "IncludeSensitive", "Everything"};
+  std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo = std::make_unique<NWebExtensionTabChangeInfo>();
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabUpdated(tab_id, changed_property_names,
+      ::testing::A<std::unique_ptr<NWebExtensionTabChangeInfo>>())).Times(0);
+  nweb_impl_->WebExtensionTabUpdated(tab_id, changed_property_names, changeInfo);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabUpdated004) {
+  int tab_id = 0;
+  const std::vector<std::string> changed_property_names = {"Default", "IncludeSensitive", "Everything"};
+  std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo = std::make_unique<NWebExtensionTabChangeInfo>();
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabUpdated(tab_id, changed_property_names,
+      ::testing::A<std::unique_ptr<NWebExtensionTabChangeInfo>>())).Times(1);
+  nweb_impl_->WebExtensionTabUpdated(tab_id, changed_property_names, std::move(changeInfo));
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabUpdated005) {
+  int tab_id = 0;
+  std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo = std::make_unique<NWebExtensionTabChangeInfo>();
+  std::unique_ptr<NWebExtensionTab> tab = std::make_unique<NWebExtensionTab>();
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabUpdated(tab_id,
+      ::testing::A<std::unique_ptr<NWebExtensionTabChangeInfo>>(),
+      ::testing::A<std::unique_ptr<NWebExtensionTab>>())).Times(0);
+  nweb_impl_->WebExtensionTabUpdated(tab_id, std::move(changeInfo), std::move(tab));
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabUpdated006) {
+  int tab_id = 0;
+  std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo = std::make_unique<NWebExtensionTabChangeInfo>();
+  std::unique_ptr<NWebExtensionTab> tab = std::make_unique<NWebExtensionTab>();
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabUpdated(tab_id,
+      ::testing::A<std::unique_ptr<NWebExtensionTabChangeInfo>>(),
+      ::testing::A<std::unique_ptr<NWebExtensionTab>>())).Times(1);
+  nweb_impl_->WebExtensionTabUpdated(tab_id, std::move(changeInfo), std::move(tab));
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabRemoved001) {
+  int tab_id = 0;
+  bool isWindowClosing = false;
+  int windowId = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabRemoved(tab_id, isWindowClosing, windowId)).Times(0);
+  nweb_impl_->WebExtensionTabRemoved(tab_id, isWindowClosing, windowId);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabRemoved002) {
+  int tab_id = 0;
+  bool isWindowClosing = false;
+  int windowId = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabRemoved(tab_id, isWindowClosing, windowId)).Times(1);
+  nweb_impl_->WebExtensionTabRemoved(tab_id, isWindowClosing, windowId);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabActivated001) {
+  std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo = std::make_unique<NWebExtensionTabActiveInfo>();
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabActivated(::testing::_)).Times(0);
+  nweb_impl_->WebExtensionTabActivated(std::move(activeInfo));
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabActivated002) {
+  std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo = std::make_unique<NWebExtensionTabActiveInfo>();
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabActivated(::testing::_)).Times(1);
+  nweb_impl_->WebExtensionTabActivated(std::move(activeInfo));
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabAttached001) {
+  std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo = std::make_unique<NWebExtensionTabAttachInfo>();
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabAttached(::testing::_)).Times(0);
+  nweb_impl_->WebExtensionTabAttached(std::move(attachInfo));
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabAttached002) {
+  std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo = std::make_unique<NWebExtensionTabAttachInfo>();
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabAttached(::testing::_)).Times(1);
+  nweb_impl_->WebExtensionTabAttached(std::move(attachInfo));
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabDetached001) {
+  std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo = std::make_unique<NWebExtensionTabDetachInfo>();
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabDetached(::testing::_)).Times(0);
+  nweb_impl_->WebExtensionTabDetached(std::move(detachInfo));
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabDetached002) {
+  std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo = std::make_unique<NWebExtensionTabDetachInfo>();
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabDetached(::testing::_)).Times(1);
+  nweb_impl_->WebExtensionTabDetached(std::move(detachInfo));
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabHighlighted001) {
+  NWebExtensionTabHighlightInfo highlightInfo;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabHighlighted(::testing::_)).Times(0);
+  nweb_impl_->WebExtensionTabHighlighted(highlightInfo);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabHighlighted002) {
+  NWebExtensionTabHighlightInfo highlightInfo;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabHighlighted(::testing::_)).Times(1);
+  nweb_impl_->WebExtensionTabHighlighted(highlightInfo);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabMoved001) {
+  int32_t tab_id = 0;
+  std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo = std::make_unique<NWebExtensionTabMoveInfo>();
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabMoved(tab_id, ::testing::_)).Times(0);
+  nweb_impl_->WebExtensionTabMoved(tab_id, std::move(moveInfo));
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabMoved002) {
+  int32_t tab_id = 0;
+  std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo = std::make_unique<NWebExtensionTabMoveInfo>();
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabMoved(tab_id, ::testing::_)).Times(1);
+  nweb_impl_->WebExtensionTabMoved(tab_id, std::move(moveInfo));
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabReplaced001) {
+  int32_t addedTabId = 0;
+  int32_t removedTabId = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabReplaced(addedTabId, removedTabId)).Times(0);
+  nweb_impl_->WebExtensionTabReplaced(addedTabId, removedTabId);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionTabReplaced002) {
+  int32_t addedTabId = 0;
+  int32_t removedTabId = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionTabReplaced(addedTabId, removedTabId)).Times(1);
+  nweb_impl_->WebExtensionTabReplaced(addedTabId, removedTabId);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionSetViewType001) {
+  int32_t type = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, WebExtensionSetViewType(type)).Times(0);
+  nweb_impl_->WebExtensionSetViewType(type);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionSetViewType002) {
+  int32_t type = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, WebExtensionSetViewType(type)).Times(1);
+  nweb_impl_->WebExtensionSetViewType(type);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+TEST_F(NWebImplTest, SetBackForwardCacheOptions001) {
+  int32_t size = 0;
+  int32_t timeToLive = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SetBackForwardCacheOptions(size, timeToLive)).Times(0);
+  nweb_impl_->SetBackForwardCacheOptions(size, timeToLive);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetBackForwardCacheOptions002) {
+  int32_t size = 0;
+  int32_t timeToLive = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SetBackForwardCacheOptions(size, timeToLive)).Times(1);
+  nweb_impl_->SetBackForwardCacheOptions(size, timeToLive);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetMediaResumeFromBFCachePage001) {
+  bool resume = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SetMediaResumeFromBFCachePage(resume)).Times(0);
+  nweb_impl_->SetMediaResumeFromBFCachePage(resume);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetMediaResumeFromBFCachePage002) {
+  bool resume = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SetMediaResumeFromBFCachePage(resume)).Times(1);
+  nweb_impl_->SetMediaResumeFromBFCachePage(resume);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
+TEST_F(NWebImplTest, TrimMemoryByPressureLevel001) {
+  int32_t memoryLevel = 0;
+  NWebImpl::TrimMemoryByPressureLevel(memoryLevel);
+  EXPECT_NE(nweb_impl_, nullptr);
+}
+
+TEST_F(NWebImplTest, TrimMemoryByPressureLevel002) {
+  int32_t memoryLevel = 1;
+  NWebImpl::TrimMemoryByPressureLevel(memoryLevel);
+  EXPECT_NE(nweb_impl_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
+
+TEST_F(NWebImplTest, SetSurfaceDensity001) {
+  const double density = 1.0;
+  nweb_impl_->inputmethod_handler_ = nullptr;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SetSurfaceDensity(density)).Times(0);
+  nweb_impl_->SetSurfaceDensity(density);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetSurfaceDensity002) {
+  const double density = 1.0;
+  nweb_impl_->inputmethod_handler_ = new NWebInputMethodHandler();
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SetSurfaceDensity(density)).Times(0);
+  nweb_impl_->SetSurfaceDensity(density);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetSurfaceDensity003) {
+  const double density = 1.0;
+  nweb_impl_->inputmethod_handler_ = new NWebInputMethodHandler();
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SetSurfaceDensity(density)).Times(1);
+  nweb_impl_->SetSurfaceDensity(density);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+TEST_F(NWebImplTest, SetTransformHint001) {
+  uint32_t rotation = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SetTransformHint(rotation)).Times(0);
+  nweb_impl_->SetTransformHint(rotation);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetTransformHint002) {
+  uint32_t rotation = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SetTransformHint(rotation)).Times(1);
+  nweb_impl_->SetTransformHint(rotation);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
+TEST_F(NWebImplTest, SetPopupSurface001) {
+  void* popupSurface = nullptr;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->output_handler_ = std::make_shared<NWebOutputHandler>(MockFrameCallback);
+  nweb_impl_->SetPopupSurface(&popupSurface);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetPopupSurface002) {
+  void* popupSurface = nullptr;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->output_handler_ = std::make_shared<NWebOutputHandler>(MockFrameCallback);
+  nweb_impl_->SetPopupSurface(&popupSurface);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->output_handler_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+TEST_F(NWebImplTest, MaximizeResize001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, MaximizeResize()).Times(0);
+  nweb_impl_->MaximizeResize();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, MaximizeResize002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, MaximizeResize()).Times(1);
+  nweb_impl_->MaximizeResize();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+
+#if BUILDFLAG(ARKWEB_DRAG_RESIZE)
+TEST_F(NWebImplTest, DragResize001) {
+  uint32_t width = 0;
+  uint32_t height = 0;
+  uint32_t pre_height = 0;
+  uint32_t pre_width = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->input_handler_ = nullptr;
+  nweb_impl_->DragResize(width, height, pre_height, pre_width);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, DragResize002) {
+  uint32_t width = 0;
+  uint32_t height = 0;
+  uint32_t pre_height = 0;
+  uint32_t pre_width = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->output_handler_ = nullptr;
+  nweb_impl_->DragResize(width, height, pre_height, pre_width);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+  EXPECT_EQ(nweb_impl_->output_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, DragResize003) {
+  uint32_t width = 0;
+  uint32_t height = 0;
+  uint32_t pre_height = 0;
+  uint32_t pre_width = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->output_handler_ = std::make_shared<NWebOutputHandler>(MockFrameCallback);
+  nweb_impl_->DragResize(width, height, pre_height, pre_width);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+  EXPECT_NE(nweb_impl_->output_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, DragResize004) {
+  uint32_t width = 0;
+  uint32_t height = 0;
+  uint32_t pre_height = 1;
+  uint32_t pre_width = 1;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->output_handler_ = std::make_shared<NWebOutputHandler>(MockFrameCallback);
+  nweb_impl_->DragResize(width, height, pre_height, pre_width);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+  EXPECT_NE(nweb_impl_->output_handler_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_DRAG_RESIZE)
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+TEST_F(NWebImplTest, StopScreenCapture001) {
+  int32_t nweb_id = 0;
+  const char* session_id = nullptr;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, StopScreenCapture(nweb_id, ::testing::_)).Times(0);
+  nweb_impl_->StopScreenCapture(nweb_id, session_id);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(session_id, nullptr);
+}
+
+TEST_F(NWebImplTest, StopScreenCapture002) {
+  int32_t nweb_id = 0;
+  const char* session_id = "test";
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, StopScreenCapture(nweb_id, ::testing::_)).Times(0);
+  nweb_impl_->StopScreenCapture(nweb_id, session_id);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(session_id, nullptr);
+}
+
+TEST_F(NWebImplTest, StopScreenCapture003) {
+  int32_t nweb_id = 0;
+  const char* session_id = "test";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, StopScreenCapture(nweb_id, ::testing::_)).Times(1);
+  nweb_impl_->StopScreenCapture(nweb_id, session_id);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(session_id, nullptr);
+}
+
+TEST_F(NWebImplTest, SetScreenCapturePickerShow001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, SetScreenCapturePickerShow()).Times(0);
+  nweb_impl_->SetScreenCapturePickerShow();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetScreenCapturePickerShow002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SetScreenCapturePickerShow()).Times(1);
+  nweb_impl_->SetScreenCapturePickerShow();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, DisableSessionReuse001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, DisableSessionReuse()).Times(0);
+  nweb_impl_->DisableSessionReuse();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, DisableSessionReuse002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, DisableSessionReuse()).Times(1);
+  nweb_impl_->DisableSessionReuse();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, PutWebScreenCaptureDelegateCallback001) {
+  std::shared_ptr<NWebScreenCaptureDelegateCallback> callback = nullptr;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, RegisterScreenCaptureDelegateListener(callback)).Times(0);
+  nweb_impl_->PutWebScreenCaptureDelegateCallback(callback);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, PutWebScreenCaptureDelegateCallback002) {
+  std::shared_ptr<NWebScreenCaptureDelegateCallback> callback = nullptr;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, RegisterScreenCaptureDelegateListener(callback)).Times(1);
+  nweb_impl_->PutWebScreenCaptureDelegateCallback(callback);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
 }  // namespace OHOS::NWeb
                           

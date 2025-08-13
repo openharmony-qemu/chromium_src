@@ -19,6 +19,7 @@
 
 #include <thread>
 
+#include "base/hash/hash.h"
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "base/functional/bind.h"
@@ -4723,8 +4724,8 @@ void NWebHandlerDelegate::OnLoadFinished(CefRefPtr<CefFrame> frame,
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void NWebHandlerDelegate::RegisterOnCreateNativeMediaPlayerListener(
     std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
-  WVLOG_I("RegisterOnCreateNativeMediaPlayerListener(%{public}p)",
-          callback.get());
+  WVLOG_I("RegisterOnCreateNativeMediaPlayerListener(%{public}x)",
+          base::FastHash(base::byte_span_from_ref(callback.get())));
   create_native_media_player_cb_ = std::move(callback);
 }
 

@@ -178,7 +178,9 @@ void OHOSCustomMediaPlayerRendererClient::OnDurationChange(
     base::TimeDelta duration) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
 
-  media_resource_->ForwardDurationChangeToDemuxerHost(duration);
+  if (media_resource_ != nullptr) {
+    media_resource_->ForwardDurationChangeToDemuxerHost(duration);
+  }
 }
 
 void OHOSCustomMediaPlayerRendererClient::UpdatePlaybackStatus(
@@ -206,9 +208,10 @@ void OHOSCustomMediaPlayerRendererClient::UpdatePlaybackRate(
 void OHOSCustomMediaPlayerRendererClient::UpdateBufferedEndTime(
     double buffered_time) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
-
-  media_resource_->ForwardBufferedEndTimeChangeToDemuxerHost(
-      base::Seconds(buffered_time));
+  if (media_resource_ != nullptr) {
+    media_resource_->ForwardBufferedEndTimeChangeToDemuxerHost(
+        base::Seconds(buffered_time));
+  }
 }
 
 void OHOSCustomMediaPlayerRendererClient::OnGetVideoRect(

@@ -119,7 +119,6 @@ void MediaStreamManagerExt::SendScreenCaptureStateToNative(
 
 void MediaStreamManagerExt::PopSessionIdState(int32_t nweb_id,
                                               const std::string& session_id) {
-  std::lock_guard<std::mutex> lock(nweb_id_mutex_);
   for (auto state_it = session_id_state_.begin();
        state_it != session_id_state_.end();) {
     if (state_it->session_id == session_id) {

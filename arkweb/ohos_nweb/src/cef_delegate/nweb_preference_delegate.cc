@@ -1214,8 +1214,7 @@ int64_t NWebPreferenceDelegate::GetPreferenceHash()
   pref_hash_cached_ = true;
 
   std::ostringstream str;
-  str << UserAgent() << ", "
-    << CursiveFontFamilyName() << ", "
+  str << CursiveFontFamilyName() << ", "
     << FantasyFontFamilyName() << ", "
     << FixedFontFamilyName() << ", "
     << SansSerifFontFamilyName() << ", "
@@ -1238,8 +1237,7 @@ int64_t NWebPreferenceDelegate::GetPreferenceHash()
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
     << GetNativeEmbedMode() << ", "
 #endif
-    << GetRotationType() << ", "
-    << GetScrollBarColor();
+    << GetRotationType();
   pref_hash_ = std::hash<std::string>{}(str.str());
 
   LOG(DEBUG) << "NWebPreferenceDelegate::GetPreferenceHash() hash = " << pref_hash_;

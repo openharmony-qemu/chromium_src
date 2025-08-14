@@ -3421,12 +3421,7 @@ void MediaStreamManager::Closed(
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
   AsMediaStreamManagerExt()->SendScreenCaptureState(capture_session_id.ToString(), SCREEN_CAPTURE_STOPED);
-  std::lock_guard<std::mutex> lock(nweb_id_mutex_);
-  auto nweb_id_it = nweb_id_maps_.find(capture_session_id.ToString());
-  if (nweb_id_it == nweb_id_maps_.end()) {
-    return;
-  }
-  nweb_id_maps_.erase(nweb_id_it);
+  AsMediaStreamManagerExt()->RemoveNWebIdBySession(capture_session_id);
 #endif // defined(ARKWEB_EX_SCREEN_CAPTURE)
 }
 

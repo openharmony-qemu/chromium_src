@@ -30,7 +30,6 @@
 
 using namespace OHOS::NWeb;
 
-
 namespace {
 constexpr int32_t kUnittestAudioSampleRate = 48000;
 constexpr int32_t kUnittestAudioChannels = 2;
@@ -607,7 +606,6 @@ TEST_F(ScreenCaptureAdapterImplTest, AcquireVideoBuffer)
   EXPECT_EQ(buffer, nullptr);
   adapterImpl->ReleaseAudioBuffer(OHOS::NWeb::AudioCaptureSourceTypeAdapter::ALL_PLAYBACK);
 }
-
 
 TEST_F(ScreenCaptureAdapterImplTest, AcquireAudioBuffer)
 {

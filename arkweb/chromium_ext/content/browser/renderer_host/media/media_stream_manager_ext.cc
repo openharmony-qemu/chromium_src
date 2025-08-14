@@ -117,20 +117,6 @@ void MediaStreamManagerExt::SendScreenCaptureStateToNative(
   }
 }
 
-void MediaStreamManagerExt::PopSessionIdState(int32_t nweb_id,
-                                              const std::string& session_id) {
-  for (auto state_it = session_id_state_.begin();
-       state_it != session_id_state_.end();) {
-    if (state_it->session_id == session_id) {
-      MediaStreamManagerExt::SendScreenCaptureStateToNative(
-          nweb_id, state_it->session_id, state_it->state);
-      state_it = session_id_state_.erase(state_it);
-    } else {
-      state_it++;
-    }
-  }
-}
-
 void MediaStreamManagerExt::OnScreenCaptureOpened(const std::string& session_id) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   SendScreenCaptureState(session_id, SCREEN_CAPTURE_OPENED);

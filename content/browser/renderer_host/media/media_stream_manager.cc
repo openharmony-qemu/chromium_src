@@ -3669,13 +3669,7 @@ void MediaStreamManager::HandleAccessRequestResponse(
       if (device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE ||
           device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB ||
           device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET) {
-        std::lock_guard<std::mutex> lock(nweb_id_mutex_);
-        std::string session_id_str = device.session_id().ToString();
-        auto nweb_id_it = nweb_id_maps_.find(session_id_str);
-        if (nweb_id_it == nweb_id_maps_.end()) {
-          AsMediaStreamManagerExt()->PopSessionIdState(nweb_id, session_id_str);
-        }
-        nweb_id_maps_[session_id_str] = nweb_id;
+        AsMediaStreamManagerExt()->AddNWebIdBySession(device.session_id());
       }
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 

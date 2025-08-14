@@ -883,12 +883,6 @@ class CONTENT_EXPORT MediaStreamManager
 
   std::unique_ptr<media::SystemEventMonitorImpl> system_event_monitor_;
 #endif
-
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  std::map<std::string, int> nweb_id_maps_;
-  mutable std::mutex nweb_id_mutex_;
-  std::list<SessionIdState> session_id_state_;
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 };
 }  // namespace content
 #include "arkweb/chromium_ext/content/browser/renderer_host/media/media_stream_manager_ext.h"

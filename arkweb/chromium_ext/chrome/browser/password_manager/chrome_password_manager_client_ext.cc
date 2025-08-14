@@ -371,7 +371,8 @@ void ChromePasswordManagerClientExt::FillAccountSuggestion(
   }
 
   LOG(INFO) << "[Autofill] Try to fill account suggestion.";
-  ContentPasswordManagerDriverExt* contentPasswordManagerDriverExt = driver->AsContentPasswordManagerDriverExt();
+  power_manager::ContentPasswordManagerDriverExt* contentPasswordManagerDriverExt =
+      driver->AsContentPasswordManagerDriverExt();
   if (contentPasswordManagerDriverExt == nullptr) {
     LOG(ERROR) << "[Autofill] contentPasswordManagerDriverExt is nullptr";
     return;

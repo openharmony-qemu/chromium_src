@@ -439,6 +439,7 @@ int32_t ScreenCaptureAdapterImpl::InitV2(const std::shared_ptr<ScreenCaptureConf
 
     if (!config) {
         WVLOG_E("config is null");
+        Release();
         return -1;
     }
 
@@ -649,12 +650,22 @@ OH_SurfaceBufferAdapterImpl::OH_SurfaceBufferAdapterImpl(OH_AVBuffer* avBuffer,
     void* bufferAddr = OH_AVBuffer_GetAddr(avBuffer);
     if (!bufferAddr) {
         WVLOG_E("buffer address not exists");
+        ReleaseSurfaceBuffer();
         return;
     }
-    memcpy_s(avBuffer_, size_, bufferAddr, size_);
+    if (memcpy_s(avBuffer_, size_, bufferAddr, size_) != EOK) {
+        WVLOG_E("OH_SurfaceBufferAdapterImpl memcpy_s is failed");
+        ReleaseSurfaceBuffer();
+        return;
+    }
 }
 
 OH_SurfaceBufferAdapterImpl::~OH_SurfaceBufferAdapterImpl()
+{
+    ReleaseSurfaceBuffer();
+}
+
+void OH_SurfaceBufferAdapterImpl::ReleaseSurfaceBuffer()
 {
     if (avBuffer_) {
         free(avBuffer_);
@@ -716,12 +727,22 @@ OH_AudioBufferAdapterImpl::OH_AudioBufferAdapterImpl(OH_AVBuffer* avBuffer,
     uint8_t* bufferAddr = OH_AVBuffer_GetAddr(avBuffer);
     if (!bufferAddr) {
         WVLOG_E("audio buffer address not exists");
+        ReleaseAudioBuffer();
         return;
     }
-    memcpy_s(avBuffer_, length_, bufferAddr, length_);
+    if (memcpy_s(avBuffer_, length_, bufferAddr, length_) != EOK) {
+        WVLOG_E("OH_SurfaceBufferAdapterImpl memcpy_s is failed");
+        ReleaseAudioBuffer();
+        return;
+    }
 }
 
 OH_AudioBufferAdapterImpl::~OH_AudioBufferAdapterImpl()
+{
+    ReleaseAudioBuffer();
+}
+
+void OH_AudioBufferAdapterImpl::ReleaseAudioBuffer()
 {
     if (avBuffer_) {
         free(avBuffer_);

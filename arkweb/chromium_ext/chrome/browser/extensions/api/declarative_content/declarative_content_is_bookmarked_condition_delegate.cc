@@ -15,6 +15,8 @@
 
 #include "arkweb/chromium_ext/chrome/browser/extensions/api/declarative_content/declarative_content_is_bookmarked_condition_delegate.h"
 
+#include "arkweb/ohos_nweb/src/cef_delegate/nweb_extension_bookmarks_cef_delegate.h"
+
 namespace extensions {
 namespace {
 GURL GetUrlFromBookmarkTreeNode(const NWebExtensionBookmarkTreeNode* node) {
@@ -130,6 +132,31 @@ void DeclarativeContentIsBookmarkedConditionDelegate::OnBookmarksImportEnd(
   }
   for (auto& observer : observers_iter->second) {
     observer.OnBookmarksImportEnd();
+  }
+}
+
+void DeclarativeContentIsBookmarkedConditionDelegate::RequestIsBookmarked(
+    const GURL& url,
+    RequestIsBookmarkedCallback callback) {
+  if (url.is_empty()) {
+    return;
+  }
+  NWebExtensionBookmarksSearchParam param = {0};
+  char* param_url = strdup(url.spec().c_str());
+  if (!param_url) {
+    LOG(ERROR) << __FUNCTION__ << " failed to allocate param_url";
+    return;
+  }
+  param.url = param_url;
+  bool success =
+      OHOS::NWeb::NWebExtensionBookmarksCefDelegate::GetInstance().OnSearch(
+          &param, std::move(callback));
+  if (param.url) {
+    free(param.url);
+    param.url = nullptr;
+  }
+  if (!success) {
+    LOG(ERROR) << __FUNCTION__ << " failed to search url in bookmarks";
   }
 }
 }  // namespace extensions

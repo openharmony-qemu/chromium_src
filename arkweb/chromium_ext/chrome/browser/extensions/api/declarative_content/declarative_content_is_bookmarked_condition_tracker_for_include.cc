@@ -46,5 +46,53 @@ void DeclarativeContentIsBookmarkedConditionTracker::OnBookmarksImportBegin() {
 void DeclarativeContentIsBookmarkedConditionTracker::OnBookmarksImportEnd() {
   ExtensiveBookmarkChangesEnded();
 }
+
+void DeclarativeContentIsBookmarkedConditionTracker::PerWebContentsTracker::
+UpdateState(bool request_evaluation_if_unchanged) {
+  if (request_evaluation_if_unchanged) {
+    DeclarativeContentIsBookmarkedConditionDelegate::GetInstance()
+        .RequestIsBookmarked(
+            web_contents()->GetVisibleURL(),
+            base::BindRepeating(
+                &DeclarativeContentIsBookmarkedConditionTracker::
+                    PerWebContentsTracker::IsBookmarkedForceEvaluationCallback,
+                weak_factory_.GetWeakPtr()));
+  } else {
+    DeclarativeContentIsBookmarkedConditionDelegate::GetInstance()
+        .RequestIsBookmarked(
+            web_contents()->GetVisibleURL(),
+            base::BindRepeating(
+                &DeclarativeContentIsBookmarkedConditionTracker::
+                    PerWebContentsTracker::IsBookmarkedCallback,
+                weak_factory_.GetWeakPtr()));
+  }
+}
+
+void DeclarativeContentIsBookmarkedConditionTracker::PerWebContentsTracker::
+IsBookmarkedCallback(uint32_t bookmarkCount,
+                     const NWebExtensionBookmarkTreeNode* bookmarks,
+                     const char* error) {
+  if (error) {
+    LOG(ERROR) << __FUNCTION__ << " error: " << error;
+    return;
+  }
+  if ((bookmarkCount > 0) != is_url_bookmarked_) {
+    is_url_bookmarked_ = !is_url_bookmarked_;
+    request_evaluation_.Run(web_contents());
+  }
+}
+
+void DeclarativeContentIsBookmarkedConditionTracker::PerWebContentsTracker::
+IsBookmarkedForceEvaluationCallback(
+        uint32_t bookmarkCount,
+        const NWebExtensionBookmarkTreeNode* bookmarks,
+        const char* error) {
+  if (error) {
+    LOG(ERROR) << __FUNCTION__ << " error: " << error;
+    return;
+  }
+  is_url_bookmarked_ = (bookmarkCount > 0);
+  request_evaluation_.Run(web_contents());
+}
 #endif
 }  // namespace extensions

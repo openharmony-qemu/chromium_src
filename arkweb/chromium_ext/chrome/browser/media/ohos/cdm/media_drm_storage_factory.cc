@@ -10,8 +10,6 @@
 #include "base/functional/callback.h"
 #include "base/logging.h"
 #include "base/metrics/histogram_functions.h"
-#include "chrome/browser/media/ohos/cdm/media_drm_origin_id_manager.h"
-#include "chrome/browser/media/ohos/cdm/media_drm_origin_id_manager_factory.h"
 #include "chrome/browser/profiles/profile.h"
 #include "components/cdm/browser/media_drm_storage_impl.h"
 #include "components/prefs/pref_service.h"
@@ -25,7 +23,6 @@
 namespace {
 
 using MediaDrmOriginId = media::MediaDrmStorage::MediaDrmOriginId;
-using GetOriginIdStatus = MediaDrmOriginIdManager::GetOriginIdStatus;
 using OriginIdReadyCB =
     base::OnceCallback<void(bool success, const MediaDrmOriginId& origin_id)>;
 

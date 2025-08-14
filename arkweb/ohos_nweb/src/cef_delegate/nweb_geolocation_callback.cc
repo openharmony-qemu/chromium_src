@@ -31,17 +31,20 @@ void NWebGeolocationCallback::GeolocationCallbackInvoke(
     return;
   }
 
+  CefRefPtr<ArkWebBrowserExt> arkWebBrowserExt =  browser_->AsArkWebBrowser();
+  if (arkWebBrowserExt == nullptr) {
+    LOG(ERROR) << "GeolocationCallbackInvoke arkWebBrowserExt is nullptr";
+    return;
+  }
   if (retain) {
     if (allow) {
-      browser_->AsArkWebBrowser()->GetGeolocationPermissions()->Enabled(
+      arkWebBrowserExt->GetGeolocationPermissions()->Enabled(
           origin, incognito);
     } else {
-      browser_->AsArkWebBrowser()->GetGeolocationPermissions()->Disabled(
+      arkWebBrowserExt->GetGeolocationPermissions()->Disabled(
           origin, incognito);
     }
   }
-  browser_->AsArkWebBrowser()
-      ->GetPermissionRequestDelegate()
-      ->NotifyGeolocationPermission(allow, origin);
+  arkWebBrowserExt->GetPermissionRequestDelegate()->NotifyGeolocationPermission(allow, origin);
 }
 }  // namespace OHOS::NWeb

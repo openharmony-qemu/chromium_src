@@ -431,11 +431,18 @@ ARKWEB_NDK_EXPORT ArkWeb_WebMessagePortPtr* OH_ArkWeb_CreateWebMessagePorts(
   }
   auto webObjectPtr =
       OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
+  if (webObjectPtr == nullptr) {
+    return nullptr;
+  }
+  auto nwebSharedPtr = webObjectPtr->GetWebSharedPtr();
+  if (nwebSharedPtr == nullptr) {
+    return nullptr;
+  }
   for (unsigned int i = 0; i < ports.size(); i++) {
     wPorts[i] = new (std::nothrow) ArkWeb_WebMessagePort();
     if (!wPorts[i]) {
       LOG(ERROR) << "NativeArkWeb CreateWebMessagePorts malloc failed";
-      webObjectPtr->GetWebSharedPtr()->ClosePort(std::string(ports[0]));
+      nwebSharedPtr->ClosePort(std::string(ports[0]));
       OH_ArkWeb_DestroyWebMessagePorts(&wPorts, ports.size());
       *size = 0;
       return nullptr;
@@ -449,7 +456,7 @@ ARKWEB_NDK_EXPORT ArkWeb_WebMessagePortPtr* OH_ArkWeb_CreateWebMessagePorts(
       if (tag) {
         delete[] tag;
       }
-      webObjectPtr->GetWebSharedPtr()->ClosePort(std::string(ports[0]));
+      nwebSharedPtr->ClosePort(std::string(ports[0]));
       OH_ArkWeb_DestroyWebMessagePorts(&wPorts, ports.size());
       *size = 0;
       return nullptr;
@@ -466,7 +473,7 @@ ARKWEB_NDK_EXPORT ArkWeb_WebMessagePortPtr* OH_ArkWeb_CreateWebMessagePorts(
       if (portHandle) {
         delete[] portHandle;
       }
-      webObjectPtr->GetWebSharedPtr()->ClosePort(std::string(ports[0]));
+      nwebSharedPtr->ClosePort(std::string(ports[0]));
       OH_ArkWeb_DestroyWebMessagePorts(&wPorts, ports.size());
       *size = 0;
       return nullptr;

@@ -96,12 +96,17 @@ void NWebPreferenceDelegate::WebPreferencesChanged() {
 
   CefBrowserSettings browser_settings;
   ComputeBrowserSettings(browser_settings);
+  if (!(browser_->GetHost())) {
+    LOG(ERROR) << "host is null";
+    return;
+  }
   browser_->GetHost()->SetWebPreferences(browser_settings);
 }
 
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
 void NWebPreferenceDelegate::SetBypassVsyncCondition(int32_t condition) {
-  if (!browser_) {
+  if (!(browser_.get()) || !(browser_->GetHost())) {
+    LOG(ERROR) << "host or browser_ is null";
     return;
   }
   LOG(INFO) << "NWebPreferenceDelegate::SetBypassVsyncCondition condition:"
@@ -302,8 +307,8 @@ void NWebPreferenceDelegate::PutEnableContentAccess(bool flag) {
 
 void NWebPreferenceDelegate::PutEnableRawFileAccess(bool flag) {
   raw_file_access_ = flag;
-  if (!browser_.get()) {
-    LOG(ERROR) << "browser is null";
+  if (!(browser_.get()) || !(browser_->GetHost())) {
+    LOG(ERROR) << "browser or host is null";
     return;
   }
 
@@ -506,8 +511,8 @@ void NWebPreferenceDelegate::PutBlockNetwork(bool flag) {
                   "INTERNET permission";
   }
   is_network_blocked_ = flag;
-  if (!browser_.get()) {
-    LOG(ERROR) << "browser is null";
+  if (!(browser_.get()) || !(browser_->GetHost())) {
+    LOG(ERROR) << "browser or host is null";
     return;
   }
 
@@ -526,12 +531,16 @@ void NWebPreferenceDelegate::PutCacheMode(CacheModeFlag flag) {
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   net_service::NetHelpers::no_use_cache = (CacheMode() == USE_NO_CACHE);
 #endif
+  if (!(browser_->GetHost())) {
+    LOG(ERROR) << "host is null";
+    return;
+  }
   browser_->GetHost()->SetCacheMode(ConvertCacheMode(flag));
 }
 
 void NWebPreferenceDelegate::PutWebDebuggingAccess(bool flag) {
-  if (!browser_.get()) {
-    LOG(ERROR) << "put web debugging access failed, browser is null";
+  if (!(browser_.get()) || !(browser_->GetHost())) {
+    LOG(ERROR) << "put web debugging access failed, browser or host is null";
     return;
   }
 
@@ -595,10 +604,11 @@ std::string NWebPreferenceDelegate::DefaultTextEncodingFormat() {
 }
 
 std::string NWebPreferenceDelegate::DefaultUserAgent() {
-  if (!browser_) {
-    LOG(ERROR) << "get DefaultUserAgent failed, browser is null";
+  if (!(browser_.get()) || !(browser_->GetHost())) {
+    LOG(ERROR) << "get DefaultUserAgent failed, browser or host is null";
     return "";
   }
+
   std::string ua = browser_->GetHost()->DefaultUserAgent();
   return ua;
 }
@@ -721,8 +731,8 @@ void NWebPreferenceDelegate::PutHasInternetPermission(bool flag) {
 }
 
 bool NWebPreferenceDelegate::IsWebDebuggingAccess() {
-  if (!browser_.get()) {
-    LOG(ERROR) << "get web debugggin access failed, browser is null";
+  if (!(browser_.get()) || !(browser_->GetHost())) {
+    LOG(ERROR) << "get web debugggin access failed, browser or host is null";
     return false;
   }
 
@@ -766,8 +776,8 @@ int NWebPreferenceDelegate::GetOverscrollMode() {
 
 void NWebPreferenceDelegate::PutOverscrollMode(int mode) {
   overscroll_mode_ = mode;
-  if (!browser_) {
-    LOG(ERROR) << "PutOverscrollMode failed, browser is null";
+  if (!(browser_.get()) || !(browser_->GetHost())) {
+    LOG(ERROR) << "PutOverscrollMode failed, browser or host is null";
     return;
   }
   browser_->GetHost()->SetOverscrollMode(mode);
@@ -785,8 +795,8 @@ int NWebPreferenceDelegate::GetBlurEnable() {
 void NWebPreferenceDelegate::SetScrollable(bool enable) {
   scroll_enabled_ = enable;
   WebPreferencesChanged();
-  if (!browser_.get()) {
-    LOG(ERROR) << "SetScrollable failed, browser is null";
+  if (!(browser_.get()) || !(browser_->GetHost())) {
+    LOG(ERROR) << "SetScrollable failed, browser or host is null";
     return;
   }
   browser_->GetHost()->SetScrollable(
@@ -802,8 +812,8 @@ void NWebPreferenceDelegate::SetScrollable(bool enable, int32_t scrollType) {
     setting_scroll_enabled_ = true;
     WebPreferencesChanged();
   }
-  if (!browser_.get()) {
-    LOG(ERROR) << "SetScrollable failed, browser is null";
+  if (!(browser_.get()) || !(browser_->GetHost())) {
+    LOG(ERROR) << "SetScrollable failed, browser or host is null";
     return;
   }
   browser_->GetHost()->SetScrollable(enable, scrollType);
@@ -825,8 +835,8 @@ void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
     zooming_function_enabled_ = false;
   }
   WebPreferencesChanged();
-  if (!browser_.get()) {
-    LOG(ERROR) << "SetNativeEmbedMode failed, browser is null";
+  if (!(browser_.get()) || !(browser_->GetHost())) {
+    LOG(ERROR) << "SetNativeEmbedMode failed, browser or host is null";
     return;
   }
   browser_->GetHost()->SetNativeEmbedMode(enable_embed_mode_);
@@ -976,8 +986,8 @@ void NWebPreferenceDelegate::SetNativeVideoPlayerConfig(bool enable,
   }
   native_video_player_config_ = {enable, shouldOverlay};
   WebPreferencesChanged();
-  if (!browser_) {
-    LOG(ERROR) << "SetNativeVideoPlayerConfig failed, browser is null";
+  if (!(browser_.get()) || !(browser_->GetHost())) {
+    LOG(ERROR) << "SetNativeVideoPlayerConfig failed, browser or host is null";
     return;
   }
   LOG(INFO) << "NWebPreferenceDelegate::SetNativeVideoPlayerConfig enable:"
@@ -1187,8 +1197,8 @@ void NWebPreferenceDelegate::SetAutofillCallback(
 
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 void NWebPreferenceDelegate::PutWebMediaAVSessionEnabled(bool enable) {
-  if (!browser_) {
-    LOG(ERROR) << "PutWebMediaAVSessionEnabled failed, browser is null";
+  if (!(browser_.get()) || !(browser_->GetHost())) {
+    LOG(ERROR) << "PutWebMediaAVSessionEnabled failed, browser or host is null";
     return;
   }
   LOG(INFO) << "NWebPreferenceDelegate::PutWebMediaAVSessionEnabled enable:"

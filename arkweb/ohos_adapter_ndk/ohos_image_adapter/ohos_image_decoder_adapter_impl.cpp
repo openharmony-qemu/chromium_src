@@ -63,6 +63,7 @@ void OhosImageDecoderAdapterImpl::NativeBufferFromPixelMap()
         if (errorCode == Image_ErrorCode::IMAGE_SUCCESS) {
             return;
         }
+        nativeBuffer_ = nullptr;
         WVLOG_E("[HeifSupport] NativeBufferFromPixelMap GetNativeBuffer failed, errorCode %{public}d", errorCode);
         return;
     }
@@ -72,6 +73,10 @@ void OhosImageDecoderAdapterImpl::NativeBufferFromPixelMap()
 
 bool OhosImageDecoderAdapterImpl::ParseRawData(const uint8_t* data, uint32_t size)
 {
+    if (data == nullptr || size == 0) {
+        WVLOG_E("[HeifSupport] invalid raw data.");
+        return false;
+    }
     Image_ErrorCode errorCode = OH_ImageSourceNative_CreateFromData(const_cast<uint8_t*>(data), size, &imageSource_);
     if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
         WVLOG_E("[HeifSupport] ParseRawData create imageSource failed, errorCode %{public}d", errorCode);
@@ -111,7 +116,7 @@ OhosImageDecoderAdapterImpl::~OhosImageDecoderAdapterImpl()
 
 bool OhosImageDecoderAdapterImpl::ParseImageInfo(const uint8_t* data, uint32_t size)
 {
-    WVLOG_D("[HeifSupport] ParseImageInfo size = %{public}d", size);
+    WVLOG_D("[HeifSupport] ParseImageInfo size = %{public}u", size);
     return ParseRawData(data, size);
 }
 

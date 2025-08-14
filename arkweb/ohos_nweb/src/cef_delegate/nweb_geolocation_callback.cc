@@ -31,20 +31,27 @@ void NWebGeolocationCallback::GeolocationCallbackInvoke(
     return;
   }
 
-  CefRefPtr<ArkWebBrowserExt> arkWebBrowserExt =  browser_->AsArkWebBrowser();
+  CefRefPtr<ArkWebBrowserExt> arkWebBrowserExt = browser_->AsArkWebBrowser();
   if (arkWebBrowserExt == nullptr) {
     LOG(ERROR) << "GeolocationCallbackInvoke arkWebBrowserExt is nullptr";
     return;
   }
-  if (retain) {
+  CefRefPtr<CefGeolocationAcess> cefGeolocationAcess = arkWebBrowserExt->GetGeolocationPermissions();
+  if (cefGeolocationAcess == nullptr) {
+    LOG(ERROR) << "GeolocationCallbackInvoke cefGeolocationAcess is nullptr";
+  } else if (retain) {
     if (allow) {
-      arkWebBrowserExt->GetGeolocationPermissions()->Enabled(
-          origin, incognito);
+      cefGeolocationAcess->Enabled(origin, incognito);
     } else {
-      arkWebBrowserExt->GetGeolocationPermissions()->Disabled(
-          origin, incognito);
+      cefGeolocationAcess->Disabled(origin, incognito);
     }
   }
-  arkWebBrowserExt->GetPermissionRequestDelegate()->NotifyGeolocationPermission(allow, origin);
+  CefRefPtr<CefBrowserPermissionRequestDelegate> cefBrowserPermissionRequestDelegate =
+    arkWebBrowserExt->GetPermissionRequestDelegate();
+  if (cefGeolocationAcess == nullptr) {
+    LOG(ERROR) << "GeolocationCallbackInvoke cefGeolocationAcess is nullptr";
+  } else {
+    cefBrowserPermissionRequestDelegate->NotifyGeolocationPermission(allow, origin);
+  }
 }
 }  // namespace OHOS::NWeb

@@ -75,7 +75,7 @@ class GestureProviderTest : public testing::Test, public GestureProviderClient {
  public:
   GestureProviderTest()
       : task_environment_(
-            base::test::SingleThreadTaskEnvironment::MainThreadType::UI) {}
+            base::test::SingleThreadTaskEnvironment::MainThreadType::DEFAULT) {}
   ~GestureProviderTest() override = default;
 
   static MockMotionEvent ObtainMotionEvent(base::TimeTicks event_time,
@@ -3685,3 +3685,7 @@ TEST_F(GestureProviderTest, GesutreDragLongpressCancelAndReset) {
 #endif
 
 }  // namespace ui
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_provider_ext_unittest.cc"
+#endif

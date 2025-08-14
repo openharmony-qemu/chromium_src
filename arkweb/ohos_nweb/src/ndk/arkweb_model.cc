@@ -434,7 +434,7 @@ ARKWEB_NDK_EXPORT ArkWeb_WebMessagePortPtr* OH_ArkWeb_CreateWebMessagePorts(
   if (webObjectPtr == nullptr) {
     return nullptr;
   }
-  auto* nwebSharedPtr = webObjectPtr->GetWebSharedPtr();
+  auto nwebSharedPtr = webObjectPtr->GetWebSharedPtr();
   if (nwebSharedPtr == nullptr) {
     return nullptr;
   }

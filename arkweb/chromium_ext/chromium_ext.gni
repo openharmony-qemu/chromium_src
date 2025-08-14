@@ -825,6 +825,10 @@ arkweb_ui_compositor_sources = [
   "//arkweb/chromium_ext/ui/compositor/compositor_utils.h",
 ]
 
+arkweb_ui_base_pointer_test_sources = [
+  "//arkweb/chromium_ext/ui/base/pointer/pointer_device_ohos_unittest.cc",
+]
+
 arkweb_third_party_blink_renderer_platform_widget_test_sources = [
   "/arkweb/chromium_ext/third_party/blink/renderer/platform/bindings/parkable_string_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/software_compositor_proxy_ohos_unittest.cc",

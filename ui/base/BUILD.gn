@@ -1030,6 +1030,7 @@ test("ui_base_unittests") {
   ]
   if (arkweb_unittests) {
     import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_ui_base_pointer_test_sources
   }
   data = []
   data_deps = [ "//testing/buildbot/filters:ui_base_unittests_filters" ]

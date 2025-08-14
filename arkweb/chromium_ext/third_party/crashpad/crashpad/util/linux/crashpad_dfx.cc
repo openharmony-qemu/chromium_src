@@ -320,14 +320,14 @@ int32_t CrashpadDfx::GetProcessTypeByPid(pid_t pid) {
   DIR* dir = opendir(path.c_str());
   if (!dir) {
     LOG(ERROR) << "opendir: " << path << " failed, errno: " << errno;
-    return ProcessType::kUnknown;
+    return (int32_t)ProcessType::kUnknown;
   }
   std::string file_name = path.append("/stat");
   std::ifstream file(file_name.c_str());
   if (!file.is_open()) {
     LOG(ERROR) << "open file failed, file path: " << file_name;
     closedir(dir);
-    return ProcessType::kUnknown;
+    return (int32_t)ProcessType::kUnknown;
   }
   file.seekg(0, std::ios::beg);
   std::string content;
@@ -335,11 +335,11 @@ int32_t CrashpadDfx::GetProcessTypeByPid(pid_t pid) {
   file.close();
   closedir(dir);
   if (content.find(":gpu") != std::string::npos) {
-    return ProcessType::kGpu;
+    return (int32_t)ProcessType::kGpu;
   } else if (content.find(":render") != std::string::npos) {
-    return ProcessType::kRender;
+    return (int32_t)ProcessType::kRender;
   }
-  return ProcessType::kUnknown;
+  return (int32_t)ProcessType::kUnknown;
 }
 
 // LOVC_EXCL_START

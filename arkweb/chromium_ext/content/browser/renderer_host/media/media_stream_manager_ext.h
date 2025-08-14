@@ -50,7 +50,7 @@ private:
   std::map<std::string, int> nweb_id_maps_;
   mutable std::mutex nweb_id_mutex_;
   std::list<SessionIdState> session_id_state_;
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+#endif  // BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
   base::WeakPtrFactory<MediaStreamManagerExt> weak_factory_{this};
   
 };

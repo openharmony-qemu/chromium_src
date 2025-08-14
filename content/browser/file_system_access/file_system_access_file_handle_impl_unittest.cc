@@ -6,6 +6,7 @@
 
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -16,6 +17,7 @@
 #include "base/files/file_util.h"
 #include "base/files/scoped_temp_dir.h"
 #include "base/memory/scoped_refptr.h"
+#include "base/strings/strcat.h"
 #include "base/strings/stringprintf.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
@@ -67,6 +69,13 @@ namespace content {
 using blink::mojom::PermissionStatus;
 using storage::FileSystemURL;
 
+// Test fixture for FileSystemAccessFileHandleImpl.
+//
+// The permission context in this fixture is always null, so the relevant
+// permission checks are skipped.
+//
+// Tests with mock permission context are in
+// FileSystemAccessFileHandleImplMovePermissionsTest
 class FileSystemAccessFileHandleImplTest : public testing::Test {
  public:
   FileSystemAccessFileHandleImplTest() = default;
@@ -245,6 +254,7 @@ class FileSystemAccessFileHandleImplTest : public testing::Test {
   scoped_refptr<storage::MockQuotaManagerProxy> quota_manager_proxy_;
   scoped_refptr<storage::FileSystemContext> file_system_context_;
   scoped_refptr<ChromeBlobStorageContext> chrome_blob_context_;
+  testing::NiceMock<MockFileSystemAccessPermissionContext> permission_context_;
   scoped_refptr<FileSystemAccessManagerImpl> manager_;
 
   raw_ptr<WebContents> web_contents_ = nullptr;
@@ -987,6 +997,13 @@ TEST_F(FileSystemAccessFileHandleSwapFileCloningTest, HandleCloneFailure) {
 }
 #endif  // BUILDFLAG(IS_MAC)
 
+struct MovePermissionsTestCase {
+  // Is there a file to be overwritten?
+  bool target_present;
+  // Does the site have user activation?
+  bool gesture_present;
+};
+
 // Uses a mock permission context to ensure the correct permission grant for the
 // target file (and parent, for renames) is used, since moves retrieve the
 // target's permission grant via GetSharedHandleStateForNonSandboxedPath() which
@@ -998,7 +1015,7 @@ TEST_F(FileSystemAccessFileHandleSwapFileCloningTest, HandleCloneFailure) {
 // access to the destination directory.
 class FileSystemAccessFileHandleImplMovePermissionsTest
     : public FileSystemAccessFileHandleImplTest,
-      public testing::WithParamInterface<std::tuple<bool, bool>> {
+      public testing::WithParamInterface<MovePermissionsTestCase> {
  public:
   void SetUp() override {
     base::CommandLine::ForCurrentProcess()->AppendSwitch(
@@ -1009,8 +1026,8 @@ class FileSystemAccessFileHandleImplMovePermissionsTest
     manager_->SetPermissionContextForTesting(&permission_context_);
   }
 
-  bool target_present() const { return std::get<0>(GetParam()); }
-  bool gesture_present() const { return std::get<1>(GetParam()); }
+  bool target_present() const { return GetParam().target_present; }
+  bool gesture_present() const { return GetParam().gesture_present; }
 
   std::pair<base::FilePath, base::FilePath> CreateSourceAndMaybeTarget() {
     base::FilePath source;
@@ -1054,6 +1071,15 @@ class FileSystemAccessFileHandleImplMovePermissionsTest
                     FileSystemAccessPermissionContext::HandleType::kFile,
                     FileSystemAccessPermissionContext::UserAction::kNone))
         .WillOnce(testing::Return(target_grant));
+    EXPECT_CALL(
+        permission_context_,
+        ConfirmSensitiveEntryAccess_(
+            origin, content::PathInfo(target),
+            FileSystemAccessPermissionContext::HandleType::kFile,
+            FileSystemAccessPermissionContext::UserAction::kSave,
+            web_contents_->GetPrimaryMainFrame()->GetGlobalId(), testing::_))
+        .WillOnce(base::test::RunOnceCallback<5>(
+            FileSystemAccessPermissionContext::SensitiveEntryResult::kAllowed));
 
     // These checks should only be called if the file is successfully moved.
 
@@ -1094,7 +1120,9 @@ class FileSystemAccessFileHandleImplMovePermissionsTest
       const base::FilePath& target,
       scoped_refptr<FixedFileSystemAccessPermissionGrant> target_grant,
       blink::mojom::FileSystemAccessStatus result,
-      bool expects_safe_name = true) {
+      bool expects_safe_name = true,
+      std::optional<FileSystemAccessPermissionContext::SensitiveEntryResult>
+          expected_sensitive_entry_result = std::nullopt) {
     auto source_handle =
         GetHandleWithPermissions(source, /*read_grant=*/allow_grant_,
                                  /*write_grant=*/allow_grant_);
@@ -1106,7 +1134,18 @@ class FileSystemAccessFileHandleImplMovePermissionsTest
 
     EXPECT_CALL(permission_context_,
                 IsFileTypeDangerous_(target_basename, origin))
-        .WillOnce(testing::Return(!expects_safe_name));
+        .WillRepeatedly(testing::Return(!expects_safe_name));
+    if (expected_sensitive_entry_result.has_value()) {
+      EXPECT_CALL(
+          permission_context_,
+          ConfirmSensitiveEntryAccess_(
+              origin, content::PathInfo(target),
+              FileSystemAccessPermissionContext::HandleType::kFile,
+              FileSystemAccessPermissionContext::UserAction::kSave,
+              web_contents_->GetPrimaryMainFrame()->GetGlobalId(), testing::_))
+          .WillOnce(
+              base::test::RunOnceCallback<5>(*expected_sensitive_entry_result));
+    }
     if (expects_safe_name) {
       // If safe name check has passed, it should be expected to get grants.
       EXPECT_CALL(permission_context_,
@@ -1157,6 +1196,15 @@ class FileSystemAccessFileHandleImplMovePermissionsTest
     EXPECT_CALL(permission_context_,
                 IsFileTypeDangerous_(target_basename, origin))
         .WillRepeatedly(testing::Return(false));
+    EXPECT_CALL(
+        permission_context_,
+        ConfirmSensitiveEntryAccess_(
+            origin, content::PathInfo(target),
+            FileSystemAccessPermissionContext::HandleType::kFile,
+            FileSystemAccessPermissionContext::UserAction::kSave,
+            web_contents_->GetPrimaryMainFrame()->GetGlobalId(), testing::_))
+        .WillOnce(base::test::RunOnceCallback<5>(
+            FileSystemAccessPermissionContext::SensitiveEntryResult::kAllowed));
 
     // These checks should only be called if the file is successfully moved.
     if (source != target) {
@@ -1196,7 +1244,9 @@ class FileSystemAccessFileHandleImplMovePermissionsTest
       const base::FilePath& target,
       scoped_refptr<FixedFileSystemAccessPermissionGrant> target_grant,
       blink::mojom::FileSystemAccessStatus result,
-      bool expects_safe_name = true) {
+      bool expects_safe_name = true,
+      std::optional<FileSystemAccessPermissionContext::SensitiveEntryResult>
+          expected_sensitive_entry_result = std::nullopt) {
     base::FilePath target_parent = target.DirName();
     // The site has write access to the destination directory.
     auto dest_dir_handle = GetDirectoryHandleWithPermissions(
@@ -1209,7 +1259,18 @@ class FileSystemAccessFileHandleImplMovePermissionsTest
 
     EXPECT_CALL(permission_context_,
                 IsFileTypeDangerous_(target_basename, origin))
-        .WillOnce(testing::Return(!expects_safe_name));
+        .WillRepeatedly(testing::Return(!expects_safe_name));
+    if (expected_sensitive_entry_result.has_value()) {
+      EXPECT_CALL(
+          permission_context_,
+          ConfirmSensitiveEntryAccess_(
+              origin, content::PathInfo(target),
+              FileSystemAccessPermissionContext::HandleType::kFile,
+              FileSystemAccessPermissionContext::UserAction::kSave,
+              web_contents_->GetPrimaryMainFrame()->GetGlobalId(), testing::_))
+          .WillOnce(
+              base::test::RunOnceCallback<5>(*expected_sensitive_entry_result));
+    }
 
     // No after-write checks needed since the file should not have been moved.
 
@@ -1231,6 +1292,24 @@ class FileSystemAccessFileHandleImplMovePermissionsTest
       permission_context_;
 };
 
+INSTANTIATE_TEST_SUITE_P(
+    All,
+    FileSystemAccessFileHandleImplMovePermissionsTest,
+    ::testing::Values(MovePermissionsTestCase{.target_present = false,
+                                              .gesture_present = false},
+                      MovePermissionsTestCase{.target_present = false,
+                                              .gesture_present = true},
+                      MovePermissionsTestCase{.target_present = true,
+                                              .gesture_present = false},
+                      MovePermissionsTestCase{.target_present = true,
+                                              .gesture_present = true}),
+    [](const testing::TestParamInfo<
+        FileSystemAccessFileHandleImplMovePermissionsTest::ParamType>& info) {
+      return base::StrCat(
+          {(info.param.target_present ? "" : "No"), "TargetPresent_",
+           (info.param.gesture_present ? "" : "No"), "GesturePresent"});
+    });
+
 TEST_P(FileSystemAccessFileHandleImplMovePermissionsTest,
        Rename_HasTargetWriteAccess) {
   auto [source, target] = CreateSourceAndMaybeTarget();
@@ -1245,13 +1324,22 @@ TEST_P(FileSystemAccessFileHandleImplMovePermissionsTest,
   auto target_grant = ask_grant_;
 
   if (!gesture_present()) {
+    // The rename should fail because write access to the target is not granted.
     ExpectFileRenameFailure(
         source, target, target_grant,
-        blink::mojom::FileSystemAccessStatus::kPermissionDenied);
+        blink::mojom::FileSystemAccessStatus::kPermissionDenied
+        // No user activation, so the sensitive entry access check is not
+        // performed.
+    );
   } else if (target_present()) {
+    // The rename should fail because write access to the target is not granted.
     ExpectFileRenameFailure(
         source, target, target_grant,
-        blink::mojom::FileSystemAccessStatus::kInvalidModificationError);
+        blink::mojom::FileSystemAccessStatus::kInvalidModificationError,
+        /*expects_safe_name=*/true,
+        // With user activation, the sensitive entry access check should be
+        // performed and allowed.
+        FileSystemAccessPermissionContext::SensitiveEntryResult::kAllowed);
   } else {
     ExpectFileRenameSuccess(source, target, target_grant);
   }
@@ -1271,7 +1359,22 @@ TEST_P(FileSystemAccessFileHandleImplMovePermissionsTest, Rename_UnsafeName) {
   ExpectFileRenameFailure(
       source, target, /*target_grant=*/allow_grant_,
       blink::mojom::FileSystemAccessStatus::kInvalidArgument,
-      /*expects_safe_name=*/false);
+      /*expects_safe_name=*/false
+      // The access is already granted to the target, so the sensitive entry
+      // access check should not be performed.
+  );
+}
+
+TEST_P(FileSystemAccessFileHandleImplMovePermissionsTest,
+       Rename_SensitiveName) {
+  auto [source, target] = CreateSourceAndMaybeTarget();
+
+  ExpectFileRenameFailure(
+      source, target, /*target_grant=*/allow_grant_,
+      blink::mojom::FileSystemAccessStatus::kInvalidArgument,
+      /*expects_safe_name=*/true,
+      // Let the test fail because the sensitive entry access check is aborted.
+      FileSystemAccessPermissionContext::SensitiveEntryResult::kAbort);
 }
 
 TEST_P(FileSystemAccessFileHandleImplMovePermissionsTest, Move) {
@@ -1299,15 +1402,21 @@ TEST_P(FileSystemAccessFileHandleImplMovePermissionsTest, Move_UnsafeName) {
 
   ExpectFileMoveFailure(source, target, /*target_grant=*/allow_grant_,
                         blink::mojom::FileSystemAccessStatus::kInvalidArgument,
-                        /*expects_safe_name=*/false);
+                        /*expects_safe_name=*/false
+                        // The access is already granted to the target, so the
+                        // sensitive entry access check should not be performed.
+  );
 }
 
-INSTANTIATE_TEST_SUITE_P(All,
-                         FileSystemAccessFileHandleImplMovePermissionsTest,
-                         ::testing::Combine(
-                             // Is there a file to be overwritten?
-                             ::testing::Bool(),
-                             // Does the site have user activation?
-                             ::testing::Bool()));
+TEST_P(FileSystemAccessFileHandleImplMovePermissionsTest, Move_SensitiveName) {
+  auto [source, target] = CreateSourceAndMaybeTarget();
+
+  ExpectFileMoveFailure(
+      source, target, /*target_grant=*/allow_grant_,
+      blink::mojom::FileSystemAccessStatus::kInvalidArgument,
+      /*expects_safe_name=*/true,
+      // Let the test fail because the sensitive entry access check is aborted.
+      FileSystemAccessPermissionContext::SensitiveEntryResult::kAbort);
+}
 
 }  // namespace content

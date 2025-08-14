@@ -47,8 +47,8 @@ public:
     
     uint64_t ConvertToInt64(const char *originValue, uint64_t defaultValue);
 private:
-    int DECIMAL_NUMERAL_SYSTEM = 10;
-    uint64_t ARKWEB_HITRACE_ENABLE = (1ULL << 24);
+    const int DECIMAL_NUMERAL_SYSTEM = 10;
+    const uint64_t ARKWEB_HITRACE_ENABLE = (1ULL << 24);
 };
 } // namespace OHOS::NWeb
 

@@ -40,6 +40,12 @@ class ImageAnnotationService : public mojom::ImageAnnotationService {
  private:
   // Service params:
 
+#if BUILDFLAG(IS_ARKWEB)
+  static constexpr base::FeatureParam<std::string> kPixelsServerUrl{
+      &kImageAnnotationServiceExperimental, "server_url", "https://x.x.x.x"};
+  static constexpr base::FeatureParam<std::string> kLangsServerUrl{
+      &kImageAnnotationServiceExperimental, "langs_server_url", "https://x.x.x.x"};
+#else
   // The url of the service that fetches descriptions given image pixels.
   static constexpr base::FeatureParam<std::string> kPixelsServerUrl{
       &kImageAnnotationServiceExperimental, "server_url",
@@ -48,6 +54,8 @@ class ImageAnnotationService : public mojom::ImageAnnotationService {
   static constexpr base::FeatureParam<std::string> kLangsServerUrl{
       &kImageAnnotationServiceExperimental, "langs_server_url",
       "https://ckintersect-pa.googleapis.com/v1/intersect/langs"};
+#endif // BUILDFLAG(IS_ARKWEB)
+
   // An override Google API key. If empty, the API key with which the browser
   // was built (if any) will be used instead.
   static constexpr base::FeatureParam<std::string> kApiKey{

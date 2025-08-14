@@ -20,6 +20,7 @@ namespace media {
 namespace {
 // ID of the virtual device used to share system audio
 constexpr std::string_view kScreenSystemAudioDeviceId = "screen:systemAudio:-2:0";
+constexpr double kVolumeEpsilon = 1e-6;
 }
 
 class OHOSAudioInputStream::CaptureCallbackAdapter
@@ -134,7 +135,7 @@ bool OHOSAudioInputStream::GetAutomaticGainControl() {
 }
 
 bool OHOSAudioInputStream::IsMuted() {
-  return volume_ == 0.0;
+  return volume_ < kVolumeEpsilon;
 }
 
 void OHOSAudioInputStream::SetOutputDeviceForAec(

@@ -3669,7 +3669,7 @@ void MediaStreamManager::HandleAccessRequestResponse(
       if (device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE ||
           device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB ||
           device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET) {
-        AsMediaStreamManagerExt()->AddNWebIdBySession(device.session_id());
+        AsMediaStreamManagerExt()->AddNWebIdBySession(nweb_id,device.session_id());
       }
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 

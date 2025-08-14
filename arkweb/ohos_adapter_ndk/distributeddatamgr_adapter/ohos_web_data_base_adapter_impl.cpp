@@ -205,7 +205,6 @@ void OhosWebDataBaseAdapterImpl::GetHttpAuthCredentials(const std::string& host,
         return;
     }
 
-    std::vector<std::string> columns;
     OH_Predicates *dirAbsPred = OH_Rdb_CreatePredicates(HTTPAUTH_TABLE_NAME.c_str());
     if (!dirAbsPred) {
         WVLOG_E("dirAbsPred is nullptr");

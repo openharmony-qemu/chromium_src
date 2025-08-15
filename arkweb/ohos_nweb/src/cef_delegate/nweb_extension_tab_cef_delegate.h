@@ -40,8 +40,6 @@ class NWebExtensionTabCefDelegate {
  public:
   static bool HasExtensionListener();
 
-  static bool HasUpdateTabCallback();
-
   // chrome.tabs.get
   static std::unique_ptr<NWebExtensionTab> GetTab(int tab_id);
 
@@ -57,11 +55,6 @@ class NWebExtensionTabCefDelegate {
 
   static void TabUpdateCallback(int request_id,
       NWebExtensionTab& tab, std::optional<std::string>& error);
-
-  // compatible with old version
-  static void UpdateTab(
-      int tab_id,
-      NWebExtensionTabUpdateProperties& update_properties);
 
   // chrome.tabs.create
   static bool CreateTab(NWebTabCreateInfo& create_info,

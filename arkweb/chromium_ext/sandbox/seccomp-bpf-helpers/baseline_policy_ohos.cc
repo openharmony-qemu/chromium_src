@@ -203,6 +203,7 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_getrlimit:
     case __NR_newfstatat:
     case __NR_fstatfs:
+    case __NR_mmap:
 #endif
 
     override_and_allow = true;

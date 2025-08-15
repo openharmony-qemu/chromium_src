@@ -48,7 +48,7 @@ class OHOSMediaPlayerRendererWebContentsObserver
   friend class WebContentsUserData<OHOSMediaPlayerRendererWebContentsObserver>;
 
   base::flat_set<OHOSMediaPlayerRenderer*> players_;
-
+  base::flat_set<raw_ptr<OHOSMediaPlayerRenderer, CtnExperimental>> players_;
   WEB_CONTENTS_USER_DATA_KEY_DECL();
 };
 }  // namespace content

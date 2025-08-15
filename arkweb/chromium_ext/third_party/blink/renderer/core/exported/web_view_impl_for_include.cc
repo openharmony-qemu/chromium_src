@@ -96,6 +96,10 @@ void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
   settings->SetCopyOption(prefs.copy_option);
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 
+#if BUILDFLAG(ARKWEB_FOCUS)
+  settings->SetGestureFocusMode(prefs.gesture_focus_mode);
+#endif
+
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   settings->SetCustomVideoPlayerEnabled(prefs.custom_video_player_enable);
   settings->SetCustomVideoPlayerOverlay(prefs.custom_video_player_overlay);

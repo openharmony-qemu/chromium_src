@@ -408,7 +408,7 @@ bool CreateWebMessagePortsInternal(const char* webTag,
   }
 
   ArkWeb_WebMessagePortPtr* wPorts =
-    new (std::nothrow) ArkWeb_WebMessagePortPtr[ports.size()];
+      new (std::nothrow) ArkWeb_WebMessagePortPtr[ports.size()];
   if (!wPorts) {
     LOG(ERROR) << "NativeArkWeb CreateWebMessagePorts malloc failed";
     *size = 0;
@@ -820,19 +820,19 @@ OH_CookieManager_FetchCookieSync(const char* url,
     return ARKWEB_INVALID_PARAM;
   }
 
-  #if BUILDFLAG(ARKWEB_COOKIE)
+#if BUILDFLAG(ARKWEB_COOKIE)
 #if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
   *cookie_value = new char[cookie_content.length() + 1];
 #else
   *cookie_value = (char*)__real_malloc(cookie_content.length() + 1);
-  #endif // ADDRESS_SANITIZER
+#endif // ADDRESS_SANITIZER
 #endif
   if (!*cookie_value) {
     LOG(ERROR) << "cookie value is nullptr";
     return ARKWEB_ERROR_UNKNOWN;
   }
   int ret = strcpy_s(*cookie_value, cookie_content.length() + 1, cookie_content.c_str());
-if (ret != 0) {
+  if (ret != 0) {
     LOG(ERROR) << "OH_CookieManager_FetchCookieSync error, call strcpy_s ret = " << ret;
     free(*cookie_value);
     *cookie_value = nullptr;
@@ -1051,38 +1051,38 @@ ARKWEB_NDK_EXPORT ArkWeb_JavaScriptValuePtr
 OH_JavaScript_CreateJavaScriptValue(ArkWeb_JavaScriptValueType type,
                                     void* data,
                                     size_t dataLength) {
-    if (!data) {
+  if (!data) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue nullptr error";
-        return nullptr;
+    return nullptr;
   }
 
   if (dataLength == 0) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue data size error";
-        return nullptr;
+    return nullptr;
   }
 
   if (type == ArkWeb_JavaScriptValueType::ARKWEB_JAVASCRIPT_NONE) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue type none";
-        return nullptr;
+    return nullptr;
   }
 
   if (type == ArkWeb_JavaScriptValueType::ARKWEB_JAVASCRIPT_BOOL &&
       dataLength != 1) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue type bool length error";
-        return nullptr;
+    return nullptr;
   }
 
   char* destination = new (std::nothrow) char[dataLength];
 
   if (!destination) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue malloc failed";
-        return nullptr;
+    return nullptr;
   }
 
   if (memcpy_s(destination, dataLength, (char*)data, dataLength) != EOK) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue memcpy failed";
     delete[] destination;
-        return nullptr;
+    return nullptr;
   }
 
   if (memcpy_s(destination, dataLength, (char*)data, dataLength) != EOK) {
@@ -1142,7 +1142,7 @@ OH_NativeArkWeb_LoadData(const char* webTag,
 
 ARKWEB_NDK_EXPORT ArkWeb_BlanklessInfo OH_NativeArkWeb_GetBlanklessInfoWithKey(const char* webTag, const char* key)
 {
-if (key == nullptr) {
+    if (key == nullptr) {
       LOG(ERROR) << "blankless OH_NativeArkWeb_GetBlanklessInfoWithKey key pointer is nullptr";
       return { ArkWeb_BlanklessErrorCode::ARKWEB_BLANKLESS_ERR_INVALID_ARGS, 0.0, 0 };
     }

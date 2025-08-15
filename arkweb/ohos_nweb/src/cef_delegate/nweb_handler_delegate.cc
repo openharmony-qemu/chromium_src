@@ -1212,10 +1212,10 @@ bool NWebHandlerDelegate::DoClose(CefRefPtr<CefBrowser> browser) {
         if (GetBrowser() && GetBrowser()->GetHost()) {
             GetBrowser()->GetHost()->SendPipEvent(
               pip_delegate_id_, pip_child_id_, pip_frame_routing_id_,
-              content::PIP_STATE_EXIT);
+              content::PIP_STATE_PAGE_CLOSE);
         }
-        nweb_handler_->OnPip(1, pip_delegate_id_, pip_child_id_,
-                             pip_frame_routing_id_, 0, 0);
+        nweb_handler_->OnPip(content::PIP_STATE_PAGE_CLOSE, pip_delegate_id_,
+                             pip_child_id_, pip_frame_routing_id_, 0, 0);
     }
   }
   // Closing the main window requires special handling. See the DoClose()

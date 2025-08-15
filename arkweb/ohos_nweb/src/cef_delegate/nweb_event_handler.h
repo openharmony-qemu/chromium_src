@@ -22,7 +22,7 @@
 #include "nweb_input_delegate.h"
 #include "nweb_inputmethod_handler.h"
 #include "nweb_key_event.h"
-#include "ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 
 namespace OHOS::NWeb {
 

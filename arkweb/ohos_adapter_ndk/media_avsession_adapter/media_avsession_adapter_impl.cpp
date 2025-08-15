@@ -120,7 +120,7 @@ bool MediaAVSessionAdapterImpl::CreateAVSession(MediaAVSessionType type) {
         return CreateNewSession(type);
     } else {
         if (findIter != avSessionMap.end()) {
-            if (findIter->second && findIter->second->avSession_ != avSession_) {
+            if (findIter->second != this) {
                 DestroyAndEraseSession();
                 DestroyAVSession();
             } else {
@@ -144,7 +144,7 @@ void MediaAVSessionAdapterImpl::DestroyAVSession() {
         avSession_ = nullptr;
     }
     auto iter = avSessionMap.find(avSessionKey_->ToString());
-    if (iter != avSessionMap.end()) {
+    if (iter != avSessionMap.end() && iter->second == this) {
         avSessionMap.erase(iter);
     }
     WVLOG_I("DestroyAVSession out");
@@ -241,8 +241,8 @@ bool MediaAVSessionAdapterImpl::Activate() {
     }
     AVSession_ErrCode ret = OH_AVSession_Activate(avSession_);
     if (ret != AV_SESSION_ERR_SUCCESS) {
-    WVLOG_E("Activate failed. ret: %{public}d", ret);
-    return false;
+        WVLOG_E("Activate failed. ret: %{public}d", ret);
+        return false;
     }
 
     isActived_ = true;
@@ -434,16 +434,17 @@ void MediaAVSessionAdapterImpl::DestroyAndEraseSession() {
         WVLOG_E("DestroyAndEraseSession avsession is null pointer return");
         return;
     }
-    AVSession_ErrCode ret = OH_AVSession_Destroy(iter->second->avSession_);
-    if (ret != AV_SESSION_ERR_SUCCESS) {
-        WVLOG_E("DestroyAndEraseSession Destroy failed, ret: %{public}d", ret);
-    } else {
-        WVLOG_I("DestroyAndEraseSession Destroy success");
+
+    if (iter->second->avSession_ != nullptr) {
+        AVSession_ErrCode ret = OH_AVSession_Destroy(iter->second->avSession_);
+        if (ret != AV_SESSION_ERR_SUCCESS) {
+            WVLOG_E("DestroyAndEraseSession Destroy failed, ret: %{public}d", ret);
+        } else {
+            WVLOG_I("DestroyAndEraseSession Destroy success");
+        }
     }
     // clear adapter->avSession, otherwise it will crash when callback
     iter->second->avSession_ = nullptr;
-
-    avSession_ = nullptr;
     avSessionMap.erase(iter);
     WVLOG_I("DestroyAndEraseSession out");
 }

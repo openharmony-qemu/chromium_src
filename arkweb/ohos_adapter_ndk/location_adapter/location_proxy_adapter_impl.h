@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,9 +16,9 @@
 #ifndef LOCATION_PROXY_ADAPTER_IMPL_H
 #define LOCATION_PROXY_ADAPTER_IMPL_H
 
-#include <map>
 #include <string>
 #include <LocationKit/oh_location_type.h>
+
 #include "location_adapter.h"
 
 namespace OHOS::NWeb {
@@ -36,6 +36,7 @@ public:
     int32_t GetScenario();
     int32_t GetTimeInterval();
     Location_PowerConsumptionScene GetPriority();
+
 private:
     int32_t scenario_;
     int32_t timeInterval_;
@@ -59,6 +60,7 @@ public:
 
     void SetAdditions(char* additions);
     void SetBasicInfo(const Location_BasicInfo* basicInfo);
+
 private:
     std::vector<std::string> additions_;
     Location_BasicInfo basicInfo_;
@@ -67,7 +69,7 @@ private:
 class LocationProxyAdapterImpl : public LocationProxyAdapter {
 public:
     LocationProxyAdapterImpl();
-    virtual ~LocationProxyAdapterImpl() = default;
+    virtual ~LocationProxyAdapterImpl();
 
     int32_t StartLocating(
         std::shared_ptr<LocationRequestConfig> requestConfig,
@@ -77,7 +79,7 @@ public:
     bool IsLocationEnabled() override;
 
 private:
-    Location_RequestConfig* ohRequestConfig;
+    Location_RequestConfig* ohRequestConfig_;
     std::shared_ptr<LocationCallbackAdapter> ohCallback_;
 };
 }

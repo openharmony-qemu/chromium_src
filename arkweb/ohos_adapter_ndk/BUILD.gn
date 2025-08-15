@@ -215,6 +215,7 @@ component("adapter_ndk") {
     "migration_manager_adapter/migration_manager_adapter_impl.cpp",
     "power_mgr_adapter/power_mgr_client_adapter_impl.cpp",
     "audio_capturer_adapter/audio_renderer_adapter_impl.cpp",
+    "qos_manager_adapter/qos_manager_adapter_impl.cpp",
   ]
 
   if (arkweb_ndk_adapter) {
@@ -241,6 +242,7 @@ component("adapter_ndk") {
     "system_properties_adapter",
     "camera_adapter/include",
     "audio_capturer_adapter",
+    "qos_manager_adapter",
     "third_party/bounds_checking_function/include",
     "ohos_sdk/openharmony/native/sysroot/usr/include/",
   ]
@@ -308,6 +310,7 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libchild_process.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_vsync.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libohprint.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libqos.so",
     ]
   } else if (target_cpu == "arm") {
     libs = [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libffrt.z.so",
@@ -368,6 +371,7 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libchild_process.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_vsync.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libohprint.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libqos.so",
     ]
   } else if (target_cpu == "x86_64" || target_cpu == "x64") {
     libs = [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libffrt.z.so",
@@ -428,6 +432,7 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libchild_process.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_vsync.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libohprint.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libqos.so",
     ]
   }
 

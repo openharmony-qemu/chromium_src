@@ -18,14 +18,13 @@
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #include "ui/gl/gl_surface.h"
+extern bool QueryBoolFromBrowserProcess(const std::string& key, bool defaultValue);
 
 namespace viz {
 SkiaOutputDeviceGLUtils::SkiaOutputDeviceGLUtils(SkiaOutputDeviceGL* impl)
     : skiaOutPutDeviceGl_(impl)
 {
-  supports_damage_region_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                .GetSystemPropertiesInstance()
-                                .GetBoolParameter("web.damageRegion.enable", 1);
+  supports_damage_region_ = QueryBoolFromBrowserProcess("web.damageRegion.enable", 1);
 }
 
 gfx::SwapResult SkiaOutputDeviceGLUtils::SwapBuffers(

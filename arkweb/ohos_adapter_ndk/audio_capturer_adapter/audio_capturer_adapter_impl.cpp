@@ -96,6 +96,14 @@ int32_t OnReadData(OH_AudioCapturer* capturer, void* userData, void* buffer, int
     }
     userDataCallback->callback->OnReadData(length);
     return 0;
+
+}
+
+AudioCapturerAdapterImpl::~AudioCapturerAdapterImpl()
+{
+    WVLOG_D("~AudioCapturerAdapterImpl: Release capturer");
+    Stop();
+    Release();
 }
 
 int32_t AudioCapturerAdapterImpl::Create(

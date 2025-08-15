@@ -142,6 +142,7 @@ class NDKOhosAdapterHelper : public NWeb::OhosAdapterHelper {
   std::unique_ptr<NWeb::MigrationManagerAdapter> CreateMigrationMgrAdapter()
       override;
 
+  NWeb::QosManagerAdapter& GetQosManagerInstance() override;
 };
 
 }  // namespace OHOS::ArkWeb

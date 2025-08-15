@@ -646,7 +646,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfo(
 
     if (SetAVCencInfoStruct(avCencInfo, cencInfo) != DecoderAdapterCode::DECODER_OK) {
         WVLOG_E("OH_AVCencInfo_SetAVCencInfoStruct fail.");
-        OH_AVCencInfo_Destroy(avCencInfo);
+        (void)OH_AVCencInfo_Destroy(avCencInfo);
         avCencInfo = nullptr;
         return DecoderAdapterCode::DECODER_ERROR;
     }
@@ -655,7 +655,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfo(
         std::unique_lock<std::mutex> lock(bufferMutex_);
         if (bufferMap_.find(index) == bufferMap_.end()) {
             WVLOG_E("MediaCodecDecoder QueueInputBufferDec not find index.");
-            OH_AVCencInfo_Destroy(avCencInfo);
+            (void)OH_AVCencInfo_Destroy(avCencInfo);
             avCencInfo = nullptr;
             return DecoderAdapterCode::DECODER_ERROR;
         }
@@ -664,7 +664,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfo(
 
     if (ret != AV_ERR_OK) {
         WVLOG_E("OH_AVCencInfo_SetAVBuffer fail, ret=%{public}u.", static_cast<uint32_t>(ret));
-        OH_AVCencInfo_Destroy(avCencInfo);
+        (void)OH_AVCencInfo_Destroy(avCencInfo);
         avCencInfo = nullptr;
         return DecoderAdapterCode::DECODER_ERROR;
     }

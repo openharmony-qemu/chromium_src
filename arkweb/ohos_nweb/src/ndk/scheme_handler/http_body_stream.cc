@@ -90,7 +90,13 @@ void ArkWeb_HttpBodyStream_::Read(void* buffer, int64_t buf_len) const {
   }
 
   if (!buffer) {
-    LOG(ERROR) << "scheme_hadnler read buffer is nullptr.";
+    LOG(ERROR) << "scheme_handler read buffer is nullptr.";
+    return;
+  }
+
+  if (buf_len < 0) {
+    LOG(ERROR) << "buf_len must be greater than or equal to 0.";
+    return;
   }
 
   post_data_stream->Read(buffer, buf_len,

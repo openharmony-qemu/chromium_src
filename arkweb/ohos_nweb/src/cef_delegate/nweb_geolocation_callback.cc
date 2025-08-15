@@ -48,8 +48,8 @@ void NWebGeolocationCallback::GeolocationCallbackInvoke(
   }
   CefRefPtr<CefBrowserPermissionRequestDelegate> cefBrowserPermissionRequestDelegate =
     arkWebBrowserExt->GetPermissionRequestDelegate();
-  if (cefGeolocationAcess == nullptr) {
-    LOG(ERROR) << "GeolocationCallbackInvoke cefGeolocationAcess is nullptr";
+  if (cefBrowserPermissionRequestDelegate == nullptr) {
+    LOG(ERROR) << "GeolocationCallbackInvoke cefBrowserPermissionRequestDelegate is nullptr";
   } else {
     cefBrowserPermissionRequestDelegate->NotifyGeolocationPermission(allow, origin);
   }

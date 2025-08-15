@@ -89,6 +89,14 @@
   mojom::CopyOptionMode GetCopyOption() { return copy_option_; }
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 
+#if BUILDFLAG(ARKWEB_FOCUS)
+  void SetGestureFocusMode(int mode) {
+    gesture_focus_mode_ = mode;
+  }
+
+  int GetGestureFocusMode() { return gesture_focus_mode_; }
+#endif
+
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
   void SetScrollBarColor(uint32_t colorValue) { scrollbar_color_ = colorValue; }
 

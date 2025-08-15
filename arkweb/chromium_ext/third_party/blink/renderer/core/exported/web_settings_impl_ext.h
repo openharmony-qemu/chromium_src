@@ -53,6 +53,10 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
   void SetCopyOption(mojom::blink::CopyOptionMode value) override;
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 
+#if BUILDFLAG(ARKWEB_FOCUS)
+  void SetGestureFocusMode(int) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   void SetContextMenuCustomization(bool) override;
 #endif

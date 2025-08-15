@@ -87,6 +87,9 @@ static void WebPreferenceMojomExt(blink::mojom::WebPreferencesDataView data,
 #if BUILDFLAG(ARKWEB_COPY_OPTION)
   out->copy_option = data.copy_option();
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+#if BUILDFLAG(ARKWEB_FOCUS)
+  out->gesture_focus_mode = data.gesture_focus_mode();
+#endif
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   out->contextmenu_customization_enabled =
       data.contextmenu_customization_enabled();

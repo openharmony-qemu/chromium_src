@@ -19,9 +19,7 @@
 #include "content/public/browser/browser_context.h"
 #include "cef/libcef/browser/request_context_impl.h"
 #include "nweb_extension_utils.h"
- 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
- 
+
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_extension_side_panel_dispatcher.h"
 #endif

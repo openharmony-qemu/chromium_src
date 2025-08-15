@@ -340,20 +340,6 @@ public:
   void OnBrowserForeground() override;
   void OnBrowserBackground() override;
 #endif
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  void OnShowConfirmInfoBar(const std::string& title,
-                            const std::string& infoId,
-                            const std::string& message,
-                            int buttons,
-                            const std::string& buttonLabelOK,
-                            const std::string& buttonLabelCancel);
-  void OnHideConfirmInfoBar(const std::string& title,
-                            const std::string& infoId,
-                            const std::string& message,
-                            int buttons,
-                            const std::string& buttonLabelOK,
-                            const std::string& buttonLabelCancel);
-#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 private:
   std::string custom_user_agent_;

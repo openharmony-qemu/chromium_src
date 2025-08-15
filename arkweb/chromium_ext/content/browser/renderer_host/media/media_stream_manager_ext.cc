@@ -105,7 +105,7 @@ void MediaStreamManagerExt::SendScreenCaptureStateToNative(
       LOG(ERROR) << "SendScreenCaptureStateToNative ui_task_runner is nullptr";
       return;
     }
-    io_task_runner->PostTask(
+    ui_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(&MediaStreamManagerExt::SendScreenCaptureStateToNative,
                        nweb_id, session_id, state));

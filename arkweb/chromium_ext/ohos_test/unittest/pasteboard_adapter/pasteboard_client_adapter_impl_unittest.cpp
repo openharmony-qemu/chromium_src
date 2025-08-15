@@ -25,9 +25,6 @@
 #undef private
  
 using namespace testing;
-// using namespace OHOS;
-// using namespace OHOS::MiscServices;
-// using namespace OHOS::Media;
 
 namespace OHOS::NWeb {
 const int RESULT_OK = 0;
@@ -365,25 +362,14 @@ TEST_F(PasteboardClientAdapterImplTest, AddAndGetRecord)
     primaryText = g_dataadapter_null->GetPrimaryText();
     EXPECT_EQ(primaryText, nullptr);
 
-    // TODO: call OH_UdmfData_GetRecord or OH_UdmfData_GetRecords will crash， need debug
-    // std::shared_ptr<std::string> primaryMimeType = g_dataadapter->GetPrimaryMimeType();
-    // EXPECT_NE(primaryMimeType, nullptr);
     std::shared_ptr<std::string> primary = g_dataadapter_null->GetPrimaryMimeType();
     EXPECT_EQ(primary, nullptr);
 
-
-    // std::shared_ptr<PasteDataRecordAdapter> record = g_dataadapter->GetRecordAt(0);
-    // EXPECT_NE(record, nullptr);
-    // record = g_dataadapter->GetRecordAt(2);
-    // EXPECT_EQ(record, nullptr);
     std::shared_ptr<PasteDataRecordAdapter> record_null = g_dataadapter_null->GetRecordAt(0);
     EXPECT_EQ(record_null, nullptr);
     std::size_t count = g_dataadapter_null->GetRecordCount();
-    EXPECT_EQ((int32_t)count, 0);
+    EXPECT_EQ(count, 0);
 
-    // PasteRecordVector recordVector = g_dataadapter->AllRecords();
-    // isEmpty = recordVector.empty();
-    // EXPECT_EQ(isEmpty, false);
     PasteRecordVector recordVector_null = g_dataadapter_null->AllRecords();
     isEmpty = recordVector_null.empty();
     EXPECT_EQ(isEmpty, true);
@@ -401,7 +387,6 @@ TEST_F(PasteboardClientAdapterImplTest, SetAndGetPasteData)
     record->SetHtmlText(pasteData);
     data.push_back(record);
     PasteBoardClientAdapterImpl::GetInstance().SetPasteData(data);
-    // EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), true);
 
     PasteBoardClientAdapterImpl::GetInstance().Clear();
     EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
@@ -413,12 +398,12 @@ TEST_F(PasteboardClientAdapterImplTest, SetAndGetPasteData)
     int32_t id = PasteBoardClientAdapterImpl::GetInstance().AddPasteboardChangedObserver(observer);
     EXPECT_EQ(id, 0);
     PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(id);
-    EXPECT_EQ((int32_t)PasteBoardClientAdapterImpl::GetInstance().reg_.size(), 0);
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().reg_.size(), 0);
 
     id = PasteBoardClientAdapterImpl::GetInstance().AddPasteboardChangedObserver(nullptr);
     EXPECT_EQ(id, -1);
     PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(-1);
-    EXPECT_EQ((int32_t)PasteBoardClientAdapterImpl::GetInstance().reg_.size(), 0);
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().reg_.size(), 0);
 }
 
 TEST_F(PasteboardClientAdapterImplTest, CheckTransitionCopyOption)

@@ -1333,6 +1333,18 @@ int FontConfig_OHOS::loadFontBackup(const SkFontScanner& fontScanner, const char
     if (!ret) {
         SkString specifiedName;
         TypefaceSet* tpSet = getTypefaceSet(font.familyName, specifiedName);
+        if (!specifiedName.isEmpty()) {
+            SkString fontFamilyName = font.familyName;
+            addIndexToFallbackSet(fontFamilyName);
+            int index = *(fallbackNames.find(fontFamilyName));
+            TypefaceSet* newTpSet = fallbackSet[index]->typefaceSet.get();
+            if (newTpSet) {
+                FontInfo newFont(font);
+                sk_sp<SkTypeface_OHOS> typeface = sk_make_sp<SkTypeface_OHOS>(fontFamilyName, newFont);
+                newTpSet->push_back(std::move(typeface));
+            }
+        }
+
         if (tpSet) {
             sk_sp<SkTypeface_OHOS> typeface = sk_make_sp<SkTypeface_OHOS>(specifiedName, font);
             tpSet->push_back(std::move(typeface));

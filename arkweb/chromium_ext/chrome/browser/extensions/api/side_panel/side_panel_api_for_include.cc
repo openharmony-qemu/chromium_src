@@ -25,7 +25,7 @@
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 namespace extensions {
-
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 typedef OHOS::NWeb::NWebExtensionSidePanelCefDelegate NWebExtensionSidePanelCefDelegate;
 
 std::string GetExtensionContextType(content::BrowserContext* browser_context) {
@@ -77,6 +77,7 @@ void SidePanelSetOptionsFunction::OnSetOptions(
     function->Release();
   }
 }
+#endif
 
 ExtensionFunction::ResponseAction SidePanelSetOptionsFunction::RunFunctionForInclude(
     std::optional<api::side_panel::SetOptions::Params>& params) {
@@ -131,6 +132,7 @@ ExtensionFunction::ResponseAction SidePanelSetOptionsFunction::RunFunctionForInc
 ExtensionFunction::ResponseAction SidePanelOpenFunction::RunOpenFunctionForInclude(
     std::optional<api::side_panel::Open::Params>& params) {
   LOG(INFO) << "SidePanelOpenFunction::RunFunction";
+#if BUILDFLAG(ARKWEB_NWEB_EX)
   if (IsNativeApiEnable()) {
     if (NWebExtensionSidePanelDispatcher::HasOnOpenByPbCallback()) {
       call_on_open_ = true;
@@ -173,6 +175,7 @@ ExtensionFunction::ResponseAction SidePanelOpenFunction::RunOpenFunctionForInclu
         params->options.tab_id.value_or(api::tabs::TAB_ID_NONE),
         params->options.window_id.value_or(api::windows::WINDOW_ID_NONE));
   }
+#endif
   return RespondNow(NoArguments());
 }
 

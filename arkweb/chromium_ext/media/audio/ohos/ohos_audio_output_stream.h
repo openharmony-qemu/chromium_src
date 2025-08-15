@@ -62,6 +62,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   void OnResume();
 
+  void OldDeviceUnavailable();
+  
   bool isNeedResume(int32_t resumeInterval);
 
   void SchedulePumpSamples();

@@ -99,13 +99,13 @@ void MediaStreamManagerExt::SendScreenCaptureStateToNative(
     int32_t nweb_id,
     const std::string& session_id,
     int32_t state) {
-  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
-    auto io_task_runner = GetIOThreadTaskRunner({});
-    if (!io_task_runner) {
-      LOG(ERROR) << "SendScreenCaptureStateToNative io_task_runner is nullptr";
+  if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
+    auto ui_task_runner = GetUIThreadTaskRunner({});
+    if (!ui_task_runner) {
+      LOG(ERROR) << "SendScreenCaptureStateToNative ui_task_runner is nullptr";
       return;
     }
-    io_task_runner->PostTask(
+    ui_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(&MediaStreamManagerExt::SendScreenCaptureStateToNative,
                        nweb_id, session_id, state));

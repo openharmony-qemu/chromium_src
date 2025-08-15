@@ -85,7 +85,6 @@ ExtensionFunction::ResponseAction SidePanelSetOptionsFunction::RunFunctionForInc
   std::optional<std::string> absolute_path;
   if (params->options.path.has_value()) {
     absolute_path = extension()->GetResourceURL(*params->options.path).spec();
- 
   }
  
   if (IsNativeApiEnable()) {

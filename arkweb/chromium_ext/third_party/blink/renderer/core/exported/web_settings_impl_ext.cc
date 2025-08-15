@@ -63,6 +63,12 @@ void WebSettingsImplExt::SetCopyOption(mojom::blink::CopyOptionMode value) {
 }
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 
+#if BUILDFLAG(ARKWEB_FOCUS)
+void WebSettingsImplExt::SetGestureFocusMode(int mode) {
+  settings_->SetGestureFocusMode(mode);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_CSS_FONT)
 void WebSettingsImplExt::SetFontWeightScale(float value) {
   settings_->SetFontWeightScale(value);

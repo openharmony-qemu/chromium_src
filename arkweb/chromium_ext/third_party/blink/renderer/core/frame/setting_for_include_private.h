@@ -47,6 +47,10 @@
   mojom::CopyOptionMode copy_option_ = mojom::CopyOptionMode::CROSS_DEVICE;
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 
+#if BUILDFLAG(ARKWEB_FOCUS)
+  int gesture_focus_mode_ = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
   uint32_t scrollbar_color_ = 0;
 #endif

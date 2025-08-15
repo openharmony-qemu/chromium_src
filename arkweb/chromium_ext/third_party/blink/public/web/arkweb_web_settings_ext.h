@@ -76,6 +76,10 @@ public:
   virtual void SetCopyOption(mojom::CopyOptionMode) = 0;
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 
+#if BUILDFLAG(ARKWEB_FOCUS)
+  virtual void SetGestureFocusMode(int) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   virtual void SetVideoAssistantEnabled(bool enabled) {}
   virtual void SetCustomMediaPlayerEnabled(bool enabled) {}

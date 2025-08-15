@@ -15,6 +15,7 @@
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "ohos_nweb/src/cef_delegate/nweb_extension_side_panel_cef_delegate.h"
 #include "ohos_nweb_ex/core/extension/nweb_extension_side_panel_dispatcher.h"
 #endif
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
@@ -25,26 +26,155 @@
 
 namespace extensions {
 
-void RunFunctionForInclude(
-    raw_ptr<SidePanelSetOptionsFunction> obj,
+typedef OHOS::NWeb::NWebExtensionSidePanelCefDelegate NWebExtensionSidePanelCefDelegate;
+
+std::string GetExtensionContextType(content::BrowserContext* browser_context) {
+  if (!browser_context)
+    return std::string();
+ 
+  if (browser_context->IsOffTheRecord()) {
+    return "INCOGNITO";
+  } else {
+    return "REGULAR";
+  }
+}
+
+void SidePanelOpenFunction::OnOpen(
+      const base::WeakPtr<SidePanelOpenFunction>& function,
+      const std::optional<std::string>& error) {
+  DCHECK(function);
+  if (!function) {
+    LOG(ERROR) << "OnOpen is empty!!!!";
+    return;
+  }
+  if (error) {
+    function->Respond(function->Error(*error));
+  } else {
+    function->Respond(function->NoArguments());
+  }
+ 
+  if (!function->call_on_open_) {
+    LOG(INFO) << "SidePanelOpenFunction Release";
+    function->Release();
+  }
+}
+
+void SidePanelSetOptionsFunction::OnSetOptions(
+      const base::WeakPtr<SidePanelSetOptionsFunction>& function,
+      const std::optional<std::string>& error) {
+  DCHECK(function);
+  if (!function) {
+    LOG(ERROR) << "OnSetOptions is empty!!!!";
+    return;
+  }
+  if (error) {
+    function->Respond(function->Error(*error));
+  } else {
+    function->Respond(function->NoArguments());
+  }
+  if (!function->call_on_set_options_) {
+    LOG(INFO) << "SidePanelSetOptionsFunction Release";
+    function->Release();
+  }
+}
+
+ExtensionFunction::ResponseAction SidePanelSetOptionsFunction::RunFunctionForInclude(
     std::optional<api::side_panel::SetOptions::Params>& params) {
   LOG(INFO) << "SidePanelSetOptionsFunction::RunFunction";
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   std::optional<std::string> absolute_path;
   if (params->options.path.has_value()) {
-    absolute_path =
-        obj->extension()->GetResourceURL(*params->options.path).spec();
+    absolute_path = extension()->GetResourceURL(*params->options.path).spec();
+ 
   }
+ 
   if (IsNativeApiEnable()) {
-    NWebExtensionSidePanelDispatcher::OnSetOptionsNative(
-        obj->extension()->id(), params->options.enabled, params->options.tab_id,
-        absolute_path);
+    if (NWebExtensionSidePanelDispatcher::HasOnSetOptionsByPbCallback()) {
+      call_on_set_options_ = true;
+      ExtensionSidePanelSetOptions options;
+      options.extensionId = extension()->id();
+      options.enabled = params->options.enabled;
+      options.tabId = params->options.tab_id;
+      options.path = absolute_path;
+      std::string context_type = GetExtensionContextType(browser_context());
+      if (!context_type.empty()) {
+        options.contextType = context_type;
+      }
+      options.includeIncognitoInfo = include_incognito_information();
+      bool success = NWebExtensionSidePanelCefDelegate::GetInstance()->OnSetOptionsByPb(
+           options, base::BindRepeating(&SidePanelSetOptionsFunction::OnSetOptions,
+                                        weak_ptr_factory_.GetWeakPtr()));
+      call_on_set_options_ = false;
+      if (did_respond()) {
+        LOG(INFO) << "SidePanelSetOptionsFunction did_respond";
+        return AlreadyResponded();
+      }
+ 
+      if (success) {
+        AddRef();
+        LOG(INFO) << "SidePanelSetOptionsFunction AddRef";
+        return RespondLater();
+      }
+    } else {
+      NWebExtensionSidePanelDispatcher::OnSetOptionsNative(
+          extension()->id(), params->options.enabled, params->options.tab_id,
+          absolute_path);
+    }
   } else {
     NWebExtensionSidePanelDispatcher::OnSetOptions(
-        obj->extension()->id(), params->options.enabled, params->options.tab_id,
+        extension()->id(), params->options.enabled, params->options.tab_id,
         absolute_path);
   }
 #endif
+  return RespondNow(NoArguments());
+}
+
+ExtensionFunction::ResponseAction SidePanelOpenFunction::RunOpenFunctionForInclude(
+    std::optional<api::side_panel::Open::Params>& params) {
+  LOG(INFO) << "SidePanelOpenFunction::RunFunction";
+  if (IsNativeApiEnable()) {
+    if (NWebExtensionSidePanelDispatcher::HasOnOpenByPbCallback()) {
+      call_on_open_ = true;
+      ExtensionSidePanelOpenOptions options;
+      options.extensionId = extension()->id();
+      if (params->options.tab_id.has_value()) {
+        options.tabId = params->options.tab_id.value();
+      }
+      if (params->options.window_id.has_value()) {
+        options.windowId = params->options.window_id.value();
+      }
+      std::string context_type = GetExtensionContextType(browser_context());
+      if (!context_type.empty()) {
+        options.contextType = context_type;
+      }
+      options.includeIncognitoInfo = include_incognito_information();
+      bool success = NWebExtensionSidePanelCefDelegate::GetInstance()->OnOpenByPb(
+          options, base::BindRepeating(&SidePanelOpenFunction::OnOpen,
+                                       weak_ptr_factory_.GetWeakPtr()));
+      call_on_open_ = false;
+      if (did_respond()) {
+        LOG(INFO) << "SidePanelOpenFunction did_respond";
+        return AlreadyResponded();
+      }
+ 
+      if (success) {
+        AddRef();
+        LOG(INFO) << "SidePanelOpenFunction AddRef";
+        return RespondLater();
+      }
+    } else {
+      NWebExtensionSidePanelDispatcher::OnOpenNative(
+          extension()->id(),
+          params->options.tab_id.value_or(api::tabs::TAB_ID_NONE),
+          params->options.window_id.value_or(api::windows::WINDOW_ID_NONE));
+    }
+  } else {
+    NWebExtensionSidePanelDispatcher::OnOpen(
+        extension()->id(),
+        params->options.tab_id.value_or(api::tabs::TAB_ID_NONE),
+        params->options.window_id.value_or(api::windows::WINDOW_ID_NONE));
+  }
+  return RespondNow(NoArguments());
 }
 
 }  // namespace extensions

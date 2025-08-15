@@ -2711,9 +2711,6 @@ bool NWebHandlerDelegate::OnSetFocus(CefRefPtr<CefBrowser> browser,
                                      FocusSource source) {
   if (nweb_handler_ != nullptr) {
 #if BUILDFLAG(ARKWEB_FOCUS)
-    if (!nweb_handler_->OnFocus(static_cast<NWebFocusSource>(source))) {
-      return true;
-    }
     LOG(INFO) << "nweb_handler request focus successful, source = " << source
               << ", nweb_id = " << nweb_id_;
     focusState_ = true;

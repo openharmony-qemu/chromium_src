@@ -4811,34 +4811,6 @@ void NWebHandlerDelegate::OnReportStatisticLog(const CefString& content) {
 #endif  // ARKWEB_VIDEO_ASSISTANT
 }
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-void NWebHandlerDelegate::OnShowConfirmInfoBar(
-    const CefString& title,
-    const CefString& infoId,
-    const CefString& message,
-    int buttons,
-    const CefString& buttonLabelOK,
-    const CefString& buttonLabelCancel) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  NWebImpl::OnShowConfirmInfoBar(
-      title.ToString(), infoId.ToString(), message.ToString(), buttons,
-      buttonLabelOK.ToString(), buttonLabelCancel.ToString());
-}
-
-void NWebHandlerDelegate::OnHideConfirmInfoBar(
-    const CefString& title,
-    const CefString& infoId,
-    const CefString& message,
-    int buttons,
-    const CefString& buttonLabelOK,
-    const CefString& buttonLabelCancel) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  NWebImpl::OnHideConfirmInfoBar(
-      title.ToString(), infoId.ToString(), message.ToString(), buttons,
-      buttonLabelOK.ToString(), buttonLabelCancel.ToString());
-}
-#endif // ARKWEB_ARKWEB_EXTENSIONS
-
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 CefOwnPtr<CefMediaPlayerListenerForVAST>
 NWebHandlerDelegate::OnFullScreenOverlayEnter(

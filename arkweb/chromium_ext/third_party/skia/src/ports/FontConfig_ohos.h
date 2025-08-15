@@ -253,6 +253,8 @@ class FontConfig_OHOS {
   TypefaceSet* getTypefaceSet(const SkString& familyName,
                               SkString& specifiedName) const;
 
+  void addIndexToFallbackSet(const SkString& familyName);
+
   int loadFont(const SkFontScanner& scanner,
                const char* fname,
                const bool& installedOrStyle);

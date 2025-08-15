@@ -22,8 +22,8 @@
  
 #include "base/functional/callback.h"
 #include "ohos_nweb/src/capi/nweb_extension_api_callback.h"
-#include "ohos_nweb_ex/public/capi/nweb_extension_side_panel_types.h"
- 
+#include "ohos_nweb/src/capi/web_extension_side_panel_items.h"
+
 namespace OHOS::NWeb {
  
 using SidePanelOnOpenCallback = base::RepeatingCallback<void(const std::optional<std::string>&)>;

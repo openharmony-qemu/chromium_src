@@ -413,6 +413,9 @@
             "18": [
                 "int OH_Netstack_IsCleartextPermitted(bool *isCleartextPermitted)",
                 "int OH_Netstack_IsCleartextPermittedByHostName(const char *hostname, bool *isCleartextPermitted)"
+            ],
+            "20": [
+                "int OH_Netstack_IsCleartextCfgByComponent(const char *component, bool *componentCfg)"
             ]
         },
         "includes": []

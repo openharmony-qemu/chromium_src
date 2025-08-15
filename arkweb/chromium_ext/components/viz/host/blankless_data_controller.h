@@ -19,6 +19,7 @@
 
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_snapshot_data_base.h"
+#include "cancelable_delayed_task_manager.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
 namespace base {
@@ -52,6 +53,7 @@ public:
   OHOS::NWeb::SnapshotDataItem GetSnapshotDataItem(int64_t key, int64_t pref_hash);
   int32_t SetBlanklessLoadingCacheCapacity(int capacity);
   int32_t GetBlanklessLoadingCacheCapacity() const;
+  void PostDumpTaskWithDelay(uint64_t blankless_key, base::OnceClosure task);
 
 private:
   BlanklessDataController();
@@ -63,6 +65,7 @@ private:
 
   std::unordered_map<int64_t, std::shared_ptr<SnapshotInfo>> last_info_;
   std::mutex last_info_mutex_;
+  std::unique_ptr<viz::CancelableDelayedTaskManager> task_manager_;
 };
 }  // namespace ohos
 }  // namespace base

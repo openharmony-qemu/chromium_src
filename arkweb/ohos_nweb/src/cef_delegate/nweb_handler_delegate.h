@@ -363,7 +363,8 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void OnRefreshAccessedHistory(CefRefPtr<CefBrowser> browser,
                                 CefRefPtr<CefFrame> frame,
                                 const CefString& url,
-                                bool isReload) override;
+                                bool isReload,
+                                bool isMainFrame) override;
 
   void OnPageVisible(CefRefPtr<CefBrowser> browser,
                      const CefString& url,

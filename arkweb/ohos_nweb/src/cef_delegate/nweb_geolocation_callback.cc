@@ -36,12 +36,12 @@ void NWebGeolocationCallback::GeolocationCallbackInvoke(
     LOG(ERROR) << "GeolocationCallbackInvoke arkWebBrowserExt is nullptr";
     return;
   }
-  CefRefPtr<CefGeolocationAcess> cefGeolocationAcess = arkWebBrowserExt->GetGeolocationPermissions();
-  if (cefGeolocationAcess == nullptr) {
-    LOG(ERROR) << "GeolocationCallbackInvoke cefGeolocationAcess is nullptr";
-    return;
-  }
   if (retain) {
+    CefRefPtr<CefGeolocationAcess> cefGeolocationAcess = arkWebBrowserExt->GetGeolocationPermissions();
+    if (cefGeolocationAcess == nullptr) {
+      LOG(ERROR) << "GeolocationCallbackInvoke cefGeolocationAcess is nullptr";
+      return;
+    }
     if (allow) {
       cefGeolocationAcess->Enabled(origin, incognito);
     } else {

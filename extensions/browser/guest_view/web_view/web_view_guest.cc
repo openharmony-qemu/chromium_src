@@ -1876,13 +1876,8 @@ GURL WebViewGuest::ResolveURL(const std::string& src) {
     return GURL(src);
   }
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  GURL default_url(base::StringPrintf("%s://%s/", kArkwebExtensionScheme,
-                                      owner_host().c_str()));
-#else
   GURL default_url(
       base::StringPrintf("%s://%s/", kExtensionScheme, owner_host().c_str()));
-#endif
   return default_url.Resolve(src);
 }
 

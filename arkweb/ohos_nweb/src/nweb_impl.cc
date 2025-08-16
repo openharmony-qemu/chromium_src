@@ -6051,7 +6051,7 @@ void NWebImpl::SetPrivacyStatus(bool isPrivate) {
 
 int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) {
   if (!base::ohos::BlanklessController::CheckGlobalProperty() ||
-      !nweb_delegate_ || !similarity || !loadingTime) {
+      !nweb_delegate_ || !similarity || !loadingTime || !CheckNetAvailable()) {
       if (similarity) {
         *similarity = 0;
       }
@@ -6090,7 +6090,7 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
 }
 
 int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStart) {
-  if (!base::ohos::BlanklessController::CheckGlobalProperty()) {
+  if (!base::ohos::BlanklessController::CheckGlobalProperty() || !CheckNetAvailable()) {
     return -5;  // ERR_SIGNIFICANT_CHANGE
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
@@ -6138,7 +6138,7 @@ void NWebImpl::RemoveBlanklessFrame() {
 
 bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   if (!base::ohos::BlanklessController::CheckGlobalProperty() || !nweb_delegate_ ||
-      !base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
+      !base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url) || !CheckNetAvailable()) {
     return false;
   }
   blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(url);
@@ -6186,6 +6186,22 @@ void NWebImpl::ClearBlanklessKey() {
   }
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, base::ohos::BlanklessController::INVALID_BLANKLESS_KEY);
   blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
+}
+
+bool NWebImpl::CheckNetAvailable() {
+  auto netConnectAdapter = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateNetConnectAdapter();
+  if (!netConnectAdapter) {
+    LOG(ERROR) << "blankless net_connect_adapter is nullptr";
+    return false;
+  }
+  NetConnectType type = NetConnectType::CONNECTION_UNKNOWN;
+  NetConnectSubtype subtype = NetConnectSubtype::SUBTYPE_UNKNOWN;
+  netConnectAdapter->GetDefaultNetConnect(type, subtype);
+  if (type == NetConnectType::CONNECTION_UNKNOWN) {
+    LOG(DEBUG) << "blankless net not available";
+    return false;
+  }
+  return true;
 }
 
 void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file) {

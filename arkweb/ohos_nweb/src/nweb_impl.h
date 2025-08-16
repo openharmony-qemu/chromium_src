@@ -1120,6 +1120,7 @@ class NWebImpl : public NWeb {
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void ClearBlanklessKey();
+  bool CheckNetAvailable();
   void CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file);
   // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
   std::atomic<uint64_t> blankless_key_ = UINT64_MAX;

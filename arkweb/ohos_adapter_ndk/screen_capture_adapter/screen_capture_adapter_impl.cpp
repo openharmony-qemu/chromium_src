@@ -16,7 +16,6 @@
 #include "screen_capture_adapter_impl.h"
 
 #include <shared_mutex>
-#include "base/synchronization/lock.h"
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 #include <multimedia/player_framework/native_avscreen_capture.h>

@@ -33,7 +33,7 @@
 #include "cc/raster/categorized_worker_pool.h"
 #include "cc/trees/layer_tree_host.h"
 #include "cc/trees/layer_tree_settings.h"
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#if BUILDFLAG(IS_ARKWEB)
 #include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
 #include "base/process/process_handle.h"
 #include "base/task/post_job.h"
@@ -52,7 +52,7 @@ namespace blink {
 WidgetBaseUtils::WidgetBaseUtils(WidgetBase* widget_base) : widget_base_(widget_base) {}
 // LCOV_EXCL_STOP
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#if BUILDFLAG(IS_ARKWEB)
 static void GetThreadIdsAndReport(std::vector<base::PlatformThreadId>& workersTids,
                                        bool is_created) {
   std::vector<int32_t> thread_ids;

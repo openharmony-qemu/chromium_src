@@ -29,7 +29,7 @@ class BLINK_PLATFORM_EXPORT WidgetBaseUtils {
  public:
   WidgetBaseUtils(WidgetBase* widget_base);
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#if BUILDFLAG(IS_ARKWEB)
   void ReportForegroundThreadPool();
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

@@ -84,6 +84,11 @@ component("quiche") {
     "//third_party/protobuf:protobuf_lite",
     "//third_party/zlib",
   ]
+  if (defined(is_arkweb) && is_arkweb) {
+    deps += [
+      "//base:base_static",
+    ]
+  }
 
   public_deps = [
     ":net_quic_proto",

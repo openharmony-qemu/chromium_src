@@ -218,6 +218,11 @@
 #endif
 
 #include "arkweb/chromium_ext/content/browser/renderer_host/navigation_request_utils.h"
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "content/browser/web_contents/web_contents_impl.h"
+#include "content/public/browser/web_contents.h"
+#include "url/ohos/log_utils.h"
+#endif
 
 namespace content {
 
@@ -2654,6 +2659,10 @@ void NavigationRequest::OnFencedFrameURLMappingComplete(
                           // destroyed `this`.
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "arkweb/chromium_ext/content/browser/renderer_host/navigation_request_for_include.cc"
+#endif
+
 void NavigationRequest::BeginNavigationImpl() {
   TRACE_EVENT_WITH_FLOW0("navigation", "NavigationRequest::BeginNavigationImpl",
                          TRACE_ID_WITH_SCOPE(kNavigationRequestScope,
@@ -2670,6 +2679,9 @@ void NavigationRequest::BeginNavigationImpl() {
               << commit_params_->is_browser_initiated
               << " was_redirected_: " << was_redirected_
               << " " << devtools_navigation_token_;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    StartNavigationExt();
+#endif
   }
 #endif
 

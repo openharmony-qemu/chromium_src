@@ -160,6 +160,11 @@ void ProcessEntryFile(BackendFileOperations* file_operations,
   if (!simple_util::GetEntryHashKeyFromHexString(hash_string, &hash_key)) {
     LOG(WARNING) << "Invalid entry hash key filename while restoring index from"
                  << " disk: " << file_name;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING)
+        << "Invalid entry hash key filename while restoring index from"
+        << " disk: " << file_name;
+#endif
     return;
   }
 
@@ -305,6 +310,10 @@ void SimpleIndexFile::SyncWriteToDisk(
   if (!file_operations->DirectoryExists(index_file_directory) &&
       !file_operations->CreateDirectory(index_file_directory)) {
     LOG(ERROR) << "Could not create a directory to hold the index file";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR)
+        << "Could not create a directory to hold the index file";
+#endif
     return;
   }
 
@@ -318,6 +327,9 @@ void SimpleIndexFile::SyncWriteToDisk(
       file_operations->GetFileInfo(cache_directory);
   if (!file_info) {
     LOG(ERROR) << "Could not obtain information about cache age";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "Could not obtain information about cache age";
+#endif
     return;
   }
   cache_dir_mtime = file_info->last_modified;
@@ -325,6 +337,9 @@ void SimpleIndexFile::SyncWriteToDisk(
   if (!WritePickleFile(file_operations.get(), pickle.get(),
                        temp_index_filename)) {
     LOG(ERROR) << "Failed to write the temporary index file";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "Failed to write the temporary index file";
+#endif
     return;
   }
 
@@ -545,6 +560,9 @@ void SimpleIndexFile::Deserialize(net::CacheType cache_type,
       base::as_bytes(base::span(data, base::checked_cast<size_t>(data_len))));
   if (!pickle.data() || !pickle.HeaderValid()) {
     LOG(WARNING) << "Corrupt Simple Index File.";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "Corrupt Simple Index File.";
+#endif
     return;
   }
 
@@ -555,17 +573,26 @@ void SimpleIndexFile::Deserialize(net::CacheType cache_type,
 
   if (crc_read != crc_calculated) {
     LOG(WARNING) << "Invalid CRC in Simple Index file.";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "Invalid CRC in Simple Index file.";
+#endif
     return;
   }
 
   SimpleIndexFile::IndexMetadata index_metadata;
   if (!index_metadata.Deserialize(&pickle_it)) {
     LOG(ERROR) << "Invalid index_metadata on Simple Cache Index.";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "Invalid index_metadata on Simple Cache Index.";
+#endif
     return;
   }
 
   if (!index_metadata.CheckIndexMetadata()) {
     LOG(ERROR) << "Invalid index_metadata on Simple Cache Index.";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "Invalid index_metadata on Simple Cache Index.";
+#endif
     return;
   }
 
@@ -578,6 +605,9 @@ void SimpleIndexFile::Deserialize(net::CacheType cache_type,
             cache_type, &pickle_it, index_metadata.has_entry_in_memory_data(),
             index_metadata.app_cache_has_trailer_prefetch_size())) {
       LOG(WARNING) << "Invalid EntryMetadata in Simple Index file.";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(WARNING) << "Invalid EntryMetadata in Simple Index file.";
+#endif
       entries->clear();
       return;
     }
@@ -618,6 +648,9 @@ void SimpleIndexFile::SyncRestoreFromDisk(
   }
   if (enumerator->HasError()) {
     LOG(ERROR) << "Could not reconstruct index from disk";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "Could not reconstruct index from disk";
+#endif
     return;
   }
   out_result->did_load = true;

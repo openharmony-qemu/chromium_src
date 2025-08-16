@@ -625,6 +625,11 @@ struct NetworkContextParams {
   // Stores mapping of endpoint name to endpoint url from initial reporting
   // endpoints set by the ReportingEndpoints enterprise policy.
   map<string, url.mojom.Url>? enterprise_reporting_endpoints;
+
+  // #ifdef ARKWEB_LOGGER_REPORT
+  [EnableIf=arkweb_logger_report]
+  bool is_strict_log_mode = true;
+  // #endif ARKWEB_LOGGER_REPORT
 };
 
 struct NetworkConditions {

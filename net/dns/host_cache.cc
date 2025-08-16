@@ -1291,6 +1291,10 @@ void HostCache::RecordEraseAll(EraseReason reason, base::TimeTicks now) {
   }
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "arkweb/chromium_ext/net/dns/host_cache_for_include.cc"
+#endif  // ARKWEB_LOGGER_REPORT
+
 }  // namespace net
 
 // Debug logging support

@@ -321,6 +321,12 @@
 #include "content/browser/renderer_host/render_view_host_delegate_view.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "content/browser/web_contents/web_contents_impl.h"
+#include "content/public/browser/web_contents.h"
+#include "url/ohos/log_utils.h"
+#endif
+
 #if defined(AX_FAIL_FAST_BUILD)
 #include "base/command_line.h"
 #include "content/public/browser/ax_inspect_factory.h"
@@ -5864,6 +5870,10 @@ NavigationRequest* RenderFrameHostImpl::GetSameDocumentNavigationRequest(
 
 void RenderFrameHostImpl::ResetOwnedNavigationRequests(
     NavigationDiscardReason reason) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "current lifecycle state: "
+                     << static_cast<int>(lifecycle_state_);
+#endif
   if (lifecycle_state_ == LifecycleStateImpl::kPendingCommit) {
     // Pending commit RenderFrameHosts should never have same document
     // navigation requests yet, as they do not have a real document committed
@@ -11594,6 +11604,25 @@ void RenderFrameHostImpl::CommitNavigation(
   if (frame_tree_node()->IsMainFrame()) {
     LOG(INFO) << "event_message: commit navigation in main frame, routing_id: "
               << routing_id_ << ", url: ***, " << devtools_navigation_token.ToString();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO)
+        << "event_message: commit navigation in main frame, routing_id: "
+        << routing_id_ << ", url: "
+        << url::LogUtils::ConvertUrlWithMask(
+               common_params->url.possibly_invalid_spec())
+        << ", " << devtools_navigation_token.ToString();
+    if (!GetProcess()->GetBrowserContext()->IsOffTheRecord()) {
+      int32_t usage_scenario = WebContents::FromFrameTreeNodeId(
+                                   frame_tree_node()->frame_tree_node_id())
+                                   ->GetOrCreateWebPreferences()
+                                   .usage_scenario;
+      LOG(URL) << "event_message: commit navigation in main frame, routing_id: "
+               << routing_id_ << ", url: "
+               << url::LogUtils::ConvertUrl(
+                      common_params->url.possibly_invalid_spec(),
+                      usage_scenario);
+    }
+#endif
   }
 #endif
 

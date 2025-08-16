@@ -63,6 +63,7 @@ private:
     bool ParseRawData(const uint8_t* data, uint32_t size);
     void NativeBufferFromPixelMap();
     void SetMemoryName(AllocatorType type);
+    void InitOhosImageDecoderAdapterImpl();
 };
 
 }  // namespace NWeb

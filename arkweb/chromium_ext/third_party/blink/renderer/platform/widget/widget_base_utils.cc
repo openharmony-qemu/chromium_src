@@ -75,7 +75,7 @@ static void GetThreadIdsAndReport(std::vector<base::PlatformThreadId>& workersTi
 static void GetThreadIdsAndReport(std::vector<scoped_refptr<base::internal::WorkerThread>>& workers,
                                        bool is_created) {
   std::vector<int32_t> thread_ids;
-  std::vector<base::internal::WorkerThread*> remain_workers;
+  std::vector<scoped_refptr<base::internal::WorkerThread>>& remain_workers;
   for (auto& worker : workers) {
     if (worker) {
       auto tid = worker->GetRealTid();

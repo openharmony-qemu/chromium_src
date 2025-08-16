@@ -62,6 +62,10 @@ bool ProfileInteractionManagerUtil::OnAdsViolationTriggeredExt(
     raw_ptr<ProfileInteractionManager> ProfileInteractionManagerObj,
     content::RenderFrameHost* rfh,
     mojom::AdsViolation& triggered_violation) {
+  if (rfh == nullptr) {
+    return false;
+  }
+
   if (ProfileInteractionManagerObj->profile_context_) {
     const GURL& url = rfh->GetLastCommittedURL();
     std::optional<AdsInterventionManager::LastAdsIntervention>

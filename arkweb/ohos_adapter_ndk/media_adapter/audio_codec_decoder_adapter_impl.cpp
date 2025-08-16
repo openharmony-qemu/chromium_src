@@ -594,7 +594,7 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::QueueInputBufferDec(uint32
     }
 
     OH_AVBuffer *avBuffer = GetInputBuffer(index);
-    int32_t bufferCapacity = OH_AVBuffer_GetCapacity(avBuffer)
+    int32_t bufferCapacity = OH_AVBuffer_GetCapacity(avBuffer);
     if (avBuffer == nullptr || bufferCapacity < bufferSize) {
         WVLOG_E("QueueInputBufferDec fail, inputbuffer[%{public}u] not find or cap size less than buffer size.", index);
         return AudioDecoderAdapterCode::DECODER_ERROR;

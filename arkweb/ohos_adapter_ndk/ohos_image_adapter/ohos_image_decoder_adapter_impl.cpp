@@ -94,14 +94,20 @@ bool OhosImageDecoderAdapterImpl::ParseRawData(const uint8_t* data, uint32_t siz
 
 OhosImageDecoderAdapterImpl::OhosImageDecoderAdapterImpl()
 {
+    InitOhosImageDecoderAdapterImpl();
+}
+
+void OhosImageDecoderAdapterImpl::InitOhosImageDecoderAdapterImpl() {
     Image_ErrorCode errorCode = OH_PixelmapInitializationOptions_Create(&opt_);
     if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
         WVLOG_E("[HeifSupport] init create options failed, errorCode %{public}d", errorCode);
+        return;
     }
     errorCode = OH_ImageSourceInfo_Create(&imageInfo_);
     if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
         WVLOG_E("[HeifSupport] init create imageInfo failed, errorCode %{public}d", errorCode);
-    }
+        return;
+    }    
 }
 
 OhosImageDecoderAdapterImpl::~OhosImageDecoderAdapterImpl()

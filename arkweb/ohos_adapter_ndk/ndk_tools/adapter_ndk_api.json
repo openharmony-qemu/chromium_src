@@ -413,6 +413,9 @@
             "18": [
                 "int OH_Netstack_IsCleartextPermitted(bool *isCleartextPermitted)",
                 "int OH_Netstack_IsCleartextPermittedByHostName(const char *hostname, bool *isCleartextPermitted)"
+            ],
+            "20": [
+                "int OH_Netstack_IsCleartextCfgByComponent(const char *component, bool *componentCfg)"
             ]
         },
         "includes": []
@@ -906,6 +909,10 @@
     },
     "image_source":{
         "apiList": {
+            "12": [
+                "Image_ErrorCode OH_PixelmapNative_AccessPixels(OH_PixelmapNative *pixelmap, void **addr)",
+                "Image_ErrorCode OH_PixelmapNative_UnaccessPixels(OH_PixelmapNative *pixelmap)"
+            ],
             "14": [
                 "Image_ErrorCode OH_DecodingOptions_Release(OH_DecodingOptions *options)",
                 "Image_ErrorCode OH_ImageSourceNative_CreateFromData(uint8_t *data, size_t dataSize, OH_ImageSourceNative **res)",

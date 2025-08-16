@@ -17,7 +17,7 @@
 #define WINDOW_MANAGER_ADAPTER_IMPL_H
 
 #include <cstdint>
-#include <stdlib.h>
+#include <cstdlib>
 
 namespace OHOS::NWeb {
 

@@ -35,8 +35,13 @@ class LeakDetectionRequest : public LeakDetectionRequestInterface {
     kMaxValue = kParseError
   };
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  static constexpr char kLookupSingleLeakEndpoint[] =
+      "https://x.x.x.x";
+#else
   static constexpr char kLookupSingleLeakEndpoint[] =
       "https://passwordsleakcheck-pa.googleapis.com/v1/leaks:lookupSingle";
+#endif
 
   LeakDetectionRequest();
   ~LeakDetectionRequest() override;

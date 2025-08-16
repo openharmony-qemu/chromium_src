@@ -51,8 +51,13 @@ void DesktopWindowTreeHostOhos::AddAdditionalInitProperties(
       target_color = ui::kColorWindowBackground;
       break;
   }
+  Widget* widget = GetWidget();
+  if (widget == nullptr) {
+    LOG(ERROR) << "AddAdditionalInitProperties failed, GetWidget() is null.";
+    return;
+  }
   properties->background_color =
-      GetWidget()->GetColorProvider()->GetColor(target_color);
+      widget->GetColorProvider()->GetColor(target_color);
 }
 // LCOV_EXCL_STOP
 

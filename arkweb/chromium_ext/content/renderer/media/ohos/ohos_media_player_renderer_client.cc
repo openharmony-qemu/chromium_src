@@ -73,7 +73,7 @@ void OHOSMediaPlayerRendererClient::Initialize(
 
   native_texture_wrapper_->Initialize(
       base::BindRepeating(&OHOSMediaPlayerRendererClient::OnFrameAvailable,
-                          base::Unretained(this)),
+                          weak_factory_.GetWeakPtr()),
       compositor_task_runner_,
       base::BindOnce(
           &OHOSMediaPlayerRendererClient::OnStreamTextureWrapperInitialized,

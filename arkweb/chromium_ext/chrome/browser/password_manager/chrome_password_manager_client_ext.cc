@@ -371,7 +371,13 @@ void ChromePasswordManagerClientExt::FillAccountSuggestion(
   }
 
   LOG(INFO) << "[Autofill] Try to fill account suggestion.";
-  driver->AsContentPasswordManagerDriverExt()->FillAccountSuggestion(page_url, username, password);
+  password_manager::ContentPasswordManagerDriverExt* contentPasswordManagerDriverExt =
+      driver->AsContentPasswordManagerDriverExt();
+  if (contentPasswordManagerDriverExt == nullptr) {
+    LOG(ERROR) << "[Autofill] contentPasswordManagerDriverExt is nullptr";
+    return;
+  }
+  contentPasswordManagerDriverExt->FillAccountSuggestion(page_url, username, password);
 }
 
 void ChromePasswordManagerClientExt::OnRequestAutofill(

@@ -385,9 +385,10 @@ MediaPlayerId MediaWebContentsObserver::GetMediaPlayerId(
 }
 
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
-    OnPictureInPictureStateChanged(uint32_t state) {
+    OnPictureInPictureStateChanged(
+        uint32_t state, int32_t width, int32_t height) {
   media_web_contents_observer_->session_controllers_manager()
-      ->OnPictureInPictureStateChanged(media_player_id_, state);
+      ->OnPictureInPictureStateChanged(media_player_id_, state, width, height);
 }
 #endif
 }

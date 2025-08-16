@@ -39,17 +39,6 @@ static const std::unordered_map<OH_AVCodecBufferFlags, BufferFlag> BUFFER_FLAG_M
     { OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_CODEC_DATA, BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA }
 };
 
-static const std::unordered_map<const char *, AudioMimeType>  MIME_TYPE_MAP = {
-    { OH_AVCODEC_MIMETYPE_AUDIO_AAC, AudioMimeType::MIMETYPE_AUDIO_AAC },
-    { OH_AVCODEC_MIMETYPE_AUDIO_FLAC, AudioMimeType::MIMETYPE_AUDIO_FLAC },
-    { OH_AVCODEC_MIMETYPE_AUDIO_VORBIS, AudioMimeType::MIMETYPE_AUDIO_VORBIS },
-    { OH_AVCODEC_MIMETYPE_AUDIO_MPEG, AudioMimeType::MIMETYPE_AUDIO_MPEG },
-    { OH_AVCODEC_MIMETYPE_AUDIO_AMR_NB, AudioMimeType::MIMETYPE_AUDIO_AMR_NB },
-    { OH_AVCODEC_MIMETYPE_AUDIO_AMR_WB, AudioMimeType::MIMETYPE_AUDIO_AMR_WB },
-    { OH_AVCODEC_MIMETYPE_AUDIO_G711MU, AudioMimeType::MIMETYPE_AUDIO_G711MU },
-    { OH_AVCODEC_MIMETYPE_AUDIO_APE, AudioMimeType::MIMETYPE_AUDIO_APE }
-};
-
 AudioDecoderFormatAdapterImpl::~AudioDecoderFormatAdapterImpl() {}
 int32_t AudioDecoderFormatAdapterImpl::GetSampleRate()
 {
@@ -225,10 +214,10 @@ AudioCodecDecoderAdapterImpl::~AudioCodecDecoderAdapterImpl()
     if (decoder_ != nullptr) {
         AudioDecoderCallbackManager::DeleteAudioDecoder(decoder_);
         OH_AVErrCode errCode = OH_AudioCodec_Destroy(decoder_);
+        decoder_ = nullptr;
         if (errCode != AV_ERR_OK) {
             WVLOG_E("destroy decoder_ fail, errCode = %{public}u.", uint32_t(errCode));
         }
-        decoder_ = nullptr;
     }
 }
 
@@ -291,12 +280,6 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::CreateAudioDecoderByMime(c
     if (decoder_ == nullptr) {
         WVLOG_E("create decoder by mine[%{public}s] failed.", mimetype.c_str());
         return AudioDecoderAdapterCode::DECODER_ERROR;
-    }
-    mimeType_ = AudioMimeType::MIMETYPE_UNKNOW;
-    for (auto it = MIME_TYPE_MAP.begin(); it != MIME_TYPE_MAP.end(); it++) {
-        if (strcmp(it->first, mimetype.c_str()) == 0) {
-            mimeType_ = it->second;
-        }
     }
 
     AudioDecoderCallbackManager::AddAudioDecoder(this);
@@ -493,11 +476,11 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::ReleaseDecoder()
 
     AudioDecoderCallbackManager::DeleteAudioDecoder(decoder_);
     OH_AVErrCode errCode = OH_AudioCodec_Destroy(decoder_);
+    decoder_ = nullptr;
     if (errCode != AV_ERR_OK) {
         WVLOG_E("destroy decoder_ fail, errCode = %{public}u.", uint32_t(errCode));
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
-    decoder_ = nullptr;
 
     // clear input and output buffers
     {
@@ -585,6 +568,7 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::SetBufferCencInfo(
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
     errNo = OH_AVCencInfo_Destroy(avCencInfo);
+    avCencInfo = nullptr;
     if (errNo != AV_ERR_OK) {
         WVLOG_E("destroy cencInfo fail, errNo = %{public}u", static_cast<uint32_t>(errNo));
         return AudioDecoderAdapterCode::DECODER_ERROR;

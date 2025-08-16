@@ -1369,7 +1369,11 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   //
   // This method must be called if any state that affects web preferences has
   // changed so that it can be recomputed and sent to the renderer.
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  virtual void OnWebPreferencesChanged(int32_t usage_scenario_type = 99) = 0;
+#else
   virtual void OnWebPreferencesChanged() = 0;
+#endif
 
   // Requests the renderer to exit fullscreen.
   // |will_cause_resize| indicates whether the fullscreen change causes a

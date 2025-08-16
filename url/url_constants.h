@@ -6,7 +6,9 @@
 #define URL_URL_CONSTANTS_H_
 
 #include <stddef.h>
+
 #include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 
 namespace url {
 
@@ -82,6 +84,12 @@ inline constexpr char kDataabilityScheme[] = "dataability";
 #if BUILDFLAG(IS_ARKWEB_EXT)
 const char kArkwebScheme[] = "arkweb";
 const char16_t kArkwebScheme16[] = u"arkweb";
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+inline constexpr char kToAppParam[] = "to_app";
+inline constexpr char kChannelParam[] = "channel";
+inline constexpr char kChannelIdParam[] = "channelid";
 #endif
 
 }  // namespace url

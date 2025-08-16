@@ -15,7 +15,7 @@
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
-#include "base/task/thread_pool.h"
+#include "base/functional/bind.h"
 #endif
 
 namespace viz {
@@ -94,29 +94,30 @@ void GpuHostImpl::SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
                                             const std::vector<gfx::Rect>& quad_list,
                                             mojo::ScopedSharedBufferHandle buffer,
                                             mojom::BlanklessBitmapMetadataPtr metadata) {
+  if (!infoPtr) {
+    LOG(WARNING) << "blankless SendBlanklessSnapshotInfo invalid snapshot infoPtr.";
+    return;
+  }
   TRACE_EVENT1("io", "blankless GpuHostImpl::SendBlanklessSnapshotInfo", "blankless_key", infoPtr->blankless_key);
-  base::ohos::BlanklessInfo info = {
-    .blankless_key = infoPtr->blankless_key,
-    .nweb_id = infoPtr->nweb_id,
-    .lcp_time = infoPtr->lcp_time,
-    .system_time = infoPtr->system_time,
-    .pref_hash = infoPtr->pref_hash
-  };
-  base::ThreadPool::PostTask(
-      FROM_HERE,
-      {base::MayBlock(), base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN,
-       base::TaskPriority::USER_BLOCKING},
-      base::BindOnce(&GpuHostImpl::DumpBlanklessSnapshot, std::move(info), quad_list,
-        std::move(buffer), std::move(metadata)));
+  uint64_t key = infoPtr->blankless_key;
+  auto task = base::BindOnce(&GpuHostImpl::DumpBlanklessSnapshot,
+                             std::move(infoPtr), quad_list,
+                             std::move(buffer), std::move(metadata));
+  auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
+  databaseAdapter.PostDumpTaskWithDelay(key, std::move(task));
 }
 
-void GpuHostImpl::DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& blankless_info,
+void GpuHostImpl::DumpBlanklessSnapshot(mojom::BlanklessSendInfoPtr infoPtr,
                                         const std::vector<gfx::Rect>& quad_list,
                                         mojo::ScopedSharedBufferHandle buffer,
                                         mojom::BlanklessBitmapMetadataPtr metadata) {
-  TRACE_EVENT1("io", "blankless GpuHostImpl::DumpBlanklessSnapshot", "blankless_key", blankless_info.blankless_key);
-  LOG(DEBUG) << "GpuHostImpl::DumpBlanklessSnapshot url begin : key " << blankless_info.blankless_key
-    << ", lcp_time " << blankless_info.lcp_time << ", pref_hash " << blankless_info.pref_hash;
+  if (!infoPtr) {
+    LOG(WARNING) << "blankless DumpBlanklessSnapshot invalid snapshot infoPtr.";
+    return;
+  }
+  TRACE_EVENT1("io", "blankless GpuHostImpl::DumpBlanklessSnapshot", "blankless_key", infoPtr->blankless_key);
+  LOG(DEBUG) << "GpuHostImpl::DumpBlanklessSnapshot url begin : key " << infoPtr->blankless_key
+    << ", lcp_time " << infoPtr->lcp_time << ", pref_hash " << infoPtr->pref_hash;
   
   // the next all the process is sync, here we restore the skbitmap from mojo
   if (!buffer || !buffer.is_valid() ||
@@ -144,6 +145,14 @@ void GpuHostImpl::DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& blankless_in
     return;
   }
 
+  base::ohos::BlanklessInfo blankless_info = {
+    .blankless_key = infoPtr->blankless_key,
+    .nweb_id = infoPtr->nweb_id,
+    .lcp_time = infoPtr->lcp_time,
+    .system_time = infoPtr->system_time,
+    .pref_hash = infoPtr->pref_hash
+  };
+
   auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
   std::vector<base::ohos::BlanklessDataController::SnapShotRect> rect_list;
   if (quad_list.size() > 0) {
@@ -157,7 +166,7 @@ void GpuHostImpl::DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& blankless_in
       quad.height(),
     });
   }
-  databaseAdapter.DumpBlanklessSnapshot(std::move(blankless_info), bitmap, rect_list);
+  databaseAdapter.DumpBlanklessSnapshot(blankless_info, bitmap, rect_list);
 }
 
 void GpuHostImpl::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {

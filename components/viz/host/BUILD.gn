@@ -28,6 +28,8 @@ viz_component("host") {
     "//arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h",
     "//arkweb/chromium_ext/components/viz/host/blankless_data_controller.cc",
     "//arkweb/chromium_ext/components/viz/host/blankless_data_controller.h",
+    "//arkweb/chromium_ext/components/viz/host/cancelable_delayed_task_manager.cc",
+    "//arkweb/chromium_ext/components/viz/host/cancelable_delayed_task_manager.h",
     "host_gpu_memory_buffer_manager.cc",
     "host_gpu_memory_buffer_manager.h",
     "renderer_settings_creation.cc",

@@ -245,6 +245,10 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   bool is_download_request = false;
 #endif  //  ARKWEB_EX_DOWNLOAD
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  int32_t usage_scenario_ = 99;
+#endif
   net::SocketTag socket_tag;
 };
 // LINT.ThenChange(//services/network/prefetch_matches.cc)

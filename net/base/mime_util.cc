@@ -169,9 +169,7 @@ static const MimeInfo kPrimaryMappings[] = {
     {"audio/x-m4a", "m4a"},
     {"image/avif", "avif"},
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-#if false
    {"image/heif", "heif,heic,hevc"},
-#endif
 #endif
     {"image/gif", "gif"},
     {"image/jpeg", "jpeg,jpg"},

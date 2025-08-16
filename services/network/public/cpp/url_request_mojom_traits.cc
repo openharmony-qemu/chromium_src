@@ -246,6 +246,9 @@ bool StructTraits<
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   out->is_download_request = data.is_download_request();
 #endif  //  ARKWEB_EX_DOWNLOAD
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  out->usage_scenario_ = data.usage_scenario_();
+#endif
   return true;
 }
 

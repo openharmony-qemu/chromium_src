@@ -43,7 +43,7 @@ const std::string DATABASE_DIR = "/data/storage/el2/base/cache/web";
 const std::string DUMP_FILE_PRE = "/web_frame_";
 const std::string DUMP_FILE_TYPE = ".png";
 const double SSIM_THRESHOLD = 0.95;
-
+const int DUMP_TASK_DELAY_TIME = 1000; // Milliseconds
 
 static double Mean(const std::vector<double>& data) {
   if (data.size() == 0) {
@@ -384,6 +384,7 @@ BlanklessDataController::BlanklessDataController() : dbInstance_(OHOS::NWeb::Oho
     if (web_snapshot_db_callback_) {
       dbInstance_.RegisterDataBaseCallback(web_snapshot_db_callback_);
     }
+    task_manager_ = std::make_unique<viz::CancelableDelayedTaskManager>();
 }
 
 std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::GetHistorySnapshotInfo(
@@ -408,7 +409,7 @@ std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::
   return snapshotInfo;
 }
 
-void BlanklessDataController::DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& info,
+void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessInfo& info,
                                                     const SkBitmap& bitmap,
                                                     const std::vector<SnapShotRect>& quad_list)
 {
@@ -534,6 +535,13 @@ int32_t BlanklessDataController::SetBlanklessLoadingCacheCapacity(int capacity)
 int32_t BlanklessDataController::GetBlanklessLoadingCacheCapacity() const
 {
   return dbInstance_.GetCapacityInByte();
+}
+
+void BlanklessDataController::PostDumpTaskWithDelay(uint64_t blankless_key, base::OnceClosure task)
+{
+  if (task_manager_) {
+    task_manager_->PostNewDelayedTask(blankless_key, std::move(task), base::Milliseconds(DUMP_TASK_DELAY_TIME));
+  }
 }
 }  // namespace ohos
 }  // namespace base

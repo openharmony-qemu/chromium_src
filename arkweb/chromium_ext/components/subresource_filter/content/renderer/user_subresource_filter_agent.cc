@@ -136,7 +136,11 @@ bool UserSubresourceFilterAgent::IsParentAdFrame() {
   // A fenced frame root should never ask this since it can't see the outer
   // frame tree. Its AdEvidence is always computed by the browser.
   DCHECK(!IsFencedFrameRoot(render_frame()));
-  return render_frame()->GetWebFrame()->Parent()->IsAdFrame();
+  auto* parent = render_frame()->GetWebFrame()->Parent();
+  if (parent == nullptr) {
+    return false;
+  }
+  return parent->IsAdFrame();
 }
 
 bool UserSubresourceFilterAgent::IsProvisional() {

@@ -152,6 +152,9 @@ void ArkWebLocalFrameMojoHandlerExt::GetImageFromCache(
   blink::Document* document = frame_->GetDocument();
   if (document == nullptr) {
     LOG(ERROR) << "getImageFromCache: document nullptr";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "getImageFromCache: document nullptr";
+#endif
     std::move(callback).Run(0, base::ReadOnlySharedMemoryRegion());
     return;
   }
@@ -159,6 +162,9 @@ void ArkWebLocalFrameMojoHandlerExt::GetImageFromCache(
   DocumentLoader* loader = document->Loader();
   if (loader == nullptr) {
     LOG(ERROR) << "getImageFromCache: loader nullptr";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "getImageFromCache: loader nullptr";
+#endif
     std::move(callback).Run(0, base::ReadOnlySharedMemoryRegion());
     return;
   }
@@ -171,6 +177,9 @@ void ArkWebLocalFrameMojoHandlerExt::GetImageFromCache(
 #endif
   if (resource_buffer == nullptr) {
     LOG(ERROR) << "getImageFromCache: Get resource buffer null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "getImageFromCache: Get resource buffer null";
+#endif
     std::move(callback).Run(0, base::ReadOnlySharedMemoryRegion());
     return;
   }
@@ -179,6 +188,10 @@ void ArkWebLocalFrameMojoHandlerExt::GetImageFromCache(
       base::WritableSharedMemoryRegion::Create(resource_buffer->size());
   if (!region.IsValid()) {
     LOG(ERROR) << "getImageFromCache: WritableSharedMemoryRegion create failed";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR)
+        << "getImageFromCache: WritableSharedMemoryRegion create failed";
+#endif
     std::move(callback).Run(0, base::ReadOnlySharedMemoryRegion());
     return;
   }
@@ -186,6 +199,10 @@ void ArkWebLocalFrameMojoHandlerExt::GetImageFromCache(
   base::WritableSharedMemoryMapping mapping = region.Map();
   if (!mapping.IsValid()) {
     LOG(ERROR) << "getImageFromCache: WritableSharedMemoryRegion map failed";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR)
+        << "getImageFromCache: WritableSharedMemoryRegion map failed";
+#endif
     std::move(callback).Run(0, base::ReadOnlySharedMemoryRegion());
     return;
   }
@@ -195,6 +212,11 @@ void ArkWebLocalFrameMojoHandlerExt::GetImageFromCache(
     LOG(ERROR)
         << "getImageFromCache: Get resource bytes unfinished, buffer size "
         << resource_buffer->size();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR)
+        << "getImageFromCache: Get resource bytes unfinished, buffer size "
+        << resource_buffer->size();
+#endif
     std::move(callback).Run(0, base::ReadOnlySharedMemoryRegion());
     return;
   }

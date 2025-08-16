@@ -370,7 +370,7 @@ void ArkWebChromeContentRendererClientExt::TriggerElementHidingInFrame(
   auto* render_frame = content::RenderFrame::FromRoutingID(routing_id);
   if (!render_frame) {
     LOG(ERROR) << "[AdBlock] TriggerElementHidingInFrame render_frame null";
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(ERROR)
         << "[AdBlock] TriggerElementHidingInFrame render_frame null";
 #endif
@@ -380,7 +380,7 @@ void ArkWebChromeContentRendererClientExt::TriggerElementHidingInFrame(
   blink::WebLocalFrame* web_frame = render_frame->GetWebFrame();
   if (!web_frame) {
     LOG(ERROR) << "[AdBlock] TriggerElementHidingInFrame web_frame null";
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(ERROR)
         << "[AdBlock] TriggerElementHidingInFrame web_frame null";
 #endif
@@ -403,7 +403,7 @@ void ArkWebChromeContentRendererClientExt::TriggerElementHidingInFrame(
   if (!document.Url().ProtocolIs("https") &&
       !document.Url().ProtocolIs("http")) {
     LOG(ERROR) << "[AdBlock] TriggerElementHidingInFrame scheme error";
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(ERROR) << "[AdBlock] TriggerElementHidingInFrame scheme error";
 #endif
     return;
@@ -411,7 +411,7 @@ void ArkWebChromeContentRendererClientExt::TriggerElementHidingInFrame(
   if (web_frame->GetHasDocumentTypeOption()) {
     LOG(WARNING) << "[AdBlock] Match $document for "
                  << "***";
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(WARNING) << "[AdBlock] Match $document for "
                           << url::LogUtils::ConvertUrlWithMask(
                                  document.Url().GetString().Utf8());
@@ -421,7 +421,7 @@ void ArkWebChromeContentRendererClientExt::TriggerElementHidingInFrame(
   if (web_frame->GetHasElemHideTypeOption()) {
     LOG(WARNING) << "[AdBlock] Match selemhide for "
                  << "***";
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(WARNING) << "[AdBlock] Match $elemhide for "
                           << url::LogUtils::ConvertUrlWithMask(
                                  document.Url().GetString().Utf8());
@@ -432,7 +432,7 @@ void ArkWebChromeContentRendererClientExt::TriggerElementHidingInFrame(
   if (has_generichide) {
     LOG(WARNING) << "[AdBlock] Match sgenerichide for "
                  << "***";
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(WARNING) << "[AdBlock] Match $generichide for "
                           << url::LogUtils::ConvertUrlWithMask(
                                  document.Url().GetString().Utf8());
@@ -453,7 +453,7 @@ void ArkWebChromeContentRendererClientExt::TriggerElementHidingInFrame(
     LOG(WARNING) << "[AdBlock] Element hiding for "
                  << "***"
                  << "assumming " << duration.InMicroseconds() << "microseconds";
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(WARNING) << "[AdBlock] Element hiding for "
                           << url::LogUtils::ConvertUrlWithMask(
                                  document.Url().GetString().Utf8())
@@ -473,7 +473,7 @@ void ArkWebChromeContentRendererClientExt::TriggerUserElementHidingInFrame(
   if (!render_frame) {
     LOG(ERROR) << "[AdBlock] TriggerUserElementHidingInFrame render_frame null";
 
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(ERROR)
         << "[AdBlock] TriggerUserElementHidingInFrame render_frame null";
 #endif
@@ -510,7 +510,7 @@ void ArkWebChromeContentRendererClientExt::TriggerUserElementHidingInFrame(
                  << " assumming " << duration.InMicroseconds()
                  << " microseconds";
 
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(WARNING) << "[User AdBlock] Element hiding for "
                           << url::LogUtils::ConvertUrlWithMask(
                                  document.Url().GetString().Utf8())

@@ -34,7 +34,7 @@ int ConvertToInt(const char *originValue, int defaultValue)
 
 uint64_t HiTraceAdapterImpl::ConvertToInt64(const char *originValue, uint64_t defaultValue)
 {
-    return originValue == nullptr ? defaultValue : std::strtoull(originValue, nullptr, decimal_numeral_system_);
+    return originValue == nullptr ? defaultValue : std::strtoull(originValue, nullptr, DECIMAL_NUMERAL_SYSTEM);
 }
 
 void HiTraceAdapterImpl::StartTrace(const std::string& value, float limit)
@@ -64,10 +64,17 @@ void HiTraceAdapterImpl::CountTrace(const std::string& name, int64_t count)
 
 bool HiTraceAdapterImpl::IsHiTraceEnable()
 {
+    static bool first_call = true;
+    static bool hitrace_enable = true;
+    if (!first_call) {
+        return hitrace_enable;
+    }
     std::string enable = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
                             .GetStringParameter("debug.hitrace.tags.enableflags", "0");
     uint64_t tags = ConvertToInt64(enable.c_str(), 0);
-    return (tags & arkweb_hitrace_enable_);
+    hitrace_enable = (tags & ARKWEB_HITRACE_ENABLE) != 0;
+    first_call = false;
+    return hitrace_enable;
 }
 
 void HiTraceAdapterImpl::StartOHOSTrace(const std::string& value, float limit)

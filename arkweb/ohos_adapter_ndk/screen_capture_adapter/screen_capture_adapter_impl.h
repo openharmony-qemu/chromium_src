@@ -33,6 +33,7 @@ void ScreenCaptureCallbackOnStateChange(struct OH_AVScreenCapture *capture,
 
 class OH_SurfaceBufferAdapterImpl : public SurfaceBufferAdapter {
 private:
+    void ReleaseSurfaceBuffer();
     void* avBuffer_ = nullptr;
     OH_NativeBuffer_Config config_;
     uint32_t size_ = 0;
@@ -84,6 +85,9 @@ public:
     int32_t length_ = 0;
     int64_t timestamp_ = 0;
     OH_AudioCaptureSourceType sourcetype_ = OH_AudioCaptureSourceType::OH_SOURCE_DEFAULT;
+
+private:
+    void ReleaseAudioBuffer();
 };
 
 struct CallbackInfo {

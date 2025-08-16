@@ -1,8 +1,13 @@
-// Copyright 2022 The Chromium Authors
+// Copyright (c) 2025 Huawei Device Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "third_party/xdg_shared_mime_info/mime_cache.h"
+// Based on mime_cache.gen.cc originally written by
+// Copyright (c) 2022 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#include "arkweb/chromium_ext/third_party/xdg_shared_mime_info/mime_cache.h"
 
 #include "base/containers/fixed_flat_map.h"
 #include "base/strings/string_util.h"

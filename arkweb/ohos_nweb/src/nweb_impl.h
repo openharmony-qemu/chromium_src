@@ -59,7 +59,6 @@ struct FrameInfos;
 struct IsolatedWorld;
 struct OpenDevToolsParam;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "capi/nweb_confirm_info_bar_callback.h"
 #include "capi/nweb_extension_manager_callback.h"
 #include "capi/nweb_extension_context_menus_callback.h"
 #include "capi/web_extension_tab_items.h"
@@ -881,33 +880,15 @@ class NWebImpl : public NWeb {
       std::unique_ptr<NWebExtensionTab> tab);
   void WebExtensionTabActivated(
       std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo);
-  void WebExtensionTabAttached(
+  void WebExtensionTabAttached(int tab_id,
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo);
-  void WebExtensionTabDetached(
+  void WebExtensionTabDetached(int tab_id,
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo);
   void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo);
   void WebExtensionTabMoved(int32_t tab_id,
                             std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo);
   void WebExtensionTabReplaced(int32_t addedTabId, int32_t removedTabId);
   void WebExtensionSetViewType(int32_t type);
-  static void OnShowConfirmInfoBar(const std::string& title,
-                                   const std::string& infoId,
-                                   const std::string& message,
-                                   int buttons,
-                                   const std::string& buttonLabelOK,
-                                   const std::string& buttonLabelCancel);
-  static void OnHideConfirmInfoBar(const std::string& title,
-                                   const std::string& infoId,
-                                   const std::string& message,
-                                   int buttons,
-                                   const std::string& buttonLabelOK,
-                                   const std::string& buttonLabelCancel);
-  static void SetOnShowConfirmInfoBarCallback(OnArkWebStaticShowConfirmInfoBarFunc func);
-  static void SetOnHideConfirmInfoBarCallback(OnArkWebStaticShowConfirmInfoBarFunc func);
-  static void CancelConfirmInfoBar(const std::string& infoId);
-  static void OnConfirmInfoBarConfigurationUpdated(
-      std::shared_ptr<NWebSystemConfiguration> configuration,
-      const std::string& language);
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -918,6 +899,13 @@ class NWebImpl : public NWeb {
   void OnDataDetectorSelectText() override;
   void OnDataDetectorCopy(const std::vector<std::string>& recordMix) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  static void PutLoggerCallback(
+      std::shared_ptr<NWebLoggerCallback> logger_callback);
+  static void RemoveLoggerCallback();
+#endif
+
   int SetUrlTrustList(const std::string& urlTrustList) override;
   int SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
                                 std::string& detailErrMsg) override;
@@ -1145,12 +1133,6 @@ class NWebImpl : public NWeb {
   std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
 #endif
-
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  static OnArkWebStaticShowConfirmInfoBarFunc on_show_confirm_info_bar_callback_;
-  static OnArkWebStaticShowConfirmInfoBarFunc on_hide_confirm_info_bar_callback_;
-  static ConfirmInfoBarMessage confirm_info_bar_message_;
-#endif // ARKWEB_ARKWEB_EXTENSIONS
 };
 }  // namespace OHOS::NWeb
 

@@ -47,14 +47,6 @@ bool NWebExtensionTabCefDelegate::HasExtensionListener() {
 #endif
 }
 
-bool NWebExtensionTabCefDelegate::HasUpdateTabCallback() {
-#if !BUILDFLAG(ARKWEB_NWEB_EX)
-  return false;
-#else
-  return NWebExtensionTabDispatcher::HasUpdateTabCallback();
-#endif
-}
-
 bool NWebExtensionTabCefDelegate::CreateTab(
     NWebTabCreateInfo& create_info,
     TabCreatedCallback callback) {
@@ -80,16 +72,6 @@ void NWebExtensionTabCefDelegate::TabCreateCallback(
     std::move(g_tab_created_map_[request_id]).Run(tab, error);
     g_tab_created_map_.erase(request_id);
   }
-}
-
-void NWebExtensionTabCefDelegate::UpdateTab(
-    int tab_id,
-    NWebExtensionTabUpdateProperties& update_properties) {
-#if !BUILDFLAG(ARKWEB_NWEB_EX)
-  return;
-#else
-  NWebExtensionTabDispatcher::UpdateTab(-1, tab_id, update_properties);
-#endif
 }
 
 bool NWebExtensionTabCefDelegate::UpdateTab(

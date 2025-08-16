@@ -256,18 +256,27 @@ scoped_refptr<const SharedBuffer> GetShareBufferForImageDocument(
   HTMLImageElement* element = To<ImageDocument>(document)->ImageElement();
   if (!element) {
     LOG(ERROR) << "GetShareBufferForImageDocument, element is null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "GetShareBufferForImageDocument, element is null";
+#endif
     return nullptr;
   }
 
   ImageResourceContent* content = element->CachedImage();
   if (!content) {
     LOG(ERROR) << "GetShareBufferForImageDocument, content is null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "GetShareBufferForImageDocument, content is null";
+#endif
     return nullptr;
   }
 
   blink::Image* image = content->GetImage();
   if (!image || image->IsNull()) {
     LOG(ERROR) << "GetShareBufferForImageDocument, image is null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "GetShareBufferForImageDocument, image is null";
+#endif
     return nullptr;
   }
 

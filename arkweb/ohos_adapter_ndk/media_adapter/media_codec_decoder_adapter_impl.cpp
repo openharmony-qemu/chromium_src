@@ -147,6 +147,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::ConfigureDecoder(const std::sha
 
     OH_AVErrCode ret = OH_VideoDecoder_Configure(decoder_, codecFormat);
     OH_AVFormat_Destroy(codecFormat);
+    codecFormat = nullptr;
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         WVLOG_E("MediaCodecDecoder OH_VideoDecoder_Configure fail, ret=%{public}u.", static_cast<uint32_t>(ret));
         return DecoderAdapterCode::DECODER_ERROR;
@@ -177,6 +178,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetParameterDecoder(const std::
 
     OH_AVErrCode ret = OH_VideoDecoder_SetParameter(decoder_, codecFormat);
     OH_AVFormat_Destroy(codecFormat);
+    codecFormat = nullptr;
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         WVLOG_E("MediaCodecDecoder OH_VideoDecoder_SetParameter fail, ret=%{public}u.", static_cast<uint32_t>(ret));
         return DecoderAdapterCode::DECODER_ERROR;
@@ -643,6 +645,9 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfo(
     }
 
     if (SetAVCencInfoStruct(avCencInfo, cencInfo) != DecoderAdapterCode::DECODER_OK) {
+        WVLOG_E("OH_AVCencInfo_SetAVCencInfoStruct fail.");
+        (void)OH_AVCencInfo_Destroy(avCencInfo);
+        avCencInfo = nullptr;
         return DecoderAdapterCode::DECODER_ERROR;
     }
 
@@ -650,6 +655,8 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfo(
         std::unique_lock<std::mutex> lock(bufferMutex_);
         if (bufferMap_.find(index) == bufferMap_.end()) {
             WVLOG_E("MediaCodecDecoder QueueInputBufferDec not find index.");
+            (void)OH_AVCencInfo_Destroy(avCencInfo);
+            avCencInfo = nullptr;
             return DecoderAdapterCode::DECODER_ERROR;
         }
         ret = OH_AVCencInfo_SetAVBuffer(avCencInfo, bufferMap_[index]);
@@ -657,9 +664,12 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfo(
 
     if (ret != AV_ERR_OK) {
         WVLOG_E("OH_AVCencInfo_SetAVBuffer fail, ret=%{public}u.", static_cast<uint32_t>(ret));
+        (void)OH_AVCencInfo_Destroy(avCencInfo);
+        avCencInfo = nullptr;
         return DecoderAdapterCode::DECODER_ERROR;
     }
     ret = OH_AVCencInfo_Destroy(avCencInfo);
+    avCencInfo = nullptr;
     if (ret != AV_ERR_OK) {
         WVLOG_E("OH_AVCencInfo_Destroy fail, ret=%{public}u.", static_cast<uint32_t>(ret));
         return DecoderAdapterCode::DECODER_ERROR;

@@ -53,6 +53,9 @@ void GestureManagerUtils::CloseAIOverlay(
 WebInputEventResult GestureManagerUtils::HandleGestureDragLongPress(
     const GestureEventWithHitTestResults& targeted_event) {
   LOG(INFO) << "DragDrop HandleGestureDragLongPress";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "DragDrop HandleGestureDragLongPress";
+#endif
   const WebGestureEvent& gesture_event = targeted_event.Event();
 
   // FIXME: Ideally we should try to remove the extra mouse-specific hit-tests
@@ -135,7 +138,14 @@ void GestureManagerUtils::UpdateContextMenuForFreeCopy(
         (!hit_test_result.IsLiveLink())) {
       if (inner_node && inner_node->GetLayoutObject() &&
           gesture_manager_->selection_controller_->HandleGestureLongPress(
+#if BUILDFLAG(ARKWEB_FOCUS)
+              hit_test_result,
+              gesture_manager_->frame_->GetSettings() &&
+                  gesture_manager_->frame_->GetSettings()->GetGestureFocusMode() &&
+                  gesture_manager_->frame_->GetSettings()->GetShowContextMenuOnMouseUp())) {
+#else
               hit_test_result)) {
+#endif
         gesture_manager_->mouse_event_manager_->FocusDocumentView();
       }
     }
@@ -151,7 +161,14 @@ void GestureManagerUtils::UpdateContextMenuForFreeCopy(
   } else {
     if (inner_node && inner_node->GetLayoutObject() &&
         gesture_manager_->selection_controller_->HandleGestureLongPress(
+#if BUILDFLAG(ARKWEB_FOCUS)
+            hit_test_result,
+            gesture_manager_->frame_->GetSettings() &&
+                gesture_manager_->frame_->GetSettings()->GetGestureFocusMode() &&
+                gesture_manager_->frame_->GetSettings()->GetShowContextMenuOnMouseUp())) {
+#else
             hit_test_result)) {
+#endif
       gesture_manager_->mouse_event_manager_->FocusDocumentView();
     }
   }

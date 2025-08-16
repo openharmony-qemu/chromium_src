@@ -83,16 +83,13 @@ void ArkWebHostResolverDnsTaskExt::RecordFailedTransactionInfo(
             << static_cast<int>(dns_query_type) << ", host "
             << std::string(hostResolverDnsTask->host_.GetHostnameWithoutBrackets())
             << ", and needed tranactions num is 2";
-  // TODO(ARKWEB)
-  // #ifdef OHOS_LOGGER_REPORT
-  //     LOG_FEEDBACK(INFO) << "The completed transaction [" << index << "] is
-  //     failed "
-  //               << net_error << ", failedQueryType "
-  //               << static_cast<int>(dns_query_type) << ", host "
-  //               <<
-  //               url::LogUtils::ConvertUrlWithMask(std::string(host_.GetHostnameWithoutBrackets()))
-  //               << ", and needed tranactions num is 2";
-  // #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO)
+      << "The completed transaction [" << index << "] is failed " << net_error
+      << ", failedQueryType " << static_cast<int>(dns_query_type) << ", host "
+      << std::string(hostResolverDnsTask->host_.GetHostnameWithoutBrackets())
+      << ", and needed tranactions num is 2";
+#endif
 }
 
 void ArkWebHostResolverDnsTaskExt::SetNotNeedMoreAttemptIPQueryType(

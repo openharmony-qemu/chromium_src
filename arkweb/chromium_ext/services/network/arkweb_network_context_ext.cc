@@ -351,4 +351,10 @@ void ArkWebNetworkContextExt::SetURLLoaderFactoryParam(mojom::URLLoaderFactoryPa
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+bool ArkWebNetworkContextExt::IsStrictLogMode() const {
+  return params_ && params_->is_strict_log_mode;
+}
+#endif  // ARKWEB_LOGGER_REPORT
+
 }  // namespace network

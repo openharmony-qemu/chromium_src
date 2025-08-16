@@ -9,6 +9,7 @@
 #include <optional>
 
 #include "absl/types/optional.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/task/single_thread_task_runner.h"
 #include "third_party/webrtc/modules/desktop_capture/desktop_capture_options.h"
@@ -129,7 +130,7 @@ class BaseWindowCapturer : public DesktopCapturer {
   OHOS::NWeb::ScreenCaptureStateCodeAdapter capture_state_code_ =
       OHOS::NWeb::ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_INVLID;
 
-  Callback* callback_ = nullptr;
+  raw_ptr<Callback> callback_ = nullptr;
 
   CaptureSourceType capture_source_type_ =
       BaseWindowCapturer::CaptureSourceType::kScreen;

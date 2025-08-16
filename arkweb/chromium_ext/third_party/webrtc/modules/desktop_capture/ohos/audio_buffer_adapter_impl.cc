@@ -19,7 +19,7 @@ namespace OHOS::NWeb {
 
 uint8_t* AudioBufferAdapterImpl::GetBuffer()
 {
-    return buffer_;
+    return buffer_.get();
 }
 
 int32_t AudioBufferAdapterImpl::GetLength()

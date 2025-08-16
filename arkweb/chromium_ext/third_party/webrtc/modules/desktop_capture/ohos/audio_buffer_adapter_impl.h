@@ -17,6 +17,7 @@
 #define AUDIO_BUFFER_ADAPTER_IMPL_H
 
 #include "screen_capture_adapter.h"
+#include "base/memory/raw_ptr.h"
 
 namespace OHOS::NWeb {
 class AudioBufferAdapterImpl : public AudioBufferAdapter {
@@ -40,7 +41,7 @@ public:
     void SetSourcetype(AudioCaptureSourceTypeAdapter sourcetype) override;
 
 private:
-    uint8_t* buffer_ = nullptr;
+    raw_ptr<uint8_t> buffer_ = nullptr;
     int32_t length_ = 0;
     int64_t timestamp_ = 0;
     AudioCaptureSourceTypeAdapter sourcetype_ = AudioCaptureSourceTypeAdapter::SOURCE_INVALID;

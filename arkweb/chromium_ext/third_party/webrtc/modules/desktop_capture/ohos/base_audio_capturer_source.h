@@ -17,6 +17,7 @@
 #define MEDIA_OHOS_AUDIO_BASE_AUDIO_CAPTURER_SOURCE_H_
 
 #include "base/files/file_util.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/threading/thread_checker.h"
 #include "media/base/audio_capturer_source.h"
@@ -98,7 +99,7 @@ private:
     scoped_refptr<base::SingleThreadTaskRunner> capturer_task_runner_;
     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
     AudioParameters params_;
-    CaptureCallback* base_callback_ = nullptr;
+    raw_ptr<CaptureCallback> base_callback_ = nullptr;
     base::Lock base_callback_lock_;
     FILE* dumpFile_ = nullptr;
 

@@ -235,6 +235,8 @@ int32_t LocationProxyAdapterImpl::StartLocating(
     OH_LocationRequestConfig_SetCallback(ohRequestConfig, LocationCallback, ohCallback_.get());
     Location_ResultCode errCode = OH_Location_StartLocating(ohRequestConfig);
     if (errCode != LOCATION_SUCCESS) {
+        OH_Location_DestroyRequestConfig(ohRequestConfig);
+        ohRequestConfig = nullptr;
         WVLOG_E("StartLocating failed, errcode:%{public}d", errCode);
         return id;
     }

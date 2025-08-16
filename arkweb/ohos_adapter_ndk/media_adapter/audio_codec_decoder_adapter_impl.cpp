@@ -583,20 +583,21 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::QueueInputBufferDec(uint32
     WVLOG_I("%{public}s index[%{public}u],  buffer size[%{public}d], isEncrypted[%{public}d],"
         "flag[%{public}d].", __FUNCTION__, index, bufferSize, static_cast<uint32_t>(isEncrypted),
         static_cast<uint32_t>(flag));
-
     if (decoder_ == nullptr) {
         WVLOG_E("decoder_ is nullptr.");
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
-
     if (isEncrypted && SetBufferCencInfo(index, cencInfo) != AudioDecoderAdapterCode::DECODER_OK) {
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
-
     OH_AVBuffer *avBuffer = GetInputBuffer(index);
+    if (avBuffer == nullptr) {
+        WVLOG_E("QueueInputBufferDec fail, inputbuffer[%{public}u] not find.", index);
+        return AudioDecoderAdapterCode::DECODER_ERROR;
+    }
     int32_t bufferCapacity = OH_AVBuffer_GetCapacity(avBuffer);
-    if (avBuffer == nullptr || bufferCapacity < bufferSize) {
-        WVLOG_E("QueueInputBufferDec fail, inputbuffer[%{public}u] not find or cap size less than buffer size.", index);
+    if (bufferCapacity < bufferSize) {
+        WVLOG_E("QueueInputBufferDec fail, cap size less than buffer size.");
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
     uint8_t *addr = OH_AVBuffer_GetAddr(avBuffer);

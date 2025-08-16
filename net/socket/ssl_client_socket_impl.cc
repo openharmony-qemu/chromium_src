@@ -84,7 +84,7 @@ const int kCertVerifyPending = 1;
 // Default size of the internal BoringSSL buffers.
 const int kDefaultOpenSSLBufferSize = 17 * 1024;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
 constexpr uint16_t kDefaultSSLVersionMinWarn = SSL_PROTOCOL_VERSION_TLS1_2;
 constexpr uint16_t k3DESCipher = 0x000a;
 #endif
@@ -692,10 +692,13 @@ int SSLClientSocketImpl::Init() {
       ssl_config_.version_min_override.value_or(context_->config().version_min);
   uint16_t version_max =
       ssl_config_.version_max_override.value_or(context_->config().version_max);
+
+#if !BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)  
   if (version_min < TLS1_2_VERSION || version_max < TLS1_2_VERSION) {
     // TLS versions before TLS 1.2 are no longer supported.
     return ERR_UNEXPECTED;
   }
+#endif
 
   if (!SSL_set_min_proto_version(ssl_.get(), version_min) ||
       !SSL_set_max_proto_version(ssl_.get(), version_max)) {

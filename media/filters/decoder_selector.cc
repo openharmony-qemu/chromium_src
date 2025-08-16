@@ -239,6 +239,11 @@ void DecoderSelector<StreamType>::OnDecoderInitializeDone(
   LOG(WARNING) << "OhMedia::OnDecoderInitializeDone "
                << decoder_->GetDecoderType()
                << " success=" << static_cast<int>(status.code());
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(WARNING) << "OhMedia::OnDecoderInitializeDone "
+                        << decoder_->GetDecoderType()
+                        << " success=" << static_cast<int>(status.code());
+#endif
 #else
   DVLOG(2) << __func__ << ": " << decoder_->GetDecoderType()
            << " success=" << static_cast<int>(status.code());

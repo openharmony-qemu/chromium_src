@@ -191,7 +191,6 @@ private:
 
     OH_AVBuffer* GetOutputBuffer(uint32_t index);
 
-    AudioMimeType mimeType_ = AudioMimeType::MIMETYPE_UNKNOW;
     OH_AVCodec *decoder_  = nullptr;
     std::shared_ptr<AudioDecoderCallbackAdapterImpl> callback_ = nullptr;
     std::mutex inMutex_;

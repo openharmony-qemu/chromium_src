@@ -864,6 +864,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
               SetBackForwardCacheOptions,
               (int32_t size, int32_t timeToLive),
               (override));
+  MOCK_METHOD(void,
+              SetMediaResumeFromBFCachePage,
+              (bool resume),
+              (override));
 #endif
 
   MOCK_METHOD(bool, IsCustomKeyboard, (), (const, override));
@@ -1069,11 +1073,13 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (override));
   MOCK_METHOD(void,
               WebExtensionTabAttached,
-              (std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo),
+              (int tab_id,
+               std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo),
               (override));
   MOCK_METHOD(void,
               WebExtensionTabDetached,
-              (std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo),
+              (int tab_id,
+               std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo),
               (override));
   MOCK_METHOD(void,
               WebExtensionTabHighlighted,

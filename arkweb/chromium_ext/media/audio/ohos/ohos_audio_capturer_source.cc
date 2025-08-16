@@ -54,6 +54,9 @@ void OHOSAudioCapturerSource::Initialize(
   params_ = params;
   callback_ = callback;
 
+  if (!capturer_) {
+    return;
+  }
   if (params_.format() != AudioParameters::AUDIO_PCM_LOW_LATENCY) {
     ReportError("Only AUDIO_PCM_LOW_LATENCY format is supported");
     return;
@@ -116,6 +119,9 @@ void OHOSAudioCapturerSource::Stop() {
     }
     is_stopped_.store(true);
   }
+  if (!capturer_) {
+    return;
+  }
 
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());
   if (!capturer_->Stop()) {
@@ -128,7 +134,6 @@ void OHOSAudioCapturerSource::Stop() {
 }
 
 void OHOSAudioCapturerSource::ReadData() {
-  base::AutoLock lock(callback_lock_);
   if (!capturer_) {
     return;
   }
@@ -154,10 +159,13 @@ void OHOSAudioCapturerSource::ReadData() {
   audio_bus->FromInterleaved<SignedInt16SampleTypeTraits>(
       reinterpret_cast<const int16_t*>(bufferDesc->GetBuffer()),
       static_cast<int>(frameCount_));
-  if (callback_) {
-    callback_->Capture(audio_bus.get(), timeStamp, {}, 1.0, false);
-    DumpFileUtil::WriteDumpFile(dumpFile_, bufferDesc->GetBuffer(),
-                                bufferDesc->GetBufLength());
+  {
+    base::AutoLock lock(callback_lock_);
+    if (callback_) {
+      callback_->Capture(audio_bus.get(), timeStamp, {}, 1.0, false);
+      DumpFileUtil::WriteDumpFile(dumpFile_, bufferDesc->GetBuffer(),
+                                  bufferDesc->GetBufLength());
+    }
   }
   capturer_->Enqueue(bufferDesc);
 }

@@ -1187,6 +1187,19 @@ TypefaceSet* FontConfig_OHOS::getTypefaceSet(const SkString& familyName,
   return nullptr;
 }
 
+void FontConfig_OHOS::addIndexToFallbackSet(const SkString& familyName) {
+  if (fallbackNames.find(familyName) != nullptr) {
+    return;
+  }
+  std::unique_ptr<FallbackInfo> fallback = std::make_unique<FallbackInfo>();
+  fallback->familyName = familyName;
+  fallback->typefaceSet = std::make_shared<TypefaceSet>();
+  fallbackNames.set(familyName, fallbackSet.size());
+  fallbackSet.emplace_back(std::move(fallback));
+  FallbackSetPos setPos = {0, (unsigned int)(fallbackSet.size())};
+  fallbackForMap.set(SkString(""), setPos);
+}
+
 /*! To load font information from a font file
  * \param scanner a scanner used to parse the font file
  * \param fname the full name of a font file
@@ -1218,20 +1231,8 @@ int FontConfig_OHOS::loadFont(const SkFontScanner& fontScanner,
     free(fnameCopy);
     return err;
   }
-  int installPathLen = strlen("/data/service/el1/public/for-all-app/fonts/");
-  if (installedOrStyle &&
-      strncmp(fname, OHOS_FONT_INSTALL_DIR.c_str(), installPathLen) == 0 &&
-      fallbackNames.find(SkString(font.familyName)) == nullptr) {
-    SkString fallbackFor("");
-    unsigned int startPos = 0;
-    std::unique_ptr<FallbackInfo> fallback = std::make_unique<FallbackInfo>();
-    fallback->familyName = SkString(font.familyName);
-    fallback->typefaceSet = std::make_shared<TypefaceSet>();
-    fallbackNames.set(SkString(font.familyName), fallbackSet.size());
-    fallbackSet.emplace_back(std::move(fallback));
-    FallbackSetPos setPos = {startPos,
-                             (unsigned int)(fallbackSet.size() - startPos)};
-    fallbackForMap.set(fallbackFor, setPos);
+  if (installedOrStyle) {
+    addIndexToFallbackSet(SkString(font.familyName));
   }
   // for adjustMap - update weight
   if (adjustMap.find(font.familyName) != nullptr) {
@@ -1259,6 +1260,17 @@ int FontConfig_OHOS::loadFont(const SkFontScanner& fontScanner,
   if (!ret) {
     SkString specifiedName;
     TypefaceSet* tpSet = getTypefaceSet(font.familyName, specifiedName);
+    if (!specifiedName.isEmpty()) {
+      SkString fontFamilyName = font.familyName;
+      addIndexToFallbackSet(fontFamilyName);
+      int index = *(fallbackNames.find(fontFamilyName));
+      TypefaceSet* newTpSet = fallbackSet[index]->typefaceSet.get();
+      if (newTpSet) {
+        FontInfo newFont(font);
+        sk_sp<SkTypeface_OHOS> typeface = sk_make_sp<SkTypeface_OHOS>(fontFamilyName, newFont);
+        newTpSet->push_back(std::move(typeface));
+      }
+    }
     if (tpSet) {
       sk_sp<SkTypeface_OHOS> typeface =
           sk_make_sp<SkTypeface_OHOS>(specifiedName, font);
@@ -1321,6 +1333,18 @@ int FontConfig_OHOS::loadFontBackup(const SkFontScanner& fontScanner, const char
     if (!ret) {
         SkString specifiedName;
         TypefaceSet* tpSet = getTypefaceSet(font.familyName, specifiedName);
+        if (!specifiedName.isEmpty()) {
+            SkString fontFamilyName = font.familyName;
+            addIndexToFallbackSet(fontFamilyName);
+            int index = *(fallbackNames.find(fontFamilyName));
+            TypefaceSet* newTpSet = fallbackSet[index]->typefaceSet.get();
+            if (newTpSet) {
+                FontInfo newFont(font);
+                sk_sp<SkTypeface_OHOS> typeface = sk_make_sp<SkTypeface_OHOS>(fontFamilyName, newFont);
+                newTpSet->push_back(std::move(typeface));
+            }
+        }
+
         if (tpSet) {
             sk_sp<SkTypeface_OHOS> typeface = sk_make_sp<SkTypeface_OHOS>(specifiedName, font);
             tpSet->push_back(std::move(typeface));

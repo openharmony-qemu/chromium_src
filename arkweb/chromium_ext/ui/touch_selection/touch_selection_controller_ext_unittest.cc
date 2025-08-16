@@ -683,10 +683,13 @@ TEST_F(TouchSelectionControllerExtTest, UpdateSelectionChanged) {
   MockMotionEvent event(MockMotionEvent::Action::DOWN, base::TimeTicks::Now(), 1, 0);
   gfx::SelectionBound start_bound;
   gfx::SelectionBound end_bound;
+  controller().active_status_ = TouchSelectionController::ActiveStatus::SELECTION_ACTIVE;
+  EXPECT_EQ(controller().SelectOverImg(), false);
   controller().insertion_handle_ =
     std::make_unique<TouchHandleExt>(touchHandleClient.get(), TouchHandleOrientation::CENTER, kDefaultViewportRect);
   controller().start_selection_handle_ =
     std::make_unique<TouchHandleExt>(touchHandleClient.get(), TouchHandleOrientation::LEFT, kDefaultViewportRect);
+  EXPECT_EQ(controller().SelectOverImg(), false);
   controller().end_selection_handle_ =
     std::make_unique<TouchHandleExt>(touchHandleClient.get(), TouchHandleOrientation::RIGHT, kDefaultViewportRect);
   controller().SetTouchNumsForHandle(event);
@@ -703,6 +706,16 @@ TEST_F(TouchSelectionControllerExtTest, UpdateSelectionChanged) {
   EXPECT_EQ(controller().SelectOverImg(), false);
   controller().show_touch_handles_ = true;
   EXPECT_EQ(controller().SelectOverImg(), false);
+  controller().end_selection_handle_->BeginDrag();
+  EXPECT_EQ(controller().SelectOverImg(), true);
+  controller().start_selection_handle_->BeginDrag();
+  EXPECT_EQ(controller().SelectOverImg(), true);
+  controller().start_selection_handle_->EndDrag();
+  controller().end_selection_handle_->EndDrag();
+
+  controller().longpress_drag_selector_.SetState(LongPressDragSelector::SelectionState::DRAGGING);
+  EXPECT_EQ(controller().SelectOverImg(), true);
+
   controller().end_selection_handle_->SetVisible(true, TouchHandle::AnimationStyle::ANIMATION_NONE);
   controller().HandleIfEndNotVisible(event);
   EXPECT_EQ(controller().end_selection_handle_->AsTouchHandleExt()->GetVisible(), true);
@@ -758,6 +771,10 @@ TEST_F(TouchSelectionControllerExtTest, ArkSelectBetweenCoordinates002) {
   controller().end_ = end_bound;
   controller().ArkSelectBetweenCoordinates(base, extent);
   EXPECT_FALSE(IsBase());
+  controller().anchor_drag_to_selection_start_ = true;
+  controller().ArkSelectBetweenCoordinates(base, extent);
+  controller().anchor_drag_to_selection_start_ = false;
+
   controller().end_selection_handle_->SetVisible(false, TouchHandle::AnimationStyle::ANIMATION_NONE);
   controller().ArkSelectBetweenCoordinates(base, extent);
   end_bound.SetEdge(line_rect.origin(), line_rect.bottom_left());
@@ -768,6 +785,16 @@ TEST_F(TouchSelectionControllerExtTest, ArkSelectBetweenCoordinates002) {
   controller().start_ = start_bound;
   controller().ArkSelectBetweenCoordinates(base, extent);
   EXPECT_TRUE(IsBase());
+  controller().anchor_drag_to_selection_start_ = true;
+  controller().ArkSelectBetweenCoordinates(base, extent);
+  controller().anchor_drag_to_selection_start_ = false;
+  controller().end_selection_handle_->BeginDrag();
+  EXPECT_EQ(controller().OnHandleSwap(false, start_bound, end_bound), true);
+  controller().end_selection_handle_->EndDrag();
+  controller().start_selection_handle_->BeginDrag();
+  EXPECT_EQ(controller().OnHandleSwap(false, start_bound, end_bound), true);
+  controller().start_selection_handle_->EndDrag();
+
   controller().insertion_handle_ = nullptr;
   controller().start_selection_handle_ = nullptr;
   controller().end_selection_handle_ = nullptr;

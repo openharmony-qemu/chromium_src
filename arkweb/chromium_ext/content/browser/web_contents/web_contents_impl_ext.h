@@ -294,6 +294,8 @@ class WebContentsImplExt : public WebContentsImpl {
              int width,
              int height);
   void OnPipEvent(int event) override;
+  void SetUpdateSurface(bool state);
+  bool IsUpdateSurface();
 #endif
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 friend class WebContentsImpl;
@@ -338,20 +340,6 @@ public:
   void OnBrowserForeground() override;
   void OnBrowserBackground() override;
 #endif
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  void OnShowConfirmInfoBar(const std::string& title,
-                            const std::string& infoId,
-                            const std::string& message,
-                            int buttons,
-                            const std::string& buttonLabelOK,
-                            const std::string& buttonLabelCancel);
-  void OnHideConfirmInfoBar(const std::string& title,
-                            const std::string& infoId,
-                            const std::string& message,
-                            int buttons,
-                            const std::string& buttonLabelOK,
-                            const std::string& buttonLabelCancel);
-#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 private:
   std::string custom_user_agent_;
@@ -380,6 +368,7 @@ private:
   std::string shared_render_process_token_;
 #endif
 #if BUILDFLAG(ARKWEB_PIP)
+  bool pip_update_surface_ = false;
   bool pip_status_ = false;
 #endif
 };

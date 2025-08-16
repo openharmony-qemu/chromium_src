@@ -178,7 +178,7 @@ size_t ArkwebRenderProcessHostImplUtils::GetProcessCountForLimitArkweb(
     RenderProcessHostImpl* host =
         static_cast<RenderProcessHostImpl*>(it.GetCurrentValue());
 
-    if (!host->is_dead()) {
+    if (host != nullptr && !host->is_dead()) {
       count++;
     }
     it.Advance();

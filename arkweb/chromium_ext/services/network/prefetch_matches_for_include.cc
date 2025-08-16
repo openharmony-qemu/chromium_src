@@ -86,6 +86,7 @@
   DO_FIELD(is_preflight) __VA_ARGS__                           \
   DO_FIELD(is_sync_mode) __VA_ARGS__                           \
   DO_FIELD(is_download_request) __VA_ARGS__                    \
+  DO_FIELD(usage_scenario_) __VA_ARGS__                        \
   DO_FIELD(socket_tag)
 #endif  // BUILDFLAG(IS_ARKWEB)
 

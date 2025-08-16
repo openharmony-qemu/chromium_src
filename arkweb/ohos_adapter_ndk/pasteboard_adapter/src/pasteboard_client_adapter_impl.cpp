@@ -207,7 +207,7 @@ void PasteDataRecordAdapterImpl::ReleaseMemory(
   }
   if (imageInfo != nullptr) {
     int pixelmapImageInfoDestroy_res = OH_PixelmapImageInfo_Release(imageInfo);
-    if (pixelmapImageInfoDestroy_res != UDMF_E_OK) {
+    if (pixelmapImageInfoDestroy_res != IMAGE_SUCCESS) {
       WVLOG_E("imageInfo destroy failed. error code is : %{public}d",
               pixelmapImageInfoDestroy_res);
     }
@@ -399,6 +399,7 @@ std::shared_ptr<std::string> PasteDataRecordAdapterImpl::GetHtmlText()
     const char* html = OH_UdsHtml_GetContent(udsHtml);
     if (html == nullptr) {
         WVLOG_E("GetContent is nullptr");
+        OH_UdsHtml_Destroy(udsHtml);
         return nullptr;
     }
     std::shared_ptr<std::string> htmlText = std::make_shared<std::string>(html);
@@ -474,6 +475,10 @@ std::shared_ptr<std::string> PasteDataRecordAdapterImpl::GetPlainText()
     WVLOG_D("GetPlainText, hasPlainText = %{public}d", hasHtml);
     if (hasHtml) {
         std::shared_ptr<std::string> html = GetHtmlText();
+        if (html == nullptr) {
+            WVLOG_E("GetPlainText failed, GetHtmlText() is null.");
+            return nullptr;
+        }
         std::shared_ptr<std::string> htmlPlainText = std::make_shared<std::string>(HtmlToPlainText(*html));
         return htmlPlainText;
     }
@@ -771,6 +776,7 @@ void PasteDataAdapterImpl::AddTextRecord(const std::string& text)
     OH_UdmfRecord* record = OH_UdmfRecord_Create();
     if (record == nullptr) {
         WVLOG_E("Create UdmfRecord failed.");
+        OH_UdsPlainText_Destroy(udsPlainText);
         return;
     }
 

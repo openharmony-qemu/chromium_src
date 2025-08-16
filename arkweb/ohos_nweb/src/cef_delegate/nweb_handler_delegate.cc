@@ -19,6 +19,7 @@
 
 #include <thread>
 
+#include "base/hash/hash.h"
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "base/functional/bind.h"
@@ -169,6 +170,9 @@
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/public/browser/render_frame_host.h"
 #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "arkweb/chromium_ext/base/ohos/logger.h"
+#endif
 
 namespace OHOS::NWeb {
 namespace {
@@ -189,6 +193,10 @@ const int WEB_CAN_SNAPSHOT_DELAY_TIME = 1500;
 #endif
 
 const int VIEW_PORT_DIFF = 5;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+std::shared_ptr<NWebLoggerCallback> g_logger_callback = nullptr;
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_PERMISSION)
 static std::atomic<int> nweb_request_new_key = 0;
@@ -785,6 +793,42 @@ void NWebHandlerDelegate::OnNativeEmbedFirstFramePaint(
             << request->GetSurfaceId().ToString().c_str();
   web_app_client_extension_listener_->OnNativeEmbedFirstFramePaint(
       web_app_client_extension_listener_->nweb_id, nweb_request);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+// static
+void NWebHandlerDelegate::RegisterLoggerCallback(
+    std::shared_ptr<NWebLoggerCallback> logger_callback) {
+  // TODO: Expected to be an instance of a profile
+  g_logger_callback = logger_callback;
+  ohos::logger::SetLoggerCallback(g_logger_callback);
+}
+
+// static
+void NWebHandlerDelegate::UnRegisterLoggerCallback() {
+  g_logger_callback = nullptr;
+}
+
+void NWebHandlerDelegate::logFeedback(const CefString& tag,
+                                      int level,
+                                      const CefString& message) {
+  if (!g_logger_callback) {
+    LOG(ERROR) << "No loggercallback logfeedback";
+    return;
+  }
+  std::string tagStr = tag.ToString();
+  std::string messageStr = message.ToString();
+  g_logger_callback->logFeedback(tagStr.c_str(), level, messageStr.c_str());
+}
+
+void NWebHandlerDelegate::logUrl(const CefString& url) {
+  if (!g_logger_callback) {
+    LOG(ERROR) << "No loggercallback logurl";
+    return;
+  }
+  std::string urlStr = url.ToString();
+  g_logger_callback->logUrl(urlStr.c_str());
 }
 #endif
 
@@ -4723,8 +4767,8 @@ void NWebHandlerDelegate::OnLoadFinished(CefRefPtr<CefFrame> frame,
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void NWebHandlerDelegate::RegisterOnCreateNativeMediaPlayerListener(
     std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
-  WVLOG_I("RegisterOnCreateNativeMediaPlayerListener(%{public}p)",
-          callback.get());
+  WVLOG_I("RegisterOnCreateNativeMediaPlayerListener(%{public}x)",
+          base::FastHash(base::byte_span_from_ref(callback.get())));
   create_native_media_player_cb_ = std::move(callback);
 }
 
@@ -4809,34 +4853,6 @@ void NWebHandlerDelegate::OnReportStatisticLog(const CefString& content) {
   NWebImpl::OnReportStatisticLog(content.ToString());
 #endif  // ARKWEB_VIDEO_ASSISTANT
 }
-
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-void NWebHandlerDelegate::OnShowConfirmInfoBar(
-    const CefString& title,
-    const CefString& infoId,
-    const CefString& message,
-    int buttons,
-    const CefString& buttonLabelOK,
-    const CefString& buttonLabelCancel) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  NWebImpl::OnShowConfirmInfoBar(
-      title.ToString(), infoId.ToString(), message.ToString(), buttons,
-      buttonLabelOK.ToString(), buttonLabelCancel.ToString());
-}
-
-void NWebHandlerDelegate::OnHideConfirmInfoBar(
-    const CefString& title,
-    const CefString& infoId,
-    const CefString& message,
-    int buttons,
-    const CefString& buttonLabelOK,
-    const CefString& buttonLabelCancel) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  NWebImpl::OnHideConfirmInfoBar(
-      title.ToString(), infoId.ToString(), message.ToString(), buttons,
-      buttonLabelOK.ToString(), buttonLabelCancel.ToString());
-}
-#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 CefOwnPtr<CefMediaPlayerListenerForVAST>

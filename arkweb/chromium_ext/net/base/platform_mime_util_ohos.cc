@@ -10,7 +10,6 @@
 #include "base/nix/mime_util_xdg.h"
 #include "build/build_config.h"
 #include "net/base/platform_mime_util.h"
-#include "third_party/xdg_shared_mime_info/mime_cache.h"
 
 namespace net {
 

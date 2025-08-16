@@ -198,12 +198,12 @@ private:
     void Erase(uint32_t nweb_id, uint64_t blankless_key)
     {
       std::lock_guard<std::mutex> lck(m_mtx_);
-      if (blankless_key == INVALID_BLANKLESS_KEY) {
-        m_info_map_.erase(nweb_id);
-        return;
-      }
       auto it = m_info_map_.find(nweb_id);
       if (it == m_info_map_.end()) {
+        return;
+      }
+      if (blankless_key == INVALID_BLANKLESS_KEY) {
+        m_info_map_.erase(it);
         return;
       }
       auto& cache = it->second;

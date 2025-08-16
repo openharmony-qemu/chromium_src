@@ -54,8 +54,8 @@ TEST_F(DragControllerTest, DragLinkWithRestoreDragLinkEffects) {
       DataTransfer::kDragAndDrop, DataTransferAccessPolicy::kWritable,
       DataObject::Create());
   EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsHyperLinkDragging());
-  GetFrame().GetPage()->GetDragController().StartDrag(
-      &GetFrame(), drag_state, mouse_event, gfx::Point(5, 10));
+  EXPECT_TRUE(GetFrame().GetPage()->GetDragController().StartDrag(
+      &GetFrame(), drag_state, mouse_event, gfx::Point(5, 10)));
   EXPECT_TRUE(GetFrame().GetPage()->GetDragController().IsHyperLinkDragging());
   EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsInImageDraging());
   GetFrame().GetPage()->GetDragController().DragEnded();
@@ -127,5 +127,98 @@ TEST_F(DragControllerTest, DragImageForIsInImageDraging) {
   EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsInImageDraging());
   GetFrame().GetPage()->GetDragController().DragEnded();
   EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsInImageDraging());
+  drag_state.drag_type_ = kDragSourceActionLink;
+  GetFrame().GetPage()->GetDragController().StartDragTextEffects();
 }
+
+TEST_F(DragControllerTest, FindAndRemoveGrayStyle) {
+  SetBodyInnerHTML(R"HTML(
+    <style>
+      * { margin: 0; }
+      a {
+        width: 50px;
+        height: 40px;
+        font-size: 30px;
+        margin-top: 2px;
+        display: block;
+        ;
+      }
+    </style>
+    <a id='drag' href='https://foobarbaz.com'>foobarbaz</a>
+  )HTML");
+  Element* element = GetDocument().documentElement();
+  ASSERT_NE(element, nullptr);
+
+  element->setAttribute(html_names::kStyleAttr, AtomicString("; color: gray;"));
+  GetFrame().GetPage()->GetDragController().FindAndRemoveGrayStyle(element);
+
+  element->setAttribute(html_names::kStyleAttr, AtomicString("; color: gray; display: block;"));
+  GetFrame().GetPage()->GetDragController().FindAndRemoveGrayStyle(element);
+
+  element->setAttribute(html_names::kStyleAttr, AtomicString("color: gray;"));
+  GetFrame().GetPage()->GetDragController().FindAndRemoveGrayStyle(element);
+
+  element->setAttribute(html_names::kStyleAttr, AtomicString("color: gray"));
+  GetFrame().GetPage()->GetDragController().FindAndRemoveGrayStyle(element);
+
+  element->setAttribute(html_names::kStyleAttr, AtomicString("display: block;"));
+  GetFrame().GetPage()->GetDragController().FindAndRemoveGrayStyle(element);
+}
+
+TEST_F(DragControllerTest, DragStateNull) {
+  SetBodyInnerHTML(R"HTML(
+    <style>
+      * { margin: 0; }
+      a {
+        width: 50px;
+        height: 40px;
+        font-size: 30px;
+        margin-top: 2px;
+        display: block;
+      }
+    </style>
+    <a id='drag' href='https://foobarbaz.com'>foobarbaz</a>
+  )HTML");
+  const int page_scale_factor = 2;
+  GetFrame().GetPage()->SetPageScaleFactor(page_scale_factor);
+  GetFrame().Selection().SelectAll();
+
+  // set drag_state to null
+  GetFrame().GetPage()->GetDragController().ContextDestroyed();
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsHyperLinkDragging());
+  GetFrame().GetPage()->GetDragController().StartDragTextEffects();
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsInTextDraging());
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsInImageDraging());
+  GetFrame().GetPage()->GetDragController().StartDragImageEffects();
+  GetFrame().GetPage()->GetDragController().UpdateLinkStyle(nullptr);
+  GetFrame().GetPage()->GetDragController().RestoreLinkStyle(nullptr);
+  GetFrame().GetPage()->GetDragController().InvalidateSelectionForDrag(nullptr);
+  GetFrame().GetPage()->GetDragController().GetVisibleRectToUIInRootFrame(nullptr);
+
+  // make drag_state
+  WebMouseEvent mouse_event(WebInputEvent::Type::kMouseDown,
+                            WebInputEvent::kNoModifiers,
+                            WebInputEvent::GetStaticTimeStampForTests());
+  mouse_event.button = WebMouseEvent::Button::kRight;
+  mouse_event.SetFrameScale(1);
+  mouse_event.SetPositionInWidget(5, 10);
+  auto& drag_state = GetFrame().GetPage()->GetDragController().GetDragState();
+  drag_state.drag_type_ = kDragSourceActionLink;
+  drag_state.drag_src_ = GetDocument().getElementById(AtomicString("drag"));
+  drag_state.drag_data_transfer_ = DataTransfer::Create(
+      DataTransfer::kDragAndDrop, DataTransferAccessPolicy::kWritable,
+      DataObject::Create());
+  EXPECT_TRUE(GetFrame().GetPage()->GetDragController().StartDrag(
+      &GetFrame(), drag_state, mouse_event, gfx::Point(5, 10)));
+  drag_state.drag_type_ = kDragSourceActionSelection;
+  EXPECT_TRUE(GetFrame().GetPage()->GetDragController().IsInTextDraging());
+  drag_state.drag_type_ = kDragSourceActionImage;
+  EXPECT_TRUE(GetFrame().GetPage()->GetDragController().IsInImageDraging());
+  drag_state.drag_src_ = nullptr;
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().DragLinkCheckSrcAndType());
+  GetFrame().GetPage()->GetDragController().DragEnded();
+  drag_state.drag_type_ = kDragSourceActionSelection;
+  EXPECT_FALSE(GetFrame().GetPage()->GetDragController().IsInTextDraging());
+}
+
 }

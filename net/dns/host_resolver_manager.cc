@@ -149,6 +149,10 @@
 
 #include "arkweb/chromium_ext/net/dns/host_resolver_manager_for_include.cc"
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace net {
 
 namespace {
@@ -1775,8 +1779,7 @@ void HostResolverManager::InvalidateCaches(bool network_change) {
     LOG(INFO) << "Host caches has been invalidated";
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    // TODO(ARKWEB_LOGGER_REPORT)
-    //  LOG_FEEDBACK(INFO) << "Host caches has been invalidated";
+    LOG_FEEDBACK(INFO) << "Host caches has been invalidated";
 #endif
   }
 #endif

@@ -69,6 +69,7 @@ enum PictureInPictureState {
   PIP_STATE_HLS_EXIT,
   PIP_STATE_RESIZE,
   PIP_STATE_NONE,
+  PIP_STATE_UPDATE_SURFACE,
 };
 #endif
 
@@ -317,7 +318,8 @@ class CONTENT_EXPORT MediaWebContentsObserver
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_PIP)
-    void OnPictureInPictureStateChanged(uint32_t state) override;
+    void OnPictureInPictureStateChanged(
+        uint32_t state, int32_t width, int32_t height) override;
 #endif
    private:
     PlayerInfo* GetPlayerInfo();

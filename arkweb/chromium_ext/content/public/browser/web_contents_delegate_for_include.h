@@ -116,20 +116,6 @@ virtual std::unique_ptr<MediaPlayerListener> OnFullScreenOverlayEnter(
     const MediaPlayerId& media_player_id);
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-virtual void OnShowConfirmInfoBar(const std::string& title,
-                                  const std::string& infoId,
-                                  const std::string& message,
-                                  int buttons,
-                                  const std::string& buttonLabelOK,
-                                  const std::string& buttonLabelCancel);
-virtual void OnHideConfirmInfoBar(const std::string& title,
-                                  const std::string& infoId,
-                                  const std::string& message,
-                                  int buttons,
-                                  const std::string& buttonLabelOK,
-                                  const std::string& buttonLabelCancel);
-#endif  // ARKWEB_ARKWEB_EXTENSIONS
 #if BUILDFLAG(ARKWEB_PDF)
 virtual void OnPdfScrollAtBottom(const std::string& url) {}
 virtual void OnPdfLoadEvent(int32_t result, const std::string& url) {}

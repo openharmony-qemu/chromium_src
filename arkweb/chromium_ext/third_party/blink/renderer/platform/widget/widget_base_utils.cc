@@ -132,12 +132,16 @@ void WidgetBaseUtils::ReportForegroundThreadPool() {
     std::vector<scoped_refptr<base::internal::WorkerThread>>& create_workers =
       foreground_thread_group->ReportCreateWorkers();
     if (create_workers.size()) {
+#if BUILDFLAG(IS_ARKWEB)
       GetThreadIdsAndReport(create_workers, true);
+#endif
     }
     std::vector<base::PlatformThreadId>& destroy_workers_ids_ =
       foreground_thread_group->ReportDestroyWorkers();
     if (destroy_workers_ids_.size()) {
+#if BUILDFLAG(IS_ARKWEB)
       GetThreadIdsAndReport(destroy_workers_ids_, false);
+#endif
     }
   }
 }

@@ -319,7 +319,6 @@ int32_t SensorAdapterImpl::SubscribeOhosSensor(int32_t sensorTypeId, int64_t sam
         WVLOG_E("SubscribeOhosSensor error, sensorTypeId is invalid.");
         return SENSOR_PARAMETER_ERROR;
     }
-    std::string userName = SensorTypeToSensorUserName(sensorTypeId);
     Sensor_Subscriber *subscriber = OH_Sensor_CreateSubscriber();
     ret = OH_SensorSubscriber_SetCallback(subscriber, OhosSensorCallback);
     if (ret != SENSOR_SUCCESS) {

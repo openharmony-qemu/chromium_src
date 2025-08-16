@@ -27,6 +27,7 @@ enum class NWebExtensionTabStatus {
   UNLOADED,
   LOADING,
   COMPLETE,
+  NWEB_NOTIFY,
   UNKOWN_STATUS,
 };
 

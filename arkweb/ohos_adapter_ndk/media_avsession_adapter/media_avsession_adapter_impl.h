@@ -86,6 +86,7 @@ private:
     bool UpdatePlaybackStateCache(const std::shared_ptr<MediaAVSessionPositionAdapter> position);
     void DestroyAndEraseSession();
     bool CreateNewSession(const MediaAVSessionType& type);
+    void InitMediaAVSessionAdapterImpl();
 
     std::shared_ptr<MediaAVSessionKey> avSessionKey_ = nullptr;
     AVSession_PlaybackState avPlaybackState_;

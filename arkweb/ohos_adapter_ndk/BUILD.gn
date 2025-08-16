@@ -336,4 +336,9 @@ component("adapter_ndk") {
     "//arkweb/build/features",
     "//third_party/boringssl",
   ]
+  if (defined(is_arkweb) && is_arkweb) {
+    deps += [
+      "//arkweb/build/features:features",
+    ]
+  }
 }

@@ -45,6 +45,8 @@
 #include "services/network/url_loader.h"
 #include "url/gurl.h"
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+#include "base/base_switches.h"
+#include "base/command_line.h"
 #include "net/base/ip_endpoint.h"
 #include "net/nqe/network_quality_estimator.h"
 #include "net/url_request/url_request_context.h"
@@ -83,6 +85,25 @@ void NetworkServiceNetworkDelegateExt::RecordErrorInfo(net::URLRequest* request,
        << ", downstream throughput kbps: " << downlink_kbps
        << ", duration_time(ms) " << duration_time.InMilliseconds();
   LOG(INFO) << "final url: *** " << ostr.str();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "final url: "
+                     << url::LogUtils::ConvertUrlWithMask(request->url().spec())
+                     << ostr.str();
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableLoggerReport)) {
+    if (!network_context_->AsArkWebNetworkContextExt()->IsStrictLogMode()) {
+      std::string url_info = request->url().spec();
+      const size_t url_print_len = 1024;
+      if (url_info.length() > url_print_len) {
+        url_info = url_info.substr(0, url_print_len);
+        url_info.append("...");
+      }
+      LOG(URL) << "final url "
+               << url::LogUtils::ConvertUrl(url_info, request->usage_scenario())
+               << ostr.str();
+    }
+  }
+#endif
 }
 
 int32_t NetworkServiceNetworkDelegateExt::GetDownStreamThroughputKbps() {

@@ -87,6 +87,13 @@ arkweb_device_sources = [
   "//services/device/generic_sensor/platform_sensor_util.h",
   ]
 
+if (defined(arkweb_logger_report) && arkweb_logger_report) {
+  arkweb_content_renderer_sources += [
+    "//arkweb/chromium_ext/content/renderer/logger_report.cc",
+    "//arkweb/chromium_ext/content/renderer/logger_report.h",
+  ]
+}
+
 arkweb_native_scroller_sources = [
   "//arkweb/chromium_ext/ui/gl/events/native_scroller_ohos.cc",
   "//arkweb/chromium_ext/ui/gl/events/native_scroller_ohos.h",

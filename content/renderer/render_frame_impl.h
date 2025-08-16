@@ -911,6 +911,13 @@ class CONTENT_EXPORT RenderFrameImpl
                                      uint64_t frame_sink_id,
                                      int64_t pref_hash) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void PageLoadStartLoggerReport(blink::WebDocumentLoader* document_loader);
+  void ContentLoadFailedLoggerReport();
+  void PageLoadFinishedLoggerReport();
+#endif
+
  protected:
   explicit RenderFrameImpl(CreateParams params);
 

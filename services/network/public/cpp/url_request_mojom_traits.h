@@ -437,6 +437,12 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
 
   static bool Read(network::mojom::URLRequestDataView data,
                    network::ResourceRequest* out);
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  static bool usage_scenario_(const network::ResourceRequest& request) {
+    return request.usage_scenario_;
+  }
+#endif
 };
 
 template <>

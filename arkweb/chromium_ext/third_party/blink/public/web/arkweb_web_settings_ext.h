@@ -95,6 +95,10 @@ public:
   virtual void SetUsageScenario(int32_t usage_scenario) = 0;
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  virtual int32_t GetUsageScenario() = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
   virtual void SetBorderRadiusFromWeb(double, double, double, double) = 0;
   virtual double GetBorderRadiusTopLeft() = 0;

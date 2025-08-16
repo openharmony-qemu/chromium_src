@@ -9,6 +9,7 @@
 
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "arkweb/build/features/features.h"
 
 namespace switches {
 
@@ -63,9 +64,9 @@ extern const char kPackageVersionName[];
 extern const char kSchedulerBoostUrgent[];
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 #include "arkweb/chromium_ext/base/base_switches_for_include.h"
-#endif  // BUILDFLAG(IS_ARKWEB)
+#endif  // BUILDFLAG(ARKWEB_LOGGER_REPORT)
 
 }  // namespace switches
 

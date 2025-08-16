@@ -95,6 +95,18 @@ void LogUtils::ConvertUrlPath(const std::string& url,
   return;
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+// static
+bool LogUtils::IsSupportParam(const std::string& param) {
+  if (base::EqualsCaseInsensitiveASCII(param, url::kToAppParam) ||
+      base::EqualsCaseInsensitiveASCII(param, url::kChannelParam) ||
+      base::EqualsCaseInsensitiveASCII(param, url::kChannelIdParam)) {
+    return true;
+  }
+  return false;
+}
+#endif
+
 // static
 void LogUtils::ConvertUrlQuery(const std::string& url,
                                const url::Component& part,
@@ -114,8 +126,12 @@ void LogUtils::ConvertUrlQuery(const std::string& url,
     std::string temp_str = "";
     if (url[i] == '=') {
       temp_str.append(url, appendStart, i - appendStart);
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      if (IsSupportParam(temp_str)) {
+#else
       if (temp_str == "to_app" || temp_str == "channel" ||
           temp_str == "channelid") {
+#endif
         converted.append(url, appendStart, i - appendStart + 1);
         appendLast = i + 1;
         appendStart = i + 1;
@@ -213,11 +229,11 @@ std::string LogUtils::ConvertUrlWithMask(const std::string& url) {
     if (colonIndex < url.length() - 1) {
       return url.substr(0, colonIndex);
     } else {
-      return kReplaceStr;
+      return url;
     }
   }
 
-  converted.append(url.substr(0, colonIndex));
+  converted.append(url.substr(0, colonIndex + 1));
   converted.append("//***");
   return converted;
 }

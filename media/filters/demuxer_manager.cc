@@ -204,6 +204,11 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
   LOG(INFO) << "OhMedia::OnError PipelineStatus = " << (int)error.code();
 #endif // BUILDFLAG(ARKWEB_MEDIA)
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "OhMedia::OnError PipelineStatus = "
+                     << (int)error.code();
+#endif
+
   if (!fallback_allowed_) {
     return client_->OnError(std::move(error));
   }

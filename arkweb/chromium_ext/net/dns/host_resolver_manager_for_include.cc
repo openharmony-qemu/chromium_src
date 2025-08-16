@@ -87,11 +87,11 @@ class HostResolverManager::WarmUpHttpDnsFallbackImpl
     if (!url.is_valid()) {
       LOG(INFO) << "Pre-dns of doh-fallback server won't start, for the server "
                    "template is invalid";
-      // #ifdef OHOS_LOGGER_REPORT
-      //       LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server won't
-      //       start, for the server "
-      //                             "template is invalid";
-      // #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(INFO)
+          << "Pre-dns of doh-fallback server won't start, for the server "
+             "template is invalid";
+#endif
       return;
     }
     HostPortPair destination = HostPortPair::FromURL(url);
@@ -105,12 +105,11 @@ class HostResolverManager::WarmUpHttpDnsFallbackImpl
         weak_ptr_factory_.GetWeakPtr()));
     LOG(INFO) << "Pre-dns of doh-fallback server, server template "
               << url.spec() << ", result " << result;
-    // #ifdef OHOS_LOGGER_REPORT
-    //     LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server, server
-    //     template "
-    //                        << url::LogUtils::ConvertUrlWithMask(url.spec())
-    //                        << ", result " << result;
-    // #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server, server template "
+                       << url::LogUtils::ConvertUrlWithMask(url.spec())
+                       << ", result " << result;
+#endif
     if (result != ERR_IO_PENDING) {
       request_.reset();
     }
@@ -118,11 +117,10 @@ class HostResolverManager::WarmUpHttpDnsFallbackImpl
 
   void PreDnsOfDohFallbackServerComplete(int result) {
     LOG(INFO) << "Pre-dns of doh-fallback server complete, result " << result;
-    // #ifdef OHOS_LOGGER_REPORT
-    //     LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server complete,
-    //     result "
-    //                        << result;
-    // #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server complete, result "
+                       << result;
+#endif
     request_.reset();
   }
 

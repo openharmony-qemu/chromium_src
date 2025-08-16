@@ -417,6 +417,9 @@ constexpr base::TimeDelta DRAG_OVER_INTERVAL = base::Milliseconds(65);
 
 using ASHelper = OHOS::NWeb::NWebAdvancedSecurityHelper;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+std::shared_ptr<NWebLoggerCallback> g_logger_callback;
+#endif
 bool g_logger_callback_initialized = false;
 
 bool GetWebOptimizationValue() {
@@ -1100,6 +1103,9 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
   if (!g_logger_callback_initialized) {
     g_logger_callback_initialized = true;
     base::ohos::SetUploadCallback(UploadCallback);
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    NWebHandlerDelegate::RegisterLoggerCallback(g_logger_callback);
+#endif
   }
 
   return true;
@@ -3794,6 +3800,19 @@ void NWebImpl::InstallExtensionFile(const std::string& file_path,
       base::BindOnce(&PerformCrxInstallation, file_path, callback, browser_context));
 }
 #endif // ARKWEB_ARKWEB_EXTENSIONS
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+void NWebImpl::PutLoggerCallback(
+    std::shared_ptr<NWebLoggerCallback> logger_callback) {
+  WVLOG_D("put logger callback");
+  g_logger_callback = logger_callback;
+}
+
+void NWebImpl::RemoveLoggerCallback() {
+  WVLOG_D("remove logger callback");
+  NWebHandlerDelegate::UnRegisterLoggerCallback();
+}
+#endif
 
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 // static

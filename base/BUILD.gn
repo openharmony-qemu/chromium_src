@@ -1059,6 +1059,12 @@ component("base") {
     defines += [ "REPORT_SYS_EVENT" ]
   }
  
+  if (defined(is_arkweb) && is_arkweb) {
+    deps += [
+      "//base:base_static",
+    ]
+  }
+
   if (!is_nacl) {
     # Used by metrics/crc32, except on NaCl builds.
     deps += [ "//third_party/zlib" ]
@@ -2808,6 +2814,11 @@ static_library("base_static") {
     ":fuzzing_buildflags",
     "//build:chromeos_buildflags",
   ]
+  if (defined(is_arkweb) && is_arkweb) {
+    deps += [
+      "//arkweb/build/features:features",
+    ]
+  }
 
   if (is_win) {
     sources += [

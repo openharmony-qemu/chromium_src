@@ -34,4 +34,8 @@ extern const char kOhosAppApiVersion[];
 extern const char kEnableVideoAssistant[];
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+extern const char kEnableLoggerReport[];
+#endif
+
 #endif  // ARKWEB_CHROMIUM_EXT_BASE_BASE_SWITCHES_FOR_INCLUDE_H_

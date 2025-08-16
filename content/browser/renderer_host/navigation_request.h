@@ -1439,6 +1439,9 @@ class CONTENT_EXPORT NavigationRequest
   // Called from BeginNavigation(), OnPrerenderingActivationChecksComplete(),
   // or OnFencedFrameURLMappingComplete().
   void BeginNavigationImpl();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void StartNavigationExt();
+#endif
 
   // Checks if the response requests an isolated origin via the
   // Origin-Agent-Cluster header, and if so opts in the origin to be isolated.

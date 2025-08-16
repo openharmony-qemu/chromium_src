@@ -172,6 +172,11 @@ void HTMLMediaElement::UpdatePlaybackStatus(uint32_t status) {
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "UpdatePlaybackStatus(" << status << "), paused_["
                      << paused_ << "]";
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "UpdatePlaybackStatus(" << status << "), paused_["
+                     << paused_ << "]";
 #endif  // ARKWEB_LOGGER_REPORT
 
   base::AutoReset<bool> resetter(&played_by_custom_mp_, true);

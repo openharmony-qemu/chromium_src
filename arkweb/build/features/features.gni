@@ -211,7 +211,7 @@ declare_args() {
   arkweb_vibrate = true
   arkweb_resource_intercept = true
   arkweb_disable_mojo_js = true
-  arkweb_logger_report = false
+  arkweb_logger_report = true
   arkweb_slide_ltpo = true
   arkweb_swap_buffer_trace = true
   arkweb_safebrowsing = true
@@ -264,6 +264,11 @@ if (defined(arkweb_network_conninfo) && arkweb_network_conninfo) {
 if (defined(arkweb_prp_preload) && arkweb_prp_preload) {
   arkweb_mojo_features += [ "arkweb_prp_preload" ]
 }  #endif  // BUILDFLAG(ARKWEB_PRP_PRELOAD)
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+if (defined(arkweb_logger_report) && arkweb_logger_report) {
+  arkweb_mojo_features += [ "arkweb_logger_report" ]
+}  #endif  // BUILDFLAG(ARKWEB_LOGGER_REPORT)
 
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
 if (defined(arkweb_ex_download) && arkweb_ex_download) {

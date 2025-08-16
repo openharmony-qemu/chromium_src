@@ -507,6 +507,10 @@ class NET_EXPORT HostCache {
   int network_changes() const { return network_changes_; }
   const EntryMap& entries() const { return entries_; }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  std::vector<IPEndPoint> LookupByHost(url::SchemeHostPort destination);
+#endif  // ARKWEB_LOGGER_REPORT
+
  private:
   FRIEND_TEST_ALL_PREFIXES(HostCacheTest, NoCache);
 

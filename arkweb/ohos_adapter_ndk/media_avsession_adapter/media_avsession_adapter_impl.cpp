@@ -61,21 +61,28 @@ std::string MediaAVSessionKey::ToString() {
 }
 
 MediaAVSessionAdapterImpl::MediaAVSessionAdapterImpl() {
+    InitMediaAVSessionAdapterImpl();
+}
+
+void MediaAVSessionAdapterImpl::InitMediaAVSessionAdapterImpl() {
     avSessionKey_ = std::make_shared<MediaAVSessionKey>();
     avSessionKey_->Init();
     AVMetadata_Result ret = OH_AVMetadataBuilder_Create(&builder_);
     if (ret != AVMETADATA_SUCCESS) {
         WVLOG_E("create metadata builder failed, ret=%{public}d", ret);
+        return;
     }
 
     ret = OH_AVMetadataBuilder_SetAssetId(builder_, std::to_string(avSessionKey_->GetPID()).c_str());
     if (ret != AVMETADATA_SUCCESS) {
         WVLOG_E("set assert id failed, ret=%{public}d", ret);
+        return;
     }
 
     ret = OH_AVMetadataBuilder_GenerateAVMetadata(builder_, &avMetadata_);
     if (ret != AVMETADATA_SUCCESS) {
         WVLOG_E("generate avmetadata failed, ret=%{public}d", ret);
+        return;
     }
 
     avPlaybackState_ = PLAYBACK_STATE_INITIAL;

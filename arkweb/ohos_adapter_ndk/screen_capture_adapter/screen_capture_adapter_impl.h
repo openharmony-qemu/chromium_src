@@ -34,6 +34,7 @@ void ScreenCaptureCallbackOnStateChange(struct OH_AVScreenCapture *capture,
 class OH_SurfaceBufferAdapterImpl : public SurfaceBufferAdapter {
 private:
     void ReleaseSurfaceBuffer();
+    void InitSurfaceBufferAdapterImpl(OH_AVBuffer* avBuffer);
     void* avBuffer_ = nullptr;
     OH_NativeBuffer_Config config_;
     uint32_t size_ = 0;

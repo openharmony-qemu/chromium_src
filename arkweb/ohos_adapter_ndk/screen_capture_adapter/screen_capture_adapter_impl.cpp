@@ -643,8 +643,8 @@ void OH_SurfaceBufferAdapterImpl::InitSurfaceBufferAdapterImpl(OH_AVBuffer* avBu
 {
     // avBuffer will be released soon, we must copy in local
     size_ = static_cast<uint32_t>(OH_AVBuffer_GetCapacity(avBuffer));
-    if (size_ <= 0) {
-        WVLOG_E("buffer size = %{public}d is illegal", size_);
+    if (size_ == 0) {
+        WVLOG_E("buffer size = %{public}u is illegal", size_);
         return;
     }
     avBuffer_ = malloc(size_);

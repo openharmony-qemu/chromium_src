@@ -423,13 +423,8 @@ bool Extension::FormatPEMForFileOutput(std::string_view input,
 
 // static
 GURL Extension::GetBaseURLFromExtensionId(const ExtensionId& extension_id) {
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  return GURL(base::StrCat({extensions::kArkwebExtensionScheme,
-                            url::kStandardSchemeSeparator, extension_id}));
-#else
   return GURL(base::StrCat({extensions::kExtensionScheme,
                             url::kStandardSchemeSeparator, extension_id}));
-#endif
 }
 
 // static

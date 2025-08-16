@@ -581,7 +581,7 @@ void ThreadGroupImpl::WorkerDelegate::CleanupLockRequired(
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   if (worker->GetRealTid()) {
-    outer_->destroy_workers_.push_back(worker->GetRealTid());
+    outer_->destroy_workers_ids_.push_back(worker->GetRealTid());
   }
 #endif
 }
@@ -843,7 +843,7 @@ ThreadGroupImpl::CreateAndRegisterWorkerLockRequired(
   workers_.push_back(worker);
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   if (worker) {
-    create_workers_.push_back(worker);
+    create_workers.push_back(worker);
   }
 #endif
   executor->ScheduleStart(worker);

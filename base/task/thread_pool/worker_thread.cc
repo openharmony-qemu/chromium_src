@@ -326,7 +326,7 @@ void WorkerThread::UpdateThreadType(ThreadType desired_thread_type) {
   current_thread_type_ = desired_thread_type;
 }
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#if BUILDFLAG(IS_ARKWEB)
 PlatformThreadId WorkerThread::GetRealTid() {
   return realtid_;
 }

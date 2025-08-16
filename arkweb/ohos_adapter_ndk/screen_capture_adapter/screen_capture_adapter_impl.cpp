@@ -636,6 +636,11 @@ int32_t ScreenCaptureAdapterImpl::ReleaseAudioBuffer(AudioCaptureSourceTypeAdapt
 OH_SurfaceBufferAdapterImpl::OH_SurfaceBufferAdapterImpl(OH_AVBuffer* avBuffer,
     OH_NativeBuffer_Config config) : config_(config)
 {
+    InitSurfaceBufferAdapterImpl(avBuffer);
+}
+
+void OH_SurfaceBufferAdapterImpl::InitSurfaceBufferAdapterImpl(OH_AVBuffer* avBuffer)
+{
     // avBuffer will be released soon, we must copy in local
     size_ = static_cast<uint32_t>(OH_AVBuffer_GetCapacity(avBuffer));
     if (size_ <= 0) {

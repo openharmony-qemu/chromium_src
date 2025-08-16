@@ -80,8 +80,8 @@ public:
         if (!cencInfo) {
             return;
         }
-        WVLOG_I("AudioCodecDecoder PrintFormatData:algo[%{public}u], encryptedBlockCount[%{public}u],"
-                "skippedBlockCount[%{public}u], firstEncryptedOffset[%{public}u], mode[%{public}u],",
+        WVLOG_I("AudioCodecDecoder PrintFormatData:algo[%{private}u], encryptedBlockCount[%{private}u],"
+                "skippedBlockCount[%{private}u], firstEncryptedOffset[%{private}u], mode[%{private}u],",
                 cencInfo->GetAlgo(), cencInfo->GetEncryptedBlockCount(), cencInfo->GetSkippedBlockCount(),
                 cencInfo->GetFirstEncryptedOffset(), cencInfo->GetMode());
     }

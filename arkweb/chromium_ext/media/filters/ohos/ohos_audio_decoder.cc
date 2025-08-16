@@ -397,6 +397,7 @@ bool OHOSAudioDecoder::InitAudioDecoder(std::string mime_type) {
   audio_decoder_ = OhosAdapterHelper::GetInstance().CreateAudioCodecDecoderAdapter();
   if (!audio_decoder_) {
     LOG(ERROR) << "OHOSAudioDecoder::Initialize audio_decoder_ is null ";
+    return false;
   }
 
   std::shared_ptr<OHOSAudioDecoderFormat> audioDecoderFormat = std::make_shared<OHOSAudioDecoderFormat>();

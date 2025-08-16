@@ -211,7 +211,7 @@ class BASE_EXPORT WorkerThread : public RefCountedThreadSafe<WorkerThread>,
 
   size_t sequence_num() const { return sequence_num_; }
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#if BUILDFLAG(IS_ARKWEB)
   PlatformThreadId GetRealTid();
 #endif
 

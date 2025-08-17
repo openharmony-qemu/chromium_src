@@ -150,6 +150,18 @@ class PictureInPictureMediaPlayerReceiver : public media::mojom::MediaPlayer {
   void PipRequestPlay() override {}
 #endif
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetHtmlPlayEnabled(bool enabled) override {}
+  void RequestEnterFullscreen() override {}
+  void RequestExitFullscreen() override {}
+  void SetPlaybackRate(double playback_rate) override {}
+  void RequestDownloadUrl() override {}
+  void HidePlaybackSpeedList() override {}
+  void SetVideoSurface(int32_t widget_id) override {}
+  void SetVolume(double volume) override {}
+  void GetVolume(GetVolumeCallback callback) override {} 
+#endif
+
  private:
   mojo::AssociatedReceiver<media::mojom::MediaPlayer> receiver_{this};
 };

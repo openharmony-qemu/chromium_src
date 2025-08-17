@@ -205,6 +205,11 @@ class URLLoaderClientForFetchHandler : public network::mojom::URLLoaderClient,
                         base::OnceCallback<void()> callback) override {}
   void OnTransferSizeUpdated(int32_t transfer_size_diff) override {}
   void OnComplete(const network::URLLoaderCompletionStatus& status) override {}
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void OnTransferDataWithSharedMemory(
+      ::base::ReadOnlySharedMemoryRegion region,
+      uint64_t buffer_size) override {}
+#endif
 
  private:
   mojo::Receiver<network::mojom::URLLoaderClient> receiver_{this};

@@ -71,4 +71,11 @@ TestAXPlatformTreeManagerDelegate::AccessibilityGetWebContentsAccessibility() {
   return nullptr;
 }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+content::RenderFrameHostImpl*
+TestAXPlatformTreeManagerDelegate::AccessibilityRenderFrameHost() {
+  return nullptr;
+}
+#endif
+
 }  // namespace ui

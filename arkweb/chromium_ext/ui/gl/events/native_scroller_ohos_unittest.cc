@@ -27,7 +27,7 @@
 #include "ui/events/gestures/fling_curve.h"
 
 namespace ui {
-
+using namespace ohos_gesture;
 struct FlingTestCase {
   blink::WebGestureDevice device_source;
   float initial_velocity_y;
@@ -94,5 +94,26 @@ TEST(NativeScrollerOhosTest, ParameterizedFlingTest) {
     cumulative_delta += current_scroll_delta;
     EXPECT_NEAR(cumulative_delta.y(), test_case.expected_final_delta_y, 1);
   }
+}
+
+TEST(NativeScrollerOhosTest, ConvertNativeScrollerDeviceSource) {
+  EXPECT_EQ(ConvertNativeScrollerDeviceSource(
+                blink::WebGestureDevice::kUninitialized),
+            NativeScrollerOhos::GestureDevice::kUninitialized);
+  EXPECT_EQ(ConvertNativeScrollerDeviceSource(
+                blink::WebGestureDevice::kTouchpad),
+            NativeScrollerOhos::GestureDevice::kTouchpad);
+  EXPECT_EQ(ConvertNativeScrollerDeviceSource(
+                blink::WebGestureDevice::kTouchscreen),
+            NativeScrollerOhos::GestureDevice::kTouchscreen);
+  EXPECT_EQ(ConvertNativeScrollerDeviceSource(
+                blink::WebGestureDevice::kSyntheticAutoscroll),
+            NativeScrollerOhos::GestureDevice::kSyntheticAutoscroll);
+  EXPECT_EQ(ConvertNativeScrollerDeviceSource(
+                blink::WebGestureDevice::kScrollbar),
+            NativeScrollerOhos::GestureDevice::kScrollbar);
+  blink::WebGestureDevice device_source;
+  EXPECT_EQ(ConvertNativeScrollerDeviceSource(device_source),
+            NativeScrollerOhos::GestureDevice::kUninitialized);
 }
 }  // namespace ui

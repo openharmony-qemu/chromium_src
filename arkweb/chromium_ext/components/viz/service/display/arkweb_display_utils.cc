@@ -364,27 +364,13 @@ void ArkwebDisplayUtils::removeDuplicatesRect(std::vector<gfx::Rect>& quad_list)
 //LCOV_EXCL_START
 void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
   if (!gpu_service_impl_) {
-    LOG(ERROR) << "blankless DumpSnapshotForBlankLess, gpu_service_impl_ is nullptr";
+    LOG(DEBUG) << "blankless DumpSnapshotForBlankLess, gpu_service_impl_ is nullptr";
     return;
   }
-  const raw_ptr<gpu::GpuChannelManager> gpu_channel_manager = gpu_service_impl_->gpu_channel_manager();
-  if (!gpu_channel_manager) {
-    LOG(ERROR) << "blankless DumpSnapshotForBlankLess, gpu_channel_manager is nullptr";
-    return;
-  }
-
-  gpu::GpuChannel* gpu_channel = gpu_channel_manager->LookupChannel(client_id_);
-  if (!gpu_channel) {
-    LOG(DEBUG) << "blankless DumpSnapshotForBlankLess, dump is disable now";
-    return;
-  }
-
   uint64_t id = display_->frame_sink_id_.hash();
   base::ohos::BlanklessDumpInfo info;
-  if (!gpu_channel->AsGpuChannelExt() ||
-      !gpu_channel->AsGpuChannelExt()->GetBlanklessDumpInfoAndDisableDump(id, info) ||
-      !info.dump_enabled) {
-    LOG(DEBUG) << "blankless dump disable";
+  if (!gpu::GpuChannelExt::GetBlanklessDumpInfoAndDisableDump(client_id_, id, info) || !info.dump_enabled) {
+    LOG(DEBUG) << "blankless dump disable or no blankless info";
     return;
   }
   LOG(DEBUG) << "blankless create FrameSnapshotCopyOutputRequest";

@@ -2950,4 +2950,12 @@ void DownloadItemImpl::UpdateRenameProgress(int64_t bytes_so_far,
   UpdateObservers();
 }
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+void DownloadItemImpl::ReadDownloadData(
+    const std::string& guid,
+    const int32_t read_size,
+    base::OnceCallback<void(const std::vector<uint8_t>&)> callback) {
+  NOTREACHED();
+}
+#endif // ARKWEB_EXT_DOWNLOAD
 }  // namespace download

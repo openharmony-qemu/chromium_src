@@ -470,7 +470,12 @@ class MockRenderWidgetHostDelegate : public RenderWidgetHostDelegate {
 
   void RendererUnresponsive(
       RenderWidgetHostImpl* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) override {
+      base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+      ,
+      content::RendererIsUnresponsiveReason reason
+#endif
+    ) override {
     unresponsive_timer_fired_ = true;
   }
 

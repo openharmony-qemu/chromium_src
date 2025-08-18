@@ -117,5 +117,9 @@ TEST_F(ImageExtTest, ClipResizeAndOrientImage) {
   scale_in = {2.0, 2.0};
   img_out = ImageExt::ClipResizeAndOrientImage(
       img_in, orientation, rect, scale_in, opacity, interpolation_quality);
+
+  rect.set_height(200);
+  img_out = ImageExt::ClipResizeAndOrientImage(
+      img_in, orientation, rect, scale_in, opacity, interpolation_quality);
 }
 }  // namespace blink

@@ -275,7 +275,7 @@ static bool GetSnapShotFileInfo(const std::string& filename, int64_t& snapShotFi
   return true;
 }
 
-class OhosWebSnapshotDataBaseCallbackImpl : public OHOS::NWeb::OhosWebSnapshotDataBaseCallback
+class OhosWebSnapshotDataBaseCallbackImpl : public OhosWebSnapshotDataBaseCallback
 {
  public:
   void OnDataDelete(const std::string& path) override {
@@ -332,16 +332,15 @@ BlanklessDataController& BlanklessDataController::GetInstance()
     return instance;
 }
 
-BlanklessDataController::BlanklessDataController() : dbInstance_(OHOS::NWeb::OhosWebSnapshotDataBase::GetInstance())
+BlanklessDataController::BlanklessDataController()
 {
     base::FilePath databaseDir(DATABASE_DIR);
     if (!base::PathExists(databaseDir)) {
       base::CreateDirectory(databaseDir);
     }
-    dbInstance_.Init(DATABASE_DIR.c_str());
     web_snapshot_db_callback_ = std::make_shared<OhosWebSnapshotDataBaseCallbackImpl>();
     if (web_snapshot_db_callback_) {
-      dbInstance_.RegisterDataBaseCallback(web_snapshot_db_callback_);
+      OhosWebSnapshotDataBase::GetInstance().RegisterDataBaseCallback(web_snapshot_db_callback_);
     }
     task_manager_ = std::make_unique<viz::CancelableDelayedTaskManager>();
 }
@@ -355,7 +354,7 @@ std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::
     snapshotInfo = it->second;
   }
   if (snapshotInfo == nullptr) {
-    auto snapshotDataItem = dbInstance_.GetSnapshotDataItem(blankless_key);
+    auto snapshotDataItem = OhosWebSnapshotDataBase::GetInstance().GetSnapshotDataItem(blankless_key);
     snapshotInfo = std::make_shared<SnapshotInfo>();
     snapshotInfo->path = snapshotDataItem.wholePath;
     SkBitmap bitmap;
@@ -394,7 +393,7 @@ void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessI
     LOG(ERROR) << "blankless encode snapShot image failed!";
     return;
   }
-  if (stream.bytesWritten() > dbInstance_.GetCapacityInByte()) {
+  if (stream.bytesWritten() > OhosWebSnapshotDataBase::GetInstance().GetCapacityInByte()) {
     LOG(ERROR) << "blankless no capacity to save img";
     return;
   }
@@ -411,7 +410,7 @@ void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessI
   // the database during this load.
   auto dump_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
   instance.RecordDumpTime(info.nweb_id, info.blankless_key, dump_time);
-  OHOS::NWeb::SnapshotDataItem snapshotDataItem = {
+  SnapshotDataItem snapshotDataItem = {
     .wholePath = newFile,
     .staticPath = "",
     .historySimilarity = 0.0f,
@@ -427,7 +426,7 @@ void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessI
       snapshotInfo->bitmap.width() != bitmapNew.width() || snapshotInfo->bitmap.height() != bitmapNew.height() ||
       snapshotInfo->pixels.size() == 0) {
     LOG(DEBUG) << "blankless last snapshot error";
-    dbInstance_.InsertSnapshotDataItem(info.blankless_key, snapshotDataItem);
+    OhosWebSnapshotDataBase::GetInstance().InsertSnapshotDataItem(info.blankless_key, snapshotDataItem);
     return;
   }
 
@@ -442,7 +441,7 @@ void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessI
     instance.FireFrameRemoveCallback(info.blankless_key, info.nweb_id);
   }
   snapshotDataItem.staticPath = newFile;
-  dbInstance_.InsertSnapshotDataItem(info.blankless_key, snapshotDataItem);
+  OhosWebSnapshotDataBase::GetInstance().InsertSnapshotDataItem(info.blankless_key, snapshotDataItem);
 }
 
 void BlanklessDataController::ClearSnapshot(int64_t blankless_key)
@@ -454,17 +453,17 @@ void BlanklessDataController::ClearSnapshot(int64_t blankless_key)
 
 void BlanklessDataController::ClearSnapshotDataItem(const std::vector<int64_t>& blankless_keys)
 {
-  dbInstance_.ClearSnapshotDataItem(blankless_keys);
+  OhosWebSnapshotDataBase::GetInstance().ClearSnapshotDataItem(blankless_keys);
 }
 
 void BlanklessDataController::InsertSnapshotDataItem(int64_t blankless_key, const SnapshotDataItem& data)
 {
-  dbInstance_.InsertSnapshotDataItem(blankless_key, data);
+  OhosWebSnapshotDataBase::GetInstance().InsertSnapshotDataItem(blankless_key, data);
 }
 
 SnapshotDataItem BlanklessDataController::GetSnapshotDataItem(int64_t blankless_key, int64_t pref_hash)
 {
-  auto item = dbInstance_.GetSnapshotDataItem(blankless_key);
+  auto item = OhosWebSnapshotDataBase::GetInstance().GetSnapshotDataItem(blankless_key);
   // check preferenceHash
   if (item.preferenceHash != pref_hash) {
     LOG(ERROR) << "BlanklessDataController::GetSnapshotDataItem error! mismatch preferenceHash "
@@ -492,12 +491,12 @@ SnapshotDataItem BlanklessDataController::GetSnapshotDataItem(int64_t blankless_
 
 int32_t BlanklessDataController::SetBlanklessLoadingCacheCapacity(int capacity)
 {
-  return dbInstance_.SetBlanklessLoadingCacheCapacity(capacity);
+  return OhosWebSnapshotDataBase::GetInstance().SetBlanklessLoadingCacheCapacity(capacity);
 }
 
 int32_t BlanklessDataController::GetBlanklessLoadingCacheCapacity() const
 {
-  return dbInstance_.GetCapacityInByte();
+  return OhosWebSnapshotDataBase::GetInstance().GetCapacityInByte();
 }
 
 void BlanklessDataController::PostDumpTaskWithDelay(uint64_t blankless_key, base::OnceClosure task)

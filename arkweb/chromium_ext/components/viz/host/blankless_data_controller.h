@@ -60,7 +60,6 @@ private:
   std::shared_ptr<SnapshotInfo> GetHistorySnapshotInfo(uint64_t blankless_key);
 
 private:
-  OHOS::NWeb::OhosWebSnapshotDataBase& dbInstance_;
   std::shared_ptr<OHOS::NWeb::OhosWebSnapshotDataBaseCallback> web_snapshot_db_callback_ = nullptr;
 
   std::unordered_map<int64_t, std::shared_ptr<SnapshotInfo>> last_info_;

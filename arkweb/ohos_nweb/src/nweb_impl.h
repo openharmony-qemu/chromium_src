@@ -98,6 +98,15 @@ class NWebImpl : public NWeb {
   void OnTouchMove(
       const std::vector<std::shared_ptr<NWebTouchPointInfo>>& touch_point_infos,
       bool fromOverlay = false) override;
+  void OnStylusTouchPress(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) override;
+  void OnStylusTouchRelease(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) override;
+  void OnStylusTouchMove(
+      const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>& stylus_touch_point_infos,
+      bool from_overlay = false) override;
   void OnTouchCancel() override;
   void OnNavigateBack() override;
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction) override;

@@ -206,6 +206,16 @@ class NWebDelegateInterface
   virtual void OnTouchMove(
       const std::vector<std::shared_ptr<NWebTouchPointInfo>>& touch_point_infos,
       bool from_overlay) = 0;
+  virtual void OnStylusTouchPress(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) = 0;
+  virtual void OnStylusTouchRelease(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) = 0;
+  virtual void OnStylusTouchMove(
+      const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>&
+          stylus_touch_point_infos,
+      bool from_overlay) = 0;
   virtual void OnTouchCancel() = 0;
   virtual void OnTouchCancelById(int32_t id,
                                  double x,

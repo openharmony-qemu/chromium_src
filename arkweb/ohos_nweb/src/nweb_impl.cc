@@ -1617,6 +1617,96 @@ void NWebImpl::OnTouchMove(
 #endif
 }
 
+void NWebImpl::OnStylusTouchPress(
+    std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+    bool from_overlay) {
+  if (!stylus_touch_point_info) {
+    WVLOG_W(
+        "OnStylusTouchPress: invalid touch point info, nweb_id = %{public}u",
+        nweb_id_);
+    return;
+  }
+
+  WVLOG_I(
+      "NWebImpl::OnStylusTouchPress id=%{public}d, from_overlay=%{public}d, "
+      "nweb_id = %{public}u",
+      stylus_touch_point_info->GetId(), from_overlay, nweb_id_);
+
+  if (input_handler_ == nullptr) {
+    return;
+  }
+
+  ResSchedClientAdapter::ReportScene(ResSchedStatusAdapter::WEB_SCENE_ENTER,
+                                     ResSchedSceneAdapter::CLICK, nweb_id_);
+  input_handler_->OnStylusTouchPress(stylus_touch_point_info, from_overlay);
+
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (nweb_delegate_) {
+    nweb_delegate_->RefreshAccessibilityManagerClickEvent();
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  ClearBlanklessKey();
+#endif
+}
+
+void NWebImpl::OnStylusTouchRelease(
+    std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+    bool from_overlay) {
+  if (!stylus_touch_point_info) {
+    WVLOG_W(
+        "OnStylusTouchRelease: invalid touch point info, nweb_id = %{public}u",
+        nweb_id_);
+    return;
+  }
+
+  WVLOG_I(
+      "NWebImpl::OnStylusTouchRelease id=%{public}d, from_overlay=%{public}d, "
+      "nweb_id = %{public}u",
+      stylus_touch_point_info->GetId(), from_overlay, nweb_id_);
+
+  if (input_handler_ == nullptr) {
+    return;
+  }
+
+  input_handler_->OnStylusTouchRelease(stylus_touch_point_info, from_overlay);
+}
+
+void NWebImpl::OnStylusTouchMove(
+    const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>&
+        stylus_touch_point_infos,
+    bool from_overlay) {
+  if (stylus_touch_point_infos.empty()) {
+    WVLOG_W("OnStylusTouchMove: empty touch point list, nweb_id = %{public}u",
+            nweb_id_);
+    return;
+  }
+
+  if (input_handler_ == nullptr) {
+    return;
+  }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool nativeEmbedMode = false;
+  bool isEnableCustomVideoPlayer = false;
+  if (nweb_delegate_) {
+    nativeEmbedMode = nweb_delegate_->GetNativeEmbedMode();
+    isEnableCustomVideoPlayer = nweb_delegate_->IsEnableCustomVideoPlayer();
+  }
+  if (nativeEmbedMode || isEnableCustomVideoPlayer) {
+    for (const auto& stylus_touch : stylus_touch_point_infos) {
+      std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>
+          single_stylus_touch;
+      single_stylus_touch.emplace_back(stylus_touch);
+      input_handler_->OnStylusTouchMove(single_stylus_touch, from_overlay);
+    }
+  } else {
+    input_handler_->OnStylusTouchMove(stylus_touch_point_infos, from_overlay);
+  }
+#endif
+}
+
 void NWebImpl::OnTouchCancel() {
   WVLOG_D("NWebImpl::OnTouchCancel");
   if (input_handler_ == nullptr) {

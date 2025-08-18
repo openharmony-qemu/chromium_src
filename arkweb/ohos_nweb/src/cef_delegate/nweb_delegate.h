@@ -147,6 +147,16 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void OnTouchMove(
       const std::vector<std::shared_ptr<NWebTouchPointInfo>>& touch_point_infos,
       bool from_overlay = false) override;
+  void OnStylusTouchPress(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) override;
+  void OnStylusTouchRelease(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) override;
+  void OnStylusTouchMove(
+      const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>&
+          stylus_touch_point_infos,
+      bool from_overlay) override;
   void OnTouchCancel() override;
   void OnTouchCancelById(int32_t id,
                          double x,

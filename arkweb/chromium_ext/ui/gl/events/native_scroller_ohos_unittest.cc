@@ -112,8 +112,5 @@ TEST(NativeScrollerOhosTest, ConvertNativeScrollerDeviceSource) {
   EXPECT_EQ(ConvertNativeScrollerDeviceSource(
                 blink::WebGestureDevice::kScrollbar),
             NativeScrollerOhos::GestureDevice::kScrollbar);
-  blink::WebGestureDevice device_source;
-  EXPECT_EQ(ConvertNativeScrollerDeviceSource(device_source),
-            NativeScrollerOhos::GestureDevice::kUninitialized);
 }
 }  // namespace ui

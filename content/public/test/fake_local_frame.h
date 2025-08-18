@@ -183,6 +183,24 @@ class FakeLocalFrame : public blink::mojom::LocalFrame {
   void UpdatePrerenderURL(const ::GURL& matched_url,
                           UpdatePrerenderURLCallback callback) override;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void JavaScriptExecuteRequestExt(
+      ::mojo::ScopedHandle fd_handle,
+      uint64_t scriptLength,
+      bool wants_result,
+      JavaScriptExecuteRequestCallback callback) override {}
+
+  void GetImageFromCache(
+      const std::string& url,
+      GetImageFromCacheCallback callback) override {}
+
+  void GenerateCodeCache(
+      const std::string& url,
+      const std::string& script,
+      blink::mojom::CacheOptionsPtr cache_options,
+      GenerateCodeCacheCallback callback) override {}
+#endif
+
  private:
   void BindFrameHostReceiver(mojo::ScopedInterfaceEndpointHandle handle);
 

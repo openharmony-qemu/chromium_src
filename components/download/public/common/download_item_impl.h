@@ -359,7 +359,12 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
   void SetDisplayName(const base::FilePath& name) override;
   std::string DebugString(bool verbose) const override;
   void SimulateErrorForTesting(DownloadInterruptReason reason) override;
-
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  void ReadDownloadData(
+    const std::string& guid,
+    const int32_t read_size,
+    base::OnceCallback<void(const std::vector<uint8_t>&)> callback) override;
+#endif // ARKWEB_EXT_DOWNLOAD
   // All remaining public interfaces virtual to allow for DownloadItemImpl
   // mocks.
 

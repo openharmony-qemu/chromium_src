@@ -67,6 +67,10 @@ namespace {
 
 using testing::Optional;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+const std::string& TEST_STRING_URL = "https:www.example.com";
+#endif
+
 class TestNavigationLoaderInterceptor : public NavigationLoaderInterceptor {
  public:
   explicit TestNavigationLoaderInterceptor(
@@ -131,7 +135,14 @@ class TestNavigationLoaderInterceptor : public NavigationLoaderInterceptor {
         /*devtools_observer=*/mojo::NullRemote(),
         /*accept_ch_frame_observer=*/mojo::NullRemote(),
         /*attribution_request_helper=*/nullptr,
-        /*shared_storage_writable=*/false);
+        /*shared_storage_writable=*/false
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+        ,
+        /*std::shared_ptr<ohos_prp_preload::PRPPRequestLoader>*/ nullptr,
+        /*const std::string&*/ TEST_STRING_URL,
+        /*std::shared_ptr<ohos_prp_preload::PRRequestInfo>*/ nullptr
+);
+#endif
   }
 
   bool MaybeCreateLoaderForResponse(

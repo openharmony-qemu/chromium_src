@@ -259,7 +259,7 @@ void OHOSMediaPlayerBridge::SetPlayerSurface() {
 
   int32_t prepare_ret = player_->PrepareAsync();
   if (prepare_ret != 0) {
-    LOG(ERROR) << "Prepare error::ret=" << prepare_ret << " url=" << url_.spec();
+    LOG(ERROR) << "Prepare error::ret=" << prepare_ret;
   }
 }
 

@@ -19,7 +19,9 @@
 
 #include "base/functional/callback.h"
 #include "ohos_nweb/src/capi/browser_service/nweb_extension_downloads_types.h"
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/public/capi/nweb_extension_downloads_callbacks.h"
+#endif
 
 typedef base::OnceCallback<void(const FilenameSuggestion& suggestion)>
       FilenameChangedCallback;

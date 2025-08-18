@@ -16,7 +16,7 @@
 #include "player_framework_adapter_impl.h"
 
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
-#include "native_window_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
 
 namespace OHOS::NWeb {
 namespace {

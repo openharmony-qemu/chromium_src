@@ -25,10 +25,12 @@
 #include "ohos_nweb/src/capi/web_extension_side_panel_items.h"
 
 namespace OHOS::NWeb {
- 
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 using SidePanelOnOpenCallback = base::RepeatingCallback<void(const std::optional<std::string>&)>;
 using SidePanelOnSetOptionsCallback = base::RepeatingCallback<void(const std::optional<std::string>&)>;
- 
+#endif
+
 class NWebExtensionSidePanelCefDelegate {
   public:
     static NWebExtensionSidePanelCefDelegate* GetInstance();
@@ -39,9 +41,11 @@ class NWebExtensionSidePanelCefDelegate {
                   SidePanelOnOpenCallback callback);
   bool OnSetOptionsByPb(ExtensionSidePanelSetOptions& options,
                         SidePanelOnSetOptionsCallback callback);
+#if BUILDFLAG(ARKWEB_NWEB_EX)
   void OnOpenCallback(int request_id, const std::optional<std::string>& error);
   void OnSetOptionsCallback(int request_id, const std::optional<std::string>& error);
- 
+#endif
+
   private:
     NWebExtensionSidePanelCefDelegate();
 };

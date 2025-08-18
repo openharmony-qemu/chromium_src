@@ -25,11 +25,13 @@
 #endif
  
 namespace OHOS::NWeb {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 namespace {
   static std::map<int, SidePanelOnOpenCallback> g_sidepanel_open_map_;
   static std::map<int, SidePanelOnSetOptionsCallback> g_sidepanel_setoptions_map_;
 }
- 
+#endif
+
 // static
 NWebExtensionSidePanelCefDelegate* NWebExtensionSidePanelCefDelegate::GetInstance() {
   static NWebExtensionSidePanelCefDelegate instance;
@@ -99,7 +101,8 @@ bool NWebExtensionSidePanelCefDelegate::OnSetOptionsByPb(
   return true;
 #endif
 }
- 
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 void NWebExtensionSidePanelCefDelegate::OnOpenCallback(
       int request_id,
       const std::optional<std::string>& error) {
@@ -127,5 +130,6 @@ void NWebExtensionSidePanelCefDelegate::OnSetOptionsCallback(
     LOG(ERROR) << "request_id is inValid";
   }
 }
- 
+#endif
+
 } // namespace OHOS::NWeb

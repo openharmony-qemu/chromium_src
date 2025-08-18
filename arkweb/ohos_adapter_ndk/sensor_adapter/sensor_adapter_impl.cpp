@@ -104,7 +104,7 @@ int32_t SensorAdapterImpl::IsOhosSensorSupported(int32_t sensorTypeId)
         ret = OH_Sensor_GetInfos(nullptr, &count);
         Sensor_Info **sensorInfo = OH_Sensor_CreateInfos(count);
         ret = OH_Sensor_GetInfos(sensorInfo, &count);
-        if (ret != SENSOR_SUCCESS || count < 0) {
+        if (ret != SENSOR_SUCCESS) {
             OH_Sensor_DestroyInfos(sensorInfo, count);
             WVLOG_E("IsOhosSensorSupported Error, ret = %{public}d, count = %{public}d.", ret, count);
             return SENSOR_ERROR;
@@ -180,7 +180,7 @@ double SensorAdapterImpl::GetOhosSensorMinSupportedFrequency(int32_t sensorTypeI
     ret = OH_Sensor_GetInfos(nullptr, &count);
     Sensor_Info **sensorInfo = OH_Sensor_CreateInfos(count);
     ret = OH_Sensor_GetInfos(sensorInfo, &count);
-    if (ret != SENSOR_SUCCESS || sensorInfo == nullptr || count < 0) {
+    if (ret != SENSOR_SUCCESS || sensorInfo == nullptr) {
         OH_Sensor_DestroyInfos(sensorInfo, count);
         WVLOG_E("GetOhosSensorMinSupportedFrequency Error, ret = %{public}d, count = %{public}d.", ret, count);
         return minFrequency;
@@ -226,7 +226,7 @@ double SensorAdapterImpl::GetOhosSensorMaxSupportedFrequency(int32_t sensorTypeI
     ret = OH_Sensor_GetInfos(nullptr, &count);
     Sensor_Info **sensorInfo = OH_Sensor_CreateInfos(count);
     ret = OH_Sensor_GetInfos(sensorInfo, &count);
-    if (ret != SENSOR_SUCCESS || sensorInfo == nullptr || count < 0) {
+    if (ret != SENSOR_SUCCESS || sensorInfo == nullptr) {
         OH_Sensor_DestroyInfos(sensorInfo, count);
         WVLOG_E("GetOhosSensorMaxSupportedFrequency Error, ret = %{public}d, count = %{public}d.", ret, count);
         return maxFrequency;
@@ -319,7 +319,6 @@ int32_t SensorAdapterImpl::SubscribeOhosSensor(int32_t sensorTypeId, int64_t sam
         WVLOG_E("SubscribeOhosSensor error, sensorTypeId is invalid.");
         return SENSOR_PARAMETER_ERROR;
     }
-    std::string userName = SensorTypeToSensorUserName(sensorTypeId);
     Sensor_Subscriber *subscriber = OH_Sensor_CreateSubscriber();
     ret = OH_SensorSubscriber_SetCallback(subscriber, OhosSensorCallback);
     if (ret != SENSOR_SUCCESS) {

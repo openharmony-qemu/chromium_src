@@ -26,10 +26,8 @@
 
 namespace OHOS::NWeb {
 
-#if BUILDFLAG(ARKWEB_NWEB_EX)
 using SidePanelOnOpenCallback = base::RepeatingCallback<void(const std::optional<std::string>&)>;
 using SidePanelOnSetOptionsCallback = base::RepeatingCallback<void(const std::optional<std::string>&)>;
-#endif
 
 class NWebExtensionSidePanelCefDelegate {
   public:

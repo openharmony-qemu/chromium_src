@@ -174,10 +174,6 @@ component("clipboard") {
   if (arkweb_clipboard) {
     import("//build/config/ohos/config.gni")
     import("ohos/build.gni")
-    sources -= [
-      "clipboard_non_backed.cc",
-      "clipboard_non_backed.h",
-    ]
     sources += ohos_clipboard_sources
     include_dirs = ohos_src_includes
     deps += [

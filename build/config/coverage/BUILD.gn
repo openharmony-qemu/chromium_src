@@ -37,7 +37,8 @@ config("default_coverage") {
       # of binary size enables building Chrome's large unit test targets on
       # MacOS. Please refer to crbug.com/796290 for more details.
       "-mllvm",
-      "-limited-coverage-experimental=true",
+      "-limited-coverage-experimental=true", 
+      "--coverage",
     ]
 
     # Rust coverage is gated on using the Chromium-built Rust toolchain as it

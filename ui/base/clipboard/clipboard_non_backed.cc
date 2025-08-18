@@ -438,7 +438,9 @@ class ClipboardDataBuilder {
   static ClipboardData* current_data_;
 };
 
+#if !BUILDFLAG(IS_OHOS)
 ClipboardData* ClipboardDataBuilder::current_data_ = nullptr;
+#endif // BUILDFLAG(IS_OHOS)
 
 // static
 ClipboardNonBacked* ClipboardNonBacked::GetForCurrentThread() {

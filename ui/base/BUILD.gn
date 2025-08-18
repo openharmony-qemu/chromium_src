@@ -397,6 +397,10 @@ component("base") {
       "themed_vector_icon.h",
     ]
 
+    include_dirs = [
+      "src/ohos_sdk/openharmony/native/sysroot/usr/include",
+    ]
+
     if (!is_android && !is_ios) {
       sources += [
         "menu_source_utils.cc",
@@ -435,8 +439,11 @@ component("base") {
       sources += [ "pointer/pointer_device_android.cc" ]
     } else if (is_ios) {
       sources += [ "pointer/pointer_device_ios.cc" ]
-    } else if (is_linux || is_chromeos || is_ohos) {
+    } else if (is_linux || is_chromeos) {
       sources += [ "pointer/pointer_device_linux.cc" ]
+    } else if (is_arkweb) {
+      import("//arkweb/chromium_ext/chromium_ext.gni")
+      sources += arkweb_ui_base_pointer_sources
     } else {
       # Empty implementation for all other cases.
       sources += [ "pointer/pointer_device.cc" ]

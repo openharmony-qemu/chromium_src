@@ -36,7 +36,9 @@ void MediaSessionController::SetMetadata(
     bool has_video,
     media::MediaContentType media_content_type) {
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  media_session_->SetMediaContentType(media_content_type);
+  if (media_session_) {
+    media_session_->SetMediaContentType(media_content_type);
+  }
 #endif
   has_audio_ = has_audio;
   has_video_ = has_video;

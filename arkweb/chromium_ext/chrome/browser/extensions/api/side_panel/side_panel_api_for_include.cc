@@ -86,7 +86,7 @@ ExtensionFunction::ResponseAction SidePanelSetOptionsFunction::RunFunctionForInc
   }
  
   if (IsNativeApiEnable()) {
-    if (NWebExtensionSidePanelDispatcher::HasOnSetOptionsByPbCallback()) {
+    if (NWebExtensionSidePanelCefDelegate::GetInstance()->HasOnSetOptionsByPbCallback()) {
       call_on_set_options_ = true;
       ExtensionSidePanelSetOptions options;
       options.extensionId = extension()->id();
@@ -133,7 +133,7 @@ ExtensionFunction::ResponseAction SidePanelOpenFunction::RunOpenFunctionForInclu
     std::optional<api::side_panel::Open::Params>& params) {
   LOG(INFO) << "SidePanelOpenFunction::RunFunction";
   if (IsNativeApiEnable()) {
-    if (NWebExtensionSidePanelDispatcher::HasOnOpenByPbCallback()) {
+    if (NWebExtensionSidePanelCefDelegate::GetInstance()->HasOnOpenByPbCallback()) {
       call_on_open_ = true;
       ExtensionSidePanelOpenOptions options;
       options.extensionId = extension()->id();

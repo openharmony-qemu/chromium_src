@@ -15,17 +15,16 @@
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#include "ohos_nweb/src/cef_delegate/nweb_extension_side_panel_cef_delegate.h"
 #include "ohos_nweb_ex/core/extension/nweb_extension_side_panel_dispatcher.h"
 #endif
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "arkweb/ohos_nweb/src/nweb_common.h"
 #include "base/logging.h"
 #include "chrome/browser/extensions/extension_tab_util.h"
+#include "ohos_nweb/src/cef_delegate/nweb_extension_side_panel_cef_delegate.h"
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 namespace extensions {
-#if BUILDFLAG(ARKWEB_NWEB_EX)
 typedef OHOS::NWeb::NWebExtensionSidePanelCefDelegate NWebExtensionSidePanelCefDelegate;
 
 std::string GetExtensionContextType(content::BrowserContext* browser_context) {
@@ -77,12 +76,10 @@ void SidePanelSetOptionsFunction::OnSetOptions(
     function->Release();
   }
 }
-#endif
 
 ExtensionFunction::ResponseAction SidePanelSetOptionsFunction::RunFunctionForInclude(
     std::optional<api::side_panel::SetOptions::Params>& params) {
   LOG(INFO) << "SidePanelSetOptionsFunction::RunFunction";
-#if BUILDFLAG(ARKWEB_NWEB_EX)
   std::optional<std::string> absolute_path;
   if (params->options.path.has_value()) {
     absolute_path = extension()->GetResourceURL(*params->options.path).spec();
@@ -116,23 +113,25 @@ ExtensionFunction::ResponseAction SidePanelSetOptionsFunction::RunFunctionForInc
         return RespondLater();
       }
     } else {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
       NWebExtensionSidePanelDispatcher::OnSetOptionsNative(
           extension()->id(), params->options.enabled, params->options.tab_id,
           absolute_path);
+#endif // ARKWEB_NWEB_EX
     }
   } else {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
     NWebExtensionSidePanelDispatcher::OnSetOptions(
         extension()->id(), params->options.enabled, params->options.tab_id,
         absolute_path);
+#endif // ARKWEB_NWEB_EX
   }
-#endif
   return RespondNow(NoArguments());
 }
 
 ExtensionFunction::ResponseAction SidePanelOpenFunction::RunOpenFunctionForInclude(
     std::optional<api::side_panel::Open::Params>& params) {
   LOG(INFO) << "SidePanelOpenFunction::RunFunction";
-#if BUILDFLAG(ARKWEB_NWEB_EX)
   if (IsNativeApiEnable()) {
     if (NWebExtensionSidePanelDispatcher::HasOnOpenByPbCallback()) {
       call_on_open_ = true;
@@ -164,18 +163,21 @@ ExtensionFunction::ResponseAction SidePanelOpenFunction::RunOpenFunctionForInclu
         return RespondLater();
       }
     } else {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
       NWebExtensionSidePanelDispatcher::OnOpenNative(
           extension()->id(),
           params->options.tab_id.value_or(api::tabs::TAB_ID_NONE),
           params->options.window_id.value_or(api::windows::WINDOW_ID_NONE));
+#endif // ARKWEB_NWEB_EX
     }
   } else {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
     NWebExtensionSidePanelDispatcher::OnOpen(
         extension()->id(),
         params->options.tab_id.value_or(api::tabs::TAB_ID_NONE),
         params->options.window_id.value_or(api::windows::WINDOW_ID_NONE));
+#endif // ARKWEB_NWEB_EX
   }
-#endif
   return RespondNow(NoArguments());
 }
 

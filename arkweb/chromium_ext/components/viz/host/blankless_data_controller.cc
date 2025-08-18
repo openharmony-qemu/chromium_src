@@ -15,6 +15,7 @@
 
 #include "blankless_data_controller.h"
 
+#include <algorithm>
 #include <mutex>
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/ohos_adapter_ndk/window_manager_adapter/window_manager_adapter_impl.h"
@@ -84,16 +85,18 @@ static double Covariance(const std::vector<double>& data1,
   return sum / data1.size();
 }
 
-static double CalculateSSIM(const std::vector<double>& img1, const std::vector<double>& img2, const int depth) {
-  // SSIM计算公式中的常数值共计算公式C1=(K1*L)*(K1*L);C2=(K2*L)*(K2*L);其中K1和K2默认值为0.01和0.03
-  double C1 = (0.01 * depth) * (0.01 * depth);
-  double C2 = (0.03 * depth) * (0.03 * depth);
+static double CalculateSSIM(const std::vector<double>& img1, const std::vector<double>& img2) {
+  // SSIM计算公式中的常数值共计算公式C1=(K1*L)*(K1*L);C2=(K2*L)*(K2*L);其中K1和K2默认值为0.01和0.03;像素已归一化,L为1
+  double C1 = 0.01 * 0.01;
+  double C2 = 0.03 * 0.03;
 
   double mean1 = Mean(img1);
   double mean2 = Mean(img2);
   double var1 = Variance(img1, mean1);
   double var2 = Variance(img2, mean2);
   double cov12 = Covariance(img1, mean1, img2, mean2);
+  // Avoid the calculation result being negative.
+  cov12 = std::max(cov12, 0.0);
 
   double numerator = (2 * mean1 * mean2 + C1) * (2 * cov12 + C2);
   double denominator = (mean1 * mean1 + mean2 * mean2 + C1) * (var1 + var2 + C2);
@@ -155,8 +158,8 @@ static std::vector<double> GetSnapshotPixels(const SkPixmap& pixmap) {
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
       const SkColor color = pixmap.getColor(x, y);
-      // 灰度值计算公式0.299、0.587、0.114是RGB各通道的权重
-      double gray = 0.299 * SkColorGetR(color) + 0.587 * SkColorGetG(color) + 0.114 * SkColorGetB(color);
+      // 灰度值计算公式0.299、0.587、0.114是RGB各通道的权重，并将结果归一化
+      double gray = (0.299 * SkColorGetR(color) + 0.587 * SkColorGetG(color) + 0.114 * SkColorGetB(color)) / 255;
       pixels[y * width + x] = gray;
     }
   }
@@ -166,9 +169,7 @@ static std::vector<double> GetSnapshotPixels(const SkPixmap& pixmap) {
 static double CalculateSnapshotSimilarity(std::vector<double>& pixels1,
                                    std::vector<double>& pixels2,
                                    int width,
-                                   int height,
-                                   const std::vector<BlanklessDataController::SnapShotRect>& quad_list,
-                                   const int depth) {
+                                   int height) {
   if (width == 0 || height == 0) {
     LOG(DEBUG) << "blankless width: " << width << ", height: " << height;
     return 0.0;
@@ -179,49 +180,7 @@ static double CalculateSnapshotSimilarity(std::vector<double>& pixels1,
     return 0.0;
   }
 
-  std::vector<double> samePixels;
-  samePixels.resize(width * height, 0);
-  int samePixelsNum = 0;
-  for (int i = 0; i < quad_list.size(); i++) {
-    int rectWidth = quad_list[i].w / 2;
-    int rectHeight = quad_list[i].h / 2;
-    if (rectWidth <= 0 || rectHeight <= 0) {
-      continue;
-    }
-    int x0 = quad_list[i].x / 2;
-    int y0 = quad_list[i].y / 2;
-    if (x0 < 0) {
-      x0 = 0;
-    }
-    if (y0 < 0) {
-      y0 = 0;
-    }
-    std::vector<double> rectPixels1;
-    std::vector<double> rectPixels2;
-    rectPixels1.resize(rectWidth * rectHeight);
-    rectPixels2.resize(rectWidth * rectHeight);
-    for (int y = y0; y < height && y < y0 + rectHeight; y++) {
-      for (int x = x0; x < width && x < x0 + rectWidth; x++) {
-        rectPixels1[(y - y0) * rectWidth + x - x0] = pixels1[y * width + x];
-        rectPixels2[(y - y0) * rectWidth + x - x0] = pixels2[y * width + x];
-      }
-    }
-    double SSIM = CalculateSSIM(rectPixels1, rectPixels2, depth);
-    if (SSIM < SSIM_THRESHOLD) {
-      continue;
-    }
-    for (int y = y0; y < height && y < y0 + rectHeight; y++) {
-      for (int x = x0; x < width && x < x0 + rectWidth; x++) {
-        samePixelsNum += (samePixels[y * width + x] == 0);
-        samePixels[y * width + x] = 1;
-      }
-    }
-    LOG(DEBUG) << "blankless CalculateSnapshotSimilarity SSIM[" << i << "]=" << SSIM;
-  }
-
-  double percent = (double)samePixelsNum / (double)(width * height);
-  LOG(DEBUG) << "blankless CalculateSnapshotSimilarity percent:" << percent;
-  return percent;
+  return CalculateSSIM(pixels1, pixels2);
 }
 
 static bool LoadBitmap(const char* path, SkBitmap& bitmap) {
@@ -471,7 +430,7 @@ void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessI
   std::vector<double> pixelsNew = GetSnapshotPixels(bitmapNew.pixmap());
   // bitmapNew.bytesPerPixel() * 8为SSIM计算公式中动态范围参数L近似计算
   double similarity = CalculateSnapshotSimilarity(snapshotInfo->pixels, pixelsNew, bitmapNew.width(),
-                                                  bitmapNew.height(), quad_list, bitmapNew.bytesPerPixel() * 8);
+                                                  bitmapNew.height());
   snapshotDataItem.historySimilarity = similarity;
   LOG(DEBUG) << "blankless Insert Snapshot: " << newFile << " " << similarity;
   if (similarity >= base::ohos::BlanklessController::CALLBACK_SIMILARITY_THRESHOLD) {

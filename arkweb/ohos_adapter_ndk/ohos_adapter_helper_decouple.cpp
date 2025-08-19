@@ -165,10 +165,6 @@ ArkOhosAdapterHelperWrapper::CreateBatteryClientAdapter() {
 
 std::unique_ptr<NWeb::NetConnectAdapter>
 ArkOhosAdapterHelperWrapper::CreateNetConnectAdapter() {
-  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
-    return nullptr;
-  }
-
   ArkWebRefPtr<ArkNetConnectAdapter> adapter =
       ctocpp_->CreateNetConnectAdapter();
 

@@ -762,10 +762,6 @@ void NWebDelegate::OnDestroy(bool is_close_all) {
   if (preference_delegate_ != nullptr) {
     preference_delegate_->OnDestroy();
   }
-  if (!GetBrowser().get()) {
-    return;
-  }
-  GetBrowser()->GetHost()->DestroyAllWebMessagePorts();
 }
 
 void NWebDelegate::RegisterDownLoadListener(

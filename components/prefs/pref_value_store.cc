@@ -264,6 +264,11 @@ bool PrefValueStore::GetValueFromStoreWithType(
     base::Value::Type type,
     PrefStoreType store,
     const base::Value** out_value) const {
+#if BUILDFLAG(ARKWEB_I18N)
+  if (name.find("intl.accept_languages") != std::string_view::npos) {
+    store = PrefStoreType::DEFAULT_STORE;
+  }
+#endif
   if (GetValueFromStore(name, store, out_value)) {
     if ((*out_value)->type() == type)
       return true;

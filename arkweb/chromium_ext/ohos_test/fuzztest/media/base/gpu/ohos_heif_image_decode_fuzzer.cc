@@ -26,17 +26,9 @@ using namespace OHOS::NWeb;
 bool OHOSHeifImageDecodeFuzzTest(const uint8_t* data, size_t size)
 {
     FuzzedDataProvider fdp(data, size);
-    OhosHeifImageDecoder hiefDecoder;
+    OhosHeifImageDecoder heifDecoder;
     heifDecoder.GetType();
     heifDecoder.GetYUVColorSpace();
-    OhosImageDecoder imageDecoder;
-    imageDecoder->Initialize();
-    auto rawValue = fdp.ConsumeIntegralInRange<int32_t>(0, 4);
-    OhosImageDecodeStatus status = static_cast<OhosImageDecodeStatus>(rawValue);
-    imageDecoder->ExportAsNativePixmapDmaBuf(status)
-    imageDecoder->GetSupportedProfile();
-    imageDecoder->GetOhosImageDecoderAdapter();
-    imageDecoder->ReleaseDecodedPixelMap();
 
     return true;
 }

@@ -195,12 +195,27 @@ uint64_t BlanklessController::GetSystemTime(uint32_t nweb_id, uint64_t blankless
   return INVALID_TIMESTAMP;
 }
 
+void BlanklessController::RecordDumpTime(uint32_t nweb_id, uint64_t blankless_key, uint64_t dump_time)
+{
+  m_dump_time_map_.Insert(nweb_id, blankless_key, dump_time);
+}
+
+uint64_t BlanklessController::GetDumpTime(uint32_t nweb_id, uint64_t blankless_key)
+{
+  auto dump_time = m_dump_time_map_.Get(nweb_id, blankless_key, /*move*/false);
+  if (dump_time.has_value()) {
+    return dump_time.value();
+  }
+  return INVALID_TIMESTAMP;
+}
+
 void BlanklessController::Clear(uint32_t nweb_id)
 {
   if (nweb_id == 0) {
     m_frame_insert_callback_map_.Clear();
     m_frame_remove_callback_map_.Clear();
     m_system_time_map_.Clear();
+    m_dump_time_map_.Clear();
     {
       std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
       m_nweb_status_map_.clear();
@@ -212,6 +227,7 @@ void BlanklessController::Clear(uint32_t nweb_id)
   m_frame_insert_callback_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
   m_frame_remove_callback_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
   m_system_time_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
+  m_dump_time_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
   {
     std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
     m_nweb_status_map_.erase(nweb_id);

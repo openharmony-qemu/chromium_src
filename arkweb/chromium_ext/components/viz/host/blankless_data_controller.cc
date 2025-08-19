@@ -407,6 +407,10 @@ void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessI
   if (!GetSnapShotFileInfo(newFile, snapShotFileSize, snapShotFileTime)) {
     LOG(WARNING) << "blankless GetSnapShotFileInfo failed! filename " << newFile;
   }
+  // Record the time when the snapshot is written to the database to determine if there is a new snapshot written to
+  // the database during this load.
+  auto dump_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
+  instance.RecordDumpTime(info.nweb_id, info.blankless_key, dump_time);
   OHOS::NWeb::SnapshotDataItem snapshotDataItem = {
     .wholePath = newFile,
     .staticPath = "",

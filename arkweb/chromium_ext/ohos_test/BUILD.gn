@@ -985,7 +985,7 @@ fuzzer_test("html_embed_element_for_include_fuzzer") {
   ]
   deps = [
     "//arkweb/ohos_adapter_ndk:adapter_ndk_stub",
-  "//cef:libcef_static",
+    "//cef:libcef_static",
     "//ohos_nweb:cef_nweb",
     "//ohos_nweb:nweb_sources",
   ]

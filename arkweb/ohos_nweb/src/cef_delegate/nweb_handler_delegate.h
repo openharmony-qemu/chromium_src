@@ -480,6 +480,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void KeyboardReDispatch(const CefKeyEvent& event, bool isUsed) override;
   void OnTakeFocus(CefRefPtr<CefBrowser> browser, bool next) override;
   bool IsCurrentFocus();
+  void SetImeShow(bool visible) override;
 #endif
   /* CefKeyboardHandler methods begin */
 

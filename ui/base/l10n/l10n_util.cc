@@ -475,7 +475,7 @@ bool CheckAndResolveLocale(const std::string& locale,
     }
 #if BUILDFLAG(ARKWEB_I18N)
       else if (base::EqualsCaseInsensitiveASCII(lang, "bo")) {
-        tmp_locale.append("-CN")
+        tmp_locale.append("-CN");
       }
 #endif
     if (HasStringsForLocale(tmp_locale, perform_io)) {

@@ -2,5 +2,5 @@
 <!DOCTYPE translationbundle>
 <translationbundle lang="zh-HK">
 <translation id="IDS_ACCEPT_LANGUAGES">zh-HK,zh,en-US,en</translation>
-<translation id="IDS_DEFAULT_ENCODING">UTF-8</translation>
+<translation id="IDS_DEFAULT_ENCODING">Big5</translation>
 </translationbundle>

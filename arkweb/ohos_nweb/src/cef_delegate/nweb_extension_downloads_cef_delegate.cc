@@ -107,7 +107,7 @@ bool NWebExtensionDownloadCefDelegate::Erase(ExDownloadsQueryInfo& query,
 
 void NWebExtensionDownloadCefDelegate::EraseCallback(int requestId,
   std::optional<std::string> error,
-  std::vector<int32_t> eraseIds) {
+  std::vector<int32_t>& eraseIds) {
   DownloadEraseCallback callback;
   {
     std::lock_guard<std::mutex> lock(g_downloads_erase_callback_map_mutex);
@@ -516,7 +516,7 @@ void NWebExtensionDownloadCefDelegate::SearchCallback(
     int requestId,
     std::optional<std::string> error,
     const uint32_t size,
-    std::vector<ExDownloadsItem> downloadItems) {
+    std::vector<ExDownloadsItem>& downloadItems) {
   DownloadSearchCallback callback;
   {
     std::lock_guard<std::mutex> lock(g_downloads_search_callback_map_mutex);

@@ -27,7 +27,7 @@ typedef base::OnceCallback<void(const FilenameSuggestion& suggestion)>
       FilenameChangedCallback;
 
 using DownloadEraseCallback = base::RepeatingCallback<
-    void(std::optional<std::string> error, std::vector<int32_t> eraseIds)>;
+    void(std::optional<std::string> error, std::vector<int32_t>& eraseIds)>;
 
 using DownloadsOpenCallback = base::RepeatingCallback<void(std::optional<std::string> error)>;
 using DownloadsRemoveFileCallback =
@@ -45,7 +45,7 @@ using DownloadsShowCallback = base::RepeatingCallback<void(std::optional<std::st
 using DownloadSearchCallback =
     base::RepeatingCallback<void(std::optional<std::string> error,
                                  const uint32_t size,
-                                 std::vector<ExDownloadsItem> downloadItems)>;
+                                 std::vector<ExDownloadsItem>& downloadItems)>;
 using DownloadGetFileIconCallback =
     base::RepeatingCallback<void(std::optional<std::string> error,
                                  std::string iconUrl)>;
@@ -62,7 +62,7 @@ class NWebExtensionDownloadCefDelegate {
   bool Erase(ExDownloadsQueryInfo& query, DownloadEraseCallback callback);
   void EraseCallback(int requestId,
                      std::optional<std::string> error,
-                     std::vector<int32_t> eraseIds);
+                     std::vector<int32_t>& eraseIds);
 
   // downloads.open
   bool Open(int downloadId, DownloadsOpenCallback callback);
@@ -105,7 +105,7 @@ class NWebExtensionDownloadCefDelegate {
   void SearchCallback(int requestId,
                       std::optional<std::string> error,
                       const uint32_t size,
-                      std::vector<ExDownloadsItem> downloadItems);
+                      std::vector<ExDownloadsItem>& downloadItems);
 
   // downloads.download
   bool GetDownloadId(const std::string& guid, DownloadsIdCallback callback);

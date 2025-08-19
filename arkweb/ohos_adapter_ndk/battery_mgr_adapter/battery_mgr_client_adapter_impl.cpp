@@ -136,6 +136,8 @@ bool BatteryMgrClientAdapterImpl::StartListen()
         if (ret != COMMONEVENT_ERR_OK) {
             OH_CommonEvent_DestroySubscribeInfo(commonEventSubscriberInfo_);
             OH_CommonEvent_DestroySubscriber(commonEventSubscriber_);
+            commonEventSubscriberInfo_ = nullptr;
+            commonEventSubscriber_ = nullptr;
             WVLOG_E("Subscribe fail. ret: %{public}d", ret);
             return false;
         }

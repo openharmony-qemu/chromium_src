@@ -630,7 +630,7 @@ void NWebExtensionDownloadCefDelegate::GetFileIconCallback(
 ExDownloadsItemVector NWebExtensionDownloadCefDelegate::GetAllDownloadItem() {
   LOG(INFO) << "NWebExtensionDownloadCefDelegate::GetAllDownloadItem";
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
-  return nullptr;
+  return ExDownloadsItemVector();
 #else
   return NWebExtensionDownloadsDispatcher::GetInstance().GetAllDownloadItem();
 #endif

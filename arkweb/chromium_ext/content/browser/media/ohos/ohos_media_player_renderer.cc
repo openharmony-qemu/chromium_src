@@ -53,7 +53,6 @@ OHOSMediaPlayerRenderer::OHOSMediaPlayerRenderer(
       render_process_id_(process_id),
       routing_id_(routing_id),
       volume_(kDefaultVolume),
-      web_contents_(web_contents->GetWeakPtr()),
       renderer_extension_receiver_(this,
                                    std::move(renderer_extension_receiver)) {
   WebContentsImpl* web_contents_impl =
@@ -61,6 +60,7 @@ OHOSMediaPlayerRenderer::OHOSMediaPlayerRenderer(
   web_contents_muted_ = web_contents_impl && web_contents_impl->IsAudioMuted();
 
   if (web_contents) {
+    web_contents_ = web_contents->GetWeakPtr();
     OHOSMediaPlayerRendererWebContentsObserver::CreateForWebContents(
         web_contents);
     web_contents_observer_ =

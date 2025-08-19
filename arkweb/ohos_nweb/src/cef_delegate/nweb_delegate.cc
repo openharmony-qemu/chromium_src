@@ -742,6 +742,9 @@ bool NWebDelegate::Init(bool is_enhance_surface,
 }
 
 void NWebDelegate::OnDestroy(bool is_close_all) {
+  if (GetBrowser().get() && GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->DestroyAllWebMessagePorts();
+  }
   if (display_listener_id_ >= 0 && display_listener_ != nullptr &&
       display_manager_adapter_ != nullptr) {
     display_manager_adapter_->UnregisterDisplayListener(display_listener_id_);

@@ -340,7 +340,7 @@ bool CodecWrapperImpl::SetSurface(
   DCHECK(surface_bundle);
   DCHECK(codec_ && state_ != State::kError);
 
-  if (codec_->SetBridgeOutputSurface(surface_bundle->GetOHOSNativeWindow()) ==
+  if (!surface_bundle || codec_->SetBridgeOutputSurface(surface_bundle->GetOHOSNativeWindow()) ==
       DecoderAdapterCode::DECODER_ERROR) {
     state_ = State::kError;
     return false;

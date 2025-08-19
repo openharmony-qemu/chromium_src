@@ -629,7 +629,6 @@ InputMethod_ErrorCode IMFTextEditorProxyImpl::ConstructTextConfig(const std::sha
     if (ret != IME_ERR_OK) {
         WVLOG_E("Set enter key type failed ret=%{public}d", ret);
         DestroyTextConfig();
-        OH_TextConfig_Destroy(textConfig_);
         return ret;
     }
     bool support = true;

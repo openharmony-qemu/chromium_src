@@ -180,6 +180,10 @@ virtual void SetScreenCapturePickerShow() = 0;
 virtual void DisableSessionReuse() = 0;
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+virtual bool OnStartBackgroundTask(int32_t type, const std::string& message) = 0;
+#endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
+
 private:
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 std::string media_title_;

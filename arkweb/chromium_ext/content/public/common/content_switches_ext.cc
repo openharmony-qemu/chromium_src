@@ -103,4 +103,7 @@ const char kSetExtensionName[] = "set-extension-name";
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
 const char  kOhosEnableGwpAsanType[] = "ohos-enable-gwp-asan-type";
 #endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+const char  kEnableWebAudioBackgroundTask[] = "enable-web-audio-background-task";
+#endif
 }  // namespace switches

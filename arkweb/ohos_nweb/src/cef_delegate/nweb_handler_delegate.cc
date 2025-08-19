@@ -5272,4 +5272,23 @@ void NWebHandlerDelegate::OnPdfLoadEvent(int32_t result, const std::string& url)
   }
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+bool NWebHandlerDelegate::OnStartBackgroundTask(int32_t type,
+                                                const std::string& message) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    return dispatcher_.OnStartBackgroundTask(type, message);
+  }
+#endif  // ARKWEB_NWEB_EX
+  if (web_app_client_extension_listener_ == nullptr ||
+      web_app_client_extension_listener_->OnStartBackgroundTask == nullptr) {
+    LOG(ERROR) << "NWebHandlerDelegate::OnStartBackgroundTask failed for "
+                  "nullptr. default return true";
+    return true;
+  }
+  return web_app_client_extension_listener_->OnStartBackgroundTask(
+      type, message, web_app_client_extension_listener_->nweb_id);
+}
+#endif  // RKWEB_PERFORMANCE_PERSISTENT_TASK
 }  // namespace OHOS::NWeb

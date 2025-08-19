@@ -1150,4 +1150,16 @@ void WebContentsImplExt::OnBrowserBackground() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+bool WebContentsImplExt::OnStartBackgroundTask(int32_t type,
+                                               const std::string& message) {
+  LOG(INFO) << "WebContentsImplExt::OnStartBackgroundTask, type=" << type
+            << ", message=" << message.c_str();
+  if (delegate_) {
+    return delegate_->OnStartBackgroundTask(type, message);
+  }
+  return true;
+}
+#endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
+
 }  // namespace content

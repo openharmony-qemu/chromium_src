@@ -26,7 +26,6 @@ const std::string THREAD_NAME = "VSync-webview";
 }
 
 void (*VSyncAdapterNdkImpl::callback_)() = nullptr;
-void (*VSyncAdapterNdkImpl::onVsyncEndCallback_)() = nullptr;
 
 VSyncAdapterNdkImpl::~VSyncAdapterNdkImpl()
 {
@@ -79,13 +78,7 @@ void VSyncAdapterNdkImpl::OnVsync(long long timestamp, void* client)
 {
     auto vsyncClient = static_cast<VSyncAdapterNdkImpl*>(client);
     if (vsyncClient) {
-        if (callback_) {
-            callback_();
-        }
         vsyncClient->VsyncCallbackInner(timestamp);
-        if (onVsyncEndCallback_) {
-            onVsyncEndCallback_();
-        }
     } else {
         WVLOG_E("VsyncClient is null");
     }
@@ -95,6 +88,9 @@ void VSyncAdapterNdkImpl::VsyncCallbackInner(long long timestamp)
 {
     std::unordered_map<void*, NWebVSyncCb> vsyncCallbacks;
     std::lock_guard<std::mutex> lock(mtx_);
+    if (callback_) {
+        callback_();
+    }
     vsyncCallbacks = vsyncCallbacks_;
     vsyncCallbacks_.clear();
 
@@ -134,6 +130,7 @@ void VSyncAdapterNdkImpl::SetFramePreferredRate(int32_t preferredRate)
 
 void VSyncAdapterNdkImpl::SetOnVsyncCallback(void (*callback)())
 {
+    std::lock_guard<std::mutex> lock(mtx_);
     callback_ = callback;
 }
 
@@ -144,7 +141,6 @@ void VSyncAdapterNdkImpl::SetIsGPUProcess(bool isGPU)
 
 void VSyncAdapterNdkImpl::SetOnVsyncEndCallback(void (*onVsyncEndCallback)())
 {
-    onVsyncEndCallback_ = onVsyncEndCallback;
 }
 
 void VSyncAdapterNdkImpl::SetScene(const std::string& sceneName, uint32_t state)

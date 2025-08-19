@@ -51,6 +51,7 @@ TEST_F(VSyncAdapterImplTest, VSyncAdapterImplTest_001)
     VSyncAdapterNdkImpl vsyncAdapter;
     void* client = nullptr;
     adapter.OnVsync(1, client);
+    adapter.VsyncCallbackInner(0);
     adapter.VsyncCallbackInner(1);
     int64_t period = adapter.GetVSyncPeriod();
     EXPECT_EQ(period, 0);

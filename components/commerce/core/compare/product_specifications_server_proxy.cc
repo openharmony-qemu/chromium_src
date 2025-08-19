@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/time/time.h"
@@ -26,7 +27,11 @@ namespace commerce {
 namespace {
 
 const char kEndpointUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://memex-pa.googleapis.com/v1/shopping/products:specifications";
+#endif
 
 const char kAltTextKey[] = "alternativeText";
 const char kBuyingOptionsURLKey[] = "buyingOptionsUrl";

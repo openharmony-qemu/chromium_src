@@ -293,6 +293,7 @@ OnReportStatisticLogFunc
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include "arkweb/chromium_ext/base/feature_list_utils.h"
 #include "arkweb/ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/nweb_safe_browsing_detection_handler.h"
 #include "base/base_switches.h"
 #include "base/strings/string_split.h"
@@ -305,6 +306,7 @@ OnReportStatisticLogFunc
 #include "cef/ohos_cef_ext/libcef/browser/global_config/global_config_prefs.h"
 #include "chrome/browser/browser_process.h"
 #include "components/prefs/pref_service.h"
+#include "services/network/public/cpp/features.h"
 #endif
 #endif
 namespace {
@@ -767,6 +769,14 @@ void AddGlobalConfigFeaturesSwitchesToCommandLine() {
   }
 }
 
+void RegisterCustomFeatureOverrides() {
+  if (base::ohos::ApplicationApiVersion() < 20) {
+    base::FeatureList::GetInstance()->GetUtils()->SetOverrideStateByFeatureName(
+      network::features::kOpaqueResponseBlockingV02.name,
+      base::FeatureList::OverrideState::OVERRIDE_DISABLE_FEATURE);
+  }
+}
+
 void DealGlobalConfigInThread() {
   AddGlobalConfigFeaturesSwitchesToCommandLine();
 
@@ -779,6 +789,9 @@ void DealGlobalConfigInThread() {
       command_line->GetSwitchValueASCII(switches::kEnableBlinkFeatures),
       command_line->GetSwitchValueASCII(switches::kDisableBlinkFeatures));
   }
+
+  // FeatureOverrides from cloud control supersedes Custom FeatureOverrides
+  RegisterCustomFeatureOverrides();
 
   OHOS::NWeb::NWebSafeBrowsingDetectionHandler::GetInstance().HandleGlobalConfig();
 }

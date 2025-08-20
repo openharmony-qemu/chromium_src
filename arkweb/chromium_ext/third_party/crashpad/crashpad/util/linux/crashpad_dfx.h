@@ -35,6 +35,10 @@ namespace crashpad {
 
 class CrashpadDfx {
  public:
+  enum class CrashReason : int32_t {
+    kUnDefined = -1,
+    kOutOfMemory = 0,
+  };
   static void ProcessCrashReport(const std::string process_type,
                                  const std::string happen_time,
                                  const std::string bundle_name,

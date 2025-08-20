@@ -108,7 +108,7 @@ class TestFrameSinkManagerImpl : public mojom::FrameSinkManager {
                             uint32_t client_id) override {}
   void ResetVSyncFrequency(const ::viz::FrameSinkId& frame_sink_id) override {}
   void SendInternalBeginFrame(const ::viz::FrameSinkId& frame_sink_id) override {}
-  void EvictFrameBackBuffers(const ::viz::FrameSinkId& frame_sink_id, bool invisible) {}
+  void EvictFrameBackBuffers(const ::viz::FrameSinkId& frame_sink_id) {}
 #endif
 #if BUILDFLAG(ARKWEB_PIP)
   void SetPipActive(bool active, const FrameSinkId& frame_sink_id) override {}

@@ -720,12 +720,6 @@ void VideoResourceUpdater::ReleaseFrameResource() {
   frame_resource_id_ = viz::ResourceId();
 }
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-void VideoResourceUpdater::SetHasNativeLayer(bool has_native_layer) {
-  has_native_layer_ = has_native_layer;
-}
-#endif
-
 void VideoResourceUpdater::AppendQuad(
     viz::CompositorRenderPass* render_pass,
     scoped_refptr<VideoFrame> frame,
@@ -777,11 +771,6 @@ void VideoResourceUpdater::AppendQuad(
           frame_resource_type_ == VideoFrameResourceType::RGBA_PREMULTIPLIED;
 
       bool flipped = !frame->metadata().texture_origin_is_top_left;
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-      if (base::ohos::IsEmulator() && has_native_layer_) {
-        flipped = !flipped;
-      }
-#endif
       bool nearest_neighbor = false;
       gfx::ProtectedVideoType protected_video_type =
           ProtectedVideoTypeFromMetadata(frame->metadata());

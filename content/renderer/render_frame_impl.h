@@ -1747,8 +1747,6 @@ class CONTENT_EXPORT RenderFrameImpl
   // Set if this RenderFrameImpl is for a main frame which is not top-level.
   const bool is_for_nested_main_frame_;
 
-  RenderFrameImplUtils* implUtils;
-
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   uint32_t nweb_id_ = 0;
   uint64_t blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
@@ -1759,7 +1757,8 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_USERAGENT)
   bool viewport_meta_enabled_{false};
 #endif
-
+  raw_ptr<RenderFrameImplUtils> implUtils;
+  
   base::WeakPtrFactory<RenderFrameImpl> weak_factory_{this};
 };
 

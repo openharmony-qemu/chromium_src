@@ -1729,7 +1729,7 @@ void NWebHandlerDelegate::ClearSnapshot() {
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
   uint64_t dump_time = instance.GetDumpTime(nweb_id_, blankless_key_);
-  uint64_t system_time = instance.GetSyStemTime(nweb_id_, blankless_key_);
+  uint64_t system_time = instance.GetSystemTime(nweb_id_, blankless_key_);
   if (dump_time != base::ohos::BlanklessController::INVALID_TIMESTAMP && dump_time > system_time) {
     auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
     databaseInstance.ClearSnapshot(blankless_key_);

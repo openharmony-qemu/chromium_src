@@ -1137,6 +1137,53 @@ void NWebDelegate::OnTouchMove(int32_t id,
   }
 }
 
+void NWebDelegate::OnStylusTouchPress(
+    std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+    bool from_overlay) {
+  if (event_handler_ == nullptr || !stylus_touch_point_info) {
+    return;
+  }
+
+  if (pressing_num_ < 0) {
+    pressing_num_ = 0;
+  }
+  ++pressing_num_;
+
+  event_handler_->OnStylusTouchPress(stylus_touch_point_info, from_overlay,
+                                     default_virtual_pixel_ratio_);
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (render_handler_ != nullptr) {
+    render_handler_->SetIrregularDragBackground(true);
+  }
+#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
+}
+
+void NWebDelegate::OnStylusTouchRelease(
+    std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+    bool from_overlay) {
+  if (event_handler_ == nullptr || !stylus_touch_point_info) {
+    return;
+  }
+
+  --pressing_num_;
+
+  event_handler_->OnStylusTouchRelease(stylus_touch_point_info, from_overlay,
+                                       default_virtual_pixel_ratio_);
+}
+
+void NWebDelegate::OnStylusTouchMove(
+    const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>&
+        stylus_touch_point_infos,
+    bool from_overlay) {
+  if (event_handler_ == nullptr || stylus_touch_point_infos.empty()) {
+    return;
+  }
+
+  event_handler_->OnStylusTouchMove(stylus_touch_point_infos, from_overlay,
+                                    default_virtual_pixel_ratio_);
+}
+
 void NWebDelegate::OnTouchCancel() {
   if (event_handler_ != nullptr) {
     --pressing_num_;

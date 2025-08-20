@@ -127,8 +127,7 @@ TEST_F(CompositorTest, SetEnableHalfFrameRate) {
 
 TEST_F(CompositorTest, EvictFrameBackBuffers) {
   ASSERT_NE(g_compositor, nullptr);
-  g_compositor->Utils()->EvictFrameBackBuffers(false);
-  g_compositor->Utils()->EvictFrameBackBuffers(true);
+  g_compositor->Utils()->EvictFrameBackBuffers();
 }
 
 TEST_F(CompositorTest, UpdateVSyncFrequency) {

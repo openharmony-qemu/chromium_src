@@ -26,8 +26,7 @@ FrameSinkManagerImplUtils::FrameSinkManagerImplUtils(FrameSinkManagerImpl* manag
 
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
 void FrameSinkManagerImplUtils::EvictFrameBackBuffers(
-    const FrameSinkId& root_frame_sink_id,
-    bool invisible)
+    const FrameSinkId& root_frame_sink_id)
 {
   TRACE_EVENT1("viz", "FrameSinkManagerImpl::EvictFrameBackBuffers",
                "root_frame_sink_id", root_frame_sink_id.ToString());
@@ -38,7 +37,7 @@ void FrameSinkManagerImplUtils::EvictFrameBackBuffers(
       LOG(ERROR) << "RootCompositorFrameSinkImpl is null";
       return;
     }
-    root_it->second->AsExt()->EvictFrameBackBuffers(invisible);
+    root_it->second->AsExt()->EvictFrameBackBuffers();
   }
 }
 

@@ -1414,7 +1414,6 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult00) {
   auto* style = link->GetComputedStyle();
   EXPECT_TRUE(style != nullptr);
 
-  auto& controller_ = Controller();
   hit_test_result_.SetInnerNode(node);
 
   hit_test_result_.SetURLElement(link);
@@ -1504,7 +1503,6 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult02) {
   EXPECT_TRUE(style != nullptr);
   layout_text_->SetStyle(style);
 
-  auto& controller_ = Controller();
   hit_test_result_.SetInnerNode(node);
   hit_test_result_.InnerNode()->SetLayoutObject(nullptr);
   hit_test_result_.SetURLElement(link);
@@ -1592,7 +1590,6 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult06) {
   EXPECT_TRUE(style != nullptr);
   layout_text_->SetStyle(style);
 
-  auto& controller_ = Controller();
   hit_test_result_.SetInnerNode(node);
   hit_test_result_.InnerNode()->SetLayoutObject(layout_text_);
   hit_test_result_.SetURLElement(link);
@@ -1652,7 +1649,6 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult04) {
   EXPECT_TRUE(style != nullptr);
   layout_text_->SetStyle(style);
 
-  auto& controller_ = Controller();
   hit_test_result_.SetInnerNode(node);
   hit_test_result_.InnerNode()->SetLayoutObject(layout_text_);
   hit_test_result_.SetURLElement(link);
@@ -1711,7 +1707,6 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult05) {
   EXPECT_TRUE(style != nullptr);
   layout_text_->SetStyle(style);
 
-  auto& controller_ = Controller();
   hit_test_result_.SetInnerNode(node);
   hit_test_result_.InnerNode()->SetLayoutObject(layout_text_);
   hit_test_result_.SetURLElement(link);

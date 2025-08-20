@@ -1482,7 +1482,7 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   if ((cur_blankless_frame_width_ != 0) && (cur_blankless_frame_height_ != 0) &&
      (cur_blankless_frame_width_ != width) && (cur_blankless_frame_height_ != height) &&
-     base::ohos::BlanklessController::CheckGlobalProperty()) {
+     base::ohos::BlanklessController::CheckGlobalProperty() && (nweb_handle_ != nullptr)) {
     LOG(DEBUG) << "RemoveBlanklessFrame due to resolution inconsistency between webPattern and snapshot";
     nweb_handle_->OnRemoveBlanklessFrame(0);
   }
@@ -6233,7 +6233,7 @@ void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, 
       handle->OnRemoveBlanklessFrame(0);
     });
   } else {
-    instance.RegisterFrameInsertCallback(	nweb_id_, blankless_key_, [handle = this->nweb_handle_, file, width, height](){
+    instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_, file, width, height](){
       handle->OnInsertBlanklessFrame(file, width, height);
     }, lcp_time);
   }

@@ -106,9 +106,6 @@ bool NWebExtensionSidePanelCefDelegate::OnSetOptionsByPb(
 void NWebExtensionSidePanelCefDelegate::OnOpenCallback(
       int request_id,
       const std::optional<std::string>& error) {
-  LOG(ERROR) << "NWebExtensionSidePanelCefDelegate OnOpenCallback zfn"
-             << ", requestId = " << request_id
-             << ", error = " << (error.has_value()? error.value() : "null");
   if (g_sidepanel_open_map_.count(request_id)) {
     std::move(g_sidepanel_open_map_[request_id]).Run(error);
     g_sidepanel_open_map_.erase(request_id);
@@ -120,9 +117,6 @@ void NWebExtensionSidePanelCefDelegate::OnOpenCallback(
 void NWebExtensionSidePanelCefDelegate::OnSetOptionsCallback(
     int request_id,
     const std::optional<std::string>& error) {
-  LOG(ERROR) << "NWebExtensionSidePanelCefDelegate OnSetOptionsCallback zfn"
-             << ", requestId = " << request_id
-             << ", error = " <<  (error.has_value()? error.value() : "null");
   if (g_sidepanel_setoptions_map_.count(request_id)) {
     std::move(g_sidepanel_setoptions_map_[request_id]).Run(error);
     g_sidepanel_setoptions_map_.erase(request_id);

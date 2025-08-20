@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -33,19 +33,22 @@ class NWebExtensionSidePanelCefDelegate {
   public:
     static NWebExtensionSidePanelCefDelegate* GetInstance();
  
-  bool HasOnOpenByPbCallback();
-  bool HasOnSetOptionsByPbCallback();
-  bool OnOpenByPb(ExtensionSidePanelOpenOptions& options,
-                  SidePanelOnOpenCallback callback);
-  bool OnSetOptionsByPb(ExtensionSidePanelSetOptions& options,
-                        SidePanelOnSetOptionsCallback callback);
+    bool HasOnOpenByPbCallback();
+    bool HasOnSetOptionsByPbCallback();
+    bool OnOpenByPb(ExtensionSidePanelOpenOptions& options,
+                    SidePanelOnOpenCallback callback);
+    bool OnSetOptionsByPb(ExtensionSidePanelSetOptions& options,
+                          SidePanelOnSetOptionsCallback callback);
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  void OnOpenCallback(int request_id, const std::optional<std::string>& error);
-  void OnSetOptionsCallback(int request_id, const std::optional<std::string>& error);
+    void OnOpenCallback(int request_id, const std::optional<std::string>& error);
+    void OnSetOptionsCallback(int request_id, const std::optional<std::string>& error);
 #endif
 
   private:
     NWebExtensionSidePanelCefDelegate();
+    NWebExtensionSidePanelCefDelegate(const NWebExtensionSidePanelCefDelegate&) = delete;
+    NWebExtensionSidePanelCefDelegate& operator=(
+        const NWebExtensionSidePanelCefDelegate&) = delete;
 };
 } // namespace OHOS::NWeb
  

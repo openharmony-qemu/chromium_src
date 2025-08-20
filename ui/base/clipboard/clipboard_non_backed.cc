@@ -438,9 +438,9 @@ class ClipboardDataBuilder {
   static ClipboardData* current_data_;
 };
 
-#if !BUILDFLAG(IS_OHOS)
+#if !BUILDFLAG(ARKWEB_ASAN)
 ClipboardData* ClipboardDataBuilder::current_data_ = nullptr;
-#endif // BUILDFLAG(IS_OHOS)
+#endif // BUILDFLAG(ARKWEB_ASAN)
 
 // static
 ClipboardNonBacked* ClipboardNonBacked::GetForCurrentThread() {

@@ -6,6 +6,7 @@ import("//build/config/chromeos/args.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//build/config/ui.gni")
+import("//arkweb/build/features/features.gni")
 
 declare_args() {
   # Indicates support for content analysis against a cloud agent for Enterprise
@@ -22,7 +23,7 @@ declare_args() {
       is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos
 
   # Indicates support for client certificates provisioning.
-  enterprise_client_certificates = is_win || is_mac || is_linux || is_ohos
+  enterprise_client_certificates = is_win || is_mac || is_linux || arkweb_asan
 
   # The watermark is currently implemented using the views framework.
   enterprise_watermark =

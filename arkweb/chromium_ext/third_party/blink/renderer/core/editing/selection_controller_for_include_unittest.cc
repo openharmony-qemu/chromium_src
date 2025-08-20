@@ -853,7 +853,7 @@ TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_5thIf) {
 
   HitTestResult hit_test_result;
   Node* node = GetDocument().getElementById(AtomicString("top"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   hit_test_result.SetInnerNode(node);
   hit_test_result.InnerNode()->SetLayoutObject(nullptr);
@@ -894,9 +894,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_5thIf) {
   double_click.SetModifiers(blink::WebInputEvent::Modifiers::kShiftKey);
 
   HitTestResult result;
-
   const MouseEventWithHitTestResults event_(double_click, location, result);
-
   bool result_ = GetFrame()
                      .GetEventHandler()
                      .GetSelectionController()
@@ -1313,7 +1311,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExist02) {
 
   HitTestResult hit_test_result;
   Node* node = GetDocument().getElementById(AtomicString("selectable"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   hit_test_result.SetInnerNode(node);
   const HitTestResult hit_test_result_ = hit_test_result;
@@ -1359,7 +1357,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExist03) {
 
   HitTestResult hit_test_result;
   Node* node = GetDocument().getElementById(AtomicString("selectable"));
-  EXPECT_TRUE(node == nullptr);
+  ASSERT_TRUE(node == nullptr);
 
   hit_test_result.SetInnerNode(node);
   const HitTestResult hit_test_result_ = hit_test_result;
@@ -1406,13 +1404,13 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult00) {
   HitTestResult hit_test_result_;
   Node* node =
       GetDocument().getElementById(AtomicString("linktarget"))->firstChild();
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   Element* link = GetDocument().getElementById(AtomicString("linktarget"));
-  EXPECT_TRUE(link != nullptr);
+  ASSERT_TRUE(link != nullptr);
 
   auto* style = link->GetComputedStyle();
-  EXPECT_TRUE(style != nullptr);
+  ASSERT_TRUE(style != nullptr);
 
   hit_test_result_.SetInnerNode(node);
 
@@ -1443,7 +1441,7 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult01) {
 
   HitTestResult hit_test_result;
   Node* node = GetDocument().getElementById(AtomicString("selectable"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   hit_test_result.SetInnerNode(node);
   const HitTestResult hit_test_result_ = hit_test_result;
@@ -1490,17 +1488,17 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult02) {
   HitTestResult hit_test_result_;
   Node* node =
       GetDocument().getElementById(AtomicString("linktarget"))->firstChild();
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   auto* layout_text_ =
       MakeGarbageCollected<LayoutText>(node, String("Content"));
-  EXPECT_TRUE(layout_text_ != nullptr);
+  ASSERT_TRUE(layout_text_ != nullptr);
 
   Element* link = GetDocument().getElementById(AtomicString("linktarget"));
-  EXPECT_TRUE(link != nullptr);
+  ASSERT_TRUE(link != nullptr);
 
   auto* style = link->GetComputedStyle();
-  EXPECT_TRUE(style != nullptr);
+  ASSERT_TRUE(style != nullptr);
   layout_text_->SetStyle(style);
 
   hit_test_result_.SetInnerNode(node);
@@ -1530,7 +1528,7 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult03) {
 
   HitTestResult hit_test_result;
   Node* node = GetDocument().getElementById(AtomicString("selectable"));
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   hit_test_result.SetInnerNode(node);
   const HitTestResult hit_test_result_ = hit_test_result;
@@ -1577,17 +1575,17 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult06) {
   HitTestResult hit_test_result_;
   Node* node =
       GetDocument().getElementById(AtomicString("linktarget"))->firstChild();
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   auto* layout_text_ =
       MakeGarbageCollected<LayoutText>(node, String("Content"));
-  EXPECT_TRUE(layout_text_ != nullptr);
+  ASSERT_TRUE(layout_text_ != nullptr);
 
   Element* link = GetDocument().getElementById(AtomicString("linktarget"));
-  EXPECT_TRUE(link != nullptr);
+  ASSERT_TRUE(link != nullptr);
 
   auto* style = link->GetComputedStyle();
-  EXPECT_TRUE(style != nullptr);
+  ASSERT_TRUE(style != nullptr);
   layout_text_->SetStyle(style);
 
   hit_test_result_.SetInnerNode(node);
@@ -1636,17 +1634,17 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult04) {
   HitTestResult hit_test_result_;
   Node* node =
       GetDocument().getElementById(AtomicString("linktarget"))->firstChild();
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   auto* layout_text_ =
       MakeGarbageCollected<LayoutText>(node, String("Content"));
-  EXPECT_TRUE(layout_text_ != nullptr);
+  ASSERT_TRUE(layout_text_ != nullptr);
 
   Element* link = GetDocument().getElementById(AtomicString("linktarget"));
-  EXPECT_TRUE(link != nullptr);
+  ASSERT_TRUE(link != nullptr);
 
   auto* style = link->GetComputedStyle();
-  EXPECT_TRUE(style != nullptr);
+  ASSERT_TRUE(style != nullptr);
   layout_text_->SetStyle(style);
 
   hit_test_result_.SetInnerNode(node);
@@ -1694,17 +1692,17 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult05) {
   HitTestResult hit_test_result_;
   Node* node =
       GetDocument().getElementById(AtomicString("linktarget"))->firstChild();
-  EXPECT_TRUE(node != nullptr);
+  ASSERT_TRUE(node != nullptr);
 
   auto* layout_text_ =
       MakeGarbageCollected<LayoutText>(node, String("Content"));
-  EXPECT_TRUE(layout_text_ != nullptr);
+  ASSERT_TRUE(layout_text_ != nullptr);
 
   Element* link = GetDocument().getElementById(AtomicString("linktarget"));
-  EXPECT_TRUE(link != nullptr);
+  ASSERT_TRUE(link != nullptr);
 
   auto* style = link->GetComputedStyle();
-  EXPECT_TRUE(style != nullptr);
+  ASSERT_TRUE(style != nullptr);
   layout_text_->SetStyle(style);
 
   hit_test_result_.SetInnerNode(node);

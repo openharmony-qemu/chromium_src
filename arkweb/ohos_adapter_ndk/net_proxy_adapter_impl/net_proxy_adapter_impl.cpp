@@ -287,10 +287,10 @@ void NetProxyAdapterImpl::AppProxyChange(NetConn_HttpProxy *receiveHttpProxy)
         receiveHttpProxy->host, receiveHttpProxy->port);
 
     NetConn_HttpProxy *httpProxy = receiveHttpProxy;
+    NetConn_HttpProxy tempHttpProxy;
     std::string host;
     host.assign(httpProxy->host);
     if (host == EMPTY_HTTP_PROXY_HOST) {
-        NetConn_HttpProxy tempHttpProxy;
         int32_t ret = OH_NetConn_GetDefaultHttpProxy(&tempHttpProxy);
         if (ret != 0) {
             WVLOG_E("NetProxyAdapter::OH_NetConn_GetDefaultHttpProxy failed.");

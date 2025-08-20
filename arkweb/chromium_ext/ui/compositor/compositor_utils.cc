@@ -93,9 +93,9 @@ void CompositorUtils::SetEnableHalfFrameRate(bool enabled) {
       enabled, compositor_->frame_sink_id());
 }
 
-void CompositorUtils::EvictFrameBackBuffers(bool invisible) {
+void CompositorUtils::EvictFrameBackBuffers() {
   compositor_->context_factory_->GetHostFrameSinkManager()->managerUtils->EvictFrameBackBuffers(
-      compositor_->frame_sink_id(), invisible);
+      compositor_->frame_sink_id());
 }
 #endif
 

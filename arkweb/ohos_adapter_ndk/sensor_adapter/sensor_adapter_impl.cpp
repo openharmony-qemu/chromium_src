@@ -35,7 +35,7 @@ typedef struct SensorSubscriber {
     Sensor_SubscriptionId *id;
     Sensor_SubscriptionAttribute *attr;
 } SensorSubscriber;
-std::unordered_map<Sensor_Type, std::shared_ptr<SensorSubscriber>> SensorAdapterImpl::sensorSubscriberMap;
+std::unordered_map<Sensor_Type, std::shared_ptr<SensorSubscriber>> sensorSubscriberMap;
 std::unordered_map<Sensor_Type, std::shared_ptr<SensorCallbackImpl>> SensorAdapterImpl::sensorCallbackMap;
 std::mutex SensorAdapterImpl::sensorSubscriberMapMutex_;
 std::mutex SensorAdapterImpl::sensorCallbackMapMutex_;
@@ -347,7 +347,7 @@ int32_t SensorAdapterImpl::SubscribeOhosSensor(int32_t sensorTypeId, int64_t sam
     sensorSubscriber->subscriber = subscriber;
     sensorSubscriber->id = id;
     sensorSubscriber->attr = attr;
-    std::lock_guard<std::mutex> lock(sensorSubscriberMapMutex_);
+    std::lock_guard<std::mutex> lock_subscriber(sensorSubscriberMapMutex_);
     sensorSubscriberMap[ohosSensorTypeId] = sensorSubscriber;
     WVLOG_I("SubscribeOhosSensor sensorTypeId:%{public}d,samplingInterval:%{public}ld", sensorTypeId, samplingInterval);
     return SENSOR_SUCCESS;
@@ -374,7 +374,7 @@ int32_t SensorAdapterImpl::UnsubscribeOhosSensor(int32_t sensorTypeId)
     std::shared_ptr<SensorSubscriber>sensorSubscriber = nullptr;
     int32_t ret = SensorTypeToOhosSensorType(sensorTypeId, &ohosSensorTypeId);
     if (ret == SENSOR_SUCCESS) {
-        std::lock_guard<std::mutex> lock(sensorSubscriberMapMutex_);
+        std::lock_guard<std::mutex> lock_subscriber(sensorSubscriberMapMutex_);
         auto findIter = sensorSubscriberMap.find(ohosSensorTypeId);
         if (findIter == sensorSubscriberMap.end()) {
             return SENSOR_PARAMETER_ERROR;

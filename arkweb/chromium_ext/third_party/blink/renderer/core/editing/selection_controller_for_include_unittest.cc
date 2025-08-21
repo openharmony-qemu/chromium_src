@@ -22,20 +22,20 @@ class SelectionControllerForIncludeClient : public LocalFrameClient {
   SelectionControllerForIncludeClient() = default;
 };
 
-void SelectionControllerTest::SetStartSelect(bool params) {
-  Controller().mouse_down_may_start_select_ = params;
+void SelectionControllerTest::SetStartSelect(bool start_select_) {
+  Controller().mouse_down_may_start_select_ = start_select_;
 }
 
-void SelectionControllerTest::SetClickSelection(bool params) {
-  Controller().mouse_down_was_single_click_in_selection_ = params;
+void SelectionControllerTest::SetClickSelection(bool click_in_selection_) {
+  Controller().mouse_down_was_single_click_in_selection_ = click_in_selection_;
 }
 
-void SelectionControllerTest::SetDownAllow(bool params) {
-  Controller().mouse_click_down_allows_ = params;
+void SelectionControllerTest::SetDownAllow(bool down_allows_) {
+  Controller().mouse_click_down_allows_ = down_allows_;
 }
 
-void SelectionControllerTest::SetMenuShow(bool params) {
-  Controller().mouse_menu_show_ = params;
+void SelectionControllerTest::SetMenuShow(bool menu_show_) {
+  Controller().mouse_menu_show_ = menu_show_;
 }
 
 bool SelectionControllerTest::GetStartSelect() {

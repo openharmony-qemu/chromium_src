@@ -55,7 +55,9 @@ class CORE_EXPORT ImageRecordsManagerUtils {
     void AssignPaintTimeToRegisteredQueuedRecordsForALCP(const MediaRecordIdHash& record_id_hash,
         const base::TimeTicks& timestamp);
     void ClearForALCP();
-    void TraceForALCP(Visitor* visitor) const;
+    void Trace(Visitor* visitor) const;
+    void SetForBlankless();
+    bool IsForBlankless() const;
 #endif
  private:
     ImageRecordsManager& image_records_manager_;
@@ -69,6 +71,7 @@ class CORE_EXPORT ImageRecordsManagerUtils {
     HeapHashMap<MediaRecordIdHash, Member<ImageRecord>> alcp_pending_images_;
     bool alcp_pending_images_added_ = false;
     Member<ImageRecord> alcp_image_;
+    bool is_for_blankless_only_ = false;
 #endif
 };
 

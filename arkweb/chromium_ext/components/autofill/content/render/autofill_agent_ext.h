@@ -60,7 +60,7 @@ class AutofillAgentExt : public AutofillAgent {
 #endif
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   PasswordAutofillAgent* GetPasswordAutofillAgent() {
-    return password_autofill_agent.get();
+    return password_autofill_agent_.get();
   }
 #endif
 #if BUILDFLAG(ARKWEB_AUTOFILL)

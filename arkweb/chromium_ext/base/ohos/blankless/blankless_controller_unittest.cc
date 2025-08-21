@@ -16,6 +16,7 @@
 #define private public
 #include "base/ohos/blankless/blankless_controller.h"
 #undef private
+#include "base/time/time.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

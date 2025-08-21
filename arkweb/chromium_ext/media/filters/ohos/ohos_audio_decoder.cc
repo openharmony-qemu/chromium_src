@@ -497,11 +497,12 @@ void OHOSAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer, DecodeCB deco
     return;
   }
 
-  if (state_ == ERROR) {
+  if (state_ == ERROR || decoder_loop_ == nullptr) {
     LOG(ERROR) << "OHOSAudioDecoder::Decode "<< buffer->AsHumanReadableString()
-      << ": Error state, returning decode error for all buffers";
+      << ": Error state or decoder_loop_ is nullptr, returning decode error for all buffers";
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-    std::string errorDesc = "OHOSAudioDecoder::Error state, returning decode error for all buffers";
+    std::string errorDesc =
+        "OHOSAudioDecoder::Error state or decoder_loop_ is nullptr, returning decode error for all buffers";
     ReportDrmAudioPlayErrorInfo(errorDesc);
 #endif
     ClearInputQueue(DecoderStatus::Codes::kFailed);
@@ -629,9 +630,13 @@ static void SetCencInfoToInputData(OHOSAudioDecoderLoop::InputData& data, const 
 // LCOV_EXCL_START
 OHOSAudioDecoderLoop::InputData OHOSAudioDecoder::ProvideInputData() {
   LOG(DEBUG) << "OHOSAudioDecoder::ProvideInputData";
-  const DecoderBuffer* decoder_buffer = input_queue_.front().first.get();
   OHOSAudioDecoderLoop::InputData data;
-
+  if (input_queue_.empty()) {
+    LOG(WARNING) << "OHOSAudioDecoder::ProvideInputData , input_queue_ is empty";
+    data.is_valid = false;
+    return data;
+  }
+  const DecoderBuffer* decoder_buffer = input_queue_.front().first.get();
   if (decoder_buffer == nullptr) {
     LOG(WARNING) << "OHOSAudioDecoder::ProvideInputData , decoder_buffer is null";
     data.is_valid = false;
@@ -670,7 +675,9 @@ bool OHOSAudioDecoder::OnDecodedEos(const OutputBufferData& out) {
   std::move(input_queue_.front()).second.Run(DecoderStatus::Codes::kOk);
   input_queue_.pop_front();
   std::unique_lock<std::mutex> lock(output_mtx_);
-  output_buffer_queue_.pop_front();
+  if (!output_buffer_queue_.empty()) {
+    output_buffer_queue_.pop_front();
+  }
   LOG(DEBUG) << "OHOSAudioDecoder::OnDecodedEos output_buffer_queue_ pop front ok";
   return true;
 }
@@ -706,7 +713,9 @@ bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
   audio_decoder_->ReleaseOutputBufferDec(out.index_);
   {
     std::unique_lock<std::mutex> lock(output_mtx_);
-    output_buffer_queue_.pop_front();
+    if (!output_buffer_queue_.empty()) {
+      output_buffer_queue_.pop_front();
+    }
   }
 
   if (!timestamp_helper_->base_timestamp()) {

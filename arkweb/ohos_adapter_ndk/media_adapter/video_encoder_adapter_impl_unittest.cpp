@@ -30,11 +30,11 @@
 using namespace testing;
 
 namespace OHOS::NWeb {
-class EncodeCallbackAdapterMock : public CodecCallbackAdapter {
+class EncoderCallbackAdapterMock : public CodecCallbackAdapter {
  public:
-  EncodeCallbackAdapterMock() = default;
+  EncoderCallbackAdapterMock() = default;
 
-  ~EncodeCallbackAdapterMock() override = default;
+  ~EncoderCallbackAdapterMock() override = default;
 
   void OnError(ErrorType errorType, int32_t errorCode) override {}
 
@@ -66,28 +66,28 @@ class EncoderCallbackImplTest : public testing::Test {
  protected:
   void SetUp() {
     std::shared_ptr<CodecCallbackAdapter> callback =
-        std::make_shared<EncodeCallbackAdapterMock>();
+        std::make_shared<EncoderCallbackAdapterMock>();
     encoder_callback_ = std::make_shared<EncoderCallbackImpl>(callback);
   }
 
   std::shared_ptr<EncoderCallbackImpl> encoder_callback_ = nullptr;
 };
 
-TEST_F(VideoEncoderAdapterImplTest, TestCreateVideoByMime001) {
+TEST_F(VideoEncoderAdapterImplTest, TestCreateVideoCodecByMime001) {
   CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
   CodecCodeAdapter actual_result =
       codec_adapter_->CreateVideoCodecByMime("test");
   EXPECT_EQ(expected_result, actual_result);
 }
 
-TEST_F(VideoEncoderAdapterImplTest, TestCreateVideoByMime002) {
+TEST_F(VideoEncoderAdapterImplTest, TestCreateVideoCodecByMime002) {
   CodecCodeAdapter expected_result = CodecCodeAdapter::OK;
   CodecCodeAdapter actual_result =
       codec_adapter_->CreateVideoCodecByMime("video/avc");
   EXPECT_EQ(expected_result, actual_result);
 }
 
-TEST_F(VideoEncoderAdapterImplTest, TestCreateVideoByName001) {
+TEST_F(VideoEncoderAdapterImplTest, TestCreateVideoCodecByName001) {
   CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
   CodecCodeAdapter actual_result =
       codec_adapter_->CreateVideoCodecByName("test");
@@ -95,24 +95,24 @@ TEST_F(VideoEncoderAdapterImplTest, TestCreateVideoByName001) {
 }
 
 TEST_F(VideoEncoderAdapterImplTest, TestCodecCallback001) {
-  CodecCodeAdapter expected_result = CodecCallbackAdapter::ERROR;
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
   CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(nullptr);
   EXPECT_EQ(expected_result, actual_result);
 }
 
 TEST_F(VideoEncoderAdapterImplTest, TestCodecCallback002) {
-  CodecCodeAdapter expected_result = CodecCallbackAdapter::ERROR;
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
   std::shared_ptr<CodecCallbackAdapter> callback =
-      std::make_shared<EncodeCallbackAdapterMock>();
+      std::make_shared<EncoderCallbackAdapterMock>();
   codec_adapter_->encoder_ = nullptr;
   CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(callback);
   EXPECT_EQ(expected_result, actual_result);
 }
 
 TEST_F(VideoEncoderAdapterImplTest, TestCodecCallback003) {
-  CodecCodeAdapter expected_result = CodecCallbackAdapter::OK;
+  CodecCodeAdapter expected_result = CodecCodeAdapter::OK;
   std::shared_ptr<CodecCallbackAdapter> callback =
-      std::make_shared<EncodeCallbackAdapterMock>();
+      std::make_shared<EncoderCallbackAdapterMock>();
   CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(callback);
   EXPECT_EQ(expected_result, actual_result);
 }
@@ -145,7 +145,7 @@ TEST_F(VideoEncoderAdapterImplTest, TestConfigure004) {
   config->SetWidth(1080);
   config->SetHeight(720);
   config->SetBitRate(120);
-  config->FrameRate(60);
+  config->SetFrameRate(60);
   CodecCodeAdapter actual_result = codec_adapter_->Configure(config);
   EXPECT_EQ(expected_result, actual_result);
 }
@@ -262,58 +262,58 @@ TEST_F(VideoEncoderAdapterImplTest, TestGetBufferFlag002) {
   BufferFlag actual_result = codec_adapter_->GetBufferFlag(
       OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_DISCARD);
   EXPECT_EQ(expected_result, actual_result);    
-}
 
-TEST_F(EncoderCallbackImplTestTest, TestOnError001) {
+
+TEST_F(EncoderCallbackImplTest, TestOnError001) {
   encoder_callback_->cb_ = nullptr;
   testing::internal::CaptureStderr();
   encoder_callback_->OnError(0);
-  std::string log_output = testing::internal::GetCaptureStderr();
+  std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_EQ(log_output.find("callback is null"), std::string::npos);
 }
 
-TEST_F(EncoderCallbackImplTestTest, TestOnError002) {
+TEST_F(EncoderCallbackImplTest, TestOnError002) {
   testing::internal::CaptureStderr();
   encoder_callback_->OnError(0);
-  std::string log_output = testing::internal::GetCaptureStderr();
+  std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_EQ(log_output.find("callback is null"), std::string::npos);   
 }
 
-TEST_F(EncoderCallbackImplTestTest, TestOnOutputFormatChanged001) {
+TEST_F(EncoderCallbackImplTest, TestOnOutputFormatChanged001) {
   encoder_callback_->cb_ = nullptr;
   testing::internal::CaptureStderr();
   encoder_callback_->OnOutputFormatChanged(nullptr);
-  std::string log_output = testing::internal::GetCaptureStderr();
+  std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_EQ(log_output.find("callback is null"), std::string::npos);   
 }
 
-TEST_F(EncoderCallbackImplTestTest, TestOnInputBufferAvailable001) {
+TEST_F(EncoderCallbackImplTest, TestOnInputBufferAvailable001) {
   encoder_callback_->cb_ = nullptr;
   testing::internal::CaptureStderr();
   encoder_callback_->OnInputBufferAvailable(0, nullptr);
-  std::string log_output = testing::internal::GetCaptureStderr();
+  std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_EQ(log_output.find("callback is null"), std::string::npos);   
 }
 
-TEST_F(EncoderCallbackImplTestTest, TestOnInputBufferAvailable002) {
+TEST_F(EncoderCallbackImplTest, TestOnInputBufferAvailable002) {
   testing::internal::CaptureStderr();
   encoder_callback_->OnInputBufferAvailable(0, nullptr);
-  std::string log_output = testing::internal::GetCaptureStderr();
+  std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_EQ(log_output.find("callback is null"), std::string::npos);   
 }
 
-TEST_F(EncoderCallbackImplTestTest, TestOnOutputBufferAvailable001) {
+TEST_F(EncoderCallbackImplTest, TestOnOutputBufferAvailable001) {
   encoder_callback_->cb_ = nullptr;
   testing::internal::CaptureStderr();
   encoder_callback_->OnOutputBufferAvailable(0, nullptr);
-  std::string log_output = testing::internal::GetCaptureStderr();
+  std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_EQ(log_output.find("callback is null"), std::string::npos);   
 }
 
-TEST_F(EncoderCallbackImplTestTest, TestOnOutputBufferAvailable002) {
+TEST_F(EncoderCallbackImplTest, TestOnOutputBufferAvailable002) {
   testing::internal::CaptureStderr();
   encoder_callback_->OnOutputBufferAvailable(0, nullptr);
-  std::string log_output = testing::internal::GetCaptureStderr();
+  std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_EQ(log_output.find("callback is null"), std::string::npos);   
 }
 } // namespace OHOS::NWeb

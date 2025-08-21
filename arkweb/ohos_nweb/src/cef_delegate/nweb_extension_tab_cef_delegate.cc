@@ -311,6 +311,21 @@ int NWebExtensionTabCefDelegate::GetAnyTab(int windowId) {
 #endif
 }
 
+void NWebExtensionTabCefDelegate::OnTabActivated(std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) {
+  if (!activeInfo) {
+    LOG(ERROR) << "OnTabActivated activeInfo is null";
+    return;
+  }
+
+  auto browser_context = GetBrowserContext();
+  if (!browser_context) {
+    return;
+  }
+
+  extensions::TabsWindowsAPI::Get(browser_context)
+      ->TabActivated(activeInfo->tabId, activeInfo->windowId, browser_context);
+}
+
 void NWebExtensionTabCefDelegate::OnTabCreated(std::unique_ptr<NWebExtensionTab> tab) {
   if (!tab) {
     LOG(ERROR) << "OnTabCreated tab is null";

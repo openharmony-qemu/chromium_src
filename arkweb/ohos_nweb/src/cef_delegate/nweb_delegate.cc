@@ -5498,22 +5498,7 @@ void NWebDelegate::WebExtensionTabUpdated(
   return GetBrowser()->GetHost()->WebExtensionTabUpdated(
       tab_id, std::move(changeInfo), std::move(tab));
 }
- 
-void NWebDelegate::WebExtensionTabActivated(
-    std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) {
-  if (!activeInfo) {
-    LOG(ERROR) << "WebExtensionTabActivated activeInfo is null";
-    return;
-  }
-  LOG(INFO) << "WebExtensionTabActivated, tab_id: "
-            << activeInfo->tabId << " windowId: " << activeInfo->windowId;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabActivated failed, get browser failed";
-    return;
-  }
-  GetBrowser()->GetHost()->WebExtensionTabActivated(activeInfo->tabId, activeInfo->windowId);
-}
- 
+
 void NWebDelegate::WebExtensionTabAttached(
     int tab_id,
     std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) {

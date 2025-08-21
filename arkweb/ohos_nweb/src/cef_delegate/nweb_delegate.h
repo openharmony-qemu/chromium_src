@@ -1063,6 +1063,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   int32_t nearest_snapshot_width_ = 0;
   int32_t nearest_snapshot_height_ = 0;
 #endif
+  base::WeakPtrFactory<NWebDelegate> weak_factory_{this};
 };
 }  // namespace OHOS::NWeb
 #endif

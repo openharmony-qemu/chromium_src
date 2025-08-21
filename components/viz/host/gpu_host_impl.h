@@ -260,7 +260,7 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
                                  const std::vector<gfx::Rect> &quad_list,
                                  mojo::ScopedSharedBufferHandle buffer,
                                  mojom::BlanklessBitmapMetadataPtr metadata) override;
-  static void DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& blankless_info,
+  static void DumpBlanklessSnapshot(mojom::BlanklessSendInfoPtr blankless_info,
                                     const std::vector<gfx::Rect>& quad_list,
                                     mojo::ScopedSharedBufferHandle buffer,
                                     mojom::BlanklessBitmapMetadataPtr metadata);

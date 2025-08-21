@@ -14,6 +14,7 @@
 
 #include <set>
 #include <string>
+#include <unistd.h>
 #include <vector>
 
 #include "base/base_switches.h"
@@ -56,8 +57,9 @@ const char kAuthType[] = "RSA";
 // X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY.
 const unsigned int kMaxAIAFetches = 5;
 
-const char kUserCaPath1[] = "/data/certificates/user_cacerts/0";
-const char kUserCaPath2[] = "/data/certificates/user_cacerts/100";
+const char kGlobalCaPath[] = "/data/certificates/user_cacerts/0";
+const char kUserCaBasePath[] = "/data/certificates/user_cacerts/";
+constexpr int32_t UID_TRANSFORM_DIVISOR = 200000;
 
 void GetChainDEREncodedBytes(X509Certificate* cert,
                              std::vector<std::string>* chain_bytes) {
@@ -260,8 +262,11 @@ void AddAppCert(const std::string_view& hostname, X509_STORE* ca_store) {
     return;
   }
 
-  X509_LOOKUP_add_dir(ca_look_up, kUserCaPath1, X509_FILETYPE_PEM);
-  X509_LOOKUP_add_dir(ca_look_up, kUserCaPath2, X509_FILETYPE_PEM);
+  int32_t userId = getuid() / UID_TRANSFORM_DIVISOR;
+  std::string cueerntUserCaPath = std::string(kUserCaBasePath) + std::to_string(userId);
+
+  X509_LOOKUP_add_dir(ca_look_up, kGlobalCaPath, X509_FILETYPE_PEM);
+  X509_LOOKUP_add_dir(ca_look_up, cueerntUserCaPath.c_str(), X509_FILETYPE_PEM);
 
   // add app ca
   std::vector<std::string> app_certs_path;

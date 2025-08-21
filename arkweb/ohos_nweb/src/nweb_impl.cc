@@ -5658,14 +5658,6 @@ void NWebImpl::WebExtensionTabUpdated(
   nweb_delegate_->WebExtensionTabUpdated(tab_id, std::move(changeInfo), std::move(tab));
 }
 
-void NWebImpl::WebExtensionTabActivated(
-    std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->WebExtensionTabActivated(std::move(activeInfo));
-}
-
 void NWebImpl::WebExtensionTabAttached(
     int tab_id,
     std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) {

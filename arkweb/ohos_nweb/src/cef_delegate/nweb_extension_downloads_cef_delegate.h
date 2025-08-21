@@ -69,7 +69,7 @@ class NWebExtensionDownloadCefDelegate {
   void OpenCallback(int requestId, std::optional<std::string> error);
 
   // downloads.removeFile
-  bool RemoveFile(int downloadId, DownloadsOpenCallback callback);
+  bool RemoveFile(int downloadId, DownloadsRemoveFileCallback callback);
   void RemoveFileCallback(int requestId, std::optional<std::string> error);
 
   // downloads.pause

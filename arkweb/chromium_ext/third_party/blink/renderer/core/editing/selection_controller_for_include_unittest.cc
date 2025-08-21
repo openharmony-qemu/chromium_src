@@ -17,44 +17,56 @@
 #include "third_party/blink/renderer/core/editing/selection_controller.h"
 #undef private
 
-class SelectionControllerForIncludeClient : public LocalFrameClient {
+class SelectionControllerForIncludeTest : public SelectionControllerTest {
  public:
-  SelectionControllerForIncludeClient() = default;
+  void SetStartSelect(bool start_select_);
+  void SetClickSelection(bool click_in_selection_);
+  void SetDownAllow(bool down_allows_);
+  void SetMenuShow(bool menu_show_);
+  bool GetStartSelect();
+  bool GetClickSelection();
+  bool GetDownAllow();
+  bool GetMenuShow();
+  void SetOwnVariable(SelectionController& controller, int type, bool value);
+  void SetLongPress(HitTestResult& result);
+  void SetLinkPress(HitTestResult& result);
+
+  void TestBody() override {}
 };
 
-void SelectionControllerTest::SetStartSelect(bool start_select_) {
+void SelectionControllerForIncludeTest::SetStartSelect(bool start_select_) {
   Controller().mouse_down_may_start_select_ = start_select_;
 }
 
-void SelectionControllerTest::SetClickSelection(bool click_in_selection_) {
+void SelectionControllerForIncludeTest::SetClickSelection(bool click_in_selection_) {
   Controller().mouse_down_was_single_click_in_selection_ = click_in_selection_;
 }
 
-void SelectionControllerTest::SetDownAllow(bool down_allows_) {
+void SelectionControllerForIncludeTest::SetDownAllow(bool down_allows_) {
   Controller().mouse_click_down_allows_ = down_allows_;
 }
 
-void SelectionControllerTest::SetMenuShow(bool menu_show_) {
+void SelectionControllerForIncludeTest::SetMenuShow(bool menu_show_) {
   Controller().mouse_menu_show_ = menu_show_;
 }
 
-bool SelectionControllerTest::GetStartSelect() {
+bool SelectionControllerForIncludeTest::GetStartSelect() {
   return Controller().mouse_down_may_start_select_;
 }
 
-bool SelectionControllerTest::GetClickSelection() {
+bool SelectionControllerForIncludeTest::GetClickSelection() {
   return Controller().mouse_down_was_single_click_in_selection_;
 }
 
-bool SelectionControllerTest::GetDownAllow() {
+bool SelectionControllerForIncludeTest::GetDownAllow() {
   return Controller().mouse_click_down_allows_;
 }
 
-bool SelectionControllerTest::GetMenuShow() {
+bool SelectionControllerForIncludeTest::GetMenuShow() {
   return Controller().mouse_menu_show_;
 }
 
-void SelectionControllerTest::SetOwnVariable(SelectionController& controller,
+void SelectionControllerForIncludeTest::SetOwnVariable(SelectionController& controller,
                                              int type,
                                              bool value) {
   if (type == 0) {
@@ -76,15 +88,15 @@ void SelectionControllerTest::SetOwnVariable(SelectionController& controller,
   }
 }
 
-void SelectionControllerTest::SetLongPress(HitTestResult& result) {
+void SelectionControllerForIncludeTest::SetLongPress(HitTestResult& result) {
   Controller().last_long_press_hit_test_result_ = result;
 }
 
-void SelectionControllerTest::SetLinkPress(HitTestResult& result) {
+void SelectionControllerForIncludeTest::SetLinkPress(HitTestResult& result) {
   Controller().last_link_hit_test_result_ = result;
 }
 
-TEST_F(SelectionControllerTest, NotifyContextMenuWillShowTest_1stIf) {
+TEST_F(SelectionControllerForIncludeTest, NotifyContextMenuWillShowTest_1stIf) {
   HitTestResult result;
   GetFrame()
       .GetEventHandler()
@@ -93,7 +105,7 @@ TEST_F(SelectionControllerTest, NotifyContextMenuWillShowTest_1stIf) {
   EXPECT_TRUE(!result.InnerNode());
 }
 
-TEST_F(SelectionControllerTest, NotifyContextMenuWillShowTest_2ndIf) {
+TEST_F(SelectionControllerForIncludeTest, NotifyContextMenuWillShowTest_2ndIf) {
   HitTestResult result;
   GetFrame()
       .GetEventHandler()
@@ -102,13 +114,13 @@ TEST_F(SelectionControllerTest, NotifyContextMenuWillShowTest_2ndIf) {
   EXPECT_TRUE(!result.InnerNode());
 }
 
-TEST_F(SelectionControllerTest, FocusDocumentViewTest_1stIf) {
+TEST_F(SelectionControllerForIncludeTest, FocusDocumentViewTest_1stIf) {
   HitTestResult result;
   GetFrame().GetEventHandler().GetSelectionController().FocusDocumentView();
   EXPECT_TRUE(!result.InnerNode());
 }
 
-TEST_F(SelectionControllerTest,
+TEST_F(SelectionControllerForIncludeTest,
        ShowSelectionByLastLongPressHitTestResultTest_1stIf) {
   GetDocument().documentElement()->setInnerHTML(R"HTML(
     <body>
@@ -162,7 +174,7 @@ TEST_F(SelectionControllerTest,
   EXPECT_TRUE(result);
 }
 
-TEST_F(SelectionControllerTest,
+TEST_F(SelectionControllerForIncludeTest,
        ShowSelectionByLastLongPressHitTestResultTest_2ndIf) {
   GetDocument().documentElement()->setInnerHTML(R"HTML(
     <body>
@@ -189,7 +201,7 @@ TEST_F(SelectionControllerTest,
   EXPECT_TRUE(result);
 }
 
-TEST_F(SelectionControllerTest,
+TEST_F(SelectionControllerForIncludeTest,
        ShowSelectionByLastLongPressHitTestResultTest_3rdIf) {
   GetDocument().documentElement()->setInnerHTML(R"HTML(
     <body>
@@ -217,7 +229,7 @@ TEST_F(SelectionControllerTest,
   EXPECT_FALSE(result);
 }
 
-TEST_F(SelectionControllerTest,
+TEST_F(SelectionControllerForIncludeTest,
        ShowSelectionByLastLongPressHitTestResultTest_4thIf) {
   GetDocument().documentElement()->setInnerHTML(R"HTML(
     <body>
@@ -251,7 +263,7 @@ TEST_F(SelectionControllerTest,
   EXPECT_TRUE(result);
 }
 
-TEST_F(SelectionControllerTest, SelectClosestWordFromLiveLinkTest_1stIf) {
+TEST_F(SelectionControllerForIncludeTest, SelectClosestWordFromLiveLinkTest_1stIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <style>
@@ -278,7 +290,7 @@ TEST_F(SelectionControllerTest, SelectClosestWordFromLiveLinkTest_1stIf) {
   EXPECT_TRUE(result);
 }
 
-TEST_F(SelectionControllerTest, SelectClosestWordFromLiveLinkTest_2ndIf) {
+TEST_F(SelectionControllerForIncludeTest, SelectClosestWordFromLiveLinkTest_2ndIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <style>
@@ -306,7 +318,7 @@ TEST_F(SelectionControllerTest, SelectClosestWordFromLiveLinkTest_2ndIf) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SelectionControllerTest, SelectClosestWordFromLiveLinkTest_3rdIf) {
+TEST_F(SelectionControllerForIncludeTest, SelectClosestWordFromLiveLinkTest_3rdIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <style>
@@ -331,7 +343,7 @@ TEST_F(SelectionControllerTest, SelectClosestWordFromLiveLinkTest_3rdIf) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SelectionControllerTest, SelectClosestWordFromLiveLinkTest_4thIf) {
+TEST_F(SelectionControllerForIncludeTest, SelectClosestWordFromLiveLinkTest_4thIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <a href='#'><span id='span'>click me</span></a>
@@ -358,7 +370,7 @@ TEST_F(SelectionControllerTest, SelectClosestWordFromLiveLinkTest_4thIf) {
   EXPECT_TRUE(result);
 }
 
-TEST_F(SelectionControllerTest, SelectClosestWordFromLiveLinkTest_5thIf) {
+TEST_F(SelectionControllerForIncludeTest, SelectClosestWordFromLiveLinkTest_5thIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <a href='#'><span id='span'>click me</span></a>
@@ -384,7 +396,7 @@ TEST_F(SelectionControllerTest, SelectClosestWordFromLiveLinkTest_5thIf) {
   EXPECT_TRUE(result);
 }
 
-TEST_F(SelectionControllerTest, SelectClosestWordFromLiveLinkTest_6thIf) {
+TEST_F(SelectionControllerForIncludeTest, SelectClosestWordFromLiveLinkTest_6thIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <a href='#' id='link'>click me</a>
@@ -410,7 +422,7 @@ TEST_F(SelectionControllerTest, SelectClosestWordFromLiveLinkTest_6thIf) {
   EXPECT_TRUE(result);
 }
 
-TEST_F(SelectionControllerTest, MouseSelectMenuShowTest_1stIf) {
+TEST_F(SelectionControllerForIncludeTest, MouseSelectMenuShowTest_1stIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <style>
@@ -448,7 +460,7 @@ TEST_F(SelectionControllerTest, MouseSelectMenuShowTest_1stIf) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SelectionControllerTest, SetDataDetectorHitTest_1stIf) {
+TEST_F(SelectionControllerForIncludeTest, SetDataDetectorHitTest_1stIf) {
   GetDocument().GetSettings()->SetScriptEnabled(true);
   Element* script = GetDocument().CreateRawElement(html_names::kScriptTag);
   ASSERT_TRUE(script != nullptr);
@@ -486,7 +498,7 @@ TEST_F(SelectionControllerTest, SetDataDetectorHitTest_1stIf) {
   EXPECT_FALSE(hit_test_result_.InnerNode());
 }
 
-TEST_F(SelectionControllerTest, SetDataDetectorHitTest_2ndIf) {
+TEST_F(SelectionControllerForIncludeTest, SetDataDetectorHitTest_2ndIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <style>
@@ -539,7 +551,7 @@ TEST_F(SelectionControllerTest, SetDataDetectorHitTest_2ndIf) {
   EXPECT_TRUE(hit_test_result_.InnerNode());
 }
 
-TEST_F(SelectionControllerTest, SetDataDetectorHitTest_3rdIf) {
+TEST_F(SelectionControllerForIncludeTest, SetDataDetectorHitTest_3rdIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <style>
@@ -619,7 +631,7 @@ TEST_F(SelectionControllerTest, SetDataDetectorHitTest_3rdIf) {
   EXPECT_TRUE(hit_test_result_.InnerNode());
 }
 
-TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_1stIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleMouseReleaseEventWithMenuExtTest_1stIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <style>
@@ -676,7 +688,7 @@ TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_1stIf) {
   EXPECT_TRUE(GetClickSelection());
 }
 
-TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_2ndIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleMouseReleaseEventWithMenuExtTest_2ndIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <style>
@@ -733,7 +745,7 @@ TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_2ndIf) {
   EXPECT_TRUE(!GetClickSelection());
 }
 
-TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_3rdIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleMouseReleaseEventWithMenuExtTest_3rdIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <style>
@@ -790,7 +802,7 @@ TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_3rdIf) {
   EXPECT_FALSE(GetClickSelection());
 }
 
-TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_4thIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleMouseReleaseEventWithMenuExtTest_4thIf) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <style>
@@ -831,7 +843,7 @@ TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_4thIf) {
   EXPECT_FALSE(GetMenuShow());
 }
 
-TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_5thIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleMouseReleaseEventWithMenuExtTest_5thIf) {
   const char* body_content = "<span id=top>top</span><span id=host></span>";
   const char* shadow_content = "<span id=bottom>bottom</span>";
   SetBodyContent(body_content);
@@ -875,7 +887,7 @@ TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_5thIf) {
   EXPECT_FALSE(GetDownAllow());
 }
 
-TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_5thIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExistTest_5thIf) {
   const char* body_content =
       "<div id='sample' contenteditable>"
       "<span id = top>this is a sample test</span>"
@@ -911,7 +923,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_5thIf) {
   EXPECT_FALSE(result_);
 }
 
-TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_6thIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExistTest_6thIf) {
   const char* body_content =
       "<div id='sample' contenteditable>"
       "<span id = top>this is a sample test</span>"
@@ -947,7 +959,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_6thIf) {
   EXPECT_FALSE(result_);
 }
 
-TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_7thIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExistTest_7thIf) {
   const char* body_content =
       "<div id='sample' contenteditable>"
       "<span id = top>this is a sample test</span>"
@@ -983,7 +995,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_7thIf) {
   EXPECT_FALSE(result_);
 }
 
-TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_8thIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExistTest_8thIf) {
   const char* body_content =
       "<div id='sample' contenteditable>"
       "<span id = top>this is a sample test</span>"
@@ -1023,7 +1035,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_8thIf) {
   EXPECT_FALSE(result_);
 }
 
-TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_9thIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExistTest_9thIf) {
   const char* body_content =
       "<div id='sample' contenteditable>"
       "<span id = top>this is a sample test</span>"
@@ -1066,7 +1078,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_9thIf) {
   EXPECT_FALSE(result_);
 }
 
-TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_10thIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExistTest_10thIf) {
   const char* body_content = "<span id = top>this is a sample test</span>";
   SetBodyContent(body_content);
 
@@ -1102,7 +1114,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_10thIf) {
   EXPECT_FALSE(result_);
 }
 
-TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_15thIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExistTest_15thIf) {
   const char* body_content =
       "<div id='sample' contenteditable>"
       "<span id = top>this is a sample test</span>"
@@ -1143,7 +1155,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExistTest_15thIf) {
   EXPECT_FALSE(result_);
 }
 
-TEST_F(SelectionControllerTest, HandleEmptyLineTest_1stIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleEmptyLineTest_1stIf) {
   const char* body_content =
       "<div id='sample' contenteditable>"
       "<span id = top>this is a sample test</span>"
@@ -1156,7 +1168,7 @@ TEST_F(SelectionControllerTest, HandleEmptyLineTest_1stIf) {
   EXPECT_EQ(pos, pos_);
 }
 
-TEST_F(SelectionControllerTest, HandleEmptyLineTest_2ndIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleEmptyLineTest_2ndIf) {
   const char* body_content =
       "<div id='sample' contenteditable>"
       "<span id = top>this is a \n sample test</span>"
@@ -1172,7 +1184,7 @@ TEST_F(SelectionControllerTest, HandleEmptyLineTest_2ndIf) {
   EXPECT_NE(pos, pos_);
 }
 
-TEST_F(SelectionControllerTest, HandleEmptyLineTest_3rdIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleEmptyLineTest_3rdIf) {
   const char* body_content =
       "<div id='sample' contenteditable>"
       "<span id = top>"
@@ -1191,7 +1203,7 @@ TEST_F(SelectionControllerTest, HandleEmptyLineTest_3rdIf) {
   EXPECT_NE(pos, pos_);
 }
 
-TEST_F(SelectionControllerTest, HandleEmptyLineTest_4thIf) {
+TEST_F(SelectionControllerForIncludeTest, HandleEmptyLineTest_4thIf) {
   const char* body_content =
       "<div id='sample' contenteditable>"
       "<span id = top>"
@@ -1210,54 +1222,61 @@ TEST_F(SelectionControllerTest, HandleEmptyLineTest_4thIf) {
   EXPECT_EQ(pos, pos_);
 }
 
-TEST_F(SelectionControllerTest, OffsetAdjustWhiteSpace01) {
+TEST_F(SelectionControllerForIncludeTest, OffsetAdjustWhiteSpace01) {
   WTF::String str = "abc   ";
   int offset = 1, temp = 1;
   SelectionControllerUtils::OffsetAdjustWhiteSpace(offset, temp, str, false);
   EXPECT_EQ(offset, 1);
   EXPECT_EQ(temp, 1);
 }
-TEST_F(SelectionControllerTest, OffsetAdjustWhiteSpace02) {
+
+TEST_F(SelectionControllerForIncludeTest, OffsetAdjustWhiteSpace02) {
   WTF::String str = "abc   ";
   int offset = 5, temp = 5;
   SelectionControllerUtils::OffsetAdjustWhiteSpace(offset, temp, str, true);
   EXPECT_EQ(offset, 2);
   EXPECT_EQ(temp, 2);
 }
-TEST_F(SelectionControllerTest, OffsetAdjustWhiteSpace03) {
+
+TEST_F(SelectionControllerForIncludeTest, OffsetAdjustWhiteSpace03) {
   WTF::String str = "ab  c";
   int offset = 3, temp = 3;
   SelectionControllerUtils::OffsetAdjustWhiteSpace(offset, temp, str, true);
   EXPECT_EQ(offset, 1);
   EXPECT_EQ(temp, 1);
 }
-TEST_F(SelectionControllerTest, OffsetAdjustWhiteSpace04) {
+
+TEST_F(SelectionControllerForIncludeTest, OffsetAdjustWhiteSpace04) {
   WTF::String str = "   abc";
   int offset = 2, temp = 2;
   SelectionControllerUtils::OffsetAdjustWhiteSpace(offset, temp, str, true);
   EXPECT_EQ(offset, 2);
   EXPECT_EQ(temp, 2);
+
 }
-TEST_F(SelectionControllerTest, OffsetAdjustWhiteSpace05) {
+TEST_F(SelectionControllerForIncludeTest, OffsetAdjustWhiteSpace05) {
   WTF::String str = "a b";
   int offset = 0, temp = 0;
   SelectionControllerUtils::OffsetAdjustWhiteSpace(offset, temp, str, true);
   EXPECT_EQ(offset, 0);
   EXPECT_EQ(temp, 0);
 }
-TEST_F(SelectionControllerTest, MaxOffsetTrimTailWhiteSpace01) {
+
+TEST_F(SelectionControllerForIncludeTest, MaxOffsetTrimTailWhiteSpace01) {
   WTF::String str = "any content";
   unsigned len = 0;
   EXPECT_EQ(SelectionControllerUtils::MaxOffsetTrimTailWhiteSpace(str, len),
             0u);
 }
-TEST_F(SelectionControllerTest, MaxOffsetTrimTailWhiteSpace02) {
+
+TEST_F(SelectionControllerForIncludeTest, MaxOffsetTrimTailWhiteSpace02) {
   WTF::String str = "abc   ";
   unsigned len = 6;
   EXPECT_EQ(SelectionControllerUtils::MaxOffsetTrimTailWhiteSpace(str, len),
             2u);
 }
-TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExist01) {
+
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExist01) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <div id='selectable'>This is a sample text."</div>
@@ -1285,7 +1304,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExist01) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExist02) {
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExist02) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <div id='selectable'>This is a sample text."</div>
@@ -1334,7 +1353,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExist02) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExist03) {
+TEST_F(SelectionControllerForIncludeTest, HandleGestureTapIfSelectionExist03) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <div id='selectable'>This is a sample text."</div>
@@ -1381,7 +1400,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExist03) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult00) {
+TEST_F(SelectionControllerForIncludeTest, ShowSelectionByLastLinkHitTestResult00) {
   GetDocument().documentElement()->setInnerHTML(R"HTML(
     <body>
       <style>
@@ -1434,7 +1453,7 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult00) {
   EXPECT_TRUE(result);
 }
 
-TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult01) {
+TEST_F(SelectionControllerForIncludeTest, ShowSelectionByLastLinkHitTestResult01) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <div id='selectable'>This is a sample text."</div>
@@ -1465,7 +1484,7 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult01) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult02) {
+TEST_F(SelectionControllerForIncludeTest, ShowSelectionByLastLinkHitTestResult02) {
   GetDocument().documentElement()->setInnerHTML(R"HTML(
     <body>
       <style>
@@ -1523,7 +1542,7 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult02) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult03) {
+TEST_F(SelectionControllerForIncludeTest, ShowSelectionByLastLinkHitTestResult03) {
   SetHtmlInnerHTML(R"HTML(
     <body>
       <div id='selectable'>This is a sample text."</div>
@@ -1552,7 +1571,7 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult03) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult06) {
+TEST_F(SelectionControllerForIncludeTest, ShowSelectionByLastLinkHitTestResult06) {
   GetDocument().documentElement()->setInnerHTML(R"HTML(
     <body>
       <style>
@@ -1611,7 +1630,7 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult06) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult04) {
+TEST_F(SelectionControllerForIncludeTest, ShowSelectionByLastLinkHitTestResult04) {
   GetDocument().documentElement()->setInnerHTML(R"HTML(
     <body>
       <style>
@@ -1669,7 +1688,7 @@ TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult04) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(SelectionControllerTest, ShowSelectionByLastLinkHitTestResult05) {
+TEST_F(SelectionControllerForIncludeTest, ShowSelectionByLastLinkHitTestResult05) {
   GetDocument().documentElement()->setInnerHTML(R"HTML(
     <body>
       <style>

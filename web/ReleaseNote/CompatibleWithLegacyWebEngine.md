@@ -2,14 +2,14 @@
 
 ## 1. Web内核切换API使用说明
 
-OpenHarmony 6.0系统ArkWebCore内核默认升级到了M132版本，同时系统提供了双内核方案，保留老的M114版本内核，以便生态应用使用自主选择M114升级到M132的节奏和策略，降低应用因WEB内核升级的兼容性影响。
+OpenHarmony 6.0系统ArkWebCore内核默认升级到了M132版本，同时系统提供了双内核方案，保留老的M114版本内核，以便生态应用自主选择M114升级到M132的节奏和策略，降低应用因Web内核升级而导致的兼容性问题。
 
-两种web内核类型说明：
+两种Web内核类型说明：
 
-| **内核类型** | 英文              | **说明**                                                                                                                                                                                        |
-| ------------ | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 常青内核     | EVERGREEN webCore | 当前系统的最新版web内核，系统基于此版本的内核进行完整的功能实现，推荐应用使用。                                                                                                                 |
-| 遗留内核     | LEGACY webcore    | 复用上一个商用版本的内核，只做安全补丁及舆情问题修复。遗留内核仅作为兼容性回滚使用，新的OpenHarmony系统发布时，不一定必选支持；且遗留内核的支持有时间限制，一般在系统发布后半年后会完全禁用掉。 |
+| **内核类型** | **英文**   | **说明**  |
+| ----------- | ---------- | -------- |
+| 常青内核     | EVERGREEN WebCore | 当前系统的最新版Web内核，系统基于此类型的内核进行完整的功能实现，推荐应用使用。|
+| 遗留内核     | LEGACY WebCore    | 复用上一个商用版本的内核，只做安全补丁及舆情问题修复。遗留内核仅作为兼容性回滚使用，新的OpenHarmony系统发布时，不一定必选支持；且遗留内核的支持有时间限制，一般在系统发布后半年后会完全禁用掉。 |
 
 双内核相关API:
 
@@ -29,8 +29,8 @@ ArkWebEngineVersion枚举值定义：
 
 |    **枚举值**    | **内核类型**             | **说明**                                                                                                               |
 | :--------------: | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-|       M132       | 6.0版本的常青内核        | 6.0版本上的默认内核。如果后续oh系统版本上不存在此内核则设置无效。                                                      |
-|       M114       | 6.0版本的遗留内核        | 开发者可选择此遗留内核。如果后续oh系统版本上不存在此内核则设置无效。                                                   |
+|       M132       | 6.0版本的常青内核        | 6.0版本上的默认内核。如果后续OpenHarmony系统版本上不存在此内核则设置无效。                                                      |
+|       M114       | 6.0版本的遗留内核        | 开发者可选择此遗留内核。如果后续OpenHarmony系统版本上不存在此内核则设置无效。 计划在2026-Q2禁用此内核。                                |
 | SYSTEM_EVERGREEN | 常青内核，系统的最新内核 | 开发者可选择在每个系统版本上都使用最新的内核，6.0以及之后所有系统版本都生效，比如7.0系统上常青内核可能是最新的其他内核 |
 |  SYSTEM_DEFAULT  | 系统默认                 | 使用系统上默认内核，6.0版本上默认为M132                                                                                |
 
@@ -231,7 +231,7 @@ static napi_value getWebVersion(napi_env env, napi_callback_info info)
 > 
 > * **内核已经初始化**：此接口只能在内核初始化前调用才能生效，初始化后调用不会生效。
 > * **系统没有预置指定版本的内核**：系统版本发布后，一些产品可能不支持双内核，此时此接口调用不会生效。
-> * **指定版本的内核已经失效**：系统刚发布时如果支持M114遗留内核，半年后应用灰度升级到M132后，系统侧也会禁用掉M114遗留内核，此时此接口调用也不会生效。
+> * **指定版本的内核已经失效**：遗留内核的生命周期通常在系统发布半年后，生命周期结束后，指定遗留内核版本不会生效。
 > * 本接口调用是否生效可以通过getActiveWebEngineVersion接口查询实际生效的内核版本
 
 ## 2. 使用遗留内核的风险说明
@@ -269,13 +269,13 @@ if (getActiveWebEngineVersion() > M114) {
 
 ### 4.1 内核navigator标识信息变化说明
 
-应用会使用W3C中navigator的[userAgent](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/userAgent)和[platform](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/platform)屬性进行业务隔离，这些字段的值如下所示：
+应用会使用W3C中navigator的[userAgent](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/userAgent)和[platform](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/platform)属性进行业务隔离，这些字段的值如下所示：
 
 | **类型**      | **[platform](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/platform)** | **[userAgent](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/userAgent)**                                                       |
 | ------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| M114 on OH5.1 | Linux x86_64                                                                        | Mozilla/5.0 (Phone; OpenHarmony**5.1**) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/**114.0.0.0** Safari/537.36 ArkWeb/*5.1.0.207* Mobile |
-| M114 on OH6.0 | Linux x86_64                                                                        | Mozilla/5.0 (Phone; OpenHarmony**6.0**) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/**114.0.0.0** Safari/537.36 ArkWeb/*6.0.0.44* Mobile  |
-| M132 on OH6.0 | Linux x86_64                                                                        | Mozilla/5.0 (Phone; OpenHarmony**6.0**) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/**132.0.0.0** Safari/537.36 ArkWeb/*6.0.0.44* Mobile  |
+| M114 on OH5.1 | Linux x86_64                                                                        | Mozilla/5.0 (Phone; OpenHarmony 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/**114.0.0.0** Safari/537.36 ArkWeb/*5.1.0.207* Mobile |
+| M114 on OH6.0 | Linux x86_64                                                                        | Mozilla/5.0 (Phone; OpenHarmony 6.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/**114.0.0.0** Safari/537.36 ArkWeb/*6.0.0.44* Mobile  |
+| M132 on OH6.0 | Linux x86_64                                                                        | Mozilla/5.0 (Phone; OpenHarmony 6.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/**132.0.0.0** Safari/537.36 ArkWeb/*6.0.0.44* Mobile  |
 
 > 注意：不推荐使用[platform](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/platform)属性，该属性已废弃。
 
@@ -284,7 +284,7 @@ if (getActiveWebEngineVersion() > M114) {
 #### ErrorPage处理接口
 
 ```
-/**
+    /**
       * Set whether enable the error page. onOverrideErrorPage will be triggered when the page error.
       *
       * @param { boolean } enable - Whether to enable the default error page feature.
@@ -541,6 +541,7 @@ getPageOffset(): ScrollOffset;
      * <br>The valid interval of avoidHeight is [0, the height of web component].
      * <br>When avoidHeight is out of the valid interval, it takes the boundary value of the interval.
      * @throws { BusinessError } 17100001 - Init error.
+	 *                           801 - Capability not supported.
      *                           The WebviewController must be associated with a Web component.
      * @syscap SystemCapability.Web.Webview.Core
      * @since 20
@@ -551,7 +552,7 @@ getPageOffset(): ScrollOffset;
 * **接口作用说明**
   设置网页底部避让高度
 * **接口在M114遗留内核上的行为**
-  `avoidVisibleViewportBottom`在M114遗留内核上设置不生效，不会抛异常。
+  `avoidVisibleViewportBottom`在M114遗留内核上设置不生效，将返回错误码801。
   不建议开发者在M114内核中使用以上接口。
 
 #### getBlanklessInfoWithKey接口
@@ -926,7 +927,7 @@ onBeforeUnload(callback: Callback<OnBeforeUnloadEvent, boolean>): WebAttribute;
 * **接口作用说明**
   OH6.0上新增了通知宿主应用页面开始加载、加载完成、页面标题以及自定义错误页回调接口。
 * **接口在M114遗留内核上的行为**
-  在M114内核上，下述三个新增回调函数将都不会生效，为组件定义这些回调时，都可以成功调用，但设置后系统不会触发此回调。
+  在M114内核上，下述三个新增回调函数将失效，为组件定义这些回调时，都可以成功调用，但设置后系统不会触发此回调。
   
   * [onLoadStarted](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#onloadstarted20)
   * [onLoadFinished](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#onloadfinished20)
@@ -934,9 +935,9 @@ onBeforeUnload(callback: Callback<OnBeforeUnloadEvent, boolean>): WebAttribute;
   
   应用业务如果依赖此类回调的执行，需要做好兼容适配，确保不回调时，业务也可以降级完成。
   
-  下述两个接口在M114行也会毁掉，只是……
-  [onTitleReceive](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#ontitlereceive)接口在回调时，isRealTitle始终为false。
-  [onBeforeUnload](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#onBeforeUnload)接口在回调时，isReload始终为false。
+  下述两个接口在M114行也会回调，只是行为与132内核有所区别:
+  * [onTitleReceive](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#ontitlereceive)接口在回调时，isRealTitle始终为false。
+  * [onBeforeUnload](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#onBeforeUnload)接口在回调时，isReload始终为false。
 
 #### SslErrorHandler相关接口
 
@@ -1040,7 +1041,8 @@ bypassVsyncCondition(condition: WebBypassVsyncCondition): WebAttribute;
 ```
 
 * **接口作用说明**
-  [WebBypassVsyncCondition](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-e.md#webbypassvsynccondition20)枚举只提供给bypassVsyncCondition接口传参使用，用以设置是否跳过渲染vsync的条件。| 名称                      | 值 | 说明                                                                                        |
+  [WebBypassVsyncCondition](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-e.md#webbypassvsynccondition20)枚举只提供给bypassVsyncCondition接口传参使用，用以设置是否跳过渲染vsync的条件。
+  | 名称                       | 值 | 说明                                                                                        |
   | ------------------------- | -- | ------------------------------------------------------------------------------------------- |
   | NONE                      | 0  | 默认值，按vsync调度流程绘制。                                                               |
   | SCROLLBY_FROM_ZERO_OFFSET | 1  | 在使用scrollby（只支持带滚动偏移量）且Web页面滚动偏移量为0，渲染流程跳过vsync调度直接绘制。 |
@@ -1081,34 +1083,7 @@ declare class WebContextMenuResult {
   pasteAndMatchStyle(): void;
 }
 
-declare enum ContextMenuMediaType {
-  None = 0,
-  Image = 1,
-
-  /**
-   * Video.
-   *
-   * @syscap SystemCapability.Web.Webview.Core
-   * @since 20
-   */
-  VIDEO = 2,
-
-  /**
-   * Audio.
-   *
-   * @syscap SystemCapability.Web.Webview.Core
-   * @since 20
-   */
-  AUDIO = 3
-}
-
-declare class WebContextMenuParam {
-  ...
-  getMediaType(): ContextMenuMediaType;
-}
-
 declare interface OnContextMenuShowEvent {
-  param: WebContextMenuParam;
   result: WebContextMenuResult;
 }
 
@@ -1116,19 +1091,13 @@ onContextMenuShow(callback: Callback<OnContextMenuShowEvent, boolean>): WebAttri
 ```
 
 * **接口作用说明**
-  WebContextMenuParam用于获取定制上下文菜单的相关参数，新增了以下媒体类型的识别：
-  
-  * VIDEO：上下文菜单识别为视频内容
-  * AUDIO：上下文菜单识别为音频内容
-  
   WebContextMenuResult用于响应在编辑区上下文菜单操作，新增了以下接口：
-  
-  * undo：在编辑区调用该接口会重做用户上一步的修改
+
+  * undo：在编辑区调用该接口会撤销用户上一步的修改
   * redo：在编辑区调用该接口会重做用户上一步的修改
   * pasteAndMatchStyle：在编辑区调用该接口会将剪贴板中的数据粘贴为纯文本
 * **接口在M114遗留内核上的行为**
-  在M114上，上下文菜单无法识别VIDEO和AUDIO类型， getMediaType始终不会返回上述两种类型。
-  WebContextMenuResult新增的接口调用后不生效，且系统不报错、不抛异常、无错误码。
+  在M114上，WebContextMenuResult新增的接口调用后不生效，且系统不报错、不抛异常、无错误码。
 
 #### bindSelectionMenu新增LINK枚举支持
 
@@ -1374,7 +1343,7 @@ onNativeEmbedGestureEvent(callback: (event: NativeEmbedTouchInfo) => void): WebA
 ```
 
 * **接口作用说明**
-  同层组件新增了以下两个接口：
+  同层组件新增了以下三个接口：
   * supportCssDisplayChange：可见性支持display属性
   * onNativeEmbedMouseEvent：同层组件支持鼠标事件
   * setMouseEventResult：onNativeEmbedGestureEvent回调时，设置鼠标事件的消费结果

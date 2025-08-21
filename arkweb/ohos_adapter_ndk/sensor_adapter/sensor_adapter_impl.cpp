@@ -37,6 +37,7 @@ typedef struct SensorSubscriber {
 } SensorSubscriber;
 std::unordered_map<Sensor_Type, std::shared_ptr<SensorSubscriber>> sensorSubscriberMap;
 std::unordered_map<Sensor_Type, std::shared_ptr<SensorCallbackImpl>> SensorAdapterImpl::sensorCallbackMap;
+std::mutex SensorAdapterImpl::sensorSubscriberMapMutex_;
 std::mutex SensorAdapterImpl::sensorCallbackMapMutex_;
 constexpr double NANOSECONDS_IN_SECOND = 1000000000.0;
 constexpr double DEFAULT_SAMPLE_PERIOD = 200000000.0;
@@ -346,6 +347,7 @@ int32_t SensorAdapterImpl::SubscribeOhosSensor(int32_t sensorTypeId, int64_t sam
     sensorSubscriber->subscriber = subscriber;
     sensorSubscriber->id = id;
     sensorSubscriber->attr = attr;
+    std::lock_guard<std::mutex> lock_subscriber(sensorSubscriberMapMutex_);
     sensorSubscriberMap[ohosSensorTypeId] = sensorSubscriber;
     WVLOG_I("SubscribeOhosSensor sensorTypeId:%{public}d,samplingInterval:%{public}ld", sensorTypeId, samplingInterval);
     return SENSOR_SUCCESS;
@@ -358,7 +360,7 @@ int32_t SensorAdapterImpl::RegistOhosSensorCallback(int32_t sensorTypeId,
     int32_t ret = SensorTypeToOhosSensorType(sensorTypeId, &ohosSensorTypeId);
     if (ret == SENSOR_SUCCESS) {
         auto callback = std::make_shared<SensorCallbackImpl>(callbackAdapter);
-	std::lock_guard<std::mutex> lock(sensorCallbackMapMutex_);
+	    std::lock_guard<std::mutex> lock(sensorCallbackMapMutex_);
         sensorCallbackMap[ohosSensorTypeId] = callback;
         return SENSOR_SUCCESS;
     }
@@ -372,6 +374,7 @@ int32_t SensorAdapterImpl::UnsubscribeOhosSensor(int32_t sensorTypeId)
     std::shared_ptr<SensorSubscriber>sensorSubscriber = nullptr;
     int32_t ret = SensorTypeToOhosSensorType(sensorTypeId, &ohosSensorTypeId);
     if (ret == SENSOR_SUCCESS) {
+        std::lock_guard<std::mutex> lock_subscriber(sensorSubscriberMapMutex_);
         auto findIter = sensorSubscriberMap.find(ohosSensorTypeId);
         if (findIter == sensorSubscriberMap.end()) {
             return SENSOR_PARAMETER_ERROR;

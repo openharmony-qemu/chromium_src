@@ -94,13 +94,13 @@ TEST_F(VideoEncoderAdapterImplTest, TestCreateVideoCodecByName001) {
   EXPECT_EQ(expected_result, actual_result);
 }
 
-TEST_F(VideoEncoderAdapterImplTest, TestCodecCallback001) {
+TEST_F(VideoEncoderAdapterImplTest, TestSetCodecCallback001) {
   CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
   CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(nullptr);
   EXPECT_EQ(expected_result, actual_result);
 }
 
-TEST_F(VideoEncoderAdapterImplTest, TestCodecCallback002) {
+TEST_F(VideoEncoderAdapterImplTest, TestSetCodecCallback002) {
   CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
   std::shared_ptr<CodecCallbackAdapter> callback =
       std::make_shared<EncoderCallbackAdapterMock>();
@@ -109,7 +109,7 @@ TEST_F(VideoEncoderAdapterImplTest, TestCodecCallback002) {
   EXPECT_EQ(expected_result, actual_result);
 }
 
-TEST_F(VideoEncoderAdapterImplTest, TestCodecCallback003) {
+TEST_F(VideoEncoderAdapterImplTest, TestSetCodecCallback003) {
   CodecCodeAdapter expected_result = CodecCodeAdapter::OK;
   std::shared_ptr<CodecCallbackAdapter> callback =
       std::make_shared<EncoderCallbackAdapterMock>();
@@ -262,7 +262,7 @@ TEST_F(VideoEncoderAdapterImplTest, TestGetBufferFlag002) {
   BufferFlag actual_result = codec_adapter_->GetBufferFlag(
       OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_DISCARD);
   EXPECT_EQ(expected_result, actual_result);    
-
+}
 
 TEST_F(EncoderCallbackImplTest, TestOnError001) {
   encoder_callback_->cb_ = nullptr;

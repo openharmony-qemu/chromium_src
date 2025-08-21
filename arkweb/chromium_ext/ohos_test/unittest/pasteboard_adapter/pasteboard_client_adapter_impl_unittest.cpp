@@ -182,6 +182,8 @@ TEST_F(PasteboardClientAdapterImplTest, SetAndGetHtmlText)
     std::shared_ptr<std::string> plain_text = g_datarecord->GetPlainText();
     EXPECT_EQ(plain_text, nullptr);
 
+    EXPECT_EQ(g_datarecord->GetMimeType(), "");
+
     EXPECT_EQ(g_datarecord->SetHtmlText(g_test_text), true);
     EXPECT_NE(g_datarecord->GetMimeType(), "");
 
@@ -196,6 +198,7 @@ TEST_F(PasteboardClientAdapterImplTest, SetAndGetHtmlText)
     EXPECT_NE(plain_text, nullptr);
 
     // record is nullptr
+    EXPECT_EQ(g_datarecord_null->GetPlainText(), nullptr);
     EXPECT_EQ(g_datarecord_null->SetHtmlText(g_test_text), false);
     EXPECT_EQ(g_datarecord_null->GetMimeType(), "");
     mimeTypes = g_datarecord_null->GetMimeTypes();
@@ -219,9 +222,11 @@ TEST_F(PasteboardClientAdapterImplTest, SetAndGetPlainText)
 
 TEST_F(PasteboardClientAdapterImplTest, SetAndGetUri)
 {
+    std::shared_ptr<std::string> uri = g_datarecord->GetUri();
+    EXPECT_EQ(uri, nullptr);
     EXPECT_EQ(g_datarecord->SetUri(g_empty_uri), false);
     EXPECT_EQ(g_datarecord->SetUri(g_test_uri), true);
-    std::shared_ptr<std::string> uri = g_datarecord->GetUri();
+    uri = g_datarecord->GetUri();
     EXPECT_NE(uri, nullptr);
 
     EXPECT_EQ(g_datarecord_null->SetUri(g_test_uri), false);
@@ -335,9 +340,28 @@ TEST_F(PasteboardClientAdapterImplTest, ClearImgBuffer)
 
 TEST_F(PasteboardClientAdapterImplTest, AddAndGetRecord)
 {
-    g_dataadapter->AddHtmlRecord(g_test_str);
+    // get paste data while data is empty
     std::vector<std::string> mimeTypes = g_dataadapter->GetMimeTypes();
     bool isEmpty = mimeTypes.empty();
+    EXPECT_EQ(isEmpty, true);
+    std::shared_ptr<std::string> primaryHtml = g_dataadapter->GetPrimaryHtml();
+    EXPECT_EQ(primaryHtml, nullptr);
+    std::shared_ptr<std::string> primaryText = g_dataadapter->GetPrimaryText();
+    EXPECT_EQ(primaryText, nullptr);
+    std::shared_ptr<std::string> primaryMimeType = g_dataadapter->GetPrimaryMimeType();
+    EXPECT_EQ(primaryMimeType, nullptr);
+    std::shared_ptr<PasteDataRecordAdapter> record = g_dataadapter->GetRecordAt(0);
+    EXPECT_EQ(record, nullptr);
+    std::size_t count = g_dataadapter->GetRecordCount();
+    EXPECT_EQ(count, 0);
+    PasteRecordVector recordVector = g_dataadapter_null->AllRecords();
+    isEmpty = recordVector.empty();
+    EXPECT_EQ(isEmpty, true);
+
+    // set and get paste data
+    g_dataadapter->AddHtmlRecord(g_test_str);
+    mimeTypes = g_dataadapter->GetMimeTypes();
+    isEmpty = mimeTypes.empty();
     EXPECT_EQ(isEmpty, false);
 
     g_dataadapter_null->AddHtmlRecord(g_test_str);
@@ -352,12 +376,12 @@ TEST_F(PasteboardClientAdapterImplTest, AddAndGetRecord)
 
     g_dataadapter_null->AddTextRecord(g_test_str);
 
-    std::shared_ptr<std::string> primaryHtml = g_dataadapter->GetPrimaryHtml();
+    primaryHtml = g_dataadapter->GetPrimaryHtml();
     EXPECT_NE(primaryHtml, nullptr);
     primaryHtml = g_dataadapter_null->GetPrimaryHtml();
     EXPECT_EQ(primaryHtml, nullptr);
 
-    std::shared_ptr<std::string> primaryText = g_dataadapter->GetPrimaryText();
+    primaryText = g_dataadapter->GetPrimaryText();
     EXPECT_NE(primaryText, nullptr);
     primaryText = g_dataadapter_null->GetPrimaryText();
     EXPECT_EQ(primaryText, nullptr);
@@ -367,7 +391,7 @@ TEST_F(PasteboardClientAdapterImplTest, AddAndGetRecord)
 
     std::shared_ptr<PasteDataRecordAdapter> record_null = g_dataadapter_null->GetRecordAt(0);
     EXPECT_EQ(record_null, nullptr);
-    std::size_t count = g_dataadapter_null->GetRecordCount();
+    count = g_dataadapter_null->GetRecordCount();
     EXPECT_EQ(count, 0);
 
     PasteRecordVector recordVector_null = g_dataadapter_null->AllRecords();
@@ -412,6 +436,8 @@ TEST_F(PasteboardClientAdapterImplTest, CheckTransitionCopyOption)
         Udmf_ShareOption::SHARE_OPTIONS_IN_APP);
     EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().TransitionCopyOption(CopyOptionMode::LOCAL_DEVICE),
         Udmf_ShareOption::SHARE_OPTIONS_CROSS_APP);
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().TransitionCopyOption(CopyOptionMode::CROSS_DEVICE),
+        Udmf_ShareOption::SHARE_OPTIONS_CROSS_APP);
     EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().TransitionCopyOption(CopyOptionMode::NONE),
         Udmf_ShareOption::SHARE_OPTIONS_INVALID);
 }
@@ -439,5 +465,12 @@ TEST_F(PasteboardClientAdapterImplTest, PasteDataNull)
     EXPECT_EQ(id, 1);
     PasteBoardClientAdapterImpl::GetInstance().pasteboard_ = nullptr;
     PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(id);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, ReleaseMemory)
+{
+    g_datarecord->DestoryOptions(0, nullptr, "options is nullptr");
+    g_datarecord->DestoryPixelmapNative(nullptr);
+    g_datarecord->ReleaseMemory(nullptr, nullptr, nullptr, nullptr, "test all input is nullptr", 0);
 }
 }

@@ -107,4 +107,291 @@ TEST_F(AutofillAgentTestWithFeatures, FillFieldWithValue) {
       GetFieldRendererIdById("ce"), u"value"));
 }
 
+TEST_F(AutofillAgentTestWithFeatures, AutofillSurfaceClosedReadonly) {
+  LoadHTML(R"(<body><form>
+    <input id="ff" readonly>
+  </form></body>)");
+  auto agent_ext = autofill_agent()
+                       .AsAutofillAgentExt()
+                       ->GetPasswordAutofillAgent()
+                       ->AsPasswordAutofillAgentExt();
+  agent_ext->AutofillSurfaceClosed(true);
+  FieldRendererId field_id = GetFieldRendererIdById("ff");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  agent_ext->AutofillSurfaceClosed(true);
+}
+
+TEST_F(AutofillAgentTestWithFeatures, AutofillSurfaceClosed) {
+  LoadHTML(R"(<body><form>
+    <input id="ff">
+  </form></body>)");
+  auto agent_ext = autofill_agent()
+                       .AsAutofillAgentExt()
+                       ->GetPasswordAutofillAgent()
+                       ->AsPasswordAutofillAgentExt();
+  FieldRendererId field_id = GetFieldRendererIdById("ff");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  agent_ext->AutofillSurfaceClosed(false);
+  agent_ext->AutofillSurfaceClosed(true);
+}
+
+TEST_F(AutofillAgentTestWithFeatures, SetParsedPasswordForm) {
+  LoadHTML(R"(<body><form>
+    <INPUT type='text' id='username'/>
+    <INPUT type='password' id='password'/>
+  </form></body>)");
+  PasswordFormFillData form_data;
+  auto agent =
+      autofill_agent().AsAutofillAgentExt()->GetPasswordAutofillAgent();
+  agent->AsPasswordAutofillAgentExt()->CleanupOnDocumentShutdownExt();
+  EXPECT_TRUE(form_data.username_element_renderer_id.is_null());
+  EXPECT_TRUE(form_data.password_element_renderer_id.is_null());
+  agent->SetParsedPasswordForm(form_data);
+  form_data.password_element_renderer_id = FieldRendererId(2);
+  EXPECT_TRUE(form_data.username_element_renderer_id.is_null());
+  EXPECT_FALSE(form_data.password_element_renderer_id.is_null());
+  agent->SetParsedPasswordForm(form_data);
+  form_data.password_element_renderer_id = GetFieldRendererIdById("password");
+  EXPECT_TRUE(form_data.username_element_renderer_id.is_null());
+  EXPECT_FALSE(form_data.password_element_renderer_id.is_null());
+  agent->SetParsedPasswordForm(form_data);
+  form_data.username_element_renderer_id = GetFieldRendererIdById("username");
+  EXPECT_FALSE(form_data.username_element_renderer_id.is_null());
+  EXPECT_FALSE(form_data.password_element_renderer_id.is_null());
+  agent->SetParsedPasswordForm(form_data);
+  form_data.password_element_renderer_id = FieldRendererId();
+  EXPECT_FALSE(form_data.username_element_renderer_id.is_null());
+  EXPECT_TRUE(form_data.password_element_renderer_id.is_null());
+  agent->SetParsedPasswordForm(form_data);
+}
+
+TEST_F(AutofillAgentTestWithFeatures, IsPasswordAutofill) {
+  LoadHTML(R"(<body><form>
+    <input id="ff">
+  </form></body>)");
+  FieldRendererId field_id = GetFieldRendererIdById("ff");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  LoadHTML(R"(<body><form>
+    <input id="gg" readonly>
+  </form></body>)");
+  auto agent_ext = autofill_agent()
+                       .AsAutofillAgentExt()
+                       ->GetPasswordAutofillAgent()
+                       ->AsPasswordAutofillAgentExt();
+  agent_ext->CleanupOnDocumentShutdownExt();
+  EXPECT_FALSE(agent_ext->IsPasswordAutofill(
+      autofill_agent().last_queried_element().DynamicTo<blink::WebInputElement>()));
+  field_id = GetFieldRendererIdById("gg");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  EXPECT_FALSE(agent_ext->IsPasswordAutofill(
+      autofill_agent().last_queried_element().DynamicTo<blink::WebInputElement>()));
+  LoadHTML(R"(<body><form>
+    <INPUT type='text' id='username'/>
+    <INPUT type='password' id='password'/>
+  </form></body>)");
+  field_id = GetFieldRendererIdById("username");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+
+  PasswordFormFillData form_data;
+  form_data.username_element_renderer_id = GetFieldRendererIdById("username");
+  agent_ext->SetParsedPasswordForm(form_data);
+  EXPECT_TRUE(agent_ext->IsPasswordAutofill(
+      autofill_agent().last_queried_element().DynamicTo<blink::WebInputElement>()));
+  form_data.password_element_renderer_id = GetFieldRendererIdById("password");
+  agent_ext->SetParsedPasswordForm(form_data);
+  EXPECT_TRUE(agent_ext->IsPasswordAutofill(
+      autofill_agent().last_queried_element().DynamicTo<blink::WebInputElement>()));
+
+  field_id = GetFieldRendererIdById("password");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  EXPECT_TRUE(agent_ext->IsPasswordAutofill(
+      autofill_agent().last_queried_element().DynamicTo<blink::WebInputElement>()));
+  agent_ext->CleanupOnDocumentShutdownExt();
+  EXPECT_FALSE(agent_ext->IsPasswordAutofill(
+      autofill_agent().last_queried_element().DynamicTo<blink::WebInputElement>()));
+  form_data.username_element_renderer_id = FieldRendererId();
+  agent_ext->SetParsedPasswordForm(form_data);
+  EXPECT_TRUE(agent_ext->IsPasswordAutofill(
+      autofill_agent().last_queried_element().DynamicTo<blink::WebInputElement>()));
+}
+
+TEST_F(AutofillAgentTestWithFeatures, RequestAutofill) {
+  LoadHTML(R"(<body><form>
+    <input id="gg" readonly>
+  </form></body>)");
+  auto agent_ext = autofill_agent()
+                       .AsAutofillAgentExt()
+                       ->GetPasswordAutofillAgent()
+                       ->AsPasswordAutofillAgentExt();
+  agent_ext->CleanupOnDocumentShutdownExt();
+  FieldRendererId field_id = GetFieldRendererIdById("gg");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  EXPECT_FALSE(agent_ext->RequestAutofill(
+      autofill_agent().last_queried_element(), true));
+
+  LoadHTML(R"(<body>
+    <INPUT type='text' id='username'/>
+    <INPUT type='password' id='password'/>
+  </body>)");
+  field_id = GetFieldRendererIdById("username");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  EXPECT_FALSE(agent_ext->RequestAutofill(
+      autofill_agent().last_queried_element(), true));
+  PasswordFormFillData form_data;
+  form_data.username_element_renderer_id = GetFieldRendererIdById("username");
+  form_data.password_element_renderer_id = FieldRendererId();
+  agent_ext->SetParsedPasswordForm(form_data);
+  EXPECT_TRUE(agent_ext->RequestAutofill(
+      autofill_agent().last_queried_element(), true));
+  field_id = GetFieldRendererIdById("password");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  form_data.username_element_renderer_id = FieldRendererId();
+  form_data.password_element_renderer_id = GetFieldRendererIdById("password");
+  agent_ext->SetParsedPasswordForm(form_data);
+  EXPECT_TRUE(agent_ext->RequestAutofill(
+      autofill_agent().last_queried_element(), true));
+  agent_ext->CleanupOnDocumentShutdownExt();
+
+  LoadHTML(R"(<body><form>
+    <INPUT type='text' id='username'/>
+    <INPUT type='password' id='password' readonly/>
+  </form></body>)");
+  field_id = GetFieldRendererIdById("username");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  form_data.username_element_renderer_id = GetFieldRendererIdById("username");
+  form_data.password_element_renderer_id = GetFieldRendererIdById("password");
+  agent_ext->SetParsedPasswordForm(form_data);
+  EXPECT_TRUE(agent_ext->RequestAutofill(
+      autofill_agent().last_queried_element(), false));
+  agent_ext->CleanupOnDocumentShutdownExt();
+
+  LoadHTML(R"(<body><form>
+    <INPUT type='text' id='username' readonly/>
+    <INPUT type='password' id='password'/>
+  </form></body>)");
+  field_id = GetFieldRendererIdById("password");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  form_data.username_element_renderer_id = GetFieldRendererIdById("username");
+  form_data.password_element_renderer_id = GetFieldRendererIdById("password");
+  agent_ext->SetParsedPasswordForm(form_data);
+  EXPECT_TRUE(agent_ext->RequestAutofill(
+      autofill_agent().last_queried_element(), false));
+}
+
+TEST_F(AutofillAgentTestWithFeatures, FillAccountSuggestion) {
+  LoadHTML(R"(<body><form>
+    <input id="gg">
+  </form></body>)");
+  auto agent_ext = autofill_agent()
+                       .AsAutofillAgentExt()
+                       ->GetPasswordAutofillAgent()
+                       ->AsPasswordAutofillAgentExt();
+  agent_ext->CleanupOnDocumentShutdownExt();
+  FieldRendererId field_id = GetFieldRendererIdById("gg");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+
+  LoadHTML(R"(<body><form>
+    <INPUT type='text' id='username'/>
+    <INPUT type='password' id='password' readonly/>
+  </form></body>)");
+  EXPECT_FALSE(agent_ext->FillAccountSuggestion(
+      autofill_agent().last_queried_element(), u"username", u"password"));
+  field_id = GetFieldRendererIdById("username");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  PasswordFormFillData form_data;
+  form_data.username_element_renderer_id = GetFieldRendererIdById("username");
+  agent_ext->SetParsedPasswordForm(form_data);
+  EXPECT_TRUE(agent_ext->FillAccountSuggestion(
+      autofill_agent().last_queried_element(), u"username", u"password"));
+  form_data.password_element_renderer_id = GetFieldRendererIdById("password");
+  agent_ext->SetParsedPasswordForm(form_data);
+  EXPECT_FALSE(agent_ext->FillAccountSuggestion(
+      autofill_agent().last_queried_element(), u"username", u"password"));
+  agent_ext->CleanupOnDocumentShutdownExt();
+
+  LoadHTML(R"(<body><form>
+    <INPUT type='text' id='username' readonly/>
+    <INPUT type='password' id='password'/>
+  </form></body>)");
+  field_id = GetFieldRendererIdById("username");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  form_data.username_element_renderer_id = GetFieldRendererIdById("username");
+  form_data.password_element_renderer_id = FieldRendererId();
+  agent_ext->SetParsedPasswordForm(form_data);
+  EXPECT_TRUE(agent_ext->FillAccountSuggestion(
+      autofill_agent().last_queried_element(), u"username", u"password"));
+  agent_ext->CleanupOnDocumentShutdownExt();
+
+  LoadHTML(R"(<body><form>
+    <INPUT type='text' id='username'/>
+    <INPUT type='password' id='password'/>
+  </form></body>)");
+  field_id = GetFieldRendererIdById("username");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  form_data.username_element_renderer_id = GetFieldRendererIdById("username");
+  form_data.password_element_renderer_id = GetFieldRendererIdById("password");
+  agent_ext->SetParsedPasswordForm(form_data);
+  EXPECT_TRUE(agent_ext->FillAccountSuggestion(
+      autofill_agent().last_queried_element(), u"", u"password"));
+  EXPECT_TRUE(agent_ext->FillAccountSuggestion(
+      autofill_agent().last_queried_element(), u"username", u"password"));
+  field_id = GetFieldRendererIdById("password");
+  autofill_agent().TriggerSuggestions(
+      field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+  EXPECT_EQ(autofill_agent().last_queried_element(),
+            form_util::GetFormControlByRendererId(field_id));
+  EXPECT_TRUE(agent_ext->FillAccountSuggestion(
+      autofill_agent().last_queried_element(), u"", u"password"));
+  EXPECT_TRUE(agent_ext->FillAccountSuggestion(
+      autofill_agent().last_queried_element(), u"username", u"password"));
+  agent_ext->CleanupOnDocumentShutdownExt();
+}
+
 }  // namespace autofill

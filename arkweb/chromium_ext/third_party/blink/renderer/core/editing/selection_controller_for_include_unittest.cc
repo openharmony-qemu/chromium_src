@@ -425,6 +425,7 @@ TEST_F(SelectionControllerTest, MouseSelectMenuShowTest_1stIf) {
 
   GetDocument().GetSettings()->SetScriptEnabled(true);
   Element* script = GetDocument().CreateRawElement(html_names::kScriptTag);
+  ASSERT_TRUE(script != nullptr);
   script->setInnerHTML(
       "document.designMode = 'on';"
       "const selection = window.getSelection();"
@@ -450,6 +451,7 @@ TEST_F(SelectionControllerTest, MouseSelectMenuShowTest_1stIf) {
 TEST_F(SelectionControllerTest, SetDataDetectorHitTest_1stIf) {
   GetDocument().GetSettings()->SetScriptEnabled(true);
   Element* script = GetDocument().CreateRawElement(html_names::kScriptTag);
+  ASSERT_TRUE(script != nullptr);
   script->setInnerHTML(
       "document.designMode = 'on';"
       "const selection = window.getSelection();"
@@ -499,6 +501,7 @@ TEST_F(SelectionControllerTest, SetDataDetectorHitTest_2ndIf) {
 
   GetDocument().GetSettings()->SetScriptEnabled(true);
   Element* script = GetDocument().CreateRawElement(html_names::kScriptTag);
+  ASSERT_TRUE(script != nullptr);
   script->setInnerHTML(
       "document.designMode = 'on';"
       "const selection = window.getSelection();"
@@ -564,6 +567,7 @@ TEST_F(SelectionControllerTest, SetDataDetectorHitTest_3rdIf) {
 
   GetDocument().GetSettings()->SetScriptEnabled(true);
   Element* script = GetDocument().CreateRawElement(html_names::kScriptTag);
+  ASSERT_TRUE(script != nullptr);
   script->setInnerHTML(
       "document.designMode = 'on';"
       "const selection = window.getSelection();"
@@ -630,6 +634,7 @@ TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_1stIf) {
 
   GetDocument().GetSettings()->SetScriptEnabled(true);
   Element* script = GetDocument().CreateRawElement(html_names::kScriptTag);
+  ASSERT_TRUE(script != nullptr);
   script->setInnerHTML(
       "document.designMode = 'on';"
       "const selection = window.getSelection();"
@@ -686,6 +691,7 @@ TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_2ndIf) {
 
   GetDocument().GetSettings()->SetScriptEnabled(true);
   Element* script = GetDocument().CreateRawElement(html_names::kScriptTag);
+  ASSERT_TRUE(script != nullptr);
   script->setInnerHTML(
       "document.designMode = 'on';"
       "const selection = window.getSelection();"
@@ -742,6 +748,7 @@ TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_3rdIf) {
 
   GetDocument().GetSettings()->SetScriptEnabled(true);
   Element* script = GetDocument().CreateRawElement(html_names::kScriptTag);
+  ASSERT_TRUE(script != nullptr);
   script->setInnerHTML(
       "document.designMode = 'on';"
       "const selection = window.getSelection();"
@@ -829,6 +836,7 @@ TEST_F(SelectionControllerTest, HandleMouseReleaseEventWithMenuExtTest_5thIf) {
   const char* shadow_content = "<span id=bottom>bottom</span>";
   SetBodyContent(body_content);
   ShadowRoot* shadow_root = SetShadowContent(shadow_content, "host");
+  ASSERT_TRUE(shadow_root != nullptr);
 
   Node* top = GetDocument().getElementById(AtomicString("top"))->firstChild();
   Node* bottom =
@@ -1286,6 +1294,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExist02) {
 
   GetDocument().GetSettings()->SetScriptEnabled(true);
   Element* script = GetDocument().CreateRawElement(html_names::kScriptTag);
+  ASSERT_TRUE(script != nullptr);
   script->setInnerHTML(
       "document.designMode = 'on';"
       "const selection = window.getSelection();"
@@ -1333,6 +1342,7 @@ TEST_F(SelectionControllerTest, HandleGestureTapIfSelectionExist03) {
   )HTML");
   GetDocument().GetSettings()->SetScriptEnabled(true);
   Element* script = GetDocument().CreateRawElement(html_names::kScriptTag);
+  ASSERT_TRUE(script != nullptr);
   script->setInnerHTML(
       "document.designMode = 'on';"
       "const selection = window.getSelection();"

@@ -405,6 +405,7 @@ static setUserAgentForHosts(userAgent: string, hosts : Array<string>) : void;
  * Gets the loading progress for the current page.
  *
  * @returns { number } The loading progress for the current page.
+ * @throws { BusinessError } 801 - Capability not supported.
  * @syscap SystemCapability.Web.Webview.Core
  * @since 20
  */
@@ -442,6 +443,33 @@ static setWebDebuggingAccess(webDebuggingAccess: boolean, port: number): void;
 * **接口在M114遗留内核上的行为**:
   若开发者在M114内核中使用该[接口](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#setwebdebuggingaccess20)，仅会启用网页调试功能，而端口设置无效，接口效果与 `static setWebDebuggingAccess(webDebuggingAccess: boolean): void`一致。
   不建议开发者在M114内核中使用以上接口，建议开发者通过 `static setWebDebuggingAccess(webDebuggingAccess: boolean): void`[接口](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#setwebdebuggingaccess)替代。
+
+#### WebResourceHandler didFail接口
+
+```
+/**
+ class WebResourceHandler {
+/**
+ * Notify that this request should be failed.
+ *
+ * @param { WebNetErrorList } code - Set response error code to intercept.
+ * @param { boolean } completeIfNoResponse - If completeIfNoResponse is true, when DidFailWithError is called, if
+ *                                           DidReceiveResponse has not been called, a response is automatically
+ *                                           constructed and the current request is terminated.
+ * @throws { BusinessError } 17100101 - The errorCode is either ARKWEB_NET_OK or outside the range of error codes
+ *                                      in WebNetErrorList.
+ * @throws { BusinessError } 17100021 - The resource handler is invalid.
+ * @syscap SystemCapability.Web.Webview.Core
+ * @since 20
+ */
+didFail(code: WebNetErrorList, completeIfNoResponse: boolean): void;
+}
+```
+
+* **接口作用说明**:
+  通知ArkWeb内核，被拦截请求应返回失败。若completeIfNoResponse为false，调用前需优先调用didReceiveResponse，将构造的响应头传递给被拦截的请求。若completeIfNoResponse为true，且调用前未调用didReceiveResponse，则自动生成一个响应头，网络错误码为`-104`。
+* **接口在M114遗留内核上的行为**:
+  接口行为跟``didFail(code: WebNetErrorList): void;``一致，completeIfNoResponse参数不生效。
 
 #### setWebDestroyMode接口
 

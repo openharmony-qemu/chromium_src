@@ -307,9 +307,9 @@ if (getActiveWebEngineVersion() > M114) {
     getErrorPageEnabled(): boolean;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   设置和查询默认错误页配置。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   [setErrorPageEnabled](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#seterrorpageenabled20)在M114遗留内核上设置不生效，不会抛异常，也不会返回错误码；应用调用后，通过[getErrorPageEnabled](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#getErrorPageEnabled20)接口获取值始终为false。
   不建议开发者在M114内核中使用以上接口。
 
@@ -340,10 +340,10 @@ static enablePrivateNetworkAccess(enable: boolean): void;
 static isPrivateNetworkAccessEnabled(): boolean;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   设置和查询Web组件设置私有网络访问检查功能（Private Network Access）的启用状态。
-* **接口在M114遗留内核上的行为**
-  [enablePrivateNetworkAccess]([GitCode - 全球开发者的开源社区,开源代码托管平台](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#enablePrivateNetworkAccess20))设置不生效，不会抛异常，也不会返回错误码；[isPrivateNetworkAccessEnabled]([GitCode - 全球开发者的开源社区,开源代码托管平台](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#isPrivateNetworkAccessEnabled20))接口获取值始终为false。
+* **接口在M114遗留内核上的行为**:
+  [enablePrivateNetworkAccess](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#enablePrivateNetworkAccess20)设置不生效，不会抛异常，也不会返回错误码；[isPrivateNetworkAccessEnabled](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#isPrivateNetworkAccessEnabled20)接口获取值始终为false。
   不建议开发者在M114内核中使用以上接口。
 
 #### UserAgent新增接口
@@ -391,11 +391,11 @@ static setAppCustomUserAgent(userAgent: string) : void;
 static setUserAgentForHosts(userAgent: string, hosts : Array<string>) : void;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   设置应用或应用的特定网站设置自定义用户代理，会覆盖系统的用户代理，应用内所有Web组件生效。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   [setAppCustomUserAgent](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#setAppCustomUserAgent20)在M114内核中使用该接口不生效，不会抛异常，也不会返回错误码。
-  [setUserAgentForHosts ]([项目文件预览 - docs:OpenHarmony documentation | OpenHarmony开发者文档 - GitCode](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#setuseragentforhosts20))设置不生效，不会抛异常，也不会返回错误码。
+  [setUserAgentForHosts ](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#setuseragentforhosts20)设置不生效，不会抛异常，也不会返回错误码。
   不建议开发者在M114内核中使用以上接口。
 
 #### getProgress获取网页加载进度接口
@@ -411,9 +411,9 @@ static setUserAgentForHosts(userAgent: string, hosts : Array<string>) : void;
 getProgress() : number;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   获取当前网页加载进度。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   [getProgress ](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#getProgress20)在M114内核中调用该接口抛801异常。
 
 #### setWebDebuggingAccess接口
@@ -437,11 +437,11 @@ getProgress() : number;
 static setWebDebuggingAccess(webDebuggingAccess: boolean, port: number): void;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   设置是否启用无线网页调试功能，默认不开启。
-* **接口在M114遗留内核上的行为**
-  若开发者在M114内核中使用该[接口]([项目文件预览 - docs:OpenHarmony documentation | OpenHarmony开发者文档 - GitCode](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#setwebdebuggingaccess20))，仅会启用网页调试功能，而端口设置无效，接口效果与 `static setWebDebuggingAccess(webDebuggingAccess: boolean): void`一致。
-  不建议开发者在M114内核中使用以上接口，建议开发者通过 `static setWebDebuggingAccess(webDebuggingAccess: boolean): void`[接口]([项目文件预览 - docs:OpenHarmony documentation | OpenHarmony开发者文档 - GitCode](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#setwebdebuggingaccess))替代。
+* **接口在M114遗留内核上的行为**:
+  若开发者在M114内核中使用该[接口](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#setwebdebuggingaccess20)，仅会启用网页调试功能，而端口设置无效，接口效果与 `static setWebDebuggingAccess(webDebuggingAccess: boolean): void`一致。
+  不建议开发者在M114内核中使用以上接口，建议开发者通过 `static setWebDebuggingAccess(webDebuggingAccess: boolean): void`[接口](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#setwebdebuggingaccess)替代。
 
 #### setWebDestroyMode接口
 
@@ -479,9 +479,9 @@ enum WebDestroyMode {
 }
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   通过setWebDestroyMode设置Web的析构模式，当WebDestroyMode设置成FAST_MODE为立即析构，当Web组件触发销毁时，会立即释放相关资源；设置成NORMAL_MODE为正常模式，当Web组件触发销毁时会延迟析构，默认值为NORMAL_MODE。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   setWebDestroyMode在M114遗留内核上设置不生效，不会抛异常，也不会返回错误码。  Web组件将维持延迟析构的模式运行。
   不建议开发者在M114内核中使用以上接口。
 
@@ -499,9 +499,9 @@ enum WebDestroyMode {
 onActivateContent(callback: Callback<void>): WebAttribute;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   当Web页面触发window.open(url, name)时，会根据name查找是否存在已绑定的Web实例。若存在，则触发onActivateContent回调并通知应用需将其展示至前端；若不存在，则通过onWindowNew通知应用创建新Web实例。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   由于在M114遗留内核上并未注册onActivateContent回调，所以会通过onWindowNew创建新Web实例，不会抛异常，也不会返回错误码。
 
 #### getPageOffset 接口
@@ -519,9 +519,9 @@ onActivateContent(callback: Callback<void>): WebAttribute;
 getPageOffset(): ScrollOffset;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   获取页面滑动偏移量，与getScrollOffset相比，不包含过滚动的偏移。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   在M114内核中使用 `getPageOffset`接口，将返回错误码801。
   不建议开发者在M114内核中使用该接口。
 
@@ -549,9 +549,9 @@ getPageOffset(): ScrollOffset;
     avoidVisibleViewportBottom(avoidHeight: number): void;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   设置网页底部避让高度
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   `avoidVisibleViewportBottom`在M114遗留内核上设置不生效，将返回错误码801。
   不建议开发者在M114内核中使用以上接口。
 
@@ -614,9 +614,9 @@ getPageOffset(): ScrollOffset;
 getBlanklessInfoWithKey(key: string) : BlanklessInfo;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   获取页面首屏加载预测信息（具体见****WebBlanklessInfo ****），并使能本次加载过渡帧生成，应用根据此信息确定是否需要使能Blankless加载
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   接口功能在M114内核不支持，返回错误码 `801`
 
 #### setBlanklessLoadingWithKey接口
@@ -705,9 +705,9 @@ getBlanklessInfoWithKey(key: string) : BlanklessInfo;
 setBlanklessLoadingWithKey(key: string, is_start: boolean) : WebBlanklessErrorCode;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   设置Blankless加载是否使能
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   接口功能在M114内核不支持，返回错误码 `801`
 
 #### clearBlanklessLoadingCache接口
@@ -731,9 +731,9 @@ setBlanklessLoadingWithKey(key: string, is_start: boolean) : WebBlanklessErrorCo
 static clearBlanklessLoadingCache(keys?: Array<string>) : void;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   清除指定key值页面Blankless优化缓存，本接口只清除缓存。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   接口功能在M114内核不支持，返回错误码 `801`
 
 #### setBlanklessLoadingCacheCapacity接口
@@ -758,9 +758,9 @@ static clearBlanklessLoadingCache(keys?: Array<string>) : void;
 static setBlanklessLoadingCacheCapacity(capacity: number) : number;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   设置Blankless加载方案持久缓存容量，返回实际生效的值
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   接口功能在M114内核不支持，返回错误码 `801`
 
 ### 4.3 web组件接口
@@ -804,9 +804,9 @@ declare interface WebMediaOptions {
 mediaOptions(options: WebMediaOptions): WebAttribute;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   应用中Web音频类型。默认值对应系统音频流类型 STREAM\_USAGE\_MUSIC。设置该参数会改变组件音频类型与系统音频类型映射关系，进而影响Web音频焦点策略。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   audioSessionType 参数在M114遗留内核上设置不生效，不会抛异常，也不会返回错误码。在M114上，mediaOptions接口参数 WebMediaOptions 仅 resumeInterval 和 audioExclusive 参数生效；
   不建议开发者在M114内核中使用audioSessionType 参数。
 
@@ -924,9 +924,9 @@ declare interface OnBeforeUnloadEvent {
 onBeforeUnload(callback: Callback<OnBeforeUnloadEvent, boolean>): WebAttribute;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   OH6.0上新增了通知宿主应用页面开始加载、加载完成、页面标题以及自定义错误页回调接口。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   在M114内核上，下述三个新增回调函数将失效，为组件定义这些回调时，都可以成功调用，但设置后系统不会触发此回调。
   
   * [onLoadStarted](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#onloadstarted20)
@@ -990,11 +990,11 @@ declare interface OnSslErrorEventReceiveEvent {
 onSslErrorEventReceive(callback: Callback<OnSslErrorEventReceiveEvent>): WebAttribute;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   网页加载过程中，发生SSL错误回调时，OH6.0新增了以下两个接口：
   * certChainData：SSL证书链数据
   * handleCancel：可通知Web组件取消此请求，并根据参数abortLoading决定是否停止加载。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   在M114内核上：
   * SslErrorEvent的certChainData为null。
   * [handleCancel](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-SslErrorHandler.md#handlecancel20)的abortLoading配置不生效。
@@ -1040,7 +1040,7 @@ declare enum WebBypassVsyncCondition {
 bypassVsyncCondition(condition: WebBypassVsyncCondition): WebAttribute;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   [WebBypassVsyncCondition](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-e.md#webbypassvsynccondition20)枚举只提供给bypassVsyncCondition接口传参使用，用以设置是否跳过渲染vsync的条件。
   | 名称                       | 值 | 说明                                                                                        |
   | ------------------------- | -- | ------------------------------------------------------------------------------------------- |
@@ -1049,7 +1049,7 @@ bypassVsyncCondition(condition: WebBypassVsyncCondition): WebAttribute;
 
 当开发者调用scrollBy接口进行页面滚动时，可以通过bypassVsyncCondition接口设置渲染流程跳过vsync（垂直同步）调度，直接触发绘制。
 
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   [ bypassVsyncCondition](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-attributes.md#bypassvsynccondition20)在M114遗留内核上设置不生效，不会抛异常，也不会返回错误码。
   不建议开发者在M114内核中使用以上接口。
 
@@ -1090,13 +1090,13 @@ declare interface OnContextMenuShowEvent {
 onContextMenuShow(callback: Callback<OnContextMenuShowEvent, boolean>): WebAttribute;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   WebContextMenuResult用于响应在编辑区上下文菜单操作，新增了以下接口：
 
   * undo：在编辑区调用该接口会撤销用户上一步的修改
   * redo：在编辑区调用该接口会重做用户上一步的修改
   * pasteAndMatchStyle：在编辑区调用该接口会将剪贴板中的数据粘贴为纯文本
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   在M114上，WebContextMenuResult新增的接口调用后不生效，且系统不报错、不抛异常、无错误码。
 
 #### bindSelectionMenu新增LINK枚举支持
@@ -1118,9 +1118,9 @@ bindSelectionMenu(elementType: WebElementType, content: CustomBuilder, responseT
     options?: SelectionMenuOptionsExt): WebAttribute;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   如果设置bindSelectionMenu下的WebElementType为LINK时，开发者可自定义超链接菜单功能；长按元素类型为超链接时，会展示开发者自定义的菜单。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   开发者无法自定义超链接菜单，若开发者配置WebElementType为LINK，自定义超链接菜单功能不生效，且系统不报错、不抛异常、无错误码，不执行自定义超链接菜单展示。
 
 #### DataDetector相关接口
@@ -1148,9 +1148,9 @@ enableDataDetector(enable: boolean): WebAttribute;
 dataDetectorConfig(config: TextDataDetectorConfig): WebAttribute;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   DataDetector用于AI提供智能分词能力，支持5种类型（电话号码、链接、邮箱、地址、时间）的智能分词识别。dataDetectorConfig和enableDataDetector接口可以配置文本识别的类型、颜色、样式，以及是否识别长按显示AI菜单能力，并提供点击、长按、选中出AI菜单的能力。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   调用此接口无效，且系统不报错、不抛异常、无错误码，不执行，系统保持默认无AI智能分词能力。
   不建议开发者在M114内核中使用以上接口。
 
@@ -1202,9 +1202,9 @@ gestureFocusMode(mode: GestureFocusMode): WebAttribute;
  }
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   支持配置手势获焦模式。DEFAULT模式下，任何手势操作都可在Touch Down时使web获焦；GESTURE_TAP_AND_LONG_PRESS模式下，仅长按和点击手势可使web获焦；默认为DEFAULT模式。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   开发者设置gestureFocusMode属性接口配置不生效，且系统不报错、不抛异常、无错误码，Web组件默认为DEFAULT获焦模式。
   不建议开发者在M114内核中使用以上接口。
 
@@ -1232,9 +1232,9 @@ onPdfScrollAtBottom(callback: Callback<OnPdfScrollEvent>): WebAttribute;
 onPdfLoadEvent(callback: Callback<OnPdfLoadEvent>): WebAttribute;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   上述新增接口用于通知宿主应用PDF页面已加载到底部以及加载完成事件。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   应用在M114内核上为组件设置上述回调不生效，不报错、不抛异常、无错误码；设置后系统不会触发此回调。
 
 #### 同层渲染新增接口
@@ -1342,12 +1342,12 @@ declare interface NativeEmbedTouchInfo {
 onNativeEmbedGestureEvent(callback: (event: NativeEmbedTouchInfo) => void): WebAttribute;
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   同层组件新增了以下三个接口：
   * supportCssDisplayChange：可见性支持display属性
   * onNativeEmbedMouseEvent：同层组件支持鼠标事件
   * setMouseEventResult：onNativeEmbedGestureEvent回调时，设置鼠标事件的消费结果
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   * `supportCssDisplayChange`在M114遗留内核上设置不生效，不会抛异常，也不会返回错误码。
   * `onNativeEmbedMouseEvent`在M114遗留内核上设置后会不生效，内核不会触发鼠标事件，只触发 `onNativeEmbedGestureEvent`
   * `setMouseEventResult`在M114遗留内核上设置不生效，不会抛异常，也不会返回错误码。
@@ -1433,9 +1433,9 @@ ARKWEB_BLANKLESS_ERR_DEVICE_NOT_SUPPORT = 801,
 ArkWeb_BlanklessErrorCode OH_NativeArkWeb_SetBlanklessLoadingWithKey(const char* webTag, const char* key, bool isStarted);
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   设置Blankless加载是否使能
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   接口功能在M114内核不支持，返回错误码 `801`
 
 #### OH_NativeArkWeb_ClearBlanklessLoadingCache接口
@@ -1457,9 +1457,9 @@ ArkWeb_BlanklessErrorCode OH_NativeArkWeb_SetBlanklessLoadingWithKey(const char*
 void OH_NativeArkWeb_ClearBlanklessLoadingCache(const char* key[], uint32_t size);
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   清除指定key值页面Blankless优化缓存，本接口只清除缓存。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   接口功能在M114内核不支持，无效果
 
 #### OH_NativeArkWeb_GetBlanklessInfoWithKey接口
@@ -1497,9 +1497,9 @@ typedef struct {
 ArkWeb_BlanklessInfo OH_NativeArkWeb_GetBlanklessInfoWithKey(const char* webTag, const char* key);
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   获取页面首屏加载预测信息，并使能本次加载过渡帧生成，应用根据此信息确定是否需要使能Blankless加载
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   接口功能在M114内核不支持，返回ArkWeb_BlanklessInfo类型变量的ArkWeb_BlanklessErrorCode错误码是 `801`
 
 #### OH_NativeArkWeb_SetBlanklessLoadingCacheCapacity接口
@@ -1520,9 +1520,9 @@ ArkWeb_BlanklessInfo OH_NativeArkWeb_GetBlanklessInfoWithKey(const char* webTag,
 uint32_t OH_NativeArkWeb_SetBlanklessLoadingCacheCapacity(uint32_t capacity);
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   设置Blankless加载方案持久缓存容量，返回实际生效的值
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   接口功能在M114内核不支持，无效果，返回值是0
 
 #### OH_ArkWebResourceHandler_DidFailWithErrorV2接口
@@ -1544,9 +1544,9 @@ int32_t OH_ArkWebResourceHandler_DidFailWithErrorV2(const ArkWeb_ResourceHandler
                                                     bool completeIfNoResponse);
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   通知ArkWeb内核，被拦截请求应返回失败。若completeIfNoResponse为false，调用前需优先调用didReceiveResponse，将构造的响应头传递给被拦截的请求。若completeIfNoResponse为true，且调用前未调用didReceiveResponse，则自动生成一个响应头，网络错误码为 `-104`。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   接口行为跟 `OH_ArkWebResourceHandler_DidFailWithError`一致，completeIfNoResponse参数不生效。
 
 #### OH_NativeArkWeb_RegisterAsyncThreadJavaScriptProxy 接口
@@ -1570,9 +1570,9 @@ void OH_NativeArkWeb_RegisterAsyncThreadJavaScriptProxy(const char* webTag,
     const ArkWeb_ProxyObjectWithResult* proxyObject, const char* permission);
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   ndk接口支持在异步线程注册JavaScriptProxy，避免ui线程繁忙导致的阻塞。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   设置不生效，不会抛异常，也不会返回错误码。
   不建议开发者在M114内核中使用以上接口。
 
@@ -1629,9 +1629,9 @@ int bytesRead);
   void OH_ArkWebHttpBodyStream_AsyncRead(const ArkWeb_HttpBodyStream *httpBodyStream, uint8_t *buffer, int bufLen);
 ```
 
-* **接口作用说明**
+* **接口作用说明**:
   ArkWebHttpBodyStream_AsyncRead 支持异步异步数据，常用于性能优化 。
-* **接口在M114遗留内核上的行为**
+* **接口在M114遗留内核上的行为**:
   OH_ArkWebHttpBodyStream_SetAsyncReadCallback 设置不生效，返回错误码17100100。
   OH_ArkWebHttpBodyStream_AsyncRead 不执行操作。
   ArkWeb_HttpBodyStreamAsyncReadCallback 不会触发回调。

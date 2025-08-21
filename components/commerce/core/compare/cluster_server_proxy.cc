@@ -31,7 +31,7 @@ const int kTimeoutMs = 5000;
 // URL to get compare result.
 const char kDefaultServiceBaseUrl[] =
 #if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
-"https://x.x.x";
+    "https://x.x.x";
 #else
     "https://memex-pa.googleapis.com/v1/shopping/products:related";
 #endif

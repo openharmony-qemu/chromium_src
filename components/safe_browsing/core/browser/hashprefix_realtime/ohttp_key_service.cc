@@ -31,7 +31,7 @@ constexpr base::TimeDelta kKeyFetchTimeout = base::Seconds(3);
 
 constexpr char kKeyFetchServerUrl[] =
 #if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
-        "https://x.x.x";
+    "https://x.x.x";
 #else
     "https://safebrowsingohttpgateway.googleapis.com/v1/ohttp/hpkekeyconfig";
 #endif

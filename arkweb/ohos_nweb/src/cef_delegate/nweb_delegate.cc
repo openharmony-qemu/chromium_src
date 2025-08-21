@@ -6018,19 +6018,6 @@ int64_t NWebDelegate::GetPreferenceHash() {
   return preference_delegate_->GetPreferenceHash();
 }
 
-int32_t NWebDelegate::NearestSnapshotWidth() {
-  return nearest_snapshot_width_;
-}
-
-int32_t NWebDelegate::NearestSnapshotHeight() {
-  return nearest_snapshot_height_;
-}
-
-void NWebDelegate::SetNearestSnapshotSize(int width, int height) {
-  nearest_snapshot_width_ = width;
-  nearest_snapshot_height_ = height;
-}
-
 int32_t NWebDelegate::GetWidth() {
   return width_;
 }

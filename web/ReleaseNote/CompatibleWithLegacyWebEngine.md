@@ -1344,9 +1344,9 @@ onNativeEmbedGestureEvent(callback: (event: NativeEmbedTouchInfo) => void): WebA
 
 * **接口作用说明**:
   同层组件新增了以下三个接口：
-  * supportCssDisplayChange：可见性支持display属性
-  * onNativeEmbedMouseEvent：同层组件支持鼠标事件
-  * setMouseEventResult：onNativeEmbedGestureEvent回调时，设置鼠标事件的消费结果
+  * `supportCssDisplayChange`：可见性支持display属性
+  * `onNativeEmbedMouseEvent`：同层组件支持鼠标事件
+  * `setMouseEventResult`：onNativeEmbedGestureEvent回调时，设置鼠标事件的消费结果
 * **接口在M114遗留内核上的行为**:
   * `supportCssDisplayChange`在M114遗留内核上设置不生效，不会抛异常，也不会返回错误码。
   * `onNativeEmbedMouseEvent`在M114遗留内核上设置后会不生效，内核不会触发鼠标事件，只触发 `onNativeEmbedGestureEvent`

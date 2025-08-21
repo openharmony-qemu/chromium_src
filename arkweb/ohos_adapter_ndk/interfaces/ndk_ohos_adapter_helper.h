@@ -38,7 +38,7 @@ class NDKOhosAdapterHelper : public NWeb::OhosAdapterHelper {
 
   std::unique_ptr<NWeb::NetConnectAdapter> CreateNetConnectAdapter() override;
 
-  NWeb::OhosWebDataBaseAdapter& GetOhosWebDataBaseAdapterInstance() override;
+  NWeb::OhosWebDataBaseAdapter& GetOhosWebDataBaseAdapterInstance(const std::string& cachePath = "") override;
 
   NWeb::PasteBoardClientAdapter& GetPasteBoard() override;
 
@@ -50,7 +50,7 @@ class NDKOhosAdapterHelper : public NWeb::OhosAdapterHelper {
 
   NWeb::AudioSystemManagerAdapter& GetAudioSystemManager() override;
 
-  NWeb::OhosWebPermissionDataBaseAdapter& GetWebPermissionDataBaseInstance()
+  NWeb::OhosWebPermissionDataBaseAdapter& GetWebPermissionDataBaseInstance(const std::string& cachePath = "")
       override;
 
   std::unique_ptr<NWeb::MMIAdapter> CreateMMIAdapter() override;

@@ -80,7 +80,7 @@ public:
 
     virtual std::unique_ptr<NetConnectAdapter> CreateNetConnectAdapter() = 0;
 
-    virtual OhosWebDataBaseAdapter& GetOhosWebDataBaseAdapterInstance() = 0;
+    virtual OhosWebDataBaseAdapter& GetOhosWebDataBaseAdapterInstance(const std::string& cachePath = "") = 0;
 
     virtual PasteBoardClientAdapter& GetPasteBoard() = 0;
 
@@ -90,7 +90,7 @@ public:
 
     virtual AudioSystemManagerAdapter& GetAudioSystemManager() = 0;
 
-    virtual OhosWebPermissionDataBaseAdapter& GetWebPermissionDataBaseInstance() = 0;
+    virtual OhosWebPermissionDataBaseAdapter& GetWebPermissionDataBaseInstance(const std::string& cachePath = "") = 0;
 
     virtual std::unique_ptr<MMIAdapter> CreateMMIAdapter() = 0;
 

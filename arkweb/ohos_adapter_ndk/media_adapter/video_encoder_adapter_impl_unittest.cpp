@@ -1,0 +1,319 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#define private public
+#include "arkweb/ohos_adapter_ndk/media_adapter/include/video_encoder_adapter_impl.h"
+#undef private
+
+#include "arkweb/chromium_ext/media/base/ohos/codec_config_para_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/media_adapter/buffer_info_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/media_adapter/ohos_buffer_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/media_adapter/codec_format_adapter_impl.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/media_codec_adapter.h"
+
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
+using namespace testing;
+
+namespace OHOS::NWeb {
+class EncodeCallbackAdapterMock : public CodecCallbackAdapter {
+ public:
+  EncodeCallbackAdapterMock() = default;
+
+  ~EncodeCallbackAdapterMock() override = default;
+
+  void OnError(ErrorType errorType, int32_t errorCode) override {}
+
+  void OnStreamChanged(
+      const std::shared_ptr<CodecFormatAdapter> formatAdapter_) override {}
+
+  void OnNeedInputData(uint32_t index,
+                       std::shared_ptr<OhosBufferAdapter> buffer) override {}
+  
+  void OnNeedOutputData(uint32_t index,
+                        std::shared_ptr<BufferInfoAdapter> info,
+                        BufferFlag flag,
+                        std::shared_ptr<OhosBufferAdapter> buffer) override {}
+};
+
+class VideoEncoderAdapterImplTest : public testing::Test {
+ protected:
+  void SetUp() {
+    codec_adapter_ = std::make_unique<VideoEncoderAdapterImpl>();
+    codec_adapter_->CreateVideoCodecByMime("video/avc");
+  }
+
+  void TearDown() { codec_adapter_->Release(); }
+
+  std::unique_ptr<VideoEncoderAdapterImpl> codec_adapter_ = nullptr;
+};
+
+class EncoderCallbackImplTest : public testing::Test {
+ protected:
+  void SetUp() {
+    std::shared_ptr<CodecCallbackAdapter> callback =
+        std::make_shared<EncodeCallbackAdapterMock>();
+    encoder_callback_ = std::make_shared<EncoderCallbackImpl>(callback);
+  }
+
+  std::shared_ptr<EncoderCallbackImpl> encoder_callback_ = nullptr;
+};
+
+TEST_F(VideoEncoderAdapterImplTest, TestCreateVideoByMime001) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  CodecCodeAdapter actual_result =
+      codec_adapter_->CreateVideoCodecByMime("test");
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestCreateVideoByMime002) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::OK;
+  CodecCodeAdapter actual_result =
+      codec_adapter_->CreateVideoCodecByMime("video/avc");
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestCreateVideoByName001) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  CodecCodeAdapter actual_result =
+      codec_adapter_->CreateVideoCodecByName("test");
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestCodecCallback001) {
+  CodecCodeAdapter expected_result = CodecCallbackAdapter::ERROR;
+  CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(nullptr);
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestCodecCallback002) {
+  CodecCodeAdapter expected_result = CodecCallbackAdapter::ERROR;
+  std::shared_ptr<CodecCallbackAdapter> callback =
+      std::make_shared<EncodeCallbackAdapterMock>();
+  codec_adapter_->encoder_ = nullptr;
+  CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(callback);
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestCodecCallback003) {
+  CodecCodeAdapter expected_result = CodecCallbackAdapter::OK;
+  std::shared_ptr<CodecCallbackAdapter> callback =
+      std::make_shared<EncodeCallbackAdapterMock>();
+  CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(callback);
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestConfigure001) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  codec_adapter_->encoder_ = nullptr;
+  CodecCodeAdapter actual_result = codec_adapter_->Configure(nullptr);
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestConfigure002) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  CodecCodeAdapter actual_result = codec_adapter_->Configure(nullptr);
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestConfigure003) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  std::shared_ptr<CodecConfigParaAdapter> config =
+      std::make_shared<CodecConfigParaAdapterImpl>();
+  CodecCodeAdapter actual_result = codec_adapter_->Configure(config);
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestConfigure004) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  std::shared_ptr<CodecConfigParaAdapter> config =
+      std::make_shared<CodecConfigParaAdapterImpl>();
+  config->SetWidth(1080);
+  config->SetHeight(720);
+  config->SetBitRate(120);
+  config->FrameRate(60);
+  CodecCodeAdapter actual_result = codec_adapter_->Configure(config);
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestPrepare001) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  codec_adapter_->encoder_ = nullptr;
+  CodecCodeAdapter actual_result = codec_adapter_->Prepare();
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestPrepare002) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::OK;
+  CodecCodeAdapter actual_result = codec_adapter_->Prepare();
+  EXPECT_EQ(expected_result, actual_result);    
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestStart001) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  codec_adapter_->encoder_ = nullptr;
+  CodecCodeAdapter actual_result = codec_adapter_->Start();
+  EXPECT_EQ(expected_result, actual_result);   
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestStart002) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  CodecCodeAdapter actual_result = codec_adapter_->Start();
+  EXPECT_EQ(expected_result, actual_result);   
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestStop001) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  codec_adapter_->encoder_ = nullptr;
+  CodecCodeAdapter actual_result = codec_adapter_->Stop();
+  EXPECT_EQ(expected_result, actual_result);   
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestStop002) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  CodecCodeAdapter actual_result = codec_adapter_->Stop();
+  EXPECT_EQ(expected_result, actual_result);     
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestReset001) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  codec_adapter_->encoder_ = nullptr;
+  CodecCodeAdapter actual_result = codec_adapter_->Reset();
+  EXPECT_EQ(expected_result, actual_result);     
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestReset002) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::OK;
+  CodecCodeAdapter actual_result = codec_adapter_->Reset();
+  EXPECT_EQ(expected_result, actual_result);    
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestRelease001) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  codec_adapter_->encoder_ = nullptr;
+  CodecCodeAdapter actual_result = codec_adapter_->Release();
+  EXPECT_EQ(expected_result, actual_result);      
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestCreateInputSurface001) {
+  std::shared_ptr<ProducerSurfaceAdapter> expected_result = nullptr;
+  codec_adapter_->encoder_ = nullptr;
+  std::shared_ptr<ProducerSurfaceAdapter> actual_result =
+      codec_adapter_->CreateInputSurface();
+  EXPECT_EQ(expected_result, actual_result);  
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestCreateInputSurface002) {
+  std::shared_ptr<ProducerSurfaceAdapter> expected_result = nullptr;
+  std::shared_ptr<ProducerSurfaceAdapter> actual_result =
+      codec_adapter_->CreateInputSurface();
+  EXPECT_EQ(expected_result, actual_result);    
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestReleaseOutputBuffer001) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  codec_adapter_->encoder_ = nullptr;
+  CodecCodeAdapter actual_result = codec_adapter_->ReleaseOutputBuffer(0, true);
+  EXPECT_EQ(expected_result, actual_result);   
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestReleaseOutputBuffer002) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  CodecCodeAdapter actual_result = codec_adapter_->ReleaseOutputBuffer(0, true);
+  EXPECT_EQ(expected_result, actual_result);     
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestRequestKeyFrameSoon001) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  codec_adapter_->encoder_ = nullptr;
+  CodecCodeAdapter actual_result = codec_adapter_->RequestKeyFrameSoon();
+  EXPECT_EQ(expected_result, actual_result);      
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestRequestKeyFrameSoon002) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  CodecCodeAdapter actual_result = codec_adapter_->RequestKeyFrameSoon();
+  EXPECT_EQ(expected_result, actual_result);        
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestGetBufferFlag001) {
+  BufferFlag expected_result = BufferFlag::CODEC_BUFFER_FLAG_EOS;
+  BufferFlag actual_result = codec_adapter_->GetBufferFlag(
+      OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_EOS);
+  EXPECT_EQ(expected_result, actual_result);    
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestGetBufferFlag002) {
+  BufferFlag expected_result = BufferFlag::CODEC_BUFFER_FLAG_NONE;
+  BufferFlag actual_result = codec_adapter_->GetBufferFlag(
+      OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_DISCARD);
+  EXPECT_EQ(expected_result, actual_result);    
+}
+
+TEST_F(EncoderCallbackImplTestTest, TestOnError001) {
+  encoder_callback_->cb_ = nullptr;
+  testing::internal::CaptureStderr();
+  encoder_callback_->OnError(0);
+  std::string log_output = testing::internal::GetCaptureStderr();
+  EXPECT_EQ(log_output.find("callback is null"), std::string::npos);
+}
+
+TEST_F(EncoderCallbackImplTestTest, TestOnError002) {
+  testing::internal::CaptureStderr();
+  encoder_callback_->OnError(0);
+  std::string log_output = testing::internal::GetCaptureStderr();
+  EXPECT_EQ(log_output.find("callback is null"), std::string::npos);   
+}
+
+TEST_F(EncoderCallbackImplTestTest, TestOnOutputFormatChanged001) {
+  encoder_callback_->cb_ = nullptr;
+  testing::internal::CaptureStderr();
+  encoder_callback_->OnOutputFormatChanged(nullptr);
+  std::string log_output = testing::internal::GetCaptureStderr();
+  EXPECT_EQ(log_output.find("callback is null"), std::string::npos);   
+}
+
+TEST_F(EncoderCallbackImplTestTest, TestOnInputBufferAvailable001) {
+  encoder_callback_->cb_ = nullptr;
+  testing::internal::CaptureStderr();
+  encoder_callback_->OnInputBufferAvailable(0, nullptr);
+  std::string log_output = testing::internal::GetCaptureStderr();
+  EXPECT_EQ(log_output.find("callback is null"), std::string::npos);   
+}
+
+TEST_F(EncoderCallbackImplTestTest, TestOnInputBufferAvailable002) {
+  testing::internal::CaptureStderr();
+  encoder_callback_->OnInputBufferAvailable(0, nullptr);
+  std::string log_output = testing::internal::GetCaptureStderr();
+  EXPECT_EQ(log_output.find("callback is null"), std::string::npos);   
+}
+
+TEST_F(EncoderCallbackImplTestTest, TestOnOutputBufferAvailable001) {
+  encoder_callback_->cb_ = nullptr;
+  testing::internal::CaptureStderr();
+  encoder_callback_->OnOutputBufferAvailable(0, nullptr);
+  std::string log_output = testing::internal::GetCaptureStderr();
+  EXPECT_EQ(log_output.find("callback is null"), std::string::npos);   
+}
+
+TEST_F(EncoderCallbackImplTestTest, TestOnOutputBufferAvailable002) {
+  testing::internal::CaptureStderr();
+  encoder_callback_->OnOutputBufferAvailable(0, nullptr);
+  std::string log_output = testing::internal::GetCaptureStderr();
+  EXPECT_EQ(log_output.find("callback is null"), std::string::npos);   
+}
+} // namespace OHOS::NWeb

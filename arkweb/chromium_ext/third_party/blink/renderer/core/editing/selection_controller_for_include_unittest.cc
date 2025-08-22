@@ -23,11 +23,9 @@ class SelectionControllerForIncludeTest : public SelectionControllerTest {
   void SetClickSelection(bool click_in_selection_);
   void SetDownAllow(bool down_allows_);
   void SetMenuShow(bool menu_show_);
-  bool GetStartSelect();
   bool GetClickSelection();
   bool GetDownAllow();
   bool GetMenuShow();
-  void SetOwnVariable(SelectionController& controller, int type, bool value);
   void SetLongPress(HitTestResult& result);
   void SetLinkPress(HitTestResult& result);
 
@@ -50,10 +48,6 @@ void SelectionControllerForIncludeTest::SetMenuShow(bool menu_show_) {
   Controller().mouse_menu_show_ = menu_show_;
 }
 
-bool SelectionControllerForIncludeTest::GetStartSelect() {
-  return Controller().mouse_down_may_start_select_;
-}
-
 bool SelectionControllerForIncludeTest::GetClickSelection() {
   return Controller().mouse_down_was_single_click_in_selection_;
 }
@@ -64,28 +58,6 @@ bool SelectionControllerForIncludeTest::GetDownAllow() {
 
 bool SelectionControllerForIncludeTest::GetMenuShow() {
   return Controller().mouse_menu_show_;
-}
-
-void SelectionControllerForIncludeTest::SetOwnVariable(SelectionController& controller,
-                                             int type,
-                                             bool value) {
-  if (type == 0) {
-    return;
-  }
-  switch (type) {
-    case 1:
-      controller.mouse_down_may_start_select_ = value;
-      break;
-    case 2:
-      controller.mouse_down_was_single_click_in_selection_ = value;
-      break;
-    case 3:
-      controller.mouse_click_down_allows_ = value;
-      break;
-    case 4:
-      controller.mouse_menu_show_ = value;
-      break;
-  }
 }
 
 void SelectionControllerForIncludeTest::SetLongPress(HitTestResult& result) {

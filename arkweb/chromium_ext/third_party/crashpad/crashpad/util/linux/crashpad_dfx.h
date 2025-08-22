@@ -39,7 +39,7 @@ class CrashpadDfx {
     kUnknown = -1,
     kRender = 0,
     kGpu,
-  }
+  };
   enum class CrashReason : int32_t {
     kUnDefined = -1,
     kOutOfMemory = 0,

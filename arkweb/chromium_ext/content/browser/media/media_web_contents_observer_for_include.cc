@@ -41,26 +41,23 @@ bool MediaWebContentsObserver::IsPlayerIdInMediaPlayerRemotesMap(const MediaPlay
 }
 #endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
-bool CheckWebContentIsNotNull() {
+bool IsWebContentsAvailable() {
   if (!media_web_contents_observer_) {
     return false;
   }
 
-  if (!media_web_contents_observer_->web_contents_impl()) {
+  auto* web_contents_impl = media_web_contents_observer_->web_contents_impl();
+  if (!web_contents_impl) {
     return false;
   }
 
-  if (!media_web_contents_observer_->web_contents_impl()->AsWebContentsImplExt()) {
-    return false;
-  }
-
-  return true;
+  return web_contents_impl->AsWebContentsImplExt() != nullptr;
 }
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     UpdateLayerRect(const gfx::Rect& rect) {
-  if (CheckWebContentIsNotNull()) {
+  if (IsWebContentsAvailable()) {
     media_web_contents_observer_->web_contents_impl()->AsWebContentsImplExt()->UpdateLayerRect(
         media_player_id_, rect);
   }    
@@ -68,7 +65,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
 
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     FullscreenChanged(bool is_fullscreen) {
-  if (CheckWebContentIsNotNull()) {
+  if (IsWebContentsAvailable()) {
     media_web_contents_observer_->web_contents_impl()->AsWebContentsImplExt()->FullScreenChanged(
         media_player_id_, is_fullscreen);
   }
@@ -241,7 +238,7 @@ void MediaWebContentsObserver::MediaPlayerHostImpl::RequestVideoAssistantConfig(
   LOG(INFO) << "RequestVideoAssistantConfig";
   auto config = media::mojom::VideoAssistantConfig::New(true, true,
       media::mojom::VideoAssistantDownloadButton::kDownloadPerPage);
-  if (CheckWebContentIsNotNull()) {
+  if (IsWebContentsAvailable()) {
     auto* web_contents_impl = media_web_contents_observer_->web_contents_impl();
     web_contents_impl->AsWebContentsImplExt()->PopluateVideoAssistantConfig(config);
     std::move(callback).Run(std::move(config));
@@ -251,7 +248,7 @@ void MediaWebContentsObserver::MediaPlayerHostImpl::RequestVideoAssistantConfig(
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     OnVideoPlaying(
         media::mojom::VideoAttributesForVASTPtr video_attributes) {
-  if (CheckWebContentIsNotNull()) {
+  if (IsWebContentsAvailable()) {
     LOG(INFO) << "OnVideoPlaying";
     media_web_contents_observer_->web_contents_impl()->AsWebContentsImplExt()->OnVideoPlaying(
         std::move(video_attributes), media_player_id_);
@@ -261,7 +258,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     OnUpdateVideoAttributes(
         media::mojom::VideoAttributesForVASTPtr video_attributes) {
-  if (CheckWebContentIsNotNull()) {
+  if (IsWebContentsAvailable()) {
     LOG(INFO) << "OnUpdateVideoAttributes";
     media_web_contents_observer_->web_contents_impl()->AsWebContentsImplExt()->OnUpdateVideoAttributes(
         std::move(video_attributes), media_player_id_);
@@ -270,7 +267,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
 
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     OnVideoDestroyed() {
-  if (CheckWebContentIsNotNull()) {
+  if (IsWebContentsAvailable()) {
     LOG(INFO) << "OnVideoDestroyed";
     media_web_contents_observer_->web_contents_impl()->AsWebContentsImplExt()->OnVideoDestroyed(
         media_player_id_);
@@ -285,7 +282,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     return;
   }
 
-  if (CheckWebContentIsNotNull()) {
+  if (IsWebContentsAvailable()) {
     LOG(INFO) << "OnFullScreenOverlayEnter";
     media_player_listener_ = media_web_contents_observer_
         ->web_contents_impl()->AsWebContentsImplExt()->OnFullScreenOverlayEnter(
@@ -407,7 +404,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnVolumeChanged(doub
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     FullscreenOverlayChanged(
         bool fullscreen_overlay, const std::string& decoder_name) {
-  if (CheckWebContentIsNotNull()) {
+  if (IsWebContentsAvailable()) {
     media_web_contents_observer_->web_contents_impl()->AsWebContentsImplExt()->ReportVideoDecoderName(
         decoder_name);
   }

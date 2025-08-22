@@ -73,8 +73,8 @@ TEST_F(CrashpadDfxTest,  CrashpadDfxTest003){
     EXPECT_NE(dfxtest,nullptr);
     pid_t current_pid = getpid();
 
-    std::string process_type = dfxtest->GetProcessTypeByPid(current_pid);
-    EXPECT_EQ(process_type, "unknown");
+    int32_t process_type = dfxtest->GetProcessTypeByPid(current_pid);
+    EXPECT_EQ(process_type, (int32_t)-1);
 }
 
 TEST_F(CrashpadDfxTest,  CrashpadDfxTest004){

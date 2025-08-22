@@ -257,14 +257,20 @@ case "${build_target}" in
     [[ "-$buildarg_musl" == "-use_musl=true" ]] && build_sysroot="use_ohos_sdk_sysroot=true"
     ;;
   "coreut"|"${BUILD_TARGET_BROWSER_ENGINE_CORE_UNITTESTS}")
+    buildargs="${buildargs}
+    arkweb_test=true"
     build_target="${BUILD_TARGET_BROWSER_ENGINE_CORE_UNITTESTS}"
     ;;
   "allut"|"${BUILD_TARGET_BROWSER_ENGINE_BASE_UNITTESTS}")
 #    is_official_build=0
+    buildargs="${buildargs}
+    arkweb_test=true"
     build_target="${BUILD_TARGET_BROWSER_ENGINE_BASE_UNITTESTS}"
     ;;
   "smokeut"|"${BUILD_TARGET_BROWSER_ENGINE_SMOKE_UNITTESTS}")
 #    is_official_build=0
+    buildargs="${buildargs}
+    arkweb_test=true"
     build_target="${BUILD_TARGET_BROWSER_ENGINE_SMOKE_UNITTESTS}"
     ;;
   "component")

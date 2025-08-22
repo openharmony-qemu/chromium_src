@@ -228,6 +228,7 @@ if (!enable_arkweb) {
   arkweb_suspend_all_timers = false
   arkweb_theme_font = false
   arkweb_unittests = true
+  arkweb_test = false
   arkweb_url_trust_list = true
   arkweb_useragent = false
   arkweb_video_assistant = true
@@ -452,6 +453,7 @@ buildflag_header("features") {
     "ARKWEB_SUSPEND_ALL_TIMERS=$arkweb_suspend_all_timers",
     "ARKWEB_THEME_FONT=$arkweb_theme_font",
     "ARKWEB_UNITTESTS=$arkweb_unittests",
+    "ARKWEB_TEST=$arkweb_test",
     "ARKWEB_URL_TRUST_LIST=$arkweb_url_trust_list",
     "ARKWEB_USERAGENT=$arkweb_useragent",
     "ARKWEB_VIDEO_ASSISTANT=$arkweb_video_assistant",

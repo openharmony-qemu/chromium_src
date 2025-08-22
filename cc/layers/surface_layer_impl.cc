@@ -162,7 +162,9 @@ bool SurfaceLayerImpl::WillDraw(
 #endif
   bool will_draw = LayerImpl::WillDraw(draw_mode, resource_provider);
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  surfaceLayerImplUtils_->LayerRectUpdate();
+  if(will_draw) {
+    surfaceLayerImplUtils_->LayerRectUpdate();
+  }
 #endif
 
   // If we have a change in WillDraw (meaning that visibility has changed), we

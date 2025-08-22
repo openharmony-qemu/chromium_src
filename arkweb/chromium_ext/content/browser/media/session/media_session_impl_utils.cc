@@ -57,10 +57,12 @@ void MediaSessionImplUtils::IsSuspended() {
 
 void MediaSessionImplUtils::PushBackMediaImage(std::vector<media_session::MediaImage> artwork) {
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-  std::string attrib_image_url = impl->web_contents()->GetVideoPoster();
-  media_session::MediaImage mediaImage;
-  mediaImage.src = GURL(attrib_image_url);
-  artwork.push_back(mediaImage);
+  if (impl->web_contents()) {
+    std::string attrib_image_url = impl->web_contents()->GetVideoPoster();
+    media_session::MediaImage mediaImage;
+    mediaImage.src = GURL(attrib_image_url);
+    artwork.push_back(mediaImage);
+  }
 #endif  // ARKWEB_MEDIA_AVSESSION
 }
 

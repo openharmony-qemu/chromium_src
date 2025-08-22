@@ -275,6 +275,10 @@ void ScreenCaptureCallbackOnError(OH_AVScreenCapture *capture, int32_t errorCode
     }
     WVLOG_I("OnError is called, errorCode %{public}d", errorCode);
     CallbackInfo* callbackInfo = (CallbackInfo*)userData;
+    if (callbackInfo->callback == nullptr) {
+        WVLOG_E("callback is null");
+        return;
+    }
     callbackInfo->callback->OnError(errorCode);
 }
 

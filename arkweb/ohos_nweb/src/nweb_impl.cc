@@ -5628,6 +5628,7 @@ void NWebImpl::SetUsageScenario(int32_t usage_scenario) {
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "SetUsageScenario failed"
                   "for nweb_delegate_ is nullptr.";
+    return;
   }
   nweb_delegate_->SetUsageScenario(usage_scenario);
 }

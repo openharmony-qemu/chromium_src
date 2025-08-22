@@ -142,12 +142,11 @@ void DeclarativeContentIsBookmarkedConditionDelegate::RequestIsBookmarked(
     return;
   }
   NWebExtensionBookmarksSearchParam param = {0};
-  char* param_url = strdup(url.spec().c_str());
-  if (!param_url) {
-    LOG(ERROR) << __FUNCTION__ << " failed to allocate param_url";
+  param.url = strdup(url.spec().c_str());
+  if (!param.url) {
+    LOG(ERROR) << __FUNCTION__ << " failed to allocate param.url";
     return;
   }
-  param.url = param_url;
   bool success =
       OHOS::NWeb::NWebExtensionBookmarksCefDelegate::GetInstance().OnSearch(
           &param, std::move(callback));

@@ -86,7 +86,10 @@ char* itoa_r(intptr_t i, char* buf, size_t sz, int base, size_t padding) {
 
   char* start = buf;
 
-  uintptr_t j = static_cast<uintptr_t>(i);
+  if(i < 0){
+    i = -i;
+  }
+  uintptr_t j = (uintptr_t)i; 
 
   // Handle negative numbers (only for base 10).
   if (i < 0 && base == 10) {
@@ -149,10 +152,12 @@ void itoa_r(intptr_t i, int base, size_t padding, base::span<char> buf) {
 
   auto writer = base::SpanWriter(buf);
   size_t start = 0u;
-  uintptr_t j = 0;
-  if(i>=0) {
-    j = i;
-  }
+
+  if(i < 0) {
+    i = -i;
+  }  
+  uintptr_t j = (uintptr_t)i;
+
   // Handle negative numbers (only for base 10).
   if (i < 0 && base == 10) {
     // This does "j = -i" while avoiding integer overflow.

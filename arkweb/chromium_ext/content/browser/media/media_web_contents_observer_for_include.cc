@@ -41,6 +41,7 @@ bool MediaWebContentsObserver::IsPlayerIdInMediaPlayerRemotesMap(const MediaPlay
 }
 #endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 bool IsWebContentsAvailable() {
   if (!media_web_contents_observer_) {
     return false;
@@ -54,7 +55,6 @@ bool IsWebContentsAvailable() {
   return web_contents_impl->AsWebContentsImplExt() != nullptr;
 }
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     UpdateLayerRect(const gfx::Rect& rect) {
   if (IsWebContentsAvailable()) {
@@ -439,7 +439,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     OnPictureInPictureStateChanged(
         uint32_t state, int32_t width, int32_t height) {
   if (media_web_contents_observer_ &&
-      media_web_contents_observer_->session_controllers_manager())        
+      media_web_contents_observer_->session_controllers_manager()) {
     media_web_contents_observer_->session_controllers_manager()
         ->OnPictureInPictureStateChanged(media_player_id_, state, width, height);
   }

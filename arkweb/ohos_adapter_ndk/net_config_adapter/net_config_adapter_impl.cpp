@@ -86,4 +86,5 @@ bool NetConfigAdapterImpl::GetIsCleartextCfgByComponent(
   return is_cleartext_cfg;
 }
 
+
 }  // namespace OHOS::NWeb

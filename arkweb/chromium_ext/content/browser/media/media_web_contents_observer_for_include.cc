@@ -41,7 +41,7 @@ bool MediaWebContentsObserver::IsPlayerIdInMediaPlayerRemotesMap(const MediaPlay
 }
 #endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 bool IsWebContentsAvailable() {
   if (!media_web_contents_observer_) {
     return false;
@@ -54,7 +54,9 @@ bool IsWebContentsAvailable() {
 
   return web_contents_impl->AsWebContentsImplExt() != nullptr;
 }
+#endif
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     UpdateLayerRect(const gfx::Rect& rect) {
   if (IsWebContentsAvailable()) {

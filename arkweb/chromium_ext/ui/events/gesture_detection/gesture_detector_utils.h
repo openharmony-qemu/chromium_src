@@ -29,7 +29,7 @@ class TimeoutGestureHandlerUtils {
   ~TimeoutGestureHandlerUtils();
   void Stop(bool is_lost_focus);
 
-  GestureDetector::TimeoutGestureHandler* timeout_gesture_handler_;
+  raw_ptr<GestureDetector::TimeoutGestureHandler> timeout_gesture_handler_;
 };
 }  // namespace ui
 

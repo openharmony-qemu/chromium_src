@@ -149,9 +149,10 @@ void itoa_r(intptr_t i, int base, size_t padding, base::span<char> buf) {
 
   auto writer = base::SpanWriter(buf);
   size_t start = 0u;
-
-  uintptr_t j = static_cast<uintptr_t>(i);
-
+  uintptr_t j = 0;
+  if(i>=0) {
+    j = i;
+  }
   // Handle negative numbers (only for base 10).
   if (i < 0 && base == 10) {
     // This does "j = -i" while avoiding integer overflow.
@@ -164,6 +165,9 @@ void itoa_r(intptr_t i, int base, size_t padding, base::span<char> buf) {
     }
     start += 1u;  // The number starts after the sign.
   }
+  else {
+    return;
+  } 
 
   // Loop until we have converted the entire number. Output at least one
   // character (i.e. '0').

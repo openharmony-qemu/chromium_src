@@ -23,9 +23,7 @@
 #include "base/task/thread_pool.h"
 #include "base/threading/platform_thread.h"
 #include "base/values.h"
-#include "cef/libcef/browser/prefs/browser_prefs.h"
 #include "cef/ohos_cef_ext/libcef/browser/global_config/global_config_prefs.h"
-#include "chrome/browser/browser_process.h"
 #include "components/prefs/pref_service.h"
 #endif
 

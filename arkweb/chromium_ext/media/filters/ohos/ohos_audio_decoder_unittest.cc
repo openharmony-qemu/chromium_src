@@ -129,7 +129,6 @@ TEST_F(OHOSAudioCencInfoTest, GetMode_ShouldReturnMode_WhenCalled)
 class OHOSAudioDecoderFormatTest : public testing::Test {
  protected:
   void SetUp() override {}
-
   void TearDown() override {}
 };
 
@@ -173,7 +172,6 @@ TEST_F(OHOSAudioCencInfoTest, FunctionsCalled)
 class AudioDecoderCallbackTest : public testing::Test {
  protected:
   void SetUp() override {}
-
   void TearDown() override {}
 };
 
@@ -578,7 +576,6 @@ TEST_F(OhosAudioDecoderTest, ProvideInputData)
     ASSERT_FALSE(data.is_eos);
     ASSERT_FALSE(data.cenc_info);
   }
-
 
   const uint32_t crypt_byte_block = 1;
   const uint32_t skip_byte_block = 1;

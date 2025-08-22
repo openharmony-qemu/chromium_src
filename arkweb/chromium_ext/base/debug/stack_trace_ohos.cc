@@ -170,9 +170,6 @@ void itoa_r(intptr_t i, int base, size_t padding, base::span<char> buf) {
     }
     start += 1u;  // The number starts after the sign.
   }
-  else {
-    return;
-  } 
 
   // Loop until we have converted the entire number. Output at least one
   // character (i.e. '0').

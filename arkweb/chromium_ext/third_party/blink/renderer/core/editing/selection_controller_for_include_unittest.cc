@@ -28,6 +28,8 @@ class SelectionControllerForIncludeTest : public SelectionControllerTest {
   bool GetMenuShow();
   void SetLongPress(HitTestResult& result);
   void SetLinkPress(HitTestResult& result);
+
+  void TestBody() override {}
 };
 
 void SelectionControllerForIncludeTest::SetStartSelect(bool start_select_) {

@@ -5834,7 +5834,6 @@ void NWebImpl::SetTransformHint(uint32_t rotation) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
 void NWebImpl::SetPopupSurface(void* popupSurface) {
   uint32_t width, height;
-  output_handler_->GetWindowInfo(width, height);
   if (nweb_delegate_ == nullptr) {
     WVLOG_E("SetPopupSurface failed,nweb_delegate is nullptr.");
     return;
@@ -5844,6 +5843,7 @@ void NWebImpl::SetPopupSurface(void* popupSurface) {
     WVLOG_E("SetPopupSurface failed, NWeb output handler is not ready");
     return;
   }
+  output_handler_->GetWindowInfo(width, height);
   void* popup_window = nullptr;
   popup_window = output_handler_->GetNativeWindowFromSurface(popupSurface);
 

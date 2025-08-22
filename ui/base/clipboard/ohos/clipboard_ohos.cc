@@ -228,7 +228,7 @@ class ClipboardOHOSInternal {
     if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
       content::GetUIThreadTaskRunner({})->PostTask(
           FROM_HERE, base::BindOnce(&ClipboardOHOSInternal::SetClipboardState,
-                                    base::Unretained(this), state));
+                                    weak_ptr_factory_.GetWeakPtr(), state));
     } else {
       state_ = state;
     }
@@ -270,7 +270,7 @@ class ClipboardOHOSInternal {
     base::ThreadPool::PostTaskAndReplyWithResult(
         FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_VISIBLE},
         base::BindOnce(&ClipboardOHOSInternal::UpdateClipboardDataRun,
-                       base::Unretained(this)),
+                       weak_ptr_factory_.GetWeakPtr()),
         base::BindOnce(&ClipboardOHOSInternal::OnUpdateClipboardData,
                        weak_ptr_factory_.GetWeakPtr(), std::move(callback)));
   }

@@ -297,6 +297,11 @@ class WebContentsImplExt : public WebContentsImpl {
   void SetUpdateSurface(bool state);
   bool IsUpdateSurface();
 #endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  bool OnStartBackgroundTask(int32_t type, const std::string& message) override;
+#endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 friend class WebContentsImpl;
 friend class WebContentsImplUtils;
@@ -340,20 +345,6 @@ public:
   void OnBrowserForeground() override;
   void OnBrowserBackground() override;
 #endif
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  void OnShowConfirmInfoBar(const std::string& title,
-                            const std::string& infoId,
-                            const std::string& message,
-                            int buttons,
-                            const std::string& buttonLabelOK,
-                            const std::string& buttonLabelCancel);
-  void OnHideConfirmInfoBar(const std::string& title,
-                            const std::string& infoId,
-                            const std::string& message,
-                            int buttons,
-                            const std::string& buttonLabelOK,
-                            const std::string& buttonLabelCancel);
-#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 private:
   std::string custom_user_agent_;

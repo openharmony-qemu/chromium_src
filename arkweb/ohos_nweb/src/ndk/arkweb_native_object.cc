@@ -135,8 +135,8 @@ void ArkWebNativeObject::BindWebTagToWebInstance(int32_t id,
                                                  const char* webTag) {
   LOG(INFO) << "NativeArkWeb BindWebTagToWebInstance webTag:" << webTag;
 
-  if (auto webObject = ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
-      webObject != nullptr) {
+  auto webObject = ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
+  if (webObject != nullptr) {
     std::shared_ptr<NWebImpl> nwebShared = NWebImpl::GetNWebSharedPtr(id);
     webObject->SetWebWeakPtr(nwebShared);
     webObject->FireValidCallback();

@@ -1004,10 +1004,9 @@ void TransportClientSocketPool::RemoveGroup(const GroupId& group_id) {
           switches::kEnableNwebExHttpDnsFallback)) {
     if (it == group_map_.end()) {
       LOG(ERROR) << "the group of this group_id is empty";
-// TODO(ARKWEB)
-// #ifdef OHOS_LOGGER_REPORT
-//       LOG_FEEDBACK(ERROR) << "the group of this group_id is empty";
-// #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(ERROR) << "the group of this group_id is empty";
+#endif
 
       return;
     }

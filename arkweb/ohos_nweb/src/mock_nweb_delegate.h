@@ -1068,10 +1068,6 @@ class MockNWebDelegate : public NWebDelegateInterface {
                std::unique_ptr<NWebExtensionTab> tab),
               (override));
   MOCK_METHOD(void,
-              WebExtensionTabActivated,
-              (std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo),
-              (override));
-  MOCK_METHOD(void,
               WebExtensionTabAttached,
               (int tab_id,
                std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo),
@@ -1195,6 +1191,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (uint32_t nweb_id, uint64_t blankless_key),
               (override));
   MOCK_METHOD(int64_t, GetPreferenceHash, (), (override));
+  MOCK_METHOD(int32_t, GetWidth, (), (override));
+  MOCK_METHOD(int32_t, GetHeight, (), (override));
 #endif
 
 #if BUILDFLAG(ARKWEB_MENU)

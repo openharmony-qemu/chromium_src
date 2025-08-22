@@ -742,6 +742,9 @@ bool NWebDelegate::Init(bool is_enhance_surface,
 }
 
 void NWebDelegate::OnDestroy(bool is_close_all) {
+  if (GetBrowser().get() && GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->DestroyAllWebMessagePorts();
+  }
   if (display_listener_id_ >= 0 && display_listener_ != nullptr &&
       display_manager_adapter_ != nullptr) {
     display_manager_adapter_->UnregisterDisplayListener(display_listener_id_);
@@ -1132,6 +1135,53 @@ void NWebDelegate::OnTouchMove(int32_t id,
     event_handler_->OnTouchMove(id, x / default_virtual_pixel_ratio_,
                                 y / default_virtual_pixel_ratio_, from_overlay);
   }
+}
+
+void NWebDelegate::OnStylusTouchPress(
+    std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+    bool from_overlay) {
+  if (event_handler_ == nullptr || !stylus_touch_point_info) {
+    return;
+  }
+
+  if (pressing_num_ < 0) {
+    pressing_num_ = 0;
+  }
+  ++pressing_num_;
+
+  event_handler_->OnStylusTouchPress(stylus_touch_point_info, from_overlay,
+                                     default_virtual_pixel_ratio_);
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (render_handler_ != nullptr) {
+    render_handler_->SetIrregularDragBackground(true);
+  }
+#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
+}
+
+void NWebDelegate::OnStylusTouchRelease(
+    std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+    bool from_overlay) {
+  if (event_handler_ == nullptr || !stylus_touch_point_info) {
+    return;
+  }
+
+  --pressing_num_;
+
+  event_handler_->OnStylusTouchRelease(stylus_touch_point_info, from_overlay,
+                                       default_virtual_pixel_ratio_);
+}
+
+void NWebDelegate::OnStylusTouchMove(
+    const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>&
+        stylus_touch_point_infos,
+    bool from_overlay) {
+  if (event_handler_ == nullptr || stylus_touch_point_infos.empty()) {
+    return;
+  }
+
+  event_handler_->OnStylusTouchMove(stylus_touch_point_infos, from_overlay,
+                                    default_virtual_pixel_ratio_);
 }
 
 void NWebDelegate::OnTouchCancel() {
@@ -5448,22 +5498,7 @@ void NWebDelegate::WebExtensionTabUpdated(
   return GetBrowser()->GetHost()->WebExtensionTabUpdated(
       tab_id, std::move(changeInfo), std::move(tab));
 }
- 
-void NWebDelegate::WebExtensionTabActivated(
-    std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) {
-  if (!activeInfo) {
-    LOG(ERROR) << "WebExtensionTabActivated activeInfo is null";
-    return;
-  }
-  LOG(INFO) << "WebExtensionTabActivated, tab_id: "
-            << activeInfo->tabId << " windowId: " << activeInfo->windowId;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabActivated failed, get browser failed";
-    return;
-  }
-  GetBrowser()->GetHost()->WebExtensionTabActivated(activeInfo->tabId, activeInfo->windowId);
-}
- 
+
 void NWebDelegate::WebExtensionTabAttached(
     int tab_id,
     std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) {
@@ -5958,6 +5993,7 @@ void NWebDelegate::SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_k
   // before send to render_frame, frame_sink_id will be get from compositor.
   int64_t pref_hash = preference_delegate_ ? preference_delegate_->GetPreferenceHash() : 0;
   browser->GetMainFrame()->AsArkWebFrame()->SendBlanklessKeyToRenderFrame(nweb_id, blankless_key, 0, pref_hash);
+  handler_delegate_->SetBlanklessLoadingKey(blankless_key);
 }
 
 int64_t NWebDelegate::GetPreferenceHash() {
@@ -5965,19 +6001,6 @@ int64_t NWebDelegate::GetPreferenceHash() {
     return base::ohos::BlanklessDataController::INVALID_PREF_HASH;
   }
   return preference_delegate_->GetPreferenceHash();
-}
-
-int32_t NWebDelegate::NearestSnapshotWidth() {
-  return nearest_snapshot_width_;
-}
-
-int32_t NWebDelegate::NearestSnapshotHeight() {
-  return nearest_snapshot_height_;
-}
-
-void NWebDelegate::SetNearestSnapshotSize(int width, int height) {
-  nearest_snapshot_width_ = width;
-  nearest_snapshot_height_ = height;
 }
 
 int32_t NWebDelegate::GetWidth() {

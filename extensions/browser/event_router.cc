@@ -53,6 +53,10 @@
 #include "ipc/ipc_channel_proxy.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/downloads/download_api_ext_router.h"
+#endif
+
 using content::BrowserContext;
 using content::BrowserThread;
 using content::RenderProcessHost;
@@ -705,6 +709,9 @@ void EventRouter::OnListenerRemoved(const EventListener* listener) {
       listener->IsLazy());
   std::string base_event_name = GetBaseEventName(listener->event_name());
   auto it = observer_map_.find(base_event_name);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ExtensionDownloadsEventRouterEx::GetInstance().OnListenerRemoved(details);
+#endif
   if (it != observer_map_.end()) {
     for (auto& observer : *it->second) {
       observer.OnListenerRemoved(details);

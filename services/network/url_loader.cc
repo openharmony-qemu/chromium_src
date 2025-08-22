@@ -126,6 +126,12 @@
 #include "base/functional/callback.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -775,6 +781,9 @@ URLLoader::URLLoader(
       request.referrer_policy,
       /*upgrade_if_insecure=*/request.upgrade_if_insecure,
       /*is_ad_tagged=*/request.is_ad_tagged,
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      request.usage_scenario_,
+#endif
       /*isolation_info=*/
       GetIsolationInfo(factory_params_->isolation_info,
                        factory_params_->automatically_assign_isolation_info,
@@ -843,6 +852,9 @@ void URLLoader::ConfigureRequest(
     net::ReferrerPolicy referrer_policy,
     bool upgrade_if_insecure,
     bool is_ad_tagged,
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    int32_t usage_scenario,
+#endif
     std::optional<net::IsolationInfo> isolation_info,
     bool force_main_frame_for_same_site_cookies,
     net::SecureDnsPolicy secure_dns_policy,
@@ -867,6 +879,10 @@ void URLLoader::ConfigureRequest(
   url_request_->set_referrer_policy(referrer_policy);
   url_request_->set_upgrade_if_insecure(upgrade_if_insecure);
   url_request_->set_ad_tagged(is_ad_tagged);
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  url_request_->set_usage_scenario(usage_scenario);
+#endif
 
   if (isolation_info) {
     url_request_->set_isolation_info(std::move(isolation_info).value());
@@ -2058,6 +2074,22 @@ void URLLoader::ContinueOnResponseStarted() {
         << static_cast<int>(*blocked_reason) << ", url: ***";
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO)
+        << "ContinueOnResponseStarted blocked by response, blocked_reason "
+        << static_cast<int>(*blocked_reason) << ", url: "
+        << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableLoggerReport)) {
+      if (!is_strict_log_mode_) {
+        LOG(URL)
+            << "ContinueOnResponseStarted blocked by response, blocked_reason "
+            << static_cast<int>(*blocked_reason) << ", url: "
+            << url::LogUtils::ConvertUrl(url_request_->url().spec(),
+                                         url_request_->usage_scenario());
+      }
+    }
+#endif
     // Close the socket associated with the request, to prevent leaking
     // information.
     url_request_->AbortAndCloseConnection();
@@ -2103,6 +2135,20 @@ void URLLoader::ContinueOnResponseStarted() {
       LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
                    "ORB blocked origin "
                    "response, url: ***";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(INFO)
+          << "ContinueOnResponseStarted blocked the request for "
+             "Cross-Origin Read Blocking (CORB) blocked cross-origin "
+             "response, url: "
+          << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
+      if (!is_strict_log_mode_) {
+        LOG(URL) << "ContinueOnResponseStarted blocked the request for "
+                    "Cross-Origin Read Blocking (CORB) blocked cross-origin "
+                    "response, url: "
+                 << url::LogUtils::ConvertUrl(url_request_->url().spec(),
+                                              url_request_->usage_scenario());
+      }
+#endif
 #endif
       return;
     }
@@ -2331,6 +2377,22 @@ void URLLoader::DidRead(int num_bytes,
       LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
                    "ORB blocked origin "
                    "response, url: ***";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(INFO)
+          << "DidRead blocked the request for Cross-Origin Read "
+             "Blocking (CORB) blocked cross-origin response, url: "
+          << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
+      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+              ::switches::kEnableLoggerReport)) {
+            if (!is_strict_log_mode_) {
+              LOG(URL) << "DidRead blocked the request for Cross-Origin Read "
+                          "Blocking (CORB) blocked cross-origin response, url: "
+                       << url::LogUtils::ConvertUrl(
+                              url_request_->url().spec(),
+                              url_request_->usage_scenario());
+            }
+      }
+#endif
 #endif
           return;
         }

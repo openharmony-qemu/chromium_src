@@ -96,6 +96,11 @@ void ArkClampedImageScale(gfx::Vector2dF& image_scale, gfx::Size& image_size,
   if (image_size.Area64() > kMaxOriginalImageArea) {
     LOG(WARNING) << "The image (" << image_size.width() << ","
                  << image_size.height() << ") is too big to support drag";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "The image (" << image_size.width() << ","
+                          << image_size.height()
+                          << ") is too big to support drag";
+#endif
   }
 }
 

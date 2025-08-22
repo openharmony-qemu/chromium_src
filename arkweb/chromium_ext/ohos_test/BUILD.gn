@@ -49,7 +49,7 @@ group("ohos_fuzz") {
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/nweb_imf_cursor_info_adapter_fuzzer:nweb_imf_cursor_info_adapter_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/cef_delegate/nweb_access_request_delegate_fuzzer:nweb_access_request_delegate_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/cef_delegate/nweb_extension_content_settings_cef_delegate_fuzzer",
-      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/inputmethodframework_adapter:imf_adapter_impl_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/inputmethodframework_adapter:nweb_imf_adapter_impl_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/multimodalinputnew_adapter:mmi_new_adapter_impl_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/battery_mgr_adapter:battery_mgr_adapter_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/datashare_adapter:datashare_adapter_fuzzer",
@@ -72,6 +72,8 @@ group("ohos_fuzz") {
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/hiviewdfx_adapter/hitrace_adapter_fuzzer:hitrace_adapter_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_nweb/src/capi_fuzzer",
       "//arkweb/chromium_ext/ohos_test/fuzztest/chromium_ext/components/download/internal/common/arkweb_download_file_impl_ext_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/ohos_adapter_ndk_ai_fuzzer:ohos_adapter_ndk_api01_fuzzer",
+      "//arkweb/chromium_ext/ohos_test/fuzztest/ohos_adapter_ndk/ohos_adapter_ndk_ai_fuzzer:ohos_adapter_ndk_api02_fuzzer",
     ]
 }
 
@@ -988,5 +990,43 @@ fuzzer_test("html_embed_element_for_include_fuzzer") {
     "//cef:libcef_static",
     "//ohos_nweb:cef_nweb",
     "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("ohos_media_codec_bridge_impl_fuzzer") {
+  sources = [ "fuzztest/media/base/ohos/ohos_media_codec_bridge_impl_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//arkweb/ohos_adapter_ndk/media_adapter",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
+    "//arkweb/chromium_ext/media/base/ohos",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gmock",
+    "//arkweb/ohos_adapter_ndk:adapter_ndk",
+  ]
+}
+
+fuzzer_test("ohos_heif_image_decode_fuzzer") {
+  sources = [ "fuzztest/media/base/gpu/ohos_heif_image_decode_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+    "//arkweb/ohos_adapter_ndk/media_adapter",
+    "//third_party/ohos_ndk/includes/ohos_adapter",
+    "//arkweb/chromium_ext/media/base/ohos",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:nweb_sources",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gmock",
+    "//arkweb/ohos_adapter_ndk:adapter_ndk",
   ]
 }

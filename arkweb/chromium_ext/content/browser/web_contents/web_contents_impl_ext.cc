@@ -80,12 +80,18 @@ void WebContentsImplExt::StartCamera(int nWebID) {
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
     LOG(ERROR) << "media_stream_manager null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "media_stream_manager null";
+#endif
     return;
   }
 
   auto videoCaptureManager = media_stream_manager->video_capture_manager();
   if (!videoCaptureManager) {
     LOG(ERROR) << "videoCaptureManager null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "videoCaptureManager null";
+#endif
     return;
   }
   videoCaptureManager->AsVideoCaptureManagerExt()->StartCamera(nWebID);
@@ -96,12 +102,18 @@ void WebContentsImplExt::StopCamera(int nWebID) {
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
     LOG(ERROR) << "media_stream_manager null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "media_stream_manager null";
+#endif
     return;
   }
 
   auto videoCaptureManager = media_stream_manager->video_capture_manager();
   if (!videoCaptureManager) {
     LOG(ERROR) << "videoCaptureManager null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "videoCaptureManager null";
+#endif
     return;
   }
   videoCaptureManager->AsVideoCaptureManagerExt()->StopCamera(nWebID);
@@ -112,12 +124,18 @@ void WebContentsImplExt::CloseCamera(int nWebID) {
       BrowserMainLoop::GetInstance()->media_stream_manager();
   if (!media_stream_manager) {
     LOG(ERROR) << "media_stream_manager null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "media_stream_manager null";
+#endif
     return;
   }
 
   auto videoCaptureManager = media_stream_manager->video_capture_manager();
   if (!videoCaptureManager) {
     LOG(ERROR) << "videoCaptureManager null";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "videoCaptureManager null";
+#endif
     return;
   }
   videoCaptureManager->AsVideoCaptureManagerExt()->CloseCamera(nWebID);
@@ -413,6 +431,11 @@ void WebContentsImplExt::OnNativeEmbedStatusUpdate(
     LOG(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate " << " state is "
               << (int)state << ", " << native_embed_info
               << ", params: " << param_list;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "[NativeEmbed] OnNativeEmbedStatusUpdate "
+                       << " state is " << (int)state << ", "
+                       << native_embed_info << ", params: " << param_list;
+#endif
   }
   if (delegate_) {
     delegate_->OnNativeEmbedStatusUpdate(native_embed_info, state);
@@ -425,6 +448,9 @@ void WebContentsImplExt::OnNativeEmbedFirstFramePaint(
     const std::string& embed_id_attribute) {
   if (!delegate_) {
     LOG(WARNING) << "OnNativeEmbedFirstFramePaint failed, no delegate";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "OnNativeEmbedFirstFramePaint failed, no delegate";
+#endif
     return;
   }
   delegate_->OnNativeEmbedFirstFramePaint(native_embed_id, embed_id_attribute);
@@ -500,34 +526,6 @@ int32_t WebContentsImplExt::ExtensionGetTabId() {
     return delegate_->ExtensionGetTabId();
   }
   return -1;
-}
-
-void WebContentsImplExt::OnShowConfirmInfoBar(const std::string& title,
-                                              const std::string& infoId,
-                                              const std::string& message,
-                                              int buttons,
-                                              const std::string& buttonLabelOK,
-                                              const std::string& buttonLabelCancel) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  if (!delegate_) {
-    LOG(ERROR) << "delegate is nullptr when notify to report statistic log";
-    return;
-  }
-  delegate_->OnShowConfirmInfoBar(title, infoId, message, buttons, buttonLabelOK, buttonLabelCancel);
-}
-
-void WebContentsImplExt::OnHideConfirmInfoBar(const std::string& title,
-                                              const std::string& infoId,
-                                              const std::string& message,
-                                              int buttons,
-                                              const std::string& buttonLabelOK,
-                                              const std::string& buttonLabelCancel) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  if (!delegate_) {
-    LOG(ERROR) << "delegate is nullptr when notify to report statistic log";
-    return;
-  }
-  delegate_->OnHideConfirmInfoBar(title, infoId, message, buttons, buttonLabelOK, buttonLabelCancel);
 }
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
@@ -1151,5 +1149,17 @@ void WebContentsImplExt::OnBrowserBackground() {
   observers_.NotifyObservers(&WebContentsObserver::OnBrowserBackground);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+bool WebContentsImplExt::OnStartBackgroundTask(int32_t type,
+                                               const std::string& message) {
+  LOG(INFO) << "WebContentsImplExt::OnStartBackgroundTask, type=" << type
+            << ", message=" << message.c_str();
+  if (delegate_) {
+    return delegate_->OnStartBackgroundTask(type, message);
+  }
+  return true;
+}
+#endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
 }  // namespace content

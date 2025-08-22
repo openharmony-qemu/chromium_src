@@ -61,7 +61,6 @@ struct OpenDevToolsParam;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "capi/nweb_extension_manager_callback.h"
 #include "capi/nweb_extension_context_menus_callback.h"
-#include "capi/nweb_confirm_info_bar_callback.h"
 #include "capi/web_extension_tab_items.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
@@ -98,6 +97,15 @@ class NWebImpl : public NWeb {
   void OnTouchMove(
       const std::vector<std::shared_ptr<NWebTouchPointInfo>>& touch_point_infos,
       bool fromOverlay = false) override;
+  void OnStylusTouchPress(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) override;
+  void OnStylusTouchRelease(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) override;
+  void OnStylusTouchMove(
+      const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>& stylus_touch_point_infos,
+      bool from_overlay = false) override;
   void OnTouchCancel() override;
   void OnNavigateBack() override;
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction) override;
@@ -879,8 +887,6 @@ class NWebImpl : public NWeb {
       int tab_id,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
       std::unique_ptr<NWebExtensionTab> tab);
-  void WebExtensionTabActivated(
-      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo);
   void WebExtensionTabAttached(int tab_id,
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo);
   void WebExtensionTabDetached(int tab_id,
@@ -890,24 +896,6 @@ class NWebImpl : public NWeb {
                             std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo);
   void WebExtensionTabReplaced(int32_t addedTabId, int32_t removedTabId);
   void WebExtensionSetViewType(int32_t type);
-  static void OnShowConfirmInfoBar(const std::string& title,
-                                   const std::string& infoId,
-                                   const std::string& message,
-                                   int buttons,
-                                   const std::string& buttonLabelOK,
-                                   const std::string& buttonLabelCancel);
-  static void OnHideConfirmInfoBar(const std::string& title,
-                                   const std::string& infoId,
-                                   const std::string& message,
-                                   int buttons,
-                                   const std::string& buttonLabelOK,
-                                   const std::string& buttonLabelCancel);
-  static void SetOnShowConfirmInfoBarCallback(OnArkWebStaticShowConfirmInfoBarFunc func);
-  static void SetOnHideConfirmInfoBarCallback(OnArkWebStaticShowConfirmInfoBarFunc func);
-  static void CancelConfirmInfoBar(const std::string& infoId);
-  static void OnConfirmInfoBarConfigurationUpdated(
-      std::shared_ptr<NWebSystemConfiguration> configuration,
-      const std::string& language);
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -918,6 +906,13 @@ class NWebImpl : public NWeb {
   void OnDataDetectorSelectText() override;
   void OnDataDetectorCopy(const std::vector<std::string>& recordMix) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  static void PutLoggerCallback(
+      std::shared_ptr<NWebLoggerCallback> logger_callback);
+  static void RemoveLoggerCallback();
+#endif
+
   int SetUrlTrustList(const std::string& urlTrustList) override;
   int SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
                                 std::string& detailErrMsg) override;
@@ -1043,7 +1038,7 @@ class NWebImpl : public NWeb {
   int32_t SetBlanklessLoadingWithKey(const std::string& key, bool isStart) override;
   int64_t GetPreferenceHash();
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
-  void RemoveBlanklessFrame();
+  void RecordBlanklessFrameSize(uint32_t width, uint32_t height) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
@@ -1139,18 +1134,19 @@ class NWebImpl : public NWeb {
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void ClearBlanklessKey();
-  void CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file);
+  bool CheckNetAvailable();
+  void CallBlanklessFrameFunc(uint64_t blankless_key,
+                              int32_t lcp_time,
+                              const std::string& file,
+                              int32_t width,
+                              int32_t height);
   // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
   std::atomic<uint64_t> blankless_key_ = UINT64_MAX;
   std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
+  uint32_t cur_blankless_frame_width_ = 0;
+  uint32_t cur_blankless_frame_height_ = 0;
 #endif
-
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  static OnArkWebStaticShowConfirmInfoBarFunc on_show_confirm_info_bar_callback_;
-  static OnArkWebStaticShowConfirmInfoBarFunc on_hide_confirm_info_bar_callback_;
-  static ConfirmInfoBarMessage confirm_info_bar_message_;
-#endif // ARKWEB_ARKWEB_EXTENSIONS
 };
 }  // namespace OHOS::NWeb
 

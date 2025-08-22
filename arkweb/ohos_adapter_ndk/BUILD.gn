@@ -334,7 +334,11 @@ component("adapter_ndk") {
   deps = [
     "//third_party:huawei_securec",
     "//arkweb/build/features",
-    "//base:tracing_buildflags",
     "//third_party/boringssl",
   ]
+  if (defined(is_arkweb) && is_arkweb) {
+    deps += [
+      "//arkweb/build/features:features",
+    ]
+  }
 }

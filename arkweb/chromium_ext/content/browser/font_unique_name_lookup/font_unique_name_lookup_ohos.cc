@@ -28,6 +28,7 @@
 #include "third_party/blink/public/common/font_unique_name_lookup/font_unique_name_table.pb.h"
 #include "third_party/blink/public/common/font_unique_name_lookup/icu_fold_case_util.h"
 #include "third_party/icu/source/common/unicode/unistr.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 #include FT_TRUETYPE_IDS_H
 
@@ -332,8 +333,10 @@ base::FilePath FontUniqueNameLookup::TableCacheFilePath() {
 }
 
 std::string FontUniqueNameLookup::GetOhosBuildFingerprint() const {
-  // Here temporary return kFingerprintSuffixForceUpdateCache.
-  return std::string(kFingerprintSuffixForceUpdateCache);
+  std::string version = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                            .GetSystemPropertiesInstance()
+                            .GetStringParameter("const.product.software.version", "");
+  return version + std::string(kFingerprintSuffixForceUpdateCache);
 }
 
 std::vector<std::string> FontUniqueNameLookup::GetFontFilePaths() const {

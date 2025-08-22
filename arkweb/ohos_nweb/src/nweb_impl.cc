@@ -276,11 +276,6 @@ OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-OnArkWebStaticShowConfirmInfoBarFunc OHOS::NWeb::NWebImpl::on_show_confirm_info_bar_callback_ = nullptr;
-OnArkWebStaticShowConfirmInfoBarFunc OHOS::NWeb::NWebImpl::on_hide_confirm_info_bar_callback_ = nullptr;
-ConfirmInfoBarMessage OHOS::NWeb::NWebImpl::confirm_info_bar_message_ = {};
-#endif // ARKWEB_ARKWEB_EXTENSIONS
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
@@ -298,6 +293,7 @@ ConfirmInfoBarMessage OHOS::NWeb::NWebImpl::confirm_info_bar_message_ = {};
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include "arkweb/chromium_ext/base/feature_list_utils.h"
 #include "arkweb/ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/nweb_safe_browsing_detection_handler.h"
 #include "base/base_switches.h"
 #include "base/strings/string_split.h"
@@ -310,6 +306,7 @@ ConfirmInfoBarMessage OHOS::NWeb::NWebImpl::confirm_info_bar_message_ = {};
 #include "cef/ohos_cef_ext/libcef/browser/global_config/global_config_prefs.h"
 #include "chrome/browser/browser_process.h"
 #include "components/prefs/pref_service.h"
+#include "services/network/public/cpp/features.h"
 #endif
 #endif
 namespace {
@@ -422,6 +419,9 @@ constexpr base::TimeDelta DRAG_OVER_INTERVAL = base::Milliseconds(65);
 
 using ASHelper = OHOS::NWeb::NWebAdvancedSecurityHelper;
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+std::shared_ptr<NWebLoggerCallback> g_logger_callback;
+#endif
 bool g_logger_callback_initialized = false;
 
 bool GetWebOptimizationValue() {
@@ -772,6 +772,14 @@ void AddGlobalConfigFeaturesSwitchesToCommandLine() {
   }
 }
 
+void RegisterCustomFeatureOverrides() {
+  if (base::ohos::ApplicationApiVersion() < 20) {
+    base::FeatureList::GetInstance()->GetUtils()->SetOverrideStateByFeatureName(
+      network::features::kOpaqueResponseBlockingV02.name,
+      base::FeatureList::OverrideState::OVERRIDE_DISABLE_FEATURE);
+  }
+}
+
 void DealGlobalConfigInThread() {
   AddGlobalConfigFeaturesSwitchesToCommandLine();
 
@@ -784,6 +792,9 @@ void DealGlobalConfigInThread() {
       command_line->GetSwitchValueASCII(switches::kEnableBlinkFeatures),
       command_line->GetSwitchValueASCII(switches::kDisableBlinkFeatures));
   }
+
+  // FeatureOverrides from cloud control supersedes Custom FeatureOverrides
+  RegisterCustomFeatureOverrides();
 
   OHOS::NWeb::NWebSafeBrowsingDetectionHandler::GetInstance().HandleGlobalConfig();
 }
@@ -1105,6 +1116,9 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
   if (!g_logger_callback_initialized) {
     g_logger_callback_initialized = true;
     base::ohos::SetUploadCallback(UploadCallback);
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    NWebHandlerDelegate::RegisterLoggerCallback(g_logger_callback);
+#endif
   }
 
   return true;
@@ -1479,10 +1493,11 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
   output_handler_->Resize(width, height);
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if ((nweb_delegate_->NearestSnapshotWidth() != static_cast<int32_t>(width)) ||
-  (nweb_delegate_->NearestSnapshotHeight() != static_cast<int32_t>(height))) {
+  if ((cur_blankless_frame_width_ != 0) && (cur_blankless_frame_height_ != 0) &&
+     (cur_blankless_frame_width_ != width) && (cur_blankless_frame_height_ != height) &&
+     base::ohos::BlanklessController::CheckGlobalProperty() && (nweb_handle_ != nullptr)) {
     LOG(DEBUG) << "RemoveBlanklessFrame due to resolution inconsistency between webPattern and snapshot";
-    RemoveBlanklessFrame();
+    nweb_handle_->OnRemoveBlanklessFrame(0);
   }
 #endif
 }
@@ -1614,6 +1629,96 @@ void NWebImpl::OnTouchMove(
   }
 #else
   input_handler_->OnTouchMove(touch_point_infos, from_overlay);
+#endif
+}
+
+void NWebImpl::OnStylusTouchPress(
+    std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+    bool from_overlay) {
+  if (!stylus_touch_point_info) {
+    WVLOG_W(
+        "OnStylusTouchPress: invalid touch point info, nweb_id = %{public}u",
+        nweb_id_);
+    return;
+  }
+
+  WVLOG_I(
+      "NWebImpl::OnStylusTouchPress id=%{public}d, from_overlay=%{public}d, "
+      "nweb_id = %{public}u",
+      stylus_touch_point_info->GetId(), from_overlay, nweb_id_);
+
+  if (input_handler_ == nullptr) {
+    return;
+  }
+
+  ResSchedClientAdapter::ReportScene(ResSchedStatusAdapter::WEB_SCENE_ENTER,
+                                     ResSchedSceneAdapter::CLICK, nweb_id_);
+  input_handler_->OnStylusTouchPress(stylus_touch_point_info, from_overlay);
+
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (nweb_delegate_) {
+    nweb_delegate_->RefreshAccessibilityManagerClickEvent();
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  ClearBlanklessKey();
+#endif
+}
+
+void NWebImpl::OnStylusTouchRelease(
+    std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+    bool from_overlay) {
+  if (!stylus_touch_point_info) {
+    WVLOG_W(
+        "OnStylusTouchRelease: invalid touch point info, nweb_id = %{public}u",
+        nweb_id_);
+    return;
+  }
+
+  WVLOG_I(
+      "NWebImpl::OnStylusTouchRelease id=%{public}d, from_overlay=%{public}d, "
+      "nweb_id = %{public}u",
+      stylus_touch_point_info->GetId(), from_overlay, nweb_id_);
+
+  if (input_handler_ == nullptr) {
+    return;
+  }
+
+  input_handler_->OnStylusTouchRelease(stylus_touch_point_info, from_overlay);
+}
+
+void NWebImpl::OnStylusTouchMove(
+    const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>&
+        stylus_touch_point_infos,
+    bool from_overlay) {
+  if (stylus_touch_point_infos.empty()) {
+    WVLOG_W("OnStylusTouchMove: empty touch point list, nweb_id = %{public}u",
+            nweb_id_);
+    return;
+  }
+
+  if (input_handler_ == nullptr) {
+    return;
+  }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool nativeEmbedMode = false;
+  bool isEnableCustomVideoPlayer = false;
+  if (nweb_delegate_) {
+    nativeEmbedMode = nweb_delegate_->GetNativeEmbedMode();
+    isEnableCustomVideoPlayer = nweb_delegate_->IsEnableCustomVideoPlayer();
+  }
+  if (nativeEmbedMode || isEnableCustomVideoPlayer) {
+    for (const auto& stylus_touch : stylus_touch_point_infos) {
+      std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>
+          single_stylus_touch;
+      single_stylus_touch.emplace_back(stylus_touch);
+      input_handler_->OnStylusTouchMove(single_stylus_touch, from_overlay);
+    }
+  } else {
+    input_handler_->OnStylusTouchMove(stylus_touch_point_infos, from_overlay);
+  }
 #endif
 }
 
@@ -3798,85 +3903,20 @@ void NWebImpl::InstallExtensionFile(const std::string& file_path,
       base::BindOnce(&base::PathExists, crx_path),
       base::BindOnce(&PerformCrxInstallation, file_path, callback, browser_context));
 }
-
-void NWebImpl::OnConfirmInfoBarConfigurationUpdated(
-    std::shared_ptr<NWebSystemConfiguration> configuration,
-    const std::string& language) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  static std::string lastLanguage = "";
-  if (lastLanguage == language) {
-    LOG(INFO) << " func:" << __FUNCTION__ << " same language:" << language;
-    return;
-  }
-  for (auto extension_id :
-       extensions::ExtensionDevToolsInfoBarDelegate::GetDelegateIds()) {
-    auto* infoBarDelegate =
-        extensions::ExtensionDevToolsInfoBarDelegate::GetDelegateById(
-            extension_id);
-    if (infoBarDelegate) {
-      NWebImpl::OnShowConfirmInfoBar(
-          base::UTF16ToUTF8(infoBarDelegate->GetTitleText()),
-          extension_id,
-          base::UTF16ToUTF8(infoBarDelegate->GetMessageText()),
-          infoBarDelegate->GetButtons(),
-          base::UTF16ToUTF8(infoBarDelegate->GetButtonLabel(
-              extensions::ExtensionDevToolsInfoBarDelegate::BUTTON_OK)),
-          base::UTF16ToUTF8(infoBarDelegate->GetButtonLabel(
-              extensions::ExtensionDevToolsInfoBarDelegate::BUTTON_CANCEL)));
-    }
-  }
-}
-
-NO_SANITIZE("cfi")
-void NWebImpl::OnShowConfirmInfoBar(const std::string& title,
-                                    const std::string& infoId,
-                                    const std::string& message,
-                                    int buttons,
-                                    const std::string& buttonLabelOK,
-                                    const std::string& buttonLabelCancel) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  if (on_show_confirm_info_bar_callback_) {
-    on_show_confirm_info_bar_callback_(
-        title.c_str(), infoId.c_str(), message.c_str(), buttons,
-        buttonLabelOK.c_str(), buttonLabelCancel.c_str());
-  }
-  confirm_info_bar_message_ = {title,   infoId,        message,
-                               buttons, buttonLabelOK, buttonLabelCancel};
-}
-
-NO_SANITIZE("cfi")
-void NWebImpl::OnHideConfirmInfoBar(const std::string& title,
-                                    const std::string& infoId,
-                                    const std::string& message,
-                                    int buttons,
-                                    const std::string& buttonLabelOK,
-                                    const std::string& buttonLabelCancel) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  if (on_hide_confirm_info_bar_callback_) {
-    on_hide_confirm_info_bar_callback_(
-        title.c_str(), infoId.c_str(), message.c_str(), buttons,
-        buttonLabelOK.c_str(), buttonLabelCancel.c_str());
-  }
-  confirm_info_bar_message_ = {title,   infoId,        message,
-                               buttons, buttonLabelOK, buttonLabelCancel};
-
-}
-
-void NWebImpl::SetOnShowConfirmInfoBarCallback(OnArkWebStaticShowConfirmInfoBarFunc func) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  on_show_confirm_info_bar_callback_ = func;
-}
-
-void NWebImpl::SetOnHideConfirmInfoBarCallback(OnArkWebStaticShowConfirmInfoBarFunc func) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  on_hide_confirm_info_bar_callback_ = func;
-}
-
-void NWebImpl::CancelConfirmInfoBar(const std::string& infoId) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  extensions::ExtensionDevToolsInfoBarDelegate::CancelConfirmInfoBar(infoId);
-}
 #endif // ARKWEB_ARKWEB_EXTENSIONS
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+void NWebImpl::PutLoggerCallback(
+    std::shared_ptr<NWebLoggerCallback> logger_callback) {
+  WVLOG_D("put logger callback");
+  g_logger_callback = logger_callback;
+}
+
+void NWebImpl::RemoveLoggerCallback() {
+  WVLOG_D("remove logger callback");
+  NWebHandlerDelegate::UnRegisterLoggerCallback();
+}
+#endif
 
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 // static
@@ -5426,9 +5466,6 @@ void NWebImpl::OnConfigurationUpdated(
     }
 #endif  // ARKWEB_THEME_FONT
   }
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  NWebImpl::OnConfirmInfoBarConfigurationUpdated(configuration, GetCurrentLanguage());
-#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 #endif  //  IS_OHOS
 
@@ -5648,14 +5685,6 @@ void NWebImpl::WebExtensionTabUpdated(
     return;
   }
   nweb_delegate_->WebExtensionTabUpdated(tab_id, std::move(changeInfo), std::move(tab));
-}
-
-void NWebImpl::WebExtensionTabActivated(
-    std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->WebExtensionTabActivated(std::move(activeInfo));
 }
 
 void NWebImpl::WebExtensionTabAttached(
@@ -6137,7 +6166,7 @@ void NWebImpl::SetPrivacyStatus(bool isPrivate) {
 
 int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) {
   if (!base::ohos::BlanklessController::CheckGlobalProperty() ||
-      !nweb_delegate_ || !similarity || !loadingTime) {
+      !nweb_delegate_ || !similarity || !loadingTime || !CheckNetAvailable()) {
       if (similarity) {
         *similarity = 0;
       }
@@ -6154,8 +6183,8 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
   auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
   if (is_private) {
     LOG(DEBUG) << "blankless this is a private window: "<< window_id;
-    databaseAdapter.ClearSnapshot(blankless_key);
-    databaseAdapter.ClearSnapshotDataItem({blankless_key});
+    databaseInstance.ClearSnapshot(blankless_key);
+    databaseInstance.ClearSnapshotDataItem({blankless_key});
   }
   if (status_code != base::ohos::BlanklessController::StatusCode::DUMPED ||
       databaseInstance.GetBlanklessLoadingCacheCapacity() == 0 || is_private) {
@@ -6176,7 +6205,7 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
 }
 
 int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStart) {
-  if (!base::ohos::BlanklessController::CheckGlobalProperty()) {
+  if (!base::ohos::BlanklessController::CheckGlobalProperty() || !CheckNetAvailable()) {
     return -5;  // ERR_SIGNIFICANT_CHANGE
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
@@ -6190,8 +6219,8 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
   auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
   if (is_private) {
     LOG(DEBUG) << "blankless this is a private window: "<< window_id;
-    databaseAdapter.ClearSnapshot(blankless_key);
-    databaseAdapter.ClearSnapshotDataItem({blankless_key});
+    databaseInstance.ClearSnapshot(blankless_key);
+    databaseInstance.ClearSnapshotDataItem({blankless_key});
     return -5;
   }  
   if (status_code != base::ohos::BlanklessController::StatusCode::INSERTED ||
@@ -6204,50 +6233,32 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
       LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey similarity < 0.33";
       return -5;    // ERR_SIGNIFICANT_CHANGE
     }
-    if ((dataItem.width != nweb_delegate_->GetWidth()) || (dataItem.height != nweb_delegate_->GetHeight())) {
-      LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey snapshot resolution is different from webPattern";
-      return -5;
-    }
-    nweb_delegate_->SetNearestSnapshotSize(dataItem.width, dataItem.height);
-    CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath);
+    CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath, dataItem.width, dataItem.height);
   }
   return 0;   // SUCCESS
 }
 
-void NWebImpl::RemoveBlanklessFrame() {
-  if ((nweb_delegate_->NearestSnapshotWidth() == 0) || (nweb_delegate_->NearestSnapshotHeight() == 0)) {
-    return;
-  }
-  nweb_handle_->OnRemoveBlanklessFrame(0);
-  nweb_delegate_->SetNearestSnapshotSize(0, 0);
-}
-
 bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   if (!base::ohos::BlanklessController::CheckGlobalProperty() || !nweb_delegate_ ||
-      !base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
+      !base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url) || !CheckNetAvailable()) {
     return false;
   }
   blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(url);
   auto& instance = base::ohos::BlanklessController::GetInstance();
   auto window_id = instance.GetWindowIdByNWebId(nweb_id_);
-  auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
+  auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
   auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
   if (is_private) {
     LOG(DEBUG) << "blankless this is a private window: "<< window_id;
-    databaseAdapter.ClearSnapshot(blankless_key_);
-    databaseAdapter.ClearSnapshotDataItem({blankless_key_});
+    databaseInstance.ClearSnapshot(blankless_key_);
+    databaseInstance.ClearSnapshotDataItem({blankless_key_});
     return false;
   }
   auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
   base::ohos::BlanklessController::GetInstance().RecordSystemTime(nweb_id_, blankless_key_, system_time);
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
-  OHOS::NWeb::SnapshotDataItem dataItem = databaseAdapter.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
-  if ((dataItem.width != nweb_delegate_->GetWidth()) || (dataItem.height != nweb_delegate_->GetHeight())) {
-    LOG(DEBUG) << "blankless TriggerBlanklessForUrl snapshot resolution is differnet webPattern";
-    return false;
-  }
-  nweb_delegate_->SetNearestSnapshotSize(dataItem.width, dataItem.height);
-  CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath);
+  OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
+  CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath, dataItem.width, dataItem.height);
   return true;
 }
 
@@ -6266,6 +6277,12 @@ void NWebImpl::SetVisibility(bool isVisible) {
   }
 }
 
+void NWebImpl::RecordBlanklessFrameSize(uint32_t width, uint32_t height)
+{
+  cur_blankless_frame_width_ = width;
+  cur_blankless_frame_height_ = height;
+}
+
 void NWebImpl::ClearBlanklessKey() {
   if (nweb_delegate_ == nullptr || blankless_key_ == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
     return;
@@ -6274,7 +6291,24 @@ void NWebImpl::ClearBlanklessKey() {
   blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
 }
 
-void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file) {
+bool NWebImpl::CheckNetAvailable() {
+  auto netConnectAdapter = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateNetConnectAdapter();
+  if (!netConnectAdapter) {
+    LOG(ERROR) << "blankless net_connect_adapter is nullptr";
+    return false;
+  }
+  NetConnectType type = NetConnectType::CONNECTION_UNKNOWN;
+  NetConnectSubtype subtype = NetConnectSubtype::SUBTYPE_UNKNOWN;
+  netConnectAdapter->GetDefaultNetConnect(type, subtype);
+  if (type == NetConnectType::CONNECTION_UNKNOWN) {
+    LOG(DEBUG) << "blankless net not available";
+    return false;
+  }
+  return true;
+}
+
+void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file, int32_t width,
+                                      int32_t height) {
   if (nweb_handle_ == nullptr || lcp_time == INT32_MAX || lcp_time <= 0 || file.empty()) {
     return;
   }
@@ -6288,14 +6322,14 @@ void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, 
   }
   lcp_time = std::min(lcp_time, 2000);  // 2000 ms
   if (is_visible_) {
-    nweb_handle_->OnInsertBlanklessFrame(file);
+    nweb_handle_->OnInsertBlanklessFrameWithSize(file, width, height);
     nweb_handle_->OnRemoveBlanklessFrame(lcp_time);
     instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_](){
       handle->OnRemoveBlanklessFrame(0);
     });
   } else {
-    instance.RegisterFrameInsertCallback(	nweb_id_, blankless_key_, [handle = this->nweb_handle_, file](){
-      handle->OnInsertBlanklessFrame(file);
+    instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_, file, width, height](){
+      handle->OnInsertBlanklessFrame(file, width, height);
     }, lcp_time);
   }
 }

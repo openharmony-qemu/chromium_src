@@ -106,6 +106,70 @@ void NWebInputHandler::OnTouchMove(
   last_y_ = touch_point_info->GetY();
 }
 
+void NWebInputHandler::OnStylusTouchPress(
+    std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+    bool from_overlay) {
+  if (nweb_delegate_ == nullptr || !stylus_touch_point_info) {
+    return;
+  }
+
+  int32_t id = stylus_touch_point_info->GetId();
+  double x = stylus_touch_point_info->GetX();
+  double y = stylus_touch_point_info->GetY();
+
+  nweb_delegate_->OnStylusTouchPress(stylus_touch_point_info, from_overlay);
+
+  touch_press_id_map_[id] = true;
+  last_touch_start_x_ = x;
+  last_x_ = x;
+  last_y_ = y;
+}
+
+void NWebInputHandler::OnStylusTouchRelease(
+    std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+    bool from_overlay) {
+  if (nweb_delegate_ == nullptr || !stylus_touch_point_info) {
+    return;
+  }
+
+  int32_t id = stylus_touch_point_info->GetId();
+  double x = stylus_touch_point_info->GetX();
+  double y = stylus_touch_point_info->GetY();
+
+  if (x == 0 && y == 0) {
+    x = last_x_;
+    y = last_y_;
+  }
+
+  nweb_delegate_->OnStylusTouchRelease(stylus_touch_point_info, from_overlay);
+
+#if !BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  CheckSlideNavigation(last_touch_start_x_, x);
+#endif
+
+  touch_press_id_map_.erase(id);
+}
+
+void NWebInputHandler::OnStylusTouchMove(
+    const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>&
+        stylus_touch_point_infos,
+    bool from_overlay) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+
+  if (stylus_touch_point_infos.empty()) {
+    return;
+  }
+
+  nweb_delegate_->OnStylusTouchMove(stylus_touch_point_infos, from_overlay);
+
+  std::shared_ptr<NWebStylusTouchPointInfo> touch_point_info =
+      stylus_touch_point_infos.front();
+  last_x_ = touch_point_info->GetX();
+  last_y_ = touch_point_info->GetY();
+}
+
 void NWebInputHandler::OnTouchCancel() {
   if (nweb_delegate_ == nullptr) {
     return;

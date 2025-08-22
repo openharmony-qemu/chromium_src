@@ -1987,6 +1987,9 @@ void WebContentsImpl::ExecutePageBroadcastMethodForAllPages(
 }
 
 RenderViewHostImpl* WebContentsImpl::GetRenderViewHost() {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(WARNING) << "GetRenderViewHost is nullptr";
+#endif
   return GetRenderManager()->current_frame_host()->render_view_host();
 }
 
@@ -3402,7 +3405,12 @@ void WebContentsImpl::DidChangeVisibleSecurityState() {
       &WebContentsObserver::DidChangeVisibleSecurityState);
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
+    int32_t usage_scenario_type) {
+#else
 const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
+#endif
   OPTIONAL_TRACE_EVENT0("browser", "WebContentsImpl::ComputeWebPreferences");
 
   blink::web_pref::WebPreferences prefs;
@@ -3616,10 +3624,19 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
 #if BUILDFLAG(ARKWEB_BFCACHE)
   prefs.media_resume_from_bfcache_page = AsWebContentsImplExt()->media_resume_from_bfcache_page_;
 #endif // BUILDFLAG(ARKWEB_BFCACHE)
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  prefs.usage_scenario = usage_scenario_type;
+#endif
+
   return prefs;
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+void WebContentsImpl::OnWebPreferencesChanged(int32_t usage_scenario_type) {
+#else
 void WebContentsImpl::OnWebPreferencesChanged() {
+#endif
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::OnWebPreferencesChanged");
 
   // This is defensive code to avoid infinite loops due to code run inside
@@ -3629,7 +3646,11 @@ void WebContentsImpl::OnWebPreferencesChanged() {
     return;
   }
   updating_web_preferences_ = true;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  SetWebPreferences(ComputeWebPreferences(usage_scenario_type));
+#else
   SetWebPreferences(ComputeWebPreferences());
+#endif
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   for (FrameTreeNode* node : primary_frame_tree_.Nodes()) {
     RenderFrameHostImpl* rfh = node->current_frame_host();

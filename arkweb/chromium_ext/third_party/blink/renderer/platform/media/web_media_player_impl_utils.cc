@@ -350,6 +350,10 @@ void WebMediaPlayerImplUtils::DoSeekExt(base::TimeDelta time) {
   LOG(WARNING) << "OhMedia::DoSeek(), seconds = " << time.InSecondsF() << "s)"
                << " delegate_id_:" << impl->delegate_id_;
 #endif // BUILDFLAG(ARKWEB_MEDIA)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(WARNING) << "OhMedia::DoSeek(" << (void*)this
+                        << "), seconds = " << time.InSecondsF() << "s)";
+#endif
 }
 
 void WebMediaPlayerImplUtils::SetVolumeExt(double volume) {
@@ -357,6 +361,10 @@ void WebMediaPlayerImplUtils::SetVolumeExt(double volume) {
   LOG(INFO) << "OhMedia:: " << __func__ << "(), volume =" << volume
             << " delegate_id_:" << impl->delegate_id_;
 #endif // BUILDFLAG(ARKWEB_MEDIA)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "OhMedia:: " << __func__ << "(" << (void*)this
+                     << "), volume =" << volume;
+#endif
 }
 
 void WebMediaPlayerImplUtils::OnFrameShownExt() {
@@ -374,6 +382,10 @@ void WebMediaPlayerImplUtils::OnFrameHiddenExt() {
   LOG(INFO) << "WebMediaPlayerImpl::OnFrameHidden()"
             << " delegate_id_:" << impl->delegate_id_;
 #endif  // BUILDFLAG(ARKWEB_MEDIA)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "WebMediaPlayerImpl::OnFrameHidden()"
+                     << " delegate_id_:" << impl->delegate_id_;
+#endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   impl->client_->OnPageVisibilityChanged();
@@ -413,15 +425,15 @@ void WebMediaPlayerImplUtils::UpdatePlayState_ComputePlayStateExt(
 #endif // ARKWEB_VIDEO_ASSISTANT
 }
 
-bool WebMediaPlayerImplUtils::ShouldPausePlaybackWhenHiddenExt() {
+void WebMediaPlayerImplUtils::OnVideoNaturalSizeChangeExt() {
 #if BUILDFLAG(ARKWEB_MEDIA)
-  // Expect that video will pause after switching to the background while
-  // loading.
-  if (impl->HasVideo() && impl->pipeline_metadata_.natural_size.IsEmpty()) {
-    return true;
+  if (!impl->paused_ && impl->IsPageHidden() && impl->ShouldPausePlaybackWhenHidden()) {
+    LOG(INFO) << "OhMedia::WebMediaPlayerImpl::OnVideoNaturalSizeChange pause when hidden";
+    impl->Pause();
+
   }
 #endif
-  return false;
+
 }
 
 void WebMediaPlayerImplUtils::DidEndAVSessionExt() {

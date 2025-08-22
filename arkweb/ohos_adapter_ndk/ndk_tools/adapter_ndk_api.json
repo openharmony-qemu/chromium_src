@@ -28,7 +28,8 @@
                 "OH_AudioStream_Result OH_AudioCapturer_GetTimestamp(OH_AudioCapturer* capturer, clockid_t clockId, int64_t* framePosition, int64_t* timestamp)",
                 "OH_AudioStream_Result OH_AudioRenderer_SetSilentModeAndMixWithOthers(OH_AudioRenderer *renderer, bool on)",
                 "OH_AudioStream_Result OH_AudioStreamBuilder_SetEncodingType(OH_AudioStreamBuilder* builder, OH_AudioStream_EncodingType encodingType)",
-                "OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder, OH_AudioStream_Usage usage)"
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder, OH_AudioStream_Usage usage)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback(OH_AudioStreamBuilder* builder, OH_AudioRenderer_OutputDeviceChangeCallback callback, void* userData)"
             ]
         },
         "includes": []
@@ -413,6 +414,9 @@
             "18": [
                 "int OH_Netstack_IsCleartextPermitted(bool *isCleartextPermitted)",
                 "int OH_Netstack_IsCleartextPermittedByHostName(const char *hostname, bool *isCleartextPermitted)"
+            ],
+            "20": [
+                "int OH_Netstack_IsCleartextCfgByComponent(const char *component, bool *componentCfg)"
             ]
         },
         "includes": []
@@ -906,6 +910,10 @@
     },
     "image_source":{
         "apiList": {
+            "12": [
+                "Image_ErrorCode OH_PixelmapNative_AccessPixels(OH_PixelmapNative *pixelmap, void **addr)",
+                "Image_ErrorCode OH_PixelmapNative_UnaccessPixels(OH_PixelmapNative *pixelmap)"
+            ],
             "14": [
                 "Image_ErrorCode OH_DecodingOptions_Release(OH_DecodingOptions *options)",
                 "Image_ErrorCode OH_ImageSourceNative_CreateFromData(uint8_t *data, size_t dataSize, OH_ImageSourceNative **res)",

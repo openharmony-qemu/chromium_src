@@ -41,6 +41,10 @@
 #include "base/ohos/nweb_engine_event_logger_code.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace net {
 
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
@@ -217,6 +221,14 @@ void ArkWebTransportConnectJobExt::NeedReportSuccessIp(const IPEndPoint& address
   if (success_index == 1) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (type == SUB_MULTI_JOB || type == SUB_MULTI_FALLBACK_JOB) {
+    LOG_FEEDBACK(INFO) << "success ip = " << address.ToString()
+                       << ", and success index = " << success_index
+                       << ", job_type " << (int)type;
+  }
+#endif
 
   ReportSuccessIp(success_index, endpoint.ip_endpoints.size(), type);
 }

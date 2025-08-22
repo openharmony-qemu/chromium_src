@@ -147,6 +147,16 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void OnTouchMove(
       const std::vector<std::shared_ptr<NWebTouchPointInfo>>& touch_point_infos,
       bool from_overlay = false) override;
+  void OnStylusTouchPress(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) override;
+  void OnStylusTouchRelease(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) override;
+  void OnStylusTouchMove(
+      const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>&
+          stylus_touch_point_infos,
+      bool from_overlay) override;
   void OnTouchCancel() override;
   void OnTouchCancelById(int32_t id,
                          double x,
@@ -760,8 +770,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       int tab_id,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
       std::unique_ptr<NWebExtensionTab> tab) override;
-  void WebExtensionTabActivated(
-      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) override;
   void WebExtensionTabAttached(
       int tab_id,
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) override;
@@ -863,9 +871,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) override;
   int64_t GetPreferenceHash() override;
-  void SetNearestSnapshotSize(int32_t width, int32_t height) override;
-  int32_t NearestSnapshotWidth() override;
-  int32_t NearestSnapshotHeight() override;
   int32_t GetWidth() override;
   int32_t GetHeight() override;
   void SetRotationType(RotationType rotation);

@@ -18,6 +18,7 @@
 #include <string_view>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/compiler_specific.h"
 #include "base/files/file_util.h"
@@ -102,6 +103,8 @@ const char kRemoteUrlPattern[] =
 #if BUILDFLAG(GOOGLE_CHROME_BRANDING)
     "https://chrome-devtools-frontend.appspot.com/serve_internal_file/%s/"
     "%s.html";
+#elif BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x/%s/%s.html";
 #else
     "https://chrome-devtools-frontend.appspot.com/serve_rev/%s/%s.html";
 #endif

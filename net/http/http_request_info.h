@@ -147,6 +147,10 @@ struct NET_EXPORT HttpRequestInfo {
   bool allow_preload_record = true;
   GURL main_url;
 #endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  int32_t usage_scenario_ = 99;
+#endif
 };
 
 }  // namespace net

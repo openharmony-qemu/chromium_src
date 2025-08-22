@@ -64,10 +64,11 @@ class AnrDumper::InterruptData {
 void AnrDumper::DumpCurrentJavaScriptStack(
     mojom::ChildProcess::dumpCurrentJavaScriptStackInMainThreadCallback
         callback) {
-  v8::Isolate* isolate = blink::Thread::MainThread()
-                             ->Scheduler()
-                             ->ToMainThreadScheduler()
-                             ->Isolate();
+  auto* scheduler = blink::Thread::MainThread()->Scheduler()->ToMainThreadScheduler();
+  if (scheduler == nullptr) {
+    return;
+  }
+  v8::Isolate* isolate = scheduler->Isolate();
   if (!isolate) {
     std::move(callback).Run("");
   }

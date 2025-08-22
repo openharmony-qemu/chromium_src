@@ -567,6 +567,11 @@ struct URLRequest {
 
   [EnableIf=arkweb_resource_interception]
   bool is_sync_mode;
+
+  // #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  [EnableIf=arkweb_logger_report]
+  int32 usage_scenario_;
+  // #endif
 };
 
 // URLRequestBody represents body (i.e. upload data) of a HTTP request.

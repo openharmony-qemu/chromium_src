@@ -82,10 +82,6 @@ const char kEnableNwebExGetZoomLevel[] = "enable-nweb-ex-get-zoom-level";
 const char kEnableNwebExPullToRefresh[] = "enable-nweb-ex-pull-to-refresh";
 #endif
 
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-const char kEnableLoggerReport[] = "enable-nweb-logger-report";
-#endif
-
 #if BUILDFLAG(ARKWEB_BFCACHE)
 const char kEnableBFCache[] = "enable-bfcache";
 const char kEnableCacheNativeEmbed[] = "enable-cache-native-embed";
@@ -106,5 +102,8 @@ const char kSetExtensionName[] = "set-extension-name";
 
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
 const char  kOhosEnableGwpAsanType[] = "ohos-enable-gwp-asan-type";
+#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+const char  kEnableWebAudioBackgroundTask[] = "enable-web-audio-background-task";
 #endif
 }  // namespace switches

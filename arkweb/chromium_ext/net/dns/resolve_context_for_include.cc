@@ -30,11 +30,9 @@ void ResolveContext::NotifyDohStatsInit() {
     stats->last_failure = base::TimeTicks();
     stats->last_success = base::TimeTicks();
     LOG(INFO) << "Doh server " << i << " stats init successfully.";
-    // TODO(ARKWEB)
-    // #ifdef OHOS_LOGGER_REPORT
-    //     LOG_FEEDBACK(INFO) << "Doh server " << i << " stats init
-    //     successfully.";
-    // #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Doh server " << i << " stats init successfully.";
+#endif
   }
 }
 #endif

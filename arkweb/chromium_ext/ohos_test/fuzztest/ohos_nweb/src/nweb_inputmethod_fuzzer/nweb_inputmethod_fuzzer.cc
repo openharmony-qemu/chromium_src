@@ -232,37 +232,6 @@ void NWebInputMethodHandlerFuzzTest(const uint8_t* data, size_t size) {
   }
   FuzzedDataProvider fdp(data, size);
 
-  const std::vector<cef_text_input_mode_t> allModes = {
-      CEF_TEXT_INPUT_MODE_DEFAULT, CEF_TEXT_INPUT_MODE_NONE,
-      CEF_TEXT_INPUT_MODE_TEXT,    CEF_TEXT_INPUT_MODE_TEL,
-      CEF_TEXT_INPUT_MODE_URL,     CEF_TEXT_INPUT_MODE_EMAIL,
-      CEF_TEXT_INPUT_MODE_NUMERIC, CEF_TEXT_INPUT_MODE_DECIMAL,
-      CEF_TEXT_INPUT_MODE_SEARCH};
-
-  const std::vector<cef_text_input_type_t> allTypes = {
-      CEF_TEXT_INPUT_TYPE_TEXT,      CEF_TEXT_INPUT_TYPE_PASSWORD,
-      CEF_TEXT_INPUT_TYPE_EMAIL,     CEF_TEXT_INPUT_TYPE_NUMBER,
-      CEF_TEXT_INPUT_TYPE_TELEPHONE, CEF_TEXT_INPUT_TYPE_URL,
-      CEF_TEXT_INPUT_TYPE_TEXT_AREA, CEF_TEXT_INPUT_TYPE_CONTENT_EDITABLE};
-
-  const std::vector<int32_t> allEnterKeyTypes = {
-      static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED),
-      static_cast<int32_t>(IMFAdapterEnterKeyType::NONE),
-      static_cast<int32_t>(IMFAdapterEnterKeyType::GO),
-      static_cast<int32_t>(IMFAdapterEnterKeyType::SEARCH),
-      static_cast<int32_t>(IMFAdapterEnterKeyType::SEND),
-      static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT),
-      static_cast<int32_t>(IMFAdapterEnterKeyType::DONE),
-      static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS),
-      static_cast<int32_t>(IMFAdapterEnterKeyType::NEW_LINE)};
-
-  const std::vector<cef_text_input_action_t> allActions = {
-      CEF_TEXT_INPUT_ACTION_DEFAULT, CEF_TEXT_INPUT_ACTION_ENTER,
-      CEF_TEXT_INPUT_ACTION_DONE,    CEF_TEXT_INPUT_ACTION_GO,
-      CEF_TEXT_INPUT_ACTION_NEXT,    CEF_TEXT_INPUT_ACTION_PREVIOUS,
-      CEF_TEXT_INPUT_ACTION_SEARCH,  CEF_TEXT_INPUT_ACTION_SEND,
-  };
-
   const std::vector<cef_text_input_flags_t> allFlags = {
       CEF_TEXT_INPUT_FLAG_AUTOCOMPLETE_ON,
       CEF_TEXT_INPUT_FLAG_AUTOCOMPLETE_OFF,
@@ -288,6 +257,37 @@ void NWebInputMethodHandlerFuzzTest(const uint8_t* data, size_t size) {
       NWebInputMethodHandler::HideTextinputType::FROM_KERNEL,
       NWebInputMethodHandler::HideTextinputType::FROM_ONBLUR,
       NWebInputMethodHandler::HideTextinputType::FROM_ONPAUSE};
+
+  const std::vector<cef_text_input_type_t> allTypes = {
+    CEF_TEXT_INPUT_TYPE_TEXT,      CEF_TEXT_INPUT_TYPE_PASSWORD,
+    CEF_TEXT_INPUT_TYPE_EMAIL,     CEF_TEXT_INPUT_TYPE_NUMBER,
+    CEF_TEXT_INPUT_TYPE_TELEPHONE, CEF_TEXT_INPUT_TYPE_URL,
+    CEF_TEXT_INPUT_TYPE_TEXT_AREA, CEF_TEXT_INPUT_TYPE_CONTENT_EDITABLE};
+
+  const std::vector<cef_text_input_mode_t> allModes = {
+      CEF_TEXT_INPUT_MODE_DEFAULT, CEF_TEXT_INPUT_MODE_NONE,
+      CEF_TEXT_INPUT_MODE_TEXT,    CEF_TEXT_INPUT_MODE_TEL,
+      CEF_TEXT_INPUT_MODE_URL,     CEF_TEXT_INPUT_MODE_EMAIL,
+      CEF_TEXT_INPUT_MODE_NUMERIC, CEF_TEXT_INPUT_MODE_DECIMAL,
+      CEF_TEXT_INPUT_MODE_SEARCH};
+
+  const std::vector<int32_t> allEnterKeyTypes = {
+      static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED),
+      static_cast<int32_t>(IMFAdapterEnterKeyType::NONE),
+      static_cast<int32_t>(IMFAdapterEnterKeyType::GO),
+      static_cast<int32_t>(IMFAdapterEnterKeyType::SEARCH),
+      static_cast<int32_t>(IMFAdapterEnterKeyType::SEND),
+      static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT),
+      static_cast<int32_t>(IMFAdapterEnterKeyType::DONE),
+      static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS),
+      static_cast<int32_t>(IMFAdapterEnterKeyType::NEW_LINE)};
+
+  const std::vector<cef_text_input_action_t> allActions = {
+      CEF_TEXT_INPUT_ACTION_DEFAULT, CEF_TEXT_INPUT_ACTION_ENTER,
+      CEF_TEXT_INPUT_ACTION_DONE,    CEF_TEXT_INPUT_ACTION_GO,
+      CEF_TEXT_INPUT_ACTION_NEXT,    CEF_TEXT_INPUT_ACTION_PREVIOUS,
+      CEF_TEXT_INPUT_ACTION_SEARCH,  CEF_TEXT_INPUT_ACTION_SEND,
+  };
 
   {
     FuzzNWebInputMethodHandler handler;

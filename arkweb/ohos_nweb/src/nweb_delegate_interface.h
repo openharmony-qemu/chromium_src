@@ -206,6 +206,16 @@ class NWebDelegateInterface
   virtual void OnTouchMove(
       const std::vector<std::shared_ptr<NWebTouchPointInfo>>& touch_point_infos,
       bool from_overlay) = 0;
+  virtual void OnStylusTouchPress(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) = 0;
+  virtual void OnStylusTouchRelease(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) = 0;
+  virtual void OnStylusTouchMove(
+      const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>&
+          stylus_touch_point_infos,
+      bool from_overlay) = 0;
   virtual void OnTouchCancel() = 0;
   virtual void OnTouchCancelById(int32_t id,
                                  double x,
@@ -742,8 +752,6 @@ class NWebDelegateInterface
       int tab_id,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
       std::unique_ptr<NWebExtensionTab> tab) = 0;
-  virtual void WebExtensionTabActivated(
-      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) = 0;
   virtual void WebExtensionTabAttached(
       int tab_id,
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) = 0;
@@ -884,9 +892,6 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   virtual void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) = 0;
   virtual int64_t GetPreferenceHash() = 0;
-  virtual void SetNearestSnapshotSize(int32_t width, int32_t height) = 0;
-  virtual int32_t NearestSnapshotWidth() = 0;
-  virtual int32_t NearestSnapshotHeight() = 0;
   virtual int32_t GetWidth() = 0;
   virtual int32_t GetHeight() = 0;
 #endif

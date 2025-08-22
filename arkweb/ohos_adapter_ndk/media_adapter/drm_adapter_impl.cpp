@@ -29,6 +29,7 @@
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 
 namespace OHOS::NWeb {
+constexpr int32_t MAX_PROVISION_RESPONSE_LEN = 16 * 1024;
 std::unordered_map<MediaKeySystem*, std::shared_ptr<DrmCallbackImpl>> DrmAdapterImpl::mediaKeySystemCallbackMap_;
 std::unordered_map<MediaKeySession*, std::shared_ptr<DrmCallbackImpl>> DrmAdapterImpl::mediaKeySessionCallbackMap_;
 std::mutex DrmAdapterImpl::mediaKeySystemCallbackMapMutex_;
@@ -1006,6 +1007,10 @@ int32_t DrmAdapterImpl::ProcessKeySystemResponse(const std::string& response, bo
     bool success = true;
     if (isResponseReceived) {
         int32_t responseLen = static_cast<int32_t>(response.size());
+        if (responseLen > MAX_PROVISION_RESPONSE_LEN) {
+            WVLOG_E("[DRM]responseLen[%{public}d] is too larger!", responseLen);
+            return static_cast<int32_t>(DrmResult::DRM_RESULT_ERROR);
+        }
         std::vector<uint8_t> vec(responseLen);
         errno_t retCopy = memcpy_s(vec.data(), responseLen, response.data(), response.size());
         if (retCopy != 0) {

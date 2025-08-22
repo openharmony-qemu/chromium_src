@@ -44,6 +44,12 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace network {
 
 NetworkServiceNetworkDelegate::NetworkServiceNetworkDelegate(
@@ -162,6 +168,19 @@ int NetworkServiceNetworkDelegate::OnHeadersReceived(
       original_response_headers->response_code() >= 400) {
     LOG(INFO) << "INFO: resource: ***"
               << " error code: " << original_response_headers->response_code();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "INFO: resource: "
+                       << url::LogUtils::ConvertUrlWithMask(
+                              request->url().spec())
+                       << " error code: "
+                       << original_response_headers->response_code();
+    if (!network_context_->AsArkWebNetworkContextExt()->IsStrictLogMode()) {
+      LOG(URL) << "resource : "
+               << url::LogUtils::ConvertUrl(request->url().spec(),
+                                            request->usage_scenario())
+               << " error code: " << original_response_headers->response_code();
+    }
+#endif
   }
 #endif
 

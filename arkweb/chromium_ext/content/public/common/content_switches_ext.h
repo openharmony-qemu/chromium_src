@@ -86,10 +86,6 @@ CONTENT_EXPORT extern const char kEnableNwebExGetZoomLevel[];
 CONTENT_EXPORT extern const char kEnableNwebExPullToRefresh[];
 #endif
 
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-extern const char kEnableLoggerReport[];
-#endif
-
 #if BUILDFLAG(ARKWEB_BFCACHE)
 extern const char kEnableBFCache[];
 #endif
@@ -113,6 +109,9 @@ CONTENT_EXPORT extern const char kSetExtensionName[];
 #endif
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
 CONTENT_EXPORT extern const char  kOhosEnableGwpAsanType[];
+#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+CONTENT_EXPORT extern const char  kEnableWebAudioBackgroundTask[];
 #endif
 }  // namespace switches
 

@@ -57,6 +57,11 @@
 #include "quiche/common/platform/api/quiche_testvalue.h"
 #include "quiche/common/quiche_text_utils.h"
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#endif
+
 namespace quic {
 
 class QuicDecrypter;
@@ -1744,6 +1749,18 @@ bool QuicConnection::OnConnectionCloseFrame(
                       << connection_id() << ", with error: "
                       << QuicErrorCodeToString(frame.quic_error_code) << " ("
                       << frame.error_details << ")";
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+              switches::kEnableLoggerReport)) {
+        LOG_FEEDBACK(INFO) << ENDPOINT
+                           << "Received ConnectionClose for connection: "
+                           << connection_id() << ", with error: "
+                           << QuicErrorCodeToString(frame.quic_error_code)
+                           << " (" << frame.error_details << ")";
+      }
+#endif
+
       break;
     case IETF_QUIC_TRANSPORT_CONNECTION_CLOSE:
       QUIC_DLOG(INFO) << ENDPOINT
@@ -1757,6 +1774,23 @@ bool QuicConnection::OnConnectionCloseFrame(
                                  frame.wire_error_code))
                       << ", error frame type: "
                       << frame.transport_close_frame_type;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+              switches::kEnableLoggerReport)) {
+        LOG_FEEDBACK(INFO)
+            << ENDPOINT << "Received Transport ConnectionClose for connection: "
+            << connection_id()
+            << ", with error: " << QuicErrorCodeToString(frame.quic_error_code)
+            << " (" << frame.error_details << ")"
+            << ", transport error code: "
+            << QuicIetfTransportErrorCodeString(
+                   static_cast<QuicIetfTransportErrorCodes>(
+                       frame.wire_error_code))
+            << ", error frame type: " << frame.transport_close_frame_type;
+      }
+#endif
+
       break;
     case IETF_QUIC_APPLICATION_CONNECTION_CLOSE:
       QUIC_DLOG(INFO) << ENDPOINT
@@ -1765,6 +1799,20 @@ bool QuicConnection::OnConnectionCloseFrame(
                       << QuicErrorCodeToString(frame.quic_error_code) << " ("
                       << frame.error_details << ")"
                       << ", application error code: " << frame.wire_error_code;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+              switches::kEnableLoggerReport)) {
+        LOG_FEEDBACK(INFO)
+            << ENDPOINT
+            << "Received Application ConnectionClose for connection: "
+            << connection_id()
+            << ", with error: " << QuicErrorCodeToString(frame.quic_error_code)
+            << " (" << frame.error_details << ")"
+            << ", application error code: " << frame.wire_error_code;
+      }
+#endif
+
       break;
   }
 

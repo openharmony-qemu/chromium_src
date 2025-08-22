@@ -58,6 +58,11 @@ class AutofillAgentExt : public AutofillAgent {
                                 const std::u16string& password);
   void OhFormControlElementClicked();
 #endif
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  PasswordAutofillAgent* GetPasswordAutofillAgent() {
+    return password_autofill_agent_.get();
+  }
+#endif
 #if BUILDFLAG(ARKWEB_AUTOFILL)
   void OhAutoFillFormControlElementClicked(const blink::WebNode& node);
   bool OhAutoFillDidChangeScrollOffset();

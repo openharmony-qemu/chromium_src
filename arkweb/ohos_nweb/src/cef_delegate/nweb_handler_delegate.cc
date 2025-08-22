@@ -19,6 +19,7 @@
 
 #include <thread>
 
+#include "base/hash/hash.h"
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "base/functional/bind.h"
@@ -160,6 +161,7 @@
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
@@ -168,6 +170,9 @@
 #include "content/browser/renderer_host/frame_tree.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/public/browser/render_frame_host.h"
+#endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "arkweb/chromium_ext/base/ohos/logger.h"
 #endif
 
 namespace OHOS::NWeb {
@@ -189,6 +194,10 @@ const int WEB_CAN_SNAPSHOT_DELAY_TIME = 1500;
 #endif
 
 const int VIEW_PORT_DIFF = 5;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+std::shared_ptr<NWebLoggerCallback> g_logger_callback = nullptr;
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_PERMISSION)
 static std::atomic<int> nweb_request_new_key = 0;
@@ -788,6 +797,42 @@ void NWebHandlerDelegate::OnNativeEmbedFirstFramePaint(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+// static
+void NWebHandlerDelegate::RegisterLoggerCallback(
+    std::shared_ptr<NWebLoggerCallback> logger_callback) {
+  // TODO: Expected to be an instance of a profile
+  g_logger_callback = logger_callback;
+  ohos::logger::SetLoggerCallback(g_logger_callback);
+}
+
+// static
+void NWebHandlerDelegate::UnRegisterLoggerCallback() {
+  g_logger_callback = nullptr;
+}
+
+void NWebHandlerDelegate::logFeedback(const CefString& tag,
+                                      int level,
+                                      const CefString& message) {
+  if (!g_logger_callback) {
+    LOG(ERROR) << "No loggercallback logfeedback";
+    return;
+  }
+  std::string tagStr = tag.ToString();
+  std::string messageStr = message.ToString();
+  g_logger_callback->logFeedback(tagStr.c_str(), level, messageStr.c_str());
+}
+
+void NWebHandlerDelegate::logUrl(const CefString& url) {
+  if (!g_logger_callback) {
+    LOG(ERROR) << "No loggercallback logurl";
+    return;
+  }
+  std::string urlStr = url.ToString();
+  g_logger_callback->logUrl(urlStr.c_str());
+}
+#endif
+
 CefRefPtr<CefCookieAccessFilter> NWebHandlerDelegate::GetCookieAccessFilter(
     CefRefPtr<CefBrowser> browser,
     CefRefPtr<CefFrame> frame,
@@ -1211,10 +1256,10 @@ bool NWebHandlerDelegate::DoClose(CefRefPtr<CefBrowser> browser) {
         if (GetBrowser() && GetBrowser()->GetHost()) {
             GetBrowser()->GetHost()->SendPipEvent(
               pip_delegate_id_, pip_child_id_, pip_frame_routing_id_,
-              content::PIP_STATE_EXIT);
+              content::PIP_STATE_PAGE_CLOSE);
         }
-        nweb_handler_->OnPip(1, pip_delegate_id_, pip_child_id_,
-                             pip_frame_routing_id_, 0, 0);
+        nweb_handler_->OnPip(content::PIP_STATE_PAGE_CLOSE, pip_delegate_id_,
+                             pip_child_id_, pip_frame_routing_id_, 0, 0);
     }
   }
   // Closing the main window requires special handling. See the DoClose()
@@ -1673,6 +1718,38 @@ std::string GetDataURI(const std::string& data, const std::string& mime_type) {
              .ToString();
 }
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void NWebHandlerDelegate::SetBlanklessLoadingKey(uint64_t blankless_key) {
+  blankless_key_ = blankless_key;
+}
+
+void NWebHandlerDelegate::ClearSnapshot() {
+  if (blankless_key_ == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
+    return;
+  }
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  uint64_t dump_time = instance.GetDumpTime(nweb_id_, blankless_key_);
+  uint64_t system_time = instance.GetSystemTime(nweb_id_, blankless_key_);
+  if (dump_time != base::ohos::BlanklessController::INVALID_TIMESTAMP && dump_time > system_time) {
+    auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
+    databaseInstance.ClearSnapshot(blankless_key_);
+    databaseInstance.ClearSnapshotDataItem({blankless_key_});
+  }
+  // If there is a network error during dumpsnapshot, set the system time to an invalid vlaue,
+  // the dump snapshot verification will not pass.
+  instance.RecordSystemTime(nweb_id_, blankless_key_, base::ohos::BlanklessController::INVALID_TIMESTAMP);
+
+  blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
+  auto browser = GetBrowser();
+  if (browser == nullptr || browser->GetMainFrame() == nullptr ||
+      browser->GetMainFrame()->AsArkWebFrame() == nullptr) {
+    LOG(ERROR) << "blankless NWebHandlerDelegate::ClearSnapshot browser is nullptr";
+    return;
+  }
+  browser->GetMainFrame()->AsArkWebFrame()->SendBlanklessKeyToRenderFrame(nweb_id_, blankless_key_, 0, 0);
+}
+#endif
+
 void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
                                       CefRefPtr<CefFrame> frame,
                                       ErrorCode error_code,
@@ -1680,6 +1757,12 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
                                       const CefString& failed_url) {
   LOG(INFO) << "NWebHandlerDelegate::OnLoadError";
   CEF_REQUIRE_UI_THREAD();
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
+    ClearSnapshot();
+  }
+#endif
 
   // Don't display an error for downloaded files.
   if (error_code == ERR_ABORTED) {
@@ -1715,6 +1798,11 @@ void NWebHandlerDelegate::OnLoadErrorWithRequest(CefRefPtr<CefRequest> request,
                                                  bool has_user_gesture,
                                                  int error_code,
                                                  const CefString& error_text) {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
+    ClearSnapshot();
+  }
+#endif
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   if (error_code == ERR_ABORTED) {
     LOG(WARNING) << "ignoring the error";
@@ -1740,6 +1828,11 @@ void NWebHandlerDelegate::OnHttpError(CefRefPtr<CefRequest> request,
                                       bool is_main_frame,
                                       bool has_user_gesture,
                                       CefRefPtr<CefResponse> response) {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
+    ClearSnapshot();
+  }
+#endif
   if (nweb_handler_ != nullptr) {
     CefRequest::HeaderMap cef_request_headers;
     request->GetHeaderMap(cef_request_headers);
@@ -4723,8 +4816,8 @@ void NWebHandlerDelegate::OnLoadFinished(CefRefPtr<CefFrame> frame,
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void NWebHandlerDelegate::RegisterOnCreateNativeMediaPlayerListener(
     std::shared_ptr<NWebCreateNativeMediaPlayerCallback> callback) {
-  WVLOG_I("RegisterOnCreateNativeMediaPlayerListener(%{public}p)",
-          callback.get());
+  WVLOG_I("RegisterOnCreateNativeMediaPlayerListener(%{public}x)",
+          base::FastHash(base::byte_span_from_ref(callback.get())));
   create_native_media_player_cb_ = std::move(callback);
 }
 
@@ -4809,34 +4902,6 @@ void NWebHandlerDelegate::OnReportStatisticLog(const CefString& content) {
   NWebImpl::OnReportStatisticLog(content.ToString());
 #endif  // ARKWEB_VIDEO_ASSISTANT
 }
-
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-void NWebHandlerDelegate::OnShowConfirmInfoBar(
-    const CefString& title,
-    const CefString& infoId,
-    const CefString& message,
-    int buttons,
-    const CefString& buttonLabelOK,
-    const CefString& buttonLabelCancel) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  NWebImpl::OnShowConfirmInfoBar(
-      title.ToString(), infoId.ToString(), message.ToString(), buttons,
-      buttonLabelOK.ToString(), buttonLabelCancel.ToString());
-}
-
-void NWebHandlerDelegate::OnHideConfirmInfoBar(
-    const CefString& title,
-    const CefString& infoId,
-    const CefString& message,
-    int buttons,
-    const CefString& buttonLabelOK,
-    const CefString& buttonLabelCancel) {
-  LOG(INFO) << " func:" << __FUNCTION__;
-  NWebImpl::OnHideConfirmInfoBar(
-      title.ToString(), infoId.ToString(), message.ToString(), buttons,
-      buttonLabelOK.ToString(), buttonLabelCancel.ToString());
-}
-#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 CefOwnPtr<CefMediaPlayerListenerForVAST>
@@ -5207,4 +5272,23 @@ void NWebHandlerDelegate::OnPdfLoadEvent(int32_t result, const std::string& url)
   }
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+bool NWebHandlerDelegate::OnStartBackgroundTask(int32_t type,
+                                                const std::string& message) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    return dispatcher_.OnStartBackgroundTask(type, message);
+  }
+#endif  // ARKWEB_NWEB_EX
+  if (web_app_client_extension_listener_ == nullptr ||
+      web_app_client_extension_listener_->OnStartBackgroundTask == nullptr) {
+    LOG(ERROR) << "NWebHandlerDelegate::OnStartBackgroundTask failed for "
+                  "nullptr. default return true";
+    return true;
+  }
+  return web_app_client_extension_listener_->OnStartBackgroundTask(
+      type, message, web_app_client_extension_listener_->nweb_id);
+}
+#endif  // RKWEB_PERFORMANCE_PERSISTENT_TASK
 }  // namespace OHOS::NWeb

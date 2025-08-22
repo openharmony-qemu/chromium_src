@@ -279,6 +279,7 @@ InputMethod_EnterKeyType AdapterEnterKeyTypeToOhEnterKeyTypeEx(
   if (checkIter != ENTER_KEY_TYPE_MAP.end()) {
     return checkIter->second;
   }
+
   return IME_ENTER_KEY_UNSPECIFIED;
 }
 
@@ -308,138 +309,6 @@ std::shared_ptr<std::string> PrivateCommandGetStrValueEx(InputMethod_PrivateComm
         return nullptr;
     }
     return std::make_shared<std::string>(value);
-}
-
-void FuzzIMFAdapterImpl(FuzzedDataProvider* fdp) {
-  auto listener = std::make_shared<MockIMFTextListenerAdapter>();
-  uint32_t windowId = fdp->ConsumeIntegral<uint32_t>();
-  double positionY = fdp->ConsumeFloatingPoint<double>();
-  double height = fdp->ConsumeFloatingPoint<double>();
-  IMFAdapterImpl adapter;
-
-  for (int32_t inputType = static_cast<int32_t>(IMFAdapterTextInputType::NONE);
-       inputType <=
-       static_cast<int32_t>(IMFAdapterTextInputType::NUMBER_DECIMAL);
-       ++inputType) {
-    for (int32_t enterKey =
-             static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED);
-         enterKey <= static_cast<int32_t>(IMFAdapterEnterKeyType::NEW_LINE);
-         ++enterKey) {
-      auto config = std::make_shared<MockIMFTextConfigAdapter>(
-          windowId, positionY, height);
-
-      config->SetInputPattern(static_cast<IMFAdapterTextInputType>(inputType));
-      config->SetEnterKeyType(static_cast<IMFAdapterEnterKeyType>(enterKey));
-
-      std::u16string selectionText = u"Hello, World!";
-      adapter.OnSelectionChange(selectionText, 2, selectionText.length());
-      adapter.HideTextInput();
-      adapter.Close();
-      adapter.ShowCurrentInput(static_cast<IMFAdapterTextInputType>(inputType));
-    }
-  }
-
-  {
-    const int32_t minType = static_cast<int32_t>(IMFAdapterTextInputType::NONE);
-    const int32_t maxType =
-        static_cast<int32_t>(IMFAdapterTextInputType::NUMBER_DECIMAL);
-
-    std::vector<int32_t> testTypes;
-    for (int32_t i = minType; i <= maxType; ++i) {
-      testTypes.push_back(i);
-    }
-
-    for (int32_t type : testTypes) {
-      InputMethod_TextInputType result =
-          AdapterTextInputTypeToTextInputTypeEx(type);
-      (void)result;
-    }
-  }
-
-  {
-    const int32_t minType =
-        static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED);
-    const int32_t maxType =
-        static_cast<int32_t>(IMFAdapterEnterKeyType::NEW_LINE);
-
-    std::vector<int32_t> testTypes;
-    for (int32_t i = minType; i <= maxType; ++i) {
-      testTypes.push_back(i);
-    }
-
-    for (int32_t type : testTypes) {
-      InputMethod_EnterKeyType result =
-          AdapterEnterKeyTypeToOhEnterKeyTypeEx(type);
-      (void)result;
-    }
-  }
-
-  {
-    const std::vector<InputMethod_KeyboardStatus> keyboardStatuses = {
-        IME_KEYBOARD_STATUS_NONE, IME_KEYBOARD_STATUS_HIDE,
-        IME_KEYBOARD_STATUS_SHOW, static_cast<InputMethod_KeyboardStatus>(-1),
-        static_cast<InputMethod_KeyboardStatus>(3)};
-    for (InputMethod_KeyboardStatus status : keyboardStatuses) {
-      IMFAdapterKeyboardStatus result =
-          ohKeyboardStatusToAdapterKeyboardStatusEx(status);
-      (void)result;
-    }
-  }
-
-  IMFAdapterTextInputType inputType =
-      static_cast<IMFAdapterTextInputType>(fdp->ConsumeIntegralInRange<int32_t>(
-          0, static_cast<int32_t>(IMFAdapterTextInputType::NUMBER_DECIMAL)));
-  InputMethod_TextEditorProxy* proxy = 
-      IMFTextEditorProxyImpl::TextEditorProxyCreate(listener);
-  static InputMethod_TextConfig *textConfig_;
-  InputMethod_TextConfig* textConfig = OH_TextConfig_Create();
-  if (textConfig) {
-    IMFTextEditorProxyImpl::textConfig_ = textConfig;
-  }
-  auto config = std::make_shared<MockIMFTextConfigAdapter>(
-          windowId, positionY, height);
-  InputMethod_ErrorCode ret = IMFTextEditorProxyImpl::ConstructTextConfig(config);
-  (void)ret;
-  InputMethod_TextConfig* funcDestConfig = OH_TextConfig_Create();
-  if (funcDestConfig) {
-    IMFTextEditorProxyImpl::GetTextConfigFunc(proxy, funcDestConfig);
-    OH_TextConfig_Destroy(funcDestConfig);
-  }
-  adapter.AttachParamsCheck(listener, true, config, true);
-  adapter.AttachParamsCheck(listener, true, config, false);
-  adapter.AttachParamsCheck(listener, false, config, true);
-  adapter.AttachParamsCheck(listener, false, config, false);
-  adapter.ShowCurrentInput(inputType);
-  adapter.HideTextInput();
-  std::shared_ptr<IMFCursorInfoAdapter> cursorInfo =
-      std::make_shared<MockIMFCursorInfoAdapter>(10.2, 33.2, 44.8, 55.2);
-  adapter.OnCursorUpdate(cursorInfo);
-  std::u16string selectionText = GenerateRandomU16String(fdp, 100);
-  int start = fdp->ConsumeIntegralInRange<int>(0, selectionText.length());
-  int end = fdp->ConsumeIntegralInRange<int>(start, selectionText.length());
-  adapter.OnSelectionChange(selectionText, start, end);
-  std::string cmdKey = fdp->ConsumeRandomLengthString(32);
-  std::string cmdValue = fdp->ConsumeRandomLengthString(256);
-  std::string validKey = AUTO_FILL_CANCEL_PRIVATE_COMMAND;
-  std::string validValue = R"({"fillContent": "test", "action": "cancel"})";
-  adapter.SendPrivateCommand(cmdKey, cmdValue);
-  adapter.SendPrivateCommand(validKey, validValue);
-  InputMethod_PrivateCommand *cmd = OH_PrivateCommand_Create(const_cast<char*>("init_key"), strlen("init_key"));
-  std::vector<InputMethod_PrivateCommand*> privateCommands;
-  privateCommands.push_back(cmd);
-  std::string JsonValue = R"({"userName": "test_user", "hasAccount": "true"})";
-  adapter.ParseFillContentJsonValue(JsonValue, privateCommands);
-  for (size_t i = 0; i < privateCommands.size(); ++i) {
-    std::shared_ptr<std::string> style = PrivateCommandGetStrValueEx(privateCommands[i]);
-    (void)style;
-  }
-  MiscServices::PanelStatusInfo panelInfo{};
-  panelInfo.trigger = fdp->ConsumeBool()
-                          ? MiscServices::Trigger::IME_APP
-                          : static_cast<MiscServices::Trigger>(
-                                fdp->ConsumeIntegralInRange<int>(0, 5));
-  listener->NotifyPanelStatusInfo(panelInfo);
-  adapter.Close();
 }
 
 void FixedIMFAdapterImpl() {
@@ -574,6 +443,178 @@ void FixedIMFAdapterImpl() {
   }
 }
 
+void FuzzIMFAdapterImpl(FuzzedDataProvider* fdp) {
+  auto listener = std::make_shared<MockIMFTextListenerAdapter>();
+  uint32_t windowId = fdp->ConsumeIntegral<uint32_t>();
+  double positionY = fdp->ConsumeFloatingPoint<double>();
+  double height = fdp->ConsumeFloatingPoint<double>();
+  IMFAdapterImpl adapter;
+
+  for (int32_t inputType = static_cast<int32_t>(IMFAdapterTextInputType::NONE);
+       inputType <=
+       static_cast<int32_t>(IMFAdapterTextInputType::NUMBER_DECIMAL);
+       ++inputType) {
+    for (int32_t enterKey =
+             static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED);
+         enterKey <= static_cast<int32_t>(IMFAdapterEnterKeyType::NEW_LINE);
+         ++enterKey) {
+      auto config = std::make_shared<MockIMFTextConfigAdapter>(
+          windowId, positionY, height);
+
+      config->SetInputPattern(static_cast<IMFAdapterTextInputType>(inputType));
+      config->SetEnterKeyType(static_cast<IMFAdapterEnterKeyType>(enterKey));
+
+      std::u16string selectionText = u"Hello, World!";
+      adapter.OnSelectionChange(selectionText, 2, selectionText.length());
+      adapter.HideTextInput();
+      adapter.Close();
+      adapter.ShowCurrentInput(static_cast<IMFAdapterTextInputType>(inputType));
+    }
+  }
+
+  {
+    const int32_t minType = static_cast<int32_t>(IMFAdapterTextInputType::NONE);
+    const int32_t maxType =
+        static_cast<int32_t>(IMFAdapterTextInputType::NUMBER_DECIMAL);
+
+    std::vector<int32_t> testTypes;
+    for (int32_t i = minType; i <= maxType; ++i) {
+      testTypes.push_back(i);
+    }
+
+    for (int32_t type : testTypes) {
+      InputMethod_TextInputType result =
+          AdapterTextInputTypeToTextInputTypeEx(type);
+      (void)result;
+    }
+  }
+
+  {
+    const int32_t minType =
+        static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED);
+    const int32_t maxType =
+        static_cast<int32_t>(IMFAdapterEnterKeyType::NEW_LINE);
+
+    std::vector<int32_t> testTypes;
+    for (int32_t i = minType; i <= maxType; ++i) {
+      testTypes.push_back(i);
+    }
+
+    for (int32_t type : testTypes) {
+      InputMethod_EnterKeyType result =
+          AdapterEnterKeyTypeToOhEnterKeyTypeEx(type);
+      (void)result;
+    }
+  }
+
+  {
+    const std::vector<InputMethod_KeyboardStatus> keyboardStatuses = {
+        IME_KEYBOARD_STATUS_NONE, IME_KEYBOARD_STATUS_HIDE,
+        IME_KEYBOARD_STATUS_SHOW, static_cast<InputMethod_KeyboardStatus>(-1),
+        static_cast<InputMethod_KeyboardStatus>(3)};
+    for (InputMethod_KeyboardStatus status : keyboardStatuses) {
+      IMFAdapterKeyboardStatus result =
+          ohKeyboardStatusToAdapterKeyboardStatusEx(status);
+      (void)result;
+    }
+  }
+
+  IMFAdapterTextInputType inputType =
+      static_cast<IMFAdapterTextInputType>(fdp->ConsumeIntegralInRange<int32_t>(
+          0, static_cast<int32_t>(IMFAdapterTextInputType::NUMBER_DECIMAL)));
+  InputMethod_TextEditorProxy* proxy = 
+      IMFTextEditorProxyImpl::TextEditorProxyCreate(listener);
+  static InputMethod_TextConfig *textConfig_;
+  InputMethod_TextConfig* textConfig = OH_TextConfig_Create();
+  if (textConfig) {
+    IMFTextEditorProxyImpl::textConfig_ = textConfig;
+  }
+  auto config = std::make_shared<MockIMFTextConfigAdapter>(
+          windowId, positionY, height);
+  InputMethod_ErrorCode ret = IMFTextEditorProxyImpl::ConstructTextConfig(config);
+  (void)ret;
+  InputMethod_TextConfig* funcDestConfig = OH_TextConfig_Create();
+  if (funcDestConfig) {
+    IMFTextEditorProxyImpl::GetTextConfigFunc(proxy, funcDestConfig);
+    OH_TextConfig_Destroy(funcDestConfig);
+  }
+  adapter.AttachParamsCheck(listener, true, config, true);
+  adapter.AttachParamsCheck(listener, true, config, false);
+  adapter.AttachParamsCheck(listener, false, config, true);
+  adapter.AttachParamsCheck(listener, false, config, false);
+  adapter.ShowCurrentInput(inputType);
+  adapter.HideTextInput();
+  std::shared_ptr<IMFCursorInfoAdapter> cursorInfo =
+      std::make_shared<MockIMFCursorInfoAdapter>(10.2, 33.2, 44.8, 55.2);
+  adapter.OnCursorUpdate(cursorInfo);
+  std::u16string selectionText = GenerateRandomU16String(fdp, 100);
+  int start = fdp->ConsumeIntegralInRange<int>(0, selectionText.length());
+  int end = fdp->ConsumeIntegralInRange<int>(start, selectionText.length());
+  adapter.OnSelectionChange(selectionText, start, end);
+  std::string cmdKey = fdp->ConsumeRandomLengthString(32);
+  std::string cmdValue = fdp->ConsumeRandomLengthString(256);
+  std::string validKey = AUTO_FILL_CANCEL_PRIVATE_COMMAND;
+  std::string validValue = R"({"fillContent": "test", "action": "cancel"})";
+  adapter.SendPrivateCommand(cmdKey, cmdValue);
+  adapter.SendPrivateCommand(validKey, validValue);
+  InputMethod_PrivateCommand *cmd = OH_PrivateCommand_Create(const_cast<char*>("init_key"), strlen("init_key"));
+  std::vector<InputMethod_PrivateCommand*> privateCommands;
+  privateCommands.push_back(cmd);
+  std::string JsonValue = R"({"userName": "test_user", "hasAccount": "true"})";
+  adapter.ParseFillContentJsonValue(JsonValue, privateCommands);
+  for (size_t i = 0; i < privateCommands.size(); ++i) {
+    std::shared_ptr<std::string> style = PrivateCommandGetStrValueEx(privateCommands[i]);
+    (void)style;
+  }
+  MiscServices::PanelStatusInfo panelInfo{};
+  panelInfo.trigger = fdp->ConsumeBool()
+                          ? MiscServices::Trigger::IME_APP
+                          : static_cast<MiscServices::Trigger>(
+                                fdp->ConsumeIntegralInRange<int>(0, 5));
+  listener->NotifyPanelStatusInfo(panelInfo);
+  adapter.Close();
+}
+
+void FixedIMFTextEditorProxyImpl() {
+  auto listener = std::make_shared<MockIMFTextListenerAdapter>();
+  InputMethod_TextEditorProxy* proxy =
+      IMFTextEditorProxyImpl::TextEditorProxyCreate(listener);
+  if (!proxy) {
+    return;
+  }
+
+  InputMethod_ErrorCode ret =
+      IMFTextEditorProxyImpl::TextEditorProxy_SetTextFunc(proxy);
+  if (ret != IME_ERR_OK) {
+    IMFTextEditorProxyImpl::TextEditorProxyDestroy(proxy);
+    return;
+  }
+
+  std::u16string testText = u"Hello, Fixed World!";
+  IMFTextEditorProxyImpl::InsertTextFunc(proxy, testText.c_str(),
+                                         testText.length());
+  IMFTextEditorProxyImpl::DeleteBackwardFunc(proxy, 5);
+  IMFTextEditorProxyImpl::MoveCursorFunc(
+      proxy, InputMethod_Direction::IME_DIRECTION_RIGHT);
+  IMFTextEditorProxyImpl::HandleSetSelectionFunc(proxy, 0, 10);
+  IMFTextEditorProxyImpl::HandleExtendActionFunc(
+      proxy, InputMethod_ExtendAction::IME_EXTEND_ACTION_PASTE);
+  char16_t leftText[100] = {0};
+  size_t leftLength = 0;
+  IMFTextEditorProxyImpl::GetLeftTextOfCursorFunc(proxy, 10, leftText,
+                                                  &leftLength);
+  char16_t rightText[100] = {0};
+  size_t rightLength = 0;
+  IMFTextEditorProxyImpl::GetRightTextOfCursorFunc(proxy, 10, rightText,
+                                                   &rightLength);
+  IMFTextEditorProxyImpl::GetTextIndexAtCursorFunc(proxy);
+  std::u16string previewText = u"Preview Text";
+  IMFTextEditorProxyImpl::SetPreviewTextFunc(proxy, previewText.c_str(),
+                                             previewText.length(), 0, 5);
+  IMFTextEditorProxyImpl::FinishTextPreviewFunc(proxy);
+  IMFTextEditorProxyImpl::TextEditorProxyDestroy(proxy);
+}
+
 void FuzzIMFTextEditorProxyImpl(FuzzedDataProvider* fdp) {
   auto listener = std::make_shared<MockIMFTextListenerAdapter>();
   InputMethod_TextEditorProxy* proxy =
@@ -654,46 +695,6 @@ void FuzzIMFTextEditorProxyImpl(FuzzedDataProvider* fdp) {
     }
   }
 
-  IMFTextEditorProxyImpl::TextEditorProxyDestroy(proxy);
-}
-
-void FixedIMFTextEditorProxyImpl() {
-  auto listener = std::make_shared<MockIMFTextListenerAdapter>();
-  InputMethod_TextEditorProxy* proxy =
-      IMFTextEditorProxyImpl::TextEditorProxyCreate(listener);
-  if (!proxy) {
-    return;
-  }
-
-  InputMethod_ErrorCode ret =
-      IMFTextEditorProxyImpl::TextEditorProxy_SetTextFunc(proxy);
-  if (ret != IME_ERR_OK) {
-    IMFTextEditorProxyImpl::TextEditorProxyDestroy(proxy);
-    return;
-  }
-
-  std::u16string testText = u"Hello, Fixed World!";
-  IMFTextEditorProxyImpl::InsertTextFunc(proxy, testText.c_str(),
-                                         testText.length());
-  IMFTextEditorProxyImpl::DeleteBackwardFunc(proxy, 5);
-  IMFTextEditorProxyImpl::MoveCursorFunc(
-      proxy, InputMethod_Direction::IME_DIRECTION_RIGHT);
-  IMFTextEditorProxyImpl::HandleSetSelectionFunc(proxy, 0, 10);
-  IMFTextEditorProxyImpl::HandleExtendActionFunc(
-      proxy, InputMethod_ExtendAction::IME_EXTEND_ACTION_PASTE);
-  char16_t leftText[100] = {0};
-  size_t leftLength = 0;
-  IMFTextEditorProxyImpl::GetLeftTextOfCursorFunc(proxy, 10, leftText,
-                                                  &leftLength);
-  char16_t rightText[100] = {0};
-  size_t rightLength = 0;
-  IMFTextEditorProxyImpl::GetRightTextOfCursorFunc(proxy, 10, rightText,
-                                                   &rightLength);
-  IMFTextEditorProxyImpl::GetTextIndexAtCursorFunc(proxy);
-  std::u16string previewText = u"Preview Text";
-  IMFTextEditorProxyImpl::SetPreviewTextFunc(proxy, previewText.c_str(),
-                                             previewText.length(), 0, 5);
-  IMFTextEditorProxyImpl::FinishTextPreviewFunc(proxy);
   IMFTextEditorProxyImpl::TextEditorProxyDestroy(proxy);
 }
 

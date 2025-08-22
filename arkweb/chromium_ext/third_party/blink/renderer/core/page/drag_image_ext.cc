@@ -61,7 +61,7 @@ std::unique_ptr<DragImage> DragImageExt::CreateClippedByVisualViewport(
   if (!image) {
     LOG(WARNING) << "DragDrop Invalid image input";
 
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(WARNING) << "DragDrop Invalid image input";
 #endif
 
@@ -72,7 +72,7 @@ std::unique_ptr<DragImage> DragImageExt::CreateClippedByVisualViewport(
   if (!paint_image) {
     LOG(WARNING) << "DragDrop Invalid paint image";
 
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(WARNING) << "DragDrop Invalid paint image";
 #endif
 
@@ -93,7 +93,7 @@ std::unique_ptr<DragImage> DragImageExt::CreateClippedByVisualViewport(
   if (!paint_image || !paint_image.GetSwSkImage()->asLegacyBitmap(&bm)) {
     LOG(WARNING) << "DragDrop Invalid paint image or bitmap after clip";
 
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(WARNING)
         << "DragDrop Invalid paint image or bitmap after clip";
 #endif

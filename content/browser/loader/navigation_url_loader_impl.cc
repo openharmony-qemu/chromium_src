@@ -118,6 +118,12 @@
 #include "content/public/browser/plugin_service.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "content/browser/web_contents/web_contents_impl.h"
+#include "content/public/browser/web_contents.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -344,6 +350,18 @@ std::unique_ptr<network::ResourceRequest> CreateResourceRequest(
       request_info.begin_params->impression.has_value()
           ? network::mojom::AttributionReportingEligibility::kNavigationSource
           : network::mojom::AttributionReportingEligibility::kUnset;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableLoggerReport)) {
+    new_request->usage_scenario_ =
+        WebContents::FromFrameTreeNodeId(frame_tree_node->frame_tree_node_id())
+            ->GetOrCreateWebPreferences()
+            .usage_scenario;
+  } else {
+    new_request->usage_scenario_ = 1;
+  }
+#endif
 
   new_request->shared_storage_writable_eligible =
       request_info.shared_storage_writable_eligible;

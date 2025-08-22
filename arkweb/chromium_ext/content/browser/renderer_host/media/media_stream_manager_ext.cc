@@ -99,13 +99,13 @@ void MediaStreamManagerExt::SendScreenCaptureStateToNative(
     int32_t nweb_id,
     const std::string& session_id,
     int32_t state) {
-  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
-    auto io_task_runner = GetIOThreadTaskRunner({});
-    if (!io_task_runner) {
-      LOG(ERROR) << "SendScreenCaptureStateToNative io_task_runner is nullptr";
+  if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
+    auto ui_task_runner = GetUIThreadTaskRunner({});
+    if (!ui_task_runner) {
+      LOG(ERROR) << "SendScreenCaptureStateToNative ui_task_runner is nullptr";
       return;
     }
-    io_task_runner->PostTask(
+    ui_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(&MediaStreamManagerExt::SendScreenCaptureStateToNative,
                        nweb_id, session_id, state));
@@ -117,23 +117,37 @@ void MediaStreamManagerExt::SendScreenCaptureStateToNative(
   }
 }
 
-void MediaStreamManagerExt::PopSessionIdState(int32_t nweb_id,
-                                              const std::string& session_id) {
-  for (auto state_it = session_id_state_.begin();
-       state_it != session_id_state_.end();) {
-    if (state_it->session_id == session_id) {
-      MediaStreamManagerExt::SendScreenCaptureStateToNative(
-          nweb_id, state_it->session_id, state_it->state);
-      state_it = session_id_state_.erase(state_it);
-    } else {
-      state_it++;
-    }
-  }
-}
-
 void MediaStreamManagerExt::OnScreenCaptureOpened(const std::string& session_id) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   SendScreenCaptureState(session_id, SCREEN_CAPTURE_OPENED);
+}
+
+void MediaStreamManagerExt::RemoveNWebIdBySession(const base::UnguessableToken& capture_session_id) {
+  std::lock_guard<std::mutex> lock(nweb_id_mutex_);
+  auto nweb_id_it = nweb_id_maps_.find(capture_session_id.ToString());
+  if (nweb_id_it == nweb_id_maps_.end()) {
+    return;
+  }
+  nweb_id_maps_.erase(nweb_id_it);
+}
+
+void MediaStreamManagerExt::AddNWebIdBySession(int32_t nweb_id, const base::UnguessableToken& session_id) {
+  std::lock_guard<std::mutex> lock(nweb_id_mutex_);
+  std::string session_id_str = session_id.ToString();
+  auto nweb_id_it = nweb_id_maps_.find(session_id_str);
+  if (nweb_id_it == nweb_id_maps_.end()) {
+    for (auto state_it = session_id_state_.begin();
+        state_it != session_id_state_.end();) {
+      if (state_it->session_id == session_id_str) {
+        MediaStreamManagerExt::SendScreenCaptureStateToNative(
+            nweb_id, state_it->session_id, state_it->state);
+        state_it = session_id_state_.erase(state_it);
+      } else {
+        state_it++;
+      }
+    }
+  }
+  nweb_id_maps_[session_id_str] = nweb_id;
 }
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 

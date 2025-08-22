@@ -4,6 +4,7 @@
 
 #include "components/safe_browsing/core/browser/hashprefix_realtime/ohttp_key_service.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/base64.h"
 #include "base/feature_list.h"
 #include "base/metrics/histogram_functions.h"
@@ -29,7 +30,12 @@ namespace {
 constexpr base::TimeDelta kKeyFetchTimeout = base::Seconds(3);
 
 constexpr char kKeyFetchServerUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://safebrowsingohttpgateway.googleapis.com/v1/ohttp/hpkekeyconfig";
+#endif
+
 // Key older than 3 days is considered expired and should be refetched.
 constexpr base::TimeDelta kKeyExpirationDuration = base::Days(3);
 // For slower rotated keys (the old mechanism), key older than 7 days is

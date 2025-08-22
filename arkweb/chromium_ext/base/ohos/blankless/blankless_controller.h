@@ -105,6 +105,9 @@ public:
   void RecordSystemTime(uint32_t nweb_id, uint64_t blankless_key, uint64_t system_time);
   uint64_t GetSystemTime(uint32_t nweb_id, uint64_t blankless_key);
 
+  void RecordDumpTime(uint32_t nweb_id, uint64_t blankless_key, uint64_t dump_time);
+  uint64_t GetDumpTime(uint32_t nweb_id, uint64_t blankless_key);
+
   void Clear(uint32_t nweb_id);
 
   bool CheckEnableForUrl(const std::string& url);
@@ -234,6 +237,8 @@ private:
   NWebRelatedInfoMap<std::pair<Callback, int32_t>> m_frame_insert_callback_map_;
 
   NWebRelatedInfoMap<uint64_t> m_system_time_map_;
+  // Record the time when the snapshot is written to the database.
+  NWebRelatedInfoMap<uint64_t> m_dump_time_map_;
 
   std::unordered_map<uint32_t, uint32_t> m_window_id_map_;
 

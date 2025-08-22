@@ -63,6 +63,10 @@ OhosWebDataBaseAdapterImpl& OhosWebDataBaseAdapterImpl::GetInstance()
 Rdb_SecurityArea OhosWebDataBaseAdapterImpl::GetAreaMode(AbilityRuntime_AreaMode areaMode)
 {
     auto mode = AREA_MODE_MAP.find(areaMode);
+    if (mode == AREA_MODE_MAP.end()) {
+        WVLOG_E("webdatabase no find areaMode in map");
+        return RDB_SECURITY_AREA_EL2;
+    }
     return mode->second;
 }
 
@@ -201,9 +205,17 @@ void OhosWebDataBaseAdapterImpl::GetHttpAuthCredentials(const std::string& host,
         return;
     }
 
-    std::vector<std::string> columns;
     OH_Predicates *dirAbsPred = OH_Rdb_CreatePredicates(HTTPAUTH_TABLE_NAME.c_str());
+    if (!dirAbsPred) {
+        WVLOG_E("dirAbsPred is nullptr");
+        return;
+    }
     OH_VObject *valueObject = OH_Rdb_CreateValueObject();
+    if (!valueObject) {
+        WVLOG_E("valueObject is nullptr");
+        dirAbsPred->destroy(dirAbsPred);
+        return;
+    }
     valueObject->putText(valueObject, host.c_str());
     dirAbsPred->equalTo(dirAbsPred, HTTPAUTH_HOST_COL.c_str(), valueObject);
     valueObject->putText(valueObject, realm.c_str());

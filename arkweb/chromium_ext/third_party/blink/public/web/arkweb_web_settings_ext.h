@@ -76,6 +76,10 @@ public:
   virtual void SetCopyOption(mojom::CopyOptionMode) = 0;
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 
+#if BUILDFLAG(ARKWEB_FOCUS)
+  virtual void SetGestureFocusMode(int) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   virtual void SetVideoAssistantEnabled(bool enabled) {}
   virtual void SetCustomMediaPlayerEnabled(bool enabled) {}
@@ -90,6 +94,10 @@ public:
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   virtual void SetUsageScenario(int32_t usage_scenario) = 0;
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  virtual int32_t GetUsageScenario() = 0;
+#endif
 
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
   virtual void SetBorderRadiusFromWeb(double, double, double, double) = 0;

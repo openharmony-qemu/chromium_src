@@ -134,8 +134,7 @@ OhosWebPermissionDataBaseAdapterImpl::OhosWebPermissionDataBaseAdapterImpl()
     config.storeName = name.c_str();
     config.area = GetAreaMode(areaMode);
     config.securityLevel = OH_Rdb_SecurityLevel::S3;
-    WVLOG_I("web permission database databaseDir=%{public}s", databaseDir.c_str());
-    WVLOG_I("web permission database bundleName=%{public}s", bundleName);
+    WVLOG_I("web permission database databaseDir=%{public}s, bundleName=%{public}s", databaseDir.c_str(), bundleName);
 
     int errCode = static_cast<int>(RDB_OK);
     GetOrOpen(&config, &errCode);
@@ -159,10 +158,9 @@ std::string OhosWebPermissionDataBaseAdapterImpl::KeyToTableName(const WebPermis
     return "";
 }
 
-bool OhosWebPermissionDataBaseAdapterImpl::ExistPermissionByOrigin(
+bool OhosWebPermissionDataBaseAdapterImpl::VerifyPermissionByOrigin(
     const std::string& origin, const WebPermissionType& key)
 {
-    WVLOG_I("web permission database check exist permissions");
     if (rdbStore_ == nullptr || origin.empty()) {
         return false;
     }
@@ -189,6 +187,16 @@ bool OhosWebPermissionDataBaseAdapterImpl::ExistPermissionByOrigin(
         if (cursor != nullptr) {
             cursor->destroy(cursor);
         }
+        return false;
+    }
+    return true;
+}
+
+bool OhosWebPermissionDataBaseAdapterImpl::ExistPermissionByOrigin(
+    const std::string& origin, const WebPermissionType& key)
+{
+    WVLOG_I("web permission database check exist permissions");
+    if (!VerifyPermissionByOrigin(origin, key)) {
         return false;
     }
     cursor->destroy(cursor);
@@ -199,32 +207,7 @@ bool OhosWebPermissionDataBaseAdapterImpl::GetPermissionResultByOrigin(const std
     const WebPermissionType& key, bool& result)
 {
     WVLOG_I("web permission database get permissions");
-    if (rdbStore_ == nullptr || origin.empty()) {
-        return false;
-    }
-    std::string tableName = KeyToTableName(key);
-    if (tableName.empty()) {
-        return false;
-    }
-
-    OH_Predicates *dirAbsPred = OH_Rdb_CreatePredicates(tableName.c_str());
-    OH_VObject *valueObject = OH_Rdb_CreateValueObject();
-    if (dirAbsPred == nullptr || valueObject == nullptr) {
-        WVLOG_E("pointer create failed!");
-        return false;
-    }
-    valueObject->putText(valueObject, origin.c_str());
-    dirAbsPred->equalTo(dirAbsPred, PERMISSION_ORIGIN_COL.c_str(), valueObject);
-    valueObject->destroy(valueObject);
-
-    OH_Cursor *cursor = OH_Rdb_Query(rdbStore_, dirAbsPred, NULL, 0);
-    dirAbsPred->destroy(dirAbsPred);
-
-    if ((cursor == nullptr) || (cursor->goToNextRow(cursor) != RDB_OK)) {
-        WVLOG_E("web permissions database rdb store query failed");
-        if (cursor != nullptr) {
-            cursor->destroy(cursor);
-        }
+    if (!VerifyPermissionByOrigin(origin, key)) {
         return false;
     }
 
@@ -347,4 +330,5 @@ void OhosWebPermissionDataBaseAdapterImpl::GetOriginsByPermission(const WebPermi
         origins.push_back(origin);
         delete[] origin;
     } while (cursor->goToNextRow(cursor) == RDB_OK);
+    cursor->destroy(cursor);
 }

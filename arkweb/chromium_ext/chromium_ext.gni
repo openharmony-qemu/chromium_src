@@ -87,6 +87,13 @@ arkweb_device_sources = [
   "//services/device/generic_sensor/platform_sensor_util.h",
   ]
 
+if (defined(arkweb_logger_report) && arkweb_logger_report) {
+  arkweb_content_renderer_sources += [
+    "//arkweb/chromium_ext/content/renderer/logger_report.cc",
+    "//arkweb/chromium_ext/content/renderer/logger_report.h",
+  ]
+}
+
 arkweb_native_scroller_sources = [
   "//arkweb/chromium_ext/ui/gl/events/native_scroller_ohos.cc",
   "//arkweb/chromium_ext/ui/gl/events/native_scroller_ohos.h",
@@ -317,6 +324,7 @@ arkweb_media_mojo_services_unittest_sources = [
 arkweb_media_audio_unittest_sources = [
   "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_manager_unittest.cc",
   "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_output_stream_unittest.cc",
+  "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_capturer_source_unittest.cc",
 ]
 
 arkweb_media_filters_sources = [
@@ -652,8 +660,10 @@ arkweb_media_adapter_unittest_sources = [
   "//arkweb/ohos_adapter_ndk/media_adapter/drm_adapter_impl_unittest.cpp",
   "//arkweb/ohos_adapter_ndk/media_adapter/media_codec_decoder_adapter_impl_unittest.cpp",
   "//arkweb/ohos_adapter_ndk/media_adapter/ohos_buffer_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/media_adapter/player_framework_adapter_impl_unittest.cpp",
   "//arkweb/ohos_adapter_ndk/display_manager_adapter/native_display_manager_adapter_impl_unittest.cpp",
   "//arkweb/ohos_adapter_ndk/drawing_text_adapter/ohos_drawing_text_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/screen_capture_adapter/screen_capture_adapter_impl_unittest.cc",
 ]
 
 arkweb_media_gpu_unittest_sources = [
@@ -823,6 +833,14 @@ arkweb_field_trial_utils_unittest_source = [
 arkweb_ui_compositor_sources = [
   "//arkweb/chromium_ext/ui/compositor/compositor_utils.cc",
   "//arkweb/chromium_ext/ui/compositor/compositor_utils.h",
+]
+
+arkweb_ui_base_pointer_sources = [
+  "//arkweb/chromium_ext/ui/base/pointer/pointer_device_ohos.cc",
+]
+
+arkweb_ui_base_pointer_test_sources = [
+  "//arkweb/chromium_ext/ui/base/pointer/pointer_device_ohos_unittest.cc",
 ]
 
 arkweb_third_party_blink_renderer_platform_widget_test_sources = [
@@ -1169,4 +1187,6 @@ arkweb_components_viz_common_frame_sinks_copy_output_result_deps = [
 arkweb_third_patry_blink_renderer_core_paint_timing_detector_resources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.h",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/image_paint_timing_detector_utils.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/image_paint_timing_detector_utils.h",
 ]

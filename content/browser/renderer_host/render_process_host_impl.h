@@ -1058,6 +1058,9 @@ class CONTENT_EXPORT RenderProcessHostImpl
       uint64_t private_memory_footprint_bytes) override;
 #endif
   void HasGpuProcess(HasGpuProcessCallback callback) override;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void ReportRendererLog(int policy, const std::string& msg) override;
+#endif  // ARKWEB_LOGGER_REPORT
 
   void CreateEmbeddedFrameSinkProvider(
       mojo::PendingReceiver<blink::mojom::EmbeddedFrameSinkProvider> receiver);

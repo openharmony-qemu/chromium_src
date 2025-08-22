@@ -629,7 +629,6 @@ InputMethod_ErrorCode IMFTextEditorProxyImpl::ConstructTextConfig(const std::sha
     if (ret != IME_ERR_OK) {
         WVLOG_E("Set enter key type failed ret=%{public}d", ret);
         DestroyTextConfig();
-        OH_TextConfig_Destroy(textConfig_);
         return ret;
     }
     bool support = true;
@@ -855,6 +854,7 @@ bool IMFAdapterImpl::Attach(std::shared_ptr<IMFTextListenerAdapter> listener, bo
     }
     InputMethod_AttachOptions *options = OH_AttachOptions_Create(isShowKeyboard);
     InputMethod_ErrorCode ret = OH_InputMethodController_Attach(textEditorProxy_, options, &inputMethodProxy_);
+    OH_AttachOptions_Destroy(options);
     if (ret != IME_ERR_OK) {
         WVLOG_E("inputmethod attach failed, errcode=%{public}d", ret);
         return false;
@@ -905,6 +905,7 @@ bool IMFAdapterImpl::Attach(std::shared_ptr<IMFTextListenerAdapter> listener, bo
     }
     InputMethod_AttachOptions *options = OH_AttachOptions_Create(isShowKeyboard);
     ret = OH_InputMethodController_Attach(textEditorProxy_, options, &inputMethodProxy_);
+    OH_AttachOptions_Destroy(options);
     if (ret != IME_ERR_OK) {
         WVLOG_E("Inputmethod attach failed, ret=%{public}d", isShowKeyboard);
     }
@@ -955,6 +956,7 @@ bool IMFAdapterImpl::AttachWithRequestKeyboardReason(std::shared_ptr<IMFTextList
     InputMethod_AttachOptions* options = OH_AttachOptions_CreateWithRequestKeyboardReason(isShowKeyboard, requestKeyboardReason);
     */
     ret = OH_InputMethodController_Attach(textEditorProxy_, options, &inputMethodProxy_);
+    OH_AttachOptions_Destroy(options);
     if (ret != IME_ERR_OK) {
         WVLOG_E("Inputmethod attach failed, ret=%{public}d", isShowKeyboard);
     }

@@ -817,7 +817,6 @@ TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurfaceNew03) {
 
   auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
   bridge->player_ = std::move(mock_player_adapter);
-  
 
   EXPECT_EQ(bridge->new_surface_id_, surface_id);
   EXPECT_EQ(bridge->pending_new_surface_id_, surface_id);
@@ -900,7 +899,6 @@ TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack01) {
   bridge->player_ = std::move(mock_player_adapter_);
   bridge->pending_seek_ = base::Milliseconds(0);
   bridge->recording_seek_ = base::Milliseconds(0);
-  
 
   bridge->OnSeekBack(base::Milliseconds(0));
   EXPECT_EQ(bridge->recording_seek_, base::Milliseconds(0));
@@ -910,7 +908,6 @@ TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack02) {
   bridge->player_ = nullptr;
   bridge->pending_seek_ = base::Milliseconds(1);
   bridge->recording_seek_ = base::Milliseconds(0);
-  
 
   bridge->OnSeekBack(base::Milliseconds(0));
   EXPECT_EQ(bridge->recording_seek_, base::Milliseconds(0));
@@ -921,7 +918,6 @@ TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack03) {
   bridge->player_ = std::move(mock_player_adapter_);
   bridge->pending_seek_ = base::Milliseconds(1);
   bridge->recording_seek_ = base::Milliseconds(0);
-  
 
   bridge->OnSeekBack(base::Milliseconds(0));
   EXPECT_EQ(bridge->recording_seek_, base::Milliseconds(0));
@@ -933,7 +929,6 @@ TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack04) {
   bridge->pending_seek_ = base::Milliseconds(1);
   bridge->recording_seek_ = base::Milliseconds(0);
   bridge->seek_complete_ = false;
-  
 
   bridge->OnSeekBack(base::Milliseconds(0));
   EXPECT_EQ(bridge->recording_seek_, base::Milliseconds(-1));
@@ -946,7 +941,6 @@ TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack05) {
   bridge->recording_seek_ = base::Milliseconds(0);
   bridge->seek_complete_ = true;
   bridge->seeking_back_complete_ = true;
-  
 
   bridge->OnSeekBack(base::Milliseconds(0));
   EXPECT_EQ(bridge->recording_seek_, base::Milliseconds(0));
@@ -959,7 +953,6 @@ TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack06) {
   bridge->recording_seek_ = base::Milliseconds(400);
   bridge->seek_complete_ = true;
   bridge->seeking_back_complete_ = false;
-  
 
   bridge->OnSeekBack(base::Milliseconds(0));
   EXPECT_EQ(bridge->seeking_back_complete_, true);

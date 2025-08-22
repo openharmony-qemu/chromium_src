@@ -197,6 +197,11 @@ component("cef_nweb") {
     "src/sysevent/oh_web_performance_timing.cc",
     "src/sysevent/oh_web_performance_timing.h",
   ]
+  if (defined(arkweb_logger_report) && arkweb_logger_report) {
+    sources += [
+      "//cef/ohos_cef_ext/include/cef_logger_callback_api_handler.h",
+    ]
+  }
 
   if (arkweb_drag_resize) {
     sources += [
@@ -221,6 +226,8 @@ component("cef_nweb") {
       "src/cef_delegate/nweb_extension_proxy_cef_delegate.h",      
       "src/cef_delegate/nweb_extension_side_panel_cef_controller.cc",
       "src/cef_delegate/nweb_extension_side_panel_cef_controller.h",
+      "src/cef_delegate/nweb_extension_side_panel_cef_delegate.cc",
+      "src/cef_delegate/nweb_extension_side_panel_cef_delegate.h",
       "src/cef_delegate/nweb_extension_history_cef_delegate.cc",
       "src/cef_delegate/nweb_extension_history_cef_delegate.h",
       "src/cef_delegate/nweb_extension_tab_cef_delegate.cc",
@@ -660,6 +667,7 @@ source_set("unittests") {
     "browser/performance_manager/policies/ohos_bfcache_policy_unittest.cc",
     "browser/performance_manager/policies/background_task_policy_unittest.cc",
     "src/nweb_resize_helper_unittests.cc",
+    "src/video_assistant/nweb_media_player_controller_impl_unittest.cc",
   ]
 
   deps = [

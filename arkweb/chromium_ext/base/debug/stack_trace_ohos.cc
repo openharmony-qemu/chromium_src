@@ -87,13 +87,11 @@ char* itoa_r(intptr_t i, char* buf, size_t sz, int base, size_t padding) {
   char* start = buf;
 
   if(i<0) {
-    j = static_cast<uintptr_t>i;
+    j = static_cast<uintptr_t>(-(i + 1)) + 1;
   }
   else {
     j = i;
   }
-
-  uintptr_t j = static_cast<uintptr_t>i;
 
   // Handle negative numbers (only for base 10).
   if (i < 0 && base == 10) {

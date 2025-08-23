@@ -194,10 +194,10 @@ size_t ArkwebRenderProcessHostImplUtils::GetProcessCountForLimitArkweb(
 class DelayedRenderKiller {
   public:
     static DelayedRenderKiller* GetInstance() {
-      static DelayedRenderKiller inst_;
-      return &inst_;
+      static DelayedRenderKiller* inst_ = new DelayedRenderKiller();
+      return inst_;
     }
-    ~DelayedRenderKiller() = default;
+    ~DelayedRenderKiller() = delete;
     void StartTimer() {
       if (!timer_.IsRunning()) {
         rep_ = 0;

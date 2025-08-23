@@ -23,7 +23,7 @@
 
 namespace blink {
 
-FrameCaretUtils::FrameCaretUtils(FrameCaret* frame_caret)
+FrameCaretUtils::FrameCaretUtils(Member<FrameCaret> frame_caret)
     : frame_caret_(frame_caret) {}
 
 #if BUILDFLAG(ARKWEB_MENU)

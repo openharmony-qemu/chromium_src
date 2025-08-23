@@ -17,6 +17,7 @@
 #define MEDIA_OHOS_AUDIO_BASE_AUDIO_CAPTURER_SOURCE_H_
 
 #include "base/files/file_util.h"
+#include "base/files/scoped_file.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/threading/thread_checker.h"
@@ -101,7 +102,7 @@ private:
     AudioParameters params_;
     raw_ptr<CaptureCallback> base_callback_ = nullptr;
     base::Lock base_callback_lock_;
-    FILE* dumpFile_ = nullptr;
+    base::ScopedFILE dumpFile_ = nullptr;
 
     bool isStart_ = false;
     bool portal_init_failed_ = false;

@@ -53,7 +53,6 @@ class OhosWebSnapshotDataBase {
 public:
     static OhosWebSnapshotDataBase& GetInstance();
     ~OhosWebSnapshotDataBase();
-    void Init(const char* databaseDir);
 
     /**
      * @brief Clear the screenshot data in the database.
@@ -61,7 +60,7 @@ public:
      * @param blankless_keys Indicates list of url to be cleaned. If the size is 0, means to clean all data.
      */
     void ClearSnapshotDataItem(const std::vector<int64_t>& blankless_keys);
-    void InsertSnapshotDataItem(int64_t blankless_key, const SnapshotDataItem& data);
+    bool InsertSnapshotDataItem(int64_t blankless_key, const SnapshotDataItem& data);
     SnapshotDataItem GetSnapshotDataItem(int64_t blankless_key);
     void RegisterDataBaseCallback(std::shared_ptr<OhosWebSnapshotDataBaseCallback> callback);
     int32_t SetBlanklessLoadingCacheCapacity(int32_t capacity);
@@ -79,30 +78,33 @@ private:
 
     void GetAllInfo();
     void GetDatabaseInfo();
-    int64_t GetCurrentTime();
     void GetOrOpen(const OH_Rdb_Config& config);
+    int64_t GetCurrentTime();
+    int64_t GetOldestKey();
+
     void InsertDataBaseDataItem(int64_t blankless_key, const DataBaseDataItem& data);
-    void ClearSnapshotDataItemInnerWithoutLock();
-    void NotifyDataBaseDeletePath(const std::string& path);
 
-    int32_t DataClear();
-    int32_t DataDelete(int64_t blankless_key);
-    int32_t DataInsert(int64_t blankless_key, const DataBaseDataItem& data);
-    int32_t DataUpdateCapacity(int32_t capacity);
+    void ClearInner();
+    void ClearData();
+    void ClearNotify();
+    void ClearMap();
 
-    void DataMapClear();
-    void DataMapErase(int64_t blankless_key);
-    void DataMapEraseOldestKeyWithoutLock(std::vector<int64_t>& needDeleteKeys);
-    void DataMapEraseInnerWithoutLock(int64_t blankless_key);
-    bool DataMapInsert(int64_t blankless_key, const DataBaseDataItem& data, std::vector<int64_t>& needDeleteKeys);
-    bool DataMapUpdate(int64_t blankless_key, const DataBaseDataItem& data, std::vector<int64_t>& needDeleteKeys);
+    void DeleteInner(int64_t blankless_key);
+    void DeleteData(int64_t blankless_key);
+    void DeleteNotify(int64_t blankless_key);
+    void DeleteMap(int64_t blankless_key);
+
+    void InsertInner(int64_t blankless_key, const DataBaseDataItem& data);
+    void InsertData(int64_t blankless_key, const DataBaseDataItem& data);
+    void InsertMap(int64_t blankless_key, const DataBaseDataItem& data);
+
+    void UpdateCapacityData(int32_t capacity);
 
     OH_Rdb_Store* rdbStore_ = nullptr;
     std::mutex dataBaseMapMtx_;
     std::unordered_map<int64_t, DataBaseDataItem> dataBaseMap_;
     std::vector<std::shared_ptr<OhosWebSnapshotDataBaseCallback>> dataBaseDeleteCallbacks_;
     int32_t totalSnapShotFileBytes_ = 0;
-
     int32_t capacityInByte_;
 };
 } // namespace

@@ -81,7 +81,7 @@ void OHOSMediaDrmBridgeFactory::Create(
 
 void OHOSMediaDrmBridgeFactory::OnStorageInitialized(bool success) {
   DCHECK(storage_);
-  if (!success) {
+  if (!success && cdm_created_cb_) {
     std::move(cdm_created_cb_)
         .Run(nullptr, CreateCdmStatus::kGetCdmOriginIdFailed);
     return;
@@ -103,7 +103,7 @@ void OHOSMediaDrmBridgeFactory::CreateMediaDrmBridge(
       session_closed_cb_, session_keys_change_cb_,
       session_expiration_update_cb_);
   LOG(INFO) << "[DRM]" << __func__;
-  if (!ohos_media_drm_bridge_) {
+  if (!ohos_media_drm_bridge_ && cdm_created_cb_) {
     std::move(cdm_created_cb_)
         .Run(nullptr, CreateCdmStatus::kInitCdmFailed);
     LOG(INFO) << "[DRM]" << __func__;
@@ -118,6 +118,10 @@ void OHOSMediaDrmBridgeFactory::CreateMediaDrmBridge(
 void OHOSMediaDrmBridgeFactory::OnOHOSMediaCryptoReady(
     void* session,
     bool requires_secure_video_codec) {
+  if (!cdm_created_cb_) {
+    return;
+  }
+
   LOG(INFO) << "[DRM]" << __func__;
   if (!session) {
     LOG(INFO) << "[DRM]" << __func__;

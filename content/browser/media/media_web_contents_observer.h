@@ -318,6 +318,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
     void OnVolumeChanged(double volume) override;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    bool IsWebContentsAvailable();
+#endif
+
 #if BUILDFLAG(ARKWEB_PIP)
     void OnPictureInPictureStateChanged(
         uint32_t state, int32_t width, int32_t height) override;

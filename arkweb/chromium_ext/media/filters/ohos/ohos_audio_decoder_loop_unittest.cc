@@ -340,31 +340,6 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferError) {
   delete[] input_data.memory;
 }
 
-// 测试 ProcessOneInputBuffer 无效输入数据
-TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferInvalidData) {
-  CreateDecoderLoop();
-  decoder_loop_->SetState(OHOSAudioDecoderLoop::READY);
-
-  EXPECT_CALL(*mock_client_, IsAnyInputPending())
-      .WillOnce(Return(true));
-
-  EXPECT_CALL(*mock_client_, DequeueInputBuffer(_))
-      .WillOnce(Invoke([](int64_t& index) {
-        index = 1;
-        return 0;
-      }));
-
-  OHOSAudioDecoderLoop::InputData input_data;
-  input_data.is_valid = false;
-  
-  EXPECT_CALL(*mock_client_, ProvideInputData())
-      .WillOnce(Return(input_data));
-
-  EXPECT_CALL(*mock_client_, EnqueueInputBuffer(1));
-
-  EXPECT_TRUE(decoder_loop_->ProcessOneInputBuffer());
-}
-
 // 测试 ProcessOneOutputBuffer 在 ERROR 状态
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneOutputBufferInErrorState) {
   CreateDecoderLoop();

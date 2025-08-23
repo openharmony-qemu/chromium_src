@@ -729,18 +729,26 @@ int SSLClientSocketImpl::Init() {
   SSL_set_mode(ssl_.get(), mode.set_mask);
   SSL_clear_mode(ssl_.get(), mode.clear_mask);
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
   // Use BoringSSL defaults, but disable HMAC-SHA1 ciphers in ECDSA.
   // These are the remaining CBC-mode ECDSA ciphers.
   std::string command("ALL:!aPSK:!ECDSA+SHA1");
+
+  if (ssl_config_.require_ecdhe) {
+    command.append(":!kRSA");
+  }
+
+  if (ssl_config_.disable_sha1_server_signatures) {
+    command.append(":!3DES");
+  }
 #else
   // Use BoringSSL defaults, but disable 3DES and HMAC-SHA1 ciphers in ECDSA.
   // These are the remaining CBC-mode ECDSA ciphers.
   std::string command("ALL:!aPSK:!ECDSA+SHA1:!3DES");
-#endif
 
   if (ssl_config_.require_ecdhe)
     command.append(":!kRSA");
+#endif
 
   // Remove any disabled ciphers.
   for (uint16_t id : context_->config().disabled_cipher_suites) {
@@ -761,15 +769,17 @@ int SSLClientSocketImpl::Init() {
   // Disable SHA-1 server signatures.
   // TODO(crbug.com/boringssl/699): Once the default is flipped in BoringSSL, we
   // no longer need to override it.
-  static const uint16_t kVerifyPrefs[] = {
-      SSL_SIGN_ECDSA_SECP256R1_SHA256, SSL_SIGN_RSA_PSS_RSAE_SHA256,
-      SSL_SIGN_RSA_PKCS1_SHA256,       SSL_SIGN_ECDSA_SECP384R1_SHA384,
-      SSL_SIGN_RSA_PSS_RSAE_SHA384,    SSL_SIGN_RSA_PKCS1_SHA384,
-      SSL_SIGN_RSA_PSS_RSAE_SHA512,    SSL_SIGN_RSA_PKCS1_SHA512,
-  };
-  if (!SSL_set_verify_algorithm_prefs(ssl_.get(), kVerifyPrefs,
-                                      std::size(kVerifyPrefs))) {
-    return ERR_UNEXPECTED;
+  if (ssl_config_.disable_sha1_server_signatures) {
+    static const uint16_t kVerifyPrefs[] = {
+        SSL_SIGN_ECDSA_SECP256R1_SHA256, SSL_SIGN_RSA_PSS_RSAE_SHA256,
+        SSL_SIGN_RSA_PKCS1_SHA256,       SSL_SIGN_ECDSA_SECP384R1_SHA384,
+        SSL_SIGN_RSA_PSS_RSAE_SHA384,    SSL_SIGN_RSA_PKCS1_SHA384,
+        SSL_SIGN_RSA_PSS_RSAE_SHA512,    SSL_SIGN_RSA_PKCS1_SHA512,
+    };
+    if (!SSL_set_verify_algorithm_prefs(ssl_.get(), kVerifyPrefs,
+                                        std::size(kVerifyPrefs))) {
+      return ERR_UNEXPECTED;
+    }
   }
 
   SSL_set_alps_use_new_codepoint(
@@ -1172,7 +1182,7 @@ ssl_verify_result_t SSLClientSocketImpl::HandleVerifyResult() {
       result = ct_result;
   }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ARKWEB)
   // If no other errors occurred, check whether the connection used a legacy
   SSLInfo ssl_info;
   bool has_ssl_info = GetSSLInfo(&ssl_info);
@@ -1624,6 +1634,7 @@ SSLClientSessionCache::Key SSLClientSocketImpl::GetSessionCacheKey(
     key.network_anonymization_key = ssl_config_.network_anonymization_key;
   }
   key.privacy_mode = ssl_config_.privacy_mode;
+  key.disable_legacy_crypto = ssl_config_.disable_sha1_server_signatures;
   return key;
 }
 

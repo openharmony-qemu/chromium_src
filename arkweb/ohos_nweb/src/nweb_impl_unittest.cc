@@ -71,11 +71,16 @@ class MockNWebInputHandler : public NWebInputHandler {
   MOCK_METHOD5(
       WebSendMouseWheelEvent,
       void(double, double, double, double, const std::vector<int32_t>&));
+  MOCK_METHOD6(
+      WebSendMouseWheelEventV2,
+      void(double, double, double, double, const std::vector<int32_t>&, int32_t));
   MOCK_METHOD5(
       WebSendTouchpadFlingEvent,
       void(double, double, double, double, const std::vector<int32_t>&));
   MOCK_METHOD1(WebSendMouseEvent,
                void (const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>&));
+  MOCK_METHOD1(SendKeyboardEvent,
+               bool (const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>&));
 #endif
 };
 
@@ -6431,5 +6436,368 @@ TEST_F(NWebImplTest, OnBrowserBackground002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 #endif // BUILDFLAG(ARKWEB_BGTASK)
+
+TEST_F(NWebImplTest, IsNavigateForwardAllowed001) {
+  bool temp = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, IsNavigateForwardAllowed()).Times(0);
+  auto result = nweb_impl_->IsNavigateForwardAllowed();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, IsNavigateForwardAllowed002) {
+  bool temp = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, IsNavigateForwardAllowed()).WillOnce(::testing::Return(temp));
+  auto result = nweb_impl_->IsNavigateForwardAllowed();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+#if BUILDFLAG(ARKWEB_PDF)
+TEST_F(NWebImplTest, ExecuteCreatePDFExt001) {
+  std::shared_ptr<NWebPDFConfigArgs> pdfConfig = nullptr;
+  std::shared_ptr<NWebArrayBufferValueCallback> callback = nullptr;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, ExecuteCreatePDFExt(pdfConfig, callback)).Times(0);
+  nweb_impl_->ExecuteCreatePDFExt(pdfConfig, callback);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, ExecuteCreatePDFExt002) {
+  std::shared_ptr<NWebPDFConfigArgs> pdfConfig = nullptr;
+  std::shared_ptr<NWebArrayBufferValueCallback> callback = nullptr;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, ExecuteCreatePDFExt(pdfConfig, callback)).Times(1);
+  nweb_impl_->ExecuteCreatePDFExt(pdfConfig, callback);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif // BUILDFLAG(ARKWEB_PDF)
+
+TEST_F(NWebImplTest, OnDragAttach001) {
+  nweb_impl_->inputmethod_handler_ = nullptr;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->OnDragAttach();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnDragAttach002) {
+  nweb_impl_->inputmethod_handler_ = new NWebInputMethodHandler();
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->OnDragAttach();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+#if BUILDFLAG(ARKWEB_MSGPORT)
+TEST_F(NWebImplTest, PostPortMessageV2001) {
+  const std::string portHandle = "test";
+  std::shared_ptr<NWebRomValue> data = nullptr;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->PostPortMessageV2(portHandle, data);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, PostPortMessageV2002) {
+  const std::string portHandle = "test";
+  std::shared_ptr<NWebRomValue> data = nullptr;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->PostPortMessageV2(portHandle, data);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif  // BUILDFLAG(ARKWEB_MSGPORT)
+
+TEST_F(NWebImplTest, FillAutofillDataV2001) {
+  std::shared_ptr<NWebRomValue> data = nullptr;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->FillAutofillDataV2(data);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, FillAutofillDataV2002) {
+  std::shared_ptr<NWebRomValue> data = nullptr;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->FillAutofillDataV2(data);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, RegisterArkJSfunction003) {
+  const std::string object_name = "test_id";
+  const std::vector<std::string> method_list = {"Default", "IncludeSensitive", "Everything"};
+  const std::vector<std::string> async_method_list = {"Default", "IncludeSensitive", "Everything"};
+  const int32_t object_id = 1;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, RegisterArkJSfunction(
+      object_name, method_list, async_method_list, object_id, "")).Times(0);
+  nweb_impl_->RegisterArkJSfunction(object_name, method_list, async_method_list, object_id);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, RegisterArkJSfunction004) {
+  const std::string object_name = "test_id";
+  const std::vector<std::string> method_list = {"Default", "IncludeSensitive", "Everything"};
+  const std::vector<std::string> async_method_list = {"Default", "IncludeSensitive", "Everything"};
+  const int32_t object_id = 1;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, RegisterArkJSfunction(
+      object_name, method_list, async_method_list, object_id, "")).Times(1);
+  nweb_impl_->RegisterArkJSfunction(object_name, method_list, async_method_list, object_id);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, RegisterArkJSfunction005) {
+  const std::string object_name = "test_id";
+  const std::vector<std::string> method_list = {"Default", "IncludeSensitive", "Everything"};
+  const std::vector<std::string> async_method_list = {"Default", "IncludeSensitive", "Everything"};
+  const int32_t object_id = 1;
+  const std::string permission = "test";
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, RegisterArkJSfunction(
+      object_name, method_list, async_method_list, object_id, permission)).Times(0);
+  nweb_impl_->RegisterArkJSfunction(object_name, method_list, async_method_list, object_id, permission);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, RegisterArkJSfunction006) {
+  const std::string object_name = "test_id";
+  const std::vector<std::string> method_list = {"Default", "IncludeSensitive", "Everything"};
+  const std::vector<std::string> async_method_list = {"Default", "IncludeSensitive", "Everything"};
+  const int32_t object_id = 1;
+  const std::string permission = "test";
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, RegisterArkJSfunction(
+      object_name, method_list, async_method_list, object_id, permission)).Times(1);
+  nweb_impl_->RegisterArkJSfunction(object_name, method_list, async_method_list, object_id, permission);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, CallH5FunctionV2001) {
+  int32_t routing_id = 0;
+  int32_t h5_object_id = 0;
+  const std::string h5_method_name = "name";
+  const std::vector<std::shared_ptr<NWebRomValue>> args;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, CallH5FunctionV2(routing_id, h5_object_id, h5_method_name, args)).Times(0);
+  nweb_impl_->CallH5FunctionV2(routing_id, h5_object_id, h5_method_name, args);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, CallH5FunctionV2002) {
+  int32_t routing_id = 0;
+  int32_t h5_object_id = 1;
+  const std::string h5_method_name = "name";
+  const std::vector<std::shared_ptr<NWebRomValue>> args;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, CallH5FunctionV2(routing_id, h5_object_id, h5_method_name, args)).Times(1);
+  nweb_impl_->CallH5FunctionV2(routing_id, h5_object_id, h5_method_name, args);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, CallH5FunctionV2003) {
+  int32_t routing_id = 0;
+  int32_t h5_object_id = -1;
+  const std::string h5_method_name = "name";
+  const std::vector<std::shared_ptr<NWebRomValue>> args;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, CallH5FunctionV2(routing_id, h5_object_id, h5_method_name, args)).Times(0);
+  nweb_impl_->CallH5FunctionV2(routing_id, h5_object_id, h5_method_name, args);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnFocus001) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->inputmethod_handler_ = new NWebInputMethodHandler();
+  bool temp = false;
+  EXPECT_CALL(*mock_delegate_, IsCustomKeyboard()).WillOnce(::testing::Return(temp));
+  EXPECT_CALL(*mock_delegate_, OnFocus(::testing::_)).WillOnce(::testing::Return(temp));
+  nweb_impl_->OnFocus(OHOS::NWeb::FocusReason::FOCUS_DEFAULT);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnBlur001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->inputmethod_handler_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, IsCustomKeyboard()).Times(0);
+  EXPECT_CALL(*mock_delegate_, OnBlur()).Times(0);
+  nweb_impl_->OnBlur(OHOS::NWeb::BlurReason::WINDOW_BLUR);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnBlur002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->inputmethod_handler_ = nullptr;
+  bool temp = false;
+  EXPECT_CALL(*mock_delegate_, IsCustomKeyboard()).WillOnce(::testing::Return(temp));
+  EXPECT_CALL(*mock_delegate_, OnBlur()).Times(1);
+  nweb_impl_->OnBlur(OHOS::NWeb::BlurReason::WINDOW_BLUR);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+TEST_F(NWebImplTest, GetScrollOffset003) {
+  float offset_y = 0.0f;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetScrollOffset(::testing::_, ::testing::_)).Times(1);
+  nweb_impl_->GetScrollOffset(nullptr, &offset_y);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(offset_y, 0.0f);
+}
+
+TEST_F(NWebImplTest, GetScrollOffset004) {
+  float offset_x = 0.0f;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, GetScrollOffset(::testing::_, ::testing::_)).Times(1);
+  nweb_impl_->GetScrollOffset(&offset_x, nullptr);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(offset_x, 0.0f);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+TEST_F(NWebImplTest, WebSendKeyEvent001) {
+  int32_t keyCode = 1;
+  int32_t keyAction = 1;
+  std::vector<int32_t> pressedCodes = {1, 2, 3};
+  input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->input_handler_ = input_handler_;
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+  nweb_impl_->WebSendKeyEvent(keyCode, keyAction, pressedCodes);
+}
+
+TEST_F(NWebImplTest, WebSendMouseWheelEvent001) {
+  double x = 1.0;
+  double y = 2.0;
+  double deltaX = 3.0;
+  double deltaY = 4.0;
+  std::vector<int32_t> pressedCodes = {1, 2, 3};
+  input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->input_handler_ = input_handler_;
+  nweb_impl_->WebSendMouseWheelEvent(x, y, deltaX, deltaY, pressedCodes);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebSendMouseWheelEventV2001) {
+  double x = 1.0;
+  double y = 2.0;
+  double deltaX = 3.0;
+  double deltaY = 4.0;
+  std::vector<int32_t> pressedCodes = {1, 2, 3};
+  int32_t source = 0;
+  input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->input_handler_ = input_handler_;
+  nweb_impl_->WebSendMouseWheelEventV2(x, y, deltaX, deltaY, pressedCodes, source);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebSendTouchpadFlingEvent001) {
+  double x = 1.0;
+  double y = 2.0;
+  double deltaX = 3.0;
+  double deltaY = 4.0;
+  std::vector<int32_t> pressedCodes = {1, 2, 3};
+  input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->input_handler_ = input_handler_;
+  nweb_impl_->WebSendTouchpadFlingEvent(x, y, deltaX, deltaY, pressedCodes);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, SendKeyboardEvent001) {
+  bool temp = false;
+  const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent> keyboardEvent = nullptr;
+  input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->input_handler_ = nullptr;
+  EXPECT_CALL(*input_handler_, SendKeyboardEvent(keyboardEvent)).Times(0);
+  auto result = nweb_impl_->SendKeyboardEvent(keyboardEvent);
+  EXPECT_EQ(nweb_impl_->input_handler_, nullptr);
+  EXPECT_EQ(result, temp);
+}
+
+TEST_F(NWebImplTest, SendKeyboardEvent002) {
+  const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent> keyboardEvent = nullptr;
+  input_handler_ = std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->input_handler_ = input_handler_;
+  nweb_impl_->SendKeyboardEvent(keyboardEvent);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebSendMouseEvent003) {
+  std::shared_ptr<MockNWebMouseEvent> mockMouseEvent = std::make_shared<MockNWebMouseEvent>();
+  std::shared_ptr<OHOS::NWeb::NWebMouseEvent> mouseEvent = mockMouseEvent;
+  EXPECT_CALL(*mockMouseEvent, GetAction()).WillOnce(::testing::Return(1));
+  nweb_impl_->nweb_delegate_ = nullptr;
+  input_handler_= std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->input_handler_ = input_handler_;
+  nweb_impl_->WebSendMouseEvent(mouseEvent);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebSendMouseEvent004) {
+  std::shared_ptr<MockNWebMouseEvent> mockMouseEvent = std::make_shared<MockNWebMouseEvent>();
+  std::shared_ptr<OHOS::NWeb::NWebMouseEvent> mouseEvent = mockMouseEvent;
+  EXPECT_CALL(*mockMouseEvent, GetAction()).WillOnce(::testing::Return(2));
+  nweb_impl_->nweb_delegate_ = nullptr;
+  input_handler_= std::make_shared<MockNWebInputHandler>(mock_delegate_);
+  nweb_impl_->input_handler_ = input_handler_;
+  nweb_impl_->WebSendMouseEvent(mouseEvent);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->input_handler_, nullptr);
+}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+TEST_F(NWebImplTest, SetScreenOffSet001) {
+  double x = 1.0;
+  double y = 1.0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, SetScreenOffset(x, y)).Times(1);
+  nweb_impl_->inputmethod_handler_ = nullptr;
+  nweb_impl_->SetScreenOffSet(x, y);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetScreenOffSet002) {
+  double x = 1.0;
+  double y = 1.0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->inputmethod_handler_ = new NWebInputMethodHandler();
+  nweb_impl_->SetScreenOffSet(x, y);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
+TEST_F(NWebImplTest, NotifyMemoryLevel001) {
+  int32_t level = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->NotifyMemoryLevel(level);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, NotifyMemoryLevel002) {
+  int32_t level = 2;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->NotifyMemoryLevel(level);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif  // BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
 }  // namespace OHOS::NWeb
                           

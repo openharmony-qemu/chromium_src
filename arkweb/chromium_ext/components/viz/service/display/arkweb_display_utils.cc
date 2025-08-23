@@ -408,4 +408,16 @@ void ArkwebDisplayUtils::SetGpuServiceImpl(GpuServiceImpl* gpu_service_impl) {
 }
 //LCOV_EXCL_STOP
 #endif
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+void ArkwebDisplayUtils::DiscardBackbuffer() {
+#if BUILDFLAG(ARKWEB_VULKAN)
+  if (display_->renderer_) {
+    display_->renderer_->ReallocatedFrameBuffers();
+  }
+#endif
+  if (display_->output_surface_) {
+    display_->output_surface_->DiscardBackbuffer();
+  }
+}
+#endif
 }  // namespace viz

@@ -42,7 +42,8 @@ bool MediaWebContentsObserver::IsPlayerIdInMediaPlayerRemotesMap(const MediaPlay
 #endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-bool IsWebContentsAvailable() {
+bool MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    IsWebContentsAvailable() {
   if (!media_web_contents_observer_) {
     return false;
   }
@@ -62,7 +63,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
   if (IsWebContentsAvailable()) {
     media_web_contents_observer_->web_contents_impl()->AsWebContentsImplExt()->UpdateLayerRect(
         media_player_id_, rect);
-  }    
+  }
 }
 
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
@@ -264,7 +265,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     LOG(INFO) << "OnUpdateVideoAttributes";
     media_web_contents_observer_->web_contents_impl()->AsWebContentsImplExt()->OnUpdateVideoAttributes(
         std::move(video_attributes), media_player_id_);
-  }    
+  }
 }
 
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::

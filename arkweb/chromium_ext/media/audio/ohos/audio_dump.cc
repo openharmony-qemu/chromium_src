@@ -71,3 +71,49 @@ void DumpFileUtil::OpenDumpFile(std::string filename, FILE** file) {
   *file = dumpFile;
   return;
 }
+
+void DumpFileUtil::WriteDumpScopedFile(base::ScopedFILE& dumpFile,
+                                       void* buffer,
+                                       size_t bufferSize) {
+  if (!dumpFile.get()) {
+    LOG(DEBUG) << "DumpFileUtil::WriteDumpScopedFile dumpFile is null";
+    return;
+  }
+  if (buffer == nullptr) {
+    LOG(WARNING) << "DumpFileUtil::WriteDumpScopedFile buffer == nullptr";
+    return;
+  }
+  size_t writeResult = fwrite(buffer, 1, bufferSize, dumpFile.get());
+  if (writeResult != bufferSize) {
+    LOG(WARNING) << "DumpFileUtil::WriteDumpFile writeResult != bufferSize";
+    return;
+  }
+}
+
+void DumpFileUtil::OpenDumpScopedFile(const std::string& filename,
+                                      base::ScopedFILE* file) {
+  std::string filePath = DUMP_APP_DIR + filename;
+  bool res = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                 .GetSystemPropertiesInstance()
+                 .GetBoolParameter(DUMP_AUDIO_PARA, false);
+  if (!res) {
+    LOG(WARNING) << "DumpFileUtil::OpenDumpScopedFile DUMP_AUDIO_PARA is false";
+    file->reset(nullptr);
+    return;
+  }
+  base::ScopedFILE dumpFile(fopen(filePath.c_str(), "wb+"));
+  if (!dumpFile.get()) {
+    LOG(WARNING) << "DumpFileUtil::OpenDumpScopedFile fopen failed! filename: "
+                 << filename;
+    file->reset(nullptr);
+    return;
+  }
+  file->reset(dumpFile.release());
+}
+
+void DumpFileUtil::CloseDumpScopedFile(base::ScopedFILE* dumpFile) {
+  if (dumpFile) {
+    LOG(WARNING) << "DumpFileUtil::CloseDumpScopedFile dumpFile close success";
+    dumpFile->reset(nullptr);
+  }
+}

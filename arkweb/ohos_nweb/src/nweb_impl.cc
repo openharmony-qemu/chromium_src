@@ -293,20 +293,7 @@ OnReportStatisticLogFunc
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
-#include "arkweb/chromium_ext/base/feature_list_utils.h"
-#include "arkweb/ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/nweb_safe_browsing_detection_handler.h"
-#include "base/base_switches.h"
-#include "base/strings/string_split.h"
-#include "base/strings/stringprintf.h"
-#include "base/task/task_traits.h"
-#include "base/task/thread_pool.h"
-#include "base/threading/platform_thread.h"
-#include "base/values.h"
-#include "cef/libcef/browser/prefs/browser_prefs.h"
 #include "cef/ohos_cef_ext/libcef/browser/global_config/global_config_prefs.h"
-#include "chrome/browser/browser_process.h"
-#include "components/prefs/pref_service.h"
-#include "services/network/public/cpp/features.h"
 #endif
 #endif
 namespace {
@@ -723,84 +710,6 @@ void MigratePasswordsToPasswordVault() {
 }
 #endif // ARKWEB_EXT_PASSWORD
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-void ApplyCommandLineFromJson(const std::string& commandline) {
-  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
- 
-  // Split the command line into individual arguments.
-  std::vector<std::string> args = base::SplitString(
-      commandline, " ", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
- 
-  for (const auto& arg : args) {
-    if (arg.empty()) {
-      continue;
-    }
- 
-    size_t equals_pos = arg.find('=');
-    if (equals_pos != std::string::npos && (arg[0] == '-' && arg[1] == '-')) {
-      // Argument with value: --switch=value
-      std::string switch_name = arg.substr(0, equals_pos);
-      std::string value = arg.substr(equals_pos + 1);
-      command_line->AppendSwitchASCII(switch_name.substr(2), value); // Remove '--'
-    } else if (arg[0] == '-' && arg[1] == '-') {
-      // Switch without value: --switch
-      command_line->AppendSwitch(arg.substr(2)); // Remove '--'
-    } else {
-      // Regular argument
-      command_line->AppendArgNative(arg);
-    }
-  }
-}
- 
-void AddGlobalConfigFeaturesSwitchesToCommandLine() {
-  const base::Value::List& featuresSwitches =
-    g_browser_process->local_state()->GetList(global_config::kGlobalConfigFeaturesSwitches);
-  if (featuresSwitches.empty()) {
-    return;
-  }
-  for (const auto& item : featuresSwitches) {
-    if (!item.is_dict()) {
-      continue;
-    }
- 
-    const std::string* name = item.GetDict().FindString("name");
-    const std::string* cmdLine = item.GetDict().FindString("commandline");
-    if (name && cmdLine) {
-      ApplyCommandLineFromJson(*cmdLine);
-    }
-  }
-}
-
-void RegisterCustomFeatureOverrides() {
-  if (base::ohos::ApplicationApiVersion() < 20) {
-    base::FeatureList::GetInstance()->GetUtils()->SetOverrideStateByFeatureName(
-      network::features::kOpaqueResponseBlockingV02.name,
-      base::FeatureList::OverrideState::OVERRIDE_DISABLE_FEATURE);
-  }
-}
-
-void DealGlobalConfigInThread() {
-  AddGlobalConfigFeaturesSwitchesToCommandLine();
-
-  if (base::FeatureList::GetInstance()) {
-    base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-    base::FeatureList::GetInstance()->InitFromCommandLine(
-      command_line->GetSwitchValueASCII(switches::kEnableFeatures),
-      command_line->GetSwitchValueASCII(switches::kDisableFeatures));
-    base::FeatureList::GetInstance()->InitFromCommandLine(
-      command_line->GetSwitchValueASCII(switches::kEnableBlinkFeatures),
-      command_line->GetSwitchValueASCII(switches::kDisableBlinkFeatures));
-  }
-
-  // FeatureOverrides from cloud control supersedes Custom FeatureOverrides
-  RegisterCustomFeatureOverrides();
-
-  OHOS::NWeb::NWebSafeBrowsingDetectionHandler::GetInstance().HandleGlobalConfig();
-}
-#endif
-#endif
-
 typedef void(*ReadDownloadDataCallback)(const char* guid, const void* buffer, const size_t size);
 class NWebReadDownloadDataCallback : public CefReadDownloadDataCallback {
  public:
@@ -972,15 +881,6 @@ void NWebImpl::InitializeWebEngine(
 #endif
   NWebApplication::GetDefault()->InitializeCef(mainargs, settings);
   content::GetNetworkService();
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-  base::ThreadPool::PostTask(
-          FROM_HERE,
-          {base::MayBlock(), base::TaskPriority::USER_VISIBLE},
-          base::BindOnce(DealGlobalConfigInThread));
-#endif
-#endif
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {

@@ -121,7 +121,7 @@ void OHOSMediaDrmBridgeFactory::OnOHOSMediaCryptoReady(
   if (!cdm_created_cb_) {
     return;
   }
-   
+
   LOG(INFO) << "[DRM]" << __func__;
   if (!session) {
     LOG(INFO) << "[DRM]" << __func__;

@@ -326,6 +326,16 @@ public:
   void DelAllVideoSurfaces();
   void ReportVideoDecoderName(const std::string& decoder_name);
 #endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  bool IsActiveFileChooser() override {
+    return active_file_chooser_ != nullptr;
+  }
+  void SetFileChooserInActive() override {
+    active_file_chooser_ = nullptr; 
+  }
+#endif  // BUILDFLAG(ARKWEB_FILE_UPLOAD)
+
 #if BUILDFLAG(ARKWEB_PDF)
   void OnPdfScrollAtBottom(const std::string& url) override;
   void OnPdfLoadEvent(int32_t result, const std::string& url) override;

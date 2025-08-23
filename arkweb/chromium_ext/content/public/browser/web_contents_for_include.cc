@@ -153,6 +153,11 @@ virtual void UpdateBrowserControlsHeight(int, bool) = 0;
 #if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
 virtual void OnBeforeUnloadFired(bool proceed) = 0;
 #endif  // ARKWEB_DISATCH_BEFORE_UNLOAD
+
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  virtual void SetFileChooserInActive() = 0;
+#endif // BUILDFLAG(ARKWEB_FILE_UPLOAD)
+
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 void SetMediaTitle(const std::string& data) {
   media_title_ = data;

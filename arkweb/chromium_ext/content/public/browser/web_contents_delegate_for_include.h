@@ -54,6 +54,10 @@ virtual DropData* GetDropData() {
 virtual void ClearContextMenu() {}
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
+#if defined(ARKWEB_MULTI_WINDOW)
+virtual bool IsActiveFileChooser() {}
+#endif  // defined(ARKWEB_MULTI_WINDOW)
+
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 virtual void OnNativeEmbedStatusUpdate(const NativeEmbedInfo& native_embed_info,
                                        NativeEmbedInfo::TagState state) {}

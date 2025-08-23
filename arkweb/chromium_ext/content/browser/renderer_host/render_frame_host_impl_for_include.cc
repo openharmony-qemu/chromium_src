@@ -87,6 +87,16 @@ void RenderFrameHostImpl::GetCreateNewWindow(
     WindowOpenDisposition disposition,
     bool allow_popup,
     GetCreateNewWindowCallback callback) {
+  if (delegate_ && delegate_->IsActiveFileChooser()) {
+    // Do not allow opening a new window or tab while a file select is active
+    // file chooser to avoid user confusion over which tab triggered the file
+    // chooser.
+    AddMessageToConsole(blink::mojom::ConsoleMessageLevel::kWarning,
+                        "window.open blocked due to active file chooser.");
+    LOG(WARNING) << "The window.open blocked due to active file chooser.";
+    std::move(callback).Run(mojom::CreateNewWindowStatus::kBlocked);
+    return;
+  }
   bool effective_transient_activation_state =
       allow_popup || frame_tree_node_->HasTransientUserActivation();
   GetContentClient()->browser()->CanCreateWindow(

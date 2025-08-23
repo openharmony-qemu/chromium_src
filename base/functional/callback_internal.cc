@@ -56,6 +56,9 @@ void BindStateHolder::Reset() {
 
 bool BindStateHolder::IsCancelled() const {
   DCHECK(bind_state_);
+  if (bind_state_ == nullptr) {
+    return true;
+  }
   return bind_state_->IsCancelled();
 }
 

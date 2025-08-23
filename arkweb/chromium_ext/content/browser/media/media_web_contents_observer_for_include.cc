@@ -241,10 +241,12 @@ void MediaWebContentsObserver::MediaPlayerHostImpl::RequestVideoAssistantConfig(
   LOG(INFO) << "RequestVideoAssistantConfig";
   auto config = media::mojom::VideoAssistantConfig::New(true, true,
       media::mojom::VideoAssistantDownloadButton::kDownloadPerPage);
-  if (IsWebContentsAvailable()) {
+  if (media_web_contents_observer_) {
     auto* web_contents_impl = media_web_contents_observer_->web_contents_impl();
-    web_contents_impl->AsWebContentsImplExt()->PopluateVideoAssistantConfig(config);
-    std::move(callback).Run(std::move(config));
+    if (web_contents_impl && web_contents_impl->AsWebContentsImplExt()) {
+      web_contents_impl->AsWebContentsImplExt()->PopluateVideoAssistantConfig(config);
+      std::move(callback).Run(std::move(config));
+    }
   }
 }
 

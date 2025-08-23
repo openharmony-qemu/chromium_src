@@ -93,7 +93,7 @@ void BaseAudioCapturerSource::Initialize(
       std::to_string(kInnerAudioSampleRate) + "_" +
       std::to_string(params_.channels()) + "_" +
       std::to_string(1) + "_webrtc_capturer_in.pcm";
-  DumpFileUtil::OpenDumpFile(dumpFileName, &dumpFile_);
+  DumpFileUtil::OpenDumpScopedFile(dumpFileName, &dumpFile_);
 
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());
 
@@ -146,7 +146,7 @@ void BaseAudioCapturerSource::Stop() {
 
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());
 
-  DumpFileUtil::CloseDumpFile(&dumpFile_);
+  DumpFileUtil::CloseDumpScopedFile(&dumpFile_);
 }
 // LCOV_EXCL_STOP
 
@@ -184,7 +184,7 @@ void BaseAudioCapturerSource::HandleAudioBuffer(OHOS::NWeb::AudioCaptureSourceTy
     base::AutoLock lock(base_callback_lock_);
     if (base_callback_) {
       base_callback_->Capture(audio_bus.get(), timeStamp, {}, 1.0, false);
-      DumpFileUtil::WriteDumpFile(dumpFile_, audiobuffer->GetBuffer(), audiobuffer->GetLength());
+      DumpFileUtil::WriteDumpScopedFile(dumpFile_, audiobuffer->GetBuffer(), audiobuffer->GetLength());
     }
   }
 

@@ -31,7 +31,7 @@ struct YUVMemcpyData {
   int32_t planes_cnt[MAXPLANES];
   int32_t planes_stride[MAXPLANES];
   uint8_t* dst_addr;
-  int32_t dst_size = 0;
+  uint32_t dst_size = 0;
   const uint8_t* src_addr[MAXPLANES];
   size_t src_size[MAXPLANES];
 };

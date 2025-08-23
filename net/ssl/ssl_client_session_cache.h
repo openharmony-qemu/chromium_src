@@ -54,6 +54,7 @@ class NET_EXPORT SSLClientSessionCache {
     std::optional<IPAddress> dest_ip_addr;
     NetworkAnonymizationKey network_anonymization_key;
     PrivacyMode privacy_mode = PRIVACY_MODE_DISABLED;
+    bool disable_legacy_crypto = false;
   };
 
   explicit SSLClientSessionCache(const Config& config);

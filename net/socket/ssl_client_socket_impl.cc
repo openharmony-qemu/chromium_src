@@ -693,7 +693,7 @@ int SSLClientSocketImpl::Init() {
   uint16_t version_max =
       ssl_config_.version_max_override.value_or(context_->config().version_max);
 
-#if !BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)  
+#if !BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
   if (version_min < TLS1_2_VERSION || version_max < TLS1_2_VERSION) {
     // TLS versions before TLS 1.2 are no longer supported.
     return ERR_UNEXPECTED;

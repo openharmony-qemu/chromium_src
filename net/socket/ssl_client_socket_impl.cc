@@ -1648,7 +1648,7 @@ SSLClientSessionCache::Key SSLClientSocketImpl::GetSessionCacheKey(
     key.network_anonymization_key = ssl_config_.network_anonymization_key;
   }
   key.privacy_mode = ssl_config_.privacy_mode;
-#if !BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
   key.disable_legacy_crypto = ssl_config_.disable_sha1_server_signatures;
 #endif
   return key;

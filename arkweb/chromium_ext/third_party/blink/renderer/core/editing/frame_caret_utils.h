@@ -22,14 +22,14 @@ class LocalFrameView;
 
 class CORE_EXPORT FrameCaretUtils {
  public:
-  FrameCaretUtils(FrameCaret* frame_caret);
+  explicit FrameCaretUtils(Member<FrameCaret> frame_caret);
 
 #if BUILDFLAG(ARKWEB_MENU)
   bool GetTouchHandleStateFromWeb(LocalFrameView* frame_view);
 #endif  // BUILDFLAG(ARKWEB_MENU)
 
  private:
-  FrameCaret* frame_caret_ = nullptr;
+  Member<FrameCaret> frame_caret_;
 };
 
 }  // namespace blink

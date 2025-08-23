@@ -119,6 +119,8 @@ ArkwebChildProcessLauncherHelperUtils::GetProcessStatusByExitCode(
         // On ChromeOS, only way a process gets kill by SIGKILL
         // is by oom-killer.
         return TERMINATION_STATUS_PROCESS_WAS_KILLED_BY_OOM;
+#else
+        [[fallthrough]];
 #endif
       case SIGINT:
       case SIGTERM:

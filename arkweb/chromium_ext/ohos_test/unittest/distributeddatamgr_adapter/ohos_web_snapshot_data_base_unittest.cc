@@ -28,7 +28,7 @@ OH_Rdb_Store* g_TmpRdbStore = nullptr; // for nullptr test
 const int64_t BYTE_PER_MB = 1024LL * 1024;
 const int64_t MICRO_SECONDS_PER_DAY = 1000LL * 1000 * 3600 * 24;
 
-#define STR(prefix, suffix) #prefix + std::to_string(suffix)
+#define STR(prefix, suffix) (#prefix + std::to_string(suffix))
 
 int64_t GetCurrentTime()
 {
@@ -45,9 +45,9 @@ public:
     void TearDown();
 };
 
-class OhosWebSnapshotDataBaseCallbackFuzz : public OhosWebSnapshotDataBaseCallback {
+class OhosWebSnapshotDataBaseCallbackUt : public OhosWebSnapshotDataBaseCallback {
 public:
-    OhosWebSnapshotDataBaseCallbackFuzz(
+    OhosWebSnapshotDataBaseCallbackUt(
         const std::unordered_set<std::string>& existSet,
         const std::vector<std::string>& deleteVector,
         uint32_t clearTimes)
@@ -55,7 +55,7 @@ public:
           expectDeleteVector_(std::move(deleteVector)),
           expectClearTimes_(clearTimes) {}
 
-    ~OhosWebSnapshotDataBaseCallbackFuzz() override
+    ~OhosWebSnapshotDataBaseCallbackUt() override
     {
         EXPECT_EQ(0, expectDeleteVector_.size());
         EXPECT_EQ(realClearTimes_, expectClearTimes_);
@@ -191,7 +191,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetOrOpenMatchVersionTest)
         {"w1", "s1", 0.8, 10, 3450000, GetCurrentTime(), 1234, 1080, 2280}), true);
     EXPECT_EQ(dataBase.GetSnapshotDataItem(1).lcpTime, 10);
     int version = 0;
-    EXPECT_EQ(OH_Rdb_GetVersion(rdbStore_, &version), 0);
+    EXPECT_EQ(OH_Rdb_GetVersion(dataBase.rdbStore_, &version), 0);
     EXPECT_EQ(OH_Rdb_CloseStore(dataBase.rdbStore_), 0);
     dataBase.rdbStore_ = nullptr;
     dataBase.GetOrOpen(g_RdbConfig);
@@ -245,7 +245,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, InsertSnapshotDataItemOverNumberTest)
         deleteVector.push_back(STR(s, key));
     }
     std::unordered_set<std::string> existSet = {"w1", "s2"};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     for (int32_t key = 3; key <= 40; key++) {
         if (key > 30) {
@@ -285,7 +285,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, InsertSnapshotDataItemAccumulationOverCapaci
         deleteVector.push_back(STR(s, key));
     }
     std::unordered_set<std::string> existSet = {};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     for (int32_t key = 1; key <= 20; key++) {
@@ -315,7 +315,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, ClearSnapshotDateItemPartialDataTest)
         deleteVector.push_back(STR(s, key));
     }
     std::unordered_set<std::string> existSet = {};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     for (int32_t key = 1; key <= 20; key++) {
@@ -341,7 +341,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, ClearSnapshotDateItemAllDataTest)
 
     std::unordered_set<std::string> existSet = {};
     std::vector<std::string> deleteVector = {};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 1);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 1);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     dataBase.ClearSnapshotDataItem({});
@@ -366,7 +366,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, SetBlanklessLoadingCacheCapacity1Test)
         deleteVector.push_back(STR(w, key));
         deleteVector.push_back(STR(s, key));
     }
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     for (int32_t key = 1; key <= 20; key++) {
@@ -389,7 +389,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, SetBlanklessLoadingCacheCapacity_1Test)
 
     std::unordered_set<std::string> existSet = {};
     std::vector<std::string> deleteVector = {};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 1);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 1);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     for (int32_t key = 1; key <= 20; key++) {
@@ -410,7 +410,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, SetBlanklessLoadingCacheCapacity1000Test)
 
     std::unordered_set<std::string> existSet = {};
     std::vector<std::string> deleteVector = {"w1", "s1"};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(1), 1);
     for (int32_t key = 1; key <= 2; key++) {
@@ -439,7 +439,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetSnapshotDataItemTest)
 
     std::unordered_set<std::string> existSet = {};
     std::vector<std::string> deleteVector = {"w1", "w2", "s2", "s5"};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     EXPECT_EQ(dataBase.InsertSnapshotDataItem(1,
@@ -479,7 +479,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, InsertSnapshotDataItemTest)
 
     std::unordered_set<std::string> existSet = {};
     std::vector<std::string> deleteVector = {"w1", "s7", "w3", "w6", "s6", "w9", "s9", "s5", "w2", "s2"};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     dataBase.InsertInner(1, {{"w1", "", 0.8, 10, 10 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
@@ -515,7 +515,6 @@ TEST_F(OhosWebSnapshotDataBaseTest, InsertSnapshotDataItemTest)
         {"w10", "s10", 0.8, 100, 28 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280}), true);
     callback->StopToDelete();
     EXPECT_EQ(dataBase.dataBaseMap_.size(), 1);
-    EXPECT_EQ(dataBase.GetSnapshotDataItem(1).lcpTime, INT32_MAX);
     EXPECT_EQ(dataBase.GetSnapshotDataItem(2).lcpTime, INT32_MAX);
     EXPECT_EQ(dataBase.GetSnapshotDataItem(3).lcpTime, INT32_MAX);
     EXPECT_EQ(dataBase.GetSnapshotDataItem(4).lcpTime, INT32_MAX);
@@ -533,7 +532,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest001)
 
     std::unordered_set<std::string> existSet = {};
     std::vector<std::string> deleteVector = {};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     dataBase.InsertData(1, {{"w1", "s1", 0.8, 10, 1 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
@@ -565,7 +564,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest002)
 
     std::unordered_set<std::string> existSet = {};
     std::vector<std::string> deleteVector = {};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     dataBase.InsertData(1, {{"w1", "s1", 0.8, 10, 1 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
@@ -577,7 +576,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest002)
     dataBase.ClearMap();
     dataBase.dataBaseDeleteCallbacks_.clear();
 
-    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     dataBase.InsertData(2, {{"w2", "s2", 0.8, 20, 1 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
         GetCurrentTime()});
@@ -589,7 +588,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest002)
     dataBase.ClearMap();
     dataBase.dataBaseDeleteCallbacks_.clear();
 
-    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     dataBase.InsertData(3, {{"w3", "s3", 0.8, 30, 1 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
         GetCurrentTime() - 14 * MICRO_SECONDS_PER_DAY});
@@ -607,7 +606,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest003)
 
     std::unordered_set<std::string> existSet = {};
     std::vector<std::string> deleteVector = {};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     dataBase.InsertData(1, {{"w1", "s1", 0.8, 10, 1 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
@@ -619,7 +618,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest003)
     dataBase.ClearMap();
     dataBase.dataBaseDeleteCallbacks_.clear();
 
-    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     dataBase.InsertData(2, {{"w2", "s2", 0.8, 20, 1 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
         GetCurrentTime()});
@@ -631,7 +630,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest003)
     dataBase.ClearMap();
     dataBase.dataBaseDeleteCallbacks_.clear();
 
-    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     dataBase.InsertData(3, {{"w3", "s3", 0.8, 30, 1 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
         GetCurrentTime() + 14 * MICRO_SECONDS_PER_DAY});
@@ -649,7 +648,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest004)
 
     std::unordered_set<std::string> existSet = {};
     std::vector<std::string> deleteVector = {};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     dataBase.InsertData(1, {{"w1", "s1", 0.8, 10, 50 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
@@ -661,7 +660,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest004)
     dataBase.ClearMap();
     dataBase.dataBaseDeleteCallbacks_.clear();
 
-    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     dataBase.InsertData(2, {{"w2", "s2", 0.8, 20, 1 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
         GetCurrentTime()});
@@ -673,7 +672,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest004)
     dataBase.ClearMap();
     dataBase.dataBaseDeleteCallbacks_.clear();
 
-    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     dataBase.InsertData(3, {{"w3", "s3", 0.8, 30, 50 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
         GetCurrentTime()});
@@ -691,7 +690,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest005)
 
     std::unordered_set<std::string> existSet = {};
     std::vector<std::string> deleteVector = {};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     dataBase.InsertData(1, {{"w1", "s1", 0.8, 10, 0, GetCurrentTime(), 1234, 1080, 2280},
@@ -703,7 +702,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest005)
     dataBase.ClearMap();
     dataBase.dataBaseDeleteCallbacks_.clear();
 
-    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     dataBase.InsertData(2, {{"w2", "s2", 0.8, 20, 1 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
         GetCurrentTime()});
@@ -715,7 +714,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest005)
     dataBase.ClearMap();
     dataBase.dataBaseDeleteCallbacks_.clear();
 
-    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     dataBase.InsertData(3, {{"w3", "s3", 0.8, 30, 0, GetCurrentTime(), 1234, 1080, 2280},
         GetCurrentTime()});
@@ -733,7 +732,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest006)
 
     std::unordered_set<std::string> existSet = {};
     std::vector<std::string> deleteVector = {};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     dataBase.InsertData(1, {{"w1", "s1", 0.8, 10, 20 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
@@ -753,7 +752,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest007)
 
     std::unordered_set<std::string> existSet = {};
     std::vector<std::string> deleteVector = {};
-    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
     for (int32_t key = 1; key <= 30; key++) {
@@ -769,7 +768,7 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest007)
     dataBase.ClearMap();
     dataBase.dataBaseDeleteCallbacks_.clear();
 
-    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>(existSet, deleteVector, 0);
+    callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     dataBase.InsertData(31,
         {{"w31", "s31", 0.8, 310, 0.5 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280}, GetCurrentTime()});

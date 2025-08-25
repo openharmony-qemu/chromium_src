@@ -52,7 +52,7 @@ const std::string LCP_TIME_COL = "lcpTime";
 const std::string SNAPSHOT_FILE_SIZE_COL = "snapshotFileSize";
 const std::string SNAPSHOT_FILE_TIME_COL = "snapshotFileTime";
 const std::string PREFERENCE_HASH_COL = "preferenceHash";
-const uint32_t MAXIMUM_SNAPSHOT_NUMBER = 30;
+const uint32_t MAXIMUM_SNAPSHOT_NUMBER = 1000;
 const int64_t MAXIMUM_TIME_LIMIT_MICRO_SECONDS = 1000LL * 1000 * 3600 * 24 * 7;
 
 const std::string DATABASE_INFO_TABLE_NAME = "databaseInfo";

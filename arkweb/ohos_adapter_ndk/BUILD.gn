@@ -112,6 +112,8 @@ component("adapter_ndk") {
     "media_adapter/video_encoder_adapter_impl.cpp",
     "ohos_image_adapter/ohos_image_decoder_adapter_impl.cpp",
     "ohos_image_adapter/ohos_image_decoder_adapter_impl.h",
+    "ohos_image_adapter/ohos_image_encoder_adapter.cpp",
+    "ohos_image_adapter/ohos_image_encoder_adapter.h",
     "keystore_adapter/keystore_adapter_impl.h",
     "keystore_adapter/keystore_adapter_impl.cpp",
     "date_time_format_adapter/date_time_format_adapter_impl.h",
@@ -144,6 +146,7 @@ component("adapter_ndk") {
     "graphic_adapter/",
     "third_party/bounds_checking_function/include",
     "ohos_sdk/openharmony/native/sysroot/usr/include/",
+    "//third_party/skia",
   ]
 
   if (target_cpu == "arm" || target_cpu == "arm64" || target_cpu == "x86_64") {
@@ -193,6 +196,8 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_window.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_media_acodec.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_media_avcencinfo.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libimage_packer.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_color_space_manager.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libimage_source.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libhuks_ndk.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libasset_ndk.z.so",
@@ -247,6 +252,8 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_window.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_media_acodec.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_media_avcencinfo.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libimage_packer.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_color_space_manager.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libimage_source.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libhuks_ndk.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libasset_ndk.z.so",
@@ -300,6 +307,8 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_window.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_media_acodec.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_media_avcencinfo.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libimage_packer.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_color_space_manager.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libimage_source.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libhuks_ndk.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libasset_ndk.z.so",

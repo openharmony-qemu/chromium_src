@@ -236,40 +236,36 @@ TEST_F(OhosWebSnapshotDataBaseTest, InsertSnapshotDataItemOverNumberTest)
     EXPECT_EQ(dataBase.InsertSnapshotDataItem(2,
         {"", "s2", 0.8, 20, 0.5 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280}), true);
     std::vector<std::string> deleteVector = {"w1", "s2"};
-    for (int32_t key = 3; key <= 10; key++) {
-        deleteVector.push_back(STR(w, key));
-        deleteVector.push_back(STR(s, key));
-    }
-    for (int32_t key = 11; key <= 20; key++) {
+    for (int32_t key = 3; key <= 500; key++) {
         deleteVector.push_back(STR(w, key));
         deleteVector.push_back(STR(s, key));
     }
     std::unordered_set<std::string> existSet = {"w1", "s2"};
     auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
-    for (int32_t key = 3; key <= 40; key++) {
-        if (key > 30) {
-            callback->StartToDelete(key <= 32 ? 1 : 2);
+    for (int32_t key = 3; key <= 1010; key++) {
+        if (key > 1000) {
+            callback->StartToDelete(key <= 1002 ? 1 : 2);
         }
         EXPECT_EQ(dataBase.InsertSnapshotDataItem(key,
-            {STR(w, key), STR(s, key), 0.8, key * 10, 0.5 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280}), true);
-        if (key > 30) {
+            {STR(w, key), STR(s, key), 0.8, key * 10, 0.02 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280}), true);
+        if (key > 1000) {
             callback->StopToDelete();
         }
     }
     EXPECT_EQ(dataBase.GetSnapshotDataItem(1).lcpTime, INT32_MAX);
     EXPECT_EQ(dataBase.GetSnapshotDataItem(10).lcpTime, INT32_MAX);
     EXPECT_EQ(dataBase.GetSnapshotDataItem(11).lcpTime, 110);
-    EXPECT_EQ(dataBase.GetSnapshotDataItem(40).lcpTime, 400);
-    callback->StartToDelete(20);
-    EXPECT_EQ(dataBase.InsertSnapshotDataItem(41,
-        {"w41", "s41", 0.8, 410, 20 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280}), true);
+    EXPECT_EQ(dataBase.GetSnapshotDataItem(1010).lcpTime, 10100);
+    callback->StartToDelete(980);
+    EXPECT_EQ(dataBase.InsertSnapshotDataItem(1011,
+        {"w1011", "s1011", 0.8, 10110, 19.8 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280}), true);
     callback->StopToDelete();
     EXPECT_EQ(dataBase.GetSnapshotDataItem(11).lcpTime, INT32_MAX);
     EXPECT_EQ(dataBase.GetSnapshotDataItem(20).lcpTime, INT32_MAX);
-    EXPECT_EQ(dataBase.GetSnapshotDataItem(21).lcpTime, 210);
-    EXPECT_EQ(dataBase.GetSnapshotDataItem(40).lcpTime, 400);
-    EXPECT_EQ(dataBase.GetSnapshotDataItem(41).lcpTime, 410);
+    EXPECT_EQ(dataBase.GetSnapshotDataItem(501).lcpTime, 5010);
+    EXPECT_EQ(dataBase.GetSnapshotDataItem(1010).lcpTime, 10100);
+    EXPECT_EQ(dataBase.GetSnapshotDataItem(1011).lcpTime, 10110);
 }
 
 TEST_F(OhosWebSnapshotDataBaseTest, InsertSnapshotDataItemAccumulationOverCapacityTest)
@@ -755,28 +751,28 @@ TEST_F(OhosWebSnapshotDataBaseTest, GetAllInfoTest007)
     auto callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
     EXPECT_EQ(dataBase.SetBlanklessLoadingCacheCapacity(30), 30);
-    for (int32_t key = 1; key <= 30; key++) {
+    for (int32_t key = 1; key <= 1000; key++) {
         dataBase.InsertData(key,
-            {{STR(w, key), STR(s, key), 0.8, key * 10, 0.5 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
+            {{STR(w, key), STR(s, key), 0.8, key * 10, 0.01 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280},
             GetCurrentTime()});
     }
     dataBase.ClearMap();
     dataBase.GetAllInfo();
-    EXPECT_EQ(dataBase.dataBaseMap_.size(), 30);
+    EXPECT_EQ(dataBase.dataBaseMap_.size(), 1000);
     EXPECT_EQ(dataBase.GetSnapshotDataItem(1).lcpTime, 10);
-    EXPECT_EQ(dataBase.GetSnapshotDataItem(30).lcpTime, 300);
+    EXPECT_EQ(dataBase.GetSnapshotDataItem(1000).lcpTime, 10000);
     dataBase.ClearMap();
     dataBase.dataBaseDeleteCallbacks_.clear();
 
     callback = std::make_shared<OhosWebSnapshotDataBaseCallbackUt>(existSet, deleteVector, 0);
     dataBase.RegisterDataBaseCallback(callback);
-    dataBase.InsertData(31,
-        {{"w31", "s31", 0.8, 310, 0.5 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280}, GetCurrentTime()});
+    dataBase.InsertData(1001,
+        {{"w1001", "s1001", 0.8, 10010, 0.01 * BYTE_PER_MB, GetCurrentTime(), 1234, 1080, 2280}, GetCurrentTime()});
     dataBase.ClearMap();
     dataBase.GetAllInfo();
     EXPECT_EQ(dataBase.dataBaseMap_.size(), 0);
     EXPECT_EQ(dataBase.GetSnapshotDataItem(1).lcpTime, INT32_MAX);
-    EXPECT_EQ(dataBase.GetSnapshotDataItem(30).lcpTime, INT32_MAX);
-    EXPECT_EQ(dataBase.GetSnapshotDataItem(31).lcpTime, INT32_MAX);
+    EXPECT_EQ(dataBase.GetSnapshotDataItem(1000).lcpTime, INT32_MAX);
+    EXPECT_EQ(dataBase.GetSnapshotDataItem(1001).lcpTime, INT32_MAX);
 }
 } // namespace OHOS::NWeb

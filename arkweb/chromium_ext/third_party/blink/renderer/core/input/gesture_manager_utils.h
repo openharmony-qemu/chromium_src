@@ -22,7 +22,7 @@
 namespace blink {
 class GestureManager;
 
-class GestureManagerUtils {
+class GestureManagerUtils : public GarbageCollected<GestureManagerUtils> {
   friend class GestureManager;
 
  public:

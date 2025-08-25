@@ -28,6 +28,8 @@
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "third_party/blink/public/web/web_performance_metrics_for_reporting.h"
+#include "third_party/blink/renderer/core/frame/web_local_frame_impl.h"
+#include "third_party/blink/renderer/core/paint/timing/paint_timing_detector.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
@@ -188,6 +190,27 @@ void RenderFrameImpl::SendBlanklessKeyToRenderFrame(uint32_t nweb_id,
   blankless_key_ = blankless_key;
   frame_sink_id_ = frame_sink_id;
   pref_hash_ = pref_hash;
+  if (blankless_key == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
+    return;
+  }
+  // need restart painttimingdetector for blankless
+  blink::WebLocalFrameImpl* web_frame = static_cast<blink::WebLocalFrameImpl*>(GetWebFrame());
+  if (!web_frame) {
+    return;
+  }
+
+  blink::LocalFrame* local_frame = web_frame->GetFrame();
+  if (!local_frame) {
+    return;
+  }
+
+  blink::LocalFrameView* lfv = local_frame->View();
+  if (!lfv) {
+    return;
+  }
+  LOG(DEBUG) << "blankless lcp:RenderFrameImpl::SendBlanklessKeyToRenderFrame restart PTD for blankless, nweb_id:"
+    << nweb_id << ", key:" << blankless_key << "lfv:" << (uint64_t)lfv;
+    lfv->GetPaintTimingDetector().RestartRecordingForBlankless();
 }
 #endif
 

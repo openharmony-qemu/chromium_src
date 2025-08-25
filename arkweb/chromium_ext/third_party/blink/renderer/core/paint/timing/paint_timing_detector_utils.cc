@@ -20,15 +20,39 @@
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/loader/document_loader.h"
+#include "third_party/blink/renderer/core/paint/timing/image_paint_timing_detector.h"
+#include "third_party/blink/renderer/core/paint/timing/largest_contentful_paint_calculator.h"
+#include "third_party/blink/renderer/core/paint/timing/text_paint_timing_detector.h"
+#include "third_party/blink/renderer/core/layout/layout_view.h"
 #endif
 
 namespace blink {
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+PaintTimingDetectorUtils::PaintTimingDetectorUtils(PaintTimingDetector* paint_timing_detector,
+  bool need_supplement_for_bl /* = true */) {
+#else
 PaintTimingDetectorUtils::PaintTimingDetectorUtils(PaintTimingDetector* paint_timing_detector) {
+#endif
   this->paint_timing_detector_ = paint_timing_detector;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (need_supplement_for_bl) {
+    ptd_supplement_for_bl_ = std::make_unique<PTDSupplementForBL>(paint_timing_detector->frame_view_);
+  } else {
+    paint_timing_detector->GetImagePaintTimingDetector().SetForBlankless();
+    paint_timing_detector->GetTextPaintTimingDetector().SetForBlankless();
+  }
+#endif
 }
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+static bool IsBgImgContentful(const LayoutObject& object, const Image& image) {
+  if (IsA<LayoutView>(object) || object.IsBody() || object.IsDocumentElement()) {
+    return false;
+  }
+  return true;
+}
+
 void PaintTimingDetectorUtils::NotifyLcpForBlankless() {
   LOG(DEBUG) << "blankless PaintTimingDetectorUtils::NotifyLcpForBlankless";
   if (!base::ohos::BlanklessController::CheckGlobalProperty()) {
@@ -43,6 +67,220 @@ void PaintTimingDetectorUtils::NotifyLcpForBlankless() {
     return;
   }
   loader->AsArkWebDocumentLoaderExt()->NotifyLcpForBlankless();
+}
+
+void PaintTimingDetectorUtils::CheckNotifyLcpForBlankless() {
+  ImagePaintTimingDetector& image_paint_timing_detector = paint_timing_detector_->GetImagePaintTimingDetector();
+  if (image_paint_timing_detector.TakeIfHasALCP()) {
+    TRACE_EVENT0("blink", "blankless lcp:PaintTimingDetector::UpdateLcpCandidate have one lcp");
+    LOG(INFO) << "blankless lcp:PaintTimingDetector::UpdateLcpCandidate have one lcp, have supplement:"
+      << HaveSupplementForBL();
+    NotifyLcpForBlankless();
+  } else {
+    ForwardUpdateLcpCandidate();
+  }
+}
+
+bool PaintTimingDetectorUtils::ForwardNotifyPaintFinished() {
+  if (!ptd_supplement_for_bl_.get()) {
+    return false;
+  }
+  ptd_supplement_for_bl_->NotifyPaintFinished();
+  return true;
+}
+
+void PaintTimingDetectorUtils::ForwardNotifyBackgroundImagePaint(const Node& node, const Image& image,
+                                      const StyleImage& style_image,
+                                      const PropertyTreeStateOrAlias& current_paint_chunk_properties,
+                                      const gfx::Rect& image_border) {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+
+  LayoutObject* object = node.GetLayoutObject();
+  if (!object) {
+    return false;
+  }
+  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_->GetPaintTimingDetector();
+  ImagePaintTimingDetector& image_paint_timing_detector = paint_timing_detector.GetImagePaintTimingDetector();
+  if (!image_paint_timing_detector.IsRecordingLargestImagePaint()) {
+    return false;
+  }
+  if (!IsBgImgContentful(*object, image)) {
+    return false;
+  }
+
+  ImageResourceContent* cached_image = style_image.CachedImage();
+  DCHECK(cached_image);
+  return image_paint_timing_detector.RecordImage(*object, image.Size(), *cached_image, current_paint_chunk_properties,
+    &style_image, image_border);
+}
+
+bool PaintTimingDetectorUtils::ForwardNotifyImagePaint(const LayoutObject& object,
+                                                      const gfx::Size& intrinsic_size,
+                                                      const MediaTiming& media_timing,
+                                                      const PropertyTreeStateOrAlias& current_paint_chunk_properties,
+                                                      const gfx::Rect& image_border) {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+
+  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_->GetPaintTimingDetector();
+  ImagePaintTimingDetector& image_paint_timing_detector = paint_timing_detector.GetImagePaintTimingDetector();
+  if (!image_paint_timing_detector.IsRecordingLargestImagePaint()) {
+    return false;
+  }
+
+  return image_paint_timing_detector.RecordImage(object, intrinsic_size, media_timing, current_paint_chunk_properties,
+    nullptr, image_border);
+}
+
+void PaintTimingDetectorUtils::ForwardNotifyImageFinished(const LayoutObject& object,
+  const MediaTiming* media_timing) {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+  if (paint_timing_detector_->GetImagePaintTimingDetector().IsRecordingLargestImagePaint()) {
+    return;
+  }
+  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_->GetPaintTimingDetector();
+  ImagePaintTimingDetector& image_paint_timing_detector = paint_timing_detector.GetImagePaintTimingDetector();
+  if (!image_paint_timing_detector.IsRecordingLargestImagePaint()) {
+    return;
+  }
+
+  image_paint_timing_detector.NotifyImageFinished(object, media_timing);
+}
+
+void PaintTimingDetectorUtils::ForwardLayoutObjectWillBeDestroyed(const LayoutObject& object) {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_->GetPaintTimingDetector();
+  TextPaintTimingDetector& text_paint_timing_detector = paint_timing_detector.GetTextPaintTimingDetector();
+  text_paint_timing_detector.LayoutObjectWillBeDestroyed(object);
+}
+
+void PaintTimingDetectorUtils::ForwardNotifyImageRemoved(const LayoutObject& object,
+  const ImageResourceContent* cached_image) {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_->GetPaintTimingDetector();
+  ImagePaintTimingDetector& image_paint_timing_detector = paint_timing_detector.GetImagePaintTimingDetector();
+  image_paint_timing_detector.NotifyImageRemoved(object, cached_image);
+}
+
+void PaintTimingDetectorUtils::ForwardOnInputOrScroll() {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+  ptd_supplement_for_bl_->OnInputOrScroll();
+  return;
+}
+
+void PaintTimingDetectorUtils::ForwardRestartRecordingLCP() {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+
+  // sync blankless only PTD frame index to PTD.
+  SyncBLPTDFrameIdxToPTD();
+
+  ptd_supplement_for_bl_->RestartRecordingLCP();
+}
+
+void PaintTimingDetectorUtils::ForwardRestartRecordingLCPToUkm() {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+
+  // sync blankless only PTD frame index to PTD.
+  SyncBLPTDFrameIdxToPTD();
+
+  ptd_supplement_for_bl_->RestartRecordingLCPToUkm();
+}
+
+void PaintTimingDetectorUtils::ForwardSoftNavigationDetected(LocalDOMWindow* window) {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+  ptd_supplement_for_bl_->SoftNavigationDetected(window);
+  return;
+}
+
+void PaintTimingDetectorUtils::ForwardReportIgnoredContent() {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+  ptd_supplement_for_bl_->ReportIgnoredContent();
+}
+
+void PaintTimingDetectorUtils::ForwardUpdateLcpCandidate() {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+  ptd_supplement_for_bl_->UpdateLcpCandidate();
+}
+
+void PaintTimingDetectorUtils::RestartRecordingForBlankless() {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+  LOG(INFO) << "blankless lcp:PaintTimingDetectorUtils::RestartRecordingForBlankless";
+  ptd_supplement_for_bl_->StopRecordingLCP(false);
+}
+
+void PaintTimingDetectorUtils::SyncBLPTDFrameIdxToPTD() {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+  paint_timing_detector_->GetImagePaintTimingDetector().SetFrameIndex(
+    ptd_supplement_for_bl_->GetImagePaintTimingDetector().GetFrameIndex());
+  paint_timing_detector_->GetTextPaintTimingDetector().SetFrameIndex(
+    ptd_supplement_for_bl_->GetTextPaintTimingDetector().GetFrameIndex());
+}
+
+void PaintTimingDetectorUtils::SyncIPTDFrameIdxToBLIPTD(unsigned frame_index) {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+  ptd_supplement_for_bl_->GetImagePaintTimingDetector().SetFrameIndex(frame_index);
+}
+
+void PaintTimingDetectorUtils::SyncTPTDFrameIdxToBLTPTD(unsigned frame_index) {
+  if (!ptd_supplement_for_bl_.get()) {
+    return;
+  }
+  ptd_supplement_for_bl_->GetTextPaintTimingDetector().SetFrameIndex(frame_index);
+}
+
+void PaintTimingDetector::RestartRecordingForBlankless() {
+  paint_timing_detector_utils_->RestartRecordingForBlankless();
+}
+
+void PaintTimingDetector::SyncIPTDFrameIdxToBLIPTD(unsigned frame_index) {
+  paint_timing_detector_utils_->SyncIPTDFrameIdxToBLIPTD(frame_index);
+}
+
+void PaintTimingDetector::SyncTPTDFrameIdxToBLTPTD(unsigned frame_index) {
+  paint_timing_detector_utils_->SyncTPTDFrameIdxToBLTPTD(frame_index);
+}
+
+void TextPaintTimingDetector::SetForBlankless() {
+  is_for_blankless_only_ = true;
+}
+
+uint32_t TextPaintTimingDetector::GetFrameIndex() const {
+  return frame_index_;
+}
+
+void TextPaintTimingDetector::SetFrameIndex(uint32_t frame_index) {
+  frame_index_ = frame_index;
+}
+
+void LargestContentfulPaintCalculator::SetForBlankless() {
+  is_for_blankless_only_ = true;
 }
 #endif
 

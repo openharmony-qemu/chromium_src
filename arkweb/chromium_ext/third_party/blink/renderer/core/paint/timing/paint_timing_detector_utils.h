@@ -19,17 +19,60 @@
 #include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/platform/heap/persistent.h"
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/ptd_supplement_for_bl.h"
+#include "third_party/blink/renderer/core/layout/layout_object.h"
+#include "third_party/blink/renderer/platform/graphics/image.h"
+#include "third_party/blink/renderer/core/style/style_image.h"
+#include "third_party/blink/renderer/platform/graphics/paint/property_tree_state.h"
+#include "third_party/blink/renderer/platform/loader/fetch/media_timing.h"
+#include "ui/gfx/geometry/rect.h"
+#include "ui/gfx/geometry/rect_f.h"
+#include "third_party/blink/renderer/core/loader/resource/image_resource_content.h"
+#endif
+
 namespace blink {
 
 class PaintTimingDetector;
+class PTDSupplementForBL;
 
 class PaintTimingDetectorUtils {
  public:
   Persistent<PaintTimingDetector> paint_timing_detector_;
-  PaintTimingDetectorUtils(PaintTimingDetector* paint_timing_detector);
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  PaintTimingDetectorUtils(PaintTimingDetector* paint_timing_detector, bool need_supplement_for_bl = true);
+#else
+  explicit PaintTimingDetectorUtils(PaintTimingDetector* paint_timing_detector);
+#endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  bool ForwardNotifyPaintFinished();
+  void ForwardNotifyBackgroundImagePaint(const Node& node, const Image& image, const StyleImage& style_image,
+    const PropertyTreeStateOrAlias& current_paint_chunk_properties, const gfx::Rect& image_border);
+  bool ForwardNotifyImagePaint(const LayoutObject& object,
+                              const gfx::Size& intrinsic_size,
+                              const MediaTiming& media_timing,
+                              const PropertyTreeStateOrAlias& current_paint_chunk_properties,
+                              const gfx::Rect& image_border);
+  void ForwardNotifyImageFinished(const LayoutObject& object, const MediaTiming* media_timing);
+  void ForwardLayoutObjectWillBeDestroyed(const LayoutObject& object);
+  void ForwardNotifyImageRemoved(const LayoutObject& object, const ImageResourceContent* cached_image);
+  void ForwardOnInputOrScroll();
+  void ForwardRestartRecordingLCP();
+  void ForwardSoftNavigationDetected(LocalDOMWindow* window);
+  void ForwardRestartRecordingLCPToUkm();
+  void ForwardReportIgnoredContent();
+  void ForwardUpdateLcpCandidate();
   void NotifyLcpForBlankless();
+  void CheckNotifyLcpForBlankless();
+  void RestartRecordingForBlankless();
+  bool HaveSupplementForBL() const { return ptd_supplement_for_bl_ != nullptr; }
+  void SyncIPTDFrameIdxToBLIPTD(unsigned frame_index);
+  void SyncTPTDFrameIdxToBLTPTD(unsigned frame_index);
+
+private:
+  void SyncBLPTDFrameIdxToPTD();
+  std::unique_ptr<PTDSupplementForBL> ptd_supplement_for_bl_ = nullptr;
 #endif
 };
 

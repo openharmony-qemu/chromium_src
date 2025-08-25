@@ -156,7 +156,7 @@ bool PermissionsData::IsRestrictedUrl(const GURL& document_url,
 #if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)                                
   if (document_url.SchemeIs(content::kChromeUIScheme) &&
 #else
-  if (document_url.SchemeIs(content::kChromeUIScheme) || document_url.SchemeIs(content::kArkWebUIScheme)) &&
+  if ((document_url.SchemeIs(content::kChromeUIScheme) || document_url.SchemeIs(content::kArkWebUIScheme)) &&
 #endif
       !allow_on_chrome_urls) {
     if (error)

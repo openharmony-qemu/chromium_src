@@ -104,7 +104,7 @@ void NWebExtensionTabCefDelegate::TabUpdateCallback(
 
 bool NWebExtensionTabCefDelegate::MoveTab(
     std::vector<int32_t>& tab_ids,
-    NWebExtensionTabMoveProperties& move_properties,
+    NWebExtensionTabMovePropertiesV2& move_properties_v2,
     TabMovedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
@@ -112,7 +112,15 @@ bool NWebExtensionTabCefDelegate::MoveTab(
   static int request_id = 0;
   request_id++;
   g_tab_moved_map_[request_id] = std::move(callback);
-  bool result = NWebExtensionTabDispatcher::MoveTab(request_id, tab_ids, move_properties);
+
+  bool result;
+  if (NWebExtensionTabDispatcher::HasMoveTabV2Callback()) {
+    result = NWebExtensionTabDispatcher::MoveTabV2(request_id, tab_ids,
+                                                   move_properties_v2);
+  } else {
+    result = NWebExtensionTabDispatcher::MoveTab(request_id, tab_ids,
+                                                 move_properties_v2.properties);
+  }
   if (!result) {
     g_tab_moved_map_.erase(request_id);
   }
@@ -131,14 +139,21 @@ void NWebExtensionTabCefDelegate::TabMoveCallback(
 }
 
 bool NWebExtensionTabCefDelegate::RemoveTab(
-    std::vector<int>& tab_ids, TabRemovedCallback callback) {
+    NWebExtensionTabRemoveParams& params,
+    TabRemovedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
   static int request_id = 0;
   request_id++;
   g_tab_removed_map_[request_id] = std::move(callback);
-  bool result = NWebExtensionTabDispatcher::RemoveTab(request_id, tab_ids);
+
+  bool result;
+  if (NWebExtensionTabDispatcher::HasRemoveTabV2Callback()) {
+    result = NWebExtensionTabDispatcher::RemoveTabV2(request_id, params);
+  } else {
+    result = NWebExtensionTabDispatcher::RemoveTab(request_id, params.tabIds);
+  }
   if (!result) {
     g_tab_removed_map_.erase(request_id);
   }
@@ -233,7 +248,7 @@ void NWebExtensionTabCefDelegate::TabGroupCallback(
 }
 
 bool NWebExtensionTabCefDelegate::UngroupTab(
-    std::vector<int>& tabs,
+    NWebExtensionTabUngroupParams& params,
     TabUngroupedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
@@ -241,7 +256,13 @@ bool NWebExtensionTabCefDelegate::UngroupTab(
   static int request_id = 0;
   request_id++;
   g_tab_ungrouped_map_[request_id] = std::move(callback);
-  bool result = NWebExtensionTabDispatcher::UngroupTab(request_id, tabs);
+
+  bool result;
+  if (NWebExtensionTabDispatcher::HasUngroupTabV2Callback()) {
+    result = NWebExtensionTabDispatcher::UngroupTabV2(request_id, params);
+  } else {
+    result = NWebExtensionTabDispatcher::UngroupTab(request_id, params.tabIds);
+  }
   if (!result) {
     g_tab_ungrouped_map_.erase(request_id);
   }
@@ -286,28 +307,40 @@ void NWebExtensionTabCefDelegate::TabHighlightCallback(
 }
 
 std::unique_ptr<NWebExtensionTab> NWebExtensionTabCefDelegate::GetTab(
-    int tab_id) {
+    int tabId,
+    std::optional<std::string> contextType,
+    std::optional<bool> includeIncognitoInfo) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return nullptr;
 #else
-  return NWebExtensionTabDispatcher::GetTab(tab_id);
+  NWebExtensionTabGetParams params = {tabId, contextType, includeIncognitoInfo};
+  return NWebExtensionTabDispatcher::GetTab(params);
 #endif
 }
 
 std::vector<NWebExtensionTab> NWebExtensionTabCefDelegate::QueryTab(
-    NWebExtensionTabQueryInfo& queryInfo) {
+    NWebExtensionTabQueryInfoV2& queryInfo) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return std::vector<NWebExtensionTab>();
 #else
-  return NWebExtensionTabDispatcher::QueryTab(queryInfo);
+  if (NWebExtensionTabDispatcher::HasQueryTabV2Callback()) {
+    return NWebExtensionTabDispatcher::QueryTabV2(queryInfo);
+  } else {
+    return NWebExtensionTabDispatcher::QueryTab(queryInfo.query);
+  }
 #endif
 }
 
-int NWebExtensionTabCefDelegate::GetAnyTab(int windowId) {
+int NWebExtensionTabCefDelegate::GetAnyTab(
+    NWebExtensionTabGetAnyTabParams& params) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return -1;
 #else
-  return NWebExtensionTabDispatcher::GetAnyTab(windowId);
+  if (NWebExtensionTabDispatcher::HasGetAnyTabV2Callback()) {
+    return NWebExtensionTabDispatcher::GetAnyTabV2(params);
+  } else {
+    return NWebExtensionTabDispatcher::GetAnyTab(params.windowId);
+  }
 #endif
 }
 

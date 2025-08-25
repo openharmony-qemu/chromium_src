@@ -340,7 +340,8 @@ arkweb_media_filters_ohos_sources = [
 ]
 
 arkweb_media_filters_ohos_unittest_sources = [
-  "//arkweb/chromium_ext/media/filters/ohos/ohos_audio_decoder_unittest.cc"
+  "//arkweb/chromium_ext/media/filters/ohos/ohos_audio_decoder_unittest.cc",
+  "//arkweb/chromium_ext/media/filters/ohos/ohos_audio_decoder_loop_unittest.cc"
 ]
 
 arkweb_media_mojo_mojom_sources = [

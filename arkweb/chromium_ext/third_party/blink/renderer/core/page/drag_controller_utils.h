@@ -23,7 +23,7 @@ namespace blink {
 
 class DragController;
 
-class DragControllerUtils : public GarbageCollected<ScrollableAreaUtils> {
+class DragControllerUtils : public GarbageCollected<DragControllerUtils> {
  public:
   explicit DragControllerUtils(DragController*);
 

@@ -39,6 +39,7 @@ class POLICY_EXPORT PolicyLoaderOhos : public AsyncPolicyLoader {
                                     PolicyBundle* bundle);
 
  private:
+  friend class PolicyLoaderOhosTest;
   std::string ReadTestPolices();
 
   std::shared_ptr<PolicyChangedEventCallback> event_callback_;
@@ -59,6 +60,7 @@ class PolicyChangedEventCallback
   void Changed() override;
 
  private:
+  friend class PolicyChangedEventCallbackTest;
   void OnPolicyChangedImpl();
   raw_ptr<PolicyLoaderOhos> loader_;
 };

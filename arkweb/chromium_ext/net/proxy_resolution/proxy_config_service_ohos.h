@@ -102,6 +102,8 @@ class NET_EXPORT ProxyConfigServiceOHOS : public ProxyConfigService {
 
  private:
   // friend class ProxyConfigServiceOHOSTestBase
+  friend class TestDelegate;
+  friend class ProxyConfigServiceOHOSTest;
   class Delegate;
   friend class NetProxyEventCallback;
 

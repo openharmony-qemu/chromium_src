@@ -434,7 +434,8 @@ class ProxyConfigServiceOHOS::Delegate
 
  private:
   friend class base::RefCountedThreadSafe<Delegate>;
-
+  friend class TestDelegate;
+  friend class ProxyConfigServiceOHOSTest;
   virtual ~Delegate() {}
 
   // Called on the network sequence.

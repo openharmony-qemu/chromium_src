@@ -165,12 +165,12 @@ bool LanguagePrefs::IsForcedLanguage(const std::string& language) {
 void LanguagePrefs::InitializeSelectedLanguagesPref() {
   // Initializes user-selected languages if they're empty.
   // This is important so that previously saved languages aren't overwritten.
-#if BUILDFLAG(ARKWEB_I18N)
+#if !BUILDFLAG(ARKWEB_I18N)
   if (prefs_->GetString(language::prefs::kSelectedLanguages).empty()) {
 #endif
     prefs_->SetString(language::prefs::kSelectedLanguages,
                       prefs_->GetString(language::prefs::kAcceptLanguages));
-#if BUILDFLAG(ARKWEB_I18N)
+#if !BUILDFLAG(ARKWEB_I18N)
   }
 #endif
 }

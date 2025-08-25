@@ -323,7 +323,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
     buffer_adapter_ = nullptr;
     return CodecCodeAdapter::ERROR;
   }
-  uint8_t *dst = data..get();
+  uint8_t *dst = data.dst_addr.get();
   if ((CopyYUVData(data, VideoFrame::kYPlane, &dst) != CodecCodeAdapter::OK) ||
       (CopyYUVData(data, VideoFrame::kUPlane, &dst) != CodecCodeAdapter::OK) ||
       (CopyYUVData(data, VideoFrame::kVPlane, &dst) != CodecCodeAdapter::OK)) {

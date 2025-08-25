@@ -30,8 +30,8 @@ struct YUVMemcpyData {
   int32_t height;
   int32_t planes_cnt[MAXPLANES];
   int32_t planes_stride[MAXPLANES];
-  uint8_t* dst_addr;
-  int32_t dst_size = 0;
+  raw_ptr<uint8_t> dst_addr;
+  uint32_t dst_size = 0;
   const uint8_t* src_addr[MAXPLANES];
   size_t src_size[MAXPLANES];
 };
@@ -323,7 +323,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
     buffer_adapter_ = nullptr;
     return CodecCodeAdapter::ERROR;
   }
-  uint8_t *dst = data.dst_addr;
+  uint8_t *dst = data..get();
   if ((CopyYUVData(data, VideoFrame::kYPlane, &dst) != CodecCodeAdapter::OK) ||
       (CopyYUVData(data, VideoFrame::kUPlane, &dst) != CodecCodeAdapter::OK) ||
       (CopyYUVData(data, VideoFrame::kVPlane, &dst) != CodecCodeAdapter::OK)) {

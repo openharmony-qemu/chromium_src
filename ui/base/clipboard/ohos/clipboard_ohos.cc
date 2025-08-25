@@ -228,7 +228,7 @@ class ClipboardOHOSInternal {
     if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
       content::GetUIThreadTaskRunner({})->PostTask(
           FROM_HERE, base::BindOnce(&ClipboardOHOSInternal::SetClipboardState,
-                                    base::Unretained(this), state));
+                                    weak_ptr_factory_.GetWeakPtr(), state));
     } else {
       state_ = state;
     }
@@ -250,14 +250,12 @@ class ClipboardOHOSInternal {
     }
   }
 
-  bool UpdateClipboardDataRun() {
+  void UpdateClipboardDataRun() {
     LOG(INFO) << "update clipboard data async";
     UpdateClipboardData();
-    return true;
   }
 
-  void OnUpdateClipboardData(Clipboard::UpdateClipboardDataCallback callback,
-                             bool flag) {
+  void OnUpdateClipboardData(Clipboard::UpdateClipboardDataCallback callback) {
     if (!callback) {
       LOG(ERROR) << "UpdateClipboardDataAsync Failed";
       return;
@@ -267,10 +265,10 @@ class ClipboardOHOSInternal {
 
   void UpdateClipboardData(Clipboard::UpdateClipboardDataCallback callback) {
     LOG(INFO) << "Update clipboard data start";
-    base::ThreadPool::PostTaskAndReplyWithResult(
+    base::ThreadPool::PostTaskAndReply(
         FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_VISIBLE},
         base::BindOnce(&ClipboardOHOSInternal::UpdateClipboardDataRun,
-                       base::Unretained(this)),
+                       weak_ptr_factory_.GetWeakPtr()),
         base::BindOnce(&ClipboardOHOSInternal::OnUpdateClipboardData,
                        weak_ptr_factory_.GetWeakPtr(), std::move(callback)));
   }

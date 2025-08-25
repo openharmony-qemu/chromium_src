@@ -71,4 +71,8 @@ bool ScrollableAreaUtils::GetScrollable() {
 }
 // LCOV_EXCL_STOP
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+void ScrollableAreaUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(scrollable_area_);
+}
 }  // namespace blink

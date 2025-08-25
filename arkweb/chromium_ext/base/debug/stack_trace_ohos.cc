@@ -150,7 +150,7 @@ void itoa_r(intptr_t i, int base, size_t padding, base::span<char> buf) {
   auto writer = base::SpanWriter(buf);
   size_t start = 0u;
 
-  uintptr_t j = i;
+  uintptr_t j = static_cast<uintptr_t>(i);
 
   // Handle negative numbers (only for base 10).
   if (i < 0 && base == 10) {

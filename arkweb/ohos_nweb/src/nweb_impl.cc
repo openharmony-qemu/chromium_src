@@ -113,6 +113,7 @@
 
 #if BUILDFLAG(ARKWEB_EXT_UA)
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_ua_config.h"
+#include "ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/cloud_control_config/ua_push_config/nweb_safe_browsing_ua_push_config.h"
 #endif
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
@@ -1020,7 +1021,14 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
     NWebHandlerDelegate::RegisterLoggerCallback(g_logger_callback);
 #endif
   }
-
+#if BUILDFLAG(ARKWEB_EXT_UA)
+  static std::once_flag flag;
+  static const int kDefaultConfigId = -1;
+  std::call_once(flag, []() {
+    OHOS::NWeb::NWebSafeBrowsingUAPushConfig::GetInstance().EnableUAPushConfig(
+        kDefaultConfigId, true);
+  });
+#endif
   return true;
 }
 

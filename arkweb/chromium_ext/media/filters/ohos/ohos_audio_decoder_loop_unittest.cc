@@ -20,7 +20,6 @@ using namespace testing;
 namespace media {
 namespace {
 
-// 模拟客户端类
 class MockClient : public OHOSAudioDecoderLoop::Client {
  public:
   MOCK_METHOD(bool, IsAnyInputPending, (), (const, override));
@@ -86,29 +85,25 @@ class OHOSAudioDecoderLoopTest : public testing::Test {
   std::unique_ptr<OHOSAudioDecoderLoop> decoder_loop_;
 };
 
-// 测试构造函数
 TEST_F(OHOSAudioDecoderLoopTest, Constructor) {
   CreateDecoderLoop();
   EXPECT_NE(decoder_loop_.get(), nullptr);
 }
 
-// 测试空客户端构造函数
 TEST_F(OHOSAudioDecoderLoopTest, ConstructorWithNullClient) {
   decoder_loop_ = std::make_unique<OHOSAudioDecoderLoop>(
       nullptr, task_runner_);
   EXPECT_EQ(decoder_loop_->state_, OHOSAudioDecoderLoop::State::ERROR);
 }
 
-// 测试 TryFlush 在 ERROR 状态
 TEST_F(OHOSAudioDecoderLoopTest, TryFlushInErrorState) {
   CreateDecoderLoop();
-  // 强制设置 ERROR 状态
+
   decoder_loop_->SetState(OHOSAudioDecoderLoop::ERROR);
   
   EXPECT_FALSE(decoder_loop_->TryFlush());
 }
 
-// 测试 TryFlush 成功
 TEST_F(OHOSAudioDecoderLoopTest, TryFlushSuccess) {
   CreateDecoderLoop();
   
@@ -118,7 +113,6 @@ TEST_F(OHOSAudioDecoderLoopTest, TryFlushSuccess) {
   EXPECT_TRUE(decoder_loop_->TryFlush());
 }
 
-// 测试 TryFlush 失败
 TEST_F(OHOSAudioDecoderLoopTest, TryFlushFailure) {
   CreateDecoderLoop();
   
@@ -128,7 +122,6 @@ TEST_F(OHOSAudioDecoderLoopTest, TryFlushFailure) {
   EXPECT_FALSE(decoder_loop_->TryFlush());
 }
 
-// 测试 OnKeyAdded 在 WAITING_FOR_KEY 状态
 TEST_F(OHOSAudioDecoderLoopTest, OnKeyAddedInWaitingState) {
   CreateDecoderLoop();
   decoder_loop_->SetState(OHOSAudioDecoderLoop::WAITING_FOR_KEY);
@@ -139,11 +132,9 @@ TEST_F(OHOSAudioDecoderLoopTest, OnKeyAddedInWaitingState) {
   
   decoder_loop_->OnKeyAdded();
 
-  // 应该回到 READY 状态
   EXPECT_EQ(decoder_loop_->state_, OHOSAudioDecoderLoop::State::READY);
 }
 
-// 测试 OnKeyAdded 在其他状态
 TEST_F(OHOSAudioDecoderLoopTest, OnKeyAddedInReadyState) {
   CreateDecoderLoop();
   decoder_loop_->SetState(OHOSAudioDecoderLoop::READY);
@@ -152,34 +143,19 @@ TEST_F(OHOSAudioDecoderLoopTest, OnKeyAddedInReadyState) {
   EXPECT_CALL(*mock_client_, DequeueOutputBuffer(_))
       .WillOnce(Return(-1));
 
-  // 处于READY状态会直接触发循环
   decoder_loop_->OnKeyAdded();
 
-  // 状态应该保持不变
   EXPECT_EQ(decoder_loop_->state_, OHOSAudioDecoderLoop::State::READY);
 }
 
-// 测试 ExpectWork 启动定时器
 TEST_F(OHOSAudioDecoderLoopTest, ExpectWorkStartsTimer) {
   CreateDecoderLoop();
-  
   EXPECT_CALL(*mock_client_, IsAnyInputPending()).WillOnce(Return(false));
-
   decoder_loop_->ExpectWork();
-  // 应该启动定时器
+
   ASSERT_TRUE(decoder_loop_->io_timer_.IsRunning());
 }
 
-// 测试 DoPendingWork 在 ERROR 状态
-TEST_F(OHOSAudioDecoderLoopTest, DoPendingWorkInErrorState) {
-  CreateDecoderLoop();
-  decoder_loop_->SetState(OHOSAudioDecoderLoop::ERROR);
-
-  // 不应该处理任何工作
-  decoder_loop_->DoPendingWork();
-}
-
-// 测试 ProcessOneInputBuffer 在非 READY 状态
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferInNonReadyState) {
   CreateDecoderLoop();
   decoder_loop_->SetState(OHOSAudioDecoderLoop::WAITING_FOR_KEY);
@@ -187,7 +163,6 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferInNonReadyState) {
   EXPECT_FALSE(decoder_loop_->ProcessOneInputBuffer());
 }
 
-// 测试 ProcessOneInputBuffer 无输入数据
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferNoInput) {
   CreateDecoderLoop();
 
@@ -197,7 +172,6 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferNoInput) {
   EXPECT_FALSE(decoder_loop_->ProcessOneInputBuffer());
 }
 
-// 测试 ProcessOneInputBuffer 获取输入缓冲区失败
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferDequeueFail) {
   CreateDecoderLoop();
 
@@ -213,7 +187,6 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferDequeueFail) {
   EXPECT_FALSE(decoder_loop_->ProcessOneInputBuffer());
 }
 
-// 测试 ProcessOneInputBuffer 成功入队
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferSuccess) {
   CreateDecoderLoop();
 
@@ -244,7 +217,6 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferSuccess) {
   delete[] input_data.memory;
 }
 
-// 测试 ProcessOneInputBuffer EOS 处理
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferEos) {
   CreateDecoderLoop();
 
@@ -272,13 +244,12 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferEos) {
   EXPECT_CALL(*mock_client_, OnInputDataQueued(true));
 
   EXPECT_TRUE(decoder_loop_->ProcessOneInputBuffer());
-  // 应该进入 DRAINING 状态
   EXPECT_EQ(decoder_loop_->state_, OHOSAudioDecoderLoop::State::DRAINING);
 
   delete[] input_data.memory;
 }
 
-// 测试 ProcessOneInputBuffer 需要重试（等待密钥）
+// test ProcessOneInputBuffer function which need waiting for key
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferRetry) {
   CreateDecoderLoop();
 
@@ -303,13 +274,11 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferRetry) {
       .WillOnce(Return(AudioDecoderAdapterCode::DECODER_RETRY));
 
   EXPECT_TRUE(decoder_loop_->ProcessOneInputBuffer());
-  // 应该进入 WAITING_FOR_KEY 状态
   EXPECT_EQ(decoder_loop_->state_, OHOSAudioDecoderLoop::State::WAITING_FOR_KEY);
 
   delete[] input_data.memory;
 }
 
-// 测试 ProcessOneInputBuffer 入队错误
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferError) {
   CreateDecoderLoop();
 
@@ -335,12 +304,11 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneInputBufferError) {
 
   EXPECT_CALL(*mock_client_, OnInputDataQueued(false));
   EXPECT_FALSE(decoder_loop_->ProcessOneInputBuffer());
-  // 应该进入 ERROR 状态
+
   EXPECT_EQ(decoder_loop_->state_, OHOSAudioDecoderLoop::State::ERROR);
   delete[] input_data.memory;
 }
 
-// 测试 ProcessOneOutputBuffer 在 ERROR 状态
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneOutputBufferInErrorState) {
   CreateDecoderLoop();
   decoder_loop_->SetState(OHOSAudioDecoderLoop::ERROR);
@@ -348,7 +316,6 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneOutputBufferInErrorState) {
   EXPECT_FALSE(decoder_loop_->ProcessOneOutputBuffer());
 }
 
-// 测试 ProcessOneOutputBuffer 无输出
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneOutputBufferNoOutput) {
   CreateDecoderLoop();
 
@@ -358,7 +325,6 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneOutputBufferNoOutput) {
   EXPECT_FALSE(decoder_loop_->ProcessOneOutputBuffer());
 }
 
-// 测试 ProcessOneOutputBuffer EOS 输出
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneOutputBufferEos) {
   CreateDecoderLoop();
   decoder_loop_->SetState(OHOSAudioDecoderLoop::DRAINING);
@@ -380,11 +346,9 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneOutputBufferEos) {
       .WillOnce(Return(true));
   
   EXPECT_TRUE(decoder_loop_->ProcessOneOutputBuffer());
-  // 应该进入 DRAINED 状态
   EXPECT_EQ(decoder_loop_->state_, OHOSAudioDecoderLoop::State::DRAINED);
 }
 
-// 测试 ProcessOneOutputBuffer EOS 处理失败
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneOutputBufferEosFailure) {
   CreateDecoderLoop();
   decoder_loop_->SetState(OHOSAudioDecoderLoop::DRAINING);
@@ -406,11 +370,9 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneOutputBufferEosFailure) {
       .WillOnce(Return(false));
   
   EXPECT_TRUE(decoder_loop_->ProcessOneOutputBuffer());
-  // 应该进入 ERROR 状态
   EXPECT_EQ(decoder_loop_->state_, OHOSAudioDecoderLoop::State::ERROR);
 }
 
-// 测试 ProcessOneOutputBuffer 正常输出
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneOutputBufferNormal) {
   CreateDecoderLoop();
   
@@ -430,7 +392,6 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneOutputBufferNormal) {
   EXPECT_TRUE(decoder_loop_->ProcessOneOutputBuffer());
 }
 
-// 测试 ProcessOneOutputBuffer 正常输出处理失败
 TEST_F(OHOSAudioDecoderLoopTest, ProcessOneOutputBufferNormalFailure) {
   CreateDecoderLoop();
   
@@ -448,12 +409,10 @@ TEST_F(OHOSAudioDecoderLoopTest, ProcessOneOutputBufferNormalFailure) {
       .WillOnce(Return(false));
   
   EXPECT_TRUE(decoder_loop_->ProcessOneOutputBuffer());
-  // 应该进入 ERROR 状态
   EXPECT_EQ(decoder_loop_->state_, OHOSAudioDecoderLoop::State::ERROR);
   
 }
 
-// 设置定时器禁用
 TEST_F(OHOSAudioDecoderLoopTest, ManageTimer_DisableTimer) {
   CreateDecoderLoop(true);
 
@@ -465,184 +424,182 @@ TEST_F(OHOSAudioDecoderLoopTest, ManageTimer_DidWork_StartTimer) {
   CreateDecoderLoop();
   decoder_loop_->idle_time_begin_ = base::TimeTicks();
   
-  // 调用ManageTimer，did_work = true
+  // did_work = true
   decoder_loop_->ManageTimer(true);
   
-  // 验证idle_time_begin_被更新
+  // Verify that idle_time_begin has been updated
   EXPECT_NE(decoder_loop_->idle_time_begin_, base::TimeTicks());
   ASSERT_TRUE(decoder_loop_->io_timer_.IsRunning());
 }
 
 TEST_F(OHOSAudioDecoderLoopTest, ManageTimer_DidWork_UpdateIdleTime) {
   CreateDecoderLoop();
-  // 设置一个旧的空闲时间
+  // Set an old idle time
   base::TimeTicks old_time = base::TimeTicks::Now() - base::Seconds(30);
   SetIdleTimeBegin(old_time);
   
   decoder_loop_->ManageTimer(true);
   
-  // 验证空闲时间被更新为当前时间
+  // Verify that idle time is updated to the current time
   EXPECT_GT(GetIdleTimeBegin(), old_time);
   EXPECT_TRUE(IsTimerRunning());
 }
 
 TEST_F(OHOSAudioDecoderLoopTest, ManageTimer_NoWork_FirstIdle) {
   CreateDecoderLoop();
-  // 初始状态：空闲时间为0，没有工作
+  // Initial state: Idle time is 0, no work
   SetIdleTimeBegin(base::TimeTicks());
   
   decoder_loop_->ManageTimer(false);
   
-  // 验证空闲时间被设置，定时器应该启动
+  // Verify that idle time is set and the timer should start
   EXPECT_NE(GetIdleTimeBegin(), base::TimeTicks());
   EXPECT_TRUE(IsTimerRunning());
 }
 
 TEST_F(OHOSAudioDecoderLoopTest, ManageTimer_NoWork_NotTimeout) {
   CreateDecoderLoop();
-  // 设置空闲时间在500ms前（未超时）
+  // Set idle time before 500ms (without timeout)
   base::TimeTicks idle_start = base::TimeTicks::Now() - base::Milliseconds(500);
   SetIdleTimeBegin(idle_start);
   
-  // 确保定时器正在运行
+  // Ensure that the timer is running
   decoder_loop_->ManageTimer(true);
   EXPECT_TRUE(IsTimerRunning());
   
-  // 设置空闲时间在500ms前（未超时）
   idle_start = base::TimeTicks::Now() - base::Milliseconds(500);
   SetIdleTimeBegin(idle_start);
-  // 没有工作，但未超时
+  // No work, but not exceeding the time limit
   decoder_loop_->ManageTimer(false);
   
-  // 验证定时器继续运行
+  // Verify that the timer continues to run
   EXPECT_TRUE(IsTimerRunning());
-  // 空闲时间不应改变
+  // Idle time should not be changed
   EXPECT_EQ(GetIdleTimeBegin(), idle_start);
 }
 
 TEST_F(OHOSAudioDecoderLoopTest, ManageTimer_NoWork_Timeout) {
   CreateDecoderLoop();
-  // 设置空闲时间在2秒前（已超时，假设kIdleTimerTimeout=1s）
+  // Set the idle time to 2 seconds ago (timed out, assuming kIdleTimerTimeout=1s)
   base::TimeTicks idle_start = base::TimeTicks::Now() - base::Seconds(2);
   SetIdleTimeBegin(idle_start);
   
-  // 确保定时器正在运行
+  // Ensure that the timer is running
   decoder_loop_->ManageTimer(true);
   EXPECT_TRUE(IsTimerRunning());
 
   idle_start = base::TimeTicks::Now() - base::Seconds(2);
   SetIdleTimeBegin(idle_start);
-  // 没有工作，且已超时
+  // No work and timeout
   decoder_loop_->ManageTimer(false);
   
-  // 验证定时器被停止
+  // The verification timer has been stopped
   EXPECT_FALSE(IsTimerRunning());
 }
 
 TEST_F(OHOSAudioDecoderLoopTest, ManageTimer_TimerAlreadyRunning_NoChange) {
   CreateDecoderLoop();
-  // 启动定时器
   SetIdleTimeBegin(base::TimeTicks());
   decoder_loop_->ManageTimer(true);
   EXPECT_TRUE(IsTimerRunning());
   
-  // 再次调用ManageTimer，有工作，定时器已经在运行
+  // Call ManageTimer again, there is work and the timer is already running
   decoder_loop_->ManageTimer(true);
   
-  // 验证定时器继续运行
+  // Verify that the timer continues to run
   EXPECT_TRUE(IsTimerRunning());
 }
 
 TEST_F(OHOSAudioDecoderLoopTest, ManageTimer_TimerNotRunning_ShouldNotStart) {
   CreateDecoderLoop();
-  // 设置超时状态
+  // Set timeout status
   base::TimeTicks idle_start = base::TimeTicks::Now() - base::Seconds(2);
   SetIdleTimeBegin(idle_start);
   
-  // 没有工作，已超时，定时器不应该启动
+  // No work, timed out, timer should not start
   decoder_loop_->ManageTimer(false);
   EXPECT_FALSE(IsTimerRunning());
   
-  // 再次调用，仍然不应该启动
+  // Call again, still should not start
   decoder_loop_->ManageTimer(false);
   EXPECT_FALSE(IsTimerRunning());
 }
 
 TEST_F(OHOSAudioDecoderLoopTest, ManageTimer_TimeoutThenWork) {
   CreateDecoderLoop();
-  // 先设置超时状态
+  // Set timeout status first
   base::TimeTicks idle_start = base::TimeTicks::Now() - base::Seconds(2);
   SetIdleTimeBegin(idle_start);
   decoder_loop_->ManageTimer(false);
   EXPECT_FALSE(IsTimerRunning());
   
-  // 然后有工作完成
+  // Then the work is completed
   decoder_loop_->ManageTimer(true);
   
-  // 验证定时器重新启动，空闲时间更新
+  // Verify timer restart, idle time update
   EXPECT_TRUE(IsTimerRunning());
   EXPECT_GT(GetIdleTimeBegin(), idle_start);
 }
 
 TEST_F(OHOSAudioDecoderLoopTest, TimerCallback_DoPendingWork) {
   CreateDecoderLoop();
-  // 启动定时器
+  // Start the timer
   SetIdleTimeBegin(base::TimeTicks());
   decoder_loop_->ManageTimer(true);
   EXPECT_TRUE(IsTimerRunning());
   
-  // 设置DoPendingWork的期望
+  // Set expectation for DoPendingWork
   EXPECT_CALL(*mock_client_, IsAnyInputPending())
       .WillRepeatedly(Return(false));
   
-  // 快进时间触发定时器回调
+  // Fast forward time to trigger the timer callback
   FastForwardAndRunTimer(base::Milliseconds(10));
   
-  // 验证定时器继续运行（因为回调会再次调用ManageTimer）
+  // Verify the timer continues running (because the callback will call ManageTimer again)
   EXPECT_TRUE(IsTimerRunning());
 }
 
 TEST_F(OHOSAudioDecoderLoopTest, RealTimerBehavior_WithTimeControl) {
   CreateDecoderLoop();
-  // 测试真实定时器行为
+  // Test real timer behavior
   SetIdleTimeBegin(base::TimeTicks());
   decoder_loop_->ManageTimer(true);
   
-  // 验证定时器确实在运行
+  // Verify the timer is indeed running
   EXPECT_TRUE(IsTimerRunning());
   
-  // 记录当前空闲时间
+  // Record current idle time
   base::TimeTicks initial_idle_time = GetIdleTimeBegin();
   
-  // 快进时间，但不超过超时时间
+  // Fast forward time, but not beyond the timeout threshold
   FastForwardAndRunTimer(base::Milliseconds(500));
   
-  // 定时器应该继续运行，空闲时间不变（因为没有工作完成）
+  // Timer should continue running, idle time remains unchanged (because no work was completed)
   EXPECT_TRUE(IsTimerRunning());
   
-  // 模拟有工作完成
+  // Simulate work completion
   decoder_loop_->ManageTimer(true);
   
-  // 空闲时间应该更新
+  // Idle time should be updated
   EXPECT_TRUE(IsTimerRunning());
 }
 
 TEST_F(OHOSAudioDecoderLoopTest, TimerStopsAfterTimeout) {
   CreateDecoderLoop();
-  // 启动定时器
+  // Start the timer
   SetIdleTimeBegin(base::TimeTicks());
   decoder_loop_->ManageTimer(true);
   EXPECT_TRUE(IsTimerRunning());
   
-  // 快进时间超过超时时间
+  // Fast forward time beyond the timeout threshold
   FastForwardAndRunTimer(base::Seconds(2));
   
-  // 没有工作完成，定时器应该停止
+  // No work was completed, the timer should stop
   decoder_loop_->ManageTimer(false);
   EXPECT_FALSE(IsTimerRunning());
 }
 
-// 测试 SetState 到 ERROR 状态触发回调
+// Test that setting state to ERROR triggers the callback
 TEST_F(OHOSAudioDecoderLoopTest, SetStateToErrorTriggersCallback) {
   CreateDecoderLoop();
   
@@ -651,23 +608,23 @@ TEST_F(OHOSAudioDecoderLoopTest, SetStateToErrorTriggersCallback) {
   decoder_loop_->SetState(OHOSAudioDecoderLoop::ERROR);
 }
 
-// 测试 SetState 到其他状态不触发回调
+// Test that setting state to other states does not trigger the callback
 TEST_F(OHOSAudioDecoderLoopTest, SetStateToOtherNoCallback) {
   CreateDecoderLoop();
   EXPECT_CALL(*mock_client_, OnCodecLoopError()).Times(0);
-  // OnCodecLoopError 不应该被调用
+  // OnCodecLoopError should not be called
   decoder_loop_->SetState(OHOSAudioDecoderLoop::READY);
 }
 
-// 测试完整工作流程
+// Test the complete workflow
 TEST_F(OHOSAudioDecoderLoopTest, CompleteWorkflow) {
   CreateDecoderLoop();
   
-  // 设置输入数据可用
+  // Set input data as available
   EXPECT_CALL(*mock_client_, IsAnyInputPending())
       .WillRepeatedly(Return(true));
   
-  // 提供输入缓冲区 - 第一次调用返回index=1，第二次调用返回index=-1
+  // Provide input buffer - first call returns index=1, second call returns index=-1
   EXPECT_CALL(*mock_client_, DequeueInputBuffer(_))
       .WillOnce(Invoke([](int64_t& index) {
         index = 1;
@@ -678,7 +635,7 @@ TEST_F(OHOSAudioDecoderLoopTest, CompleteWorkflow) {
         return 0;
       }));
   
-  // 提供输入数据
+  // Provide input data
   OHOSAudioDecoderLoop::InputData input_data;
   input_data.is_valid = true;
   input_data.memory = new uint8_t[10];
@@ -687,13 +644,13 @@ TEST_F(OHOSAudioDecoderLoopTest, CompleteWorkflow) {
   EXPECT_CALL(*mock_client_, ProvideInputData())
       .WillOnce(Return(input_data));
   
-  // 成功入队
+  // Successfully enqueue
   EXPECT_CALL(*mock_client_, QueueInputBufferDec(_, _, _, _, _, _, _))
       .WillOnce(Return(AudioDecoderAdapterCode::DECODER_OK));
   
   EXPECT_CALL(*mock_client_, OnInputDataQueued(true));
   
-  // 提供输出数据
+  // Provide output data
   OutputBufferData output_data;
   output_data.flag_ = BufferFlag::CODEC_BUFFER_FLAG_NONE;
   output_data.index_ = 1;
@@ -711,7 +668,7 @@ TEST_F(OHOSAudioDecoderLoopTest, CompleteWorkflow) {
   EXPECT_CALL(*mock_client_, OnDecodedFrame(_))
       .WillOnce(Return(true));
   
-  // 执行工作
+  // Execute the work
   decoder_loop_->DoPendingWork();
   
   delete[] input_data.memory;

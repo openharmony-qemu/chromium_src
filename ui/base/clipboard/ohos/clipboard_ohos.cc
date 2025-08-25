@@ -250,14 +250,12 @@ class ClipboardOHOSInternal {
     }
   }
 
-  bool UpdateClipboardDataRun() {
+  void UpdateClipboardDataRun() {
     LOG(INFO) << "update clipboard data async";
     UpdateClipboardData();
-    return true;
   }
 
-  void OnUpdateClipboardData(Clipboard::UpdateClipboardDataCallback callback,
-                             bool flag) {
+  void OnUpdateClipboardData(Clipboard::UpdateClipboardDataCallback callback) {
     if (!callback) {
       LOG(ERROR) << "UpdateClipboardDataAsync Failed";
       return;
@@ -267,7 +265,7 @@ class ClipboardOHOSInternal {
 
   void UpdateClipboardData(Clipboard::UpdateClipboardDataCallback callback) {
     LOG(INFO) << "Update clipboard data start";
-    base::ThreadPool::PostTaskAndReplyWithResult(
+    base::ThreadPool::PostTaskAndReply(
         FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_VISIBLE},
         base::BindOnce(&ClipboardOHOSInternal::UpdateClipboardDataRun,
                        weak_ptr_factory_.GetWeakPtr()),

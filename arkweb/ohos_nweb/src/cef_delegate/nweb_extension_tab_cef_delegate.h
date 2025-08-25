@@ -41,11 +41,14 @@ class NWebExtensionTabCefDelegate {
   static bool HasExtensionListener();
 
   // chrome.tabs.get
-  static std::unique_ptr<NWebExtensionTab> GetTab(int tab_id);
+  static std::unique_ptr<NWebExtensionTab> GetTab(
+      int tabId,
+      std::optional<std::string> contextType = std::nullopt,
+      std::optional<bool> includeIncognitoInfo = std::nullopt);
 
   // chrome.tabs.query
   static std::vector<NWebExtensionTab> QueryTab(
-      NWebExtensionTabQueryInfo& queryInfo);
+      NWebExtensionTabQueryInfoV2& queryInfo);
 
   // chrome.tabs.update
   static bool UpdateTab(
@@ -65,7 +68,7 @@ class NWebExtensionTabCefDelegate {
 
   // chrome.tabs.move
   static bool MoveTab(std::vector<int>& tab_ids,
-                      NWebExtensionTabMoveProperties& move_info,
+                      NWebExtensionTabMovePropertiesV2& move_info,
                       TabMovedCallback callback);
 
   static void TabMoveCallback(
@@ -74,7 +77,7 @@ class NWebExtensionTabCefDelegate {
       std::optional<std::string>& error);
 
   // chrome.tabs.remove
-  static bool RemoveTab(std::vector<int>& tab_ids,
+  static bool RemoveTab(NWebExtensionTabRemoveParams& params,
                         TabRemovedCallback callback);
 
   static void TabRemoveCallback(
@@ -100,7 +103,8 @@ class NWebExtensionTabCefDelegate {
       int group_id, std::optional<std::string>& error);
 
   // chrome.tabs.ungroup
-  static bool UngroupTab(std::vector<int>& tabs, TabUngroupedCallback callback);
+  static bool UngroupTab(NWebExtensionTabUngroupParams& params,
+                         TabUngroupedCallback callback);
 
   static void TabUngroupCallback(int request_id, std::optional<std::string>& error);
 
@@ -111,7 +115,7 @@ class NWebExtensionTabCefDelegate {
       WebExtensionWindow& window, std::optional<std::string>& error);
 
   // like chrome::FindAnyBrowser, get an existing tab.
-  static int GetAnyTab(int windowId);
+  static int GetAnyTab(NWebExtensionTabGetAnyTabParams& params);
 
   // onActivated event
   static void OnTabActivated(std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo);

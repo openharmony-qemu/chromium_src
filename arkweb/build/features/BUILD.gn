@@ -310,7 +310,7 @@ if (!enable_arkweb) {
   arkweb_immediate_destory = false
   arkweb_cwnd = false
   arkweb_viewport_avoid = false
-  arkweb_blank_optimize = false
+  arkweb_blank_optimize = true
   arkweb_error_page = false
   arkweb_gwp_asan = false
   arkweb_bgtask = false

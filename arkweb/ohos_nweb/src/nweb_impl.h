@@ -1039,6 +1039,8 @@ class NWebImpl : public NWeb {
   int64_t GetPreferenceHash();
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
   void RecordBlanklessFrameSize(uint32_t width, uint32_t height) override;
+  bool TriggerBlanklessForUrl(const std::string& url) override;
+  void SetVisibility(bool isVisible) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)

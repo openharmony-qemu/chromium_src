@@ -351,7 +351,7 @@ void ArkwebDisplayUtils::DrawAndSwap(AggregatedRenderPass& last_render_pass,
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 void ArkwebDisplayUtils::removeDuplicatesRect(std::vector<gfx::Rect>& quad_list) {
-  if (quea_list.empty()) {
+  if (quad_list.empty()) {
     LOG(ERROR) << "blankless removeDuplicatesRect, quad_list is empty.";
     return;
   }

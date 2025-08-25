@@ -37,6 +37,12 @@ void DisplaySchedulerUtils::OnDisplayDamaged(SurfaceId surface_id) {
     wait_render_frame_submission_before_draw_ = false;
   }
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (display_scheduler_->client_) {
+    display_scheduler_->client_->SetClientId(surface_id.frame_sink_id().client_id());
+  }
+#endif
 }
 
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
@@ -58,11 +64,5 @@ void DisplaySchedulerUtils::ResetShouldFrameSubmissionBeforeDraw() {
   wait_render_frame_submission_before_draw_ = false;
 }
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (display_scheduler_->client_) {
-    display_scheduler_->client_->SetClientId(surface_id.frame_sink_id().client_id());
-  }
-#endif
 
 }  // namespace viz

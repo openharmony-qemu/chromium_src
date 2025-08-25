@@ -140,7 +140,7 @@ TEST_F(VideoEncoderAdapterImplTest, TestConfigure003) {
 
 TEST_F(VideoEncoderAdapterImplTest, TestConfigure004) {
   CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
-  std::shared_ptr<CodecConfigParaAdapter> config =
+  std::shared_ptr<CodecConfigParaAdapterImpl> config =
       std::make_shared<CodecConfigParaAdapterImpl>();
   config->SetWidth(1080);
   config->SetHeight(720);

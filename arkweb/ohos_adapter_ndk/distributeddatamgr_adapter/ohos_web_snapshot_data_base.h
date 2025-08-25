@@ -16,6 +16,7 @@
 #ifndef OHOS_WEB_SNAPSHOT_DATA_BASE_H
 #define OHOS_WEB_SNAPSHOT_DATA_BASE_H
 
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -81,8 +82,6 @@ private:
     void GetOrOpen(const OH_Rdb_Config& config);
     int64_t GetCurrentTime();
     int64_t GetOldestKey();
-
-    void InsertDataBaseDataItem(int64_t blankless_key, const DataBaseDataItem& data);
 
     void ClearInner();
     void ClearData();

@@ -45,27 +45,22 @@ public:
     void OnDataClear() override {}
 };
 
-void OhosWebSnapshotDataBaseFuzzTest(const uint8_t* data, size_t size)
+void HookDataBase()
 {
-    FuzzedDataProvider dataProvider(data, size);
     OhosWebSnapshotDataBase& dataBase = OhosWebSnapshotDataBase::GetInstance();
-    std::shared_ptr<OhosWebSnapshotDataBaseCallback> callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>();
-    std::string databaseDir = "/data/storage/el2/base/cache/web";
-    dataBase.Init(databaseDir.c_str());
     OH_Rdb_Config config = {0};
     config.selfSize = sizeof(OH_Rdb_Config);
-    config.dataBaseDir = databaseDir.c_str();
+    config.dataBaseDir = "/data/storage/el2/base/cache/web";
     config.bundleName = "com.example.myapplication";
     config.storeName = "web_snapshot.db";
     config.area = Rdb_SecurityArea::RDB_SECURITY_AREA_EL2;
     config.securityLevel = OH_Rdb_SecurityLevel::S3;
-
     dataBase.GetOrOpen(config);
     dataBase.GetAllInfo();
-    if (dataProvider.ConsumeBool()) {
-        dataBase.rdbStore_ = nullptr;
-    }
-    dataBase.RegisterDataBaseCallback(callback);
+}
+
+SnapshotDataItem ConsumeSnapshotDataItem(FuzzedDataProvider& dataProvider)
+{
     SnapshotDataItem dataItem = {
         dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH),
         dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH),
@@ -75,24 +70,36 @@ void OhosWebSnapshotDataBaseFuzzTest(const uint8_t* data, size_t size)
         dataProvider.ConsumeIntegral<int64_t>(),
         dataProvider.ConsumeIntegral<int64_t>()
     };
+    return dataItem;
+}
+
+void OhosWebSnapshotDataBaseFuzzTest(const uint8_t* data, size_t size)
+{
+    FuzzedDataProvider dataProvider(data, size);
+    HookDataBase();
+    OhosWebSnapshotDataBase& dataBase = OhosWebSnapshotDataBase::GetInstance();
+    std::shared_ptr<OhosWebSnapshotDataBaseCallback> callback = std::make_shared<OhosWebSnapshotDataBaseCallbackFuzz>();
+    if (dataProvider.ConsumeBool()) {
+        dataBase.rdbStore_ = nullptr;
+    }
+    dataBase.RegisterDataBaseCallback(callback);
+    SnapshotDataItem dataItem = ConsumeSnapshotDataItem(dataProvider);
     if (!dataProvider.ConsumeBool()) {
         dataItem.snapShotFileSize = 1;
     }
     dataBase.InsertSnapshotDataItem(dataProvider.ConsumeIntegralInRange<int64_t>(0, MAX_KEY), dataItem);
-    dataBase.InsertDataBaseDataItem(dataProvider.ConsumeIntegralInRange<int64_t>(0, MAX_KEY),
-        {dataItem, dataProvider.ConsumeIntegral<int64_t>()});
     if (!dataProvider.ConsumeBool()) {
-        dataBase.InsertDataBaseDataItem(1, {dataItem, dataProvider.ConsumeIntegral<int64_t>()});
+        dataBase.InsertSnapshotDataItem(1, dataItem);
     }
     dataBase.GetSnapshotDataItem(dataProvider.ConsumeIntegralInRange<int64_t>(0, MAX_KEY));
+    int32_t capacity = MAX_CAPACITY;
     if (dataProvider.ConsumeBool()) {
-        dataBase.SetBlanklessLoadingCacheCapacity(
-            dataProvider.ConsumeIntegralInRange<int32_t>(MIN_CAPACITY, MAX_CAPACITY));
-    } else {
-        dataBase.SetBlanklessLoadingCacheCapacity(MAX_CAPACITY);
+        capacity = dataProvider.ConsumeIntegralInRange<int32_t>(MIN_CAPACITY, MAX_CAPACITY);
     }
+    dataBase.SetBlanklessLoadingCacheCapacity(capacity);
+    dataBase.UpdateCapacityData(capacity);
     dataBase.GetCapacityInByte();
-    std::vector<int64_t> keys;
+    std::vector<int64_t> keys = {};
     for (size_t idx = 0; idx < dataProvider.ConsumeIntegralInRange<size_t>(0, MAX_KEY_LENGTH); idx++) {
         keys.push_back(dataProvider.ConsumeIntegralInRange<int64_t>(0, MAX_KEY));
     }
@@ -100,6 +107,12 @@ void OhosWebSnapshotDataBaseFuzzTest(const uint8_t* data, size_t size)
         keys.push_back(1);
     }
     dataBase.ClearSnapshotDataItem(keys);
+    dataBase.ClearSnapshotDataItem({});
+    dataBase.GetDatabaseInfo();
+    dataBase.InsertInner(dataProvider.ConsumeIntegralInRange<int64_t>(0, MAX_KEY),
+        {dataItem, dataBase.GetCurrentTime()});
+    dataBase.DeleteInner(dataBase.GetOldestKey());
+    dataBase.ClearInner();
 }
 } // namespace
 

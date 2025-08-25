@@ -236,4 +236,40 @@ struct NWebExtensionTab {
   int32_t windowId;
 };
 
+struct NWebExtensionTabMovePropertiesV2 {
+  NWebExtensionTabMoveProperties properties;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionTabQueryInfoV2 {
+  NWebExtensionTabQueryInfo query;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionTabGetParams {
+  int tabId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionTabRemoveParams {
+  std::vector<int> tabIds;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionTabUngroupParams {
+  std::vector<int> tabIds;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionTabGetAnyTabParams {
+  int windowId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
 #endif  // OHOS_NWEB_EX_BROWSER_WEB_EXTENSION_TAB_ITEMS_H_

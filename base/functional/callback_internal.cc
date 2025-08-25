@@ -7,10 +7,10 @@
 #include "base/check.h"
 #include "base/notreached.h"
 #include "base/types/cxx23_to_underlying.h"
-#include "base/logging.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-#include "arkweb/build/features/features.h"
+#include "base/logging.h"
 #endif
 
 namespace base {

@@ -405,7 +405,7 @@ void SelectionControllerUtils::OffsetAdjustWhiteSpace(int& offset,
   if (!permission) {
     return;
   }
-  unsigned closestLeftNotWhiteOffset =
+  int closestLeftNotWhiteOffset =
     SelectionControllerUtils::MaxOffsetTrimTailWhiteSpace(str, str.length());
   if (closestLeftNotWhiteOffset < temp_offset) {
     offset -= temp_offset - closestLeftNotWhiteOffset;

@@ -145,7 +145,7 @@ void OHOSAudioDecoderLoop::SetState(State new_state) {
     << " new_state: " << static_cast<int32_t>(new_state);
   const State old_state = state_;
   state_ = new_state;
-  if (old_state != new_state && new_state == ERROR)
+  if (client_ && old_state != new_state && new_state == ERROR)
     client_->OnCodecLoopError();
 }
 

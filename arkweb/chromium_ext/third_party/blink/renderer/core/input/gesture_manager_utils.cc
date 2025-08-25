@@ -174,4 +174,7 @@ void GestureManagerUtils::UpdateContextMenuForFreeCopy(
   }
 }
 #endif
+void GestureManagerUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(gesture_manager_);
+}
 }  // namespace blink

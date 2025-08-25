@@ -25,7 +25,7 @@
 namespace blink {
 class ScrollableArea;
 
-class CORE_EXPORT ScrollableAreaUtils {
+class CORE_EXPORT ScrollableAreaUtils : public GarbageCollected<ScrollableAreaUtils> {
  public:
   ScrollableAreaUtils(ScrollableArea* scrollable_area);
 
@@ -44,7 +44,8 @@ class CORE_EXPORT ScrollableAreaUtils {
   bool GetScrollable();
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
-  raw_ptr<ScrollableArea> scrollable_area_ = nullptr;
+  void Trace(Visitor*) const;
+  Member<ScrollableArea> scrollable_area_;
 };
 }  // namespace blink
 

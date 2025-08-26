@@ -4749,8 +4749,8 @@ void NWebImpl::OnSafeBrowsingDetectionResult(int code,
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 // static
-void NWebImpl::OnGlobalConfigResult(const std::string& path) {
-  global_config::OnGlobalConfigResult(path);
+void NWebImpl::OnGlobalConfigResult(const std::string& path, PrefService* localState) {
+  global_config::OnGlobalConfigResult(path, localState);
 }
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)

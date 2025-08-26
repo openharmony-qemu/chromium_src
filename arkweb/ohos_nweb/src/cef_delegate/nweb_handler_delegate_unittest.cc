@@ -600,3 +600,9 @@ TEST_F(NWebHandlerDelegateTest, GetJavaScriptObjectMethods) {
   delegate->GetJavaScriptObjectMethods(object_id, returned_method_names);
   ASSERT_NE(delegate, nullptr);
 }
+
+TEST_F(NWebHandlerDelegateTest, IsShowHandle) {
+  ASSERT_NE(delegate, nullptr);
+  auto result = delegate->IsShowHandle();
+  EXPECT_FALSE(result);
+}

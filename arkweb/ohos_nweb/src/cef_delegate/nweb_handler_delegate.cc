@@ -5265,6 +5265,10 @@ void NWebHandlerDelegate::HideMagnifier() {
     nweb_handler_->HideMagnifier();
   }
 }
+
+bool NWebHandlerDelegate::IsShowHandle() {
+  return nweb_handler_ && nweb_handler_->IsShowHandle();
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_PDF)

@@ -181,9 +181,6 @@ void OHOSAudioCapturerSource::SetAutomaticGainControl(bool enable) {
 
 void OHOSAudioCapturerSource::SetOutputDeviceForAec(
     const std::string& output_device_id) {
-#if false
-  NOTREACHED();
-#endif
   return;
 }
 

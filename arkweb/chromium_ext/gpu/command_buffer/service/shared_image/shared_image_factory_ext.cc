@@ -95,9 +95,8 @@ bool SharedImageFactoryExt::CreateSharedImage(const Mailbox& mailbox,
 
   auto* factory = GetFactoryByUsage(usage_set, si_format, size,
                                     /*pixel_data=*/{}, gmb_type);
-  std::string debug_label = "ZGLEE";
   if (!factory) {
-    LogGetFactoryFailed(usage_set, si_format, gmb_type, debug_label);
+    LogGetFactoryFailed(usage_set, si_format, gmb_type, "ArkwebHeifSupport");
     return false;
   }
 

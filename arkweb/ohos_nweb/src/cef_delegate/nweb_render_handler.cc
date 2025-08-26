@@ -1108,7 +1108,7 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
       drag_data, drag_touch_point, start_edge, end_edge,
       screen_info_.display_ratio, usefull_selection, dark_mode_enable,
       is_drag_new_style);
-
+  nweb_drag_data_->SetAllowedDragOperation(static_cast<NWebDragData::DragOperationsMask>(allowed_ops));
   auto handler = handler_.lock();
   if (handler == nullptr) {
     LOG(ERROR) << "can't get strong ptr with handler";

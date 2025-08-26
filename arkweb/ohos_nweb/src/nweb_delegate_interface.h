@@ -80,6 +80,8 @@ struct DelegateDragEvent {
   double x = 0.0;
   double y = 0.0;
   DelegateDragAction action = DelegateDragAction::DRAG_START;
+  CefBrowserHost::DragOperationsMask op = CefBrowserHost::DragOperationsMask::DRAG_OPERATION_COPY;
+  CefBrowserHost::DragOperationsMask allowed_op = CefBrowserHost::DragOperationsMask::DRAG_OPERATION_EVERY;
 };
 
 #if BUILDFLAG(ARKWEB_NAVIGATION)

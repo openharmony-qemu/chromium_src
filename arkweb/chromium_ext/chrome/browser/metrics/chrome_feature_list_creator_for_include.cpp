@@ -101,10 +101,10 @@ void AddGlobalConfigFeaturesSwitchesToCommandLine(PrefService* local_state) {
   }
 }
 
-void DealGlobalConfigInThread(PrefService* local_state) {
+void DealGlobalConfig(PrefService* local_state) {
   AddGlobalConfigFeaturesSwitchesToCommandLine(local_state);
 
-  OHOS::NWeb::NWebSafeBrowsingDetectionHandler::GetInstance().HandleGlobalConfig();
+  OHOS::NWeb::NWebSafeBrowsingDetectionHandler::GetInstance().HandleGlobalConfig(local_state);
 }
 #endif
 }

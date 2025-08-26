@@ -125,6 +125,9 @@ int UserScript::ValidUserScriptSchemes(bool can_execute_script_everywhere) {
   if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kExtensionsOnChromeURLs)) {
     valid_schemes &= ~URLPattern::SCHEME_CHROMEUI;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    valid_schemes &= ~URLPattern::SCHEME_ARKWEBUI;
+#endif
   }
   return valid_schemes;
 }

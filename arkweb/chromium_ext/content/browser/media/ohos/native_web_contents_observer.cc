@@ -18,9 +18,6 @@
 #include <memory>
 #include <tuple>
 
-#if false
-#include "base/containers/cxx20_erase.h"
-#endif
 #include "base/debug/crash_logging.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/memory/raw_ptr.h"

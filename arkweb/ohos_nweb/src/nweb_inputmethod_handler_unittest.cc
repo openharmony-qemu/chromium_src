@@ -360,7 +360,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 #endif  // BUILDFLAG(IS_OHOS)
   void OnSafeInsetsChange(int left, int top, int right, int bottom) override {}
   MOCK_METHOD(void, NotifyForNextTouchEvent, (), (override));
-  void SetGrantFileAccessDirs(const std::vector<CefString>& dir_list) override {}
+  void SetGrantFileAccessDirs(const std::vector<CefString>& dir_list,
+                              const std::vector<CefString>& excluded_dir_list) override {}
   void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback) override {}
   void FillAutofillData(CefRefPtr<CefValue> message) override {}
   void ScrollFocusedEditableNodeIntoView() override {}

@@ -5367,21 +5367,28 @@ int NWebDelegate::SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 void NWebDelegate::SetPathAllowingUniversalAccess(
-    const std::vector<std::string>& pathList) {
+    const std::vector<std::string>& path_list,
+    const std::vector<std::string>& excluded_path_list) {
   if (!GetBrowser().get() || !GetBrowser()->GetHost() ||
       !preference_delegate_) {
     LOG(ERROR) << "NWebDelegate::SetPathAllowingUniversalAccess failed, get "
                   "browser failed";
     return;
   }
-  preference_delegate_->PutEnableUniversalAccessFromFileURLs(pathList.size() !=
+  preference_delegate_->PutEnableUniversalAccessFromFileURLs(path_list.size() !=
                                                              0);
   std::vector<CefString> cef_path_list;
-  std::for_each(pathList.begin(), pathList.end(),
+  std::for_each(path_list.begin(), path_list.end(),
                 [&cef_path_list](const std::string& path) {
                   cef_path_list.emplace_back(CefString(path));
                 });
-  GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list);
+
+  std::vector<CefString> cef_excluded_path_list;
+  std::for_each(excluded_path_list.begin(), excluded_path_list.end(),
+                [&cef_excluded_path_list](const std::string& path) {
+                  cef_excluded_path_list.emplace_back(CefString(path));
+                });
+  GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list, cef_excluded_path_list);
 }
 
 int NWebDelegate::PrerenderPage(const std::string& url,

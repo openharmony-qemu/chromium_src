@@ -540,7 +540,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   MOCK_METHOD(void, NotifyForNextTouchEvent, (), (override));
 
-  void SetGrantFileAccessDirs(const std::vector<CefString>& dir_list) override {
+  void SetGrantFileAccessDirs(const std::vector<CefString>& dir_list,
+                              const std::vector<CefString>& excluded_dir_list) override {
   }
 
   void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback) override {

@@ -391,33 +391,33 @@ static std::string g_feedbacklogs_crash_path =
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-static std::string g_dir_el1 = "/data/storage/el1";
-static std::string g_dir_el2 = "/data/storage/el2";
+static std::string kDirEl1 = "/data/storage/el1";
+static std::string kDirEl2 = "/data/storage/el2";
 
 void SetPathList(const std::vector<std::string>& module_name,
                  std::map<OHOS::NWeb::NWebImpl::PathType, std::vector<base::FilePath>>& path_lists) {
   for (auto& name : module_name) {
     path_lists[OHOS::NWeb::NWebImpl::PathType::kDirResource].push_back(
-        base::FilePath(g_dir_el1 + "/bundle/" + name + "/resources/resfile"));
+        base::FilePath(kDirEl1 + "/bundle/" + name + "/resources/resfile"));
     path_lists[OHOS::NWeb::NWebImpl::PathType::kDirFile].push_back(
-        base::FilePath(g_dir_el2 + "/base/haps/" + name + "/files"));
+        base::FilePath(kDirEl2 + "/base/haps/" + name + "/files"));
     path_lists[OHOS::NWeb::NWebImpl::PathType::kDirCache].push_back(
-        base::FilePath(g_dir_el2 + "/base/haps/" + name + "/cache"));
+        base::FilePath(kDirEl2 + "/base/haps/" + name + "/cache"));
     path_lists[OHOS::NWeb::NWebImpl::PathType::kDirTemp].push_back(
-        base::FilePath(g_dir_el2 + "/base/haps/" + name + "/temp"));
+        base::FilePath(kDirEl2 + "/base/haps/" + name + "/temp"));
   }
-  path_lists[OHOS::NWeb::NWebImpl::PathType::kDirFile].push_back(base::FilePath(g_dir_el2 + "/base/files"));
-  path_lists[OHOS::NWeb::NWebImpl::PathType::kDirCache].push_back(base::FilePath(g_dir_el2 + "/base/cache"));
-  path_lists[OHOS::NWeb::NWebImpl::PathType::kDirTemp].push_back(base::FilePath(g_dir_el2 + "/base/temp"));
+  path_lists[OHOS::NWeb::NWebImpl::PathType::kDirFile].push_back(base::FilePath(kDirEl2 + "/base/files"));
+  path_lists[OHOS::NWeb::NWebImpl::PathType::kDirCache].push_back(base::FilePath(kDirEl2 + "/base/cache"));
+  path_lists[OHOS::NWeb::NWebImpl::PathType::kDirTemp].push_back(base::FilePath(kDirEl2 + "/base/temp"));
 }
 
 void SetExcludedPathList(const std::vector<std::string>& module_name,
                          std::map<OHOS::NWeb::NWebImpl::PathType, std::vector<base::FilePath>>& path_lists) {
   for (auto& name : module_name) {
     path_lists[OHOS::NWeb::NWebImpl::PathType::kDirCache].push_back(
-        base::FilePath(g_dir_el2 + "/base/haps/" + name + "/cache/web"));
+        base::FilePath(kDirEl2 + "/base/haps/" + name + "/cache/web"));
   }
-  path_lists[OHOS::NWeb::NWebImpl::PathType::kDirCache].push_back(base::FilePath(g_dir_el2 + "/base/cache/web"));
+  path_lists[OHOS::NWeb::NWebImpl::PathType::kDirCache].push_back(base::FilePath(kDirEl2 + "/base/cache/web"));
 }
 
 void GetExcludedPathList(std::map<OHOS::NWeb::NWebImpl::PathType, std::vector<base::FilePath>>& src_path_lists,

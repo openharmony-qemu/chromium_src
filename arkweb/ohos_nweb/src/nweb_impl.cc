@@ -198,6 +198,7 @@ extern bool g_siteIsolationMode;
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
+#include "cef/ohos_cef_ext/libcef/browser/net/extra_headers_throttle.h"
 #endif
 
 #ifdef OHOS_WEB_LTPO
@@ -5548,7 +5549,12 @@ int NWebImpl::PrerenderPage(const std::string& url,
   }
   return nweb_delegate_->PrerenderPage(url, additional_headers);
 }
- 
+
+void NWebImpl::SetExtraHeadersMap(const std::string& url,
+                                  const std::string& additional_headers) {
+  throttle::ExtraHeadersThrottle::SetExtraHeaders(GURL(url), additional_headers);
+}
+
 void NWebImpl::CancelAllPrerendering() {
   if (nweb_delegate_ == nullptr) {
     return;

@@ -947,6 +947,8 @@ class NWebImpl : public NWeb {
   int PrerenderPage(const std::string& url,
                     const std::string& additional_headers);
   void CancelAllPrerendering();
+  static void SetExtraHeadersMap(const std::string& url,
+                                 const std::string& additional_headers);
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)

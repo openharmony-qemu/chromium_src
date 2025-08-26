@@ -58,6 +58,9 @@ public:
 private:
   BlanklessDataController();
   std::shared_ptr<SnapshotInfo> GetHistorySnapshotInfo(uint64_t blankless_key);
+  bool EncodeImage(const SkBitmap& bitmap,
+                   std::string& newFile,
+                   OHOS::NWeb::SnapshotDataItem* snapshotDataItem);
 
 private:
   std::shared_ptr<OHOS::NWeb::OhosWebSnapshotDataBaseCallback> web_snapshot_db_callback_ = nullptr;

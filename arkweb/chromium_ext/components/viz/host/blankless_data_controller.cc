@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <mutex>
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#include "arkweb/ohos_adapter_ndk/ohos_image_adapter/ohos_image_encoder_adapter.h"
 #include "arkweb/ohos_adapter_ndk/window_manager_adapter/window_manager_adapter_impl.h"
 #include "base/files/file_enumerator.h"
 #include "base/files/file_path.h"
@@ -26,6 +27,8 @@
 #include "base/path_service.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/time/time.h"
+#include "third_party/bounds_checking_function/include/securec.h"
+#include "third_party/skia/include/core/SkAlphaType.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkStream.h"
 #include "third_party/skia/include/encode/SkPngEncoder.h"
@@ -42,9 +45,11 @@ namespace ohos {
 const base::FilePath::CharType DUMP_FILE_PATH[] = FILE_PATH_LITERAL("snapshot");
 const std::string DATABASE_DIR = "/data/storage/el2/base/cache/web";
 const std::string DUMP_FILE_PRE = "/web_frame_";
-const std::string DUMP_FILE_TYPE = ".png";
+const std::string DUMP_FILE_PNG_TYPE = ".png";
+const std::string DUMP_FILE_HEIC_TYPE = ".heic";
 const double SSIM_THRESHOLD = 0.95;
 const int DUMP_TASK_DELAY_TIME = 1000; // Milliseconds
+const int SCREEN_MAX_RESOLUTION = 8000;
 
 static double Mean(const std::vector<double>& data) {
   if (data.size() == 0) {
@@ -106,24 +111,6 @@ static double CalculateSSIM(const std::vector<double>& img1, const std::vector<d
   }
 
   return numerator / denominator;
-}
-
-static void AdjustColorChannels(SkBitmap& bitmap) {
-    for (int y = 0; y < bitmap.height(); ++y) {
-        for (int x = 0; x < bitmap.width(); ++x) {
-            uint32_t* pixel = bitmap.getAddr32(x, y);
-            uint8_t r = (*pixel & 0x00FF0000) >> 16; // Extract Red   (bits 16-23)
-            uint8_t g = (*pixel & 0x0000FF00) >> 8; // Extract Green (bits 8-15)
-            uint8_t b = (*pixel & 0x000000FF); // Extract Blue  (bits 0-7)
-            uint8_t a = (*pixel & 0xFF000000) >> 24; // Extract Alpha (bits 24-31)
-            // Reassemble pixel with swapped Red/Blue channels:
-            // - Keep Alpha in highest byte (shift left 24 bits)
-            // - Place original Blue in Red's position (shift left 16 bits)
-            // - Keep Green in middle position (shift left 8 bits)
-            // - Place original Red in Blue's position (no shift)
-            *pixel = (a << 24) | (b << 16) | (g << 8) | r;
-        }
-    }
 }
 
 static SkBitmap DownscaleToLowRes(const SkBitmap& srcBitmap, int newWidth, int newHeight) {
@@ -243,7 +230,7 @@ static bool SaveImage(std::string& filename, SkDynamicMemoryWStream& stream) {
   filename.append(dumpFilePath);
   filename.append(DUMP_FILE_PRE);
   filename.append(base::NumberToString(base::TimeTicks::Now().since_origin().InMicroseconds()));
-  filename.append(DUMP_FILE_TYPE);
+  filename.append(DUMP_FILE_PNG_TYPE);
   base::FilePath filePath(filename);
   std::string_view sv(static_cast<const char*>(skData->data()), skData->size());
   bool res = base::WriteFile(filePath, sv);
@@ -253,6 +240,93 @@ static bool SaveImage(std::string& filename, SkDynamicMemoryWStream& stream) {
     LOG(DEBUG) << "blankless save snapshot img:" << filename.c_str();
   }
   return res;
+}
+
+static bool EncodeImageHardware(const SkBitmap& bitmap, std::string& filename)
+{
+  std::string dumpFilePath = GetDumpFilePath();
+  if (dumpFilePath.empty()) {
+    LOG(ERROR) << "blankless get dumpFilePath error!";
+    return false;
+  }
+
+  filename.append(dumpFilePath);
+  filename.append(DUMP_FILE_PRE);
+  filename.append(base::NumberToString(base::TimeTicks::Now().since_origin().InMicroseconds()));
+  filename.append(DUMP_FILE_HEIC_TYPE);
+  base::FilePath filePath(filename);
+  auto& encoderInstance = OHOS::NWeb::OhosImageEncoderAdapter::GetInstance();
+  bool res = encoderInstance.Encode(bitmap, filename);
+  if (!res) {
+    LOG(ERROR) << "blankless encode snapshot image failed!";
+  } else {
+    LOG(DEBUG) << "blankless encode snapshot img:" << filename.c_str();
+  }
+  return res;
+}
+
+static bool DecodeImage(const std::string& path, SkBitmap& bitmap, OHOS::NWeb::SnapshotDataItem snapshotDataItem)
+{
+  if (path.empty()) {
+    LOG(ERROR) << "blankless DecodeImage path is empty";
+    return false;
+  }
+  LOG(DEBUG) << "blankless DecodeImage, path:" << path.c_str();
+  auto decoderAdapter = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateOhosImageDecoderAdapter();
+  if (!decoderAdapter) {
+    LOG(ERROR) << "blankless DecodeImage decoderAdapter is null";
+    return false;
+  }
+  if (!decoderAdapter->DecodeByPath(path, AllocatorType::kDmaAlloc)) {
+    LOG(ERROR) << "blankless DecodeImage DecodeByPath failed, path:" << path.c_str();
+    return false;
+  }
+  void* decodeData = decoderAdapter->GetDecodeData();
+  if (decodeData == nullptr) {
+    LOG(ERROR) << "blankless DecodeImage GetDecodeData failed, path:" << path.c_str();
+    return false;
+  }
+
+  int stride = decoderAdapter->GetStride();
+  if (stride <= 0) {
+    LOG(ERROR) << "blankless DecodeImage GetStride error, stride:" << stride;
+    return false;
+  }
+
+  int width = decoderAdapter->GetImageWidth();
+  int height = decoderAdapter->GetImageHeight();
+  if (width != snapshotDataItem.width || height != snapshotDataItem.height
+      || width > SCREEN_MAX_RESOLUTION || height > SCREEN_MAX_RESOLUTION) {
+    LOG(ERROR) << "blankless DecodeImage size not match, width:" << width << ", height:" <<height
+               << ", snapshotDataItem.width:" << snapshotDataItem.width
+               << ", snapshotDataItem.height:" << snapshotDataItem.height;
+    return false;
+  }
+  bool res = bitmap.tryAllocPixels(SkImageInfo::Make(width, height, kRGBA_8888_SkColorType, kPremul_SkAlphaType));
+  if (!res) {
+    LOG(ERROR) << "blankless DecodeImage tryAllocPixels failed";
+    return false;
+  }
+  size_t rowBytes = bitmap.rowBytes();
+  int bytesPerPixel = bitmap.bytesPerPixel();
+  void* pixels = bitmap.getPixels();
+  if (pixels == nullptr) {
+    LOG(ERROR) << "blankless DecodeImage tryAllocPixels nullptr";
+    return false;
+  }
+  for (int i = 0; i < height; i++) {
+    if (memcpy_s((uint8_t*)pixels + i * width * bytesPerPixel, rowBytes,
+                 (uint8_t*)decodeData + i * stride, width * bytesPerPixel) != EOK) {
+      LOG(ERROR) << "blankless DecodeImage memcpy failed."
+                 << "width = " << width << ", height = " << height
+                 << ", rowBytes = " << rowBytes
+                 << ", bytesPerPixel = " << bytesPerPixel
+                 << ", stride = " << stride;
+      return false;
+    }
+  }
+  LOG(DEBUG) << "blankless DecodeImage success, path:" << path.c_str();
+  return true;
 }
 
 static bool GetSnapShotFileInfo(const std::string& filename, int64_t& snapShotFileSize, int64_t& snapShotFileTime)
@@ -358,13 +432,69 @@ std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::
     snapshotInfo = std::make_shared<SnapshotInfo>();
     snapshotInfo->path = snapshotDataItem.wholePath;
     SkBitmap bitmap;
-    if (!snapshotDataItem.wholePath.empty() && LoadBitmap(snapshotDataItem.wholePath.c_str(), bitmap)) {
-      snapshotInfo->bitmap = std::move(bitmap);
-      snapshotInfo->pixels = GetSnapshotPixels(snapshotInfo->bitmap.pixmap());
+    if (snapshotDataItem.wholePath.length() > DUMP_FILE_HEIC_TYPE.length()) {
+      bool res = false;
+      if (snapshotDataItem.wholePath.rfind(DUMP_FILE_PNG_TYPE) == snapshotDataItem.wholePath.length() - DUMP_FILE_PNG_TYPE.length()) {
+        res = LoadBitmap(snapshotDataItem.wholePath.c_str(), bitmap);
+      } else if (snapshotDataItem.wholePath.rfind(DUMP_FILE_HEIC_TYPE) == snapshotDataItem.wholePath.length() - DUMP_FILE_HEIC_TYPE.length()) {
+        res = DecodeImage(snapshotDataItem.wholePath, bitmap, snapshotDataItem);
+      } else {
+        LOG(ERROR) << "blankless GetHistorySnapshotInfo failed, wholePath:" << snapshotDataItem.wholePath.c_str();
+      }
+      if (res) {
+        snapshotInfo->bitmap = std::move(bitmap);
+        snapshotInfo->pixels = GetSnapshotPixels(snapshotInfo->bitmap.pixmap());
+      }
     }
     last_info_.emplace(blankless_key, snapshotInfo);
   }
   return snapshotInfo;
+}
+
+bool BlanklessDataController::EncodeImage(const SkBitmap& bitmap,
+                                          std::string& newFile,
+                                          OHOS::NWeb::SnapshotDataItem* snapshotDataItem)
+{
+  bool res = EncodeImageHardware(bitmap, newFile);
+  int64_t snapShotFileSize = 0LL;
+  int64_t snapShotFileTime = 0LL;
+  if (!GetSnapShotFileInfo(newFile, snapShotFileSize, snapShotFileTime)) {
+    LOG(WARNING) << "blankless GetSnapShotFileInfo failed, filename:" << newFile;
+  }
+
+  if (snapShotFileSize > OhosWebSnapshotDataBase::GetInstance().GetCapacityInByte()) {
+    LOG(ERROR) << "blankless img size is not within range, size:" << snapShotFileSize
+               << ", CapacityInByte:" << OhosWebSnapshotDataBase::GetInstance().GetCapacityInByte();
+    base::FilePath dataPath(newFile);
+    base::DeleteFile(dataPath);
+    return false;
+  }
+
+  if (!res || snapShotFileSize <= 0) {
+    LOG(WARNING) << "blankless EncodeImageHardware failed!";
+    SkDynamicMemoryWStream stream;
+    if (!EncodeSnapShotImage(bitmap, stream)) {
+      LOG(ERROR) << "blankless encode snapShot image failed!";
+      return false;
+    }
+    if (stream.bytesWritten() > OhosWebSnapshotDataBase::GetInstance().GetCapacityInByte()) {
+      LOG(ERROR) << "blankless no capacity to save img";
+      return false;
+    }
+    if (!SaveImage(newFile, stream)) {
+      LOG(ERROR) << "blankless save snapshot img failed!";
+      return false;
+    }
+    if (!GetSnapShotFileInfo(newFile, snapShotFileSize, snapShotFileTime)) {
+      LOG(ERROR) << "blankless GetSnapShotFileInfo failed! filename:" << newFile;
+      return false;
+    }
+  }
+
+  snapshotDataItem->wholePath = newFile;
+  snapshotDataItem->snapShotFileSize = snapShotFileSize;
+  snapshotDataItem->snapShotFileTime = snapShotFileTime;
+  return true;
 }
 
 void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessInfo& info,
@@ -388,39 +518,27 @@ void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessI
   }
   SkBitmap bitmapNew = DownscaleToLowRes(bitmap, bitmap.width() / 2, bitmap.height() / 2);
   std::string newFile;
-  SkDynamicMemoryWStream stream;
-  if (!EncodeSnapShotImage(bitmapNew, stream)) {
-    LOG(ERROR) << "blankless encode snapShot image failed!";
-    return;
-  }
-  if (stream.bytesWritten() > OhosWebSnapshotDataBase::GetInstance().GetCapacityInByte()) {
-    LOG(ERROR) << "blankless no capacity to save img";
-    return;
-  }
-  if (!SaveImage(newFile, stream)) {
-    LOG(ERROR) << "blankless save snapshot img failed!";
-    return;
-  }
-  int64_t snapShotFileSize = 0LL;
-  int64_t snapShotFileTime = 0LL;
-  if (!GetSnapShotFileInfo(newFile, snapShotFileSize, snapShotFileTime)) {
-    LOG(WARNING) << "blankless GetSnapShotFileInfo failed! filename " << newFile;
-  }
   // Record the time when the snapshot is written to the database to determine if there is a new snapshot written to
   // the database during this load.
   auto dump_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
   instance.RecordDumpTime(info.nweb_id, info.blankless_key, dump_time);
   SnapshotDataItem snapshotDataItem = {
-    .wholePath = newFile,
+    .wholePath = "",
     .staticPath = "",
     .historySimilarity = 0.0f,
     .lcpTime = corrected_time,
-    .snapShotFileSize = snapShotFileSize,
-    .snapShotFileTime = snapShotFileTime,
+    .snapShotFileSize = 0LL,
+    .snapShotFileTime = 0LL,
     .preferenceHash = info.pref_hash,
     .width = bitmap.width(),
     .height = bitmap.height(),
   };
+  bool res = EncodeImage(bitmapNew, newFile, &snapshotDataItem);
+  if (!res) {
+    LOG(ERROR) << "blankless EncodeImage failed!";
+    return;
+  }
+
   std::shared_ptr<SnapshotInfo> snapshotInfo = GetHistorySnapshotInfo(info.blankless_key);
   if (!snapshotInfo || snapshotInfo->path.size() == 0 || snapshotInfo->bitmap.empty() ||
       snapshotInfo->bitmap.width() != bitmapNew.width() || snapshotInfo->bitmap.height() != bitmapNew.height() ||

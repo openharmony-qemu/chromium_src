@@ -280,6 +280,9 @@
                 "Image_ErrorCode OH_PixelmapImageInfo_GetHeight(OH_Pixelmap_ImageInfo *info, uint32_t *height)",
                 "Image_ErrorCode OH_PixelmapInitializationOptions_SetPixelFormat(OH_Pixelmap_InitializationOptions *options, int32_t pixelFormat)",
                 "Image_ErrorCode OH_PixelmapNative_SetMemoryName(OH_PixelmapNative *pixelmap, char *name, size_t *size)"
+            ],
+            "13": [
+                "Image_ErrorCode OH_PixelmapNative_SetColorSpaceNative(OH_PixelmapNative *pixelmap, OH_NativeColorSpaceManager *colorSpaceNative)"
             ]
         },
         "includes": []
@@ -909,7 +912,8 @@
         "apiList": {
             "12": [
                 "Image_ErrorCode OH_PixelmapNative_AccessPixels(OH_PixelmapNative *pixelmap, void **addr)",
-                "Image_ErrorCode OH_PixelmapNative_UnaccessPixels(OH_PixelmapNative *pixelmap)"
+                "Image_ErrorCode OH_PixelmapNative_UnaccessPixels(OH_PixelmapNative *pixelmap)",
+                "Image_ErrorCode OH_ImageSourceNative_CreateFromUri(char *uri, size_t uriSize, OH_ImageSourceNative **res)"
             ],
             "14": [
                 "Image_ErrorCode OH_DecodingOptions_Release(OH_DecodingOptions *options)",
@@ -1090,6 +1094,29 @@
                 "const OH_Drawing_String* OH_Drawing_GetSystemFontFullNameByIndex(OH_Drawing_Array* fullNameArray, size_t index)",
                 "void OH_Drawing_DestroySystemFontFullNames(OH_Drawing_Array* fullNameArray)",
                 "size_t OH_Drawing_GetDrawingArraySize(OH_Drawing_Array* drawingArray)"
+            ]
+        },
+        "includes": []
+    },
+    "image_packer": {
+        "apiList": {
+            "12": [
+                "Image_ErrorCode OH_PackingOptions_Create(OH_PackingOptions **options)",
+                "Image_ErrorCode OH_PackingOptions_Release(OH_PackingOptions *options)",
+                "Image_ErrorCode OH_PackingOptions_SetQuality(OH_PackingOptions *options, uint32_t quality)",
+                "Image_ErrorCode OH_PackingOptions_SetMimeType(OH_PackingOptions *options, Image_MimeType *format)",
+                "Image_ErrorCode OH_ImagePackerNative_Create(OH_ImagePackerNative **imagePacker)",
+                "Image_ErrorCode OH_ImagePackerNative_Release(OH_ImagePackerNative *imagePacker)",
+                "Image_ErrorCode OH_ImagePackerNative_PackToFileFromPixelmap(OH_ImagePackerNative *imagePacker, OH_PackingOptions *options, OH_PixelmapNative *pixelmap, int32_t fd)"
+            ]
+        },
+        "includes": []
+    },
+    "native_color_space_manager": {
+        "apiList": {
+            "13": [
+                "OH_NativeColorSpaceManager* OH_NativeColorSpaceManager_CreateFromName(ColorSpaceName colorSpaceName)",
+                "void OH_NativeColorSpaceManager_Destroy(OH_NativeColorSpaceManager* nativeColorSpaceManager)"
             ]
         },
         "includes": []

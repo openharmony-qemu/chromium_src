@@ -20,6 +20,11 @@
 #include "sstream"
 #include "string"
 #include "third_party/bounds_checking_function/include/securec.h"
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include <errno.h>
+#include <limits.h>
+#include <stdlib.h>
+#endif
 
 namespace OHOS {
 namespace NWeb {
@@ -425,5 +430,65 @@ void* OhosImageDecoderAdapterImpl::GetDecodeData()
 }
 // LCOV_EXCL_STOP
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+bool OhosImageDecoderAdapterImpl::DecodeByPath(const std::string& path, AllocatorType type)
+{
+    if (path.empty()) {
+        WVLOG_E("[HeifSupport] blankless DecodeByPath path is empty");
+        return false;
+    }
+
+    WVLOG_D("[HeifSupport] blankless DecodeByPath path =%{public}s", path.c_str());
+    char fullPath[PATH_MAX];
+    if (realpath(path.c_str(), fullPath) == nullptr) {
+        WVLOG_E("[HeifSupport] blankless DecodeByPath realpath failed, errno = %{public}d", errno);
+        return false;
+    }
+
+    size_t size = strlen(fullPath);
+    WVLOG_D("[HeifSupport] blankless DecodeByPath fullPath =%{public}s, size = %{public}zu", fullPath, size);
+    Image_ErrorCode errorCode = OH_ImageSourceNative_CreateFromUri(fullPath, size, &imageSource_);
+    if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+        WVLOG_E("[HeifSupport] blankless DecodeByPath create imageSource from uri failed, errorCode %{public}d",
+                errorCode);
+        return false;
+    }
+    if (!imageInfo_) {
+        errorCode = OH_ImageSourceInfo_Create(&imageInfo_);
+        if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+            WVLOG_E("[HeifSupport] blankless DecodeByPath create imageinfo failed, errorCode %{public}d", errorCode);
+            return false;
+        }
+    }
+    errorCode = OH_ImageSourceNative_GetImageInfo(imageSource_, 0, imageInfo_);
+    if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+        WVLOG_E("[HeifSupport] blankless DecodeByPath GetImageInfo failed, errorCode %{public}d", errorCode);
+        return false;
+    }
+
+    OH_DecodingOptions* decodeOptions;
+    errorCode = OH_DecodingOptions_Create(&decodeOptions);
+    if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+        WVLOG_E("[HeifSupport] blankless DecodeByPath create decode options failed, errorCode %{public}d", errorCode);
+        return false;
+    }
+    errorCode = OH_DecodingOptions_SetPixelFormat(decodeOptions, PIXEL_FORMAT::PIXEL_FORMAT_RGBA_8888);
+    if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+        WVLOG_E("[HeifSupport] blankless DecodeByPath set pixel format failed, errorCode %{public}d", errorCode);
+        ReleaseDecodeOptions(decodeOptions);
+        return false;
+    }
+    errorCode = OH_ImageSourceNative_CreatePixelmapUsingAllocator(imageSource_, decodeOptions,
+        GetImageAllocType(type), &pixelMap_);
+    if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
+        WVLOG_E("[HeifSupport] blankless DecodeByPath create pixel map failed, errorCode %{public}d", errorCode);
+        ReleaseDecodeOptions(decodeOptions);
+        return false;
+    }
+    SetMemoryName(type);
+    ReleaseDecodeOptions(decodeOptions);
+    return true;
+}
+#endif
 }  // namespace NWeb
 }  // namespace OHOS

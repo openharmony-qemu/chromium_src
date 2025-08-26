@@ -169,7 +169,7 @@ void NWebExtensionDownloadCefDelegate::OpenCallback(int requestId,
 // downloads.remove
 bool NWebExtensionDownloadCefDelegate::RemoveFile(
     const int downloadId,
-    DownloadsOpenCallback callback) {
+    DownloadsRemoveFileCallback callback) {
   LOG(INFO) << "NWebExtensionDownloadCefDelegate::RemoveFile downloadId: "
             << downloadId;
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
@@ -196,7 +196,7 @@ bool NWebExtensionDownloadCefDelegate::RemoveFile(
 
 void NWebExtensionDownloadCefDelegate::RemoveFileCallback(int requestId,
                                                           std::optional<std::string> error) {
-  DownloadsOpenCallback callback;
+  DownloadsRemoveFileCallback callback;
   {
     std::lock_guard<std::mutex> lock(g_downloads_removefile_callback_map_mutex);
     auto it = g_downloads_removefile_callback_map_.find(requestId);

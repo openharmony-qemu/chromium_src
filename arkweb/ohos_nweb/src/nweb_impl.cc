@@ -6076,18 +6076,20 @@ void NWebImpl::SetPrivacyStatus(bool isPrivate) {
 int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) {
   if (!base::ohos::BlanklessController::CheckGlobalProperty() ||
       !nweb_delegate_ || !similarity || !loadingTime || !CheckNetAvailable()) {
-      if (similarity) {
-        *similarity = 0;
-      }
-      if (loadingTime) {
-        *loadingTime = 0;
-      }
+    if (similarity) {
+      *similarity = 0;
+    }
+    if (loadingTime) {
+      *loadingTime = 0;
+    }
     return 0;  // SUCCESS
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
   auto window_id = instance.GetWindowIdByNWebId(nweb_id_);
   uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
   auto status_code = instance.RecordKey(nweb_id_, blankless_key);
+  LOG(DEBUG) << "blankless GetBlanklessInfoWithKey nweb_id: " << nweb_id_
+             << ", blankless_key: " << blankless_key << ", status: " << static_cast<int>(status_code);
   auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
   auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
   if (is_private) {
@@ -6099,6 +6101,9 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
       databaseInstance.GetBlanklessLoadingCacheCapacity() == 0 || is_private) {
     *similarity = 0;
     *loadingTime = 0;
+    LOG(DEBUG) << "blankless GetBlanklessInfoWithKey nweb_id: " << nweb_id_
+               << ", blankless_key: " << blankless_key << ", status: " << static_cast<int>(status_code)
+               << ", capacity: " << databaseInstance.GetBlanklessLoadingCacheCapacity();
   } else {
     blankless_key_ = blankless_key;
     auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
@@ -6107,7 +6112,8 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
     OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
     *similarity = dataItem.historySimilarity;
     *loadingTime = dataItem.lcpTime;
-    LOG(DEBUG) << "blankless GetBlanklessInfoWithKey similarity: " << dataItem.historySimilarity
+    LOG(DEBUG) << "blankless GetBlanklessInfoWithKey nweb_id: " << nweb_id_
+               << ", blankless_key: " << blankless_key << ", similarity: " << dataItem.historySimilarity
                << ", loadingTime: " << dataItem.lcpTime;
   }
   return 0;   // SUCCESS
@@ -6120,6 +6126,8 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
   auto& instance = base::ohos::BlanklessController::GetInstance();
   uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
   auto status_code = instance.MatchKey(nweb_id_, blankless_key);
+  LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey nweb_id: " << nweb_id_
+             << ", blankless_key: " << blankless_key << ", status: " << static_cast<int>(status_code);
   if (status_code == base::ohos::BlanklessController::StatusCode::KEY_NOT_MATCH) {
     return -4;    // ERR_KEY_NOT_MATCH
   }
@@ -6134,6 +6142,10 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
   }  
   if (status_code != base::ohos::BlanklessController::StatusCode::INSERTED ||
       databaseInstance.GetBlanklessLoadingCacheCapacity() == 0) {
+    LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey nweb_id: " << nweb_id_
+               << ", blankless_key: " << blankless_key << ", status: " << static_cast<int>(status_code)
+               << ", capacity: " << databaseInstance.GetBlanklessLoadingCacheCapacity()
+               << ", isStart: " << isStart;
     return (isStart ? -5 : 0);  // ERR_SIGNIFICANT_CHANGE(true) or SUCCESS(false)
   }
   if (isStart) {
@@ -6172,8 +6184,11 @@ bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
 }
 
 void NWebImpl::SetVisibility(bool isVisible) {
+  if (!base::ohos::BlanklessController::CheckGlobalProperty()) {
+    return;
+  }
   is_visible_ = isVisible;
-  if (!isVisible) {
+  if (!isVisible || !nweb_handle_) {
     return;
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();

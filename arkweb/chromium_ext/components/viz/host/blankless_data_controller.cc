@@ -511,11 +511,16 @@ void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessI
     return;
   }
   uint64_t recorded_time = instance.GetSystemTime(info.nweb_id, info.blankless_key);
-  int32_t corrected_time = static_cast<int32_t>(info.system_time - recorded_time);
-  if (corrected_time <= 0) {
-    LOG(ERROR) << "blankless corrected loading time error " << corrected_time << ", lcp: " << info.lcp_time;
+  if (info.system_time <= recorded_time || (info.system_time - recorded_time) > INT32_MAX) {
+    LOG(ERROR) << "blankless corrected loading time error. nweb_id: " << info.nweb_id
+               << ", blankless_key: " << info.blankless_key
+               << ", system_time: " << info.system_time
+               << ", recorded_time: " << recorded_time;
     return;
   }
+  int32_t corrected_time = static_cast<int32_t>(info.system_time - recorded_time);
+  LOG(DEBUG) << "blankless corrected loading time: " << corrected_time << ", nweb_id: " << info.nweb_id
+             << ", blankless_key: " << info.blankless_key;
   SkBitmap bitmapNew = DownscaleToLowRes(bitmap, bitmap.width() / 2, bitmap.height() / 2);
   std::string newFile;
   // Record the time when the snapshot is written to the database to determine if there is a new snapshot written to

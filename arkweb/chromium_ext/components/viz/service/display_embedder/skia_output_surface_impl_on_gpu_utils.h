@@ -17,13 +17,14 @@
 #define COMPONENTS_VIZ_SERVICE_DISPLAY_EMBEDDER_SKIA_OUTPUT_SURFACE_IMPL_ON_GPU_UTILS_H_
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 
 namespace viz {
 class SkiaOutputSurfaceImplOnGpu;
 
 class SkiaOutputSurfaceImplOnGpuUtils {
  public:
-  SkiaOutputSurfaceImplOnGpu* skiaOutputSurfaceImplOnGpu;
+  raw_ptr<SkiaOutputSurfaceImplOnGpu> skiaOutputSurfaceImplOnGpu = nullptr;
   SkiaOutputSurfaceImplOnGpuUtils(SkiaOutputSurfaceImplOnGpu* impl);
 };
 

@@ -75,10 +75,6 @@ std::unique_ptr<SharedImageBacking> OzoneImageBackingFactoryExt::CreateSharedIma
   }
   const gfx::Size plane_size = gpu::GetPlaneSize(plane, size);
   auto si_format = viz::GetSharedImageFormat(GetPlaneBufferFormat(plane, buffer_format));
-#if false
-  const viz::ResourceFormat plane_format =
-      viz::GetResourceFormat(GetPlaneBufferFormat(plane, buffer_format));
-#endif
   std::string debug_label = "ZGLEE";
   auto backing = std::make_unique<OzoneImageBacking>(
       mailbox, si_format, plane_size, color_space, surface_origin, alpha_type,

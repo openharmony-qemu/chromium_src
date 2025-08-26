@@ -88,11 +88,6 @@ bool SharedImageFactoryExt::CreateSharedImage(const Mailbox& mailbox,
     SkAlphaType alpha_type,
     uint32_t usage,
     void* window_buffer) {
-#if false
-  auto si_format =
-      viz::SharedImageFormat::SinglePlane(viz::GetResourceFormat(format));
-
-#endif
   auto si_format = viz::GetSharedImageFormat(format);
   gfx::GpuMemoryBufferType gmb_type = handle.type;
 

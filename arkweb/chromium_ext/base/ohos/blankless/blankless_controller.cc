@@ -38,13 +38,13 @@ void BlanklessController::BlankOptWhiteList::LoadWhiteList()
 
   base::FilePath data_path = base::FilePath("/etc/web/blank_opt_white_list.json");
   base::File tfile(data_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
-  if (!tfile.IsValid()) {
+  if (!tfile.IsValid() || tfile.GetLength() <= 0) {
     LOG(WARNING) << "blankless BlankOptWhiteList file is invalid or not exist.";
     return;
   }
 
-  std::vector<char> buffer(tfile.GetLength());
-  int bytes_read = tfile.Read(0, buffer.data(), buffer.size());
+  std::vector<char> buffer(static_cast<size_t>(tfile.GetLength()));
+  int bytes_read = tfile.Read(0, buffer.data(), static_cast<int>(buffer.size()));
   if (bytes_read == -1) {
     LOG(WARNING) << "blankless BlankOptWhiteList read file failed.";
     return;

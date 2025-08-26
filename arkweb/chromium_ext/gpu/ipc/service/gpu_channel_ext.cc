@@ -127,13 +127,17 @@ bool GpuChannelExt::GetBlanklessDumpInfoAndDisableDump(uint32_t client_id, uint6
   std::lock_guard<std::mutex> lck(dump_info_map_mtx_);
   auto it = blankless_dump_info_map_.find(client_id);
   if (it == blankless_dump_info_map_.end()) {
+    LOG(DEBUG) << "blankless GetBlanklessDumpInfoAndDisableDump client_id[" << client_id << "] not found.";
     return false;
   }
   auto iter = it->second.find(frame_sink_id);
   if (iter == it->second.end()) {
+    LOG(DEBUG) << "blankless GetBlanklessDumpInfoAndDisableDump frame_sink_id[" << frame_sink_id << "] not found";
     return false;
   }
   if (!iter->second.dump_enabled) {
+    LOG(DEBUG) << "blankless GpuChannelExt::GetBlanklessDumpInfoAndDisableDump dump disable, frame_sink_id:"
+               << frame_sink_id << " client_id:" << client_id;
     return false;
   }
   LOG(DEBUG) << "blankless GpuChannelExt::GetBlanklessDumpInfoAndDisableDump got it, frame_sink_id:"

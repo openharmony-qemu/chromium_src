@@ -355,7 +355,7 @@ void ArkwebDisplayUtils::removeDuplicatesRect(std::vector<gfx::Rect>& quad_list)
     LOG(ERROR) << "blankless removeDuplicatesRect, quad_list is empty.";
     return;
   }
-  for (int i = 0; i < quad_list.size() - 1; i++) {
+  for (size_t i = 0; i < quad_list.size() - 1; ++i) {
      auto iter = std::remove(quad_list.begin() + i + 1, quad_list.end(), quad_list[i]);
      quad_list.erase(iter, quad_list.end());
   }
@@ -394,6 +394,8 @@ void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
   }
   removeDuplicatesRect(draw_quad_list);
   if (draw_quad_list.size() >= kRectNumthreshold) {
+    LOG(DEBUG) << "blankless push copy render pass. nweb_id: " << info.info.nweb_id
+               << ", blankless_key: " << info.info.blankless_key;
     snapshot_request->copy_output_request_utils()->SetQuadList(draw_quad_list);
     root_render_pass->copy_requests.push_back(std::move(snapshot_request));
   }

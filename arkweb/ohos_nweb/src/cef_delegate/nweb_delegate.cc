@@ -5985,7 +5985,7 @@ void NWebDelegate::SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_k
   }
 
   auto browser = GetBrowser();
-  if (browser == nullptr) {
+  if (browser == nullptr || browser->GetMainFrame() == nullptr || browser->GetMainFrame()->AsArkWebFrame() == nullptr) {
     LOG(ERROR) << "blankless NWebDelegate::SetBlanklessLoadingKey browser is nullptr";
     return;
   }

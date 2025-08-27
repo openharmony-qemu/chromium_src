@@ -301,7 +301,7 @@ class OHOSScreenCaptureCallback
   }
 
   int32_t BaseScreenCaptureSource::StopCapture(int nweb_id) {
-    LOG(INFO) << "BaseScreenCaptureSource Stop Capture";
+    LOG(INFO) << "BaseScreenCaptureSource Stop Capture, nweb_id = " << nweb_id;
     int32_t ret = -1;
 
     {
@@ -320,7 +320,7 @@ class OHOSScreenCaptureCallback
   }
 
   void BaseScreenCaptureSource::ReleaseCapture(int nweb_id) {
-    LOG(INFO) << "BaseScreenCaptureSource Release Capture";
+    LOG(INFO) << "BaseScreenCaptureSource Release Capture, nweb_id = " << nweb_id;
 
     {
       std::unique_lock<std::shared_mutex> lock(screen_capture_map_lock_);

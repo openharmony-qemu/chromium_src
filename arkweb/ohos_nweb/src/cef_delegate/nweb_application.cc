@@ -66,7 +66,7 @@ namespace OHOS::NWeb {
 // static
 CefRefPtr<OHOS::NWeb::NWebApplication> NWebApplication::GetDefault() {
   if (!g_application) {
-    new NWebApplication();
+    g_application = new NWebApplication();
   }
   return g_application;
 }

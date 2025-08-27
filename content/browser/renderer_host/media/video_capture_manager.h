@@ -385,6 +385,9 @@ class CONTENT_EXPORT VideoCaptureManager
   NWebIdMap nWebId_;
   mutable std::mutex NWebIdMutex_;
 #endif  // defined(OHOS_WEBRTC)
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  base::WeakPtrFactory<VideoCaptureManager> weak_factory_{this};
+#endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 };
 
 }  // namespace content

@@ -34,3 +34,7 @@ const char kEnableVideoAssistant[] = "enable-nweb-ex-video-assistant";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 const char kEnableLoggerReport[] = "enable-nweb-logger-report";
 #endif
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+const char kDisableAutoPreconnect[] = "disable-auto-preconnect";
+#endif

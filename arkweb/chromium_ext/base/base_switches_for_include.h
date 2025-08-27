@@ -38,4 +38,8 @@ extern const char kEnableVideoAssistant[];
 extern const char kEnableLoggerReport[];
 #endif
 
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+extern const char kDisableAutoPreconnect[];
+#endif
+
 #endif  // ARKWEB_CHROMIUM_EXT_BASE_BASE_SWITCHES_FOR_INCLUDE_H_

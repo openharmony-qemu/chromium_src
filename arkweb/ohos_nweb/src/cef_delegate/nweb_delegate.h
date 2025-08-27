@@ -732,7 +732,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   void SetPathAllowingUniversalAccess(
-      const std::vector<std::string>& pathList) override;
+      const std::vector<std::string>& path_list,
+      const std::vector<std::string>& excluded_path_list) override;
   int PrerenderPage(const std::string& url,
                     const std::string& additional_headers) override;
   void CancelAllPrerendering() override;

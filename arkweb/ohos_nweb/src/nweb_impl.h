@@ -942,6 +942,13 @@ class NWebImpl : public NWeb {
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  enum class PathType {
+      kDirResource,
+      kDirFile,
+      kDirCache,
+      kDirTemp,
+  };
+
   void SetPathAllowingUniversalAccess(
       const std::vector<std::string>& pathList,
       const std::vector<std::string>& moduleName,

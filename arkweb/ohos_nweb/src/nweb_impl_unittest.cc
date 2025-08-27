@@ -5245,9 +5245,10 @@ TEST_F(NWebImplTest, SetUrlTrustListWithErrMsg002) {
 TEST_F(NWebImplTest, SetPathAllowingUniversalAccess001) {
   const std::vector<std::string> pathList = {"Default", "IncludeSensitive", "Everything"};
   const std::vector<std::string> moduleName = {"Default", "IncludeSensitive", "Everything"};
+  const std::vector<std::string> excludedPathList = {};
   std::string errorPath = "path";
   nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, SetPathAllowingUniversalAccess(pathList)).Times(0);
+  EXPECT_CALL(*mock_delegate_, SetPathAllowingUniversalAccess(pathList, excludedPathList)).Times(0);
   nweb_impl_->SetPathAllowingUniversalAccess(pathList, moduleName, errorPath);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
 }
@@ -5264,9 +5265,10 @@ TEST_F(NWebImplTest, SetPathAllowingUniversalAccess002) {
 TEST_F(NWebImplTest, SetPathAllowingUniversalAccess003) {
   const std::vector<std::string> pathList = {};
   const std::vector<std::string> moduleName = {"Default", "IncludeSensitive", "Everything"};
+  const std::vector<std::string> excludedPathList = {};
   std::string errorPath = "path";
   nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, SetPathAllowingUniversalAccess(pathList)).Times(1);
+  EXPECT_CALL(*mock_delegate_, SetPathAllowingUniversalAccess(pathList, excludedPathList)).Times(1);
   nweb_impl_->SetPathAllowingUniversalAccess(pathList, moduleName, errorPath);
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }

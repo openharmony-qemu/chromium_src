@@ -727,7 +727,8 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   virtual void SetPathAllowingUniversalAccess(
-      const std::vector<std::string>& pathList) = 0;
+      const std::vector<std::string>& path_list,
+      const std::vector<std::string>& excluded_path_list) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)

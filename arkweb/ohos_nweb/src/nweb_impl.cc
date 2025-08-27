@@ -390,6 +390,62 @@ static std::string g_feedbacklogs_crash_path =
     "/data/storage/el2/base/haps/entry/files/logs/logs/logFile";
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+static std::string kDirEl1 = "/data/storage/el1";
+static std::string kDirEl2 = "/data/storage/el2";
+
+void SetPathList(const std::vector<std::string>& module_name,
+                 std::map<OHOS::NWeb::NWebImpl::PathType, std::vector<base::FilePath>>& path_lists) {
+  for (auto& name : module_name) {
+    path_lists[OHOS::NWeb::NWebImpl::PathType::kDirResource].push_back(
+        base::FilePath(kDirEl1 + "/bundle/" + name + "/resources/resfile"));
+    path_lists[OHOS::NWeb::NWebImpl::PathType::kDirFile].push_back(
+        base::FilePath(kDirEl2 + "/base/haps/" + name + "/files"));
+    path_lists[OHOS::NWeb::NWebImpl::PathType::kDirCache].push_back(
+        base::FilePath(kDirEl2 + "/base/haps/" + name + "/cache"));
+    path_lists[OHOS::NWeb::NWebImpl::PathType::kDirTemp].push_back(
+        base::FilePath(kDirEl2 + "/base/haps/" + name + "/temp"));
+  }
+  path_lists[OHOS::NWeb::NWebImpl::PathType::kDirFile].push_back(base::FilePath(kDirEl2 + "/base/files"));
+  path_lists[OHOS::NWeb::NWebImpl::PathType::kDirCache].push_back(base::FilePath(kDirEl2 + "/base/cache"));
+  path_lists[OHOS::NWeb::NWebImpl::PathType::kDirTemp].push_back(base::FilePath(kDirEl2 + "/base/temp"));
+}
+
+void SetExcludedPathList(const std::vector<std::string>& module_name,
+                         std::map<OHOS::NWeb::NWebImpl::PathType, std::vector<base::FilePath>>& path_lists) {
+  for (auto& name : module_name) {
+    path_lists[OHOS::NWeb::NWebImpl::PathType::kDirCache].push_back(
+        base::FilePath(kDirEl2 + "/base/haps/" + name + "/cache/web"));
+  }
+  path_lists[OHOS::NWeb::NWebImpl::PathType::kDirCache].push_back(base::FilePath(kDirEl2 + "/base/cache/web"));
+}
+
+void GetExcludedPathList(std::map<OHOS::NWeb::NWebImpl::PathType, std::vector<base::FilePath>>& src_path_lists,
+                         std::vector<std::string>& des_path_lists) {
+    for (const auto& [path_type, file_paths] : src_path_lists) {
+        for (const auto& file_path : file_paths) {
+            des_path_lists.push_back(file_path.value());
+        }
+    }
+}
+
+bool CheckRealPath(const base::FilePath& real_path, const std::vector<base::FilePath>& path_list,
+                   bool allow_parent, const std::vector<base::FilePath>& excluded_paths = {}) {
+  for (const auto& excluded_path : excluded_paths) {
+    if (excluded_path == real_path) {
+      return false;
+    }
+  }
+
+  for (const auto& dir : path_list) {
+    if ((allow_parent && dir == real_path) || dir.IsParent(real_path)) {
+      return true;
+    }
+  }
+  return false;
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
 static bool set_whole_page_drawing = false;
 #endif
@@ -5404,18 +5460,18 @@ void NWebImpl::SetPathAllowingUniversalAccess(
   }
   if (pathList.empty()) {
     LOG(INFO) << "SetPathAllowingUniversalAccess empty";
-    nweb_delegate_->SetPathAllowingUniversalAccess(pathList);
+    nweb_delegate_->SetPathAllowingUniversalAccess(pathList, {});
     return;
   }
-  std::vector<base::FilePath> res_dir_path_list;
-  std::vector<base::FilePath> file_dir_path_list;
-  for (auto& name : moduleName) {
-    res_dir_path_list.push_back(base::FilePath("/data/storage/el1/bundle/" +
-                                               name + "/resources/resfile"));
-    file_dir_path_list.push_back(
-        base::FilePath("/data/storage/el2/base/haps/" + name + "/files"));
-  }
-  file_dir_path_list.push_back(base::FilePath("/data/storage/el2/base/files"));
+
+  std::map<PathType, std::vector<base::FilePath>> path_lists;
+  SetPathList(moduleName, path_lists);
+
+  std::map<PathType, std::vector<base::FilePath>> excluded_path_list;
+  SetExcludedPathList(moduleName, excluded_path_list);
+
+  std::vector<std::string> excludedPathList;
+  GetExcludedPathList(excluded_path_list, excludedPathList);
 
   for (auto& p : pathList) {
     base::FilePath path(p);
@@ -5426,28 +5482,19 @@ void NWebImpl::SetPathAllowingUniversalAccess(
       errorPath = p;
       return;
     }
-    bool valid = false;
-    for (auto& res_dir : res_dir_path_list) {
-      if (res_dir.IsParent(real_path) || res_dir == real_path) {
-        valid = true;
-        break;
-      }
-    }
-    if (valid) {
+
+    if (CheckRealPath(real_path, path_lists[NWebImpl::PathType::kDirResource], true) ||
+        CheckRealPath(real_path, path_lists[NWebImpl::PathType::kDirFile], false) ||
+        CheckRealPath(real_path, path_lists[NWebImpl::PathType::kDirCache], true,
+                      excluded_path_list[NWebImpl::PathType::kDirCache]) ||
+        CheckRealPath(real_path, path_lists[NWebImpl::PathType::kDirTemp], true)) {
       continue;
     }
-    for (auto& file_dir : file_dir_path_list) {
-      if (file_dir.IsParent(real_path)) {
-        valid = true;
-        break;
-      }
-    }
-    if (!valid) {
-      errorPath = p;
-      return;
-    }
+
+    errorPath = p;
+    return;
   }
-  nweb_delegate_->SetPathAllowingUniversalAccess(pathList);
+  nweb_delegate_->SetPathAllowingUniversalAccess(pathList, excludedPathList);
 }
 
 int NWebImpl::PrerenderPage(const std::string& url,

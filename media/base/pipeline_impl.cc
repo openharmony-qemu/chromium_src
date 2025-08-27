@@ -1832,7 +1832,7 @@ void PipelineImpl::SetMediaPlayerState(bool is_suspend,
 
   media_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&RendererWrapper::SetMediaPlayerState,
-                                base::Unretained(renderer_wrapper_->AsWeakPtr()),
+                                renderer_wrapper_->AsWeakPtr(),
                                 is_suspend, suspend_type));
 }
 
@@ -1865,7 +1865,7 @@ void PipelineImpl::SetPlaybackRateWithReason(
   playback_rate_ = playback_rate;
   media_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&RendererWrapper::SetPlaybackRateWithReason,
-                                base::Unretained(renderer_wrapper_->AsWeakPtr()),
+                                renderer_wrapper_->AsWeakPtr(),
                                 playback_rate_, reason));
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER

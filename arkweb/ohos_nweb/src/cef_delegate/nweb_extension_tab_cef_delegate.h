@@ -85,13 +85,17 @@ class NWebExtensionTabCefDelegate {
       std::optional<std::string>& error);
 
   // chrome.tabs.discard
-  static bool DiscardTab(int tab_id, TabDiscardedCallback callback);
+  static bool DiscardTab(int tab_id,
+                         NWebExtensionTabDiscardInfo& discard_info,
+                         TabDiscardedCallback callback);
 
   static void TabDiscardCallback(int request_id,
       NWebExtensionTab& tab, std::optional<std::string>& error);
 
   // chrome.tabs.duplicate
-  static bool DuplicateTab(int tab_id, TabDuplicatedCallback callback);
+  static bool DuplicateTab(int tab_id,
+                           NWebExtensionTabDuplicateInfo& duplicate_info,
+                           TabDuplicatedCallback callback);
 
   static void TabDuplicateCallback(int request_id,
       NWebExtensionTab& tab, std::optional<std::string>& error);

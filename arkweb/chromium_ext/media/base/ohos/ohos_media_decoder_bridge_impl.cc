@@ -514,8 +514,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBufferEOS() {
   if (signal_ == nullptr || signal_->isOnError_) {
     return DecoderAdapterCode::DECODER_ERROR;
   }
-  if (signal_->isDecoderFlushing_.load() || signal_->inputQueue_.empty() ||
-      !isRunning_.load()) {
+  if (signal_->isDecoderFlushing_.load() || signal_->inputQueue_.empty()) {
     return DecoderAdapterCode::DECODER_RETRY;
   }
   if (videoDecoder_ == nullptr) {
@@ -671,11 +670,6 @@ void CodecBridgeCallback::OnNeedOutputData(
              << index << ", timestamp = " << info->GetPresentationTimeUs();
   if (signal_->isDecoderFlushing_.load()) {
     LOG(DEBUG) << "CodecBridgeCallback::OnNeedOutputData Decoder is flushing.";
-    return;
-  }
-
-  if (!info) {
-    LOG(ERROR) << "CodecBridgeCallback::OnNeedOutputData info is NULL";
     return;
   }
 

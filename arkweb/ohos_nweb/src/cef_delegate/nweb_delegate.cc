@@ -6000,7 +6000,9 @@ void NWebDelegate::SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_k
   // before send to render_frame, frame_sink_id will be get from compositor.
   int64_t pref_hash = preference_delegate_ ? preference_delegate_->GetPreferenceHash() : 0;
   browser->GetMainFrame()->AsArkWebFrame()->SendBlanklessKeyToRenderFrame(nweb_id, blankless_key, 0, pref_hash);
-  handler_delegate_->SetBlanklessLoadingKey(blankless_key);
+  if (handler_delegate_) {
+    handler_delegate_->SetBlanklessLoadingKey(blankless_key);
+  }
 }
 
 int64_t NWebDelegate::GetPreferenceHash() {

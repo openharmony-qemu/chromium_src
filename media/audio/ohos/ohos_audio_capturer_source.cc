@@ -49,6 +49,9 @@ void OHOSAudioCapturerSource::Initialize(
   params_ = params;
   callback_ = callback;
 
+  if (!capturer_) {
+    return;
+  }
   if (params_.format() != AudioParameters::AUDIO_PCM_LOW_LATENCY) {
     ReportError("Only AUDIO_PCM_LOW_LATENCY format is supported");
     return;
@@ -100,6 +103,9 @@ void OHOSAudioCapturerSource::Stop() {
     if (callback_) {
       callback_ = nullptr;
     }
+  }
+  if (!capturer) {
+    return;
   }
 
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());

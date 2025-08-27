@@ -3888,7 +3888,32 @@ void NWebDelegate::PrefetchPage(
   CefString additionalHttpHeadersCef;
   additionalHttpHeadersCef.FromString(output);
   if (GetBrowser().get()) {
-    GetBrowser()->PrefetchPage(urlCef, additionalHttpHeadersCef);
+    GetBrowser()->PrefetchPage(urlCef, additionalHttpHeadersCef, 500, false);
+  }
+#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+}
+
+void NWebDelegate::PrefetchPageV2(
+    const std::string& url,
+    const std::map<std::string, std::string>& additionalHttpHeaders,
+    int32_t minTimeBetweenPrefetchesMs, 
+    bool ignoreCacheControlNoStore) {
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  CefString urlCef;
+  urlCef.FromString(url);
+  std::string output;
+  for (auto& header : additionalHttpHeaders) {
+    base::StringAppendF(&output, "%s: %s\r\n", header.first.c_str(),
+                        header.second.c_str());
+  }
+  output.append("\r\n");
+  CefString additionalHttpHeadersCef;
+  additionalHttpHeadersCef.FromString(output);
+  if (GetBrowser().get()) {
+    LOG(INFO) << "[dgy] NWebDelegate::PrefetchPageV2";
+    GetBrowser()->PrefetchPage(urlCef, additionalHttpHeadersCef,
+    minTimeBetweenPrefetchesMs,
+    ignoreCacheControlNoStore);
   }
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }

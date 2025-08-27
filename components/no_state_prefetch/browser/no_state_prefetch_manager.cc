@@ -713,6 +713,8 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
 #if BUILDFLAG(IS_ARKWEB)
   no_state_prefetch_contents_ptr->SetOhStartPrerenderingExtraHeaders(
       extra_headers);
+  no_state_prefetch_contents_ptr->SetIgnoreCacheControlNoStore(
+      ignoreCacheControlNoStore_);
 #endif
   std::unique_ptr<NoStatePrefetchHandle> no_state_prefetch_handle =
       base::WrapUnique(
@@ -887,7 +889,11 @@ bool NoStatePrefetchManager::DoesRateLimitAllowPrefetch(Origin origin) const {
       GetCurrentTimeTicks() - last_prefetch_start_time_;
   if (!config_.rate_limit_enabled)
     return true;
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  return elapsed_time >= base::Milliseconds(minTimeBetweenPrefetchesMs_);
+#elif
   return elapsed_time >= base::Milliseconds(kMinTimeBetweenPrefetchesMs);
+#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }
 
 void NoStatePrefetchManager::DeleteOldWebContents() {

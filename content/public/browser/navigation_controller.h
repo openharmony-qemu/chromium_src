@@ -251,6 +251,9 @@ class NavigationController {
     // needed to pass URLs that exceed the IPC limit (kMaxURLChars). Short
     // data: URLs can be passed in the |url| field.
     scoped_refptr<base::RefCountedString> data_url_as_string;
+     
+    // true if ignoring Cache-Control: no-store.
+    bool load_ignore_cache_params = false;
 #endif
 
     // Used in LOAD_TYPE_HTTP_POST loads only. Carries the post data of the

@@ -3781,7 +3781,8 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::NavigateWithoutEntry(
           params.has_user_gesture, network::mojom::SourceLocation::New(),
           reload_type, pending_entry_, pending_entry_->GetFrameEntry(node),
           navigation_start_time);
-
+  
+  request->load_ignore_cache_params = params.load_ignore_cache_params;
   // If the navigation couldn't start, return immediately and discard the
   // pending NavigationEntry.
   if (!request) {

@@ -301,6 +301,9 @@ std::unique_ptr<network::ResourceRequest> CreateResourceRequest(
   if (request_info.is_outermost_main_frame) {
     load_flags |= net::LOAD_MAIN_FRAME_DEPRECATED;
     load_flags |= net::LOAD_CAN_USE_RESTRICTED_PREFETCH_FOR_MAIN_FRAME;
+    if(frame_tree_node->navigation_request()->load_ignore_cache_params){
+      load_flags |= net::LOAD_IGNORE_CACHE_CONTROL;
+    }
   }
 
   // Sync loads should have maximum priority and should be the only

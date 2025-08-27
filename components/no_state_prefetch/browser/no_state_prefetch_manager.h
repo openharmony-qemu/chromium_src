@@ -119,6 +119,13 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
       const gfx::Size& size,
       content::PreloadingAttempt* attempt,
       const std::string& extra_headers);
+  void SetMinTimeBetweenPrefetchesMs(int time) {
+    minTimeBetweenPrefetchesMs_ = 
+      (time >= 500 ? 500 : time) <= 0 ? 0 : time;
+  }
+  void SetIgnoreCacheControlNoStore(bool flag) {
+    ignoreCacheControlNoStore_ = flag;
+  }
 #endif  // ARKWEB_NO_STATE_PREFETCH
   // Adds a NoStatePrefetch that only allows for same origin requests (i.e.,
   // requests that only redirect to the same origin).
@@ -496,6 +503,8 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
                         Origin origin,
                         base::WeakPtr<content::PreloadingAttempt> attempt);
   std::set<GURL> oh_prefetch_urls_;
+  int minTimeBetweenPrefetchesMs_ = 500;
+  bool ignoreCacheControlNoStore_ = false;
 #endif
 
   base::WeakPtrFactory<NoStatePrefetchManager> weak_factory_{this};

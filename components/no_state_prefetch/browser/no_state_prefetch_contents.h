@@ -143,6 +143,9 @@ class NoStatePrefetchContents
   void SetOhStartPrerenderingExtraHeaders(const std::string& extra_headers) {
     start_prerendering_extra_headers_ = extra_headers;
   }
+  void SetIgnoreCacheControlNoStore(bool flag) {
+    ignoreCacheControlNoStore_ = flag;
+  }
 #endif
 
   // Indicates whether this prerendered page can be used for the provided
@@ -314,6 +317,7 @@ class NoStatePrefetchContents
 
 #if BUILDFLAG(IS_ARKWEB)
   std::string start_prerendering_extra_headers_ = std::string();
+  bool ignoreCacheControlNoStore_ = false;
 #endif
 
   base::WeakPtrFactory<NoStatePrefetchContents> weak_factory_{this};

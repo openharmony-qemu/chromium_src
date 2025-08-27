@@ -440,6 +440,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void PrefetchPage(
       const std::string& url,
       const std::map<std::string, std::string>& additionalHttpHeaders) override;
+  void PrefetchPageV2(
+      const std::string& url,
+      const std::map<std::string, std::string>& additionalHttpHeaders,
+      int32_t minTimeBetweenPrefetchesMs, 
+      bool ignoreCacheControlNoStore) override;
   // #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

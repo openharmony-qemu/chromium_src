@@ -3306,6 +3306,21 @@ void NWebImpl::PrefetchPage(
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }
 
+void NWebImpl::PrefetchPageV2(
+    const std::string& url,
+    const std::map<std::string, std::string>& additionalHttpHeaders,
+    int32_t minTimeBetweenPrefetchesMs, 
+    bool ignoreCacheControlNoStore) {
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  TRACE_EVENT0("NWebImpl", "NWebImpl::PrefetchPageV2");
+  nweb_delegate_->PrefetchPageV2(url, additionalHttpHeaders, 
+    minTimeBetweenPrefetchesMs, ignoreCacheControlNoStore);
+#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+}
+
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 bool NWebImpl::CanStoreWebArchive() const {
   if (nweb_delegate_ == nullptr) {

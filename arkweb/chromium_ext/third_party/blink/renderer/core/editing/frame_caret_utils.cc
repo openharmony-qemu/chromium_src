@@ -23,7 +23,7 @@
 
 namespace blink {
 
-FrameCaretUtils::FrameCaretUtils(Member<FrameCaret> frame_caret)
+FrameCaretUtils::FrameCaretUtils(FrameCaret* frame_caret)
     : frame_caret_(frame_caret) {}
 
 #if BUILDFLAG(ARKWEB_MENU)
@@ -38,5 +38,9 @@ bool FrameCaretUtils::GetTouchHandleStateFromWeb(LocalFrameView* frame_view) {
   return setting->IsTouchHandleExist();
 }
 #endif  // BUILDFLAG(ARKWEB_MENU)
+
+void FrameCaretUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(frame_caret_);
+}
 
 }  // namespace blink

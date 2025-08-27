@@ -21,17 +21,22 @@ class FrameCaret;
 class LocalFrameView;
 
 class CORE_EXPORT FrameCaretUtils {
- public:
-  explicit FrameCaretUtils(Member<FrameCaret> frame_caret);
+  DISALLOW_NEW();
+  explicit FrameCaretUtils(FrameCaret* frame_caret);
 
+ public:
 #if BUILDFLAG(ARKWEB_MENU)
   bool GetTouchHandleStateFromWeb(LocalFrameView* frame_view);
 #endif  // BUILDFLAG(ARKWEB_MENU)
 
+  void Trace(Visitor* visitor) const;
+
  private:
   Member<FrameCaret> frame_caret_;
+  FrameCaretUtils(const FrameCaretUtils&) = delete;
+  FrameCaretUtils& operator=(const FrameCaretUtils&) = delete;
 };
 
 }  // namespace blink
 
-#endif // THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_FRAME_CARET_UTILS_EXT_H_
+#endif  // THIRD_PARTY_BLINK_RENDERER_CORE_EDITING_FRAME_CARET_UTILS_EXT_H_

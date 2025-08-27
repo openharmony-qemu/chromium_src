@@ -22,6 +22,13 @@ namespace OHOS::NWeb {
 
 content::BrowserContext* GetBrowserContext();
 
+std::optional<std::string> GetExtensionContextType(
+    content::BrowserContext* browser_context);
+
+std::optional<bool> GetIncludeIncognitoInformation(
+    const std::string& extension_id,
+    content::BrowserContext* browser_context);
+
 }  // namespace OHOS::NWeb
 
 #endif  // NWEB_EXTENSION_UTILS_H_

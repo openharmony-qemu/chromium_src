@@ -17,7 +17,7 @@
 #define TASK_QUEUE_IMPL_EXT_H_
 
 #include "arkweb/build/features/features.h"
-#include "base/task/sequence_manager/task.h"
+#include "base/task/sequence_manager/tasks.h"
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
 namespace base {

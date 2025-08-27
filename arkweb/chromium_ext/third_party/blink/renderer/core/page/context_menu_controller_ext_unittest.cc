@@ -2089,6 +2089,7 @@ TEST_F(ContextMenuControllerTest, SetImageRectFromPotentialImageNodeTest_2ndIf) 
 
   Node* first_paragraph =
       GetDocument()->getElementById(AtomicString("first"))->firstChild();
+  ASSERT_TRUE(first_paragraph != nullptr);
 
   ContextMenuData data_;
   data_.has_image_contents = true;

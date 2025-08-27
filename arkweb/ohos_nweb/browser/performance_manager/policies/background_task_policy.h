@@ -11,9 +11,15 @@
 #define BACKGROUND_TASK_POLICY_H_
 
 #include <memory>
-
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#undef private
+#endif  // ARKWEB_TEST
 #include "components/performance_manager/public/graph/graph.h"
 #include "components/performance_manager/public/graph/page_node.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#define private public
+#endif  // ARKWEB_TEST
 
 namespace performance_manager {
 
@@ -75,6 +81,9 @@ class BackgroundTaskPolicy : public GraphOwnedDefaultImpl,
 
   base::WeakPtrFactory<BackgroundTaskPolicy> weak_factory_{this};
 };
+#if BUILDFLAG(ARKWEB_TEST)
+#undef private
+#endif  // ARKWEB_TEST
 }  // namespace policies
 }  // namespace performance_manager
 #endif  // BACKGROUND_TASK_POLICY_H_

@@ -109,6 +109,12 @@ PrintAttributesAdapter PrintDocumentAdapterImpl::ConvertPrintingParameters(const
     printAttributesAdapter.isLandscape = attrs->isLandscape;
     printAttributesAdapter.colorMode = attrs->colorMode;
     printAttributesAdapter.duplexMode = attrs->duplexMode;
+    PrintMarginAdapter printMarginAdapter;
+    printMarginAdapter.top = attrs->pageMargin.topMargin;
+    printMarginAdapter.bottom = attrs->pageMargin.bottomMargin;
+    printMarginAdapter.left = attrs->pageMargin.leftMargin;
+    printMarginAdapter.right = attrs->pageMargin.rightMargin;
+    printAttributesAdapter.margin = printMarginAdapter;
     return printAttributesAdapter;
 }
 

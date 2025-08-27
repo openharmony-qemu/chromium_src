@@ -1584,6 +1584,30 @@ TEST_F(ContextMenuControllerTest, SetArkWebMenuDataTest_1stIf) {
               mojom::blink::ContextMenuDataMediaType::kImage);
 }
 
+TEST_F(ContextMenuControllerTest, SetArkWebMenuDataTest_2ndIf) {
+  RegisterMockedImageURLLoad("http://test.png");
+  GetDocument()->documentElement()->setInnerHTML(R"HTML(
+    <body>
+      <img id=target src='http://test.png'>
+    </body>
+  )HTML");
+
+  ContextMenuData data_;
+  HitTestResult hit_test_result_;
+
+  Node* node = GetDocument()->getElementById(AtomicString("target"));
+  ASSERT_TRUE(node != nullptr);
+  hit_test_result_.SetInnerNode(node);
+
+  auto& helper =
+      web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
+  auto ext = helper.AsContextMenuControllerExt();
+  ASSERT_TRUE(ext != nullptr);
+  ext->SetArkWebMenuData(data_, hit_test_result_);
+  EXPECT_TRUE(data_.media_type ==
+              mojom::blink::ContextMenuDataMediaType::kImage);
+}
+
 TEST_F(ContextMenuControllerTest, IsAILinkTest_1stIf) {
   ContextMenuAllowedScope context_menu_allowed_scope;
 
@@ -1958,7 +1982,80 @@ TEST_F(ContextMenuControllerTest, GetImgUrlTest_7thIf) {
   EXPECT_TRUE(ShowContextMenu(location, kMenuSourceKeyboard));
 }
 
-TEST_F(ContextMenuControllerTest, SetImageRectFromPotentialImageNode_1stIf) {
+TEST_F(ContextMenuControllerTest, GetImgUrlTest_8thIf) {
+  RegisterMockedImageURLLoad("http://test.png");
+  ContextMenuAllowedScope context_menu_allowed_scope;
+
+  GetDocument()->documentElement()->setInnerHTML(R"HTML(
+    <body>
+      <p id='first' style="background-image:url('http://test.png');">This is a sample text.</p>
+    </body>
+  )HTML");
+  GetDocument()->UpdateStyleAndLayout(DocumentUpdateReason::kTest);
+  GetDocument()->View()->UpdateAllLifecyclePhases(DocumentUpdateReason::kTest);
+
+  Element* first_paragraph =
+      GetDocument()->getElementById(AtomicString("first"));
+  ASSERT_TRUE(first_paragraph != nullptr);
+
+  const ComputedStyle* computed_style = first_paragraph->GetComputedStyle();
+  if(!computed_style || !computed_style->HasBackgroundImage()) {
+    return;
+  }
+
+  PhysicalOffset location(LayoutUnit(5), LayoutUnit(5));
+  EXPECT_TRUE(ShowContextMenu(location, kMenuSourceLongPress));
+
+  ContextMenuData data_;
+  HitTestResult hit_test_result_;
+  HitTestLocation location_(location);
+  PhysicalRect rect(PhysicalOffset(0, 0), PhysicalSize(100, 100));
+  WebMenuSourceType source_type_ = kMenuSourceLongPress;
+
+  hit_test_result_.SetInnerNode(first_paragraph);
+  hit_test_result_.AddNodeToListBasedTestResult(first_paragraph, location_, rect);
+
+  auto& helper =
+      web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
+  auto ext = helper.AsContextMenuControllerExt();
+  ASSERT_TRUE(ext != nullptr);
+  ext->GetImgUrl(hit_test_result_, data_, source_type_);
+}
+
+TEST_F(ContextMenuControllerTest, GetImgUrlTest_9thIf) {
+  RegisterMockedImageURLLoad("http://test.png");
+  ContextMenuAllowedScope context_menu_allowed_scope;
+
+  GetDocument()->documentElement()->setInnerHTML(R"HTML(
+    <body>
+      <p id='first' style="background-image:linear-gradient(to right, red, blue);">This is a sample text.</p>
+    </body>
+  )HTML");
+  GetDocument()->UpdateStyleAndLayout(DocumentUpdateReason::kTest);
+
+  Element* first_paragraph =
+      GetDocument()->getElementById(AtomicString("first"));
+  ASSERT_TRUE(first_paragraph != nullptr);
+  PhysicalOffset location(LayoutUnit(5), LayoutUnit(5));
+  EXPECT_TRUE(ShowContextMenu(location, kMenuSourceLongPress));
+
+  ContextMenuData data_;
+  HitTestResult hit_test_result_;
+  HitTestLocation location_(location);
+  PhysicalRect rect(PhysicalOffset(0, 0), PhysicalSize(100, 100));
+  WebMenuSourceType source_type_ = kMenuSourceLongPress;
+
+  hit_test_result_.SetInnerNode(first_paragraph);
+  hit_test_result_.AddNodeToListBasedTestResult(first_paragraph, location_, rect);
+
+  auto& helper =
+      web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
+  auto ext = helper.AsContextMenuControllerExt();
+  ASSERT_TRUE(ext != nullptr);
+  ext->GetImgUrl(hit_test_result_, data_, source_type_);
+}
+
+TEST_F(ContextMenuControllerTest, SetImageRectFromPotentialImageNodeTest_1stIf) {
   ContextMenuAllowedScope context_menu_allowed_scope;
 
   GetDocument()->documentElement()->setInnerHTML(R"HTML(
@@ -1981,7 +2078,7 @@ TEST_F(ContextMenuControllerTest, SetImageRectFromPotentialImageNode_1stIf) {
   EXPECT_TRUE(data_.image_rect.IsEmpty());
 }
 
-TEST_F(ContextMenuControllerTest, SetImageRectFromPotentialImageNode_2ndIf) {
+TEST_F(ContextMenuControllerTest, SetImageRectFromPotentialImageNodeTest_2ndIf) {
   ContextMenuAllowedScope context_menu_allowed_scope;
 
   GetDocument()->documentElement()->setInnerHTML(R"HTML(
@@ -2006,4 +2103,223 @@ TEST_F(ContextMenuControllerTest, SetImageRectFromPotentialImageNode_2ndIf) {
   EXPECT_TRUE(data_.image_rect.IsEmpty());
 }
 
+TEST_F(ContextMenuControllerTest, SetImageRectFromPotentialImageNodeTest_3rdIf) {
+  ContextMenuAllowedScope context_menu_allowed_scope;
+
+  GetDocument()->documentElement()->setInnerHTML(R"HTML(
+    <body>
+     <div id='dd'>
+      <img id='first'src='htttp://test.png' alt='Sample Image'>
+     </div>
+    </body>
+  )HTML");
+
+  GetDocument()->UpdateStyleAndLayout(DocumentUpdateReason::kTest);
+
+  Element* first_paragraph =
+      GetDocument()->getElementById(AtomicString("first"));
+  ASSERT_TRUE(first_paragraph != nullptr);
+
+  ASSERT_TRUE(first_paragraph->GetLayoutObject() != nullptr);
+  ASSERT_TRUE(first_paragraph->GetLayoutBox() != nullptr);
+
+  ContextMenuData data_;
+  data_.has_image_contents = true;
+
+  auto& helper =
+      web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
+  auto ext = helper.AsContextMenuControllerExt();
+  ASSERT_TRUE(ext != nullptr);
+  ext->SetImageRectFromPotentialImageNode(data_, first_paragraph);
+
+  EXPECT_TRUE(data_.image_rect.IsEmpty());
+}
+
+TEST_F(ContextMenuControllerTest, HandleArkWebContextMenuTest_2ndIf) {
+  RegisterMockedImageURLLoad("http://test.png");
+  ContextMenuAllowedScope context_menu_allowed_scope;
+
+  GetDocument()->documentElement()->setInnerHTML(R"HTML(
+    <body>
+      <style>
+        #target {
+          top: 0;
+          left: 0;
+          position: absolute;
+          width: 100px;
+          height: 100px;
+          z-index: 1;
+        }
+        #hiddenancestor {
+          top: 0;
+          left: 0;
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          z-index: 2;
+        }
+        #occluder {
+          top: 0;
+          left: 0;
+          position: absolute;
+          width: 100px;
+          height: 100px;
+          z-index: 3;
+        }
+      </style>
+      <p id='first'>This is a sample text."</p>
+      <img id=target src='http://test.png'>
+      <div id=hiddenancestor>
+        <div id=occluder></div>
+      </div>
+    </body>
+  )HTML");
+
+  Persistent<MockEventListener> event_listener =
+      MakeGarbageCollected<MockEventListener>();
+  base::HistogramTester histograms;
+
+  Element* hidden_ancestor =
+      GetDocument()->getElementById(AtomicString("hiddenancestor"));
+  hidden_ancestor->addEventListener(event_type_names::kContextmenu,
+                                    event_listener);
+
+  PhysicalOffset location(LayoutUnit(5), LayoutUnit(5));
+  EXPECT_TRUE(ShowContextMenu(location, kMenuSourceLongPress));
+
+  ContextMenuData data_;
+  HitTestResult hit_test_result_;
+  LocalFrame* frame_ = GetDocument()->GetFrame();
+  LocalFrame* selected_frame_ = GetDocument()->GetFrame();
+  LocalFrameView* view = frame_->View();
+  frame_->SetView(nullptr);
+
+  Node* first_paragraph =
+      GetDocument()->getElementById(AtomicString("first"))->firstChild();
+  const auto& selected_start = Position(first_paragraph, 5);
+  const auto& selected_end = Position(first_paragraph, 9);
+
+  selected_frame_->Selection().SetSelection(
+      SelectionInDOMTree::Builder()
+          .SetBaseAndExtent(selected_start, selected_end)
+          .Build(),
+      SetSelectionOptions());
+  base::RunLoop().RunUntilIdle();
+
+  auto& helper =
+      web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
+  auto ext = helper.AsContextMenuControllerExt();
+  ASSERT_TRUE(ext != nullptr);
+
+  ext->HandleArkWebContextMenu(data_, frame_, hit_test_result_,
+                               selected_frame_, kMenuSourceShowFreeCopyMenu);
+  frame_->SetView(view);
+
+  EXPECT_TRUE(data_.image_rect.IsEmpty());
+}
+
+TEST_F(ContextMenuControllerTest, HandleArkWebContextMenuTest_3rdIf) {
+  ContextMenuAllowedScope context_menu_allowed_scope;
+
+  GetDocument()->documentElement()->setInnerHTML(R"HTML(
+    <body>
+      <p id='first'>This is a sample text."</p>
+    </body>
+  )HTML");
+
+  Node* first_paragraph =
+      GetDocument()->getElementById(AtomicString("first"))->firstChild();
+
+  const auto& selected_start = Position(first_paragraph,5);
+  const auto& selected_end = Position(first_paragraph,9);
+
+  GetDocument()->GetFrame()->Selection().SetSelection(
+      SelectionInDOMTree::Builder()
+          .SetBaseAndExtent(selected_start, selected_end)
+          .Build(),
+      SetSelectionOptions());
+  base::RunLoop().RunUntilIdle();
+  EXPECT_EQ(GetDocument()->GetFrame()->Selection().SelectedText(), "is a");
+
+  ContextMenuData data_;
+  HitTestResult hit_test_result_;
+  LocalFrame* frame_ = GetDocument()->GetFrame();
+  LocalFrame* selected_frame_ = GetDocument()->GetFrame();
+
+  data_.selected_text.clear();
+  data_.is_selectable = true;
+
+  Page* page = GetDocument()->GetPage();
+  page->GetSettings().SetContextMenuCustomization(true);
+
+  auto& helper =
+      web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
+  auto ext = helper.AsContextMenuControllerExt();
+  ASSERT_TRUE(ext != nullptr);
+  ext->HandleArkWebContextMenu(data_, frame_, hit_test_result_,
+                               selected_frame_, kMenuSourceShowFreeCopyMenu);
+
+  EXPECT_TRUE(!data_.is_selectable);
+}
+
+TEST_F(ContextMenuControllerTest, HandleArkWebContextMenuTest_4thIf) {
+  ContextMenuAllowedScope context_menu_allowed_scope;
+
+  GetDocument()->documentElement()->setInnerHTML(R"HTML(
+    <body>
+      <p id='first'>This is a sample text."</p>
+    </body>
+  )HTML");
+
+  Node* first_paragraph =
+      GetDocument()->getElementById(AtomicString("first"))->firstChild();
+
+  ContextMenuData data_;
+  HitTestResult hit_test_result_;
+  LocalFrame* frame_ = GetDocument()->GetFrame();
+  LocalFrame* selected_frame_ = GetDocument()->GetFrame();
+
+  data_.selected_text.clear();
+
+  Page* page = GetDocument()->GetPage();
+  page->GetSettings().SetContextMenuCustomization(true);
+
+  auto& helper =
+      web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
+  auto ext = helper.AsContextMenuControllerExt();
+  ASSERT_TRUE(ext != nullptr);
+  ext->HandleArkWebContextMenu(data_, frame_, hit_test_result_,
+                               selected_frame_, kMenuSourceTypeLast);
+
+  EXPECT_TRUE(!data_.is_selectable);
+}
+
+TEST_F(ContextMenuControllerTest, HandleArkWebContextMenuTest_5thIf) {
+  ContextMenuAllowedScope context_menu_allowed_scope;
+
+  GetDocument()->documentElement()->setInnerHTML(R"HTML(
+    <body>
+      <p id='first'>This is a sample text."</p>
+    </body>
+  )HTML");
+
+  Node* first_paragraph =
+      GetDocument()->getElementById(AtomicString("first"))->firstChild();
+
+  ContextMenuData data_;
+  HitTestResult hit_test_result_;
+  LocalFrame* selected_frame_ = GetDocument()->GetFrame();
+
+  data_.selected_text.clear();
+  data_.link_url = GURL("https://example.com");
+
+  auto& helper =
+      web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
+  auto ext = helper.AsContextMenuControllerExt();
+  ASSERT_TRUE(ext != nullptr);
+  ext->HandleArkWebContextMenu(data_, nullptr, hit_test_result_,
+                               selected_frame_, kMenuSourceTypeLast);
+
+  EXPECT_TRUE(!data_.is_selectable);
+}
 }  // namespace blink

@@ -131,7 +131,7 @@ class OHOSScreenCaptureCallback
 
   BaseScreenCaptureSource::BaseScreenCaptureSource()
   {
-    LOG(INFO) << "BaseScreenCaptureSource::~BaseScreenCaptureSource";
+    LOG(INFO) << "BaseScreenCaptureSource::BaseScreenCaptureSource";
   }
 
   BaseScreenCaptureSource::~BaseScreenCaptureSource()

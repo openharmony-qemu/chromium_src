@@ -513,14 +513,7 @@ class NWebDelegateInterface
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  virtual void PrefetchPage(
-      const std::string& url,
-      const std::map<std::string, std::string>& additionalHttpHeaders) = 0;
-  virtual void PrefetchPageV2(
-      const std::string& url,
-      const std::map<std::string, std::string>& additionalHttpHeaders,
-      int32_t minTimeBetweenPrefetchesMs, 
-      bool ignoreCacheControlNoStore) = 0;
+  virtual void PrefetchPage(PrefetchOptions PrefetchOptions) = 0;
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)

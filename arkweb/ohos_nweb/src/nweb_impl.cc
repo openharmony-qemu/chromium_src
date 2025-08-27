@@ -94,6 +94,7 @@
 
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 #include "libcef/browser/browser_context.h"
+#include "capi/nweb_prefetch_options.h"
 #include "ohos_cef_ext/libcef/browser/predictors/loading_predictor.h"
 #include "ohos_cef_ext/libcef/browser/predictors/loading_predictor_config.h"
 #include "ohos_cef_ext/libcef/browser/predictors/loading_predictor_factory.h"
@@ -3302,7 +3303,13 @@ void NWebImpl::PrefetchPage(
     return;
   }
   TRACE_EVENT0("NWebImpl", "NWebImpl::PrefetchPage");
-  nweb_delegate_->PrefetchPage(url, additionalHttpHeaders);
+  std::string output;
+  for (auto& header : additionalHttpHeaders) {
+    base::StringAppendF(&output, "%s: %s\r\n", header.first.c_str(),
+                        header.second.c_str());
+  }
+  output.append("\r\n");
+  nweb_delegate_->PrefetchPage(PrefetchOptions(url, output));
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }
 
@@ -3316,8 +3323,14 @@ void NWebImpl::PrefetchPageV2(
     return;
   }
   TRACE_EVENT0("NWebImpl", "NWebImpl::PrefetchPageV2");
-  nweb_delegate_->PrefetchPageV2(url, additionalHttpHeaders, 
-    minTimeBetweenPrefetchesMs, ignoreCacheControlNoStore);
+  std::string output;
+  for (auto& header : additionalHttpHeaders) {
+    base::StringAppendF(&output, "%s: %s\r\n", header.first.c_str(),
+                        header.second.c_str());
+  }
+  output.append("\r\n");
+  nweb_delegate_->PrefetchPage(PrefetchOptions(url, output, 
+    minTimeBetweenPrefetchesMs, ignoreCacheControlNoStore));
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }
 

@@ -305,7 +305,9 @@ void NoStatePrefetchContents::StartPrerendering(
   load_url_params.transition_type = ui::PAGE_TRANSITION_LINK;
 #if BUILDFLAG(IS_ARKWEB)
   load_url_params.extra_headers = start_prerendering_extra_headers_;
-  if(ignoreCacheControlNoStore_){
+#endif
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+   if(ignore_cache_control_no_store_){
     load_url_params.load_ignore_cache_params = true;
   }
 #endif

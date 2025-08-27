@@ -64,10 +64,6 @@
 #include "nweb_drag_data_impl.h"
 #endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 
-#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-#include "base/strings/stringprintf.h"
-#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-
 #include "base/strings/escape.h"
 #include "cef/include/internal/cef_string_types.h"
 #include "libcef/common/net/url_util_ex.h"
@@ -3873,46 +3869,11 @@ int NWebDelegate::GetMediaPlaybackState() {
 
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
-void NWebDelegate::PrefetchPage(
-    const std::string& url,
-    const std::map<std::string, std::string>& additionalHttpHeaders) {
+void NWebDelegate::PrefetchPage(PrefetchOptions prefetchOptions) {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  CefString urlCef;
-  urlCef.FromString(url);
-  std::string output;
-  for (auto& header : additionalHttpHeaders) {
-    base::StringAppendF(&output, "%s: %s\r\n", header.first.c_str(),
-                        header.second.c_str());
-  }
-  output.append("\r\n");
-  CefString additionalHttpHeadersCef;
-  additionalHttpHeadersCef.FromString(output);
   if (GetBrowser().get()) {
-    GetBrowser()->PrefetchPage(urlCef, additionalHttpHeadersCef, 500, false);
-  }
-#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-}
-
-void NWebDelegate::PrefetchPageV2(
-    const std::string& url,
-    const std::map<std::string, std::string>& additionalHttpHeaders,
-    int32_t minTimeBetweenPrefetchesMs, 
-    bool ignoreCacheControlNoStore) {
-#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  CefString urlCef;
-  urlCef.FromString(url);
-  std::string output;
-  for (auto& header : additionalHttpHeaders) {
-    base::StringAppendF(&output, "%s: %s\r\n", header.first.c_str(),
-                        header.second.c_str());
-  }
-  output.append("\r\n");
-  CefString additionalHttpHeadersCef;
-  additionalHttpHeadersCef.FromString(output);
-  if (GetBrowser().get()) {
-    GetBrowser()->PrefetchPage(urlCef, additionalHttpHeadersCef,
-    minTimeBetweenPrefetchesMs,
-    ignoreCacheControlNoStore);
+    LOG(INFO) << "[dgy] NWebDelegate::PrefetchPage";
+    GetBrowser()->PrefetchPage(prefetchOptions);
   }
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }

@@ -4076,8 +4076,11 @@ void HttpCache::Transaction::TransitionToState(State state) {
 bool HttpCache::Transaction::UpdateAndReportCacheability(
     const HttpResponseHeaders& headers) {
   // Do not cache no-store content.
-  if (headers.HasHeaderValue("cache-control", "no-store") && 
-      !(effective_load_flags_ & LOAD_IGNORE_CACHE_CONTROL)) {
+  if (headers.HasHeaderValue("cache-control", "no-store") 
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+   && !(effective_load_flags_ & LOAD_IGNORE_CACHE_CONTROL)
+#endif
+   ) {
     if (base::FeatureList::IsEnabled(features::kAvoidEntryCreationForNoStore)) {
       cache_->MarkKeyNoStore(cache_key_);
     }

@@ -1602,7 +1602,7 @@ TEST_F(ContextMenuControllerTest, SetArkWebMenuDataTest_2ndIf) {
   auto& helper =
       web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
   auto ext = helper.AsContextMenuControllerExt();
-  EXPECT_TRUE(ext != nullptr);
+  ASSERT_TRUE(ext != nullptr);
   ext->SetArkWebMenuData(data_, hit_test_result_);
   EXPECT_TRUE(data_.media_type ==
               mojom::blink::ContextMenuDataMediaType::kImage);
@@ -1997,10 +1997,10 @@ TEST_F(ContextMenuControllerTest, GetImgUrlTest_8thIf) {
   Element* first_paragraph =
       GetDocument()->getElementById(AtomicString("first"));
   ASSERT_TRUE(first_paragraph != nullptr);
-  std::cout<<"2024"<<std::endl;
+
   const ComputedStyle* computed_style = first_paragraph->GetComputedStyle();
   if(!computed_style || !computed_style->HasBackgroundImage()) {
-    std::cout<< "2027 "<<!computed_style<<std::endl;
+    return;
   }
 
   PhysicalOffset location(LayoutUnit(5), LayoutUnit(5));
@@ -2018,7 +2018,7 @@ TEST_F(ContextMenuControllerTest, GetImgUrlTest_8thIf) {
   auto& helper =
       web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
   auto ext = helper.AsContextMenuControllerExt();
-  EXPECT_TRUE(ext != nullptr);
+  ASSERT_TRUE(ext != nullptr);
   ext->GetImgUrl(hit_test_result_, data_, source_type_);
 }
 
@@ -2051,7 +2051,7 @@ TEST_F(ContextMenuControllerTest, GetImgUrlTest_9thIf) {
   auto& helper =
       web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
   auto ext = helper.AsContextMenuControllerExt();
-  EXPECT_TRUE(ext != nullptr);
+  ASSERT_TRUE(ext != nullptr);
   ext->GetImgUrl(hit_test_result_, data_, source_type_);
 }
 
@@ -2129,7 +2129,7 @@ TEST_F(ContextMenuControllerTest, SetImageRectFromPotentialImageNodeTest_3rdIf) 
   auto& helper =
       web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
   auto ext = helper.AsContextMenuControllerExt();
-  EXPECT_TRUE(ext != nullptr);
+  ASSERT_TRUE(ext != nullptr);
   ext->SetImageRectFromPotentialImageNode(data_, first_paragraph);
 
   EXPECT_TRUE(data_.image_rect.IsEmpty());
@@ -2209,11 +2209,10 @@ TEST_F(ContextMenuControllerTest, HandleArkWebContextMenuTest_2ndIf) {
   auto& helper =
       web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
   auto ext = helper.AsContextMenuControllerExt();
-  EXPECT_TRUE(ext != nullptr);
+  ASSERT_TRUE(ext != nullptr);
 
   ext->HandleArkWebContextMenu(data_, frame_, hit_test_result_,
-  selected_frame_,
-                               kMenuSourceShowFreeCopyMenu);
+                               selected_frame_, kMenuSourceShowFreeCopyMenu);
   frame_->SetView(view);
 
   EXPECT_TRUE(data_.image_rect.IsEmpty());
@@ -2256,10 +2255,9 @@ TEST_F(ContextMenuControllerTest, HandleArkWebContextMenuTest_3rdIf) {
   auto& helper =
       web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
   auto ext = helper.AsContextMenuControllerExt();
-  EXPECT_TRUE(ext != nullptr);
+  ASSERT_TRUE(ext != nullptr);
   ext->HandleArkWebContextMenu(data_, frame_, hit_test_result_,
-  selected_frame_,
-                               kMenuSourceShowFreeCopyMenu);
+                               selected_frame_, kMenuSourceShowFreeCopyMenu);
 
   EXPECT_TRUE(!data_.is_selectable);
 }
@@ -2289,10 +2287,9 @@ TEST_F(ContextMenuControllerTest, HandleArkWebContextMenuTest_4thIf) {
   auto& helper =
       web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
   auto ext = helper.AsContextMenuControllerExt();
-  EXPECT_TRUE(ext != nullptr);
+  ASSERT_TRUE(ext != nullptr);
   ext->HandleArkWebContextMenu(data_, frame_, hit_test_result_,
-  selected_frame_,
-                               kMenuSourceTypeLast);
+                               selected_frame_, kMenuSourceTypeLast);
 
   EXPECT_TRUE(!data_.is_selectable);
 }
@@ -2319,10 +2316,9 @@ TEST_F(ContextMenuControllerTest, HandleArkWebContextMenuTest_5thIf) {
   auto& helper =
       web_view_helper_.GetWebView()->GetPage()->GetContextMenuController();
   auto ext = helper.AsContextMenuControllerExt();
-  EXPECT_TRUE(ext != nullptr);
+  ASSERT_TRUE(ext != nullptr);
   ext->HandleArkWebContextMenu(data_, nullptr, hit_test_result_,
-  selected_frame_,
-                               kMenuSourceTypeLast);
+                               selected_frame_, kMenuSourceTypeLast);
 
   EXPECT_TRUE(!data_.is_selectable);
 }

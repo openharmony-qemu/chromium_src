@@ -891,7 +891,7 @@ bool NoStatePrefetchManager::DoesRateLimitAllowPrefetch(Origin origin) const {
     return true;
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
   return elapsed_time >= base::Milliseconds(minTimeBetweenPrefetchesMs_);
-#elif
+#else
   return elapsed_time >= base::Milliseconds(kMinTimeBetweenPrefetchesMs);
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }

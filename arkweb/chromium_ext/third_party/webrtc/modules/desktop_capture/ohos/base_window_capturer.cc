@@ -160,7 +160,7 @@ BaseWindowCapturer::BaseWindowCapturer(CaptureSourceType source_type, bool is_pi
 }
 
 BaseWindowCapturer::~BaseWindowCapturer() {
-  LOG(DEBUG) << "BaseWindowCapturer::~BaseWindowCapturer, nweb_id = " << nweb_id_;
+  LOG(INFO) << "BaseWindowCapturer::~BaseWindowCapturer, nweb_id = " << nweb_id_;
 }
 
 void BaseWindowCapturer::Stop()

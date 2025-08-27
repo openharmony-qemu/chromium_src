@@ -129,9 +129,9 @@ class PolicyLoaderOhosTest : public ::testing::Test {
 
   bool PolicyExists(const std::string& name) {
     if (bundle_) {
-      const PolicyMap& chrome_policies =
+      const PolicyMap& domain_policies =
           bundle_->Get(PolicyNamespace(POLICY_DOMAIN_CHROME, std::string()));
-      return chrome_policies.GetValue(name, ::base::Value::Type::NONE) !=
+      return domain_policies.GetValue(name, ::base::Value::Type::NONE) !=
              nullptr;
     }
     return false;
@@ -139,10 +139,10 @@ class PolicyLoaderOhosTest : public ::testing::Test {
 
   template <typename T>
   T GetPolicyValue(const std::string& name) {
-    const PolicyMap& chrome_policies =
+    const PolicyMap& domain_policies =
         bundle_->Get(PolicyNamespace(POLICY_DOMAIN_CHROME, std::string()));
     const base::Value* value =
-        chrome_policies.GetValue(name, base::Value::Type::NONE);
+        domain_policies.GetValue(name, base::Value::Type::NONE);
     if (!value) {
       return T();
     }

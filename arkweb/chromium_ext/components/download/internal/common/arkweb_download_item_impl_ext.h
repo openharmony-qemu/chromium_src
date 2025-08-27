@@ -41,6 +41,9 @@ namespace download {
 class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItemImpl {
  public:
   friend DownloadItemImpl;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class ArkWebDownloadItemImplExtTest;
+#endif
   ArkWebDownloadItemImplExt *AsArkWebDownloadItemImplExt() override { return this; }
 
   // Constructing from persistent store:

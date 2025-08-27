@@ -294,14 +294,6 @@ void OHOSCustomMediaPlayerRenderer::Initialize(
     std::move(init_cb).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
     return;
   }
-
-  media_url_params_ = std::make_unique<media::MediaUrlParams>(
-      media_resource->GetMediaUrlParams());
-  if (!media_url_params_) {
-    LOG(ERROR) << "GetMediaUrlParams failed";
-    std::move(init_cb).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
-    return;
-  }
   init_cb_ = std::move(init_cb);
   GetCookies();
 }

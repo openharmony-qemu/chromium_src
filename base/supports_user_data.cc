@@ -50,6 +50,11 @@ SupportsUserData::Data* SupportsUserData::GetUserData(const void* key) const {
   }
   auto found = impl_->user_data_.find(key);
   if (found != impl_->user_data_.end()) {
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+  if (!found->second.get()) {
+    LOG(ERROR) << "GetUserData called, key : " << key << ", value nullptr";
+  }
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
     return found->second.get();
   }
   return nullptr;

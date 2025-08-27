@@ -2362,6 +2362,13 @@ void NWebHandlerDelegate::OnTakeFocus(CefRefPtr<CefBrowser> browser,
 bool NWebHandlerDelegate::IsCurrentFocus() {
   return nweb_handler_ ? nweb_handler_->IsCurrentFocus() : false;
 }
+
+void NWebHandlerDelegate::SetImeShow(bool visible) {
+  LOG(INFO) << "NWebHandlerDelegate::SetImeShow visible=" << visible;
+  if (nweb_handler_ != nullptr) {
+    nweb_handler_->SetImeShow(visible);
+  }
+}
 #endif
 /* CefKeyboardHandler methods end */
 

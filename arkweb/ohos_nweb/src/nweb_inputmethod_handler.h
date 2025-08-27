@@ -76,6 +76,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   bool Reattach(uint32_t nwebId, ReattachType type);
   void SetIMEStatus(bool status);
   void WebBlurKeyboardHide();
+  void WebSetImeShow(bool visible);
   void HandleSecurityLayer();
   void InsertText(const std::u16string& text);
   void DeleteBackward(int32_t length);

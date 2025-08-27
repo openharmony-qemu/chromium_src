@@ -114,6 +114,9 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   void SetMediaPlayerState(bool is_suspend, int suspend_type);
   void SetPlaybackRateWithReason(double playback_rate, ActionReason reason);
+  base::WeakPtr<RendererWrapper> AsWeakPtr() {
+    return weak_factory_.GetWeakPtr();
+  }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER
 
  private:
@@ -1829,7 +1832,7 @@ void PipelineImpl::SetMediaPlayerState(bool is_suspend,
 
   media_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&RendererWrapper::SetMediaPlayerState,
-                                base::Unretained(renderer_wrapper_.get()),
+                                base::Unretained(renderer_wrapper_->AsWeakPtr()),
                                 is_suspend, suspend_type));
 }
 
@@ -1862,7 +1865,7 @@ void PipelineImpl::SetPlaybackRateWithReason(
   playback_rate_ = playback_rate;
   media_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&RendererWrapper::SetPlaybackRateWithReason,
-                                base::Unretained(renderer_wrapper_.get()),
+                                base::Unretained(renderer_wrapper_->AsWeakPtr()),
                                 playback_rate_, reason));
 }
 #endif // OHOS_CUSTOM_VIDEO_PLAYER

@@ -3910,7 +3910,6 @@ void NWebDelegate::PrefetchPageV2(
   CefString additionalHttpHeadersCef;
   additionalHttpHeadersCef.FromString(output);
   if (GetBrowser().get()) {
-    LOG(INFO) << "[dgy] NWebDelegate::PrefetchPageV2";
     GetBrowser()->PrefetchPage(urlCef, additionalHttpHeadersCef,
     minTimeBetweenPrefetchesMs,
     ignoreCacheControlNoStore);

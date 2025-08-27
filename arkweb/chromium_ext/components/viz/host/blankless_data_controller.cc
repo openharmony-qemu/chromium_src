@@ -477,7 +477,7 @@ bool BlanklessDataController::EncodeImage(const SkBitmap& bitmap,
       LOG(ERROR) << "blankless encode snapShot image failed!";
       return false;
     }
-    if (stream.bytesWritten() > OhosWebSnapshotDataBase::GetInstance().GetCapacityInByte()) {
+    if (stream.bytesWritten() > static_cast<size_t>(OhosWebSnapshotDataBase::GetInstance().GetCapacityInByte())) {
       LOG(ERROR) << "blankless no capacity to save img";
       return false;
     }

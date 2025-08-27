@@ -104,7 +104,7 @@ void OHOSAudioCapturerSource::Stop() {
       callback_ = nullptr;
     }
   }
-  if (!capturer) {
+  if (!capturer_) {
     return;
   }
 

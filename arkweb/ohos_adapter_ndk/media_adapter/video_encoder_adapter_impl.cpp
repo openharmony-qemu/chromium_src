@@ -147,7 +147,7 @@ CodecCodeAdapter VideoEncoderAdapterImpl::SetCodecCallback(const std::shared_ptr
     cb.onError = OnError;
     cb.onStreamChanged = OnStreamChanged;
     cb.onNeedInputBuffer = OnNeedInputBuffer;
-    cb.onNewOutputBuffer = onNewOutputBuffer;
+    cb.onNewOutputBuffer = OnNewOutputBuffer;
 
     OH_AVErrCode ret = OH_VideoEncoder_RegisterCallback(encoder_, cb, reinterpret_cast<void*>(callback_index_));
     if (ret != OH_AVErrCode::AV_ERR_OK) {

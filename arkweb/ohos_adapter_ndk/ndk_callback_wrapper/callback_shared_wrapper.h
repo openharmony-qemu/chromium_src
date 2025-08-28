@@ -24,7 +24,7 @@
 namespace OHOS::NWeb {
 
 // The class is designed for security reinforcement of NDK interface callback functions,
-// with template parameters accepting pointer types of the std::shared_ptr.
+// with template parameters accepting pointer types of std::shared_ptr.
 template <typename T>
 class CallbackSharedWrapper {
 public:

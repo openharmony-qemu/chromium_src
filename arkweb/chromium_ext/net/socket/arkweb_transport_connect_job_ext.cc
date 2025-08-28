@@ -8,6 +8,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/check_op.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -240,7 +241,8 @@ void ArkWebTransportConnectJobExt::ReportSuccessIp(int success_index,
   ostr << "ip_counter=" << ip_addresses_num
        << ", succeed_number=" << success_index << ", job_type=" << (int)type;
   std::string host = ToLegacyDestinationEndpoint(params_->destination()).host();
-  LOG(DEBUG) << "event_message: " << ostr.str() << ", resource: " << host;
+  LOG(DEBUG) << "event_message: " << ostr.str() << ", resource: "
+             << url::LogUtils::ConvertUrlWithMask(host);
 
 #if BUILDFLAG(IS_ARKWEB)
   // 打点

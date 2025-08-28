@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
+
 namespace net {
 
 namespace {
@@ -104,7 +106,8 @@ class HostResolverManager::WarmUpHttpDnsFallbackImpl
         &WarmUpHttpDnsFallbackImpl::PreDnsOfDohFallbackServerComplete,
         weak_ptr_factory_.GetWeakPtr()));
     LOG(INFO) << "Pre-dns of doh-fallback server, server template "
-              << url.spec() << ", result " << result;
+              << url::LogUtils::ConvertUrlWithMask(url.spec()) << ", result "
+              << result;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server, server template "
                        << url::LogUtils::ConvertUrlWithMask(url.spec())
@@ -201,7 +204,8 @@ void HostResolverManager::ReportSecureFallbackDnsResult(
        << ", result=" << secure_fallback_results.error()
        << ", duration=" << duration.InMilliseconds();
 
-  LOG(INFO) << "event_message: " << ostr.str() << ", resource: " << host;
+  LOG(INFO) << "event_message: " << ostr.str() << ", resource: "
+            << url::LogUtils::ConvertUrlWithMask(host);
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: "
                      << url::LogUtils::ConvertUrlWithMask(host);
@@ -216,7 +220,8 @@ void HostResolverManager::ReportDnsTransactionResult(int index,
   ostr << "dns_type=" << kDnsTransactionString[index]
        << ", v4result=" << result_for_ipv4 << ", v6result=" << result_for_ipv6;
 
-  LOG(INFO) << "event_message: " << ostr.str() << ", resource: " << host;
+  LOG(INFO) << "event_message: " << ostr.str() << ", resource: "
+            << url::LogUtils::ConvertUrlWithMask(host);
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: "
                      << url::LogUtils::ConvertUrlWithMask(host);

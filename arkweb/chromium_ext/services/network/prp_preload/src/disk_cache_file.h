@@ -5,6 +5,7 @@
 #ifndef SERVICES_NETWORK_PRP_PRELOAD_SRC_DISK_CACHE_FILE_H
 #define SERVICES_NETWORK_PRP_PRELOAD_SRC_DISK_CACHE_FILE_H
 
+#include "base/memory/raw_ref.h"
 #include "arkweb/chromium_ext/services/network/prp_preload/src/disk_cache_backend_factory.h"
 
 namespace ohos_prp_preload {
@@ -36,7 +37,7 @@ class DiskCacheEntry {
 
   raw_ptr<DiskCacheFile> cache_;
   OpType op_type_ = OPEN_ENTRY;
-  const std::string& url_;
+  raw_ref<const std::string> url_;
   std::string entry_content_;
   raw_ptr<disk_cache::Entry, DanglingUntriaged> entry_;
   base::WeakPtr<DiskCacheEntry> weak_ptr_;
@@ -69,7 +70,7 @@ class DiskCacheReadHelper {
 
   raw_ptr<DiskCacheFile> cache_;
   OpType op_type_ = OPEN_ENTRY;
-  const std::string& url_;
+  raw_ref<const std::string> url_;
   EntryLoadedCallback entry_loaded_cb_;
   scoped_refptr<net::IOBufferWithSize> buf_;
   raw_ptr<disk_cache::Entry, DanglingUntriaged> entry_;
@@ -108,7 +109,7 @@ class DiskCacheFile : public base::RefCounted<DiskCacheFile> {
   void RunLoadTask(bool clear = false);
 
   scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory_;
-  const std::string& url_;
+  raw_ref<const std::string> url_;
   EntryLoadedCallback entry_loaded_cb_;
   std::unique_ptr<DiskCacheReadHelper> helper_;
   std::unique_ptr<DiskCacheEntry> entry_;

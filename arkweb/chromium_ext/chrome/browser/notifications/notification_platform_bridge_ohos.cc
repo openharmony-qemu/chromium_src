@@ -45,6 +45,7 @@
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/time.h"
 #include "base/version.h"
+#include "base/no_destructor.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/lifetime/termination_notification.h"
 #include "chrome/browser/notifications/notification_display_service_impl.h"
@@ -80,12 +81,12 @@ void* __real_malloc(size_t);
 
 namespace {
 
-std::map<std::string, std::unique_ptr<ProfileNotification>> g_profile_notifications_;
+base::NoDestructor<std::map<std::string, std::unique_ptr<ProfileNotification>>> g_profile_notifications_;
 
 ProfileNotification* FindProfileNotification(
     const std::string& id) {
-  auto iter = g_profile_notifications_.find(id);
-  if (iter == g_profile_notifications_.end()) {
+  auto iter = (*g_profile_notifications_).find(id);
+  if (iter == (*g_profile_notifications_).end()) {
     return nullptr;
   }
 
@@ -94,8 +95,8 @@ ProfileNotification* FindProfileNotification(
 
 void AddProfileNotification(const std::string& id,
     std::unique_ptr<ProfileNotification> profile_notification) {
-  DCHECK(g_profile_notifications_.find(id) == g_profile_notifications_.end());
-  g_profile_notifications_[id] = std::move(profile_notification);
+  DCHECK((*g_profile_notifications_).find(id) == (*g_profile_notifications_).end());
+  (*g_profile_notifications_)[id] = std::move(profile_notification);
 }
 
 void Add(const std::string& id, const message_center::Notification& notification,
@@ -108,11 +109,11 @@ void Add(const std::string& id, const message_center::Notification& notification
 
 void RemoveProfileNotification(
     const std::string& notification_id) {
-  auto it = g_profile_notifications_.find(notification_id);
-  if (it == g_profile_notifications_.end()) {
+  auto it = (*g_profile_notifications_).find(notification_id);
+  if (it == (*g_profile_notifications_).end()) {
     return;
   }
-  g_profile_notifications_.erase(it);
+  (*g_profile_notifications_).erase(it);
 }
 
 bool CancelById(
@@ -121,8 +122,8 @@ bool CancelById(
   std::string profile_notification_id =
       ProfileNotification::GetProfileNotificationId(id, profile_id);
 
-  auto iter = g_profile_notifications_.find(profile_notification_id);
-  if (iter == g_profile_notifications_.end()) {
+  auto iter = (*g_profile_notifications_).find(profile_notification_id);
+  if (iter == (*g_profile_notifications_).end()) {
     return false;
   }
 

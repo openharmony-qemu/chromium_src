@@ -2785,7 +2785,7 @@ void NWebDelegate::RegisterNativeScrollCallback(
 #if BUILDFLAG(ARKWEB_JSPROXY)
 void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
-    int count = 0;
+    size_t count = 0;
     if (scriptItems.size() == 0) {
       GetBrowser()->GetHost()->JavaScriptOnDocumentStart("", std::vector<CefString>(),
                                                          true);
@@ -2817,7 +2817,7 @@ void NWebDelegate::JavaScriptOnDocumentStartByOrder(
       GetBrowser()->GetHost()->JavaScriptOnDocumentStart("", std::vector<CefString>(),
                                                          true);
     }
-    int count = 0;
+    size_t count = 0;
     for (const auto& item : scriptItemsByOrder) {
       if (scriptItems.find(item) == scriptItems.end()) {
         continue;
@@ -2849,7 +2849,7 @@ void NWebDelegate::JavaScriptOnDocumentEndByOrder(
       GetBrowser()->GetHost()->JavaScriptOnDocumentEnd("", std::vector<CefString>(),
                                                        true);
     }
-    int count = 0;
+    size_t count = 0;
     for (const auto& item : scriptItemsByOrder) {
       if (scriptItems.find(item) == scriptItems.end()) {
         continue;
@@ -2881,7 +2881,7 @@ void NWebDelegate::JavaScriptOnHeadReadyByOrder(
       GetBrowser()->GetHost()->JavaScriptOnHeadReady("", std::vector<CefString>(),
                                                      true);
     }
-    int count = 0;
+    size_t count = 0;
     for (const auto& item : scriptItemsByOrder) {
       if (scriptItems.find(item) == scriptItems.end()) {
         continue;
@@ -2959,7 +2959,7 @@ void NWebDelegate::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
       GetBrowser()->GetHost()->JavaScriptOnDocumentEnd("", std::vector<CefString>(),
                                                        true);
     }
-    int count = 0;
+    size_t count = 0;
     for (auto item : scriptItems) {
       count++;
       CefString script = item.first;

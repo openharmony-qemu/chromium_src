@@ -16,12 +16,13 @@
 #ifndef OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_SCHEME_HANDLER_H
 #define OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_SCHEME_HANDLER_H
 
+#include "base/memory/raw_ptr.h"
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
 
 struct ArkWeb_SchemeHandler_ {
   ArkWeb_OnRequestStart on_request_start;
   ArkWeb_OnRequestStop on_request_stop;
-  void* user_data{nullptr};
+  raw_ptr<void> user_data{nullptr};
   bool fromEts = false;
 };
 

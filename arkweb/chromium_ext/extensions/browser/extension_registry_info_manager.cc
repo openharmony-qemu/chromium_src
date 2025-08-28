@@ -16,6 +16,7 @@
 #include "extensions/browser/extension_registry_info_manager.h"
 
 #include "base/logging.h"
+#include "base/no_destructor.h"
 #include "chrome/browser/extensions/menu_manager.h"
 #include "chrome/common/extensions/manifest_handlers/settings_overrides_handler.h"
 #include "content/public/common/url_constants.h"
@@ -170,7 +171,7 @@ std::optional<WebExtensionManifestOptionsPageInfo> GetManifestOptionsPageInfo(
 
 }
 
-std::shared_ptr<NWebExtensionManagerCallBack> g_extension_manager_listener = nullptr;
+base::NoDestructor<std::shared_ptr<NWebExtensionManagerCallBack>> g_extension_manager_listener(nullptr);
 
 gfx::Image ExtensionRegistryGetIcon(
     int tabId,
@@ -503,64 +504,64 @@ void ExtensionRegistryInfoManager::OnShutdown(ExtensionRegistry* registry) {}
 void ExtensionRegistryInfoManager::RegisterWebExtensionManagerListener(
     std::shared_ptr<NWebExtensionManagerCallBack> web_extension_manager_listener) {
   LOG(INFO) << "ExtensionRegistryInfoManager::RegisterWebExtensionManagerListener";
-  g_extension_manager_listener = web_extension_manager_listener;
+  *g_extension_manager_listener = web_extension_manager_listener;
 }
 
 // static
 void ExtensionRegistryInfoManager::UnRegisterWebExtensionManagerListener() {
   LOG(INFO) << "ExtensionRegistryInfoManager::RegisterWebExtensionManagerListener";
-  g_extension_manager_listener = nullptr;
+  *g_extension_manager_listener = nullptr;
 }
 
 //static
 NO_SANITIZE("cfi-icall")
 void ExtensionRegistryInfoManager::OnExtensionLoadedCallBack(const WebExtensionInfo& loadedInfo) {
   LOG(INFO) << "ExtensionRegistryInfoManager::OnExtensionLoadedCallBack";
-  if (!g_extension_manager_listener) {
+  if (!(*g_extension_manager_listener)) {
     LOG(ERROR) << "No web extension manager listener";
     return;
   }
 
-  if (!g_extension_manager_listener->OnWebExtensionLoaded) {
+  if (!(*g_extension_manager_listener)->OnWebExtensionLoaded) {
     LOG(ERROR) << "No OnWebExtensionLoaded listener";
     return;
   }
 
-  g_extension_manager_listener->OnWebExtensionLoaded(loadedInfo);
+  (*g_extension_manager_listener)->OnWebExtensionLoaded(loadedInfo);
 }
 
 //static
 NO_SANITIZE("cfi-icall")
 void ExtensionRegistryInfoManager::OnExtensionUnLoadedCallBack(const std::string& eid) {
   LOG(INFO) << "ExtensionRegistryInfoManager::OnExtensionUnLoadedCallBack";
-  if (!g_extension_manager_listener) {
+  if (!(*g_extension_manager_listener)) {
     LOG(ERROR) << "No web extension manager listener";
     return;
   }
 
-  if (!g_extension_manager_listener->OnWebExtensionUnLoaded) {
+  if (!(*g_extension_manager_listener)->OnWebExtensionUnLoaded) {
     LOG(ERROR) << "No OnWebExtensionUnLoaded listener";
     return;
   }
 
-  g_extension_manager_listener->OnWebExtensionUnLoaded(eid);
+  (*g_extension_manager_listener)->OnWebExtensionUnLoaded(eid);
 }
 
 //static
 NO_SANITIZE("cfi-icall")
 void ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack(const std::string& url) {
   LOG(INFO) << "ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack";
-  if (!g_extension_manager_listener) {
+  if (!(*g_extension_manager_listener)) {
     LOG(ERROR) << "No web extension manager listener";
     return;
   }
 
-  if (!g_extension_manager_listener->OnWebExtensionOpenUrlFun) {
+  if (!(*g_extension_manager_listener)->OnWebExtensionOpenUrlFun) {
     LOG(ERROR) << "No OnWebExtensionOpenUrlFun listener";
     return;
   }
 
-  g_extension_manager_listener->OnWebExtensionOpenUrlFun(url);
+  (*g_extension_manager_listener)->OnWebExtensionOpenUrlFun(url);
 }
 
 }  // namespace extensions

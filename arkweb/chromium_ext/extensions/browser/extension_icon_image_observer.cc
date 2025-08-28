@@ -17,27 +17,28 @@
 
 #include "base/command_line.h"
 #include "base/logging.h"
+#include "base/no_destructor.h"
 #include "content/public/common/content_switches.h"
 #include "ohos_nweb/src/cef_delegate/nweb_extension_action_cef_delegate.h"
 
 namespace extensions {
 
-std::map<std::string, ExtensionIconImageObserver*> g_icon_image_observers;
+base::NoDestructor<std::map<std::string, ExtensionIconImageObserver*>> g_icon_image_observers;
 
 void SetExtensionIconImageObserver(const std::string& extension_id, int32_t tab_id) {
   LOG(INFO) << "Add Icon Image Observer, extension_id=" << extension_id
             << " tab_id=" << tab_id;
-  if (g_icon_image_observers.find(extension_id) != g_icon_image_observers.end()) {
+  if ((*g_icon_image_observers).find(extension_id) != (*g_icon_image_observers).end()) {
     LOG(INFO) << "The observer already exists. extension_id=" << extension_id;
     return;
   }
   ExtensionIconImageObserver* observer = new ExtensionIconImageObserver(extension_id, tab_id);
-  g_icon_image_observers[extension_id] = observer;
+  (*g_icon_image_observers)[extension_id] = observer;
 }
 
 ExtensionIconImageObserver* GetExtensionIconImageObserver(const std::string& extension_id) {
-  if (g_icon_image_observers.find(extension_id) != g_icon_image_observers.end()) {
-    ExtensionIconImageObserver* observer = g_icon_image_observers[extension_id];
+  if ((*g_icon_image_observers).find(extension_id) != (*g_icon_image_observers).end()) {
+    ExtensionIconImageObserver* observer = (*g_icon_image_observers)[extension_id];
     return observer;
   }
   LOG(INFO) << "Not found observer! extension_id=" << extension_id;
@@ -46,9 +47,9 @@ ExtensionIconImageObserver* GetExtensionIconImageObserver(const std::string& ext
 
 void DestroyExtensionIconImageObserver(const std::string& extension_id) {
   LOG(INFO) << "Destroy Icon Image Observer, extension_id=" << extension_id;
-  if (g_icon_image_observers.find(extension_id) != g_icon_image_observers.end()) {
-    ExtensionIconImageObserver* observer = g_icon_image_observers[extension_id];
-    g_icon_image_observers.erase(extension_id);
+  if ((*g_icon_image_observers).find(extension_id) != (*g_icon_image_observers).end()) {
+    ExtensionIconImageObserver* observer = (*g_icon_image_observers)[extension_id];
+    (*g_icon_image_observers).erase(extension_id);
     delete observer;
     LOG(INFO) << "Destroy Icon Image Observer Success.";
   }

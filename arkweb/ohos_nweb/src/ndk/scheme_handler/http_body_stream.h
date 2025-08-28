@@ -16,6 +16,7 @@
 #ifndef OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_HTTP_BODY_STREAM_H
 #define OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_HTTP_BODY_STREAM_H
 
+#include "base/memory/raw_ptr.h"
 #include "include/arkweb_request_ext.h"
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
 
@@ -48,7 +49,7 @@ struct ArkWeb_HttpBodyStream_ : public ArkWebCefPostDataStreamInitCallback,
   ArkWeb_HttpBodyStreamAsyncReadCallback read_async_callback{nullptr};
   ArkWeb_HttpBodyStreamInitCallback stream_init_callback{nullptr};
   CefRefPtr<ArkWebCefPostDataStream> post_data_stream;
-  void* user_data{nullptr};
+  raw_ptr<void> user_data{nullptr};
   bool is_ets_ = false;
 
   IMPLEMENT_REFCOUNTING(ArkWeb_HttpBodyStream_);

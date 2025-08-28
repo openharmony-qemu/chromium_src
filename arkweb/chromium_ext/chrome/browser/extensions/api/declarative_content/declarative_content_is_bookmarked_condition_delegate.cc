@@ -42,8 +42,8 @@ void GetUrlsFromBookmarkTreeNode(const NWebExtensionBookmarkTreeNode* node,
 
 DeclarativeContentIsBookmarkedConditionDelegate&
 DeclarativeContentIsBookmarkedConditionDelegate::GetInstance() {
-  static DeclarativeContentIsBookmarkedConditionDelegate instance;
-  return instance;
+  static base::NoDestructor<DeclarativeContentIsBookmarkedConditionDelegate> instance;
+  return *instance;
 }
 
 void DeclarativeContentIsBookmarkedConditionDelegate::AddObserver(

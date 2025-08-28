@@ -70,6 +70,7 @@
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 #include "cef/libcef/browser/browser_host_base.h"
+#include "cef/ohos_cef_ext/libcef/browser/net/extra_headers_throttle.h"
 #endif
 
 enum AppLoadedInTabSource {
@@ -256,6 +257,23 @@ class ChromeContentBrowserClientUtils {
             frame_tree_node_id, (request.transition_type &
                                  ui::PAGE_TRANSITION_CLIENT_REDIRECT) != 0));
       }
+    }
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  static void AddExtraHeadersThrottle(
+      const network::ResourceRequest& request,
+      std::vector<std::unique_ptr<blink::URLLoaderThrottle>>& throttles) {
+    const bool is_load_url =
+        request.transition_type & ui::PAGE_TRANSITION_FROM_API;
+    const bool is_go_back_forward =
+        request.transition_type & ui::PAGE_TRANSITION_FORWARD_BACK;
+    const bool is_reload = ui::PageTransitionCoreTypeIs(
+        static_cast<ui::PageTransition>(request.transition_type),
+        ui::PAGE_TRANSITION_RELOAD);
+    if (is_load_url || is_go_back_forward || is_reload) {
+      throttles.push_back(std::make_unique<throttle::ExtraHeadersThrottle>());
     }
   }
 #endif

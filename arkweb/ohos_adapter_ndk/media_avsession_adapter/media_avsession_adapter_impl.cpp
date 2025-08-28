@@ -22,6 +22,7 @@
 namespace OHOS::NWeb {
 
 std::unordered_map<std::string, MediaAVSessionAdapterImpl *> MediaAVSessionAdapterImpl::avSessionMap;
+CallbackSharedWrapper<MediaAVSessionCallbackAdapter> MediaAVSessionAdapterImpl::callback_wrapper_;
 
 void MediaAVSessionKey::Init() {
     pid_ = getpid();
@@ -61,7 +62,7 @@ std::string MediaAVSessionKey::ToString() {
 }
 
 MediaAVSessionAdapterImpl::MediaAVSessionAdapterImpl() {
-    InitMediaAVSessionAdapterImpl();
+InitMediaAVSessionAdapterImpl();
 }
 
 void MediaAVSessionAdapterImpl::InitMediaAVSessionAdapterImpl() {
@@ -70,19 +71,19 @@ void MediaAVSessionAdapterImpl::InitMediaAVSessionAdapterImpl() {
     AVMetadata_Result ret = OH_AVMetadataBuilder_Create(&builder_);
     if (ret != AVMETADATA_SUCCESS) {
         WVLOG_E("create metadata builder failed, ret=%{public}d", ret);
-        return;
+return;
     }
 
     ret = OH_AVMetadataBuilder_SetAssetId(builder_, std::to_string(avSessionKey_->GetPID()).c_str());
     if (ret != AVMETADATA_SUCCESS) {
         WVLOG_E("set assert id failed, ret=%{public}d", ret);
-        return;
+return;
     }
 
     ret = OH_AVMetadataBuilder_GenerateAVMetadata(builder_, &avMetadata_);
     if (ret != AVMETADATA_SUCCESS) {
         WVLOG_E("generate avmetadata failed, ret=%{public}d", ret);
-        return;
+return;
     }
 
     avPlaybackState_ = PLAYBACK_STATE_INITIAL;
@@ -105,6 +106,9 @@ MediaAVSessionAdapterImpl::~MediaAVSessionAdapterImpl() {
         }
     }
 
+    if (callback_index_ > 0) {
+        callback_wrapper_.Clear(callback_index_);
+    }
     avMetadata_ = nullptr;
     builder_ = nullptr;
     DestroyAVSession();
@@ -165,7 +169,8 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::AVSessionOnCommandCallback(O
         WVLOG_E("ohmedia: userData is null");
         return AVSESSION_CALLBACK_RESULT_FAILURE;
     }
-    MediaAVSessionCallbackAdapter *media = reinterpret_cast<MediaAVSessionCallbackAdapter *>(userData);
+    size_t callback_index = reinterpret_cast<size_t>(userData);
+    auto media = callback_wrapper_.GetCallback(callback_index);
     if (!media) {
         WVLOG_E("ohmedia: media is null");
         return AVSESSION_CALLBACK_RESULT_FAILURE;
@@ -197,7 +202,8 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::AVSessionOnSeekCallback(OH_A
         WVLOG_E("ohmedia: userData is null");
         return AVSESSION_CALLBACK_RESULT_FAILURE;
     }
-    MediaAVSessionCallbackAdapter *media = reinterpret_cast<MediaAVSessionCallbackAdapter *>(userData);
+    size_t callback_index = reinterpret_cast<size_t>(userData);
+    auto media = callback_wrapper_.GetCallback(callback_index);
     if (!media) {
         WVLOG_E("ohmedia: media is null");
         return AVSESSION_CALLBACK_RESULT_FAILURE;
@@ -212,12 +218,20 @@ bool MediaAVSessionAdapterImpl::RegistCallback(
     if (avSession_ && Activate()) {
         AVSession_ErrCode ret;
         callbackAdapter_ = callbackAdapter;
+        if (callbackAdapter_ == nullptr) {
+            WVLOG_E("Create callbackAdapter_ failed");
+            return false;
+        }
+        if (callback_index_ > 0) {
+            callback_wrapper_.Clear(callback_index_);
+        }
+        callback_index_ = callback_wrapper_.AddCallback(callbackAdapter_);
         for (AVSession_ControlCommand command = CONTROL_CMD_PLAY;
             command <= CONTROL_CMD_STOP;
             command = (AVSession_ControlCommand)(command + 1)) {
             ret = OH_AVSession_RegisterCommandCallback(avSession_,
                 command, &MediaAVSessionAdapterImpl::AVSessionOnCommandCallback,
-                reinterpret_cast<void *>(callbackAdapter_.get()));
+                reinterpret_cast<void *>(callback_index_));
             if (ret != AV_SESSION_ERR_SUCCESS) {
                 WVLOG_E("RegisterCommandCallback failed. ret: %{public}d", ret);
                 return false;
@@ -225,7 +239,7 @@ bool MediaAVSessionAdapterImpl::RegistCallback(
         }
 
         ret = OH_AVSession_RegisterSeekCallback(avSession_,
-            &MediaAVSessionAdapterImpl::AVSessionOnSeekCallback, reinterpret_cast<void *>(callbackAdapter_.get()));
+            &MediaAVSessionAdapterImpl::AVSessionOnSeekCallback, reinterpret_cast<void *>(callback_index_));
         if (ret != AV_SESSION_ERR_SUCCESS) {
             WVLOG_E("RegisterSeekCallback failed. ret: %{public}d", ret);
             return false;

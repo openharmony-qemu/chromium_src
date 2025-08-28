@@ -16,7 +16,7 @@
 #include "net/dns/public/dns_protocol.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
-
+#define strcpy_s(dst, n, src) strncpy(dst, src, n)
 namespace net {
 
 namespace {

@@ -170,6 +170,11 @@ SharedImageManager::Register(std::unique_ptr<SharedImageBacking> backing,
   // well as thread-checking failures in tests.
   auto factory_ref = std::make_unique<SharedImageRepresentationFactoryRef>(
       this, backing.get(), tracker, /*is_primary=*/true);
+#if BUILDFLAG(IS_ARKWEB)
+  if (images_.find(backing) != images_.end())
+    LOG(INFO) << "backing is exist, could not emplace again.";
+  LOG(INFO) << "images_ emplace, get mailbox info: " << backing->mailbox().ToDebugString().c_str();
+#endif
   images_.emplace(std::move(backing));
 
   return factory_ref;
@@ -524,8 +529,12 @@ void SharedImageManager::OnRepresentationDestroyed(
     // SharedImageManager::OnRepresentationDestroyed can be nested, so we need
     // to get the iterator again.
     auto found = images_.find(mailbox);
-    if (found != images_.end() && (!(*found)->HasAnyRefs()))
+    if (found != images_.end() && (!(*found)->HasAnyRefs())) {
+#if BUILDFLAG(IS_ARKWEB)
+      LOG(INFO) << "images_ erase, get mailbox info: " << mailbox.ToDebugString().c_str();
+#endif
       images_.erase(found);
+    }
   }
 }
 

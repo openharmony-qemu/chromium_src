@@ -1684,6 +1684,11 @@ void SkiaOutputSurfaceImplOnGpu::CopyOutput(
               mailbox, context_state_.get());
       DCHECK(backing_representation);
 
+#if BUILDFLAG(IS_ARKWEB)
+      if (!backing_representation)
+        LOG(ERROR) << "Fail to get backing representation.";
+#endif
+
       SkSurfaceProps surface_props;
       // TODO(crbug.com/40776586): Use BeginScopedReadAccess instead
       scoped_access = backing_representation->BeginScopedWriteAccess(
@@ -2767,6 +2772,10 @@ gpu::SkiaImageRepresentation* SkiaOutputSurfaceImplOnGpu::GetSkiaRepresentation(
   if (!it->second) {
     it->second = shared_image_representation_factory_->ProduceSkia(
         mailbox, context_state_.get());
+#if BUILDFLAG(IS_ARKWEB)
+    if (!it->second)
+      LOG(ERROR) << "Fail to get skia representation.";
+#endif
   }
   return it->second.get();
 }

@@ -152,6 +152,10 @@ void OHOSAudioOutputStream::OnSuspend() {
     LOG(ERROR) << "OHOSAudioOutputStream::OnSuspend parameters_ is not valid.";
     return;
   }
+  if (!running_) {
+    LOG(ERROR) << "The playback is stopped. Exit OnSuspend.";
+    return;
+  }
   if (OHOSAudioFocusController::IsActive(parameters_)) {
     if (audioResumeInterval_ != 0) {
       intervalSinceLastSuspend_ = std::time(nullptr);
@@ -572,7 +576,6 @@ base::TimeDelta OHOSAudioOutputStream::GetDelay(
 
 // LCOV_EXCL_START
 void OHOSAudioOutputStream::PumpSamples() {
-    base::AutoLock lock(lock_);
     if (!running_) {
         LOG(INFO) << "The playback is stopped. Exit PumpSamples.";
         return;
@@ -602,9 +605,11 @@ void OHOSAudioOutputStream::PumpSamples() {
         }
         return;
     }
-
-    // Obtains data. The data does not need to be processed and may be empty.
-    (void)callback_->OnMoreData(base::TimeDelta(), base::TimeTicks::Now(), {}, audio_bus_.get());
+    {
+      base::AutoLock lock(lock_);
+      // Obtains data. The data does not need to be processed and may be empty.
+      (void)callback_->OnMoreData(base::TimeDelta(), base::TimeTicks::Now(), {}, audio_bus_.get());
+    }
     SchedulePumpSamples();
 }
 // LCOV_EXCL_STOP

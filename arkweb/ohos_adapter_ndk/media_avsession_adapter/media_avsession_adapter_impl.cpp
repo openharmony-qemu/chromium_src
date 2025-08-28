@@ -217,15 +217,15 @@ bool MediaAVSessionAdapterImpl::RegistCallback(
     WVLOG_I("RegistCallback in");
     if (avSession_ && Activate()) {
         AVSession_ErrCode ret;
-        callbackAdapter_ = callbackAdapter;
-        if (callbackAdapter_ == nullptr) {
-            WVLOG_E("Create callbackAdapter_ failed");
+        std::shared_ptr<MediaAVSessionCallbackAdapter> callback_adapter = callbackAdapter;
+        if (callback_adapter == nullptr) {
+            WVLOG_E("Create callback_adapter failed");
             return false;
         }
         if (callback_index_ > 0) {
             callback_wrapper_.Clear(callback_index_);
         }
-        callback_index_ = callback_wrapper_.AddCallback(callbackAdapter_);
+        callback_index_ = callback_wrapper_.AddCallback(callback_adapter);
         for (AVSession_ControlCommand command = CONTROL_CMD_PLAY;
             command <= CONTROL_CMD_STOP;
             command = (AVSession_ControlCommand)(command + 1)) {

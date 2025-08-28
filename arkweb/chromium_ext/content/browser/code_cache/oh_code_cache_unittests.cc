@@ -165,7 +165,7 @@ TEST_F(OhCodeCacheTest, InitCacheDirectory003) {
     EXPECT_TRUE(base::CreateDirectory(path));
     EXPECT_TRUE(base::PathExists(path));
     response_cache->InitCacheDirectory(path);
-    EXPECT_EQ(response_cache->(*cache_dir_path_)->value(), path.value());
+    EXPECT_EQ((*response_cache->cache_dir_path_)->value(), path.value());
     base::DeletePathRecursively(path);
 }
 
@@ -185,8 +185,8 @@ TEST_F(OhCodeCacheTest, CreateResponseCache002) {
 TEST_F(OhCodeCacheTest, CreateResponseCache003) {
     std::string url = "http://test.com/example.js";
     std::shared_ptr<ResponseCache> response_cache = std::make_shared<ResponseCache>(url);
-    response_cache->(*cache_dir_path_) = std::make_unique<base::FilePath>("");
-    EXPECT_TRUE(response_cache->(*cache_dir_path_)->empty());
+    (*response_cache->cache_dir_path_) = std::make_unique<base::FilePath>("");
+    EXPECT_TRUE((*response_cache->cache_dir_path_)->empty());
     auto res = response_cache->CreateResponseCache(url);
     EXPECT_EQ(res, nullptr);
 }
@@ -194,8 +194,8 @@ TEST_F(OhCodeCacheTest, CreateResponseCache003) {
 TEST_F(OhCodeCacheTest, CreateResponseCache004) {
     std::string url = "http://test.com/example.js";
     std::shared_ptr<ResponseCache> response_cache = std::make_shared<ResponseCache>(url);
-    response_cache->(*cache_dir_path_) = nullptr;
-    EXPECT_EQ(response_cache->(*cache_dir_path_), nullptr);
+    (*response_cache->cache_dir_path_) = nullptr;
+    EXPECT_EQ((*response_cache->cache_dir_path_), nullptr);
     auto res = response_cache->CreateResponseCache(url);
     EXPECT_EQ(res, nullptr);
 }
@@ -203,8 +203,8 @@ TEST_F(OhCodeCacheTest, CreateResponseCache004) {
 TEST_F(OhCodeCacheTest, CreateResponseCache005) {
     std::string url = "http://test.com/example.js";
     std::shared_ptr<ResponseCache> response_cache = std::make_shared<ResponseCache>(url);
-    response_cache->(*cache_dir_path_) = std::make_unique<base::FilePath>("/tmp/test/cache");
-    EXPECT_NE(response_cache->(*cache_dir_path_), nullptr);
+    (*response_cache->cache_dir_path_) = std::make_unique<base::FilePath>("/tmp/test/cache");
+    EXPECT_NE((*response_cache->cache_dir_path_), nullptr);
     auto res = response_cache->CreateResponseCache(url);
     EXPECT_NE(res, nullptr);
 }
@@ -215,7 +215,7 @@ TEST_F(OhCodeCacheTest, ClearAllCache001) {
     std::shared_ptr<ResponseCacheMetadata> RCMptr = std::make_shared<ResponseCacheMetadata>();
     (*ResponseCache::cache_metadata_map_).emplace("key1", RCMptr);
     (*ResponseCache::cache_dir_path_) = nullptr;
-    EXPECT_EQ(response_cache->(*cache_dir_path_), nullptr);
+    EXPECT_EQ((*response_cache->cache_dir_path_), nullptr);
     ResponseCache::ClearAllCache();
     EXPECT_FALSE((*ResponseCache::cache_metadata_map_).empty());
 }

@@ -504,7 +504,7 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
                         Origin origin,
                         base::WeakPtr<content::PreloadingAttempt> attempt);
   std::set<GURL> oh_prefetch_urls_;
-  int min_time_between_prefetches_ = 500;
+  int min_time_between_prefetches_ = kMinTimeBetweenPrefetchesMs;
   bool ignore_cache_control_no_store_ = false;
 #endif
 

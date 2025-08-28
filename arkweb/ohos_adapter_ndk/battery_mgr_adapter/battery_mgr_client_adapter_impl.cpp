@@ -92,6 +92,10 @@ void BatteryMgrClientAdapterImpl::OnBatteryEvent(const CommonEvent_RcvData *data
 
     std::lock_guard<std::mutex> lock(mutex_);
     for (const auto &eventCallback : callbackSet_) {
+        if (!eventCallback) {
+            WVLOG_E("eventCallback is nullptr.");
+            continue;
+        }
         eventCallback->BatteryInfoChanged(batterinfo);
     }
 }

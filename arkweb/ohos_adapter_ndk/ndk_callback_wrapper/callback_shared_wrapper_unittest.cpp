@@ -18,7 +18,7 @@
 #include "gtest/gtest.h"
 #define private public
 #include "callback_shared_wrapper.h"
-#endif private
+#undef private
 
 using namespace testing;
 
@@ -38,14 +38,14 @@ class PersonWrapper {
         }
         ~PersonWrapper() = default;
     private:
-        std::string name;
+        std::string name_;
         uint32_t age_;
 };
 
 /**
  * @tc.name: AddCallback_WhenInputNullptr
  * @tc.number: CallbackSharedWrapperTest_001
- * @tc.desc: Test AddCallback method of CallbackSharedWrapperTest class
+ * @tc.desc: Test AddCallback method of CallbackSharedWrapper class
  */
 TEST_F(CallbackSharedWrapperTest, AddCallback_WhenInputNullptr) {
     CallbackSharedWrapper<PersonWrapper> callback_wrapper;
@@ -57,7 +57,7 @@ TEST_F(CallbackSharedWrapperTest, AddCallback_WhenInputNullptr) {
 /**
  * @tc.name: AddCallback_WhenInputNormal
  * @tc.number: CallbackSharedWrapperTest_002
- * @tc.desc: Test AddCallback method of CallbackSharedWrapperTest class
+ * @tc.desc: Test AddCallback method of CallbackSharedWrapper class
  */
 TEST_F(CallbackSharedWrapperTest, AddCallback_WhenInputNormal) {
     CallbackSharedWrapper<PersonWrapper> callback_wrapper;
@@ -69,7 +69,7 @@ TEST_F(CallbackSharedWrapperTest, AddCallback_WhenInputNormal) {
 /**
  * @tc.name: ClearAndSizeTest
  * @tc.number: CallbackSharedWrapperTest_003
- * @tc.desc: Test Size and Clear method of CallbackSharedWrapperTest class
+ * @tc.desc: Test Size and Clear method of CallbackSharedWrapper class
  */
 TEST_F(CallbackSharedWrapperTest, ClearAndSizeTest) {
     CallbackSharedWrapper<PersonWrapper> callback_wrapper;
@@ -83,7 +83,7 @@ TEST_F(CallbackSharedWrapperTest, ClearAndSizeTest) {
 /**
  * @tc.name: GetCallbackTest
  * @tc.number: CallbackSharedWrapperTest_004
- * @tc.desc: Test GetCallback method of CallbackSharedWrapperTest class
+ * @tc.desc: Test GetCallback method of CallbackSharedWrapper class
  */
 TEST_F(CallbackSharedWrapperTest, GetCallbackTest) {
     CallbackSharedWrapper<PersonWrapper> callback_wrapper;

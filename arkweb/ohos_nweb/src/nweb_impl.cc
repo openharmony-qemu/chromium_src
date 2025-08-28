@@ -94,6 +94,7 @@
 
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 #include "libcef/browser/browser_context.h"
+#include "capi/nweb_prefetch_options.h"
 #include "ohos_cef_ext/libcef/browser/predictors/loading_predictor.h"
 #include "ohos_cef_ext/libcef/browser/predictors/loading_predictor_config.h"
 #include "ohos_cef_ext/libcef/browser/predictors/loading_predictor_factory.h"
@@ -2238,11 +2239,11 @@ float NWebImpl::Scale() {
 
 int NWebImpl::Load(
     const std::string& url,
-    const std::map<std::string, std::string>& additionalHttpHeaders) {
+    const std::map<std::string, std::string>& additional_http_headers) {
   if (nweb_delegate_ == nullptr) {
     return NWEB_ERR;
   }
-  return nweb_delegate_->Load(url, additionalHttpHeaders);
+  return nweb_delegate_->Load(url, additional_http_headers);
 }
 
 int NWebImpl::PostUrl(const std::string& url,
@@ -3352,13 +3353,28 @@ std::shared_ptr<NWebDragData> NWebImpl::GetOrCreateDragData() {
 
 void NWebImpl::PrefetchPage(
     const std::string& url,
-    const std::map<std::string, std::string>& additionalHttpHeaders) {
+    const std::map<std::string, std::string>& additional_http_headers) {
+    PrefetchPageV2(url, additional_http_headers, 500, false);
+}
+
+void NWebImpl::PrefetchPageV2(
+    const std::string& url,
+    const std::map<std::string, std::string>& additional_http_headers,
+    int32_t min_time_between_prefetches, 
+    bool ignore_cache_control_no_store) {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
   if (nweb_delegate_ == nullptr) {
     return;
   }
   TRACE_EVENT0("NWebImpl", "NWebImpl::PrefetchPage");
-  nweb_delegate_->PrefetchPage(url, additionalHttpHeaders);
+  std::string output;
+  for (auto& header : additional_http_headers) {
+    base::StringAppendF(&output, "%s: %s\r\n", header.first.c_str(),
+                        header.second.c_str());
+  }
+  output.append("\r\n");
+  nweb_delegate_->PrefetchPage(PrefetchOptions(url, output, 
+    min_time_between_prefetches, ignore_cache_control_no_store));
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }
 

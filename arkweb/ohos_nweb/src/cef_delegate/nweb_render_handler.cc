@@ -21,6 +21,7 @@
 #include <cstring>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/command_line.h"
 #include "base/logging.h"
 #include "content/public/common/content_switches.h"
@@ -1302,7 +1303,8 @@ std::shared_ptr<NWebNativeEmbedDataInfo> NWebRenderHandler::CefEmbedDataToWeb(
   } else {
     url = info.url;
   }
-  LOG(DEBUG) << "GetUrl CefEmbedDataToWeb url is " << url;
+  LOG(DEBUG) << "GetUrl CefEmbedDataToWeb url is "
+             << url::LogUtils::ConvertUrlWithMask(url);
   std::shared_ptr<NWebNativeEmbedInfoImpl> embedinfo =
       std::make_shared<NWebNativeEmbedInfoImpl>(
           info.width, info.height, info.id, info.src, url, info.type, info.tag,

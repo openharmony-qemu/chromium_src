@@ -174,6 +174,14 @@ cef_pointer_type_t NWebEventHandler::ConvertSourceToolToPointerType(
   }
 }
 
+float NWebEventHandler::ConvertRollAngleToTwist(float raw_roll_angle) {
+  float real_angle = (raw_roll_angle > 32767.0f) ?
+                    (raw_roll_angle - 65536.0f) :
+                    raw_roll_angle;
+  real_angle = std::clamp(real_angle, -180.0f, 180.0f);
+  return (real_angle < 0.0f) ? (real_angle + 360.0f) : real_angle;
+}
+
 void NWebEventHandler::OnStylusTouchPress(
     std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
     bool from_overlay,
@@ -195,7 +203,8 @@ void NWebEventHandler::OnStylusTouchPress(
       static_cast<float>(stylus_touch_point_info->GetWidth()) / 2.0f;
   touch_pressed.radius_y =
       static_cast<float>(stylus_touch_point_info->GetHeight()) / 2.0f;
-  touch_pressed.rotation_angle = stylus_touch_point_info->GetRollAngle();
+  touch_pressed.rotation_angle =
+      ConvertRollAngleToTwist(stylus_touch_point_info->GetRollAngle());
   touch_pressed.pressure = stylus_touch_point_info->GetForce();
   touch_pressed.modifiers = EVENTFLAG_NONE;
   touch_pressed.from_overlay = from_overlay;
@@ -224,7 +233,8 @@ void NWebEventHandler::OnStylusTouchRelease(
       static_cast<float>(stylus_touch_point_info->GetWidth()) / 2.0f;
   touch_end.radius_y =
       static_cast<float>(stylus_touch_point_info->GetHeight()) / 2.0f;
-  touch_end.rotation_angle = stylus_touch_point_info->GetRollAngle();
+  touch_end.rotation_angle =
+      ConvertRollAngleToTwist(stylus_touch_point_info->GetRollAngle());
   touch_end.pressure = stylus_touch_point_info->GetForce();
   touch_end.modifiers = EVENTFLAG_NONE;
   touch_end.from_overlay = from_overlay;
@@ -254,7 +264,8 @@ void NWebEventHandler::OnStylusTouchMove(
     touch_move.tiltY = touch_point->GetTiltY();
     touch_move.radius_x = static_cast<float>(touch_point->GetWidth()) / 2.0f;
     touch_move.radius_y = static_cast<float>(touch_point->GetHeight()) / 2.0f;
-    touch_move.rotation_angle = touch_point->GetRollAngle();
+    touch_move.rotation_angle =
+        ConvertRollAngleToTwist(touch_point->GetRollAngle());
     touch_move.pressure = touch_point->GetForce();
     touch_move.modifiers = EVENTFLAG_NONE;
     touch_move.from_overlay = from_overlay;

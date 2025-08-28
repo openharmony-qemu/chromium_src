@@ -513,7 +513,7 @@ class NWebDelegateInterface
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  virtual void PrefetchPage(PrefetchOptions prefetch_options) = 0;
+  virtual void PrefetchPage(const PrefetchOptions prefetch_options) = 0;
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)

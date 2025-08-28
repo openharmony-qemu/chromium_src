@@ -21,6 +21,7 @@
 
 #include "cef/include/cef_base.h"
 
+namespace OHOS::NWeb {
 
 struct PrefetchOptions {
     CefString url_cef;
@@ -40,5 +41,7 @@ struct PrefetchOptions {
         additional_http_headers_cef.FromString(headers);
     }
 };
+
+}
 
 #endif  // OHOS_NWEB_SRC_CAPI_NWEB_PREFETCH_OPTIONS_H_

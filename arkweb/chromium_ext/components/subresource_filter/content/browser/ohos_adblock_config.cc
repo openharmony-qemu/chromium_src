@@ -15,6 +15,7 @@
 
 #include "components/subresource_filter/content/browser/ohos_adblock_config.h"
 
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/logging.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
@@ -181,7 +182,8 @@ AdBlockConfig::AddAdsBlockDisallowListInternal(
   for (auto& item : disallow_list_) {
     std::string trimed_str;
     base::TrimWhitespaceASCII(item, base::TRIM_ALL, &trimed_str);
-    LOG(DEBUG) << "[Adblock] trimed key:" << trimed_str;
+    LOG(DEBUG) << "[Adblock] trimed key:"
+               << url::LogUtils::ConvertUrlWithMask(trimed_str);
     std::vector<uint8_t> key = ToByteArray(trimed_str);
     std::reverse(std::begin(key), std::end(key));
     disallow_data->AddDataForKey(key, trimed_str);
@@ -236,7 +238,8 @@ AdBlockConfig::RemoveAdsBlockDisallowedListInternal(
   for (auto& item : disallow_list_) {
     std::string trimed_str;
     base::TrimWhitespaceASCII(item, base::TRIM_ALL, &trimed_str);
-    LOG(DEBUG) << "[Adblock] trimed key:" << trimed_str;
+    LOG(DEBUG) << "[Adblock] trimed key:"
+               << url::LogUtils::ConvertUrlWithMask(trimed_str);
     std::vector<uint8_t> key = ToByteArray(trimed_str);
     std::reverse(std::begin(key), std::end(key));
     disallow_data->AddDataForKey(key, trimed_str);
@@ -391,7 +394,8 @@ AdBlockConfig::RemoveAdsBlockAllowedListInternal(
   for (auto& item : allow_list_) {
     std::string trimed_str;
     base::TrimWhitespaceASCII(item, base::TRIM_ALL, &trimed_str);
-    LOG(DEBUG) << "[Adblock] trimed key:" << trimed_str;
+    LOG(DEBUG) << "[Adblock] trimed key:"
+               << url::LogUtils::ConvertUrlWithMask(trimed_str);
     std::vector<uint8_t> key = ToByteArray(trimed_str);
     std::reverse(std::begin(key), std::end(key));
     allow_data->AddDataForKey(key, trimed_str);

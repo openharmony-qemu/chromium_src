@@ -87,24 +87,23 @@ bool DragControllerExt::IsHyperLinkDragging() {
     LOG(WARNING) << "DragDrop frame null, not a hyper link dragging";
     return false;
   }
-  return drag_state_->drag_type_ == kDragSourceActionLink &&
-         did_initiate_drag_ && frame->Selection().SelectionHasFocus();
+  return did_initiate_drag_ && frame->Selection().SelectionHasFocus();
 }
 // LCOV_EXCL_STOP
 
 // LCOV_EXCL_START
 bool DragControllerExt::DragLinkCheckSrcAndType() {
+  if (!did_initiate_drag_) {
+    LOG(DEBUG) << "DragDrop drag not start";
+    return false;
+  }
+
   if (!drag_state_) {
     LOG(DEBUG) << "DragDrop state null, drag nothing";
     return false;
   }
   if (drag_state_->drag_type_ != kDragSourceActionLink) {
     LOG(DEBUG) << "DragDrop type is not link, just pass";
-    return false;
-  }
-
-  if (!did_initiate_drag_) {
-    LOG(DEBUG) << "DragDrop drag not start";
     return false;
   }
 
@@ -293,6 +292,9 @@ NO_SANITIZE("cfi") void DragControllerExt::StartDragTextEffects() {
 
   // textEffect should not happend in ImageDrag
   Element* element = static_cast<Element*>(node);
+  if (!element) {
+    return;
+  }
   // Add the judgment of the dragging type for mixed dragging of image and text
   if (blink::CanDragImage(*element) &&
       drag_state_->drag_type_ == kDragSourceActionImage) {
@@ -320,7 +322,9 @@ NO_SANITIZE("cfi") void DragControllerExt::RestoreDragTextEffects() {
 
   // ImageDrag should directly return
   Element* element = static_cast<Element*>(node);
-
+  if (!element) {
+    return;
+  }
   if (blink::CanDragImage(*element) &&
       drag_state_->drag_type_ == kDragSourceActionImage) {
     return;
@@ -367,7 +371,7 @@ NO_SANITIZE("cfi") void DragControllerExt::StartDragImageEffects() {
 
   // draggable or size should be checked before this call
   Element* element = static_cast<Element*>(node);
-  if (!blink::CanDragImage(*element)) {
+  if (!element || !blink::CanDragImage(*element)) {
     return;
   }
 
@@ -408,7 +412,7 @@ NO_SANITIZE("cfi") void DragControllerExt::RestoreDragImageEffects() {
   }
 
   Element* element = static_cast<Element*>(node);
-  if (!blink::CanDragImage(*element)) {
+  if (!element || !blink::CanDragImage(*element)) {
     return;
   }
 

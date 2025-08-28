@@ -20,6 +20,7 @@
 #include "nweb_accessibility_utils.h"
 #endif
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/command_line.h"
 #include "base/check.h"
 #include "base/command_line.h"
@@ -1408,7 +1409,8 @@ int NWebDelegate::PostUrl(const std::string& url,
       return NWEB_INVALID_URL;
     }
   }
-  LOG(DEBUG) << "NWebDelegate::PostUrl url=" << url;
+  LOG(DEBUG) << "NWebDelegate::PostUrl url="
+             << url::LogUtils::ConvertUrlWithMask(url);
   auto browser = GetBrowser();
   if (browser == nullptr) {
     LOG(ERROR) << "NWebDelegate::PostUrl browser is nullptr";

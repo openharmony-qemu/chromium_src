@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <vector>
 
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
 #include "base/containers/adapters.h"
@@ -243,7 +244,11 @@ int32_t GetApplicationApiVersion() {
   if (apiVersion.empty()) {
     return -1;
   }
-  return std::stoi(apiVersion);
+  int32_t apiVersionNumber;
+  if(!base::StringToInt(apiVersion, &apiVersionNumber)) {
+    return -1;
+  }
+  return apiVersionNumber;
 }
 
 void AddAppCert(const std::string_view& hostname, X509_STORE* ca_store) {
@@ -282,7 +287,8 @@ void AddAppCert(const std::string_view& hostname, X509_STORE* ca_store) {
       }
     }
   } else {
-    LOG(ERROR) << "GetTrustAnchorsForHostName host:" << host << " failed.";
+    LOG(ERROR) << "GetTrustAnchorsForHostName host:"
+               << url::LogUtils::ConvertUrlWithMask(host) << " failed.";
   }
 
   return;
@@ -426,7 +432,7 @@ bool PerformAIAFetchAndAddResultToVector(
   if (error != OK) {
     LOG(ERROR)
         << "PerformAIAFetchAndAddResultToVector: Wait for result failed, uri: "
-        << uri;
+        << url::LogUtils::ConvertUrlWithMask(std::string(uri));
     return false;
   }
 

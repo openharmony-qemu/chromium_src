@@ -425,6 +425,7 @@ void ScreenCaptureCallbackOnDisplaySelected(OH_AVScreenCapture* capture,
 
 ScreenCaptureAdapterImpl::~ScreenCaptureAdapterImpl()
 {
+    WVLOG_I("ScreenCaptureAdapterImpl::~ScreenCaptureAdapterImpl, nweb_id = %{public}d", callback_info_.nweb_id);
     {
         std::shared_lock<std::shared_mutex> lock(surface_map_lock_);
         auto video = bufferAvailableQueueMap_.find(callback_info_.nweb_id);

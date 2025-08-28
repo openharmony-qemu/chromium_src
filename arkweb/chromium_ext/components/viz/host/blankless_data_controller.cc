@@ -416,7 +416,6 @@ BlanklessDataController::BlanklessDataController()
     if (web_snapshot_db_callback_) {
       OhosWebSnapshotDataBase::GetInstance().RegisterDataBaseCallback(web_snapshot_db_callback_);
     }
-    task_manager_ = std::make_unique<viz::CancelableDelayedTaskManager>();
 }
 
 std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::GetHistorySnapshotInfo(
@@ -620,6 +619,14 @@ int32_t BlanklessDataController::SetBlanklessLoadingCacheCapacity(int capacity)
 int32_t BlanklessDataController::GetBlanklessLoadingCacheCapacity() const
 {
   return OhosWebSnapshotDataBase::GetInstance().GetCapacityInByte();
+}
+
+void BlanklessDataController::CreateTaskManager()
+{
+  std::lock_guard<std::mutex> task_manager_guard(task_manager_mutex_);
+  if (!task_manager_) {
+    task_manager_ = std::make_unique<viz::CancelableDelayedTaskManager>();
+  }
 }
 
 void BlanklessDataController::PostDumpTaskWithDelay(uint64_t blankless_key, base::OnceClosure task)

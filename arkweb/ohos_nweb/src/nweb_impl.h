@@ -561,6 +561,11 @@ class NWebImpl : public NWeb {
   void PrefetchPage(
       const std::string& url,
       const std::map<std::string, std::string>& additionalHttpHeaders) override;
+  void PrefetchPageV2(
+      const std::string& url,
+      const std::map<std::string, std::string>& additionalHttpHeaders,
+      int32_t min_time_between_prefetches, 
+      bool ignore_cache_control_no_store) override;
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
   int PostUrl(const std::string& url,
@@ -670,7 +675,7 @@ class NWebImpl : public NWeb {
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
-  void SetForceEnableZoom(bool forceEnableZoom) const;
+  void SetForceEnableZoom(bool forceEnableZoom) const override;
   bool GetForceEnableZoom() const;
 #endif  // ARKWEB_EXT_FORCE_ZOOM
 
@@ -942,6 +947,13 @@ class NWebImpl : public NWeb {
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  enum class PathType {
+      kDirResource,
+      kDirFile,
+      kDirCache,
+      kDirTemp,
+  };
+
   void SetPathAllowingUniversalAccess(
       const std::vector<std::string>& pathList,
       const std::vector<std::string>& moduleName,
@@ -949,6 +961,8 @@ class NWebImpl : public NWeb {
   int PrerenderPage(const std::string& url,
                     const std::string& additional_headers);
   void CancelAllPrerendering();
+  static void SetExtraHeadersMap(const std::string& url,
+                                 const std::string& additional_headers);
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)

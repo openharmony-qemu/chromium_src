@@ -102,11 +102,6 @@ class BaseWindowCapturer : public DesktopCapturer {
 
   void HandleBuffer();
 
-  // void HandleBuffer(OH_AVBuffer* buffer,
-  //                   OH_AVScreenCaptureBufferType bufferType,
-  //                   int64_t timestamp,
-  //                   void* userData);
-
   void SetScreenCaptureState(
       const OHOS::NWeb::ScreenCaptureStateCodeAdapter& stateCode);
 
@@ -148,7 +143,6 @@ class BaseWindowCapturer : public DesktopCapturer {
   std::shared_ptr<WindowCapturerReadCallback> WindowCapturerReadCallback_ = nullptr;
 
   OH_AVScreenCapture* screen_capture_ = nullptr;
-  //ohos::adapter::OhosDisplay ohos_screen_;
 
   int nweb_id_ = 0;
   base::WeakPtrFactory<BaseWindowCapturer> weak_factory_{this};

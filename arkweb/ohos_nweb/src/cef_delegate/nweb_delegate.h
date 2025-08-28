@@ -437,9 +437,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   // #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  void PrefetchPage(
-      const std::string& url,
-      const std::map<std::string, std::string>& additionalHttpHeaders) override;
+  void PrefetchPage(const PrefetchOptions& prefetch_options) override;
   // #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -732,7 +730,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   void SetPathAllowingUniversalAccess(
-      const std::vector<std::string>& pathList) override;
+      const std::vector<std::string>& path_list,
+      const std::vector<std::string>& excluded_path_list) override;
   int PrerenderPage(const std::string& url,
                     const std::string& additional_headers) override;
   void CancelAllPrerendering() override;

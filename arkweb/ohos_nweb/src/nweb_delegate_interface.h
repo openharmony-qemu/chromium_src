@@ -513,9 +513,7 @@ class NWebDelegateInterface
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  virtual void PrefetchPage(
-      const std::string& url,
-      const std::map<std::string, std::string>& additionalHttpHeaders) = 0;
+  virtual void PrefetchPage(const PrefetchOptions& prefetch_options) = 0;
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
@@ -727,7 +725,8 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   virtual void SetPathAllowingUniversalAccess(
-      const std::vector<std::string>& pathList) = 0;
+      const std::vector<std::string>& path_list,
+      const std::vector<std::string>& excluded_path_list) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)

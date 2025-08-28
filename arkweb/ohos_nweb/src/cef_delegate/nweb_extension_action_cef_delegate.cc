@@ -21,8 +21,8 @@
 #include "cef/ohos_cef_ext/libcef/browser/alloy/alloy_browser_host_impl_ext.h"
 #include "cef/ohos_cef_ext/libcef/browser/extensions/tab_extensions_util.h"
 #include "content/public/common/content_switches.h"
-#include "third_party/skia/include/core/SkBitmap.h"
 #include "nweb_common.h"
+#include "third_party/skia/include/core/SkBitmap.h"
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_extension_action_dispatcher.h"
@@ -111,7 +111,57 @@ NWebExtensionActionIcon CreateFromImageSkiaReps(
 
 namespace {
 std::shared_ptr<NWebExtensionActionApiCallback> g_action_api_listener = nullptr;
+
+std::optional<NWebExtensionActionIconBitmapV2> ConvertToBitmapV2(
+    const SkBitmap& source_bitmap,
+    double scale) {
+  if (source_bitmap.drawsNothing() || source_bitmap.empty()) {
+    return std::nullopt;
+  }
+  NWebExtensionActionIconBitmapV2 bitmap;
+  bitmap.colorType = GetColorTypeFromSkBitmap(source_bitmap);
+  bitmap.alphaType = GetAlphaTypeFromSkBitmap(source_bitmap);
+  bitmap.width = source_bitmap.width();
+  bitmap.height = source_bitmap.height();
+  const size_t byte_size = source_bitmap.computeByteSize();
+  bitmap.bitmap.resize(byte_size);
+  if (!source_bitmap.readPixels(
+          SkImageInfo::Make(source_bitmap.width(), source_bitmap.height(),
+                            source_bitmap.colorType(),
+                            source_bitmap.alphaType()),
+          bitmap.bitmap.data(), source_bitmap.rowBytes(), 0, 0)) {
+    LOG(ERROR) << "Failed to read bitmap pixels";
+    return std::nullopt;
+  }
+  return bitmap;
 }
+
+NWebExtensionActionSetIconDetailsV2 GetActionSetIconDetailsV2(
+    const gfx::Image& icon_image,
+    const std::optional<int32_t>& tabId,
+    const std::optional<std::string>& contextType,
+    const std::optional<bool>& includeIncognitoInfo) {
+  NWebExtensionActionSetIconDetailsV2 details;
+  if (!icon_image.IsEmpty()) {
+    const gfx::ImageSkia image_skia = icon_image.AsImageSkia();
+    const std::vector<gfx::ImageSkiaRep> image_reps = image_skia.image_reps();
+    for (const auto& rep : image_reps) {
+      const double scale = rep.scale();
+      const SkBitmap& source_bitmap = rep.GetBitmap();
+      auto bitmap = ConvertToBitmapV2(source_bitmap, scale);
+      if (!bitmap) {
+        continue;
+      }
+      details.icon.bitmaps.emplace(scale, std::move(*bitmap));
+    }
+  }
+  details.tabId = tabId;
+  details.contextType = contextType;
+  details.includeIncognitoInfo = includeIncognitoInfo;
+  return details;
+}
+
+}  // namespace
 
 void DeleteNWebExtensionActionIcon(NWebExtensionActionIcon** icon) {
   if (!icon || !*icon) {
@@ -190,9 +240,19 @@ void NWebExtensionActionCefDelegate::WebExtensionSetPopupWindowId(
 }
 
 NO_SANITIZE("cfi-icall")
-void NWebExtensionActionCefDelegate::OnDisable(const std::string& extensionId,
-                                               std::optional<int>& tabId) {
+void NWebExtensionActionCefDelegate::OnDisable(
+    const std::string& extensionId,
+    std::optional<int>& tabId,
+    std::optional<std::string> contextType,
+    std::optional<bool> includeIncognitoInfo) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (NWebExtensionActionDispathcher::GetInstance().HasOnDisableV2()) {
+    NWebExtensionActionDisableOptionsV2 options = {tabId, contextType,
+                                                   includeIncognitoInfo};
+    NWebExtensionActionDispathcher::GetInstance().OnDisableV2(extensionId,
+                                                              options);
+    return;
+  }
   if (IsNativeApiEnable()) {
     NWebExtensionActionDispathcher::GetInstance().OnDisable(extensionId, tabId);
     return;
@@ -213,9 +273,19 @@ void NWebExtensionActionCefDelegate::OnDisable(const std::string& extensionId,
 }
 
 NO_SANITIZE("cfi-icall")
-void NWebExtensionActionCefDelegate::OnEnable(const std::string& extensionId,
-                                              std::optional<int>& tabId) {
+void NWebExtensionActionCefDelegate::OnEnable(
+    const std::string& extensionId,
+    std::optional<int>& tabId,
+    std::optional<std::string> contextType,
+    std::optional<bool> includeIncognitoInfo) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (NWebExtensionActionDispathcher::GetInstance().HasOnEnableV2()) {
+    NWebExtensionActionEnableOptionsV2 options = {tabId, contextType,
+                                                  includeIncognitoInfo};
+    NWebExtensionActionDispathcher::GetInstance().OnEnableV2(extensionId,
+                                                             options);
+    return;
+  }
   if (IsNativeApiEnable()) {
     NWebExtensionActionDispathcher::GetInstance().OnEnable(extensionId, tabId);
     return;
@@ -238,8 +308,18 @@ void NWebExtensionActionCefDelegate::OnEnable(const std::string& extensionId,
 NO_SANITIZE("cfi-icall")
 void NWebExtensionActionCefDelegate::OnOpenPopup(
     const std::string& extensionId,
-    const std::optional<NWebExtensionActionOpenPopupOptions>& options) {
+    const std::optional<NWebExtensionActionOpenPopupOptions>& options,
+    std::optional<std::string> contextType,
+    std::optional<bool> includeIncognitoInfo) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (NWebExtensionActionDispathcher::GetInstance().HasOnOpenPopupV2()) {
+    NWebExtensionActionOpenPopupOptionsV2 optionsV2 = {
+        options.has_value() ? options->windowId : std::nullopt, contextType,
+        includeIncognitoInfo};
+    NWebExtensionActionDispathcher::GetInstance().OnOpenPopupV2(extensionId,
+                                                                optionsV2);
+    return;
+  }
   if (IsNativeApiEnable()) {
     NWebExtensionActionDispathcher::GetInstance().OnOpenPopup(extensionId,
                                                               options);
@@ -263,8 +343,17 @@ void NWebExtensionActionCefDelegate::OnOpenPopup(
 NO_SANITIZE("cfi-icall")
 void NWebExtensionActionCefDelegate::OnSetTitle(
     const std::string& extensionId,
-    const NWebExtensionActionSetTitleDetails& details) {
+    const NWebExtensionActionSetTitleDetails& details,
+    std::optional<std::string> contextType,
+    std::optional<bool> includeIncognitoInfo) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (NWebExtensionActionDispathcher::GetInstance().HasOnSetTitleV2()) {
+    NWebExtensionActionSetTitleDetailsV2 detailsV2 = {
+        details.title, details.tabId, contextType, includeIncognitoInfo};
+    NWebExtensionActionDispathcher::GetInstance().OnSetTitleV2(extensionId,
+                                                               detailsV2);
+    return;
+  }
   if (IsNativeApiEnable()) {
     NWebExtensionActionDispathcher::GetInstance().OnSetTitle(extensionId,
                                                              details);
@@ -288,8 +377,17 @@ void NWebExtensionActionCefDelegate::OnSetTitle(
 NO_SANITIZE("cfi-icall")
 void NWebExtensionActionCefDelegate::OnSetPopup(
     const std::string& extensionId,
-    const NWebExtensionActionSetPopupDetails& details) {
+    const NWebExtensionActionSetPopupDetails& details,
+    std::optional<std::string> contextType,
+    std::optional<bool> includeIncognitoInfo) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (NWebExtensionActionDispathcher::GetInstance().HasOnSetPopupV2()) {
+    NWebExtensionActionSetPopupDetailsV2 options = {
+        details.popup, details.tabId, contextType, includeIncognitoInfo};
+    NWebExtensionActionDispathcher::GetInstance().OnSetPopupV2(extensionId,
+                                                               options);
+    return;
+  }
   if (IsNativeApiEnable()) {
     NWebExtensionActionDispathcher::GetInstance().OnSetPopup(extensionId,
                                                              details);
@@ -311,10 +409,21 @@ void NWebExtensionActionCefDelegate::OnSetPopup(
 }
 
 NO_SANITIZE("cfi-icall")
-void NWebExtensionActionCefDelegate::OnSetIcon(std::string extension_id,
-                                               const gfx::Image& icon_image,
-                                               int32_t tab_id) {
+void NWebExtensionActionCefDelegate::OnSetIcon(
+    std::string extension_id,
+    const gfx::Image& icon_image,
+    int32_t tab_id,
+    std::optional<std::string> contextType,
+    std::optional<bool> includeIncognitoInfo) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (NWebExtensionActionDispathcher::GetInstance().HasOnSetIconV2()) {
+    LOG(INFO) << "OnSetIconV2 extension ID:" << extension_id;
+    NWebExtensionActionSetIconDetailsV2 details = GetActionSetIconDetailsV2(
+        icon_image, tab_id, contextType, includeIncognitoInfo);
+    NWebExtensionActionDispathcher::GetInstance().OnSetIconV2(extension_id,
+                                                              details);
+    return;
+  }
   if (IsNativeApiEnable()) {
     LOG(INFO) << "OnSetIcon extension ID:" << extension_id;
     NWebExtensionActionIcon actionIcon =
@@ -357,8 +466,17 @@ void NWebExtensionActionCefDelegate::OnSetIcon(std::string extension_id,
 NO_SANITIZE("cfi-icall")
 void NWebExtensionActionCefDelegate::OnSetBadgeText(
     const std::string& extensionId,
-    const NWebExtensionActionSetBadgeTextDetails& details) {
+    const NWebExtensionActionSetBadgeTextDetails& details,
+    std::optional<std::string> contextType,
+    std::optional<bool> includeIncognitoInfo) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (NWebExtensionActionDispathcher::GetInstance().HasOnSetBadgeTextV2()) {
+    NWebExtensionActionSetBadgeTextDetailsV2 detailsV2 = {
+        details.text, details.tabId, contextType, includeIncognitoInfo};
+    NWebExtensionActionDispathcher::GetInstance().OnSetBadgeTextV2(extensionId,
+                                                                   detailsV2);
+    return;
+  }
   if (IsNativeApiEnable()) {
     NWebExtensionActionDispathcher::GetInstance().OnSetBadgeText(extensionId,
                                                                  details);
@@ -381,8 +499,18 @@ void NWebExtensionActionCefDelegate::OnSetBadgeText(
 NO_SANITIZE("cfi-icall")
 void NWebExtensionActionCefDelegate::OnSetBadgeTextColor(
     const std::string& extensionId,
-    const NWebExtensionActionSetBadgeTextColorDetails& details) {
+    const NWebExtensionActionSetBadgeTextColorDetails& details,
+    std::optional<std::string> contextType,
+    std::optional<bool> includeIncognitoInfo) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (NWebExtensionActionDispathcher::GetInstance()
+          .HasOnSetBadgeTextColorV2()) {
+    NWebExtensionActionSetBadgeTextColorDetailsV2 detailsV2 = {
+        details.color, details.tabId, contextType, includeIncognitoInfo};
+    NWebExtensionActionDispathcher::GetInstance().OnSetBadgeTextColorV2(
+        extensionId, detailsV2);
+    return;
+  }
   if (IsNativeApiEnable()) {
     NWebExtensionActionDispathcher::GetInstance().OnSetBadgeTextColor(
         extensionId, details);
@@ -406,8 +534,18 @@ void NWebExtensionActionCefDelegate::OnSetBadgeTextColor(
 NO_SANITIZE("cfi-icall")
 void NWebExtensionActionCefDelegate::OnSetBadgeBackgroundColor(
     const std::string& extensionId,
-    const NWebExtensionActionSetBadgeBackgroundColorDetails& details) {
+    const NWebExtensionActionSetBadgeBackgroundColorDetails& details,
+    std::optional<std::string> contextType,
+    std::optional<bool> includeIncognitoInfo) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (NWebExtensionActionDispathcher::GetInstance()
+          .HasOnSetBadgeBackgroundColorV2()) {
+    NWebExtensionActionSetBadgeBackgroundColorDetailsV2 detailsV2 = {
+        details.color, details.tabId, contextType, includeIncognitoInfo};
+    NWebExtensionActionDispathcher::GetInstance().OnSetBadgeBackgroundColorV2(
+        extensionId, detailsV2);
+    return;
+  }
   if (IsNativeApiEnable()) {
     NWebExtensionActionDispathcher::GetInstance().OnSetBadgeBackgroundColor(
         extensionId, details);

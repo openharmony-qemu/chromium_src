@@ -68,7 +68,7 @@ TEST(ParsedCookieTest, TestEmpty) {
 
 TEST(ParsedCookieTest, TestSetEmptyNameValue) {
   CookieInclusionStatus status;
-  ParsedCookie empty("", &status);
+  ParsedCookie empty("", true, &status);
   EXPECT_FALSE(empty.IsValid());
   EXPECT_TRUE(status.HasExclusionReason(
       CookieInclusionStatus::ExclusionReason::EXCLUDE_NO_COOKIE_CONTENT));
@@ -391,7 +391,7 @@ TEST(ParsedCookieTest, EnforceSizeConstraints) {
   EXPECT_TRUE(pc2.IsValid());
   EXPECT_EQ(max_name, pc2.Name());
 
-  ParsedCookie pc3(max_name + "X=", &status);
+  ParsedCookie pc3(max_name + "X=", true, &status);
   EXPECT_FALSE(pc3.IsValid());
   EXPECT_TRUE(status.HasOnlyExclusionReason(
       CookieInclusionStatus::ExclusionReason::
@@ -405,7 +405,7 @@ TEST(ParsedCookieTest, EnforceSizeConstraints) {
   EXPECT_TRUE(pc5.IsValid());
   EXPECT_EQ(max_value, pc5.Value());
 
-  ParsedCookie pc6("=" + max_value + "X", &status);
+  ParsedCookie pc6("=" + max_value + "X", true, &status);
   EXPECT_FALSE(pc6.IsValid());
   EXPECT_TRUE(status.HasOnlyExclusionReason(
       CookieInclusionStatus::ExclusionReason::
@@ -421,7 +421,7 @@ TEST(ParsedCookieTest, EnforceSizeConstraints) {
   EXPECT_EQ(almost_max_name, pc8.Name());
   EXPECT_EQ("x", pc8.Value());
 
-  ParsedCookie pc9(almost_max_name + "=xX", &status);
+  ParsedCookie pc9(almost_max_name + "=xX", true, &status);
   EXPECT_FALSE(pc9.IsValid());
   EXPECT_TRUE(status.HasOnlyExclusionReason(
       CookieInclusionStatus::ExclusionReason::
@@ -437,7 +437,7 @@ TEST(ParsedCookieTest, EnforceSizeConstraints) {
   EXPECT_EQ("x", pc11.Name());
   EXPECT_EQ(almost_max_value, pc11.Value());
 
-  ParsedCookie pc12("xX=" + almost_max_value, &status);
+  ParsedCookie pc12("xX=" + almost_max_value, true, &status);
   EXPECT_FALSE(pc12.IsValid());
   EXPECT_TRUE(status.HasOnlyExclusionReason(
       CookieInclusionStatus::ExclusionReason::
@@ -454,7 +454,7 @@ TEST(ParsedCookieTest, EnforceSizeConstraints) {
   EXPECT_TRUE(pc20.HasPath());
   EXPECT_EQ("/" + almost_max_path, pc20.Path());
 
-  ParsedCookie pc21("name=value; path=" + too_long_path, &status);
+  ParsedCookie pc21("name=value; path=" + too_long_path, true, &status);
   EXPECT_TRUE(pc21.IsValid());
   EXPECT_FALSE(pc21.HasPath());
   EXPECT_TRUE(status.HasWarningReason(
@@ -569,9 +569,9 @@ TEST(ParsedCookieTest, EmbeddedTerminator) {
   CookieInclusionStatus status1;
   CookieInclusionStatus status2;
   CookieInclusionStatus status3;
-  ParsedCookie pc1("AAA=BB\0ZYX"s, &status1);
-  ParsedCookie pc2("AAA=BB\rZYX"s, &status2);
-  ParsedCookie pc3("AAA=BB\nZYX"s, &status3);
+  ParsedCookie pc1("AAA=BB\0ZYX"s, true, &status1);
+  ParsedCookie pc2("AAA=BB\rZYX"s, true, &status2);
+  ParsedCookie pc3("AAA=BB\nZYX"s, true, &status3);
 
   EXPECT_FALSE(pc1.IsValid());
   EXPECT_FALSE(pc2.IsValid());
@@ -1097,7 +1097,7 @@ TEST(ParsedCookieTest, InvalidNonAlphanumericChars) {
     SCOPED_TRACE(testing::Message()
                  << "Test case #" << base::NumberToString(i + 1));
     CookieInclusionStatus status;
-    ParsedCookie pc(cases[i], &status);
+    ParsedCookie pc(cases[i], true, &status);
     EXPECT_FALSE(pc.IsValid());
     EXPECT_TRUE(status.HasOnlyExclusionReason(
         CookieInclusionStatus::ExclusionReason::EXCLUDE_DISALLOWED_CHARACTER));

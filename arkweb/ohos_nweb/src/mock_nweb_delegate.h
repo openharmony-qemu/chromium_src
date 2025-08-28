@@ -848,7 +848,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   MOCK_METHOD(void,
               SetPathAllowingUniversalAccess,
-              (const std::vector<std::string>& pathList),
++              (const std::vector<std::string>& path_list,
++               const std::vector<std::string>& excluded_path_list),
               (override));
 #endif
 

@@ -65,10 +65,6 @@
 #include "nweb_drag_data_impl.h"
 #endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 
-#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-#include "base/strings/stringprintf.h"
-#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-
 #include "base/strings/escape.h"
 #include "cef/include/internal/cef_string_types.h"
 #include "libcef/common/net/url_util_ex.h"
@@ -3106,12 +3102,16 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
   }
 #endif  // ARKWEB_DRAG_DROP
 
-  if (!GetBrowser().get() || !render_handler_) {
-    LOG(ERROR) << "browser or render_handler is nullptr";
+  if (!GetBrowser().get() || !GetBrowser()->GetHost() || !render_handler_) {
+    LOG(ERROR) << "browser or host or render_handler is nullptr";
     return;
   }
   CefMouseEvent event;
   float ratio = render_handler_->GetVirtualPixelRatio();
+  if (ratio <= 0) {
+    LOG(ERROR) << "get ratio invalid: " << ratio;
+    return;
+  }
   event.x = dragEvent.x / ratio;
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
   event.y =
@@ -3121,6 +3121,10 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
 #endif
   event.modifiers = EVENTFLAG_LEFT_MOUSE_BUTTON;
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (!handler_delegate_) {
+    LOG(ERROR) << "handler_delegate is nullptr";
+    return;
+  }
   switch (dragEvent.action) {
     case DelegateDragAction::DRAG_START:
       LOG(DEBUG) << "DragDrop event SendDragEvent start webId:"
@@ -3161,7 +3165,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
       handler_delegate_->SetDragEnter(false);
       LOG(INFO) << "DragDrop event SendDragEvent drop webId:"
                 << GetBrowser()->GetNWebId();
-      if (render_handler_) {
+      if (render_handler_ && render_handler_->GetDragData()) {
         auto drag_data1 = render_handler_->GetDragData();
         auto fragment1 = drag_data1->GetFragmentText();
         LOG(DEBUG) << "DragDrop drag data GetFragmentText:"
@@ -3176,7 +3180,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
                            link_url1, link_html1);
 #endif
       } else {
-        LOG(ERROR) << "DragDrop drag data render_handler_ nullptr";
+        LOG(ERROR) << "DragDrop drag data nullptr";
       }
 
       GetBrowser()->GetHost()->DragTargetDrop(event);
@@ -3875,22 +3879,10 @@ int NWebDelegate::GetMediaPlaybackState() {
 
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
-void NWebDelegate::PrefetchPage(
-    const std::string& url,
-    const std::map<std::string, std::string>& additionalHttpHeaders) {
+void NWebDelegate::PrefetchPage(const PrefetchOptions& prefetch_options) {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  CefString urlCef;
-  urlCef.FromString(url);
-  std::string output;
-  for (auto& header : additionalHttpHeaders) {
-    base::StringAppendF(&output, "%s: %s\r\n", header.first.c_str(),
-                        header.second.c_str());
-  }
-  output.append("\r\n");
-  CefString additionalHttpHeadersCef;
-  additionalHttpHeadersCef.FromString(output);
   if (GetBrowser().get()) {
-    GetBrowser()->PrefetchPage(urlCef, additionalHttpHeadersCef);
+    GetBrowser()->PrefetchPage(prefetch_options);
   }
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }
@@ -5369,21 +5361,28 @@ int NWebDelegate::SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 void NWebDelegate::SetPathAllowingUniversalAccess(
-    const std::vector<std::string>& pathList) {
+    const std::vector<std::string>& path_list,
+    const std::vector<std::string>& excluded_path_list) {
   if (!GetBrowser().get() || !GetBrowser()->GetHost() ||
       !preference_delegate_) {
     LOG(ERROR) << "NWebDelegate::SetPathAllowingUniversalAccess failed, get "
                   "browser failed";
     return;
   }
-  preference_delegate_->PutEnableUniversalAccessFromFileURLs(pathList.size() !=
+  preference_delegate_->PutEnableUniversalAccessFromFileURLs(path_list.size() !=
                                                              0);
   std::vector<CefString> cef_path_list;
-  std::for_each(pathList.begin(), pathList.end(),
+  std::for_each(path_list.begin(), path_list.end(),
                 [&cef_path_list](const std::string& path) {
                   cef_path_list.emplace_back(CefString(path));
                 });
-  GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list);
+
+  std::vector<CefString> cef_excluded_path_list;
+  std::for_each(excluded_path_list.begin(), excluded_path_list.end(),
+                [&cef_excluded_path_list](const std::string& path) {
+                  cef_excluded_path_list.emplace_back(CefString(path));
+                });
+  GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list, cef_excluded_path_list);
 }
 
 int NWebDelegate::PrerenderPage(const std::string& url,
@@ -5995,7 +5994,9 @@ void NWebDelegate::SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_k
   // before send to render_frame, frame_sink_id will be get from compositor.
   int64_t pref_hash = preference_delegate_ ? preference_delegate_->GetPreferenceHash() : 0;
   browser->GetMainFrame()->AsArkWebFrame()->SendBlanklessKeyToRenderFrame(nweb_id, blankless_key, 0, pref_hash);
-  handler_delegate_->SetBlanklessLoadingKey(blankless_key);
+  if (handler_delegate_) {
+    handler_delegate_->SetBlanklessLoadingKey(blankless_key);
+  }
 }
 
 int64_t NWebDelegate::GetPreferenceHash() {

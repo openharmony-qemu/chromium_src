@@ -1737,6 +1737,7 @@ void NWebHandlerDelegate::ClearSnapshot() {
     databaseInstance.ClearSnapshot(blankless_key_);
     databaseInstance.ClearSnapshotDataItem({blankless_key_});
   }
+  LOG(DEBUG) << "blankless triggered clear due to resource loading error";
   // If there is a network error during dumpsnapshot, set the system time to an invalid vlaue,
   // the dump snapshot verification will not pass.
   instance.RecordSystemTime(nweb_id_, blankless_key_, base::ohos::BlanklessController::INVALID_TIMESTAMP);
@@ -1760,16 +1761,16 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
   LOG(INFO) << "NWebHandlerDelegate::OnLoadError";
   CEF_REQUIRE_UI_THREAD();
 
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
-    ClearSnapshot();
-  }
-#endif
-
   // Don't display an error for downloaded files.
   if (error_code == ERR_ABORTED) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (error_code <= ERR_CONNECTION_CLOSED && base::ohos::BlanklessController::CheckGlobalProperty()) {
+    ClearSnapshot();
+  }
+#endif
 
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnPageLoadError(error_code, error_text.ToString(),
@@ -1802,15 +1803,15 @@ void NWebHandlerDelegate::OnLoadErrorWithRequest(CefRefPtr<CefRequest> request,
                                                  bool has_user_gesture,
                                                  int error_code,
                                                  const CefString& error_text) {
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
-    ClearSnapshot();
-  }
-#endif
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   if (error_code == ERR_ABORTED) {
     LOG(WARNING) << "ignoring the error";
     return;
+  }
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (error_code <= ERR_CONNECTION_CLOSED && base::ohos::BlanklessController::CheckGlobalProperty()) {
+    ClearSnapshot();
   }
 #endif
   CefRequest::HeaderMap cef_request_headers;

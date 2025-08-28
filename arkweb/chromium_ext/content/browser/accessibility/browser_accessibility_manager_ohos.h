@@ -41,7 +41,7 @@ private:
 
     std::unordered_map<int32_t, int32_t> eventThrottleDelays_;
     std::unordered_set<int32_t> viewIndependentEvents_;
-    BrowserAccessibilityManagerOHOS *manager_;
+    raw_ptr<BrowserAccessibilityManagerOHOS> manager_;
     std::unordered_map<int64_t, int64_t> eventLastFiredTimes_;
     std::unordered_map<int64_t, base::DelayedTaskHandle> pendingEvents_;
 };

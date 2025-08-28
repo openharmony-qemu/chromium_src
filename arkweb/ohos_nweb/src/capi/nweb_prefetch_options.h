@@ -35,7 +35,7 @@ struct PrefetchOptions {
     }
   
     PrefetchOptions(std::string url, std::string headers,
-                    int32_t Time, bool flag) : min_time_between_prefetches(Time),  
+                    int32_t time, bool flag) : min_time_between_prefetches(time),  
                     ignore_cache_control_no_store(flag) {
         url_cef.FromString(url);
         additional_http_headers_cef.FromString(headers);

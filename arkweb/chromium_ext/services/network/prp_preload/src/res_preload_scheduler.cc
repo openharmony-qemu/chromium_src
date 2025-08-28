@@ -23,7 +23,7 @@ ResPreloadScheduler::ResPreloadScheduler(const std::string& url,
     const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
     base::WeakPtr<net::URLRequestContext> url_request_context,
     const PRPPOnPageOriginCB& on_page_origin_cb) :
-  url_(url), net_task_runner_(net_task_runner),
+  url_(raw_ref(url)), net_task_runner_(net_task_runner),
   url_request_context_(url_request_context), on_page_origin_cb_(on_page_origin_cb) {}
 
 void ResPreloadScheduler::CreateReqLoaderAndStart(const std::shared_ptr<PRRequestInfo>& info)
@@ -85,7 +85,7 @@ void ResPreloadScheduler::SchedulePreloads(const PRPPPreconnectInfoList& preconn
       (preload_info_tree_->req_info_->type() != PRRequestInfoType::TYPE_PAGE_ORIGIN) ||
       (preload_info_tree_->children_.size() == 0)) {
     if (!on_page_origin_cb_.is_null()) {
-      net_task_runner_->PostTask(FROM_HERE, base::BindOnce(on_page_origin_cb_, url_, CANCEL_ORIGIN));
+      net_task_runner_->PostTask(FROM_HERE, base::BindOnce(on_page_origin_cb_, *url_, CANCEL_ORIGIN));
     }
     LOG(DEBUG) << "PRPPreload.ResPreloadScheduler::SchedulePreloads invalid tree or no TYPE_PAGE_ORIGIN";
     return;
@@ -93,7 +93,7 @@ void ResPreloadScheduler::SchedulePreloads(const PRPPPreconnectInfoList& preconn
 
   std::string origin = preload_info_tree_->req_info_->page_origin();
   if (!on_page_origin_cb_.is_null()) {
-    net_task_runner_->PostTask(FROM_HERE, base::BindOnce(on_page_origin_cb_, url_, std::move(origin)));
+    net_task_runner_->PostTask(FROM_HERE, base::BindOnce(on_page_origin_cb_, *url_, std::move(origin)));
   }
   cur_parent_ = preload_info_tree_;
   cur_node_iter_ = preload_info_tree_->children_.begin();

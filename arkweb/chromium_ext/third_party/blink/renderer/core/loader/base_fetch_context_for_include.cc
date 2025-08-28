@@ -19,7 +19,7 @@ class BaseFetchContextUtil {
  public:
   static std::optional<ResourceRequestBlockedReason>
   CanRequestBasedOnSubresourceFilterOnlyForInclude(
-      raw_ptr<const BaseFetchContext> obj,
+      const BaseFetchContext* obj,
       ResourceType type,
       const ResourceRequest& resource_request,
       const KURL& url,

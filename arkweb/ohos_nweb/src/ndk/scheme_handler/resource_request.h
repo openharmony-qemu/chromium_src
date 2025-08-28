@@ -17,7 +17,7 @@
 #define OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_RESOURCE_REQUEST_H
 
 #include <string>
-
+#include "base/memory/raw_ptr.h"
 #include "cef/include/cef_request.h"
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
 
@@ -38,7 +38,7 @@ struct ArkWeb_ResourceRequest_ {
 
   CefRefPtr<CefRequest> cef_request;
   CefRefPtr<ArkWeb_HttpBodyStream> http_body_stream;
-  void* user_data{nullptr};
+  raw_ptr<void> user_data{nullptr};
   bool is_ets_ = false;
 };
 

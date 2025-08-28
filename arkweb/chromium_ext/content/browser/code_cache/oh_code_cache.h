@@ -23,6 +23,7 @@
 #include "base/task/thread_pool.h"
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
+#include "base/no_destructor.h"
 #include "cef/libcef/browser/net_service/stream_reader_url_loader.h"
 #include "net/disk_cache/simple/simple_util.h"
 #include "third_party/bounds_checking_function/include/securec.h"
@@ -61,7 +62,7 @@ class TaskRunner {
   static scoped_refptr<base::SingleThreadTaskRunner> GetTaskRunner();
 
  private:
-  static scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
+  static base::NoDestructor<scoped_refptr<base::SingleThreadTaskRunner>> task_runner_;
 };
 
 class ResponseCacheMetadata {
@@ -99,8 +100,8 @@ class ResponseCache {
                const std::string response_body);
   bool CanUseCache();
 
-  static std::unique_ptr<base::FilePath> cache_dir_path_;
-  static std::map<std::string, std::shared_ptr<ResponseCacheMetadata>>
+  static base::NoDestructor<std::unique_ptr<base::FilePath>> cache_dir_path_;
+  static base::NoDestructor<std::map<std::string, std::shared_ptr<ResponseCacheMetadata>>>
       cache_metadata_map_;
 
   std::string url_;

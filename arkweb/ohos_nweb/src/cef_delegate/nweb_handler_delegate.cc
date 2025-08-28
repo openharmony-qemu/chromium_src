@@ -1767,7 +1767,8 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
   }
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (error_code <= ERR_CONNECTION_CLOSED && base::ohos::BlanklessController::CheckGlobalProperty()) {
+  if (base::ohos::BlanklessController::CheckGlobalProperty() && error_code <= ERR_CONNECTION_CLOSED &&
+      error_code != ERR_UNKNOWN_URL_SCHEME && error_code != ERR_NAME_NOT_RESOLVED) {
     ClearSnapshot();
   }
 #endif
@@ -1810,7 +1811,8 @@ void NWebHandlerDelegate::OnLoadErrorWithRequest(CefRefPtr<CefRequest> request,
   }
 #endif
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (error_code <= ERR_CONNECTION_CLOSED && base::ohos::BlanklessController::CheckGlobalProperty()) {
+  if (base::ohos::BlanklessController::CheckGlobalProperty() && error_code <= ERR_CONNECTION_CLOSED &&
+      error_code != ERR_UNKNOWN_URL_SCHEME && error_code != ERR_NAME_NOT_RESOLVED) {
     ClearSnapshot();
   }
 #endif
@@ -1833,11 +1835,6 @@ void NWebHandlerDelegate::OnHttpError(CefRefPtr<CefRequest> request,
                                       bool is_main_frame,
                                       bool has_user_gesture,
                                       CefRefPtr<CefResponse> response) {
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
-    ClearSnapshot();
-  }
-#endif
   if (nweb_handler_ != nullptr) {
     CefRequest::HeaderMap cef_request_headers;
     request->GetHeaderMap(cef_request_headers);

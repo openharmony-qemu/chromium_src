@@ -3310,7 +3310,7 @@ void NWebImpl::PrefetchPageV2(
   if (nweb_delegate_ == nullptr) {
     return;
   }
-  TRACE_EVENT0("NWebImpl", "NWebImpl::PrefetchPageV2");
+  TRACE_EVENT0("NWebImpl", "NWebImpl::PrefetchPage");
   std::string output;
   for (auto& header : additional_http_headers) {
     base::StringAppendF(&output, "%s: %s\r\n", header.first.c_str(),

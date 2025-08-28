@@ -1359,7 +1359,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
       base::ThreadPool::PostTask(FROM_HERE,
         {base::MayBlock(), base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN, base::TaskPriority::USER_BLOCKING},
         base::BindOnce([]() {
-          base::ohos::BlanklessDataController::GetInstance();
+          base::ohos::BlanklessDataController::GetInstance().CreateTaskManager();
           WVLOG_D("BlanklessDataController instance init");
       }));
       initInstance = true;

@@ -23,21 +23,21 @@
 
 
 struct PrefetchOptions {
-    CefString urlCef;
-    CefString additionalHttpHeadersCef;
-    int32_t minTimeBetweenPrefetchesMs = 500;
-    bool ignoreCacheControlNoStore = false;
+    CefString url_cef;
+    CefString additional_http_headers_cef;
+    int32_t min_time_between_prefetches = 500;
+    bool ignore_cache_control_no_store = false;
 
-    PrefetchOptions(std::string url, std::string Headers) {
-        urlCef.FromString(url);
-        additionalHttpHeadersCef.FromString(Headers);
+    PrefetchOptions(std::string url, std::string headers) {
+        url_cef.FromString(url);
+        additional_http_headers_cef.FromString(headers);
     }
   
-    PrefetchOptions(std::string url, std::string Headers,
-                    int32_t Time, bool flag) : minTimeBetweenPrefetchesMs(Time),  
-                    ignoreCacheControlNoStore(flag) {
-        urlCef.FromString(url);
-        additionalHttpHeadersCef.FromString(Headers);
+    PrefetchOptions(std::string url, std::string headers,
+                    int32_t Time, bool flag) : min_time_between_prefetches(Time),  
+                    ignore_cache_control_no_store(flag) {
+        url_cef.FromString(url);
+        additional_http_headers_cef.FromString(headers);
     }
 };
 

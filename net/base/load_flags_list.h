@@ -15,6 +15,8 @@
 // expanded differently in some places (for example, to automatically
 // map a load flag value to its symbolic name).
 
+#include "arkweb/build/features/features.h"
+
 LOAD_FLAG(NORMAL, 0)
 
 // This is "normal reload", meaning an if-none-match/if-modified-since query.

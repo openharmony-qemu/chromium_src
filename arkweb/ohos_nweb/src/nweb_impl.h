@@ -560,8 +560,8 @@ class NWebImpl : public NWeb {
   void PrefetchPageV2(
       const std::string& url,
       const std::map<std::string, std::string>& additionalHttpHeaders,
-      int32_t minTimeBetweenPrefetchesMs, 
-      bool ignoreCacheControlNoStore) override;
+      int32_t min_time_between_prefetches, 
+      bool ignore_cache_control_no_store) override;
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
   int PostUrl(const std::string& url,

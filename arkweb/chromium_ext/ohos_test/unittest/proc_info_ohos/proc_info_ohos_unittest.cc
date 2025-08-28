@@ -14,8 +14,6 @@
  */
 
  #include "arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/proc_info_ohos.h"
- #include <gtest/gtest.h>
- #include <memory>
  #include <string>
  #include <sys/time.h>
  #include <iostream>
@@ -28,11 +26,18 @@
 
  };
 
- TEST_F(ProcInfoOhosTest, GetProcStatusByPid) {
+ TEST_F(ProcInfoOhosTest, GetProcStatusByPid001) {
     int realPid = getpid();
     struct ProcInfo procInfo;
     bool result = GetProcStatusByPid(realPid, procInfo);
     EXPECT_TRUE(result);
+ }
+
+  TEST_F(ProcInfoOhosTest, GetProcStatusByPid002) {
+    int realPid = getpid() + 5;
+    struct ProcInfo procInfo;
+    bool result = GetProcStatusByPid(realPid, procInfo);
+    EXPECT_FALSE(result);
  }
 
  TEST_F(ProcInfoOhosTest, GetProcStatus) {
@@ -41,12 +46,20 @@
     EXPECT_TRUE(result);
  }
 
- TEST_F(ProcInfoOhosTest, TidToNstid) {
+ TEST_F(ProcInfoOhosTest, TidToNstid001) {
     const int realPid = getpid();
     const int realTid = gettid();
     int nstid = 0;
     bool result = TidToNstid(realPid, realTid, nstid);
     EXPECT_TRUE(result);
+ }
+
+  TEST_F(ProcInfoOhosTest, TidToNstid002) {
+    const int realPid = getpid() + 5;
+    const int realTid = gettid() + 5;
+    int nstid = 0;
+    bool result = TidToNstid(realPid, realTid, nstid);
+    EXPECT_FALSE(result);
  }
 
  TEST_F(ProcInfoOhosTest, IsThreadInPid001) {

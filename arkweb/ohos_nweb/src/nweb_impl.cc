@@ -3298,7 +3298,7 @@ std::shared_ptr<NWebDragData> NWebImpl::GetOrCreateDragData() {
 void NWebImpl::PrefetchPage(
     const std::string& url,
     const std::map<std::string, std::string>& additional_http_headers) {
-    PrefetchPageV2(url, additional_http_headers, 500, false)
+    PrefetchPageV2(url, additional_http_headers, 500, false);
 }
 
 void NWebImpl::PrefetchPageV2(

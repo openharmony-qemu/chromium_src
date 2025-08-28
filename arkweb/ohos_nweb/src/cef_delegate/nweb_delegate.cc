@@ -3869,7 +3869,7 @@ int NWebDelegate::GetMediaPlaybackState() {
 
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
-void NWebDelegate::PrefetchPage(const PrefetchOptions prefetch_options) {
+void NWebDelegate::PrefetchPage(const PrefetchOptions& prefetch_options) {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
   if (GetBrowser().get()) {
     GetBrowser()->PrefetchPage(prefetch_options);

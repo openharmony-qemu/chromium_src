@@ -961,6 +961,7 @@ arkweb_crashpad_sources = [
 
 arkweb_crashpad_unittest_sources = [
   "//arkweb/chromium_ext/ohos_test/unittest/crash_report_exception_handler/crash_report_exception_handler_ext_unittest.cc",
+  "//arkweb/chromium_ext/ohos_test/unittest/proc_info_ohos/proc_info_ohos_unittest.cc",
 ]
 
 arkweb_crashpad_dfx_sources = [

@@ -22,11 +22,17 @@
 namespace blink {
 // LCOV_EXCL_START
 #if BUILDFLAG(IS_OHOS)
+static bool kUseOptimizedBudget = false;
 void SetOptimizeParserBudgetEnabled(bool enable)
 {
   LOG(WARNING) << "OptimizeParserBudget set enable: " << enable;
   TRACE_EVENT1("blink", "SetOptimizeParserBudgetEnabled", "enable", enable);
   kUseOptimizedBudget = enable;
+}
+
+bool GetOptimizeParserBudgetEnabled()
+{
+  return kUseOptimizedBudget;
 }
 #endif
 // LCOV_EXCL_STOP

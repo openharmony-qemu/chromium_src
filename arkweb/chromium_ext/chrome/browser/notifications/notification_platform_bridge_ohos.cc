@@ -317,8 +317,7 @@ void NotificationPlatformBridgeOhos::Display(
             << "; title=" << notification.title()
             << "; message=" << notification.message()
             << "; type=" << (int)notification_type
-            << "; profileId=" << GetProfileId(profile)
-            << "; manager=" << (void*)profile_manager;
+            << "; profileId=" << GetProfileId(profile);
 
   message_center::Notification notification_with_delegate(notification);
   notification_with_delegate.set_delegate(base::WrapRefCounted(

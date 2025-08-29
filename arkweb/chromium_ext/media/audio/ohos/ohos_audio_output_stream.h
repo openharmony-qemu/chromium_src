@@ -11,6 +11,7 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/task_runner.h"
 #include "base/timer/timer.h"
+#include "base/files/scoped_file.h"
 #include "media/audio/ohos/ohos_audio_manager.h"
 #include "ohaudio/native_audiorenderer.h"
 #include "ohaudio/native_audiostreambuilder.h"
@@ -143,6 +144,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   int audioResumeInterval_ = 0;
 
   int write_data_counts_ = 0;
+
+  base::ScopedFILE dumpFile_ = nullptr;
 
   base::WeakPtrFactory<OHOSAudioOutputStream> weak_factory_{this};
 };

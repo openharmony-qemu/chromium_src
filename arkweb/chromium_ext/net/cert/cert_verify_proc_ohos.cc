@@ -494,6 +494,7 @@ int ConvertToParsedCertificates(const std::vector<std::string>& cert_bytes,
     LOG(ERROR) << "TryVerifyWithAIAFetching: Parse cert number is 0";
     return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
   }
+  return X509_V_OK;
 }
 
 int TryVerifyWithAIAFetching(const std::vector<std::string>& cert_bytes,

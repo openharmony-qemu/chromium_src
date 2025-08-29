@@ -6309,11 +6309,17 @@ void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, 
   auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
   uint64_t recorded_time = instance.GetSystemTime(nweb_id_, blankless_key_);
   int32_t corrected_time = static_cast<int32_t>(system_time - recorded_time);
-  if (corrected_time < 0 || corrected_time >= lcp_time || lcp_time - corrected_time < 40) { // 40 ms
+  if (corrected_time < 0 || corrected_time >= lcp_time ||
+      lcp_time - corrected_time < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
     LOG(DEBUG) << "blankless CallBlanklessFrameFunc corrected time error " << corrected_time << " " << lcp_time;
     return;
   }
-  lcp_time = std::min(lcp_time, 2000);  // 2000 ms
+  if (lcp_time >= base::ohos::BlanklessController::A_STANDARD) {
+    lcp_time = std::min(lcp_time, base::ohos::BlanklessController::MAXIMUM_FRAME_LEFETIME);  // 2000 ms
+  } else {
+    lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LEFETIME;
+  }
+  LOG(DEBUG) << "blankless OnRemoveBlanklessFrame Delay Time: " << lcp_time;
   if (is_visible_) {
     nweb_handle_->OnInsertBlanklessFrameWithSize(file, width, height);
     nweb_handle_->OnRemoveBlanklessFrame(lcp_time);

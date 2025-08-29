@@ -51,8 +51,11 @@ public:
   };
 
   static constexpr uint64_t INVALID_BLANKLESS_KEY = UINT64_MAX;
-  static constexpr double CALLBACK_SIMILARITY_THRESHOLD = 0.75;
+  static constexpr double CALLBACK_SIMILARITY_THRESHOLD = 0.5;
   static constexpr uint64_t INVALID_TIMESTAMP = UINT64_MAX;
+  static constexpr int32_t A_STANDARD = 1600; // 1600 ms
+  static constexpr int32_t MINIMUM_FRAME_LIFETIME = 40; // 40 ms
+  static constexpr int32_t MAXIMUM_FRAME_LEFETIME = 2000; // 2000 ms
 
   static uint64_t ConvertToBlanklessKey(const std::string& value);
 

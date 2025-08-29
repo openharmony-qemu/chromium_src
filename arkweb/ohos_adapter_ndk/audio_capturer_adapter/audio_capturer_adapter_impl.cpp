@@ -97,7 +97,7 @@ int32_t AudioCapturerAdapterImpl::OnReadData(OH_AudioCapturer* capturer, void* u
 
     size_t callback_index = reinterpret_cast<size_t>(userData);
     std::shared_ptr<UserDataCallBack> userDataCallback = callback_wrapper_.GetCallback(callback_index);
-    if (!userDataCallBack) {
+    if (!userDataCallback) {
         WVLOG_E("AudioCapturerAdapterImpl userDataCallBack is nullptr");
         return -1;
     }

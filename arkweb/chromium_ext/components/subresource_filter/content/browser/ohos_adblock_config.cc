@@ -153,6 +153,7 @@ bool AdBlockConfig::CheckIsInDisallowData(GURL url) {
           net::registry_controlled_domains::INCLUDE_PRIVATE_REGISTRIES);
 
   std::vector<uint8_t> key = ToByteArray(registrable_domain);
+  LOG(DEBUG) << "[Adblock] registrable key:" << url::LogUtils::ConvertUrlWithMask(registrable_domain);
   std::reverse(std::begin(key), std::end(key));
 
   {

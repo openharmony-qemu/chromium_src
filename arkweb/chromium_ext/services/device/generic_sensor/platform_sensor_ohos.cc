@@ -211,7 +211,9 @@ void PlatformSensorOHOS::StopSensor() {
   int32_t ret = sensor_adapter_->UnsubscribeOhosSensor(
       static_cast<int32_t>(GetType()));
   if (ret != OHOS::NWeb::SENSOR_SUCCESS) {
-    LOG(ERROR) << "UnsubscribeOhosSensor Error, Type: "
+    ret = sensor_adapter_->UnsubscribeOhosSensor(
+      static_cast<int32_t>(GetType()));
+    LOG(INFO) << "Retry UnsubscribeOhosSensor, Type: "
       << GetType() << ", ret: " << ret;
   }
   current_sampling_interval_ = 0;

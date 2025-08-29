@@ -44,5 +44,4 @@ base::Value MockClientSocketPoolManager::SocketPoolInfoToValue() const {
   return base::Value();
 }
 
-void SetConnectTimeout(int seconds) {}
 }  // namespace net

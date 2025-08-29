@@ -11,7 +11,8 @@
 #include <set>
 #include <string>
 #include <vector>
-
+#include "build/build_config.h"
+#include "build/buildflag.h"
 #include "base/compiler_specific.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"

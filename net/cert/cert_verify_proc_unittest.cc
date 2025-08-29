@@ -218,7 +218,7 @@ scoped_refptr<CertVerifyProc> CreateCertVerifyProc(
 #elif BUILDFLAG(IS_OHOS)
     case CERT_VERIFY_PROC_OHOS:
       return base::MakeRefCounted<CertVerifyProcOHOS>(
-          std::move(cert_net_fetcher), std::move(crl_set), false);
+          std::move(cert_net_fetcher));
 #elif BUILDFLAG(IS_IOS)
     case CERT_VERIFY_PROC_IOS:
       return base::MakeRefCounted<CertVerifyProcIOS>(std::move(crl_set));

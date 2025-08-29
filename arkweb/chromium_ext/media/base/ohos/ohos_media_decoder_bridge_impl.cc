@@ -674,11 +674,6 @@ void CodecBridgeCallback::OnNeedOutputData(
     return;
   }
 
-  if (!info) {
-    LOG(ERROR) << "CodecBridgeCallback::OnNeedOutputData info is NULL";
-    return;
-  }
-
   VideoBridgeDecoderOutputBuffer outputBuffer;
   outputBuffer.outputBufferIndex = index;
   outputBuffer.outputBufferFlag = flag;

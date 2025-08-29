@@ -478,7 +478,7 @@ int AttemptVerificationAfterAIAFetch(const bssl::ParsedCertificateList& certs,
   return status;
 }
 
-void ConvertToParsedCertificates(const std::vector<std::string>& cert_bytes,
+int ConvertToParsedCertificates(const std::vector<std::string>& cert_bytes,
                                  bssl::CertErrors& errors,
                                  bssl::ParsedCertificateList& certs) {
   for (const auto& cert : cert_bytes) {

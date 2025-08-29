@@ -29,7 +29,7 @@
 namespace OHOS {
 namespace NWeb {
 
-const int64_t OHMEDIA_NAME_SIZE = 32;
+const int64_t OHMEDIA_NAME_SIZE = 256;
 const std::unordered_map<AllocatorType, IMAGE_ALLOCATOR_TYPE> ALLOC_TYPE_MAP = {
     { AllocatorType::kDmaAlloc, IMAGE_ALLOCATOR_TYPE_DMA },
     { AllocatorType::kShareMemAlloc, IMAGE_ALLOCATOR_TYPE_SHARE_MEMORY },

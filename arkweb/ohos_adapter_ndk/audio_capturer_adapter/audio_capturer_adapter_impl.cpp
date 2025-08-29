@@ -78,6 +78,7 @@ const OH_AudioStream_SourceType DEFAULT_SourceType = AUDIOSTREAM_SOURCE_TYPE_VOI
 AudioCapturerAdapterImpl::~AudioCapturerAdapterImpl() {
     if (callback_index_ > 0) {
         callback_wrapper_.Clear(callback_index_);
+        callback_index_ = 0;
     }
 }
 
@@ -180,6 +181,7 @@ int32_t AudioCapturerAdapterImpl::Create(
 
     if (callback_index_ > 0) {
         callback_wrapper_.Clear(callback_index_);
+        callback_index_ = 0;
     }
     std::shared_ptr<UserDataCallBack> userDataCallBack = std::make_shared<UserDataCallBack>();
     callback_index_ = callback_wrapper_.AddCallback(userDataCallBack);

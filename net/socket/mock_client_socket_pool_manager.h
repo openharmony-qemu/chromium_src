@@ -37,7 +37,7 @@ class MockClientSocketPoolManager : public ClientSocketPoolManager {
   void CloseIdleSockets(const char* net_log_reason_utf8) override;
   ClientSocketPool* GetSocketPool(const ProxyChain& proxy_chain) override;
   base::Value SocketPoolInfoToValue() const override;
-  void SetConnectTimeout(int seconds) override;
+  void SetConnectTimeout(int seconds) override {}
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   void SetConnectJobWithSecureDnsOnlyTimeout(int seconds) override {}
 #endif

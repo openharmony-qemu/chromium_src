@@ -311,7 +311,6 @@ void NotificationPlatformBridgeOhos::Display(
     Profile* profile,
     const message_center::Notification& notification,
     std::unique_ptr<NotificationCommon::Metadata> metadata) {
-  ProfileManager* profile_manager = g_browser_process->profile_manager();
   LOG(INFO) << "NotificationPlatformBridgeOhos::Display: "
             << "id=" << notification.id()
             << "; title=" << notification.title()

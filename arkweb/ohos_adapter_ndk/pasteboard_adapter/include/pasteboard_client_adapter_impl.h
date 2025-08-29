@@ -16,6 +16,7 @@
 #define PASTEBOARD_CLIENT_ADAPTER_IMPL_H
 
 #include "pasteboard_client_adapter.h"
+#include "arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper.h"
 
 #include <mutex>
 #include <database/udmf/udmf.h>
@@ -107,6 +108,7 @@ public:
     uint32_t GetTokenId() override;
     int32_t AddPasteboardChangedObserver(std::shared_ptr<PasteboardObserverAdapter> callback) override;
     void RemovePasteboardChangedObserver(int32_t callbackId) override;
+    static CallbackSharedWrapper<PasteBoardCallback> callbackWrapper_;
 private:
     uint32_t tokenId_ = 0;
     bool isLocalPaste_ = false;
@@ -115,7 +117,7 @@ private:
     std::string webviewPasteDataTag_ = "WebviewPasteDataTag";
     Udmf_ShareOption TransitionCopyOption(CopyOptionMode copyOption);
     OH_Pasteboard* pasteboard_ = nullptr;
-    std::shared_ptr<PasteBoardCallback> pasteCallback_;
+    size_t callbackIndex_ = 0;
 };
 } // namespace OHOS::NWeb
 

@@ -382,10 +382,10 @@ void NWebExtensionActionCefDelegate::OnSetPopup(
     std::optional<bool> includeIncognitoInfo) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   if (NWebExtensionActionDispathcher::GetInstance().HasOnSetPopupV2()) {
-    NWebExtensionActionSetPopupDetailsV2 options = {
+    NWebExtensionActionSetPopupDetailsV2 detailsV2 = {
         details.popup, details.tabId, contextType, includeIncognitoInfo};
     NWebExtensionActionDispathcher::GetInstance().OnSetPopupV2(extensionId,
-                                                               options);
+                                                               detailsV2);
     return;
   }
   if (IsNativeApiEnable()) {

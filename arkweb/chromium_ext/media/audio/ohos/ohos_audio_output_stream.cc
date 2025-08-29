@@ -11,8 +11,8 @@
 #include "content/browser/media/session/media_session_impl.h"
 #include "content/public/browser/web_contents.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#include "media/audio/ohos/ohos_audio_focus_controller.h"
 #include "media/audio/ohos/audio_dump.h"
+#include "media/audio/ohos/ohos_audio_focus_controller.h"
 
 namespace media {
 

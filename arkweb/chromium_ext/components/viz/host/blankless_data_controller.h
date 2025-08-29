@@ -54,14 +54,13 @@ public:
   int32_t SetBlanklessLoadingCacheCapacity(int capacity);
   int32_t GetBlanklessLoadingCacheCapacity() const;
   void CreateTaskManager();
-  void PostDumpTaskWithDelay(uint64_t blankless_key, base::OnceClosure task);
 
 private:
   BlanklessDataController();
   std::shared_ptr<SnapshotInfo> GetHistorySnapshotInfo(uint64_t blankless_key);
-  bool EncodeImage(const SkBitmap& bitmap,
-                   std::string& newFile,
-                   OHOS::NWeb::SnapshotDataItem* snapshotDataItem);
+  static bool EncodeImage(const SkBitmap& bitmap, std::string& newFile, OHOS::NWeb::SnapshotDataItem* snapshotDataItem);
+  static void DumpTask(const base::ohos::BlanklessInfo& info, const SkBitmap& bitmap,
+                       double similarity, int width, int height);
 
 private:
   std::shared_ptr<OHOS::NWeb::OhosWebSnapshotDataBaseCallback> web_snapshot_db_callback_ = nullptr;

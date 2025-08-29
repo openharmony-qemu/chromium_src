@@ -514,7 +514,8 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBufferEOS() {
   if (signal_ == nullptr || signal_->isOnError_) {
     return DecoderAdapterCode::DECODER_ERROR;
   }
-  if (signal_->isDecoderFlushing_.load() || signal_->inputQueue_.empty()) {
+  if (signal_->isDecoderFlushing_.load() || signal_->inputQueue_.empty() ||
+      !isRunning_.load()) {
     return DecoderAdapterCode::DECODER_RETRY;
   }
   if (videoDecoder_ == nullptr) {

@@ -57,7 +57,7 @@ ArkWebDeviceDataManagerUtils* DeviceDataManager::GetArkWebDeviceDataManagerUtils
 }
 
 DeviceDataManager::~DeviceDataManager() {
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS) && !BUILDFLAG(ARKWEB_TEST)
   arkweb_device_data_manager_utils_->CleanupDeviceListeners();
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   instance_ = nullptr;

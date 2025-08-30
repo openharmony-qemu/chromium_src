@@ -24,7 +24,7 @@ class CaretDisplayItemClient;
 class LayoutBlock;
 class GraphicsContext;
 
-class CORE_EXPORT CaretDisplayItemClientUtils :public GarbageCollected<CaretDisplayItemClientUtils> {
+class CORE_EXPORT CaretDisplayItemClientUtils : public GarbageCollected<CaretDisplayItemClientUtils> {
  public:
   CaretDisplayItemClientUtils(
       CaretDisplayItemClient* caret_display_item_client);

@@ -149,7 +149,7 @@ TEST_F(NativeThemeAuraUtilsTest, GetNinePatchAperture_001) {
 }
 
 TEST_F(NativeThemeAuraUtilsTest, PCDeviceTest_001) {
-  auto& system_properties_mock = SystemPropertiesMock::getInstance();
+  auto& system_properties_mock = base::ohos::SystemPropertiesMock::getInstance();
   EXPECT_CALL(system_properties_mock, IsPcDeviceMock())
       .WillOnce(Return(true))
       .WillRepeatedly(Return(true));

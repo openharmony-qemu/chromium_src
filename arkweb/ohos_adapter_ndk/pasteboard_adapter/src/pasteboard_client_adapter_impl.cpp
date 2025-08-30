@@ -927,6 +927,10 @@ PasteBoardClientAdapterImpl::PasteBoardClientAdapterImpl()
 PasteBoardClientAdapterImpl :: ~PasteBoardClientAdapterImpl()
 {
     OH_Pasteboard_Destroy(pasteboard_);
+    if (callbackIndex_ > 0) {
+        callbackWrapper_.Clear(callbackIndex_);
+        callbackIndex_ = 0;
+    }
 }
 
 Udmf_ShareOption PasteBoardClientAdapterImpl::TransitionCopyOption(CopyOptionMode copyOption)
@@ -1070,14 +1074,17 @@ uint32_t PasteBoardClientAdapterImpl::GetTokenId()
     return tokenId_;
 }
 
+CallbackSharedWrapper<PasteBoardCallback> PasteBoardClientAdapterImpl::callbackWrapper_;
+
 void PasteBoardNotify(void* context, Pasteboard_NotifyType type)
 {
     if (context == nullptr) {
         WVLOG_E("PasteBoardNotify failed, context is NULL");
         return;
     }
+    size_t callbackIndex = reinterpret_cast<size_t>(context);
     std::shared_ptr<PasteBoardCallback> pasteBoardCallback =
-                *(static_cast<std::shared_ptr<PasteBoardCallback>*>(context));
+        PasteBoardClientAdapterImpl::callbackWrapper_.GetCallback(callbackIndex);
     pasteBoardCallback->callback->OnPasteboardChanged();
 }
 
@@ -1092,8 +1099,13 @@ int32_t PasteBoardClientAdapterImpl::AddPasteboardChangedObserver(
     static int32_t count = 0;
     int32_t id = -1;
     if (callback) {
-        pasteCallback_ = std::make_shared<PasteBoardCallback>();
-        pasteCallback_->callback = callback;
+        std::shared_ptr<PasteBoardCallback> pasteCallback = std::make_shared<PasteBoardCallback>();
+        pasteCallback->callback = callback;
+        if (callbackIndex_ > 0) {
+            callbackWrapper_.Clear(callbackIndex_);
+            callbackIndex_ = 0;
+        }
+        callbackIndex_ = callbackWrapper_.AddCallback(pasteCallback);
         OH_PasteboardObserver* observer = nullptr;
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -1102,7 +1114,7 @@ int32_t PasteBoardClientAdapterImpl::AddPasteboardChangedObserver(
                 return -1;
             }
 
-            auto ret = OH_PasteboardObserver_SetData(observer, static_cast<void*>(&pasteCallback_),
+            auto ret = OH_PasteboardObserver_SetData(observer, reinterpret_cast<void*>(callbackIndex_),
                                                      PasteBoardNotify, PasteBoardFinalize);
             if (ret != ERR_OK) {
                 WVLOG_E("PasteboardObserver SetData failed. error code is : %{public}d", ret);

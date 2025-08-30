@@ -3703,7 +3703,9 @@ test("base_unittests") {
     sources += arkweb_crashpad_sources
     sources += arkweb_crashpad_dfx_sources
     sources += arkweb_crashpad_dfx_unittest_sources
-
+    sources += arkweb_policy_loader_ohos_unittest_source
+    sources += arkweb_proxy_config_service_ohos_unittest_source
+    sources += arkweb_base_ohos_ltpo_unittests_sources
     sources += [
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
     ]
@@ -3717,6 +3719,7 @@ test("base_unittests") {
       "//components/autofill/core/browser",
       "//components/subresource_filter/content/browser",
     ]
+
   }
 
   if (!is_cronet_build) {

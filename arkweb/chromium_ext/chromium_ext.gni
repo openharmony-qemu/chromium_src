@@ -724,6 +724,9 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/base/datashare_uri_utils_unittest.cc",
   "//arkweb/chromium_ext/base/ohos/dynamic_frame_loss_monitor_unittests.cc",
   "//arkweb/chromium_ext/base/ohos/blankless/blankless_controller_unittest.cc",
+  "//arkweb/chromium_ext/base/ohos/d_vsync/src/d_vsync_controller_unittests.cc",
+  "//arkweb/chromium_ext/base/ohos/locale_utils_unittests.cc",
+  "//arkweb/chromium_ext/base/ohos/scoped_native_buffer_handle_unittests.cc",
   "//arkweb/chromium_ext/base/report_loss_frame_unittest.cc",
   "//arkweb/chromium_ext/base/debug/stack_trace_ohos_unittest.cc",
   "//arkweb/chromium_ext/base/files/file_util_posix_unittest.cc",
@@ -740,6 +743,7 @@ arkweb_base_unittest_sources = [
   "//arkweb/ohos_adapter_ndk/hiviewdfx_adapter/hitrace_adapter_impl_unittest.cc",
   "//arkweb/ohos_adapter_ndk/net_proxy_adapter_impl/net_proxy_adapter_impl_unittest.cc",
   "//arkweb/ohos_adapter_ndk/net_connect_adapter/net_connect_adapter_impl_unittest.cc",
+  "//arkweb/chromium_ext/base/ohos/sys_info_utils_ext_unittests.cc",
 ]
 
 arkweb_base_trace_event_sources = [

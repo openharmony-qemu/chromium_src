@@ -13,12 +13,14 @@
  * limitations under the License.
  */
 
+#include <string>
 #define private public
 #include "base/ohos/blankless/blankless_controller.h"
 #undef private
 #include "base/time/time.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "base/time/time_utils.h"
 
 namespace base {
 namespace ohos {
@@ -39,6 +41,19 @@ protected:
 
   int32_t nweb_id1 = 1;
 };
+
+TEST_F(BlanklessControllerTest, CheckWhiteList01) {
+  std::string url = "abc";
+  EXPECT_FALSE(controller.m_white_list_.CheckWhiteList(url));  
+
+  EXPECT_FALSE(controller.m_white_list_.CheckWhiteList(url));
+}
+
+TEST_F(BlanklessControllerTest, CheckWhiteList02) {
+  std::string url = "abc";
+  controller.m_white_list_.m_is_loaded_ = true;
+  EXPECT_FALSE(controller.m_white_list_.CheckWhiteList(url));
+}
 
 TEST_F(BlanklessControllerTest, FrameRemoveCallback)
 {

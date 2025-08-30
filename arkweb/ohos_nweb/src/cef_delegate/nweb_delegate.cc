@@ -99,7 +99,7 @@
 
 #if BUILDFLAG(ARKWEB_AI)
 #include "ohos_resources/data_detector/grit/data_detector_resources.h"
-#include "ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
+#include "arkweb/chromium_ext/ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
 #include "ui/base/resource/resource_bundle.h"
 #endif // BUILDFLAG(ARKWEB_AI)
 

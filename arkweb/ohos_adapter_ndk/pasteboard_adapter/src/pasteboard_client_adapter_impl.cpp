@@ -927,6 +927,10 @@ PasteBoardClientAdapterImpl::PasteBoardClientAdapterImpl()
 PasteBoardClientAdapterImpl :: ~PasteBoardClientAdapterImpl()
 {
     OH_Pasteboard_Destroy(pasteboard_);
+    if (callbackIndex_ > 0) {
+        callbackWrapper_.Clear(callbackIndex_);
+        callbackIndex_ = 0;
+    }
 }
 
 Udmf_ShareOption PasteBoardClientAdapterImpl::TransitionCopyOption(CopyOptionMode copyOption)
@@ -1099,6 +1103,7 @@ int32_t PasteBoardClientAdapterImpl::AddPasteboardChangedObserver(
         pasteCallback->callback = callback;
         if (callbackIndex_ > 0) {
             callbackWrapper_.Clear(callbackIndex_);
+            callbackIndex_ = 0;
         }
         callbackIndex_ = callbackWrapper_.AddCallback(pasteCallback);
         OH_PasteboardObserver* observer = nullptr;

@@ -59,6 +59,8 @@ TEST_F(LocaleUtilsTest, IsTraditionalLanguage002) {
   EXPECT_CALL(*instance, GetResourceAdapter("")).WillOnce(testing::Return(testing::ByMove(std::move(adapter))));
   EXPECT_CALL(*adapter_ptr, GetSystemLanguage()).WillOnce(testing::Return("zh-Hant"));
   EXPECT_TRUE(IsTraditionalLanguage());
+  OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
 }
 
 TEST_F(LocaleUtilsTest, ComputeLanguageByRegionDefault) {
@@ -82,6 +84,8 @@ TEST_F(LocaleUtilsTest, ComputeLanguageByRegionHant001) {
   EXPECT_CALL(*instance, GetResourceAdapter("")).WillOnce(testing::Return(testing::ByMove(std::move(adapter))));
   EXPECT_CALL(*adapter_ptr, GetSystemLanguage()).WillOnce(testing::Return("zh-Hant"));
   EXPECT_EQ(ComputeLanguageByRegion("HK"), "zh-HK");
+  OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
 }
 
 TEST_F(LocaleUtilsTest, ComputeLanguageByRegionHant002) {
@@ -92,6 +96,8 @@ TEST_F(LocaleUtilsTest, ComputeLanguageByRegionHant002) {
   EXPECT_CALL(*instance, GetResourceAdapter("")).WillOnce(testing::Return(testing::ByMove(std::move(adapter))));
   EXPECT_CALL(*adapter_ptr, GetSystemLanguage()).WillOnce(testing::Return("zh-Hant"));
   EXPECT_EQ(ComputeLanguageByRegion("MO"), "zh-HK");
+  OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
 }
 
 TEST_F(LocaleUtilsTest, ComputeLanguageByRegionHant003) {
@@ -102,6 +108,8 @@ TEST_F(LocaleUtilsTest, ComputeLanguageByRegionHant003) {
   EXPECT_CALL(*instance, GetResourceAdapter("")).WillOnce(testing::Return(testing::ByMove(std::move(adapter))));
   EXPECT_CALL(*adapter_ptr, GetSystemLanguage()).WillOnce(testing::Return("zh-Hant"));
   EXPECT_EQ(ComputeLanguageByRegion("TW"), "zh-TW");
+  OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
 }
 
 TEST_F(LocaleUtilsTest, ComputeLanguageByRegion004) {
@@ -112,6 +120,8 @@ TEST_F(LocaleUtilsTest, ComputeLanguageByRegion004) {
   EXPECT_CALL(*instance, GetResourceAdapter("")).WillOnce(testing::Return(testing::ByMove(std::move(adapter))));
   EXPECT_CALL(*adapter_ptr, GetSystemLanguage()).WillOnce(testing::Return("en"));
   EXPECT_EQ(ComputeLanguageByRegion("en-US"), "en-US");
+  OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
 }
 
 TEST_F(LocaleUtilsTest, ComputeLanguageByRegion005) {
@@ -122,6 +132,8 @@ TEST_F(LocaleUtilsTest, ComputeLanguageByRegion005) {
   EXPECT_CALL(*instance, GetResourceAdapter("")).WillOnce(testing::Return(testing::ByMove(std::move(adapter))));
   EXPECT_CALL(*adapter_ptr, GetSystemLanguage()).WillOnce(testing::Return("zh"));
   EXPECT_EQ(ComputeLanguageByRegion("zh-CN"), "zh-CN");
+  OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
 }
 
 TEST_F(LocaleUtilsTest, ComputeLanguageByRegion006) {
@@ -132,6 +144,8 @@ TEST_F(LocaleUtilsTest, ComputeLanguageByRegion006) {
   EXPECT_CALL(*instance, GetResourceAdapter("")).WillOnce(testing::Return(testing::ByMove(std::move(adapter))));
   EXPECT_CALL(*adapter_ptr, GetSystemLanguage()).WillOnce(testing::Return("bo"));
   EXPECT_EQ(ComputeLanguageByRegion("bo-CN"), "bo-CN");
+  OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
 }
 
 
@@ -143,6 +157,8 @@ TEST_F(LocaleUtilsTest, ComputeLanguageByRegion007) {
   EXPECT_CALL(*instance, GetResourceAdapter("")).WillOnce(testing::Return(testing::ByMove(std::move(adapter))));
   EXPECT_CALL(*adapter_ptr, GetSystemLanguage()).WillOnce(testing::Return("ug"));
   EXPECT_EQ(ComputeLanguageByRegion("ug"), "ug");
+  OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
 }
 
 TEST_F(LocaleUtilsTest, ComputeLanguageByRegion008) {
@@ -153,6 +169,8 @@ TEST_F(LocaleUtilsTest, ComputeLanguageByRegion008) {
   EXPECT_CALL(*instance, GetResourceAdapter("")).WillOnce(testing::Return(testing::ByMove(std::move(adapter))));
   EXPECT_CALL(*adapter_ptr, GetSystemLanguage()).WillOnce(testing::Return("aa"));
   EXPECT_EQ(ComputeLanguageByRegion("ug"), "");
+  OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
 }
 }  // namespace ohos
 }  // namespace base

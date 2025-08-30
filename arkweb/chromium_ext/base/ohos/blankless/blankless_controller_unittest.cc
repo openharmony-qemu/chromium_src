@@ -44,8 +44,6 @@ protected:
 
 TEST_F(BlanklessControllerTest, CheckWhiteList01) {
   std::string url = "abc";
-  EXPECT_FALSE(controller.m_white_list_.CheckWhiteList(url));  
-
   EXPECT_FALSE(controller.m_white_list_.CheckWhiteList(url));
 }
 

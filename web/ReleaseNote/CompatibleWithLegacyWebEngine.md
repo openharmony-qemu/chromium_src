@@ -441,8 +441,7 @@ static setWebDebuggingAccess(webDebuggingAccess: boolean, port: number): void;
 * **接口作用说明**:
   设置是否启用无线网页调试功能，默认不开启。
 * **接口在M114遗留内核上的行为**:
-  若开发者在M114内核中使用该[接口](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#setwebdebuggingaccess20)，仅会启用网页调试功能，而端口设置无效，接口效果与 `static setWebDebuggingAccess(webDebuggingAccess: boolean): void`一致。
-  不建议开发者在M114内核中使用以上接口，建议开发者通过 `static setWebDebuggingAccess(webDebuggingAccess: boolean): void`[接口](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#setwebdebuggingaccess)替代。
+  [setWebDebuggingAccess(webDebuggingAccess: boolean, port: number)](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#setwebdebuggingaccess20)的`port: number`端口设置无效，建议开发者直接使用[static setWebDebuggingAccess(webDebuggingAccess: boolean): void](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-apis-webview-WebviewController.md#setwebdebuggingaccess)。
 
 #### WebResourceHandler didFail接口
 
@@ -897,13 +896,12 @@ onLoadFinished(callback: Callback<OnLoadFinishedEvent>): WebAttribute;
  * The callback of onOverrideErrorPage.
  *
  * @typedef { function } OnOverrideErrorpageCallback
- * @param { WebResourceRequest } webResourceRequest - Information about the failed request.
- * @param { error } WebResourceError - The information of error.
+ * @param { OnErrorReceiveEvent } errorPageEvent - The information of error.
  * @returns { string } - Return an HTML text content encoded in Base64.
  * @syscap SystemCapability.Web.Webview.Core
  * @since 20
  */
-type OnOverrideErrorPageCallback= (webResourceRequest: WebResourceRequest, error: WebResourceError) => string;
+type OnOverrideErrorPageCallback = (errorPageEvent: OnErrorReceiveEvent) => string;
 
 /**
  * Triggered when the web page's document resource error.
@@ -1599,7 +1597,7 @@ void OH_NativeArkWeb_RegisterAsyncThreadJavaScriptProxy(const char* webTag,
 ```
 
 * **接口作用说明**:
-  ndk接口支持在异步线程注册JavaScriptProxy，避免ui线程繁忙导致的阻塞。
+  ndk接口支持在工作线程执行JavaScriptProxy注册对象的方法，避免ui线程繁忙导致的阻塞。
 * **接口在M114遗留内核上的行为**:
   设置不生效，不会抛异常，也不会返回错误码。
   不建议开发者在M114内核中使用以上接口。
@@ -1658,7 +1656,7 @@ int bytesRead);
 ```
 
 * **接口作用说明**:
-  ArkWebHttpBodyStream_AsyncRead 支持异步异步数据，常用于性能优化 。
+  ArkWebHttpBodyStream_AsyncRead 支持异步数据，常用于性能优化 。
 * **接口在M114遗留内核上的行为**:
   OH_ArkWebHttpBodyStream_SetAsyncReadCallback 设置不生效，返回错误码17100100。
   OH_ArkWebHttpBodyStream_AsyncRead 不执行操作。

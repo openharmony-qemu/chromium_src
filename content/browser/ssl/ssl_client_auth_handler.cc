@@ -105,7 +105,7 @@ void SSLClientAuthHandler::DidGetClientCertsOnPostTask(
     net::ClientCertIdentityList client_certs) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
-  if (!browser_context_) {
+  if (!browser_context_ || !web_contents_) {
     delegate_->CancelCertificateSelection();
     return;
   }

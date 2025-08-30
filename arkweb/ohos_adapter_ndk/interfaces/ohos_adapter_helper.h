@@ -154,6 +154,8 @@ public:
 
     virtual std::unique_ptr<SensorAdapter> CreateSensorAdapter() = 0;
 
+    virtual void SetApplicationResourceManager(void* mgr) = 0;
+
     virtual void SetArkWebCoreHapPathOverride(const std::string& hapPath) = 0;
 
     virtual OhosNativeBufferAdapter& GetOhosNativeBufferAdapter() = 0;

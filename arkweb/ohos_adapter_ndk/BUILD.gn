@@ -92,6 +92,22 @@ component("adapter_extractortool") {
   public_configs = [ ":ability_extractor_config" ]
 }
 
+source_set("ohos_adapter_napi") {
+  sources = [
+    "ohos_adapter_napi/ohos_adapter_napi.cpp"
+  ]
+
+  include_dirs = [
+    "interfaces"
+  ]
+
+  libs = [
+    "ace_napi.z",
+    "rawfile.z",
+    "hilog_ndk.z"
+  ]
+}
+
 config("adapter_ndk_config") {
   ldflags = wrapper_ldflags
 }

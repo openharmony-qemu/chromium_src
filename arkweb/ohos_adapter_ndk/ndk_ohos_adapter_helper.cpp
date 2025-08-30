@@ -323,6 +323,11 @@ NDKOhosAdapterHelper::CreateMigrationMgrAdapter() {
   return std::make_unique<MigrationManagerAdapterImpl>();
 }
 
+void NDKOhosAdapterHelper::SetApplicationResourceManager(void* mgr)
+{
+    OhosResourceAdapterImpl::SetApplicationResourceManager(mgr);
+}
+
 NWeb::QosManagerAdapter& NDKOhosAdapterHelper::GetQosManagerInstance()
 {
     return QosManagerAdapterImpl::GetInstance();

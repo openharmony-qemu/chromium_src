@@ -58,6 +58,10 @@ void PaintTimingDetectorUtils::NotifyLcpForBlankless() {
   if (!base::ohos::BlanklessController::CheckGlobalProperty()) {
     return;
   }
+  if (!paint_timing_detector_ || !paint_timing_detector_->frame_view_
+      || !paint_timing_detector_->frame_view_->GetFrame()) {
+    return;
+  }
   Document* document = paint_timing_detector_->frame_view_->GetFrame().GetDocument();
   if (!document) {
     return;

@@ -14,17 +14,15 @@
  */
 
 #include "ohos_image_decoder_adapter_impl.h"
+#include <cerrno>
+#include <climits>
+#include <cstdlib>
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 #include "fstream"
 #include "istream"
 #include "sstream"
 #include "string"
 #include "third_party/bounds_checking_function/include/securec.h"
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-#include <errno.h>
-#include <limits.h>
-#include <stdlib.h>
-#endif
 
 namespace OHOS {
 namespace NWeb {
@@ -430,7 +428,6 @@ void* OhosImageDecoderAdapterImpl::GetDecodeData()
 }
 // LCOV_EXCL_STOP
 
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 bool OhosImageDecoderAdapterImpl::DecodeByPath(const std::string& path, AllocatorType type)
 {
     if (path.empty()) {
@@ -489,6 +486,6 @@ bool OhosImageDecoderAdapterImpl::DecodeByPath(const std::string& path, Allocato
     ReleaseDecodeOptions(decodeOptions);
     return true;
 }
-#endif
+
 }  // namespace NWeb
 }  // namespace OHOS

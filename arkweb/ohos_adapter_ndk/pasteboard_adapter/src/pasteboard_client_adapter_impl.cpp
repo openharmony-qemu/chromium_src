@@ -1109,7 +1109,7 @@ int32_t PasteBoardClientAdapterImpl::AddPasteboardChangedObserver(
                 return -1;
             }
 
-            auto ret = OH_PasteboardObserver_SetData(observer, reinterpret_cast<void*>(callbackIndex_)
+            auto ret = OH_PasteboardObserver_SetData(observer, reinterpret_cast<void*>(callbackIndex_),
                                                      PasteBoardNotify, PasteBoardFinalize);
             if (ret != ERR_OK) {
                 WVLOG_E("PasteboardObserver SetData failed. error code is : %{public}d", ret);

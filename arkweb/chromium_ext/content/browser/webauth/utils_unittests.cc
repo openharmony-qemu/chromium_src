@@ -67,4 +67,32 @@ TEST_F(UtilsTest, Convert005) {
     auto result = Convert(mediation);
     EXPECT_EQ(result, temp);
 }
+
+TEST_F(UtilsTest, Convert006) {
+    const blink::mojom::Hint hint = blink::mojom::Hint::SECURITY_KEY;
+    device::CredentialHint temp = device::CredentialHint::kSecurityKey;
+    auto result = Convert(hint);
+    EXPECT_EQ(result, temp);
+}
+
+TEST_F(UtilsTest, Convert007) {
+    const blink::mojom::Hint hint = blink::mojom::Hint::CLIENT_DEVICE;
+    device::CredentialHint temp = device::CredentialHint::kClientDevice;
+    auto result = Convert(hint);
+    EXPECT_EQ(result, temp);
+}
+
+TEST_F(UtilsTest, Convert008) {
+    const blink::mojom::Hint hint = blink::mojom::Hint::HYBRID;
+    device::CredentialHint temp = device::CredentialHint::kHintHybrid;
+    auto result = Convert(hint);
+    EXPECT_EQ(result, temp);
+}
+
+TEST_F(UtilsTest, Convert009) {
+    const blink::mojom::Hint hint = static_cast<blink::mojom::Hint>(-1);
+    device::CredentialHint temp = device::CredentialHint::kHintHybrid;
+    auto result = Convert(hint);
+    EXPECT_EQ(result, temp);
+}
 } // content

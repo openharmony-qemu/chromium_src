@@ -4625,9 +4625,7 @@ bool NWebDelegate::GetAccessibilityVisible(int64_t accessibilityId) {
     LOG(ERROR) << "GetAccessibilityNodeInfoById node is not found";
     return true;
   }
-  ui::AXOffscreenResult offscreen_result = ui::AXOffscreenResult::kOnscreen;
-  node->GetUnclippedRootFrameBoundsRect(&offscreen_result);
-  return offscreen_result == ui::AXOffscreenResult::kOnscreen;
+  return !node->IsInvisibleOrIgnored();
 }
 
 std::shared_ptr<NWebAccessibilityNodeInfo>

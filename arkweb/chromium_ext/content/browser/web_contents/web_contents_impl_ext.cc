@@ -477,6 +477,13 @@ void WebContentsImplExt::OnRenderFrameHostLeaveBackForwardCache(
     native_web_contents_observer_->OnRenderFrameHostLeaveBackForwardCache(id);
   }
 }
+
+void WebContentsImplExt::OnNativeEmbedObjectParamChange(
+    const NativeEmbedParamDataInfo& native_param_info) {
+  if (delegate_) {
+    delegate_->OnNativeEmbedObjectParamChange(native_param_info);
+  }
+}
 // LCOV_EXCL_STOP
 #endif
 

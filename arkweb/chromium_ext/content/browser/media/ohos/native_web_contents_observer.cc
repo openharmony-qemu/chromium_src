@@ -339,5 +339,37 @@ void NativeWebContentsObserver::OnNativeBridgeAdded(
       std::move(native_bridge_observer));
 }
 
+void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
+    OnEmbedObjectParamChange(media::mojom::NativeEmbedParamChangeInfoPtr change_info) {
+  if (!native_web_contents_observer_ ||
+      !(native_web_contents_observer_->web_contents_impl())) {
+    return;
+  }
+
+  NativeEmbedParamDataInfo native_param_info;
+  native_param_info.embed_id = change_info->embed_id;
+  native_param_info.object_attribute_id = change_info->object_attribute_id;
+  for (const auto& mojo_item : change_info->param_items) {
+    content::NativeEmbedParamItem native_item;
+    switch (mojo_item->status) {
+      case media::mojom::NativeEmbedParamStatus::kAdd:
+        native_item.status = content::NativeEmbedParamStatus::kAdd;
+        break;
+      case media::mojom::NativeEmbedParamStatus::kUpdate:
+        native_item.status = content::NativeEmbedParamStatus::kUpdate;
+        break;
+      case media::mojom::NativeEmbedParamStatus::kDelete:
+        native_item.status = content::NativeEmbedParamStatus::kDelete;
+        break;
+    }
+    native_item.id = mojo_item->id;
+    native_item.name = mojo_item->name;
+    native_item.value = mojo_item->value;
+    native_param_info.param_items.push_back(native_item);
+  }
+  native_web_contents_observer_->web_contents_impl()->OnNativeEmbedObjectParamChange(
+      native_param_info);
+}
+
 }  // namespace content
                        

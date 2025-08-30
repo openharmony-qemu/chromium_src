@@ -62,6 +62,8 @@ virtual void OnNativeEmbedFirstFramePaint(
     const std::string& embed_id_attribute) {}
 virtual void OnLayerRectVisibilityChange(const std::string& embed_id,
                                          bool visibility) {}
+virtual void OnNativeEmbedObjectParamChange(
+    const NativeEmbedParamDataInfo& native_param_info) {}
 #endif
 
 #if BUILDFLAG(ARKWEB_BFCACHE)

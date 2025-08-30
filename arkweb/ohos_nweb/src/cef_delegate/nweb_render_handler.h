@@ -201,6 +201,8 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
                                     const CefNativeEmbedData& info) override;
   void OnNativeEmbedVisibilityChange(const CefString& embed_id,
                                      bool visibility) override;
+  void OnNativeEmbedObjectParamChange(CefRefPtr<CefBrowser> browser,
+                                      const CefNativeParamData& paramData) override;
   void OnScrollStart(CefRefPtr<CefBrowser> browser,
                      const float x,
                      const float y) override;
@@ -217,6 +219,8 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
                          bool& isAvailable) override;
   std::shared_ptr<NWebNativeEmbedDataInfo> CefEmbedDataToWeb(
       const CefNativeEmbedData& embedData);
+  std::shared_ptr<NWebNativeEmbedParamDataInfo> CefEmbedParamDataToWeb(
+      const CefNativeParamData& paramData);
   void SetContentSize(int width, int height);
   void SetGestureEventResult(bool result) override;
   bool GetGestureEventResult();

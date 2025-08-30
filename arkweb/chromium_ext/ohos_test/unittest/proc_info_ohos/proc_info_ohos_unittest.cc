@@ -14,6 +14,7 @@
  */
 
  #include "arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/proc_info_ohos.h"
+ #include <gtest/gtest.h>
  #include <string>
  #include <sys/time.h>
  #include <iostream>

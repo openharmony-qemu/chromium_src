@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -42,7 +42,7 @@ void DumpFileUtil::WriteDumpFile(FILE* dumpFile,
 }
 
 void DumpFileUtil::CloseDumpFile(FILE** dumpFile) {
-  if (*dumpFile == nullptr) {
+  if (dumpFile == nullptr || *dumpFile == nullptr) {
     return;
   }
   int rc = fclose(*dumpFile);
@@ -54,6 +54,9 @@ void DumpFileUtil::CloseDumpFile(FILE** dumpFile) {
 }
 
 void DumpFileUtil::OpenDumpFile(std::string filename, FILE** file) {
+  if (!file) {
+    return;
+  }
   std::string filePath = DUMP_APP_DIR + filename;
   FILE* dumpFile = nullptr;
   bool res = OHOS::NWeb::OhosAdapterHelper::GetInstance()

@@ -692,9 +692,10 @@ bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
       LOG(ERROR) << "OHOSAudioDecoder::OnDecodedFrame buffer data is invalid";
       return false;
   }
+
   if (audio_decoder_ == nullptr) {
     LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
-    return AudioDecoderAdapterCode::DECODER_ERROR;
+    return false;
   }
 
   LOG(DEBUG) << "OHOSAudioDecoder::OnDecodedFrame";

@@ -144,7 +144,7 @@ CodecCodeAdapter VideoEncoderAdapterImpl::SetCodecCallback(const std::shared_ptr
 
     if (callback_index_ > 0) {
         callback_wrapper_.Clear(callback_index_);
-        callback_index = 0;
+        callback_index_ = 0;
     }
     callback_index_ = callback_wrapper_.AddCallback(encode_callback);
 

@@ -26,7 +26,7 @@ class CORE_EXPORT LayoutObjectUtils {
 
 #if BUILDFLAG(ARKWEB_MENU)
   bool ArkWebVisibleToHitTestRequest(const HitTestRequest& request) const;
-  static bool hit_test_mode_;
+  static bool get_position_mode_;
 #endif
 };
 }  // namespace blink

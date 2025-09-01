@@ -1094,11 +1094,6 @@ void NWebDelegate::OnTouchPress(int32_t id,
                                  y / default_virtual_pixel_ratio_,
                                  from_overlay);
   }
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  if (render_handler_ != nullptr) {
-    render_handler_->SetIrregularDragBackground(true);
-  }
-#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 void NWebDelegate::OnTouchRelease(int32_t id,
@@ -1199,11 +1194,6 @@ void NWebDelegate::SendMouseEvent(int x,
                                    y / default_virtual_pixel_ratio_, button,
                                    action, count);
   }
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  if (render_handler_ != nullptr) {
-    render_handler_->SetIrregularDragBackground(false);
-  }
-#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -3454,11 +3444,6 @@ void NWebDelegate::WebSendMouseEvent(
     LOG(INFO) << "Mouse Event dropped! event_handler is " << !!event_handler_;
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
   }
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  if (render_handler_ != nullptr) {
-    render_handler_->SetIrregularDragBackground(false);
-  }
-#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 void NWebDelegate::ScrollToWithAnime(float x, float y, int32_t duration) {

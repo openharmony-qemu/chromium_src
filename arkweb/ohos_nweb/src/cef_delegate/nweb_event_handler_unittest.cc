@@ -485,6 +485,9 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void CreateWebPrintDocumentAdapter(const CefString& jobName,
                                      void** webPrintDocumentAdapter) override {}
 
+  void CreateWebPrintDocumentAdapterV2(const CefString& jobName,
+                                       void** adapter) override {}
+
   void SetOverscrollMode(int mode) override {}
 
   bool Discard() override { return false; }

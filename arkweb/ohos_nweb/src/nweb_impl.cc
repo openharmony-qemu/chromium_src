@@ -2676,6 +2676,31 @@ bool NWebImpl::TerminateRenderProcess() {
 }
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+NWebPrintDocumentAdapterAdapterImpl::~NWebPrintDocumentAdapterAdapterImpl() {
+  if (ref_) {
+    delete ref_;
+  }
+}
+
+void NWebPrintDocumentAdapterAdapterImpl::OnStartLayoutWrite(
+    const std::string& jobId,
+    std::shared_ptr<NWebPrintAttributesAdapter> oldAttrs,
+    std::shared_ptr<NWebPrintAttributesAdapter> newAttrs, uint32_t fd,
+    std::shared_ptr<NWebPrintWriteResultCallbackAdapter> callback) {
+  if (ref_) {
+    ref_->OnStartLayoutWrite(jobId, oldAttrs, newAttrs, fd, callback);
+  }
+}
+
+void NWebPrintDocumentAdapterAdapterImpl::OnJobStateChanged(
+    const std::string& jobId, uint32_t state) {
+  if (ref_) {
+    ref_->OnJobStateChanged(jobId, state);
+  }
+}
+#endif
+
 bool NWebImpl::GetFavicon(const void** data,
                           size_t& width,
                           size_t& height,
@@ -3280,6 +3305,16 @@ void* NWebImpl::CreateWebPrintDocumentAdapter(const std::string& jobName) {
     return nullptr;
   }
   return nweb_delegate_->CreateWebPrintDocumentAdapter(jobName);
+}
+
+std::unique_ptr<OHOS::NWeb::NWebPrintDocumentAdapterAdapter>
+    NWebImpl::CreateWebPrintDocumentAdapterV2(const std::string& jobName) {
+  if (nweb_delegate_ == nullptr) {
+    return nullptr;
+  }
+  void* adapter = nweb_delegate_->CreateWebPrintDocumentAdapterV2(jobName);
+  return std::make_unique<NWebPrintDocumentAdapterAdapterImpl>(
+    static_cast<OHOS::NWeb::NWebPrintDocumentAdapterAdapter*>(adapter));
 }
 
 void NWebImpl::SetPrintBackground(bool enable) {

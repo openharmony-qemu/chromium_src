@@ -4006,6 +4006,20 @@ void* NWebDelegate::CreateWebPrintDocumentAdapter(const std::string& jobName) {
   return webPrintDocumentAdapter;
 }
 
+void* NWebDelegate::CreateWebPrintDocumentAdapterV2(
+    const std::string& jobName) {
+  LOG(DEBUG) << "Create Web print document adapter v2 jobName = " << jobName;
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "CreateWebPrintDocumentAdapterV2 can not get browser";
+    return nullptr;
+  }
+
+  void* webPrintDocumentAdapter = nullptr;
+  GetBrowser()->GetHost()->CreateWebPrintDocumentAdapterV2(
+      CefString(jobName), &webPrintDocumentAdapter);
+  return webPrintDocumentAdapter;
+}
+
 void NWebDelegate::SetPrintBackground(bool enable) {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
     LOG(ERROR) << "SetPrintBackground can not get browser";

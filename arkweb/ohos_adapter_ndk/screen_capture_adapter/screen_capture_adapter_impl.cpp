@@ -745,7 +745,7 @@ void OH_AudioBufferAdapterImpl::InitAudioBufferAdapterImpl(OH_AVBuffer* avBuffer
 {
     OH_AVCodecBufferAttr info;
     if (!avBuffer) {
-        LOG(ERROR) << "InitAudioBufferAdapterImpl avBuffer is nullptr";
+        WVLOG_E("InitAudioBufferAdapterImpl avBuffer is nullptr");
         return;
     }
     OH_AVBuffer_GetBufferAttr(avBuffer, &info);

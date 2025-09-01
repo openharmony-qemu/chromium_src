@@ -204,11 +204,9 @@ void HostResolverManager::ReportSecureFallbackDnsResult(
        << ", result=" << secure_fallback_results.error()
        << ", duration=" << duration.InMilliseconds();
 
-  LOG(INFO) << "event_message: " << ostr.str() << ", resource: "
-            << url::LogUtils::ConvertUrlWithMask(host);
+  LOG(INFO) << "event_message: " << ostr.str() << ", resource: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: "
-                     << url::LogUtils::ConvertUrlWithMask(host);
+  LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: ***";
 #endif
 }
 
@@ -220,11 +218,9 @@ void HostResolverManager::ReportDnsTransactionResult(int index,
   ostr << "dns_type=" << kDnsTransactionString[index]
        << ", v4result=" << result_for_ipv4 << ", v6result=" << result_for_ipv6;
 
-  LOG(INFO) << "event_message: " << ostr.str() << ", resource: "
-            << url::LogUtils::ConvertUrlWithMask(host);
+  LOG(INFO) << "event_message: " << ostr.str() << ", resource: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: "
-                     << url::LogUtils::ConvertUrlWithMask(host);
+  LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: ***";
 #endif
 }
 #endif

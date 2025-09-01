@@ -48,7 +48,7 @@ bool NWebExtensionTabCefDelegate::HasExtensionListener() {
 }
 
 bool NWebExtensionTabCefDelegate::CreateTab(
-    NWebTabCreateInfo& create_info,
+    NWebTabCreateInfoV2& create_info,
     TabCreatedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
@@ -76,7 +76,7 @@ void NWebExtensionTabCefDelegate::TabCreateCallback(
 
 bool NWebExtensionTabCefDelegate::UpdateTab(
     int tab_id,
-    NWebExtensionTabUpdateProperties& update_properties,
+    NWebExtensionTabUpdatePropertiesV2& update_properties,
     TabUpdatedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;

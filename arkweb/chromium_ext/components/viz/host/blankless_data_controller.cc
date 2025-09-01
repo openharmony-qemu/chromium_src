@@ -433,9 +433,13 @@ std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::
     SkBitmap bitmap;
     if (snapshotDataItem.wholePath.length() > DUMP_FILE_HEIC_TYPE.length()) {
       bool res = false;
-      if (snapshotDataItem.wholePath.rfind(DUMP_FILE_PNG_TYPE) == snapshotDataItem.wholePath.length() - DUMP_FILE_PNG_TYPE.length()) {
+      if (snapshotDataItem.wholePath.rfind(DUMP_FILE_PNG_TYPE)
+          == snapshotDataItem.wholePath.length() - DUMP_FILE_PNG_TYPE.length()) {
+        LOG(DEBUG) << "blankless LoadBitmap, path:" << snapshotDataItem.wholePath.c_str();
         res = LoadBitmap(snapshotDataItem.wholePath.c_str(), bitmap);
-      } else if (snapshotDataItem.wholePath.rfind(DUMP_FILE_HEIC_TYPE) == snapshotDataItem.wholePath.length() - DUMP_FILE_HEIC_TYPE.length()) {
+      } else if (snapshotDataItem.wholePath.rfind(DUMP_FILE_HEIC_TYPE)
+                 == snapshotDataItem.wholePath.length() - DUMP_FILE_HEIC_TYPE.length()) {
+        LOG(DEBUG) << "blankless DecodeImage, path:" << snapshotDataItem.wholePath.c_str();
         res = DecodeImage(snapshotDataItem.wholePath, bitmap, snapshotDataItem);
       } else {
         LOG(ERROR) << "blankless GetHistorySnapshotInfo failed, wholePath:" << snapshotDataItem.wholePath.c_str();

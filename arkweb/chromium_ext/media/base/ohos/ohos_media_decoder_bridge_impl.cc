@@ -457,9 +457,8 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
   LOG(DEBUG) << "MediaCodecDecoderBridgeImpl::QueueInputBuffer";
   std::lock_guard<std::recursive_mutex> lock(decoderMutex_);
   if (!isRunning_.load()) {
-    LOG(ERROR)
+    LOG(WARNING)
         << "MediaCodecDecoderBridgeImpl::QueueInputBuffer decoder is stopped.";
-    return DecoderAdapterCode::DECODER_ERROR;
   }
   if (data == nullptr || data_size == 0) {
     return DecoderAdapterCode::DECODER_ERROR;
@@ -467,7 +466,8 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
   if (signal_ == nullptr || signal_->isOnError_) {
     return DecoderAdapterCode::DECODER_ERROR;
   }
-  if (signal_->isDecoderFlushing_.load() || signal_->inputQueue_.empty()) {
+  if (signal_->isDecoderFlushing_.load() || signal_->inputQueue_.empty() ||
+      !isRunning_.load()) {
     return DecoderAdapterCode::DECODER_RETRY;
   }
   if (videoDecoder_ == nullptr) {
@@ -507,9 +507,8 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBufferEOS() {
   LOG(INFO) << "MediaCodecDecoderBridgeImpl::QueueInputBufferEOS";
   std::lock_guard<std::recursive_mutex> lock(decoderMutex_);
   if (!isRunning_.load()) {
-    LOG(ERROR)
+    LOG(WARNING)
         << "MediaCodecDecoderBridgeImpl::QueueInputBufferEOS decoder is stopped.";
-    return DecoderAdapterCode::DECODER_ERROR;
   }
   if (signal_ == nullptr || signal_->isOnError_) {
     return DecoderAdapterCode::DECODER_ERROR;
@@ -560,7 +559,8 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::DequeueOutputBuffer(
   if (signal_ == nullptr || signal_->isOnError_ || presentation_time == nullptr) {
     return DecoderAdapterCode::DECODER_ERROR;
   }
-  if (signal_->isDecoderFlushing_.load() || signal_->outputQueue_.empty()) {
+  if (signal_->isDecoderFlushing_.load() || signal_->outputQueue_.empty() ||
+      !isRunning_.load()) {
     LOG(DEBUG) << "CodecBridgeCallback::OnNeedOutputData Decoder is flushing.";
     return DecoderAdapterCode::DECODER_RETRY;
   }

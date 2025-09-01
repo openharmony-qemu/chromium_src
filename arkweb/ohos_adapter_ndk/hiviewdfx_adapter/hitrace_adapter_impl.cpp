@@ -17,10 +17,14 @@
 
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/utils/include/sys_param.h"
 
 #include <hitrace/trace.h>
 
 namespace OHOS::NWeb {
+
+extern "C" __attribute__((weak)) void *CachedParameterCreate(const char *name, const char *defValue);
+
 HiTraceAdapterImpl& HiTraceAdapterImpl::GetInstance()
 {
     static HiTraceAdapterImpl instance;
@@ -32,7 +36,7 @@ int ConvertToInt(const char *originValue, int defaultValue)
     return originValue == nullptr ? defaultValue : std::atoi(originValue);
 }
 
-uint64_t HiTraceAdapterImpl::ConvertToInt64(const char *originValue, uint64_t defaultValue)
+uint64_t HiTraceAdapterImpl::ConvertToUint64(const char *originValue, uint64_t defaultValue)
 {
     return originValue == nullptr ? defaultValue : std::strtoull(originValue, nullptr, DECIMAL_NUMERAL_SYSTEM);
 }
@@ -64,17 +68,15 @@ void HiTraceAdapterImpl::CountTrace(const std::string& name, int64_t count)
 
 bool HiTraceAdapterImpl::IsHiTraceEnable()
 {
-    static bool first_call = true;
-    static bool hitrace_enable = true;
-    if (!first_call) {
-        return hitrace_enable;
-    }
-    std::string enable = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance()
-                            .GetStringParameter("debug.hitrace.tags.enableflags", "0");
-    uint64_t tags = ConvertToInt64(enable.c_str(), 0);
-    hitrace_enable = (tags & ARKWEB_HITRACE_ENABLE) != 0;
-    first_call = false;
-    return hitrace_enable;
+#if defined(OS_OHOS)
+    static void* g_handle = CachedParameterCreate("debug.hitrace.tags.enableflags", "0");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_handle, &changed);
+    uint64_t tags = ConvertToUint64(enable, 0);
+    return (tags & ARKWEB_HITRACE_ENABLE) != 0;
+#else
+    return true;
+#endif
 }
 
 void HiTraceAdapterImpl::StartOHOSTrace(const std::string& value, float limit)

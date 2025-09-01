@@ -560,6 +560,9 @@ void NWebRenderHandler::OnResizeScrollableViewport(
   LOG(INFO)
       << "NWebRenderHandler::OnResizeScrollableViewport needFocusViewport:"
       << needFocusViewport_;
+  if (!browser || !browser->GetHost()) {
+    return;
+  }
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   if (viewportAvoidScrollOffset_ != 0) {
     LOG(INFO) << "AvoidVisibleViewportBottom set: " << viewportAvoidHeight_
@@ -1400,6 +1403,12 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
     }
     LOG(INFO) << "NWebRenderHandler::CreateOverlay, data_size = " << data_size;
 
+    if (!browser || !browser->GetHost()) {
+      free(buffer);
+      LOG(ERROR)
+          << "NWebRenderHandler::CreateOverlay, browser or GetHost is nullptr";
+      return;
+    }
     float scale = browser->GetHost()->GetPageScaleFactor();
     auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
     view_port_height +=
@@ -1415,6 +1424,9 @@ void NWebRenderHandler::CreateOverlay(CefRefPtr<CefBrowser> browser,
 
 void NWebRenderHandler::OnOverlayStateChanged(CefRefPtr<CefBrowser> browser,
                                               const CefRect& cef_image_rect) {
+  if (!browser || !browser->GetHost()) {
+    return;
+  }
   if (auto handler = handler_.lock()) {
     auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
     view_port_height +=

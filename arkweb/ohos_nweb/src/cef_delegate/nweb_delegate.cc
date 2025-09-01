@@ -3792,13 +3792,17 @@ void NWebDelegate::SetVirtualKeyBoardArg(int32_t width,
                                          int32_t height,
                                          double keyboard) {
   if (GetBrowser().get()) {
-    GetBrowser()->GetHost()->SetVirtualKeyBoardArg(width, height, keyboard);
+    if (GetBrowser()->GetHost()) {
+      GetBrowser()->GetHost()->SetVirtualKeyBoardArg(width, height, keyboard);
+    }
   }
 }
 
 bool NWebDelegate::ShouldVirtualKeyboardOverlay() {
   if (GetBrowser().get()) {
-    return GetBrowser()->GetHost()->ShouldVirtualKeyboardOverlay();
+    if (GetBrowser()->GetHost()) {
+      return GetBrowser()->GetHost()->ShouldVirtualKeyboardOverlay();
+    }
   }
   return false;
 }

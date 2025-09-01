@@ -1113,6 +1113,11 @@ OH_NativeArkWeb_LoadData(const char* webTag,
                          const char* encoding,
                          const char* baseUrl,
                          const char* historyUrl) {
+  if (!data || !mimeType || !encoding) {
+    LOG(ERROR) << "NativeArkWeb LoadData nullptr error";
+    return ArkWeb_ErrorCode::ARKWEB_INVALID_PARAM;
+  }
+
   std::string base_url_str(baseUrl ? baseUrl : "");
   std::string history_url_str(historyUrl ? historyUrl : "");
 

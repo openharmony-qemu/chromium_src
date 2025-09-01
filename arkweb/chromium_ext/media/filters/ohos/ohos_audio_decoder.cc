@@ -529,6 +529,10 @@ void OHOSAudioDecoder::ReportDrmAudioPlayErrorInfo(const std::string& errorDesc)
 
 void OHOSAudioDecoder::Reset(base::OnceClosure closure) {
   LOG(INFO) << "OHOSAudioDecoder::Reset";
+  if (audio_decoder_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
+    return AudioDecoderAdapterCode::DECODER_ERROR;
+  }
   ClearInputQueue(DecoderStatus::Codes::kAborted);
   bool success = decoder_loop_->TryFlush();
   {
@@ -688,6 +692,10 @@ bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
       LOG(ERROR) << "OHOSAudioDecoder::OnDecodedFrame buffer data is invalid";
       return false;
   }
+  if (audio_decoder_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
+    return AudioDecoderAdapterCode::DECODER_ERROR;
+  }
 
   LOG(DEBUG) << "OHOSAudioDecoder::OnDecodedFrame";
   size_t frame_count = 1;
@@ -778,6 +786,10 @@ int32_t OHOSAudioDecoder::DequeueOutputBuffer(OutputBufferData& out) {
 
 // LCOV_EXCL_START
 AudioDecoderAdapterCode OHOSAudioDecoder::FlushDecoder() {
+  if (audio_decoder_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
+    return AudioDecoderAdapterCode::DECODER_ERROR;
+  }
   return audio_decoder_->FlushDecoder();
 }
 
@@ -816,6 +828,10 @@ AudioDecoderAdapterCode OHOSAudioDecoder::QueueInputBufferDec(uint32_t index,
     LOG(DEBUG) << "OHOSAudioDecoder::QueueInputBufferDec error, state = WAITING_FOR_MEDIA_CRYPTO";
     return AudioDecoderAdapterCode::DECODER_RETRY;
   }
+  if (audio_decoder_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
+    return AudioDecoderAdapterCode::DECODER_ERROR;
+  }
   AudioDecoderAdapterCode ret = audio_decoder_->QueueInputBufferDec(index, presentationTimeUs, bufferData,
     bufferSize, cencInfo, isEncrypted, flag);
   if (ret == AudioDecoderAdapterCode::DECODER_ERROR && waiting_for_key_) {
@@ -830,6 +846,10 @@ AudioDecoderAdapterCode OHOSAudioDecoder::QueueInputBufferDec(uint32_t index,
 }
 
 AudioDecoderAdapterCode OHOSAudioDecoder::ReleaseOutputBufferDec(uint32_t index) {
+  if (audio_decoder_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
+    return AudioDecoderAdapterCode::DECODER_ERROR;
+  }
   return audio_decoder_->ReleaseOutputBufferDec(index);
 }
 
@@ -849,6 +869,10 @@ void OHOSAudioDecoder::AddOutputBuffer(uint32_t index, uint8_t* bufferData, uint
 
 // LCOV_EXCL_START
 void OHOSAudioDecoder::UpdateOutputFormat() {
+  if (audio_decoder_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
+    return AudioDecoderAdapterCode::DECODER_ERROR;
+  }
   AudioDecoderAdapterCode ret = audio_decoder_->GetOutputFormatDec(decoder_format_);
   if (ret != AudioDecoderAdapterCode::DECODER_OK) {
     LOG(ERROR) << "OHOSAudioDecoder::UpdateOutputFormat err";

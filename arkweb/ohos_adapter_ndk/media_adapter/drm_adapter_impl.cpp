@@ -26,7 +26,6 @@
 
 #include <multimedia/drm_framework/native_mediakeysession.h>
 #include <multimedia/drm_framework/native_mediakeysystem.h>
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
 
 namespace OHOS::NWeb {
 constexpr int32_t MAX_PROVISION_RESPONSE_LEN = 16 * 1024;

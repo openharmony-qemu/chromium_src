@@ -379,6 +379,10 @@ TEST_F(OHOSAudioManagerTest, TestMakeLowLatencyInputStream) {
                                                      log_callback);
 
   EXPECT_NE(inputStream, nullptr);
+  if (inputStream) {
+    delete inputStream;
+    inputStream = nullptr;
+  }
 }
 
 TEST_F(OHOSAudioManagerTest, TestGetPreferredOutputStreamParameters) {

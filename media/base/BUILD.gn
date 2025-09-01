@@ -738,8 +738,10 @@ source_set("unit_tests") {
     sources += arkweb_media_adapter_unittest_sources
     sources += arkweb_media_gpu_unittest_sources
     sources += arkweb_media_filters_ohos_unittest_sources
+    sources += arkweb_media_third_party_unittest_sources
     deps += [
-      "//arkweb/ohos_adapter_ndk:adapter_ndk"
+      "//arkweb/ohos_adapter_ndk:adapter_ndk",
+      "//content/test:test_support"
     ]
     defines += [ "IS_MEDIA_IMPL" ]
   }

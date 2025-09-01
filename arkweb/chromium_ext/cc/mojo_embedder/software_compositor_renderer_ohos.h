@@ -51,7 +51,7 @@ class CC_MOJO_EMBEDDER_EXPORT SoftwareCompositorRendererOhos {
   SoftwareCompositorRendererOhos& operator=(
       const SoftwareCompositorRendererOhos&) = delete;
 
-  ~SoftwareCompositorRendererOhos();
+  virtual ~SoftwareCompositorRendererOhos();
 
   void BindToClient(LayerTreeFrameSinkClient* client,
                     viz::BeginFrameSource* source);
@@ -62,7 +62,7 @@ class CC_MOJO_EMBEDDER_EXPORT SoftwareCompositorRendererOhos {
 
   bool DemandDrawSw(SkCanvas* canvas, gfx::SizeF size, gfx::PointF offset);
 
-  void DrawRect(const gfx::Rect& rect);
+  virtual void DrawRect(const gfx::Rect& rect);
 
   void SendCompositorFrameAckToClient();
 

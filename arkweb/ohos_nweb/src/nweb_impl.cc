@@ -66,7 +66,7 @@
 #include "ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
-#include "ui/base/clipboard/ohos/clipboard_ohos.h"
+#include "arkweb/chromium_ext/ui/base/clipboard/ohos/clipboard_ohos.h"
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)

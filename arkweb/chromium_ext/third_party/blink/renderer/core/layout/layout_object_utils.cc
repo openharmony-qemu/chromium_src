@@ -28,5 +28,7 @@ bool LayoutObjectUtils::ArkWebVisibleToHitTestRequest(
          (request.IgnorePointerEventsNone() ||
           layout_object_->StyleRef().VisibleToHitTesting());
 }
+
+bool LayoutObjectUtils::hit_test_mode_ = false;
 #endif
 }  // namespace blink

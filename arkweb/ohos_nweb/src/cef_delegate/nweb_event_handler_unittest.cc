@@ -738,6 +738,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void OnFoldStatusChanged(uint32_t foldStatus) override {}
   void SetNativeEmbedMode(bool flag) override {}
   void SetNativeInnerWeb(bool isInnerWeb) override {}
+  void SetEnableCustomVideoPlayer(bool flag) override {}
   void ScaleGestureChangeV2(int type, float scale, float originScale, float width, float height) override {}
   virtual std::string GetCurrentLanguage() override { return ""; }
   void MaximizeResize() override {}

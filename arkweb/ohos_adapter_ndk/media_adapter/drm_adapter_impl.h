@@ -18,13 +18,14 @@
 
 #include <mutex>
 #include <pthread.h>
-#include "third_party/bounds_checking_function/include/securec.h"
 #include <map>
 
+#include "arkweb/ohos_nweb/src/nweb_hilog.h"
 #include "drm_adapter.h"
 #include <multimedia/drm_framework/native_drm_common.h>
 #include <multimedia/drm_framework/native_drm_err.h>
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "third_party/bounds_checking_function/include/securec.h"
+
 
 namespace OHOS::NWeb {
 

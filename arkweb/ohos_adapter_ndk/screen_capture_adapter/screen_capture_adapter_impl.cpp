@@ -460,6 +460,10 @@ ScreenCaptureAdapterImpl::~ScreenCaptureAdapterImpl()
         }
     }
     Release();
+    if (callback_index_ > 0) {
+        callback_wrapper_.Clear(callback_index_);
+        callback_index_ = 0;
+    }
 }
 
 int32_t ScreenCaptureAdapterImpl::InitV2(const std::shared_ptr<ScreenCaptureConfigAdapter> config, int nweb_id)
@@ -488,6 +492,7 @@ int32_t ScreenCaptureAdapterImpl::InitV2(const std::shared_ptr<ScreenCaptureConf
 
     if (callback_index_ > 0) {
         callback_wrapper_.Clear(callback_index_);
+        callback_index_ = 0;
     }
     std::shared_ptr<CallbackInfo> callback_info = std::make_shared<CallbackInfo>();
     callback_info->nweb_id = nweb_id;

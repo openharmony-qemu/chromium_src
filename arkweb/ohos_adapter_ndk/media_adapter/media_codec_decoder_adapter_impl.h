@@ -27,7 +27,6 @@
 
 #include "media_codec_decoder_adapter.h"
 #include "audio_cenc_info_adapter.h"
-#include "ohos_buffer_adapter_impl.h"
 #include <shared_mutex>
 
 namespace OHOS::NWeb {

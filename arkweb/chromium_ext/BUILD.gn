@@ -14,3 +14,7 @@
 config("arkweb_system_properties_config") {
   ldflags = [ "-Wl,--wrap=IsPcDevice" ]
 }
+
+config("blink_renderer_config") {
+  ldflags = [ "-Wl,--wrap=IsTabletDevice" ]
+}

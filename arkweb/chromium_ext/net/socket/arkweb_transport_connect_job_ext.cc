@@ -48,6 +48,10 @@
 
 namespace net {
 
+#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+constexpr size_t kMinRequiredIpEndpoints = 2;
+#endif
+
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 void ArkWebTransportConnectJobExt::SetConnectTimeout(int timeout_override) {
   timeout_override_ = base::Seconds(timeout_override);
@@ -205,7 +209,7 @@ void ArkWebTransportConnectJobExt::NeedReportSuccessIp(const IPEndPoint& address
                                               SubJobType type) {
   const HostResolverEndpointResult& endpoint =
       GetEndpointResultForCurrentSubJobs();
-  if (endpoint.ip_endpoints.size() < 2) {
+  if (endpoint.ip_endpoints.size() < kMinRequiredIpEndpoints) {
     return;
   }
 
@@ -241,8 +245,7 @@ void ArkWebTransportConnectJobExt::ReportSuccessIp(int success_index,
   ostr << "ip_counter=" << ip_addresses_num
        << ", succeed_number=" << success_index << ", job_type=" << (int)type;
   std::string host = ToLegacyDestinationEndpoint(params_->destination()).host();
-  LOG(DEBUG) << "event_message: " << ostr.str() << ", resource: "
-             << url::LogUtils::ConvertUrlWithMask(host);
+  LOG(DEBUG) << "event_message: " << ostr.str() << ", resource: ***";
 
 #if BUILDFLAG(IS_ARKWEB)
   // 打点

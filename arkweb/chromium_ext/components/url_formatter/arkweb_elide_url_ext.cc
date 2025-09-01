@@ -82,7 +82,6 @@ UrlType GetInputTypeForScheme(const std::string& scheme) {
       (base::EqualsCaseInsensitiveASCII(scheme, url::kDataScheme) ||
        base::EqualsCaseInsensitiveASCII(scheme, url::kBlobScheme) ||
        base::EqualsCaseInsensitiveASCII(scheme, url::kFileSystemScheme) ||
-       base::EqualsCaseInsensitiveASCII(scheme, url::kContentScheme) ||
        base::EqualsCaseInsensitiveASCII(scheme, url::kJavaScriptScheme) ||
        base::EqualsCaseInsensitiveASCII(scheme, url::kResourcesScheme) ||
        base::EqualsCaseInsensitiveASCII(scheme, url::kArkwebScheme))) {

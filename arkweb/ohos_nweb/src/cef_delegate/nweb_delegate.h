@@ -594,6 +594,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_PRINT)
   void SetToken(void* token) override;
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
+  void* CreateWebPrintDocumentAdapterV2(const std::string& jobName) override;
   void SetPrintBackground(bool enable) override;
   bool GetPrintBackground() override;
 #endif  // BUILDFLAG(ARKWEB_PRINT)

@@ -671,6 +671,7 @@ source_set("unittests") {
     "browser/performance_manager/policies/background_task_policy_unittest.cc",
     "src/nweb_resize_helper_unittests.cc",
     "src/video_assistant/nweb_media_player_controller_impl_unittest.cc",
+    "src/native_media_player/nweb_media_info_impl_unittest.cc",
   ]
 
   deps = [

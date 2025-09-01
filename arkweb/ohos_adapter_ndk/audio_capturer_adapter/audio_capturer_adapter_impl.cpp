@@ -233,12 +233,16 @@ bool AudioCapturerAdapterImpl::Release()
         WVLOG_E("audio capturer is nullptr");
         return false;
     }
-    auto ret = OH_AudioCapturer_Release(audio_capturer_);
     {
         std::unique_lock<std::mutex> lock(capturesSetMutex_);
         captures_.erase(audio_capturer_);
     }
-    return ret == AUDIOSTREAM_SUCCESS;
+    auto ret = OH_AudioCapturer_Release(audio_capturer_);
+    if (ret == AUDIOSTREAM_SUCCESS) {
+        audio_capturer_ = nullptr;
+        return true;
+    }
+    return false;
 }
 
 int32_t AudioCapturerAdapterImpl::SetCapturerReadCallback(

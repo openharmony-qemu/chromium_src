@@ -484,6 +484,7 @@ void ScreenCaptureAdapterImpl::Release()
     int32_t ret = OH_AVScreenCapture_Release(screenCapture_);
     if (ret != OH_AVSCREEN_CAPTURE_ErrCode::AV_SCREEN_CAPTURE_ERR_OK) {
         WVLOG_E("OH_AVScreenCapture release failed, ret = %{public}d", ret);
+        return;
     }
     screenCapture_ = nullptr;
 }

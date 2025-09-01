@@ -108,7 +108,7 @@ TEST_F(LayoutThemeOhosTest, PlatformTapHighlightColor) {
 }
 
 TEST_F(LayoutThemeOhosTest, ExtraDefaultStyleSheet) {
-  const CommandLine::CharType* argv[] = {switches::kDisableMobileStyleSheet};
+  const base::CommandLine::CharType* argv[] = {switches::kDisableMobileStyleSheet};
   
   base::CommandLine::Reset();
   theme()->ExtraDefaultStyleSheet();

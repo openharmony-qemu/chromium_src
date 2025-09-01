@@ -1,8 +1,8 @@
 ohos_clipboard_sources = [
-      "ohos/clipboard_ohos.cc",
-      "ohos/clipboard_ohos.h",
-      "ohos/clipboard_ohos_read_data.cc",
-      "ohos/clipboard_ohos_read_data.h",
-      "ohos/clip_board_image_data_adapter_impl.cc",
-      "ohos/clip_board_image_data_adapter_impl.h",
+      "//arkweb/chromium_ext/ui/base/clipboard/ohos/clipboard_ohos.cc",
+      "//arkweb/chromium_ext/ui/base/clipboard/ohos/clipboard_ohos.h",
+      "//arkweb/chromium_ext/ui/base/clipboard/ohos/clipboard_ohos_read_data.cc",
+      "//arkweb/chromium_ext/ui/base/clipboard/ohos/clipboard_ohos_read_data.h",
+      "//arkweb/chromium_ext/ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.cc",
+      "//arkweb/chromium_ext/ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h",
     ]

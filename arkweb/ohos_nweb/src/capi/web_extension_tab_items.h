@@ -53,6 +53,10 @@ struct NWebTabCreateInfo {
   std::optional<bool> pinned;
   std::optional<std::string> url;
   std::optional<int32_t> windowId;
+};
+
+struct NWebTabCreateInfoV2 {
+  NWebTabCreateInfo createInfo;
   std::optional<std::string> contextType;
   std::optional<bool> includeIncognitoInfo;
 };
@@ -184,6 +188,10 @@ struct NWebExtensionTabUpdateProperties {
   std::optional<int32_t> openerTabId;
   std::optional<bool> pinned;
   std::optional<std::string> url;
+};
+
+struct NWebExtensionTabUpdatePropertiesV2 {
+  NWebExtensionTabUpdateProperties updateProperties;
   std::optional<std::string> contextType;
   std::optional<bool> includeIncognitoInfo;
 };

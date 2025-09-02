@@ -106,6 +106,9 @@ public:
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void OnPlaybackSpeedRateChanged();
 #endif
+
+private:
+  void InitMediaControlsImplUtils(MediaControlsImpl* media_controls_impl, HTMLMediaElement& media_element);
 };
 
 }

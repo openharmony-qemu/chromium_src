@@ -800,9 +800,9 @@ class NWebDelegateInterface
   virtual bool IsMixedContentAutoUpgradesEnabled() = 0;
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
   virtual void EnableAppLinking(bool enable) = 0;
-#endif
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
 #if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
   virtual void EnableMediaNetworkTrafficPrompt(bool enable) = 0;

@@ -21,6 +21,7 @@
 #include <multimedia/player_framework/native_avscreen_capture.h>
 #include <native_buffer/native_buffer.h>
 #include <queue>
+#include "arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper.h"
 
 namespace OHOS::NWeb {
 void ScreenCaptureCallbackOnError(OH_AVScreenCapture *capture, int32_t errorCode, void* userData);
@@ -123,12 +124,23 @@ public:
     int32_t InitV2(const std::shared_ptr<ScreenCaptureConfigAdapter> config, int nweb_id) override;
 
     void ClearBufferQueue(int nwebId) override;
+
+    static void ScreenCaptureCallbackOnError(OH_AVScreenCapture *capture, int32_t errorCode, void* userData);
+
+    static void ScreenCaptureCallbackOnBufferAvailable(OH_AVScreenCapture *capture, OH_AVBuffer *buffer,
+        OH_AVScreenCaptureBufferType bufferType, int64_t timestamp, void* userData);
+    
+    static void ScreenCaptureCallbackOnStateChange(struct OH_AVScreenCapture *capture,
+        OH_AVScreenCaptureStateCode stateCode, void* userData);
 private:
     void Release();
 
 private:
     OH_AVScreenCapture *screenCapture_;
-    CallbackInfo callback_info_ = {nullptr, 0};
+
+    int nweb_id_ = -1;
+    size_t callback_index_ = 0;
+    static CallbackSharedWrapper<CallbackInfo> callback_wrapper_;
 };
 
 }  // namespace OHOS::NWeb

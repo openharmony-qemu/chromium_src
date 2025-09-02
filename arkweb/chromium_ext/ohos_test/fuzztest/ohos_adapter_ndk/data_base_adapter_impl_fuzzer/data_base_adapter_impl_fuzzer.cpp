@@ -15,6 +15,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 #include <iostream>
+#include <string>
 #include "ohos_nweb/include/nweb.h"
 #include "ohos_nweb/src/nweb_impl.h"
 
@@ -49,7 +50,8 @@ void FuzzTest001(FuzzedDataProvider* fdp)
     auto un = fdp->ConsumeRandomLengthString(64);
     auto pw = fdp->ConsumeRandomLengthString(64);
     auto pws = fdp->ConsumeIntegral<uint32_t>();
-    impl->SaveHttpAuthCredentials(host, realm, un, pw.c_str());
+    size_t pw_len = strnlen(pw.c_str(), 128);
+    impl->SaveHttpAuthCredentials(host, realm, un, (pw_len == 0 || pw_len > 100) ? nullptr : pw.c_str());
 
     impl->GetHttpAuthCredentials(host, realm, un, pw.data(), pws);
 

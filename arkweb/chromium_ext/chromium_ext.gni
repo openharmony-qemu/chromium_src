@@ -713,6 +713,9 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/base/files/file_path_sta_ext_unittest.cc",
   "//arkweb/chromium_ext/content/browser/code_cache/oh_code_cache_unittests.cc",
   "//arkweb/chromium_ext/content/browser/webauth/utils_unittests.cc",
+  "//arkweb/chromium_ext/components/policy/core/common/policy_loader_ohos_unittest.cc",
+  "//arkweb/chromium_ext/net/proxy_resolution/proxy_config_service_ohos_unittest.cc",
+  "//arkweb/chromium_ext/components/subresource_filter/content/browser/ohos_adblock_config_unittest.cc",
 ]
 
 arkweb_base_trace_event_sources = [
@@ -836,12 +839,7 @@ arkweb_components_web_cache_browser_unittest_sources = [
 arkweb_storage_monitor_unittest_source = [
   "//arkweb/chromium_ext/components/storage_monitor/storage_monitor_ohos_unittest.cc"
 ]
-arkweb_policy_loader_ohos_unittest_source = [
-  "//arkweb/chromium_ext/components/policy/core/common/policy_loader_ohos_unittest.cc"
-]
-arkweb_proxy_config_service_ohos_unittest_source = [
-  "//arkweb/chromium_ext/net/proxy_resolution/proxy_config_service_ohos_unittest.cc"
-]
+
 arkweb_field_trial_utils_unittest_source = [
   "//arkweb/chromium_ext/components/content_settings/core/browser/content_settings_default_provider_for_include_unittest.cc",
 ]

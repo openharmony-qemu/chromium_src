@@ -376,9 +376,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
   void SetNWebId(uint32_t nwebId) override;
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
   void EnableAppLinking(bool enable) override;
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
   void StoreWebArchive(
       const std::string& base_name,

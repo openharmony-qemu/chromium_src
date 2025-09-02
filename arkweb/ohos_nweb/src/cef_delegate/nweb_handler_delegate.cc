@@ -4124,6 +4124,10 @@ int NWebHandlerDelegate::ProcessNativeProxyResultThread(
 
   auto callback = methodMap[method];
   char** ptr = (char**)malloc(sizeof(char*) * args->GetSize());
+  if(ptr == nullptr) {
+    // malloc failed
+    return 1;    
+  }
   for (size_t i = 0; i < args->GetSize(); i++) {
     CefValueType type = args->GetType(i);
     CefRefPtr<CefValue> value = args->GetValue(i);

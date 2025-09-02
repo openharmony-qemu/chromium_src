@@ -65,27 +65,45 @@ class NWebExtensionDownloadCefDelegate {
                      std::vector<int32_t>& eraseIds);
 
   // downloads.open
-  bool Open(int downloadId, DownloadsOpenCallback callback);
+  bool Open(int downloadId,
+            const std::optional<std::string>& contextType,
+            const std::optional<bool>& includeIncognitoInfo,
+            DownloadsOpenCallback callback);
   void OpenCallback(int requestId, std::optional<std::string> error);
 
   // downloads.removeFile
-  bool RemoveFile(int downloadId, DownloadsRemoveFileCallback callback);
+  bool RemoveFile(int downloadId,
+                  const std::optional<std::string>& contextType,
+                  const std::optional<bool>& includeIncognitoInfo,
+                  DownloadsRemoveFileCallback callback);
   void RemoveFileCallback(int requestId, std::optional<std::string> error);
 
   // downloads.pause
-  bool Pause(int downloadId, DownloadsPauseCallback callback);
+  bool Pause(int downloadId,
+             const std::optional<std::string>& contextType,
+             const std::optional<bool>& includeIncognitoInfo,
+             DownloadsPauseCallback callback);
   void PauseCallback(int requestId, std::optional<std::string> error);
 
   // downloads.resume
-  bool Resume(int downloadId, DownloadsResumeCallback callback);
+  bool Resume(int downloadId,
+              const std::optional<std::string>& contextType,
+              const std::optional<bool>& includeIncognitoInfo,
+              DownloadsResumeCallback callback);
   void ResumeCallback(int requestId, std::optional<std::string> error);
 
   // downloads.cancel
-  bool Cancel(int downloadId, DownloadsCancelCallback callback);
+  bool Cancel(int downloadId,
+              const std::optional<std::string>& contextType,
+              const std::optional<bool>& includeIncognitoInfo,
+              DownloadsCancelCallback callback);
   void CancelCallback(int requestId, std::optional<std::string> error);
 
   // downloads.acceptDanger
-  bool AcceptDanger(int downloadId, DownloadsAcceptDangerCallback callback);
+  bool AcceptDanger(int downloadId,
+                    const std::optional<std::string>& contextType,
+                    const std::optional<bool>& includeIncognitoInfo,
+                    DownloadsAcceptDangerCallback callback);
   void AcceptDangerCallback(int requestId, std::optional<std::string> error);
 
   // downloads.setUiOptions
@@ -94,7 +112,10 @@ class NWebExtensionDownloadCefDelegate {
   void SetUiOptionsCallback(int requestId, std::optional<std::string> error);
 
   // downloads.show
-  bool Show(int downloadId, DownloadsShowCallback callback);
+  bool Show(int downloadId,
+            const std::optional<std::string>& contextType,
+            const std::optional<bool>& includeIncognitoInfo,
+            DownloadsShowCallback callback);
   void ShowCallback(int requestId, std::optional<std::string> error);
 
   // downloads.showDefaultFolder

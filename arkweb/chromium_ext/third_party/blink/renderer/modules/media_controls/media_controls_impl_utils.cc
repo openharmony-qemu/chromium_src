@@ -134,7 +134,15 @@ bool ShouldShowPlaybackSpeedButton(HTMLMediaElement& media_element) {
 
 MediaControlsImplUtils::MediaControlsImplUtils(MediaControlsImpl* media_controls_impl,
     HTMLMediaElement& media_element) {
-  DCHECK(media_controls_impl);
+  InitMediaControlsImplUtils(media_controls_impl, media_element);
+}
+
+void MediaControlsImplUtils::InitMediaControlsImplUtils(MediaControlsImpl* media_controls_impl,
+    HTMLMediaElement& media_element) {
+  if (!media_controls_impl) {
+    LOG(ERROR) << "InitMediaControlsImplUtils media_controls_impl is nullptr";
+    return;
+  }
   this->media_controls_impl_ = media_controls_impl;
 #if BUILDFLAG(ARKWEB_MEDIA)
   media_controls_impl_->scrubbing_panel_ = nullptr;

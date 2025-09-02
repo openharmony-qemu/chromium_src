@@ -555,9 +555,13 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::DequeueOutputBuffer(
   if (signal_ == nullptr || signal_->isOnError_ || presentation_time == nullptr) {
     return DecoderAdapterCode::DECODER_ERROR;
   }
-  if (signal_->isDecoderFlushing_.load() || signal_->outputQueue_.empty() ||
-      !isRunning_.load()) {
+  if (signal_->isDecoderFlushing_.load() || signal_->outputQueue_.empty()) {
     LOG(DEBUG) << "CodecBridgeCallback::OnNeedOutputData Decoder is flushing.";
+    return DecoderAdapterCode::DECODER_RETRY;
+  }
+  if (!isRunning_.load()) {
+    LOG(WARNING)
+        << "MediaCodecDecoderBridgeImpl::DequeueOutputBuffer decoder is stopped.";
     return DecoderAdapterCode::DECODER_RETRY;
   }
   if (videoDecoder_ == nullptr) {

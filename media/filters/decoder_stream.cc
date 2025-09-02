@@ -27,7 +27,7 @@
 #include "media/base/video_frame.h"
 #include "media/filters/decrypting_demuxer_stream.h"
 #if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/media/filters/decoder_stream_for include.cc"
+#include "arkweb/chromium_ext/media/filters/decoder_stream_for_include.cc"
 #endif
 
 namespace media {

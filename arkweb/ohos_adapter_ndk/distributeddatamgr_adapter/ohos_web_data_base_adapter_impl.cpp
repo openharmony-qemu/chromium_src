@@ -165,7 +165,7 @@ void OhosWebDataBaseAdapterImpl::SaveHttpAuthCredentials(const std::string& host
     const std::string& username, const char* password)
 {
     WVLOG_I("webdatabase save http auth info");
-    if (host.empty() || username.empty() || password == nullptr) {
+    if (host.empty() || username.empty() || password == nullptr || strlen(password) == 0) {
         return;
     }
     if (rdbStore_ == nullptr) {
@@ -183,7 +183,7 @@ void OhosWebDataBaseAdapterImpl::SaveHttpAuthCredentials(const std::string& host
         static_cast<uint32_t>(passwordVector.size()));
     errno_t ret = memset_s(&passwordVector[0], passwordVector.size(), 0, passwordVector.size());
     if (ret != E_OK) {
-        WVLOG_E("memset failed， errCode=%{public}d", ret);
+        WVLOG_E("memset failed, errCode=%{public}d", ret);
     }
     errCode = OH_Rdb_Insert(rdbStore_, HTTPAUTH_TABLE_NAME.c_str(), valueBucket);
     valueBucket->destroy(valueBucket);

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "ohos_adblock_config.h"
 
 #include <gmock/gmock.h>
@@ -25,31 +26,6 @@
 
 namespace OHOS {
 namespace adblock {
-namespace {
-bool CheckIsInResult(const std::set<std::string>& result,
-                     const std::string& schemeAndHostName) {
-  if (result.find(schemeAndHostName) != result.end()) {
-    LOG(DEBUG) << "[adblock] CheckIsInResult:true";
-    return true;
-  }
-  std::size_t found_dot = schemeAndHostName.find_first_of('.');
-  std::size_t found_slash = schemeAndHostName.find_first_of('/');
-  std::size_t found = std::string::npos;
-  if (found_dot != std::string::npos && found_slash != std::string::npos) {
-    found = std::min(found_dot, found_slash);
-    return CheckIsInResult(result, schemeAndHostName.substr(found + 1));
-  } else if (found_dot != std::string::npos) {
-    found = found_dot;
-    return CheckIsInResult(result, schemeAndHostName.substr(found + 1));
-  } else if (found_slash != std::string::npos) {
-    found = found_slash;
-    return CheckIsInResult(result, schemeAndHostName.substr(found + 1));
-  }
-  LOG(DEBUG) << "[adblock] CheckIsInResult:false";
-  return false;
-}
-}  // namespace
-
 class MockPrefNotifierImpl : public PrefNotifierImpl {
  public:
   MockPrefNotifierImpl() = default;
@@ -134,26 +110,31 @@ class AdBlockConfigTest : public ::testing::Test {
     if (ad_block_config_) {
       return ad_block_config_->is_valid_;
     }
+    return false;
   }
   bool GetReplace() {
     if (ad_block_config_) {
       return ad_block_config_->replace_;
     }
+    return false;
   }
   std::string GetRulesFiles() {
     if (ad_block_config_) {
       return ad_block_config_->rules_files_;
     }
+    return std::string();
   }
   autofill::Trie<std::string>* GetDisallowData() {
     if (ad_block_config_) {
       return ad_block_config_->disallow_data_.get();
     }
+    return nullptr;
   }
   autofill::Trie<std::string>* GetAllowData() {
     if (ad_block_config_) {
       return ad_block_config_->allow_data_.get();
     }
+    return nullptr;
   }
   void TestUpdateDisallowDataOnIOThread(
       std::unique_ptr<autofill::Trie<std::string>> disallow_data) {
@@ -212,35 +193,14 @@ class AdBlockConfigTest : public ::testing::Test {
     }
     return nullptr;
   }
-  void TearDown() { ad_block_config_ = nullptr; }
+  void TearDown() {
+    ad_block_config_ = nullptr;
+    pref_service_ = nullptr;
+  }
+
   AdBlockConfig* ad_block_config_ = nullptr;
   std::unique_ptr<MockPrefService> pref_service_;
 };
-
-TEST_F(AdBlockConfigTest, CheckIsInResult_001) {
-  std::set<std::string> result = {"https://example.com", "http://test.org"};
-  EXPECT_TRUE(CheckIsInResult(result, "https://example.com"));
-}
-
-TEST_F(AdBlockConfigTest, CheckIsInResult_002) {
-  std::set<std::string> result = {"https://example.com"};
-  EXPECT_FALSE(CheckIsInResult(result, "http://nonexistent.org"));
-}
-
-TEST_F(AdBlockConfigTest, CheckIsInResult_003) {
-  std::set<std::string> result = {"example.com"};
-  EXPECT_TRUE(CheckIsInResult(result, "https://sub.example.com"));
-}
-
-TEST_F(AdBlockConfigTest, CheckIsInResult_004) {
-  std::set<std::string> result = {"path"};
-  EXPECT_TRUE(CheckIsInResult(result, "https://example.com/path"));
-}
-
-TEST_F(AdBlockConfigTest, CheckIsInResult_005) {
-  std::set<std::string> result = {"com/path"};
-  EXPECT_TRUE(CheckIsInResult(result, "https://example.com/path"));
-}
 
 TEST_F(AdBlockConfigTest, GetInstance) {
   auto first_instance = AdBlockConfig::GetInstance();
@@ -425,6 +385,20 @@ TEST_F(AdBlockConfigTest, CheckIsInAllowData_003) {
   EXPECT_TRUE(result);
 }
 
+TEST_F(AdBlockConfigTest, CheckIsInAllowData_004) {
+  GURL test_url("http://nonexistent.org");
+  auto test_data = std::make_unique<autofill::Trie<std::string>>();
+  ASSERT_NE(test_data, nullptr);
+  std::string key_str = "nonexistent.org";
+  std::vector<uint8_t> key(key_str.begin(), key_str.end());
+  std::reverse(std::begin(key), std::end(key));
+  std::string value = "https://example.com";
+  test_data->AddDataForKey(key, value);
+  TestUpdateAllowDataOnIOThread(std::move(test_data));
+  bool result = TestCheckIsInAllowData(test_url);
+  EXPECT_FALSE(result);
+}
+
 TEST_F(AdBlockConfigTest, AddAdsBlockAllowListInternal_001) {
   std::vector<std::string> empty_domains;
   auto result = TestAddAdsBlockAllowListInternal(empty_domains);
@@ -467,6 +441,7 @@ TEST_F(AdBlockConfigTest, IsAdblockEnabledForUrl_001) {
   ASSERT_NE(ad_block_config_, nullptr);
   GURL invalid_url("invalid_url");
   EXPECT_FALSE(ad_block_config_->IsAdblockEnabledForUrl(invalid_url));
+
   GURL empty_url("");
   EXPECT_FALSE(ad_block_config_->IsAdblockEnabledForUrl(empty_url));
 }
@@ -474,11 +449,13 @@ TEST_F(AdBlockConfigTest, IsAdblockEnabledForUrl_001) {
 TEST_F(AdBlockConfigTest, IsAdblockEnabledForUrl_002) {
   ASSERT_NE(ad_block_config_, nullptr);
   GURL test_url("http://example.com");
+
   auto test_data = std::make_unique<autofill::Trie<std::string>>();
   ASSERT_NE(test_data, nullptr);
   std::string key_str = "example.com";
   std::vector<uint8_t> key(key_str.begin(), key_str.end());
   std::reverse(std::begin(key), std::end(key));
+
   std::string value = "http://example.com";
   test_data->AddDataForKey(key, value);
   TestUpdateAllowDataOnIOThread(std::move(test_data));
@@ -486,12 +463,14 @@ TEST_F(AdBlockConfigTest, IsAdblockEnabledForUrl_002) {
   std::string value_d = "http://baidu.com";
   test_data_d->AddDataForKey(key, value_d);
   TestUpdateDisallowDataOnIOThread(std::move(test_data_d));
+
   EXPECT_TRUE(ad_block_config_->IsAdblockEnabledForUrl(test_url));
 }
 
 TEST_F(AdBlockConfigTest, IsAdblockEnabledForUrl_003) {
   ASSERT_NE(ad_block_config_, nullptr);
   GURL test_url("http://example.com");
+
   auto test_data = std::make_unique<autofill::Trie<std::string>>();
   ASSERT_NE(test_data, nullptr);
   std::string key_str = "example.com";
@@ -500,10 +479,12 @@ TEST_F(AdBlockConfigTest, IsAdblockEnabledForUrl_003) {
   std::string value = "http://baidu.com";
   test_data->AddDataForKey(key, value);
   TestUpdateAllowDataOnIOThread(std::move(test_data));
+
   auto test_data_d = std::make_unique<autofill::Trie<std::string>>();
   std::string value_d = "http://example.com";
   test_data_d->AddDataForKey(key, value_d);
   TestUpdateDisallowDataOnIOThread(std::move(test_data_d));
+
   EXPECT_FALSE(ad_block_config_->IsAdblockEnabledForUrl(test_url));
 }
 }  // namespace adblock

@@ -689,6 +689,11 @@ source_set("unittests") {
 
   if (enable_arkweb_ext) {
     deps += [ "//arkweb/ohos_nweb_ex/build/features" ]
+    sources += [ "//arkweb/ohos_nweb_ex/core/web_screencapturer_unittest.cc" ]
+    include_dirs += [
+      "//arkweb/ohos_nweb_ex",
+      "//arkweb/ohos_nweb/src/capi",
+    ]
   }
 
   public_deps = [

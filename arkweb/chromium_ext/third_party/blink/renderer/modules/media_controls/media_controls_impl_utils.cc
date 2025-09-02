@@ -311,8 +311,8 @@ void MediaControlsImplUtils::PopulatePanelHM() {
 
 bool MediaControlsImplUtils::UpdateCSSClassFromStateEnablePlaybackSpeedButton() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  if (ShouldShowVideoControlsHM() && media_controls_impl_ && (media_controls_impl_->playback_speed_button_)
-      && !media_controls_impl_->playback_speed_button_->FastHasAttribute(html_names::kDisabledAttr)) {
+  if (ShouldShowVideoControlsHM() && media_controls_impl_ && (media_controls_impl_->playback_speed_button_) &&
+      !media_controls_impl_->playback_speed_button_->FastHasAttribute(html_names::kDisabledAttr)) {
     media_controls_impl_->playback_speed_button_->setAttribute(html_names::kDisabledAttr, AtomicString(""));
     return true;
   }
@@ -322,8 +322,8 @@ bool MediaControlsImplUtils::UpdateCSSClassFromStateEnablePlaybackSpeedButton() 
 
 bool MediaControlsImplUtils::UpdateCSSClassFromStateDisablePlaybackSpeedButton() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  if (ShouldShowVideoControlsHM() && media_controls_impl_ && (media_controls_impl_->playback_speed_button_)
-      && media_controls_impl_->playback_speed_button_->FastHasAttribute(html_names::kDisabledAttr)) {
+  if (ShouldShowVideoControlsHM() && media_controls_impl_ && (media_controls_impl_->playback_speed_button_) &&
+      media_controls_impl_->playback_speed_button_->FastHasAttribute(html_names::kDisabledAttr)) {
     media_controls_impl_->playback_speed_button_->removeAttribute(html_names::kDisabledAttr);
     return true;
   }

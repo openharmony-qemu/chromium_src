@@ -531,7 +531,7 @@ void OHOSAudioDecoder::Reset(base::OnceClosure closure) {
   LOG(INFO) << "OHOSAudioDecoder::Reset";
   if (audio_decoder_ == nullptr) {
     LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
-    return AudioDecoderAdapterCode::DECODER_ERROR;
+    return;
   }
   ClearInputQueue(DecoderStatus::Codes::kAborted);
   bool success = decoder_loop_->TryFlush();
@@ -872,7 +872,7 @@ void OHOSAudioDecoder::AddOutputBuffer(uint32_t index, uint8_t* bufferData, uint
 void OHOSAudioDecoder::UpdateOutputFormat() {
   if (audio_decoder_ == nullptr) {
     LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
-    return AudioDecoderAdapterCode::DECODER_ERROR;
+    return;
   }
   AudioDecoderAdapterCode ret = audio_decoder_->GetOutputFormatDec(decoder_format_);
   if (ret != AudioDecoderAdapterCode::DECODER_OK) {

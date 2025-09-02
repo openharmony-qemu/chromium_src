@@ -353,7 +353,7 @@ TEST_F(PasteboardClientAdapterImplTest, AddAndGetRecord)
     std::shared_ptr<PasteDataRecordAdapter> record = g_dataadapter->GetRecordAt(0);
     EXPECT_EQ(record, nullptr);
     std::size_t count = g_dataadapter->GetRecordCount();
-    EXPECT_EQ(count, 0);
+    EXPECT_EQ(count, 0u);
     PasteRecordVector recordVector = g_dataadapter_null->AllRecords();
     isEmpty = recordVector.empty();
     EXPECT_EQ(isEmpty, true);
@@ -392,7 +392,7 @@ TEST_F(PasteboardClientAdapterImplTest, AddAndGetRecord)
     std::shared_ptr<PasteDataRecordAdapter> record_null = g_dataadapter_null->GetRecordAt(0);
     EXPECT_EQ(record_null, nullptr);
     count = g_dataadapter_null->GetRecordCount();
-    EXPECT_EQ(count, 0);
+    EXPECT_EQ(count, 0u);
 
     PasteRecordVector recordVector_null = g_dataadapter_null->AllRecords();
     isEmpty = recordVector_null.empty();
@@ -422,12 +422,12 @@ TEST_F(PasteboardClientAdapterImplTest, SetAndGetPasteData)
     int32_t id = PasteBoardClientAdapterImpl::GetInstance().AddPasteboardChangedObserver(observer);
     EXPECT_EQ(id, 0);
     PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(id);
-    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().reg_.size(), 0);
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().reg_.size(), 0u);
 
     id = PasteBoardClientAdapterImpl::GetInstance().AddPasteboardChangedObserver(nullptr);
     EXPECT_EQ(id, -1);
     PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(-1);
-    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().reg_.size(), 0);
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().reg_.size(), 0u);
 }
 
 TEST_F(PasteboardClientAdapterImplTest, CheckTransitionCopyOption)

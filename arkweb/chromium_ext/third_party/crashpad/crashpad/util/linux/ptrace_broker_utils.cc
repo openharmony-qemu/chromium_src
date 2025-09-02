@@ -26,7 +26,9 @@
 #include "base/check_op.h"
 #include "base/memory/page_size.h"
 #include "base/posix/eintr_wrapper.h"
+#if !BUILDFLAG(ARKWEB_TEST)
 #include "third_party/lss/lss.h"
+#endif // !BUILDFLAG(ARKWEB_TEST)
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
 #include "base/logging.h"

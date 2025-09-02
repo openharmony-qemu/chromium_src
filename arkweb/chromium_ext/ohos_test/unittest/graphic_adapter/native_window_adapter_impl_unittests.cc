@@ -96,7 +96,7 @@ public:
 
     TransformTypeAdapter GetTransformType() override { return TransformTypeAdapter::ROTATE_90; }
 
-    int64 GetTimestamp() override { return 1; }
+    int64_t GetTimestamp() override { return 1; }
 };
 
 class MockBufferFlushConfigAdapter : public BufferFlushConfigAdapter {
@@ -208,7 +208,7 @@ TEST_F(NativeWindowAdapterImplTest, NativeWindowAdapterImplTest_006)
 {
     NativeBufferAdapterImpl adapter = NativeBufferAdapterImpl(nullptr);
     uint32_t ret = adapter.GetSize();
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, 0u);
     void* addr = adapter.GetVirAddr();
     EXPECT_EQ(addr, nullptr);
     void* buffer = nullptr;
@@ -217,7 +217,7 @@ TEST_F(NativeWindowAdapterImplTest, NativeWindowAdapterImplTest_006)
         OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer(static_cast<OH_NativeBuffer*>(buffer));
     NativeBufferAdapterImpl nativeAdapter = NativeBufferAdapterImpl(nativeWindowBuffer);
     ret = nativeAdapter.GetSize();
-    EXPECT_NE(ret, 0);
+    EXPECT_NE(ret, 0u);
     addr = nativeAdapter.GetVirAddr();
     EXPECT_NE(addr, nullptr);
 }

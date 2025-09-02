@@ -26,7 +26,6 @@
 #include "base/strings/string_split.h"
 
 namespace blink {
-constexpr float kFloatTolerance = 1e-6f;
 
 HTMLMediaElementUtils::HTMLMediaElementUtils(HTMLMediaElement* element)
 {
@@ -384,8 +383,8 @@ double HTMLMediaElementUtils::CalculateBufferedEndTime()
     float start = buffered_time_ranges->start(i, ASSERT_NO_EXCEPTION);
     float end = buffered_time_ranges->end(i, ASSERT_NO_EXCEPTION);
     if (std::isnan(start) || std::isnan(end) ||
-        start > htmlMediaElement_->currentTime() + kCurrentTimeBufferedDelta + kFloatTolerance ||
-        end < htmlMediaElement_->currentTime() - kFloatTolerance) {
+        start > htmlMediaElement_->currentTime() + kCurrentTimeBufferedDelta ||
+        end < htmlMediaElement_->currentTime()) {
       continue;
     }
     return end;

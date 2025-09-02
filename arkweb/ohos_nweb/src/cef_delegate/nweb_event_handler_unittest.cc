@@ -774,6 +774,18 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   bool IsAppLinkingEnabled() const override { return false; }
 #endif
 #endif  // BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetMediaResumeFromBFCachePage(bool resume) override {}
+  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {}
+  void GetImageForContextNode(CefRefPtr<CefFrame> frame, int command_id) override {}
+  void SetHasComposition(bool has_composition) override {}
+  bool GetHasComposition() override { return false; }
+  void PutUserAgent(const CefString& ua, bool from_app) override {}
+  void SetImeShow(bool visible) override {}
+  void SetEnableCustomVideoPlayer(bool flag) override {}
+  void EnableAppLinking(bool enable) override {}
+  bool IsAppLinkingEnabled() const override { return false; }
+#endif // ARKWEB_UNITTESTS
 };
 
 class MockCefBrowser : public ArkWebBrowserExt {

@@ -115,6 +115,12 @@ IdentityGetAuthTokenFunction::~IdentityGetAuthTokenFunction() {
 }
 
 ExtensionFunction::ResponseAction IdentityGetAuthTokenFunction::Run() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  api::identity::GetAuthTokenResult empty_auth_token_result;
+  base::Value empty_infos(empty_auth_token_result.ToValue());
+  return RespondNow(WithArguments(std::move(empty_infos)));
+#endif
+
   TRACE_EVENT_NESTABLE_ASYNC_BEGIN1("identity", "IdentityGetAuthTokenFunction",
                                     this, "extension", extension()->id());
 

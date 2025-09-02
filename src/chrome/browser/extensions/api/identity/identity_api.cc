@@ -266,6 +266,10 @@ void IdentityAPI::OnExtendedAccountInfoRemoved(
 
 void IdentityAPI::FireOnAccountSignInChanged(const std::string& gaia_id,
                                              bool is_signed_in) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return;
+#endif
+
   CHECK(!gaia_id.empty());
   api::identity::AccountInfo api_account_info;
   api_account_info.id = gaia_id;

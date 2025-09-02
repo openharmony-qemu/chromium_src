@@ -93,6 +93,11 @@ IdentityLaunchWebAuthFlowFunction::~IdentityLaunchWebAuthFlowFunction() {
 }
 
 ExtensionFunction::ResponseAction IdentityLaunchWebAuthFlowFunction::Run() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  base::Value empty_response("");
+  return RespondNow(WithArguments(std::move(empty_response)));
+#endif
+
   Profile* profile = Profile::FromBrowserContext(browser_context());
   if (profile->IsOffTheRecord()) {
     Error error = Error::kOffTheRecord;

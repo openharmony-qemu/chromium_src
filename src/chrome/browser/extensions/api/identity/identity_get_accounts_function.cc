@@ -26,6 +26,11 @@ IdentityGetAccountsFunction::~IdentityGetAccountsFunction() {
 }
 
 ExtensionFunction::ResponseAction IdentityGetAccountsFunction::Run() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  base::Value::List empty_infos;
+  return RespondNow(WithArguments(std::move(empty_infos)));
+#endif
+
   if (browser_context()->IsOffTheRecord()) {
     return RespondNow(Error(identity_constants::kOffTheRecord));
   }

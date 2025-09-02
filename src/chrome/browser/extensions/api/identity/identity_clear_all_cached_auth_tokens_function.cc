@@ -18,6 +18,10 @@ IdentityClearAllCachedAuthTokensFunction::
 
 ExtensionFunction::ResponseAction
 IdentityClearAllCachedAuthTokensFunction::Run() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return RespondNow(NoArguments());
+#endif
+
   Profile* profile = Profile::FromBrowserContext(browser_context());
   if (profile->IsOffTheRecord())
     return RespondNow(Error(identity_constants::kOffTheRecord));

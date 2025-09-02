@@ -614,7 +614,7 @@ void NWebHandlerDelegate::OnDestroy() {
 #if BUILDFLAG(ARKWEB_JSPROXY)
   RemoveTransientJavaScriptObject();
 #endif
-  if (main_browser_) {
+  if (main_browser_ && main_browser_->GetHost()) {
     main_browser_->GetHost()->CloseBrowser(true);
     main_browser_ = nullptr;
   }
@@ -985,6 +985,9 @@ void NWebHandlerDelegate::InjectJsToWebInner(
     JsRunTime time,
     ScriptItems& scriptItems,
     ScriptItemsByOrder& scriptItemsByOrder) {
+  if (!main_browser_ || !main_browser_->GetHost()) {
+    return;
+  } 
   switch (time) {
     case JsRunTime::Start:
       scriptItems = preference_delegate_->GetJavaScriptOnDocumentStart();
@@ -1038,6 +1041,9 @@ void NWebHandlerDelegate::InjectJsToWeb(JsRunTime time) {
       CefString cefRule;
       cefRule.FromString(rule);
       scriptRules.push_back(cefRule);
+    }
+    if (!main_browser_ || !main_browser_->GetHost()) {
+      return;
     }
     switch (time) {
       case JsRunTime::Start:
@@ -1289,7 +1295,7 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
     }
   } else {
     content::GpuProcessHost* host = content::GpuProcessHost::Get();
-    if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr) {
+    if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr && main_browser_->GetHost()) {
       host->gpu_host()->DestroyNativeWindow(main_browser_->GetHost()->GetAcceleratedWidget(false));
     }
     OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
@@ -1558,7 +1564,7 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
   isWebPaintedForSnapshot_ = false;
 #endif
 
-  if (nweb_handler_ != nullptr) {
+  if (nweb_handler_ != nullptr && browser->GetHost()) {
     nweb_handler_->OnPageLoadBegin(url.ToString());
     browser->GetHost()->OnTextSelected(false);
   }
@@ -2267,7 +2273,7 @@ bool NWebHandlerDelegate::OnBeforeDownload(
     return false;
   }
 
-  if (download_listener_ != nullptr) {
+  if (download_listener_ != nullptr && browser->GetHost()) {
     download_listener_->OnDownloadStart(
         download_item->GetURL().ToString(),
         browser->GetHost()->DefaultUserAgent(),

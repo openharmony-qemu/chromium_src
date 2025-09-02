@@ -570,6 +570,7 @@ buildflag_header("features") {
     "ARKWEB_EXT_NAVIGATION=false",
     "ARKWEB_EXT_SECURITY_STATE=false",
     "ARKWEB_EXT_PULL_TO_REFRESH=false",
+    "ARKWEB_READER_MODE=false",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

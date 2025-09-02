@@ -20,7 +20,6 @@
 #include <pthread.h>
 #include <map>
 
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
 #include "drm_adapter.h"
 #include <multimedia/drm_framework/native_drm_common.h>
 #include <multimedia/drm_framework/native_drm_err.h>
@@ -94,8 +93,8 @@ public:
     {
         (void)memset_s(keySetId_, sizeof(keySetId_), 0, sizeof(keySetId_));
         if (keySetId != nullptr && keySetIdLen > 0 && keySetIdLen <= MAX_KEY_SET_ID_LEN) {
-            if (memcpy_s(keySetId_, sizeof(keySetId_), keySetId, keySetIdLen) != 0) {
-                WVLOG_E("SessionId memcpy_s fail.");
+            if (memcpy_s(keySetId_, sizeof(keySetId_), keySetId, keySetIdLen) == 0) {
+                keySetIdLen_ = keySetIdLen;
             }
         }
     }

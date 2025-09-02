@@ -28,6 +28,10 @@ void OHOSMediaPlayerCallback::OnError(
     media_error_type =
         OHOSMediaPlayerBridge::MediaErrorType::MEDIA_ERROR_DECODE;
   }
+  if (media_player_ == nullptr) {
+    LOG(ERROR) << "media_player_ is nullptr";
+    return;
+  }
   task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&OHOSMediaPlayerBridge::OnError, media_player_,
                                 media_error_type));
@@ -36,6 +40,10 @@ void OHOSMediaPlayerCallback::OnError(
 void OHOSMediaPlayerCallback::OnInfo(OHOS::NWeb::PlayerOnInfoType type,
                                      int32_t extra,
                                      int32_t value) {
+  if (media_player_ == nullptr) {
+    LOG(ERROR) << "media_player_ is nullptr";
+    return;
+  }
   switch (type) {
     case OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_EOS:
       task_runner_->PostTask(

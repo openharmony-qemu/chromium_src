@@ -75,4 +75,4 @@ class DistillerPageWebContentsExt : public DistillerPageWebContents {
 };
 
 }  // namespace dom_distiller
-#endif // COMPONENTS_DOM_DISTILLER_CONTENT_BROWSER_DISTILLER_PAGE_WEB_CONTENTS_EXT_H_
+#endif  // COMPONENTS_DOM_DISTILLER_CONTENT_BROWSER_DISTILLER_PAGE_WEB_CONTENTS_EXT_H_

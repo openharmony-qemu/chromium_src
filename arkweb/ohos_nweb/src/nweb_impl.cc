@@ -671,8 +671,8 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--enable-aggressive-domstorage-flushing");
   web_engine_args.emplace_back("--ohos-enable-drdc");
 #if BUILDFLAG(ARKWEB_READER_MODE)
-  web_engine_args.emplace_back("--enable-distillability-service");
-  web_engine_args.emplace_back("--enable-dom-distiller");
+  web_engine_args.push_back("--enable-distillability-service");
+  web_engine_args.push_back("--enable-dom-distiller");
 #endif // ARKWEB_READER_MODE
 
   std::vector<std::string> modeVector = {"Default", "IncludeSensitive",
@@ -3982,7 +3982,8 @@ void NWebImpl::UpdateBrowserEngineGlobalConfig(const std::string& file_path,
 #if BUILDFLAG(ARKWEB_READER_MODE)
 // static
 void NWebImpl::UpdateReaderModeConfig(const std::string& file_path,
-                                      const std::string& version) {
+                                  const std::string& version) {
+  LOG(INFO) << "NWebImpl::UpdateReaderModeConfig file_path:" << file_path << " version:" << version;
   nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->UpdateBrowserReaderModeConfig(file_path, version);
 }
 

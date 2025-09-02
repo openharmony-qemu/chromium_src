@@ -6076,7 +6076,7 @@ void NWebDelegate::Distill(const std::string& guid, const DistillOptions& distil
                           const DistillOptions&,
                           DistillCallback)) &
                           NWebDelegate::Distill,
-                      this, guid, distill_options, callback));
+                       this, guid, distill_options, callback));
     return;
   }
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {

@@ -2440,7 +2440,7 @@ source_set("browser") {
   if (arkweb_reader_mode) {
     deps += [ "//components/dom_distiller/content/common/mojom" ]
   }
-
+  
   if (defined(report_sys_event) && report_sys_event) {
     defines += [ "REPORT_SYS_EVENT" ]
   }

@@ -48,5 +48,5 @@ class TaskTrackerUtils {
   std::vector<std::unique_ptr<ViewRequestDelegate>> viewers_list_;
 #endif // ARKWEB_READER_MODE
 };
-  // namespace dom_distiller
+}  // namespace dom_distiller
 #endif  // COMPONENTS_DOM_DISTILLER_CORE_TASK_TRACKER_UTILS_H_

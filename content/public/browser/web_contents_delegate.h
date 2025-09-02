@@ -57,7 +57,7 @@
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
 #include "components/dom_distiller/content/common/mojom/distillability_service.mojom.h"
-#endif
+#endif  // ARKWEB_READER_MODE
 
 class GURL;
 

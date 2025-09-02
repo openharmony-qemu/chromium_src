@@ -101,7 +101,7 @@ message DistilledPageProto {
       optional CatalogPaginationInfo pagination_info = 3;
     }
     optional CatalogPageInfo catalog_info = 11;
-
+    
     optional string start_read_link = 12;
     optional bool finished_status = 13;
     

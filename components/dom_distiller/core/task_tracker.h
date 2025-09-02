@@ -162,7 +162,6 @@ class TaskTracker {
   bool destruction_allowed_;
 
   std::unique_ptr<TaskTrackerUtils> tracker_utils_;
-
   // Note: This should remain the last member so it'll be destroyed and
   // invalidate its weak pointers before any other members are destroyed.
   base::WeakPtrFactory<TaskTracker> weak_ptr_factory_{this};

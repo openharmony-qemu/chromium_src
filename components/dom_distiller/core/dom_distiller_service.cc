@@ -73,7 +73,6 @@ std::unique_ptr<ViewerHandle> DomDistillerService::ViewUrl(
   if (!url.is_valid()) {
     return nullptr;
   }
- 
 #if BUILDFLAG(ARKWEB_READER_MODE)
   if (service_utils_->ShouldViewUrl(url, distiller_page)) return nullptr;
 #endif // ARKWEB_READER_MODE

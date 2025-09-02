@@ -24,7 +24,7 @@ constexpr char kBECEMatchPrevFeature[] = "match_prev_feature";
 constexpr char kBECEMatchNextFeature[] = "match_next_feature";
 constexpr char kBECEMatchCatalogFeature[] = "match_catalog_feature";
 constexpr char kBECEMatchTime[] = "match_time";
- 
+
 bool UrlIsHomePage(const GURL& url) {
   if (!url.has_path()) {
     return true;

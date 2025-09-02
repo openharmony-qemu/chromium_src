@@ -1009,6 +1009,36 @@ void NWebRenderHandler::OnTouchSelectionChanged(
 }
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
+void NWebRenderHandler::SelectionBoundsChanged(const CefRect& anchor_rect,
+                                               const CefRect& focus_rect,
+                                               bool is_anchor_first) {
+  CefRect start_rect = focus_rect;
+  CefRect end_rect = anchor_rect;
+
+  if (!is_anchor_first) {
+    start_rect = anchor_rect;
+    end_rect = focus_rect;
+  }
+
+  start_rect.x *= screen_info_.display_ratio;
+  start_rect.y *= screen_info_.display_ratio;
+  start_rect.width *= screen_info_.display_ratio;
+  start_rect.height *= screen_info_.display_ratio;
+
+  end_rect.x *= screen_info_.display_ratio;
+  end_rect.y *= screen_info_.display_ratio;
+  end_rect.width *= screen_info_.display_ratio;
+  end_rect.height *= screen_info_.display_ratio;
+
+  start_edge_top_.Set(start_rect.x, start_rect.y);
+  start_edge_bottom_.Set(start_rect.x + start_rect.width,
+                         start_rect.y + start_rect.height);
+
+  end_edge_top_.Set(end_rect.x, end_rect.y);
+  end_edge_bottom_.Set(end_rect.x + end_rect.width,
+                       end_rect.y + end_rect.height);
+}
+
 void NWebRenderHandler::NotifySelectAllClicked(bool select_all) {
   select_all_ = select_all;
 }
@@ -1092,25 +1122,14 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
   ImageDragForFileUri(drag_data);
   CefPoint drag_touch_point(x, y);
 
-  std::vector<CefPoint> start_edge{
-      CefPoint(start_selection_handle_.origin.x,
-               start_selection_handle_.origin.y -
-                   start_selection_handle_.edge_height),
-      CefPoint(start_selection_handle_.origin.x,
-               start_selection_handle_.origin.y)};
-  std::vector<CefPoint> end_edge{
-      CefPoint(
-          end_selection_handle_.origin.x,
-          end_selection_handle_.origin.y - end_selection_handle_.edge_height),
-      CefPoint(end_selection_handle_.origin.x, end_selection_handle_.origin.y)};
+  std::vector<CefPoint> start_edge{start_edge_top_, start_edge_bottom_};
+  std::vector<CefPoint> end_edge{end_edge_top_, end_edge_bottom_};
 
-  bool usefull_selection = false;
+  bool usefull_selection = true;
   if (!link_url.empty() && !drag_data->IsImageFileContents()) {
     usefull_selection = false;
   } else if (select_all_) {
     usefull_selection = false;
-  } else {
-    usefull_selection = is_irregular_drag_background_;
   }
 
   // default value false
@@ -1185,12 +1204,6 @@ void NWebRenderHandler::FreePixlMapData() {
         ->FreePixlMapData();
   }
 }
-
-void NWebRenderHandler::SetIrregularDragBackground(
-    bool is_irregular_background) {
-  is_irregular_drag_background_ = is_irregular_background;
-}
-
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
 #if BUILDFLAG(IS_OHOS)

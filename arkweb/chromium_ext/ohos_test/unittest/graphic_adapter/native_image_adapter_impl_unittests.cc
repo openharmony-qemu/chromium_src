@@ -17,7 +17,9 @@
 #include <cstring>
 #include <memory>
 #include <gtest/gtest.h>
- 
+#include <native_image/graphic_error_code.h>
+#include <native_window/external_window.h>
+#include <native_buffer/native_buffer.h>
 #define private public
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_image_adapter_impl.h"
 #undef private
@@ -27,7 +29,6 @@ using namespace testing;
 namespace OHOS::NWeb {
 constexpr int BUFFER_SIZE = 10;
 constexpr int BITS_PER_PIXEL = 4;
-constexpr int NATIVE_ERROR_UNKNOWN = 50002000;
 class NativeImageAdapterImplTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -51,6 +52,28 @@ void NativeImageAdapterImplTest::TearDownTestCase() {}
 void NativeImageAdapterImplTest::SetUp() {}
 
 void NativeImageAdapterImplTest::TearDown() {}
+
+void TestBufferAllocateForNativeImageAdapter(void** outBuffer)
+{
+    if (outBuffer == nullptr) {
+        return;
+    }
+
+    OH_NativeBuffer_Config config = {
+        .width = 10,
+        .height = 10,
+        .format = OH_NativeBuffer_Format::NATIVEBUFFER_PIXEL_FMT_RGBA_8888,
+        .usage = 1,
+        .stride = 1,
+    };
+
+    OH_NativeBuffer* buffer = OH_NativeBuffer_Alloc(&config);
+    if (buffer != nullptr) {
+        *outBuffer = buffer;
+    } else {
+        *outBuffer = nullptr;
+    }
+}
 
 TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_001)
 {
@@ -163,7 +186,12 @@ TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_008)
     EXPECT_NE(adapter, nullptr);
     void* windowBuffer = nullptr;
     int fenceId = -1;
-    int32_t ret = adapter->AcquireNativeWindowBuffer(&windowBuffer, &fenceId);
+    int32_t ret = NATIVE_ERROR_OK;
+    ret = adapter->AcquireNativeWindowBuffer(nullptr, &fenceId);
+    EXPECT_EQ(ret, NATIVE_ERROR_UNKNOWN);
+    ret = adapter->AcquireNativeWindowBuffer(&windowBuffer, nullptr);
+    EXPECT_EQ(ret, NATIVE_ERROR_UNKNOWN);
+    ret = adapter->AcquireNativeWindowBuffer(&windowBuffer, &fenceId);
     EXPECT_EQ(ret, NATIVE_ERROR_UNKNOWN);
     adapter->NewNativeImage();
     EXPECT_NE(adapter->ohNativeImage_, nullptr);
@@ -175,23 +203,41 @@ TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_009)
 {
     std::shared_ptr<NativeImageAdapterImpl> adapter = std::make_shared<NativeImageAdapterImpl>();
     EXPECT_NE(adapter, nullptr);
-    void* windowBuffer = nullptr;
+    void* buffer = nullptr;
+    TestBufferAllocateForNativeImageAdapter(&buffer);
+    OHNativeWindowBuffer* windowBuffer =
+        OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer(static_cast<OH_NativeBuffer*>(buffer));
     void* nativeBuffer = nullptr;
-    adapter->GetNativeBuffer(windowBuffer, &nativeBuffer);
+    int32_t ret = NATIVE_ERROR_OK;
+    ret = adapter->GetNativeBuffer(nullptr, &nativeBuffer);
+    EXPECT_EQ(ret, NATIVE_ERROR_UNKNOWN);
+    ret = adapter->GetNativeBuffer(windowBuffer, nullptr);
+    EXPECT_EQ(ret, NATIVE_ERROR_UNKNOWN);
+    ret = adapter->GetNativeBuffer(windowBuffer, &nativeBuffer);
+    EXPECT_EQ(ret, NATIVE_ERROR_OK);
+    OH_NativeWindow_DestroyNativeWindowBuffer(windowBuffer);
+    windowBuffer = nullptr;
 }
 
 TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_010)
 {
     std::shared_ptr<NativeImageAdapterImpl> adapter = std::make_shared<NativeImageAdapterImpl>();
     EXPECT_NE(adapter, nullptr);
-    void* windowBuffer = nullptr;
+    void* buffer = nullptr;
+    TestBufferAllocateForNativeImageAdapter(&buffer);
+    OHNativeWindowBuffer* windowBuffer =
+        OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer(static_cast<OH_NativeBuffer*>(buffer));
     int fenceId = -1;
-    int32_t ret = adapter->ReleaseNativeWindowBuffer(windowBuffer, fenceId);
+    int32_t ret = adapter->ReleaseNativeWindowBuffer(nullptr, fenceId);
     EXPECT_EQ(ret, NATIVE_ERROR_UNKNOWN);
     adapter->NewNativeImage();
     EXPECT_NE(adapter->ohNativeImage_, nullptr);
+    ret = adapter->ReleaseNativeWindowBuffer(nullptr, fenceId);
+    EXPECT_EQ(ret, NATIVE_ERROR_UNKNOWN);
     ret = adapter->ReleaseNativeWindowBuffer(windowBuffer, fenceId);
-    EXPECT_NE(ret, NATIVE_ERROR_UNKNOWN);
+    EXPECT_NE(ret, NATIVE_ERROR_OK);
+    OH_NativeWindow_DestroyNativeWindowBuffer(windowBuffer);
+    windowBuffer = nullptr;
 }
 
 TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_011)
@@ -211,7 +257,7 @@ TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_011)
     adapter->GetNativeWindowBufferSize(windowBuffer, nullptr, &height);
     adapter->GetNativeWindowBufferSize(windowBuffer, &width, &height);
     delete[] reinterpret_cast<uint8_t*>(windowBuffer);
-    EXPECT_EQ(width, 0);
-    EXPECT_EQ(height, 0);
+    EXPECT_EQ(width, (uint32_t)0);
+    EXPECT_EQ(height, (uint32_t)0);
 }
 } // namespace OHOS::NWeb

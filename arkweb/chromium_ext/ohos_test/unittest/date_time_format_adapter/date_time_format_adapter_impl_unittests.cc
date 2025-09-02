@@ -19,14 +19,20 @@
 #define private public
 #include "arkweb/ohos_adapter_ndk/date_time_format_adapter/date_time_format_adapter_impl.h"
 #undef private
+#include "arkweb/ohos_adapter_ndk/date_time_format_adapter/date_time_format_adapter_impl.cpp"
+
+#include "base/logging.h"
+#include "testing/gmock/include/gmock/gmock.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 using namespace testing;
 
-namespace OHOS {
-namespace NWeb {
-
+namespace OHOS::NWeb {
 class DateTimeFormatAdapterImplTest : public testing::Test {
 public:
+    DateTimeFormatAdapterImplTest() {}
+    ~DateTimeFormatAdapterImplTest() = default;
+
     static void SetUpTestCase();
     static void TearDownTestCase();
     void SetUp();
@@ -60,5 +66,49 @@ TEST_F(DateTimeFormatAdapterImplTest, DateTimeFormatAdapterImplTest_001)
     auto timeStr = adapter->GetTimezone();
     EXPECT_FALSE(timeStr.empty());
 }
-} // namespace NWeb
-} // namespace OHOS
+
+TEST_F(DateTimeFormatAdapterImplTest, DateTimeFormatReceiveCallback01) {
+  ASSERT_NO_FATAL_FAILURE(DateTimeFormatReceiveCallback(nullptr));
+
+}
+
+TEST_F(DateTimeFormatAdapterImplTest, DateTimeFormatAdapterImplTest_002) {
+  DateTimeFormatAdapterImpl dateTimeForAdapter;
+  bool ret = dateTimeForAdapter.StartListen();
+  EXPECT_TRUE(ret);
+  EXPECT_NE(dateTimeForAdapter.commonEventSubscriberInfo_, nullptr);
+  EXPECT_NE(dateTimeForAdapter.commonEventSubscriber_, nullptr);
+  ret = dateTimeForAdapter.StartListen();
+  EXPECT_TRUE(ret);
+  dateTimeForAdapter.StopListen();
+  EXPECT_EQ(dateTimeForAdapter.commonEventSubscriberInfo_, nullptr);
+  EXPECT_EQ(dateTimeForAdapter.commonEventSubscriber_, nullptr);
+}
+
+TEST_F(DateTimeFormatAdapterImplTest, DateTimeFormatAdapterImplTest_003) {
+  DateTimeFormatAdapterImpl dateTimeForAdapter;
+  bool ret = dateTimeForAdapter.StartListen();
+  EXPECT_TRUE(ret);
+  EXPECT_NE(dateTimeForAdapter.commonEventSubscriberInfo_, nullptr);
+  EXPECT_NE(dateTimeForAdapter.commonEventSubscriber_, nullptr);
+  std::shared_ptr<TimezoneEventCallbackAdapter> cb = std::make_shared<MockTimezoneEventCallbackAdapter>();
+  EXPECT_NE(cb.get(), nullptr);
+  dateTimeForAdapter.cbSet_.insert(cb);
+  dateTimeForAdapter.StopListen();
+  EXPECT_NE(dateTimeForAdapter.commonEventSubscriberInfo_, nullptr);
+  EXPECT_NE(dateTimeForAdapter.commonEventSubscriber_, nullptr);
+}
+
+TEST_F(DateTimeFormatAdapterImplTest, DateTimeFormatAdapterImplTest_004) {
+  DateTimeFormatAdapterImpl dateTimeForAdapter;
+  bool ret = dateTimeForAdapter.StartListen();
+  EXPECT_TRUE(ret);
+  EXPECT_NE(dateTimeForAdapter.commonEventSubscriberInfo_, nullptr);
+  EXPECT_NE(dateTimeForAdapter.commonEventSubscriber_, nullptr);
+  dateTimeForAdapter.StopListen();
+  dateTimeForAdapter.cbSet_.insert(dateTimeForAdapter.cb_);
+  dateTimeForAdapter.StopListen();
+  EXPECT_EQ(dateTimeForAdapter.commonEventSubscriberInfo_, nullptr);
+  EXPECT_EQ(dateTimeForAdapter.commonEventSubscriber_, nullptr);
+}
+} // namespace OHOS::NWeb

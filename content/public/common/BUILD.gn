@@ -328,6 +328,10 @@ source_set("common_sources") {
     public_deps += [ "//media/capture/video/chromeos/public" ]
   }
 
+  if (arkweb_reader_mode) {
+    public_deps += [ "//components/dom_distiller/content/common/mojom" ]
+  }
+
   if (is_linux || is_chromeos) {
     sources += [
       "zygote/sandbox_support_linux.h",

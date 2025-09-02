@@ -4343,6 +4343,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
   blink::mojom::PermissionStatus GetCombinedPermissionStatus(
       blink::PermissionType permission_type);
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  net::Error GetNetErrorCode() override;
+  net::Error net_error_{net::Error::OK};
+#endif // ARKWEB_READER_MODE
+
   // The RenderViewHost that this RenderFrameHost is associated with.
   //
   // It is kept alive as long as any RenderFrameHosts or RenderFrameProxyHosts

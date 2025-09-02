@@ -2714,6 +2714,10 @@ void NavigationRequest::BeginNavigationImpl() {
   if (!this_ptr)
     return;
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  nav_request_utils_->BeginNavigationImpl(should_override_url_loading);
+#endif
+
   if (should_override_url_loading) {
     // Don't create a NavigationHandle here to simulate what happened with the
     // old navigation code path (i.e. doesn't fire onPageFinished notification

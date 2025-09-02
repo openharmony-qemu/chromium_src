@@ -510,4 +510,9 @@ WebContentsDelegate::OnFullScreenOverlayEnter(
 }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+bool WebContentsDelegate::IsForDistillerPage() {
+  return false;
+}
+#endif
 }  // namespace content

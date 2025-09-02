@@ -2437,6 +2437,10 @@ source_set("browser") {
     sources += arkweb_content_browser_renderer_host_media_sources
   }
 
+  if (arkweb_reader_mode) {
+    deps += [ "//components/dom_distiller/content/common/mojom" ]
+  }
+
   if (defined(report_sys_event) && report_sys_event) {
     defines += [ "REPORT_SYS_EVENT" ]
   }

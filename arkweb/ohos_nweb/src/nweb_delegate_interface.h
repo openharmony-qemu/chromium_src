@@ -61,6 +61,10 @@
 #include "ui/gfx/geometry/size.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "capi/nweb_extension_distill_item.h"
+#endif // ARKWEB_READER_MODE
+
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -908,6 +912,11 @@ class NWebDelegateInterface
                                      bool recursive, IsolatedWorld world,
                                      OnReceiveValueCallback callback) = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  virtual void Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) = 0;
+  virtual void AbortDistill() = 0;
+#endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   virtual void SetErrorPageEnabled(bool enable) = 0;

@@ -731,6 +731,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                                        void** adapter) override {}
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void Distill(const std::string& guid, const DistillOptions& distill_options,
+    CefRefPtr<CefDistillCallback> callback) override {}
+  void AbortDistill() override {}
+#endif // ARKWEB_READER_MODE
 };
 
 class MockCefBrowser : public CefBrowser {

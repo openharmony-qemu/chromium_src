@@ -11,6 +11,10 @@
 #include "base/functional/callback.h"
 #include "base/observer_list_types.h"
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "components/dom_distiller/content/common/mojom/distillability_service.mojom.h"
+#endif
+
 namespace content {
 class WebContents;
 }  // namespace content
@@ -29,6 +33,9 @@ void IsDistillablePageForDetector(content::WebContents* web_contents,
                                   base::OnceCallback<void(bool)> callback);
 
 struct DistillabilityResult {
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  mojom::PageDistillableInfo page_info;
+#endif
   bool is_distillable;
   bool is_last;
   bool is_long_article;

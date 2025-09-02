@@ -575,6 +575,10 @@ mojom("mojo_bindings") {
     sources += [ "pepper_plugin.mojom" ]
   }
 
+  if (arkweb_reader_mode) {
+    enabled_features += [ "arkweb_reader_mode" ]
+  }
+
   if (defined(arkweb_adblock) && arkweb_adblock) {
     enabled_features += [ "arkweb_adblock" ]
   }

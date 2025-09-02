@@ -591,5 +591,4 @@ void ArkwebRenderProcessHostImplUtils::AddHostUIThreadInterface(
                 std::move(receiver));
           }));
 }
-
 }  // namespace content

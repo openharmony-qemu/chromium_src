@@ -3863,6 +3863,14 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
     child_process_->SetStrictLogMode(GetBrowserContext()->IsOffTheRecord());
   }
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE) && !defined(COMPONENT_BUILD)
+  if (AsArkwebRenderProcessHostImplExt()) {
+    AsArkwebRenderProcessHostImplExt()->UpdateReaderModeConfig(
+        nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()
+            ->GetReaderModeConfigData());
+  }
+#endif
 }
 
 void RenderProcessHostImpl::OnChannelError() {

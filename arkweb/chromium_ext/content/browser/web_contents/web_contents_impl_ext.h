@@ -302,6 +302,12 @@ class WebContentsImplExt : public WebContentsImpl {
   bool OnStartBackgroundTask(int32_t type, const std::string& message) override;
 #endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void OnIsPageDistillable(int page_type,
+                           const std::string& distillable_page_url,
+                           const std::string& title) override;
+#endif // ARKWEB_READER_MODE
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 friend class WebContentsImpl;
 friend class WebContentsImplUtils;

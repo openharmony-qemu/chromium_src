@@ -7,6 +7,9 @@ import("//media/media_options.gni")
 import("//ppapi/buildflags/buildflags.gni")
 import("//arkweb/build/features/features.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 # See //content/BUILD.gn for how this works.
 group("renderer") {
   if (is_component_build) {
@@ -56,6 +59,10 @@ target(link_target_type, "renderer_sources") {
     "window_features_converter.h",
     "worker_thread.h",
   ]
+
+  if (is_arkweb) {
+    sources += arkweb_content_public_renderer_sources
+  }
 
   configs += [ "//content:content_implementation" ]
 

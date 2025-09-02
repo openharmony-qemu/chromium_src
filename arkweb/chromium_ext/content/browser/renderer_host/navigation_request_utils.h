@@ -51,6 +51,10 @@ void SetAdblockEnabledStatus(blink::mojom::CommitNavigationParams* commit_params
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 bool GetCustomScheme(const std::pair<url::Origin, std::string>& origin_and_debug_info);
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void BeginNavigationImpl(bool& should_override_url_loading);
+#endif
   base::WeakPtrFactory<NavigationRequestUtils> weak_factory_{this};
 };
 }

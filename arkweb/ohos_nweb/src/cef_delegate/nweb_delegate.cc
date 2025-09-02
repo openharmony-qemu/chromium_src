@@ -560,6 +560,28 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
 };
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+class DistillCallbackImpl : public CefDistillCallback {
+public:
+  DistillCallbackImpl(int32_t nweb_id, DistillCallback callback)
+  : nweb_id_(nweb_id), callback_(callback) {}
+
+  ~DistillCallbackImpl() {}
+
+  void OnDistillCallback(const std::string& guid, const std::string& distill_info) override {
+    if (callback_ != nullptr) {
+      callback_(nweb_id_, guid.c_str(), distill_info.c_str());
+    }
+  }
+
+ private:
+  int32_t nweb_id_ = 0;
+  DistillCallback callback_;
+
+  IMPLEMENT_REFCOUNTING(DistillCallbackImpl);
+};
+#endif // ARKWEB_READER_MODE
+
 NWebDelegate::NWebDelegate(int argc, const char* argv[])
     : argc_(argc), argv_(argv) {}
 
@@ -5367,28 +5389,21 @@ int NWebDelegate::SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 void NWebDelegate::SetPathAllowingUniversalAccess(
-    const std::vector<std::string>& path_list,
-    const std::vector<std::string>& excluded_path_list) {
+    const std::vector<std::string>& pathList) {
   if (!GetBrowser().get() || !GetBrowser()->GetHost() ||
       !preference_delegate_) {
     LOG(ERROR) << "NWebDelegate::SetPathAllowingUniversalAccess failed, get "
                   "browser failed";
     return;
   }
-  preference_delegate_->PutEnableUniversalAccessFromFileURLs(path_list.size() !=
+  preference_delegate_->PutEnableUniversalAccessFromFileURLs(pathList.size() !=
                                                              0);
   std::vector<CefString> cef_path_list;
-  std::for_each(path_list.begin(), path_list.end(),
+  std::for_each(pathList.begin(), pathList.end(),
                 [&cef_path_list](const std::string& path) {
                   cef_path_list.emplace_back(CefString(path));
                 });
-
-  std::vector<CefString> cef_excluded_path_list;
-  std::for_each(excluded_path_list.begin(), excluded_path_list.end(),
-                [&cef_excluded_path_list](const std::string& path) {
-                  cef_excluded_path_list.emplace_back(CefString(path));
-                });
-  GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list, cef_excluded_path_list);
+  GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list);
 }
 
 int NWebDelegate::PrerenderPage(const std::string& url,
@@ -5992,7 +6007,7 @@ void NWebDelegate::SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_k
   }
 
   auto browser = GetBrowser();
-  if (browser == nullptr || browser->GetMainFrame() == nullptr || browser->GetMainFrame()->AsArkWebFrame() == nullptr) {
+  if (browser == nullptr) {
     LOG(ERROR) << "blankless NWebDelegate::SetBlanklessLoadingKey browser is nullptr";
     return;
   }
@@ -6000,9 +6015,7 @@ void NWebDelegate::SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_k
   // before send to render_frame, frame_sink_id will be get from compositor.
   int64_t pref_hash = preference_delegate_ ? preference_delegate_->GetPreferenceHash() : 0;
   browser->GetMainFrame()->AsArkWebFrame()->SendBlanklessKeyToRenderFrame(nweb_id, blankless_key, 0, pref_hash);
-  if (handler_delegate_) {
-    handler_delegate_->SetBlanklessLoadingKey(blankless_key);
-  }
+  handler_delegate_->SetBlanklessLoadingKey(blankless_key);
 }
 
 int64_t NWebDelegate::GetPreferenceHash() {
@@ -6052,6 +6065,45 @@ void NWebDelegate::RunJavaScriptInFrames(const std::string& jsString, FrameInfos
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void NWebDelegate::Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce((void(NWebDelegate::*)(
+                          const std::string&,
+                          const DistillOptions&,
+                          DistillCallback)) &
+                          NWebDelegate::Distill,
+                      this, guid, distill_options, callback));
+    return;
+  }
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::Distill failed, can not get browser";
+    return;
+  }
+  CefRefPtr<DistillCallbackImpl> callback_impl =
+      new DistillCallbackImpl(nweb_id_, callback);
+  GetBrowser()->GetHost()->Distill(guid, distill_options, callback_impl);
+}
+
+void NWebDelegate::AbortDistill() {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce((void(NWebDelegate::*)()) &
+                        NWebDelegate::AbortDistill,
+                        this));
+    return;
+  }
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::AbortDistill failed, can not get browser";
+    return;
+  }
+  GetBrowser()->GetHost()->AbortDistill();
+}
+#endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
 void NWebDelegate::SetErrorPageEnabled(bool enable) {

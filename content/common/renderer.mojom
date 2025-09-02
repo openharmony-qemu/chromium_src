@@ -18,6 +18,9 @@ import "third_party/blink/public/mojom/user_agent/user_agent_metadata.mojom";
 [EnableIf=arkweb_theme_font]
 import "mojo/public/mojom/base/file.mojom";
 
+[EnableIf=arkweb_reader_mode]
+import "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom";
+
 struct UpdateScrollbarThemeParams {
   // TODO(avi): Update these to optional values when optional numeric types are
   // allowed. (https://crbug.com/657632)
@@ -180,4 +183,9 @@ interface Renderer {
   [EnableIf=arkweb_i18n]
   NotifyLocaleChanged(string update_locale);
   //#endif
+
+  // #if BUILDFLAG(ARKWEB_READER_MODE)
+  [EnableIf=arkweb_reader_mode]
+  UpdateReaderModeConfig(blink.mojom.ReaderModeConfig config);
+  // #endif
 };

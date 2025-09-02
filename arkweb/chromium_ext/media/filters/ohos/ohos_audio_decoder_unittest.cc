@@ -707,6 +707,12 @@ TEST_F(OhosAudioDecoderTest, OnDecodedFrame)
   }
 
   {
+    // audio_decoder_ is nullptr
+    OutputBufferData bufferData(index, data , size , pts, flag);
+    ASSERT_FALSE(decoder_->OnDecodedFrame(bufferData));
+  }
+
+  {
     InitializeDecoder();
     OutputBufferData bufferData(index, data , size , pts, flag);
     ASSERT_TRUE(decoder_->OnDecodedFrame(bufferData));
@@ -755,4 +761,5 @@ TEST_F(OhosAudioDecoderTest, DequeueOutputBuffer)
   decoder_->EnqueueInputBuffer(index);
   EXPECT_EQ(decoder_->DequeueOutputBuffer(out), 0);
 }
+
 }

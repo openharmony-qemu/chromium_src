@@ -565,6 +565,10 @@ void MediaCodecDecoderAdapterImpl::OnOutputBufferAvailable(uint32_t index, OH_AV
 DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfoStruct(
     OH_AVCencInfo *avCencInfo, const std::shared_ptr<AudioCencInfoAdapter> cencInfo)
 {
+    if (cencInfo->GetClearHeaderLens().size() != cencInfo->GetPayLoadLens().size()) {
+        WVLOG_E("MediaCodecDecoder GetClearHeaderLens().size() != GetPayLoadLens().size()");
+        return DecoderAdapterCode::DECODER_ERROR;
+    }
     OH_AVErrCode errNo = OH_AVCencInfo_SetAlgorithm(avCencInfo, static_cast<DrmCencAlgorithm>(cencInfo->GetAlgo()));
     if (errNo != AV_ERR_OK) {
         WVLOG_E("MediaCodecDecoder set AVCencInfo Algorithm fail, errNo = %{public}u", static_cast<uint32_t>(errNo));

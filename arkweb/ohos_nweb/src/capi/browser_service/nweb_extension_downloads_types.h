@@ -55,7 +55,7 @@ enum class ExDownloadsState {
 };
 
 struct ExDownloadsQueryInfo {
-  static const int NUM_PROPERTIES = 27;
+  static const int NUM_PROPERTIES = 29;
   std::optional<double> bytesReceived;
   int32_t danger;
   std::optional<std::string> endTime;
@@ -83,6 +83,8 @@ struct ExDownloadsQueryInfo {
   std::optional<double> totalBytesLess;
   std::optional<std::string> url;
   std::optional<std::string> urlRegex;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
 };
 
 struct ExDownloadsItem {
@@ -119,6 +121,8 @@ struct ExDownloadsGetDownloadIdCallbackParams {
 struct ExDownloadsGetFileIconOptions{
   int downloadId;
   std::optional<int> size;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
 };
 
 struct ExDownloadsGetFileIconCallbackParams {
@@ -151,6 +155,8 @@ struct ExDownloadsEraseCallbackParams {
 struct ExDownloadsUiOptions {
   std::string extensionId;
   bool enabled;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
 };
 
 #ifdef __cplusplus

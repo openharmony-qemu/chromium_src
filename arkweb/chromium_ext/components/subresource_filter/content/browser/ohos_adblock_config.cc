@@ -238,7 +238,7 @@ AdBlockConfig::RemoveAdsBlockDisallowedListInternal(
     std::reverse(std::begin(key), std::end(key));
     disallow_data->AddDataForKey(key, trimed_str);
   }
- 
+
   return disallow_data;
 }
 

@@ -315,6 +315,7 @@ if (!enable_arkweb) {
   arkweb_gwp_asan = false
   arkweb_bgtask = false
   arkweb_privacy_compliance = true
+  arkweb_ex_enable_applinking = false
 }
 
 buildflag_header("features") {
@@ -570,6 +571,7 @@ buildflag_header("features") {
     "ARKWEB_EXT_NAVIGATION=false",
     "ARKWEB_EXT_SECURITY_STATE=false",
     "ARKWEB_EXT_PULL_TO_REFRESH=false",
+    "ARKWEB_EX_ENABLE_APPLINKING=arkweb_ex_enable_applinking",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

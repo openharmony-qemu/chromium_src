@@ -834,7 +834,7 @@ mediaOptions(options: WebMediaOptions): WebAttribute;
   audioSessionType 参数在M114遗留内核上设置不生效，不会抛异常，也不会返回错误码。在M114上，mediaOptions接口参数 WebMediaOptions 仅 resumeInterval 和 audioExclusive 参数生效；
   不建议开发者在M114内核中使用audioSessionType 参数。
 
-#### 页面加载回调新增接口
+#### 页面加载回调接口
 
 ```
 declare interface OnLoadStartedEvent {
@@ -948,7 +948,11 @@ onBeforeUnload(callback: Callback<OnBeforeUnloadEvent, boolean>): WebAttribute;
 ```
 
 * **接口作用说明**:
-  OH6.0上新增了通知宿主应用页面开始加载、加载完成、页面标题以及自定义错误页回调接口。
+  * onLoadStarted：应用页面开始加载时触发该回调
+  * onLoadFinished:：应用页面加载完成时触发该回调
+  * onOverrideErrorPage：页面加载遇到错误时触发该回调, 可使用该接口自定义错误展示页
+  * onTitleReceive: 应用页面文档标题发生变化时触发该回调
+  * onBeforeUnload: 即将完成页面刷新或关闭当前页面时触发该回调
 * **接口在M114遗留内核上的行为**:
   在M114内核上，下述三个新增回调函数将失效，为组件定义这些回调时，都可以成功调用，但设置后系统不会触发此回调。
   
@@ -1014,13 +1018,11 @@ onSslErrorEventReceive(callback: Callback<OnSslErrorEventReceiveEvent>): WebAttr
 ```
 
 * **接口作用说明**:
-  网页加载过程中，发生SSL错误回调时，OH6.0新增了以下两个接口：
-  * certChainData：SSL证书链数据
-  * handleCancel：可通知Web组件取消此请求，并根据参数abortLoading决定是否停止加载。
+  * [onSslErrorEvent](gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#onSslErrorEvent12): 通知用户加载资源（主资源+子资源）时发生SSL错误
+  * [onSslErrorEventReceive](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#onSslErrorEventReceive9): 通知用户加载主资源时发生SSL错误
 * **接口在M114遗留内核上的行为**:
-  在M114内核上：
-  * SslErrorEvent的certChainData为null。
-  * [handleCancel](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-SslErrorHandler.md#handlecancel20)的abortLoading配置不生效。
+  * onSslErrorEvent: `certChainData`始终为undefined。
+  * onSslErrorEventReceive: [handleCancel](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-SslErrorHandler.md#handlecancel20)的`abortLoading`参数不生效。
 
 #### bypassVsyncCondition 接口
 

@@ -3711,6 +3711,8 @@ test("base_unittests") {
 
     public_deps = [
       "//content/public/browser",
+      "//components/autofill/core/browser",
+      "//components/subresource_filter/content/browser",
     ]
   }
 

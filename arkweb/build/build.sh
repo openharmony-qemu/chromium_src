@@ -453,6 +453,11 @@ cd -
 time_start_for_build=$(date +%s)
 time_start_for_gn=$time_start_for_build
 
+cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/include/net_ssl_c.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/network/netstack/net_ssl/net_ssl_c.h"
+cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/aarch64-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnet_ssl.so"
+cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/x86_64-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnet_ssl.so"
+cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/arm-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnet_ssl.so"
+
 if [ $buildgn = 1 ]; then
   echo "generating args list:"
   echo "$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"

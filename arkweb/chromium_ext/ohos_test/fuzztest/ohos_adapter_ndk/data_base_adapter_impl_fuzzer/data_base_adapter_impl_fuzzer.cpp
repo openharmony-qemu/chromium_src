@@ -51,7 +51,7 @@ void FuzzTest001(FuzzedDataProvider* fdp)
     auto pw = fdp->ConsumeRandomLengthString(64);
     auto pws = fdp->ConsumeIntegral<uint32_t>();
     size_t pw_len = strnlen(pw.c_str(), 128);
-    impl->SaveHttpAuthCredentials(host, realm, un, (pw_len == 0 || pw_len > 100) ? nullptr : pw.c_str());
+    impl->SaveHttpAuthCredentials(host, realm, un, (pw_len == 0 || pw_len >= 128) ? nullptr : pw.c_str());
 
     impl->GetHttpAuthCredentials(host, realm, un, pw.data(), pws);
 

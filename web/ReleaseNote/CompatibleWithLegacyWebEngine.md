@@ -1655,7 +1655,7 @@ int bytesRead);
 ```
 
 * **接口作用说明**:
-  ArkWebHttpBodyStream_AsyncRead 支持异步数据，常用于性能优化 。
+  ArkWebHttpBodyStream_AsyncRead 支持异步读取数据，常用于性能优化 。
 * **接口在M114遗留内核上的行为**:
   OH_ArkWebHttpBodyStream_SetAsyncReadCallback 设置不生效，返回错误码17100100。
   OH_ArkWebHttpBodyStream_AsyncRead 不执行操作。

@@ -20,6 +20,10 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
+if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
 buildflag_header("buildflags") {
   header = "buildflags.h"
   flags = [ "ENABLE_SCREEN_CAPTURE=$enable_screen_capture" ]
@@ -326,6 +330,10 @@ source_set("common_sources") {
 
   if (is_chromeos_ash) {
     public_deps += [ "//media/capture/video/chromeos/public" ]
+  }
+
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    public_deps += [ "//components/dom_distiller/content/common/mojom" ]
   }
 
   if (is_linux || is_chromeos) {

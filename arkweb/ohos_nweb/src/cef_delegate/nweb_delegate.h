@@ -863,6 +863,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                              OnReceiveValueCallback callback) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) override;
+void AbortDistill() override;
+#endif // ARKWEB_READER_MODE
+
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   void SetErrorPageEnabled(bool enable) override;
   bool GetErrorPageEnabled() override;

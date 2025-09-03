@@ -23,6 +23,8 @@
 #include "ui/base/resource/resource_bundle.h"
 #include "url/gurl.h"
 
+#include "arkweb/chromium_ext/components/dom_distiller/core/distiller_page_ohos.h"
+
 namespace dom_distiller {
 
 namespace {
@@ -32,14 +34,22 @@ const char* kStringifyPlaceholder = "$$STRINGIFY";
 
 std::string GetDistillerScriptWithOptions(
     const dom_distiller::proto::DomDistillerOptions& options,
-    bool stringify_output) {
+    bool stringify_output
+#if BUILDFLAG(ARKWEB_READER_MODE)
+    ,
+    bool is_distill_catalog
+#endif // ARKWEB_READER_MODE
+  ) {
   std::string script =
       ui::ResourceBundle::GetSharedInstance().LoadDataResourceString(
+#if BUILDFLAG(ARKWEB_READER_MODE)
+          IDR_DISTILLER_JS_ARKWEB);
+#else
           IDR_DISTILLER_JS);
+#endif // ARKWEB_READER_MODE
   if (script.empty()) {
     return "";
   }
-
   base::Value options_value =
       dom_distiller::proto::json::DomDistillerOptions::WriteToValue(options);
   std::string options_json;
@@ -60,10 +70,11 @@ std::string GetDistillerScriptWithOptions(
             script.find(kStringifyPlaceholder, stringify_offset + 1));
   script = script.replace(stringify_offset, strlen(kStringifyPlaceholder),
                           stringify);
-
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  ModifyDistillerScriptOhos(script, is_distill_catalog);
+#endif // ARKWEB_READER_MODE
   return script;
 }
-
 }  // namespace
 
 DistillerPageFactory::~DistillerPageFactory() = default;
@@ -83,8 +94,16 @@ void DistillerPage::DistillPage(
   // the callback to OnDistillationDone happens.
   ready_ = false;
   distiller_page_callback_ = std::move(callback);
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  dom_distiller::proto::DomDistillerOptions new_options = options;
+  bool is_distill_catalog = DistillPageOhos(gurl, new_options);
+  DistillPageImpl(gurl,
+                  GetDistillerScriptWithOptions(new_options, StringifyOutput(),
+                                                is_distill_catalog));
+#else
   DistillPageImpl(gurl,
                   GetDistillerScriptWithOptions(options, StringifyOutput()));
+#endif // ARKWEB_READER_MODE
 }
 
 void DistillerPage::OnDistillationDone(const GURL& page_url,

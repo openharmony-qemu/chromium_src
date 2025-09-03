@@ -24,11 +24,15 @@
 #include "components/dom_distiller/core/proto/distilled_article.pb.h"
 #include "url/gurl.h"
 
+#include "arkweb/chromium_ext/components/dom_distiller/core/distiller_ohos.h"
+
 namespace dom_distiller {
 
+class DistillerOhos;
 class DistillerImpl;
+class DistillerImplUtils;
 
-class Distiller {
+class Distiller : public DistillerOhos {
  public:
   using DistillationFinishedCallback =
       base::OnceCallback<void(std::unique_ptr<DistilledArticleProto>)>;
@@ -89,7 +93,14 @@ class DistillerImpl : public Distiller {
   DistillerImpl(const DistillerImpl&) = delete;
   DistillerImpl& operator=(const DistillerImpl&) = delete;
 
+  DistillerImplUtils* utils() {
+    impl_utils_.get();
+  }
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void AbortDistill() override;
+#endif // ARKWEB_READER_MODE
  private:
+  friend class DistillerImplUtils;
   // In case of multiple pages, the Distiller maintains state of multiple pages
   // as page numbers relative to the page number where distillation started.
   // E.g. if distillation starts at page 2 for a 3 page article. The relative
@@ -114,6 +125,7 @@ class DistillerImpl : public Distiller {
                         const std::string& id,
                         const std::string& original_url,
                         const std::string& response);
+
 
   void OnPageDistillationFinished(
       int page_num,
@@ -190,6 +202,8 @@ class DistillerImpl : public Distiller {
   size_t max_pages_in_article_;
 
   bool destruction_allowed_;
+
+  std::unique_ptr<DistillerImplUtils> impl_utils_;
 
   base::WeakPtrFactory<DistillerImpl> weak_factory_{this};
 };

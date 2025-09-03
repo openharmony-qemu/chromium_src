@@ -322,6 +322,11 @@ class MockRenderProcessHost : public RenderProcessHost {
     return foreground_service_worker_count_;
   }
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void UpdateReaderModeConfig(
+      const nweb_ex::BrowserReaderModeConfigData*) override {}
+#endif
+
  private:
   // Stores IPC messages that would have been sent to the renderer.
   IPC::TestSink sink_;

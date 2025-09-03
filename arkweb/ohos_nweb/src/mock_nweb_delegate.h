@@ -1221,6 +1221,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
                IsolatedWorld world,
                OnReceiveValueCallback callback),
               (override));
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  MOCK_METHOD(void, Distill, (const std::string& guid, const DistillOptions& distill_options,
+    DistillCallback callback), (override));
+  MOCK_METHOD(void, AbortDistill, (), (override));
+#endif // ARKWEB_READER_MODE
 };
 }  // namespace OHOS::NWeb
 

@@ -73,6 +73,10 @@ struct OpenDevToolsParam;
 #include "components/prefs/pref_service.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "capi/nweb_extension_distill_item.h"
+#endif // ARKWEB_READER_MODE
+
 namespace OHOS::NWeb {
 #if BUILDFLAG(IS_ARKWEB)
 class NWebPrintDocumentAdapterAdapterImpl :
@@ -693,6 +697,13 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_CLOUD_CONTROL)
   static void UpdateBrowserEngineGlobalConfig(const std::string& file_path,
                                               const std::string& version);
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  static void UpdateReaderModeConfig(const std::string& file_path, const std::string& version);
+  static void SetJsFilePath(const std::string& js_type, const std::string& file_path, const std::string& version);
+  void Distill(char** guid, const DistillOptions& distill_options, DistillCallback callback);
+  void AbortDistill();
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)

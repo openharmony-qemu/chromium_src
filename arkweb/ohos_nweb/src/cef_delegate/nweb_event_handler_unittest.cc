@@ -773,6 +773,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void EnableAppLinking(bool enable) override {}
   bool IsAppLinkingEnabled() const override { return false; }
 #endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void Distill(const std::string& guid, const DistillOptions& distill_options,
+    CefRefPtr<CefDistillCallback> callback) override {}
+  void AbortDistill() override {}
+#endif  // BUILDFLAG(ARKWEB_READER_MODE)
 #endif  // BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetMediaResumeFromBFCachePage(bool resume) override {}

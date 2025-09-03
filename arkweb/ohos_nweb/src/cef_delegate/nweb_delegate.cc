@@ -559,6 +559,28 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
 };
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+class DistillCallbackImpl : public CefDistillCallback {
+public:
+  DistillCallbackImpl(int32_t nweb_id, DistillCallback callback)
+  : nweb_id_(nweb_id), callback_(callback) {}
+
+  ~DistillCallbackImpl() {}
+
+  void OnDistillCallback(const std::string& guid, const std::string& distill_info) override {
+    if (callback_ != nullptr) {
+      callback_(nweb_id_, guid.c_str(), distill_info.c_str());
+    }
+  }
+
+ private:
+  int32_t nweb_id_ = 0;
+  DistillCallback callback_;
+
+  IMPLEMENT_REFCOUNTING(DistillCallbackImpl);
+};
+#endif // ARKWEB_READER_MODE
+
 NWebDelegate::NWebDelegate(int argc, const char* argv[])
     : argc_(argc), argv_(argv) {}
 
@@ -6040,6 +6062,45 @@ void NWebDelegate::RunJavaScriptInFrames(const std::string& jsString, FrameInfos
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void NWebDelegate::Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce((void(NWebDelegate::*)(
+                          const std::string&,
+                          const DistillOptions&,
+                          DistillCallback)) &
+                          NWebDelegate::Distill,
+                       this, guid, distill_options, callback));
+    return;
+  }
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::Distill failed, can not get browser";
+    return;
+  }
+  CefRefPtr<DistillCallbackImpl> callback_impl =
+      new DistillCallbackImpl(nweb_id_, callback);
+  GetBrowser()->GetHost()->Distill(guid, distill_options, callback_impl);
+}
+
+void NWebDelegate::AbortDistill() {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce((void(NWebDelegate::*)()) &
+                        NWebDelegate::AbortDistill,
+                        this));
+    return;
+  }
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::AbortDistill failed, can not get browser";
+    return;
+  }
+  GetBrowser()->GetHost()->AbortDistill();
+}
+#endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
 void NWebDelegate::SetErrorPageEnabled(bool enable) {

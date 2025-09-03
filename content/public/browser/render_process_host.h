@@ -73,6 +73,8 @@
 #include "base/files/file.h"
 #endif
 
+#include "arkweb/chromium_ext/content/public/browser/render_process_host_ohos.h"
+
 class GURL;
 
 namespace base {
@@ -140,7 +142,8 @@ enum class RenderProcessMode {
 // Interface that represents the browser side of the browser <-> renderer
 // communication channel. There will generally be one RenderProcessHost per
 // renderer process.
-class CONTENT_EXPORT RenderProcessHost : public IPC::Sender,
+class CONTENT_EXPORT RenderProcessHost : public RenderProcessHostOhos,
+                                         public IPC::Sender,
                                          public IPC::Listener,
                                          public base::SupportsUserData {
   // Do not remove this macro!

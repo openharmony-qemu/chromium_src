@@ -127,6 +127,11 @@
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_engine_global_config.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_reader_mode_config.h"
+#include "base/strings/safe_sprintf.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
 #include "chrome/browser/ui/zoom/chrome_zoom_level_prefs.h"
 #include "third_party/blink/public/common/page/page_zoom.h"
@@ -667,6 +672,10 @@ void InitialWebEngineArgs(
   // http://crbug.com/479767
   web_engine_args.emplace_back("--enable-aggressive-domstorage-flushing");
   web_engine_args.emplace_back("--ohos-enable-drdc");
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  web_engine_args.push_back("--enable-distillability-service");
+  web_engine_args.push_back("--enable-dom-distiller");
+#endif // ARKWEB_READER_MODE
 
   std::vector<std::string> modeVector = {"Default", "IncludeSensitive",
                                          "Everything"};
@@ -4019,6 +4028,45 @@ void NWebImpl::UpdateBrowserEngineGlobalConfig(const std::string& file_path,
                                                const std::string& version) {
   nweb_ex::AlloyBrowserEngineGlobalConfig::GetInstance()
       ->UpdateBrowserEngineGlobalConfig(file_path, version);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+// static
+void NWebImpl::UpdateReaderModeConfig(const std::string& file_path,
+                                  const std::string& version) {
+  LOG(INFO) << "NWebImpl::UpdateReaderModeConfig file_path:" << file_path << " version:" << version;
+  nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->UpdateBrowserReaderModeConfig(file_path, version);
+}
+
+// static
+void NWebImpl::SetJsFilePath(const std::string& js_type, const std::string& file_path, const std::string& version) {
+  nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->SetJsFilePath(js_type, file_path, version);
+}
+
+void NWebImpl::Distill(char** guid, const DistillOptions& distill_options, DistillCallback callback) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "NWebImpl::Distill delegate_ is nullptr";
+    return;
+  }
+  if (callback == nullptr) {
+    LOG(ERROR) << "NWebImpl::Distill callback is nullptr";
+    return;
+  }
+  std::string guid_str = base::Uuid::GenerateRandomV4().AsLowercaseString();
+  size_t len = guid_str.size() + 1;
+  *guid = new char[len];
+  base::strings::SafeSNPrintf(*guid, len, "%s", guid_str.c_str());
+  nweb_delegate_->Distill(guid_str, distill_options, callback);
+}
+
+void NWebImpl::AbortDistill() {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "NWebImpl::AbortDistill delegate_ is nullptr";
+    return;
+  }
+
+  nweb_delegate_->AbortDistill();
 }
 #endif
 

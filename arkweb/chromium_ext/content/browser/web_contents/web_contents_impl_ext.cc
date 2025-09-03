@@ -1138,6 +1138,16 @@ void WebContentsImplExt::SetMediaResumeFromBFCachePage(bool resume) {
 }
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void WebContentsImplExt::OnIsPageDistillable(int page_type,
+                                             const std::string& distillable_page_url,
+                                             const std::string& title) {
+  if (delegate_) {
+    delegate_->OnIsPageDistillable(page_type, distillable_page_url, title);
+  }
+}
+#endif // ARKWEB_READER_MODE
+
 #if BUILDFLAG(ARKWEB_BGTASK)
 void WebContentsImplExt::OnBrowserForeground() {
   LOG(INFO) << "WebContentsImplExt::OnBrowserForeground";

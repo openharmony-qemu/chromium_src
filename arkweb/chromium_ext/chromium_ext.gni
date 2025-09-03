@@ -32,9 +32,15 @@ arkweb_content_public_common_sources = [
   "//arkweb/chromium_ext/content/public/common/content_switches_ext.h",
 ]
 
+arkweb_content_public_renderer_sources = [
+  "//arkweb/chromium_ext/content/public/renderer/render_thread_ohos.h",
+]
+
 arkweb_content_renderer_sources = [
   "//arkweb/chromium_ext/content/renderer/host_proxy.cc",
   "//arkweb/chromium_ext/content/renderer/host_proxy.h",
+  "//arkweb/chromium_ext/content/renderer/renderer_blink_platform_impl_ext.cc",
+  "//arkweb/chromium_ext/content/renderer/renderer_blink_platform_impl_ext.h",
   "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos.cc",
   "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos.h",
   "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_media_player_renderer_client.cc",
@@ -250,6 +256,8 @@ arkweb_content_public_browser_sources = [
   "//arkweb/chromium_ext/content/public/browser/native_embed_info.cc",
   "//arkweb/chromium_ext/content/public/browser/native_embed_info.h",
   "//arkweb/chromium_ext/content/public/browser/ohos_navigation_type.h",
+  "//arkweb/chromium_ext/content/public/browser/render_frame_host_ohos.h",
+  "//arkweb/chromium_ext/content/public/browser/render_process_host_ohos.h",
 ]
 
 arkweb_content_render_sources = []
@@ -1212,4 +1220,20 @@ arkweb_third_patry_blink_renderer_core_paint_timing_detector_resources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/image_paint_timing_detector_utils.h",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/ptd_supplement_for_bl.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/ptd_supplement_for_bl.h",
+]
+
+arkweb_components_dom_distiller_content_browser_sources = [
+  "//arkweb/chromium_ext/components/dom_distiller/content/browser/distiller_page_web_contents_ext.cc",
+  "//arkweb/chromium_ext/components/dom_distiller/content/browser/distiller_page_web_contents_ext.h",
+]
+
+arkweb_components_dom_distiller_core_sources = [
+  "//arkweb/chromium_ext/components/dom_distiller/core/distiller_ohos.cc",
+  "//arkweb/chromium_ext/components/dom_distiller/core/distiller_ohos.h",
+  "//arkweb/chromium_ext/components/dom_distiller/core/distiller_page_ohos.cc",
+  "//arkweb/chromium_ext/components/dom_distiller/core/distiller_page_ohos.h",
+  "//arkweb/chromium_ext/components/dom_distiller/core/dom_distiller_service_utils.cc",
+  "//arkweb/chromium_ext/components/dom_distiller/core/dom_distiller_service_utils.h",
+  "//arkweb/chromium_ext/components/dom_distiller/core/task_tracker_utils.cc",
+  "//arkweb/chromium_ext/components/dom_distiller/core/task_tracker_utils.h",
 ]

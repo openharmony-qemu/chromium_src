@@ -388,4 +388,10 @@ void RenderFrameHostImpl::OnPdfLoadEvent(int32_t result, const std::string& url)
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 // LCOV_EXCL_STOP
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+net::Error RenderFrameHostImpl::GetNetErrorCode() {
+  return net_error_;
+}
+#endif
 }  // namespace content

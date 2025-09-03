@@ -132,6 +132,10 @@ class MockRenderThread : public RenderThread {
   TakeInitialBrowserInterfaceBrokerReceiverForFrame(
       const blink::LocalFrameToken& frame_token);
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  const blink::mojom::ReaderModeConfig* GetReaderModeConfig() override {}
+#endif
+
  protected:
 #if BUILDFLAG(CONTENT_ENABLE_LEGACY_IPC)
   // This function operates as a regular IPC listener. Subclasses

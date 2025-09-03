@@ -116,6 +116,10 @@ void OHOSAudioManager::GetAudioOutputDeviceNames(
 #if BUILDFLAG(ARKWEB_WEBRTC)
 void OHOSAudioManager::GetAudioInputDeviceNames(
     AudioDeviceNames* device_names) {
+  if (!device_names) {
+    LOG(ERROR) << "GetAudioInputDeviceNames audioDevice is nullptr.";
+    return;
+  }
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kDisableAudioInput)) {
     return;

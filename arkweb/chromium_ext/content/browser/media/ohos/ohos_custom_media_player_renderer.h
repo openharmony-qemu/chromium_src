@@ -138,6 +138,7 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   void TryCreateMediaPlayer();
   void CreateMediaPlayer();
   MediaInfo BuildMediaInfo(const std::string& surface_id_string);
+  bool IsClientExtensionValid();
 
   void UpdateVolume();
 

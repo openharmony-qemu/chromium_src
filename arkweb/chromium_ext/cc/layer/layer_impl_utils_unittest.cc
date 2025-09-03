@@ -91,8 +91,8 @@ TEST_F(LayerImplUtilsTest, GetNativeRect002) {
 }
 
 TEST_F(LayerImplUtilsTest, GetNativeRect003) {
-  gfx::RectF test_empty_rect(0, 0, 0, 0);
-  utils_->native_rect_ = test_empty_rect;
+  gfx::RectF test_rect(0, 0, 0, 0);
+  utils_->native_rect_ = test_rect;
   utils_->may_contain_native_ = true;
   test_rect.set_width(utils_->layer_impl_->bounds().width());
   test_rect.set_height(utils_->layer_impl_->bounds().height());

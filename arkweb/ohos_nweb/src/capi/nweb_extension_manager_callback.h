@@ -138,6 +138,7 @@ struct WebExtensionInfoV2 {
   WebExtensionInfo info;
   WebExtensionManifestInfo manifest_info;
   bool is_incognito_enabled = false;
+  std::vector<NWebContextMenusItemV2> contextMenusV2;
 };
 
 typedef void (*OnWebExtensionLoadedFun)(const WebExtensionInfo& load_info);

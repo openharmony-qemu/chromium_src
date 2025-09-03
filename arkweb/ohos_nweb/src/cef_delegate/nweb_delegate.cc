@@ -5377,21 +5377,28 @@ int NWebDelegate::SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 void NWebDelegate::SetPathAllowingUniversalAccess(
-    const std::vector<std::string>& pathList) {
+    const std::vector<std::string>& path_list,
+    const std::vector<std::string>& excluded_path_list) {
   if (!GetBrowser().get() || !GetBrowser()->GetHost() ||
       !preference_delegate_) {
     LOG(ERROR) << "NWebDelegate::SetPathAllowingUniversalAccess failed, get "
                   "browser failed";
     return;
   }
-  preference_delegate_->PutEnableUniversalAccessFromFileURLs(pathList.size() !=
+  preference_delegate_->PutEnableUniversalAccessFromFileURLs(path_list.size() !=
                                                              0);
   std::vector<CefString> cef_path_list;
-  std::for_each(pathList.begin(), pathList.end(),
+  std::for_each(path_list.begin(), path_list.end(),
                 [&cef_path_list](const std::string& path) {
                   cef_path_list.emplace_back(CefString(path));
                 });
-  GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list);
+
+  std::vector<CefString> cef_excluded_path_list;
+  std::for_each(excluded_path_list.begin(), excluded_path_list.end(),
+                [&cef_excluded_path_list](const std::string& path) {
+                  cef_excluded_path_list.emplace_back(CefString(path));
+                });
+  GetBrowser()->GetHost()->SetGrantFileAccessDirs(cef_path_list, cef_excluded_path_list);
 }
 
 int NWebDelegate::PrerenderPage(const std::string& url,
@@ -5995,7 +6002,7 @@ void NWebDelegate::SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_k
   }
 
   auto browser = GetBrowser();
-  if (browser == nullptr) {
+  if (browser == nullptr || browser->GetMainFrame() == nullptr || browser->GetMainFrame()->AsArkWebFrame() == nullptr) {
     LOG(ERROR) << "blankless NWebDelegate::SetBlanklessLoadingKey browser is nullptr";
     return;
   }
@@ -6003,7 +6010,9 @@ void NWebDelegate::SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_k
   // before send to render_frame, frame_sink_id will be get from compositor.
   int64_t pref_hash = preference_delegate_ ? preference_delegate_->GetPreferenceHash() : 0;
   browser->GetMainFrame()->AsArkWebFrame()->SendBlanklessKeyToRenderFrame(nweb_id, blankless_key, 0, pref_hash);
-  handler_delegate_->SetBlanklessLoadingKey(blankless_key);
+  if (handler_delegate_) {
+    handler_delegate_->SetBlanklessLoadingKey(blankless_key);
+  }
 }
 
 int64_t NWebDelegate::GetPreferenceHash() {

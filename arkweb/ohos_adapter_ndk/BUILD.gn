@@ -262,7 +262,8 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libtelephony_radio.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libohcommonevent.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_media_venc.so",
-    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libhitrace_ndk.z.so", ]
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libhitrace_ndk.z.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_vsync.so", ]
   } else if (target_cpu == "x86_64" || target_cpu == "x64") {
     libs = [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libffrt.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libhilog_ndk.z.so",

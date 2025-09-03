@@ -3101,8 +3101,11 @@ URLLoader::BlockResponseForOrbResult URLLoader::BlockResponseForOrb() {
   // This preserves compatibility with current implementations, which use
   // net::ERR_ABORTED when the resource is detachable.
   if (url_loader_utils_->corb_detachable_ && blocked_error_code == net::OK) {
-    CHECK(!base::FeatureList::IsEnabled(features::kOpaqueResponseBlockingV02));
-    blocked_error_code = net::ERR_ABORTED;
+    CHECK(!base::FeatureList::IsEnabled(
+      features::kOpaqueResponseBlockingErrorsForAllFetches));
+    if (!base::FeatureList::IsEnabled(features::kOpaqueResponseBlockingV02)) {
+      blocked_error_code = net::ERR_ABORTED;
+    }
   }
 #endif
 

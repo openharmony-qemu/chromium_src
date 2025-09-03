@@ -107,7 +107,7 @@ class MockFrameSinkManager : public mojom::FrameSinkManager {
               (override));
   MOCK_METHOD(void,
               EvictFrameBackBuffers,
-              (const ::viz::FrameSinkId& frame_sink_id, bool invisible),
+              (const ::viz::FrameSinkId& frame_sink_id),
               (override));
   MOCK_METHOD(void,
               SetPipActive,

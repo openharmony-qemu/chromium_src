@@ -68,6 +68,9 @@ class ExtensionRegistryInfoManager : public MenuManager::LoadObserver,
   std::vector<NWebContextMenusItem> GetAllExtensionContextMenus(
       const std::string& extensionId) const;
 
+  std::vector<NWebContextMenusItemV2> GetAllExtensionContextMenusV2(
+      const std::string& extensionId) const;
+
   void Loaded(const std::string& extension_id) override;
 
   void OnExtensionLoaded(content::BrowserContext* browser_context,

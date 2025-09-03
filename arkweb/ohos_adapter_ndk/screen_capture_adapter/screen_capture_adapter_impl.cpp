@@ -773,7 +773,16 @@ void* OH_SurfaceBufferAdapterImpl::GetVirAddr()
 OH_AudioBufferAdapterImpl::OH_AudioBufferAdapterImpl(OH_AVBuffer* avBuffer,
     int64_t timestamp, OH_AudioCaptureSourceType sourcetype) : timestamp_(timestamp), sourcetype_(sourcetype)
 {
+    InitAudioBufferAdapterImpl(avBuffer);
+}
+
+void OH_AudioBufferAdapterImpl::InitAudioBufferAdapterImpl(OH_AVBuffer* avBuffer)
+{
     OH_AVCodecBufferAttr info;
+    if (!avBuffer) {
+        WVLOG_E("InitAudioBufferAdapterImpl avBuffer is nullptr");
+        return;
+    }
     OH_AVBuffer_GetBufferAttr(avBuffer, &info);
     // avBuffer will be released soon, we must copy in local
     length_ = static_cast<uint32_t>(OH_AVBuffer_GetCapacity(avBuffer));

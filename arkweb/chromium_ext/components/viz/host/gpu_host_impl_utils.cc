@@ -15,7 +15,7 @@
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
-#include "base/functional/bind.h"
+#include "base/task/thread_pool.h"
 #endif
 
 namespace viz {
@@ -99,12 +99,12 @@ void GpuHostImpl::SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
     return;
   }
   TRACE_EVENT1("io", "blankless GpuHostImpl::SendBlanklessSnapshotInfo", "blankless_key", infoPtr->blankless_key);
-  uint64_t key = infoPtr->blankless_key;
-  auto task = base::BindOnce(&GpuHostImpl::DumpBlanklessSnapshot,
-                             std::move(infoPtr), quad_list,
-                             std::move(buffer), std::move(metadata));
-  auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
-  databaseAdapter.PostDumpTaskWithDelay(key, std::move(task));
+  base::ThreadPool::PostTask(
+    FROM_HERE,
+    {base::MayBlock(), base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN, base::TaskPriority::USER_BLOCKING},
+    base::BindOnce(&GpuHostImpl::DumpBlanklessSnapshot,
+                   std::move(infoPtr), quad_list, std::move(buffer), std::move(metadata))
+  );
 }
 
 void GpuHostImpl::DumpBlanklessSnapshot(mojom::BlanklessSendInfoPtr infoPtr,
@@ -116,7 +116,7 @@ void GpuHostImpl::DumpBlanklessSnapshot(mojom::BlanklessSendInfoPtr infoPtr,
     return;
   }
   TRACE_EVENT1("io", "blankless GpuHostImpl::DumpBlanklessSnapshot", "blankless_key", infoPtr->blankless_key);
-  LOG(DEBUG) << "GpuHostImpl::DumpBlanklessSnapshot url begin : key " << infoPtr->blankless_key
+  LOG(DEBUG) << "blankless GpuHostImpl::DumpBlanklessSnapshot begin : key " << infoPtr->blankless_key
     << ", lcp_time " << infoPtr->lcp_time << ", pref_hash " << infoPtr->pref_hash;
   
   // the next all the process is sync, here we restore the skbitmap from mojo

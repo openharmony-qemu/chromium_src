@@ -65,7 +65,7 @@ BaseAudioCapturerSource::BaseAudioCapturerSource(
 }
 
 BaseAudioCapturerSource::~BaseAudioCapturerSource() {
-  LOG(INFO) << "BaseAudioCapturerSource::~BaseAudioCapturerSource";
+  LOG(INFO) << "BaseAudioCapturerSource::~BaseAudioCapturerSource, nwebId = " << nwebId_;
 }
 
 void BaseAudioCapturerSource::SetScreenCaptureState(const OHOS::NWeb::ScreenCaptureStateCodeAdapter& stateCode) {

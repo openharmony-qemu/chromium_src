@@ -50,11 +50,14 @@ void KeystoreAdapterImplTest::TearDown(void)
 TEST_F(KeystoreAdapterImplTest, KeystoreAdapterImplTest_InitParamSet_001)
 {
     struct OH_Huks_ParamSet *paramSet;
-    int32_t result = KeystoreAdapterImpl::GetInstance().InitParamSet(nullptr, g_decryptParams, sizeof(g_decryptParams) / sizeof(OH_Huks_Param));
+    int32_t result = KeystoreAdapterImpl::GetInstance().InitParamSet(
+        nullptr, g_genEncDecParams, sizeof(g_genEncDecParams) / sizeof(OH_Huks_Param));
     EXPECT_EQ(result, 401);
-    result = KeystoreAdapterImpl::GetInstance().InitParamSet(&paramSet, nullptr, sizeof(g_decryptParams) / sizeof(OH_Huks_Param));
+    result = KeystoreAdapterImpl::GetInstance().InitParamSet(
+        &paramSet, nullptr, sizeof(g_genEncDecParams) / sizeof(OH_Huks_Param));
     EXPECT_EQ(result, 401);
-    result = KeystoreAdapterImpl::GetInstance().InitParamSet(&paramSet, g_decryptParams, sizeof(g_decryptParams) / sizeof(OH_Huks_Param));
+    result = KeystoreAdapterImpl::GetInstance().InitParamSet(
+        &paramSet, g_genEncDecParams, sizeof(g_genEncDecParams) / sizeof(OH_Huks_Param));
     EXPECT_EQ(result, 0);
 }
 

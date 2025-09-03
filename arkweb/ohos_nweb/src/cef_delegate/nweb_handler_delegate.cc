@@ -22,6 +22,7 @@
 #include "base/hash/hash.h"
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/task/thread_pool.h"
@@ -115,7 +116,7 @@
 #include "base/strings/string_number_conversions.h"
 #endif
 
-#include "ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
+#include "arkweb/chromium_ext/ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 #include "cef/ohos_cef_ext/include/cef_media_player_listener.h"
@@ -613,7 +614,7 @@ void NWebHandlerDelegate::OnDestroy() {
 #if BUILDFLAG(ARKWEB_JSPROXY)
   RemoveTransientJavaScriptObject();
 #endif
-  if (main_browser_) {
+  if (main_browser_ && main_browser_->GetHost()) {
     main_browser_->GetHost()->CloseBrowser(true);
     main_browser_ = nullptr;
   }
@@ -984,6 +985,9 @@ void NWebHandlerDelegate::InjectJsToWebInner(
     JsRunTime time,
     ScriptItems& scriptItems,
     ScriptItemsByOrder& scriptItemsByOrder) {
+  if (!main_browser_ || !main_browser_->GetHost()) {
+    return;
+  } 
   switch (time) {
     case JsRunTime::Start:
       scriptItems = preference_delegate_->GetJavaScriptOnDocumentStart();
@@ -1026,7 +1030,7 @@ void NWebHandlerDelegate::InjectJsToWeb(JsRunTime time) {
 
   InjectJsToWebInner(time, scriptItems, scriptItemsByOrder);
 
-  int count = 0;
+  size_t count = 0;
   for (const auto& item : scriptItemsByOrder) {
     if (scriptItems.find(item) == scriptItems.end()) {
       continue;
@@ -1037,6 +1041,9 @@ void NWebHandlerDelegate::InjectJsToWeb(JsRunTime time) {
       CefString cefRule;
       cefRule.FromString(rule);
       scriptRules.push_back(cefRule);
+    }
+    if (!main_browser_ || !main_browser_->GetHost()) {
+      return;
     }
     switch (time) {
       case JsRunTime::Start:
@@ -1288,7 +1295,7 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
     }
   } else {
     content::GpuProcessHost* host = content::GpuProcessHost::Get();
-    if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr) {
+    if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr && main_browser_->GetHost()) {
       host->gpu_host()->DestroyNativeWindow(main_browser_->GetHost()->GetAcceleratedWidget(false));
     }
     OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
@@ -1557,7 +1564,7 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
   isWebPaintedForSnapshot_ = false;
 #endif
 
-  if (nweb_handler_ != nullptr) {
+  if (nweb_handler_ != nullptr && browser->GetHost()) {
     nweb_handler_->OnPageLoadBegin(url.ToString());
     browser->GetHost()->OnTextSelected(false);
   }
@@ -1601,7 +1608,8 @@ void NWebHandlerDelegate::OnLoadEnd(CefRefPtr<CefBrowser> browser,
   }
 
 #if defined(REPORT_SYS_EVENT)
-  LOG(DEBUG) << "NWebHandlerDelegate::OnLoadEnd url=" << frame->GetURL().ToString()
+  LOG(DEBUG) << "NWebHandlerDelegate::OnLoadEnd url="
+             << url::LogUtils::ConvertUrlWithMask(frame->GetURL().ToString())
              << " http_status_code=" << http_status_code;
   g_access_sum_count++;
   ReportPageLoadStatsInternal(nweb_id_);
@@ -1765,7 +1773,8 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
   }
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (error_code <= ERR_CONNECTION_CLOSED && base::ohos::BlanklessController::CheckGlobalProperty()) {
+  if (base::ohos::BlanklessController::CheckGlobalProperty() && error_code <= ERR_CONNECTION_CLOSED &&
+      error_code != ERR_UNKNOWN_URL_SCHEME && error_code != ERR_NAME_NOT_RESOLVED) {
     ClearSnapshot();
   }
 #endif
@@ -1778,7 +1787,8 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
     std::stringstream ss;
     ss << "<html><body bgcolor=\"white\">"
           "<h2>Failed to load URL "
-       << std::string(failed_url) << " with error " << std::string(error_text)
+       << url::LogUtils::ConvertUrlWithMask(std::string(failed_url))
+       << " with error " << std::string(error_text)
        << " (" << error_code << ").</h2></body></html>";
 
     frame->LoadURL(GetDataURI(ss.str(), "text/html"));
@@ -1786,8 +1796,9 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
 
 #if defined(REPORT_SYS_EVENT)
   if (frame != nullptr && frame->IsMain()) {
-    LOG(DEBUG) << "NWebHandlerDelegate::OnLoadError main url=" << failed_url.ToString()
-               << " error_code=" << int(error_code) << " error_desc=" << std::string(error_text);
+    LOG(DEBUG) << "NWebHandlerDelegate::OnLoadError main url="
+    << url::LogUtils::ConvertUrlWithMask(std::string(failed_url))
+    << " error_code=" << int(error_code) << " error_desc=" << std::string(error_text);
     g_access_fail_count++;
     SetPageLoadErrorInfo(nweb_id_, int(error_code), std::string(error_text));
   }
@@ -1806,7 +1817,8 @@ void NWebHandlerDelegate::OnLoadErrorWithRequest(CefRefPtr<CefRequest> request,
   }
 #endif
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (error_code <= ERR_CONNECTION_CLOSED && base::ohos::BlanklessController::CheckGlobalProperty()) {
+  if (base::ohos::BlanklessController::CheckGlobalProperty() && error_code <= ERR_CONNECTION_CLOSED &&
+      error_code != ERR_UNKNOWN_URL_SCHEME && error_code != ERR_NAME_NOT_RESOLVED) {
     ClearSnapshot();
   }
 #endif
@@ -1829,11 +1841,6 @@ void NWebHandlerDelegate::OnHttpError(CefRefPtr<CefRequest> request,
                                       bool is_main_frame,
                                       bool has_user_gesture,
                                       CefRefPtr<CefResponse> response) {
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (base::ohos::BlanklessController::CheckGlobalProperty()) {
-    ClearSnapshot();
-  }
-#endif
   if (nweb_handler_ != nullptr) {
     CefRequest::HeaderMap cef_request_headers;
     request->GetHeaderMap(cef_request_headers);
@@ -2266,7 +2273,7 @@ bool NWebHandlerDelegate::OnBeforeDownload(
     return false;
   }
 
-  if (download_listener_ != nullptr) {
+  if (download_listener_ != nullptr && browser->GetHost()) {
     download_listener_->OnDownloadStart(
         download_item->GetURL().ToString(),
         browser->GetHost()->DefaultUserAgent(),
@@ -4117,6 +4124,10 @@ int NWebHandlerDelegate::ProcessNativeProxyResultThread(
 
   auto callback = methodMap[method];
   char** ptr = (char**)malloc(sizeof(char*) * args->GetSize());
+  if(ptr == nullptr) {
+    // malloc failed
+    return 1;    
+  }
   for (size_t i = 0; i < args->GetSize(); i++) {
     CefValueType type = args->GetType(i);
     CefRefPtr<CefValue> value = args->GetValue(i);
@@ -5264,6 +5275,10 @@ void NWebHandlerDelegate::HideMagnifier() {
   if (nweb_handler_) {
     nweb_handler_->HideMagnifier();
   }
+}
+
+bool NWebHandlerDelegate::IsShowHandle() {
+  return nweb_handler_ && nweb_handler_->IsShowHandle();
 }
 #endif
 

@@ -32,7 +32,7 @@ bool TestRootCerts::AddImpl(X509Certificate* certificate) {
   auto data_buf = reinterpret_cast<const char*>(
       CRYPTO_BUFFER_data(certificate->cert_buffer()));
   const int data_size = CRYPTO_BUFFER_len(certificate->cert_buffer());
-  const int write_size = base::WriteFile(test_cert_file, data_buf, data_size);
+  const int write_size = base::WriteFile(test_cert_file, data_buf);
 
   return write_size == data_size;
 #else

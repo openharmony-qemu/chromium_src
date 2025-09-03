@@ -66,7 +66,7 @@
 #include "ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
-#include "ui/base/clipboard/ohos/clipboard_ohos.h"
+#include "arkweb/chromium_ext/ui/base/clipboard/ohos/clipboard_ohos.h"
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
@@ -94,6 +94,7 @@
 
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 #include "libcef/browser/browser_context.h"
+#include "capi/nweb_prefetch_options.h"
 #include "ohos_cef_ext/libcef/browser/predictors/loading_predictor.h"
 #include "ohos_cef_ext/libcef/browser/predictors/loading_predictor_config.h"
 #include "ohos_cef_ext/libcef/browser/predictors/loading_predictor_factory.h"
@@ -204,6 +205,7 @@ extern bool g_siteIsolationMode;
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
+#include "cef/ohos_cef_ext/libcef/browser/net/extra_headers_throttle.h"
 #endif
 
 #ifdef OHOS_WEB_LTPO
@@ -1367,7 +1369,7 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
       base::ThreadPool::PostTask(FROM_HERE,
         {base::MayBlock(), base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN, base::TaskPriority::USER_BLOCKING},
         base::BindOnce([]() {
-          base::ohos::BlanklessDataController::GetInstance();
+          base::ohos::BlanklessDataController::GetInstance().CreateTaskManager();
           WVLOG_D("BlanklessDataController instance init");
       }));
       initInstance = true;
@@ -2247,11 +2249,11 @@ float NWebImpl::Scale() {
 
 int NWebImpl::Load(
     const std::string& url,
-    const std::map<std::string, std::string>& additionalHttpHeaders) {
+    const std::map<std::string, std::string>& additional_http_headers) {
   if (nweb_delegate_ == nullptr) {
     return NWEB_ERR;
   }
-  return nweb_delegate_->Load(url, additionalHttpHeaders);
+  return nweb_delegate_->Load(url, additional_http_headers);
 }
 
 int NWebImpl::PostUrl(const std::string& url,
@@ -2680,6 +2682,31 @@ bool NWebImpl::TerminateRenderProcess() {
     return false;
   }
   return nweb_delegate_->TerminateRenderProcess();
+}
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+NWebPrintDocumentAdapterAdapterImpl::~NWebPrintDocumentAdapterAdapterImpl() {
+  if (ref_) {
+    delete ref_;
+  }
+}
+
+void NWebPrintDocumentAdapterAdapterImpl::OnStartLayoutWrite(
+    const std::string& jobId,
+    std::shared_ptr<NWebPrintAttributesAdapter> oldAttrs,
+    std::shared_ptr<NWebPrintAttributesAdapter> newAttrs, uint32_t fd,
+    std::shared_ptr<NWebPrintWriteResultCallbackAdapter> callback) {
+  if (ref_) {
+    ref_->OnStartLayoutWrite(jobId, oldAttrs, newAttrs, fd, callback);
+  }
+}
+
+void NWebPrintDocumentAdapterAdapterImpl::OnJobStateChanged(
+    const std::string& jobId, uint32_t state) {
+  if (ref_) {
+    ref_->OnJobStateChanged(jobId, state);
+  }
 }
 #endif
 
@@ -3289,6 +3316,16 @@ void* NWebImpl::CreateWebPrintDocumentAdapter(const std::string& jobName) {
   return nweb_delegate_->CreateWebPrintDocumentAdapter(jobName);
 }
 
+std::unique_ptr<OHOS::NWeb::NWebPrintDocumentAdapterAdapter>
+    NWebImpl::CreateWebPrintDocumentAdapterV2(const std::string& jobName) {
+  if (nweb_delegate_ == nullptr) {
+    return nullptr;
+  }
+  void* adapter = nweb_delegate_->CreateWebPrintDocumentAdapterV2(jobName);
+  return std::make_unique<NWebPrintDocumentAdapterAdapterImpl>(
+    static_cast<OHOS::NWeb::NWebPrintDocumentAdapterAdapter*>(adapter));
+}
+
 void NWebImpl::SetPrintBackground(bool enable) {
   if (nweb_delegate_ == nullptr) {
     return;
@@ -3361,13 +3398,28 @@ std::shared_ptr<NWebDragData> NWebImpl::GetOrCreateDragData() {
 
 void NWebImpl::PrefetchPage(
     const std::string& url,
-    const std::map<std::string, std::string>& additionalHttpHeaders) {
+    const std::map<std::string, std::string>& additional_http_headers) {
+    PrefetchPageV2(url, additional_http_headers, 500, false);
+}
+
+void NWebImpl::PrefetchPageV2(
+    const std::string& url,
+    const std::map<std::string, std::string>& additional_http_headers,
+    int32_t min_time_between_prefetches, 
+    bool ignore_cache_control_no_store) {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
   if (nweb_delegate_ == nullptr) {
     return;
   }
   TRACE_EVENT0("NWebImpl", "NWebImpl::PrefetchPage");
-  nweb_delegate_->PrefetchPage(url, additionalHttpHeaders);
+  std::string output;
+  for (auto& header : additional_http_headers) {
+    base::StringAppendF(&output, "%s: %s\r\n", header.first.c_str(),
+                        header.second.c_str());
+  }
+  output.append("\r\n");
+  nweb_delegate_->PrefetchPage(PrefetchOptions(url, output, 
+    min_time_between_prefetches, ignore_cache_control_no_store));
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }
 
@@ -5552,7 +5604,12 @@ int NWebImpl::PrerenderPage(const std::string& url,
   }
   return nweb_delegate_->PrerenderPage(url, additional_headers);
 }
- 
+
+void NWebImpl::SetExtraHeadersMap(const std::string& url,
+                                  const std::string& additional_headers) {
+  throttle::ExtraHeadersThrottle::SetExtraHeaders(GURL(url), additional_headers);
+}
+
 void NWebImpl::CancelAllPrerendering() {
   if (nweb_delegate_ == nullptr) {
     return;
@@ -5764,7 +5821,7 @@ void NWebImpl::SetMediaResumeFromBFCachePage(bool resume) {
 #endif // BUILDFLAG(ARKWEB_BFCACHE)
 }
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 void NWebImpl::EnableAppLinking(bool enable) {
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "EnableAppLinking failed"
@@ -5773,7 +5830,7 @@ void NWebImpl::EnableAppLinking(bool enable) {
   }
   nweb_delegate_->EnableAppLinking(enable);
 }
-#endif
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
 void NWebImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
@@ -6335,11 +6392,17 @@ void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, 
   auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
   uint64_t recorded_time = instance.GetSystemTime(nweb_id_, blankless_key_);
   int32_t corrected_time = static_cast<int32_t>(system_time - recorded_time);
-  if (corrected_time < 0 || corrected_time >= lcp_time || lcp_time - corrected_time < 40) { // 40 ms
+  if (corrected_time < 0 || corrected_time >= lcp_time ||
+      lcp_time - corrected_time < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
     LOG(DEBUG) << "blankless CallBlanklessFrameFunc corrected time error " << corrected_time << " " << lcp_time;
     return;
   }
-  lcp_time = std::min(lcp_time, 2000);  // 2000 ms
+  if (lcp_time >= base::ohos::BlanklessController::A_STANDARD) {
+    lcp_time = std::min(lcp_time, base::ohos::BlanklessController::MAXIMUM_FRAME_LEFETIME);  // 2000 ms
+  } else {
+    lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LEFETIME;
+  }
+  LOG(DEBUG) << "blankless OnRemoveBlanklessFrame Delay Time: " << lcp_time;
   if (is_visible_) {
     nweb_handle_->OnInsertBlanklessFrameWithSize(file, width, height);
     nweb_handle_->OnRemoveBlanklessFrame(lcp_time);

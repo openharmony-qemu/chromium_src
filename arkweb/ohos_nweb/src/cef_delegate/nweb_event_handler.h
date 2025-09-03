@@ -95,6 +95,7 @@ class NWebEventHandler {
 
  private:
   static cef_pointer_type_t ConvertSourceToolToPointerType(SourceTool source_tool);
+  static float ConvertRollAngleToTwist(float raw_roll_angle);
   bool IsCharInputEvent(CefKeyEvent& keyEvent);
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

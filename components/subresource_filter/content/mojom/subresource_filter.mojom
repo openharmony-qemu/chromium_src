@@ -137,7 +137,7 @@ interface UserSubresourceFilterHost {
 
   // Called when a render frame detects an ads violation. It is used to record
   // ads violations within the ads intervention manager.
-  OnAdsViolationTriggered(AdsViolation violation);
+  OnUserAdsViolationTriggered(AdsViolation violation);
 
   // This is sent to a RenderFrameHost in the browser after a document load is
   // finished

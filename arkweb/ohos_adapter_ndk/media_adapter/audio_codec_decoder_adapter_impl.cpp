@@ -476,12 +476,11 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::ReleaseDecoder()
 
     AudioDecoderCallbackManager::DeleteAudioDecoder(decoder_);
     OH_AVErrCode errCode = OH_AudioCodec_Destroy(decoder_);
-    decoder_ = nullptr;
     if (errCode != AV_ERR_OK) {
         WVLOG_E("destroy decoder_ fail, errCode = %{public}u.", uint32_t(errCode));
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
-
+    decoder_ = nullptr;
     // clear input and output buffers
     {
         std::unique_lock<std::mutex> lock(inMutex_);

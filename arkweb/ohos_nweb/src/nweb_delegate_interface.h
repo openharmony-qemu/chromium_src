@@ -517,9 +517,7 @@ class NWebDelegateInterface
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  virtual void PrefetchPage(
-      const std::string& url,
-      const std::map<std::string, std::string>& additionalHttpHeaders) = 0;
+  virtual void PrefetchPage(const PrefetchOptions& prefetch_options) = 0;
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
@@ -535,6 +533,7 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_PRINT)
   virtual void SetToken(void* token) = 0;
   virtual void* CreateWebPrintDocumentAdapter(const std::string& jobName) = 0;
+  virtual void* CreateWebPrintDocumentAdapterV2(const std::string& jobName) = 0;
   virtual void SetPrintBackground(bool enable) = 0;
   virtual bool GetPrintBackground() = 0;
 #endif  // BUILDFLAG(ARKWEB_PRINT)
@@ -805,9 +804,9 @@ class NWebDelegateInterface
   virtual bool IsMixedContentAutoUpgradesEnabled() = 0;
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
   virtual void EnableAppLinking(bool enable) = 0;
-#endif
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
 #if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
   virtual void EnableMediaNetworkTrafficPrompt(bool enable) = 0;

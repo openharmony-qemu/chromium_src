@@ -17,6 +17,7 @@
 #include <stdint.h>
 
 #include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/debug/alias.h"
@@ -186,7 +187,7 @@ void URLRequestContext::AssertNoURLRequests() const {
     base::debug::Alias(&num_requests);
     base::debug::Alias(&load_flags);
     CHECK(false) << "Leaked " << num_requests << " URLRequest(s). First URL: "
-                 << request->url().spec().c_str() << ".";
+                 << url::LogUtils::ConvertUrlWithMask(request->url().spec()) << ".";
   }
 }
 

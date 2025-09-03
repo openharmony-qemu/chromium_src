@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <memory>
 
 #include "arkweb/build/features/features.h"
@@ -352,6 +367,19 @@ TEST_F(OHOSAudioManagerTest, TestGetAudioOutputDeviceNames) {
   EXPECT_TRUE(foundExpectedDevice);
 }
 
+TEST_F(OHOSAudioManagerTest, TestGetAudioOutputDeviceNames001) {
+  media::AudioDeviceNames deviceNames;
+  base::CommandLine::ForCurrentProcess()->AppendSwitch(
+      switches::kDisableAudioOutput);
+  ohos_audio_manager_->GetAudioOutputDeviceNames(&deviceNames);
+  EXPECT_EQ(deviceNames.size(), 0);
+  base::CommandLine::ForCurrentProcess()->RemoveSwitch(
+      switches::kDisableAudioOutput);
+  ohos_audio_manager_->GetAudioOutputDeviceNames(nullptr);
+  ohos_audio_manager_->GetAudioOutputDeviceNames(&deviceNames);
+  EXPECT_GT(deviceNames.size(), 0);
+}
+
 #if BUILDFLAG(ARKWEB_WEBRTC)
 
 TEST_F(OHOSAudioManagerTest, TestGetAudioInputDeviceNames) {
@@ -368,6 +396,19 @@ TEST_F(OHOSAudioManagerTest, TestGetAudioInputDeviceNames) {
   }
   EXPECT_TRUE(foundExpectedDevice);
 }
+
+TEST_F(OHOSAudioManagerTest, TestGetAudioInputDeviceNames001) {
+  media::AudioDeviceNames deviceNames;
+  base::CommandLine::ForCurrentProcess()->AppendSwitch(
+      switches::kDisableAudioInput);
+  ohos_audio_manager_->GetAudioInputDeviceNames(&deviceNames);
+  EXPECT_EQ(deviceNames.size(), 0);
+  base::CommandLine::ForCurrentProcess()->RemoveSwitch(
+      switches::kDisableAudioInput);
+  ohos_audio_manager_->GetAudioInputDeviceNames(nullptr);
+  ohos_audio_manager_->GetAudioInputDeviceNames(&deviceNames);
+  EXPECT_GT(deviceNames.size(), 0);
+}
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
 TEST_F(OHOSAudioManagerTest, TestMakeLowLatencyInputStream) {
@@ -379,6 +420,10 @@ TEST_F(OHOSAudioManagerTest, TestMakeLowLatencyInputStream) {
                                                      log_callback);
 
   EXPECT_NE(inputStream, nullptr);
+  if (inputStream) {
+    delete inputStream;
+    inputStream = nullptr;
+  }
 }
 
 TEST_F(OHOSAudioManagerTest, TestGetPreferredOutputStreamParameters) {

@@ -11,6 +11,7 @@
 #include "content/browser/media/session/media_session_impl.h"
 #include "content/public/browser/web_contents.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "media/audio/ohos/audio_dump.h"
 #include "media/audio/ohos/ohos_audio_focus_controller.h"
 
 namespace media {
@@ -61,6 +62,7 @@ OHOSAudioOutputStream::~OHOSAudioOutputStream() {
     OH_AudioStreamBuilder_Destroy(audio_stream_builder_);
     audio_stream_builder_ = nullptr;
   }
+  DumpFileUtil::CloseDumpScopedFile(&dumpFile_);
 }
 
 bool OHOSAudioOutputStream::Open() {
@@ -70,11 +72,18 @@ bool OHOSAudioOutputStream::Open() {
   if (!InitRender()) {
     return false;
   }
+  time_t now = time(nullptr);
+  std::string dumpFileName = std::to_string(now) + "_" +
+      std::to_string(parameters_.sample_rate()) + "_" +
+      std::to_string(parameters_.channels()) + "_" +
+      std::to_string(1) + "_output_write.pcm";
+  DumpFileUtil::OpenDumpScopedFile(dumpFileName, &dumpFile_);
   return true;
 }
 
 void OHOSAudioOutputStream::Close() {
   Stop();
+  DumpFileUtil::CloseDumpScopedFile(&dumpFile_);
   manager_->ReleaseOutputStream(this);
 }
 // LCOV_EXCL_STOP
@@ -150,6 +159,10 @@ void OHOSAudioOutputStream::OnSuspend() {
             << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   if (!parameters_.IsValid()) {
     LOG(ERROR) << "OHOSAudioOutputStream::OnSuspend parameters_ is not valid.";
+    return;
+  }
+  if (!running_) {
+    LOG(ERROR) << "The playback is stopped. Exit OnSuspend.";
     return;
   }
   if (OHOSAudioFocusController::IsActive(parameters_)) {
@@ -468,7 +481,7 @@ bool OHOSAudioOutputStream::InitRender() {
 
 void OHOSAudioOutputStream::SetStreamUsage() {
   if (isCommunication_) {
-    OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_VOICE_COMMUNICATION);
+    OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_VIDEO_COMMUNICATION);
     return;
   }
  
@@ -572,7 +585,6 @@ base::TimeDelta OHOSAudioOutputStream::GetDelay(
 
 // LCOV_EXCL_START
 void OHOSAudioOutputStream::PumpSamples() {
-    base::AutoLock lock(lock_);
     if (!running_) {
         LOG(INFO) << "The playback is stopped. Exit PumpSamples.";
         return;
@@ -602,9 +614,11 @@ void OHOSAudioOutputStream::PumpSamples() {
         }
         return;
     }
-
-    // Obtains data. The data does not need to be processed and may be empty.
-    (void)callback_->OnMoreData(base::TimeDelta(), base::TimeTicks::Now(), {}, audio_bus_.get());
+    {
+      base::AutoLock lock(lock_);
+      // Obtains data. The data does not need to be processed and may be empty.
+      (void)callback_->OnMoreData(base::TimeDelta(), base::TimeTicks::Now(), {}, audio_bus_.get());
+    }
     SchedulePumpSamples();
 }
 // LCOV_EXCL_STOP
@@ -628,6 +642,7 @@ void OHOSAudioOutputStream::OnWriteData(void* buffer, int32_t length) {
   audio_bus_->Scale(volume_);
   audio_bus_->ToInterleaved<SignedInt16SampleTypeTraits>(
       frames_filled, reinterpret_cast<int16_t*>(buffer));
+  DumpFileUtil::WriteDumpScopedFile(dumpFile_, buffer, length);
   if (reference_time_.is_null()) {
     reference_time_ = now;
   }

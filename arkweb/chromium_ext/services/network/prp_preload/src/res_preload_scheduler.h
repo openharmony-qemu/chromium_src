@@ -5,6 +5,7 @@
 #ifndef SERVICES_NETWORK_PRP_PRELOAD_SRC_RES_PRELOAD_SCHEDULER_H
 #define SERVICES_NETWORK_PRP_PRELOAD_SRC_RES_PRELOAD_SCHEDULER_H
 
+#include "base/memory/raw_ref.h"
 #include "arkweb/chromium_ext/services/network/prp_preload/include/preload_runner/prpp_request_loader_factory.h"
 #include "base/task/thread_pool.h"
 
@@ -38,7 +39,7 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
   void SchedulePrerequests(uint32_t limit, int32_t info_list_version);
   void ContinueSchedulePreconnects(PreconnectInfoListIter preconnect_infos_iter, int32_t info_list_version);
 
-  const std::string& url_;
+  raw_ref<const std::string> url_;
   std::list<std::shared_ptr<PRRequestInfo>> prerequest_info_list_;
   std::unordered_map<std::string, int> idle_connect_list_;
   scoped_refptr<base::SingleThreadTaskRunner> net_task_runner_;

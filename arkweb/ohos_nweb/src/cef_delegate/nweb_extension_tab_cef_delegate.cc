@@ -48,7 +48,7 @@ bool NWebExtensionTabCefDelegate::HasExtensionListener() {
 }
 
 bool NWebExtensionTabCefDelegate::CreateTab(
-    NWebTabCreateInfo& create_info,
+    NWebTabCreateInfoV2& create_info,
     TabCreatedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
@@ -76,7 +76,7 @@ void NWebExtensionTabCefDelegate::TabCreateCallback(
 
 bool NWebExtensionTabCefDelegate::UpdateTab(
     int tab_id,
-    NWebExtensionTabUpdateProperties& update_properties,
+    NWebExtensionTabUpdatePropertiesV2& update_properties,
     TabUpdatedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
@@ -171,14 +171,16 @@ void NWebExtensionTabCefDelegate::TabRemoveCallback(
 }
 
 bool NWebExtensionTabCefDelegate::DiscardTab(
-    int tab_id, TabDiscardedCallback callback) {
+    int tab_id,
+    NWebExtensionTabDiscardInfo& discard_info,
+    TabDiscardedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
   static int request_id = 0;
   request_id++;
   g_tab_discarded_map_[request_id] = std::move(callback);
-  bool result = NWebExtensionTabDispatcher::DiscardTab(request_id, tab_id);
+  bool result = NWebExtensionTabDispatcher::DiscardTab(request_id, tab_id, discard_info);
   if (!result) {
     g_tab_discarded_map_.erase(request_id);
   }
@@ -196,14 +198,16 @@ void NWebExtensionTabCefDelegate::TabDiscardCallback(
 }
 
 bool NWebExtensionTabCefDelegate::DuplicateTab(
-    int tab_id, TabDuplicatedCallback callback) {
+    int tab_id,
+    NWebExtensionTabDuplicateInfo& duplicate_info,
+    TabDuplicatedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
   static int request_id = 0;
   request_id++;
   g_tab_duplicated_map_[request_id] = std::move(callback);
-  bool result = NWebExtensionTabDispatcher::DuplicateTab(request_id, tab_id);
+  bool result = NWebExtensionTabDispatcher::DuplicateTab(request_id, tab_id, duplicate_info);
   if (!result) {
     g_tab_duplicated_map_.erase(request_id);
   }

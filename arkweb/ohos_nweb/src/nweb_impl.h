@@ -78,6 +78,25 @@ struct OpenDevToolsParam;
 #endif // ARKWEB_READER_MODE
 
 namespace OHOS::NWeb {
+#if BUILDFLAG(IS_ARKWEB)
+class NWebPrintDocumentAdapterAdapterImpl :
+    public NWebPrintDocumentAdapterAdapter {
+public:
+    explicit NWebPrintDocumentAdapterAdapterImpl(
+        NWebPrintDocumentAdapterAdapter* ref) : ref_(ref) {}
+    ~NWebPrintDocumentAdapterAdapterImpl();
+
+    void OnStartLayoutWrite(const std::string& jobId,
+        std::shared_ptr<NWebPrintAttributesAdapter> oldAttrs,
+        std::shared_ptr<NWebPrintAttributesAdapter> newAttrs, uint32_t fd,
+        std::shared_ptr<NWebPrintWriteResultCallbackAdapter> callback) override;
+
+    void OnJobStateChanged(const std::string& jobId, uint32_t state) override;
+private:
+    raw_ptr<NWebPrintDocumentAdapterAdapter> ref_;
+};
+#endif
+
 class NWebImpl : public NWeb {
  public:
   explicit NWebImpl(uint32_t id);
@@ -535,6 +554,8 @@ class NWebImpl : public NWeb {
   void SetFocusWindowId(uint32_t focus_window_id) override;
   void SetToken(void* token) override;
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
+  std::unique_ptr<NWebPrintDocumentAdapterAdapter>
+      CreateWebPrintDocumentAdapterV2(const std::string& jobName) override;
   void SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) override;
   int GetSecurityLevel() override;
   void SetPrintBackground(bool enable) override;
@@ -565,6 +586,11 @@ class NWebImpl : public NWeb {
   void PrefetchPage(
       const std::string& url,
       const std::map<std::string, std::string>& additionalHttpHeaders) override;
+  void PrefetchPageV2(
+      const std::string& url,
+      const std::map<std::string, std::string>& additionalHttpHeaders,
+      int32_t min_time_between_prefetches, 
+      bool ignore_cache_control_no_store) override;
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
   int PostUrl(const std::string& url,
@@ -681,7 +707,7 @@ class NWebImpl : public NWeb {
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
-  void SetForceEnableZoom(bool forceEnableZoom) const;
+  void SetForceEnableZoom(bool forceEnableZoom) const override;
   bool GetForceEnableZoom() const;
 #endif  // ARKWEB_EXT_FORCE_ZOOM
 
@@ -967,6 +993,8 @@ class NWebImpl : public NWeb {
   int PrerenderPage(const std::string& url,
                     const std::string& additional_headers);
   void CancelAllPrerendering();
+  static void SetExtraHeadersMap(const std::string& url,
+                                 const std::string& additional_headers);
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
@@ -992,8 +1020,11 @@ class NWebImpl : public NWeb {
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);
 #if BUILDFLAG(IS_ARKWEB)
   void SetSurfaceDensity(const double& density) override;
-  void EnableAppLinking(bool enable);
 #endif
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+  void EnableAppLinking(bool enable);
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   void getTotalSize(float size);
   float DumpGpuInfo() override;

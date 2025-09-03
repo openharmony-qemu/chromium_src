@@ -83,8 +83,6 @@ component("adapter_ndk") {
     "multimodalinputnew_adapter/mmi_new_adapter_impl.h",
     "multimodalinputnew_adapter/mmi_new_adapter_impl.cpp",
     "pasteboard_adapter/src/pasteboard_client_adapter_impl.cpp",
-    "media_adapter/player_framework_adapter_impl.h",
-    "media_adapter/player_framework_adapter_impl.cpp",
     "display_manager_adapter/native_display_manager_adapter_impl.h",
     "display_manager_adapter/native_display_manager_adapter_impl.cpp",
     "graphic_adapter/ashmem_adapter_impl.cpp",
@@ -134,6 +132,7 @@ component("adapter_ndk") {
     "net_config_adapter/net_config_adapter_impl.cpp",
     "window_manager_adapter/window_manager_adapter_impl.h",
     "window_manager_adapter/window_manager_adapter_impl.cpp",
+    "ndk_callback_wrapper/callback_shared_wrapper.h",
   ]
 
   include_dirs = [
@@ -263,7 +262,8 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libtelephony_radio.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libohcommonevent.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_media_venc.so",
-    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libhitrace_ndk.z.so", ]
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libhitrace_ndk.z.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_vsync.so", ]
   } else if (target_cpu == "x86_64" || target_cpu == "x64") {
     libs = [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libffrt.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libhilog_ndk.z.so",

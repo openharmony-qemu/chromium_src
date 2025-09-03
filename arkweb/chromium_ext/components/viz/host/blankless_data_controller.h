@@ -53,21 +53,22 @@ public:
   OHOS::NWeb::SnapshotDataItem GetSnapshotDataItem(int64_t key, int64_t pref_hash);
   int32_t SetBlanklessLoadingCacheCapacity(int capacity);
   int32_t GetBlanklessLoadingCacheCapacity() const;
-  void PostDumpTaskWithDelay(uint64_t blankless_key, base::OnceClosure task);
+  void CreateTaskManager();
 
 private:
   BlanklessDataController();
   std::shared_ptr<SnapshotInfo> GetHistorySnapshotInfo(uint64_t blankless_key);
-  bool EncodeImage(const SkBitmap& bitmap,
-                   std::string& newFile,
-                   OHOS::NWeb::SnapshotDataItem* snapshotDataItem);
+  static bool EncodeImage(const SkBitmap& bitmap, std::string& newFile, OHOS::NWeb::SnapshotDataItem* snapshotDataItem);
+  static void DumpTask(const base::ohos::BlanklessInfo& info, const SkBitmap& bitmap,
+                       double similarity, int width, int height);
 
 private:
   std::shared_ptr<OHOS::NWeb::OhosWebSnapshotDataBaseCallback> web_snapshot_db_callback_ = nullptr;
 
   std::unordered_map<int64_t, std::shared_ptr<SnapshotInfo>> last_info_;
   std::mutex last_info_mutex_;
-  std::unique_ptr<viz::CancelableDelayedTaskManager> task_manager_;
+  std::unique_ptr<viz::CancelableDelayedTaskManager> task_manager_ = nullptr;
+  std::mutex task_manager_mutex_;
 };
 }  // namespace ohos
 }  // namespace base

@@ -37,7 +37,31 @@ class FakeSubresourceFilter : public blink::WebDocumentSubresourceFilter {
       const blink::WebURL& url) override;
   void ReportDisallowedLoad() override;
   bool ShouldLogToConsole() override;
-
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void ClearStatistics() override {}
+  bool HasGenericHideTypeOption(
+      const blink::WebURL& document_url,
+      const url::Origin& parent_document_origin) override { return false; }
+  bool HasElemHideTypeOption(
+      const blink::WebURL& document_url,
+      const url::Origin& parent_document_origin) override { return false; }
+  bool HasDocumentTypeOption(
+      const blink::WebURL& document_url,
+      const url::Origin& parent_document_origin) override { return false; }
+  void DidMatchCssRule(const blink::WebURL& document_url,
+                       const std::string& dom_path,
+                       //  unsigned rule_line_num = 0,
+                       bool is_for_report = false) override {}
+  void SetDidFinishLoad(bool did_load_finished) override {}
+  bool GetDidFinishLoad() override { return false; }
+  std::unique_ptr<std::vector<std::string>> GetUserDomPathSelectors(
+      const blink::WebURL& document_url,
+      bool need_generic_selectors) override { return nullptr; }
+  void set_activation_state(bool enabled) override {}
+   std::unique_ptr<std::string> GetElementHidingSelectors(
+      const blink::WebURL& document_url,
+      bool need_common_selectors) override { return nullptr; }
+#endif // ARKWEB_UNITTESTS
  private:
   LoadPolicy GetLoadPolicyImpl(const blink::WebURL& url);
 

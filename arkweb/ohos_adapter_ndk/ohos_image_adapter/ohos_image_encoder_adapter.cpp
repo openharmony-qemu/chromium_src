@@ -15,7 +15,7 @@
 
 #include "ohos_image_encoder_adapter.h"
 
-#include <errno.h>
+#include <cerrno>
 #include <fcntl.h>
 #include <unistd.h>
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
@@ -45,7 +45,8 @@ std::shared_ptr<OH_PackingOptions> OhosImageEncoderAdapter::CreatePackingOptions
 
     // 100 is the number of image quality
     OH_PackingOptions_SetQuality(optionsPtr.get(), 100);
-    Image_MimeType format = { .data = const_cast<char*>(MIME_TYPE_HEIC), .size = strlen(MIME_TYPE_HEIC) };
+    std::string mimeTypeBuffer = MIME_TYPE_HEIC;
+    Image_MimeType format = { .data = const_cast<char*>(mimeTypeBuffer.c_str()), .size = mimeTypeBuffer.length() };
     OH_PackingOptions_SetMimeType(optionsPtr.get(), &format);
     return optionsPtr;
 }
@@ -136,11 +137,12 @@ bool OhosImageEncoderAdapter::Encode(const SkBitmap& bitmap, const std::string& 
         return false;
     }
     errorCode = OH_ImagePackerNative_PackToFileFromPixelmap(imagePackerPtr.get(), optionsPtr.get(), pixelmap.get(), fd);
-    close(fd);
     if (errorCode != IMAGE_SUCCESS) {
+        close(fd);
         WVLOG_E("blankless OH_ImagePackerNative_PackToFileFromPixelmap failed, errorCode: %{public}d", errorCode);
         return false;
     }
+    close(fd);
     WVLOG_D("blankless Encode success, path:%{public}s", path.c_str());
     return true;
 }

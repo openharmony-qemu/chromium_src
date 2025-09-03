@@ -45,7 +45,7 @@ public:
 
     bool IsACETraceEnable() override;
     
-    uint64_t ConvertToInt64(const char *originValue, uint64_t defaultValue);
+    uint64_t ConvertToUint64(const char *originValue, uint64_t defaultValue);
 private:
     const int DECIMAL_NUMERAL_SYSTEM = 10;
     const uint64_t ARKWEB_HITRACE_ENABLE = (1ULL << 24);

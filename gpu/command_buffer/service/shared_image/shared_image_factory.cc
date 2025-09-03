@@ -921,6 +921,10 @@ bool SharedImageFactory::RegisterBacking(
 
   shared_image->RegisterImageFactory(this);
 
+#if BUILDFLAG(IS_ARKWEB)
+  if (shared_images_.find(shared_image) != shared_images_.end())
+    LOG(INFO) << "shared_image is exist, could not emplace again.";
+#endif
   shared_images_.emplace(std::move(shared_image));
   return true;
 }

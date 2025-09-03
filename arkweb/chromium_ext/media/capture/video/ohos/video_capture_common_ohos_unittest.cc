@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -177,5 +177,30 @@ TEST(VideoCaptureCommonOHOSTest, GetAdapterCameraPixelFormat1) {
   VideoCaptureCommonOHOS::GetAdapterCameraPixelFormatType(pixel_format);
   EXPECT_EQ(log_output1.find("adapter camera pixel format:"),
             std::string::npos);
+}
+
+TEST(VideoCaptureCommonOHOSTest, TestGetSupportedFormats0) {
+  std::vector<std::shared_ptr<FormatAdapter>> capture_formats_adapter;
+  auto adapter = std::make_shared<MockFormatAdapter>();
+  EXPECT_CALL(*adapter, GetWidth()).WillRepeatedly(::testing::Return(640));
+  EXPECT_CALL(*adapter, GetHeight()).WillRepeatedly(::testing::Return(480));
+  EXPECT_CALL(*adapter, GetFrameRate())
+      .WillRepeatedly(::testing::Return(30.0f));
+  EXPECT_CALL(*adapter, GetPixelFormat())
+      .WillRepeatedly(::testing::Return(
+          OHOS::NWeb::VideoPixelFormatAdapter::FORMAT_YUV_420_SP));
+  capture_formats_adapter.push_back(nullptr);
+  capture_formats_adapter.push_back(adapter);
+  auto result = VideoCaptureCommonOHOS::GetSupportedFormats(capture_formats_adapter);
+  auto frameSizeWidth = result[0].frame_size.width();
+  auto frameSizeheight = result[0].frame_size.height();
+  auto frameRate = result[0].frame_rate;
+  auto pixelFormat = result[0].pixel_format;
+  auto temp = VideoCaptureCommonOHOS::GetCameraPixelFormatType(
+      OHOS::NWeb::VideoPixelFormatAdapter::FORMAT_YUV_420_SP);
+  EXPECT_EQ(frameSizeWidth, 640);
+  EXPECT_EQ(frameSizeheight, 480);
+  EXPECT_FLOAT_EQ(frameRate, 30.0f);
+  EXPECT_EQ(pixelFormat, temp);
 }
 }  // namespace media

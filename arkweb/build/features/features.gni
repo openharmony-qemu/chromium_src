@@ -247,6 +247,7 @@ declare_args() {
   arkweb_bgtask = false
   arkweb_privacy_compliance = true
   arkweb_reader_mode=false
+  arkweb_ex_enable_applinking = false
 }
 
 # Features enabled in mojom bindings.

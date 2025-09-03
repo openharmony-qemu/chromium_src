@@ -376,9 +376,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
   void SetNWebId(uint32_t nwebId) override;
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
   void EnableAppLinking(bool enable) override;
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
   void StoreWebArchive(
       const std::string& base_name,
@@ -437,9 +437,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   // #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  void PrefetchPage(
-      const std::string& url,
-      const std::map<std::string, std::string>& additionalHttpHeaders) override;
+  void PrefetchPage(const PrefetchOptions& prefetch_options) override;
   // #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -596,6 +594,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_PRINT)
   void SetToken(void* token) override;
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
+  void* CreateWebPrintDocumentAdapterV2(const std::string& jobName) override;
   void SetPrintBackground(bool enable) override;
   bool GetPrintBackground() override;
 #endif  // BUILDFLAG(ARKWEB_PRINT)

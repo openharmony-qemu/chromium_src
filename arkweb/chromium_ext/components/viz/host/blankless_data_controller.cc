@@ -416,7 +416,6 @@ BlanklessDataController::BlanklessDataController()
     if (web_snapshot_db_callback_) {
       OhosWebSnapshotDataBase::GetInstance().RegisterDataBaseCallback(web_snapshot_db_callback_);
     }
-    task_manager_ = std::make_unique<viz::CancelableDelayedTaskManager>();
 }
 
 std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::GetHistorySnapshotInfo(
@@ -434,9 +433,13 @@ std::shared_ptr<BlanklessDataController::SnapshotInfo> BlanklessDataController::
     SkBitmap bitmap;
     if (snapshotDataItem.wholePath.length() > DUMP_FILE_HEIC_TYPE.length()) {
       bool res = false;
-      if (snapshotDataItem.wholePath.rfind(DUMP_FILE_PNG_TYPE) == snapshotDataItem.wholePath.length() - DUMP_FILE_PNG_TYPE.length()) {
+      if (snapshotDataItem.wholePath.rfind(DUMP_FILE_PNG_TYPE)
+          == snapshotDataItem.wholePath.length() - DUMP_FILE_PNG_TYPE.length()) {
+        LOG(DEBUG) << "blankless LoadBitmap, path:" << snapshotDataItem.wholePath.c_str();
         res = LoadBitmap(snapshotDataItem.wholePath.c_str(), bitmap);
-      } else if (snapshotDataItem.wholePath.rfind(DUMP_FILE_HEIC_TYPE) == snapshotDataItem.wholePath.length() - DUMP_FILE_HEIC_TYPE.length()) {
+      } else if (snapshotDataItem.wholePath.rfind(DUMP_FILE_HEIC_TYPE)
+                 == snapshotDataItem.wholePath.length() - DUMP_FILE_HEIC_TYPE.length()) {
+        LOG(DEBUG) << "blankless DecodeImage, path:" << snapshotDataItem.wholePath.c_str();
         res = DecodeImage(snapshotDataItem.wholePath, bitmap, snapshotDataItem);
       } else {
         LOG(ERROR) << "blankless GetHistorySnapshotInfo failed, wholePath:" << snapshotDataItem.wholePath.c_str();
@@ -497,19 +500,10 @@ bool BlanklessDataController::EncodeImage(const SkBitmap& bitmap,
   return true;
 }
 
-void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessInfo& info,
-                                                    const SkBitmap& bitmap,
-                                                    const std::vector<SnapShotRect>& quad_list)
+void BlanklessDataController::DumpTask(const base::ohos::BlanklessInfo& info, const SkBitmap& bitmap,
+                                       double similarity, int width, int height)
 {
   auto& instance = base::ohos::BlanklessController::GetInstance();
-  auto window_id = instance.GetWindowIdByNWebId(info.nweb_id);
-  auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetInstance().GetWindowPrivacyMode(window_id);
-  if (is_private) {
-    LOG(DEBUG) << "blankless this is a private window: "<< window_id;
-    ClearSnapshot(info.blankless_key);
-    ClearSnapshotDataItem({info.blankless_key});
-    return;
-  }
   uint64_t recorded_time = instance.GetSystemTime(info.nweb_id, info.blankless_key);
   if (info.system_time <= recorded_time || (info.system_time - recorded_time) > INT32_MAX) {
     LOG(ERROR) << "blankless corrected loading time error. nweb_id: " << info.nweb_id
@@ -521,7 +515,7 @@ void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessI
   int32_t corrected_time = static_cast<int32_t>(info.system_time - recorded_time);
   LOG(DEBUG) << "blankless corrected loading time: " << corrected_time << ", nweb_id: " << info.nweb_id
              << ", blankless_key: " << info.blankless_key;
-  SkBitmap bitmapNew = DownscaleToLowRes(bitmap, bitmap.width() / 2, bitmap.height() / 2);
+
   std::string newFile;
   // Record the time when the snapshot is written to the database to determine if there is a new snapshot written to
   // the database during this load.
@@ -535,36 +529,60 @@ void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessI
     .snapShotFileSize = 0LL,
     .snapShotFileTime = 0LL,
     .preferenceHash = info.pref_hash,
-    .width = bitmap.width(),
-    .height = bitmap.height(),
+    .width = width,
+    .height = height,
   };
-  bool res = EncodeImage(bitmapNew, newFile, &snapshotDataItem);
-  if (!res) {
+  if (!EncodeImage(bitmap, newFile, &snapshotDataItem)) {
     LOG(ERROR) << "blankless EncodeImage failed!";
     return;
   }
 
-  std::shared_ptr<SnapshotInfo> snapshotInfo = GetHistorySnapshotInfo(info.blankless_key);
-  if (!snapshotInfo || snapshotInfo->path.size() == 0 || snapshotInfo->bitmap.empty() ||
-      snapshotInfo->bitmap.width() != bitmapNew.width() || snapshotInfo->bitmap.height() != bitmapNew.height() ||
-      snapshotInfo->pixels.size() == 0) {
+  if (similarity < 0) {
     LOG(DEBUG) << "blankless last snapshot error";
     OhosWebSnapshotDataBase::GetInstance().InsertSnapshotDataItem(info.blankless_key, snapshotDataItem);
     return;
   }
 
-  std::vector<double> pixelsNew = GetSnapshotPixels(bitmapNew.pixmap());
-  // bitmapNew.bytesPerPixel() * 8为SSIM计算公式中动态范围参数L近似计算
-  double similarity = CalculateSnapshotSimilarity(snapshotInfo->pixels, pixelsNew, bitmapNew.width(),
-                                                  bitmapNew.height());
   snapshotDataItem.historySimilarity = similarity;
-  LOG(DEBUG) << "blankless Insert Snapshot: " << newFile << " " << similarity;
-  if (similarity >= base::ohos::BlanklessController::CALLBACK_SIMILARITY_THRESHOLD) {
-    instance.CancelFrameInsertCallback(info.blankless_key, info.nweb_id);
-    instance.FireFrameRemoveCallback(info.blankless_key, info.nweb_id);
-  }
   snapshotDataItem.staticPath = newFile;
   OhosWebSnapshotDataBase::GetInstance().InsertSnapshotDataItem(info.blankless_key, snapshotDataItem);
+}
+
+void BlanklessDataController::DumpBlanklessSnapshot(const base::ohos::BlanklessInfo& info,
+                                                    const SkBitmap& bitmap,
+                                                    const std::vector<SnapShotRect>& quad_list)
+{
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  auto window_id = instance.GetWindowIdByNWebId(info.nweb_id);
+  auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetInstance().GetWindowPrivacyMode(window_id);
+  if (is_private) {
+    LOG(DEBUG) << "blankless this is a private window: "<< window_id;
+    ClearSnapshot(info.blankless_key);
+    ClearSnapshotDataItem({info.blankless_key});
+    return;
+  }
+
+  SkBitmap bitmapNew = DownscaleToLowRes(bitmap, bitmap.width() / 2, bitmap.height() / 2);
+  std::shared_ptr<SnapshotInfo> snapshotInfo = GetHistorySnapshotInfo(info.blankless_key);
+  double similarity = -1.0f;
+  if (snapshotInfo && snapshotInfo->path.size() != 0 && !snapshotInfo->bitmap.empty() &&
+      snapshotInfo->bitmap.width() == bitmapNew.width() && snapshotInfo->bitmap.height() == bitmapNew.height() &&
+      snapshotInfo->pixels.size() != 0) {
+    std::vector<double> pixelsNew = GetSnapshotPixels(bitmapNew.pixmap());
+    similarity = CalculateSnapshotSimilarity(snapshotInfo->pixels, pixelsNew, bitmapNew.width(), bitmapNew.height());
+    LOG(DEBUG) << "blankless CalculateSimilarity nweb_id: " << info.nweb_id
+               << ", blankless_key: " << info.blankless_key << ", similarity: " << similarity;
+    if (similarity >= base::ohos::BlanklessController::CALLBACK_SIMILARITY_THRESHOLD) {
+      instance.CancelFrameInsertCallback(info.nweb_id, info.blankless_key);
+      instance.FireFrameRemoveCallback(info.nweb_id, info.blankless_key);
+    }
+  }
+
+  if (task_manager_) {
+    auto task = base::BindOnce(&BlanklessDataController::DumpTask,
+                               info, std::move(bitmapNew), similarity, bitmap.width(), bitmap.height());
+    task_manager_->PostNewDelayedTask(info.blankless_key, std::move(task), base::Milliseconds(DUMP_TASK_DELAY_TIME));
+  }
 }
 
 void BlanklessDataController::ClearSnapshot(int64_t blankless_key)
@@ -622,10 +640,11 @@ int32_t BlanklessDataController::GetBlanklessLoadingCacheCapacity() const
   return OhosWebSnapshotDataBase::GetInstance().GetCapacityInByte();
 }
 
-void BlanklessDataController::PostDumpTaskWithDelay(uint64_t blankless_key, base::OnceClosure task)
+void BlanklessDataController::CreateTaskManager()
 {
-  if (task_manager_) {
-    task_manager_->PostNewDelayedTask(blankless_key, std::move(task), base::Milliseconds(DUMP_TASK_DELAY_TIME));
+  std::lock_guard<std::mutex> task_manager_guard(task_manager_mutex_);
+  if (!task_manager_) {
+    task_manager_ = std::make_unique<viz::CancelableDelayedTaskManager>();
   }
 }
 }  // namespace ohos

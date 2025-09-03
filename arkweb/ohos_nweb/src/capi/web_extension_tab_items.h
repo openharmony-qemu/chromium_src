@@ -55,8 +55,16 @@ struct NWebTabCreateInfo {
   std::optional<int32_t> windowId;
 };
 
+struct NWebTabCreateInfoV2 {
+  NWebTabCreateInfo createInfo;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
 struct NWebExtensionTabCreateProperties {
   std::optional<int32_t> windowId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
 };
 
 struct NWebExtensionTabGroupOptions {
@@ -78,6 +86,8 @@ struct NWebExtensionTabDetachInfo {
 struct NWebExtensionTabHighlightInfo {
   std::vector<int32_t> tabIds;
   std::optional<int32_t> windowId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
 };
 
 struct NWebExtensionTabMoveProperties {
@@ -179,6 +189,20 @@ struct NWebExtensionTabUpdateProperties {
   std::optional<bool> pinned;
   std::optional<std::string> url;
 };
+
+struct NWebExtensionTabUpdatePropertiesV2 {
+  NWebExtensionTabUpdateProperties updateProperties;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionTabContextInfo {
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+ 
+using NWebExtensionTabDiscardInfo = NWebExtensionTabContextInfo;
+using NWebExtensionTabDuplicateInfo = NWebExtensionTabContextInfo;
 
 inline const char* NWebExtensionTabMutedInfoReasonToString(
     NWebExtensionTabMutedInfoReason enum_param) {

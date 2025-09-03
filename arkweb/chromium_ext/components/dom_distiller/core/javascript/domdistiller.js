@@ -29,7 +29,7 @@ try {
   // The OPTIONS placeholder will be replaced with the DomDistillerOptions at
   // runtime.
   const distiller = window.org.chromium.distiller.DomDistiller;
-  res = null
+  res = null;
   if (extract_catalog_info) {
   res = distiller.applyCatalogWithOptions(options);
   } else {

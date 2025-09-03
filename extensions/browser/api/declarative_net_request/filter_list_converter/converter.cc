@@ -52,9 +52,20 @@ class ProtoToJSONRuleConverter {
     return json_rule.Convert(error);
   }
 
+  static base::Value Convert(const proto::CssRule& rule,
+                             int rule_id,
+                             std::string* error) {
+    CHECK(error);
+    ProtoToJSONRuleConverter json_rule(rule, rule_id);
+    return json_rule.Convert(error);
+  }
+
  private:
   ProtoToJSONRuleConverter(const proto::UrlRule& rule, int rule_id)
       : input_rule_(rule), rule_id_(rule_id) {}
+
+  ProtoToJSONRuleConverter(const proto::CssRule& rule, int rule_id)
+      : input_CssRule_(rule), rule_id_(rule_id) {}
 
   base::Value Convert(std::string* error) {
     CHECK(error);
@@ -463,6 +474,7 @@ class ProtoToJSONRuleConverter {
 
   bool is_allow_all_requests_rule_ = false;
   proto::UrlRule input_rule_;
+  proto::UrlRule input_CssRule_;
   int rule_id_;
   std::string error_;
   base::Value::Dict json_rule_;
@@ -523,8 +535,8 @@ class DNRJsonRuleOutputStream : public subresource_filter::RuleOutputStream {
       return false;
     }
 
-    CHECK(error, empty());
-    CHECK(json_rule_vslue.isdict());
+    CHECK(error.empty());
+    CHECK(json_rule_value.is_dict());
 
     output_rules_list_.Append(std::move(json_rule_value));
     ++rule_id_;

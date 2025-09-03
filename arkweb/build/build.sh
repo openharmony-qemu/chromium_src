@@ -278,8 +278,7 @@ case "${build_target}" in
     build_target="${BUILD_TARGET_COMPONENT}"
     ;;
   *)
-    echo "Invalid build_target: ${build_target}"
-    exit 2
+    echo "Build_target: ${build_target}"
     ;;
 esac
 

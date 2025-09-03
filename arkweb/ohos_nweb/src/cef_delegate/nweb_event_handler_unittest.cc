@@ -769,10 +769,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
 #endif
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
   void EnableAppLinking(bool enable) override {}
   bool IsAppLinkingEnabled() const override { return false; }
-#endif
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 #endif  // BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetMediaResumeFromBFCachePage(bool resume) override {}

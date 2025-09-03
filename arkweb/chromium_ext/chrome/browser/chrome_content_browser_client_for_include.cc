@@ -65,8 +65,11 @@
 
 #if BUILDFLAG(IS_ARKWEB)
 #include "cef/ohos_cef_ext/libcef/browser/net/ohos_applink_throttle.h"
-#include "cef/ohos_cef_ext/libcef/browser/arkweb_browser_host_ext.h"
 #endif  // BUILDFLAG(IS_ARKWEB)
+
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#include "cef/ohos_cef_ext/libcef/browser/arkweb_browser_host_ext.h"
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 #include "cef/libcef/browser/browser_host_base.h"
@@ -221,6 +224,7 @@ class ChromeContentBrowserClientUtils {
       const network::ResourceRequest& request,
       std::vector<std::unique_ptr<blink::URLLoaderThrottle>>& result,
       content::FrameTreeNodeId frame_tree_node_id) {
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
     content::WebContents* web_contents =
         content::WebContents::FromFrameTreeNodeId(frame_tree_node_id);
     if (web_contents == nullptr) {
@@ -237,6 +241,7 @@ class ChromeContentBrowserClientUtils {
       LOG(DEBUG) << "AppLinkThrottleExt, applink disabled";
       return;
     }
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
     if (request.destination == network::mojom::RequestDestination::kDocument &&
         request.url.SchemeIs(url::kHttpsScheme) &&
         request.transition_type !=

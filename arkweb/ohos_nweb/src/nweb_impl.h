@@ -1009,8 +1009,11 @@ class NWebImpl : public NWeb {
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);
 #if BUILDFLAG(IS_ARKWEB)
   void SetSurfaceDensity(const double& density) override;
-  void EnableAppLinking(bool enable);
 #endif
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+  void EnableAppLinking(bool enable);
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   void getTotalSize(float size);
   float DumpGpuInfo() override;

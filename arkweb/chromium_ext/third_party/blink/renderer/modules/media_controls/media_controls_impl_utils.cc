@@ -134,6 +134,15 @@ bool ShouldShowPlaybackSpeedButton(HTMLMediaElement& media_element) {
 
 MediaControlsImplUtils::MediaControlsImplUtils(MediaControlsImpl* media_controls_impl,
     HTMLMediaElement& media_element) {
+  InitMediaControlsImplUtils(media_controls_impl, media_element);
+}
+
+void MediaControlsImplUtils::InitMediaControlsImplUtils(MediaControlsImpl* media_controls_impl,
+    HTMLMediaElement& media_element) {
+  if (!media_controls_impl) {
+    LOG(ERROR) << "InitMediaControlsImplUtils media_controls_impl is nullptr";
+    return;
+  }
   this->media_controls_impl_ = media_controls_impl;
 #if BUILDFLAG(ARKWEB_MEDIA)
   media_controls_impl_->scrubbing_panel_ = nullptr;
@@ -169,6 +178,10 @@ void MediaControlsImplUtils::UpdateOverflowMenuWantedExt(
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 bool MediaControlsImplUtils::ShouldShowVideoControlsHM() const {
+  if (!media_controls_impl_) {
+    LOG(ERROR) << "ShouldShowVideoControlsHM media_controls_impl_ is nullptr";
+    return false;
+  }
   return media_controls_impl_->MediaElement().IsCustomMediaPlayerEnabled() &&
     media_controls_impl_->ShouldShowVideoControls();
 }
@@ -183,9 +196,17 @@ void MediaControlsImplUtils::UpdateDeviceCSSClassExt() {
 
 // LCOV_EXCL_START
 void MediaControlsImplUtils::InitializeControlsExt() {
+  if (!media_controls_impl_) {
+    LOG(ERROR) << "InitializeControlsExt media_controls_impl_ is nullptr";
+    return;
+  }
 #if BUILDFLAG(ARKWEB_MEDIA)
   media_controls_impl_->entered_fullscreen_panel_ =
       MakeGarbageCollected<MediaControlEnteredFullscreenPanelElement>(*media_controls_impl_);
+  if (!(media_controls_impl_->entered_fullscreen_panel_)) {
+    LOG(ERROR) << "InitializeControlsExt entered_fullscreen_panel_ is nullptr";
+    return;
+  }
   media_controls_impl_->entered_fullscreen_panel_->setInnerHTML("");
   media_controls_impl_->ParserAppendChild(media_controls_impl_->entered_fullscreen_panel_);
 
@@ -200,16 +221,24 @@ void MediaControlsImplUtils::InitializeControlsExt() {
   if (ShouldShowVideoControlsHM()) {
     media_controls_impl_->top_row_panel_ =
       MakeGarbageCollected<MediaControlTopRowPanelElement>(*media_controls_impl_);
+    if (!(media_controls_impl_->top_row_panel_)) {
+      LOG(ERROR) << "InitializeControlsExt top_row_panel_ is nullptr";
+      return;
+    }
     media_controls_impl_->top_row_panel_->setInnerHTML("");
     media_controls_impl_->timeline_row_panel_ =
       MakeGarbageCollected<MediaControlTimelineRowPanelElement>(*media_controls_impl_);
+    if (!(media_controls_impl_->timeline_row_panel_)) {
+      LOG(ERROR) << "InitializeControlsExt timeline_row_panel_ is nullptr";
+      return;
+    }
     media_controls_impl_->timeline_row_panel_->setInnerHTML("");
   }
 #endif // ARKWEB_VIDEO_ASSISTANT
 }
 
 void MediaControlsImplUtils::PopulatePanelExt() {
-  if (media_controls_impl_->scrubbing_panel_) {
+  if (media_controls_impl_ && media_controls_impl_->scrubbing_panel_) {
     MaybeParserAppendChild(media_controls_impl_->panel_, media_controls_impl_->scrubbing_panel_);
     MaybeParserAppendChild(media_controls_impl_->scrubbing_panel_, media_controls_impl_->scrubbing_message_);
   } else {
@@ -219,12 +248,21 @@ void MediaControlsImplUtils::PopulatePanelExt() {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 void MediaControlsImplUtils::PopulatePanelHM() {
+  if (!media_controls_impl_ || !(media_controls_impl_->panel_)) {
+    LOG(ERROR) << "PopulatePanelHM media_controls_impl_ is nullptr";
+    return;
+  }
   media_controls_impl_->panel_->setInnerHTML("");
 
   MaybeParserAppendChild(media_controls_impl_->volume_control_container_, media_controls_impl_->volume_slider_);
   media_controls_impl_->volume_control_container_->ParserAppendChild(media_controls_impl_->mute_button_);
   media_controls_impl_->AttachHoverBackground(media_controls_impl_->mute_button_);
 
+
+  if (!(media_controls_impl_->download_button_)) {
+    LOG(ERROR) << "PopulatePanelHM download_button_ is nullptr";
+    return;
+  }
   media_controls_impl_->download_button_->
     SetIsWanted(media_controls_impl_->download_button_->ShouldDisplayDownloadButton());
   media_controls_impl_->AttachHoverBackground(media_controls_impl_->download_button_);
@@ -265,6 +303,10 @@ void MediaControlsImplUtils::PopulatePanelHM() {
   }
 
   button_panel->ParserAppendChild(media_controls_impl_->playback_speed_button_);
+  if (!(media_controls_impl_->playback_speed_button_)) {
+    LOG(ERROR) << "PopulatePanelHM playback_speed_button_ is nullptr";
+    return;
+  }
   media_controls_impl_->playback_speed_button_->
     SetIsWanted(ShouldShowPlaybackSpeedButton(media_controls_impl_->MediaElement()));
   media_controls_impl_->AttachHoverBackground(media_controls_impl_->play_button_);
@@ -277,7 +319,7 @@ void MediaControlsImplUtils::PopulatePanelHM() {
 
 bool MediaControlsImplUtils::UpdateCSSClassFromStateEnablePlaybackSpeedButton() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  if (ShouldShowVideoControlsHM() &&
+  if (ShouldShowVideoControlsHM() && media_controls_impl_ && (media_controls_impl_->playback_speed_button_) &&
       !media_controls_impl_->playback_speed_button_->FastHasAttribute(html_names::kDisabledAttr)) {
     media_controls_impl_->playback_speed_button_->setAttribute(html_names::kDisabledAttr, AtomicString(""));
     return true;
@@ -288,7 +330,7 @@ bool MediaControlsImplUtils::UpdateCSSClassFromStateEnablePlaybackSpeedButton() 
 
 bool MediaControlsImplUtils::UpdateCSSClassFromStateDisablePlaybackSpeedButton() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  if (ShouldShowVideoControlsHM() &&
+  if (ShouldShowVideoControlsHM() && media_controls_impl_ && (media_controls_impl_->playback_speed_button_) &&
       media_controls_impl_->playback_speed_button_->FastHasAttribute(html_names::kDisabledAttr)) {
     media_controls_impl_->playback_speed_button_->removeAttribute(html_names::kDisabledAttr);
     return true;
@@ -299,7 +341,7 @@ bool MediaControlsImplUtils::UpdateCSSClassFromStateDisablePlaybackSpeedButton()
 
 void MediaControlsImplUtils::UpdateCSSClassFromStateEnableCurrentTimeDisplay() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  if (ShouldShowVideoControlsHM()) {
+  if (ShouldShowVideoControlsHM() && media_controls_impl_ && (media_controls_impl_->current_time_display_)) {
     media_controls_impl_->current_time_display_->classList().Remove(AtomicString(kDisabledCSSClass));
   }
 #endif
@@ -307,7 +349,7 @@ void MediaControlsImplUtils::UpdateCSSClassFromStateEnableCurrentTimeDisplay() {
 
 void MediaControlsImplUtils::UpdateCSSClassFromStateDisableCurrentTimeDisplay() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  if (ShouldShowVideoControlsHM()) {
+  if (ShouldShowVideoControlsHM() && media_controls_impl_ && (media_controls_impl_->current_time_display_)) {
     media_controls_impl_->current_time_display_->classList().Add(AtomicString(kDisabledCSSClass));
   }
 #endif
@@ -315,7 +357,8 @@ void MediaControlsImplUtils::UpdateCSSClassFromStateDisableCurrentTimeDisplay() 
 
 void MediaControlsImplUtils::MaybeShowExt() {
 #if BUILDFLAG(ARKWEB_MEDIA) && BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  if (media_controls_impl_->MediaElement().IsFullscreen()) {
+  if (media_controls_impl_ && media_controls_impl_->entered_fullscreen_panel_ &&
+      media_controls_impl_->MediaElement().IsFullscreen()) {
     media_controls_impl_->entered_fullscreen_panel_->SetIsWanted(true);
   }
 #endif // ARKWEB_MEDIA && ARKWEB_VIDEO_ASSISTANT
@@ -323,7 +366,8 @@ void MediaControlsImplUtils::MaybeShowExt() {
 
 void MediaControlsImplUtils::HideExt() {
 #if BUILDFLAG(ARKWEB_MEDIA)
-  if (media_controls_impl_->MediaElement().IsFullscreen()) {
+  if (media_controls_impl_ && media_controls_impl_->entered_fullscreen_title_display_ &&
+      media_controls_impl_->entered_fullscreen_panel_ && media_controls_impl_->MediaElement().IsFullscreen()) {
     media_controls_impl_->entered_fullscreen_title_display_->SetIsWanted(false);
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
     media_controls_impl_->entered_fullscreen_panel_->SetIsWanted(false);
@@ -334,7 +378,8 @@ void MediaControlsImplUtils::HideExt() {
 
 void MediaControlsImplUtils::MakeOpaqueExt() {
 #if BUILDFLAG(ARKWEB_MEDIA)
-  if (media_controls_impl_->MediaElement().IsFullscreen()) {
+  if (media_controls_impl_ && media_controls_impl_->entered_fullscreen_title_display_ &&
+      media_controls_impl_->MediaElement().IsFullscreen()) {
     media_controls_impl_->entered_fullscreen_title_display_->SetIsWanted(true);
   }
 #endif  // UILDFLAG(ARKWEB_MEDIA)
@@ -342,20 +387,25 @@ void MediaControlsImplUtils::MakeOpaqueExt() {
 
 void MediaControlsImplUtils::MakeTransparentExt() {
 #if BUILDFLAG(ARKWEB_MEDIA)
-  if (media_controls_impl_->MediaElement().IsFullscreen()) {
+  if (media_controls_impl_ && media_controls_impl_->entered_fullscreen_title_display_ &&
+      media_controls_impl_->MediaElement().IsFullscreen()) {
     media_controls_impl_->entered_fullscreen_title_display_->SetIsWanted(false);
   }
 #endif  // BUILDFLAG(ARKWEB_MEDIA)
 }
 
 void MediaControlsImplUtils::BeginScrubbingStartTimer() {
-  if (media_controls_impl_->scrubbing_timer_.IsActive()) {
+  if (media_controls_impl_ && media_controls_impl_->scrubbing_timer_.IsActive()) {
     media_controls_impl_->scrubbing_timer_.Stop();
   }
   media_controls_impl_->scrubbing_timer_.StartOneShot(kScrubbingDelay, FROM_HERE);
 }
 
 void MediaControlsImplUtils::BeginScrubbingStopTimer() {
+  if (!media_controls_impl_) {
+    LOG(ERROR) << "BeginScrubbingStopTimer media_controls_impl_ is nullptr";
+    return;
+  }
   media_controls_impl_->is_begin_scrubbing = true;
   if (media_controls_impl_->scrubbing_timer_.IsActive()) {
     media_controls_impl_->scrubbing_timer_.Stop();
@@ -364,7 +414,7 @@ void MediaControlsImplUtils::BeginScrubbingStopTimer() {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 MediaControlsSizingClass MediaControlsImplUtils::GetSizingClassHM() {
-  if (media_controls_impl_->size_.width() < kMediaControlsSizingMediumThresholdVideoAssitant) {
+  if (media_controls_impl_ && media_controls_impl_->size_.width() < kMediaControlsSizingMediumThresholdVideoAssitant) {
     return MediaControlsSizingClass::kSmall;
   }
   if (media_controls_impl_->size_.width() < kMediaControlsSizingLargeThresholdVideoAssitant) {
@@ -374,6 +424,10 @@ MediaControlsSizingClass MediaControlsImplUtils::GetSizingClassHM() {
 }
 
 void MediaControlsImplUtils::MakeTransparentImmediately() {
+  if (!media_controls_impl_) {
+    LOG(ERROR) << "MakeTransparentImmediately media_controls_impl_ is nullptr";
+    return;
+  }
   media_controls_impl_->MakeTransparent();
   media_controls_impl_->panel_->SetIsWanted(false);
 }
@@ -381,6 +435,10 @@ void MediaControlsImplUtils::MakeTransparentImmediately() {
 
 void MediaControlsImplUtils::UpdateSizingCSSClassExt() {
   MediaControlsSizingClass sizing_class_hm = GetSizingClassHM();
+  if (!media_controls_impl_) {
+    LOG(ERROR) << "UpdateSizingCSSClassExt media_controls_impl_ is nullptr";
+    return;
+  }
   media_controls_impl_->SetClass(kMediaControlsSizingSmallCSSClass,
     media_controls_impl_->ShouldShowVideoControls() && sizing_class_hm == MediaControlsSizingClass::kSmall);
   media_controls_impl_->SetClass(kMediaControlsSizingMediumCSSClass,
@@ -390,6 +448,10 @@ void MediaControlsImplUtils::UpdateSizingCSSClassExt() {
 }
 
 void MediaControlsImplUtils::OnDurationChangeExt() {
+  if (!media_controls_impl_) {
+    LOG(ERROR) << "OnDurationChangeExt media_controls_impl_ is nullptr";
+    return;
+  }
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (media_controls_impl_->MediaElement().IsCustomMediaPlayerEnabled()) {
     media_controls_impl_->playback_speed_button_->SetIsWanted(
@@ -401,9 +463,10 @@ void MediaControlsImplUtils::OnDurationChangeExt() {
 void MediaControlsImplUtils::OnSeekingExt() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (ShouldShowVideoControlsHM()) {
-    if (media_controls_impl_->scrubbing_message_ && media_controls_impl_->is_begin_scrubbing) {
+    if (media_controls_impl_ && media_controls_impl_->scrubbing_message_ &&
+        media_controls_impl_->is_begin_scrubbing) {
       media_controls_impl_->scrubbing_message_->updateScrubbingMsg(true);
-      if (media_controls_impl_->scrubbing_message_->DoesFit()) {
+      if (media_controls_impl_->scrubbing_message_->DoesFit() && media_controls_impl_->panel_) {
         media_controls_impl_->panel_->setAttribute(AtomicString("class"), AtomicString(kScrubbingMessageCSSClass));
       }
     }
@@ -417,9 +480,11 @@ void MediaControlsImplUtils::OnSeekingExt() {
 
 void MediaControlsImplUtils::OnEnteredFullscreenSetIswanted() {
 #if BUILDFLAG(ARKWEB_MEDIA)
-  media_controls_impl_->entered_fullscreen_panel_->ParserAppendChild(
-      media_controls_impl_->entered_fullscreen_title_display_);
-  media_controls_impl_->entered_fullscreen_panel_->SetIsWanted(true);
+  if (media_controls_impl_ && media_controls_impl_->entered_fullscreen_panel_) {
+    media_controls_impl_->entered_fullscreen_panel_->ParserAppendChild(
+        media_controls_impl_->entered_fullscreen_title_display_);
+    media_controls_impl_->entered_fullscreen_panel_->SetIsWanted(true);    
+  }
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (!media_controls_impl_->MediaElement().ShouldShowControls()) {
     media_controls_impl_->entered_fullscreen_panel_->SetIsWanted(false);
@@ -427,7 +492,7 @@ void MediaControlsImplUtils::OnEnteredFullscreenSetIswanted() {
 #endif // ARKWEB_VIDEO_ASSISTANT
   media_controls_impl_->SetClass("fullscreen", true);
 
-  if (!media_controls_impl_->IsVisible()) {
+  if (!media_controls_impl_->IsVisible() && media_controls_impl_->entered_fullscreen_title_display_) {
     media_controls_impl_->entered_fullscreen_title_display_->SetIsWanted(false);
   }
 #endif  // BUILDFLAG(ARKWEB_MEDIA)
@@ -435,7 +500,7 @@ void MediaControlsImplUtils::OnEnteredFullscreenSetIswanted() {
 
 void MediaControlsImplUtils::OnEnteredFullscreenAddStyleElement() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  if (media_controls_impl_->MediaElement().IsVideoAssistantEnabled()) {
+  if (media_controls_impl_ && media_controls_impl_->MediaElement().IsVideoAssistantEnabled()) {
     media_controls_impl_->style_element_ = MakeGarbageCollected<HTMLStyleElement>(
         media_controls_impl_->GetDocument(), CreateElementFlags());
     media_controls_impl_->ParserAppendChild(media_controls_impl_->style_element_);
@@ -445,11 +510,13 @@ void MediaControlsImplUtils::OnEnteredFullscreenAddStyleElement() {
 
 void MediaControlsImplUtils::OnExitedFullscreenSetIswanted() {
 #if BUILDFLAG(ARKWEB_MEDIA)
-  media_controls_impl_->entered_fullscreen_panel_->ParserRemoveChild(
-      *media_controls_impl_->entered_fullscreen_title_display_);
-  media_controls_impl_->entered_fullscreen_panel_->SetIsWanted(false);
+  if (media_controls_impl_ && media_controls_impl_->entered_fullscreen_panel_) {
+    media_controls_impl_->entered_fullscreen_panel_->ParserRemoveChild(
+        *media_controls_impl_->entered_fullscreen_title_display_);
+    media_controls_impl_->entered_fullscreen_panel_->SetIsWanted(false);
 
-  media_controls_impl_->SetClass("fullscreen", false);
+    media_controls_impl_->SetClass("fullscreen", false);
+  }
 #endif  // BUILDFLAG(ARKWEB_MEDIA)
 }
 
@@ -474,7 +541,9 @@ MediaControlPlaybackSpeedButtonElement& MediaControlsImplUtils::Playback_Speed_B
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 void MediaControlsImplUtils::OnPlaybackSpeedRateChanged() {
-  media_controls_impl_->playback_speed_button_->RefreshPlaybackSpeedButton();
+  if (media_controls_impl_ && media_controls_impl_->playback_speed_button_) {
+    media_controls_impl_->playback_speed_button_->RefreshPlaybackSpeedButton();
+  }
 }
 #endif
 // LCOV_EXCL_STOP
@@ -502,14 +571,17 @@ void MediaControlsImplUtils::TraceExt(Visitor* visitor) {
 void MediaControlsImplUtils::CreateExt(
     MediaControlsImpl* controls, HTMLMediaElement& media_element) {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  controls->SetClass("rtl", media_element.html_media_element_utils_->IsRTL());
+  if (controls) {
+    controls->SetClass("rtl", media_element.html_media_element_utils_->IsRTL());
+  }
 #endif
 }
 
 // LCOV_EXCL_START
 bool MediaControlsImplUtils::PopulatePanelExtVideoAssistant() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  if (media_controls_impl_->mediaControlsImplUtils_->ShouldShowVideoControlsHM()) {
+  if (media_controls_impl_ && media_controls_impl_->mediaControlsImplUtils_ &&
+      media_controls_impl_->mediaControlsImplUtils_->ShouldShowVideoControlsHM()) {
     media_controls_impl_->mediaControlsImplUtils_->PopulatePanelHM();
     return true;
   }
@@ -520,7 +592,7 @@ bool MediaControlsImplUtils::PopulatePanelExtVideoAssistant() {
 
 void MediaControlsImplUtils::BeginScrubbingExt(bool is_touch_event) {
 #if BUILDFLAG(ARKWEB_MEDIA)
-  if (media_controls_impl_->scrubbing_panel_ && is_touch_event) {
+  if (media_controls_impl_ && media_controls_impl_->scrubbing_panel_ && is_touch_event) {
     media_controls_impl_->scrubbing_panel_->SetIsWanted(true);
   }
 #endif
@@ -528,11 +600,11 @@ void MediaControlsImplUtils::BeginScrubbingExt(bool is_touch_event) {
 
 // LCOV_EXCL_START
 void MediaControlsImplUtils::ScrubbingTimerFiredExt() {
-  if (!media_controls_impl_->MediaElement().isConnected()) {
+  if (!media_controls_impl_ || !media_controls_impl_->MediaElement().isConnected()) {
     return;
   }
 
-  if (media_controls_impl_->is_begin_scrubbing) {
+  if (media_controls_impl_->is_begin_scrubbing && media_controls_impl_->scrubbing_message_) {
     media_controls_impl_->scrubbing_message_->updateScrubbingMsg(false);
     if (media_controls_impl_->scrubbing_panel_) {
       media_controls_impl_->scrubbing_panel_->SetIsWanted(false);

@@ -95,8 +95,12 @@ void VideoEncoderAdapterImpl::OnNewOutputBuffer(OH_AVCodec *codec, uint32_t inde
 }
 
 VideoEncoderAdapterImpl::~VideoEncoderAdapterImpl() {
+    if (encoder_ != nullptr) {
+        Release();
+    }
     if (callback_index_ > 0) {
         callback_wrapper_.Clear(callback_index_);
+        callback_index_ = 0;
     }
 }
 
@@ -140,6 +144,7 @@ CodecCodeAdapter VideoEncoderAdapterImpl::SetCodecCallback(const std::shared_ptr
 
     if (callback_index_ > 0) {
         callback_wrapper_.Clear(callback_index_);
+        callback_index_ = 0;
     }
     callback_index_ = callback_wrapper_.AddCallback(encode_callback);
 
@@ -259,6 +264,7 @@ CodecCodeAdapter VideoEncoderAdapterImpl::Release()
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         return CodecCodeAdapter::ERROR;
     }
+    encoder_ = nullptr;
     return CodecCodeAdapter::OK;
 }
 

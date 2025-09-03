@@ -1000,6 +1000,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   }
   void ShowMagnifier() override;
   void HideMagnifier() override;
+  bool IsShowHandle() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)

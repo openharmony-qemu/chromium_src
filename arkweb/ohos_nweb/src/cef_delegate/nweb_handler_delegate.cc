@@ -116,7 +116,7 @@
 #include "base/strings/string_number_conversions.h"
 #endif
 
-#include "ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
+#include "arkweb/chromium_ext/ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 #include "cef/ohos_cef_ext/include/cef_media_player_listener.h"
@@ -614,7 +614,7 @@ void NWebHandlerDelegate::OnDestroy() {
 #if BUILDFLAG(ARKWEB_JSPROXY)
   RemoveTransientJavaScriptObject();
 #endif
-  if (main_browser_) {
+  if (main_browser_ && main_browser_->GetHost()) {
     main_browser_->GetHost()->CloseBrowser(true);
     main_browser_ = nullptr;
   }
@@ -985,6 +985,9 @@ void NWebHandlerDelegate::InjectJsToWebInner(
     JsRunTime time,
     ScriptItems& scriptItems,
     ScriptItemsByOrder& scriptItemsByOrder) {
+  if (!main_browser_ || !main_browser_->GetHost()) {
+    return;
+  } 
   switch (time) {
     case JsRunTime::Start:
       scriptItems = preference_delegate_->GetJavaScriptOnDocumentStart();
@@ -1038,6 +1041,9 @@ void NWebHandlerDelegate::InjectJsToWeb(JsRunTime time) {
       CefString cefRule;
       cefRule.FromString(rule);
       scriptRules.push_back(cefRule);
+    }
+    if (!main_browser_ || !main_browser_->GetHost()) {
+      return;
     }
     switch (time) {
       case JsRunTime::Start:
@@ -1289,7 +1295,7 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
     }
   } else {
     content::GpuProcessHost* host = content::GpuProcessHost::Get();
-    if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr) {
+    if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr && main_browser_->GetHost()) {
       host->gpu_host()->DestroyNativeWindow(main_browser_->GetHost()->GetAcceleratedWidget(false));
     }
     OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
@@ -1558,7 +1564,7 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
   isWebPaintedForSnapshot_ = false;
 #endif
 
-  if (nweb_handler_ != nullptr) {
+  if (nweb_handler_ != nullptr && browser->GetHost()) {
     nweb_handler_->OnPageLoadBegin(url.ToString());
     browser->GetHost()->OnTextSelected(false);
   }
@@ -2267,7 +2273,7 @@ bool NWebHandlerDelegate::OnBeforeDownload(
     return false;
   }
 
-  if (download_listener_ != nullptr) {
+  if (download_listener_ != nullptr && browser->GetHost()) {
     download_listener_->OnDownloadStart(
         download_item->GetURL().ToString(),
         browser->GetHost()->DefaultUserAgent(),
@@ -4118,6 +4124,10 @@ int NWebHandlerDelegate::ProcessNativeProxyResultThread(
 
   auto callback = methodMap[method];
   char** ptr = (char**)malloc(sizeof(char*) * args->GetSize());
+  if(ptr == nullptr) {
+    // malloc failed
+    return 1;    
+  }
   for (size_t i = 0; i < args->GetSize(); i++) {
     CefValueType type = args->GetType(i);
     CefRefPtr<CefValue> value = args->GetValue(i);
@@ -5265,6 +5275,10 @@ void NWebHandlerDelegate::HideMagnifier() {
   if (nweb_handler_) {
     nweb_handler_->HideMagnifier();
   }
+}
+
+bool NWebHandlerDelegate::IsShowHandle() {
+  return nweb_handler_ && nweb_handler_->IsShowHandle();
 }
 #endif
 

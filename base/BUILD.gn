@@ -2717,7 +2717,7 @@ buildflag_header("protected_memory_buildflags") {
   header_dir = "base/memory"
 
   protected_memory_enabled = !is_component_build && is_clang &&
-                             (is_win || is_linux || is_android || is_mac)
+                             (is_win || is_linux || is_android || is_mac || is_ohos)
 
   flags = [ "PROTECTED_MEMORY_ENABLED=$protected_memory_enabled" ]
 }
@@ -3703,8 +3703,7 @@ test("base_unittests") {
     sources += arkweb_crashpad_sources
     sources += arkweb_crashpad_dfx_sources
     sources += arkweb_crashpad_dfx_unittest_sources
-    sources += arkweb_policy_loader_ohos_unittest_source
-    sources += arkweb_proxy_config_service_ohos_unittest_source
+
     sources += [
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
     ]

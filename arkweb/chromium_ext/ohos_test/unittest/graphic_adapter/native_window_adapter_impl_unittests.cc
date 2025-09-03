@@ -18,10 +18,12 @@
 #include <gtest/gtest.h>
 #include <sys/mman.h>
 
+#include "base/logging.h"
 #define private public
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_image_adapter_impl.h"
 #undef private
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.cpp"
 
 using namespace testing;
 
@@ -94,9 +96,11 @@ public:
 
     ColorGamutAdapter GetColorGamut() override { return ColorGamutAdapter::NATIVE; }
 
-    TransformTypeAdapter GetTransformType() override { return TransformTypeAdapter::ROTATE_90; }
+    TransformTypeAdapter GetTransformType() override { return transformTypeAdapter_; }
 
-    int64 GetTimestamp() override { return 1; }
+    int64_t GetTimestamp() override { return 1; }
+
+    TransformTypeAdapter transformTypeAdapter_ = TransformTypeAdapter::ROTATE_90;
 };
 
 class MockBufferFlushConfigAdapter : public BufferFlushConfigAdapter {
@@ -132,6 +136,23 @@ void TestBufferAllocate(void** outBuffer)
     } else {
         *outBuffer = nullptr;
     }
+}
+
+TEST_F(NativeWindowAdapterImplTest, IsSupportFormat_001)
+{
+    bool ret = IsSupportFormat(OH_NativeBuffer_Format::NATIVEBUFFER_PIXEL_FMT_RGBA_8888);
+    EXPECT_TRUE(ret);
+    ret = IsSupportFormat(OH_NativeBuffer_Format::NATIVEBUFFER_PIXEL_FMT_YCBCR_420_SP);
+    EXPECT_TRUE(ret);
+    ret = IsSupportFormat(OH_NativeBuffer_Format::NATIVEBUFFER_PIXEL_FMT_CLUT8);
+    EXPECT_FALSE(ret);
+}
+
+TEST_F(NativeWindowAdapterImplTest, OnBufferAvailableWapper_001)
+{
+    ASSERT_NO_FATAL_FAILURE(OnBufferAvailableWapper(nullptr));
+    NativeBufferConsumerListenerImpl listen(nullptr, nullptr);
+    ASSERT_NO_FATAL_FAILURE(OnBufferAvailableWapper(&listen));
 }
 
 TEST_F(NativeWindowAdapterImplTest, NativeWindowAdapterImplTest_001)
@@ -208,7 +229,7 @@ TEST_F(NativeWindowAdapterImplTest, NativeWindowAdapterImplTest_006)
 {
     NativeBufferAdapterImpl adapter = NativeBufferAdapterImpl(nullptr);
     uint32_t ret = adapter.GetSize();
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, (uint32_t)0);
     void* addr = adapter.GetVirAddr();
     EXPECT_EQ(addr, nullptr);
     void* buffer = nullptr;
@@ -217,9 +238,33 @@ TEST_F(NativeWindowAdapterImplTest, NativeWindowAdapterImplTest_006)
         OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer(static_cast<OH_NativeBuffer*>(buffer));
     NativeBufferAdapterImpl nativeAdapter = NativeBufferAdapterImpl(nativeWindowBuffer);
     ret = nativeAdapter.GetSize();
-    EXPECT_NE(ret, 0);
+    EXPECT_NE(ret, (uint32_t)0);
+
+    // save old size and set size to zero, so GetVirAddr fail
+    int32_t windowHandleSize = nativeAdapter.windowHandle_->size;
+    nativeAdapter.windowHandle_->size = 0;
+    addr = nativeAdapter.GetVirAddr();
+    EXPECT_EQ(addr, nullptr);
+    // restore size
+    nativeAdapter.windowHandle_->size = windowHandleSize;
+
+    // save old fd and set fd to -1, so  GetVirAddr fail
+    int32_t windowHandleFd = nativeAdapter.windowHandle_->fd;
+    // mmap retrun MAP_FAILED
+    nativeAdapter.windowHandle_->fd = -1;
+    addr = nativeAdapter.GetVirAddr();
+    EXPECT_EQ(addr, nullptr);
+    // restore fd
+    nativeAdapter.windowHandle_->fd = windowHandleFd;
+
+    // normal
     addr = nativeAdapter.GetVirAddr();
     EXPECT_NE(addr, nullptr);
+    
+    // GetVirAddr again, will return addr
+    void* new_addr = nativeAdapter.GetVirAddr();
+    EXPECT_NE(new_addr, nullptr);
+    EXPECT_EQ(new_addr, addr);
 }
 
 TEST_F(NativeWindowAdapterImplTest, NativeWindowAdapterImplTest_007)

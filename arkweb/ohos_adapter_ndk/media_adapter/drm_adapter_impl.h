@@ -18,12 +18,13 @@
 
 #include <mutex>
 #include <pthread.h>
-#include "third_party/bounds_checking_function/include/securec.h"
 #include <map>
 
 #include "drm_adapter.h"
 #include <multimedia/drm_framework/native_drm_common.h>
 #include <multimedia/drm_framework/native_drm_err.h>
+#include "third_party/bounds_checking_function/include/securec.h"
+
 
 namespace OHOS::NWeb {
 
@@ -88,11 +89,12 @@ public:
     }
 
     SessionId(std::string emeId, const uint8_t* keySetId, int32_t keySetIdLen)
-        : emeId_(emeId), keySetIdLen_(keySetIdLen)
+        : emeId_(emeId)
     {
         (void)memset_s(keySetId_, sizeof(keySetId_), 0, sizeof(keySetId_));
         if (keySetId != nullptr && keySetIdLen > 0 && keySetIdLen <= MAX_KEY_SET_ID_LEN) {
-            if (memcpy_s(keySetId_, sizeof(keySetId_), keySetId, keySetIdLen) != 0) {
+            if (memcpy_s(keySetId_, sizeof(keySetId_), keySetId, keySetIdLen) == 0) {
+                keySetIdLen_ = keySetIdLen;
             }
         }
     }

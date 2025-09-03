@@ -1,8 +1,0 @@
-ohos_clipboard_sources = [
-      "ohos/clipboard_ohos.cc",
-      "ohos/clipboard_ohos.h",
-      "ohos/clipboard_ohos_read_data.cc",
-      "ohos/clipboard_ohos_read_data.h",
-      "ohos/clip_board_image_data_adapter_impl.cc",
-      "ohos/clip_board_image_data_adapter_impl.h",
-    ]

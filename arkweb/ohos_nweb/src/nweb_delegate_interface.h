@@ -529,6 +529,7 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_PRINT)
   virtual void SetToken(void* token) = 0;
   virtual void* CreateWebPrintDocumentAdapter(const std::string& jobName) = 0;
+  virtual void* CreateWebPrintDocumentAdapterV2(const std::string& jobName) = 0;
   virtual void SetPrintBackground(bool enable) = 0;
   virtual bool GetPrintBackground() = 0;
 #endif  // BUILDFLAG(ARKWEB_PRINT)
@@ -799,9 +800,9 @@ class NWebDelegateInterface
   virtual bool IsMixedContentAutoUpgradesEnabled() = 0;
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
   virtual void EnableAppLinking(bool enable) = 0;
-#endif
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
 #if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
   virtual void EnableMediaNetworkTrafficPrompt(bool enable) = 0;

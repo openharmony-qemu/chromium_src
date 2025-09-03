@@ -96,6 +96,8 @@ class ArkWebContentSubresourceFilterThrottleManagerExt : public ContentSubresour
 
   void UserSetDocumentLoadStatistics(
       mojom::DocumentLoadStatisticsPtr statistics) override;
+
+  void OnUserAdsViolationTriggered(mojom::AdsViolation violation) override;
 #endif
 };
 

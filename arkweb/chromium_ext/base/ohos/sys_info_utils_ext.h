@@ -31,8 +31,15 @@ BASE_EXPORT float GetPixelRatio();
 BASE_EXPORT void SetPixelRatio(float ratio);
 
 BASE_EXPORT bool IsMobileDevice();
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 BASE_EXPORT bool IsTabletDevice();
+
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -484,6 +484,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void GetOverScrollOffset(float* offset_x, float* offset_y) override {}
   void OnFoldStatusChanged(uint32_t foldStatus) override {}
   void SetNativeEmbedMode(bool flag) override {}
+  void SetEnableCustomVideoPlayer(bool flag) override {}
   void SetNativeInnerWeb(bool isInnerWeb) override {}
   void ScaleGestureChangeV2(int type, float scale, float originScale, float width, float height) override {}
   virtual std::string GetCurrentLanguage() override { return ""; }
@@ -525,6 +526,18 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                              bool recursive, IsolatedWorld world,
                              CefRefPtr<CefJavaScriptResultCallback> callback) override {}
 #endif  // BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+   void SetMediaResumeFromBFCachePage(bool resume) override {}
+   void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {}
+   void GetImageForContextNode(CefRefPtr<CefFrame> frame, int command_id) override {}
+   void SetHasComposition(bool has_composition) override {}
+   bool GetHasComposition() override { return false; }
+   void PutUserAgent(const CefString& ua, bool from_app) override {}
+   void SetImeShow(bool visible) override {}
+   void SetEnableCustomVideoPlayer(bool flag) override {}
+   void EnableAppLinking(bool enable) override {}
+   bool IsAppLinkingEnabled() const override { return false; }
+#endif // ARKWEB_UNITTESTS
 };
 
 class MockIMFAdapterFunctionKeyAdapter : public IMFAdapterFunctionKeyAdapter {

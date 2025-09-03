@@ -127,6 +127,7 @@ class TestGpuService : public mojom::GpuService {
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   ARKWEB_UNITTESTS_TEST_GPU_SERVICE_PART1()
   ARKWEB_UNITTESTS_TEST_GPU_SERVICE_PART2()
+  void SetIsScroll(bool is_scroll_enabled) override {}
 #endif
   void EstablishGpuChannel(int32_t client_id,
                            uint64_t client_tracing_id,

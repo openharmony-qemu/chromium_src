@@ -87,5 +87,28 @@ TEST_F(OHOSMojoUtilTest, CreateMediaDrmStorage) {
   EXPECT_NE(result, nullptr);
   ASSERT_TRUE(media_drm_storage.is_valid());
 }
+
+TEST_F(OHOSMojoUtilTest, CreateProvisionFetcherNullptr) {
+  mojo::PendingRemote<mojom::ProvisionFetcher> provision_fetcher;
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner(
+      base::MakeRefCounted<base::TestSimpleTaskRunner>());
+  base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd(task_runner);
+  frame_interfaces = std::move(Mock_frame_interfaces);
+  auto result = ohos_mojo_util::CreateProvisionFetcher(nullptr);
+  ASSERT_TRUE(result == nullptr);
+  ASSERT_FALSE(provision_fetcher.is_valid());
+}
+
+TEST_F(OHOSMojoUtilTest, CreateMediaDrmStorageNullptr) {
+  mojo::PendingRemote<mojom::MediaDrmStorage> media_drm_storage;
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner(
+      base::MakeRefCounted<base::TestSimpleTaskRunner>());
+  base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd(task_runner);
+  frame_interfaces = std::move(Mock_frame_interfaces);
+  auto result = ohos_mojo_util::CreateMediaDrmStorage(nullptr);
+  ASSERT_TRUE(result == nullptr);
+  ASSERT_FALSE(media_drm_storage.is_valid());
+}
+
 }  // namespace ohos_mojo_util
 }  // namespace media

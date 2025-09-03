@@ -83,6 +83,8 @@ class CONTENT_EXPORT TouchSelectionControllerClientManager {
   virtual void UpdateClientClippedSelectionBounds(const gfx::Rect& clipped_selection_bounds) {}
 
   virtual void HideHandleAndQuickMenuIfNecessary(bool hide_handles) {}
+
+  virtual void ConvertClientClippedSelectionBounds(gfx::Rect& clipped_selection_bounds) {}
 #endif  // BUILDFLAG(ARKWEB_PDF)
 };
 

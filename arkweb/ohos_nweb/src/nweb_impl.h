@@ -74,6 +74,25 @@ struct OpenDevToolsParam;
 #endif
 
 namespace OHOS::NWeb {
+#if BUILDFLAG(IS_ARKWEB)
+class NWebPrintDocumentAdapterAdapterImpl :
+    public NWebPrintDocumentAdapterAdapter {
+public:
+    explicit NWebPrintDocumentAdapterAdapterImpl(
+        NWebPrintDocumentAdapterAdapter* ref) : ref_(ref) {}
+    ~NWebPrintDocumentAdapterAdapterImpl();
+
+    void OnStartLayoutWrite(const std::string& jobId,
+        std::shared_ptr<NWebPrintAttributesAdapter> oldAttrs,
+        std::shared_ptr<NWebPrintAttributesAdapter> newAttrs, uint32_t fd,
+        std::shared_ptr<NWebPrintWriteResultCallbackAdapter> callback) override;
+
+    void OnJobStateChanged(const std::string& jobId, uint32_t state) override;
+private:
+    raw_ptr<NWebPrintDocumentAdapterAdapter> ref_;
+};
+#endif
+
 class NWebImpl : public NWeb {
  public:
   explicit NWebImpl(uint32_t id);
@@ -531,6 +550,8 @@ class NWebImpl : public NWeb {
   void SetFocusWindowId(uint32_t focus_window_id) override;
   void SetToken(void* token) override;
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
+  std::unique_ptr<NWebPrintDocumentAdapterAdapter>
+      CreateWebPrintDocumentAdapterV2(const std::string& jobName) override;
   void SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) override;
   int GetSecurityLevel() override;
   void SetPrintBackground(bool enable) override;
@@ -988,8 +1009,11 @@ class NWebImpl : public NWeb {
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);
 #if BUILDFLAG(IS_ARKWEB)
   void SetSurfaceDensity(const double& density) override;
-  void EnableAppLinking(bool enable);
 #endif
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+  void EnableAppLinking(bool enable);
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   void getTotalSize(float size);
   float DumpGpuInfo() override;

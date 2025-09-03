@@ -82,7 +82,6 @@
 #include "arkweb/ohos_adapter_ndk/audio_capturer_adapter/audio_capturer_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/screen_capture_adapter/screen_capture_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/access_token_adapter/access_token_adapter_impl.h"
-#include "arkweb/ohos_adapter_ndk/media_adapter/player_framework_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl.h"
 #include "pasteboard_adapter/include/pasteboard_client_adapter_impl.h"
@@ -403,7 +402,11 @@ ArkOhosAdapterHelperWrapper::CreateConsumerSurfaceAdapter() {
 
 std::unique_ptr<NWeb::PlayerAdapter>
 ArkOhosAdapterHelperWrapper::CreatePlayerAdapter() {
-  return std::make_unique<NWeb::PlayerAdapterImpl>();
+  ArkWebRefPtr<ArkPlayerAdapter> adapter = ctocpp_->CreatePlayerAdapter();
+  if (CHECK_REF_PTR_IS_NULL(adapter)) {
+    return nullptr;
+  }
+  return std::make_unique<ArkPlayerAdapterWrapper>(adapter);
 }
 
 NWeb::WindowAdapter& ArkOhosAdapterHelperWrapper::GetWindowAdapterInstance() {

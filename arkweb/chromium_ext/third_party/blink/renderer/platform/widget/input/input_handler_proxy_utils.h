@@ -24,7 +24,7 @@
 
 namespace blink {
 
-#define MAX_FINGER_NUMBER 20
+#define MAX_FINGER_NUMBER 16
 #define MIN_FINGER_NUMBER 0
 
 class WebInputEventAttribution;
@@ -125,7 +125,7 @@ public:
       std::unique_ptr<EventWithCallback> event_with_callback);
   bool HandleTouchStartIfHitNative(const WebTouchEvent& touch_event);
   bool HandleTouchStartIfHitVideo(const WebTouchEvent& touch_event);
-  size_t GetTouchChangeIndex(const WebTouchEvent& event);
+  int32_t GetTouchChangeIndex(const WebTouchEvent& event);
   void NativeHitTestResultV2(bool native, size_t finger_Id, int layer_Id);
   void SetGestureEventResult(bool result,
                              bool stopPropagation,
@@ -137,6 +137,14 @@ public:
   void NativeMouseEventProcess(
       std::unique_ptr<EventWithCallback> event_with_callback);
   void ResetTouchSequence();
+  void SendEventToNativeByIndex(const WebTouchEvent& touch_event, int32_t index);
+  bool CheckFingerIdOutOfIndex(int32_t finger_id);
+  void HandleTouchStartInit(
+      std::unique_ptr<EventWithCallback> event_with_callback,
+      int32_t finger_id);
+  bool HandleTouchStartInitInQueue(
+      std::unique_ptr<EventWithCallback> event_with_callback,
+      int32_t finger_id);
 #endif
  private:
  raw_ptr<InputHandlerProxy> proxy_;

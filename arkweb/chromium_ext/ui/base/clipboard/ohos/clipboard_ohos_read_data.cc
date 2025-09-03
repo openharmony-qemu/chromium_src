@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/base/clipboard/ohos/clipboard_ohos_read_data.h"
+#include "clipboard_ohos_read_data.h"
 
 #include <map>
 

@@ -20,6 +20,7 @@
 #include <native_window/buffer_handle.h>
 #include <native_buffer/native_buffer.h>
 
+#include "base/memory/raw_ptr.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
 
 namespace OHOS::NWeb {
@@ -48,9 +49,9 @@ public:
     OHNativeWindowBuffer *GetBuffer();
 
 private:
-    void *mappedAddr_ = nullptr;
-    OHNativeWindowBuffer *buffer_ = nullptr;
-    BufferHandle *windowHandle_ = nullptr;
+    raw_ptr<void> mappedAddr_ = nullptr;
+    raw_ptr<OHNativeWindowBuffer> buffer_ = nullptr;
+    raw_ptr<BufferHandle> windowHandle_ = nullptr;
 };
 
 class NativeBufferConsumerListenerImpl {
@@ -63,7 +64,7 @@ public:
     void OnBufferAvailable();
 
 private:
-    OH_NativeImage *nativeImage_ = nullptr;
+    raw_ptr<OH_NativeImage> nativeImage_ = nullptr;
     std::shared_ptr<IBufferConsumerListenerAdapter> listener_ = nullptr;
 };
 
@@ -83,7 +84,7 @@ public:
 
     OH_NativeImage* GetConsumerSurface();
 private:
-    OH_NativeImage* cImage_ = nullptr;
+    raw_ptr<OH_NativeImage> cImage_ = nullptr;
     std::shared_ptr<NativeBufferConsumerListenerImpl> listenerAdapter_;
 };
 
@@ -104,7 +105,7 @@ private:
         const std::shared_ptr<BufferRequestConfigAdapter> configAdapter);
     OH_NativeBuffer_ColorGamut TransToGraphicColorGamut(const ColorGamutAdapter& colorGamut);
     OH_NativeBuffer_TransformType TransToTransformType(const TransformTypeAdapter& type);
-    OHNativeWindow *window_ = nullptr;
+    raw_ptr<OHNativeWindow> window_ = nullptr;
 };
 } // namespace OHOS::NWeb
 

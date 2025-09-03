@@ -8,6 +8,7 @@
 #include "arkweb/build/features/features.h"
 #include "base/containers/circular_deque.h"
 #include "base/time/time.h"
+#include "base/memory/raw_ref.h"
 #include "components/viz/common/frame_sinks/begin_frame_source.h"
 #include "components/viz/common/surfaces/frame_sink_id.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
@@ -88,7 +89,7 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   bool first_vsync_since_notify_enabled_;
 
   std::unique_ptr<VSyncUserData> user_data_;
-  OHOS::NWeb::VSyncAdapter& vsync_adapter_;
+  raw_ref<OHOS::NWeb::VSyncAdapter> vsync_adapter_;
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
   FrameSinkId frame_sink_id_;

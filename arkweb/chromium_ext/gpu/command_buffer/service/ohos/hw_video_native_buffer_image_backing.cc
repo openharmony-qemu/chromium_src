@@ -450,6 +450,7 @@ HwVideoNativeBufferImageBacking::ProduceSkiaGanesh(
   base::AutoLockMaybe auto_lock(GetDrDcLockPtr());
 
   DCHECK(context_state);
+  CHECK(context_state);
 
   // For (old) overlays, we don't have a texture owner, but overlay promotion
   // might not happen for some reasons. In that case, it will try to draw

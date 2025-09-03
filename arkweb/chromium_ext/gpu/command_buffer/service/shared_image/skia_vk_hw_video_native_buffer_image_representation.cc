@@ -86,7 +86,7 @@ std::vector<sk_sp<SkSurface>> SkiaVkHWVideoNBImageRepresentation::BeginWriteAcce
   }
 
   auto* gr_context = context_state_->gr_context();
-  if (gr_context->abandoned()) {
+  if (!gr_context || gr_context->abandoned()) {
       return {};
   }
 

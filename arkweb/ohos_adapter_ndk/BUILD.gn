@@ -345,6 +345,7 @@ component("adapter_ndk") {
     "//arkweb/build/features",
     "//base:tracing_buildflags",
     "//third_party/boringssl",
+    "//base/allocator/partition_allocator:raw_ptr"
   ]
   if (defined(is_arkweb) && is_arkweb) {
     deps += [

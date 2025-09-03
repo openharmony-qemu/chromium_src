@@ -88,7 +88,7 @@ ExternalBeginFrameSourceOHOS::ExternalBeginFrameSourceOHOS(
       base::SingleThreadTaskRunner::GetCurrentDefault(),
       weak_factory_.GetWeakPtr());
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  vsync_adapter_.SetOnVsyncCallback(
+  vsync_adapter_->SetOnVsyncCallback(
       ExternalBeginFrameSourceOHOS::OnVSyncCallback);
 #endif
 
@@ -139,7 +139,7 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
     return;
   }
   last_vsync_period_ = timestamp;
-  vsync_period_ = vsync_adapter_.GetVSyncPeriod();
+  vsync_period_ = vsync_adapter_->GetVSyncPeriod();
   if (vsync_period_ == 0) {
     if (first_vsync_since_notify_enabled_) {
       first_vsync_since_notify_enabled_ = false;
@@ -212,7 +212,7 @@ if (last_dvsync_state_ != currentDysyncState) {
     LOG(INFO) << "ExternalBeginFrameSourceOHOS::OnVSyncImpl::SetDVSyncSwitch: " << currentDysyncState;
     TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::SetDVSyncSwitch", "SetDVSyncSwitch",
             currentDysyncState);
-    vsync_adapter_.SetDVSyncSwitch(currentDysyncState);
+    vsync_adapter_->SetDVSyncSwitch(currentDysyncState);
     last_dvsync_state_ = currentDysyncState;
 }
 #endif
@@ -238,7 +238,7 @@ if (last_dvsync_state_ != currentDysyncState) {
     g_skip_vsync_ = true;
   }
 
-  vsync_adapter_.RequestVsync(user_data_.release(),
+  vsync_adapter_->RequestVsync(user_data_.release(),
                               ExternalBeginFrameSourceOHOS::OnVSync);
 
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
@@ -291,7 +291,7 @@ void ExternalBeginFrameSourceOHOS::SetEnabled(bool enabled) {
 #endif
   vsync_notification_enabled_ = enabled;
   if (vsync_notification_enabled_ && user_data_ != nullptr) {
-    vsync_adapter_.RequestVsync(user_data_.release(),
+    vsync_adapter_->RequestVsync(user_data_.release(),
                                 ExternalBeginFrameSourceOHOS::OnVSync);
   }
 }

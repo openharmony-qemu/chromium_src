@@ -15,6 +15,7 @@
 
 #include "native_window_adapter_impl.h"
 
+#include <mutex>
 #include <native_window/external_window.h>
 #include <sys/mman.h>
 #include <unordered_map>
@@ -24,6 +25,7 @@
 
 namespace OHOS::NWeb {
 constexpr int32_t INVALID = -1;
+std:mutex g_mutex_native_window;
 namespace {
 bool IsSupportFormat(int32_t format)
 {
@@ -41,8 +43,11 @@ void OnBufferAvailableWapper(void *context)
         WVLOG_E("OnBufferAvailableWapper context is nullptr");
         return;
     }
+    std::lock_guard<std:mutex> lock(g_mutex_native_window);
     NativeBufferConsumerListenerImpl *callback = static_cast<NativeBufferConsumerListenerImpl*>(context);
-    callback->OnBufferAvailable();
+    if (callback) {
+        callback->OnBufferAvailable();
+    }
 }
 } // namespace
 
@@ -139,7 +144,7 @@ void* NativeBufferAdapterImpl::GetVirAddr()
 
     mappedAddr_ = mmap(nullptr, windowHandle_->size, PROT_READ | PROT_WRITE, MAP_SHARED, windowHandle_->fd, 0);
     if ((mappedAddr_ == MAP_FAILED) || (mappedAddr_ == nullptr)) {
-        WVLOG_E("Map ashmem failed, ret = 0x{public}lx", mappedAddr_);
+        WVLOG_E("Map ashmem failed, ret = 0x{public}lx", mappedAddr_.get());
         return nullptr;
     }
 
@@ -186,12 +191,18 @@ ConsumerNativeAdapterImpl::ConsumerNativeAdapterImpl()
 
 ConsumerNativeAdapterImpl::~ConsumerNativeAdapterImpl()
 {
-    OH_NativeImage_Destroy(&cImage_);
+    if (cImage_ == nullptr) {
+        return;
+    }
+    OH_NativeImage* raw = cImage_.get();
+    OH_NativeImage_Destroy(&raw);
+    cImage_ = raw;
 }
 
 int32_t ConsumerNativeAdapterImpl::RegisterConsumerListener(
     std::shared_ptr<IBufferConsumerListenerAdapter> listenerAdapter)
 {
+    std::lock_guard<std:mutex> lock(g_mutex_native_window);
     if (!cImage_ || !listenerAdapter) {
         WVLOG_E("cImage_ or listener_ is nullptr");
         return -1;

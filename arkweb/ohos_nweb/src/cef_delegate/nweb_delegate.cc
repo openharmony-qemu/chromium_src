@@ -5826,7 +5826,7 @@ void NWebDelegate::SetPopupSurface(void* popupSurface) {
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
 void NWebDelegate::MaximizeResize() {
-  if (GetBrowser().get()) {
+  if (GetBrowser().get() && GetBrowser()->GetHost()) {
     GetBrowser()->GetHost()->MaximizeResize();
   }
 }

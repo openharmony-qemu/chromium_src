@@ -882,7 +882,7 @@ class NWebImpl : public NWeb {
 
 #if BUILDFLAG(ARKWEB_SITE_ISOLATION)
   static int32_t SetSiteIsolationMode(bool mode);
-  static bool GetSiteIsolationMode();
+  static bool GetSiteIsolationModeResult();
 #endif
 
 #if BUILDFLAG(ARKWEB_USERAGENT)

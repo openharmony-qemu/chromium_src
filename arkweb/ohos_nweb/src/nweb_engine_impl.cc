@@ -183,7 +183,7 @@ void NWebEngineImpl::PrefetchResource(
 }
 
 int32_t NWebEngineImpl::SetSiteIsolationMode(SiteIsolationMode mode) {
-#if BUILDFLAG(ARKWEB_SITE_ISOLATION_MODE)
+#if BUILDFLAG(ARKWEB_SITE_ISOLATION)
   LOG(INFO) << "NWebEngineImpl::SetSiteIsolationMode";
   bool isStrict = (mode == SiteIsolationMode::STRICT)? true:false;
   return NWebImpl::SetSiteIsolationMode(isStrict);
@@ -193,7 +193,7 @@ int32_t NWebEngineImpl::SetSiteIsolationMode(SiteIsolationMode mode) {
 }
 
 SiteIsolationMode NWebEngineImpl::GetSiteIsolationMode() {
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+#if BUILDFLAG(ARKWEB_SITE_ISOLATION)
   bool resMode = NWebImpl::GetSiteIsolationModeResult();
   LOG(INFO) << "NWebEngineImpl::GetSiteIsolationMode" << resMode;
   SiteIsolationMode mode = (resMode == false)? SiteIsolationMode::PARTIAL : SiteIsolationMode::STRICT;

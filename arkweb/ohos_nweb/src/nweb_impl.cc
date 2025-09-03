@@ -316,7 +316,7 @@ enum class SiteIsolationInitMode{
   INIT,
   PARTIAL,
   STRICT
-}
+};
 const int32_t ALREADY_SET_ERR = 4;
 const int32_t SINGLE_RENDER_SET_STRICT_ERR = 3;
 const int32_t ADVANCED_SECURITY_SET_ERR = 2;
@@ -5203,7 +5203,7 @@ int32_t NWebImpl::SetSiteIsolationMode(bool mode) {
       return ALREADY_SET_ERR;
   }
 
-  if(mode = true && !IsMultipleRenderProcess()) {
+  if(mode == true && !IsMultipleRenderProcess()) {
       LOG(WARNING) << "Site isolation mode cannot be strict when single render";
       return SINGLE_RENDER_SET_STRICT_ERR;
   }

@@ -18,6 +18,7 @@
 #include "chrome/browser/extensions/permissions/active_tab_permission_granter.h"
 #include "chrome/browser/extensions/tab_helper.h"
 #include "extensions/browser/extension_registry.h"
+#include "extensions/common/mojom/context_type.mojom.h"
 #include "ohos_cef_ext/libcef/browser/extensions/tab_extensions_util.h"
 #endif
 
@@ -92,7 +93,14 @@ void ExtensionActionDispatcher::DispatchExtensionActionClickedWithCustomArgs(
   }
 
   base::Value::List args;
-  args.Append(GetTabValue(*custom_tab));
+  GURL gurl(custom_tab->url.value());
+  constexpr mojom::ContextType context_type =
+      mojom::ContextType::kPrivilegedExtension;
+  ExtensionTabUtil::ScrubTabBehavior scrub_tab_behavior =
+      ExtensionTabUtil::GetScrubTabBehaviorExt(extension, context_type, gurl, custom_tab->id.value_or(-1));
+ 
+  NWebExtensionTab tab_t = *custom_tab;
+  args.Append(GetTabValue(tab_t, scrub_tab_behavior));
 
   if (custom_tab->id.has_value()) {
     ExtensionActionInvokeActiveTab(context, custom_tab->id.value(), extension_id);

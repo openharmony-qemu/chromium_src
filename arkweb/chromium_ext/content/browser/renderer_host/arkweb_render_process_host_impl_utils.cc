@@ -254,7 +254,7 @@ class DelayedRenderKiller {
 RenderProcessHost*
 ArkwebRenderProcessHostImplUtils::GetExistingBackgroundProcessHost() {
   // First figure out which existing renderers we can use.
-  RenderProcessHost* longest_background_host;
+  RenderProcessHost* longest_background_host = nullptr;
   base::TimeDelta longest_duration;
   base::TimeTicks current_time = base::TimeTicks::Now();
 

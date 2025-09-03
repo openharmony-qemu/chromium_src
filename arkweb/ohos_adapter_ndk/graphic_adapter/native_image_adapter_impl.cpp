@@ -114,7 +114,7 @@ void NativeImageAdapterImpl::DestroyNativeImage()
     }
     OH_NativeImage* raw = ohNativeImage_.get();
     OH_NativeImage_Destroy(&raw);
-    ohNativeImage_ = raw;
+    ohNativeImage_ = nullptr;
 }
 
 

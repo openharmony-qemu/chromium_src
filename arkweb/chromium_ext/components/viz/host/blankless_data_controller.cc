@@ -83,10 +83,6 @@ static double Covariance(const std::vector<double>& data1,
     LOG(DEBUG) << "blankless Covariance data1 size 0";
     return 0;
   }
-  if (data1.size() > data2.size()) {
-    LOG(DEBUG) << "blankless Covariance data1 size bigger than data2 size";
-    return 0;
-  }
   double sum = 0.0;
   for (size_t i = 0; i < data1.size(); ++i) {
     sum += (data1[i] - mean1) * (data2[i] - mean2);

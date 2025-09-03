@@ -21,7 +21,7 @@ constexpr char kGpuProcess[] = "gpu-process";
 
 namespace gl {
 
-std:mutex g_mutex_native_image;
+std::mutex g_mutex_native_image;
 
 scoped_refptr<OhosNativeImage> OhosNativeImage::Create(int texture_id) {
   auto nativeImageAdapter =
@@ -48,7 +48,7 @@ OhosNativeImage::~OhosNativeImage() {
 void OhosNativeImage::SetFrameAvailableCallback(
     base::RepeatingClosure callback) {
   DCHECK(!frame_available_cb_);
-  std::lock_guard<std:mutex> lock(g_mutex_native_image);
+  std::lock_guard<std::mutex> lock(g_mutex_native_image);
   frame_available_cb_ = std::move(callback);
   if (native_image_adapter_ != nullptr && listener_ == nullptr) {
     listener_ = std::make_shared<OHOS::NWeb::FrameAvailableListenerImpl>();
@@ -128,7 +128,7 @@ void* OhosNativeImage::AquireOhosNativeWindow() {
 }
 
 void OhosNativeImage::OnFrameAvailableListener(void* context) {
-  std::lock_guard<std:mutex> lock(g_mutex_native_image);
+  std::lock_guard<std::mutex> lock(g_mutex_native_image);
   OhosNativeImage* nativeImage = reinterpret_cast<OhosNativeImage*>(context);
   if (nativeImage == nullptr) {
     return;

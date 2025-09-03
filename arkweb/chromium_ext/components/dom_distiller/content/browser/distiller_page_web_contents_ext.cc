@@ -48,10 +48,12 @@ DistillerPageWebContentsExt::DistillerPageWebContentsExt(
                                std::move(optional_web_contents_handle)) {}
 
 DistillerPageWebContentsExt::~DistillerPageWebContentsExt() {
+#if BUILDFLAG(ARKWEB_READER_MODE)
   if (!is_source_webcontents_ && !resident_web_contents_ &&
       source_page_handle_ && source_page_handle_->web_contents()) {
     resident_web_contents_.reset(source_page_handle_->web_contents());
   }
+#endif // ARKWEB_READER_MODE
 }
 
 #if BUILDFLAG(ARKWEB_READER_MODE)

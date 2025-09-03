@@ -267,6 +267,11 @@ extern bool g_siteIsolationMode;
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 #include "base/base_switches.h"
 #include "base/command_line.h"
+#include "base/files/file_path.h"
+#include "base/files/file_util.h"
+#include "base/ohos/nweb_engine_event_logger.h"
+#include "base/ohos/nweb_engine_event_logger_code.h"
+#include "base/path_service.h"
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "ohos_nweb/src/nweb_web_storage_impl.h"
 #include "chrome/browser/browser_process.h"
@@ -469,6 +474,13 @@ using ASHelper = OHOS::NWeb::NWebAdvancedSecurityHelper;
 std::shared_ptr<NWebLoggerCallback> g_logger_callback;
 #endif
 bool g_logger_callback_initialized = false;
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+static const int kMigrationBase = 10;
+static const int kMigrationMaxCount = 10000;
+constexpr base::FilePath::CharType kMigrateKeyFlagFile[] =
+    FILE_PATH_LITERAL("migrate/MIGRATE_ASSET_SUCCESS");
+#endif
 
 bool GetWebOptimizationValue() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -760,11 +772,35 @@ void InitialWebEngineArgs(
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 void MigratePasswordsToPasswordVault() {
+  base::FilePath cache_path;
+  base::PathService::Get(base::DIR_CACHE, &cache_path);
+  if (cache_path.empty()) {
+    LOG(INFO) << "[Autofill] cache_path is empty.";
+    return;
+  }
+  base::FilePath flagFile = cache_path.Append(FILE_PATH_LITERAL(kMigrateKeyFlagFile));
+  bool IsFlagFileExist = base::PathExists(flagFile);
   bool migrateReady = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsReady);
   bool migrateVault = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsToPasswordVault);
-  if (migrateReady == true && migrateVault == false) {
+  LOG(INFO) << "[Autofill] MigratePasswordsReady:" << migrateReady
+            << ", MigratePasswordsToPasswordVault:" << migrateVault
+            << ", IsFlagFileExist:" << IsFlagFileExist;
+  if (migrateReady == true && migrateVault == false && IsFlagFileExist == true) {
+    int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCount);
+    LOG(INFO) << "[Autofill] migration count:" << count;
+    g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCount, count + 1);
+    g_browser_process->local_state()->CommitPendingWrite();
+    if (count <= kMigrationBase || (count % kMigrationBase == 0 && count <= kMigrationMaxCount)) {
       OHOS::NWeb::NWebWebStorageImpl* nweb_web_storage = new OHOS::NWeb::NWebWebStorageImpl();
       nweb_web_storage->MigratePasswords();
+    } else if (count > kMigrationMaxCount) {
+      LOG(ERROR) << "[Autofill] Migrate passwords over max counts, stop migrate.";
+      std::string err_msg = "Migrate passwords over kMigrationMaxCount, stop migrate.";
+      base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
+                                    base::ohos::kPasswordManagerError, err_msg);
+      g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+      g_browser_process->local_state()->CommitPendingWrite();
+    }
   }
 }
 #endif // ARKWEB_EXT_PASSWORD
@@ -943,6 +979,7 @@ void NWebImpl::InitializeWebEngine(
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {
+    LOG(INFO) << "[Autofill] Migrate passwords to passwordVault start.";
     MigratePasswordsToPasswordVault();
   }
 #endif
@@ -5161,8 +5198,13 @@ void NWebImpl::SetWholeWebDrawing() {
 // static
 void NWebImpl::SetMigrationPasswordReady(const bool migrationReady) {
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  if (!base::CommandLine::ForCurrentProcess()) {
+    LOG(ERROR) << "[Autofill] InitializeWebEngine is not init.";
+    return;
+  }
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {
     g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsReady, migrationReady);
+    g_browser_process->local_state()->CommitPendingWrite();
     LOG(INFO) << "[Autofill] Migrate Passwords Ready:" << migrationReady;
     if (migrationReady == true) {
       MigratePasswordsToPasswordVault();

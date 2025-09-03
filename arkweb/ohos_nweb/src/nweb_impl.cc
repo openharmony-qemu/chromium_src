@@ -311,6 +311,21 @@ std::vector<std::string> g_browser_args = {};
 int32_t g_browser_service_sdk_api_level = 0;
 #endif  // BUILDFLAG(ARKWEB_NWEB_EX)
 
+#if BUILDFLAG(ARKWEB_SITE_ISOLATION)
+enum class SiteIsolationInitMode{
+  INIT,
+  PARTIAL,
+  STRICT
+}
+const int32_t ALREADY_SET_ERR = 4;
+const int32_t SINGLE_RENDER_SET_STRICT_ERR = 3;
+const int32_t ADVANCED_SECURITY_SET_ERR = 2;
+const int32_t SITE_ISOLATION_SET_SUCCESS = 1;
+
+bool g_siteIsolationModeInit = false;
+SiteIsolationInitMode g_siteIsolationModeInitValue = SiteIsolationInitMode::INIT;
+#endif  // BUILDFLAG(ARKWEB_SITE_ISOLATION)
+
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 std::optional<std::string> g_extension_name;
 
@@ -515,6 +530,14 @@ static bool ShouldEnableSiteIsolation() {
 
   if (isSiteIsolationMode == "false") {
     return false;
+  }
+
+  if (g_siteIsolationModeInit) {
+    if (g_siteIsolationModeInitValue == SiteIsolationInitMode::STRICT && !IsMultipleRenderProcess()){
+      LOG(ERROR) << "Site isolation mode cannot be strict when single render";
+    } else {
+      return (g_siteIsolationModeInitValue == SiteIsolationInitMode::STRICT)? true : false;
+    }
   }
 
   const base::CommandLine* command_line =
@@ -5150,6 +5173,50 @@ RenderProcessMode NWebImpl::GetRenderProcessMode() {
       content::RenderProcessHost::render_process_mode());
 }
 #endif  // ARKWEB_RENDER_PROCESS_MODE
+
+#if BUILDFLAG(ARKWEB_SITE_ISOLATION)
+bool NWebImpl::GetSiteIsolationModeResult() {
+  return ShouldEnableSiteIsolation();
+}
+
+static void ApplySiteIsolationMode(bool mode){
+  std::string rootMode = GetSiteIsolationMode();
+  if(rootMode == "false"){
+    g_siteIsolationMode = false;
+    LOG(WARNING) << "mode forced site isolation to false";
+  } else {
+    g_siteIsolationMode = mode;
+  }
+  g_siteIsolationModeInit = true;
+
+  OHOS::NWEB::ResSchedClientAdapter::ReportSiteIsolationMode(g_siteIsolationMode);
+  ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
+  g_siteIsolationModeInitValue = (g_siteIsolationMode == true)? SiteIsolationInitMode::STRICT : SiteIsolationInitMode::PARTIAL;
+  LOG(INFO) << "Final site isolation mode set to:" << g_siteIsolationMode;
+}
+
+int32_t NWebImpl::SetSiteIsolationMode(bool mode) {
+  LOG(INFO) << "NWeb Impl SetSiteIsolationMode request:" << mode;
+
+  if(g_siteIsolationModeInit) {
+      LOG(WARNING) << "Site isolation mode already set by developer";
+      return ALREADY_SET_ERR;
+  }
+
+  if(mode = true && !IsMultipleRenderProcess()) {
+      LOG(WARNING) << "Site isolation mode cannot be strict when single render";
+      return SINGLE_RENDER_SET_STRICT_ERR;
+  }
+
+  if(IsAdvancedSecurityMode()) {
+      LOG(WARNING) << "Cannot change (AdvancedSecurityMode Active)";
+      return ADVANCED_SECURITY_SET_ERR;
+  }
+  ApplySiteIsolationMode(mode);
+  return SITE_ISOLATION_SET_SUCCESS;
+}
+
+#endif  // ARKWEB_SITE_ISOLATION
 
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
 // static

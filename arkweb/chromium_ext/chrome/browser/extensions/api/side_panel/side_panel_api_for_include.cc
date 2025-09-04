@@ -78,7 +78,7 @@ void SidePanelSetOptionsFunction::RunFunctionForInclude(
         options.contextType = context_type;
       }
       options.includeIncognitoInfo = include_incognito_information();
-      success = NWebExtensionSidePanelCefDelegate::GetInstance()->OnSetOptionsByPb(options);
+      NWebExtensionSidePanelCefDelegate::GetInstance()->OnSetOptionsByPb(options);
     } else {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
       NWebExtensionSidePanelDispatcher::OnSetOptionsNative(

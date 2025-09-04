@@ -339,6 +339,7 @@ arkweb_media_audio_unittest_sources = [
 
 arkweb_media_third_party_unittest_sources = [
   "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/base_window_capturer_unittest.cc",
+  "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/base_screen_capture_source_bridge_unittest.cc",
 ]
 
 arkweb_media_filters_sources = [

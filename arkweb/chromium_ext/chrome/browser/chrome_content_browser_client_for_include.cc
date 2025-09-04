@@ -149,7 +149,7 @@ class ChromeContentBrowserClientUtils {
     CefRefPtr<CefBrowserHostBase> browser_host =
         CefBrowserHostBase::GetBrowserForHost(rvh);
     if (rwhvb && rwhvb->IsRenderWidgetHostViewChildFrame() && browser_host) {
-      return browser_host;
+      return;
     }
 
     if (rwhvb && browser_host && rwhvb->AsArkWebRenderWidgetHostViewOSRExt()) {

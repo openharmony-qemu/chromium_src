@@ -19,9 +19,25 @@
 #include "base/logging.h"
 #include "third_party/blink/renderer/core/frame/settings.h"
 #include "third_party/blink/renderer/platform/heap/persistent.h"
+#include "third_party/blink/renderer/core/html/html_plugin_element.h"
 
 namespace blink {
 class HTMLPlugInElement;
+
+struct ParamChangeInfo {
+  enum class Status { kAdd, kUpdate, kDelete };
+
+  ParamChangeInfo(Status s,
+                  const AtomicString& i,
+                  const AtomicString& n,
+                  const AtomicString& v)
+      : status(s), id(i), name(n), value(v) {}
+
+  Status status;
+  AtomicString id;
+  AtomicString name;
+  AtomicString value;
+};
 
 class HTMLPlugInElementUtils {
  public:
@@ -32,6 +48,8 @@ class HTMLPlugInElementUtils {
   bool IsCssDisplayChangeEnabled() const;
   void SetNativeEmbedOverlay(bool native_embed_overlay);
   void SetNativeEmbedOverlayInfinity(bool native_embed_overlay_infinity);
+  void ProcessParamChanges(const Vector<ParamChangeInfo>& changes);
+  void ProcessBufferedParamChanges();
   bool IsOverlay() {
     return native_embed_overlay_;
   }
@@ -43,6 +61,7 @@ class HTMLPlugInElementUtils {
   Persistent<HTMLPlugInElement> plugin_;
   bool native_embed_overlay_{false};
   bool native_embed_overlay_infinity_{false};
+  Vector<ParamChangeInfo> buffered_param_changes_;
 };
 
 }  // namespace blink

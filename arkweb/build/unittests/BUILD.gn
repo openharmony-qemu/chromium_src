@@ -46,7 +46,6 @@ group("oh_core_unittests") {
   deps = [
     "//components/gwp_asan:gwp_asan_unittests",
     "//components/services/filesystem:filesystem_service_unittests",
-    "//extensions:extensions_unittests",
     "//media:audio_unittests",
     "//media/cast:cast_unittests",
     "//media/midi:midi_unittests",

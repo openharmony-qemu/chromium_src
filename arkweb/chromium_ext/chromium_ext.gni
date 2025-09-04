@@ -214,6 +214,12 @@ ark_third_party_skia_src_ports_unittest_sources = [
   "//arkweb/chromium_ext/skia/ext/skia_memory_tracer_unittest.cc",
 ]
 
+arkweb_chrome_components_input_unittest_sources = [
+  "//arkweb/chromium_ext/components/input/arkweb_input_router_impl_utils_unittest.cc",
+  "//content/browser/renderer_host/input/mock_input_router_client.cc",
+  "//content/browser/renderer_host/input/mock_input_disposition_handler.cc",
+]
+
 arkweb_ui_events_devices_sources = [
   "//arkweb/chromium_ext/ui/events/devices/arkweb_device_data_manager_utils.cc",
   "//arkweb/chromium_ext/ui/events/devices/arkweb_device_data_manager_utils.h",

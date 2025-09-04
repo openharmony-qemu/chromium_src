@@ -151,6 +151,10 @@ class ChromeContentBrowserClientUtils {
         static_cast<CefRenderWidgetHostViewOSR*>(rvh->GetWidget()->GetView());
     CefRefPtr<CefBrowserHostBase> browser_host =
         CefBrowserHostBase::GetBrowserForHost(rvh);
+    if (rwhvb && rwhvb->GetViewType().empty()) {
+      LOG(ERROR) << "GetViewType is empty, access wrong RenderWidgetHostView";
+      return browser_host;
+    }
     if (rwhvb && rwhvb->IsRenderWidgetHostViewChildFrame() && browser_host) {
       return browser_host;
     }

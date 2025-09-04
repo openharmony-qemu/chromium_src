@@ -5181,7 +5181,7 @@ bool NWebImpl::GetSiteIsolationModeResult() {
 
 static void ApplySiteIsolationMode(bool mode){
   std::string rootMode = GetSiteIsolationMode();
-  if(rootMode == "false"){
+  if (rootMode == "false") {
     g_siteIsolationMode = false;
     LOG(WARNING) << "mode forced site isolation to false";
   } else {
@@ -5199,17 +5199,17 @@ static void ApplySiteIsolationMode(bool mode){
 int32_t NWebImpl::SetSiteIsolationMode(bool mode) {
   LOG(INFO) << "NWeb Impl SetSiteIsolationMode request:" << mode;
 
-  if(g_siteIsolationModeInit) {
+  if (g_siteIsolationModeInit) {
       LOG(WARNING) << "Site isolation mode already set by developer";
       return ALREADY_SET_ERR;
   }
 
-  if(mode == true && !IsMultipleRenderProcess()) {
+  if (mode && !IsMultipleRenderProcess()) {
       LOG(WARNING) << "Site isolation mode cannot be strict when single render";
       return SINGLE_RENDER_SET_STRICT_ERR;
   }
 
-  if(IsAdvancedSecurityMode()) {
+  if (IsAdvancedSecurityMode()) {
       LOG(WARNING) << "Cannot change (AdvancedSecurityMode Active)";
       return ADVANCED_SECURITY_SET_ERR;
   }

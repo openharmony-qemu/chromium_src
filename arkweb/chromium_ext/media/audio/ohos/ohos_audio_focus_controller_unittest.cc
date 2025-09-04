@@ -355,4 +355,26 @@ TEST(OHOSAudioFocusControllerTest, CheckIsSuspendedUIThread02) {
   bool res = OHOSAudioFocusController::CheckIsSuspendedUIThread(params);
   EXPECT_EQ(res, false);
 }
+
+TEST(OHOSAudioFocusControllerTest, CheckGetMediaPlayerMuteStateOnUIThread01) {
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
+  AudioParameters params(
+      AudioParameters::AUDIO_PCM_LOW_LATENCY,
+      ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
+      kMinimumInputBufferSize);
+  bool res = OHOSAudioFocusController::CheckGetMediaPlayerMuteStateOnUIThread(params);
+  EXPECT_EQ(res, false);
+}
+
+TEST(OHOSAudioFocusControllerTest, CheckGetMediaPlayerMuteStateOnUIThread02) {
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
+  AudioParameters params(
+      AudioParameters::AUDIO_FAKE,
+      ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
+      kMinimumInputBufferSize);
+  bool res = OHOSAudioFocusController::CheckGetMediaPlayerMuteStateOnUIThread(params);
+  EXPECT_EQ(res, false);
+}
 } // namespace media

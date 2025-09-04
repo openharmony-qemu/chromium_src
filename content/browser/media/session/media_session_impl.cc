@@ -523,9 +523,7 @@ void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
   hidden_players_.erase(identifier);
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  if (players_mute_state_.find(player_id) != players_mute_state_.end()) {
-    players_mute_state_.erase(player_id);
-}
+  players_mute_state_.erase(player_id);
 #endif
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
   if (has_normal_player && (normal_players_.size() == 0)) {

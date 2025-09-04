@@ -383,7 +383,7 @@ bool OHOSAudioOutputStream::InitRender() {
 
 void OHOSAudioOutputStream::SetStreamUsage() {
   if (isCommunication_) {
-    OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_VOICE_COMMUNICATION);
+    OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_VIDEO_COMMUNICATION);
     return;
   }
  

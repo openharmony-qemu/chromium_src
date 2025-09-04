@@ -185,7 +185,7 @@ void NWebEngineImpl::PrefetchResource(
 int32_t NWebEngineImpl::SetSiteIsolationMode(SiteIsolationMode mode) {
 #if BUILDFLAG(ARKWEB_SITE_ISOLATION)
   LOG(INFO) << "NWebEngineImpl::SetSiteIsolationMode";
-  bool isStrict = (mode == SiteIsolationMode::STRICT)? true:false;
+  bool isStrict = (mode == SiteIsolationMode::STRICT);
   return NWebImpl::SetSiteIsolationMode(isStrict);
 #else
   return 0;

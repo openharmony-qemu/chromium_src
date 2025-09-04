@@ -891,6 +891,11 @@ class NWebImpl : public NWeb {
   static RenderProcessMode GetRenderProcessMode();
 #endif
 
+#if BUILDFLAG(ARKWEB_SITE_ISOLATION)
+  static int32_t SetSiteIsolationMode(bool mode);
+  static bool GetSiteIsolationModeResult();
+#endif
+
 #if BUILDFLAG(ARKWEB_USERAGENT)
   static void SetAppCustomUserAgent(const std::string& userAgent);
   static void SetUserAgentForHosts(const std::string& userAgent,

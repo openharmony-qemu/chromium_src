@@ -182,6 +182,27 @@ void NWebEngineImpl::PrefetchResource(
 #endif
 }
 
+int32_t NWebEngineImpl::SetSiteIsolationMode(SiteIsolationMode mode) {
+#if BUILDFLAG(ARKWEB_SITE_ISOLATION)
+  LOG(INFO) << "NWebEngineImpl::SetSiteIsolationMode";
+  bool isStrict = (mode == SiteIsolationMode::STRICT);
+  return NWebImpl::SetSiteIsolationMode(isStrict);
+#else
+  return 0;
+#endif
+}
+
+SiteIsolationMode NWebEngineImpl::GetSiteIsolationMode() {
+#if BUILDFLAG(ARKWEB_SITE_ISOLATION)
+  bool resMode = NWebImpl::GetSiteIsolationModeResult();
+  LOG(INFO) << "NWebEngineImpl::GetSiteIsolationMode" << resMode;
+  SiteIsolationMode mode = (resMode == false)? SiteIsolationMode::PARTIAL : SiteIsolationMode::STRICT;
+  return mode;
+#else
+  return SiteIsolationMode::PARTIAL;
+#endif
+}
+
 void NWebEngineImpl::SetRenderProcessMode(RenderProcessMode mode) {
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
   NWebImpl::SetRenderProcessMode(mode);

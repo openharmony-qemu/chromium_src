@@ -15,16 +15,40 @@
 
 #include "net_config_adapter_impl.h"
 
+#include <dlfcn.h>
+#include <netdb.h>
+#include <network/netstack/net_ssl/net_ssl_c.h>
+
 #include <cstring>
 #include <string>
 #include <vector>
 
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
-#include "network/netstack/net_ssl/net_ssl_c.h"
+#include "base/native_library.h"	
+#include "net/base/network_handle.h"
 
 using namespace OHOS::NWeb;
 
 namespace OHOS::NWeb {
+
+namespace {
+
+using OHIsCleartextCfgByComponent = int32_t(*)(const char* component,
+                                              bool* componentCfg);
+
+OHIsCleartextCfgByComponent GetOHIsCleartextCfgByComponent() {
+#if defined(ARCH_CPU_ARM64)
+  base::FilePath file("system/lib64/ndk/libnet_ssl.so");
+#else
+  base::FilePath file("system/lib/ndk/libnet_ssl.so");
+#endif
+  void* dl = dlopen(file.value().c_str(), RTLD_NOW);
+  return dl == nullptr ? nullptr
+                       : reinterpret_cast<OHIsCleartextCfgByComponent>(dlsym(
+                             dl, "OH_Netstack_IsCleartextCfgByComponent"));
+}
+
+}  // namespace
 
 bool NetConfigAdapterImpl::GetIsCleartextPermittedByHostName(
     const std::string& hostname) {
@@ -41,11 +65,17 @@ bool NetConfigAdapterImpl::GetIsCleartextPermittedByHostName(
   return is_cleartext_permitted;
 }
 
+NO_SANITIZE("cfi-icall")
 bool NetConfigAdapterImpl::GetIsCleartextCfgByComponent(
     const std::string& component) {
   bool is_cleartext_cfg = false;
-  int32_t ret = OH_Netstack_IsCleartextCfgByComponent(component.c_str(),
-                                                      &is_cleartext_cfg);
+  static OHIsCleartextCfgByComponent get_iscleartextcfg_by_component =	
+      GetOHIsCleartextCfgByComponent();	
+  if (!get_iscleartextcfg_by_component) {
+    return false;
+  }
+  int32_t ret =
+      get_iscleartextcfg_by_component(component.c_str(), &is_cleartext_cfg);
   if (ret != 0) {
     WVLOG_E(
         "GetIsCleartextCfgByComponent for hostname:%{public}s failed, "

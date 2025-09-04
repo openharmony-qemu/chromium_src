@@ -373,14 +373,7 @@ void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
     LOG(DEBUG) << "blankless dump disable or no blankless info";
     return;
   }
-  LOG(DEBUG) << "blankless create FrameSnapshotCopyOutputRequest";
-  auto snapshot_request = std::make_unique<FrameSnapshotCopyOutputRequest>(
-      base::BindOnce(&GpuServiceImpl::OnFrameSnapshotCopyOutputResult, gpu_service_impl_->GetWeakPtr()));
-  if (!snapshot_request || !snapshot_request->copy_output_request_utils()) {
-    LOG(ERROR) << "blankless snapshot_request is null";
-    return;
-  }
-  snapshot_request->copy_output_request_utils()->SetBlanklessInfo(info.info);
+
   auto& root_render_pass = frame.render_pass_list.back();
   if (!root_render_pass) {
     LOG(ERROR) << "blankless no root render pass";
@@ -394,9 +387,18 @@ void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
   }
   removeDuplicatesRect(draw_quad_list);
   if (draw_quad_list.size() >= kRectNumthreshold) {
+    auto snapshot_request = std::make_unique<FrameSnapshotCopyOutputRequest>(
+      base::BindOnce(&GpuServiceImpl::OnFrameSnapshotCopyOutputResult, gpu_service_impl_->GetWeakPtr()));
+    if (!snapshot_request || !snapshot_request->copy_output_request_utils()) {
+      LOG(ERROR) << "blankless snapshot_request is null";
+      return;
+    }
+    info.info.width = root_render_pass->output_rect.width();
+    info.info.height = root_render_pass->output_rect.height();
+    snapshot_request->SetUniformScaleRatio(base::ohos::BlanklessController::SNAPSHOT_SCALE_FACTOR, 1);
+    snapshot_request->copy_output_request_utils()->SetBlanklessInfo(info.info);
     LOG(DEBUG) << "blankless push copy render pass. nweb_id: " << info.info.nweb_id
                << ", blankless_key: " << info.info.blankless_key;
-    snapshot_request->copy_output_request_utils()->SetQuadList(draw_quad_list);
     root_render_pass->copy_requests.push_back(std::move(snapshot_request));
   }
 }

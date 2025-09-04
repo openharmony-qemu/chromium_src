@@ -6398,9 +6398,9 @@ void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, 
     return;
   }
   if (lcp_time >= base::ohos::BlanklessController::A_STANDARD) {
-    lcp_time = std::min(lcp_time, base::ohos::BlanklessController::MAXIMUM_FRAME_LEFETIME);  // 2000 ms
+    lcp_time = std::min(lcp_time, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
   } else {
-    lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LEFETIME;
+    lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME;
   }
   LOG(DEBUG) << "blankless OnRemoveBlanklessFrame Delay Time: " << lcp_time;
   if (is_visible_) {

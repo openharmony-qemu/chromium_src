@@ -277,6 +277,9 @@ void MediaSessionImpl::WebContentsDestroyed() {
   normal_players_.clear();
   pepper_players_.clear();
   one_shot_players_.clear();
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  players_mute_state_.clear();
+#endif
 
   AbandonSystemAudioFocusIfNeeded();
 
@@ -484,6 +487,9 @@ bool MediaSessionImpl::AddPlayer(MediaSessionPlayerObserver* observer,
     // are suspended.
     if (old_audio_focus_state != State::ACTIVE) {
       normal_players_.clear();
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+      players_mute_state_.clear();
+#endif
     }
   } else if (audio_focus_state_ == State::INACTIVE) {
     // We switch from `INACTIVE` to `SUSPENDED` to indicate that we want to have
@@ -516,6 +522,11 @@ void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
   one_shot_players_.erase(identifier);
   hidden_players_.erase(identifier);
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  if (players_mute_state_.find(player_id) != players_mute_state_.end()) {
+    players_mute_state_.erase(player_id);
+}
+#endif
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
   if (has_normal_player && (normal_players_.size() == 0)) {
     SetWebviewShow(false, false);
@@ -757,6 +768,9 @@ void MediaSessionImpl::Stop(SuspendType suspend_type) {
 
   DCHECK(audio_focus_state_ == State::SUSPENDED);
   normal_players_.clear();
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  players_mute_state_.clear();
+#endif
 
   AbandonSystemAudioFocusIfNeeded();
   RebuildAndNotifyMediaPositionChanged();
@@ -875,6 +889,9 @@ void MediaSessionImpl::RemoveAllPlayersForTest() {
   normal_players_.clear();
   pepper_players_.clear();
   one_shot_players_.clear();
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  players_mute_state_.clear();
+#endif
   AbandonSystemAudioFocusIfNeeded();
 }
 

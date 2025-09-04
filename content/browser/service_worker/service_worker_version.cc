@@ -2574,7 +2574,7 @@ void ServiceWorkerVersion::OnTimeoutTimer() {
           break;
       }
     }
-    }
+  }
 
   // TODO(crbug.com/40864997): This was promoted from a DCHECK to validate
   // the fix for this bug. If no crashes are observed by the next release
@@ -2697,7 +2697,6 @@ bool ServiceWorkerVersion::MaybeTimeoutRequest(
   inflight_requests_.Remove(info.id);
 
   std::move(error_callback).Run(blink::ServiceWorkerStatusCode::kErrorTimeout);
-  inflight_requests_.Remove(info.id);
   return true;
 }
 

@@ -116,11 +116,13 @@ void ArkWebLocalFrameMojoHandlerExt::JavaScriptExecuteRequestExt(
       OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateFlowbufferAdapter();
   if (!flowbufferAdapter) {
     LOG(ERROR) << "create flowbuffer adapter failed";
+    close(fd);
     return;
   }
   char* ashmem = static_cast<char*>(flowbufferAdapter->CreateAshmemWithFd(
       fd, static_cast<size_t>(scriptLength + 1), PROT_READ));
   if (!ashmem) {
+    close(fd);
     return;
   }
   String javascript = String::FromUTF8(ashmem);

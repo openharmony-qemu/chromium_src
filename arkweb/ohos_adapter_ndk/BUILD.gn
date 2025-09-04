@@ -344,6 +344,7 @@ component("adapter_ndk") {
     "//third_party:huawei_securec",
     "//arkweb/build/features",
     "//third_party/boringssl",
+    "//base/allocator/partition_allocator:raw_ptr"
   ]
   if (defined(is_arkweb) && is_arkweb) {
     deps += [

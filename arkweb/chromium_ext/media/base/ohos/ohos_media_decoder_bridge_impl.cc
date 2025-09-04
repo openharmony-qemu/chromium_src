@@ -559,11 +559,6 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::DequeueOutputBuffer(
     LOG(DEBUG) << "CodecBridgeCallback::OnNeedOutputData Decoder is flushing.";
     return DecoderAdapterCode::DECODER_RETRY;
   }
-  if (!isRunning_.load()) {
-    LOG(WARNING)
-        << "MediaCodecDecoderBridgeImpl::DequeueOutputBuffer decoder is stopped.";
-    return DecoderAdapterCode::DECODER_RETRY;
-  }
   if (videoDecoder_ == nullptr) {
     LOG(ERROR)
         << "MediaCodecDecoderBridgeImpl::DequeueOutputBuffer decoder is NULL.";

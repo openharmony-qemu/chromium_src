@@ -28,7 +28,6 @@ namespace OHOS::NWeb {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 namespace {
   static std::map<int, SidePanelOnOpenCallback> g_sidepanel_open_map_;
-  static std::map<int, SidePanelOnSetOptionsCallback> g_sidepanel_setoptions_map_;
 }
 #endif
 
@@ -82,19 +81,16 @@ bool NWebExtensionSidePanelCefDelegate::OnOpenByPb(
 // static
 NO_SANITIZE("cfi-icall")
 bool NWebExtensionSidePanelCefDelegate::OnSetOptionsByPb(
-    ExtensionSidePanelSetOptions& options,
-    SidePanelOnSetOptionsCallback callback) {
+    ExtensionSidePanelSetOptions& options) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
   LOG(DEBUG) << "NWebExtensionSidePanelCefDelegate OnSetOptionsByPb";
   static int request_id = 0;
   request_id++;
-  g_sidepanel_setoptions_map_[request_id] = std::move(callback);
   options.requestId = request_id;
   
   if (!NWebExtensionSidePanelDispatcher::OnSetOptionsByPb(options)) {
-    g_sidepanel_setoptions_map_.erase(request_id);
     return false;
   }
  
@@ -117,11 +113,9 @@ void NWebExtensionSidePanelCefDelegate::OnOpenCallback(
 void NWebExtensionSidePanelCefDelegate::OnSetOptionsCallback(
     int request_id,
     const std::optional<std::string>& error) {
-  if (g_sidepanel_setoptions_map_.count(request_id)) {
-    std::move(g_sidepanel_setoptions_map_[request_id]).Run(error);
-    g_sidepanel_setoptions_map_.erase(request_id);
-  } else {
-    LOG(ERROR) << "request_id is inValid";
+  LOG(DEBUG) << "OnSetOptionsCallback request_id = " << request_id;
+  if (error) {
+    LOG(ERROR) <<"SetOptions error happened";
   }
 }
 #endif

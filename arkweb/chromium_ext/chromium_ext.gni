@@ -805,6 +805,7 @@ arkweb_cc_layer_unittest_sources = [
 
 arkweb_third_party_blink_renderer_core_unittest_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/exported/web_element_utils_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/exported/web_view_impl_for_include_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/page/page_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/dom/document_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/web_local_frame_impl_for_include_unittest.cc",
@@ -877,7 +878,7 @@ arkweb_ui_base_pointer_test_sources = [
 arkweb_third_party_blink_renderer_platform_widget_test_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/platform/bindings/parkable_string_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/software_compositor_proxy_ohos_unittest.cc",
-  #"//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/widget_input_handler_manager_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/widget_input_handler_manager_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/compositing/layer_tree_settings_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/platform/fonts/ohos/font_unique_name_lookup_ohos_unittest.cc",

@@ -15,7 +15,7 @@ OHOSAudioOutputCallback::OHOSAudioOutputCallback(
     DCHECK(audio_output_stream_);
 }
 
-int32_t OHOSAudioOutputCallback::AudioRendererOnWriteData(void* buffer, int32_t length) {
+void OHOSAudioOutputCallback::AudioRendererOnWriteData(void* buffer, int32_t length) {
     if (buffer && task_runner_ && audio_output_stream_) {
         task_runner_->PostTask(
             FROM_HERE,
@@ -24,7 +24,6 @@ int32_t OHOSAudioOutputCallback::AudioRendererOnWriteData(void* buffer, int32_t 
             FROM_HERE,
             base::BindOnce(&OHOSAudioOutputStream::SetUpAudioSilentState, audio_output_stream_));
     }
-    return 0;
 }
 
 int32_t OHOSAudioOutputCallback::AudioRendererOnError(OH_AudioStream_Result error) {
@@ -36,7 +35,7 @@ int32_t OHOSAudioOutputCallback::AudioRendererOnError(OH_AudioStream_Result erro
     return 0;
 }
 
-int32_t OHOSAudioOutputCallback::AudioRendererOnInterruptEvent(OH_AudioInterrupt_Hint hint) {
+void OHOSAudioOutputCallback::AudioRendererOnInterruptEvent(OH_AudioInterrupt_Hint hint) {
     if (task_runner_ && audio_output_stream_) {
         switch (hint) {
             case OH_AudioInterrupt_Hint::AUDIOSTREAM_INTERRUPT_HINT_PAUSE:
@@ -59,7 +58,6 @@ int32_t OHOSAudioOutputCallback::AudioRendererOnInterruptEvent(OH_AudioInterrupt
                 break;
         }        
     }
-    return 0;
 }
 
 void OHOSAudioOutputCallback::AudioRendererOutputDeviceChangeCallback(OH_AudioStream_DeviceChangeReason reason) {

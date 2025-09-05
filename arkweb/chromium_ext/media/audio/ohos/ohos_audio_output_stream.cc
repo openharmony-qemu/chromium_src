@@ -150,7 +150,7 @@ void OHOSAudioOutputStream::AudioRendererOutputDeviceChangeCallback(
     std::shared_ptr<OHOSAudioOutputCallback> callback = callback_wrapper_.GetCallback(callback_index);
     if (!callback) {
       LOG(ERROR) << "AudioRendererOutputDeviceChangeCallback callback is nullptr";
-      return 0;
+      return;
     }
     callback->AudioRendererOutputDeviceChangeCallback(reason);
   }

@@ -17,11 +17,11 @@ public:
         const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
         base::WeakPtr<OHOSAudioOutputStream> audio_output_stream);
 
-    int32_t AudioRendererOnWriteData(void* buffer, int32_t length);
+    void AudioRendererOnWriteData(void* buffer, int32_t length);
 
-    int32_t AudioRendererOnError(OH_AudioStream_Result error);
+    void AudioRendererOnError(OH_AudioStream_Result error);
 
-    int32_t AudioRendererOnInterruptEvent(OH_AudioInterrupt_Hint hint);
+    void AudioRendererOnInterruptEvent(OH_AudioInterrupt_Hint hint);
 
     void AudioRendererOutputDeviceChangeCallback(OH_AudioStream_DeviceChangeReason reason);
 

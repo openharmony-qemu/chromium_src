@@ -28,7 +28,7 @@ public:
 private:
     scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
     base::WeakPtr<OHOSAudioOutputStream> audio_output_stream_;
-}
+};
 
 } // namespace media
 

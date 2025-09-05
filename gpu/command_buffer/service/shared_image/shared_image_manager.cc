@@ -524,8 +524,10 @@ void SharedImageManager::OnRepresentationDestroyed(
     // SharedImageManager::OnRepresentationDestroyed can be nested, so we need
     // to get the iterator again.
     auto found = images_.find(mailbox);
-    if (found != images_.end() && (!(*found)->HasAnyRefs()))
+    if (found != images_.end() && (!(*found)->HasAnyRefs())) {
+      LOG(INFO) << "SharedImageManager::OnRepresentationDestroyed: mailbox is:" << mailbox.ToDebugString();
       images_.erase(found);
+    }
   }
 }
 

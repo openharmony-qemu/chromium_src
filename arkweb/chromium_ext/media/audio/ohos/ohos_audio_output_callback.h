@@ -17,6 +17,8 @@
 #define MEDIA_AUDIO_OHOS_AUDIO_OUTPUT_CALLBACK_H_
 
 #include "media/audio/ohos/ohos_audio_output_stream.h"
+#include "ohaudio/native_audiorenderer.h"
+#include "ohaudio/native_audiostreambuilder.h"
 
 namespace media {
 

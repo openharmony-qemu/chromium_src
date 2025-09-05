@@ -350,7 +350,7 @@ OHOSNativeBufferImageBackingFactory::MakeBackingWithValidateConfig(
   }
 
   if (backing) {
-    LOG(INFO) << "NativeBuffer backing created:(OhosNativeBufferImageBacking) ";
+    LOG(INFO) << "NativeBuffer backing created:(OhosNativeBufferImageBacking), and mailbox is: " << mailbox.ToDebugString();
   }
 
   return backing;

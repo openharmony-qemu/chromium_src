@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-static void PushCreateWorkersTids(scoped_refptr<base::internal::WorkerThread>>& worker,
+static void PushCreateWorkersTids(scoped_refptr<base::internal::WorkerThread>& worker,
                                   std::vector<int32_t>& create_workers_thread_ids_,
                                   std::vector<scoped_refptr<base::internal::WorkerThread>> remain_workers) {
   auto tid = worker->GetRealTid();

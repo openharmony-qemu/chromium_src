@@ -34,8 +34,8 @@ void UpdateBaseOsName(std::string& base_os_name_front_str,
                        const std::string device_type_string) {
 #if !defined(COMPONENT_BUILD)
   if (ohos_user_agent::UAPushConfig::GetInstance()) {
-    ohos_user_agent::OSPostionPrefsInfo defaultPrefs{"", ""};
-    ohos_user_agent::OSPostionPrefsInfo os_postion_prefs =
+    ohos_user_agent::OSPositionPrefsInfo defaultPrefs{"", ""};
+    ohos_user_agent::OSPositionPrefsInfo os_postion_prefs =
         ohos_user_agent::UAPushConfig::GetInstance()
             ->GetLastOsPositionStr(device_type_string)
             .value_or(defaultPrefs);

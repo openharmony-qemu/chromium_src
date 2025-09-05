@@ -37,13 +37,12 @@ void OHOSAudioOutputCallback::AudioRendererOnWriteData(void* buffer, int32_t len
     }
 }
 
-int32_t OHOSAudioOutputCallback::AudioRendererOnError(OH_AudioStream_Result error) {
+void OHOSAudioOutputCallback::AudioRendererOnError(OH_AudioStream_Result error) {
     if (task_runner_ && audio_output_stream_) {
         task_runner_->PostTask(
             FROM_HERE,
             base::BindOnce(&OHOSAudioOutputStream::ReportError, audio_output_stream_));
     }
-    return 0;
 }
 
 void OHOSAudioOutputCallback::AudioRendererOnInterruptEvent(OH_AudioInterrupt_Hint hint) {

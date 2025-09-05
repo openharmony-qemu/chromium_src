@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+#include <queue>
+#include <memory>
+#include <mutex>
+#include <thread>
 #include "base/ohos/nweb_engine_event_logger.h"
 #include "base/logging.h"
 #include "base/task/single_thread_task_runner.h"
@@ -22,6 +26,23 @@ namespace base {
 namespace ohos {
 
 namespace {
+
+struct UploadData {
+  std::string module;
+  std::string resource;
+  std::string error_code;
+  std::string error_msg;
+};
+
+std::queue<std::shared_ptr<UploadData>>& GetUploadQueue() {
+  static std::queue<std::shared_ptr<UploadData>> upload_queue;
+  return upload_queue;
+}
+
+std::mutex& GetQueueMutex() {
+  static std::mutex queue_mutex;
+  return queue_mutex;
+}
 
 class NWebEngineEventLogger {
  public:
@@ -33,6 +54,14 @@ class NWebEngineEventLogger {
   void set_upload_callback(UploadCallbackFunc callback) {
     upload_callback_ = callback;
     task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
+
+    std::lock_guard<std::mutex> lock(GetQueueMutex());
+    while (!GetUploadQueue().empty()) {
+        std::shared_ptr<UploadData> data = GetUploadQueue().front();
+        GetUploadQueue().pop();
+ 
+        upload_callback(data->module, data->resource, data->error_code, data->error_msg);
+    }
   }
 
   void upload_callback(const std::string& module,
@@ -40,6 +69,14 @@ class NWebEngineEventLogger {
                        const std::string& error_code,
                        const std::string& error_msg) {
     if (task_runner_ == nullptr) {
+      std::shared_ptr<UploadData> data = std::make_shared<UploadData>();
+      data->module = module;
+      data->resource = resource;
+      data->error_code = error_code;
+      data->error_msg = error_msg;
+
+      std::lock_guard<std::mutex> lock(GetQueueMutex());
+      GetUploadQueue().push(data);
       return;
     }
 

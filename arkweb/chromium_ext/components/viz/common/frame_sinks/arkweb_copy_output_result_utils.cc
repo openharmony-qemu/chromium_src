@@ -42,13 +42,5 @@ const base::ohos::BlanklessInfo& ArkwebCopyOutputResultUtils::GetBlanklessInfo()
 bool ArkwebCopyOutputResultUtils::IsBlanklessInfoValid() const {
   return info_.blankless_key != base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
 }
-
-void ArkwebCopyOutputResultUtils::SetQuadList(const std::vector<gfx::Rect>& quad_list) {
-  quad_list_ = quad_list;
-}
-
-const std::vector<gfx::Rect>& ArkwebCopyOutputResultUtils::GetQuadList() const {
-  return quad_list_;
-}
 #endif
 }  // namespace viz

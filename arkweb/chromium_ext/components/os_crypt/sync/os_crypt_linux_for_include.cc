@@ -22,7 +22,7 @@ namespace {
 // LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 constexpr base::FilePath::CharType kNWebAssetHandleDir[] =
-    FILE_PATH_LITERAL("migrate");
+    FILE_PATH_LITERAL("migrate_bak");
 constexpr char kNewbAssetHandleAlias[] = "asset_data_key";
 #endif
 
@@ -37,47 +37,30 @@ static std::string GetKeyFromAsset() {
   base::FilePath key_dir =
       cache_path.Append(FILE_PATH_LITERAL(kNWebAssetHandleDir));
   if (!base::PathExists(key_dir)) {
-    LOG(ERROR) << "[Autofill] Assethandle dir not exist, errorcode = 1.";
-    g_browser_process->local_state()->SetBoolean(
-        browser_prefs::kMigratePasswordsToPasswordVault, true);
+    LOG(ERROR) << "[Autofill] Assethandle dir not exist.";
+    std::string err_msg = "Assethandle dir not exist, error_code:" +
+                          std::to_string(DIRECTORY_OR_FILE_NOT_EXIST);
+    base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
+                                  base::ohos::kPasswordManagerError, err_msg);
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
     return std::string();
   }
 
-  base::FilePath key_file = key_dir.Append(FILE_PATH_LITERAL(
-      crypto::ohos::get_asset_handle_file_256(kNewbAssetHandleAlias)));
+  base::FilePath key_file = key_dir.Append(
+    FILE_PATH_LITERAL(crypto::ohos::get_asset_handle_file_256(kNewbAssetHandleAlias)));
   if (!base::PathExists(key_file)) {
-    LOG(ERROR) << "[Autofill] Assethandle file not exist, errorcode = 1.";
-    g_browser_process->local_state()->SetBoolean(
-        browser_prefs::kMigratePasswordsToPasswordVault, true);
+    LOG(ERROR) << "[Autofill] Assethandle file not exist.";
+    std::string err_msg = "Assethandle file not exist, error_code:" +
+                          std::to_string(DIRECTORY_OR_FILE_NOT_EXIST);
+    base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
+                                  base::ohos::kPasswordManagerError, err_msg);
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
     return std::string();
   }
 
-  std::string assetHandle;
-  bool res = base::ReadFileToString(key_file, &assetHandle);
-  if (!res) {
-    LOG(ERROR) << "[Autofill] read assethandle file failed, errorcode = 2.";
-    g_browser_process->local_state()->SetBoolean(
-        browser_prefs::kMigratePasswordsToPasswordVault, true);
-    return std::string();
-  }
-
-  if (assetHandle.empty()) {
-    LOG(INFO) << "[Autofill] assethandle is empty, not need to migrate.";
-    g_browser_process->local_state()->SetBoolean(
-        browser_prefs::kMigratePasswordsToPasswordVault, true);
-    return std::string();
-  }
-
-  std::string local_key = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                              .GetKeystoreAdapterInstance()
-                              .AssetQuery(assetHandle);
-  if (local_key.empty()) {
-    LOG(ERROR) << "[Autofill] get key from asset failed, errorcode = 2.";
-    g_browser_process->local_state()->SetBoolean(
-        browser_prefs::kMigratePasswordsToPasswordVault, true);
-    return std::string();
-  }
-  LOG(INFO) << "[Autofill] get key from asset success.";
+  std::string local_key = AssetQuery(key_file);
   return local_key;
 }
 
@@ -215,7 +198,9 @@ crypto::SymmetricKey* OSCryptImpl::GetPasswordForOtaFail() {
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 crypto::SymmetricKey* OSCryptImpl::GetPasswordV10ForMigrate() {
   base::AutoLock auto_lock(OSCryptImpl::GetLock());
-  if (!is_password_migrate_cached_) {
+  int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCount);
+  if (!is_password_migrate_cached_ || migration_count_ < count) {
+    migration_count_ = count;
     password_migrate_cache_ = GenerateEncryptionKeyForMigrate();
     is_password_migrate_cached_ = true;
   }

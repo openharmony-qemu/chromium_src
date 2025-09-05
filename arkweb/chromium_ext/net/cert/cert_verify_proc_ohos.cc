@@ -287,8 +287,7 @@ void AddAppCert(const std::string_view& hostname, X509_STORE* ca_store) {
       }
     }
   } else {
-    LOG(ERROR) << "GetTrustAnchorsForHostName host:"
-               << url::LogUtils::ConvertUrlWithMask(host) << " failed.";
+    LOG(ERROR) << "GetTrustAnchorsForHostName host: ***" << " failed.";
   }
 
   return;
@@ -579,7 +578,6 @@ int TryVerifyWithAIAFetching(const std::vector<std::string>& cert_bytes,
   }
 
   NOTREACHED();
-  return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
 }
 
 void SetCertStatus(int status, CertVerifyResult* verify_result) {
@@ -600,8 +598,6 @@ void SetCertStatus(int status, CertVerifyResult* verify_result) {
         break;
       default:
         NOTREACHED();
-        verify_result->cert_status |= CERT_STATUS_INVALID;
-        break;
   }
 }
 

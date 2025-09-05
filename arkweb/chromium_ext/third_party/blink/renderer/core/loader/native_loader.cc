@@ -237,6 +237,10 @@ void NativeLoader::OnCreateNativeSurface(int native_embed_id,
   if (first_update_visibility_) {
     NotifyVisibilityChange(visibility_);
   }
+
+  if (!pending_param_changes_.empty()) {
+    ProcessPendingParamChanges();
+  }
 }
 
 // LCOV_EXCL_START
@@ -439,6 +443,71 @@ void NativeLoader::SetNativeEmbedOverlay(bool native_embed_overlay) {
   cc_layer_->SetNativeEmbedOverlay(native_embed_overlay);
   if (native_embed_overlay) {
     cc_layer_->layer_utils()->SetShouldInterceptTouchEvent(true);
+  }
+}
+
+void NativeLoader::ProcessParamChanges(const Vector<ParamChangeInfo>& changes) {
+  Vector<media::mojom::blink::NativeEmbedParamItemPtr> mojo_items;
+  for (const auto& info : changes) {
+    auto item = media::mojom::blink::NativeEmbedParamItem::New();
+    switch (info.status) {
+      case ParamChangeInfo::Status::kAdd:
+        item->status = media::mojom::blink::NativeEmbedParamStatus::kAdd;
+        break;
+      case ParamChangeInfo::Status::kUpdate:
+        item->status = media::mojom::blink::NativeEmbedParamStatus::kUpdate;
+        break;
+      case ParamChangeInfo::Status::kDelete:
+        item->status = media::mojom::blink::NativeEmbedParamStatus::kDelete;
+        break;
+    }
+    item->id = info.id.IsNull() ? "" : info.id.Ascii().data();
+    item->name = info.name.IsNull() ? "" : info.name.Ascii().data();
+    item->value = info.value.IsNull() ? "" : info.value.Ascii().data();
+    pending_param_changes_.push_back(std::move(item));
+  }
+
+  if (param_update_task_pending_) {
+    return;
+  }
+
+  if (plugin_element_) {
+    param_update_task_pending_ = true;
+    plugin_element_->GetDocument().GetTaskRunner(TaskType::kInternalMedia)->PostTask(
+        FROM_HERE, base::BindOnce(&NativeLoader::ProcessPendingParamChanges, weak_ptr_factory_.GetWeakPtr()));
+  } else {
+    param_update_task_pending_ = false;
+    pending_param_changes_.clear();
+  }
+}
+
+constexpr size_t kMaxParamsPerIPC = 500;
+
+void NativeLoader::ProcessPendingParamChanges() {
+  LOG(INFO) << "[NativeEmbed] NativeLoader::ProcessPendingParamChanges: "
+            << pending_param_changes_.size();
+  param_update_task_pending_ = false;
+  if (native_embed_id_ == -1) {
+    return;
+  }
+
+  if (pending_param_changes_.empty() || !current_plugin_element()) {
+    return;
+  }
+
+  auto all_changes = std::move(pending_param_changes_);
+  pending_param_changes_.clear();
+  for (size_t i = 0; i < all_changes.size(); i += kMaxParamsPerIPC) {
+    auto param_info = media::mojom::blink::NativeEmbedParamChangeInfo::New();
+    param_info->embed_id = native_embed_id_;
+    param_info->object_attribute_id = GetIdAttribute().IsNull() ? "" : GetIdAttribute();
+    size_t end = std::min(i + kMaxParamsPerIPC, static_cast<size_t>(all_changes.size()));
+    for (size_t j = i; j < end; ++j) {
+      param_info->param_items.push_back(std::move(all_changes[j]));
+    }
+    for (auto& observer : native_bridge_observer_remote_set_->Value()) {
+      observer->OnEmbedObjectParamChange(param_info.Clone());
+    }
   }
 }
 // LCOV_EXCL_STOP

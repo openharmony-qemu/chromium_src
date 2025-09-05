@@ -18,13 +18,19 @@
 
 #include "content/browser/renderer_host/render_process_host_impl.h"
 #include "content/common/child_process.mojom.h"
+#include "content/common/content_export.h"
 #include "content/public/browser/browser_context.h"
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_reader_mode_config_utils.h"
+#include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_reader_mode_config.h"
+#endif
 
 namespace content {
 
 class RenderProcessHostImpl;
 
-class ArkwebRenderProcessHostImplExt : public RenderProcessHostImpl {
+class CONTENT_EXPORT ArkwebRenderProcessHostImplExt : public RenderProcessHostImpl {
  public:
   ArkwebRenderProcessHostImplExt(BrowserContext* browser_context,
                                  StoragePartitionImpl* storage_partition_impl,
@@ -58,6 +64,12 @@ class ArkwebRenderProcessHostImplExt : public RenderProcessHostImpl {
                          const std::string& error_msg) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  static void UpdateCloudControlReaderModeConfigData(
+      const nweb_ex::BrowserReaderModeConfigData* data);
+  void UpdateReaderModeConfig(
+      const nweb_ex::BrowserReaderModeConfigData* data) override;
+#endif  // ARKWEB_READER_MODE
  private:
 };
 

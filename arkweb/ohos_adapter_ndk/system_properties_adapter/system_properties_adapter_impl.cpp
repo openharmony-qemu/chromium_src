@@ -495,7 +495,7 @@ int SystemPropertiesAdapterImpl::GetIntParameter(const char *key, int defaultVal
         WVLOG_E("failed to get int, ret %{public}d", ret);
     }
 
-    WVLOG_D("get bool param, key:%{public}s, value:%{public}d", key, value);
+    WVLOG_D("get int param, key:%{public}s, value:%{public}d", key, value);
     return value;
 }
 
@@ -527,7 +527,7 @@ std::string SystemPropertiesAdapterImpl::GetStringParameter(const char *key, std
         return defaultValue;
     }
 
-    WVLOG_D("get bool param, key:%{public}s, value:%{public}s", key, value);
+    WVLOG_D("get string param, key:%{public}s, value:%{public}s", key, value);
     std::string str = value;
     OH_Preferences_FreeString(value);
     return str;
@@ -583,9 +583,10 @@ int32_t SystemPropertiesAdapterImpl::GetLTPOStrategy()
 
 std::string SystemPropertiesAdapterImpl::GetVulkanStatus()
 {
-    if ((GetStringParameter("const.gpu.vendor", "0").compare("higpu.v200") == 0)
-        || (GetStringParameter("const.gpu.vendor", "0").compare("higpu.v210") == 0)
-        || (GetStringParameter("const.gpu.vendor", "0").compare("higpu.v300") == 0)) {
+    std::string gpu_vendor = GetStringParameter("const.gpu.vendor", "0");
+    if ((gpu_vendor.compare("higpu.v200") == 0)
+        || (gpu_vendor.compare("higpu.v210") == 0)
+        || (gpu_vendor.compare("higpu.v300") == 0)) {
         return GetStringParameter("web.ohos.vulkan", "");
     } else {
         return "false";

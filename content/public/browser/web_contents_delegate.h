@@ -55,6 +55,10 @@
 #include "media/mojo/mojom/media_player.mojom-forward.h"
 #endif // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "components/dom_distiller/content/common/mojom/distillability_service.mojom.h"
+#endif  // ARKWEB_READER_MODE
+
 class GURL;
 
 namespace base {

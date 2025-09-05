@@ -769,11 +769,28 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
 #endif
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
   void EnableAppLinking(bool enable) override {}
   bool IsAppLinkingEnabled() const override { return false; }
-#endif
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void Distill(const std::string& guid, const DistillOptions& distill_options,
+    CefRefPtr<CefDistillCallback> callback) override {}
+  void AbortDistill() override {}
+#endif  // BUILDFLAG(ARKWEB_READER_MODE)
 #endif  // BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetMediaResumeFromBFCachePage(bool resume) override {}
+  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {}
+  void GetImageForContextNode(CefRefPtr<CefFrame> frame, int command_id) override {}
+  void SetHasComposition(bool has_composition) override {}
+  bool GetHasComposition() override { return false; }
+  void PutUserAgent(const CefString& ua, bool from_app) override {}
+  void SetImeShow(bool visible) override {}
+  void SetEnableCustomVideoPlayer(bool flag) override {}
+  void EnableAppLinking(bool enable) override {}
+  bool IsAppLinkingEnabled() const override { return false; }
+#endif // ARKWEB_UNITTESTS
 };
 
 class MockCefBrowser : public ArkWebBrowserExt {

@@ -14,6 +14,13 @@
  */
 
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/input/mouse_event_manager_ext.h"
+#include "third_party/blink/renderer/core/dom/tree_scope.h"
+#include "third_party/blink/renderer/core/dom/document.h"
+#include "third_party/blink/renderer/core/dom/element.h"
+#include "third_party/blink/renderer/core/dom/shadow_root.h"
+#include "third_party/blink/renderer/core/testing/null_execution_context.h"
+#include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+#include "third_party/blink/renderer/platform/testing/task_environment.h"
 
 namespace blink {
 
@@ -54,6 +61,10 @@ constexpr char BASE64_RED_IMAGE_DATA_100_99[] =
     "CswKzArMCswKzArMCswKzArMCswKzArMCswKzArMCswKzArMCswKzArMCswKzArMCswKzArMCs"
     "wKzArMCswKzArMCswKzArMCswKzArMCswKzArMCswKzArMCswKzZ+"
     "3NFAcW1S1gAAAAAAElFTkSuQmCC";
+
+constexpr int POINT_VAL_A = 100;
+constexpr int POINT_VAL_B = 700;
+constexpr int POINT_VAL_C = 0;
 
 class CreateOverlayEventBuilder : public WebGestureEvent {
  public:
@@ -433,6 +444,52 @@ TEST_F(MouseEventManagerExtTest, HandleGestureDragLongPress_HitOverlay) {
   DragLongPressEventBuilder drag_event(gfx::PointF(100, 100));
   GetEventHandler().HandleGestureEvent(drag_event);
   EXPECT_TRUE(SimTestExt::LogCheck("DragDrop HandleGestureDragLongPress"));
+}
+
+TEST_F(MouseEventManagerExtTest, StopCreateOverlayTimer) {
+  SetUpHtmlDefault();
+  auto& manager = GetMouseEventManagerExt();
+  manager.create_overlay_timer_.Reset();
+  EXPECT_TRUE(manager.create_overlay_timer_.IsRunning());
+
+  manager.StopCreateOverlayTimer();
+  EXPECT_FALSE(manager.create_overlay_timer_.IsRunning());
+}
+
+TEST_F(MouseEventManagerExtTest, IsValidOverlayNode002) {
+  SetUpHtmlDefault();
+  auto result = GetHitTestResultForTest(gfx::PointF(POINT_VAL_C, POINT_VAL_C));
+  auto inner_node = result.InnerNode();
+
+  SimTestExt::LogCatch();
+  EXPECT_FALSE(GetMouseEventManagerExt().IsValidOverlayNode(inner_node));
+}
+
+TEST_F(MouseEventManagerExtTest, IsValidOverlayNode003) {
+  EXPECT_FALSE(GetMouseEventManagerExt().IsValidOverlayNode(nullptr));
+}
+
+TEST_F(MouseEventManagerExtTest, CloseImageOverlayWhenMousePress) {
+  SetUpHtmlDefault();
+  auto& manager = GetMouseEventManagerExt();
+  CreateOverlayOnPoint(gfx::PointF(POINT_VAL_A, POINT_VAL_A));
+  EXPECT_FALSE(manager.GetOverlayInProgress());
+
+  WebMouseEvent mouse_event_in =
+    CreateTestMouseEvent(WebInputEvent::Type::kMouseDown, gfx::PointF(POINT_VAL_A, POINT_VAL_A));
+  HitTestLocation location_in(gfx::PointF(POINT_VAL_A, POINT_VAL_A));
+  HitTestResult hit_in = GetHitTestResultForTest(gfx::PointF(POINT_VAL_A, POINT_VAL_A));
+  MouseEventWithHitTestResults event_in(mouse_event_in, location_in, hit_in);
+  manager.CloseImageOverlayWhenMousePress(event_in);
+  EXPECT_FALSE(manager.GetOverlayInProgress());
+
+  WebMouseEvent mouse_event_out =
+    CreateTestMouseEvent(WebInputEvent::Type::kMouseDown, gfx::PointF(POINT_VAL_A, POINT_VAL_B));
+  HitTestLocation location_out(gfx::PointF(POINT_VAL_A, POINT_VAL_B));
+  HitTestResult hit_out = GetHitTestResultForTest(gfx::PointF(POINT_VAL_A, POINT_VAL_B));
+  MouseEventWithHitTestResults event_out(mouse_event_out, location_out, hit_out);
+  manager.CloseImageOverlayWhenMousePress(event_out);
+  EXPECT_FALSE(manager.GetOverlayInProgress());
 }
 
 }  // namespace blink

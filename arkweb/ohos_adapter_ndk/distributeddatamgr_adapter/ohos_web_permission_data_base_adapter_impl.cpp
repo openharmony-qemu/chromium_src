@@ -189,6 +189,7 @@ bool OhosWebPermissionDataBaseAdapterImpl::VerifyPermissionByOrigin(
         }
         return false;
     }
+    cursor->destroy(cursor);
     return true;
 }
 

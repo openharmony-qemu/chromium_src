@@ -376,9 +376,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
   void SetNWebId(uint32_t nwebId) override;
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
   void EnableAppLinking(bool enable) override;
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
   void StoreWebArchive(
       const std::string& base_name,
@@ -862,6 +862,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                              bool recursive, IsolatedWorld world,
                              OnReceiveValueCallback callback) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) override;
+void AbortDistill() override;
+#endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   void SetErrorPageEnabled(bool enable) override;

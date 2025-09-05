@@ -127,6 +127,11 @@
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_engine_global_config.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_reader_mode_config.h"
+#include "base/strings/safe_sprintf.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
 #include "chrome/browser/ui/zoom/chrome_zoom_level_prefs.h"
 #include "third_party/blink/public/common/page/page_zoom.h"
@@ -267,6 +272,11 @@ extern bool g_siteIsolationMode;
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 #include "base/base_switches.h"
 #include "base/command_line.h"
+#include "base/files/file_path.h"
+#include "base/files/file_util.h"
+#include "base/ohos/nweb_engine_event_logger.h"
+#include "base/ohos/nweb_engine_event_logger_code.h"
+#include "base/path_service.h"
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "ohos_nweb/src/nweb_web_storage_impl.h"
 #include "chrome/browser/browser_process.h"
@@ -485,6 +495,13 @@ std::shared_ptr<NWebLoggerCallback> g_logger_callback;
 #endif
 bool g_logger_callback_initialized = false;
 
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+static const int kMigrationBase = 10;
+static const int kMigrationMaxCount = 10000;
+constexpr base::FilePath::CharType kMigrateKeyFlagFile[] =
+    FILE_PATH_LITERAL("migrate/MIGRATE_ASSET_SUCCESS");
+#endif
+
 bool GetWebOptimizationValue() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                         .GetSystemPropertiesInstance();
@@ -690,6 +707,10 @@ void InitialWebEngineArgs(
   // http://crbug.com/479767
   web_engine_args.emplace_back("--enable-aggressive-domstorage-flushing");
   web_engine_args.emplace_back("--ohos-enable-drdc");
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  web_engine_args.push_back("--enable-distillability-service");
+  web_engine_args.push_back("--enable-dom-distiller");
+#endif // ARKWEB_READER_MODE
 
   std::vector<std::string> modeVector = {"Default", "IncludeSensitive",
                                          "Everything"};
@@ -783,11 +804,35 @@ void InitialWebEngineArgs(
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 void MigratePasswordsToPasswordVault() {
+  base::FilePath cache_path;
+  base::PathService::Get(base::DIR_CACHE, &cache_path);
+  if (cache_path.empty()) {
+    LOG(INFO) << "[Autofill] cache_path is empty.";
+    return;
+  }
+  base::FilePath flagFile = cache_path.Append(FILE_PATH_LITERAL(kMigrateKeyFlagFile));
+  bool IsFlagFileExist = base::PathExists(flagFile);
   bool migrateReady = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsReady);
   bool migrateVault = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsToPasswordVault);
-  if (migrateReady == true && migrateVault == false) {
+  LOG(INFO) << "[Autofill] MigratePasswordsReady:" << migrateReady
+            << ", MigratePasswordsToPasswordVault:" << migrateVault
+            << ", IsFlagFileExist:" << IsFlagFileExist;
+  if (migrateReady == true && migrateVault == false && IsFlagFileExist == true) {
+    int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCount);
+    LOG(INFO) << "[Autofill] migration count:" << count;
+    g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCount, count + 1);
+    g_browser_process->local_state()->CommitPendingWrite();
+    if (count <= kMigrationBase || (count % kMigrationBase == 0 && count <= kMigrationMaxCount)) {
       OHOS::NWeb::NWebWebStorageImpl* nweb_web_storage = new OHOS::NWeb::NWebWebStorageImpl();
       nweb_web_storage->MigratePasswords();
+    } else if (count > kMigrationMaxCount) {
+      LOG(ERROR) << "[Autofill] Migrate passwords over max counts, stop migrate.";
+      std::string err_msg = "Migrate passwords over kMigrationMaxCount, stop migrate.";
+      base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
+                                    base::ohos::kPasswordManagerError, err_msg);
+      g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+      g_browser_process->local_state()->CommitPendingWrite();
+    }
   }
 }
 #endif // ARKWEB_EXT_PASSWORD
@@ -966,6 +1011,7 @@ void NWebImpl::InitializeWebEngine(
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {
+    LOG(INFO) << "[Autofill] Migrate passwords to passwordVault start.";
     MigratePasswordsToPasswordVault();
   }
 #endif
@@ -4045,6 +4091,45 @@ void NWebImpl::UpdateBrowserEngineGlobalConfig(const std::string& file_path,
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+// static
+void NWebImpl::UpdateReaderModeConfig(const std::string& file_path,
+                                  const std::string& version) {
+  LOG(INFO) << "NWebImpl::UpdateReaderModeConfig file_path:" << file_path << " version:" << version;
+  nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->UpdateBrowserReaderModeConfig(file_path, version);
+}
+
+// static
+void NWebImpl::SetJsFilePath(const std::string& js_type, const std::string& file_path, const std::string& version) {
+  nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->SetJsFilePath(js_type, file_path, version);
+}
+
+void NWebImpl::Distill(char** guid, const DistillOptions& distill_options, DistillCallback callback) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "NWebImpl::Distill delegate_ is nullptr";
+    return;
+  }
+  if (callback == nullptr) {
+    LOG(ERROR) << "NWebImpl::Distill callback is nullptr";
+    return;
+  }
+  std::string guid_str = base::Uuid::GenerateRandomV4().AsLowercaseString();
+  size_t len = guid_str.size() + 1;
+  *guid = new char[len];
+  base::strings::SafeSNPrintf(*guid, len, "%s", guid_str.c_str());
+  nweb_delegate_->Distill(guid_str, distill_options, callback);
+}
+
+void NWebImpl::AbortDistill() {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "NWebImpl::AbortDistill delegate_ is nullptr";
+    return;
+  }
+
+  nweb_delegate_->AbortDistill();
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_I18N)
 void NWebImpl::UpdateAcceptLanguageInternal() {
   const base::CommandLine& command_line =
@@ -5230,8 +5315,13 @@ void NWebImpl::SetWholeWebDrawing() {
 // static
 void NWebImpl::SetMigrationPasswordReady(const bool migrationReady) {
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  if (!base::CommandLine::ForCurrentProcess()) {
+    LOG(ERROR) << "[Autofill] InitializeWebEngine is not init.";
+    return;
+  }
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {
     g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsReady, migrationReady);
+    g_browser_process->local_state()->CommitPendingWrite();
     LOG(INFO) << "[Autofill] Migrate Passwords Ready:" << migrationReady;
     if (migrationReady == true) {
       MigratePasswordsToPasswordVault();
@@ -5842,7 +5932,7 @@ void NWebImpl::SetMediaResumeFromBFCachePage(bool resume) {
 #endif // BUILDFLAG(ARKWEB_BFCACHE)
 }
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 void NWebImpl::EnableAppLinking(bool enable) {
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "EnableAppLinking failed"
@@ -5851,7 +5941,7 @@ void NWebImpl::EnableAppLinking(bool enable) {
   }
   nweb_delegate_->EnableAppLinking(enable);
 }
-#endif
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
 void NWebImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
@@ -6419,9 +6509,9 @@ void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, 
     return;
   }
   if (lcp_time >= base::ohos::BlanklessController::A_STANDARD) {
-    lcp_time = std::min(lcp_time, base::ohos::BlanklessController::MAXIMUM_FRAME_LEFETIME);  // 2000 ms
+    lcp_time = std::min(lcp_time, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
   } else {
-    lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LEFETIME;
+    lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME;
   }
   LOG(DEBUG) << "blankless OnRemoveBlanklessFrame Delay Time: " << lcp_time;
   if (is_visible_) {

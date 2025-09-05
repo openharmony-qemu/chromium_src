@@ -27,7 +27,6 @@
 namespace OHOS::NWeb {
 
 using SidePanelOnOpenCallback = base::RepeatingCallback<void(const std::optional<std::string>&)>;
-using SidePanelOnSetOptionsCallback = base::RepeatingCallback<void(const std::optional<std::string>&)>;
 
 class NWebExtensionSidePanelCefDelegate {
   public:
@@ -37,8 +36,7 @@ class NWebExtensionSidePanelCefDelegate {
     bool HasOnSetOptionsByPbCallback();
     bool OnOpenByPb(ExtensionSidePanelOpenOptions& options,
                     SidePanelOnOpenCallback callback);
-    bool OnSetOptionsByPb(ExtensionSidePanelSetOptions& options,
-                          SidePanelOnSetOptionsCallback callback);
+    bool OnSetOptionsByPb(ExtensionSidePanelSetOptions& options);
 #if BUILDFLAG(ARKWEB_NWEB_EX)
     void OnOpenCallback(int request_id, const std::optional<std::string>& error);
     void OnSetOptionsCallback(int request_id, const std::optional<std::string>& error);

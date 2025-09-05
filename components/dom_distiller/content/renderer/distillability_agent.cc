@@ -20,6 +20,12 @@
 #include "third_party/blink/public/web/web_element.h"
 #include "third_party/blink/public/web/web_local_frame.h"
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom.h"
+#include "base/strings/stringprintf.h"
+#include "third_party/blink/public/platform/platform.h"
+#endif
+
 namespace dom_distiller {
 
 namespace {
@@ -39,6 +45,9 @@ const char* const kFilterlist[] = {"www.reddit.com", "tools.usps.com",
 // Adaboost-based heuristics are the only ones doing the second update,
 // which is after loading.
 bool NeedToUpdate(bool is_loaded) {
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  return !is_loaded;
+#else
   switch (GetDistillerHeuristicsType()) {
     case DistillerHeuristicsType::ALWAYS_TRUE:
       return !is_loaded;
@@ -51,15 +60,20 @@ bool NeedToUpdate(bool is_loaded) {
     default:
       return false;
   }
+#endif
 }
 
 // Returns whether this update is the last one for the page.
 bool IsLast(bool is_loaded) {
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  return true;
+#else
   if (GetDistillerHeuristicsType() == DistillerHeuristicsType::ADABOOST_MODEL ||
       GetDistillerHeuristicsType() == DistillerHeuristicsType::ALL_ARTICLES)
     return is_loaded;
 
   return true;
+#endif
 }
 
 bool IsFiltered(const GURL& url) {
@@ -153,6 +167,10 @@ bool IsDistillablePageAdaboost(blink::WebDocument& doc,
   return distillable && is_long_article;
 }
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/dom_distiller/content/renderer/distillability_agent_for_include.cc"
+#endif
+
 bool IsDistillablePage(blink::WebDocument& doc,
                        bool is_last,
                        bool& is_long_article,
@@ -184,10 +202,20 @@ DistillabilityAgent::DistillabilityAgent(content::RenderFrame* render_frame,
 
 void DistillabilityAgent::DidMeaningfulLayout(
     blink::WebMeaningfulLayout layout_type) {
+  LOG(DEBUG) << "[Distiller] DidMeaningfulLayout layout_type:" << (int)layout_type;
   if (layout_type != blink::WebMeaningfulLayout::kFinishedParsing &&
       layout_type != blink::WebMeaningfulLayout::kFinishedLoading) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  // check config "reader mode enabled"
+  const auto* config = blink::Platform::Current()->GetReaderModeConfig();
+  if (!config || !config->reader_mode_enabled) {
+    LOG(INFO) << "[Distiller] reader mode is not enable.";
+    return;
+  }
+#endif
 
   DCHECK(render_frame());
   DCHECK(render_frame()->GetWebFrame());
@@ -212,11 +240,16 @@ void DistillabilityAgent::DidMeaningfulLayout(
     return;
   bool is_long_article = false;
   bool is_mobile_friendly = false;
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/components/dom_distiller/content/renderer/distillability_agent_for_include_after.cc"
+#else
   bool is_distillable =
       IsDistillablePage(doc, is_last, is_long_article, is_mobile_friendly,
                         render_frame(), dump_info_);
   distillability_service->NotifyIsDistillable(
       is_distillable, is_last, is_long_article, is_mobile_friendly);
+#endif
 }
 
 DistillabilityAgent::~DistillabilityAgent() = default;

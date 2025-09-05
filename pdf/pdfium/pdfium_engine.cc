@@ -4056,10 +4056,12 @@ void PDFiumEngine::MoveRangeSelectionExtent(const gfx::Point& extent) {
     return;
 
   SelectionChangeInvalidator selection_invalidator(this);
+#if !BUILDFLAG(ARKWEB_PDF)
   if (range_selection_direction_ == RangeSelectionDirection::Right) {
     ExtendSelection(page_index, char_index);
     return;
   }
+#endif  // !BUILDFLAG(ARKWEB_PDF)
 
   // For a left selection we clear the current selection and set a new starting
   // point based on the new left position. We then extend that selection out to

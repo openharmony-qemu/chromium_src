@@ -55,6 +55,8 @@
 #include "third_party/jni_zero/jni_zero.h"
 #endif
 
+#include "arkweb/chromium_ext/content/public/browser/render_frame_host_ohos.h"
+
 class GURL;
 
 namespace base {
@@ -143,7 +145,8 @@ class Page;
 // higher-level dependencies. In short: code that uses RenderFrameHost must be
 // back-forward cache aware, and code that does not use RenderFrameHost should
 // not have to be back-forward cache aware.
-class CONTENT_EXPORT RenderFrameHost : public IPC::Listener,
+class CONTENT_EXPORT RenderFrameHost : public RenderFrameHostOhos,
+                                       public IPC::Listener,
                                        public IPC::Sender {
   // Do not remove this macro!
   // The macro is maintained by the memory safety team.

@@ -21,7 +21,28 @@
 #include "base/ohos/nweb_engine_event_logger.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom.h"
+#include "arkweb/ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_reader_mode_config_utils.h"
+
+using blink::mojom::ContentFeatureIndex;
+using blink::mojom::ContentTemplateIndex;
+using blink::mojom::DetailTemplateIndex;
+using blink::mojom::ReaderModeConfig;
+#endif
+
 namespace content {
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+constexpr int kDetailTemplateCatalogIndex =
+    static_cast<int>(DetailTemplateIndex::CHAPTERS);
+constexpr int kContentTemplateChapterIndex =
+    static_cast<int>(ContentTemplateIndex::PAGER);
+constexpr int kFeaturePrevIndex = static_cast<int>(ContentFeatureIndex::PREV);
+constexpr int kFeatureNextIndex = static_cast<int>(ContentFeatureIndex::NEXT);
+constexpr int kFeatureCatalogIndex =
+    static_cast<int>(ContentFeatureIndex::CATALOG);
+#endif
 
 // LCOV_EXCL_START
 ArkwebRenderProcessHostImplExt::ArkwebRenderProcessHostImplExt(
@@ -75,4 +96,78 @@ void ArkwebRenderProcessHostImplExt::ReportEngineEvent(const std::string& module
 #endif
 // LCOV_EXCL_STOP
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void ArkwebRenderProcessHostImplExt::UpdateCloudControlReaderModeConfigData(
+    const nweb_ex::BrowserReaderModeConfigData* data) {
+  content::RenderProcessHost::iterator it =
+      content::RenderProcessHost::AllHostsIterator();
+  while (!it.IsAtEnd()) {
+    content::RenderProcessHost* host = it.GetCurrentValue();
+    if (host && host->IsInitializedAndNotDead()) {
+      host->UpdateReaderModeConfig(data);
+    }
+    it.Advance();
+  }
+}
+
+void ArkwebRenderProcessHostImplExt::UpdateReaderModeConfig(
+    const nweb_ex::BrowserReaderModeConfigData* reader_mode_config_data) {
+  if (reader_mode_config_data == nullptr) {
+    LOG(WARNING) << "UpdateReaderModeConfig param reader_mode_config_data is null";
+    return;
+  }
+  auto* renderer_interface = GetRendererInterface();
+  if (!renderer_interface) {
+    LOG(WARNING) << "UpdateReaderModeConfig interface is null";
+    return;
+  }
+
+  auto config = blink::mojom::ReaderModeConfig::New();
+  config->reader_mode_enabled = reader_mode_config_data->enabled;
+
+  // 详情模板
+  for (const auto& item : reader_mode_config_data->detail_config.templates) {
+    if (item.templateConfig.size() > kDetailTemplateCatalogIndex) {
+      config->detail_templates.emplace(item.templateId, item.templateConfig);
+    } else {
+      LOG(WARNING) << "UpdateReaderModeConfig detail template must 3 items[info, intro, chapter]";
+    }
+  }
+  // 正文模板
+  for (const auto& item :
+       reader_mode_config_data->content_config.template_match) {
+    if (item.template_config.size() > kContentTemplateChapterIndex) {
+      config->content_templates.emplace(item.template_id, item.template_config);
+    } else {
+      LOG(WARNING) << "UpdateReaderModeConfig content template must 2 items[body, chapter]";
+    }
+  }
+  // 正文特征
+  if (reader_mode_config_data->content_config.feature_match.size() >
+      kFeatureCatalogIndex) {
+    const std::vector<std::vector<std::string>>& features =
+        reader_mode_config_data->content_config.feature_match;
+    config->content_features.emplace(blink::mojom::ContentFeatureIndex::PREV, features[kFeaturePrevIndex]);
+    config->content_features.emplace(blink::mojom::ContentFeatureIndex::NEXT, features[kFeatureNextIndex]);
+    config->content_features.emplace(blink::mojom::ContentFeatureIndex::CATALOG, features[kFeatureCatalogIndex]);
+  } else {
+    LOG(WARNING) << "UpdateReaderModeConfig features must 3 items[pre, next, catalog]";
+  }
+  // 正文元数据
+  const nweb_ex::BrowserReaderModeContentMetaDataConfig& metaData = reader_mode_config_data->content_config.meta_data;
+  config->must_have_catalog = metaData.must_have_catalog;
+  config->must_have_prev_and_next = metaData.must_have_prev_and_next;
+  config->minimum_content_length = metaData.minimum_content_length;
+
+  LOG(INFO) << "RenderProcessHostImpl::UpdateReaderModeConfig config enable " << config->reader_mode_enabled
+            << " must_have_catalog:" << config->must_have_catalog
+            << " must_have_prev_and_next:" << config->must_have_prev_and_next
+            << " minimum_content_length:" << config->minimum_content_length
+            << " detail_templates size:" << config->detail_templates.size()
+            << " content_templates size:" << config->content_templates.size()
+            << " content_features size:" << config->content_features.size();
+
+  renderer_interface->UpdateReaderModeConfig(std::move(config));
+}
+#endif  // ARKWEB_READER_MODE
 }  // namespace content

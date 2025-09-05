@@ -19,10 +19,12 @@
 #include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "arkweb/ohos_adapter_ndk/utils/include/sys_param.h"
 
+#include <cstdlib>
+#include <sstream>
 #include <hitrace/trace.h>
 
 namespace OHOS::NWeb {
-
+constexpr static int DECIMAL_NUMERAL_SYSTEM = 10;
 extern "C" __attribute__((weak)) void *CachedParameterCreate(const char *name, const char *defValue);
 
 HiTraceAdapterImpl& HiTraceAdapterImpl::GetInstance()
@@ -33,12 +35,27 @@ HiTraceAdapterImpl& HiTraceAdapterImpl::GetInstance()
 
 int ConvertToInt(const char *originValue, int defaultValue)
 {
-    return originValue == nullptr ? defaultValue : std::atoi(originValue);
+    if (originValue == nullptr) {
+        return defaultValue;
+    }
+    std::istringstream origin_value_stream(originValue);
+    int origin_value_int = 0;
+    origin_value_stream >> origin_value_int;
+    return origin_value_int;
 }
 
 uint64_t HiTraceAdapterImpl::ConvertToUint64(const char *originValue, uint64_t defaultValue)
 {
-    return originValue == nullptr ? defaultValue : std::strtoull(originValue, nullptr, DECIMAL_NUMERAL_SYSTEM);
+    if (originValue == nullptr) {
+        return defaultValue;
+    }
+    char *endptr = nullptr;
+    uint64_t res = std::strtoull(originValue, &endptr, DECIMAL_NUMERAL_SYSTEM);
+    if (endptr == originValue) {
+        WVLOG_E("failed to strtoull, return default value");
+        return defaultValue;
+    }
+    return res;
 }
 
 void HiTraceAdapterImpl::StartTrace(const std::string& value, float limit)

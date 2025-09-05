@@ -559,6 +559,28 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
 };
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+class DistillCallbackImpl : public CefDistillCallback {
+public:
+  DistillCallbackImpl(int32_t nweb_id, DistillCallback callback)
+  : nweb_id_(nweb_id), callback_(callback) {}
+
+  ~DistillCallbackImpl() {}
+
+  void OnDistillCallback(const std::string& guid, const std::string& distill_info) override {
+    if (callback_ != nullptr) {
+      callback_(nweb_id_, guid.c_str(), distill_info.c_str());
+    }
+  }
+
+ private:
+  int32_t nweb_id_ = 0;
+  DistillCallback callback_;
+
+  IMPLEMENT_REFCOUNTING(DistillCallbackImpl);
+};
+#endif // ARKWEB_READER_MODE
+
 NWebDelegate::NWebDelegate(int argc, const char* argv[])
     : argc_(argc), argv_(argv) {}
 
@@ -1092,11 +1114,6 @@ void NWebDelegate::OnTouchPress(int32_t id,
                                  y / default_virtual_pixel_ratio_,
                                  from_overlay);
   }
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  if (render_handler_ != nullptr) {
-    render_handler_->SetIrregularDragBackground(true);
-  }
-#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 void NWebDelegate::OnTouchRelease(int32_t id,
@@ -1147,11 +1164,6 @@ void NWebDelegate::OnStylusTouchPress(
   event_handler_->OnStylusTouchPress(stylus_touch_point_info, from_overlay,
                                      default_virtual_pixel_ratio_);
 
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  if (render_handler_ != nullptr) {
-    render_handler_->SetIrregularDragBackground(true);
-  }
-#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 void NWebDelegate::OnStylusTouchRelease(
@@ -1244,11 +1256,6 @@ void NWebDelegate::SendMouseEvent(int x,
                                    y / default_virtual_pixel_ratio_, button,
                                    action, count);
   }
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  if (render_handler_ != nullptr) {
-    render_handler_->SetIrregularDragBackground(false);
-  }
-#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -3508,11 +3515,6 @@ void NWebDelegate::WebSendMouseEvent(
     LOG(INFO) << "Mouse Event dropped! event_handler is " << !!event_handler_;
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
   }
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  if (render_handler_ != nullptr) {
-    render_handler_->SetIrregularDragBackground(false);
-  }
-#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 void NWebDelegate::ScrollToWithAnime(float x, float y, int32_t duration) {
@@ -5691,7 +5693,7 @@ bool NWebDelegate::IsMixedContentAutoUpgradesEnabled() {
 }
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 void NWebDelegate::EnableAppLinking(bool enable) {
   LOG(DEBUG) << "NWebDelegate::EnableAppLinking, enable: " << enable;
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
@@ -5702,7 +5704,7 @@ void NWebDelegate::EnableAppLinking(bool enable) {
   GetBrowser()->GetHost()->EnableAppLinking(enable);
   return;
 }
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
 void NWebDelegate::SetUsageScenario(int32_t usage_scenario) {
@@ -5846,7 +5848,7 @@ void NWebDelegate::SetPopupSurface(void* popupSurface) {
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
 void NWebDelegate::MaximizeResize() {
-  if (GetBrowser().get()) {
+  if (GetBrowser().get() && GetBrowser()->GetHost()) {
     GetBrowser()->GetHost()->MaximizeResize();
   }
 }
@@ -6060,6 +6062,45 @@ void NWebDelegate::RunJavaScriptInFrames(const std::string& jsString, FrameInfos
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void NWebDelegate::Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce((void(NWebDelegate::*)(
+                          const std::string&,
+                          const DistillOptions&,
+                          DistillCallback)) &
+                          NWebDelegate::Distill,
+                       this, guid, distill_options, callback));
+    return;
+  }
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::Distill failed, can not get browser";
+    return;
+  }
+  CefRefPtr<DistillCallbackImpl> callback_impl =
+      new DistillCallbackImpl(nweb_id_, callback);
+  GetBrowser()->GetHost()->Distill(guid, distill_options, callback_impl);
+}
+
+void NWebDelegate::AbortDistill() {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce((void(NWebDelegate::*)()) &
+                        NWebDelegate::AbortDistill,
+                        this));
+    return;
+  }
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "NWebDelegate::AbortDistill failed, can not get browser";
+    return;
+  }
+  GetBrowser()->GetHost()->AbortDistill();
+}
+#endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
 void NWebDelegate::SetErrorPageEnabled(bool enable) {

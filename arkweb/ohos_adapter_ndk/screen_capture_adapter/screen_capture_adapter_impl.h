@@ -90,6 +90,7 @@ public:
 
 private:
     void ReleaseAudioBuffer();
+    void InitAudioBufferAdapterImpl(OH_AVBuffer* avBuffer);
 };
 
 struct CallbackInfo {

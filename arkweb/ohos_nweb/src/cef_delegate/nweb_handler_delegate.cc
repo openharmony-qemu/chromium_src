@@ -4409,6 +4409,11 @@ char* NWebHandlerDelegate::FlowbufStrAtIndex(void* mem,
   }
 
   *strLen = *(header + (i * INDEX_SIZE) + 1) - 1;
+  if ((offset + *strLen) > MAX_FLOWBUF_DATA_SIZE) {
+    LOG(ERROR) << "offset bigger than MAX_FLOWBUF_DATA_SIZE";
+    *argIndex = -1;
+    return nullptr;
+  }
   *argIndex = *entry;
 
   char* dataSegment = static_cast<char*>(mem) + HEADER_SIZE;
@@ -4455,6 +4460,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
   size_t argsSize = args->GetSize();
   auto callback = methodMap[method];
   int flowbufSize = GetFlowbufCount(ashmem);
+  int dataListSize = argsSize + flowbufSize;
   std::vector<std::vector<uint8_t>> dataList(argsSize +
                                              static_cast<size_t>(flowbufSize));
   std::vector<size_t> dataSize(argsSize + static_cast<size_t>(flowbufSize));
@@ -4466,7 +4472,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
   char* flowbufStr =
       FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
   flowbufIndex++;
-  while (argIndex == curIndex) {
+  while (curIndex < dataListSize && argIndex == curIndex) {
     std::string flowbuf_stdstr(flowbufStr, strLen);
     dataList[curIndex] =
         std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
@@ -4477,7 +4483,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
   }
 
   for (size_t i = 0; i < argsSize; i++) {
-    while (argIndex == curIndex) {
+    while (curIndex < dataListSize && argIndex == curIndex) {
       std::string flowbuf_stdstr(flowbufStr, strLen);
       dataList[curIndex] =
           std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
@@ -4521,7 +4527,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
     curIndex++;
   }
 
-  while (argIndex == curIndex) {
+  while (curIndex < dataListSize && argIndex == curIndex) {
     std::string flowbuf_stdstr(flowbufStr, strLen);
     dataList[curIndex] =
         std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
@@ -5275,6 +5281,34 @@ void NWebHandlerDelegate::HideMagnifier() {
   if (nweb_handler_) {
     nweb_handler_->HideMagnifier();
   }
+}
+
+bool NWebHandlerDelegate::IsShowHandle() {
+  return nweb_handler_ && nweb_handler_->IsShowHandle();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void NWebHandlerDelegate::OnIsPageDistillable(int page_type,
+                                            const std::string& distillable_page_url, const std::string& title) {
+  LOG(INFO) << "NWebHandlerDelegate::OnIsPageDistillable page_type:" << page_type
+            << " distillablePageUrl:" << distillable_page_url.c_str() << " title:" << title.c_str();
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    dispatcher_.OnIsPageDistillable(page_type, distillable_page_url.c_str(), title.c_str());
+    return;
+  }
+#endif  // OHOS_NWEB_EX
+  if (!web_app_client_extension_listener_) {
+    LOG(WARNING) << "OnIsPageDistillable failed, no listener";
+    return;
+  }
+  if (!web_app_client_extension_listener_->OnIsPageDistillable) {
+    LOG(WARNING) << "OnIsPageDistillable failed, no function";
+    return;
+  }
+  web_app_client_extension_listener_->OnIsPageDistillable(
+      web_app_client_extension_listener_->nweb_id, page_type, distillable_page_url.c_str(), title.c_str());
 }
 #endif
 

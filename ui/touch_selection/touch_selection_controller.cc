@@ -420,6 +420,11 @@ bool TouchSelectionController::WillHandleTouchEventImpl(
 #endif
   if (active_status_ == INSERTION_ACTIVE) {
     DCHECK(insertion_handle_);
+#if BUILDFLAG(ARKWEB_MENU)
+    if (insertion_handle_->AsTouchHandleExt()) {
+        insertion_handle_->AsTouchHandleExt()->SetEdge(start_.edge_start(), start_.edge_end());
+    }
+#endif
     return insertion_handle_->WillHandleTouchEvent(event);
   }
 

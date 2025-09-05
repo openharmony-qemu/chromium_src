@@ -73,6 +73,10 @@ struct OpenDevToolsParam;
 #include "components/prefs/pref_service.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "capi/nweb_extension_distill_item.h"
+#endif // ARKWEB_READER_MODE
+
 namespace OHOS::NWeb {
 #if BUILDFLAG(IS_ARKWEB)
 class NWebPrintDocumentAdapterAdapterImpl :
@@ -695,6 +699,13 @@ class NWebImpl : public NWeb {
                                               const std::string& version);
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  static void UpdateReaderModeConfig(const std::string& file_path, const std::string& version);
+  static void SetJsFilePath(const std::string& js_type, const std::string& file_path, const std::string& version);
+  void Distill(char** guid, const DistillOptions& distill_options, DistillCallback callback);
+  void AbortDistill();
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   void SetForceEnableZoom(bool forceEnableZoom) const override;
   bool GetForceEnableZoom() const;
@@ -1014,8 +1025,11 @@ class NWebImpl : public NWeb {
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);
 #if BUILDFLAG(IS_ARKWEB)
   void SetSurfaceDensity(const double& density) override;
-  void EnableAppLinking(bool enable);
 #endif
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+  void EnableAppLinking(bool enable);
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   void getTotalSize(float size);
   float DumpGpuInfo() override;

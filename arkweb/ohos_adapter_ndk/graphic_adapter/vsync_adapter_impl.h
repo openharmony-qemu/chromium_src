@@ -21,6 +21,7 @@
 #include <mutex>
 #include <native_vsync/native_vsync.h>
 
+#include "base/memory/raw_ptr.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/graphic_adapter.h"
 
 namespace OHOS::NWeb {
@@ -49,7 +50,7 @@ private:
 
     std::mutex mtx_;
     bool hasRequestedVsync_ = false;
-    OH_NativeVSync* vsyncReceiver_ = nullptr;
+    raw_ptr<OH_NativeVSync> vsyncReceiver_ = nullptr;
     std::unordered_map<void*, NWebVSyncCb> vsyncCallbacks_;
     OH_NativeVSync_FrameCallback frameCallback_ = OnVsync;
     static void (*callback_)();

@@ -246,6 +246,8 @@ declare_args() {
   arkweb_gwp_asan = true
   arkweb_bgtask = false
   arkweb_privacy_compliance = true
+  arkweb_reader_mode=false
+  arkweb_ex_enable_applinking = false
 }
 
 # Features enabled in mojom bindings.
@@ -316,3 +318,11 @@ if (defined(arkweb_fido) && arkweb_fido) {
   ]
 }
 #endif // BUILDFLAG(ARKWEB_FIDO)
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+  arkweb_mojo_features += [
+    "arkweb_reader_mode",
+  ]
+}
+#endif // BUILDFLAG(ARKWEB_READER_MODE)

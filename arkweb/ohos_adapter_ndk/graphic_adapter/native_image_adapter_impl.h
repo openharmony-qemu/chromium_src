@@ -18,6 +18,7 @@
 
 #include <native_image/native_image.h>
 
+#include "base/memory/raw_ptr.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
 
 namespace OHOS::NWeb {
@@ -67,7 +68,7 @@ public:
         uint32_t* height) override;
 
 private:
-    OH_NativeImage* ohNativeImage_ = nullptr;
+    raw_ptr<OH_NativeImage> ohNativeImage_ = nullptr;
 };
 } // namespace OHOS::NWeb
 

@@ -653,6 +653,7 @@ source_set("unittests") {
     "src/cef_delegate/nweb_scheme_handler_factory_unittest.cc",
     "src/ndk/arkweb_model_unittest.cc",
     "src/ndk/arkweb_native_object_unittest.cc",
+    "src/native_media_player/nweb_native_media_player_handler_impl_unittests.cc",
     "src/ndk/scheme_handler/http_body_stream_unittest.cc",
     "src/ndk/scheme_handler/resource_handler_unittest.cc",
     "src/ndk/scheme_handler/resource_request_unittest.cc",
@@ -689,6 +690,11 @@ source_set("unittests") {
 
   if (enable_arkweb_ext) {
     deps += [ "//arkweb/ohos_nweb_ex/build/features" ]
+    sources += [ "//arkweb/ohos_nweb_ex/core/web_screencapturer_unittest.cc" ]
+    include_dirs += [
+      "//arkweb/ohos_nweb_ex",
+      "//arkweb/ohos_nweb/src/capi",
+    ]
   }
 
   public_deps = [

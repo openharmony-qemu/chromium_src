@@ -353,7 +353,7 @@ TEST_F(PasteboardClientAdapterImplTest, AddAndGetRecord)
     std::shared_ptr<PasteDataRecordAdapter> record = g_dataadapter->GetRecordAt(0);
     EXPECT_EQ(record, nullptr);
     std::size_t count = g_dataadapter->GetRecordCount();
-    EXPECT_EQ(count, 0);
+    EXPECT_EQ(count, 0u);
     PasteRecordVector recordVector = g_dataadapter_null->AllRecords();
     isEmpty = recordVector.empty();
     EXPECT_EQ(isEmpty, true);
@@ -392,7 +392,7 @@ TEST_F(PasteboardClientAdapterImplTest, AddAndGetRecord)
     std::shared_ptr<PasteDataRecordAdapter> record_null = g_dataadapter_null->GetRecordAt(0);
     EXPECT_EQ(record_null, nullptr);
     count = g_dataadapter_null->GetRecordCount();
-    EXPECT_EQ(count, 0);
+    EXPECT_EQ(count, 0u);
 
     PasteRecordVector recordVector_null = g_dataadapter_null->AllRecords();
     isEmpty = recordVector_null.empty();
@@ -422,12 +422,12 @@ TEST_F(PasteboardClientAdapterImplTest, SetAndGetPasteData)
     int32_t id = PasteBoardClientAdapterImpl::GetInstance().AddPasteboardChangedObserver(observer);
     EXPECT_EQ(id, 0);
     PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(id);
-    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().reg_.size(), 0);
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().reg_.size(), 0u);
 
     id = PasteBoardClientAdapterImpl::GetInstance().AddPasteboardChangedObserver(nullptr);
     EXPECT_EQ(id, -1);
     PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(-1);
-    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().reg_.size(), 0);
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().reg_.size(), 0u);
 }
 
 TEST_F(PasteboardClientAdapterImplTest, CheckTransitionCopyOption)
@@ -473,4 +473,70 @@ TEST_F(PasteboardClientAdapterImplTest, ReleaseMemory)
     g_datarecord->DestoryPixelmapNative(nullptr);
     g_datarecord->ReleaseMemory(nullptr, nullptr, nullptr, nullptr, "test all input is nullptr", 0);
 }
+
+TEST_F(PasteboardClientAdapterImplTest, HtmlToPlainText001)
+{
+    std::string html = "";
+    std::string expected = "";
+    EXPECT_EQ(g_datarecord->HtmlToPlainText(html), expected);
+    html = "aa";
+    EXPECT_EQ(g_datarecord->HtmlToPlainText(html), expected);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HtmlToPlainText002)
+{
+    std::string html = "a<div";
+    std::string expected = "";
+    EXPECT_EQ(g_datarecord->HtmlToPlainText(html), expected);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HtmlToPlainText003)
+{
+    std::string html = "<p class=\"content\">aa</p>";
+    std::string expected = "aa";
+    EXPECT_EQ(g_datarecord->HtmlToPlainText(html), expected);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HtmlToPlainText004)
+{
+    std::string html = "<h1>aa</h1>";
+    std::string expected = "aa";
+    EXPECT_EQ(g_datarecord->HtmlToPlainText(html), expected);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HtmlToPlainText005)
+{
+    std::string html = "<div>aa</div><ul>bb</ul>";
+    std::string expected = "aa\r\nbb";
+    EXPECT_EQ(g_datarecord->HtmlToPlainText(html), expected);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HtmlToPlainText006)
+{
+    std::string html = "<p>aa";
+    std::string expected = "aa";
+    EXPECT_EQ(g_datarecord->HtmlToPlainText(html), expected);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HtmlToPlainText007)
+{
+    std::string html = "<span>aa</span>bb<span>cc</span>";
+    std::string expected = "aabbcc";
+    EXPECT_EQ(g_datarecord->HtmlToPlainText(html), expected);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, HtmlToPlainText008)
+{
+    std::string html = "aa<h2>bb</h2><p>cc</p>dd";
+    std::string expected = "bb\r\nccdd";
+    EXPECT_EQ(g_datarecord->HtmlToPlainText(html), expected);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, AllRecords001)
+{
+    PasteRecordVector recordVector = g_dataadapter->AllRecords();
+    bool isEmpty = recordVector.empty();
+    EXPECT_EQ(isEmpty, true);
+}
+
 }

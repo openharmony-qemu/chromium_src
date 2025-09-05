@@ -169,7 +169,7 @@ BASE_FEATURE(kMdnsResponderGeneratedNameListing,
 // This should only be enabled when ORB v0.1 is, too.
 BASE_FEATURE(kOpaqueResponseBlockingV02,
              "OpaqueResponseBlockingV02",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+             base::FEATURE_DISABLED_BY_DEFAULT);
 #endif
 
 

@@ -16,6 +16,9 @@
 #include "content/public/common/content_switches.h"
 #include "content/browser/renderer_host/frame_tree_node.h"
 #include "mojo/public/cpp/bindings/callback_helpers.h"
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "content/public/browser/web_contents_delegate.h"
+#endif
 
 namespace content {
 NavigationRequestUtils::NavigationRequestUtils(NavigationRequest* nav_request)
@@ -132,6 +135,20 @@ bool NavigationRequestUtils::GetCustomScheme(const std::pair<url::Origin, std::s
     }
   }
   return find_custom_scheme;
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void NavigationRequestUtils::BeginNavigationImpl(
+    bool& should_override_url_loading) {
+  if (nav_request_->GetWebContents()->GetDelegate() &&
+      nav_request_->GetWebContents()->GetDelegate()->IsForDistillerPage()) {
+    should_override_url_loading =
+        !nav_request_->common_params_->has_user_gesture &&
+        !nav_request_->commit_params_->is_browser_initiated &&
+        nav_request_->common_params_->referrer->url.host() !=
+            nav_request_->common_params_->url.host();
+  }
 }
 #endif
 

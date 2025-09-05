@@ -51,7 +51,11 @@ class CC_MOJO_EMBEDDER_EXPORT SoftwareCompositorRendererOhos {
   SoftwareCompositorRendererOhos& operator=(
       const SoftwareCompositorRendererOhos&) = delete;
 
+#if BUILDFLAG(ARKWEB_TEST)
   virtual ~SoftwareCompositorRendererOhos();
+#else
+  ~SoftwareCompositorRendererOhos();
+#endif
 
   void BindToClient(LayerTreeFrameSinkClient* client,
                     viz::BeginFrameSource* source);
@@ -62,7 +66,11 @@ class CC_MOJO_EMBEDDER_EXPORT SoftwareCompositorRendererOhos {
 
   bool DemandDrawSw(SkCanvas* canvas, gfx::SizeF size, gfx::PointF offset);
 
+#if BUILDFLAG(ARKWEB_TEST)
   virtual void DrawRect(const gfx::Rect& rect);
+#else
+  void DrawRect(const gfx::Rect& rect);
+#endif
 
   void SendCompositorFrameAckToClient();
 

@@ -93,7 +93,7 @@ void ExtensionActionDispatcher::DispatchExtensionActionClickedWithCustomArgs(
   }
 
   base::Value::List args;
-  GURL gurl(custom_tab->url.value());
+  GURL gurl(custom_tab->url.value_or(""));
   constexpr mojom::ContextType context_type =
       mojom::ContextType::kPrivilegedExtension;
   ExtensionTabUtil::ScrubTabBehavior scrub_tab_behavior =

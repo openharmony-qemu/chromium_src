@@ -16,9 +16,6 @@
 #include "ui/accessibility/platform/browser_accessibility_manager.h"
 #include "ui/accessibility/platform/one_shot_accessibility_tree_search.h"
 
-#if false
-#include "content/browser/renderer_host/render_frame_host_impl.h"
-#endif
 namespace ui {
 
 class BrowserAccessibility;
@@ -44,7 +41,7 @@ private:
 
     std::unordered_map<int32_t, int32_t> eventThrottleDelays_;
     std::unordered_set<int32_t> viewIndependentEvents_;
-    BrowserAccessibilityManagerOHOS *manager_;
+    raw_ptr<BrowserAccessibilityManagerOHOS> manager_;
     std::unordered_map<int64_t, int64_t> eventLastFiredTimes_;
     std::unordered_map<int64_t, base::DelayedTaskHandle> pendingEvents_;
 };

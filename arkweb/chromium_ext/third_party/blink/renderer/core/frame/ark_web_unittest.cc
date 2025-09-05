@@ -20,7 +20,7 @@ protected:
     void SetUp() override {
         EnableCompositing();
         RenderingTest::SetUp();
-        web_view_helper_.Inirialize();
+        web_view_helper_.Initialize();
         page_holder_ = std::make_unique<DummyPageHolder>();
         local_frame_ = &page_holder_->GetFrame();
         document_ = &page_holder_->GetDocument();
@@ -56,7 +56,7 @@ TEST_F(ArkWebTest, ScrollbarAvoidAreaTop) {
   const double test_margin = 15.0;
 
   ark_web_->setScrollbarAvoidAreaTop(test_margin, exception_state);
-  double result_margin = ark_web_->ScrollbarAvoidAreaTop(exception_state);
+  double result_margin = ark_web_->scrollbarAvoidAreaTop(exception_state);
 }
 
 TEST_F(ArkWebTest, setScrollbarAvoidAreaBottom) {

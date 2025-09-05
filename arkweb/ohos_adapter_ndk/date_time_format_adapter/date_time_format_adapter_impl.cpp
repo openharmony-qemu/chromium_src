@@ -134,20 +134,20 @@ void DateTimeFormatAdapterImpl::StopListen()
         return;
     }
 
-    if (commonEventSubscriber_ == nullptr) {
-        return;
+    if (commonEventSubscriber_ != nullptr) {
+        CommonEvent_ErrCode ret = OH_CommonEvent_UnSubscribe(commonEventSubscriber_);
+        if (ret != COMMONEVENT_ERR_OK) {
+            WVLOG_E("UnSubscribe fail. ret: %{public}d", ret);
+        }
+
+        OH_CommonEvent_DestroySubscriber(commonEventSubscriber_);
+        commonEventSubscriber_ = nullptr;
     }
 
-    CommonEvent_ErrCode ret = OH_CommonEvent_UnSubscribe(commonEventSubscriber_);
-    if (ret != COMMONEVENT_ERR_OK) {
-        WVLOG_E("UnSubscribe fail. ret: %{public}d", ret);
+    if (commonEventSubscriberInfo_ != nullptr) {
+        OH_CommonEvent_DestroySubscribeInfo(commonEventSubscriberInfo_);
+        commonEventSubscriberInfo_ = nullptr;
     }
-
-    OH_CommonEvent_DestroySubscriber(commonEventSubscriber_);
-    commonEventSubscriber_ = nullptr;
-
-    OH_CommonEvent_DestroySubscribeInfo(commonEventSubscriberInfo_);
-    commonEventSubscriberInfo_ = nullptr;
 }
 
 std::string DateTimeFormatAdapterImpl::GetTimezone()

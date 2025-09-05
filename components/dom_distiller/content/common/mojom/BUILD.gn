@@ -10,4 +10,9 @@ mojom("mojom") {
     "distiller_javascript_service.mojom",
   ]
   deps = [ "//components/dom_distiller/core/mojom" ]
+  
+  #if BUILDFLAG(ARKWEB_READER_MODE)
+  #if (arkweb_reader_mode) {
+    deps += [ "//third_party/blink/public/mojom:mojom_core" ]
+  #}
 }

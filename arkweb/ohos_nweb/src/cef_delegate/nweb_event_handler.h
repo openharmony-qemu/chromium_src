@@ -43,6 +43,21 @@ class NWebEventHandler {
       bool from_overlay,
       float virtual_pixel_ratio);
   void OnTouchRelease(int32_t id, double x, double y, bool from_overlay);
+  void OnStylusTouchPress(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay,
+      float virtual_pixel_ratio);
+
+  void OnStylusTouchRelease(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay,
+      float virtual_pixel_ratio);
+
+  void OnStylusTouchMove(
+      const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>&
+          stylus_touch_point_infos,
+      bool from_overlay,
+      float virtual_pixel_ratio);
   void OnTouchCancel();
   void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay);
   void SendTouchpadFlingEvent(double x, double y, double vx, double vy);
@@ -79,6 +94,8 @@ class NWebEventHandler {
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
  private:
+  static cef_pointer_type_t ConvertSourceToolToPointerType(SourceTool source_tool);
+  static float ConvertRollAngleToTwist(float raw_roll_angle);
   bool IsCharInputEvent(CefKeyEvent& keyEvent);
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

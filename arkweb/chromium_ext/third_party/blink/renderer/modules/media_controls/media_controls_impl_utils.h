@@ -56,8 +56,8 @@ const char kMediaControlsDevicePcCSSClass[] = "device-pc";
 
 class MediaControlsImplUtils {
 public:
-  raw_ptr<MediaControlsImpl> impl = nullptr;
-  MediaControlsImplUtils(MediaControlsImpl* mediaControlsImpl, HTMLMediaElement& media_element);
+  raw_ptr<MediaControlsImpl> media_controls_impl_ = nullptr;
+  MediaControlsImplUtils(MediaControlsImpl* media_controls_impl, HTMLMediaElement& media_element);
   static bool ShouldShowPlaybackSpeedButtonExt(HTMLMediaElement& media_element);
   void InitializeControlsExt();
   void PopulatePanelExt();
@@ -106,6 +106,9 @@ public:
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void OnPlaybackSpeedRateChanged();
 #endif
+
+private:
+  void InitMediaControlsImplUtils(MediaControlsImpl* media_controls_impl, HTMLMediaElement& media_element);
 };
 
 }

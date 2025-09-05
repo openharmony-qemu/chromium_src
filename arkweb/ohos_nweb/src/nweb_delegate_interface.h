@@ -61,6 +61,10 @@
 #include "ui/gfx/geometry/size.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "capi/nweb_extension_distill_item.h"
+#endif // ARKWEB_READER_MODE
+
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -205,6 +209,16 @@ class NWebDelegateInterface
                            bool from_overlay) = 0;
   virtual void OnTouchMove(
       const std::vector<std::shared_ptr<NWebTouchPointInfo>>& touch_point_infos,
+      bool from_overlay) = 0;
+  virtual void OnStylusTouchPress(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) = 0;
+  virtual void OnStylusTouchRelease(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) = 0;
+  virtual void OnStylusTouchMove(
+      const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>&
+          stylus_touch_point_infos,
       bool from_overlay) = 0;
   virtual void OnTouchCancel() = 0;
   virtual void OnTouchCancelById(int32_t id,
@@ -503,9 +517,7 @@ class NWebDelegateInterface
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  virtual void PrefetchPage(
-      const std::string& url,
-      const std::map<std::string, std::string>& additionalHttpHeaders) = 0;
+  virtual void PrefetchPage(const PrefetchOptions& prefetch_options) = 0;
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
@@ -521,6 +533,7 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_PRINT)
   virtual void SetToken(void* token) = 0;
   virtual void* CreateWebPrintDocumentAdapter(const std::string& jobName) = 0;
+  virtual void* CreateWebPrintDocumentAdapterV2(const std::string& jobName) = 0;
   virtual void SetPrintBackground(bool enable) = 0;
   virtual bool GetPrintBackground() = 0;
 #endif  // BUILDFLAG(ARKWEB_PRINT)
@@ -717,7 +730,8 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   virtual void SetPathAllowingUniversalAccess(
-      const std::vector<std::string>& pathList) = 0;
+      const std::vector<std::string>& path_list,
+      const std::vector<std::string>& excluded_path_list) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
@@ -742,11 +756,11 @@ class NWebDelegateInterface
       int tab_id,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
       std::unique_ptr<NWebExtensionTab> tab) = 0;
-  virtual void WebExtensionTabActivated(
-      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) = 0;
   virtual void WebExtensionTabAttached(
+      int tab_id,
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) = 0;
   virtual void WebExtensionTabDetached(
+      int tab_id,
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) = 0;
   virtual void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) = 0;
   virtual void WebExtensionTabMoved(
@@ -790,9 +804,9 @@ class NWebDelegateInterface
   virtual bool IsMixedContentAutoUpgradesEnabled() = 0;
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
   virtual void EnableAppLinking(bool enable) = 0;
-#endif
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
 #if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
   virtual void EnableMediaNetworkTrafficPrompt(bool enable) = 0;
@@ -882,9 +896,6 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   virtual void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) = 0;
   virtual int64_t GetPreferenceHash() = 0;
-  virtual void SetNearestSnapshotSize(int32_t width, int32_t height) = 0;
-  virtual int32_t NearestSnapshotWidth() = 0;
-  virtual int32_t NearestSnapshotHeight() = 0;
   virtual int32_t GetWidth() = 0;
   virtual int32_t GetHeight() = 0;
 #endif
@@ -900,6 +911,11 @@ class NWebDelegateInterface
                                      bool recursive, IsolatedWorld world,
                                      OnReceiveValueCallback callback) = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  virtual void Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) = 0;
+  virtual void AbortDistill() = 0;
+#endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   virtual void SetErrorPageEnabled(bool enable) = 0;

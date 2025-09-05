@@ -417,7 +417,8 @@ class MediaSessionImpl : public MediaSession,
   NWebMediaSessionState sessionState_ = NWebMediaSessionState::NOINITIAL;
 #endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 #if BUILDFLAG(ARKWEB_PIP)
-  void OnPictureInPictureStateChanged(const MediaPlayerId& id, uint32_t state);
+  void OnPictureInPictureStateChanged(
+      const MediaPlayerId& id, uint32_t state, int32_t width, int32_t height);
 #endif
 #if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
   void OnNotifyMemoryLevel(int32_t level);
@@ -427,6 +428,11 @@ class MediaSessionImpl : public MediaSession,
   std::unique_ptr<base::MemoryPressureListener> memory_pressure_listener_;
   base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level_ =
       base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE;
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  void UpdateMediaPlayersMuteState(int player_id, bool mute);
+  bool GetMediaPlayerMuteState();
 #endif
 
  private:
@@ -696,6 +702,7 @@ class MediaSessionImpl : public MediaSession,
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   media::MediaContentType media_content_type_;
+  std::unordered_map<int, bool> players_mute_state_;
 #endif
 
   // Returns the PageData for the specified |page|.

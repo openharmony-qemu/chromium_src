@@ -47,16 +47,8 @@ bool NWebExtensionTabCefDelegate::HasExtensionListener() {
 #endif
 }
 
-bool NWebExtensionTabCefDelegate::HasUpdateTabCallback() {
-#if !BUILDFLAG(ARKWEB_NWEB_EX)
-  return false;
-#else
-  return NWebExtensionTabDispatcher::HasUpdateTabCallback();
-#endif
-}
-
 bool NWebExtensionTabCefDelegate::CreateTab(
-    NWebTabCreateInfo& create_info,
+    NWebTabCreateInfoV2& create_info,
     TabCreatedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
@@ -82,19 +74,9 @@ void NWebExtensionTabCefDelegate::TabCreateCallback(
   }
 }
 
-void NWebExtensionTabCefDelegate::UpdateTab(
-    int tab_id,
-    NWebExtensionTabUpdateProperties& update_properties) {
-#if !BUILDFLAG(ARKWEB_NWEB_EX)
-  return;
-#else
-  NWebExtensionTabDispatcher::UpdateTab(-1, tab_id, update_properties);
-#endif
-}
-
 bool NWebExtensionTabCefDelegate::UpdateTab(
     int tab_id,
-    NWebExtensionTabUpdateProperties& update_properties,
+    NWebExtensionTabUpdatePropertiesV2& update_properties,
     TabUpdatedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
@@ -122,7 +104,7 @@ void NWebExtensionTabCefDelegate::TabUpdateCallback(
 
 bool NWebExtensionTabCefDelegate::MoveTab(
     std::vector<int32_t>& tab_ids,
-    NWebExtensionTabMoveProperties& move_properties,
+    NWebExtensionTabMovePropertiesV2& move_properties_v2,
     TabMovedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
@@ -130,7 +112,15 @@ bool NWebExtensionTabCefDelegate::MoveTab(
   static int request_id = 0;
   request_id++;
   g_tab_moved_map_[request_id] = std::move(callback);
-  bool result = NWebExtensionTabDispatcher::MoveTab(request_id, tab_ids, move_properties);
+
+  bool result;
+  if (NWebExtensionTabDispatcher::HasMoveTabV2Callback()) {
+    result = NWebExtensionTabDispatcher::MoveTabV2(request_id, tab_ids,
+                                                   move_properties_v2);
+  } else {
+    result = NWebExtensionTabDispatcher::MoveTab(request_id, tab_ids,
+                                                 move_properties_v2.properties);
+  }
   if (!result) {
     g_tab_moved_map_.erase(request_id);
   }
@@ -149,14 +139,21 @@ void NWebExtensionTabCefDelegate::TabMoveCallback(
 }
 
 bool NWebExtensionTabCefDelegate::RemoveTab(
-    std::vector<int>& tab_ids, TabRemovedCallback callback) {
+    NWebExtensionTabRemoveParams& params,
+    TabRemovedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
   static int request_id = 0;
   request_id++;
   g_tab_removed_map_[request_id] = std::move(callback);
-  bool result = NWebExtensionTabDispatcher::RemoveTab(request_id, tab_ids);
+
+  bool result;
+  if (NWebExtensionTabDispatcher::HasRemoveTabV2Callback()) {
+    result = NWebExtensionTabDispatcher::RemoveTabV2(request_id, params);
+  } else {
+    result = NWebExtensionTabDispatcher::RemoveTab(request_id, params.tabIds);
+  }
   if (!result) {
     g_tab_removed_map_.erase(request_id);
   }
@@ -174,14 +171,16 @@ void NWebExtensionTabCefDelegate::TabRemoveCallback(
 }
 
 bool NWebExtensionTabCefDelegate::DiscardTab(
-    int tab_id, TabDiscardedCallback callback) {
+    int tab_id,
+    NWebExtensionTabDiscardInfo& discard_info,
+    TabDiscardedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
   static int request_id = 0;
   request_id++;
   g_tab_discarded_map_[request_id] = std::move(callback);
-  bool result = NWebExtensionTabDispatcher::DiscardTab(request_id, tab_id);
+  bool result = NWebExtensionTabDispatcher::DiscardTab(request_id, tab_id, discard_info);
   if (!result) {
     g_tab_discarded_map_.erase(request_id);
   }
@@ -199,14 +198,16 @@ void NWebExtensionTabCefDelegate::TabDiscardCallback(
 }
 
 bool NWebExtensionTabCefDelegate::DuplicateTab(
-    int tab_id, TabDuplicatedCallback callback) {
+    int tab_id,
+    NWebExtensionTabDuplicateInfo& duplicate_info,
+    TabDuplicatedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
   static int request_id = 0;
   request_id++;
   g_tab_duplicated_map_[request_id] = std::move(callback);
-  bool result = NWebExtensionTabDispatcher::DuplicateTab(request_id, tab_id);
+  bool result = NWebExtensionTabDispatcher::DuplicateTab(request_id, tab_id, duplicate_info);
   if (!result) {
     g_tab_duplicated_map_.erase(request_id);
   }
@@ -251,7 +252,7 @@ void NWebExtensionTabCefDelegate::TabGroupCallback(
 }
 
 bool NWebExtensionTabCefDelegate::UngroupTab(
-    std::vector<int>& tabs,
+    NWebExtensionTabUngroupParams& params,
     TabUngroupedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
@@ -259,7 +260,13 @@ bool NWebExtensionTabCefDelegate::UngroupTab(
   static int request_id = 0;
   request_id++;
   g_tab_ungrouped_map_[request_id] = std::move(callback);
-  bool result = NWebExtensionTabDispatcher::UngroupTab(request_id, tabs);
+
+  bool result;
+  if (NWebExtensionTabDispatcher::HasUngroupTabV2Callback()) {
+    result = NWebExtensionTabDispatcher::UngroupTabV2(request_id, params);
+  } else {
+    result = NWebExtensionTabDispatcher::UngroupTab(request_id, params.tabIds);
+  }
   if (!result) {
     g_tab_ungrouped_map_.erase(request_id);
   }
@@ -304,29 +311,56 @@ void NWebExtensionTabCefDelegate::TabHighlightCallback(
 }
 
 std::unique_ptr<NWebExtensionTab> NWebExtensionTabCefDelegate::GetTab(
-    int tab_id) {
+    int tabId,
+    std::optional<std::string> contextType,
+    std::optional<bool> includeIncognitoInfo) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return nullptr;
 #else
-  return NWebExtensionTabDispatcher::GetTab(tab_id);
+  NWebExtensionTabGetParams params = {tabId, contextType, includeIncognitoInfo};
+  return NWebExtensionTabDispatcher::GetTab(params);
 #endif
 }
 
 std::vector<NWebExtensionTab> NWebExtensionTabCefDelegate::QueryTab(
-    NWebExtensionTabQueryInfo& queryInfo) {
+    NWebExtensionTabQueryInfoV2& queryInfo) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return std::vector<NWebExtensionTab>();
 #else
-  return NWebExtensionTabDispatcher::QueryTab(queryInfo);
+  if (NWebExtensionTabDispatcher::HasQueryTabV2Callback()) {
+    return NWebExtensionTabDispatcher::QueryTabV2(queryInfo);
+  } else {
+    return NWebExtensionTabDispatcher::QueryTab(queryInfo.query);
+  }
 #endif
 }
 
-int NWebExtensionTabCefDelegate::GetAnyTab(int windowId) {
+int NWebExtensionTabCefDelegate::GetAnyTab(
+    NWebExtensionTabGetAnyTabParams& params) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return -1;
 #else
-  return NWebExtensionTabDispatcher::GetAnyTab(windowId);
+  if (NWebExtensionTabDispatcher::HasGetAnyTabV2Callback()) {
+    return NWebExtensionTabDispatcher::GetAnyTabV2(params);
+  } else {
+    return NWebExtensionTabDispatcher::GetAnyTab(params.windowId);
+  }
 #endif
+}
+
+void NWebExtensionTabCefDelegate::OnTabActivated(std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) {
+  if (!activeInfo) {
+    LOG(ERROR) << "OnTabActivated activeInfo is null";
+    return;
+  }
+
+  auto browser_context = GetBrowserContext();
+  if (!browser_context) {
+    return;
+  }
+
+  extensions::TabsWindowsAPI::Get(browser_context)
+      ->TabActivated(activeInfo->tabId, activeInfo->windowId, browser_context);
 }
 
 void NWebExtensionTabCefDelegate::OnTabCreated(std::unique_ptr<NWebExtensionTab> tab) {

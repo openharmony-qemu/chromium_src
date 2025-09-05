@@ -351,11 +351,11 @@ void ArkwebDisplayUtils::DrawAndSwap(AggregatedRenderPass& last_render_pass,
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 void ArkwebDisplayUtils::removeDuplicatesRect(std::vector<gfx::Rect>& quad_list) {
-  if (quea_list.empty()) {
+  if (quad_list.empty()) {
     LOG(ERROR) << "blankless removeDuplicatesRect, quad_list is empty.";
     return;
   }
-  for (int i = 0; i < quad_list.size() - 1; i++) {
+  for (size_t i = 0; i < quad_list.size() - 1; ++i) {
      auto iter = std::remove(quad_list.begin() + i + 1, quad_list.end(), quad_list[i]);
      quad_list.erase(iter, quad_list.end());
   }
@@ -364,39 +364,16 @@ void ArkwebDisplayUtils::removeDuplicatesRect(std::vector<gfx::Rect>& quad_list)
 //LCOV_EXCL_START
 void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
   if (!gpu_service_impl_) {
-    LOG(ERROR) << "blankless DumpSnapshotForBlankLess, gpu_service_impl_ is nullptr";
+    LOG(DEBUG) << "blankless DumpSnapshotForBlankLess, gpu_service_impl_ is nullptr";
     return;
   }
-  const raw_ptr<gpu::GpuChannelManager> gpu_channel_manager = gpu_service_impl_->gpu_channel_manager();
-  if (!gpu_channel_manager) {
-    LOG(ERROR) << "blankless DumpSnapshotForBlankLess, gpu_channel_manager is nullptr";
-    return;
-  }
-
-  gpu::GpuChannel* gpu_channel = gpu_channel_manager->LookupChannel(client_id_);
-  if (!gpu_channel) {
-    LOG(DEBUG) << "blankless DumpSnapshotForBlankLess, dump is disable now";
-    return;
-  }
-
   uint64_t id = display_->frame_sink_id_.hash();
   base::ohos::BlanklessDumpInfo info;
-  if (!gpu_channel->AsGpuChannelExt() ||
-      !gpu_channel->AsGpuChannelExt()->GetBlanklessDumpInfoAndDisableDump(id, info) ||
-      !info.dump_enabled) {
-    LOG(DEBUG) << "blankless dump disable";
+  if (!gpu::GpuChannelExt::GetBlanklessDumpInfoAndDisableDump(client_id_, id, info) || !info.dump_enabled) {
+    LOG(DEBUG) << "blankless dump disable or no blankless info";
     return;
   }
-  LOG(DEBUG) << "blankless create FrameSnapshotCopyOutputRequest";
-  auto snapshot_request = std::make_unique<FrameSnapshotCopyOutputRequest>(
-      base::BindOnce(&GpuServiceImpl::OnFrameSnapshotCopyOutputResult, gpu_service_impl_->GetWeakPtr()));
-  if (!snapshot_request || !snapshot_request->copy_output_request_utils()) {
-    LOG(ERROR) << "blankless snapshot_request is null";
-    return;
-  }
-  snapshot_request->copy_output_request_utils()->SetBlanklessKey(info.blankless_key);
-  snapshot_request->copy_output_request_utils()->SetLcpTime(info.lcp_time);
-  snapshot_request->copy_output_request_utils()->SetPreferenceHash(info.pref_hash);
+
   auto& root_render_pass = frame.render_pass_list.back();
   if (!root_render_pass) {
     LOG(ERROR) << "blankless no root render pass";
@@ -410,7 +387,18 @@ void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
   }
   removeDuplicatesRect(draw_quad_list);
   if (draw_quad_list.size() >= kRectNumthreshold) {
-    snapshot_request->copy_output_request_utils()->SetQuadList(draw_quad_list);
+    auto snapshot_request = std::make_unique<FrameSnapshotCopyOutputRequest>(
+      base::BindOnce(&GpuServiceImpl::OnFrameSnapshotCopyOutputResult, gpu_service_impl_->GetWeakPtr()));
+    if (!snapshot_request || !snapshot_request->copy_output_request_utils()) {
+      LOG(ERROR) << "blankless snapshot_request is null";
+      return;
+    }
+    info.info.width = root_render_pass->output_rect.width();
+    info.info.height = root_render_pass->output_rect.height();
+    snapshot_request->SetUniformScaleRatio(base::ohos::BlanklessController::SNAPSHOT_SCALE_FACTOR, 1);
+    snapshot_request->copy_output_request_utils()->SetBlanklessInfo(info.info);
+    LOG(DEBUG) << "blankless push copy render pass. nweb_id: " << info.info.nweb_id
+               << ", blankless_key: " << info.info.blankless_key;
     root_render_pass->copy_requests.push_back(std::move(snapshot_request));
   }
 }
@@ -423,5 +411,17 @@ void ArkwebDisplayUtils::SetGpuServiceImpl(GpuServiceImpl* gpu_service_impl) {
   gpu_service_impl_ = gpu_service_impl;
 }
 //LCOV_EXCL_STOP
+#endif
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+void ArkwebDisplayUtils::DiscardBackbuffer() {
+#if BUILDFLAG(ARKWEB_VULKAN)
+  if (display_->renderer_) {
+    display_->renderer_->ReallocatedFrameBuffers();
+  }
+#endif
+  if (display_->output_surface_) {
+    display_->output_surface_->DiscardBackbuffer();
+  }
+}
 #endif
 }  // namespace viz

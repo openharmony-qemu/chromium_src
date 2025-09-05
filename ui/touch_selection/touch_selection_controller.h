@@ -49,6 +49,7 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionControllerClient {
 #if BUILDFLAG(ARKWEB_MENU)
   virtual void SelectBetweenCoordinatesV2(const gfx::PointF& position, bool is_base) {}
   virtual void NotifyShowMagnifier() {}
+  virtual bool IsShowHandle() { return false; }
 #endif
 };
 
@@ -187,6 +188,10 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
   const gfx::SelectionBound& end() const { return end_; }
 
   ActiveStatus active_status() const { return active_status_; }
+
+#if BUILDFLAG(ARKWEB_MENU)
+  bool IsShowHandle() override;
+#endif
 
  private:
   friend class TouchSelectionControllerTestApi;

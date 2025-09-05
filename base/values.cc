@@ -34,6 +34,10 @@
 #include "base/trace_event/memory_usage_estimator.h"  // no-presubmit-check
 #endif  // BUILDFLAG(ENABLE_BASE_TRACING)
 
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+#include "base/logging.h"
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
+
 namespace base {
 
 namespace {
@@ -931,6 +935,12 @@ Value::Dict::Dict(
     const flat_map<std::string, std::unique_ptr<Value>>& storage) {
   storage_.reserve(storage.size());
   for (const auto& [key, value] : storage) {
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+    if (!value) {
+      LOG(ERROR) << "Dict constructor, key:" << key << " value is nullptr";
+      continue;
+    }
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
     Set(key, value->Clone());
   }
 }

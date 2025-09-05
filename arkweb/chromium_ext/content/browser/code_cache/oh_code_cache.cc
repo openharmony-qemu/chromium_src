@@ -13,9 +13,6 @@
  * limitations under the License.
  */
 
-#if false
-#include "base/containers/span.h"
-#endif
 #include "content/browser/code_cache/oh_code_cache.h"
 
 namespace oh_code_cache {
@@ -67,26 +64,26 @@ std::string ResponseCacheMetadata::ToString() {
 
 // TaskRunner --------------------------------------------------
 
-scoped_refptr<base::SingleThreadTaskRunner> TaskRunner::task_runner_ = nullptr;
+base::NoDestructor<scoped_refptr<base::SingleThreadTaskRunner>> TaskRunner::task_runner_(nullptr);
 
 // static
 scoped_refptr<base::SingleThreadTaskRunner> TaskRunner::GetTaskRunner() {
-  if (!task_runner_) {
-    task_runner_ = base::ThreadPool::CreateSingleThreadTaskRunner(
+  if (!(*task_runner_)) {
+    *task_runner_ = base::ThreadPool::CreateSingleThreadTaskRunner(
         {base::MayBlock(), base::WithBaseSyncPrimitives(),
          base::TaskPriority::USER_VISIBLE},
         base::SingleThreadTaskRunnerThreadMode::DEDICATED);
   }
 
-  return task_runner_;
+  return *task_runner_;
 }
 
 // ResponseCache --------------------------------------------------
 
-std::unique_ptr<base::FilePath> ResponseCache::cache_dir_path_ =
-    std::make_unique<base::FilePath>();
-std::map<std::string, std::shared_ptr<ResponseCacheMetadata>>
-    ResponseCache::cache_metadata_map_ = {};
+base::NoDestructor<std::unique_ptr<base::FilePath>> ResponseCache::cache_dir_path_(
+    std::make_unique<base::FilePath>());
+base::NoDestructor<std::map<std::string, std::shared_ptr<ResponseCacheMetadata>>>
+    ResponseCache::cache_metadata_map_{};
 
 // static
 void ResponseCache::InitCacheDirectory(base::FilePath path) {
@@ -98,7 +95,7 @@ void ResponseCache::InitCacheDirectory(base::FilePath path) {
     base::CreateDirectory(path);
   }
 
-  cache_dir_path_ = std::make_unique<base::FilePath>(path);
+  *cache_dir_path_ = std::make_unique<base::FilePath>(path);
 }
 
 // static
@@ -115,7 +112,7 @@ std::shared_ptr<ResponseCache> ResponseCache::CreateResponseCache(
     return nullptr;
   }
 
-  if (!cache_dir_path_ || cache_dir_path_->empty()) {
+  if (!(*cache_dir_path_) || (*cache_dir_path_)->empty()) {
     LOG(ERROR)
         << "Create Response Cache error: cache dir path has not initialized.";
     return nullptr;
@@ -125,9 +122,9 @@ std::shared_ptr<ResponseCache> ResponseCache::CreateResponseCache(
   response_cache->url_hash_ =
       std::to_string(disk_cache::simple_util::GetEntryHashKey(url));
   base::FilePath file_path(kFileTag + response_cache->url_hash_);
-  response_cache->cache_file_path_ = cache_dir_path_->Append(file_path);
+  response_cache->cache_file_path_ = (*cache_dir_path_)->Append(file_path);
   response_cache->metadata_file_path_ =
-      cache_dir_path_->Append(kCacheMetadataFileName);
+      (*cache_dir_path_)->Append(kCacheMetadataFileName);
   response_cache->metadata_out_ = std::make_shared<ResponseCacheMetadata>();
 
   return response_cache;
@@ -135,7 +132,7 @@ std::shared_ptr<ResponseCache> ResponseCache::CreateResponseCache(
 
 // static
 void ResponseCache::ClearAllCache() {
-  auto cache_dir_path = cache_dir_path_.get();
+  auto cache_dir_path = (*cache_dir_path_).get();
 
   if (!cache_dir_path || !base::PathExists(*cache_dir_path)) {
     LOG(ERROR) << "Cannot clear response cache. cache directory path has not "
@@ -154,7 +151,7 @@ void ResponseCache::ClearAllCache() {
     }
   }
 
-  cache_metadata_map_.clear();
+  (*cache_metadata_map_).clear();
 }
 
 ResponseCache::ResponseCache(const std::string& url) : url_(url) {}
@@ -206,21 +203,21 @@ bool ResponseCache::CreateStream() {
 bool ResponseCache::FindMetadata() {
   TRACE_EVENT1("net", "ResponseCache::FindMetadata", "url", url_);
 
-  if (cache_metadata_map_.empty()) {
+  if ((*cache_metadata_map_).empty()) {
     if (!CreateStream()) {
       return false;
     }
 
     while (ReadMetadata()) {
-      cache_metadata_map_.emplace(metadata_out_->url_hash_, metadata_out_);
+      (*cache_metadata_map_).emplace(metadata_out_->url_hash_, metadata_out_);
     }
 
     CloseStream();
   }
 
-  auto it = cache_metadata_map_.find(url_hash_);
+  auto it = (*cache_metadata_map_).find(url_hash_);
 
-  if (it == cache_metadata_map_.end()) {
+  if (it == (*cache_metadata_map_).end()) {
     return false;
   }
 
@@ -311,7 +308,7 @@ NextOp ResponseCache::DoCreate() {
     return NextOp::THROW_ERROR;
   }
 
-  cache_metadata_map_.emplace(url_hash_, metadata_in_);
+  (*cache_metadata_map_).emplace(url_hash_, metadata_in_);
 
   if (!DoWriteIntoFile(cache_file_path_, response_body_in_)) {
     LOG(ERROR)
@@ -349,7 +346,7 @@ bool ResponseCache::DoUpdateMetadata() {
     return false;
   }
 
-  base::FilePath temp_file_path = cache_dir_path_->Append(kTempFilePath);
+  base::FilePath temp_file_path = (*cache_dir_path_)->Append(kTempFilePath);
   auto temp_file = std::make_unique<base::File>(
       temp_file_path, base::File::FLAG_CREATE | base::File::FLAG_WRITE);
   temp_file->Lock(base::File::LockMode::kExclusive);
@@ -375,7 +372,7 @@ bool ResponseCache::DoUpdateMetadata() {
     }
 
     if (result) {
-      cache_metadata_map_[url_hash_] = metadata_in_;
+      (*cache_metadata_map_)[url_hash_] = metadata_in_;
     }
   }
 

@@ -21,8 +21,8 @@ import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
 import("//arkweb/build/features/features.gni")
 
-fuzzer_test("imf_adapter_impl_fuzzer") {
-  sources = [ "imf_adapter_impl_fuzzer.cc" ]
+fuzzer_test("nweb_imf_adapter_impl_fuzzer") {
+  sources = [ "nweb_imf_adapter_impl_fuzzer.cc" ]
   include_dirs = [
     "//cef",
     "//cef/include",
@@ -43,6 +43,6 @@ group("ohos_test") {
     testonly = true
     deps = []
     deps += [
-      ":imf_adapter_impl_fuzzer",
+      ":nweb_imf_adapter_impl_fuzzer",
     ]
 }

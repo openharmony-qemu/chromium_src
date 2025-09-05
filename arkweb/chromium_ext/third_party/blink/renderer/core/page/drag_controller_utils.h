@@ -23,14 +23,15 @@ namespace blink {
 
 class DragController;
 
-class DragControllerUtils {
+class DragControllerUtils : public GarbageCollected<DragControllerUtils> {
  public:
   explicit DragControllerUtils(DragController*);
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
+  void Trace(Visitor*) const;
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
  private:
-  DragController* drag_controller_;
+  Member<DragController> drag_controller_;
 };
 
   std::unique_ptr<DragImage> DragImageForLink(const KURL& link_url, const String& link_text,

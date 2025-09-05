@@ -1059,6 +1059,12 @@ component("base") {
     defines += [ "REPORT_SYS_EVENT" ]
   }
  
+  if (defined(is_arkweb) && is_arkweb) {
+    deps += [
+      "//base:base_static",
+    ]
+  }
+
   if (!is_nacl) {
     # Used by metrics/crc32, except on NaCl builds.
     deps += [ "//third_party/zlib" ]
@@ -2711,7 +2717,7 @@ buildflag_header("protected_memory_buildflags") {
   header_dir = "base/memory"
 
   protected_memory_enabled = !is_component_build && is_clang &&
-                             (is_win || is_linux || is_android || is_mac)
+                             (is_win || is_linux || is_android || is_mac || is_ohos)
 
   flags = [ "PROTECTED_MEMORY_ENABLED=$protected_memory_enabled" ]
 }
@@ -2808,6 +2814,11 @@ static_library("base_static") {
     ":fuzzing_buildflags",
     "//build:chromeos_buildflags",
   ]
+  if (defined(is_arkweb) && is_arkweb) {
+    deps += [
+      "//arkweb/build/features:features",
+    ]
+  }
 
   if (is_win) {
     sources += [
@@ -3690,6 +3701,9 @@ test("base_unittests") {
     sources += arkweb_storage_monitor_unittest_source
     sources += arkweb_crashpad_unittest_sources
     sources += arkweb_crashpad_sources
+    sources += arkweb_crashpad_dfx_sources
+    sources += arkweb_crashpad_dfx_unittest_sources
+
     sources += [
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
     ]
@@ -3697,6 +3711,8 @@ test("base_unittests") {
 
     public_deps = [
       "//content/public/browser",
+      "//components/autofill/core/browser",
+      "//components/subresource_filter/content/browser",
     ]
   }
 
@@ -3770,6 +3786,7 @@ test("base_unittests") {
    deps += ["//components/web_cache/browser"]
    deps += ["//components/storage_monitor"]
    deps += ["//components/performance_manager"]
+   deps += ["//third_party:huawei_securec"]
    }
 
 

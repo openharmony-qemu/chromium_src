@@ -96,6 +96,10 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
     handler_->WebBlurKeyboardHide();
   }
 
+  void WebSetImeShow(bool visible) override {
+    handler_->WebSetImeShow(visible);
+  }
+
   void MoveCursor(const IMFAdapterDirection direction) override {
     if (direction == IMFAdapterDirection::NONE) {
       LOG(ERROR) << "NWebInputMethodHandler::MoveCursor got none direction";
@@ -731,6 +735,12 @@ void NWebInputMethodHandler::WebBlurKeyboardHide() {
   }
 }
 // LCOV_EXCL_STOP
+
+void NWebInputMethodHandler::WebSetImeShow(bool visible) {
+  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
+    browser_->GetHost()->SetImeShow(visible);
+  }
+}
 
 void NWebInputMethodHandler::InsertText(const std::u16string& text) {
   if (text.empty()) {

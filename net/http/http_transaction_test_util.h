@@ -11,7 +11,8 @@
 #include <set>
 #include <string>
 #include <vector>
-
+#include "build/build_config.h"
+#include "build/buildflag.h"
 #include "base/compiler_specific.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
@@ -195,7 +196,9 @@ class MockNetworkTransaction final : public HttpTransaction {
 
   int RestartIgnoringLastError(CompletionOnceCallback callback) override;
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   int RestartWithSecureDnsOnly(CompletionOnceCallback callback) override;
+#endif
 
   int RestartWithCertificate(scoped_refptr<X509Certificate> client_cert,
                              scoped_refptr<SSLPrivateKey> client_private_key,

@@ -21,6 +21,17 @@ import "url/mojom/url.mojom";
 import "ui/gfx/mojom/dxgi_info.mojom";
 
 [EnableIf=arkweb_blank_optimize]
+struct BlanklessSendInfo {
+  uint64 blankless_key;
+  uint32 nweb_id;
+  int32 lcp_time;
+  uint64 system_time;
+  int64 pref_hash;
+  int64 width;
+  int64 height;
+};
+
+[EnableIf=arkweb_blank_optimize]
 struct BlanklessBitmapMetadata {
   int32 width;
   int32 height;
@@ -93,9 +104,7 @@ interface GpuHost {
 
   // send snapshot to save
   [EnableIf=arkweb_blank_optimize]
-  SendBlanklessSnapshotInfo(uint64 blankless_key, int32 lcp_time, int64 pref_hash,
-                            array<gfx.mojom.Rect> quad_list, handle<shared_buffer> buffer,
-                            BlanklessBitmapMetadata metadata);
+  SendBlanklessSnapshotInfo(BlanklessSendInfo info, handle<shared_buffer> buffer, BlanklessBitmapMetadata metadata);
 
   // clear snapshot
   [EnableIf=arkweb_blank_optimize]

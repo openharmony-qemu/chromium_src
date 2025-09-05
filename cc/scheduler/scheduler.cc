@@ -325,6 +325,11 @@ void Scheduler::StartOrStopBeginFrames() {
   }
 
   bool needs_begin_frames = state_machine_.ShouldSubscribeToBeginFrames();
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT2("cc,benchmark", "Scheduler::StartOrStopBeginFrames", "needs_begin_frames",
+               needs_begin_frames, "BeginImplFrameState",
+               state_machine_.begin_impl_frame_state());
+#endif
   if (needs_begin_frames == observing_begin_frame_source_) {
     return;
   }
@@ -448,6 +453,11 @@ bool Scheduler::OnBeginFrameDerivedImpl(const viz::BeginFrameArgs& args) {
     if (pending_begin_frame_args_.IsValid()) {
       TRACE_EVENT_INSTANT0("cc", "Scheduler::BeginFrameDropped",
                            TRACE_EVENT_SCOPE_THREAD);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+      auto valid_time = pending_begin_frame_args_.interval - base::TimeDelta();
+      TRACE_EVENT1("cc,benchmark", "BeginFrameDropped kRecoverLatency", "valid",
+                   valid_time.InMicroseconds());
+#endif
       SendDidNotProduceFrame(pending_begin_frame_args_,
                              FrameSkippedReason::kRecoverLatency);
     }

@@ -3,6 +3,12 @@
 # found in the LICENSE file.
 
 import("//build/config/chromeos/ui_mode.gni")
+if (defined(is_arkweb) && is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    import("//arkweb/chromium_ext/components/prefs/arkweb_pref_ext.gni")
+  }
+}
 
 component("prefs") {
   sources = [
@@ -68,6 +74,10 @@ component("prefs") {
       "android/pref_service_android.h",
     ]
     deps += [ "android:jni_headers" ]
+  }
+
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    sources += arkweb_pref_ext_sources
   }
 }
 

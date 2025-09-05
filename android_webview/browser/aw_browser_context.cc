@@ -96,6 +96,10 @@
 #include "android_webview/browser_jni_headers/AwPrefetchParameters_jni.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+#include "base/logging.h"
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
+
 using base::FilePath;
 using content::BrowserThread;
 
@@ -197,9 +201,12 @@ AwBrowserContext::AwBrowserContext(std::string name,
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
   TRACE_EVENT0("startup", "AwBrowserContext::AwBrowserContext");
 
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+  LOG(INFO) << "AwBrowserContext SetBrowserProfileType, context : "
+      << reinterpret_cast<uintptr_t>(this) % 100000000;
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
   profile_metrics::SetBrowserProfileType(
       this, profile_metrics::BrowserProfileType::kRegular);
-
   if (IsDefaultBrowserContext()) {
     MigrateProfileData(GetHttpCachePath(), GetPath());
   } else {

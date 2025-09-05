@@ -36,7 +36,7 @@ class NetConnectionCallbackImpl : public NetConnectionCallback {
   int32_t NetLost() override;
 
  private:
-  NetworkChangeNotifierOhos* notifier_ohos_ = nullptr;
+  raw_ptr<NetworkChangeNotifierOhos> notifier_ohos_ = nullptr;
 };
 
 int32_t NetConnectionCallbackImpl::NetAvailable() {

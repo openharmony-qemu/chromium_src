@@ -99,6 +99,10 @@
 
 namespace net {
 
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  constexpr int kTimeoutSeconds = 5;
+#endif
+
 ArkWebHttpNetworkTransactionExt::ArkWebHttpNetworkTransactionExt(RequestPriority priority,
                                                HttpNetworkSession* session)
     : HttpNetworkTransaction(priority, session) {}
@@ -185,13 +189,13 @@ int ArkWebHttpNetworkTransactionExt::DoCreateFallbackStreamWithSecureDnsOnlyComp
 void ArkWebHttpNetworkTransactionExt::StartRecording() {
   if (is_recording_) {
     timer_.Stop();
-    timer_.Start(FROM_HERE, base::Seconds(5), this,
+    timer_.Start(FROM_HERE, base::Seconds(kTimeoutSeconds), this,
                  &ArkWebHttpNetworkTransactionExt::ReportTimeout);
     return;
   }
 
   is_recording_ = true;
-  timer_.Start(FROM_HERE, base::Seconds(5), this,
+  timer_.Start(FROM_HERE, base::Seconds(kTimeoutSeconds), this,
                &ArkWebHttpNetworkTransactionExt::ReportTimeout);
 }
 
@@ -206,6 +210,15 @@ void ArkWebHttpNetworkTransactionExt::StopRecording() {
 
 void ArkWebHttpNetworkTransactionExt::ReportTimeout() {
   LOG(INFO) << "INFO: request had no reponse within 5 seconds. url: ***";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "INFO: request had no reponse within 5 seconds. url: "
+                     << url::LogUtils::ConvertUrlWithMask(url_.spec());
+  if (!session_->is_strict_log_mode()) {
+    LOG(URL) << "request had no reponse within 5 seconds. url: "
+             << url::LogUtils::ConvertUrl(url_.spec(),
+                                          request_->usage_scenario_);
+  }
+#endif
 }
 #endif
 

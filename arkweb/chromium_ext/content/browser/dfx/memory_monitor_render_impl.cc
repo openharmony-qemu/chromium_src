@@ -225,23 +225,6 @@ void MemoryMonitorImpl::MemoryAllocReport()
 
 void MemoryMonitorImpl::Init()
 {
-  const char* osReleaseType = OH_GetOsReleaseType();
-  const char* distributionReleaseType = OH_GetDistributionOSReleaseType();
-  auto IsNullOrEmpty = [](const char* str) {
-    return str == nullptr || str[0] == '\0';
-  };
-  auto IsRelease = [](const char* str) {
-    return str != nullptr && strcmp(str, "Release") == 0;
-  };
-  bool isReleaseVersion =
-    IsRelease(osReleaseType) || IsRelease(distributionReleaseType) ||
-    (IsNullOrEmpty(osReleaseType) && IsNullOrEmpty(distributionReleaseType));
-  if (isReleaseVersion) {
-    LOG(WARNING) << "release version";
-    return;
-  }
-  LOG(WARNING) << "beta version";
-
   InitDfxMemStatus(mem_status_);
   mem_status_.lastTime = "";
   mem_info_.pid = 0;

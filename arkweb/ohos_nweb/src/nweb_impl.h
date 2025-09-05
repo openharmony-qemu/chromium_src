@@ -59,7 +59,6 @@ struct FrameInfos;
 struct IsolatedWorld;
 struct OpenDevToolsParam;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "capi/nweb_confirm_info_bar_callback.h"
 #include "capi/nweb_extension_manager_callback.h"
 #include "capi/nweb_extension_context_menus_callback.h"
 #include "capi/web_extension_tab_items.h"
@@ -70,7 +69,34 @@ struct OpenDevToolsParam;
 #include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include "components/prefs/pref_service.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "capi/nweb_extension_distill_item.h"
+#endif // ARKWEB_READER_MODE
+
 namespace OHOS::NWeb {
+#if BUILDFLAG(IS_ARKWEB)
+class NWebPrintDocumentAdapterAdapterImpl :
+    public NWebPrintDocumentAdapterAdapter {
+public:
+    explicit NWebPrintDocumentAdapterAdapterImpl(
+        NWebPrintDocumentAdapterAdapter* ref) : ref_(ref) {}
+    ~NWebPrintDocumentAdapterAdapterImpl();
+
+    void OnStartLayoutWrite(const std::string& jobId,
+        std::shared_ptr<NWebPrintAttributesAdapter> oldAttrs,
+        std::shared_ptr<NWebPrintAttributesAdapter> newAttrs, uint32_t fd,
+        std::shared_ptr<NWebPrintWriteResultCallbackAdapter> callback) override;
+
+    void OnJobStateChanged(const std::string& jobId, uint32_t state) override;
+private:
+    raw_ptr<NWebPrintDocumentAdapterAdapter> ref_;
+};
+#endif
+
 class NWebImpl : public NWeb {
  public:
   explicit NWebImpl(uint32_t id);
@@ -98,6 +124,15 @@ class NWebImpl : public NWeb {
   void OnTouchMove(
       const std::vector<std::shared_ptr<NWebTouchPointInfo>>& touch_point_infos,
       bool fromOverlay = false) override;
+  void OnStylusTouchPress(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) override;
+  void OnStylusTouchRelease(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) override;
+  void OnStylusTouchMove(
+      const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>& stylus_touch_point_infos,
+      bool from_overlay = false) override;
   void OnTouchCancel() override;
   void OnNavigateBack() override;
   bool SendKeyEvent(int32_t keyCode, int32_t keyAction) override;
@@ -511,7 +546,7 @@ class NWebImpl : public NWeb {
                                      int policy,
                                      const std::string& mappingType,
                                      const std::string& url);
-  static void OnGlobalConfigResult(const std::string& path);
+  static void OnGlobalConfigResult(const std::string& path, PrefService* localState);
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
 #if BUILDFLAG(IS_OHOS)
@@ -519,6 +554,8 @@ class NWebImpl : public NWeb {
   void SetFocusWindowId(uint32_t focus_window_id) override;
   void SetToken(void* token) override;
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
+  std::unique_ptr<NWebPrintDocumentAdapterAdapter>
+      CreateWebPrintDocumentAdapterV2(const std::string& jobName) override;
   void SetNestedScrollMode(const NestedScrollMode& nestedScrollMode) override;
   int GetSecurityLevel() override;
   void SetPrintBackground(bool enable) override;
@@ -549,6 +586,11 @@ class NWebImpl : public NWeb {
   void PrefetchPage(
       const std::string& url,
       const std::map<std::string, std::string>& additionalHttpHeaders) override;
+  void PrefetchPageV2(
+      const std::string& url,
+      const std::map<std::string, std::string>& additionalHttpHeaders,
+      int32_t min_time_between_prefetches, 
+      bool ignore_cache_control_no_store) override;
 #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
   int PostUrl(const std::string& url,
@@ -657,8 +699,15 @@ class NWebImpl : public NWeb {
                                               const std::string& version);
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  static void UpdateReaderModeConfig(const std::string& file_path, const std::string& version);
+  static void SetJsFilePath(const std::string& js_type, const std::string& file_path, const std::string& version);
+  void Distill(char** guid, const DistillOptions& distill_options, DistillCallback callback);
+  void AbortDistill();
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
-  void SetForceEnableZoom(bool forceEnableZoom) const;
+  void SetForceEnableZoom(bool forceEnableZoom) const override;
   bool GetForceEnableZoom() const;
 #endif  // ARKWEB_EXT_FORCE_ZOOM
 
@@ -842,6 +891,11 @@ class NWebImpl : public NWeb {
   static RenderProcessMode GetRenderProcessMode();
 #endif
 
+#if BUILDFLAG(ARKWEB_SITE_ISOLATION)
+  static int32_t SetSiteIsolationMode(bool mode);
+  static bool GetSiteIsolationModeResult();
+#endif
+
 #if BUILDFLAG(ARKWEB_USERAGENT)
   static void SetAppCustomUserAgent(const std::string& userAgent);
   static void SetUserAgentForHosts(const std::string& userAgent,
@@ -879,35 +933,15 @@ class NWebImpl : public NWeb {
       int tab_id,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
       std::unique_ptr<NWebExtensionTab> tab);
-  void WebExtensionTabActivated(
-      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo);
-  void WebExtensionTabAttached(
+  void WebExtensionTabAttached(int tab_id,
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo);
-  void WebExtensionTabDetached(
+  void WebExtensionTabDetached(int tab_id,
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo);
   void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo);
   void WebExtensionTabMoved(int32_t tab_id,
                             std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo);
   void WebExtensionTabReplaced(int32_t addedTabId, int32_t removedTabId);
   void WebExtensionSetViewType(int32_t type);
-  static void OnShowConfirmInfoBar(const std::string& title,
-                                   const std::string& infoId,
-                                   const std::string& message,
-                                   int buttons,
-                                   const std::string& buttonLabelOK,
-                                   const std::string& buttonLabelCancel);
-  static void OnHideConfirmInfoBar(const std::string& title,
-                                   const std::string& infoId,
-                                   const std::string& message,
-                                   int buttons,
-                                   const std::string& buttonLabelOK,
-                                   const std::string& buttonLabelCancel);
-  static void SetOnShowConfirmInfoBarCallback(OnArkWebStaticShowConfirmInfoBarFunc func);
-  static void SetOnHideConfirmInfoBarCallback(OnArkWebStaticShowConfirmInfoBarFunc func);
-  static void CancelConfirmInfoBar(const std::string& infoId);
-  static void OnConfirmInfoBarConfigurationUpdated(
-      std::shared_ptr<NWebSystemConfiguration> configuration,
-      const std::string& language);
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -918,6 +952,13 @@ class NWebImpl : public NWeb {
   void OnDataDetectorSelectText() override;
   void OnDataDetectorCopy(const std::vector<std::string>& recordMix) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  static void PutLoggerCallback(
+      std::shared_ptr<NWebLoggerCallback> logger_callback);
+  static void RemoveLoggerCallback();
+#endif
+
   int SetUrlTrustList(const std::string& urlTrustList) override;
   int SetUrlTrustListWithErrMsg(const std::string& urlTrustList,
                                 std::string& detailErrMsg) override;
@@ -943,6 +984,13 @@ class NWebImpl : public NWeb {
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  enum class PathType {
+      kDirResource,
+      kDirFile,
+      kDirCache,
+      kDirTemp,
+  };
+
   void SetPathAllowingUniversalAccess(
       const std::vector<std::string>& pathList,
       const std::vector<std::string>& moduleName,
@@ -950,6 +998,8 @@ class NWebImpl : public NWeb {
   int PrerenderPage(const std::string& url,
                     const std::string& additional_headers);
   void CancelAllPrerendering();
+  static void SetExtraHeadersMap(const std::string& url,
+                                 const std::string& additional_headers);
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
@@ -975,8 +1025,11 @@ class NWebImpl : public NWeb {
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);
 #if BUILDFLAG(IS_ARKWEB)
   void SetSurfaceDensity(const double& density) override;
-  void EnableAppLinking(bool enable);
 #endif
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+  void EnableAppLinking(bool enable);
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   void getTotalSize(float size);
   float DumpGpuInfo() override;
@@ -1043,7 +1096,9 @@ class NWebImpl : public NWeb {
   int32_t SetBlanklessLoadingWithKey(const std::string& key, bool isStart) override;
   int64_t GetPreferenceHash();
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
-  void RemoveBlanklessFrame();
+  void RecordBlanklessFrameSize(uint32_t width, uint32_t height) override;
+  bool TriggerBlanklessForUrl(const std::string& url) override;
+  void SetVisibility(bool isVisible) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
@@ -1139,18 +1194,19 @@ class NWebImpl : public NWeb {
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void ClearBlanklessKey();
-  void CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file);
+  bool CheckNetAvailable();
+  void CallBlanklessFrameFunc(uint64_t blankless_key,
+                              int32_t lcp_time,
+                              const std::string& file,
+                              int32_t width,
+                              int32_t height);
   // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
   std::atomic<uint64_t> blankless_key_ = UINT64_MAX;
   std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
+  uint32_t cur_blankless_frame_width_ = 0;
+  uint32_t cur_blankless_frame_height_ = 0;
 #endif
-
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  static OnArkWebStaticShowConfirmInfoBarFunc on_show_confirm_info_bar_callback_;
-  static OnArkWebStaticShowConfirmInfoBarFunc on_hide_confirm_info_bar_callback_;
-  static ConfirmInfoBarMessage confirm_info_bar_message_;
-#endif // ARKWEB_ARKWEB_EXTENSIONS
 };
 }  // namespace OHOS::NWeb
 

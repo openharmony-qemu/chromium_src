@@ -116,7 +116,7 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
       delete resource_handler;
       return nullptr;
     }
-    return resource_handler->pipe_resource_handler;
+    return resource_handler->pipe_resource_handler_;
   }
 
   // Try to get handler for web tag.
@@ -157,7 +157,7 @@ CefRefPtr<CefResourceHandler> NWebSchemeHandlerFactory::Create(
     return nullptr;
   }
   LOG(DEBUG) << "scheme_handler will intercept the request.";
-  return resource_handler->pipe_resource_handler;
+  return resource_handler->pipe_resource_handler_;
 }
 
 void NWebSchemeHandlerFactory::SetSchemeHandler(

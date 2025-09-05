@@ -66,6 +66,9 @@ size_t OhosDfxDataSource::StreamDataSize()
 // LOVC_EXCL_STOP
 bool OhosDfxDataSource::ReadStreamData(Delegate* delegate)
 {
+  if (delegate == nullptr) {
+    return false;
+  }
   return delegate->ExtensionStreamDataSourceRead(
       data_.size() ? data_.data() : nullptr, data_.size());
 }

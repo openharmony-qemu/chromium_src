@@ -51,6 +51,7 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "third_party/skia/include/core/SkPixmap.h"
 #include "ui/gfx/geometry/rect.h"
 #endif
@@ -255,16 +256,10 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  void SendBlanklessSnapshotInfo(uint64_t blankless_key,
-                                 int32_t lcp_time,
-                                 int64_t pref_hash,
-                                 const std::vector<gfx::Rect> &quad_list,
+  void SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
                                  mojo::ScopedSharedBufferHandle buffer,
                                  mojom::BlanklessBitmapMetadataPtr metadata) override;
-  static void DumpBlanklessSnapshot(uint64_t blankless_key,
-                                    int32_t lcp_time,
-                                    int64_t pref_hash,
-                                    const std::vector<gfx::Rect>& quad_list,
+  static void DumpBlanklessSnapshot(mojom::BlanklessSendInfoPtr blankless_info,
                                     mojo::ScopedSharedBufferHandle buffer,
                                     mojom::BlanklessBitmapMetadataPtr metadata);
   void ClearBlanklessSnapshotInfo(uint64_t blankless_key) override;

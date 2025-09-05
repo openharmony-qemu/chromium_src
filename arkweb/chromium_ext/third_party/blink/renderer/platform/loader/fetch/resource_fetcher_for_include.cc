@@ -43,6 +43,12 @@ void PrintLoadersToCancel(HeapVector<Member<ResourceLoader>>& loaders_to_cancel,
     LOG(INFO) << "Resource fetcher StopFetchingInternal, the size of "
                  "loaders_to_cancel: "
               << loaders_to_cancel.size() << ", target: " << target;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Resource fetcher StopFetchingInternal, the size of "
+                          "loaders_to_cancel: "
+                       << loaders_to_cancel.size()
+                       << ", target: " << static_cast<int>(target);
+#endif
   }
 }
 #endif

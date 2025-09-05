@@ -362,6 +362,11 @@ component("network_service") {
     "//url",
     "//arkweb/chromium_ext/services/network:network_service",
   ]
+  if (defined(is_arkweb) && is_arkweb) {
+    deps += [
+      "//base:base_static",
+    ]
+  }
 
   if (is_linux || is_chromeos || is_ohos) {
     deps += [

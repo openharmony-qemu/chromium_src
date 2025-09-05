@@ -93,12 +93,17 @@ class PromptInfoHolder {
     data->title = strdup(title.c_str());
     data->abortButtonLabel = strdup(abortButtonLabel.c_str());
     data->acceptButtonLabel = strdup(acceptButtonLabel.c_str());
-    data->permissionsHeading = strdup(permissionsHeading.c_str());
+    data->permissionsHeading = nullptr;
 
     data->permissionCount = prompt_->GetPermissionCount();
     if (0 < data->permissionCount) {
+      data->permissionsHeading = strdup(permissionsHeading.c_str());
+
       data->permissions = (NWebExtensionPermission*)calloc(
           data->permissionCount, sizeof(NWebExtensionPermission));
+      if (!data->permissions) {
+        return;
+      }
 
       const std::string show_details_label =
           l10n_util::GetStringUTF8(IDS_EXTENSIONS_SHOW_DETAILS);

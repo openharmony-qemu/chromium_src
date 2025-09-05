@@ -33,6 +33,10 @@ if (arkweb_copy_option) {
   mojom_platform_enabled_features += [ "arkweb_copy_option" ]
 }
 
+if (arkweb_focus) {
+  mojom_platform_enabled_features += [ "arkweb_focus" ]
+}
+
 if (arkweb_same_layer) {
   mojom_platform_enabled_features += [ "arkweb_same_layer" ]
 }

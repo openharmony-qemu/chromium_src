@@ -16,6 +16,7 @@
 #define private public
 #include "base/ohos/blankless/blankless_controller.h"
 #undef private
+#include "base/time/time.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -26,7 +27,7 @@ class BlanklessControllerTest : public ::testing::Test
 protected:
   void SetUp() override
   {
-    controller.ResetForTest();
+    controller.Clear(0);
   }
   void TearDown() override {}
 
@@ -36,48 +37,32 @@ protected:
   uint64_t blankless_key2 = 1025;
   uint64_t blankless_key3 = 1026;
 
-  int32_t lcp = 300;
   int32_t nweb_id1 = 1;
-  int32_t nweb_id2 = 2;
 };
 
 TEST_F(BlanklessControllerTest, FrameRemoveCallback)
 {
-  EXPECT_EQ(controller.m_frame_remove_callback_map_.size(), 0);
+  int count = 0;
+  controller.RegisterFrameRemoveCallback(nweb_id1, blankless_key1, [&count](){count++;});
+  controller.FireFrameRemoveCallback(nweb_id1, blankless_key1);
+  EXPECT_EQ(count, 1);
 
-  controller.RegisterFrameRemoveCallback(blankless_key1, [](){});
-  EXPECT_EQ(controller.m_frame_remove_callback_map_.size(), 1);
-
-  controller.RegisterFrameRemoveCallback(blankless_key2, [](){});
-  EXPECT_EQ(controller.m_frame_remove_callback_map_.size(), 2);
-
-  controller.FireFrameRemoveCallback(blankless_key2);
-  EXPECT_EQ(controller.m_frame_remove_callback_map_.size(), 1);
-
-  controller.FireFrameRemoveCallback(blankless_key2);
-  EXPECT_EQ(controller.m_frame_remove_callback_map_.size(), 1);
-
-  controller.FireFrameRemoveCallback(blankless_key1);
-  EXPECT_EQ(controller.m_frame_remove_callback_map_.size(), 0);
+  controller.FireFrameRemoveCallback(nweb_id1, blankless_key1);
+  EXPECT_EQ(count, 1);
 }
 
 TEST_F(BlanklessControllerTest, FrameInsertCallback)
 {
-  EXPECT_EQ(controller.m_frame_insert_callback_map_.size(), 0);
+  int32_t lcp = 300;
+  int count = 0;
+  controller.RegisterFrameInsertCallback(nweb_id1, blankless_key1, [&count](){count++;}, lcp);
+  EXPECT_EQ(controller.FireFrameInsertCallback(nweb_id1, blankless_key1), lcp);
+  EXPECT_EQ(count, 1);
 
-  controller.RegisterFrameInsertCallback(blankless_key1, [](){}, lcp);
-  EXPECT_EQ(controller.m_frame_insert_callback_map_.size(), 1);
-
-  controller.RegisterFrameInsertCallback(blankless_key2, [](){}, lcp);
-  EXPECT_EQ(controller.m_frame_insert_callback_map_.size(), 2);
-
-  EXPECT_EQ(controller.FireFrameInsertCallback(blankless_key1), lcp);
-  EXPECT_EQ(controller.m_frame_insert_callback_map_.size(), 1);
-
-  controller.CancelFrameInsertCallback(blankless_key2);
-  EXPECT_EQ(controller.m_frame_insert_callback_map_.size(), 0);
-
-  EXPECT_EQ(controller.FireFrameInsertCallback(blankless_key2), INT32_MAX);
+  controller.RegisterFrameInsertCallback(nweb_id1, blankless_key1, [&count](){count++;}, lcp);
+  controller.CancelFrameInsertCallback(nweb_id1, blankless_key1);
+  EXPECT_EQ(controller.FireFrameInsertCallback(nweb_id1, blankless_key1), 0);
+  EXPECT_EQ(count, 1);
 }
 
 TEST_F(BlanklessControllerTest, Status_Allowed_NotAllowed)
@@ -100,7 +85,6 @@ TEST_F(BlanklessControllerTest, Status_Allowed_RecordKey)
   BlanklessController::StatusInfo info = {
     .status_code = BlanklessController::StatusCode::DUMPED,
     .blankless_key = blankless_key1,
-    .blankless_key_dumped_history = {blankless_key1},
   };
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
 }
@@ -180,183 +164,80 @@ TEST_F(BlanklessControllerTest, Status_NotAllowed_MatchKey)
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
 }
 
-TEST_F(BlanklessControllerTest, Status_Dumped_ResetStatus_Allowed)
+TEST_F(BlanklessControllerTest, Status_Dumped_ResetStatus)
 {
-  controller.ResetStatus(nweb_id1, true, false);
   controller.RecordKey(nweb_id1, blankless_key1);
   auto status = controller.ResetStatus(nweb_id1, true, false);
   EXPECT_EQ(status, BlanklessController::StatusCode::ALLOWED);
-  BlanklessController::StatusInfo info = {
+  BlanklessController::StatusInfo info1 = {
     .status_code = BlanklessController::StatusCode::ALLOWED,
-    .blankless_key_dumped_history = {blankless_key1},
+    .blankless_key = blankless_key1,
   };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info1));
+
+  status = controller.ResetStatus(nweb_id1, false, false);
+  EXPECT_EQ(status, BlanklessController::StatusCode::NOT_ALLOWED);
+  BlanklessController::StatusInfo info2 = {
+    .status_code = BlanklessController::StatusCode::NOT_ALLOWED,
+    .allowed = false,
+    .blankless_key = blankless_key1,
+  };
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info2));
 }
 
-TEST_F(BlanklessControllerTest, Status_Dumped_RecordKey_DiffKey)
+TEST_F(BlanklessControllerTest, Status_Dumped_RecordKey)
 {
-  controller.ResetStatus(nweb_id1, true, false);
   controller.RecordKey(nweb_id1, blankless_key1);
   auto status = controller.RecordKey(nweb_id1, blankless_key2);
   EXPECT_EQ(status, BlanklessController::StatusCode::DUMPED);
-  BlanklessController::StatusInfo info = {
+  BlanklessController::StatusInfo info1 = {
     .status_code = BlanklessController::StatusCode::DUMPED,
     .blankless_key = blankless_key2,
-    .blankless_key_dumped_history = {blankless_key1, blankless_key2},
   };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info1));
 
-TEST_F(BlanklessControllerTest, Status_Dumped_RecordKey_SameKey)
-{
-  controller.ResetStatus(nweb_id1, true, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  auto status = controller.RecordKey(nweb_id1, blankless_key1);
-  EXPECT_EQ(status, BlanklessController::StatusCode::CALL_MULTIPLED_TIMES);
-  BlanklessController::StatusInfo info = {
-    .status_code = BlanklessController::StatusCode::CALL_MULTIPLED_TIMES,
+  status = controller.RecordKey(nweb_id1, blankless_key1);
+  EXPECT_EQ(status, BlanklessController::StatusCode::DUMPED);
+  BlanklessController::StatusInfo info2 = {
+    .status_code = BlanklessController::StatusCode::DUMPED,
     .blankless_key = blankless_key1,
-    .blankless_key_dumped_history = {blankless_key1},
   };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info2));
 }
 
-TEST_F(BlanklessControllerTest, Status_Dumped_MatchKey_SameKey)
+TEST_F(BlanklessControllerTest, Status_Dumped_MatchKey)
 {
-  controller.ResetStatus(nweb_id1, true, false);
   controller.RecordKey(nweb_id1, blankless_key1);
-  auto status = controller.MatchKey(nweb_id1, blankless_key1);
+  auto status = controller.MatchKey(nweb_id1, blankless_key2);
+  EXPECT_EQ(status, BlanklessController::StatusCode::KEY_NOT_MATCH);
+  BlanklessController::StatusInfo info1 = {
+    .status_code = BlanklessController::StatusCode::KEY_NOT_MATCH,
+    .blankless_key = blankless_key1,
+  };
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info1));
+
+  status = controller.MatchKey(nweb_id1, blankless_key1);
   EXPECT_EQ(status, BlanklessController::StatusCode::INSERTED);
-  BlanklessController::StatusInfo info = {
+  BlanklessController::StatusInfo info2 = {
     .status_code = BlanklessController::StatusCode::INSERTED,
-    .blankless_key_dumped_history = {blankless_key1},
-    .blankless_key_inserted_history = {blankless_key1},
   };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info2));
 }
 
-TEST_F(BlanklessControllerTest, Status_Dumped_MatchKey_DiffKey)
+TEST_F(BlanklessControllerTest, Status_Inserted_ResetStatu)
 {
-  controller.ResetStatus(nweb_id1, true, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  auto status = controller.MatchKey(nweb_id1, blankless_key2);
-  EXPECT_EQ(status, BlanklessController::StatusCode::KEY_NOT_MATCH);
-  BlanklessController::StatusInfo info = {
-    .status_code = BlanklessController::StatusCode::KEY_NOT_MATCH,
-    .blankless_key = blankless_key1,
-    .blankless_key_dumped_history = {blankless_key1},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
-
-TEST_F(BlanklessControllerTest, Status_CallMultipledTimes_ResetStatus_Allowed)
-{
-  controller.ResetStatus(nweb_id1, true, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  auto status = controller.ResetStatus(nweb_id1, true, false);
-  EXPECT_EQ(status, BlanklessController::StatusCode::ALLOWED);
-  BlanklessController::StatusInfo info = {
-    .status_code = BlanklessController::StatusCode::ALLOWED,
-    .blankless_key_dumped_history = {blankless_key1},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
-
-TEST_F(BlanklessControllerTest, Status_CallMultipledTimes_RecordKey_DiffKey)
-{
-  controller.ResetStatus(nweb_id1, true, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  auto status = controller.RecordKey(nweb_id1, blankless_key2);
-  EXPECT_EQ(status, BlanklessController::StatusCode::DUMPED);
-  BlanklessController::StatusInfo info = {
-    .status_code = BlanklessController::StatusCode::DUMPED,
-    .blankless_key = blankless_key2,
-    .blankless_key_dumped_history = {blankless_key1, blankless_key2},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
-
-TEST_F(BlanklessControllerTest, Status_CallMultipledTimes_RecordKey_SameKey)
-{
-  controller.ResetStatus(nweb_id1, true, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  auto status = controller.RecordKey(nweb_id1, blankless_key1);
-  EXPECT_EQ(status, BlanklessController::StatusCode::CALL_MULTIPLED_TIMES);
-  BlanklessController::StatusInfo info = {
-    .status_code = BlanklessController::StatusCode::CALL_MULTIPLED_TIMES,
-    .blankless_key = blankless_key1,
-    .blankless_key_dumped_history = {blankless_key1},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
-
-TEST_F(BlanklessControllerTest, Status_CallMultipledTimes_MatchKey_SameKey)
-{
-  controller.ResetStatus(nweb_id1, true, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  auto status = controller.MatchKey(nweb_id1, blankless_key1);
-  EXPECT_EQ(status, BlanklessController::StatusCode::INSERTED);
-  BlanklessController::StatusInfo info = {
-    .status_code = BlanklessController::StatusCode::INSERTED,
-    .blankless_key_dumped_history = {blankless_key1},
-    .blankless_key_inserted_history = {blankless_key1},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
-
-TEST_F(BlanklessControllerTest, Status_CallMultipledTimes_MatchKey_DiffKey)
-{
-  controller.ResetStatus(nweb_id1, true, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  auto status = controller.MatchKey(nweb_id1, blankless_key2);
-  EXPECT_EQ(status, BlanklessController::StatusCode::KEY_NOT_MATCH);
-  BlanklessController::StatusInfo info = {
-    .status_code = BlanklessController::StatusCode::KEY_NOT_MATCH,
-    .blankless_key = blankless_key1,
-    .blankless_key_dumped_history = {blankless_key1},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
-
-TEST_F(BlanklessControllerTest, Status_CallMultipledTimes_MatchKey_Twice)
-{
-  controller.ResetStatus(nweb_id1, true, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.MatchKey(nweb_id1, blankless_key1);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  auto status = controller.MatchKey(nweb_id1, blankless_key1);
-  EXPECT_EQ(status, BlanklessController::StatusCode::CALL_MULTIPLED_TIMES);
-  BlanklessController::StatusInfo info = {
-    .status_code = BlanklessController::StatusCode::CALL_MULTIPLED_TIMES,
-    .blankless_key_dumped_history = {blankless_key1},
-    .blankless_key_inserted_history = {blankless_key1},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
-
-TEST_F(BlanklessControllerTest, Status_Inserted_ResetStatus_Allowed)
-{
-  controller.ResetStatus(nweb_id1, true, false);
   controller.RecordKey(nweb_id1, blankless_key1);
   controller.MatchKey(nweb_id1, blankless_key1);
   auto status = controller.ResetStatus(nweb_id1, true, false);
   EXPECT_EQ(status, BlanklessController::StatusCode::ALLOWED);
   BlanklessController::StatusInfo info = {
     .status_code = BlanklessController::StatusCode::ALLOWED,
-    .blankless_key_dumped_history = {blankless_key1},
-    .blankless_key_inserted_history = {blankless_key1},
   };
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
 }
 
-TEST_F(BlanklessControllerTest, Status_Inserted_RecordKey_DiffKey)
+TEST_F(BlanklessControllerTest, Status_Inserted_RecordKey)
 {
-  controller.ResetStatus(nweb_id1, true, false);
   controller.RecordKey(nweb_id1, blankless_key1);
   controller.MatchKey(nweb_id1, blankless_key1);
   auto status = controller.RecordKey(nweb_id1, blankless_key2);
@@ -364,75 +245,37 @@ TEST_F(BlanklessControllerTest, Status_Inserted_RecordKey_DiffKey)
   BlanklessController::StatusInfo info = {
     .status_code = BlanklessController::StatusCode::DUMPED,
     .blankless_key = blankless_key2,
-    .blankless_key_dumped_history = {blankless_key1, blankless_key2},
-    .blankless_key_inserted_history = {blankless_key1},
   };
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
 }
 
-TEST_F(BlanklessControllerTest, Status_Inserted_RecordKey_SameKey)
+TEST_F(BlanklessControllerTest, Status_Inserted_MatchKey)
 {
-  controller.ResetStatus(nweb_id1, true, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.MatchKey(nweb_id1, blankless_key1);
-  auto status = controller.RecordKey(nweb_id1, blankless_key1);
-  EXPECT_EQ(status, BlanklessController::StatusCode::CALL_MULTIPLED_TIMES);
-  BlanklessController::StatusInfo info = {
-    .status_code = BlanklessController::StatusCode::CALL_MULTIPLED_TIMES,
-    .blankless_key = blankless_key1,
-    .blankless_key_dumped_history = {blankless_key1},
-    .blankless_key_inserted_history = {blankless_key1},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
-
-TEST_F(BlanklessControllerTest, Status_Inserted_MatchKey_DiffKey)
-{
-  controller.ResetStatus(nweb_id1, true, false);
   controller.RecordKey(nweb_id1, blankless_key1);
   controller.MatchKey(nweb_id1, blankless_key1);
   auto status = controller.MatchKey(nweb_id1, blankless_key2);
   EXPECT_EQ(status, BlanklessController::StatusCode::KEY_NOT_MATCH);
   BlanklessController::StatusInfo info = {
     .status_code = BlanklessController::StatusCode::KEY_NOT_MATCH,
-    .blankless_key_dumped_history = {blankless_key1},
-    .blankless_key_inserted_history = {blankless_key1},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
-
-TEST_F(BlanklessControllerTest, Status_Inserted_MatchKey_SameKey)
-{
-  controller.ResetStatus(nweb_id1, true, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.MatchKey(nweb_id1, blankless_key1);
-  auto status = controller.MatchKey(nweb_id1, blankless_key1);
-  EXPECT_EQ(status, BlanklessController::StatusCode::KEY_NOT_MATCH);
-  BlanklessController::StatusInfo info = {
-    .status_code = BlanklessController::StatusCode::KEY_NOT_MATCH,
-    .blankless_key_dumped_history = {blankless_key1},
-    .blankless_key_inserted_history = {blankless_key1},
   };
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
 }
 
 TEST_F(BlanklessControllerTest, Status_KeyNotMatch_ResetStatus_Allowed)
 {
-  controller.ResetStatus(nweb_id1, true, false);
   controller.RecordKey(nweb_id1, blankless_key1);
   controller.MatchKey(nweb_id1, blankless_key2);
   auto status = controller.ResetStatus(nweb_id1, true, false);
   EXPECT_EQ(status, BlanklessController::StatusCode::ALLOWED);
   BlanklessController::StatusInfo info = {
     .status_code = BlanklessController::StatusCode::ALLOWED,
-    .blankless_key_dumped_history = {blankless_key1},
+    .blankless_key = blankless_key1,
   };
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
 }
 
-TEST_F(BlanklessControllerTest, Status_KeyNotMatch_RecordKey_DiffKey)
+TEST_F(BlanklessControllerTest, Status_KeyNotMatch_RecordKey)
 {
-  controller.ResetStatus(nweb_id1, true, false);
   controller.RecordKey(nweb_id1, blankless_key1);
   controller.MatchKey(nweb_id1, blankless_key2);
   auto status = controller.RecordKey(nweb_id1, blankless_key2);
@@ -440,54 +283,28 @@ TEST_F(BlanklessControllerTest, Status_KeyNotMatch_RecordKey_DiffKey)
   BlanklessController::StatusInfo info = {
     .status_code = BlanklessController::StatusCode::DUMPED,
     .blankless_key = blankless_key2,
-    .blankless_key_dumped_history = {blankless_key1, blankless_key2},
   };
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
 }
 
-TEST_F(BlanklessControllerTest, Status_KeyNotMatch_RecordKey_SameKey)
+TEST_F(BlanklessControllerTest, Status_KeyNotMatch_MatchKey)
 {
-  controller.ResetStatus(nweb_id1, true, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.MatchKey(nweb_id1, blankless_key2);
-  auto status = controller.RecordKey(nweb_id1, blankless_key1);
-  EXPECT_EQ(status, BlanklessController::StatusCode::CALL_MULTIPLED_TIMES);
-  BlanklessController::StatusInfo info = {
-    .status_code = BlanklessController::StatusCode::CALL_MULTIPLED_TIMES,
-    .blankless_key = blankless_key1,
-    .blankless_key_dumped_history = {blankless_key1},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
-
-TEST_F(BlanklessControllerTest, Status_KeyNotMatch_MatchKey_DiffKey)
-{
-  controller.ResetStatus(nweb_id1, true, false);
   controller.RecordKey(nweb_id1, blankless_key1);
   controller.MatchKey(nweb_id1, blankless_key2);
   auto status = controller.MatchKey(nweb_id1, blankless_key3);
   EXPECT_EQ(status, BlanklessController::StatusCode::KEY_NOT_MATCH);
-  BlanklessController::StatusInfo info = {
+  BlanklessController::StatusInfo info1 = {
     .status_code = BlanklessController::StatusCode::KEY_NOT_MATCH,
     .blankless_key = blankless_key1,
-    .blankless_key_dumped_history = {blankless_key1},
   };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info1));
 
-TEST_F(BlanklessControllerTest, Status_KeyNotMatch_MatchKey_SameKey)
-{
-  controller.ResetStatus(nweb_id1, true, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.MatchKey(nweb_id1, blankless_key2);
-  auto status = controller.MatchKey(nweb_id1, blankless_key1);
+  status = controller.MatchKey(nweb_id1, blankless_key1);
   EXPECT_EQ(status, BlanklessController::StatusCode::INSERTED);
-  BlanklessController::StatusInfo info = {
+  BlanklessController::StatusInfo info2 = {
     .status_code = BlanklessController::StatusCode::INSERTED,
-    .blankless_key_dumped_history = {blankless_key1},
-    .blankless_key_inserted_history = {blankless_key1},
   };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info2));
 }
 
 TEST_F(BlanklessControllerTest, Status_NotAllowed_KeyNotMatch_RecordKey)
@@ -504,25 +321,8 @@ TEST_F(BlanklessControllerTest, Status_NotAllowed_KeyNotMatch_RecordKey)
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
 }
 
-TEST_F(BlanklessControllerTest, Status_NotAllowed_Allowed_RecordKey)
-{
-  controller.ResetStatus(nweb_id1, false, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.MatchKey(nweb_id1, blankless_key1);
-  controller.ResetStatus(nweb_id1, true, false);
-  auto status = controller.RecordKey(nweb_id1, blankless_key1);
-  EXPECT_EQ(status, BlanklessController::StatusCode::DUMPED);
-  BlanklessController::StatusInfo info = {
-    .status_code = BlanklessController::StatusCode::DUMPED,
-    .blankless_key = blankless_key1,
-    .blankless_key_dumped_history = {blankless_key1},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
-
 TEST_F(BlanklessControllerTest, Status_NotAllowed_Allowed_Success)
 {
-  controller.ResetStatus(nweb_id1, false, false);
   controller.RecordKey(nweb_id1, blankless_key1);
   controller.MatchKey(nweb_id1, blankless_key1);
   controller.ResetStatus(nweb_id1, true, false);
@@ -531,7 +331,6 @@ TEST_F(BlanklessControllerTest, Status_NotAllowed_Allowed_Success)
   BlanklessController::StatusInfo info1 = {
     .status_code = BlanklessController::StatusCode::DUMPED,
     .blankless_key = blankless_key1,
-    .blankless_key_dumped_history = {blankless_key1},
   };
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info1));
 
@@ -539,62 +338,35 @@ TEST_F(BlanklessControllerTest, Status_NotAllowed_Allowed_Success)
   EXPECT_EQ(status, BlanklessController::StatusCode::INSERTED);
   BlanklessController::StatusInfo info2 = {
     .status_code = BlanklessController::StatusCode::INSERTED,
-    .blankless_key_dumped_history = {blankless_key1},
-    .blankless_key_inserted_history = {blankless_key1},
   };
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info2));
 }
 
 TEST_F(BlanklessControllerTest, Status_Allowed_RecordKey_MatchKey_Loop)
 {
-  controller.ResetStatus(nweb_id1, true, false);
   BlanklessController::StatusInfo info = {
     .status_code = BlanklessController::StatusCode::ALLOWED,
   };
   std::vector blankless_keys = {1, 2, 3, 4, 5};
-  for (int i = 0; i < blankless_keys.size(); ++i) {
-    auto status = controller.RecordKey(nweb_id1, blankless_keys[i]);
-    EXPECT_EQ(status, BlanklessController::StatusCode::DUMPED);
-    info.status_code = BlanklessController::StatusCode::DUMPED;
-    info.blankless_key = blankless_keys[i];
-    info.blankless_key_dumped_history.insert(blankless_keys[i]);
-    EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
+  for (int loop = 0; loop < 2; ++loop) {
+    for (int i = 0; i < blankless_keys.size(); ++i) {
+      auto status = controller.RecordKey(nweb_id1, blankless_keys[i]);
+      EXPECT_EQ(status, BlanklessController::StatusCode::DUMPED);
+      info.status_code = BlanklessController::StatusCode::DUMPED;
+      info.blankless_key = blankless_keys[i];
+      EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
+    }
   }
-  for (int i = 0; i < blankless_keys.size(); ++i) {
-    auto status = controller.RecordKey(nweb_id1, blankless_keys[i]);
-    EXPECT_EQ(status, BlanklessController::StatusCode::CALL_MULTIPLED_TIMES);
-    info.status_code = BlanklessController::StatusCode::CALL_MULTIPLED_TIMES;
-    info.blankless_key = blankless_keys[i];
-    EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
+  for (int loop = 0; loop < 2; ++loop) {
+    for (int i = 0; i < blankless_keys.size(); ++i) {
+      controller.RecordKey(nweb_id1, blankless_keys[i]);
+      auto status = controller.MatchKey(nweb_id1, blankless_keys[i]);
+      EXPECT_EQ(status, BlanklessController::StatusCode::INSERTED);
+      info.status_code = BlanklessController::StatusCode::INSERTED;
+      info.blankless_key = BlanklessController::INVALID_BLANKLESS_KEY;
+      EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
+    }
   }
-  for (int i = 0; i < blankless_keys.size(); ++i) {
-    controller.RecordKey(nweb_id1, blankless_keys[i]);
-    auto status = controller.MatchKey(nweb_id1, blankless_keys[i]);
-    EXPECT_EQ(status, BlanklessController::StatusCode::INSERTED);
-    info.blankless_key = BlanklessController::INVALID_BLANKLESS_KEY;
-    info.status_code = BlanklessController::StatusCode::INSERTED;
-    info.blankless_key_inserted_history.insert(blankless_keys[i]);
-    EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-  }
-  for (int i = 0; i < blankless_keys.size(); ++i) {
-    controller.RecordKey(nweb_id1, blankless_keys[i]);
-    info.blankless_key = blankless_keys[i];
-    auto status = controller.MatchKey(nweb_id1, blankless_keys[i]);
-    EXPECT_EQ(status, BlanklessController::StatusCode::CALL_MULTIPLED_TIMES);
-    info.status_code = BlanklessController::StatusCode::CALL_MULTIPLED_TIMES;
-    info.blankless_key = BlanklessController::INVALID_BLANKLESS_KEY;
-    EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-  }
-}
-
-TEST_F(BlanklessControllerTest, Status_RemoveStatus)
-{
-  controller.ResetStatus(nweb_id1, true, false);
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.MatchKey(nweb_id1, blankless_key1);
-  controller.RemoveStatus(nweb_id1);
-  BlanklessController::StatusInfo info = {};
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info, false));
 }
 
 TEST_F(BlanklessControllerTest, Status_RecordKey_MatchKey_SameKey)
@@ -604,8 +376,6 @@ TEST_F(BlanklessControllerTest, Status_RecordKey_MatchKey_SameKey)
   EXPECT_EQ(status, BlanklessController::StatusCode::INSERTED);
   BlanklessController::StatusInfo info = {
     .status_code = BlanklessController::StatusCode::INSERTED,
-    .blankless_key_dumped_history = {blankless_key1},
-    .blankless_key_inserted_history = {blankless_key1},
   };
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
 }
@@ -618,48 +388,8 @@ TEST_F(BlanklessControllerTest, Status_RecordKey_MatchKey_DiffKey)
   BlanklessController::StatusInfo info = {
     .status_code = BlanklessController::StatusCode::KEY_NOT_MATCH,
     .blankless_key = blankless_key1,
-    .blankless_key_dumped_history = {blankless_key1},
   };
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
-
-TEST_F(BlanklessControllerTest, Status_RecordKey_Twice)
-{
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.MatchKey(nweb_id1, blankless_key1);
-  auto status = controller.RecordKey(nweb_id1, blankless_key1);
-  EXPECT_EQ(status, BlanklessController::StatusCode::CALL_MULTIPLED_TIMES);
-  BlanklessController::StatusInfo info = {
-    .status_code = BlanklessController::StatusCode::CALL_MULTIPLED_TIMES,
-    .blankless_key = blankless_key1,
-    .blankless_key_dumped_history = {blankless_key1},
-    .blankless_key_inserted_history = {blankless_key1},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
-}
-
-TEST_F(BlanklessControllerTest, Status_MatchKey_Twice)
-{
-  controller.RecordKey(nweb_id1, blankless_key1);
-  controller.MatchKey(nweb_id1, blankless_key1);
-  auto status = controller.MatchKey(nweb_id1, blankless_key1);
-  EXPECT_EQ(status, BlanklessController::StatusCode::KEY_NOT_MATCH);
-  BlanklessController::StatusInfo info1 = {
-    .status_code = BlanklessController::StatusCode::KEY_NOT_MATCH,
-    .blankless_key_dumped_history = {blankless_key1},
-    .blankless_key_inserted_history = {blankless_key1},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info1));
-
-  controller.RecordKey(nweb_id1, blankless_key1);
-  status = controller.MatchKey(nweb_id1, blankless_key1);
-  EXPECT_EQ(status, BlanklessController::StatusCode::CALL_MULTIPLED_TIMES);
-  BlanklessController::StatusInfo info2 = {
-    .status_code = BlanklessController::StatusCode::CALL_MULTIPLED_TIMES,
-    .blankless_key_dumped_history = {blankless_key1},
-    .blankless_key_inserted_history = {blankless_key1},
-  };
-  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info2));
 }
 
 TEST_F(BlanklessControllerTest, Status_MatchKey)
@@ -668,6 +398,72 @@ TEST_F(BlanklessControllerTest, Status_MatchKey)
   EXPECT_EQ(status, BlanklessController::StatusCode::KEY_NOT_MATCH);
   BlanklessController::StatusInfo info = {};
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info, false));
+}
+
+TEST_F(BlanklessControllerTest, Status_RecordKey_NotAllowed_MatchKey)
+{
+  controller.RecordKey(nweb_id1, blankless_key1);
+  controller.ResetStatus(nweb_id1, false, false);
+  auto status = controller.MatchKey(nweb_id1, blankless_key1);
+  EXPECT_EQ(status, BlanklessController::StatusCode::NOT_ALLOWED);
+  BlanklessController::StatusInfo info1 = {
+    .status_code = BlanklessController::StatusCode::NOT_ALLOWED,
+    .allowed = false,
+    .blankless_key = blankless_key1,
+  };
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info1));
+
+  controller.ResetStatus(nweb_id1, true, false);
+  status = controller.MatchKey(nweb_id1, blankless_key1);
+  EXPECT_EQ(status, BlanklessController::StatusCode::INSERTED);
+  BlanklessController::StatusInfo info2 = {
+    .status_code = BlanklessController::StatusCode::INSERTED,
+  };
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info2));
+}
+
+TEST_F(BlanklessControllerTest, Status_RecordKey_Allowed_MatchKey)
+{
+  controller.RecordKey(nweb_id1, blankless_key1);
+  controller.ResetStatus(nweb_id1, true, false);
+  auto status = controller.MatchKey(nweb_id1, blankless_key1);
+  EXPECT_EQ(status, BlanklessController::StatusCode::INSERTED);
+  BlanklessController::StatusInfo info1 = {
+    .status_code = BlanklessController::StatusCode::INSERTED,
+  };
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info1));
+
+  controller.ResetStatus(nweb_id1, true, false);
+  status = controller.MatchKey(nweb_id1, blankless_key1);
+  EXPECT_EQ(status, BlanklessController::StatusCode::KEY_NOT_MATCH);
+  BlanklessController::StatusInfo info2 = {
+    .status_code = BlanklessController::StatusCode::KEY_NOT_MATCH,
+  };
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info2));
+}
+
+TEST_F(BlanklessControllerTest, Check_Record_Window_Id)
+{
+  uint32_t window_id = 1;
+  controller.RecordWindowId(nweb_id1, window_id);
+  auto window_id1 = controller.GetWindowIdByNWebId(nweb_id1);
+  EXPECT_EQ(window_id1, window_id);
+
+  uint32_t nweb_id2 = 2;
+  auto window_id2 = controller.GetWindowIdByNWebId(nweb_id2);
+  EXPECT_EQ(window_id2, 0);
+}
+
+TEST_F(BlanklessControllerTest, Check_Record_Dump_Time)
+{
+  auto dump_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
+  controller.RecordDumpTime(nweb_id1, blankless_key1, dump_time);
+  auto record_time1 = controller.GetDumpTime(nweb_id1, blankless_key1);
+  EXPECT_EQ(record_time1, dump_time);
+
+  uint32_t nweb_id2 = 2;
+  auto record_time2 = controller.GetDumpTime(nweb_id2, blankless_key1);
+  EXPECT_EQ(record_time2, BlanklessController::INVALID_TIMESTAMP);
 }
 }  // namespace ohos
 }  // namespace base

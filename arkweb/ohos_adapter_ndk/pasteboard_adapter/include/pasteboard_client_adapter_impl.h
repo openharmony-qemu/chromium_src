@@ -16,6 +16,7 @@
 #define PASTEBOARD_CLIENT_ADAPTER_IMPL_H
 
 #include "pasteboard_client_adapter.h"
+#include "arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper.h"
 
 #include <mutex>
 #include <database/udmf/udmf.h>
@@ -24,8 +25,8 @@
 namespace OHOS::NWeb {
 class PasteDataRecordAdapterImpl : public PasteDataRecordAdapter {
 public:
-    explicit PasteDataRecordAdapterImpl(
-        OH_UdmfRecord* record);
+    PasteDataRecordAdapterImpl(OH_UdmfRecord* record,
+                               bool need_destory_record);
     PasteDataRecordAdapterImpl(const std::string& mimeType,
                                std::shared_ptr<std::string> htmlText,
                                std::shared_ptr<std::string> plainText);
@@ -57,7 +58,14 @@ private:
     std::vector<std::string> GetMimeTypes();
     void DestoryOptions(int createResult, OH_Pixelmap_InitializationOptions *options, std::string type);
     void DestoryPixelmapNative(OH_PixelmapNative *pixelmapNative);
+    void ReleaseMemory(OH_UdsPixelMap* udsPixelMap = nullptr,
+                       OH_Pixelmap_InitializationOptions* options = nullptr,
+                       OH_PixelmapNative* pixelmapNative = nullptr,
+                       OH_Pixelmap_ImageInfo* imageInfo = nullptr,
+                       const std::string& optionType = "",
+                       int result = 0);
     std::string HtmlToPlainText(const std::string& html);
+    bool need_destory_record_ = true;
 };
 
 class PasteDataAdapterImpl : public PasteDataAdapter {
@@ -101,6 +109,7 @@ public:
     uint32_t GetTokenId() override;
     int32_t AddPasteboardChangedObserver(std::shared_ptr<PasteboardObserverAdapter> callback) override;
     void RemovePasteboardChangedObserver(int32_t callbackId) override;
+    static CallbackSharedWrapper<PasteBoardCallback> callbackWrapper_;
 private:
     uint32_t tokenId_ = 0;
     bool isLocalPaste_ = false;
@@ -109,7 +118,7 @@ private:
     std::string webviewPasteDataTag_ = "WebviewPasteDataTag";
     Udmf_ShareOption TransitionCopyOption(CopyOptionMode copyOption);
     OH_Pasteboard* pasteboard_ = nullptr;
-    std::shared_ptr<PasteBoardCallback> pasteCallback_;
+    size_t callbackIndex_ = 0;
 };
 } // namespace OHOS::NWeb
 

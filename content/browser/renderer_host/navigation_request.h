@@ -117,6 +117,10 @@ class CONTENT_EXPORT NavigationRequest
  public:
  friend class NavigationRequestUtils;
  std::unique_ptr<NavigationRequestUtils> nav_request_utils_;
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+ // True if ignoring Cache-Control: no-store
+ bool load_ignore_cache_params = false;
+#endif
   // Keeps track of the various stages of a NavigationRequest.
   // To see what state transitions are allowed, see |SetState|.
   enum NavigationState {
@@ -1439,6 +1443,9 @@ class CONTENT_EXPORT NavigationRequest
   // Called from BeginNavigation(), OnPrerenderingActivationChecksComplete(),
   // or OnFencedFrameURLMappingComplete().
   void BeginNavigationImpl();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void StartNavigationExt();
+#endif
 
   // Checks if the response requests an isolated origin via the
   // Origin-Agent-Cluster header, and if so opts in the origin to be isolated.

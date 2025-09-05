@@ -28,41 +28,19 @@ void ArkwebCopyOutputResultUtils::SetImplOnGpu(SkiaOutputSurfaceImplOnGpu* impl_
 }
 
 SkiaOutputSurfaceImplOnGpu* ArkwebCopyOutputResultUtils::ImplOnGpu() const {	
-  return impl_on_gpu_;	
+  return impl_on_gpu_;
 }
 
-void ArkwebCopyOutputResultUtils::SetBlanklessKey(uint64_t blankless_key) {
-  blankless_key_ = blankless_key;
+void ArkwebCopyOutputResultUtils::SetBlanklessInfo(const base::ohos::BlanklessInfo& info) {
+  info_ = info;
 }
 
-uint64_t ArkwebCopyOutputResultUtils::GetBlanklessKey() const {
-  return blankless_key_;
+const base::ohos::BlanklessInfo& ArkwebCopyOutputResultUtils::GetBlanklessInfo() const {
+  return info_;
 }
 
-void ArkwebCopyOutputResultUtils::SetLcpTime(int32_t lcp_time) {
-  lcp_time_ = lcp_time;
-}
-
-int32_t ArkwebCopyOutputResultUtils::GetLcpTime() const {
-  return lcp_time_;
-}
-
-void ArkwebCopyOutputResultUtils::SetPreferenceHash(int64_t pref_hash)
-{
-  pref_hash_ = pref_hash;
-}
-
-int64_t ArkwebCopyOutputResultUtils::GetPreferenceHash() const
-{
-  return pref_hash_;
-}
-
-void ArkwebCopyOutputResultUtils::SetQuadList(const std::vector<gfx::Rect>& quad_list) {
-  quad_list_ = quad_list;
-}
-
-const std::vector<gfx::Rect>& ArkwebCopyOutputResultUtils::GetQuadList() const {
-  return quad_list_;
+bool ArkwebCopyOutputResultUtils::IsBlanklessInfoValid() const {
+  return info_.blankless_key != base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
 }
 #endif
 }  // namespace viz

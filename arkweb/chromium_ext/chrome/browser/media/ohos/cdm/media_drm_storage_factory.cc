@@ -10,8 +10,6 @@
 #include "base/functional/callback.h"
 #include "base/logging.h"
 #include "base/metrics/histogram_functions.h"
-#include "chrome/browser/media/ohos/cdm/media_drm_origin_id_manager.h"
-#include "chrome/browser/media/ohos/cdm/media_drm_origin_id_manager_factory.h"
 #include "chrome/browser/profiles/profile.h"
 #include "components/cdm/browser/media_drm_storage_impl.h"
 #include "components/prefs/pref_service.h"
@@ -25,7 +23,6 @@
 namespace {
 
 using MediaDrmOriginId = media::MediaDrmStorage::MediaDrmOriginId;
-using GetOriginIdStatus = MediaDrmOriginIdManager::GetOriginIdStatus;
 using OriginIdReadyCB =
     base::OnceCallback<void(bool success, const MediaDrmOriginId& origin_id)>;
 
@@ -52,10 +49,8 @@ void CreateOriginId(OriginIdReadyCB callback) {
 
 void AllowEmptyOriginId(content::RenderFrameHost* render_frame_host,
                         base::OnceCallback<void(bool)> callback) {
-  if (media::OHOSMediaDrmBridge::IsPerApplicationProvisioningSupported()) {
-    std::move(callback).Run(false);
-    return;
-  }
+  // Widevine dose not allow the use of empty origin Id and wiseplay
+  // dose not need origin Id, so false is always returned here.
   std::move(callback).Run(false);
 }
 

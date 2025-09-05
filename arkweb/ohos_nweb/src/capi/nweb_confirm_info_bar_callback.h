@@ -16,7 +16,6 @@
 #ifndef OHOS_NWEB_SRC_NWEB_CONFIRM_INFO_BAR_CALLBACK_H_
 #define OHOS_NWEB_SRC_NWEB_CONFIRM_INFO_BAR_CALLBACK_H_
 #include <string>
-#include "arkweb/ohos_nweb/include/nweb_value_callback.h"
 
 struct ConfirmInfoBarMessage {
   std::string title;
@@ -32,7 +31,10 @@ typedef void (*OnShowConfirmInfoBarFunc)(const std::string& title,
                                          int buttons,
                                          const std::string& buttonLabelOK,
                                          const std::string& buttonLabelCancel);
-#if !BUILDFLAG(ARKWEB_NWEB_EX)
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
+
 typedef void (*OnArkWebStaticShowConfirmInfoBarFunc)(const char* title,
                                                      const char* infoId,
                                                      const char* message,
@@ -40,5 +42,8 @@ typedef void (*OnArkWebStaticShowConfirmInfoBarFunc)(const char* title,
                                                      const char* buttonLabelOK,
                                                      const char* buttonLabelCancel);
 
-#endif
+#ifdef __cplusplus
+}
+#endif  // __cplusplus
+
 #endif  // OHOS_NWEB_SRC_NWEB_CONFIRM_INFO_BAR_CALLBACK_H_

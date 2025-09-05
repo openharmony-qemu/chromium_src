@@ -21,6 +21,7 @@
 #include <multimedia/player_framework/native_avscreen_capture.h>
 #include <native_buffer/native_buffer.h>
 #include <queue>
+#include "arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper.h"
 
 namespace OHOS::NWeb {
 void ScreenCaptureCallbackOnError(OH_AVScreenCapture *capture, int32_t errorCode, void* userData);
@@ -33,6 +34,8 @@ void ScreenCaptureCallbackOnStateChange(struct OH_AVScreenCapture *capture,
 
 class OH_SurfaceBufferAdapterImpl : public SurfaceBufferAdapter {
 private:
+    void ReleaseSurfaceBuffer();
+    void InitSurfaceBufferAdapterImpl(OH_AVBuffer* avBuffer);
     void* avBuffer_ = nullptr;
     OH_NativeBuffer_Config config_;
     uint32_t size_ = 0;
@@ -84,6 +87,10 @@ public:
     int32_t length_ = 0;
     int64_t timestamp_ = 0;
     OH_AudioCaptureSourceType sourcetype_ = OH_AudioCaptureSourceType::OH_SOURCE_DEFAULT;
+
+private:
+    void ReleaseAudioBuffer();
+    void InitAudioBufferAdapterImpl(OH_AVBuffer* avBuffer);
 };
 
 struct CallbackInfo {
@@ -118,12 +125,23 @@ public:
     int32_t InitV2(const std::shared_ptr<ScreenCaptureConfigAdapter> config, int nweb_id) override;
 
     void ClearBufferQueue(int nwebId) override;
+
+    static void ScreenCaptureCallbackOnError(OH_AVScreenCapture *capture, int32_t errorCode, void* userData);
+
+    static void ScreenCaptureCallbackOnBufferAvailable(OH_AVScreenCapture *capture, OH_AVBuffer *buffer,
+        OH_AVScreenCaptureBufferType bufferType, int64_t timestamp, void* userData);
+    
+    static void ScreenCaptureCallbackOnStateChange(struct OH_AVScreenCapture *capture,
+        OH_AVScreenCaptureStateCode stateCode, void* userData);
 private:
     void Release();
 
 private:
     OH_AVScreenCapture *screenCapture_;
-    CallbackInfo callback_info_ = {nullptr, 0};
+
+    int nweb_id_ = -1;
+    size_t callback_index_ = 0;
+    static CallbackSharedWrapper<CallbackInfo> callback_wrapper_;
 };
 
 }  // namespace OHOS::NWeb

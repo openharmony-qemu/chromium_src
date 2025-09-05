@@ -22,6 +22,7 @@
 namespace OHOS::NWeb {
 
 std::unordered_map<std::string, MediaAVSessionAdapterImpl *> MediaAVSessionAdapterImpl::avSessionMap;
+CallbackSharedWrapper<MediaAVSessionCallbackAdapter> MediaAVSessionAdapterImpl::callback_wrapper_;
 
 void MediaAVSessionKey::Init() {
     pid_ = getpid();
@@ -61,21 +62,28 @@ std::string MediaAVSessionKey::ToString() {
 }
 
 MediaAVSessionAdapterImpl::MediaAVSessionAdapterImpl() {
+    InitMediaAVSessionAdapterImpl();
+}
+
+void MediaAVSessionAdapterImpl::InitMediaAVSessionAdapterImpl() {
     avSessionKey_ = std::make_shared<MediaAVSessionKey>();
     avSessionKey_->Init();
     AVMetadata_Result ret = OH_AVMetadataBuilder_Create(&builder_);
     if (ret != AVMETADATA_SUCCESS) {
         WVLOG_E("create metadata builder failed, ret=%{public}d", ret);
+        return;
     }
 
     ret = OH_AVMetadataBuilder_SetAssetId(builder_, std::to_string(avSessionKey_->GetPID()).c_str());
     if (ret != AVMETADATA_SUCCESS) {
         WVLOG_E("set assert id failed, ret=%{public}d", ret);
+        return;
     }
 
     ret = OH_AVMetadataBuilder_GenerateAVMetadata(builder_, &avMetadata_);
     if (ret != AVMETADATA_SUCCESS) {
         WVLOG_E("generate avmetadata failed, ret=%{public}d", ret);
+        return;
     }
 
     avPlaybackState_ = PLAYBACK_STATE_INITIAL;
@@ -98,6 +106,9 @@ MediaAVSessionAdapterImpl::~MediaAVSessionAdapterImpl() {
         }
     }
 
+    if (callback_index_ > 0) {
+        callback_wrapper_.Clear(callback_index_);
+    }
     avMetadata_ = nullptr;
     builder_ = nullptr;
     DestroyAVSession();
@@ -105,11 +116,11 @@ MediaAVSessionAdapterImpl::~MediaAVSessionAdapterImpl() {
 
 bool MediaAVSessionAdapterImpl::CreateAVSession(MediaAVSessionType type) {
     WVLOG_I("CreateAVSession in, type=%{public}d", int32_t(type));
-    if (MediaAVSessionType::MEDIA_TYPE_INVALID == type) {
+    if (type == MediaAVSessionType::MEDIA_TYPE_INVALID) {
         WVLOG_E("CreateAVSession, type invalid return false");
         return false;
     }
-    if (avSession_ && (type != avSessionKey_->GetType())) {
+    if (avSession_ && avSessionKey_ &&(type != avSessionKey_->GetType())) {
         DestroyAVSession();
     }
     auto findIter = avSessionMap.find(avSessionKey_->ToString());
@@ -143,17 +154,27 @@ void MediaAVSessionAdapterImpl::DestroyAVSession() {
         }
         avSession_ = nullptr;
     }
-    auto iter = avSessionMap.find(avSessionKey_->ToString());
-    if (iter != avSessionMap.end()) {
-        avSessionMap.erase(iter);
+    if (avSessionKey_) {
+        auto iter = avSessionMap.find(avSessionKey_->ToString());
+        if (iter != avSessionMap.end()) {
+            avSessionMap.erase(iter);
+        }
     }
     WVLOG_I("DestroyAVSession out");
 }
 
 AVSessionCallback_Result MediaAVSessionAdapterImpl::AVSessionOnCommandCallback(OH_AVSession *session,
     AVSession_ControlCommand command, void *userData) {
-    MediaAVSessionCallbackAdapter *media = reinterpret_cast<MediaAVSessionCallbackAdapter *>(userData);
-
+    if (!userData) {
+        WVLOG_E("ohmedia: userData is null");
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
+    }
+    size_t callback_index = reinterpret_cast<size_t>(userData);
+    auto media = callback_wrapper_.GetCallback(callback_index);
+    if (!media) {
+        WVLOG_E("ohmedia: media is null");
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
+    }
     switch (command) {
         case CONTROL_CMD_PLAY:
             media->Play();
@@ -177,8 +198,16 @@ AVSessionCallback_Result MediaAVSessionAdapterImpl::AVSessionOnCommandCallback(O
 AVSessionCallback_Result MediaAVSessionAdapterImpl::AVSessionOnSeekCallback(OH_AVSession *session,
     uint64_t seekTime, void *userData) {
     WVLOG_I("SeekCallback seekTime: %{public}lu", seekTime);
-    MediaAVSessionCallbackAdapter *media = reinterpret_cast<MediaAVSessionCallbackAdapter *>(userData);
-
+    if (!userData) {
+        WVLOG_E("ohmedia: userData is null");
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
+    }
+    size_t callback_index = reinterpret_cast<size_t>(userData);
+    auto media = callback_wrapper_.GetCallback(callback_index);
+    if (!media) {
+        WVLOG_E("ohmedia: media is null");
+        return AVSESSION_CALLBACK_RESULT_FAILURE;
+    }
     media->SeekTo(seekTime);
     return AVSESSION_CALLBACK_RESULT_SUCCESS;
 }
@@ -188,13 +217,21 @@ bool MediaAVSessionAdapterImpl::RegistCallback(
     WVLOG_I("RegistCallback in");
     if (avSession_ && Activate()) {
         AVSession_ErrCode ret;
-        callbackAdapter_ = callbackAdapter;
+        std::shared_ptr<MediaAVSessionCallbackAdapter> callback_adapter = callbackAdapter;
+        if (callback_adapter == nullptr) {
+            WVLOG_E("Create callback_adapter failed");
+            return false;
+        }
+        if (callback_index_ > 0) {
+            callback_wrapper_.Clear(callback_index_);
+        }
+        callback_index_ = callback_wrapper_.AddCallback(callback_adapter);
         for (AVSession_ControlCommand command = CONTROL_CMD_PLAY;
             command <= CONTROL_CMD_STOP;
             command = (AVSession_ControlCommand)(command + 1)) {
             ret = OH_AVSession_RegisterCommandCallback(avSession_,
                 command, &MediaAVSessionAdapterImpl::AVSessionOnCommandCallback,
-                reinterpret_cast<void *>(callbackAdapter_.get()));
+                reinterpret_cast<void *>(callback_index_));
             if (ret != AV_SESSION_ERR_SUCCESS) {
                 WVLOG_E("RegisterCommandCallback failed. ret: %{public}d", ret);
                 return false;
@@ -202,7 +239,7 @@ bool MediaAVSessionAdapterImpl::RegistCallback(
         }
 
         ret = OH_AVSession_RegisterSeekCallback(avSession_,
-            &MediaAVSessionAdapterImpl::AVSessionOnSeekCallback, reinterpret_cast<void *>(callbackAdapter_.get()));
+            &MediaAVSessionAdapterImpl::AVSessionOnSeekCallback, reinterpret_cast<void *>(callback_index_));
         if (ret != AV_SESSION_ERR_SUCCESS) {
             WVLOG_E("RegisterSeekCallback failed. ret: %{public}d", ret);
             return false;
@@ -229,13 +266,11 @@ bool MediaAVSessionAdapterImpl::Activate() {
         WVLOG_E("Activate avSession_ is null, return false");
         return false;
     }
-    if (!avSession_) {
-        return false;
-    }
+
     AVSession_ErrCode ret = OH_AVSession_Activate(avSession_);
     if (ret != AV_SESSION_ERR_SUCCESS) {
-    WVLOG_E("Activate failed. ret: %{public}d", ret);
-    return false;
+        WVLOG_E("Activate failed. ret: %{public}d", ret);
+        return false;
     }
 
     isActived_ = true;
@@ -322,6 +357,10 @@ AVMetadata_Result MediaAVSessionAdapterImpl::UpdateAVMetadata(void) {
 }
 
 bool MediaAVSessionAdapterImpl::UpdateMetaDataCache(const std::shared_ptr<MediaAVSessionMetadataAdapter> metadata) {
+    if (!metadata) {
+        WVLOG_E("ohmedia: metadata is null");
+        return false;
+    }
     bool updated = false;
     AVMetadata_Result ret = OH_AVMetadataBuilder_SetTitle(builder_, metadata->GetTitle().c_str());
     if (ret == AVMETADATA_SUCCESS) {
@@ -349,6 +388,10 @@ bool MediaAVSessionAdapterImpl::UpdateMetaDataCache(const std::shared_ptr<MediaA
 }
 
 bool MediaAVSessionAdapterImpl::UpdateMetaDataCache(const std::shared_ptr<MediaAVSessionPositionAdapter> position) {
+    if (!position) {
+        WVLOG_E("ohmedia: position is null");
+        return false;
+    }
     AVMetadata_Result ret = OH_AVMetadataBuilder_SetDuration(builder_, position->GetDuration());
     if (ret != AVMETADATA_SUCCESS) {
         WVLOG_E("UpdateMetaDataCache failed. ret: %{public}d", ret);
@@ -391,6 +434,10 @@ bool MediaAVSessionAdapterImpl::UpdatePlaybackStateCache(MediaAVSessionPlayState
 
 bool MediaAVSessionAdapterImpl::UpdatePlaybackStateCache(
     const std::shared_ptr<MediaAVSessionPositionAdapter> position) {
+    if (!position) {
+        WVLOG_E("ohmedia: position is null");
+        return false;
+    }
     bool updated = false;
     auto duration = static_cast<int32_t>(position->GetDuration());
     AVMetadata_Result ret = OH_AVMetadataBuilder_SetDuration(builder_, duration);
@@ -417,6 +464,10 @@ bool MediaAVSessionAdapterImpl::UpdatePlaybackStateCache(
 
 void MediaAVSessionAdapterImpl::DestroyAndEraseSession() {
     WVLOG_I("DestroyAndEraseSession in");
+    if (!avSessionKey_) {
+        WVLOG_E("ohmedia: avSessionKey_ is null");
+        return;
+    }
     auto iter = avSessionMap.find(avSessionKey_->ToString());
     if (iter == avSessionMap.end()) {
         WVLOG_E("DestroyAndEraseSession invalid iterator return");
@@ -457,7 +508,10 @@ bool MediaAVSessionAdapterImpl::CreateNewSession(const MediaAVSessionType& type)
         default:
             return false;
     }
-
+    if (!avSessionKey_) {
+        WVLOG_E("ohmedia: avSessionKey_ is null");
+        return;
+    }
     AVSession_ErrCode ret = OH_AVSession_Create(sessionType, "av_media_session",
         avSessionKey_->GetBundleName().c_str(), avSessionKey_->GetAbilityName().c_str(),
         &avSession_);

@@ -16,6 +16,7 @@
 #include "extensions/browser/extension_registry_info_manager.h"
 
 #include "base/logging.h"
+#include "base/no_destructor.h"
 #include "chrome/browser/extensions/menu_manager.h"
 #include "chrome/common/extensions/manifest_handlers/settings_overrides_handler.h"
 #include "content/public/common/url_constants.h"
@@ -108,15 +109,29 @@ NWebContextMenusItem GetNWebContextMenusItem(extensions::MenuItem* menu_item) {
   item.type = GetTypeStr(menu_item->type());
   item.visible = menu_item->visible();
   item.extensionId = menu_item->extension_id();
+  return item;
+}
+
+NWebContextMenusItemV2 GetNWebContextMenusItemV2(extensions::MenuItem* menu_item) {
+  NWebContextMenusItemV2 item;
+  item.item = GetNWebContextMenusItem(menu_item);
   item.isOffTheRecord = menu_item->incognito();
   return item;
 }
 
 void GetFlattenedMenuItemSubtree(std::vector<NWebContextMenusItem>& items,
-                                                  const std::unique_ptr<extensions::MenuItem>& item) {
+                                 const std::unique_ptr<extensions::MenuItem>& item) {
   items.push_back(GetNWebContextMenusItem(item.get()));
   for (const auto& child : item->children()) {
     GetFlattenedMenuItemSubtree(items, child);
+  }
+}
+
+void GetFlattenedMenuItemSubtreeV2(std::vector<NWebContextMenusItemV2>& items,
+                                   const std::unique_ptr<extensions::MenuItem>& item) {
+  items.push_back(GetNWebContextMenusItemV2(item.get()));
+  for (const auto& child : item->children()) {
+    GetFlattenedMenuItemSubtreeV2(items, child);
   }
 }
 
@@ -170,7 +185,7 @@ std::optional<WebExtensionManifestOptionsPageInfo> GetManifestOptionsPageInfo(
 
 }
 
-std::shared_ptr<NWebExtensionManagerCallBack> g_extension_manager_listener = nullptr;
+base::NoDestructor<std::shared_ptr<NWebExtensionManagerCallBack>> g_extension_manager_listener(nullptr);
 
 gfx::Image ExtensionRegistryGetIcon(
     int tabId,
@@ -301,6 +316,26 @@ std::vector<NWebContextMenusItem> ExtensionRegistryInfoManager::GetAllExtensionC
   return items;
 }
 
+std::vector<NWebContextMenusItemV2> ExtensionRegistryInfoManager::GetAllExtensionContextMenusV2(
+    const std::string& extensionId) const {
+  std::vector<NWebContextMenusItemV2> items;
+  extensions::MenuManager* menu_manager = extensions::MenuManager::Get(browser_context_);
+  if (!menu_manager) {
+    LOG(ERROR) << "menu_manager is null";
+    return items;
+  }
+  for (const auto& id : menu_manager->ExtensionIds()) {
+    if (extensionId == id.extension_id) {
+      const extensions::MenuItem::OwnedList* top_items = menu_manager->MenuItems(id);
+      for (const std::unique_ptr<extensions::MenuItem>& item : *top_items) {
+        GetFlattenedMenuItemSubtreeV2(items, item);
+      }
+    }
+  }
+  LOG(DEBUG) << "CefMenuManager::GetAllExtensionContextMenusV2 items.size:" << items.size();
+  return items;
+}
+
 void DeleteExtensionActionInfoIcon(WebExtensionActionInfo& action_info) {
   if (!action_info.icon.has_value()) {
     return;
@@ -400,6 +435,7 @@ void ExtensionRegistryInfoManager::NotifyOnExtensionLoaded(const Extension& exte
       info.info.contextMenus = GetAllExtensionContextMenus(extension.id());
       GetExtensionManifestInfo(extension, info.manifest_info);
       info.is_incognito_enabled = util::IsIncognitoEnabled(extension.id(), browser_context_);
+      info.contextMenusV2 = GetAllExtensionContextMenusV2(extension.id());
       NWebExtensionManagerDispatcher::OnExtensionLoadedByPb(info);
       DeleteExtensionActionInfoIcon(info.info.action);
     } else {
@@ -503,64 +539,64 @@ void ExtensionRegistryInfoManager::OnShutdown(ExtensionRegistry* registry) {}
 void ExtensionRegistryInfoManager::RegisterWebExtensionManagerListener(
     std::shared_ptr<NWebExtensionManagerCallBack> web_extension_manager_listener) {
   LOG(INFO) << "ExtensionRegistryInfoManager::RegisterWebExtensionManagerListener";
-  g_extension_manager_listener = web_extension_manager_listener;
+  *g_extension_manager_listener = web_extension_manager_listener;
 }
 
 // static
 void ExtensionRegistryInfoManager::UnRegisterWebExtensionManagerListener() {
   LOG(INFO) << "ExtensionRegistryInfoManager::RegisterWebExtensionManagerListener";
-  g_extension_manager_listener = nullptr;
+  *g_extension_manager_listener = nullptr;
 }
 
 //static
 NO_SANITIZE("cfi-icall")
 void ExtensionRegistryInfoManager::OnExtensionLoadedCallBack(const WebExtensionInfo& loadedInfo) {
   LOG(INFO) << "ExtensionRegistryInfoManager::OnExtensionLoadedCallBack";
-  if (!g_extension_manager_listener) {
+  if (!(*g_extension_manager_listener)) {
     LOG(ERROR) << "No web extension manager listener";
     return;
   }
 
-  if (!g_extension_manager_listener->OnWebExtensionLoaded) {
+  if (!(*g_extension_manager_listener)->OnWebExtensionLoaded) {
     LOG(ERROR) << "No OnWebExtensionLoaded listener";
     return;
   }
 
-  g_extension_manager_listener->OnWebExtensionLoaded(loadedInfo);
+  (*g_extension_manager_listener)->OnWebExtensionLoaded(loadedInfo);
 }
 
 //static
 NO_SANITIZE("cfi-icall")
 void ExtensionRegistryInfoManager::OnExtensionUnLoadedCallBack(const std::string& eid) {
   LOG(INFO) << "ExtensionRegistryInfoManager::OnExtensionUnLoadedCallBack";
-  if (!g_extension_manager_listener) {
+  if (!(*g_extension_manager_listener)) {
     LOG(ERROR) << "No web extension manager listener";
     return;
   }
 
-  if (!g_extension_manager_listener->OnWebExtensionUnLoaded) {
+  if (!(*g_extension_manager_listener)->OnWebExtensionUnLoaded) {
     LOG(ERROR) << "No OnWebExtensionUnLoaded listener";
     return;
   }
 
-  g_extension_manager_listener->OnWebExtensionUnLoaded(eid);
+  (*g_extension_manager_listener)->OnWebExtensionUnLoaded(eid);
 }
 
 //static
 NO_SANITIZE("cfi-icall")
 void ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack(const std::string& url) {
   LOG(INFO) << "ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack";
-  if (!g_extension_manager_listener) {
+  if (!(*g_extension_manager_listener)) {
     LOG(ERROR) << "No web extension manager listener";
     return;
   }
 
-  if (!g_extension_manager_listener->OnWebExtensionOpenUrlFun) {
+  if (!(*g_extension_manager_listener)->OnWebExtensionOpenUrlFun) {
     LOG(ERROR) << "No OnWebExtensionOpenUrlFun listener";
     return;
   }
 
-  g_extension_manager_listener->OnWebExtensionOpenUrlFun(url);
+  (*g_extension_manager_listener)->OnWebExtensionOpenUrlFun(url);
 }
 
 }  // namespace extensions

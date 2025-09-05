@@ -155,6 +155,130 @@ void NWebEventHandler::OnTouchRelease(int32_t id,
   }
 }
 
+cef_pointer_type_t NWebEventHandler::ConvertSourceToolToPointerType(
+    SourceTool source_tool) {
+  switch (source_tool) {
+    case SourceTool::PEN:
+    case SourceTool::BRUSH:
+    case SourceTool::PENCIL:
+    case SourceTool::AIRBRUSH:
+      return CEF_POINTER_TYPE_PEN;
+    case SourceTool::RUBBER:
+      return CEF_POINTER_TYPE_ERASER;
+    case SourceTool::FINGER:
+      return CEF_POINTER_TYPE_TOUCH;
+    case SourceTool::MOUSE:
+      return CEF_POINTER_TYPE_MOUSE;
+    default:
+      return CEF_POINTER_TYPE_UNKNOWN;
+  }
+}
+
+float NWebEventHandler::ConvertRollAngleToTwist(float raw_roll_angle) {
+  float real_angle = (raw_roll_angle > 32767.0f) ?
+                    (raw_roll_angle - 65536.0f) :
+                    raw_roll_angle;
+  real_angle = std::clamp(real_angle, -180.0f, 180.0f);
+  return (real_angle < 0.0f) ? (real_angle + 360.0f) : real_angle;
+}
+
+void NWebEventHandler::OnStylusTouchPress(
+    std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+    bool from_overlay,
+    float virtual_pixel_ratio) {
+#if BUILDFLAG(ARKWEB_SLIDE) || BUILDFLAG(ARKWEB_PER_DFX)
+  TRACE_EVENT0("input", "NWebEventHandler::OnStylusTouchPress begin");
+#endif
+
+  CefTouchEvent touch_pressed;
+  touch_pressed.type = CEF_TET_PRESSED;
+  touch_pressed.pointer_type =
+      ConvertSourceToolToPointerType(stylus_touch_point_info->GetSourceTool());
+  touch_pressed.id = stylus_touch_point_info->GetId();
+  touch_pressed.x = stylus_touch_point_info->GetX() / virtual_pixel_ratio;
+  touch_pressed.y = stylus_touch_point_info->GetY() / virtual_pixel_ratio;
+  touch_pressed.tiltX = stylus_touch_point_info->GetTiltX();
+  touch_pressed.tiltY = stylus_touch_point_info->GetTiltY();
+  touch_pressed.radius_x =
+      static_cast<float>(stylus_touch_point_info->GetWidth()) / 2.0f;
+  touch_pressed.radius_y =
+      static_cast<float>(stylus_touch_point_info->GetHeight()) / 2.0f;
+  touch_pressed.rotation_angle =
+      ConvertRollAngleToTwist(stylus_touch_point_info->GetRollAngle());
+  touch_pressed.pressure = stylus_touch_point_info->GetForce();
+  touch_pressed.modifiers = EVENTFLAG_NONE;
+  touch_pressed.from_overlay = from_overlay;
+
+  if (browser_ && browser_->GetHost()) {
+    browser_->GetHost()->SendTouchEvent(touch_pressed);
+  }
+}
+
+void NWebEventHandler::OnStylusTouchRelease(
+    std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+    bool from_overlay,
+    float virtual_pixel_ratio) {
+  LOG(INFO) << "NWebEventHandler::OnStylusTouchRelease";
+
+  CefTouchEvent touch_end;
+  touch_end.type = CEF_TET_RELEASED;
+  touch_end.pointer_type =
+      ConvertSourceToolToPointerType(stylus_touch_point_info->GetSourceTool());
+  touch_end.id = stylus_touch_point_info->GetId();
+  touch_end.x = stylus_touch_point_info->GetX() / virtual_pixel_ratio;
+  touch_end.y = stylus_touch_point_info->GetY() / virtual_pixel_ratio;
+  touch_end.tiltX = stylus_touch_point_info->GetTiltX();
+  touch_end.tiltY = stylus_touch_point_info->GetTiltY();
+  touch_end.radius_x =
+      static_cast<float>(stylus_touch_point_info->GetWidth()) / 2.0f;
+  touch_end.radius_y =
+      static_cast<float>(stylus_touch_point_info->GetHeight()) / 2.0f;
+  touch_end.rotation_angle =
+      ConvertRollAngleToTwist(stylus_touch_point_info->GetRollAngle());
+  touch_end.pressure = stylus_touch_point_info->GetForce();
+  touch_end.modifiers = EVENTFLAG_NONE;
+  touch_end.from_overlay = from_overlay;
+
+  if (browser_ && browser_->GetHost()) {
+    browser_->GetHost()->SendTouchEvent(touch_end);
+  }
+}
+
+void NWebEventHandler::OnStylusTouchMove(
+    const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>&
+        stylus_touch_point_infos,
+    bool from_overlay,
+    float virtual_pixel_ratio) {
+  std::vector<CefTouchEvent> event_list{};
+
+  std::string touch_point_info_str{"NWebEventHandler::OnStylusTouchMove"};
+  for (const auto& touch_point : stylus_touch_point_infos) {
+    CefTouchEvent touch_move;
+    touch_move.type = CEF_TET_MOVED;
+    touch_move.pointer_type =
+        ConvertSourceToolToPointerType(touch_point->GetSourceTool());
+    touch_move.id = touch_point->GetId();
+    touch_move.x = touch_point->GetX() / virtual_pixel_ratio;
+    touch_move.y = touch_point->GetY() / virtual_pixel_ratio;
+    touch_move.tiltX = touch_point->GetTiltX();
+    touch_move.tiltY = touch_point->GetTiltY();
+    touch_move.radius_x = static_cast<float>(touch_point->GetWidth()) / 2.0f;
+    touch_move.radius_y = static_cast<float>(touch_point->GetHeight()) / 2.0f;
+    touch_move.rotation_angle =
+        ConvertRollAngleToTwist(touch_point->GetRollAngle());
+    touch_move.pressure = touch_point->GetForce();
+    touch_move.modifiers = EVENTFLAG_NONE;
+    touch_move.from_overlay = from_overlay;
+    touch_point_info_str += " id = " + std::to_string(touch_point->GetId());
+    event_list.emplace_back(touch_move);
+  }
+  LOG(DEBUG) << touch_point_info_str << ", from_overlay = " << from_overlay;
+
+  if (browser_ && browser_->GetHost()) {
+    browser_->GetHost()->SendTouchEventList(event_list);
+  }
+}
+
 void NWebEventHandler::OnTouchCancel() {
   LOG(INFO) << "NWebEventHandler::OnTouchCancel";
   CefTouchEvent touch_cancelled;

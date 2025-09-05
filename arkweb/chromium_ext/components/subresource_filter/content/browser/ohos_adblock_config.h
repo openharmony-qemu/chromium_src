@@ -61,6 +61,7 @@ class AdBlockConfig {
   AdBlockConfig();
 
  private:
+  friend class AdBlockConfigTest;
   bool CheckIsInDisallowData(GURL url);
 
   std::unique_ptr<autofill::Trie<std::string>> AddAdsBlockDisallowListInternal(
@@ -119,7 +120,7 @@ class AdBlockConfig {
   std::unique_ptr<autofill::Trie<std::string>> disallow_data_;
   std::unique_ptr<autofill::Trie<std::string>> allow_data_;
 
-  PrefService* local_state_ = nullptr;
+  raw_ptr<PrefService> local_state_ = nullptr;
   base::Lock lock_;
 };
 

@@ -53,6 +53,8 @@ class RenderFrameHostDelegateExt {
       const GlobalRenderFrameHostId& id) {}
   virtual void OnRenderFrameHostLeaveBackForwardCache(
       const GlobalRenderFrameHostId& id) {}
+  virtual void OnNativeEmbedObjectParamChange(
+      const NativeEmbedParamDataInfo& native_param_info) {}
 #endif
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   // Notified to UI, contextmenu popup window should be dimissed
@@ -62,6 +64,10 @@ class RenderFrameHostDelegateExt {
   virtual void OnPdfScrollAtBottom(const std::string& url) {}
   virtual void OnPdfLoadEvent(int32_t result, const std::string& url) {}
 #endif  // BUILDFLAG(ARKWEB_PDF)
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  virtual bool IsActiveFileChooser() {}
+  virtual void SetFileChooserInActive() {}
+#endif  // BUILDFLAG(ARKWEB_FILE_UPLOAD)
 };
 }  // namespace content
 #endif  // CONTENT_BROWSER_RENDERER_HOST_RENDER_FRAME_HOST_DELEGATE_EXT_H_

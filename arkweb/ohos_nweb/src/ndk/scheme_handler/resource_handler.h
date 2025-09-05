@@ -31,9 +31,9 @@ struct ArkWeb_ResourceHandler_ {
   void DidReceiveResponse(const ArkWeb_Response* response) const;
   void DidReceiveData(const uint8_t* buffer, int64_t buf_len) const;
   void DidFinish() const;
-  void DidFailWithError(ArkWeb_NetError error_code) const;
+  void DidFailWithError(ArkWeb_NetError error_code, bool completeIfNoResponse) const;
 
-  CefRefPtr<OHOS::NWeb::NWebPipeResourceHandler> pipe_resource_handler;
+  CefRefPtr<OHOS::NWeb::NWebPipeResourceHandler> pipe_resource_handler_;
 };
 
 #endif  // OHOS_NWEB_SRC_CAPI_SCHEME_HANDLER_RESOURCE_HANDLER_H

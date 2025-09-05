@@ -35,6 +35,7 @@
 #include "net/dns/public/dns_protocol.h"
 #endif
 
+#include "base/no_destructor.h"
 #include "arkweb/chromium_ext/net/base/network_change_notifier_passive_for_include.cc"
 
 namespace net {

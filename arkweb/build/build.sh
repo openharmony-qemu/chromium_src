@@ -257,14 +257,20 @@ case "${build_target}" in
     [[ "-$buildarg_musl" == "-use_musl=true" ]] && build_sysroot="use_ohos_sdk_sysroot=true"
     ;;
   "coreut"|"${BUILD_TARGET_BROWSER_ENGINE_CORE_UNITTESTS}")
+    buildargs="${buildargs}
+    arkweb_test=true"
     build_target="${BUILD_TARGET_BROWSER_ENGINE_CORE_UNITTESTS}"
     ;;
   "allut"|"${BUILD_TARGET_BROWSER_ENGINE_BASE_UNITTESTS}")
 #    is_official_build=0
+    buildargs="${buildargs}
+    arkweb_test=true"
     build_target="${BUILD_TARGET_BROWSER_ENGINE_BASE_UNITTESTS}"
     ;;
   "smokeut"|"${BUILD_TARGET_BROWSER_ENGINE_SMOKE_UNITTESTS}")
 #    is_official_build=0
+    buildargs="${buildargs}
+    arkweb_test=true"
     build_target="${BUILD_TARGET_BROWSER_ENGINE_SMOKE_UNITTESTS}"
     ;;
   "component")
@@ -272,8 +278,7 @@ case "${build_target}" in
     build_target="${BUILD_TARGET_COMPONENT}"
     ;;
   *)
-    echo "Invalid build_target: ${build_target}"
-    exit 2
+    echo "Build_target: ${build_target}"
     ;;
 esac
 
@@ -446,6 +451,11 @@ cd -
 
 time_start_for_build=$(date +%s)
 time_start_for_gn=$time_start_for_build
+
+cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/include/net_ssl_c.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/network/netstack/net_ssl/net_ssl_c.h"
+cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/aarch64-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnet_ssl.so"
+cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/x86_64-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnet_ssl.so"
+cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/arm-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnet_ssl.so"
 
 if [ $buildgn = 1 ]; then
   echo "generating args list:"

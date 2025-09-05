@@ -33,7 +33,7 @@
 #include "cc/raster/categorized_worker_pool.h"
 #include "cc/trees/layer_tree_host.h"
 #include "cc/trees/layer_tree_settings.h"
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#if BUILDFLAG(IS_ARKWEB)
 #include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
 #include "base/process/process_handle.h"
 #include "base/task/post_job.h"
@@ -52,11 +52,30 @@ namespace blink {
 WidgetBaseUtils::WidgetBaseUtils(WidgetBase* widget_base) : widget_base_(widget_base) {}
 // LCOV_EXCL_STOP
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-static void GetThreadIdsAndReport(std::vector<base::internal::WorkerThread*>& workers,
+#if BUILDFLAG(IS_ARKWEB)
+static void GetThreadIdsAndReport(std::vector<base::PlatformThreadId>& workersTids,
                                        bool is_created) {
   std::vector<int32_t> thread_ids;
-  std::vector<base::internal::WorkerThread*> remain_workers;
+  for (auto& tid : workersTids) {
+    thread_ids.push_back(tid );
+  }
+  workersTids.clear();
+
+  auto* thread = content::ChildThreadImpl::current();
+  if (thread) {
+    auto host = thread->child_process_host();
+    auto status = is_created ? OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED :
+                               OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED;
+    host->ReportKeyThreadIds(static_cast<int32_t>(status),
+        base::GetCurrentRealPid(), thread_ids,
+        static_cast<int32_t>(OHOS::NWeb::ResSchedRoleAdapter::IMAGE_DECODE));
+  }
+}
+
+static void GetThreadIdsAndReport(std::vector<scoped_refptr<base::internal::WorkerThread>>& workers,
+                                       bool is_created) {
+  std::vector<int32_t> thread_ids;
+  std::vector<scoped_refptr<base::internal::WorkerThread>> remain_workers;
   for (auto& worker : workers) {
     if (worker) {
       auto tid = worker->GetRealTid();
@@ -110,15 +129,15 @@ void WidgetBaseUtils::ReportForegroundThreadPool() {
   base::internal::ThreadGroupImpl* foreground_thread_group =
     static_cast<base::internal::ThreadGroupImpl*>(thread_pool->GetForegroundThreadGroup());
   if (foreground_thread_group) {
-    std::vector<base::internal::WorkerThread*>& create_workers =
+    std::vector<scoped_refptr<base::internal::WorkerThread>>& create_workers =
       foreground_thread_group->ReportCreateWorkers();
     if (create_workers.size()) {
       GetThreadIdsAndReport(create_workers, true);
     }
-    std::vector<base::internal::WorkerThread*>& destroy_workers =
+    std::vector<base::PlatformThreadId>& destroy_workers_ids_ =
       foreground_thread_group->ReportDestroyWorkers();
-    if (destroy_workers.size()) {
-      GetThreadIdsAndReport(destroy_workers, false);
+    if (destroy_workers_ids_.size()) {
+      GetThreadIdsAndReport(destroy_workers_ids_, false);
     }
   }
 }
@@ -193,7 +212,7 @@ void WidgetBaseUtils::DidNativeEmbedEvent(blink::WebInputEvent::Type type,
   LOG(DEBUG) << "[NativeEmbed] DidNativeEmbedEvent type is : " << nativeType
              << " x: " << x << " y: " << y;
   widget_base_->widget_host_->DidNativeEmbedEvent(mojom::blink::NativeEmbedTouchEvent::New(
-      static_cast<String>(embedId), id, x, y, x, y, nativeType, x, y));
+      String(embedId.c_str()), id, x, y, x, y, nativeType, x, y));
 }
 
 void WidgetBaseUtils::MouseHitTest(const WebMouseEvent& event) {

@@ -15,6 +15,8 @@
 // expanded differently in some places (for example, to automatically
 // map a load flag value to its symbolic name).
 
+#include "arkweb/build/features/features.h"
+
 LOAD_FLAG(NORMAL, 0)
 
 // This is "normal reload", meaning an if-none-match/if-modified-since query.
@@ -118,3 +120,8 @@ LOAD_FLAG(SHOULD_BYPASS_HSTS, 1 << 19)
 
 // This load will not send any cookies. For CEF usage.
 LOAD_FLAG(DO_NOT_SEND_COOKIES, 1 << 20)
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+// This load will ignoring Cache-Control: no-store
+LOAD_FLAG(IGNORE_CACHE_CONTROL, 1 << 21)
+#endif

@@ -32,7 +32,7 @@ void DateTimeChooserOHOS::OnDateTimeChooserReceiver(
   date_time_chooser_receiver_.Bind(std::move(receiver));
   date_time_chooser_receiver_.set_disconnect_handler(base::BindOnce(
       &DateTimeChooserOHOS::OnDateTimeChooserReceiverConnectionError,
-      base::Unretained(this)));
+      GetWeakPtr()));
 }
 
 void DateTimeChooserOHOS::OpenDateTimeDialog(
@@ -50,6 +50,10 @@ void DateTimeChooserOHOS::OpenDateTimeDialog(
 }
 
 void DateTimeChooserOHOS::NotifyResult(bool success, double dialog_value) {
+  if (!open_date_time_response_callback_) {
+    LOG(ERROR) << "DateTimeCallback is null";
+    return;
+  }
   std::move(open_date_time_response_callback_).Run(success, dialog_value);
 }
 

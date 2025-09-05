@@ -129,7 +129,6 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
   void WasUnOccluded() override;
   void WasOccluded() override;
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
-  void EvictFrameBackBuffers(bool invisible) override {}
   bool GetScrollable() override { return true; }
 #endif
   gfx::Rect GetViewBounds() override;

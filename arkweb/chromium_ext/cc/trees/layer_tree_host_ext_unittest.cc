@@ -160,5 +160,17 @@ class OnLayerBoundsUpdateInvalidTest : public LayerTreeHostExtTestBase {
 
 SINGLE_AND_MULTI_THREAD_TEST_F(OnLayerBoundsUpdateInvalidTest);
 
+class OnLayerRectVisibilityChangeFalseTest : public LayerTreeHostExtTestBase {
+ protected:
+  void BeginTest() override {
+    const int layer_id = 1;
+    AddMockLayer(layer_id);
+    host_ext()->OnLayerRectVisibilityChange(layer_id, false);
+    EndTest();
+  }
+};
+
+SINGLE_AND_MULTI_THREAD_TEST_F(OnLayerRectVisibilityChangeFalseTest);
+
 }  //namespace
 }  // namespace cc

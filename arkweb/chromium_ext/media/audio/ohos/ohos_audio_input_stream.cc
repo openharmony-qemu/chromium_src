@@ -20,6 +20,8 @@ namespace media {
 namespace {
 // ID of the virtual device used to share system audio
 constexpr std::string_view kScreenSystemAudioDeviceId = "screen:systemAudio:-2:0";
+constexpr double kVolumeEpsilon = 1e-6;
+constexpr int kInvalidNWebId = -1;
 }
 
 class OHOSAudioInputStream::CaptureCallbackAdapter
@@ -134,7 +136,7 @@ bool OHOSAudioInputStream::GetAutomaticGainControl() {
 }
 
 bool OHOSAudioInputStream::IsMuted() {
-  return volume_ == 0.0;
+  return volume_ < kVolumeEpsilon;
 }
 
 void OHOSAudioInputStream::SetOutputDeviceForAec(
@@ -184,6 +186,7 @@ int OHOSAudioInputStream::GetNWebIdOnUIThread(const AudioParameters& params) {
   content::WebContents* webContent = content::WebContents::FromRenderFrameHost(renderFrameHost);
   if (!webContent) {
     LOG(ERROR) << "GetNWebIdOnUIThread WebContent not associated with RenderFrameHost";
+    return kInvalidNWebId;
   }
 
   return webContent->GetNWebId();

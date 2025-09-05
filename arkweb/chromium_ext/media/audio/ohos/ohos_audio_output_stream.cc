@@ -4,12 +4,14 @@
 
 #include "media/audio/ohos/ohos_audio_output_stream.h"
 
+#include "base/hash/hash.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "media/base/audio_timestamp_helper.h"
 #include "content/browser/media/session/media_session_impl.h"
 #include "content/public/browser/web_contents.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "media/audio/ohos/audio_dump.h"
 #include "media/audio/ohos/ohos_audio_focus_controller.h"
 
 namespace media {
@@ -60,19 +62,28 @@ OHOSAudioOutputStream::~OHOSAudioOutputStream() {
     OH_AudioStreamBuilder_Destroy(audio_stream_builder_);
     audio_stream_builder_ = nullptr;
   }
+  DumpFileUtil::CloseDumpScopedFile(&dumpFile_);
 }
 
 bool OHOSAudioOutputStream::Open() {
-  LOG(INFO) << "OHOSAudioOutputStream::Open. [" << (void*)this << "]";
+  LOG(INFO) << "OHOSAudioOutputStream::Open. [hash: "
+            << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   base::AutoLock lock(lock_);
   if (!InitRender()) {
     return false;
   }
+  time_t now = time(nullptr);
+  std::string dumpFileName = std::to_string(now) + "_" +
+      std::to_string(parameters_.sample_rate()) + "_" +
+      std::to_string(parameters_.channels()) + "_" +
+      std::to_string(1) + "_output_write.pcm";
+  DumpFileUtil::OpenDumpScopedFile(dumpFileName, &dumpFile_);
   return true;
 }
 
 void OHOSAudioOutputStream::Close() {
   Stop();
+  DumpFileUtil::CloseDumpScopedFile(&dumpFile_);
   manager_->ReleaseOutputStream(this);
 }
 // LCOV_EXCL_STOP
@@ -122,15 +133,36 @@ static int32_t AudioRendererOnInterruptEvent(OH_AudioRenderer* renderer,
   return 0;
 }
 
+static void AudioRendererOutputDeviceChangeCallback(OH_AudioRenderer* renderer,
+                                          void* userData,
+                                          OH_AudioStream_DeviceChangeReason reason) {
+  LOG(INFO) << "AudioRenderer on device change reason:" << static_cast<int32_t>(reason);
+  if (userData) {
+    switch (reason) {
+      case OH_AudioStream_DeviceChangeReason::REASON_OLD_DEVICE_UNAVAILABLE:
+          ((OHOSAudioOutputStream*)(userData))->OldDeviceUnavailable();
+          break;
+      default:
+          LOG(ERROR) << "AudioRendererOutputDeviceChangeCallback reason not foud, reason:" << reason;
+          break;
+    }
+  }
+}
+
 // LCOV_EXCL_START
 void OHOSAudioOutputStream::OnSuspend() {
   if (isDestroyed_.load()) {
     LOG(INFO) << "OHOSAudioOutputStream::OnSuspend during destroyed";
     return;
   }
-  LOG(INFO) << "OHOSAudioOutputStream::OnSuspend. [" << (void*)this << "]";
+  LOG(INFO) << "OHOSAudioOutputStream::OnSuspend. [hash: "
+            << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   if (!parameters_.IsValid()) {
     LOG(ERROR) << "OHOSAudioOutputStream::OnSuspend parameters_ is not valid.";
+    return;
+  }
+  if (!running_) {
+    LOG(ERROR) << "The playback is stopped. Exit OnSuspend.";
     return;
   }
   if (OHOSAudioFocusController::IsActive(parameters_)) {
@@ -155,7 +187,8 @@ void OHOSAudioOutputStream::OnSuspend() {
         FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::PumpSamples,
                                   weak_factory_.GetWeakPtr()));
   } else {
-    LOG(INFO) << "media session is not active. [" << (void*)this << "]";
+    LOG(INFO) << "media session is not active. [hash: "
+              << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
     if (OHOSAudioFocusController::HasOnlyOneShotPlayersPublic(parameters_)) {
       OneShotMediaPlayerStopped();
@@ -165,7 +198,8 @@ void OHOSAudioOutputStream::OnSuspend() {
 }
 
 void OHOSAudioOutputStream::OneShotMediaPlayerStopped() {
-  LOG(INFO) << __func__ << "[" << (void*)this << "]";
+  LOG(INFO) << __func__ << "[hash: "
+            << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     if (!main_task_runner_) {
       LOG(ERROR) << "main_task_runner is nullptr";
@@ -215,6 +249,63 @@ void OHOSAudioOutputStream::OnResume() {
 }
 // LCOV_EXCL_STOP
 
+void OHOSAudioOutputStream::OldDeviceUnavailable() {
+  if (isCommunication_) {
+    LOG(INFO) << "OldDeviceUnavailable communication";
+    return;
+  }
+ 
+  LOG(INFO) << "AudioRendererOutputDeviceChangeCallback need stop session";
+  auto OutputDeviceChangeFunc =
+    [] (AudioParameters params) {
+    content::RenderFrameHost* renderFrameHost =
+    content::RenderFrameHost::FromID(params.render_process_id(),
+                                      params.render_frame_id());
+    if (!renderFrameHost) {
+      LOG(ERROR) << "OldDeviceUnavailable get renderFrameHost failed.";
+      return;
+    }
+    auto webContent =
+        content::WebContents::FromRenderFrameHost(renderFrameHost);
+    if (!webContent) {
+      LOG(ERROR) << "AudioOutputStream get webContent failed.";
+      return;
+    }
+    content::MediaSessionImpl* mediaSession =
+      content::MediaSessionImpl::Get(webContent);
+    if (!mediaSession) {
+      LOG(ERROR) << "AudioOutputStream get mediaSession failed.";
+      return;
+    }
+    auto weakMediaSession = mediaSession->weakMediaSessionFactory_.GetWeakPtr();
+    if (!weakMediaSession) {
+      LOG(ERROR) << "OHOSAudioOutputStream::OHOSAudioOutputStream "
+                    "weakMediaSession get failed";
+      return;
+    }
+ 
+    if (weakMediaSession.get()->IsActive()) {
+      LOG(INFO) << "MediaSession is suspending the audio";
+      weakMediaSession.get()->Suspend(
+          content::MediaSession::SuspendType::kSystem);
+    } else {
+      LOG(INFO) << "MediaSession is suspended";
+    }
+  };
+ 
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    if (!main_task_runner_) {
+      LOG(INFO) << "main_task_runner is nullptr";
+      return;
+    }
+    main_task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(OutputDeviceChangeFunc, parameters_));
+  } else {
+    OutputDeviceChangeFunc(parameters_);
+  }
+}
+
 bool OHOSAudioOutputStream::isNeedResume(int32_t resumeInterval) {
   return resumeInterval < 0 ||
       (resumeInterval > 0 &&
@@ -251,7 +342,8 @@ void OHOSAudioOutputStream::SuspendOtherMediaSession() {
 // LCOV_EXCL_STOP
 
 void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
-  LOG(INFO) << "OHOSAudioOutputStream::Start [" << (void*)this << "]";
+  LOG(INFO) << "OHOSAudioOutputStream::Start [hash: "
+            << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   base::AutoLock lock(lock_);
   DCHECK(!callback_);
   DCHECK(reference_time_.is_null());
@@ -272,7 +364,8 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
 
 // LCOV_EXCL_START
 void OHOSAudioOutputStream::Stop() {
-  LOG(INFO) << "OHOSAudioOutputStream::Stop. [" << (void*)this << "]";
+  LOG(INFO) << "OHOSAudioOutputStream::Stop. [hash: "
+            << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   base::AutoLock lock(lock_);
   timer_.Stop();
   running_ = false;
@@ -367,6 +460,12 @@ bool OHOSAudioOutputStream::InitRender() {
   callbacks.OH_AudioRenderer_OnInterruptEvent = AudioRendererOnInterruptEvent;
   OH_AudioStreamBuilder_SetRendererCallback(audio_stream_builder_, callbacks,
                                             this);
+  OH_AudioStream_Result res = OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback(
+                              audio_stream_builder_,
+                              &AudioRendererOutputDeviceChangeCallback, this);
+  if (res != AUDIOSTREAM_SUCCESS) {
+    return false;
+  }
   OH_AudioStream_Result ret;
   // create audio render
   OH_AudioRenderer* tempAudioRenderer = audio_renderer_.get();
@@ -382,7 +481,7 @@ bool OHOSAudioOutputStream::InitRender() {
 
 void OHOSAudioOutputStream::SetStreamUsage() {
   if (isCommunication_) {
-    OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_VOICE_COMMUNICATION);
+    OH_AudioStreamBuilder_SetRendererInfo(audio_stream_builder_, AUDIOSTREAM_USAGE_VIDEO_COMMUNICATION);
     return;
   }
  
@@ -486,7 +585,6 @@ base::TimeDelta OHOSAudioOutputStream::GetDelay(
 
 // LCOV_EXCL_START
 void OHOSAudioOutputStream::PumpSamples() {
-    base::AutoLock lock(lock_);
     if (!running_) {
         LOG(INFO) << "The playback is stopped. Exit PumpSamples.";
         return;
@@ -516,9 +614,11 @@ void OHOSAudioOutputStream::PumpSamples() {
         }
         return;
     }
-
-    // Obtains data. The data does not need to be processed and may be empty.
-    (void)callback_->OnMoreData(base::TimeDelta(), base::TimeTicks::Now(), {}, audio_bus_.get());
+    {
+      base::AutoLock lock(lock_);
+      // Obtains data. The data does not need to be processed and may be empty.
+      (void)callback_->OnMoreData(base::TimeDelta(), base::TimeTicks::Now(), {}, audio_bus_.get());
+    }
     SchedulePumpSamples();
 }
 // LCOV_EXCL_STOP
@@ -542,6 +642,7 @@ void OHOSAudioOutputStream::OnWriteData(void* buffer, int32_t length) {
   audio_bus_->Scale(volume_);
   audio_bus_->ToInterleaved<SignedInt16SampleTypeTraits>(
       frames_filled, reinterpret_cast<int16_t*>(buffer));
+  DumpFileUtil::WriteDumpScopedFile(dumpFile_, buffer, length);
   if (reference_time_.is_null()) {
     reference_time_ = now;
   }
@@ -561,7 +662,7 @@ void OHOSAudioOutputStream::SetUpAudioSilentState() {
   bool is_playing = OHOSAudioFocusController::IsActive(parameters_) ||
                     OHOSAudioFocusController::GetPlayingState(parameters_) ||
                     write_data_counts_ >= 1;
-  bool is_muted = OHOSAudioFocusController::GetMuteState(parameters_);
+  bool is_muted = OHOSAudioFocusController::GetMediaPlayerMuteState(parameters_);
   if (is_playing && !is_muted) {
     OH_AudioRenderer_SetSilentModeAndMixWithOthers(audio_renderer_, false);
     LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode false!";
@@ -589,7 +690,7 @@ bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode() {
       OHOSAudioFocusController::GetSessionState(parameters_);
   bool is_active = OHOSAudioFocusController::IsActive(parameters_);
   bool is_playingState = OHOSAudioFocusController::GetPlayingState(parameters_);
-  bool is_muted = OHOSAudioFocusController::GetMuteState(parameters_);
+  bool is_muted = OHOSAudioFocusController::GetMediaPlayerMuteState(parameters_);
   LOG(INFO) << "OHOSAudioOutputStream sessionState:"
             << static_cast<uint32_t>(sessionState) << ", mutedMode:" << is_muted
             << ", activeMode:" << is_active

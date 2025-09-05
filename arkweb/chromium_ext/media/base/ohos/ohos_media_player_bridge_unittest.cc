@@ -27,6 +27,10 @@ using namespace testing;
 using namespace OHOS::NWeb;
 using namespace base;
 
+static constexpr int DEFAULT_VALUE = -1;
+static constexpr int DEFAULT_VALUE_ONE = 1;
+static constexpr int DEFAULT_VALUE_TWO = 2;
+
 class MockGURL : public GURL {
  public:
   MOCK_METHOD(bool, SchemeIsBlob, (), (const override));
@@ -774,4 +778,182 @@ TEST_F(OHOSMediaPlayerBridgeTests, IsAudible) {
   float volume_f = 1;
   bool ret = bridge->IsAudible(volume_f);
   EXPECT_TRUE(ret);
+}
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+TEST_F(OHOSMediaPlayerBridgeTests, uv__get_addr_tag01) {
+  void* test_addr = reinterpret_cast<void*>(0x12345678);
+  uint64_t ret = bridge->uv__get_addr_tag(test_addr);
+  EXPECT_NE(ret, 0);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, uv__get_addr_tag02) {
+  uint64_t ret = bridge->uv__get_addr_tag(nullptr);
+  EXPECT_EQ(ret, 0);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurfaceNew01) {
+  int32_t surface_id = DEFAULT_VALUE;
+  bridge->SetVideoSurfaceNew(surface_id);
+
+  EXPECT_EQ(bridge->new_surface_id_, surface_id);
+  EXPECT_EQ(bridge->pending_new_surface_id_, DEFAULT_VALUE);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurfaceNew02) {
+  int32_t surface_id = DEFAULT_VALUE_ONE;
+  bridge->new_surface_id_ = DEFAULT_VALUE_TWO;
+  bridge->SetVideoSurfaceNew(surface_id);
+
+  EXPECT_EQ(bridge->new_surface_id_, surface_id);
+  EXPECT_EQ(bridge->pending_new_surface_id_, surface_id);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurfaceNew03) {
+  int32_t surface_id = DEFAULT_VALUE_ONE;
+  bridge->SetVideoSurfaceNew(surface_id);
+
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter);
+
+  EXPECT_EQ(bridge->new_surface_id_, surface_id);
+  EXPECT_EQ(bridge->pending_new_surface_id_, surface_id);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurfaceNew04) {
+  int32_t surface_id = DEFAULT_VALUE_ONE;
+  bridge->SetVideoSurfaceNew(surface_id);
+  bridge->player_ = nullptr;
+
+  EXPECT_EQ(bridge->new_surface_id_, surface_id);
+  EXPECT_EQ(bridge->pending_new_surface_id_, surface_id);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurfaceOld01) {
+  bridge->new_surface_id_ = DEFAULT_VALUE_TWO;
+  bridge->player_ = nullptr;
+  bridge->SetVideoSurfaceOld();
+
+  EXPECT_EQ(bridge->new_surface_id_, DEFAULT_VALUE);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurfaceOld02) {
+  bridge->player_ = nullptr;
+  bridge->SetVideoSurfaceOld();
+
+  EXPECT_EQ(bridge->new_surface_id_, DEFAULT_VALUE);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurfaceOld03) {
+  bridge->new_surface_id_ = DEFAULT_VALUE_TWO;
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter);
+
+  bridge->SetVideoSurfaceOld();
+
+  EXPECT_EQ(bridge->new_surface_id_, DEFAULT_VALUE);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurfaceOld04) {
+  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter);
+
+  bridge->SetVideoSurfaceOld();
+
+  EXPECT_EQ(bridge->new_surface_id_, DEFAULT_VALUE);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurface01) {
+  int32_t surface_id = DEFAULT_VALUE_ONE;
+  bridge->SetVideoSurface(surface_id);
+
+  EXPECT_EQ(bridge->new_surface_id_, surface_id);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, SetVideoSurface02) {
+  int32_t surface_id = DEFAULT_VALUE;
+  bridge->SetVideoSurface(surface_id);
+
+  EXPECT_EQ(bridge->new_surface_id_, DEFAULT_VALUE);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_PIP)
+TEST_F(OHOSMediaPlayerBridgeTests, PipEnable01) {
+  bridge->PipEnable(true);
+
+  EXPECT_EQ(bridge->new_surface_id_, DEFAULT_VALUE);
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, PipEnable02) {
+  bridge->PipEnable(false);
+
+  EXPECT_EQ(bridge->new_surface_id_, DEFAULT_VALUE);
+}
+#endif
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack01) {
+  auto mock_player_adapter_ = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter_);
+  bridge->pending_seek_ = base::Milliseconds(0);
+  bridge->recording_seek_ = base::Milliseconds(0);
+
+  bridge->OnSeekBack(base::Milliseconds(0));
+  EXPECT_EQ(bridge->recording_seek_, base::Milliseconds(0));
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack02) {
+  bridge->player_ = nullptr;
+  bridge->pending_seek_ = base::Milliseconds(1);
+  bridge->recording_seek_ = base::Milliseconds(0);
+
+  bridge->OnSeekBack(base::Milliseconds(0));
+  EXPECT_EQ(bridge->recording_seek_, base::Milliseconds(0));
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack03) {
+  auto mock_player_adapter_ = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter_);
+  bridge->pending_seek_ = base::Milliseconds(1);
+  bridge->recording_seek_ = base::Milliseconds(0);
+
+  bridge->OnSeekBack(base::Milliseconds(0));
+  EXPECT_EQ(bridge->recording_seek_, base::Milliseconds(0));
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack04) {
+  auto mock_player_adapter_ = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter_);
+  bridge->pending_seek_ = base::Milliseconds(1);
+  bridge->recording_seek_ = base::Milliseconds(0);
+  bridge->seek_complete_ = false;
+
+  bridge->OnSeekBack(base::Milliseconds(0));
+  EXPECT_EQ(bridge->recording_seek_, base::Milliseconds(-1));
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack05) {
+  auto mock_player_adapter_ = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter_);
+  bridge->pending_seek_ = base::Milliseconds(1);
+  bridge->recording_seek_ = base::Milliseconds(0);
+  bridge->seek_complete_ = true;
+  bridge->seeking_back_complete_ = true;
+
+  bridge->OnSeekBack(base::Milliseconds(0));
+  EXPECT_EQ(bridge->recording_seek_, base::Milliseconds(0));
+}
+
+TEST_F(OHOSMediaPlayerBridgeTests, OnSeekBack06) {
+  auto mock_player_adapter_ = std::make_unique<MockPlayerAdapter>();
+  bridge->player_ = std::move(mock_player_adapter_);
+  bridge->pending_seek_ = base::Milliseconds(1);
+  bridge->recording_seek_ = base::Milliseconds(400);
+  bridge->seek_complete_ = true;
+  bridge->seeking_back_complete_ = false;
+
+  bridge->OnSeekBack(base::Milliseconds(0));
+  EXPECT_EQ(bridge->seeking_back_complete_, true);
 }

@@ -43,6 +43,18 @@ bool PageNodeImpl::IsMediaPlaying() const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   return is_media_playing();
 }
+
+void PageNodeImpl::AudioContextPlaybackStarted(const AudioContextId& audio_context_id) {
+  for (auto& observer : GetObservers()) {
+    observer.OnAudioContextPlaybackStarted(audio_context_id);
+  }
+}
+
+void PageNodeImpl::AudioContextPlaybackStopped(const AudioContextId& audio_context_id) {
+  for (auto& observer : GetObservers()) {
+    observer.OnAudioContextPlaybackStopped(audio_context_id);
+  }
+}
 // LCOV_EXCL_STOP
 #endif
 }

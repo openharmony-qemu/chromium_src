@@ -155,6 +155,8 @@ class WebContentsImplExt : public WebContentsImpl {
       const GlobalRenderFrameHostId& id) override;
   void OnRenderFrameHostLeaveBackForwardCache(
       const GlobalRenderFrameHostId& id) override;
+  void OnNativeEmbedObjectParamChange(
+      const NativeEmbedParamDataInfo& native_param_info) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
@@ -294,7 +296,20 @@ class WebContentsImplExt : public WebContentsImpl {
              int width,
              int height);
   void OnPipEvent(int event) override;
+  void SetUpdateSurface(bool state);
+  bool IsUpdateSurface();
 #endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  bool OnStartBackgroundTask(int32_t type, const std::string& message) override;
+#endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void OnIsPageDistillable(int page_type,
+                           const std::string& distillable_page_url,
+                           const std::string& title) override;
+#endif // ARKWEB_READER_MODE
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 friend class WebContentsImpl;
 friend class WebContentsImplUtils;
@@ -326,6 +341,16 @@ public:
   void DelAllVideoSurfaces();
   void ReportVideoDecoderName(const std::string& decoder_name);
 #endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  bool IsActiveFileChooser() override {
+    return active_file_chooser_ != nullptr;
+  }
+  void SetFileChooserInActive() override {
+    active_file_chooser_ = nullptr; 
+  }
+#endif  // BUILDFLAG(ARKWEB_FILE_UPLOAD)
+
 #if BUILDFLAG(ARKWEB_PDF)
   void OnPdfScrollAtBottom(const std::string& url) override;
   void OnPdfLoadEvent(int32_t result, const std::string& url) override;
@@ -338,20 +363,6 @@ public:
   void OnBrowserForeground() override;
   void OnBrowserBackground() override;
 #endif
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  void OnShowConfirmInfoBar(const std::string& title,
-                            const std::string& infoId,
-                            const std::string& message,
-                            int buttons,
-                            const std::string& buttonLabelOK,
-                            const std::string& buttonLabelCancel);
-  void OnHideConfirmInfoBar(const std::string& title,
-                            const std::string& infoId,
-                            const std::string& message,
-                            int buttons,
-                            const std::string& buttonLabelOK,
-                            const std::string& buttonLabelCancel);
-#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 private:
   std::string custom_user_agent_;
@@ -380,6 +391,7 @@ private:
   std::string shared_render_process_token_;
 #endif
 #if BUILDFLAG(ARKWEB_PIP)
+  bool pip_update_surface_ = false;
   bool pip_status_ = false;
 #endif
 };

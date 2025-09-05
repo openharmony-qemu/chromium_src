@@ -540,7 +540,8 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
 
   void NotifyForNextTouchEvent() override {}
 
-  void SetGrantFileAccessDirs(const std::vector<CefString>& dir_list) override {
+  void SetGrantFileAccessDirs(const std::vector<CefString>& dir_list,
+                              const std::vector<CefString>& excluded_dir_list) override {
   }
 
   void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback) override {
@@ -755,6 +756,12 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
                                        void** adapter) override {}
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void Distill(const std::string& guid, const DistillOptions& distill_options,
+    CefRefPtr<CefDistillCallback> callback) override {}
+  void AbortDistill() override {}
+#endif // ARKWEB_READER_MODE
 
   bool GetHasComposition() {}
   void SetHasComposition(bool has_composition)  {}

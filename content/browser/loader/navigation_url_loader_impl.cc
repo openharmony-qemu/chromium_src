@@ -68,6 +68,7 @@
 #include "content/public/browser/url_loader_throttles.h"
 #include "content/public/browser/web_ui_url_loader_factory.h"
 #include "content/public/common/content_client.h"
+#include "content/public/common/content_features.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/referrer.h"
 #include "content/public/common/url_constants.h"
@@ -116,6 +117,12 @@
 
 #if BUILDFLAG(ENABLE_PLUGINS)
 #include "content/public/browser/plugin_service.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "content/browser/web_contents/web_contents_impl.h"
+#include "content/public/browser/web_contents.h"
 #endif
 
 namespace content {
@@ -295,6 +302,11 @@ std::unique_ptr<network::ResourceRequest> CreateResourceRequest(
   if (request_info.is_outermost_main_frame) {
     load_flags |= net::LOAD_MAIN_FRAME_DEPRECATED;
     load_flags |= net::LOAD_CAN_USE_RESTRICTED_PREFETCH_FOR_MAIN_FRAME;
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+    if(frame_tree_node->navigation_request()->load_ignore_cache_params){
+      load_flags |= net::LOAD_IGNORE_CACHE_CONTROL;
+    }
+#endif
   }
 
   // Sync loads should have maximum priority and should be the only
@@ -344,6 +356,18 @@ std::unique_ptr<network::ResourceRequest> CreateResourceRequest(
       request_info.begin_params->impression.has_value()
           ? network::mojom::AttributionReportingEligibility::kNavigationSource
           : network::mojom::AttributionReportingEligibility::kUnset;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableLoggerReport)) {
+    new_request->usage_scenario_ =
+        WebContents::FromFrameTreeNodeId(frame_tree_node->frame_tree_node_id())
+            ->GetOrCreateWebPreferences()
+            .usage_scenario;
+  } else {
+    new_request->usage_scenario_ = 1;
+  }
+#endif
 
   new_request->shared_storage_writable_eligible =
       request_info.shared_storage_writable_eligible;
@@ -1151,7 +1175,13 @@ void NavigationURLLoaderImpl::OnReceiveRedirect(
   LogQueueTimeHistogram("Navigation.QueueTime.OnReceiveRedirect",
                         resource_request_->is_outermost_main_frame);
   net::Error error = net::OK;
-  if (!bypass_redirect_checks_ &&
+
+  bool bypass_redirect_checks =
+      base::FeatureList::IsEnabled(features::kBypassRedirectChecksPerRequest)
+          ? head->bypass_redirect_checks
+          : bypass_redirect_checks_;
+
+  if (!bypass_redirect_checks &&
       !IsSafeRedirectTarget(url_, redirect_info.new_url)) {
     error = net::ERR_UNSAFE_REDIRECT;
   } else if (--redirect_limit_ == 0) {

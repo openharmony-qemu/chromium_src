@@ -12,11 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <mutex>
+#include <set>
 #include <unordered_map>
 #include "audio_capturer_adapter_impl.h"
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 
 namespace OHOS::NWeb {
+
+static std::set<OH_AudioCapturer*> captures_;
+static std::mutex capturesSetMutex_;
+CallbackSharedWrapper<UserDataCallBack> AudioCapturerAdapterImpl::callback_wrapper_;
 
 const std::unordered_map<AudioAdapterSamplingRate, int32_t> SAMPLING_RATE_MAP = {
     {AudioAdapterSamplingRate::SAMPLE_RATE_8000, 8000},
@@ -67,14 +73,35 @@ const OH_AudioStream_EncodingType DEFAULT_ENCODETYPE = AUDIOSTREAM_ENCODING_TYPE
 const OH_AudioStream_SampleFormat DEFAULT_SAMPLE_FORMAT = AUDIOSTREAM_SAMPLE_U8;
 const int32_t DEFAULT_AUDIO_CHANNEL = 2;
 const OH_AudioStream_SourceType DEFAULT_SourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_RECOGNITION;
+} // namespace
 
-int32_t OnReadData(OH_AudioCapturer* capturer, void* userData, void* buffer, int32_t length)
+AudioCapturerAdapterImpl::~AudioCapturerAdapterImpl() {
+    if (callback_index_ > 0) {
+        callback_wrapper_.Clear(callback_index_);
+        callback_index_ = 0;
+    }
+}
+
+int32_t AudioCapturerAdapterImpl::OnReadData(OH_AudioCapturer* capturer, void* userData, void* buffer, int32_t length)
 {
+    {
+        std::unique_lock<std::mutex> lock(capturesSetMutex_);
+        auto it = captures_.find(capturer);
+        if (it == captures_.end()) {
+            WVLOG_E("AudioCapturerAdapterImpl OnReadData cannot find capture, return");
+            return -1;
+        }
+    }
     if (userData == nullptr) {
         return -1;
     }
 
-    std::shared_ptr<UserDataCallBack> userDataCallback = *(static_cast<std::shared_ptr<UserDataCallBack>*>(userData));
+    size_t callback_index = reinterpret_cast<size_t>(userData);
+    std::shared_ptr<UserDataCallBack> userDataCallback = callback_wrapper_.GetCallback(callback_index);
+    if (!userDataCallback) {
+        WVLOG_E("AudioCapturerAdapterImpl userDataCallBack is nullptr");
+        return -1;
+    }
     userDataCallback->buffer = static_cast<uint8_t*>(buffer);
     userDataCallback->length = length;
     if (userDataCallback->callback == nullptr) {
@@ -83,7 +110,6 @@ int32_t OnReadData(OH_AudioCapturer* capturer, void* userData, void* buffer, int
     userDataCallback->callback->OnReadData(length);
     return 0;
 }
-} // namespace
 
 int32_t AudioCapturerAdapterImpl::Create(
     const std::shared_ptr<AudioCapturerOptionsAdapter> capturerOptions,
@@ -153,8 +179,13 @@ int32_t AudioCapturerAdapterImpl::Create(
     callbacks.OH_AudioCapturer_OnStreamEvent = nullptr;
     callbacks.OH_AudioCapturer_OnError = nullptr;
 
-    userDataCallBack_ = std::make_shared<UserDataCallBack>();
-    OH_AudioStreamBuilder_SetCapturerCallback(builder, callbacks, static_cast<void*>(&userDataCallBack_));
+    if (callback_index_ > 0) {
+        callback_wrapper_.Clear(callback_index_);
+        callback_index_ = 0;
+    }
+    std::shared_ptr<UserDataCallBack> userDataCallBack = std::make_shared<UserDataCallBack>();
+    callback_index_ = callback_wrapper_.AddCallback(userDataCallBack);
+    OH_AudioStreamBuilder_SetCapturerCallback(builder, callbacks, reinterpret_cast<void*>(callback_index_));
 
     ret = OH_AudioStreamBuilder_GenerateCapturer(builder, &audio_capturer_);
     if (ret != AUDIOSTREAM_SUCCESS) {
@@ -173,6 +204,12 @@ bool AudioCapturerAdapterImpl::Start()
         return false;
     }
     auto ret = OH_AudioCapturer_Start(audio_capturer_);
+    {
+        std::unique_lock<std::mutex> lock(capturesSetMutex_);
+        if (ret == AUDIOSTREAM_SUCCESS) {
+            captures_.insert(audio_capturer_);
+        }
+    }
     return ret == AUDIOSTREAM_SUCCESS;
 }
 
@@ -181,6 +218,10 @@ bool AudioCapturerAdapterImpl::Stop()
     if (audio_capturer_ == nullptr) {
         WVLOG_E("audio capturer is nullptr");
         return false;
+    }
+    {
+        std::unique_lock<std::mutex> lock(capturesSetMutex_);
+        captures_.erase(audio_capturer_);
     }
     auto ret = OH_AudioCapturer_Stop(audio_capturer_);
     return ret == AUDIOSTREAM_SUCCESS;
@@ -192,8 +233,16 @@ bool AudioCapturerAdapterImpl::Release()
         WVLOG_E("audio capturer is nullptr");
         return false;
     }
+    {
+        std::unique_lock<std::mutex> lock(capturesSetMutex_);
+        captures_.erase(audio_capturer_);
+    }
     auto ret = OH_AudioCapturer_Release(audio_capturer_);
-    return ret == AUDIOSTREAM_SUCCESS;
+    if (ret == AUDIOSTREAM_SUCCESS) {
+        audio_capturer_ = nullptr;
+        return true;
+    }
+    return false;
 }
 
 int32_t AudioCapturerAdapterImpl::SetCapturerReadCallback(
@@ -209,26 +258,28 @@ int32_t AudioCapturerAdapterImpl::SetCapturerReadCallback(
         return AUDIO_NULL_ERROR;
     }
 
-    if (userDataCallBack_ == nullptr) {
+    auto userDataCallBack = callback_wrapper_.GetCallback(callback_index_);
+    if (userDataCallBack == nullptr) {
         WVLOG_E("userDataCallBack is nullptr");
         return AUDIO_NULL_ERROR;
     }
 
-    userDataCallBack_->callback = callback;
+    userDataCallBack->callback = callback;
     return AUDIO_OK;
 }
 
 int32_t AudioCapturerAdapterImpl::GetBufferDesc(std::shared_ptr<BufferDescAdapter> bufferDesc)
 {
-    if (!bufferDesc || !userDataCallBack_ || userDataCallBack_->buffer == nullptr) {
+    auto userDataCallBack = callback_wrapper_.GetCallback(callback_index_);
+    if (!bufferDesc || !userDataCallBack || userDataCallBack->buffer == nullptr) {
         WVLOG_E("bufferDesc is nullptr");
         return AUDIO_NULL_ERROR;
     }
 
-    WVLOG_D("GetBufferDesc %{public}p, %{public}zd", userDataCallBack_->buffer, userDataCallBack_->length);
-    bufferDesc->SetBuffer(userDataCallBack_->buffer);
-    bufferDesc->SetBufLength(userDataCallBack_->length);
-    bufferDesc->SetDataLength(userDataCallBack_->length);
+    WVLOG_D("GetBufferDesc buffer size: %{public}zu", userDataCallBack->length);
+    bufferDesc->SetBuffer(userDataCallBack->buffer);
+    bufferDesc->SetBufLength(userDataCallBack->length);
+    bufferDesc->SetDataLength(userDataCallBack->length);
     return AUDIO_OK;
 }
 

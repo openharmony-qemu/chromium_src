@@ -19,7 +19,7 @@ class BaseFetchContextUtil {
  public:
   static std::optional<ResourceRequestBlockedReason>
   CanRequestBasedOnSubresourceFilterOnlyForInclude(
-      raw_ptr<const BaseFetchContext> obj,
+      const BaseFetchContext* obj,
       ResourceType type,
       const ResourceRequest& resource_request,
       const KURL& url,
@@ -37,7 +37,7 @@ class BaseFetchContextUtil {
             ResourceRequestBlockedReason::kSubresourceFilter, type);
       }
       LOG(INFO) << "[User AdBlock] Subresource request blocked : ***";
-#ifdef OHOS_LOGGER_REPORT
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
       LOG_FEEDBACK(INFO) << "[User AdBlock] Subresource request blocked : "
                          << url::LogUtils::ConvertUrlWithMask(
                                 url.GetString().Utf8());

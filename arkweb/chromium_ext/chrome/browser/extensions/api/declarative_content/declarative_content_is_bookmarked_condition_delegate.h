@@ -18,10 +18,17 @@
 
 #include <mutex>
 
+#include "base/functional/callback.h"
 #include "base/observer_list.h"
 #include "base/observer_list_types.h"
+#include "base/no_destructor.h"
 #include "content/public/browser/browser_context.h"
 #include "ohos_nweb/src/capi/browser_service/nweb_extension_bookmarks_types.h"
+
+using RequestIsBookmarkedCallback =
+    base::RepeatingCallback<void(uint32_t bookmarkCount,
+                                 const NWebExtensionBookmarkTreeNode* bookmarks,
+                                 const char* error)>;
 
 namespace extensions {
 
@@ -53,7 +60,11 @@ class DeclarativeContentIsBookmarkedConditionDelegate {
   void OnBookmarksImportBegin(content::BrowserContext* context);
   void OnBookmarksImportEnd(content::BrowserContext* context);
 
+  void RequestIsBookmarked(const GURL& url,
+                           RequestIsBookmarkedCallback callback);
+
  private:
+  friend class base::NoDestructor<DeclarativeContentIsBookmarkedConditionDelegate>;
   DeclarativeContentIsBookmarkedConditionDelegate() = default;
   ~DeclarativeContentIsBookmarkedConditionDelegate() = default;
   DeclarativeContentIsBookmarkedConditionDelegate(

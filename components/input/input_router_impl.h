@@ -186,6 +186,27 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   bool IsWheelScrollInProgress() override;
   bool IsAutoscrollInProgress() override;
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetGestureEventResult(bool result,
+    bool stopPropagation, int32_t fingerId) override {}
+
+  void SetNativeEmbedMode(bool flag) override {}
+  void SetMouseEventResult(bool result, bool stopPropagation) override {}
+  void SetEnableCustomVideoPlayer(bool flag) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void ScrollBy(float delta_x, float delta_y) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override {}
+#endif
+
   // TouchpadPinchEventQueueClient
   void SendMouseWheelEventForPinchImmediately(
       const MouseWheelEventWithLatencyInfo& event,

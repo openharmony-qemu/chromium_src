@@ -848,7 +848,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   MOCK_METHOD(void,
               SetPathAllowingUniversalAccess,
-              (const std::vector<std::string>& pathList),
++              (const std::vector<std::string>& path_list,
++               const std::vector<std::string>& excluded_path_list),
               (override));
 #endif
 
@@ -863,6 +864,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void,
               SetBackForwardCacheOptions,
               (int32_t size, int32_t timeToLive),
+              (override));
+  MOCK_METHOD(void,
+              SetMediaResumeFromBFCachePage,
+              (bool resume),
               (override));
 #endif
 
@@ -1064,16 +1069,14 @@ class MockNWebDelegate : public NWebDelegateInterface {
                std::unique_ptr<NWebExtensionTab> tab),
               (override));
   MOCK_METHOD(void,
-              WebExtensionTabActivated,
-              (std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo),
-              (override));
-  MOCK_METHOD(void,
               WebExtensionTabAttached,
-              (std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo),
+              (int tab_id,
+               std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo),
               (override));
   MOCK_METHOD(void,
               WebExtensionTabDetached,
-              (std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo),
+              (int tab_id,
+               std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo),
               (override));
   MOCK_METHOD(void,
               WebExtensionTabHighlighted,
@@ -1189,6 +1192,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (uint32_t nweb_id, uint64_t blankless_key),
               (override));
   MOCK_METHOD(int64_t, GetPreferenceHash, (), (override));
+  MOCK_METHOD(int32_t, GetWidth, (), (override));
+  MOCK_METHOD(int32_t, GetHeight, (), (override));
 #endif
 
 #if BUILDFLAG(ARKWEB_MENU)
@@ -1216,6 +1221,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
                IsolatedWorld world,
                OnReceiveValueCallback callback),
               (override));
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  MOCK_METHOD(void, Distill, (const std::string& guid, const DistillOptions& distill_options,
+    DistillCallback callback), (override));
+  MOCK_METHOD(void, AbortDistill, (), (override));
+#endif // ARKWEB_READER_MODE
 };
 }  // namespace OHOS::NWeb
 

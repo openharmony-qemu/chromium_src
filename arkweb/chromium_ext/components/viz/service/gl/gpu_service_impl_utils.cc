@@ -162,15 +162,11 @@ bool GpuServiceImpl::GetIsScroll() {
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-void GpuServiceImpl::SendBlanklessSnapshotInfo(uint64_t blankless_key,
-                                               int32_t lcp_time,
-                                               int64_t pref_hash,
-                                               const std::vector<gfx::Rect>& quad_list,
+void GpuServiceImpl::SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
                                                mojo::ScopedSharedBufferHandle buffer,
                                                mojom::BlanklessBitmapMetadataPtr metadata) {
   TRACE_EVENT0("viz", "blankless SendBlanklessSnapshotInfo to browser");
-  gpu_host_->SendBlanklessSnapshotInfo(blankless_key, lcp_time, pref_hash, quad_list,
-    std::move(buffer), std::move(metadata));
+  gpu_host_->SendBlanklessSnapshotInfo(std::move(infoPtr), std::move(buffer), std::move(metadata));
 }
 
 void GpuServiceImpl::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {
@@ -184,7 +180,7 @@ void GpuServiceImpl::OnFrameSnapshotCopyOutputResult(std::unique_ptr<CopyOutputR
   }
   TRACE_EVENT0("viz", "blankless OnFrameSnapshotCopyOutputResult callback");
   ArkwebCopyOutputResultUtils* utils = result->copy_output_result_utils();
-  if (utils && utils->GetBlanklessKey() != base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
+  if (utils && utils->IsBlanklessInfoValid()) {
     SkBitmap bitmap = result->ScopedAccessSkBitmap().bitmap();
     if (!bitmap.getPixels()) {
       LOG(ERROR) << "blankless OnFrameSnapshotCopyOutputResult: Invaild bitmap.";
@@ -193,6 +189,8 @@ void GpuServiceImpl::OnFrameSnapshotCopyOutputResult(std::unique_ptr<CopyOutputR
     size_t size = bitmap.computeByteSize();
     LOG(DEBUG) << "blankless OnFrameSnapshotCopyOutputResult, width:"
       << bitmap.width() << ",height:" << bitmap.height() << ",size:" << size;
+
+    auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
 
     mojo::ScopedSharedBufferHandle shared_buffer = mojo::SharedBufferHandle::Create(size);
     if (!shared_buffer.is_valid()) {
@@ -220,11 +218,23 @@ void GpuServiceImpl::OnFrameSnapshotCopyOutputResult(std::unique_ptr<CopyOutputR
     metadata->color_type = static_cast<int32_t>(info.colorType());
     metadata->alpha_type = static_cast<int32_t>(info.alphaType());
     metadata->size = static_cast<uint64_t>(size);
-    io_runner_->PostTask(FROM_HERE,
-                      base::BindOnce(&GpuServiceImpl::SendBlanklessSnapshotInfo,
-                      weak_ptr_, utils->GetBlanklessKey(), utils->GetLcpTime(),
-                      utils->GetPreferenceHash(), utils->GetQuadList(),
-                      std::move(shared_buffer), std::move(metadata)));
+
+    mojom::BlanklessSendInfoPtr infoPtr = mojom::BlanklessSendInfo::New();
+    if (!infoPtr) {
+      LOG(ERROR) << "blankless OnFrameSnapshotCopyOutputResult Failed to new BlanklessInfo.";
+      return;
+    }
+    auto& blankless_info = utils->GetBlanklessInfo();
+    infoPtr->blankless_key = blankless_info.blankless_key;
+    infoPtr->nweb_id = blankless_info.nweb_id;
+    infoPtr->lcp_time = blankless_info.lcp_time;
+    infoPtr->system_time = system_time;
+    infoPtr->pref_hash = blankless_info.pref_hash;
+    infoPtr->width = blankless_info.width;
+    infoPtr->height = blankless_info.height;
+
+    io_runner_->PostTask(FROM_HERE, base::BindOnce(&GpuServiceImpl::SendBlanklessSnapshotInfo,
+                         weak_ptr_, std::move(infoPtr), std::move(shared_buffer), std::move(metadata)));
   }
 }
 

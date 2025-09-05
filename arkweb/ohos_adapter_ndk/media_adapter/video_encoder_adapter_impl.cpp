@@ -36,6 +36,74 @@ const std::unordered_map<OH_AVCodecBufferFlags, BufferFlag> BUFFER_FLAG_MAP = {
 };
 } // namespace
 
+CallbackSharedWrapper<EncoderCallbackImpl> VideoEncoderAdapterImpl::callback_wrapper_;
+
+void VideoEncoderAdapterImpl::OnError(OH_AVCodec *codec, int32_t errorCode, void *userData) {
+    (void)codec;
+    if (!userData) {
+        return;
+    }
+
+    size_t callback_index = reinterpret_cast<size_t>(userData);
+    std::shared_ptr<EncoderCallbackImpl> callback = callback_wrapper_.GetCallback(callback_index);
+    if (!callback) {
+        return;
+    }
+    callback->OnError(errorCode);
+}
+
+void VideoEncoderAdapterImpl::OnStreamChanged(OH_AVCodec *codec, OH_AVFormat *format, void *userData) {
+    (void)codec;
+    if (!userData) {
+        return;
+    }
+
+    size_t callback_index = reinterpret_cast<size_t>(userData);
+    std::shared_ptr<EncoderCallbackImpl> callback = callback_wrapper_.GetCallback(callback_index);
+    if (!callback) {
+        return;
+    }
+    callback->OnOutputFormatChanged(format);
+}
+
+void VideoEncoderAdapterImpl::OnNeedInputBuffer(OH_AVCodec *codec, uint32_t index, OH_AVBuffer *buffer, void *userData) {
+    (void)codec;
+    if (!userData) {
+        return;
+    }
+
+    size_t callback_index = reinterpret_cast<size_t>(userData);
+    std::shared_ptr<EncoderCallbackImpl> callback = callback_wrapper_.GetCallback(callback_index);
+    if (!callback) {
+        return;
+    }
+    callback->OnInputBufferAvailable(index, buffer);
+}
+
+void VideoEncoderAdapterImpl::OnNewOutputBuffer(OH_AVCodec *codec, uint32_t index, OH_AVBuffer *buffer, void *userData) {
+    (void)codec;
+    if (!userData) {
+        return;
+    }
+
+    size_t callback_index = reinterpret_cast<size_t>(userData);
+    std::shared_ptr<EncoderCallbackImpl> callback = callback_wrapper_.GetCallback(callback_index);
+    if (!callback) {
+        return;
+    }
+    callback->OnOutputBufferAvailable(index, buffer);
+}
+
+VideoEncoderAdapterImpl::~VideoEncoderAdapterImpl() {
+    if (encoder_ != nullptr) {
+        Release();
+    }
+    if (callback_index_ > 0) {
+        callback_wrapper_.Clear(callback_index_);
+        callback_index_ = 0;
+    }
+}
+
 CodecCodeAdapter VideoEncoderAdapterImpl::CreateVideoCodecByMime(const std::string mimetype)
 {
     encoder_ = OH_VideoEncoder_CreateByMime(mimetype.c_str());
@@ -68,31 +136,25 @@ CodecCodeAdapter VideoEncoderAdapterImpl::SetCodecCallback(const std::shared_ptr
         return CodecCodeAdapter::ERROR;
     }
 
-    callback_ = std::make_shared<EncoderCallbackImpl>(callback);
-    if (callback_ == nullptr) {
+    std::shared_ptr<EncoderCallbackImpl> encode_callback = std::make_shared<EncoderCallbackImpl>(callback);
+    if (encode_callback == nullptr) {
         WVLOG_E("Create EncoderCallbackImpl failed.");
         return CodecCodeAdapter::ERROR;
     }
 
-    struct OH_AVCodecCallback cb;
-    cb.onError = [] (OH_AVCodec *codec, int32_t errorCode, void *userData) {
-        (void)codec;
-        static_cast<EncoderCallbackImpl*>(userData)->OnError(errorCode);
-    };
-    cb.onStreamChanged = [] (OH_AVCodec *codec, OH_AVFormat *format, void *userData) {
-        (void)codec;
-        static_cast<EncoderCallbackImpl*>(userData)->OnOutputFormatChanged(format);
-    };
-    cb.onNeedInputBuffer = [] (OH_AVCodec *codec, uint32_t index, OH_AVBuffer *buffer, void *userData) {
-        (void)codec;
-        static_cast<EncoderCallbackImpl*>(userData)->OnInputBufferAvailable(index, buffer);
-    };
-    cb.onNewOutputBuffer = [] (OH_AVCodec *codec, uint32_t index, OH_AVBuffer *buffer, void *userData) {
-        (void)codec;
-        static_cast<EncoderCallbackImpl*>(userData)->OnOutputBufferAvailable(index, buffer);
-    };
+    if (callback_index_ > 0) {
+        callback_wrapper_.Clear(callback_index_);
+        callback_index_ = 0;
+    }
+    callback_index_ = callback_wrapper_.AddCallback(encode_callback);
 
-    OH_AVErrCode ret = OH_VideoEncoder_RegisterCallback(encoder_, cb, callback_.get());
+    struct OH_AVCodecCallback cb;
+    cb.onError = OnError;
+    cb.onStreamChanged = OnStreamChanged;
+    cb.onNeedInputBuffer = OnNeedInputBuffer;
+    cb.onNewOutputBuffer = OnNewOutputBuffer;
+
+    OH_AVErrCode ret = OH_VideoEncoder_RegisterCallback(encoder_, cb, reinterpret_cast<void*>(callback_index_));
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         return CodecCodeAdapter::ERROR;
     }
@@ -127,6 +189,8 @@ CodecCodeAdapter VideoEncoderAdapterImpl::Configure(const std::shared_ptr<CodecC
     WVLOG_I("Configure width: %{public}d, height: %{public}d, bitRate: %{public}d, framerate: %{public}lf,",
         config->GetWidth(), config->GetHeight(), (int32_t)config->GetBitRate(), config->GetFrameRate());
     OH_AVErrCode ret = OH_VideoEncoder_Configure(encoder_, format);
+    OH_AVFormat_Destroy(format);
+    format = nullptr;
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         return CodecCodeAdapter::ERROR;
     }
@@ -200,6 +264,7 @@ CodecCodeAdapter VideoEncoderAdapterImpl::Release()
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         return CodecCodeAdapter::ERROR;
     }
+    encoder_ = nullptr;
     return CodecCodeAdapter::OK;
 }
 
@@ -249,6 +314,8 @@ CodecCodeAdapter VideoEncoderAdapterImpl::RequestKeyFrameSoon()
     OH_AVFormat_SetIntValue(format, OH_MD_KEY_REQUEST_I_FRAME, true);
 
     OH_AVErrCode ret = OH_VideoEncoder_SetParameter(encoder_, format);
+    OH_AVFormat_Destroy(format);
+    format = nullptr;
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         return CodecCodeAdapter::ERROR;
     }

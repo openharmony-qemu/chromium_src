@@ -22,7 +22,7 @@
 namespace blink {
 class GestureManager;
 
-class GestureManagerUtils {
+class GestureManagerUtils : public GarbageCollected<GestureManagerUtils> {
   friend class GestureManager;
 
  public:
@@ -45,7 +45,8 @@ class GestureManagerUtils {
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   void UpdateContextMenuForFreeCopy(HitTestResult& hit_test_result, HitTestLocation& location);
 #endif
-  raw_ptr<GestureManager> gesture_manager_;
+  void Trace(Visitor*) const;
+  Member<GestureManager> gesture_manager_;
 };
 }  // namespace blink
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_INPUT_GESTURE_MANAGER_UTILS_H_

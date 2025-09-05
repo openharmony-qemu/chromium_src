@@ -444,6 +444,11 @@ SyncPointManager::CreateSyncPointClientState(
 
   DCHECK_GE(namespace_id, 0);
   DCHECK_LT(static_cast<size_t>(namespace_id), std::size(client_state_maps_));
+#if BUILDFLAG(IS_ARKWEB)
+  if ((namespace_id >= 0 && namespace_id < std::size(client_state_maps_)) &&
+      client_state_maps_[namespace_id].find(command_buffer_id) != client_state_maps_[namespace_id].end())
+    LOG(INFO) << "command_buffer_id is exist, could not insert again.";
+#endif
   const auto [_, inserted] = client_state_maps_[namespace_id].insert(
       std::make_pair(command_buffer_id, client_state));
   CHECK(inserted);

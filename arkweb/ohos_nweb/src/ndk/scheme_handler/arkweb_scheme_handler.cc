@@ -259,6 +259,10 @@ ARKWEB_EXPORT void OH_ArkWebHttpBodyStream_Read(
     LOG(ERROR) << "scheme_handler http body stream is nullptr";
     return;
   }
+  if (buf_len < 0) {
+    LOG(ERROR) << "buf_len smaller then zero";
+    return;
+  }
 
   http_body_stream->Read(buffer, buf_len);
 }
@@ -839,7 +843,19 @@ ARKWEB_EXPORT int32_t OH_ArkWebResourceHandler_DidFailWithError(
     LOG(ERROR) << "scheme_handler resource handler is nullptr";
     return ARKWEB_INVALID_PARAM;
   }
-  resource_handler->DidFailWithError(error_code);
+  resource_handler->DidFailWithError(error_code, false);
+  return ARKWEB_NET_OK;
+}
+
+ARKWEB_EXPORT int32_t OH_ArkWebResourceHandler_DidFailWithErrorV2(
+    const ArkWeb_ResourceHandler* resource_handler,
+    ArkWeb_NetError error_code,
+    bool completeIfNoResponse) {
+  if (!resource_handler) {
+    LOG(ERROR) << "scheme_handler resource handler is nullptr";
+    return ARKWEB_INVALID_PARAM;
+  }
+  resource_handler->DidFailWithError(error_code, completeIfNoResponse);
   return ARKWEB_NET_OK;
 }
 

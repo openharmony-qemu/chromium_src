@@ -107,7 +107,7 @@ class MockFrameSinkManager : public mojom::FrameSinkManager {
               (override));
   MOCK_METHOD(void,
               EvictFrameBackBuffers,
-              (const ::viz::FrameSinkId& frame_sink_id, bool invisible),
+              (const ::viz::FrameSinkId& frame_sink_id),
               (override));
   MOCK_METHOD(void,
               SetPipActive,
@@ -225,9 +225,8 @@ TEST_F(HostFrameSinkManagerUtilsTest, SetEnableHalfFrameRate) {
 TEST_F(HostFrameSinkManagerUtilsTest, EvictFrameBackBuffers) {
   HostFrameSinkManagerUtils utils(HostManager());
   const FrameSinkId sink_id(0, 0);
-  bool invisible = true;
   EXPECT_CALL(*FrameSinkManager(), EvictFrameBackBuffers);
-  utils.EvictFrameBackBuffers(sink_id, invisible);
+  utils.EvictFrameBackBuffers(sink_id);
 }
 #endif
 

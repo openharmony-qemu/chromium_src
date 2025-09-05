@@ -25,7 +25,7 @@ ArkWeb_ResourceHandler_::ArkWeb_ResourceHandler_(
     CefRefPtr<OHOS::NWeb::NWebSchemeHandlerFactory> factory,
     const std::string& web_tag,
     bool from_service_worker) {
-  pipe_resource_handler = new OHOS::NWeb::NWebPipeResourceHandler(
+  pipe_resource_handler_ = new OHOS::NWeb::NWebPipeResourceHandler(
       resource_request, this, factory, web_tag, from_service_worker);
 }
 
@@ -33,8 +33,8 @@ ArkWeb_ResourceHandler_::~ArkWeb_ResourceHandler_() {}
 
 void ArkWeb_ResourceHandler_::DidReceiveResponse(
     const ArkWeb_Response* response) const {
-  if (!pipe_resource_handler) {
-    LOG(ERROR) << "scheme_handler pipe_resource_handler is nullptr.";
+  if (!pipe_resource_handler_) {
+    LOG(ERROR) << "scheme_handler pipe_resource_handler_ is nullptr.";
     return;
   }
 
@@ -48,13 +48,13 @@ void ArkWeb_ResourceHandler_::DidReceiveResponse(
     return;
   }
 
-  pipe_resource_handler->DidReceiveResponse(response->cef_response);
+  pipe_resource_handler_->DidReceiveResponse(response->cef_response);
 }
 
 void ArkWeb_ResourceHandler_::DidReceiveData(const uint8_t* buffer,
                                              int64_t buf_len) const {
-  if (!pipe_resource_handler) {
-    LOG(ERROR) << "scheme_handler pipe_resource_handler is nullptr.";
+  if (!pipe_resource_handler_) {
+    LOG(ERROR) << "scheme_handler pipe_resource_handler_ is nullptr.";
     return;
   }
 
@@ -63,24 +63,25 @@ void ArkWeb_ResourceHandler_::DidReceiveData(const uint8_t* buffer,
     return;
   }
 
-  pipe_resource_handler->DidReceiveData(buffer, buf_len);
+  pipe_resource_handler_->DidReceiveData(buffer, buf_len);
 }
 
 void ArkWeb_ResourceHandler_::DidFinish() const {
-  if (!pipe_resource_handler) {
-    LOG(ERROR) << "scheme_handler pipe_resource_handler is nullptr.";
+  if (!pipe_resource_handler_) {
+    LOG(ERROR) << "scheme_handler pipe_resource_handler_ is nullptr.";
     return;
   }
 
-  pipe_resource_handler->DidFinish();
+  pipe_resource_handler_->DidFinish();
 }
 
 void ArkWeb_ResourceHandler_::DidFailWithError(
-    ArkWeb_NetError error_code) const {
-  if (!pipe_resource_handler) {
-    LOG(ERROR) << "scheme_handler pipe_resource_handler is nullptr.";
+    ArkWeb_NetError error_code,
+    bool completeIfNoResponse) const {
+  if (!pipe_resource_handler_) {
+    LOG(ERROR) << "scheme_handler pipe_resource_handler_ is nullptr.";
     return;
   }
-
-  pipe_resource_handler->DidFailWithError(error_code);
+ 
+  pipe_resource_handler_->DidFailWithError(error_code, completeIfNoResponse);
 }

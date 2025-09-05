@@ -16,6 +16,7 @@
 #ifndef MEDIA_OHOS_BASE_SCREEN_CAPTURE_SOURCE_BRIDGE_H_
 #define MEDIA_OHOS_BASE_SCREEN_CAPTURE_SOURCE_BRIDGE_H_
 
+#include <shared_mutex>
 #include "base/memory/weak_ptr.h"
 #include "base/threading/thread_checker.h"
 #include "media/base/audio_capturer_source.h"
@@ -73,9 +74,19 @@ public:
 
     void ReleaseCapture(int nweb_id);
 
+    std::shared_ptr<SurfaceBufferAdapter> AcquireVideoBuffer(int nweb_id);
+
+    int32_t ReleaseVideoBuffer(int nweb_id);
+
+    int32_t AcquireAudioBuffer(std::shared_ptr<AudioBufferAdapter> audiobuffer, AudioCaptureSourceTypeAdapter type, int nweb_id);
+
+    int32_t ReleaseAudioBuffer(AudioCaptureSourceTypeAdapter type, int nweb_id);
+
     void SetDisplaySelectCallback(base::OnceCallback<void(uint64_t displayId)> callback);
 
     void OnDisplaySelectCallback(uint64_t displayId);
+
+    std::shared_mutex screen_capture_map_lock_;
 
     std::unordered_map<int, std::unique_ptr<OHOS::NWeb::ScreenCaptureAdapter>> screen_capture_adapter_map_;
 
@@ -83,13 +94,19 @@ public:
 
     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
 
+    std::shared_mutex audio_callback_map_lock_;
+
     std::unordered_map<int, std::shared_ptr<BaseScreenCaptureReadCallback>> audio_callback_map_;
 
     bool AudioCallbackIsExist(int nweb_id);
 
+    std::shared_mutex window_callback_map_lock_;
+
     std::unordered_map<int, std::shared_ptr<BaseScreenCaptureReadCallback>> window_callback_map_;
 
     bool WindowCallbackIsExist(int nweb_id);
+
+    std::shared_mutex capture_state_map_lock_;
 
     std::unordered_map<int, OHOS::NWeb::ScreenCaptureStateCodeAdapter> capture_state_code_map_;
 

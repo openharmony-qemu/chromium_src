@@ -29,6 +29,7 @@
 
 namespace OHOS::NWeb {
 std::unordered_map<int32_t, std::shared_ptr<NetConnCallback>> NetConnectAdapterImpl::netConnCallbackMap_ = {};
+std::mutex NetConnectAdapterImpl::mutex_;
 
 int32_t NetConnectAdapterImpl::NetAvailable(std::shared_ptr<NetConnCallback> cb, NetConn_NetHandle *netHandle)
 {
@@ -95,6 +96,7 @@ void NetConnectAdapterImpl::InitNetConnCallback(NetConn_NetConnCallback *netConn
             WVLOG_E("NetConnCallback enter, net available, netHandle is nullptr.");
             return;
         }
+        std::lock_guard<std::mutex> lock(mutex_);
         for (auto it = netConnCallbackMap_.begin(); it != netConnCallbackMap_.end(); it++) {
             NetAvailable(it->second, netHandle);
         }
@@ -104,6 +106,7 @@ void NetConnectAdapterImpl::InitNetConnCallback(NetConn_NetConnCallback *netConn
             WVLOG_E("NetConnCallback enter, NetCapabilitiesChange, netHandle or netAllCap is nullptr.");
             return;
         }
+        std::lock_guard<std::mutex> lock(mutex_);
         for (auto it = netConnCallbackMap_.begin(); it != netConnCallbackMap_.end(); it++) {
             NetCapabilitiesChange(it->second, netHandle, netCap);
         }
@@ -113,12 +116,14 @@ void NetConnectAdapterImpl::InitNetConnCallback(NetConn_NetConnCallback *netConn
             WVLOG_E("NetConnCallback enter, NetConnectionPropertiesChange, netHandle or info is nullptr.");
             return;
         }
+        std::lock_guard<std::mutex> lock(mutex_);
         for (auto it = netConnCallbackMap_.begin(); it != netConnCallbackMap_.end(); it++) {
             NetConnectionPropertiesChange(it->second, netHandle, connProp);
         }
     };
     netConnCallback->onNetLost = [](NetConn_NetHandle *netHandle) {
         WVLOG_I("NetConnCallback enter, NetLost, net id = %{public}d.", netHandle->netId);
+        std::lock_guard<std::mutex> lock(mutex_);
         for (auto it = netConnCallbackMap_.begin(); it != netConnCallbackMap_.end(); it++) {
             if (it->second != nullptr) {
                 it->second->NetUnavailable();
@@ -127,6 +132,7 @@ void NetConnectAdapterImpl::InitNetConnCallback(NetConn_NetConnCallback *netConn
     };
     netConnCallback->onNetUnavailable = [](void) {
         WVLOG_I("NetConnCallback enter, NetUnavailable.");
+        std::lock_guard<std::mutex> lock(mutex_);
         for (auto it = netConnCallbackMap_.begin(); it != netConnCallbackMap_.end(); it++) {
             if (it->second != nullptr) {
                 it->second->NetUnavailable();
@@ -157,6 +163,7 @@ int32_t NetConnectAdapterImpl::RegisterNetConnCallback(std::shared_ptr<NetConnCa
     }
 
     int32_t id = static_cast<int32_t>(uid);
+    std::lock_guard<std::mutex> lock(mutex_);
     netConnCallbackMap_.insert(std::make_pair(id, cb));
     WVLOG_I("register NetConnCallback success.");
     return id;
@@ -164,6 +171,7 @@ int32_t NetConnectAdapterImpl::RegisterNetConnCallback(std::shared_ptr<NetConnCa
 
 int32_t NetConnectAdapterImpl::UnregisterNetConnCallback(int32_t id)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     auto it = netConnCallbackMap_.find(id);
     if (it == netConnCallbackMap_.end()) {
         WVLOG_E("unregister NetConnCallback, not find the NetConnCallback.");

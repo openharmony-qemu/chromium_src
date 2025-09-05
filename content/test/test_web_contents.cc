@@ -154,7 +154,11 @@ bool TestWebContents::HasPendingDownloadImage(const GURL& url) {
   return !pending_image_downloads_[url].empty();
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+void TestWebContents::OnWebPreferencesChanged(int32_t usage_scenario_type) {
+#else
 void TestWebContents::OnWebPreferencesChanged() {
+#endif
   WebContentsImpl::OnWebPreferencesChanged();
   if (web_preferences_changed_counter_)
     ++*web_preferences_changed_counter_;
@@ -582,9 +586,6 @@ bool TestWebContents::GetOverscrollNavigationEnabled() {
 
 void TestWebContents::SetSafeAreaInsetsHost(
     std::unique_ptr<SafeAreaInsetsHost> safe_area_insets_host) {
-#if false
-  safe_area_insets_host_ = std::move(safe_area_insets_host);
-#endif
 }
 
 void TestWebContents::GetMediaCaptureRawDeviceIdsOpened(

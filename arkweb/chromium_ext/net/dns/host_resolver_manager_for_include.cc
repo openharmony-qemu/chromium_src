@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
+
 namespace net {
 
 namespace {
@@ -87,11 +89,11 @@ class HostResolverManager::WarmUpHttpDnsFallbackImpl
     if (!url.is_valid()) {
       LOG(INFO) << "Pre-dns of doh-fallback server won't start, for the server "
                    "template is invalid";
-      // #ifdef OHOS_LOGGER_REPORT
-      //       LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server won't
-      //       start, for the server "
-      //                             "template is invalid";
-      // #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(INFO)
+          << "Pre-dns of doh-fallback server won't start, for the server "
+             "template is invalid";
+#endif
       return;
     }
     HostPortPair destination = HostPortPair::FromURL(url);
@@ -104,13 +106,13 @@ class HostResolverManager::WarmUpHttpDnsFallbackImpl
         &WarmUpHttpDnsFallbackImpl::PreDnsOfDohFallbackServerComplete,
         weak_ptr_factory_.GetWeakPtr()));
     LOG(INFO) << "Pre-dns of doh-fallback server, server template "
-              << url.spec() << ", result " << result;
-    // #ifdef OHOS_LOGGER_REPORT
-    //     LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server, server
-    //     template "
-    //                        << url::LogUtils::ConvertUrlWithMask(url.spec())
-    //                        << ", result " << result;
-    // #endif
+              << url::LogUtils::ConvertUrlWithMask(url.spec()) << ", result "
+              << result;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server, server template "
+                       << url::LogUtils::ConvertUrlWithMask(url.spec())
+                       << ", result " << result;
+#endif
     if (result != ERR_IO_PENDING) {
       request_.reset();
     }
@@ -118,11 +120,10 @@ class HostResolverManager::WarmUpHttpDnsFallbackImpl
 
   void PreDnsOfDohFallbackServerComplete(int result) {
     LOG(INFO) << "Pre-dns of doh-fallback server complete, result " << result;
-    // #ifdef OHOS_LOGGER_REPORT
-    //     LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server complete,
-    //     result "
-    //                        << result;
-    // #endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server complete, result "
+                       << result;
+#endif
     request_.reset();
   }
 
@@ -203,10 +204,9 @@ void HostResolverManager::ReportSecureFallbackDnsResult(
        << ", result=" << secure_fallback_results.error()
        << ", duration=" << duration.InMilliseconds();
 
-  LOG(INFO) << "event_message: " << ostr.str() << ", resource: " << host;
+  LOG(INFO) << "event_message: " << ostr.str() << ", resource: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: "
-                     << url::LogUtils::ConvertUrlWithMask(host);
+  LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: ***";
 #endif
 }
 
@@ -218,10 +218,9 @@ void HostResolverManager::ReportDnsTransactionResult(int index,
   ostr << "dns_type=" << kDnsTransactionString[index]
        << ", v4result=" << result_for_ipv4 << ", v6result=" << result_for_ipv6;
 
-  LOG(INFO) << "event_message: " << ostr.str() << ", resource: " << host;
+  LOG(INFO) << "event_message: " << ostr.str() << ", resource: ***";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: "
-                     << url::LogUtils::ConvertUrlWithMask(host);
+  LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: ***";
 #endif
 }
 #endif

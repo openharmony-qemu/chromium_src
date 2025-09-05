@@ -27,6 +27,7 @@ enum class NWebExtensionTabStatus {
   UNLOADED,
   LOADING,
   COMPLETE,
+  NWEB_NOTIFY,
   UNKOWN_STATUS,
 };
 
@@ -54,8 +55,16 @@ struct NWebTabCreateInfo {
   std::optional<int32_t> windowId;
 };
 
+struct NWebTabCreateInfoV2 {
+  NWebTabCreateInfo createInfo;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
 struct NWebExtensionTabCreateProperties {
   std::optional<int32_t> windowId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
 };
 
 struct NWebExtensionTabGroupOptions {
@@ -77,6 +86,8 @@ struct NWebExtensionTabDetachInfo {
 struct NWebExtensionTabHighlightInfo {
   std::vector<int32_t> tabIds;
   std::optional<int32_t> windowId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
 };
 
 struct NWebExtensionTabMoveProperties {
@@ -179,6 +190,20 @@ struct NWebExtensionTabUpdateProperties {
   std::optional<std::string> url;
 };
 
+struct NWebExtensionTabUpdatePropertiesV2 {
+  NWebExtensionTabUpdateProperties updateProperties;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionTabContextInfo {
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+ 
+using NWebExtensionTabDiscardInfo = NWebExtensionTabContextInfo;
+using NWebExtensionTabDuplicateInfo = NWebExtensionTabContextInfo;
+
 inline const char* NWebExtensionTabMutedInfoReasonToString(
     NWebExtensionTabMutedInfoReason enum_param) {
   switch (enum_param) {
@@ -233,6 +258,42 @@ struct NWebExtensionTab {
   std::optional<std::string> url;
   std::optional<int32_t> width;
   int32_t windowId;
+};
+
+struct NWebExtensionTabMovePropertiesV2 {
+  NWebExtensionTabMoveProperties properties;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionTabQueryInfoV2 {
+  NWebExtensionTabQueryInfo query;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionTabGetParams {
+  int tabId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionTabRemoveParams {
+  std::vector<int> tabIds;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionTabUngroupParams {
+  std::vector<int> tabIds;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionTabGetAnyTabParams {
+  int windowId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
 };
 
 #endif  // OHOS_NWEB_EX_BROWSER_WEB_EXTENSION_TAB_ITEMS_H_

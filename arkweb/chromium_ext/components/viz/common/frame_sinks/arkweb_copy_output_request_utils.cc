@@ -22,38 +22,16 @@ ArkwebCopyOutputRequestUtils::ArkwebCopyOutputRequestUtils(CopyOutputRequest* Co
     : copyOutputRequest_(CopyOutputRequest) {}
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-void ArkwebCopyOutputRequestUtils::SetBlanklessKey(uint64_t key) {
-  blankless_key_ = key;
+void ArkwebCopyOutputRequestUtils::SetBlanklessInfo(const base::ohos::BlanklessInfo& info) {
+  info_ = info;
 }
 
-void ArkwebCopyOutputRequestUtils::SetLcpTime(int32_t lcp_time) {
-  lcp_time_ = lcp_time;
+const base::ohos::BlanklessInfo& ArkwebCopyOutputRequestUtils::GetBlanklessInfo() const {
+  return info_;
 }
 
-void ArkwebCopyOutputRequestUtils::SetPreferenceHash(int64_t pref_hash)
-{
-  pref_hash_ = pref_hash;
-}
-
-void ArkwebCopyOutputRequestUtils::SetQuadList(const std::vector<gfx::Rect>& quad_list) {
-  quad_list_ = quad_list;
-}
-
-uint64_t ArkwebCopyOutputRequestUtils::GetBlanklessKey() const {
-  return blankless_key_;
-}
-
-int32_t ArkwebCopyOutputRequestUtils::GetLcpTime() const {
-  return lcp_time_;
-}
-
-int64_t ArkwebCopyOutputRequestUtils::GetPreferenceHash() const
-{
-  return pref_hash_;
-}
-
-const std::vector<gfx::Rect>& ArkwebCopyOutputRequestUtils::GetQuadList() const {
-  return quad_list_;
+bool ArkwebCopyOutputRequestUtils::IsBlanklessInfoValid() const {
+  return info_.blankless_key != base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
 }
 #endif
 }  // namespace viz

@@ -30,3 +30,11 @@ const char kOhosAppApiVersion[] = "user-api-version";
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 const char kEnableVideoAssistant[] = "enable-nweb-ex-video-assistant";
 #endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+const char kEnableLoggerReport[] = "enable-nweb-logger-report";
+#endif
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+const char kDisableAutoPreconnect[] = "disable-auto-preconnect";
+#endif

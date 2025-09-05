@@ -43,7 +43,7 @@ class TestRenderWidgetHost : public RenderWidgetHostImpl {
   void GetVisibleRectToWeb(GetVisibleRectToWebCallback callback) override {}
   void GetWordSelection(const std::string& text, int8_t offset, GetWordSelectionCallback callback) override {}
   void SendCurrentLanguage(const std::string& ans) override {}
-  void DidNativeEmbedEvent(blink::mojom::NativeEmbedTouchEventPtr event) override {};
+  void DidNativeEmbedEvent(blink::mojom::NativeEmbedTouchEventPtr event) override {}
   void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override {}
   void DidNativeEmbedMouseEvent(blink::mojom::NativeEmbedMouseEventPtr event) override {}
 #endif

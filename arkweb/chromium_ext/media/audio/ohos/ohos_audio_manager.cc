@@ -88,7 +88,8 @@ void OHOSAudioManager::GetAudioOutputDeviceNames(
                                  .GetAudioSystemManager()
                                  .GetDefaultOutputDevice();
   for (auto audioDevice : audioDeviceList) {
-    if (!audioDevice) {
+    if (!audioDevice || !device_names) {
+      LOG(ERROR) << "GetAudioOutputDeviceNames audioDevice is nullptr.";
       return;
     }
     if (!defaultOutputDevice) {
@@ -115,10 +116,20 @@ void OHOSAudioManager::GetAudioOutputDeviceNames(
 #if BUILDFLAG(ARKWEB_WEBRTC)
 void OHOSAudioManager::GetAudioInputDeviceNames(
     AudioDeviceNames* device_names) {
+  if (!device_names) {
+    LOG(ERROR) << "GetAudioInputDeviceNames audioDevice is nullptr.";
+    return;
+  }
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kDisableAudioInput)) {
     return;
   }
+
+  if (!device_names) {
+    LOG(ERROR) << "OHOSAudioManager::GetAudioInputDeviceNames device_names is null";
+    return;
+  }
+
   auto audioDeviceList =
       OhosAdapterHelper::GetInstance().GetAudioSystemManager().GetDevices(
           AdapterDeviceFlag::INPUT_DEVICES_FLAG);

@@ -49,7 +49,8 @@ public:
     int32_t GetPlanesCount() override;
     void ReleasePixelMap() override;
     OH_PixelmapNative* GetPixelMap() { return pixelMap_; }
-    void* GetDecodeData() override {}
+    void* GetDecodeData() override;
+    bool DecodeByPath(const std::string& path, AllocatorType type) override;
 private:
     OH_ImageSourceNative* imageSource_ = nullptr;
     OH_ImageSource_Info* imageInfo_ = nullptr;
@@ -58,6 +59,7 @@ private:
     OH_NativeBuffer* nativeBuffer_ = nullptr;
     OH_Pixelmap_InitializationOptions* opt_ = nullptr;
     BufferHandle* bufferHandle_ = nullptr;
+    bool has_lock_pixelmap_;
     bool CreateNativeWindowBuffer();
     bool GetBufferHandle();
     bool ParseRawData(const uint8_t* data, uint32_t size);

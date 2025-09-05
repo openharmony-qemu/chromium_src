@@ -52,9 +52,17 @@ const std::unordered_map<BufferFlag, OH_AVCodecBufferFlags> AV_BUFFER_FLAG_MAP =
 };
 } // namespace
 
+std::shared_mutex MediaCodecDecoderAdapterImpl::decoderMutex_;
+
+std::map<OH_AVCodec*, OHOS::NWeb::MediaCodecDecoderAdapterImpl*> VideoDecoderCallbackManager::decoders_;
+
+std::shared_mutex VideoDecoderCallbackManager::decodersMapMutex_;
+
 MediaCodecDecoderAdapterImpl::~MediaCodecDecoderAdapterImpl()
 {
+    std::unique_lock<std::shared_mutex> lock(decoderMutex_);
     WVLOG_D("MediaCodecDecoder ~MediaCodecDecoderAdapterImpl");
+    callback_ = nullptr;
     if (decoder_ != nullptr) {
         ReleaseDecoder();
     }
@@ -79,6 +87,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::CreateVideoDecoderByMime(const 
         return DecoderAdapterCode::DECODER_ERROR;
     }
 
+    VideoDecoderCallbackManager::AddVideoDecoder(this);
     return DecoderAdapterCode::DECODER_OK;
 }
 
@@ -96,6 +105,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::CreateVideoDecoderByName(const 
         decoder_ = OH_VideoDecoder_CreateByName(decoderName.c_str());
         if (decoder_ != nullptr) {
             isHardwareDecode_ = true;
+            VideoDecoderCallbackManager::AddVideoDecoder(this);
             WVLOG_I("MediaCodecDecoder create hardware decoder.");
             return DecoderAdapterCode::DECODER_OK;
         }
@@ -110,6 +120,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::CreateVideoDecoderByName(const 
         decoder_ = OH_VideoDecoder_CreateByName(decoderName.c_str());
         if (decoder_ != nullptr) {
             isHardwareDecode_ = false;
+            VideoDecoderCallbackManager::AddVideoDecoder(this);
             WVLOG_I("MediaCodecDecoder create software decoder.");
             return DecoderAdapterCode::DECODER_OK;
         }
@@ -147,6 +158,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::ConfigureDecoder(const std::sha
 
     OH_AVErrCode ret = OH_VideoDecoder_Configure(decoder_, codecFormat);
     OH_AVFormat_Destroy(codecFormat);
+    codecFormat = nullptr;
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         WVLOG_E("MediaCodecDecoder OH_VideoDecoder_Configure fail, ret=%{public}u.", static_cast<uint32_t>(ret));
         return DecoderAdapterCode::DECODER_ERROR;
@@ -177,6 +189,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetParameterDecoder(const std::
 
     OH_AVErrCode ret = OH_VideoDecoder_SetParameter(decoder_, codecFormat);
     OH_AVFormat_Destroy(codecFormat);
+    codecFormat = nullptr;
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         WVLOG_E("MediaCodecDecoder OH_VideoDecoder_SetParameter fail, ret=%{public}u.", static_cast<uint32_t>(ret));
         return DecoderAdapterCode::DECODER_ERROR;
@@ -189,6 +202,11 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetOutputSurface(void* window)
     WVLOG_D("MediaCodecDecoder SetOutputSurface");
     if (decoder_ == nullptr) {
         WVLOG_E("MediaCodecDecoder decoder_ is nullptr.");
+        return DecoderAdapterCode::DECODER_ERROR;
+    }
+
+    if (window == nullptr) {
+        WVLOG_E("MediaCodecDecoder window is nullptr.");
         return DecoderAdapterCode::DECODER_ERROR;
     }
 
@@ -301,12 +319,13 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::ReleaseDecoder()
         WVLOG_E("MediaCodecDecoder decoder_ is nullptr.");
         return DecoderAdapterCode::DECODER_ERROR;
     }
+    VideoDecoderCallbackManager::DeleteVideoDecoder(decoder_);
     OH_AVErrCode ret = OH_VideoDecoder_Destroy(decoder_);
-    decoder_ = nullptr;
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         WVLOG_E("MediaCodecDecoder OH_VideoDecoder_Destroy fail, ret=%{public}u.", static_cast<uint32_t>(ret));
         return DecoderAdapterCode::DECODER_ERROR;
     }
+    decoder_ = nullptr;
     std::unique_lock<std::mutex> lock(bufferMutex_);
     bufferMap_.clear();
     return DecoderAdapterCode::DECODER_OK;
@@ -409,37 +428,19 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetCallbackDec(const std::share
         WVLOG_E("MediaCodecDecoder decoder_ is nullptr.");
         return DecoderAdapterCode::DECODER_ERROR;
     }
-
     if (callback == nullptr) {
         WVLOG_E("Media Callback is NULL.");
         return DecoderAdapterCode::DECODER_ERROR;
     }
-
     callback_ = callback;
-    if (callback_ == nullptr) {
-        WVLOG_E("Create Callback failed.");
-        return DecoderAdapterCode::DECODER_ERROR;
-    }
-
-    struct OH_AVCodecCallback cb;
-    cb.onError = [] (OH_AVCodec *codec, int32_t errorCode, void *userData) {
-        (void)codec;
-        static_cast<MediaCodecDecoderAdapterImpl*>(userData)->OnError(errorCode);
-    };
-    cb.onStreamChanged = [] (OH_AVCodec *codec, OH_AVFormat *format, void *userData) {
-        (void)codec;
-        static_cast<MediaCodecDecoderAdapterImpl*>(userData)->OnOutputFormatChanged(format);
-    };
-    cb.onNeedInputBuffer = [] (OH_AVCodec *codec, uint32_t index, OH_AVBuffer *buffer, void *userData) {
-        (void)codec;
-        static_cast<MediaCodecDecoderAdapterImpl*>(userData)->OnInputBufferAvailable(index, buffer);
-    };
-    cb.onNewOutputBuffer = [] (OH_AVCodec *codec, uint32_t index, OH_AVBuffer *buffer, void *userData) {
-        (void)codec;
-        static_cast<MediaCodecDecoderAdapterImpl*>(userData)->OnOutputBufferAvailable(index, buffer);
+    struct OH_AVCodecCallback cb = {
+      &VideoDecoderCallbackManager::OnError,
+      &VideoDecoderCallbackManager::OnStreamChanged,
+      &VideoDecoderCallbackManager::OnNeedInputBuffer,
+      &VideoDecoderCallbackManager::OnNewOutputBuffer
     };
 
-    OH_AVErrCode ret = OH_VideoDecoder_RegisterCallback(decoder_, cb, this);
+    OH_AVErrCode ret = OH_VideoDecoder_RegisterCallback(decoder_, cb, nullptr);
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         return DecoderAdapterCode::DECODER_ERROR;
     }
@@ -486,6 +487,11 @@ void MediaCodecDecoderAdapterImpl::OnOutputFormatChanged(OH_AVFormat* format)
         return;
     }
 
+    if (format == nullptr) {
+        WVLOG_E("format is NULL.");
+        return;
+    }
+
     int32_t width = 0;
     int32_t height = 0;
     OH_AVFormat_GetIntValue(format, OH_MD_KEY_WIDTH, &width);
@@ -529,6 +535,11 @@ void MediaCodecDecoderAdapterImpl::OnOutputBufferAvailable(uint32_t index, OH_AV
         return;
     }
 
+    if (buffer == nullptr) {
+        WVLOG_E("buffer is NULL.");
+        return; 
+    }
+
     OH_AVCodecBufferAttr attr;
     OH_AVErrCode ret = OH_AVBuffer_GetBufferAttr(buffer, &attr);
     if (ret != OH_AVErrCode::AV_ERR_OK) {
@@ -554,6 +565,10 @@ void MediaCodecDecoderAdapterImpl::OnOutputBufferAvailable(uint32_t index, OH_AV
 DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfoStruct(
     OH_AVCencInfo *avCencInfo, const std::shared_ptr<AudioCencInfoAdapter> cencInfo)
 {
+    if (cencInfo->GetClearHeaderLens().size() != cencInfo->GetPayLoadLens().size()) {
+        WVLOG_E("MediaCodecDecoder GetClearHeaderLens().size() != GetPayLoadLens().size()");
+        return DecoderAdapterCode::DECODER_ERROR;
+    }
     OH_AVErrCode errNo = OH_AVCencInfo_SetAlgorithm(avCencInfo, static_cast<DrmCencAlgorithm>(cencInfo->GetAlgo()));
     if (errNo != AV_ERR_OK) {
         WVLOG_E("MediaCodecDecoder set AVCencInfo Algorithm fail, errNo = %{public}u", static_cast<uint32_t>(errNo));
@@ -594,8 +609,13 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetDecryptionConfig(void *sessi
 {
     WVLOG_I("%{public}s, isSecure = %{public}u, session = %{public}d.",
         __FUNCTION__, static_cast<uint32_t>(isSecure), session ? 1 : 0);
+    if (decoder_ == nullptr) {
+        WVLOG_E("MediaCodecDecoder decoder_ is nullptr.");
+        return DecoderAdapterCode::DECODER_ERROR;
+    }
     isSecure_ = isSecure;
     if (session == nullptr) {
+        WVLOG_E("MediaCodecDecoder session is nullptr.");
         return DecoderAdapterCode::DECODER_OK;
     }
     OH_AVErrCode errCode = OH_VideoDecoder_SetDecryptionConfig(
@@ -622,6 +642,9 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfo(
     }
 
     if (SetAVCencInfoStruct(avCencInfo, cencInfo) != DecoderAdapterCode::DECODER_OK) {
+        WVLOG_E("OH_AVCencInfo_SetAVCencInfoStruct fail.");
+        (void)OH_AVCencInfo_Destroy(avCencInfo);
+        avCencInfo = nullptr;
         return DecoderAdapterCode::DECODER_ERROR;
     }
 
@@ -629,6 +652,8 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfo(
         std::unique_lock<std::mutex> lock(bufferMutex_);
         if (bufferMap_.find(index) == bufferMap_.end()) {
             WVLOG_E("MediaCodecDecoder QueueInputBufferDec not find index.");
+            (void)OH_AVCencInfo_Destroy(avCencInfo);
+            avCencInfo = nullptr;
             return DecoderAdapterCode::DECODER_ERROR;
         }
         ret = OH_AVCencInfo_SetAVBuffer(avCencInfo, bufferMap_[index]);
@@ -636,13 +661,124 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfo(
 
     if (ret != AV_ERR_OK) {
         WVLOG_E("OH_AVCencInfo_SetAVBuffer fail, ret=%{public}u.", static_cast<uint32_t>(ret));
+        (void)OH_AVCencInfo_Destroy(avCencInfo);
+        avCencInfo = nullptr;
         return DecoderAdapterCode::DECODER_ERROR;
     }
     ret = OH_AVCencInfo_Destroy(avCencInfo);
+    avCencInfo = nullptr;
     if (ret != AV_ERR_OK) {
         WVLOG_E("OH_AVCencInfo_Destroy fail, ret=%{public}u.", static_cast<uint32_t>(ret));
         return DecoderAdapterCode::DECODER_ERROR;
     }
 
     return DecoderAdapterCode::DECODER_OK;
+}
+
+std::shared_mutex& MediaCodecDecoderAdapterImpl::GetDecoderMutex() {
+    return decoderMutex_;
+}
+
+void VideoDecoderCallbackManager::OnError(OH_AVCodec *codec, int32_t errorCode, void *userData) {
+    (void)userData;
+    WVLOG_D("VideoDecoderCallbackManager %{public}s.", __FUNCTION__);
+    if (!codec) {
+        WVLOG_E("VideoDecoderCallbackManager avcodec is nullptr.");
+        return;
+    }
+
+    std::shared_lock<std::shared_mutex> lock(MediaCodecDecoderAdapterImpl::GetDecoderMutex());
+    OHOS::NWeb::MediaCodecDecoderAdapterImpl* impl = FindVideoDecoder(codec);
+    if (!impl) {
+        WVLOG_E("VideoDecoderCallbackManager not find decoder.");
+        return;
+    }
+
+    impl->OnError(errorCode);
+}
+
+void VideoDecoderCallbackManager::OnStreamChanged(OH_AVCodec *codec, OH_AVFormat *format, void *userData) {
+    (void)userData;
+    WVLOG_D("VideoDecoderCallbackManager %{public}s.", __FUNCTION__);
+    if (!codec) {
+        WVLOG_E("VideoDecoderCallbackManager avcodec is nullptr.");
+        return;
+    }
+
+    std::shared_lock<std::shared_mutex> lock(MediaCodecDecoderAdapterImpl::GetDecoderMutex());
+    OHOS::NWeb::MediaCodecDecoderAdapterImpl* impl = FindVideoDecoder(codec);
+    if (!impl) {
+        WVLOG_E("VideoDecoderCallbackManager not find decoder.");
+        return;
+    }
+
+    impl->OnOutputFormatChanged(format);
+}
+
+void VideoDecoderCallbackManager::OnNeedInputBuffer(OH_AVCodec *codec, uint32_t index, OH_AVBuffer *buffer, void *userData) {
+    (void)userData;
+    WVLOG_D("VideoDecoderCallbackManager %{public}s.", __FUNCTION__);
+    if (!codec) {
+        WVLOG_E("VideoDecoderCallbackManager avcodec is nullptr.");
+        return;
+    }
+
+    std::shared_lock<std::shared_mutex> lock(MediaCodecDecoderAdapterImpl::GetDecoderMutex());
+    OHOS::NWeb::MediaCodecDecoderAdapterImpl* impl = FindVideoDecoder(codec);
+    if (!impl) {
+        WVLOG_E("VideoDecoderCallbackManager not find decoder.");
+        return;
+    }
+
+    impl->OnInputBufferAvailable(index, buffer);
+}
+
+void VideoDecoderCallbackManager::OnNewOutputBuffer(OH_AVCodec *codec, uint32_t index, OH_AVBuffer *buffer, void *userData) {
+    (void)userData;
+    WVLOG_D("VideoDecoderCallbackManager %{public}s.", __FUNCTION__);
+    if (!codec) {
+        WVLOG_E("VideoDecoderCallbackManager avcodec is nullptr.");
+        return;
+    }
+
+    std::shared_lock<std::shared_mutex> lock(MediaCodecDecoderAdapterImpl::GetDecoderMutex());
+    OHOS::NWeb::MediaCodecDecoderAdapterImpl* impl = FindVideoDecoder(codec);
+    if (!impl) {
+        WVLOG_E("VideoDecoderCallbackManager not find decoder.");
+        return;
+    }
+
+    impl->OnOutputBufferAvailable(index, buffer);
+}
+
+OHOS::NWeb::MediaCodecDecoderAdapterImpl* VideoDecoderCallbackManager::FindVideoDecoder(OH_AVCodec *codec) {
+    std::shared_lock<std::shared_mutex> lock(decodersMapMutex_);
+    auto it = decoders_.find(codec);
+    if (it != decoders_.end()) {
+        return it->second;
+    }
+
+    return nullptr;
+}
+
+void VideoDecoderCallbackManager::DeleteVideoDecoder(OH_AVCodec *codec) {
+    if (codec == nullptr) {
+        return;
+    }
+
+    std::unique_lock<std::shared_mutex> lock(decodersMapMutex_);
+    decoders_.erase(codec);
+}
+
+void VideoDecoderCallbackManager::AddVideoDecoder(OHOS::NWeb::MediaCodecDecoderAdapterImpl *impl) {
+    if (impl == nullptr || impl->GetAVDecoder() == nullptr) {
+        return;
+    }
+
+    std::unique_lock<std::shared_mutex> lock(decodersMapMutex_);
+    if (decoders_.find(impl->GetAVDecoder()) != decoders_.end()) {
+        return;
+    }
+
+    decoders_[impl->GetAVDecoder()] = impl;
 }

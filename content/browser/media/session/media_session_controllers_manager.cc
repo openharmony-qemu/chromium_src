@@ -187,11 +187,12 @@ MediaSessionController* MediaSessionControllersManager::FindOrCreateController(
 #if BUILDFLAG(ARKWEB_PIP)
 void MediaSessionControllersManager::OnPictureInPictureStateChanged(
     const MediaPlayerId& id,
-    uint32_t state) {
+    uint32_t state, int32_t width, int32_t height) {
   if (!IsMediaSessionEnabled())
     return;
   auto controller = FindOrCreateController(id);
-  controller->AsMediaSessionControllerExt()->OnPictureInPictureStateChanged(id, state);
+  controller->AsMediaSessionControllerExt()->OnPictureInPictureStateChanged(
+      id, state, width, height);
 }
 #endif
 }  // namespace content

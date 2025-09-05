@@ -84,6 +84,9 @@ BrowserAccessibilityOHOS::~BrowserAccessibilityOHOS() {
   if (!html_element_id_.empty()) {
     g_html_element_id_map.Get().erase(html_element_id_);
   }
+  if (g_leaf_map.Get().find(this) != g_leaf_map.Get().end()) {
+    g_leaf_map.Get().erase(this);
+  }
 }
 
 int64_t BrowserAccessibilityOHOS::GetAccessibilityId() const {

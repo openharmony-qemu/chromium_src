@@ -28,7 +28,7 @@ public:
 
     ~FoldStatusListenerAdapterMock() override = default;
 
-    void onFoldStatusChanged(FoldStatus foldstatus) override {}
+    void OnFoldStatusChanged(FoldStatus foldstatus) override {}
 };
 
 class NativeDisplayManagerAdapterImplTest : public testing::Test {

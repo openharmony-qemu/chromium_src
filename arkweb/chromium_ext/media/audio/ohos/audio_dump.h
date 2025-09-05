@@ -19,10 +19,16 @@
 #include <cstdio>
 #include <string>
 
+#include "base/files/scoped_file.h"
+
 class DumpFileUtil {
  public:
   static void WriteDumpFile(FILE* dumpFile, void* buffer, size_t bufferSize);
   static void CloseDumpFile(FILE** dumpFile);
   static void OpenDumpFile(std::string filename, FILE** file);
+
+  static void WriteDumpScopedFile(base::ScopedFILE& dumpFile, void* buffer, size_t bufferSize);
+  static void CloseDumpScopedFile(base::ScopedFILE* dumpFile);
+  static void OpenDumpScopedFile(const std::string& filename, base::ScopedFILE* file);
 };
 #endif  // ARKWEB_AUDIO_DUMP_H

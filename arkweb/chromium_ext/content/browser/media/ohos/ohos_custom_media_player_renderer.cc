@@ -165,9 +165,17 @@ GetRestrictedCookieManagerForContext(
     RenderFrameHostImpl* render_frame_host) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
+  mojo::PendingRemote<network::mojom::RestrictedCookieManager> pipe;
+
+  StoragePartition* storage_partition = nullptr;
   url::Origin request_origin = url::Origin::Create(url);
-  StoragePartition* storage_partition =
+  if (browser_context != nullptr) {
+    storage_partition =
       browser_context->GetDefaultStoragePartition();
+  } else {
+    LOG(ERROR) << "browser_context is nullptr";
+    return pipe;
+  }
 
   // `request_origin` cannot be used to create `isolation_info` since it
   // represents the media resource, not the frame origin. Here we use the
@@ -180,7 +188,6 @@ GetRestrictedCookieManagerForContext(
       net::IsolationInfo::RequestType::kOther, top_frame_origin,
       top_frame_origin, site_for_cookies, absl::nullopt);
 
-  mojo::PendingRemote<network::mojom::RestrictedCookieManager> pipe;
   static_cast<StoragePartitionImpl*>(storage_partition)
       ->CreateRestrictedCookieManager(
           network::mojom::RestrictedCookieManagerRole::NETWORK, request_origin,
@@ -283,14 +290,6 @@ void OHOSCustomMediaPlayerRenderer::Initialize(
   if (!media_resource ||
       media_resource->GetType() != media::MediaResource::Type::KUrl) {
     DLOG(ERROR) << "MediaResource is not of Type URL";
-    std::move(init_cb).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
-    return;
-  }
-
-  media_url_params_ = std::make_unique<media::MediaUrlParams>(
-      media_resource->GetMediaUrlParams());
-  if (!media_url_params_) {
-    LOG(ERROR) << "GetMediaUrlParams failed";
     std::move(init_cb).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
     return;
   }
@@ -566,7 +565,9 @@ void OHOSCustomMediaPlayerRenderer::OnMediaDurationChanged(
 
   if (duration_ != duration) {
     duration_ = duration;
-    client_extension_->OnDurationChange(duration);
+    if (IsClientExtensionValid()) {
+      client_extension_->OnDurationChange(duration);
+    }
   }
 }
 
@@ -598,7 +599,9 @@ void OHOSCustomMediaPlayerRenderer::OnVideoSizeChanged(int width, int height) {
     // Send via |client_extension_| instead of |renderer_client_|, so
     // MediaPlayerRendererClient can update its texture size.
     // MPRClient will then continue propagating changes via its RendererClient.
-    client_extension_->OnVideoSizeChange(video_size_);
+    if (IsClientExtensionValid()) {
+      client_extension_->OnVideoSizeChange(video_size_);
+    }
   }
 }
 
@@ -691,24 +694,34 @@ void OHOSCustomMediaPlayerRenderer::OnBufferingStateChange(
 
 void OHOSCustomMediaPlayerRenderer::UpdatePlaybackStatus(uint32_t status) {
   is_playing_ = !!status;
-  client_extension_->UpdatePlaybackStatus(status);
+  if (IsClientExtensionValid()) {
+    client_extension_->UpdatePlaybackStatus(status);
+  }
 }
 
 void OHOSCustomMediaPlayerRenderer::UpdateVolume(double volume) {
-  client_extension_->UpdateVolume(volume);
+  if (IsClientExtensionValid()) {
+    client_extension_->UpdateVolume(volume);
+  }
 }
 
 void OHOSCustomMediaPlayerRenderer::UpdateMuted(bool muted) {
-  client_extension_->UpdateMuted(muted);
+  if (IsClientExtensionValid()) {
+    client_extension_->UpdateMuted(muted);
+  }
 }
 
 void OHOSCustomMediaPlayerRenderer::UpdatePlaybackRate(double playback_rate) {
-  client_extension_->UpdatePlaybackRate(playback_rate);
+  if (IsClientExtensionValid()) {
+    client_extension_->UpdatePlaybackRate(playback_rate);
+  }
 }
 
 void OHOSCustomMediaPlayerRenderer::UpdateBufferedEndTime(
     double buffered_time) {
-  client_extension_->UpdateBufferedEndTime(buffered_time);
+  if (IsClientExtensionValid()) {
+    client_extension_->UpdateBufferedEndTime(buffered_time);
+  }
 }
 
 void OHOSCustomMediaPlayerRenderer::OnFullscreenChanged(bool fullscreen) {
@@ -725,4 +738,12 @@ void OHOSCustomMediaPlayerRenderer::OnFullscreenChanged(bool fullscreen) {
         media_player_id_);
   }
 }
+
+bool OHOSCustomMediaPlayerRenderer::IsClientExtensionValid() {
+  if (client_extension_.is_bound() && client_extension_.is_connected()) {
+    return true;
+  }
+  return false;
+}
+
 }  // namespace content

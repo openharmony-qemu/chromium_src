@@ -66,10 +66,10 @@ void GpuChannelMessageFilter::SetBlanklessDumpInfo(uint32_t nweb_id, uint64_t bl
     return;
   }
   base::ohos::BlanklessDumpInfo info {
-    .blankless_key = blankless_key,
-    .lcp_time = lcp_time,
-    .nweb_id = nweb_id,
-    .pref_hash = pref_hash,
+    .info.blankless_key = blankless_key,
+    .info.lcp_time = lcp_time,
+    .info.nweb_id = nweb_id,
+    .info.pref_hash = pref_hash,
     .dump_enabled = true
   };
   gpu_channel_->AsGpuChannelExt()->SetBlanklessDumpInfo(frame_sink_id, std::move(info));

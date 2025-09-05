@@ -147,6 +147,16 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void OnTouchMove(
       const std::vector<std::shared_ptr<NWebTouchPointInfo>>& touch_point_infos,
       bool from_overlay = false) override;
+  void OnStylusTouchPress(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) override;
+  void OnStylusTouchRelease(
+      std::shared_ptr<NWebStylusTouchPointInfo> stylus_touch_point_info,
+      bool from_overlay) override;
+  void OnStylusTouchMove(
+      const std::vector<std::shared_ptr<NWebStylusTouchPointInfo>>&
+          stylus_touch_point_infos,
+      bool from_overlay) override;
   void OnTouchCancel() override;
   void OnTouchCancelById(int32_t id,
                          double x,
@@ -366,9 +376,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
   void SetNWebId(uint32_t nwebId) override;
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
   void EnableAppLinking(bool enable) override;
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
   void StoreWebArchive(
       const std::string& base_name,
@@ -427,9 +437,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   // #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-  void PrefetchPage(
-      const std::string& url,
-      const std::map<std::string, std::string>& additionalHttpHeaders) override;
+  void PrefetchPage(const PrefetchOptions& prefetch_options) override;
   // #endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -586,6 +594,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_PRINT)
   void SetToken(void* token) override;
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
+  void* CreateWebPrintDocumentAdapterV2(const std::string& jobName) override;
   void SetPrintBackground(bool enable) override;
   bool GetPrintBackground() override;
 #endif  // BUILDFLAG(ARKWEB_PRINT)
@@ -722,7 +731,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   void SetPathAllowingUniversalAccess(
-      const std::vector<std::string>& pathList) override;
+      const std::vector<std::string>& path_list,
+      const std::vector<std::string>& excluded_path_list) override;
   int PrerenderPage(const std::string& url,
                     const std::string& additional_headers) override;
   void CancelAllPrerendering() override;
@@ -760,11 +770,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       int tab_id,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
       std::unique_ptr<NWebExtensionTab> tab) override;
-  void WebExtensionTabActivated(
-      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) override;
   void WebExtensionTabAttached(
+      int tab_id,
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) override;
   void WebExtensionTabDetached(
+      int tab_id,
       std::unique_ptr<NWebExtensionTabDetachInfo> detachInfo) override;
   void WebExtensionTabHighlighted(NWebExtensionTabHighlightInfo& highlightInfo) override;
   void WebExtensionTabMoved(
@@ -853,6 +863,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                              OnReceiveValueCallback callback) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) override;
+void AbortDistill() override;
+#endif // ARKWEB_READER_MODE
+
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   void SetErrorPageEnabled(bool enable) override;
   bool GetErrorPageEnabled() override;
@@ -861,9 +876,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) override;
   int64_t GetPreferenceHash() override;
-  void SetNearestSnapshotSize(int32_t width, int32_t height) override;
-  int32_t NearestSnapshotWidth() override;
-  int32_t NearestSnapshotHeight() override;
   int32_t GetWidth() override;
   int32_t GetHeight() override;
   void SetRotationType(RotationType rotation);
@@ -1056,6 +1068,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   int32_t nearest_snapshot_width_ = 0;
   int32_t nearest_snapshot_height_ = 0;
 #endif
+  base::WeakPtrFactory<NWebDelegate> weak_factory_{this};
 };
 }  // namespace OHOS::NWeb
 #endif

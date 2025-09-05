@@ -145,7 +145,7 @@ void OHOSAudioDecoderLoop::SetState(State new_state) {
     << " new_state: " << static_cast<int32_t>(new_state);
   const State old_state = state_;
   state_ = new_state;
-  if (old_state != new_state && new_state == ERROR)
+  if (client_ && old_state != new_state && new_state == ERROR)
     client_->OnCodecLoopError();
 }
 
@@ -214,7 +214,7 @@ bool OHOSAudioDecoderLoop::EnqueueInputBuffer(const InputBuffer& input_buffer) {
     << input_buffer.index;
   AudioDecoderAdapterCode code = client_->QueueInputBufferDec(
       static_cast<uint32_t>(input_buffer.index), input_data.presentation_time.InMilliseconds(),
-      input_data.memory, input_data.length, input_data.cenc_info, input_data.is_encrypted, flag);
+      input_data.memory.get(), input_data.length, input_data.cenc_info, input_data.is_encrypted, flag);
 
   switch (code) {
     case AudioDecoderAdapterCode::DECODER_RETRY:

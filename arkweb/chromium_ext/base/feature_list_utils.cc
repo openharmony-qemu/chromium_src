@@ -105,7 +105,10 @@ void FeatureListUtils::AddFeatureToField(PersistentMemoryAllocator* allocator,
     entry->pickle_size = pickle.size();
 
     char* dst = reinterpret_cast<char*>(entry) + sizeof(FeatureEntry);
-    memcpy_s(dst, pickle.size(), pickle.data(), pickle.size());
+    int ret = memcpy_s(dst, pickle.size(), pickle.data(), pickle.size());
+    if (ret != EOK) {
+      LOG(ERROR) << "AddFeatureToField failed, call memcpy_s ret = " << ret;
+    }
 
     allocator->MakeIterable(entry);
   }

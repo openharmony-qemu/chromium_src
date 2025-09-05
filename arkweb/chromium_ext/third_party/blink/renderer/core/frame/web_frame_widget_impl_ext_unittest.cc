@@ -50,6 +50,8 @@ class MockWebFrameWidgetImplExt : public frame_test_helpers::TestWebFrameWidget 
                     const gfx::Vector2dF& unused_delta,
                     const cc::OverscrollBehavior& overscroll_behavior,
                     bool event_processed));
+  MOCK_METHOD0(ShowFreeCopyMenu, void());
+  MOCK_METHOD0(ParseLanguage, void());
 };
 
 class WebFrameWidgetImplExtSimTest : public SimTest {
@@ -301,12 +303,20 @@ TEST_F(WebFrameWidgetImplExtSimTest, MouseHitTest) {
                       WebInputEvent::kNoModifiers,
                       WebInputEvent::GetStaticTimeStampForTests());
   
-  MockMainFrameWidget()->MouseHitTest(event, 1);
+  MockMainFrameWidget()->MouseHitTest(event);
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, GetInputElementAttributes) {
   HashMap<String, String> attributes;
   MockMainFrameWidget()->GetInputElementAttributes(attributes);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SetOverscrollMode) {
+  MockMainFrameWidget()->SetOverscrollMode(1);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SelectRangeV2) {
+  MockMainFrameWidget()->SelectRangeV2(gfx::Point(10, 10), false);
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, ParseLanguage) {

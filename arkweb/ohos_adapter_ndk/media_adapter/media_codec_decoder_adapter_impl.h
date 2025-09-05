@@ -27,6 +27,7 @@
 
 #include "media_codec_decoder_adapter.h"
 #include "audio_cenc_info_adapter.h"
+#include <shared_mutex>
 
 namespace OHOS::NWeb {
 class MediaCodecDecoderAdapterImpl : public MediaCodecDecoderAdapter {
@@ -82,11 +83,13 @@ public:
 
     void OnOutputBufferAvailable(uint32_t index, OH_AVBuffer* buffer);
 
-    DecoderAdapterCode SetAVCencInfoStruct(OH_AVCencInfo *avCencInfo, std::shared_ptr<AudioCencInfoAdapter> cencInfo);
-
     OH_AVCodec* GetAVDecoder() { return decoder_; }
 
+    static std::shared_mutex& GetDecoderMutex();
+
 private:
+    DecoderAdapterCode SetAVCencInfoStruct(OH_AVCencInfo *avCencInfo, std::shared_ptr<AudioCencInfoAdapter> cencInfo);
+
     OH_AVCodec* decoder_ = nullptr;
     std::shared_ptr<DecoderCallbackAdapter> callback_ = nullptr;
     std::map<uint32_t, OH_AVBuffer*> bufferMap_;
@@ -94,6 +97,28 @@ private:
     bool isHardwareDecode_ = true;
     bool isSecure_ = false;
     OH_AVCapability *avCap_ = nullptr;
+    static std::shared_mutex decoderMutex_;
+};
+
+class VideoDecoderCallbackManager {
+public:
+    static void OnError(OH_AVCodec* codec, int32_t errorCode, void* userData);
+
+    static void OnStreamChanged(OH_AVCodec* codec, OH_AVFormat* format, void* userData);
+
+    static void OnNeedInputBuffer(OH_AVCodec* codec, uint32_t index, OH_AVBuffer* buffer, void* userData);
+
+    static void OnNewOutputBuffer(OH_AVCodec* codec, uint32_t index, OH_AVBuffer* buffer, void* userData);
+
+    static OHOS::NWeb::MediaCodecDecoderAdapterImpl* FindVideoDecoder(OH_AVCodec* codec);
+
+    static void DeleteVideoDecoder(OH_AVCodec* codec);
+
+    static void AddVideoDecoder(OHOS::NWeb::MediaCodecDecoderAdapterImpl* impl);
+
+private:
+    static std::map<OH_AVCodec*, OHOS::NWeb::MediaCodecDecoderAdapterImpl*> decoders_;
+    static std::shared_mutex decodersMapMutex_;
 };
 } // namespace OHOS::NWeb
 

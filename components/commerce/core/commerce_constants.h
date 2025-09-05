@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/build/features/features.h"
 #ifndef COMPONENTS_COMMERCE_CORE_COMMERCE_CONSTANTS_H_
 #define COMPONENTS_COMMERCE_CORE_COMMERCE_CONSTANTS_H_
 
@@ -61,7 +62,11 @@ inline constexpr char kOAuthName[] = "chromememex_svc";
 
 // OAuth scope used for network request.
 inline constexpr char kOAuthScope[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://www.googleapis.com/auth/chromememex";
+#endif
 
 // Open graph keys.
 inline constexpr char kOgImage[] = "image";

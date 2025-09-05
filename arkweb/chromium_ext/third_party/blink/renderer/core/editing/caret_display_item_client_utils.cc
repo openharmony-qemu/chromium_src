@@ -97,4 +97,7 @@ bool CaretDisplayItemClientUtils::IsViewportScale(
   return false;
 }
 #endif  // BUILDFLAG(ARKWEB_MENU)
+void CaretDisplayItemClientUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(caret_display_item_client_);
+}
 }  // namespace blink

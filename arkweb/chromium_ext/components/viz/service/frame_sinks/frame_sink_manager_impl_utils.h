@@ -34,8 +34,7 @@ public:
   raw_ptr<FrameSinkManagerImpl> frameSinkManagerImpl;
   FrameSinkManagerImplUtils(FrameSinkManagerImpl* managerImplUtils);
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
-  void EvictFrameBackBuffers(const FrameSinkId& root_frame_sink_id,
-                             bool invisible);
+  void EvictFrameBackBuffers(const FrameSinkId& root_frame_sink_id);
   void SetEnableLowerFrameRate(bool enabled, const FrameSinkId& frame_sink_id);
   void SetEnableHalfFrameRate(bool enabled, const FrameSinkId& frame_sink_id);
 #endif

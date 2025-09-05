@@ -8,6 +8,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/check_op.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -41,7 +42,15 @@
 #include "base/ohos/nweb_engine_event_logger_code.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace net {
+
+#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+constexpr size_t kMinRequiredIpEndpoints = 2;
+#endif
 
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 void ArkWebTransportConnectJobExt::SetConnectTimeout(int timeout_override) {
@@ -200,7 +209,7 @@ void ArkWebTransportConnectJobExt::NeedReportSuccessIp(const IPEndPoint& address
                                               SubJobType type) {
   const HostResolverEndpointResult& endpoint =
       GetEndpointResultForCurrentSubJobs();
-  if (endpoint.ip_endpoints.size() < 2) {
+  if (endpoint.ip_endpoints.size() < kMinRequiredIpEndpoints) {
     return;
   }
 
@@ -218,6 +227,14 @@ void ArkWebTransportConnectJobExt::NeedReportSuccessIp(const IPEndPoint& address
     return;
   }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (type == SUB_MULTI_JOB || type == SUB_MULTI_FALLBACK_JOB) {
+    LOG_FEEDBACK(INFO) << "success ip = " << address.ToString()
+                       << ", and success index = " << success_index
+                       << ", job_type " << (int)type;
+  }
+#endif
+
   ReportSuccessIp(success_index, endpoint.ip_endpoints.size(), type);
 }
 
@@ -228,7 +245,7 @@ void ArkWebTransportConnectJobExt::ReportSuccessIp(int success_index,
   ostr << "ip_counter=" << ip_addresses_num
        << ", succeed_number=" << success_index << ", job_type=" << (int)type;
   std::string host = ToLegacyDestinationEndpoint(params_->destination()).host();
-  LOG(DEBUG) << "event_message: " << ostr.str() << ", resource: " << host;
+  LOG(DEBUG) << "event_message: " << ostr.str() << ", resource: ***";
 
 #if BUILDFLAG(IS_ARKWEB)
   // 打点

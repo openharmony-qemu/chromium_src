@@ -173,11 +173,12 @@ void MediaSessionImpl::CreateSessionOhos() {
 #if BUILDFLAG(ARKWEB_PIP)
 void MediaSessionImpl::OnPictureInPictureStateChanged(
     const MediaPlayerId& id,
-    uint32_t state) {
+    uint32_t state, int32_t width, int32_t height) {
   if (auto* pip_window_controller_ =
           VideoPictureInPictureWindowControllerImpl::FromWebContents(
               web_contents())) {
-    pip_window_controller_->OnPictureInPictureStateChanged(id, state);
+    pip_window_controller_->OnPictureInPictureStateChanged(
+        id, state, width, height);
   }
 }
 #endif
@@ -210,4 +211,36 @@ void MediaSessionImpl::OnNotifyMemoryLevel(int32_t level) {
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+void MediaSessionImpl::UpdateMediaPlayersMuteState(int player_id, bool mute) {
+  LOG(INFO) << __func__ << ", player_id:" << player_id << ", mute:" << mute
+            << ", normal_players_ size:" << normal_players_.size()
+            << ", players_mute_state_ size:" << players_mute_state_.size();
+  if (normal_players_.empty()) {
+    return;
+  }
+  for (const auto& iter : normal_players_) {
+    if (iter.first.player_id == player_id) {
+      players_mute_state_[player_id] = mute;
+      break;
+    }
+  }
+}
+
+bool MediaSessionImpl::GetMediaPlayerMuteState() {
+  for (const auto& iter : normal_players_) {
+    int player_id = iter.first.player_id;
+    auto mute_iter = players_mute_state_.find(player_id);
+    if (mute_iter == players_mute_state_.end()) {
+      continue;
+    }
+    if (!mute_iter->second) {
+      LOG(INFO) << __func__ << ", player_id: " << player_id << " not muted";
+      return false;
+    }
+  }
+  return is_muted_;
+}
+#endif  // ARKWEB_MEDIA_POLICY
 }

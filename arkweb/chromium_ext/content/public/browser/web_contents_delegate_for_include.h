@@ -54,6 +54,10 @@ virtual DropData* GetDropData() {
 virtual void ClearContextMenu() {}
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
+#if defined(ARKWEB_MULTI_WINDOW)
+virtual bool IsActiveFileChooser() {}
+#endif  // defined(ARKWEB_MULTI_WINDOW)
+
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 virtual void OnNativeEmbedStatusUpdate(const NativeEmbedInfo& native_embed_info,
                                        NativeEmbedInfo::TagState state) {}
@@ -62,6 +66,8 @@ virtual void OnNativeEmbedFirstFramePaint(
     const std::string& embed_id_attribute) {}
 virtual void OnLayerRectVisibilityChange(const std::string& embed_id,
                                          bool visibility) {}
+virtual void OnNativeEmbedObjectParamChange(
+    const NativeEmbedParamDataInfo& native_param_info) {}
 #endif
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
@@ -116,23 +122,18 @@ virtual std::unique_ptr<MediaPlayerListener> OnFullScreenOverlayEnter(
     const MediaPlayerId& media_player_id);
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-virtual void OnShowConfirmInfoBar(const std::string& title,
-                                  const std::string& infoId,
-                                  const std::string& message,
-                                  int buttons,
-                                  const std::string& buttonLabelOK,
-                                  const std::string& buttonLabelCancel);
-virtual void OnHideConfirmInfoBar(const std::string& title,
-                                  const std::string& infoId,
-                                  const std::string& message,
-                                  int buttons,
-                                  const std::string& buttonLabelOK,
-                                  const std::string& buttonLabelCancel);
-#endif  // ARKWEB_ARKWEB_EXTENSIONS
 #if BUILDFLAG(ARKWEB_PDF)
 virtual void OnPdfScrollAtBottom(const std::string& url) {}
 virtual void OnPdfLoadEvent(int32_t result, const std::string& url) {}
 #endif  // ARKWEB_PDF
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+virtual bool OnStartBackgroundTask(int32_t type, const std::string& message) { return true; }
+#endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+virtual void OnIsPageDistillable(int page_type, const std::string& distillable_page_url, const std::string& title) {}
+virtual bool IsForDistillerPage();
+#endif
 
 #endif  // ARKWEB_CHROMIUM_EXT_CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_DELEGATE_FOR_INCLUDE_H_

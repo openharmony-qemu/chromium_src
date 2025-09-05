@@ -32,8 +32,9 @@ public:
   void SetScreenCapturePickerShow();
   void DisableSessionReuse();
   void SendScreenCaptureState(const std::string& session_id, int32_t state);
-  void PopSessionIdState(int32_t nweb_id, const std::string& session_id);
   void OnScreenCaptureOpened(const std::string& session_id) override;
+  void RemoveNWebIdBySession(const base::UnguessableToken& capture_session_id);
+  void AddNWebIdBySession(int32_t nweb_id, const base::UnguessableToken& session_id);
 #endif  // BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
@@ -45,6 +46,11 @@ public:
   }
 
 private:
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  std::map<std::string, int> nweb_id_maps_;
+  mutable std::mutex nweb_id_mutex_;
+  std::list<SessionIdState> session_id_state_;
+#endif  // BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
   base::WeakPtrFactory<MediaStreamManagerExt> weak_factory_{this};
   
 };

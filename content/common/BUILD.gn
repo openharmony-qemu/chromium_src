@@ -17,6 +17,10 @@ import("features.gni")
 import("//arkweb/build/features/features.gni")
 import("//arkweb/chromium_ext/chromium_ext.gni")
 
+if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
 # For feature flags internal to content. See content/public/common:features
 # for feature flags that clients of contents need to know about.
 buildflag_header("buildflags") {
@@ -575,11 +579,18 @@ mojom("mojo_bindings") {
     sources += [ "pepper_plugin.mojom" ]
   }
 
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    enabled_features += [ "arkweb_reader_mode" ]
+  }
+
   if (defined(arkweb_adblock) && arkweb_adblock) {
     enabled_features += [ "arkweb_adblock" ]
   }
   if (defined(arkweb_javascript_bridge) && arkweb_javascript_bridge) {
     enabled_features += [ "arkweb_javascript_bridge" ]
+  }
+  if (arkweb_blank_optimize) {
+    enabled_features += [ "arkweb_blank_optimize" ]
   }
   if (is_arkweb) {
     enabled_features += [ "arkweb_dfx_tracing" ]

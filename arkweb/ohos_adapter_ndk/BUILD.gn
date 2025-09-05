@@ -83,8 +83,6 @@ component("adapter_ndk") {
     "multimodalinputnew_adapter/mmi_new_adapter_impl.h",
     "multimodalinputnew_adapter/mmi_new_adapter_impl.cpp",
     "pasteboard_adapter/src/pasteboard_client_adapter_impl.cpp",
-    "media_adapter/player_framework_adapter_impl.h",
-    "media_adapter/player_framework_adapter_impl.cpp",
     "display_manager_adapter/native_display_manager_adapter_impl.h",
     "display_manager_adapter/native_display_manager_adapter_impl.cpp",
     "graphic_adapter/ashmem_adapter_impl.cpp",
@@ -112,6 +110,8 @@ component("adapter_ndk") {
     "media_adapter/video_encoder_adapter_impl.cpp",
     "ohos_image_adapter/ohos_image_decoder_adapter_impl.cpp",
     "ohos_image_adapter/ohos_image_decoder_adapter_impl.h",
+    "ohos_image_adapter/ohos_image_encoder_adapter.cpp",
+    "ohos_image_adapter/ohos_image_encoder_adapter.h",
     "keystore_adapter/keystore_adapter_impl.h",
     "keystore_adapter/keystore_adapter_impl.cpp",
     "date_time_format_adapter/date_time_format_adapter_impl.h",
@@ -130,6 +130,9 @@ component("adapter_ndk") {
     "distributeddatamgr_adapter/ohos_web_snapshot_data_base.cpp",
     "net_config_adapter/net_config_adapter_impl.h",
     "net_config_adapter/net_config_adapter_impl.cpp",
+    "window_manager_adapter/window_manager_adapter_impl.h",
+    "window_manager_adapter/window_manager_adapter_impl.cpp",
+    "ndk_callback_wrapper/callback_shared_wrapper.h",
   ]
 
   include_dirs = [
@@ -142,6 +145,7 @@ component("adapter_ndk") {
     "graphic_adapter/",
     "third_party/bounds_checking_function/include",
     "ohos_sdk/openharmony/native/sysroot/usr/include/",
+    "//third_party/skia",
   ]
 
   if (target_cpu == "arm" || target_cpu == "arm64" || target_cpu == "x86_64") {
@@ -191,6 +195,8 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_window.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_media_acodec.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_media_avcencinfo.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libimage_packer.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_color_space_manager.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libimage_source.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libhuks_ndk.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libasset_ndk.z.so",
@@ -245,6 +251,8 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_window.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_media_acodec.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_media_avcencinfo.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libimage_packer.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_color_space_manager.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libimage_source.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libhuks_ndk.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libasset_ndk.z.so",
@@ -254,7 +262,8 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libtelephony_radio.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libohcommonevent.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_media_venc.so",
-    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libhitrace_ndk.z.so", ]
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libhitrace_ndk.z.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_vsync.so", ]
   } else if (target_cpu == "x86_64" || target_cpu == "x64") {
     libs = [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libffrt.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libhilog_ndk.z.so",
@@ -298,6 +307,8 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_window.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_media_acodec.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_media_avcencinfo.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libimage_packer.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_color_space_manager.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libimage_source.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libhuks_ndk.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libasset_ndk.z.so",
@@ -332,6 +343,12 @@ component("adapter_ndk") {
   deps = [
     "//third_party:huawei_securec",
     "//arkweb/build/features",
-    "//base:tracing_buildflags",
+    "//third_party/boringssl",
+    "//base/allocator/partition_allocator:raw_ptr"
   ]
+  if (defined(is_arkweb) && is_arkweb) {
+    deps += [
+      "//arkweb/build/features:features",
+    ]
+  }
 }

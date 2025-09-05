@@ -9,6 +9,7 @@
 #include <optional>
 
 #include "absl/types/optional.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/task/single_thread_task_runner.h"
 #include "third_party/webrtc/modules/desktop_capture/desktop_capture_options.h"
@@ -101,11 +102,6 @@ class BaseWindowCapturer : public DesktopCapturer {
 
   void HandleBuffer();
 
-  // void HandleBuffer(OH_AVBuffer* buffer,
-  //                   OH_AVScreenCaptureBufferType bufferType,
-  //                   int64_t timestamp,
-  //                   void* userData);
-
   void SetScreenCaptureState(
       const OHOS::NWeb::ScreenCaptureStateCodeAdapter& stateCode);
 
@@ -129,7 +125,7 @@ class BaseWindowCapturer : public DesktopCapturer {
   OHOS::NWeb::ScreenCaptureStateCodeAdapter capture_state_code_ =
       OHOS::NWeb::ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_INVLID;
 
-  Callback* callback_ = nullptr;
+  raw_ptr<Callback> callback_ = nullptr;
 
   CaptureSourceType capture_source_type_ =
       BaseWindowCapturer::CaptureSourceType::kScreen;
@@ -147,7 +143,6 @@ class BaseWindowCapturer : public DesktopCapturer {
   std::shared_ptr<WindowCapturerReadCallback> WindowCapturerReadCallback_ = nullptr;
 
   OH_AVScreenCapture* screen_capture_ = nullptr;
-  //ohos::adapter::OhosDisplay ohos_screen_;
 
   int nweb_id_ = 0;
   base::WeakPtrFactory<BaseWindowCapturer> weak_factory_{this};

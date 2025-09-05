@@ -34,23 +34,13 @@ class ArkwebCopyOutputResultUtils {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SetImplOnGpu(SkiaOutputSurfaceImplOnGpu* impl_on_gpu);
 
-  SkiaOutputSurfaceImplOnGpu* ImplOnGpu() const;	
+  SkiaOutputSurfaceImplOnGpu* ImplOnGpu() const;
 
-  void SetBlanklessKey(uint64_t blankless_key);
+  void SetBlanklessInfo(const base::ohos::BlanklessInfo& info);
 
-  uint64_t GetBlanklessKey() const;
+  const base::ohos::BlanklessInfo& GetBlanklessInfo() const;
 
-  void SetLcpTime(int32_t lcp_time);
-
-  int32_t GetLcpTime() const;
-
-  void SetPreferenceHash(int64_t pref_hash);
-
-  int64_t GetPreferenceHash() const;
-
-  void SetQuadList(const std::vector<gfx::Rect>& quad_list);
-
-  const std::vector<gfx::Rect>& GetQuadList() const;
+  bool IsBlanklessInfoValid() const;
 #endif
 
  private:
@@ -58,10 +48,7 @@ class ArkwebCopyOutputResultUtils {
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   raw_ptr<SkiaOutputSurfaceImplOnGpu> impl_on_gpu_ = nullptr;
-  uint64_t blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
-  int32_t lcp_time_ = 0;
-  int64_t pref_hash_ = 0;
-  std::vector<gfx::Rect> quad_list_;
+  base::ohos::BlanklessInfo info_;
 #endif
 };
 

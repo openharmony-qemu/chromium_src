@@ -298,6 +298,7 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
   void ScrollBy(float delta_x, float delta_y) override {}
   void SetMouseEventResult(bool result, bool stopPropagation) override {}
   void SetBypassVsyncCondition(int32_t condition) override {}
+  void SetEnableCustomVideoPlayer(bool flag) override {}
 #endif
   using MessageVector = std::vector<std::unique_ptr<DispatchedMessage>>;
   MessageVector GetAndResetDispatchedMessages();

@@ -26,7 +26,9 @@
 #include "base/check_op.h"
 #include "base/memory/page_size.h"
 #include "base/posix/eintr_wrapper.h"
+#if !BUILDFLAG(ARKWEB_TEST)
 #include "third_party/lss/lss.h"
+#endif // !BUILDFLAG(ARKWEB_TEST)
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
 #include "base/logging.h"
@@ -44,6 +46,9 @@ using namespace crashpad;
 #if BUILDFLAG(ARKWEB_CRASHPAD)
 int PtraceBrokerUtils::ConvertRealtidToNstid(int real_tid, PtraceBroker* ptraceBroker)
 {
+  if (ptraceBroker == nullptr) {
+    return real_tid;
+  }
   if (ptraceBroker->is_in_pid_ns_) {
     auto it = ptraceBroker->tid_nstid_map_.find(real_tid);
     if (it != ptraceBroker->tid_nstid_map_.end()) {

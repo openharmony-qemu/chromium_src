@@ -17,7 +17,20 @@
 
 namespace OHOS::NWeb {
 
-AudioCencInfoAdapterImpl::~AudioCencInfoAdapterImpl() {}
+AudioCencInfoAdapterImpl::~AudioCencInfoAdapterImpl()
+{
+    keyId_ = nullptr;
+    keyIdLen_ = 0;
+    iv_ = nullptr;
+    ivLen_ = 0;
+    algo_ = 0;
+    encryptedBlockCount_ = 0;
+    skippedBlockCount_ = 0;
+    firstEncryptedOffset_ = 0;
+    clearHeaderLens_.clear();
+    payLoadLens_.clear();
+    mode_ = 0;
+}
 
 uint8_t* AudioCencInfoAdapterImpl::GetKeyId()
 {

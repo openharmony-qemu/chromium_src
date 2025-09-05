@@ -153,7 +153,7 @@ void ArkWebDownloadItemImplExt::IsNeedAutoResume(
   LOG(INFO) << "DownloadItemImpl::InterruptWithPartialState "
             << ", guid: " << GetGuid()
             << ", need_auto_resume: " << need_auto_resume
-            << ", path: " << GetFullPath();
+            << ", path: ***";
 }
 
 bool ArkWebDownloadItemImplExt::CheckIsNeedAutoResume(DownloadInterruptReason reason) {

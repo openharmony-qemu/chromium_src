@@ -355,6 +355,7 @@ target(link_target_type, "renderer") {
 
     deps += [
       "//ohos_glue:ohos_adapter_glue_source",
+      "//base:base_static",
     ]
 
     if (arkweb_crashpad) {

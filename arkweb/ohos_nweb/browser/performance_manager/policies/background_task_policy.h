@@ -11,9 +11,15 @@
 #define BACKGROUND_TASK_POLICY_H_
 
 #include <memory>
-
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#undef private
+#endif  // ARKWEB_TEST
 #include "components/performance_manager/public/graph/graph.h"
 #include "components/performance_manager/public/graph/page_node.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#define private public
+#endif  // ARKWEB_TEST
 
 namespace performance_manager {
 
@@ -52,13 +58,32 @@ class BackgroundTaskPolicy : public GraphOwnedDefaultImpl,
   void SetBrowserForeground(const PageNode* page_node) override;
   void SetBrowserBackground(const PageNode* page_node) override;
 #endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  void OnAudioContextPlaybackStarted(const AudioContextId& audio_context_id) override;
+  void OnAudioContextPlaybackStopped(const AudioContextId& audio_context_id) override;
+
+  bool IsWebAudioRequestBackgroundRunning();
+  void ProcessAudioContextPlayers(const PageNode* page_node);
+  void ProcessAudioContextPlayersOnUIThread(const PageNode* page_node);
+  bool GetWebAudioStartBackgroundTask();
+  bool GetWebAudioStartBackgroundTaskOnUIThread();
+
+  // Set of active audio contexts
+  std::set<AudioContextId> audio_context_players_num_;
+#endif
+
   raw_ptr<const PageNode> page_node_being_removed_ = nullptr;
   std::unique_ptr<mechanism::BackgroundTaskHolder> background_task_holder_;
   bool is_request_background_task_;
   int32_t visible_page_num_;
   int32_t media_playing_num_;
   int32_t audio_state_num_;
+
+  base::WeakPtrFactory<BackgroundTaskPolicy> weak_factory_{this};
 };
+#if BUILDFLAG(ARKWEB_TEST)
+#undef private
+#endif  // ARKWEB_TEST
 }  // namespace policies
 }  // namespace performance_manager
 #endif  // BACKGROUND_TASK_POLICY_H_

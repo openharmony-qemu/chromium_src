@@ -43,7 +43,7 @@ TEST(NWebWebStorageDelegateTEST, DeleteAllData) {
 
 TEST(NWebWebStorageDelegateTEST, DeleteOrigin001) {
     auto web_storage = std::make_shared<NWebWebStorageDelegate>();
-    EXPECT_EQ(web_storage->DeleteOrigin(""), OHOS::NWeb::NWEB_INVALID_ORIGIN)
+    EXPECT_EQ(web_storage->DeleteOrigin(""), OHOS::NWeb::NWEB_INVALID_ORIGIN);
 }
 
 TEST(NWebWebStorageDelegateTEST, DeleteOrigin002) {

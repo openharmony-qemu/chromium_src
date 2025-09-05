@@ -38,13 +38,13 @@ void BlanklessController::BlankOptWhiteList::LoadWhiteList()
 
   base::FilePath data_path = base::FilePath("/etc/web/blank_opt_white_list.json");
   base::File tfile(data_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
-  if (!tfile.IsValid()) {
+  if (!tfile.IsValid() || tfile.GetLength() <= 0) {
     LOG(WARNING) << "blankless BlankOptWhiteList file is invalid or not exist.";
     return;
   }
 
-  std::vector<char> buffer(tfile.GetLength());
-  int bytes_read = tfile.Read(0, buffer.data(), buffer.size());
+  std::vector<char> buffer(static_cast<size_t>(tfile.GetLength()));
+  int bytes_read = tfile.Read(0, buffer.data(), static_cast<int>(buffer.size()));
   if (bytes_read == -1) {
     LOG(WARNING) << "blankless BlankOptWhiteList read file failed.";
     return;
@@ -107,75 +107,53 @@ BlanklessController& BlanklessController::GetInstance()
   return instance;
 }
 
-void BlanklessController::RegisterFrameRemoveCallback(uint64_t blankless_key, Callback&& callback)
+void BlanklessController::RegisterFrameRemoveCallback(uint32_t nweb_id, uint64_t blankless_key, Callback&& callback)
 {
-  std::lock_guard<std::mutex> lck(m_frame_remove_callback_map_mtx_);
-  m_frame_remove_callback_map_[blankless_key] = callback;
+  m_frame_remove_callback_map_.Insert(nweb_id, blankless_key, std::move(callback));
 }
 
-void BlanklessController::FireFrameRemoveCallback(uint64_t blankless_key)
+void BlanklessController::FireFrameRemoveCallback(uint32_t nweb_id, uint64_t blankless_key)
 {
-  std::optional<Callback> callback;
-  {
-    std::lock_guard<std::mutex> lck(m_frame_remove_callback_map_mtx_);
-    if (auto it = m_frame_remove_callback_map_.find(blankless_key); it != m_frame_remove_callback_map_.end()) {
-      callback = std::move(it->second);
-      m_frame_remove_callback_map_.erase(it);
-    }
-  }
+  std::optional<Callback> callback = m_frame_remove_callback_map_.Get(nweb_id, blankless_key, /*move*/true);
   if (callback.has_value()) {
     callback.value()();
+    LOG(DEBUG) << "blankless FireFrameRemoveCallback nweb_id: " << nweb_id << ", blankless_key: " << blankless_key;
   }
 }
 
-void BlanklessController::RegisterFrameInsertCallback(uint64_t blankless_key, Callback&& callback, int32_t lcp_time)
+void BlanklessController::RegisterFrameInsertCallback(
+  uint32_t nweb_id, uint64_t blankless_key, Callback&& callback, int32_t lcp_time)
 {
-  std::lock_guard<std::mutex> lck(m_frame_insert_callback_map_mtx_);
-  m_frame_insert_callback_map_[blankless_key] = { callback, lcp_time };
+  m_frame_insert_callback_map_.Insert(nweb_id, blankless_key,  { std::move(callback), lcp_time });
 }
 
-int32_t BlanklessController::FireFrameInsertCallback(uint64_t blankless_key)
+int32_t BlanklessController::FireFrameInsertCallback(uint32_t nweb_id, uint64_t blankless_key)
 {
-  std::optional<Callback> callback;
-  int32_t ret = INT32_MAX;
-  {
-    std::lock_guard<std::mutex> lck(m_frame_insert_callback_map_mtx_);
-    if (auto it = m_frame_insert_callback_map_.find(blankless_key); it != m_frame_insert_callback_map_.end()) {
-      callback = std::move(it->second.first);
-      ret = it->second.second;
-      m_frame_insert_callback_map_.erase(it);
-    }
+  auto info = m_frame_insert_callback_map_.Get(nweb_id, blankless_key, /*move*/true);
+  if (!info.has_value()) {
+    return 0;
   }
-  if (callback.has_value()) {
-    callback.value()();
-  }
-  return ret;
+  std::pair<Callback, int32_t> info_ = info.value();
+  info_.first();
+  return info_.second;
 }
 
-void BlanklessController::CancelFrameInsertCallback(uint64_t blankless_key)
+void BlanklessController::CancelFrameInsertCallback(uint32_t nweb_id, uint64_t blankless_key)
 {
-  std::lock_guard<std::mutex> lck(m_frame_insert_callback_map_mtx_);
-  m_frame_insert_callback_map_.erase(blankless_key);
+  m_frame_insert_callback_map_.Erase(nweb_id, blankless_key);
 }
 
-BlanklessController::StatusCode BlanklessController::ResetStatus(int32_t nweb_id, bool is_main_frame, bool is_redirect)
+BlanklessController::StatusCode BlanklessController::ResetStatus(uint32_t nweb_id, bool is_main_frame, bool is_redirect)
 {
   bool allowed = (is_main_frame && !is_redirect);
   std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
   auto& info = m_nweb_status_map_[nweb_id];
-  info.blankless_key = INVALID_BLANKLESS_KEY;
   info.allowed = allowed;
   info.status_code = allowed ? StatusCode::ALLOWED : StatusCode::NOT_ALLOWED;
   return info.status_code;
 }
 
-void BlanklessController::RemoveStatus(int32_t nweb_id)
-{
-  std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
-  m_nweb_status_map_.erase(nweb_id);
-}
-
-BlanklessController::StatusCode BlanklessController::RecordKey(int32_t nweb_id, uint64_t blankless_key)
+BlanklessController::StatusCode BlanklessController::RecordKey(uint32_t nweb_id, uint64_t blankless_key)
 {
   std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
   auto& info = m_nweb_status_map_[nweb_id];
@@ -183,14 +161,10 @@ BlanklessController::StatusCode BlanklessController::RecordKey(int32_t nweb_id, 
   if (!info.allowed) {
     return info.status_code = StatusCode::NOT_ALLOWED;
   }
-  if (info.blankless_key_dumped_history.find(blankless_key) != info.blankless_key_dumped_history.end()) {
-    return info.status_code = StatusCode::CALL_MULTIPLED_TIMES;
-  }
-  info.blankless_key_dumped_history.insert(blankless_key);
   return info.status_code = StatusCode::DUMPED;
 }
 
-BlanklessController::StatusCode BlanklessController::MatchKey(int32_t nweb_id, uint64_t blankless_key)
+BlanklessController::StatusCode BlanklessController::MatchKey(uint32_t nweb_id, uint64_t blankless_key)
 {
   std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
   auto it = m_nweb_status_map_.find(nweb_id);
@@ -205,11 +179,62 @@ BlanklessController::StatusCode BlanklessController::MatchKey(int32_t nweb_id, u
     return info.status_code = StatusCode::NOT_ALLOWED;
   }
   info.blankless_key = INVALID_BLANKLESS_KEY;
-  if (info.blankless_key_inserted_history.find(blankless_key) != info.blankless_key_inserted_history.end()) {
-    return info.status_code = StatusCode::CALL_MULTIPLED_TIMES;
-  }
-  info.blankless_key_inserted_history.insert(blankless_key);
   return info.status_code = StatusCode::INSERTED;
+}
+
+void BlanklessController::RecordSystemTime(uint32_t nweb_id, uint64_t blankless_key, uint64_t system_time)
+{
+  m_system_time_map_.Insert(nweb_id, blankless_key, system_time);
+}
+
+uint64_t BlanklessController::GetSystemTime(uint32_t nweb_id, uint64_t blankless_key)
+{
+  auto system_time = m_system_time_map_.Get(nweb_id, blankless_key, /*move*/false);
+  if (system_time.has_value()) {
+    return system_time.value();
+  }
+  return INVALID_TIMESTAMP;
+}
+
+void BlanklessController::RecordDumpTime(uint32_t nweb_id, uint64_t blankless_key, uint64_t dump_time)
+{
+  m_dump_time_map_.Insert(nweb_id, blankless_key, dump_time);
+}
+
+uint64_t BlanklessController::GetDumpTime(uint32_t nweb_id, uint64_t blankless_key)
+{
+  auto dump_time = m_dump_time_map_.Get(nweb_id, blankless_key, /*move*/false);
+  if (dump_time.has_value()) {
+    return dump_time.value();
+  }
+  return INVALID_TIMESTAMP;
+}
+
+void BlanklessController::Clear(uint32_t nweb_id)
+{
+  if (nweb_id == 0) {
+    m_frame_insert_callback_map_.Clear();
+    m_frame_remove_callback_map_.Clear();
+    m_system_time_map_.Clear();
+    m_dump_time_map_.Clear();
+    {
+      std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
+      m_nweb_status_map_.clear();
+    }
+    std::lock_guard<std::mutex> window_id_map_lck(m_window_id_map_mtx_);
+    m_window_id_map_.clear();
+    return;
+  }
+  m_frame_insert_callback_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
+  m_frame_remove_callback_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
+  m_system_time_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
+  m_dump_time_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
+  {
+    std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
+    m_nweb_status_map_.erase(nweb_id);
+  }
+  std::lock_guard<std::mutex> window_id_map_lck(m_window_id_map_mtx_);
+  m_window_id_map_.erase(nweb_id);
 }
 
 bool BlanklessController::CheckEnableForUrl(const std::string& url)
@@ -224,22 +249,6 @@ bool BlanklessController::CheckGlobalProperty()
   return BlankOptEnableFlag;
 }
 
-void BlanklessController::ResetForTest()
-{
-  {
-    std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
-    m_nweb_status_map_.clear();
-  }
-  {
-    std::lock_guard<std::mutex> lck(m_frame_insert_callback_map_mtx_);
-    m_frame_insert_callback_map_.clear();
-  }
-  {
-    std::lock_guard<std::mutex> lck(m_frame_remove_callback_map_mtx_);
-    m_frame_remove_callback_map_.clear();
-  }
-}
-
 bool BlanklessController::CheckStatusForTest(
   int32_t nweb_id, const BlanklessController::StatusInfo& expected_status, bool expected_found)
 {
@@ -251,10 +260,22 @@ bool BlanklessController::CheckStatusForTest(
   auto& info = it->second;
   bool ret = expected_status.allowed == info.allowed &&
              expected_status.blankless_key == info.blankless_key &&
-             expected_status.status_code == info.status_code &&
-             expected_status.blankless_key_dumped_history == info.blankless_key_dumped_history &&
-             expected_status.blankless_key_inserted_history == info.blankless_key_inserted_history;
+             expected_status.status_code == info.status_code;
   return ret;
+}
+
+void BlanklessController::RecordWindowId(uint32_t nweb_id, uint32_t window_id) {
+  std::lock_guard<std::mutex> lck(m_window_id_map_mtx_);
+  m_window_id_map_.emplace(nweb_id, window_id);
+}
+
+uint32_t BlanklessController::GetWindowIdByNWebId(uint32_t nweb_id) {
+  std::lock_guard<std::mutex> lck(m_window_id_map_mtx_);
+  auto it = m_window_id_map_.find(nweb_id);
+  if (it == m_window_id_map_.end()) {
+    return 0;
+  }
+  return it->second;
 }
 }  // namespace ohos
 }  // namespace base

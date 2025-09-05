@@ -44,6 +44,17 @@ const size_t kIVSizeAESGCM = 12;
 
 constexpr char kDataKeyAlias[] = "nweb_data_key";
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+enum WebStorageMigrationErrorCode {
+  MIGRATE_SUCCESS = 0,
+  DIRECTORY_OR_FILE_NOT_EXIST,
+  ASSET_QUERY_FAILED,
+  LOGIN_DATA_OPEN_FAILED,
+  PASSWORD_VAULT_CONNECT_FAILED,
+  PASSWORD_IMPORT_FAILED
+};
+#endif
 }  // namespace
 
 #endif  // COMPONENTS_OS_CRYPT_SYNC_OS_CRYPT_FOR_INCLUDE_H_

@@ -172,12 +172,9 @@ void CopyOutputRequest::SendResult(std::unique_ptr<CopyOutputResult> result) {
   }
 #endif
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (result &&
-      copy_output_request_utils_->GetBlanklessKey() != base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
-    result->copy_output_result_utils()->SetBlanklessKey(copy_output_request_utils_->GetBlanklessKey());
-    result->copy_output_result_utils()->SetLcpTime(copy_output_request_utils_->GetLcpTime());
-    result->copy_output_result_utils()->SetPreferenceHash(copy_output_request_utils_->GetPreferenceHash());
-    result->copy_output_result_utils()->SetQuadList(copy_output_request_utils_->GetQuadList());
+  if (result && result->copy_output_result_utils() && copy_output_request_utils_
+      && copy_output_request_utils_->IsBlanklessInfoValid()) {
+    result->copy_output_result_utils()->SetBlanklessInfo(copy_output_request_utils_->GetBlanklessInfo());
   }
 #endif
   runner->PostTask(FROM_HERE, base::BindOnce(std::move(result_callback_),

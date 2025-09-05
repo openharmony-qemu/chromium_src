@@ -510,20 +510,9 @@ WebContentsDelegate::OnFullScreenOverlayEnter(
 }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-void WebContentsDelegate::OnShowConfirmInfoBar(const std::string& title,
-                                               const std::string& infoId,
-                                               const std::string& message,
-                                               int buttons,
-                                               const std::string& buttonLabelOK,
-                                               const std::string& buttonLabelCancel) {
+#if BUILDFLAG(ARKWEB_READER_MODE)
+bool WebContentsDelegate::IsForDistillerPage() {
+  return false;
 }
-void WebContentsDelegate::OnHideConfirmInfoBar(const std::string& title,
-                                               const std::string& infoId,
-                                               const std::string& message,
-                                               int buttons,
-                                               const std::string& buttonLabelOK,
-                                               const std::string& buttonLabelCancel) {
-}
-#endif // ARKWEB_ARKWEB_EXTENSIONS
+#endif
 }  // namespace content

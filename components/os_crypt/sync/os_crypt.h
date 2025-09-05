@@ -286,6 +286,7 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
   bool is_password_migrate_cached_ = false;
+  int migration_count_ = 0;
 #endif
 
   // Returns a cached. Is thread-safe for ota password loss.

@@ -451,6 +451,11 @@ HwVideoNativeBufferImageBacking::ProduceSkiaGanesh(
 
   DCHECK(context_state);
 
+  if (!context_state) {
+    LOG(ERROR) << "Context state is nullptr.";
+    return nullptr;
+  }
+
   // For (old) overlays, we don't have a texture owner, but overlay promotion
   // might not happen for some reasons. In that case, it will try to draw
   // which should result in no image.

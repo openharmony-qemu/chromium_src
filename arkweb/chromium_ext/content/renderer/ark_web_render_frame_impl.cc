@@ -23,11 +23,22 @@
 #include "content/renderer/render_frame_impl.h"
 #include "third_party/blink/public/web/web_document_loader.h"
 #include "third_party/blink/public/web/web_navigation_control.h"
+#include "third_party/blink/public/web/web_settings.h"
 #include "third_party/blink/public/web/web_view.h"
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "third_party/blink/public/web/web_performance_metrics_for_reporting.h"
+#include "third_party/blink/renderer/core/frame/web_local_frame_impl.h"
+#include "third_party/blink/renderer/core/paint/timing/paint_timing_detector.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "url/ohos/log_utils.h"
+#endif
+
+using blink::WebDocumentLoader;
 
 namespace content {
 
@@ -179,7 +190,98 @@ void RenderFrameImpl::SendBlanklessKeyToRenderFrame(uint32_t nweb_id,
   blankless_key_ = blankless_key;
   frame_sink_id_ = frame_sink_id;
   pref_hash_ = pref_hash;
+  if (blankless_key == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
+    return;
+  }
+  // need restart painttimingdetector for blankless
+  blink::WebLocalFrameImpl* web_frame = static_cast<blink::WebLocalFrameImpl*>(GetWebFrame());
+  if (!web_frame) {
+    return;
+  }
+
+  blink::LocalFrame* local_frame = web_frame->GetFrame();
+  if (!local_frame) {
+    return;
+  }
+
+  blink::LocalFrameView* lfv = local_frame->View();
+  if (!lfv) {
+    return;
+  }
+  LOG(DEBUG) << "blankless lcp:RenderFrameImpl::SendBlanklessKeyToRenderFrame restart PTD for blankless, nweb_id:"
+    << nweb_id << ", key:" << blankless_key << "lfv:" << (uint64_t)lfv;
+    lfv->GetPaintTimingDetector().RestartRecordingForBlankless();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+void RenderFrameImpl::PageLoadStartLoggerReport(
+    WebDocumentLoader* document_loader) {
+  LOG_FEEDBACK(WARNING) << "event_message: page load start, routing_id: "
+                        << routing_id_ << ", url: "
+                        << url::LogUtils::ConvertUrlWithMask(
+                               document_loader->GetUrl().GetString().Utf8());
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableLoggerReport)) {
+    bool is_strict_log_mode = true;
+    if (GetWebView()) {
+      is_strict_log_mode = GetWebView()->IsStrictLogMode();
+    }
+    if (!is_strict_log_mode) {
+      int32_t usage_scenario = GetWebView()->GetSettings()->GetUsageScenario();
+      LOG(URL) << "event_message: page load start, routing_id: " << routing_id_
+               << ", url: "
+               << url::LogUtils::ConvertUrl(
+                      document_loader->GetUrl().GetString().Utf8(),
+                      usage_scenario);
+    }
+  }
+}
+
+void RenderFrameImpl::ContentLoadFailedLoggerReport() {
+  if (IsMainFrame()) {
+    LOG_FEEDBACK(WARNING)
+        << "event_message: content load finished, routing_id: " << routing_id_
+        << ", url: "
+        << url::LogUtils::ConvertUrlWithMask(GetLoadingUrl().spec());
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kEnableLoggerReport)) {
+      bool is_strict_log_mode = true;
+      if (GetWebView()) {
+        is_strict_log_mode = GetWebView()->IsStrictLogMode();
+      }
+      if (!is_strict_log_mode) {
+        int32_t usage_scenario =
+            GetWebView()->GetSettings()->GetUsageScenario();
+        LOG(URL) << "event_message: content load finished, routing_id: "
+                 << routing_id_ << ", url: "
+                 << url::LogUtils::ConvertUrl(GetLoadingUrl().spec(),
+                                              usage_scenario);
+      }
+    }
+  }
+}
+
+void RenderFrameImpl::PageLoadFinishedLoggerReport() {
+  LOG_FEEDBACK(WARNING)
+      << "event_message: page load finished, routing_id: " << routing_id_
+      << ", url: " << url::LogUtils::ConvertUrlWithMask(GetLoadingUrl().spec());
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableLoggerReport)) {
+    bool is_strict_log_mode = true;
+    if (GetWebView()) {
+      is_strict_log_mode = GetWebView()->IsStrictLogMode();
+    }
+    if (!is_strict_log_mode) {
+      int32_t usage_scenario = GetWebView()->GetSettings()->GetUsageScenario();
+      LOG(URL) << "event_message: page load finished, routing_id: "
+               << routing_id_ << ", url: "
+               << url::LogUtils::ConvertUrl(GetLoadingUrl().spec(),
+                                            usage_scenario);
+    }
+  }
+}
+#endif
+
 // LCOV_EXCL_STOP
 }  // namespace content

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "net_connect_fuzz_mock.h"
+#include <memory>
 
 static const char* const COMMON_EVENT_CONNECTIVITY_CHANGE =
     "usual.event.CONNECTIVITY_CHANGE";

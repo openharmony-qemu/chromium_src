@@ -42,6 +42,20 @@ if (arkweb_vulkan) {
   ]
 }
 
+if (defined(arkweb_logger_report) && arkweb_logger_report) {
+  arkweb_base_ext_sources += [
+    "//arkweb/chromium_ext/base/ohos/logger.cc",
+    "//arkweb/chromium_ext/base/ohos/logger.h",
+  ]
+}
+
+if (arkweb_crashpad) {
+  arkweb_base_ext_sources += [
+    "//arkweb/chromium_ext/base/task/task_queue_impl_ext.cc",
+    "//arkweb/chromium_ext/base/task/task_queue_impl_ext.h",
+  ]
+}
+
 arkweb_metrics_sources = [
   "//arkweb/chromium_ext/base/metrics/field_trial_utils.cc",
   "//arkweb/chromium_ext/base/metrics/field_trial_utils.h",

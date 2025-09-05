@@ -228,6 +228,7 @@ if (!enable_arkweb) {
   arkweb_suspend_all_timers = false
   arkweb_theme_font = false
   arkweb_unittests = true
+  arkweb_test = false
   arkweb_url_trust_list = true
   arkweb_useragent = false
   arkweb_video_assistant = true
@@ -309,10 +310,12 @@ if (!enable_arkweb) {
   arkweb_immediate_destory = false
   arkweb_cwnd = false
   arkweb_viewport_avoid = false
-  arkweb_blank_optimize = false
+  arkweb_blank_optimize = true
   arkweb_error_page = false
   arkweb_gwp_asan = false
   arkweb_bgtask = false
+  arkweb_privacy_compliance = true
+  arkweb_ex_enable_applinking = false
 }
 
 buildflag_header("features") {
@@ -451,6 +454,7 @@ buildflag_header("features") {
     "ARKWEB_SUSPEND_ALL_TIMERS=$arkweb_suspend_all_timers",
     "ARKWEB_THEME_FONT=$arkweb_theme_font",
     "ARKWEB_UNITTESTS=$arkweb_unittests",
+    "ARKWEB_TEST=$arkweb_test",
     "ARKWEB_URL_TRUST_LIST=$arkweb_url_trust_list",
     "ARKWEB_USERAGENT=$arkweb_useragent",
     "ARKWEB_VIDEO_ASSISTANT=$arkweb_video_assistant",
@@ -547,6 +551,7 @@ buildflag_header("features") {
     "ARKWEB_ERROR_PAGE=$arkweb_error_page",
     "ARKWEB_GWP_ASAN=$arkweb_gwp_asan",
     "ARKWEB_HWASAN=$is_hwasan",
+    "ARKWEB_PRIVACY_COMPLIANCE=$arkweb_privacy_compliance",
     "ARKWEB_BGTASK=$arkweb_bgtask",
 
     # ARKWEB_EXT dafault value
@@ -566,6 +571,8 @@ buildflag_header("features") {
     "ARKWEB_EXT_NAVIGATION=false",
     "ARKWEB_EXT_SECURITY_STATE=false",
     "ARKWEB_EXT_PULL_TO_REFRESH=false",
+    "ARKWEB_READER_MODE=false",
+    "ARKWEB_EX_ENABLE_APPLINKING=arkweb_ex_enable_applinking",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

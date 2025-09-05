@@ -15,12 +15,12 @@
 
 #include "audio_codec_decoder_adapter_impl.h"
 
-#include <multimedia/player_framework/native_avcodec_audiocodec.h>
-#include <multimedia/player_framework/native_avcapability.h>
-#include <multimedia/native_audio_channel_layout.h>
 #include <multimedia/drm_framework/native_drm_err.h>
 #include <multimedia/drm_framework/native_mediakeysession.h>
+#include <multimedia/native_audio_channel_layout.h>
 #include <multimedia/player_framework/native_avbuffer.h>
+#include <multimedia/player_framework/native_avcapability.h>
+#include <multimedia/player_framework/native_avcodec_audiocodec.h>
 
 #include "audio_cenc_info_adapter_impl.h"
 
@@ -37,17 +37,6 @@ static const std::unordered_map<OH_AVCodecBufferFlags, BufferFlag> BUFFER_FLAG_M
     { OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_INCOMPLETE_FRAME,
         BufferFlag::CODEC_BUFFER_FLAG_PARTIAL_FRAME },
     { OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_CODEC_DATA, BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA }
-};
-
-static const std::unordered_map<const char *, AudioMimeType>  MIME_TYPE_MAP = {
-    { OH_AVCODEC_MIMETYPE_AUDIO_AAC, AudioMimeType::MIMETYPE_AUDIO_AAC },
-    { OH_AVCODEC_MIMETYPE_AUDIO_FLAC, AudioMimeType::MIMETYPE_AUDIO_FLAC },
-    { OH_AVCODEC_MIMETYPE_AUDIO_VORBIS, AudioMimeType::MIMETYPE_AUDIO_VORBIS },
-    { OH_AVCODEC_MIMETYPE_AUDIO_MPEG, AudioMimeType::MIMETYPE_AUDIO_MPEG },
-    { OH_AVCODEC_MIMETYPE_AUDIO_AMR_NB, AudioMimeType::MIMETYPE_AUDIO_AMR_NB },
-    { OH_AVCODEC_MIMETYPE_AUDIO_AMR_WB, AudioMimeType::MIMETYPE_AUDIO_AMR_WB },
-    { OH_AVCODEC_MIMETYPE_AUDIO_G711MU, AudioMimeType::MIMETYPE_AUDIO_G711MU },
-    { OH_AVCODEC_MIMETYPE_AUDIO_APE, AudioMimeType::MIMETYPE_AUDIO_APE }
 };
 
 AudioDecoderFormatAdapterImpl::~AudioDecoderFormatAdapterImpl() {}
@@ -225,10 +214,10 @@ AudioCodecDecoderAdapterImpl::~AudioCodecDecoderAdapterImpl()
     if (decoder_ != nullptr) {
         AudioDecoderCallbackManager::DeleteAudioDecoder(decoder_);
         OH_AVErrCode errCode = OH_AudioCodec_Destroy(decoder_);
+        decoder_ = nullptr;
         if (errCode != AV_ERR_OK) {
             WVLOG_E("destroy decoder_ fail, errCode = %{public}u.", uint32_t(errCode));
         }
-        decoder_ = nullptr;
     }
 }
 
@@ -291,12 +280,6 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::CreateAudioDecoderByMime(c
     if (decoder_ == nullptr) {
         WVLOG_E("create decoder by mine[%{public}s] failed.", mimetype.c_str());
         return AudioDecoderAdapterCode::DECODER_ERROR;
-    }
-    mimeType_ = AudioMimeType::MIMETYPE_UNKNOW;
-    for (auto it = MIME_TYPE_MAP.begin(); it != MIME_TYPE_MAP.end(); it++) {
-        if (strcmp(it->first, mimetype.c_str()) == 0) {
-            mimeType_ = it->second;
-        }
     }
 
     AudioDecoderCallbackManager::AddAudioDecoder(this);
@@ -498,7 +481,6 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::ReleaseDecoder()
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
     decoder_ = nullptr;
-
     // clear input and output buffers
     {
         std::unique_lock<std::mutex> lock(inMutex_);
@@ -585,6 +567,7 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::SetBufferCencInfo(
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
     errNo = OH_AVCencInfo_Destroy(avCencInfo);
+    avCencInfo = nullptr;
     if (errNo != AV_ERR_OK) {
         WVLOG_E("destroy cencInfo fail, errNo = %{public}u", static_cast<uint32_t>(errNo));
         return AudioDecoderAdapterCode::DECODER_ERROR;
@@ -599,19 +582,21 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::QueueInputBufferDec(uint32
     WVLOG_I("%{public}s index[%{public}u],  buffer size[%{public}d], isEncrypted[%{public}d],"
         "flag[%{public}d].", __FUNCTION__, index, bufferSize, static_cast<uint32_t>(isEncrypted),
         static_cast<uint32_t>(flag));
-
     if (decoder_ == nullptr) {
         WVLOG_E("decoder_ is nullptr.");
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
-
     if (isEncrypted && SetBufferCencInfo(index, cencInfo) != AudioDecoderAdapterCode::DECODER_OK) {
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
-
     OH_AVBuffer *avBuffer = GetInputBuffer(index);
     if (avBuffer == nullptr) {
         WVLOG_E("QueueInputBufferDec fail, inputbuffer[%{public}u] not find.", index);
+        return AudioDecoderAdapterCode::DECODER_ERROR;
+    }
+    int32_t bufferCapacity = OH_AVBuffer_GetCapacity(avBuffer);
+    if (bufferCapacity < bufferSize) {
+        WVLOG_E("QueueInputBufferDec fail, cap size less than buffer size.");
         return AudioDecoderAdapterCode::DECODER_ERROR;
     }
     uint8_t *addr = OH_AVBuffer_GetAddr(avBuffer);
@@ -620,7 +605,7 @@ AudioDecoderAdapterCode AudioCodecDecoderAdapterImpl::QueueInputBufferDec(uint32
             WVLOG_E("index[%{public}u] bufferData is nullptr.", index);
             return AudioDecoderAdapterCode::DECODER_ERROR;
         }
-        if (memcpy_s(addr, bufferSize, bufferData, bufferSize) != EOK) {
+        if (memcpy_s(addr, bufferCapacity, bufferData, bufferSize) != EOK) {
             WVLOG_E(" index[%{public}u] memcpy_s buffer fail.", index);
             return AudioDecoderAdapterCode::DECODER_ERROR;
         }
@@ -912,6 +897,7 @@ void AudioDecoderCallbackManager::OnOutputFormatChanged(OH_AVCodec *codec, OH_AV
 void AudioDecoderCallbackManager::OnInputBufferAvailable(
     OH_AVCodec *codec, uint32_t index, OH_AVBuffer *data, void *userData)
 {
+    (void)userData;
     WVLOG_D("AudioDecoderCallbackManager %{public}s[%{public}u].", __FUNCTION__, index);
     if (codec == nullptr) {
         WVLOG_E("AudioDecoderCallbackManager::OnInputBufferAvailable avcodec is nullptr.");
@@ -947,6 +933,11 @@ void AudioDecoderCallbackManager::OnOutputBufferAvailable(
         return;
     }
 
+    if (data == nullptr) {
+        WVLOG_E("AudioDecoderCallbackManager::OnOutputBufferAvailable avbuffer is nullptr.");
+        return;
+    }
+
     std::unique_lock<std::mutex> lock(AudioCodecDecoderAdapterImpl::GetDecoderMutex());
     OHOS::NWeb::AudioCodecDecoderAdapterImpl *impl = FindAudioDecoder(codec);
     if (impl == nullptr) {
@@ -961,9 +952,14 @@ void AudioDecoderCallbackManager::OnOutputBufferAvailable(
 
     OH_AVCodecBufferAttr attr = {0};
     OH_AVErrCode errCode = OH_AVBuffer_GetBufferAttr(data, &attr);
+    int32_t capacity = OH_AVBuffer_GetCapacity(data);
     if (errCode != AV_ERR_OK || attr.size < 0) {
         WVLOG_E(" get buffer attr fail.");
         return;
+    }
+    if (attr.size > capacity) {
+        WVLOG_E("attr.size is larger than capacity.");
+        return;  
     }
 
     uint8_t bufferData[attr.size];

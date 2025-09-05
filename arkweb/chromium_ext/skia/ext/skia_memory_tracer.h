@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "base/memory/raw_ptr.h"
 #include "include/core/SkString.h"
 #include "include/core/SkTraceMemoryDump.h"
 
@@ -73,7 +74,7 @@ class SkiaMemoryTracer : public SkTraceMemoryDump {
   float ConvertToMB(const TraceValue& value);
 
   const std::vector<ResourcePair> resourceMap_;
-  const char* categoryKey_ = nullptr;
+  raw_ptr<const char> categoryKey_ = nullptr;
   const bool itemizeType_;
 
   TraceValue totalSize_;

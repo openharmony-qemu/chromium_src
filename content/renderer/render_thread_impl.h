@@ -70,6 +70,11 @@
 #include "arkweb/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom-forward.h"
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom.h"
+#endif
+
 namespace blink {
 class WebVideoCaptureImplManager;
 }
@@ -397,6 +402,12 @@ class CONTENT_EXPORT RenderThreadImpl
                             int64_t pref_hash);
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void UpdateReaderModeConfig(
+      blink::mojom::ReaderModeConfigPtr config) override;
+  const blink::mojom::ReaderModeConfig* GetReaderModeConfig() override;
+#endif
+
  private:
   FRIEND_TEST_ALL_PREFIXES(RenderThreadImplBrowserTest,
                            TransferSharedLastForegroundTime);
@@ -416,6 +427,11 @@ class CONTENT_EXPORT RenderThreadImpl
 
 #if BUILDFLAG(ARKWEB_I18N)
   void NotifyLocaleChanged(const std::string& update_locale) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void OnChannelConnected(int32_t peer_pid) override;
+  void OnChannelListenError() override;
 #endif
 
 #if BUILDFLAG(IS_ANDROID)
@@ -575,6 +591,10 @@ class CONTENT_EXPORT RenderThreadImpl
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   scoped_refptr<NativeTextureFactory> native_texture_factory_;
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  blink::mojom::ReaderModeConfigPtr reader_mode_config_;
+#endif  // ARKWEB_READER_MODE
 
   scoped_refptr<viz::ContextProviderCommandBuffer> shared_main_thread_contexts_;
 

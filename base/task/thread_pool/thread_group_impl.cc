@@ -579,8 +579,10 @@ void ThreadGroupImpl::WorkerDelegate::CleanupLockRequired(
   CHECK(worker_iter != outer_->workers_.end(), base::NotFatalUntil::M125);
   outer_->workers_.erase(worker_iter);
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  outer_->destroy_workers_.push_back(worker);
+#if BUILDFLAG(IS_ARKWEB)
+  if (worker->GetRealTid()) {
+    outer_->destroy_workers_ids_.push_back(worker->GetRealTid());
+  }
 #endif
 }
 
@@ -839,8 +841,10 @@ ThreadGroupImpl::CreateAndRegisterWorkerLockRequired(
       task_tracker_, worker_sequence_num_++, &lock_);
 
   workers_.push_back(worker);
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  create_workers_.push_back(worker.get());
+#if BUILDFLAG(IS_ARKWEB)
+  if (worker) {
+    create_workers.push_back(worker);
+  }
 #endif
   executor->ScheduleStart(worker);
   DCHECK_LE(workers_.size(), max_tasks_);

@@ -4,6 +4,7 @@
 
 #include "chromeos/components/quick_answers/utils/spell_check_language.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_util.h"
 #include "base/logging.h"
 #include "base/path_service.h"
@@ -22,8 +23,13 @@
 namespace quick_answers {
 namespace {
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kDownloadServerUrl[] =
+    "https://x.x.x";
+#else
 constexpr char kDownloadServerUrl[] =
     "https://redirector.gvt1.com/edgedl/chrome/dict/";
+#endif
 
 constexpr char kQuickAnswersDictionarySubDirName[] = "quick_answers";
 

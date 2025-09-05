@@ -18,6 +18,7 @@
 #include <ctime>
 
 #include "base/command_line.h"
+#include "base/hash/hash.h"
 #include "base/location.h"
 #include "base/logging.h"
 #include "base/task/task_runner.h"
@@ -58,13 +59,13 @@ void AudioScreenCapturerReadCallback::OnReadData(OHOS::NWeb::AudioCaptureSourceT
 BaseAudioCapturerSource::BaseAudioCapturerSource(
     scoped_refptr<base::SingleThreadTaskRunner> capturer_task_runner,
     int nwebId)
-    : capturer_task_runner_(capturer_task_runner) {  // 初始化新成员变量
+    : capturer_task_runner_(capturer_task_runner) {
   nwebId_ = nwebId;
   LOG(INFO) << "BaseAudioCapturerSource::BaseAudioCapturerSource, screen capture adapter init";
 }
 
 BaseAudioCapturerSource::~BaseAudioCapturerSource() {
-  LOG(INFO) << "BaseAudioCapturerSource::~BaseAudioCapturerSource";
+  LOG(INFO) << "BaseAudioCapturerSource::~BaseAudioCapturerSource, nwebId = " << nwebId_;
 }
 
 void BaseAudioCapturerSource::SetScreenCaptureState(const OHOS::NWeb::ScreenCaptureStateCodeAdapter& stateCode) {
@@ -92,7 +93,7 @@ void BaseAudioCapturerSource::Initialize(
       std::to_string(kInnerAudioSampleRate) + "_" +
       std::to_string(params_.channels()) + "_" +
       std::to_string(1) + "_webrtc_capturer_in.pcm";
-  DumpFileUtil::OpenDumpFile(dumpFileName, &dumpFile_);
+  DumpFileUtil::OpenDumpScopedFile(dumpFileName, &dumpFile_);
 
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());
 
@@ -115,8 +116,8 @@ void BaseAudioCapturerSource::Start() {
     return;
   }
 
-  LOG(INFO) << "BaseAudioCapturerSource, CreateBaseScreenCaptureSource: "
-            << &BaseScreenCaptureSource::GetInstance();
+  LOG(INFO) << "BaseAudioCapturerSource, CreateBaseScreenCaptureSource: hash="
+            << std::hex << base::FastHash(base::byte_span_from_ref(&BaseScreenCaptureSource::GetInstance()));
   AudioScreenCapturerReadCallback_ =
       std::make_shared<AudioScreenCapturerReadCallback>(base::BindRepeating(
           &BaseAudioCapturerSource::HandleAudioBuffer, weak_factory_.GetWeakPtr()));
@@ -145,12 +146,12 @@ void BaseAudioCapturerSource::Stop() {
 
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());
 
-  DumpFileUtil::CloseDumpFile(&dumpFile_);
+  DumpFileUtil::CloseDumpScopedFile(&dumpFile_);
 }
 // LCOV_EXCL_STOP
 
 void BaseAudioCapturerSource::HandleAudioBuffer(OHOS::NWeb::AudioCaptureSourceTypeAdapter type) {
-  base::AutoLock lock(base_callback_lock_);
+  int32_t ret = -1;
 
   if (portal_init_failed_) {
     LOG(ERROR) << "init failed";
@@ -159,22 +160,17 @@ void BaseAudioCapturerSource::HandleAudioBuffer(OHOS::NWeb::AudioCaptureSourceTy
 
   std::shared_ptr<OHOS::NWeb::AudioBufferAdapterImpl> audiobuffer =
         std::make_shared<OHOS::NWeb::AudioBufferAdapterImpl>();
-  if (!BaseScreenCaptureSource::GetInstance().ScreenCaptureAdapterIsExist(nwebId_) ||
-    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nwebId_] == nullptr) {
-    LOG(ERROR) << "screencap adapter not exist";
-    return;
-  }
-  int ret = BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nwebId_]->
-    AcquireAudioBuffer(audiobuffer, type);
+  
+  ret = BaseScreenCaptureSource::GetInstance().AcquireAudioBuffer(audiobuffer, type, nwebId_);
   if (ret != 0) {
     LOG(ERROR) << "acquire audio buffer failed";
     return;
   }
 
-  OHOS::NWeb::AudioCaptureSourceTypeAdapter sourcetype = audiobuffer->GetSourcetype();
-  if (sourcetype != type) {
-    LOG(ERROR) << "buffer type error, sourcetype: " << (int32_t)sourcetype;
-    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nwebId_]->ReleaseAudioBuffer(sourcetype);
+  OHOS::NWeb::AudioCaptureSourceTypeAdapter source_type = audiobuffer->GetSourcetype();
+  if (source_type != type) {
+    LOG(ERROR) << "buffer type error, source_type: " << (int32_t)source_type;
+    BaseScreenCaptureSource::GetInstance().ReleaseAudioBuffer(source_type, nwebId_);
     return;
   }
 
@@ -184,12 +180,15 @@ void BaseAudioCapturerSource::HandleAudioBuffer(OHOS::NWeb::AudioCaptureSourceTy
   audio_bus->FromInterleaved<media::SignedInt16SampleTypeTraits>(
       reinterpret_cast<const int16_t*>(audiobuffer->GetBuffer()),
       static_cast<int>(kInnerAudioFrameCount));
-  if (base_callback_) {
-    base_callback_->Capture(audio_bus.get(), timeStamp, {}, 1.0, false);
-    DumpFileUtil::WriteDumpFile(dumpFile_, audiobuffer->GetBuffer(), audiobuffer->GetLength());
+  {
+    base::AutoLock lock(base_callback_lock_);
+    if (base_callback_) {
+      base_callback_->Capture(audio_bus.get(), timeStamp, {}, 1.0, false);
+      DumpFileUtil::WriteDumpScopedFile(dumpFile_, audiobuffer->GetBuffer(), audiobuffer->GetLength());
+    }
   }
 
-  BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nwebId_]->ReleaseAudioBuffer(type);
+  BaseScreenCaptureSource::GetInstance().ReleaseAudioBuffer(type, nwebId_);
 }
 
 void BaseAudioCapturerSource::SetVolume(double volume) {

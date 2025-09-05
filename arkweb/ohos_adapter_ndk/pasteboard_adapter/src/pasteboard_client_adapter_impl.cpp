@@ -33,8 +33,9 @@
 
 namespace OHOS::NWeb {
 PasteDataRecordAdapterImpl::PasteDataRecordAdapterImpl(
-    OH_UdmfRecord* record)
-    : record_(record) {}
+    OH_UdmfRecord* record, bool need_destory_record)
+    : record_(record),
+      need_destory_record_(need_destory_record) {}
 
 PasteDataRecordAdapterImpl::PasteDataRecordAdapterImpl(
     const std::string& mimeType)
@@ -54,6 +55,9 @@ PasteDataRecordAdapterImpl::PasteDataRecordAdapterImpl(
 
 PasteDataRecordAdapterImpl::~PasteDataRecordAdapterImpl()
 {
+    if (!need_destory_record_) {
+        return;
+    }
     OH_UdmfRecord_Destroy(record_);
 }
 
@@ -187,6 +191,31 @@ void PasteDataRecordAdapterImpl::DestoryPixelmapNative(OH_PixelmapNative *pixelm
     if (pixelmapNativeDestroy_res != IMAGE_SUCCESS) {
         WVLOG_E("PixelmapNative Destroy failed. error code is : %{public}d", pixelmapNativeDestroy_res);
     }
+}
+
+void PasteDataRecordAdapterImpl::ReleaseMemory(
+    OH_UdsPixelMap* udsPixelMap,
+    OH_Pixelmap_InitializationOptions* options,
+    OH_PixelmapNative* pixelmapNative,
+    OH_Pixelmap_ImageInfo* imageInfo,
+    const std::string& optionType,
+    int result) {
+  if (udsPixelMap != nullptr) {
+    OH_UdsPixelMap_Destroy(udsPixelMap);
+  }
+  if (options != nullptr) {
+    DestoryOptions(result, options, optionType);
+  }
+  if (pixelmapNative != nullptr) {
+    DestoryPixelmapNative(pixelmapNative);
+  }
+  if (imageInfo != nullptr) {
+    int pixelmapImageInfoDestroy_res = OH_PixelmapImageInfo_Release(imageInfo);
+    if (pixelmapImageInfoDestroy_res != IMAGE_SUCCESS) {
+      WVLOG_E("imageInfo destroy failed. error code is : %{public}d",
+              pixelmapImageInfoDestroy_res);
+    }
+  }
 }
 
 PIXEL_FORMAT PasteDataRecordAdapterImpl::ClipBoardToPixelColorType(ClipBoardImageColorType colorType)
@@ -374,6 +403,7 @@ std::shared_ptr<std::string> PasteDataRecordAdapterImpl::GetHtmlText()
     const char* html = OH_UdsHtml_GetContent(udsHtml);
     if (html == nullptr) {
         WVLOG_E("GetContent is nullptr");
+        OH_UdsHtml_Destroy(udsHtml);
         return nullptr;
     }
     std::shared_ptr<std::string> htmlText = std::make_shared<std::string>(html);
@@ -449,6 +479,10 @@ std::shared_ptr<std::string> PasteDataRecordAdapterImpl::GetPlainText()
     WVLOG_D("GetPlainText, hasPlainText = %{public}d", hasHtml);
     if (hasHtml) {
         std::shared_ptr<std::string> html = GetHtmlText();
+        if (html == nullptr) {
+            WVLOG_E("GetPlainText failed, GetHtmlText() is null.");
+            return nullptr;
+        }
         std::shared_ptr<std::string> htmlPlainText = std::make_shared<std::string>(HtmlToPlainText(*html));
         return htmlPlainText;
     }
@@ -471,12 +505,13 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     OH_UdsPixelMap* udsPixelMap = OH_UdsPixelMap_Create();
     if (udsPixelMap == nullptr) {
         WVLOG_E("Create UdsPixelMap fail.");
+        return false;
     }
 
     int getPixelMap_res = OH_UdmfRecord_GetPixelMap(record_, udsPixelMap);
     if (getPixelMap_res != UDMF_E_OK) {
         WVLOG_E("GetPixelmap failed. error code is : %{public}d", getPixelMap_res);
-        OH_UdsPixelMap_Destroy(udsPixelMap);
+        ReleaseMemory(udsPixelMap);
         return false;
     }
 
@@ -484,6 +519,7 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     int createOptions_res = OH_PixelmapInitializationOptions_Create(&options);
     if (createOptions_res != IMAGE_SUCCESS) {
         WVLOG_E("create OH_Pixelmap_InitializationOptions failed. error code is : %{public}d", createOptions_res);
+        ReleaseMemory(udsPixelMap);
         return false;
     }
 
@@ -496,14 +532,14 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     int createPixelMap_res = OH_PixelmapNative_CreateEmptyPixelmap(options, &pixelmapNative);
     if (createPixelMap_res != IMAGE_SUCCESS) {
         WVLOG_E("create OH_PixelmapNative failed. error code is : %{public}d", createPixelMap_res);
-        DestoryOptions(createPixelMap_res, options, "create OH_PixelmapNative failed");
+        ReleaseMemory(udsPixelMap, options, nullptr, nullptr, "create OH_PixelmapNative failed", createPixelMap_res);
         return false;
     }
 
     OH_UdsPixelMap_GetPixelMap(udsPixelMap, pixelmapNative);
     if (pixelmapNative == nullptr) {
         WVLOG_E("GetPixelMapNative is null");
-        OH_UdsPixelMap_Destroy(udsPixelMap);
+        ReleaseMemory(udsPixelMap, options, nullptr, nullptr, "GetPixelMapNative is null");
         return false;
     }
 
@@ -511,14 +547,14 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     int createImageInfo_res = OH_PixelmapImageInfo_Create(&imageInfo);
     if (createImageInfo_res != IMAGE_SUCCESS) {
         WVLOG_E("CreateImageInfo failed. error code is : %{public}d", createImageInfo_res);
-        OH_UdsPixelMap_Destroy(udsPixelMap);
+        ReleaseMemory(udsPixelMap, options, pixelmapNative, nullptr, "CreateImageInfo failed", createImageInfo_res);
         return false;
     }
 
     int GetImageInfo_res = OH_PixelmapNative_GetImageInfo(pixelmapNative, imageInfo);
     if (GetImageInfo_res != IMAGE_SUCCESS) {
-        WVLOG_E("GetImageInfo failed. error code is : %{public}d", createImageInfo_res);
-        OH_UdsPixelMap_Destroy(udsPixelMap);
+        WVLOG_E("GetImageInfo failed. error code is : %{public}d", GetImageInfo_res);
+        ReleaseMemory(udsPixelMap, options, pixelmapNative, imageInfo, "GetImageInfo failed", GetImageInfo_res);
         return false;
     }
 
@@ -560,21 +596,31 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     uint8_t* dataBuffer = static_cast<uint8_t *>(calloc(dataSize, sizeof(uint8_t)));
     if (dataBuffer == nullptr) {
         WVLOG_E("calloc dataBuffer failed");
+        ReleaseMemory(udsPixelMap, options, pixelmapNative, imageInfo);
         return false;
     }
 
     uint32_t* data = static_cast<uint32_t *>(calloc(dataSize, sizeof(uint32_t)));
+    if (data == nullptr) {
+        WVLOG_E("calloc data failed");
+        ReleaseMemory(udsPixelMap, options, pixelmapNative, imageInfo);
+        free(dataBuffer);
+        return false;
+    }
     int readPixels_res = OH_PixelmapNative_ReadPixels(pixelmapNative, dataBuffer, &dataSize);
     if (readPixels_res != IMAGE_SUCCESS) {
         WVLOG_E("ReadPixels failed. error code is : %{public}d", readPixels_res);
     } else {
         if (memcpy_s(data, dataSize, dataBuffer, dataSize)) {
             WVLOG_E("memcpy_s failed");
+            ReleaseMemory(udsPixelMap, options, pixelmapNative, imageInfo);
+            free(dataBuffer);
+            free(data);
             return false;
         }
-        free(dataBuffer);
-        dataBuffer = nullptr;
     }
+    free(dataBuffer);
+    dataBuffer = nullptr;
 
     imageData->SetData(data);
     imageData->SetDataSize(dataSize);
@@ -584,13 +630,7 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     imageData->SetAlphaType(PixelToClipboardAlphaType(static_cast<PIXELMAP_ALPHA_TYPE>(alphaType)));
     imageData->SetColorType(PixelToClipBoardColorType(static_cast<PIXEL_FORMAT>(pixelFormat)));
 
-    DestoryOptions(0, options, "GetImgData ended");
-    DestoryPixelmapNative(pixelmapNative);
-    OH_UdsPixelMap_Destroy(udsPixelMap);
-    int pixelmapImageInfoDestroy_res = OH_PixelmapImageInfo_Release(imageInfo);
-    if (pixelmapImageInfoDestroy_res != UDMF_E_OK) {
-        WVLOG_E("imageInfo destroy failed. error code is : %{public}d", pixelmapImageInfoDestroy_res);
-    }
+    ReleaseMemory(udsPixelMap, options, pixelmapNative, imageInfo, "GetImgData ended");
     return true;
 }
 
@@ -740,6 +780,7 @@ void PasteDataAdapterImpl::AddTextRecord(const std::string& text)
     OH_UdmfRecord* record = OH_UdmfRecord_Create();
     if (record == nullptr) {
         WVLOG_E("Create UdmfRecord failed.");
+        OH_UdsPlainText_Destroy(udsPlainText);
         return;
     }
 
@@ -794,7 +835,7 @@ std::shared_ptr<std::string> PasteDataAdapterImpl::GetPrimaryHtml()
     }
 
     const char* html = OH_UdsHtml_GetContent(udsHtml);
-    std::shared_ptr<std::string> primaryHtml = std::make_shared<std::string>(html);
+    std::shared_ptr<std::string> primaryHtml = html ? std::make_shared<std::string>(html) : nullptr;
     OH_UdsHtml_Destroy(udsHtml);
     return primaryHtml;
 }
@@ -853,7 +894,7 @@ std::shared_ptr<PasteDataRecordAdapter> PasteDataAdapterImpl::GetRecordAt(
         WVLOG_E("GetRecord failed.");
         return nullptr;
     }
-    return std::make_shared<PasteDataRecordAdapterImpl>(record);
+    return std::make_shared<PasteDataRecordAdapterImpl>(record, false);
 }
 
 std::size_t PasteDataAdapterImpl::GetRecordCount()
@@ -871,7 +912,7 @@ PasteRecordVector PasteDataAdapterImpl::AllRecords()
     unsigned int count;
     OH_UdmfRecord** records = OH_UdmfData_GetRecords(data_, &count);
     for (unsigned int i = 0; i < count; i++) {
-        result.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i]));
+        result.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i], false));
     }
     return result;
 }
@@ -890,6 +931,10 @@ PasteBoardClientAdapterImpl::PasteBoardClientAdapterImpl()
 PasteBoardClientAdapterImpl :: ~PasteBoardClientAdapterImpl()
 {
     OH_Pasteboard_Destroy(pasteboard_);
+    if (callbackIndex_ > 0) {
+        callbackWrapper_.Clear(callbackIndex_);
+        callbackIndex_ = 0;
+    }
 }
 
 Udmf_ShareOption PasteBoardClientAdapterImpl::TransitionCopyOption(CopyOptionMode copyOption)
@@ -951,7 +996,7 @@ bool PasteBoardClientAdapterImpl::GetPasteData(PasteRecordVector& data)
         return false;
     }
     for (unsigned int i = 0; i < count; i++) {
-        data.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i]));
+        data.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i], false));
     }
     isLocalPaste_ = OH_UdmfData_IsLocal(getData);
     if (params != nullptr) {
@@ -1033,14 +1078,17 @@ uint32_t PasteBoardClientAdapterImpl::GetTokenId()
     return tokenId_;
 }
 
+CallbackSharedWrapper<PasteBoardCallback> PasteBoardClientAdapterImpl::callbackWrapper_;
+
 void PasteBoardNotify(void* context, Pasteboard_NotifyType type)
 {
     if (context == nullptr) {
         WVLOG_E("PasteBoardNotify failed, context is NULL");
         return;
     }
+    size_t callbackIndex = reinterpret_cast<size_t>(context);
     std::shared_ptr<PasteBoardCallback> pasteBoardCallback =
-                *(static_cast<std::shared_ptr<PasteBoardCallback>*>(context));
+        PasteBoardClientAdapterImpl::callbackWrapper_.GetCallback(callbackIndex);
     pasteBoardCallback->callback->OnPasteboardChanged();
 }
 
@@ -1055,8 +1103,13 @@ int32_t PasteBoardClientAdapterImpl::AddPasteboardChangedObserver(
     static int32_t count = 0;
     int32_t id = -1;
     if (callback) {
-        pasteCallback_ = std::make_shared<PasteBoardCallback>();
-        pasteCallback_->callback = callback;
+        std::shared_ptr<PasteBoardCallback> pasteCallback = std::make_shared<PasteBoardCallback>();
+        pasteCallback->callback = callback;
+        if (callbackIndex_ > 0) {
+            callbackWrapper_.Clear(callbackIndex_);
+            callbackIndex_ = 0;
+        }
+        callbackIndex_ = callbackWrapper_.AddCallback(pasteCallback);
         OH_PasteboardObserver* observer = nullptr;
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -1065,7 +1118,7 @@ int32_t PasteBoardClientAdapterImpl::AddPasteboardChangedObserver(
                 return -1;
             }
 
-            auto ret = OH_PasteboardObserver_SetData(observer, static_cast<void*>(&pasteCallback_),
+            auto ret = OH_PasteboardObserver_SetData(observer, reinterpret_cast<void*>(callbackIndex_),
                                                      PasteBoardNotify, PasteBoardFinalize);
             if (ret != ERR_OK) {
                 WVLOG_E("PasteboardObserver SetData failed. error code is : %{public}d", ret);

@@ -40,6 +40,7 @@
 #include <utility>
 
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/command_line.h"
 #include "base/containers/adapters.h"
 #include "base/debug/dump_without_crashing.h"
@@ -128,6 +129,10 @@
 #include "cef/ohos_cef_ext/libcef/browser/page_load_metrics/arkweb_page_load_metrics_observer.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace content {
 
 ArkWebNavigationControllerImplExt::ArkWebNavigationControllerImplExt(
@@ -171,8 +176,14 @@ const std::string& ArkWebNavigationControllerImplExt::GetOriginalUrl() {
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 NavigationController::NavigationEntryUpdateError
 ArkWebNavigationControllerImplExt::InsertBackForwardEntry(int index, const GURL& url) {
-  DLOG(INFO) << "InsertNavigationEntryAtFront url: " << url << "[index]"
+  DLOG(INFO) << "InsertNavigationEntryAtFront url: "
+             << url::LogUtils::ConvertUrlWithMask(url.spec()) << "[index]"
              << index;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "InsertBackForwardEntry url: "
+                     << url::LogUtils::ConvertUrlWithMask(url.spec())
+                     << "[index]" << index;
+#endif
   if (index < 0 || static_cast<size_t>(index) > entries_.size()) {
     return NavigationEntryUpdateError::ERR_WRONG_OFFSET;
   }
@@ -207,11 +218,22 @@ ArkWebNavigationControllerImplExt::InsertBackForwardEntry(int index, const GURL&
 
 NavigationController::NavigationEntryUpdateError
 ArkWebNavigationControllerImplExt::UpdateNavigationEntryUrl(int index, const GURL& url) {
-  DLOG(INFO) << "UpdateNavigationEntryUrl url: " << url << "[index]" << index;
+  DLOG(INFO) << "UpdateNavigationEntryUrl url: "
+             << url::LogUtils::ConvertUrlWithMask(url.spec()) << "[index]" << index;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "UpdateNavigationEntryUrl url: "
+                     << url::LogUtils::ConvertUrlWithMask(url.spec())
+                     << "[index]" << index;
+#endif
   if (frame_tree_->IsLoadingIncludingInnerFrameTrees()) {
     LOG(ERROR)
         << "If the url of the entry is modified during the loading process,"
         << " it will cause some unpredictable effects!";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR)
+        << "If the url of the entry is modified during the loading process,"
+        << " it will cause some unpredictable effects!";
+#endif
     return NavigationEntryUpdateError::ERR_OTHER;
   }
 

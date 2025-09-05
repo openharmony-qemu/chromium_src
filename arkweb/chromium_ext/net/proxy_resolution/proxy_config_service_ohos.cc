@@ -33,6 +33,7 @@
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
 #include "base/task/sequenced_task_runner.h"
+#include "base/no_destructor.h"
 #include "net/base/host_port_pair.h"
 #include "net/base/proxy_server.h"
 #include "net/base/proxy_string_util.h"
@@ -434,7 +435,8 @@ class ProxyConfigServiceOHOS::Delegate
 
  private:
   friend class base::RefCountedThreadSafe<Delegate>;
-
+  friend class TestDelegate;
+  friend class ProxyConfigServiceOHOSTest;
   virtual ~Delegate() {}
 
   // Called on the network sequence.
@@ -462,19 +464,19 @@ class ProxyConfigServiceOHOS::Delegate
 };
 
 std::shared_ptr<NetProxyEventCallback> NetProxyEventCallback::GetInstance() {
-  static std::shared_ptr<NetProxyEventCallback> proxy_event_callback_ = nullptr;
+  static base::NoDestructor<std::shared_ptr<NetProxyEventCallback>> proxy_event_callback_(nullptr);
  
-  if (proxy_event_callback_) {
-    return proxy_event_callback_;
+  if (*proxy_event_callback_) {
+    return *proxy_event_callback_;
   }
  
   NetProxyEventCallback* raw = new NetProxyEventCallback();
-  proxy_event_callback_.reset(raw);
+  (*proxy_event_callback_).reset(raw);
  
   OHOS::NWeb::OhosAdapterHelper::GetInstance()
       .GetNetProxyInstance()
-      .RegNetProxyEvent(proxy_event_callback_);
-  return proxy_event_callback_;
+      .RegNetProxyEvent(*proxy_event_callback_);
+  return *proxy_event_callback_;
 }
  
 void NetProxyEventCallback::AddObserver(ProxyConfigServiceOHOS* observer) {

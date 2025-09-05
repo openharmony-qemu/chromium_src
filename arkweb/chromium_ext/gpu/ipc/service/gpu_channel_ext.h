@@ -64,7 +64,8 @@ class GpuChannelExt : public GpuChannel {
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SetBlanklessDumpInfo(uint64_t frame_sink_id, const base::ohos::BlanklessDumpInfo& info);
-  bool GetBlanklessDumpInfoAndDisableDump(uint64_t frame_sink_id, base::ohos::BlanklessDumpInfo& info);
+  static bool GetBlanklessDumpInfoAndDisableDump(uint32_t client_id, uint64_t frame_sink_id,
+      base::ohos::BlanklessDumpInfo& info);
 #endif
 
  private:
@@ -74,8 +75,9 @@ class GpuChannelExt : public GpuChannel {
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  std::map<uint64_t, base::ohos::BlanklessDumpInfo> blankless_dump_info_map_;
-  std::mutex dump_info_map_mtx_;
+  void ClearCurBlanklessDumpInfo();
+  static std::map<uint32_t, std::map<uint64_t, base::ohos::BlanklessDumpInfo>> blankless_dump_info_map_;
+  static std::mutex dump_info_map_mtx_;
 #endif
 };
 }// namespace gpu

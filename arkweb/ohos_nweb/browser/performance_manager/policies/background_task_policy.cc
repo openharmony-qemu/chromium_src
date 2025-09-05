@@ -16,13 +16,32 @@
 #include "background_task_policy.h"
 
 #include <memory>
-
+#include "base/hash/hash.h"
 #include "background_task_adapter.h"
 #include "content/browser/scheduler/browser_task_executor.h"
 #include "ohos_nweb/browser/performance_manager/mechanisms/background_task_holder.h"
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#include "base/memory/safe_ref.h"
+#include "content/public/browser/web_contents.h"
+#endif
+
 namespace performance_manager::policies {
 using namespace OHOS::NWeb;
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+namespace {
+enum BackgroundTaskType {
+  // web page audio play in background.
+  AUDIO_PLAYBACK = 0,
+
+  // web page web audio play in background.
+  WEB_AUDIO_PLAYBACK = 1,
+};
+}  // namespace
+#endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
 enum class RequestBackgroundTaskReason : int32_t {
   NEED_BG_TASK = 0,
@@ -39,7 +58,14 @@ BackgroundTaskPolicy::BackgroundTaskPolicy()
       visible_page_num_(0),
       media_playing_num_(0),
       audio_state_num_(0) {}
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+BackgroundTaskPolicy::~BackgroundTaskPolicy() {
+  audio_context_players_num_.clear();
+}
+#else
 BackgroundTaskPolicy::~BackgroundTaskPolicy() = default;
+#endif // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
 void BackgroundTaskPolicy::OnTakenFromGraph(Graph* graph) {
   if (graph == nullptr) {
@@ -106,7 +132,7 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__
             << ", OnIsMediaPlayingChanged "
             << (page_node->IsMediaPlaying() ? "true" : "false")
-            << " page_node=" << page_node
+            << " page_node hash=" << std::hex << base::FastHash(base::byte_span_from_ref(page_node))
             << ", media_playing_num: " << media_playing_num_
             << " page_node->IsVisible=" << (page_node->IsVisible() ? "true" : "false");
   MaybeChangeBackgroundTask(page_node);
@@ -114,7 +140,8 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
 void BackgroundTaskPolicy::OnDecrementAudioNum(const PageNode* page_node) {
-  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession page_node=" << page_node;
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession page_node hash="
+            << std::hex << base::FastHash(base::byte_span_from_ref(page_node));
   if (page_node == nullptr) {
     LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << " page_node is null return";
     return;
@@ -130,7 +157,9 @@ void BackgroundTaskPolicy::OnDecrementAudioNum(const PageNode* page_node) {
   if (audio_state_num_ < 0) {
     audio_state_num_ = 0;
   }
-
+  if (audio_state_num_ == 0) {
+    audio_context_players_num_.clear();
+  }
   LOG(INFO) << BG_TASK_TAG << " OnDecrementAudioNum media_playing_num_: " << media_playing_num_
             << "audio_state_num_: "<< audio_state_num_;
   MaybeChangeBackgroundTask(page_node);
@@ -148,6 +177,14 @@ void BackgroundTaskPolicy::OnIsAudibleChanged(const PageNode* page_node) {
   if (audio_state_num_ < 0) {
     audio_state_num_ = 0;
   }
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  if (audio_state_num_ == 0) {
+    audio_context_players_num_.clear();
+  }
+  if (!page_node->IsAudible()) {
+    ProcessAudioContextPlayers(page_node);
+  }
+#endif
   LOG(INFO) << BG_TASK_TAG << " OnIsAudibleChanged "
             << (page_node->IsAudible() ? "true" : "false")
             << ", audio_state_num: " << audio_state_num_;
@@ -157,7 +194,7 @@ void BackgroundTaskPolicy::OnIsAudibleChanged(const PageNode* page_node) {
 void BackgroundTaskPolicy::MaybeChangeBackgroundTask(
     const PageNode* page_node) {
   LOG(INFO) << "BackgroundTaskPolicy::MaybeChangeBackgroundTask "
-            << " page_node=" << page_node
+            << " page_node hash=" << std::hex << base::FastHash(base::byte_span_from_ref(page_node))
             << " visible_page_num_: " << visible_page_num_
             << " media_playing_num_: " << media_playing_num_
             << " audio_state_num_: " << audio_state_num_
@@ -180,6 +217,12 @@ void BackgroundTaskPolicy::MaybeChangeBackgroundTask(
     LOG(INFO) << BG_TASK_TAG << " no change return";
     return;
   }
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+    if (!IsWebAudioRequestBackgroundRunning()) {
+      LOG(INFO) << "is_web_audio_request is false, return";
+      return;
+    }
+#endif
 
   bool need_request = reason == RequestBackgroundTaskReason::NEED_BG_TASK;
   bool ret = background_task_holder_->MaybeRequestBackgroundRunning(
@@ -210,6 +253,12 @@ void BackgroundTaskPolicy::SetBrowserBackground(const PageNode* page_node)
 {
   LOG(INFO) << BG_TASK_TAG << "BackgroundTaskPolicy::" << __FUNCTION__;
   if (media_playing_num_ > 0 || audio_state_num_ > 0) {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+    if (!IsWebAudioRequestBackgroundRunning()) {
+      LOG(INFO) << "is_web_audio_request is false, return";
+      return;
+    }
+#endif
     bool ret = background_task_holder_->MaybeRequestBackgroundRunning(true, BackgroundModeAdapter::AUDIO_PLAYBACK);
     if (ret) {
       LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << "request bg task success";
@@ -219,4 +268,134 @@ void BackgroundTaskPolicy::SetBrowserBackground(const PageNode* page_node)
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+void BackgroundTaskPolicy::OnAudioContextPlaybackStarted(const AudioContextId& audio_context_id) {
+  audio_context_players_num_.insert(audio_context_id);
+}
+
+void BackgroundTaskPolicy::OnAudioContextPlaybackStopped(const AudioContextId& audio_context_id) {
+  audio_context_players_num_.erase(audio_context_id);
+}
+
+bool BackgroundTaskPolicy::IsWebAudioRequestBackgroundRunning() {
+  auto currentProcess = base::CommandLine::ForCurrentProcess();
+  if (currentProcess &&
+      !currentProcess->HasSwitch(switches::kEnableWebAudioBackgroundTask)) {
+    return true;
+  }
+  LOG(INFO) << "audio_state_num_=" << audio_state_num_
+            << ", audio_context_players_num_="
+            << audio_context_players_num_.size();
+  if (static_cast<size_t>(audio_state_num_) !=
+      audio_context_players_num_.size()) {
+    return true;
+  }
+  return GetWebAudioStartBackgroundTask();
+}
+
+void BackgroundTaskPolicy::ProcessAudioContextPlayers(
+    const PageNode* page_node) {
+  auto currentProcess = base::CommandLine::ForCurrentProcess();
+  if (currentProcess &&
+      !currentProcess->HasSwitch(switches::kEnableWebAudioBackgroundTask)) {
+    return;
+  }
+  if (!page_node) {
+    LOG(ERROR) << __func__ << ", page_node is nullptr";
+    return;
+  }
+  if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    ProcessAudioContextPlayersOnUIThread(page_node);
+  } else {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            &BackgroundTaskPolicy::ProcessAudioContextPlayersOnUIThread,
+            weak_factory_.GetSafeRef(), page_node));
+  }
+}
+
+void BackgroundTaskPolicy::ProcessAudioContextPlayersOnUIThread(const PageNode* page_node) {
+  DCHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
+  if (!page_node) {
+    LOG(ERROR) << __func__ << ", page_node is nullptr";
+    return;
+  }
+  if (audio_state_num_ == 0) {
+    audio_context_players_num_.clear();
+    return;
+  }
+  if (audio_context_players_num_.empty()) {
+    return;
+  }
+  LOG(INFO) << __func__ << ", audio_context_players_num_ = "
+            << audio_context_players_num_.size();
+  for (auto iter = audio_context_players_num_.begin();
+       iter != audio_context_players_num_.end();) {
+    content::RenderFrameHost* render_frame_host = iter->first;
+    if (!render_frame_host) {
+      continue;
+    }
+    if (content::WebContents::FromRenderFrameHost(render_frame_host) ==
+        page_node->GetWebContents().get()) {
+        iter = audio_context_players_num_.erase(iter);
+    } else {
+        ++iter;
+    }
+  }
+}
+
+bool BackgroundTaskPolicy::GetWebAudioStartBackgroundTask() {
+  if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    return GetWebAudioStartBackgroundTaskOnUIThread();
+  }
+  bool result = true;
+  base::WaitableEvent event(
+        base::WaitableEvent::ResetPolicy::AUTOMATIC,
+        base::WaitableEvent::InitialState::NOT_SIGNALED);
+  content::GetUIThreadTaskRunner({})->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](base::WeakPtr<BackgroundTaskPolicy> weak_self, bool* out_result,
+             base::WaitableEvent* out_event) {
+            if (!weak_self) {
+              LOG(ERROR) << __func__ << ", weak_self is nullptr";
+              return;
+            }
+            *out_result = weak_self->GetWebAudioStartBackgroundTaskOnUIThread();
+            out_event->Signal();
+          },
+          weak_factory_.GetWeakPtr(), &result, &event));
+  event.Wait();
+  return result;
+}
+
+bool BackgroundTaskPolicy::GetWebAudioStartBackgroundTaskOnUIThread() {
+  DCHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
+  if (audio_context_players_num_.empty()) {
+    return true;
+  }
+  bool result = false;
+  for (const auto& audio_context_id : audio_context_players_num_) {
+    content::RenderFrameHost* render_frame_host = audio_context_id.first;
+    if (!render_frame_host) {
+        continue;
+    }
+    auto webContent = content::WebContents::FromRenderFrameHost(render_frame_host);
+    if (!webContent) {
+        LOG(ERROR) << "GetWebAudioStartBackgroundTaskOnUIThread get webContent "
+                      "failed.";
+        continue;
+    }
+    result = webContent->OnStartBackgroundTask(WEB_AUDIO_PLAYBACK,
+                                               "web audio playback scenarios");
+    if (result) {
+        break;
+    }
+  }
+  return result;
+}
+#endif // ARKWEB_PERFORMANCE_PERSISTENT_TASK
+
 }  // namespace performance_manager::policies

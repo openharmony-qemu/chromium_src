@@ -337,6 +337,19 @@ class FakeInterfaceFactory : public media::mojom::InterfaceFactory {
   void CreateCdm(const media::CdmConfig& cdm_config,
                  CreateCdmCallback callback) override {}
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void CreateMediaPlayerRenderer(
+    ::mojo::PendingRemote<::media::mojom::MediaPlayerRendererClientExtension> client_extension,
+    ::mojo::PendingReceiver<::media::mojom::Renderer> renderer,
+    ::mojo::PendingReceiver<::media::mojom::MediaPlayerRendererExtension> renderer_extension) override {}
+
+  void CreateCustomMediaPlayerRenderer(
+    ::mojo::PendingRemote<::media::mojom::CustomMediaPlayerRendererClientExtension> client_extension,
+    ::mojo::PendingReceiver<::media::mojom::Renderer> renderer,
+    ::mojo::PendingReceiver<::media::mojom::MediaPlayerRendererExtension> renderer_extension,
+    int32_t player_id) override {}
+#endif
+
  private:
   void OnConnectionError() { receiver_.reset(); }
 

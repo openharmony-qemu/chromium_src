@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "absl/algorithm/container.h"
 #include "absl/functional/bind_front.h"
 #include "absl/status/status.h"
@@ -43,7 +44,11 @@ std::string OmitDefault(T value) {
 }
 
 constexpr absl::string_view kIssuerHostname =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://ipprotection-ppissuer.googleapis.com";
+#endif
 
 }  // namespace
 

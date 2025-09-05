@@ -397,6 +397,7 @@ bool OHOSAudioDecoder::InitAudioDecoder(std::string mime_type) {
   audio_decoder_ = OhosAdapterHelper::GetInstance().CreateAudioCodecDecoderAdapter();
   if (!audio_decoder_) {
     LOG(ERROR) << "OHOSAudioDecoder::Initialize audio_decoder_ is null ";
+    return false;
   }
 
   std::shared_ptr<OHOSAudioDecoderFormat> audioDecoderFormat = std::make_shared<OHOSAudioDecoderFormat>();
@@ -496,11 +497,12 @@ void OHOSAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer, DecodeCB deco
     return;
   }
 
-  if (state_ == ERROR) {
+  if (state_ == ERROR || decoder_loop_ == nullptr) {
     LOG(ERROR) << "OHOSAudioDecoder::Decode "<< buffer->AsHumanReadableString()
-      << ": Error state, returning decode error for all buffers";
+      << ": Error state or decoder_loop_ is nullptr, returning decode error for all buffers";
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-    std::string errorDesc = "OHOSAudioDecoder::Error state, returning decode error for all buffers";
+    std::string errorDesc =
+        "OHOSAudioDecoder::Error state or decoder_loop_ is nullptr, returning decode error for all buffers";
     ReportDrmAudioPlayErrorInfo(errorDesc);
 #endif
     ClearInputQueue(DecoderStatus::Codes::kFailed);
@@ -527,6 +529,10 @@ void OHOSAudioDecoder::ReportDrmAudioPlayErrorInfo(const std::string& errorDesc)
 
 void OHOSAudioDecoder::Reset(base::OnceClosure closure) {
   LOG(INFO) << "OHOSAudioDecoder::Reset";
+  if (audio_decoder_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
+    return;
+  }
   ClearInputQueue(DecoderStatus::Codes::kAborted);
   bool success = decoder_loop_->TryFlush();
   {
@@ -628,9 +634,13 @@ static void SetCencInfoToInputData(OHOSAudioDecoderLoop::InputData& data, const 
 // LCOV_EXCL_START
 OHOSAudioDecoderLoop::InputData OHOSAudioDecoder::ProvideInputData() {
   LOG(DEBUG) << "OHOSAudioDecoder::ProvideInputData";
-  const DecoderBuffer* decoder_buffer = input_queue_.front().first.get();
   OHOSAudioDecoderLoop::InputData data;
-
+  if (input_queue_.empty()) {
+    LOG(WARNING) << "OHOSAudioDecoder::ProvideInputData , input_queue_ is empty";
+    data.is_valid = false;
+    return data;
+  }
+  const DecoderBuffer* decoder_buffer = input_queue_.front().first.get();
   if (decoder_buffer == nullptr) {
     LOG(WARNING) << "OHOSAudioDecoder::ProvideInputData , decoder_buffer is null";
     data.is_valid = false;
@@ -669,7 +679,9 @@ bool OHOSAudioDecoder::OnDecodedEos(const OutputBufferData& out) {
   std::move(input_queue_.front()).second.Run(DecoderStatus::Codes::kOk);
   input_queue_.pop_front();
   std::unique_lock<std::mutex> lock(output_mtx_);
-  output_buffer_queue_.pop_front();
+  if (!output_buffer_queue_.empty()) {
+    output_buffer_queue_.pop_front();
+  }
   LOG(DEBUG) << "OHOSAudioDecoder::OnDecodedEos output_buffer_queue_ pop front ok";
   return true;
 }
@@ -679,6 +691,11 @@ bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
     || decoder_loop_ == nullptr || channel_count_ == 0) {
       LOG(ERROR) << "OHOSAudioDecoder::OnDecodedFrame buffer data is invalid";
       return false;
+  }
+
+  if (audio_decoder_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
+    return false;
   }
 
   LOG(DEBUG) << "OHOSAudioDecoder::OnDecodedFrame";
@@ -705,7 +722,9 @@ bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
   audio_decoder_->ReleaseOutputBufferDec(out.index_);
   {
     std::unique_lock<std::mutex> lock(output_mtx_);
-    output_buffer_queue_.pop_front();
+    if (!output_buffer_queue_.empty()) {
+      output_buffer_queue_.pop_front();
+    }
   }
 
   if (!timestamp_helper_->base_timestamp()) {
@@ -768,6 +787,10 @@ int32_t OHOSAudioDecoder::DequeueOutputBuffer(OutputBufferData& out) {
 
 // LCOV_EXCL_START
 AudioDecoderAdapterCode OHOSAudioDecoder::FlushDecoder() {
+  if (audio_decoder_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
+    return AudioDecoderAdapterCode::DECODER_ERROR;
+  }
   return audio_decoder_->FlushDecoder();
 }
 
@@ -806,6 +829,10 @@ AudioDecoderAdapterCode OHOSAudioDecoder::QueueInputBufferDec(uint32_t index,
     LOG(DEBUG) << "OHOSAudioDecoder::QueueInputBufferDec error, state = WAITING_FOR_MEDIA_CRYPTO";
     return AudioDecoderAdapterCode::DECODER_RETRY;
   }
+  if (audio_decoder_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
+    return AudioDecoderAdapterCode::DECODER_ERROR;
+  }
   AudioDecoderAdapterCode ret = audio_decoder_->QueueInputBufferDec(index, presentationTimeUs, bufferData,
     bufferSize, cencInfo, isEncrypted, flag);
   if (ret == AudioDecoderAdapterCode::DECODER_ERROR && waiting_for_key_) {
@@ -820,6 +847,10 @@ AudioDecoderAdapterCode OHOSAudioDecoder::QueueInputBufferDec(uint32_t index,
 }
 
 AudioDecoderAdapterCode OHOSAudioDecoder::ReleaseOutputBufferDec(uint32_t index) {
+  if (audio_decoder_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
+    return AudioDecoderAdapterCode::DECODER_ERROR;
+  }
   return audio_decoder_->ReleaseOutputBufferDec(index);
 }
 
@@ -839,6 +870,10 @@ void OHOSAudioDecoder::AddOutputBuffer(uint32_t index, uint8_t* bufferData, uint
 
 // LCOV_EXCL_START
 void OHOSAudioDecoder::UpdateOutputFormat() {
+  if (audio_decoder_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " audio_decoder_ is nullptr";
+    return;
+  }
   AudioDecoderAdapterCode ret = audio_decoder_->GetOutputFormatDec(decoder_format_);
   if (ret != AudioDecoderAdapterCode::DECODER_OK) {
     LOG(ERROR) << "OHOSAudioDecoder::UpdateOutputFormat err";

@@ -39,4 +39,8 @@ bool FrameCaretUtils::GetTouchHandleStateFromWeb(LocalFrameView* frame_view) {
 }
 #endif  // BUILDFLAG(ARKWEB_MENU)
 
+void FrameCaretUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(frame_caret_);
+}
+
 }  // namespace blink

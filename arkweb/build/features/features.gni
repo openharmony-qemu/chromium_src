@@ -147,6 +147,7 @@ declare_args() {
   arkweb_suspend_all_timers = true
   arkweb_theme_font = true
   arkweb_unittests = true
+  arkweb_test = false
   arkweb_url_trust_list = true
   arkweb_useragent = true
   arkweb_video_ltpo = true
@@ -211,7 +212,7 @@ declare_args() {
   arkweb_vibrate = true
   arkweb_resource_intercept = true
   arkweb_disable_mojo_js = true
-  arkweb_logger_report = false
+  arkweb_logger_report = true
   arkweb_slide_ltpo = true
   arkweb_swap_buffer_trace = true
   arkweb_safebrowsing = true
@@ -239,11 +240,14 @@ declare_args() {
   arkweb_ext_http_dns_fallback=false
   arkweb_ext_password=false
   arkweb_ex_free_copy=false
-  arkweb_blank_optimize = false
+  arkweb_blank_optimize = true
   arkweb_viewport_avoid = true
   arkweb_error_page = true
   arkweb_gwp_asan = true
   arkweb_bgtask = false
+  arkweb_privacy_compliance = true
+  arkweb_reader_mode=false
+  arkweb_ex_enable_applinking = false
 }
 
 # Features enabled in mojom bindings.
@@ -263,6 +267,11 @@ if (defined(arkweb_network_conninfo) && arkweb_network_conninfo) {
 if (defined(arkweb_prp_preload) && arkweb_prp_preload) {
   arkweb_mojo_features += [ "arkweb_prp_preload" ]
 }  #endif  // BUILDFLAG(ARKWEB_PRP_PRELOAD)
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+if (defined(arkweb_logger_report) && arkweb_logger_report) {
+  arkweb_mojo_features += [ "arkweb_logger_report" ]
+}  #endif  // BUILDFLAG(ARKWEB_LOGGER_REPORT)
 
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
 if (defined(arkweb_ex_download) && arkweb_ex_download) {
@@ -309,3 +318,11 @@ if (defined(arkweb_fido) && arkweb_fido) {
   ]
 }
 #endif // BUILDFLAG(ARKWEB_FIDO)
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+  arkweb_mojo_features += [
+    "arkweb_reader_mode",
+  ]
+}
+#endif // BUILDFLAG(ARKWEB_READER_MODE)

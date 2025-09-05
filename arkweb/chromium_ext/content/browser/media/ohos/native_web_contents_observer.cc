@@ -18,9 +18,6 @@
 #include <memory>
 #include <tuple>
 
-#if false
-#include "base/containers/cxx20_erase.h"
-#endif
 #include "base/debug/crash_logging.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/memory/raw_ptr.h"
@@ -133,6 +130,10 @@ void NativeWebContentsObserver::NativeBridgeHostImpl::OnNativeBridgeAdded(
     mojo::PendingAssociatedReceiver<media::mojom::NativeBridgeObserver>
         observer,
     int32_t bridge_id) {
+  if (!native_web_contents_observer_) {
+    return;
+  }
+
   LOG(INFO) << "NativeEmbed BFCache, "
                "NativeBridgeHostImpl::OnNativeBridgeAdded, frame_routing_id_ = "
             << frame_routing_id_;
@@ -167,7 +168,8 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
 
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
     OnCreateNativeSurface(media::mojom::NativeEmbedInfoPtr embed_info) {
-  if (!native_web_contents_observer_) {
+  if (!native_web_contents_observer_ ||
+      !(native_web_contents_observer_->web_contents_impl())) {
     return;
   }
 
@@ -190,9 +192,11 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
     OnNativeEmbedFirstFramePaint(int32_t native_embed_id,
                                  const std::string& embed_id_attribute) {
-  if (!native_web_contents_observer_) {
+  if (!native_web_contents_observer_ ||
+      !(native_web_contents_observer_->web_contents_impl())) {
     return;
   }
+
   native_web_contents_observer_->web_contents_impl()
       ->AsWebContentsImplExt()
       ->OnNativeEmbedFirstFramePaint(native_embed_id, embed_id_attribute);
@@ -200,7 +204,8 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
 
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
     OnDestroyNativeSurface() {
-  if (!native_web_contents_observer_) {
+  if (!native_web_contents_observer_ ||
+      !(native_web_contents_observer_->web_contents_impl())) {
     return;
   }
 
@@ -217,9 +222,11 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
 
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
     OnLayerRectVisibilityChange(bool visibility, int embed_id) {
-  if (!native_web_contents_observer_) {
+  if (!native_web_contents_observer_ ||
+      !(native_web_contents_observer_->web_contents_impl())) {
     return;
   }
+
   native_web_contents_observer_->web_contents_impl()
       ->AsWebContentsImplExt()
       ->OnLayerRectVisibilityChange(std::to_string(embed_id), visibility);
@@ -227,7 +234,8 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
 
 void NativeWebContentsObserver::NativeBridgeObserverHostImpl::OnEmbedRectChange(
     const gfx::Rect& new_rect) {
-  if (!native_web_contents_observer_) {
+  if (!native_web_contents_observer_ ||
+      !(native_web_contents_observer_->web_contents_impl())) {
     return;
   }
 
@@ -326,6 +334,38 @@ void NativeWebContentsObserver::OnNativeBridgeAdded(
       id, std::make_unique<NativeBridgeObserverHostImpl>(id, this));
   observer_it.first->second->BindNativeBridgeObserverReceiver(
       std::move(native_bridge_observer));
+}
+
+void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
+    OnEmbedObjectParamChange(media::mojom::NativeEmbedParamChangeInfoPtr change_info) {
+  if (!native_web_contents_observer_ ||
+      !(native_web_contents_observer_->web_contents_impl())) {
+    return;
+  }
+
+  NativeEmbedParamDataInfo native_param_info;
+  native_param_info.embed_id = change_info->embed_id;
+  native_param_info.object_attribute_id = change_info->object_attribute_id;
+  for (const auto& mojo_item : change_info->param_items) {
+    content::NativeEmbedParamItem native_item;
+    switch (mojo_item->status) {
+      case media::mojom::NativeEmbedParamStatus::kAdd:
+        native_item.status = content::NativeEmbedParamStatus::kAdd;
+        break;
+      case media::mojom::NativeEmbedParamStatus::kUpdate:
+        native_item.status = content::NativeEmbedParamStatus::kUpdate;
+        break;
+      case media::mojom::NativeEmbedParamStatus::kDelete:
+        native_item.status = content::NativeEmbedParamStatus::kDelete;
+        break;
+    }
+    native_item.id = mojo_item->id;
+    native_item.name = mojo_item->name;
+    native_item.value = mojo_item->value;
+    native_param_info.param_items.push_back(native_item);
+  }
+  native_web_contents_observer_->web_contents_impl()->OnNativeEmbedObjectParamChange(
+      native_param_info);
 }
 
 }  // namespace content

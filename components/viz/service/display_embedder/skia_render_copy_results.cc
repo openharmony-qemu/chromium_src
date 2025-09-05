@@ -113,7 +113,7 @@ void CopyOutputResultSkiaRGBA::OnReadbackDone(
       context->color_space);
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (impl_on_gpu->dependency()) {
+  if (result && result->copy_output_result_utils() && impl_on_gpu) {
     result->copy_output_result_utils()->SetImplOnGpu(impl_on_gpu);
   }
 #endif

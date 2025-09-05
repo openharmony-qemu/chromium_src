@@ -171,13 +171,17 @@ SameLayerNativeBufferGLOwner::GetNativeBuffer() {
     LOG(ERROR) << "GetNativeBuffer returned nullptr: ";
     return nullptr;
   }
+  uint32_t width = 0;
+  uint32_t height = 0;
+  loader_->GetNativeWindowBufferSize(current_image_ref_->image()->rawbuffer,
+                                     &width, &height);
 
   uint32_t seq_num = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                          .GetOhosNativeBufferAdapter()
                          .GetSeqNum(buffer);
   TRACE_EVENT1("gpu", "SameLayerNativeBufferGLOwner::GetNativeBuffer", "seqnum",
                seq_num);
-
+  LOG(INFO) << "GetNativeBuffer seqnum: " << seq_num << " width: " << width << " height: " << height;
   return std::make_unique<ScopedNativeBufferImpl>(
       this, current_image_ref_->image(),
       ScopedNativeBufferHandle::Create(buffer),

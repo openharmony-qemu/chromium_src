@@ -284,7 +284,7 @@ OHOSNativeBufferImageBackingFactory::MakeBackingWithValidateConfig(
     LOG(ERROR) << "Failed to allocate NativeBuffer";
     return nullptr;
   }
-
+  LOG(INFO) << "NativeBuffer created, width: " << size.width() << " height: " << size.height();
   auto handle = gpu::ScopedNativeBufferHandle::Adopt(buffer);
 
   base::ScopedFD initial_upload_fd;

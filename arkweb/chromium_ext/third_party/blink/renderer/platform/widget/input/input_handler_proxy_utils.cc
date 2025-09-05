@@ -124,16 +124,22 @@ void InputHandlerProxyUtils::NativeHitTestResult(bool native,
   }
 }
 
-void InputHandlerProxyUtils::NativeMouseHitTestResult(bool native, int layerId) {
-  LOG(DEBUG)<<"[NativeEmbed] NativeMouseHitTestResult native is : " << native;
-  TRACE_EVENT1("input", "InputHandlerProxy::NativeMouseHitTestResult", "native", native);
-  isMouseNativeArea_ = native;
+void InputHandlerProxyUtils::NativeMouseHitTestResult(bool native,
+                                                      int layerId,
+                                                      int32_t button) {
+  LOG(DEBUG) << "[NativeEmbed] NativeMouseHitTestResult native is : " << native
+             << ",button is :" << button;
+  TRACE_EVENT1("input", "InputHandlerProxy::NativeMouseHitTestResult", "native",
+               native);
+  mouse_native_map_[button] = native;
   mouse_hit_testing_number_--;
   if (native) {
-    mouse_native_layer_id_ = layerId;
-    SendMouseNativeEvent(start_mouse_event_, WebInputEvent::Type::kMouseDown);
+    mouse_native_id_map_[button] = layerId;
+    SendMouseNativeEvent(start_mouse_event_, WebInputEvent::Type::kMouseDown,
+                         button);
   } else if (!native_mouse_event_queue_->empty()) {
-    SendMouseNativeEvent(start_mouse_event_, WebInputEvent::Type::kMouseDown, false);
+    SendMouseNativeEvent(start_mouse_event_, WebInputEvent::Type::kMouseDown,
+                         button, false);
     auto event_with_callback = native_mouse_event_queue_->Pop();
     proxy_->DispatchSingleInputEvent(std::move(event_with_callback));
   }
@@ -142,7 +148,7 @@ void InputHandlerProxyUtils::NativeMouseHitTestResult(bool native, int layerId) 
     if (native) {
       const WebMouseEvent& mouse_event = static_cast<const WebMouseEvent&>(callback->event());
       native_mouse_event_queue_->Queue(std::move(callback));
-      SendMouseNativeEvent(mouse_event, WebInputEvent::Type::kMouseUp);
+      SendMouseNativeEvent(mouse_event, WebInputEvent::Type::kMouseUp, button);
     } else {
       proxy_->DispatchSingleInputEvent(std::move(callback));
     }
@@ -152,6 +158,7 @@ void InputHandlerProxyUtils::NativeMouseHitTestResult(bool native, int layerId) 
 void InputHandlerProxyUtils::SendMouseNativeEvent(
     const WebMouseEvent& mouse_event,
     WebInputEvent::Type type,
+    int32_t button,
     bool result) {
   TRACE_EVENT2("input", "InputHandlerProxy::SendNativeEvent", "type",
                WebInputEvent::GetName(type), "result", result);
@@ -159,7 +166,7 @@ void InputHandlerProxyUtils::SendMouseNativeEvent(
   if (result) {
     float x = mouse_event.PositionInWidget().x();
     float y = mouse_event.PositionInWidget().y();
-    int layer_id = mouse_native_layer_id_;
+    int layer_id = mouse_native_id_map_[button];
 
     cc::LayerImpl* layer_impl =
         proxy_->input_handler_->handler_utils()->GetLayerImplById(layer_id);
@@ -301,10 +308,30 @@ InputHandlerProxyUtils::DidMouseEmbedEvent(const WebInputEvent& event) {
     return NORMAL;
   }
   // for 5.0.x
-  if (event.GetModifiers() != WebInputEvent::Modifiers::kLeftButtonDown
-    && event.GetModifiers() != (WebInputEvent::Modifiers::kLeftButtonDown | WebInputEvent::Modifiers::kIsAutoRepeat)) {
+  auto modifiers = event.GetModifiers();
+  auto is_left_click = modifiers == WebInputEvent::Modifiers::kLeftButtonDown ||
+                       modifiers == (WebInputEvent::Modifiers::kLeftButtonDown |
+                                    WebInputEvent::Modifiers::kIsAutoRepeat);
+  auto is_right_click =
+      modifiers == WebInputEvent::Modifiers::kRightButtonDown ||
+      modifiers == (WebInputEvent::Modifiers::kRightButtonDown |
+                   WebInputEvent::Modifiers::kIsAutoRepeat);
+  auto is_mid_click =
+      modifiers == WebInputEvent::Modifiers::kMiddleButtonDown ||
+      modifiers == (WebInputEvent::Modifiers::kMiddleButtonDown |
+                   WebInputEvent::Modifiers::kIsAutoRepeat);
+
+  if (!is_left_click && !is_right_click && !is_mid_click) {
     return NORMAL;
   }
+
+  int32_t button = static_cast<int32_t>(
+      is_left_click
+          ? WebInputEvent::Modifiers::kLeftButtonDown
+          : (is_right_click
+                 ? WebInputEvent::Modifiers::kRightButtonDown
+                 : (is_mid_click ? WebInputEvent::Modifiers::kMiddleButtonDown
+                                 : 0)));
   const WebMouseEvent& mouse_event = static_cast<const WebMouseEvent&>(event);
   InputHandlerProxyUtils::NativeEventDisposition result = NORMAL;
   float x = mouse_event.PositionInWidget().x();
@@ -315,9 +342,9 @@ InputHandlerProxyUtils::DidMouseEmbedEvent(const WebInputEvent& event) {
         proxy_->input_handler_->handler_utils()->GetLayerImplIsHitByPoint(gfx::Point(x, y));
     if (video_layer_impl &&
         video_layer_impl->layer_impl_utils()->ShouldInterceptTouchEvent()) {
-      mouse_native_layer_id_ = video_layer_impl->id();
-      SendMouseNativeEvent(mouse_event, event.GetType());
-      isMouseNativeArea_ = true;
+      mouse_native_id_map_[button] = video_layer_impl->id();
+      SendMouseNativeEvent(mouse_event, event.GetType(), button);
+      mouse_native_map_[button] = true;
       return SEND_VIDEO;
     }
 
@@ -328,19 +355,20 @@ InputHandlerProxyUtils::DidMouseEmbedEvent(const WebInputEvent& event) {
     cc::LayerImpl* native_layer_impl = proxy_->input_handler_->handler_utils()->GetNativeLayerImpl(gfx::Point(x, y));
     if (native_layer_impl) {
       start_mouse_event_ = mouse_event;
-      proxy_->client_->MouseHitTest(mouse_event);
+      proxy_->client_->MouseHitTest(mouse_event, button);
       mouse_hit_testing_number_++;
       result = SEND_NATIVE;
     } else {
-      SendMouseNativeEvent(mouse_event, type, false);
-      isMouseNativeArea_ = false;
+      SendMouseNativeEvent(mouse_event, type, button, false);
+      mouse_native_map_[button] = false;
       result = NORMAL;
     }
     return result;
   }
   // move
-  if (isMouseNativeArea_ && type != WebInputEvent::Type::kMouseUp) {
-    SendMouseNativeEvent(mouse_event, type);
+  auto isMouseNativeArea = mouse_native_map_[button];
+  if (isMouseNativeArea && type != WebInputEvent::Type::kMouseUp) {
+    SendMouseNativeEvent(mouse_event, type, button);
     result = SEND_NATIVE;
   }
   if (type != WebInputEvent::Type::kMouseUp) {
@@ -351,11 +379,11 @@ InputHandlerProxyUtils::DidMouseEmbedEvent(const WebInputEvent& event) {
     result = END_QUEUE;
     LOG(INFO) << "[NativeEmbed] DidNativeEmbedEvent mouseDown in hitTesting.";
   }
-  if (mouse_hit_testing_number_ == 0 && isMouseNativeArea_) {
-    SendMouseNativeEvent(mouse_event, type, isMouseNativeArea_);
+  if (mouse_hit_testing_number_ == 0 && isMouseNativeArea) {
+    SendMouseNativeEvent(mouse_event, type, button, isMouseNativeArea);
     result = SEND_NATIVE;
   }
-  isMouseNativeArea_ = false;
+  mouse_native_map_[button] = false;
   return result;
 }
 

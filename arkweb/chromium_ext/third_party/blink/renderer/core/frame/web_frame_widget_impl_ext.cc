@@ -384,7 +384,8 @@ void WebFrameWidgetImplExt::TouchHitTest(const WebPointerEvent& event,
                                              layer_id);
 }
 
-void WebFrameWidgetImplExt::MouseHitTest(const WebMouseEvent& event) {
+void WebFrameWidgetImplExt::MouseHitTest(const WebMouseEvent& event,
+                                         int32_t button) {
   auto pointEvent = WebPointerEvent(event.GetType(), event);
 
   WebPointerEvent transformed_event =
@@ -409,7 +410,8 @@ void WebFrameWidgetImplExt::MouseHitTest(const WebMouseEvent& event) {
       is_native_type = true;
     }
   }
-  widget_base_->utils()->NativeMouseHitTestResult(is_native_type, layer_id);
+  widget_base_->utils()->NativeMouseHitTestResult(is_native_type, layer_id,
+                                                  button);
 }
 #endif
 

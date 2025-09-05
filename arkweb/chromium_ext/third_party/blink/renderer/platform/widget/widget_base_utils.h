@@ -50,8 +50,8 @@ class BLINK_PLATFORM_EXPORT WidgetBaseUtils {
                            int32_t id,
                            float x,
                            float y);
-  void MouseHitTest(const WebMouseEvent& event);
-  void NativeMouseHitTestResult(bool isNative, int layerId);
+  void MouseHitTest(const WebMouseEvent& event, int32_t button);
+  void NativeMouseHitTestResult(bool isNative, int layerId, int32_t button);
   void DidNativeEmbedMouseEvent(blink::WebInputEvent::Type type, blink::WebInputEvent::Modifiers modifiers,
     std::string embedId, bool isHitNativeArea, float x, float y);
 #endif

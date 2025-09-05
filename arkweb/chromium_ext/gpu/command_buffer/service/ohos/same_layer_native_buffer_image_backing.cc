@@ -319,7 +319,8 @@ class SameLayerNativeBufferImageBacking::SkiaVkSameLayerRepresentation
       if (!vulkan_image_) {
         return {};
       }
-
+      LOG(INFO) << "SameLayerNativeBufferImageBacking create vkimage width: "
+          << size().width() << " height: " << size().height();
       // We always use VK_IMAGE_TILING_OPTIMAL while creating the vk image in
       // VulkanImplementationAndroid::CreateVkImageAndImportAHB. Hence pass
       // the tiling parameter as VK_IMAGE_TILING_OPTIMAL to below call rather

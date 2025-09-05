@@ -18,6 +18,7 @@
 #include "gpu/command_buffer/service/abstract_texture_ohos.h"
 #include "gpu/command_buffer/service/gles2_cmd_decoder.h"
 #include "gpu/command_buffer/service/memory_tracking.h"
+#include "gpu/command_buffer/service/ohos/native_buffer_config_impl.h"
 #include "gpu/command_buffer/service/ohos/scoped_native_buffer_fence_sync.h"
 #include "gpu/command_buffer/service/shared_context_state.h"
 #include "gpu/command_buffer/service/shared_image/shared_image_backing.h"
@@ -384,15 +385,24 @@ class HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation
     // into begin_semaphore vector which client will wait on.
     init_read_fence_ = scoped_hardware_buffer_->TakeFence();
 
+    std::shared_ptr<OHOS::NWeb::NativeBufferConfigAdapterImpl> 
+        configAdapterTmp =
+            std::make_shared<OHOS::NWeb::NativeBufferConfigAdapterImpl>();
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetOhosNativeBufferAdapter()
+        .Describe(configAdapterTmp, scoped_hardware_buffer_->buffer());
     if (!vulkan_image_) {
       DCHECK(!promise_texture_);
-
+      real_size_.set_width(std::min(size().width(), configAdapterTmp->GetBufferWidth()));
+      real_size_.set_height(std::min(size().height(), configAdapterTmp->GetBufferHeight()));
       vulkan_image_ = CreateVkImageFromNativeBufferHandle(
-          scoped_hardware_buffer_->TakeBuffer(), context_state(), size(),
+          scoped_hardware_buffer_->TakeBuffer(), context_state(), real_size_,
           format(), VK_QUEUE_FAMILY_FOREIGN_EXT);
       if (!vulkan_image_) {
         return {};
       }
+      LOG(INFO) << "HwVideoNativeBufferImageBacking create vkimage width: "
+          << real_size_.width() << " height: " << real_size_.height();
 
       promise_texture_ = GrPromiseImageTexture::Make(GrBackendTextures::MakeVk(
           size().width(), size().height(),
@@ -421,6 +431,7 @@ class HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation
 //LCOV_EXCL_STOP
 
  private:
+  gfx::Size real_size_;
   std::unique_ptr<ScopedNativeBufferFenceSync>
       scoped_hardware_buffer_;
 };

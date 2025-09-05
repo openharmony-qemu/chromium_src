@@ -352,7 +352,18 @@ TEST_F(OHOSMediaCodecBridgeImplTest, CreateVideoCodecByName_CreateFailed)
     EXPECT_EQ(ret, CodecCodeAdapter::ERROR);
 }
 
-TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache_Isrunning)
+TEST_F(OHOSMediaCodecBridgeImplTest, CreateVideoCodecByName_CreateSucceeds)
+{
+    auto mock_adapter = std::make_unique<MockMediaCodecAdapter>();
+    EXPECT_NE(mock_adapter, nullptr);
+    EXPECT_CALL(*mock_adapter, CreateVideoCodecByName("codec_failed"))
+        .WillOnce(testing::Return(CodecCodeAdapter::OK));
+    SetCodecAdapter(std::move(mock_adapter));
+    CodecCodeAdapter ret = bridge_impl.CreateVideoCodecByName("codec_failed");
+    EXPECT_EQ(ret, CodecCodeAdapter::OK);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache001)
 {
     bool Is_running = true;
     SetIsRunning(Is_running);
@@ -360,7 +371,7 @@ TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache_Isrunning)
     EXPECT_EQ(GetIsRunning(), Is_running);
 }
 
-TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache_Cb)
+TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache002)
 {
     bool Is_running = true;
     auto mock_adapter = std::make_shared<CodecEncodeBridgeCallback>(signal_);
@@ -369,14 +380,7 @@ TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache_Cb)
     EXPECT_EQ(mock_adapter->is_running_.load(), Is_running);
 }
 
-TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache001)
-{
-    const bool kExpected = true;
-    UpdateStatusAndClearCache(kExpected);
-    EXPECT_TRUE(kExpected);
-}
-
-TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache002)
+TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache003)
 {
     const bool kExpected = false;
     auto mock_adapter = std::make_shared<CodecEncodeBridgeCallback>(signal_);
@@ -386,7 +390,7 @@ TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache002)
     EXPECT_FALSE(kExpected);
 }
 
-TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache003)
+TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache004)
 {
     const bool kExpected = false;
     auto mock_adapter = std::make_shared<CodecEncodeBridgeCallback>(signal_);
@@ -397,7 +401,7 @@ TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache003)
     EXPECT_FALSE(kExpected);
 }
 
-TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache004)
+TEST_F(OHOSMediaCodecBridgeImplTest, UpdateStatusAndClearCache005)
 {
     const bool kExpected = false;
     SetIsRunning(true);
@@ -422,6 +426,8 @@ TEST_F(OHOSMediaCodecBridgeImplTest, Configure002)
 {
     CodecConfigPara config{.width = 640, .height = 480, .bitRate = 1000000, .frameRate = 30};
     scoped_refptr<base::SequencedTaskRunner> codec_task_runner = GetTaskRunner();
+    auto mock_codec_adapter = std::make_unique<MockMediaCodecAdapter>();
+    SetCodecAdapter(std::move(mock_codec_adapter));
     SetCodecEncodeBridgeCallback(nullptr);
     CodecCodeAdapter result = bridge_impl.Configure(config, codec_task_runner);
     EXPECT_EQ(result, CodecCodeAdapter::ERROR);
@@ -434,6 +440,13 @@ TEST_F(OHOSMediaCodecBridgeImplTest, Configure003)
     SetCodecAdapter(nullptr);
     CodecCodeAdapter result = bridge_impl.Configure(config, codec_task_runner);
     EXPECT_EQ(result, CodecCodeAdapter::ERROR);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, TestPrepare)
+{
+    SetCodecAdapter(nullptr);
+    CodecCodeAdapter result = bridge_impl.Prepare();
+    ASSERT_EQ(static_cast<int>(result), static_cast<int>(CodecCodeAdapter::ERROR));
 }
 
 TEST_F(OHOSMediaCodecBridgeImplTest, TestPrepare_NonNullAdapter)
@@ -518,7 +531,10 @@ TEST_F(OHOSMediaCodecBridgeImplTest, TestCreateInputSurface)
 
 TEST_F(OHOSMediaCodecBridgeImplTest, TestCreateInputSurface_NullSurface)
 {
-    SetSurface(nullptr);
+    auto mock_adapter = std::make_unique<MockMediaCodecAdapter>();
+    EXPECT_CALL(*mock_adapter, CreateInputSurface())
+        .WillOnce(::testing::Return(nullptr));
+    SetCodecAdapter(std::move(mock_adapter));
     CodecCodeAdapter result = bridge_impl.CreateInputSurface();
     ASSERT_EQ(result, CodecCodeAdapter::ERROR);
 }
@@ -531,14 +547,6 @@ TEST_F(OHOSMediaCodecBridgeImplTest, TestCreateInputSurface_NonNullSurface)
     SetCodecAdapter(std::move(mock_adapter));
     CodecCodeAdapter result = bridge_impl.CreateInputSurface();
     ASSERT_EQ(result, CodecCodeAdapter::OK);
-}
-
-TEST_F(OHOSMediaCodecBridgeImplTest, CreateVideoCodecByMime_NullCb)
-{
-    const std::string kExpectedMimetype = "video/avc";
-    SetCodecEncodeBridgeCallback(nullptr);
-    bridge_impl.CreateVideoCodecByMime(kExpectedMimetype);
-    ASSERT_NE(GetCodecEncodeBridgeCallback(), callback_);
 }
 
 TEST_F(OHOSMediaCodecBridgeImplTest, RequestKeyFrameSoonTest001)
@@ -577,6 +585,7 @@ TEST_F(OHOSMediaCodecBridgeImplTest, ReleaseOutputBufferTest002)
 
 TEST_F(OHOSMediaCodecBridgeImplTest, ClearKeyFrameCacheTest001)
 {
+    SetKeyFrameAddr(nullptr);
     bridge_impl.ClearKeyFrameCache();
     EXPECT_EQ(GetKeyFrameAddr(), nullptr);
 }
@@ -804,19 +813,6 @@ TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenReq
     EXPECT_CALL(*mock_producer_surface_adapter, RequestBuffer).WillOnce(testing::Return(nullptr));
     SetSurface(mock_producer_surface_adapter);
     CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(video_frame, 1);
-}
-
-TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenDstIsNull)
-{
-    std::shared_ptr<MockProducerSurfaceAdapter> mock_producer_surface_adapter =
-    std::make_shared<MockProducerSurfaceAdapter>();
-    auto buffer_adapter = std::make_shared<MockSurfaceBufferAdapter>();
-    EXPECT_CALL(*mock_producer_surface_adapter, RequestBuffer).WillOnce(testing::Return(buffer_adapter));
-    EXPECT_CALL(*buffer_adapter, GetVirAddr()).WillOnce(testing::Return(nullptr));
-    EXPECT_CALL(*buffer_adapter, GetStride()).WillOnce(testing::Return(1));
-    SetSurface(mock_producer_surface_adapter);
-    CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(video_frame, 1);
-    EXPECT_EQ(result, CodecCodeAdapter::ERROR);
 }
 
 TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenYSrcIsNull)

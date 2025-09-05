@@ -16,7 +16,7 @@ OHOSAudioOutputCallback::OHOSAudioOutputCallback(
 }
 
 int32_t OHOSAudioOutputCallback::AudioRendererOnWriteData(void* buffer, int32_t length) {
-    if (buffer && task_runner_, audio_output_stream_) {
+    if (buffer && task_runner_ && audio_output_stream_) {
         task_runner_->PostTask(
             FROM_HERE,
             base::BindOnce(&OHOSAudioOutputStream::OnWriteData, audio_output_stream_, buffer, length));
@@ -33,6 +33,7 @@ int32_t OHOSAudioOutputCallback::AudioRendererOnError(OH_AudioStream_Result erro
             FROM_HERE,
             base::BindOnce(&OHOSAudioOutputStream::ReportError, audio_output_stream_));
     }
+    return 0;
 }
 
 int32_t OHOSAudioOutputCallback::AudioRendererOnInterruptEvent(OH_AudioInterrupt_Hint hint) {
@@ -76,4 +77,4 @@ void OHOSAudioOutputCallback::AudioRendererOutputDeviceChangeCallback(OH_AudioSt
     }
 }
 
-}
+} // namespace media

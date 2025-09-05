@@ -30,4 +30,6 @@ private:
     base::WeakPtr<OHOSAudioOutputStream> audio_output_stream_;
 }
 
-}
+} // namespace media
+
+#endif // MEDIA_AUDIO_OHOS_AUDIO_OUTPUT_CALLBACK_H_

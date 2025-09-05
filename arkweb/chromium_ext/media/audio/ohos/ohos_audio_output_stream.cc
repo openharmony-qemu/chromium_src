@@ -552,6 +552,10 @@ bool OHOSAudioOutputStream::StartRender() {
     if (OH_AudioRenderer_Release(audio_renderer_) != AUDIOSTREAM_SUCCESS) {
       LOG(ERROR) << "ohos audio render release failed";
     } else {
+      if (callback_index_ > 0) {
+        callback_wrapper_.Clear(callback_index_);
+        callback_index_ = 0;
+      }
       audio_renderer_ = nullptr;
     }
     ReportError();

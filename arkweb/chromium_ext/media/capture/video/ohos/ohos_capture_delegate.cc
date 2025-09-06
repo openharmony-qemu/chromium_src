@@ -55,7 +55,6 @@ int OHOSCaptureDelegate::TransToOHOSCaptrueParams(
   int matched_height = req_height;
   VideoPixelFormatAdapter matched_pixel_format =
       VideoPixelFormatAdapter::FORMAT_UNKNOWN;
-  ;
   std::string device_id = device_descriptor_.device_id;
 
   for (auto single_device_desc : devices_desc) {

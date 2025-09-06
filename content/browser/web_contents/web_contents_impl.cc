@@ -3604,8 +3604,10 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
   }
 
 #if BUILDFLAG(ARKWEB_USERAGENT) || BUILDFLAG(ARKWEB_EXT_UA)
-  if (!(AsWebContentsImplExt()->user_agent_.empty())) {
-    bool is_desktop = (AsWebContentsImplExt()->user_agent_.find("Mobile") == std::string::npos);
+  if (!(AsWebContentsImplExt()->user_agent_.empty()) &&
+      GetUserAgentOverride().from_app) {
+    bool is_desktop = (AsWebContentsImplExt()->user_agent_.find("Mobile") ==
+                       std::string::npos);
     prefs.viewport_meta_enabled = !is_desktop;
   } else {
     prefs.viewport_meta_enabled = true;

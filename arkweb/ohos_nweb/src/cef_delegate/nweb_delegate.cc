@@ -5908,6 +5908,20 @@ void NWebDelegate::WebExtensionContextMenuReloadFocusedFrame() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void NWebDelegate::WebExtensionContextMenuGetFocusedFrameInfo(
+    int32_t& frame_id,
+    std::string& frame_url) {
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "get browser failed or get host failed";
+    return;
+  }
+  CefString cef_frame_url;
+  GetBrowser()->GetHost()->GetFocusedFrameInfo(frame_id, cef_frame_url);
+  frame_url = cef_frame_url.ToString();
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 bool NWebDelegate::SetFocusByPosition(float x, float y)
 {

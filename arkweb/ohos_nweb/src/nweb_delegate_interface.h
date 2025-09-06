@@ -844,6 +844,12 @@ class NWebDelegateInterface
   virtual void WebExtensionContextMenuReloadFocusedFrame() = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  virtual void WebExtensionContextMenuGetFocusedFrameInfo(
+      int32_t& frame_id,
+      std::string& frame_url) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   virtual void EnableViewAutoResize(
       const CefSize& min_size,

@@ -4476,6 +4476,30 @@ TEST_F(NWebImplTest, WebExtensionContextMenuReloadFocusedFrame002) {
 }
 #endif // BUILDFLAG(ARKWEB_EX_REFRESH_IFRAME)
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+TEST_F(NWebImplTest, WebExtensionContextMenuGetFocusedFrameInfo001) {
+  int32_t id = 0;
+  std::string url = "https://example.com";
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_,
+              WebExtensionContextMenuGetFocusedFrameInfo(id, url))
+      .Times(0);
+  nweb_impl_->WebExtensionContextMenuGetFocusedFrameInfo(id, url);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionContextMenuGetFocusedFrameInfo002) {
+  int32_t id = 0;
+  std::string url = "https://example.com";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_,
+              WebExtensionContextMenuGetFocusedFrameInfo(id, url))
+      .Times(1);
+  nweb_impl_->WebExtensionContextMenuGetFocusedFrameInfo(id, url);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
 TEST_F(NWebImplTest, UpdateBrowserControlsState001) {
   int constraints = 0;

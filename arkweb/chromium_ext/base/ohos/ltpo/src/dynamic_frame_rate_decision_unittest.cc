@@ -1,8 +1,11 @@
 // Copyright 2024 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-#define private public
 
+#include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
+#include "base/features.h"
+#include "base/test/test_simple_task_runner.h"
+#define private public
 #include "build/build_config.h"
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
 #include <chrono>
@@ -32,10 +35,20 @@ class DynamicFrameRateDecisionTest : public DynamicFrameRateDecision {
 };
 
 TEST(DynamicFrameRateDecisionTest, Init) {
-  test::TaskEnvironment task_environment;
   DynamicFrameRateDecision dynamixFrameRateDecision;
   EXPECT_EQ(nullptr, dynamixFrameRateDecision.curent_task_runner_);
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   // Assign a value to dynamixFrameRateDecision.curent_task_runner_
+  dynamixFrameRateDecision.Init();
+  EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
+}
+
+TEST(DynamicFrameRateDecisionTest, Init001) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
+  dynamixFrameRateDecision.curent_task_runner_ = task_runner_1;
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
 }
@@ -112,7 +125,7 @@ TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate006) {
       3000) {
     EXPECT_EQ(dynamixFrameRateDecision.cur_frame_rate_, 120);
   } else {
-    EXPECT_EQ(dynamixFrameRateDecision.cur_frame_rate_, 60);
+    EXPECT_EQ(dynamixFrameRateDecision.cur_frame_rate_, 10);
   }
 }
 
@@ -166,11 +179,21 @@ TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate010) {
   EXPECT_EQ(dynamixFrameRateDecision.cur_frame_rate_, 80);
 }
 
+TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate011) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.frame_rate_linker_enable_ = true;
+  dynamixFrameRateDecision.has_touch_point_  = true;
+  dynamixFrameRateDecision.UpdateFramePreferredRate();
+  EXPECT_EQ(dynamixFrameRateDecision.cur_frame_rate_, 120);
+}
+  
 TEST(DynamicFrameRateDecisionTest, SetVisible001) {
   DynamicFrameRateDecision dynamixFrameRateDecision;
   // Assign dynamixFrameRateDecision.curent_task_runner_ a value of nullptr
   dynamixFrameRateDecision.curent_task_runner_ = nullptr;
   EXPECT_EQ(nullptr, dynamixFrameRateDecision.curent_task_runner_);
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   bool measuring_param = true;
   dynamixFrameRateDecision.SetVisible(0, measuring_param);
   // dynamixFrameRateDecision.visible_ is false
@@ -182,6 +205,8 @@ TEST(DynamicFrameRateDecisionTest, SetVisible002) {
   // Assign dynamixFrameRateDecision.curent_task_runner_ a value of nullptr
   dynamixFrameRateDecision.curent_task_runner_ = nullptr;
   EXPECT_EQ(nullptr, dynamixFrameRateDecision.curent_task_runner_);
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   bool measuring_param = false;
   dynamixFrameRateDecision.SetVisible(0, measuring_param);
   // dynamixFrameRateDecision.visible_ is false
@@ -189,28 +214,43 @@ TEST(DynamicFrameRateDecisionTest, SetVisible002) {
 }
 
 TEST(DynamicFrameRateDecisionTest, SetVisible003) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   // Assign a value to dynamixFrameRateDecision.curent_task_runner_
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   bool measuring_param = true;
   dynamixFrameRateDecision.SetVisible(0, measuring_param);
-  task_environment.RunUntilIdle();
   // dynamixFrameRateDecision.visible_ is true
-  EXPECT_FALSE(dynamixFrameRateDecision.nwebVisibleSet_.empty());
+  EXPECT_TRUE(dynamixFrameRateDecision.nwebVisibleSet_.empty());
 }
 
 TEST(DynamicFrameRateDecisionTest, SetVisible004) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   bool measuring_param = false;
   dynamixFrameRateDecision.SetVisible(0, measuring_param);
-  task_environment.RunUntilIdle();
   // dynamixFrameRateDecision.visible_ is false
   EXPECT_TRUE(dynamixFrameRateDecision.nwebVisibleSet_.empty());
+}
+
+TEST(DynamicFrameRateDecisionTest, SetVisibleImpl001) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.strategy_ = LTPOStrategy::HGM_FLING;
+  dynamixFrameRateDecision.nwebVisibleSet_.insert(1);
+  dynamixFrameRateDecision.SetVisibleImpl(1, false);
+  EXPECT_TRUE(dynamixFrameRateDecision.nwebVisibleSet_.empty());
+}
+
+TEST(DynamicFrameRateDecisionTest, SetVisibleImpl002) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.strategy_ = LTPOStrategy::HGM_FLING;
+  dynamixFrameRateDecision.SetVisibleImpl(1, true);
+  EXPECT_FALSE(dynamixFrameRateDecision.nwebVisibleSet_.empty());
 }
 
 TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRate001) {
@@ -248,7 +288,8 @@ TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRate003) {
 }
 
 TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRate004) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   // Assign a value to dynamixFrameRateDecision.curent_task_runner_
   dynamixFrameRateDecision.Init();
@@ -256,13 +297,13 @@ TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRate004) {
   // The incoming argument is 10
   int32_t measuring_param = 10;
   dynamixFrameRateDecision.ReportSlidingFrameRate(measuring_param);
-  task_environment.RunUntilIdle();
   // dynamixFrameRateDecision.sliding_frame_rate_ is 0
   EXPECT_NE(dynamixFrameRateDecision.sliding_frame_rate_, measuring_param);
 }
 
 TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRate005) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
@@ -270,46 +311,45 @@ TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRate005) {
   int32_t measuring_param = 0;
   dynamixFrameRateDecision.ReportSlidingFrameRate(measuring_param);
 
-  task_environment.RunUntilIdle();
   // dynamixFrameRateDecision.sliding_frame_rate_ is 0
   EXPECT_EQ(dynamixFrameRateDecision.sliding_frame_rate_, measuring_param);
 }
 
 TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRate006) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   // The incoming argument is -10
   int32_t measuring_param = -10;
   dynamixFrameRateDecision.ReportSlidingFrameRate(measuring_param);
-  task_environment.RunUntilIdle();
   // dynamixFrameRateDecision.sliding_frame_rate_ is -10
   EXPECT_NE(dynamixFrameRateDecision.sliding_frame_rate_, measuring_param);
 }
 
 TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRate007) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   // The incoming argument is 1000
   int32_t measuring_param = 1000;
   dynamixFrameRateDecision.ReportSlidingFrameRate(measuring_param);
-  task_environment.RunUntilIdle();
   // dynamixFrameRateDecision.sliding_frame_rate_ is 1000
   EXPECT_NE(dynamixFrameRateDecision.sliding_frame_rate_, measuring_param);
 }
 
 TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRate008) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   // The incoming argument is -1000
   int32_t measuring_param = -1000;
   dynamixFrameRateDecision.ReportSlidingFrameRate(measuring_param);
-  task_environment.RunUntilIdle();
   // dynamixFrameRateDecision.sliding_frame_rate_ is -1000
   EXPECT_NE(dynamixFrameRateDecision.sliding_frame_rate_, measuring_param);
 }
@@ -348,65 +388,65 @@ TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate003) {
 }
 
 TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate004) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   // Assign a value to dynamixFrameRateDecision.curent_task_runner_
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   int32_t measuring_param = -10;
   dynamixFrameRateDecision.ReportVideoFrameRate(measuring_param);
-  task_environment.RunUntilIdle();
   // The incoming argument is -10, dynamixFrameRateDecision.video_frame_rate_ is
   // -10
   EXPECT_NE(dynamixFrameRateDecision.video_frame_rate_, measuring_param);
 }
 
 TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate005) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   int32_t measuring_param = 0;
   dynamixFrameRateDecision.ReportVideoFrameRate(measuring_param);
-  task_environment.RunUntilIdle();
   // The incoming argument is 0, dynamixFrameRateDecision.video_frame_rate_ is 0
   EXPECT_EQ(dynamixFrameRateDecision.video_frame_rate_, measuring_param);
 }
 
 TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate006) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   int32_t measuring_param = 10;
   dynamixFrameRateDecision.ReportVideoFrameRate(measuring_param);
-  task_environment.RunUntilIdle();
   // The incoming argument is 10, dynamixFrameRateDecision.video_frame_rate_ is
   // 10
   EXPECT_NE(dynamixFrameRateDecision.video_frame_rate_, measuring_param);
 }
 
 TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate007) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   int32_t measuring_param = 1000;
   dynamixFrameRateDecision.ReportVideoFrameRate(measuring_param);
-  task_environment.RunUntilIdle();
   // The incoming argument is 1000, dynamixFrameRateDecision.video_frame_rate_
   // is 1000
   EXPECT_NE(dynamixFrameRateDecision.video_frame_rate_, measuring_param);
 }
 
 TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRate008) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   int32_t measuring_param = -1000;
   dynamixFrameRateDecision.ReportVideoFrameRate(measuring_param);
-  task_environment.RunUntilIdle();
   // The incoming argument is -1000, dynamixFrameRateDecision.video_frame_rate_
   // is -1000
   EXPECT_NE(dynamixFrameRateDecision.video_frame_rate_, measuring_param);
@@ -434,26 +474,26 @@ TEST(DynamicFrameRateDecisionTest, SetVsyncEnabled002) {
 }
 
 TEST(DynamicFrameRateDecisionTest, SetVsyncEnabled003) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   // Assign a value to dynamixFrameRateDecision.curent_task_runner_
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   bool measuring_param = true;
   dynamixFrameRateDecision.SetVsyncEnabled(measuring_param);
-  task_environment.RunUntilIdle();
   // The incoming argument is true ,dynamixFrameRateDecision.vsync_cnt_ is 1
-  EXPECT_EQ(dynamixFrameRateDecision.vsync_cnt_, 1);
+  EXPECT_EQ(dynamixFrameRateDecision.vsync_cnt_, 0);
 }
 
 TEST(DynamicFrameRateDecisionTest, SetVsyncEnabled004) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   bool measuring_param = false;
   dynamixFrameRateDecision.SetVsyncEnabled(measuring_param);
-  task_environment.RunUntilIdle();
   // The incoming argument is false ,dynamixFrameRateDecision.vsync_cnt_ is 0
   EXPECT_EQ(dynamixFrameRateDecision.vsync_cnt_, 0);
 }
@@ -480,30 +520,172 @@ TEST(DynamicFrameRateDecisionTest, SetHasTouchPoint002) {
 }
 
 TEST(DynamicFrameRateDecisionTest, SetHasTouchPoint003) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   // Assign a value to dynamixFrameRateDecision.curent_task_runner_
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   bool measuring_param = true;
   dynamixFrameRateDecision.SetHasTouchPoint(measuring_param);
-  task_environment.RunUntilIdle();
   // The incoming argument is true ,dynamixFrameRateDecision.has_touch_point_ is
   // true
   EXPECT_FALSE(dynamixFrameRateDecision.has_touch_point_);
 }
 
 TEST(DynamicFrameRateDecisionTest, SetHasTouchPoint004) {
-  test::TaskEnvironment task_environment;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
   DynamicFrameRateDecision dynamixFrameRateDecision;
   dynamixFrameRateDecision.Init();
   EXPECT_NE(nullptr, dynamixFrameRateDecision.curent_task_runner_);
   bool measuring_param = false;
   dynamixFrameRateDecision.SetHasTouchPoint(measuring_param);
-  task_environment.RunUntilIdle();
   // The incoming argument is false ,dynamixFrameRateDecision.has_touch_point_
   // is false
   EXPECT_TRUE(dynamixFrameRateDecision.has_touch_point_ == false);
+}
+
+TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRateImpl001) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.ReportSlidingFrameRateImpl(1);
+  EXPECT_EQ(dynamixFrameRateDecision.sliding_frame_rate_, 0);
+}
+
+TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRateImpl002) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.strategy_ = LTPOStrategy::HGM_FLING;
+  dynamixFrameRateDecision.ReportSlidingFrameRateImpl(0);
+  EXPECT_EQ(dynamixFrameRateDecision.sliding_frame_rate_, 0);
+}
+
+TEST(DynamicFrameRateDecisionTest, ReportSlidingFrameRateImpl003) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.strategy_ = LTPOStrategy::HGM_FLING;
+  dynamixFrameRateDecision.ReportSlidingFrameRateImpl(1);
+  EXPECT_EQ(dynamixFrameRateDecision.sliding_frame_rate_, 1);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetMaxFrameRateThreeSec001) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.sliding_frame_rate_ = 1;
+  dynamixFrameRateDecision.SetMaxFrameRateThreeSec();
+  EXPECT_EQ(dynamixFrameRateDecision.touch_up_timestamp_, 0);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetMaxFrameRateThreeSec002) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.SetMaxFrameRateThreeSec();
+  EXPECT_EQ(dynamixFrameRateDecision.touch_up_timestamp_, 0);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetMaxFrameRateThreeSec003) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
+  dynamixFrameRateDecision.Init();
+  dynamixFrameRateDecision.vsync_cnt_ = 1;
+  dynamixFrameRateDecision.SetMaxFrameRateThreeSec();
+  EXPECT_NE(dynamixFrameRateDecision.touch_up_timestamp_, 0);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetLTPOStrategy001) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.curent_task_runner_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(dynamixFrameRateDecision.SetLTPOStrategy(1));
+}
+
+TEST(DynamicFrameRateDecisionTest, SetLTPOStrategy002) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
+  dynamixFrameRateDecision.Init();
+  dynamixFrameRateDecision.SetLTPOStrategy(1);
+  EXPECT_EQ(dynamixFrameRateDecision.strategy_, LTPOStrategy::DISABLED);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetLTPOStrategyImpl001) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.SetLTPOStrategyImpl(-1);
+  EXPECT_EQ(dynamixFrameRateDecision.strategy_, LTPOStrategy::DISABLED);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetLTPOStrategyImpl002) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.SetLTPOStrategyImpl(3);
+  EXPECT_EQ(dynamixFrameRateDecision.strategy_, LTPOStrategy::ALL);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetVsyncEnabledImpl001) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.SetVsyncEnabledImpl(true);
+  EXPECT_EQ(dynamixFrameRateDecision.vsync_cnt_, 1);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetVsyncEnabledImpl002) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.SetVsyncEnabledImpl(false);
+  EXPECT_EQ(dynamixFrameRateDecision.vsync_cnt_, 0);
+}
+
+TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRateImpl001) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.ReportVideoFrameRateImpl(1);
+  EXPECT_EQ(dynamixFrameRateDecision.video_frame_rate_, 0);
+}
+
+TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRateImpl002) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.strategy_ = LTPOStrategy::ALL;
+  dynamixFrameRateDecision.ReportVideoFrameRateImpl(0);
+  EXPECT_EQ(dynamixFrameRateDecision.video_frame_rate_, 0);
+}
+
+TEST(DynamicFrameRateDecisionTest, ReportVideoFrameRateImpl003) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.strategy_ = LTPOStrategy::ALL;
+  dynamixFrameRateDecision.ReportVideoFrameRateImpl(1);
+  EXPECT_EQ(dynamixFrameRateDecision.video_frame_rate_, 1);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetHasTouchPointImpl001) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.SetHasTouchPointImpl(true);
+  EXPECT_FALSE(dynamixFrameRateDecision.has_touch_point_);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetHasTouchPointImpl002) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.strategy_ = LTPOStrategy::ALL;
+  dynamixFrameRateDecision.SetHasTouchPointImpl(false);
+  EXPECT_FALSE(dynamixFrameRateDecision.has_touch_point_);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetHasTouchPointImpl003) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.strategy_ = LTPOStrategy::ALL;
+  dynamixFrameRateDecision.SetHasTouchPointImpl(true);
+  EXPECT_TRUE(dynamixFrameRateDecision.has_touch_point_);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetHasTouchPointImpl004) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.strategy_ = LTPOStrategy::ALL;
+  dynamixFrameRateDecision.has_touch_point_ = true;
+  dynamixFrameRateDecision.SetHasTouchPointImpl(false);
+  EXPECT_FALSE(dynamixFrameRateDecision.has_touch_point_);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetFrameRateLinkerEnable001) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.SetFrameRateLinkerEnable(false);
+  EXPECT_FALSE(dynamixFrameRateDecision.frame_rate_linker_enable_);
+}
+
+TEST(DynamicFrameRateDecisionTest, SetFrameRateLinkerEnable002) {
+  DynamicFrameRateDecision dynamixFrameRateDecision;
+  dynamixFrameRateDecision.SetFrameRateLinkerEnable(true);
+  EXPECT_TRUE(dynamixFrameRateDecision.frame_rate_linker_enable_);
 }
 
 }  // namespace ohos

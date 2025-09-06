@@ -2,18 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <chrono>
+#include <cmath>
 #include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
 #include "base/features.h"
 #include "base/test/test_simple_task_runner.h"
 #define private public
+#include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
+#undef private
 #include "build/build_config.h"
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-#include <chrono>
-#include <cmath>
 
-#include "base/logging.h"
 #include "base/no_destructor.h"
-#include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool.h"

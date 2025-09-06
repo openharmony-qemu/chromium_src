@@ -466,15 +466,8 @@ bool OHOSAudioOutputStream::InitRender() {
   callbacks.OH_AudioRenderer_OnError = AudioRendererOnError;
   callbacks.OH_AudioRenderer_OnInterruptEvent = AudioRendererOnInterruptEvent;
 
-  auto task_runner = base::SingleThreadTaskRunner::GetCurrentDefault();
-  if (!task_runner) {
-    LOG(ERROR) << "InitRender task_runner is nullptr";
-    return false;
-  }
-
   std::shared_ptr<OHOSAudioOutputCallback> audioOutputCallback =
-      std::make_shared<OHOSAudioOutputCallback>(task_runner,
-                                                weak_factory_.GetWeakPtr());
+      std::make_shared<OHOSAudioOutputCallback>(weak_factory_.GetWeakPtr());
   if (!audioOutputCallback) {
     LOG(ERROR) << "InitRender audioOutputCallback is nullptr";
     return false;

@@ -105,7 +105,11 @@ void SSLClientAuthHandler::DidGetClientCertsOnPostTask(
     net::ClientCertIdentityList client_certs) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  if (!browser_context_ || !web_contents_) {
+#else
   if (!browser_context_) {
+#endif
     delegate_->CancelCertificateSelection();
     return;
   }

@@ -458,7 +458,7 @@ void WebFrameWidgetImplExt::DeterminePageLanguage() {
             << ", contents_size: " << contents.size();
 
   if (auto host = GetAssociatedFrameWidgetHost(); host) {
-    if (ans == "und" && is_reliable) {
+    if (is_reliable) {
       host->SendCurrentLanguage(static_cast<WTF::String>(model_ans));
     } else {
       host->SendCurrentLanguage(static_cast<WTF::String>(ans));

@@ -52,9 +52,6 @@ void MediaSessionControllerExt::SetSessionStateIfNeed(bool isNeedMediaSession)
 void MediaSessionControllerExt::OnPictureInPictureStateChanged(
     const MediaPlayerId& id,
     uint32_t state, int32_t width, int32_t height) {
-  LOG(INFO) << __func__ << " Pip state:" << state <<  " "
-            << id.delegate_id << " " <<  id.frame_routing_id.child_id
-			<< " " << id.frame_routing_id.frame_routing_id;
   media_session_->OnPictureInPictureStateChanged(id, state, width, height);
 }
 #endif

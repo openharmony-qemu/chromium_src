@@ -109,7 +109,8 @@ void CreateAndBindEglImageFromNativeBuffer(OHOSNativeBuffer buffer,
     // We should never alter gl binding without updating state tracking, which
     // we can't do here, so restore previous after we done.
     gl::ScopedRestoreTexture scoped_restore(gl::g_current_gl_context,
-        GL_TEXTURE_EXTERNAL_OES);
+                                            GL_TEXTURE_EXTERNAL_OES);
+
     glBindTexture(GL_TEXTURE_EXTERNAL_OES, service_id);
     glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_image.get());
   }
@@ -319,8 +320,7 @@ class SameLayerNativeBufferImageBacking::SkiaVkSameLayerRepresentation
       if (!vulkan_image_) {
         return {};
       }
-      LOG(INFO) << "SameLayerNativeBufferImageBacking create vkimage width: "
-          << size().width() << " height: " << size().height();
+
       // We always use VK_IMAGE_TILING_OPTIMAL while creating the vk image in
       // VulkanImplementationAndroid::CreateVkImageAndImportAHB. Hence pass
       // the tiling parameter as VK_IMAGE_TILING_OPTIMAL to below call rather

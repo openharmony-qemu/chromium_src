@@ -751,6 +751,9 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
     CefRefPtr<CefDistillCallback> callback) override {}
   void AbortDistill() override {}
 #endif // ARKWEB_READER_MODE
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetMediaResumeFromBFCachePage(bool resume) override {}

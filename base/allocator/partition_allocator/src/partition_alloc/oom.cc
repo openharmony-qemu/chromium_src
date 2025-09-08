@@ -4,7 +4,6 @@
 
 #include "arkweb/build/features/features.h"
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-#include "third_party/crashpad/crashpad/util/posix/signals.h"
 #include <stdlib.h>
 #include "unistd.h"
 #endif
@@ -25,7 +24,7 @@
 #endif  // PA_BUILDFLAG(IS_WIN)
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-extern "C" __attribute__((weak) )void set_fatal_message(const char *msg);
+#include "ohos_sdk/openharmony/native/sysroot/usr/include/info/fatal_message.h"
 #endif
 
 namespace partition_alloc {

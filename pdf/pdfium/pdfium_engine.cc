@@ -780,7 +780,7 @@ void PDFiumEngine::PostPaint() {
 
 bool PDFiumEngine::HandleDocumentLoad(std::unique_ptr<UrlLoader> loader,
                                       const std::string& original_url) {
-  LOG(INFO) << __func__ << ", pdf client start to consume.";
+  LOG(INFO) << __func__ << ", PDF client start to consume.";
   password_tries_remaining_ = kMaxPasswordTries;
   process_when_pending_request_complete_ =
       base::FeatureList::IsEnabled(features::kPdfIncrementalLoading);
@@ -3761,7 +3761,12 @@ void PDFiumEngine::OnSelectionPositionChanged() {
   gfx::Rect left(std::numeric_limits<int32_t>::max(),
                  std::numeric_limits<int32_t>::max(), 0, 0);
   gfx::Rect right;
+
 #if BUILDFLAG(ARKWEB_PDF)
+  if (!client_) {
+    LOG(ERROR) << __func__ << ", PDF client_ is null.";
+    return;
+  }
   gfx::Rect clipped_selection_bounds(0, 0, 0, 0);
   OnSelectionPositionChangedForPDF(left, right, clipped_selection_bounds, selection_);
 #else
@@ -3777,6 +3782,7 @@ void PDFiumEngine::OnSelectionPositionChanged() {
     }
   }
 #endif  // BUILDFLAG(ARKWEB_PDF)
+
   right.set_x(right.x() + right.width());
   if (left.IsEmpty()) {
     left.set_x(0);

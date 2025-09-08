@@ -128,13 +128,40 @@ void PDFDocumentHelper::SelectionChanged(const gfx::PointF& left,
 
 #if BUILDFLAG(ARKWEB_PDF)
 void PDFDocumentHelper::UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) {
-  LOG(DEBUG) << "pdf clipped selection bounds: " << clipped_selection_bounds.ToString();
+  if (!touch_selection_controller_client_manager_) {
+    InitTouchSelectionClientManager();
+  }
+
+  if (!touch_selection_controller_client_manager_) {
+    LOG(ERROR) << __func__ << ", PDF touch_selection_controller_client_manager_ is null.";
+    return;
+  }
+
+  LOG(DEBUG) << "PDF clipped selection bounds: " << clipped_selection_bounds.ToString();
+  gfx::Point bounds_origin = clipped_selection_bounds.origin();
+  gfx::Size bounds_size = clipped_selection_bounds.size();
+  gfx::PointF bounds_origin_f =
+    ConvertToRoot(gfx::PointF(bounds_origin.x(), bounds_origin.y()));
+  bounds_origin.set_x(bounds_origin_f.x());
+  bounds_origin.set_y(bounds_origin_f.y());
+  gfx::Rect converted_bounds(bounds_origin, bounds_size);
   touch_selection_controller_client_manager_->
-    UpdateClientClippedSelectionBounds(clipped_selection_bounds);
+    ConvertClientClippedSelectionBounds(converted_bounds);
+  touch_selection_controller_client_manager_->
+    UpdateClientClippedSelectionBounds(converted_bounds);
 }
 
 void PDFDocumentHelper::HideHandleAndQuickMenuForPDF(bool hide_handles) {
-  LOG(DEBUG) << "pdf hide handle and quick nenu: " << hide_handles;
+  if (!touch_selection_controller_client_manager_) {
+    InitTouchSelectionClientManager();
+  }
+
+  if (!touch_selection_controller_client_manager_) {
+    LOG(ERROR) << __func__ << ", PDF touch_selection_controller_client_manager_ is null.";
+    return;
+  }
+  
+  LOG(DEBUG) << "PDF hide handle and quick nenu: " << hide_handles;
   touch_selection_controller_client_manager_->
     HideHandleAndQuickMenuIfNecessary(hide_handles);
 }

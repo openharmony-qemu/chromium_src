@@ -524,11 +524,21 @@ void ExtensionRegistryInfoManager::OnExtensionWillBeInstalled(content::BrowserCo
 
 void ExtensionRegistryInfoManager::OnExtensionInstalled(content::BrowserContext* browser_context,
                                                         const Extension* extension,
-                                                        bool is_update) {}
+                                                        bool is_update) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  NWebExtensionManagerDispatcher::OnExtensionInstalledCallBack(
+      extension->id(), extension->creation_flags(), static_cast<int>(extension->manifest()->location()));
+#endif
+}
 
 void ExtensionRegistryInfoManager::OnExtensionUninstalled(content::BrowserContext* browser_context,
                                                           const Extension* extension,
-                                                          UninstallReason reason) {}
+                                                          UninstallReason reason) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    NWebExtensionManagerDispatcher::OnExtensionUninstalledCallBack(
+      extension->id(), static_cast<int>(reason));
+#endif
+}
 
 void ExtensionRegistryInfoManager::OnExtensionUninstallationDenied(content::BrowserContext* browser_context,
                                                                    const Extension* extension) {}

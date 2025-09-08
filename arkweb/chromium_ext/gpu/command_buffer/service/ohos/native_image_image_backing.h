@@ -62,11 +62,6 @@ class GPU_GLES2_EXPORT NativeImageImageBacking
       MemoryTypeTracker* tracker,
       scoped_refptr<SharedContextState> context_state) override;
 
-  //   std::unique_ptr<gpu::LegacyOverlayImageRepresentation>
-  //   ProduceLegacyOverlay(
-  //       gpu::SharedImageManager* manager,
-  //       gpu::MemoryTypeTracker* tracker);
-
  private:
   class SharedImageRepresentationGLTextureVideo;
   class SharedImageRepresentationGLTexturePassthroughVideo;

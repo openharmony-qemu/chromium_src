@@ -254,7 +254,7 @@ class DelayedRenderKiller {
 RenderProcessHost*
 ArkwebRenderProcessHostImplUtils::GetExistingBackgroundProcessHost() {
   // First figure out which existing renderers we can use.
-  RenderProcessHost* longest_background_host;
+  RenderProcessHost* longest_background_host = nullptr;
   base::TimeDelta longest_duration;
   base::TimeTicks current_time = base::TimeTicks::Now();
 
@@ -487,16 +487,6 @@ ThemeFont* ArkwebRenderProcessHostImplUtils::EnsureThemeFont() {
   // {"id":"0","origin":"online","ttfFileSrc":"/absolute/path/themefont.ttf"}
   // {"id":"1","origin":"preset","ttfFileSrc":"/absolute/path/default.ttf"}
   const base::Value::Dict& dict = parsed_json->GetDict();
-  const std::string* origin = dict.FindString("origin");
-  if (!origin || origin->empty()) {
-    LOG(ERROR) << "[themefont] manifest file has no origin tag";
-    return nullptr;
-  }
-  if (*origin != std::string("online")) {
-    LOG(DEBUG) << "[themefont] manifest file's origin tag is not online";
-    return nullptr;
-  }
-
   const std::string* absolte_font_path = dict.FindString("ttfFileSrc");
   if (!absolte_font_path || absolte_font_path->empty()) {
     LOG(ERROR) << "[themefont] manifest file has no ttfFileSrc tag";
@@ -591,5 +581,4 @@ void ArkwebRenderProcessHostImplUtils::AddHostUIThreadInterface(
                 std::move(receiver));
           }));
 }
-
 }  // namespace content

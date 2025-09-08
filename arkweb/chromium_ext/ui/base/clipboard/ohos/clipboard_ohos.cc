@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/base/clipboard/ohos/clipboard_ohos.h"
+#include "clipboard_ohos.h"
 
 #include <map>
 #include <set>
@@ -37,8 +37,8 @@
 #include "ui/base/clipboard/clipboard_monitor.h"
 #include "ui/base/clipboard/clipboard_util.h"
 #include "ui/base/clipboard/custom_data_helper.h"
-#include "ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
-#include "ui/base/clipboard/ohos/clipboard_ohos_read_data.h"
+#include "clip_board_image_data_adapter_impl.h"
+#include "clipboard_ohos_read_data.h"
 #include "ui/base/data_transfer_policy/data_transfer_endpoint.h"
 #include "ui/base/data_transfer_policy/data_transfer_policy_controller.h"
 #include "ui/gfx/color_space.h"

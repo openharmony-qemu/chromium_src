@@ -60,9 +60,12 @@
 #include "url/url_constants.h"
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "base/ohos/nweb_engine_event_logger.h"
+#include "base/ohos/nweb_engine_event_logger_code.h"
 #include "chrome/browser/browser_process.h"
 #include "cef/libcef/browser/prefs/browser_prefs.h"
 #include "components/prefs/pref_service.h"
+#include "components/os_crypt/sync/os_crypt_linux_for_include.h"
 #endif
 
 #if BUILDFLAG(IS_IOS)
@@ -1134,7 +1137,12 @@ bool LoginDatabase::Init(
     LogDatabaseInitError(OPEN_FILE_ERROR);
     LOG(ERROR) << "[Autofill] Unable to open the password store database, errorcode = 3.";
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+    std::string err_msg = "Unable to open the password store database, error_code:" +
+                          std::to_string(LOGIN_DATA_OPEN_FAILED);
+    base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
+                                  base::ohos::kPasswordManagerError, err_msg);
     g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
 #endif
     return false;
   }

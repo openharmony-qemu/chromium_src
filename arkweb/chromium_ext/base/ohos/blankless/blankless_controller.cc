@@ -117,6 +117,7 @@ void BlanklessController::FireFrameRemoveCallback(uint32_t nweb_id, uint64_t bla
   std::optional<Callback> callback = m_frame_remove_callback_map_.Get(nweb_id, blankless_key, /*move*/true);
   if (callback.has_value()) {
     callback.value()();
+    LOG(DEBUG) << "blankless FireFrameRemoveCallback nweb_id: " << nweb_id << ", blankless_key: " << blankless_key;
   }
 }
 

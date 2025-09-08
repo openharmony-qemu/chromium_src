@@ -111,6 +111,26 @@ TEST_F(VideoEncoderAdapterImplTest, TestSetCodecCallback002) {
 
 TEST_F(VideoEncoderAdapterImplTest, TestSetCodecCallback003) {
   CodecCodeAdapter expected_result = CodecCodeAdapter::OK;
+  codec_adapter_->callback_index_ = 0;
+  std::shared_ptr<CodecCallbackAdapter> callback =
+      std::make_shared<EncoderCallbackAdapterMock>();
+  CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(callback);
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestSetCodecCallback004) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::OK;
+  codec_adapter_->callback_index_ = 1;
+  std::shared_ptr<CodecCallbackAdapter> callback =
+      std::make_shared<EncoderCallbackAdapterMock>();
+  CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(callback);
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestSetCodecCallback005) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  codec_adapter_->callback_index_ = 0;
+  codec_adapter_->encoder_ = nullptr;
   std::shared_ptr<CodecCallbackAdapter> callback =
       std::make_shared<EncoderCallbackAdapterMock>();
   CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(callback);

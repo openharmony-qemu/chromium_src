@@ -90,7 +90,7 @@ class WebFrameWidgetImplExt : public WebFrameWidgetImpl {
 #endif
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   void TouchHitTest(const WebPointerEvent& event, size_t i) override;
-  void MouseHitTest(const WebMouseEvent& event) override;
+  void MouseHitTest(const WebMouseEvent& event, int32_t button) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)

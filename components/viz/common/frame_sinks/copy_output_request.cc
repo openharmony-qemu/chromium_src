@@ -172,9 +172,9 @@ void CopyOutputRequest::SendResult(std::unique_ptr<CopyOutputResult> result) {
   }
 #endif
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if (result && copy_output_request_utils_->IsBlanklessInfoValid()) {
+  if (result && result->copy_output_result_utils() && copy_output_request_utils_
+      && copy_output_request_utils_->IsBlanklessInfoValid()) {
     result->copy_output_result_utils()->SetBlanklessInfo(copy_output_request_utils_->GetBlanklessInfo());
-    result->copy_output_result_utils()->SetQuadList(copy_output_request_utils_->GetQuadList());
   }
 #endif
   runner->PostTask(FROM_HERE, base::BindOnce(std::move(result_callback_),

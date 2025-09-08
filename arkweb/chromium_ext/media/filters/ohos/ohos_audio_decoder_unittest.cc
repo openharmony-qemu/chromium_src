@@ -37,7 +37,7 @@ class OHOSAudioCencInfoTest : public testing::Test {
 TEST_F(OHOSAudioCencInfoTest, GetKeyID_ShouldReturnKeyId_WhenCalled)
 {
   OHOSAudioCencInfo cenc;
-  uint8_t* keyId = static_cast<uint8_t*>("keyId");
+  uint8_t keyId[] = "keyId";
   cenc.SetKeyId(keyId);
   EXPECT_EQ(cenc.GetKeyId(), keyId);
 }
@@ -53,7 +53,7 @@ TEST_F(OHOSAudioCencInfoTest, GetKeyIDLen_ShouldReturnKeyIdLen_WhenCalled)
 TEST_F(OHOSAudioCencInfoTest, GetIv_ShouldReturnIv_WhenCalled)
 {
   OHOSAudioCencInfo cenc;
-  uint8_t* iv = static_cast<uint8_t*>("iv");
+  uint8_t iv[] = "iv";
   cenc.SetIv(iv);
   EXPECT_EQ(cenc.GetIv(), iv);
 }
@@ -707,6 +707,12 @@ TEST_F(OhosAudioDecoderTest, OnDecodedFrame)
   }
 
   {
+    // audio_decoder_ is nullptr
+    OutputBufferData bufferData(index, data , size , pts, flag);
+    ASSERT_FALSE(decoder_->OnDecodedFrame(bufferData));
+  }
+
+  {
     InitializeDecoder();
     OutputBufferData bufferData(index, data , size , pts, flag);
     ASSERT_TRUE(decoder_->OnDecodedFrame(bufferData));
@@ -755,4 +761,5 @@ TEST_F(OhosAudioDecoderTest, DequeueOutputBuffer)
   decoder_->EnqueueInputBuffer(index);
   EXPECT_EQ(decoder_->DequeueOutputBuffer(out), 0);
 }
+
 }

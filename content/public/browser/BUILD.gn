@@ -20,6 +20,10 @@ if (is_arkweb) {
   import("//arkweb/chromium_ext/chromium_ext.gni")
 }
 
+if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
 # See //content/BUILD.gn for how this works.
 group("browser") {
   if (is_component_build) {
@@ -628,6 +632,10 @@ source_set("browser_sources") {
     "//ui/shell_dialogs",
     "//ui/surface",
   ]
+
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    deps += [ "//components/dom_distiller/content/common/mojom" ]
+  }
 
   allow_circular_includes_from = [
     # This target is a pair with content / browser.They always go together and

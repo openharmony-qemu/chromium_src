@@ -76,6 +76,9 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandleClient
   virtual std::unique_ptr<TouchHandleDrawable> CreateDrawable() = 0;
   virtual base::TimeDelta GetMaxTapDuration() const = 0;
   virtual bool IsAdaptiveHandleOrientationEnabled() const = 0;
+#if BUILDFLAG(ARKWEB_MENU)
+  virtual bool IsShowHandle() { return false; }
+#endif
 };
 
 // Responsible for displaying a selection or insertion handle for text
@@ -195,7 +198,7 @@ friend class TouchHandleExt;
   float handle_horizontal_padding_;
 #if BUILDFLAG(ARKWEB_AI)
   int32_t continuous_touch_nums_ = 0;
-  bool is_single_handle_ = false;
+  bool is_show_handle_ = false;
 #endif
 };
 

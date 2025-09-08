@@ -53,14 +53,14 @@ class NWebExtensionTabCefDelegate {
   // chrome.tabs.update
   static bool UpdateTab(
       int tab_id,
-      NWebExtensionTabUpdateProperties& update_properties,
+      NWebExtensionTabUpdatePropertiesV2& update_properties,
       TabUpdatedCallback callback);
 
   static void TabUpdateCallback(int request_id,
       NWebExtensionTab& tab, std::optional<std::string>& error);
 
   // chrome.tabs.create
-  static bool CreateTab(NWebTabCreateInfo& create_info,
+  static bool CreateTab(NWebTabCreateInfoV2& create_info,
                  TabCreatedCallback callback);
 
   static void TabCreateCallback(int request_id,

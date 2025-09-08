@@ -104,7 +104,7 @@ void LocationRequestConfigImpl::SetFixNumber(int32_t number)
     return;
 }
 
-void LocationRequestConfigImpl::SetMaxAccuracy(int32_t maxAccuary)
+void LocationRequestConfigImpl::SetMaxAccuracy(int32_t maxAccuracy)
 {
     // invalid interface
     return;

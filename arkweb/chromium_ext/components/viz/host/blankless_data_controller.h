@@ -20,6 +20,8 @@
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_snapshot_data_base.h"
 #include "cancelable_delayed_task_manager.h"
+#include "mojo/public/cpp/system/buffer.h"
+#include "services/viz/privileged/mojom/gl/gpu_host.mojom.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
 namespace base {
@@ -41,12 +43,13 @@ public:
     std::string path;
     SkBitmap bitmap;
     std::vector<double> pixels;
+    double mean = 0.0f;
+    double var = 0.0f;
   };
 
-
-  void DumpBlanklessSnapshot(const base::ohos::BlanklessInfo& info,
-                             const SkBitmap& bitmap,
-                             const std::vector<SnapShotRect>& quad_list);
+  void DumpBlanklessSnapshot(viz::mojom::BlanklessSendInfoPtr infoPtr,
+                             mojo::ScopedSharedBufferHandle buffer,
+                             viz::mojom::BlanklessBitmapMetadataPtr metadata);
   void ClearSnapshot(int64_t key);
   void ClearSnapshotDataItem(const std::vector<int64_t>& keys);
   void InsertSnapshotDataItem(int64_t key, const OHOS::NWeb::SnapshotDataItem& data);
@@ -54,14 +57,13 @@ public:
   int32_t SetBlanklessLoadingCacheCapacity(int capacity);
   int32_t GetBlanklessLoadingCacheCapacity() const;
   void CreateTaskManager();
-  void PostDumpTaskWithDelay(uint64_t blankless_key, base::OnceClosure task);
 
 private:
   BlanklessDataController();
   std::shared_ptr<SnapshotInfo> GetHistorySnapshotInfo(uint64_t blankless_key);
-  bool EncodeImage(const SkBitmap& bitmap,
-                   std::string& newFile,
-                   OHOS::NWeb::SnapshotDataItem* snapshotDataItem);
+  static bool EncodeImage(const SkBitmap& bitmap, std::string& newFile, OHOS::NWeb::SnapshotDataItem* snapshotDataItem);
+  static void DumpTask(viz::mojom::BlanklessSendInfoPtr infoPtr, mojo::ScopedSharedBufferHandle buffer,
+                       viz::mojom::BlanklessBitmapMetadataPtr metadata, double similarity);
 
 private:
   std::shared_ptr<OHOS::NWeb::OhosWebSnapshotDataBaseCallback> web_snapshot_db_callback_ = nullptr;

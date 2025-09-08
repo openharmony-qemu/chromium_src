@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/buildflag_header.gni")
 import("//build/config/coverage/coverage.gni")
 import("//build/config/rust.gni")
@@ -38,8 +39,11 @@ config("default_coverage") {
       # MacOS. Please refer to crbug.com/796290 for more details.
       "-mllvm",
       "-limited-coverage-experimental=true", 
-      "--coverage",
     ]
+
+    if (arkweb_asan) {
+      cflags += [ "--coverage" ]
+    }
 
     # Rust coverage is gated on using the Chromium-built Rust toolchain as it
     # needs to have a compatible LLVM version with the C++ compiler and the LLVM

@@ -987,6 +987,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   bool OnStartBackgroundTask(int32_t type, const std::string& message) override;
 #endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void OnIsPageDistillable(int page_type,
+                          const std::string& distillable_page_url, const std::string& title) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_PDF)
   void OnPdfScrollAtBottom(const std::string& url) override;
   void OnPdfLoadEvent(int32_t result, const std::string& url) override;
@@ -1000,6 +1005,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   }
   void ShowMagnifier() override;
   void HideMagnifier() override;
+  bool IsShowHandle() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)

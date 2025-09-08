@@ -182,9 +182,16 @@ class VideoFrameFactoryImplTest : public testing::Test {
   std::unique_ptr<VideoFrameFactoryImpl> video_frame_factory_;
 };
 
-TEST_F(VideoFrameFactoryImplTest, SetSurfaceBundle001) {
+TEST_F(VideoFrameFactoryImplTest, TestSetSurfaceBundle001) {
+  scoped_refptr<CodecSurfaceBundle> surface_bundle = nullptr;
   impl_->SetSurfaceBundle(nullptr);
   EXPECT_EQ(impl_->codec_buffer_wait_coordinator_, nullptr);
+}
+
+TEST_F(VideoFrameFactoryImplTest, TestSetSurfaceBundle002) {
+  scoped_refptr<CodecSurfaceBundle> surface_bundle;
+  video_frame_factory_->SetSurfaceBundle(surface_bundle);
+  EXPECT_EQ(video_frame_factory_->codec_buffer_wait_coordinator_, nullptr);
 }
 
 TEST_F(VideoFrameFactoryImplTest, CreateVideoFrame) {
@@ -218,7 +225,6 @@ TEST_F(VideoFrameFactoryImplTest, CreateVideoFrame_OnFrameInfoReady001) {
       image_ready_cb;
   std::unique_ptr<CodecOutputBufferRenderer> output_buffer_renderer;
   FrameInfoHelper::FrameInfo frame_info;
-  EXPECT_CALL(image_ready_cb, Run(_, _, _));
   impl_->CreateVideoFrame_OnFrameInfoReady(
       image_ready_cb.Get(), std::move(output_buffer_renderer), frame_info);
   EXPECT_TRUE(image_ready_cb.Get());
@@ -228,13 +234,26 @@ TEST_F(VideoFrameFactoryImplTest, CreateVideoFrame_OnFrameInfoReady002) {
   base::MockCallback<VideoFrameFactoryImpl::ImageWithInfoReadyCB>
       image_ready_cb;
   FrameInfoHelper::FrameInfo frame_info;
-  frame_info.coded_size = gfx::Size();
-  EXPECT_CALL(image_ready_cb, Run(_, _, _));
+  frame_info.coded_size = gfx::Size(0, 0);
   testing::internal::CaptureStderr();
   impl_->CreateVideoFrame_OnFrameInfoReady(image_ready_cb.Get(),
                                            std::move(nullptr), frame_info);
   std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_NE(log_output.find("CreateVideoFrame_OnFrameInfoReady"),
+            std::string::npos);
+}
+
+TEST_F(VideoFrameFactoryImplTest, CreateVideoFrame_OnFrameInfoReady003) {
+  base::MockCallback<VideoFrameFactoryImpl::ImageWithInfoReadyCB>
+      image_ready_cb;
+  FrameInfoHelper::FrameInfo frame_info;
+  frame_info.coded_size = gfx::Size();
+  impl_->image_spec_.coded_size = gfx::Size(1, 1);
+  testing::internal::CaptureStderr();
+  impl_->CreateVideoFrame_OnFrameInfoReady(image_ready_cb.Get(),
+                                           std::move(nullptr), frame_info);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("CreateVideoFrame_OnFrameInfoReady"),
             std::string::npos);
 }
 
@@ -272,12 +291,6 @@ TEST_F(VideoFrameFactoryImplTest,
   task_environment_.RunUntilIdle();
   EXPECT_TRUE(init_cb_called);
   EXPECT_TRUE(init_cb.is_null());
-}
-
-TEST_F(VideoFrameFactoryImplTest, TestSetSurfaceBundle_NullSurfaceBundle) {
-  scoped_refptr<CodecSurfaceBundle> surface_bundle = nullptr;
-  video_frame_factory_->SetSurfaceBundle(surface_bundle);
-  EXPECT_EQ(video_frame_factory_->codec_buffer_wait_coordinator_, nullptr);
 }
 
 TEST_F(VideoFrameFactoryImplTest, CreateVideoFrame_InvalidConfig) {

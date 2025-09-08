@@ -5,13 +5,16 @@
 #ifndef MEDIA_AUDIO_OHOS_AUDIO_OUTPUT_STREAM_H_
 #define MEDIA_AUDIO_OHOS_AUDIO_OUTPUT_STREAM_H_
 
+#include "arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/audio_renderer_adapter.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/task_runner.h"
 #include "base/timer/timer.h"
+#include "base/files/scoped_file.h"
 #include "media/audio/ohos/ohos_audio_manager.h"
+#include "media/audio/ohos/ohos_audio_output_callback.h"
 #include "ohaudio/native_audiorenderer.h"
 #include "ohaudio/native_audiostreambuilder.h"
 
@@ -25,6 +28,7 @@ namespace media {
 using namespace OHOS::NWeb;
 
 class OHOSAudioManager;
+class OHOSAudioOutputCallback;
 
 enum class AudioSessionType {AUTO = 0, AMBIENT = 3};
 
@@ -70,6 +74,24 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   // Call to set audio_render silentMode
   void SetUpAudioSilentState();
+
+  static int32_t AudioRendererOnWriteData(OH_AudioRenderer* renderer,
+                                          void* userData,
+                                          void* buffer,
+                                          int32_t length);
+
+  static int32_t AudioRendererOnError(OH_AudioRenderer* renderer,
+                                      void* userData,
+                                      OH_AudioStream_Result error);
+
+  static int32_t AudioRendererOnInterruptEvent(OH_AudioRenderer* renderer,
+                                              void* userData,
+                                              OH_AudioInterrupt_ForceType type,
+                                              OH_AudioInterrupt_Hint hint);
+
+  static void AudioRendererOutputDeviceChangeCallback(OH_AudioRenderer* renderer,
+                                                      void* userData,
+                                                      OH_AudioStream_DeviceChangeReason reason);
 
  private:
   ~OHOSAudioOutputStream() override;
@@ -143,6 +165,12 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   int audioResumeInterval_ = 0;
 
   int write_data_counts_ = 0;
+
+  base::ScopedFILE dumpFile_ = nullptr;
+
+  size_t callback_index_ = 0;
+
+  static CallbackSharedWrapper<OHOSAudioOutputCallback> callback_wrapper_;
 
   base::WeakPtrFactory<OHOSAudioOutputStream> weak_factory_{this};
 };

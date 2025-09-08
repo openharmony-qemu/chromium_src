@@ -41,4 +41,7 @@ arkweb_content_browser_mediasession_sources = [
 
   "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_focus_controller.cc",
   "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_focus_controller.h",
+
+  "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_output_callback.cc",
+  "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_output_callback.h",
 ]

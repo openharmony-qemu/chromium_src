@@ -24,6 +24,7 @@ SetKeepScreenLockHandle::SetKeepScreenLockHandle(int32_t id,
 void SetKeepScreenLockHandle::AddScreenLockHandle(
     int32_t id,
     const SetKeepScreenOn& handle) {
+  std::lock_guard<std::mutex> lock(handle_map_mutex_);
   auto iter = handle_map_.find(id);
   if (iter != handle_map_.end()) {
     return;
@@ -34,6 +35,7 @@ void SetKeepScreenLockHandle::AddScreenLockHandle(
 }
 
 void SetKeepScreenLockHandle::RemoveScreenLockHandle(int32_t id) {
+  std::lock_guard<std::mutex> lock(handle_map_mutex_);
   auto iter = handle_map_.find(id);
   if (iter == handle_map_.end()) {
     LOG(DEBUG) << "nweb screen remove handle id not found";
@@ -51,10 +53,12 @@ void SetKeepScreenLockHandle::RemoveScreenLockHandle(int32_t id) {
 }
 
 bool SetKeepScreenLockHandle::IsEmpty() {
+  std::lock_guard<std::mutex> lock(handle_map_mutex_);
   return handle_map_.empty();
 }
 
 bool SetKeepScreenLockHandle::Lock(int32_t id) {
+  std::lock_guard<std::mutex> lock(handle_map_mutex_);
   if (id == -1) {
     if (!handle_map_.empty()) {
       screen_lock_count_++;
@@ -91,6 +95,7 @@ bool SetKeepScreenLockHandle::Lock(int32_t id) {
 }
 
 bool SetKeepScreenLockHandle::UnLock(int32_t id) {
+  std::lock_guard<std::mutex> lock(handle_map_mutex_);
   if (id == -1) {
     if (!handle_map_.empty() && screen_lock_count_ > 0 &&
         screen_lock_invalid_id_count_ > 0) {

@@ -27,6 +27,7 @@ public:
         return instance;
     };
     MOCK_METHOD(bool, IsPcDeviceMock, (), ());
+    MOCK_METHOD(bool, IsTabletDeviceMock, (), ());
 };
 
 #ifdef __cplusplus
@@ -34,6 +35,9 @@ extern "C" {
 #endif
 bool __wrap_IsPcDevice() {
     return SystemPropertiesMock::getInstance().IsPcDeviceMock();
+}
+bool __wrap_IsTabletDevice() {
+    return SystemPropertiesMock::getInstance().IsTabletDeviceMock();
 }
 #ifdef __cplusplus
 }

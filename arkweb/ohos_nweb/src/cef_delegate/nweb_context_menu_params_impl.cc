@@ -38,7 +38,7 @@ const std::unordered_map<int, int> kCmTypeFlagMap = {
 };
 
 const std::unordered_map<int, int> kCmMediaTypeMap = {
-    {CM_MEDIATYPE_NONE, CmMt::CM_MT_NONE},
+    {CM_MEDIATYPE_NONE, CmMt::CM_MT_TEXT},
     {CM_MEDIATYPE_IMAGE, CmMt::CM_MT_IMAGE},
     {CM_MEDIATYPE_VIDEO, CmMt::CM_MT_NONE},
     {CM_MEDIATYPE_AUDIO, CmMt::CM_MT_NONE},
@@ -102,7 +102,7 @@ const std::unordered_map<int, int> kCmSourceTypeMap = {
     {CM_SOURCETYPE_TOUCH, CmSt::CM_ST_NONE},
     {CM_SOURCETYPE_TOUCH_EDIT_MENU, CmSt::CM_ST_NONE},
     {CM_SOURCETYPE_LONG_PRESS, CmSt::CM_ST_LONG_PRESS},
-    {CM_SOURCETYPE_LONG_TAP, CmSt::CM_ST_NONE},
+    {CM_SOURCETYPE_LONG_TAP, CmSt::CM_ST_LONG_TAP},
     {CM_SOURCETYPE_TOUCH_HANDLE, CmSt::CM_ST_NONE},
     {CM_SOURCETYPE_STYLUS, CmSt::CM_ST_NONE},
     {CM_SOURCETYPE_ADJUST_SELECTION, CmSt::CM_ST_NONE},

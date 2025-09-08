@@ -376,9 +376,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
   void SetNWebId(uint32_t nwebId) override;
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
   void EnableAppLinking(bool enable) override;
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
   void StoreWebArchive(
       const std::string& base_name,
@@ -594,6 +594,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_PRINT)
   void SetToken(void* token) override;
   void* CreateWebPrintDocumentAdapter(const std::string& jobName) override;
+  void* CreateWebPrintDocumentAdapterV2(const std::string& jobName) override;
   void SetPrintBackground(bool enable) override;
   bool GetPrintBackground() override;
 #endif  // BUILDFLAG(ARKWEB_PRINT)
@@ -823,6 +824,12 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void WebExtensionContextMenuReloadFocusedFrame() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void WebExtensionContextMenuGetFocusedFrameInfo(
+      int32_t& frame_id,
+      std::string& frame_url) override;
+#endif
+
   void SetSurfaceDensity(const double& density) override;
 
   void OpenDevtoolsWith(
@@ -861,6 +868,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                              bool recursive, IsolatedWorld world,
                              OnReceiveValueCallback callback) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) override;
+void AbortDistill() override;
+#endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   void SetErrorPageEnabled(bool enable) override;

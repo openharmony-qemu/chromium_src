@@ -897,6 +897,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(bool, WebExtensionContextMenuIsIframe, (), (override));
   MOCK_METHOD(void, WebExtensionContextMenuReloadFocusedFrame, (), (override));
 #endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  MOCK_METHOD(void,
+              WebExtensionContextMenuGetFocusedFrameInfo,
+              (int32_t& frame_id, std::string& frame_url),
+              (override));
+#endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   MOCK_METHOD(bool, SetFocusByPosition, (float x, float y), (override));
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -1221,6 +1227,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
                IsolatedWorld world,
                OnReceiveValueCallback callback),
               (override));
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  MOCK_METHOD(void, Distill, (const std::string& guid, const DistillOptions& distill_options,
+    DistillCallback callback), (override));
+  MOCK_METHOD(void, AbortDistill, (), (override));
+#endif // ARKWEB_READER_MODE
 };
 }  // namespace OHOS::NWeb
 

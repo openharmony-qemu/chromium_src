@@ -21,7 +21,7 @@
 #include <ohaudio/native_audiostream_base.h>
 #include <ohaudio/native_audiostreambuilder.h>
 #include <ohaudio/native_audio_common.h>
-
+#include "arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper.h"
 
 namespace OHOS::NWeb {
 
@@ -35,7 +35,7 @@ class AudioCapturerAdapterImpl : public AudioCapturerAdapter {
 public:
     AudioCapturerAdapterImpl() = default;
 
-    ~AudioCapturerAdapterImpl() override = default;
+    ~AudioCapturerAdapterImpl() override;
 
     int32_t Create(const std::shared_ptr<AudioCapturerOptionsAdapter> capturerOptions,
         std::string cachePath = std::string()) override;
@@ -67,9 +67,12 @@ public:
 
     static OH_AudioStream_SourceType GetAudioSourceType(AudioAdapterSourceType SourceType);
 
+    static int32_t OnReadData(OH_AudioCapturer* capturer, void* userData, void* buffer, int32_t length);
+
 private:
-    OH_AudioCapturer* audio_capturer_ = nullptr; // todo 释放
-    std::shared_ptr<UserDataCallBack> userDataCallBack_;
+    OH_AudioCapturer* audio_capturer_ = nullptr;
+    size_t callback_index_ = 0;
+    static CallbackSharedWrapper<UserDataCallBack> callback_wrapper_;
 };
 }  // namespace OHOS::NWeb
 

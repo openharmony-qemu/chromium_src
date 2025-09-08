@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
+#include "clip_board_image_data_adapter_impl.h"
 
 namespace OHOS::NWeb {
 

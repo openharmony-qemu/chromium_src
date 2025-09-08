@@ -2340,6 +2340,9 @@ error::Error WebGPUDecoderImpl::HandleDissociateMailboxForPresent(
   // The compositor renders uninitialized textures as red. If the texture is
   // not initialized, we need to explicitly clear its contents to black.
   if (!is_initialized && !ClearSharedImageWithSkia(mailbox)) {
+#if BUILDFLAG(IS_ARKWEB)
+    LOG(ERROR) << "Fail to clear skia image representation.";
+#endif
     return error::kInvalidArguments;
   }
   return error::kNoError;

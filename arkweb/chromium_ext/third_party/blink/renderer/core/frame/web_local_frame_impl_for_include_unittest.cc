@@ -70,4 +70,14 @@ TEST_F(WebLocalFrameImplTest, OnDataDetectorSelectTextWithValidView) {
   OnDataDetectorSelectText();
 }
 
+TEST_F(WebLocalFrameImplTest, SelectRangeV2WithValidView) {
+  gfx::Point position = gfx::Point(10, 10);
+  ASSERT_NO_FATAL_FAILURE(frame_impl_->SelectRangeV2(position, true););
+}
+
+TEST_F(WebLocalFrameImplTest, SelectRangeV2WithValidViewAndBaseFalse) {
+  gfx::Point position = gfx::Point(10, 10);
+  ASSERT_NO_FATAL_FAILURE(frame_impl_->SelectRangeV2(position, false););
+}
+
 }  // namespace blink

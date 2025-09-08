@@ -109,15 +109,29 @@ NWebContextMenusItem GetNWebContextMenusItem(extensions::MenuItem* menu_item) {
   item.type = GetTypeStr(menu_item->type());
   item.visible = menu_item->visible();
   item.extensionId = menu_item->extension_id();
+  return item;
+}
+
+NWebContextMenusItemV2 GetNWebContextMenusItemV2(extensions::MenuItem* menu_item) {
+  NWebContextMenusItemV2 item;
+  item.item = GetNWebContextMenusItem(menu_item);
   item.isOffTheRecord = menu_item->incognito();
   return item;
 }
 
 void GetFlattenedMenuItemSubtree(std::vector<NWebContextMenusItem>& items,
-                                                  const std::unique_ptr<extensions::MenuItem>& item) {
+                                 const std::unique_ptr<extensions::MenuItem>& item) {
   items.push_back(GetNWebContextMenusItem(item.get()));
   for (const auto& child : item->children()) {
     GetFlattenedMenuItemSubtree(items, child);
+  }
+}
+
+void GetFlattenedMenuItemSubtreeV2(std::vector<NWebContextMenusItemV2>& items,
+                                   const std::unique_ptr<extensions::MenuItem>& item) {
+  items.push_back(GetNWebContextMenusItemV2(item.get()));
+  for (const auto& child : item->children()) {
+    GetFlattenedMenuItemSubtreeV2(items, child);
   }
 }
 
@@ -302,6 +316,26 @@ std::vector<NWebContextMenusItem> ExtensionRegistryInfoManager::GetAllExtensionC
   return items;
 }
 
+std::vector<NWebContextMenusItemV2> ExtensionRegistryInfoManager::GetAllExtensionContextMenusV2(
+    const std::string& extensionId) const {
+  std::vector<NWebContextMenusItemV2> items;
+  extensions::MenuManager* menu_manager = extensions::MenuManager::Get(browser_context_);
+  if (!menu_manager) {
+    LOG(ERROR) << "menu_manager is null";
+    return items;
+  }
+  for (const auto& id : menu_manager->ExtensionIds()) {
+    if (extensionId == id.extension_id) {
+      const extensions::MenuItem::OwnedList* top_items = menu_manager->MenuItems(id);
+      for (const std::unique_ptr<extensions::MenuItem>& item : *top_items) {
+        GetFlattenedMenuItemSubtreeV2(items, item);
+      }
+    }
+  }
+  LOG(DEBUG) << "CefMenuManager::GetAllExtensionContextMenusV2 items.size:" << items.size();
+  return items;
+}
+
 void DeleteExtensionActionInfoIcon(WebExtensionActionInfo& action_info) {
   if (!action_info.icon.has_value()) {
     return;
@@ -401,6 +435,7 @@ void ExtensionRegistryInfoManager::NotifyOnExtensionLoaded(const Extension& exte
       info.info.contextMenus = GetAllExtensionContextMenus(extension.id());
       GetExtensionManifestInfo(extension, info.manifest_info);
       info.is_incognito_enabled = util::IsIncognitoEnabled(extension.id(), browser_context_);
+      info.contextMenusV2 = GetAllExtensionContextMenusV2(extension.id());
       NWebExtensionManagerDispatcher::OnExtensionLoadedByPb(info);
       DeleteExtensionActionInfoIcon(info.info.action);
     } else {
@@ -489,11 +524,21 @@ void ExtensionRegistryInfoManager::OnExtensionWillBeInstalled(content::BrowserCo
 
 void ExtensionRegistryInfoManager::OnExtensionInstalled(content::BrowserContext* browser_context,
                                                         const Extension* extension,
-                                                        bool is_update) {}
+                                                        bool is_update) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  NWebExtensionManagerDispatcher::OnExtensionInstalledCallBack(
+      extension->id(), extension->creation_flags(), static_cast<int>(extension->manifest()->location()));
+#endif
+}
 
 void ExtensionRegistryInfoManager::OnExtensionUninstalled(content::BrowserContext* browser_context,
                                                           const Extension* extension,
-                                                          UninstallReason reason) {}
+                                                          UninstallReason reason) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    NWebExtensionManagerDispatcher::OnExtensionUninstalledCallBack(
+      extension->id(), static_cast<int>(reason));
+#endif
+}
 
 void ExtensionRegistryInfoManager::OnExtensionUninstallationDenied(content::BrowserContext* browser_context,
                                                                    const Extension* extension) {}

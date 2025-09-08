@@ -33,8 +33,9 @@
 
 namespace OHOS::NWeb {
 PasteDataRecordAdapterImpl::PasteDataRecordAdapterImpl(
-    OH_UdmfRecord* record)
-    : record_(record) {}
+    OH_UdmfRecord* record, bool need_destory_record)
+    : record_(record),
+      need_destory_record_(need_destory_record) {}
 
 PasteDataRecordAdapterImpl::PasteDataRecordAdapterImpl(
     const std::string& mimeType)
@@ -54,6 +55,9 @@ PasteDataRecordAdapterImpl::PasteDataRecordAdapterImpl(
 
 PasteDataRecordAdapterImpl::~PasteDataRecordAdapterImpl()
 {
+    if (!need_destory_record_) {
+        return;
+    }
     OH_UdmfRecord_Destroy(record_);
 }
 
@@ -890,7 +894,7 @@ std::shared_ptr<PasteDataRecordAdapter> PasteDataAdapterImpl::GetRecordAt(
         WVLOG_E("GetRecord failed.");
         return nullptr;
     }
-    return std::make_shared<PasteDataRecordAdapterImpl>(record);
+    return std::make_shared<PasteDataRecordAdapterImpl>(record, false);
 }
 
 std::size_t PasteDataAdapterImpl::GetRecordCount()
@@ -908,7 +912,7 @@ PasteRecordVector PasteDataAdapterImpl::AllRecords()
     unsigned int count;
     OH_UdmfRecord** records = OH_UdmfData_GetRecords(data_, &count);
     for (unsigned int i = 0; i < count; i++) {
-        result.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i]));
+        result.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i], false));
     }
     return result;
 }
@@ -927,6 +931,10 @@ PasteBoardClientAdapterImpl::PasteBoardClientAdapterImpl()
 PasteBoardClientAdapterImpl :: ~PasteBoardClientAdapterImpl()
 {
     OH_Pasteboard_Destroy(pasteboard_);
+    if (callbackIndex_ > 0) {
+        callbackWrapper_.Clear(callbackIndex_);
+        callbackIndex_ = 0;
+    }
 }
 
 Udmf_ShareOption PasteBoardClientAdapterImpl::TransitionCopyOption(CopyOptionMode copyOption)
@@ -988,7 +996,7 @@ bool PasteBoardClientAdapterImpl::GetPasteData(PasteRecordVector& data)
         return false;
     }
     for (unsigned int i = 0; i < count; i++) {
-        data.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i]));
+        data.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i], false));
     }
     isLocalPaste_ = OH_UdmfData_IsLocal(getData);
     if (params != nullptr) {
@@ -1070,14 +1078,17 @@ uint32_t PasteBoardClientAdapterImpl::GetTokenId()
     return tokenId_;
 }
 
+CallbackSharedWrapper<PasteBoardCallback> PasteBoardClientAdapterImpl::callbackWrapper_;
+
 void PasteBoardNotify(void* context, Pasteboard_NotifyType type)
 {
     if (context == nullptr) {
         WVLOG_E("PasteBoardNotify failed, context is NULL");
         return;
     }
+    size_t callbackIndex = reinterpret_cast<size_t>(context);
     std::shared_ptr<PasteBoardCallback> pasteBoardCallback =
-                *(static_cast<std::shared_ptr<PasteBoardCallback>*>(context));
+        PasteBoardClientAdapterImpl::callbackWrapper_.GetCallback(callbackIndex);
     pasteBoardCallback->callback->OnPasteboardChanged();
 }
 
@@ -1092,8 +1103,13 @@ int32_t PasteBoardClientAdapterImpl::AddPasteboardChangedObserver(
     static int32_t count = 0;
     int32_t id = -1;
     if (callback) {
-        pasteCallback_ = std::make_shared<PasteBoardCallback>();
-        pasteCallback_->callback = callback;
+        std::shared_ptr<PasteBoardCallback> pasteCallback = std::make_shared<PasteBoardCallback>();
+        pasteCallback->callback = callback;
+        if (callbackIndex_ > 0) {
+            callbackWrapper_.Clear(callbackIndex_);
+            callbackIndex_ = 0;
+        }
+        callbackIndex_ = callbackWrapper_.AddCallback(pasteCallback);
         OH_PasteboardObserver* observer = nullptr;
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -1102,7 +1118,7 @@ int32_t PasteBoardClientAdapterImpl::AddPasteboardChangedObserver(
                 return -1;
             }
 
-            auto ret = OH_PasteboardObserver_SetData(observer, static_cast<void*>(&pasteCallback_),
+            auto ret = OH_PasteboardObserver_SetData(observer, reinterpret_cast<void*>(callbackIndex_),
                                                      PasteBoardNotify, PasteBoardFinalize);
             if (ret != ERR_OK) {
                 WVLOG_E("PasteboardObserver SetData failed. error code is : %{public}d", ret);

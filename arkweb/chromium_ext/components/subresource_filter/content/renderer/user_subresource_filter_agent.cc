@@ -417,12 +417,12 @@ void UserSubresourceFilterAgent::WillCreateWorkerFetchContext(
 }
 
 void UserSubresourceFilterAgent::OnOverlayPopupAdDetected() {
-  GetSubresourceFilterHost()->OnAdsViolationTriggered(
+  GetSubresourceFilterHost()->OnUserAdsViolationTriggered(
       subresource_filter::mojom::AdsViolation::kOverlayPopupAd);
 }
 
 void UserSubresourceFilterAgent::OnLargeStickyAdDetected() {
-  GetSubresourceFilterHost()->OnAdsViolationTriggered(
+  GetSubresourceFilterHost()->OnUserAdsViolationTriggered(
       subresource_filter::mojom::AdsViolation::kLargeStickyAd);
 }
 

@@ -18,7 +18,7 @@
 #include "third_party/blink/renderer/core/testing/core_unit_test_helper.h"
 #include "third_party/blink/renderer/platform/heap/persistent.h"
 #include "third_party/blink/renderer/platform/testing/testing_platform_support.h"
-#include "third_party/blink/renderer/platform/wtf/test/wtf_string.h"
+#include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 
 
 namespace blink {
@@ -38,7 +38,7 @@ protected:
     void SetUp() override {
         EnableCompositing();
         RenderingTest::SetUp();
-        web_view_helper_.Inirialize();
+        web_view_helper_.Initialize();
         dummy_page_holder_ = std::make_unique<DummyPageHolder>();
         local_frame_ = &dummy_page_holder_->GetFrame();
         handler_ = std::make_unique<ArkWebLocalFrameMojoHandlerExt>(*local_frame_);

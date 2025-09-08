@@ -232,6 +232,7 @@
 #endif
 
 #if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/renderer/renderer_blink_platform_impl_ext.h"
 #include "arkweb/chromium_ext/content/renderer/render_thread_impl_ext.cc"
 #endif
 
@@ -894,7 +895,11 @@ void RenderThreadImpl::InitializeWebKit(mojo::BinderMap* binders) {
 #endif
 
   blink_platform_impl_ =
+#if BUILDFLAG(IS_ARKWEB)
+      std::make_unique<RendererBlinkPlatformImplExt>(main_thread_scheduler_.get());
+#else
       std::make_unique<RendererBlinkPlatformImpl>(main_thread_scheduler_.get());
+#endif
   // This, among other things, enables any feature marked "test" in
   // runtime_enabled_features. It is run before
   // SetRuntimeFeaturesDefaultsAndUpdateFromArgs() so that command line
@@ -1940,4 +1945,14 @@ void RenderThreadImpl::OnMemoryPressureFromBrowserReceived(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void RenderThreadImpl::UpdateReaderModeConfig(
+    blink::mojom::ReaderModeConfigPtr config) {
+  reader_mode_config_ = std::move(config);
+}
+
+const blink::mojom::ReaderModeConfig* RenderThreadImpl::GetReaderModeConfig() {
+  return reader_mode_config_.get();
+}
+#endif  // ARKWEB_READER_MODE
 }  // namespace content

@@ -76,6 +76,10 @@ class NWebEngineImpl : public NWebEngine {
 
   RenderProcessMode GetRenderProcessMode() override;
 
+  int32_t SetSiteIsolationMode(SiteIsolationMode mode) override;
+
+  SiteIsolationMode GetSiteIsolationMode() override;
+
   void ClearPrefetchedResource(
       const std::vector<std::string>& cache_key_list) override;
 

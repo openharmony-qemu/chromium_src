@@ -66,6 +66,8 @@ virtual void OnNativeEmbedFirstFramePaint(
     const std::string& embed_id_attribute) {}
 virtual void OnLayerRectVisibilityChange(const std::string& embed_id,
                                          bool visibility) {}
+virtual void OnNativeEmbedObjectParamChange(
+    const NativeEmbedParamDataInfo& native_param_info) {}
 #endif
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
@@ -128,5 +130,10 @@ virtual void OnPdfLoadEvent(int32_t result, const std::string& url) {}
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
 virtual bool OnStartBackgroundTask(int32_t type, const std::string& message) { return true; }
 #endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+virtual void OnIsPageDistillable(int page_type, const std::string& distillable_page_url, const std::string& title) {}
+virtual bool IsForDistillerPage();
+#endif
 
 #endif  // ARKWEB_CHROMIUM_EXT_CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_DELEGATE_FOR_INCLUDE_H_

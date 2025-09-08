@@ -58,26 +58,7 @@ void SidePanelOpenFunction::OnOpen(
   }
 }
 
-void SidePanelSetOptionsFunction::OnSetOptions(
-      const base::WeakPtr<SidePanelSetOptionsFunction>& function,
-      const std::optional<std::string>& error) {
-  DCHECK(function);
-  if (!function) {
-    LOG(ERROR) << "OnSetOptions is empty!!!!";
-    return;
-  }
-  if (error) {
-    function->Respond(function->Error(*error));
-  } else {
-    function->Respond(function->NoArguments());
-  }
-  if (!function->call_on_set_options_) {
-    LOG(INFO) << "SidePanelSetOptionsFunction Release";
-    function->Release();
-  }
-}
-
-ExtensionFunction::ResponseAction SidePanelSetOptionsFunction::RunFunctionForInclude(
+void SidePanelSetOptionsFunction::RunFunctionForInclude(
     std::optional<api::side_panel::SetOptions::Params>& params) {
   LOG(INFO) << "SidePanelSetOptionsFunction::RunFunction";
   std::optional<std::string> absolute_path;
@@ -87,7 +68,6 @@ ExtensionFunction::ResponseAction SidePanelSetOptionsFunction::RunFunctionForInc
  
   if (IsNativeApiEnable()) {
     if (NWebExtensionSidePanelCefDelegate::GetInstance()->HasOnSetOptionsByPbCallback()) {
-      call_on_set_options_ = true;
       ExtensionSidePanelSetOptions options;
       options.extensionId = extension()->id();
       options.enabled = params->options.enabled;
@@ -98,20 +78,7 @@ ExtensionFunction::ResponseAction SidePanelSetOptionsFunction::RunFunctionForInc
         options.contextType = context_type;
       }
       options.includeIncognitoInfo = include_incognito_information();
-      bool success = NWebExtensionSidePanelCefDelegate::GetInstance()->OnSetOptionsByPb(
-           options, base::BindRepeating(&SidePanelSetOptionsFunction::OnSetOptions,
-                                        weak_ptr_factory_.GetWeakPtr()));
-      call_on_set_options_ = false;
-      if (did_respond()) {
-        LOG(INFO) << "SidePanelSetOptionsFunction did_respond";
-        return AlreadyResponded();
-      }
- 
-      if (success) {
-        AddRef();
-        LOG(INFO) << "SidePanelSetOptionsFunction AddRef";
-        return RespondLater();
-      }
+      NWebExtensionSidePanelCefDelegate::GetInstance()->OnSetOptionsByPb(options);
     } else {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
       NWebExtensionSidePanelDispatcher::OnSetOptionsNative(
@@ -126,7 +93,6 @@ ExtensionFunction::ResponseAction SidePanelSetOptionsFunction::RunFunctionForInc
         absolute_path);
 #endif // ARKWEB_NWEB_EX
   }
-  return RespondNow(NoArguments());
 }
 
 ExtensionFunction::ResponseAction SidePanelOpenFunction::RunOpenFunctionForInclude(

@@ -96,7 +96,7 @@ std::string SkiaMemoryTracer::ProcessType() {
 const char* SkiaMemoryTracer::ProcessResourceName() {
   const char* resourceName = MapName(currentElement_.c_str());
   if (categoryKey_ != nullptr) {
-    auto categoryResult = currentValues_.find(categoryKey_);
+    auto categoryResult = currentValues_.find(categoryKey_.get());
     if (categoryResult != currentValues_.end()) {
       resourceName = categoryResult->second.units.c_str();
     }

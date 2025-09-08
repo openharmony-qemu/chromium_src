@@ -98,9 +98,10 @@ TEST_F(GpuChannelExtOHOSTest, test005) {
     base::ohos::BlanklessDumpInfo info;
     std::unordered_map<uint64_t, base::ohos::BlanklessDumpInfo> blankless_dump_info_map_;
     const uint64_t kValidFrameSinkId = 12345;
+    uint32_t client_id = 123;
     valid_info.dump_enabled = true;
     blankless_dump_info_map_[kValidFrameSinkId] = valid_info;
-    bool result = gpu_channel_ext_->GetBlanklessDumpInfoAndDisableDump(kValidFrameSinkId, info);
+    bool result = gpu_channel_ext_->GetBlanklessDumpInfoAndDisableDump(client_id, kValidFrameSinkId, info);
     EXPECT_FALSE(result);
 }
 

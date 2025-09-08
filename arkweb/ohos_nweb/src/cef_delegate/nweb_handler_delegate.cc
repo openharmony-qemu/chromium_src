@@ -116,7 +116,7 @@
 #include "base/strings/string_number_conversions.h"
 #endif
 
-#include "ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
+#include "arkweb/chromium_ext/ui/base/clipboard/ohos/clip_board_image_data_adapter_impl.h"
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 #include "cef/ohos_cef_ext/include/cef_media_player_listener.h"
@@ -614,7 +614,7 @@ void NWebHandlerDelegate::OnDestroy() {
 #if BUILDFLAG(ARKWEB_JSPROXY)
   RemoveTransientJavaScriptObject();
 #endif
-  if (main_browser_) {
+  if (main_browser_ && main_browser_->GetHost()) {
     main_browser_->GetHost()->CloseBrowser(true);
     main_browser_ = nullptr;
   }
@@ -985,6 +985,9 @@ void NWebHandlerDelegate::InjectJsToWebInner(
     JsRunTime time,
     ScriptItems& scriptItems,
     ScriptItemsByOrder& scriptItemsByOrder) {
+  if (!main_browser_ || !main_browser_->GetHost()) {
+    return;
+  } 
   switch (time) {
     case JsRunTime::Start:
       scriptItems = preference_delegate_->GetJavaScriptOnDocumentStart();
@@ -1038,6 +1041,9 @@ void NWebHandlerDelegate::InjectJsToWeb(JsRunTime time) {
       CefString cefRule;
       cefRule.FromString(rule);
       scriptRules.push_back(cefRule);
+    }
+    if (!main_browser_ || !main_browser_->GetHost()) {
+      return;
     }
     switch (time) {
       case JsRunTime::Start:
@@ -1289,7 +1295,7 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
     }
   } else {
     content::GpuProcessHost* host = content::GpuProcessHost::Get();
-    if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr) {
+    if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr && main_browser_->GetHost()) {
       host->gpu_host()->DestroyNativeWindow(main_browser_->GetHost()->GetAcceleratedWidget(false));
     }
     OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
@@ -1558,7 +1564,7 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
   isWebPaintedForSnapshot_ = false;
 #endif
 
-  if (nweb_handler_ != nullptr) {
+  if (nweb_handler_ != nullptr && browser->GetHost()) {
     nweb_handler_->OnPageLoadBegin(url.ToString());
     browser->GetHost()->OnTextSelected(false);
   }
@@ -2267,7 +2273,7 @@ bool NWebHandlerDelegate::OnBeforeDownload(
     return false;
   }
 
-  if (download_listener_ != nullptr) {
+  if (download_listener_ != nullptr && browser->GetHost()) {
     download_listener_->OnDownloadStart(
         download_item->GetURL().ToString(),
         browser->GetHost()->DefaultUserAgent(),
@@ -4118,6 +4124,10 @@ int NWebHandlerDelegate::ProcessNativeProxyResultThread(
 
   auto callback = methodMap[method];
   char** ptr = (char**)malloc(sizeof(char*) * args->GetSize());
+  if(ptr == nullptr) {
+    // malloc failed
+    return 1;    
+  }
   for (size_t i = 0; i < args->GetSize(); i++) {
     CefValueType type = args->GetType(i);
     CefRefPtr<CefValue> value = args->GetValue(i);
@@ -4399,6 +4409,11 @@ char* NWebHandlerDelegate::FlowbufStrAtIndex(void* mem,
   }
 
   *strLen = *(header + (i * INDEX_SIZE) + 1) - 1;
+  if ((offset + *strLen) > MAX_FLOWBUF_DATA_SIZE) {
+    LOG(ERROR) << "offset bigger than MAX_FLOWBUF_DATA_SIZE";
+    *argIndex = -1;
+    return nullptr;
+  }
   *argIndex = *entry;
 
   char* dataSegment = static_cast<char*>(mem) + HEADER_SIZE;
@@ -4445,6 +4460,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
   size_t argsSize = args->GetSize();
   auto callback = methodMap[method];
   int flowbufSize = GetFlowbufCount(ashmem);
+  int dataListSize = argsSize + flowbufSize;
   std::vector<std::vector<uint8_t>> dataList(argsSize +
                                              static_cast<size_t>(flowbufSize));
   std::vector<size_t> dataSize(argsSize + static_cast<size_t>(flowbufSize));
@@ -4456,7 +4472,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
   char* flowbufStr =
       FlowbufStrAtIndex(ashmem, flowbufIndex, &argIndex, &strLen);
   flowbufIndex++;
-  while (argIndex == curIndex) {
+  while (curIndex < dataListSize && argIndex == curIndex) {
     std::string flowbuf_stdstr(flowbufStr, strLen);
     dataList[curIndex] =
         std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
@@ -4467,7 +4483,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
   }
 
   for (size_t i = 0; i < argsSize; i++) {
-    while (argIndex == curIndex) {
+    while (curIndex < dataListSize && argIndex == curIndex) {
       std::string flowbuf_stdstr(flowbufStr, strLen);
       dataList[curIndex] =
           std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
@@ -4511,7 +4527,7 @@ int NWebHandlerDelegate::ProcessNativeProxyResultNewFlowbuf(
     curIndex++;
   }
 
-  while (argIndex == curIndex) {
+  while (curIndex < dataListSize && argIndex == curIndex) {
     std::string flowbuf_stdstr(flowbufStr, strLen);
     dataList[curIndex] =
         std::vector<uint8_t>(flowbuf_stdstr.begin(), flowbuf_stdstr.end());
@@ -5265,6 +5281,34 @@ void NWebHandlerDelegate::HideMagnifier() {
   if (nweb_handler_) {
     nweb_handler_->HideMagnifier();
   }
+}
+
+bool NWebHandlerDelegate::IsShowHandle() {
+  return nweb_handler_ && nweb_handler_->IsShowHandle();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void NWebHandlerDelegate::OnIsPageDistillable(int page_type,
+                                            const std::string& distillable_page_url, const std::string& title) {
+  LOG(INFO) << "NWebHandlerDelegate::OnIsPageDistillable page_type:" << page_type
+            << " distillablePageUrl:" << distillable_page_url.c_str() << " title:" << title.c_str();
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    dispatcher_.OnIsPageDistillable(page_type, distillable_page_url.c_str(), title.c_str());
+    return;
+  }
+#endif  // OHOS_NWEB_EX
+  if (!web_app_client_extension_listener_) {
+    LOG(WARNING) << "OnIsPageDistillable failed, no listener";
+    return;
+  }
+  if (!web_app_client_extension_listener_->OnIsPageDistillable) {
+    LOG(WARNING) << "OnIsPageDistillable failed, no function";
+    return;
+  }
+  web_app_client_extension_listener_->OnIsPageDistillable(
+      web_app_client_extension_listener_->nweb_id, page_type, distillable_page_url.c_str(), title.c_str());
 }
 #endif
 

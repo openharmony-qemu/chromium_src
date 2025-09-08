@@ -61,6 +61,10 @@
 #include "ui/gfx/geometry/size.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "capi/nweb_extension_distill_item.h"
+#endif // ARKWEB_READER_MODE
+
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -529,6 +533,7 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_PRINT)
   virtual void SetToken(void* token) = 0;
   virtual void* CreateWebPrintDocumentAdapter(const std::string& jobName) = 0;
+  virtual void* CreateWebPrintDocumentAdapterV2(const std::string& jobName) = 0;
   virtual void SetPrintBackground(bool enable) = 0;
   virtual bool GetPrintBackground() = 0;
 #endif  // BUILDFLAG(ARKWEB_PRINT)
@@ -799,9 +804,9 @@ class NWebDelegateInterface
   virtual bool IsMixedContentAutoUpgradesEnabled() = 0;
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
   virtual void EnableAppLinking(bool enable) = 0;
-#endif
+#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
 
 #if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
   virtual void EnableMediaNetworkTrafficPrompt(bool enable) = 0;
@@ -837,6 +842,12 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_EX_REFRESH_IFRAME)
   virtual bool WebExtensionContextMenuIsIframe() = 0;
   virtual void WebExtensionContextMenuReloadFocusedFrame() = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  virtual void WebExtensionContextMenuGetFocusedFrameInfo(
+      int32_t& frame_id,
+      std::string& frame_url) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -906,6 +917,11 @@ class NWebDelegateInterface
                                      bool recursive, IsolatedWorld world,
                                      OnReceiveValueCallback callback) = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  virtual void Distill(const std::string& guid, const DistillOptions& distill_options, DistillCallback callback) = 0;
+  virtual void AbortDistill() = 0;
+#endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   virtual void SetErrorPageEnabled(bool enable) = 0;

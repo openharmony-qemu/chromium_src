@@ -41,10 +41,6 @@ class ArkwebCopyOutputResultUtils {
   const base::ohos::BlanklessInfo& GetBlanklessInfo() const;
 
   bool IsBlanklessInfoValid() const;
-
-  void SetQuadList(const std::vector<gfx::Rect>& quad_list);
-
-  const std::vector<gfx::Rect>& GetQuadList() const;
 #endif
 
  private:
@@ -53,7 +49,6 @@ class ArkwebCopyOutputResultUtils {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   raw_ptr<SkiaOutputSurfaceImplOnGpu> impl_on_gpu_ = nullptr;
   base::ohos::BlanklessInfo info_;
-  std::vector<gfx::Rect> quad_list_;
 #endif
 };
 

@@ -124,8 +124,11 @@ void NWebExtensionDownloadCefDelegate::EraseCallback(int requestId,
 }
 
 // downloads.open
-bool NWebExtensionDownloadCefDelegate::Open(const int downloadId,
-                                            DownloadsOpenCallback callback) {
+bool NWebExtensionDownloadCefDelegate::Open(
+    const int downloadId,
+    const std::optional<std::string>& contextType,
+    const std::optional<bool>& includeIncognitoInfo,
+    DownloadsOpenCallback callback) {
   LOG(INFO) << "NWebExtensionDownloadCefDelegate::Open downloadId: "
             << downloadId;
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
@@ -139,7 +142,7 @@ bool NWebExtensionDownloadCefDelegate::Open(const int downloadId,
     g_downloads_open_callback_map_[currentRequestId] = std::move(callback);
   }
   bool result = NWebExtensionDownloadsDispatcher::GetInstance().Open(
-      currentRequestId, downloadId);
+      currentRequestId, downloadId, contextType, includeIncognitoInfo);
   if (!result) {
     std::lock_guard<std::mutex> lock(g_downloads_open_callback_map_mutex);
     g_downloads_open_callback_map_.erase(currentRequestId);
@@ -169,6 +172,8 @@ void NWebExtensionDownloadCefDelegate::OpenCallback(int requestId,
 // downloads.remove
 bool NWebExtensionDownloadCefDelegate::RemoveFile(
     const int downloadId,
+    const std::optional<std::string>& contextType,
+    const std::optional<bool>& includeIncognitoInfo,
     DownloadsRemoveFileCallback callback) {
   LOG(INFO) << "NWebExtensionDownloadCefDelegate::RemoveFile downloadId: "
             << downloadId;
@@ -184,7 +189,7 @@ bool NWebExtensionDownloadCefDelegate::RemoveFile(
         std::move(callback);
   }
   bool result = NWebExtensionDownloadsDispatcher::GetInstance().RemoveFile(
-      currentRequestId, downloadId);
+      currentRequestId, downloadId, contextType, includeIncognitoInfo);
   if (!result) {
     std::lock_guard<std::mutex> lock(g_downloads_removefile_callback_map_mutex);
     g_downloads_removefile_callback_map_.erase(currentRequestId);
@@ -212,8 +217,11 @@ void NWebExtensionDownloadCefDelegate::RemoveFileCallback(int requestId,
 }
 
 // downloads.pause
-bool NWebExtensionDownloadCefDelegate::Pause(const int downloadId,
-                                             DownloadsPauseCallback callback) {
+bool NWebExtensionDownloadCefDelegate::Pause(
+    const int downloadId,
+    const std::optional<std::string>& contextType,
+    const std::optional<bool>& includeIncognitoInfo,
+    DownloadsPauseCallback callback) {
   LOG(INFO) << "NWebExtensionDownloadCefDelegate::Pause downloadId: "
             << downloadId;
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
@@ -227,7 +235,7 @@ bool NWebExtensionDownloadCefDelegate::Pause(const int downloadId,
     g_downloads_pause_callback_map_[currentRequestId] = std::move(callback);
   }
   bool result = NWebExtensionDownloadsDispatcher::GetInstance().Pause(
-      currentRequestId, downloadId);
+      currentRequestId, downloadId, contextType, includeIncognitoInfo);
   if (!result) {
     std::lock_guard<std::mutex> lock(g_downloads_pause_callback_map_mutex);
     g_downloads_pause_callback_map_.erase(currentRequestId);
@@ -257,6 +265,8 @@ void NWebExtensionDownloadCefDelegate::PauseCallback(int requestId,
 // downloads.resume
 bool NWebExtensionDownloadCefDelegate::Resume(
     const int downloadId,
+    const std::optional<std::string>& contextType,
+    const std::optional<bool>& includeIncognitoInfo,
     DownloadsResumeCallback callback) {
   LOG(INFO) << "NWebExtensionDownloadCefDelegate::Resume downloadId: "
             << downloadId;
@@ -271,7 +281,7 @@ bool NWebExtensionDownloadCefDelegate::Resume(
     g_downloads_resume_callback_map_[currentRequestId] = std::move(callback);
   }
   bool result = NWebExtensionDownloadsDispatcher::GetInstance().Resume(
-      currentRequestId, downloadId);
+      currentRequestId, downloadId, contextType, includeIncognitoInfo);
   if (!result) {
     std::lock_guard<std::mutex> lock(g_downloads_resume_callback_map_mutex);
     g_downloads_resume_callback_map_.erase(currentRequestId);
@@ -301,6 +311,8 @@ void NWebExtensionDownloadCefDelegate::ResumeCallback(int requestId,
 // downloads.cancel
 bool NWebExtensionDownloadCefDelegate::Cancel(
     const int downloadId,
+    const std::optional<std::string>& contextType,
+    const std::optional<bool>& includeIncognitoInfo,
     DownloadsCancelCallback callback) {
   LOG(INFO) << "NWebExtensionDownloadCefDelegate::Cancel downloadId: "
             << downloadId;
@@ -315,7 +327,7 @@ bool NWebExtensionDownloadCefDelegate::Cancel(
     g_downloads_cancel_callback_map_[currentRequestId] = std::move(callback);
   }
   bool result = NWebExtensionDownloadsDispatcher::GetInstance().Cancel(
-      currentRequestId, downloadId);
+      currentRequestId, downloadId, contextType, includeIncognitoInfo);
   if (!result) {
     std::lock_guard<std::mutex> lock(g_downloads_cancel_callback_map_mutex);
     g_downloads_cancel_callback_map_.erase(currentRequestId);
@@ -345,6 +357,8 @@ void NWebExtensionDownloadCefDelegate::CancelCallback(int requestId,
 // downloads.acceptDanger
 bool NWebExtensionDownloadCefDelegate::AcceptDanger(
     const int downloadId,
+    const std::optional<std::string>& contextType,
+    const std::optional<bool>& includeIncognitoInfo,
     DownloadsAcceptDangerCallback callback) {
   LOG(INFO) << "NWebExtensionDownloadCefDelegate::AcceptDanger downloadId: "
             << downloadId;
@@ -361,7 +375,7 @@ bool NWebExtensionDownloadCefDelegate::AcceptDanger(
         std::move(callback);
   }
   bool result = NWebExtensionDownloadsDispatcher::GetInstance().AcceptDanger(
-      currentRequestId, downloadId);
+      currentRequestId, downloadId, contextType, includeIncognitoInfo);
   if (!result) {
     std::lock_guard<std::mutex> lock(
         g_downloads_accept_danger_callback_map_mutex);
@@ -438,8 +452,11 @@ void NWebExtensionDownloadCefDelegate::SetUiOptionsCallback(int requestId,
 }
 
 // downloads.show
-bool NWebExtensionDownloadCefDelegate::Show(const int downloadId,
-                                            DownloadsShowCallback callback) {
+bool NWebExtensionDownloadCefDelegate::Show(
+    const int downloadId,
+    const std::optional<std::string>& contextType,
+    const std::optional<bool>& includeIncognitoInfo,
+    DownloadsShowCallback callback) {
   LOG(INFO) << "NWebExtensionDownloadCefDelegate::Show downloadId: "
             << downloadId;
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
@@ -453,7 +470,7 @@ bool NWebExtensionDownloadCefDelegate::Show(const int downloadId,
     g_downloads_show_callback_map_[currentRequestId] = std::move(callback);
   }
   bool result = NWebExtensionDownloadsDispatcher::GetInstance().Show(
-      currentRequestId, downloadId);
+      currentRequestId, downloadId, contextType, includeIncognitoInfo);
   if (!result) {
     std::lock_guard<std::mutex> lock(g_downloads_show_callback_map_mutex);
     g_downloads_show_callback_map_.erase(currentRequestId);

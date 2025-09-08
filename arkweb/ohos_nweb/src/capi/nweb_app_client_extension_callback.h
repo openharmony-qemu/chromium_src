@@ -126,6 +126,13 @@ struct NWebAppClientExtensionCallback {
                                 const std::string& message,
                                 int32_t nweb_id);
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void (*OnIsPageDistillable)(int32_t nweb_id,
+                              int page_type,
+                              const char* distillable_page_url,
+                              const char* title);
+#endif
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

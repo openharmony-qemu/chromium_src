@@ -16,7 +16,10 @@
 #
 
 components_viz_host_unittests_ext = {
-  sources = [ "//arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils_unittest.cc" ]
+  sources = [
+    "//arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils_unittest.cc",
+    "//arkweb/chromium_ext/components/viz/host/gpu_host_impl_utils_unittests.cc"
+   ]
   sources_del = []
   deps = [ "//arkweb/build/features" ]
 }

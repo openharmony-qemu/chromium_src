@@ -133,6 +133,10 @@ void TouchSelectionControllerExt::OnInsertionChangedExt(const gfx::SelectionBoun
     UpdateHandleLayoutIfNecessary();
   }
 }
+
+bool TouchSelectionController::IsShowHandle() {
+  return client_ && client_->IsShowHandle();
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -180,8 +184,6 @@ bool TouchSelectionControllerExt::IsContinuousEvent(const PreTouchInfo& first_do
 void TouchSelectionControllerExt::SetTouchNumsForHandle(const MotionEvent& event) {
   int32_t continuous_touch_nums = GetTouchNums(event);
   if (insertion_handle_) {
-    insertion_handle_->AsTouchHandleExt()->SetIsSingleHandle(active_status_ ==
-                                                       INSERTION_ACTIVE);
     insertion_handle_->SetTouchNums(continuous_touch_nums);
   }
   if(start_selection_handle_)

@@ -33,3 +33,7 @@
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "ohos_nweb/src/capi/web_extension_tab_items.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "components/dom_distiller/content/common/mojom/distillability_service.mojom.h"
+#endif  // ARKWEB_READER_MODE

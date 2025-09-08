@@ -24,7 +24,7 @@ class CaretDisplayItemClient;
 class LayoutBlock;
 class GraphicsContext;
 
-class CORE_EXPORT CaretDisplayItemClientUtils {
+class CORE_EXPORT CaretDisplayItemClientUtils : public GarbageCollected<CaretDisplayItemClientUtils> {
  public:
   CaretDisplayItemClientUtils(
       CaretDisplayItemClient* caret_display_item_client);
@@ -35,8 +35,9 @@ class CORE_EXPORT CaretDisplayItemClientUtils {
                          const Color& color);
   bool IsViewportScale(LayoutBlock* layout_block);
 #endif  // BUILDFLAG(ARKWEB_MENU)
+  void Trace(Visitor*) const;
  private:
-  CaretDisplayItemClient* caret_display_item_client_ = nullptr;
+  Member<CaretDisplayItemClient> caret_display_item_client_;
   bool on_scale_ = false;
 };
 }  // namespace blink

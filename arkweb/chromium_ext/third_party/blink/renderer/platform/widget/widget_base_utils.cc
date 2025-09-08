@@ -53,44 +53,7 @@ WidgetBaseUtils::WidgetBaseUtils(WidgetBase* widget_base) : widget_base_(widget_
 // LCOV_EXCL_STOP
 
 #if BUILDFLAG(IS_ARKWEB)
-static void GetThreadIdsAndReport(std::vector<base::PlatformThreadId>& workersTids,
-                                       bool is_created) {
-  std::vector<int32_t> thread_ids;
-  for (auto& tid : workersTids) {
-    thread_ids.push_back(tid );
-  }
-  workersTids.clear();
-
-  auto* thread = content::ChildThreadImpl::current();
-  if (thread) {
-    auto host = thread->child_process_host();
-    auto status = is_created ? OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED :
-                               OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED;
-    host->ReportKeyThreadIds(static_cast<int32_t>(status),
-        base::GetCurrentRealPid(), thread_ids,
-        static_cast<int32_t>(OHOS::NWeb::ResSchedRoleAdapter::IMAGE_DECODE));
-  }
-}
-
-static void GetThreadIdsAndReport(std::vector<scoped_refptr<base::internal::WorkerThread>>& workers,
-                                       bool is_created) {
-  std::vector<int32_t> thread_ids;
-  std::vector<scoped_refptr<base::internal::WorkerThread>> remain_workers;
-  for (auto& worker : workers) {
-    if (worker) {
-      auto tid = worker->GetRealTid();
-      if (tid) {
-        thread_ids.push_back(tid);
-      } else {
-        remain_workers.push_back(worker);
-      }
-    }
-  }
-  workers.clear();
-  if (remain_workers.size()) {
-    workers = std::move(remain_workers);
-  }
-
+static void ReportThreadIds(std::vector<int32_t> thread_ids, bool is_created) {
   auto* thread = content::ChildThreadImpl::current();
   if (thread) {
     auto host = thread->child_process_host();
@@ -129,16 +92,12 @@ void WidgetBaseUtils::ReportForegroundThreadPool() {
   base::internal::ThreadGroupImpl* foreground_thread_group =
     static_cast<base::internal::ThreadGroupImpl*>(thread_pool->GetForegroundThreadGroup());
   if (foreground_thread_group) {
-    std::vector<scoped_refptr<base::internal::WorkerThread>>& create_workers =
+    std::vector<int32_t> create_workers_thread_ids_ =
       foreground_thread_group->ReportCreateWorkers();
-    if (create_workers.size()) {
-      GetThreadIdsAndReport(create_workers, true);
-    }
-    std::vector<base::PlatformThreadId>& destroy_workers_ids_ =
+    ReportThreadIds(create_workers_thread_ids_, true);
+    std::vector<int32_t> destroy_workers_thread_ids_ =
       foreground_thread_group->ReportDestroyWorkers();
-    if (destroy_workers_ids_.size()) {
-      GetThreadIdsAndReport(destroy_workers_ids_, false);
-    }
+    ReportThreadIds(destroy_workers_thread_ids_, false);
   }
 }
 // LCOV_EXCL_STOP
@@ -212,21 +171,23 @@ void WidgetBaseUtils::DidNativeEmbedEvent(blink::WebInputEvent::Type type,
   LOG(DEBUG) << "[NativeEmbed] DidNativeEmbedEvent type is : " << nativeType
              << " x: " << x << " y: " << y;
   widget_base_->widget_host_->DidNativeEmbedEvent(mojom::blink::NativeEmbedTouchEvent::New(
-      static_cast<String>(embedId), id, x, y, x, y, nativeType, x, y));
+      String(embedId.c_str()), id, x, y, x, y, nativeType, x, y));
 }
 
-void WidgetBaseUtils::MouseHitTest(const WebMouseEvent& event) {
+void WidgetBaseUtils::MouseHitTest(const WebMouseEvent& event, int32_t button) {
   FrameWidget* frame_widget = widget_base_->client_->FrameWidget();
   if (!frame_widget) {
     return;
   }
-  frame_widget->MouseHitTest(event);
+  frame_widget->MouseHitTest(event, button);
 }
 
-void WidgetBaseUtils::NativeMouseHitTestResult(bool isNative, int layerId) {
+void WidgetBaseUtils::NativeMouseHitTestResult(bool isNative,
+                                               int layerId,
+                                               int32_t button) {
   if (widget_base_->widget_input_handler_manager_) {
     widget_base_->widget_input_handler_manager_->manager_utils()
-      ->NativeMouseHitTestResult(isNative, layerId);
+      ->NativeMouseHitTestResult(isNative, layerId, button);
   }
 }
 
@@ -252,11 +213,23 @@ void WidgetBaseUtils::DidNativeEmbedMouseEvent(
       nativeMouseType = mojom::blink::NativeMouseType::CANCEL;
   }
   mojom::blink::NativeMouseButton nativeMouseButton;
-  if (modifiers & blink::WebInputEvent::Modifiers::kLeftButtonDown) {
+
+  auto is_left_click = modifiers == WebInputEvent::Modifiers::kLeftButtonDown ||
+                       modifiers == (WebInputEvent::Modifiers::kLeftButtonDown |
+                                    WebInputEvent::Modifiers::kIsAutoRepeat);
+  auto is_right_click =
+      modifiers == WebInputEvent::Modifiers::kRightButtonDown ||
+      modifiers == (WebInputEvent::Modifiers::kRightButtonDown |
+                   WebInputEvent::Modifiers::kIsAutoRepeat);
+  auto is_mid_click =
+      modifiers == WebInputEvent::Modifiers::kMiddleButtonDown ||
+      modifiers == (WebInputEvent::Modifiers::kMiddleButtonDown |
+                   WebInputEvent::Modifiers::kIsAutoRepeat);
+  if (is_left_click) {
     nativeMouseButton = mojom::blink::NativeMouseButton::LEFT_BUTTON;
-  } else if (modifiers & blink::WebInputEvent::Modifiers::kRightButtonDown) {
+  } else if (is_right_click) {
     nativeMouseButton = mojom::blink::NativeMouseButton::RIGHT_BUTTON;
-  } else if (modifiers & blink::WebInputEvent::Modifiers::kMiddleButtonDown) {
+  } else if (is_mid_click) {
     nativeMouseButton = mojom::blink::NativeMouseButton::MIDDLE_BUTTON;
   }
   LOG(DEBUG) << "[NativeEmbed] DidNativeEmbedEvent mouse event type is : "

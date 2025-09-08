@@ -92,7 +92,7 @@ void SetMaxVisibleBytes(cc::ManagedMemoryPolicy& actual)
     // It needs more tile memory for foldable phone.
     actual.bytes_limit_when_visible =
         std::max(actual.bytes_limit_when_visible,
-                 static_cast<size_t>(1000 * 1024 * 1024));
+                 static_cast<size_t>(1024 * 1024 * 1024));
 #endif
   }
 }

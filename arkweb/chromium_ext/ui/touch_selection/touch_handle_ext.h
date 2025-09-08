@@ -43,7 +43,6 @@ class TouchHandleExt : public TouchHandle {
   bool GetVisible() const { return is_visible_; }
   bool SetFocus(const gfx::PointF& top, const gfx::PointF& bottom);
   void SetInsertHandleAlpha(float alpha);
-  void SetIsSingleHandle(bool is_single_handle) { is_single_handle_ = is_single_handle; }
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)

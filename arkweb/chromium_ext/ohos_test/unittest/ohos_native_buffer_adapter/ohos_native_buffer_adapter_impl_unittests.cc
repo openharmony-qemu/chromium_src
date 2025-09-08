@@ -61,6 +61,39 @@ void TestAllocate(void** outBuffer)
     }
 }
 
+class MockNativeBufferConfigAdapter : public NativeBufferConfigAdapter {
+public:
+    MockNativeBufferConfigAdapter() = default;
+
+    virtual ~MockNativeBufferConfigAdapter() = default;
+
+    int GetBufferWidth() override { return width_; }
+
+    int GetBufferHeight() override { return height_; }
+
+    int GetBufferFormat() override { return format_; }
+
+    int GetBufferUsage() override { return usage_; }
+
+    int GetBufferStride() override { return stride_; }
+
+    void SetBufferWidth(int width) override { width_ = width; }
+
+    void SetBufferHeight(int height) override { height_ = height; }
+
+    void SetBufferFormat(int format) override { format_ = format; }
+
+    void SetBufferUsage(int usage) override { usage_ = usage; }
+
+    void SetBufferStride(int stride) override { stride_ = stride; }
+
+    int width_ = 0;
+    int height_ = 0;
+    int format_ = 0;
+    int usage_ = 0;
+    int stride_ = 0;
+};
+
 TEST_F(NativeBufferAdapterImplTest, NativeBufferAdapterImplTest_001)
 {
     std::shared_ptr<OhosNativeBufferAdapterImpl> adapter = std::make_shared<OhosNativeBufferAdapterImpl>();
@@ -98,6 +131,8 @@ TEST_F(NativeBufferAdapterImplTest, NativeBufferAdapterImplTest_003)
     void* nativeBuffer = nullptr;
     TestAllocate(&nativeBuffer);
     EXPECT_NE(nativeBuffer, nullptr);
+    ret = adapter->GetEGLBuffer(nativeBuffer, nullptr);
+    EXPECT_EQ(ret, -1);
     adapter->GetEGLBuffer(nativeBuffer, &eglBuffer);
     EXPECT_NE(eglBuffer, nullptr);
     ret = adapter->FreeEGLBuffer(eglBuffer);
@@ -108,9 +143,19 @@ TEST_F(NativeBufferAdapterImplTest, NativeBufferAdapterImplTest_004)
 {
     std::shared_ptr<OhosNativeBufferAdapterImpl> adapter = std::make_shared<OhosNativeBufferAdapterImpl>();
     EXPECT_NE(adapter, nullptr);
-    void* nativeWindowBuffer = nullptr;
+
+    int ret = adapter->NativeBufferFromNativeWindowBuffer(nullptr, nullptr);
+    EXPECT_EQ(ret, -1);
+
+    void* buffer = nullptr;
+    TestAllocate(&buffer);
+    OHNativeWindowBuffer* nativeWindowBuffer =
+        OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer(static_cast<OH_NativeBuffer*>(buffer));
+    ret = adapter->NativeBufferFromNativeWindowBuffer(nativeWindowBuffer, nullptr);
+    EXPECT_EQ(ret, -1);
+
     void* nativeBuffer = nullptr;
-    int ret = adapter->NativeBufferFromNativeWindowBuffer(nativeWindowBuffer, &nativeBuffer);
+    ret = adapter->NativeBufferFromNativeWindowBuffer(nativeWindowBuffer, &nativeBuffer);
     EXPECT_EQ(ret, 0);
 }
 
@@ -132,8 +177,14 @@ TEST_F(NativeBufferAdapterImplTest, NativeBufferAdapterImplTest_006)
 {
     std::shared_ptr<OhosNativeBufferAdapterImpl> adapter = std::make_shared<OhosNativeBufferAdapterImpl>();
     EXPECT_NE(adapter, nullptr);
+    adapter->Allocate(nullptr, nullptr);
+
+    std::shared_ptr<NativeBufferConfigAdapter> bufferConfig = std::make_shared<MockNativeBufferConfigAdapter>();
+    EXPECT_NE(bufferConfig, nullptr);
+    adapter->Allocate(bufferConfig, nullptr);
+
     void* outBuffer = nullptr;
-    adapter->Allocate(nullptr, &outBuffer);
+    adapter->Allocate(bufferConfig, &outBuffer);
     EXPECT_EQ(outBuffer, nullptr);
 }
 
@@ -141,10 +192,13 @@ TEST_F(NativeBufferAdapterImplTest, NativeBufferAdapterImplTest_007)
 {
     std::shared_ptr<OhosNativeBufferAdapterImpl> adapter = std::make_shared<OhosNativeBufferAdapterImpl>();
     EXPECT_NE(adapter, nullptr);
+    adapter->Describe(nullptr, nullptr);
+
     void* buffer = nullptr;
-    std::shared_ptr<NativeBufferConfigAdapter> bufferConfig = nullptr;
+    TestAllocate(&buffer);
+    EXPECT_NE(buffer, nullptr);
+    std::shared_ptr<NativeBufferConfigAdapter> bufferConfig = std::make_shared<MockNativeBufferConfigAdapter>();
     adapter->Describe(bufferConfig, buffer);
-    EXPECT_EQ(bufferConfig, nullptr);
 }
 
 
@@ -169,8 +223,12 @@ TEST_F(NativeBufferAdapterImplTest, NativeBufferAdapterImplTest_008)
     EXPECT_FALSE(res);
     ret = adapter->Unlock(nativeBuffer, &fence);
     EXPECT_EQ(ret, -1);
+    ret = adapter->Lock(nativeBuffer, 0, 0, nullptr);
+    EXPECT_EQ(ret, -1);
     ret = adapter->Lock(nativeBuffer, 0, 0, &address);
     EXPECT_EQ(ret, 0);
+    ret = adapter->Lock(nativeBuffer, 0, 0, &address);
+    EXPECT_EQ(ret, -1);
     ret = adapter->Unlock(nativeBuffer, &fence);
     EXPECT_EQ(ret, 0);
 }

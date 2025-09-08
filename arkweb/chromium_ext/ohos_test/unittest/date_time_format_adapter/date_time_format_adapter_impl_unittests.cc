@@ -97,6 +97,7 @@ TEST_F(DateTimeFormatAdapterImplTest, DateTimeFormatAdapterImplTest_003) {
   dateTimeForAdapter.StopListen();
   EXPECT_NE(dateTimeForAdapter.commonEventSubscriberInfo_, nullptr);
   EXPECT_NE(dateTimeForAdapter.commonEventSubscriber_, nullptr);
+  dateTimeForAdapter.cbSet_.erase(cb);
 }
 
 TEST_F(DateTimeFormatAdapterImplTest, DateTimeFormatAdapterImplTest_004) {

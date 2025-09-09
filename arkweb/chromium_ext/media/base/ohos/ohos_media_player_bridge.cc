@@ -51,7 +51,6 @@ OHOSMediaPlayerBridge::OHOSMediaPlayerBridge(
       seek_complete_(true),
       should_seek_on_prepare_(false),
       should_set_volume_on_prepare_(false),
-      seeking_on_playback_complete_(false),
       seeking_back_complete_(false),
       headers_(std::move(headers)),
       user_agent_(user_agent),
@@ -342,11 +341,6 @@ void OHOSMediaPlayerBridge::Pause() {
 
 void OHOSMediaPlayerBridge::SeekTo(base::TimeDelta time) {
   pending_seek_ = time;
-  if (player_state_ ==
-      OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PLAYBACK_COMPLETE) {
-    seeking_on_playback_complete_ = true;
-    return;
-  }
   if (!prepared_) {
     should_seek_on_prepare_ = true;
     return;
@@ -417,7 +411,7 @@ base::TimeDelta OHOSMediaPlayerBridge::GetDuration() {
 }
 
 base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
-  if (!player_ || !prepared_ || seeking_on_playback_complete_ ||
+  if (!player_ || !prepared_ ||
       !seek_complete_) {
     return pending_seek_;
   }
@@ -500,7 +494,6 @@ void OHOSMediaPlayerBridge::OnPlayerStateUpdate(
   if (player_state_ ==
           OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_PLAYBACK_COMPLETE &&
       player_state != player_state_) {
-    seeking_on_playback_complete_ = false;
     pause_when_prepared_ = false;
   }
 

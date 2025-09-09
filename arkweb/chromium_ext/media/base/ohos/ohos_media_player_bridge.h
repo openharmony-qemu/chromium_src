@@ -171,7 +171,8 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
 
   // MediaPlayer is unable to handle Seek request when playback end. We should
   // pending the SeekTo request until its playback state changed.
-  bool seeking_on_playback_complete_;
+  // latest：MediaPlayer is can handle Seek request when playback end.
+
   base::TimeDelta extra_time_;
   // It is a sign of rollback and SEEK_CLOSEST failure.
   bool seeking_back_complete_;

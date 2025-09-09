@@ -13,21 +13,38 @@
  * limitations under the License.
  */
 
-#include "arkweb/chromium_ext/media/base/ohos/ohos_media_crypto_context_impl.h"
+#include "testing/gmock/include/gmock/gmock.h"
+#include "testing/gtest/include/gtest/gtest.h"
+
 #include "base/test/test_simple_task_runner.h"
+#include "base/test/task_environment.h"
+#include "base/task/single_thread_task_runner.h"
 #include "media/base/cdm_context.h"
 #include "arkweb/chromium_ext/media/base/ohos/ohos_media_crypto_context.h"
 #define private public
-#include "base/task/single_thread_task_runner.h"
 #include "arkweb/chromium_ext/media/base/ohos/ohos_media_drm_bridge.h"
+#include "arkweb/chromium_ext/media/base/ohos/ohos_media_crypto_context_impl.h"
 #undef private
 #include "media/base/content_decryption_module.h"
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+#include "media/cdm/wiseplay_cdm_common.h"
+#endif
 
 using ::testing::_;
 
 namespace media {
+
+namespace {
+  CreateFetcherCB create_fetcher_cb;
+  SessionMessageCB session_message_cb;
+  SessionClosedCB session_closed_cb;
+  SessionKeysChangeCB session_keys_change_cb;
+  SessionExpirationUpdateCB session_expiration_update_cb;
+  const uint8_t kWidevineUuid[16] = {0xED, 0xEF, 0x8B, 0xA9, 0x79, 0xD6,
+                                    0x4A, 0xCE, 0xA3, 0xC8, 0x27, 0xDC,
+                                    0xD5, 0x1D, 0x21, 0xED};
+}
+
 class MockOHOSMediaCryptoContext : public OHOSMediaCryptoContext {
  public:
   MOCK_METHOD(void,
@@ -48,46 +65,83 @@ class OHOSMediaCryptoContextImplTest : public ::testing::Test {
   ~OHOSMediaCryptoContextImplTest() override = default;
 
   void SetUp() override {
-    media_crypto_ready_cb_ = std::make_unique<MockOHOSMediaCryptoContext>();
+    task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
   }
 
   void TearDown() override {
-    media_crypto_ready_cb_.reset();
-    media_crypto_ready.reset();
-    storage.reset();
+    if (bridge_) {
+      bridge_.reset();
+    }
   }
-  std::unique_ptr<MockOHOSMediaCryptoContext> media_crypto_ready_cb_;
-  std::unique_ptr<OHOSMediaCryptoContextImpl> media_crypto_ready;
-  std::unique_ptr<OHOSMediaDrmStorageBridge> storage;
+
+  void CreateOHOSMediaDrmBridge(std::string system = "com.wiseplay.drm") {
+    std::vector<uint8_t> scheme_uuid;
+    if (system == "com.wiseplay.drm") {
+      scheme_uuid = std::vector<uint8_t>(kWiseplayUuid, kWiseplayUuid + sizeof(kWiseplayUuid));
+    } else if (system == "com.widevine.alpha") {
+      scheme_uuid = std::vector<uint8_t>(kWidevineUuid, kWidevineUuid + sizeof(kWidevineUuid));
+    } else {
+      return;
+    }
+    std::string origin_id = "example_origin_id";
+    OHOSMediaDrmBridge::SecurityLevel level = OHOSMediaDrmBridge::SECURITY_LEVEL_DEFAULT;
+    bool require_media_crypto = true;
+    bridge_ = std::make_unique<OHOSMediaDrmBridge>(
+        scheme_uuid, origin_id, level, require_media_crypto, nullptr,
+        create_fetcher_cb, session_message_cb, session_closed_cb,
+        session_keys_change_cb, session_expiration_update_cb);
+  }
+
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
+  base::test::TaskEnvironment task_environment_;
+  std::unique_ptr<OHOSMediaCryptoContextImpl> media_crypto_context_impl_;
+  std::unique_ptr<OHOSMediaDrmBridge> bridge_;
 };
 
-TEST_F(OHOSMediaCryptoContextImplTest, SetOHOSMediaCryptoReadyCB) {
-  EXPECT_CALL(*media_crypto_ready_cb_, SetOHOSMediaCryptoReadyCB(_)).Times(0);
+TEST_F(OHOSMediaCryptoContextImplTest, SetOHOSMediaCryptoReadyCB_BridgeNotNull_widevine) {
+  CreateOHOSMediaDrmBridge("com.widevine.alpha");
   MockOHOSMediaCryptoContext::OHOSMediaCryptoReadyCB callback =
       base::BindOnce([](void* session, bool requires_secure_video_codec) {});
-  std::vector<uint8_t> scheme_uuid_ = {0x10, 0x31};
-  std::string origin_id_ = "example_origin_id";
-  OHOSMediaDrmBridge::SecurityLevel security_level_ =
-      OHOSMediaDrmBridge::SECURITY_LEVEL_DEFAULT;
-  bool requires_media_crypto_ = true;
-  scoped_refptr<base::SingleThreadTaskRunner> task_runner(
-      base::MakeRefCounted<base::TestSimpleTaskRunner>());
-  base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd(task_runner);
-  auto storage = std::make_unique<OHOSMediaDrmStorageBridge>();
-  CreateFetcherCB create_fetcher_cb_;
-  SessionMessageCB session_message_cb_;
-  SessionClosedCB session_closed_cb_;
-  SessionKeysChangeCB session_keys_change_cb_;
-  SessionExpirationUpdateCB session_expiration_update_cb_;
-  OHOSMediaDrmBridge* media_drm_bridge = new OHOSMediaDrmBridge(
-      scheme_uuid_, origin_id_, security_level_, requires_media_crypto_,
-      std::move(storage), create_fetcher_cb_, session_message_cb_,
-      session_closed_cb_, session_keys_change_cb_,
-      session_expiration_update_cb_);
-  ASSERT_NE(media_drm_bridge, nullptr);
-  media_crypto_ready =
-      std::make_unique<OHOSMediaCryptoContextImpl>(media_drm_bridge);
-  media_crypto_ready->SetOHOSMediaCryptoReadyCB(std::move(callback));
-  ASSERT_NE(media_crypto_ready, nullptr);
+
+  media_crypto_context_impl_ = std::make_unique<OHOSMediaCryptoContextImpl>(bridge_.get());
+  EXPECT_NO_FATAL_FAILURE(media_crypto_context_impl_->SetOHOSMediaCryptoReadyCB(std::move(callback)));
+  EXPECT_NE(media_crypto_context_impl_->media_drm_bridge_, nullptr);
 }
+
+TEST_F(OHOSMediaCryptoContextImplTest, SetOHOSMediaCryptoReadyCB_BridgeIsNull) {
+  CreateOHOSMediaDrmBridge();
+  MockOHOSMediaCryptoContext::OHOSMediaCryptoReadyCB callback =
+      base::BindOnce([](void* session, bool requires_secure_video_codec) {});
+
+  media_crypto_context_impl_ = std::make_unique<OHOSMediaCryptoContextImpl>(nullptr);
+  EXPECT_NO_FATAL_FAILURE(media_crypto_context_impl_->SetOHOSMediaCryptoReadyCB(std::move(callback)));
+  EXPECT_EQ(media_crypto_context_impl_->media_drm_bridge_, nullptr);
+}
+
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+TEST_F(OHOSMediaCryptoContextImplTest, SetOHOSMediaCryptoReadyCB_BridgeNotNull_wiseplay) {
+  CreateOHOSMediaDrmBridge();
+  MockOHOSMediaCryptoContext::OHOSMediaCryptoReadyCB callback =
+      base::BindOnce([](void* session, bool requires_secure_video_codec) {});
+
+  media_crypto_context_impl_ = std::make_unique<OHOSMediaCryptoContextImpl>(bridge_.get());
+  EXPECT_NO_FATAL_FAILURE(media_crypto_context_impl_->SetOHOSMediaCryptoReadyCB(std::move(callback)));
+  EXPECT_NE(media_crypto_context_impl_->media_drm_bridge_, nullptr);
+}
+
+TEST_F(OHOSMediaCryptoContextImplTest, ReleaseInnerResource_BridgeIsNull) {
+  CreateOHOSMediaDrmBridge();
+  media_crypto_context_impl_ = std::make_unique<OHOSMediaCryptoContextImpl>(nullptr);
+  EXPECT_NO_FATAL_FAILURE(media_crypto_context_impl_->ReleaseInnerResource());
+  EXPECT_EQ(media_crypto_context_impl_->media_drm_bridge_, nullptr);
+}
+
+TEST_F(OHOSMediaCryptoContextImplTest, ReleaseInnerResource_BridgeNotNull) {
+  CreateOHOSMediaDrmBridge();
+  media_crypto_context_impl_ = std::make_unique<OHOSMediaCryptoContextImpl>(bridge_.get());
+  EXPECT_NO_FATAL_FAILURE(media_crypto_context_impl_->ReleaseInnerResource());
+  EXPECT_NE(media_crypto_context_impl_->media_drm_bridge_, nullptr);
+}
+#endif
+
 }  // namespace media

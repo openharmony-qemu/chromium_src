@@ -36,7 +36,6 @@ public:
   void HasReported() {
     reported_ = true;
   }
-  std::mutex appfreeze_monitor_lock_;
 private:
   std::unique_ptr<base::SingleThreadTaskExecutor> task_executor_ =
     std::make_unique<base::SingleThreadTaskExecutor>(base::MessagePumpType::DEFAULT);

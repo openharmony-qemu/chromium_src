@@ -34,7 +34,9 @@
 #include "arkweb/chromium_ext/services/device/public/mojom/res_sched_report.mojom.h"
 #include "arkweb/chromium_ext/services/device/public/mojom/sysprop_render_observer.mojom.h"
 #endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
-
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "arkweb/chromium_ext/content/browser/render_freeze/render_freeze_reporter_impl.h"
+#endif
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
@@ -580,5 +582,12 @@ void ArkwebRenderProcessHostImplUtils::AddHostUIThreadInterface(
             GetDeviceService().BindSysPropRenderObserver(
                 std::move(receiver));
           }));
+}
+
+void ArkwebRenderProcessHostImplUtils::AddDFXToUIThreadInterface(
+    service_manager::BinderRegistry* registry) {
+  render_process_host_impl_->AddUIThreadInterface(
+      registry,
+      base::BindRepeating(&FreezeReporterImpl::ProcessPendingReceiver));
 }
 }  // namespace content

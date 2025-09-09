@@ -1,0 +1,6 @@
+import("//mojom/public/tools/bindings/mojom.gni")
+
+mojom("mojom") {
+  sources = [ "freeze_reporter.mojom" ]
+  public_deps = [ "//mojo/public/mojom/base" ]
+}

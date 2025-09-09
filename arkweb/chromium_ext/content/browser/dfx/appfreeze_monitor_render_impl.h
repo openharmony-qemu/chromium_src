@@ -16,10 +16,10 @@
 #ifndef DFX_APPFREEZE_MONITOR_RENDER_IMPL_H_
 #define DFX_APPFREEZE_MONITOR_RENDER_IMPL_H_
 
-#include <mutex>
-#include <string>
 #include "arkweb/chromium_ext/content/browser/dfx/mojom/dfx_reporting.mojom.h"
+#include "base/task/single_thread_task_executor.h"
 #include "mojo/public/cpp/bindings/remote.h"
+#include "third_party/blink/public/platform/browser_interface_broker_proxy.h"
 
 void ReportRenderFreeze();
 
@@ -28,22 +28,20 @@ public:
   AppfreezeMonitorImpl() = default;
   ~AppfreezeMonitorImpl() = default;
   static std::shared_ptr<AppfreezeMonitorImpl> GetInstance();
-  void GetRemoteAndSend(const std::string& args) {
-    if (remote_.is_bound()) {
-      remote_->ReportHiSysEvent(args, "");
-    }
+  void GetRemoteAndSend(const std::string& args);
+  void Init();
+  bool IsReported() {
+    return reported_;
   }
-  mojo::PendingReceiver<dfx::mojom::DfxReporter> &GetPendingReceiver() {
-    return receiver_;
+  void HasReported() {
+    reported_ = true;
   }
-  bool IsInitialized() { return initialized_; }
-  void HasInitialized() { initialized_ = true; }
-  bool reported_ = false;
   std::mutex appfreeze_monitor_lock_;
 private:
+  std::unique_ptr<base::SingleThreadTaskExecutor> task_executor_ =
+    std::make_unique<base::SingleThreadTaskExecutor>(base::MessagePumpType::DEFAULT);
+  mojo::Remote<freeze_reporter::mojom::FreezeReporter> remote_;
+  bool reported_ = false;
   bool initialized_ = false;
-  mojo::Remote<dfx::mojom::DfxReporter> remote_;
-  mojo::PendingReceiver<dfx::mojom::DfxReporter> receiver_ =
-      remote_.BindNewPipeAndPassReceiver();
 };
 #endif

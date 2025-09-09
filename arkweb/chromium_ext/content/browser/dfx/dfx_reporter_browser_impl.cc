@@ -121,7 +121,4 @@ void DfxReporterImpl::ReportHiSysEvent(const std::string& eventName, const std::
   if (eventName == DfxReporterImpl::PAGE_MEM_LEAK) {
     ReportRendererInfo(sysEventInfoJson, true);
   }
-  if (eventName == "PROCESS_FREEZE_WARNING") {
-    ReportAppfreeze();
-  }
 }

@@ -1,4 +1,4 @@
-import("//mojom/public/tools/bindings/mojom.gni")
+import("//mojo/public/tools/bindings/mojom.gni")
 
 mojom("mojom") {
   sources = [ "freeze_reporter.mojom" ]

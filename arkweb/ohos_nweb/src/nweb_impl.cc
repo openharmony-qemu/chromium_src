@@ -4637,8 +4637,8 @@ void NWebImpl::WebExtensionContextMenuGetFocusedFrameInfo(
     LOG(ERROR) << "nullptr nweb_delegate_";
     return;
   }
-  return nweb_delegate_->WebExtensionContextMenuGetFocusedFrameInfo(frame_id,
-                                                                    frame_url);
+  nweb_delegate_->WebExtensionContextMenuGetFocusedFrameInfo(frame_id,
+                                                             frame_url);
 }
 #endif
 

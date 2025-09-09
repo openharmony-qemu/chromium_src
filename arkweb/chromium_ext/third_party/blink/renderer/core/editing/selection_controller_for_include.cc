@@ -280,8 +280,7 @@ SelectionInFlatTree SelectionControllerUtils::HandleArkWebAISelectionExt(Selecti
     return;
   }
   WTF::String str;
-  bool after_line_select_tail =
-      is_double_click || !(IsEditable(*inner_node) || layout_change);
+  bool after_line_select_tail = is_double_click;
   if (after_line_select_tail) {
     if (pos.IsNotNull()) {
       str = pos.AnchorNode()->textContent(true);

@@ -192,8 +192,13 @@ bool AudioCapturerAdapterImpl::Release()
         WVLOG_E("audio capturer is nullptr");
         return false;
     }
+
     auto ret = OH_AudioCapturer_Release(audio_capturer_);
-    return ret == AUDIOSTREAM_SUCCESS;
+    if (ret == AUDIOSTREAM_SUCCESS) {
+        audio_capturer_ = nullptr;
+        return true;
+    }
+    return false;
 }
 
 int32_t AudioCapturerAdapterImpl::SetCapturerReadCallback(

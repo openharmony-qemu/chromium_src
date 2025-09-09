@@ -3174,6 +3174,10 @@ class CONTENT_EXPORT ContentBrowserClient {
   virtual bool ShouldDispatchPagehideDuringCommit(
       BrowserContext* browser_context,
       const GURL& destination_url);
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  virtual std::string GetUAStringForHost(std::string host);
+#endif
 };
 
 }  // namespace content

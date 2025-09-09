@@ -36,6 +36,9 @@ void* __real_malloc(size_t);
 
 namespace OHOS::NWeb {
 
+namespace {
+std::shared_ptr<NWebExtensionActionApiCallback> g_action_api_listener = nullptr;
+
 NWebExtensionActionIconColorType GetColorTypeFromSkBitmap(
     const SkBitmap& bitmap) {
   NWebExtensionActionIconColorType colorType;
@@ -90,27 +93,16 @@ NWebExtensionActionIconBitmap CreateIconBitmapFromImage(
   return iconBitmap;
 }
 
-NWebExtensionActionIcon CreateFromImageSkiaReps(
-    const std::vector<gfx::ImageSkiaRep>& imageSkiaReps) {
-  NWebExtensionActionIcon actionIcon;
-  for (auto rep : imageSkiaReps) {
-    double scale = rep.scale();
-#if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
-    actionIcon.bitmaps[scale] = new NWebExtensionActionIconBitmap(
-        CreateIconBitmapFromImage(rep.GetBitmap()));
-#else
-    NWebExtensionActionIconBitmap* addr =
-        (NWebExtensionActionIconBitmap*)__real_malloc(
-            sizeof(NWebExtensionActionIconBitmap));
-    actionIcon.bitmaps[scale] = new (addr) NWebExtensionActionIconBitmap(
-        CreateIconBitmapFromImage(rep.GetBitmap()));
-#endif
+void DeleteNWebExtensionActionIcon(NWebExtensionActionIcon* icon) {
+  if (!icon) {
+    return;
   }
-  return actionIcon;
-}
 
-namespace {
-std::shared_ptr<NWebExtensionActionApiCallback> g_action_api_listener = nullptr;
+  for (auto& it : icon->bitmaps) {
+    delete it.second;
+  }
+  delete icon;
+}
 
 std::optional<NWebExtensionActionIconBitmapV2> ConvertToBitmapV2(
     const SkBitmap& source_bitmap,
@@ -163,16 +155,38 @@ NWebExtensionActionSetIconDetailsV2 GetActionSetIconDetailsV2(
 
 }  // namespace
 
-void DeleteNWebExtensionActionIcon(NWebExtensionActionIcon** icon) {
-  if (!icon || !*icon) {
-    return;
+NWebExtensionActionIcon CreateFromImageSkiaReps(
+    const std::vector<gfx::ImageSkiaRep>& imageSkiaReps) {
+  NWebExtensionActionIcon actionIcon;
+  for (auto rep : imageSkiaReps) {
+    double scale = rep.scale();
+#if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
+    actionIcon.bitmaps[scale] = new NWebExtensionActionIconBitmap(
+        CreateIconBitmapFromImage(rep.GetBitmap()));
+#else
+    NWebExtensionActionIconBitmap* addr =
+        (NWebExtensionActionIconBitmap*)__real_malloc(
+            sizeof(NWebExtensionActionIconBitmap));
+    actionIcon.bitmaps[scale] = new (addr) NWebExtensionActionIconBitmap(
+        CreateIconBitmapFromImage(rep.GetBitmap()));
+#endif
   }
+  return actionIcon;
+}
 
-  for (auto& it : (*icon)->bitmaps) {
-    delete it.second;
+NWebExtensionActionIconV2 CreateNWebIconFromImageSkiaRepsV2(
+    const std::vector<gfx::ImageSkiaRep>& imageSkiaReps) {
+  NWebExtensionActionIconV2 actionIcon;
+  for (const auto& rep : imageSkiaReps) {
+    const double scale = rep.scale();
+    const SkBitmap& source_bitmap = rep.GetBitmap();
+    auto bitmap = ConvertToBitmapV2(source_bitmap, scale);
+    if (!bitmap) {
+      continue;
+    }
+    actionIcon.bitmaps.emplace(scale, std::move(*bitmap));
   }
-  delete *icon;
-  *icon = nullptr;
+  return actionIcon;
 }
 
 // static
@@ -438,7 +452,7 @@ void NWebExtensionActionCefDelegate::OnSetIcon(
 #endif
     NWebExtensionActionDispathcher::GetInstance().OnSetIcon(extension_id, icon,
                                                             tab_id);
-    DeleteNWebExtensionActionIcon(&icon);
+    DeleteNWebExtensionActionIcon(icon);
     return;
   }
 #endif

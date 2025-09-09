@@ -518,6 +518,7 @@ void OHOSMediaPlayerBridge::OnPlayerStateUpdate(
     if (IsAudible(current_volume_)) {
       client_->OnAudioStateChanged(true);
     }
+    client_->SuspendOtherPlaybacks();
   }
 
   player_state_ = player_state;

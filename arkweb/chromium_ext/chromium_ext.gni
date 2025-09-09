@@ -735,6 +735,11 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/components/policy/core/common/policy_loader_ohos_unittest.cc",
   "//arkweb/chromium_ext/net/proxy_resolution/proxy_config_service_ohos_unittest.cc",
   "//arkweb/chromium_ext/components/subresource_filter/content/browser/ohos_adblock_config_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/net_connect_adapter/net_connect_utils_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/hiviewdfx_adapter/hitrace_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/net_proxy_adapter_impl/net_proxy_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/net_connect_adapter/net_connect_adapter_impl_unittest.cc",
 ]
 
 arkweb_base_trace_event_sources = [

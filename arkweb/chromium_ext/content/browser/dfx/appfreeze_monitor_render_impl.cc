@@ -20,12 +20,12 @@
 void ReportRenderFreeze() {
   std::shared_ptr<AppfreezeMonitorImpl> instance = AppfreezeMonitorImpl::GetInstance();
   if (instance && !instance->IsReported()) {
-    instance->Init();
     instance->GetRemoteAndSend();
-    instance->HasReported();
   }
 }
-
+void AppfreezeMonitorImpl::AppfreezeMonitorImpl() {
+  Init();
+}
 void AppfreezeMonitorImpl::Init() {
   if (initialized_) {
     return;
@@ -49,5 +49,6 @@ std::shared_ptr<AppfreezeMonitorImpl> AppfreezeMonitorImpl::GetInstance() {
 void AppfreezeMonitorImpl::GetRemoteAndSend() {
   if (remote_.is_bound()) {
     remote_->ReportFreeze(""); // the param may be used in the future
+    reported_ = true;
   }
 }

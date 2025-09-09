@@ -25,16 +25,13 @@ void ReportRenderFreeze();
 
 class AppfreezeMonitorImpl {
 public:
-  AppfreezeMonitorImpl() = default;
+  AppfreezeMonitorImpl();
   ~AppfreezeMonitorImpl() = default;
   static std::shared_ptr<AppfreezeMonitorImpl> GetInstance();
   void GetRemoteAndSend();
   void Init();
   bool IsReported() {
     return reported_;
-  }
-  void HasReported() {
-    reported_ = true;
   }
 private:
   std::unique_ptr<base::SingleThreadTaskExecutor> task_executor_ =

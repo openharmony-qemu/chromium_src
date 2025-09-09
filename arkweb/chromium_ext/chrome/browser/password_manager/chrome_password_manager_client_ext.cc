@@ -65,7 +65,12 @@ using password_manager::PasswordManagerDriver;
 
 ChromePasswordManagerClientExt::ChromePasswordManagerClientExt(
     content::WebContents* web_contents)
-    : ChromePasswordManagerClient(web_contents) {}
+    : ChromePasswordManagerClient(web_contents) {
+  last_request_fill_username_.type = mojom::OhosInputElementType::kUsernameType;
+  last_request_fill_username_.is_focused = false;
+  last_request_fill_password_.type = mojom::OhosInputElementType::kPasswordType;
+  last_request_fill_password_.is_focused = false;
+}
 
 ChromePasswordManagerClientExt::~ChromePasswordManagerClientExt() = default;
 

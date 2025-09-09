@@ -28,25 +28,31 @@ constexpr char DEBUG_CATEGORY[] = "disabled-";
 constexpr uint64_t HITRACE_TAG_NWEB = (1ULL << 24);  // nweb trace tag
 class TraceObserver : public OHOS::NWeb::SystemPropertiesObserver {
  public:
-  TraceObserver() = default;
-  ~TraceObserver() override = default;
-
   void PropertiesUpdate(const char* value) override {
     auto status = std::atol(value);
     isHiTraceEnable = static_cast<uint64_t>(status) & HITRACE_TAG_NWEB;
   }
+
+  static TraceObserver& GetInstance() {
+    static TraceObserver instance;
+    return instance;
+  }
+
+ private:
+  TraceObserver() = default;
+  ~TraceObserver() override = default;
+  TraceObserver(const TraceObserver&) = delete;
+  TraceObserver& operator=(const TraceObserver&) = delete;
 };
 
 // LOVC_EXCL_START
 void StartObserveTraceEnable() {
 // todo: check webview
 #if BUILDFLAG(IS_ARKWEB_EXT)
-  std::unique_ptr<TraceObserver> traceObserver =
-      std::make_unique<TraceObserver>();
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                         .GetSystemPropertiesInstance();
   system_properties_adapter.AttachSysPropObserver(
-      OHOS::NWeb::PropertiesKey::PROP_HITRACE_ENABLEFLAGS, traceObserver.get());
+      OHOS::NWeb::PropertiesKey::PROP_HITRACE_ENABLEFLAGS, &TraceObserver::GetInstance());
   if (OHOS::NWeb::OhosAdapterHelper::GetInstance()
           .GetHiTraceAdapterInstance()
           .IsHiTraceEnable()) {

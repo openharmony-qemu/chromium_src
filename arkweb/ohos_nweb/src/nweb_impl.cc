@@ -4629,6 +4629,19 @@ void NWebImpl::WebExtensionContextMenuReloadFocusedFrame() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void NWebImpl::WebExtensionContextMenuGetFocusedFrameInfo(
+    int32_t& frame_id,
+    std::string& frame_url) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nullptr nweb_delegate_";
+    return;
+  }
+  return nweb_delegate_->WebExtensionContextMenuGetFocusedFrameInfo(frame_id,
+                                                                    frame_url);
+}
+#endif
+
 // static
 void NWebImpl::ResumeDownloadStatic(
     std::shared_ptr<NWebDownloadItem> web_download) {
@@ -5277,7 +5290,8 @@ static void ApplySiteIsolationMode(bool mode){
   OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(
       g_siteIsolationMode);
   ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
-  g_siteIsolationModeInitValue = (g_siteIsolationMode == true) ? SiteIsolationInitMode::STRICT : SiteIsolationInitMode::PARTIAL;
+  g_siteIsolationModeInitValue = 
+    (g_siteIsolationMode == true) ? SiteIsolationInitMode::STRICT : SiteIsolationInitMode::PARTIAL;
   LOG(INFO) << "Final site isolation mode set to:" << g_siteIsolationMode;
 }
 

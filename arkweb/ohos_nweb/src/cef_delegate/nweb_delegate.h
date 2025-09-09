@@ -824,6 +824,12 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void WebExtensionContextMenuReloadFocusedFrame() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void WebExtensionContextMenuGetFocusedFrameInfo(
+      int32_t& frame_id,
+      std::string& frame_url) override;
+#endif
+
   void SetSurfaceDensity(const double& density) override;
 
   void OpenDevtoolsWith(

@@ -393,16 +393,23 @@ class HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation
         .Describe(configAdapterTmp, scoped_hardware_buffer_->buffer());
     if (!vulkan_image_) {
       DCHECK(!promise_texture_);
-      real_size_.set_width(std::min(size().width(), configAdapterTmp->GetBufferWidth()));
-      real_size_.set_height(std::min(size().height(), configAdapterTmp->GetBufferHeight()));
+      real_size_ = size();
+      if (configAdapterTmp) {
+        real_size_.set_width(std::min(size().width(), configAdapterTmp->GetBufferWidth()));
+        real_size_.set_height(std::min(size().height(), configAdapterTmp->GetBufferHeight()));
+      }
+      if (real_size_ != size()) {
+        LOG(INFO) << "HwVideoNativeBufferImageBacking create vkimage width: "
+          << real_size_.width() << " height: " << real_size_.height();
+        LOG(INFO) << "HwVideoNativeBufferImageBacking backing width: "
+          << size().width() << " height: " << size().height();
+      }
       vulkan_image_ = CreateVkImageFromNativeBufferHandle(
           scoped_hardware_buffer_->TakeBuffer(), context_state(), real_size_,
           format(), VK_QUEUE_FAMILY_FOREIGN_EXT);
       if (!vulkan_image_) {
         return {};
       }
-      LOG(INFO) << "HwVideoNativeBufferImageBacking create vkimage width: "
-          << real_size_.width() << " height: " << real_size_.height();
 
       promise_texture_ = GrPromiseImageTexture::Make(GrBackendTextures::MakeVk(
           size().width(), size().height(),

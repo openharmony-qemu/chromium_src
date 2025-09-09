@@ -17,6 +17,8 @@
 #define VIDEO_ENCODER_IMPL_ADAPTER
 
 #include "media_codec_adapter.h"
+#include "arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper.h"
+
 #include <multimedia/player_framework/native_avcodec_videoencoder.h>
 
 namespace OHOS::NWeb {
@@ -42,7 +44,7 @@ class VideoEncoderAdapterImpl : public MediaCodecAdapter {
 public:
     VideoEncoderAdapterImpl() = default;
 
-    ~VideoEncoderAdapterImpl() = default;
+    ~VideoEncoderAdapterImpl();
 
     CodecCodeAdapter CreateVideoCodecByMime(const std::string mimetype) override;
 
@@ -70,9 +72,19 @@ public:
 
     static BufferFlag GetBufferFlag(OH_AVCodecBufferFlags codecBufferFlag);
 
+    static void OnError(OH_AVCodec *codec, int32_t errorCode, void *userData);
+
+    static void OnStreamChanged(OH_AVCodec *codec, OH_AVFormat *format, void *userData);
+
+    static void OnNeedInputBuffer(OH_AVCodec *codec, uint32_t index, OH_AVBuffer *buffer, void *userData);
+
+    static void OnNewOutputBuffer(OH_AVCodec *codec, uint32_t index, OH_AVBuffer *buffer, void *userData);
+
 private:
     OH_AVCodec* encoder_ = nullptr;
-    std::shared_ptr<EncoderCallbackImpl> callback_ = nullptr;
+
+    size_t callback_index_ = 0;
+    static CallbackSharedWrapper<EncoderCallbackImpl> callback_wrapper_;
 };
 }
 

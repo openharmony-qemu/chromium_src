@@ -479,6 +479,7 @@ fi
 export OHOS_BASE_SDK_HOME="${ROOT_DIR}/ohos_sdk"
 
 echo "third_party/depot_tools/ninja -C $build_dir -j$buildcount ${build_target}"
+third_party/depot_tools/ninja -C $build_dir -j$buildcount third_party/blink/public/mojom/origin_trials:origin_trial_feature
 third_party/depot_tools/ninja -C $build_dir -j$buildcount ${build_target}
 
 if [[ $build_hmp =~ 1 ]] ; then

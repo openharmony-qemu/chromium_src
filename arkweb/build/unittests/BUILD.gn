@@ -44,6 +44,7 @@ group("oh_base_unittests") {
 group("oh_core_unittests") {
   testonly = true
   deps = [
+    "//chrome/test:browser_tests",
     "//components/gwp_asan:gwp_asan_unittests",
     "//components/services/filesystem:filesystem_service_unittests",
     "//media:audio_unittests",

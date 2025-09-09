@@ -28,7 +28,7 @@ public:
   AppfreezeMonitorImpl() = default;
   ~AppfreezeMonitorImpl() = default;
   static std::shared_ptr<AppfreezeMonitorImpl> GetInstance();
-  void GetRemoteAndSend(const std::string& args);
+  void GetRemoteAndSend();
   void Init();
   bool IsReported() {
     return reported_;

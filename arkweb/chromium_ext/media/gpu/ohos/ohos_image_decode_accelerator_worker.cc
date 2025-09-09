@@ -34,7 +34,13 @@
 #include "ui/gfx/native_pixmap_handle.h"
 
 namespace media {
-
+#if BUILDFLAG(ARKWEB_TEST)
+std::function<std::unique_ptr<OhosImageDecoder>()> test_decoder;
+void SetTestDecoder(
+    std::function<std::unique_ptr<OhosImageDecoder>()> decoder) {
+  test_decoder = decoder;
+}
+#endif
 namespace {
 // Uses |decoder| to decode the image corresponding to |encoded_data|.
 // |decode_cb| is called when finished or when an error is encountered. We don't
@@ -126,8 +132,12 @@ void DecodeTask(
 std::unique_ptr<OhosImageDecodeAcceleratorWorker>
 OhosImageDecodeAcceleratorWorker::Create() {
   OhosImageDecoderVector decoders;
-
-  auto heif_image_decoder = std::make_unique<OhosHeifImageDecoder>();
+  std::unique_ptr<OhosImageDecoder> heif_image_decoder;
+#if BUILDFLAG(ARKWEB_TEST)
+  heif_image_decoder = test_decoder();
+#else
+  heif_image_decoder = std::make_unique<OhosHeifImageDecoder>();
+#endif
 
   if (heif_image_decoder->Initialize()) {
     decoders.push_back(std::move(heif_image_decoder));

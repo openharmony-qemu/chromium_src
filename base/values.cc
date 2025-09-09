@@ -34,10 +34,6 @@
 #include "base/trace_event/memory_usage_estimator.h"  // no-presubmit-check
 #endif  // BUILDFLAG(ENABLE_BASE_TRACING)
 
-#if BUILDFLAG(ARKWEB_WEBSTORAGE)
-#include "base/logging.h"
-#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
-
 namespace base {
 
 namespace {

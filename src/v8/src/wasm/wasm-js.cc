@@ -2100,6 +2100,9 @@ V8_WARN_UNUSED_RESULT bool EncodeExceptionValues(
         values_out->set(index++, *value_handle);
         break;
       }
+      case i::wasm::kS128:
+        thrower->TypeError("Invalid type v128");
+        return false;
       case i::wasm::kRtt:
       case i::wasm::kI8:
       case i::wasm::kI16:
@@ -2107,7 +2110,6 @@ V8_WARN_UNUSED_RESULT bool EncodeExceptionValues(
       case i::wasm::kVoid:
       case i::wasm::kTop:
       case i::wasm::kBottom:
-      case i::wasm::kS128:
         UNREACHABLE();
     }
   }
@@ -2865,6 +2867,9 @@ void WebAssemblyExceptionGetArgImpl(
       }
       return;
     }
+    case i::wasm::kS128:
+      thrower.TypeError("Invalid type v128");
+      return;
     case i::wasm::kRtt:
     case i::wasm::kI8:
     case i::wasm::kI16:
@@ -2872,7 +2877,6 @@ void WebAssemblyExceptionGetArgImpl(
     case i::wasm::kVoid:
     case i::wasm::kTop:
     case i::wasm::kBottom:
-    case i::wasm::kS128:
       UNREACHABLE();
   }
   info.GetReturnValue().Set(result);

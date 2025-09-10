@@ -19,6 +19,7 @@
 #include <unistd.h>
 
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 #include <AbilityKit/ability_runtime/application_context.h>
 #include <unordered_map>
 using namespace OHOS::NWeb;
@@ -182,8 +183,8 @@ void OhosWebDataBaseAdapterImpl::SaveHttpAuthCredentials(const std::string& host
     valueBucket->putBlob(valueBucket, HTTPAUTH_PASSWORD_COL.c_str(), passwordVector.data(),
         static_cast<uint32_t>(passwordVector.size()));
     errno_t ret = memset_s(&passwordVector[0], passwordVector.size(), 0, passwordVector.size());
-    if (ret != E_OK) {
-        WVLOG_E("memset failed， errCode=%{public}d", ret);
+    if (ret != 0) {
+        WVLOG_E("memset failed, errCode=%{public}d", ret);
     }
     errCode = OH_Rdb_Insert(rdbStore_, HTTPAUTH_TABLE_NAME.c_str(), valueBucket);
     valueBucket->destroy(valueBucket);
@@ -252,12 +253,12 @@ void OhosWebDataBaseAdapterImpl::GetHttpAuthCredentials(const std::string& host,
     cursor->getBlob(cursor, columnIndex, passwd, size);
     cursor->destroy(cursor);
     errno_t ret = memcpy_s(password, size + 1, passwd, size + 1);
-    if (ret != E_OK) {
-        WVLOG_E("memcpy failed， errCode=%{public}d", ret);
+    if (ret != 0) {
+        WVLOG_E("memcpy failed, errCode=%{public}d", ret);
     }
     ret = memset_s(passwd, size + 1, 0, size + 1);
-    if (ret != E_OK) {
-        WVLOG_E("memset failed， errCode=%{public}d", ret);
+    if (ret != 0) {
+        WVLOG_E("memset failed, errCode=%{public}d", ret);
     }
     delete[] passwd;
 }

@@ -405,7 +405,7 @@ class HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation
           << size().width() << " height: " << size().height();
       }
       vulkan_image_ = CreateVkImageFromNativeBufferHandle(
-          scoped_hardware_buffer_->TakeBuffer(), context_state(), size(), real_size_,
+          scoped_hardware_buffer_->TakeBuffer(), context_state(), real_size_,
           format(), VK_QUEUE_FAMILY_FOREIGN_EXT);
       if (!vulkan_image_) {
         return {};

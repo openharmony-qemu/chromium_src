@@ -415,10 +415,10 @@ int32_t DrmAdapterImpl::ReleaseMediaKeySession()
 
     Drm_ErrCode ret = OH_MediaKeySession_Destroy(drmKeySession_);
     WVLOG_I("[DRM]DrmAdapterImpl::OH_MediaKeySession_Destroy, ret = %{public}d.", ret);
-    drmKeySession_ = nullptr;
     if (ret != DRM_ERR_OK) {
         WVLOG_E("[DRM]Failed to release MediaKeySession.");
     }
+    drmKeySession_ = nullptr;
     return static_cast<int32_t>(DrmResult::DRM_RESULT_OK);
 }
 

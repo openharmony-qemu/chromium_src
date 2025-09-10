@@ -8,6 +8,7 @@
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
 #include "arkweb/build/features/features.h"
+#include "arkweb/build/features/features.h"
 
 namespace extensions {
 

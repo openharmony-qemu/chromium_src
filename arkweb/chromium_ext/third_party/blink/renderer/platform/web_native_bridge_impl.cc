@@ -267,7 +267,7 @@ void WebNativeBridgeImpl::ActivateSurfaceLayerForSameLayer() {
       FROM_HERE,
       base::BindOnce(
           &VideoFrameCompositor::EnableSubmission,
-          base::Unretained(compositor_.get()), bridge_->GetSurfaceId(),
+          compositor_->GetWeakPtr(), bridge_->GetSurfaceId(),
           media::kNoTransformation,
           false));
   bridge_->SetContentsOpaque(false);

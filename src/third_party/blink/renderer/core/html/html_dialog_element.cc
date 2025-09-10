@@ -419,7 +419,7 @@ void HTMLDialogElement::SetCloseWatcherEnabledState() {
 }
 
 void HTMLDialogElement::CreateCloseWatcher() {
-  CHECK(!close_watcher_);
+  DCHECK(!close_watcher_);
   LocalDOMWindow* window = GetDocument().domWindow();
   if (!window) {
     return;

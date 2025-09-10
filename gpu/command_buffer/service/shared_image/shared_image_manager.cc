@@ -524,8 +524,12 @@ void SharedImageManager::OnRepresentationDestroyed(
     // SharedImageManager::OnRepresentationDestroyed can be nested, so we need
     // to get the iterator again.
     auto found = images_.find(mailbox);
-    if (found != images_.end() && (!(*found)->HasAnyRefs()))
+    if (found != images_.end() && (!(*found)->HasAnyRefs())) {
+#if BUILDFLAG(IS_ARKWEB)
+      LOG(INFO) << "images_ erase, get mailbox info:" << mailbox.toDebugString().c_str();
+#endif
       images_.erase(found);
+    }
   }
 }
 

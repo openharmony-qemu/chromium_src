@@ -36,7 +36,7 @@ public:
 private:
   std::unique_ptr<base::SingleThreadTaskExecutor> task_executor_ =
     std::make_unique<base::SingleThreadTaskExecutor>(base::MessagePumpType::DEFAULT);
-  mojo::Remote<freeze_reporter::mojom::FreezeReporter> remote_;
+  mojo::Remote<dfx::mojom::FreezeReporter> remote_;
   bool reported_ = false;
   bool initialized_ = false;
 };

@@ -32,8 +32,7 @@ void AppfreezeMonitorImpl::Init() {
   }
   if (blink::Platform::Current() && blink::Platform::Current()->GetBrowserInterfaceBroker()) {
     blink::Platform::Current()->GetBrowserInterfaceBroker()->GetInterface(
-      remote_.BindNewPipeAndPassReceiver()
-    );
+      remote_.BindNewPipeAndPassReceiver());
     initialized_ = true;
   } else {
     LOG(ERROR) << "Init FreezeReporter failed!";
@@ -48,7 +47,7 @@ std::shared_ptr<AppfreezeMonitorImpl> AppfreezeMonitorImpl::GetInstance() {
 
 void AppfreezeMonitorImpl::GetRemoteAndSend() {
   if (remote_.is_bound()) {
-    remote_->ReportFreeze(""); // the param may be used in the future
+    remote_->ReportHiSysEvent(""); // the param may be used in the future
     reported_ = true;
   }
 }

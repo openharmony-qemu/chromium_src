@@ -1241,6 +1241,7 @@ void NWebImpl::OnDestroy() {
   // Report nweb instance count
   ReportMultiInstanceStats(nweb_id_, g_nweb_count, g_nweb_max_count);
 #endif
+  NWebConnectNativeManager::GetInstance()->UnRegisterNWebHandler(nweb_id_);
 }
 
 void NWebImpl::ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args) {
@@ -1469,6 +1470,7 @@ void NWebImpl::SetNWebHandler(std::shared_ptr<NWebHandler> client) {
 
   nweb_handle_ = client;
   nweb_delegate_->RegisterNWebHandler(client);
+  NWebConnectNativeManager::GetInstance()->RegisterNWebHandler(nweb_id_, client);
   client->SetNWeb(shared_from_this());
 }
 

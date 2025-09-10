@@ -37,4 +37,12 @@ public:
   void ReportHiSysEvent(const std::string& eventName, const std::string& sysEventInfoJson) override;
 };
 
+class FreezeReporterImpl : public dfx::mojom::FreezeReporter {
+public:
+  FreezeReporterImpl() {}
+  ~FreezeReporterImpl() override {}
+  static void ProcessPendingReceiver(mojo::PendingReceiver<dfx::mojom::FreezeReporter> receiver);
+  void ReportRenderFreeze(const std::string& eventInfo) override;
+};
+
 #endif // BROWSER_PERFORMANCE_DFX_REPORTER_IMPL_H_

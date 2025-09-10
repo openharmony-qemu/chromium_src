@@ -3711,8 +3711,10 @@ test("base_unittests") {
       "//arkweb/chromium_ext:arkweb_base_unittest_config"
     ]
     sources += arkweb_ohos_adapter_ndk_unittests_sources
+    sources += arkweb_content_browser_accessibility_resources
 
     public_deps = [
+      "//ui/accessibility:test_support",
       "//content/public/browser",
       "//components/autofill/core/browser",
       "//components/subresource_filter/content/browser",

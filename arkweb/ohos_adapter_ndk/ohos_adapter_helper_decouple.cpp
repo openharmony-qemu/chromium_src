@@ -106,13 +106,26 @@
 #include "arkweb/ohos_adapter_ndk/net_config_adapter/net_config_adapter_impl.h"
 
 namespace OHOS::NWeb {
-
+#if BUILDFLAG(ARKWEB_TEST)
+static OhosAdapterHelper* instance_ = nullptr;
+#endif
 OhosAdapterHelper& OhosAdapterHelper::GetInstance() {
+#if BUILDFLAG(ARKWEB_TEST)
+    if (instance_) {
+        return *instance_;
+    }
+#endif
   static ArkWeb::ArkOhosAdapterHelperWrapper instance(
       ArkWeb::ArkOhosAdapterHelper::GetInstance());
   return instance;
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+void OhosAdapterHelper::SetInstance(OhosAdapterHelper* instance)
+{
+    instance_ = instance;
+}
+#endif
 }  // namespace OHOS::NWeb
 
 namespace OHOS::ArkWeb {

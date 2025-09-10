@@ -23,6 +23,7 @@ using namespace OHOS::NWeb;
 namespace {
 using CmTf = NWebContextMenuParams::ContextMenuTypeFlags;
 using CmMt = NWebContextMenuParams::ContextMenuMediaType;
+using CmDMt = NWebContextMenuParams::ContextMenuDataMediaType;
 using CmEf = NWebContextMenuParams::ContextMenuEditStateFlags;
 using CmIt = NWebContextMenuParams::ContextMenuInputFieldType;
 using CmSt = NWebContextMenuParams::ContextMenuSourceType;
@@ -35,6 +36,14 @@ const std::unordered_map<int, int> kCmTypeFlagMap = {
     {CM_TYPEFLAG_MEDIA, CmTf::CM_TF_MEDIA},
     {CM_TYPEFLAG_SELECTION, CmTf::CM_TF_SELECTION},
     {CM_TYPEFLAG_EDITABLE, CmTf::CM_TF_EDITABLE},
+};
+
+const std::unordered_map<int, int> kCmDataMediaTypeMap = {
+    {CM_MEDIATYPE_NONE, CmDMt::CMD_MT_NONE},
+    {CM_MEDIATYPE_IMAGE, CmDMt::CMD_MT_IMAGE},
+    {CM_MEDIATYPE_VIDEO, CmDMt::CMD_MT_VIDEO},
+    {CM_MEDIATYPE_AUDIO, CmDMt::CMD_MT_AUDIO},
+    {CM_MEDIATYPE_CANVAS, CmDMt::CMD_MT_CANVAS},
 };
 
 const std::unordered_map<int, int> kCmMediaTypeMap = {
@@ -148,6 +157,15 @@ int32_t ConvertMenuFlags(int32_t value,
   return result;
 }
 
+CmDMt ConvertContextMenuDataMediaType(CefContextMenuParamsExt::MediaType value) {
+  std::unordered_map<int, int>::const_iterator iter =
+      kCmDataMediaTypeMap.find(static_cast<int32_t>(value));
+  if (iter != kCmDataMediaTypeMap.end()) {
+    return static_cast<CmDMt>(iter->second);
+  }
+  return CmDMt::CMD_MT_NONE;
+}
+
 CmMt ConvertContextMenuMediaType(CefContextMenuParamsExt::MediaType value) {
   std::unordered_map<int, int>::const_iterator iter =
       kCmMediaTypeMap.find(static_cast<int32_t>(value));
@@ -236,6 +254,13 @@ CmMt NWebContextMenuParamsImpl::GetMediaType() {
     return ConvertContextMenuMediaType(params_->GetMediaType());
   }
   return CmMt::CM_MT_NONE;
+}
+
+CmDMt NWebContextMenuParamsImpl::GetContextMenuMediaType() {
+  if (params_ != nullptr) {
+    return ConvertContextMenuDataMediaType(params_->GetMediaType());
+  }
+  return CmDMt::CMD_MT_NONE;
 }
 
 bool NWebContextMenuParamsImpl::IsEditable() {

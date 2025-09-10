@@ -331,6 +331,7 @@ arkweb_media_base_unittest_sources = [
 ]
 
 arkweb_media_mojo_services_unittest_sources = [
+  "//arkweb/chromium_ext/media/mojo/services/mojo_renderer_service_for_include_unittest.cc",
   "//arkweb/chromium_ext/media/mojo/services/ohos_mojo_media_client_unittests.cc",
   "//arkweb/chromium_ext/media/mojo/services/ohos_mojo_util_unittests.cc",
 ]
@@ -927,6 +928,7 @@ if (arkweb_enable_cdm) {
 
   arkweb_cdm_unittest_sources = [
     "//arkweb/chromium_ext/components/cdm/common/widevine_drm_delegate_ohos_unittest.cc",
+    "//arkweb/chromium_ext/components/cdm/renderer/key_system_support_update_for_include_unittest.cc",
   ]
 }
 

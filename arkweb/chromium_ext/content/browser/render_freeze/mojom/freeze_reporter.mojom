@@ -1,5 +1,0 @@
-module freeze_reporter.mojom;
-
-interface FreezeReporter {
-  ReportFreeze(string eventInfo);
-};

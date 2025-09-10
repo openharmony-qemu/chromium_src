@@ -600,7 +600,7 @@ TEST_F(ScreenCaptureAdapterImplTest, AcquireVideoBuffer)
   EXPECT_EQ(result, 0);
 
   std::queue<std::shared_ptr<SurfaceBufferAdapter>> bufferAvailableQueue1;
-  adapterImpl->callback_info_.nweb_id = 100;
+  adapterImpl->nweb_id_ = 100;
   bufferAvailableQueueMap_.emplace(100, bufferAvailableQueue1);
   buffer = adapterImpl->AcquireVideoBuffer();
   EXPECT_EQ(buffer, nullptr);
@@ -622,18 +622,18 @@ TEST_F(ScreenCaptureAdapterImplTest, AcquireAudioBuffer)
   auto config = GetScreenCaptureConfig();
   result = adapterImpl->InitV2(config, 0);
   EXPECT_EQ(result, 0);
-  adapterImpl->callback_info_.nweb_id = 101;
+  adapterImpl->nweb_id_ = 101;
   result = adapterImpl->AcquireAudioBuffer(buffer, OHOS::NWeb::AudioCaptureSourceTypeAdapter::ALL_PLAYBACK);
   EXPECT_EQ(result, -1);
 
-  adapterImpl->callback_info_.nweb_id = 102;
+  adapterImpl->nweb_id_ = 102;
   std::queue<std::shared_ptr<OH_AudioBufferAdapterImpl>> bufferQueue;
   audioBufferAvailableQueueMap_.emplace(102, bufferQueue);
   result = adapterImpl->AcquireAudioBuffer(buffer, OHOS::NWeb::AudioCaptureSourceTypeAdapter::ALL_PLAYBACK);
   EXPECT_EQ(result, -1);
 
   audioBufferAvailableQueueMap_.erase(102);
-  adapterImpl->callback_info_.nweb_id = 0;
+  adapterImpl->nweb_id_ = 0;
   auto callback = std::make_shared<OHOSScreenCaptureCallbackMock>();
   result = adapterImpl->SetCaptureCallback(callback);
   EXPECT_EQ(result, 0);
@@ -644,7 +644,7 @@ TEST_F(ScreenCaptureAdapterImplTest, AcquireAudioBuffer)
   cb.callback = std::make_shared<OHOSScreenCaptureCallbackMock>();
   cb.nweb_id = 0;
   void* userData = static_cast<void*>(&cb);
-  ScreenCaptureCallbackOnBufferAvailable(
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(
       nullptr, avBuffer, OH_AVScreenCaptureBufferType::OH_SCREEN_CAPTURE_BUFFERTYPE_AUDIO_INNER, 0, userData);
 
   result = adapterImpl->AcquireAudioBuffer(buffer, OHOS::NWeb::AudioCaptureSourceTypeAdapter::ALL_PLAYBACK);
@@ -849,30 +849,30 @@ TEST_F(ScreenCaptureAdapterImplTest, ConvertAudioCaptureSourceType)
 TEST_F(ScreenCaptureAdapterImplTest, ScreenCaptureCallbackOnError)
 {
   testing::internal::CaptureStderr();
-  ScreenCaptureCallbackOnError(nullptr, 0, nullptr);
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnError(nullptr, 0, nullptr);
 
   CallbackInfo cb;
   cb.callback = std::make_shared<OHOSScreenCaptureCallbackMock>();
   void* userData = static_cast<void*>(&cb);
-  ScreenCaptureCallbackOnError(nullptr, 0, userData);
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnError(nullptr, 0, userData);
 }
 
 TEST_F(ScreenCaptureAdapterImplTest, ScreenCaptureCallbackOnBufferAvailable)
 {
 
   OH_AVBuffer* avBuffer = OH_AVBuffer_Create(1);
-  ScreenCaptureCallbackOnBufferAvailable(
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(
       nullptr, nullptr, OH_AVScreenCaptureBufferType::OH_SCREEN_CAPTURE_BUFFERTYPE_VIDEO, 0, nullptr);
 
   CallbackInfo cb;
   cb.callback = nullptr;
   void* userData = static_cast<void*>(&cb);
-  ScreenCaptureCallbackOnBufferAvailable(
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(
       nullptr, nullptr, OH_AVScreenCaptureBufferType::OH_SCREEN_CAPTURE_BUFFERTYPE_VIDEO, 0, userData);
 
   cb.callback = std::make_shared<OHOSScreenCaptureCallbackMock>();
   cb.nweb_id = 0;
-  ScreenCaptureCallbackOnBufferAvailable(
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(
       nullptr, avBuffer, OH_AVScreenCaptureBufferType::OH_SCREEN_CAPTURE_BUFFERTYPE_VIDEO, 0, userData);
 
   cb.nweb_id = 0;
@@ -881,13 +881,13 @@ TEST_F(ScreenCaptureAdapterImplTest, ScreenCaptureCallbackOnBufferAvailable)
   std::queue<std::shared_ptr<SurfaceBufferAdapter>> bufferAvailableQueue;
   bufferAvailableQueue.push(std::move(surfaceBufferImpl));
   bufferAvailableQueueMap_[0] = bufferAvailableQueue;
-  ScreenCaptureCallbackOnBufferAvailable(
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(
       nullptr, avBuffer, OH_AVScreenCaptureBufferType::OH_SCREEN_CAPTURE_BUFFERTYPE_VIDEO, 0, userData);
 
-  ScreenCaptureCallbackOnBufferAvailable(
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(
       nullptr, avBuffer, OH_AVScreenCaptureBufferType::OH_SCREEN_CAPTURE_BUFFERTYPE_AUDIO_INNER, 0, userData);
 
-  ScreenCaptureCallbackOnBufferAvailable(
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(
       nullptr, avBuffer, OH_AVScreenCaptureBufferType::OH_SCREEN_CAPTURE_BUFFERTYPE_AUDIO_MIC, 0, userData);
 
   OH_AVBuffer_Destroy(avBuffer);
@@ -897,17 +897,17 @@ TEST_F(ScreenCaptureAdapterImplTest, ScreenCaptureCallbackOnStateChange)
 {
   OH_AVBuffer* avBuffer = OH_AVBuffer_Create(1);
   testing::internal::CaptureStderr();
-  ScreenCaptureCallbackOnStateChange(
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnStateChange(
       nullptr, OH_AVScreenCaptureStateCode::OH_SCREEN_CAPTURE_STATE_STARTED, nullptr);
 
   CallbackInfo cb;
   cb.callback = nullptr;
   void* userData = static_cast<void*>(&cb);
-  ScreenCaptureCallbackOnStateChange(
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnStateChange(
       nullptr, OH_AVScreenCaptureStateCode::OH_SCREEN_CAPTURE_STATE_STARTED, userData);
 
   cb.callback = std::make_shared<OHOSScreenCaptureCallbackMock>();
-  ScreenCaptureCallbackOnStateChange(
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnStateChange(
       nullptr, OH_AVScreenCaptureStateCode::OH_SCREEN_CAPTURE_STATE_STARTED, userData);
 }
 

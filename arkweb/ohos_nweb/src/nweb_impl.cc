@@ -3618,8 +3618,7 @@ void NWebImpl::RemoveWebExtensionCallback() {
   nweb_delegate_->UnRegisterWebExtensionListener();
 }
 
-void NWebImpl::RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
-                                     bool recursive, IsolatedWorld world,
+void NWebImpl::RunJavaScriptInFrames(RunJavaScriptParam param,
                                      OnReceiveValueCallback callback) {
   if (nweb_delegate_ == nullptr) {
     WVLOG_E(
@@ -3629,11 +3628,11 @@ void NWebImpl::RunJavaScriptInFrames(const std::string& jsString, FrameInfos roo
     return;
   }
   if (callback == nullptr) {
-    LOG(INFO) << "NWebImpl::RunJavaScriptInFrames callback is nullptr";
+    LOG(WARNING) << "NWebImpl::RunJavaScriptInFrames callback is nullptr";
     return;
   } 
  
-  nweb_delegate_->RunJavaScriptInFrames(jsString, rootFrame, recursive, world, callback);
+  nweb_delegate_->RunJavaScriptInFrames(param, callback);
 }
 
 void NWebImpl::OpenDevtools(std::unique_ptr<OpenDevToolsParam> param) {

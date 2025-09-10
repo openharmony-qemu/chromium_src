@@ -3478,28 +3478,37 @@ TEST_F(NWebImplTest, RemoveWebExtensionCallback002) {
 }
 
 TEST_F(NWebImplTest, RunJavaScriptInFrames001) {
-  const std::string jsString = "test";
   FrameInfos rootFrame;
-  bool recursive = false;
   IsolatedWorld world;
+  RunJavaScriptParam param;
+  param.script = "test";
+  param.recursive = false;
+  param.rootFrame = rootFrame;
+  param.world = world;
+  param.callbackId = 0;
   OnReceiveValueCallback callback = nullptr;
   nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, RunJavaScriptInFrames(jsString, ::testing::_, recursive, ::testing::_, callback))
+  EXPECT_CALL(*mock_delegate_, RunJavaScriptInFrames(::testing::_, callback))
       .Times(0);
-  nweb_impl_->RunJavaScriptInFrames(jsString, rootFrame, recursive, world, callback);
+  nweb_impl_->RunJavaScriptInFrames(param, callback);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
 }
 
 TEST_F(NWebImplTest, RunJavaScriptInFrames002) {
-  const std::string jsString = "test";
   FrameInfos rootFrame;
-  bool recursive = false;
   IsolatedWorld world;
+  RunJavaScriptParam param;
+  param.script = "test";
+  param.recursive = false;
+  param.rootFrame = rootFrame;
+  param.world = world;
+  param.callbackId = 0;
+
   OnReceiveValueCallback callback = nullptr;
   nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, RunJavaScriptInFrames(jsString, ::testing::_, recursive, ::testing::_, callback))
+  EXPECT_CALL(*mock_delegate_, RunJavaScriptInFrames(::testing::_, callback))
       .Times(0);
-  nweb_impl_->RunJavaScriptInFrames(jsString, rootFrame, recursive, world, callback);
+  nweb_impl_->RunJavaScriptInFrames(param, callback);
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 

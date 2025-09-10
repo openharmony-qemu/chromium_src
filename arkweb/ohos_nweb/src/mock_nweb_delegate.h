@@ -1221,10 +1221,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
   MOCK_METHOD(void,
               RunJavaScriptInFrames,
-              (const std::string& jsString,
-               FrameInfos rootFrame,
-               bool recursive,
-               IsolatedWorld world,
+              (RunJavaScriptParam,
                OnReceiveValueCallback callback),
               (override));
 

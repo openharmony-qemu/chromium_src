@@ -45,6 +45,8 @@
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "arkweb/ohos_nweb_ex/public/nweb_basic_types_utils.h"
+#include "arkweb/ohos_nweb_ex/public/nweb_extension_javascript_types_utils.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
@@ -136,22 +138,80 @@ static const int64_t kRootAccessibilityId = 1;
 #endif
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-std::string ConvertCefValueToString(CefRefPtr<CefValue> src) {
-  std::string dst;
+void ConvertCefListToJavaScriptValue(CefRefPtr<CefValue> src,
+                                      JavaScriptValue* dst) {
+  dst->type = JavaScriptDataType::LIST;
+  CefRefPtr<CefListValue> listValue = src->GetList();
+  size_t len = listValue->GetSize();
+  for (size_t i = 0; i < len; i++) {
+    CefRefPtr<CefValue> elem = listValue->GetValue(i);
+    if (elem->GetType() == VTYPE_STRING) {
+      dst->listValue.type = JavaScriptDataType::STRING;
+      dst->listValue.stringArr.push_back(elem->GetString());
+    } else if (elem->GetType() == VTYPE_BOOL) {
+      dst->listValue.type = JavaScriptDataType::BOOL;
+      dst->listValue.boolArr.push_back(elem->GetBool());
+    } else if (elem->GetType() == VTYPE_DOUBLE) {
+      dst->listValue.type = JavaScriptDataType::DOUBLE;
+      dst->listValue.doubleArr.push_back(elem->GetDouble());
+    } else if (elem->GetType() == VTYPE_INT) {
+      dst->listValue.type = JavaScriptDataType::INT;
+      dst->listValue.intArr.push_back(elem->GetInt());
+    }
+  }
+}
+
+void ConvertCefValueToJavaScriptValue(CefRefPtr<CefValue> src,
+                                      JavaScriptValue* dst) {
   int type = src->GetType();
-  LOG(DEBUG) << "OnMessage type:" << type;
+  LOG(DEBUG) << "JavaScriptValue type:" << type;
   switch (type) {
     case VTYPE_STRING: {
-      dst = src->GetString();
+      dst->type = JavaScriptDataType::STRING;
+      dst->stringValue = src->GetString().ToString();
+      break;
+    }
+    case VTYPE_BINARY: {
+      CefRefPtr<CefBinaryValue> binValue = src->GetBinary();
+      size_t len = binValue->GetSize();
+      std::vector<uint8_t> arr(len);
+      binValue->GetData(&arr[0], len, 0);
+      dst->type = JavaScriptDataType::BINARY;
+      dst->binaryData = arr;
+      break;
+    }
+    case VTYPE_BOOL: {
+      dst->type = JavaScriptDataType::BOOL;
+      dst->boolValue = src->GetBool();
+      break;
+    }
+    case VTYPE_DOUBLE: {
+      dst->type = JavaScriptDataType::DOUBLE;
+      dst->doubleValue = src->GetDouble();
+      break;
+    }
+    case VTYPE_INT: {
+      dst->type = JavaScriptDataType::INT;
+      dst->intValue = src->GetInt();
+      break;
+    }
+    case VTYPE_DICTIONARY: {
+      CefRefPtr<CefDictionaryValue> dict = src->GetDictionary();
+      dst->type = JavaScriptDataType::DICTIONARY;
+      dst->dictionaryValue.errName = dict->GetString("Error.name").ToString();
+      dst->dictionaryValue.errMsg = dict->GetString("Error.message").ToString();
+      break;
+    }
+    case VTYPE_LIST: {
+      ConvertCefListToJavaScriptValue(src, dst);
       break;
     }
     default: {
-      LOG(ERROR) << "OnMessage not support type";
-      dst = std::string("OnMessage not support type");
+      dst->type = JavaScriptDataType::NONE;
+      LOG(ERROR) << "JavaScriptValue not support type";
       break;
     }
   }
-  return dst;
 }
 #endif
 
@@ -538,23 +598,39 @@ class NavigationEntryVisitorImpl : public CefNavigationEntryVisitor {
 class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback {
  public:
   JavaScriptInFramesResultCallbackImpl(
-      OnReceiveValueCallback callback, uint32_t nweb_id)
+      OnReceiveValueCallback callback,
+      int32_t callback_id, uint32_t nweb_id)
       : callback_(callback),
+        callback_id_(callback_id),
         nweb_id_(nweb_id){}
   ~JavaScriptInFramesResultCallbackImpl() {}
  
   NO_SANITIZE("cfi")
   void OnJavaScriptExeResult(CefRefPtr<CefValue> result) override {
     if (callback_ != nullptr) {
-      std::string data = ConvertCefValueToString(result);
-      callback_(nweb_id_, data);
+      JavaScriptValue value;
+      ConvertCefValueToJavaScriptValue(result, &value);
+
+      nweb_ex::proto::JavaScriptValue pb_value;
+      NwebExtensionJavaScriptTypesUtils::ExtensionWebValueClassToPb(value, pb_value);
+      ArkWebPbBuffer pb_result_buffer = {};
+      bool ret = NWebBasicTypesUtils::AllocAndPopulateArkWebPbBuffer(pb_value, pb_result_buffer);
+      if (!ret) {
+        LOG(ERROR) << "failed to convert JavaScriptValue into pb buffer";
+        return;
+      }
+
+      callback_(nweb_id_, callback_id_, &pb_result_buffer);
+
+      NWebBasicTypesUtils::FreeArkWebPbBuffer(pb_result_buffer);
     }
   }
- 
+
  private:
-  OnReceiveValueCallback callback_;
+  OnReceiveValueCallback callback_ = nullptr;
+  int32_t callback_id_ = 0;
   uint32_t nweb_id_ = 0;
- 
+
   IMPLEMENT_REFCOUNTING(JavaScriptInFramesResultCallbackImpl);
 };
 #endif
@@ -6054,25 +6130,28 @@ void NWebDelegate::UpdateSingleHandleVisible(bool isVisible) {
 #endif
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-void NWebDelegate::RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
-                                         bool recursive, IsolatedWorld world,
+void NWebDelegate::RunJavaScriptInFrames(RunJavaScriptParam param,,
                                          OnReceiveValueCallback callback) {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(
         CEF_UIT,
         base::BindOnce((void(NWebDelegate::*)(
-                           const std::string&,
-                           FrameInfos, bool, IsolatedWorld,
+                           RunJavaScriptParam
                            OnReceiveValueCallback)) &
                            NWebDelegate::RunJavaScriptInFrames,
-                       this, jsString, rootFrame, recursive, world, callback));
+                       this, param, callback));
     return;
   }
  
   if (GetBrowser().get()) {
+    if (!param.rootFrame.has_value() || !param.world.has_value()) {
+      LOG(ERROR) << "RunJavaScriptInFrames param invaild";
+      return;
+    }
     CefRefPtr<JavaScriptInFramesResultCallbackImpl> JsResultCb =
-        new JavaScriptInFramesResultCallbackImpl(callback, nweb_id_);
-    GetBrowser()->GetHost()->RunJavaScriptInFrames(jsString, rootFrame, recursive, world, JsResultCb);
+        new JavaScriptInFramesResultCallbackImpl(callback, param.callbackId, nweb_id_);
+    GetBrowser()->GetHost()->RunJavaScriptInFrames(param.script, param.rootFrame.value(),
+                                                   param.recursive, param.world.value(), JsResultCb);
   }
 }
 #endif

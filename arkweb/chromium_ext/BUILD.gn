@@ -44,5 +44,6 @@ config("arkweb_base_unittest_config") {
   "-Wl,--wrap=OH_AudioStreamBuilder_SetLatencyMode",
   "-Wl,--wrap=OH_AudioStreamBuilder_SetCapturerCallback",
   "-Wl,--wrap=OH_AudioStreamBuilder_GenerateCapturer",
+  "-Wl,--wrap=OH_CommonEvent_UnSubscribe",
   ]
 }

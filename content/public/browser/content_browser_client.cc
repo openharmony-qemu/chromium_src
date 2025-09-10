@@ -1875,7 +1875,7 @@ bool ContentBrowserClient::ShouldDispatchPagehideDuringCommit(
 }
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
-std::string ContentBrowserClient::GetUAStringForHost(std::string host) {
+std::string ContentBrowserClient::GetUAStringForHost(const std::string& host) {
   return GetUserAgent();
 }
 #endif

@@ -309,11 +309,11 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::ReleaseDecoder()
         return DecoderAdapterCode::DECODER_ERROR;
     }
     OH_AVErrCode ret = OH_VideoDecoder_Destroy(decoder_);
-    decoder_ = nullptr;
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         WVLOG_E("MediaCodecDecoder OH_VideoDecoder_Destroy fail, ret=%{public}u.", static_cast<uint32_t>(ret));
         return DecoderAdapterCode::DECODER_ERROR;
     }
+    decoder_ = nullptr;
     std::unique_lock<std::mutex> lock(bufferMutex_);
     bufferMap_.clear();
     return DecoderAdapterCode::DECODER_OK;

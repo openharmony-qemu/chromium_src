@@ -700,25 +700,6 @@ fuzzer_test("ohos_buffer_adapter_impl_fuzzer") {
   ]
 }
 
-fuzzer_test("player_framework_adapter_impl_fuzzer") {
-  sources = [ "fuzztest/ohos_adapter_ndk/media_adapter/player_framework_adapter_impl_fuzzer.cpp" ]
-  include_dirs = [
-    "//cef",
-    "//cef/include",
-    "//ohos_nweb/include",
-    "//arkweb/ohos_adapter_ndk/media_adapter",
-    "//arkweb/ohos_adapter_ndk/graphic_adapter",
-    "//third_party/ohos_ndk/includes/ohos_adapter",
-  ]
-  deps = [
-    "//cef:libcef_static",
-    "//ohos_nweb:nweb_sources",
-    "//third_party/googletest:gtest",
-    "//third_party/googletest:gmock",
-    "//arkweb/ohos_adapter_ndk:adapter_ndk",
-  ]
-}
-
 fuzzer_test("nweb_preference_delegate_secondary_fuzzer") {
   sources = [ "fuzztest/ohos_nweb/src/cef_delegate/nweb_preference_delegate_secondary_fuzzer.cc" ]
   include_dirs = [

@@ -3171,7 +3171,7 @@ class CONTENT_EXPORT ContentBrowserClient {
       const GURL& destination_url);
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
-  virtual std::string GetUAStringForHost(std::string host);
+  virtual std::string GetUAStringForHost(const std::string& host);
 #endif
 };
 

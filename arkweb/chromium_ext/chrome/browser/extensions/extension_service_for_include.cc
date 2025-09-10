@@ -20,10 +20,12 @@
 namespace extensions {
  
 namespace {
-#if BUILDFLAG(ARKWEB_NWEB_EX)
+
 void NotifyOnInstalledExtensionsLoadedInFileTask() {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
   content::GetUIThreadTaskRunner({})
           ->PostTask(FROM_HERE,base::BindOnce(&NWebExtensionManagerDispatcher::OnExtensionInitLoadEndCallBack));
+#endif
 }
  
 void NotifyOnInstalledExtensionsLoadedInUITask() {
@@ -35,6 +37,6 @@ void NotifyOnInstalledExtensionsLoaded() {
   content::GetUIThreadTaskRunner({base::TaskPriority::USER_VISIBLE})
         ->PostTask(FROM_HERE, base::BindOnce(&NotifyOnInstalledExtensionsLoadedInUITask));
 } 
-#endif 
+
 }  // namespace
 }  // namespace extensions

@@ -23,7 +23,7 @@ void ReportRenderFreeze() {
     instance->GetRemoteAndSend();
   }
 }
-void AppfreezeMonitorImpl::AppfreezeMonitorImpl() {
+AppfreezeMonitorImpl::AppfreezeMonitorImpl() {
   Init();
 }
 void AppfreezeMonitorImpl::Init() {

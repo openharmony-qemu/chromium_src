@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/public/capi/nweb_basic_types.h"
 #endif
 
@@ -87,7 +87,7 @@ struct JavaScriptValue {
   JavaScriptItemList listValue;
 };
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 typedef void (*OnReceiveValueCallback)(int32_t nwebId, int32_t callbackId,
                                        const ArkWebPbBuffer* pb_result_buffer);
 #endif

@@ -19,7 +19,6 @@
 #include "arkweb/chromium_ext/content/browser/dfx/mojom/dfx_reporting.mojom.h"
 #include "base/task/single_thread_task_executor.h"
 #include "mojo/public/cpp/bindings/remote.h"
-#include "third_party/blink/public/platform/browser_interface_broker_proxy.h"
 
 void ReportRenderFreeze();
 

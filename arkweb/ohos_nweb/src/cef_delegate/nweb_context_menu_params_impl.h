@@ -43,6 +43,7 @@ class NWebContextMenuParamsImpl : public NWebContextMenuParams {
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   void GetImageRect(int& x, int& y, int& w, int& h) override;
   bool IsAILink() override;
+  ContextMenuDataMediaType GetContextMenuMediaType() override;
 #endif
 
  private:

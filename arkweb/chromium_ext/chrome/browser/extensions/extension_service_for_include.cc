@@ -20,7 +20,7 @@
 namespace extensions {
  
 namespace {
- 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 void NotifyOnInstalledExtensionsLoadedInFileTask() {
   content::GetUIThreadTaskRunner({})
           ->PostTask(FROM_HERE,base::BindOnce(&NWebExtensionManagerDispatcher::OnExtensionInitLoadEndCallBack));
@@ -35,6 +35,6 @@ void NotifyOnInstalledExtensionsLoaded() {
   content::GetUIThreadTaskRunner({base::TaskPriority::USER_VISIBLE})
         ->PostTask(FROM_HERE, base::BindOnce(&NotifyOnInstalledExtensionsLoadedInUITask));
 } 
- 
+#endif 
 }  // namespace
 }  // namespace extensions

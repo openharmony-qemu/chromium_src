@@ -6,5 +6,5 @@ interface DfxReporter {
 };
 
 interface FreezeReporter {
-  ReportHiSysEvent(string eventInfo);
+  ReportRenderFreeze(string eventInfo);
 };

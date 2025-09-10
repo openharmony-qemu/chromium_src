@@ -47,7 +47,7 @@ std::shared_ptr<AppfreezeMonitorImpl> AppfreezeMonitorImpl::GetInstance() {
 
 void AppfreezeMonitorImpl::GetRemoteAndSend() {
   if (remote_.is_bound()) {
-    remote_->ReportHiSysEvent(""); // the param may be used in the future
+    remote_->ReportRenderFreeze(""); // the param may be used in the future
     reported_ = true;
   }
 }

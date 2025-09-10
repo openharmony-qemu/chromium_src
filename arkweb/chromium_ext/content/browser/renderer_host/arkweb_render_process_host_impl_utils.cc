@@ -35,7 +35,7 @@
 #include "arkweb/chromium_ext/services/device/public/mojom/sysprop_render_observer.mojom.h"
 #endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-#include "arkweb/chromium_ext/content/browser/dfx/dfx_reporter_browser_impl.h"
+#include "../dfx/dfx_reporter_browser_impl.h"
 #endif
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)

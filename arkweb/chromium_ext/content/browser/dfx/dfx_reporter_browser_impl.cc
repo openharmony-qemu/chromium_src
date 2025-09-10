@@ -124,7 +124,7 @@ void DfxReporterImpl::ReportHiSysEvent(const std::string& eventName, const std::
 }
 
 // the param `eventInfo` may be used in the future
-void FreezeReporterImpl::ReportHiSysEvent(const std::string& eventInfo)
+void FreezeReporterImpl::ReportRenderFreeze(const std::string& eventInfo)
 {
   ReportAppfreeze();
 }

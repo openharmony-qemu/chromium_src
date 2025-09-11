@@ -23,11 +23,15 @@
 #include "gpu/command_buffer/common/context_result.h"
 #include "gpu/gpu_export.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
 namespace gpu {
 
 class Buffer;
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_ARKWEB)
+#if !BUILDFLAG(IS_ANDROID)
 #define CMD_HELPER_PERIODIC_FLUSH_CHECK
 const int kCommandsPerFlushCheck = 100;
 const int kPeriodicFlushDelayInMicroseconds = 500;
@@ -137,7 +141,11 @@ class GPU_EXPORT CommandBufferHelper {
     // kernel to thrash between generating GPU commands and executing them.
     ++commands_issued_;
     if (flush_automatically_ &&
+#if BUILDFLAG(IS_ARKWEB)
+        (commands_issued_ % kCommandsPerFlushCheck == 0) && EnablePeriodFlush()) {
+#else
         (commands_issued_ % kCommandsPerFlushCheck == 0)) {
+#endif
       PeriodicFlushCheck();
     }
 #endif
@@ -307,6 +315,12 @@ class GPU_EXPORT CommandBufferHelper {
                     base::trace_event::ProcessMemoryDump* pmd);
 
   int32_t GetPutOffsetForTest() const { return put_; }
+#if BUILDFLAG(IS_ARKWEB)
+  // only enable period flush on the pc.
+  bool EnablePeriodFlush() const {
+    return enable_period_flush_;
+  }
+#endif
 
  private:
   void CalcImmediateEntries(int waiting_count);
@@ -344,6 +358,9 @@ class GPU_EXPORT CommandBufferHelper {
 
 #if defined(CMD_HELPER_PERIODIC_FLUSH_CHECK)
   int commands_issued_ = 0;
+#if BUILDFLAG(IS_ARKWEB)
+  bool enable_period_flush_ = false;
+#endif
 #endif
 
   bool usable_ = true;

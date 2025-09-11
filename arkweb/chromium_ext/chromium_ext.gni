@@ -334,6 +334,7 @@ arkweb_media_mojo_services_unittest_sources = [
   "//arkweb/chromium_ext/media/mojo/services/mojo_renderer_service_for_include_unittest.cc",
   "//arkweb/chromium_ext/media/mojo/services/ohos_mojo_media_client_unittests.cc",
   "//arkweb/chromium_ext/media/mojo/services/ohos_mojo_util_unittests.cc",
+  "//arkweb/chromium_ext/media/mojo/services/mojo_video_decoder_service_for_include_unittests.cc",
 ]
 
 arkweb_media_audio_unittest_sources = [
@@ -697,6 +698,7 @@ arkweb_media_gpu_unittest_sources = [
   "//arkweb/chromium_ext/media/gpu/ohos/codec_output_buffer_renderer_unittest.cc",
   "//arkweb/chromium_ext/media/gpu/ohos/codec_image_unittest.cc",
   "//arkweb/chromium_ext/media/gpu/ohos/codec_allocator_unittest.cc",
+  "//arkweb/chromium_ext/media/gpu/ohos/shared_image_video_provider_unittest.cc",
 ]
 
 arkweb_content_browser_media_sources = [

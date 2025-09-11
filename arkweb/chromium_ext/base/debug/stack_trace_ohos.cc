@@ -216,7 +216,7 @@ size_t CollectStackTrace(span<const void*> trace) {
 void StackTrace::PrintMessageWithPrefix(cstring_view prefix_string,
                                         cstring_view message) {
   if (!prefix_string.empty()) {
-    LOG(ERROR) << StrCat({prefix_string, message}).c_str();
+    LOG(ERROR) << prefix_string.c_str() << message.c_str();
   } else {
     LOG(ERROR) << message.c_str();
   }

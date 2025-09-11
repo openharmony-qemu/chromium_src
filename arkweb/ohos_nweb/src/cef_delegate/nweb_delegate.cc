@@ -139,7 +139,7 @@ static const int64_t kRootAccessibilityId = 1;
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 void ConvertCefListToJavaScriptValue(CefRefPtr<CefValue> src,
-                                      JavaScriptValue* dst) {
+                                     JavaScriptValue* dst) {
   dst->type = JavaScriptDataType::LIST;
   CefRefPtr<CefListValue> listValue = src->GetList();
   size_t len = listValue->GetSize();

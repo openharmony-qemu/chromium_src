@@ -1160,7 +1160,7 @@ class NWebImpl : public NWeb {
   bool incognito_mode_ = false;
   raw_ptr<void> window_;
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
-  float totalSize_;
+  float totalSize_ = 0;
 #endif
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
   std::string web_tag_{""};

@@ -60,8 +60,7 @@ BASE_DECLARE_FEATURE(kCustomProfileStringsForSupervisedUsers);
 BASE_DECLARE_FEATURE(kShowKiteForSupervisedUsers);
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || \
-    BUILDFLAG(ARKWEB_TEST)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
 // This hides the following guest mode entry points for supervised users:
 //
 // * In the Profile menu for supervised profiles

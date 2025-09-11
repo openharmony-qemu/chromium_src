@@ -158,9 +158,10 @@ std::string OhosWebPermissionDataBaseAdapterImpl::KeyToTableName(const WebPermis
     return "";
 }
 
-bool OhosWebPermissionDataBaseAdapterImpl::VerifyPermissionByOrigin(
+bool OhosWebPermissionDataBaseAdapterImpl::ExistPermissionByOrigin(
     const std::string& origin, const WebPermissionType& key)
 {
+    WVLOG_I("web permission database check exist permissions");
     if (rdbStore_ == nullptr || origin.empty()) {
         return false;
     }
@@ -189,16 +190,6 @@ bool OhosWebPermissionDataBaseAdapterImpl::VerifyPermissionByOrigin(
         }
         return false;
     }
-    return true;
-}
-
-bool OhosWebPermissionDataBaseAdapterImpl::ExistPermissionByOrigin(
-    const std::string& origin, const WebPermissionType& key)
-{
-    WVLOG_I("web permission database check exist permissions");
-    if (!VerifyPermissionByOrigin(origin, key)) {
-        return false;
-    }
     cursor->destroy(cursor);
     return true;
 }
@@ -207,7 +198,32 @@ bool OhosWebPermissionDataBaseAdapterImpl::GetPermissionResultByOrigin(const std
     const WebPermissionType& key, bool& result)
 {
     WVLOG_I("web permission database get permissions");
-    if (!VerifyPermissionByOrigin(origin, key)) {
+    if (rdbStore_ == nullptr || origin.empty()) {
+        return false;
+    }
+    std::string tableName = KeyToTableName(key);
+    if (tableName.empty()) {
+        return false;
+    }
+
+    OH_Predicates *dirAbsPred = OH_Rdb_CreatePredicates(tableName.c_str());
+    OH_VObject *valueObject = OH_Rdb_CreateValueObject();
+    if (dirAbsPred == nullptr || valueObject == nullptr) {
+        WVLOG_E("pointer create failed!");
+        return false;
+    }
+    valueObject->putText(valueObject, origin.c_str());
+    dirAbsPred->equalTo(dirAbsPred, PERMISSION_ORIGIN_COL.c_str(), valueObject);
+    valueObject->destroy(valueObject);
+
+    OH_Cursor *cursor = OH_Rdb_Query(rdbStore_, dirAbsPred, NULL, 0);
+    dirAbsPred->destroy(dirAbsPred);
+
+    if ((cursor == nullptr) || (cursor->goToNextRow(cursor) != RDB_OK)) {
+        WVLOG_E("web permissions database rdb store query failed");
+        if (cursor != nullptr) {
+            cursor->destroy(cursor);
+        }
         return false;
     }
 

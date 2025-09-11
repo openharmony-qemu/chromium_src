@@ -957,9 +957,9 @@ bool NWebImpl::InitializeICUStatic(
   if (!g_init_icu) {
     std::list<std::string> web_engine_args;
     InitialWebEngineArgs(web_engine_args, init_args);
-    int argc = web_engine_args.size();
+    uint32_t argc = web_engine_args.size();
     const char** argv = new const char*[argc];
-    int i = 0;
+    uint32_t i = 0;
     for (auto it = web_engine_args.begin(); i < argc; ++i, ++it) {
       argv[i] = it->c_str();
     }
@@ -967,6 +967,7 @@ bool NWebImpl::InitializeICUStatic(
     content::RegisterPathProvider();
     if (!base::i18n::InitializeICU()) {
       WVLOG_E("initialize icu failed.");
+      delete[] argv;
       return false;
     }
     g_init_icu = true;
@@ -984,9 +985,9 @@ void NWebImpl::InitializeWebEngine(
   std::list<std::string> web_engine_args;
   InitialWebEngineArgs(web_engine_args, init_args);
 
-  int argc = web_engine_args.size();
+  uint32_t argc = web_engine_args.size();
   const char** argv = new const char*[argc];
-  int i = 0;
+  uint32_t i = 0;
   for (auto it = web_engine_args.begin(); i < argc; ++i, ++it) {
     argv[i] = it->c_str();
   }
@@ -1288,9 +1289,9 @@ bool NWebImpl::SetVirtualDeviceRatio() {
 void NWebImpl::SetNwebDelegateForTest(
     std::shared_ptr<NWebEngineInitArgs> init_args) {
   ProcessInitArgs(init_args);
-  int argc = web_engine_args_.size();
+  uint32_t argc = web_engine_args_.size();
   const char** argv = new const char*[argc];
-  int i = 0;
+  uint32_t i = 0;
   for (auto it = web_engine_args_.begin(); i < argc; ++i, ++it) {
     argv[i] = it->c_str();
   }
@@ -1314,9 +1315,9 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
     return false;
   }
 
-  int argc = web_engine_args_.size();
+  uint32_t argc = web_engine_args_.size();
   const char** argv = new const char*[argc];
-  int i = 0;
+  uint32_t i = 0;
   for (auto it = web_engine_args_.begin(); i < argc; ++i, ++it) {
     argv[i] = it->c_str();
     if (!strncmp(argv[i],
@@ -5648,7 +5649,7 @@ void NWebImpl::OnConfigurationUpdated(
              content::RenderProcessHost::AllHostsIterator();
          !host_iterator.IsAtEnd(); host_iterator.Advance()) {
       content::RenderProcessHost* host = host_iterator.GetCurrentValue();
-      if (host->IsInitializedAndNotDead()) {
+      if (host && host->IsInitializedAndNotDead()) {
         host->OnThemeFontChange();
       }
     }
@@ -6097,12 +6098,12 @@ void NWebImpl::DragResize(uint32_t width,
     drag_bigger_width = true;
   }
   if (drag_bigger_height) {
-    height = OHOS::NWeb::NWebResizeHelper::GetInstance().GetResizeAdjustValue(
-        height, pre_height, true);
+    height = static_cast<uint32_t>(OHOS::NWeb::NWebResizeHelper::GetInstance().GetResizeAdjustValue(
+        height, pre_height, true));
   }
   if (drag_bigger_width) {
-    width = OHOS::NWeb::NWebResizeHelper::GetInstance().GetResizeAdjustValue(
-        width, pre_width, false);
+    width = static_cast<uint32_t>(OHOS::NWeb::NWebResizeHelper::GetInstance().GetResizeAdjustValue(
+        width, pre_width, false));
   }
   OHOS::NWeb::NWebResizeHelper::GetInstance().SetResizeHeightAndWidth(height,
                                                                       width);

@@ -234,7 +234,7 @@ class WebContentsImplExt : public WebContentsImpl {
   void HideAutofillPopup() override;
 #endif // BUILDFLAG(ARKWEB_DATALIST)
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
-  bool is_selectable_;
+  bool is_selectable_ = false;
   void SetShouldShowFreeCopyMenu(bool is_selectable) {
     is_selectable_ = is_selectable;
   }

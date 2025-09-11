@@ -331,7 +331,6 @@ arkweb_media_base_unittest_sources = [
 ]
 
 arkweb_media_mojo_services_unittest_sources = [
-  "//arkweb/chromium_ext/media/mojo/services/mojo_renderer_service_for_include_unittest.cc",
   "//arkweb/chromium_ext/media/mojo/services/ohos_mojo_media_client_unittests.cc",
   "//arkweb/chromium_ext/media/mojo/services/ohos_mojo_util_unittests.cc",
 ]
@@ -725,9 +724,6 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/base/datashare_uri_utils_unittest.cc",
   "//arkweb/chromium_ext/base/ohos/dynamic_frame_loss_monitor_unittests.cc",
   "//arkweb/chromium_ext/base/ohos/blankless/blankless_controller_unittest.cc",
-  "//arkweb/chromium_ext/base/ohos/d_vsync/src/d_vsync_controller_unittests.cc",
-  "//arkweb/chromium_ext/base/ohos/locale_utils_unittests.cc",
-  "//arkweb/chromium_ext/base/ohos/scoped_native_buffer_handle_unittests.cc",
   "//arkweb/chromium_ext/base/report_loss_frame_unittest.cc",
   "//arkweb/chromium_ext/base/debug/stack_trace_ohos_unittest.cc",
   "//arkweb/chromium_ext/base/files/file_util_posix_unittest.cc",
@@ -744,7 +740,6 @@ arkweb_base_unittest_sources = [
   "//arkweb/ohos_adapter_ndk/hiviewdfx_adapter/hitrace_adapter_impl_unittest.cc",
   "//arkweb/ohos_adapter_ndk/net_proxy_adapter_impl/net_proxy_adapter_impl_unittest.cc",
   "//arkweb/ohos_adapter_ndk/net_connect_adapter/net_connect_adapter_impl_unittest.cc",
-  "//arkweb/chromium_ext/base/ohos/sys_info_utils_ext_unittests.cc",
 ]
 
 arkweb_base_trace_event_sources = [
@@ -932,7 +927,6 @@ if (arkweb_enable_cdm) {
 
   arkweb_cdm_unittest_sources = [
     "//arkweb/chromium_ext/components/cdm/common/widevine_drm_delegate_ohos_unittest.cc",
-    "//arkweb/chromium_ext/components/cdm/renderer/key_system_support_update_for_include_unittest.cc",
   ]
 }
 
@@ -1004,20 +998,6 @@ arkweb_crashpad_sources = [
 arkweb_crashpad_unittest_sources = [
   "//arkweb/chromium_ext/ohos_test/unittest/crash_report_exception_handler/crash_report_exception_handler_ext_unittest.cc",
   "//arkweb/chromium_ext/ohos_test/unittest/proc_info_ohos/proc_info_ohos_unittest.cc",
-]
-
-arkweb_crashpad_dfx_sources = [
-  "//arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/crashpad_dfx.h",
-  "//arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/crashpad_dfx.cc",
-  "//arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/crashpad_dfx_elf_define.h",
-  "//arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/proc_info_ohos.cc",
-  "//arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/proc_info_ohos.h",
-  "//arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/ptrace_broker_utils.h",
-  "//arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/ptrace_broker_utils.cc",
-]
-
-arkweb_crashpad_dfx_unittest_sources = [
-  "//arkweb/chromium_ext/ohos_test/unittest/crashpad_dfx/crashpad_dfx_unittest.cc",
 ]
 
 arkweb_chromium_components_viz_service_frame_sinks_sources = [

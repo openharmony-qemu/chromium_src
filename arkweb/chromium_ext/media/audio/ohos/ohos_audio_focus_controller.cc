@@ -632,6 +632,7 @@ void OHOSAudioFocusController::SuspendOtherPlaybacks(const content::WebContentsI
 {
     if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
         CheckSuspendOtherPlaybacksUIThread(webContentsImpl);
+        return;
     }
 
     base::WaitableEvent event(
@@ -652,6 +653,7 @@ void OHOSAudioFocusController::SuspendOtherPlaybacks(const AudioParameters& para
 {
     if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
         CheckSuspendOtherPlaybacksUIThread(params);
+        return;
     }
 
     base::WaitableEvent event(

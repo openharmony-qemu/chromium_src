@@ -604,16 +604,6 @@ void OHOSAudioOutputStream::PumpSamples() {
       LOG(INFO) << "AudioRender is nullptr";
       return;
     }
-
-    if (OHOSAudioFocusController::IsActive(parameters_)) {
-        LOG(INFO) << "AudioStream should be restarted";
-        if (OH_AudioRenderer_Start(audio_renderer_) == AUDIOSTREAM_SUCCESS) {
-            isSuspended_ = false;
-        } else {
-            LOG(ERROR) << "Restarted audioStream but failed";
-        }
-        return;
-    }
     {
       base::AutoLock lock(lock_);
       // Obtains data. The data does not need to be processed and may be empty.

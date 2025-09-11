@@ -26,7 +26,7 @@ class COMPONENT_EXPORT(DEVICE_FIDO) OhosAuthenticator
     : public FidoAuthenticator {
  public:
   static void IsUserVerifyingPlatformAuthenticatorAvailable(
-      base::OnceCallback<void(bool is_available)>);
+      base::OnceCallback<void(bool)>);
 
   static void SignalUnknownCredential(const std::vector<uint8_t>& credential_id,
                                       const std::string& relying_party_id);
@@ -36,7 +36,9 @@ class COMPONENT_EXPORT(DEVICE_FIDO) OhosAuthenticator
       const std::vector<uint8_t>& user_id,
       const std::vector<std::vector<uint8_t>>& all_accepted_credential_ids);
 
-  static std::vector<std::pair<std::string, bool>> GetClientCapabilities();
+  using ClientCapabilities = std::vector<std::pair<std::string, bool>>;
+  static void GetClientCapabilities(
+      base::OnceCallback<void(const ClientCapabilities&)>);
 
   OhosAuthenticator();
 
@@ -78,8 +80,6 @@ class COMPONENT_EXPORT(DEVICE_FIDO) OhosAuthenticator
   const AuthenticatorSupportedOptions options_;
   bool is_pending_ = false;
   bool waiting_for_cancellation_ = false;
-
-  raw_ptr<OhosWebAuthnApi, DanglingUntriaged> ohos_api_;
 
   SEQUENCE_CHECKER(sequence_checker_);
   base::WeakPtrFactory<OhosAuthenticator> weak_factory_{this};

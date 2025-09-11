@@ -52,4 +52,14 @@ TEST_F(WindowAdapterImplTest, WindowAdapterImplTest_001)
     EXPECT_EQ(ret, 0);
     adapter.NativeWindowUnRef(window);
 }
+
+TEST_F(WindowAdapterImplTest, WindowAdapterImplTest_002)
+{
+    WindowAdapterNdkImpl &adapter = WindowAdapterNdkImpl::GetInstance();
+    auto ret = adapter.GetNativeWindowRequestBuffer(nullptr, nullptr, nullptr);
+    EXPECT_NE(ret, 0);
+
+    ret = adapter.GetNativeWindowAbortBuffer(nullptr, nullptr);
+    EXPECT_NE(ret, 0);
+}
 } // namespace OHOS::NWeb

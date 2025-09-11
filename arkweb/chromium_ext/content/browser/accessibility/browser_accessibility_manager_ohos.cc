@@ -795,6 +795,11 @@ int64_t AccessibilityEventDispatcher::Uuid(int64_t accessibilityId,
   if (viewIndependentEvents_.find(eventType) != viewIndependentEvents_.end()) {
     return eventType;
   }
-  return (accessibilityId << kShiftedBitNumber) | eventType;
+  if (accessibilityId < 0 || eventType < 0) {
+    LOG(ERROR) << "AccessibilityEventDispatcher::Uuid input parameter invalid";
+    return 0;
+  }
+  return ((static_cast<uint64_t>(accessibilityId)) << (static_cast<uint32_t>(kShiftedBitNumber))) |
+    (static_cast<uint32_t>(eventType));
 }
 }  // namespace ui

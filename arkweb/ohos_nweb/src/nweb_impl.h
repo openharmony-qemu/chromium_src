@@ -37,6 +37,7 @@
 #include "nweb_input_handler.h"
 #include "nweb_inputmethod_handler.h"
 #include "nweb_output_handler.h"
+#include "arkweb/ohos_nweb/src/cef_delegate/nweb_extension_connect_native.h"
 // #ifdef OHOS_EX_PERMISSION
 #include "capi/nweb_permission_request.h"
 // #endif
@@ -55,9 +56,9 @@
 #include "capi/nweb_statistic_callback.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-struct FrameInfos;
-struct IsolatedWorld;
 struct OpenDevToolsParam;
+struct RunJavaScriptParam;
+
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "capi/nweb_extension_manager_callback.h"
 #include "capi/nweb_extension_context_menus_callback.h"
@@ -637,8 +638,7 @@ class NWebImpl : public NWeb {
   void PutWebExtensionCallback(
       std::shared_ptr<NWebExtensionCallback> web_extension_callback);
   void RemoveWebExtensionCallback();
-  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
-                             bool recursive, IsolatedWorld world,
+  void RunJavaScriptInFrames(RunJavaScriptParam param,
                              OnReceiveValueCallback callback);
   void GetImageFromContextNode();
   void GetImageFromCache(const std::string& url);

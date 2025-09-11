@@ -3,36 +3,88 @@
 // found in the LICENSE file.
 
 #include <cstdint>
+#include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
+#include "base/features.h"
 #define private public
 #include "build/build_config.h"
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
 
 #include <stdint.h>
-
 #include <vector>
-
 #include "adapter_base.h"
 #include "base/logging.h"
 #include "base/ohos/ltpo/include/sliding_observer.h"
 #include "base/trace_event/trace_event.h"
-#include "ohos_adapter_helper.h"
 #include "ohos_nweb/src/sysevent/event_reporter.h"
-#include "system_properties_adapter.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/events/gesture_detection/gesture_configuration.h"
-
+#include "gmock/gmock.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_system_properties_adapter.h"
+using namespace OHOS::NWeb;
 namespace {
 const float kMicroSecondPerSecond = 1000000.0;
 }
 
 namespace base {
 namespace ohos {
+
+class IsPcDeviceMock {
+public:
+  static IsPcDeviceMock& getInstance() {
+    static IsPcDeviceMock instance;
+    return instance;
+  };
+  MOCK_METHOD(bool, IsPcDevice, (), ());
+};
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  bool __wrap_IsPcDevice() {
+    return IsPcDeviceMock::getInstance().IsPcDevice();
+  }
+#ifdef __cplusplus
+}
+#endif
+
 using OHOS::NWeb::FrameRateSetting;
 class SlidingObserverTest : public SlidingObserver {
  public:
   SlidingObserverTest() = default;
   ~SlidingObserverTest() = default;
 };
+
+TEST(SlidingObserverTest, SlidingObserver001) {
+  MockOhosAdapterHelper* instance = new MockOhosAdapterHelper();
+  OhosAdapterHelper::SetInstance(instance);
+  MockSystemPropertiesAdapter adapter;
+
+  EXPECT_CALL(*instance, GetSystemPropertiesInstance()).WillOnce(testing::ReturnRef(adapter));
+  EXPECT_CALL(adapter, GetLTPOStrategy()).WillOnce(testing::Return(1));
+  SlidingObserver observer;
+  EXPECT_EQ(observer.strategy_, LTPOStrategy::APS_FLING);
+  OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
+}
+
+TEST(SlidingObserverTest, SlidingObserver002) {
+  OhosAdapterHelper& original_instance = OhosAdapterHelper::GetInstance();
+  MockOhosAdapterHelper* instance = new MockOhosAdapterHelper();
+  OhosAdapterHelper::SetInstance(instance);
+  MockSystemPropertiesAdapter adapter;
+
+  EXPECT_CALL(*instance, GetSystemPropertiesInstance()).WillOnce(testing::ReturnRef(adapter))
+    .WillRepeatedly(testing::Invoke(&original_instance, 
+    &OhosAdapterHelper::GetSystemPropertiesInstance));
+  EXPECT_CALL(adapter, GetLTPOStrategy()).WillOnce(testing::Return(2));
+  SlidingObserver observer;
+  EXPECT_EQ(observer.strategy_, LTPOStrategy::HGM_FLING);
+  EXPECT_TRUE(observer.is_inited_);
+  OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
+}
 
 TEST(SlidingObserverTest, GetVelocity001) {
   SlidingObserver observer;
@@ -252,7 +304,16 @@ TEST(SlidingObserverTest, StopSlidingTest10) {
   SlidingObserver observer;
   observer.is_off_screen_ = true;
   int32_t result = observer.StopSliding();
-  EXPECT_FALSE(observer.is_off_screen_);
+  EXPECT_TRUE(observer.is_off_screen_);
+  EXPECT_EQ(result, -1);
+}
+
+TEST(SlidingObserverTest, StopSlidingTest11) {
+  SlidingObserver observer;
+  observer.is_sliding_ = true;
+  observer.is_inited_ = true;
+  observer.is_off_screen_ = true;
+  int32_t result = observer.StopSliding();
   EXPECT_EQ(result, -1);
 }
 
@@ -339,11 +400,20 @@ TEST(SlidingObserverTest, StartFlingTest08) {
 TEST(SlidingObserverTest, StartFlingTest09) {
   SlidingObserver observer;
   observer.StartFling();
-  EXPECT_TRUE(observer.is_off_screen_);
+  EXPECT_FALSE(observer.is_off_screen_);
 }
 
 TEST(SlidingObserverTest, StartFlingTest10) {
   SlidingObserver observer;
+  observer.StartFling();
+  EXPECT_FALSE(observer.is_off_screen_);
+}
+
+TEST(SlidingObserverTest, StartFlingTest11) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.is_sliding_ = true;
+  observer.strategy_ = LTPOStrategy::APS_FLING;
   observer.StartFling();
   EXPECT_TRUE(observer.is_off_screen_);
 }
@@ -619,7 +689,7 @@ TEST(SlidingObserverTest, GetPreferedFrameRateTest002) {
   testing::internal::CaptureStderr();
   int32_t frameRate = observer.GetPreferedFrameRate(15.0f, settings);
   std::string log_output = testing::internal::GetCapturedStderr();
-  EXPECT_NE(log_output.find("can not find proper prefered frame rate"),
+  EXPECT_NE(log_output.find("can not find proper prfered frame rate"),
             std::string::npos);
   EXPECT_EQ(frameRate, 120);
 }
@@ -654,11 +724,10 @@ TEST(SlidingObserverTest, GetPreferedFrameRateTest006) {
   testing::internal::CaptureStderr();
   int32_t frameRate = observer.GetPreferedFrameRate(15.0f, settings);
   std::string log_output = testing::internal::GetCapturedStderr();
-  EXPECT_NE(log_output.find("can not find proper prefered frame rate"),
+  EXPECT_NE(log_output.find("can not find proper prfered frame rate"),
             std::string::npos);
   EXPECT_EQ(frameRate, 120);
 }
-
 TEST(SlidingObserverTest, GetPreferedFrameRateTest007) {
   SlidingObserver observer;
   std::vector<OHOS::NWeb::FrameRateSetting> settings = {{10.0f, 30.0f, 30}};
@@ -671,7 +740,7 @@ TEST(SlidingObserverTest, GetPreferedFrameRateTest008) {
   testing::internal::CaptureStderr();
   int32_t frameRate = observer.GetPreferedFrameRate(40.0f, settings);
   std::string log_output = testing::internal::GetCapturedStderr();
-  EXPECT_NE(log_output.find("can not find proper prefered frame rate"),
+  EXPECT_NE(log_output.find("can not find proper prfered frame rate"),
             std::string::npos);
   EXPECT_EQ(frameRate, 120);
 }
@@ -686,6 +755,80 @@ TEST(SlidingObserverTest, GetPreferedFrameRateTest010) {
   SlidingObserver observer;
   std::vector<OHOS::NWeb::FrameRateSetting> settings = {{20.0f, 40.0f, 30}};
   EXPECT_EQ(observer.GetPreferedFrameRate(25.0f, settings), 30);
+}
+
+TEST(SlidingObserverTest, OnDisplayInfoChange001) {
+  SlidingObserver observer;
+  observer.is_inited_ = false;
+  observer.OnDisplayInfoChange();
+  EXPECT_EQ(observer.virtual_pixel_ratio_, -1);
+}
+
+TEST(SlidingObserverTest, OnDisplayInfoChange002) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.OnDisplayInfoChange();
+  EXPECT_NE(observer.virtual_pixel_ratio_, -1);
+}
+
+TEST(SlidingObserverTest, SetIsPdf001) {
+  SlidingObserver observer;
+  observer.SetIsPdf(false);
+  EXPECT_FALSE(observer.use_pdf_rate_);
+}
+
+TEST(SlidingObserverTest, SetIsPdf002) {
+  SlidingObserver observer;
+  observer.SetIsPdf(true);
+  EXPECT_TRUE(observer.use_pdf_rate_);
+}
+
+TEST(SlidingObserverTest, SetIsPdf003) {
+  auto& mock = IsPcDeviceMock::getInstance();
+  EXPECT_CALL(mock, IsPcDevice()).WillOnce(testing::Return(true));
+  SlidingObserver observer;
+  observer.use_pdf_rate_ = true;
+  observer.SetIsPdf(true);
+  EXPECT_FALSE(observer.use_pdf_rate_);
+}
+
+TEST(SlidingObserverTest, StopFling001) {
+  SlidingObserver observer;
+  EXPECT_EQ(observer.StopFling(), -1);
+}
+
+TEST(SlidingObserverTest, StopFling002) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  EXPECT_EQ(observer.StopFling(), -1);
+}
+
+TEST(SlidingObserverTest, StopFling003) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.is_sliding_ = true;
+  EXPECT_EQ(observer.StopFling(), -1);
+}
+
+TEST(SlidingObserverTest, StopFling004) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  EXPECT_EQ(observer.StopFling(), 0);
+  EXPECT_FALSE(observer.is_sliding_);
+  EXPECT_FALSE(observer.is_off_screen_);
+}
+
+TEST(SlidingObserverTest, StopFling005) {
+  SlidingObserver observer;
+  observer.is_inited_ = true;
+  observer.is_sliding_ = true;
+  observer.is_off_screen_ = true;
+  observer.strategy_ = LTPOStrategy::APS_FLING;
+  EXPECT_EQ(observer.StopFling(), 0);
+  EXPECT_FALSE(observer.is_sliding_);
+  EXPECT_FALSE(observer.is_off_screen_);
 }
 
 }  // namespace ohos

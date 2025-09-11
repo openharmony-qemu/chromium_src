@@ -58,6 +58,7 @@
 
 struct FrameInfos;
 struct IsolatedWorld;
+struct RunJavaScriptParam;
 struct OpenDevToolsParam;
 
 namespace OHOS::NWeb {
@@ -864,8 +865,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
-                             bool recursive, IsolatedWorld world,
+  void RunJavaScriptInFrames(RunJavaScriptParam param,
                              OnReceiveValueCallback callback) override;
 #endif
 

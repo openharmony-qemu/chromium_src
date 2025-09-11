@@ -331,8 +331,10 @@ arkweb_media_base_unittest_sources = [
 ]
 
 arkweb_media_mojo_services_unittest_sources = [
+  "//arkweb/chromium_ext/media/mojo/services/mojo_renderer_service_for_include_unittest.cc",
   "//arkweb/chromium_ext/media/mojo/services/ohos_mojo_media_client_unittests.cc",
   "//arkweb/chromium_ext/media/mojo/services/ohos_mojo_util_unittests.cc",
+  "//arkweb/chromium_ext/media/mojo/services/mojo_video_decoder_service_for_include_unittests.cc",
 ]
 
 arkweb_media_audio_unittest_sources = [
@@ -699,6 +701,7 @@ arkweb_media_gpu_unittest_sources = [
   "//arkweb/chromium_ext/media/gpu/ohos/codec_buffer_wait_coordinator_unittest.cc",
   "//arkweb/chromium_ext/media/gpu/ohos/ohos_image_decode_accelerator_worker_unittest.cc",
   "//arkweb/chromium_ext/media/gpu/ohos/codec_surface_bundle_unittest.cc",
+  "//arkweb/chromium_ext/media/gpu/ohos/shared_image_video_provider_unittest.cc",
 ]
 
 arkweb_content_browser_media_sources = [
@@ -727,6 +730,9 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/base/datashare_uri_utils_unittest.cc",
   "//arkweb/chromium_ext/base/ohos/dynamic_frame_loss_monitor_unittests.cc",
   "//arkweb/chromium_ext/base/ohos/blankless/blankless_controller_unittest.cc",
+  "//arkweb/chromium_ext/base/ohos/d_vsync/src/d_vsync_controller_unittests.cc",
+  "//arkweb/chromium_ext/base/ohos/locale_utils_unittests.cc",
+  "//arkweb/chromium_ext/base/ohos/scoped_native_buffer_handle_unittests.cc",
   "//arkweb/chromium_ext/base/report_loss_frame_unittest.cc",
   "//arkweb/chromium_ext/base/debug/stack_trace_ohos_unittest.cc",
   "//arkweb/chromium_ext/base/files/file_util_posix_unittest.cc",
@@ -738,6 +744,12 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/components/policy/core/common/policy_loader_ohos_unittest.cc",
   "//arkweb/chromium_ext/net/proxy_resolution/proxy_config_service_ohos_unittest.cc",
   "//arkweb/chromium_ext/components/subresource_filter/content/browser/ohos_adblock_config_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/net_connect_adapter/net_connect_utils_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/hiviewdfx_adapter/hitrace_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/net_proxy_adapter_impl/net_proxy_adapter_impl_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/net_connect_adapter/net_connect_adapter_impl_unittest.cc",
+  "//arkweb/chromium_ext/base/ohos/sys_info_utils_ext_unittests.cc",
 ]
 
 arkweb_base_trace_event_sources = [
@@ -925,6 +937,7 @@ if (arkweb_enable_cdm) {
 
   arkweb_cdm_unittest_sources = [
     "//arkweb/chromium_ext/components/cdm/common/widevine_drm_delegate_ohos_unittest.cc",
+    "//arkweb/chromium_ext/components/cdm/renderer/key_system_support_update_for_include_unittest.cc",
   ]
 }
 

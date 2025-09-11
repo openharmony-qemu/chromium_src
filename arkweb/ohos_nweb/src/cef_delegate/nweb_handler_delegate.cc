@@ -951,17 +951,21 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
     LOG(WARNING) << "OnFrameCreated failed, frame is invalid";
     return;
   }
- 
+
   CefRefPtr<CefFrameHostImpl> frameHost = static_cast<CefFrameHostImpl*>(frame.get());
   if (!frameHost->GetRenderFrameHost()) {
     LOG(WARNING) << "OnFrameCreated failed, GetRenderFrameHost failed";
     return;
   }
- 
+
   content::RenderFrameHostImpl* rfh =
     static_cast<content::RenderFrameHostImpl*>(frameHost ->GetRenderFrameHost());
+  if (!rfh) {
+    LOG(WARNING) << "OnFrameCreated failed, dynamic_cast to content::RenderFrameHostImpl failed";
+    return;
+  }
   auto globalId = rfh->GetGlobalId();
- 
+
   FrameInfos frameInfo;
   frameInfo.id = std::to_string(globalId.child_id) + "_" + std::to_string(globalId.frame_routing_id);
   if (content::RenderFrameHostImpl* parent = rfh->GetParent()) {
@@ -971,8 +975,7 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
   } else {
     frameInfo.parentId.clear();
   }
-  frameInfo.url = rfh->GetLastCommittedURL().spec();
- 
+
   dispatcher_.OnFrameCreated(frameInfo);
 }
 #endif
@@ -1869,13 +1872,14 @@ void NWebHandlerDelegate::OnRefreshAccessedHistory(
     CefRefPtr<CefBrowser> browser,
     CefRefPtr<CefFrame> frame,
     const CefString& url,
-    bool isReload) {
+    bool isReload,
+    bool isMainFrame) {
   std::string url1 = url.ToString();
   auto pos = url1.find("?");
   url1 = url1.substr(0, pos);
   LOG(DEBUG) << "NWebHandlerDelegate::OnRefreshAccessedHistory, intercepted "
                 "url: ***, isReload = "
-             << isReload;
+             << isReload << ", isMainFrame = " << isMainFrame;
   if (nweb_handler_ == nullptr) {
     LOG(ERROR) << "nweb handler is null";
     return;
@@ -1890,7 +1894,10 @@ void NWebHandlerDelegate::OnRefreshAccessedHistory(
 #endif
 
   edited_forms_id_.clear();
-  nweb_handler_->OnRefreshAccessedHistory(url.ToString(), isReload);
+  nweb_handler_->OnRefreshAccessedHistoryV2(url.ToString(), isReload, isMainFrame);
+  if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+    nweb_handler_->OnRefreshAccessedHistory(url.ToString(), isReload);
+  }
 }
 
 #if BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)

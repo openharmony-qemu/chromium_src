@@ -3430,6 +3430,12 @@ target(_test_target_type, "net_unittests") {
       "//components/unexportable_keys:unexportable_keys",
     ]
   }
+
+  if (is_ohos) {
+    deps += [
+      "//content/public/common:static_switches",
+    ]
+  }
 }
 
 # !is_android && !is_win && !is_mac

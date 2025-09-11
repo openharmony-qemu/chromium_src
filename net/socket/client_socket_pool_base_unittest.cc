@@ -571,7 +571,12 @@ class TestConnectJobFactory : public ConnectJobFactory {
       SecureDnsPolicy secure_dns_policy,
       bool disable_cert_network_fetches,
       const CommonConnectJobParams* common_connect_job_params,
-      ConnectJob::Delegate* delegate) const override {
+      ConnectJob::Delegate* delegate
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      ,
+      bool secure_dns_only = false
+#endif
+      ) const override {
     EXPECT_TRUE(!job_types_ || !job_types_->empty());
     TestConnectJob::JobType job_type = job_type_;
     if (job_types_ && !job_types_->empty()) {

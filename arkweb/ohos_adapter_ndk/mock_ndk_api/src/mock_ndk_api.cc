@@ -129,4 +129,186 @@ Input_Result __wrap_OH_Input_GetDeviceIds(int32_t *deviceIds, int32_t inSize, in
 #ifdef __cplusplus
 }
 #endif
+
+bool OhosInterfaceMock::bNativeBundleGetMainElementName = false;
+bool OhosInterfaceMock::bAVMetadataBuilderCreate = false;
+bool OhosInterfaceMock::bAVMetadataBuilderSetAssetId = false;
+bool OhosInterfaceMock::bAVMetadataBuilderGenerateAVMetadata = false;
+bool OhosInterfaceMock::bAVMetadataDestroy = false;
+bool OhosInterfaceMock::bAVMetadataBuilderDestroy = false;
+bool OhosInterfaceMock::bAVSessionCreate = false;
+bool OhosInterfaceMock::bAVSessionDestroy = false;
+bool OhosInterfaceMock::bAVSessionActivate = false;
+bool OhosInterfaceMock::bAVSessionDeactivate = false;
+bool OhosInterfaceMock::bAVSessionRegisterCommandCallback = false;
+bool OhosInterfaceMock::bAVSessionRegisterSeekCallback = false;
+bool OhosInterfaceMock::bAVMetadataBuilderSetTitle = false;
+bool OhosInterfaceMock::bAVMetadataBuilderSetArtist = false;
+bool OhosInterfaceMock::bAVMetadataBuilderSetAlbum = false;
+bool OhosInterfaceMock::bAVMetadataBuilderSetDuration = false;
+bool OhosInterfaceMock::bAVMetadataBuilderSetMediaImageUri = false;
+bool OhosInterfaceMock::bAVSessionSetPlaybackState = false;
+bool OhosInterfaceMock::bAVSessionSetAVMetadata = false;
+bool OhosInterfaceMock::bAVSessionSetPlaybackPosition = false;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+OH_NativeBundle_ElementName __wrap_OH_NativeBundle_GetMainElementName() {
+    if (OhosInterfaceMock::bNativeBundleGetMainElementName == true) {
+        return OhosInterfaceMock::GetInstance().OH_NativeBundle_GetMainElementName();
+    } else {
+        return __real_OH_NativeBundle_GetMainElementName();
+    }
+}
+AVMetadata_Result __wrap_OH_AVMetadataBuilder_Create(OH_AVMetadataBuilder** builder) {
+    if (OhosInterfaceMock::bAVMetadataBuilderCreate == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVMetadataBuilder_Create(builder);
+    } else {
+        return __real_OH_AVMetadataBuilder_Create(builder);
+    }
+}
+AVMetadata_Result __wrap_OH_AVMetadataBuilder_SetAssetId(OH_AVMetadataBuilder* builder, const char* assetId) {
+    if (OhosInterfaceMock::bAVMetadataBuilderSetAssetId == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVMetadataBuilder_SetAssetId(builder, assetId);
+    } else {
+        return __real_OH_AVMetadataBuilder_SetAssetId(builder, assetId);
+    }
+}
+AVMetadata_Result __wrap_OH_AVMetadataBuilder_GenerateAVMetadata(OH_AVMetadataBuilder* builder,
+                                                                 OH_AVMetadata** metadata) {
+    if (OhosInterfaceMock::bAVMetadataBuilderGenerateAVMetadata == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVMetadataBuilder_GenerateAVMetadata(builder, metadata);
+    } else {
+        return __real_OH_AVMetadataBuilder_GenerateAVMetadata(builder, metadata);
+    }
+}
+AVMetadata_Result __wrap_OH_AVMetadata_Destroy(OH_AVMetadata* metadata) {
+    if (OhosInterfaceMock::bAVMetadataDestroy == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVMetadata_Destroy(metadata);
+    } else {
+        return __real_OH_AVMetadata_Destroy(metadata);
+    }
+}
+AVMetadata_Result __wrap_OH_AVMetadataBuilder_Destroy(OH_AVMetadataBuilder* builder) {
+    if (OhosInterfaceMock::bAVMetadataBuilderDestroy == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVMetadataBuilder_Destroy(builder);
+    } else {
+        return __real_OH_AVMetadataBuilder_Destroy(builder);
+    }
+}
+AVSession_ErrCode __wrap_OH_AVSession_Create(AVSession_Type type,
+                                             const char* sessionName,
+                                             const char* bundleName,
+                                             const char* abilityName,
+                                             OH_AVSession** session) {
+    if (OhosInterfaceMock::bAVSessionCreate == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_Create(type, sessionName, bundleName,
+                                                                    abilityName, session);
+    } else {
+        return __real_OH_AVSession_Create(type, sessionName, bundleName, abilityName, session);
+    }
+}
+AVSession_ErrCode __wrap_OH_AVSession_Destroy(OH_AVSession* session) {
+    if (OhosInterfaceMock::bAVSessionDestroy == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_Destroy(session);
+    } else {
+        return __real_OH_AVSession_Destroy(session);
+    }
+}
+AVSession_ErrCode __wrap_OH_AVSession_Activate(OH_AVSession* session) {
+    if (OhosInterfaceMock::bAVSessionActivate == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_Activate(session);
+    } else {
+        return __real_OH_AVSession_Activate(session);
+    }
+}
+AVSession_ErrCode __wrap_OH_AVSession_Deactivate(OH_AVSession* session) {
+    if (OhosInterfaceMock::bAVSessionDeactivate == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_Deactivate(session);
+    } else {
+        return __real_OH_AVSession_Deactivate(session);
+    }
+}
+AVSession_ErrCode __wrap_OH_AVSession_RegisterCommandCallback(OH_AVSession* session,
+                                                              AVSession_ControlCommand command,
+                                                              OH_AVSessionCallback_OnCommand* callback,
+                                                              void* userData) {
+    if (OhosInterfaceMock::bAVSessionRegisterCommandCallback == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_RegisterCommandCallback(session, command,
+                                                                                     callback, userData);
+    } else {
+        return __real_OH_AVSession_RegisterCommandCallback(session, command, callback, userData);
+    }
+}
+AVSession_ErrCode __wrap_OH_AVSession_RegisterSeekCallback(OH_AVSession* session,
+                                                           OH_AVSessionCallback_OnSeek* callback,
+                                                           void* userData) {
+    if (OhosInterfaceMock::bAVSessionRegisterSeekCallback == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_RegisterSeekCallback(session, callback, userData);
+    } else {
+        return __real_OH_AVSession_RegisterSeekCallback(session, callback, userData);
+    }
+}
+AVMetadata_Result __wrap_OH_AVMetadataBuilder_SetTitle(OH_AVMetadataBuilder* builder, const char* title) {
+    if (OhosInterfaceMock::bAVMetadataBuilderSetTitle == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVMetadataBuilder_SetTitle(builder, title);
+    } else {
+        return __real_OH_AVMetadataBuilder_SetTitle(builder, title);
+    }
+}
+AVMetadata_Result __wrap_OH_AVMetadataBuilder_SetArtist(OH_AVMetadataBuilder* builder, const char* artist) {
+    if (OhosInterfaceMock::bAVMetadataBuilderSetArtist == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVMetadataBuilder_SetArtist(builder, artist);
+    } else {
+        return __real_OH_AVMetadataBuilder_SetArtist(builder, artist);
+    }
+}
+AVMetadata_Result __wrap_OH_AVMetadataBuilder_SetAlbum(OH_AVMetadataBuilder* builder, const char* album) {
+    if (OhosInterfaceMock::bAVMetadataBuilderSetAlbum == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVMetadataBuilder_SetAlbum(builder, album);
+    } else {
+        return __real_OH_AVMetadataBuilder_SetAlbum(builder, album);
+    }
+}
+AVMetadata_Result __wrap_OH_AVMetadataBuilder_SetDuration(OH_AVMetadataBuilder* builder, int64_t duration) {
+    if (OhosInterfaceMock::bAVMetadataBuilderSetDuration == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVMetadataBuilder_SetDuration(builder, duration);
+    } else {
+        return __real_OH_AVMetadataBuilder_SetDuration(builder, duration);
+    }
+}
+AVMetadata_Result __wrap_OH_AVMetadataBuilder_SetMediaImageUri(OH_AVMetadataBuilder* builder, const char* uri) {
+    if (OhosInterfaceMock::bAVMetadataBuilderSetMediaImageUri == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVMetadataBuilder_SetMediaImageUri(builder, uri);
+    } else {
+        return __real_OH_AVMetadataBuilder_SetMediaImageUri(builder, uri);
+    }
+}
+AVSession_ErrCode __wrap_OH_AVSession_SetPlaybackState(OH_AVSession* session, AVSession_PlaybackState state) {
+    if (OhosInterfaceMock::bAVSessionSetPlaybackState == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_SetPlaybackState(session, state);
+    } else {
+        return __real_OH_AVSession_SetPlaybackState(session, state);
+    }
+}
+AVSession_ErrCode __wrap_OH_AVSession_SetAVMetadata(OH_AVSession* session, OH_AVMetadata* metadata) {
+    if (OhosInterfaceMock::bAVSessionSetAVMetadata == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_SetAVMetadata(session, metadata);
+    } else {
+        return __real_OH_AVSession_SetAVMetadata(session, metadata);
+    }
+}
+AVSession_ErrCode __wrap_OH_AVSession_SetPlaybackPosition(OH_AVSession* session,
+                                                          AVSession_PlaybackPosition* position) {
+    if (OhosInterfaceMock::bAVSessionSetPlaybackPosition == true) {
+        return OhosInterfaceMock::GetInstance().OH_AVSession_SetPlaybackPosition(session, position);
+    } else {
+        return __real_OH_AVSession_SetPlaybackPosition(session, position);
+    }
+}
+
+#ifdef __cplusplus
+}
+#endif
 }  // namespace MockNdkApi 

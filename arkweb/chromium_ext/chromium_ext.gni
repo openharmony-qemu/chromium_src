@@ -1256,6 +1256,10 @@ arkweb_content_browser_accessibility_resources = [
   "//content/test/test_content_client.h",
 ]
 
+arkweb_media_codec_decoder_adapter_impl_unittest_sources = [
+  "//arkweb/ohos_adapter_ndk/media_avsession_adapter/media_avsession_adapter_impl_unittests.cc",
+]
+
 arkweb_third_patry_blink_renderer_core_paint_timing_detector_resources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.h",

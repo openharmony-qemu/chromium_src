@@ -118,6 +118,7 @@ class ArkwebDisplayUtils {
   GpuServiceImpl* gpu_service_impl_ {nullptr};
   uint32_t client_id_ = 0;
 #endif
+  base::WeakPtrFactory<ArkwebDisplayUtils> weak_factory_{this};
 };
 
 }  // namespace viz

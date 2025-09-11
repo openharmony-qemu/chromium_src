@@ -180,6 +180,7 @@ class CodecBufferWaitCoordinatorTest : public testing::Test {
 
     coordinator_ = base::MakeRefCounted<CodecBufferWaitCoordinator>(
         std::move(texture_owner_), drdc_lock_);
+    EXPECT_NE(coordinator_, nullptr);
   }
 
   void TearDown() override {
@@ -194,10 +195,6 @@ class CodecBufferWaitCoordinatorTest : public testing::Test {
   scoped_refptr<CodecBufferWaitCoordinator> coordinator_;
   base::RepeatingClosure frame_available_callback_;
 };
-
-TEST_F(CodecBufferWaitCoordinatorTest, Constructor) {
-  EXPECT_NE(coordinator_, nullptr);
-}
 
 TEST_F(CodecBufferWaitCoordinatorTest, SetReleaseTimeToNow) {
   coordinator_->SetReleaseTimeToNow();

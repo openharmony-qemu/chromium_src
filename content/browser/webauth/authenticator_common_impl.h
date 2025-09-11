@@ -367,6 +367,12 @@ class CONTENT_EXPORT AuthenticatorCommonImpl : public AuthenticatorCommon {
   // Check whether the given `RequestKey` identifies the current request.
   [[nodiscard]] bool CheckRequestKey(RequestKey key);
 
+#if BUILDFLAG(ARKWEB_FIDO)
+  void GetClientCapabilitiesExt(
+      url::Origin caller_origin,
+      blink::mojom::Authenticator::GetClientCapabilitiesCallback callback);
+#endif // BUILDFLAG(ARKWEB_FIDO)
+
   const GlobalRenderFrameHostId render_frame_host_id_;
   const ServingRequestsFor serving_requests_for_;
   const scoped_refptr<WebAuthRequestSecurityChecker> security_checker_;

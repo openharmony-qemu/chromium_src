@@ -660,7 +660,7 @@ struct URLLoaderOptions {
 ,
         std::move(prpp_loader),
         org_main_url,
-        std::move(preload_info),
+        std::move(preload_info)
 #endif
         );
   }

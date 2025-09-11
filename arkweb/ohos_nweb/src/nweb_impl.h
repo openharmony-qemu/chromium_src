@@ -37,6 +37,7 @@
 #include "nweb_input_handler.h"
 #include "nweb_inputmethod_handler.h"
 #include "nweb_output_handler.h"
+#include "arkweb/ohos_nweb/src/cef_delegate/nweb_extension_connect_native.h"
 // #ifdef OHOS_EX_PERMISSION
 #include "capi/nweb_permission_request.h"
 // #endif

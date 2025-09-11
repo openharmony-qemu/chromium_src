@@ -1120,6 +1120,10 @@ class NWebImpl : public NWeb {
   void OnBrowserBackground() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  static void SetSocketIdleTimeout(int32_t timeout);
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

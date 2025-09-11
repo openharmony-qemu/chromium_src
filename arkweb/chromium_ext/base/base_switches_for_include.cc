@@ -38,3 +38,7 @@ const char kEnableLoggerReport[] = "enable-nweb-logger-report";
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 const char kDisableAutoPreconnect[] = "disable-auto-preconnect";
 #endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+const char kSocketIdleTimeout[] = "socket-idle-timeout";
+#endif

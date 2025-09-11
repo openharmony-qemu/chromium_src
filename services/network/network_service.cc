@@ -561,8 +561,9 @@ void NetworkService::SetTestDohConfigForTesting(
 
 std::unique_ptr<NetworkService> NetworkService::Create(
     mojo::PendingReceiver<mojom::NetworkService> receiver) {
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
-    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) ||                                \
+    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS) || \
+    BUILDFLAG(ARKWEB_NETWORK_SERVICE)
   return std::make_unique<ArkWebNetworkServiceExt>(nullptr,
                                                    std::move(receiver));
 #else
@@ -573,8 +574,9 @@ std::unique_ptr<NetworkService> NetworkService::Create(
 // static
 std::unique_ptr<NetworkService> NetworkService::CreateForTesting() {
   auto network_service =
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
-    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) ||                                \
+    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS) || \
+    BUILDFLAG(ARKWEB_NETWORK_SERVICE)
       std::make_unique<ArkWebNetworkServiceExt>(nullptr /* binder_registry */);
 #else
       std::make_unique<NetworkService>(nullptr /* binder_registry */);

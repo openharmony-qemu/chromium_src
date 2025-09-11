@@ -326,3 +326,9 @@ if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
   ]
 }
 #endif // BUILDFLAG(ARKWEB_READER_MODE)
+
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+if (defined(arkweb_network_service) && arkweb_network_service) {
+  arkweb_mojo_features += [ "arkweb_network_service" ]
+}
+#endif // BUILDFLAG(ARKWEB_NETWORK_SERVICE)

@@ -124,8 +124,6 @@ public:
 
     int32_t InitV2(const std::shared_ptr<ScreenCaptureConfigAdapter> config, int nweb_id) override;
 
-    void ClearBufferQueue(int nwebId) override;
-
     static void ScreenCaptureCallbackOnError(OH_AVScreenCapture *capture, int32_t errorCode, void* userData);
 
     static void ScreenCaptureCallbackOnBufferAvailable(OH_AVScreenCapture *capture, OH_AVBuffer *buffer,

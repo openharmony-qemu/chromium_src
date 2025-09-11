@@ -62,6 +62,10 @@ class NET_EXPORT_PRIVATE ClientSocketPoolManagerImpl
   void SetConnectJobWithSecureDnsOnlyTimeout(int seconds) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  void SetSocketIdleTimeout(int32_t timeout) override;
+#endif
+
  private:
   using SocketPoolMap = std::map<ProxyChain, std::unique_ptr<ClientSocketPool>>;
 

@@ -334,4 +334,10 @@ bool NWebEngineImpl::IsPrivateNetworkAccessEnabled() {
 #endif
 }
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+void NWebEngineImpl::SetSocketIdleTimeout(int32_t timeout) {
+  NWebImpl::SetSocketIdleTimeout(timeout);
+}
+#endif
+
 }  // namespace OHOS::NWeb

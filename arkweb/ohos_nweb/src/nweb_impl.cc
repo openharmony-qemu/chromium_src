@@ -6653,3 +6653,26 @@ void NWebImpl::OnBrowserBackground() {
   nweb_delegate_->OnBrowserBackground();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+void NWebImpl::SetSocketIdleTimeout(int32_t timeout) {
+  if (!NWebApplication::GetDefault()->HasInitializedCef()) {
+    WVLOG_I(
+        "Web had not initiated. Will set socket idle timeout value after"
+        "network_service initialized.");
+    net_service::NetHelpers::SetSocketIdleTimeout(timeout);
+    return;
+  }
+
+  network::mojom::NetworkService* network_service =
+      content::GetNetworkService();
+  if (!network_service) {
+    WVLOG_I(
+        "network_service is nullptr. Will set socket idle timeout value after"
+        "network_service initialized.");
+    return;
+  }
+
+  content::GetNetworkService()->SetSocketIdleTimeout(timeout);
+}
+#endif

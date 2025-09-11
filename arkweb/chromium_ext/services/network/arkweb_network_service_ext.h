@@ -114,6 +114,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ArkWebNetworkServiceExt
   void DeregisterNetworkContextExt(NetworkContext* network_context);
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  void SetSocketIdleTimeout(int32_t timeout) override;
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   void SetHttpsDnsHostResolver(bool enabled,

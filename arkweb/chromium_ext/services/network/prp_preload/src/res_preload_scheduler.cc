@@ -163,7 +163,7 @@ void ResPreloadScheduler::SchedulePrerequests(uint32_t limit, int32_t info_list_
       base::Milliseconds(DELAYED_TIME));
     return;
   }
-  limit += idle_prerequest_count_;
+  limit += static_cast<uint32_t>(idle_prerequest_count_);
   limit = limit > MAX_REQUEST_COUNT ? MAX_REQUEST_COUNT : limit;
   idle_prerequest_count_ = 0;
   bool need_continue = false;

@@ -30,6 +30,10 @@ struct NWebContextMenusItem {
   std::string type;
   bool visible;
   std::string extensionId;
+};
+ 
+struct NWebContextMenusItemV2 {
+  NWebContextMenusItem item;
   std::optional<bool> isOffTheRecord;
 };
  

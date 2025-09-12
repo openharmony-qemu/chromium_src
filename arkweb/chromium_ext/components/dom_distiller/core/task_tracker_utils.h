@@ -20,6 +20,9 @@
 #include "build/build_config.h"
 #include "build/buildflag.h"
 #include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace dom_distiller {
 

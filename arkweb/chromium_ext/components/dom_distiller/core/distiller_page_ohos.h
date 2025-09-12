@@ -21,6 +21,9 @@
 #include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "build/buildflag.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #if BUILDFLAG(ARKWEB_READER_MODE)
 #include "arkweb/ohos_nweb/src/capi/nweb_extension_distill_item.h"
 #include "base/json/json_reader.h"

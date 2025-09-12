@@ -16,9 +16,12 @@
 #ifndef CONTENT_PUBLIC_RENDERER_RENDER_THREAD_OHOS_H_
 #define CONTENT_PUBLIC_RENDERER_RENDER_THREAD_OHOS_H_
 
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "build/buildflag.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace blink {
 #if BUILDFLAG(ARKWEB_READER_MODE)

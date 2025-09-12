@@ -17,8 +17,7 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_DOM_DOCUMENT_RECOGNISE_UTIL_H_
 
 #include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom.h"
-
-#include "third_party/blink/public/platform/web_distillability.h"
+#include "arkweb/chromium_ext/third_party/blink/platform/web_distillability_match.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"

@@ -4096,7 +4096,6 @@ void NWebImpl::UpdateBrowserEngineGlobalConfig(const std::string& file_path,
 // static
 void NWebImpl::UpdateReaderModeConfig(const std::string& file_path,
                                   const std::string& version) {
-  LOG(INFO) << "NWebImpl::UpdateReaderModeConfig file_path:" << file_path << " version:" << version;
   nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()->UpdateBrowserReaderModeConfig(file_path, version);
 }
 

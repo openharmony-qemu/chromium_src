@@ -13,9 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef THIRD_PARTY_BLINK_PLATFORM_WEB_DISTILLABILITY_FOR_INCLUDE_H_
-#define THIRD_PARTY_BLINK_PLATFORM_WEB_DISTILLABILITY_FOR_INCLUDE_H_
+#ifndef THIRD_PARTY_BLINK_PLATFORM_WEB_DISTILLABILITY_MATCH_H_
+#define THIRD_PARTY_BLINK_PLATFORM_WEB_DISTILLABILITY_MATCH_H_
 
+#include <string>
+
+namespace blink {
 enum class WebDistillabilityMatchResult {
   MATCH_NONE = 0,
   MATCH_TEMPLATE = 1,
@@ -39,4 +42,5 @@ struct WebDistillabilityMatchInfo {
   // 匹配到的目录文本特征,比如"目录"
   std::string catalog_feature;
 };
-#endif // THIRD_PARTY_BLINK_PLATFORM_WEB_DISTILLABILITY_FOR_INCLUDE_H_
+}  // namespace blink
+#endif // THIRD_PARTY_BLINK_PLATFORM_WEB_DISTILLABILITY_MATCH_H_

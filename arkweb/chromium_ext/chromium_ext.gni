@@ -600,6 +600,10 @@ arkweb_components_url_formatter_contexts_sources = [
   "//arkweb/chromium_ext/components/url_formatter/arkweb_elide_url_ext.h",
 ]
 
+arkweb_components_url_formatter_contexts_unittest_sources = [
+  "//arkweb/chromium_ext/components/url_formatter/arkweb_elide_url_ext_unittest.cc",
+]
+
 arkweb_components_download_internal_common_sources = [
   "//arkweb/chromium_ext/components/download/internal/common/arkweb_download_item_impl_ext.cc",
   "//arkweb/chromium_ext/components/download/internal/common/arkweb_download_item_impl_ext.h",
@@ -937,6 +941,11 @@ arkweb_adblock_sources = [
   "//arkweb/chromium_ext/components/url_pattern_index/url_pattern_index_ext.h",
   "//arkweb/chromium_ext/components/url_pattern_index/url_pattern_ext.cc",
   "//arkweb/chromium_ext/components/url_pattern_index/url_pattern_ext.h",
+]
+
+arkweb_adblock_unittest_sources = [
+  "//arkweb/chromium_ext/components/url_pattern_index/url_pattern_index_ext_unittest.cc",
+  "//arkweb/chromium_ext/components/url_pattern_index/url_pattern_ext_unittest.cc",
 ]
 
 arkweb_ui_ozone_platform_headless_sources = [

@@ -120,10 +120,10 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
       content::PreloadingAttempt* attempt,
       const std::string& extra_headers);
   void SetMinTimeBetweenPrefetchesMs(int time) {
-    min_time_between_prefetches_ = 
-      time >= kMinTimeBetweenPrefetchesMs ? kMinTimeBetweenPrefetchesMs : time;
-    min_time_between_prefetches_ = 
-      min_time_between_prefetches_ <= 0 ? 0 : min_time_between_prefetches_;
+    if(time >= min_time_between_prefetches_){
+      return;
+    }
+    min_time_between_prefetches_ = time <= 0 ? 0 : time;
   }
   void SetIgnoreCacheControlNoStore(bool flag) {
     ignore_cache_control_no_store_ = flag;

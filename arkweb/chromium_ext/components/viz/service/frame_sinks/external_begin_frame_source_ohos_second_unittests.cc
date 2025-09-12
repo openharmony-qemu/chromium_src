@@ -41,8 +41,10 @@ void ExternalBeginFrameSourceOhosSecondTest::SetUp() {
 
 void ExternalBeginFrameSourceOhosSecondTest::TearDown() {
     externalBeginFramesourceOHOS_.reset();
-    delete frame_sink_manager_impl_;
-    frame_sink_manager_impl_ = nullptr;
+    if (frame_sink_manager_impl_ != nullptr) {
+        delete frame_sink_manager_impl_;
+        frame_sink_manager_impl_ = nullptr;
+    }
 }
 
 TEST_F(ExternalBeginFrameSourceOhosSecondTest, SendInternalBeginFrame) {

@@ -915,9 +915,10 @@ void LogMessage::Flush() {
 #endif
 #elif BUILDFLAG(ARKWEB_DFX_LOGGING) && BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    if ((severity_ == LOGGING_FEEDBACK || severity_ == LOGGING_URL) &&
-        IsEnableLoggerReport() && g_logger_callback != nullptr) {
-      ArkWebLoggingSeverity(str_newline);
+    if (severity_ == LOGGING_FEEDBACK || severity_ == LOGGING_URL) {
+      if (g_logger_callback != nullptr && IsEnableLoggerReport()) {
+        ArkWebLoggingSeverity(str_newline);
+      }
       return;
     }
 #endif

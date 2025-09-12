@@ -7,16 +7,17 @@
 
 #include <memory>
 
+#include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
 #include "base/functional/callback.h"
 #include "base/memory/ref_counted.h"
 #include "frame_available_listener_impl.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/graphic_adapter.h"
 #include "ui/gl/gl_export.h"
 
 namespace gl {
 
 class GL_EXPORT OhosNativeImage
-    : public base::RefCountedThreadSafe<OhosNativeImage> {
+    : public OHOS::NWeb::OhosNativeImageAdapter,
+      public base::RefCountedThreadSafe<OhosNativeImage> {
  public:
   static scoped_refptr<OhosNativeImage> Create(int texture_id);
 
@@ -30,7 +31,7 @@ class GL_EXPORT OhosNativeImage
   void DetachFromGLContext();
   void ReleaseNativeImage();
   void* AquireOhosNativeWindow();
-  static void OnFrameAvailableListener(void* context);
+  void OnFrameAvailableListener() override;
 
   static scoped_refptr<OhosNativeImage> Create();
 

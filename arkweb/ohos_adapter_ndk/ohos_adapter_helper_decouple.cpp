@@ -50,7 +50,6 @@
 #include "ohos_adapter/bridge/ark_media_codec_list_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_migration_manager_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_mmi_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_native_image_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_net_connect_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_net_proxy_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_ohos_drawing_text_adapter_wrapper.h"

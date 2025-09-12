@@ -71,4 +71,12 @@ void BufferRequestConfigAdapterImpl::SetTransformType(
   transform_type_ = type;
 }
 
+int64_t BufferRequestConfigAdapterImpl::GetTimestamp() {
+  return timestamp_;
+}
+
+void BufferRequestConfigAdapterImpl::SetTimestamp(int64_t timestamp) {
+  timestamp_ = timestamp;
+}
+
 }  // namespace OHOS::NWeb

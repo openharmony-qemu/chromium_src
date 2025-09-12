@@ -41,8 +41,7 @@ class FrameAvailableListenerTest : public FrameAvailableListener {
 public:
     FrameAvailableListenerTest() {}
     ~FrameAvailableListenerTest() {}
-    void* GetContext() override { return nullptr; }
-    OnFrameAvailableCb GetOnFrameAvailableCb() override { return nullptr; }
+    void OnFrameAvailableListener() override { return nullptr; }
 };
 
 void NativeImageAdapterImplTest::SetUpTestCase() {}

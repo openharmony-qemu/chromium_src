@@ -43,6 +43,7 @@ struct ArkWeb_HttpBodyStream_ : public ArkWebCefPostDataStreamInitCallback,
   void OnAsyncReadComplete(char* buffer, int bytes_read) override;
   void Reset();
   void SetForEts(bool ets) { is_ets_ = ets; }
+  void ResetOnIOThread();
 
   ArkWeb_HttpBodyStreamReadCallback read_callback{nullptr};
   ArkWeb_HttpBodyStreamAsyncReadCallback read_async_callback{nullptr};

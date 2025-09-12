@@ -285,7 +285,7 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
           base::BindOnce(
               base::IgnoreResult(
                   &JavaScriptResultCallbackImpl::CallbackOnReceiveThread),
-              base::Unretained(this), result));
+              weak_factory_.GetWeakPtr(), result));
     }
   }
 
@@ -295,6 +295,8 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
   std::shared_ptr<NWebDelegateInterface> nwebDelegate_;
 
   IMPLEMENT_REFCOUNTING(JavaScriptResultCallbackImpl);
+ private:
+  base::WeakPtrFactory<JavaScriptResultCallbackImpl> weak_factory_{this};
 };
 
 class CefWebMessageReceiverImpl : public CefWebMessageReceiver {

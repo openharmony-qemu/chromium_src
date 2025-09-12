@@ -583,10 +583,10 @@ int32_t SystemPropertiesAdapterImpl::GetLTPOStrategy()
 
 std::string SystemPropertiesAdapterImpl::GetVulkanStatus()
 {
-    std::string gpu_vendor = GetStringParameter("const.gpu.vendor", "0");
-    if ((gpu_vendor.compare("higpu.v200") == 0)
-        || (gpu_vendor.compare("higpu.v210") == 0)
-        || (gpu_vendor.compare("higpu.v300") == 0)) {
+    std::string gpuVendor = GetStringParameter("const.gpu.vendor", "0");
+    if ((gpuVendor.compare("higpu.v200") == 0)
+        || (gpuVendor.compare("higpu.v210") == 0)
+        || (gpuVendor.compare("higpu.v300") == 0)) {
         return GetStringParameter("web.ohos.vulkan", "");
     } else {
         return "false";

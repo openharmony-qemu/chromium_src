@@ -35,7 +35,7 @@ EventHandlerFDListenerAdapterImpl::EventHandlerFDListenerAdapterImpl(
 
 EventHandlerAdapterImpl::~EventHandlerAdapterImpl()
 {
-    lock_guard<mutex> lock(fd_listener_map_mutex_);
+    std::lock_guard<std::mutex> lock(fd_listener_map_mutex_);
     if (!fdListenerMap_.empty()) {
         for (auto it = fdListenerMap_.begin(); it != fdListenerMap_.end(); ++it) {
             delete it->second;
@@ -64,7 +64,7 @@ bool EventHandlerAdapterImpl::AddFileDescriptorListener(
     EventHandlerFDListenerAdapterImpl *fileDescriptorListener =
         new EventHandlerFDListenerAdapterImpl(listener, fileDescriptor);
     {
-        lock_guard<mutex> lock(fd_listener_map_mutex_);
+        std::lock_guard<std::mutex> lock(fd_listener_map_mutex_);
         fdListenerMap_[fileDescriptor] = fileDescriptorListener;
     }
 
@@ -85,7 +85,7 @@ void EventHandlerAdapterImpl::RemoveFileDescriptorListener(int32_t fileDescripto
         WVLOG_E("remove file descriptor listener failed");
     }
 
-    lock_guard<mutex> lock(fd_listener_map_mutex_);
+    std::lock_guard<std::mutex> lock(fd_listener_map_mutex_);
     auto it = fdListenerMap_.find(fileDescriptor);
     if (it != fdListenerMap_.end()) {
         delete it->second;

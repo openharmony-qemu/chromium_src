@@ -41,7 +41,7 @@ class MockClientSocketPoolManager : public ClientSocketPoolManager {
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   void SetConnectJobWithSecureDnsOnlyTimeout(int seconds) override {}
 #endif
-
+  void SetSocketIdleTimeout(int32_t timeout) override {}
  private:
   using ClientSocketPoolMap =
       std::map<ProxyChain, std::unique_ptr<ClientSocketPool>>;

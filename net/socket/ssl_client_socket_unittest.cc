@@ -1116,9 +1116,8 @@ class SSLClientSocketFalseStartTest
       base::RunLoop().RunUntilIdle();
       EXPECT_FALSE(callback.have_result());
     }
-
-    uint16_t version() const { return GetParam(); }
   }
+  uint16_t version() const { return GetParam(); }
 };
 
 // Sends an HTTP request on the socket and reads the response. This may be used

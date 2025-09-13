@@ -119,6 +119,11 @@ const std::string& ArkWebDownloadItemImplExt::GetRequestMethod() const {
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+ArkWebDownloadItemImplExt::~ArkWebDownloadItemImplExt() {
+  LOG(DEBUG) << "ArkWebDownloadItemImplExt::~ArkWebDownloadItemImplExt";
+  RunCallbackIfExistsCallback();
+}
+
 bool ArkWebDownloadItemImplExt::IsAllowedAutoResume() {
   switch (last_reason_) {
     case DOWNLOAD_INTERRUPT_REASON_SERVER_NO_RANGE:

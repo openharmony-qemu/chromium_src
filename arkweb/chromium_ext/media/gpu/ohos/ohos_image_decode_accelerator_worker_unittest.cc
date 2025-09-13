@@ -38,7 +38,6 @@
 #include "media/gpu/ohos/ohos_heif_image_decoder.h"
 #include "media/parsers/webp_parser.h"
 #include "mojo/public/cpp/bindings/callback_helpers.h"
-#include "string.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/gpu_fence.h"
 #include "ui/gfx/gpu_memory_buffer.h"
@@ -85,7 +84,7 @@ class MockOhosImageDecoder : public OhosImageDecoder {
 
 class MockNativePixmapDmaBuf : public gfx::NativePixmapDmaBuf {
  public:
-  MockNativePixmapDmaBuf(const gfx::Size& size)
+  explicit MockNativePixmapDmaBuf(const gfx::Size& size)
       : gfx::NativePixmapDmaBuf(size,
                                 kFormatForDecodes,
                                 gfx::NativePixmapHandle()) {}
@@ -374,6 +373,4 @@ TEST_F(OhosImageDecodeAcceleratorWorkerTest, Decode_ExportHandleFailure) {
       log_output.find("[HeifSupport] Could not export the NativePixmapHandle"),
       std::string::npos);
 }
-}
-
 }  // namespace media

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "arkweb/build/features/features.h"
 #include "base/base_switches.h"
 #include "net/base/url_util.h"
@@ -110,7 +111,8 @@ class ResourceURLLoader : public network::mojom::URLLoader {
       return;
     }
 
-    LOG(INFO) << "ResourceURLLoader url: " << request.url.spec()
+    LOG(INFO) << "ResourceURLLoader url: " 
+              << url::LogUtils::ConvertUrlWithMask(request.url.spec())
               << ", path: " << resourcesPath;
     std::string hapPath =
         base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(

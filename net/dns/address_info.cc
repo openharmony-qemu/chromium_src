@@ -199,7 +199,11 @@ std::unique_ptr<addrinfo, FreeAddrInfoFunc> AddrInfoGetter::getaddrinfo(
     const addrinfo* hints,
     int* out_os_error,
     handles::NetworkHandle network) {
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  addrinfo* ai = nullptr;
+#else
   addrinfo* ai;
+#endif
   // We wrap freeaddrinfo() in a lambda just in case some operating systems use
   // a different signature for it.
   FreeAddrInfoFunc deleter = [](addrinfo* ai) { ::freeaddrinfo(ai); };

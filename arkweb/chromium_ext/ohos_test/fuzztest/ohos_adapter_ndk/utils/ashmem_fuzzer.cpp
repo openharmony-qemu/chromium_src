@@ -29,8 +29,6 @@ void AshmemFuzzTest(const uint8_t* data, size_t size)
         return false;
     }
     FuzzedDataProvider dataProvider(data, size);
-    int fd = dataProvider.ConsumeIntegralInRange<int>(MIN_INT_SIZE, MAX_INT_SIZE);
-    ShmemAdapterClose(fd);
 
     int cLength = dataProvider.ConsumeIntegralInRange<int>(0, MAX_INT_SIZE);
     char res[cLength + 1];
@@ -41,12 +39,13 @@ void AshmemFuzzTest(const uint8_t* data, size_t size)
     res[cLength] = '\0';
     char *name = res;
     int testSize = dataProvider.ConsumeIntegralInRange<int>(MIN_INT_SIZE, MAX_INT_SIZE);
-    ShmemAdapterCreate(name, testSize);
+    int fd = ShmemAdapterCreate(name, testSize);
     int prot = dataProvider.ConsumeIntegralInRange<int>(MIN_INT_SIZE, MAX_INT_SIZE);
     ShmemAdapterSetProt(fd, prot);
     ShmemAdapterGetSize(fd);
     ShmemAdapterGetProt(fd);
     ShmemAdapterMap(fd, prot);
+    ShmemAdapterClose(fd);
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)

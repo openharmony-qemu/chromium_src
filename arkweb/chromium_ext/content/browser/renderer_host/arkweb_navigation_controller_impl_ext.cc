@@ -40,6 +40,7 @@
 #include <utility>
 
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/command_line.h"
 #include "base/containers/adapters.h"
 #include "base/debug/dump_without_crashing.h"
@@ -175,7 +176,8 @@ const std::string& ArkWebNavigationControllerImplExt::GetOriginalUrl() {
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 NavigationController::NavigationEntryUpdateError
 ArkWebNavigationControllerImplExt::InsertBackForwardEntry(int index, const GURL& url) {
-  DLOG(INFO) << "InsertNavigationEntryAtFront url: " << url << "[index]"
+  DLOG(INFO) << "InsertNavigationEntryAtFront url: "
+             << url::LogUtils::ConvertUrlWithMask(url.spec()) << "[index]"
              << index;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "InsertBackForwardEntry url: "
@@ -216,7 +218,8 @@ ArkWebNavigationControllerImplExt::InsertBackForwardEntry(int index, const GURL&
 
 NavigationController::NavigationEntryUpdateError
 ArkWebNavigationControllerImplExt::UpdateNavigationEntryUrl(int index, const GURL& url) {
-  DLOG(INFO) << "UpdateNavigationEntryUrl url: " << url << "[index]" << index;
+  DLOG(INFO) << "UpdateNavigationEntryUrl url: "
+             << url::LogUtils::ConvertUrlWithMask(url.spec()) << "[index]" << index;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "UpdateNavigationEntryUrl url: "
                      << url::LogUtils::ConvertUrlWithMask(url.spec())

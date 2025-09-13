@@ -28,7 +28,11 @@ class InputHandler;
 class InputHandlerUtils {
 public:
   InputHandlerUtils(InputHandler* handler);
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual ~InputHandlerUtils();
+#else
   ~InputHandlerUtils();
+#endif  // BUILDFLAG(ARKWEB_TEST)
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void HandleScrollUpdateForInternalBeginFrame(
@@ -36,9 +40,15 @@ public:
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual LayerImpl* GetLayerImplById(int id);
+  virtual LayerImpl* GetLayerImplIsHitByPoint(const gfx::Point& viewport_point);
+  virtual LayerImpl* GetNativeLayerImpl(const gfx::Point& viewport_point);
+#else
   LayerImpl* GetLayerImplIsHitByPoint(const gfx::Point& viewport_point);
   LayerImpl* GetNativeLayerImpl(const gfx::Point& viewport_point);
   LayerImpl* GetLayerImplById(int id);
+#endif  // BUILDFLAG(ARKWEB_TEST)
   bool IsNativeLayer(gfx::PointF device_viewport_point);
 #endif
 

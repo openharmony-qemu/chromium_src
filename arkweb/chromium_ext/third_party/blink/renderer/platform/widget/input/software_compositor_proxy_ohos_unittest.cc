@@ -273,4 +273,24 @@ TEST_F(SoftwareCompositorProxyOhosTest, DemandDrawSwAsync001) {
 
   EXPECT_FALSE(callback_result);
 }
+
+TEST_F(SoftwareCompositorProxyOhosTest, DemandDrawSwAsync002) {
+  base::WritableSharedMemoryRegion shm_region =
+      base::WritableSharedMemoryRegion::Create(100);
+  bool set_result = false;
+  g_softwareCompositor->SetSharedMemory(
+      std::move(shm_region),
+      base::BindOnce([](bool* out_result, bool result) { *out_result = result; },
+          &set_result));
+  ASSERT_TRUE(set_result);
+  auto params = mojom::blink::SoftwareCompositorDemandDrawSwParams::New();
+  params->size = gfx::SizeF(0.0f, 0.0f);
+  params->offset = gfx::PointF(0.0f, 0.0f);
+  bool callback_result = true;
+  g_softwareCompositor->DemandDrawSwAsync(
+      std::move(params),
+      base::BindOnce([](bool* out_result, bool result) { *out_result = result; },
+          &callback_result));
+  EXPECT_FALSE(callback_result);
+}
 }  // namespace blink

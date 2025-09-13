@@ -40,6 +40,24 @@ namespace {
   int32_t g_web_debugging_port = 0;
 } // namespace
 
+#if BUILDFLAG(ARKWEB_TEST)
+bool GetWebDebuggingEnabled() {
+  return g_web_debugging_enabled;
+}
+
+void SetWebDebuggingEnabled(bool value) {
+  g_web_debugging_enabled = value;
+}
+
+int32_t GetWebDebuggingPort() {
+  return g_web_debugging_port;
+}
+
+void SetWebDebuggingPort(int32_t value) {
+  g_web_debugging_port = value;
+}
+#endif
+
 static std::shared_ptr<NWebEngineImpl> g_nweb_engine_impl =
     std::make_shared<NWebEngineImpl>();
 

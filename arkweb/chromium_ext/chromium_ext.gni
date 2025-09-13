@@ -733,6 +733,7 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/content/browser/code_cache/oh_code_cache_unittests.cc",
   "//arkweb/chromium_ext/content/browser/webauth/utils_unittests.cc",
   "//arkweb/chromium_ext/content/browser/arkweb_child_process_launcher_helper_utils_unittests.cc",
+  "//arkweb/chromium_ext/content/browser/renderer_host/text_input_manager_utils_unittest.cc",
   "//arkweb/chromium_ext/components/policy/core/common/policy_loader_ohos_unittest.cc",
   "//arkweb/chromium_ext/net/proxy_resolution/proxy_config_service_ohos_unittest.cc",
   "//arkweb/chromium_ext/components/subresource_filter/content/browser/ohos_adblock_config_unittest.cc",
@@ -830,6 +831,7 @@ arkweb_third_party_blink_renderer_core_unittest_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/frame/ark_web_unittest.cc",
   "//arkweb/chromium_ext/third_party/ashmem/ohos_ashmem_unittests.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/page/drag_image_ext_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollbar_theme_utils_uinttest.cc",
 ]
 
 arkweb_third_party_blink_renderer_platform_unittest_sources = [

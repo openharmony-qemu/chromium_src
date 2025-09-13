@@ -17,10 +17,9 @@
 #include "ui/base/pointer/pointer_device.h"
 
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #if BUILDFLAG(ARKWEB_TEST)
 #define protected public
-#include "pointer_device_ohos.cc"
+#include "arkweb/chromium_ext/ui/base/pointer/pointer_device_ohos.cc"
 #endif
 
 namespace ui {

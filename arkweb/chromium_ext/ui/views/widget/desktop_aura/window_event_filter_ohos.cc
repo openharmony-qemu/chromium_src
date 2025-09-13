@@ -32,9 +32,11 @@ void WindowEventFilterOhos::HandleLocatedEventWithHitTest(
       HandleMouseEventWithHitTest(hit_test, event->AsMouseEvent())) {
     return;
   }
-  if (desktop_window_tree_host_->GetContentWindow()->GetProperty(
-          aura::client::kResizeBehaviorKey) &
-      aura::client::kResizeBehaviorCanResize) {
+  uint32_t resize_behavior = static_cast<uint32_t>(
+      desktop_window_tree_host_->GetContentWindow()->GetProperty(
+          aura::client::kResizeBehaviorKey));
+  if (resize_behavior &
+      static_cast<uint32_t>(aura::client::kResizeBehaviorCanResize)) {
     MaybeDispatchHostWindowDragMovement(hit_test, event);
   }
 }

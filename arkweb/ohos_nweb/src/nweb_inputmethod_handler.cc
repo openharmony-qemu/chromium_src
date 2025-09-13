@@ -170,7 +170,7 @@ class InputMethodTask : public CefTask {
 
 // LCOV_EXCL_START
 NWebInputMethodHandler::NWebInputMethodHandler()
-    : selected_from_(0), selected_to_(0) {
+    : selected_from_(0), selected_to_(0), device_pixel_ratio_(0.0f) {
   inputmethod_adapter_ = OhosAdapterHelper::GetInstance().CreateIMFAdapter();
   if (inputmethod_adapter_ == nullptr) {
     LOG(ERROR) << "inputmethod_adapter_ create failed";
@@ -317,17 +317,29 @@ IMFAdapterEnterKeyType NWebInputMethodHandler::TextInputActionToIMFAdapter(
 
 // LCOV_EXCL_START
 void NWebInputMethodHandler::HandleSecurityLayer() {
-  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
-    CefRefPtr<CefTask> task = new InputMethodTask(base::BindOnce(
-        &NWebInputMethodHandler::HandleSecurityLayerHandlerOnUI, this));
-    browser_->GetHost()->PostTaskToUIThread(task);
+  if (browser_ == nullptr) {
+    return;
   }
+
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+
+  CefRefPtr<CefTask> task = new InputMethodTask(base::BindOnce(
+      &NWebInputMethodHandler::HandleSecurityLayerHandlerOnUI, this));
+  host->PostTaskToUIThread(task);
 }
 
 void NWebInputMethodHandler::HandleSecurityLayerHandlerOnUI() {
-  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
-    browser_->GetHost()->UpdateSecurityLayer(input_is_password_);
+  if (browser_ == nullptr) {
+    return;
   }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  host->UpdateSecurityLayer(input_is_password_);
 }
 // LCOV_EXCL_STOP
 
@@ -691,13 +703,19 @@ void NWebInputMethodHandler::OnUpdateTextInputStateCalled(
     if (browser_ && browser_->GetHost()) {
       browser_->GetHost()->SetHasComposition(has_composition_);
     }
-    composition_range_start_ = compositon_range.from;
+    composition_range_start_ =
+        (compositon_range.from > static_cast<uint32_t>(INT32_MAX))
+            ? INT32_MAX
+            : static_cast<int32_t>(compositon_range.from);
     composition_range_end_ = compositon_range.to;
     int32_t preview_length = composition_range_end_ - composition_range_start_;
-    if (!text.ToString16().empty() &&
-        (static_cast<uint32_t>(composition_range_end_) <= text.ToString16().length())) {
-      preview_text_cache_ =
-          text.ToString16().substr(composition_range_start_, preview_length);
+    if (composition_range_start_ >= 0 && preview_length > 0) {
+      const auto& text16 = text.ToString16();
+      size_t start = static_cast<size_t>(composition_range_start_);
+      size_t length = static_cast<size_t>(preview_length);
+      if (!text16.empty() && (start + length <= text16.length())) {
+        preview_text_cache_ = text16.substr(start, length);
+      }
     }
   }
   LOG(DEBUG) << "NWebInputMethodHandler::OnUpdateTextInputStateCalled";
@@ -719,20 +737,30 @@ void NWebInputMethodHandler::OnUpdateTextInputStateCalled(
 }
 
 void NWebInputMethodHandler::SetIMEStatus(bool status) {
-  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
-    CefRefPtr<CefTask> insert_task = new InputMethodTask(base::BindOnce(
-        &NWebInputMethodHandler::SetIMEStatusOnUI, this, std::move(status)));
-    browser_->GetHost()->PostTaskToUIThread(insert_task);
+  if (browser_ == nullptr) {
+    return;
   }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  CefRefPtr<CefTask> insert_task = new InputMethodTask(base::BindOnce(
+      &NWebInputMethodHandler::SetIMEStatusOnUI, this, std::move(status)));
+  host->PostTaskToUIThread(insert_task);
 }
 
 // LCOV_EXCL_START
 void NWebInputMethodHandler::WebBlurKeyboardHide() {
-  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
-    CefRefPtr<CefTask> task = new InputMethodTask(
-        base::BindOnce(&NWebInputMethodHandler::WebBlurKeyboardHideOnUI, this));
-    browser_->GetHost()->PostTaskToUIThread(task);
+  if (browser_ == nullptr) {
+    return;
   }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  CefRefPtr<CefTask> task = new InputMethodTask(
+      base::BindOnce(&NWebInputMethodHandler::WebBlurKeyboardHideOnUI, this));
+  host->PostTaskToUIThread(task);
 }
 // LCOV_EXCL_STOP
 
@@ -756,25 +784,37 @@ void NWebInputMethodHandler::InsertText(const std::u16string& text) {
 }
 
 void NWebInputMethodHandler::DeleteBackward(int32_t length) {
-  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
-    CefRefPtr<CefTask> delete_task = new InputMethodTask(base::BindOnce(
-        &NWebInputMethodHandler::DeleteBackwardHandlerOnUI, this, length));
-    browser_->GetHost()->PostTaskToUIThread(delete_task);
+  if (browser_ == nullptr) {
+    return;
   }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  CefRefPtr<CefTask> delete_task = new InputMethodTask(base::BindOnce(
+      &NWebInputMethodHandler::DeleteBackwardHandlerOnUI, this, length));
+  host->PostTaskToUIThread(delete_task);
 }
 
 void NWebInputMethodHandler::DeleteForward(int32_t length) {
-  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
-    CefRefPtr<CefTask> delete_task = new InputMethodTask(base::BindOnce(
-        &NWebInputMethodHandler::DeleteForwardHandlerOnUI, this, length));
-    browser_->GetHost()->PostTaskToUIThread(delete_task);
+  if (browser_ == nullptr) {
+    return;
   }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  CefRefPtr<CefTask> delete_task = new InputMethodTask(base::BindOnce(
+      &NWebInputMethodHandler::DeleteForwardHandlerOnUI, this, length));
+  host->PostTaskToUIThread(delete_task);
 }
 
 void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
   LOG(INFO) << "NWebInputMethodHandler::SetIMEStatusOnUI status:" << status;
   if (!status && ime_text_composing_) {
-    browser_->GetHost()->ImeFinishComposingText(false);
+    if (browser_->GetHost()) {
+      browser_->GetHost()->ImeFinishComposingText(false);
+    }
     ime_text_composing_ = false;
     composing_text_.clear();
   }
@@ -788,7 +828,9 @@ void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
 void NWebInputMethodHandler::WebBlurKeyboardHideOnUI() {
   LOG(INFO) << "NWebInputMethodHandler::WebBlurKeyboardHideOnUI";
   isManualCloseKeyboard_ = true;
-  browser_->GetHost()->SetFocusOnWeb();
+  if (browser_->GetHost()) {
+    browser_->GetHost()->SetFocusOnWeb();
+  }
 }
 // LCOV_EXCL_STOP
 
@@ -802,6 +844,15 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
     textCursorReady_++;
   }
 
+  if (browser_ == nullptr) {
+    LOG(ERROR) << "browser is null in InsertTextHandlerOnUI";
+    return;
+  }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    LOG(ERROR) << "browser host is null in InsertTextHandlerOnUI";
+    return;
+  }
   CefKeyEvent keyEvent;
   keyEvent.windows_key_code = ui::VKEY_PROCESSKEY;
   // keycode conversion for single char input on PC
@@ -814,15 +865,15 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
   keyEvent.modifiers = 0;
   keyEvent.is_system_key = false;
   keyEvent.type = KEYEVENT_RAWKEYDOWN;
-  browser_->GetHost()->SendKeyEvent(keyEvent);
+  host->SendKeyEvent(keyEvent);
 
   if (!ime_text_composing_) {
     ime_text_composing_ = true;
     composing_text_.clear();
   }
   composing_text_.append(text);
-  browser_->GetHost()->ImeCommitText(composing_text_,
-                                     CefRange(UINT32_MAX, UINT32_MAX), 0);
+  host->ImeCommitText(composing_text_, CefRange(UINT32_MAX, UINT32_MAX),
+                      0);
 
   if (text.length() > 1) {
     ResSchedClientAdapter::ReportScene(ResSchedStatusAdapter::WEB_SCENE_ENTER,
@@ -835,15 +886,18 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
   LOG(DEBUG) << "NWebInputMethodHandler::InsertTextHandlerOnUI selected_from_ "
              << selected_from_;
   keyEvent.type = KEYEVENT_KEYUP;
-  browser_->GetHost()->SendKeyEvent(keyEvent);
+  host->SendKeyEvent(keyEvent);
   ClearComposingStatus();
 }
 
 // LCOV_EXCL_START
 void NWebInputMethodHandler::ClearComposingStatus() {
   has_composition_ = false;
-  if (browser_ && browser_->GetHost()) {
-    browser_->GetHost()->SetHasComposition(has_composition_);
+  if (browser_ != nullptr) {
+    CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+    if (host != nullptr) {
+      host->SetHasComposition(has_composition_);
+    }
   }
   preview_text_cache_ = u"";
   composition_range_start_ = 0;
@@ -889,25 +943,39 @@ void NWebInputMethodHandler::PreviewTextHandlerOnUI(const std::u16string& text,
   LOG(DEBUG) << "NWebInputMethodHandler::selection_range from "
              << selection_range.from << ", to " << selection_range.to;
 
-  browser_->GetHost()->ImeSetComposition(text, underlines, replace_range,
-                                         selection_range);
+  if (browser_ != nullptr) {
+    CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+    if (host != nullptr) {
+      host->ImeSetComposition(text, underlines, replace_range, selection_range);
+    }
+  }
 }
 
 // LCOV_EXCL_START
 void NWebInputMethodHandler::CancelPreviewHandlerOnUI() {
-  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
-    LOG(DEBUG) << "NWebInputMethodHandler::CancelPreviewHandlerOnUI";
-    browser_->GetHost()->ImeCancelComposition();
-    ClearComposingStatus();
+  if (browser_ == nullptr) {
+    return;
   }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  LOG(DEBUG) << "NWebInputMethodHandler::CancelPreviewHandlerOnUI";
+  host->ImeCancelComposition();
+  ClearComposingStatus();
 }
 
 void NWebInputMethodHandler::FinishPreviewTextOnUI() {
-  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
-    LOG(DEBUG) << "NWebInputMethodHandler::FinishPreviewTextOnUI";
-    browser_->GetHost()->ImeFinishComposingText(false);
-    ClearComposingStatus();
+  if (browser_ == nullptr) {
+    return;
   }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  LOG(DEBUG) << "NWebInputMethodHandler::FinishPreviewTextOnUI";
+  host->ImeFinishComposingText(false);
+  ClearComposingStatus();
 }
 // LCOV_EXCL_STOP
 
@@ -926,8 +994,13 @@ void NWebInputMethodHandler::DeleteForwardHandlerOnUI(int32_t length) {
   keyEvent.character = keyEvent.unmodified_character = DEL_CHAR;
   LOG(DEBUG) << "NWebInputMethodHandler::DeleteForwardHandlerOnUI";
 
-  if (!browser_ || !browser_->GetHost()) {
+  if (browser_ == nullptr) {
     LOG(ERROR) << "delete backward browser get failed";
+    return;
+  }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    LOG(ERROR) << "delete backward browser host get failed";
     return;
   }
   is_need_notify_all_ = false;
@@ -938,7 +1011,8 @@ void NWebInputMethodHandler::DeleteForwardHandlerOnUI(int32_t length) {
       << "NWebInputMethodHandler::DeleteForwardHandlerOnUI selected_from_ "
       << selected_from_;
   if (static_cast<int32_t>(whole_text_.substr(selected_from_).size()) <= length) {
-    text_cursor_length_ = whole_text_.substr(selected_from_).size();
+    text_cursor_length_ =
+        static_cast<int32_t>(whole_text_.substr(selected_from_).size());
     if (selected_from_ == 0) {
       is_need_notify_all_ = true;
     }
@@ -946,14 +1020,14 @@ void NWebInputMethodHandler::DeleteForwardHandlerOnUI(int32_t length) {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
     textCursorReady_ += text_cursor_length_;
   }
-  for (int32_t i = 0; i < length; i++) {
+  for (int32_t i = 0; i < text_cursor_length_; i++) {
     keyEvent.type = KEYEVENT_RAWKEYDOWN;
-    browser_->GetHost()->SendKeyEvent(keyEvent);
+    host->SendKeyEvent(keyEvent);
     keyEvent.type = KEYEVENT_CHAR;
-    browser_->GetHost()->SendKeyEvent(keyEvent);
+    host->SendKeyEvent(keyEvent);
   }
   keyEvent.type = KEYEVENT_KEYUP;
-  browser_->GetHost()->SendKeyEvent(keyEvent);
+  host->SendKeyEvent(keyEvent);
   if (preview_text_cache_.length() == 1) {
     ClearComposingStatus();
   }
@@ -968,8 +1042,13 @@ void NWebInputMethodHandler::DeleteBackwardHandlerOnUI(int32_t length) {
   keyEvent.character = keyEvent.unmodified_character = DEL_CHAR;
   LOG(DEBUG) << "NWebInputMethodHandler::DeleteBackwardHandlerOnUI";
 
-  if (!browser_ || !browser_->GetHost()) {
-    LOG(ERROR) << "delete forward browser get failed";
+  if (browser_ == nullptr) {
+    LOG(ERROR) << "delete backward browser get failed";
+    return;
+  }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    LOG(ERROR) << "delete backward browser host get failed";
     return;
   }
   text_cursor_length_ = length;
@@ -979,51 +1058,62 @@ void NWebInputMethodHandler::DeleteBackwardHandlerOnUI(int32_t length) {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
     textCursorReady_ += text_cursor_length_;
   }
-  for (int32_t i = 0; i < length; i++) {
+  for (int32_t i = 0; i < text_cursor_length_; i++) {
     keyEvent.type = KEYEVENT_RAWKEYDOWN;
-    browser_->GetHost()->SendKeyEvent(keyEvent);
+    host->SendKeyEvent(keyEvent);
     keyEvent.type = KEYEVENT_CHAR;
-    browser_->GetHost()->SendKeyEvent(keyEvent);
+    host->SendKeyEvent(keyEvent);
   }
   keyEvent.type = KEYEVENT_KEYUP;
-  browser_->GetHost()->SendKeyEvent(keyEvent);
+  host->SendKeyEvent(keyEvent);
   if (preview_text_cache_.length() == 1) {
     ClearComposingStatus();
   }
 }
 
 void NWebInputMethodHandler::SendEnterKeyEvent(int32_t enterKeyType) {
-  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
-    CefRefPtr<CefTask> sendEnterKeyEvent_task = new InputMethodTask(
-        base::BindOnce(&NWebInputMethodHandler::SendEnterKeyEventOnUI, this,
-                       std::move(enterKeyType)));
-    browser_->GetHost()->PostTaskToUIThread(sendEnterKeyEvent_task);
+  if (browser_ == nullptr) {
+    return;
   }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  CefRefPtr<CefTask> sendEnterKeyEvent_task = new InputMethodTask(
+      base::BindOnce(&NWebInputMethodHandler::SendEnterKeyEventOnUI, this,
+                     std::move(enterKeyType)));
+  host->PostTaskToUIThread(sendEnterKeyEvent_task);
 }
 
 void NWebInputMethodHandler::SendEnterKeyEventOnUI(int32_t enterKeyType) {
-  if (!browser_ || !browser_->GetHost()) {
+  if (browser_ == nullptr) {
     LOG(ERROR)
         << "NWebInputMethodHandler send enter key failed, browser_ is nullptr!";
     return;
   }
-
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    LOG(ERROR) << "NWebInputMethodHandler send enter key failed, browser host "
+                  "is nullptr!";
+    return;
+  }
   if (!base::ohos::IsPcDevice()) {
     if (enterKeyType == static_cast<int32_t>(IMFAdapterEnterKeyType::NEXT) &&
-        input_flags_ & CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT) {
+        (static_cast<uint32_t>(input_flags_) &
+         static_cast<uint32_t>(
+             CEF_TEXT_INPUT_FLAG_HAVE_NEXT_FOCUSABLE_ELEMENT))) {
       LOG(DEBUG) << "NWebInputMethodHandler::SendEnterKeyEvent "
                     "IMFAdapterEnterKeyType::NEXT";
-      browser_->GetHost()->AdvanceFocusForIME(
-          static_cast<int>(FocusType::FORWARD));
+      host->AdvanceFocusForIME(static_cast<int>(FocusType::FORWARD));
       return;
     } else if (enterKeyType ==
                    static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS) &&
-               input_flags_ &
-                   CEF_TEXT_INPUT_FLAG_HAVE_PREVIOUS_FOCUSABLE_ELEMENT) {
+               (static_cast<uint32_t>(input_flags_) &
+                static_cast<uint32_t>(
+                    CEF_TEXT_INPUT_FLAG_HAVE_PREVIOUS_FOCUSABLE_ELEMENT))) {
       LOG(DEBUG) << "NWebInputMethodHandler::SendEnterKeyEvent "
                     "IMFAdapterEnterKeyType::PREVIOUS";
-      browser_->GetHost()->AdvanceFocusForIME(
-          static_cast<int>(FocusType::BACKWARD));
+      host->AdvanceFocusForIME(static_cast<int>(FocusType::BACKWARD));
       return;
     }
   }
@@ -1268,7 +1358,7 @@ int32_t NWebInputMethodHandler::GetCompositionTypeAndCheckInput(
     }
     case COMPOSITION_POSITION:
     case COMPOSITION_REPLACE: {
-      int32_t whole_text_length = whole_text_.length();
+      int32_t whole_text_length = static_cast<int32_t>(whole_text_.length());
       if (end > whole_text_length) {
         LOG(ERROR) << "composition position is larger then current text length "
                    << "end: " << end
@@ -1369,7 +1459,7 @@ int32_t NWebInputMethodHandler::UpdateCompositionInfo(
         std::u16string replace_string =
             preview_text_cache_.replace(replace_pos, replace_length, text);
         preview_text_cache_ = replace_string;
-        composition_cursor_index_ = replace_pos + text.length();
+        composition_cursor_index_ = static_cast<size_t>(replace_pos) + text.length();
       } else {
         preview_text_cache_ = text;
         composition_cursor_index_ = text.length();
@@ -1404,18 +1494,22 @@ int32_t NWebInputMethodHandler::SetPreviewText(const std::u16string& text,
   }
   if (composition_type_ == COMPOSITION_CANCEL) {
     LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_CANCEL";
-    if (browser_ != nullptr && browser_->GetHost() != nullptr) {
-      CefRefPtr<CefTask> task = new InputMethodTask(base::BindOnce(
-          &NWebInputMethodHandler::CancelPreviewHandlerOnUI, this));
-      browser_->GetHost()->PostTaskToUIThread(task);
+    if (browser_ == nullptr) {
+      return;
     }
+    CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+    if (host == nullptr) {
+      return;
+    }
+    CefRefPtr<CefTask> task = new InputMethodTask(base::BindOnce(
+        &NWebInputMethodHandler::CancelPreviewHandlerOnUI, this));
+    host->PostTaskToUIThread(task);
   } else if (composition_type_ == COMPOSITION_DELETE) {
     LOG(DEBUG) << "NWebInputMethodHandler::COMPOSITION_DELETE selected_from_ "
                << selected_from_;
-    // 后向删除
     if (start == selected_from_) {
       DeleteForward(1);
-    }  // 前向删除
+    }
     else if (end == selected_from_) {
       DeleteBackward(1);
     }
@@ -1432,11 +1526,16 @@ int32_t NWebInputMethodHandler::SetPreviewText(const std::u16string& text,
 
 // LCOV_EXCL_START
 void NWebInputMethodHandler::FinishTextPreview() {
-  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
-    CefRefPtr<CefTask> task = new InputMethodTask(
-        base::BindOnce(&NWebInputMethodHandler::FinishPreviewTextOnUI, this));
-    browser_->GetHost()->PostTaskToUIThread(task);
+  if (browser_ == nullptr) {
+    return;
   }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  CefRefPtr<CefTask> task = new InputMethodTask(
+      base::BindOnce(&NWebInputMethodHandler::FinishPreviewTextOnUI, this));
+  host->PostTaskToUIThread(task);
 }
 
 void NWebInputMethodHandler::SetNeedUnderLine(bool is_need_underline) {

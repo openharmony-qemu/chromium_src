@@ -51,10 +51,12 @@ class ArkWebHostResolverManagerJobExt : public HostResolverManager::Job {
       const base::TickClock* tick_clock,
       const HostResolver::HttpsSvcbOptions& https_svcb_options);
   ~ArkWebHostResolverManagerJobExt() override;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   ArkWebHostResolverManagerJobExt* AsArkWebHostResolverManagerJobExt()
       override {
     return this;
   }
+#endif
 
  private:
   friend class Job;

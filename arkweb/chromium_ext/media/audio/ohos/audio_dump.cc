@@ -95,6 +95,9 @@ void DumpFileUtil::WriteDumpScopedFile(base::ScopedFILE& dumpFile,
 
 void DumpFileUtil::OpenDumpScopedFile(const std::string& filename,
                                       base::ScopedFILE* file) {
+  if (!file) {
+    return;
+  }
   std::string filePath = DUMP_APP_DIR + filename;
   bool res = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                  .GetSystemPropertiesInstance()

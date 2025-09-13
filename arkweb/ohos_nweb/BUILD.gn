@@ -196,6 +196,8 @@ component("cef_nweb") {
     "src/sysevent/event_reporter.h",
     "src/sysevent/oh_web_performance_timing.cc",
     "src/sysevent/oh_web_performance_timing.h",
+    "src/cef_delegate/nweb_extension_connect_native.cc",
+    "src/cef_delegate/nweb_extension_connect_native.h",
   ]
   if (defined(arkweb_logger_report) && arkweb_logger_report) {
     sources += [
@@ -458,6 +460,8 @@ component("nweb_sources") {
     "src/nweb_url_resource_error_impl.hh",
     "src/nweb_url_resource_request_impl.cc",
     "src/nweb_url_resource_request_impl.h",
+    "src/nweb_runtime_connect_info_impl.cc",
+    "src/nweb_runtime_connect_info_impl.h",
     "src/nweb_web_storage_impl.cc",
     "src/nweb_web_storage_impl.h",
     "src/nweb_first_meaningful_paint_details_impl.cc",
@@ -672,6 +676,7 @@ source_set("unittests") {
     "src/nweb_resize_helper_unittests.cc",
     "src/video_assistant/nweb_media_player_controller_impl_unittest.cc",
     "src/nweb_engine_impl_unittest.cc",
+    "src/native_media_player/nweb_media_info_impl_unittest.cc",
   ]
 
   deps = [

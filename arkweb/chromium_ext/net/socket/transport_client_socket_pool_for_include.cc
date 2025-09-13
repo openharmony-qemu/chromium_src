@@ -68,7 +68,11 @@ class TransportClientSocketPoolUtils {
         timeout = obj->unused_idle_socket_timeout_;
       }
     } else {
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+      timeout = obj->arkweb_used_idle_socket_timeout_;
+#else
       timeout = obj->used_idle_socket_timeout_;
+#endif
     }
     return timeout;
   }

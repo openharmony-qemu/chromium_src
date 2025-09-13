@@ -392,4 +392,21 @@ void ArkWebNetworkServiceExt::DeregisterNetworkContextExt(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+void ArkWebNetworkServiceExt::SetSocketIdleTimeout(int32_t timeout) {
+  LOG(INFO) << "Network service set socket idle timeout " << timeout
+            << " second(s)";
+  net::ClientSocketPool::set_used_idle_socket_timeout(base::Seconds(timeout));
+
+  for (NetworkContext* network_context : network_contexts_) {
+    net::URLRequestContext* url_request_context =
+        network_context->url_request_context();
+    if (url_request_context) {
+      url_request_context->AsURLRequestContextExt()->SetSocketIdleTimeout(
+          timeout);
+    }
+  }
+}
+#endif
+
 }  // namespace network

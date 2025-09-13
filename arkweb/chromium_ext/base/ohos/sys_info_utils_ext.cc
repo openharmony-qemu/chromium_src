@@ -141,6 +141,11 @@ BASE_EXPORT void SetPixelRatio(float ratio) {
   SystemProperties::Instance()->set_pixel_ratio(ratio);
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+#ifdef __cplusplus
+extern "C" {
+#endif
+#endif
 BASE_EXPORT bool IsMobileDevice() {
   return SystemProperties::Instance()->is_mobile();
 }
@@ -153,6 +158,11 @@ BASE_EXPORT bool IsPcDevice() {
   // 2in1 is treated as pc device on ohos platform now.
   return SystemProperties::Instance()->is_2in1();
 }
+#if BUILDFLAG(ARKWEB_TEST)
+#ifdef __cplusplus
+}
+#endif
+#endif
 
 BASE_EXPORT bool IsEmulator() {
   return SystemProperties::Instance()->is_emulator();
@@ -162,6 +172,11 @@ BASE_EXPORT bool IsWearableDevice() {
   return SystemProperties::Instance()->is_wearable();
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+#ifdef __cplusplus
+extern "C" {
+#endif
+#endif
 BASE_EXPORT int32_t MajorVersion() {
   return SystemProperties::Instance()->major_version();
 }
@@ -169,11 +184,21 @@ BASE_EXPORT int32_t MajorVersion() {
 BASE_EXPORT int32_t SeniorVersion() {
   return SystemProperties::Instance()->senior_version();
 }
+#if BUILDFLAG(ARKWEB_TEST)
+#ifdef __cplusplus
+}
+#endif
+#endif
 
 BASE_EXPORT std::string OsName() {
   return SystemProperties::Instance()->os_name();
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+#ifdef __cplusplus
+extern "C" {
+#endif
+#endif
 BASE_EXPORT std::string OsVersion() {
   return SystemProperties::Instance()->os_version();
 }
@@ -185,6 +210,11 @@ BASE_EXPORT std::string BaseOsName() {
 BASE_EXPORT std::string CompatibleDeviceType() {
   return SystemProperties::Instance()->compatible_device_type();
 }
+#if BUILDFLAG(ARKWEB_TEST)
+#ifdef __cplusplus
+}
+#endif
+#endif
 
 BASE_EXPORT bool IsCompatibleMode() {
   return SystemProperties::Instance()->is_compatible_mode();

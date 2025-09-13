@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/base64.h"
 #include "base/containers/span.h"
 #include "base/feature_list.h"
@@ -2372,6 +2373,10 @@ TEST_F(PasswordAutofillManagerTest,
   EXPECT_THAT(histograms.GetTotalCountsForPrefix("Autofill.Funnel."),
               ::testing::IsEmpty());
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_autofill_manager_ext_unittest.cc"
+#endif
 
 }  // namespace
 }  // namespace password_manager

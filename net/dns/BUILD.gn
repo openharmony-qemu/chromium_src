@@ -502,6 +502,12 @@ source_set("tests") {
     "//testing/gmock",
     "//testing/gtest",
   ]
+  
+  if (is_ohos) {
+    deps += [
+      "//third_party:huawei_securec",
+    ]
+  }
 }
 
 source_set("test_support") {

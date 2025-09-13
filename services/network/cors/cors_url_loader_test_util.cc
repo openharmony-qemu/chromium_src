@@ -176,7 +176,11 @@ CorsURLLoaderTestBase::CorsURLLoaderTestBase(bool shared_dictionary_enabled)
 
   context_params->shared_dictionary_enabled = shared_dictionary_enabled;
 
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  network_context_ = std::make_unique<ArkWebNetworkContextExt>(
+#else
   network_context_ = std::make_unique<NetworkContext>(
+#endif
       network_service_.get(),
       network_context_remote_.BindNewPipeAndPassReceiver(),
       std::move(context_params));

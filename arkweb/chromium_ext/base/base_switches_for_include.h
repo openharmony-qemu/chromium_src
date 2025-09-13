@@ -42,4 +42,8 @@ extern const char kEnableLoggerReport[];
 extern const char kDisableAutoPreconnect[];
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+extern const char kSocketIdleTimeout[];
+#endif
+
 #endif  // ARKWEB_CHROMIUM_EXT_BASE_BASE_SWITCHES_FOR_INCLUDE_H_

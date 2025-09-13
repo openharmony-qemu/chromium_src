@@ -3627,6 +3627,7 @@ source_set("browser") {
     deps += [
       "//build/config/freetype",
       "//third_party/blink/public/common:font_unique_name_table_proto",
+      "//third_party/blink/public/mojom:mojom_platform_blink"
     ]
   }
 

@@ -578,6 +578,10 @@ class MockRenderer : public Renderer {
   MOCK_METHOD0(RecycleDmaBuffer, void());
   MOCK_METHOD0(ResumeDmaBuffer, void());
 #endif  // ARKWEB_MEDIA_DMABUF
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  MOCK_METHOD(void, SetMediaPlayerState, (bool, int), (override));
+  MOCK_METHOD(void, SetPlaybackRateWithReason, (double, ActionReason), (override));
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   base::WeakPtr<MockRenderer> AsWeakPtr() {
     return weak_ptr_factory_.GetWeakPtr();

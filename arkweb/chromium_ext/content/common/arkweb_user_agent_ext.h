@@ -15,6 +15,7 @@
 #include "base/strings/strcat.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
+#include "build/buildflag.h"
 #include "build/build_config.h"
 #include "build/util/chromium_git_revision.h"
 
@@ -45,7 +46,11 @@
 #endif
 
 namespace content {
-
+#if BUILDFLAG(ARKWEB_TEST)
+extern bool is_compatible_type_setted;
+extern void SetArkwebUserAgentExtStateForTest(bool);
+extern void ResetArkwebUserAgentExtStateForTest();
+#endif
 #if BUILDFLAG(ARKWEB_USERAGENT)
 std::string GetDistVersion();
 std::string GetOhosFullname();

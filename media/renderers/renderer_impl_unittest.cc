@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
+#define private public
 #include "media/renderers/renderer_impl.h"
+#undef private
 
 #include <stdint.h>
 
@@ -1071,5 +1074,9 @@ TEST_F(RendererImplTest, AudioResumedFromUnderflowDuringVideoTrackChange) {
   std::move(video_renderer_flush_cb).Run();
   track_change.Run();
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "media/renderers/renderer_impl_for_include_unitttest.cc"
+#endif // ARKWEB_TEST
 
 }  // namespace media

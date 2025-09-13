@@ -10,10 +10,23 @@
 namespace content {
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
+#if BUILDFLAG(ARKWEB_TEST)
+bool is_compatible_type_setted = false;
+static std::string compatible_device_type;
+void SetArkwebUserAgentExtStateForTest(bool is_setted) {
+  is_compatible_type_setted = is_setted;
+}
+
+void ResetArkwebUserAgentExtStateForTest() {
+  SetArkwebUserAgentExtStateForTest(false);
+  compatible_device_type.clear();
+}
+#else
 namespace {
 std::atomic<bool> is_compatible_type_setted{false};
 static std::string compatible_device_type;
 }  // namespace
+#endif
 
 std::string GetDistVersion() {
   std::string dist_version;

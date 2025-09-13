@@ -257,7 +257,7 @@ TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_011)
     adapter->GetNativeWindowBufferSize(windowBuffer, nullptr, &height);
     adapter->GetNativeWindowBufferSize(windowBuffer, &width, &height);
     delete[] reinterpret_cast<uint8_t*>(windowBuffer);
-    EXPECT_EQ(width, (uint32_t)0);
-    EXPECT_EQ(height, (uint32_t)0);
+    EXPECT_EQ(width, static_cast<uint32_t>(0));
+    EXPECT_EQ(height, static_cast<uint32_t>(0));
 }
 } // namespace OHOS::NWeb

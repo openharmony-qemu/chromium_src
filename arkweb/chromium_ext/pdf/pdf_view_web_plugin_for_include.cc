@@ -16,6 +16,13 @@
 
 namespace chrome_pdf {
 
+namespace {
+
+// The minimum scale level allowed.
+constexpr double kMinScale = 0.001f;
+
+}  // namespace
+
 #if BUILDFLAG(ARKWEB_PDF)
 void PdfViewWebPlugin::NotifyPdfScrollAtBottom(float scroll_position_y, float max_y) {
   if (document_size_.height() == 0) {
@@ -69,7 +76,21 @@ int32_t PdfViewWebPlugin::CastFpdfErrorToPdfLoadEvent(int pdf_error) {
   return static_cast<int32_t>(load_event);
 }
 
-void PdfViewWebPlugin::UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) {
+void PdfViewWebPlugin::UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipped_selection_bounds) {
+  if (std::abs(device_scale_) <= kMinScale) {
+    LOG(ERROR) << "PDF device scale is almost equal to 0.";
+    return;
+  }
+
+  const float inverse_scale = 1.0 / device_scale_;
+  gfx::Point converted_origin(clipped_selection_bounds.x() + available_area_.x(),
+                              clipped_selection_bounds.y());
+  converted_origin.set_x(converted_origin.x() * inverse_scale);
+  converted_origin.set_y(converted_origin.y() * inverse_scale);
+  gfx::Size converted_size(clipped_selection_bounds.width() * inverse_scale,
+                            clipped_selection_bounds.height() * inverse_scale);
+  clipped_selection_bounds.set_origin(converted_origin);
+  clipped_selection_bounds.set_size(converted_size);
   pdf_host_->UpdateClientClippedSelectionBoundsForPDF(clipped_selection_bounds);
 }
 

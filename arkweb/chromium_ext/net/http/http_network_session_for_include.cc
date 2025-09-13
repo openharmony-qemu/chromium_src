@@ -32,4 +32,11 @@ void HttpNetworkSession::SetConnectJobWithSecureDnsOnlyTimeout(int seconds) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+void HttpNetworkSession::SetSocketIdleTimeout(int32_t timeout) {
+    normal_socket_pool_manager_->SetSocketIdleTimeout(timeout);
+    websocket_socket_pool_manager_->SetSocketIdleTimeout(timeout);
+}
+#endif
+
 }  // namespace net

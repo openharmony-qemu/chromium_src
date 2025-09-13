@@ -72,10 +72,10 @@ namespace {
 BoolExpr RestrictSocketArguments(const Arg<int>& domain,
                                  const Arg<int>& type,
                                  const Arg<int>& protocol) {
-  const int kSockFlags = SOCK_CLOEXEC | SOCK_NONBLOCK;
+  const unsigned int kSockFlags = SOCK_CLOEXEC | SOCK_NONBLOCK;
   return AllOf(domain == AF_UNIX,
-               AnyOf((type & ~kSockFlags) == SOCK_DGRAM,
-                     (type & ~kSockFlags) == SOCK_STREAM),
+               AnyOf(((type & ~static_cast<int>(kSockFlags)) == SOCK_DGRAM),
+                     ((type & ~static_cast<int>(kSockFlags)) == SOCK_STREAM)),
                protocol == 0);
 }
 #endif  // !defined(__i386__)

@@ -169,7 +169,7 @@ class Shell : public WebContentsDelegate, public WebContentsObserver {
                             base::RepeatingClosure hang_monitor_restarter
 #if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
                             ,
-                            RenderProcessNotRespondingReason reason
+                            RendererIsUnresponsiveReason reason
 #endif
                             ) override;
 

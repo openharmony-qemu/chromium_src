@@ -22,9 +22,12 @@
 #include "media/base/mock_media_log.h"
 #include "media/base/test_helpers.h"
 #include "media/base/timestamp_constants.h"
-#include "media/filters/decoder_stream.h"
 #include "media/filters/fake_video_decoder.h"
 #include "testing/gtest/include/gtest/gtest.h"
+
+#define private public
+#include "media/filters/decoder_stream.h"
+#undef private
 
 #if !BUILDFLAG(IS_ANDROID)
 #include "media/filters/decrypting_video_decoder.h"
@@ -1674,4 +1677,7 @@ TEST_P(VideoDecoderStreamTest, Destroy_DuringFallbackDecoderSelection) {
   SatisfyPendingCallback(DECODER_REINIT);
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/media/filters/decoder_stream_for_include_unittest.cc"
+#endif  // ARKWEB_TEST
 }  // namespace media

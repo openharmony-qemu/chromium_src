@@ -133,6 +133,10 @@ class NWebEngineImpl : public NWebEngine {
   bool IsPrivateNetworkAccessEnabled() override;
   void SetWebDestroyMode(WebDestroyMode mode) override;
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  void SetSocketIdleTimeout(int32_t timeout) override;
+#endif
+
  private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;
   std::shared_ptr<NWebWebStorage> nweb_web_storage_ = nullptr;

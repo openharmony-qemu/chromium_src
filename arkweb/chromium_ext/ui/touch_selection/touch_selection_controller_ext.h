@@ -67,6 +67,7 @@ class TouchSelectionControllerExt : public TouchSelectionController {
   void ResetPositionAfterDragEnd(const TouchSelectionDraggable& draggable);
   void OnInsertionChangedExt(const gfx::SelectionBound& start,
                              const gfx::SelectionBound& end);
+  bool IsTapEvent() { return response_pending_input_event_ = TAP; }
 #endif
 
   bool SelectOverImg();

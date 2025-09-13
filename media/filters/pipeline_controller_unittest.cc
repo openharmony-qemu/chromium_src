@@ -611,4 +611,16 @@ TEST_F(PipelineControllerTest, PreservesPitch) {
   pipeline_controller_.SetPreservesPitch(true);
 }
 
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+TEST_F(PipelineControllerTest, RecycleDmaBuffer) {
+  Complete(StartPipeline());
+  ASSERT_NO_FATAL_FAILURE(pipeline_controller_.RecycleDmaBuffer());
+}
+
+TEST_F(PipelineControllerTest, ResumeDmaBuffer) {
+  Complete(StartPipeline());
+  ASSERT_NO_FATAL_FAILURE(pipeline_controller_.ResumeDmaBuffer());
+}
+#endif
+
 }  // namespace media

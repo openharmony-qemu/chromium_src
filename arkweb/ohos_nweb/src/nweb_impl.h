@@ -37,6 +37,7 @@
 #include "nweb_input_handler.h"
 #include "nweb_inputmethod_handler.h"
 #include "nweb_output_handler.h"
+#include "arkweb/ohos_nweb/src/cef_delegate/nweb_extension_connect_native.h"
 // #ifdef OHOS_EX_PERMISSION
 #include "capi/nweb_permission_request.h"
 // #endif
@@ -55,9 +56,9 @@
 #include "capi/nweb_statistic_callback.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-struct FrameInfos;
-struct IsolatedWorld;
 struct OpenDevToolsParam;
+struct RunJavaScriptParam;
+
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "capi/nweb_extension_manager_callback.h"
 #include "capi/nweb_extension_context_menus_callback.h"
@@ -637,8 +638,7 @@ class NWebImpl : public NWeb {
   void PutWebExtensionCallback(
       std::shared_ptr<NWebExtensionCallback> web_extension_callback);
   void RemoveWebExtensionCallback();
-  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
-                             bool recursive, IsolatedWorld world,
+  void RunJavaScriptInFrames(RunJavaScriptParam param,
                              OnReceiveValueCallback callback);
   void GetImageFromContextNode();
   void GetImageFromCache(const std::string& url);
@@ -1120,6 +1120,10 @@ class NWebImpl : public NWeb {
   void OnBrowserBackground() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  static void SetSocketIdleTimeout(int32_t timeout);
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
@@ -1160,7 +1164,7 @@ class NWebImpl : public NWeb {
   bool incognito_mode_ = false;
   raw_ptr<void> window_;
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
-  float totalSize_;
+  float totalSize_ = 0;
 #endif
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
   std::string web_tag_{""};

@@ -324,6 +324,18 @@ class ChromeContentBrowserClientUtils {
     }
 #endif  // BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
   }
+
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  static void SetSocketIdleTimeoutOnNetworkServiceCreated(
+      network::mojom::NetworkService* network_service) {
+    int32_t socket_idle_timeout =
+        net_service::NetHelpers::GetSocketIdleTimeout();
+    if (socket_idle_timeout !=
+        net_service::NetHelpers::GetDefaultSocketIdleTimeout()) {
+      network_service->SetSocketIdleTimeout(socket_idle_timeout);
+    }
+  }
+#endif
 };
 
 #if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)

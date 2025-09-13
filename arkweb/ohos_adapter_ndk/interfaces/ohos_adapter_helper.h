@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License") = 0;
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,7 +17,7 @@
 #define OHOS_ADAPTER_HELPER_H
 
 #include <memory>
-
+#include "arkweb/build/features/features.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/aafwk_app_mgr_client_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/access_token_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/audio_capturer_adapter.h"
@@ -68,7 +68,9 @@ namespace OHOS::NWeb {
 class OhosAdapterHelper {
 public:
     static OhosAdapterHelper& GetInstance();
-
+#if BUILDFLAG(ARKWEB_TEST)
+    static void SetInstance(OhosAdapterHelper* instance);
+#endif
     virtual ~OhosAdapterHelper() = default;
 
     virtual std::unique_ptr<AafwkAppMgrClientAdapter> CreateAafwkAdapter() = 0;

@@ -5,6 +5,7 @@
 #ifndef COMPONENTS_CDM_RENDERER_KEY_SYSTEM_SUPPORT_UPDATE_H_
 #define COMPONENTS_CDM_RENDERER_KEY_SYSTEM_SUPPORT_UPDATE_H_
 
+#include "arkweb/build/features/features.h"
 #include "content/public/renderer/render_frame.h"
 #include "media/base/key_system_info.h"
 #include "media/base/key_systems_support_registration.h"
@@ -20,6 +21,12 @@ std::unique_ptr<media::KeySystemSupportRegistration>
 GetSupportedKeySystemsUpdates(content::RenderFrame* render_frame,
                               bool can_persist_data,
                               media::GetSupportedKeySystemsCB cb);
+
+#if BUILDFLAG(ARKWEB_TEST)
+void TestAddWiseplay(const media::KeySystemCapability& capability,
+                     bool can_persist_data,
+                     media::KeySystemInfos* key_systems);
+#endif  // ARKWEB_TEST
 
 }  // namespace cdm
 

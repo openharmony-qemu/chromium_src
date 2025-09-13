@@ -1796,7 +1796,11 @@ TEST_F(NetworkContextTest, HostResolutionFailure) {
 
   network_context_remote_.reset();
   std::unique_ptr<NetworkContext> network_context =
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+      std::make_unique<ArkWebNetworkContextExt>(
+#else
       std::make_unique<NetworkContext>(
+#endif
           network_service_.get(),
           network_context_remote_.BindNewPipeAndPassReceiver(),
           url_request_context.get(),
@@ -1851,7 +1855,11 @@ TEST_F(NetworkContextTest, P2PHostResolution) {
 
   network_context_remote_.reset();
   std::unique_ptr<NetworkContext> network_context =
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+      std::make_unique<ArkWebNetworkContextExt>(
+#else
       std::make_unique<NetworkContext>(
+#endif
           network_service_.get(),
           network_context_remote_.BindNewPipeAndPassReceiver(),
           url_request_context.get(),
@@ -1922,7 +1930,11 @@ TEST_F(NetworkContextTest, P2PHostResolutionWithFamily) {
 
   network_context_remote_.reset();
   std::unique_ptr<NetworkContext> network_context =
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+      std::make_unique<ArkWebNetworkContextExt>(
+#else
       std::make_unique<NetworkContext>(
+#endif
           network_service_.get(),
           network_context_remote_.BindNewPipeAndPassReceiver(),
           url_request_context.get(),
@@ -5766,7 +5778,11 @@ TEST_F(NetworkContextTrustedParamsTest, DisableSecureDns) {
 
   network_context_remote_.reset();
   std::unique_ptr<NetworkContext> network_context =
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+      std::make_unique<ArkWebNetworkContextExt>(
+#else
       std::make_unique<NetworkContext>(
+#endif
           network_service_.get(),
           network_context_remote_.BindNewPipeAndPassReceiver(),
           url_request_context.get(),
@@ -5822,7 +5838,11 @@ TEST_F(NetworkContextTest, FactoryParamsDisableSecureDns) {
   resolver.rules()->AddRule("example.test", test_server.GetIPLiteralString());
 
   network_context_remote_.reset();
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  ArkWebNetworkContextExt network_context(
+#else
   NetworkContext network_context(
+#endif
       network_service_.get(),
       network_context_remote_.BindNewPipeAndPassReceiver(),
       url_request_context.get(),

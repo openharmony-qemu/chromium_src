@@ -126,4 +126,16 @@ TEST_F(HTMLPlugInElementUtilsTest, SetNativeEmbedOverlayInfinity_ChangeWithoutLo
   EXPECT_TRUE(utils_->IsOverlayInfinity());
 }
 
+TEST_F(HTMLPlugInElementUtilsTest, IsCssDisplayChange001) {
+  utils_->CheckNativeType("invalid_key");
+  EXPECT_FALSE(utils_->IsCssDisplayChangeEnabled());
+}
+
+TEST_F(HTMLPlugInElementUtilsTest, IsCssDisplayChange002) {
+  GetFrame().GetSettings()->SetNativeEmbedModeEnabled(true);
+  SetServiceType("service_prefix.match");
+  bool ret = utils_->IsCssDisplayChangeEnabled();
+  EXPECT_FALSE(ret);
+}
+
 }  // namespace blink

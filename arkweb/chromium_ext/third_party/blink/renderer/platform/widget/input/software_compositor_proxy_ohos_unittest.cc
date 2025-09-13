@@ -57,22 +57,22 @@ void SoftwareCompositorProxyOhosTest::TearDown(void) {
   g_softwareCompositor = nullptr;
 }
 
-#if !BUILDFLAG(ARKWEB_UNITTESTS)
 class MockAsyncLayerTreeFrameSink
     : public cc::mojo_embedder::AsyncLayerTreeFrameSink {
  public:
   MockAsyncLayerTreeFrameSink(
-      scoped_refptr<viz::ContextProvider> context_provider,
+      scoped_refptr<viz::RasterContextProvider> context_provider,
       scoped_refptr<cc::RasterContextProviderWrapper>
           worker_context_provider_wrapper,
+      scoped_refptr<gpu::ClientSharedImageInterface> shared_image_interface,
       InitParams* params)
       : AsyncLayerTreeFrameSink(context_provider,
                                 worker_context_provider_wrapper,
+                                shared_image_interface,
                                 params) {}
   MockAsyncLayerTreeFrameSink(const MockAsyncLayerTreeFrameSink&) = delete;
   ~MockAsyncLayerTreeFrameSink() = default;
 };
-#endif
 
 class MockSoftwareCompositorRegistryOhos
     : public cc::mojo_embedder::SoftwareCompositorRegistryOhos {
@@ -103,8 +103,8 @@ class WritableSharedMemoryRegionMock : public base::WritableSharedMemoryRegion {
 class MockSoftwareCompositorRendererOhos
     : public cc::mojo_embedder::SoftwareCompositorRendererOhos {
  public:
-  MockSoftwareCompositorRendererOhos(AsyncLayerTreeFrameSink* sink,
-                                     SoftwareCompositorRegistryOhos* registry)
+  MockSoftwareCompositorRendererOhos(cc::mojo_embedder::AsyncLayerTreeFrameSink* sink,
+                                     cc::mojo_embedder::SoftwareCompositorRegistryOhos* registry)
       : cc::mojo_embedder::SoftwareCompositorRendererOhos(sink, registry) {}
   MockSoftwareCompositorRendererOhos(
       const MockSoftwareCompositorRendererOhos&) = delete;
@@ -145,8 +145,8 @@ TEST_F(SoftwareCompositorProxyOhosTest, SetSharedMemory001) {
       WritableSharedMemoryRegionMock::Create(1024 * 1024);
 
   bool callback_result = false;
-  SharedMemoryMapper* shared_mapper_ptr =
-      SharedMemoryMapper::GetDefaultInstance();
+  base::SharedMemoryMapper* shared_mapper_ptr =
+      base::SharedMemoryMapper::GetDefaultInstance();
   shared_region.Map(shared_mapper_ptr);
 
   g_softwareCompositor->SetSharedMemory(
@@ -271,6 +271,26 @@ TEST_F(SoftwareCompositorProxyOhosTest, DemandDrawSwAsync001) {
           [](bool* out_result, bool result) { *out_result = result; },
           &callback_result));
 
+  EXPECT_FALSE(callback_result);
+}
+
+TEST_F(SoftwareCompositorProxyOhosTest, DemandDrawSwAsync002) {
+  base::WritableSharedMemoryRegion shm_region =
+      base::WritableSharedMemoryRegion::Create(100);
+  bool set_result = false;
+  g_softwareCompositor->SetSharedMemory(
+      std::move(shm_region),
+      base::BindOnce([](bool* out_result, bool result) { *out_result = result; },
+          &set_result));
+  ASSERT_TRUE(set_result);
+  auto params = mojom::blink::SoftwareCompositorDemandDrawSwParams::New();
+  params->size = gfx::SizeF(0.0f, 0.0f);
+  params->offset = gfx::PointF(0.0f, 0.0f);
+  bool callback_result = true;
+  g_softwareCompositor->DemandDrawSwAsync(
+      std::move(params),
+      base::BindOnce([](bool* out_result, bool result) { *out_result = result; },
+          &callback_result));
   EXPECT_FALSE(callback_result);
 }
 }  // namespace blink

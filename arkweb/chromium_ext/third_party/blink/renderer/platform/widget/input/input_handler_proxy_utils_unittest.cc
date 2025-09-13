@@ -613,6 +613,59 @@ TEST_F(InputHandlerProxyUtilsTest, SendNativeEvent_001) {
   utils.SendNativeEvent(touch_event, WebInputEvent::Type::kTouchStart, 0);
 }
 
+TEST_F(InputHandlerProxyUtilsTest, SendNativeEvent_002) {
+  WebTouchEvent touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchStart, 0,
+      WebTouchPoint::State::kStatePressed);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplById(0))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  int layer_id = 88; // 88 is the id of the layer
+  int finger_id = 2; // 2 is the finger id
+  size_t i = 0;
+  utils_->NativeHitTestResult(true, finger_id, layer_id);
+  touch_event.SetType(blink::WebInputEvent::Type::kTouchStart);
+  touch_event.touches_length = 1;
+  touch_event.touches[i].id = finger_id;
+  touch_event.touches[i].SetPositionInWidget(gfx::PointF(15, 25)); // x=15, y=25
+  touch_event.touches[i].state = blink::WebTouchPoint::State::kStatePressed;
+  EXPECT_CALL(*mock_client_,
+      DidNativeEmbedEvent(WebInputEvent::Type::kTouchStart, "0", 100, 0, 0)); // 100 is the hit testing number
+  utils_->SendNativeEvent(touch_event, blink::WebInputEvent::Type::kTouchStart, i, false);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, SendNativeEvent_003) {
+  int layer_id = 88; // 88 is the id of the layer
+  int finger_id = 2; // 2 is the finger id
+  size_t i = 0;
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplById(0))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  WebTouchEvent touch_start_event;
+  touch_start_event.SetType(blink::WebInputEvent::Type::kTouchStart);
+  touch_start_event.touches_length = 1;
+  touch_start_event.touches[i].id = finger_id;
+  touch_start_event.touches[i].SetPositionInWidget(gfx::PointF(10, 20)); // x=10, y=20
+  touch_start_event.touches[i].state = blink::WebTouchPoint::State::kStatePressed;
+  utils_->SendNativeEvent(touch_start_event, blink::WebInputEvent::Type::kTouchStart, i);
+  WebTouchEvent touch_end_event;
+  touch_end_event.SetType(blink::WebInputEvent::Type::kTouchEnd);
+  touch_end_event.touches_length = 1;
+  touch_end_event.touches[i].id = finger_id;
+  touch_end_event.touches[i].SetPositionInWidget(gfx::PointF(15, 25)); // x=15, y=25
+  touch_end_event.touches[i].state = blink::WebTouchPoint::State::kStateReleased;
+  EXPECT_CALL(*mock_client_, DidNativeEmbedEvent(WebInputEvent::Type::kTouchEnd,
+      "0",finger_id, 15, 25)); // 15, 25 is the position of the touch end event
+  utils_->SendNativeEvent(touch_end_event, blink::WebInputEvent::Type::kTouchEnd, i);
+}
+
 TEST_F(InputHandlerProxyUtilsTest, DidNativeEmbedEvent_001) {
   testing::NiceMock<MockInputHandler> mock_input_handler;
   testing::StrictMock<MockInputHandlerProxyClient> mock_client;
@@ -694,6 +747,100 @@ TEST_F(InputHandlerProxyUtilsTest, DidNativeEmbedEvent_002) {
   event.SetType(WebInputEvent::Type::kTouchCancel);
   result = utils.DidNativeEmbedEvent(event);
   EXPECT_EQ(result, InputHandlerProxyUtils::NativeEventDisposition::NORMAL);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidNativeEmbedEvent_VideoLayerIntercept) {
+  WebTouchEvent touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchStart, 0,
+      WebTouchPoint::State::kStatePressed);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  auto result = utils_->DidNativeEmbedEvent(touch_event);
+  EXPECT_EQ(result, InputHandlerProxyUtils::SEND_VIDEO);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidNativeEmbedEvent_NativeLayerImpl) {
+  WebTouchEvent touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchStart, 0,
+      WebTouchPoint::State::kStatePressed);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  SetNativeEnabled(utils_.get(), true);
+  EXPECT_CALL(*mock_input_handler_utils_, GetNativeLayerImpl(_))
+      .WillOnce(Return(mock_layer_impl_.get()));
+  auto result = utils_->DidNativeEmbedEvent(touch_event);
+  EXPECT_EQ(result, InputHandlerProxyUtils::SEND_NATIVE);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidNativeEmbedEvent_NativeLayerImplNull) {
+  WebTouchEvent touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchStart, 0,
+      WebTouchPoint::State::kStatePressed);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  SetNativeEnabled(utils_.get(), true);
+  EXPECT_CALL(*mock_input_handler_utils_, GetNativeLayerImpl(_))
+      .WillOnce(Return(nullptr));
+  auto result = utils_->DidNativeEmbedEvent(touch_event);
+  EXPECT_EQ(result, InputHandlerProxyUtils::NORMAL);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidNativeEmbedEvent_kTouchMove) {
+  WebTouchEvent touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchMove, 0,
+      WebTouchPoint::State::kStateMoved);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  SetNativeEnabled(utils_.get(), true);
+  utils_->NativeHitTestResult(true, touch_event.touches[0].id, 88); // 88 is the layer id
+  SetHitTestingNumber(utils_.get(), 1);
+  auto result = utils_->DidNativeEmbedEvent(touch_event);
+  EXPECT_EQ(result, InputHandlerProxyUtils::SEND_NATIVE);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidNativeEmbedEvent_kTouchEndWithNumber) {
+  WebTouchEvent touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchEnd, 0,
+      WebTouchPoint::State::kStateReleased);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  SetNativeEnabled(utils_.get(), true);
+  utils_->NativeHitTestResult(true, touch_event.touches[0].id, 88); // 88 is the layer id
+  SetHitTestingNumber(utils_.get(), 1);
+  auto result = utils_->DidNativeEmbedEvent(touch_event);
+  EXPECT_EQ(result, InputHandlerProxyUtils::END_QUEUE);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidNativeEmbedEvent_kTouchEndWithOutNumber) {
+  WebTouchEvent touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchEnd, 0,
+      WebTouchPoint::State::kStateReleased);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  SetNativeEnabled(utils_.get(), true);
+  utils_->NativeHitTestResult(true, touch_event.touches[0].id, 88); // 88 is the layer id
+  SetHitTestingNumber(utils_.get(), 0);
+  auto result = utils_->DidNativeEmbedEvent(touch_event);
+  EXPECT_EQ(result, InputHandlerProxyUtils::SEND_NATIVE);
 }
 
 TEST_F(InputHandlerProxyUtilsTest, NativeHitTestResult_001) {
@@ -864,6 +1011,31 @@ TEST_F(InputHandlerProxyUtilsTest, NativeMouseHitTestResult_004) {
   utils.NativeMouseHitTestResult(true, 0, 0);
 }
 
+TEST_F(InputHandlerProxyUtilsTest, NativeMouseHitTestResult_005) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  ON_CALL(mock_input_handler, handler_utils())
+    .WillByDefault(Return(mock_input_handler_utils_.get()));
+  SetMouseHitTestingNumber(&utils, 1);
+  WebMouseEvent mouse_event(blink::WebInputEvent::Type::kMouseDown,
+                            blink::WebInputEvent::kNoModifiers,
+                            blink::WebInputEvent::GetStaticTimeStampForTests());
+  mouse_event.pointer_type = blink::WebPointerProperties::PointerType::kMouse;
+  const ui::LatencyInfo info;
+  std::unique_ptr<cc::EventMetrics> metrics;
+  SetMouseEvent(&utils, mouse_event, info, std::move(metrics), mouse_event);
+  auto modifiers = static_cast<WebInputEvent::Modifiers>(mouse_event.GetModifiers());
+  EXPECT_CALL(mock_client, DidNativeEmbedMouseEvent(
+      blink::WebInputEvent::Type::kMouseDown, modifiers, "-1", false, 0, 0));
+  utils.NativeMouseHitTestResult(false, 0, 0);
+  EXPECT_EQ(GetHitTestNumber(&utils), 0);
+}
+
 TEST_F(InputHandlerProxyUtilsTest, SendMouseNativeEvent_001) {
   testing::NiceMock<MockInputHandler> mock_input_handler;
   testing::StrictMock<MockInputHandlerProxyClient> mock_client;
@@ -882,6 +1054,44 @@ TEST_F(InputHandlerProxyUtilsTest, SendMouseNativeEvent_001) {
   mouse_event.pointer_type = blink::WebPointerProperties::PointerType::kMouse;
   utils.SendMouseNativeEvent(mouse_event, WebInputEvent::Type::kMouseDown, 0,
                              true);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, SendMouseNativeEvent_002) {
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplById(0))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  blink::WebMouseEvent mouse_event(
+      blink::WebInputEvent::Type::kMouseMove,
+      blink::WebInputEvent::kNoModifiers,
+      blink::WebInputEvent::GetStaticTimeStampForTests());
+  mouse_event.SetPositionInWidget(gfx::PointF(15, 25)); // 15, 25 is the position of the mouse down event
+  auto modifiers = static_cast<WebInputEvent::Modifiers>(mouse_event.GetModifiers());
+  EXPECT_CALL(*mock_client_, DidNativeEmbedMouseEvent(blink::WebInputEvent::Type::kMouseDown, modifiers,
+      "0", true, 15, 25)); // 15, 25 is the position of the mouse down event
+  utils_->SendMouseNativeEvent(mouse_event, blink::WebInputEvent::Type::kMouseDown, 1, true);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, SendMouseNativeEvent_003) {
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplById(0))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  blink::WebMouseEvent mouse_event(
+      blink::WebInputEvent::Type::kMouseMove,
+      blink::WebInputEvent::kNoModifiers,
+      blink::WebInputEvent::GetStaticTimeStampForTests());
+  mouse_event.SetPositionInWidget(gfx::PointF(15, 25)); // 15, 25 is the position of the mouse move event
+  auto modifiers = static_cast<WebInputEvent::Modifiers>(mouse_event.GetModifiers());
+  EXPECT_CALL(*mock_client_, DidNativeEmbedMouseEvent(blink::WebInputEvent::Type::kMouseMove, modifiers,
+      "0", true, 15, 25)); // 15, 25 is the position of the mouse move event
+  utils_->SendMouseNativeEvent(mouse_event, blink::WebInputEvent::Type::kMouseMove, 1, true);
 }
 
 TEST_F(InputHandlerProxyUtilsTest, DidMouseEmbedEvent_001) {
@@ -1028,6 +1238,107 @@ TEST_F(InputHandlerProxyUtilsTest, DidMouseEmbedEvent_004) {
             InputHandlerProxyUtils::NativeEventDisposition::SEND_NATIVE);
 }
 
+TEST_F(InputHandlerProxyUtilsTest, DidMouseEmbedEvent_006) {
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  SetNativeEnabled(utils_.get(), true);
+  blink::WebMouseEvent mouse_event(
+      blink::WebInputEvent::Type::kMouseDown,
+      blink::WebInputEvent::kNoModifiers,
+      blink::WebInputEvent::GetStaticTimeStampForTests());
+  mouse_event.SetModifiers(WebInputEvent::Modifiers::kMiddleButtonDown | WebInputEvent::Modifiers::kIsAutoRepeat);
+  auto result = utils_->DidMouseEmbedEvent(mouse_event);
+  EXPECT_EQ(result, InputHandlerProxyUtils::NativeEventDisposition::SEND_VIDEO);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidMouseEmbedEvent_007) {
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  SetNativeEnabled(utils_.get(), true);
+  EXPECT_CALL(*mock_input_handler_utils_, GetNativeLayerImpl(_))
+      .WillOnce(Return(mock_layer_impl_.get()));
+  blink::WebMouseEvent mouse_event(
+      blink::WebInputEvent::Type::kMouseDown,
+      blink::WebInputEvent::kNoModifiers,
+      blink::WebInputEvent::GetStaticTimeStampForTests());
+  mouse_event.SetModifiers(WebInputEvent::Modifiers::kMiddleButtonDown | WebInputEvent::Modifiers::kIsAutoRepeat);
+  auto result = utils_->DidMouseEmbedEvent(mouse_event);
+  EXPECT_EQ(result, InputHandlerProxyUtils::NativeEventDisposition::SEND_NATIVE);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidNativeSendEvent_TouchEvent) {
+  SetNativeEnabled(utils_.get(), true);
+  auto event = CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  utils_->DidNativeSendEvent(std::move(event));
+  EXPECT_TRUE(IsNativeMouseEventQueueEmpty(utils_.get()));
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidNativeSendEvent_MouseEvent) {
+  SetNativeEnabled(utils_.get(), true);
+  auto event = CreateMouseEventCallback(WebInputEvent::Type::kMouseDown, WebInputEvent::Modifiers::kLeftButtonDown);
+  utils_->DidNativeSendEvent(std::move(event));
+  EXPECT_TRUE(IsNativeMouseEventQueueEmpty(utils_.get()));
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidNativeSendEvent_SendNative) {
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  SetNativeEnabled(utils_.get(), true);
+  EXPECT_EQ(GetNativeEnabled(utils_.get()), true);
+  EXPECT_CALL(*mock_input_handler_utils_, GetNativeLayerImpl(_))
+      .WillOnce(Return(mock_layer_impl_.get()));
+  auto event = CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  SetMouseNativeMap(utils_.get(), WebInputEvent::Modifiers::kLeftButtonDown, true);
+  utils_->DidNativeSendEvent(std::move(event));
+  EXPECT_TRUE(IsNativeMouseEventQueueEmpty(utils_.get()));
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidNativeSendEvent_SendVedio) {
+  auto event = CreateMouseEventCallback(WebInputEvent::Type::kMouseDown, WebInputEvent::Modifiers::kLeftButtonDown);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  utils_->DidNativeSendEvent(std::move(event));
+  EXPECT_FALSE(IsNativeMouseEventQueueEmpty(utils_.get()));
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidNativeSendEvent_MouseEndQueue) {
+  auto event = CreateMouseEventCallback(WebInputEvent::Type::kMouseUp, WebInputEvent::Modifiers::kLeftButtonDown);
+  SetMouseHitTestingNumber(utils_.get(), 1);
+  utils_->DidNativeSendEvent(std::move(event));
+  EXPECT_FALSE(IsNativeMouseEndQueueEmpty(utils_.get()));
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidNativeSendEvent_TouchEndQueue) {
+  auto event = CreateTouchEventCallback(WebInputEvent::Type::kTouchEnd, 0, WebTouchPoint::State::kStateReleased);
+  SetHitTestingNumber(utils_.get(), 1);
+  utils_->DidNativeSendEvent(std::move(event));
+  EXPECT_TRUE(IsNativeMouseEndQueueEmpty(utils_.get()));
+}
+
+TEST_F(InputHandlerProxyUtilsTest, DidNativeSendEvent_Normal) {
+  auto event = CreateMouseEventCallback(WebInputEvent::Type::kMouseDown, WebInputEvent::Modifiers::kRightButtonDown);
+  utils_->DidNativeSendEvent(std::move(event));
+  EXPECT_TRUE(IsNativeMouseEventQueueEmpty(utils_.get()));
+}
+
 TEST_F(InputHandlerProxyUtilsTest, SetGestureEventResult_001) {
   testing::NiceMock<MockInputHandler> mock_input_handler;
   testing::StrictMock<MockInputHandlerProxyClient> mock_client;
@@ -1086,6 +1397,24 @@ TEST_F(InputHandlerProxyUtilsTest, SetGestureEventResult_003) {
   EXPECT_EQ(GetHitTestNumber(&utils), 0);
 }
 
+TEST_F(InputHandlerProxyUtilsTest, SetGestureEventResult_004) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  ON_CALL(mock_input_handler, handler_utils()).WillByDefault(Return(mock_input_handler_utils_.get()));
+  WebTouchEvent touch_event;
+  WebTouchEvent event;
+  const ui::LatencyInfo info;
+  std::unique_ptr<cc::EventMetrics> metrics;
+  SetEvent(&utils, touch_event, info, std::move(metrics), event);
+  utils.SetGestureEventResult(true, false);
+  EXPECT_EQ(GetHitTestNumber(&utils), 0);
+}
+
 TEST_F(InputHandlerProxyUtilsTest, SetMouseEventResult_003) {
   testing::NiceMock<MockInputHandler> mock_input_handler;
   testing::StrictMock<MockInputHandlerProxyClient> mock_client;
@@ -1121,6 +1450,41 @@ TEST_F(InputHandlerProxyUtilsTest, SetMouseEventResult_004) {
   std::unique_ptr<cc::EventMetrics> metrics;
   SetMouseEvent(&utils, touch_event, info, std::move(metrics), event);
   utils.SetMouseEventResult(true, false);
+  EXPECT_EQ(GetHitTestNumber(&utils), 0);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, SetMouseEventResult_005) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  ON_CALL(mock_input_handler, handler_utils()).WillByDefault(Return(mock_input_handler_utils_.get()));
+  WebMouseEvent touch_event;
+  WebMouseEvent event;
+  const ui::LatencyInfo info;
+  std::unique_ptr<cc::EventMetrics> metrics;
+  SetMouseEvent(&utils, touch_event, info, std::move(metrics), event);
+  utils.SetMouseEventResult(true, true);
+  EXPECT_EQ(GetHitTestNumber(&utils), 0);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, SetMouseEventResult_006) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  InputHandlerProxyUtils utils(&proxy);
+  ON_CALL(mock_input_handler, handler_utils()).WillByDefault(Return(mock_input_handler_utils_.get()));
+  WebMouseEvent touch_event;
+  WebMouseEvent event;
+  const ui::LatencyInfo info;
+  std::unique_ptr<cc::EventMetrics> metrics;
+  utils.SetMouseEventResult(true, true);
   EXPECT_EQ(GetHitTestNumber(&utils), 0);
 }
 
@@ -1175,6 +1539,19 @@ TEST_F(InputHandlerProxyUtilsTest, SetBypassVsyncCondition_001) {
   utils.SetBypassVsyncCondition(0);
 }
 
+TEST_F(InputHandlerProxyUtilsTest, SetOverscrollMode_001) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  proxy.UpdateElasticOverscroll();
+  InputHandlerProxyUtils utils(&proxy);
+  ON_CALL(mock_input_handler, handler_utils()).WillByDefault(Return(mock_input_handler_utils_.get()));
+  utils.SetOverscrollMode(0);
+}
+
 TEST_F(InputHandlerProxyUtilsTest, GetOverScrollOffset_001) {
   testing::NiceMock<MockInputHandler> mock_input_handler;
   testing::StrictMock<MockInputHandlerProxyClient> mock_client;
@@ -1185,6 +1562,19 @@ TEST_F(InputHandlerProxyUtilsTest, GetOverScrollOffset_001) {
   InputHandlerProxyUtils utils(&proxy);
   ON_CALL(mock_input_handler, handler_utils())
     .WillByDefault(Return(mock_input_handler_utils_.get()));
+  utils.GetOverScrollOffset();
+}
+
+TEST_F(InputHandlerProxyUtilsTest, GetOverScrollOffset_002) {
+  testing::NiceMock<MockInputHandler> mock_input_handler;
+  testing::StrictMock<MockInputHandlerProxyClient> mock_client;
+  testing::StrictMock<MockSynchronousInputHandler>
+      mock_synchronous_input_handler;
+  InputHandlerProxy proxy(mock_input_handler, &mock_client);
+  proxy.SetSynchronousInputHandler(&mock_synchronous_input_handler);
+  proxy.UpdateElasticOverscroll();
+  InputHandlerProxyUtils utils(&proxy);
+  ON_CALL(mock_input_handler, handler_utils()).WillByDefault(Return(mock_input_handler_utils_.get()));
   utils.GetOverScrollOffset();
 }
 
@@ -1232,6 +1622,22 @@ TEST_F(InputHandlerProxyUtilsTest, NativeEventProcess_TouchEvent) {
 
   // Will call NativeTouchEventProcess which we'll test separately
   utils_->NativeEventProcess(std::move(event));
+}
+
+TEST_F(InputHandlerProxyUtilsTest, NativeEventProcess_EnableCustomVideoPlayer) {
+  SetNativeEnabled(utils_.get(), false);
+  utils_->SetEnableCustomVideoPlayer(true);
+  auto event = CreateMouseEventCallback(WebInputEvent::Type::kMouseDown, WebInputEvent::Modifiers::kLeftButtonDown);
+  utils_->NativeEventProcess(std::move(event));
+  EXPECT_TRUE(IsNativeMouseEventQueueEmpty(utils_.get()));
+}
+
+TEST_F(InputHandlerProxyUtilsTest, NativeEventProcess_IsTouchEventTypeFalse) {
+  SetNativeEnabled(utils_.get(), false);
+  utils_->SetEnableCustomVideoPlayer(true);
+  auto event = CreateTouchEventCallback(WebInputEvent::Type::kTouchTypeLast, 0, WebTouchPoint::State::kStatePressed);
+  utils_->NativeEventProcess(std::move(event));
+  EXPECT_TRUE(IsNativeMouseEventQueueEmpty(utils_.get()));
 }
 
 TEST_F(InputHandlerProxyUtilsTest, NativeTouchEventProcess_TouchStart) {
@@ -1407,6 +1813,71 @@ TEST_F(InputHandlerProxyUtilsTest, HandleTouchStartIfHitVideo_NoHit) {
   EXPECT_FALSE(utils_->HandleTouchStartIfHitVideo(touch_event));
 }
 
+TEST_F(InputHandlerProxyUtilsTest, HandleTouchStartInit_HitTopLayer) {
+  auto event = CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(gfx::Point(0, 0)))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  utils_->HandleTouchStartInit(std::move(event), 0);
+  auto queue = utils_->NativeTouchEventQueues_[0];
+  EXPECT_EQ(queue->GetStatus(), InputHandlerProxyUtils::PEND_NATIVE);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, HandleTouchStartInit_HitNitiveLayer) {
+  auto event = CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetNativeLayerImpl(gfx::Point(0, 0)))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  SetNativeEnabled(utils_.get(), true);
+  utils_->HandleTouchStartInit(std::move(event), 0);
+  auto queue = utils_->NativeTouchEventQueues_[0];
+  EXPECT_EQ(queue->GetStatus(), InputHandlerProxyUtils::PEND_HITTEST);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, HandleTouchStartInitInQueue_HitTopLayer) {
+  auto event = CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(gfx::Point(0, 0)))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  utils_->HandleTouchStartInitInQueue(std::move(event), 0);
+  auto queue = utils_->NativeTouchEventQueues_[0];
+  EXPECT_EQ(queue->GetStatus(), InputHandlerProxyUtils::PEND_NATIVE);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, HandleTouchStartInitInQueue_HitNativeLayerFalse) {
+  auto event = CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetNativeLayerImpl(gfx::Point(0, 0)))
+      .WillRepeatedly(Return(nullptr));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  SetNativeEnabled(utils_.get(), true);
+  utils_->HandleTouchStartInitInQueue(std::move(event), 0);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, HandleTouchStartInitInQueue_HitNativeLayer) {
+  auto event = CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetNativeLayerImpl(gfx::Point(0, 0)))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  SetNativeEnabled(utils_.get(), true);
+  utils_->HandleTouchStartInitInQueue(std::move(event), 0);
+  auto queue = utils_->NativeTouchEventQueues_[0];
+  EXPECT_EQ(queue->GetStatus(), InputHandlerProxyUtils::PEND_HITTEST);
+}
+
 TEST_F(InputHandlerProxyUtilsTest,
        HandleTouchStartIfHitNative_InvalidChangeIndex) {
   WebTouchEvent touch_event;
@@ -1488,6 +1959,15 @@ TEST_F(InputHandlerProxyUtilsTest, NativeTouchStartProcess_PendStatus) {
   utils_->NativeTouchEventQueues_[0] = queue;
 
   // Should queue the event
+  utils_->NativeTouchStartProcess(std::move(event));
+  EXPECT_FALSE(queue->empty());
+}
+
+TEST_F(InputHandlerProxyUtilsTest, NativeTouchStartProcess_PendHittest) {
+  auto event = CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  auto queue = std::make_shared<NativeEmbedEventQueue>();
+  queue->SetStatus(InputHandlerProxyUtils::PEND_HITTEST);
+  utils_->NativeTouchEventQueues_[0] = queue;
   utils_->NativeTouchStartProcess(std::move(event));
   EXPECT_FALSE(queue->empty());
 }
@@ -1666,6 +2146,14 @@ TEST_F(InputHandlerProxyUtilsTest,
   queue->SetStatus(InputHandlerProxyUtils::SEND_NATIVE_BLINK_CONSUMER);
   utils_->NativeTouchEventQueues_[0] = queue;
 
+  utils_->NativeTouchStartProcessInQueue(std::move(event));
+}
+
+TEST_F(InputHandlerProxyUtilsTest, NativeTouchStartProcessInQueue_Default) {
+  auto event = CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  auto queue = std::make_shared<NativeEmbedEventQueue>();
+  queue->SetStatus(static_cast<InputHandlerProxyUtils::NativeEventState>(-1));
+  utils_->NativeTouchEventQueues_[0] = queue;
   utils_->NativeTouchStartProcessInQueue(std::move(event));
 }
 
@@ -2115,6 +2603,15 @@ TEST_F(InputHandlerProxyUtilsTest, SetGestureEventResult_ResultFalse) {
             InputHandlerProxyUtils::SEND_NATIVE_BLINK);
 }
 
+TEST_F(InputHandlerProxyUtilsTest, SetGestureEventResult_False) {
+  auto queue = std::make_shared<NativeEmbedEventQueue>();
+  queue->Queue(CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 1, WebTouchPoint::State::kStatePressed));
+  queue->SetStatus(InputHandlerProxyUtils::PEND_NATIVE);
+  utils_->NativeTouchEventQueues_[0] = queue;
+  utils_->SetGestureEventResult(false, false, 0);
+  EXPECT_EQ(utils_->NativeTouchEventQueues_[0]->GetStatus(), InputHandlerProxyUtils::SEND_NATIVE_BLINK);
+}
+
 // Test Cases for GetTouchChangeIndex
 TEST_F(InputHandlerProxyUtilsTest,
        GetTouchChangeIndex_TouchStartWithPressedState) {
@@ -2192,6 +2689,15 @@ TEST_F(InputHandlerProxyUtilsTest, GetTouchChangeIndex_EmptyTouches) {
   EXPECT_EQ(index, -1);
 }
 
+TEST_F(InputHandlerProxyUtilsTest, GetTouchChangeIndex_NotSameEventType) {
+  WebTouchEvent touch_event;
+  touch_event.touches_length = 1;
+  touch_event.touches[0].state = WebTouchPoint::State::kStatePressed;
+  touch_event.SetType(WebInputEvent::Type::kTouchTypeLast);
+  int32_t index = utils_->GetTouchChangeIndex(touch_event);
+  EXPECT_EQ(index, -1);
+}
+
 // Test Cases for FlushNativeTouchQueue
 TEST_F(InputHandlerProxyUtilsTest, FlushNativeTouchQueue_EmptyQueue) {
   auto queue = std::make_shared<NativeEmbedEventQueue>();
@@ -2205,6 +2711,22 @@ TEST_F(InputHandlerProxyUtilsTest, FlushNativeTouchQueue_NonEmptyQueueNoStop) {
                                         WebTouchPoint::State::kStateMoved);
 
   utils_->FlushNativeTouchQueue(0);
+}
+
+TEST_F(InputHandlerProxyUtilsTest, FlushNativeTouchQueue_NeedStopPop) {
+  auto event = CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  auto queue = std::make_shared<NativeEmbedEventQueue>();
+  queue->Queue(CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed));
+  utils_->NativeTouchEventQueues_[0] = queue;
+  utils_->FlushNativeTouchQueue(0);
+  EXPECT_FALSE(queue->empty());
 }
 
 // Test Cases for SendToBlink

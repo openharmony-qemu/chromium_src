@@ -912,6 +912,16 @@ arkweb_content_common_font_list_sources = [
   "//arkweb/chromium_ext/content/common/font_list_ohos.cc",
 ]
 
+arkweb_content_common_unittests_sources = [
+  "//arkweb/chromium_ext/content/common/arkweb_user_agent_ext_unittests.cc",
+  "//cef/ohos_cef_ext/libcef/browser/useragent/ua_push_config.cc",
+]
+
+arkweb_content_renderer_unittests_sources = [
+  "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos_unittest.cc",
+  "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos.cc",
+]
+
 arkweb_input_router_impl_sources = [
   "//arkweb/chromium_ext/components/input/arkweb_input_router_impl_ext.cc",
   "//arkweb/chromium_ext/components/input/arkweb_input_router_impl_ext.h",

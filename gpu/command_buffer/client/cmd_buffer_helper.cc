@@ -23,7 +23,15 @@
 namespace gpu {
 
 CommandBufferHelper::CommandBufferHelper(CommandBuffer* command_buffer)
+#if !BUILDFLAG(IS_ARKWEB)
     : command_buffer_(command_buffer) {}
+#else
+    : command_buffer_(command_buffer) {
+  enable_period_flush_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                .GetSystemPropertiesInstance()
+                                .GetBoolParameter("web.periodflush.enable", 0);
+}
+#endif
 
 void CommandBufferHelper::SetAutomaticFlushes(bool enabled) {
   flush_automatically_ = enabled;

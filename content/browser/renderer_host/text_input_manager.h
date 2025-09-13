@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/i18n/rtl.h"
 #include "base/memory/raw_ptr.h"
 #include "base/observer_list.h"
@@ -28,11 +29,17 @@ class RenderWidgetHostViewBase;
 #if BUILDFLAG(ARKWEB_MENU)
 class TextInputManagerUtils;
 #endif
+#if BUILDFLAG(ARKWEB_TEST)
+class TextInputManagerUtilsTest;
+#endif
 // A class which receives updates of TextInputState from multiple sources and
 // decides what the new TextInputState is. It also notifies the observers when
 // text input state is updated.
 class CONTENT_EXPORT TextInputManager {
  public:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class TextInputManagerUtilsTest;
+#endif
 #if BUILDFLAG(ARKWEB_MENU)
   friend class TextInputManagerUtils;
   std::unique_ptr<TextInputManagerUtils> imp_utils_ = nullptr;

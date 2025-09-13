@@ -336,6 +336,7 @@ arkweb_media_base_unittest_sources = [
 arkweb_media_mojo_services_unittest_sources = [
   "//arkweb/chromium_ext/media/mojo/services/ohos_mojo_media_client_unittests.cc",
   "//arkweb/chromium_ext/media/mojo/services/ohos_mojo_util_unittests.cc",
+  "//arkweb/chromium_ext/media/mojo/clients/mojo_video_decoder_for_include_unittest.cc",
   "//arkweb/chromium_ext/media/mojo/services/mojo_video_decoder_service_for_include_unittests.cc",
 ]
 
@@ -350,6 +351,7 @@ arkweb_media_audio_unittest_sources = [
 arkweb_media_third_party_unittest_sources = [
   "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/base_window_capturer_unittest.cc",
   "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/base_screen_capture_source_bridge_unittest.cc",
+  "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/base_audio_capturer_source_unittest.cc",
 ]
 
 arkweb_media_filters_sources = [
@@ -366,7 +368,8 @@ arkweb_media_filters_ohos_sources = [
 
 arkweb_media_filters_ohos_unittest_sources = [
   "//arkweb/chromium_ext/media/filters/ohos/ohos_audio_decoder_unittest.cc",
-  "//arkweb/chromium_ext/media/filters/ohos/ohos_audio_decoder_loop_unittest.cc"
+  "//arkweb/chromium_ext/media/filters/ohos/ohos_audio_decoder_loop_unittest.cc",
+  "//arkweb/chromium_ext/media/filters/decoder_stream_traits_for_include_unittest.cc",
 ]
 
 arkweb_media_mojo_mojom_sources = [
@@ -841,6 +844,7 @@ arkweb_third_party_blink_renderer_core_unittest_sources = [
   "//arkweb/chromium_ext/third_party/ashmem/ohos_ashmem_unittests.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/page/drag_image_ext_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollbar_theme_utils_uinttest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_popup_menu_element_utils_unittest.cc",
 ]
 
 arkweb_third_party_blink_renderer_platform_unittest_sources = [
@@ -948,6 +952,7 @@ if (arkweb_enable_cdm) {
   ]
 
   arkweb_cdm_unittest_sources = [
+    "//arkweb/chromium_ext/content/browser/media/key_system_support_ohos_unittest.cc",
     "//arkweb/chromium_ext/components/cdm/common/widevine_drm_delegate_ohos_unittest.cc",
   ]
 }

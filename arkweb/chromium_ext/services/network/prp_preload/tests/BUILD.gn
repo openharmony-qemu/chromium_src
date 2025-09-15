@@ -17,7 +17,10 @@ import("//arkweb/build/features/features.gni")
 test("prp_preload_unittests") {
   testonly = true
 
-  sources = ["res_request_info_cache_mgr_unittest.cc"
+  sources = [
+    "disk_cache_file_unittest.cc",
+    "disk_cache_info_parser_unittest.cc",
+    "res_request_info_cache_mgr_unittest.cc",
   ]
 
   include_dirs = [

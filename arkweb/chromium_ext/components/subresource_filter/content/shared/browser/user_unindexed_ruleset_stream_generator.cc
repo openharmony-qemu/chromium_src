@@ -69,7 +69,7 @@ void UserUnindexedRulesetStreamGenerator::GenerateStreamFromResourceId(
     int resource_id) {
   ui::ResourceBundle& bundle = ui::ResourceBundle::GetSharedInstance();
   std::string data_as_string = bundle.LoadDataResourceString(resource_id);
-  ruleset_size_ = data_as_string.size();
+  ruleset_size_ = static_cast<int64_t>(data_as_string.size());
 
   string_stream_.str(data_as_string);
   ruleset_stream_ = std::make_unique<google::protobuf::io::IstreamInputStream>(

@@ -823,7 +823,8 @@ void MigratePasswordsToPasswordVault() {
     g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCount, count + 1);
     g_browser_process->local_state()->CommitPendingWrite();
     if (count <= kMigrationBase || (count % kMigrationBase == 0 && count <= kMigrationMaxCount)) {
-      OHOS::NWeb::NWebWebStorageImpl* nweb_web_storage = new OHOS::NWeb::NWebWebStorageImpl();
+      std::shared_ptr<OHOS::NWeb::NWebWebStorageImpl> nweb_web_storage = 
+          std::make_shared<OHOS::NWeb::NWebWebStorageImpl>();
       nweb_web_storage->MigratePasswords();
     } else if (count > kMigrationMaxCount) {
       LOG(ERROR) << "[Autofill] Migrate passwords over max counts, stop migrate.";
@@ -3852,11 +3853,12 @@ void NWebImpl::UnLoadWebExtension(const std::string& eid) {
     if (current_extension->was_installed_by_default()) {
       WVLOG_I("NWebImpl::UnLoadWebExtension RemovedDefaultInstalledExtension");
     }
-
-    bool result = extensions::ExtensionSystem::Get(browser_context)
-        ->extension_service()
-        ->UninstallExtension(eid, extensions::UNINSTALL_REASON_USER_INITIATED, error);
-    WVLOG_I("NWebImpl::UnLoadWebExtension result:%{public}d, error:%{public}s", result, error);
+    if (extensions::ExtensionSystem::Get(browser_context)->extension_service()) {
+      bool result = extensions::ExtensionSystem::Get(browser_context)
+          ->extension_service()
+          ->UninstallExtension(eid, extensions::UNINSTALL_REASON_USER_INITIATED, error);
+      WVLOG_I("NWebImpl::UnLoadWebExtension result:%{public}d, error:%{public}s", result, error);
+    }
     return;
   }
   WVLOG_I("NWebImpl::UnLoadWebExtension extension not exist!");
@@ -3878,10 +3880,12 @@ void NWebImpl::DisableWebExtension(const std::string& eid) {
       WVLOG_I("NWebImpl::DisableWebExtension DisableDefaultInstalledExtension");
     }
 
-    extensions::ExtensionSystem::Get(browser_context)
-        ->extension_service()
-        ->DisableExtension(eid, extensions::disable_reason::DISABLE_USER_ACTION);
-    WVLOG_I("NWebImpl::DisableWebExtension id:%{public}s", eid.c_str());
+    if (extensions::ExtensionSystem::Get(browser_context)->extension_service()) {
+      extensions::ExtensionSystem::Get(browser_context)
+          ->extension_service()
+          ->DisableExtension(eid, extensions::disable_reason::DISABLE_USER_ACTION);
+      WVLOG_I("NWebImpl::DisableWebExtension id:%{public}s", eid.c_str());
+    }
     return;
   }
   WVLOG_I("NWebImpl::DisableWebExtension extension not exist: id:%{public}s", eid.c_str());

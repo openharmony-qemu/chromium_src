@@ -5271,6 +5271,7 @@ bool NWebImpl::GetSiteIsolationModeResult() {
     }
     bool isMultipleRenderProcess = OHOS::NWeb::NWebImpl::GetRenderProcessMode() ==
                    OHOS::NWeb::RenderProcessMode::MULTIPLE_MODE;
+
     LOG(INFO) << "isMultipleRenderProcess:" << isMultipleRenderProcess;
 
     if (g_siteIsolationModeInit) {
@@ -5287,11 +5288,9 @@ bool NWebImpl::GetSiteIsolationModeResult() {
     if (isIgnoreLockdownMode && isMultipleRenderProcess) {
       return true;
     }
-
     if (IsAdvancedSecurityMode() && isMultipleRenderProcess) {
       return true;
     }
-
     return false;
   } else {
     return ShouldEnableSiteIsolation();

@@ -56,7 +56,7 @@ void ArkWeb_ResourceRequest_::GetMethod(char** method) const {
   }
 
   std::string cef_method = cef_request->GetMethod().ToString();
-  const int length = cef_method.length();
+  const uint32_t length = cef_method.length();
   *method = new char[length + 1];
   if (!(*method)) {
     LOG(ERROR) << "GetMethod method is nullptr.";
@@ -77,7 +77,7 @@ void ArkWeb_ResourceRequest_::GetUrl(char** url) const {
   }
 
   std::string cef_url = cef_request->GetURL().ToString();
-  const int length = cef_url.length();
+  const uint32_t length = cef_url.length();
   *url = new char[length + 1];
   if (!(*url)) {
     LOG(ERROR) << "GetUrl url is nullptr.";
@@ -126,7 +126,7 @@ void ArkWeb_ResourceRequest_::GetReferrer(char** referrer) const {
   }
 
   std::string cef_referrer = cef_request->GetReferrerURL().ToString();
-  const int length = cef_referrer.length();
+  const uint32_t length = cef_referrer.length();
   *referrer = new char[length + 1];
   if (!(*referrer)) {
     LOG(ERROR) << "GetReferrer referrer is nullptr.";
@@ -157,7 +157,7 @@ void ArkWeb_ResourceRequest_::GetFrameUrl(char** frame_url) const {
 
   std::string cef_frame_url =
       cef_request->AsArkWebRequestExt()->GetFrameUrl().ToString();
-  const int length = cef_frame_url.length();
+  const uint32_t length = cef_frame_url.length();
   *frame_url = new char[length + 1];
   if (!(*frame_url)) {
     LOG(ERROR) << "GetFrameUrl frame_url is nullptr.";
@@ -198,7 +198,7 @@ void ArkWeb_RequestHeaderList_::GetHeader(int index,
   }
 
   std::string cef_key = header_value[index].key;
-  int length = cef_key.length();
+  uint32_t length = cef_key.length();
   *key = new char[length + 1];
   if (!(*key)) {
     LOG(ERROR) << "GetHeader key is nullptr.";

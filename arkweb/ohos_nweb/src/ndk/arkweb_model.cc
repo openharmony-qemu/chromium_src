@@ -794,7 +794,9 @@ ARKWEB_NDK_EXPORT void* OH_WebMessage_GetData(ArkWeb_WebMessagePtr message,
                                               size_t* dataLength) {
   if (!message || !dataLength) {
     LOG(ERROR) << "NativeArkWeb GetData nullptr error";
-    *dataLength = 0;
+    if (dataLength) {
+      *dataLength = 0;
+    }
     return nullptr;
   }
 

@@ -303,7 +303,15 @@ class MockVideoDecoder : public VideoDecoder {
   MOCK_CONST_METHOD0(GetMaxDecodeRequests, int());
   MOCK_CONST_METHOD0(CanReadWithoutStalling, bool());
   MOCK_CONST_METHOD0(NeedsBitstreamConversion, bool());
-
+#if BUILDFLAG(ARKWEB_TEST)
+#if BUILDFLAG(ARKWEB_PIP)
+  MOCK_METHOD1(PipEnable, void(bool enable));
+#endif  // ARKWEB_PIP
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  MOCK_METHOD0(RecycleDmaBuffer, void());
+  MOCK_METHOD0(ResumeDmaBuffer, void());
+#endif  // ARKWEB_MEDIA_DMABUF
+#endif  // ARKWEB_TEST
  private:
   const bool is_platform_decoder_;
   const bool supports_decryption_;

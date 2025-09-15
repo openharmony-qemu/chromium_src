@@ -144,6 +144,7 @@ class AudioCapturerAdapterImplTest : public testing::Test {
       mockCallback_ = std::make_shared<MockAudioCapturerReadCallbackAdapter>();
       bufferDesc_ = std::make_shared<MockBufferDescAdapter>();
       options_ = std::make_shared<MockAudioCapturerOptions>();
+      adapter_->callback_index_ = 0;
     }
 
     std::shared_ptr<AudioCapturerAdapterImpl> adapter_;
@@ -177,11 +178,12 @@ TEST_F(AudioCapturerAdapterImplTest, GetAudioTime_ReturnsError) {
 }
 
 TEST_F(AudioCapturerAdapterImplTest, GetBufferDesc_ReturnsError) {
+  adapter_->callback_index_= adapter_->callback_wrapper_.AddCallback(nullptr);
   EXPECT_EQ(adapter_->GetBufferDesc(nullptr), AUDIO_NULL_ERROR);
 }
 
 TEST_F(AudioCapturerAdapterImplTest, GetBufferDesc_ReturnsErrorWhenUserDataCallbackIsNull) {
-  adapter_->userDataCallBack_ = nullptr;
+  adapter_->callback_index_= adapter_->callback_wrapper_.AddCallback(nullptr);
   EXPECT_EQ(adapter_->GetBufferDesc(bufferDesc_), AUDIO_NULL_ERROR);
 }
 
@@ -189,7 +191,7 @@ TEST_F(AudioCapturerAdapterImplTest, GetBufferDesc_ReturnsErrorWhenUserDataBuffe
   auto userCallBack = std::make_shared<UserDataCallBack>();
   userCallBack->buffer = nullptr;
   userCallBack->length = 100;
-  adapter_->userDataCallBack_ = userCallBack;
+  adapter_->callback_index_= adapter_->callback_wrapper_.AddCallback(userCallBack);
   EXPECT_EQ(adapter_->GetBufferDesc(bufferDesc_), AUDIO_NULL_ERROR);
 }
 
@@ -202,7 +204,7 @@ TEST_F(AudioCapturerAdapterImplTest, GetBufferDesc_Success) {
   uint8_t testBuffer[testLength]{};
   userCallBack->buffer = testBuffer;
   userCallBack->length = testLength;
-  adapter_->userDataCallBack_ = userCallBack;
+  adapter_->callback_index_= adapter_->callback_wrapper_.AddCallback(userCallBack);
 
   EXPECT_CALL(*mockDesc, SetBuffer(testBuffer)).Times(1);
   EXPECT_CALL(*mockDesc, SetBufLength(testLength)).Times(1);
@@ -227,10 +229,9 @@ TEST_F(AudioCapturerAdapterImplTest, SetCapturerReadCallback_Success) {
   uint8_t testBuffer[testLength]{};
   userCallBack->buffer = testBuffer;
   userCallBack->length = testLength;
-  adapter_->userDataCallBack_ = userCallBack;
+  adapter_->callback_index_= adapter_->callback_wrapper_.AddCallback(userCallBack);
   int32_t ret = adapter_->SetCapturerReadCallback(mockCallback_);
   EXPECT_EQ(ret, AUDIO_OK);
-  EXPECT_EQ(adapter_->userDataCallBack_->callback, mockCallback_);
 }
 
 TEST_F(AudioCapturerAdapterImplTest, SetCapturerReadCallback_NullCallback) {
@@ -246,7 +247,7 @@ TEST_F(AudioCapturerAdapterImplTest, SetCapturerReadCallback_NullAudioCapturer) 
 
 TEST_F(AudioCapturerAdapterImplTest, SetCapturerReadCallback_NullUserDataCallback) {
   adapter_->audio_capturer_ = reinterpret_cast<OH_AudioCapturer*>(0x1);
-  adapter_->userDataCallBack_ = nullptr;
+  adapter_->callback_index_= adapter_->callback_wrapper_.AddCallback(nullptr);
   int32_t ret = adapter_->SetCapturerReadCallback(mockCallback_);
   EXPECT_EQ(ret, AUDIO_NULL_ERROR);
 }

@@ -65,7 +65,7 @@ std::string GetTypeStr(extensions::MenuItem::Type type) {
   };
   return {};
 }
- 
+
 std::string GetContextStr(extensions::MenuItem::Context context) {
   switch (context) {
     case extensions::MenuItem::Context::ALL : return "all";
@@ -84,10 +84,10 @@ std::string GetContextStr(extensions::MenuItem::Context context) {
   };
   return {};
 }
- 
+
 std::vector<std::string> ContextListToStrVector(const extensions::MenuItem::ContextList& contextList) {
   std::vector<std::string> result;
-  for (int contextInt = extensions::MenuItem::Context::ALL;
+  for (uint32_t contextInt = extensions::MenuItem::Context::ALL;
         contextInt <= extensions::MenuItem::Context::ACTION;
         contextInt <<= 1) {
     if (contextList.Contains(static_cast<extensions::MenuItem::Context>(contextInt))) {

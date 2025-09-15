@@ -75,7 +75,7 @@ class ArkWebHostResolverManagerJobExt : public HostResolverManager::Job {
   int resolved_result_for_ipv4_{0};
   int resolved_result_for_ipv6_{0};
   HostResolverManager::DnsTransactionAddressFailedType
-      failed_transactions_type_;
+      failed_transactions_type_{DnsTransactionAddressFailedType::BOTH_OK};
 #endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 };
 

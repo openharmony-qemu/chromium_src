@@ -2178,6 +2178,10 @@ static_library("test_support") {
     "url_request/url_request_test_util.h",
   ]
 
+  if (is_arkweb) {
+    sources += arkweb_net_cert_unittest_sources
+  }
+
   if (is_win) {
     sources += [
       "test/win/fake_network_cost_manager.cc",
@@ -2644,6 +2648,10 @@ if (is_cronet_build) {
 }
 
 target(_test_target_type, "net_unittests") {
+  ldflags = [
+    "-Wl,--wrap=BIO_new_mem_buf",
+    "-Wl,--wrap=X509_STORE_CTX_new"
+  ]
   sources = [
     "base/address_family_unittest.cc",
     "base/address_list_unittest.cc",

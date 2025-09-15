@@ -40,7 +40,11 @@ void BlanklessController::BlankOptWhiteList::LoadSysWhiteList()
   }
   m_is_sys_loaded_ = true;
 
+#if BUILDFLAG(ARKWEB_TEST)
+  base::FilePath data_path = base::FilePath("/data/ut/blank_opt_white_list.json");
+#else
   base::FilePath data_path = base::FilePath("/etc/web/blank_opt_white_list.json");
+#endif
   base::File tfile(data_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
   if (!tfile.IsValid() || tfile.GetLength() <= 0) {
     LOG(WARNING) << "blankless BlankOptWhiteList sys file is invalid or not exist.";

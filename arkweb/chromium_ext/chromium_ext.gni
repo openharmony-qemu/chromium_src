@@ -758,6 +758,10 @@ arkweb_base_unittest_sources = [
   "//arkweb/ohos_adapter_ndk/hiviewdfx_adapter/hitrace_adapter_impl_unittest.cc",
   "//arkweb/ohos_adapter_ndk/net_proxy_adapter_impl/net_proxy_adapter_impl_unittest.cc",
   "//arkweb/ohos_adapter_ndk/net_connect_adapter/net_connect_adapter_impl_unittest.cc",
+  "//arkweb/chromium_ext/base/ohos/sys_info_utils_ext_unittests.cc",
+  "//arkweb/chromium_ext/base/ohos/d_vsync/src/d_vsync_controller_unittests.cc",
+  "//arkweb/chromium_ext/base/ohos/locale_utils_unittests.cc",
+  "//arkweb/chromium_ext/base/ohos/scoped_native_buffer_handle_unittests.cc",
 ]
 
 arkweb_base_trace_event_sources = [

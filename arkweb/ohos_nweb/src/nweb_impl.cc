@@ -5319,12 +5319,18 @@ static void ApplySiteIsolationMode(bool mode){
 int32_t NWebImpl::SetSiteIsolationMode(bool mode) {
   LOG(INFO) << "NWeb Impl SetSiteIsolationMode request:" << mode;
 
+  const base::CommandLine* command_line =
+      base::CommandLine::ForCurrentProcess();
+
+  bool isMultipleRenderProcess = OHOS::NWeb::NWebImpl::GetRenderProcessMode() ==
+                OHOS::NWeb::RenderProcessMode::MULTIPLE_MODE;
+
   if (g_siteIsolationModeInit) {
       LOG(WARNING) << "Site isolation mode already set by developer";
       return ALREADY_SET_ERR;
   }
 
-  if (mode && !IsMultipleRenderProcess()) {
+  if (mode && ((command_line && !IsMultipleRenderProcess()) || (!command_line && !isMultipleRenderProcess))) {
       LOG(WARNING) << "Site isolation mode cannot be strict when single render";
       return SINGLE_RENDER_SET_STRICT_ERR;
   }

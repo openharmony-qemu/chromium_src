@@ -5261,7 +5261,41 @@ RenderProcessMode NWebImpl::GetRenderProcessMode() {
 
 #if BUILDFLAG(ARKWEB_SITE_ISOLATION)
 bool NWebImpl::GetSiteIsolationModeResult() {
-  return ShouldEnableSiteIsolation();
+  const base::CommandLine* command_line =
+      base::CommandLine::ForCurrentProcess();
+  if (!command_line) {
+    std::string isSiteIsolationMode = GetSiteIsolationMode();
+
+    if (isSiteIsolationMode == "false") {
+      return false;
+    }
+    bool isMultipleRenderProcess = OHOS::NWeb::NWebImpl::GetRenderProcessMode() ==
+                   OHOS::NWeb::RenderProcessMode::MULTIPLE_MODE;
+    LOG(INFO) << "isMultipleRenderProcess:" << isMultipleRenderProcess;
+
+    if (g_siteIsolationModeInit) {
+      if (g_siteIsolationModeInitValue == SiteIsolationInitMode::STRICT && !isMultipleRenderProcess){
+        LOG(ERROR) << "Site isolation mode cannot be strict when single render";
+      } else {
+        return (g_siteIsolationModeInitValue == SiteIsolationInitMode::STRICT)? true : false;
+      }
+    }
+
+    // for judge PC&&Tablet devices
+    bool isIgnoreLockdownMode = base::ohos::IsTabletDevice() || base::ohos::IsPcDevice();
+
+    if (isIgnoreLockdownMode && isMultipleRenderProcess) {
+      return true;
+    }
+
+    if (IsAdvancedSecurityMode() && isMultipleRenderProcess) {
+      return true;
+    }
+
+    return false;
+  } else {
+    return ShouldEnableSiteIsolation();
+  }
 }
 
 static void ApplySiteIsolationMode(bool mode){

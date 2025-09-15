@@ -17,7 +17,10 @@ import("//arkweb/build/features/features.gni")
 test("prp_preload_unittests") {
   testonly = true
 
-  sources = [ ]
+  sources = [
+    "prpp_request_loader_factory_impl_unittest.cc",
+    "page_res_parallel_preload_mgr_impl_unittest.cc",
+  ]
 
   include_dirs = [
     "//arkweb/chromium_ext/services/network/prp_preload/include",

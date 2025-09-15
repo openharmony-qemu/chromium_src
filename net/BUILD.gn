@@ -2178,6 +2178,10 @@ static_library("test_support") {
     "url_request/url_request_test_util.h",
   ]
 
+  if (is_arkweb) {
+    sources += arkweb_net_cert_unittest_sources
+  }
+
   if (is_win) {
     sources += [
       "test/win/fake_network_cost_manager.cc",
@@ -2644,6 +2648,10 @@ if (is_cronet_build) {
 }
 
 target(_test_target_type, "net_unittests") {
+  ldflags = [
+    "-Wl,--wrap=BIO_new_mem_buf",
+    "-Wl,--wrap=X509_STORE_CTX_new"
+  ]
   sources = [
     "base/address_family_unittest.cc",
     "base/address_list_unittest.cc",
@@ -2974,6 +2982,11 @@ target(_test_target_type, "net_unittests") {
     "url_request/view_cache_helper_unittest.cc",
   ]
 
+  if (arkweb_prp_preload) {
+    import("//arkweb/chromium_ext/net/base/arkweb_net_base_ext.gni")
+    sources += arkweb_net_base_ext_unittest_sources
+  }
+
   if (is_android) {
     sources += [
       "android/dummy_spnego_authenticator.cc",
@@ -3114,7 +3127,14 @@ target(_test_target_type, "net_unittests") {
   }
 
   if (is_android || is_chromeos_ash) {
-    sources += [ "base/network_change_notifier_passive_unittest.cc" ]
+    sources += [
+      "base/network_change_notifier_passive_unittest.cc",
+    ]
+  }
+  if (is_arkweb && arkweb_ext_http_dns_fallback) {
+    sources += [
+      "//arkweb/chromium_ext/net/base/network_change_notifier_passive_for_include_unittest.cc",
+    ]
   }
 
   if (enable_reporting) {

@@ -1,10 +1,15 @@
 import("//arkweb/build/features/features.gni")
 
 arkweb_net_base_ext_sources = []
+arkweb_net_base_ext_unittest_sources = []
 
 if (arkweb_prp_preload) {
   arkweb_net_base_ext_sources += [
     "//arkweb/chromium_ext/net/base/page_res_request_info.cc",
     "//arkweb/chromium_ext/net/base/page_res_request_info.h",
+  ]
+
+  arkweb_net_base_ext_unittest_sources += [
+    "//arkweb/chromium_ext/net/base/page_res_request_info_unittest.cc",
   ]
 }

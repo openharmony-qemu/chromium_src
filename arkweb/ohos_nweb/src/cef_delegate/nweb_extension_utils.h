@@ -29,6 +29,9 @@ std::optional<bool> GetIncludeIncognitoInformation(
     const std::string& extension_id,
     content::BrowserContext* browser_context);
 
+content::BrowserContext* GetIncognitoContext(
+    content::BrowserContext* browser_context);
+
 }  // namespace OHOS::NWeb
 
 #endif  // NWEB_EXTENSION_UTILS_H_

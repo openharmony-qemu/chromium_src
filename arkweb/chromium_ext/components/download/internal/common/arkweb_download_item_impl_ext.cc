@@ -69,14 +69,6 @@
 #include "net/url_request/referrer_policy.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
 
-#if BUILDFLAG(IS_ANDROID)
-#include "components/download/internal/common/android/download_collection_bridge.h"
-#endif  // BUILDFLAG(IS_ANDROID)
-
-#if BUILDFLAG(IS_MAC)
-#include "base/mac/mac_util.h"
-#endif  // BUILDFLAG(IS_MAC)
-
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 #include "base/command_line.h"
 #include "content/public/common/content_switches.h"

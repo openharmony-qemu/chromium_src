@@ -5278,7 +5278,7 @@ bool NWebImpl::GetSiteIsolationModeResult() {
       if (g_siteIsolationModeInitValue == SiteIsolationInitMode::STRICT && !isMultipleRenderProcess){
         LOG(ERROR) << "Site isolation mode cannot be strict when single render";
       } else {
-        return (g_siteIsolationModeInitValue == SiteIsolationInitMode::STRICT)? true : false;
+        return g_siteIsolationModeInitValue == SiteIsolationInitMode::STRICT;
       }
     }
 

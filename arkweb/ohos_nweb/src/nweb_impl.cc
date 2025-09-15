@@ -972,6 +972,7 @@ bool NWebImpl::InitializeICUStatic(
       return false;
     }
     g_init_icu = true;
+    delete[] argv;
   }
 #endif
   return true;
@@ -6210,10 +6211,10 @@ void NWebImpl::SetProxyOverride(
     const bool& reverseBypass,
     std::shared_ptr<NWebProxyChangedCallback> callback) {
   std::vector<net::ProxyConfigServiceOHOS::ProxyOverrideRule> proxyRules;
-  int size = proxySchemeFilters.size();
+  size_t size = proxySchemeFilters.size();
   DCHECK(proxySchemeFilters.size() == proxyUrls.size());
   proxyRules.reserve(size);
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     proxyRules.emplace_back(proxySchemeFilters[i], proxyUrls[i]);
   }
   NWEB::ProxyConfigMonitor::GetInstance()->SetProxyOverride(proxyRules, bypassRules, reverseBypass,

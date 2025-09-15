@@ -213,16 +213,23 @@ void BackgroundTaskPolicy::MaybeChangeBackgroundTask(
   } else {
   }
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+    if ((reason == RequestBackgroundTaskReason::NEED_BG_TASK) &&
+        !IsWebAudioRequestBackgroundRunning()) {
+      LOG(INFO) << "is_web_audio_request is false";
+      reason = RequestBackgroundTaskReason::NO_CHANGE_BG_TASK;
+    }
+    if (is_request_background_task_ && visible_page_num_ == 0 &&
+        audio_context_players_num_.size() > 0 &&
+        !IsWebAudioRequestBackgroundRunning()) {
+      LOG(INFO) << "need cancel bg task";
+      reason = RequestBackgroundTaskReason::NO_NEED_BG_TASK;
+    }
+#endif
   if (reason == RequestBackgroundTaskReason::NO_CHANGE_BG_TASK) {
     LOG(INFO) << BG_TASK_TAG << " no change return";
     return;
   }
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-    if (!IsWebAudioRequestBackgroundRunning()) {
-      LOG(INFO) << "is_web_audio_request is false, return";
-      return;
-    }
-#endif
 
   bool need_request = reason == RequestBackgroundTaskReason::NEED_BG_TASK;
   bool ret = background_task_holder_->MaybeRequestBackgroundRunning(

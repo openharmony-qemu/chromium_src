@@ -32,7 +32,9 @@ void OHOSMediaPlayerRendererWebContentsObserver::AddMediaPlayerRenderer(
     OHOSMediaPlayerRenderer* player) {
   DCHECK(player);
   DCHECK(players_.find(player) == players_.end());
-  players_.insert(player);
+  if (player) {
+    players_.insert(player);
+  }
 }
 
 void OHOSMediaPlayerRendererWebContentsObserver::RemoveMediaPlayerRenderer(
@@ -45,13 +47,17 @@ void OHOSMediaPlayerRendererWebContentsObserver::RemoveMediaPlayerRenderer(
 void OHOSMediaPlayerRendererWebContentsObserver::DidUpdateAudioMutingState(
     bool muted) {
   for (OHOSMediaPlayerRenderer* player : players_) {
-    player->OnUpdateAudioMutingState(muted);
+    if (player) {
+      player->OnUpdateAudioMutingState(muted);
+    }
   }
 }
 
 void OHOSMediaPlayerRendererWebContentsObserver::WebContentsDestroyed() {
   for (OHOSMediaPlayerRenderer* player : players_) {
-    player->OnWebContentsDestroyed();
+    if (player) {
+      player->OnWebContentsDestroyed();
+    }
   }
   players_.clear();
 }

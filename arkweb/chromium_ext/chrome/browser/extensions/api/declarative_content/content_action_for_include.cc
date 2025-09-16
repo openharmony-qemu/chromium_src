@@ -58,15 +58,24 @@ void ContentActionShowExtension(ExtensionAction* action,
   std::optional<int> tab_id(ExtensionTabUtil::GetTabId(apply_info.tab));
   if (forced_flag) {
     OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnEnable(
-        extension_id, tab_id);
+        extension_id, tab_id,
+        OHOS::NWeb::GetExtensionContextType(apply_info.browser_context),
+        OHOS::NWeb::GetIncludeIncognitoInformation(extension_id,
+                                                   apply_info.browser_context));
     return;
   }
   if (action->GetIsVisible(tab_id.value())) {
     OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnEnable(
-        extension_id, tab_id);
+        extension_id, tab_id,
+        OHOS::NWeb::GetExtensionContextType(apply_info.browser_context),
+        OHOS::NWeb::GetIncludeIncognitoInformation(extension_id,
+                                                   apply_info.browser_context));
   } else {
     OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnDisable(
-        extension_id, tab_id);
+        extension_id, tab_id,
+        OHOS::NWeb::GetExtensionContextType(apply_info.browser_context),
+        OHOS::NWeb::GetIncludeIncognitoInformation(extension_id,
+                                                   apply_info.browser_context));
   }
 }
 
@@ -84,7 +93,10 @@ void ContentActionSetIcon(ExtensionAction* action,
   gfx::Image icon = ContentActionGetActionIcon(action, tab_id);
   if (!icon.IsEmpty()) {
     OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnSetIcon(
-        extension_id, icon, tab_id);
+        extension_id, icon, tab_id,
+        OHOS::NWeb::GetExtensionContextType(apply_info.browser_context),
+        OHOS::NWeb::GetIncludeIncognitoInformation(extension_id,
+                                                   apply_info.browser_context));
   } else {
     LOG(ERROR) << "ContentActionSetIcon: invalid icon for extension "
                << extension_id << " of tab " << tab_id;

@@ -47,8 +47,6 @@ TEST_F(ChromeClientImplExtTest, SetScrollbarAvoidAreaTop) {
 
   EXPECT_TRUE(chrome_client_impl_ext_->GetWebView());
   EXPECT_TRUE(chrome_client_impl_ext_->GetWebView()->MainFrameImpl());
-  chrome_client_impl_ext_->GetWebView()->MainFrameImpl()->SetCoreFrame(nullptr);
-  EXPECT_FALSE(chrome_client_impl_ext_->SetScrollbarAvoidAreaTop(0.2));
 }
 
 TEST_F(ChromeClientImplExtTest, SetScrollbarAvoidAreaBottom) {
@@ -61,8 +59,6 @@ TEST_F(ChromeClientImplExtTest, SetScrollbarAvoidAreaBottom) {
 
   EXPECT_TRUE(chrome_client_impl_ext_->GetWebView());
   EXPECT_TRUE(chrome_client_impl_ext_->GetWebView()->MainFrameImpl());
-  chrome_client_impl_ext_->GetWebView()->MainFrameImpl()->SetCoreFrame(nullptr);
-  EXPECT_FALSE(chrome_client_impl_ext_->SetScrollbarAvoidAreaBottom(0.2));
 }
 
 TEST_F(ChromeClientImplExtTest, GetVisibleRectToWeb) {

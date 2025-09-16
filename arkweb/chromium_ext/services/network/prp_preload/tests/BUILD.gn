@@ -23,6 +23,8 @@ test("prp_preload_unittests") {
     "page_res_parallel_preload_mgr_impl_unittest.cc",
     "prpp_request_loader_factory_impl_unittest.cc",
     "res_request_info_cache_mgr_unittest.cc",
+    "res_preload_scheduler_unittest.cc",
+    "prpp_request_loader_impl_unittest.cc",
   ]
 
   include_dirs = [

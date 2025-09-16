@@ -597,6 +597,10 @@ void ExtensionRegistryInfoManager::OnExtensionInstalled(content::BrowserContext*
                                                         const Extension* extension,
                                                         bool is_update) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (!extensions::ui_util::ShouldDisplayInExtensionSettings(*extension)) {
+    return;
+  }
+
   NWebExtensionManagerDispatcher::OnExtensionInstalledCallBack(
       extension->id(), extension->creation_flags(), static_cast<int>(extension->manifest()->location()));
 #endif

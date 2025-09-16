@@ -7,6 +7,7 @@
 #include "components/value_store/value_store_factory.h"
 #include "extensions/common/extension_id.h"
 #include "extensions/common/extension_set.h"
+#include "extensions/browser/management_policy.h"
 
 namespace extensions {
 
@@ -27,7 +28,8 @@ ExtensionService* MockExtensionSystem::extension_service() {
 }
 
 ManagementPolicy* MockExtensionSystem::management_policy() {
-  return nullptr;
+  management_policy_ =  std::make_unique<ManagementPolicy>();
+  return management_policy_.get();
 }
 
 ServiceWorkerManager* MockExtensionSystem::service_worker_manager() {

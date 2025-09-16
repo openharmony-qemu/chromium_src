@@ -23,6 +23,7 @@
 #include <unordered_set>
 
 #include "base/containers/lru_cache.h"
+#include "build/buildflag.h"
 
 namespace base {
 namespace ohos {
@@ -116,7 +117,11 @@ public:
 
   void Clear(uint32_t nweb_id);
 
-  bool CheckEnableForUrl(const std::string& url);
+  bool CheckEnableForSysUrl(const std::string& url, uint64_t& blankless_key);
+
+#if BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
+  bool CheckEnableForAppUrl(const std::string& url, uint64_t& blankless_key);
+#endif // BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
 
   void RecordWindowId(uint32_t nweb_id, uint32_t window_id);
   uint32_t GetWindowIdByNWebId(uint32_t nweb_id);
@@ -148,16 +153,31 @@ private:
     BlankOptWhiteList() = default;
     ~BlankOptWhiteList() = default;
 
-    void LoadWhiteList();
-    bool CheckWhiteList(const std::string& url);
+    bool CheckSysWhiteList(const std::string& url, uint64_t& blankless_key);
+
+#if BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
+    bool CheckAppWhiteList(const std::string& url, uint64_t& blankless_key);
+#endif // BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
 
   private:
+    void LoadSysWhiteList();
     bool ExactMatch(const std::string& url);
     bool FuzzyMatch(const std::string& url);
 
     std::unordered_set<std::string> m_exact_match_set_;
     std::unordered_set<std::string> m_fuzzy_match_set_;
-    bool m_is_loaded_ = false;
+    bool m_is_sys_loaded_ = false;
+
+#if BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
+    void LoadAppWhiteList();
+    void ParseAppWhiteList(std::vector<char>& buffer);
+    bool QueryMatch(const std::string& url);
+    std::string GetBaseUrl(const std::string& url);
+    std::string GetQueryUrl(const std::string& url);
+
+    std::unordered_map<std::string, std::unordered_set<std::string>> m_query_match_map_;
+    bool m_is_app_loaded_ = false;
+#endif // BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
   };
   BlankOptWhiteList m_white_list_;
 

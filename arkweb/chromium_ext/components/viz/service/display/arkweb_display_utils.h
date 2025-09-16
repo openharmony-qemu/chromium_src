@@ -83,6 +83,10 @@ class ArkwebDisplayUtils {
   void SetGpuServiceImpl(GpuServiceImpl* gpu_service_impl);
 #endif
 
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+  void DiscardBackbuffer();
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   friend class ArkwebDisplayUtilsTest;

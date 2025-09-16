@@ -24,6 +24,10 @@ namespace content {
 bool MediaSessionImpl::HasOnlyOneShotPlayersPublic() const {
   return HasOnlyOneShotPlayers();
 }
+
+bool MediaSessionImpl::HasWebrtcOneShotPlayersPublic() const {
+  return has_webrtc_one_shot_players_;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)

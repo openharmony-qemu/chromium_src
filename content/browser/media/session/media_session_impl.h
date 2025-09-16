@@ -380,6 +380,7 @@ class MediaSessionImpl : public MediaSession,
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   bool HasOnlyOneShotPlayersPublic() const;
+  bool HasWebrtcOneShotPlayersPublic() const;
 #endif
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
   void PutWebMediaAVSessionEnabled(bool enable);
@@ -415,6 +416,7 @@ class MediaSessionImpl : public MediaSession,
   bool fileAccess_ = false;
   std::vector<std::string> grantMediaFileAccessDirs_;
   NWebMediaSessionState sessionState_ = NWebMediaSessionState::NOINITIAL;
+  bool has_webrtc_one_shot_players_ = false;
 #endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 #if BUILDFLAG(ARKWEB_PIP)
   void OnPictureInPictureStateChanged(

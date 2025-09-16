@@ -36,8 +36,8 @@ void MediaSessionController::SetMetadata(
     bool has_video,
     media::MediaContentType media_content_type) {
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  AsMediaSessionControllerExt()->HasWebrtcOneShotPlayers(has_audio, has_video, media_content_type);
   if (media_session_) {
-    AsMediaSessionControllerExt()->HasWebrtcOneShotPlayers(has_audio, has_video, media_content_type);
     media_session_->SetMediaContentType(media_content_type);
   }
 #endif

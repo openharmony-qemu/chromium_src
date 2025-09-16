@@ -3713,8 +3713,10 @@ test("base_unittests") {
       ]
     }
     sources += arkweb_ohos_adapter_ndk_unittests_sources
+    sources += arkweb_content_browser_accessibility_resources
 
     public_deps = [
+      "//ui/accessibility:test_support",
       "//content/public/browser",
     ]
   }

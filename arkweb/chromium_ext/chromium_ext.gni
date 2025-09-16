@@ -1258,6 +1258,12 @@ arkweb_components_viz_common_frame_sinks_copy_output_result_deps = [
   "//media/gpu:buildflags",
 ]
 
+arkweb_content_browser_accessibility_resources = [
+  "//arkweb/chromium_ext/content/browser/accessibility/browser_accessibility_ohos_unittest.cc",
+  "//content/test/test_content_client.cc",
+  "//content/test/test_content_client.h",
+]
+
 arkweb_third_patry_blink_renderer_core_paint_timing_detector_resources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.h",

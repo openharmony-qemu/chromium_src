@@ -16,7 +16,6 @@
 
 namespace media {
 
-std::vector<AudioParameters> OHOSAudioOutputStream::audioParameterSet_ = {};
 CallbackSharedWrapper<OHOSAudioOutputCallback> OHOSAudioOutputStream::callback_wrapper_;
 
 OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,

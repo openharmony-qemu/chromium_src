@@ -683,12 +683,12 @@ void OHOSAudioFocusController::CheckSuspendOtherPlaybacksUIThread(const content:
             LOG(ERROR) << "CheckSuspendOtherPlaybacksUIThread webContents is null";
             continue;
         }
-        content::MediaSessionImpl *mediaSession = content::MediaSessionImpl::Get(webContents);
-        if (!mediaSession) {
-            LOG(ERROR) << "CheckSuspendOtherPlaybacksUIThread MediaSession not available for WebContents";
+        if(webContentsImpl == webContents) {
             continue;
         }
-        if(webContentsImpl == webContents) {
+        content::MediaSessionImpl* mediaSession = content::MediaSessionImpl::FromWebContents(webContents);
+        if (!mediaSession) {
+            LOG(ERROR) << "CheckSuspendOtherPlaybacksUIThread MediaSession not available for WebContents";
             continue;
         }
         mediaSession->Suspend(content::MediaSession::SuspendType::kSystem);
@@ -698,15 +698,15 @@ void OHOSAudioFocusController::CheckSuspendOtherPlaybacksUIThread(const content:
 void OHOSAudioFocusController::CheckSuspendOtherPlaybacksUIThread(const AudioParameters& params)
 {
     DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
-    content::RenderFrameHost *renderFrameHost =
+    content::RenderFrameHost* renderFrameHost =
         content::RenderFrameHost::FromID(params.render_process_id(), params.render_frame_id());
     if (!renderFrameHost) {
-        LOG(ERROR) << "CheckSuspendOtherPlaybacksUIThread RenderFrameHost not found for PID: " << params.render_process_id()
-                   << ", FrameID: " << params.render_frame_id();
+        LOG(ERROR) << "CheckSuspendOtherPlaybacksUIThread RenderFrameHost not found for PID: "
+                   << params.render_process_id() << ", FrameID: " << params.render_frame_id();
         return;
     }
 
-    content::WebContents *webContents = content::WebContents::FromRenderFrameHost(renderFrameHost);
+    content::WebContents* webContents = content::WebContents::FromRenderFrameHost(renderFrameHost);
     if (!webContents) {
         LOG(ERROR) << "CheckSuspendOtherPlaybacksUIThread WebContents not found for RenderFrameHost";
         return;

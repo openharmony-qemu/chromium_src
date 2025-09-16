@@ -62,7 +62,10 @@ void ExtensionIconImageObserver::OnExtensionIconImageChanged(IconImage* icon_ima
     LOG(INFO) << "ExtensionIconImageObserver::OnExtensionIconImageChange start";
     gfx::Image icon = icon_image->image();
     OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnSetIcon(
-        extension_id_, icon, tab_id_);
+        extension_id_, icon, tab_id_,
+        OHOS::NWeb::GetExtensionContextType(icon_image->browser_context()),
+        OHOS::NWeb::GetIncludeIncognitoInformation(
+            extension_id_, icon_image->browser_context()));
     icon_image->RemoveObserver(this);
 }
 

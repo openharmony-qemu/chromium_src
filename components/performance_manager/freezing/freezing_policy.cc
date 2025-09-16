@@ -345,7 +345,6 @@ void FreezingPolicy::OnCannotFreezeReasonChange(const PageNode* page_node,
   } else {
     size_t num_removed =
         std::erase(page_freezing_state.cannot_freeze_reasons, reason);
-    CHECK_EQ(num_removed, 1U);
     if (page_freezing_state.cannot_freeze_reasons.empty()) {
       UpdateFrozenState(page_node);
     }

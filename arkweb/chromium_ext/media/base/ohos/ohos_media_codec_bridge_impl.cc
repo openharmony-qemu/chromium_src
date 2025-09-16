@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "buffer_request_config_adapter_impl.h"
 #include "ohos_media_codec_bridge_impl.h"
 
 #include <cstddef>
@@ -11,7 +12,6 @@
 
 #include "base/logging.h"
 #include "buffer_flush_config_adapter_impl.h"
-#include "buffer_request_config_adapter_impl.h"
 #include "codec_config_para_adapter_impl.h"
 #include "ohos_adapter_helper.h"
 #include "third_party/bounds_checking_function/include/securec.h"
@@ -311,6 +311,7 @@ CodecCodeAdapter OHOSMediaCodecBridgeImpl::FillSurfaceBuffer(
   configAdapter->SetWidth(frame->coded_size().width());
   configAdapter->SetHeight(frame->coded_size().height());
   configAdapter->SetStrideAlignment(DEFAULT_STRIDE);
+  configAdapter->SetTimestamp(timestamp_ms);
   buffer_adapter_ = surface_->RequestBuffer(fence, configAdapter);
   if (buffer_adapter_ == nullptr) {
     LOG(DEBUG) << "fail to RequestBuffer";

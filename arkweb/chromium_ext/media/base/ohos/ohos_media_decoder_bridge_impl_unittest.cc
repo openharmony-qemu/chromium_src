@@ -375,6 +375,14 @@ class MockOhosAdapterHelper : public OhosAdapterHelper {
               CreateScreenlockManagerAdapter,
               (),
               (override));
+  MOCK_METHOD(std::unique_ptr<CertManagerAdapter>,
+              GetCertManagerAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<NetConfigAdapter>,
+              GetNetConfigAdapter,
+              (),
+              (override));
   static MockOhosAdapterHelper& GetInstance() {
     static MockOhosAdapterHelper instance;
     return instance;

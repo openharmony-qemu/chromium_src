@@ -7,6 +7,11 @@
 #include "base/check.h"
 #include "base/notreached.h"
 #include "base/types/cxx23_to_underlying.h"
+#include "arkweb/build/features/features"
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "base/logging.h"
+#endif
 
 namespace base {
 namespace internal {
@@ -56,6 +61,12 @@ void BindStateHolder::Reset() {
 
 bool BindStateHolder::IsCancelled() const {
   DCHECK(bind_state_);
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  if (bind_state_ == nullptr) {
+    LOG(WARNING) << "bind_state_ is nullptr";
+    return true;
+  }
+#endif
   return bind_state_->IsCancelled();
 }
 

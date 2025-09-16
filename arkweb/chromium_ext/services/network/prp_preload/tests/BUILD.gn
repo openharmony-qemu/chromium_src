@@ -20,6 +20,8 @@ test("prp_preload_unittests") {
   sources = [
     "disk_cache_file_unittest.cc",
     "disk_cache_info_parser_unittest.cc",
+    "page_res_parallel_preload_mgr_impl_unittest.cc",
+    "prpp_request_loader_factory_impl_unittest.cc",
     "res_request_info_cache_mgr_unittest.cc",
   ]
 

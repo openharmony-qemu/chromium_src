@@ -35,6 +35,10 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_snapshot_data_base.h"
+#endif
+
 using namespace testing;
 using namespace OHOS::NWeb;
 
@@ -6225,58 +6229,107 @@ TEST_F(NWebImplTest, ClearBlanklessKey003) {
 
 TEST_F(NWebImplTest, CallBlanklessFrameFunc001) {
   uint64_t blankless_key = 0;
-  int32_t lcp_time = 0;
-  const std::string file = "test";
+  SnapshotDataItem dataItem = {
+    .staticPath = "test",
+    .lcpTime = 0,
+    .width = 100,
+    .height = 100,
+  };
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = nullptr;
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_EQ(nweb_impl_->nweb_handle_, nullptr);
 }
 
 TEST_F(NWebImplTest, CallBlanklessFrameFunc002) {
   uint64_t blankless_key = 0;
-  int32_t lcp_time = INT32_MAX;
-  const std::string file = "test";
+  SnapshotDataItem dataItem = {
+    .staticPath = "test",
+    .lcpTime = INT32_MAX,
+    .width = 100,
+    .height = 100,
+  };
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
 }
 
 TEST_F(NWebImplTest, CallBlanklessFrameFunc003) {
   uint64_t blankless_key = 0;
-  int32_t lcp_time = 0;
-  const std::string file = "test";
+  SnapshotDataItem dataItem = {
+    .staticPath = "test",
+    .lcpTime = 0,
+    .width = 100,
+    .height = 100,
+  };
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
 }
 
 TEST_F(NWebImplTest, CallBlanklessFrameFunc004) {
   uint64_t blankless_key = 0;
-  int32_t lcp_time = 5;
-  const std::string file = "test";
+  SnapshotDataItem dataItem = {
+    .staticPath = "test",
+    .lcpTime = 5,
+    .width = 100,
+    .height = 100,
+  };
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
 }
 
 TEST_F(NWebImplTest, CallBlanklessFrameFunc005) {
   uint64_t blankless_key = 0;
-  int32_t lcp_time = 5;
-  const std::string file = "";
+  SnapshotDataItem dataItem = {
+    .lcpTime = 5,
+    .width = 100,
+    .height = 100,
+  };
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
-  EXPECT_TRUE(file.empty());
+  EXPECT_TRUE(dataItem.staticPath.empty());
+}
+
+TEST_F(NWebImplTest, CallBlanklessFrameFunc006) {
+  uint64_t blankless_key = 0;
+  SnapshotDataItem dataItem = {
+    .wholePath = "test",
+    .lcpTime = 5,
+    .width = 100,
+    .height = 100,
+  };
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem, true);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
+}
+
+TEST_F(NWebImplTest, CallBlanklessFrameFunc007) {
+  uint64_t blankless_key = 0;
+  SnapshotDataItem dataItem = {
+    .lcpTime = 5,
+    .width = 100,
+    .height = 100,
+  };
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem, true);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
+  EXPECT_TRUE(dataItem.wholePath.empty());
 }
 
 TEST_F(NWebImplTest, GetPreferenceHash001) {

@@ -248,6 +248,7 @@ declare_args() {
   arkweb_privacy_compliance = true
   arkweb_reader_mode=false
   arkweb_ex_enable_applinking = false
+  arkweb_blank_prop_config = true
 }
 
 # Features enabled in mojom bindings.

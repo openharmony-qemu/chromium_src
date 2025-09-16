@@ -136,6 +136,7 @@ declare_args() {
   arkweb_scrollbar = true
   arkweb_scrollbar_avoid_area = true
   arkweb_scrollbar_avoid_corner = true
+  arkweb_softkeyboard_avoid = true
   arkweb_scroll_performance = true
   arkweb_secure_javascript_proxy = true
   arkweb_security_state = true

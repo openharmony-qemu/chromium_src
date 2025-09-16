@@ -217,6 +217,7 @@ if (!enable_arkweb) {
   arkweb_scrollbar = true
   arkweb_scrollbar_avoid_area = true
   arkweb_scrollbar_avoid_corner = true
+  arkweb_softkeyboard_avoid = true
   arkweb_scroll_performance = false
   arkweb_secure_javascript_proxy = false
   arkweb_security_state = false
@@ -443,6 +444,7 @@ buildflag_header("features") {
     "ARKWEB_SCROLLBAR=$arkweb_scrollbar",
     "ARKWEB_SCROLLBAR_AVOID_AREA=$arkweb_scrollbar_avoid_area",
     "ARKWEB_SCROLLBAR_AVOID_CORNER=$arkweb_scrollbar_avoid_corner",
+    "ARKWEB_SOFTKEYBOARD_AVOID=$arkweb_softkeyboard_avoid",
     "ARKWEB_SCROLL_PERFORMANCE=$arkweb_scroll_performance",
     "ARKWEB_SECURE_JAVASCRIPT_PROXY=$arkweb_secure_javascript_proxy",
     "ARKWEB_SECURITY_STATE=$arkweb_security_state",

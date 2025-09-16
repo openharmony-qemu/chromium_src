@@ -159,7 +159,7 @@ public:
     std::optional<VideoFrameLayout> layout =
     VideoFrameLayout::Create(VideoPixelFormat::PIXEL_FORMAT_I422A, gfx::Size());
     scoped_refptr<VideoFrame> video_frame = new VideoFrame(
-        layout.value(), VideoFrame::StorageType::STORAGE_GPU_MEMORY_BUFFER, 
+        layout.value(), VideoFrame::StorageType::STORAGE_GPU_MEMORY_BUFFER,
         gfx::Rect(), gfx::Size(), base::Seconds(1));
 protected:
     void SetUp() override
@@ -813,6 +813,24 @@ TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenReq
     EXPECT_CALL(*mock_producer_surface_adapter, RequestBuffer).WillOnce(testing::Return(nullptr));
     SetSurface(mock_producer_surface_adapter);
     CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(video_frame, 1);
+}
+
+TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenFramePlaneSizeIsTwo)
+{
+    std::shared_ptr<MockProducerSurfaceAdapter> mock_producer_surface_adapter =
+    std::make_shared<MockProducerSurfaceAdapter>();
+    auto buffer_adapter = std::make_shared<MockSurfaceBufferAdapter>();
+    EXPECT_CALL(*mock_producer_surface_adapter, RequestBuffer).WillOnce(testing::Return(buffer_adapter));
+    std::unique_ptr<uint8_t> dst_data = std::make_unique<uint8_t>(1);
+    EXPECT_CALL(*buffer_adapter, GetVirAddr()).WillOnce(testing::Return(dst_data.get()));
+    EXPECT_CALL(*buffer_adapter, GetStride()).WillOnce(testing::Return(1));
+    SetSurface(mock_producer_surface_adapter);
+    std::unique_ptr<uint8_t> data_ptr = std::make_unique<uint8_t>(1);
+    SetStorageType(VideoFrame::STORAGE_UNOWNED_MEMORY);
+    SetData(VideoFrame::kUPlane, data_ptr.get());
+    SetData(VideoFrame::kVPlane, data_ptr.get());
+    CodecCodeAdapter result = bridge_impl.FillSurfaceBuffer(video_frame, 1);
+    EXPECT_EQ(result, CodecCodeAdapter::ERROR);
 }
 
 TEST_F(OHOSMediaCodecBridgeImplTest, FillSurfaceBuffer_ShouldReturnError_WhenYSrcIsNull)

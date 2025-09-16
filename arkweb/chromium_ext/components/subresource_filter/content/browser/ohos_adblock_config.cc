@@ -15,7 +15,6 @@
 
 #include "components/subresource_filter/content/browser/ohos_adblock_config.h"
 
-#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/logging.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"

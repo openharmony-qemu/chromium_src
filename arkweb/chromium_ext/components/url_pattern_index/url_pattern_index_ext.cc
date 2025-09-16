@@ -289,7 +289,7 @@ CssPatternIndexOffset CssPatternIndexBuilder::Finish() {
 
 NGram CssPatternIndexBuilder::GetMostDistinctiveNGram(
     std::string_view pattern) {
-  size_t min_list_size = std::numeric_limits<size_t>::max();
+  size_t min_list_size = kMinListSize;
   NGram best_ngram = 0;
 
   // To support case-insensitive matching, make sure the n-grams for |pattern|

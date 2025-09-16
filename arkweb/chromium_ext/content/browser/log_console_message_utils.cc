@@ -20,6 +20,9 @@
 #if BUILDFLAG(ARKWEB_DFX_LOGGING)
 #include "hilog_adapter.h"
 #endif
+#if BUILDFLAG(ARKWEB_TEST)
+#include "base/strings/utf_string_conversions.h"
+#endif
 
 namespace content {
 
@@ -44,6 +47,12 @@ void LogConsoleMessageUtils::LogConsoleMessage(int32_t resolved_level, const std
         case logging::LOGGING_DEBUG:
             priority = OHOS::NWeb::LogLevelAdapter::DEBUG;
   }
+#if BUILDFLAG(ARKWEB_TEST)
+  LOG(INFO) << "LogConsoleMessage { " << "resolved_level=" << resolved_level
+      << ", " << "message=" << base::UTF16ToUTF8(message) << ", "
+      << "line_number=" << line_number << ", "
+      << "source_id=" << base::UTF16ToUTF8(source_id) << " }";
+#endif
   std::ostringstream stream;
   stream << "\"" << message << "\", source: " << source_id << " (" << line_number << ")";
   std::string message_str(stream.str());

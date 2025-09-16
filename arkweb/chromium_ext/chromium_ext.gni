@@ -1278,3 +1278,13 @@ arkweb_components_dom_distiller_core_sources = [
   "//arkweb/chromium_ext/components/dom_distiller/core/task_tracker_utils.cc",
   "//arkweb/chromium_ext/components/dom_distiller/core/task_tracker_utils.h",
 ]
+
+arkweb_content_browser_unittests_sources =[
+  "//arkweb/chromium_ext/content/browser/log_console_message_utils_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/ohos/date_time_chooser_ohos_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/ohos/content_view_statics_ohos_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/host_zoom_map_impl_utils_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/ohos/overscroll_controller_ohos_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/message_port_provider_for_include_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/ohos/software_compositor_host_ohos_unittest.cc"
+]

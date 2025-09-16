@@ -4600,15 +4600,12 @@ void WebContentsImpl::UpdateVisibilityAndNotifyPageAndView(
   // calls us).
   if (auto* view = GetRenderWidgetHostView()) {
     if (view_is_visible) {
-#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
-      view->EvictFrameBackBuffers(false);
-#endif
       static_cast<RenderWidgetHostViewBase*>(view)->ShowWithVisibility(
           page_visibility);
     } else if (new_visibility == Visibility::HIDDEN) {
       view->Hide();
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
-      view->EvictFrameBackBuffers(true);
+      view->EvictFrameBackBuffers();
 #endif
     } else {
       view->WasOccluded();

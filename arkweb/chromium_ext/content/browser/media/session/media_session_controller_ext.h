@@ -25,8 +25,7 @@ public:
   // Set whether to the HTML play can be used to  control media
   void SetSessionStateIfNeed(bool isNeedMediaSession);
 
-  void HasWebrtcOneShotPlayers(
-    bool has_audio, bool has_video, media::MediaContentType media_content_type);
+  void HasWebrtcOneShotPlayers(media::MediaContentType media_content_type);
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)

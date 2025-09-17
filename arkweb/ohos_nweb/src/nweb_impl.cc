@@ -280,6 +280,7 @@ OnReportStatisticLogFunc
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
 #include "arkweb/ohos_adapter_ndk/window_manager_adapter/window_manager_adapter_impl.h"
+#include "ohos_glue/base/include/ark_web_errno.h"
 #endif
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
@@ -1480,10 +1481,11 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
   output_handler_->Resize(width, height);
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if ((nweb_delegate_->NearestSnapshotWidth() != static_cast<int32_t>(width)) ||
-  (nweb_delegate_->NearestSnapshotHeight() != static_cast<int32_t>(height))) {
+  if ((cur_blankless_frame_width_ != 0) && (cur_blankless_frame_height_ != 0) &&
+     (cur_blankless_frame_width_ != width) && (cur_blankless_frame_height_ != height) &&
+     base::ohos::BlanklessController::CheckGlobalProperty() && (nweb_handle_ != nullptr)) {
     LOG(DEBUG) << "RemoveBlanklessFrame due to resolution inconsistency between webPattern and snapshot";
-    RemoveBlanklessFrame();
+    nweb_handle_->OnRemoveBlanklessFrame(0);
   }
 #endif
 }
@@ -6137,22 +6139,9 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
       LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey similarity < 0.33";
       return -5;    // ERR_SIGNIFICANT_CHANGE
     }
-    if ((dataItem.width != nweb_delegate_->GetWidth()) || (dataItem.height != nweb_delegate_->GetHeight())) {
-      LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey snapshot resolution is different from webPattern";
-      return -5;
-    }
-    nweb_delegate_->SetNearestSnapshotSize(dataItem.width, dataItem.height);
-    CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath);
+    CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath, dataItem.width, dataItem.height);
   }
   return 0;   // SUCCESS
-}
-
-void NWebImpl::RemoveBlanklessFrame() {
-  if ((nweb_delegate_->NearestSnapshotWidth() == 0) || (nweb_delegate_->NearestSnapshotHeight() == 0)) {
-    return;
-  }
-  nweb_handle_->OnRemoveBlanklessFrame(0);
-  nweb_delegate_->SetNearestSnapshotSize(0, 0);
 }
 
 bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
@@ -6175,12 +6164,7 @@ bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   base::ohos::BlanklessController::GetInstance().RecordSystemTime(nweb_id_, blankless_key_, system_time);
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
   OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
-  if ((dataItem.width != nweb_delegate_->GetWidth()) || (dataItem.height != nweb_delegate_->GetHeight())) {
-    LOG(DEBUG) << "blankless TriggerBlanklessForUrl snapshot resolution is differnet webPattern";
-    return false;
-  }
-  nweb_delegate_->SetNearestSnapshotSize(dataItem.width, dataItem.height);
-  CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath);
+  CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath, dataItem.width, dataItem.height);
   return true;
 }
 
@@ -6199,6 +6183,12 @@ void NWebImpl::SetVisibility(bool isVisible) {
   }
 }
 
+void NWebImpl::RecordBlanklessFrameSize(uint32_t width, uint32_t height)
+{
+  cur_blankless_frame_width_ = width;
+  cur_blankless_frame_height_ = height;
+}
+
 void NWebImpl::ClearBlanklessKey() {
   if (nweb_delegate_ == nullptr || blankless_key_ == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
     return;
@@ -6207,7 +6197,8 @@ void NWebImpl::ClearBlanklessKey() {
   blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
 }
 
-void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file) {
+void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file, int32_t width,
+                                      int32_t height) {
   if (nweb_handle_ == nullptr || lcp_time == INT32_MAX || lcp_time <= 0 || file.empty()) {
     return;
   }
@@ -6221,14 +6212,22 @@ void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, 
   }
   lcp_time = std::min(lcp_time, 2000);  // 2000 ms
   if (is_visible_) {
-    nweb_handle_->OnInsertBlanklessFrame(file);
+    nweb_handle_->OnInsertBlanklessFrameWithSize(file, width, height);
+    if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      nweb_handle_->OnInsertBlanklessFrame(file);
+      LOG(INFO) << "blankless nweb_handler_->OnInsertBlanklessFrame() called!";
+    }
     nweb_handle_->OnRemoveBlanklessFrame(lcp_time);
     instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_](){
       handle->OnRemoveBlanklessFrame(0);
     });
   } else {
-    instance.RegisterFrameInsertCallback(	nweb_id_, blankless_key_, [handle = this->nweb_handle_, file](){
-      handle->OnInsertBlanklessFrame(file);
+    instance.RegisterFrameInsertCallback(	nweb_id_, blankless_key_, [handle = this->nweb_handle_, file, width, height](){
+      handle->OnInsertBlanklessFrameWithSize(file, width, height);
+      if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+        handle->OnInsertBlanklessFrame(file);
+        LOG(INFO) << "blankless nweb_handler_->OnInsertBlanklessFrame() called!";
+      }
     }, lcp_time);
   }
 }

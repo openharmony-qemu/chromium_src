@@ -16,14 +16,13 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_RESOURCE_SCRIPT_RESOURCE_UTILS_H_
 
 #include "arkweb/build/features/features.h"
-#include "third_party/blink/renderer/platform/heap/persistent.h"
 
 namespace blink {
 class ScriptResource;
 
 class ScriptResourceUtils {
 public:
-	Persistent<ScriptResource> scriptResource;
+	ScriptResource* scriptResource;
 	ScriptResourceUtils(ScriptResource* impl);
 
 #if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)

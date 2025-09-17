@@ -18,14 +18,13 @@
 
 #include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
-#include "third_party/blink/renderer/platform/heap/persistent.h"
 
 namespace blink {
 class CSSStyleSheetResource;
 
 class CSSStyleSheetResourceUtils {
  public:
-  Persistent<CSSStyleSheetResource> cssStyleSheetResource;
+  CSSStyleSheetResource* cssStyleSheetResource;
   CSSStyleSheetResourceUtils(CSSStyleSheetResource* impl);
 
 #if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)

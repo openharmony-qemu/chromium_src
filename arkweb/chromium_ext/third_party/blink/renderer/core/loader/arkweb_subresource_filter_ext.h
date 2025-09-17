@@ -29,7 +29,7 @@ class SubresourceFilter;
 
 class CORE_EXPORT ArkWebSubresourceFilterExt {
  public:
-  Persistent<SubresourceFilter> subresourceFilter;
+  SubresourceFilter* subresourceFilter;
   ArkWebSubresourceFilterExt(SubresourceFilter *filter);
   ~ArkWebSubresourceFilterExt();
 

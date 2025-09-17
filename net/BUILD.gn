@@ -2650,7 +2650,8 @@ if (is_cronet_build) {
 target(_test_target_type, "net_unittests") {
   ldflags = [
     "-Wl,--wrap=BIO_new_mem_buf",
-    "-Wl,--wrap=X509_STORE_CTX_new"
+    "-Wl,--wrap=X509_STORE_CTX_new",
+    "-W1,--wrap=OH_NetStack_GetCertificatesForHostName",
   ]
   sources = [
     "base/address_family_unittest.cc",
@@ -3061,7 +3062,10 @@ target(_test_target_type, "net_unittests") {
   }
 
   if (is_ohos) {
-    sources += [ "//arkweb/chromium_ext/net/cert/test_root_certs_ohos.cc" ]
+    sources += [
+      "//arkweb/chromium_ext/net/cert/test_root_certs_ohos.cc",
+      "//net/tools/transport_security_state_generator/cert_util.cc",
+    ]
     defines += [ "NET_UNITTESTS_OHOS_ENABLE" ]
   }
 
@@ -3127,11 +3131,9 @@ target(_test_target_type, "net_unittests") {
   }
 
   if (is_android || is_chromeos_ash) {
-    sources += [
-      "base/network_change_notifier_passive_unittest.cc",
-    ]
+    sources += [ "base/network_change_notifier_passive_unittest.cc" ]
   }
-  if (is_arkweb && arkweb_ext_http_dns_fallback) {
+  if (is_arkweb) {
     sources += [
       "//arkweb/chromium_ext/net/base/network_change_notifier_passive_for_include_unittest.cc",
     ]

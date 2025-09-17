@@ -156,12 +156,62 @@ class NetworkChangeNotifierPassiveExtTest : public testing::Test {
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
 TEST_F(NetworkChangeNotifierPassiveExtTest,
        ConvertOhosConnTypeToNetBaseConnType) {
-  auto type = ConvertOhosConnTypeToNetBaseConnType(
-      OHOS::NWeb::NetConnectType::CONNECTION_UNKNOWN);
-  EXPECT_EQ(type,
-            net::NetworkChangeNotifier::ConnectionType::CONNECTION_UNKNOWN);
-  auto sub_type = ConvertOhosConnSubtypeToNetBaseConnSubtype(
-      OHOS::NWeb::NetConnectSubtype::SUBTYPE_UNKNOWN);
+  std::map<net::NetworkChangeNotifier::ConnectionType,
+           OHOS::NWeb::NetConnectType>
+      connection_type_map = {
+          {net::NetworkChangeNotifier::ConnectionType::CONNECTION_UNKNOWN,
+           OHOS::NWeb::NetConnectType::CONNECTION_UNKNOWN},
+          {net::NetworkChangeNotifier::ConnectionType::CONNECTION_ETHERNET,
+           OHOS::NWeb::NetConnectType::CONNECTION_ETHERNET},
+          {net::NetworkChangeNotifier::ConnectionType::CONNECTION_WIFI,
+           OHOS::NWeb::NetConnectType::CONNECTION_WIFI},
+          {net::NetworkChangeNotifier::ConnectionType::CONNECTION_2G,
+           OHOS::NWeb::NetConnectType::CONNECTION_2G},
+          {net::NetworkChangeNotifier::ConnectionType::CONNECTION_3G,
+           OHOS::NWeb::NetConnectType::CONNECTION_3G},
+          {net::NetworkChangeNotifier::ConnectionType::CONNECTION_4G,
+           OHOS::NWeb::NetConnectType::CONNECTION_4G},
+          {net::NetworkChangeNotifier::ConnectionType::CONNECTION_NONE,
+           OHOS::NWeb::NetConnectType::CONNECTION_NONE},
+          {net::NetworkChangeNotifier::ConnectionType::CONNECTION_BLUETOOTH,
+           OHOS::NWeb::NetConnectType::CONNECTION_BLUETOOTH},
+          {net::NetworkChangeNotifier::ConnectionType::CONNECTION_5G,
+           OHOS::NWeb::NetConnectType::CONNECTION_5G},
+      };
+  for (auto [notifier_type, nweb_type] : connection_type_map) {
+    auto type = ConvertOhosConnTypeToNetBaseConnType(nweb_type);
+    EXPECT_EQ(type, notifier_type);
+  }
+}
+
+TEST_F(NetworkChangeNotifierPassiveExtTest,
+       ConvertOhosConnSubtypeToNetBaseConnSubtype) {
+  std::map<net::NetworkChangeNotifier::ConnectionSubtype,
+           OHOS::NWeb::NetConnectSubtype>
+      connection_type_map = {
+          {net::NetworkChangeNotifier::ConnectionSubtype::SUBTYPE_UNKNOWN,
+           OHOS::NWeb::NetConnectSubtype::SUBTYPE_UNKNOWN},
+          {net::NetworkChangeNotifier::ConnectionSubtype::SUBTYPE_NONE,
+           OHOS::NWeb::NetConnectSubtype::SUBTYPE_NONE},
+          {net::NetworkChangeNotifier::ConnectionSubtype::SUBTYPE_OTHER,
+           OHOS::NWeb::NetConnectSubtype::SUBTYPE_OTHER},
+          {net::NetworkChangeNotifier::ConnectionSubtype::SUBTYPE_GSM,
+           OHOS::NWeb::NetConnectSubtype::SUBTYPE_GSM},
+          {net::NetworkChangeNotifier::ConnectionSubtype::SUBTYPE_IDEN,
+           OHOS::NWeb::NetConnectSubtype::SUBTYPE_IDEN},
+          {net::NetworkChangeNotifier::ConnectionSubtype::SUBTYPE_CDMA,
+           OHOS::NWeb::NetConnectSubtype::SUBTYPE_CDMA},
+          {net::NetworkChangeNotifier::ConnectionSubtype::SUBTYPE_1XRTT,
+           OHOS::NWeb::NetConnectSubtype::SUBTYPE_1XRTT},
+          {net::NetworkChangeNotifier::ConnectionSubtype::SUBTYPE_GPRS,
+           OHOS::NWeb::NetConnectSubtype::SUBTYPE_GPRS},
+          {net::NetworkChangeNotifier::ConnectionSubtype::SUBTYPE_EDGE,
+           OHOS::NWeb::NetConnectSubtype::SUBTYPE_EDGE},
+      };
+  for (auto [notifier_type, nweb_type] : connection_type_map) {
+    auto type = ConvertOhosConnSubtypeToNetBaseConnSubtype(nweb_type);
+    EXPECT_EQ(type, notifier_type);
+  }
 }
 
 // network_change_notifier_posix_ is null

@@ -1,45 +1,41 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd. All rights reserved.
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
 #include <stdlib.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "base/base64.h"
 #include "base/base_paths.h"
 #include "base/base_switches.h"
-#include "base/command_line.h"
-#include "base/containers/span.h"
+
 #include "base/files/file_util.h"
 #include "base/memory/scoped_refptr.h"
-#include "base/path_service.h"
 #include "base/test/scoped_command_line.h"
 #include "base/test/task_environment.h"
-#include "base/time/time.h"
 #include "net/cert/cert_net_fetcher.h"
 #include "net/cert/cert_verify_result.h"
-#include "net/cert/known_roots.h"
 #include "net/cert/mock_cert_net_fetcher.h"
 #include "net/cert/test_root_certs.h"
-#include "net/cert/x509_certificate.h"
-#include "net/cert/x509_util.h"
 #include "net/log/net_log_with_source.h"
 #include "net/test/cert_builder.h"
 #include "net/test/cert_test_util.h"
-#include "net/test/test_certificate_data.h"
-#include "openssl/err.h"
-#include "openssl/ossl_typ.h"
-#include "openssl/x509.h"
-#include "openssl/x509_vfy.h"
 #include "third_party/boringssl/src/pki/cert_errors.h"
-#include "third_party/boringssl/src/pki/parsed_certificate.h"
 #include "url/gurl.h"
 
 #define protected public
@@ -55,54 +51,54 @@ using ::testing::Return;
 
 namespace net {
 namespace {
-const char kHostname[] = "example.com";
+const char kHostname[] = "www.example.com";
 const char kUrl[] = "http://aia.test/root";
 const GURL kRootURL(kUrl);
 const GURL kIntermediateURL("http://aia.test/intermediate");
-
-const char kTestHostname2[] = "test.example.org";
 const char kInvalidPEM[] = "invalid pem data";
-
-const base::FilePath::StringPieceType kTestOkCertPath =
-    FILE_PATH_LITERAL("cacert.pem");
-
-base::FilePath GetTestCertsPath() {
-  base::FilePath file_path;
-  base::PathService::Get(base::BasePathKey::DIR_SRC_TEST_DATA_ROOT, &file_path);
-  file_path = file_path.Append("net/testdata/");
-  return file_path;
-}
-
-std::unique_ptr<CertBuilder> CreateCertBuilderFromCertFile(
-    base::FilePath::StringPieceType file_path_string,
-    bool self_sign = false) {
-  base::FilePath path = GetTestCertsPath();
-  path = path.Append(file_path_string);
-  scoped_refptr<X509Certificate> cert = ImportCertFromFile(path);
-  if (!cert) {
-    return nullptr;
-  }
-
-  if (!self_sign) {
-    return CertBuilder::FromStaticCert(cert->cert_buffer(), nullptr);
-  }
-  return CertBuilder::FromStaticCertFile(path);
-}
 }  // namespace
 
 class CertVerifyProcOHOSTest : public ::testing::Test {
- public:
+ protected:
   void SetUp() override {
     fetcher_ = base::MakeRefCounted<MockCertNetFetcher>();
     certVerifyProc_ = base::MakeRefCounted<CertVerifyProcOHOS>(fetcher_);
     scoped_command_line_ = std::make_unique<base::test::ScopedCommandLine>();
+    GetCertVerifyProcStub()->OH_NetStack_GetCertificatesForHostName =
+        GetCertificatesForHostName_stub;
   }
 
   void TearDown() override {
     ASSERT_TRUE(testing::Mock::VerifyAndClearExpectations(fetcher_.get()));
+    GetCertVerifyProcStub()->OH_NetStack_GetCertificatesForHostName = nullptr;
   }
 
- protected:
+  static int32_t GetCertificatesForHostName_stub(const char* hostname,
+                                                 NetStack_Certificates* certs) {
+    if (hostname == nullptr || certs == nullptr) {
+      return -1;
+    }
+    certs->length = 0;
+    certs->content = nullptr;
+    base::FilePath path = GetTmpCertDir();
+    size_t content_size = sizeof(char*);
+    size_t total = content_size + path.value().size() + 1;
+    char* ptr = (char*)malloc(total);
+    if (ptr == nullptr) {
+      return -1;
+    }
+    char** content_ptr = reinterpret_cast<char**>(ptr);
+    char* cert_ptr = ptr + content_size;
+    if (strcpy(cert_ptr, path.value().c_str()) == nullptr) {
+      free(ptr);
+      return -1;
+    }
+    content_ptr[0] = cert_ptr;
+    certs->length = 1;
+    certs->content = content_ptr;
+    return 0;
+  }
+
   scoped_refptr<CertVerifyProcOHOS> certVerifyProc_;
   scoped_refptr<MockCertNetFetcher> fetcher_;
   std::unique_ptr<base::test::ScopedCommandLine> scoped_command_line_;
@@ -110,13 +106,12 @@ class CertVerifyProcOHOSTest : public ::testing::Test {
 
 // Verify
 TEST_F(CertVerifyProcOHOSTest, VerifyInternal_ValidCertificateChain) {
-  auto builder = CreateCertBuilderFromCertFile(kTestOkCertPath);
-  if (builder.get() == nullptr) {
-    return;
-  }
+  auto [leaf, intermediate, root] = CertBuilder::CreateSimpleChain3();
+  ScopedTestRoot test_root(root->GetX509Certificate());
+
   CertVerifyResult verify_result;
   int result = certVerifyProc_->VerifyInternal(
-      builder->GetX509CertificateChain().get(), kHostname, std::string(),
+      leaf->GetX509CertificateChain().get(), kHostname, std::string(),
       std::string(), 0, &verify_result, NetLogWithSource());
   EXPECT_EQ(result, OK);
   EXPECT_FALSE(IsCertStatusError(verify_result.cert_status));
@@ -126,7 +121,7 @@ TEST_F(CertVerifyProcOHOSTest, VerifyInternal_ValidCertificateChain) {
 
 TEST_F(CertVerifyProcOHOSTest, VerifyInternal_Fail) {
   auto [leaf, intermediate, root] = CertBuilder::CreateSimpleChain3();
-  ScopedTestRoot test_root(root->GetX509Certificate());
+  // do not save root cert
 
   CertVerifyResult verify_result;
   int result = certVerifyProc_->VerifyInternal(
@@ -141,13 +136,11 @@ TEST_F(CertVerifyProcOHOSTest, VerifyInternal_TryAIAFetch_Fail) {
   root->SetCaIssuersUrl(kRootURL);
   intermediate->SetCaIssuersUrl(kRootURL);
   leaf->SetCaIssuersUrl(kIntermediateURL);
-  leaf->SetSubjectAltName(kHostname);
-  ScopedTestRoot test_root(root->GetX509Certificate());
+  // do not save root cert
 
-  EXPECT_CALL(*fetcher_, FetchCaIssuers(_, _, _))
+  EXPECT_CALL(*fetcher_, FetchCaIssuers(kRootURL, _, _))
       .WillOnce(Return(ByMove(
           MockCertNetFetcherRequest::Create(intermediate->GetCertBuffer()))));
-
   CertVerifyResult verify_result;
   int result = certVerifyProc_->VerifyInternal(
       leaf->GetX509CertificateChain().get(), kHostname, std::string(),
@@ -156,26 +149,29 @@ TEST_F(CertVerifyProcOHOSTest, VerifyInternal_TryAIAFetch_Fail) {
   EXPECT_TRUE(verify_result.cert_status & CERT_STATUS_AUTHORITY_INVALID);
 }
 
-TEST_F(CertVerifyProcOHOSTest, VerifyInternal_TryAIAFetch_Success) {
-  auto [leaf, intermediate, root] = CertBuilder::CreateSimpleChain3();
-  root->SetCaIssuersUrl(kRootURL);
-  intermediate->SetCaIssuersUrl(kRootURL);
-  leaf->SetCaIssuersUrl(kIntermediateURL);
-  ScopedTestRoot test_root(root->GetX509Certificate());
+TEST_F(CertVerifyProcOHOSTest, VerifyInternal_TryAIAFetch_FetchFail) {
+  auto [leaf1, intermediate1, root1] = CertBuilder::CreateSimpleChain3();
+  leaf1->SetCaIssuersUrl(kRootURL);
+  intermediate1->SetCaIssuersUrl(kRootURL);
 
-  auto builder = CreateCertBuilderFromCertFile(kTestOkCertPath);
-  if (builder.get() == nullptr) {
-    return;
-  }
-  EXPECT_CALL(*fetcher_, FetchCaIssuers(_, _, _))
-      .WillOnce(Return(
-          ByMove(MockCertNetFetcherRequest::Create(builder->GetCertBuffer()))));
+  EXPECT_CALL(*fetcher_, FetchCaIssuers(kRootURL, _, _))
+      .WillOnce(Return(ByMove(
+          MockCertNetFetcherRequest::Create(ERR_DISALLOWED_URL_SCHEME))));
+
+  // fail OH_NetStack_GetCertificatesForHostName
+  GetCertVerifyProcStub()->OH_NetStack_GetCertificatesForHostName =
+      [](const char* hostname, NetStack_Certificates* certs) {
+        certs->length = 0;
+        certs->content = nullptr;
+        return -1;
+      };
 
   CertVerifyResult verify_result;
   int result = certVerifyProc_->VerifyInternal(
-      leaf->GetX509CertificateChain().get(), "www.example.com", std::string(),
+      intermediate1->GetX509Certificate().get(), kHostname, std::string(),
       std::string(), 0, &verify_result, NetLogWithSource());
-  EXPECT_EQ(result, OK);
+  EXPECT_NE(result, OK);
+  EXPECT_TRUE(verify_result.cert_status & CERT_STATUS_AUTHORITY_INVALID);
 }
 
 TEST_F(CertVerifyProcOHOSTest, Constructor_ValidFetcher) {
@@ -317,14 +313,20 @@ TEST_F(CertVerifyProcOHOSTest, PerformAIAFetchAndAddResultToVector) {
   std::vector<std::string> chain_bytes;
   auto [leaf, intermediate, root] = CertBuilder::CreateSimpleChain3();
 
-  EXPECT_CALL(*fetcher_, FetchCaIssuers(kTestURL, _, _))
-      .WillOnce(Return(ByMove(
-          MockCertNetFetcherRequest::Create(intermediate->GetCertBuffer()))));
   bssl::ParsedCertificateList cert_list;
   bool result =
       PerformAIAFetchAndAddResultToVector(fetcher_, "invalid_url", &cert_list);
   EXPECT_FALSE(result);
 
+  EXPECT_CALL(*fetcher_, FetchCaIssuers(kTestURL, _, _))
+      .WillOnce(Return(ByMove(
+          MockCertNetFetcherRequest::Create(ERR_DISALLOWED_URL_SCHEME))));
+  result = PerformAIAFetchAndAddResultToVector(fetcher_, kTestURL.spec(),
+                                               &cert_list);
+  EXPECT_FALSE(result);
+  EXPECT_CALL(*fetcher_, FetchCaIssuers(kTestURL, _, _))
+      .WillOnce(Return(ByMove(
+          MockCertNetFetcherRequest::Create(intermediate->GetCertBuffer()))));
   result = PerformAIAFetchAndAddResultToVector(fetcher_, kTestURL.spec(),
                                                &cert_list);
   EXPECT_TRUE(result);
@@ -391,7 +393,7 @@ TEST_F(CertVerifyProcOHOSTest, FindLastCertWithUnknownIssuer_SelfEqual) {
   EXPECT_EQ(ret, X509_V_OK);
   EXPECT_EQ(3u, certs.size());
   auto parsedCerts = FindLastCertWithUnknownIssuer(certs, certs[0]);
-  EXPECT_NE(parsedCerts, nullptr);
+  EXPECT_EQ(parsedCerts, nullptr);
 }
 
 X509_STORE_CTX* X509_STORE_CTX_new_stub() {

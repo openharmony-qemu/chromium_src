@@ -1,55 +1,25 @@
-// Copyright (c) 2022 Huawei Device Co., Ltd. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-// Based on cert_verify_proc_android.cc originally written by
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-#include <openssl/bio.h>
-#include <openssl/pem.h>
-#include <unistd.h>
-
-#include <set>
-#include <string>
-#include <vector>
-
-#include "arkweb/chromium_ext/url/ohos/log_utils.h"
-#include "base/base64.h"
-#include "base/base_switches.h"
-#include "base/command_line.h"
-#include "base/containers/adapters.h"
-#include "base/files/file_enumerator.h"
-#include "base/files/file_util.h"
-#include "base/logging.h"
-#include "base/notreached.h"
-#include "base/strings/string_util.h"
-#include "base/strings/stringprintf.h"
-#include "crypto/sha2.h"
-#include "net/cert/asn1_util.h"
-#include "net/cert/cert_net_fetcher.h"
-#include "net/cert/cert_verify_proc_ohos.h"
-#include "net/cert/cert_verify_result.h"
-#include "net/cert/crl_set.h"
-#include "net/cert/known_roots.h"
-#include "net/cert/x509_certificate.h"
-#include "net/cert/x509_util.h"
-#include "openssl/err.h"
-#include "openssl/ossl_typ.h"
-#include "openssl/x509.h"
-#include "openssl/x509_vfy.h"
-#include "third_party/boringssl/src/crypto/x509/internal.h"
-#include "third_party/boringssl/src/pki/cert_errors.h"
-#include "third_party/boringssl/src/pki/parsed_certificate.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#include "url/gurl.h"
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#include <network/netstack/net_ssl/net_ssl_c.h>
 
 struct CertVerifyProcStub {
-  bool (*GetTrustAnchorsForHostName)(const std::string& hostname,
-                                     std::vector<std::string>& certs);
   BIO* (*BIO_new_mem_buf)(char* cert, int size);
   X509_STORE_CTX* (*X509_STORE_CTX_new)(void);
+  int32_t (*OH_NetStack_GetCertificatesForHostName)(
+      const char* hostname,
+      NetStack_Certificates* certs);
 };
 
 #ifdef __cplusplus
@@ -77,6 +47,31 @@ X509_STORE_CTX* __wrap_X509_STORE_CTX_new(void) {
   return __real_X509_STORE_CTX_new();
 }
 
+int32_t __real_OH_NetStack_GetCertificatesForHostName(const char*,
+                                                      NetStack_Certificates*);
+int32_t __wrap_OH_NetStack_GetCertificatesForHostName(
+    const char* hostname,
+    NetStack_Certificates* certs) {
+  if (GetCertVerifyProcStub()->OH_NetStack_GetCertificatesForHostName) {
+    return GetCertVerifyProcStub()->OH_NetStack_GetCertificatesForHostName(
+        hostname, certs);
+  }
+  return __real_OH_NetStack_GetCertificatesForHostName(hostname, certs);
+}
+
+extern void __real_OH_Netstack_DestroyCertificatesContent(
+    NetStack_Certificates* certs);
+void __wrap_OH_Netstack_DestroyCertificatesContent(
+    NetStack_Certificates* certs) {
+  if (certs == nullptr || certs->content == nullptr) {
+    return;
+  }
+  if (GetCertVerifyProcStub()->OH_NetStack_GetCertificatesForHostName) {
+    free(certs->content);
+    return;
+  }
+  return __real_OH_Netstack_DestroyCertificatesContent(certs);
+}
 #ifdef __cplusplus
 }
 #endif
@@ -108,12 +103,6 @@ static const char kSelfSignedWithCommonNamePEM[] =
     "9y6A59guc1RFVPeEQAxUIUDZGDQlB3PtmrXrp1/LAaDYvQCstDBgiZoamy+xSROP\n"
     "BU2KIzRj2EUOWqtIURU4Q2QC1fbVqxVjfPowX/A=\n"
     "-----END CERTIFICATE-----\n";
-// Valid PEM certificate headers but invalid BASE64 content.
-static const char kInvalidCertificatePEM[] =
-    "-----BEGIN CERTIFICATE-----\n"
-    "This is invalid base64.\n"
-    "It contains some (#$*) invalid characters.\n"
-    "-----END CERTIFICATE-----\n";
 }  // namespace
 
 void GetChainDEREncodedBytes(X509Certificate* cert,
@@ -138,58 +127,8 @@ int TryVerifyWithAIAFetching(const std::vector<std::string>& cert_bytes,
 std::shared_ptr<const bssl::ParsedCertificate> FindLastCertWithUnknownIssuer(
     const bssl::ParsedCertificateList& certs,
     const std::shared_ptr<const bssl::ParsedCertificate>& start);
-void ConvertToParsedCertificates(const std::vector<std::string>& cert_bytes,
-                                 bssl::CertErrors& errors,
-                                 bssl::ParsedCertificateList& certs);
-
-
-class MockCertManagerAdapter final : public OHOS::NWeb::CertManagerAdapter {
- public:
-  MockCertManagerAdapter() = default;
-  ~MockCertManagerAdapter() override = default;
-
-  uint32_t GetCertMaxSize() override { return 0; }
-  uint32_t GetAppCertMaxSize() override { return 0; }
-  int32_t GetSytemRootCertData(uint32_t certCount, uint8_t* certData) override {
-    return 0;
-  }
-  uint32_t GetSytemRootCertSum() override { return 0; }
-  int32_t GetUserRootCertData(uint32_t certCount, uint8_t* certData) override {
-    return 0;
-  }
-  uint32_t GetUserRootCertSum() override { return 0; }
-  int32_t GetAppCert(uint8_t* uriData,
-                     uint8_t* certData,
-                     uint32_t* len) override {
-    return 0;
-  }
-  int32_t Sign(const uint8_t* uri,
-               const uint8_t* certData,
-               uint32_t certDataLen,
-               uint8_t* signData,
-               uint32_t signDataLen) override {
-    return 0;
-  }
-  int32_t GetCertDataBySubject(const char* subjectName,
-                               uint8_t* certData,
-                               int32_t certType) override {
-    return 0;
-  }
-  bool GetTrustAnchorsForHostName(const std::string& hostname,
-                                  std::vector<std::string>& certs) override {
-    if (GetCertVerifyProcStub()->GetTrustAnchorsForHostName) {
-      return GetCertVerifyProcStub()->GetTrustAnchorsForHostName(hostname,
-                                                                 certs);
-    }
-    return false;
-  }
-  bool GetPinSetForHostName(const std::string& hostname,
-                            std::vector<std::string>& pins) override {
-    return false;
-  }
-};
-
-std::unique_ptr<OHOS::NWeb::CertManagerAdapter> MockGetRootCertDataAdapter() {
-  return std::make_unique<MockCertManagerAdapter>();
-}
+int ConvertToParsedCertificates(const std::vector<std::string>& cert_bytes,
+                                bssl::CertErrors& errors,
+                                bssl::ParsedCertificateList& certs);
+base::FilePath GetTmpCertDir();
 }  // namespace net

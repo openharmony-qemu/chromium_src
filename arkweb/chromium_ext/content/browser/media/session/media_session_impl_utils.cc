@@ -55,7 +55,7 @@ void MediaSessionImplUtils::IsSuspended() {
 #endif
 }
 
-void MediaSessionImplUtils::PushBackMediaImage(std::vector<media_session::MediaImage> artwork) {
+void MediaSessionImplUtils::PushBackMediaImage(std::vector<media_session::MediaImage>& artwork) {
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
   if (impl->web_contents()) {
     std::string attrib_image_url = impl->web_contents()->GetVideoPoster();

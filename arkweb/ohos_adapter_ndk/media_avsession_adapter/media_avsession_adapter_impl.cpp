@@ -581,10 +581,11 @@ bool MediaAVSessionAdapterImpl::StartAsyncPosterUpdate() {
 
 void MediaAVSessionAdapterImpl::ProcessPosterQueue() {
     WVLOG_I("ohmedia: start async task");
+    std::string url;
     while (!url_queue_.empty()) {
         {
             std::lock_guard<std::mutex> lock(url_mutex_);
-            std::string url = url_queue_.front();
+            url = url_queue_.front();
             url_queue_.pop_front();
         }
         AVMetadata_Result ret = OH_AVMetadataBuilder_SetMediaImageUri(builder_, url.c_str());
@@ -594,16 +595,33 @@ void MediaAVSessionAdapterImpl::ProcessPosterQueue() {
         }
         poster_url_ = url;
         OH_AVMetadata *avMetadata = nullptr;
-        auto ret = OH_AVMetadataBuilder_GenerateAVMetadata(builder_, &avMetadata);
+        ret = OH_AVMetadataBuilder_GenerateAVMetadata(builder_, &avMetadata);
+        if (ret != AVMETADATA_SUCCESS) {
+            WVLOG_E("GenerateAVMetadata failed. ret: %{public}d", ret);
+            ret = OH_AVMetadata_Destroy(avMetadata);
+            if (ret != AVMETADATA_SUCCESS) {
+                WVLOG_E("destory avmetadata failed. ret: %{public}d", ret);
+            }
+            continue;
+        }
+           
         {
             std::lock_guard<std::mutex> lock(avsession_mutex_);
             if (!avSession_) {
+                ret = OH_AVMetadata_Destroy(avMetadata);
+                if (ret != AVMETADATA_SUCCESS) {
+                    WVLOG_E("destory avmetadata failed. ret: %{public}d", ret);
+                }
                 continue;
             }
             Activate();
             AVSession_ErrCode avsessionCode = OH_AVSession_SetAVMetadata(avSession_, avMetadata);
             if (avsessionCode != AV_SESSION_ERR_SUCCESS) {
                 WVLOG_E("SetMetadata failed. ret: %{public}d", avsessionCode );
+                ret = OH_AVMetadata_Destroy(avMetadata);
+                if (ret != AVMETADATA_SUCCESS) {
+                    WVLOG_E("destory avmetadata failed. ret: %{public}d", ret);
+                }
                 continue;
             }
         }

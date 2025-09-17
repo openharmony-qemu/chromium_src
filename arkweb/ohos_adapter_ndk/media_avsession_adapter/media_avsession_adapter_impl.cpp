@@ -150,13 +150,15 @@ void MediaAVSessionAdapterImpl::DestroyAVSession() {
     WVLOG_I("DestroyAVSession in");
     {
         std::lock_guard<std::mutex> lock(avsession_Mutex_);
-        AVSession_ErrCode ret = OH_AVSession_Destroy(avSession_);
-        if (ret != AV_SESSION_ERR_SUCCESS) {
-            WVLOG_E("DestroyAVSession Destroy() failed, ret: %{public}d", ret);
-        } else {
-            WVLOG_I("DestroyAVSession Destroy() success, ret: %{public}d", ret);
+        if (avSession_) {
+                AVSession_ErrCode ret = OH_AVSession_Destroy(avSession_);
+            if (ret != AV_SESSION_ERR_SUCCESS) {
+                WVLOG_E("DestroyAVSession Destroy() failed, ret: %{public}d", ret);
+            } else {
+                WVLOG_I("DestroyAVSession Destroy() success, ret: %{public}d", ret);
+            }
+            avSession_ = nullptr;
         }
-        avSession_ = nullptr;
     }
     if (avSessionKey_) {
         auto iter = avSessionMap.find(avSessionKey_->ToString());

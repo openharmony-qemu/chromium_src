@@ -3575,6 +3575,17 @@ test("content_unittests") {
   if (is_castos || is_cast_android) {
     deps += [ "//chromecast:chromecast_buildflags" ]
   }
+
+  if (arkweb_test) {
+    sources += arbweb_content_media_test_sources
+    include_dirs = [
+      "//arkweb/ohos_adapter_ndk/interfaces",
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+    ]
+    deps += [
+      "//arkweb/ohos_adapter_ndk:adapter_ndk",
+    ]
+  }
 }
 
 if (is_ios) {

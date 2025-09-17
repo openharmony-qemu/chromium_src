@@ -780,6 +780,12 @@ arkweb_content_renderer_test_sources = [
   "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos_unittest.cc",
 ]
 
+arbweb_content_media_test_sources = [
+  "//arkweb/chromium_ext/content/browser/media/session/media_session_controller_ext_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/media/session/media_session_impl_for_include_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/media/media_web_contents_observer_for_include_unittest.cc",
+]
+
 arkweb_cc_layer_source = [
   "//arkweb/chromium_ext/cc/layer/layer_ext.h",
   "//arkweb/chromium_ext/cc/layer/layer_impl_utils.cc",

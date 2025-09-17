@@ -1013,7 +1013,11 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   virtual void OnBrowserBackground() {}
 #endif
 
- protected:
+#if BUILDFLAG(ARKWEB_TEST)
+  public:
+#else
+  protected:
+#endif  // ARKWEB_TEST
   // Use this constructor when the object is tied to a single WebContents for
   // its entire lifetime.
   explicit WebContentsObserver(WebContents* web_contents);
@@ -1027,7 +1031,12 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   // Start observing a different WebContents; used with the default constructor.
   void Observe(WebContents* web_contents);
 
- private:
+#if BUILDFLAG(ARKWEB_TEST)
+  public:
+#else
+  private:
+#endif  // ARKWEB_TEST
+
   friend class WebContentsImpl;
 
   void ResetWebContents();

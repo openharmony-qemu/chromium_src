@@ -25,8 +25,8 @@ bool MediaSessionImpl::HasOnlyOneShotPlayersPublic() const {
   return HasOnlyOneShotPlayers();
 }
 
-bool MediaSessionImpl::HasWebrtcOneShotPlayersPublic() const {
-  return has_webrtc_one_shot_players_;
+bool MediaSessionImpl::HasOneShotPlayersWhenSetMetadataPublic() const {
+  return has_one_shot_players_;
 }
 #endif
 

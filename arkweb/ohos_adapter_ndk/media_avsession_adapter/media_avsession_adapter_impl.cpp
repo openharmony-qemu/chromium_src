@@ -149,7 +149,7 @@ bool MediaAVSessionAdapterImpl::CreateAVSession(MediaAVSessionType type) {
 void MediaAVSessionAdapterImpl::DestroyAVSession() {
     WVLOG_I("DestroyAVSession in");
     {
-        std::lock_guard<std::mutex> lock(avsession_Mutex_);
+        std::lock_guard<std::mutex> lock(avsession_mutex_);
         if (avSession_) {
                 AVSession_ErrCode ret = OH_AVSession_Destroy(avSession_);
             if (ret != AV_SESSION_ERR_SUCCESS) {
@@ -534,7 +534,7 @@ bool MediaAVSessionAdapterImpl::CreateNewSession(const MediaAVSessionType& type)
         return;
     }
     {
-        std::lock_guard<std::mutex> lock(avsession_Mutex_);
+        std::lock_guard<std::mutex> lock(avsession_mutex_);
         AVSession_ErrCode ret = OH_AVSession_Create(sessionType, "av_media_session",
         avSessionKey_->GetBundleName().c_str(), avSessionKey_->GetAbilityName().c_str(),
         &avSession_);
@@ -551,27 +551,27 @@ bool MediaAVSessionAdapterImpl::CreateNewSession(const MediaAVSessionType& type)
 }
 
 bool MediaAVSessionAdapterImpl::IsUrlInQueue(const std::string& url) {
-    return std::find(url_Queue_.begin(), url_Queue_.end(), url) != url_Queue_.end();
+    return std::find(url_queue_.begin(), url_queue_.end(), url) != url_queue_.end();
 }
 
 void MediaAVSessionAdapterImpl::AddUrl(const std::string& url) {
-    std::lock_guard<std::mutex> lock(url_Mutex_);
+    std::lock_guard<std::mutex> lock(url_mutex_);
     if (!IsUrlInQueue(url)) {
-        if (url_Queue_.size() >= URL_NUM) {
-            url_Queue_.pop_front();
+        if (url_queue_.size() >= URL_NUM) {
+            url_queue_.pop_front();
         }
-        url_Queue_.push_back(url);
+        url_queue_.push_back(url);
     }
 }
 
 bool MediaAVSessionAdapterImpl::StartAsyncPosterUpdate() {
-    if (media_Futures_.valid() &&
-        media_Futures_.wait_for(std::chrono::seconds(TIME_OUT)) != std::future_status::ready) {
+    if (media_futures_.valid() &&
+        media_futures_.wait_for(std::chrono::seconds(TIME_OUT)) != std::future_status::ready) {
         WVLOG_E("ohmedia: previous task not finished yet");
         return false;
     }
     std::weak_ptr<MediaAVSessionAdapterImpl> weak_this = shared_from_this();
-    media_Futures_ = std::async(std::launch::async, [weak_this]() {
+    media_futures_ = std::async(std::launch::async, [weak_this]() {
         if (auto weak = weak_this.lock()) {
             weak->ProcessPosterQueue();
         }
@@ -581,30 +581,30 @@ bool MediaAVSessionAdapterImpl::StartAsyncPosterUpdate() {
 
 void MediaAVSessionAdapterImpl::ProcessPosterQueue() {
     WVLOG_I("ohmedia: start async task");
-    while (!url_Queue_.empty()) {
+    while (!url_queue_.empty()) {
         {
-            std::lock_guard<std::mutex> lock(url_Mutex_);
-            std::string url = url_Queue_.front();
-            url_Queue_.pop_front();
-            AVMetadata_Result ret = OH_AVMetadataBuilder_SetMediaImageUri(builder_, url.c_str());
-            if (ret != AVMETADATA_SUCCESS) {
-                WVLOG_E("OH_AVMetadataBuilder_SetMediaImageUri failed. ret: %{public}d", ret);
-                return;
-            }
-            poster_url_ = url;
+            std::lock_guard<std::mutex> lock(url_mutex_);
+            std::string url = url_queue_.front();
+            url_queue_.pop_front();
         }
+        AVMetadata_Result ret = OH_AVMetadataBuilder_SetMediaImageUri(builder_, url.c_str());
+        if (ret != AVMETADATA_SUCCESS) {
+            WVLOG_E("OH_AVMetadataBuilder_SetMediaImageUri failed. ret: %{public}d", ret);
+            continue;
+        }
+        poster_url_ = url;
         OH_AVMetadata *avMetadata = nullptr;
-        auto ret = OH_AVMetadataBuilder_GenerateAVMetadata(builder_, &avMetadata_);
+        auto ret = OH_AVMetadataBuilder_GenerateAVMetadata(builder_, &avMetadata);
         {
-            std::lock_guard<std::mutex> lock(avsession_Mutex_);
+            std::lock_guard<std::mutex> lock(avsession_mutex_);
             if (!avSession_) {
-                return;
+                continue;
             }
             Activate();
-            AVSession_ErrCode avsessionCode = OH_AVSession_SetAVMetadata(avSession_, avMetadata_);
+            AVSession_ErrCode avsessionCode = OH_AVSession_SetAVMetadata(avSession_, avMetadata);
             if (avsessionCode != AV_SESSION_ERR_SUCCESS) {
                 WVLOG_E("SetMetadata failed. ret: %{public}d", avsessionCode );
-                return;
+                continue;
             }
         }
         ret = OH_AVMetadata_Destroy(avMetadata);

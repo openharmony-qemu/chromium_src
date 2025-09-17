@@ -111,16 +111,16 @@ private:
     size_t callback_index_ = 0;
     static CallbackSharedWrapper<MediaAVSessionCallbackAdapter> callback_wrapper_;
 
-    std::future<void> media_Futures_;
+    std::future<void> media_futures_;
     std::string poster_url_ = "";
     std::string poster_new_ = "";
     std::string title_ = "";
     std::string artist_ = "";
     std::string album_ = "";
     int duration_ = 0;
-    std::deque<std::string> url_Queue_;
-    std::mutex url_Mutex_;
-    std::mutex avsession_Mutex_;
+    std::deque<std::string> url_queue_;
+    std::mutex url_mutex_;
+    std::mutex avsession_mutex_;
 };
 } // namespace OHOS::NWeb
 

@@ -245,7 +245,7 @@ bool OHOSAudioFocusController::CheckOneShotPlayersWhenSetMetadataOnUIThread(cons
         return false;
     }
 
-    content::MediaSessionImpl *mediaSession = content::MediaSessionImpl::Get(webContents);
+    content::MediaSessionImpl *mediaSession = content::MediaSessionImpl::FromWebContents(webContents);
     if (!mediaSession) {
         LOG(ERROR) << "CheckOneShotPlayersWhenSetMetadataOnUIThread MediaSession not available for WebContents";
         return false;

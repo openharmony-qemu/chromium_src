@@ -311,4 +311,193 @@ AVSession_ErrCode __wrap_OH_AVSession_SetPlaybackPosition(OH_AVSession* session,
 #ifdef __cplusplus
 }
 #endif
+
+bool MockOhSensorSupport::enableGetInfos = false;
+bool MockOhSensorSupport::enableCreateInfos = false;
+bool MockOhSensorSupport::enableDestroyInfos = false;
+bool MockOhSensorSupport::enableInfoGetType = false;
+bool MockOhSensorSupport::enableInfoGetMinSamplingInterval = false;
+bool MockOhSensorSupport::enableInfoGetMaxSamplingInterval = false;
+bool MockOhSensorSupport::enableCreateSubscriber = false;
+bool MockOhSensorSupport::enableSubscriberSetCallback = false;
+bool MockOhSensorSupport::enableCreateSubscriptionId = false;
+bool MockOhSensorSupport::enableSubscriptionIdSetType = false;
+bool MockOhSensorSupport::enableCreateSubscriptionAttribute = false;
+bool MockOhSensorSupport::enableSubscriptionAttributeSetSamplingInterval = false;
+bool MockOhSensorSupport::enableSubscribe = false;
+bool MockOhSensorSupport::enableUnsubscribe = false;
+bool MockOhSensorSupport::enableDestroySubscriber = false;
+bool MockOhSensorSupport::enableDestroySubscriptionId = false;
+bool MockOhSensorSupport::enableDestroySubscriptionAttribute = false;
+bool MockOhSensorSupport::enableEventGetType = false;
+bool MockOhSensorSupport::enableEventGetData = false;
+bool MockOhSensorSupport::enableEventGetTimestamp = false;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+Sensor_Result __wrap_OH_Sensor_GetInfos(Sensor_Info** infos, uint32_t* count) {
+    if (MockOhSensorSupport::enableGetInfos) {
+        return MockOhSensorSupport::getInstance().OH_Sensor_GetInfos(infos, count);
+    } else {
+        return __real_OH_Sensor_GetInfos(infos, count);
+    }
+}
+
+Sensor_Info** __wrap_OH_Sensor_CreateInfos(uint32_t count) {
+    if (MockOhSensorSupport::enableCreateInfos) {
+        return MockOhSensorSupport::getInstance().OH_Sensor_CreateInfos(count);
+    } else {
+        return __real_OH_Sensor_CreateInfos(count);
+    }
+}
+
+int32_t __wrap_OH_Sensor_DestroyInfos(Sensor_Info** infos, uint32_t count) {
+    if (MockOhSensorSupport::enableDestroyInfos) {
+        return MockOhSensorSupport::getInstance().OH_Sensor_DestroyInfos(infos, count);
+    } else {
+        return __real_OH_Sensor_DestroyInfos(infos, count);
+    }
+}
+
+int32_t __wrap_OH_SensorInfo_GetType(Sensor_Info* info, Sensor_Type* type) {
+    if (MockOhSensorSupport::enableInfoGetType) {
+        return MockOhSensorSupport::getInstance().OH_SensorInfo_GetType(info, type);
+    } else {
+        return __real_OH_SensorInfo_GetType(info, type);
+    }
+}
+
+int32_t __wrap_OH_SensorInfo_GetMinSamplingInterval(Sensor_Info* info, int64_t* interval) {
+    if (MockOhSensorSupport::enableInfoGetMinSamplingInterval) {
+        return MockOhSensorSupport::getInstance().OH_SensorInfo_GetMinSamplingInterval(info, interval);
+    } else {
+        return __real_OH_SensorInfo_GetMinSamplingInterval(info, interval);
+    }
+}
+
+int32_t __wrap_OH_SensorInfo_GetMaxSamplingInterval(Sensor_Info* info, int64_t* interval) {
+    if (MockOhSensorSupport::enableInfoGetMaxSamplingInterval) {
+        return MockOhSensorSupport::getInstance().OH_SensorInfo_GetMaxSamplingInterval(info, interval);
+    } else {
+        return __real_OH_SensorInfo_GetMaxSamplingInterval(info, interval);
+    }
+}
+
+Sensor_Subscriber* __wrap_OH_Sensor_CreateSubscriber() {
+    if (MockOhSensorSupport::enableCreateSubscriber) {
+        return MockOhSensorSupport::getInstance().OH_Sensor_CreateSubscriber();
+    } else {
+        return __real_OH_Sensor_CreateSubscriber();
+    }
+}
+
+int32_t __wrap_OH_SensorSubscriber_SetCallback(Sensor_Subscriber* subscriber, Sensor_EventCallback callback) {
+    if (MockOhSensorSupport::enableSubscriberSetCallback) {
+        return MockOhSensorSupport::getInstance().OH_SensorSubscriber_SetCallback(subscriber, callback);
+    } else {
+        return __real_OH_SensorSubscriber_SetCallback(subscriber, callback);
+    }
+}
+
+Sensor_SubscriptionId* __wrap_OH_Sensor_CreateSubscriptionId() {
+    if (MockOhSensorSupport::enableCreateSubscriptionId) {
+        return MockOhSensorSupport::getInstance().OH_Sensor_CreateSubscriptionId();
+    } else {
+        return __real_OH_Sensor_CreateSubscriptionId();
+    }
+}
+
+int32_t __wrap_OH_SensorSubscriptionId_SetType(Sensor_SubscriptionId* id, Sensor_Type type) {
+    if (MockOhSensorSupport::enableSubscriptionIdSetType) {
+        return MockOhSensorSupport::getInstance().OH_SensorSubscriptionId_SetType(id, type);
+    } else {
+        return __real_OH_SensorSubscriptionId_SetType(id, type);
+    }
+}
+
+Sensor_SubscriptionAttribute* __wrap_OH_Sensor_CreateSubscriptionAttribute() {
+    if (MockOhSensorSupport::enableCreateSubscriptionAttribute) {
+        return MockOhSensorSupport::getInstance().OH_Sensor_CreateSubscriptionAttribute();
+    } else {
+        return __real_OH_Sensor_CreateSubscriptionAttribute();
+    }
+}
+
+int32_t __wrap_OH_SensorSubscriptionAttribute_SetSamplingInterval(Sensor_SubscriptionAttribute* attr, int64_t samplingInterval) {
+    if (MockOhSensorSupport::enableSubscriptionAttributeSetSamplingInterval) {
+        return MockOhSensorSupport::getInstance().OH_SensorSubscriptionAttribute_SetSamplingInterval(attr, samplingInterval);
+    } else {
+        return __real_OH_SensorSubscriptionAttribute_SetSamplingInterval(attr, samplingInterval);
+    }
+}
+
+Sensor_Result __wrap_OH_Sensor_Subscribe(const Sensor_SubscriptionId* id, const Sensor_SubscriptionAttribute* attr, const Sensor_Subscriber* subscriber) {
+    if (MockOhSensorSupport::enableSubscribe) {
+        return MockOhSensorSupport::getInstance().OH_Sensor_Subscribe(id, attr, subscriber);
+    } else {
+        return __real_OH_Sensor_Subscribe(id, attr, subscriber);
+    }
+}
+
+Sensor_Result __wrap_OH_Sensor_Unsubscribe(const Sensor_SubscriptionId* id, const Sensor_Subscriber* subscriber) {
+    if (MockOhSensorSupport::enableUnsubscribe) {
+        return MockOhSensorSupport::getInstance().OH_Sensor_Unsubscribe(id, subscriber);
+    } else {
+        return __real_OH_Sensor_Unsubscribe(id, subscriber);
+    }
+}
+
+int32_t __wrap_OH_Sensor_DestroySubscriber(Sensor_Subscriber* subscriber) {
+    if (MockOhSensorSupport::enableDestroySubscriber) {
+        return MockOhSensorSupport::getInstance().OH_Sensor_DestroySubscriber(subscriber);
+    } else {
+        return __real_OH_Sensor_DestroySubscriber(subscriber);
+    }
+}
+
+int32_t __wrap_OH_Sensor_DestroySubscriptionId(Sensor_SubscriptionId* id) {
+    if (MockOhSensorSupport::enableDestroySubscriptionId) {
+        return MockOhSensorSupport::getInstance().OH_Sensor_DestroySubscriptionId(id);
+    } else {
+        return __real_OH_Sensor_DestroySubscriptionId(id);
+    }
+}
+
+int32_t __wrap_OH_Sensor_DestroySubscriptionAttribute(Sensor_SubscriptionAttribute* attr) {
+    if (MockOhSensorSupport::enableDestroySubscriptionAttribute) {
+        return MockOhSensorSupport::getInstance().OH_Sensor_DestroySubscriptionAttribute(attr);
+    } else {
+        return __real_OH_Sensor_DestroySubscriptionAttribute(attr);
+    }
+}
+
+int32_t __wrap_OH_SensorEvent_GetType(Sensor_Event* event, Sensor_Type* type) {
+    if (MockOhSensorSupport::enableEventGetType) {
+        return MockOhSensorSupport::getInstance().OH_SensorEvent_GetType(event, type);
+    } else {
+        return __real_OH_SensorEvent_GetType(event, type);
+    }
+}
+
+int32_t __wrap_OH_SensorEvent_GetData(Sensor_Event* event, float** data, uint32_t* length) {
+    if (MockOhSensorSupport::enableEventGetData) {
+        return MockOhSensorSupport::getInstance().OH_SensorEvent_GetData(event, data, length);
+    } else {
+        return __real_OH_SensorEvent_GetData(event, data, length);
+    }
+}
+
+int32_t __wrap_OH_SensorEvent_GetTimestamp(Sensor_Event* event, int64_t* timestamp) {
+    if (MockOhSensorSupport::enableEventGetTimestamp) {
+        return MockOhSensorSupport::getInstance().OH_SensorEvent_GetTimestamp(event, timestamp);
+    } else {
+        return __real_OH_SensorEvent_GetTimestamp(event, timestamp);
+    }
+}
+
+#ifdef __cplusplus
+}
+#endif
 }  // namespace MockNdkApi 

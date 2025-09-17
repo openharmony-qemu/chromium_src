@@ -431,6 +431,8 @@ bool OHOSAudioOutputStream::InitRender() {
                                                parameters_.frames_per_buffer());
   OH_AudioStreamBuilder_SetEncodingType(audio_stream_builder_,
                                         AUDIOSTREAM_ENCODING_TYPE_RAW);
+  OH_AudioStreamBuilder_SetSampleFormat(audio_stream_builder_,
+                                        AUDIOSTREAM_SAMPLE_S16LE);
   OH_AudioStreamBuilder_SetRendererInterruptMode(
       audio_stream_builder_, (OH_AudioInterrupt_Mode) false);
   SetStreamUsage();
@@ -629,6 +631,7 @@ void OHOSAudioOutputStream::OnWriteData(void* buffer, int32_t length) {
       callback_->OnMoreData(delay, now, {}, audio_bus_.get(), false);
   DCHECK_EQ(frames_filled, audio_bus_->frames());
   audio_bus_->Scale(volume_);
+  frames_filled = std::min(frames_filled, length / bytes_per_frame_);
   audio_bus_->ToInterleaved<SignedInt16SampleTypeTraits>(
       frames_filled, reinterpret_cast<int16_t*>(buffer));
   DumpFileUtil::WriteDumpScopedFile(dumpFile_, buffer, length);

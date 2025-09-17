@@ -6164,7 +6164,7 @@ bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   base::ohos::BlanklessController::GetInstance().RecordSystemTime(nweb_id_, blankless_key_, system_time);
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
   OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
-  CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath, dataItem.width, dataItem.height);
+  CallBlanklessFrameFunc(blankless_key_, dataItem.lcpTime, dataItem.staticPath, dataItem.width, dataItem.height);
   return true;
 }
 
@@ -6222,7 +6222,7 @@ void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, 
       handle->OnRemoveBlanklessFrame(0);
     });
   } else {
-    instance.RegisterFrameInsertCallback(	nweb_id_, blankless_key_, [handle = this->nweb_handle_, file, width, height](){
+    instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_, file, width, height](){
       handle->OnInsertBlanklessFrameWithSize(file, width, height);
       if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
         handle->OnInsertBlanklessFrame(file);

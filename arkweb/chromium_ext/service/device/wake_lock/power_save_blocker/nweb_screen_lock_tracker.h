@@ -54,6 +54,7 @@ class SetKeepScreenLockHandle {
   bool is_screen_on_ = false;
 
   std::unordered_map<int32_t, std::unique_ptr<SetKeepScreenLock>> handle_map_;
+  std::mutex handle_map_mutex_;
 };
 
 class NWEB_EXPORT NWebScreenLockTracker {

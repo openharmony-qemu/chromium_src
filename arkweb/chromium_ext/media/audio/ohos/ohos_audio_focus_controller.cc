@@ -204,10 +204,10 @@ bool OHOSAudioFocusController::CheckOneShotPlayersOnUIThread(const AudioParamete
     return mediaSession->HasOnlyOneShotPlayersPublic();
 }
 
-bool OHOSAudioFocusController::HasWebrtcOneShotPlayersPublic(const AudioParameters &parameters)
+bool OHOSAudioFocusController::HasOneShotPlayersWhenSetMetadataPublic(const AudioParameters &parameters)
 {
     if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
-        return CheckWebrtcOneShotPlayersOnUIThread(parameters);
+        return CheckOneShotPlayersWhenSetMetadataOnUIThread(parameters);
     }
 
     bool result = false;
@@ -217,7 +217,7 @@ bool OHOSAudioFocusController::HasWebrtcOneShotPlayersPublic(const AudioParamete
     content::GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
         base::BindOnce(
             [](const media::AudioParameters &params, bool *out_result, base::WaitableEvent *out_event) {
-                *out_result = CheckWebrtcOneShotPlayersOnUIThread(params);
+                *out_result = CheckOneShotPlayersWhenSetMetadataOnUIThread(params);
                 out_event->Signal();
             },
             parameters,
@@ -227,31 +227,31 @@ bool OHOSAudioFocusController::HasWebrtcOneShotPlayersPublic(const AudioParamete
     return result;
 }
 
-bool OHOSAudioFocusController::CheckWebrtcOneShotPlayersOnUIThread(const AudioParameters &params)
+bool OHOSAudioFocusController::CheckOneShotPlayersWhenSetMetadataOnUIThread(const AudioParameters &params)
 {
     DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
 
     content::RenderFrameHost *renderFrameHost =
         content::RenderFrameHost::FromID(params.render_process_id(), params.render_frame_id());
     if (!renderFrameHost) {
-        LOG(ERROR) << "CheckWebrtcOneShotPlayersOnUIThread RenderFrameHost not found for PID: " << params.render_process_id()
+        LOG(ERROR) << "CheckOneShotPlayersWhenSetMetadataOnUIThread RenderFrameHost not found for PID: " << params.render_process_id()
                    << ", FrameID: " << params.render_frame_id();
         return false;
     }
 
     content::WebContents *webContents = content::WebContents::FromRenderFrameHost(renderFrameHost);
     if (!webContents) {
-        LOG(ERROR) << "CheckWebrtcOneShotPlayersOnUIThread WebContents not found for RenderFrameHost";
+        LOG(ERROR) << "CheckOneShotPlayersWhenSetMetadataOnUIThread WebContents not found for RenderFrameHost";
         return false;
     }
 
     content::MediaSessionImpl *mediaSession = content::MediaSessionImpl::Get(webContents);
     if (!mediaSession) {
-        LOG(ERROR) << "CheckWebrtcOneShotPlayersOnUIThread MediaSession not available for WebContents";
+        LOG(ERROR) << "CheckOneShotPlayersWhenSetMetadataOnUIThread MediaSession not available for WebContents";
         return false;
     }
 
-    return mediaSession->HasWebrtcOneShotPlayersPublic();
+    return mediaSession->HasOneShotPlayersWhenSetMetadataPublic();
 }
 
 content::MediaSessionImpl::NWebMediaSessionState OHOSAudioFocusController::GetSessionState(

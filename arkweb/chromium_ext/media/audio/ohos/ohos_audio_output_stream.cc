@@ -688,7 +688,7 @@ bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode() {
 
   bool is_preload = is_active || is_playingState;
   if (sessionState == content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL ||
-      OHOSAudioFocusController::HasWebrtcOneShotPlayersPublic(parameters_)) {
+      OHOSAudioFocusController::HasOneShotPlayersWhenSetMetadataPublic(parameters_)) {
     return false;
   }
 

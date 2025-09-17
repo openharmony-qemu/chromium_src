@@ -49,10 +49,10 @@ void MediaSessionControllerExt::SetSessionStateIfNeed(bool isNeedMediaSession)
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 void MediaSessionControllerExt::HasWebrtcOneShotPlayers(
-    bool has_audio, bool has_video, media::MediaContentType media_content_type) {
+    media::MediaContentType media_content_type) {
   if (!media_session_)
     return;
-  if (media_content_type_ == media::MediaContentType::kOneShot) {
+  if (media_content_type == media::MediaContentType::kOneShot) {
     LOG(INFO) << "MediaSessionController contentType is oneShot, has webrtc oneShot players";
     media_session_->has_webrtc_one_shot_players_ = true;
   }

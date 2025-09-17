@@ -46,7 +46,6 @@ void MediaSessionControllerExt::SetSessionStateIfNeed(bool isNeedMediaSession)
     media_session_->SetSessionState(MediaSessionImpl::NWebMediaSessionState::NONEED);
   }
 }
-#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 void MediaSessionControllerExt::HasWebrtcOneShotPlayers(
     media::MediaContentType media_content_type) {
@@ -58,6 +57,7 @@ void MediaSessionControllerExt::HasWebrtcOneShotPlayers(
     media_session_->has_webrtc_one_shot_players_ = true;
   }
 }
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 #if BUILDFLAG(ARKWEB_PIP)
 void MediaSessionControllerExt::OnPictureInPictureStateChanged(

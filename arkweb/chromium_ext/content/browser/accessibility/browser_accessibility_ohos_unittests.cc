@@ -1986,4 +1986,1990 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_Image
   std::u16string result = n->GetSubstringTextContentUTF16(absl::nullopt);
   EXPECT_FALSE(result.empty());
 }
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetFromAccessibilityId_ByHtmlId) {
+  ui::AXNodeData root;
+  root.id = 7300;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(7301);
+
+  ui::AXNodeData embed;
+  embed.id = 7301;
+  embed.role = ax::mojom::Role::kEmbeddedObject;
+  embed.html_attributes.emplace_back("id", "mapId");
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, embed);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* e = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7301));
+  ASSERT_NE(e, nullptr);
+  int64_t mapped = ui::BrowserAccessibilityOHOS::GetAccessibilityIdByHtmlElementId("mapId");
+  ASSERT_NE(mapped, -1);
+  auto* back = ui::BrowserAccessibilityOHOS::GetFromAccessibilityId(mapped);
+  ASSERT_NE(back, nullptr);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_AccessibilityIdMapping_EmbeddedObject) {
+  ui::AXNodeData root;
+  root.id = 6800;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(6801);
+
+  ui::AXNodeData embed;
+  embed.id = 6801;
+  embed.role = ax::mojom::Role::kEmbeddedObject;
+  embed.html_attributes.emplace_back("id", "embed123");
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, embed);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* e = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(6801));
+  ASSERT_NE(e, nullptr);
+  int64_t mapped = ui::BrowserAccessibilityOHOS::GetAccessibilityIdByHtmlElementId("embed123");
+  EXPECT_NE(mapped, -1);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_SelectionAndItemCount) {
+  ui::AXNodeData root;
+  root.id = 500;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(501);
+  root.child_ids.push_back(502);
+
+  ui::AXNodeData textfield;
+  textfield.id = 501;
+  textfield.role = ax::mojom::Role::kTextField;
+  textfield.AddIntAttribute(ax::mojom::IntAttribute::kTextSelStart, 3);
+  textfield.AddIntAttribute(ax::mojom::IntAttribute::kTextSelEnd, 7);
+
+  ui::AXNodeData list;
+  list.id = 502;
+  list.role = ax::mojom::Role::kList;
+  list.AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 4);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, textfield, list);
+
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+
+  auto* tf = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(501));
+  ASSERT_NE(tf, nullptr);
+  EXPECT_EQ(tf->GetSelectionStart(), 3);
+  EXPECT_EQ(tf->GetSelectionEnd(), 7);
+
+  auto* ls = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(502));
+  ASSERT_NE(ls, nullptr);
+  EXPECT_TRUE(ls->IsCollection());
+  EXPECT_EQ(ls->GetItemCount(), static_cast<size_t>(4));
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSelectionStart_NonAtomicReturnsZero) {
+  ui::AXNodeData root;
+  root.id = 9800;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(9801);
+
+  ui::AXNodeData static_text;
+  static_text.id = 9801;
+  static_text.role = ax::mojom::Role::kStaticText;
+  static_text.AddIntAttribute(ax::mojom::IntAttribute::kTextSelStart, 4);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, static_text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9801));
+  ASSERT_NE(n, nullptr);
+  EXPECT_EQ(n->GetSelectionStart(), 0);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSelectionStart_AtomicTextField) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData text_field;
+  text_field.id = 2;
+  text_field.role = ax::mojom::Role::kTextField;
+  text_field.AddIntAttribute(ax::mojom::IntAttribute::kTextSelStart, 5);
+
+  root.child_ids = {2};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, text_field);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_EQ(n->GetSelectionStart(), 5);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSelectionStart_NonAtomicTextFieldNullAnchor) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData text_field;
+  text_field.id = 2;
+  text_field.role = ax::mojom::Role::kStaticText;
+  root.child_ids = {2};
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, text_field);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_EQ(n->GetSelectionStart(), 0);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSelectionEnd_NonAtomicReturnsZero) {
+  ui::AXNodeData root;
+  root.id = 9300;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(9301);
+
+  ui::AXNodeData static_text;
+  static_text.id = 9301;
+  static_text.role = ax::mojom::Role::kStaticText;
+  static_text.AddIntAttribute(ax::mojom::IntAttribute::kTextSelEnd, 9);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, static_text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9301));
+  ASSERT_NE(n, nullptr);
+  EXPECT_EQ(n->GetSelectionEnd(), 0);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSelectionEnd_AtomicTextField) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData text_field;
+  text_field.id = 2;
+  text_field.role = ax::mojom::Role::kTextField;
+  text_field.AddIntAttribute(ax::mojom::IntAttribute::kTextSelEnd, 10);
+  root.child_ids = {2};
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, text_field);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_EQ(n->GetSelectionEnd(), 10);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSelectionEnd_NonAtomicTextField) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData text_field;
+  text_field.id = 2;
+  text_field.role = ax::mojom::Role::kStaticText;
+
+  root.child_ids = {2};
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, text_field);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_EQ(n->GetSelectionEnd(), 0);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsCollection_DirectoryDeprecatedTrue) {
+  ui::AXNodeData root;
+  root.id = 9760;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(9761);
+
+  ui::AXNodeData dir;
+  dir.id = 9761;
+  dir.role = ax::mojom::Role::kDirectoryDeprecated;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, dir);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9761));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->IsCollection());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_RangeControlWithoutAriaValueText_Count100) {
+  ui::AXNodeData root;
+  root.id = 900;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(901);
+
+  ui::AXNodeData slider;
+  slider.id = 901;
+  slider.role = ax::mojom::Role::kSlider;
+
+  slider.AddFloatAttribute(ax::mojom::FloatAttribute::kValueForRange, 10.0f);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, slider);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* node = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(901));
+  ASSERT_NE(node, nullptr);
+  EXPECT_TRUE(node->IsRangeControlWithoutAriaValueText());
+  EXPECT_EQ(node->GetItemCount(), static_cast<size_t>(100));
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_TableMetrics) {
+  ui::AXNodeData root;
+  root.id = 1000;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(1001);
+  root.child_ids.push_back(1002);
+
+  ui::AXNodeData table;
+  table.id = 1001;
+  table.role = ax::mojom::Role::kTable;
+  table.AddIntAttribute(ax::mojom::IntAttribute::kTableRowCount, 5);
+
+  ui::AXNodeData cell;
+  cell.id = 1002;
+  cell.role = ax::mojom::Role::kCell;
+  cell.AddIntAttribute(ax::mojom::IntAttribute::kTableCellRowIndex, 2);
+  cell.AddIntAttribute(ax::mojom::IntAttribute::kTableCellRowSpan, 2);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, table, cell);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+
+  auto* t = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1001));
+  auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1002));
+  ASSERT_NE(t, nullptr);
+  ASSERT_NE(c, nullptr);
+
+  EXPECT_EQ(t->RowCount(), 5);
+
+  EXPECT_EQ(t->ColumnCount(), 0);
+  EXPECT_TRUE(c->IsCollectionItem());
+  EXPECT_EQ(c->RowIndex(), 0);
+
+  EXPECT_EQ(c->ColumnIndex(), 0);
+  EXPECT_EQ(c->RowSpan(), 2);
+  EXPECT_EQ(c->ColumnSpan(), 1);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_RowCount_FromSetSizeOnList) {
+  ui::AXNodeData root;
+  root.id = 7500;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(7501);
+
+  ui::AXNodeData list;
+  list.id = 7501;
+  list.role = ax::mojom::Role::kList;
+  list.AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 7);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, list);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7501));
+  ASSERT_NE(n, nullptr);
+  EXPECT_EQ(n->RowCount(), 7);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_RowCount_NonCollectionIsZero) {
+  ui::AXNodeData root;
+  root.id = 9200;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(9201);
+
+  ui::AXNodeData button;
+  button.id = 9201;
+  button.role = ax::mojom::Role::kButton;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9201));
+  ASSERT_NE(n, nullptr);
+  EXPECT_EQ(n->RowCount(), 0);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_ColumnCount_FromTableAttribute) {
+  ui::AXNodeData root;
+  root.id = 7100;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(7101);
+
+  ui::AXNodeData table;
+  table.id = 7101;
+  table.role = ax::mojom::Role::kTable;
+  table.AddIntAttribute(ax::mojom::IntAttribute::kTableColumnCount, 3);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, table);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* t = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7101));
+  ASSERT_NE(t, nullptr);
+  EXPECT_EQ(t->ColumnCount(), 3);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsCollectionItem_RowHeaderTrue) {
+  ui::AXNodeData root;
+  root.id = 9400;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(9401);
+
+  ui::AXNodeData row_header;
+  row_header.id = 9401;
+  row_header.role = ax::mojom::Role::kRowHeader;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, row_header);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9401));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->IsCollectionItem());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsCollectionItem_ColumnHeaderTrue) {
+  ui::AXNodeData root;
+  root.id = 9800;
+  root.role = ax::mojom::Role::kTable;
+  root.child_ids.push_back(9801);
+
+  ui::AXNodeData col_header;
+  col_header.id = 9801;
+  col_header.role = ax::mojom::Role::kColumnHeader;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, col_header);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9801));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->IsCollectionItem());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_TableMetrics_DefaultsWhenMissing) {
+  ui::AXNodeData root;
+  root.id = 8900;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(8901);
+
+  ui::AXNodeData cell;
+  cell.id = 8901;
+  cell.role = ax::mojom::Role::kCell;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, cell);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(8901));
+  ASSERT_NE(c, nullptr);
+
+  EXPECT_EQ(c->RowIndex(), 0);
+  EXPECT_EQ(c->ColumnIndex(), 0);
+  EXPECT_EQ(c->RowSpan(), 1);
+  EXPECT_EQ(c->ColumnSpan(), 1);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_RowIndex_PosInSetEdgeCases) {
+  ui::AXNodeData root;
+  root.id = 9100;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(9101);
+
+  ui::AXNodeData cell;
+  cell.id = 9101;
+  cell.role = ax::mojom::Role::kCell;
+
+  cell.AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 1);
+
+  ui::AXTreeUpdate update1 = ui::MakeAXTreeUpdateForTesting(root, cell);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager1(
+      new ui::BrowserAccessibilityManagerOHOS(update1, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* c1 = static_cast<ui::BrowserAccessibilityOHOS*>(manager1->GetFromID(9101));
+  ASSERT_NE(c1, nullptr);
+  EXPECT_EQ(c1->RowIndex(), 0);
+
+  ui::AXNodeData cell2 = cell;
+  cell2.AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 0);
+  cell2.AddIntAttribute(ax::mojom::IntAttribute::kTableCellRowIndex, 5);
+
+  ui::AXTreeUpdate update2 = ui::MakeAXTreeUpdateForTesting(root, cell2);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager2(
+      new ui::BrowserAccessibilityManagerOHOS(update2, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* c2 = static_cast<ui::BrowserAccessibilityOHOS*>(manager2->GetFromID(9101));
+  ASSERT_NE(c2, nullptr);
+  EXPECT_EQ(c2->RowIndex(), 0);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_RowIndex_UsesPosInSet) {
+  ui::AXNodeData root;
+  root.id = 6400;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(6401);
+
+  ui::AXNodeData item;
+  item.id = 6401;
+  item.role = ax::mojom::Role::kListItem;
+  item.AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 3);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, item);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(6401));
+  ASSERT_NE(n, nullptr);
+  EXPECT_EQ(n->RowIndex(), 0);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_ColumnSpan_DefaultZero) {
+  ui::AXNodeData root;
+  root.id = 6500;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(6501);
+
+  ui::AXNodeData cell;
+  cell.id = 6501;
+  cell.role = ax::mojom::Role::kCell;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, cell);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(6501));
+  ASSERT_NE(c, nullptr);
+  EXPECT_EQ(c->ColumnSpan(), 1);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_HeadingRecursion) {
+  ui::AXNodeData root;
+  root.id = 1099;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(1100);
+
+  ui::AXNodeData heading;
+  heading.id = 1100;
+  heading.role = ax::mojom::Role::kHeading;
+  heading.SetName("H");
+  heading.child_ids.push_back(1101);
+
+  ui::AXNodeData child;
+  child.id = 1101;
+  child.role = ax::mojom::Role::kStaticText;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, heading, child);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1101));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->IsHeading());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_OnlyTextChildrenAndListMarker) {
+  ui::AXNodeData root;
+  root.id = 1199;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(1200);
+  root.child_ids.push_back(1203);
+
+  ui::AXNodeData parent1;
+  parent1.id = 1200;
+  parent1.role = ax::mojom::Role::kGenericContainer;
+  parent1.child_ids.push_back(1201);
+  parent1.child_ids.push_back(1202);
+
+  ui::AXNodeData text1;
+  text1.id = 1201;
+  text1.role = ax::mojom::Role::kStaticText;
+
+  ui::AXNodeData text2;
+  text2.id = 1202;
+  text2.role = ax::mojom::Role::kStaticText;
+
+  ui::AXNodeData parent2;
+  parent2.id = 1203;
+  parent2.role = ax::mojom::Role::kGenericContainer;
+  parent2.child_ids.push_back(1204);
+
+  ui::AXNodeData marker;
+  marker.id = 1204;
+  marker.role = ax::mojom::Role::kListMarker;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, parent1, text1, text2, parent2, marker);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+
+  auto* p1 = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1200));
+  auto* p2 = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1203));
+  ASSERT_NE(p1, nullptr);
+  ASSERT_NE(p2, nullptr);
+  EXPECT_TRUE(p1->HasOnlyTextChildren());
+  EXPECT_TRUE(p2->HasListMarkerChild());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_HasOnlyTextChildren_NegativeWithImage) {
+  ui::AXNodeData root;
+  root.id = 9500;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(9501);
+
+  ui::AXNodeData parent;
+  parent.id = 9501;
+  parent.role = ax::mojom::Role::kGenericContainer;
+  parent.child_ids.push_back(9502);
+  parent.child_ids.push_back(9503);
+
+  ui::AXNodeData text;
+  text.id = 9502;
+  text.role = ax::mojom::Role::kStaticText;
+
+  ui::AXNodeData img;
+  img.id = 9503;
+  img.role = ax::mojom::Role::kImage;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, parent, text, img);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* p = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9501));
+  ASSERT_NE(p, nullptr);
+  EXPECT_FALSE(p->HasOnlyTextChildren());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_HasOnlyTextChildren_OnlyTextChildren) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData div;
+  div.id = 2;
+  div.role = ax::mojom::Role::kGenericContainer;
+
+  ui::AXNodeData text1;
+  text1.id = 3;
+  text1.role = ax::mojom::Role::kStaticText;
+
+  ui::AXNodeData text2;
+  text2.id = 4;
+  text2.role = ax::mojom::Role::kInlineTextBox;
+
+  div.child_ids = {3, 4};
+  root.child_ids = {2};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, div, text1, text2);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->HasOnlyTextChildren());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_HasOnlyTextChildren_NonTextChildren) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData div;
+  div.id = 2;
+  div.role = ax::mojom::Role::kGenericContainer;
+
+  ui::AXNodeData text;
+  text.id = 3;
+  text.role = ax::mojom::Role::kStaticText;
+
+  ui::AXNodeData button;
+  button.id = 4;
+  button.role = ax::mojom::Role::kButton;
+
+  div.child_ids = {3, 4};
+  root.child_ids = {2};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, div, text, button);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_FALSE(n->HasOnlyTextChildren());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_HasListMarkerChild_WithListMarker) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData list_item;
+  list_item.id = 2;
+  list_item.role = ax::mojom::Role::kListItem;
+
+  ui::AXNodeData marker;
+  marker.id = 3;
+  marker.role = ax::mojom::Role::kListMarker;
+
+  ui::AXNodeData text;
+  text.id = 4;
+  text.role = ax::mojom::Role::kStaticText;
+
+  root.child_ids = {2};
+  list_item.child_ids = {3, 4};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, list_item, marker, text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->HasListMarkerChild());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_HasListMarkerChild_WithoutListMarker) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData list_item;
+  list_item.id = 2;
+  list_item.role = ax::mojom::Role::kListItem;
+
+  ui::AXNodeData text;
+  text.id = 3;
+  text.role = ax::mojom::Role::kStaticText;
+
+  root.child_ids = {2};
+  list_item.child_ids = {3};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, list_item, text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+
+  EXPECT_FALSE(n->HasListMarkerChild());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_HeadingLink) {
+  ui::AXNodeData root;
+  root.id = 1299;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(1300);
+
+  ui::AXNodeData heading;
+  heading.id = 1300;
+  heading.role = ax::mojom::Role::kHeading;
+  heading.child_ids.push_back(1301);
+
+  ui::AXNodeData link;
+  link.id = 1301;
+  link.role = ax::mojom::Role::kLink;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, heading, link);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* h = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1300));
+  ASSERT_NE(h, nullptr);
+  EXPECT_TRUE(h->IsHeadingLink());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsLeafVariants) {
+  ui::BrowserAccessibilityOHOS::ResetLeafCache();
+  ui::AXNodeData root;
+  root.id = 1400;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(1401);
+  root.child_ids.push_back(1402);
+  root.child_ids.push_back(1403);
+
+  ui::AXNodeData button;
+  button.id = 1401;
+  button.role = ax::mojom::Role::kButton;
+
+  ui::AXNodeData link;
+  link.id = 1402;
+  link.role = ax::mojom::Role::kLink;
+
+  ui::AXNodeData container;
+  container.id = 1403;
+  container.role = ax::mojom::Role::kGenericContainer;
+  container.child_ids.push_back(1404);
+
+  ui::AXNodeData static_text;
+  static_text.id = 1404;
+  static_text.role = ax::mojom::Role::kStaticText;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button, link, container, static_text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+
+  auto* b = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1401));
+  auto* l = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1402));
+  auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1403));
+  ASSERT_NE(b, nullptr);
+  ASSERT_NE(l, nullptr);
+  ASSERT_NE(c, nullptr);
+  EXPECT_TRUE(b->IsLeaf());
+  EXPECT_TRUE(l->IsLeaf());
+  EXPECT_TRUE(c->IsLeaf());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsLeaf_FocusableChildReturnsFalse) {
+  ui::AXNodeData root;
+  root.id = 2840;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(2841);
+
+  ui::AXNodeData parent;
+  parent.id = 2841;
+  parent.role = ax::mojom::Role::kGenericContainer;
+  parent.child_ids.push_back(2842);
+
+  ui::AXNodeData child;
+  child.id = 2842;
+  child.role = ax::mojom::Role::kButton;
+  child.AddState(ax::mojom::State::kFocusable);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, parent, child);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* p = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2841));
+  ASSERT_NE(p, nullptr);
+  EXPECT_FALSE(p->IsLeaf());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_SoleInterestingNode_Null) {
+  ui::AXNodeData root;
+  root.id = 1499;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(1500);
+
+  ui::AXNodeData parent;
+  parent.id = 1500;
+  parent.role = ax::mojom::Role::kGenericContainer;
+  parent.child_ids.push_back(1501);
+  parent.child_ids.push_back(1502);
+
+  ui::AXNodeData btn1;
+  btn1.id = 1501;
+  btn1.role = ax::mojom::Role::kButton;
+  btn1.SetName("A");
+
+  ui::AXNodeData btn2;
+  btn2.id = 1502;
+  btn2.role = ax::mojom::Role::kButton;
+  btn2.SetName("B");
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, parent, btn1, btn2);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* p = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1500));
+  ASSERT_NE(p, nullptr);
+  EXPECT_EQ(p->GetSoleInterestingNodeFromSubtree(), nullptr);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_SoleInterestingNode_Positive) {
+  ui::AXNodeData root;
+  root.id = 3099;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(3100);
+
+  ui::AXNodeData parent;
+  parent.id = 3100;
+  parent.role = ax::mojom::Role::kGenericContainer;
+  parent.child_ids.push_back(3101);
+
+  ui::AXNodeData btn;
+  btn.id = 3101;
+  btn.role = ax::mojom::Role::kButton;
+  btn.SetName("A");
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, parent, btn);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* p = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3100));
+  ASSERT_NE(p, nullptr);
+  auto* sole = p->GetSoleInterestingNodeFromSubtree();
+  ASSERT_NE(sole, nullptr);
+  EXPECT_EQ(sole->GetAccessibilityId(), static_cast<int64_t>(3101 + 1));
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSoleInterestingNodeFromSubtree_InterestingNode) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData button;
+  button.id = 2;
+  button.role = ax::mojom::Role::kButton;
+
+  root.child_ids = {2};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  const ui::BrowserAccessibilityOHOS* result = n->GetSoleInterestingNodeFromSubtree();
+  EXPECT_EQ(result, n);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSoleInterestingNodeFromSubtree_TwoInterestingChildren) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData div;
+  div.id = 2;
+  div.role = ax::mojom::Role::kGenericContainer;
+
+  ui::AXNodeData button1;
+  button1.id = 3;
+  button1.role = ax::mojom::Role::kButton;
+
+  ui::AXNodeData button2;
+  button2.id = 4;
+  button2.role = ax::mojom::Role::kButton;
+
+  root.child_ids = {2};
+  div.child_ids = {3, 4};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, div, button1, button2);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  const ui::BrowserAccessibilityOHOS* result = n->GetSoleInterestingNodeFromSubtree();
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSoleInterestingNodeFromSubtree_OneInterestingChild) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData div;
+  div.id = 2;
+  div.role = ax::mojom::Role::kGenericContainer;
+
+  ui::AXNodeData button;
+  button.id = 3;
+  button.role = ax::mojom::Role::kButton;
+
+  ui::AXNodeData text;
+  text.id = 4;
+  text.role = ax::mojom::Role::kStaticText;
+
+  root.child_ids = {2};
+  div.child_ids = {3, 4};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, div, button, text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  const ui::BrowserAccessibilityOHOS* result = n->GetSoleInterestingNodeFromSubtree();
+  EXPECT_NE(result, nullptr);
+  EXPECT_EQ(result->GetId(), 3);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSoleInterestingNodeFromSubtree_NoInterestingChildren) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData div;
+  div.id = 2;
+  div.role = ax::mojom::Role::kGenericContainer;
+
+  ui::AXNodeData text1;
+  text1.id = 3;
+  text1.role = ax::mojom::Role::kStaticText;
+
+  ui::AXNodeData text2;
+  text2.id = 4;
+  text2.role = ax::mojom::Role::kStaticText;
+
+  root.child_ids = {2};
+  div.child_ids = {3, 4};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, div, text1, text2);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  const ui::BrowserAccessibilityOHOS* result = n->GetSoleInterestingNodeFromSubtree();
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_CanFireEvents_ChildOfLeaf) {
+  ui::AXNodeData root;
+  root.id = 1599;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(1600);
+
+  ui::AXNodeData button;
+  button.id = 1600;
+  button.role = ax::mojom::Role::kButton;
+  button.SetName("Btn");
+  button.child_ids.push_back(1601);
+
+  ui::AXNodeData child;
+  child.id = 1601;
+  child.role = ax::mojom::Role::kStaticText;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button, child);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1601));
+  ASSERT_NE(c, nullptr);
+  EXPECT_FALSE(c->CanFireEvents());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_CanFireEvents_NotChildOfLeaf) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData button;
+  button.id = 2;
+  button.role = ax::mojom::Role::kButton;
+
+  root.child_ids = {2};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->CanFireEvents());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_CanFireEvents_ChildOfLeaf_Second) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData button;
+  button.id = 2;
+  button.role = ax::mojom::Role::kButton;
+
+  ui::AXNodeData text;
+  text.id = 3;
+  text.role = ax::mojom::Role::kStaticText;
+
+  root.child_ids = {2};
+  button.child_ids = {3};
+  root.child_ids = {2};
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button, text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3));
+  ASSERT_NE(n, nullptr);
+  EXPECT_FALSE(n->CanFireEvents());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_CheckboxGroupStatus) {
+  ui::AXNodeData root;
+  root.id = 1699;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(1700);
+
+  ui::AXNodeData node;
+  node.id = 1700;
+  node.role = ax::mojom::Role::kMenuItemCheckBox;
+  node.SetCheckedState(ax::mojom::CheckedState::kTrue);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, node);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1700));
+  ASSERT_NE(n, nullptr);
+  EXPECT_EQ(n->GetCheckboxGroupSelectedStatus(), 0);
+
+  ui::AXNodeData root_m;
+  root_m.id = 1710;
+  root_m.role = ax::mojom::Role::kRootWebArea;
+  root_m.child_ids.push_back(1711);
+  ui::AXNodeData node_m = node;
+  node_m.id = 1711;
+  node_m.SetCheckedState(ax::mojom::CheckedState::kMixed);
+  ui::AXTreeUpdate upd_m = ui::MakeAXTreeUpdateForTesting(root_m, node_m);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager_m(
+      new ui::BrowserAccessibilityManagerOHOS(upd_m, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n_m = static_cast<ui::BrowserAccessibilityOHOS*>(manager_m->GetFromID(1711));
+  ASSERT_NE(n_m, nullptr);
+  EXPECT_EQ(n_m->GetCheckboxGroupSelectedStatus(), 1);
+
+  ui::AXNodeData root_f;
+  root_f.id = 1720;
+  root_f.role = ax::mojom::Role::kRootWebArea;
+  root_f.child_ids.push_back(1721);
+  ui::AXNodeData node_f = node;
+  node_f.id = 1721;
+  node_f.SetCheckedState(ax::mojom::CheckedState::kFalse);
+  ui::AXTreeUpdate upd_f = ui::MakeAXTreeUpdateForTesting(root_f, node_f);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager_f(
+      new ui::BrowserAccessibilityManagerOHOS(upd_f, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n_f = static_cast<ui::BrowserAccessibilityOHOS*>(manager_f->GetFromID(1721));
+  ASSERT_NE(n_f, nullptr);
+  EXPECT_EQ(n_f->GetCheckboxGroupSelectedStatus(), 2);
+
+  ui::AXNodeData root_d;
+  root_d.id = 1730;
+  root_d.role = ax::mojom::Role::kRootWebArea;
+  root_d.child_ids.push_back(1731);
+  ui::AXNodeData node_d;
+  node_d.id = 1731;
+  node_d.role = ax::mojom::Role::kButton;
+  ui::AXTreeUpdate upd_d = ui::MakeAXTreeUpdateForTesting(root_d, node_d);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager_d(
+      new ui::BrowserAccessibilityManagerOHOS(upd_d, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n_d = static_cast<ui::BrowserAccessibilityOHOS*>(manager_d->GetFromID(1731));
+  ASSERT_NE(n_d, nullptr);
+  EXPECT_EQ(n_d->GetCheckboxGroupSelectedStatus(), -1);
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingVariants) {
+  ui::AXNodeData root;
+  root.id = 1900;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(1901);
+  root.child_ids.push_back(1902);
+
+  ui::AXNodeData button;
+  button.id = 1901;
+  button.role = ax::mojom::Role::kButton;
+  button.SetName("Press");
+
+  ui::AXNodeData link;
+  link.id = 1902;
+  link.role = ax::mojom::Role::kLink;
+  link.child_ids.push_back(1903);
+
+  ui::AXNodeData link_child;
+  link_child.id = 1903;
+  link_child.role = ax::mojom::Role::kStaticText;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button, link, link_child);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+
+  auto* r = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1900));
+  auto* b = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1901));
+  auto* lc = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1903));
+  ASSERT_NE(r, nullptr);
+  ASSERT_NE(b, nullptr);
+  ASSERT_NE(lc, nullptr);
+  EXPECT_FALSE(r->IsInterestingOnOHOS());
+  EXPECT_TRUE(b->IsInterestingOnOHOS());
+  EXPECT_FALSE(lc->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInteresting_InvisibleIframeParentFalse) {
+  ui::AXNodeData root;
+  root.id = 9740;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(9741);
+
+  ui::AXNodeData iframe;
+  iframe.id = 9741;
+  iframe.role = ax::mojom::Role::kIframe;
+  iframe.AddState(ax::mojom::State::kInvisible);
+  iframe.child_ids.push_back(9742);
+
+  ui::AXNodeData child;
+  child.id = 9742;
+  child.role = ax::mojom::Role::kButton;
+  child.SetName("btn");
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, iframe, child);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9742));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_PlatformDocumentEmptyText) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.AddStringAttribute(ax::mojom::StringAttribute::kName, "");
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1));
+  ASSERT_NE(n, nullptr);
+  EXPECT_FALSE(n->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_InvisibleOrIgnored) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData invisible;
+  invisible.id = 2;
+  invisible.role = ax::mojom::Role::kButton;
+  invisible.AddState(ax::mojom::State::kInvisible);
+
+  root.child_ids = {2};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, invisible);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_FALSE(n->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_ControlRole) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData button;
+  button.id = 2;
+  button.role = ax::mojom::Role::kButton;
+
+  root.child_ids = {2};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_NonFocusableChildOfControl) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData button;
+  button.id = 2;
+  button.role = ax::mojom::Role::kButton;
+
+  ui::AXNodeData text;
+  text.id = 3;
+  text.role = ax::mojom::Role::kStaticText;
+  text.child_ids = {};
+
+  button.child_ids = {3};
+  root.child_ids = {2};
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button, text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3));
+  ASSERT_NE(n, nullptr);
+  EXPECT_FALSE(n->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_ChildOfInvisibleIframe) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData iframe;
+  iframe.id = 2;
+  iframe.role = ax::mojom::Role::kIframe;
+  iframe.AddState(ax::mojom::State::kInvisible);
+
+  ui::AXNodeData text;
+  text.id = 3;
+  text.role = ax::mojom::Role::kStaticText;
+  text.child_ids = {};
+
+  iframe.child_ids = {3};
+  root.child_ids = {2};
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, iframe, text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3));
+  ASSERT_NE(n, nullptr);
+  EXPECT_FALSE(n->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_ChildOfLink) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData link;
+  link.id = 2;
+  link.role = ax::mojom::Role::kLink;
+
+  ui::AXNodeData text;
+  text.id = 3;
+  text.role = ax::mojom::Role::kStaticText;
+  text.child_ids = {};
+
+  link.child_ids = {3};
+  root.child_ids = {2};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, link, text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3));
+  ASSERT_NE(n, nullptr);
+  EXPECT_FALSE(n->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_FocusableNode) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData button;
+  button.id = 2;
+  button.role = ax::mojom::Role::kButton;
+  button.AddState(ax::mojom::State::kFocusable);
+
+  root.child_ids = {2};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_ProgressIndicator) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData progress;
+  progress.id = 2;
+  progress.role = ax::mojom::Role::kProgressIndicator;
+
+  root.child_ids = {2};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, progress);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_DirectDescendantOfLinkNoSiblings) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData link;
+  link.id = 2;
+  link.role = ax::mojom::Role::kLink;
+
+  ui::AXNodeData text;
+  text.id = 3;
+  text.role = ax::mojom::Role::kStaticText;
+  text.child_ids = {};
+
+  root.child_ids = {2};
+  link.child_ids = {3};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, link, text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3));
+  ASSERT_NE(n, nullptr);
+  EXPECT_FALSE(n->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_EmbeddedObject) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData embedded;
+  embedded.id = 2;
+  embedded.role = ax::mojom::Role::kEmbeddedObject;
+
+  root.child_ids = {2};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, embedded);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_LeafWithNonWhitespaceText) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData text;
+  text.id = 2;
+  text.role = ax::mojom::Role::kStaticText;
+  text.AddStringAttribute(ax::mojom::StringAttribute::kName, "Hello World");
+
+  root.child_ids = {2};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_LeafWithWhitespaceText) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData text;
+  text.id = 2;
+  text.role = ax::mojom::Role::kStaticText;
+  text.AddStringAttribute(ax::mojom::StringAttribute::kName, "   \t\n   ");
+
+  root.child_ids = {2};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  EXPECT_FALSE(n->IsInterestingOnOHOS());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedText_Fallback) {
+  ui::AXNodeData root;
+  root.id = 2099;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(2100);
+
+  ui::AXNodeData combo;
+  combo.id = 2100;
+  combo.role = ax::mojom::Role::kComboBoxMenuButton;
+  combo.child_ids.push_back(2101);
+
+  ui::AXNodeData listbox;
+  listbox.id = 2101;
+  listbox.role = ax::mojom::Role::kListBox;
+  listbox.AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 5);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo, listbox);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2100));
+  ASSERT_NE(c, nullptr);
+  auto text = c->GetComboboxExpandedTextFallback();
+  EXPECT_EQ(text, u"{x} options available");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedTextFallback_SingleCollectionWithSetSize) {
+  ui::AXNodeData root;
+  root.id = 2760;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(2761);
+
+  ui::AXNodeData combo;
+  combo.id = 2761;
+  combo.role = ax::mojom::Role::kComboBoxMenuButton;
+  combo.child_ids.push_back(2762);
+
+  ui::AXNodeData list;
+  list.id = 2762;
+  list.role = ax::mojom::Role::kListBox;
+  list.AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 3);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo, list);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2761));
+  ASSERT_NE(c, nullptr);
+  auto text = c->GetComboboxExpandedTextFallback();
+  EXPECT_EQ(text, u"{x} options available");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedTextFallback_NoOrMultipleCollections) {
+  // 无集合子节点：返回默认文案
+  {
+    ui::AXNodeData root;
+    root.id = 6700;
+    root.role = ax::mojom::Role::kRootWebArea;
+    root.child_ids.push_back(6701);
+
+    ui::AXNodeData combo;
+    combo.id = 6701;
+    combo.role = ax::mojom::Role::kComboBoxMenuButton;
+
+    ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo);
+    std::unique_ptr<ui::BrowserAccessibilityManager> manager(new ui::BrowserAccessibilityManagerOHOS(
+        update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+    auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(6701));
+    ASSERT_NE(c, nullptr);
+    EXPECT_EQ(c->GetComboboxExpandedTextFallback(), u"Expanded");
+  }
+
+  // 多个集合子节点：也走默认文案
+  {
+    ui::AXNodeData root;
+    root.id = 6710;
+    root.role = ax::mojom::Role::kRootWebArea;
+    root.child_ids.push_back(6711);
+
+    ui::AXNodeData combo;
+    combo.id = 6711;
+    combo.role = ax::mojom::Role::kComboBoxMenuButton;
+    combo.child_ids.push_back(6712);
+    combo.child_ids.push_back(6713);
+
+    ui::AXNodeData list1;
+    list1.id = 6712;
+    list1.role = ax::mojom::Role::kListBox;
+
+    ui::AXNodeData list2;
+    list2.id = 6713;
+    list2.role = ax::mojom::Role::kListBox;
+
+    ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo, list1, list2);
+    std::unique_ptr<ui::BrowserAccessibilityManager> manager(new ui::BrowserAccessibilityManagerOHOS(
+        update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+    auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(6711));
+    ASSERT_NE(c, nullptr);
+    EXPECT_EQ(c->GetComboboxExpandedTextFallback(), u"Expanded");
+  }
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedTextFallback_SingleCollectionNoSetSize) {
+  ui::AXNodeData root;
+  root.id = 2850;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(2851);
+
+  ui::AXNodeData combo;
+  combo.id = 2851;
+  combo.role = ax::mojom::Role::kComboBoxMenuButton;
+  combo.child_ids.push_back(2852);
+
+  ui::AXNodeData list;
+  list.id = 2852;
+  list.role = ax::mojom::Role::kListBox;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo, list);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2851));
+  ASSERT_NE(c, nullptr);
+  auto text = c->GetComboboxExpandedTextFallback();
+  EXPECT_EQ(text, u"{x} options available");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedTextFallback_NoCollections) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData combobox;
+  combobox.id = 2;
+  combobox.role = ax::mojom::Role::kComboBoxGrouping;
+
+  ui::AXNodeData text;
+  text.id = 3;
+  text.role = ax::mojom::Role::kStaticText;
+
+  root.child_ids = {2};
+  combobox.child_ids = {3};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, text);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  std::u16string result = n->GetComboboxExpandedTextFallback();
+  EXPECT_EQ(result, u"Expanded");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedTextFallback_MultipleCollections) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData combobox;
+  combobox.id = 2;
+  combobox.role = ax::mojom::Role::kComboBoxGrouping;
+
+  ui::AXNodeData listbox1;
+  listbox1.id = 3;
+  listbox1.role = ax::mojom::Role::kListBox;
+
+  ui::AXNodeData listbox2;
+  listbox2.id = 4;
+  listbox2.role = ax::mojom::Role::kListBox;
+
+  root.child_ids = {2};
+  combobox.child_ids = {3, 4};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, listbox1, listbox2);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  std::u16string result = n->GetComboboxExpandedTextFallback();
+  EXPECT_EQ(result, u"Expanded");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedTextFallback_SingleCollectionNoSetSize) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData combobox;
+  combobox.id = 2;
+  combobox.role = ax::mojom::Role::kComboBoxGrouping;
+
+  ui::AXNodeData listbox;
+  listbox.id = 3;
+  listbox.role = ax::mojom::Role::kListBox;
+
+  root.child_ids = {2};
+  combobox.child_ids = {3};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, listbox);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  std::u16string result = n->GetComboboxExpandedTextFallback();
+  EXPECT_EQ(result, u"{x} options available");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedTextFallback_SingleCollectionWithSetSize) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData combobox;
+  combobox.id = 2;
+  combobox.role = ax::mojom::Role::kComboBoxGrouping;
+
+  ui::AXNodeData listbox;
+  listbox.id = 3;
+  listbox.role = ax::mojom::Role::kListBox;
+  listbox.AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 3);
+
+  root.child_ids = {2};
+  combobox.child_ids = {3};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, listbox);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  std::u16string result = n->GetComboboxExpandedTextFallback();
+  EXPECT_EQ(result, u"{x} options available");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsFocusable_PlatformDocument) {
+  ui::AXNodeData root;
+  root.id = 2400;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* r = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2400));
+  ASSERT_NE(r, nullptr);
+  EXPECT_FALSE(r->IsFocusable());
+
+  ui::AXNodeData root_named = root;
+  root_named.SetName("Doc");
+  ui::AXTreeUpdate update_named = ui::MakeAXTreeUpdateForTesting(root_named);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager_named(new ui::BrowserAccessibilityManagerOHOS(
+      update_named, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  r = static_cast<ui::BrowserAccessibilityOHOS*>(manager_named->GetFromID(2400));
+
+  EXPECT_FALSE(r->IsFocusable());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsFocusable_IframeNamedFalse) {
+  ui::AXNodeData root;
+  root.id = 7000;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(7001);
+
+  ui::AXNodeData iframe;
+  iframe.id = 7001;
+  iframe.role = ax::mojom::Role::kIframe;
+  iframe.SetName("I");
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, iframe);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7001));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->IsFocusable());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsFocusable_PlatformDocumentWithParentNamedTrue) {
+  ui::AXNodeData root;
+  root.id = 9750;
+  root.role = ax::mojom::Role::kGenericContainer;
+  root.child_ids.push_back(9751);
+
+  ui::AXNodeData subdoc;
+  subdoc.id = 9751;
+  subdoc.role = ax::mojom::Role::kRootWebArea;
+  subdoc.SetName("SubDoc");
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, subdoc);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9751));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->IsFocusable());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedText_ViaAriaControls) {
+  ui::AXNodeData root;
+  root.id = 2700;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(2701);
+
+  ui::AXNodeData combo;
+  combo.id = 2701;
+  combo.role = ax::mojom::Role::kComboBoxMenuButton;
+  combo.child_ids.push_back(2702);
+
+  ui::AXNodeData input;
+  input.id = 2702;
+  input.role = ax::mojom::Role::kTextField;
+
+  input.AddIntListAttribute(ax::mojom::IntListAttribute::kControlsIds, {2703});
+
+  ui::AXNodeData listbox;
+  listbox.id = 2703;
+  listbox.role = ax::mojom::Role::kListBox;
+  listbox.AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 4);
+
+  root.child_ids.push_back(2703);
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo, input, listbox);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2701));
+  ASSERT_NE(c, nullptr);
+  auto text = c->GetComboboxExpandedText();
+  EXPECT_EQ(text, u"{x} options available");
+
+  ui::AXNodeData dialog;
+  dialog.id = 2704;
+  dialog.role = ax::mojom::Role::kDialog;
+  input.AddIntListAttribute(ax::mojom::IntListAttribute::kControlsIds, {2704});
+
+  ui::AXNodeData root2 = root;
+  root2.child_ids.clear();
+  root2.child_ids.push_back(2701);
+  root2.child_ids.push_back(2703);
+  root2.child_ids.push_back(2704);
+  ui::AXTreeUpdate update2 = ui::MakeAXTreeUpdateForTesting(root2, combo, input, listbox, dialog);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager2(
+      new ui::BrowserAccessibilityManagerOHOS(update2, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  c = static_cast<ui::BrowserAccessibilityOHOS*>(manager2->GetFromID(2701));
+  auto text2 = c->GetComboboxExpandedText();
+  EXPECT_EQ(text2, u"Dialog");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedText_ControlsDialog) {
+  ui::AXNodeData root;
+  root.id = 2750;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(2751);
+
+  ui::AXNodeData combo;
+  combo.id = 2751;
+  combo.role = ax::mojom::Role::kComboBoxMenuButton;
+  combo.child_ids.push_back(2752);
+
+  ui::AXNodeData input;
+  input.id = 2752;
+  input.role = ax::mojom::Role::kTextField;
+  input.AddIntListAttribute(ax::mojom::IntListAttribute::kControlsIds, {2753});
+
+  ui::AXNodeData dialog;
+  dialog.id = 2753;
+  dialog.role = ax::mojom::Role::kDialog;
+
+  root.child_ids.push_back(2753);
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo, input, dialog);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2751));
+  ASSERT_NE(c, nullptr);
+  auto text = c->GetComboboxExpandedText();
+  EXPECT_EQ(text, u"Dialog");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedText_NoInputReturnsFallbackEmpty) {
+  ui::AXNodeData root;
+  root.id = 9730;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(9731);
+
+  ui::AXNodeData combo;
+  combo.id = 9731;
+  combo.role = ax::mojom::Role::kComboBoxMenuButton;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9731));
+  ASSERT_NE(c, nullptr);
+  auto text = c->GetComboboxExpandedText();
+  EXPECT_EQ(text, u"Expanded");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedText_NoChildInputNotTextField) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData combobox;
+  combobox.id = 2;
+  combobox.role = ax::mojom::Role::kComboBoxGrouping;
+
+  root.child_ids = {2};
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+
+  std::u16string result = n->GetComboboxExpandedText();
+  EXPECT_EQ(result, u"Expanded");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedText_NoAriaControls) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData combobox;
+  combobox.id = 2;
+  combobox.role = ax::mojom::Role::kTextFieldWithComboBox;
+
+  root.child_ids = {2};
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+
+  std::u16string result = n->GetComboboxExpandedText();
+  EXPECT_EQ(result, u"Expanded");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedText_NonComboboxContainer) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData combobox;
+  combobox.id = 2;
+  combobox.role = ax::mojom::Role::kTextFieldWithComboBox;
+
+  ui::AXNodeData div;
+  div.id = 3;
+  div.role = ax::mojom::Role::kGenericContainer;
+
+  root.child_ids = {2, 3};
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, div);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  std::u16string result = n->GetComboboxExpandedText();
+  EXPECT_EQ(result, u"Expanded");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedText_DialogRole) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData combobox;
+  combobox.id = 2;
+  combobox.role = ax::mojom::Role::kTextFieldWithComboBox;
+
+  ui::AXNodeData dialog;
+  dialog.id = 3;
+  dialog.role = ax::mojom::Role::kDialog;
+
+  root.child_ids = {2, 3};
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, dialog);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  std::u16string result = n->GetComboboxExpandedText();
+  EXPECT_EQ(result, u"Expanded");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedText_NoSetSize) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData combobox;
+  combobox.id = 2;
+  combobox.role = ax::mojom::Role::kTextFieldWithComboBox;
+
+  ui::AXNodeData listbox;
+  listbox.id = 3;
+  listbox.role = ax::mojom::Role::kListBox;
+
+  root.child_ids = {2};
+  combobox.child_ids = {3};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, listbox);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  std::u16string result = n->GetComboboxExpandedText();
+  EXPECT_EQ(result, u"Expanded");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedText_WithSetSize) {
+  ui::AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+
+  ui::AXNodeData combobox;
+  combobox.id = 2;
+  combobox.role = ax::mojom::Role::kTextFieldWithComboBox;
+
+  ui::AXNodeData listbox;
+  listbox.id = 3;
+  listbox.role = ax::mojom::Role::kListBox;
+  listbox.AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 5);
+
+  root.child_ids = {2};
+  combobox.child_ids = {3};
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, listbox);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
+  ASSERT_NE(n, nullptr);
+  std::u16string result = n->GetComboboxExpandedText();
+  EXPECT_EQ(result, u"Expanded");
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsClickable_DefaultVerb_And_NonClickableCases) {
+  ui::AXNodeData root;
+  root.id = 2800;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(2801);
+  root.child_ids.push_back(2802);
+
+  ui::AXNodeData btn;
+  btn.id = 2801;
+  btn.role = ax::mojom::Role::kButton;
+  btn.AddIntAttribute(ax::mojom::IntAttribute::kDefaultActionVerb,
+                      static_cast<int>(ax::mojom::DefaultActionVerb::kPress));
+
+  ui::AXNodeData iframe;
+  iframe.id = 2802;
+  iframe.role = ax::mojom::Role::kIframe;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, btn, iframe);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* b = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2801));
+  auto* f = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2802));
+  ASSERT_NE(b, nullptr);
+  ASSERT_NE(f, nullptr);
+  EXPECT_TRUE(b->IsClickable());
+  EXPECT_FALSE(f->IsClickable());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsClickable_ClickAncestorFalse) {
+  ui::AXNodeData root;
+  root.id = 2810;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(2811);
+  root.child_ids.push_back(2812);
+
+  ui::AXNodeData btn_click;
+  btn_click.id = 2811;
+  btn_click.role = ax::mojom::Role::kButton;
+  btn_click.AddIntAttribute(ax::mojom::IntAttribute::kDefaultActionVerb,
+                            static_cast<int>(ax::mojom::DefaultActionVerb::kClickAncestor));
+
+  ui::AXNodeData btn_press;
+  btn_press.id = 2812;
+  btn_press.role = ax::mojom::Role::kButton;
+  btn_press.AddIntAttribute(ax::mojom::IntAttribute::kDefaultActionVerb,
+                            static_cast<int>(ax::mojom::DefaultActionVerb::kPress));
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, btn_click, btn_press);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n_click = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2811));
+  auto* n_press = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2812));
+  ASSERT_NE(n_click, nullptr);
+  ASSERT_NE(n_press, nullptr);
+  EXPECT_TRUE(n_click->IsClickable());
+  EXPECT_TRUE(n_press->IsClickable());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsClickable_PlatformDocumentFalse) {
+  ui::AXNodeData root;
+  root.id = 9700;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.SetName("Doc");
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9700));
+  ASSERT_NE(n, nullptr);
+  EXPECT_FALSE(n->IsClickable());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsClickable_LinkFalse) {
+  ui::AXNodeData root;
+  root.id = 9710;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(9711);
+
+  ui::AXNodeData link;
+  link.id = 9711;
+  link.role = ax::mojom::Role::kLink;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, link);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9711));
+  ASSERT_NE(n, nullptr);
+  EXPECT_TRUE(n->IsClickable());
+}
+
+TEST_F(BrowserAccessibilityOHOSTest, Instance_IsChecked_Branches) {
+  ui::AXNodeData root;
+  root.id = 5100;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids.push_back(5101);
+  root.child_ids.push_back(5102);
+
+  ui::AXNodeData checked;
+  checked.id = 5101;
+  checked.role = ax::mojom::Role::kCheckBox;
+  checked.SetCheckedState(ax::mojom::CheckedState::kTrue);
+
+  ui::AXNodeData not_checked;
+  not_checked.id = 5102;
+  not_checked.role = ax::mojom::Role::kCheckBox;
+  not_checked.SetCheckedState(ax::mojom::CheckedState::kFalse);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, checked, not_checked);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
+      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+
+  auto* check = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(5101));
+  auto* not_check = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(5102));
+
+  ASSERT_NE(check, nullptr);
+  ASSERT_NE(not_check, nullptr);
+
+  EXPECT_TRUE(check->IsChecked());
+  EXPECT_FALSE(not_check->IsChecked());
+}
 }  // namespace content

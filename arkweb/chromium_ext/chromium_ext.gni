@@ -1262,7 +1262,7 @@ arkweb_components_viz_common_frame_sinks_copy_output_result_deps = [
 ]
 
 arkweb_content_browser_accessibility_resources = [
-  "//arkweb/chromium_ext/content/browser/accessibility/browser_accessibility_ohos_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/accessibility/browser_accessibility_ohos_unittests.cc",
   "//content/test/test_content_client.cc",
   "//content/test/test_content_client.h",
 ]

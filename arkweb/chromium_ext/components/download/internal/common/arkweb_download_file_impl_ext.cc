@@ -215,4 +215,8 @@ void ArkWebDownloadFileImplExt::ResetDownloadJobTimer() {
 }
 #endif
 
+void ArkWebDownloadItemImplExt::Cancel(bool user_cancel) {
+	DownloadItemImpl::Cancel(user_cancel);
+  ReadDataFromDownloadFileDone(std::vector<uint8_t>());
+}
 }  // namespace download

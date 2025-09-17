@@ -238,22 +238,26 @@ void OHOSAudioOutputStream::OnResume() {
     LOG(ERROR) << "OHOSAudioOutputStream::OnResume parameters_ is not valid.";
     return;
   }
-  if (isNeedResume(audioResumeInterval_) &&
-      OHOSAudioFocusController::IsSuspended(parameters_)) {
-    if (!main_task_runner_) {
-      LOG(ERROR) << "OHOSAudioOutputStream::OnResume main task runner is nullptr";
-      return;
+  if (OHOSAudioFocusController::IsSuspended(parameters_)) {
+    if(isNeedResume(audioResumeInterval_)) {
+      if (!main_task_runner_) {
+        LOG(ERROR) << "OHOSAudioOutputStream::OnResume main task runner is nullptr";
+        return;
+      }
+      main_task_runner_->PostTask(
+          FROM_HERE,
+          base::BindOnce(
+              [](base::WeakPtr<OHOSAudioOutputStream> self) {
+                if (self && self->parameters_.IsValid()) {
+                  OHOSAudioFocusController::OnResume(self->parameters_);
+                }
+              },
+              weak_factory_.GetWeakPtr()));
     }
-    main_task_runner_->PostTask(
-        FROM_HERE,
-        base::BindOnce(
-            [](base::WeakPtr<OHOSAudioOutputStream> self) {
-              if (self && self->parameters_.IsValid()) {
-                OHOSAudioFocusController::OnResume(self->parameters_);
-              }
-            },
-            weak_factory_.GetWeakPtr()));
+    return;
   }
+  LOG(INFO) << "[Oneshot] try to restart stream";
+  Start(callback_);
 }
 // LCOV_EXCL_STOP
 

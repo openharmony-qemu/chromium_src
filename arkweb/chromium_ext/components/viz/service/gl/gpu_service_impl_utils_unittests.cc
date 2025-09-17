@@ -69,6 +69,7 @@ TEST_F(GpuServiceImplUtilsTest, SetWakeUpGpuClosure) {
   auto count = 0;
   base::RepeatingClosure closure = base::BarrierClosure(
       0, base::BindLambdaForTesting([&count] { ++count; }));
+  ASSERT_NE(gpu_service(), nullptr);
   gpu_service()->SetWakeUpGpuClosure(std::move(closure));
   EXPECT_EQ(count, 1);
 }
@@ -76,6 +77,7 @@ TEST_F(GpuServiceImplUtilsTest, SetWakeUpGpuClosure) {
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
 TEST_F(GpuServiceImplUtilsTest, GetSurfaceId) {
     mojo::Remote<mojom::GpuService> gpu_service_remote;
+    ASSERT_NE(gpu_service(), nullptr);
     gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
     const int32_t kTestNativeEmbedId = 1;
     const std::string kTestSurfaceId = "test_surface_id_12345";
@@ -96,6 +98,7 @@ TEST_F(GpuServiceImplUtilsTest, GetSurfaceId) {
 
 TEST_F(GpuServiceImplUtilsTest, DestroyNativeWindow) {
     mojo::Remote<mojom::GpuService> gpu_service_remote;
+    ASSERT_NE(gpu_service(), nullptr);
     gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
     ASSERT_NO_FATAL_FAILURE(gpu_service()->DestroyNativeWindow(1223));
 }
@@ -104,6 +107,7 @@ TEST_F(GpuServiceImplUtilsTest, DestroyNativeWindow) {
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
 TEST_F(GpuServiceImplUtilsTest, DumpGpuInfo){
     mojo::Remote<mojom::GpuService> gpu_service_remote;
+    ASSERT_NE(gpu_service(), nullptr);
     gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
     ASSERT_NO_FATAL_FAILURE(gpu_service()->DumpGpuInfo(base::BindOnce([](float){})));
 }
@@ -112,6 +116,7 @@ TEST_F(GpuServiceImplUtilsTest, DumpGpuInfo){
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 TEST_F(GpuServiceImplUtilsTest, OnFrameSnapshotCopyOutputResult) {
   mojo::Remote<mojom::GpuService> gpu_service_remote;
+  ASSERT_NE(gpu_service(), nullptr);
   gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
 
   ASSERT_NO_FATAL_FAILURE(gpu_service()->OnFrameSnapshotCopyOutputResult(nullptr));
@@ -122,10 +127,10 @@ TEST_F(GpuServiceImplUtilsTest, OnFrameSnapshotCopyOutputResult) {
   ASSERT_NO_FATAL_FAILURE(gpu_service()->OnFrameSnapshotCopyOutputResult(std::move(result)));
   gpu_service_remote.FlushForTesting();
 
-  result = std::make_unique<CopyOutputResult>(CopyOutputResult::Format::RGBA,
+  auto result1 = std::make_unique<CopyOutputResult>(CopyOutputResult::Format::RGBA,
     CopyOutputResult::Destination::kSystemMemory, gfx::Rect(0, 0, 0, 0), false);
-  result->copy_output_result_utils()->info_.blankless_key = 11;
-  ASSERT_NO_FATAL_FAILURE(gpu_service()->OnFrameSnapshotCopyOutputResult(std::move(result)));
+  result1->copy_output_result_utils()->info_.blankless_key = 11;
+  ASSERT_NO_FATAL_FAILURE(gpu_service()->OnFrameSnapshotCopyOutputResult(std::move(result1)));
   gpu_service_remote.FlushForTesting();
 
   SkBitmap bitmap;

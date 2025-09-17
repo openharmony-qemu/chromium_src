@@ -75,15 +75,19 @@ class MockFrameSinkManagerClient : public mojom::FrameSinkManagerClient {
               (override));
   MOCK_METHOD(void,
               OnAggregatedHitTestRegionListUpdated,
-              (const ::viz::FrameSinkId& frame_sink_id, const std::vector<::viz::AggregatedHitTestRegion>& hit_test_data),
+              (const ::viz::FrameSinkId& frame_sink_id,
+                const std::vector<::viz::AggregatedHitTestRegion>& hit_test_data),
               (override));
   MOCK_METHOD(void,
               OnFrameTokenChanged,
-              (const ::viz::FrameSinkId& frame_sink_id, uint32_t frame_token, ::base::TimeTicks activation_time),
+              (const ::viz::FrameSinkId& frame_sink_id,
+                uint32_t frame_token,
+                ::base::TimeTicks activation_time),
               (override));
   MOCK_METHOD(void,
               OnScreenshotCaptured,
-              (const ::blink::SameDocNavigationScreenshotDestinationToken& destination_token, ::std::unique_ptr<::viz::CopyOutputResult> copy_output_result),
+              (const ::blink::SameDocNavigationScreenshotDestinationToken& destination_token,
+                ::std::unique_ptr<::viz::CopyOutputResult> copy_output_result),
               (override));
   MOCK_METHOD(void,
               RestoreRenderFit,
@@ -188,8 +192,7 @@ class FrameSinkManagerImplUtilsTest : public testing::Test {
     ASSERT_NO_FATAL_FAILURE(utils_.UpdateVSyncFrequency(frameSinkId1, 1));
 
     RootCompositorFrameSinkData root_data;
-    managerImpl.CreateRootCompositorFrameSink(
-      root_data.BuildParams(frameSinkId2));
+    managerImpl.CreateRootCompositorFrameSink(root_data.BuildParams(frameSinkId2));
     for (auto &item : managerImpl.root_sink_map_) {
       EXPECT_NE(item.second, nullptr);
     }
@@ -261,6 +264,7 @@ class FrameSinkManagerImplUtilsTest : public testing::Test {
     managerImpl.client_remote_.Bind(std::move(client));
     managerImpl.client_ = managerImpl.client_remote_.get();
     ASSERT_NO_FATAL_FAILURE(utils_.RestoreRenderFit(frameSinkId1));
+    managerImpl.client_ = nullptr;
   }
 #endif
 };

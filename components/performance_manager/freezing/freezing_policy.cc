@@ -327,6 +327,11 @@ void FreezingPolicy::OnCannotFreezeReasonChange(const PageNode* page_node,
                                                 CannotFreezeReason reason) {
   auto& page_freezing_state = PageFreezingState::FromPage(page_node);
   if (add) {
+#if BUILDFLAG(IS_ARKWEB)
+    if (base::Contains(page_freezing_state.cannot_freeze_reasons, reason)) {
+      return;
+    }
+#endif
     DCHECK(!base::Contains(page_freezing_state.cannot_freeze_reasons, reason));
     page_freezing_state.cannot_freeze_reasons.push_back(reason);
     if (page_freezing_state.cannot_freeze_reasons.size() == 1U) {

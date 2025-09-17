@@ -151,7 +151,7 @@ void MediaAVSessionAdapterImpl::DestroyAVSession() {
     {
         std::lock_guard<std::mutex> lock(avsession_mutex_);
         if (avSession_) {
-                AVSession_ErrCode ret = OH_AVSession_Destroy(avSession_);
+            AVSession_ErrCode ret = OH_AVSession_Destroy(avSession_);
             if (ret != AV_SESSION_ERR_SUCCESS) {
                 WVLOG_E("DestroyAVSession Destroy() failed, ret: %{public}d", ret);
             } else {
@@ -536,8 +536,8 @@ bool MediaAVSessionAdapterImpl::CreateNewSession(const MediaAVSessionType& type)
     {
         std::lock_guard<std::mutex> lock(avsession_mutex_);
         AVSession_ErrCode ret = OH_AVSession_Create(sessionType, "av_media_session",
-        avSessionKey_->GetBundleName().c_str(), avSessionKey_->GetAbilityName().c_str(),
-        &avSession_);
+            avSessionKey_->GetBundleName().c_str(), avSessionKey_->GetAbilityName().c_str(),
+            &avSession_);
         if (ret != AV_SESSION_ERR_SUCCESS) {
             WVLOG_I("OH_AVSession_Create failed. ret: %{public}d", ret);
             return false;

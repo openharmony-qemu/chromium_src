@@ -163,7 +163,7 @@ class MockOhosAdapterHelper : public OHOS::NWeb::OhosAdapterHelper {
               CreateFlowbufferAdapter,
               (),
               (override));
-  MOCK_METHOD(std::unique_ptr<MediaAVSessionAdapter>,
+  MOCK_METHOD(std::shared_ptr<MediaAVSessionAdapter>,
               CreateMediaAVSessionAdapter,
               (),
               (override));

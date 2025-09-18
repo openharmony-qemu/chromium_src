@@ -120,7 +120,7 @@ class ArkOhosAdapterHelperWrapper : public NWeb::OhosAdapterHelper {
 
   std::unique_ptr<NWeb::FlowbufferAdapter> CreateFlowbufferAdapter() override;
 
-  std::unique_ptr<NWeb::MediaAVSessionAdapter> CreateMediaAVSessionAdapter()
+  std::shared_ptr<NWeb::MediaAVSessionAdapter> CreateMediaAVSessionAdapter()
       override;
 
   std::unique_ptr<NWeb::OhosImageDecoderAdapter> CreateOhosImageDecoderAdapter()

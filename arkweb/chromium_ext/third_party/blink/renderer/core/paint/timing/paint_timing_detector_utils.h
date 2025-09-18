@@ -38,8 +38,10 @@ class PTDSupplementForBL;
 
 class PaintTimingDetectorUtils {
  public:
-  Persistent<PaintTimingDetector> paint_timing_detector_;
+  DISALLOW_NEW();
+  Member<PaintTimingDetector> paint_timing_detector_;
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  PaintTimingDetectorUtils() = default;
   PaintTimingDetectorUtils(PaintTimingDetector* paint_timing_detector, bool need_supplement_for_bl = true);
 #else
   explicit PaintTimingDetectorUtils(PaintTimingDetector* paint_timing_detector);
@@ -66,13 +68,15 @@ class PaintTimingDetectorUtils {
   void NotifyLcpForBlankless();
   void CheckNotifyLcpForBlankless();
   void RestartRecordingForBlankless();
-  bool HaveSupplementForBL() const { return ptd_supplement_for_bl_ != nullptr; }
+  bool HaveSupplementForBL() const { return need_supplement_for_bl_; }
   void SyncIPTDFrameIdxToBLIPTD(unsigned frame_index);
   void SyncTPTDFrameIdxToBLTPTD(unsigned frame_index);
+  void Trace(Visitor* visitor) const;
 
 private:
   void SyncBLPTDFrameIdxToPTD();
-  std::unique_ptr<PTDSupplementForBL> ptd_supplement_for_bl_ = nullptr;
+  bool need_supplement_for_bl_ = false;
+  PTDSupplementForBL ptd_supplement_for_bl_;
 #endif
 };
 

@@ -699,7 +699,8 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--no-sandbox");
   web_engine_args.emplace_back("--use-mobile-user-agent");
   web_engine_args.emplace_back("--enable-gpu-rasterization");
-  if (!base::ohos::IsPcDevice() || base::ohos::IsCompatibleMode()) {
+  if ((!base::ohos::IsPcDevice() && !base::ohos::IsPcMode()) ||
+      base::ohos::IsCompatibleMode()) {
     web_engine_args.emplace_back("--enable-viewport");
   }
   web_engine_args.emplace_back(

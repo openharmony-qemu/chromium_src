@@ -439,7 +439,6 @@ void OhosVideoDecoder::OnCodecConfigured(
 
 void OhosVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
                               DecodeCB decode_cb) {
-  LOG(DEBUG) << "OhosVideoDecoder::Decode: " << buffer->AsHumanReadableString();
   if (!buffer) {
     LOG(ERROR) << "OhosVideoDecoder::Decode buffer is null";
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
@@ -453,6 +452,7 @@ void OhosVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
     std::move(decode_cb).Run(DecoderStatus::Codes::kFailed);
     return;
   }
+  LOG(DEBUG) << "OhosVideoDecoder::Decode: " << buffer->AsHumanReadableString();
   if (state_ == State::kError) {
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
     if (!ohos_crypto_context_) {
@@ -811,4 +811,10 @@ void OhosVideoDecoder::ResumeDmaBuffer() {
   }
 }
 #endif  // ARKWEB_MEDIA_DMABUF
+
+#if BUILDFLAG(ARKWEB_TEST)
+void OhosVideoDecoder::TestOutputBufferReleased(base::RepeatingClosure pump_cb, bool has_work) {
+  OutputBufferReleased(pump_cb, has_work);
+}
+#endif
 }  // namespace media

@@ -165,6 +165,10 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
 
   void ReleaseCodec();
 
+#if BUILDFLAG(ARKWEB_TEST)  
+  void TestOutputBufferReleased(base::RepeatingClosure pump_cb, bool has_work);
+#endif
+
   std::unique_ptr<MediaLog> media_log_;
 
   State state_ = State::kInitializing;

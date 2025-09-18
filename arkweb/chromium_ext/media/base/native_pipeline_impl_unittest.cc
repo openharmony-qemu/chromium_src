@@ -54,6 +54,7 @@ using namespace OHOS::NWeb;
 class MockClient : public media::NativePipeline::Client {
  public:
   void OnSetLayer() {}
+  virtual ~MockClient() = default;
 };
 
 class MockSequencedTaskRunner : public base::SequencedTaskRunner {
@@ -128,12 +129,12 @@ class NativePipelineImplTest : public ::testing::Test {
 };
 
 TEST_F(NativePipelineImplTest, TestItem1) {
-  MockClient *client_ = new MockClient;
+  auto client = std::make_unique<MockClient>();
   media::CreateTextureCB create_texture_cb = base::BindPostTaskToCurrentDefault(
       base::BindOnce(&NativePipelineImplTest::OnSurfaceCreated, weak_this_));
   media::DestroyTextureCB destroy_texture_cb = base::BindPostTaskToCurrentDefault(
       base::BindOnce(&NativePipelineImplTest::OnSurfaceDestroyed, weak_this_));
-  pipeline_->Start(client_, std::move(create_texture_cb), std::move(destroy_texture_cb));
+  pipeline_->Start(client.get(), std::move(create_texture_cb), std::move(destroy_texture_cb));
   EXPECT_TRUE(pipeline_->IsRunning());
 
   pipeline_->Stop();

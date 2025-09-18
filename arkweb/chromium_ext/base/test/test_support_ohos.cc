@@ -5,12 +5,28 @@
 #ifndef BASE_TEST_TEST_SUPPORT_OHOS_H_
 #define BASE_TEST_TEST_SUPPORT_OHOS_H_
 
+#include "arkweb/chromium_ext/base/message_loop/message_pump_ohos.h"
 
+#include "arkweb/chromium_ext/base/test/test_support_ohos.h"
 #include "base/path_service.h"
 #include "base/files/file_path.h"
 #include "base/base_paths.h"
 
+#include "base/memory/raw_ptr.h"
+#include "base/memory/singleton.h"
+#include "base/message_loop/message_pump.h"
+#include "base/synchronization/waitable_event.h"
+#include "base/test/multiprocess_test.h"
+
+#include "base/message_loop/message_pump_default.h"
+
 namespace {
+
+std::unique_ptr<base::MessagePump> CreateMessagePumpOhosStub() {
+  auto message_pump_stub = std::make_unique<base::MessagePumpDefault>();
+  return message_pump_stub;
+}
+
 // Provides the test path for paths overridden during tests.
 bool GetTestProviderPath(int key, base::FilePath* result) {
   // On OHOS, such directory relate to arkui env, unittest cannot get. MOCK it.
@@ -65,6 +81,12 @@ void RegisterPathProviderForOhosTest() {
   InitPathProvider(DIR_USER_DESKTOP);
   InitPathProvider(DIR_SRC_TEST_DATA_ROOT);
   InitPathProvider(DIR_MODULE);
+}
+
+void InitOhosTestMessageLoop() {
+  // fix bug
+  if (!MessagePump::IsMessagePumpForUIFactoryOveridden())
+    MessagePump::OverrideMessagePumpForUIFactory(&CreateMessagePumpOhosStub);
 }
 
 }  // namespace base

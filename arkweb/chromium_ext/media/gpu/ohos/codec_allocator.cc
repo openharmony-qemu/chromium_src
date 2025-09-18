@@ -52,9 +52,6 @@ void ReleaseMediaCodecInternal(
   TRACE_EVENT0("media", "CodecAllocator::ReleaseMediaCodecInternal");
   base::ScopedBlockingCall scoped_block(FROM_HERE,
                                         base::BlockingType::MAY_BLOCK);
-#if false
-  codec->ReleaseBridgeDecoder();
-#endif
   codec = nullptr;
 }
 

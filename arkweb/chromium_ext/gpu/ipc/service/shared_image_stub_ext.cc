@@ -48,14 +48,6 @@ bool SharedImageStubExt::CreateSharedImage(const Mailbox& mailbox,
                                         void* window_buffer) {
   TRACE_EVENT2("gpu", "SharedImageStub::CreateSharedImage", "width",
                size.width(), "height", size.height());
-#if false
-  if (!mailbox.IsSharedImage()) {
-    LOG(ERROR) << "[HeifSupport] SharedImageStub: Trying to create a SharedImage with a "
-                  "non-SharedImage mailbox.";
-    OnError();
-    return false;
-  }
-#endif
   if (!MakeContextCurrent()) {
     OnError();
     return false;

@@ -2974,6 +2974,10 @@ test("content_unittests") {
     "test_render_frame_host_unittest.cc",
   ]
 
+  if (arkweb_unittests) {
+    sources += arkweb_content_browser_test_sources
+  }
+
   if (is_mac) {
     sources += [
       "../browser/child_process_task_port_provider_mac_unittest.cc",

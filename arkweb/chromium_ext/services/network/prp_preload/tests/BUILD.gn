@@ -18,7 +18,7 @@ test("prp_preload_unittests") {
   testonly = true
 
   sources = [
-    "res_request_info_updater_unittest.cc"
+    "res_request_info_updater_unittest.cc",
     "res_request_info_cache_mgr_unittest.cc",    
     "disk_cache_file_unittest.cc",
     "disk_cache_info_parser_unittest.cc",

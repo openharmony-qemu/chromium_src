@@ -672,6 +672,51 @@ float GetVirtualPixelRatioForScrollbar() {
 }
 #endif
 
+/**
+ * Parse command line flags from a flat buffer, supporting double-quote enclosed strings
+ * containing whitespace. argv elements are derived by splitting the buffer on whitepace; double
+ * quote characters may enclose tokens containing whitespace; a double-quote literal may be
+ * escaped with back-slash. (Otherwise backslash is taken as a literal).
+ */
+std::vector<std::string> tokenizeQuotedArguments(const std::string& buffer) {
+    int max_file_size = 96 * 1024;
+    if (buffer.size() > max_file_size) {
+        return {};  // Return an empty vector on error
+    }
+    std::vector<std::string> args;
+    std::string arg;
+    char currentQuote = '\0';
+    const char singleQuote = '\'';
+    const char doubleQuote = '"';
+    for (char c : buffer) {
+        // Detect start or end of quote block.
+        if ((currentQuote == '\0' && (c == singleQuote || c == doubleQuote)) || c == currentQuote) {
+            if (!arg.empty() && arg.back() == '\\') {
+                // Last char was a backslash; treat c as a literal.
+                arg.back() = c;
+            } else {
+                currentQuote = (currentQuote == '\0') ? c : '\0';
+            }
+        } else if (currentQuote == '\0' && std::isspace(c)) {
+            if (!arg.empty()) {
+                args.push_back(arg);
+                arg.clear();
+            }
+        } else {
+            arg.push_back(c);
+        }
+    }
+    if (!arg.empty()) {
+        if (currentQuote != '\0') {
+            // If quotes are unbalanced, return empty vector
+            return {};
+        }
+        args.push_back(arg);
+    }
+    LOG(INFO) << "tokenizeQuotedArguments:: tokenize from ohos-command-line succ.";
+    return args;
+}
+
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
 std::string GetGwpAsanEnable()
 {
@@ -813,6 +858,21 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back(arg);
   }
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
+
+  base::FilePath ohos_command_line_file(
+    FILE_PATH_LITERAL("/data/storage/el1/bundle/arkwebcore/libs/ohos-command-line"));
+  if (base::PathExists(ohos_command_line_file)) {
+    std::string ohos_command_line_content;
+    if (base::ReadFileToString(ohos_command_line_file, &ohos_command_line_content)) {
+        std::vector<std::string> args = tokenizeQuotedArguments(ohos_command_line_content);
+        for (auto& arg : args) {
+          web_engine_args.emplace_back(arg);
+        }
+    }
+  LOG(INFO) << "ohos connamd line args analysis from ohos-command-line file succ.";
+  } else {
+    LOG(INFO) << "file ohos-command-line does not exist.";
+  }
 }
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 

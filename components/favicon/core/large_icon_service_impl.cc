@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/logging.h"
@@ -36,7 +37,12 @@ using NoBigEnoughIconBehavior =
 
 const char kImageFetcherUmaClient[] = "LargeIconService";
 
-const char kGoogleServerV2Url[] = "https://t0.gstatic.com/faviconV2";
+const char kGoogleServerV2Url[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
+    "https://t0.gstatic.com/faviconV2";
+#endif
 
 // `check_seen` is a legacy parameter which prevents the Google-favicon-server
 // from crawling a URL as a result of a Google-favicon-server request in order
@@ -290,6 +296,12 @@ void LargeIconServiceImpl::
         GoogleFaviconServerRequestStatus::FAILURE_CONNECTION_ERROR);
     return;
   }
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  FinishServerRequestAsynchronously(
+      std::move(callback),
+      GoogleFaviconServerRequestStatus::FAILURE_TARGET_URL_INVALID);
+  return;
+#endif
 
   if (!page_url.is_valid()) {
     FinishServerRequestAsynchronously(

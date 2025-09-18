@@ -56,6 +56,10 @@
 #include "capi/nweb_statistic_callback.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_snapshot_data_base.h"
+#endif
+
 struct OpenDevToolsParam;
 struct RunJavaScriptParam;
 
@@ -1194,7 +1198,6 @@ class NWebImpl : public NWeb {
 
   std::unique_ptr<base::RetainingOneShotTimer> drag_over_timer_;
   DelegateDragEvent drag_over_event_;
-  base::WeakPtrFactory<NWebImpl> weak_factory_{this};
 
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   void AvoidVisibleViewportBottom(int32_t avoidHeight) override;
@@ -1202,20 +1205,32 @@ class NWebImpl : public NWeb {
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void MarkUserEnableBlankless()
+  {
+    is_user_enable_ = true;
+  }
+  void ResetUserEnableBlankless()
+  {
+    is_user_enable_ = false;
+  }
+  bool IsUserEnableBlankless()
+  {
+    return is_user_enable_;
+  }
+  bool ProcessBlanklessForUrl(uint64_t blanklessKey, bool isAnime = false);
   void ClearBlanklessKey();
   bool CheckNetAvailable();
-  void CallBlanklessFrameFunc(uint64_t blankless_key,
-                              int32_t lcp_time,
-                              const std::string& file,
-                              int32_t width,
-                              int32_t height);
+  void CallBlanklessFrameFunc(uint64_t blankless_key, SnapshotDataItem& dataItem, bool isAnime = false);
   // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
   std::atomic<uint64_t> blankless_key_ = UINT64_MAX;
   std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
+  std::atomic<bool> is_user_enable_ = false;
   uint32_t cur_blankless_frame_width_ = 0;
   uint32_t cur_blankless_frame_height_ = 0;
 #endif
+
+  base::WeakPtrFactory<NWebImpl> weak_factory_{this};
 };
 }  // namespace OHOS::NWeb
 

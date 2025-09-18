@@ -81,12 +81,15 @@ class SystemProperties {
                          compatible_device_type_ == kCompatibleTablet);
   }
 
+  bool is_pc_mode() { return is_pc_mode_; }
+
   float get_pixel_ratio() { return virtual_pixel_ratio_; }
   void set_pixel_ratio(float ratio) { virtual_pixel_ratio_ = ratio; }
 
  private:
   friend class NoDestructor<SystemProperties>;
 
+  bool NotifyIsPcMode();
   SystemProperties();
   ~SystemProperties() = default;
 
@@ -100,7 +103,19 @@ class SystemProperties {
   std::string api_version_;
   std::string compatible_device_type_;
   float virtual_pixel_ratio_ = 2.0;
+  bool is_pc_mode_ = false;
 };
+
+bool SystemProperties::NotifyIsPcMode() {
+  auto& adapter =
+      OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance();
+  if (adapter.GetStringParameter("const.window.support_window_pcmode_switch",
+                                 "false") == "true") {
+    return adapter.GetStringParameter("persist.sceneboard.ispcmode", "false") ==
+           "true";
+  }
+  return false;
+}
 
 SystemProperties::SystemProperties()
     : major_version_(OhosAdapterHelper::GetInstance()
@@ -129,7 +144,9 @@ SystemProperties::SystemProperties()
                        .GetDeviceInfoApiVersion()),
       compatible_device_type_(OhosAdapterHelper::GetInstance()
                                   .GetSystemPropertiesInstance()
-                                  .GetCompatibleDeviceType()) {}
+                                  .GetCompatibleDeviceType()) {
+  is_pc_mode_ = NotifyIsPcMode();
+}
 
 }  // namespace
 
@@ -246,6 +263,10 @@ BASE_EXPORT bool IsPageScale() {
 
 BASE_EXPORT std::string ComponentName() {
   return std::string(kComponentName);
+}
+
+BASE_EXPORT bool IsPcMode() {
+  return SystemProperties::Instance()->is_pc_mode();
 }
 }  // namespace ohos
 

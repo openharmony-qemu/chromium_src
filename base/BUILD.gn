@@ -3703,6 +3703,7 @@ test("base_unittests") {
     sources += arkweb_crashpad_sources
     sources += arkweb_content_common_unittests_sources
     sources += arkweb_content_renderer_unittests_sources
+    sources += arkweb_base_ohos_ltpo_unittests_sources
     sources += [
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
     ]
@@ -3710,10 +3711,16 @@ test("base_unittests") {
       configs += [
         "//arkweb/chromium_ext:arkweb_base_unittest_config"
       ]
+
+      sources += [
+        "//arkweb/chromium_ext/base/ohos/ltpo/src/mock_sys_info_util_ext.cc",
+      ]
     }
     sources += arkweb_ohos_adapter_ndk_unittests_sources
+    sources += arkweb_content_browser_accessibility_resources
 
     public_deps = [
+      "//ui/accessibility:test_support",
       "//content/public/browser",
     ]
   }

@@ -75,6 +75,10 @@ class ExtensionRegistryInfoManager : public MenuManager::LoadObserver,
 
   static void OnExtensionOpenUrlCallBack(const std::string& url);
 
+  static void StartInitialLoad();
+ 
+  static void StopInitialLoad();
+
   ExtensionRegistryInfoManager(content::BrowserContext* browser_context);
 
   ~ExtensionRegistryInfoManager() = default;

@@ -113,6 +113,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   void OneShotMediaPlayerStopped();
 
+  void StopTimer();
+
   raw_ptr<OHOSAudioManager> manager_ = nullptr;
 
   AudioParameters parameters_;

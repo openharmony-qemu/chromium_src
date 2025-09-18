@@ -581,6 +581,20 @@ static bool ShouldEnableSiteIsolation() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+static void RemoveBlanklessFrame(std::shared_ptr<OHOS::NWeb::NWebHandler> handle, int32_t lcp_time, bool isAnime)
+{
+  if (!handle) {
+    return;
+  }
+  if (isAnime) {
+    handle->OnRemoveBlanklessFrameWithAnimation(lcp_time);
+    return;
+  }
+  handle->OnRemoveBlanklessFrame(lcp_time);
+}
+#endif
+
 static std::string GetNetlogMode() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                         .GetSystemPropertiesInstance();
@@ -685,7 +699,8 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--no-sandbox");
   web_engine_args.emplace_back("--use-mobile-user-agent");
   web_engine_args.emplace_back("--enable-gpu-rasterization");
-  if (!base::ohos::IsPcDevice() || base::ohos::IsCompatibleMode()) {
+  if ((!base::ohos::IsPcDevice() && !base::ohos::IsPcMode()) ||
+      base::ohos::IsCompatibleMode()) {
     web_engine_args.emplace_back("--enable-viewport");
   }
   web_engine_args.emplace_back(
@@ -6396,6 +6411,7 @@ void NWebImpl::SetPrivacyStatus(bool isPrivate) {
 }
 
 int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) {
+  MarkUserEnableBlankless();
   if (!base::ohos::BlanklessController::CheckGlobalProperty() ||
       !nweb_delegate_ || !similarity || !loadingTime || !CheckNetAvailable()) {
     if (similarity) {
@@ -6442,6 +6458,7 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
 }
 
 int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStart) {
+  MarkUserEnableBlankless();
   if (!base::ohos::BlanklessController::CheckGlobalProperty() || !CheckNetAvailable()) {
     return -5;  // ERR_SIGNIFICANT_CHANGE
   }
@@ -6476,17 +6493,31 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
       LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey similarity < 0.33";
       return -5;    // ERR_SIGNIFICANT_CHANGE
     }
-    CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath, dataItem.width, dataItem.height);
+    CallBlanklessFrameFunc(blankless_key, dataItem);
   }
   return 0;   // SUCCESS
 }
 
 bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   if (!base::ohos::BlanklessController::CheckGlobalProperty() || !nweb_delegate_ ||
-      !base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url) || !CheckNetAvailable()) {
+      !CheckNetAvailable() || IsUserEnableBlankless()) {
     return false;
   }
-  blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(url);
+#if BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
+  auto app_blankless_key = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
+  if (base::ohos::BlanklessController::GetInstance().CheckEnableForAppUrl(url, app_blankless_key)) {
+    return ProcessBlanklessForUrl(app_blankless_key, true);
+  }
+#endif // BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
+  auto sys_blankless_key = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
+  if (base::ohos::BlanklessController::GetInstance().CheckEnableForSysUrl(url, sys_blankless_key)) {
+    return ProcessBlanklessForUrl(sys_blankless_key);
+  }
+  return false;
+}
+
+bool NWebImpl::ProcessBlanklessForUrl(uint64_t blanklessKey, bool isAnime) {
+  blankless_key_ = blanklessKey;
   auto& instance = base::ohos::BlanklessController::GetInstance();
   auto window_id = instance.GetWindowIdByNWebId(nweb_id_);
   auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
@@ -6501,7 +6532,7 @@ bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   base::ohos::BlanklessController::GetInstance().RecordSystemTime(nweb_id_, blankless_key_, system_time);
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
   OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
-  CallBlanklessFrameFunc(blankless_key_, dataItem.lcpTime, dataItem.staticPath, dataItem.width, dataItem.height);
+  CallBlanklessFrameFunc(blankless_key_, dataItem, isAnime);
   return true;
 }
 
@@ -6535,6 +6566,7 @@ void NWebImpl::ClearBlanklessKey() {
   }
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, base::ohos::BlanklessController::INVALID_BLANKLESS_KEY);
   blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
+  ResetUserEnableBlankless();
 }
 
 bool NWebImpl::CheckNetAvailable() {
@@ -6553,36 +6585,37 @@ bool NWebImpl::CheckNetAvailable() {
   return true;
 }
 
-void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file, int32_t width,
-                                      int32_t height) {
-  if (nweb_handle_ == nullptr || lcp_time == INT32_MAX || lcp_time <= 0 || file.empty()) {
+void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, SnapshotDataItem& dataItem, bool isAnime) {
+  std::string file = isAnime ? dataItem.wholePath : dataItem.staticPath;
+  if (nweb_handle_ == nullptr || dataItem.lcpTime == INT32_MAX || dataItem.lcpTime <= 0 || file.empty()) {
     return;
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
   auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
   uint64_t recorded_time = instance.GetSystemTime(nweb_id_, blankless_key_);
   int32_t corrected_time = static_cast<int32_t>(static_cast<uint64_t>(system_time) - recorded_time);
-  if (corrected_time < 0 || corrected_time >= lcp_time ||
-      lcp_time - corrected_time < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
-    LOG(DEBUG) << "blankless CallBlanklessFrameFunc corrected time error " << corrected_time << " " << lcp_time;
+  if (corrected_time < 0 || corrected_time >= dataItem.lcpTime ||
+      dataItem.lcpTime - corrected_time < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
+    LOG(DEBUG) << "blankless CallBlanklessFrameFunc corrected time error " <<
+      corrected_time << " " << dataItem.lcpTime;
     return;
   }
-  if (lcp_time >= base::ohos::BlanklessController::A_STANDARD) {
-    lcp_time = std::min(lcp_time, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
-  } else {
-    lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME;
+  int32_t lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME;
+  if (dataItem.lcpTime >= base::ohos::BlanklessController::A_STANDARD) {
+    lcp_time = std::min(dataItem.lcpTime, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
   }
   LOG(DEBUG) << "blankless OnRemoveBlanklessFrame Delay Time: " << lcp_time;
   if (is_visible_) {
-    nweb_handle_->OnInsertBlanklessFrameWithSize(file, width, height);
-    nweb_handle_->OnRemoveBlanklessFrame(lcp_time);
-    instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_](){
-      handle->OnRemoveBlanklessFrame(0);
+    nweb_handle_->OnInsertBlanklessFrameWithSize(file, dataItem.width, dataItem.height);
+    RemoveBlanklessFrame(nweb_handle_, lcp_time, isAnime);
+    instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_, isAnime](){
+      RemoveBlanklessFrame(handle, 0, isAnime);
     });
   } else {
-    instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_, file, width, height](){
-      handle->OnInsertBlanklessFrameWithSize(file, width, height);
-    }, lcp_time);
+    instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_,
+        [handle = this->nweb_handle_, file, width = dataItem.width, height = dataItem.height](){
+          handle->OnInsertBlanklessFrameWithSize(file, width, height);
+        }, lcp_time);
   }
 }
 

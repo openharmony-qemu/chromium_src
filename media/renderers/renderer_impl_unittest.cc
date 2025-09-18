@@ -2,10 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if BUILDFLAG(ARKWEB_TEST)
 #include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
 #define private public
 #include "media/renderers/renderer_impl.h"
 #undef private
+#else
+#include "media/renderers/renderer_impl.h"
+#endif // ARKWEB_TEST
 
 #include <stdint.h>
 

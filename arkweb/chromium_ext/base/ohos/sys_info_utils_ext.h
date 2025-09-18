@@ -103,6 +103,8 @@ BASE_EXPORT void SetPageScale(bool status);
 BASE_EXPORT bool IsPageScale();
 
 BASE_EXPORT std::string ComponentName();
+
+BASE_EXPORT bool IsPcMode();
 }  // namespace ohos
 }  // namespace base
 

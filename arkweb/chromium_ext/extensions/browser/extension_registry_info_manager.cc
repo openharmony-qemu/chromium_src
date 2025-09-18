@@ -48,6 +48,16 @@
 namespace extensions {
 
 namespace {
+
+enum LoadPhase {
+  kStartInitialLoad,
+  kEndInitialLoad,
+  kNormalLoad,
+};
+ 
+LoadPhase g_load_phase = kNormalLoad;
+std::set<std::string> g_initial_loaded_extensions;
+
 constexpr char kExtensionsHost[] = "extensions";
 constexpr char kUrlSeparator[] = "://";
 constexpr int kTabIdNone = -1;
@@ -282,6 +292,16 @@ void ExtensionRegistryInfoManager::BrowserNotifier::NotifyIfReady() {
   }
   LOG(INFO) << "BrowserNotifier ready to notify extension: " << extension_.id();
   NotifyManagerExtensionLoaded();
+
+  if (g_load_phase != kNormalLoad) {
+    g_initial_loaded_extensions.erase(extension_.id());
+    if (g_load_phase == kEndInitialLoad && g_initial_loaded_extensions.empty()) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+      NWebExtensionManagerDispatcher::OnExtensionInitLoadEndCallBack();
+#endif
+      g_load_phase = kNormalLoad;
+    }
+  }
 }
 
 void ExtensionRegistryInfoManager::BrowserNotifier::PopulateActionIcon(
@@ -580,6 +600,10 @@ void ExtensionRegistryInfoManager::Loaded(const std::string& extension_id) {
     return;
   }
 
+  if (g_load_phase == kStartInitialLoad) {
+    g_initial_loaded_extensions.insert(extension_id);
+  }
+
   StartNotifyingExtensionLoaded(*extension);
 }
 
@@ -597,6 +621,10 @@ void ExtensionRegistryInfoManager::OnExtensionInstalled(content::BrowserContext*
                                                         const Extension* extension,
                                                         bool is_update) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (!extensions::ui_util::ShouldDisplayInExtensionSettings(*extension)) {
+    return;
+  }
+
   NWebExtensionManagerDispatcher::OnExtensionInstalledCallBack(
       extension->id(), extension->creation_flags(), static_cast<int>(extension->manifest()->location()));
 #endif
@@ -732,6 +760,20 @@ void ExtensionRegistryInfoManager::StartNotifyingExtensionLoaded(
   }
 
   notifier->NotifyIfReady();
+}
+
+void ExtensionRegistryInfoManager::StartInitialLoad() {
+  g_load_phase = kStartInitialLoad;
+}
+ 
+void ExtensionRegistryInfoManager::StopInitialLoad() {
+  g_load_phase = kEndInitialLoad;
+  if (g_initial_loaded_extensions.empty()) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    NWebExtensionManagerDispatcher::OnExtensionInitLoadEndCallBack();
+#endif
+    g_load_phase = kNormalLoad;
+  }
 }
 
 }  // namespace extensions

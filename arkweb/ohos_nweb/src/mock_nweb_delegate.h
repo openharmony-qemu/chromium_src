@@ -145,6 +145,9 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, EnableMixedContentAutoUpgrades, (bool enable), (override));
   MOCK_METHOD(bool, IsMixedContentAutoUpgradesEnabled, (), (override));
 #endif
+#if BUILDFLAG(IS_ARKWEB)
+  MOCK_METHOD(void, EnableAppLinking, (bool enable), (override));
+#endif
   MOCK_METHOD(void, SetPopupSurface, (void* popupSurface), (override));
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

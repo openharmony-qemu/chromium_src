@@ -150,6 +150,7 @@ class GpuServiceMock : public mojom::GpuService {
    MOCK_METHOD1(DumpGpuInfo, void(DumpGpuInfoCallback callback));
    MOCK_METHOD1(SetIsFling, void(bool is_fling_enabled));
    MOCK_METHOD1(SetIsScroll, void(bool is_scroll_enabled));
+   MOCK_METHOD1(WriteClangProfilingProfile, void(WriteClangProfilingProfileCallback callback));
 };
 
 class GpuHostImplTest : public testing::Test {
@@ -280,7 +281,7 @@ TEST_F(GpuHostImplTest, Discard) {
             std::move(infoPtr), std::move(buffer), std::move(metadata)));
     }
 
-    void TestDumpBlanklessSnapshot(){
+    void TestDumpBlanklessSnapshot01() {
       DelegateMock delegate;
       mojo::PendingRemote<viz::mojom::VizMain> viz_main_pending_remote;
       auto viz_main_receiver = viz_main_pending_remote.InitWithNewPipeAndPassReceiver();
@@ -294,88 +295,86 @@ TEST_F(GpuHostImplTest, Discard) {
       mojo::ScopedSharedBufferHandle buffer = mojo::SharedBufferHandle::Create(metadata->size);
       EXPECT_EQ(buffer.is_valid(), true);
 
-      ASSERT_NO_FATAL_FAILURE(
-        gpu_host.DumpBlanklessSnapshot(
-          std::move(infoPtr), std::move(buffer), std::move(metadata)));
-      ASSERT_NO_FATAL_FAILURE(
-        gpu_host.DumpBlanklessSnapshot(
-          nullptr, std::move(buffer), std::move(metadata)));
+      ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
+        std::move(infoPtr), std::move(buffer), std::move(metadata)));
+      ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
+        nullptr, std::move(buffer), std::move(metadata)));
 
       infoPtr = CreateInfoPtr();
       metadata = CreateMetaData();
       buffer = mojo::SharedBufferHandle::Create(metadata->size);
-      ASSERT_NO_FATAL_FAILURE(
-        gpu_host.DumpBlanklessSnapshot(
-          std::move(infoPtr), std::move(buffer), std::move(metadata)));
+      ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
+        std::move(infoPtr), std::move(buffer), std::move(metadata)));
 
       infoPtr = CreateInfoPtr();
       metadata = CreateMetaData();
       buffer = mojo::SharedBufferHandle::Create(metadata->size);
-      ASSERT_NO_FATAL_FAILURE(
-        gpu_host.DumpBlanklessSnapshot(
-          std::move(infoPtr), mojo::ScopedSharedBufferHandle(), std::move(metadata)));
+      ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
+        std::move(infoPtr), mojo::ScopedSharedBufferHandle(), std::move(metadata)));
 
       infoPtr = CreateInfoPtr();
       buffer = mojo::SharedBufferHandle::Create(111);
-      ASSERT_NO_FATAL_FAILURE(
-        gpu_host.DumpBlanklessSnapshot(
-          std::move(infoPtr), std::move(buffer), nullptr));
+      ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
+        std::move(infoPtr), std::move(buffer), nullptr));
 
       infoPtr = CreateInfoPtr();
       metadata = CreateMetaData();
       buffer = mojo::SharedBufferHandle::Create(metadata->size);
       metadata->width = -1;
-      ASSERT_NO_FATAL_FAILURE(
-        gpu_host.DumpBlanklessSnapshot(
-          std::move(infoPtr), std::move(buffer), std::move(metadata)));
+      ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
+        std::move(infoPtr), std::move(buffer), std::move(metadata)));
 
       infoPtr = CreateInfoPtr();
       metadata = CreateMetaData();
       buffer = mojo::SharedBufferHandle::Create(metadata->size);
       metadata->height = -1;
-      ASSERT_NO_FATAL_FAILURE(
-        gpu_host.DumpBlanklessSnapshot(
-          std::move(infoPtr), std::move(buffer), std::move(metadata)));
+      ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
+        std::move(infoPtr), std::move(buffer), std::move(metadata)));
+    }
 
-      infoPtr = CreateInfoPtr();
-      metadata = CreateMetaData();
-      buffer = mojo::SharedBufferHandle::Create(111);
+    void TestDumpBlanklessSnapshot02() {
+      DelegateMock delegate;
+      mojo::PendingRemote<viz::mojom::VizMain> viz_main_pending_remote;
+      auto viz_main_receiver = viz_main_pending_remote.InitWithNewPipeAndPassReceiver();
+      VizMainMock viz_main_mock;
+      mojo::Receiver<viz::mojom::VizMain> viz_main_receiver_impl(&viz_main_mock, std::move(viz_main_receiver));
+      GpuHostImpl::InitParams params;
+      GpuHostImpl gpu_host(&delegate, std::move(viz_main_pending_remote), std::move(params));
+
+      auto infoPtr = CreateInfoPtr();
+      auto metadata = CreateMetaData();
+      mojo::ScopedSharedBufferHandle buffer = mojo::SharedBufferHandle::Create(111);
       metadata->size = 0;
-      ASSERT_NO_FATAL_FAILURE(
-        gpu_host.DumpBlanklessSnapshot(
+      ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
           std::move(infoPtr), std::move(buffer), std::move(metadata)));
 
       infoPtr = CreateInfoPtr();
       metadata = CreateMetaData();
       buffer = mojo::SharedBufferHandle::Create(metadata->size);
       metadata->color_type = -1;
-      ASSERT_NO_FATAL_FAILURE(
-        gpu_host.DumpBlanklessSnapshot(
-          std::move(infoPtr), std::move(buffer), std::move(metadata)));
+      ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
+        std::move(infoPtr), std::move(buffer), std::move(metadata)));
 
       infoPtr = CreateInfoPtr();
       metadata = CreateMetaData();
       buffer = mojo::SharedBufferHandle::Create(metadata->size);
       metadata->color_type = 111111;
-      ASSERT_NO_FATAL_FAILURE(
-        gpu_host.DumpBlanklessSnapshot(
-          std::move(infoPtr), std::move(buffer), std::move(metadata)));
+      ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
+        std::move(infoPtr), std::move(buffer), std::move(metadata)));
 
       infoPtr = CreateInfoPtr();
       metadata = CreateMetaData();
       buffer = mojo::SharedBufferHandle::Create(metadata->size);
       metadata->alpha_type = -1;
-      ASSERT_NO_FATAL_FAILURE(
-        gpu_host.DumpBlanklessSnapshot(
-          std::move(infoPtr), std::move(buffer), std::move(metadata)));
+      ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
+        std::move(infoPtr), std::move(buffer), std::move(metadata)));
 
       infoPtr = CreateInfoPtr();
       metadata = CreateMetaData();
       buffer = mojo::SharedBufferHandle::Create(metadata->size);
       metadata->alpha_type = 100000;
-      ASSERT_NO_FATAL_FAILURE(
-        gpu_host.DumpBlanklessSnapshot(
-          std::move(infoPtr), std::move(buffer), std::move(metadata)));
+      ASSERT_NO_FATAL_FAILURE(gpu_host.DumpBlanklessSnapshot(
+        std::move(infoPtr), std::move(buffer), std::move(metadata)));
     }
 #endif
 
@@ -385,7 +384,8 @@ TEST_F(GpuHostImplTest, SendBlanklessSnapshotInfo) {
 }
 
 TEST_F(GpuHostImplTest, DumpBlanklessSnapshot) {
-  TestDumpBlanklessSnapshot();
+  TestDumpBlanklessSnapshot01();
+  TestDumpBlanklessSnapshot02();
 }
 #endif
 } // namespace viz

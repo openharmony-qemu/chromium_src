@@ -37,7 +37,8 @@ PaintTimingDetectorUtils::PaintTimingDetectorUtils(PaintTimingDetector* paint_ti
   this->paint_timing_detector_ = paint_timing_detector;
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   if (need_supplement_for_bl) {
-    ptd_supplement_for_bl_ = std::make_unique<PTDSupplementForBL>(paint_timing_detector->frame_view_);
+    need_supplement_for_bl_ = need_supplement_for_bl;
+    ptd_supplement_for_bl_ = PTDSupplementForBL(paint_timing_detector->frame_view_);
   } else {
     paint_timing_detector->GetImagePaintTimingDetector().SetForBlankless();
     paint_timing_detector->GetTextPaintTimingDetector().SetForBlankless();
@@ -85,10 +86,10 @@ void PaintTimingDetectorUtils::CheckNotifyLcpForBlankless() {
 }
 
 bool PaintTimingDetectorUtils::ForwardNotifyPaintFinished() {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return false;
   }
-  ptd_supplement_for_bl_->NotifyPaintFinished();
+  ptd_supplement_for_bl_.NotifyPaintFinished();
   return true;
 }
 
@@ -96,7 +97,7 @@ void PaintTimingDetectorUtils::ForwardNotifyBackgroundImagePaint(const Node& nod
                                       const StyleImage& style_image,
                                       const PropertyTreeStateOrAlias& current_paint_chunk_properties,
                                       const gfx::Rect& image_border) {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
 
@@ -104,7 +105,7 @@ void PaintTimingDetectorUtils::ForwardNotifyBackgroundImagePaint(const Node& nod
   if (!object) {
     return false;
   }
-  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_->GetPaintTimingDetector();
+  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_.GetPaintTimingDetector();
   ImagePaintTimingDetector& image_paint_timing_detector = paint_timing_detector.GetImagePaintTimingDetector();
   if (!image_paint_timing_detector.IsRecordingLargestImagePaint()) {
     return false;
@@ -124,11 +125,11 @@ bool PaintTimingDetectorUtils::ForwardNotifyImagePaint(const LayoutObject& objec
                                                       const MediaTiming& media_timing,
                                                       const PropertyTreeStateOrAlias& current_paint_chunk_properties,
                                                       const gfx::Rect& image_border) {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
 
-  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_->GetPaintTimingDetector();
+  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_.GetPaintTimingDetector();
   ImagePaintTimingDetector& image_paint_timing_detector = paint_timing_detector.GetImagePaintTimingDetector();
   if (!image_paint_timing_detector.IsRecordingLargestImagePaint()) {
     return false;
@@ -140,13 +141,13 @@ bool PaintTimingDetectorUtils::ForwardNotifyImagePaint(const LayoutObject& objec
 
 void PaintTimingDetectorUtils::ForwardNotifyImageFinished(const LayoutObject& object,
   const MediaTiming* media_timing) {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
   if (paint_timing_detector_->GetImagePaintTimingDetector().IsRecordingLargestImagePaint()) {
     return;
   }
-  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_->GetPaintTimingDetector();
+  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_.GetPaintTimingDetector();
   ImagePaintTimingDetector& image_paint_timing_detector = paint_timing_detector.GetImagePaintTimingDetector();
   if (!image_paint_timing_detector.IsRecordingLargestImagePaint()) {
     return;
@@ -156,118 +157,125 @@ void PaintTimingDetectorUtils::ForwardNotifyImageFinished(const LayoutObject& ob
 }
 
 void PaintTimingDetectorUtils::ForwardLayoutObjectWillBeDestroyed(const LayoutObject& object) {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
-  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_->GetPaintTimingDetector();
+  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_.GetPaintTimingDetector();
   TextPaintTimingDetector& text_paint_timing_detector = paint_timing_detector.GetTextPaintTimingDetector();
   text_paint_timing_detector.LayoutObjectWillBeDestroyed(object);
 }
 
 void PaintTimingDetectorUtils::ForwardNotifyImageRemoved(const LayoutObject& object,
   const ImageResourceContent* cached_image) {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
-  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_->GetPaintTimingDetector();
+  PaintTimingDetector& paint_timing_detector = ptd_supplement_for_bl_.GetPaintTimingDetector();
   ImagePaintTimingDetector& image_paint_timing_detector = paint_timing_detector.GetImagePaintTimingDetector();
   image_paint_timing_detector.NotifyImageRemoved(object, cached_image);
 }
 
 void PaintTimingDetectorUtils::ForwardOnInputOrScroll() {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
-  ptd_supplement_for_bl_->OnInputOrScroll();
+  ptd_supplement_for_bl_.OnInputOrScroll();
   return;
 }
 
 void PaintTimingDetectorUtils::ForwardRestartRecordingLCP() {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
 
   // sync blankless only PTD frame index to PTD.
   SyncBLPTDFrameIdxToPTD();
 
-  ptd_supplement_for_bl_->RestartRecordingLCP();
+  ptd_supplement_for_bl_.RestartRecordingLCP();
 }
 
 void PaintTimingDetectorUtils::ForwardRestartRecordingLCPToUkm() {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
 
   // sync blankless only PTD frame index to PTD.
   SyncBLPTDFrameIdxToPTD();
 
-  ptd_supplement_for_bl_->RestartRecordingLCPToUkm();
+  ptd_supplement_for_bl_.RestartRecordingLCPToUkm();
 }
 
 void PaintTimingDetectorUtils::ForwardSoftNavigationDetected(LocalDOMWindow* window) {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
-  ptd_supplement_for_bl_->SoftNavigationDetected(window);
+  ptd_supplement_for_bl_.SoftNavigationDetected(window);
   return;
 }
 
 void PaintTimingDetectorUtils::ForwardReportIgnoredContent() {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
-  ptd_supplement_for_bl_->ReportIgnoredContent();
+  ptd_supplement_for_bl_.ReportIgnoredContent();
 }
 
 void PaintTimingDetectorUtils::ForwardUpdateLcpCandidate() {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
-  ptd_supplement_for_bl_->UpdateLcpCandidate();
+  ptd_supplement_for_bl_.UpdateLcpCandidate();
 }
 
 void PaintTimingDetectorUtils::RestartRecordingForBlankless() {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
   LOG(INFO) << "blankless lcp:PaintTimingDetectorUtils::RestartRecordingForBlankless";
-  ptd_supplement_for_bl_->StopRecordingLCP(false);
+  ptd_supplement_for_bl_.StopRecordingLCP(false);
 }
 
 void PaintTimingDetectorUtils::SyncBLPTDFrameIdxToPTD() {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
   paint_timing_detector_->GetImagePaintTimingDetector().SetFrameIndex(
-    ptd_supplement_for_bl_->GetImagePaintTimingDetector().GetFrameIndex());
+    ptd_supplement_for_bl_.GetImagePaintTimingDetector().GetFrameIndex());
   paint_timing_detector_->GetTextPaintTimingDetector().SetFrameIndex(
-    ptd_supplement_for_bl_->GetTextPaintTimingDetector().GetFrameIndex());
+    ptd_supplement_for_bl_.GetTextPaintTimingDetector().GetFrameIndex());
 }
 
 void PaintTimingDetectorUtils::SyncIPTDFrameIdxToBLIPTD(unsigned frame_index) {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
-  ptd_supplement_for_bl_->GetImagePaintTimingDetector().SetFrameIndex(frame_index);
+  ptd_supplement_for_bl_.GetImagePaintTimingDetector().SetFrameIndex(frame_index);
 }
 
 void PaintTimingDetectorUtils::SyncTPTDFrameIdxToBLTPTD(unsigned frame_index) {
-  if (!ptd_supplement_for_bl_.get()) {
+  if (!need_supplement_for_bl_) {
     return;
   }
-  ptd_supplement_for_bl_->GetTextPaintTimingDetector().SetFrameIndex(frame_index);
+  ptd_supplement_for_bl_.GetTextPaintTimingDetector().SetFrameIndex(frame_index);
+}
+
+void PaintTimingDetectorUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(paint_timing_detector_);
+  if (need_supplement_for_bl_) {
+    visitor->Trace(ptd_supplement_for_bl_);
+  }
 }
 
 void PaintTimingDetector::RestartRecordingForBlankless() {
-  paint_timing_detector_utils_->RestartRecordingForBlankless();
+  paint_timing_detector_utils_.RestartRecordingForBlankless();
 }
 
 void PaintTimingDetector::SyncIPTDFrameIdxToBLIPTD(unsigned frame_index) {
-  paint_timing_detector_utils_->SyncIPTDFrameIdxToBLIPTD(frame_index);
+  paint_timing_detector_utils_.SyncIPTDFrameIdxToBLIPTD(frame_index);
 }
 
 void PaintTimingDetector::SyncTPTDFrameIdxToBLTPTD(unsigned frame_index) {
-  paint_timing_detector_utils_->SyncTPTDFrameIdxToBLTPTD(frame_index);
+  paint_timing_detector_utils_.SyncTPTDFrameIdxToBLTPTD(frame_index);
 }
 
 void TextPaintTimingDetector::SetForBlankless() {

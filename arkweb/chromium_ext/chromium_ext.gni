@@ -1026,6 +1026,10 @@ arkweb_page_load_statistics_sources = [
   "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/page_load_statistics_ext.h",
 ]
 
+arkweb_page_load_statistics_unittest_sources = [
+  "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/page_load_statistics_ext_unittest.cc",
+]
+
 arkweb_context_memu_params_builder_cc_sources = [ "//arkweb/chromium_ext/third_party/blink/common/context_menu_data/context_menu_params_builder_utils.cc" ]
 
 arkweb_context_memu_params_builder_h_sources = [ "//arkweb/chromium_ext/third_party/blink/public/common/context_menu_data/context_menu_params_builder_utils.h" ]
@@ -1104,6 +1108,10 @@ arkweb_third_party_blink_renderer_core_ohos_adblock_util_test_sources = [
 arkweb_document_subresource_filter_sources = [
   "//arkweb/chromium_ext/components/subresource_filter/core/common/document_subresource_filter_ext.cc",
   "//arkweb/chromium_ext/components/subresource_filter/core/common/document_subresource_filter_ext.h",
+]
+
+arkweb_document_subresource_filter_unittest_sources = [
+  "//arkweb/chromium_ext/components/subresource_filter/core/common/document_subresource_filter_ext_unittest.cc",
 ]
 
 arkweb_net_url_request_sources = [
@@ -1192,6 +1200,11 @@ arkweb_user_ruleset_version_sources = [
   "//arkweb/chromium_ext/components/subresource_filter/core/browser/user_ruleset_version.h",
 ]
 
+arkweb_user_ruleset_version_unittest_sources = [
+  "//arkweb/chromium_ext/components/subresource_filter/core/browser/user_ruleset_version_unittest.cc",
+  "//arkweb/chromium_ext/components/subresource_filter/core/browser/user_ruleset_version.h",
+]
+
 arkweb_user_subresource_filter_constants_sources = [
   "//arkweb/chromium_ext/components/subresource_filter/core/browser/user_subresource_filter_constants.cc",
   "//arkweb/chromium_ext/components/subresource_filter/core/browser/user_subresource_filter_constants.h",
@@ -1230,6 +1243,10 @@ arkweb_components_subresource_filter_content_shared_browser = [
   "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/user_ruleset_service.h",
   "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/user_unindexed_ruleset_stream_generator.cc",
   "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/user_unindexed_ruleset_stream_generator.h",
+]
+
+arkweb_components_subresource_filter_content_shared_browser_unittest = [
+  "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/user_unindexed_ruleset_stream_generator_unittest.cc",
 ]
 
 arkweb_ohos_adapter_ndk_unittests_sources = [

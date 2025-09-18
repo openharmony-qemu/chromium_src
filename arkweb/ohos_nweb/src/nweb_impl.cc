@@ -4352,14 +4352,16 @@ void NWebImpl::PasswordSuggestionSelected(int list_index) const {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 void NWebImpl::SetForceEnableZoom(bool forceEnableZoom) const {
   if (nweb_delegate_ == nullptr) {
     return;
   }
   nweb_delegate_->SetForceEnableZoom(forceEnableZoom);
 }
+#endif
 
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
 bool NWebImpl::GetForceEnableZoom() const {
   if (nweb_delegate_ == nullptr) {
     return false;

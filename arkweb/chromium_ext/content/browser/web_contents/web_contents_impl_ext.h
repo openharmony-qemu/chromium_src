@@ -91,7 +91,7 @@ class WebContentsImplExt : public WebContentsImpl {
 
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   bool force_enable_zoom_ = false;
   void SetForceEnableZoom(bool forceEnableZoom) override;
   bool GetForceEnableZoom() override { return force_enable_zoom_; }

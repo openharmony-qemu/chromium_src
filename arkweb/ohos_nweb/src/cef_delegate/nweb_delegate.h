@@ -552,8 +552,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD) || BUILDFLAG(ARKWEB_DATALIST)
   void PasswordSuggestionSelected(int list_index) const override;
 #endif
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   void SetForceEnableZoom(bool forceEnableZoom) override;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   bool GetForceEnableZoom() override;
 #endif
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)

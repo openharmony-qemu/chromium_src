@@ -44,7 +44,7 @@ virtual void CloseDateTimeChooser() = 0;
 virtual void CollapseAllFramesSelection() = 0;
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 virtual void SetForceEnableZoom(bool forceEnableZoom) = 0;
 virtual bool GetForceEnableZoom() = 0;
 #endif  // ARKWEB_EXT_FORCE_ZOOM

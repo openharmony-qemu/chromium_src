@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_is_test.h"
 #include "base/containers/contains.h"
 #include "base/feature_list.h"
@@ -1014,6 +1015,11 @@ void CloudPolicyClient::UploadSecurityEventReport(
     bool include_device_info,
     base::Value::Dict report,
     ResultCallback callback) {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  std::move(callback).Run(CloudPolicyClient::Result(NotRegistered()));
+  return;
+#endif
+
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   if (!is_registered()) {
@@ -1029,6 +1035,11 @@ void CloudPolicyClient::UploadSecurityEventReport(
 
 void CloudPolicyClient::UploadAppInstallReport(base::Value::Dict report,
                                                ResultCallback callback) {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  std::move(callback).Run(CloudPolicyClient::Result(NotRegistered()));
+  return;
+#endif
+
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   if (!is_registered()) {

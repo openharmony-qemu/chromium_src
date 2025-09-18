@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/build/features/features.h"
 #include "components/component_updater/component_updater_url_constants.h"
 
 namespace component_updater {
@@ -15,9 +16,17 @@ namespace component_updater {
 // The value of |kDefaultUrlSource| can be overridden with
 // --component-updater=url-source=someurl.
 const char kUpdaterJSONDefaultUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://update.googleapis.com/service/update2/json";
+#endif
 
 const char kUpdaterJSONFallbackUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "http://update.googleapis.com/service/update2/json";
+#endif
 
 }  // namespace component_updater

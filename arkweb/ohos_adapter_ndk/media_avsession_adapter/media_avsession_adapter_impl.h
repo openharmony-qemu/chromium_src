@@ -22,7 +22,7 @@
 #include <multimedia/av_session/native_avsession_errors.h>
 
 #include "media_avsession_adapter.h"
-
+#include "arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper.h"
 
 namespace OHOS::NWeb {
 

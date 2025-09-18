@@ -22,7 +22,7 @@
 namespace OHOS::NWeb {
 
 std::unordered_map<std::string, MediaAVSessionAdapterImpl *> MediaAVSessionAdapterImpl::avSessionMap;
-CallbackSharedWrapper<<MediaAVSessionAdapterImpl *> MediaAVSessionAdapterImpl::callback_wrapper_;
+CallbackSharedWrapper<MediaAVSessionAdapterImpl *> MediaAVSessionAdapterImpl::callback_wrapper_;
 void MediaAVSessionKey::Init() {
     pid_ = getpid();
     OH_NativeBundle_ElementName bundleInfo = OH_NativeBundle_GetMainElementName();

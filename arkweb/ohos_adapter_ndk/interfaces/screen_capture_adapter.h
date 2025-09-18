@@ -297,8 +297,6 @@ public:
     virtual void OnVideoBufferAvailableV2(bool isReady, int32_t nweb_id) {}
 
     virtual void OnStateChangeV2(ScreenCaptureStateCodeAdapter stateCode, int32_t nweb_id) {}
-
-    virtual void OnDisplaySelectedV2(uint64_t displayId, int32_t nweb_id) {}
 };
 
 class ScreenCaptureAdapter {
@@ -330,8 +328,6 @@ public:
     {
         return -1;
     }
-
-    virtual void ClearBufferQueue(int nwebId) {}
 };
 
 } // namespace OHOS::NWeb

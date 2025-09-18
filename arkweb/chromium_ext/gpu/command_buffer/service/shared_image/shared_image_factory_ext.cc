@@ -88,11 +88,6 @@ bool SharedImageFactoryExt::CreateSharedImage(const Mailbox& mailbox,
     SkAlphaType alpha_type,
     uint32_t usage,
     void* window_buffer) {
-#if false
-  auto si_format =
-      viz::SharedImageFormat::SinglePlane(viz::GetResourceFormat(format));
-
-#endif
   auto si_format = viz::GetSharedImageFormat(format);
   gfx::GpuMemoryBufferType gmb_type = handle.type;
 
@@ -100,9 +95,8 @@ bool SharedImageFactoryExt::CreateSharedImage(const Mailbox& mailbox,
 
   auto* factory = GetFactoryByUsage(usage_set, si_format, size,
                                     /*pixel_data=*/{}, gmb_type);
-  std::string debug_label = "ZGLEE";
   if (!factory) {
-    LogGetFactoryFailed(usage_set, si_format, gmb_type, debug_label);
+    LogGetFactoryFailed(usage_set, si_format, gmb_type, "ArkwebHeifSupport");
     return false;
   }
 

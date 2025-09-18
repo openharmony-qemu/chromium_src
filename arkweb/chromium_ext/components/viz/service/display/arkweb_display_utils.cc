@@ -157,7 +157,7 @@ ArkwebDisplayUtils::ArkwebDisplayUtils(Display* display) : display_(display) {
   reenable_swap_timer_ = std::make_unique<base::RetainingOneShotTimer>(
       FROM_HERE, reenable_draw_delay,
       base::BindRepeating(&ArkwebDisplayUtils::RestoreRenderFitTimeElapsed,
-                          base::Unretained(this)));
+                          weak_factory_.GetWeakPtr()));
 #endif  // ARKWEB_MAXIMIZE_RESIZE
 }
 

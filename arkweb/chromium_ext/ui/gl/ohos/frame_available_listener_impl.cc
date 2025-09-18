@@ -17,20 +17,14 @@
 
 namespace OHOS::NWeb {
 
-void* FrameAvailableListenerImpl::GetContext() {
-  return context_;
-}
+FrameAvailableListenerImpl::FrameAvailableListenerImpl(
+  raw_ptr<OhosNativeImageAdapter> adapter) : ohos_native_image_adapter_(adapter) {}
 
-OnFrameAvailableCb FrameAvailableListenerImpl::GetOnFrameAvailableCb() {
-  return cb_;
-}
-
-void FrameAvailableListenerImpl::SetContext(void* context) {
-  context_ = context;
-}
-
-void FrameAvailableListenerImpl::SetOnFrameAvailableCb(OnFrameAvailableCb cb) {
-  cb_ = cb;
+void FrameAvailableListenerImpl::OnFrameAvailableListener() {
+  if (!ohos_native_image_adapter_) {
+    return;
+  }
+  ohos_native_image_adapter_->OnFrameAvailableListener();
 }
 
 }  // namespace OHOS::NWeb

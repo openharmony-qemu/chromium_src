@@ -499,7 +499,11 @@ class CC_EXPORT LayerImpl {
 
   virtual void SetInInvisibleLayerTree() {}
 
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual LayerImplUtils* layer_impl_utils() {
+#else
   LayerImplUtils* layer_impl_utils() {
+#endif  // BUILDFLAG(ARKWEB_TEST)
     return layer_impl_utils_.get();
   }
 

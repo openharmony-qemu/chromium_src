@@ -41,6 +41,9 @@ using OhosImageDecoderMap =
     base::small_map<std::unordered_map<gpu::ImageDecodeAcceleratorType,
                                        std::unique_ptr<OhosImageDecoder>>>;
 
+#if BUILDFLAG(ARKWEB_TEST)
+void SetTestDecoder(std::function<std::unique_ptr<OhosImageDecoder>()> decoder);
+#endif
 class OhosImageDecodeAcceleratorWorker
     : public gpu::ImageDecodeAcceleratorWorker {
  public:

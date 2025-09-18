@@ -167,7 +167,7 @@ void ArkWebDownloadFileImplExt::RegisterReadDownloadCallback(
   }
 
   LOG(DEBUG) << "DownloadFileImpl::RegisterReadDownloadCallback called";
-  read_download_size_ = size;
+  read_download_size_ = static_cast<uint32_t>(size);
   read_download_callback_ = std::move(callback);
 }
 
@@ -215,4 +215,8 @@ void ArkWebDownloadFileImplExt::ResetDownloadJobTimer() {
 }
 #endif
 
+void ArkWebDownloadItemImplExt::Cancel(bool user_cancel) {
+	DownloadItemImpl::Cancel(user_cancel);
+  ReadDataFromDownloadFileDone(std::vector<uint8_t>());
+}
 }  // namespace download

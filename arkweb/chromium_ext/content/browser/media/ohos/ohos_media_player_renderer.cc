@@ -368,7 +368,7 @@ void OHOSMediaPlayerRenderer::SuspendOtherPlaybacks() {
     return;
   }
 
-  MediaSessionImpl* mediaSession = MediaSessionImpl::Get(web_contents_.get());
+  MediaSessionImpl* mediaSession = MediaSessionImpl::FromWebContents(web_contents_.get());
   if (mediaSession == nullptr) {
     LOG(ERROR) << "get mediaSession is nullptr";
     return;

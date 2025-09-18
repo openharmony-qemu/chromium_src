@@ -56,10 +56,25 @@ class MockGpuChannel : public mojom::GpuChannel {
   MOCK_METHOD2(ScheduleImageDecode,
                void(mojom::ScheduleImageDecodeParamsPtr, uint64_t));
 
- #if BUILDFLAG(ARKWEB_UNITTESTS)
-   ARKWEB_UNITTESTS_MOCK_METHOD4_BOOL();
-   ARKWEB_UNITTESTS_MOCK_METHOD4_VOILD();
- #endif
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  ARKWEB_UNITTESTS_MOCK_METHOD4_BOOL();
+  ARKWEB_UNITTESTS_MOCK_METHOD4_VOID();
+  bool CreateNativeTexture(
+      int32_t a,
+      int32_t b,
+      mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver,
+      int32_t* out_value) override {
+    return CreateNativeTextureReturnBool(a, b, std::move(receiver), out_value);
+  }
+
+  void CreateNativeTexture(
+      int32_t a,
+      int32_t b,
+      mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver,
+      CreateNativeTextureCallback callback) override {
+    CreateNativeTextureReturnVoid(a, b, std::move(receiver), std::move(callback));
+  }
+#endif
 
   MOCK_METHOD2(FlushDeferredRequests,
                void(std::vector<mojom::DeferredRequestPtr>, uint32_t));

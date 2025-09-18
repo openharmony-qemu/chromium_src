@@ -351,6 +351,7 @@ ManagementGetPermissionWarningsByIdFunction::Run() {
 
 ExtensionFunction::ResponseAction
 ManagementGetPermissionWarningsByManifestFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::optional<management::GetPermissionWarningsByManifest::Params> params =
       management::GetPermissionWarningsByManifest::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
@@ -365,6 +366,9 @@ ManagementGetPermissionWarningsByManifestFunction::Run() {
 
   // Response is sent async in OnParse().
   return RespondLater();
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void ManagementGetPermissionWarningsByManifestFunction::OnParse(
@@ -398,6 +402,7 @@ void ManagementGetPermissionWarningsByManifestFunction::OnParse(
 }
 
 ExtensionFunction::ResponseAction ManagementLaunchAppFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::optional<management::LaunchApp::Params> params =
       management::LaunchApp::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
@@ -423,6 +428,9 @@ ExtensionFunction::ResponseAction ManagementLaunchAppFunction::Run() {
     return RespondNow(Error(keys::kChromeAppsDeprecated, params->id));
   }
   return RespondNow(NoArguments());
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 ManagementSetEnabledFunction::ManagementSetEnabledFunction() = default;
@@ -895,6 +903,7 @@ void ManagementCreateAppShortcutFunction::OnCloseShortcutPrompt(bool created) {
 }
 
 ExtensionFunction::ResponseAction ManagementCreateAppShortcutFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (ExtensionsBrowserClient::Get()->IsRunningInForcedAppMode()) {
     return RespondNow(Error(keys::kNotAllowedInKioskError));
   }
@@ -946,9 +955,13 @@ ExtensionFunction::ResponseAction ManagementCreateAppShortcutFunction::Run() {
   } else {
     return RespondNow(Error(std::move(error)));
   }
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 ExtensionFunction::ResponseAction ManagementSetLaunchTypeFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (ExtensionsBrowserClient::Get()->IsRunningInForcedAppMode()) {
     return RespondNow(Error(keys::kNotAllowedInKioskError));
   }
@@ -1003,6 +1016,9 @@ ExtensionFunction::ResponseAction ManagementSetLaunchTypeFunction::Run() {
   delegate->SetLaunchType(browser_context(), params->id, launch_type);
 
   return RespondNow(NoArguments());
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 ManagementGenerateAppForLinkFunction::ManagementGenerateAppForLinkFunction() =
@@ -1025,6 +1041,7 @@ void ManagementGenerateAppForLinkFunction::FinishCreateWebApp(
 }
 
 ExtensionFunction::ResponseAction ManagementGenerateAppForLinkFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (ExtensionsBrowserClient::Get()->IsRunningInForcedAppMode()) {
     return RespondNow(Error(keys::kNotAllowedInKioskError));
   }
@@ -1059,6 +1076,9 @@ ExtensionFunction::ResponseAction ManagementGenerateAppForLinkFunction::Run() {
 
   // Response is sent async in FinishCreateWebApp().
   return RespondLater();
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 ManagementInstallReplacementWebAppFunction::
@@ -1069,6 +1089,7 @@ ManagementInstallReplacementWebAppFunction::
 
 ExtensionFunction::ResponseAction
 ManagementInstallReplacementWebAppFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (ExtensionsBrowserClient::Get()->IsRunningInForcedAppMode()) {
     return RespondNow(Error(keys::kNotAllowedInKioskError));
   }
@@ -1106,6 +1127,9 @@ ManagementInstallReplacementWebAppFunction::Run() {
 
   // Response is sent async in FinishResponse().
   return RespondLater();
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void ManagementInstallReplacementWebAppFunction::FinishResponse(

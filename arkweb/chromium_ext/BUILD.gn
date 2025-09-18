@@ -44,5 +44,17 @@ config("arkweb_base_unittest_config") {
   "-Wl,--wrap=OH_AudioStreamBuilder_SetLatencyMode",
   "-Wl,--wrap=OH_AudioStreamBuilder_SetCapturerCallback",
   "-Wl,--wrap=OH_AudioStreamBuilder_GenerateCapturer",
+  "-Wl,--wrap=OH_CommonEvent_UnSubscribe",
+  ]
+
+  ldflags += [ 
+    "-Wl,--wrap=OsVersion",
+    "-Wl,--wrap=CompatibleDeviceType",
+    "-Wl,--wrap=IsMobileDevice",
+    "-Wl,--wrap=IsTabletDevice",
+    "-Wl,--wrap=IsPcDevice",
+    "-Wl,--wrap=BaseOsName",
+    "-Wl,--wrap=MajorVersion",
+    "-Wl,--wrap=SeniorVersion",
   ]
 }

@@ -23,6 +23,13 @@
 
 namespace OHOS::NWeb {
 
+#if BUILDFLAG(ARKWEB_TEST)
+bool GetWebDebuggingEnabled();
+void SetWebDebuggingEnabled(bool value);
+int32_t GetWebDebuggingPort();
+void SetWebDebuggingPort(int32_t value);
+#endif
+
 class NWebEngineImpl : public NWebEngine {
  public:
   NWebEngineImpl();

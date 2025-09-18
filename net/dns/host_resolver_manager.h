@@ -287,6 +287,7 @@ class NET_EXPORT HostResolverManager
   void SetHaveOnlyLoopbackAddresses(bool result);
 
  private:
+  friend class ArkWebHostResolverManagerJobExt;
   friend class HostResolverManagerTest;
   friend class HostResolverManagerDnsTest;
   class LoopbackProbeJob;

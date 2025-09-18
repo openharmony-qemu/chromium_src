@@ -50,7 +50,6 @@
 #include "ohos_adapter/bridge/ark_media_codec_list_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_migration_manager_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_mmi_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_native_image_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_net_connect_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_net_proxy_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_ohos_drawing_text_adapter_wrapper.h"
@@ -106,13 +105,26 @@
 #include "arkweb/ohos_adapter_ndk/net_config_adapter/net_config_adapter_impl.h"
 
 namespace OHOS::NWeb {
-
+#if BUILDFLAG(ARKWEB_TEST)
+static OhosAdapterHelper* instance_ = nullptr;
+#endif
 OhosAdapterHelper& OhosAdapterHelper::GetInstance() {
+#if BUILDFLAG(ARKWEB_TEST)
+    if (instance_) {
+        return *instance_;
+    }
+#endif
   static ArkWeb::ArkOhosAdapterHelperWrapper instance(
       ArkWeb::ArkOhosAdapterHelper::GetInstance());
   return instance;
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+void OhosAdapterHelper::SetInstance(OhosAdapterHelper* instance)
+{
+    instance_ = instance;
+}
+#endif
 }  // namespace OHOS::NWeb
 
 namespace OHOS::ArkWeb {

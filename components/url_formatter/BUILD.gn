@@ -88,7 +88,9 @@ source_set("unit_tests") {
     "url_fixer_unittest.cc",
     "url_formatter_unittest.cc",
   ]
-
+  if (is_arkweb) {
+    sources += arkweb_components_url_formatter_contexts_unittest_sources
+  }
   deps = [
     ":skeleton_generator",
     ":url_formatter",

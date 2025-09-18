@@ -92,6 +92,7 @@ class NativePipelineImpl::RendererWrapper {
   base::WeakPtrFactory<RendererWrapper> weak_factory_{this};
 };
 
+#ifndef ARKWEB_TEST_INCLUDE
 NativePipelineImpl::RendererWrapper::RendererWrapper(
     scoped_refptr<base::SequencedTaskRunner> media_task_runner,
     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner)
@@ -308,6 +309,7 @@ void NativePipelineImpl::OnSetLayer() {
   DCHECK(client_);
   client_->OnSetLayer();
 }
+#endif
 
 }  // namespace media
                      

@@ -33,16 +33,21 @@ public:
 TEST_F(CompositorFrameSinkImplUtilTest, SubmitCompositorFrameUtils) {
     CompositorFrameMetadata metadata;
     CompositorFrameSinkImplUtil util(nullptr);
+
+    metadata.dropped_frame_count = 0;
+    metadata.dropped_frame_duration = 0;
     ASSERT_NO_FATAL_FAILURE(util.SubmitCompositorFrameUtils(metadata));
 
     metadata.dropped_frame_count = 1;
+    metadata.dropped_frame_duration = 0;
     ASSERT_NO_FATAL_FAILURE(util.SubmitCompositorFrameUtils(metadata));
 
     metadata.dropped_frame_count = 0;
-    metadata.dropped_frame_count = 1;
+    metadata.dropped_frame_duration = 1;
     ASSERT_NO_FATAL_FAILURE(util.SubmitCompositorFrameUtils(metadata));
 
     metadata.dropped_frame_count = 1;
+    metadata.dropped_frame_duration = 1;
     ASSERT_NO_FATAL_FAILURE(util.SubmitCompositorFrameUtils(metadata));
 }
 #endif

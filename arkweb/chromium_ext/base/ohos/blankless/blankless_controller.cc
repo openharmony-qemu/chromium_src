@@ -22,6 +22,10 @@
 #include "base/json/json_reader.h"
 #include "base/logging.h"
 #include "base/values.h"
+#if BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
+#include "net/base/url_util.h"
+#include "url/gurl.h"
+#endif // BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
 
 using namespace OHOS::NWeb;
 
@@ -29,31 +33,31 @@ static constexpr int32_t MAX_ENABLED_URL_COUNT = 100;
 
 namespace base {
 namespace ohos {
-void BlanklessController::BlankOptWhiteList::LoadWhiteList()
+void BlanklessController::BlankOptWhiteList::LoadSysWhiteList()
 {
-  if (m_is_loaded_) {
+  if (m_is_sys_loaded_) {
     return;
   }
-  m_is_loaded_ = true;
+  m_is_sys_loaded_ = true;
 
   base::FilePath data_path = base::FilePath("/etc/web/blank_opt_white_list.json");
   base::File tfile(data_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
   if (!tfile.IsValid() || tfile.GetLength() <= 0) {
-    LOG(WARNING) << "blankless BlankOptWhiteList file is invalid or not exist.";
+    LOG(WARNING) << "blankless BlankOptWhiteList sys file is invalid or not exist.";
     return;
   }
 
   std::vector<char> buffer(static_cast<size_t>(tfile.GetLength()));
   int bytes_read = tfile.Read(0, buffer.data(), static_cast<int>(buffer.size()));
   if (bytes_read == -1) {
-    LOG(WARNING) << "blankless BlankOptWhiteList read file failed.";
+    LOG(WARNING) << "blankless BlankOptWhiteList read sys file failed.";
     return;
   }
 
   auto buffer_str = std::string_view(buffer.data(), buffer.size());
   std::optional<base::Value> json = base::JSONReader::Read(buffer_str, base::JSON_ALLOW_TRAILING_COMMAS);
   if (!json.has_value() || !json->is_dict()) {
-    LOG(WARNING) << "blankless BlankOptWhiteList parse file as invalid json format failed.";
+    LOG(WARNING) << "blankless BlankOptWhiteList parse sys file as invalid json format failed.";
     return;
   }
 
@@ -61,7 +65,7 @@ void BlanklessController::BlankOptWhiteList::LoadWhiteList()
   base::Value* exactMatch = dict.Find("exact-match");
   base::Value* fuzzyMatch = dict.Find("fuzzy-match");
   if (!exactMatch || !fuzzyMatch || !exactMatch->is_list() || !fuzzyMatch->is_list()) {
-    LOG(WARNING) << "blankless BlankOptWhiteList read white list failed.";
+    LOG(WARNING) << "blankless BlankOptWhiteList read sys white list failed.";
     return;
   }
   base::Value::List& exactMatchList = exactMatch->GetList();
@@ -72,13 +76,7 @@ void BlanklessController::BlankOptWhiteList::LoadWhiteList()
   for (const auto& item : fuzzyMatchList) {
     m_fuzzy_match_set_.insert(item.GetString());
   }
-  LOG(DEBUG) << "blankless BlankOptWhiteList read white list success.";
-}
-
-bool BlanklessController::BlankOptWhiteList::CheckWhiteList(const std::string& url)
-{
-  LoadWhiteList();
-  return ExactMatch(url) || FuzzyMatch(url);
+  LOG(DEBUG) << "blankless BlankOptWhiteList read sys white list success.";
 }
 
 bool BlanklessController::BlankOptWhiteList::ExactMatch(const std::string& url)
@@ -95,6 +93,138 @@ bool BlanklessController::BlankOptWhiteList::FuzzyMatch(const std::string& url)
   }
   return false;
 }
+
+bool BlanklessController::BlankOptWhiteList::CheckSysWhiteList(const std::string& url, uint64_t& blankless_key)
+{
+  LoadSysWhiteList();
+  if (ExactMatch(url) || FuzzyMatch(url)) {
+    blankless_key = std::hash<std::string>{}(url);
+    return true;
+  }
+  return false;
+}
+
+#if BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
+void BlanklessController::BlankOptWhiteList::LoadAppWhiteList()
+{
+  if (m_is_app_loaded_) {
+    return;
+  }
+  m_is_app_loaded_ = true;
+
+  static std::string bundleName =
+      OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBundleName();
+  if (bundleName.empty()) {
+    LOG(WARNING) << "blankless BlankOptWhiteList get app bundle name failed.";
+    return;
+  }
+  base::FilePath data_path = base::FilePath("/sys_prod/etc/web/" + bundleName + ".json");
+  base::File tfile(data_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
+  if (!tfile.IsValid()) {
+    LOG(WARNING) << "blankless BlankOptWhiteList app file is invalid or not exist.";
+    return;
+  }
+
+  std::vector<char> buffer(tfile.GetLength());
+  int bytes_read = tfile.Read(0, buffer.data(), buffer.size());
+  if (bytes_read == -1) {
+    LOG(WARNING) << "blankless BlankOptWhiteList read app white list failed.";
+    return;
+  }
+
+  ParseAppWhiteList(buffer);
+}
+
+void BlanklessController::BlankOptWhiteList::ParseAppWhiteList(std::vector<char>& buffer)
+{
+  auto buffer_str = std::string_view(buffer.data(), buffer.size());
+  std::optional<base::Value> json = base::JSONReader::Read(buffer_str, base::JSON_ALLOW_TRAILING_COMMAS);
+  if (!json.has_value() || !json->is_dict()) {
+    LOG(WARNING) << "blankless BlankOptWhiteList parse app file as invalid json format failed.";
+    return;
+  }
+
+  base::Value::Dict& dict = json->GetDict();
+  const std::optional<bool> enable = dict.FindBool("enable");
+  if (enable.has_value() && !enable.value()) {
+    LOG(WARNING) << "blankless BlankOptWhiteList app file not enable.";
+    return;
+  }
+
+  base::Value* queryUrls = dict.Find("query-match");
+  if (queryUrls && queryUrls->is_list()) {
+    base::Value::List& queryUrlsList = queryUrls->GetList();
+    for (const auto& item : queryUrlsList) {
+      const base::Value::Dict* dict_val = item.GetIfDict();
+      if (!dict_val) {
+        LOG(WARNING) << "blankless BlankOptWhiteList read app query match item failed.";
+        continue;
+      }
+      const std::string* url_value = dict_val->FindString("url");
+      const base::Value::List* query_keys = dict_val->FindList("query_keys");
+      std::unordered_set<std::string> query_keys_set;
+      for (const auto& key : *query_keys) {
+        const std::string key_str = key.GetString();
+        query_keys_set.insert(key_str);
+      }
+      m_query_match_map_.emplace(*url_value, query_keys_set);
+    }
+  }
+
+  LOG(DEBUG) << "blankless BlankOptWhiteList read app white list success."; 
+}
+
+std::string BlanklessController::BlankOptWhiteList::GetBaseUrl(const std::string& url)
+{
+  size_t pos = url.find('?');
+  return (pos == std::string::npos) ? url : url.substr(0, pos);
+}
+
+std::string BlanklessController::BlankOptWhiteList::GetQueryUrl(const std::string& url)
+{
+  // split hostname and query string
+  std::string baseUrl = GetBaseUrl(url);
+  auto it = m_query_match_map_.find(baseUrl);
+  if (it == m_query_match_map_.end()) {
+    return url;
+  }
+
+  // build new url by querykeys
+  const std::unordered_set<std::string>& keySet = it->second;
+  if (keySet.size() == 0) {
+    return baseUrl;
+  }
+  std::ostringstream result;
+  GURL gurl = GURL(url);
+  result << baseUrl << "?";
+  for (const std::string& key : keySet) {
+    std::string value;
+    bool isExist = net::GetValueForKeyInQuery(gurl, key, &value);
+    if (!isExist) {
+      continue;
+    }
+    result << key << "=" << value << "&";
+  }
+  return result.str();
+}
+
+bool BlanklessController::BlankOptWhiteList::QueryMatch(const std::string& url)
+{
+  std::string baseUrl = GetBaseUrl(url);
+  return m_query_match_map_.find(baseUrl) != m_query_match_map_.end();
+}
+
+bool BlanklessController::BlankOptWhiteList::CheckAppWhiteList(const std::string& url, uint64_t& blankless_key)
+{
+  LoadAppWhiteList();
+  if (QueryMatch(url)) {
+    const std::string queryUrl = GetQueryUrl(url);
+    blankless_key = std::hash<std::string>{}(queryUrl);
+    return true;
+  }
+  return false;
+}
+#endif // BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
 
 uint64_t BlanklessController::ConvertToBlanklessKey(const std::string& value)
 {
@@ -237,10 +367,17 @@ void BlanklessController::Clear(uint32_t nweb_id)
   m_window_id_map_.erase(nweb_id);
 }
 
-bool BlanklessController::CheckEnableForUrl(const std::string& url)
+bool BlanklessController::CheckEnableForSysUrl(const std::string& url, uint64_t& blankless_key)
 {
-  return m_white_list_.CheckWhiteList(url);
+  return m_white_list_.CheckSysWhiteList(url, blankless_key);
 }
+
+#if BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
+bool BlanklessController::CheckEnableForAppUrl(const std::string& url, uint64_t& blankless_key)
+{
+  return m_white_list_.CheckAppWhiteList(url, blankless_key);
+}
+#endif // BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
 
 bool BlanklessController::CheckGlobalProperty()
 {

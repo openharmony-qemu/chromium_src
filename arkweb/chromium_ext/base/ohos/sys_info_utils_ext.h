@@ -18,11 +18,15 @@
 
 #define APP_API_LEVEL_20 20
 
+#include "arkweb/build/features/features.h"
+
 #include <stdint.h>
 
 #include <string>
 
 #include "base/base_export.h"
+
+#include "build/buildflag.h"
 
 namespace base {
 namespace ohos {
@@ -30,15 +34,18 @@ BASE_EXPORT float GetPixelRatio();
 
 BASE_EXPORT void SetPixelRatio(float ratio);
 
-BASE_EXPORT bool IsMobileDevice();
+#if BUILDFLAG(ARKWEB_TEST)
 #ifdef __cplusplus
 extern "C" {
 #endif
+#endif
+BASE_EXPORT bool IsMobileDevice();
 
 BASE_EXPORT bool IsTabletDevice();
-
+#if BUILDFLAG(ARKWEB_TEST)
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #ifdef __cplusplus
@@ -55,17 +62,37 @@ BASE_EXPORT bool IsEmulator();
 
 BASE_EXPORT bool IsWearableDevice();
 
+#if BUILDFLAG(ARKWEB_TEST)
+#ifdef __cplusplus
+extern "C" {
+#endif
+#endif
 BASE_EXPORT int32_t MajorVersion();
 
 BASE_EXPORT int32_t SeniorVersion();
+#if BUILDFLAG(ARKWEB_TEST)
+#ifdef __cplusplus
+}
+#endif
+#endif
 
 BASE_EXPORT std::string OsName();
 
+#if BUILDFLAG(ARKWEB_TEST)
+#ifdef __cplusplus
+extern "C" {
+#endif
+#endif
 BASE_EXPORT std::string OsVersion();
 
 BASE_EXPORT std::string BaseOsName();
 
 BASE_EXPORT std::string CompatibleDeviceType();
+#if BUILDFLAG(ARKWEB_TEST)
+#ifdef __cplusplus
+}
+#endif
+#endif
 
 BASE_EXPORT bool IsCompatibleMode();
 

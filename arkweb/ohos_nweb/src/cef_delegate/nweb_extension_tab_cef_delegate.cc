@@ -374,9 +374,18 @@ void NWebExtensionTabCefDelegate::OnTabCreated(std::unique_ptr<NWebExtensionTab>
     return;
   }
 
+  auto browserContextInUse = browserContext;
+  if (tab->incognito) {
+    browserContextInUse = GetIncognitoContext(browserContext);
+    if (!browserContextInUse) {
+      LOG(ERROR) << "OnTabCreated get incognito context failed";
+      return;
+    }
+  }
+
   int tabId = tab->id ? tab->id.value() : -1;
   extensions::TabsWindowsAPI::Get(browserContext)
-      ->TabCreated(tabId, browserContext, std::move(tab));
+      ->TabCreated(tabId, browserContextInUse, std::move(tab));
 }
 
 }  // namespace OHOS::NWeb

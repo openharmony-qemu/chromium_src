@@ -66,6 +66,10 @@ source_set("unit_tests") {
     "url_pattern_unittest.cc",
     "url_rule_util_unittest.cc",
   ]
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_adblock_unittest_sources
+  }
   deps = [
     ":test_support",
     ":url_pattern_index",

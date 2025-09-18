@@ -14,6 +14,7 @@
  */
 
 #include <string>
+#include <string_view>
 #define private public
 #include "base/ohos/blankless/blankless_controller.h"
 #undef private
@@ -21,6 +22,10 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "base/time/time_utils.h"
+#include "base/files/file.h"
+#include "base/files/file_util.cc"
+#include "base/values.h"
+#include "base/json/json_writer.h"
 
 namespace base {
 namespace ohos {
@@ -42,15 +47,189 @@ protected:
   int32_t nweb_id1 = 1;
 };
 
-TEST_F(BlanklessControllerTest, CheckWhiteList01) {
-  std::string url = "abc";
-  EXPECT_FALSE(controller.m_white_list_.CheckWhiteList(url));
+#if BUILDFLAG(ARKWEB_TEST)
+TEST_F(BlanklessControllerTest, LoadSysWhiteList001) {
+  base::FilePath file_path = base::FilePath("/data/ut/blank_opt_white_list.json");
+  ASSERT_TRUE(base::CreateDirectory(file_path.DirName()));
+
+  base::File file(file_path, base::File::FLAG_CREATE | base::File::FLAG_WRITE);
+  ASSERT_TRUE(file.IsValid());
+
+  controller.m_white_list_.m_is_sys_loaded_ = false;
+  controller.m_white_list_.LoadSysWhiteList();
+  EXPECT_TRUE(controller.m_white_list_.m_is_sys_loaded_);
+  base::DeleteFile(file_path);
 }
 
-TEST_F(BlanklessControllerTest, CheckWhiteList02) {
+TEST_F(BlanklessControllerTest, LoadSysWhiteList002) {
+  base::FilePath file_path = base::FilePath("/data/ut/blank_opt_white_list.json");
+  ASSERT_TRUE(base::CreateDirectory(file_path.DirName()));
+
+  base::File file(file_path, base::File::FLAG_CREATE | base::File::FLAG_WRITE);
+  ASSERT_TRUE(file.IsValid());
+
+  std::string_view data = "text";
+  base::WriteFile(file_path, data);
+
+  controller.m_white_list_.m_is_sys_loaded_ = false;
+  controller.m_white_list_.LoadSysWhiteList();
+  EXPECT_TRUE(controller.m_white_list_.m_is_sys_loaded_);
+  base::DeleteFile(file_path);
+}
+
+TEST_F(BlanklessControllerTest, LoadSysWhiteList003) {
+  base::FilePath file_path = base::FilePath("/data/ut/blank_opt_white_list.json");
+  ASSERT_TRUE(base::CreateDirectory(file_path.DirName()));
+
+  base::File file(file_path, base::File::FLAG_CREATE | base::File::FLAG_WRITE);
+  ASSERT_TRUE(file.IsValid());
+
+  std::string_view data = R"json({
+    "names": [
+      {
+        "key": "value",
+      },
+    ],
+  })json";
+  base::WriteFile(file_path, data);
+
+  controller.m_white_list_.m_is_sys_loaded_ = false;
+  controller.m_white_list_.LoadSysWhiteList();
+  EXPECT_TRUE(controller.m_white_list_.m_is_sys_loaded_);
+  base::DeleteFile(file_path);
+}
+
+TEST_F(BlanklessControllerTest, LoadSysWhiteList004) {
+  base::FilePath file_path = base::FilePath("/data/ut/blank_opt_white_list.json");
+  ASSERT_TRUE(base::CreateDirectory(file_path.DirName()));
+
+  base::File file(file_path, base::File::FLAG_CREATE | base::File::FLAG_WRITE);
+  ASSERT_TRUE(file.IsValid());
+
+  std::string_view data = R"json({
+    "exact-match": {
+      "enabled": true,
+      "patterns": ["example.com", "test.org"]
+    },
+  })json";
+  base::WriteFile(file_path, data);
+
+  controller.m_white_list_.m_is_sys_loaded_ = false;
+  controller.m_white_list_.LoadSysWhiteList();
+  EXPECT_TRUE(controller.m_white_list_.m_is_sys_loaded_);
+  base::DeleteFile(file_path);
+}
+
+TEST_F(BlanklessControllerTest, LoadSysWhiteList005) {
+  base::FilePath file_path = base::FilePath("/data/ut/blank_opt_white_list.json");
+  ASSERT_TRUE(base::CreateDirectory(file_path.DirName()));
+
+  base::File file(file_path, base::File::FLAG_CREATE | base::File::FLAG_WRITE);
+  ASSERT_TRUE(file.IsValid());
+
+  std::string_view data = R"json({
+    "exact-match": {
+      "enabled": true,
+      "patterns": ["example.com", "test.org"]
+    },
+    "fuzzy-match": {
+      "threshold": 0.85,
+      "domains": ["*.example.com", "*.test.org"]
+    }
+  })json";
+  base::WriteFile(file_path, data);
+
+  controller.m_white_list_.m_is_sys_loaded_ = false;
+  controller.m_white_list_.LoadSysWhiteList();
+  EXPECT_TRUE(controller.m_white_list_.m_is_sys_loaded_);
+  base::DeleteFile(file_path);
+}
+
+TEST_F(BlanklessControllerTest, LoadSysWhiteList006) {
+  base::FilePath file_path = base::FilePath("/data/ut/blank_opt_white_list.json");
+  ASSERT_TRUE(base::CreateDirectory(file_path.DirName()));
+
+  base::File file(file_path, base::File::FLAG_CREATE | base::File::FLAG_WRITE);
+  ASSERT_TRUE(file.IsValid());
+
+  base::Value::Dict outer_dict;
+  base::Value::List inner_list;
+  inner_list.Append("item1");
+  inner_list.Append("item2");
+  inner_list.Append("item3");
+  outer_dict.Set("exact-match", std::move(inner_list));
+  outer_dict.Set("fuzzy-match", "file");
+  std::string json_str;
+  base::JSONWriter::Write(outer_dict, &json_str);
+  base::WriteFile(file_path, json_str);
+
+  controller.m_white_list_.m_is_sys_loaded_ = false;
+  controller.m_white_list_.LoadSysWhiteList();
+  EXPECT_TRUE(controller.m_white_list_.m_is_sys_loaded_);
+  base::DeleteFile(file_path);
+}
+
+TEST_F(BlanklessControllerTest, LoadSysWhiteList007) {
+  base::FilePath file_path = base::FilePath("/data/ut/blank_opt_white_list.json");
+  ASSERT_TRUE(base::CreateDirectory(file_path.DirName()));
+
+  base::File file(file_path, base::File::FLAG_CREATE | base::File::FLAG_WRITE);
+  ASSERT_TRUE(file.IsValid());
+
+  base::Value::Dict outer_dict;
+  base::Value::List inner_list;
+  outer_dict.Set("exact-match", std::move(inner_list));
+  outer_dict.Set("fuzzy-match", std::move(inner_list));
+  std::string json_str;
+  base::JSONWriter::Write(outer_dict, &json_str);
+  base::WriteFile(file_path, json_str);
+
+  controller.m_white_list_.m_is_sys_loaded_ = false;
+  controller.m_white_list_.LoadSysWhiteList();
+  EXPECT_TRUE(controller.m_white_list_.m_is_sys_loaded_);
+  base::DeleteFile(file_path);
+}
+
+TEST_F(BlanklessControllerTest, LoadSysWhiteList008) {
+  base::FilePath file_path = base::FilePath("/data/ut/blank_opt_white_list.json");
+  ASSERT_TRUE(base::CreateDirectory(file_path.DirName()));
+
+  base::File file(file_path, base::File::FLAG_CREATE | base::File::FLAG_WRITE);
+  ASSERT_TRUE(file.IsValid());
+
+  base::Value::Dict outer_dict;
+  base::Value::List inner_list_exact;
+  inner_list_exact.Append("item1");
+  inner_list_exact.Append("item2");
+  inner_list_exact.Append("item3");
+  base::Value::List inner_list_fuzzy;
+  inner_list_fuzzy.Append("item1");
+  inner_list_fuzzy.Append("item2");
+  inner_list_fuzzy.Append("item3");
+  outer_dict.Set("exact-match", std::move(inner_list_exact));
+  outer_dict.Set("fuzzy-match", std::move(inner_list_fuzzy));
+  std::string json_str;
+  base::JSONWriter::Write(outer_dict, &json_str);
+  base::WriteFile(file_path, json_str);
+
+  controller.m_white_list_.m_is_sys_loaded_ = false;
+  controller.m_white_list_.LoadSysWhiteList();
+  EXPECT_TRUE(controller.m_white_list_.m_is_sys_loaded_);
+  base::DeleteFile(file_path);
+}
+#endif
+
+TEST_F(BlanklessControllerTest, CheckSysWhiteList01) {
   std::string url = "abc";
-  controller.m_white_list_.m_is_loaded_ = true;
-  EXPECT_FALSE(controller.m_white_list_.CheckWhiteList(url));
+  uint64_t key = 0;
+  EXPECT_FALSE(controller.m_white_list_.CheckSysWhiteList(url, key));
+}
+
+TEST_F(BlanklessControllerTest, CheckSysWhiteList02) {
+  std::string url = "abc";
+  controller.m_white_list_.m_is_sys_loaded_ = true;
+  uint64_t key = 0;
+  EXPECT_FALSE(controller.m_white_list_.CheckSysWhiteList(url, key));
 }
 
 TEST_F(BlanklessControllerTest, FrameRemoveCallback)

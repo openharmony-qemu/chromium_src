@@ -20,32 +20,7 @@
 #undef private
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-namespace base {
-class ProcessMock {
-public:
-  static ProcessMock& getInstance() {
-    static ProcessMock instance;
-    return instance;
-  };
-  MOCK_METHOD(CommandLine*, ForCurrentProcess, (), ());
-  MOCK_METHOD(bool, HasSwitch, (const char switch_constant[]), ());
-};
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-  CommandLine* __wrap_ForCurrentProcess() {
-    return ProcessMock::getInstance().ForCurrentProcess();
-  }
-
-  bool __wrap_HasSwitch(const char switch_constant[]) {
-    return ProcessMock::getInstance().HasSwitch(switch_constant);
-  }
-#ifdef __cplusplus
-}
-#endif
-}
+#include "base/test/scoped_command_line.h"
 
 namespace base {
 namespace ohos {
@@ -67,11 +42,68 @@ TEST_F(SystemPropertiesTest, ApplicationApiVersion001) {
 }
 
 TEST_F(SystemPropertiesTest, ApplicationApiVersion002) {
-  CommandLine* ptr = new CommandLine(base::CommandLine::NoProgram::NO_PROGRAM);
-  auto& mock = base::ProcessMock::getInstance();
-  EXPECT_CALL(mock, ForCurrentProcess()).WillOnce(testing::Return(ptr)).WillOnce(testing::Return(ptr));
-  EXPECT_CALL(mock, HasSwitch(switches::kOhosAppApiVersion)).WillOnce(testing::Return(true));
+  const char* test_argv[] = {"test_program",
+                              "--ohos-app-api-version=invalid",
+                              "--ohos-app-api-version=208",
+                              nullptr};
+  CommandLine::Init(3, test_argv);
   EXPECT_EQ(ApplicationApiVersion(), -1);
+}
+
+TEST_F(SystemPropertiesTest, ApplicationApiVersion003) {
+  const char* test_argv[] = {"test_program",
+                              "--ohos-app-api-version=invalid",
+                              "--ohos-app-api-version=208",
+                              nullptr};
+  CommandLine::Init(3, test_argv);
+
+  base::test::ScopedCommandLine scoped_cl;
+  scoped_cl.GetProcessCommandLine()->AppendSwitchASCII(
+      switches::kOhosAppApiVersion, "");
+  
+  EXPECT_EQ(ApplicationApiVersion(), -1);
+}
+
+TEST_F(SystemPropertiesTest, ApplicationApiVersion004) {
+  const char* test_argv[] = {"test_program",
+                              "--ohos-app-api-version=invalid",
+                              "--ohos-app-api-version=208",
+                              nullptr};
+  CommandLine::Init(3, test_argv);
+
+  base::test::ScopedCommandLine scoped_cl;
+  scoped_cl.GetProcessCommandLine()->AppendSwitchASCII(
+      switches::kOhosAppApiVersion, "99");
+  
+  EXPECT_EQ(ApplicationApiVersion(), 99);
+}
+
+TEST_F(SystemPropertiesTest, ApplicationApiVersion005) {
+  const char* test_argv[] = {"test_program",
+                              "--ohos-app-api-version=invalid",
+                              "--ohos-app-api-version=208",
+                              nullptr};
+  CommandLine::Init(3, test_argv);
+
+  base::test::ScopedCommandLine scoped_cl;
+  scoped_cl.GetProcessCommandLine()->AppendSwitchASCII(
+      switches::kOhosAppApiVersion, "105");
+  
+  EXPECT_EQ(ApplicationApiVersion(), 5);
+}
+
+TEST_F(SystemPropertiesTest, ApplicationApiVersion006) {
+  const char* test_argv[] = {"test_program",
+                              "--ohos-app-api-version=invalid",
+                              "--ohos-app-api-version=208",
+                              nullptr};
+  CommandLine::Init(3, test_argv);
+
+  base::test::ScopedCommandLine scoped_cl;
+  scoped_cl.GetProcessCommandLine()->AppendSwitchASCII(
+      switches::kOhosAppApiVersion, "0");
+  
+  EXPECT_EQ(ApplicationApiVersion(), 0);
 }
 
 TEST_F(SystemPropertiesTest, is_compatible_mode001) {

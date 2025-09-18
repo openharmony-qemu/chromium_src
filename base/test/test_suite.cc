@@ -575,6 +575,10 @@ void TestSuite::Initialize() {
   InitAndroidTestMessageLoop();
 #endif  // else BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_TEST)
+  InitOhosTestMessageLoop();
+#endif
+
   CHECK(debug::EnableInProcessStackDumping());
 #if BUILDFLAG(IS_WIN)
   RouteStdioToConsole(true);

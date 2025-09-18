@@ -243,6 +243,63 @@ void OHOSAudioOutputStream::OnResume() {
 }
 // LCOV_EXCL_STOP
 
+void OHOSAudioOutputStream::OldDeviceUnavailable() {
+  if (isCommunication_) {
+    LOG(INFO) << "OldDeviceUnavailable communication";
+    return;
+  }
+ 
+  LOG(INFO) << "AudioRendererOutputDeviceChangeCallback need stop session";
+  auto OutputDeviceChangeFunc =
+    [] (AudioParameters params) {
+    content::RenderFrameHost* renderFrameHost =
+    content::RenderFrameHost::FromID(params.render_process_id(),
+                                      params.render_frame_id());
+    if (!renderFrameHost) {
+      LOG(ERROR) << "OldDeviceUnavailable get renderFrameHost failed.";
+      return;
+    }
+    auto webContent =
+        content::WebContents::FromRenderFrameHost(renderFrameHost);
+    if (!webContent) {
+      LOG(ERROR) << "AudioOutputStream get webContent failed.";
+      return;
+    }
+    content::MediaSessionImpl* mediaSession =
+      content::MediaSessionImpl::Get(webContent);
+    if (!mediaSession) {
+      LOG(ERROR) << "AudioOutputStream get mediaSession failed.";
+      return;
+    }
+    auto weakMediaSession = mediaSession->weakMediaSessionFactory_.GetWeakPtr();
+    if (!weakMediaSession) {
+      LOG(ERROR) << "OHOSAudioOutputStream::OHOSAudioOutputStream "
+                    "weakMediaSession get failed";
+      return;
+    }
+ 
+    if (weakMediaSession.get()->IsActive()) {
+      LOG(INFO) << "MediaSession is suspending the audio";
+      weakMediaSession.get()->Suspend(
+          content::MediaSession::SuspendType::kSystem);
+    } else {
+      LOG(INFO) << "MediaSession is suspended";
+    }
+  };
+ 
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    if (!main_task_runner_) {
+      LOG(INFO) << "main_task_runner is nullptr";
+      return;
+    }
+    main_task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(OutputDeviceChangeFunc, parameters_));
+  } else {
+    OutputDeviceChangeFunc(parameters_);
+  }
+}
+
 bool OHOSAudioOutputStream::isNeedResume(int32_t resumeInterval) {
   return resumeInterval < 0 ||
       (resumeInterval > 0 &&

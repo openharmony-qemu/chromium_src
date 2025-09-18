@@ -7,9 +7,9 @@
 * nweb：基于CEF构建的OpenHarmony Web组件的Native引擎，主要构建Web组件浏览器内核的部分能力。
 * CEF：CEF全称Chromium Embedded Framework，是一个基于Google Chromium 的开源项目。
 ## 使用说明
-1. 下载代码：以主干(master)为例，要下载其他分支代码请替换-b 后带的manifest分支参数，参数列表详见8。下载114_trunk分支代码时需要将-m 后的参数由chromium.xml替换为developer.xml。
+1. 下载代码：以132_trunk为例，要下载其他分支代码，请替换-b之后的分支名，参数列表详见8。
     ```
-    repo init -u https://gitcode.com/openharmony-tpc/manifest -b chromium -m chromium.xml --no-repo-verify
+    repo init -u https://gitcode.com/openharmony-tpc/manifest.git -b 132_trunk -m developer.xml --no-repo-verify
     repo sync -c
     repo forall -c 'git lfs pull'
     ```

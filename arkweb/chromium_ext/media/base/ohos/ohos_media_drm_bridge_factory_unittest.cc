@@ -130,6 +130,70 @@ TEST_F(OHOSMediaDrmBridgeFactoryTest, Create) {
   }
 }
 
+TEST_F(OHOSMediaDrmBridgeFactoryTest, CreateWithWidevineHwSecure) {
+  auto media_drm_bridge_client = std::make_unique<OHOSMediaDrmBridgeClient>();
+  SetMediaDrmBridgeClient(media_drm_bridge_client.get());
+  cdm_config_.key_system = "com.widevine.alpha";
+  cdm_config_.use_hw_secure_codecs = true;
+  SessionMessageCB session_message_cb;
+  SessionClosedCB session_closed_cb;
+  SessionKeysChangeCB session_keys_change_cb;
+  SessionExpirationUpdateCB session_expiration_update_cb;
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner(
+      base::MakeRefCounted<base::TestSimpleTaskRunner>());
+  base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd(task_runner);
+  auto cdm_created_cb = [](const scoped_refptr<ContentDecryptionModule>& cdm,
+                           CreateCdmStatus status) {};
+  factory_->create_storage_cb_ =
+      base::BindRepeating([]() -> std::unique_ptr<MediaDrmStorage> {
+        auto storage = std::make_unique<MockMediaDrmStorage>();
+        EXPECT_CALL(*storage, Initialize(_)).Times(testing::AtLeast(0));
+        return storage;
+      });
+  factory_->cdm_created_cb_ = base::BindOnce(cdm_created_cb);
+  bool isSupported =
+      OHOSMediaDrmBridge::IsKeySystemSupported(cdm_config_.key_system);
+  if (isSupported) {
+    factory_->Create(cdm_config_, session_message_cb, session_closed_cb,
+                     session_keys_change_cb, session_expiration_update_cb,
+                     std::move(factory_->cdm_created_cb_));
+    ASSERT_NE(factory_->storage_, nullptr);
+    EXPECT_EQ(factory_->security_level_, OHOSMediaDrmBridge::SECURITY_LEVEL_1);
+  }
+}
+
+TEST_F(OHOSMediaDrmBridgeFactoryTest, CreateWithWidevineNonHwSecure) {
+  auto media_drm_bridge_client = std::make_unique<OHOSMediaDrmBridgeClient>();
+  SetMediaDrmBridgeClient(media_drm_bridge_client.get());
+  cdm_config_.key_system = "com.widevine.alpha";
+  cdm_config_.use_hw_secure_codecs = false;
+  SessionMessageCB session_message_cb;
+  SessionClosedCB session_closed_cb;
+  SessionKeysChangeCB session_keys_change_cb;
+  SessionExpirationUpdateCB session_expiration_update_cb;
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner(
+      base::MakeRefCounted<base::TestSimpleTaskRunner>());
+  base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd(task_runner);
+  auto cdm_created_cb = [](const scoped_refptr<ContentDecryptionModule>& cdm,
+                           CreateCdmStatus status) {};
+  factory_->create_storage_cb_ =
+      base::BindRepeating([]() -> std::unique_ptr<MediaDrmStorage> {
+        auto storage = std::make_unique<MockMediaDrmStorage>();
+        EXPECT_CALL(*storage, Initialize(_)).Times(testing::AtLeast(0));
+        return storage;
+      });
+  factory_->cdm_created_cb_ = base::BindOnce(cdm_created_cb);
+  bool isSupported =
+      OHOSMediaDrmBridge::IsKeySystemSupported(cdm_config_.key_system);
+  if (isSupported) {
+    factory_->Create(cdm_config_, session_message_cb, session_closed_cb,
+                     session_keys_change_cb, session_expiration_update_cb,
+                     std::move(factory_->cdm_created_cb_));
+    ASSERT_NE(factory_->storage_, nullptr);
+    EXPECT_EQ(factory_->security_level_, OHOSMediaDrmBridge::SECURITY_LEVEL_3);
+  }
+}
+
 TEST_F(OHOSMediaDrmBridgeFactoryTest, CreateMediaDrmBridge) {
   std::vector<uint8_t> scheme_uuid_ = {0x10, 0x31};
   std::string origin_id_ = "origin_id";
@@ -153,5 +217,42 @@ TEST_F(OHOSMediaDrmBridgeFactoryTest, OnOHOSMediaCryptoReady) {
   factory_->cdm_created_cb_ = base::BindOnce(cdm_created_cb);
   factory_->OnOHOSMediaCryptoReady(session, requires_secure_video_codec);
   ASSERT_EQ(factory_->ohos_media_drm_bridge_, nullptr);
+}
+
+TEST_F(OHOSMediaDrmBridgeFactoryTest, OnOHOSMediaCryptoReady_NoCallback) {
+  void* session = nullptr;
+  bool requires_secure_video_codec = true;
+  EXPECT_NO_FATAL_FAILURE(
+      factory_->OnOHOSMediaCryptoReady(session, requires_secure_video_codec));
+}
+
+TEST_F(OHOSMediaDrmBridgeFactoryTest, OnOHOSMediaCryptoReady_Success) {
+  std::vector<uint8_t> scheme_uuid_ = {0x10, 0x31};
+  std::string origin_id_ = "origin_id";
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner(
+      base::MakeRefCounted<base::TestSimpleTaskRunner>());
+  base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd(task_runner);
+  auto cdm_created_cb = [](const scoped_refptr<ContentDecryptionModule>& cdm,
+                           CreateCdmStatus status) {};
+  factory_->cdm_created_cb_ = base::BindOnce(cdm_created_cb);
+  factory_->CreateMediaDrmBridge(origin_id_);
+  EXPECT_NE(factory_->ohos_media_drm_bridge_, nullptr);
+  void* session = reinterpret_cast<void*>(0x1234);
+  bool requires_secure_video_codec = true;
+  factory_->OnOHOSMediaCryptoReady(session, requires_secure_video_codec);
+  EXPECT_NE(factory_->ohos_media_drm_bridge_, nullptr);
+}
+
+TEST_F(OHOSMediaDrmBridgeFactoryTest, OnStorageInitialized) {
+  std::vector<uint8_t> scheme_uuid_ = {0x10, 0x31};
+  std::string origin_id_ = "origin_id";
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner(
+      base::MakeRefCounted<base::TestSimpleTaskRunner>());
+  base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd(task_runner);
+  auto cdm_created_cb = [](const scoped_refptr<ContentDecryptionModule>& cdm,
+                           CreateCdmStatus status) {};
+  factory_->cdm_created_cb_ = base::BindOnce(cdm_created_cb);
+  factory_->OnStorageInitialized(false);
+  EXPECT_EQ(factory_->ohos_media_drm_bridge_, nullptr);
 }
 }  // namespace media

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "content/renderer/v8_value_converter_impl.h"
+#include "content/renderer/v8_value_converter_impl.cc"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -1283,6 +1284,126 @@ TEST_F(V8ValueConverterImplTest, StrategyBypass) {
   std::unique_ptr<base::Value> undefined_value(
       converter.FromV8Value(undefined, context));
   EXPECT_FALSE(undefined_value);
+}
+
+TEST_F(V8ValueConverterImplTest, FromV8Object_CircularReference) {
+  V8ValueConverterImpl converter;
+  v8::HandleScope handle_scope(isolate_);
+  v8::Local<v8::Context> context = context_.Get(isolate_);
+  v8::Context::Scope context_scope(context);
+  v8::Local<v8::Object> obj = v8::Object::New(isolate_);
+  obj->Set(context, v8::String::NewFromUtf8Literal(isolate_, "self"), obj).Check();
+  V8ValueConverterImpl::FromV8ValueState state(false);
+  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(obj, &state, isolate_, false, false);
+  EXPECT_TRUE(result->is_dict());
+  EXPECT_FALSE(result->GetDict().empty());
+}
+
+TEST_F(V8ValueConverterImplTest, FromV8Object_CrossContext) {
+  V8ValueConverterImpl converter;
+  v8::HandleScope handle_scope(isolate_);
+  v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate_);
+  v8::Local<v8::Context> second_context = v8::Context::New(isolate_, nullptr, global);
+  v8::Context::Scope context_scope(second_context);
+  v8::Local<v8::Object> obj = v8::Object::New(isolate_);
+  obj->Set(second_context, v8::String::NewFromUtf8Literal(isolate_, "test"),
+      v8::String::NewFromUtf8Literal(isolate_, "value")).Check();
+  v8::Context::Scope original_context_scope(context_.Get(isolate_));
+  V8ValueConverterImpl::FromV8ValueState state(false);
+  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(obj, &state, isolate_, false, false);
+  EXPECT_TRUE(result->is_dict());
+  EXPECT_EQ("value", GetString(&result->GetDict(), "test"));
+}
+
+TEST_F(V8ValueConverterImplTest, FromV8Object_DOMObject) {
+  V8ValueConverterImpl converter;
+  v8::HandleScope handle_scope(isolate_);
+  v8::Local<v8::Context> context = context_.Get(isolate_);
+  v8::Context::Scope context_scope(context);
+  v8::Local<v8::ObjectTemplate> templ = v8::ObjectTemplate::New(isolate_);
+  templ->SetInternalFieldCount(1);
+  v8::Local<v8::Object> dom_like_obj = templ->NewInstance(context).ToLocalChecked();
+  V8ValueConverterImpl::FromV8ValueState state(false);
+  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(dom_like_obj, &state, isolate_, false, false);
+  EXPECT_TRUE(result->is_dict());
+  EXPECT_TRUE(result->GetDict().empty());
+}
+
+TEST_F(V8ValueConverterImplTest, FromV8Object_ScripNullValues) {
+  V8ValueConverterImpl converter;
+  converter.SetStripNullFromObjects(true);
+  v8::HandleScope handle_scope(isolate_);
+  v8::Local<v8::Context> context = context_.Get(isolate_);
+  v8::Context::Scope context_scope(context);
+  v8::Local<v8::Object> obj = v8::Object::New(isolate_);
+  obj->Set(context, v8::String::NewFromUtf8Literal(isolate_, "nullvalue"),
+      v8::Null(isolate_)).Check();
+  obj->Set(context, v8::String::NewFromUtf8Literal(isolate_, "stringValue"),
+      v8::String::NewFromUtf8Literal(isolate_, "test")).Check();
+  V8ValueConverterImpl::FromV8ValueState state(false);
+  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(obj, &state, isolate_, false, false);
+  EXPECT_TRUE(result->is_dict());
+  EXPECT_FALSE(result->GetDict().contains("nullvalue"));
+  EXPECT_TRUE(result->GetDict().contains("stringValue"));
+  EXPECT_EQ("test", GetString(&result->GetDict(), "stringValue"));
+}
+
+TEST_F(V8ValueConverterImplTest, FromV8Object_NonStringNumberKeys) {
+  V8ValueConverterImpl converter;
+  v8::HandleScope handle_scope(isolate_);
+  v8::Local<v8::Context> context = context_.Get(isolate_);
+  v8::Context::Scope context_scope(context);
+  v8::Local<v8::Object> obj = v8::Object::New(isolate_);
+  v8::Local<v8::Symbol> symbol = v8::Symbol::New(isolate_);
+  obj->Set(context, symbol, v8::String::NewFromUtf8Literal(isolate_, "symbol_value")).Check();
+  V8ValueConverterImpl::FromV8ValueState state(false);
+  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(obj, &state, isolate_, false, false);
+  EXPECT_TRUE(result->is_dict());
+  EXPECT_TRUE(result->GetDict().empty());
+}
+
+TEST_F(V8ValueConverterImplTest, FromV8Object_StrategyTrue) {
+  V8ValueConverterImpl converter;
+  v8::HandleScope handle_scope(isolate_);
+  v8::Local<v8::Context> context = context_.Get(isolate_);
+  v8::Context::Scope context_scope(context);
+  V8ValueConverterOverridingStrategyForTesting strategy;
+  converter.SetStrategy(&strategy);
+  v8::Local<v8::Object> obj = v8::Object::New(isolate_);
+  V8ValueConverterImpl::FromV8ValueState state(false);
+  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(obj, &state, isolate_, false, false);
+  EXPECT_TRUE(result->is_dict());
+  EXPECT_TRUE(result->GetDict().empty());
+}
+
+TEST_F(V8ValueConverterImplTest, FromV8Object_InternalFieldCountPositive) {
+  V8ValueConverterImpl converter;
+  v8::HandleScope handle_scope(isolate_);
+  v8::Local<v8::Context> context = context_.Get(isolate_);
+  v8::Context::Scope context_scope(context);
+  v8::Local<v8::ObjectTemplate> obj_template = v8::ObjectTemplate::New(isolate_);
+  obj_template->SetInternalFieldCount(1);
+  v8::Local<v8::Object> dom_object = obj_template->NewInstance(context).ToLocalChecked();
+  V8ValueConverterImpl::FromV8ValueState state(false);
+  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(dom_object, &state, isolate_, false, false);
+  EXPECT_TRUE(result->is_dict());
+  EXPECT_TRUE(result->GetDict().empty());
+}
+
+TEST_F(V8ValueConverterImplTest, FromV8Object_NonStringKey) {
+  V8ValueConverterImpl converter;
+  v8::HandleScope handle_scope(isolate_);
+  v8::Local<v8::Context> context = context_.Get(isolate_);
+  v8::Context::Scope context_scope(context);
+  v8::Local<v8::Object> obj = v8::Object::New(isolate_);
+  v8::Local<v8::Symbol> symbol = v8::Symbol::New(isolate_);
+  obj->Set(context, symbol, v8::String::NewFromUtf8Literal(isolate_, "symbol_value")).Check();
+  obj->Set(context, v8::Number::New(isolate_, 42),
+           v8::String::NewFromUtf8Literal(isolate_, "number_value")).Check();
+  V8ValueConverterImpl::FromV8ValueState state(false);
+  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(obj, &state, isolate_, false, false);
+  EXPECT_TRUE(result->is_dict());
+  EXPECT_FALSE(result->GetDict().empty());
 }
 
 }  // namespace content

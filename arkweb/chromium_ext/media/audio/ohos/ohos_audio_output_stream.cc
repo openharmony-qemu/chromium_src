@@ -256,8 +256,10 @@ void OHOSAudioOutputStream::OnResume() {
     }
     return;
   }
-  LOG(INFO) << "[Oneshot] try to restart stream";
-  Start(callback_);
+  if(callback_) {
+    LOG(INFO) << "[Oneshot] try to restart stream";
+    Start(callback_);
+  }
 }
 // LCOV_EXCL_STOP
 
@@ -338,7 +340,6 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   LOG(INFO) << "OHOSAudioOutputStream::Start [hash: "
             << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   base::AutoLock lock(lock_);
-  DCHECK(!callback_);
   DCHECK(reference_time_.is_null());
   isSuspended_ = false;
 

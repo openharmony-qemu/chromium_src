@@ -2,5 +2,5 @@
 
 #include <string>
 
-void PrintHilog(const std::string& info, va_list args);
+void PrintHilog(const char* format, va_list args);
 void StreamHilog(const std::string& string);

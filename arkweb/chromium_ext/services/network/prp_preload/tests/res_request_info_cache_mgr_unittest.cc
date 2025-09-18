@@ -70,7 +70,7 @@ TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_001)
   cache.CheckFlush(false);
   cache.CheckFlush(true);
   cache.SetPageOrigin("test");
-  EXPECT_NE(cache.page_origin_,"test");
+  EXPECT_EQ(cache.page_origin_,"test");
   cache.Start();
 
   GURL request_url("preflight+https://example.com/path/to/resource");
@@ -157,7 +157,7 @@ TEST_F(ResRequestInfoCacheMgrTest, UpdateResRequestInfoTest)
   cache.new_preload_info_list_.insert({request_info->url().spec(),request_info});
   cache.UpdateResRequestInfo(request_info);
 
-  GURL url("http://user:pass@expample.com");
+  GURL url("http://user:pass@example.com");
   std::shared_ptr<PRRequestInfo> info = std::make_shared<PRRequestInfo>(url, false);
   bool is_request_with_cookie2 = cache.IsRequestWithCookie(info);
   EXPECT_EQ(is_request_with_cookie2,false);

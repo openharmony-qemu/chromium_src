@@ -883,6 +883,10 @@ arkweb_ui_compositor_sources = [
   "//arkweb/chromium_ext/ui/compositor/compositor_utils.h",
 ]
 
+arkweb_content_browser_test_sources = [
+  "//arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext_test.cc",
+]
+
 arkweb_ui_base_pointer_sources = [
   "//arkweb/chromium_ext/ui/base/pointer/pointer_device_ohos.cc",
 ]

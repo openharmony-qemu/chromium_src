@@ -73,6 +73,8 @@ bool OHOSAudioOutputStream::Open() {
 }
 
 void OHOSAudioOutputStream::Close() {
+  LOG(INFO) << "OHOSAudioOutputStream::Close. [hash: "
+            << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   Stop();
   manager_->ReleaseOutputStream(this);
 }
@@ -279,7 +281,11 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
 void OHOSAudioOutputStream::Stop() {
   LOG(INFO) << "OHOSAudioOutputStream::Stop. [hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   base::AutoLock lock(lock_);
-  timer_.Stop();
+  if (main_task_runner_) {
+    main_task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::StopTimer,
+                                  weak_factory_.GetWeakPtr()));
+  }
   running_ = false;
   auto it = std::find(OHOSAudioOutputStream::audioParameterSet_.begin(),
                       OHOSAudioOutputStream::audioParameterSet_.end(), parameters_);
@@ -301,6 +307,12 @@ void OHOSAudioOutputStream::Stop() {
   OH_AudioStream_Result ret = OH_AudioRenderer_Stop(audio_renderer_);
   if (ret != AUDIOSTREAM_SUCCESS) {
     ReportError();
+  }
+}
+
+void OHOSAudioOutputStream::StopTimer() {
+  if (timer_.IsRunning()) {
+    timer_.Stop();
   }
 }
 // LCOV_EXCL_STOP
@@ -610,6 +622,14 @@ bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode() {
 }
 
 void OHOSAudioOutputStream::SchedulePumpSamples() {
+  if (timer_.IsRunning()) {
+    LOG(INFO) << __func__ << ", timer is running";
+    return;
+  }
+  if (!running_) {
+    LOG(INFO) << __func__ << ", audio output not running";
+    return;
+  }
   timer_.Start(FROM_HERE, time_per_buffer_,
                base::BindOnce(&OHOSAudioOutputStream::PumpSamples,
                               weak_factory_.GetWeakPtr()));

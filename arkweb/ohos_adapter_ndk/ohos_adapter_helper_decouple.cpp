@@ -82,6 +82,7 @@
 #include "arkweb/ohos_adapter_ndk/audio_capturer_adapter/audio_capturer_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/screen_capture_adapter/screen_capture_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/access_token_adapter/access_token_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/media_adapter/player_framework_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl.h"
 #include "pasteboard_adapter/include/pasteboard_client_adapter_impl.h"
@@ -123,6 +124,10 @@ ArkOhosAdapterHelperWrapper::ArkOhosAdapterHelperWrapper(
 
 std::unique_ptr<NWeb::AafwkAppMgrClientAdapter>
 ArkOhosAdapterHelperWrapper::CreateAafwkAdapter() {
+  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    return nullptr;
+  }
+
   ArkWebRefPtr<ArkAafwkAppMgrClientAdapter> adapter =
       ctocpp_->CreateAafwkAdapter();
 
@@ -140,6 +145,10 @@ ArkOhosAdapterHelperWrapper::CreatePowerMgrClientAdapter() {
 
 std::unique_ptr<NWeb::DisplayManagerAdapter>
 ArkOhosAdapterHelperWrapper::CreateDisplayMgrAdapter() {
+  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    return nullptr;
+  }
+
   ArkWebRefPtr<ArkDisplayManagerAdapter> adapter =
       ctocpp_->CreateDisplayMgrAdapter();
   if (CHECK_REF_PTR_IS_NULL(adapter)) {
@@ -168,8 +177,12 @@ ArkOhosAdapterHelperWrapper::CreateNetConnectAdapter() {
 
 NWeb::OhosWebDataBaseAdapter&
 ArkOhosAdapterHelperWrapper::GetOhosWebDataBaseAdapterInstance() {
-  static ArkOhosWebDataBaseAdapterWrapper instance(
-      ctocpp_->GetOhosWebDataBaseAdapterInstance());
+  ArkWebRefPtr<ArkOhosWebDataBaseAdapter> ref = nullptr;
+  if (!CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    ref = ctocpp_->GetOhosWebDataBaseAdapterInstance();
+  }
+
+  static ArkOhosWebDataBaseAdapterWrapper instance(ref);
   return instance;
 }
 
@@ -190,20 +203,32 @@ ArkOhosAdapterHelperWrapper::CreateAudioCapturerAdapter() {
 
 NWeb::AudioSystemManagerAdapter&
 ArkOhosAdapterHelperWrapper::GetAudioSystemManager() {
-  static ArkAudioSystemManagerAdapterWrapper instance(
-      ctocpp_->GetAudioSystemManager());
+  ArkWebRefPtr<ArkAudioSystemManagerAdapter> ref = nullptr;
+  if (!CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    ref = ctocpp_->GetAudioSystemManager();
+  }
+
+  static ArkAudioSystemManagerAdapterWrapper instance(ref);
   return instance;
 }
 
 NWeb::OhosWebPermissionDataBaseAdapter&
 ArkOhosAdapterHelperWrapper::GetWebPermissionDataBaseInstance() {
-  static ArkOhosWebPermissionDataBaseAdapterWrapper instance(
-      ctocpp_->GetWebPermissionDataBaseInstance());
+  ArkWebRefPtr<ArkOhosWebPermissionDataBaseAdapter> ref = nullptr;
+  if (!CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    ref = ctocpp_->GetWebPermissionDataBaseInstance();
+  }
+
+  static ArkOhosWebPermissionDataBaseAdapterWrapper instance(ref);
   return instance;
 }
 
 std::unique_ptr<NWeb::MMIAdapter>
 ArkOhosAdapterHelperWrapper::CreateMMIAdapter() {
+  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    return nullptr;
+  }
+
   ArkWebRefPtr<ArkMMIAdapter> adapter = ctocpp_->CreateMMIAdapter();
 
   if (CHECK_REF_PTR_IS_NULL(adapter)) {
@@ -215,6 +240,10 @@ ArkOhosAdapterHelperWrapper::CreateMMIAdapter() {
 
 std::unique_ptr<NWeb::SocPerfClientAdapter>
 ArkOhosAdapterHelperWrapper::CreateSocPerfClientAdapter() {
+  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    return nullptr;
+  }
+
   ArkWebRefPtr<ArkSocPerfClientAdapter> adapter =
       ctocpp_->CreateSocPerfClientAdapter();
 
@@ -227,6 +256,10 @@ ArkOhosAdapterHelperWrapper::CreateSocPerfClientAdapter() {
 
 std::unique_ptr<NWeb::OhosResourceAdapter>
 ArkOhosAdapterHelperWrapper::GetResourceAdapter(const std::string& hapPath) {
+  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    return nullptr;
+  }
+
   ArkWebString str = ArkWebStringClassToStruct(hapPath);
   ArkWebRefPtr<ArkOhosResourceAdapter> adapter =
       ctocpp_->GetResourceAdapter(str);
@@ -241,18 +274,31 @@ ArkOhosAdapterHelperWrapper::GetResourceAdapter(const std::string& hapPath) {
 
 NWeb::SystemPropertiesAdapter&
 ArkOhosAdapterHelperWrapper::GetSystemPropertiesInstance() {
-  static ArkSystemPropertiesAdapterWrapper instance(
-      ctocpp_->GetSystemPropertiesInstance());
+  ArkWebRefPtr<ArkSystemPropertiesAdapter> ref = nullptr;
+  if (!CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    ref = ctocpp_->GetSystemPropertiesInstance();
+  }
+
+  static ArkSystemPropertiesAdapterWrapper instance(ref);
   return instance;
 }
 
 NWeb::VSyncAdapter& ArkOhosAdapterHelperWrapper::GetVSyncAdapter() {
-  static ArkVSyncAdapterWrapper instance(ctocpp_->GetVSyncAdapter());
+  ArkWebRefPtr<ArkVSyncAdapter> ref = nullptr;
+  if (!CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    ref = ctocpp_->GetVSyncAdapter();
+  }
+
+  static ArkVSyncAdapterWrapper instance(ref);
   return instance;
 }
 
 std::unique_ptr<NWeb::OhosInitWebAdapter>
 ArkOhosAdapterHelperWrapper::GetInitWebAdapter() {
+  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    return nullptr;
+  }
+
   ArkWebRefPtr<ArkOhosInitWebAdapter> adapter = ctocpp_->GetInitWebAdapter();
 
   if (CHECK_REF_PTR_IS_NULL(adapter)) {
@@ -269,8 +315,12 @@ ArkOhosAdapterHelperWrapper::GetKeystoreAdapterInstance() {
 
 NWeb::EnterpriseDeviceManagementAdapter&
 ArkOhosAdapterHelperWrapper::GetEnterpriseDeviceManagementInstance() {
-  static ArkEnterpriseDeviceManagementAdapterWrapper instance(
-      ctocpp_->GetEnterpriseDeviceManagementInstance());
+  ArkWebRefPtr<ArkEnterpriseDeviceManagementAdapter> ref = nullptr;
+  if (!CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    ref = ctocpp_->GetEnterpriseDeviceManagementInstance();
+  }
+
+  static ArkEnterpriseDeviceManagementAdapterWrapper instance(ref);
   return instance;
 }
 
@@ -280,6 +330,10 @@ NWeb::DatashareAdapter& ArkOhosAdapterHelperWrapper::GetDatashareInstance() {
 
 std::unique_ptr<NWeb::IMFAdapter>
 ArkOhosAdapterHelperWrapper::CreateIMFAdapter() {
+  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    return nullptr;
+  }
+
   ArkWebRefPtr<ArkIMFAdapter> adapter = ctocpp_->CreateIMFAdapter();
 
   if (CHECK_REF_PTR_IS_NULL(adapter)) {
@@ -296,6 +350,10 @@ ArkOhosAdapterHelperWrapper::GetRootCertDataAdapter() {
 
 std::unique_ptr<NWeb::CertManagerAdapter>
 ArkOhosAdapterHelperWrapper::GetCertManagerAdapter() {
+  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    return nullptr;
+  }
+
   ArkWebRefPtr<ArkCertManagerAdapter> adapter =
       ctocpp_->GetRootCertDataAdapter();
  
@@ -313,6 +371,10 @@ ArkOhosAdapterHelperWrapper::GetAccessTokenAdapterInstance() {
 
 std::unique_ptr<NWeb::EventHandlerAdapter>
 ArkOhosAdapterHelperWrapper::GetEventHandlerAdapter() {
+  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    return nullptr;
+  }
+
   ArkWebRefPtr<ArkEventHandlerAdapter> adapter =
       ctocpp_->GetEventHandlerAdapter();
 
@@ -325,8 +387,12 @@ ArkOhosAdapterHelperWrapper::GetEventHandlerAdapter() {
 
 NWeb::PrintManagerAdapter&
 ArkOhosAdapterHelperWrapper::GetPrintManagerInstance() {
-  static ArkPrintManagerAdapterWrapper instance(
-      ctocpp_->GetPrintManagerInstance());
+  ArkWebRefPtr<ArkPrintManagerAdapter> ref = nullptr;
+  if (!CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    ref = ctocpp_->GetPrintManagerInstance();
+  }
+
+  static ArkPrintManagerAdapterWrapper instance(ref);
   return instance;
 }
 
@@ -337,22 +403,27 @@ ArkOhosAdapterHelperWrapper::CreateConsumerSurfaceAdapter() {
 
 std::unique_ptr<NWeb::PlayerAdapter>
 ArkOhosAdapterHelperWrapper::CreatePlayerAdapter() {
-  ArkWebRefPtr<ArkPlayerAdapter> adapter = ctocpp_->CreatePlayerAdapter();
-  if (CHECK_REF_PTR_IS_NULL(adapter)) {
-    return nullptr;
-  }
-  return std::make_unique<ArkPlayerAdapterWrapper>(adapter);
+  return std::make_unique<NWeb::PlayerAdapterImpl>();
 }
 
 NWeb::WindowAdapter& ArkOhosAdapterHelperWrapper::GetWindowAdapterInstance() {
-  static ArkWindowAdapterWrapper instance(ctocpp_->GetWindowAdapterInstance());
+  ArkWebRefPtr<ArkWindowAdapter> ref = nullptr;
+  if (!CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    ref = ctocpp_->GetWindowAdapterInstance();
+  }
+
+  static ArkWindowAdapterWrapper instance(ref);
   return instance;
 }
 
 NWeb::HiSysEventAdapter&
 ArkOhosAdapterHelperWrapper::GetHiSysEventAdapterInstance() {
-  static ArkHiSysEventAdapterWrapper instance(
-      ctocpp_->GetHiSysEventAdapterInstance());
+  ArkWebRefPtr<ArkHiSysEventAdapter> ref = nullptr;
+  if (!CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    ref = ctocpp_->GetHiSysEventAdapterInstance();
+  }
+
+  static ArkHiSysEventAdapterWrapper instance(ref);
   return instance;
 }
 
@@ -361,13 +432,23 @@ NWeb::HiTraceAdapter& ArkOhosAdapterHelperWrapper::GetHiTraceAdapterInstance() {
 }
 
 NWeb::NetProxyAdapter& ArkOhosAdapterHelperWrapper::GetNetProxyInstance() {
-  static ArkNetProxyAdapterWrapper instance(ctocpp_->GetNetProxyInstance());
+  ArkWebRefPtr<ArkNetProxyAdapter> ref = nullptr;
+  if (!CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    ref = ctocpp_->GetNetProxyInstance();
+  }
+
+  static ArkNetProxyAdapterWrapper instance(ref);
   return instance;
 }
 
 NWeb::CameraManagerAdapter&
 ArkOhosAdapterHelperWrapper::GetCameraManagerAdapter() {
-  static ArkCameraManagerAdapterWrapper instance(ctocpp_->GetCameraManagerAdapter());
+  ArkWebRefPtr<ArkCameraManagerAdapter> ref = nullptr;
+  if (!CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    ref = ctocpp_->GetCameraManagerAdapter();
+  }
+
+  static ArkCameraManagerAdapterWrapper instance(ref);
   return instance;
 }
 
@@ -403,6 +484,10 @@ ArkOhosAdapterHelperWrapper::GetMediaCodecListAdapter() {
 
 std::unique_ptr<NWeb::FlowbufferAdapter>
 ArkOhosAdapterHelperWrapper::CreateFlowbufferAdapter() {
+  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    return nullptr;
+  }
+
   ArkWebRefPtr<ArkFlowbufferAdapter> adapter =
       ctocpp_->CreateFlowbufferAdapter();
 
@@ -430,6 +515,11 @@ ArkOhosAdapterHelperWrapper::CreateSensorAdapter() {
 
 void ArkOhosAdapterHelperWrapper::SetArkWebCoreHapPathOverride(
     const std::string& hapPath) {
+  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    WVLOG_E("set arkweb core hap path override failed, ref ptr is null");
+    return;
+  }
+
   ArkWebString str = ArkWebStringClassToStruct(hapPath);
   ctocpp_->SetArkWebCoreHapPathOverride(str);
   ArkWebStringStructRelease(str);
@@ -462,6 +552,10 @@ ArkOhosAdapterHelperWrapper::GetOhosDrawingTextTypographyAdapter() {
 
 std::unique_ptr<NWeb::MigrationManagerAdapter>
 ArkOhosAdapterHelperWrapper::CreateMigrationMgrAdapter() {
+  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    return nullptr;
+  }
+
   ArkWebRefPtr<ArkMigrationManagerAdapter> adapter =
       ctocpp_->CreateMigrationMgrAdapter();
 
@@ -474,6 +568,10 @@ ArkOhosAdapterHelperWrapper::CreateMigrationMgrAdapter() {
 
 std::unique_ptr<NWeb::ScreenlockManagerAdapter>
 ArkOhosAdapterHelperWrapper::CreateScreenlockManagerAdapter() {
+  if (CHECK_REF_PTR_IS_NULL(ctocpp_)) {
+    return nullptr;
+  }
+
   ArkWebRefPtr<ArkScreenlockManagerAdapter> adapter =
       ctocpp_->CreateScreenlockManagerAdapter();
 

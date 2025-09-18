@@ -91,4 +91,43 @@ void UpdateWithNWebExtensionTabInfo(api::tabs::Tab& tab) {
   }
 }
 }  // namespace
+
+ExtensionTabUtil::ScrubTabBehavior ExtensionTabUtil::GetScrubTabBehaviorExt(
+    const Extension* extension,
+    mojom::ContextType context,
+    const GURL& url,
+    int tab_id) {
+  if (context == mojom::ContextType::kWebUi) {
+    return {ExtensionTabUtil::kDontScrubTab, ExtensionTabUtil::kDontScrubTab};
+  }
+ 
+  if (context == mojom::ContextType::kUntrustedWebUi) {
+    return {ExtensionTabUtil::kScrubTabFully, ExtensionTabUtil::kScrubTabFully};
+  }
+ 
+  bool has_permission = false;
+ 
+  if (extension) {
+    bool api_permission = false;
+    if (tab_id == api::tabs::TAB_ID_NONE) {
+      api_permission = extension->permissions_data()->HasAPIPermission(
+          mojom::APIPermissionID::kTab);
+    } else {
+      api_permission = extension->permissions_data()->HasAPIPermissionForTab(
+          tab_id, mojom::APIPermissionID::kTab);
+    }
+ 
+    bool host_permission = extension->permissions_data()
+                               ->active_permissions()
+                               .HasExplicitAccessToOrigin(url);
+    has_permission = api_permission || host_permission;
+  }
+ 
+  if (!has_permission) {
+    return {ExtensionTabUtil::kScrubTabFully, ExtensionTabUtil::kScrubTabFully};
+  }
+ 
+  return {ExtensionTabUtil::kDontScrubTab, ExtensionTabUtil::kDontScrubTab};
+}
+
 }  // namespace extensions

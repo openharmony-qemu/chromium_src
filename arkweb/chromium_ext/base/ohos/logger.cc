@@ -151,7 +151,9 @@ void LoggerCallbackFunction(int severity,
 void SetLoggerCallback(std::shared_ptr<NWebLoggerCallback> loggerCallback) {
   GetTaskRunner() = base::SingleThreadTaskRunner::GetCurrentDefault();
   GetLoggerCallBack() = loggerCallback;
-  logging::SetLoggerCallbackToBase(&LoggerCallbackFunction);
+  logging::LoggerCallbackFunction logger_callback_fn =
+      loggerCallback ? LoggerCallbackFunction : nullptr;
+  logging::SetLoggerCallbackToBase(logger_callback_fn);
 }
 
 // static

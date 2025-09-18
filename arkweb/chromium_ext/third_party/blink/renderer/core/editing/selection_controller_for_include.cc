@@ -280,8 +280,7 @@ SelectionInFlatTree SelectionControllerUtils::HandleArkWebAISelectionExt(Selecti
     return;
   }
   WTF::String str;
-  bool after_line_select_tail =
-      is_double_click || !(IsEditable(*inner_node) || layout_change);
+  bool after_line_select_tail = is_double_click;
   if (after_line_select_tail) {
     if (pos.IsNotNull()) {
       str = pos.AnchorNode()->textContent(true);
@@ -379,20 +378,12 @@ PositionInFlatTree SelectionControllerUtils::HandleEmptyLine(
   if (!inner_node || !pos.IsNotNull()) {
     return pos;
   }
-  WTF::String str = inner_node->textContent(true);
-  if (!str.ContainsOnlyWhitespaceOrEmpty()) {
+  WTF::String str = pos.AnchorNode()->textContent(true);
+  if (str.ContainsOnlyWhitespaceOrEmpty()) {
+    inner_node = UpdateAnchorIfWhiteSpace(inner_node, pos);
+    str = inner_node->textContent(true);
     return PositionInFlatTree::CreateWithoutValidation(*inner_node,
                                                       str.length());
-  } else if (depth && inner_node->HasPreviousSibling()
-             && inner_node->parentNode()) {
-    Node* previous_inner_node = inner_node->previousSibling();
-    Node* parent_inner_node = inner_node->parentNode();
-    bool sameEditable = IsEditable(*previous_inner_node) == IsEditable(*inner_node);
-    sameEditable &= IsEditable(*parent_inner_node) == IsEditable(*inner_node);
-    if (sameEditable) {
-        return SelectionControllerUtils::HandleEmptyLine(previous_inner_node, pos,
-                                                    depth -1);
-    }
   }
   return pos;
 }
@@ -418,5 +409,54 @@ void SelectionControllerUtils::OffsetAdjustWhiteSpace(int& offset,
         temp_offset = closestLeftNotWhiteOffset;
     }
   }
+}
+
+Node* SelectionControllerUtils::SameEditablePreviousSibling(Node* inner_node)
+{
+  if (!inner_node) {
+    return nullptr;
+  }
+  Node* previous_inner_node = inner_node->previousSibling();
+  if (previous_inner_node && SameEditableParent(inner_node) &&
+      IsEditable(*inner_node) == IsEditable(*previous_inner_node)) {
+    return previous_inner_node;
+  }
+  return nullptr;
+}
+
+Node* SelectionControllerUtils::SameEditableParent(Node* inner_node)
+{
+  if (!inner_node) {
+    return nullptr;
+  }
+  Node* parent_inner_node = inner_node->parentNode();
+  if (parent_inner_node &&
+      IsEditable(*inner_node) == IsEditable(*parent_inner_node)) {
+    return parent_inner_node;
+  }
+  return nullptr;
+}
+
+Node* SelectionControllerUtils::UpdateAnchorIfWhiteSpace(Node* inner_node,
+                                                         const PositionInFlatTree& pos)
+{
+  Node* anchor = pos.AnchorNode();
+  WTF::String str;
+  for (int i = MAX_DEPTH; anchor && i > 0; i--) {
+    if (SameEditablePreviousSibling(anchor)) {
+      anchor = anchor->previousSibling();
+    } else if (anchor->HasPreviousSibling()) {
+      break;
+    } else if (SameEditableParent(anchor)) {
+      continue;
+    } else {
+      break;
+    }
+    str = anchor->textContent(true);
+    if (!str.ContainsOnlyWhitespaceOrEmpty()) {
+      return anchor;
+    }
+  }
+  return pos.AnchorNode();
 }
 } // namespace blink

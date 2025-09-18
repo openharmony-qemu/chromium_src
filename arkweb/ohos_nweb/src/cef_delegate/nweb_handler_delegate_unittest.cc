@@ -229,9 +229,6 @@ class MockCefBrowser : public ArkWebBrowserExt {
   void ShowFreeCopyMenu() override {}
   bool ShouldShowFreeCopyMenu() override {}
   void EnableSafeBrowsingDetection(bool enable, bool strictMode) override {}
-  int InsertBackForwardEntry(int index, const CefString& url) override {}
-  int UpdateNavigationEntryUrl(int index, const CefString& url) override {}
-  void ClearForwardList() override {}
   void ExtensionSetTabId(int tab_id) override {}
   int ExtensionGetTabId() override {}
   uint32_t GetAcceleratedWidget(bool isPopup) override {}

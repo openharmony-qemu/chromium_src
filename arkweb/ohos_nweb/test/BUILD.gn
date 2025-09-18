@@ -39,4 +39,8 @@ test("ohos_nweb_unittests") {
     "//third_party/boringssl",
     "//content/public/common",
   ]
+
+  if (enable_arkweb_ext) {
+    deps += [ "//ohos_nweb_ex/test:ohos_nweb_ex_unittests", ]
+  }
 }

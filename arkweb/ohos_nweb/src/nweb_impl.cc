@@ -4629,6 +4629,19 @@ void NWebImpl::WebExtensionContextMenuReloadFocusedFrame() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void NWebImpl::WebExtensionContextMenuGetFocusedFrameInfo(
+    int32_t& frame_id,
+    std::string& frame_url) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nullptr nweb_delegate_";
+    return;
+  }
+  nweb_delegate_->WebExtensionContextMenuGetFocusedFrameInfo(frame_id,
+                                                             frame_url);
+}
+#endif
+
 // static
 void NWebImpl::ResumeDownloadStatic(
     std::shared_ptr<NWebDownloadItem> web_download) {
@@ -5277,7 +5290,8 @@ static void ApplySiteIsolationMode(bool mode){
   OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(
       g_siteIsolationMode);
   ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
-  g_siteIsolationModeInitValue = (g_siteIsolationMode == true) ? SiteIsolationInitMode::STRICT : SiteIsolationInitMode::PARTIAL;
+  g_siteIsolationModeInitValue = 
+    (g_siteIsolationMode == true) ? SiteIsolationInitMode::STRICT : SiteIsolationInitMode::PARTIAL;
   LOG(INFO) << "Final site isolation mode set to:" << g_siteIsolationMode;
 }
 
@@ -6501,7 +6515,7 @@ void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, 
   auto& instance = base::ohos::BlanklessController::GetInstance();
   auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
   uint64_t recorded_time = instance.GetSystemTime(nweb_id_, blankless_key_);
-  int32_t corrected_time = static_cast<int32_t>(system_time - recorded_time);
+  int32_t corrected_time = static_cast<int32_t>(static_cast<uint64_t>(system_time) - recorded_time);
   if (corrected_time < 0 || corrected_time >= lcp_time ||
       lcp_time - corrected_time < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
     LOG(DEBUG) << "blankless CallBlanklessFrameFunc corrected time error " << corrected_time << " " << lcp_time;

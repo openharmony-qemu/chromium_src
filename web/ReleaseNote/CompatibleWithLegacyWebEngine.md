@@ -1018,7 +1018,7 @@ onSslErrorEventReceive(callback: Callback<OnSslErrorEventReceiveEvent>): WebAttr
 ```
 
 * **接口作用说明**:
-  * [onSslErrorEvent](gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#onSslErrorEvent12): 通知用户加载资源（主资源+子资源）时发生SSL错误
+  * [onSslErrorEvent](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#onSslErrorEvent12): 通知用户加载资源（主资源+子资源）时发生SSL错误
   * [onSslErrorEventReceive](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-arkweb/arkts-basic-components-web-events.md#onSslErrorEventReceive9): 通知用户加载主资源时发生SSL错误
 * **接口在M114遗留内核上的行为**:
   * onSslErrorEvent: `certChainData`始终为undefined。

@@ -790,6 +790,11 @@ class NWebImpl : public NWeb {
   void WebExtensionContextMenuReloadFocusedFrame();
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void WebExtensionContextMenuGetFocusedFrameInfo(int32_t& frame_id,
+                                                  std::string& frame_url);
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
   static void SetDefaultBrowserZoomLevel(double zoom_factor);
   void SetBrowserZoomLevel(double zoom_factor) const;

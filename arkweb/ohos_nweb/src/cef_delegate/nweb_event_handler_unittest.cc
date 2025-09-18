@@ -718,9 +718,6 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void ShowFreeCopyMenu() override {}
   bool ShouldShowFreeCopyMenu() override { return false; }
   void EnableSafeBrowsingDetection(bool enable, bool strictMode) override {}
-  int InsertBackForwardEntry(int index, const CefString& url) override { return 0; }
-  int UpdateNavigationEntryUrl(int index, const CefString& url) override { return 0; }
-  void ClearForwardList() override {}
   void ExtensionSetTabId(int tab_id) override {}
   int ExtensionGetTabId() override { return 0; }
   uint32_t GetAcceleratedWidget(bool isPopup) { return 0; }
@@ -778,6 +775,9 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
     CefRefPtr<CefDistillCallback> callback) override {}
   void AbortDistill() override {}
 #endif  // BUILDFLAG(ARKWEB_READER_MODE)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 #endif  // BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetMediaResumeFromBFCachePage(bool resume) override {}
@@ -870,9 +870,6 @@ class MockCefBrowser : public ArkWebBrowserExt {
   void ShowFreeCopyMenu() override {}
   bool ShouldShowFreeCopyMenu() override { return false; }
   void EnableSafeBrowsingDetection(bool enable, bool strictMode) override {}
-  int InsertBackForwardEntry(int index, const CefString& url) override { return 0; }
-  int UpdateNavigationEntryUrl(int index, const CefString& url) override { return 0; }
-  void ClearForwardList() override {}
   void ExtensionSetTabId(int tab_id) override {}
   int ExtensionGetTabId() override { return 0; }
   uint32_t GetAcceleratedWidget(bool isPopup) { return 0; }

@@ -20,14 +20,13 @@ using namespace testing;
 class HiTraceAdapterImplTest : public ::testing::Test {};
 
 namespace OHOS::NWeb {
-extern int ConvertToInt(const char *originValue, int defaultValue);
+int ConvertToInt(const char *originValue, int defaultValue);
 }
 
 /**
  * @tc.name: HiTraceAdapterImplTest_ConvertToInt_001.
- * @tc.desc: test of ConvertToInt in HiTraceAdapterImplTest 
+ * @tc.desc: test of ConvertToInt in HiTraceAdapterImplTest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(HiTraceAdapterImplTest, HiTraceAdapterImplTest_ConvertToInt_001) {
   char origin_value[] = "100";

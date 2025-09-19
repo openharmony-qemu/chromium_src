@@ -25,7 +25,6 @@ class NetConnectUtilsTest : public ::testing::Test {};
  * @tc.name: NetConnectUtilsTest_ConvertToConnectTypeInner_001.
  * @tc.desc: test of ConvertToConnectTypeInner in NetConnectUtilsTest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(NetConnectUtilsTest, NetConnectUtilsTest_ConvertToConnectTypeInner_001) {
   EXPECT_EQ(NetConnectUtils::ConvertToConnectType(NETCONN_BEARER_CELLULAR,
@@ -62,7 +61,6 @@ TEST_F(NetConnectUtilsTest, NetConnectUtilsTest_ConvertToConnectTypeInner_001) {
  * @tc.name: NetConnectUtilsTest_ConvertToConnectsubtype_001.
  * @tc.desc: test of ConvertToConnectsubtype in NetConnectUtilsTest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(NetConnectUtilsTest, NetConnectUtilsTest_ConvertToConnectsubtype_001) {
   EXPECT_EQ(NetConnectUtils::ConvertToConnectsubtype(Telephony_RadioTechnology::TEL_RADIO_TECHNOLOGY_UNKNOWN),
@@ -99,7 +97,6 @@ TEST_F(NetConnectUtilsTest, NetConnectUtilsTest_ConvertToConnectsubtype_001) {
  * @tc.name: NetConnectUtilsTest_ConvertToConnectType_001.
  * @tc.desc: test of ConvertToConnectType in NetConnectUtilsTest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(NetConnectUtilsTest, NetConnectUtilsTest_ConvertToConnectType_001) {
   EXPECT_EQ(NetConnectUtils::ConvertToConnectType(NETCONN_BEARER_WIFI,
@@ -118,7 +115,6 @@ TEST_F(NetConnectUtilsTest, NetConnectUtilsTest_ConvertToConnectType_001) {
  * @tc.name: NetConnectUtilsTest_ConnectTypeToString_001.
  * @tc.desc: test of ConnectTypeToString in NetConnectUtilsTest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(NetConnectUtilsTest, NetConnectUtilsTest_ConnectTypeToString_001) {
   EXPECT_EQ(NetConnectUtils::ConnectTypeToString(NetConnectType::CONNECTION_UNKNOWN), "unknown");

@@ -125,7 +125,9 @@ class ArkwebRenderProcessHostImplUtils {
 #if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
  void AddHostUIThreadInterface(service_manager::BinderRegistry* registry);
 #endif
-
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  void AddDFXToUIThreadInterface(service_manager::BinderRegistry* registry);
+#endif
  private:
   const raw_ptr<RenderProcessHostImpl> render_process_host_impl_;
 #if BUILDFLAG(ARKWEB_THEME_FONT)

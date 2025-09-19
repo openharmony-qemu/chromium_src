@@ -55,6 +55,7 @@ class NativeWebContentsObserver::BridgeInfo {
   const raw_ptr<NativeWebContentsObserver> observer_;
 };
 
+#ifndef ARKWEB_TEST_INCLUDE
 NativeWebContentsObserver::NativeWebContentsObserver(
     WebContentsImpl* web_contents)
     : WebContentsObserver(web_contents) {}
@@ -367,6 +368,7 @@ void NativeWebContentsObserver::NativeBridgeObserverHostImpl::
   native_web_contents_observer_->web_contents_impl()->OnNativeEmbedObjectParamChange(
       native_param_info);
 }
+#endif  // ARKWEB_TEST_INCLUDE
 
 }  // namespace content
                        

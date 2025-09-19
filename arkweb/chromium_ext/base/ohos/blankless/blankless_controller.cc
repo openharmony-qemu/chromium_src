@@ -38,13 +38,13 @@ void BlanklessController::BlankOptWhiteList::LoadWhiteList()
 
   base::FilePath data_path = base::FilePath("/etc/web/blank_opt_white_list.json");
   base::File tfile(data_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
-  if (!tfile.IsValid()) {
+  if (!tfile.IsValid() || tfile.GetLength() <= 0) {
     LOG(WARNING) << "blankless BlankOptWhiteList file is invalid or not exist.";
     return;
   }
 
-  std::vector<char> buffer(tfile.GetLength());
-  int bytes_read = tfile.Read(0, buffer.data(), buffer.size());
+  std::vector<char> buffer(static_cast<size_t>(tfile.GetLength()));
+  int bytes_read = tfile.Read(0, buffer.data(), static_cast<int>(buffer.size()));
   if (bytes_read == -1) {
     LOG(WARNING) << "blankless BlankOptWhiteList read file failed.";
     return;
@@ -117,6 +117,7 @@ void BlanklessController::FireFrameRemoveCallback(uint32_t nweb_id, uint64_t bla
   std::optional<Callback> callback = m_frame_remove_callback_map_.Get(nweb_id, blankless_key, /*move*/true);
   if (callback.has_value()) {
     callback.value()();
+    LOG(DEBUG) << "blankless FireFrameRemoveCallback nweb_id: " << nweb_id << ", blankless_key: " << blankless_key;
   }
 }
 
@@ -195,12 +196,27 @@ uint64_t BlanklessController::GetSystemTime(uint32_t nweb_id, uint64_t blankless
   return INVALID_TIMESTAMP;
 }
 
+void BlanklessController::RecordDumpTime(uint32_t nweb_id, uint64_t blankless_key, uint64_t dump_time)
+{
+  m_dump_time_map_.Insert(nweb_id, blankless_key, dump_time);
+}
+
+uint64_t BlanklessController::GetDumpTime(uint32_t nweb_id, uint64_t blankless_key)
+{
+  auto dump_time = m_dump_time_map_.Get(nweb_id, blankless_key, /*move*/false);
+  if (dump_time.has_value()) {
+    return dump_time.value();
+  }
+  return INVALID_TIMESTAMP;
+}
+
 void BlanklessController::Clear(uint32_t nweb_id)
 {
   if (nweb_id == 0) {
     m_frame_insert_callback_map_.Clear();
     m_frame_remove_callback_map_.Clear();
     m_system_time_map_.Clear();
+    m_dump_time_map_.Clear();
     {
       std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
       m_nweb_status_map_.clear();
@@ -212,6 +228,7 @@ void BlanklessController::Clear(uint32_t nweb_id)
   m_frame_insert_callback_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
   m_frame_remove_callback_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
   m_system_time_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
+  m_dump_time_map_.Erase(nweb_id, INVALID_BLANKLESS_KEY);
   {
     std::lock_guard<std::mutex> lck(m_nweb_status_map_mtx_);
     m_nweb_status_map_.erase(nweb_id);

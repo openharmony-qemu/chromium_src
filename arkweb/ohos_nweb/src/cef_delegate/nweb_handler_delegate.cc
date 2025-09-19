@@ -162,6 +162,7 @@
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
@@ -1719,6 +1720,39 @@ std::string GetDataURI(const std::string& data, const std::string& mime_type) {
              .ToString();
 }
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void NWebHandlerDelegate::SetBlanklessLoadingKey(uint64_t blankless_key) {
+  blankless_key_ = blankless_key;
+}
+
+void NWebHandlerDelegate::ClearSnapshot() {
+  if (blankless_key_ == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
+    return;
+  }
+  auto& instance = base::ohos::BlanklessController::GetInstance();
+  uint64_t dump_time = instance.GetDumpTime(nweb_id_, blankless_key_);
+  uint64_t system_time = instance.GetSystemTime(nweb_id_, blankless_key_);
+  if (dump_time != base::ohos::BlanklessController::INVALID_TIMESTAMP && dump_time > system_time) {
+    auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
+    databaseInstance.ClearSnapshot(blankless_key_);
+    databaseInstance.ClearSnapshotDataItem({blankless_key_});
+  }
+  LOG(DEBUG) << "blankless triggered clear due to resource loading error";
+  // If there is a network error during dumpsnapshot, set the system time to an invalid vlaue,
+  // the dump snapshot verification will not pass.
+  instance.RecordSystemTime(nweb_id_, blankless_key_, base::ohos::BlanklessController::INVALID_TIMESTAMP);
+
+  blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
+  auto browser = GetBrowser();
+  if (browser == nullptr || browser->GetMainFrame() == nullptr ||
+      browser->GetMainFrame()->AsArkWebFrame() == nullptr) {
+    LOG(ERROR) << "blankless NWebHandlerDelegate::ClearSnapshot browser is nullptr";
+    return;
+  }
+  browser->GetMainFrame()->AsArkWebFrame()->SendBlanklessKeyToRenderFrame(nweb_id_, blankless_key_, 0, 0);
+}
+#endif
+
 void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
                                       CefRefPtr<CefFrame> frame,
                                       ErrorCode error_code,
@@ -1731,6 +1765,13 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
   if (error_code == ERR_ABORTED) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (base::ohos::BlanklessController::CheckGlobalProperty() && error_code <= ERR_CONNECTION_CLOSED &&
+      error_code != ERR_UNKNOWN_URL_SCHEME && error_code != ERR_NAME_NOT_RESOLVED) {
+    ClearSnapshot();
+  }
+#endif
 
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnPageLoadError(error_code, error_text.ToString(),
@@ -1767,6 +1808,12 @@ void NWebHandlerDelegate::OnLoadErrorWithRequest(CefRefPtr<CefRequest> request,
   if (error_code == ERR_ABORTED) {
     LOG(WARNING) << "ignoring the error";
     return;
+  }
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (base::ohos::BlanklessController::CheckGlobalProperty() && error_code <= ERR_CONNECTION_CLOSED &&
+      error_code != ERR_UNKNOWN_URL_SCHEME && error_code != ERR_NAME_NOT_RESOLVED) {
+    ClearSnapshot();
   }
 #endif
   CefRequest::HeaderMap cef_request_headers;

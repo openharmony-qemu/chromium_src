@@ -6073,19 +6073,21 @@ void NWebImpl::SetPrivacyStatus(bool isPrivate) {
 
 int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) {
   if (!base::ohos::BlanklessController::CheckGlobalProperty() ||
-      !nweb_delegate_ || !similarity || !loadingTime) {
-      if (similarity) {
-        *similarity = 0;
-      }
-      if (loadingTime) {
-        *loadingTime = 0;
-      }
+      !nweb_delegate_ || !similarity || !loadingTime || !CheckNetAvailable()) {
+    if (similarity) {
+      *similarity = 0;
+    }
+    if (loadingTime) {
+      *loadingTime = 0;
+    }
     return 0;  // SUCCESS
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
   auto window_id = instance.GetWindowIdByNWebId(nweb_id_);
   uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
   auto status_code = instance.RecordKey(nweb_id_, blankless_key);
+  LOG(DEBUG) << "blankless GetBlanklessInfoWithKey nweb_id: " << nweb_id_
+             << ", blankless_key: " << blankless_key << ", status: " << static_cast<int>(status_code);
   auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
   auto is_private = OHOS::NWeb::WindowManagerAdapterImpl::GetWindowPrivacyMode(window_id);
   if (is_private) {
@@ -6097,6 +6099,9 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
       databaseInstance.GetBlanklessLoadingCacheCapacity() == 0 || is_private) {
     *similarity = 0;
     *loadingTime = 0;
+    LOG(DEBUG) << "blankless GetBlanklessInfoWithKey nweb_id: " << nweb_id_
+               << ", blankless_key: " << blankless_key << ", status: " << static_cast<int>(status_code)
+               << ", capacity: " << databaseInstance.GetBlanklessLoadingCacheCapacity();
   } else {
     blankless_key_ = blankless_key;
     auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
@@ -6105,19 +6110,22 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
     OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key, GetPreferenceHash());
     *similarity = dataItem.historySimilarity;
     *loadingTime = dataItem.lcpTime;
-    LOG(DEBUG) << "blankless GetBlanklessInfoWithKey similarity: " << dataItem.historySimilarity
+    LOG(DEBUG) << "blankless GetBlanklessInfoWithKey nweb_id: " << nweb_id_
+               << ", blankless_key: " << blankless_key << ", similarity: " << dataItem.historySimilarity
                << ", loadingTime: " << dataItem.lcpTime;
   }
   return 0;   // SUCCESS
 }
 
 int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStart) {
-  if (!base::ohos::BlanklessController::CheckGlobalProperty()) {
+  if (!base::ohos::BlanklessController::CheckGlobalProperty() || !CheckNetAvailable()) {
     return -5;  // ERR_SIGNIFICANT_CHANGE
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
   uint64_t blankless_key = base::ohos::BlanklessController::ConvertToBlanklessKey(key);
   auto status_code = instance.MatchKey(nweb_id_, blankless_key);
+  LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey nweb_id: " << nweb_id_
+             << ", blankless_key: " << blankless_key << ", status: " << static_cast<int>(status_code);
   if (status_code == base::ohos::BlanklessController::StatusCode::KEY_NOT_MATCH) {
     return -4;    // ERR_KEY_NOT_MATCH
   }
@@ -6132,6 +6140,10 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
   }  
   if (status_code != base::ohos::BlanklessController::StatusCode::INSERTED ||
       databaseInstance.GetBlanklessLoadingCacheCapacity() == 0) {
+    LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey nweb_id: " << nweb_id_
+               << ", blankless_key: " << blankless_key << ", status: " << static_cast<int>(status_code)
+               << ", capacity: " << databaseInstance.GetBlanklessLoadingCacheCapacity()
+               << ", isStart: " << isStart;
     return (isStart ? -5 : 0);  // ERR_SIGNIFICANT_CHANGE(true) or SUCCESS(false)
   }
   if (isStart) {
@@ -6147,7 +6159,7 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
 
 bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   if (!base::ohos::BlanklessController::CheckGlobalProperty() || !nweb_delegate_ ||
-      !base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url)) {
+      !base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url) || !CheckNetAvailable()) {
     return false;
   }
   blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(url);
@@ -6170,8 +6182,11 @@ bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
 }
 
 void NWebImpl::SetVisibility(bool isVisible) {
+  if (!base::ohos::BlanklessController::CheckGlobalProperty()) {
+    return;
+  }
   is_visible_ = isVisible;
-  if (!isVisible) {
+  if (!isVisible || !nweb_handle_) {
     return;
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
@@ -6198,6 +6213,22 @@ void NWebImpl::ClearBlanklessKey() {
   blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
 }
 
+bool NWebImpl::CheckNetAvailable() {
+  auto netConnectAdapter = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateNetConnectAdapter();
+  if (!netConnectAdapter) {
+    LOG(ERROR) << "blankless net_connect_adapter is nullptr";
+    return false;
+  }
+  NetConnectType type = NetConnectType::CONNECTION_UNKNOWN;
+  NetConnectSubtype subtype = NetConnectSubtype::SUBTYPE_UNKNOWN;
+  netConnectAdapter->GetDefaultNetConnect(type, subtype);
+  if (type == NetConnectType::CONNECTION_UNKNOWN) {
+    LOG(DEBUG) << "blankless net not available";
+    return false;
+  }
+  return true;
+}
+
 void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file, int32_t width,
                                       int32_t height) {
   if (nweb_handle_ == nullptr || lcp_time == INT32_MAX || lcp_time <= 0 || file.empty()) {
@@ -6206,12 +6237,18 @@ void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, 
   auto& instance = base::ohos::BlanklessController::GetInstance();
   auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
   uint64_t recorded_time = instance.GetSystemTime(nweb_id_, blankless_key_);
-  int32_t corrected_time = static_cast<int32_t>(system_time - recorded_time);
-  if (corrected_time < 0 || corrected_time >= lcp_time || lcp_time - corrected_time < 40) { // 40 ms
+  int32_t corrected_time = static_cast<int32_t>(static_cast<uint64_t>(system_time) - recorded_time);
+  if (corrected_time < 0 || corrected_time >= lcp_time ||
+      lcp_time - corrected_time < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
     LOG(DEBUG) << "blankless CallBlanklessFrameFunc corrected time error " << corrected_time << " " << lcp_time;
     return;
   }
-  lcp_time = std::min(lcp_time, 2000);  // 2000 ms
+  if (lcp_time >= base::ohos::BlanklessController::A_STANDARD) {
+    lcp_time = std::min(lcp_time, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
+  } else {
+    lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME;
+  }
+  LOG(DEBUG) << "blankless OnRemoveBlanklessFrame Delay Time: " << lcp_time;
   if (is_visible_) {
     nweb_handle_->OnInsertBlanklessFrameWithSize(file, width, height);
     if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {

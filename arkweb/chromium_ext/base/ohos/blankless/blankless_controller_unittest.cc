@@ -16,6 +16,7 @@
 #define private public
 #include "base/ohos/blankless/blankless_controller.h"
 #undef private
+#include "base/time/time.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -451,6 +452,18 @@ TEST_F(BlanklessControllerTest, Check_Record_Window_Id)
   uint32_t nweb_id2 = 2;
   auto window_id2 = controller.GetWindowIdByNWebId(nweb_id2);
   EXPECT_EQ(window_id2, 0);
+}
+
+TEST_F(BlanklessControllerTest, Check_Record_Dump_Time)
+{
+  auto dump_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
+  controller.RecordDumpTime(nweb_id1, blankless_key1, dump_time);
+  auto record_time1 = controller.GetDumpTime(nweb_id1, blankless_key1);
+  EXPECT_EQ(record_time1, dump_time);
+
+  uint32_t nweb_id2 = 2;
+  auto record_time2 = controller.GetDumpTime(nweb_id2, blankless_key1);
+  EXPECT_EQ(record_time2, BlanklessController::INVALID_TIMESTAMP);
 }
 }  // namespace ohos
 }  // namespace base

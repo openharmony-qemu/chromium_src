@@ -344,7 +344,6 @@ arkweb_media_audio_unittest_sources = [
   "//arkweb/chromium_ext/media/audio/ohos/audio_dump_unittest.cc",
   "//arkweb/chromium_ext/media/audio/ohos/buffer_desc_adapter_impl_unittest.cc",
   "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_manager_unittest.cc",
-  "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_output_stream_unittest.cc",
   "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_capturer_source_unittest.cc",
 ]
 

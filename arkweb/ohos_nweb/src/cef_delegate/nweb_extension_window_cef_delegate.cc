@@ -44,13 +44,11 @@ namespace {
 #endif
 }
 
-#if BUILDFLAG(ARKWEB_NWEB_EX)
 // static
 NweExtensionWindowCefDelegate* NweExtensionWindowCefDelegate::GetInstance() {
   static NweExtensionWindowCefDelegate instance;
   return &instance;
 }
-#endif
 
 NweExtensionWindowCefDelegate::NweExtensionWindowCefDelegate() {}
 

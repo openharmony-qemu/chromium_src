@@ -35,9 +35,9 @@ using WindowRemovedCallback = base::RepeatingCallback<void(const std::optional<s
 
 class NweExtensionWindowCefDelegate {
   public:
-#if BUILDFLAG(ARKWEB_NWEB_EX)  
     static NweExtensionWindowCefDelegate* GetInstance();
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
     void WindowCreated(const WebExtensionWindow& window);
     void WindowRemoved(const WebExtensionWindow& window);
     void WindowBoundsChanged(const WebExtensionWindow& window);

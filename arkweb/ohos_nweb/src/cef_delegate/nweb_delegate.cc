@@ -3844,7 +3844,7 @@ bool NWebDelegate::IsEnableCustomVideoPlayer() {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
   LOG(INFO) << "NWebDelegate::SetForceEnableZoom " << forceEnableZoom;
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
@@ -3854,7 +3854,9 @@ void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
     GetBrowser()->SetForceEnableZoom(forceEnableZoom);
   }
 }
+#endif
 
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
 bool NWebDelegate::GetForceEnableZoom() {
   if (GetBrowser().get()) {
     return GetBrowser()->GetForceEnableZoom();

@@ -101,7 +101,7 @@ static void WebPreferenceMojomExt(blink::mojom::WebPreferencesDataView data,
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   out->usage_scenario = data.usage_scenario();
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   out->force_enable_zoom = data.force_enable_zoom();
 #endif
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)

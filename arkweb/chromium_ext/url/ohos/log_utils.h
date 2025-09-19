@@ -49,6 +49,7 @@ class COMPONENT_EXPORT(URL) LogUtils {
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   static bool IsSupportParam(const std::string& param);
 #endif
+  static std::string MaskHost(const std::string& host);
 };
 }  // namespace url
 

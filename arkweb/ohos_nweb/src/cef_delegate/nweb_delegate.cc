@@ -20,6 +20,7 @@
 #include "nweb_accessibility_utils.h"
 #endif
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/command_line.h"
 #include "base/check.h"
 #include "base/command_line.h"
@@ -285,7 +286,7 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
           base::BindOnce(
               base::IgnoreResult(
                   &JavaScriptResultCallbackImpl::CallbackOnReceiveThread),
-              base::Unretained(this), result));
+              weak_factory_.GetWeakPtr(), result));
     }
   }
 
@@ -295,6 +296,8 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
   std::shared_ptr<NWebDelegateInterface> nwebDelegate_;
 
   IMPLEMENT_REFCOUNTING(JavaScriptResultCallbackImpl);
+ private:
+  base::WeakPtrFactory<JavaScriptResultCallbackImpl> weak_factory_{this};
 };
 
 class CefWebMessageReceiverImpl : public CefWebMessageReceiver {
@@ -1094,11 +1097,6 @@ void NWebDelegate::OnTouchPress(int32_t id,
                                  y / default_virtual_pixel_ratio_,
                                  from_overlay);
   }
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  if (render_handler_ != nullptr) {
-    render_handler_->SetIrregularDragBackground(true);
-  }
-#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 void NWebDelegate::OnTouchRelease(int32_t id,
@@ -1199,11 +1197,6 @@ void NWebDelegate::SendMouseEvent(int x,
                                    y / default_virtual_pixel_ratio_, button,
                                    action, count);
   }
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  if (render_handler_ != nullptr) {
-    render_handler_->SetIrregularDragBackground(false);
-  }
-#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -1362,7 +1355,8 @@ int NWebDelegate::PostUrl(const std::string& url,
       return NWEB_INVALID_URL;
     }
   }
-  LOG(DEBUG) << "NWebDelegate::PostUrl url=" << url;
+  LOG(DEBUG) << "NWebDelegate::PostUrl url="
+             << url::LogUtils::ConvertUrlWithMask(url);
   auto browser = GetBrowser();
   if (browser == nullptr) {
     LOG(ERROR) << "NWebDelegate::PostUrl browser is nullptr";
@@ -3454,11 +3448,6 @@ void NWebDelegate::WebSendMouseEvent(
     LOG(INFO) << "Mouse Event dropped! event_handler is " << !!event_handler_;
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
   }
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  if (render_handler_ != nullptr) {
-    render_handler_->SetIrregularDragBackground(false);
-  }
-#endif  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
 }
 
 void NWebDelegate::ScrollToWithAnime(float x, float y, int32_t duration) {
@@ -5965,19 +5954,6 @@ int64_t NWebDelegate::GetPreferenceHash() {
     return base::ohos::BlanklessDataController::INVALID_PREF_HASH;
   }
   return preference_delegate_->GetPreferenceHash();
-}
-
-int32_t NWebDelegate::NearestSnapshotWidth() {
-  return nearest_snapshot_width_;
-}
-
-int32_t NWebDelegate::NearestSnapshotHeight() {
-  return nearest_snapshot_height_;
-}
-
-void NWebDelegate::SetNearestSnapshotSize(int width, int height) {
-  nearest_snapshot_width_ = width;
-  nearest_snapshot_height_ = height;
 }
 
 int32_t NWebDelegate::GetWidth() {

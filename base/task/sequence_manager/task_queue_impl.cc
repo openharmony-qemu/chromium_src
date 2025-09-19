@@ -39,6 +39,10 @@
 #include "build/build_config.h"
 #include "third_party/abseil-cpp/absl/container/inlined_vector.h"
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "arkweb/chromium_ext/base/task/task_queue_impl_ext.h"
+#endif
+
 namespace base {
 namespace sequence_manager {
 
@@ -709,6 +713,9 @@ bool TaskQueueImpl::RemoveAllCanceledDelayedTasksFromFront(LazyNow* lazy_now) {
 
   while (!main_thread_only().delayed_incoming_queue.empty()) {
     const Task& task = main_thread_only().delayed_incoming_queue.top();
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    TaskCheckWithFatalMessage(task);
+#endif
     CHECK(task.task);
     if (!task.task.IsCancelled())
       break;
@@ -740,6 +747,9 @@ void TaskQueueImpl::MoveReadyDelayedTasksToWorkQueue(
 
   while (!main_thread_only().delayed_incoming_queue.empty()) {
     const Task& task = main_thread_only().delayed_incoming_queue.top();
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    TaskCheckWithFatalMessage(task);
+#endif
     CHECK(task.task);
 
     // Leave the top task alone if it hasn't been canceled and it is not ready.
@@ -1612,6 +1622,9 @@ TaskQueueImpl::DelayedIncomingQueue::~DelayedIncomingQueue() = default;
 void TaskQueueImpl::DelayedIncomingQueue::push(Task task) {
   // TODO(crbug.com/40789839): Remove this once the cause of corrupted tasks in
   // the queue is understood.
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  TaskCheckWithFatalMessage(task);
+#endif
   CHECK(task.task);
   if (task.is_high_res)
     pending_high_res_tasks_++;

@@ -32,6 +32,8 @@ struct BlanklessInfo {
   int32_t lcp_time = 0;
   uint64_t system_time = 0;
   int64_t pref_hash = 0;
+  int64_t width = 0;
+  int64_t height = 0;
 };
 
 struct BlanklessDumpInfo {
@@ -53,6 +55,7 @@ public:
   static constexpr uint64_t INVALID_BLANKLESS_KEY = UINT64_MAX;
   static constexpr double CALLBACK_SIMILARITY_THRESHOLD = 0.75;
   static constexpr uint64_t INVALID_TIMESTAMP = UINT64_MAX;
+  static constexpr int32_t SNAPSHOT_SCALE_FACTOR = 2;
 
   static uint64_t ConvertToBlanklessKey(const std::string& value);
 

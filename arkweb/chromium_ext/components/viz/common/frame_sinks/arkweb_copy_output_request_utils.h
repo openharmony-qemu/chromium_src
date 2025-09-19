@@ -36,10 +36,6 @@ class ArkwebCopyOutputRequestUtils {
   const base::ohos::BlanklessInfo& GetBlanklessInfo() const;
 
   bool IsBlanklessInfoValid() const;
-
-  void SetQuadList(const std::vector<gfx::Rect>& quad_list);
-
-  const std::vector<gfx::Rect>& GetQuadList() const;
 #endif
 
  private:
@@ -47,7 +43,6 @@ class ArkwebCopyOutputRequestUtils {
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   base::ohos::BlanklessInfo info_;
-  std::vector<gfx::Rect> quad_list_;
 #endif
 };
 }  // namespace viz

@@ -73,10 +73,6 @@ public:
 
     void ReleaseCapture(int nweb_id);
 
-    void SetDisplaySelectCallback(base::OnceCallback<void(uint64_t displayId)> callback);
-
-    void OnDisplaySelectCallback(uint64_t displayId);
-
     std::unordered_map<int, std::unique_ptr<OHOS::NWeb::ScreenCaptureAdapter>> screen_capture_adapter_map_;
 
     bool ScreenCaptureAdapterIsExist(int nweb_id);
@@ -92,10 +88,6 @@ public:
     bool WindowCallbackIsExist(int nweb_id);
 
     std::unordered_map<int, OHOS::NWeb::ScreenCaptureStateCodeAdapter> capture_state_code_map_;
-
-    base::OnceCallback<void(uint64_t displayId)> displaySelectedCallback_;
-
-    std::mutex displaySelectedCallbackMutex_;
 
     base::WeakPtrFactory<BaseScreenCaptureSource> weak_factory_{this};
 };

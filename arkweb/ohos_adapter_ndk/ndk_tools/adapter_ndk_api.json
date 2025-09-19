@@ -28,7 +28,8 @@
                 "OH_AudioStream_Result OH_AudioCapturer_GetTimestamp(OH_AudioCapturer* capturer, clockid_t clockId, int64_t* framePosition, int64_t* timestamp)",
                 "OH_AudioStream_Result OH_AudioRenderer_SetSilentModeAndMixWithOthers(OH_AudioRenderer *renderer, bool on)",
                 "OH_AudioStream_Result OH_AudioStreamBuilder_SetEncodingType(OH_AudioStreamBuilder* builder, OH_AudioStream_EncodingType encodingType)",
-                "OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder, OH_AudioStream_Usage usage)"
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder, OH_AudioStream_Usage usage)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererOutputDeviceChangeCallback(OH_AudioStreamBuilder* builder, OH_AudioRenderer_OutputDeviceChangeCallback callback, void* userData)"
             ]
         },
         "includes": []
@@ -46,9 +47,6 @@
                 "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetDataCallback(OH_AVScreenCapture *capture, OH_AVScreenCapture_OnBufferAvailable callback, void *userData)",
                 "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetStateCallback(OH_AVScreenCapture *capture, OH_AVScreenCapture_OnStateChange callback, void *userData)",
                 "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetCanvasRotation(OH_AVScreenCapture *capture, bool canvasRotation)"
-            ],
-        "15": [
-            "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetDisplayCallback(struct OH_AVScreenCapture *capture, OH_AVScreenCapture_OnDisplaySelected callback, void *userData)"
             ]
         },
         "includes": []
@@ -409,8 +407,13 @@
                 "int32_t OH_NetStack_GetPinSetForHostName(const char *hostname, NetStack_CertificatePinning *pin)",
                 "int32_t OH_NetStack_GetCertificatesForHostName(const char *hostname, NetStack_Certificates *certs)",
                 "void OH_Netstack_DestroyCertificatesContent(NetStack_Certificates *certs)",
+            ],
+            "18": [
                 "int OH_Netstack_IsCleartextPermitted(bool *isCleartextPermitted)",
                 "int OH_Netstack_IsCleartextPermittedByHostName(const char *hostname, bool *isCleartextPermitted)"
+            ],
+            "20": [
+                "int OH_Netstack_IsCleartextCfgByComponent(const char *component, bool *componentCfg)"
             ]
         },
         "includes": []

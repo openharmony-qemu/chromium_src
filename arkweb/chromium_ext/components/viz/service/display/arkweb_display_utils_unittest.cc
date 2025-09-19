@@ -294,9 +294,9 @@ class ArkwebDisplayUtilsTest : public testing::Test {
 
   void TestSetGpuChannelManager() {
     ArkwebDisplayUtils utils(nullptr);
-    raw_ptr<gpu::GpuChannelManager> test_manager;
-    utils.SetGpuChannelManager(test_manager);
-    EXPECT_EQ(utils.gpu_channel_manager_, test_manager);
+    GpuServiceImpl* test_impl = nullptr;
+    utils.SetGpuServiceImpl(test_impl);
+    EXPECT_EQ(utils.gpu_service_impl_, test_impl);
   }
 #endif
 

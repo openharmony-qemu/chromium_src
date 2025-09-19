@@ -197,10 +197,8 @@ base::FilePath MediaStorageUtil::FindDevicePathById(
 // static
 bool MediaStorageUtil::IsRemovableStorageAttached(const std::string& id) {
   StorageMonitor* monitor = StorageMonitor::GetInstance();
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (!monitor)
     return false;
-#endif
 
   StorageInfoList devices = monitor->GetAllAvailableStorages();
   for (const auto& device : devices) {

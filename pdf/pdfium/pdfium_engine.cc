@@ -1048,13 +1048,18 @@ bool PDFiumEngine::HandleInputEvent(const blink::WebInputEvent& event) {
     }
     case blink::WebInputEvent::Type::kTouchEnd:
       KillTouchTimer();
-      client_->HideHandleAndQuickMenuForPDF(false);
+#if BUILDFLAG(ARKWEB_PDF)
+      client_->SetIsTouching(false);
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
       break;
     case blink::WebInputEvent::Type::kTouchMove:
       // TODO(dsinclair): This should allow a little bit of movement (up to the
       // touch radii) to account for finger jiggle.
       KillTouchTimer();
-      client_->HideHandleAndQuickMenuForPDF(true);
+#if BUILDFLAG(ARKWEB_PDF)
+      client_->SetIsTouching(true);
+#endif  // BUILDFLAG(ARKWEB_PDF)
       break;
     default:
       break;

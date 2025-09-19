@@ -221,4 +221,5 @@ void BaseAudioCapturerSource::ReportError(const std::string& message) {
       FROM_HERE, base::BindOnce(&BaseAudioCapturerSource::NotifyCaptureError,
                                 weak_factory_.GetWeakPtr(), message));
 }
+
 }  // namespace media

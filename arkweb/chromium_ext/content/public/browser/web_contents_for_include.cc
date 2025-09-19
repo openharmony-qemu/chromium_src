@@ -195,7 +195,12 @@ virtual bool OnStartBackgroundTask(int32_t type, const std::string& message) = 0
                                    const std::string& title) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_TEST)
+public:
+#else
 private:
+#endif  // ARKWEB_TEST
+
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 std::string media_title_;
 std::string video_poster_;

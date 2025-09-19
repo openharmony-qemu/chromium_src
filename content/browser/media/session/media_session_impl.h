@@ -437,7 +437,11 @@ class MediaSessionImpl : public MediaSession,
   bool GetMediaPlayerMuteState();
 #endif
 
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif  // ARKWEB_TEST
   friend class content::WebContentsUserData<MediaSessionImpl>;
   friend class MediaSessionImplBrowserTest;
   friend class content::MediaSessionImplVisibilityBrowserTest;

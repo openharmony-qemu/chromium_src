@@ -158,6 +158,7 @@ TEST_F(WebContentsImplExtTest, CloseDateTimeChooser001) {
   ExtendContent()->CloseDateTimeChooser();
 }
 
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
 TEST_F(WebContentsImplExtTest, SetForceEnableZoom001) {
   ExtendContent()->SetForceEnableZoom(false);
   auto flag = ExtendContent()->GetForceEnableZoom();
@@ -182,6 +183,7 @@ TEST_F(WebContentsImplExtTest, EnableAdsBlock002) {
   auto flag = ExtendContent()->GetForceEnableZoom();
   EXPECT_FALSE(flag);
 }
+#endif
 
 TEST_F(WebContentsImplExtTest, IsAdsBlockEnabled001) {
   auto flag = ExtendContent()->IsAdsBlockEnabled();
@@ -218,6 +220,7 @@ TEST_F(WebContentsImplExtTest, SetAdBlockEnabledForSite001) {
                                             main_frame_tree_node_id);
 }
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 TEST_F(WebContentsImplExtTest, NotifyContextMenuWillShow001) {
   ExtendContent()->NotifyContextMenuWillShow();
   bool flag = ExtendContent()->IsShowingContextMenu();
@@ -227,6 +230,7 @@ TEST_F(WebContentsImplExtTest, NotifyContextMenuWillShow001) {
 TEST_F(WebContentsImplExtTest, ShowFreeCopyMenu001) {
   ExtendContent()->ShowFreeCopyMenu();
 }
+#endif
 
 TEST_F(WebContentsImplExtTest, GetTargetFramesIncludingPending001) {
   int routing_id = 0;
@@ -309,11 +313,13 @@ TEST_F(WebContentsImplExtTest, MediaPlayerGone001) {
   ExtendContent()->MediaPlayerGone(info, media_player_id);
 }
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
 TEST_F(WebContentsImplExtTest, UpdateBrowserControlsHeight001) {
   int height = 0;
   bool animate = false;
   ExtendContent()->UpdateBrowserControlsHeight(height, animate);
 }
+#endif
 
 TEST_F(WebContentsImplExtTest, ClearContextMenu001) {
   ExtendContent()->ClearContextMenu();

@@ -1703,6 +1703,9 @@ class CONTENT_EXPORT WebContentsImpl
 
   // TODO(brettw) TestWebContents shouldn't exist!
   friend class TestWebContents;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class TestWebContentsImplExt;
+#endif
 
   class RenderWidgetHostDestructionObserver;
   class WebContentsDestructionObserver;

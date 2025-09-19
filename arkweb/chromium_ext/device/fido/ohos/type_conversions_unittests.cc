@@ -80,6 +80,16 @@ TEST_F(TypeConversionsTest, CredentialInfoTest_001)
     EXPECT_EQ(ret.type, FIDO2_PUBLIC_KEY);
 }
 
+TEST_F(TypeConversionsTest, PublicKeyCredentialParamsTest_001)
+{
+    PublicKeyCredentialParams::CredentialInfo info = {CredentialType::kPublicKey, 0};
+    std::vector<PublicKeyCredentialParams::CredentialInfo> credential_params;
+    credential_params.emplace_back(info);
+    PublicKeyCredentialParams params(credential_params);
+    auto ret = Convert<std::vector<FIDO2_PublicKeyCredentialParameters>>(params);
+    EXPECT_FALSE(ret.empty());
+}
+
 TEST_F(TypeConversionsTest, FidoTransportProtocolTest_001)
 {
     auto ret = Convert<FIDO2_AuthenticatorTransport>(FidoTransportProtocol::kUsbHumanInterfaceDevice);
@@ -173,6 +183,27 @@ TEST_F(TypeConversionsTest, AuthenticatorAttachmentTest_001)
     EXPECT_EQ(ret, AuthenticatorAttachment::kCrossPlatform);
     ret = Convert<AuthenticatorAttachment>(static_cast<FIDO2_AuthenticatorAttachment>(2));
     EXPECT_EQ(ret, AuthenticatorAttachment::kAny);
+}
+
+TEST_F(TypeConversionsTest, PublicKeyCredentialRpEntityTest_001)
+{
+    PublicKeyCredentialRpEntity rp1("id", "name");
+    auto ret = Convert<FIDO2_PublicKeyCredentialRpEntity>(rp1);
+    EXPECT_NE(ret.name, nullptr);
+    PublicKeyCredentialRpEntity rp2;
+    ret = Convert<FIDO2_PublicKeyCredentialRpEntity>(rp2);
+    EXPECT_EQ(ret.name, nullptr);
+}
+
+TEST_F(TypeConversionsTest, PublicKeyCredentialUserEntityTest_001)
+{
+    std::vector<uint8_t> id;
+    PublicKeyCredentialUserEntity user1(id, "name", "display_name");
+    auto ret = Convert<FIDO2_PublicKeyCredentialUserEntity>(user1);
+    EXPECT_NE(ret.name, nullptr);
+    PublicKeyCredentialUserEntity user2;
+    ret = Convert<FIDO2_PublicKeyCredentialUserEntity>(user2);
+    EXPECT_EQ(ret.name, nullptr);
 }
 
 TEST_F(TypeConversionsTest, AttestationConveyancePreferenceTest_001)
@@ -308,6 +339,16 @@ TEST_F(TypeConversionsTest, CapabilityArrayToStringTest_001)
     EXPECT_EQ(ret, "[]");
 }
 
+TEST_F(TypeConversionsTest, ConvertHexStringToBytesTest_001)
+{
+    auto ret = ConvertHexStringToBytes("66666666");
+    EXPECT_FALSE(ret.empty());
+    ret = ConvertHexStringToBytes("(bytestring)1");
+    EXPECT_TRUE(ret.empty());
+    ret = ConvertHexStringToBytes("test..........");
+    EXPECT_TRUE(ret.empty());
+}
+
 TEST_F(TypeConversionsTest, ResidentKeyRequirementTest_001)
 {
     auto ret = Convert<const char*>(ResidentKeyRequirement::kDiscouraged);
@@ -318,5 +359,87 @@ TEST_F(TypeConversionsTest, ResidentKeyRequirementTest_001)
     EXPECT_EQ(ret, "required");
     ret = Convert<const char*>(static_cast<ResidentKeyRequirement>(3));
     EXPECT_EQ(ret, "discouraged");
+}
+
+TEST_F(TypeConversionsTest, InitializeMakeCredentialTest_001)
+{
+    PublicKeyCredentialRpEntity rp;
+    PublicKeyCredentialUserEntity user;
+    PublicKeyCredentialParams::CredentialInfo info = {CredentialType::kPublicKey, 0};
+    std::vector<PublicKeyCredentialParams::CredentialInfo> credential_params;
+    credential_params.emplace_back(info);
+    PublicKeyCredentialParams params(credential_params);
+    CtapMakeCredentialRequest request("client_data_json", rp, user, params);
+    CtapMakeCredentialRequestExtra extra;
+    request.extra = extra;
+    CredentialOptionsDataHolder data_holder(request);
+    MakeCredentialOptions request_options;
+    FIDO2_CredentialCreationOptions options;
+    Initialize(data_holder, request, request_options, &options);
+    EXPECT_TRUE(data_holder.descriptor_list.empty());
+}
+
+TEST_F(TypeConversionsTest, InitializeMakeCredentialTest_002)
+{
+    PublicKeyCredentialRpEntity rp;
+    PublicKeyCredentialUserEntity user;
+    PublicKeyCredentialParams::CredentialInfo info = {CredentialType::kPublicKey, 0};
+    std::vector<PublicKeyCredentialParams::CredentialInfo> credential_params;
+    credential_params.emplace_back(info);
+    PublicKeyCredentialParams params(credential_params);
+    CtapMakeCredentialRequest request("client_data_json", rp, user, params);
+    std::vector<uint8_t> challenge;
+    base::TimeDelta timeout = base::TimeDelta::Max();
+    std::vector<CredentialHint> hints;
+    hints.emplace_back(CredentialHint::kHintHybrid);
+    CtapRequestExtraCommon common = {"origin", challenge, CredentialMediationRequirement::kSilent,
+        timeout, hints, "extensions"};
+    std::vector<std::string> attestation_formats;
+    attestation_formats.emplace_back("format");
+    CtapMakeCredentialRequestExtra extra = {common, attestation_formats};
+    request.extra = extra;
+    std::vector<PublicKeyCredentialDescriptor> exclude_list;
+    PublicKeyCredentialDescriptor descriptor;
+    exclude_list.emplace_back(descriptor);
+    request.exclude_list = exclude_list;
+    CredentialOptionsDataHolder data_holder(request);
+    MakeCredentialOptions request_options;
+    FIDO2_CredentialCreationOptions options;
+    Initialize(data_holder, request, request_options, &options);
+    EXPECT_FALSE(data_holder.descriptor_list.empty());
+}
+
+TEST_F(TypeConversionsTest, InitializeGetAssertionTest_001)
+{
+    CtapGetAssertionRequest request("in_rp_id", "in_client_data_json");
+    CtapGetAssertionRequestExtra extra;
+    request.extra = extra;
+    CredentialOptionsDataHolder data_holder(request);
+    CtapGetAssertionOptions request_options;
+    FIDO2_CredentialRequestOptions options;
+    Initialize(data_holder, request, request_options, &options);
+    EXPECT_TRUE(data_holder.descriptor_list.empty());
+}
+
+TEST_F(TypeConversionsTest, InitializeGetAssertionTest_002)
+{
+    CtapGetAssertionRequest request("in_rp_id", "in_client_data_json");
+    std::vector<uint8_t> challenge;
+    base::TimeDelta timeout = base::TimeDelta::Max();
+    std::vector<CredentialHint> hints;
+    hints.emplace_back(CredentialHint::kHintHybrid);
+    CtapRequestExtraCommon common = {"origin", challenge, CredentialMediationRequirement::kSilent,
+        timeout, hints, "extensions"};
+    CtapGetAssertionRequestExtra extra = {common};
+    request.extra = extra;
+    std::vector<PublicKeyCredentialDescriptor> allow_list;
+    PublicKeyCredentialDescriptor descriptor;
+    allow_list.emplace_back(descriptor);
+    request.allow_list = allow_list;
+    CredentialOptionsDataHolder data_holder(request);
+    CtapGetAssertionOptions request_options;
+    FIDO2_CredentialRequestOptions options;
+    Initialize(data_holder, request, request_options, &options);
+    EXPECT_FALSE(data_holder.descriptor_list.empty());
 }
 } // namespace base

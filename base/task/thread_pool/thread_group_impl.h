@@ -75,12 +75,7 @@ class BASE_EXPORT ThreadGroupImpl : public ThreadGroup {
       EXCLUSIVE_LOCKS_REQUIRED(lock_) override;
 
 #if BUILDFLAG(IS_ARKWEB)
-  std::vector<scoped_refptr<base::internal::WorkerThread>>& ReportCreateWorkers() {
-    return create_workers;
-  }
-  std::vector<PlatformThreadId>& ReportDestroyWorkers() {
-    return destroy_workers_ids_;
-  }
+#include "arkweb/chromium_ext/base/task/thread_pool/thread_group_impl_for_include.cc"
 #endif
 
  private:
@@ -123,8 +118,8 @@ class BASE_EXPORT ThreadGroupImpl : public ThreadGroup {
       EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
 #if BUILDFLAG(IS_ARKWEB)
-  std::vector<scoped_refptr<base::internal::WorkerThread>> create_workers;
-  std::vector<PlatformThreadId> destroy_workers_ids_;
+  std::vector<scoped_refptr<base::internal::WorkerThread>> create_workers_ GUARDED_BY(lock_);
+  std::vector<PlatformThreadId> destroy_workers_ids_ GUARDED_BY(lock_);
 #endif
 
   size_t worker_sequence_num_ GUARDED_BY(lock_) = 0;

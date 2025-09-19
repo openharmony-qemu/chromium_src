@@ -34,7 +34,6 @@ public:
 
   void VisibilityChange();
   void LayerRectUpdate();
-  bool HasNativeLayer();
 
 private:
 #if BUILDFLAG(ARKWEB_SAME_LAYER)

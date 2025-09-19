@@ -218,11 +218,16 @@ void ArkWeb_HttpBodyStream_::OnAsyncReadComplete(char* buffer, int bytes_read) {
   read_async_callback(this, reinterpret_cast<uint8_t*>(buffer), bytes_read);
 }
 
-void ArkWeb_HttpBodyStream_::Reset() {
+void ArkWeb_HttpBodyStream_::ResetOnIOThread() {
   if (!post_data_stream) {
     return;
   }
 
   post_data_stream->Reset();
-  post_data_stream->Release();
+  Release();
+}
+
+void ArkWeb_HttpBodyStream_::Reset() {
+  CEF_POST_TASK(CEF_IOT,
+                base::BindOnce(&ArkWeb_HttpBodyStream_::ResetOnIOThread, this));
 }

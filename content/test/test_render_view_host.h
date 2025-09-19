@@ -105,8 +105,6 @@ class TestRenderWidgetHostView : public RenderWidgetHostViewBase,
   void TakeFallbackContentFrom(RenderWidgetHostView* view) override;
   void EnsureSurfaceSynchronizedForWebTest() override;
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  void EvictFrameBackBuffers(bool invisible) override {}
-
   void SetDoubleTapSupportEnabled(bool enabled) {}
   void SetMultiTouchZoomSupportEnabled(bool enabled) {}
   bool GetScrollable() {return false;}

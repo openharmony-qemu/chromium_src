@@ -17,6 +17,10 @@
 
 #include "base/logging.h"
 #include "cef/libcef/browser/request_context_impl.h"
+#include "chrome/browser/profiles/profile.h"
+#include "extensions/browser/extension_registry.h"
+#include "extensions/browser/extensions_browser_client.h"
+#include "extensions/common/extension.h"
 
 namespace OHOS::NWeb {
 
@@ -39,6 +43,46 @@ content::BrowserContext* GetBrowserContext() {
   content::BrowserContext* browser_context =
       cef_browser_context->AsBrowserContext();
   return browser_context;
+}
+
+std::optional<std::string> GetExtensionContextType(
+    content::BrowserContext* browser_context) {
+  if (!browser_context) {
+    return std::nullopt;
+  }
+  if (browser_context->IsOffTheRecord()) {
+    return "INCOGNITO";
+  }
+  Profile* profile = Profile::FromBrowserContext(browser_context);
+  if (!profile) {
+    return std::nullopt;
+  }
+  if (profile->IsRegularProfile()) {
+    return "REGULAR";
+  }
+  return std::nullopt;
+}
+
+std::optional<bool> GetIncludeIncognitoInformation(
+    const std::string& extension_id,
+    content::BrowserContext* browser_context) {
+  if (!browser_context) {
+    return std::nullopt;
+  }
+  extensions::ExtensionRegistry* registry =
+      extensions::ExtensionRegistry::Get(browser_context);
+  if (!registry) {
+    LOG(ERROR) << "Failed to get ExtensionRegistry";
+    return std::nullopt;
+  }
+  const extensions::Extension* extension =
+      registry->enabled_extensions().GetByID(extension_id);
+  if (!extension) {
+    LOG(ERROR) << "Extension not found: " << extension_id;
+    return std::nullopt;
+  }
+  return extensions::ExtensionsBrowserClient::Get()->CanExtensionCrossIncognito(
+      extension, browser_context);
 }
 
 }  // namespace OHOS::NWeb

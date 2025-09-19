@@ -152,7 +152,6 @@ bool AdBlockConfig::CheckIsInDisallowData(GURL url) {
           net::registry_controlled_domains::INCLUDE_PRIVATE_REGISTRIES);
 
   std::vector<uint8_t> key = ToByteArray(registrable_domain);
-  LOG(DEBUG) << "[Adblock] registrable key:" << registrable_domain;
   std::reverse(std::begin(key), std::end(key));
 
   {
@@ -181,7 +180,6 @@ AdBlockConfig::AddAdsBlockDisallowListInternal(
   for (auto& item : disallow_list_) {
     std::string trimed_str;
     base::TrimWhitespaceASCII(item, base::TRIM_ALL, &trimed_str);
-    LOG(DEBUG) << "[Adblock] trimed key:" << trimed_str;
     std::vector<uint8_t> key = ToByteArray(trimed_str);
     std::reverse(std::begin(key), std::end(key));
     disallow_data->AddDataForKey(key, trimed_str);
@@ -236,7 +234,6 @@ AdBlockConfig::RemoveAdsBlockDisallowedListInternal(
   for (auto& item : disallow_list_) {
     std::string trimed_str;
     base::TrimWhitespaceASCII(item, base::TRIM_ALL, &trimed_str);
-    LOG(DEBUG) << "[Adblock] trimed key:" << trimed_str;
     std::vector<uint8_t> key = ToByteArray(trimed_str);
     std::reverse(std::begin(key), std::end(key));
     disallow_data->AddDataForKey(key, trimed_str);
@@ -391,7 +388,6 @@ AdBlockConfig::RemoveAdsBlockAllowedListInternal(
   for (auto& item : allow_list_) {
     std::string trimed_str;
     base::TrimWhitespaceASCII(item, base::TRIM_ALL, &trimed_str);
-    LOG(DEBUG) << "[Adblock] trimed key:" << trimed_str;
     std::vector<uint8_t> key = ToByteArray(trimed_str);
     std::reverse(std::begin(key), std::end(key));
     allow_data->AddDataForKey(key, trimed_str);

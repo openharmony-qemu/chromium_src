@@ -55,9 +55,7 @@ void MediaControlEnteredFullscreenTitleDisplayElement::SetTitle(
       break;
     }
   }
-#if false
-  SetClass("rtl_lang", isRTL);
-#endif
+  SetClass(AtomicString("rtl_lang"), isRTL);
   title_span_->setInnerText(title_);
 }
 

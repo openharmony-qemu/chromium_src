@@ -13,6 +13,7 @@ typedef void (*LoggerCallbackFunction)(int severity,
                                        int policy,
                                        const std::string& str);
 BASE_EXPORT void SetLoggerCallbackToBase(LoggerCallbackFunction loggerCallback);
+BASE_EXPORT bool SupportFeedback();
 
 using LogPriority = int;
 constexpr LogPriority PRIORITY_INFO = 0;
@@ -70,7 +71,7 @@ constexpr LogSeverity LOGGING_MAX = 9;  // 后续新增POLICY时需要同时将�
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 #define LOG_FEEDBACK(level) \
-  LAZY_STREAM(LOG_FEEDBACK_STREAM(level), LOG_IS_ON(level))
+  LAZY_STREAM(LOG_FEEDBACK_STREAM(level), LOG_IS_ON(level) && ::logging::SupportFeedback())
 #define LOG_FEEDBACK_STREAM(level) COMPACT_GOOGLE_LOG_FEEDBACK_##level.stream()
 #endif
 

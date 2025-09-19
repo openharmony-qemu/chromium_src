@@ -34,7 +34,6 @@ public:
 
   void VisbilityChange();
   void LayerRectUpdate();
-  bool HasNativeLayer();
 
 private:
   gfx::Rect bounds_quad_rect_;

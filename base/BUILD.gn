@@ -3782,6 +3782,7 @@ test("base_unittests") {
    deps += ["//components/web_cache/browser"]
    deps += ["//components/storage_monitor"]
    deps += ["//components/performance_manager"]
+   deps += ["//third_party:huawei_securec"]
    }
 
 

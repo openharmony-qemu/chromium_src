@@ -768,6 +768,9 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void EnableAppLinking(bool enable) override {}
   bool IsAppLinkingEnabled() const override { return false; }
 #endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 #endif  // BUILDFLAG(IS_OHOS)
 };
 

@@ -883,6 +883,13 @@ int ContentMainRunnerImpl::Initialize(ContentMainParams params) {
                  base::GlobalDescriptors::kBaseDescriptor);
 #endif  // !BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(IS_OHOS)
+  g_fds->Set(kTraceConfigSharedMemoryDescriptor,
+             kTraceConfigSharedMemoryDescriptor +
+                 base::GlobalDescriptors::kBaseDescriptor);
+  LOG(INFO) << "ContentMainRunnerImpl::Initialize::kTraceConfigSharedMemoryDescriptor is registered.";
+#endif  // BUILDFLAG(IS_OHOS)
+
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OPENBSD)
   g_fds->Set(kCrashDumpSignal,
              kCrashDumpSignal + base::GlobalDescriptors::kBaseDescriptor);

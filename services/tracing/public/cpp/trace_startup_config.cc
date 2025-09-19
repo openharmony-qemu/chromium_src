@@ -26,7 +26,7 @@
 #include "services/tracing/public/mojom/perfetto_service.mojom.h"
 #include "third_party/perfetto/protos/perfetto/config/track_event/track_event_config.gen.h"
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 #include "base/android/early_trace_event_binding.h"
 #endif
 
@@ -40,9 +40,9 @@ const size_t kTraceConfigFileSizeLimit = 64 * 1024;
 // Trace config file path:
 // - Android: /data/local/chrome-trace-config.json
 // - Others: specified by --trace-config-file flag.
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 const base::FilePath::CharType kAndroidTraceConfigFile[] =
-    FILE_PATH_LITERAL("/data/local/chrome-trace-config.json");
+    FILE_PATH_LITERAL("/data/storage/el1/bundle/arkwebcore/libs/ohos-trace-config.json");
 #endif
 
 // String parameters that can be used to parse the trace config file content.
@@ -53,7 +53,7 @@ const char kResultDirectoryParam[] = "result_directory";
 
 constexpr std::string_view kDefaultStartupCategories[] = {
     "__metadata",
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     "startup",
     "browser",
     "toplevel",
@@ -97,7 +97,7 @@ perfetto::TraceConfig TraceStartupConfig::GetDefaultBackgroundStartupConfig() {
   config.add_data_sources()->mutable_config()->set_name(
       tracing::mojom::kMetaDataSourceName);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   config.add_data_sources()->mutable_config()->set_name(
       tracing::mojom::kSamplerProfilerSourceName);
 #endif
@@ -112,6 +112,7 @@ TraceStartupConfig::TraceStartupConfig() {
       command_line->GetSwitchValueASCII(switches::kTraceStartupOwner);
   if (value == "devtools") {
     session_owner_ = SessionOwner::kDevToolsTracingHandler;
+    LOG(WARNING) << "TraceStartupConfig::--trace-startup-owner=devtools";
   } else if (value == "system") {
     session_owner_ = SessionOwner::kSystemTracing;
   }
@@ -209,7 +210,7 @@ bool TraceStartupConfig::EnableFromCommandLine() {
     if (!startup_duration_str.empty() &&
         !base::StringToInt(startup_duration_str,
                            &startup_duration_in_seconds)) {
-      DLOG(WARNING) << "Could not parse --" << switches::kTraceStartupDuration
+      LOG(WARNING) << "Could not parse --" << switches::kTraceStartupDuration
                     << "=" << startup_duration_str << " defaulting to 5 (secs)";
       startup_duration_in_seconds = kDefaultStartupDurationInSeconds;
     }
@@ -284,7 +285,7 @@ bool TraceStartupConfig::EnableFromConfigHandle() {
 }
 
 bool TraceStartupConfig::EnableFromConfigFile() {
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   base::FilePath trace_config_file(kAndroidTraceConfigFile);
 #else
   auto* command_line = base::CommandLine::ForCurrentProcess();
@@ -297,7 +298,7 @@ bool TraceStartupConfig::EnableFromConfigFile() {
 
   if (trace_config_file.empty()) {
     is_enabled_ = true;
-    DLOG(WARNING) << "Use default trace config.";
+    LOG(WARNING) << "Use default trace config.";
     perfetto_config_ = tracing::GetDefaultPerfettoConfig(
         base::trace_event::TraceConfig(), false,
         output_format_ != OutputFormat::kProto,
@@ -305,9 +306,9 @@ bool TraceStartupConfig::EnableFromConfigFile() {
     perfetto_config_.set_duration_ms(kDefaultStartupDurationInSeconds * 1000);
     return true;
   }
-
+  LOG(WARNING) << "TraceStartupConfig::EnableFromConfigFile::trace_config_file: " << trace_config_file;
   if (!base::PathExists(trace_config_file)) {
-    DLOG(WARNING) << "The trace config file does not exist.";
+    LOG(WARNING) << "The trace config file does not exist.";
     return false;
   }
 
@@ -318,6 +319,8 @@ bool TraceStartupConfig::EnableFromConfigFile() {
     DLOG(WARNING) << "Cannot read the trace config file correctly.";
     return false;
   }
+  LOG(WARNING) << "TraceStartupConfig::EnableFromConfigFile::trace_config_file_content: "
+               << trace_config_file_content;
   is_enabled_ = ParseTraceConfigFileContent(trace_config_file_content);
   if (!is_enabled_) {
     DLOG(WARNING) << "Cannot parse the trace config file correctly.";

@@ -17,13 +17,14 @@
 #define COMPONENTS_VIZ_SERVICE_DISPLAY_EMBEDDER_SKIA_OUTPUT_SURFACE_DEPENDENCY_IMPL_UTILS_H_
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 
 namespace viz {
 class SkiaOutputSurfaceDependencyImpl;
 
 class SkiaOutputSurfaceDependencyImplUtils {
  public:
-  SkiaOutputSurfaceDependencyImpl* skiaOutputSurfaceDependencyImpl;
+  raw_ptr<SkiaOutputSurfaceDependencyImpl> skiaOutputSurfaceDependencyImpl = nullptr;
   SkiaOutputSurfaceDependencyImplUtils(SkiaOutputSurfaceDependencyImpl* impl);
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)

@@ -351,11 +351,11 @@ void ArkwebDisplayUtils::DrawAndSwap(AggregatedRenderPass& last_render_pass,
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 void ArkwebDisplayUtils::removeDuplicatesRect(std::vector<gfx::Rect>& quad_list) {
-  if (quea_list.empty()) {
+  if (quad_list.empty()) {
     LOG(ERROR) << "blankless removeDuplicatesRect, quad_list is empty.";
     return;
   }
-  for (int i = 0; i < quad_list.size() - 1; i++) {
+  for (size_t i = 0; i < quad_list.size() - 1; ++i) {
      auto iter = std::remove(quad_list.begin() + i + 1, quad_list.end(), quad_list[i]);
      quad_list.erase(iter, quad_list.end());
   }
@@ -364,27 +364,13 @@ void ArkwebDisplayUtils::removeDuplicatesRect(std::vector<gfx::Rect>& quad_list)
 //LCOV_EXCL_START
 void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
   if (!gpu_service_impl_) {
-    LOG(ERROR) << "blankless DumpSnapshotForBlankLess, gpu_service_impl_ is nullptr";
+    LOG(DEBUG) << "blankless DumpSnapshotForBlankLess, gpu_service_impl_ is nullptr";
     return;
   }
-  const raw_ptr<gpu::GpuChannelManager> gpu_channel_manager = gpu_service_impl_->gpu_channel_manager();
-  if (!gpu_channel_manager) {
-    LOG(ERROR) << "blankless DumpSnapshotForBlankLess, gpu_channel_manager is nullptr";
-    return;
-  }
-
-  gpu::GpuChannel* gpu_channel = gpu_channel_manager->LookupChannel(client_id_);
-  if (!gpu_channel) {
-    LOG(DEBUG) << "blankless DumpSnapshotForBlankLess, dump is disable now";
-    return;
-  }
-
   uint64_t id = display_->frame_sink_id_.hash();
   base::ohos::BlanklessDumpInfo info;
-  if (!gpu_channel->AsGpuChannelExt() ||
-      !gpu_channel->AsGpuChannelExt()->GetBlanklessDumpInfoAndDisableDump(id, info) ||
-      !info.dump_enabled) {
-    LOG(DEBUG) << "blankless dump disable";
+  if (!gpu::GpuChannelExt::GetBlanklessDumpInfoAndDisableDump(client_id_, id, info) || !info.dump_enabled) {
+    LOG(DEBUG) << "blankless dump disable or no blankless info";
     return;
   }
 
@@ -412,7 +398,7 @@ void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
     snapshot_request->SetUniformScaleRatio(base::ohos::BlanklessController::SNAPSHOT_SCALE_FACTOR, 1);
     snapshot_request->copy_output_request_utils()->SetBlanklessInfo(info.info);
     LOG(DEBUG) << "blankless push copy render pass. nweb_id: " << info.info.nweb_id
-              << ", blankless_key: " << info.info.blankless_key;
+               << ", blankless_key: " << info.info.blankless_key;
     root_render_pass->copy_requests.push_back(std::move(snapshot_request));
   }
 }

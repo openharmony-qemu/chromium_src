@@ -6187,9 +6187,11 @@ TEST_F(NWebImplTest, CallBlanklessFrameFunc001) {
   uint64_t blankless_key = 0;
   int32_t lcp_time = 0;
   const std::string file = "test";
+  int32_t width = 100;
+  int32_t height = 100;
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = nullptr;
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file, width, height);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_EQ(nweb_impl_->nweb_handle_, nullptr);
 }
@@ -6198,9 +6200,11 @@ TEST_F(NWebImplTest, CallBlanklessFrameFunc002) {
   uint64_t blankless_key = 0;
   int32_t lcp_time = INT32_MAX;
   const std::string file = "test";
+  int32_t width = 100;
+  int32_t height = 100;
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file, width, height);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
 }
@@ -6209,9 +6213,11 @@ TEST_F(NWebImplTest, CallBlanklessFrameFunc003) {
   uint64_t blankless_key = 0;
   int32_t lcp_time = 0;
   const std::string file = "test";
+  int32_t width = 100;
+  int32_t height = 100;
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file, width, height);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
 }
@@ -6220,9 +6226,11 @@ TEST_F(NWebImplTest, CallBlanklessFrameFunc004) {
   uint64_t blankless_key = 0;
   int32_t lcp_time = 5;
   const std::string file = "test";
+  int32_t width = 100;
+  int32_t height = 100;
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file, width, height);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
 }
@@ -6231,9 +6239,11 @@ TEST_F(NWebImplTest, CallBlanklessFrameFunc005) {
   uint64_t blankless_key = 0;
   int32_t lcp_time = 5;
   const std::string file = "";
+  int32_t width = 100;
+  int32_t height = 100;
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file, width, height);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
   EXPECT_TRUE(file.empty());

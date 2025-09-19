@@ -32,6 +32,7 @@ namespace {
   static std::map<int, WindowUpdatedCallback> g_window_updated_map_;
   static std::map<int, WindowRemovedCallback> g_window_removed_map_;
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
   content::BrowserContext* GetBrowserContextInUse(const WebExtensionWindow& window) {
     auto browser_context = GetBrowserContext();
     if (window.incognito) {
@@ -40,6 +41,7 @@ namespace {
 
     return browser_context;
   }
+#endif
 }
  
 // static
@@ -50,6 +52,7 @@ NweExtensionWindowCefDelegate* NweExtensionWindowCefDelegate::GetInstance() {
  
 NweExtensionWindowCefDelegate::NweExtensionWindowCefDelegate() {}
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 void NweExtensionWindowCefDelegate::WindowCreated(const WebExtensionWindow& window) {
   auto browser_context = GetBrowserContextInUse(window);
   if (!browser_context) {
@@ -89,6 +92,7 @@ void NweExtensionWindowCefDelegate::WindowFocusChanged(const WebExtensionWindow&
 
   extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowFocusChangedEvent(browser_context, window);
 }
+#endif
 
 NO_SANITIZE("cfi-icall")
 bool NweExtensionWindowCefDelegate::OnCreateWindow(const WebExtensionWindowCreateData& create_date,

@@ -2672,9 +2672,7 @@ void NavigationRequest::BeginNavigationImpl() {
   SetState(WILL_START_NAVIGATION);
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   if (frame_tree_node_->IsMainFrame()) {
-    LOG(INFO) << "event_message: start a navigation url domain: "
-              << (common_params_ ? GetDomainAndRegistry(common_params_->url,
-                  net::registry_controlled_domains::INCLUDE_PRIVATE_REGISTRIES) : "")
+    LOG(INFO) << "event_message: "
               << " is_browser_initiated_: "
               << commit_params_->is_browser_initiated
               << " was_redirected_: " << was_redirected_

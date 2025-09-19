@@ -1195,6 +1195,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (uint32_t nweb_id, uint64_t blankless_key),
               (override));
   MOCK_METHOD(int64_t, GetPreferenceHash, (), (override));
+  MOCK_METHOD(int32_t, GetWidth, (), (override));
+  MOCK_METHOD(int32_t, GetHeight, (), (override));
 #endif
 
 #if BUILDFLAG(ARKWEB_MENU)

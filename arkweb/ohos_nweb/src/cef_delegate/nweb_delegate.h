@@ -863,9 +863,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) override;
   int64_t GetPreferenceHash() override;
-  void SetNearestSnapshotSize(int32_t width, int32_t height) override;
-  int32_t NearestSnapshotWidth() override;
-  int32_t NearestSnapshotHeight() override;
   int32_t GetWidth() override;
   int32_t GetHeight() override;
   void SetRotationType(RotationType rotation);

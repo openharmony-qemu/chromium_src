@@ -1590,6 +1590,11 @@ mojom("mojom") {
     enabled_features += [ "use_network_interface_change_listener" ]
   }
 
+  if (arkweb_ssl_auth_algo) { 
+    # enable arkweb_ssl_auth_algo to add tlsv1 and tlsv1.1 
+    enabled_features += [ "arkweb_ssl_auth_algo" ] 
+  }
+
   # Typemaps which apply to both Blink and non-Blink bindings.
   shared_cpp_typemaps = []
 

@@ -159,6 +159,13 @@ TEST_F(OHOSMediaDrmStorageBridgeTest, OnInitialized) {
   MediaDrmStorage::MediaDrmOriginId origin_id(base::UnguessableToken::Create());
   factory->OnInitialized(init_cb, success, origin_id);
   ASSERT_TRUE(init_cb);
+
+  MediaDrmStorage::MediaDrmOriginId null_id = std::nullopt;
+  factory->OnInitialized(init_cb, false, null_id);
+  ASSERT_FALSE(success);
+
+  factory->OnInitialized(init_cb, true, null_id);
+  ASSERT_TRUE(success);
 }
 
 TEST_F(OHOSMediaDrmStorageBridgeTest, OnSessionDataLoaded) {
@@ -175,5 +182,13 @@ TEST_F(OHOSMediaDrmStorageBridgeTest, OnSessionDataLoaded) {
   factory->OnSessionDataLoaded(std::move(load_result_cb), session_id,
                                std::move(session_data_));
   ASSERT_EQ(session_data_.get(), nullptr);
+
+  auto cb = base::BindOnce(
+      [](const std::string& sid, const std::vector<uint8_t>& key_set_id,
+         const std::string& mime_type, uint32_t key_type) {
+        ASSERT_EQ(mime_type, "");
+        ASSERT_EQ(key_type, 0);
+      });
+  factory->OnSessionDataLoaded(std::move(cb), session_id, nullptr);
 }
 }  // namespace media

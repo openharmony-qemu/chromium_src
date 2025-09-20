@@ -32,7 +32,6 @@ namespace {
   static std::map<int, WindowUpdatedCallback> g_window_updated_map_;
   static std::map<int, WindowRemovedCallback> g_window_removed_map_;
 
-#if BUILDFLAG(ARKWEB_NWEB_EX)
   content::BrowserContext* GetBrowserContextInUse(const WebExtensionWindow& window) {
     auto browser_context = GetBrowserContext();
     if (window.incognito) {
@@ -41,7 +40,6 @@ namespace {
 
     return browser_context;
   }
-#endif
 }
 
 // static

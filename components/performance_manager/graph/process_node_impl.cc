@@ -94,6 +94,9 @@ ProcessNodeImpl::~ProcessNodeImpl() {
   // Crash if this process node is destroyed while still hosting a worker node.
   // TODO(crbug.com/40051698): Turn this into a DCHECK once the issue is
   //                                  resolved.
+#if BUILDFLAG(IS_ARKWEB)
+  CHECK(frame_nodes_.empty());
+#endif
   CHECK(worker_nodes_.empty());
 }
 

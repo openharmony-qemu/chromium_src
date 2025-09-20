@@ -236,6 +236,7 @@ MediaInfo::Preload ConvertTo(uint32_t preload_type) {
 
 }  // namespace
 
+#ifndef ARKWEB_TEST_INCLUDE
 OHOSCustomMediaPlayerRenderer::OHOSCustomMediaPlayerRenderer(
     int process_id,
     int routing_id,
@@ -745,5 +746,6 @@ bool OHOSCustomMediaPlayerRenderer::IsClientExtensionValid() {
   }
   return false;
 }
+#endif  // ARKWEB_TEST_INCLUDE
 
 }  // namespace content

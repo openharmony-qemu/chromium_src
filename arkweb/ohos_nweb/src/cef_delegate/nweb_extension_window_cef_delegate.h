@@ -37,12 +37,10 @@ class NweExtensionWindowCefDelegate {
   public:
     static NweExtensionWindowCefDelegate* GetInstance();
 
-#if BUILDFLAG(ARKWEB_NWEB_EX)
     void WindowCreated(const WebExtensionWindow& window);
     void WindowRemoved(const WebExtensionWindow& window);
     void WindowBoundsChanged(const WebExtensionWindow& window);
     void WindowFocusChanged(const WebExtensionWindow& window);
-#endif
 
     bool OnCreateWindow(const WebExtensionWindowCreateData& create_date, WindowCreatedCallback callback);
     bool OnUpdateWindow(int windowId,

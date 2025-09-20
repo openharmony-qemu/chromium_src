@@ -52,7 +52,6 @@ NweExtensionWindowCefDelegate* NweExtensionWindowCefDelegate::GetInstance() {
 
 NweExtensionWindowCefDelegate::NweExtensionWindowCefDelegate() {}
 
-#if BUILDFLAG(ARKWEB_NWEB_EX)
 void NweExtensionWindowCefDelegate::WindowCreated(const WebExtensionWindow& window) {
   auto browser_context = GetBrowserContextInUse(window);
   if (!browser_context) {
@@ -92,7 +91,6 @@ void NweExtensionWindowCefDelegate::WindowFocusChanged(const WebExtensionWindow&
 
   extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowFocusChangedEvent(browser_context, window);
 }
-#endif
 
 NO_SANITIZE("cfi-icall")
 bool NweExtensionWindowCefDelegate::OnCreateWindow(const WebExtensionWindowCreateData& create_date,

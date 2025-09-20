@@ -47,26 +47,23 @@ public:
     double var = 0.0f;
   };
 
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void DumpBlanklessSnapshot(viz::mojom::BlanklessSendInfoPtr infoPtr,
                              mojo::ScopedSharedBufferHandle buffer,
                              viz::mojom::BlanklessBitmapMetadataPtr metadata);
-#endif
   void ClearSnapshot(int64_t key);
   void ClearSnapshotDataItem(const std::vector<int64_t>& keys);
   void InsertSnapshotDataItem(int64_t key, const OHOS::NWeb::SnapshotDataItem& data);
   OHOS::NWeb::SnapshotDataItem GetSnapshotDataItem(int64_t key, int64_t pref_hash);
   int32_t SetBlanklessLoadingCacheCapacity(int capacity);
   int32_t GetBlanklessLoadingCacheCapacity() const;
-  void PostDumpTaskWithDelay(uint64_t blankless_key, base::OnceClosure task);
+  void CreateTaskManager();
 
 private:
   BlanklessDataController();
   std::shared_ptr<SnapshotInfo> GetHistorySnapshotInfo(uint64_t blankless_key);
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  static bool EncodeImage(const SkBitmap& bitmap, std::string& newFile, OHOS::NWeb::SnapshotDataItem* snapshotDataItem);
   static void DumpTask(viz::mojom::BlanklessSendInfoPtr infoPtr, mojo::ScopedSharedBufferHandle buffer,
                        viz::mojom::BlanklessBitmapMetadataPtr metadata, double similarity);
-#endif
 
 private:
   OHOS::NWeb::OhosWebSnapshotDataBase& dbInstance_;

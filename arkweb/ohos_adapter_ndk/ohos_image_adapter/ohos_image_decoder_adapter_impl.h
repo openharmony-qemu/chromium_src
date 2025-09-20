@@ -50,6 +50,7 @@ public:
     void ReleasePixelMap() override;
     OH_PixelmapNative* GetPixelMap() { return pixelMap_; }
     void* GetDecodeData() override;
+    bool DecodeByPath(const std::string& path, AllocatorType type) override;
 private:
     OH_ImageSourceNative* imageSource_ = nullptr;
     OH_ImageSource_Info* imageInfo_ = nullptr;

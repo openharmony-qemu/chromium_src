@@ -3493,6 +3493,20 @@ class CONTENT_EXPORT RenderFrameHostImpl
       TestHonorStickyActivationWithChildFrameCrossDocument);
   FRIEND_TEST_ALL_PREFIXES(NavigationPolicyContainerBuilderBrowserTest,
                            FinalPoliciesAboutBlankWithInitiatorAndHistory);
+#if BUILDFLAG(ARKWEB_TEST)
+  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, AddNamedObject_WithFrame);
+  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, AddNamedObject_NoFrame);
+  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, IsJsDialogShowOrBeforeUnloadTimedOut_WithDelegate);
+  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, OnPdfScrollAtBottom_WithDelegate);
+  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, OnPdfLoadEvent_WithDelegate);
+  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, OnPdfLoadEvent_NoDelegate);
+  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, GetCreateNewWindow_NoDelegate);
+  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, MouseSelectMenuShow_NoDelegate);
+  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, ChangeVisibilityOfQuickMenu_NoDelegate);
+  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, CloseImageOverlaySelection_NoDelegate);
+  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, IsJsDialogShowOrBeforeUnloadTimedOut_NoDelegate);
+  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, OnPdfScrollAtBottom_NoDelegate);
+#endif
 
   class SubresourceLoaderFactoriesConfig;
 
@@ -4361,7 +4375,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // some form of page context.
   scoped_refptr<RenderViewHostImpl> render_view_host_;
 
+#if BUILDFLAG(ARKWEB_TEST)
+  raw_ptr<RenderFrameHostDelegate> delegate_;
+#else
   const raw_ptr<RenderFrameHostDelegate> delegate_;
+#endif
 
   // The SiteInstance associated with this RenderFrameHost. All content drawn
   // in this RenderFrameHost is part of this SiteInstance. Cannot change over

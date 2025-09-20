@@ -2979,6 +2979,9 @@ test("content_unittests") {
   ]
 
   if (arkweb_unittests) {
+    sources += [ 
+      "../../arkweb/chromium_ext/content/browser/accessibility/browser_accessibility_manager_ohos_unittest.cc",
+    ]
     sources += arkweb_content_browser_test_sources
     configs += [ "//arkweb/chromium_ext:content_browser_config" ]
   }

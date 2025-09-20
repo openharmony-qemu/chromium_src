@@ -76,4 +76,18 @@ config("arkweb_base_unittest_config") {
     "-Wl,--wrap=OH_NetConn_GetAllNets",
     "-Wl,--wrap=OH_NetConn_GetNetCapabilities",
   ]
+
+  ldflags += [ 
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_Create",
+    "-Wl,--wrap=OH_AbilityRuntime_ApplicationContextGetCacheDir",
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_SetProgressIndicator",
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_SetDestUri",
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_SetFileConflictOptions",
+    "-Wl,--wrap=OH_Pasteboard_GetDataWithProgress",
+    "-Wl,--wrap=OH_Pasteboard_HasData",
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_Destroy",
+    "-Wl,--wrap=OH_UdmfData_GetRecords",
+    "-Wl,--wrap=OH_UdmfData_IsLocal",
+
+  ]
 }

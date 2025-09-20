@@ -134,6 +134,53 @@ TEST_F(PointerDeviceOhosTest, GetAvailablePointerTypes) {
   EXPECT_EQ(GetAvailablePointerTypes(), atypes);
 }
 
+TEST_F(PointerDeviceOhosTest, IsMouseOrTouchpadPresent001) {
+  EXPECT_FALSE(IsMouseOrTouchpadPresent());
+}
+
+TEST_F(PointerDeviceOhosTest, IsMouseOrTouchpadPresent002) {
+  GetDeviceDataManager()->ResetDeviceListsForTest();
+  TouchpadDevice device;
+  device.enabled = true;
+  std::vector<TouchpadDevice> touchpadDeviceList;
+  touchpadDeviceList.push_back(device);
+  GetDeviceDataManager()->OnTouchpadDevicesUpdated(touchpadDeviceList);
+  EXPECT_TRUE(IsMouseOrTouchpadPresent());
+  GetDeviceDataManager()->ResetDeviceListsForTest();
+
+  InputDevice input;
+  input.enabled = true;
+  std::vector<InputDevice> inputDeviceList;
+  inputDeviceList.push_back(input);
+  GetDeviceDataManager()->OnMouseDevicesUpdated(inputDeviceList);
+  EXPECT_TRUE(IsMouseOrTouchpadPresent());
+  GetDeviceDataManager()->ResetDeviceListsForTest();
+
+  GetDeviceDataManager()->OnPointingStickDevicesUpdated(inputDeviceList);
+  EXPECT_TRUE(IsMouseOrTouchpadPresent());
+  GetDeviceDataManager()->ResetDeviceListsForTest();
+
+  EXPECT_FALSE(IsMouseOrTouchpadPresent());
+
+  device.enabled = false;
+  touchpadDeviceList.clear();
+  touchpadDeviceList.push_back(device);
+  GetDeviceDataManager()->OnTouchpadDevicesUpdated(touchpadDeviceList);
+  EXPECT_FALSE(IsMouseOrTouchpadPresent());
+  GetDeviceDataManager()->ResetDeviceListsForTest();
+
+  inputDeviceList.clear();
+  input.enabled = false;
+  inputDeviceList.push_back(input);
+  GetDeviceDataManager()->OnMouseDevicesUpdated(inputDeviceList);
+  EXPECT_FALSE(IsMouseOrTouchpadPresent());
+  GetDeviceDataManager()->ResetDeviceListsForTest();
+
+  GetDeviceDataManager()->OnPointingStickDevicesUpdated(inputDeviceList);
+  EXPECT_FALSE(IsMouseOrTouchpadPresent());
+  GetDeviceDataManager()->ResetDeviceListsForTest();
+}
+
 }  // namespace ui
 
 #if BUILDFLAG(ARKWEB_TEST)

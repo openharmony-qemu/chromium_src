@@ -638,7 +638,7 @@ void RuntimeEventRouter::OnExtensionUninstalled(
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::string url = uninstall_url.spec();
-  extensions::TabsCreateFunction::CreateTabForExtension(url);
+  extensions::TabsCreateFunction::CreateTabForExtension(url, context);
 #else
   RuntimeAPI::GetFactoryInstance()->Get(context)->OpenURL(uninstall_url);
 #endif

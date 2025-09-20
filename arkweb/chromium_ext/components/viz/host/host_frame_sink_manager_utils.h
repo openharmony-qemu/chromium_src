@@ -29,7 +29,7 @@ public:
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
     void SetEnableLowerFrameRate(bool enabled, const FrameSinkId& frame_sink_id);
     void SetEnableHalfFrameRate(bool enabled, const FrameSinkId& frame_sink_id);
-    void EvictFrameBackBuffers(const FrameSinkId& frame_sink_id, bool invisible);
+    void EvictFrameBackBuffers(const FrameSinkId& frame_sink_id);
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)

@@ -658,7 +658,7 @@ class BASE_EXPORT LogMessage {
 #endif
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  LogPriority priority_;
+  LogPriority priority_ = PRIORITY_INFO;
   std::string ohos_tag_;
 #endif
 

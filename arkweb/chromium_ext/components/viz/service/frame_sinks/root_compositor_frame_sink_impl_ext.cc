@@ -100,14 +100,9 @@ void RootCompositorFrameSinkImplExt::SetEnableHalfFrameRate(bool enabled) {
   external_begin_frame_source_->SetEnableHalfFrameRate(enabled);
 }
 
-void RootCompositorFrameSinkImplExt::EvictFrameBackBuffers(bool invisible) {
-  TRACE_EVENT1("viz", "RootCompositorFrameSinkImpl::EvictFrameBackBuffers",
-               "invisible", invisible);
-  if (invisible) {
-    SetDisplayVisible(false);
-  } else {
-    SetDisplayVisible(true);
-  }
+void RootCompositorFrameSinkImplExt::EvictFrameBackBuffers() {
+  TRACE_EVENT0("viz", "RootCompositorFrameSinkImpl::EvictFrameBackBuffers");
+  display_->display_utils()->DiscardBackbuffer();
 }
 #endif
 

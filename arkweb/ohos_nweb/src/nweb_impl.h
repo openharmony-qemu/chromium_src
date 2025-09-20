@@ -740,6 +740,11 @@ class NWebImpl : public NWeb {
   void WebExtensionContextMenuReloadFocusedFrame();
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void WebExtensionContextMenuGetFocusedFrameInfo(int32_t& frame_id,
+                                                  std::string& frame_url);
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
   static void SetDefaultBrowserZoomLevel(double zoom_factor);
   void SetBrowserZoomLevel(double zoom_factor) const;
@@ -1031,7 +1036,7 @@ class NWebImpl : public NWeb {
   int32_t SetBlanklessLoadingWithKey(const std::string& key, bool isStart) override;
   int64_t GetPreferenceHash();
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
-  void RemoveBlanklessFrame();
+  void RecordBlanklessFrameSize(uint32_t width, uint32_t height) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
@@ -1127,11 +1132,17 @@ class NWebImpl : public NWeb {
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void ClearBlanklessKey();
-  void CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file);
+  void CallBlanklessFrameFunc(uint64_t blankless_key,
+                              int32_t lcp_time,
+                              const std::string& file,
+                              int32_t width,
+                              int32_t height);
   // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
   std::atomic<uint64_t> blankless_key_ = UINT64_MAX;
   std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
+  uint32_t cur_blankless_frame_width_ = 0;
+  uint32_t cur_blankless_frame_height_ = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

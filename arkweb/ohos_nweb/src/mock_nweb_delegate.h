@@ -896,6 +896,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(bool, WebExtensionContextMenuIsIframe, (), (override));
   MOCK_METHOD(void, WebExtensionContextMenuReloadFocusedFrame, (), (override));
 #endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  MOCK_METHOD(void,
+              WebExtensionContextMenuGetFocusedFrameInfo,
+              (int32_t& frame_id, std::string& frame_url),
+              (override));
+#endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   MOCK_METHOD(bool, SetFocusByPosition, (float x, float y), (override));
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -1195,6 +1201,8 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (uint32_t nweb_id, uint64_t blankless_key),
               (override));
   MOCK_METHOD(int64_t, GetPreferenceHash, (), (override));
+  MOCK_METHOD(int32_t, GetWidth, (), (override));
+  MOCK_METHOD(int32_t, GetHeight, (), (override));
 #endif
 
 #if BUILDFLAG(ARKWEB_MENU)

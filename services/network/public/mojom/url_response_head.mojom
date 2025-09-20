@@ -307,4 +307,7 @@ struct URLResponseHead {
 
   [EnableIf=arkweb_codecache_enhance]
   bool code_cache_valid = false;
+
+  // True when a proxy will handle the redirect checks.
+  bool bypass_redirect_checks = false;
 };

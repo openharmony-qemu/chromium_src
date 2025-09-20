@@ -20,6 +20,7 @@
 #include <chrono>
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 #include "content/common/content_export.h"
 #include "content/public/renderer/render_frame.h"
 #include "third_party/blink/public/platform/web_string.h"
@@ -33,7 +34,7 @@ class RenderFrameImpl;
 
 class RenderFrameImplUtils {
 public:
-    RenderFrameImpl* renderFrameImpl;
+    raw_ptr<RenderFrameImpl> renderFrameImpl;
     RenderFrameImplUtils(RenderFrameImpl* impl);
 
 #if BUILDFLAG(ARKWEB_DFX_TRACING)

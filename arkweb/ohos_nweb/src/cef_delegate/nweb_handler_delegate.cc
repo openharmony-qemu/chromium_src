@@ -22,6 +22,7 @@
 #include "base/hash/hash.h"
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/task/thread_pool.h"
@@ -1600,7 +1601,8 @@ void NWebHandlerDelegate::OnLoadEnd(CefRefPtr<CefBrowser> browser,
   }
 
 #if defined(REPORT_SYS_EVENT)
-  LOG(DEBUG) << "NWebHandlerDelegate::OnLoadEnd url=" << frame->GetURL().ToString()
+  LOG(DEBUG) << "NWebHandlerDelegate::OnLoadEnd url="
+             << url::LogUtils::ConvertUrlWithMask(frame->GetURL().ToString())
              << " http_status_code=" << http_status_code;
   g_access_sum_count++;
   ReportPageLoadStatsInternal(nweb_id_);
@@ -1738,7 +1740,8 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
     std::stringstream ss;
     ss << "<html><body bgcolor=\"white\">"
           "<h2>Failed to load URL "
-       << std::string(failed_url) << " with error " << std::string(error_text)
+       << url::LogUtils::ConvertUrlWithMask(std::string(failed_url))
+       << " with error " << std::string(error_text)
        << " (" << error_code << ").</h2></body></html>";
 
     frame->LoadURL(GetDataURI(ss.str(), "text/html"));
@@ -1746,8 +1749,9 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
 
 #if defined(REPORT_SYS_EVENT)
   if (frame != nullptr && frame->IsMain()) {
-    LOG(DEBUG) << "NWebHandlerDelegate::OnLoadError main url=" << failed_url.ToString()
-               << " error_code=" << int(error_code) << " error_desc=" << std::string(error_text);
+    LOG(DEBUG) << "NWebHandlerDelegate::OnLoadError main url="
+    << url::LogUtils::ConvertUrlWithMask(std::string(failed_url))
+    << " error_code=" << int(error_code) << " error_desc=" << std::string(error_text);
     g_access_fail_count++;
     SetPageLoadErrorInfo(nweb_id_, int(error_code), std::string(error_text));
   }
@@ -4060,6 +4064,10 @@ int NWebHandlerDelegate::ProcessNativeProxyResultThread(
 
   auto callback = methodMap[method];
   char** ptr = (char**)malloc(sizeof(char*) * args->GetSize());
+  if(ptr == nullptr) {
+    // malloc failed
+    return 1;    
+  }
   for (size_t i = 0; i < args->GetSize(); i++) {
     CefValueType type = args->GetType(i);
     CefRefPtr<CefValue> value = args->GetValue(i);

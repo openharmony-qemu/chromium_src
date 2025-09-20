@@ -586,9 +586,6 @@ bool TestWebContents::GetOverscrollNavigationEnabled() {
 
 void TestWebContents::SetSafeAreaInsetsHost(
     std::unique_ptr<SafeAreaInsetsHost> safe_area_insets_host) {
-#if false
-  safe_area_insets_host_ = std::move(safe_area_insets_host);
-#endif
 }
 
 void TestWebContents::GetMediaCaptureRawDeviceIdsOpened(

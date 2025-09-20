@@ -99,6 +99,10 @@
 
 namespace net {
 
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  constexpr int kTimeoutSeconds = 5;
+#endif
+
 ArkWebHttpNetworkTransactionExt::ArkWebHttpNetworkTransactionExt(RequestPriority priority,
                                                HttpNetworkSession* session)
     : HttpNetworkTransaction(priority, session) {}
@@ -185,13 +189,13 @@ int ArkWebHttpNetworkTransactionExt::DoCreateFallbackStreamWithSecureDnsOnlyComp
 void ArkWebHttpNetworkTransactionExt::StartRecording() {
   if (is_recording_) {
     timer_.Stop();
-    timer_.Start(FROM_HERE, base::Seconds(5), this,
+    timer_.Start(FROM_HERE, base::Seconds(kTimeoutSeconds), this,
                  &ArkWebHttpNetworkTransactionExt::ReportTimeout);
     return;
   }
 
   is_recording_ = true;
-  timer_.Start(FROM_HERE, base::Seconds(5), this,
+  timer_.Start(FROM_HERE, base::Seconds(kTimeoutSeconds), this,
                &ArkWebHttpNetworkTransactionExt::ReportTimeout);
 }
 

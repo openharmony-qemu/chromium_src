@@ -1010,6 +1010,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
     const CefString& error_text) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessLoadingKey(uint64_t blankless_key);
+  void ClearSnapshot();
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_JSPROXY)
   enum class JsRunTime{Start = 0, End = 1, HEAD_READY};
@@ -1080,6 +1085,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   ImageAlphaType alpha_type_ = ImageAlphaType::ALPHA_TYPE_UNKNOWN;
 
   uint32_t nweb_id_ = 0;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  // To avoid include blankless_controller.h in nweb_handler_delegate.h,
+  // we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
+  uint64_t blankless_key_ = UINT64_MAX;
+#endif
 
 #if BUILDFLAG(ARKWEB_PIP)
   int pip_status_ = -1;

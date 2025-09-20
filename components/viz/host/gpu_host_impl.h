@@ -259,7 +259,7 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
   void SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
                                  mojo::ScopedSharedBufferHandle buffer,
                                  mojom::BlanklessBitmapMetadataPtr metadata) override;
-  static void DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& blankless_info,
+  static void DumpBlanklessSnapshot(mojom::BlanklessSendInfoPtr blankless_info,
                                     mojo::ScopedSharedBufferHandle buffer,
                                     mojom::BlanklessBitmapMetadataPtr metadata);
   void ClearBlanklessSnapshotInfo(uint64_t blankless_key) override;

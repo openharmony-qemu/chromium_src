@@ -1037,6 +1037,8 @@ class NWebImpl : public NWeb {
   int64_t GetPreferenceHash();
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
   void RecordBlanklessFrameSize(uint32_t width, uint32_t height) override;
+  bool TriggerBlanklessForUrl(const std::string& url) override;
+  void SetVisibility(bool isVisible) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
@@ -1123,7 +1125,6 @@ class NWebImpl : public NWeb {
 
   std::unique_ptr<base::RetainingOneShotTimer> drag_over_timer_;
   DelegateDragEvent drag_over_event_;
-  base::WeakPtrFactory<NWebImpl> weak_factory_{this};
 
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   void AvoidVisibleViewportBottom(int32_t avoidHeight) override;
@@ -1132,6 +1133,7 @@ class NWebImpl : public NWeb {
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void ClearBlanklessKey();
+  bool CheckNetAvailable();
   void CallBlanklessFrameFunc(uint64_t blankless_key,
                               int32_t lcp_time,
                               const std::string& file,
@@ -1144,6 +1146,8 @@ class NWebImpl : public NWeb {
   uint32_t cur_blankless_frame_width_ = 0;
   uint32_t cur_blankless_frame_height_ = 0;
 #endif
+
+  base::WeakPtrFactory<NWebImpl> weak_factory_{this};
 };
 }  // namespace OHOS::NWeb
 

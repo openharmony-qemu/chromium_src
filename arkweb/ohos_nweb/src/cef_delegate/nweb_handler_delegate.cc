@@ -1026,7 +1026,7 @@ void NWebHandlerDelegate::InjectJsToWeb(JsRunTime time) {
 
   InjectJsToWebInner(time, scriptItems, scriptItemsByOrder);
 
-  int count = 0;
+  size_t count = 0;
   for (const auto& item : scriptItemsByOrder) {
     if (scriptItems.find(item) == scriptItems.end()) {
       continue;

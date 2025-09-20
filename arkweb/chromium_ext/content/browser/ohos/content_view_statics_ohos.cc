@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "base/no_destructor.h"
 #include "arkweb/chromium_ext/content/browser/ohos/content_view_statics_ohos.h"
 namespace content {
 
@@ -46,9 +47,9 @@ void SuspendedProcessWatcherOHOS::ResumeWebKitShardTimersFromOHOS() {
 
 std::shared_ptr<SuspendedProcessWatcherOHOS>
 SuspendedProcessWatcherOHOS::GetShradWebKitTimersInstance() {
-  static std::shared_ptr<SuspendedProcessWatcherOHOS> content_view_ =
-      std::make_shared<SuspendedProcessWatcherOHOS>();
-  return content_view_;
+  static base::NoDestructor<std::shared_ptr<SuspendedProcessWatcherOHOS>> content_view_(
+      std::make_shared<SuspendedProcessWatcherOHOS>());
+  return *content_view_;
 }
 }  // namespace content
                        

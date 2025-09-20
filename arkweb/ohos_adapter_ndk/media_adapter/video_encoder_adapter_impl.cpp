@@ -261,10 +261,10 @@ CodecCodeAdapter VideoEncoderAdapterImpl::Release()
     }
 
     OH_AVErrCode ret = OH_VideoEncoder_Destroy(encoder_);
+    encoder_ = nullptr;
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         return CodecCodeAdapter::ERROR;
     }
-    encoder_ = nullptr;
     return CodecCodeAdapter::OK;
 }
 

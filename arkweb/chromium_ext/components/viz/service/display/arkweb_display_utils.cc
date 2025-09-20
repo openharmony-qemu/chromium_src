@@ -54,6 +54,7 @@ class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
   ~DumpFrameObserver() override = default;
 
   void PropertiesUpdate(const char* value) override {
+    std::lock_guard<std::mutex> lock(mutex_);
     dump_param_list_.clear();
     if (strcmp(value, "true") == 0) {
       should_dump_ = true;
@@ -70,11 +71,13 @@ class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
   }
 
   bool ShouldDump() {
+    std::lock_guard<std::mutex> lock(mutex_);
     return should_dump_ ||
            (dump_param_list_.size() > 0 && dump_param_list_[0] == "true");
   }
 
   bool ShouldDumpInFreq() {
+    std::lock_guard<std::mutex> lock(mutex_);
     int32_t dumpFreq = DUMP_FRAME_FREQ;
     if (dump_param_list_.size() > 1) {
       dumpFreq = std::stoi(dump_param_list_[1]);
@@ -90,6 +93,7 @@ class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
   }
 
   std::string DumpPath() {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (dump_param_list_.size() > 2) {
       return dump_param_list_[2];
     }
@@ -101,6 +105,7 @@ class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
   bool should_dump_ = false;
   int dump_freq_count = 0;
   std::vector<std::string> dump_param_list_;
+  std::mutex mutex_;
 };
 #endif
 //LCOV_EXCL_STOP

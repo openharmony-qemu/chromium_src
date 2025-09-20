@@ -7,6 +7,7 @@
 #include <memory>
 #include <tuple>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
@@ -40,8 +41,13 @@ class MockWebMediaPlayerDelegateObserver
   ~MockWebMediaPlayerDelegateObserver() {}
 
   // WebMediaPlayerDelegate::Observer implementation.
+#if BUILDFLAG(ARKWEB_TEST)
+  MOCK_METHOD(void, OnPageHidden, (bool storing_in_bfcache), (override));
+  MOCK_METHOD(void, OnPageShown, (bool restoring_in_bfcache), (override));
+#else
   MOCK_METHOD0(OnPageHidden, void());
   MOCK_METHOD0(OnPageShown, void());
+#endif
   MOCK_METHOD0(OnFrameHidden, void());
   MOCK_METHOD0(OnFrameShown, void());
   MOCK_METHOD0(OnIdleTimeout, void());

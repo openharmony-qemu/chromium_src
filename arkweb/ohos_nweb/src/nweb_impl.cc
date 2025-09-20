@@ -1606,15 +1606,6 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 #endif
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);
-
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if ((cur_blankless_frame_width_ != 0) && (cur_blankless_frame_height_ != 0) &&
-     (cur_blankless_frame_width_ != width) && (cur_blankless_frame_height_ != height) &&
-     base::ohos::BlanklessController::CheckGlobalProperty() && (nweb_handle_ != nullptr)) {
-    LOG(DEBUG) << "RemoveBlanklessFrame due to resolution inconsistency between webPattern and snapshot";
-    nweb_handle_->OnRemoveBlanklessFrame(0);
-  }
-#endif
 }
 
 void NWebImpl::ResizeVisibleViewport(uint32_t width,
@@ -6614,12 +6605,6 @@ void NWebImpl::SetVisibility(bool isVisible) {
       handle->OnRemoveBlanklessFrame(0);
     });
   }
-}
-
-void NWebImpl::RecordBlanklessFrameSize(uint32_t width, uint32_t height)
-{
-  cur_blankless_frame_width_ = width;
-  cur_blankless_frame_height_ = height;
 }
 
 void NWebImpl::ClearBlanklessKey() {

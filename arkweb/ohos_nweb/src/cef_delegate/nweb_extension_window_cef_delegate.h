@@ -41,7 +41,7 @@ class NweExtensionWindowCefDelegate {
     void WindowRemoved(const WebExtensionWindow& window);
     void WindowBoundsChanged(const WebExtensionWindow& window);
     void WindowFocusChanged(const WebExtensionWindow& window);
-
+ 
     bool OnCreateWindow(const WebExtensionWindowCreateData& create_date, WindowCreatedCallback callback);
     bool OnUpdateWindow(int windowId,
                         const WebExtensionWindowUpdateInfo& update_info,

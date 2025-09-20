@@ -13,7 +13,7 @@
 #undef private
 #endif
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
-#include "res_sched_client_adapter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace content {

@@ -492,7 +492,6 @@ class MediaCodecDecoderBridgeImplTest : public ::testing::Test {
   }
 
   void SetIsFirstDecFrame(bool is_first_dec_frame) {
-    bridge_->isFirstDecFrame_ = is_first_dec_frame;
   }
 
   void SetIsRunning(bool is_running) {
@@ -1568,7 +1567,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest,
 
   auto expected_result = DecoderAdapterCode::DECODER_ERROR;
   auto actual_result =
-      bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr, false);
+      bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr, true);
   ASSERT_EQ(expected_result, actual_result);
 }
 

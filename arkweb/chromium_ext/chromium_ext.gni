@@ -752,7 +752,11 @@ arbweb_content_media_test_sources = [
   "//arkweb/chromium_ext/content/browser/media/session/media_session_ohos_unittest.cc",
   "//arkweb/chromium_ext/content/browser/media/session/media_session_controller_ext_unittest.cc",
   "//arkweb/chromium_ext/content/browser/media/session/media_session_impl_for_include_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/media/session/audio_focus_delegate_ohos_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/media/session/media_session_impl_utils_unittest.cc",
   "//arkweb/chromium_ext/content/browser/media/media_web_contents_observer_for_include_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/media/ohos/native_web_contents_observer_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer_unittest.cc",
 ]
 
 arkweb_cc_layer_source = [

@@ -189,4 +189,17 @@ TEST_F(Fido2ApiUtilsTest, ParseTest_006)
     auto ret = Parse(&credential);
     EXPECT_FALSE(ret.has_value());
 }
+
+TEST_F(Fido2ApiUtilsTest, ParseTest_007)
+{
+    FIDO2_PublicKeyAttestationCredential credential;
+    const char* json_str = "{\"fmt\": \"\", \"attStmt\": {\"alg\": 1, \"sig\":"
+        " \"signature\", \"x5c\": [\"cert\"]}, \"authData\": \"authData\"}";
+    uint8_t* json_data = reinterpret_cast<uint8_t*>(const_cast<char*>(json_str));
+    const size_t len = strlen(json_str);
+    Uint8Buff buffer = {static_cast<uint32_t>(len), json_data};
+    credential.response.attestationObject = buffer;
+    auto ret = Parse(&credential);
+    EXPECT_FALSE(ret.has_value());
+}
 } // namespace base

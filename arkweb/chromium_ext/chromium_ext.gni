@@ -135,6 +135,10 @@ arkweb_render_process_host_impl_sources = [
   "//arkweb/chromium_ext/content/browser/renderer_host/text_input_manager_utils.h",
 ]
 
+arkweb_render_process_host_impl_unittest_sources = [
+  "//arkweb/chromium_ext/ohos_test/unittest/log_console_message_utils/log_console_message_utils_unittest.cc",
+]
+
 arkweb_render_process_startup_sources = [
   "//arkweb/chromium_ext/content/browser/arkweb_child_process_launcher_helper_utils.cc",
   "//arkweb/chromium_ext/content/browser/arkweb_child_process_launcher_helper_utils.h",

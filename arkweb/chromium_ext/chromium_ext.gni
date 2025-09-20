@@ -658,6 +658,10 @@ arkweb_media_adapter_unittest_sources = [
   "//arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper_unittest.cpp",
 ]
 
+arkweb_media_adapter_mock_sources = [
+  "//arkweb/ohos_adapter_ndk/media_adapter/mock_codec_decoder_adapter.cpp",
+]
+
 arkweb_media_gpu_unittest_sources = [
   "//arkweb/chromium_ext/media/gpu/ohos/direct_shared_image_video_provider_unittest.cc",
   "//arkweb/chromium_ext/media/gpu/ohos/ohos_video_decoder_unittest.cc",

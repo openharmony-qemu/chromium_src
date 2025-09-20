@@ -20,7 +20,7 @@ namespace ohos_prp_preload {
 DiskCacheEntry::DiskCacheEntry(DiskCacheFile* cache,
                                const std::string& url,
                                const std::string& entry_content) :
-  cache_(cache), url_(url), entry_content_(entry_content), entry_(nullptr) {
+  cache_(cache), url_(raw_ref(url)), entry_content_(entry_content), entry_(nullptr) {
   weak_ptr_ = weak_ptr_factory_.GetWeakPtr();
 }
 
@@ -75,7 +75,7 @@ int DiskCacheEntry::OpenCallback(int rv) {
     return net::ERR_FAILED;
   }
   disk_cache::EntryResult create_result =
-      backend->OpenOrCreateEntry(url_, net::HIGHEST, std::move(callback));
+      backend->OpenOrCreateEntry(*url_, net::HIGHEST, std::move(callback));
   rv = create_result.net_error();
   if (rv != net::ERR_IO_PENDING) {
     entry_ = create_result.ReleaseEntry();
@@ -112,7 +112,7 @@ int DiskCacheEntry::IOComplete(int rv) {
 DiskCacheReadHelper::DiskCacheReadHelper(DiskCacheFile* cache,
                                          const std::string& url,
                                          const EntryLoadedCallback& callback) :
-  cache_(cache), url_(url), entry_loaded_cb_(callback), buf_(nullptr), entry_(nullptr) {
+  cache_(cache), url_(raw_ref(url)), entry_loaded_cb_(callback), buf_(nullptr), entry_(nullptr) {
   weak_ptr_ = weak_ptr_factory_.GetWeakPtr();
 }
 
@@ -170,7 +170,7 @@ int DiskCacheReadHelper::OpenCallback(int rv) {
     return net::ERR_FAILED;
   }
   disk_cache::EntryResult result =
-      backend->OpenEntry(url_, net::HIGHEST, std::move(callback));
+      backend->OpenEntry(*url_, net::HIGHEST, std::move(callback));
   rv = result.net_error();
 
   if (rv != net::ERR_IO_PENDING)
@@ -220,7 +220,7 @@ int DiskCacheReadHelper::IOComplete(int rv) {
 DiskCacheFile::DiskCacheFile(const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
                              const std::string& url,
                              const EntryLoadedCallback& entry_loaded_cb) :
-  disk_cache_backend_factory_(disk_cache_backend_factory), url_(url), entry_loaded_cb_(entry_loaded_cb) {}
+  disk_cache_backend_factory_(disk_cache_backend_factory), url_(raw_ref(url)), entry_loaded_cb_(entry_loaded_cb) {}
 
 void DiskCacheFile::StoreInfoAsync(const std::string& entry_content) {
   if (!disk_cache_backend_factory_) {
@@ -240,7 +240,7 @@ void DiskCacheFile::StoreInfoAsync(const std::string& entry_content) {
 
 void DiskCacheFile::DoStoreInfo(const std::string& entry_content)
 {
-  entry_ = std::make_unique<DiskCacheEntry>(this, url_, entry_content);
+  entry_ = std::make_unique<DiskCacheEntry>(this, *url_, entry_content);
   entry_->Cache();
 }
 
@@ -265,7 +265,7 @@ void DiskCacheFile::LoadInfoAsync() {
 
 void DiskCacheFile::DoLoadInfo()
 {
-  helper_ = std::make_unique<DiskCacheReadHelper>(this, url_, entry_loaded_cb_);
+  helper_ = std::make_unique<DiskCacheReadHelper>(this, *url_, entry_loaded_cb_);
   helper_->LoadCache();
 }
 

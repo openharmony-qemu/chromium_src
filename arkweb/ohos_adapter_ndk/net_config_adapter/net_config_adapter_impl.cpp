@@ -57,7 +57,7 @@ bool NetConfigAdapterImpl::GetIsCleartextPermittedByHostName(
       hostname.c_str(), &is_cleartext_permitted);
   if (ret != 0) {
     WVLOG_E(
-        "GetIsCleartextPermittedByHostName for hostname:%{public}s failed, "
+        "GetIsCleartextPermittedByHostName for hostname:%{private}s failed, "
         "ret:%{public}d",
         hostname.c_str(), ret);
     return true;

@@ -257,11 +257,9 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
-                                 const std::vector<gfx::Rect> &quad_list,
                                  mojo::ScopedSharedBufferHandle buffer,
                                  mojom::BlanklessBitmapMetadataPtr metadata) override;
   static void DumpBlanklessSnapshot(base::ohos::BlanklessInfo&& blankless_info,
-                                    const std::vector<gfx::Rect>& quad_list,
                                     mojo::ScopedSharedBufferHandle buffer,
                                     mojom::BlanklessBitmapMetadataPtr metadata);
   void ClearBlanklessSnapshotInfo(uint64_t blankless_key) override;

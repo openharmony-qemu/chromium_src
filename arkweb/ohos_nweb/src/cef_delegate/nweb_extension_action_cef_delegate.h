@@ -31,6 +31,9 @@ namespace OHOS::NWeb {
 NWebExtensionActionIcon CreateFromImageSkiaReps(
     const std::vector<gfx::ImageSkiaRep>& imageSkiaReps);
 
+NWebExtensionActionIconV2 CreateNWebIconFromImageSkiaRepsV2(
+    const std::vector<gfx::ImageSkiaRep>& imageSkiaReps);
+
 class NWebExtensionActionCefDelegate {
  public:
   static void RegisterWebExtensionApiListener(

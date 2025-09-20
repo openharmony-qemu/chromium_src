@@ -107,3 +107,7 @@ config("arkweb_codec_decoder_adapter_unittest_config") {
     "-Wl,--wrap=OH_AVCencInfo_Destroy",
   ]
 }
+
+config("content_browser_config") {
+  ldflags = [ "-Wl,--wrap=ComputeLanguageByRegion" ]
+}

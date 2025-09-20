@@ -1706,6 +1706,20 @@ class CONTENT_EXPORT WebContentsImpl
                            SuppressedPopupWindowBrowserNavResumeLoad);
   FRIEND_TEST_ALL_PREFIXES(RenderWidgetHostSitePerProcessTest,
                            BrowserClosesPopupIntersectsPermissionPrompt);
+#if BUILDFLAG(ARKWEB_TEST)
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
+                           UpdateRenderAcceptLanguageIfNeed_WithLangSwitch);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
+                           UpdateRenderAcceptLanguageIfNeed_WithLangSwitch_NoRegion);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
+                           UpdateRenderAcceptLanguageIfNeed_HasRegion_SameLanguage);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
+                           UpdateRenderAcceptLanguageIfNeed_HasRegion_CurrentLanguage);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest, JudgeIsPdfPageVisibilityChanged_NotFirstVisible);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest, JudgeIsPdfPageVisibilityChanged_FirstVisiblePdf);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest, UpdateUserAgentOverride);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest, UpdateUserAgentOverride_WithDelayedLoadUrlParams);
+#endif
 
 #if BUILDFLAG(ARKWEB_TEST)
   FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, MouseSelectMenuShow002);

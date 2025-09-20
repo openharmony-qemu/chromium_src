@@ -2976,6 +2976,7 @@ test("content_unittests") {
 
   if (arkweb_unittests) {
     sources += arkweb_content_browser_test_sources
+    configs += [ "//arkweb/chromium_ext:content_browser_config" ]
   }
 
   if (is_mac) {

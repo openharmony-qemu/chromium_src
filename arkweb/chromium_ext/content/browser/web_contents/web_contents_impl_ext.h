@@ -386,6 +386,15 @@ private:
 #endif
 
 private:
+#if BUILDFLAG(ARKWEB_TEST)
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
+                           RenderProcessShareInit_WithToken);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
+                           RenderProcessShareInit_WithToken_ExistingProcess);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest, UpdateUserAgentOverride);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
+                           UpdateUserAgentOverride_WithDelayedLoadUrlParams);
+#endif
   std::string custom_user_agent_;
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   bool safe_browsing_strict_mode_ = false;

@@ -843,7 +843,7 @@ ThreadGroupImpl::CreateAndRegisterWorkerLockRequired(
   workers_.push_back(worker);
 #if BUILDFLAG(IS_ARKWEB)
   if (worker) {
-    create_workers.push_back(worker);
+    create_workers_.push_back(worker);
   }
 #endif
   executor->ScheduleStart(worker);

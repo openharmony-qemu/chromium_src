@@ -745,6 +745,9 @@ bool NWebDelegate::Init(bool is_enhance_surface,
 }
 
 void NWebDelegate::OnDestroy(bool is_close_all) {
+  if (GetBrowser().get() && GetBrowser()->GetHost()) {
+    GetBrowser()->GetHost()->DestroyAllWebMessagePorts();
+  }
   if (display_listener_id_ >= 0 && display_listener_ != nullptr &&
       display_manager_adapter_ != nullptr) {
     display_manager_adapter_->UnregisterDisplayListener(display_listener_id_);
@@ -762,10 +765,6 @@ void NWebDelegate::OnDestroy(bool is_close_all) {
   if (preference_delegate_ != nullptr) {
     preference_delegate_->OnDestroy();
   }
-  if (!GetBrowser().get()) {
-    return;
-  }
-  GetBrowser()->GetHost()->DestroyAllWebMessagePorts();
 }
 
 void NWebDelegate::RegisterDownLoadListener(
@@ -5845,6 +5844,20 @@ void NWebDelegate::WebExtensionContextMenuReloadFocusedFrame() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void NWebDelegate::WebExtensionContextMenuGetFocusedFrameInfo(
+    int32_t& frame_id,
+    std::string& frame_url) {
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "get browser failed or get host failed";
+    return;
+  }
+  CefString cef_frame_url;
+  GetBrowser()->GetHost()->GetFocusedFrameInfo(frame_id, cef_frame_url);
+  frame_url = cef_frame_url.ToString();
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 bool NWebDelegate::SetFocusByPosition(float x, float y)
 {
@@ -5939,7 +5952,7 @@ void NWebDelegate::SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_k
   }
 
   auto browser = GetBrowser();
-  if (browser == nullptr) {
+  if (browser == nullptr || browser->GetMainFrame() == nullptr || browser->GetMainFrame()->AsArkWebFrame() == nullptr) {
     LOG(ERROR) << "blankless NWebDelegate::SetBlanklessLoadingKey browser is nullptr";
     return;
   }
@@ -5947,6 +5960,9 @@ void NWebDelegate::SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_k
   // before send to render_frame, frame_sink_id will be get from compositor.
   int64_t pref_hash = preference_delegate_ ? preference_delegate_->GetPreferenceHash() : 0;
   browser->GetMainFrame()->AsArkWebFrame()->SendBlanklessKeyToRenderFrame(nweb_id, blankless_key, 0, pref_hash);
+  if (handler_delegate_) {
+    handler_delegate_->SetBlanklessLoadingKey(blankless_key);
+  }
 }
 
 int64_t NWebDelegate::GetPreferenceHash() {
@@ -5954,19 +5970,6 @@ int64_t NWebDelegate::GetPreferenceHash() {
     return base::ohos::BlanklessDataController::INVALID_PREF_HASH;
   }
   return preference_delegate_->GetPreferenceHash();
-}
-
-int32_t NWebDelegate::NearestSnapshotWidth() {
-  return nearest_snapshot_width_;
-}
-
-int32_t NWebDelegate::NearestSnapshotHeight() {
-  return nearest_snapshot_height_;
-}
-
-void NWebDelegate::SetNearestSnapshotSize(int width, int height) {
-  nearest_snapshot_width_ = width;
-  nearest_snapshot_height_ = height;
 }
 
 int32_t NWebDelegate::GetWidth() {

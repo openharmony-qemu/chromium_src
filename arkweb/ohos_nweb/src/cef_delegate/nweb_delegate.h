@@ -816,6 +816,12 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void WebExtensionContextMenuReloadFocusedFrame() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void WebExtensionContextMenuGetFocusedFrameInfo(
+      int32_t& frame_id,
+      std::string& frame_url) override;
+#endif
+
   void SetSurfaceDensity(const double& density) override;
 
   void OpenDevtoolsWith(
@@ -863,9 +869,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) override;
   int64_t GetPreferenceHash() override;
-  void SetNearestSnapshotSize(int32_t width, int32_t height) override;
-  int32_t NearestSnapshotWidth() override;
-  int32_t NearestSnapshotHeight() override;
   int32_t GetWidth() override;
   int32_t GetHeight() override;
   void SetRotationType(RotationType rotation);
@@ -1058,6 +1061,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   int32_t nearest_snapshot_width_ = 0;
   int32_t nearest_snapshot_height_ = 0;
 #endif
+  base::WeakPtrFactory<NWebDelegate> weak_factory_{this};
 };
 }  // namespace OHOS::NWeb
 #endif

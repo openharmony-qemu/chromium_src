@@ -632,6 +632,7 @@ OH_WebMessage_PostMessage(const ArkWeb_WebMessagePortPtr webMessagePort,
 ARKWEB_NDK_EXPORT void OH_WebMessage_Close(
     const ArkWeb_WebMessagePortPtr webMessagePort,
     const char* webTag) {
+  LOG(INFO) << "NativeArkWeb Close";
   if (!webTag || !webMessagePort) {
     LOG(ERROR) << "NativeArkWeb Close nullptr error";
     return;

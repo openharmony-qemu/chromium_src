@@ -45,7 +45,6 @@ class WindowCapturerReadCallback : public BaseScreenCaptureReadCallback {
 
   void OnReadData(OHOS::NWeb::AudioCaptureSourceTypeAdapter type) override {}
 
-  void OnDisplaySelected(uint64_t displayId) override {}
  private:
   OnReadDataCallback readDataCallback_;
 };
@@ -73,22 +72,18 @@ class BaseWindowCapturer : public DesktopCapturer {
   explicit BaseWindowCapturer(
       CaptureSourceType source_type,
       bool is_picker_show, 
-      int nweb_id, 
-      base::OnceCallback<void(uint64_t displayId)> callback = 
-          base::BindOnce([](uint64_t value) {}));
+      int nweb_id);
 
   ~BaseWindowCapturer() override;
 
   static std::unique_ptr<DesktopCapturer> CreateRawCapturer(
       const DesktopCaptureOptions& options,
-      const CaptureSourceType& type,
-      base::OnceCallback<void(uint64_t displayId)> callback);
+      const CaptureSourceType& type);
 
   bool Init(const DesktopCaptureOptions& options);
 
   // DesktopCapturer interface.
   void Start(Callback* delegate) override;
-  void Stop() override;
   void CaptureFrame() override;
   bool GetSourceList(SourceList* sources) override;
   bool SelectSource(SourceId id) override;
@@ -101,11 +96,6 @@ class BaseWindowCapturer : public DesktopCapturer {
   void HandleError(int32_t errorCode, void* userData);
 
   void HandleBuffer();
-
-  // void HandleBuffer(OH_AVBuffer* buffer,
-  //                   OH_AVScreenCaptureBufferType bufferType,
-  //                   int64_t timestamp,
-  //                   void* userData);
 
   void SetScreenCaptureState(
       const OHOS::NWeb::ScreenCaptureStateCodeAdapter& stateCode);
@@ -148,7 +138,6 @@ class BaseWindowCapturer : public DesktopCapturer {
   std::shared_ptr<WindowCapturerReadCallback> WindowCapturerReadCallback_ = nullptr;
 
   OH_AVScreenCapture* screen_capture_ = nullptr;
-  //ohos::adapter::OhosDisplay ohos_screen_;
 
   int nweb_id_ = 0;
   base::WeakPtrFactory<BaseWindowCapturer> weak_factory_{this};

@@ -409,7 +409,7 @@ void OhosVideoDecoder::OnCodecConfigured(
     return;
   }
 
-  if (codec->SetBridgeOutputSurface(surface_bundle->GetOHOSNativeWindow()) ==
+  if (!surface_bundle || codec->SetBridgeOutputSurface(surface_bundle->GetOHOSNativeWindow()) ==
       DecoderAdapterCode::DECODER_ERROR) {
     LOG(ERROR) << "OhosVideoDecoder::SetBridgeOutputSurface failed.";
     EnterTerminalState(State::kError, "Unable to initialize codec");

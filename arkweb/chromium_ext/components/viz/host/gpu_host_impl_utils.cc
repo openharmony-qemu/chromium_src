@@ -15,7 +15,7 @@
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
-#include "base/functional/bind.h"
+#include "base/task/thread_pool.h"
 #endif
 
 namespace viz {
@@ -91,82 +91,40 @@ void GpuHostImpl::Discard(uint32_t native_window_id)
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 void GpuHostImpl::SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
-                                            const std::vector<gfx::Rect>& quad_list,
                                             mojo::ScopedSharedBufferHandle buffer,
                                             mojom::BlanklessBitmapMetadataPtr metadata) {
-  if (!infoPtr) {
-    LOG(WARNING) << "blankless SendBlanklessSnapshotInfo invalid snapshot infoPtr.";
-    return;
-  }
-  TRACE_EVENT1("io", "blankless GpuHostImpl::SendBlanklessSnapshotInfo", "blankless_key", infoPtr->blankless_key);
-  uint64_t key = infoPtr->blankless_key;
-  auto task = base::BindOnce(&GpuHostImpl::DumpBlanklessSnapshot,
-                             std::move(infoPtr), quad_list,
-                             std::move(buffer), std::move(metadata));
-  auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
-  databaseAdapter.PostDumpTaskWithDelay(key, std::move(task));
+  base::ThreadPool::PostTask(
+    FROM_HERE,
+    {base::MayBlock(), base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN, base::TaskPriority::USER_BLOCKING},
+    base::BindOnce(&GpuHostImpl::DumpBlanklessSnapshot,
+                   std::move(infoPtr), std::move(buffer), std::move(metadata))
+  );
 }
 
 void GpuHostImpl::DumpBlanklessSnapshot(mojom::BlanklessSendInfoPtr infoPtr,
-                                        const std::vector<gfx::Rect>& quad_list,
                                         mojo::ScopedSharedBufferHandle buffer,
                                         mojom::BlanklessBitmapMetadataPtr metadata) {
   if (!infoPtr) {
     LOG(WARNING) << "blankless DumpBlanklessSnapshot invalid snapshot infoPtr.";
     return;
   }
-  TRACE_EVENT1("io", "blankless GpuHostImpl::DumpBlanklessSnapshot", "blankless_key", infoPtr->blankless_key);
-  LOG(DEBUG) << "GpuHostImpl::DumpBlanklessSnapshot url begin : key " << infoPtr->blankless_key
-    << ", lcp_time " << infoPtr->lcp_time << ", pref_hash " << infoPtr->pref_hash;
-  
+
   // the next all the process is sync, here we restore the skbitmap from mojo
-  if (!buffer || !buffer.is_valid() ||
-    !metadata || metadata->width <= 0 || metadata->height <= 0 || metadata->size == 0 ||
-    metadata->color_type < static_cast<int32_t>(SkColorType::kUnknown_SkColorType) ||
-    metadata->color_type > static_cast<int32_t>(SkColorType::kLastEnum_SkColorType) ||
-    metadata->alpha_type < static_cast<int32_t>(SkAlphaType::kUnknown_SkAlphaType) ||
-    metadata->alpha_type > static_cast<int32_t>(SkAlphaType::kLastEnum_SkAlphaType)) {
+  if (!buffer || !buffer.is_valid() || !metadata ||
+      metadata->width <= 0 || metadata->height <= 0 || metadata->size == 0 ||
+      metadata->color_type < static_cast<int32_t>(SkColorType::kUnknown_SkColorType) ||
+      metadata->color_type > static_cast<int32_t>(SkColorType::kLastEnum_SkColorType) ||
+      metadata->alpha_type < static_cast<int32_t>(SkAlphaType::kUnknown_SkAlphaType) ||
+      metadata->alpha_type > static_cast<int32_t>(SkAlphaType::kLastEnum_SkAlphaType)) {
     LOG(WARNING) << "blankless GpuHostImpl::DumpBlanklessSnapshot invalid snapshot info";
     return;
   }
-  mojo::ScopedSharedBufferMapping mapping = buffer->Map(metadata->size);
-  if (!mapping) {
-    LOG(WARNING) << "blankless DumpBlanklessSnapshot Failed to map shared buffer.";
-    return;
-  }
-  SkImageInfo info = SkImageInfo::Make(metadata->width, metadata->height,
-                                        static_cast<SkColorType>(metadata->color_type),
-                                        static_cast<SkAlphaType>(metadata->alpha_type));
 
-  // bind the shared mem, no mem copy, the buffer and metadata will be destroyed when this function finished.
-  SkBitmap bitmap;
-  if (!bitmap.installPixels(info, mapping.get(), info.minRowBytes())) {
-    LOG(WARNING) << "blankless DumpBlanklessSnapshot Failed to install pixels into bitmap.";
-    return;
-  }
-
-  base::ohos::BlanklessInfo blankless_info = {
-    .blankless_key = infoPtr->blankless_key,
-    .nweb_id = infoPtr->nweb_id,
-    .lcp_time = infoPtr->lcp_time,
-    .system_time = infoPtr->system_time,
-    .pref_hash = infoPtr->pref_hash
-  };
-
+  TRACE_EVENT1("io", "blankless GpuHostImpl::DumpBlanklessSnapshot", "blankless_key", infoPtr->blankless_key);
+  LOG(DEBUG) << "blankless GpuHostImpl::DumpBlanklessSnapshot begin : key " << infoPtr->blankless_key
+             << ", lcp_time " << infoPtr->lcp_time << ", pref_hash " << infoPtr->pref_hash;
   auto& databaseAdapter = base::ohos::BlanklessDataController::GetInstance();
-  std::vector<base::ohos::BlanklessDataController::SnapShotRect> rect_list;
-  if (quad_list.size() > 0) {
-    rect_list.reserve(quad_list.size());
-  }
-  for (const auto& quad: quad_list) {
-    rect_list.push_back({
-      quad.x(),
-      quad.y(),
-      quad.width(),
-      quad.height(),
-    });
-  }
-  databaseAdapter.DumpBlanklessSnapshot(blankless_info, bitmap, rect_list);
+  databaseAdapter.DumpBlanklessSnapshot(std::move(infoPtr), std::move(buffer), std::move(metadata));
 }
 
 void GpuHostImpl::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {

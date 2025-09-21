@@ -22,7 +22,7 @@
 #include <multimedia/av_session/native_avsession_errors.h>
 
 #include "media_avsession_adapter.h"
-
+#include "arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper.h"
 
 namespace OHOS::NWeb {
 
@@ -95,8 +95,9 @@ private:
     OH_AVSession *avSession_ = nullptr;
     bool isActived_;
 
-    std::shared_ptr<MediaAVSessionCallbackAdapter> callbackAdapter_;
     static std::unordered_map<std::string, MediaAVSessionAdapterImpl *> avSessionMap;
+    size_t callback_index_ = 0;
+    static CallbackSharedWrapper<MediaAVSessionCallbackAdapter> callback_wrapper_;
 };
 } // namespace OHOS::NWeb
 

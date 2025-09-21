@@ -35,13 +35,18 @@ namespace crashpad {
 
 class CrashpadDfx {
  public:
+  enum class ProcessType : int32_t {
+    kUnknown = -1,
+    kRender = 0,
+    kGpu,
+  };
   static void ProcessCrashReport(const std::string process_type,
                                  const std::string happen_time,
                                  const std::string bundle_name,
                                  const std::string error_reason);
   static std::string GetProcessBundleName();
   static std::string GetCurrentTime();
-  static std::string GetProcessTypeByPid(pid_t pid);
+  static int32_t GetProcessTypeByPid(pid_t pid);
   static std::string UpdateCrashDumpPathSuffix();
 
  private:

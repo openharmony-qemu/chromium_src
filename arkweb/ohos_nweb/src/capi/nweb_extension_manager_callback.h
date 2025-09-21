@@ -30,6 +30,7 @@ typedef enum {
   EXT_COLOR_MAX = 4,
 } ExtensionColorIndex;
 
+// This is an exported struct. Do not modify it or its nested structs.
 struct WebExtensionActionInfo {
   std::string extensionId;
   std::optional<bool> isEnabled;
@@ -41,42 +42,32 @@ struct WebExtensionActionInfo {
   std::optional<NWebExtensionActionIcon*> icon;
 };
 
+struct WebExtensionActionInfoV2 {
+  std::string extensionId;
+  std::optional<bool> isEnabled;
+  std::optional<std::array<int32_t, EXT_COLOR_MAX>> badgeBackgroundColor;
+  std::optional<std::string> badgeText;
+  std::optional<std::array<int32_t, EXT_COLOR_MAX>> badgeTextColor;
+  std::optional<std::string> popup;
+  std::optional<std::string> title;
+  std::optional<NWebExtensionActionIconV2> icon;
+};
+
+// This is an exported struct. Do not modify it or its nested structs.
 struct WebExtensionSidePanelInfo {
   std::optional<bool> enable;
   std::optional<std::string> path;
   std::optional<bool> openPanelOnActionClick;
 };
 
+// This is an exported struct. Do not modify it or its nested structs.
 struct WebExtensionInfo {
-  /**
-   * extensionId of extension.
-   */
   std::string extensionId;
-
-  /**
-   * whether extension can be removed.
-   */
   bool mustRemainInstalled;
-
-  /**
-   * actionInfo of extension.
-   */
   WebExtensionActionInfo action;
-
-  /**
-   * sidePanel of extension.
-   */
   WebExtensionSidePanelInfo sidePanel;
-
-  /**
-   * contextMenus of extension.
-   */
   std::vector<NWebContextMenusItem> contextMenus;
-
-  /**
-   * extension's action icon is visible on toolbar.
-   */
-  bool isOnToolbar;
+  bool isOnToolbar = false;
 };
 
 struct WebExtensionManifestSearchProvider {
@@ -119,6 +110,7 @@ struct WebExtensionManifestInfo {
   std::optional<WebExtensionManifestSettingsOverrides> settings_overrides;
   std::optional<WebExtensionManifestOptionsPageInfo> options_page;
   std::optional<ExtensionIncognitoMode> incognito_mode;
+  std::optional<NWebExtensionActionIconV2> icons;
 };
  
 struct WebExtensionInfoV2 {
@@ -139,6 +131,7 @@ struct WebExtensionInfoV2 {
   WebExtensionManifestInfo manifest_info;
   bool is_incognito_enabled = false;
   std::vector<NWebContextMenusItemV2> contextMenusV2;
+  WebExtensionActionInfoV2 action_v2;
 };
 
 typedef void (*OnWebExtensionLoadedFun)(const WebExtensionInfo& load_info);

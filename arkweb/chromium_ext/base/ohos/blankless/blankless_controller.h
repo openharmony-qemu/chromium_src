@@ -32,6 +32,8 @@ struct BlanklessInfo {
   int32_t lcp_time = 0;
   uint64_t system_time = 0;
   int64_t pref_hash = 0;
+  int64_t width = 0;
+  int64_t height = 0;
 };
 
 struct BlanklessDumpInfo {
@@ -51,8 +53,12 @@ public:
   };
 
   static constexpr uint64_t INVALID_BLANKLESS_KEY = UINT64_MAX;
-  static constexpr double CALLBACK_SIMILARITY_THRESHOLD = 0.75;
+  static constexpr double CALLBACK_SIMILARITY_THRESHOLD = 0.5;
   static constexpr uint64_t INVALID_TIMESTAMP = UINT64_MAX;
+  static constexpr int32_t A_STANDARD = 1600; // 1600 ms
+  static constexpr int32_t MINIMUM_FRAME_LIFETIME = 40; // 40 ms
+  static constexpr int32_t MAXIMUM_FRAME_LIFETIME = 2000; // 2000 ms
+  static constexpr int32_t SNAPSHOT_SCALE_FACTOR = 2;
 
   static uint64_t ConvertToBlanklessKey(const std::string& value);
 
@@ -104,6 +110,9 @@ public:
 
   void RecordSystemTime(uint32_t nweb_id, uint64_t blankless_key, uint64_t system_time);
   uint64_t GetSystemTime(uint32_t nweb_id, uint64_t blankless_key);
+
+  void RecordDumpTime(uint32_t nweb_id, uint64_t blankless_key, uint64_t dump_time);
+  uint64_t GetDumpTime(uint32_t nweb_id, uint64_t blankless_key);
 
   void Clear(uint32_t nweb_id);
 
@@ -234,6 +243,8 @@ private:
   NWebRelatedInfoMap<std::pair<Callback, int32_t>> m_frame_insert_callback_map_;
 
   NWebRelatedInfoMap<uint64_t> m_system_time_map_;
+  // Record the time when the snapshot is written to the database.
+  NWebRelatedInfoMap<uint64_t> m_dump_time_map_;
 
   std::unordered_map<uint32_t, uint32_t> m_window_id_map_;
 

@@ -46,7 +46,7 @@ namespace {
 // Timeout for the SSL handshake portion of the connect.
 constexpr base::TimeDelta kSSLHandshakeTimeout(base::Seconds(30));
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
 constexpr uint16_t k3DESCipher = 0x000a;
 #endif
 }  // namespace

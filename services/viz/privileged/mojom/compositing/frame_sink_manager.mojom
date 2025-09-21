@@ -233,7 +233,7 @@ interface FrameSinkManager {
   SendInternalBeginFrame(FrameSinkId frame_sink_id);
   // When frame is invisible, evict display back buffers
   [EnableIf=arkweb_occluded_opt]
-  EvictFrameBackBuffers(FrameSinkId frame_sink_id, bool invisible);
+  EvictFrameBackBuffers(FrameSinkId frame_sink_id);
 
   // Set pip enable.
   [EnableIf=arkweb_pip]

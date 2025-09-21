@@ -120,6 +120,12 @@ void OHOSAudioManager::GetAudioInputDeviceNames(
           switches::kDisableAudioInput)) {
     return;
   }
+
+  if (!device_names) {
+    LOG(ERROR) << "OHOSAudioManager::GetAudioInputDeviceNames device_names is null";
+    return;
+  }
+
   auto audioDeviceList =
       OhosAdapterHelper::GetInstance().GetAudioSystemManager().GetDevices(
           AdapterDeviceFlag::INPUT_DEVICES_FLAG);

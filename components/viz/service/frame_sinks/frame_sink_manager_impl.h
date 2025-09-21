@@ -488,8 +488,7 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
   void UpdateThrottling();
 
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
-  void EvictFrameBackBuffers(const FrameSinkId& root_frame_sink_id,
-                             bool invisible) override;
+  void EvictFrameBackBuffers(const FrameSinkId& root_frame_sink_id) override;
 #endif
 
   // Clears throttling operation on the frame sink with |id| and all its

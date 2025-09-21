@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 
+#include "base/memory/raw_ptr.h"
 #include "client/crash_report_database.h"
 #include "handler/crash_report_upload_thread.h"
 #include "handler/linux/exception_handler_server.h"
@@ -110,7 +111,7 @@ class OhosUserStreamDataSource : public UserStreamDataSource {
       ProcessSnapshot* process_snapshot) override;
 
  private:
-  PtraceConnection* connection_;
+  raw_ptr<PtraceConnection> connection_;
 };
 
 }  // namespace crashpad

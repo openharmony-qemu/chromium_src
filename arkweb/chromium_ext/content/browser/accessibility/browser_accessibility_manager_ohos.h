@@ -16,9 +16,6 @@
 #include "ui/accessibility/platform/browser_accessibility_manager.h"
 #include "ui/accessibility/platform/one_shot_accessibility_tree_search.h"
 
-#if false
-#include "content/browser/renderer_host/render_frame_host_impl.h"
-#endif
 namespace ui {
 
 class BrowserAccessibility;

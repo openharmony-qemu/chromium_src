@@ -32,6 +32,8 @@ class ArkWebEntityReplacer {
     this.pendingRequests.clear();
     console.log('JS::WebDataDetector init');
     this.queueProcessing(document.body);
+    this.addSmartClickListener(document.body, this.handleLinkClick);
+    this.addSmartTouchTestListener(document.body, this.handleLinkTouchTest);
   }
 
   getScreenElementEdgesExt(element) {

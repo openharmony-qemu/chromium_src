@@ -1218,7 +1218,7 @@ void NWebPreferenceDelegate::PutErrorPageEnabled(bool enable) {
 int64_t NWebPreferenceDelegate::GetPreferenceHash()
 {
   if (pref_hash_cached_) {
-    LOG(DEBUG) << "NWebPreferenceDelegate::GetPreferenceHash() using cache. hash = " << pref_hash_;
+    LOG(DEBUG) << "blankless NWebPreferenceDelegate::GetPreferenceHash() using cache. hash = " << pref_hash_;
     return pref_hash_;
   }
   pref_hash_cached_ = true;
@@ -1250,7 +1250,8 @@ int64_t NWebPreferenceDelegate::GetPreferenceHash()
     << GetRotationType();
   pref_hash_ = std::hash<std::string>{}(str.str());
 
-  LOG(DEBUG) << "NWebPreferenceDelegate::GetPreferenceHash() hash = " << pref_hash_;
+  LOG(DEBUG) << "blankless NWebPreferenceDelegate::GetPreferenceHash() hash = " << pref_hash_
+             << ", pref_str: " << str.str();
 
   return pref_hash_;
 }

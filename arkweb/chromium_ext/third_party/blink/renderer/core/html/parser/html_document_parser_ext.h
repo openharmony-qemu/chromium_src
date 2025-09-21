@@ -26,10 +26,8 @@
 namespace blink {
 #if BUILDFLAG(IS_OHOS)
 constexpr int kOptimizedMaxTokenizationBudget = 150;
-static bool kUseOptimizedBudget = false;
-#endif
-#if BUILDFLAG(IS_OHOS)
 void SetOptimizeParserBudgetEnabled(bool enable);
+bool GetOptimizeParserBudgetEnabled();
 #endif
 }
 #endif

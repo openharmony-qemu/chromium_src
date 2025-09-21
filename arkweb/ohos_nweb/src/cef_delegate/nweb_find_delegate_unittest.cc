@@ -744,6 +744,9 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       bool recursive,
       IsolatedWorld world,
       CefRefPtr<CefJavaScriptResultCallback> callback) override {}
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 };
 
 class NWebFindDelegateTest : public ::testing::Test {

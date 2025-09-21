@@ -4,8 +4,10 @@
 
 #include "arkweb/chromium_ext/content/common/arkweb_user_agent_ext.h"
 
+#if !defined(COMPONENT_BUILD)
+#include "cef/ohos_cef_ext/libcef/browser/useragent/ua_push_config.h"
+#endif
 namespace content {
-
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
 namespace {
@@ -27,7 +29,21 @@ std::string GetDistVersion() {
   base::StringAppendF(&dist_version, "%d.%d", versionPartOne, versionPartTwo);
   return dist_version;
 }
-
+void UpdateBaseOsName(std::string& base_os_name_front_str,
+                       std::string& base_os_name_back_str,
+                       const std::string device_type_string) {
+#if !defined(COMPONENT_BUILD)
+  if (ohos_user_agent::UAPushConfig::GetInstance()) {
+    ohos_user_agent::OSPostionPrefsInfo defaultPrefs{"", ""};
+    ohos_user_agent::OSPostionPrefsInfo os_postion_prefs =
+        ohos_user_agent::UAPushConfig::GetInstance()
+            ->GetLastOsPositionStr(device_type_string)
+            .value_or(defaultPrefs);
+    base_os_name_front_str = os_postion_prefs.front_str;
+    base_os_name_back_str = os_postion_prefs.back_str;
+  }
+#endif
+}
 std::string GetOhosFullname() {
   std::string device_type_string = "Phone";
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
@@ -57,16 +73,22 @@ std::string GetOhosFullname() {
   int32_t ohos_senior_version = base::ohos::SeniorVersion();
   std::string base_os_name = base::ohos::BaseOsName();
   std::string ohos_fullname_str;
+  std::string base_os_name_front_str = "";
+  std::string base_os_name_back_str = "";
+  UpdateBaseOsName(base_os_name_front_str, base_os_name_back_str,
+                    device_type_string);
   if (base_os_name.empty() || ohos_major_version == -1 ||
       ohos_senior_version == -1) {
     std::string base_os_name_default = "OpenHarmony";
-    base::StringAppendF(&ohos_fullname_str, "%s; %s",
-                        device_type_string.c_str(),
-                        base_os_name_default.c_str());
+    base::StringAppendF(
+        &ohos_fullname_str, "%s; %s%s%s", device_type_string.c_str(),
+        base_os_name_front_str.c_str(), base_os_name_default.c_str(),
+        base_os_name_back_str.c_str());
   } else {
-    base::StringAppendF(&ohos_fullname_str, "%s; %s %d.%d",
-                        device_type_string.c_str(), base_os_name.c_str(),
-                        ohos_major_version, ohos_senior_version);
+    base::StringAppendF(
+        &ohos_fullname_str, "%s; %s%s %d.%d%s", device_type_string.c_str(),
+        base_os_name_front_str.c_str(), base_os_name.c_str(),
+        ohos_major_version, ohos_senior_version, base_os_name_back_str.c_str());
   }
   std::string dist_os_name = base::ohos::BaseOsName();
   std::string dist_version = GetDistVersion();

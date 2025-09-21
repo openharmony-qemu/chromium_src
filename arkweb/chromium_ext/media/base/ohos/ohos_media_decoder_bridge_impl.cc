@@ -704,7 +704,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetVideoSurface(
     }
     if (widget_id < 0) {
         if (window_from_surface_) {
-            return videoDecoder_->SetOutputSurface(window_from_surface_);
+            return videoDecoder_->SetOutputSurface(window_from_surface_.get());
         }
         return DecoderAdapterCode::DECODER_ERROR;
     }

@@ -21,11 +21,21 @@
 extern "C" {
 #endif
 
+const int DEFAULT_API_VERSION = 60000;
+
 int GetParamApiVersion()
 {
   std::string version =
     OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetDeviceInfoApiVersion();
-  return (std::stoi(version));
+  char* end;
+  errno = 0;
+  long versionNum = std::strtol(version.c_str(), &end, 10);
+
+  if (errno == ERANGE || end == version.c_str()) {
+    return DEFAULT_API_VERSION;
+  }
+
+  return static_cast<int>(versionNum);
 }
 
 bool CheckTargetApiVersion(int TargetApiVersion)

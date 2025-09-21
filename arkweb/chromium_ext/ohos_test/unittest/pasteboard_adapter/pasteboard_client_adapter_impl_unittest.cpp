@@ -61,13 +61,13 @@ void PasteboardClientAdapterImplTest::SetUpTestCase() {
     std::vector<uint8_t> fake_data = { 0, 1, 2 };
     g_fake_custom_data.insert(std::make_pair(fake_format, fake_data));
 
-    g_datarecord_null = std::make_shared<PasteDataRecordAdapterImpl>(nullptr);
+    g_datarecord_null = std::make_shared<PasteDataRecordAdapterImpl>(nullptr, false);
     ASSERT_NE(g_datarecord_null, nullptr);
     EXPECT_EQ(g_datarecord_null->record_, nullptr);
 
     OH_UdmfRecord* record = OH_UdmfRecord_Create();
     EXPECT_NE(record, nullptr);
-    g_datarecord = std::make_shared<PasteDataRecordAdapterImpl>(record);
+    g_datarecord = std::make_shared<PasteDataRecordAdapterImpl>(record, true);
     ASSERT_NE(g_datarecord, nullptr);
     
 

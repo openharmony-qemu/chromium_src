@@ -64,8 +64,7 @@ void WindowEventFilterOhos::OnClickedCaption(ui::MouseEvent* event,
       window_bounds_ =
           desktop_window_tree_host_->AsWindowTreeHost()->GetBoundsInPixels();
       LOG(INFO) << "[OhosDrag]WindowEventFilterOhos::OnClickedCaption,no "
-                   "client drag running,offset_:"
-                << offset_.ToString();
+                   "client drag running.";
     } else if (event->type() == ui::EventType::kMouseReleased) {
       is_dragging_ = false;
       LOG(INFO) << "[OhosDrag]WindowEventFilterOhos::OnClickedCaption,no "

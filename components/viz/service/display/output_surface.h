@@ -206,7 +206,7 @@ class VIZ_SERVICE_EXPORT OutputSurface {
   virtual void Reshape(const ReshapeParams& params) = 0;
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  virtual void SetNativeInnerWeb(bool isInnerWeb) {};
+  virtual void SetNativeInnerWeb(bool isInnerWeb) {}
 #endif
 
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)

@@ -53,44 +53,7 @@ WidgetBaseUtils::WidgetBaseUtils(WidgetBase* widget_base) : widget_base_(widget_
 // LCOV_EXCL_STOP
 
 #if BUILDFLAG(IS_ARKWEB)
-static void GetThreadIdsAndReport(std::vector<base::PlatformThreadId>& workersTids,
-                                       bool is_created) {
-  std::vector<int32_t> thread_ids;
-  for (auto& tid : workersTids) {
-    thread_ids.push_back(tid );
-  }
-  workersTids.clear();
-
-  auto* thread = content::ChildThreadImpl::current();
-  if (thread) {
-    auto host = thread->child_process_host();
-    auto status = is_created ? OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED :
-                               OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED;
-    host->ReportKeyThreadIds(static_cast<int32_t>(status),
-        base::GetCurrentRealPid(), thread_ids,
-        static_cast<int32_t>(OHOS::NWeb::ResSchedRoleAdapter::IMAGE_DECODE));
-  }
-}
-
-static void GetThreadIdsAndReport(std::vector<scoped_refptr<base::internal::WorkerThread>>& workers,
-                                       bool is_created) {
-  std::vector<int32_t> thread_ids;
-  std::vector<scoped_refptr<base::internal::WorkerThread>> remain_workers;
-  for (auto& worker : workers) {
-    if (worker) {
-      auto tid = worker->GetRealTid();
-      if (tid) {
-        thread_ids.push_back(tid);
-      } else {
-        remain_workers.push_back(worker);
-      }
-    }
-  }
-  workers.clear();
-  if (remain_workers.size()) {
-    workers = std::move(remain_workers);
-  }
-
+static void ReportThreadIds(std::vector<int32_t> thread_ids, bool is_created) {
   auto* thread = content::ChildThreadImpl::current();
   if (thread) {
     auto host = thread->child_process_host();
@@ -129,16 +92,12 @@ void WidgetBaseUtils::ReportForegroundThreadPool() {
   base::internal::ThreadGroupImpl* foreground_thread_group =
     static_cast<base::internal::ThreadGroupImpl*>(thread_pool->GetForegroundThreadGroup());
   if (foreground_thread_group) {
-    std::vector<scoped_refptr<base::internal::WorkerThread>>& create_workers =
+    std::vector<int32_t> create_workers_thread_ids_ =
       foreground_thread_group->ReportCreateWorkers();
-    if (create_workers.size()) {
-      GetThreadIdsAndReport(create_workers, true);
-    }
-    std::vector<base::PlatformThreadId>& destroy_workers_ids_ =
+    ReportThreadIds(create_workers_thread_ids_, true);
+    std::vector<int32_t> destroy_workers_thread_ids_ =
       foreground_thread_group->ReportDestroyWorkers();
-    if (destroy_workers_ids_.size()) {
-      GetThreadIdsAndReport(destroy_workers_ids_, false);
-    }
+    ReportThreadIds(destroy_workers_thread_ids_, false);
   }
 }
 // LCOV_EXCL_STOP

@@ -195,12 +195,6 @@ class GLOzoneEGLHeadless : public GLOzoneEGL {
 
   // GLOzone:
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-#if false
-  fixme bool CanImportNativePixmap() override {
-    return true;
-  }
-#endif
-
   std::unique_ptr<NativePixmapGLBinding> ImportNativePixmap(
       scoped_refptr<gfx::NativePixmap> pixmap,
       gfx::BufferFormat plane_format,

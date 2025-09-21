@@ -121,7 +121,11 @@ class CORE_EXPORT ArkWebDocumentLoaderExt : public DocumentLoader {
   ArkWebDocumentLoaderExt *AsArkWebDocumentLoaderExt() override { return this; }
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual WebDocumentSubresourceFilter* GetWebSubresourceFilter() override;
+#else
   WebDocumentSubresourceFilter* GetWebSubresourceFilter() override;
+#endif // BUILDFLAG(ARKWEB_TEST)
 
   void SetUserSubresourceFilter(SubresourceFilter*);
   SubresourceFilter* GetUserSubresourceFilter() const {
@@ -130,8 +134,12 @@ class CORE_EXPORT ArkWebDocumentLoaderExt : public DocumentLoader {
 
   void SetWebUserSubresourceFilter(WebDocumentSubresourceFilter*) override;
 
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual WebDocumentSubresourceFilter* GetWebUserSubresourceFilter() override;
+#else
   WebDocumentSubresourceFilter* GetWebUserSubresourceFilter() override;
-#endif
+#endif // BUILDFLAG(ARKWEB_TEST)
+#endif // BUILDFLAG(ARKWEB_ADBLOCK)
 
 #if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(IS_ARKWEB_EXT)
   scoped_refptr<const SharedBuffer> OnGetImageFromCache(const WTF::String& url);

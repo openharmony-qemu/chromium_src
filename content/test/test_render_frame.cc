@@ -435,6 +435,13 @@ void TestRenderFrame::BindToFrame(blink::WebNavigationControl* frame) {
           frame->GetLocalFrameToken()));
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+void TestRenderFrame::SetFrameHostForTest(mojom::FrameHost* frame_host) {
+  frame_host_test_mode = true;
+  frame_host_test = frame_host;
+}
+#endif
+
 mojom::FrameHost* TestRenderFrame::GetFrameHost() {
   // Need to mock this interface directly without going through a binding,
   // otherwise calling its sync methods could lead to a deadlock.
@@ -458,6 +465,12 @@ mojom::FrameHost* TestRenderFrame::GetFrameHost() {
   // Because the first invocation to GetFrameHost() may come while we are inside
   // a message loop already, pumping messags before 1.2 would constitute a
   // nested message loop and is therefore undesired.
+#if BUILDFLAG(ARKWEB_TEST)
+  if (frame_host_test_mode) {
+    frame_host_test_mode = false;
+    return frame_host_test;
+  }
+#endif
   return mock_frame_host_.get();
 }
 

@@ -325,11 +325,6 @@ class CONTENT_EXPORT RenderFrameImpl
   // Returns the unique name of the RenderFrame.
   const std::string& unique_name() const { return unique_name_helper_.value(); }
 
-#if BUILDFLAG(ARKWEB_TEST)
-  bool web_frame_widget_test_mode = false;
-  blink::WebFrameWidget* web_frame_widget_test = nullptr;
-  void SetLocalRootWebFrameWidgetForTest(blink::WebFrameWidget* widget);
-#endif
   // Returns the blink::WebFrameWidget attached to the local root of this
   // frame.
   blink::WebFrameWidget* GetLocalRootWebFrameWidget();
@@ -412,11 +407,6 @@ class CONTENT_EXPORT RenderFrameImpl
 #endif
   blink::WebLocalFrame* GetWebFrame() override;
   const blink::WebLocalFrame* GetWebFrame() const override;
-#if BUILDFLAG(ARKWEB_TEST)
-  bool web_view_test_mode = false;
-  blink::WebView* web_view_test = nullptr;
-  void SetWebViewForTest(blink::WebView* web_view);
-#endif
   blink::WebView* GetWebView() override;
   const blink::WebView* GetWebView() const override;
   const blink::web_pref::WebPreferences& GetBlinkPreferences() override;
@@ -950,26 +940,6 @@ class CONTENT_EXPORT RenderFrameImpl
   FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest,
                            TestOverlayRoutingTokenSendsNow);
   FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, SendUpdateCancelsPending);
-#if BUILDFLAG(ARKWEB_TEST)
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, DidSubresourceFiltered);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, OnUpdateAdBlockEnabledToRender_NoUserFilter);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, OnUpdateAdBlockEnabledToRender_NoDocumentLoader);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, OnUpdateAdBlockEnabledToRender_Filter);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, OnUpdateAdBlockEnabledToRender_UserFilter);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, OnUpdateAdBlockEnabledToRender_WithoutView);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, AddNamedObject);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, NotifyLcpForBlankless_BlanklessKey);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, NotifyLcpForBlankless_NoBlanklessKey);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, PageLoadStartLoggerReport_False);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, PageLoadStartLoggerReport_True);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, PageLoadStartLoggerReport_WithoutView);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, PageLoadFinishedLoggerReport_WithoutView);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, GetNewWindowWebView_WithoutFrameHost);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, GetNewWindowWebView_ReturnFalse);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, GetNewWindowWebView_NoSuccess);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, GetNewWindowWebView_Success);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, GetNewWindowWebView_True);
-#endif
   FRIEND_TEST_ALL_PREFIXES(RenderFrameImplMojoJsDeathTest,
                            EnabledBindingsTampered);
   FRIEND_TEST_ALL_PREFIXES(RenderFrameImplMojoJsDeathTest,

@@ -2093,20 +2093,7 @@ void RenderFrameImpl::GetInterface(
   }
 }
 
-#if BUILDFLAG(ARKWEB_TEST)
-void RenderFrameImpl::SetLocalRootWebFrameWidgetForTest(blink::WebFrameWidget* widget) {
-  web_frame_widget_test_mode = true;
-  web_frame_widget_test = widget;
-}
-#endif
-
 blink::WebFrameWidget* RenderFrameImpl::GetLocalRootWebFrameWidget() {
-#if BUILDFLAG(ARKWEB_TEST)
-  if (web_frame_widget_test_mode){
-    web_frame_widget_test_mode = false;
-    return web_frame_widget_test;
-  }
-#endif
   return frame_->LocalRoot()->FrameWidget();
 }
 
@@ -2477,20 +2464,7 @@ const blink::WebLocalFrame* RenderFrameImpl::GetWebFrame() const {
   return frame_;
 }
 
-#if BUILDFLAG(ARKWEB_TEST)
-void RenderFrameImpl::SetWebViewForTest(blink::WebView* web_view) {
-  web_view_test_mode = true;
-  web_view_test = web_view;
-}
-#endif
-
 blink::WebView* RenderFrameImpl::GetWebView() {
-#if BUILDFLAG(ARKWEB_TEST)
-  if (web_view_test_mode) {
-    web_view_test_mode = false;
-    return web_view_test;
-  }
-#endif
   blink::WebView* web_view = GetWebFrame()->View();
   DCHECK(web_view);
   return web_view;

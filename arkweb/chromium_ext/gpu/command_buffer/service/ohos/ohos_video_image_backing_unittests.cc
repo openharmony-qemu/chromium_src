@@ -37,7 +37,6 @@
 #include "gpu/ipc/service/gpu_channel_test_common.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "ui/gl/android/egl_fence_utils.h"
 #include "ui/gl/gl_bindings.h"
 #include "ui/gl/gl_context.h"
 #include "ui/gl/gl_surface.h"
@@ -63,10 +62,6 @@ public:
     MOCK_METHOD(void, NotifyOverlayPromotion, (bool promotion, const gfx::Rect& bounds), (override));
     MOCK_METHOD(bool, RenderToOverlay, (), (override));
     MOCK_METHOD(bool, TextureOwnerBindsTextureOnUpdate, (), (override));
-#if BUILDFLAG(IS_ANDROID)
-    MOCK_METHOD(std::unique_ptr<base::android::ScopedHardwareBufferFenceSync>,
-                GetAHardwareBuffer, (), (override));
-#endif
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
     MOCK_METHOD(std::unique_ptr<ScopedNativeBufferFenceSync>, GetNativeBuffer, (), (override));
 #endif

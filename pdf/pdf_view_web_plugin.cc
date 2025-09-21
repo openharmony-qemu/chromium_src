@@ -680,6 +680,12 @@ void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
 
   engine_->ScrolledToXPosition(scaled_scroll_position.x());
   engine_->ScrolledToYPosition(scaled_scroll_position.y());
+  
+#if BUILDFLAG(ARKWEB_PDF)
+  SetIsScrolling(true);
+  SetScrollStoppedAfterDelay();
+#endif  // BUILDFLAG(ARKWEB_PDF)
+  
 }
 
 void PdfViewWebPlugin::UpdateFocus(bool focused,

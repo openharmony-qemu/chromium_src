@@ -484,8 +484,10 @@ class NWebDelegateInterface
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   virtual void SetForceEnableZoom(bool forceEnableZoom) = 0;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   virtual bool GetForceEnableZoom() = 0;
 #endif
 

@@ -122,7 +122,12 @@ class CONTENT_EXPORT MediaSessionController
     return nullptr;
   }
 
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif  // ARKWEB_TEST
+
   bool IsMediaSessionNeeded() const;
 
   // Determines whether a session is needed and adds or removes the player

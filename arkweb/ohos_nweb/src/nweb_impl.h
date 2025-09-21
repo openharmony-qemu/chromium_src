@@ -710,8 +710,10 @@ class NWebImpl : public NWeb {
   void AbortDistill();
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   void SetForceEnableZoom(bool forceEnableZoom) const override;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   bool GetForceEnableZoom() const;
 #endif  // ARKWEB_EXT_FORCE_ZOOM
 
@@ -1105,7 +1107,6 @@ class NWebImpl : public NWeb {
   int32_t SetBlanklessLoadingWithKey(const std::string& key, bool isStart) override;
   int64_t GetPreferenceHash();
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
-  void RecordBlanklessFrameSize(uint32_t width, uint32_t height) override;
   bool TriggerBlanklessForUrl(const std::string& url) override;
   void SetVisibility(bool isVisible) override;
 #endif
@@ -1226,8 +1227,6 @@ class NWebImpl : public NWeb {
   std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
   std::atomic<bool> is_user_enable_ = false;
-  uint32_t cur_blankless_frame_width_ = 0;
-  uint32_t cur_blankless_frame_height_ = 0;
 #endif
 
   base::WeakPtrFactory<NWebImpl> weak_factory_{this};

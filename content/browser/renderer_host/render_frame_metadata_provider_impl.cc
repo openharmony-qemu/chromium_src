@@ -11,9 +11,9 @@
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"
 #include "content/browser/renderer_host/frame_token_message_queue.h"
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#endif
+// #if BUILDFLAG(IS_ARKWEB)
+// #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+// #endif
 
 namespace content {
 

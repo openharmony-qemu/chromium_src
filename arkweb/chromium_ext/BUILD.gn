@@ -57,4 +57,23 @@ config("arkweb_base_unittest_config") {
     "-Wl,--wrap=MajorVersion",
     "-Wl,--wrap=SeniorVersion",
   ]
+
+  ldflags += [ 
+    "-Wl,--wrap=OH_Input_CreateDeviceInfo",
+    "-Wl,--wrap=OH_Input_GetDeviceIds",
+    "-Wl,--wrap=OH_CommonEvent_CreateSubscribeInfo",
+    "-Wl,--wrap=OH_CommonEvent_CreateSubscriber",
+    "-Wl,--wrap=OH_CommonEvent_Subscribe",
+    "-Wl,--wrap=OH_NetConn_GetDefaultHttpProxy",
+    "-Wl,--wrap=OH_CommonEvent_UnSubscribe",
+    "-Wl,--wrap=OH_CommonEvent_GetEventFromRcvData",
+    "-Wl,--wrap=OH_Telephony_GetDefaultCellularDataSlotId",
+    "-Wl,--wrap=OH_Telephony_GetNetworkStateForSlot",
+    "-Wl,--wrap=OH_NetConn_RegisterDefaultNetConnCallback",
+    "-Wl,--wrap=OH_NetConn_UnregisterNetConnCallback",
+    "-Wl,--wrap=OH_NetConn_GetConnectionProperties",
+    "-Wl,--wrap=OH_NetConn_GetDefaultNet",
+    "-Wl,--wrap=OH_NetConn_GetAllNets",
+    "-Wl,--wrap=OH_NetConn_GetNetCapabilities",
+  ]
 }

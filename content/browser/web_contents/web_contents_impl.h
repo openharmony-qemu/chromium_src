@@ -1592,7 +1592,12 @@ class CONTENT_EXPORT WebContentsImpl
 
   WebContents* GetOpenedPartitionedPopin() const override;
 
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif  // ARKWEB_TEST
+
   using FrameTreeIterationCallback = base::FunctionRef<void(FrameTree&)>;
   using RenderViewHostIterationCallback =
       base::RepeatingCallback<void(RenderViewHostImpl*)>;
@@ -1703,6 +1708,9 @@ class CONTENT_EXPORT WebContentsImpl
 
   // TODO(brettw) TestWebContents shouldn't exist!
   friend class TestWebContents;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class TestWebContentsImplExt;
+#endif
 
   class RenderWidgetHostDestructionObserver;
   class WebContentsDestructionObserver;

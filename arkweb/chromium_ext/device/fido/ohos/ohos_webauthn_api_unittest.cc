@@ -34,7 +34,13 @@ void OhosWebAuthnApiTest::TearDown() {}
 TEST_F(OhosWebAuthnApiTest, GetClientCapabilitiesTest_001)
 {
     auto ret = OhosWebAuthnApi::Instance()->GetClientCapabilities();
-    EXPECT_TRUE(ret.empty());
+    EXPECT_FALSE(ret.empty());
+}
+
+TEST_F(OhosWebAuthnApiTest, IsUserVerifyingPlatformAuthenticatorAvailableTest_001)
+{
+    auto ret = OhosWebAuthnApi::Instance()->IsUserVerifyingPlatformAuthenticatorAvailable();
+    EXPECT_TRUE(ret);
 }
 
 TEST_F(OhosWebAuthnApiTest, RegisterTest_001)

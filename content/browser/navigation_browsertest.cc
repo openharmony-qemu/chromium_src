@@ -1957,7 +1957,11 @@ class CorsContentBrowserClient : public ContentBrowserTestContentBrowserClient {
       const base::RepeatingCallback<WebContents*()>& wc_getter,
       NavigationUIData* navigation_ui_data,
       FrameTreeNodeId frame_tree_node_id,
-      std::optional<int64_t> navigation_id) override {
+      std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      , bool is_prerendering
+#endif
+      ) override {
     std::vector<std::unique_ptr<blink::URLLoaderThrottle>> throttles;
     throttles.push_back(
         std::make_unique<CorsInjectingUrlLoader>(last_cors_header_value_));

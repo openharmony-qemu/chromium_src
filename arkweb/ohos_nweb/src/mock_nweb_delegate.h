@@ -600,8 +600,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   MOCK_METHOD(void, SetForceEnableZoom, (bool forceEnableZoom), (override));
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   MOCK_METHOD(bool, GetForceEnableZoom, (), (override));
 #endif
 

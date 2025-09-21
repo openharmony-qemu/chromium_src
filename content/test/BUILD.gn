@@ -2974,6 +2974,10 @@ test("content_unittests") {
     "test_render_frame_host_unittest.cc",
   ]
 
+  if (arkweb_unittests) {
+    sources += arkweb_content_browser_test_sources
+  }
+
   if (is_mac) {
     sources += [
       "../browser/child_process_task_port_provider_mac_unittest.cc",
@@ -3574,6 +3578,17 @@ test("content_unittests") {
   # TODO(crbug.com/1293538): Update to check is_cast_audio_only
   if (is_castos || is_cast_android) {
     deps += [ "//chromecast:chromecast_buildflags" ]
+  }
+
+  if (arkweb_test) {
+    sources += arbweb_content_media_test_sources
+    include_dirs = [
+      "//arkweb/ohos_adapter_ndk/interfaces",
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+    ]
+    deps += [
+      "//arkweb/ohos_adapter_ndk:adapter_ndk",
+    ]
   }
 }
 

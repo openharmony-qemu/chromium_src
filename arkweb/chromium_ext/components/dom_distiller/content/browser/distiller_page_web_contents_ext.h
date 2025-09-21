@@ -55,6 +55,11 @@ class DistillerPageWebContentsExt : public DistillerPageWebContents {
       content::NavigationHandle* navigation_handle) override;
   void OnWebContentsDistillationFailed(const std::string& error_message);
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  void DidStartNavigation(content::NavigationHandle* navigation_handle) override;
+  void DidRedirectNavigation(content::NavigationHandle* navigation_handle) override;
+#endif // ARKWEB_USERAGENT
+
   static std::unique_ptr<content::WebContents> resident_web_contents_;
 #endif  // ARKWEB_READER_MODE
 

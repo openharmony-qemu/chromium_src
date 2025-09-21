@@ -1525,3 +1525,5 @@ TEST_F(RenderFrameHostImplTest, CapturedMediaStreamAddedRemoved) {
 }
 
 }  // namespace content
+
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_frame_host_impl_for_include_unittest.cc"

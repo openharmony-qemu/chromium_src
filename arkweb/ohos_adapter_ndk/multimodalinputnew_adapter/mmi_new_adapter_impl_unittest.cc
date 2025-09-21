@@ -15,10 +15,12 @@
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_ndk_api.h"
 #include "arkweb/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl.h"
 
 using namespace testing;
 using namespace OHOS::NWeb;
+using namespace MockNdkApi;
 
 class MMINewAdapterImplTest : public ::testing::Test {};
 
@@ -26,6 +28,7 @@ namespace OHOS::NWeb {
 void OnDeviceAdded(int32_t deviceId);
 void OnDeviceRemoved(int32_t deviceId);
 }
+
 class MockMMIListenerAdapter : public MMIListenerAdapter {
  public:
   MOCK_METHOD(void, OnDeviceAdded, (int32_t deviceId, const std::string& type), (override));
@@ -55,9 +58,8 @@ class MockMMIDeviceInfoAdapter : public MMIDeviceInfoAdapter {
 
 /**
  * @tc.name: MMINewAdapterImplTest_OnDeviceAdded_001.
- * @tc.desc: test of OnDeviceAdded in MMINewAdapterImplTest 
+ * @tc.desc: test of OnDeviceAdded in MMINewAdapterImplTest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MMINewAdapterImplTest, MMINewAdapterImplTest_OnDeviceAdded_001) {
   std::string type;
@@ -68,14 +70,13 @@ TEST_F(MMINewAdapterImplTest, MMINewAdapterImplTest_OnDeviceAdded_001) {
   EXPECT_CALL(*listener, OnDeviceAdded(::testing::_, ::testing::_))
       .WillRepeatedly(::testing::Assign(&callback_called, true));
   OnDeviceAdded(deviceId);
-  EXPECT_EQ(callback_called, true); 
+  EXPECT_EQ(callback_called, true);
 }
 
 /**
  * @tc.name: MMINewAdapterImplTest_OnDeviceRemoved_001.
- * @tc.desc: test of OnDeviceRemoved in MMINewAdapterImplTest 
+ * @tc.desc: test of OnDeviceRemoved in MMINewAdapterImplTest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MMINewAdapterImplTest, MMINewAdapterImplTest_OnDeviceRemoved_001) {
   std::string type;
@@ -86,14 +87,13 @@ TEST_F(MMINewAdapterImplTest, MMINewAdapterImplTest_OnDeviceRemoved_001) {
   EXPECT_CALL(*listener, OnDeviceRemoved(::testing::_, ::testing::_))
       .WillRepeatedly(::testing::Assign(&callback_called, true));
   OnDeviceRemoved(deviceId);
-  EXPECT_EQ(callback_called, true); 
+  EXPECT_EQ(callback_called, true);
 }
 
 /**
  * @tc.name: MMINewAdapterImplTest_RegisterDevListener_001.
- * @tc.desc: test of RegisterDevListener in MMINewAdapterImplTest 
+ * @tc.desc: test of RegisterDevListener in MMINewAdapterImplTest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MMINewAdapterImplTest, MMINewAdapterImplTest_RegisterDevListener_001) {
   std::string type;
@@ -108,9 +108,8 @@ TEST_F(MMINewAdapterImplTest, MMINewAdapterImplTest_RegisterDevListener_001) {
 
 /**
  * @tc.name: MMINewAdapterImplTest_UnregisterDevListener_001.
- * @tc.desc: test of UnregisterDevListener in MMINewAdapterImplTest 
+ * @tc.desc: test of UnregisterDevListener in MMINewAdapterImplTest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MMINewAdapterImplTest, MMINewAdapterImplTest_UnregisterDevListener_001) {
   std::string type = MMINewAdapterImpl::GetInstance().GetType();
@@ -124,21 +123,33 @@ TEST_F(MMINewAdapterImplTest, MMINewAdapterImplTest_UnregisterDevListener_001) {
 
 /**
  * @tc.name: MMINewAdapterImplTest_GetDeviceIds_001.
- * @tc.desc: test of GetDeviceIds in MMINewAdapterImplTest 
+ * @tc.desc: test of GetDeviceIds in MMINewAdapterImplTest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MMINewAdapterImplTest, MMINewAdapterImplTest_GetDeviceIds_001) {
   std::vector<int32_t> ids;
+
+  g_mock_OH_Input_GetDeviceIds = [](int32_t *deviceIds, int32_t inSize, int32_t *outSize) {
+    return __real_OH_Input_GetDeviceIds(deviceIds, -1, outSize);
+  };
   auto result = MMINewAdapterImpl::GetInstance().GetDeviceIds(ids);
+  EXPECT_EQ(result, -1);
+
+  g_mock_OH_Input_GetDeviceIds = [](int32_t *deviceIds, int32_t inSize, int32_t *outSize) {
+    return __real_OH_Input_GetDeviceIds(deviceIds, 0, outSize);
+  };
+  result = MMINewAdapterImpl::GetInstance().GetDeviceIds(ids);
+  EXPECT_EQ(result, 0);
+
+  g_mock_OH_Input_GetDeviceIds = nullptr;
+  result = MMINewAdapterImpl::GetInstance().GetDeviceIds(ids);
   EXPECT_EQ(result, 0);
 }
 
 /**
  * @tc.name: MMINewAdapterImplTest_GetDeviceInfo_001.
- * @tc.desc: test of GetDeviceInfo in MMINewAdapterImplTest 
+ * @tc.desc: test of GetDeviceInfo in MMINewAdapterImplTest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MMINewAdapterImplTest, MMINewAdapterImplTest_GetDeviceInfo_001) {
   int32_t deviceId = 0;
@@ -147,6 +158,13 @@ TEST_F(MMINewAdapterImplTest, MMINewAdapterImplTest_GetDeviceInfo_001) {
   EXPECT_EQ(result, -1);
 
   info = std::make_shared<testing::NiceMock<MockMMIDeviceInfoAdapter>>();
+  g_mock_OH_Input_CreateDeviceInfo = []() {
+    return nullptr;
+  };
+  result = MMINewAdapterImpl::GetInstance().GetDeviceInfo(deviceId, info);
+  EXPECT_EQ(result, -1);
+
+  g_mock_OH_Input_CreateDeviceInfo = nullptr;
   result = MMINewAdapterImpl::GetInstance().GetDeviceInfo(deviceId, info);
   EXPECT_EQ(result, 0);
 }

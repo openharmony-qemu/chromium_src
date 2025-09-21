@@ -77,3 +77,33 @@ config("arkweb_base_unittest_config") {
     "-Wl,--wrap=OH_NetConn_GetNetCapabilities",
   ]
 }
+
+config("arkweb_codec_decoder_adapter_unittest_config") {
+  ldflags = [
+    "-Wl,--wrap=OH_VideoDecoder_Destroy",
+    "-Wl,--wrap=OH_VideoDecoder_CreateByMime",
+    "-Wl,--wrap=OH_VideoDecoder_CreateByName",
+    "-Wl,--wrap=OH_AVFormat_Create",
+    "-Wl,--wrap=OH_VideoDecoder_Configure",
+    "-Wl,--wrap=OH_VideoDecoder_SetSurface",
+    "-Wl,--wrap=OH_NativeWindow_NativeWindowHandleOpt",
+    "-Wl,--wrap=OH_VideoDecoder_Prepare",
+    "-Wl,--wrap=OH_VideoDecoder_Start",
+    "-Wl,--wrap=OH_VideoDecoder_Stop",
+    "-Wl,--wrap=OH_VideoDecoder_Flush",
+    "-Wl,--wrap=OH_VideoDecoder_Reset",
+    "-Wl,--wrap=OH_AVBuffer_SetBufferAttr",
+    "-Wl,--wrap=OH_VideoDecoder_PushInputBuffer",
+    "-Wl,--wrap=OH_VideoDecoder_GetOutputDescription",
+    "-Wl,--wrap=OH_VideoDecoder_RenderOutputBuffer",
+    "-Wl,--wrap=OH_VideoDecoder_RegisterCallback",
+    "-Wl,--wrap=OH_AVBuffer_GetBufferAttr",
+    "-Wl,--wrap=OH_AVCencInfo_SetAlgorithm",
+    "-Wl,--wrap=OH_AVCencInfo_SetSubsampleInfo",
+    "-Wl,--wrap=OH_AVCencInfo_SetMode",
+    "-Wl,--wrap=OH_VideoDecoder_SetDecryptionConfig",
+    "-Wl,--wrap=OH_AVCencInfo_Create",
+    "-Wl,--wrap=OH_AVCencInfo_SetAVBuffer",
+    "-Wl,--wrap=OH_AVCencInfo_Destroy",
+  ]
+}

@@ -636,6 +636,9 @@ void OHOSAudioOutputStream::OnWriteData(void* buffer, int32_t length) {
   if (!running_) {
       return;
   }
+  if (!buffer) {
+      return;
+  }
   base::TimeTicks now = base::TimeTicks::Now();
   base::TimeDelta delay = GetDelay(now);
   if (!callback_) {

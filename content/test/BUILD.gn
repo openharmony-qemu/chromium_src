@@ -3582,6 +3582,9 @@ test("content_unittests") {
 
   if (arkweb_test) {
     sources += arbweb_content_media_test_sources
+    sources += [
+      "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_output_stream_unittest.cc",
+    ]
     include_dirs = [
       "//arkweb/ohos_adapter_ndk/interfaces",
       "//third_party/ohos_ndk/includes/ohos_adapter",

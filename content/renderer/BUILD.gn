@@ -629,7 +629,7 @@ group("for_content_tests") {
     "//content/web_test:web_test_renderer_public_deps",
   ]
 
-  if (!is_component_build) {
+  if (!is_component_build || arkweb_test) {
     public_deps = [ ":renderer" ]
   }
 }

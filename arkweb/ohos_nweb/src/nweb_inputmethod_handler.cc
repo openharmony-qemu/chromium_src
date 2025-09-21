@@ -1014,7 +1014,7 @@ void NWebInputMethodHandler::DeleteForwardHandlerOnUI(int32_t length) {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
     textCursorReady_ += text_cursor_length_;
   }
-  for (int32_t i = 0; i < text_cursor_length_; i++) {
+  for (int32_t i = 0; i < length; i++) {
     keyEvent.type = KEYEVENT_RAWKEYDOWN;
     host->SendKeyEvent(keyEvent);
     keyEvent.type = KEYEVENT_CHAR;
@@ -1052,7 +1052,7 @@ void NWebInputMethodHandler::DeleteBackwardHandlerOnUI(int32_t length) {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
     textCursorReady_ += text_cursor_length_;
   }
-  for (int32_t i = 0; i < text_cursor_length_; i++) {
+  for (int32_t i = 0; i < length; i++) {
     keyEvent.type = KEYEVENT_RAWKEYDOWN;
     host->SendKeyEvent(keyEvent);
     keyEvent.type = KEYEVENT_CHAR;

@@ -416,8 +416,7 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::ReleaseOutputBufferDec(uint32_t
     if (ret != OH_AVErrCode::AV_ERR_OK) {
         return DecoderAdapterCode::DECODER_ERROR;
     }
-    std::unique_lock<std::mutex> lock(bufferMutex_);
-    bufferMap_.erase(index);
+
     return DecoderAdapterCode::DECODER_OK;
 }
 

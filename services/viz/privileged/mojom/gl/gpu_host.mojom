@@ -27,6 +27,8 @@ struct BlanklessSendInfo {
   int32 lcp_time;
   uint64 system_time;
   int64 pref_hash;
+  int64 width;
+  int64 height;
 };
 
 [EnableIf=arkweb_blank_optimize]
@@ -102,8 +104,7 @@ interface GpuHost {
 
   // send snapshot to save
   [EnableIf=arkweb_blank_optimize]
-  SendBlanklessSnapshotInfo(BlanklessSendInfo info, array<gfx.mojom.Rect> quad_list, handle<shared_buffer> buffer,
-                            BlanklessBitmapMetadata metadata);
+  SendBlanklessSnapshotInfo(BlanklessSendInfo info, handle<shared_buffer> buffer, BlanklessBitmapMetadata metadata);
 
   // clear snapshot
   [EnableIf=arkweb_blank_optimize]

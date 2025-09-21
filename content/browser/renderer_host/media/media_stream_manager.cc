@@ -3657,9 +3657,6 @@ void MediaStreamManager::HandleAccessRequestResponse(
 #if BUILDFLAG(ARKWEB_WEBRTC)
       int nweb_id = AsMediaStreamManagerExt()->GetNWebIdMatchStreamType(request->GetTargetRenderFrameHostId());
       if (device.type == MediaStreamType::DEVICE_VIDEO_CAPTURE ||
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-        device.type == MediaStreamType::GUM_DESKTOP_VIDEO_CAPTURE ||
-#endif
         device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE) {
           video_capture_manager()->AsVideoCaptureManagerExt()->BindSessionIdToNWebId(device.session_id(), nweb_id);
       }

@@ -29,7 +29,7 @@ public:
 
     void SetScenario(int32_t scenario) override;
     void SetFixNumber(int32_t number) override;
-    void SetMaxAccuracy(int32_t maxAccuary) override;
+    void SetMaxAccuracy(int32_t maxAccuracy) override;
     void SetDistanceInterval(int32_t disInterval) override;
     void SetTimeInterval(int32_t timeInterval) override;
     void SetPriority(int32_t priority) override;

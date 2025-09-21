@@ -38,7 +38,6 @@ void CodecImage::Initialize(
   DCHECK(output_buffer_renderer);
   output_buffer_renderer_ = std::move(output_buffer_renderer);
   is_texture_owner_backed_ = is_texture_owner_backed;
-  // promotion_hint_cb_ = std::move(promotion_hint_cb);
 }
 
 void CodecImage::AddUnusedCB(UnusedCB unused_cb) {

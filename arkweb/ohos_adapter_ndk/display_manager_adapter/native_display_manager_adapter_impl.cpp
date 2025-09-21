@@ -212,9 +212,9 @@ DisplayOrientation NativeDisplayAdapterImpl::GetDisplayOrientation()
     NativeDisplayManager_ErrorCode errorCode
         = OH_NativeDisplayManager_GetDefaultDisplayOrientation(&displayOrientation);
     if (DISPLAY_MANAGER_OK != errorCode) {
-        return ConvertDisplayOrientationType(displayOrientation);
+        return DisplayOrientation::UNKNOWN;
     }
-    return DisplayOrientation::UNKNOWN;
+    return ConvertDisplayOrientationType(displayOrientation);
 }
 
 FoldStatus NativeDisplayAdapterImpl::GetFoldStatus()

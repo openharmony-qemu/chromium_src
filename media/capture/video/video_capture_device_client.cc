@@ -193,19 +193,12 @@ FourccAndFlip GetFourccAndFlipFromPixelFormat(
     case media::PIXEL_FORMAT_ARGB:
       // Windows platforms e.g. send the data vertically flipped sometimes.
       return {libyuv::FOURCC_ARGB, flip_y};
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_WEBRTC)
     case media::PIXEL_FORMAT_ABGR:
       return {libyuv::FOURCC_ABGR};
 #endif
     case media::PIXEL_FORMAT_MJPEG:
       return {libyuv::FOURCC_MJPG};
-#if false
-#if BUILDFLAG(ARKWEB_WEBRTC)
-    case PIXEL_FORMAT_ABGR:
-      fourcc_format = libyuv::FOURCC_ABGR;
-      break;
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
-#endif
     default:
       NOTREACHED();
   }

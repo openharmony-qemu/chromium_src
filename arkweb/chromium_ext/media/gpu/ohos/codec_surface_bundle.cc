@@ -35,7 +35,7 @@ CodecSurfaceBundle::~CodecSurfaceBundle() {
 }
 
 void* CodecSurfaceBundle::GetOHOSNativeWindow() const {
-  return ohos_native_window_;
+  return ohos_native_window_.get();
 }
 
 }  // namespace media

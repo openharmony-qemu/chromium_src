@@ -53,6 +53,7 @@ BatteryMgrClientAdapterImpl::~BatteryMgrClientAdapterImpl()
 void BatteryMgrClientAdapterImpl::OnBatteryEvent(const CommonEvent_RcvData *data)
 {
     if (data == nullptr ||
+        OH_CommonEvent_GetEventFromRcvData(data) ||
         strcmp(OH_CommonEvent_GetEventFromRcvData(data), COMMON_EVENT_BATTERY_CHANGED)) {
         WVLOG_E("not battery event");
         return;
@@ -134,7 +135,9 @@ bool BatteryMgrClientAdapterImpl::StartListen()
         CommonEvent_ErrCode ret = OH_CommonEvent_Subscribe(commonEventSubscriber_);
         if (ret != COMMONEVENT_ERR_OK) {
             OH_CommonEvent_DestroySubscribeInfo(commonEventSubscriberInfo_);
+            commonEventSubscriberInfo_ = nullptr;
             OH_CommonEvent_DestroySubscriber(commonEventSubscriber_);
+            commonEventSubscriber_ = nullptr;
             WVLOG_E("Subscribe fail. ret: %{public}d", ret);
             return false;
         }

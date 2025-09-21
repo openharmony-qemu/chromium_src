@@ -13,19 +13,41 @@
  * limitations under the License.
  */
 
-#include "arkweb/chromium_ext/content/browser/dfx/appfreeze_monitor_render_impl.h"
+#include "appfreeze_monitor_render_impl.h"
+#include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
+#include "third_party/blink/public/platform/platform.h"
 
 void ReportRenderFreeze() {
-  std::shared_ptr<AppfreezeMonitorImpl> appfreezeMonitorImpl = AppfreezeMonitorImpl::GetInstance();
-  std::lock_guard<std::mutex> appfreeze_monitor_locks(appfreezeMonitorImpl->appfreeze_monitor_lock_);
-  if (appfreezeMonitorImpl->reported_) {
+  std::shared_ptr<AppfreezeMonitorImpl> instance = AppfreezeMonitorImpl::GetInstance();
+  if (instance && !instance->IsReported()) {
+    instance->GetRemoteAndSend();
+  }
+}
+AppfreezeMonitorImpl::AppfreezeMonitorImpl() {
+  Init();
+}
+void AppfreezeMonitorImpl::Init() {
+  if (initialized_) {
     return;
   }
-  appfreezeMonitorImpl->GetRemoteAndSend("PROCESS_FREEZE_WARNING");
-  appfreezeMonitorImpl->reported_ = true;
+  if (blink::Platform::Current() && blink::Platform::Current()->GetBrowserInterfaceBroker()) {
+    blink::Platform::Current()->GetBrowserInterfaceBroker()->GetInterface(
+      remote_.BindNewPipeAndPassReceiver());
+    initialized_ = true;
+  } else {
+    LOG(ERROR) << "Init FreezeReporter failed!";
+    return;
+  }
 }
 
 std::shared_ptr<AppfreezeMonitorImpl> AppfreezeMonitorImpl::GetInstance() {
   static std::shared_ptr<AppfreezeMonitorImpl> instance = std::make_shared<AppfreezeMonitorImpl>();
   return instance;
+}
+
+void AppfreezeMonitorImpl::GetRemoteAndSend() {
+  if (remote_.is_bound()) {
+    remote_->ReportRenderFreeze(""); // the param may be used in the future
+    reported_ = true;
+  }
 }

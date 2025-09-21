@@ -832,6 +832,12 @@ class NWebDelegateInterface
   virtual void WebExtensionContextMenuReloadFocusedFrame() = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  virtual void WebExtensionContextMenuGetFocusedFrameInfo(
+      int32_t& frame_id,
+      std::string& frame_url) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   virtual void EnableViewAutoResize(
       const CefSize& min_size,
@@ -884,9 +890,6 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   virtual void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) = 0;
   virtual int64_t GetPreferenceHash() = 0;
-  virtual void SetNearestSnapshotSize(int32_t width, int32_t height) = 0;
-  virtual int32_t NearestSnapshotWidth() = 0;
-  virtual int32_t NearestSnapshotHeight() = 0;
   virtual int32_t GetWidth() = 0;
   virtual int32_t GetHeight() = 0;
 #endif

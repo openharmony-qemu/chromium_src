@@ -114,6 +114,7 @@ PrintAttributesAdapter PrintDocumentAdapterImpl::ConvertPrintingParameters(const
     printMarginAdapter.bottom = attrs->pageMargin.bottomMargin;
     printMarginAdapter.left = attrs->pageMargin.leftMargin;
     printMarginAdapter.right = attrs->pageMargin.rightMargin;
+    printAttributesAdapter.margin = printMarginAdapter;
     return printAttributesAdapter;
 }
 

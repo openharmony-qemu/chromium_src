@@ -62,7 +62,7 @@ class CompositorUtils {
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
   void SetEnableLowerFrameRate(bool enabled);
   void SetEnableHalfFrameRate(bool enabled);
-  void EvictFrameBackBuffers(bool invisible);
+  void EvictFrameBackBuffers();
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)

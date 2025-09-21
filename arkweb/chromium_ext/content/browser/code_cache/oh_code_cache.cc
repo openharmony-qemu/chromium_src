@@ -13,9 +13,6 @@
  * limitations under the License.
  */
 
-#if false
-#include "base/containers/span.h"
-#endif
 #include "content/browser/code_cache/oh_code_cache.h"
 
 namespace oh_code_cache {

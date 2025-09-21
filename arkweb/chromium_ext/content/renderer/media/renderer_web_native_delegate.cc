@@ -54,14 +54,18 @@ void RendererWebNativeDelegate::RemoveObserver(int native_id) {
 void RendererWebNativeDelegate::WasHidden() {
   for (base::IDMap<Observer*>::iterator it(&id_map_); !it.IsAtEnd();
        it.Advance()) {
-    it.GetCurrentValue()->OnFrameHidden();
+    if (it.GetCurrentValue()) {
+        it.GetCurrentValue()->OnFrameHidden();
+    }
   }
 }
 
 void RendererWebNativeDelegate::WasShown() {
   for (base::IDMap<Observer*>::iterator it(&id_map_); !it.IsAtEnd();
        it.Advance()) {
-    it.GetCurrentValue()->OnFrameShown();
+    if (it.GetCurrentValue()) {
+        it.GetCurrentValue()->OnFrameShown();
+    }
   }
 }
 

@@ -47,10 +47,9 @@ void HostFrameSinkManagerUtils::SetEnableHalfFrameRate(
 }
 
 void HostFrameSinkManagerUtils::EvictFrameBackBuffers(
-    const FrameSinkId& frame_sink_id,
-    bool invisible)
+    const FrameSinkId& frame_sink_id)
 {
-  hostFrameSinkManager->frame_sink_manager_->EvictFrameBackBuffers(frame_sink_id, invisible);
+  hostFrameSinkManager->frame_sink_manager_->EvictFrameBackBuffers(frame_sink_id);
 }
 #endif
 

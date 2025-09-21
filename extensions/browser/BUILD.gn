@@ -510,8 +510,6 @@ source_set("browser_sources") {
     sources += [
       "//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager.h",
       "//arkweb/chromium_ext/extensions/browser/extension_registry_info_manager.cc",
-      "//arkweb/chromium_ext/extensions/browser/extension_icon_image_observer.cc",
-      "//arkweb/chromium_ext/extensions/browser/extension_icon_image_observer.h",
     ]
   }
   #endif

@@ -37,6 +37,7 @@ typedef struct SensorSubscriber {
 } SensorSubscriber;
 std::unordered_map<Sensor_Type, std::shared_ptr<SensorSubscriber>> sensorSubscriberMap;
 std::unordered_map<Sensor_Type, std::shared_ptr<SensorCallbackImpl>> SensorAdapterImpl::sensorCallbackMap;
+std::mutex SensorAdapterImpl::sensorSubscriberMapMutex_;
 std::mutex SensorAdapterImpl::sensorCallbackMapMutex_;
 constexpr double NANOSECONDS_IN_SECOND = 1000000000.0;
 constexpr double DEFAULT_SAMPLE_PERIOD = 200000000.0;
@@ -104,7 +105,7 @@ int32_t SensorAdapterImpl::IsOhosSensorSupported(int32_t sensorTypeId)
         ret = OH_Sensor_GetInfos(nullptr, &count);
         Sensor_Info **sensorInfo = OH_Sensor_CreateInfos(count);
         ret = OH_Sensor_GetInfos(sensorInfo, &count);
-        if (ret != SENSOR_SUCCESS || count < 0) {
+        if (ret != SENSOR_SUCCESS) {
             OH_Sensor_DestroyInfos(sensorInfo, count);
             WVLOG_E("IsOhosSensorSupported Error, ret = %{public}d, count = %{public}d.", ret, count);
             return SENSOR_ERROR;
@@ -180,7 +181,7 @@ double SensorAdapterImpl::GetOhosSensorMinSupportedFrequency(int32_t sensorTypeI
     ret = OH_Sensor_GetInfos(nullptr, &count);
     Sensor_Info **sensorInfo = OH_Sensor_CreateInfos(count);
     ret = OH_Sensor_GetInfos(sensorInfo, &count);
-    if (ret != SENSOR_SUCCESS || sensorInfo == nullptr || count < 0) {
+    if (ret != SENSOR_SUCCESS || sensorInfo == nullptr) {
         OH_Sensor_DestroyInfos(sensorInfo, count);
         WVLOG_E("GetOhosSensorMinSupportedFrequency Error, ret = %{public}d, count = %{public}d.", ret, count);
         return minFrequency;
@@ -226,7 +227,7 @@ double SensorAdapterImpl::GetOhosSensorMaxSupportedFrequency(int32_t sensorTypeI
     ret = OH_Sensor_GetInfos(nullptr, &count);
     Sensor_Info **sensorInfo = OH_Sensor_CreateInfos(count);
     ret = OH_Sensor_GetInfos(sensorInfo, &count);
-    if (ret != SENSOR_SUCCESS || sensorInfo == nullptr || count < 0) {
+    if (ret != SENSOR_SUCCESS || sensorInfo == nullptr) {
         OH_Sensor_DestroyInfos(sensorInfo, count);
         WVLOG_E("GetOhosSensorMaxSupportedFrequency Error, ret = %{public}d, count = %{public}d.", ret, count);
         return maxFrequency;
@@ -319,7 +320,6 @@ int32_t SensorAdapterImpl::SubscribeOhosSensor(int32_t sensorTypeId, int64_t sam
         WVLOG_E("SubscribeOhosSensor error, sensorTypeId is invalid.");
         return SENSOR_PARAMETER_ERROR;
     }
-    std::string userName = SensorTypeToSensorUserName(sensorTypeId);
     Sensor_Subscriber *subscriber = OH_Sensor_CreateSubscriber();
     ret = OH_SensorSubscriber_SetCallback(subscriber, OhosSensorCallback);
     if (ret != SENSOR_SUCCESS) {
@@ -347,6 +347,7 @@ int32_t SensorAdapterImpl::SubscribeOhosSensor(int32_t sensorTypeId, int64_t sam
     sensorSubscriber->subscriber = subscriber;
     sensorSubscriber->id = id;
     sensorSubscriber->attr = attr;
+    std::lock_guard<std::mutex> lock_subscriber(sensorSubscriberMapMutex_);
     sensorSubscriberMap[ohosSensorTypeId] = sensorSubscriber;
     WVLOG_I("SubscribeOhosSensor sensorTypeId:%{public}d,samplingInterval:%{public}ld", sensorTypeId, samplingInterval);
     return SENSOR_SUCCESS;
@@ -359,7 +360,7 @@ int32_t SensorAdapterImpl::RegistOhosSensorCallback(int32_t sensorTypeId,
     int32_t ret = SensorTypeToOhosSensorType(sensorTypeId, &ohosSensorTypeId);
     if (ret == SENSOR_SUCCESS) {
         auto callback = std::make_shared<SensorCallbackImpl>(callbackAdapter);
-	std::lock_guard<std::mutex> lock(sensorCallbackMapMutex_);
+	    std::lock_guard<std::mutex> lock(sensorCallbackMapMutex_);
         sensorCallbackMap[ohosSensorTypeId] = callback;
         return SENSOR_SUCCESS;
     }
@@ -373,6 +374,7 @@ int32_t SensorAdapterImpl::UnsubscribeOhosSensor(int32_t sensorTypeId)
     std::shared_ptr<SensorSubscriber>sensorSubscriber = nullptr;
     int32_t ret = SensorTypeToOhosSensorType(sensorTypeId, &ohosSensorTypeId);
     if (ret == SENSOR_SUCCESS) {
+        std::lock_guard<std::mutex> lock_subscriber(sensorSubscriberMapMutex_);
         auto findIter = sensorSubscriberMap.find(ohosSensorTypeId);
         if (findIter == sensorSubscriberMap.end()) {
             return SENSOR_PARAMETER_ERROR;

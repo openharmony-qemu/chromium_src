@@ -21,6 +21,8 @@ public:
 
   static bool HasOnlyOneShotPlayersPublic(const AudioParameters& parameters);
 
+  static bool HasOneShotPlayersWhenSetMetadataPublic(const AudioParameters& parameters);
+
   static content::MediaSessionImpl::NWebMediaSessionState GetSessionState(const AudioParameters& parameters);
 
   static bool GetPlayingState(const AudioParameters& parameters);
@@ -47,6 +49,8 @@ private:
   static MediaContentType GetContentTypeOnUIThread(const AudioParameters& params);
 
   static bool CheckOneShotPlayersOnUIThread(const AudioParameters& params);
+
+  static bool CheckOneShotPlayersWhenSetMetadataOnUIThread(const AudioParameters& params);
 
   static content::MediaSessionImpl::NWebMediaSessionState
       CheckGetSessionStateOnUIThread(const AudioParameters& params);

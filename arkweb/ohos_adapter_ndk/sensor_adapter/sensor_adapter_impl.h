@@ -52,6 +52,7 @@ public:
 private:
     static void OhosSensorCallback(Sensor_Event* event);
     static std::unordered_map<Sensor_Type, std::shared_ptr<SensorCallbackImpl>> sensorCallbackMap;
+    static std::mutex sensorSubscriberMapMutex_;
     static std::mutex sensorCallbackMapMutex_;
 };
 

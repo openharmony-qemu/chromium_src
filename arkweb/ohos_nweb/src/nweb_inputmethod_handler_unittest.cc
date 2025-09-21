@@ -2323,10 +2323,6 @@ TEST_F(NWebInputMethodHandlerTest, InsertTextHandlerOnUI) {
   inputmethod_handler_->composing_text_.clear();
   inputmethod_handler_->textCursorReady_ = 0;
   inputmethod_handler_->selected_from_ = 0;
-  inputmethod_handler_->keycode_map = {
-      {'A', 1},
-      {'B', 2},
-  };
   const std::u16string empty_text = u"";
   inputmethod_handler_->InsertTextHandlerOnUI(empty_text);
 

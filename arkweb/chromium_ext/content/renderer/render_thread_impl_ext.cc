@@ -257,4 +257,47 @@ void RenderThreadImpl::OnChannelConnected(int32_t peer_pid) {
 }
 #endif
 // LCOV_EXCL_STOP
+
+#if BUILDFLAG(ARKWEB_TEST)
+  const base::TimeDelta& GetMaxIPCLoginInterval() {
+    return kMaxIPCLoginInterval;
+  }
+  
+  base::TimeTicks& GetLastRendererLogSentTime(int policy) {
+    return g_last_renderer_log_sent_time[policy];
+  }
+  
+  void SetLastRendererLogSentTime(int policy, const base::TimeTicks& time) {
+    g_last_renderer_log_sent_time[policy] = time;
+  }
+  
+  bool& GetHasRendererLogDropped(int policy) {
+    return g_has_renderer_log_dropped[policy];
+  }
+
+  void SetHasRendererLogDropped(int policy, bool value) {
+    g_has_renderer_log_dropped[policy] = value;
+  }
+
+  void CallReportRendererLogOnMainThread(int policy, const std::string& msg) {
+    ReportRendererLogOnMainThread(policy, msg);
+  }
+  
+  bool CallHandleFatalMessageForCrashpad(int severity,
+                                               const char* file,
+                                               int line,
+                                               size_t message_start,
+                                               const std::string& string) {
+    return HandleFatalMessageForCrashpad(severity, file, line, message_start, string);
+  }
+  
+  bool CallRenderProcessLogMessageHandler(int severity,
+                                                const char* file,
+                                                int line,
+                                                size_t message_start,
+                                                const std::string& str) {
+    return RenderProcessLogMessageHandler(severity, file, line, message_start, str);
+  }
+#endif
+
 }  // namespace content

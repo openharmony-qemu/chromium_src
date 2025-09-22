@@ -461,3 +461,7 @@ TEST_F(RenderThreadImplBrowserTest, TransferSharedLastForegroundTime) {
 }
 
 }  // namespace content
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/content/renderer/render_thread_impl_ext_unittest.cc"
+#endif

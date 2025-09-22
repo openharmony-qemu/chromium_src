@@ -83,6 +83,13 @@ TEST_F(ArkwebInputRouterImplUtilsTest, TracingAndSceneReport001) {
     WebMouseEvent clickEvent(WebInputEvent::Type::kMouseDown,
         WebInputEvent::kNoModifiers, base::TimeTicks());
     implUtils_->TracingAndSceneReport(clickEvent, latencyInfo);
+
+    GestureEventWithLatencyInfo gesture(
+      WebInputEvent::Type::kGestureScrollUpdate, WebInputEvent::kNoModifiers,
+      base::TimeTicks() , ui::LatencyInfo());
+    implUtils_->prePerfTimeStamp_ = ZERO_VAL;
+    implUtils_->SendGestureEventEx(gesture);
+    EXPECT_NE(implUtils_->prePerfTimeStamp_, ZERO_VAL);
 }
 
 TEST_F(ArkwebInputRouterImplUtilsTest, ProcessFilteredEvent001) {

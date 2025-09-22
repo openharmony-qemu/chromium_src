@@ -5275,7 +5275,9 @@ void NWebHandlerDelegate::RegisterScreenCaptureDelegateListener(
 
 #if BUILDFLAG(ARKWEB_MENU)
 void NWebHandlerDelegate::OnVisibleChanged(bool isVisible) {
-  on_handle_visible_(isVisible);
+  if (!on_handle_visible_.is_null()) {
+    on_handle_visible_.Run(isVisible);
+  }
 }
 
 void NWebHandlerDelegate::ShowMagnifier() {

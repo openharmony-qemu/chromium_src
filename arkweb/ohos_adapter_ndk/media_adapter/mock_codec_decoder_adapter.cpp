@@ -58,7 +58,7 @@ OH_AVErrCode __wrap_OH_VideoDecoder_Destroy(OH_AVCodec *codec) {
     }
 }
 
-OH_AVCodec * __wrap_OH_VideoDecoder_CreateByMime(const char *mime) {
+OH_AVCodec* __wrap_OH_VideoDecoder_CreateByMime(const char *mime) {
     if (OhosInterfaceMock::createByMime == true) {
         return OhosInterfaceMock::GetInstance().OH_VideoDecoder_CreateByMime(mime);
     } else {
@@ -66,7 +66,7 @@ OH_AVCodec * __wrap_OH_VideoDecoder_CreateByMime(const char *mime) {
     }
 }
 
-OH_AVCodec * __wrap_OH_VideoDecoder_CreateByName(const char *name) {
+OH_AVCodec* __wrap_OH_VideoDecoder_CreateByName(const char *name) {
     if (OhosInterfaceMock::createByName == true) {
         return OhosInterfaceMock::GetInstance().OH_VideoDecoder_CreateByName(name);
     } else {
@@ -74,7 +74,7 @@ OH_AVCodec * __wrap_OH_VideoDecoder_CreateByName(const char *name) {
     }
 }
 
-OH_AVFormat * __wrap_OH_AVFormat_Create() {
+OH_AVFormat* __wrap_OH_AVFormat_Create() {
     if (OhosInterfaceMock::formatCreate == true) {
         return OhosInterfaceMock::GetInstance().OH_AVFormat_Create();
     } else {
@@ -99,7 +99,7 @@ OH_AVErrCode __wrap_OH_VideoDecoder_SetSurface(OH_AVCodec *codec, OHNativeWindow
 }
 
 int32_t __wrap_OH_NativeWindow_NativeWindowHandleOpt(OHNativeWindow *window, int code, uint64_t value) {
-    if (OhosInterfaceMock::setSurface == true) {
+    if (OhosInterfaceMock::nativeWindowHandleOpt) {
         return OhosInterfaceMock::GetInstance().OH_NativeWindow_NativeWindowHandleOpt(window, code, value);
     } else {
         return __real_OH_NativeWindow_NativeWindowHandleOpt(window, code, value);
@@ -162,8 +162,8 @@ OH_AVErrCode __wrap_OH_VideoDecoder_PushInputBuffer(OH_AVCodec *buffer, uint32_t
     }
 }
 
-OH_AVFormat * __wrap_OH_VideoDecoder_GetOutputDescription(OH_AVCodec *codec) {
-    if (OhosInterfaceMock::inputBuffer == true) {
+OH_AVFormat* __wrap_OH_VideoDecoder_GetOutputDescription(OH_AVCodec *codec) {
+    if (OhosInterfaceMock::getOutputDescription) {
         return OhosInterfaceMock::GetInstance().OH_VideoDecoder_GetOutputDescription(codec);
     } else {
         return __real_OH_VideoDecoder_GetOutputDescription(codec);
@@ -231,7 +231,7 @@ OH_AVErrCode __wrap_OH_VideoDecoder_SetDecryptionConfig(OH_AVCodec *codec, Media
     }
 }
 
-OH_AVCencInfo * __wrap_OH_AVCencInfo_Create() {
+OH_AVCencInfo* __wrap_OH_AVCencInfo_Create() {
     if (OhosInterfaceMock::infoCreate == true) {
         return OhosInterfaceMock::GetInstance().OH_AVCencInfo_Create();
     } else {
@@ -255,7 +255,7 @@ OH_AVErrCode __wrap_OH_AVCencInfo_Destroy(OH_AVCencInfo *cencInfo) {
     }
 }
 
-OH_AVCapability *__wrap_OH_AVCodec_GetCapabilityByCategory(const char *mime, bool isEncoder,
+OH_AVCapability* __wrap_OH_AVCodec_GetCapabilityByCategory(const char *mime, bool isEncoder,
                                                             OH_AVCodecCategory category) {
     if (OhosInterfaceMock::category == true) {
         return OhosInterfaceMock::GetInstance().OH_AVCodec_GetCapabilityByCategory(mime, isEncoder, category);
@@ -264,7 +264,7 @@ OH_AVCapability *__wrap_OH_AVCodec_GetCapabilityByCategory(const char *mime, boo
     }
 }
 
-const char *__wrap_OH_AVCapability_GetName(OH_AVCapability *capability) {
+const char* __wrap_OH_AVCapability_GetName(OH_AVCapability *capability) {
     if (OhosInterfaceMock::getName == true) {
         return OhosInterfaceMock::GetInstance().OH_AVCapability_GetName(capability);
     } else {

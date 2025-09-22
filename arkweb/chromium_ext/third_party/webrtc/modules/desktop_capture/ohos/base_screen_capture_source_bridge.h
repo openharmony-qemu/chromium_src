@@ -87,6 +87,8 @@ public:
 
     bool WindowCallbackIsExist(int nweb_id);
 
+    std::shared_mutex capture_state_map_lock_;
+
     std::unordered_map<int, OHOS::NWeb::ScreenCaptureStateCodeAdapter> capture_state_code_map_;
 
     base::WeakPtrFactory<BaseScreenCaptureSource> weak_factory_{this};

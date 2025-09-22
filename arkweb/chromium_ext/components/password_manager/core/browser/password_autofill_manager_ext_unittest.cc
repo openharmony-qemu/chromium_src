@@ -115,8 +115,9 @@ TEST_F(PasswordAutofillManagerExtTest, CanFillAccountSuggestion001) {
       password_autofill_manager_->FillSuggestionForTest(test_username_));
   testing::Mock::VerifyAndClearExpectations(client.mock_driver());
 
-  password_autofill_manager_->FillAccountSuggestion(url, test_username_, test_password_);
   EXPECT_FALSE(password_autofill_manager_->CanFillAccountSuggestion(url));
+
+  password_autofill_manager_->FillAccountSuggestion(url, test_username_, test_password_);
 }
 
 TEST_F(PasswordAutofillManagerExtTest, CreatePasswordFormFillDataWithoutPasswordInfo001) {

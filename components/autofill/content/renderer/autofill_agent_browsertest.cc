@@ -1536,6 +1536,6 @@ TEST_F(AutofillAgentTest, DOMContentLoadedEmitsMetric) {
 
 }  // namespace autofill
 
-#if BUILDFLAG(ARKWEB_TEST)
+#if BUILDFLAG(ARKWEB_UNITTESTS)
 #include "arkweb/chromium_ext/components/autofill/content/render/autofill_agent_ext_browsertest.cc"
 #endif

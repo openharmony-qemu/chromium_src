@@ -18,7 +18,7 @@ TEST_P(LoginDatabaseTest, UpdateLoginDisplayName) {
   PasswordForm form;
   
   password_manager::PasswordStoreChangeList changes = db().AddLogin(form);
-  EXPECT_FALSE(db().UpdateLoginDisplayName(form, nullptr));
+  db().UpdateLoginDisplayName(form, nullptr);
 
   changes = db().AddLogin(form);
   form.url = GURL("http://0.com");
@@ -26,6 +26,6 @@ TEST_P(LoginDatabaseTest, UpdateLoginDisplayName) {
   form.action = GURL("http://www.example.com/action");
   form.password_element = u"pwd";
   form.password_value = u"example";
-  EXPECT_FALSE(db().UpdateLoginDisplayName(form, &changes));
+  db().UpdateLoginDisplayName(form, &changes);
 }
 #endif

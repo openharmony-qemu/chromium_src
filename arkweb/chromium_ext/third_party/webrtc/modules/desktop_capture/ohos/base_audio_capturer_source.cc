@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
 
 #include "third_party/webrtc/modules/desktop_capture/ohos/base_audio_capturer_source.h"
 
@@ -184,7 +183,7 @@ void BaseAudioCapturerSource::HandleAudioBuffer(OHOS::NWeb::AudioCaptureSourceTy
     }
   }
 
-   BaseScreenCaptureSource::GetInstance().ReleaseAudioBuffer(type, nwebId_);
+  BaseScreenCaptureSource::GetInstance().ReleaseAudioBuffer(type, nwebId_);
 }
 
 void BaseAudioCapturerSource::SetVolume(double volume) {
@@ -222,5 +221,4 @@ void BaseAudioCapturerSource::ReportError(const std::string& message) {
       FROM_HERE, base::BindOnce(&BaseAudioCapturerSource::NotifyCaptureError,
                                 weak_factory_.GetWeakPtr(), message));
 }
-
 }  // namespace media

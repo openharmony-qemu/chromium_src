@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ 
 
 #include "third_party/webrtc/modules/desktop_capture/ohos/base_audio_capturer_source.h"
 

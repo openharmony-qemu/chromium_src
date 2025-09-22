@@ -69,5 +69,5 @@ void DumpFileUtil::OpenDumpFile(std::string filename, FILE** file) {
     return;
   }
   *file = dumpFile;
-  return;
+  return;	
 }

@@ -1382,7 +1382,9 @@ class CONTENT_EXPORT NavigationRequest
   bool was_reset_for_cross_document_restart() const {
     return was_reset_for_cross_document_restart_;
   }
-
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  void EnableRedirectAbortCancel();
+#endif
  private:
   friend class NavigationRequestTest;
 

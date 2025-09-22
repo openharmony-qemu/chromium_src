@@ -1074,6 +1074,7 @@ void MockPreferenceCefBrowser::UpdateBrowserSettings(
   settings_.universal_access_from_file_urls =
       browser_settings.universal_access_from_file_urls;
 #endif
+  settings_.zoom_control_access = browser_settings.zoom_control_access;
 }
 
 std::string GetSharedRenderProcessToken(
@@ -1188,6 +1189,7 @@ void NWebTestSetBrowserSettings(CefBrowserSettings& browser_settings) {
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   browser_settings.record_whole_document = false;
 #endif  // ARKWEB_SOFTWARE_COMPOSITOR
+  browser_settings.zoom_control_access = true;
 }
 
 bool NWebTestVarifyBrowserSettings(CefBrowserSettings& browser_settings,
@@ -1980,4 +1982,10 @@ TEST(NWebPreferenceDelegateTest, PutWebMediaAVSessionEnabled_BrowserNotNull) {
   browser->SetHost(new MockPreferenceCefBrowserHost());
   preference_delegate->SetBrowser(browser);
   preference_delegate->PutWebMediaAVSessionEnabled(true);
+}
+
+TEST(NWebPreferenceDelegateTest, PutZoomControlAccess) {
+    auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
+    preference_delegate->PutZoomControlAccess(false);
+    EXPECT_FALSE(preference_delegate->IsZoomControlAccess());
 }

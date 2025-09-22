@@ -31,6 +31,7 @@
 #include "capi/nweb_download_delegate_callback.h"
 #include "capi/nweb_extension_api_callback.h"
 #include "capi/nweb_extension_javascript_item.h"
+#include "capi/nweb_extension_load_url_params.h"
 #include "nweb.h"
 #include "nweb_download_callback.h"
 #include "nweb_errors.h"
@@ -207,6 +208,11 @@ class NWebImpl : public NWeb {
   int LoadWithData(const std::string& data,
                    const std::string& mimeType,
                    const std::string& encoding) override;
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  int LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
+                        const std::string& refer, const std::string& headers,
+                        const std::string& post_data, const bool allow_https_upgrade);
+#endif
 
   void RegisterNativeArkJSFunction(
       const char* objName,
@@ -1126,6 +1132,10 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override;
   void OnBrowserBackground() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void EnableHttpsUpgrades(bool enable);
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)

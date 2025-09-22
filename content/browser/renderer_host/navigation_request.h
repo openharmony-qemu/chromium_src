@@ -1379,6 +1379,12 @@ class CONTENT_EXPORT NavigationRequest
 
   void set_force_no_https_upgrade() { force_no_https_upgrade_ = true; }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void ohos_set_https_upgrade(bool is_force_no_https_upgrade) { 
+    force_no_https_upgrade_ = is_force_no_https_upgrade; 
+  }
+#endif
+
   bool was_reset_for_cross_document_restart() const {
     return was_reset_for_cross_document_restart_;
   }

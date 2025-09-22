@@ -220,6 +220,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   int LoadWithData(const std::string& data,
                    const std::string& mimeType,
                    const std::string& encoding) override;
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  int LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
+                        const std::string& refer, const std::string& headers,
+                        const std::string& post_data, const bool allow_https_upgrade) override;
+#endif
   int ContentHeight() override;
 
   void RegisterNativeArkJSFunction(

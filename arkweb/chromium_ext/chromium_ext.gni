@@ -144,6 +144,10 @@ arkweb_render_process_startup_sources = [
   "//arkweb/chromium_ext/content/browser/log_console_message_utils.h",
 ]
 
+arkweb_render_process_startup_unittest_sources = [
+  "//arkweb/chromium_ext/ohos_test/unittest/log_console_message_utils/log_console_message_utils_unittest.cc",
+]
+
 arkweb_components_viz_service_display_sources = [
   "//arkweb/chromium_ext/components/viz/service/display/arkweb_display_utils.cc",
   "//arkweb/chromium_ext/components/viz/service/display/arkweb_display_utils.h",

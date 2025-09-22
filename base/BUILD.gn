@@ -3704,6 +3704,7 @@ test("base_unittests") {
     sources += arkweb_content_common_unittests_sources
     sources += arkweb_content_renderer_unittests_sources
     sources += arkweb_base_ohos_ltpo_unittests_sources
+    sources += arkweb_render_process_startup_unittest_sources
     sources += [
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
     ]

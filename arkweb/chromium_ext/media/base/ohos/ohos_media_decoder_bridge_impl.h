@@ -159,7 +159,6 @@ class MediaCodecDecoderBridgeImpl {
   DecoderAdapterCode SetAVCencInfo(uint32_t index, const DecryptConfig* decrypt_config);
 
   std::atomic<bool> isRunning_ = false;
-  bool isFirstDecFrame_ = true;
   std::shared_ptr<DecoderBridgeSignal> signal_ = nullptr;
   std::shared_ptr<CodecBridgeCallback> cb_ = nullptr;
   std::unique_ptr<MediaCodecDecoderAdapter> videoDecoder_ = nullptr;

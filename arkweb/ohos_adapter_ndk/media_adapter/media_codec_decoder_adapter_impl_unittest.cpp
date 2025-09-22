@@ -495,6 +495,7 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_ConfigureD
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetOutputSurface_015)
 {
     OhosInterfaceMock::setSurface = true;
+    OhosInterfaceMock::nativeWindowHandleOpt = true;
     const std::string validMimetype = "video/avc";
     void *invalidWindow = reinterpret_cast<void *>(0x12345678);
     DecoderAdapterCode ret = mediaCodecDecoderAdapterImpl_->CreateVideoDecoderByMime(validMimetype);
@@ -507,6 +508,7 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetOutputS
         testing::_)).WillOnce(testing::Return(0));
     EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetOutputSurface(invalidWindow), DecoderAdapterCode::DECODER_ERROR);
     OhosInterfaceMock::setSurface = false;
+    OhosInterfaceMock::nativeWindowHandleOpt = false;
 }
 
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetOutputSurface_016)

@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+#ifndef MOCK_CODEC_DECODER_ADAPTER_H
+#define MOCK_CODEC_DECODER_ADAPTER_H
+
 #include "gtest/gtest.h"
 #include <gmock/gmock.h>
 #include <multimedia/drm_framework/native_mediakeysystem.h>
@@ -98,9 +101,9 @@ public:
 extern "C" {
 #endif
     OH_AVErrCode __real_OH_VideoDecoder_Destroy(OH_AVCodec *);
-    OH_AVCodec * __real_OH_VideoDecoder_CreateByMime(const char *);
-    OH_AVCodec * __real_OH_VideoDecoder_CreateByName(const char *);
-    OH_AVFormat * __real_OH_AVFormat_Create();
+    OH_AVCodec* __real_OH_VideoDecoder_CreateByMime(const char *);
+    OH_AVCodec* __real_OH_VideoDecoder_CreateByName(const char *);
+    OH_AVFormat* __real_OH_AVFormat_Create();
     OH_AVErrCode __real_OH_VideoDecoder_Configure(OH_AVCodec *, OH_AVFormat *);
     OH_AVErrCode __real_OH_VideoDecoder_SetSurface(OH_AVCodec *, OHNativeWindow *);
     int32_t __real_OH_NativeWindow_NativeWindowHandleOpt(OHNativeWindow *, int, uint64_t);
@@ -111,7 +114,7 @@ extern "C" {
     OH_AVErrCode __real_OH_VideoDecoder_Reset(OH_AVCodec *);
     OH_AVErrCode __real_OH_AVBuffer_SetBufferAttr(OH_AVBuffer *, const OH_AVCodecBufferAttr *);
     OH_AVErrCode __real_OH_VideoDecoder_PushInputBuffer(OH_AVCodec *, uint32_t);
-    OH_AVFormat * __real_OH_VideoDecoder_GetOutputDescription(OH_AVCodec *);
+    OH_AVFormat* __real_OH_VideoDecoder_GetOutputDescription(OH_AVCodec *);
     OH_AVErrCode __real_OH_VideoDecoder_RenderOutputBuffer(OH_AVCodec *, uint32_t);
     OH_AVErrCode __real_OH_VideoDecoder_RegisterCallback(OH_AVCodec *, OH_AVCodecCallback, void *);
     OH_AVErrCode __real_OH_AVBuffer_GetBufferAttr(OH_AVBuffer *, OH_AVCodecBufferAttr *);
@@ -120,11 +123,11 @@ extern "C" {
                                                         DrmSubsample *);
     OH_AVErrCode __real_OH_AVCencInfo_SetMode(OH_AVCencInfo *, enum DrmCencInfoMode);
     OH_AVErrCode __real_OH_VideoDecoder_SetDecryptionConfig(OH_AVCodec *, MediaKeySession *, bool);
-    OH_AVCencInfo * __real_OH_AVCencInfo_Create();
+    OH_AVCencInfo* __real_OH_AVCencInfo_Create();
     OH_AVErrCode __real_OH_AVCencInfo_SetAVBuffer(OH_AVCencInfo *, OH_AVBuffer *);
     OH_AVErrCode __real_OH_AVCencInfo_Destroy(OH_AVCencInfo *);
-    OH_AVCapability * __real_OH_AVCodec_GetCapabilityByCategory(const char *, bool, OH_AVCodecCategory);
-    const char * __real_OH_AVCapability_GetName(OH_AVCapability *);
+    OH_AVCapability* __real_OH_AVCodec_GetCapabilityByCategory(const char *, bool, OH_AVCodecCategory);
+    const char* __real_OH_AVCapability_GetName(OH_AVCapability *);
 
 #ifdef __cplusplus
 }
@@ -132,3 +135,5 @@ extern "C" {
 
 }  // namespace NWeb
 }  // namespace OHOS
+
+#endif // MOCK_CODEC_DECODER_ADAPTER_H

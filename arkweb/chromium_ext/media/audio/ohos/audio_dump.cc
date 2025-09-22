@@ -71,6 +71,3 @@ void DumpFileUtil::OpenDumpFile(std::string filename, FILE** file) {
   *file = dumpFile;
   return;
 }
-
-
-

@@ -307,6 +307,10 @@ OnReportStatisticLogFunc
 #include "components/prefs/pref_service.h"
 #endif
 #endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+#include "base/ohos/sys_info_utils_ext.h"
+#endif
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -1468,13 +1472,15 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
     return;
   }
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-    .CreateSocPerfClientAdapter()
-    ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
-  ResizeTime_++;
-  content::GetUIThreadTaskRunner({})->PostDelayedTask(
-    FROM_HERE, base::BindOnce(&NWebImpl::DisableBoost, nweb_id_),
-    base::Milliseconds(WEB_RESIZE_CLOSE_DELAY_TIME));
+  if (base::ohos::IsPcDevice() || base::ohos::IsTabletDevice()) {
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .CreateSocPerfClientAdapter()
+      ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
+    ResizeTime_++;
+    content::GetUIThreadTaskRunner({})->PostDelayedTask(
+      FROM_HERE, base::BindOnce(&NWebImpl::DisableBoost, nweb_id_),
+      base::Milliseconds(WEB_RESIZE_CLOSE_DELAY_TIME));
+  }
 #endif
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);

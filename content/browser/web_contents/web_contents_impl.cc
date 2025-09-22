@@ -269,6 +269,12 @@
 #include "content/browser/ohos/date_time_chooser_ohos.h"
 #endif  // ARKWEB_CSS_INPUT_TIME
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+#include "arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_helper.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -5037,6 +5043,19 @@ FrameTree* WebContentsImpl::CreateNewWindow(
   }
 
   auto* new_contents_impl = new_contents.get();
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES) && !defined(COMPONENT_BUILD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+        switches::kEnableNwebEx)) {
+    auto* https_helper = OhosHttpsUpgradesHelper::FromWebContents(this);
+    if (https_helper) {
+      OhosHttpsUpgradesHelper::CreateForWebContents(new_contents_impl);
+      auto* new_https_helper = OhosHttpsUpgradesHelper::FromWebContents(new_contents_impl);
+      if (new_https_helper) {
+        new_https_helper->set_is_arkweb_https_upgrades_enable(https_helper->is_arkweb_https_upgrades_enable());
+      }
+    }
+  }
+#endif
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
   if (delegate_) {
     delegate_->WebContentsCreated(this, render_process_id,

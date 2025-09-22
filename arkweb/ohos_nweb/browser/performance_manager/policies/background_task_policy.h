@@ -74,9 +74,6 @@ class BackgroundTaskPolicy : public GraphOwnedDefaultImpl,
 
   base::WeakPtrFactory<BackgroundTaskPolicy> weak_factory_{this};
 };
-#if BUILDFLAG(ARKWEB_TEST)
-#undef private
-#endif  // ARKWEB_TEST
 }  // namespace policies
 }  // namespace performance_manager
 #endif  // BACKGROUND_TASK_POLICY_H_

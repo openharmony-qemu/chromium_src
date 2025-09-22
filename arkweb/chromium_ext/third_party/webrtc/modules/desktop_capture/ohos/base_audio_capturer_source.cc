@@ -192,6 +192,9 @@ void BaseAudioCapturerSource::SetVolume(double volume) {
 }
 
 void BaseAudioCapturerSource::SetAutomaticGainControl(bool enable) {
+#if BUILDFLAG(ARKWEB_TEST)
+  return;
+#endif  
   NOTREACHED();
 }
 

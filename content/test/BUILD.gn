@@ -1782,6 +1782,9 @@ test("content_browsertests") {
     "../test/url_loader_interceptor_browsertest.cc",
   ]
   if (arkweb_unittests) {
+    sources += [
+      "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_input_stream_unittest.cc",
+    ]
     sources += arkweb_content_renderer_test_sources
   }
   if (is_linux) {

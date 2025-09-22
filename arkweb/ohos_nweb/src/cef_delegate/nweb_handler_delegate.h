@@ -982,6 +982,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                   int event) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  bool OnStartBackgroundTask(int32_t type, const std::string& message) override;
+#endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
+
 #if BUILDFLAG(ARKWEB_PDF)
   void OnPdfScrollAtBottom(const std::string& url) override;
   void OnPdfLoadEvent(int32_t result, const std::string& url) override;

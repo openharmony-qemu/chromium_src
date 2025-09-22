@@ -470,7 +470,11 @@ constexpr LogSeverity LOGGING_0 = LOGGING_ERROR;
 // impossible to stream something like a string directly to an unnamed
 // ostream. We employ a neat hack by calling the stream() member
 // function of LogMessage which seems to avoid the problem.
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#define LOG_STREAM(severity) COMPACT_ARKWEB_LOG_ ## severity.stream()
+#else
 #define LOG_STREAM(severity) COMPACT_GOOGLE_LOG_ ## severity.stream()
+#endif // BUILDFLAG(ARKWEB_LOGGER_REPORT)
 
 #define LOG(severity) LAZY_STREAM(LOG_STREAM(severity), LOG_IS_ON(severity))
 #define LOG_IF(severity, condition) \
@@ -513,6 +517,10 @@ constexpr LogSeverity LOGGING_0 = LOGGING_ERROR;
 #if BUILDFLAG(IS_WIN)
 #define PLOG_STREAM(severity) \
   COMPACT_GOOGLE_LOG_EX_ ## severity(Win32ErrorLogMessage, \
+      ::logging::GetLastSystemErrorCode()).stream()
+#elif BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#define PLOG_STREAM(severity) \
+  COMPACT_ARKWEB_LOG_EX_ ## severity(ErrnoLogMessage, \
       ::logging::GetLastSystemErrorCode()).stream()
 #elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #define PLOG_STREAM(severity) \

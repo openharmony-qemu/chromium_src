@@ -1027,7 +1027,7 @@ void NWebHandlerDelegate::InjectJsToWeb(JsRunTime time) {
 
   InjectJsToWebInner(time, scriptItems, scriptItemsByOrder);
 
-  int count = 0;
+  size_t count = 0;
   for (const auto& item : scriptItemsByOrder) {
     if (scriptItems.find(item) == scriptItems.end()) {
       continue;
@@ -1257,10 +1257,10 @@ bool NWebHandlerDelegate::DoClose(CefRefPtr<CefBrowser> browser) {
         if (GetBrowser() && GetBrowser()->GetHost()) {
             GetBrowser()->GetHost()->SendPipEvent(
               pip_delegate_id_, pip_child_id_, pip_frame_routing_id_,
-              content::PIP_STATE_EXIT);
+              content::PIP_STATE_PAGE_CLOSE);
         }
-        nweb_handler_->OnPip(1, pip_delegate_id_, pip_child_id_,
-                             pip_frame_routing_id_, 0, 0);
+        nweb_handler_->OnPip(content::PIP_STATE_PAGE_CLOSE, pip_delegate_id_,
+                             pip_child_id_, pip_frame_routing_id_, 0, 0);
     }
   }
   // Closing the main window requires special handling. See the DoClose()
@@ -5278,4 +5278,23 @@ void NWebHandlerDelegate::OnPdfLoadEvent(int32_t result, const std::string& url)
   }
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+bool NWebHandlerDelegate::OnStartBackgroundTask(int32_t type,
+                                                const std::string& message) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    return dispatcher_.OnStartBackgroundTask(type, message);
+  }
+#endif  // ARKWEB_NWEB_EX
+  if (web_app_client_extension_listener_ == nullptr ||
+      web_app_client_extension_listener_->OnStartBackgroundTask == nullptr) {
+    LOG(ERROR) << "NWebHandlerDelegate::OnStartBackgroundTask failed for "
+                  "nullptr. default return true";
+    return true;
+  }
+  return web_app_client_extension_listener_->OnStartBackgroundTask(
+      type, message, web_app_client_extension_listener_->nweb_id);
+}
+#endif  // RKWEB_PERFORMANCE_PERSISTENT_TASK
 }  // namespace OHOS::NWeb

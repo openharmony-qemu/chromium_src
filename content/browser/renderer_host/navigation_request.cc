@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
@@ -2415,7 +2416,11 @@ void NavigationRequest::BeginNavigation() {
             "Protected Audience/selectURL will deprecate supporting iframes to "
             "render the winning ad/selected URL. "
             "Please use fenced frames instead. See "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+            "https://x.x.x"
+#else
             "https://developer.chrome.com/en/docs/privacy-sandbox/fenced-frame/"
+#endif
             "#examples");
       }
     }
@@ -2672,9 +2677,7 @@ void NavigationRequest::BeginNavigationImpl() {
   SetState(WILL_START_NAVIGATION);
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   if (frame_tree_node_->IsMainFrame()) {
-    LOG(INFO) << "event_message: start a navigation url domain: "
-              << (common_params_ ? GetDomainAndRegistry(common_params_->url,
-                  net::registry_controlled_domains::INCLUDE_PRIVATE_REGISTRIES) : "")
+    LOG(INFO) << "event_message: "
               << " is_browser_initiated_: "
               << commit_params_->is_browser_initiated
               << " was_redirected_: " << was_redirected_
@@ -7025,7 +7028,11 @@ NavigationRequest::CheckCredentialedSubresource() const {
   const char* console_message =
       "Subresource requests whose URLs contain embedded credentials (e.g. "
       "`https://user:pass@host/`) are blocked. See "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "https://x.x.x"
+#else
       "https://www.chromestatus.com/feature/5669008342777856 for more "
+#endif
       "details.";
 #else
   const char* console_message =
@@ -7346,7 +7353,11 @@ void NavigationRequest::RecordDownloadUseCountersPrePolicyCheck() {
         base::StringPrintf(
             "Navigating a cross-origin opener to a download (%s) is "
             "deprecated, see "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+            "https://x.x.x",
+#else
             "https://www.chromestatus.com/feature/5742188281462784.",
+#endif
             common_params_->url.spec().c_str()));
     GetContentClient()->browser()->LogWebFeatureForCurrentPage(
         rfh, blink::mojom::WebFeature::kOpenerNavigationDownloadCrossOrigin);

@@ -2728,7 +2728,7 @@ void NWebDelegate::RegisterNativeScrollCallback(
 #if BUILDFLAG(ARKWEB_JSPROXY)
 void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
-    int count = 0;
+    size_t count = 0;
     if (scriptItems.size() == 0) {
       GetBrowser()->GetHost()->JavaScriptOnDocumentStart("", std::vector<CefString>(),
                                                          true);
@@ -2760,7 +2760,7 @@ void NWebDelegate::JavaScriptOnDocumentStartByOrder(
       GetBrowser()->GetHost()->JavaScriptOnDocumentStart("", std::vector<CefString>(),
                                                          true);
     }
-    int count = 0;
+    size_t count = 0;
     for (const auto& item : scriptItemsByOrder) {
       if (scriptItems.find(item) == scriptItems.end()) {
         continue;
@@ -2792,7 +2792,7 @@ void NWebDelegate::JavaScriptOnDocumentEndByOrder(
       GetBrowser()->GetHost()->JavaScriptOnDocumentEnd("", std::vector<CefString>(),
                                                        true);
     }
-    int count = 0;
+    size_t count = 0;
     for (const auto& item : scriptItemsByOrder) {
       if (scriptItems.find(item) == scriptItems.end()) {
         continue;
@@ -2824,7 +2824,7 @@ void NWebDelegate::JavaScriptOnHeadReadyByOrder(
       GetBrowser()->GetHost()->JavaScriptOnHeadReady("", std::vector<CefString>(),
                                                      true);
     }
-    int count = 0;
+    size_t count = 0;
     for (const auto& item : scriptItemsByOrder) {
       if (scriptItems.find(item) == scriptItems.end()) {
         continue;
@@ -2902,7 +2902,7 @@ void NWebDelegate::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
       GetBrowser()->GetHost()->JavaScriptOnDocumentEnd("", std::vector<CefString>(),
                                                        true);
     }
-    int count = 0;
+    size_t count = 0;
     for (auto item : scriptItems) {
       count++;
       CefString script = item.first;
@@ -3047,12 +3047,16 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
   }
 #endif  // ARKWEB_DRAG_DROP
 
-  if (!GetBrowser().get() || !render_handler_) {
-    LOG(ERROR) << "browser or render_handler is nullptr";
+  if (!GetBrowser().get() || !GetBrowser()->GetHost() || !render_handler_) {
+    LOG(ERROR) << "browser or host or render_handler is nullptr";
     return;
   }
   CefMouseEvent event;
   float ratio = render_handler_->GetVirtualPixelRatio();
+  if (ratio <= 0) {
+    LOG(ERROR) << "get ratio invalid: " << ratio;
+    return;
+  }
   event.x = dragEvent.x / ratio;
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
   event.y =
@@ -3062,6 +3066,10 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
 #endif
   event.modifiers = EVENTFLAG_LEFT_MOUSE_BUTTON;
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (!handler_delegate_) {
+    LOG(ERROR) << "handler_delegate is nullptr";
+    return;
+  }
   switch (dragEvent.action) {
     case DelegateDragAction::DRAG_START:
       LOG(DEBUG) << "DragDrop event SendDragEvent start webId:"
@@ -3102,7 +3110,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
       handler_delegate_->SetDragEnter(false);
       LOG(INFO) << "DragDrop event SendDragEvent drop webId:"
                 << GetBrowser()->GetNWebId();
-      if (render_handler_) {
+      if (render_handler_ && render_handler_->GetDragData()) {
         auto drag_data1 = render_handler_->GetDragData();
         auto fragment1 = drag_data1->GetFragmentText();
         LOG(DEBUG) << "DragDrop drag data GetFragmentText:"
@@ -3117,7 +3125,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
                            link_url1, link_html1);
 #endif
       } else {
-        LOG(ERROR) << "DragDrop drag data render_handler_ nullptr";
+        LOG(ERROR) << "DragDrop drag data nullptr";
       }
 
       GetBrowser()->GetHost()->DragTargetDrop(event);

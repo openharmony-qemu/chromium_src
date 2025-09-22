@@ -4,6 +4,7 @@
 
 #ifndef COMPONENTS_COMMERCE_CORE_COMMERCE_CONSTANTS_H_
 #define COMPONENTS_COMMERCE_CORE_COMMERCE_CONSTANTS_H_
+#include "arkweb/build/features/features.h"
 
 namespace commerce {
 
@@ -61,7 +62,11 @@ inline constexpr char kOAuthName[] = "chromememex_svc";
 
 // OAuth scope used for network request.
 inline constexpr char kOAuthScope[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://www.googleapis.com/auth/chromememex";
+#endif
 
 // Open graph keys.
 inline constexpr char kOgImage[] = "image";

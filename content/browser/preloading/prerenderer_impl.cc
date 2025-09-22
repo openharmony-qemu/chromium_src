@@ -11,6 +11,7 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "content/browser/preloading/prefetch/no_vary_search_helper.h"
 #include "content/browser/preloading/prefetch/prefetch_document_manager.h"
@@ -264,7 +265,11 @@ bool PrerendererImpl::MaybePrerender(
         base::StringPrintf(
             "The SpeculationRules API does not support cross-site prerender "
             "yet (initiator origin: %s, prerender origin: %s). "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+            "https://x.x.x",
+#else
             "https://crbug.com/1176054 tracks cross-site support.",
+#endif
             rfhi.GetLastCommittedOrigin().Serialize().c_str(),
             url::Origin::Create(candidate->url).Serialize().c_str()));
   }

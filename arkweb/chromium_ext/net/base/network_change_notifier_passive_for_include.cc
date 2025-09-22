@@ -176,7 +176,7 @@ void NetConnCallbackImpl::ConnectionTypeChangedTo(
   }
 }
 
-std::shared_ptr<NetConnCallbackImpl> g_net_connect_callback = nullptr;
+base::NoDestructor<std::shared_ptr<NetConnCallbackImpl>> g_net_connect_callback(nullptr);
 int32_t g_callback_id = -1;
 #endif
 
@@ -189,10 +189,10 @@ class NetworkChangeNotifierPassiveUtils {
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
   static void RegisterOhosNetConnCallback(
       raw_ptr<NetworkChangeNotifierPassive> obj) {
-    g_net_connect_callback = std::make_shared<NetConnCallbackImpl>(obj);
+    *g_net_connect_callback = std::make_shared<NetConnCallbackImpl>(obj);
     if (obj->ohos_net_conn_adapter_) {
       g_callback_id = obj->ohos_net_conn_adapter_->RegisterNetConnCallback(
-          g_net_connect_callback);
+          *g_net_connect_callback);
       if (g_callback_id < 0) {
         LOG(ERROR) << "register ohos net connect callback failed.";
       }
@@ -241,8 +241,8 @@ NetworkChangeNotifierPassive::GetCurrentDnsServers() {
 
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 void NetworkChangeNotifierPassive::BindDnsToNetwork(int32_t network_for_dns) {
-  if (g_net_connect_callback) {
-    g_net_connect_callback->BindDnsToNetwork(network_for_dns);
+  if (*g_net_connect_callback) {
+    (*g_net_connect_callback)->BindDnsToNetwork(network_for_dns);
   }
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   network_for_dns_ = network_for_dns;

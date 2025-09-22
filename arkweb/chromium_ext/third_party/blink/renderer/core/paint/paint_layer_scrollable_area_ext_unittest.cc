@@ -93,6 +93,7 @@ TEST_P(PaintLayerTest, UpdateScrollbarByScale001) {
   scrollable_area_ext->UpdateScrollbarByScale(true);
 
   scrollable_area_ext->UpdateScrollbarByScale(false);
+  EXPECT_FALSE(scrollable_area_ext->HasScrollbarAvoidCorner());
 }
 
 TEST_P(PaintLayerTest, HasScrollbarAvoidCorner001) {

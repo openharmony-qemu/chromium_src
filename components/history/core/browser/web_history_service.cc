@@ -8,6 +8,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/json/json_reader.h"
@@ -42,7 +43,12 @@ namespace history {
 
 namespace {
 
-const char kHistoryOAuthScope[] = "https://www.googleapis.com/auth/chromesync";
+const char kHistoryOAuthScope[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
+    "https://www.googleapis.com/auth/chromesync";
+#endif
 
 const char kHistoryQueryHistoryUrl[] =
     "https://history.google.com/history/api/lookup?client=chrome";

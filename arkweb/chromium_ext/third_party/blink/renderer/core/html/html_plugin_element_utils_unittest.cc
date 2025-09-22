@@ -51,6 +51,14 @@ class HTMLPlugInElementUtilsTest : public PageTestBase {
     plugin_->native_loader_ = native_loader;
   }
 
+  void ClearBufferedParamChanges() {
+    utils_->buffered_param_changes_.clear();
+  }
+
+  void AppendBufferedParamChanges(const Vector<ParamChangeInfo>& changes) {
+    utils_->buffered_param_changes_.AppendVector(changes);
+  }
+
   void TearDown() override {
     PageTestBase::TearDown();
   }
@@ -124,6 +132,26 @@ TEST_F(HTMLPlugInElementUtilsTest, SetNativeEmbedOverlayInfinity_ChangeWithoutLo
   SetNativeLoader(nullptr);
   utils_->SetNativeEmbedOverlayInfinity(true);
   EXPECT_TRUE(utils_->IsOverlayInfinity());
+}
+
+TEST_F(HTMLPlugInElementUtilsTest, ProcessParamChanges) {
+  Vector<ParamChangeInfo> param_changes;
+  utils_->ProcessParamChanges(param_changes);
+}
+
+TEST_F(HTMLPlugInElementUtilsTest, ProcessBufferedParamChanges001) {
+  ClearBufferedParamChanges();
+  utils_->ProcessBufferedParamChanges();
+}
+
+TEST_F(HTMLPlugInElementUtilsTest, ProcessBufferedParamChanges002) {
+  Vector<ParamChangeInfo> param_changes;
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kAdd,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  AppendBufferedParamChanges(param_changes);
+  utils_->ProcessBufferedParamChanges();
 }
 
 }  // namespace blink

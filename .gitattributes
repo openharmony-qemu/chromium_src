@@ -31,3 +31,8 @@ ohos_sdk/previewer-linux-x64-5.1.0.107-Release.zip filter=lfs diff=lfs merge=lfs
 ohos_sdk/toolchains-linux-x64-5.1.0.107-Release.zip filter=lfs diff=lfs merge=lfs -text
 /ohos_ndk/toolchains/llvm/bin/clang-12 filter=lfs diff=lfs merge=lfs -text
 /ohos_ndk/toolchains/llvm/lib/liblldb.so.12.0.1 filter=lfs diff=lfs merge=lfs -text
+/third_party/llvm-build/Release+Asserts/bin/clang filter=lfs diff=lfs merge=lfs -text
+/third_party/node/linux/node-linux-x64/bin/node filter=lfs diff=lfs merge=lfs -text
+/third_party/rust-toolchain/.Linux_x64_rust-toolchain-11339a0ef5ed586bb7ea4f85a9b7287880caac3a-1-llvmorg-22-init-14273-gea10026b.tar.xz filter=lfs diff=lfs merge=lfs -text
+/third_party/rust-toolchain/lib/libclang.so.22.0.0git filter=lfs diff=lfs merge=lfs -text
+/third_party/rust-toolchain/lib/librustc_driver-6d67c6991b4c2da0.so filter=lfs diff=lfs merge=lfs -text

@@ -212,13 +212,13 @@ void BaseWindowCapturer::HandleBuffer() {
   char* pSrcData = (char*)(buffer->GetVirAddr());
   if (!pData || !pSrcData) {
     LOG(ERROR) << "data or GetVirAddr failed";
-     BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
+    BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
     return;
   }
   for (int32_t i = 0; i < height; i++) {
     if (memcpy_s(pData, frameStride, pSrcData, frameStride) != EOK) {
       LOG(ERROR) << "data memcpy_s failed";
-       BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
+      BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
       return;
     }
     pData += frameStride;
@@ -231,7 +231,7 @@ void BaseWindowCapturer::HandleBuffer() {
     webrtc::MutexLock lock(&current_frame_lock_);
     current_frame_ = std::move(current_frame);
   }
-   BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
+  BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
 }
 // LCOV_EXCL_STOP
 

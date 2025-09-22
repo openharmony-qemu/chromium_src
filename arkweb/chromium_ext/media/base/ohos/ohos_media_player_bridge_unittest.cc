@@ -580,16 +580,8 @@ TEST_F(OHOSMediaPlayerBridgeTests, Pause_010) {
             std::string::npos);
 }
 
-TEST_F(OHOSMediaPlayerBridgeTests, SeekTo_001) {
-  bridge->player_state_ = OHOS::NWeb::PlayerAdapter::PLAYER_PLAYBACK_COMPLETE;
-  bridge->seeking_on_playback_complete_ = false;
-  bridge->SeekTo(time_delta);
-  EXPECT_TRUE(bridge->seeking_on_playback_complete_);
-}
-
 TEST_F(OHOSMediaPlayerBridgeTests, SeekTo_002) {
   bridge->player_state_ = OHOS::NWeb::PlayerAdapter::PLAYER_STOPPED;
-  bridge->seeking_on_playback_complete_ = false;
   bridge->prepared_ = true;
   auto mock_player_adapter_ = std::make_unique<MockPlayerAdapter>();
   EXPECT_CALL(*mock_player_adapter_,
@@ -820,21 +812,12 @@ TEST_F(OHOSMediaPlayerBridgeTests, GetDuration_003) {
   EXPECT_FALSE(bridge->player_);
 }
 
-TEST_F(OHOSMediaPlayerBridgeTests, GetMediaTime_001) {
-  bridge->pending_seek_ = time_delta;
-  bridge->prepared_ = true;
-  bridge->seeking_on_playback_complete_ = false;
-  bridge->seek_complete_ = false;
-  bridge->player_ = std::make_unique<MockPlayerAdapter>();
-  base::TimeDelta time = bridge->GetMediaTime();
-  EXPECT_EQ(time, time_delta);
-}
-
 TEST_F(OHOSMediaPlayerBridgeTests, GetMediaTime_002) {
   bridge->pending_seek_ = time_delta;
   bridge->prepared_ = true;
-  bridge->seeking_on_playback_complete_ = true;
   bridge->player_ = std::make_unique<MockPlayerAdapter>();
+  bridge->seek_complete_ = false;
+  bridge->fake_seek_complete_ = false;
   base::TimeDelta time = bridge->GetMediaTime();
   EXPECT_EQ(time, time_delta);
 }
@@ -861,11 +844,9 @@ TEST_F(OHOSMediaPlayerBridgeTests, GetMediaTime_005) {
   EXPECT_CALL(*mock_player_adapter_, GetCurrentTime(value)).Times(1);
   bridge->player_ = std::move(mock_player_adapter_);
   bridge->prepared_ = true;
-  bridge->seeking_on_playback_complete_ = false;
   bridge->seek_complete_ = true;
   bridge->GetMediaTime();
   EXPECT_TRUE(bridge->prepared_);
-  EXPECT_FALSE(bridge->seeking_on_playback_complete_);
   EXPECT_TRUE(bridge->seek_complete_);
 }
 
@@ -876,7 +857,7 @@ TEST_F(OHOSMediaPlayerBridgeTests, GetMediaTime_006) {
   EXPECT_CALL(*mock_player_adapter_, GetCurrentTime(value)).WillOnce(Return(1));
   bridge->player_ = std::move(mock_player_adapter_);
   bridge->prepared_ = true;
-  bridge->seeking_on_playback_complete_ = false;
+  bridge->fake_seek_complete_ = false;
   bridge->seek_complete_ = true;
   base::TimeDelta time = bridge->GetMediaTime();
   EXPECT_EQ(time, base::Milliseconds(value));

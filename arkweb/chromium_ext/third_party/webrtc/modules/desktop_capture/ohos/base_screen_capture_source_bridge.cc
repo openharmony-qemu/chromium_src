@@ -294,7 +294,7 @@ class OHOSScreenCaptureCallback
   void BaseScreenCaptureSource::ReleaseCapture(int nweb_id) {
     LOG(INFO) << "BaseScreenCaptureSource Release Capture";
 
-     {
+    {
       std::unique_lock<std::shared_mutex> lock(screen_capture_map_lock_);
       auto screen_capture_adapter = screen_capture_adapter_map_.find(nweb_id);
       if (screen_capture_adapter != screen_capture_adapter_map_.end()) {
@@ -383,7 +383,6 @@ class OHOSScreenCaptureCallback
   }
 
   // Not yet used
-
   bool BaseScreenCaptureSource::ScreenCaptureAdapterIsExist(int nweb_id) {
     std::shared_lock<std::shared_mutex> lock(screen_capture_map_lock_);
     auto it = screen_capture_adapter_map_.find(nweb_id);

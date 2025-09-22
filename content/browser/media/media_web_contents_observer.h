@@ -70,6 +70,7 @@ enum PictureInPictureState {
   PIP_STATE_RESIZE,
   PIP_STATE_NONE,
   PIP_STATE_UPDATE_SURFACE,
+  PIP_STATE_PAGE_CLOSE,
 };
 #endif
 

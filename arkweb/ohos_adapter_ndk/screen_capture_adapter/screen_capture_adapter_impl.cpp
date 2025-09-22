@@ -382,7 +382,7 @@ void ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnStateChange(struct OH_AVSc
 
 ScreenCaptureAdapterImpl::~ScreenCaptureAdapterImpl()
 {
-    WVLOG_I("ScreenCaptureAdapterImpl::~ScreenCaptureAdapterImpl, nweb_id = %{public}d", callback_info_.nweb_id);
+    WVLOG_I("ScreenCaptureAdapterImpl::~ScreenCaptureAdapterImpl, nweb_id = %{public}d", nweb_id_);
     {
         std::unique_lock<std::shared_mutex> lock(surface_map_lock_);
         auto video = bufferAvailableQueueMap_.find(nweb_id_);

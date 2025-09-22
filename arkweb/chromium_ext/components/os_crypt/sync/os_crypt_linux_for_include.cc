@@ -101,22 +101,6 @@ static std::string GetKeyFromAsset() {
     return std::string();
   }
 
-  std::string assetHandle;
-  bool res = base::ReadFileToString(key_file, &assetHandle);
-  if (!res) {
-    LOG(ERROR) << "[Autofill] read assethandle file failed, errorcode = 2.";
-    g_browser_process->local_state()->SetBoolean(
-        browser_prefs::kMigratePasswordsToPasswordVault, true);
-    return std::string();
-  }
-
-  if (assetHandle.empty()) {
-    LOG(INFO) << "[Autofill] assethandle is empty, not need to migrate.";
-    g_browser_process->local_state()->SetBoolean(
-        browser_prefs::kMigratePasswordsToPasswordVault, true);
-    return std::string();
-  }
-
   std::string local_key = AssetQuery(key_file);
   return local_key;
 }

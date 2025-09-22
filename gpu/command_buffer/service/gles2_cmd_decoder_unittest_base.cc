@@ -441,8 +441,8 @@ ContextResult GLES2DecoderTestBase::MaybeInitDecoderWithWorkarounds(
 #endif
 
   if (init.context_type == CONTEXT_TYPE_WEBGL2 &&
-      group_->feature_info()->gl_version_info().ises3) {
-    EAPECT_CALL(*gl_, Enable(GL_PRIMITIVE_RESTART_FIXED_INDEX))
+      group_->feature_info()->gl_version_info().is_es3) {
+    EXPECT_CALL(*gl_, Enable(GL_PRIMITIVE_RESTART_FIXED_INDEX))
          .Times(1)
          .RetiresOnSaturation();
   }

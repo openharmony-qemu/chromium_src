@@ -25,7 +25,7 @@ class TestDelegate : public ProxyConfigServiceOHOS::Delegate {
   using Delegate::Delegate;
 
   void SetHasProxyOverride(bool value) { has_proxy_override_ = value; }
-  bool GetHasProxyOverride(bool value) { return has_proxy_override_; }
+  bool GetHasProxyOverride() { return has_proxy_override_; }
   void SetExcludePacUrl(bool value) { exclude_pac_url_ = value; }
   void TestSetNewConfigInMainSequence(
       const ProxyConfigWithAnnotation& proxy_config) {

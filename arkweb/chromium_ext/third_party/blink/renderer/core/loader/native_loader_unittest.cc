@@ -259,4 +259,31 @@ TEST_F(NativeLoaderTest, ReportFirstPaintTime) {
   ReportFirstPaintTime(frame_timing_details);
 }
 
+TEST_F(NativeLoaderTest, ProcessParamChanges001) {
+  Vector<ParamChangeInfo> param_changes;
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kAdd,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kUpdate,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kDelete,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  loader_->ProcessParamChanges(param_changes);
+}
+
+TEST_F(NativeLoaderTest, ProcessPendingParamChanges001) {
+  SetNativeEmbedId(-1);
+  loader_->ProcessPendingParamChanges();
+}
+
+TEST_F(NativeLoaderTest, ProcessPendingParamChanges002) {
+  SetNativeEmbedId(1);
+  loader_->ProcessPendingParamChanges();
+}
+
 }  // namespace blink

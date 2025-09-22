@@ -1865,10 +1865,6 @@ void NWebDelegate::PutBackgroundColor(int color) const {
     preference_delegate_->SetBackgroundColor(color);
   }
 #endif  // BUILDFLAG(ARKWEB_BACKGROUND_COLOR)
-  auto browser = GetBrowser();
-  if (browser != nullptr && browser->GetHost() != nullptr) {
-    browser->GetHost()->NotifyScreenInfoChanged();
-  }
 }
 
 void NWebDelegate::InitialScale(float scale) const {

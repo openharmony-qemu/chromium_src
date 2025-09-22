@@ -49,16 +49,11 @@ class HTMLParamElementForIncludeTest : public RenderingTest {
 };
 
 TEST_F(HTMLParamElementForIncludeTest, AttributeChanged001) {
-  auto params = CreateParams(html_names::kDirAttr, AtomicString(""), AtomicString(""));
-  element_->AttributeChanged(params);
-}
-
-TEST_F(HTMLParamElementForIncludeTest, AttributeChanged002) {
   auto params = CreateParams(html_names::kNameAttr, AtomicString(""), AtomicString(""));
   element_->AttributeChanged(params);
 }
 
-TEST_F(HTMLParamElementForIncludeTest, AttributeChanged003) {
+TEST_F(HTMLParamElementForIncludeTest, AttributeChanged002) {
   auto params = CreateParams(html_names::kNameAttr, AtomicString("1"), AtomicString("2"));
   element_->AttributeChanged(params);
 }

@@ -1020,19 +1020,21 @@ TEST_F(OHOSAudioOutputStreamTest, OnWriteData002) {
   stream_->callback_ = nullptr;
   stream_->OnWriteData(nullptr, 0);
   std::string log_output = testing::internal::GetCapturedStderr();
-  EXPECT_NE(log_output.find("OnWriteData failed, callback_ is nullptr"),
+  EXPECT_EQ(log_output.find("OnWriteData failed, callback_ is nullptr"),
             std::string::npos);
 }
 
 TEST_F(OHOSAudioOutputStreamTest, OnWriteData003) {
+  uint8_t* buffer = new uint8_t[10];
+  buffer[0] = 97;
   stream_->running_ = true;
-  MockAudioSourceCallback callback;
-  stream_->callback_ = &callback;
+  stream_->callback_ = nullptr;
   testing::internal::CaptureStderr();
-  stream_->OnWriteData(nullptr, 0);
+  stream_->OnWriteData(buffer, 0);
   std::string log_output = testing::internal::GetCapturedStderr();
-  EXPECT_EQ(log_output.find("OnWriteData failed, callback_ is nullptr"),
+  EXPECT_NE(log_output.find("OnWriteData failed, callback_ is nullptr"),
             std::string::npos);
+  delete[] buffer;          
 }
 
 TEST_F(OHOSAudioOutputStreamTest, OnWriteData004) {
@@ -1042,7 +1044,11 @@ TEST_F(OHOSAudioOutputStreamTest, OnWriteData004) {
   MockAudioSourceCallback callback;
   stream_->callback_ = &callback;
   stream_->reference_time_ = base::TimeTicks();
+  testing::internal::CaptureStderr();
   stream_->OnWriteData(buffer, 1);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("OnWriteData failed, callback_ is nullptr"),
+            std::string::npos);
   EXPECT_FALSE(stream_->reference_time_.is_null());
   delete[] buffer;
 }
@@ -1054,7 +1060,11 @@ TEST_F(OHOSAudioOutputStreamTest, OnWriteData005) {
   MockAudioSourceCallback callback;
   stream_->callback_ = &callback;
   stream_->reference_time_ = base::TimeTicks::Now();
-  stream_->OnWriteData(buffer, 0);
+  testing::internal::CaptureStderr();
+  stream_->OnWriteData(buffer, 1);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("OnWriteData failed, callback_ is nullptr"),
+            std::string::npos);
   EXPECT_FALSE(stream_->reference_time_.is_null());
   delete[] buffer;
 }

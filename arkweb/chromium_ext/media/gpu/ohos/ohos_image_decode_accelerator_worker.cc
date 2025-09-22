@@ -134,7 +134,9 @@ OhosImageDecodeAcceleratorWorker::Create() {
   OhosImageDecoderVector decoders;
 
 #if BUILDFLAG(ARKWEB_TEST)
-  auto heif_image_decoder = test_decoder();
+  auto heif_image_decoder = test_decoder
+                                ? test_decoder()
+                                : std::make_unique<OhosHeifImageDecoder>();
 #else
   auto heif_image_decoder = std::make_unique<OhosHeifImageDecoder>();
 #endif

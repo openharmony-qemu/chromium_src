@@ -101,7 +101,6 @@ private:
     AudioParameters params_;
     raw_ptr<CaptureCallback> base_callback_ = nullptr;
     base::Lock base_callback_lock_;
-    FILE* dumpFile_ = nullptr;
     base::ScopedFILE dumpFile_ = nullptr;
     
     bool isStart_ = false;

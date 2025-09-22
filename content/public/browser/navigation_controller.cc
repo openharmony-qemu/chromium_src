@@ -10,21 +10,11 @@
 #include "content/public/browser/render_frame_host.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "third_party/blink/public/mojom/navigation/was_activated_option.mojom.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#include "base/command_line.h"
-#include "content/public/common/content_switches.h"
 
 namespace content {
 
 NavigationController::LoadURLParams::LoadURLParams(const GURL& url)
-    : url(url) {
-#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-        switches::kEnableNwebEx)) {
-        force_no_https_upgrade = true;
-    }
-#endif
-    }
+    : url(url) {}
 
 NavigationController::LoadURLParams::LoadURLParams(
     NavigationController::LoadURLParams&&) = default;
@@ -64,12 +54,6 @@ NavigationController::LoadURLParams::LoadURLParams(const OpenURLParams& input)
               static_cast<bool>(source_site_instance));
   }
 
-#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-        switches::kEnableNwebEx)) {
-        force_no_https_upgrade = true;
-    }
-#endif
 
   // Implementation notes:
   //   The following LoadURLParams don't have an equivalent in OpenURLParams:

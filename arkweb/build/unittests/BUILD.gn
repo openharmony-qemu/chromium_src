@@ -17,7 +17,7 @@ group("oh_base_unittests") {
   deps = [
     "//arkweb/chromium_ext/services/network/prp_preload/tests:prp_preload_unittests",
     #"//arkweb/chromium_ext/sandbox:arkweb_sandbox_unittests",
-    #"//base:base_unittests",
+    "//base:base_unittests",
     "//cc:cc_unittests",
     "//content/test:content_unittests",
     "//components:components_browsertests",
@@ -26,7 +26,7 @@ group("oh_base_unittests") {
     "//components/viz:viz_unittests",
     "//crypto:crypto_unittests",
     "//gin:gin_unittests",
-    #"//gpu:gpu_unittests",
+    "//gpu:gpu_unittests",
     #"//media:media_unittests",
     #"//ohos_nweb/test:ohos_nweb_unittests",
     #"//skia:skia_unittests",

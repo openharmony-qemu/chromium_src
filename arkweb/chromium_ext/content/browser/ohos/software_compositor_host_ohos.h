@@ -58,6 +58,9 @@ class SoftwareCompositorHostOhos {
   mojo::Remote<blink::mojom::SoftwareCompositorOhos> software_compositor_;
   std::unique_ptr<SharedMemoryWithSize> software_draw_shm_;
   base::WeakPtrFactory<SoftwareCompositorHostOhos> weak_factory_{this};
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class SoftwareCompositorHostOhosTest;
+#endif
 };
 
 }  // namespace content

@@ -363,6 +363,9 @@ void ProxyImpl::NotifyReadyToCommitOnImpl(
                         READY_TO_COMMIT_ON_IMPL);
               });
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT0("cc,benchmark", "ProxyImpl::ReadyToCommit");
+#endif
   DCHECK(!data_for_commit_.get());
   DCHECK(IsImplThread());
   DCHECK(scheduler_);

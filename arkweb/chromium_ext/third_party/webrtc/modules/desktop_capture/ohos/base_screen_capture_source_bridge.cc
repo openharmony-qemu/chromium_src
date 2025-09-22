@@ -121,7 +121,7 @@ class OHOSScreenCaptureCallback
 
   BaseScreenCaptureSource::BaseScreenCaptureSource()
   {
-    LOG(INFO) << "BaseScreenCaptureSource::~BaseScreenCaptureSource";
+    LOG(INFO) << "BaseScreenCaptureSource::BaseScreenCaptureSource";
   }
 
   BaseScreenCaptureSource::~BaseScreenCaptureSource()
@@ -155,7 +155,7 @@ class OHOSScreenCaptureCallback
 
   bool BaseScreenCaptureSource::SetScreenCaptureConfig(int nweb_id)
   {
-      capture_state_code_map_[nweb_id] = OHOS::NWeb::ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_INVLID;
+      SetScreenCaptureState(ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_INVLID, nweb_id);
       main_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
       if (!main_task_runner_) {
           LOG(ERROR) << "get task runner failed";
@@ -269,11 +269,20 @@ class OHOSScreenCaptureCallback
 
   void BaseScreenCaptureSource::SetScreenCaptureState(const OHOS::NWeb::ScreenCaptureStateCodeAdapter& stateCode,
       int nweb_id) {
-    capture_state_code_map_[nweb_id] = stateCode;
+    std::unique_lock<std::shared_mutex> lock(capture_state_map_lock_);
+    auto capture_state_code = capture_state_code_map_.find(nweb_id);
+    if (capture_state_code != capture_state_code_map_.end()) {
+      LOG(INFO) << "[webrtc_logging] Update Capture State Code, code = " << (int32_t)stateCode;
+      capture_state_code_map_[nweb_id] = stateCode;
+    } else {
+      LOG(INFO) << "[webrtc_logging] Init Capture State Code, code = -1";
+      capture_state_code_map_[nweb_id] =
+        OHOS::NWeb::ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_INVLID;
+    }
   }
 
   int32_t BaseScreenCaptureSource::StopCapture(int nweb_id) {
-    LOG(INFO) << "BaseScreenCaptureSource Stop Capture";
+    LOG(INFO) << "BaseScreenCaptureSource Stop Capture, nweb_id = " << nweb_id;
     int32_t ret = -1;
 
     {
@@ -286,13 +295,13 @@ class OHOSScreenCaptureCallback
       }
       ret = screen_capture->second->StopCapture();
     }
-    capture_state_code_map_[nweb_id] =
-        OHOS::NWeb::ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_INVLID;
+    SetScreenCaptureState(ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_STOPPED_BY_USER, nweb_id);
+  
     return ret;
   }
 
   void BaseScreenCaptureSource::ReleaseCapture(int nweb_id) {
-    LOG(INFO) << "BaseScreenCaptureSource Release Capture";
+    LOG(INFO) << "BaseScreenCaptureSource Release Capture, nweb_id = " << nweb_id;
 
     {
       std::unique_lock<std::shared_mutex> lock(screen_capture_map_lock_);
@@ -317,6 +326,14 @@ class OHOSScreenCaptureCallback
         window_callback_map_.erase(window_callback);
       }
     }
+
+    {
+      std::unique_lock<std::shared_mutex> lock(capture_state_map_lock_);
+      auto capture_state_code = capture_state_code_map_.find(nweb_id);
+      if (capture_state_code != capture_state_code_map_.end()) {
+        capture_state_code_map_.erase(capture_state_code);
+      }
+    }
   }
 
   int32_t BaseScreenCaptureSource::StartCapture(int nweb_id) {
@@ -332,8 +349,8 @@ class OHOSScreenCaptureCallback
       }
       ret = screen_capture_adapter_map_[nweb_id]->StartCapture();
     }
-    capture_state_code_map_[nweb_id] =
-        OHOS::NWeb::ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_STARTED;
+    SetScreenCaptureState(ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_STARTED, nweb_id);
+
     return ret;
   }
 

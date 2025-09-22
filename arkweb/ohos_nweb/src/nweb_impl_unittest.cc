@@ -49,6 +49,15 @@ class MockNWebDragEvent : public NWebDragEvent {
   MOCK_METHOD(DragAction, GetAction, (), (override));
   MOCK_METHOD(double, GetX, (), (override));
   MOCK_METHOD(double, GetY, (), (override));
+  MOCK_METHOD(OHOS::NWeb::NWebDragData::DragOperationsMask,
+              GetAllowedDragOperation,
+              (),
+              (const, override));
+  MOCK_METHOD(OHOS::NWeb::NWebDragData::DragOperation,
+              GetDragOperation,
+              (),
+              (const, override));
+  MOCK_METHOD(bool, IsDragOpValid, (), (const, override));
 };
 
 class MockNWebMouseEvent : public NWebMouseEvent {
@@ -301,6 +310,31 @@ TEST_F(NWebImplTest, NWebImplTest_SendDragEvent_001) {
 
   nweb_impl_->SendDragEvent(dragEvent);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, NWebImplTest_SendDragEvent_002) {
+  auto dragEvent = std::make_shared();
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*dragEvent, GetAction()).WillOnce(Return(DragAction::DRAG_OVER));
+  EXPECT_CALL(*dragEvent, GetX()).Times(2);
+  EXPECT_CALL(*dragEvent, GetY()).Times(2);
+  EXPECT_CALL(*dragEvent, GetDragOperation()).Times(0);
+  EXPECT_CALL(*dragEvent, GetAllowedDragOperation()).Times(0);
+
+  nweb_impl_->SendDragEvent(dragEvent);
+}
+
+TEST_F(NWebImplTest, NWebImplTest_SendDragEvent_003) {
+  auto dragEvent = std::make_shared();
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*dragEvent, GetAction()).WillOnce(Return(DragAction::DRAG_OVER));
+  EXPECT_CALL(*dragEvent, IsDragOpValid()).WillOnce(Return(true));
+  EXPECT_CALL(*dragEvent, GetX()).Times(2);
+  EXPECT_CALL(*dragEvent, GetY()).Times(2);
+  EXPECT_CALL(*dragEvent, GetDragOperation()).Times(1);
+  EXPECT_CALL(*dragEvent, GetAllowedDragOperation()).Times(1);
+
+  nweb_impl_->SendDragEvent(dragEvent);
 }
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

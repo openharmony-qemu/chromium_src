@@ -91,6 +91,14 @@ class NWebDragDataImpl : public NWebDragData {
 
   void FreePixlMapData();
 
+  NWebDragData::DragOperationsMask GetAllowedDragOperation() const override {
+    return allowed_op_;
+  }
+
+  void SetAllowedDragOperation(NWebDragData::DragOperationsMask allowed_op) override {
+    allowed_op_ = allowed_op;
+  }
+
  private:
   raw_ptr<void> image_buffer_ = nullptr;
   void GenerateOhosDragBitmapFromOrigin(const SkBitmap& in_bitmap,
@@ -135,6 +143,7 @@ class NWebDragDataImpl : public NWebDragData {
   bool is_useful_selection_ = true;
   bool dark_mode_enable_ = false;
   bool is_drag_new_style_ = false;
+  NWebDragData::DragOperationsMask allowed_op_;
 };
 }  // namespace OHOS::NWeb
 #endif

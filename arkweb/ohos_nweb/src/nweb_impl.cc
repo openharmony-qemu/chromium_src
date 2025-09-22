@@ -2758,16 +2758,29 @@ void NWebImpl::SendDragEvent(std::shared_ptr<NWebDragEvent> dragEvent) {
     event.action = static_cast<DelegateDragAction>(dragEvent->GetAction());
     event.x = dragEvent->GetX();
     event.y = dragEvent->GetY();
-
+    auto drag_op = OHOS::NWeb::NWebDragData::DragOperation::DRAG_OPERATION_COPY;
+    auto allowed_drag_op =
+        OHOS::NWeb::NWebDragData::DragOperationsMask::DRAG_ALLOW_EVERY;
+    if (dragEvent->IsDragOpValid()) {
+      drag_op = dragEvent->GetDragOperation();
+      allowed_drag_op = dragEvent->GetAllowedDragOperation();
+    }
     if (event.action == DelegateDragAction::DRAG_OVER ||
         event.action == DelegateDragAction::DRAG_START ||
         event.action == DelegateDragAction::DRAG_ENTER) {
       drag_over_event_.x = dragEvent->GetX();
       drag_over_event_.y = dragEvent->GetY();
+      drag_over_event_.allowed_op = static_cast<CefBrowserHost::DragOperationsMask>(allowed_drag_op);
       drag_over_timer_->Reset();
     } else {
       drag_over_timer_->Stop();
     }
+
+    LOG(DEBUG) << "DragDrop, get event from arkweb, op = "
+              << (int)drag_op
+              << " , allow_op = " << (int)allowed_drag_op;
+    event.op = static_cast<CefBrowserHost::DragOperationsMask>(drag_op);
+    event.allowed_op = static_cast<CefBrowserHost::DragOperationsMask>(allowed_drag_op);
   }
   nweb_delegate_->SendDragEvent(event);
 }

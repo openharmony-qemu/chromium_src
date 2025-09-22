@@ -25,5 +25,4 @@ class DumpFileUtil {
   static void CloseDumpFile(FILE** dumpFile);
   static void OpenDumpFile(std::string filename, FILE** file);
 };
-
 #endif  // ARKWEB_AUDIO_DUMP_H

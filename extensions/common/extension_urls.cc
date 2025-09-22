@@ -6,6 +6,7 @@
 
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/strings/escape.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
@@ -100,9 +101,13 @@ GURL GetWebstoreItemSnippetURL(const extensions::ExtensionId& extension_id) {
   }
 
   // Return `<base URL><extension_id><suffix>`.
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return GURL("https://x.x.x");
+#else
   return GURL(base::StringPrintf(
       "https://chromewebstore.googleapis.com/v2/items/%s:fetchItemSnippet",
       extension_id.c_str()));
+#endif
 }
 
 base::AutoReset<const GURL*> SetItemSnippetURLForTesting(const GURL* test_url) {

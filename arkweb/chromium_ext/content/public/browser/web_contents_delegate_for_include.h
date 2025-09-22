@@ -121,4 +121,8 @@ virtual void OnPdfScrollAtBottom(const std::string& url) {}
 virtual void OnPdfLoadEvent(int32_t result, const std::string& url) {}
 #endif  // ARKWEB_PDF
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+virtual bool OnStartBackgroundTask(int32_t type, const std::string& message) { return true; }
+#endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
+
 #endif  // ARKWEB_CHROMIUM_EXT_CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_DELEGATE_FOR_INCLUDE_H_

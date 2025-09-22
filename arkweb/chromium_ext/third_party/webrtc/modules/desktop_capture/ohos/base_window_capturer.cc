@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/hash/hash.h"
 #include "absl/memory/memory.h"
 #include "base/logging.h"
 #include "base/memory/platform_shared_memory_region.h"
@@ -133,8 +134,8 @@ BaseWindowCapturer::BaseWindowCapturer(CaptureSourceType source_type, bool is_pi
     : capture_source_type_(source_type) {
   portal_init_failed_ = true;
 
-  LOG(INFO) << "BaseWindowCapturer, CreateBaseScreenCaptureSource: "
-            << &BaseScreenCaptureSource::GetInstance();
+  LOG(INFO) << "BaseWindowCapturer, CreateBaseScreenCaptureSource: hash="
+            << std::hex << base::FastHash(base::byte_span_from_ref(&BaseScreenCaptureSource::GetInstance()));
   nweb_id_ = nweb_id;
   BaseScreenCaptureSource::GetInstance().SetScreenCapturePickerShow(is_picker_show);
   if (!BaseScreenCaptureSource::GetInstance().SetScreenCaptureConfig(nweb_id_)) {
@@ -163,14 +164,13 @@ BaseWindowCapturer::~BaseWindowCapturer() {
 
 // LCOV_EXCL_START
 void BaseWindowCapturer::HandleBuffer() {
-  if (portal_init_failed_ || !BaseScreenCaptureSource::GetInstance().ScreenCaptureAdapterIsExist(nweb_id_) ||
-    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_] == nullptr) {
+  if (portal_init_failed_) {
     LOG(ERROR) << "init failed";
     return;
   }
 
   std::shared_ptr<OHOS::NWeb::SurfaceBufferAdapter> buffer =
-      BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->AcquireVideoBuffer();
+      BaseScreenCaptureSource::GetInstance().AcquireVideoBuffer(nweb_id_);
   if (!buffer) {
     LOG(ERROR) << "acquire video buffer failed";
     return;
@@ -179,7 +179,7 @@ void BaseWindowCapturer::HandleBuffer() {
   int32_t format = buffer->GetFormat();
   if (format != OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888) {
     LOG(ERROR) << "buffer format error";
-    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
+    BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
     return;
   }
   int32_t width = buffer->GetWidth();
@@ -191,7 +191,7 @@ void BaseWindowCapturer::HandleBuffer() {
              << ", stride:" << stride;
   if (buffSize < static_cast<uint32_t>(height * stride)) {
     LOG(ERROR) << "screen capture buff size error";
-    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
+    BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
     return;
   }
 
@@ -212,13 +212,13 @@ void BaseWindowCapturer::HandleBuffer() {
   char* pSrcData = (char*)(buffer->GetVirAddr());
   if (!pData || !pSrcData) {
     LOG(ERROR) << "data or GetVirAddr failed";
-    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
+    BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
     return;
   }
   for (int32_t i = 0; i < height; i++) {
     if (memcpy_s(pData, frameStride, pSrcData, frameStride) != EOK) {
       LOG(ERROR) << "data memcpy_s failed";
-      BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
+      BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
       return;
     }
     pData += frameStride;
@@ -231,7 +231,7 @@ void BaseWindowCapturer::HandleBuffer() {
     webrtc::MutexLock lock(&current_frame_lock_);
     current_frame_ = std::move(current_frame);
   }
-  BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
+  BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
 }
 // LCOV_EXCL_STOP
 

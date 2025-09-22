@@ -46,6 +46,20 @@ void PerformanceManagerTabHelper::OneShotMediaPlayerStopped() {
       FROM_HERE, base::BindOnce(&PageNodeImpl::OneShotMediaPlayerStopped,
                                 base::Unretained(primary_page_node())));
 }
+
+void PerformanceManagerTabHelper::AudioContextPlaybackStarted(
+      const AudioContextId& audio_context_id) {
+  PerformanceManagerImpl::CallOnGraphImpl(
+      FROM_HERE, base::BindOnce(&PageNodeImpl::AudioContextPlaybackStarted,
+                                base::Unretained(primary_page_node()), audio_context_id));
+}
+
+void PerformanceManagerTabHelper::AudioContextPlaybackStopped(
+      const AudioContextId& audio_context_id) {
+  PerformanceManagerImpl::CallOnGraphImpl(
+      FROM_HERE, base::BindOnce(&PageNodeImpl::AudioContextPlaybackStopped,
+                                base::Unretained(primary_page_node()), audio_context_id));
+}
 // LCOV_EXCL_STOP
 #endif
 }

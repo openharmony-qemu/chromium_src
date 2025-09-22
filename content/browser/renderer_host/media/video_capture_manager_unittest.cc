@@ -317,9 +317,13 @@ class VideoCaptureManagerTest : public testing::Test {
     screenlock_monitor_source_ = new ScreenlockMonitorTestSource();
     screenlock_monitor_ = std::make_unique<ScreenlockMonitor>(
         std::unique_ptr<ScreenlockMonitorSource>(screenlock_monitor_source_));
-
-    vcm_ = new VideoCaptureManager(std::move(video_capture_provider_switcher),
+#if BUILDFLAG(ARKWEB_TEST)
+    vcm_ = base::MakeRefCounted<VideoCaptureManagerExt>(std::move(video_capture_provider_switcher),
                                    base::DoNothing());
+#else
+    vcm_ = base::MakeRefCounted<VideoCaptureManagerExt>(std::move(video_capture_provider_switcher),
+                                   base::DoNothing());
+#endif // ARKWEB_TEST
     const int32_t kNumberOfFakeDevices = 2;
     video_capture_device_factory_->SetToDefaultDevicesConfig(
         kNumberOfFakeDevices);
@@ -1114,5 +1118,9 @@ TEST_F(VideoCaptureManagerTest, DesktopCaptureDeviceClosedOnScreenlock) {
 
 // TODO(mcasas): Add a test to check consolidation of the supported formats
 // provided by the device when http://crbug.com/323913 is closed.
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_manager_ext_unittest.cc"
+#endif // ARKWEB_TEST
 
 }  // namespace content

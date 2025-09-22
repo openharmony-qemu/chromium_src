@@ -44,8 +44,11 @@ public:
   MediaStreamManagerExt* AsMediaStreamManagerExt() override {
     return this;
   }
-
+#if BUILDFLAG(ARKWEB_TEST)
+public:
+#else
 private:
+#endif // ARKWEB_TEST
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
   std::map<std::string, int> nweb_id_maps_;
   mutable std::mutex nweb_id_mutex_;

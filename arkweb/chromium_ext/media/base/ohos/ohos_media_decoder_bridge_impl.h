@@ -119,7 +119,8 @@ class MediaCodecDecoderBridgeImpl {
   DecoderAdapterCode QueueInputBuffer(const uint8_t* data,
                                       size_t data_size,
                                       int64_t presentation_time,
-                                      const DecryptConfig* decrypt_config);
+                                      const DecryptConfig* decrypt_config,
+                                      bool is_key_frame);
   DecoderAdapterCode QueueInputBufferEOS();
   DecoderAdapterCode DequeueOutputBuffer(base::TimeDelta* presentation_time,
                                          uint32_t& index,
@@ -147,7 +148,8 @@ class MediaCodecDecoderBridgeImpl {
   void PopOutqueueDec();
   DecoderAdapterCode PushInbufferDec(const uint32_t index,
                                      const uint32_t& bufferSize,
-                                     const int64_t& time);
+                                     const int64_t& time,
+                                     bool is_key_frame);
   DecoderAdapterCode PushInbufferDecEos(const uint32_t index);
   DecoderAdapterCode PrepareForCallback();
   void UpdateFlushToFalse() {

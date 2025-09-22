@@ -11,15 +11,8 @@
 #define BACKGROUND_TASK_POLICY_H_
 
 #include <memory>
-#include "arkweb/build/features/features.h"
-#if BUILDFLAG(ARKWEB_TEST)
-#undef private
-#endif  // ARKWEB_TEST
 #include "components/performance_manager/public/graph/graph.h"
 #include "components/performance_manager/public/graph/page_node.h"
-#if BUILDFLAG(ARKWEB_TEST)
-#define private public
-#endif  // ARKWEB_TEST
 
 namespace performance_manager {
 

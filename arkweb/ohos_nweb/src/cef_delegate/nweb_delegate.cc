@@ -6234,6 +6234,17 @@ bool NWebDelegate::GetErrorPageEnabled() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+void NWebDelegate::EnableHttpsUpgrades(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "EnableHttpsUpgrades can not get browser";
+    return;
+  }
+  LOG(INFO) << "NWebDelegate::EnableHttpsUpgrades";
+  GetBrowser()->GetHost()->EnableHttpsUpgrades(enable);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_BGTASK)
 void NWebDelegate::OnBrowserForeground() {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {

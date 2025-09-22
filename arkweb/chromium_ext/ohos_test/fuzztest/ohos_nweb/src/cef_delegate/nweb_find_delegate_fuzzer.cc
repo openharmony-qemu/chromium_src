@@ -745,6 +745,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                         const std::string& post_data, const bool allow_https_upgrade) override {
     return 0;
   }
+  void EnableHttpsUpgrades(bool enable) override {}
 #endif
 
 };

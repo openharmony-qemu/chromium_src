@@ -897,6 +897,11 @@ void AbortDistill() override;
   void OnBrowserForeground() override;
   void OnBrowserBackground() override;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void EnableHttpsUpgrades(bool enable) override;
+#endif
+
  public:
   int argc_;
   RAW_PTR_EXCLUSION const char** argv_;

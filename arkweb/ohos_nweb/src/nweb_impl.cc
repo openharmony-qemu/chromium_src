@@ -6833,6 +6833,17 @@ void NWebImpl::OnBrowserBackground() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+void NWebImpl::EnableHttpsUpgrades(bool enable) {
+  LOG(INFO) << "NWebImpl::EnableHttpsUpgrades.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("EnableHttpsUpgrades nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->EnableHttpsUpgrades(enable);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
 void NWebImpl::SetSocketIdleTimeout(int32_t timeout) {
   if (!NWebApplication::GetDefault()->HasInitializedCef()) {

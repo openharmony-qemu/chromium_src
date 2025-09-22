@@ -358,11 +358,7 @@ class NavigationController {
     // be set in very specific circumstances like navigations to captive portal
     // login URLs which may be broken by HTTPS Upgrades due to the portal's
     // unconventional handling of HTTPS URLs.
-  #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-    bool force_no_https_upgrade = true;
-  #else
     bool force_no_https_upgrade = false;
-  #endif
   };
 
   // Disables checking for a repost and prompting the user. This is used during

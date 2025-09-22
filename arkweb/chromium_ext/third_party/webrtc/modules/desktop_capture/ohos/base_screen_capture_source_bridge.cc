@@ -295,8 +295,8 @@ class OHOSScreenCaptureCallback
       }
       ret = screen_capture->second->StopCapture();
     }
-    capture_state_code_map_[nweb_id] =
-        OHOS::NWeb::ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_INVLID;
+    SetScreenCaptureState(ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_STOPPED_BY_USER, nweb_id);
+  
     return ret;
   }
 
@@ -349,8 +349,8 @@ class OHOSScreenCaptureCallback
       }
       ret = screen_capture_adapter_map_[nweb_id]->StartCapture();
     }
-    capture_state_code_map_[nweb_id] =
-        OHOS::NWeb::ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_STARTED;
+    SetScreenCaptureState(ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_STARTED, nweb_id);
+
     return ret;
   }
 

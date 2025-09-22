@@ -528,6 +528,10 @@ void OHOSAudioDecoder::ReportDrmAudioPlayErrorInfo(const std::string& errorDesc)
 
 void OHOSAudioDecoder::Reset(base::OnceClosure closure) {
   LOG(INFO) << "OHOSAudioDecoder::Reset";
+  if (audio_decoder_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << "audio_decoder_ is nullptr";
+    return;
+  }
   ClearInputQueue(DecoderStatus::Codes::kAborted);
   bool success = decoder_loop_->TryFlush();
   {

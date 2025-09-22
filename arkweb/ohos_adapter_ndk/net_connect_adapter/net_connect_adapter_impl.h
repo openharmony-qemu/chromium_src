@@ -19,7 +19,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
-
+#include <mutex>
 #include "net_connect_adapter.h"
 
 #include <network/netmanager/net_connection.h>
@@ -45,6 +45,7 @@ public:
 
 private:
     static std::unordered_map<int32_t, std::shared_ptr<NetConnCallback>> netConnCallbackMap_;
+    static std::mutex mutex_;
 
     std::vector<std::string> GetDnsServersInternal(NetConn_NetHandle &netHandle);
 

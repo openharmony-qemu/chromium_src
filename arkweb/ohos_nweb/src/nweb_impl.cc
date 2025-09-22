@@ -954,6 +954,10 @@ void* NWebImpl::logger_report_event_callback_ = nullptr;
 
 WebDestroyMode NWebImpl::webDestroyMode_ = WebDestroyMode::NORMAL_MODE;
 
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+ WebSoftKeyboardBehaviorMode NWebImpl::keyboardBehaviorMode_ = WebSoftKeyboardBehaviorMode::DEFAULT;
+#endif
+ 
 // static
 std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
     std::shared_ptr<NWebCreateInfo> create_info) {
@@ -2080,6 +2084,11 @@ void NWebImpl::OnPause() {
   is_pause_ = true;
   nweb_delegate_->OnPause();
 
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+  if (keyboardBehaviorMode_ == WebSoftKeyboardBehaviorMode::DISABLE_AUTO_KEYBOARD_ON_ACTIVE) {
+    return;
+  }
+#endif
   if (nweb_delegate_->IsCustomKeyboard()) {
     LOG(INFO) << "WebCustomKeyboard NWebImpl::OnPause";
     nweb_delegate_->GetCustomKeyboardHandler()->CloseFromWebStateChange(
@@ -2110,7 +2119,22 @@ void NWebImpl::OnContinue() {
       pending_size_.reset();
     }
   }
-
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+  if (keyboardBehaviorMode_ == WebSoftKeyboardBehaviorMode::DISABLE_AUTO_KEYBOARD_ON_ACTIVE) {
+    if (nweb_delegate_->IsCustomKeyboard()) {
+      auto handler = nweb_delegate_->GetCustomKeyboardHandler();
+      if (handler && handler->IsAttached()) {
+        nweb_delegate_->OnFocus();
+      }
+    }
+    if (inputmethod_handler_) {
+      if (inputmethod_handler_->IsAttached()) {
+        nweb_delegate_->OnFocus();
+      }
+    }
+    return;
+  }
+#endif
   if (nweb_delegate_->IsCustomKeyboard()) {
     LOG(INFO) << "WebCustomKeyboard NWebImpl::OnContinue and focus";
     auto handler = nweb_delegate_->GetCustomKeyboardHandler();
@@ -6398,6 +6422,12 @@ void NWebImpl::RegisterNativeJavaScriptProxy(const std::string& objName,
   return nweb_delegate_->SetFocusByPosition(x, y);
 }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+void NWebImpl::SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) {
+  keyboardBehaviorMode_ = mode;
+}
+#endif
 
 #if BUILDFLAG(ARKWEB_AI_WRITE)
 int NWebImpl::GetSelectStartIndex()

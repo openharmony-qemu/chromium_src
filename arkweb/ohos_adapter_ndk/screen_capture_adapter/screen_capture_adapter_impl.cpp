@@ -321,14 +321,16 @@ void ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(OH_AVScree
         }
         auto surfaceBufferImpl = std::make_shared<OH_SurfaceBufferAdapterImpl>(buffer, config);
 
-        std::shared_lock<std::shared_mutex> lock(surface_map_lock_);
-        auto it = bufferAvailableQueueMap_.find(callbackInfo->nweb_id);	
-        if (it != bufferAvailableQueueMap_.end()) {
-            it->second.push(std::move(surfaceBufferImpl));
-        } else {
-            std::queue<std::shared_ptr<SurfaceBufferAdapter>> bufferAvailableQueue;
-            bufferAvailableQueue.push(std::move(surfaceBufferImpl));
-            bufferAvailableQueueMap_[callbackInfo->nweb_id] = bufferAvailableQueue;
+        {
+            std::unique_lock<std::shared_mutex> lock(surface_map_lock_);
+            auto it = bufferAvailableQueueMap_.find(callbackInfo->nweb_id);	
+            if (it != bufferAvailableQueueMap_.end()) {
+                it->second.push(std::move(surfaceBufferImpl));
+            } else {
+                std::queue<std::shared_ptr<SurfaceBufferAdapter>> bufferAvailableQueue;
+                bufferAvailableQueue.push(std::move(surfaceBufferImpl));
+                bufferAvailableQueueMap_[callbackInfo->nweb_id] = bufferAvailableQueue;
+            }
         }
         WVLOG_D("OnBufferAvailable is called, buffer type = %{public}d", bufferType);
         callbackInfo->callback->OnVideoBufferAvailableV2(true, callbackInfo->nweb_id);
@@ -336,14 +338,16 @@ void ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(OH_AVScree
         auto audioBufferImpl = std::make_shared<OH_AudioBufferAdapterImpl>(
             buffer, timestamp, OH_AudioCaptureSourceType::OH_ALL_PLAYBACK);
         
-        std::shared_lock<std::shared_mutex> lock(audio_map_lock_);
-        auto it = audioBufferAvailableQueueMap_.find(callbackInfo->nweb_id);	
-        if (it != audioBufferAvailableQueueMap_.end()) {
-            it->second.push(std::move(audioBufferImpl));
-        } else {
-            std::queue<std::shared_ptr<OH_AudioBufferAdapterImpl>> audioBufferAvailableQueue;
-            audioBufferAvailableQueue.push(std::move(audioBufferImpl));
-            audioBufferAvailableQueueMap_[callbackInfo->nweb_id] = audioBufferAvailableQueue;
+        {
+            std::unique_lock<std::shared_mutex> lock(audio_map_lock_);
+            auto it = audioBufferAvailableQueueMap_.find(callbackInfo->nweb_id);	
+            if (it != audioBufferAvailableQueueMap_.end()) {
+                it->second.push(std::move(audioBufferImpl));
+            } else {
+                std::queue<std::shared_ptr<OH_AudioBufferAdapterImpl>> audioBufferAvailableQueue;
+                audioBufferAvailableQueue.push(std::move(audioBufferImpl));
+                audioBufferAvailableQueueMap_[callbackInfo->nweb_id] = audioBufferAvailableQueue;
+            }
         }
         WVLOG_D("OnBufferAvailable is called, buffer type = %{public}d", bufferType);
         callbackInfo->callback->OnAudioBufferAvailableV2(
@@ -378,8 +382,9 @@ void ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnStateChange(struct OH_AVSc
 
 ScreenCaptureAdapterImpl::~ScreenCaptureAdapterImpl()
 {
+    WVLOG_I("ScreenCaptureAdapterImpl::~ScreenCaptureAdapterImpl, nweb_id = %{public}d", nweb_id_);
     {
-        std::shared_lock<std::shared_mutex> lock(surface_map_lock_);
+        std::unique_lock<std::shared_mutex> lock(surface_map_lock_);
         auto video = bufferAvailableQueueMap_.find(nweb_id_);
         if (video != bufferAvailableQueueMap_.end()) {
             bufferAvailableQueueMap_.erase(video);
@@ -387,7 +392,7 @@ ScreenCaptureAdapterImpl::~ScreenCaptureAdapterImpl()
     }
 
     {
-        std::shared_lock<std::shared_mutex> lock(audio_map_lock_);
+        std::unique_lock<std::shared_mutex> lock(audio_map_lock_);
         auto audio = audioBufferAvailableQueueMap_.find(nweb_id_);
         if (audio != audioBufferAvailableQueueMap_.end()) {
             audioBufferAvailableQueueMap_.erase(audio);

@@ -17,12 +17,19 @@
 #define MOCK_NDK_API_H
 
 #include <functional>
+#include "gtest/gtest.h"
+#include <gmock/gmock.h>
+#include <unordered_map>
 #include <BasicServicesKit/oh_commonevent.h>
 #include <BasicServicesKit/oh_commonevent_support.h>
 #include <network/netmanager/net_connection_type.h>
 #include <network/netmanager/net_connection.h>
 #include <telephony/core_service/telephony_radio_type.h>
 #include <multimodalinput/oh_input_manager.h>
+#include <bundle/native_interface_bundle.h>
+#include <multimedia/av_session/native_avmetadata.h>
+#include <multimedia/av_session/native_avsession.h>
+#include <multimedia/av_session/native_avsession_errors.h>
 
 namespace MockNdkApi {
 
@@ -104,6 +111,89 @@ extern std::function<Input_Result (int32_t *deviceIds, int32_t inSize, int32_t *
 Input_Result __real_OH_Input_GetDeviceIds(int32_t *deviceIds, int32_t inSize, int32_t *outSize);
 Input_Result __wrap_OH_Input_GetDeviceIds(int32_t *deviceIds, int32_t inSize, int32_t *outSize);
 
+#ifdef __cplusplus
+}
+#endif
+class OhosInterfaceMock {
+public:
+    static OhosInterfaceMock& GetInstance() {
+        static OhosInterfaceMock instance;
+        return instance;
+    }
+    MOCK_METHOD(OH_NativeBundle_ElementName, OH_NativeBundle_GetMainElementName, (), (const));
+    MOCK_METHOD(AVMetadata_Result, OH_AVMetadataBuilder_Create, (OH_AVMetadataBuilder**), (const));
+    MOCK_METHOD(AVMetadata_Result, OH_AVMetadataBuilder_SetAssetId, (OH_AVMetadataBuilder*, const char*), (const));
+    MOCK_METHOD(AVMetadata_Result, OH_AVMetadataBuilder_GenerateAVMetadata,
+        (OH_AVMetadataBuilder*, OH_AVMetadata**), (const));
+    MOCK_METHOD(AVMetadata_Result, OH_AVMetadata_Destroy, (OH_AVMetadata*), (const));
+    MOCK_METHOD(AVMetadata_Result, OH_AVMetadataBuilder_Destroy, (OH_AVMetadataBuilder*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_Create,
+        (AVSession_Type, const char*, const char*, const char*, OH_AVSession**), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_Destroy, (OH_AVSession*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_Activate, (OH_AVSession*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_Deactivate, (OH_AVSession*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_RegisterCommandCallback,
+        (OH_AVSession*, AVSession_ControlCommand, OH_AVSessionCallback_OnCommand*, void*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_RegisterSeekCallback,
+        (OH_AVSession*, OH_AVSessionCallback_OnSeek*, void*), (const));
+    MOCK_METHOD(AVMetadata_Result, OH_AVMetadataBuilder_SetTitle, (OH_AVMetadataBuilder*, const char*), (const));
+    MOCK_METHOD(AVMetadata_Result, OH_AVMetadataBuilder_SetArtist, (OH_AVMetadataBuilder*, const char*), (const));
+    MOCK_METHOD(AVMetadata_Result, OH_AVMetadataBuilder_SetAlbum, (OH_AVMetadataBuilder*, const char*), (const));
+    MOCK_METHOD(AVMetadata_Result, OH_AVMetadataBuilder_SetDuration, (OH_AVMetadataBuilder*, int64_t), (const));
+    MOCK_METHOD(AVMetadata_Result, OH_AVMetadataBuilder_SetMediaImageUri,
+        (OH_AVMetadataBuilder*, const char*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_SetPlaybackState, (OH_AVSession*, AVSession_PlaybackState), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_SetAVMetadata, (OH_AVSession*, OH_AVMetadata*), (const));
+    MOCK_METHOD(AVSession_ErrCode, OH_AVSession_SetPlaybackPosition,
+        (OH_AVSession*, AVSession_PlaybackPosition*), (const));
+
+    static bool bNativeBundleGetMainElementName;
+    static bool bAVMetadataBuilderCreate;
+    static bool bAVMetadataBuilderSetAssetId;
+    static bool bAVMetadataBuilderGenerateAVMetadata;
+    static bool bAVMetadataDestroy;
+    static bool bAVMetadataBuilderDestroy;
+    static bool bAVSessionCreate;
+    static bool bAVSessionDestroy;
+    static bool bAVSessionActivate;
+    static bool bAVSessionDeactivate;
+    static bool bAVSessionRegisterCommandCallback;
+    static bool bAVSessionRegisterSeekCallback;
+    static bool bAVMetadataBuilderSetTitle;
+    static bool bAVMetadataBuilderSetArtist;
+    static bool bAVMetadataBuilderSetAlbum;
+    static bool bAVMetadataBuilderSetDuration;
+    static bool bAVMetadataBuilderSetMediaImageUri;
+    static bool bAVSessionSetPlaybackState;
+    static bool bAVSessionSetAVMetadata;
+    static bool bAVSessionSetPlaybackPosition;
+};
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+    OH_NativeBundle_ElementName __real_OH_NativeBundle_GetMainElementName();
+    AVMetadata_Result __real_OH_AVMetadataBuilder_Create(OH_AVMetadataBuilder**);
+    AVMetadata_Result __real_OH_AVMetadataBuilder_SetAssetId(OH_AVMetadataBuilder *, const char *);
+    AVMetadata_Result __real_OH_AVMetadataBuilder_GenerateAVMetadata(OH_AVMetadataBuilder *, OH_AVMetadata **);
+    AVMetadata_Result __real_OH_AVMetadata_Destroy(OH_AVMetadata *);
+    AVMetadata_Result __real_OH_AVMetadataBuilder_Destroy(OH_AVMetadataBuilder *);
+    AVSession_ErrCode __real_OH_AVSession_Destroy(OH_AVSession *);
+    AVSession_ErrCode __real_OH_AVSession_Create(AVSession_Type, const char*, const char*,
+                                                 const char*, OH_AVSession**);
+    AVSession_ErrCode __real_OH_AVSession_Activate(OH_AVSession *);
+    AVSession_ErrCode __real_OH_AVSession_Deactivate(OH_AVSession *);
+    AVSession_ErrCode __real_OH_AVSession_RegisterCommandCallback(OH_AVSession *, AVSession_ControlCommand,
+                                                                  OH_AVSessionCallback_OnCommand *, void *);
+    AVSession_ErrCode __real_OH_AVSession_RegisterSeekCallback(OH_AVSession *, OH_AVSessionCallback_OnSeek *, void *);
+    AVMetadata_Result __real_OH_AVMetadataBuilder_SetTitle(OH_AVMetadataBuilder *, const char *);
+    AVMetadata_Result __real_OH_AVMetadataBuilder_SetArtist(OH_AVMetadataBuilder *, const char *);
+    AVMetadata_Result __real_OH_AVMetadataBuilder_SetAlbum(OH_AVMetadataBuilder *, const char *);
+    AVMetadata_Result __real_OH_AVMetadataBuilder_SetDuration(OH_AVMetadataBuilder *, int64_t);
+    AVMetadata_Result __real_OH_AVMetadataBuilder_SetMediaImageUri(OH_AVMetadataBuilder *, const char *);
+    AVSession_ErrCode __real_OH_AVSession_SetPlaybackState(OH_AVSession *, AVSession_PlaybackState);
+    AVSession_ErrCode __real_OH_AVSession_SetAVMetadata(OH_AVSession *, OH_AVMetadata *);
+    AVSession_ErrCode __real_OH_AVSession_SetPlaybackPosition(OH_AVSession *, AVSession_PlaybackPosition *);
 #ifdef __cplusplus
 }
 #endif

@@ -61,11 +61,7 @@ config("arkweb_base_unittest_config") {
   ldflags += [ 
     "-Wl,--wrap=OH_Input_CreateDeviceInfo",
     "-Wl,--wrap=OH_Input_GetDeviceIds",
-    "-Wl,--wrap=OH_CommonEvent_CreateSubscribeInfo",
-    "-Wl,--wrap=OH_CommonEvent_CreateSubscriber",
-    "-Wl,--wrap=OH_CommonEvent_Subscribe",
     "-Wl,--wrap=OH_NetConn_GetDefaultHttpProxy",
-    "-Wl,--wrap=OH_CommonEvent_UnSubscribe",
     "-Wl,--wrap=OH_CommonEvent_GetEventFromRcvData",
     "-Wl,--wrap=OH_Telephony_GetDefaultCellularDataSlotId",
     "-Wl,--wrap=OH_Telephony_GetNetworkStateForSlot",
@@ -119,5 +115,30 @@ config("arkweb_codec_decoder_adapter_unittest_config") {
     "-Wl,--wrap=OH_AVCencInfo_Create",
     "-Wl,--wrap=OH_AVCencInfo_SetAVBuffer",
     "-Wl,--wrap=OH_AVCencInfo_Destroy",
+  ]
+}
+
+config("arkweb_ohos_adapter_unittest_config") {
+  ldflags = [
+    "-Wl,--wrap=OH_NativeBundle_GetMainElementName",
+    "-Wl,--wrap=OH_AVMetadataBuilder_Create",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetAssetId",
+    "-Wl,--wrap=OH_AVMetadataBuilder_GenerateAVMetadata",
+    "-Wl,--wrap=OH_AVMetadata_Destroy",
+    "-Wl,--wrap=OH_AVMetadataBuilder_Destroy",
+    "-Wl,--wrap=OH_AVSession_Create",
+    "-Wl,--wrap=OH_AVSession_Destroy",
+    "-Wl,--wrap=OH_AVSession_Activate",
+    "-Wl,--wrap=OH_AVSession_Deactivate",
+    "-Wl,--wrap=OH_AVSession_RegisterCommandCallback",
+    "-Wl,--wrap=OH_AVSession_RegisterSeekCallback",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetTitle",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetArtist",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetAlbum",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetDuration",
+    "-Wl,--wrap=OH_AVSession_SetPlaybackState",
+    "-Wl,--wrap=OH_AVSession_SetAVMetadata",
+    "-Wl,--wrap=OH_AVSession_SetPlaybackPosition",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetMediaImageUri",
   ]
 }

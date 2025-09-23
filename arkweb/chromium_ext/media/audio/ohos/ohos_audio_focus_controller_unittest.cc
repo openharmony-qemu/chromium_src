@@ -181,8 +181,10 @@ TEST_F(OHOSAudioFocusControllerTest, GetContentTypeOnUIThread02) {
   testing::internal::CaptureStderr();
   OHOSAudioFocusController::GetContentTypeOnUIThread(params);
   std::string log_output = testing::internal::GetCapturedStderr();
-  EXPECT_EQ(log_output.find("GetContentTypeOnUIThread WebContents not associated with RenderFrameHost"), std::string::npos);
-  EXPECT_EQ(log_output.find("GetContentTypeOnUIThread MediaSession not initialized for WebContents"), std::string::npos);
+  EXPECT_EQ(log_output.find("GetContentTypeOnUIThread WebContents not "
+                            "associated with RenderFrameHost"), std::string::npos);
+  EXPECT_EQ(log_output.find("GetContentTypeOnUIThread MediaSession not "
+                            "initialized for WebContents"), std::string::npos);
 }
 
 TEST_F(OHOSAudioFocusControllerTest, CheckActiveOnUIThread01) {
@@ -494,7 +496,8 @@ TEST_F(OHOSAudioFocusControllerTest, CheckSuspendOtherPlaybacksUIThread02) {
   OHOSAudioFocusController::CheckSuspendOtherPlaybacksUIThread(static_cast<content::WebContentsImpl*>(webContents));
   std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_EQ(log_output.find("CheckSuspendOtherPlaybacksUIThread webContents is null"), std::string::npos);
-  EXPECT_EQ(log_output.find("CheckSuspendOtherPlaybacksUIThread MediaSession not available for WebContents"), std::string::npos);
+  EXPECT_EQ(log_output.find("CheckSuspendOtherPlaybacksUIThread MediaSession "
+                            "not available for WebContents"), std::string::npos);
 }
 
 } // namespace media

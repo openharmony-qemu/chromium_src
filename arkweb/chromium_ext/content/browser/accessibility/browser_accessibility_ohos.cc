@@ -1465,6 +1465,12 @@ std::u16string BrowserAccessibilityOHOS::GetLocalizedString(
   return CHECK_DEREF(content::GetContentClient()).GetLocalizedString(message_id);
 }
 
+std::u16string BrowserAccessibilityOHOS::GetComboboxCollapsedText() const {
+  if (IsCollapsed() && !IsExpanded()) {
+    return GetLocalizedString(IDS_AX_COMBOBOX_COLLAPSED);
+  }
+}
+
 std::u16string BrowserAccessibilityOHOS::GetComboboxExpandedText() const {
   const BrowserAccessibilityOHOS* input_node = nullptr;
   for (const auto& child : PlatformChildren()) {

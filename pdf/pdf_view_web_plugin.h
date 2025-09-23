@@ -971,6 +971,7 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   gfx::Rect current_right_;
   bool isTouching_ = false;
   bool isScrolling_ = false;
+  bool isPinching_ = false;
 
   // Used for cancelable delayed task in `UpdateScroll()`.
   const scoped_refptr<base::SequencedTaskRunner> task_runner_;

@@ -78,6 +78,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   void WebBlurKeyboardHide();
   void WebSetImeShow(bool visible);
   void HandleSecurityLayer();
+  void UpdateTextFieldStatus();
   void InsertText(const std::u16string& text);
   void DeleteBackward(int32_t length);
   void DeleteForward(int32_t length);
@@ -134,6 +135,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   void SetIMEStatusOnUI(bool status);
   void WebBlurKeyboardHideOnUI();
   void HandleSecurityLayerHandlerOnUI();
+  void UpdateTextFieldStatusHandlerOnUI();
   void InsertTextHandlerOnUI(const std::u16string& text);
   void DeleteBackwardHandlerOnUI(int32_t length);
   void DeleteForwardHandlerOnUI(int32_t length);

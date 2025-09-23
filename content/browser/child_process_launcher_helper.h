@@ -271,7 +271,9 @@ class ChildProcessLauncherHelper
 #endif  // !BUILDFLAG(IS_ANDROID)
 
   std::string GetProcessType();
-
+#if BUILDFLAG(ARKWEB_TEST)
+#define private public
+#endif
  private:
   friend class base::RefCountedThreadSafe<ChildProcessLauncherHelper>;
 
@@ -382,6 +384,9 @@ class ChildProcessLauncherHelper
   std::unique_ptr<ArkwebChildProcessLauncherHelperUtils> arkweb_child_process_launcher_helper_utils_;
 #endif
 };
+#if BUILDFLAG(ARKWEB_TEST)
+#undef private
+#endif
 
 }  // namespace internal
 

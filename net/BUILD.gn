@@ -3436,6 +3436,12 @@ target(_test_target_type, "net_unittests") {
       "//content/public/common:static_switches",
     ]
   }
+
+  if (arkweb_test) {
+    sources += [
+      "//arkweb/chromium_ext/net/http/http_cache_transaction_utils_unittest.cc",
+    ]
+  }
 }
 
 # !is_android && !is_win && !is_mac

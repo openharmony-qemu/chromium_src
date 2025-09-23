@@ -113,7 +113,7 @@ void ImageRecordsManagerUtils::ClearForALCP() {
     alcp_image_ = nullptr;
 }
 
-void ImageRecordsManagerUtils::TraceForALCP(Visitor* visitor) const {
+void ImageRecordsManagerUtils::Trace(Visitor* visitor) const {
     visitor->Trace(alcp_image_);
     visitor->Trace(alcp_pending_images_);
 }
@@ -210,6 +210,14 @@ uint64_t ImageRecordsManagerUtils::CalculateLatestALCPSize() const {
     return latest_lcp_size;
 }
 
+void ImageRecordsManagerUtils::SetForBlankless() {
+    is_for_blankless_only_ = true;
+}
+
+bool ImageRecordsManagerUtils::IsForBlankless() const {
+    return is_for_blankless_only_;
+}
+
 void ImageRecordsManager::UpdateViewportSize(const std::optional<uint64_t>& size) {
     image_record_manager_utils_.UpdateViewportSize(size);
 }
@@ -228,8 +236,25 @@ bool ImageRecordsManager::CheckALCPRecord(const MediaRecordIdHash& record_id_has
         new_lcp_record);
 }
 
+void ImageRecordsManager::SetForBlankless() {
+    image_record_manager_utils_.SetForBlankless();
+}
+
 bool ImagePaintTimingDetector::TakeIfHasALCP() {
     return records_manager_.TakeIfHasALCP();
+}
+
+void ImagePaintTimingDetector::SetForBlankless() {
+    is_for_blankless_only_ = true;
+    records_manager_.SetForBlankless();
+}
+
+unsigned ImagePaintTimingDetector::GetFrameIndex() const {
+    return frame_index_;
+}
+
+void ImagePaintTimingDetector::SetFrameIndex(unsigned frame_index) {
+    frame_index_ = frame_index;
 }
 #endif // ARKWEB_BLANK_OPTIMIZE
 

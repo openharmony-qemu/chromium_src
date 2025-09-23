@@ -111,13 +111,13 @@ NWebContextMenusItem GetNWebContextMenusItem(extensions::MenuItem* menu_item) {
   NWebContextMenusItem item;
   item.checked = menu_item->checked();
   item.contexts = ContextListToStrVector(menu_item->contexts());
-  item.documentUrlPatterns = menu_item->document_url_str_patterns();
+  item.documentUrlPatterns = menu_item->document_url_patterns().ToStringVector();
   item.enabled = menu_item->enabled();
   item.id = menu_item->id().string_uid;
   if (menu_item->parent_id()) {
     item.parentId = menu_item->parent_id()->string_uid;
   }
-  item.targetUrlPatterns = menu_item->target_url_str_patterns();
+  item.targetUrlPatterns = menu_item->target_url_patterns().ToStringVector();
   item.title = menu_item->title();
   item.type = GetTypeStr(menu_item->type());
   item.visible = menu_item->visible();

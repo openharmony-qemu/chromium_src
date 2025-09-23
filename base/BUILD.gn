@@ -3708,6 +3708,7 @@ test("base_unittests") {
     sources += [
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
     ]
+    sources += arkweb_content_browser_dfx_unittests_sources
     if (arkweb_test) {
       configs += [
         "//arkweb/chromium_ext:arkweb_base_unittest_config"
@@ -3799,7 +3800,7 @@ test("base_unittests") {
    deps += ["//components/storage_monitor"]
    deps += ["//components/performance_manager"]
    deps += ["//third_party:huawei_securec"]
-
+   deps += ["//arkweb/chromium_ext/content/browser/dfx:memory_monitor_render"]
     defines += [ "CRASHPAD_LSS_EXTERNAL" ]
     deps +=[
       "//third_party/crashpad/crashpad/client",
@@ -3808,6 +3809,7 @@ test("base_unittests") {
       "//third_party/crashpad/crashpad/snapshot",
       "//third_party:huawei_securec",
     ]
+
    }
 
 

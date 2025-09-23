@@ -1029,6 +1029,10 @@ arkweb_crashpad_unittest_sources = [
   "//arkweb/chromium_ext/ohos_test/unittest/proc_info_ohos/proc_info_ohos_unittest.cc",
 ]
 
+arkweb_content_browser_dfx_unittests_sources = [
+  "//arkweb/chromium_ext/ohos_test/unittest/dfx/memory_monitor_render_unittest.cc",
+]
+
 arkweb_chromium_components_viz_service_frame_sinks_sources = [
   "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_impl_utils.cc",
   "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_impl_utils.h",

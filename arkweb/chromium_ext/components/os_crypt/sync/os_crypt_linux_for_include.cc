@@ -102,7 +102,7 @@ static std::string GetKeyFromAsset() {
     return std::string();
   }
 
-  base::FilePath key_file = key_dir.Append(FILE_PATH_LITERAL(
+  base::FilePath key_file = key_dir.Append(
       FILE_PATH_LITERAL(crypto::ohos::get_asset_handle_file_256(kNewbAssetHandleAlias)));
   if (!base::PathExists(key_file)) {
     LOG(ERROR) << "[Autofill] Assethandle file not exist.";

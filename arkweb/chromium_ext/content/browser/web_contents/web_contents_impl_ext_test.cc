@@ -4,19 +4,29 @@
 
 #include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.h"
 
-#include "base/command_line.h"
-#include "content/browser/browser_main_loop.h"
-#include "content/browser/media/media_web_contents_observer.h"
-#include "content/public/browser/custom_media_player_listener.h"
-#include "content/public/browser/navigation_handle.h"
-#include "content/public/common/main_function_params.h"
-#include "content/public/test/test_utils.h"
-#include "content/test/test_web_contents.h"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <string.h>
+
 #include <memory>
+
+#include "base/command_line.h"
+#include "content/browser/browser_main_loop.h"
+#include "content/browser/media/media_web_contents_observer.h"
+#include "content/browser/media/ohos/native_web_contents_observer.h"
+#include "content/browser/renderer_host/render_frame_host_impl.h"
+#include "content/browser/renderer_host/render_frame_host_manager.h"
+#include "content/browser/renderer_host/render_view_host_delegate_view.h"
+#include "content/browser/wake_lock/wake_lock_context_host.h"
+#include "content/browser/web_contents/web_contents_view.h"
+#include "content/public/browser/custom_media_player_listener.h"
+#include "content/public/browser/navigation_handle.h"
+#include "content/public/browser/web_contents_delegate.h"
+#include "content/public/common/main_function_params.h"
+#include "content/public/test/test_utils.h"
+#include "content/test/test_render_frame_host.h"
+#include "content/test/test_web_contents.h"
+#include "third_party/blink/public/mojom/input/input_handler.mojom.h"
 
 namespace content {
 class MockCustomMediaPlayerListener : public CustomMediaPlayerListener {
@@ -46,26 +56,183 @@ class MockCustomMediaPlayerListener : public CustomMediaPlayerListener {
   MOCK_METHOD(void, OnVideoSizeChanged, (int width, int height), (override));
 };
 
+class MockWebContentsDelegateExtended : public WebContentsDelegate {
+ public:
+  MockWebContentsDelegateExtended() = default;
+  ~MockWebContentsDelegateExtended() = default;
+
+  MOCK_METHOD(bool,
+              TrigAdBlockEnabledForSiteFromUi,
+              (const std::string& main_frame_url, int main_frame_tree_node_id),
+              ());
+
+  MOCK_METHOD(std::unique_ptr<VideoAssistant>,
+              CreateVideoAssistant,
+              (),
+              (override));
+};
+
+class MockRenderViewHostDelegateView : public RenderViewHostDelegateView {
+ public:
+  MockRenderViewHostDelegateView() = default;
+
+  MockRenderViewHostDelegateView(const MockRenderViewHostDelegateView&) =
+      delete;
+  MockRenderViewHostDelegateView& operator=(
+      const MockRenderViewHostDelegateView&) = delete;
+
+  ~MockRenderViewHostDelegateView() override = default;
+
+  int start_dragging_count() const { return start_dragging_count_; }
+
+  void StartDragging(const DropData& drop_data,
+                     const url::Origin& source_origin,
+                     blink::DragOperationsMask allowed_ops,
+                     const gfx::ImageSkia& image,
+                     const gfx::Vector2d& cursor_offset,
+                     const gfx::Rect& drag_obj_rect,
+                     const blink::mojom::DragEventSourceInfo& event_info,
+                     RenderWidgetHostImpl* source_rwh) override {
+    ++start_dragging_count_;
+  }
+
+ private:
+  int start_dragging_count_ = 0;
+};
+
+class MockWebContentsView : public WebContentsView {
+ public:
+  MockWebContentsView() = default;
+  ~MockWebContentsView() override = default;
+
+  MOCK_METHOD(gfx::NativeView, GetNativeView, (), (const, override));
+  MOCK_METHOD(gfx::NativeView, GetContentNativeView, (), (const, override));
+  MOCK_METHOD(gfx::NativeWindow,
+              GetTopLevelNativeWindow,
+              (),
+              (const, override));
+  MOCK_METHOD(gfx::Rect, GetContainerBounds, (), (const, override));
+  MOCK_METHOD(gfx::Rect, GetViewBounds, (), (const, override));
+  MOCK_METHOD(void, Focus, (), (override));
+  MOCK_METHOD(void, SetInitialFocus, (), (override));
+  MOCK_METHOD(void, StoreFocus, (), (override));
+  MOCK_METHOD(void, RestoreFocus, (), (override));
+  MOCK_METHOD(void, FocusThroughTabTraversal, (bool reverse), (override));
+  MOCK_METHOD(DropData*, GetDropData, (), (const, override));
+  MOCK_METHOD(void, CreateView, (gfx::NativeView context), (override));
+  MOCK_METHOD(RenderWidgetHostViewBase*,
+              CreateViewForWidget,
+              (RenderWidgetHost * render_widget_host),
+              (override));
+  MOCK_METHOD(RenderWidgetHostViewBase*,
+              CreateViewForChildWidget,
+              (RenderWidgetHost * render_widget_host),
+              (override));
+  MOCK_METHOD(void, SetPageTitle, (const std::u16string& title), (override));
+  MOCK_METHOD(void, RenderViewReady, (), (override));
+  MOCK_METHOD(void,
+              RenderViewHostChanged,
+              (RenderViewHost * old_host, RenderViewHost* new_host),
+              (override));
+  MOCK_METHOD(void, SetOverscrollControllerEnabled, (bool enabled), (override));
+  MOCK_METHOD(void, OnCapturerCountChanged, (), (override));
+  MOCK_METHOD(void, FullscreenStateChanged, (bool is_fullscreen), (override));
+  MOCK_METHOD(void,
+              UpdateWindowControlsOverlay,
+              (const gfx::Rect& bounding_rect),
+              (override));
+  MOCK_METHOD(BackForwardTransitionAnimationManager*,
+              GetBackForwardTransitionAnimationManager,
+              (),
+              (override));
+  MOCK_METHOD(void,
+              DestroyBackForwardTransitionAnimationManager,
+              (),
+              (override));
+
+#if BUILDFLAG(IS_MAC)
+  MOCK_METHOD(bool, CloseTabAfterEventTrackingIfNeeded, (), (override));
+#endif
+
+  // #if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+  MOCK_METHOD(void, DidStopRefresh, (), (override));
+  // #endif
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  MOCK_METHOD(void,
+              UpdateBrowserControlsHeight,
+              (int height, bool animate),
+              (override));
+#endif
+};
+
+class MockDelegate : public RenderFrameHostManager::Delegate {
+ public:
+  MockDelegate() = default;
+  ~MockDelegate() override = default;
+
+  MOCK_METHOD(bool,
+              CreateRenderViewForRenderManager,
+              (RenderViewHost * render_view_host,
+               const std::optional<blink::FrameToken>& opener_frame_token,
+               RenderFrameProxyHost* proxy_host),
+              (override));
+
+  MOCK_METHOD(void,
+              CreateRenderWidgetHostViewForRenderManager,
+              (RenderViewHost * render_view_host),
+              (override));
+
+  MOCK_METHOD(void,
+              BeforeUnloadFiredFromRenderManager,
+              (bool proceed, bool* proceed_to_fire_unload),
+              (override));
+
+  MOCK_METHOD(void, CancelModalDialogsForRenderManager, (), (override));
+
+  MOCK_METHOD(void,
+              NotifySwappedFromRenderManager,
+              (RenderFrameHostImpl * old_frame, RenderFrameHostImpl* new_frame),
+              (override));
+
+  MOCK_METHOD(void,
+              NotifySwappedFromRenderManagerWithoutFallbackContent,
+              (RenderFrameHostImpl * new_frame),
+              (override));
+
+  MOCK_METHOD(void,
+              NotifyMainFrameSwappedFromRenderManager,
+              (RenderFrameHostImpl * old_frame, RenderFrameHostImpl* new_frame),
+              (override));
+
+  MOCK_METHOD(bool, FocusLocationBarByDefault, (), (override));
+  MOCK_METHOD(void, ReattachOuterDelegateIfNeeded, (), (override));
+  MOCK_METHOD(void,
+              OnFrameTreeNodeDestroyed,
+              (FrameTreeNode * node),
+              (override));
+  MOCK_METHOD(const std::string&, SharedRenderProcessToken, (), (override));
+};
+
+class MockRenderFrameHostManager : public RenderFrameHostManager {
+ public:
+  MockRenderFrameHostManager(FrameTreeNode* frame_tree_node, Delegate* delegate)
+      : RenderFrameHostManager(frame_tree_node, delegate) {}
+  virtual ~MockRenderFrameHostManager() = default;
+
+  MOCK_METHOD(RenderFrameHostImpl*,
+              speculative_frame_host,
+              (),
+              (const, override));
+  MOCK_METHOD(RenderFrameHostImpl*, current_frame_host, (), (const, override));
+};
+
 class TestWebContentsImplExt : public TestWebContents {
  public:
   TestWebContentsImplExt(BrowserContext* browser_context)
       : TestWebContents(browser_context) {}
 
   virtual ~TestWebContentsImplExt() {}
-
-  void SetRenderManagerForTesting(RenderFrameHostManager* manager) {
-    test_manager_ = manager;
-  }
-
-  RenderFrameHostManager* GetRenderManager() {
-    if (test_manager_) {
-      return test_manager_;
-    }
-    return WebContentsImpl::GetRenderManager();
-  }
-
- private:
-  RenderFrameHostManager* test_manager_ = nullptr;
 };
 
 class WebContentsImplExtTest : public RenderViewHostImplTestHarness {
@@ -673,5 +840,622 @@ TEST_F(WebContentsImplExtTest, OnBrowserBackground001) {
 
 TEST_F(WebContentsImplExtTest, SetScreenCapturePickerShow001) {
   ExtendContent()->SetScreenCapturePickerShow();
+}
+
+TEST_F(WebContentsImplExtTest, OnLayerRectVisibilityChange001) {
+  std::string embed_id = "abc";
+  bool visibility = false;
+  ExtendContent()->OnLayerRectVisibilityChange(embed_id, visibility);
+}
+
+TEST_F(WebContentsImplExtTest, SetDelegate001) {
+  auto delegate = std::make_unique<MockWebContentsDelegateExtended>();
+  ExtendContent()->SetDelegate(delegate.get());
+}
+
+TEST_F(WebContentsImplExtTest, SetDelegate002) {
+  auto delegate = std::make_unique<MockWebContentsDelegateExtended>();
+  EXPECT_CALL(*delegate, CreateVideoAssistant())
+      .WillOnce(testing::Return(std::make_unique<VideoAssistant>()));
+  ExtendContent()->SetDelegate(delegate.get());
+}
+
+TEST_F(WebContentsImplExtTest, SetDelegate003) {
+  auto delegate = std::make_unique<MockWebContentsDelegateExtended>();
+  EXPECT_CALL(*delegate, CreateVideoAssistant())
+      .WillOnce(testing::Return(nullptr));
+  ExtendContent()->SetDelegate(delegate.get());
+}
+
+TEST_F(WebContentsImplExtTest, EnableAdsBlock003) {
+  ExtendContent()->SetTestFlag(true);
+  bool enable = true;
+  ExtendContent()->EnableAdsBlock(enable);
+}
+
+TEST_F(WebContentsImplExtTest, EnableAdsBlock004) {
+  ExtendContent()->SetTestFlag(true);
+  bool enable = false;
+  ExtendContent()->EnableAdsBlock(enable);
+}
+
+TEST_F(WebContentsImplExtTest, IsAdsBlockEnabled002) {
+  ExtendContent()->SetTestFlag(true);
+  auto flag = ExtendContent()->IsAdsBlockEnabled();
+  EXPECT_FALSE(flag);
+}
+
+TEST_F(WebContentsImplExtTest, TrigAdBlockEnabledForSiteFromUi002) {
+  auto rst = main_test_rfh();
+  ExtendContent()->SetPrimaryMainFrame(rst);
+  std::string main_frame_url = "";
+  ExtendContent()->TrigAdBlockEnabledForSiteFromUi(main_frame_url);
+}
+
+TEST_F(WebContentsImplExtTest, TrigAdBlockEnabledForSiteFromUi003) {
+  auto rst = main_test_rfh();
+  ExtendContent()->SetPrimaryMainFrame(rst);
+  ExtendContent()->SetDelegate(nullptr);
+  std::string main_frame_url = "";
+  ExtendContent()->TrigAdBlockEnabledForSiteFromUi(main_frame_url);
+}
+
+TEST_F(WebContentsImplExtTest, TrigAdBlockEnabledForSiteFromUi004) {
+  auto rst = main_test_rfh();
+  ExtendContent()->SetPrimaryMainFrame(rst);
+
+  auto delegate = std::make_unique<MockWebContentsDelegateExtended>();
+  ExtendContent()->SetDelegate(delegate.get());
+  std::string main_frame_url = "";
+  ExtendContent()->TrigAdBlockEnabledForSiteFromUi(main_frame_url);
+}
+
+TEST_F(WebContentsImplExtTest, TrigAdBlockEnabledForSiteFromUi005) {
+  auto rst = main_test_rfh();
+  ExtendContent()->SetPrimaryMainFrame(rst);
+
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+
+  EXPECT_CALL(delegate_extend,
+              TrigAdBlockEnabledForSiteFromUi(testing::_, testing::_))
+      .WillOnce(testing::Return(true));
+  std::string main_frame_url = "";
+  ExtendContent()->TrigAdBlockEnabledForSiteFromUi(main_frame_url);
+}
+
+TEST_F(WebContentsImplExtTest, TrigAdBlockEnabledForSiteFromUi006) {
+  auto rst = main_test_rfh();
+  ExtendContent()->SetPrimaryMainFrame(rst);
+
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+
+  EXPECT_CALL(delegate_extend,
+               TrigAdBlockEnabledForSiteFromUi(testing::_, testing::_))
+      .WillOnce(testing::Return(false));
+  std::string main_frame_url = "";
+  ExtendContent()->TrigAdBlockEnabledForSiteFromUi(main_frame_url);
+}
+
+TEST_F(WebContentsImplExtTest, OnAdsBlocked002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  std::string main_frame_url = "";
+  std::map<std::string, int32_t> subresource_blocked;
+  bool is_site_first_report = false;
+  ExtendContent()->OnAdsBlocked(main_frame_url, subresource_blocked,
+                                is_site_first_report);
+}
+
+TEST_F(WebContentsImplExtTest, OnNativeEmbedFirstFramePaint002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int32_t native_embed_id = 0;
+  std::string embed_id_attribute = "";
+  ExtendContent()->OnNativeEmbedFirstFramePaint(native_embed_id,
+                                                embed_id_attribute);
+}
+
+TEST_F(WebContentsImplExtTest, OnLayerRectVisibilityChange002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  std::string embed_id = "";
+  bool visibility = false;
+  ExtendContent()->OnLayerRectVisibilityChange(embed_id, visibility);
+}
+
+TEST_F(WebContentsImplExtTest, ExtensionGetTabId002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  auto id = ExtendContent()->ExtensionGetTabId();
+  EXPECT_EQ(id, -1);
+}
+
+TEST_F(WebContentsImplExtTest, ClearContextMenu002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  ExtendContent()->ClearContextMenu();
+}
+
+TEST_F(WebContentsImplExtTest, FullScreenChanged000) {
+  GlobalRenderFrameHostId host_id(0, 0);
+  MediaPlayerId media_player_id(host_id, 0);
+  bool is_fullscreen = true;
+  ExtendContent()->FullScreenChanged(media_player_id, is_fullscreen);
+}
+
+TEST_F(WebContentsImplExtTest, OnNativeEmbedStatusUpdate002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  NativeEmbedInfo::TagState state = NativeEmbedInfo::TagState::TAG_STATE_CREATE;
+  NativeEmbedInfo native_embed_info;
+  ExtendContent()->OnNativeEmbedStatusUpdate(native_embed_info, state);
+}
+
+TEST_F(WebContentsImplExtTest, OnNativeEmbedStatusUpdate003) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+
+  gfx::Rect rect(0, 0);
+  ExtendContent()->native_embed_rect_info_map_.insert(
+      std::make_pair("1", rect));
+
+  NativeEmbedInfo::TagState state = NativeEmbedInfo::TagState::TAG_STATE_CREATE;
+  NativeEmbedInfo native_embed_info;
+  native_embed_info.embed_element_id = "1";
+
+  ExtendContent()->OnNativeEmbedStatusUpdate(native_embed_info, state);
+}
+
+TEST_F(WebContentsImplExtTest, OnNativeEmbedStatusUpdate004) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+
+  gfx::Rect rect(50, 50);
+  ExtendContent()->native_embed_rect_info_map_.insert(
+      std::make_pair("1", rect));
+
+  NativeEmbedInfo::TagState state = NativeEmbedInfo::TagState::TAG_STATE_CREATE;
+  NativeEmbedInfo native_embed_info;
+  native_embed_info.embed_element_id = "1";
+  native_embed_info.rect = gfx::Rect(50, 50);
+
+  ExtendContent()->OnNativeEmbedStatusUpdate(native_embed_info, state);
+}
+
+TEST_F(WebContentsImplExtTest, OnRenderFrameHostEnterBackForwardCache002) {
+  GlobalRenderFrameHostId host_id(0, 0);
+  ExtendContent()->native_web_contents_observer_ = std::move(nullptr);
+  ExtendContent()->OnRenderFrameHostEnterBackForwardCache(host_id);
+}
+
+TEST_F(WebContentsImplExtTest, OnRenderFrameHostLeaveBackForwardCache002) {
+  GlobalRenderFrameHostId host_id(0, 0);
+  ExtendContent()->native_web_contents_observer_ = std::move(nullptr);
+  ExtendContent()->OnRenderFrameHostLeaveBackForwardCache(host_id);
+}
+
+TEST_F(WebContentsImplExtTest, MouseSelectMenuShow002) {
+  auto ptr_view = std::make_unique<MockRenderViewHostDelegateView>();
+  ExtendContent()->render_view_host_delegate_view_ = std::move(ptr_view.get());
+  bool flag = true;
+  ExtendContent()->MouseSelectMenuShow(flag);
+}
+
+TEST_F(WebContentsImplExtTest, ChangeVisibilityOfQuickMenu002) {
+  auto ptr_view = std::make_unique<MockRenderViewHostDelegateView>();
+  ExtendContent()->render_view_host_delegate_view_ = std::move(ptr_view.get());
+  ExtendContent()->ChangeVisibilityOfQuickMenu();
+}
+
+TEST_F(WebContentsImplExtTest, CloseImageOverlaySelection002) {
+  auto ptr_view = std::make_unique<MockRenderViewHostDelegateView>();
+  ExtendContent()->render_view_host_delegate_view_ = std::move(ptr_view.get());
+  ExtendContent()->CloseImageOverlaySelection();
+}
+
+TEST_F(WebContentsImplExtTest, OnOverlayZoomChanged002) {
+  auto ptr_view = std::make_unique<MockRenderViewHostDelegateView>();
+  ExtendContent()->render_view_host_delegate_view_ = std::move(ptr_view.get());
+  ExtendContent()->OnOverlayZoomChanged();
+}
+
+TEST_F(WebContentsImplExtTest, UpdateBrowserControlsHeight002) {
+  auto ptr_webview = std::make_unique<MockWebContentsView>();
+  ExtendContent()->view_ = std::move(ptr_webview);
+  int height = 0;
+  bool animate = false;
+  ExtendContent()->UpdateBrowserControlsHeight(height, animate);
+}
+
+TEST_F(WebContentsImplExtTest, CreateCustomMediaPlayer002) {
+  std::unique_ptr<MockCustomMediaPlayerListener> listener =
+      std::make_unique<MockCustomMediaPlayerListener>();
+  MediaInfo media_info;
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  auto rst =
+      ExtendContent()->CreateCustomMediaPlayer(std::move(listener), media_info);
+  EXPECT_EQ(rst, nullptr);
+}
+
+TEST_F(WebContentsImplExtTest, SetDelegate004) {
+  ExtendContent()->SetDelegate(nullptr);
+}
+
+TEST_F(WebContentsImplExtTest, SetDelegate005) {
+  ExtendContent()->video_assistant_ = std::move(nullptr);
+  ExtendContent()->SetDelegate(nullptr);
+}
+
+TEST_F(WebContentsImplExtTest, MediaDestroyed002) {
+  ExtendContent()->video_assistant_ = std::move(nullptr);
+  GlobalRenderFrameHostId host_id(0, 0);
+  MediaPlayerId media_player_id(host_id, 0);
+  ExtendContent()->MediaDestroyed(media_player_id);
+}
+
+TEST_F(WebContentsImplExtTest, EnableVideoAssistant002) {
+  bool enable = true;
+  ExtendContent()->EnableVideoAssistant(enable);
+}
+
+TEST_F(WebContentsImplExtTest, OnShowToast002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+
+  double duration = 0.0;
+  std::string toast = "abc";
+  ExtendContent()->OnShowToast(duration, toast);
+}
+
+TEST_F(WebContentsImplExtTest, OnReportStatisticLog002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+
+  std::string content = "abc";
+  ExtendContent()->OnReportStatisticLog(content);
+}
+
+TEST_F(WebContentsImplExtTest, PopluateVideoAssistantConfig002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+
+  media::mojom::VideoAssistantConfigPtr config;
+  ExtendContent()->PopluateVideoAssistantConfig(config);
+}
+
+TEST_F(WebContentsImplExtTest, OnFullScreenOverlayEnter002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+
+  media::mojom::MediaInfoForVASTPtr media_info =
+      media::mojom::MediaInfoForVAST::New();
+  GlobalRenderFrameHostId host_id(0, 0);
+  MediaPlayerId media_player_id(host_id, 0);
+  ExtendContent()->OnFullScreenOverlayEnter(std::move(media_info),
+                                            media_player_id);
+}
+
+TEST_F(WebContentsImplExtTest, ShowAutofillPopup002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+
+  gfx::RectF element_bounds;
+  bool is_rtl = false;
+  std::vector<autofill::Suggestion> suggestions;
+  bool is_password_popup_type = false;
+  ExtendContent()->ShowAutofillPopup(element_bounds, is_rtl, suggestions,
+                                     is_password_popup_type);
+}
+
+TEST_F(WebContentsImplExtTest, HideAutofillPopup002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  ExtendContent()->HideAutofillPopup();
+}
+
+TEST_F(WebContentsImplExtTest, OnShareFile002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  std::string filePath = "";
+  std::string utdTypeId = "";
+  ExtendContent()->OnShareFile(filePath, utdTypeId);
+}
+
+TEST_F(WebContentsImplExtTest, OnBeforeUnloadFired002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  bool proceed = false;
+  ExtendContent()->OnBeforeUnloadFired(proceed);
+}
+
+TEST_F(WebContentsImplExtTest, ExitFullscreenMode001) {
+  bool will_cause_resize = false;
+  ExtendContent()->ExitFullscreenMode(will_cause_resize);
+}
+
+TEST_F(WebContentsImplExtTest, RenderViewReady001) {
+  int render_process_id = 0;
+  int render_view_id = 0;
+  RenderViewHost* host =
+      RenderViewHost::FromID(render_process_id, render_view_id);
+  ExtendContent()->RenderViewReady(host);
+}
+
+TEST_F(WebContentsImplExtTest, OnPip004) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int status = 0;
+  int delegate_id = 0;
+  int child_id = 0;
+  int frame_routing_id = 0;
+  int width = 0;
+  int height = 0;
+  ExtendContent()->OnPip(status, delegate_id, child_id, frame_routing_id, width,
+                         height);
+}
+
+TEST_F(WebContentsImplExtTest, OnPip005) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int status = 7;
+  int delegate_id = 0;
+  int child_id = 0;
+  int frame_routing_id = 0;
+  int width = 0;
+  int height = 0;
+  ExtendContent()->OnPip(status, delegate_id, child_id, frame_routing_id, width,
+                         height);
+}
+
+TEST_F(WebContentsImplExtTest, OnPip006) {
+  MockWebContentsDelegateExtended delegate_extend;
+  contents()->SetDelegate(&delegate_extend);
+  int status = 1;
+  int delegate_id = 0;
+  int child_id = 0;
+  int frame_routing_id = 0;
+  int width = 0;
+  int height = 0;
+  ExtendContent()->OnPip(status, delegate_id, child_id, frame_routing_id, width,
+                         height);
+}
+
+TEST_F(WebContentsImplExtTest, OnPip007) {
+  MockWebContentsDelegateExtended delegate_extend;
+  contents()->SetDelegate(&delegate_extend);
+  int status = 11;
+  int delegate_id = 0;
+  int child_id = 0;
+  int frame_routing_id = 0;
+  int width = 0;
+  int height = 0;
+  ExtendContent()->OnPip(status, delegate_id, child_id, frame_routing_id, width,
+                         height);
+}
+
+TEST_F(WebContentsImplExtTest, OnPipEvent002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int event = 0;
+  ExtendContent()->OnPipEvent(event);
+}
+
+TEST_F(WebContentsImplExtTest, OnPipEvent003) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int event = 7;
+  ExtendContent()->OnPipEvent(event);
+}
+
+TEST_F(WebContentsImplExtTest, OnPipEvent004) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  ExtendContent()->pip_status_ = true;
+  int event = 1;
+  ExtendContent()->OnPipEvent(event);
+}
+
+TEST_F(WebContentsImplExtTest, OnPipEvent005) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int event = 0;
+  ExtendContent()->pip_status_ = true;
+  ExtendContent()->OnPipEvent(event);
+}
+
+TEST_F(WebContentsImplExtTest, OnPipEvent006) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int event = 7;
+  ExtendContent()->pip_status_ = true;
+  ExtendContent()->OnPipEvent(event);
+}
+
+TEST_F(WebContentsImplExtTest, OnPipEvent007) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int event = 1;
+  ExtendContent()->pip_status_ = true;
+  ExtendContent()->OnPipEvent(event);
+}
+
+TEST_F(WebContentsImplExtTest, OnPipEvent008) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int event = 1;
+  ExtendContent()->pip_status_ = false;
+  ExtendContent()->OnPipEvent(event);
+}
+
+TEST_F(WebContentsImplExtTest, OnPipEvent009) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int event = 8;
+  ExtendContent()->pip_status_ = false;
+  ExtendContent()->OnPipEvent(event);
+}
+
+TEST_F(WebContentsImplExtTest, OnPipEvent0010) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int event = 8;
+  ExtendContent()->pip_status_ = true;
+  ExtendContent()->OnPipEvent(event);
+}
+
+TEST_F(WebContentsImplExtTest, OnPipEvent0011) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int event = 1;
+  ExtendContent()->pip_status_ = true;
+  ExtendContent()->OnPipEvent(event);
+}
+
+TEST_F(WebContentsImplExtTest, UpdateAdBlockEnabledToRender002) {
+  auto mock_delegate = std::make_unique<MockDelegate>();
+  auto& frame_tree = ExtendContent()->GetPrimaryFrameTree();
+  auto ptr_tree_node = frame_tree.root();
+  auto manager = std::make_unique<MockRenderFrameHostManager>(
+      ptr_tree_node, mock_delegate.get());
+  ExtendContent()->SetRenderManagerForTesting(manager.get());
+  EXPECT_CALL(*manager, speculative_frame_host()).Times(1);
+  auto rst = main_test_rfh();
+  ExtendContent()->SetPrimaryMainFrame(rst);
+  ExtendContent()->UpdateAdBlockEnabledToRender(false);
+}
+
+TEST_F(WebContentsImplExtTest, GetAdblockEnabledForSite002) {
+  auto rst = main_test_rfh();
+  ExtendContent()->SetPrimaryMainFrame(rst);
+
+  auto flag = ExtendContent()->GetAdblockEnabledForSite();
+  EXPECT_FALSE(flag);
+}
+
+TEST_F(WebContentsImplExtTest, SetAdBlockEnabledForSite003) {
+  bool is_adblock_enabled = false;
+  int main_frame_tree_node_id = 0;
+
+  auto rst = main_test_rfh();
+  ExtendContent()->SetPrimaryMainFrame(rst);
+  ExtendContent()->SetAdBlockEnabledForSite(is_adblock_enabled,
+                                            main_frame_tree_node_id);
+}
+
+TEST_F(WebContentsImplExtTest, SetWakeLockHandler002) {
+  int32_t window_id = 0;
+  SetKeepScreenOn handler;
+  int render_process_id = 0;
+  int render_frame_id = 0;
+  auto host = RenderFrameHost::FromID(render_process_id, render_frame_id);
+  auto tents = WebContents::FromRenderFrameHost(host);
+  ExtendContent()->wake_lock_context_host_ =
+      std::make_unique<WakeLockContextHost>(tents);
+  ExtendContent()->SetWakeLockHandler(window_id, handler);
+}
+
+TEST_F(WebContentsImplExtTest, CollapseAllFramesSelection001) {
+  ExtendContent()->CollapseAllFramesSelection();
+}
+
+TEST_F(WebContentsImplExtTest, OnPip008) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int status = 0;
+  int delegate_id = 0;
+  int child_id = 0;
+  int frame_routing_id = 0;
+  int width = 0;
+  int height = 0;
+  ExtendContent()->OnPip(status, delegate_id, child_id, frame_routing_id, width,
+                         height);
+}
+
+TEST_F(WebContentsImplExtTest, OnPip009) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int status = 7;
+  int delegate_id = 0;
+  int child_id = 0;
+  int frame_routing_id = 0;
+  int width = 0;
+  int height = 0;
+  ExtendContent()->OnPip(status, delegate_id, child_id, frame_routing_id, width,
+                         height);
+}
+
+TEST_F(WebContentsImplExtTest, OnPip0010) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int status = 9;
+  int delegate_id = 0;
+  int child_id = 0;
+  int frame_routing_id = 0;
+  int width = 0;
+  int height = 0;
+  ExtendContent()->OnPip(status, delegate_id, child_id, frame_routing_id, width,
+                         height);
+}
+
+TEST_F(WebContentsImplExtTest, OnPdfScrollAtBottom002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  std::string url = "abc";
+  ExtendContent()->OnPdfScrollAtBottom(url);
+}
+
+TEST_F(WebContentsImplExtTest, OnPdfLoadEvent002) {
+  MockWebContentsDelegateExtended delegate_extend;
+  ExtendContent()->SetDelegate(&delegate_extend);
+  int32_t result = 0;
+  std::string url = "abc";
+  ExtendContent()->OnPdfLoadEvent(result, url);
+}
+
+TEST_F(WebContentsImplExtTest, DelMediaPlayerAudibleCount002) {
+  ExtendContent()->DelMediaPlayerAudibleCount();
+  auto flag = ExtendContent()->GetMediaPlayerCurrentAudible();
+  EXPECT_FALSE(flag);
+}
+
+TEST_F(WebContentsImplExtTest, EnableSafeBrowsingDetection004) {
+  bool enable = true;
+  bool strictMode = true;
+  ExtendContent()->EnableSafeBrowsingDetection(enable, strictMode);
+  auto flag = ExtendContent()->IsSafeBrowsingDetectionStrict();
+  EXPECT_TRUE(flag);
+}
+
+TEST_F(WebContentsImplExtTest, GetRenderViewHost003) {
+  auto mock_delegate = std::make_unique<MockDelegate>();
+  auto& frame_tree = ExtendContent()->GetPrimaryFrameTree();
+  auto ptr_tree_node = frame_tree.root();
+  auto manager = std::make_unique<MockRenderFrameHostManager>(
+      ptr_tree_node, mock_delegate.get());
+  ExtendContent()->SetRenderManagerForTesting(manager.get());
+  RenderFrameHostImpl* rfh = ExtendContent()->GetPrimaryMainFrame();
+  EXPECT_CALL(*manager, current_frame_host())
+      .Times(1)
+      .WillOnce(::testing::Return(rfh));
+  auto impl = ExtendContent()->GetRenderViewHost();
+  EXPECT_NE(impl, nullptr);
+}
+
+TEST_F(WebContentsImplExtTest, StartCamera002) {
+  int n_Web_id = 0;
+  // first para
+  auto currentProcess = base::CommandLine::ForCurrentProcess();
+  MainFunctionParams main_func_para(currentProcess);
+  // second para
+  std::unique_ptr<base::ThreadPoolInstance::ScopedExecutionFence>
+      scoped_execution_fence =
+          std::make_unique<base::ThreadPoolInstance::ScopedExecutionFence>();
+  std::unique_ptr<BrowserMainLoop> browser_context =
+      std::make_unique<BrowserMainLoop>(std::move(main_func_para),
+                                        std::move(scoped_execution_fence));
+  ExtendContent()->StartCamera(n_Web_id);
 }
 }  // namespace content

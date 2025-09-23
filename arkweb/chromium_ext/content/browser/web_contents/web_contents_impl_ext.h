@@ -317,7 +317,28 @@ private:
   std::unique_ptr<VideoAssistant> video_assistant_;
   bool custom_media_player_enabled_ = false;
   std::map<MediaPlayerId, int32_t> surface_widget_map_;
-public:
+#if BUILDFLAG(ARKWEB_TEST)
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest,
+                           OnNativeEmbedStatusUpdate003);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest,
+                           OnNativeEmbedStatusUpdate004);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest,
+                           OnRenderFrameHostEnterBackForwardCache002);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest,
+                           OnRenderFrameHostLeaveBackForwardCache002);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, SetDelegate005);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, MediaDestroyed002);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, MediaDestroyed003);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, OnPipEvent004);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, OnPipEvent005);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, OnPipEvent006);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, OnPipEvent007);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, OnPipEvent008);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, OnPipEvent009);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, OnPipEvent0010);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, OnPipEvent0011);
+#endif  // ARKWEB_TEST
+ public:
   void EnableVideoAssistant(bool enable) override;
   void ExecuteVideoAssistantFunction(const std::string& cmdId) override;
   void OnShowToast(double duration, const std::string& toast);
@@ -394,6 +415,54 @@ private:
   bool pip_update_surface_ = false;
   bool pip_status_ = false;
 #endif
+
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+  void SetPrimaryMainFrame(RenderFrameHostImpl* impl) { test_impl_ = impl; }
+  RenderFrameHostImpl* GetPrimaryMainFrame() override {
+    if (test_impl_) {
+      return test_impl_;
+    }
+    return WebContentsImpl::GetPrimaryMainFrame();
+  }
+
+  void SetTestFlag(bool flag) { flag_ = flag; }
+  blink::RendererPreferences* GetMutableRendererPrefs() override {
+    if (flag_) {
+      return nullptr;
+    }
+    return WebContentsImpl::GetMutableRendererPrefs();
+  }
+  void SetFocusedFrameWidgetInputHandler(
+      blink::mojom::FrameWidgetInputHandler* ptr_hand) {
+    ptr_hand_ = ptr_hand;
+  }
+
+  blink::mojom::FrameWidgetInputHandler* GetFocusedFrameWidgetInputHandler()
+      override {
+    if (ptr_hand_) {
+      return ptr_hand_;
+    }
+    return WebContentsImpl::GetFocusedFrameWidgetInputHandler();
+  }
+
+  void SetRenderManagerForTesting(RenderFrameHostManager* manager) {
+    test_manager_ = manager;
+  }
+
+  RenderFrameHostManager* GetRenderManager() override {
+    if (test_manager_) {
+      return test_manager_;
+    }
+    return WebContentsImpl::GetRenderManager();
+  }
+
+ private:
+  RenderFrameHostImpl* test_impl_ = nullptr;
+  blink::mojom::FrameWidgetInputHandler* ptr_hand_ = nullptr;
+  RenderFrameHostManager* test_manager_ = nullptr;
+  bool flag_ = false;
+#endif  // ARKWEB_TEST
 };
 }  // namespace content
 

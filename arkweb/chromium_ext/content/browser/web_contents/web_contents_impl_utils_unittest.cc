@@ -30,6 +30,9 @@
 
 namespace base {
 namespace ohos {
+
+static bool compute_language_by_region_for_test = false;
+
 class LanguageMock {
  public:
   static LanguageMock& getInstance() { 
@@ -44,12 +47,21 @@ class LanguageMock {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+std::string __real_ComputeLanguageByRegion();
+
 std::string __wrap_ComputeLanguageByRegion() {
-  return LanguageMock::getInstance().ComputeLanguageByRegionMock();
+  if (compute_language_by_region_for_test) {
+    return LanguageMock::getInstance().ComputeLanguageByRegionMock();
+  } else {
+    return __real_ComputeLanguageByRegion();
+  }
 }
+
 #ifdef __cplusplus
 }
 #endif
+
 }
 }
 
@@ -58,6 +70,7 @@ class WebContentsImplUtilsTest : public RenderViewHostImplTestHarness {
  public:
   void SetUp() override {
     RenderViewHostImplTestHarness::SetUp();
+    base::ohos::compute_language_by_region_for_test = true;
     utils_ = std::make_unique<WebContentsImplUtils>(contents());
   }
 
@@ -161,6 +174,7 @@ TEST_F(WebContentsImplUtilsTest, RenderProcessShareInit_WithToken_ExistingProces
   EXPECT_EQ(utils_->webContentsImpl->AsWebContentsImplExt()->shared_render_process_token_, "test-token");
 }
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
 TEST_F(WebContentsImplUtilsTest, UpdateMainFrameLoadingControlsState_NoSwitch) {
   FrameTreeNode* frame_tree_node = main_test_rfh()->frame_tree_node();
   EXPECT_TRUE(frame_tree_node);
@@ -184,6 +198,7 @@ TEST_F(WebContentsImplUtilsTest, UpdateMainFrameLoadingControlsState_MainFrame_W
   command_line->AppendSwitch(switches::kEnableNwebExTopControls);
   ASSERT_NO_FATAL_FAILURE(utils_->UpdateMainFrameLoadingControlsState(frame_tree_node, true));
 }
+#endif
 
 TEST_F(WebContentsImplUtilsTest, UpdateUserAgentOverride) {
   blink::UserAgentOverride ua_override;

@@ -19,6 +19,10 @@ config("blink_renderer_config") {
   ldflags = [ "-Wl,--wrap=IsTabletDevice" ]
 }
 
+config("content_browser_config") {
+  ldflags = [ "-Wl,--wrap=ComputeLanguageByRegion" ]
+}
+
 config("arkweb_base_unittest_config") {
   ldflags = ["-Wl,--wrap=OH_FileUri_GetPathFromUri", 
   "-Wl,--wrap=OH_FileUri_GetFileName",
@@ -106,8 +110,4 @@ config("arkweb_codec_decoder_adapter_unittest_config") {
     "-Wl,--wrap=OH_AVCencInfo_SetAVBuffer",
     "-Wl,--wrap=OH_AVCencInfo_Destroy",
   ]
-}
-
-config("content_browser_config") {
-  ldflags = [ "-Wl,--wrap=ComputeLanguageByRegion" ]
 }

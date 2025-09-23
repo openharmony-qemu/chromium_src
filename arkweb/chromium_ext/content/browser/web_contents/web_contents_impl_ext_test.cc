@@ -56,7 +56,6 @@ class MockCustomMediaPlayerListener : public CustomMediaPlayerListener {
   MOCK_METHOD(void, OnVideoSizeChanged, (int width, int height), (override));
 };
 
-<<<<<<< HEAD
 class MockWebContentsDelegateExtended : public WebContentsDelegate {
  public:
   MockWebContentsDelegateExtended() = default;
@@ -228,31 +227,12 @@ class MockRenderFrameHostManager : public RenderFrameHostManager {
   MOCK_METHOD(RenderFrameHostImpl*, current_frame_host, (), (const, override));
 };
 
-=======
->>>>>>> 4a528195179 (UT代码提交)
 class TestWebContentsImplExt : public TestWebContents {
  public:
   TestWebContentsImplExt(BrowserContext* browser_context)
       : TestWebContents(browser_context) {}
 
   virtual ~TestWebContentsImplExt() {}
-<<<<<<< HEAD
-=======
-
-  void SetRenderManagerForTesting(RenderFrameHostManager* manager) {
-    test_manager_ = manager;
-  }
-
-  RenderFrameHostManager* GetRenderManager() {
-    if (test_manager_) {
-      return test_manager_;
-    }
-    return WebContentsImpl::GetRenderManager();
-  }
-
- private:
-  RenderFrameHostManager* test_manager_ = nullptr;
->>>>>>> 4a528195179 (UT代码提交)
 };
 
 class WebContentsImplExtTest : public RenderViewHostImplTestHarness {
@@ -345,10 +325,7 @@ TEST_F(WebContentsImplExtTest, CloseDateTimeChooser001) {
   ExtendContent()->CloseDateTimeChooser();
 }
 
-<<<<<<< HEAD
 #if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
-=======
->>>>>>> 4a528195179 (UT代码提交)
 TEST_F(WebContentsImplExtTest, SetForceEnableZoom001) {
   ExtendContent()->SetForceEnableZoom(false);
   auto flag = ExtendContent()->GetForceEnableZoom();
@@ -373,10 +350,7 @@ TEST_F(WebContentsImplExtTest, EnableAdsBlock002) {
   auto flag = ExtendContent()->GetForceEnableZoom();
   EXPECT_FALSE(flag);
 }
-<<<<<<< HEAD
 #endif
-=======
->>>>>>> 4a528195179 (UT代码提交)
 
 TEST_F(WebContentsImplExtTest, IsAdsBlockEnabled001) {
   auto flag = ExtendContent()->IsAdsBlockEnabled();
@@ -413,10 +387,7 @@ TEST_F(WebContentsImplExtTest, SetAdBlockEnabledForSite001) {
                                             main_frame_tree_node_id);
 }
 
-<<<<<<< HEAD
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
-=======
->>>>>>> 4a528195179 (UT代码提交)
 TEST_F(WebContentsImplExtTest, NotifyContextMenuWillShow001) {
   ExtendContent()->NotifyContextMenuWillShow();
   bool flag = ExtendContent()->IsShowingContextMenu();
@@ -426,10 +397,7 @@ TEST_F(WebContentsImplExtTest, NotifyContextMenuWillShow001) {
 TEST_F(WebContentsImplExtTest, ShowFreeCopyMenu001) {
   ExtendContent()->ShowFreeCopyMenu();
 }
-<<<<<<< HEAD
 #endif
-=======
->>>>>>> 4a528195179 (UT代码提交)
 
 TEST_F(WebContentsImplExtTest, GetTargetFramesIncludingPending001) {
   int routing_id = 0;
@@ -512,19 +480,13 @@ TEST_F(WebContentsImplExtTest, MediaPlayerGone001) {
   ExtendContent()->MediaPlayerGone(info, media_player_id);
 }
 
-<<<<<<< HEAD
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-=======
->>>>>>> 4a528195179 (UT代码提交)
 TEST_F(WebContentsImplExtTest, UpdateBrowserControlsHeight001) {
   int height = 0;
   bool animate = false;
   ExtendContent()->UpdateBrowserControlsHeight(height, animate);
 }
-<<<<<<< HEAD
 #endif
-=======
->>>>>>> 4a528195179 (UT代码提交)
 
 TEST_F(WebContentsImplExtTest, ClearContextMenu001) {
   ExtendContent()->ClearContextMenu();
@@ -1099,6 +1061,7 @@ TEST_F(WebContentsImplExtTest, OnOverlayZoomChanged002) {
   ExtendContent()->OnOverlayZoomChanged();
 }
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
 TEST_F(WebContentsImplExtTest, UpdateBrowserControlsHeight002) {
   auto ptr_webview = std::make_unique<MockWebContentsView>();
   ExtendContent()->view_ = std::move(ptr_webview);
@@ -1106,6 +1069,7 @@ TEST_F(WebContentsImplExtTest, UpdateBrowserControlsHeight002) {
   bool animate = false;
   ExtendContent()->UpdateBrowserControlsHeight(height, animate);
 }
+#endif
 
 TEST_F(WebContentsImplExtTest, CreateCustomMediaPlayer002) {
   std::unique_ptr<MockCustomMediaPlayerListener> listener =

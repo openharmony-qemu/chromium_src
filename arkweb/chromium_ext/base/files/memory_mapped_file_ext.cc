@@ -29,10 +29,6 @@ namespace base {
 
 MemoryMappedFileExt::~MemoryMappedFileExt()
 {
-  if ((data_ != nullptr) && (mapper_ == nullptr)) {
-    delete[] data_;
-    data_ = nullptr;
-  }
   length_ = 0;
   mapper_.reset();
 }
@@ -44,10 +40,6 @@ void MemoryMappedFileExt::ClearData(std::function<void()> cb)
     return;
   }
 
-  if ((data_ != nullptr) && (mapper_ == nullptr)) {
-    delete[] data_;
-    data_ = nullptr;
-  }
   length_ = 0;
   mapper_.reset();
 }
@@ -57,12 +49,7 @@ void MemoryMappedFileExt::SetOhosFileMapper(
 {
   if (!bytes.empty()) {
     if (customizeData_) {
-      if (mapper_ == nullptr) {
-        delete[] data_;
-        data_ = nullptr;
-      } else {
-        mapper_ = nullptr;
-      }
+      mapper_ = nullptr;
     } else {
       cb();
     }

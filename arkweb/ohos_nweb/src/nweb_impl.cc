@@ -481,7 +481,7 @@ static bool set_whole_page_drawing = false;
 #endif
 
 #if BUILDFLAG(ARKWEB_DRAG_RESIZE)
-const int32_t SOC_PERF_WEB_DRAG_RESIZE_ID = 10073;
+const int32_t SOC_PERF_WEB_DRAG_RESIZE_ID = 10012;
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 const int32_t WEB_RESIZE_CLOSE_DELAY_TIME = 500;

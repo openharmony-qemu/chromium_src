@@ -57,6 +57,9 @@ class HTMLPlugInElementUtils {
   }
 #endif
  private:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class HTMLPlugInElementUtilsTest;
+#endif
   raw_ptr<HTMLPlugInElement> plugin_;
   bool native_embed_overlay_{false};
   bool native_embed_overlay_infinity_{false};

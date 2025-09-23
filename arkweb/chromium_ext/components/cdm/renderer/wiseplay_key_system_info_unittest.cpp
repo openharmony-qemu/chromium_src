@@ -224,12 +224,16 @@ TEST_F(WiseplayKeySystemInfoTest, GetRobustnessConfigRule) {
   EXPECT_EQ(key_system_info_.GetRobustnessConfigRule(
                 media::kWiseplayKeySystem, EmeMediaType::VIDEO, "SW_SECURE_CRYPTO", &hw_secure_required),
             media::EmeConfig::SupportedRule());
+}
+
+TEST_F(WiseplayKeySystemInfoTest,
+       GetRobustnessConfigRuleWithHwSecureRequirement) {
   const bool hw_secure_not_required = false;
   EXPECT_EQ(key_system_info_.GetRobustnessConfigRule(
                 media::kWiseplayKeySystem, EmeMediaType::VIDEO,
                 "SW_SECURE_CRYPTO", &hw_secure_not_required),
             media::EmeConfig::SupportedRule());
-
+  const bool hw_secure_required = true;
   WiseplayKeySystemInfo decode_key_system(
       kTestCodecs, kTestEncryptionSchemes, kTestSessionTypes,
       kTestHwSecureCodecs, kTestHwSecureEncryptionSchemes,

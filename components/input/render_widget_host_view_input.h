@@ -252,7 +252,7 @@ class COMPONENT_EXPORT(INPUT) RenderWidgetHostViewInput
       blink::mojom::InputEventResultState ack_result);
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  virtual std::string GetViewType() { return std::string(); }
+  virtual constexpr std::string_view GetViewType() { return ""; }
 #endif
 
  protected:

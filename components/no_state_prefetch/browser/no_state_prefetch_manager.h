@@ -329,6 +329,7 @@ class NoStatePrefetchManager : public content::RenderProcessHostObserver,
   friend class NoStatePrefetchContents;
   friend class NoStatePrefetchHandle;
   friend class UnitTestNoStatePrefetchManager;
+  friend class MockNoStatePrefetchManager;
 
   class OnCloseWebContentsDeleter;
   struct NavigationRecord;

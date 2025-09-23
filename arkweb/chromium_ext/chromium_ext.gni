@@ -842,6 +842,7 @@ arkweb_third_party_blink_renderer_core_unittest_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/page/drag_image_ext_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollbar_theme_utils_uinttest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_popup_menu_element_utils_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/media_controls_impl_utils_unittest.cc",
 ]
 
 arkweb_third_party_blink_renderer_platform_unittest_sources = [

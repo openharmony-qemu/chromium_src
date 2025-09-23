@@ -44,6 +44,7 @@ void SetMigratePasswordsFlagToFile() {
     g_browser_process->local_state()->CommitPendingWrite();
   }
 }
+
 static std::string AssetQuery(base::FilePath key_file) {
   std::string assetHandle;
   bool res = base::ReadFileToString(key_file, &assetHandle);

@@ -120,7 +120,7 @@ static uint64_t g_dump_frame_id = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-constexpr base::TimeDelta reset_state_delay = base::Milliseconds(600);
+constexpr base::TimeDelta reset_state_delay = base::Milliseconds(800);
 constexpr base::TimeDelta reenable_draw_delay = base::Milliseconds(3000);
 #endif  // ARKWEB_MAXIMIZE_RESIZE
 
@@ -300,20 +300,10 @@ void ArkwebDisplayUtils::Resize(const gfx::Size& size) {
   LOG(INFO) << "Display::Resize newSize = " << newSize.ToString();
 #endif
 
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  LOG(DEBUG) << "Display::Resize,current_surface_size is :"
-             << display_->current_surface_size_.ToString().c_str();
-  if (draw_mode_ &&
-      display_->current_surface_size_.height() >= MIN_FITCONTENT_SURFACE_SIZE &&
-      display_->current_surface_size_.height() <= MAX_SURFACE_SIZE) {
-    display_->current_surface_size_.set_width(newSize.width());
-  } else {
-    display_->current_surface_size_ = newSize;
-  }
-#endif
-
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  if (temp_idle_state_ == TempIdleState::INIT) {
+  if (temp_idle_state_ == TempIdleState::INIT &&
+    (size.width() > display_->current_surface_size_.width() ||
+    size.height() > display_->current_surface_size_.height())) {
     LOG(INFO) << "Display::Resize, disable swap, frame_sink_id_: "
               << display_->frame_sink_id_.ToString();
     if (reset_init_timer_ && reset_init_timer_->IsRunning()) {
@@ -325,6 +315,18 @@ void ArkwebDisplayUtils::Resize(const gfx::Size& size) {
     }
   }
 #endif  // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  LOG(DEBUG) << "Display::Resize,current_surface_size is :"
+             << display_->current_surface_size_.ToString().c_str();
+  if (draw_mode_ &&
+      display_->current_surface_size_.height() >= MIN_FITCONTENT_SURFACE_SIZE &&
+      display_->current_surface_size_.height() <= MAX_SURFACE_SIZE) {
+    display_->current_surface_size_.set_width(newSize.width());
+  } else {
+    display_->current_surface_size_ = newSize;
+  }
+#endif
 }
 
 void ArkwebDisplayUtils::DrawAndSwap(AggregatedRenderPass& last_render_pass,

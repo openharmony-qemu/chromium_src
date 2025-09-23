@@ -345,6 +345,16 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
       }
       break;
     }
+    case AXEventGenerator::Event::COLLAPSED: {
+      if (ui::SupportsExpandCollapse(nodeOHOS->GetRole()) &&
+          GetFocus()->IsDescendantOf(nodeOHOS)) {
+        SendAccessibilityEvent(
+            accessibilityId,
+            OHOS::NWeb::AccessibilityEventType::ANNOUNCE_FOR_ACCESSIBILITY,
+            base::UTF16ToUTF8(nodeOHOS->GetComboboxCollapsedText()));
+      }
+      break;
+    }
     case AXEventGenerator::Event::LIVE_REGION_CHANGED: {
       std::string text = base::UTF16ToUTF8(nodeOHOS->GetTextContentUTF16());
       int32_t liveRegionType = nodeOHOS->OHOSLiveRegionType();

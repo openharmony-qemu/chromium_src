@@ -175,7 +175,7 @@ public:
 
     virtual std::unique_ptr<CertManagerAdapter> GetCertManagerAdapter() = 0;
 
-    std::unique_ptr<BackgroundTaskAdapter> CreateBackgroundTaskAdapter() {return nullptr;}
+    virtual std::unique_ptr<BackgroundTaskAdapter> CreateBackgroundTaskAdapter() {return nullptr;}
 
     virtual std::unique_ptr<NetConfigAdapter> GetNetConfigAdapter() = 0;
 };

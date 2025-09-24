@@ -151,6 +151,26 @@ bool OhosInterfaceMock::bAVSessionSetPlaybackState = false;
 bool OhosInterfaceMock::bAVSessionSetAVMetadata = false;
 bool OhosInterfaceMock::bAVSessionSetPlaybackPosition = false;
 
+bool MockAudioCommonEventSupport::start = false;
+bool MockAudioCommonEventSupport::stop = false;
+bool MockAudioCommonEventSupport::release = false;
+bool MockAudioCommonEventSupport::getFrameSizeInCallback = false;
+bool MockAudioCommonEventSupport::getTimestamp = false;
+bool MockAudioCommonEventSupport::create = false;
+bool MockAudioCommonEventSupport::setSamplingRate = false;
+bool MockAudioCommonEventSupport::destroy = false;
+bool MockAudioCommonEventSupport::setEncodingType = false;
+bool MockAudioCommonEventSupport::setSampleFormat = false;
+bool MockAudioCommonEventSupport::setChannelCount = false;
+bool MockAudioCommonEventSupport::setCapturerInfo = false;
+bool MockAudioCommonEventSupport::setBufferAttr = false;
+bool MockAudioCommonEventSupport::setLatencyMode = false;
+bool MockAudioCommonEventSupport::setCapturerCallback = false;
+bool MockAudioCommonEventSupport::generateCapturer = false;
+
+bool MockDatashareCommonEventSupport::bGetPath = false;
+bool MockDatashareCommonEventSupport::bGetFileNameMock = false;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -306,6 +326,140 @@ AVSession_ErrCode __wrap_OH_AVSession_SetPlaybackPosition(OH_AVSession* session,
     } else {
         return __real_OH_AVSession_SetPlaybackPosition(session, position);
     }
+}
+
+OH_AudioStream_Result __wrap_OH_AudioCapturer_Start(OH_AudioCapturer *capturer) {
+    if (MockAudioCommonEventSupport::start) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioCapturer_Start(capturer);
+    }
+    return __real_OH_AudioCapturer_Start(capturer);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioCapturer_Stop(OH_AudioCapturer *capturer) {
+    if (MockAudioCommonEventSupport::stop) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioCapturer_Stop(capturer);
+    }
+    return __real_OH_AudioCapturer_Stop(capturer);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioCapturer_Release(OH_AudioCapturer *capturer) {
+    if (MockAudioCommonEventSupport::release) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioCapturer_Release(capturer);
+    }
+    return __real_OH_AudioCapturer_Release(capturer);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioCapturer_GetFrameSizeInCallback(OH_AudioCapturer *capturer, int32_t *frameSize) {
+    if (MockAudioCommonEventSupport::getFrameSizeInCallback) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioCapturer_GetFrameSizeInCallback(capturer, frameSize);
+    }
+    return __real_OH_AudioCapturer_GetFrameSizeInCallback(capturer, frameSize);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioCapturer_GetTimestamp(OH_AudioCapturer *capturer, clockid_t clockId, 
+    int64_t *framePosition, int64_t *timestamp) {
+    if (MockAudioCommonEventSupport::getTimestamp) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioCapturer_GetTimestamp(
+            capturer, clockId, framePosition, timestamp);
+    }
+    return __real_OH_AudioCapturer_GetTimestamp(capturer, clockId, framePosition, timestamp);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_Create(OH_AudioStreamBuilder **builder, OH_AudioStream_Type type) {
+    if (MockAudioCommonEventSupport::create) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioStreamBuilder_Create(builder, type);
+    }
+    return __real_OH_AudioStreamBuilder_Create(builder, type);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetSamplingRate(OH_AudioStreamBuilder *builder, int32_t rate) {
+    if (MockAudioCommonEventSupport::setSamplingRate) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioStreamBuilder_SetSamplingRate(builder, rate);
+    }
+    return __real_OH_AudioStreamBuilder_SetSamplingRate(builder, rate);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_Destroy(OH_AudioStreamBuilder *builder) {
+    if (MockAudioCommonEventSupport::destroy) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioStreamBuilder_Destroy(builder);
+    }
+    return __real_OH_AudioStreamBuilder_Destroy(builder);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetEncodingType(
+    OH_AudioStreamBuilder *builder, OH_AudioStream_EncodingType encodingType) {
+    if (MockAudioCommonEventSupport::setEncodingType) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioStreamBuilder_SetEncodingType(builder, encodingType);
+    }
+    return __real_OH_AudioStreamBuilder_SetEncodingType(builder, encodingType);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetSampleFormat(
+    OH_AudioStreamBuilder *builder, OH_AudioStream_SampleFormat format) {
+    if (MockAudioCommonEventSupport::setSampleFormat) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioStreamBuilder_SetSampleFormat(builder, format);
+    }
+    return __real_OH_AudioStreamBuilder_SetSampleFormat(builder, format);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetChannelCount(OH_AudioStreamBuilder *builder, int32_t channelCount) {
+    if (MockAudioCommonEventSupport::setChannelCount) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioStreamBuilder_SetChannelCount(builder, channelCount);
+    }
+    return __real_OH_AudioStreamBuilder_SetChannelCount(builder, channelCount);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetCapturerInfo(
+    OH_AudioStreamBuilder *builder, OH_AudioStream_SourceType sourceType) {
+    if (MockAudioCommonEventSupport::setCapturerInfo) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioStreamBuilder_SetCapturerInfo(builder, sourceType);
+    }
+    return __real_OH_AudioStreamBuilder_SetCapturerInfo(builder, sourceType);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetLatencyMode(
+    OH_AudioStreamBuilder *builder, OH_AudioStream_LatencyMode latencyMode) {
+    if (MockAudioCommonEventSupport::setLatencyMode) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioStreamBuilder_SetLatencyMode(builder, latencyMode);
+    }
+    return __real_OH_AudioStreamBuilder_SetLatencyMode(builder, latencyMode);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_SetCapturerCallback(
+    OH_AudioStreamBuilder *builder, OH_AudioCapturer_Callbacks callbacks, void *userData) {
+    if (MockAudioCommonEventSupport::setCapturerCallback) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioStreamBuilder_SetCapturerCallback(
+            builder, callbacks, userData);
+    }
+    return __real_OH_AudioStreamBuilder_SetCapturerCallback(builder, callbacks, userData);
+}
+
+OH_AudioStream_Result __wrap_OH_AudioStreamBuilder_GenerateCapturer(
+    OH_AudioStreamBuilder *builder, OH_AudioCapturer **audioCapturer) {
+    if (MockAudioCommonEventSupport::generateCapturer) {
+        return MockAudioCommonEventSupport::GetInstance().OH_AudioStreamBuilder_GenerateCapturer(builder, audioCapturer);
+    }
+    return __real_OH_AudioStreamBuilder_GenerateCapturer(builder, audioCapturer);
+}
+
+FileManagement_ErrCode __wrap_OH_FileUri_GetPathFromUri(const char* uri,
+                                                        unsigned int length,
+                                                        char** uriResult) {
+  if (MockDatashareCommonEventSupport::bGetPath) {
+    return MockDatashareCommonEventSupport::GetInstance().GetPathFromUriMock(
+        uri, length, uriResult);
+  }
+  return __real_OH_FileUri_GetPathFromUri(uri, length, uriResult);
+}
+
+FileManagement_ErrCode __wrap_OH_FileUri_GetFileName(const char* uri,
+                                                     unsigned int length,
+                                                     char** fileName) {
+  if (MockDatashareCommonEventSupport::bGetFileNameMock) {
+    return MockDatashareCommonEventSupport::GetInstance().GetFileNameMock(
+        uri, length, fileName);
+  }
+  return __real_OH_FileUri_GetFileName(uri, length, fileName);
 }
 
 #ifdef __cplusplus

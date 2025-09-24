@@ -31,6 +31,11 @@
 #include <multimedia/av_session/native_avsession.h>
 #include <multimedia/av_session/native_avsession_errors.h>
 #include <sensors/oh_sensor.h>
+#include <ohaudio/native_audiocapturer.h>
+#include <ohaudio/native_audiostream_base.h>
+#include <ohaudio/native_audiostreambuilder.h>
+#include <ohaudio/native_audio_common.h>
+#include <filemanagement/file_uri/oh_file_uri.h>
 
 namespace MockNdkApi {
 
@@ -170,6 +175,64 @@ public:
     static bool bAVSessionSetPlaybackPosition;
 };
 
+class MockAudioCommonEventSupport {
+public:
+    static MockAudioCommonEventSupport& GetInstance() {
+        static MockAudioCommonEventSupport instance;
+        return instance;
+    }
+
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioCapturer_Start, (OH_AudioCapturer *capturer));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioCapturer_Stop, (OH_AudioCapturer *capturer));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioCapturer_Release, (OH_AudioCapturer *capturer));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioCapturer_GetFrameSizeInCallback, (OH_AudioCapturer *capturer, int32_t *frameSize));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioCapturer_GetTimestamp, (OH_AudioCapturer *capturer, clockid_t clockId, int64_t *framePosition, int64_t *timestamp));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_Create, (OH_AudioStreamBuilder **builder, OH_AudioStream_Type type));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetSamplingRate, (OH_AudioStreamBuilder *builder, int32_t rate));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_Destroy, (OH_AudioStreamBuilder *builder));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetEncodingType, (OH_AudioStreamBuilder *builder, OH_AudioStream_EncodingType encodingType));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetSampleFormat, (OH_AudioStreamBuilder *builder, OH_AudioStream_SampleFormat format));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetChannelCount, (OH_AudioStreamBuilder *builder, int32_t channelCount));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetCapturerInfo, (OH_AudioStreamBuilder *builder, OH_AudioStream_SourceType sourceType));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetLatencyMode, (OH_AudioStreamBuilder *builder, OH_AudioStream_LatencyMode latencyMode));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_SetCapturerCallback, (OH_AudioStreamBuilder *builder, OH_AudioCapturer_Callbacks callbacks, void *userData));
+  MOCK_METHOD(OH_AudioStream_Result, OH_AudioStreamBuilder_GenerateCapturer, (OH_AudioStreamBuilder *builder, OH_AudioCapturer **audioCapturer));
+
+  static bool start;
+  static bool stop;
+  static bool release;
+  static bool getFrameSizeInCallback;
+  static bool getTimestamp;
+  static bool create;
+  static bool setSamplingRate;
+  static bool destroy;
+  static bool setEncodingType;
+  static bool setSampleFormat;
+  static bool setChannelCount;
+  static bool setCapturerInfo;
+  static bool setBufferAttr;
+  static bool setLatencyMode;
+  static bool setCapturerCallback;
+  static bool generateCapturer;
+};
+
+class MockDatashareCommonEventSupport {
+  public:
+    static MockDatashareCommonEventSupport& GetInstance() {
+      static MockDatashareCommonEventSupport instance;
+      return instance;
+    }
+
+    MOCK_METHOD(FileManagement_ErrCode, GetPathFromUriMock, 
+                (const char* uri, unsigned int length, char** uriResult), ());
+                
+    MOCK_METHOD(FileManagement_ErrCode, GetFileNameMock,
+                (const char* uri, unsigned int length, char** fileName), ());
+
+    
+  static bool bGetPath;
+  static bool bGetFileNameMock;
+};
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -195,6 +258,25 @@ extern "C" {
     AVSession_ErrCode __real_OH_AVSession_SetPlaybackState(OH_AVSession *, AVSession_PlaybackState);
     AVSession_ErrCode __real_OH_AVSession_SetAVMetadata(OH_AVSession *, OH_AVMetadata *);
     AVSession_ErrCode __real_OH_AVSession_SetPlaybackPosition(OH_AVSession *, AVSession_PlaybackPosition *);
+
+    OH_AudioStream_Result __real_OH_AudioCapturer_Start(OH_AudioCapturer *capturer);
+    OH_AudioStream_Result __real_OH_AudioCapturer_Stop(OH_AudioCapturer *capturer);
+    OH_AudioStream_Result __real_OH_AudioCapturer_Release(OH_AudioCapturer *capturer);
+    OH_AudioStream_Result __real_OH_AudioCapturer_GetFrameSizeInCallback(OH_AudioCapturer *capturer, int32_t *frameSize);
+    OH_AudioStream_Result __real_OH_AudioCapturer_GetTimestamp(OH_AudioCapturer *capturer, clockid_t clockId, int64_t *framePosition, int64_t *timestamp);
+    OH_AudioStream_Result __real_OH_AudioStreamBuilder_Create(OH_AudioStreamBuilder **builder, OH_AudioStream_Type type);
+    OH_AudioStream_Result __real_OH_AudioStreamBuilder_SetSamplingRate(OH_AudioStreamBuilder *builder, int32_t rate);
+    OH_AudioStream_Result __real_OH_AudioStreamBuilder_Destroy(OH_AudioStreamBuilder *builder);
+    OH_AudioStream_Result __real_OH_AudioStreamBuilder_SetEncodingType(OH_AudioStreamBuilder *builder, OH_AudioStream_EncodingType encodingType);
+    OH_AudioStream_Result __real_OH_AudioStreamBuilder_SetSampleFormat(OH_AudioStreamBuilder *builder, OH_AudioStream_SampleFormat format);
+    OH_AudioStream_Result __real_OH_AudioStreamBuilder_SetChannelCount(OH_AudioStreamBuilder *builder, int32_t channelCount);
+    OH_AudioStream_Result __real_OH_AudioStreamBuilder_SetCapturerInfo(OH_AudioStreamBuilder *builder, OH_AudioStream_SourceType sourceType);
+    OH_AudioStream_Result __real_OH_AudioStreamBuilder_SetLatencyMode(OH_AudioStreamBuilder *builder, OH_AudioStream_LatencyMode latencyMode);
+    OH_AudioStream_Result __real_OH_AudioStreamBuilder_SetCapturerCallback(OH_AudioStreamBuilder *builder, OH_AudioCapturer_Callbacks callbacks, void *userData);
+    OH_AudioStream_Result __real_OH_AudioStreamBuilder_GenerateCapturer(OH_AudioStreamBuilder *builder, OH_AudioCapturer **audioCapturer);
+
+    FileManagement_ErrCode __real_OH_FileUri_GetPathFromUri(const char* uri, unsigned int length, char** uriResult);
+    FileManagement_ErrCode __real_OH_FileUri_GetFileName(const char* uri, unsigned int length, char** fileName);
 #ifdef __cplusplus
 }
 #endif

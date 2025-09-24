@@ -18,6 +18,9 @@
 #include "oh_web_performance_timing.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
+#include "arkweb/build/features/features.h"
+#incldde "third_party/mediapipe/shims/glog/logging.h"
+
 using OHOS::NWeb::HiSysEventAdapter;
 using OHOS::NWeb::OhosAdapterHelper;
 namespace {
@@ -161,6 +164,9 @@ void ReportPageLoadErrorInfo(int instanceId,
   if (errorDesc != "") {
     error_desc = errorDesc;
   }
+#if BUILDFLAG(ARKWE_TEST)
+  LOG(INFO) << "ReportPageLoadErrorInfo { " << "eror_type=" << error_type << " , errorDesc=" << " }";
+#endif
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       PAGE_LOAD_ERROR, HiSysEventAdapter::EventType::FAULT,
       {CURRENT_INSTANCE_ID, std::to_string(instanceId), ERROR_TYPE, error_type,
@@ -246,6 +252,9 @@ void ReportAudioPlayErrorInfo(const std::string errorType,
   if (!errorDesc.empty()) {
     error_desc = errorDesc;
   }
+#if BUILDFLAG(ARKWE_TEST)
+  LOG(INFO) << "ReportAudioPlayErrorInfo { " << "eror_type=" << error_type << " , errorDesc=" << " }";
+#endif
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       AUDIO_PLAY_ERROR, HiSysEventAdapter::EventType::FAULT,
       {ERROR_TYPE, error_type, ERROR_CODE, std::to_string(error_code),
@@ -264,6 +273,9 @@ void ReportVideoPlayErrorInfo(const std::string errorType,
   if (!errorDesc.empty()) {
     error_desc = errorDesc;
   }
+#if BUILDFLAG(ARKWE_TEST)
+  LOG(INFO) << "ReportVideoPlayErrorInfo { " << "eror_type=" << error_type << " , errorDesc=" << " }";
+#endif
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       VIDEO_PLAY_ERROR, HiSysEventAdapter::EventType::FAULT,
       {ERROR_TYPE, error_type, ERROR_CODE, std::to_string(error_code),
@@ -347,6 +359,9 @@ void ReportWebMediaPlayErrorInfo(const std::string& errorType,
   if (!errorDesc.empty()) {
     error_desc = errorDesc;
   }
+#if BUILDFLAG(ARKWE_TEST)
+  LOG(INFO) << "ReportWebMediaPlayErrorInfo { " << "eror_type=" << error_type << " , errorDesc=" << " }";
+#endif
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       WEB_MEDIA_PLAY_ERROR, HiSysEventAdapter::EventType::FAULT,
       {ERROR_TYPE, error_type, ERROR_CODE, std::to_string(error_code),

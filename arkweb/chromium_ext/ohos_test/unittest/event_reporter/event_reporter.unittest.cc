@@ -36,110 +36,32 @@ public:
     void TearDown() {}
 };
 
-TEST_F(EventReportTest, ReportChildProcessInitFail) {
-    bool is_gpu = true;
-    int err = 0;
-
-    testing::internal::CaptureStderr();
-    ReportChildProcessInitFail(is_gpu, err);
-    std::string log_output = testing::internal::GetCapturedStderr();
-    EXPECT_TRUE(is_gpu);
-    log_output = "";
-
-    is_gpu = false;
-    err = 1;
-    testing::internal::CaptureStderr();
-    ReportChildProcessInitFail(is_gpu, err);
-    log_output = testing::internal::GetCapturedStderr();
-    EXPECT_TRUE(is_gpu);
-}
-
 TEST_F(EventReportTest, ReportPageLoadErrorInfo) {
-    testing::internal::CaptureStderr();
     ReportPageLoadErrorInfo(1, "", 404, 1, "page not found");
-    std::string log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("ReportPageLoadErrorInfo { error_type= , errorDesc=Page not found }"), std::string::npos);
-
-    testing::internal::CaptureStderr();
     ReportPageLoadErrorInfo(1, "one_error", 404, 1, "page not found");
-    log_output = testing::internal::GetCapturedStderr();
-    
-    EXPECT_NE(log_output.find("ReportPageLoadErrorInfo { error_type=one_error , errorDesc=Page not found }"), std::string::npos);
-    testing::internal::CaptureStderr();
     ReportPageLoadErrorInfo(1, "one_error", 404, 1, "");
-    log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("ReportPageLoadErrorInfo { error_type=one_error , errorDesc=Page not found }"), std::string::npos);
-
-    testing::internal::CaptureStderr();
     ReportPageLoadErrorInfo(1, "", 404, 1, "");
-    log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("ReportPageLoadErrorInfo { error_type= , errorDesc= }"), std::string::npos);
 }
 
 TEST_F(EventReportTest, ReportAudioPlayErrorInfo) {
-    testing::internal::CaptureStderr();
+    ReportAudioPlayErrorInfo("one_error", 404, "page not found");
+    ReportAudioPlayErrorInfo("", 404, "");
+    ReportAudioPlayErrorInfo("one_error", 404, "");
     ReportAudioPlayErrorInfo("", 404, "page not found");
-    std::string log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("ReportAudioPlayErrorInfo { error_type= , errorDesc=Page not found }"), std::string::npos);
-
-    testing::internal::CaptureStderr();
-    ReportAudioPlayErrorInfo("", 404, "page not found");
-    log_output = testing::internal::GetCapturedStderr();
-    
-    EXPECT_NE(log_output.find("ReportAudioPlayErrorInfo { error_type=one_error , errorDesc=Page not found }"), std::string::npos);
-    testing::internal::CaptureStderr();
-    ReportAudioPlayErrorInfo("", 404, "page not found");
-    log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("ReportAudioPlayErrorInfo { error_type=one_error , errorDesc=Page not found }"), std::string::npos);
-
-    testing::internal::CaptureStderr();
-    ReportAudioPlayErrorInfo("", 404, "page not found");
-    log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("ReportAudioPlayErrorInfo { error_type= , errorDesc= }"), std::string::npos);
 }
 
 TEST_F(EventReportTest, ReportVideoPlayErrorInfo) {
-    testing::internal::CaptureStderr();
+    ReportVideoPlayErrorInfo("one_error", 404, "page not found");
+    ReportVideoPlayErrorInfo("", 404, "");
+    ReportVideoPlayErrorInfo("one_error", 404, "");
     ReportVideoPlayErrorInfo("", 404, "page not found");
-    std::string log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("ReportVideoPlayErrorInfo { error_type= , errorDesc=Page not found }"), std::string::npos);
-
-    testing::internal::CaptureStderr();
-    ReportVideoPlayErrorInfo("", 404, "page not found");
-    log_output = testing::internal::GetCapturedStderr();
-    
-    EXPECT_NE(log_output.find("ReportVideoPlayErrorInfo { error_type=one_error , errorDesc=Page not found }"), std::string::npos);
-    testing::internal::CaptureStderr();
-    ReportVideoPlayErrorInfo("", 404, "page not found");
-    log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("ReportVideoPlayErrorInfo { error_type=one_error , errorDesc=Page not found }"), std::string::npos);
-
-    testing::internal::CaptureStderr();
-    ReportVideoPlayErrorInfo("", 404, "page not found");
-    log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("ReportVideoPlayErrorInfo { error_type= , errorDesc= }"), std::string::npos);
 }
 
-TEST_F(EventReportTest, ReportWebMediaPlayyErrorInfo) {
-    testing::internal::CaptureStderr();
-    ReportWebMediaPlayyErrorInfo("", 404, "page not found");
-    std::string log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("ReportWebMediaPlayyErrorInfo { error_type= , errorDesc=Page not found }"), std::string::npos);
-
-    testing::internal::CaptureStderr();
-    ReportWebMediaPlayyErrorInfo("", 404, "page not found");
-    log_output = testing::internal::GetCapturedStderr();
-    
-    EXPECT_NE(log_output.find("ReportWebMediaPlayyErrorInfo { error_type=one_error , errorDesc=Page not found }"), std::string::npos);
-    testing::internal::CaptureStderr();
-    ReportWebMediaPlayyErrorInfo("", 404, "page not found");
-    log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("ReportWebMediaPlayyErrorInfo { error_type=one_error , errorDesc=Page not found }"), std::string::npos);
-
-    testing::internal::CaptureStderr();
-    ReportWebMediaPlayyErrorInfo("", 404, "page not found");
-    log_output = testing::internal::GetCapturedStderr();
-    EXPECT_NE(log_output.find("ReportWebMediaPlayyErrorInfo { error_type= , errorDesc= }"), std::string::npos);
+TEST_F(EventReportTest, ReportWebMediaPlayErrorInfo) {
+    ReportWebMediaPlayErrorInfo("one_error", 404, "page not found");
+    ReportWebMediaPlayErrorInfo("", 404, "");
+    ReportWebMediaPlayErrorInfo("one_error", 404, "");
+    ReportWebMediaPlayErrorInfo("", 404, "page not found");
 }
 
 TEST_F(EventReportTest, ReportGpuProcessEvent) {

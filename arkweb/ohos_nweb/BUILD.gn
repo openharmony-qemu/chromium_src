@@ -658,6 +658,7 @@ source_set("unittests") {
     "src/ndk/arkweb_model_unittest.cc",
     "src/ndk/arkweb_native_object_unittest.cc",
     "src/native_media_player/nweb_native_media_player_handler_impl_unittests.cc",
+    "src/ndk/scheme_handler/arkweb_scheme_handler_unittest.cc",
     "src/ndk/scheme_handler/http_body_stream_unittest.cc",
     "src/ndk/scheme_handler/resource_handler_unittest.cc",
     "src/ndk/scheme_handler/resource_request_unittest.cc",

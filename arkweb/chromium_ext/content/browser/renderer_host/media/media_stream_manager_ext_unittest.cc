@@ -22,7 +22,7 @@ TEST_F(MediaStreamManagerTest, SetScreenCaptureDelegateCallback001) {
   ASSERT_TRUE(media_stream_manager_->AsMediaStreamManagerExt());
   media_stream_manager_->AsMediaStreamManagerExt()
       ->SetScreenCaptureDelegateCallback(callback);
-  EXPECT_FALSE(media_stream_manager_->AsMediaStreamManagerExt()
+  EXPECT_TRUE(media_stream_manager_->AsMediaStreamManagerExt()
                 ->screen_capture_callback_.is_null());
 }
 

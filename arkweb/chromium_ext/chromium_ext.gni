@@ -1306,3 +1306,7 @@ arkweb_content_browser_unittests_sources =[
   "//arkweb/chromium_ext/content/browser/message_port_provider_for_include_unittest.cc",
   "//arkweb/chromium_ext/content/browser/ohos/software_compositor_host_ohos_unittest.cc"
 ]
+
+arkweb_components_crashpad_ohos_unittest = [
+  "//arkweb/chromium_ext/ohos_test/unittest/crashpad_ohos/crashpad_ohos_unittest.cc",
+]

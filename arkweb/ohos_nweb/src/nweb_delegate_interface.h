@@ -742,8 +742,6 @@ class NWebDelegateInterface
       int tab_id,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
       std::unique_ptr<NWebExtensionTab> tab) = 0;
-  virtual void WebExtensionTabActivated(
-      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) = 0;
   virtual void WebExtensionTabAttached(
       int tab_id,
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) = 0;

@@ -163,7 +163,7 @@ bool SelectionController::HandleGestureTapIfSelectionExist(
   bool ret = false;
   if (!Selection().Contains(v_point, false)) {
     LOG(INFO) << "Tap outside the selected range to clear selection";
-    if (web_local_frame) {
+    if (web_local_frame && event.GetHitTestResult().GetImage()) {
       const blink::WebRange& range =
           web_local_frame->GetInputMethodController()->GetSelectionOffsets();
       if (!range.IsNull()) {

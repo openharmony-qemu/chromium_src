@@ -55,10 +55,11 @@ class BackgroundTaskHolder {
 
   bool MaybeRequestBackgroundRunning(bool running,
                                      OHOS::NWeb::BackgroundModeAdapter bgMode);
+  std::shared_ptr<OHOS::NWeb::BackgroundStateChangeCallbackAdapter> backgroundStateChangeCallbackAdapter_;
 
 private:
   std::unique_ptr<OHOS::NWeb::BackgroundTaskAdapter> backgroundTaskAdapter_;
-  std::shared_ptr<OHOS::NWeb::BackgroundStateChangeCallbackAdapter> backgroundStateChangeCallbackAdapter_;
+
 };
 }  // namespace performance_manager::mechanism
 

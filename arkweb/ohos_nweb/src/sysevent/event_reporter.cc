@@ -19,7 +19,7 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 #include "arkweb/build/features/features.h"
-#incldde "third_party/mediapipe/shims/glog/logging.h"
+#include "third_party/mediapipe/shims/glog/logging.h"
 
 using OHOS::NWeb::HiSysEventAdapter;
 using OHOS::NWeb::OhosAdapterHelper;

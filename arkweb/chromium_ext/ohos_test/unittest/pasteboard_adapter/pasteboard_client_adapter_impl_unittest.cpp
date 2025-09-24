@@ -203,7 +203,6 @@ public:
  MOCK_METHOD(void, OH_Pasteboard_GetDataParams_Destroy, (Pasteboard_GetDataParams* params));
  MOCK_METHOD(OH_UdmfRecord**, OH_UdmfData_GetRecords, (OH_UdmfData* pThis, unsigned int* count));
  MOCK_METHOD(bool, OH_UdmfData_IsLocal, (OH_UdmfData* data));
-//  MOCK_METHOD(, OH_Pasteboard_GetDataParams_Create, ());
 
 static bool pasteboard_GetDataParams_Create;
 static bool abilityRuntime_ApplicationContextGetCacheDir;
@@ -723,10 +722,12 @@ TEST_F(PasteboardClientAdapterImplTest, GetPasteDataTest001)
     auto& mock = MockOHOSFunction::GetInstance();
     Pasteboard_GetDataParams* params = reinterpret_cast<Pasteboard_GetDataParams*>(0x1);
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(params));
-    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _, _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_PARAM_INVALID));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_PARAM_INVALID));
     EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
 
-    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _, _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
@@ -736,7 +737,8 @@ TEST_F(PasteboardClientAdapterImplTest, GetPasteDataTest001)
     EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
 
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(params));
-    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _, _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
@@ -756,7 +758,8 @@ TEST_F(PasteboardClientAdapterImplTest, GetPasteDataTest002)
     auto& mock = MockOHOSFunction::GetInstance();
     Pasteboard_GetDataParams* params = reinterpret_cast<Pasteboard_GetDataParams*>(0x1);
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(params));
-    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _, _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
@@ -769,7 +772,8 @@ TEST_F(PasteboardClientAdapterImplTest, GetPasteDataTest002)
     EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
 
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(params));
-    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _, _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
@@ -794,10 +798,12 @@ TEST_F(PasteboardClientAdapterImplTest, GetPasteDataTest003)
     PasteRecordVector data;
     auto& mock = MockOHOSFunction::GetInstance();
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(nullptr));
-    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _, _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_PARAM_INVALID));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_PARAM_INVALID));
     EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
 
-    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _, _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
@@ -807,7 +813,8 @@ TEST_F(PasteboardClientAdapterImplTest, GetPasteDataTest003)
     EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
 
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(nullptr));
-    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _, _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
@@ -826,7 +833,8 @@ TEST_F(PasteboardClientAdapterImplTest, GetPasteDataTest004)
     PasteRecordVector data;
     auto& mock = MockOHOSFunction::GetInstance();
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(nullptr));
-    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _, _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
@@ -839,7 +847,8 @@ TEST_F(PasteboardClientAdapterImplTest, GetPasteDataTest004)
     EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
 
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(nullptr));
-    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _, _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
     EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());

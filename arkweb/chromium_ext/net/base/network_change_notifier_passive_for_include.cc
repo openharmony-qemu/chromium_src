@@ -238,7 +238,7 @@ NetworkChangeNotifierPassive::GetCurrentDnsServers() {
   return dns_servers_;
 }
 #endif
-
+#ifndef BIND_DNS_TEST
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 void NetworkChangeNotifierPassive::BindDnsToNetwork(int32_t network_for_dns) {
   if (*g_net_connect_callback) {
@@ -248,6 +248,7 @@ void NetworkChangeNotifierPassive::BindDnsToNetwork(int32_t network_for_dns) {
   network_for_dns_ = network_for_dns;
 #endif
 }
+#endif
 #endif
 
 }  // namespace net

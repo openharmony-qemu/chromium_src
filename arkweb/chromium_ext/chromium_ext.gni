@@ -351,6 +351,10 @@ arkweb_net_cert_sources = [
   "//arkweb/chromium_ext/net/cert/test_root_certs_ohos.cc"
 ]
 
+arkweb_net_cert_unittest_sources = [
+  "//arkweb/chromium_ext/net/cert/cert_verify_proc_ohos_unittest.cc",
+]
+
 arkweb_net_dns_sources = [
   "//arkweb/chromium_ext/net/dns/dns_config_service_ohos.cc",
   "//arkweb/chromium_ext/net/dns/dns_config_service_ohos.h",

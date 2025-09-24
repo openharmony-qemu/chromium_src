@@ -590,6 +590,12 @@ arkweb_components_download_internal_common_sources = [
   "//arkweb/chromium_ext/components/download/public/common/arkweb_download_utils_ext.h",
 ]
 
+arkweb_components_download_internal_common_test_sources = [
+  "//arkweb/chromium_ext/components/download/internal/common/arkweb_base_file_ext_unittest.cc",
+  "//arkweb/chromium_ext/components/download/internal/common/arkweb_download_file_impl_ext_unittest.cc",
+  "//arkweb/chromium_ext/components/download/internal/common/arkweb_download_utils_ext_unittest.cc",
+]
+
 arkweb_components_content_settings_renderer_sources = [
   "//arkweb/chromium_ext/components/content_settings/renderer/arkweb_content_settings_agent_impl_ext.cc",
   "//arkweb/chromium_ext/components/content_settings/renderer/arkweb_content_settings_agent_impl_ext.h",

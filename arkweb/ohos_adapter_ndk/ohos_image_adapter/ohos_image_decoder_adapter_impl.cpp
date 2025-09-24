@@ -130,25 +130,25 @@ std::string OhosImageDecoderAdapterImpl::GetEncodedFormat()
     return IMAGE_HEIF;
 }
 
-int32_t OhosImageDecoderAdapterImpl::GetImageWidth()
+uint32_t OhosImageDecoderAdapterImpl::GetImageWidth()
 {
     uint32_t width = 0;
     Image_ErrorCode errorCode = OH_ImageSourceInfo_GetWidth(imageInfo_, &width);
     if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
         WVLOG_E("[HeifSupport] GetImageWidth failed, errorCode %{public}d", errorCode);
     }
-    WVLOG_D("[HeifSupport] GetImageWidth = %{public}d", width);
+    WVLOG_D("[HeifSupport] GetImageWidth = %{public}u", width);
     return width;
 }
 
-int32_t OhosImageDecoderAdapterImpl::GetImageHeight()
+uint32_t OhosImageDecoderAdapterImpl::GetImageHeight()
 {
     uint32_t height = 0;
     Image_ErrorCode errorCode = OH_ImageSourceInfo_GetHeight(imageInfo_, &height);
     if (errorCode != Image_ErrorCode::IMAGE_SUCCESS) {
         WVLOG_E("[HeifSupport] GetImageHeight failed, errorCode %{public}d", errorCode);
     }
-    WVLOG_D("[HeifSupport] GetImageHeight = %{public}d", height);
+    WVLOG_D("[HeifSupport] GetImageHeight = %{public}u", height);
     return height;
 }
 
@@ -163,7 +163,7 @@ bool OhosImageDecoderAdapterImpl::Decode(const uint8_t* data,
                                          AllocatorType type,
                                          bool useYuv)
 {
-    WVLOG_D("[HeifSupport] Decode size = %{public}d, type = %{public}d, useYuv = %{public}d",
+    WVLOG_D("[HeifSupport] Decode size = %{public}u, type = %{public}d, useYuv = %{public}d",
         size, static_cast<int>(type), useYuv);
     if (!ParseRawData(data, size)) {
         WVLOG_E("[HeifSupport] Decode, fail to get image source.");

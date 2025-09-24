@@ -17,9 +17,9 @@
 
 #include <gtest/gtest.h>
 
-const char* PRODUCT_NAME = "ArkwebTestCrashReporterClient";
-const char* VERSION = "1.0";
-const char* TEST_CHANNEL = "test_channel";
+const std::string PRODUCT_NAME = "ArkwebTestCrashReporterClient";
+const std::string VERSION = "1.0";
+const std::string TEST_CHANNEL = "test_channel";
 
 class CrashPadOhosTest : public testing ::Test {
 public:
@@ -44,7 +44,7 @@ public:
         channel_ = channel;
     }
     void Clear() {
-        channel_.Clear();
+        channel_.clear();
     }
 private:
     std::string channel_;
@@ -57,7 +57,7 @@ namespace {
 TEST_F(CrashPadOhosTest, ShouldHandleCrashAndUpdateArgumentsTest) {
     bool write_minidump_to_database = true;
     bool write_minidump_to_log = true;
-    std::vector<std::string>* args;
+    std::vector<std::string> args;
     bool ret = ShouldHandleCrashAndUpdateArguments(write_minidump_to_database,
                                                    write_minidump_to_log, &args);
     EXPECT_EQ(ret, write_minidump_to_database || write_minidump_to_log);
@@ -121,7 +121,7 @@ TEST_F(CrashPadOhosTest, PlatformCrashpadInitializationTest) {
     base::FilePath exe_path; // must be empty
     std::vector<std::string> initial_arguments; // must be empty
     base::FilePath database_path;
-    bool ret = PlatformCrashpadInitialization(initial_client, browser_process, embedded_handler,
+    bool ret = internal::PlatformCrashpadInitialization(initial_client, browser_process, embedded_handler,
                                               user_data_dir, exe_path, initial_arguments,
                                               &database_path);
     EXPECT_EQ(true, ret);
@@ -133,7 +133,7 @@ TEST_F(CrashPadOhosTest, PlatformCrashpadInitializationTest) {
     exe_path.clear(); // must be empty
     initial_arguments.clear(); // must be empty
     database_path.clear();
-    ret = PlatformCrashpadInitialization(initial_client, browser_process, embedded_handler,
+    ret = internal::PlatformCrashpadInitialization(initial_client, browser_process, embedded_handler,
                                               user_data_dir, exe_path, initial_arguments,
                                               &database_path);
     EXPECT_EQ(true, ret);

@@ -488,4 +488,11 @@ void WebFrameWidgetImplExt::ReportBlank(int64_t startTime, int64_t endTime) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_TEST)
+void WebFrameWidgetImplExt::OnTextRecognizedForTest(WTF::Vector<mojom::blink::TextRecognizeResultPtr> res,
+    float scale) {
+  WebFrameWidgetImplExt::OnTextRecognized(std::move(res), scale);
+}
+#endif
+
 }  // namespace blink

@@ -19,6 +19,10 @@ config("blink_renderer_config") {
   ldflags = [ "-Wl,--wrap=IsTabletDevice" ]
 }
 
+config("content_browser_config") {
+  ldflags = [ "-Wl,--wrap=ComputeLanguageByRegion" ]
+}
+
 config("arkweb_base_unittest_config") {
   ldflags = ["-Wl,--wrap=OH_FileUri_GetPathFromUri", 
   "-Wl,--wrap=OH_FileUri_GetFileName",

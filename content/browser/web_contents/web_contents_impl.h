@@ -1497,7 +1497,11 @@ class CONTENT_EXPORT WebContentsImpl
   bool has_persistent_video() { return has_persistent_video_; }
 
   // Returns the focused frame's input handler.
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual blink::mojom::FrameWidgetInputHandler* GetFocusedFrameWidgetInputHandler();
+#else
   blink::mojom::FrameWidgetInputHandler* GetFocusedFrameWidgetInputHandler();
+#endif  // BUILDFLAG(ARKWEB_TEST)
 
   // A render view-originated drag has ended. Informs the render view host and
   // WebContentsDelegate.
@@ -1702,6 +1706,32 @@ class CONTENT_EXPORT WebContentsImpl
                            SuppressedPopupWindowBrowserNavResumeLoad);
   FRIEND_TEST_ALL_PREFIXES(RenderWidgetHostSitePerProcessTest,
                            BrowserClosesPopupIntersectsPermissionPrompt);
+#if BUILDFLAG(ARKWEB_TEST)
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
+                           UpdateRenderAcceptLanguageIfNeed_WithLangSwitch);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
+                           UpdateRenderAcceptLanguageIfNeed_WithLangSwitch_NoRegion);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
+                           UpdateRenderAcceptLanguageIfNeed_HasRegion_SameLanguage);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
+                           UpdateRenderAcceptLanguageIfNeed_HasRegion_CurrentLanguage);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest, JudgeIsPdfPageVisibilityChanged_NotFirstVisible);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest, JudgeIsPdfPageVisibilityChanged_FirstVisiblePdf);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest, UpdateUserAgentOverride);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest, UpdateUserAgentOverride_WithDelayedLoadUrlParams);
+#endif
+
+#if BUILDFLAG(ARKWEB_TEST)
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, MouseSelectMenuShow002);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest,
+                           ChangeVisibilityOfQuickMenu002);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest,
+                           CloseImageOverlaySelection002);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, OnOverlayZoomChanged002);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest,
+                           UpdateBrowserControlsHeight002);
+  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, SetWakeLockHandler002);
+#endif  // ARKWEB_TEST
 
   // So |find_request_manager_| can be accessed for testing.
   friend class FindRequestManagerTest;
@@ -1989,7 +2019,11 @@ class CONTENT_EXPORT WebContentsImpl
 
   // TODO(creis): This should take in a FrameTreeNode to know which node's
   // render manager to return.  For now, we just return the root's.
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual RenderFrameHostManager* GetRenderManager();
+#else
   RenderFrameHostManager* GetRenderManager();
+#endif  // BUILDFLAG(ARKWEB_TEST)
 
   // Removes browser plugin embedder if there is one.
   void RemoveBrowserPluginEmbedder();

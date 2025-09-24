@@ -137,4 +137,22 @@ TEST_F(WebViewImplTest, SetDelayDurationForBackgroundTabFreezing_InvalidDuration
   EXPECT_NE(scheduler->is_tab_freezing_enable_force, true);
 }
 
+TEST_F(WebViewImplTest, SetPinchSmoothMode_NullPageMainFrame) {
+  auto* main_frame = web_view_impl_->GetPage()->MainFrame();
+  web_view_impl_->GetPage()->SetMainFrame(nullptr);
+  web_view_impl_->SetPinchSmoothMode(true);
+  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, false);
+  web_view_impl_->GetPage()->SetMainFrame(main_frame);
+}
+
+TEST_F(WebViewImplTest, OnSetAdBlockEnable_NullPageMainFrame) {
+  auto* main_frame = web_view_impl_->GetPage()->MainFrame();
+  web_view_impl_->OnSetAdBlockEnable(true);
+  EXPECT_EQ(web_view_impl_->GetAdBlockEnableForSite(), true);
+  web_view_impl_->GetPage()->SetMainFrame(nullptr);
+  web_view_impl_->OnSetAdBlockEnable(true);
+  EXPECT_EQ(web_view_impl_->GetAdBlockEnableForSite(), false);
+  web_view_impl_->GetPage()->SetMainFrame(main_frame);
+}
+
 }  // namespace blink

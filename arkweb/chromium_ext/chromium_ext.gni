@@ -1267,6 +1267,8 @@ arkweb_components_subresource_filter_content_shared_browser = [
 ]
 
 arkweb_components_subresource_filter_content_shared_browser_unittest = [
+  "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/user_ruleset_service_unittest.cc",
+  "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/ruleset_service_for_include_unittest.cc",
   "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/user_unindexed_ruleset_stream_generator_unittest.cc",
 ]
 

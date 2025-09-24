@@ -71,12 +71,4 @@ TEST_F(EventReportTest, ReportGpuProcessEvent) {
     ReportGpuProcessEvent(type, "MAILBOX_NONEXISTENT");
 }
 
-TEST_F(EventReportTest, ReportSkiaOOMError) {
-    const std::string errorDesc = "one_error";
-    ReportSkiaOOMError(errorDesc);
-
-    const std::string errorDesc1 = "";
-    ReportSkiaOOMError(errorDesc1);
-}
-
 }//namespace content

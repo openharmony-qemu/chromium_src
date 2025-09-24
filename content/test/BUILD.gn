@@ -2976,7 +2976,7 @@ test("content_unittests") {
     "test_page_unittest.cc",
     "test_render_frame_host_unittest.cc",
     "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_focus_controller_unittest.cc",
-    "../../arkweb/chromomium_ext/ohos_test/unittest/dfx/dfx_reporter_browser_impl_unittest.cc",
+    "../../arkweb/chromium_ext/ohos_test/unittest/dfx/dfx_reporter_browser_impl_unittest.cc",
   ]
 
   if (arkweb_unittests) {

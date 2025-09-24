@@ -123,6 +123,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   std::string GetAllTextInfo();
 #endif // ARKWEB_AI_WRITE
   bool IsAttached() override { return isAttached_; }
+  bool IsFocusSwitch() override { return isFocusSwitchOnBlur_; }
   void SetNeedReattachOnfocus() {
     if (isAttached_) {
       isNeedReattachOnfocus_ = true;

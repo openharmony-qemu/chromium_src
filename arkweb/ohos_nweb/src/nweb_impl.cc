@@ -2133,7 +2133,7 @@ void NWebImpl::OnContinue() {
       }
     }
     if (inputmethod_handler_) {
-      if (inputmethod_handler_->IsAttached()) {
+      if (inputmethod_handler_->IsAttached() && !inputmethod_handler_->IsFocusSwitch()) {
         nweb_delegate_->OnFocus();
       }
     }

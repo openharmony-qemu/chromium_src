@@ -31,7 +31,7 @@ public:
     virtual void NotifyApplicationBackground() = 0;
 };
 
-class  BackgroundStateChangeCallback : pub OHOS::NWeb::BackgroundStateChangeCallbackAdapter {
+class  BackgroundStateChangeCallback : public OHOS::NWeb::BackgroundStateChangeCallbackAdapter {
 public:
     BackgroundStateChangeCallback() = default;
     ~BackgroundStateChangeCallback() = default;

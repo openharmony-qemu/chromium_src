@@ -33,6 +33,9 @@
 #include "ui/gfx/linux/native_pixmap_dmabuf.h"
 #include "ui/gfx/native_pixmap_handle.h"
 
+#include "third_party/skia/include/codec/SkEncodedImageFormat.h"
+#include "third_party/skia/src/codec/SkHeifCodec.h"
+
 namespace media {
 #if BUILDFLAG(ARKWEB_TEST)
 std::function<std::unique_ptr<OhosImageDecoder>()> test_decoder;
@@ -198,6 +201,10 @@ void OhosImageDecodeAcceleratorWorker::Decode(std::vector<uint8_t> encoded_data,
   // We defer checking for a null |decoder| until DecodeTask() because the
   // gpu::ImageDecodeAcceleratorWorker interface mandates that the callback be
   // called asynchronously.
+  if (!CheckImageFormatSupport(encoded_data)) {
+    return;
+  }
+
   OhosImageDecoder* decoder = GetDecoderForImage();
   decoder_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&DecodeTask, decoder, std::move(encoded_data),
@@ -210,5 +217,15 @@ void OhosImageDecodeAcceleratorWorker::ReleaseDecodedPixelMap() {
   }
 }
 
+bool OhosImageDecodeAcceleratorWorker::CheckImageFormatSupport(std::vector<uint8_t> encoded_data) {
+  SkEncodedImageFormat format;
+  if ((SkHeifCodec::IsSupported(encoded_data.data(),
+                                (size_t)encoded_data.size(), &format)) &&
+       format == SkEncodedImageFormat::kHEIF) {
+    return true;
+  }
+  LOG(ERROR) << "[ARKWEB_IMAGE]: OhosImageDecodeAcceleratorWorker doesn't support this image format.";
+  return false;
+}
+
 }  // namespace media
-                     

@@ -44,6 +44,7 @@ CONTENT_EXPORT extern const char kOhosHttpCacheSimple[];
 CONTENT_EXPORT extern const char kCalcTabletMode[];
 CONTENT_EXPORT extern const char kDisableMobileStyleSheet[];
 CONTENT_EXPORT extern const char kDisableNonAdvancedSecurityMode[];
+CONTENT_EXPORT extern const char kDisableNextPreviousFlag[];
 #endif
 
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)

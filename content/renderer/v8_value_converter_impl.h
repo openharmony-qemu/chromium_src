@@ -46,27 +46,7 @@ class CONTENT_EXPORT V8ValueConverterImpl : public V8ValueConverter {
   class FromV8ValueState;
   class ScopedUniquenessGuard;
 #if BUILDFLAG(ARKWEB_TEST)
-  class V8ValueConverterImplTest;
-#endif
-#if BUILDFLAG(ARKWEB_TEST)
-  FRIEND_TEST_ALL_PREFIXES(V8ValueConverterImplTest, FromV8Object_CircularReference);
-  FRIEND_TEST_ALL_PREFIXES(V8ValueConverterImplTest, FromV8Object_CrossContext);
-  FRIEND_TEST_ALL_PREFIXES(V8ValueConverterImplTest, FromV8Object_DOMObject);
-  FRIEND_TEST_ALL_PREFIXES(V8ValueConverterImplTest, FromV8Object_ScripNullValues);
-  FRIEND_TEST_ALL_PREFIXES(V8ValueConverterImplTest, FromV8Object_NonStringNumberKeys);
-  FRIEND_TEST_ALL_PREFIXES(V8ValueConverterImplTest, FromV8Object_StrategyTrue);
-  FRIEND_TEST_ALL_PREFIXES(V8ValueConverterImplTest, FromV8Object_InternalFieldCountPositive);
-  FRIEND_TEST_ALL_PREFIXES(V8ValueConverterImplTest, FromV8Object_NonStringKey);
-#endif
-#if BUILDFLAG(ARKWEB_TEST)
-  std::unique_ptr<base::Value> FromV8ObjectForUnitTest(
-    v8::Local<v8::Object> object,
-    FromV8ValueState* state,
-    v8::Isolate* isolate,
-    bool is_function,
-    bool is_promise){
-    return FromV8Object(object, state, isolate, is_function, is_promise);
-  }
+  friend class V8ValueConverterImplTest;
 #endif
 
   v8::Local<v8::Value> ToV8ValueImpl(v8::Isolate* isolate,

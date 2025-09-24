@@ -47,14 +47,11 @@ static constexpr int64_t kMicrosecondsPerMillisecond = 1000;
 void ChangeCommitNavigationTime(int64_t time);
 void ChangeCompleteInitialize(bool complete);
 #endif
+#if BUILDFLAG(ARKWEB_TEST)
+bool IsCompleteInitialize() { return is_complete_initialize; }
+#endif
 
 private:
-#if BUILDFLAG(ARKWEB_TEST)
-  class RenderFrameImplTest;
-#endif
-#if BUILDFLAG(ARKWEB_TEST)
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, ReportRenderInitBlock);
-#endif
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
   int64_t commit_navigation_time_ = 0;
   bool is_complete_initialize = false;

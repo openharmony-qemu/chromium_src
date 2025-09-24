@@ -82,15 +82,7 @@ class CONTENT_EXPORT StreamTextureHost
 
  private:
 #if BUILDFLAG(ARKWEB_TEST)
-  class StreamTextureHostTest;
-#endif
-#if BUILDFLAG(ARKWEB_TEST)
-  FRIEND_TEST_ALL_PREFIXES(StreamTextureHostTest, OnFrameAvailable_WithListener);
-  FRIEND_TEST_ALL_PREFIXES(StreamTextureHostTest, OnFrameAvailable_WithOutListener);
-  FRIEND_TEST_ALL_PREFIXES(StreamTextureHostTest, OnFrameWithInfoAvailable_WithListener);
-  FRIEND_TEST_ALL_PREFIXES(StreamTextureHostTest, OnFrameWithInfoAvailable_WithOutListener);
-  FRIEND_TEST_ALL_PREFIXES(StreamTextureHostTest, OnDestroySurface_WithListener);
-  FRIEND_TEST_ALL_PREFIXES(StreamTextureHostTest, OnDestroySurface_WithOutListener);
+  friend class StreamTextureHostTest;
 #endif
   // gpu::mojom::StreamTextureClient:
   void OnFrameAvailable() override;

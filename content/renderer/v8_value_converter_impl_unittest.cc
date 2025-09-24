@@ -259,6 +259,17 @@ class V8ValueConverterImplTest : public testing::Test {
         .ToLocalChecked()
         .As<T>();
   }
+#if BUILDFLAG(ARKWEB_TEST)
+  std::unique_ptr<base::Value> FromV8ObjectForUnitTest(
+    V8ValueConverterImpl& converter,
+    v8::Local<v8::Object> object,
+    v8::Isolate* isolate,
+    bool is_function,
+    bool is_promise){
+    V8ValueConverterImpl::FromV8ValueState state(false);
+    return converter.FromV8Object(object, &state, isolate, is_function, is_promise);
+  }
+#endif
 
   base::test::TaskEnvironment task_environment_;
   gin::IsolateHolder isolate_holder_;
@@ -1286,6 +1297,7 @@ TEST_F(V8ValueConverterImplTest, StrategyBypass) {
   EXPECT_FALSE(undefined_value);
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
 TEST_F(V8ValueConverterImplTest, FromV8Object_CircularReference) {
   V8ValueConverterImpl converter;
   v8::HandleScope handle_scope(isolate_);
@@ -1293,8 +1305,7 @@ TEST_F(V8ValueConverterImplTest, FromV8Object_CircularReference) {
   v8::Context::Scope context_scope(context);
   v8::Local<v8::Object> obj = v8::Object::New(isolate_);
   obj->Set(context, v8::String::NewFromUtf8Literal(isolate_, "self"), obj).Check();
-  V8ValueConverterImpl::FromV8ValueState state(false);
-  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(obj, &state, isolate_, false, false);
+  std::unique_ptr<base::Value> result = FromV8ObjectForUnitTest(converter, obj, isolate_, false, false);
   EXPECT_TRUE(result->is_dict());
   EXPECT_FALSE(result->GetDict().empty());
 }
@@ -1309,8 +1320,7 @@ TEST_F(V8ValueConverterImplTest, FromV8Object_CrossContext) {
   obj->Set(second_context, v8::String::NewFromUtf8Literal(isolate_, "test"),
       v8::String::NewFromUtf8Literal(isolate_, "value")).Check();
   v8::Context::Scope original_context_scope(context_.Get(isolate_));
-  V8ValueConverterImpl::FromV8ValueState state(false);
-  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(obj, &state, isolate_, false, false);
+  std::unique_ptr<base::Value> result = FromV8ObjectForUnitTest(converter, obj, isolate_, false, false);
   EXPECT_TRUE(result->is_dict());
   EXPECT_EQ("value", GetString(&result->GetDict(), "test"));
 }
@@ -1323,8 +1333,7 @@ TEST_F(V8ValueConverterImplTest, FromV8Object_DOMObject) {
   v8::Local<v8::ObjectTemplate> templ = v8::ObjectTemplate::New(isolate_);
   templ->SetInternalFieldCount(1);
   v8::Local<v8::Object> dom_like_obj = templ->NewInstance(context).ToLocalChecked();
-  V8ValueConverterImpl::FromV8ValueState state(false);
-  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(dom_like_obj, &state, isolate_, false, false);
+  std::unique_ptr<base::Value> result = FromV8ObjectForUnitTest(converter, dom_like_obj, isolate_, false, false);
   EXPECT_TRUE(result->is_dict());
   EXPECT_TRUE(result->GetDict().empty());
 }
@@ -1340,8 +1349,7 @@ TEST_F(V8ValueConverterImplTest, FromV8Object_ScripNullValues) {
       v8::Null(isolate_)).Check();
   obj->Set(context, v8::String::NewFromUtf8Literal(isolate_, "stringValue"),
       v8::String::NewFromUtf8Literal(isolate_, "test")).Check();
-  V8ValueConverterImpl::FromV8ValueState state(false);
-  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(obj, &state, isolate_, false, false);
+  std::unique_ptr<base::Value> result = FromV8ObjectForUnitTest(converter, obj, isolate_, false, false);
   EXPECT_TRUE(result->is_dict());
   EXPECT_FALSE(result->GetDict().contains("nullvalue"));
   EXPECT_TRUE(result->GetDict().contains("stringValue"));
@@ -1356,8 +1364,7 @@ TEST_F(V8ValueConverterImplTest, FromV8Object_NonStringNumberKeys) {
   v8::Local<v8::Object> obj = v8::Object::New(isolate_);
   v8::Local<v8::Symbol> symbol = v8::Symbol::New(isolate_);
   obj->Set(context, symbol, v8::String::NewFromUtf8Literal(isolate_, "symbol_value")).Check();
-  V8ValueConverterImpl::FromV8ValueState state(false);
-  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(obj, &state, isolate_, false, false);
+  std::unique_ptr<base::Value> result = FromV8ObjectForUnitTest(converter, obj, isolate_, false, false);
   EXPECT_TRUE(result->is_dict());
   EXPECT_TRUE(result->GetDict().empty());
 }
@@ -1370,8 +1377,7 @@ TEST_F(V8ValueConverterImplTest, FromV8Object_StrategyTrue) {
   V8ValueConverterOverridingStrategyForTesting strategy;
   converter.SetStrategy(&strategy);
   v8::Local<v8::Object> obj = v8::Object::New(isolate_);
-  V8ValueConverterImpl::FromV8ValueState state(false);
-  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(obj, &state, isolate_, false, false);
+  std::unique_ptr<base::Value> result = FromV8ObjectForUnitTest(converter, obj, isolate_, false, false);
   EXPECT_TRUE(result->is_dict());
   EXPECT_TRUE(result->GetDict().empty());
 }
@@ -1384,8 +1390,7 @@ TEST_F(V8ValueConverterImplTest, FromV8Object_InternalFieldCountPositive) {
   v8::Local<v8::ObjectTemplate> obj_template = v8::ObjectTemplate::New(isolate_);
   obj_template->SetInternalFieldCount(1);
   v8::Local<v8::Object> dom_object = obj_template->NewInstance(context).ToLocalChecked();
-  V8ValueConverterImpl::FromV8ValueState state(false);
-  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(dom_object, &state, isolate_, false, false);
+  std::unique_ptr<base::Value> result = FromV8ObjectForUnitTest(converter, dom_object, isolate_, false, false);
   EXPECT_TRUE(result->is_dict());
   EXPECT_TRUE(result->GetDict().empty());
 }
@@ -1400,10 +1405,10 @@ TEST_F(V8ValueConverterImplTest, FromV8Object_NonStringKey) {
   obj->Set(context, symbol, v8::String::NewFromUtf8Literal(isolate_, "symbol_value")).Check();
   obj->Set(context, v8::Number::New(isolate_, 42),
            v8::String::NewFromUtf8Literal(isolate_, "number_value")).Check();
-  V8ValueConverterImpl::FromV8ValueState state(false);
-  std::unique_ptr<base::Value> result = converter.FromV8ObjectForUnitTest(obj, &state, isolate_, false, false);
+  std::unique_ptr<base::Value> result = FromV8ObjectForUnitTest(converter, obj, isolate_, false, false);
   EXPECT_TRUE(result->is_dict());
   EXPECT_FALSE(result->GetDict().empty());
 }
+#endif
 
 }  // namespace content

@@ -163,107 +163,142 @@ class MockWebDocumentLoader : public blink::WebDocumentLoader {
   MOCK_METHOD(bool, HasLoadedNonInitialEmptyDocument, (), (const));
 };
 
-TEST_F(RenderFrameImplTest, RunScriptsAtHeadReady_WithContentClient) {
+class ArkWebRenderFrameImplTest : public RenderFrameImplTest {
+ public:
+  void TestDidSubresourceFiltered() {
+    GetMainRenderFrame()->DidSubresourceFiltered();
+  }
+  void TestOnUpdateAdBlockEnabledToRender(bool site_adblock_enabled) {
+    GetMainRenderFrame()->OnUpdateAdBlockEnabledToRender(site_adblock_enabled);
+  }
+  std::vector<RenderFrameObserver*> TestGetObservers() {
+    std::vector<RenderFrameObserver*> observers;
+    for (auto& observer : GetMainRenderFrame()->observers_) {
+        observers.push_back(&observer);
+    }
+    return observers;
+  }
+  void TestObserversClear() {
+    GetMainRenderFrame()->observers_.Clear();
+  }
+  void TestAddObserver(RenderFrameObserver* observer) {
+    GetMainRenderFrame()->observers_.AddObserver(observer);
+  }
+  uint32_t TestGetNWebId() {
+    return GetMainRenderFrame()->nweb_id_;
+  }
+  blink::WebDocumentLoader* TestGetDocumentLoader() {
+    return GetMainRenderFrame()->frame_->GetDocumentLoader();
+  }
+  void TestSetDocumentLoader(blink::WebDocumentLoader* document_loader) {
+    GetMainRenderFrame()->frame_->SetDocumentLoaderForTest(document_loader);
+  }
+  bool TestGetNewWindowWebView(const GURL& target_url, blink::WebNavigationPolicy policy, bool allow_popup) {
+    return GetMainRenderFrame()->GetNewWindowWebView(target_url, policy, allow_popup);
+  }
+  void SetFrameHostForTest(mojom::FrameHost* frame_host) {
+    GetMainRenderFrame()->SetFrameHostForTest(frame_host);
+  }
+  mojom::FrameHost* TestGetFrameHost() {
+    return GetMainRenderFrame()->GetFrameHost();
+  }
+};
+
+TEST_F(ArkWebRenderFrameImplTest, RunScriptsAtHeadReady_WithContentClient) {
   auto* client_renderer = SetRendererClientForTesting(nullptr);
   GetMainRenderFrame()->RunScriptsAtHeadReady();
   SetRendererClientForTesting(client_renderer);
 }
 
-TEST_F(RenderFrameImplTest, DidSubresourceFiltered) {
+TEST_F(ArkWebRenderFrameImplTest, DidSubresourceFiltered) {
   RenderFrameTestObserver observer1(GetMainRenderFrame());
-  base::ObserverList<RenderFrameObserver>::Unchecked observers;
-  for (auto& observer : GetMainRenderFrame()->observers_) {
-    observers.AddObserver(&observer);
-  }
-  GetMainRenderFrame()->observers_.Clear();
+  auto observers = TestGetObservers();
+  TestObserversClear();
   EXPECT_CALL(observer1, DidSubresourceFiltered()).Times(0);
-  GetMainRenderFrame()->DidSubresourceFiltered();
+  TestDidSubresourceFiltered();
   for (auto& observer : observers) {
-    GetMainRenderFrame()->observers_.AddObserver(&observer);
+    TestAddObserver(observer);
   }
   EXPECT_CALL(observer1, DidSubresourceFiltered()).Times(1);
-  GetMainRenderFrame()->DidSubresourceFiltered();
+  TestDidSubresourceFiltered();
 }
 
-TEST_F(RenderFrameImplTest, OnUpdateAdBlockEnabledToRender_NoUserFilter) {
+TEST_F(ArkWebRenderFrameImplTest, OnUpdateAdBlockEnabledToRender_NoUserFilter) {
   EXPECT_EQ(GetMainRenderFrame()->GetWebView()->GetAdBlockEnableForSite(), false);
-  GetMainRenderFrame()->OnUpdateAdBlockEnabledToRender(false);
+  TestOnUpdateAdBlockEnabledToRender(false);
   EXPECT_EQ(GetMainRenderFrame()->GetWebView()->GetAdBlockEnableForSite(), true);
-  GetMainRenderFrame()->OnUpdateAdBlockEnabledToRender(false);
+  TestOnUpdateAdBlockEnabledToRender(false);
   EXPECT_EQ(GetMainRenderFrame()->GetWebView()->GetAdBlockEnableForSite(), true);
 }
 
-TEST_F(RenderFrameImplTest, OnUpdateAdBlockEnabledToRender_NoDocumentLoader) {
-  blink::WebDocumentLoader* document_loader = GetMainRenderFrame()->frame_->GetDocumentLoader();
+TEST_F(ArkWebRenderFrameImplTest, OnUpdateAdBlockEnabledToRender_NoDocumentLoader) {
+  blink::WebDocumentLoader* document_loader = TestGetDocumentLoader();
   MockWebDocumentLoader document_loader_mock;
-  GetMainRenderFrame()->frame_->SetDocumentLoaderForTest(nullptr);
+  TestSetDocumentLoader(nullptr);
   EXPECT_CALL(document_loader_mock, GetWebSubresourceFilter()).Times(0);
-  GetMainRenderFrame()->OnUpdateAdBlockEnabledToRender(true);
-  GetMainRenderFrame()->frame_->SetDocumentLoaderForTest(document_loader);
+  TestOnUpdateAdBlockEnabledToRender(true);
+  TestSetDocumentLoader(document_loader);
 }
 
-TEST_F(RenderFrameImplTest, OnUpdateAdBlockEnabledToRender_Filter) {
-  blink::WebDocumentLoader* document_loader = GetMainRenderFrame()->frame_->GetDocumentLoader();
+TEST_F(ArkWebRenderFrameImplTest, OnUpdateAdBlockEnabledToRender_Filter) {
+  blink::WebDocumentLoader* document_loader = TestGetDocumentLoader();
   MockWebDocumentLoader document_loader_mock;
   MockWebDocumentSubresourceFilter mock_filter;
-  GetMainRenderFrame()->frame_->SetDocumentLoaderForTest(&document_loader_mock);
+  TestSetDocumentLoader(&document_loader_mock);
   EXPECT_CALL(document_loader_mock, GetWebSubresourceFilter()).WillOnce(testing::Return(&mock_filter));
   EXPECT_CALL(mock_filter, set_activation_state(true)).Times(1);
-  GetMainRenderFrame()->OnUpdateAdBlockEnabledToRender(true);
-  GetMainRenderFrame()->frame_->SetDocumentLoaderForTest(document_loader);
+  TestOnUpdateAdBlockEnabledToRender(true);
+  TestSetDocumentLoader(document_loader);
 }
 
-TEST_F(RenderFrameImplTest, OnUpdateAdBlockEnabledToRender_UserFilter) {
-  blink::WebDocumentLoader* document_loader = GetMainRenderFrame()->frame_->GetDocumentLoader();
+TEST_F(ArkWebRenderFrameImplTest, OnUpdateAdBlockEnabledToRender_UserFilter) {
+  blink::WebDocumentLoader* document_loader = TestGetDocumentLoader();
   MockWebDocumentLoader document_loader_mock;
   MockWebDocumentSubresourceFilter mock_filter;
-  GetMainRenderFrame()->frame_->SetDocumentLoaderForTest(&document_loader_mock);
+  TestSetDocumentLoader(&document_loader_mock);
   EXPECT_CALL(document_loader_mock, GetWebUserSubresourceFilter()).WillOnce(testing::Return(&mock_filter));
   EXPECT_CALL(mock_filter, set_activation_state(true)).Times(1);
-  GetMainRenderFrame()->OnUpdateAdBlockEnabledToRender(true);
-  GetMainRenderFrame()->frame_->SetDocumentLoaderForTest(document_loader);
+  TestOnUpdateAdBlockEnabledToRender(true);
+  TestSetDocumentLoader(document_loader);
 }
 
-TEST_F(RenderFrameImplTest, OnUpdateAdBlockEnabledToRender_WithoutView) {
+TEST_F(ArkWebRenderFrameImplTest, OnUpdateAdBlockEnabledToRender_WithoutView) {
   auto* web_view = GetMainRenderFrame()->GetWebView();
   GetMainRenderFrame()->SetWebViewForTest(nullptr);
-  blink::WebDocumentLoader* document_loader = GetMainRenderFrame()->frame_->GetDocumentLoader();
+  blink::WebDocumentLoader* document_loader = TestGetDocumentLoader();
   MockWebDocumentLoader document_loader_mock;
-  GetMainRenderFrame()->frame_->SetDocumentLoaderForTest(&document_loader_mock);
+  TestSetDocumentLoader(&document_loader_mock);
   EXPECT_CALL(document_loader_mock, GetWebSubresourceFilter()).WillOnce(testing::Return(nullptr));
-  GetMainRenderFrame()->OnUpdateAdBlockEnabledToRender(true);
+  TestOnUpdateAdBlockEnabledToRender(true);
   GetMainRenderFrame()->SetWebViewForTest(web_view);
-  GetMainRenderFrame()->frame_->SetDocumentLoaderForTest(document_loader);
+  TestSetDocumentLoader(document_loader);
 }
 
-TEST_F(RenderFrameImplTest, AddNamedObject) {
-  base::ObserverList<RenderFrameObserver>::Unchecked observers;
-  for (auto& observer : GetMainRenderFrame()->observers_) {
-    observers.AddObserver(&observer);
-  }
-  GetMainRenderFrame()->observers_.Clear();
+TEST_F(ArkWebRenderFrameImplTest, AddNamedObject) {
+  auto observers = TestGetObservers();
+  TestObserversClear();
   GetMainRenderFrame()->AddNamedObject("test_name", 1, {}, true);
   for (auto& observer : observers) {
-    GetMainRenderFrame()->observers_.AddObserver(&observer);
+    TestAddObserver(observer);
   }
   GetMainRenderFrame()->AddNamedObject("test_name", 1, {}, true);
 }
 
-TEST_F(RenderFrameImplTest, NotifyLcpForBlankless_BlanklessKey) {
+TEST_F(ArkWebRenderFrameImplTest, NotifyLcpForBlankless_BlanklessKey) {
   uint64_t blankless_key = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
   GetMainRenderFrame()->SendBlanklessKeyToRenderFrame(1, blankless_key, 3, 4);
   GetMainRenderFrame()->NotifyLcpForBlankless();
-  EXPECT_EQ(GetMainRenderFrame()->nweb_id_, 1);
+  EXPECT_EQ(TestGetNWebId(), 1);
 }
 
-TEST_F(RenderFrameImplTest, NotifyLcpForBlankless_NoBlanklessKey) {
+TEST_F(ArkWebRenderFrameImplTest, NotifyLcpForBlankless_NoBlanklessKey) {
   GetMainRenderFrame()->SendBlanklessKeyToRenderFrame(1, 1, 3, 4);
   GetMainRenderFrame()->NotifyLcpForBlankless();
-  EXPECT_EQ(GetMainRenderFrame()->nweb_id_, 1);
+  EXPECT_EQ(TestGetNWebId(), 1);
 }
 
-TEST_F(RenderFrameImplTest, PageLoadStartLoggerReport_False) {
-  blink::WebDocumentLoader* document_loader = GetMainRenderFrame()->frame_->GetDocumentLoader();
+TEST_F(ArkWebRenderFrameImplTest, PageLoadStartLoggerReport_False) {
+  blink::WebDocumentLoader* document_loader = TestGetDocumentLoader();
   EXPECT_NE(document_loader, nullptr);
   GetMainRenderFrame()->GetWebView()->SetStrictLogMode(false);
   base::CommandLine::Init(0, nullptr);
@@ -274,8 +309,8 @@ TEST_F(RenderFrameImplTest, PageLoadStartLoggerReport_False) {
   GetMainRenderFrame()->PageLoadFinishedLoggerReport();
 }
 
-TEST_F(RenderFrameImplTest, PageLoadStartLoggerReport_True) {
-  blink::WebDocumentLoader* document_loader = GetMainRenderFrame()->frame_->GetDocumentLoader();
+TEST_F(ArkWebRenderFrameImplTest, PageLoadStartLoggerReport_True) {
+  blink::WebDocumentLoader* document_loader = TestGetDocumentLoader();
   EXPECT_NE(document_loader, nullptr);
   GetMainRenderFrame()->GetWebView()->SetStrictLogMode(true);
   base::CommandLine::Init(0, nullptr);
@@ -286,9 +321,9 @@ TEST_F(RenderFrameImplTest, PageLoadStartLoggerReport_True) {
   GetMainRenderFrame()->PageLoadFinishedLoggerReport();
 }
 
-TEST_F(RenderFrameImplTest, PageLoadStartLoggerReport_WithoutView) {
+TEST_F(ArkWebRenderFrameImplTest, PageLoadStartLoggerReport_WithoutView) {
   auto* web_view = GetMainRenderFrame()->GetWebView();
-  blink::WebDocumentLoader* document_loader = GetMainRenderFrame()->frame_->GetDocumentLoader();
+  blink::WebDocumentLoader* document_loader = TestGetDocumentLoader();
   EXPECT_NE(document_loader, nullptr);
   GetMainRenderFrame()->SetWebViewForTest(nullptr);
   base::CommandLine::Init(0, nullptr);
@@ -300,7 +335,7 @@ TEST_F(RenderFrameImplTest, PageLoadStartLoggerReport_WithoutView) {
   GetMainRenderFrame()->SetWebViewForTest(web_view);
 }
 
-TEST_F(RenderFrameImplTest, PageLoadFinishedLoggerReport_WithoutView) {
+TEST_F(ArkWebRenderFrameImplTest, PageLoadFinishedLoggerReport_WithoutView) {
   auto* web_view = GetMainRenderFrame()->GetWebView();
   GetMainRenderFrame()->SetWebViewForTest(nullptr);
   base::CommandLine::Init(0, nullptr);
@@ -311,7 +346,7 @@ TEST_F(RenderFrameImplTest, PageLoadFinishedLoggerReport_WithoutView) {
   GetMainRenderFrame()->SetWebViewForTest(web_view);
 }
 
-TEST_F(RenderFrameImplTest, ContentLoadFailedLoggerReport_False) {
+TEST_F(ArkWebRenderFrameImplTest, ContentLoadFailedLoggerReport_False) {
   GetMainRenderFrame()->GetWebView()->SetStrictLogMode(false);
   base::CommandLine::Init(0, nullptr);
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
@@ -320,7 +355,7 @@ TEST_F(RenderFrameImplTest, ContentLoadFailedLoggerReport_False) {
   GetMainRenderFrame()->ContentLoadFailedLoggerReport();
 }
 
-TEST_F(RenderFrameImplTest, ContentLoadFailedLoggerReport_True) {
+TEST_F(ArkWebRenderFrameImplTest, ContentLoadFailedLoggerReport_True) {
   GetMainRenderFrame()->GetWebView()->SetStrictLogMode(true);
   base::CommandLine::Init(0, nullptr);
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
@@ -329,7 +364,7 @@ TEST_F(RenderFrameImplTest, ContentLoadFailedLoggerReport_True) {
   GetMainRenderFrame()->ContentLoadFailedLoggerReport();
 }
 
-TEST_F(RenderFrameImplTest, ContentLoadFailedLoggerReport_WithoutView) {
+TEST_F(ArkWebRenderFrameImplTest, ContentLoadFailedLoggerReport_WithoutView) {
   auto* web_view = GetMainRenderFrame()->GetWebView();
   GetMainRenderFrame()->SetWebViewForTest(nullptr);
   base::CommandLine::Init(0, nullptr);
@@ -340,23 +375,23 @@ TEST_F(RenderFrameImplTest, ContentLoadFailedLoggerReport_WithoutView) {
   GetMainRenderFrame()->SetWebViewForTest(web_view);
 }
 
-TEST_F(RenderFrameImplTest, ReportRenderInitBlock) {
+TEST_F(ArkWebRenderFrameImplTest, ReportRenderInitBlock) {
   RenderFrameImplUtils utils(GetMainRenderFrame());
   utils.ChangeCompleteInitialize(true);
-  EXPECT_EQ(utils.is_complete_initialize, true);
+  EXPECT_EQ(utils.IsCompleteInitialize(), true);
   utils.ReportRenderInitBlock();
-  EXPECT_EQ(utils.is_complete_initialize, false);
+  EXPECT_EQ(utils.IsCompleteInitialize(), false);
 }
 
-TEST_F(RenderFrameImplTest, CloseImageOverlaySelection) {
-  auto* frame_host = GetMainRenderFrame()->GetFrameHost();
-  GetMainRenderFrame()->SetFrameHostForTest(nullptr);
+TEST_F(ArkWebRenderFrameImplTest, CloseImageOverlaySelection) {
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
   GetMainRenderFrame()->CloseImageOverlaySelection();
-  GetMainRenderFrame()->SetFrameHostForTest(frame_host);
+  SetFrameHostForTest(frame_host);
   GetMainRenderFrame()->CloseImageOverlaySelection();
 }
 
-TEST_F(RenderFrameImplTest, SetZoomLevel) {
+TEST_F(ArkWebRenderFrameImplTest, SetZoomLevel) {
   auto* web_frame_widget = GetMainRenderFrame()->GetLocalRootWebFrameWidget();
   GetMainRenderFrame()->SetLocalRootWebFrameWidgetForTest(nullptr);
   GetMainRenderFrame()->SetZoomLevel(1.5, gfx::Point(10, 20));
@@ -364,7 +399,7 @@ TEST_F(RenderFrameImplTest, SetZoomLevel) {
   GetMainRenderFrame()->SetZoomLevel(1.5, gfx::Point(10, 20));
 }
 
-TEST_F(RenderFrameImplTest, SetOverscrollMode) {
+TEST_F(ArkWebRenderFrameImplTest, SetOverscrollMode) {
   auto* web_frame_widget = GetMainRenderFrame()->GetLocalRootWebFrameWidget();
   GetMainRenderFrame()->SetLocalRootWebFrameWidgetForTest(nullptr);
   GetMainRenderFrame()->SetOverscrollMode(0);
@@ -372,7 +407,7 @@ TEST_F(RenderFrameImplTest, SetOverscrollMode) {
   GetMainRenderFrame()->SetOverscrollMode(1);
 }
 
-TEST_F(RenderFrameImplTest, GetOverScrollOffset) {
+TEST_F(ArkWebRenderFrameImplTest, GetOverScrollOffset) {
   auto* web_frame_widget = GetMainRenderFrame()->GetLocalRootWebFrameWidget();
   GetMainRenderFrame()->SetLocalRootWebFrameWidgetForTest(nullptr);
   auto result1 = GetMainRenderFrame()->GetOverScrollOffset();
@@ -384,97 +419,97 @@ TEST_F(RenderFrameImplTest, GetOverScrollOffset) {
   EXPECT_EQ(result2.y(), 0);
 }
 
-TEST_F(RenderFrameImplTest, MouseSelectMenuShow) {
-  auto* frame_host = GetMainRenderFrame()->GetFrameHost();
-  GetMainRenderFrame()->SetFrameHostForTest(nullptr);
+TEST_F(ArkWebRenderFrameImplTest, MouseSelectMenuShow) {
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
   GetMainRenderFrame()->MouseSelectMenuShow(false);
-  GetMainRenderFrame()->SetFrameHostForTest(frame_host);
+  SetFrameHostForTest(frame_host);
   GetMainRenderFrame()->MouseSelectMenuShow(true);
 }
 
-TEST_F(RenderFrameImplTest, ChangeVisibilityOfQuickMenu) {
-  auto* frame_host = GetMainRenderFrame()->GetFrameHost();
-  GetMainRenderFrame()->SetFrameHostForTest(nullptr);
+TEST_F(ArkWebRenderFrameImplTest, ChangeVisibilityOfQuickMenu) {
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
   GetMainRenderFrame()->ChangeVisibilityOfQuickMenu();
-  GetMainRenderFrame()->SetFrameHostForTest(frame_host);
+  SetFrameHostForTest(frame_host);
   GetMainRenderFrame()->ChangeVisibilityOfQuickMenu();
 }
 
-TEST_F(RenderFrameImplTest, OnPdfScrollAtBottom) {
+TEST_F(ArkWebRenderFrameImplTest, OnPdfScrollAtBottom) {
   std::string url = "https://www.google.com";
-  auto* frame_host = GetMainRenderFrame()->GetFrameHost();
-  GetMainRenderFrame()->SetFrameHostForTest(nullptr);
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
   GetMainRenderFrame()->OnPdfScrollAtBottom(url);
-  GetMainRenderFrame()->SetFrameHostForTest(frame_host);
+  SetFrameHostForTest(frame_host);
   GetMainRenderFrame()->OnPdfScrollAtBottom(url);
 }
 
-TEST_F(RenderFrameImplTest, OnPdfLoadEvent) {
+TEST_F(ArkWebRenderFrameImplTest, OnPdfLoadEvent) {
   std::string url = "https://www.google.com";
-  auto* frame_host = GetMainRenderFrame()->GetFrameHost();
-  GetMainRenderFrame()->SetFrameHostForTest(nullptr);
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
   GetMainRenderFrame()->OnPdfLoadEvent(0, url);
-  GetMainRenderFrame()->SetFrameHostForTest(frame_host);
+  SetFrameHostForTest(frame_host);
   GetMainRenderFrame()->OnPdfLoadEvent(1, url);
 }
 
-TEST_F(RenderFrameImplTest, GetNewWindowWebView_WithoutFrameHost) {
-  auto* frame_host = GetMainRenderFrame()->GetFrameHost();
-  GetMainRenderFrame()->SetFrameHostForTest(nullptr);
+TEST_F(ArkWebRenderFrameImplTest, GetNewWindowWebView_WithoutFrameHost) {
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
   GURL target_url("https://www.google.com");
   bool allow_popup = true;
-  auto result = GetMainRenderFrame()->GetNewWindowWebView(target_url,
+  auto result = TestGetNewWindowWebView(target_url,
       blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow, allow_popup);
   EXPECT_EQ(result, false);
-  GetMainRenderFrame()->SetFrameHostForTest(frame_host);
+  SetFrameHostForTest(frame_host);
 }
 
-TEST_F(RenderFrameImplTest, GetNewWindowWebView_ReturnFalse) {
+TEST_F(ArkWebRenderFrameImplTest, GetNewWindowWebView_ReturnFalse) {
   MockFrameHostForArkWeb test_frame_host;
-  GetMainRenderFrame()->SetFrameHostForTest(&test_frame_host);
+  SetFrameHostForTest(&test_frame_host);
   GURL target_url("https://www.google.com");
   bool allow_popup = true;
   EXPECT_CALL(test_frame_host, GetCreateNewWindow(Matcher<const GURL&>(_), Matcher<::WindowOpenDisposition>(_),
       Matcher<bool>(_), Matcher<mojom::CreateNewWindowStatus*>(_))).WillOnce(Return(false));
-  auto result = GetMainRenderFrame()->GetNewWindowWebView(target_url,
+  auto result = TestGetNewWindowWebView(target_url,
       blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow, allow_popup);
   EXPECT_EQ(result, false);
 }
 
-TEST_F(RenderFrameImplTest, GetNewWindowWebView_NoSuccess) {
+TEST_F(ArkWebRenderFrameImplTest, GetNewWindowWebView_NoSuccess) {
   MockFrameHostForArkWeb test_frame_host;
-  GetMainRenderFrame()->SetFrameHostForTest(&test_frame_host);
+  SetFrameHostForTest(&test_frame_host);
   GURL target_url("https://www.google.com");
   bool allow_popup = true;
   EXPECT_CALL(test_frame_host, GetCreateNewWindow(Matcher<const GURL&>(_), Matcher<::WindowOpenDisposition>(_),
       Matcher<bool>(_), Matcher<mojom::CreateNewWindowStatus*>(_))).WillOnce(Return(true));
-  auto result = GetMainRenderFrame()->GetNewWindowWebView(target_url,
+  auto result = TestGetNewWindowWebView(target_url,
       blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow, allow_popup);
   EXPECT_EQ(result, false);
 }
 
-TEST_F(RenderFrameImplTest, GetNewWindowWebView_Success) {
+TEST_F(ArkWebRenderFrameImplTest, GetNewWindowWebView_Success) {
   MockFrameHostForArkWeb test_frame_host;
-  GetMainRenderFrame()->SetFrameHostForTest(&test_frame_host);
+  SetFrameHostForTest(&test_frame_host);
   GURL target_url("https://www.google.com");
   bool allow_popup = true;
   EXPECT_CALL(test_frame_host, GetCreateNewWindow(Matcher<const GURL&>(_), Matcher<::WindowOpenDisposition>(_),
       Matcher<bool>(_), Matcher<mojom::CreateNewWindowStatus*>(_)))
       .WillOnce(DoAll(SetArgPointee<3>(mojom::CreateNewWindowStatus::kSuccess), Return(true)));
-  auto result = GetMainRenderFrame()->GetNewWindowWebView(target_url,
+  auto result = TestGetNewWindowWebView(target_url,
       blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow, allow_popup);
   EXPECT_EQ(result, true);
 }
 
-TEST_F(RenderFrameImplTest, GetNewWindowWebView_True) {
+TEST_F(ArkWebRenderFrameImplTest, GetNewWindowWebView_True) {
   MockFrameHostForArkWeb test_frame_host;
-  GetMainRenderFrame()->SetFrameHostForTest(&test_frame_host);
+  SetFrameHostForTest(&test_frame_host);
   GURL target_url("https://www.google.com");
   bool allow_popup = true;
   EXPECT_CALL(test_frame_host, GetCreateNewWindow(Matcher<const GURL&>(_), Matcher<::WindowOpenDisposition>(_),
       Matcher<bool>(_), Matcher<mojom::CreateNewWindowStatus*>(_)))
       .WillOnce(DoAll(SetArgPointee<3>(mojom::CreateNewWindowStatus::kBlocked), Return(true)));
-  auto result = GetMainRenderFrame()->GetNewWindowWebView(target_url,
+  auto result = TestGetNewWindowWebView(target_url,
       blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow, allow_popup);
   EXPECT_EQ(result, false);
 }

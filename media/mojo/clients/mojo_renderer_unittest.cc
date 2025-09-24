@@ -36,9 +36,13 @@
 #include "url/gurl.h"
 #include "arkweb/build/features/features.h"
 
+#if BUILDFLAG(ARKWEB_TEST)
 #define private public
 #include "media/mojo/clients/mojo_renderer.h"
 #undef private
+#else
+#include "media/mojo/clients/mojo_renderer.h"
+#endif //ARKWEB_TEST
 
 using ::base::test::RunCallback;
 using ::base::test::RunOnceCallback;
@@ -528,8 +532,8 @@ TEST_F(MojoRendererTest, ErrorDuringFlush) {
   Flush();
 }
 
-#if BUILDFLAG(ARKWEB_UNITTESTS)
+#if BUILDFLAG(ARKWEB_TEST)
 #include "arkweb/chromium_ext/media/mojo/clients/mojo_renderer_for_include_unittest.cc"
-#endif  // ARKWEB_UNITTESTS
+#endif  // ARKWEB_TEST
 
 }  // namespace media

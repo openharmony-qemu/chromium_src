@@ -36,6 +36,8 @@ class TextPaintTimingDetector;
 // paint timing detector hook for blankless
 class PTDSupplementForBL {
  public:
+    DISALLOW_NEW();
+    PTDSupplementForBL() = default;
     explicit PTDSupplementForBL(LocalFrameView* lfv);
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -50,9 +52,10 @@ class PTDSupplementForBL {
     ImagePaintTimingDetector& GetImagePaintTimingDetector() const;
     TextPaintTimingDetector& GetTextPaintTimingDetector() const;
     void StopRecordingLCP(bool stop);
+    void Trace(Visitor* visitor) const;
  private:
     bool is_stop_ = false;
-    Persistent<PaintTimingDetector> ptd_for_bl_ = nullptr;
+    Member<PaintTimingDetector> ptd_for_bl_ = nullptr;
 #endif
 };
 

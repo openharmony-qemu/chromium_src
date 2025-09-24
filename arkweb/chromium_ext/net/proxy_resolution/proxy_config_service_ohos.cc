@@ -39,6 +39,7 @@
 #include "net/base/proxy_string_util.h"
 #include "net/proxy_resolution/proxy_config_with_annotation.h"
 #include "url/third_party/mozilla/url_parse.h"
+#include "url/ohos/log_utils.h"
 
 namespace net {
 
@@ -373,6 +374,10 @@ class ProxyConfigServiceOHOS::Delegate
                               int port,
                               const std::string& pac_url,
                               const std::vector<std::string>& exclusion_list) {
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY)
+    LOG(INFO) << "ohos_network ProxySettingsChangedTo has_proxy_override_ " << has_proxy_override_
+              << ", proxy host " << url::LogUtils::ConvertUrlWithMask(host);
+#endif
     if (has_proxy_override_) {
       return;
     }

@@ -145,6 +145,9 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, EnableMixedContentAutoUpgrades, (bool enable), (override));
   MOCK_METHOD(bool, IsMixedContentAutoUpgradesEnabled, (), (override));
 #endif
+#if BUILDFLAG(IS_ARKWEB)
+  MOCK_METHOD(void, EnableAppLinking, (bool enable), (override));
+#endif
   MOCK_METHOD(void, SetPopupSurface, (void* popupSurface), (override));
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -597,8 +600,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   MOCK_METHOD(void, SetForceEnableZoom, (bool forceEnableZoom), (override));
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   MOCK_METHOD(bool, GetForceEnableZoom, (), (override));
 #endif
 
@@ -1230,6 +1235,12 @@ class MockNWebDelegate : public NWebDelegateInterface {
     DistillCallback callback), (override));
   MOCK_METHOD(void, AbortDistill, (), (override));
 #endif // ARKWEB_READER_MODE
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  MOCK_METHOD(int, LoadUrlWithParams, (const std::string& url, const LoadUrlType load_type,
+                                       const std::string& refer, const std::string& headers,
+                                       const std::string& post_data, const bool allow_https_upgrade), (override));
+  MOCK_METHOD(void, EnableHttpsUpgrades, (bool enable), (override));                               
+#endif
 };
 }  // namespace OHOS::NWeb
 

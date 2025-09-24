@@ -115,7 +115,7 @@ TEST_F(AutofillAgentTestWithFeatures, AutofillSurfaceClosedReadonly) {
                        .AsAutofillAgentExt()
                        ->GetPasswordAutofillAgent()
                        ->AsPasswordAutofillAgentExt();
-  agent_ext->AutofillSurfaceClosed(true);
+  agent_ext->CleanupOnDocumentShutdownExt();
   FieldRendererId field_id = GetFieldRendererIdById("ff");
   autofill_agent().TriggerSuggestions(
       field_id, AutofillSuggestionTriggerSource::kFormControlElementClicked);
@@ -392,6 +392,23 @@ TEST_F(AutofillAgentTestWithFeatures, FillAccountSuggestion) {
   EXPECT_TRUE(agent_ext->FillAccountSuggestion(
       autofill_agent().last_queried_element(), u"username", u"password"));
   agent_ext->CleanupOnDocumentShutdownExt();
+}
+
+TEST_F(AutofillAgentTestWithFeatures, FillFieldWithValueTest001) {
+  LoadHTML(R"(<body>
+  <div id=ff ></div>
+  <div id=fruits ></div>
+  </body>)");
+
+  FieldRendererId field_id_a = GetFieldRendererIdById("ff");
+  FieldRendererId field_id_b = GetFieldRendererIdById("fruits");
+  EXPECT_CALL(autofill_driver(), AskForValuesToFill);
+  autofill_agent().TriggerSuggestions(
+      field_id_a, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+
+  EXPECT_FALSE(autofill_agent().AsAutofillAgentExt()->FillFieldWithValue(field_id_a, u"value"));
+
+  EXPECT_TRUE(autofill_agent().AsAutofillAgentExt()->FillFieldWithValue(field_id_b, u"value"));
 }
 
 }  // namespace autofill

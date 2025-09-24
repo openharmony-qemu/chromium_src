@@ -55,6 +55,14 @@ class HTMLPlugInElementUtilsTest : public PageTestBase {
     PageTestBase::TearDown();
   }
 
+  void ClearBufferedParamChanges() {
+    utils_->buffered_param_changes_.clear();
+  }
+
+  void AppendBufferedParamChanges(const Vector<ParamChangeInfo>& changes) {
+    utils_->buffered_param_changes_.AppendVector(changes);
+  }
+
   Persistent<HTMLEmbedElement> plugin_;
   std::unique_ptr<HTMLPlugInElementUtils> utils_;
   Persistent<HTMLNativeLoader> loader_;
@@ -136,6 +144,26 @@ TEST_F(HTMLPlugInElementUtilsTest, IsCssDisplayChange002) {
   SetServiceType("service_prefix.match");
   bool ret = utils_->IsCssDisplayChangeEnabled();
   EXPECT_FALSE(ret);
+}
+
+TEST_F(HTMLPlugInElementUtilsTest, ProcessParamChanges) {
+  Vector<ParamChangeInfo> param_changes;
+  utils_->ProcessParamChanges(param_changes);
+}
+
+TEST_F(HTMLPlugInElementUtilsTest, ProcessBufferedParamChanges001) {
+  ClearBufferedParamChanges();
+  utils_->ProcessBufferedParamChanges();
+}
+
+TEST_F(HTMLPlugInElementUtilsTest, ProcessBufferedParamChanges002) {
+  Vector<ParamChangeInfo> param_changes;
+  param_changes.push_back(ParamChangeInfo(ParamChangeInfo::Status::kAdd,
+                                          AtomicString("test"),
+                                          AtomicString("test"),
+                                          AtomicString("test")));
+  AppendBufferedParamChanges(param_changes);
+  utils_->ProcessBufferedParamChanges();
 }
 
 }  // namespace blink

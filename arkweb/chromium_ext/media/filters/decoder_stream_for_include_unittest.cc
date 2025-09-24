@@ -16,7 +16,7 @@
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 TEST_P(VideoDecoderStreamTest, SetVideoSurface) {
   Initialize();
-  EXPECT_NO_FATAL_FAILURE(video_decoder_stream_->SetVideoSurface(123));
+  EXPECT_NO_FATAL_FAILURE(video_decoder_stream_->SetVideoSurface(1));
 }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 

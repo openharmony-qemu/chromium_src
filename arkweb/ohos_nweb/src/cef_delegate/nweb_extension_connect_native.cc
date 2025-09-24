@@ -68,8 +68,7 @@ base::Process NWebConnectNativeManager::LaunchConnectNative(const std::string& n
     LOG(INFO) << "Connection Success, PID is " << connectionId;
   });
  
-  options.SetOnDisconnect([this](const int connectionId) {
-    DisconnectCallbackFromSA(connectionId);
+  options.SetOnDisconnect([](const int connectionId) {
     LOG(INFO) << "DisConnection Sucess, PID is" << connectionId;
   });
  
@@ -132,17 +131,6 @@ void NWebConnectNativeManager::DisconnectNative(int connectionId) {
     connectid_process_map_.erase(it);
   } else {
     LOG(ERROR) << "DisconnectNative Fail, Cannot found PID:" << connectionId;
-  }
-}
- 
-void NWebConnectNativeManager::DisconnectCallbackFromSA(int connectionId) {
-  auto it = connectid_process_map_.find(connectionId);
-  if (it != connectid_process_map_.end()) {
-    base::EnsureProcessTerminated(std::move(it->second));
-    connectid_process_map_.erase(it);
-    LOG(INFO) << "DisConnection From SA Sucess, PID is" << connectionId;
-  } else {
-    LOG(ERROR) << "DisConnection From SA Fail, Cannot found PID:" << connectionId;
   }
 }
 }  // namespace OHOS::NWeb

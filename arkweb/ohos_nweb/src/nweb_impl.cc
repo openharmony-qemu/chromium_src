@@ -309,6 +309,9 @@ OnReportStatisticLogFunc
 #include "cef/ohos_cef_ext/libcef/browser/global_config/global_config_prefs.h"
 #endif
 #endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+#include "base/ohos/sys_info_utils_ext.h"
+#endif
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -478,7 +481,7 @@ static bool set_whole_page_drawing = false;
 #endif
 
 #if BUILDFLAG(ARKWEB_DRAG_RESIZE)
-const int32_t SOC_PERF_WEB_DRAG_RESIZE_ID = 10073;
+const int32_t SOC_PERF_WEB_DRAG_RESIZE_ID = 10012;
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 const int32_t WEB_RESIZE_CLOSE_DELAY_TIME = 500;
@@ -581,6 +584,20 @@ static bool ShouldEnableSiteIsolation() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+static void RemoveBlanklessFrame(std::shared_ptr<OHOS::NWeb::NWebHandler> handle, int32_t lcp_time, bool isAnime)
+{
+  if (!handle) {
+    return;
+  }
+  if (isAnime) {
+    handle->OnRemoveBlanklessFrameWithAnimation(lcp_time);
+    return;
+  }
+  handle->OnRemoveBlanklessFrame(lcp_time);
+}
+#endif
+
 static std::string GetNetlogMode() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                         .GetSystemPropertiesInstance();
@@ -658,6 +675,51 @@ float GetVirtualPixelRatioForScrollbar() {
 }
 #endif
 
+/**
+ * Parse command line flags from a flat buffer, supporting double-quote enclosed strings
+ * containing whitespace. argv elements are derived by splitting the buffer on whitepace; double
+ * quote characters may enclose tokens containing whitespace; a double-quote literal may be
+ * escaped with back-slash. (Otherwise backslash is taken as a literal).
+ */
+std::vector<std::string> tokenizeQuotedArguments(const std::string& buffer) {
+    int max_file_size = 96 * 1024;
+    if (buffer.size() > max_file_size) {
+        return {};  // Return an empty vector on error
+    }
+    std::vector<std::string> args;
+    std::string arg;
+    char currentQuote = '\0';
+    const char singleQuote = '\'';
+    const char doubleQuote = '"';
+    for (char c : buffer) {
+        // Detect start or end of quote block.
+        if ((currentQuote == '\0' && (c == singleQuote || c == doubleQuote)) || c == currentQuote) {
+            if (!arg.empty() && arg.back() == '\\') {
+                // Last char was a backslash; treat c as a literal.
+                arg.back() = c;
+            } else {
+                currentQuote = (currentQuote == '\0') ? c : '\0';
+            }
+        } else if (currentQuote == '\0' && std::isspace(c)) {
+            if (!arg.empty()) {
+                args.push_back(arg);
+                arg.clear();
+            }
+        } else {
+            arg.push_back(c);
+        }
+    }
+    if (!arg.empty()) {
+        if (currentQuote != '\0') {
+            // If quotes are unbalanced, return empty vector
+            return {};
+        }
+        args.push_back(arg);
+    }
+    LOG(INFO) << "tokenizeQuotedArguments:: tokenize from ohos-command-line succ.";
+    return args;
+}
+
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
 std::string GetGwpAsanEnable()
 {
@@ -685,7 +747,8 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--no-sandbox");
   web_engine_args.emplace_back("--use-mobile-user-agent");
   web_engine_args.emplace_back("--enable-gpu-rasterization");
-  if (!base::ohos::IsPcDevice() || base::ohos::IsCompatibleMode()) {
+  if ((!base::ohos::IsPcDevice() && !base::ohos::IsPcMode()) ||
+      base::ohos::IsCompatibleMode()) {
     web_engine_args.emplace_back("--enable-viewport");
   }
   web_engine_args.emplace_back(
@@ -799,6 +862,21 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back(arg);
   }
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
+
+  base::FilePath ohos_command_line_file(
+    FILE_PATH_LITERAL("/data/storage/el1/bundle/arkwebcore/libs/ohos-command-line"));
+  if (base::PathExists(ohos_command_line_file)) {
+    std::string ohos_command_line_content;
+    if (base::ReadFileToString(ohos_command_line_file, &ohos_command_line_content)) {
+        std::vector<std::string> args = tokenizeQuotedArguments(ohos_command_line_content);
+        for (auto& arg : args) {
+          web_engine_args.emplace_back(arg);
+        }
+    }
+  LOG(INFO) << "ohos connamd line args analysis from ohos-command-line file succ.";
+  } else {
+    LOG(INFO) << "file ohos-command-line does not exist.";
+  }
 }
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 
@@ -879,6 +957,10 @@ void* NWebImpl::logger_report_event_callback_ = nullptr;
 
 WebDestroyMode NWebImpl::webDestroyMode_ = WebDestroyMode::NORMAL_MODE;
 
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+ WebSoftKeyboardBehaviorMode NWebImpl::keyboardBehaviorMode_ = WebSoftKeyboardBehaviorMode::DEFAULT;
+#endif
+ 
 // static
 std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
     std::shared_ptr<NWebCreateInfo> create_info) {
@@ -1521,25 +1603,18 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
     return;
   }
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-    .CreateSocPerfClientAdapter()
-    ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
-  ResizeTime_++;
-  content::GetUIThreadTaskRunner({})->PostDelayedTask(
-    FROM_HERE, base::BindOnce(&NWebImpl::DisableBoost, nweb_id_),
-    base::Milliseconds(WEB_RESIZE_CLOSE_DELAY_TIME));
+  if (base::ohos::IsPcDevice() || base::ohos::IsTabletDevice()) {
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .CreateSocPerfClientAdapter()
+      ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
+    ResizeTime_++;
+    content::GetUIThreadTaskRunner({})->PostDelayedTask(
+      FROM_HERE, base::BindOnce(&NWebImpl::DisableBoost, nweb_id_),
+      base::Milliseconds(WEB_RESIZE_CLOSE_DELAY_TIME));
+  }
 #endif
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);
-
-#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  if ((cur_blankless_frame_width_ != 0) && (cur_blankless_frame_height_ != 0) &&
-     (cur_blankless_frame_width_ != width) && (cur_blankless_frame_height_ != height) &&
-     base::ohos::BlanklessController::CheckGlobalProperty() && (nweb_handle_ != nullptr)) {
-    LOG(DEBUG) << "RemoveBlanklessFrame due to resolution inconsistency between webPattern and snapshot";
-    nweb_handle_->OnRemoveBlanklessFrame(0);
-  }
-#endif
 }
 
 void NWebImpl::ResizeVisibleViewport(uint32_t width,
@@ -2014,6 +2089,11 @@ void NWebImpl::OnPause() {
   is_pause_ = true;
   nweb_delegate_->OnPause();
 
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+  if (keyboardBehaviorMode_ == WebSoftKeyboardBehaviorMode::DISABLE_AUTO_KEYBOARD_ON_ACTIVE) {
+    return;
+  }
+#endif
   if (nweb_delegate_->IsCustomKeyboard()) {
     LOG(INFO) << "WebCustomKeyboard NWebImpl::OnPause";
     nweb_delegate_->GetCustomKeyboardHandler()->CloseFromWebStateChange(
@@ -2044,7 +2124,22 @@ void NWebImpl::OnContinue() {
       pending_size_.reset();
     }
   }
-
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+  if (keyboardBehaviorMode_ == WebSoftKeyboardBehaviorMode::DISABLE_AUTO_KEYBOARD_ON_ACTIVE) {
+    if (nweb_delegate_->IsCustomKeyboard()) {
+      auto handler = nweb_delegate_->GetCustomKeyboardHandler();
+      if (handler && handler->IsAttached()) {
+        nweb_delegate_->OnFocus();
+      }
+    }
+    if (inputmethod_handler_) {
+      if (inputmethod_handler_->IsAttached() && !inputmethod_handler_->IsFocusSwitch()) {
+        nweb_delegate_->OnFocus();
+      }
+    }
+    return;
+  }
+#endif
   if (nweb_delegate_->IsCustomKeyboard()) {
     LOG(INFO) << "WebCustomKeyboard NWebImpl::OnContinue and focus";
     auto handler = nweb_delegate_->GetCustomKeyboardHandler();
@@ -2351,6 +2446,18 @@ int NWebImpl::LoadWithData(const std::string& data,
   }
   return nweb_delegate_->LoadWithData(data, mimeType, encoding);
 }
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+int NWebImpl::LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
+                                const std::string& refer, const std::string& headers,
+                                const std::string& post_data, const bool allow_https_upgrade) {
+  if (nweb_delegate_ == nullptr) {
+    return NWEB_ERR;
+  }
+  return nweb_delegate_->LoadUrlWithParams(url, load_type, refer,
+                                           headers, post_data, allow_https_upgrade);
+}
+#endif
 
 void NWebImpl::RegisterNativeArkJSFunction(
     const char* objName,
@@ -2692,16 +2799,29 @@ void NWebImpl::SendDragEvent(std::shared_ptr<NWebDragEvent> dragEvent) {
     event.action = static_cast<DelegateDragAction>(dragEvent->GetAction());
     event.x = dragEvent->GetX();
     event.y = dragEvent->GetY();
-
+    auto drag_op = OHOS::NWeb::NWebDragData::DragOperation::DRAG_OPERATION_COPY;
+    auto allowed_drag_op =
+        OHOS::NWeb::NWebDragData::DragOperationsMask::DRAG_ALLOW_EVERY;
+    if (dragEvent->IsDragOpValid()) {
+      drag_op = dragEvent->GetDragOperation();
+      allowed_drag_op = dragEvent->GetAllowedDragOperation();
+    }
     if (event.action == DelegateDragAction::DRAG_OVER ||
         event.action == DelegateDragAction::DRAG_START ||
         event.action == DelegateDragAction::DRAG_ENTER) {
       drag_over_event_.x = dragEvent->GetX();
       drag_over_event_.y = dragEvent->GetY();
+      drag_over_event_.allowed_op = static_cast<CefBrowserHost::DragOperationsMask>(allowed_drag_op);
       drag_over_timer_->Reset();
     } else {
       drag_over_timer_->Stop();
     }
+
+    LOG(DEBUG) << "DragDrop, get event from arkweb, op = "
+              << (int)drag_op
+              << " , allow_op = " << (int)allowed_drag_op;
+    event.op = static_cast<CefBrowserHost::DragOperationsMask>(drag_op);
+    event.allowed_op = static_cast<CefBrowserHost::DragOperationsMask>(allowed_drag_op);
   }
   nweb_delegate_->SendDragEvent(event);
 }
@@ -4337,14 +4457,16 @@ void NWebImpl::PasswordSuggestionSelected(int list_index) const {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 void NWebImpl::SetForceEnableZoom(bool forceEnableZoom) const {
   if (nweb_delegate_ == nullptr) {
     return;
   }
   nweb_delegate_->SetForceEnableZoom(forceEnableZoom);
 }
+#endif
 
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
 bool NWebImpl::GetForceEnableZoom() const {
   if (nweb_delegate_ == nullptr) {
     return false;
@@ -6318,6 +6440,12 @@ void NWebImpl::RegisterNativeJavaScriptProxy(const std::string& objName,
 }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+void NWebImpl::SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) {
+  keyboardBehaviorMode_ = mode;
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_AI_WRITE)
 int NWebImpl::GetSelectStartIndex()
 {
@@ -6396,6 +6524,7 @@ void NWebImpl::SetPrivacyStatus(bool isPrivate) {
 }
 
 int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* similarity, int32_t* loadingTime) {
+  MarkUserEnableBlankless();
   if (!base::ohos::BlanklessController::CheckGlobalProperty() ||
       !nweb_delegate_ || !similarity || !loadingTime || !CheckNetAvailable()) {
     if (similarity) {
@@ -6442,6 +6571,7 @@ int32_t NWebImpl::GetBlanklessInfoWithKey(const std::string& key, double* simila
 }
 
 int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStart) {
+  MarkUserEnableBlankless();
   if (!base::ohos::BlanklessController::CheckGlobalProperty() || !CheckNetAvailable()) {
     return -5;  // ERR_SIGNIFICANT_CHANGE
   }
@@ -6476,17 +6606,31 @@ int32_t NWebImpl::SetBlanklessLoadingWithKey(const std::string& key, bool isStar
       LOG(DEBUG) << "blankless SetBlanklessLoadingWithKey similarity < 0.33";
       return -5;    // ERR_SIGNIFICANT_CHANGE
     }
-    CallBlanklessFrameFunc(blankless_key, dataItem.lcpTime, dataItem.staticPath, dataItem.width, dataItem.height);
+    CallBlanklessFrameFunc(blankless_key, dataItem);
   }
   return 0;   // SUCCESS
 }
 
 bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   if (!base::ohos::BlanklessController::CheckGlobalProperty() || !nweb_delegate_ ||
-      !base::ohos::BlanklessController::GetInstance().CheckEnableForUrl(url) || !CheckNetAvailable()) {
+      !CheckNetAvailable() || IsUserEnableBlankless()) {
     return false;
   }
-  blankless_key_ = base::ohos::BlanklessController::ConvertToBlanklessKey(url);
+#if BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
+  auto app_blankless_key = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
+  if (base::ohos::BlanklessController::GetInstance().CheckEnableForAppUrl(url, app_blankless_key)) {
+    return ProcessBlanklessForUrl(app_blankless_key, true);
+  }
+#endif // BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
+  auto sys_blankless_key = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
+  if (base::ohos::BlanklessController::GetInstance().CheckEnableForSysUrl(url, sys_blankless_key)) {
+    return ProcessBlanklessForUrl(sys_blankless_key);
+  }
+  return false;
+}
+
+bool NWebImpl::ProcessBlanklessForUrl(uint64_t blanklessKey, bool isAnime) {
+  blankless_key_ = blanklessKey;
   auto& instance = base::ohos::BlanklessController::GetInstance();
   auto window_id = instance.GetWindowIdByNWebId(nweb_id_);
   auto& databaseInstance = base::ohos::BlanklessDataController::GetInstance();
@@ -6501,7 +6645,7 @@ bool NWebImpl::TriggerBlanklessForUrl(const std::string& url) {
   base::ohos::BlanklessController::GetInstance().RecordSystemTime(nweb_id_, blankless_key_, system_time);
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, blankless_key_);
   OHOS::NWeb::SnapshotDataItem dataItem = databaseInstance.GetSnapshotDataItem(blankless_key_, GetPreferenceHash());
-  CallBlanklessFrameFunc(blankless_key_, dataItem.lcpTime, dataItem.staticPath, dataItem.width, dataItem.height);
+  CallBlanklessFrameFunc(blankless_key_, dataItem, isAnime);
   return true;
 }
 
@@ -6523,18 +6667,13 @@ void NWebImpl::SetVisibility(bool isVisible) {
   }
 }
 
-void NWebImpl::RecordBlanklessFrameSize(uint32_t width, uint32_t height)
-{
-  cur_blankless_frame_width_ = width;
-  cur_blankless_frame_height_ = height;
-}
-
 void NWebImpl::ClearBlanklessKey() {
   if (nweb_delegate_ == nullptr || blankless_key_ == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
     return;
   }
   nweb_delegate_->SetBlanklessLoadingKey(nweb_id_, base::ohos::BlanklessController::INVALID_BLANKLESS_KEY);
   blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
+  ResetUserEnableBlankless();
 }
 
 bool NWebImpl::CheckNetAvailable() {
@@ -6553,36 +6692,37 @@ bool NWebImpl::CheckNetAvailable() {
   return true;
 }
 
-void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file, int32_t width,
-                                      int32_t height) {
-  if (nweb_handle_ == nullptr || lcp_time == INT32_MAX || lcp_time <= 0 || file.empty()) {
+void NWebImpl::CallBlanklessFrameFunc(uint64_t blankless_key, SnapshotDataItem& dataItem, bool isAnime) {
+  std::string file = isAnime ? dataItem.wholePath : dataItem.staticPath;
+  if (nweb_handle_ == nullptr || dataItem.lcpTime == INT32_MAX || dataItem.lcpTime <= 0 || file.empty()) {
     return;
   }
   auto& instance = base::ohos::BlanklessController::GetInstance();
   auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
   uint64_t recorded_time = instance.GetSystemTime(nweb_id_, blankless_key_);
   int32_t corrected_time = static_cast<int32_t>(static_cast<uint64_t>(system_time) - recorded_time);
-  if (corrected_time < 0 || corrected_time >= lcp_time ||
-      lcp_time - corrected_time < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
-    LOG(DEBUG) << "blankless CallBlanklessFrameFunc corrected time error " << corrected_time << " " << lcp_time;
+  if (corrected_time < 0 || corrected_time >= dataItem.lcpTime ||
+      dataItem.lcpTime - corrected_time < base::ohos::BlanklessController::MINIMUM_FRAME_LIFETIME) { // 40 ms
+    LOG(DEBUG) << "blankless CallBlanklessFrameFunc corrected time error " <<
+      corrected_time << " " << dataItem.lcpTime;
     return;
   }
-  if (lcp_time >= base::ohos::BlanklessController::A_STANDARD) {
-    lcp_time = std::min(lcp_time, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
-  } else {
-    lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME;
+  int32_t lcp_time = base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME;
+  if (dataItem.lcpTime >= base::ohos::BlanklessController::A_STANDARD) {
+    lcp_time = std::min(dataItem.lcpTime, base::ohos::BlanklessController::MAXIMUM_FRAME_LIFETIME);  // 2000 ms
   }
   LOG(DEBUG) << "blankless OnRemoveBlanklessFrame Delay Time: " << lcp_time;
   if (is_visible_) {
-    nweb_handle_->OnInsertBlanklessFrameWithSize(file, width, height);
-    nweb_handle_->OnRemoveBlanklessFrame(lcp_time);
-    instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_](){
-      handle->OnRemoveBlanklessFrame(0);
+    nweb_handle_->OnInsertBlanklessFrameWithSize(file, dataItem.width, dataItem.height);
+    RemoveBlanklessFrame(nweb_handle_, lcp_time, isAnime);
+    instance.RegisterFrameRemoveCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_, isAnime](){
+      RemoveBlanklessFrame(handle, 0, isAnime);
     });
   } else {
-    instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_, [handle = this->nweb_handle_, file, width, height](){
-      handle->OnInsertBlanklessFrameWithSize(file, width, height);
-    }, lcp_time);
+    instance.RegisterFrameInsertCallback(nweb_id_, blankless_key_,
+        [handle = this->nweb_handle_, file, width = dataItem.width, height = dataItem.height](){
+          handle->OnInsertBlanklessFrameWithSize(file, width, height);
+        }, lcp_time);
   }
 }
 
@@ -6695,6 +6835,17 @@ void NWebImpl::OnBrowserBackground() {
     return;
   }
   nweb_delegate_->OnBrowserBackground();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+void NWebImpl::EnableHttpsUpgrades(bool enable) {
+  LOG(INFO) << "NWebImpl::EnableHttpsUpgrades.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("EnableHttpsUpgrades nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->EnableHttpsUpgrades(enable);
 }
 #endif
 

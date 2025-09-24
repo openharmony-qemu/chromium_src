@@ -35,9 +35,13 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "arkweb/build/features/features.h"
 
+#if BUILDFLAG(ARKWEB_TEST)
 #define private public
 #include "media/mojo/clients/mojo_renderer_wrapper.h"
 #undef private
+#else
+#include "media/mojo/clients/mojo_renderer_wrapper.h"
+#endif //ARKWEB_TEST
 
 using ::base::test::RunOnceCallback;
 using ::testing::_;

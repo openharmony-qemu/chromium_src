@@ -137,6 +137,10 @@ class NWebEngineImpl : public NWebEngine {
   void SetSocketIdleTimeout(int32_t timeout) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+  void SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) override;
+#endif
+
  private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;
   std::shared_ptr<NWebWebStorage> nweb_web_storage_ = nullptr;

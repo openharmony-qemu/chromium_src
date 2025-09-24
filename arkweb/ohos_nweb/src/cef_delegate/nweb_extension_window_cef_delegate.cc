@@ -31,30 +31,63 @@ namespace {
   static std::map<int, WindowCreatedCallback> g_window_created_map_;
   static std::map<int, WindowUpdatedCallback> g_window_updated_map_;
   static std::map<int, WindowRemovedCallback> g_window_removed_map_;
+
+  content::BrowserContext* GetBrowserContextInUse(const WebExtensionWindow& window) {
+    auto browser_context = GetBrowserContext();
+    if (window.incognito) {
+      browser_context = GetIncognitoContext(browser_context);
+    }
+
+    return browser_context;
+  }
 }
- 
+
 // static
 NweExtensionWindowCefDelegate* NweExtensionWindowCefDelegate::GetInstance() {
   static NweExtensionWindowCefDelegate instance;
   return &instance;
 }
- 
+
 NweExtensionWindowCefDelegate::NweExtensionWindowCefDelegate() {}
 
 void NweExtensionWindowCefDelegate::WindowCreated(const WebExtensionWindow& window) {
-  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowCreatedEvent(GetBrowserContext(), window);
+  auto browser_context = GetBrowserContextInUse(window);
+  if (!browser_context) {
+    LOG(ERROR) << "WindowCreated get browser context failed.";
+    return;
+  }
+
+  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowCreatedEvent(browser_context, window);
 }
  
 void NweExtensionWindowCefDelegate::WindowRemoved(const WebExtensionWindow& window) {
-  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowRemovedEvent(GetBrowserContext(), window);
+  auto browser_context = GetBrowserContextInUse(window);
+  if (!browser_context) {
+    LOG(ERROR) << "WindowRemoved get browser context failed.";
+    return;
+  }
+
+  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowRemovedEvent(browser_context, window);
 }
  
 void NweExtensionWindowCefDelegate::WindowBoundsChanged(const WebExtensionWindow& window) {
-  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowBoundsChangedEvent(GetBrowserContext(), window);
+  auto browser_context = GetBrowserContextInUse(window);
+  if (!browser_context) {
+    LOG(ERROR) << "WindowBoundsChanged get browser context failed.";
+    return;
+  }
+
+  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowBoundsChangedEvent(browser_context, window);
 }
  
 void NweExtensionWindowCefDelegate::WindowFocusChanged(const WebExtensionWindow& window) {
-  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowFocusChangedEvent(GetBrowserContext(), window);
+  auto browser_context = GetBrowserContextInUse(window);
+  if (!browser_context) {
+    LOG(ERROR) << "WindowFocusChanged get browser context failed.";
+    return;
+  }
+
+  extensions::CefWindowsEventRouter::GetInstance()->DispatchWindowFocusChangedEvent(browser_context, window);
 }
 
 NO_SANITIZE("cfi-icall")

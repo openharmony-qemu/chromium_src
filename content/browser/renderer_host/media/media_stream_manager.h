@@ -480,8 +480,11 @@ class CONTENT_EXPORT MediaStreamManager
   virtual MediaStreamManagerExt* AsMediaStreamManagerExt() {
     return nullptr;
   }
-
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif // ARKWEB_TEST
   friend class MediaStreamManagerTest;
   FRIEND_TEST_ALL_PREFIXES(MediaStreamManagerTest, DesktopCaptureDeviceStopped);
   FRIEND_TEST_ALL_PREFIXES(MediaStreamManagerTest, DesktopCaptureDeviceChanged);

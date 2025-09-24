@@ -9,55 +9,8 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "base/command_line.h"
 #include "base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/base/ohos/ltpo/src/mock_sys_info_util_ext.h"
 
-namespace base::ohos {
-class SysInfoUtilsMock{
-public:
-  static SysInfoUtilsMock& GetInstance() {
-      static SysInfoUtilsMock instance;
-      return instance;
-  }
-  MOCK_METHOD(std::string, OsVersion, (), (const));
-  MOCK_METHOD(std::string, CompatibleDeviceType, (), (const));
-  MOCK_METHOD(bool, IsMobileDevice, (), (const));
-  MOCK_METHOD(bool, IsTabletDevice, (), (const));
-  MOCK_METHOD(bool, IsPcDevice, (), (const));
-  MOCK_METHOD(std::string, BaseOsName, (), (const));
-  MOCK_METHOD(int32_t, MajorVersion, (), (const));
-  MOCK_METHOD(int32_t, SeniorVersion, (), (const));
-};
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-std::string __wrap_OsVersion() {
-    return SysInfoUtilsMock::GetInstance().OsVersion();
-}
-std::string __wrap_CompatibleDeviceType() {
-    return SysInfoUtilsMock::GetInstance().CompatibleDeviceType();
-}
-bool __wrap_IsMobileDevice() {
-    return SysInfoUtilsMock::GetInstance().IsMobileDevice();
-}
-bool __wrap_IsTabletDevice() {
-    return SysInfoUtilsMock::GetInstance().IsTabletDevice();
-}
-bool __wrap_IsPcDevice() {
-    return SysInfoUtilsMock::GetInstance().IsPcDevice();
-}
-std::string __wrap_BaseOsName() {
-    return SysInfoUtilsMock::GetInstance().BaseOsName();
-}
-int32_t __wrap_MajorVersion() {
-    return SysInfoUtilsMock::GetInstance().MajorVersion();
-}
-int32_t __wrap_SeniorVersion() {
-    return SysInfoUtilsMock::GetInstance().SeniorVersion();
-}
-#ifdef __cplusplus
-}
-#endif
-} // namespace base::ohos
 namespace content {
 
 #if BUILDFLAG(ARKWEB_USERAGENT)

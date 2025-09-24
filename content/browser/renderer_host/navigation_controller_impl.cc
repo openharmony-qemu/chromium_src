@@ -4179,9 +4179,13 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
       params.from_download_cross_origin_redirect);
   navigation_request->set_force_new_browsing_instance(
       params.force_new_browsing_instance);
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+    navigation_request->ohos_set_https_upgrade(params.force_no_https_upgrade);
+#else
   if (params.force_no_https_upgrade) {
     navigation_request->set_force_no_https_upgrade();
   }
+#endif
   return navigation_request;
 }
 

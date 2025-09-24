@@ -41,6 +41,7 @@ const char kCalcTabletMode[] = "ohos-enable-calc-tablet-mode";
 const char kDisableMobileStyleSheet[] = "ohos-disable-mobile-style-sheet";
 const char kDisableNonAdvancedSecurityMode[] =
     "disable-non-advanced-security-mode";
+const char kDisableNextPreviousFlag[] = "ohos-disable-next-previous-flag";
 
 #endif
 
@@ -106,4 +107,8 @@ const char  kOhosEnableGwpAsanType[] = "ohos-enable-gwp-asan-type";
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
 const char  kEnableWebAudioBackgroundTask[] = "enable-web-audio-background-task";
 #endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+const char  kEnableReportCookieMonsterClient[] = "ohos-enable-report-cookie-monster-client";
+#endif // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 }  // namespace switches

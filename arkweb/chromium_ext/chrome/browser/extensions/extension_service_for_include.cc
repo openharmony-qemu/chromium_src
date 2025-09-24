@@ -13,29 +13,23 @@
  * limitations under the License.
  */
  
-#if BUILDFLAG(ARKWEB_NWEB_EX)
-#include "ohos_nweb_ex/core/extension/nweb_extension_manager_dispatcher.h"
-#endif
- 
 namespace extensions {
  
 namespace {
 
 void NotifyOnInstalledExtensionsLoadedInFileTask() {
-#if BUILDFLAG(ARKWEB_NWEB_EX)
   content::GetUIThreadTaskRunner({})
-          ->PostTask(FROM_HERE,base::BindOnce(&NWebExtensionManagerDispatcher::OnExtensionInitLoadEndCallBack));
-#endif
+      ->PostTask(FROM_HERE,base::BindOnce(&ExtensionRegistryInfoManager::StopInitialLoad));
 }
  
 void NotifyOnInstalledExtensionsLoadedInUITask() {
   GetExtensionFileTaskRunner()->PostTask(
-        FROM_HERE, base::BindOnce(&NotifyOnInstalledExtensionsLoadedInFileTask));
+      FROM_HERE, base::BindOnce(&NotifyOnInstalledExtensionsLoadedInFileTask));
 }
  
 void NotifyOnInstalledExtensionsLoaded() {
   content::GetUIThreadTaskRunner({base::TaskPriority::USER_VISIBLE})
-        ->PostTask(FROM_HERE, base::BindOnce(&NotifyOnInstalledExtensionsLoadedInUITask));
+      ->PostTask(FROM_HERE, base::BindOnce(&NotifyOnInstalledExtensionsLoadedInUITask));
 } 
 
 }  // namespace

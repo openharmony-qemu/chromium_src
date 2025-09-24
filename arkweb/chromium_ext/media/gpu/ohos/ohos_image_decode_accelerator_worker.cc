@@ -132,11 +132,13 @@ void DecodeTask(
 std::unique_ptr<OhosImageDecodeAcceleratorWorker>
 OhosImageDecodeAcceleratorWorker::Create() {
   OhosImageDecoderVector decoders;
-  std::unique_ptr<OhosImageDecoder> heif_image_decoder;
+
 #if BUILDFLAG(ARKWEB_TEST)
-  heif_image_decoder = test_decoder();
+  auto heif_image_decoder = test_decoder
+                                ? test_decoder()
+                                : std::make_unique<OhosHeifImageDecoder>();
 #else
-  heif_image_decoder = std::make_unique<OhosHeifImageDecoder>();
+  auto heif_image_decoder = std::make_unique<OhosHeifImageDecoder>();
 #endif
 
   if (heif_image_decoder->Initialize()) {

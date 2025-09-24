@@ -81,7 +81,6 @@ class OHOSMediaPlayerCallbackTest : public ::testing::Test {
     bridge_ = new OHOSMediaPlayerBridge(
         *gurl_.get(), site_for_cookies_, top_frame_origin_, user_agent_, storage_access_api_status_,
         hide_url_log_, mock_client_.get(), allow_credentials_, is_hls_, headers_, grantMediaFileAccessDirs_);
-    base::WeakPtrFactory<OHOSMediaPlayerBridge> weak_factory_{bridge_};
 
     mock_task_runner_ = base::MakeRefCounted<MockSingleThreadTaskRunner>();
     EXPECT_CALL(*mock_task_runner_, PostDelayedTask(_, _, _))
@@ -90,7 +89,7 @@ class OHOSMediaPlayerCallbackTest : public ::testing::Test {
             return true;
         });
     media_player_callback_ =
-        std::make_unique<OHOSMediaPlayerCallback>(std::move(mock_task_runner_), weak_factory_.GetWeakPtr());
+        std::make_unique<OHOSMediaPlayerCallback>(std::move(mock_task_runner_), bridge_->weak_factory_.GetWeakPtr());
   }
 
   void TearDown() override {
@@ -117,8 +116,7 @@ class OHOSMediaPlayerCallbackTest : public ::testing::Test {
 };
 
 TEST_F(OHOSMediaPlayerCallbackTest, TestItem1) {
-  base::WeakPtrFactory<OHOSMediaPlayerBridge> weak_factory_{bridge_};
-  media_player_callback_->media_player_ = weak_factory_.GetWeakPtr();
+  media_player_callback_->media_player_ = bridge_->weak_factory_.GetWeakPtr();
 
   EXPECT_CALL(*mock_client_, OnError(OHOSMediaPlayerBridge::MediaErrorType::MEDIA_ERROR_INVALID_CODE)).Times(1);
   media_player_callback_->OnError(OHOS::NWeb::PlayerAdapterErrorType::INVALID_CODE);
@@ -133,9 +131,7 @@ TEST_F(OHOSMediaPlayerCallbackTest, TestItem1) {
 TEST_F(OHOSMediaPlayerCallbackTest, TestItem2) {
   constexpr int32_t TEST_EXTRA = 5;
   constexpr int32_t TEST_VALUE = 5;
-
-  base::WeakPtrFactory<OHOSMediaPlayerBridge> weak_factory_{bridge_};
-  media_player_callback_->media_player_ = weak_factory_.GetWeakPtr();
+  media_player_callback_->media_player_ = bridge_->weak_factory_.GetWeakPtr();
 
   media_player_callback_->OnInfo(OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_UNSET, TEST_EXTRA, TEST_VALUE);
   media_player_callback_->OnInfo(OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_MESSAGE, TEST_EXTRA, TEST_VALUE);

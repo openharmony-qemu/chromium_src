@@ -261,7 +261,10 @@ test("media_unittests") {
   }
 
   # The test needs OPUS_FIXED_POINT conditional define.
-  configs += [ "//third_party/opus:opus_config" ]
+  configs += [
+    "//third_party/opus:opus_config",
+    "//arkweb/chromium_ext:arkweb_codec_decoder_adapter_unittest_config",
+  ]
 
   if (is_ios) {
     deps += [ ":unit_tests_bundle_data" ]

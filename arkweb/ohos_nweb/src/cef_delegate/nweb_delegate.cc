@@ -2586,6 +2586,22 @@ int NWebDelegate::LoadWithData(const std::string& data,
   return NWEB_OK;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+int NWebDelegate::LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
+                                    const std::string& refer, const std::string& headers,
+                                    const std::string& post_data, const bool allow_https_upgrade) {
+  LOG(DEBUG) << "NWebDelegate::LoadUrlWithParams";
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    return NWEB_ERR;
+  }
+  GetBrowser()->GetHost()->LoadUrlWithParams(url, load_type, refer,
+                                             headers, post_data, allow_https_upgrade);
+  RequestVisitedHistory();
+  return NWEB_OK;
+}
+#endif
+ 
+
 const CefRefPtr<ArkWebBrowserExt> NWebDelegate::GetBrowser() const {
   if (handler_delegate_) {
     return handler_delegate_->GetBrowser();
@@ -3222,7 +3238,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
         handler_delegate_->SetDragEnter(true);
         auto drag_data = render_handler_->GetDragData();
         GetBrowser()->GetHost()->DragTargetDragEnter(drag_data, event,
-                                                     DRAG_OPERATION_EVERY);
+                                                     dragEvent.allowed_op);
       } else {
         LOG(ERROR) << "DragDrop drag data render_handler_ nullptr";
       }
@@ -3239,7 +3255,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
     case DelegateDragAction::DRAG_OVER:
       LOG(DEBUG) << "DragDrop event SendDragEvent over webId:"
                  << GetBrowser()->GetNWebId();
-      GetBrowser()->GetHost()->DragTargetDragOver(event, DRAG_OPERATION_EVERY);
+      GetBrowser()->GetHost()->DragTargetDragOver(event, dragEvent.allowed_op);
       break;
     case DelegateDragAction::DRAG_DROP:
       event.modifiers = EVENTFLAG_NONE;
@@ -3274,8 +3290,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
       ClearDragData();
       LOG(INFO) << "DragDrop event SendDragEvent end webId:"
                 << GetBrowser()->GetNWebId();
-      GetBrowser()->GetHost()->DragSourceEndedAt(event.x, event.y,
-                                                 DRAG_OPERATION_COPY);
+      GetBrowser()->GetHost()->DragSourceEndedAt(event.x, event.y, dragEvent.op);
       GetBrowser()->GetHost()->DragSourceSystemDragEnded();
       break;
     case DelegateDragAction::DRAG_CANCEL:
@@ -3844,7 +3859,7 @@ bool NWebDelegate::IsEnableCustomVideoPlayer() {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
   LOG(INFO) << "NWebDelegate::SetForceEnableZoom " << forceEnableZoom;
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
@@ -3854,7 +3869,9 @@ void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
     GetBrowser()->SetForceEnableZoom(forceEnableZoom);
   }
 }
+#endif
 
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
 bool NWebDelegate::GetForceEnableZoom() {
   if (GetBrowser().get()) {
     return GetBrowser()->GetForceEnableZoom();
@@ -6214,6 +6231,17 @@ bool NWebDelegate::GetErrorPageEnabled() {
     return false;
   }
   return preference_delegate_->ErrorPageEnabled();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+void NWebDelegate::EnableHttpsUpgrades(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "EnableHttpsUpgrades can not get browser";
+    return;
+  }
+  LOG(INFO) << "NWebDelegate::EnableHttpsUpgrades";
+  GetBrowser()->GetHost()->EnableHttpsUpgrades(enable);
 }
 #endif
 

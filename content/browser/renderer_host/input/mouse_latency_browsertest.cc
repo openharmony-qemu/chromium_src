@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/run_loop.h"
 #include "base/test/test_timeouts.h"
@@ -101,6 +102,21 @@ class TracingRenderWidgetHost : public RenderWidgetHostImpl {
       blink::mojom::InputEventResultState ack_result) override {
     RenderWidgetHostImpl::OnMouseEventAck(event, ack_source, ack_result);
   }
+
+#if BUILDFLAG(ARKWEB_TEST)
+  void CreateOverlay(const SkBitmap& bitmap,
+                     const gfx::Rect& image_rect,
+                     const gfx::Point& touch_point) override {}
+  void OnOverlayStateChanged(const gfx::Rect& image_rect) override {}
+  void GetVisibleRectToWeb(GetVisibleRectToWebCallback callback) override {}
+  void GetWordSelection(const std::string& text,
+                        int8_t offset,
+                        GetWordSelectionCallback callback) override {}
+  void SendCurrentLanguage(const std::string& ans) override {}
+  void DidNativeEmbedEvent(blink::mojom::NativeEmbedTouchEventPtr touchEvent) override {}
+  void DidNativeEmbedMouseEvent(blink::mojom::NativeEmbedMouseEventPtr mouseEvent) override {}
+  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override {}
+#endif
 };
 
 class TracingRenderWidgetHostFactory : public RenderWidgetHostFactory {

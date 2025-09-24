@@ -151,7 +151,7 @@ public:
 
     virtual std::unique_ptr<FlowbufferAdapter> CreateFlowbufferAdapter() = 0;
 
-    virtual std::unique_ptr<MediaAVSessionAdapter> CreateMediaAVSessionAdapter() = 0;
+    virtual std::shared_ptr<MediaAVSessionAdapter> CreateMediaAVSessionAdapter() = 0;
 
     virtual std::unique_ptr<OhosImageDecoderAdapter> CreateOhosImageDecoderAdapter() = 0;
 

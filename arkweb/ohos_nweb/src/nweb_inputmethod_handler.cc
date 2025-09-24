@@ -855,13 +855,7 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
   }
   CefKeyEvent keyEvent;
   keyEvent.windows_key_code = ui::VKEY_PROCESSKEY;
-  // keycode conversion for single char input on PC
-  if (base::ohos::IsPcDevice() && text.length() == 1) {
-    char16_t firstChar = text[0];
-    if (keycode_map.count(firstChar) > 0) {
-      keyEvent.windows_key_code = keycode_map[firstChar];
-    }
-  }
+
   keyEvent.modifiers = 0;
   keyEvent.is_system_key = false;
   keyEvent.type = KEYEVENT_RAWKEYDOWN;
@@ -1020,7 +1014,7 @@ void NWebInputMethodHandler::DeleteForwardHandlerOnUI(int32_t length) {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
     textCursorReady_ += text_cursor_length_;
   }
-  for (int32_t i = 0; i < text_cursor_length_; i++) {
+  for (int32_t i = 0; i < length; i++) {
     keyEvent.type = KEYEVENT_RAWKEYDOWN;
     host->SendKeyEvent(keyEvent);
     keyEvent.type = KEYEVENT_CHAR;
@@ -1058,7 +1052,7 @@ void NWebInputMethodHandler::DeleteBackwardHandlerOnUI(int32_t length) {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
     textCursorReady_ += text_cursor_length_;
   }
-  for (int32_t i = 0; i < text_cursor_length_; i++) {
+  for (int32_t i = 0; i < length; i++) {
     keyEvent.type = KEYEVENT_RAWKEYDOWN;
     host->SendKeyEvent(keyEvent);
     keyEvent.type = KEYEVENT_CHAR;

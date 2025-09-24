@@ -206,7 +206,7 @@ void WebContentsImplExt::CloseDateTimeChooser() {
 }
 #endif  // ARKWEB_CSS_INPUT_TIME
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 void WebContentsImplExt::SetForceEnableZoom(bool forceEnableZoom) {
   if (force_enable_zoom_ != forceEnableZoom) {
     force_enable_zoom_ = forceEnableZoom;

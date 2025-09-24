@@ -35,6 +35,10 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_snapshot_data_base.h"
+#endif
+
 using namespace testing;
 using namespace OHOS::NWeb;
 
@@ -45,6 +49,15 @@ class MockNWebDragEvent : public NWebDragEvent {
   MOCK_METHOD(DragAction, GetAction, (), (override));
   MOCK_METHOD(double, GetX, (), (override));
   MOCK_METHOD(double, GetY, (), (override));
+  MOCK_METHOD(OHOS::NWeb::NWebDragData::DragOperationsMask,
+              GetAllowedDragOperation,
+              (),
+              (const, override));
+  MOCK_METHOD(OHOS::NWeb::NWebDragData::DragOperation,
+              GetDragOperation,
+              (),
+              (const, override));
+  MOCK_METHOD(bool, IsDragOpValid, (), (const, override));
 };
 
 class MockNWebMouseEvent : public NWebMouseEvent {
@@ -120,6 +133,8 @@ class MockNWebInputMethodHandler : public NWebInputMethodHandler {
   MOCK_METHOD0(GetSelectEndIndex, int());
   MOCK_METHOD0(GetAllTextInfo, std::string());
 #endif // ARKWEB_AI_WRITE
+  MOCK_METHOD(bool, Reattach, (uint32_t, ReattachType), ());
+  MOCK_METHOD(void, SetFocusStatus, (bool), ());
 };
 
 class MockNWebCreateInfo : public NWebCreateInfo {
@@ -148,6 +163,63 @@ class MockNWebAccessRequest : public NWebAccessRequest {
    MOCK_METHOD(void, Agree, (int), (override));
    MOCK_METHOD(void, Refuse, (), (override));
 }
+
+#if BUILDFLAG(IS_ARKWEB)
+class MockNWebPrintDocumentAdapterAdapter : public NWebPrintDocumentAdapterAdapter {
+  public:
+   ~MockNWebPrintDocumentAdapterAdapter() = default;
+   MOCK_METHOD(void, OnStartLayoutWrite, (const std::string&, std::shared_ptr<NWebPrintAttributesAdapter>,
+       std::shared_ptr<NWebPrintAttributesAdapter>, uint32_t, std::shared_ptr<NWebPrintWriteResultCallbackAdapter>),
+       (override));
+   MOCK_METHOD(void, OnJobStateChanged, (const std::string&, uint32_t), (override));
+};
+
+class NWebPrintDocumentAdapterAdapterImplTest : public ::testing::Test {
+ public:
+  static void SetUpTestCase(void);
+  static void TearDownTestCase(void);
+  void SetUp(void);
+  void TearDown(void);
+  MockNWebPrintDocumentAdapterAdapter* mock_adapter;
+  std::shared_ptr<NWebPrintDocumentAdapterAdapterImpl> nweb_print_adapter_impl_;
+};
+
+void NWebPrintDocumentAdapterAdapterImplTest::SetUpTestCase(void) {}
+
+void NWebPrintDocumentAdapterAdapterImplTest::TearDownTestCase(void) {}
+
+void NWebPrintDocumentAdapterAdapterImplTest::SetUp() {
+  mock_adapter = new MockNWebPrintDocumentAdapterAdapter();
+  nweb_print_adapter_impl_ = std::make_shared<NWebPrintDocumentAdapterAdapterImpl>(mock_adapter);
+  ASSERT_NE(nweb_print_adapter_impl_, nullptr);
+}
+
+void NWebPrintDocumentAdapterAdapterImplTest::TearDown() {
+  delete mock_adapter;
+  nweb_print_adapter_impl_ = nullptr;
+}
+
+TEST_F(NWebPrintDocumentAdapterAdapterImplTest, OnStartLayoutWrite001) {
+  const std::string jobId = "test";
+  std::shared_ptr<NWebPrintAttributesAdapter> oldAttrs = nullptr;
+  std::shared_ptr<NWebPrintAttributesAdapter> newAttrs = nullptr;
+  uint32_t fd = 0;
+  std::shared_ptr<NWebPrintWriteResultCallbackAdapter> callback = nullptr;
+  nweb_print_adapter_impl_->ref_ = nullptr;
+  EXPECT_CALL(*mock_adapter, OnStartLayoutWrite(jobId, oldAttrs, newAttrs, fd, callback)).Times(0);
+  nweb_print_adapter_impl_->OnStartLayoutWrite(jobId, oldAttrs, newAttrs, fd, callback);
+  EXPECT_EQ(nweb_print_adapter_impl_->ref_, nullptr);
+}
+
+TEST_F(NWebPrintDocumentAdapterAdapterImplTest, OnJobStateChanged001) {
+  const std::string jobId = "test";
+  uint32_t state = 0;
+  nweb_print_adapter_impl_->ref_ = nullptr;
+  EXPECT_CALL(*mock_adapter, OnJobStateChanged(jobId, state)).Times(0);
+  nweb_print_adapter_impl_->OnJobStateChanged(jobId, state);
+  EXPECT_EQ(nweb_print_adapter_impl_->ref_, nullptr);
+}
+#endif
 
 class NWebImplTest : public ::testing::Test {
  public:
@@ -238,6 +310,31 @@ TEST_F(NWebImplTest, NWebImplTest_SendDragEvent_001) {
 
   nweb_impl_->SendDragEvent(dragEvent);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, NWebImplTest_SendDragEvent_002) {
+  auto dragEvent = std::make_shared();
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*dragEvent, GetAction()).WillOnce(Return(DragAction::DRAG_OVER));
+  EXPECT_CALL(*dragEvent, GetX()).Times(2);
+  EXPECT_CALL(*dragEvent, GetY()).Times(2);
+  EXPECT_CALL(*dragEvent, GetDragOperation()).Times(0);
+  EXPECT_CALL(*dragEvent, GetAllowedDragOperation()).Times(0);
+
+  nweb_impl_->SendDragEvent(dragEvent);
+}
+
+TEST_F(NWebImplTest, NWebImplTest_SendDragEvent_003) {
+  auto dragEvent = std::make_shared();
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*dragEvent, GetAction()).WillOnce(Return(DragAction::DRAG_OVER));
+  EXPECT_CALL(*dragEvent, IsDragOpValid()).WillOnce(Return(true));
+  EXPECT_CALL(*dragEvent, GetX()).Times(2);
+  EXPECT_CALL(*dragEvent, GetY()).Times(2);
+  EXPECT_CALL(*dragEvent, GetDragOperation()).Times(1);
+  EXPECT_CALL(*dragEvent, GetAllowedDragOperation()).Times(1);
+
+  nweb_impl_->SendDragEvent(dragEvent);
 }
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
@@ -6225,58 +6322,107 @@ TEST_F(NWebImplTest, ClearBlanklessKey003) {
 
 TEST_F(NWebImplTest, CallBlanklessFrameFunc001) {
   uint64_t blankless_key = 0;
-  int32_t lcp_time = 0;
-  const std::string file = "test";
+  SnapshotDataItem dataItem = {
+    .staticPath = "test",
+    .lcpTime = 0,
+    .width = 100,
+    .height = 100,
+  };
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = nullptr;
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_EQ(nweb_impl_->nweb_handle_, nullptr);
 }
 
 TEST_F(NWebImplTest, CallBlanklessFrameFunc002) {
   uint64_t blankless_key = 0;
-  int32_t lcp_time = INT32_MAX;
-  const std::string file = "test";
+  SnapshotDataItem dataItem = {
+    .staticPath = "test",
+    .lcpTime = INT32_MAX,
+    .width = 100,
+    .height = 100,
+  };
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
 }
 
 TEST_F(NWebImplTest, CallBlanklessFrameFunc003) {
   uint64_t blankless_key = 0;
-  int32_t lcp_time = 0;
-  const std::string file = "test";
+  SnapshotDataItem dataItem = {
+    .staticPath = "test",
+    .lcpTime = 0,
+    .width = 100,
+    .height = 100,
+  };
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
 }
 
 TEST_F(NWebImplTest, CallBlanklessFrameFunc004) {
   uint64_t blankless_key = 0;
-  int32_t lcp_time = 5;
-  const std::string file = "test";
+  SnapshotDataItem dataItem = {
+    .staticPath = "test",
+    .lcpTime = 5,
+    .width = 100,
+    .height = 100,
+  };
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
 }
 
 TEST_F(NWebImplTest, CallBlanklessFrameFunc005) {
   uint64_t blankless_key = 0;
-  int32_t lcp_time = 5;
-  const std::string file = "";
+  SnapshotDataItem dataItem = {
+    .lcpTime = 5,
+    .width = 100,
+    .height = 100,
+  };
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
-  EXPECT_TRUE(file.empty());
+  EXPECT_TRUE(dataItem.staticPath.empty());
+}
+
+TEST_F(NWebImplTest, CallBlanklessFrameFunc006) {
+  uint64_t blankless_key = 0;
+  SnapshotDataItem dataItem = {
+    .wholePath = "test",
+    .lcpTime = 5,
+    .width = 100,
+    .height = 100,
+  };
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem, true);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
+}
+
+TEST_F(NWebImplTest, CallBlanklessFrameFunc007) {
+  uint64_t blankless_key = 0;
+  SnapshotDataItem dataItem = {
+    .lcpTime = 5,
+    .width = 100,
+    .height = 100,
+  };
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, dataItem, true);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
+  EXPECT_TRUE(dataItem.wholePath.empty());
 }
 
 TEST_F(NWebImplTest, GetPreferenceHash001) {
@@ -6834,5 +6980,271 @@ TEST_F(NWebImplTest, NotifyMemoryLevel002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 #endif  // BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+TEST_F(NWebImplTest, ResizeVisibleViewport001) {
+  uint32_t width = 0;
+  uint32_t height = 0;
+  bool isKeyboard = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  EXPECT_CALL(*mock_delegate_, GetVisibleViewportAvoidHeight()).Times(0);
+#endif  // BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  nweb_impl_->ResizeVisibleViewport(width, height, isKeyboard);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, ResizeVisibleViewport002) {
+  uint32_t width = 0;
+  uint32_t height = 8000;
+  bool isKeyboard = 0;
+  nweb_impl_->draw_mode_ = 0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  EXPECT_CALL(*mock_delegate_, GetVisibleViewportAvoidHeight()).Times(0);
+#endif  // BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  nweb_impl_->ResizeVisibleViewport(width, height, isKeyboard);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, ResizeVisibleViewport003) {
+  uint32_t width = 8000;
+  uint32_t height = 8000;
+  bool isKeyboard = 0;
+  nweb_impl_->draw_mode_ = 10;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  EXPECT_CALL(*mock_delegate_, GetVisibleViewportAvoidHeight()).WillOnce(::testing::Return(0));
+#endif  // BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  EXPECT_CALL(*mock_delegate_, ResizeVisibleViewport(width, height, isKeyboard)).Times(1);
+  nweb_impl_->ResizeVisibleViewport(width, height, isKeyboard);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, ResizeVisibleViewport004) {
+  uint32_t width = 8000;
+  uint32_t height = 8000;
+  bool isKeyboard = 0;
+  nweb_impl_->draw_mode_ = 10;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  EXPECT_CALL(*mock_delegate_, GetVisibleViewportAvoidHeight()).WillOnce(::testing::Return(1));
+#endif  // BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  EXPECT_CALL(*mock_delegate_, ResizeVisibleViewport(width, height, isKeyboard)).Times(0);
+  nweb_impl_->ResizeVisibleViewport(width, height, isKeyboard);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+TEST_F(NWebImplTest, OnContinue002) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->is_pause_ = false;
+  EXPECT_CALL(*mock_delegate_, OnContinue()).Times(1);
+  nweb_impl_->OnContinue();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnContinue003) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->is_pause_ = true;
+  nweb_impl_->pending_size_ = std::nullopt;
+  EXPECT_CALL(*mock_delegate_, OnContinue()).Times(1);
+  nweb_impl_->OnContinue();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->is_pause_, false);
+}
+
+TEST_F(NWebImplTest, OnContinue004) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->is_pause_ = true;
+  nweb_impl_->pending_size_ = NWebImpl::ReSizeType {800, 600, false};
+  EXPECT_CALL(*mock_delegate_, OnContinue()).Times(1);
+  nweb_impl_->OnContinue();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->is_pause_, false);
+}
+
+TEST_F(NWebImplTest, OnContinue005) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->is_pause_ = false;
+  nweb_impl_->inputmethod_handler_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, OnContinue()).Times(1);
+  EXPECT_CALL(*mock_delegate_, IsCustomKeyboard()).WillOnce(::testing::Return(false));
+  EXPECT_CALL(*mock_delegate_, GetCustomKeyboardHandler()).Times(0);
+  nweb_impl_->OnContinue();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnContinue006) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->is_pause_ = false;
+  EXPECT_CALL(*mock_delegate_, OnContinue()).Times(1);
+  EXPECT_CALL(*mock_delegate_, IsCustomKeyboard()).WillOnce(::testing::Return(true));
+  EXPECT_CALL(*mock_delegate_, GetCustomKeyboardHandler()).Times(1);
+  nweb_impl_->OnContinue();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnContinue007) {
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->is_pause_ = false;
+  CefRefPtr<MockNWebInputMethodHandler> inputmethod_handler = new MockNWebInputMethodHandler();
+  nweb_impl_->inputmethod_handler_ = inputmethod_handler;
+  EXPECT_CALL(*mock_delegate_, OnContinue()).Times(1);
+  EXPECT_CALL(*mock_delegate_, OnFocus(::testing::_)).Times(0);
+  EXPECT_CALL(*mock_delegate_, IsCustomKeyboard()).WillOnce(::testing::Return(false));
+  EXPECT_CALL(*mock_delegate_, GetCustomKeyboardHandler()).Times(0);
+  nweb_impl_->OnContinue();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnBlur003) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  nweb_impl_->inputmethod_handler_ = nullptr;
+  bool temp = true;
+  EXPECT_CALL(*mock_delegate_, IsCustomKeyboard()).WillOnce(::testing::Return(temp));
+  EXPECT_CALL(*mock_delegate_, OnBlur()).Times(1);
+  std::shared_ptr<NWebHandler> handler = std::make_shared<NWebHandler>();
+  std::shared_ptr<NWebCustomKeyboardHandlerImpl> handlerImpl = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler);
+  EXPECT_CALL(*mock_delegate_, GetCustomKeyboardHandler()).WillOnce(::testing::Return(handlerImpl));
+  nweb_impl_->OnBlur(OHOS::NWeb::BlurReason::WINDOW_BLUR);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_EQ(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnBlur004) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  CefRefPtr<MockNWebInputMethodHandler> inputmethod_handler = new MockNWebInputMethodHandler();
+  nweb_impl_->inputmethod_handler_ = inputmethod_handler;
+  bool temp = true;
+  nweb_impl_->is_enhance_surface_ = false;
+  EXPECT_CALL(*mock_delegate_, IsCustomKeyboard()).WillOnce(::testing::Return(temp));
+  EXPECT_CALL(*mock_delegate_, OnBlur()).Times(1);
+  std::shared_ptr<NWebHandler> handler = std::make_shared<NWebHandler>();
+  std::shared_ptr<NWebCustomKeyboardHandlerImpl> handlerImpl = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler);
+  EXPECT_CALL(*mock_delegate_, GetCustomKeyboardHandler()).WillOnce(::testing::Return(handlerImpl));
+  EXPECT_CALL(*inputmethod_handler, SetFocusStatus(::testing::_)).Times(1);
+  nweb_impl_->OnBlur(OHOS::NWeb::BlurReason::CLEAR_FOCUS);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnBlur005) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  CefRefPtr<MockNWebInputMethodHandler> inputmethod_handler = new MockNWebInputMethodHandler();
+  nweb_impl_->inputmethod_handler_ = inputmethod_handler;
+  bool temp = true;
+  nweb_impl_->is_enhance_surface_ = true;
+  EXPECT_CALL(*mock_delegate_, IsCustomKeyboard()).WillOnce(::testing::Return(temp));
+  EXPECT_CALL(*mock_delegate_, OnBlur()).Times(1);
+  std::shared_ptr<NWebHandler> handler = std::make_shared<NWebHandler>();
+  std::shared_ptr<NWebCustomKeyboardHandlerImpl> handlerImpl = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler);
+  EXPECT_CALL(*mock_delegate_, GetCustomKeyboardHandler()).WillOnce(::testing::Return(handlerImpl));
+  EXPECT_CALL(*inputmethod_handler, SetFocusStatus(::testing::_)).Times(1);
+  nweb_impl_->OnBlur(OHOS::NWeb::BlurReason::FOCUS_SWITCH);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnBlur006) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  CefRefPtr<MockNWebInputMethodHandler> inputmethod_handler = new MockNWebInputMethodHandler();
+  nweb_impl_->inputmethod_handler_ = inputmethod_handler;
+  bool temp = true;
+  EXPECT_CALL(*mock_delegate_, IsCustomKeyboard()).WillOnce(::testing::Return(temp));
+  EXPECT_CALL(*mock_delegate_, OnBlur()).Times(1);
+  std::shared_ptr<NWebHandler> handler = std::make_shared<NWebHandler>();
+  std::shared_ptr<NWebCustomKeyboardHandlerImpl> handlerImpl = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler);
+  EXPECT_CALL(*mock_delegate_, GetCustomKeyboardHandler()).WillOnce(::testing::Return(handlerImpl));
+  EXPECT_CALL(*inputmethod_handler, SetFocusStatus(::testing::_)).Times(1);
+  nweb_impl_->OnBlur(OHOS::NWeb::BlurReason::VIEW_SWITCH);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+TEST_F(NWebImplTest, OnBlur007) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  CefRefPtr<MockNWebInputMethodHandler> inputmethod_handler = new MockNWebInputMethodHandler();
+  nweb_impl_->inputmethod_handler_ = inputmethod_handler;
+  bool temp = true;
+  nweb_impl_->is_enhance_surface_ = true;
+  EXPECT_CALL(*mock_delegate_, IsCustomKeyboard()).WillOnce(::testing::Return(temp));
+  EXPECT_CALL(*mock_delegate_, OnBlur()).Times(1);
+  std::shared_ptr<NWebHandler> handler = std::make_shared<NWebHandler>();
+  std::shared_ptr<NWebCustomKeyboardHandlerImpl> handlerImpl = std::make_shared<NWebCustomKeyboardHandlerImpl>(handler);
+  EXPECT_CALL(*mock_delegate_, GetCustomKeyboardHandler()).WillOnce(::testing::Return(handlerImpl));
+#if BUILDFLAG(ARKWEB_FOCUS)
+  EXPECT_CALL(*inputmethod_handler, SetFocusStatus(::testing::_)).Times(0);
+#endif  // #if BUILDFLAG(ARKWEB_FOCUS)
+  nweb_impl_->OnBlur(OHOS::NWeb::BlurReason::WINDOW_BLUR);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+}
+
+#if BUILDFLAG(ARKWEB_PRINT)
+TEST_F(NWebImplTest, CreateWebPrintDocumentAdapterV2001) {
+  const std::string jobName = "test";
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, CreateWebPrintDocumentAdapterV2(jobName)).Times(0);
+  nweb_impl_->CreateWebPrintDocumentAdapterV2(jobName);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, CreateWebPrintDocumentAdapterV2002) {
+  const std::string jobName = "test";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, CreateWebPrintDocumentAdapterV2(jobName)).Times(1);
+  nweb_impl_->CreateWebPrintDocumentAdapterV2(jobName);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif  // BUILDFLAG(ARKWEB_PRINT)
+
+#if BUILDFLAG(IS_ARKWEB)
+TEST_F(NWebImplTest, EnableAppLinking001) {
+  bool enable = false;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, EnableAppLinking(enable)).Times(0);
+  nweb_impl_->EnableAppLinking(enable);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, EnableAppLinking002) {
+  bool enable = false;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, EnableAppLinking(enable)).Times(1);
+  nweb_impl_->EnableAppLinking(enable);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif  // BUILDFLAG(IS_ARKWEB)
+
+#if BUILDFLAG(ARKWEB_AI_WRITE)
+TEST_F(NWebImplTest, GetSelectStartIndex002) {
+  int temp = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->inputmethod_handler_ = new NWebInputMethodHandler();
+  auto result = nweb_impl_->GetSelectStartIndex();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+  EXPECT_EQ(result, 0);
+}
+
+TEST_F(NWebImplTest, GetSelectEndIndex002) {
+  int temp = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->inputmethod_handler_ = new NWebInputMethodHandler();
+  auto result = nweb_impl_->GetSelectEndIndex();
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  EXPECT_NE(nweb_impl_->inputmethod_handler_, nullptr);
+  EXPECT_EQ(result, 0);
+}
+#endif  // BUILDFLAG(ARKWEB_AI_WRITE)
 }  // namespace OHOS::NWeb
                           

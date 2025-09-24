@@ -70,7 +70,7 @@ TEST_F(ResRequestInfoCacheMgrTest, ResRequestInfoCacheMgrTest_001)
   cache.CheckFlush(false);
   cache.CheckFlush(true);
   cache.SetPageOrigin("test");
-  EXPECT_NE(cache.page_origin_,"test");
+  EXPECT_EQ(cache.page_origin_,"test");
   cache.Start();
 
   GURL request_url("preflight+https://example.com/path/to/resource");
@@ -123,6 +123,7 @@ TEST_F(ResRequestInfoCacheMgrTest,ResRequestInfoCacheMgrTest_004)
   });
 
   ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,info_cache_cb);
+  EXPECT_NE(cache.disk_cache_, nullptr);
   cache.OnEntryLoadedCallback("");
   cache.is_start_ = true;
   cache.OnEntryLoadedCallback("");
@@ -157,7 +158,7 @@ TEST_F(ResRequestInfoCacheMgrTest, UpdateResRequestInfoTest)
   cache.new_preload_info_list_.insert({request_info->url().spec(),request_info});
   cache.UpdateResRequestInfo(request_info);
 
-  GURL url("http://user:pass@expample.com");
+  GURL url("http://user:pass@example.com");
   std::shared_ptr<PRRequestInfo> info = std::make_shared<PRRequestInfo>(url, false);
   bool is_request_with_cookie2 = cache.IsRequestWithCookie(info);
   EXPECT_EQ(is_request_with_cookie2,false);
@@ -214,6 +215,7 @@ TEST_F(ResRequestInfoCacheMgrTest,JsonToResReqPreloadInfoListTest)
   });
 
   ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,info_cache_cb);
+  EXPECT_NE(cache.disk_cache_, nullptr);
   cache.is_start_=true;
   cache.OnEntryLoadedCallback("test");
 
@@ -253,6 +255,7 @@ TEST_F(ResRequestInfoCacheMgrTest,JsonToResReqPreloadInfoListTest_002)
   });
 
   ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,info_cache_cb);
+  EXPECT_NE(cache.disk_cache_, nullptr);
   cache.is_start_=true;
   std::string content4 = R"json([
     {
@@ -293,6 +296,7 @@ TEST_F(ResRequestInfoCacheMgrTest,JsonToResReqPreloadInfoListTest_003)
   });
 
   ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,info_cache_cb);
+  EXPECT_NE(cache.disk_cache_, nullptr);
   cache.is_start_=true;
   std::string content3 = R"json([
     {
@@ -323,6 +327,7 @@ TEST_F(ResRequestInfoCacheMgrTest,ResReqPreloadInfoListToJsonTest)
   });
 
   ResReqInfoCacheMgr cache("www.test.com",networkAnonymizationKey,disk_cache_backend_factory,info_cache_cb);
+  EXPECT_NE(cache.disk_cache_, nullptr);
   cache.is_start_=true;
   cache.page_origin_ = "https://example.com";
   GURL request_url1("https://example.com/path/to/resource1");
@@ -358,7 +363,7 @@ TEST_F(ResRequestInfoCacheMgrTest,ResRequestInfoCacheMgrTest_005)
   });
 
   auto mgr = std::make_unique<ResReqInfoCacheMgr>("",networkAnonymizationKey,factory, info_cache_cb);
-
+  EXPECT_NE(mgr->disk_cache_, nullptr);
 }
 } // namespace ohos_prp_preload
 

@@ -77,6 +77,10 @@ source_set("unit_tests") {
     "ruleset_publisher_unittest.cc",
     "ruleset_service_unittest.cc",
   ]
+  sources += arkweb_components_subresource_filter_content_shared_browser_unittest
+  if (arkweb_adblock) {
+    sources += arkweb_page_load_statistics_unittest_sources
+  }
   deps = [
     ":test_support",
     "//base",

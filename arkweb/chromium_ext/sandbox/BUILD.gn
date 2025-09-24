@@ -41,7 +41,10 @@ component("seccomp_starter_ohos") {
 test("arkweb_sandbox_unittests") {
   include_dirs = [ "//ppapi/lib/gl/include" ]
 
-  sources = [ "seccomp-bpf-helpers/baseline_policy_ohos_unittest.cc" ]
+  sources = [
+    "seccomp-bpf-helpers/baseline_policy_ohos_unittest.cc",
+    "seccomp-bpf-helpers/seccomp_starter_ohos_unittest.cc"
+  ]
 
   public_deps = [
     "//testing/gmock",

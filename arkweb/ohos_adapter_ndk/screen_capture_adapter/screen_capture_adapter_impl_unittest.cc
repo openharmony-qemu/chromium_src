@@ -595,7 +595,7 @@ TEST_F(ScreenCaptureAdapterImplTest, AcquireVideoBuffer) {
   EXPECT_EQ(result, 0);
 
   std::queue<std::shared_ptr<SurfaceBufferAdapter>> bufferAvailableQueue1;
-  adapterImpl->callback_info_.nweb_id = 100;
+  adapterImpl->nweb_id_ = 100;
   bufferAvailableQueueMap_.emplace(100, bufferAvailableQueue1);
   buffer = adapterImpl->AcquireVideoBuffer();
   EXPECT_EQ(buffer, nullptr);
@@ -619,12 +619,12 @@ TEST_F(ScreenCaptureAdapterImplTest, AcquireAudioBuffer) {
   auto config = GetScreenCaptureConfig();
   result = adapterImpl->InitV2(config, 0);
   EXPECT_EQ(result, 0);
-  adapterImpl->callback_info_.nweb_id = 101;
+  adapterImpl->nweb_id_ = 101;
   result = adapterImpl->AcquireAudioBuffer(
       buffer, OHOS::NWeb::AudioCaptureSourceTypeAdapter::ALL_PLAYBACK);
   EXPECT_EQ(result, -1);
 
-  adapterImpl->callback_info_.nweb_id = 102;
+  adapterImpl->nweb_id_ = 102;
   std::queue<std::shared_ptr<OH_AudioBufferAdapterImpl>> bufferQueue;
   audioBufferAvailableQueueMap_.emplace(102, bufferQueue);
   result = adapterImpl->AcquireAudioBuffer(
@@ -632,7 +632,7 @@ TEST_F(ScreenCaptureAdapterImplTest, AcquireAudioBuffer) {
   EXPECT_EQ(result, -1);
 
   audioBufferAvailableQueueMap_.erase(102);
-  adapterImpl->callback_info_.nweb_id = 0;
+  adapterImpl->nweb_id_ = 0;
   auto callback = std::make_shared<OHOSScreenCaptureCallbackMock>();
   result = adapterImpl->SetCaptureCallback(callback);
   EXPECT_EQ(result, 0);

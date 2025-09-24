@@ -20,6 +20,9 @@
 #include <chrono>
 
 #include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#include "base/gtest_prod_util.h"
+#endif
 #include "base/memory/raw_ptr.h"
 #include "content/common/content_export.h"
 #include "content/public/renderer/render_frame.h"
@@ -46,6 +49,12 @@ void ChangeCompleteInitialize(bool complete);
 #endif
 
 private:
+#if BUILDFLAG(ARKWEB_TEST)
+  class RenderFrameImplTest;
+#endif
+#if BUILDFLAG(ARKWEB_TEST)
+  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, ReportRenderInitBlock);
+#endif
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
   int64_t commit_navigation_time_ = 0;
   bool is_complete_initialize = false;

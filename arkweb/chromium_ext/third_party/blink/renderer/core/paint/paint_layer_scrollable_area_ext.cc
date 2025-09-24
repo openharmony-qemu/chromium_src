@@ -65,11 +65,27 @@ float PaintLayerScrollableAreaExt::ComputeVisibleAreaScale() const {
 // LCOV_EXCL_START
 void PaintLayerScrollableAreaExt::UpdateScrollbarLengthOrCreateWidthScale() {
   is_pinch_gesture_active_ = true;
-  bool will_be_overlay = GetPageScrollbarTheme().UsesOverlayScrollbars();
-  if (will_be_overlay && HorizontalScrollbar() && VerticalScrollbar()) {
+  if (HorizontalScrollbar() && VerticalScrollbar()) {
     UpdateScrollbarProportions();
   } else {
-    UpdateScrollbarByScale(will_be_overlay);
+    bool needs_horizontal_scrollbar;
+    bool needs_vertical_scrollbar;
+    bool needs_notify_location = false;
+    ComputeScrollbarExistence(needs_horizontal_scrollbar,
+                              needs_vertical_scrollbar);
+    if (needs_horizontal_scrollbar && !HasHorizontalScrollbar()) {
+      SetHasHorizontalScrollbar(true);
+      needs_notify_location = true;
+    }
+    if (needs_vertical_scrollbar && !HasVerticalScrollbar()) {
+      SetHasVerticalScrollbar(true);
+      needs_notify_location = true;
+    }
+    if (needs_notify_location) {
+      UpdateScrollbarProportions();
+      ClampScrollOffsetAfterOverflowChange();
+      PositionOverflowControls();
+    }
   }
 }
 // LCOV_EXCL_STOP
@@ -81,35 +97,6 @@ void PaintLayerScrollableAreaExt::UpdateScrollbar() {
   PositionOverflowControls();
 }
 // LCOV_EXCL_STOP
-
-void PaintLayerScrollableAreaExt::UpdateScrollbarByScale(bool will_be_overlay) {
-  bool needs_horizontal_scrollbar;
-  bool needs_vertical_scrollbar;
-  bool needs_notify_location = false;
-  ComputeScrollbarExistence(needs_horizontal_scrollbar,
-                            needs_vertical_scrollbar);
-  if (needs_horizontal_scrollbar && !HasHorizontalScrollbar()) {
-    SetHasHorizontalScrollbar(true);
-    needs_notify_location = true;
-  }
-  if (needs_vertical_scrollbar && !HasVerticalScrollbar()) {
-    SetHasVerticalScrollbar(true);
-    needs_notify_location = true;
-  }
-  if (!will_be_overlay) {
-    if (!needs_horizontal_scrollbar && HasHorizontalScrollbar()) {
-      SetHasHorizontalScrollbar(false);
-      needs_notify_location = false;
-    }
-    if (!needs_vertical_scrollbar && HasVerticalScrollbar()) {
-      SetHasVerticalScrollbar(false);
-      needs_notify_location = false;
-    }
-  }
-  if (needs_notify_location) {
-    UpdateScrollbar();
-  }
-}
 
 // LCOV_EXCL_START
 void PaintLayerScrollableAreaExt::UpdateScrollbarProportions() {

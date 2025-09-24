@@ -513,9 +513,9 @@ ArkOhosAdapterHelperWrapper::CreateFlowbufferAdapter() {
   return std::make_unique<ArkFlowbufferAdapterWrapper>(adapter);
 }
 
-std::unique_ptr<NWeb::MediaAVSessionAdapter>
+std::shared_ptr<NWeb::MediaAVSessionAdapter>
 ArkOhosAdapterHelperWrapper::CreateMediaAVSessionAdapter() {
-  return std::make_unique<NWeb::MediaAVSessionAdapterImpl>();
+  return std::make_shared<NWeb::MediaAVSessionAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::OhosImageDecoderAdapter>

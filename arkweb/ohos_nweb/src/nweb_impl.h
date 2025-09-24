@@ -31,6 +31,7 @@
 #include "capi/nweb_download_delegate_callback.h"
 #include "capi/nweb_extension_api_callback.h"
 #include "capi/nweb_extension_javascript_item.h"
+#include "capi/nweb_extension_load_url_params.h"
 #include "nweb.h"
 #include "nweb_download_callback.h"
 #include "nweb_errors.h"
@@ -55,6 +56,10 @@
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 #include "capi/nweb_statistic_callback.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_snapshot_data_base.h"
+#endif
 
 struct OpenDevToolsParam;
 struct RunJavaScriptParam;
@@ -203,6 +208,11 @@ class NWebImpl : public NWeb {
   int LoadWithData(const std::string& data,
                    const std::string& mimeType,
                    const std::string& encoding) override;
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  int LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
+                        const std::string& refer, const std::string& headers,
+                        const std::string& post_data, const bool allow_https_upgrade);
+#endif
 
   void RegisterNativeArkJSFunction(
       const char* objName,
@@ -706,8 +716,10 @@ class NWebImpl : public NWeb {
   void AbortDistill();
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   void SetForceEnableZoom(bool forceEnableZoom) const override;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   bool GetForceEnableZoom() const;
 #endif  // ARKWEB_EXT_FORCE_ZOOM
 
@@ -1084,6 +1096,9 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool SetFocusByPosition(float x, float y) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+  static void SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode);
+#endif
 #if BUILDFLAG(ARKWEB_PIP)
   void SetPipNativeWindow(int delegate_id,
                           int child_id,
@@ -1101,7 +1116,6 @@ class NWebImpl : public NWeb {
   int32_t SetBlanklessLoadingWithKey(const std::string& key, bool isStart) override;
   int64_t GetPreferenceHash();
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
-  void RecordBlanklessFrameSize(uint32_t width, uint32_t height) override;
   bool TriggerBlanklessForUrl(const std::string& url) override;
   void SetVisibility(bool isVisible) override;
 #endif
@@ -1118,6 +1132,10 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override;
   void OnBrowserBackground() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void EnableHttpsUpgrades(bool enable);
 #endif
 
 #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
@@ -1169,7 +1187,9 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
   std::string web_tag_{""};
 #endif
-
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+  static WebSoftKeyboardBehaviorMode keyboardBehaviorMode_;
+#endif
   bool is_pause_ = false;
   struct ReSizeType {
     uint32_t width_ = 0;
@@ -1194,7 +1214,6 @@ class NWebImpl : public NWeb {
 
   std::unique_ptr<base::RetainingOneShotTimer> drag_over_timer_;
   DelegateDragEvent drag_over_event_;
-  base::WeakPtrFactory<NWebImpl> weak_factory_{this};
 
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   void AvoidVisibleViewportBottom(int32_t avoidHeight) override;
@@ -1202,20 +1221,30 @@ class NWebImpl : public NWeb {
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void MarkUserEnableBlankless()
+  {
+    is_user_enable_ = true;
+  }
+  void ResetUserEnableBlankless()
+  {
+    is_user_enable_ = false;
+  }
+  bool IsUserEnableBlankless()
+  {
+    return is_user_enable_;
+  }
+  bool ProcessBlanklessForUrl(uint64_t blanklessKey, bool isAnime = false);
   void ClearBlanklessKey();
   bool CheckNetAvailable();
-  void CallBlanklessFrameFunc(uint64_t blankless_key,
-                              int32_t lcp_time,
-                              const std::string& file,
-                              int32_t width,
-                              int32_t height);
+  void CallBlanklessFrameFunc(uint64_t blankless_key, SnapshotDataItem& dataItem, bool isAnime = false);
   // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
   std::atomic<uint64_t> blankless_key_ = UINT64_MAX;
   std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
-  uint32_t cur_blankless_frame_width_ = 0;
-  uint32_t cur_blankless_frame_height_ = 0;
+  std::atomic<bool> is_user_enable_ = false;
 #endif
+
+  base::WeakPtrFactory<NWebImpl> weak_factory_{this};
 };
 }  // namespace OHOS::NWeb
 

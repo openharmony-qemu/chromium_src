@@ -113,7 +113,6 @@ void SetOptionsXpath(
       nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()
           ->QueryWhitelistConfig(url_host);
   if (!reader_white_list || reader_white_list->distill_config.empty()) {
-    LOG(ERROR) << __func__ << " [Distill] reader_white_list empty";
     return;
   }
 

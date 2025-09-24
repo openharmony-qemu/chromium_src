@@ -173,7 +173,7 @@ TEST_F(WebFrameWidgetImplExtSimTest, ArkWebHandleTouchEvent_OtherEvent) {
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, SelectRangeV2_WithoutFocusedFrame) {
-  MockMainFrameWidget()->SelectRangeV2(gfx::Point(1, 1), false);
+  MockMainFrameWidget()->SelectRangeV2ForTest(gfx::Point(1, 1), false);
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, GetVisibleRectToWeb) {
@@ -207,11 +207,13 @@ TEST_F(WebFrameWidgetImplExtSimTest, OnTextRecognized) {
   WTF::Vector<mojom::blink::TextRecognizeResultPtr> results;
   auto result = mojom::blink::TextRecognizeResult::New();
   result->raw_value = "Test";
+  result->bounding_box = gfx::RectF(10, 10, 100, 100);
+  result->corner_points = {gfx::PointF(10, 10), gfx::PointF(10, 10), gfx::PointF(10, 10), gfx::PointF(10, 10)};
   results.push_back(std::move(result));
 
   MockMainFrameWidget()->on_text_recognize_callback_ = 
       base::BindRepeating([](std::vector<String>, std::vector<gfx::PointF>, float) {});
-  MockMainFrameWidget()->OnTextRecognized(std::move(results), 1.0f);
+  MockMainFrameWidget()->OnTextRecognizedForTest(std::move(results), 1.0f);
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, GetWordSelection_Valid) {
@@ -229,16 +231,16 @@ TEST_F(WebFrameWidgetImplExtSimTest, GetWordSelection_FailCase) {
 
 TEST_F(WebFrameWidgetImplExtSimTest, OnTextSelected) {
   MockMainFrameWidget()->on_text_selected_callback_ = base::BindRepeating([](bool) {});
-  MockMainFrameWidget()->OnTextSelected(true);
+  MockMainFrameWidget()->OnTextSelectedForTest(true);
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, OnDestroyImageAnalyzerOverlay) {
   MockMainFrameWidget()->on_destroy_image_overlay_callback_ = base::BindRepeating([]() {});
-  MockMainFrameWidget()->OnDestroyImageAnalyzerOverlay();
+  MockMainFrameWidget()->OnDestroyImageAnalyzerOverlayForTest();
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, OnDataDetectorSelectText) {
-  MockMainFrameWidget()->OnDataDetectorSelectText();
+  MockMainFrameWidget()->OnDataDetectorSelectTextForTest();
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, GetImageRectInner_Valid) {
@@ -266,7 +268,7 @@ TEST_F(WebFrameWidgetImplExtSimTest, CleanFocusCache) {
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, ShowFreeCopyMenu) {
-  MockMainFrameWidget()->ShowFreeCopyMenu();
+  MockMainFrameWidget()->ShowFreeCopyMenuForTest();
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, DisableBoost) {
@@ -338,5 +340,12 @@ TEST_F(WebFrameWidgetImplExtSimTest, ReportBlank_Branches) {
   EXPECT_FALSE(duration > kDragBlankTime);
   MockMainFrameWidget()->ReportBlank(start, end);
 }
+
+TEST_F(WebFrameWidgetImplExtSimTest, GetOverScrollOffset_ForTest) {
+  auto offset = MockMainFrameWidget()->GetOverScrollOffsetForTest();
+  EXPECT_EQ(offset.x(), 0);
+  EXPECT_EQ(offset.y(), 0);
+}
+
 }  // namespace
 }  // namespace blink

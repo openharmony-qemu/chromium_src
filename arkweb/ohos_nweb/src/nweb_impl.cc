@@ -2447,6 +2447,18 @@ int NWebImpl::LoadWithData(const std::string& data,
   return nweb_delegate_->LoadWithData(data, mimeType, encoding);
 }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+int NWebImpl::LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
+                                const std::string& refer, const std::string& headers,
+                                const std::string& post_data, const bool allow_https_upgrade) {
+  if (nweb_delegate_ == nullptr) {
+    return NWEB_ERR;
+  }
+  return nweb_delegate_->LoadUrlWithParams(url, load_type, refer,
+                                           headers, post_data, allow_https_upgrade);
+}
+#endif
+
 void NWebImpl::RegisterNativeArkJSFunction(
     const char* objName,
     const std::vector<std::shared_ptr<NWebJsProxyCallback>>& callbacks) {
@@ -6823,6 +6835,17 @@ void NWebImpl::OnBrowserBackground() {
     return;
   }
   nweb_delegate_->OnBrowserBackground();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+void NWebImpl::EnableHttpsUpgrades(bool enable) {
+  LOG(INFO) << "NWebImpl::EnableHttpsUpgrades.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("EnableHttpsUpgrades nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->EnableHttpsUpgrades(enable);
 }
 #endif
 

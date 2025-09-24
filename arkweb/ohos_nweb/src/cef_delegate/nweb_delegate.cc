@@ -2586,6 +2586,22 @@ int NWebDelegate::LoadWithData(const std::string& data,
   return NWEB_OK;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+int NWebDelegate::LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
+                                    const std::string& refer, const std::string& headers,
+                                    const std::string& post_data, const bool allow_https_upgrade) {
+  LOG(DEBUG) << "NWebDelegate::LoadUrlWithParams";
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    return NWEB_ERR;
+  }
+  GetBrowser()->GetHost()->LoadUrlWithParams(url, load_type, refer,
+                                             headers, post_data, allow_https_upgrade);
+  RequestVisitedHistory();
+  return NWEB_OK;
+}
+#endif
+ 
+
 const CefRefPtr<ArkWebBrowserExt> NWebDelegate::GetBrowser() const {
   if (handler_delegate_) {
     return handler_delegate_->GetBrowser();
@@ -6215,6 +6231,17 @@ bool NWebDelegate::GetErrorPageEnabled() {
     return false;
   }
   return preference_delegate_->ErrorPageEnabled();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+void NWebDelegate::EnableHttpsUpgrades(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "EnableHttpsUpgrades can not get browser";
+    return;
+  }
+  LOG(INFO) << "NWebDelegate::EnableHttpsUpgrades";
+  GetBrowser()->GetHost()->EnableHttpsUpgrades(enable);
 }
 #endif
 

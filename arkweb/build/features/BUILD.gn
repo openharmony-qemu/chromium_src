@@ -577,6 +577,7 @@ buildflag_header("features") {
     "ARKWEB_EXT_PULL_TO_REFRESH=false",
     "ARKWEB_READER_MODE=false",
     "ARKWEB_EX_ENABLE_APPLINKING=arkweb_ex_enable_applinking",
+    "ARKWEB_EXT_HTTPS_UPGRADES=false",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

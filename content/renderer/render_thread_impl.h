@@ -411,35 +411,12 @@ class CONTENT_EXPORT RenderThreadImpl
  private:
   FRIEND_TEST_ALL_PREFIXES(RenderThreadImplBrowserTest,
                            TransferSharedLastForegroundTime);
-#if BUILDFLAG(ARKWEB_TEST)
-  FRIEND_TEST_ALL_PREFIXES(RenderThreadImplExtUnittest,
-                           NotifyLocaleChanged_NoSharedInstance);
-  FRIEND_TEST_ALL_PREFIXES(RenderThreadImplExtUnittest,
-                           NotifyLocaleChanged_HasSharedInstance_NoPakExist);
-  FRIEND_TEST_ALL_PREFIXES(RenderThreadImplExtUnittest,
-                           NotifyLocaleChanged_LocaleEqual);
-  FRIEND_TEST_ALL_PREFIXES(RenderThreadImplExtUnittest,
-                           NotifyLocaleChanged_LocaleNotEqual);
-  FRIEND_TEST_ALL_PREFIXES(RenderThreadImplExtUnittest,
-                           NotifyLocaleChanged_LocaleNotEqual_NoResult);
-  FRIEND_TEST_ALL_PREFIXES(RenderThreadImplExtUnittest,
-                           NotifyLocaleChanged_LocaleNotEqual_WithResult);
-  FRIEND_TEST_ALL_PREFIXES(RenderThreadImplExtUnittest,
-                           OnChannelConnected_NoSwitch);
-  FRIEND_TEST_ALL_PREFIXES(RenderThreadImplExtUnittest,
-                           OnChannelConnected_WithSwitch_NoLogHandler);
-  FRIEND_TEST_ALL_PREFIXES(RenderThreadImplExtUnittest,
-                           OnChannelConnected_WithSwitch_WithLogHandler);
-  FRIEND_TEST_ALL_PREFIXES(RenderThreadImplExtUnittest,
-                           OnChannelListenError_NoSwitch);
-  FRIEND_TEST_ALL_PREFIXES(RenderThreadImplExtUnittest,
-                           OnChannelListenError_WithSwitch_NoLogHandler);
-  FRIEND_TEST_ALL_PREFIXES(RenderThreadImplExtUnittest,
-                           OnChannelListenError_WithSwitch_WithLogHandler);
-#endif
 
   friend class RenderThreadImplBrowserTest;
   friend class AgentSchedulingGroup;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class RenderThreadImplExtUnittest;
+#endif
 
   void OnProcessFinalRelease() override;
   // IPC::Listener

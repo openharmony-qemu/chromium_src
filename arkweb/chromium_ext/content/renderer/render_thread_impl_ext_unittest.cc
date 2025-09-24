@@ -42,12 +42,17 @@ extern bool CallRenderProcessLogMessageHandler(int severity,
                                                const std::string& str);
 
 class RenderThreadImplExtUnittest : public RenderThreadImplBrowserTest {
-  void SetUp() override {
-    RenderThreadImplBrowserTest::SetUp();
+public:
+  void TestNotifyLocaleChanged(const std::string& locale) {
+    thread_->NotifyLocaleChanged(locale);
   }
 
-  void TearDown() override {
-    RenderThreadImplBrowserTest::TearDown();
+  void TestOnChannelConnected(int32_t peer_pid) {
+    thread_->OnChannelConnected(peer_pid);
+  }
+
+  void TestOnChannelListenError() {
+    thread_->OnChannelListenError();
   }
 };
 
@@ -179,7 +184,7 @@ TEST_F(RenderThreadImplExtUnittest, NotifyLocaleChanged_NoSharedInstance) {
       ui::ResourceBundle::SwapSharedInstanceForTesting(nullptr);
   std::string locale = "en-US";
   testing::internal::CaptureStderr();
-  thread_->NotifyLocaleChanged(locale);
+  TestNotifyLocaleChanged(locale);
   std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_NE(log_output.find("render thread update locale failed"), std::string::npos);
   ui::ResourceBundle::SwapSharedInstanceForTesting(orig_instance);
@@ -195,7 +200,7 @@ TEST_F(RenderThreadImplExtUnittest, NotifyLocaleChanged_HasSharedInstance_NoPakE
   EXPECT_FALSE(ui::ResourceBundle::LocaleDataPakExists(locale));
 
   testing::internal::CaptureStderr();
-  thread_->NotifyLocaleChanged(locale);
+  TestNotifyLocaleChanged(locale);
   std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_NE(log_output.find("render thread update locale failed"), std::string::npos);
 
@@ -214,7 +219,7 @@ TEST_F(RenderThreadImplExtUnittest, NotifyLocaleChanged_LocaleEqual) {
   ui::ResourceBundle::GetSharedInstance().SetLoadedLocaleForTesting("en-US");
 
   testing::internal::CaptureStderr();
-  thread_->NotifyLocaleChanged(locale);
+  TestNotifyLocaleChanged(locale);
   std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_NE(log_output.find("render thread no need to update locale"), std::string::npos);
 
@@ -231,7 +236,7 @@ TEST_F(RenderThreadImplExtUnittest, NotifyLocaleChanged_LocaleNotEqual) {
   ui::ResourceBundle::GetSharedInstance().SetLoadedLocaleForTesting("zh-CN");
 
   testing::internal::CaptureStderr();
-  thread_->NotifyLocaleChanged(locale);
+  TestNotifyLocaleChanged(locale);
   std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_NE(log_output.find("CefFrameImpl update locale failed"), std::string::npos);
 
@@ -256,7 +261,7 @@ TEST_F(RenderThreadImplExtUnittest, NotifyLocaleChanged_LocaleNotEqual_NoResult)
   ui::ResourceBundle::GetSharedInstance().SetLoadedLocaleForTesting("zh-CN");
 
   testing::internal::CaptureStderr();
-  thread_->NotifyLocaleChanged(locale);
+  TestNotifyLocaleChanged(locale);
   std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_NE(log_output.find("CefFrameImpl update locale failed"), std::string::npos);
 
@@ -277,7 +282,7 @@ TEST_F(RenderThreadImplExtUnittest, NotifyLocaleChanged_LocaleNotEqual_WithResul
 
   EXPECT_EQ(locale, ui::ResourceBundle::GetSharedInstance().ReloadLocaleResources(locale));
   ui::ResourceBundle::GetSharedInstance().SetLoadedLocaleForTesting("zh-CN");
-  thread_->NotifyLocaleChanged(locale);
+  TestNotifyLocaleChanged(locale);
 
   ui::ResourceBundle::SwapSharedInstanceForTesting(orig_instance);
 }
@@ -296,7 +301,7 @@ TEST_F(RenderThreadImplExtUnittest, OnChannelListenError_NoSwitch) {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   command_line->RemoveSwitch(switches::kEnableLoggerReport);
   EXPECT_FALSE(command_line->HasSwitch(switches::kEnableLoggerReport));
-  thread_->OnChannelListenError();
+  TestOnChannelListenError();
 }
 
 TEST_F(RenderThreadImplExtUnittest, OnChannelListenError_WithSwitch_NoLogHandler) {
@@ -304,7 +309,7 @@ TEST_F(RenderThreadImplExtUnittest, OnChannelListenError_WithSwitch_NoLogHandler
   command_line->AppendSwitch(switches::kEnableLoggerReport);
   EXPECT_TRUE(command_line->HasSwitch(switches::kEnableLoggerReport));
   logging::SetLogMessageHandler(nullptr);
-  thread_->OnChannelListenError();
+  TestOnChannelListenError();
   EXPECT_FALSE(logging::GetLogMessageHandler());
 }
 
@@ -314,7 +319,7 @@ TEST_F(RenderThreadImplExtUnittest, OnChannelListenError_WithSwitch_WithLogHandl
   EXPECT_TRUE(command_line->HasSwitch(switches::kEnableLoggerReport));
   logging::SetLogMessageHandler(CallRenderProcessLogMessageHandler);
   testing::internal::CaptureStderr();
-  thread_->OnChannelListenError();
+  TestOnChannelListenError();
   std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_NE(log_output.find("remove log message handler for "), std::string::npos);
   EXPECT_FALSE(logging::GetLogMessageHandler());
@@ -324,7 +329,7 @@ TEST_F(RenderThreadImplExtUnittest, OnChannelConnected_NoSwitch) {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   command_line->RemoveSwitch(switches::kEnableLoggerReport);
   EXPECT_FALSE(command_line->HasSwitch(switches::kEnableLoggerReport));
-  thread_->OnChannelConnected(123);
+  TestOnChannelConnected(123);
 }
 
 TEST_F(RenderThreadImplExtUnittest, OnChannelConnected_WithSwitch_NoLogHandler) {
@@ -333,7 +338,7 @@ TEST_F(RenderThreadImplExtUnittest, OnChannelConnected_WithSwitch_NoLogHandler) 
   EXPECT_TRUE(command_line->HasSwitch(switches::kEnableLoggerReport));
 
   logging::SetLogMessageHandler(nullptr);
-  thread_->OnChannelConnected(123);
+  TestOnChannelConnected(123);
   EXPECT_TRUE(logging::GetLogMessageHandler());
 }
 
@@ -345,7 +350,7 @@ TEST_F(RenderThreadImplExtUnittest, OnChannelConnected_WithSwitch_WithLogHandler
   logging::SetLogMessageHandler(CallRenderProcessLogMessageHandler);
   EXPECT_TRUE(logging::GetLogMessageHandler());
   testing::internal::CaptureStderr();
-  thread_->OnChannelConnected(123);
+  TestOnChannelConnected(123);
   std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_NE(log_output.find(
             "maybe you runs in single process mode, log message handler had been setted by other"),

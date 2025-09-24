@@ -30,7 +30,33 @@ extern void CommitNavigationExt(const std::string& effective_scheme,
     ContentBrowserClient::NonNetworkURLLoaderFactoryMap& non_network_factories,
     BrowserContext* browser_context);
 
-TEST_F(RenderFrameHostImplTest, SendAccessibilityEvent_BasicCall) {
+class RenderFrameHostImplForIncludeTest : public RenderFrameHostImplTest {
+public:
+  void SetFrame(mojo::AssociatedRemote<mojom::Frame>& frame, RenderFrameHostImpl* rfh) {
+    rfh->frame_ = std::move(frame);
+  }
+
+  RenderFrameHostImpl::PageCloseState GetPageCloseState(RenderFrameHostImpl* rfh) {
+    return rfh->page_close_state_;
+  }
+
+  void SetDelegate(RenderFrameHostImpl* rfh, RenderFrameHostDelegate* delegate) {
+    rfh->delegate_ = delegate;
+  }
+
+  void TestOnPdfLoadEvent(RenderFrameHostImpl* rfh, int32_t result, const std::string& url) {
+    rfh->OnPdfLoadEvent(result, url);
+  }
+
+  void TestOnPdfScrollAtBottom(RenderFrameHostImpl* rfh, const std::string& url) {
+    rfh->OnPdfScrollAtBottom(url);
+  }
+
+  const RenderFrameHostImpl::PageCloseState expect_page_close_state =
+      RenderFrameHostImpl::PageCloseState::kNotClosing;
+};
+
+TEST_F(RenderFrameHostImplForIncludeTest, SendAccessibilityEvent_BasicCall) {
   int64_t accessibilityId = 123;
   int32_t eventType = 1;
   std::string argument = "test argument";
@@ -39,22 +65,22 @@ TEST_F(RenderFrameHostImplTest, SendAccessibilityEvent_BasicCall) {
   ASSERT_NO_FATAL_FAILURE(rfh->SendAccessibilityEvent(accessibilityId, eventType, argument));
 }
 
-TEST_F(RenderFrameHostImplTest, GetCreateNewWindow_NoDelegate) {
+TEST_F(RenderFrameHostImplForIncludeTest, GetCreateNewWindow_NoDelegate) {
   GURL target_url = GURL("https://parent.example.test/");
   WindowOpenDisposition disposition = WindowOpenDisposition::NEW_POPUP;
   bool allow_popup = true;
   content::mojom::FrameHost::GetCreateNewWindowCallback callback = base::DoNothing();
   
   RenderFrameHostImpl* rfh = main_test_rfh();
-  auto delegate = rfh->delegate_;
-  rfh->delegate_ = nullptr;
+  auto delegate = rfh->delegate();
+  SetDelegate(rfh, nullptr);
   ASSERT_FALSE(rfh->delegate());
   rfh->GetCreateNewWindow(target_url, disposition, allow_popup, std::move(callback));
-  rfh->delegate_ = delegate;
+  SetDelegate(rfh, delegate);
   ASSERT_TRUE(rfh->delegate());
 }
 
-TEST_F(RenderFrameHostImplTest, GetCreateNewWindow_AllowPopupTrue) {
+TEST_F(RenderFrameHostImplForIncludeTest, GetCreateNewWindow_AllowPopupTrue) {
   GURL target_url = GURL("https://parent.example.test/");
   WindowOpenDisposition disposition = WindowOpenDisposition::NEW_POPUP;
   bool allow_popup = true;
@@ -64,7 +90,7 @@ TEST_F(RenderFrameHostImplTest, GetCreateNewWindow_AllowPopupTrue) {
   ASSERT_NO_FATAL_FAILURE(rfh->GetCreateNewWindow(target_url, disposition, allow_popup, std::move(callback)));
 }
 
-TEST_F(RenderFrameHostImplTest, GetCreateNewWindow_AllowPopupFalse_HasTransientActivation) {
+TEST_F(RenderFrameHostImplForIncludeTest, GetCreateNewWindow_AllowPopupFalse_HasTransientActivation) {
   GURL target_url = GURL("https://parent.example.test/");
   WindowOpenDisposition disposition = WindowOpenDisposition::NEW_POPUP;
   bool allow_popup = false;
@@ -74,7 +100,7 @@ TEST_F(RenderFrameHostImplTest, GetCreateNewWindow_AllowPopupFalse_HasTransientA
   ASSERT_NO_FATAL_FAILURE(rfh->GetCreateNewWindow(target_url, disposition, allow_popup, std::move(callback)));
 }
 
-TEST_F(RenderFrameHostImplTest, GetCreateNewWindow_AllowPopupFalse_NoTransientActivation) {
+TEST_F(RenderFrameHostImplForIncludeTest, GetCreateNewWindow_AllowPopupFalse_NoTransientActivation) {
   GURL target_url = GURL("https://parent.example.test/");
   WindowOpenDisposition disposition = WindowOpenDisposition::NEW_POPUP;
   bool allow_popup = false;
@@ -84,7 +110,7 @@ TEST_F(RenderFrameHostImplTest, GetCreateNewWindow_AllowPopupFalse_NoTransientAc
   ASSERT_NO_FATAL_FAILURE(rfh->GetCreateNewWindow(target_url, disposition, allow_popup, std::move(callback)));
 }
 
-TEST_F(RenderFrameHostImplTest, GenerateCodeCache_OptionsConversion) {
+TEST_F(RenderFrameHostImplForIncludeTest, GenerateCodeCache_OptionsConversion) {
   const std::string test_url = "https://example.com/script.js";
   const std::string test_script = "console.log('Hello World');";
 
@@ -98,7 +124,7 @@ TEST_F(RenderFrameHostImplTest, GenerateCodeCache_OptionsConversion) {
   ASSERT_NO_FATAL_FAILURE(rfh->GenerateCodeCache(test_url, test_script, cache_options, base::DoNothing()));
 }
 
-TEST_F(RenderFrameHostImplTest, GenerateCodeCache_NoResponseHeaders) {
+TEST_F(RenderFrameHostImplForIncludeTest, GenerateCodeCache_NoResponseHeaders) {
   const std::string test_url = "https://example.com/script.js";
   const std::string test_script = "console.log('Hello World');";
 
@@ -109,109 +135,110 @@ TEST_F(RenderFrameHostImplTest, GenerateCodeCache_NoResponseHeaders) {
   ASSERT_NO_FATAL_FAILURE(rfh->GenerateCodeCache(test_url, test_script, cache_options, base::DoNothing()));
 }
 
-TEST_F(RenderFrameHostImplTest, OnClearContextMenu_ReadyToBeDeleted) {
+TEST_F(RenderFrameHostImplForIncludeTest, OnClearContextMenu_ReadyToBeDeleted) {
   RenderFrameHostImpl* rfh = main_test_rfh();
   rfh->SetLifecycleState(RenderFrameHostImpl::LifecycleStateImpl::kReadyToBeDeleted);
   EXPECT_TRUE(rfh->IsInactiveAndDisallowActivation(DisallowActivationReasonId::kShowContextMenu));
   rfh->OnClearContextMenu();
 }
 
-TEST_F(RenderFrameHostImplTest, OnClearContextMenu_Active) {
+TEST_F(RenderFrameHostImplForIncludeTest, OnClearContextMenu_Active) {
   RenderFrameHostImpl* rfh = main_test_rfh();
   rfh->SetLifecycleState(RenderFrameHostImpl::LifecycleStateImpl::kActive);
   EXPECT_FALSE(rfh->IsInactiveAndDisallowActivation(DisallowActivationReasonId::kShowContextMenu));
   rfh->OnClearContextMenu();
 }
 
-TEST_F(RenderFrameHostImplTest, UpdateAdBlockEnabledToRender_SiteAdblockEnableTrue) {
+TEST_F(RenderFrameHostImplForIncludeTest, UpdateAdBlockEnabledToRender_SiteAdblockEnableTrue) {
   RenderFrameHostImpl* rfh = main_test_rfh();
   bool site_adblock_enabled = true;
   ASSERT_NO_FATAL_FAILURE(rfh->UpdateAdBlockEnabledToRender(site_adblock_enabled));
 }
 
-TEST_F(RenderFrameHostImplTest, UpdateAdBlockEnabledToRender_SiteAdblockEnableFalse) {
+TEST_F(RenderFrameHostImplForIncludeTest, UpdateAdBlockEnabledToRender_SiteAdblockEnableFalse) {
   RenderFrameHostImpl* rfh = main_test_rfh();
   bool site_adblock_enabled = false;
   ASSERT_NO_FATAL_FAILURE(rfh->UpdateAdBlockEnabledToRender(site_adblock_enabled));
 }
 
-TEST_F(RenderFrameHostImplTest, AddNamedObject_WithFrame) {
+TEST_F(RenderFrameHostImplForIncludeTest, AddNamedObject_WithFrame) {
   RenderFrameHostImpl* rfh = main_test_rfh();
   base::Value::List list;
   ASSERT_NO_FATAL_FAILURE(rfh->AddNamedObject("test", 123, list, true));
 }
 
-TEST_F(RenderFrameHostImplTest, AddNamedObject_NoFrame) {
+TEST_F(RenderFrameHostImplForIncludeTest, AddNamedObject_NoFrame) {
   RenderFrameHostImpl* rfh = main_test_rfh();
   base::Value::List list;
 
-  rfh->frame_ = mojo::AssociatedRemote<mojom::Frame>();
+  auto frame = mojo::AssociatedRemote<mojom::Frame>();
+  SetFrame(frame, rfh);
   ASSERT_NO_FATAL_FAILURE(rfh->AddNamedObject("test", 123, list, true));
 }
 
-TEST_F(RenderFrameHostImplTest, MouseSelectMenuShow_WithDelegate) {
+TEST_F(RenderFrameHostImplForIncludeTest, MouseSelectMenuShow_WithDelegate) {
   RenderFrameHostImpl* rfh = main_test_rfh();
   ASSERT_NO_FATAL_FAILURE(rfh->MouseSelectMenuShow(true));
   ASSERT_NO_FATAL_FAILURE(rfh->MouseSelectMenuShow(false));
 }
 
-TEST_F(RenderFrameHostImplTest, MouseSelectMenuShow_NoDelegate) {
+TEST_F(RenderFrameHostImplForIncludeTest, MouseSelectMenuShow_NoDelegate) {
   RenderFrameHostImpl* rfh = main_test_rfh();
-  auto delegate = rfh->delegate_;
-  rfh->delegate_ = nullptr;
+  auto delegate = rfh->delegate();
+  SetDelegate(rfh, nullptr);
   ASSERT_FALSE(rfh->delegate());
   rfh->MouseSelectMenuShow(true);
-  rfh->delegate_ = delegate;
+  SetDelegate(rfh, delegate);
   ASSERT_TRUE(rfh->delegate());
 }
 
-TEST_F(RenderFrameHostImplTest, ChangeVisibilityOfQuickMenu_WithDelegate) {
+TEST_F(RenderFrameHostImplForIncludeTest, ChangeVisibilityOfQuickMenu_WithDelegate) {
   RenderFrameHostImpl* rfh = main_test_rfh();
   ASSERT_NO_FATAL_FAILURE(rfh->ChangeVisibilityOfQuickMenu());
 }
 
-TEST_F(RenderFrameHostImplTest, ChangeVisibilityOfQuickMenu_NoDelegate) {
+TEST_F(RenderFrameHostImplForIncludeTest, ChangeVisibilityOfQuickMenu_NoDelegate) {
   RenderFrameHostImpl* rfh = main_test_rfh();
-  auto delegate = rfh->delegate_;
-  rfh->delegate_ = nullptr;
+  auto delegate = rfh->delegate();
+  SetDelegate(rfh, nullptr);
   ASSERT_FALSE(rfh->delegate());
   rfh->ChangeVisibilityOfQuickMenu();
-  rfh->delegate_ = delegate;
+  SetDelegate(rfh, delegate);
   ASSERT_TRUE(rfh->delegate());
 }
 
-TEST_F(RenderFrameHostImplTest, CloseImageOverlaySelection_WithDelegate) {
+TEST_F(RenderFrameHostImplForIncludeTest, CloseImageOverlaySelection_WithDelegate) {
   RenderFrameHostImpl* rfh = main_test_rfh();
   ASSERT_NO_FATAL_FAILURE(rfh->CloseImageOverlaySelection());
 }
 
-TEST_F(RenderFrameHostImplTest, CloseImageOverlaySelection_NoDelegate) {
+TEST_F(RenderFrameHostImplForIncludeTest, CloseImageOverlaySelection_NoDelegate) {
   RenderFrameHostImpl* rfh = main_test_rfh();
-  auto delegate = rfh->delegate_;
-  rfh->delegate_ = nullptr;
+  auto delegate = rfh->delegate();
+  SetDelegate(rfh, nullptr);
   ASSERT_FALSE(rfh->delegate());
   rfh->CloseImageOverlaySelection();
-  rfh->delegate_ = delegate;
+  SetDelegate(rfh, delegate);
   ASSERT_TRUE(rfh->delegate());
 }
 
-TEST_F(RenderFrameHostImplTest, IsJsDialogShowOrBeforeUnloadTimedOut_NoDelegate) {
+TEST_F(RenderFrameHostImplForIncludeTest, IsJsDialogShowOrBeforeUnloadTimedOut_NoDelegate) {
   RenderFrameHostImpl* rfh = main_test_rfh();
-  auto delegate = rfh->delegate_;
-  rfh->delegate_ = nullptr;
+  auto delegate = rfh->delegate();
+  SetDelegate(rfh, nullptr);
   ASSERT_FALSE(rfh->delegate());
   EXPECT_FALSE(rfh->IsJsDialogShowOrBeforeUnloadTimedOut());
-  rfh->delegate_ = delegate;
+  SetDelegate(rfh, delegate);
   ASSERT_TRUE(rfh->delegate());
 }
 
-TEST_F(RenderFrameHostImplTest, IsJsDialogShowOrBeforeUnloadTimedOut_WithDelegate) {
+TEST_F(RenderFrameHostImplForIncludeTest, IsJsDialogShowOrBeforeUnloadTimedOut_WithDelegate) {
   RenderFrameHostImpl* rfh = main_test_rfh();
   rfh->IsJsDialogShowOrBeforeUnloadTimedOut();
-  EXPECT_TRUE(rfh->page_close_state_ == RenderFrameHostImpl::PageCloseState::kNotClosing);
+  EXPECT_TRUE(GetPageCloseState(rfh) == expect_page_close_state);
 }
 
-TEST_F(RenderFrameHostImplTest, CommitNavigationExt_WithResourcesScheme) {
+TEST_F(RenderFrameHostImplForIncludeTest, CommitNavigationExt_WithResourcesScheme) {
   const std::string effective_scheme = url::kResourcesScheme;
   ContentBrowserClient::NonNetworkURLLoaderFactoryMap non_network_factories;
   
@@ -224,7 +251,7 @@ TEST_F(RenderFrameHostImplTest, CommitNavigationExt_WithResourcesScheme) {
   EXPECT_TRUE(non_network_factories[url::kResourcesScheme].is_valid());
 }
 
-TEST_F(RenderFrameHostImplTest, CommitNavigationExt_WithNonResourcesScheme) {
+TEST_F(RenderFrameHostImplForIncludeTest, CommitNavigationExt_WithNonResourcesScheme) {
   const std::string effective_scheme = "http";
   ContentBrowserClient::NonNetworkURLLoaderFactoryMap non_network_factories;
 
@@ -234,7 +261,7 @@ TEST_F(RenderFrameHostImplTest, CommitNavigationExt_WithNonResourcesScheme) {
   EXPECT_TRUE(non_network_factories.empty());
 }
 
-TEST_F(RenderFrameHostImplTest, GetWorldId_EmptyName) {
+TEST_F(RenderFrameHostImplForIncludeTest, GetWorldId_EmptyName) {
   const std::string empty_world_name = "";
   int32_t world_id = 0;
     
@@ -244,7 +271,7 @@ TEST_F(RenderFrameHostImplTest, GetWorldId_EmptyName) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(RenderFrameHostImplTest, GetWorldId_NewName) {
+TEST_F(RenderFrameHostImplForIncludeTest, GetWorldId_NewName) {
   const std::string world_name = "test_world";
   int32_t world_id = 0;
   
@@ -254,7 +281,7 @@ TEST_F(RenderFrameHostImplTest, GetWorldId_NewName) {
   EXPECT_TRUE(result);
 }
 
-TEST_F(RenderFrameHostImplTest, GetWorldId_ExistingName) {
+TEST_F(RenderFrameHostImplForIncludeTest, GetWorldId_ExistingName) {
   const std::string world_name = "test_world";
   int32_t first_world_id = 0;
   int32_t second_world_id = 0;
@@ -267,7 +294,7 @@ TEST_F(RenderFrameHostImplTest, GetWorldId_ExistingName) {
   EXPECT_EQ(first_world_id, second_world_id);
 }
 
-TEST_F(RenderFrameHostImplTest, GetWorldId_IncrementalNames) {
+TEST_F(RenderFrameHostImplForIncludeTest, GetWorldId_IncrementalNames) {
   const std::string world_name1 = "test_world_1";
   const std::string world_name2 = "test_world_2";
   const std::string world_name3 = "test_world_3";
@@ -286,7 +313,7 @@ TEST_F(RenderFrameHostImplTest, GetWorldId_IncrementalNames) {
   EXPECT_EQ(world_id3, world_id2 + 1);
 }
 
-TEST_F(RenderFrameHostImplTest, ExecuteJavaScriptInFrames_WithWorldName) {
+TEST_F(RenderFrameHostImplForIncludeTest, ExecuteJavaScriptInFrames_WithWorldName) {
   const std::string world_name = "test_world";
   int32_t world_id = 0;
 
@@ -302,7 +329,7 @@ TEST_F(RenderFrameHostImplTest, ExecuteJavaScriptInFrames_WithWorldName) {
   rfh->ExecuteJavaScriptInFrames(javascript, recursive, worldName, std::move(callback));
 }
 
-TEST_F(RenderFrameHostImplTest, ExecuteJavaScriptInFrames_WithoutWorldName) {
+TEST_F(RenderFrameHostImplForIncludeTest, ExecuteJavaScriptInFrames_WithoutWorldName) {
   std::u16string javascript = u"alert('Hello World');";
   bool recursive = true;
   std::string empty_world_name = "";
@@ -313,7 +340,7 @@ TEST_F(RenderFrameHostImplTest, ExecuteJavaScriptInFrames_WithoutWorldName) {
       rfh->ExecuteJavaScriptInFrames(javascript, recursive, empty_world_name, std::move(callback)));
 }
 
-TEST_F(RenderFrameHostImplTest, ExecuteJavaScriptInFrames_NonRecursive) {
+TEST_F(RenderFrameHostImplForIncludeTest, ExecuteJavaScriptInFrames_NonRecursive) {
   std::u16string javascript = u"alert('Hello World');";
   bool recursive = false;
   std::string empty_world_name = "";
@@ -324,41 +351,41 @@ TEST_F(RenderFrameHostImplTest, ExecuteJavaScriptInFrames_NonRecursive) {
       rfh->ExecuteJavaScriptInFrames(javascript, recursive, empty_world_name, std::move(callback)));
 }
 
-TEST_F(RenderFrameHostImplTest, OnPdfScrollAtBottom_WithDelegate) {
+TEST_F(RenderFrameHostImplForIncludeTest, OnPdfScrollAtBottom_WithDelegate) {
   std::string url = "https://example.com/document.pdf";
   RenderFrameHostImpl* rfh = main_test_rfh();
   ASSERT_TRUE(rfh->delegate());
-  rfh->OnPdfScrollAtBottom(url);
+  TestOnPdfScrollAtBottom(rfh, url);
 }
 
-TEST_F(RenderFrameHostImplTest, OnPdfScrollAtBottom_NoDelegate) {
+TEST_F(RenderFrameHostImplForIncludeTest, OnPdfScrollAtBottom_NoDelegate) {
   std::string url = "https://example.com/document.pdf";
   RenderFrameHostImpl* rfh = main_test_rfh();
-  auto delegate = rfh->delegate_;
-  rfh->delegate_ = nullptr;
+  auto delegate = rfh->delegate();
+  SetDelegate(rfh, nullptr);
   ASSERT_FALSE(rfh->delegate());
-  rfh->OnPdfScrollAtBottom(url);
-  rfh->delegate_ = delegate;
+  TestOnPdfScrollAtBottom(rfh, url);
+  SetDelegate(rfh, delegate);
   ASSERT_TRUE(rfh->delegate());
 }
 
-TEST_F(RenderFrameHostImplTest, OnPdfLoadEvent_WithDelegate) {
+TEST_F(RenderFrameHostImplForIncludeTest, OnPdfLoadEvent_WithDelegate) {
   std::string url = "https://example.com/document.pdf";
   int32_t result = 0;
   RenderFrameHostImpl* rfh = main_test_rfh();
   ASSERT_TRUE(rfh->delegate());
-  rfh->OnPdfLoadEvent(result, url);
+  TestOnPdfLoadEvent(rfh, result, url);
 }
 
-TEST_F(RenderFrameHostImplTest, OnPdfLoadEvent_NoDelegate) {
+TEST_F(RenderFrameHostImplForIncludeTest, OnPdfLoadEvent_NoDelegate) {
   std::string url = "https://example.com/document.pdf";
   int32_t result = 0;
   RenderFrameHostImpl* rfh = main_test_rfh();
-  auto delegate = rfh->delegate_;
-  rfh->delegate_ = nullptr;
+  auto delegate = rfh->delegate();
+  SetDelegate(rfh, nullptr);
   ASSERT_FALSE(rfh->delegate());
-  rfh->OnPdfLoadEvent(result, url);
-  rfh->delegate_ = delegate;
+  TestOnPdfLoadEvent(rfh, result, url);
+  SetDelegate(rfh, delegate);
   ASSERT_TRUE(rfh->delegate());
 }
 

@@ -2934,4 +2934,32 @@ TEST_F(NWebInputMethodHandlerTest, IsKeyboardShow) {
   EXPECT_FALSE(result);
 }
 
+TEST_F(NWebInputMethodHandlerTest, HandleExtendAction) {
+  int32_t action = 0;
+  inputmethod_handler_->browser_ = nullptr;
+  listener_->HandleExtendAction(action);
+  inputmethod_handler_->HandleExtendAction(action);
+  inputmethod_handler_->HandleExtendActionOnUI(action);
+  EXPECT_EQ(inputmethod_handler_->browser_, nullptr);
+
+  auto mock_host = std::make_shared<MockCefBrowserHost>();
+  auto mock_browser = std::make_shared<MockCefBrowser>(mock_host.get());
+  ASSERT_NE(mock_host, nullptr);
+  ASSERT_NE(mock_browser, nullptr);
+  inputmethod_handler_->browser_ =
+      CefRefPtr<MockCefBrowser>(mock_browser.get());
+
+  EXPECT_CALL(*mock_browser, GetHost).WillOnce(testing::Return(nullptr));
+  inputmethod_handler_->HandleExtendAction(action);
+  EXPECT_CALL(*mock_browser, GetHost).WillOnce(testing::Return(nullptr));
+  inputmethod_handler_->HandleExtendActionOnUI(action);
+
+  CefRefPtr<ArkWebBrowserHostExt> arkweb_host(mock_host.get());
+  EXPECT_CALL(*mock_browser, GetHost).WillRepeatedly(testing::Invoke([&]() {
+    return arkweb_host;
+  }));
+  inputmethod_handler_->HandleExtendAction(action);
+  inputmethod_handler_->HandleExtendActionOnUI(action);
+  EXPECT_NE(inputmethod_handler_->browser_, nullptr);
+}
 }  // namespace OHOS::NWeb

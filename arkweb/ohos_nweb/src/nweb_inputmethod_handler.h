@@ -130,6 +130,8 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
     }
   }
 
+  void HandleExtendAction(int32_t action);
+
  private:
   void SetIMEStatusOnUI(bool status);
   void WebBlurKeyboardHideOnUI();
@@ -173,6 +175,8 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
                                 bool is_new_password,
                                 const std::string& content);
 #endif
+
+  void HandleExtendActionOnUI(int32_t action);
 
   static uint32_t lastAttachNWebId_;
   static IMFAdapterTextInputType lastInputMode_;

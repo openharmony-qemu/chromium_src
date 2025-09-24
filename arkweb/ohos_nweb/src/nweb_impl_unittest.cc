@@ -7246,5 +7246,77 @@ TEST_F(NWebImplTest, GetSelectEndIndex002) {
   EXPECT_EQ(result, 0);
 }
 #endif  // BUILDFLAG(ARKWEB_AI_WRITE)
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+TEST_F(NWebImplTest, SetVisibility001) {
+  bool isVisible = false;
+  nweb_impl_->nweb_handle_ = nullptr;
+  EXPECT_EQ(nweb_impl_->nweb_handle_, nullptr);
+  nweb_impl_->SetVisibility(isVisible);
+  EXPECT_FALSE(nweb_impl_->is_visible_);
+}
+
+TEST_F(NWebImplTest, SetVisibility002) {
+  bool isVisible = true;
+  nweb_impl_->nweb_handle_ = nullptr;
+  EXPECT_EQ(nweb_impl_->nweb_handle_, nullptr);
+  nweb_impl_->SetVisibility(isVisible);
+  EXPECT_TRUE(nweb_impl_->is_visible_);
+}
+
+TEST_F(NWebImplTest, SetVisibility003) {
+  bool isVisible = true;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_NE(nweb_impl_, nullptr);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  std::shared_ptr<NWebHandler> client = std::make_shared<NWebHandler>();
+  nweb_impl_->SetNWebHandler(client);
+  EXPECT_EQ(nweb_impl_->nweb_handle_, client);
+  nweb_impl_->SetVisibility(isVisible);
+  EXPECT_TRUE(nweb_impl_->is_visible_);
+}
+
+TEST_F(NWebImplTest, GetBlanklessInfoWithKey001) {
+  const std::string key = "test";
+  double similarity = 0;
+  int32_t loadingTime = 0;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  auto result = nweb_impl_->GetBlanklessInfoWithKey(key, &similarity, &loadingTime);
+  EXPECT_EQ(result, 0);
+}
+
+TEST_F(NWebImplTest, GetBlanklessInfoWithKey002) {
+  const std::string key = "test";
+  double similarity = 1.0;
+  int32_t loadingTime = 1;
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  auto result = nweb_impl_->GetBlanklessInfoWithKey(key, &similarity, &loadingTime);
+  EXPECT_EQ(similarity, 0);
+  EXPECT_EQ(loadingTime, 0);
+  EXPECT_EQ(result, 0);
+}
+
+TEST_F(NWebImplTest, GetBlanklessInfoWithKey003) {
+  const std::string key = "test";
+  int32_t loadingTime = 1;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  auto result = nweb_impl_->GetBlanklessInfoWithKey(key, nullptr, &loadingTime);
+  EXPECT_EQ(loadingTime, 0);
+  EXPECT_EQ(result, 0);
+}
+
+TEST_F(NWebImplTest, GetBlanklessInfoWithKey004) {
+  const std::string key = "test";
+  double similarity = 1.0;
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  auto result = nweb_impl_->GetBlanklessInfoWithKey(key, &similarity, nullptr);
+  EXPECT_EQ(similarity, 0);
+  EXPECT_EQ(result, 0);
+}
+#endif  // BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 }  // namespace OHOS::NWeb
                           

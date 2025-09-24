@@ -121,6 +121,10 @@ class NWebExtensionTabCefDelegate {
   // like chrome::FindAnyBrowser, get an existing tab.
   static int GetAnyTab(NWebExtensionTabGetAnyTabParams& params);
 
+  // onActivated event
+  static void OnTabActivated(std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo);
+
+  // onCreated event
   static void OnTabCreated(std::unique_ptr<NWebExtensionTab> tab);
 };
 

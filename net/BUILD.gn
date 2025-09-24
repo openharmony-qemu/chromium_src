@@ -3046,12 +3046,17 @@ target(_test_target_type, "net_unittests") {
   if (disable_zstd_filter) {
     defines += [ "NET_DISABLE_ZSTD" ]
   }
-
+  ldflags = []
   if (is_ohos) {
     sources += [ "//arkweb/chromium_ext/net/cert/test_root_certs_ohos.cc" ]
     defines += [ "NET_UNITTESTS_OHOS_ENABLE" ]
   }
-
+  if (defined(arkweb_ext_http_dns_fallback) && arkweb_ext_http_dns_fallback || is_ohos) {
+    ldflags += [
+      "-Wl,--wrap=OH_NetConn_GetDefaultNet",
+      "-Wl,--wrap=OH_NetConn_GetConnectionProperties",
+    ]
+  }
   deps = [
     ":cronet_buildflags",
     ":net",

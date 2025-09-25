@@ -142,6 +142,7 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItem
   ArkWebDownloadItemImplExt& operator=(const ArkWebDownloadItemImplExt&) = delete;
 
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  ~ArkWebDownloadItemImplExt() override;
   void ReadDownloadData(
       const std::string& guid,
       const int32_t read_size,

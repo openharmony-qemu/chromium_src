@@ -88,12 +88,9 @@ bool InputHandlerUtils::PdfOverSpeed() {
   return false;
 }
 
-std::recursive_mutex InputHandlerUtils::scroll_end_listener_mutex;
-std::function<void()> InputHandlerUtils::scroll_end_listener_ = nullptr;
-
-void InputHandlerUtils::SetScrollEndEventListener(const std::function<void()>& listener) {
-  std::lock_guard<std::recursive_mutex> lock(scroll_end_listener_mutex);
-  scroll_end_listener_ = listener;
+void InputHandlerUtils::SetScrollStopped() {
+  pdf_delta_x_ = 0;
+  pdf_delta_y_ = 0;
 }
 #endif
 // LCOV_EXCL_STOP

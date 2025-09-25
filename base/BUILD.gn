@@ -3705,15 +3705,16 @@ test("base_unittests") {
     sources += arkweb_content_renderer_unittests_sources
     sources += arkweb_base_ohos_ltpo_unittests_sources
     sources += arkweb_render_process_startup_unittest_sources
+    sources += arkweb_ptrace_unittest_sources
     sources += [
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
+      "//arkweb/chromium_ext/ohos_test/unittest/event_reporter/event_reporter_unittest.cc",
     ]
     sources += arkweb_content_browser_dfx_unittests_sources
     if (arkweb_test) {
       configs += [
         "//arkweb/chromium_ext:arkweb_base_unittest_config"
       ]
-
       sources += [
         "//arkweb/chromium_ext/base/ohos/ltpo/src/mock_sys_info_util_ext.cc"
       ]

@@ -18,6 +18,7 @@
 #include "base/logging.h"
 #include "base/no_destructor.h"
 #include "chrome/browser/extensions/menu_manager.h"
+#include "chrome/common/extensions/chrome_manifest_url_handlers.h"
 #include "chrome/common/extensions/manifest_handlers/settings_overrides_handler.h"
 #include "content/public/common/url_constants.h"
 #include "extensions/browser/extension_system.h"
@@ -33,6 +34,7 @@
 #include "extensions/browser/ui_util.h"
 #include "extensions/browser/management_policy.h"
 #include "extensions/browser/unloaded_extension_reason.h"
+#include "extensions/browser/extension_prefs.h"
 #include "ohos_nweb/src/cef_delegate/nweb_extension_action_cef_delegate.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_item.h"
 #include "ohos_nweb/src/nweb_common.h"
@@ -230,6 +232,63 @@ int UnloadedExtensionReasonEnumToInt(UnloadedExtensionReason reason) {
       return 0;
   }
 }
+
+void GetManifestUrlOverrideInfo(const Extension& extension,
+                                WebExtensionManifestInfo& manifest) {
+  const URLOverrides::URLOverrideMap& overrides =
+      URLOverrides::GetChromeURLOverrides(&extension);
+  if (!overrides.empty()) {
+    manifest.url_override.emplace(
+        WebExtensionManifestUrlOverride());
+    if (overrides.count("newtab")) {
+      manifest.url_override->newtab = overrides.find("newtab")->second.spec();
+    }
+    if (overrides.count("bookmarks")) {
+      manifest.url_override->bookmarks = overrides.find("bookmarks")->second.spec();
+    }
+    if (overrides.count("history")) {
+      manifest.url_override->history = overrides.find("history")->second.spec();
+    }
+  }
+}
+ 
+void GetManifestSettingsOverridesInfo(const Extension& extension,
+                                      WebExtensionManifestInfo& manifest) {
+  const SettingsOverrides* settings = SettingsOverrides::Get(&extension);
+  if (settings) {
+    manifest.settings_overrides.emplace(
+        WebExtensionManifestSettingsOverrides());
+    if (settings->homepage) {
+      manifest.settings_overrides->homepage = settings->homepage->spec();
+    }
+    if (!settings->startup_pages.empty()) {
+      for (const auto& page : settings->startup_pages) {
+        manifest.settings_overrides->startup_pages.emplace_back(page.spec());
+      }
+    }
+    if (settings->search_engine) {
+      WebExtensionManifestSearchProvider searcher;
+      searcher.name = settings->search_engine->name;
+      searcher.keyword = settings->search_engine->keyword;
+      searcher.favicon_url = settings->search_engine->favicon_url;
+      searcher.search_url = settings->search_engine->search_url;
+      searcher.encoding = settings->search_engine->encoding;
+      searcher.suggest_url = settings->search_engine->suggest_url;
+      searcher.image_url = settings->search_engine->image_url;
+      searcher.search_url_post_params =
+          settings->search_engine->search_url_post_params;
+      searcher.suggest_url_post_params =
+          settings->search_engine->suggest_url_post_params;
+      searcher.image_url_post_params =
+          settings->search_engine->image_url_post_params;
+      if (settings->search_engine->alternate_urls)
+        searcher.alternate_urls = *settings->search_engine->alternate_urls;
+      searcher.prepopulated_id = settings->search_engine->prepopulated_id;
+      searcher.is_default = settings->search_engine->is_default;
+      manifest.settings_overrides->search_provider.emplace(std::move(searcher));
+    }
+  }
+}
 }
 
 ExtensionRegistryInfoManager::BrowserNotifier::BrowserNotifier(
@@ -358,6 +417,8 @@ void ExtensionRegistryInfoManager::BrowserNotifier::PopulateAllSyncInfo() {
       info_manager_->GetAllExtensionContextMenusV2(extension_.id());
   loaded_info_.action_v2 =
       info_manager_->GetExtensionActionInfoV2(extension_, kTabIdNone);
+  loaded_info_.install_time =
+      ExtensionPrefs::Get(browser_context_)->GetFirstInstallTime(extension_.id()).InMillisecondsFSinceUnixEpoch();
 #endif
 }
 
@@ -526,40 +587,8 @@ void ExtensionRegistryInfoManager::GetExtensionManifestInfo(
   if (homepage_url.is_valid()) {
     manifest.homepage_url = homepage_url.spec();
   }
-  const SettingsOverrides* settings = SettingsOverrides::Get(&extension);
-  if (settings) {
-    manifest.settings_overrides.emplace(
-        WebExtensionManifestSettingsOverrides());
-    if (settings->homepage) {
-      manifest.settings_overrides->homepage = settings->homepage->spec();
-    }
-    if (!settings->startup_pages.empty()) {
-      for (const auto& page : settings->startup_pages) {
-        manifest.settings_overrides->startup_pages.emplace_back(page.spec());
-      }
-    }
-    if (settings->search_engine) {
-      WebExtensionManifestSearchProvider searcher;
-      searcher.name = settings->search_engine->name;
-      searcher.keyword = settings->search_engine->keyword;
-      searcher.favicon_url = settings->search_engine->favicon_url;
-      searcher.search_url = settings->search_engine->search_url;
-      searcher.encoding = settings->search_engine->encoding;
-      searcher.suggest_url = settings->search_engine->suggest_url;
-      searcher.image_url = settings->search_engine->image_url;
-      searcher.search_url_post_params =
-          settings->search_engine->search_url_post_params;
-      searcher.suggest_url_post_params =
-          settings->search_engine->suggest_url_post_params;
-      searcher.image_url_post_params =
-          settings->search_engine->image_url_post_params;
-      if (settings->search_engine->alternate_urls)
-        searcher.alternate_urls = *settings->search_engine->alternate_urls;
-      searcher.prepopulated_id = settings->search_engine->prepopulated_id;
-      searcher.is_default = settings->search_engine->is_default;
-      manifest.settings_overrides->search_provider.emplace(std::move(searcher));
-    }
-  }
+  GetManifestSettingsOverridesInfo(extension, manifest);
+  GetManifestUrlOverrideInfo(extension, manifest);
   manifest.options_page = GetManifestOptionsPageInfo(extension);
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   manifest.incognito_mode =

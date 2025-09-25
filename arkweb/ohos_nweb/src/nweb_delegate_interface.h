@@ -62,6 +62,7 @@
 #endif
 
 struct OpenDevToolsParam;
+struct RunJavaScriptParam;
 
 namespace OHOS::NWeb {
 class NWebValue;
@@ -899,8 +900,7 @@ class NWebDelegateInterface
 #endif  // BUILDFLAG(ARKWEB_MENU)
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  virtual void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
-                                     bool recursive, IsolatedWorld world,
+  virtual void RunJavaScriptInFrames(RunJavaScriptParam param,
                                      OnReceiveValueCallback callback) = 0;
 #endif
 

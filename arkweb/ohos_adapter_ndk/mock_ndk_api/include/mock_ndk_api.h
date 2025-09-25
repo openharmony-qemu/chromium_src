@@ -30,6 +30,7 @@
 #include <multimedia/av_session/native_avmetadata.h>
 #include <multimedia/av_session/native_avsession.h>
 #include <multimedia/av_session/native_avsession_errors.h>
+#include <sensors/oh_sensor.h>
 
 namespace MockNdkApi {
 
@@ -194,6 +195,106 @@ extern "C" {
     AVSession_ErrCode __real_OH_AVSession_SetPlaybackState(OH_AVSession *, AVSession_PlaybackState);
     AVSession_ErrCode __real_OH_AVSession_SetAVMetadata(OH_AVSession *, OH_AVMetadata *);
     AVSession_ErrCode __real_OH_AVSession_SetPlaybackPosition(OH_AVSession *, AVSession_PlaybackPosition *);
+#ifdef __cplusplus
+}
+#endif
+
+class MockOhSensorSupport {
+public:
+    static bool enableGetInfos;
+    static bool enableCreateInfos;
+    static bool enableDestroyInfos;
+    static bool enableInfoGetType;
+    static bool enableInfoGetMinSamplingInterval;
+    static bool enableInfoGetMaxSamplingInterval;
+    static bool enableCreateSubscriber;
+    static bool enableSubscriberSetCallback;
+    static bool enableCreateSubscriptionId;
+    static bool enableSubscriptionIdSetType;
+    static bool enableCreateSubscriptionAttribute;
+    static bool enableSubscriptionAttributeSetSamplingInterval;
+    static bool enableSubscribe;
+    static bool enableUnsubscribe;
+    static bool enableDestroySubscriber;
+    static bool enableDestroySubscriptionId;
+    static bool enableDestroySubscriptionAttribute;
+    static bool enableEventGetType;
+    static bool enableEventGetData;
+    static bool enableEventGetTimestamp;
+    static void EnableAll(bool enable) {
+        enableGetInfos = enable;
+        enableCreateInfos = enable;
+        enableDestroyInfos = enable;
+        enableInfoGetType = enable;
+        enableInfoGetMinSamplingInterval = enable;
+        enableInfoGetMaxSamplingInterval = enable;
+        enableCreateSubscriber = enable;
+        enableSubscriberSetCallback = enable;
+        enableCreateSubscriptionId = enable;
+        enableSubscriptionIdSetType = enable;
+        enableCreateSubscriptionAttribute = enable;
+        enableSubscriptionAttributeSetSamplingInterval = enable;
+        enableSubscribe = enable;
+        enableUnsubscribe = enable;
+        enableDestroySubscriber = enable;
+        enableDestroySubscriptionId = enable;
+        enableDestroySubscriptionAttribute = enable;
+        enableEventGetType = enable;
+        enableEventGetData = enable;
+        enableEventGetTimestamp = enable;
+    }
+
+    static MockOhSensorSupport& getInstance() {
+        static MockOhSensorSupport instance;
+        return instance;
+    }
+
+    MOCK_METHOD(Sensor_Result, OH_Sensor_GetInfos, (Sensor_Info**, uint32_t*));
+    MOCK_METHOD(Sensor_Info**, OH_Sensor_CreateInfos, (uint32_t));
+    MOCK_METHOD(int32_t, OH_Sensor_DestroyInfos, (Sensor_Info**, uint32_t));
+    MOCK_METHOD(int32_t, OH_SensorInfo_GetType, (Sensor_Info*, Sensor_Type*));
+    MOCK_METHOD(int32_t, OH_SensorInfo_GetMinSamplingInterval, (Sensor_Info*, int64_t*));
+    MOCK_METHOD(int32_t, OH_SensorInfo_GetMaxSamplingInterval, (Sensor_Info*, int64_t*));
+    MOCK_METHOD(int32_t, OH_SensorEvent_GetType, (Sensor_Event*, Sensor_Type*));
+    MOCK_METHOD(int32_t, OH_SensorEvent_GetData, (Sensor_Event*, float**, uint32_t*));
+    MOCK_METHOD(int32_t, OH_SensorEvent_GetTimestamp, (Sensor_Event*, int64_t*));
+    MOCK_METHOD(Sensor_Subscriber*, OH_Sensor_CreateSubscriber, ());
+    MOCK_METHOD(int32_t, OH_SensorSubscriber_SetCallback, (Sensor_Subscriber*, const Sensor_EventCallback));
+    MOCK_METHOD(Sensor_SubscriptionId*, OH_Sensor_CreateSubscriptionId, ());
+    MOCK_METHOD(int32_t, OH_SensorSubscriptionId_SetType, (Sensor_SubscriptionId*, const Sensor_Type));
+    MOCK_METHOD(Sensor_SubscriptionAttribute*, OH_Sensor_CreateSubscriptionAttribute, ());
+    MOCK_METHOD(int32_t, OH_SensorSubscriptionAttribute_SetSamplingInterval, (Sensor_SubscriptionAttribute*, const int64_t));
+    MOCK_METHOD(Sensor_Result, OH_Sensor_Subscribe, (const Sensor_SubscriptionId*, const Sensor_SubscriptionAttribute*, const Sensor_Subscriber*));
+    MOCK_METHOD(Sensor_Result, OH_Sensor_Unsubscribe, (const Sensor_SubscriptionId*, const Sensor_Subscriber*));
+    MOCK_METHOD(int32_t, OH_Sensor_DestroySubscriber, (Sensor_Subscriber*));
+    MOCK_METHOD(int32_t, OH_Sensor_DestroySubscriptionId, (Sensor_SubscriptionId*));
+    MOCK_METHOD(int32_t, OH_Sensor_DestroySubscriptionAttribute, (Sensor_SubscriptionAttribute*));
+};
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern Sensor_Result (*__real_OH_Sensor_GetInfos)(Sensor_Info**, uint32_t*);
+extern Sensor_Info** (*__real_OH_Sensor_CreateInfos)(uint32_t);
+extern int32_t (*__real_OH_Sensor_DestroyInfos)(Sensor_Info**, uint32_t);
+extern int32_t (*__real_OH_SensorInfo_GetType)(Sensor_Info*, Sensor_Type*);
+extern int32_t (*__real_OH_SensorInfo_GetMinSamplingInterval)(Sensor_Info*, int64_t*);
+extern int32_t (*__real_OH_SensorInfo_GetMaxSamplingInterval)(Sensor_Info*, int64_t*);
+extern Sensor_Subscriber* (*__real_OH_Sensor_CreateSubscriber)();
+extern int32_t (*__real_OH_SensorSubscriber_SetCallback)(Sensor_Subscriber*, Sensor_EventCallback);
+extern Sensor_SubscriptionId* (*__real_OH_Sensor_CreateSubscriptionId)();
+extern int32_t (*__real_OH_SensorSubscriptionId_SetType)(Sensor_SubscriptionId*, Sensor_Type);
+extern Sensor_SubscriptionAttribute* (*__real_OH_Sensor_CreateSubscriptionAttribute)();
+extern int32_t (*__real_OH_SensorSubscriptionAttribute_SetSamplingInterval)(Sensor_SubscriptionAttribute*, int64_t);
+extern Sensor_Result (*__real_OH_Sensor_Subscribe)(const Sensor_SubscriptionId*, const Sensor_SubscriptionAttribute*, const Sensor_Subscriber*);
+extern Sensor_Result (*__real_OH_Sensor_Unsubscribe)(const Sensor_SubscriptionId*, const Sensor_Subscriber*);
+extern int32_t (*__real_OH_Sensor_DestroySubscriber)(Sensor_Subscriber*);
+extern int32_t (*__real_OH_Sensor_DestroySubscriptionId)(Sensor_SubscriptionId*);
+extern int32_t (*__real_OH_Sensor_DestroySubscriptionAttribute)(Sensor_SubscriptionAttribute*);
+extern int32_t (*__real_OH_SensorEvent_GetType)(Sensor_Event*, Sensor_Type*);
+extern int32_t (*__real_OH_SensorEvent_GetData)(Sensor_Event*, float**, uint32_t*);
+extern int32_t (*__real_OH_SensorEvent_GetTimestamp)(Sensor_Event*, int64_t*);
+
 #ifdef __cplusplus
 }
 #endif

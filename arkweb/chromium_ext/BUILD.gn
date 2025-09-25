@@ -90,6 +90,29 @@ config("arkweb_base_unittest_config") {
     "-Wl,--wrap=OH_UdmfData_IsLocal",
 
   ]
+
+  ldflags += [
+    "-Wl,--wrap=OH_Sensor_GetInfos",
+    "-Wl,--wrap=OH_Sensor_CreateInfos",
+    "-Wl,--wrap=OH_Sensor_DestroyInfos",
+    "-Wl,--wrap=OH_SensorInfo_GetType",
+    "-Wl,--wrap=OH_SensorInfo_GetMinSamplingInterval",
+    "-Wl,--wrap=OH_SensorInfo_GetMaxSamplingInterval",
+    "-Wl,--wrap=OH_Sensor_CreateSubscriber",
+    "-Wl,--wrap=OH_SensorSubscriber_SetCallback",
+    "-Wl,--wrap=OH_Sensor_CreateSubscriptionId",
+    "-Wl,--wrap=OH_SensorSubscriptionId_SetType",
+    "-Wl,--wrap=OH_Sensor_CreateSubscriptionAttribute",
+    "-Wl,--wrap=OH_SensorSubscriptionAttribute_SetSamplingInterval",
+    "-Wl,--wrap=OH_Sensor_Subscribe",
+    "-Wl,--wrap=OH_Sensor_Unsubscribe",
+    "-Wl,--wrap=OH_Sensor_DestroySubscriber",
+    "-Wl,--wrap=OH_Sensor_DestroySubscriptionId",
+    "-Wl,--wrap=OH_Sensor_DestroySubscriptionAttribute",
+    "-Wl,--wrap=OH_SensorEvent_GetType",
+    "-Wl,--wrap=OH_SensorEvent_GetData",
+    "-Wl,--wrap=OH_SensorEvent_GetTimestamp",
+  ]
 }
 
 config("arkweb_codec_decoder_adapter_unittest_config") {

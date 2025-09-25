@@ -487,7 +487,6 @@ int32_t ScreenCaptureAdapterImpl::StartCapture()
         WVLOG_E("start capture failed, ret = %{public}d", ret);
         return -1;
     }
-    WVLOG_I("start screen capture[%{public}p] success", screenCapture_);
     return 0;
 }
 
@@ -502,7 +501,6 @@ int32_t ScreenCaptureAdapterImpl::StopCapture()
         WVLOG_E("stop capture failed, ret = %{public}d", ret);
         return -1;
     }
-    WVLOG_I("stop screen capture[%{public}p] success", screenCapture_);
     return 0;
 }
 

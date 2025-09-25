@@ -17,7 +17,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/ranges/algorithm.h"
-#include "base/time/tick_clock.h" 
+#include "base/time/tick_clock.h"
 #include "base/trace_event/trace_event.h"
 #include "base/trace_event/traced_value.h"
 #include "components/viz/common/features.h"

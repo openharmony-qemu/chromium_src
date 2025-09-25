@@ -65,6 +65,7 @@ class ArkWebContentSettingsAgentImplExtTest
   }
 };
 
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
 TEST_F(ArkWebContentSettingsAgentImplExtTest, ShouldAllowlistForUnreachableUrl) {
   SetupUrlAndOrigin(content::kUnreachableWebDataURL);
   
@@ -145,3 +146,4 @@ TEST_F(ArkWebContentSettingsAgentImplExtTest, TestSetContentSettingRules) {
   agent.SetContentSettingRules(&content_setting_rules);
   EXPECT_FALSE(false);
 }
+#endif

@@ -62,7 +62,7 @@ class BLINK_EXPORT WebDOMMessageEvent : public WebDOMEvent {
       WebVector<MessagePortChannel> ports = WebVector<MessagePortChannel>());
   WebDOMMessageEvent() = default;
 
-  WebString Origin() const;
+  WebString Origin();
 
 #if INSIDE_BLINK
   explicit WebDOMMessageEvent(MessageEvent* e) : WebDOMEvent(e) {}

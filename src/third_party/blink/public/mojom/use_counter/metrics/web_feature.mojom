@@ -4562,6 +4562,11 @@ enum WebFeature {
   kDocumentIsolationPolicyCredentialless = 5188,
   kClipPathGeometryBox = 5189,
   kActiveViewTransitionPseudo = 5190,
+  kMessageEventDataBeforeSameOrigin = 5613,
+  kMessageEventDataBeforeSameSiteOrigin = 5614,
+  kMessageEventDataBeforeCrossSiteOrigin = 5615,
+  kMessageEventDataBeforeOpaqueOrigin = 5616,
+  kSlowDeserialization = 5625,
 
   // Add new features immediately above this line. Don't change assigned
   // numbers of any item, and don't reuse removed slots. Also don't add extra

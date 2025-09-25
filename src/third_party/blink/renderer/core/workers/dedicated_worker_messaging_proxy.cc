@@ -291,8 +291,9 @@ void DedicatedWorkerMessagingProxy::PostMessageToWorkerObject(
   debugger->ExternalAsyncTaskStarted(message.sender_stack_trace_id);
   if (message.message->CanDeserializeIn(GetExecutionContext())) {
     MessageEvent* event =
-        MessageEvent::Create(ports, std::move(message.message));
-    event->SetTraceId(message.trace_id);
+        MessageEvent::Create(ports, std::move(message.message), /* origin=*/{},
+                             MessageEvent::kMessageIsSameOrigin,
+                             /* last_event_id=*/{}, /* source=*/nullptr);
     TRACE_EVENT(
         "devtools.timeline", "HandlePostMessage", "data",
         [&](perfetto::TracedValue context) {

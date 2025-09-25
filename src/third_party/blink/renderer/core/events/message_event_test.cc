@@ -86,7 +86,9 @@ TEST_F(MessageEventTest, AccountForArrayBufferMemory) {
       scope.GetIsolate()->AdjustAmountOfExternalAllocatedMemory(0);
 
   MessagePortArray* ports = MakeGarbageCollected<MessagePortArray>(0);
-  MessageEvent::Create(ports, serialized_script_value);
+  MessageEvent::Create(ports, serialized_script_value, /* origin=*/{},
+                       MessageEvent::kMessageIsSameOrigin,
+                       /* last_event_id=*/{}, /* source=*/nullptr);
 
   int64_t size_with_event =
       scope.GetIsolate()->AdjustAmountOfExternalAllocatedMemory(0);

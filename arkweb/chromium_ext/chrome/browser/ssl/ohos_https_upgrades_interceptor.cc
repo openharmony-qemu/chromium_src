@@ -109,8 +109,13 @@ bool ShouldExcludeNavigationFromUpgrades(
     return true;
   }
   content::NavigationRequest* request = frame_tree_node->navigation_request();
-  bool should_exclude_upgrade = ((request->is_url_typed_with_http_scheme())
-                                || (request->is_force_no_https_upgrade()));
+  // if is_browser_initiated == false, it means user tap a link to start navigation. 
+  bool is_browser_initiated = request->browser_initiated();
+  bool is_url_typed_with_http_scheme = request->is_url_typed_with_http_scheme();
+  bool is_force_no_https_upgrade = request->is_force_no_https_upgrade();
+
+  bool should_exclude_upgrade = (is_browser_initiated && is_url_typed_with_http_scheme) || is_force_no_https_upgrade;
+
   return should_exclude_upgrade;
 }
 

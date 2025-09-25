@@ -54,6 +54,7 @@ class MockWebSecurityOrigin {
   MOCK_METHOD(WebString, Protocol, (), (const));
 };
 
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
 class ArkWebContentSettingsAgentImplExtTest
     : public content::RenderViewTest {
  protected:
@@ -65,7 +66,6 @@ class ArkWebContentSettingsAgentImplExtTest
   }
 };
 
-#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
 TEST_F(ArkWebContentSettingsAgentImplExtTest, ShouldAllowlistForUnreachableUrl) {
   SetupUrlAndOrigin(content::kUnreachableWebDataURL);
   

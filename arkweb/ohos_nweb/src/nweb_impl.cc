@@ -362,6 +362,7 @@ static void ConfigureCrxInstaller(
   installer->set_off_store_install_allow_reason(
       extensions::CrxInstaller::OffStoreInstallAllowedFromSettingsPage);
   installer->set_install_cause(extension_misc::INSTALL_CAUSE_USER_DOWNLOAD);
+  installer->set_install_immediately(true);
 }
 
 static void PerformCrxInstallation(const std::string& file_path,

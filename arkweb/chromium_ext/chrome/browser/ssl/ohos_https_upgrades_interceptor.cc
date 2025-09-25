@@ -79,7 +79,8 @@ net::RedirectInfo SetupRedirect(
   response_head->response_start = response_head->request_start;
   std::string header_string = base::StringPrintf(
       "HTTP/1.1 %i Temporary Redirect\n"
-      "Location: %s\n",
+      "Location: %s\n"
+      "Non-Authoritative-Reason: HttpsUpgrades\n",
       net::HTTP_TEMPORARY_REDIRECT, new_url.spec().c_str());
   response_head->headers = base::MakeRefCounted<net::HttpResponseHeaders>(
       net::HttpUtil::AssembleRawHeaders(header_string));
@@ -100,6 +101,18 @@ net::RedirectInfo SetupRedirect(
 
 using RequestHandler = OhosHttpsUpgradesInterceptor::RequestHandler;
 
+bool ShouldExcludeNavigationFromUpgrades(
+    content::FrameTreeNodeId frame_id) {
+  content::FrameTreeNode* frame_tree_node =
+          content::FrameTreeNode::GloballyFindByID(frame_id);
+  if (!frame_tree_node || !(frame_tree_node->navigation_request())) {
+    return true;
+  }
+  content::NavigationRequest* request = frame_tree_node->navigation_request();
+  bool should_exclude_upgrade = ((request->is_url_typed_with_http_scheme())
+                                || (request->is_force_no_https_upgrade()));
+  return should_exclude_upgrade;
+}
 
 // static
 std::unique_ptr<OhosHttpsUpgradesInterceptor>
@@ -151,6 +164,12 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoader(
   }
   auto* https_helper = OhosHttpsUpgradesHelper::FromWebContents(web_contents);
 
+  StatefulSSLHostStateDelegate* state =
+      static_cast<StatefulSSLHostStateDelegate*>(
+          profile->GetSSLHostStateDelegate());
+  auto* storage_partition =
+      web_contents->GetPrimaryMainFrame()->GetStoragePartition();
+
   // Exclude HTTPS URLs.
   if (tentative_resource_request.url.SchemeIs(url::kHttpsScheme)) {
     std::move(callback).Run({});
@@ -192,6 +211,20 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoader(
       std::move(callback).Run({});
       return;
     }
+  }
+
+  // Captive portals and manually-entered http:// navigations are excluded from
+  // upgrades and we shouldn't warn on them when strict mode isn't enabled, so
+  // allowlist those http:// connections instead.
+  // TODO(crbug.com/363205521): Consider whether we want to allowlist captive
+  // portal hostnames.
+  if (ShouldExcludeNavigationFromUpgrades(frame_tree_node_id_)) {
+    if (state) {
+      state->AllowHttpForHost(tentative_resource_request.url.host(),
+                              storage_partition);
+    }
+    std::move(callback).Run({});
+    return;
   }
 
   // Check whether this host would be upgraded to HTTPS by HSTS. This requires a

@@ -24,12 +24,15 @@
 #include "base/feature_list.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
+#include "base/ohos/nweb_engine_event_logger.h"
+#include "base/ohos/nweb_engine_event_logger_code.h"
 #include "base/path_service.h"
 #include "base/strings/string_number_conversions.h"
 #include "cef/libcef/browser/prefs/browser_prefs.h"
 #include "chrome/browser/browser_process.h"
 #include "components/prefs/pref_service.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_ENCRYPT)
@@ -43,6 +46,17 @@ namespace {
 const size_t kIVSizeAESGCM = 12;
 
 constexpr char kDataKeyAlias[] = "nweb_data_key";
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+enum WebStorageMigrationErrorCode {
+  MIGRATE_SUCCESS = 0,
+  DIRECTORY_OR_FILE_NOT_EXIST,
+  ASSET_QUERY_FAILED,
+  LOGIN_DATA_OPEN_FAILED,
+  PASSWORD_VAULT_CONNECT_FAILED,
+  PASSWORD_IMPORT_FAILED
+};
 #endif
 }  // namespace
 

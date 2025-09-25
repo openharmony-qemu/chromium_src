@@ -45,6 +45,29 @@ content::BrowserContext* GetBrowserContext() {
   return browser_context;
 }
 
+const extensions::Extension* FindExtensionById(
+    content::BrowserContext* browser_context,
+    const std::string& extension_id) {
+  if (!browser_context) {
+    LOG(ERROR) << "null browser_context passed in";
+    return nullptr;
+  }
+
+  extensions::ExtensionRegistry* registry =
+      extensions::ExtensionRegistry::Get(browser_context);
+  if (!registry) {
+    LOG(ERROR) << "failed to get extension registry";
+    return nullptr;
+  }
+
+  const extensions::Extension* extension = registry->GetExtensionById(
+      extension_id, extensions::ExtensionRegistry::EVERYTHING);
+  if (!extension) {
+    LOG(ERROR) << "failed to find extension " << extension_id;
+  }
+  return extension;
+}
+
 std::optional<std::string> GetExtensionContextType(
     content::BrowserContext* browser_context) {
   if (!browser_context) {

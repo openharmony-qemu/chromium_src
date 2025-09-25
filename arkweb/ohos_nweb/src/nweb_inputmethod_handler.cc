@@ -109,7 +109,11 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
   }
 
   void HandleSetSelection(int32_t start, int32_t end) override {}
-  void HandleExtendAction(int32_t action) override {}
+
+  void HandleExtendAction(int32_t action) override {
+    handler_->HandleExtendAction(action);
+  }
+
   void HandleSelect(int32_t keyCode, int32_t cursorMoveSkip) override {}
 
   int32_t GetTextIndexAtCursor() override {
@@ -1632,4 +1636,31 @@ bool NWebInputMethodHandler::ResetTextSelectiondata() {
   return false;
 }
 // LCOV_EXCL_STOP
+
+void NWebInputMethodHandler::HandleExtendAction(int32_t action) {
+  if (browser_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " browser is nullptr, " << action;
+    return;
+  }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " browser host is nullptr, " << action;
+    return;
+  }
+  CefRefPtr<CefTask> extend_action_task = new InputMethodTask(base::BindOnce(
+        &NWebInputMethodHandler::HandleExtendActionOnUI, this, action));
+  host->PostTaskToUIThread(extend_action_task);
+}
+
+void NWebInputMethodHandler::HandleExtendActionOnUI(int32_t action) {
+  if (browser_ == nullptr) {
+    return;
+  }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  LOG(DEBUG) << __FUNCTION__ << " action is " << action;
+  host->HandleInputMethodExtendAction(action);
+}
 }  // namespace OHOS::NWeb

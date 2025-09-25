@@ -62,6 +62,7 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/system_properties_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/sensor_adapter.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/net_config_adapter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/background_task_adapter.h"
 
 namespace OHOS::NWeb {
 
@@ -173,6 +174,8 @@ public:
     virtual std::unique_ptr<ScreenlockManagerAdapter> CreateScreenlockManagerAdapter() = 0;
 
     virtual std::unique_ptr<CertManagerAdapter> GetCertManagerAdapter() = 0;
+
+    virtual std::unique_ptr<BackgroundTaskAdapter> CreateBackgroundTaskAdapter() {return nullptr;}
 
     virtual std::unique_ptr<NetConfigAdapter> GetNetConfigAdapter() = 0;
 };

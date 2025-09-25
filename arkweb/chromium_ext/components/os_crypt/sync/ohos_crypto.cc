@@ -124,8 +124,6 @@ static std::string _hex_repr(const std::string& s) {
 }
 
 static std::string _generate_key(const std::string& key_name) {
-  std::vector<uint8_t> key_byte_array;
-
   std::string digest = crypto::SHA256HashString(key_name);
   return crypto::ohos::GetKey(_hex_repr(digest));
 }
@@ -140,8 +138,6 @@ std::string _get_random(size_t sz) {
 }
 
 static std::string _generate_key_for_ota(const std::string& key_name) {
-  std::vector<uint8_t> key_byte_array;
-
   std::string digest = crypto::SHA256HashString(key_name);
   return crypto::ohos::GetKeyForOta(_hex_repr(digest));
 }

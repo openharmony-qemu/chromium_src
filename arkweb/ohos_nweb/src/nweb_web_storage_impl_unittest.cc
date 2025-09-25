@@ -113,6 +113,12 @@ TEST(NWebWebStorageImplTEST, GetOriginUsage003) {
   EXPECT_EQ(web_storage->GetOriginUsage(""), -1);
 }
 
+TEST(NWebWebStorageImplTEST, GetOriginUsage004) {
+  auto web_storage = std::make_shared<NWebWebStorageImpl>();
+  web_storage->delegate_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(web_storage->GetOriginUsage("", nullptr));
+}
+
 TEST(NWebWebStorageImplTEST, PutWebStorageCallback) {
     auto web_storage = std::make_shared<NWebWebStorageImpl>();
     web_storage->PutWebStorageCallback(nullptr);

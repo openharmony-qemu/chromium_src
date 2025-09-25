@@ -432,6 +432,11 @@ class MediaSessionImpl : public MediaSession,
       base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE;
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  void UpdateMediaPlayersMuteState(int player_id, bool mute);
+  bool GetMediaPlayerMuteState();
+#endif
+
  private:
   friend class content::WebContentsUserData<MediaSessionImpl>;
   friend class MediaSessionImplBrowserTest;
@@ -699,6 +704,7 @@ class MediaSessionImpl : public MediaSession,
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   media::MediaContentType media_content_type_;
+  std::unordered_map<int, bool> players_mute_state_;
 #endif
 
   // Returns the PageData for the specified |page|.

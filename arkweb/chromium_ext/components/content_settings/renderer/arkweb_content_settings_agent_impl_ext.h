@@ -12,6 +12,9 @@
 #include "base/containers/flat_set.h"
 #include "base/functional/callback.h"
 #include "base/gtest_prod_util.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#include "components/content_settings/renderer/content_settings_agent_impl.h"
+#endif
 #include "components/content_settings/common/content_settings_agent.mojom.h"
 #include "components/content_settings/common/content_settings_manager.mojom.h"
 #include "components/content_settings/core/common/content_settings.h"

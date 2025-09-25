@@ -19,7 +19,6 @@
 
 #include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/platform/fonts/font_platform_data.h"
-#include "third_party/blink/renderer/platform/heap/persistent.h"
 
 namespace blink {
 
@@ -46,7 +45,7 @@ FontPlatformDataUtils(FontPlatformData* data);
 #endif
 
 private:
-Persistent<FontPlatformData> font_data_;
+raw_ptr<FontPlatformData> font_data_;
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 const std::unordered_map<std::string, ScaleParam>
     FONT_FAMILY_COMPRESSION_CONFIG = {

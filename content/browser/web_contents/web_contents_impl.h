@@ -1706,32 +1706,6 @@ class CONTENT_EXPORT WebContentsImpl
                            SuppressedPopupWindowBrowserNavResumeLoad);
   FRIEND_TEST_ALL_PREFIXES(RenderWidgetHostSitePerProcessTest,
                            BrowserClosesPopupIntersectsPermissionPrompt);
-#if BUILDFLAG(ARKWEB_TEST)
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
-                           UpdateRenderAcceptLanguageIfNeed_WithLangSwitch);
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
-                           UpdateRenderAcceptLanguageIfNeed_WithLangSwitch_NoRegion);
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
-                           UpdateRenderAcceptLanguageIfNeed_HasRegion_SameLanguage);
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest,
-                           UpdateRenderAcceptLanguageIfNeed_HasRegion_CurrentLanguage);
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest, JudgeIsPdfPageVisibilityChanged_NotFirstVisible);
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest, JudgeIsPdfPageVisibilityChanged_FirstVisiblePdf);
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest, UpdateUserAgentOverride);
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplUtilsTest, UpdateUserAgentOverride_WithDelayedLoadUrlParams);
-#endif
-
-#if BUILDFLAG(ARKWEB_TEST)
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, MouseSelectMenuShow002);
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest,
-                           ChangeVisibilityOfQuickMenu002);
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest,
-                           CloseImageOverlaySelection002);
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, OnOverlayZoomChanged002);
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest,
-                           UpdateBrowserControlsHeight002);
-  FRIEND_TEST_ALL_PREFIXES(WebContentsImplExtTest, SetWakeLockHandler002);
-#endif  // ARKWEB_TEST
 
   // So |find_request_manager_| can be accessed for testing.
   friend class FindRequestManagerTest;
@@ -1740,6 +1714,7 @@ class CONTENT_EXPORT WebContentsImpl
   friend class TestWebContents;
 #if BUILDFLAG(ARKWEB_TEST)
   friend class TestWebContentsImplExt;
+  friend class WebContentsImplExtTest;
 #endif
 
   class RenderWidgetHostDestructionObserver;

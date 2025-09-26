@@ -11,6 +11,7 @@
 #include "content/browser/media/session/media_session_impl.h"
 #include "content/public/browser/web_contents.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "media/audio/ohos/audio_dump.h"
 #include "media/audio/ohos/ohos_audio_focus_controller.h"
 
 namespace media {
@@ -66,6 +67,7 @@ OHOSAudioOutputStream::~OHOSAudioOutputStream() {
     OH_AudioStreamBuilder_Destroy(audio_stream_builder_);
     audio_stream_builder_ = nullptr;
   }
+  DumpFileUtil::CloseDumpScopedFile(&dumpFile_);
 }
 
 bool OHOSAudioOutputStream::Open() {
@@ -74,6 +76,12 @@ bool OHOSAudioOutputStream::Open() {
   if (!InitRender()) {
     return false;
   }
+  time_t now = time(nullptr);
+  std::string dumpFileName = std::to_string(now) + "_" +
+      std::to_string(parameters_.sample_rate()) + "_" +
+      std::to_string(parameters_.channels()) + "_" +
+      std::to_string(1) + "_output_write.pcm";
+  DumpFileUtil::OpenDumpScopedFile(dumpFileName, &dumpFile_);
   return true;
 }
 
@@ -81,6 +89,7 @@ void OHOSAudioOutputStream::Close() {
   LOG(INFO) << "OHOSAudioOutputStream::Close. [hash: "
             << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   Stop();
+  DumpFileUtil::CloseDumpScopedFile(&dumpFile_);
   manager_->ReleaseOutputStream(this);
 }
 // LCOV_EXCL_STOP
@@ -662,6 +671,7 @@ void OHOSAudioOutputStream::OnWriteData(void* buffer, int32_t length) {
   frames_filled = std::min(frames_filled, length / bytes_per_frame_);
   audio_bus_->ToInterleaved<SignedInt16SampleTypeTraits>(
       frames_filled, reinterpret_cast<int16_t*>(buffer));
+  DumpFileUtil::WriteDumpScopedFile(dumpFile_, buffer, length);
   if (reference_time_.is_null()) {
     reference_time_ = now;
   }

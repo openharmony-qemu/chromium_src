@@ -33,6 +33,18 @@ OhosNativeImage::OhosNativeImage(
 
 OhosNativeImage::~OhosNativeImage() {
   if (native_image_adapter_ != nullptr) {
+    // Here we need to inform browser process to release the native window
+    // passed from GPU process before when gpu isolation is enabled.
+    auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+        switches::kProcessType);
+    if (type == switches::kGpuProcess) {
+      uint64_t surface_id = 0;
+      auto ret = native_image_adapter_->GetSurfaceId(&surface_id);
+      if (ret == 0) {
+        NWebNativeWindowTracker::GetInstance()
+            ->g_browser_client_->DestroyPassedSurface(surface_id);
+      }
+    }
     native_image_adapter_->DestroyNativeImage();
   }
 }

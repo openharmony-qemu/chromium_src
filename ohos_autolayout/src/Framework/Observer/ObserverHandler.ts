@@ -1,0 +1,47 @@
+import { LayoutKey, LayoutValue } from "../../Common/Constant";
+import Store from "../../Common/Utils/Store";
+import Utils from "../../Common/Utils/Utils";
+import Framework from "../Framework";
+import Throttle from "../Utils/Throttle";
+import ModifyObserver from "./Observers/ModifyObserver";
+import TransitionEndObserver from "./Observers/TransitionEndObserver";
+
+export default class ObserverHandler {
+    static relayoutHandler: Throttle;
+    private static TIMEOUT = 200;
+
+    static postTask() {
+        if (!ObserverHandler.relayoutHandler) {
+            ObserverHandler.relayoutHandler = new Throttle(ObserverHandler.TIMEOUT, Framework.mainTask);
+        }
+        ObserverHandler.relayoutHandler.postTask();
+    }
+
+    static reInit() {
+        ModifyObserver.reInit();
+        TransitionEndObserver.reInit();
+        ObserverHandler.postTask();
+    }
+
+    static updateObserver() {
+        if (Utils.isWideScreen()) {
+            return;
+        }
+        ObserverHandler.removeObserver();
+    }
+
+    static removeObserver() {
+        ModifyObserver.disconnect();
+        TransitionEndObserver.removeListener();
+    }
+
+    static nextRoundAndPost(ele: HTMLElement): void {
+        ObserverHandler.nextRound(ele);
+        ObserverHandler.postTask();
+    }
+
+    static nextRound(ele: HTMLElement): void {
+        Store.setValue(ele, LayoutKey.LAYOUT_TAG, LayoutValue.NEXT_ROUND);
+        Store.nextRoundCache.push(ele);
+    }
+}

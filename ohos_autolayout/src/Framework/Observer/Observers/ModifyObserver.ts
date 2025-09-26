@@ -1,0 +1,136 @@
+import HeaderAdj from "../../../Actions/Common/HeightRelayout/HeightAdj/HeaderAdj";
+import SwiperAction from "../../../Actions/List/OneRowList/SwiperAction";
+import { ObserverRecord, recordType } from "../../../Common/Perform/ChangeRecord";
+import DiffEleRecord from "../../../Common/Perform/DiffEleRecorder";
+import OriginStyleCache from "../../../Common/Style/Getter/OriginStyleGetter/OriginStyleCache";
+import StyleCleaner from "../../../Common/Style/Setter/StyleCleaner";
+import { Txt } from "../../../Common/Txt";
+import Utils from "../../../Common/Utils/Utils";
+import Log from "../../../Debug/Log";
+import Tag from "../../../Debug/Tag";
+import IntelligentLayout from "../../../Framework/IntelligentLayout";
+import ObserverHandler from "../ObserverHandler";
+ 
+export default class ModifyObserver {
+    static modifyObserver: MutationObserver;
+    private static TAG = Tag.modifyObserver;
+ 
+     // 定义递归遍历函数
+    private static traverseDOM(node:Node) {
+ 
+        // 递归遍历当前节点的子节点
+        const children = node.childNodes;
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            if (child.nodeType === Node.ELEMENT_NODE) { // 只处理元素节点（nodeType 为 1）
+                this.traverseDOM(child);
+            }
+        }
+    }
+ 
+    static reInit() {
+        if (ModifyObserver.modifyObserver) {
+            ModifyObserver.modifyObserver.disconnect();
+        }
+ 
+        ModifyObserver.modifyObserver = new MutationObserver(ModifyObserver.onElementModify);
+        ModifyObserver.modifyObserver.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+        });
+        // 生效
+ 
+    }
+ 
+    static disconnect() {
+        ModifyObserver.modifyObserver?.disconnect();
+        ModifyObserver.modifyObserver = null;
+    }
+ 
+    private static handleRemove(item: MutationRecord) {
+        let needSetTag = false;
+ 
+        for (let i = 0; i < item.removedNodes.length; i++) {
+            let child = item.removedNodes[i] as HTMLElement;
+            IntelligentLayout.removePopwinCache(child);
+ 
+            if (child.nodeType !== Node.ELEMENT_NODE) {
+                continue;
+            }
+ 
+            StyleCleaner.resetEle(child, true);
+ 
+            if (child.style.display !== Txt.none_) {
+                needSetTag = true;
+            }
+        }
+ 
+        if (needSetTag) {
+            // 图片如果删除，找不到其父元素，在上边的循环中向上清除缓存时找不到parentElement，在这里进行清理
+            DiffEleRecord.setTag(item.target as HTMLElement);
+        }
+ 
+        StyleCleaner.resetParent(item.target as HTMLElement);
+    }
+ 
+    private static handleElementAdd(item: MutationRecord): boolean {
+        let needPostTask = false;
+ 
+        SwiperAction.collectEle(item.target);
+        for (let i = 0; i < item.addedNodes.length; i++) {
+            const node = item.addedNodes[i] as HTMLElement;
+            if (node.nodeType !== Node.ELEMENT_NODE) {
+                continue;
+            }
+ 
+            Log.i(node, "新增元素", this.TAG);
+ 
+            if (node.style.display === Txt.none_) {
+                Log.i(node, "忽略隐藏节点", this.TAG);
+                continue;
+            }
+ 
+            if (Utils.ignoreEle(node)) {
+                Log.i(node, "忽略无意义节点", this.TAG);
+                continue;
+            }
+ 
+            OriginStyleCache.clearToTop(node);
+ 
+            HeaderAdj.collectHeaderEle(node);
+ 
+            if (ObserverRecord.ignoreChange(node, recordType.ADD)) {
+                Log.i(node, "忽略频繁变动", this.TAG);
+                continue;
+            }
+ 
+            Log.i(node, "变动有效", this.TAG);
+            needPostTask = true;
+            DiffEleRecord.setTag(node);
+        }
+        return needPostTask;
+    }
+ 
+    /**
+     * todo：
+     * 1、监听节点属性变化、节点增加减少
+     * 2、通过弹窗的root节点是否包含这些节点变化，判断弹窗是否需要重新修复。
+     * 3、如果没有弹窗根节点，则通过300ms的定时任务，检测变化的节点的宽度是否与屏幕宽度是否一致。如果一致，则启动findPopups遍历节点查找弹窗。
+     * @param records 
+     */
+    private static onElementModify(records: MutationRecord[]) {
+        console.log("onElementModify");
+        // 当窗口大小或内容发生变化时，判断是否需要调整布局
+        for (let item of records) {
+            ModifyObserver.handleRemove(item);
+        }
+ 
+        for (let item of records) {
+            const needPostTask = ModifyObserver.handleElementAdd(item);
+            if (needPostTask) {
+                ObserverHandler.postTask();
+                IntelligentLayout.markDirty(item);
+            }
+        }
+    }
+}

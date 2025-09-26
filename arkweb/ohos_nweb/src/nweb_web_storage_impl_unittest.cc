@@ -14,8 +14,10 @@
  */
 
 #include <gmock/gmock.h>
-
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "nweb_hilog.h"
 #include "nweb_web_storage_delegate.h"
 #include "gtest/gtest.h"

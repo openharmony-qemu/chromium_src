@@ -26,7 +26,7 @@ class MojoVideoDecoderIncludeTest : public ::testing::Test {
  protected:
   void SetUp() override {
     mojo::PendingRemote<mojom::VideoDecoder> pending;
-    task_runner_ = base::SequencedTaskRunner::GetCurrentDefault();
+    task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
     decoder_ = std::make_unique<MojoVideoDecoder>(task_runner_,
         nullptr, nullptr, std::move(pending), RequestOverlayInfoCB(), gfx::ColorSpace());
   }

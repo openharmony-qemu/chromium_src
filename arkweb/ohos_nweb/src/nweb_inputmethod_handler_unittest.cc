@@ -1349,7 +1349,7 @@ TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_CONTINUE_False) {
   EXPECT_EQ(result, false);
 }
 
-TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_CONTINUE_False3) {
+TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_CONTINUE_False2) {
   uint32_t nwebId = 0;
   bool result = false;
   NWebInputMethodHandler::ReattachType type =
@@ -1370,7 +1370,7 @@ TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_CONTINUE_False3) {
   EXPECT_EQ(result, false);
 }
 
-TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_CONTINUE_False2) {
+TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_CONTINUE_False3) {
   uint32_t nwebId = 0;
   bool result = false;
   NWebInputMethodHandler::ReattachType type =
@@ -1468,6 +1468,26 @@ TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_ONFOCUS_False3) {
   inputmethod_handler_->lastInputMode_ = IMFAdapterTextInputType::TEXT;
   inputmethod_handler_->imf_input_mode_ = IMFAdapterTextInputType::NUMBER;
 
+  result = inputmethod_handler_->Reattach(nwebId, type);
+  EXPECT_EQ(inputmethod_handler_->nweb_id_, nwebId);
+  EXPECT_EQ(inputmethod_handler_->isNeedReattachOnfocus_, true);
+  EXPECT_EQ(result, false);
+}
+
+TEST_F(NWebInputMethodHandlerTest, Reattach_ReattachType_FROM_ONDRAG) {
+  uint32_t nwebId = 0;
+  bool result = false;
+  NWebInputMethodHandler::ReattachType type =
+      NWebInputMethodHandler::ReattachType::FROM_ONDRAG;
+  inputmethod_handler_->isNeedReattachOnfocus_ = true;
+  inputmethod_handler_->is_editable_node_ = false;
+  inputmethod_handler_->inputmethod_listener_ = nullptr;
+  inputmethod_handler_->show_keyboard_ = false;
+  inputmethod_handler_->isAttached_ = true;
+  inputmethod_handler_->lastInputMode_ = IMFAdapterTextInputType::TEXT;
+  inputmethod_handler_->imf_input_mode_ = IMFAdapterTextInputType::NUMBER;
+  result = inputmethod_handler_->Reattach(nwebId, type);
+  inputmethod_handler_->is_editable_node_ = true;
   result = inputmethod_handler_->Reattach(nwebId, type);
   EXPECT_EQ(inputmethod_handler_->nweb_id_, nwebId);
   EXPECT_EQ(inputmethod_handler_->isNeedReattachOnfocus_, true);
@@ -1580,6 +1600,7 @@ TEST_F(NWebInputMethodHandlerTest, HideTextInput_isAttached_False2) {
   inputmethod_handler_->HideTextInput(nwebId, hideType);
   EXPECT_EQ(inputmethod_handler_->isAttached_, false);
 }
+
 TEST_F(NWebInputMethodHandlerTest, Attach_InputInfo_24) {
   NWebInputMethodClient::InputInfo inputInfo;
   bool is_need_reset_listener = false;

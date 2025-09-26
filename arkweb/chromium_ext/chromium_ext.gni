@@ -1357,3 +1357,7 @@ arkweb_content_browser_unittests_sources =[
 arkweb_components_crashpad_ohos_unittest = [
   "//arkweb/chromium_ext/ohos_test/unittest/crashpad_ohos/crashpad_ohos_unittest.cc",
 ]
+
+arkweb_components_performance_manager_graph_test_sources = [
+  "//arkweb/chromium_ext/components/performance_manager/graph/page_node_impl_for_include_unitest.cc"
+]

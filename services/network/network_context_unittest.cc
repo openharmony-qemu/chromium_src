@@ -6044,6 +6044,10 @@ TEST_F(NetworkContextTest, ClearBadProxiesCache) {
   EXPECT_EQ(0UL, proxy_resolution_service->proxy_retry_info().size());
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/services/network/arkweb_network_context_ext_unittest.cc"
+#endif // ARKWEB_TEST
+
 // This is a test ProxyErrorClient that records the sequence of calls made to
 // OnPACScriptError() and OnRequestMaybeFailedDueToProxySettings().
 class TestProxyErrorClient final : public mojom::ProxyErrorClient {

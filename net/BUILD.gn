@@ -2982,6 +2982,7 @@ target(_test_target_type, "net_unittests") {
     "url_request/url_request_unittest.cc",
     "url_request/view_cache_helper_unittest.cc",
     "//arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext_unittest.cc",
+    "//arkweb/chromium_ext/net/url_request/url_requesrt_context_ext_unittest.cc"
   ]
 
   if (arkweb_prp_preload) {

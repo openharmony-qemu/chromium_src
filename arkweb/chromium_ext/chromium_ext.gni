@@ -1183,6 +1183,7 @@ arkweb_content_browser_test_sources = [
   "//arkweb/chromium_ext/content/renderer/stream_texture_host_ohos_unittest.cc",
   "//arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_ext_unittest.cc",
   "//arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_impl_ext_unittest.cc",
+  "//arkweb/chromium_ext/content/browser/renderer_host/ark_web_render_frame_host_manager_test.cc",
   "//arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext_test.cc",
   "//arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_utils_unittest.cc",
   "//arkweb/chromium_ext/content/browser/arkweb_child_process_launcher_helper_utils_unittests.cc",

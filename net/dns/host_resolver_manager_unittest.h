@@ -19,10 +19,17 @@
 #include "net/dns/dns_test_util.h"
 #include "net/dns/host_cache.h"
 #include "net/dns/host_resolver_dns_task.h"
-#include "net/dns/host_resolver_manager.h"
 #include "net/dns/test_dns_config_service.h"
 #include "net/log/net_log_with_source.h"
 #include "net/test/test_with_task_environment.h"
+
+#if BUILDFLAG(ARKWEB_TEST)
+#define private public
+#include "net/dns/host_resolver_manager.h"
+#undef private
+#else
+#include "net/dns/host_resolver_manager.h"
+#endif
 
 namespace net {
 

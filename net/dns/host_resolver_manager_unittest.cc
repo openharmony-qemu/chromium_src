@@ -15251,4 +15251,8 @@ TEST_F(HostResolverManagerTest,
   IPv4AddressLiteralInIPv6OnlyNetworkBadAddressTest(false);
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/net/dns/host_resolver_manager_for_include_unittest.cc"
+#endif  // ARKWEB_TEST
+
 }  // namespace net

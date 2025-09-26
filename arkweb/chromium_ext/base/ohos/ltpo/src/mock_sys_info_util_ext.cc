@@ -17,32 +17,81 @@
 
 namespace base::ohos {
 
+bool SysInfoUtilsMock::osVersion = false;
+bool SysInfoUtilsMock::compatibleDeviceType = false;
+bool SysInfoUtilsMock::isMobileDevice = false;
+bool SysInfoUtilsMock::isTabletDevice = false;
+bool SysInfoUtilsMock::isPcDevice = false;
+bool SysInfoUtilsMock::baseOsName = false;
+bool SysInfoUtilsMock::majorVersion = false;
+bool SysInfoUtilsMock::seniorVersion = false;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 std::string __wrap_OsVersion() {
-  return SysInfoUtilsMock::GetInstance().OsVersion();
+  if (SysInfoUtilsMock::osVersion == true) {
+    return SysInfoUtilsMock::GetInstance().OsVersion();
+  } else {
+    return __real_OsVersion();
+  }
 }
+
 std::string __wrap_CompatibleDeviceType() {
-  return SysInfoUtilsMock::GetInstance().CompatibleDeviceType();
+  if (SysInfoUtilsMock::compatibleDeviceType == true) {
+    return SysInfoUtilsMock::GetInstance().CompatibleDeviceType();
+  } else {
+    return __real_CompatibleDeviceType();
+  }
 }
+
 bool __wrap_IsMobileDevice() {
-  return SysInfoUtilsMock::GetInstance().IsMobileDevice();
+  if (SysInfoUtilsMock::isMobileDevice == true) {
+    return SysInfoUtilsMock::GetInstance().IsMobileDevice();
+  } else {
+    return __real_IsMobileDevice();
+  }
 }
+
 bool __wrap_IsTabletDevice() {
-  return SysInfoUtilsMock::GetInstance().IsTabletDevice();
+  if (SysInfoUtilsMock::isTabletDevice == true) {
+    return SysInfoUtilsMock::GetInstance().IsTabletDevice();
+  } else {
+    return __real_IsTabletDevice();
+  }
 }
+
 bool __wrap_IsPcDevice() {
-  return SysInfoUtilsMock::GetInstance().IsPcDevice();
+  if (SysInfoUtilsMock::isPcDevice == true) {
+    return SysInfoUtilsMock::GetInstance().IsPcDevice();
+  } else {
+    return __real_IsPcDevice();
+  }
 }
+
 std::string __wrap_BaseOsName() {
-  return SysInfoUtilsMock::GetInstance().BaseOsName();
+  if (SysInfoUtilsMock::baseOsName == true) {
+    return SysInfoUtilsMock::GetInstance().BaseOsName();
+  } else {
+    return __real_BaseOsName();
+  }
 }
+
 int32_t __wrap_MajorVersion() {
-  return SysInfoUtilsMock::GetInstance().MajorVersion();
+  if (SysInfoUtilsMock::majorVersion == true) {
+    return SysInfoUtilsMock::GetInstance().MajorVersion();
+  } else {
+    return __real_MajorVersion();
+  }
 }
+
 int32_t __wrap_SeniorVersion() {
-  return SysInfoUtilsMock::GetInstance().SeniorVersion();
+  if (SysInfoUtilsMock::seniorVersion == true) {
+    return SysInfoUtilsMock::GetInstance().SeniorVersion();
+  } else {
+    return __real_SeniorVersion();
+  }
 }
 #ifdef __cplusplus
 }

@@ -673,6 +673,7 @@ arkweb_media_adapter_unittest_sources = [
   "//arkweb/ohos_adapter_ndk/drawing_text_adapter/ohos_drawing_text_adapter_impl_unittest.cpp",
   "//arkweb/ohos_adapter_ndk/screen_capture_adapter/screen_capture_adapter_impl_unittest.cc",
   "//arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/utils/src/ashmem_unittests.cc"
 ]
 
 arkweb_media_adapter_mock_sources = [
@@ -745,6 +746,7 @@ arkweb_base_unittest_sources = [
   "//arkweb/chromium_ext/base/ohos/d_vsync/src/d_vsync_controller_unittests.cc",
   "//arkweb/chromium_ext/base/ohos/locale_utils_unittests.cc",
   "//arkweb/chromium_ext/base/ohos/scoped_native_buffer_handle_unittests.cc",
+  "//arkweb/chromium_ext/components/js_injection/js_communication_host_utils_unittests.cc",
 ]
 
 arkweb_base_trace_event_sources = [

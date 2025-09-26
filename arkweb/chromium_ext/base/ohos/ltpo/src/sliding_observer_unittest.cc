@@ -802,12 +802,14 @@ TEST(SlidingObserverTest, SetIsPdf002) {
 }
 
 TEST(SlidingObserverTest, SetIsPdf003) {
+  SysInfoUtilsMock::isPcDevice = true;
   auto& mock = SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(mock, IsPcDevice()).WillOnce(testing::Return(true));
   SlidingObserver observer;
   observer.use_pdf_rate_ = true;
   observer.SetIsPdf(true);
   EXPECT_FALSE(observer.use_pdf_rate_);
+  SysInfoUtilsMock::isPcDevice = false;
 }
 
 TEST(SlidingObserverTest, StopFling001) {

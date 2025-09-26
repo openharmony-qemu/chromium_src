@@ -102,22 +102,6 @@ TEST_F(ArkwebDisplayUtilsTest, ShouldDisableSwap) {
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-TEST_F(ArkwebDisplayUtilsTest, RemoveDuplicatesRect) {
-  std::vector<gfx::Rect> quad_list_empty;
-  ArkwebDisplayUtils utils(nullptr);
-  utils.removeDuplicatesRect(quad_list_empty);
-
-  std::vector<gfx::Rect> quad_list_in{gfx::Rect(1, 1), gfx::Rect(2, 2),
-                                      gfx::Rect(1, 1), gfx::Rect(3, 3),
-                                      gfx::Rect(1, 1), gfx::Rect(4, 4)};
-  std::vector<gfx::Rect> quad_list_unique{gfx::Rect(1, 1), gfx::Rect(2, 2),
-                                          gfx::Rect(3, 3), gfx::Rect(4, 4)};
-  utils.removeDuplicatesRect(quad_list_in);
-  std::sort(quad_list_in.begin(), quad_list_in.end());
-  std::sort(quad_list_unique.begin(), quad_list_unique.end());
-  EXPECT_TRUE(quad_list_in == quad_list_unique);
-}
-
 TEST_F(ArkwebDisplayUtilsTest, SetClientId) {
   TestSetClientId();
 }

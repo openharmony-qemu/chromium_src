@@ -1995,11 +1995,12 @@ bool NWebHandlerDelegate::OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
   return result;
 }
 
-bool NWebHandlerDelegate::OnCertificateError(CefRefPtr<CefBrowser> browser,
-                                             cef_errorcode_t cert_error,
-                                             const CefString& request_url,
-                                             CefRefPtr<CefSSLInfo> ssl_info,
-                                             CefRefPtr<CefCallback> callback) {
+bool NWebHandlerDelegate::OnCertificateErrorExt(
+    CefRefPtr<CefBrowser> browser,
+    cef_errorcode_t cert_error,
+    const CefString& request_url,
+    CefRefPtr<CefSSLInfo> ssl_info,
+    CefRefPtr<ArkWebCefSslCallback> callback) {
   LOG(INFO) << "NWebHandlerDelegate::OnCertificateError happened";
   SslError error = SslErrorConvert(cert_error);
 

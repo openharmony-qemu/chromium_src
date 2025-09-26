@@ -74,8 +74,6 @@ class ArkwebDisplayUtils {
                    AggregatedFrame& frame);
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  void removeDuplicatesRect(std::vector<gfx::Rect>& quad_list);
-
   void DumpSnapshotForBlankLess(AggregatedFrame& frame);
 
   void SetClientId(const uint32_t client_id);

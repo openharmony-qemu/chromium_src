@@ -12,6 +12,7 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/task_runner.h"
 #include "base/timer/timer.h"
+#include "base/files/scoped_file.h"
 #include "media/audio/ohos/ohos_audio_manager.h"
 #include "media/audio/ohos/ohos_audio_output_callback.h"
 #include "ohaudio/native_audiorenderer.h"
@@ -166,6 +167,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   int audioResumeInterval_ = 0;
 
   int write_data_counts_ = 0;
+
+  base::ScopedFILE dumpFile_ = nullptr;
 
   size_t callback_index_ = 0;
 

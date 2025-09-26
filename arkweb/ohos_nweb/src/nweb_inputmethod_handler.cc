@@ -347,6 +347,32 @@ void NWebInputMethodHandler::HandleSecurityLayerHandlerOnUI() {
 }
 // LCOV_EXCL_STOP
 
+void NWebInputMethodHandler::UpdateTextFieldStatus() {
+  if (browser_ == nullptr) {
+    return;
+  }
+
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+
+  CefRefPtr<CefTask> task = new InputMethodTask(base::BindOnce(
+      &NWebInputMethodHandler::UpdateTextFieldStatusHandlerOnUI, this));
+  host->PostTaskToUIThread(task);
+}
+
+void NWebInputMethodHandler::UpdateTextFieldStatusHandlerOnUI() {
+  if (browser_ == nullptr) {
+    return;
+  }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  host->UpdateTextFieldStatus(show_keyboard_, isAttachSuccess_);
+}
+
 void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo,
                                                int32_t customEnterKeyType) {
   type_text_flag_multi_line_ = false;
@@ -412,6 +438,7 @@ bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener, int3
   }
   isFocusSwitchOnBlur_ = false;
 
+  UpdateTextFieldStatus();
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   if (!fill_content_.empty()) {
     if (fill_content_node_id_ == input_node_id_) {

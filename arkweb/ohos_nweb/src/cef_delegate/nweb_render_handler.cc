@@ -667,6 +667,13 @@ void NWebRenderHandler::UpdateSecurityLayer(bool isNeedSecurityLayer) {
     handler->EnableSecurityLayer(isNeedSecurityLayer);
   }
 }
+
+void NWebRenderHandler::UpdateTextFieldStatus(bool isShowKeyboard, bool isAttachIME) {
+  auto handler = handler_.lock();
+  if (handler) {
+    handler->UpdateTextFieldStatus(isShowKeyboard, isAttachIME);
+  }
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)

@@ -101,6 +101,7 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
   void SetNeedFocusViewport(bool need);
   void OnResizeScrollableViewport(CefRefPtr<CefBrowser> browser) override;
   void UpdateSecurityLayer(bool isNeedSecurityLayer) override;
+  void UpdateTextFieldStatus(bool isShowKeyboard, bool isAttachIME) override;
 #endif
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   void SetViewportAvoidHeight(int32_t viewportAvoidHeight);

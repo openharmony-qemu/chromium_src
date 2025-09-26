@@ -170,6 +170,8 @@ class CONTENT_EXPORT BrowserAccessibilityOHOS : public BrowserAccessibility {
 
   std::u16string GetComboboxExpandedText() const;
 
+  std::u16string GetComboboxCollapsedText() const;
+
   std::u16string GetComboboxExpandedTextFallback() const;
 
   std::u16string GetRoleDescription() const;

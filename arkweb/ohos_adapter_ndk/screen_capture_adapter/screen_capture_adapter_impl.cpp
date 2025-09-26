@@ -452,7 +452,6 @@ void ScreenCaptureAdapterImpl::Release()
     int32_t ret = OH_AVScreenCapture_Release(screenCapture_);
     if (ret != OH_AVSCREEN_CAPTURE_ErrCode::AV_SCREEN_CAPTURE_ERR_OK) {
         WVLOG_E("OH_AVScreenCapture release failed, ret = %{public}d", ret);
-        return;
     }
     screenCapture_ = nullptr;
 }
@@ -487,7 +486,6 @@ int32_t ScreenCaptureAdapterImpl::StartCapture()
         WVLOG_E("start capture failed, ret = %{public}d", ret);
         return -1;
     }
-    WVLOG_I("start screen capture[%{public}p] success", screenCapture_);
     return 0;
 }
 
@@ -502,7 +500,6 @@ int32_t ScreenCaptureAdapterImpl::StopCapture()
         WVLOG_E("stop capture failed, ret = %{public}d", ret);
         return -1;
     }
-    WVLOG_I("stop screen capture[%{public}p] success", screenCapture_);
     return 0;
 }
 

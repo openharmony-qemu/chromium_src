@@ -951,17 +951,21 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
     LOG(WARNING) << "OnFrameCreated failed, frame is invalid";
     return;
   }
- 
+
   CefRefPtr<CefFrameHostImpl> frameHost = static_cast<CefFrameHostImpl*>(frame.get());
   if (!frameHost->GetRenderFrameHost()) {
     LOG(WARNING) << "OnFrameCreated failed, GetRenderFrameHost failed";
     return;
   }
- 
+
   content::RenderFrameHostImpl* rfh =
     static_cast<content::RenderFrameHostImpl*>(frameHost ->GetRenderFrameHost());
+  if (!rfh) {
+    LOG(WARNING) << "OnFrameCreated failed, dynamic_cast to content::RenderFrameHostImpl failed";
+    return;
+  }
   auto globalId = rfh->GetGlobalId();
- 
+
   FrameInfos frameInfo;
   frameInfo.id = std::to_string(globalId.child_id) + "_" + std::to_string(globalId.frame_routing_id);
   if (content::RenderFrameHostImpl* parent = rfh->GetParent()) {
@@ -971,8 +975,7 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
   } else {
     frameInfo.parentId.clear();
   }
-  frameInfo.url = rfh->GetLastCommittedURL().spec();
- 
+
   dispatcher_.OnFrameCreated(frameInfo);
 }
 #endif
@@ -5249,7 +5252,7 @@ void NWebHandlerDelegate::RegisterScreenCaptureDelegateListener(
 
 #if BUILDFLAG(ARKWEB_MENU)
 void NWebHandlerDelegate::OnVisibleChanged(bool isVisible) {
-  on_handle_visible_(isVisible);
+  on_handle_visible_.Run(isVisible);
 }
 
 void NWebHandlerDelegate::ShowMagnifier() {

@@ -240,14 +240,13 @@ bool RenderFrameHostImpl::GetWorldId(const std::string& worldName, int32_t* worl
     isolated_world_.emplace(worldName, *worldId);
     return true;
   }
- 
+
   auto it = isolated_world_.find(worldName);
   if (it != isolated_world_.end()) {
     *worldId = it->second;
     return true;
- 
   }
- 
+
   int32_t maxValue = INT_MIN;
   for (const auto& pair : isolated_world_) {
     if (pair.second > maxValue) {
@@ -258,7 +257,7 @@ bool RenderFrameHostImpl::GetWorldId(const std::string& worldName, int32_t* worl
   isolated_world_.emplace(worldName, *worldId);
   return true;
 }
- 
+
 void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
     const std::u16string& javascript,
     bool recursive,
@@ -266,8 +265,7 @@ void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
     JavaScriptResultCallback callback) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   CHECK(CanExecuteJavaScript());
-  AssertFrameWasCommitted();
- 
+
   const bool wants_result = !callback.is_null();
   int32_t worldId = 0;
   bool worldIdResult = GetWorldId(worldName, &worldId);
@@ -278,11 +276,11 @@ void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
     GetAssociatedLocalFrame()->JavaScriptExecuteRequest(javascript, wants_result,
                                                         std::move(callback));
   }
- 
+
   if (!recursive) {
     return;
   }
- 
+
   RenderFrameHostImpl* initialFrame = this;
   ForEachRenderFrameHost(
     [&javascript, &worldName, &initialFrame](RenderFrameHostImpl* rfh) {
@@ -290,6 +288,7 @@ void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
     if (rfh == initialFrame) {
       return;
     }
+    rfh->AllowInjectingJavaScript();
     bool worldId_result = rfh->GetWorldId(worldName, &world_id); 
     if (worldId_result) {
       rfh->GetAssociatedLocalFrame()->JavaScriptExecuteRequestInIsolatedWorld(

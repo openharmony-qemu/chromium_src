@@ -42,6 +42,9 @@ namespace {
 
 // Hardcode these constants to avoid dependences on //chrome and //content.
 const char kChromeUIScheme[] = "chrome";
+#if BUILDFLAG(IS_ARKWEB)
+const char kArkWebUIScheme[] = "arkweb";
+#endif
 const char kDevToolsScheme[] = "devtools";
 const char kChromeUIDefaultHost[] = "version";
 const char kViewSourceScheme[] = "view-source";
@@ -607,7 +610,13 @@ GURL FixupURLInternal(const std::string& text,
       url::IsStandard(scheme.c_str(),
                       url::Component(0, static_cast<int>(scheme.length())))) {
     // Replace the about: scheme with the chrome: scheme.
-    std::string url(scheme == url::kAboutScheme ? kChromeUIScheme : scheme);
+    std::string url(scheme == url::kAboutScheme ?
+#if BUILDFLAG(IS_ARKWEB)
+                                                kArkWebUIScheme
+#else
+                                                kChromeUIScheme
+#endif
+                                                : scheme);
     url.append(url::kStandardSchemeSeparator);
 
     // We need to check whether the |username| is valid because it is our

@@ -129,6 +129,7 @@ NWebContextMenusItemV2 GetNWebContextMenusItemV2(extensions::MenuItem* menu_item
   NWebContextMenusItemV2 item;
   item.item = GetNWebContextMenusItem(menu_item);
   item.isOffTheRecord = menu_item->incognito();
+  item.intId = menu_item->id().uid;
   return item;
 }
 

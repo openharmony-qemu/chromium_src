@@ -34,7 +34,7 @@ public:
     void TearDown() {}
 };
 
-TEST_F(DfxReporterBrowserImplTest, OnVideoMemoryUsageStatsUpdate){
+TEST_F(DfxReporterBrowserImplTest, OnVideoMemoryUsageStatsUpdate) {
     pid_t pid = 1234;
     bool isSysEvent = false;
     std::map<std::string, std::string> memMap0;
@@ -72,4 +72,23 @@ TEST_F(DfxReporterBrowserImplTest, OnVideoMemoryUsageStatsUpdate){
     OnVideoMemoryUsageStatsUpdate(pid, memMap, isSysEvent, gpu_memory_stats);
     log_output = testing::internal::GetCapturedStderr();
     EXPECT_NE(log_output.find("gpu_mem = 2"), std::string::npos);
+}
+
+TEST_F(DfxReporterBrowserImplTest, ReportRendererInfo) {
+    const std::string sysEventInfoJson = "";
+    bool isSysEvent = false;
+    ReportRendererInfo(sysEventInfoJson, isSysEvent);
+
+    isSysEvent = true;
+    ReportRendererInfo(sysEventInfoJson, isSysEvent);
+}
+
+TEST_F(DfxReporterBrowserImplTest, ReportHiSysEvent) {
+    DfxReporterImpl dfxreporterimpl;
+    const std::string eventName = "test_eventname";
+    const std::string sysEventInfoJson = "";
+    dfxreporterimpl.ReportHiSysEvent(eventName, sysEventInfoJson);
+
+    const std::string eventName1 = "PAGE_MEM_LEAK";
+    dfxreporterimpl.ReportHiSysEvent(eventName1, sysEventInfoJson);
 }

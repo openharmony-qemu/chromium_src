@@ -357,17 +357,6 @@ void ArkwebDisplayUtils::DrawAndSwap(AggregatedRenderPass& last_render_pass,
 }
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-void ArkwebDisplayUtils::removeDuplicatesRect(std::vector<gfx::Rect>& quad_list) {
-  if (quad_list.empty()) {
-    LOG(ERROR) << "blankless removeDuplicatesRect, quad_list is empty.";
-    return;
-  }
-  for (size_t i = 0; i < quad_list.size() - 1; ++i) {
-     auto iter = std::remove(quad_list.begin() + i + 1, quad_list.end(), quad_list[i]);
-     quad_list.erase(iter, quad_list.end());
-  }
-}
-
 //LCOV_EXCL_START
 void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
   if (!gpu_service_impl_) {

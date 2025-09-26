@@ -525,8 +525,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetAccessibilityNodeByFocusMove_Di
   b4.relative_bounds.bounds = gfx::RectF(100, 100, 50, 50);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, b1, b2, b3, b4);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n1 = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(8701));
   auto* n2 = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(8702));
   auto* n3 = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(8703));
@@ -548,8 +548,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetAccessibilityNodeByFocusMove_Nu
   root.role = ax::mojom::Role::kRootWebArea;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1));
   ASSERT_NE(n, nullptr);
 
@@ -575,8 +575,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_SliderScrollAndInputTagGate) {
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, slider);
 
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* node = manager->GetFromID(101);
   ASSERT_NE(node, nullptr);
@@ -597,8 +597,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_SliderScrollAndInputTagGate) {
   slider2.AddStringAttribute(ax::mojom::StringAttribute::kHtmlTag, "div");
 
   ui::AXTreeUpdate update2 = ui::MakeAXTreeUpdateForTesting(root2, slider2);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager2(
-      new ui::BrowserAccessibilityManagerOHOS(update2, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager2 = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update2, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* node2 = static_cast<ui::BrowserAccessibilityOHOS*>(manager2->GetFromID(111));
   ASSERT_NE(node2, nullptr);
   EXPECT_FALSE(node2->IsScrollSupported());
@@ -623,8 +623,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ScrollableContainerCanScroll) {
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, scrollable);
 
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* node = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(401));
   ASSERT_NE(node, nullptr);
@@ -654,8 +654,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_Scroll_ScrollDirectionsAndLimits) 
   sc.AddIntAttribute(ax::mojom::IntAttribute::kScrollYMax, 100);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, sc);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7401));
   ASSERT_NE(n, nullptr);
 
@@ -686,8 +686,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_Scroll_AtBoundaries_CanScrollFlags
   cont.AddIntAttribute(ax::mojom::IntAttribute::kScrollY, 50);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, cont);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(8461));
   ASSERT_NE(n, nullptr);
 
@@ -713,8 +713,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_Scroll_AtBoundaries_CanScrollFlags
   cont2.AddIntAttribute(ax::mojom::IntAttribute::kScrollY, 0);
 
   ui::AXTreeUpdate update2 = ui::MakeAXTreeUpdateForTesting(root2, cont2);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager2(
-      new ui::BrowserAccessibilityManagerOHOS(update2, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager2 = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update2, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* m = static_cast<ui::BrowserAccessibilityOHOS*>(manager2->GetFromID(8471));
   ASSERT_NE(m, nullptr);
 
@@ -746,8 +746,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_TableHeader_ImageUrl_NonScrollable
   container.role = ax::mojom::Role::kGenericContainer;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, header, image, container);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* h = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2501));
   auto* im = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2502));
   auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2503));
@@ -774,8 +774,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_SliderEdgeScrollability) {
   slider.AddFloatAttribute(ax::mojom::FloatAttribute::kValueForRange, 10.0f);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, slider);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* s = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2901));
   ASSERT_NE(s, nullptr);
   EXPECT_FALSE(s->CanScrollForward());
@@ -783,8 +783,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_SliderEdgeScrollability) {
   slider.AddFloatAttribute(ax::mojom::FloatAttribute::kValueForRange, 0.0f);
 
   ui::AXTreeUpdate update2 = ui::MakeAXTreeUpdateForTesting(root, slider);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager2(
-      new ui::BrowserAccessibilityManagerOHOS(update2, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager2 = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update2, node_id_delegate_, test_browser_accessibility_delegate_.get());
   s = static_cast<ui::BrowserAccessibilityOHOS*>(manager2->GetFromID(2901));
   EXPECT_FALSE(s->CanScrollBackward());
 }
@@ -808,8 +808,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ValueExposureAndTargetUrl) {
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, textfield, link);
 
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* text_node = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(201));
   ASSERT_NE(text_node, nullptr);
@@ -844,8 +844,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetTargetUrl_Branches) {
   video.AddStringAttribute(ax::mojom::StringAttribute::kUrl, "https://example.com/video.mp4");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, image, link, video);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* img = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(5601));
   auto* lnk = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(5602));
@@ -872,8 +872,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetTargetUrl_NonMediaLink) {
   button.AddStringAttribute(ax::mojom::StringAttribute::kUrl, "https://example.com/button");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* btn = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(5701));
   ASSERT_NE(btn, nullptr);
@@ -896,8 +896,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetTargetUrl_LinkAndNonLink) {
     link.AddStringAttribute(ax::mojom::StringAttribute::kUrl, "https://example.com/a");
 
     ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, link);
-    std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-        new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+    std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+        update, node_id_delegate_, test_browser_accessibility_delegate_.get());
     auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(8601));
     ASSERT_NE(n, nullptr);
     EXPECT_EQ(n->GetTargetUrl(), std::string("https://example.com/a"));
@@ -916,8 +916,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetTargetUrl_LinkAndNonLink) {
     btn.AddStringAttribute(ax::mojom::StringAttribute::kUrl, "https://example.com/img");
 
     ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, btn);
-    std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-        new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+    std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+        update, node_id_delegate_, test_browser_accessibility_delegate_.get());
     auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(8611));
     ASSERT_NE(n, nullptr);
     EXPECT_EQ(n->GetTargetUrl(), std::string());
@@ -942,8 +942,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetTargetUrl_VideoAndImage) {
   video.AddStringAttribute(ax::mojom::StringAttribute::kUrl, "https://a/v.mp4");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, img, video);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n_img = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9851));
   auto* n_vid = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9852));
   ASSERT_NE(n_img, nullptr);
@@ -971,8 +971,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ColorWellTextAndRangeSupport) {
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, colorwell, slider);
 
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* cw = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(301));
   ASSERT_NE(cw, nullptr);
@@ -1006,8 +1006,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_InputTypeAndLiveRegion) {
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, input, live);
 
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* in = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(601));
   ASSERT_NE(in, nullptr);
@@ -1037,8 +1037,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_InputTypeAllAndLiveRegionAll) {
   live.AddStringAttribute(ax::mojom::StringAttribute::kLiveStatus, "polite");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, input, live);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* in = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2301));
   auto* lr = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2302));
   ASSERT_NE(in, nullptr);
@@ -1069,8 +1069,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_InputTypeAllAndLiveRegionAll) {
     upd.AddStringAttribute(ax::mojom::StringAttribute::kInputType, c.type);
 
     ui::AXTreeUpdate upd_case = ui::MakeAXTreeUpdateForTesting(root, upd, live);
-    std::unique_ptr<ui::BrowserAccessibilityManager> m_case(new ui::BrowserAccessibilityManagerOHOS(
-        upd_case, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+    std::unique_ptr<ui::BrowserAccessibilityManager> m_case = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+        upd_case, node_id_delegate_, test_browser_accessibility_delegate_.get());
     auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(m_case->GetFromID(2301));
     ASSERT_NE(n, nullptr);
     EXPECT_EQ(n->OHOSInputType(), c.expect);
@@ -1082,16 +1082,16 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_InputTypeAllAndLiveRegionAll) {
 
   upd_live.AddStringAttribute(ax::mojom::StringAttribute::kLiveStatus, "assertive");
   ui::AXTreeUpdate upd1 = ui::MakeAXTreeUpdateForTesting(root, input, upd_live);
-  std::unique_ptr<ui::BrowserAccessibilityManager> m1(
-      new ui::BrowserAccessibilityManagerOHOS(upd1, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> m1 = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      upd1, node_id_delegate_, test_browser_accessibility_delegate_.get());
   lr = static_cast<ui::BrowserAccessibilityOHOS*>(m1->GetFromID(2302));
   ASSERT_NE(lr, nullptr);
   EXPECT_EQ(lr->OHOSLiveRegionType(), 2);
 
   upd_live.AddStringAttribute(ax::mojom::StringAttribute::kLiveStatus, "off");
   ui::AXTreeUpdate upd2 = ui::MakeAXTreeUpdateForTesting(root, input, upd_live);
-  std::unique_ptr<ui::BrowserAccessibilityManager> m2(
-      new ui::BrowserAccessibilityManagerOHOS(upd2, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> m2 = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      upd2, node_id_delegate_, test_browser_accessibility_delegate_.get());
   lr = static_cast<ui::BrowserAccessibilityOHOS*>(m2->GetFromID(2302));
   ASSERT_NE(lr, nullptr);
   EXPECT_EQ(lr->OHOSLiveRegionType(), 0);
@@ -1110,8 +1110,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_InputType_NonInputTag) {
   node.AddStringAttribute(ax::mojom::StringAttribute::kInputType, "password");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, node);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3000));
   ASSERT_NE(n, nullptr);
   EXPECT_EQ(n->OHOSInputType(), static_cast<int32_t>(OHOS::NWeb::AceTextCategory::INPUT_TYPE_DEFAULT));
@@ -1142,8 +1142,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RoleDescriptionVariants) {
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, heading, link, button);
 
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* h = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(701));
   auto* l = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(702));
@@ -1192,8 +1192,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RoleDescription_MoreRoles) {
   rb.role = ax::mojom::Role::kRadioButton;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, canvas, header, listgrid, mir, rb);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   int ids[] = {3201, 3202, 3203, 3204, 3205};
   for (int id : ids) {
     auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(id));
@@ -1216,8 +1216,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RoleDescription_AriaRoleDescriptio
   root.child_ids = {3301};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3301));
   ASSERT_NE(n, nullptr);
@@ -1237,8 +1237,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RoleDescription_HeadingNoVisited) 
   heading.SetName("Test Heading");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, heading);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3401));
   ASSERT_NE(n, nullptr);
@@ -1259,8 +1259,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RoleDescription_HeadingWithVisited
   heading.AddState(ax::mojom::State::kVisited);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, heading);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3501));
   ASSERT_NE(n, nullptr);
@@ -1280,8 +1280,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RoleDescription_LinkNoVisited) {
   link.SetName("Test Link");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, link);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3601));
   ASSERT_NE(n, nullptr);
@@ -1301,8 +1301,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RoleDescription_ButtonNoPopup) {
   button.SetName("Test Button");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3701));
   ASSERT_NE(n, nullptr);
@@ -1340,8 +1340,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RoleDescription_ButtonPopupTypes) 
   button4.AddIntAttribute(ax::mojom::IntAttribute::kHasPopup, static_cast<int>(ax::mojom::HasPopup::kFalse));
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button1, button2, button3, button4);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* b1 = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3801));
   auto* b2 = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3802));
@@ -1411,8 +1411,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RoleDescription_VariousRoles) {
 
   ui::AXTreeUpdate update =
       ui::MakeAXTreeUpdateForTesting(root, alert, audio, code, details, emphasis, form, rowgroup, sectionfooter);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   int ids[] = {3901, 3902, 3903, 3904, 3905, 3906, 3907, 3908};
   for (int id : ids) {
@@ -1471,8 +1471,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RoleDescription_MoreRoleTypes) {
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, sectionheader, sectionwithoutname, strong, subscript,
                                                            superscript, time, combobox, figure);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   int no_desc_ids[] = {4001, 4002, 4003, 4004, 4005, 4006};
   for (int id : no_desc_ids) {
@@ -1504,8 +1504,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RoleDescription_DefaultBranch) {
   generic.role = ax::mojom::Role::kGenericContainer;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, generic);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(4101));
   ASSERT_NE(n, nullptr);
@@ -1537,8 +1537,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetRoleDescription_ButtonPopupDeta
   list_btn.AddIntAttribute(ax::mojom::IntAttribute::kHasPopup, static_cast<int>(ax::mojom::HasPopup::kListbox));
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, menu_btn, dlg_btn, list_btn);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* m = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7801));
   auto* d = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7802));
   auto* l = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7803));
@@ -1563,8 +1563,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_SubstringTextContent_Compose) {
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, tf);
 
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* node = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(801));
   ASSERT_NE(node, nullptr);
@@ -1591,8 +1591,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ImageAnnotationStatus_PendingAdult
     img.AddIntAttribute(ax::mojom::IntAttribute::kImageAnnotationStatus,
                         static_cast<int>(ax::mojom::ImageAnnotationStatus::kAnnotationPending));
     ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, img);
-    std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-        new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+    std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+        update, node_id_delegate_, test_browser_accessibility_delegate_.get());
     auto* i = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(8101));
     ASSERT_NE(i, nullptr);
     auto text = i->GetSubstringTextContentUTF16(absl::nullopt);
@@ -1608,8 +1608,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ImageAnnotationStatus_PendingAdult
     img.AddIntAttribute(ax::mojom::IntAttribute::kImageAnnotationStatus,
                         static_cast<int>(ax::mojom::ImageAnnotationStatus::kAnnotationAdult));
     ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, img);
-    std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-        new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+    std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+        update, node_id_delegate_, test_browser_accessibility_delegate_.get());
     auto* i = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(8111));
     ASSERT_NE(i, nullptr);
     auto text = i->GetSubstringTextContentUTF16(absl::nullopt);
@@ -1625,8 +1625,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ImageAnnotationStatus_PendingAdult
     img.AddIntAttribute(ax::mojom::IntAttribute::kImageAnnotationStatus,
                         static_cast<int>(ax::mojom::ImageAnnotationStatus::kAnnotationEmpty));
     ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, img);
-    std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-        new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+    std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+        update, node_id_delegate_, test_browser_accessibility_delegate_.get());
     auto* i = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(8121));
     ASSERT_NE(i, nullptr);
     auto text = i->GetSubstringTextContentUTF16(absl::nullopt);
@@ -1643,8 +1643,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ImageAnnotationStatus_PendingAdult
                         static_cast<int>(ax::mojom::ImageAnnotationStatus::kAnnotationSucceeded));
     img.AddStringAttribute(ax::mojom::StringAttribute::kImageAnnotation, "ALT-TEXT");
     ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, img);
-    std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-        new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+    std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+        update, node_id_delegate_, test_browser_accessibility_delegate_.get());
     auto* i = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(8131));
     ASSERT_NE(i, nullptr);
     auto text = i->GetSubstringTextContentUTF16(absl::nullopt);
@@ -1668,8 +1668,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_DocumentSplitterAndUrlFallback) {
   link.role = ax::mojom::Role::kLink;
   link.AddStringAttribute(ax::mojom::StringAttribute::kUrl, "https://example.com/path?q=1");
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, splitter, link);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* r = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1800));
   auto* s = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1801));
   auto* l = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1802));
@@ -1695,8 +1695,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_SubstringTextContent_RangeCompose)
   node.SetName("Label");
   node.AddFloatAttribute(ax::mojom::FloatAttribute::kValueForRange, 3.0f);
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, node);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2200));
   ASSERT_NE(n, nullptr);
   auto text = n->GetSubstringTextContentUTF16(absl::nullopt);
@@ -1714,8 +1714,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContent_RootAndSpl
   splitter.role = ax::mojom::Role::kSplitter;
   splitter.SetName("Divider");
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, splitter);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* r = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7700));
   auto* s = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7701));
   ASSERT_NE(r, nullptr);
@@ -1734,8 +1734,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_Ifram
   iframe.AddStringAttribute(ax::mojom::StringAttribute::kName, "Test iframe");
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, iframe);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 
@@ -1749,8 +1749,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_RootW
   root.role = ax::mojom::Role::kRootWebArea;
   root.AddStringAttribute(ax::mojom::StringAttribute::kName, "Test root");
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1));
   ASSERT_NE(n, nullptr);
 
@@ -1768,8 +1768,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_Color
   color_well.AddIntAttribute(ax::mojom::IntAttribute::kColorValue, 0xFF0000);
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, color_well);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   std::u16string result = n->GetSubstringTextContentUTF16(absl::nullopt);
@@ -1788,8 +1788,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_Range
   slider.AddStringAttribute(ax::mojom::StringAttribute::kValue, "50");
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, slider);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   std::u16string result = n->GetSubstringTextContentUTF16(absl::nullopt);
@@ -1806,8 +1806,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_Range
   slider.AddStringAttribute(ax::mojom::StringAttribute::kValue, "75");
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, slider);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   std::u16string result = n->GetSubstringTextContentUTF16(absl::nullopt);
@@ -1824,8 +1824,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_Empty
   text_field.AddStringAttribute(ax::mojom::StringAttribute::kValue, "input value");
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, text_field);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 
@@ -1840,8 +1840,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_Platf
   root.AddStringAttribute(ax::mojom::StringAttribute::kName, "Document title");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1));
   ASSERT_NE(n, nullptr);
 
@@ -1862,8 +1862,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_Split
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, splitter);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 
@@ -1886,8 +1886,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_Image
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, image);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 
@@ -1913,8 +1913,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_Alert
   alert.child_ids = {3};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, alert, text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 
@@ -1945,8 +1945,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_WithP
   div.child_ids = {3, 4};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, div, text1, text2);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 
@@ -1972,8 +1972,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_LinkR
   link.AddStringAttribute(ax::mojom::StringAttribute::kUrl, "https://example.com");
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, link);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 
@@ -1992,8 +1992,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSubstringTextContentUTF16_Image
   image.AddStringAttribute(ax::mojom::StringAttribute::kUrl, "https://example.com/image.jpg");
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, image);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 
@@ -2013,8 +2013,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetFromAccessibilityId_ByHtmlId) {
   embed.html_attributes.emplace_back("id", "mapId");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, embed);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* e = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7301));
   ASSERT_NE(e, nullptr);
   int64_t mapped = ui::BrowserAccessibilityOHOS::GetAccessibilityIdByHtmlElementId("mapId");
@@ -2035,8 +2035,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_AccessibilityIdMapping_EmbeddedObj
   embed.html_attributes.emplace_back("id", "embed123");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, embed);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* e = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(6801));
   ASSERT_NE(e, nullptr);
   int64_t mapped = ui::BrowserAccessibilityOHOS::GetAccessibilityIdByHtmlElementId("embed123");
@@ -2063,8 +2063,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_SelectionAndItemCount) {
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, textfield, list);
 
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* tf = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(501));
   ASSERT_NE(tf, nullptr);
@@ -2089,8 +2089,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSelectionStart_NonAtomicReturns
   static_text.AddIntAttribute(ax::mojom::IntAttribute::kTextSelStart, 4);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, static_text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9801));
   ASSERT_NE(n, nullptr);
   EXPECT_EQ(n->GetSelectionStart(), 0);
@@ -2109,8 +2109,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSelectionStart_AtomicTextField)
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, text_field);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_EQ(n->GetSelectionStart(), 5);
@@ -2126,8 +2126,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSelectionStart_NonAtomicTextFie
   text_field.role = ax::mojom::Role::kStaticText;
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, text_field);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_EQ(n->GetSelectionStart(), 0);
@@ -2145,8 +2145,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSelectionEnd_NonAtomicReturnsZe
   static_text.AddIntAttribute(ax::mojom::IntAttribute::kTextSelEnd, 9);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, static_text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9301));
   ASSERT_NE(n, nullptr);
   EXPECT_EQ(n->GetSelectionEnd(), 0);
@@ -2163,8 +2163,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSelectionEnd_AtomicTextField) {
   text_field.AddIntAttribute(ax::mojom::IntAttribute::kTextSelEnd, 10);
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, text_field);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_EQ(n->GetSelectionEnd(), 10);
@@ -2181,8 +2181,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSelectionEnd_NonAtomicTextField
 
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, text_field);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_EQ(n->GetSelectionEnd(), 0);
@@ -2199,8 +2199,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsCollection_DirectoryDeprecatedTr
   dir.role = ax::mojom::Role::kDirectoryDeprecated;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, dir);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9761));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->IsCollection());
@@ -2219,8 +2219,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RangeControlWithoutAriaValueText_C
   slider.AddFloatAttribute(ax::mojom::FloatAttribute::kValueForRange, 10.0f);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, slider);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* node = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(901));
   ASSERT_NE(node, nullptr);
   EXPECT_TRUE(node->IsRangeControlWithoutAriaValueText());
@@ -2246,8 +2246,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_TableMetrics) {
   cell.AddIntAttribute(ax::mojom::IntAttribute::kTableCellRowSpan, 2);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, table, cell);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* t = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1001));
   auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1002));
@@ -2277,8 +2277,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RowCount_FromSetSizeOnList) {
   list.AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 7);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, list);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7501));
   ASSERT_NE(n, nullptr);
   EXPECT_EQ(n->RowCount(), 7);
@@ -2295,8 +2295,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RowCount_NonCollectionIsZero) {
   button.role = ax::mojom::Role::kButton;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9201));
   ASSERT_NE(n, nullptr);
   EXPECT_EQ(n->RowCount(), 0);
@@ -2314,8 +2314,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ColumnCount_FromTableAttribute) {
   table.AddIntAttribute(ax::mojom::IntAttribute::kTableColumnCount, 3);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, table);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* t = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7101));
   ASSERT_NE(t, nullptr);
   EXPECT_EQ(t->ColumnCount(), 3);
@@ -2332,8 +2332,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsCollectionItem_RowHeaderTrue) {
   row_header.role = ax::mojom::Role::kRowHeader;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, row_header);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9401));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->IsCollectionItem());
@@ -2350,8 +2350,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsCollectionItem_ColumnHeaderTrue)
   col_header.role = ax::mojom::Role::kColumnHeader;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, col_header);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9801));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->IsCollectionItem());
@@ -2368,8 +2368,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_TableMetrics_DefaultsWhenMissing) 
   cell.role = ax::mojom::Role::kCell;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, cell);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(8901));
   ASSERT_NE(c, nullptr);
 
@@ -2392,8 +2392,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RowIndex_PosInSetEdgeCases) {
   cell.AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 1);
 
   ui::AXTreeUpdate update1 = ui::MakeAXTreeUpdateForTesting(root, cell);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager1(
-      new ui::BrowserAccessibilityManagerOHOS(update1, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager1 = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update1, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* c1 = static_cast<ui::BrowserAccessibilityOHOS*>(manager1->GetFromID(9101));
   ASSERT_NE(c1, nullptr);
   EXPECT_EQ(c1->RowIndex(), 0);
@@ -2403,8 +2403,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RowIndex_PosInSetEdgeCases) {
   cell2.AddIntAttribute(ax::mojom::IntAttribute::kTableCellRowIndex, 5);
 
   ui::AXTreeUpdate update2 = ui::MakeAXTreeUpdateForTesting(root, cell2);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager2(
-      new ui::BrowserAccessibilityManagerOHOS(update2, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager2 = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update2, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* c2 = static_cast<ui::BrowserAccessibilityOHOS*>(manager2->GetFromID(9101));
   ASSERT_NE(c2, nullptr);
   EXPECT_EQ(c2->RowIndex(), 0);
@@ -2422,8 +2422,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_RowIndex_UsesPosInSet) {
   item.AddIntAttribute(ax::mojom::IntAttribute::kPosInSet, 3);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, item);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(6401));
   ASSERT_NE(n, nullptr);
   EXPECT_EQ(n->RowIndex(), 0);
@@ -2440,8 +2440,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ColumnSpan_DefaultZero) {
   cell.role = ax::mojom::Role::kCell;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, cell);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(6501));
   ASSERT_NE(c, nullptr);
   EXPECT_EQ(c->ColumnSpan(), 1);
@@ -2464,8 +2464,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_HeadingRecursion) {
   child.role = ax::mojom::Role::kStaticText;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, heading, child);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1101));
   ASSERT_NE(n, nullptr);
@@ -2503,8 +2503,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_OnlyTextChildrenAndListMarker) {
   marker.role = ax::mojom::Role::kListMarker;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, parent1, text1, text2, parent2, marker);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* p1 = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1200));
   auto* p2 = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1203));
@@ -2535,8 +2535,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_HasOnlyTextChildren_NegativeWithIm
   img.role = ax::mojom::Role::kImage;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, parent, text, img);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* p = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9501));
   ASSERT_NE(p, nullptr);
   EXPECT_FALSE(p->HasOnlyTextChildren());
@@ -2563,8 +2563,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_HasOnlyTextChildren_OnlyTextChildr
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, div, text1, text2);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->HasOnlyTextChildren());
@@ -2591,8 +2591,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_HasOnlyTextChildren_NonTextChildre
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, div, text, button);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_FALSE(n->HasOnlyTextChildren());
@@ -2619,8 +2619,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_HasListMarkerChild_WithListMarker)
   list_item.child_ids = {3, 4};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, list_item, marker, text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->HasListMarkerChild());
@@ -2643,8 +2643,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_HasListMarkerChild_WithoutListMark
   list_item.child_ids = {3};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, list_item, text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 
@@ -2667,8 +2667,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_HeadingLink) {
   link.role = ax::mojom::Role::kLink;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, heading, link);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* h = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1300));
   ASSERT_NE(h, nullptr);
   EXPECT_TRUE(h->IsHeadingLink());
@@ -2701,8 +2701,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsLeafVariants) {
   static_text.role = ax::mojom::Role::kStaticText;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button, link, container, static_text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* b = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1401));
   auto* l = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1402));
@@ -2732,8 +2732,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsLeaf_FocusableChildReturnsFalse)
   child.AddState(ax::mojom::State::kFocusable);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, parent, child);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* p = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2841));
   ASSERT_NE(p, nullptr);
   EXPECT_FALSE(p->IsLeaf());
@@ -2762,8 +2762,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_SoleInterestingNode_Null) {
   btn2.SetName("B");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, parent, btn1, btn2);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* p = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1500));
   ASSERT_NE(p, nullptr);
   EXPECT_EQ(p->GetSoleInterestingNodeFromSubtree(), nullptr);
@@ -2786,8 +2786,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_SoleInterestingNode_Positive) {
   btn.SetName("A");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, parent, btn);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* p = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3100));
   ASSERT_NE(p, nullptr);
   auto* sole = p->GetSoleInterestingNodeFromSubtree();
@@ -2807,8 +2807,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSoleInterestingNodeFromSubtree_
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   const ui::BrowserAccessibilityOHOS* result = n->GetSoleInterestingNodeFromSubtree();
@@ -2836,8 +2836,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSoleInterestingNodeFromSubtree_
   div.child_ids = {3, 4};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, div, button1, button2);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   const ui::BrowserAccessibilityOHOS* result = n->GetSoleInterestingNodeFromSubtree();
@@ -2865,8 +2865,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSoleInterestingNodeFromSubtree_
   div.child_ids = {3, 4};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, div, button, text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   const ui::BrowserAccessibilityOHOS* result = n->GetSoleInterestingNodeFromSubtree();
@@ -2895,8 +2895,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetSoleInterestingNodeFromSubtree_
   div.child_ids = {3, 4};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, div, text1, text2);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   const ui::BrowserAccessibilityOHOS* result = n->GetSoleInterestingNodeFromSubtree();
@@ -2920,8 +2920,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_CanFireEvents_ChildOfLeaf) {
   child.role = ax::mojom::Role::kStaticText;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button, child);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1601));
   ASSERT_NE(c, nullptr);
   EXPECT_FALSE(c->CanFireEvents());
@@ -2939,8 +2939,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_CanFireEvents_NotChildOfLeaf) {
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->CanFireEvents());
@@ -2963,8 +2963,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_CanFireEvents_ChildOfLeaf_Second) 
   button.child_ids = {3};
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button, text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3));
   ASSERT_NE(n, nullptr);
   EXPECT_FALSE(n->CanFireEvents());
@@ -2982,8 +2982,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_CheckboxGroupStatus) {
   node.SetCheckedState(ax::mojom::CheckedState::kTrue);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, node);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1700));
   ASSERT_NE(n, nullptr);
   EXPECT_EQ(n->GetCheckboxGroupSelectedStatus(), 0);
@@ -2996,8 +2996,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_CheckboxGroupStatus) {
   node_m.id = 1711;
   node_m.SetCheckedState(ax::mojom::CheckedState::kMixed);
   ui::AXTreeUpdate upd_m = ui::MakeAXTreeUpdateForTesting(root_m, node_m);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager_m(
-      new ui::BrowserAccessibilityManagerOHOS(upd_m, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager_m = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      upd_m, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n_m = static_cast<ui::BrowserAccessibilityOHOS*>(manager_m->GetFromID(1711));
   ASSERT_NE(n_m, nullptr);
   EXPECT_EQ(n_m->GetCheckboxGroupSelectedStatus(), 1);
@@ -3010,8 +3010,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_CheckboxGroupStatus) {
   node_f.id = 1721;
   node_f.SetCheckedState(ax::mojom::CheckedState::kFalse);
   ui::AXTreeUpdate upd_f = ui::MakeAXTreeUpdateForTesting(root_f, node_f);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager_f(
-      new ui::BrowserAccessibilityManagerOHOS(upd_f, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager_f = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      upd_f, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n_f = static_cast<ui::BrowserAccessibilityOHOS*>(manager_f->GetFromID(1721));
   ASSERT_NE(n_f, nullptr);
   EXPECT_EQ(n_f->GetCheckboxGroupSelectedStatus(), 2);
@@ -3024,8 +3024,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_CheckboxGroupStatus) {
   node_d.id = 1731;
   node_d.role = ax::mojom::Role::kButton;
   ui::AXTreeUpdate upd_d = ui::MakeAXTreeUpdateForTesting(root_d, node_d);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager_d(
-      new ui::BrowserAccessibilityManagerOHOS(upd_d, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager_d = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      upd_d, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n_d = static_cast<ui::BrowserAccessibilityOHOS*>(manager_d->GetFromID(1731));
   ASSERT_NE(n_d, nullptr);
   EXPECT_EQ(n_d->GetCheckboxGroupSelectedStatus(), -1);
@@ -3053,8 +3053,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingVariants) {
   link_child.role = ax::mojom::Role::kStaticText;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button, link, link_child);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* r = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1900));
   auto* b = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1901));
@@ -3085,8 +3085,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInteresting_InvisibleIframeParen
   child.SetName("btn");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, iframe, child);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9742));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->IsInterestingOnOHOS());
@@ -3099,8 +3099,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_PlatformDocume
   root.AddStringAttribute(ax::mojom::StringAttribute::kName, "");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(1));
   ASSERT_NE(n, nullptr);
   EXPECT_FALSE(n->IsInterestingOnOHOS());
@@ -3119,8 +3119,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_InvisibleOrIgn
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, invisible);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_FALSE(n->IsInterestingOnOHOS());
@@ -3138,8 +3138,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_ControlRole) {
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->IsInterestingOnOHOS());
@@ -3162,8 +3162,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_NonFocusableCh
   button.child_ids = {3};
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button, text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3));
   ASSERT_NE(n, nullptr);
   EXPECT_FALSE(n->IsInterestingOnOHOS());
@@ -3187,8 +3187,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_ChildOfInvisib
   iframe.child_ids = {3};
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, iframe, text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3));
   ASSERT_NE(n, nullptr);
   EXPECT_FALSE(n->IsInterestingOnOHOS());
@@ -3212,8 +3212,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_ChildOfLink) {
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, link, text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3));
   ASSERT_NE(n, nullptr);
   EXPECT_FALSE(n->IsInterestingOnOHOS());
@@ -3232,8 +3232,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_FocusableNode)
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->IsInterestingOnOHOS());
@@ -3251,8 +3251,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_ProgressIndica
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, progress);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->IsInterestingOnOHOS());
@@ -3276,8 +3276,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_DirectDescenda
   link.child_ids = {3};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, link, text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(3));
   ASSERT_NE(n, nullptr);
   EXPECT_FALSE(n->IsInterestingOnOHOS());
@@ -3295,8 +3295,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_EmbeddedObject
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, embedded);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->IsInterestingOnOHOS());
@@ -3315,8 +3315,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_LeafWithNonWhi
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->IsInterestingOnOHOS());
@@ -3335,8 +3335,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsInterestingOnOHOS_LeafWithWhites
   root.child_ids = {2};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   EXPECT_FALSE(n->IsInterestingOnOHOS());
@@ -3359,8 +3359,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedText_Fallback) {
   listbox.AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 5);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo, listbox);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2100));
   ASSERT_NE(c, nullptr);
   auto text = c->GetComboboxExpandedTextFallback();
@@ -3384,8 +3384,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedTextFallback_Singl
   list.AddIntAttribute(ax::mojom::IntAttribute::kSetSize, 3);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo, list);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2761));
   ASSERT_NE(c, nullptr);
   auto text = c->GetComboboxExpandedTextFallback();
@@ -3393,7 +3393,7 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedTextFallback_Singl
 }
 
 TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedTextFallback_NoOrMultipleCollections) {
-  // 无集合子节点：返回默认文案
+  // No collection sub-nodes: Return default text.
   {
     ui::AXNodeData root;
     root.id = 6700;
@@ -3405,14 +3405,14 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedTextFallback_NoOrM
     combo.role = ax::mojom::Role::kComboBoxMenuButton;
 
     ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo);
-    std::unique_ptr<ui::BrowserAccessibilityManager> manager(new ui::BrowserAccessibilityManagerOHOS(
-        update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+    std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+        update, node_id_delegate_, test_browser_accessibility_delegate_.get());
     auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(6701));
     ASSERT_NE(c, nullptr);
     EXPECT_EQ(c->GetComboboxExpandedTextFallback(), u"Expanded");
   }
 
-  // 多个集合子节点：也走默认文案
+  // Multiple collection sub-nodes: Also follow the default text
   {
     ui::AXNodeData root;
     root.id = 6710;
@@ -3434,8 +3434,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedTextFallback_NoOrM
     list2.role = ax::mojom::Role::kListBox;
 
     ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo, list1, list2);
-    std::unique_ptr<ui::BrowserAccessibilityManager> manager(new ui::BrowserAccessibilityManagerOHOS(
-        update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+    std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+        update, node_id_delegate_, test_browser_accessibility_delegate_.get());
     auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(6711));
     ASSERT_NE(c, nullptr);
     EXPECT_EQ(c->GetComboboxExpandedTextFallback(), u"Expanded");
@@ -3458,8 +3458,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedTextFallback_Singl
   list.role = ax::mojom::Role::kListBox;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo, list);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2851));
   ASSERT_NE(c, nullptr);
   auto text = c->GetComboboxExpandedTextFallback();
@@ -3483,8 +3483,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedTextFallback_No
   combobox.child_ids = {3};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, text);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   std::u16string result = n->GetComboboxExpandedTextFallback();
@@ -3512,8 +3512,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedTextFallback_Mu
   combobox.child_ids = {3, 4};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, listbox1, listbox2);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   std::u16string result = n->GetComboboxExpandedTextFallback();
@@ -3537,8 +3537,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedTextFallback_Si
   combobox.child_ids = {3};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, listbox);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   std::u16string result = n->GetComboboxExpandedTextFallback();
@@ -3563,8 +3563,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedTextFallback_Si
   combobox.child_ids = {3};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, listbox);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   std::u16string result = n->GetComboboxExpandedTextFallback();
@@ -3577,8 +3577,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsFocusable_PlatformDocument) {
   root.role = ax::mojom::Role::kRootWebArea;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* r = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2400));
   ASSERT_NE(r, nullptr);
   EXPECT_FALSE(r->IsFocusable());
@@ -3586,8 +3586,9 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsFocusable_PlatformDocument) {
   ui::AXNodeData root_named = root;
   root_named.SetName("Doc");
   ui::AXTreeUpdate update_named = ui::MakeAXTreeUpdateForTesting(root_named);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager_named(new ui::BrowserAccessibilityManagerOHOS(
-      update_named, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager_named =
+      std::make_unique<ui::BrowserAccessibilityManagerOHOS>(update_named, node_id_delegate_,
+                                                            test_browser_accessibility_delegate_.get());
   r = static_cast<ui::BrowserAccessibilityOHOS*>(manager_named->GetFromID(2400));
 
   EXPECT_FALSE(r->IsFocusable());
@@ -3605,8 +3606,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsFocusable_IframeNamedFalse) {
   iframe.SetName("I");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, iframe);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7001));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->IsFocusable());
@@ -3624,8 +3625,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsFocusable_PlatformDocumentWithPa
   subdoc.SetName("SubDoc");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, subdoc);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9751));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->IsFocusable());
@@ -3655,8 +3656,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedText_ViaAriaContro
 
   root.child_ids.push_back(2703);
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo, input, listbox);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2701));
   ASSERT_NE(c, nullptr);
   auto text = c->GetComboboxExpandedText();
@@ -3673,8 +3674,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedText_ViaAriaContro
   root2.child_ids.push_back(2703);
   root2.child_ids.push_back(2704);
   ui::AXTreeUpdate update2 = ui::MakeAXTreeUpdateForTesting(root2, combo, input, listbox, dialog);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager2(
-      new ui::BrowserAccessibilityManagerOHOS(update2, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager2 = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update2, node_id_delegate_, test_browser_accessibility_delegate_.get());
   c = static_cast<ui::BrowserAccessibilityOHOS*>(manager2->GetFromID(2701));
   auto text2 = c->GetComboboxExpandedText();
   EXPECT_EQ(text2, u"Dialog");
@@ -3702,8 +3703,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedText_ControlsDialo
 
   root.child_ids.push_back(2753);
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo, input, dialog);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2751));
   ASSERT_NE(c, nullptr);
   auto text = c->GetComboboxExpandedText();
@@ -3721,8 +3722,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_ComboboxExpandedText_NoInputReturn
   combo.role = ax::mojom::Role::kComboBoxMenuButton;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combo);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* c = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9731));
   ASSERT_NE(c, nullptr);
   auto text = c->GetComboboxExpandedText();
@@ -3740,8 +3741,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedText_NoChildInp
 
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 
@@ -3760,8 +3761,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedText_NoAriaCont
 
   root.child_ids = {2};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 
@@ -3784,8 +3785,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedText_NonCombobo
 
   root.child_ids = {2, 3};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, div);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   std::u16string result = n->GetComboboxExpandedText();
@@ -3807,8 +3808,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedText_DialogRole
 
   root.child_ids = {2, 3};
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, dialog);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   std::u16string result = n->GetComboboxExpandedText();
@@ -3832,8 +3833,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedText_NoSetSize)
   combobox.child_ids = {3};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, listbox);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   std::u16string result = n->GetComboboxExpandedText();
@@ -3858,8 +3859,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_GetComboboxExpandedText_WithSetSiz
   combobox.child_ids = {3};
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, listbox);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   std::u16string result = n->GetComboboxExpandedText();
@@ -3884,8 +3885,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsClickable_DefaultVerb_And_NonCli
   iframe.role = ax::mojom::Role::kIframe;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, btn, iframe);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* b = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2801));
   auto* f = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2802));
   ASSERT_NE(b, nullptr);
@@ -3914,8 +3915,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsClickable_ClickAncestorFalse) {
                             static_cast<int>(ax::mojom::DefaultActionVerb::kPress));
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, btn_click, btn_press);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n_click = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2811));
   auto* n_press = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2812));
   ASSERT_NE(n_click, nullptr);
@@ -3931,8 +3932,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsClickable_PlatformDocumentFalse)
   root.SetName("Doc");
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9700));
   ASSERT_NE(n, nullptr);
   EXPECT_FALSE(n->IsClickable());
@@ -3949,8 +3950,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsClickable_LinkFalse) {
   link.role = ax::mojom::Role::kLink;
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, link);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(9711));
   ASSERT_NE(n, nullptr);
   EXPECT_TRUE(n->IsClickable());
@@ -3974,8 +3975,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_IsChecked_Branches) {
   not_checked.SetCheckedState(ax::mojom::CheckedState::kFalse);
 
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, checked, not_checked);
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager(
-      new ui::BrowserAccessibilityManagerOHOS(update, node_id_delegate_, test_browser_accessibility_delegate_.get()));
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
 
   auto* check = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(5101));
   auto* not_check = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(5102));
@@ -5918,7 +5919,7 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_OnLocationChanged) {
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 
-  // 禁用事件分发器，避免单测环境下的异步分发导致崩溃
+  // Disable the event dispatcher to prevent crashes caused by asynchronous distribution in the unit test environment.
   static_cast<ui::BrowserAccessibilityManagerOHOS*>(manager.get())->eventDispatcher_ = nullptr;
 
   n->OnLocationChanged();

@@ -86,19 +86,7 @@ class TestRenderFrame : public RenderFrameImpl {
 
  private:
 #if BUILDFLAG(ARKWEB_TEST)
-  friend class RenderFrameImplTest;
-#endif
-#if BUILDFLAG(ARKWEB_TEST)
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, CloseImageOverlaySelection);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, MouseSelectMenuShow);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, ChangeVisibilityOfQuickMenu);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, OnPdfScrollAtBottom);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, OnPdfLoadEvent);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, GetNewWindowWebView_WithoutFrameHost);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, GetNewWindowWebView_ReturnFalse);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, GetNewWindowWebView_NoSuccess);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, GetNewWindowWebView_Success);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameImplTest, GetNewWindowWebView_True);
+  friend class ArkWebRenderFrameImplTest;
 #endif
 #if BUILDFLAG(ARKWEB_TEST)
   bool frame_host_test_mode = false;

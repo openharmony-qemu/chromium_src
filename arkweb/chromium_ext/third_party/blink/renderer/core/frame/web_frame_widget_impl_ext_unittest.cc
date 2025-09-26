@@ -20,6 +20,7 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/frame/frame_test_helpers.h"
 #include "third_party/blink/renderer/core/frame/web_frame_widget_impl.h"
 #include "third_party/blink/renderer/core/testing/sim/sim_request.h"
@@ -106,6 +107,8 @@ class WebFrameWidgetImplExtSimTest : public SimTest {
       <head></head>
       <body>
         <div>Test content</div>
+        <input type="text" id="input1" value="First input">
+        <input type="text" id="input2" value="Second input">
       </body>
       </html>
     )HTML");
@@ -345,6 +348,38 @@ TEST_F(WebFrameWidgetImplExtSimTest, GetOverScrollOffset_ForTest) {
   auto offset = MockMainFrameWidget()->GetOverScrollOffsetForTest();
   EXPECT_EQ(offset.x(), 0);
   EXPECT_EQ(offset.y(), 0);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, OnTextSelected_False) {
+  MockMainFrameWidget()->OnTextSelectedForTest(true);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, OnDestroyImageAnalyzerOverlay_False) {
+  MockMainFrameWidget()->OnDestroyImageAnalyzerOverlayForTest();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, ShowFreeCopyMenu_Focused) {
+  auto* input_element = GetDocument().getElementById(AtomicString("input1"));
+  ASSERT_TRUE(input_element);
+  input_element->Focus();
+  ASSERT_TRUE(GetDocument().FocusedElement());
+  MockMainFrameWidget()->ShowFreeCopyMenuForTest();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SelectRangeV2_Focused) {
+  auto* input_element = GetDocument().getElementById(AtomicString("input1"));
+  ASSERT_TRUE(input_element);
+  input_element->Focus();
+  ASSERT_TRUE(GetDocument().FocusedElement());
+  MockMainFrameWidget()->SelectRangeV2ForTest(gfx::Point(1, 1), false);
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, OnDataDetectorSelectText_Focused) {
+  auto* input_element = GetDocument().getElementById(AtomicString("input1"));
+  ASSERT_TRUE(input_element);
+  input_element->Focus();
+  ASSERT_TRUE(GetDocument().FocusedElement());
+  MockMainFrameWidget()->OnDataDetectorSelectTextForTest();
 }
 
 }  // namespace

@@ -3334,6 +3334,9 @@ class CONTENT_EXPORT RenderFrameHostImpl
   friend class RenderFrameHostManagerUnloadBrowserTest;
   friend class NavigationBrowserTest;
   friend class FrameHostInterceptorForPopins;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class RenderFrameHostImplForIncludeTest;
+#endif
 
   FRIEND_TEST_ALL_PREFIXES(NavigatorTest, TwoNavigationsRacingCommit);
   FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplBeforeUnloadBrowserTest,
@@ -3493,20 +3496,6 @@ class CONTENT_EXPORT RenderFrameHostImpl
       TestHonorStickyActivationWithChildFrameCrossDocument);
   FRIEND_TEST_ALL_PREFIXES(NavigationPolicyContainerBuilderBrowserTest,
                            FinalPoliciesAboutBlankWithInitiatorAndHistory);
-#if BUILDFLAG(ARKWEB_TEST)
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, AddNamedObject_WithFrame);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, AddNamedObject_NoFrame);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, IsJsDialogShowOrBeforeUnloadTimedOut_WithDelegate);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, OnPdfScrollAtBottom_WithDelegate);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, OnPdfLoadEvent_WithDelegate);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, OnPdfLoadEvent_NoDelegate);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, GetCreateNewWindow_NoDelegate);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, MouseSelectMenuShow_NoDelegate);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, ChangeVisibilityOfQuickMenu_NoDelegate);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, CloseImageOverlaySelection_NoDelegate);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, IsJsDialogShowOrBeforeUnloadTimedOut_NoDelegate);
-  FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplTest, OnPdfScrollAtBottom_NoDelegate);
-#endif
 
   class SubresourceLoaderFactoriesConfig;
 

@@ -41,6 +41,12 @@ class WebViewImplTest : public testing::Test {
   void TearDown() override {
     helper_.Reset();
   }
+  void TestSetPinchSmoothMode(bool isEnable) {
+    web_view_impl_->SetPinchSmoothMode(isEnable);
+  }
+  bool TestGetPinchSmoothMode(){
+    return web_view_impl_->pinch_smooth_mode;
+  }
   test::TaskEnvironment task_environment_;
   WebViewImpl* web_view_impl_;
   frame_test_helpers::WebViewHelper helper_;
@@ -90,28 +96,28 @@ TEST_F(WebViewImplTest, GetScrollBottom) {
 }
 
 TEST_F(WebViewImplTest, SetPinchSmoothMode_False) {
-  web_view_impl_->SetPinchSmoothMode(false);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, false);
+  TestSetPinchSmoothMode(false);
+  EXPECT_EQ(TestGetPinchSmoothMode(), false);
 }
 
 TEST_F(WebViewImplTest, SetPinchSmoothMode_SameModeReturnsEarly) {
-  web_view_impl_->SetPinchSmoothMode(false);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, false);
-  web_view_impl_->SetPinchSmoothMode(false);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, false);
-  web_view_impl_->SetPinchSmoothMode(true);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, true);
-  web_view_impl_->SetPinchSmoothMode(true);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, true);
+  TestSetPinchSmoothMode(false);
+  EXPECT_EQ(TestGetPinchSmoothMode(), false);
+  TestSetPinchSmoothMode(false);
+  EXPECT_EQ(TestGetPinchSmoothMode(), false);
+  TestSetPinchSmoothMode(true);
+  EXPECT_EQ(TestGetPinchSmoothMode(), true);
+  TestSetPinchSmoothMode(true);
+  EXPECT_EQ(TestGetPinchSmoothMode(), true);
 }
 
 TEST_F(WebViewImplTest, SetPinchSmoothMode_ChangeMode) {
-  web_view_impl_->SetPinchSmoothMode(false);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, false);
-  web_view_impl_->SetPinchSmoothMode(true);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, true);
-  web_view_impl_->SetPinchSmoothMode(false);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, false);
+  TestSetPinchSmoothMode(false);
+  EXPECT_EQ(TestGetPinchSmoothMode(), false);
+  TestSetPinchSmoothMode(true);
+  EXPECT_EQ(TestGetPinchSmoothMode(), true);
+  TestSetPinchSmoothMode(false);
+  EXPECT_EQ(TestGetPinchSmoothMode(), false);
 }
 
 TEST_F(WebViewImplTest, OnSetAdBlockEnable) {
@@ -140,8 +146,8 @@ TEST_F(WebViewImplTest, SetDelayDurationForBackgroundTabFreezing_InvalidDuration
 TEST_F(WebViewImplTest, SetPinchSmoothMode_NullPageMainFrame) {
   auto* main_frame = web_view_impl_->GetPage()->MainFrame();
   web_view_impl_->GetPage()->SetMainFrame(nullptr);
-  web_view_impl_->SetPinchSmoothMode(true);
-  EXPECT_EQ(web_view_impl_->pinch_smooth_mode, false);
+  TestSetPinchSmoothMode(true);
+  EXPECT_EQ(TestGetPinchSmoothMode(), false);
   web_view_impl_->GetPage()->SetMainFrame(main_frame);
 }
 

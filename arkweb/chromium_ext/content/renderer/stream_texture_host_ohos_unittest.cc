@@ -52,6 +52,16 @@ class StreamTextureHostTest : public testing::Test {
   }
   void TearDown() override {
   }
+  void TestOnFrameAvailable (StreamTextureHost* host) {
+    host->OnFrameAvailable();
+  }
+  void TestOnFrameWithInfoAvailable(StreamTextureHost* host, const gpu::Mailbox& mailbox, const gfx::Size& coded_size,
+      const gfx::Rect& visible_rect, absl::optional<gpu::VulkanYCbCrInfo> ycbcr_info) {
+    host->OnFrameWithInfoAvailable(mailbox, coded_size, visible_rect, ycbcr_info);
+  }
+  void TestOnDestroySurface(StreamTextureHost* host) {
+    host->OnDestroySurface();
+  }
   base::test::SingleThreadTaskEnvironment task_environment_;
   scoped_refptr<TestGpuChannelHost> channel_;
   MockStreamTextureListener mock_listener_;
@@ -80,7 +90,7 @@ TEST_F(StreamTextureHostTest, OnFrameWithInfoAvailable_WithListener) {
       channel_.get(), 1, std::move(texture));
   EXPECT_TRUE(host->BindToCurrentThread(&mock_listener_));
   EXPECT_CALL(mock_listener_, OnFrameWithInfoAvailable(_, _, _, _)).Times(1);
-  host->OnFrameWithInfoAvailable(gpu::Mailbox(), gfx::Size(), gfx::Rect(), absl::nullopt);
+  TestOnFrameWithInfoAvailable(host.get(), gpu::Mailbox(), gfx::Size(), gfx::Rect(), absl::nullopt);
 }
 
 TEST_F(StreamTextureHostTest, OnFrameWithInfoAvailable_WithOutListener) {
@@ -89,7 +99,7 @@ TEST_F(StreamTextureHostTest, OnFrameWithInfoAvailable_WithOutListener) {
   texture.EnableUnassociatedUsage();
   std::unique_ptr<StreamTextureHost> host = std::make_unique<StreamTextureHost>(
       channel_.get(), 1, std::move(texture));
-  host->OnFrameWithInfoAvailable(gpu::Mailbox(), gfx::Size(), gfx::Rect(), absl::nullopt);
+  TestOnFrameWithInfoAvailable(host.get(), gpu::Mailbox(), gfx::Size(), gfx::Rect(), absl::nullopt);
 }
 
 TEST_F(StreamTextureHostTest, OnFrameAvailable_WithListener) {
@@ -100,7 +110,7 @@ TEST_F(StreamTextureHostTest, OnFrameAvailable_WithListener) {
       channel_.get(), 1, std::move(texture));
   EXPECT_TRUE(host->BindToCurrentThread(&mock_listener_));
   EXPECT_CALL(mock_listener_, OnFrameAvailable()).Times(1);
-  host->OnFrameAvailable();
+  TestOnFrameAvailable(host.get());
 }
 
 TEST_F(StreamTextureHostTest, OnFrameAvailable_WithOutListener) {
@@ -109,7 +119,7 @@ TEST_F(StreamTextureHostTest, OnFrameAvailable_WithOutListener) {
   texture.EnableUnassociatedUsage();
   std::unique_ptr<StreamTextureHost> host = std::make_unique<StreamTextureHost>(
       channel_.get(), 1, std::move(texture));
-  host->OnFrameAvailable();
+  TestOnFrameAvailable(host.get());
 }
 
 TEST_F(StreamTextureHostTest, OnDestroySurface_WithListener) {
@@ -120,7 +130,7 @@ TEST_F(StreamTextureHostTest, OnDestroySurface_WithListener) {
       channel_.get(), 1, std::move(texture));
   EXPECT_TRUE(host->BindToCurrentThread(&mock_listener_));
   EXPECT_CALL(mock_listener_, OnDestroySurface()).Times(1);
-  host->OnDestroySurface();
+  TestOnDestroySurface(host.get());
 }
 
 TEST_F(StreamTextureHostTest, OnDestroySurface_WithOutListener) {
@@ -129,7 +139,7 @@ TEST_F(StreamTextureHostTest, OnDestroySurface_WithOutListener) {
   texture.EnableUnassociatedUsage();
   std::unique_ptr<StreamTextureHost> host = std::make_unique<StreamTextureHost>(
       channel_.get(), 1, std::move(texture));
-  host->OnDestroySurface();
+  TestOnDestroySurface(host.get());
 }
 
 TEST_F(StreamTextureHostTest, UpdateRotatedVisibleSize) {

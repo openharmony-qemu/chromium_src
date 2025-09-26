@@ -22,9 +22,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "ui/base/ui_base_switches.h"
-#define private public
 #include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
-#undef private
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "content/public/test/mock_render_process_host.h"
 
@@ -79,6 +77,34 @@ class WebContentsImplUtilsTest : public RenderViewHostImplTestHarness {
     RenderViewHostImplTestHarness::TearDown();
   }
 
+  const NavigationController::UserAgentOverrideOption& GetOverrideUserAgent()  {
+    return utils_->webContentsImpl->delayed_load_url_params_->override_user_agent;
+  }
+
+  void SetOverrideUserAgent(const NavigationController::UserAgentOverrideOption& option) {
+    utils_->webContentsImpl->delayed_load_url_params_->override_user_agent = option;
+  }
+
+  void SetDelayedLoadUrlParams(std::unique_ptr<NavigationController::LoadURLParams> params) {
+    utils_->webContentsImpl->delayed_load_url_params_ = std::move(params);
+  }
+
+  const std::string& GetUserAgent() {
+    return utils_->webContentsImpl->AsWebContentsImplExt()->user_agent_;
+  }
+
+  void SetAcceptLanguage(const std::string& accept_language) {
+    utils_->webContentsImpl->renderer_preferences_.accept_languages = accept_language;
+  }
+
+  const std::string& GetAcceptLanguage() {
+    return utils_->webContentsImpl->GetMutableRendererPrefs()->accept_languages;
+  }
+
+  void SetDidFirstSetVisible(bool did_first_set_visible) {
+    utils_->webContentsImpl->did_first_set_visible_ = did_first_set_visible;
+  }
+
   std::unique_ptr<WebContentsImplUtils> utils_;
 };
 
@@ -95,49 +121,50 @@ TEST_F(WebContentsImplUtilsTest, UpdateRenderAcceptLanguageIfNeed_NoLangSwitch) 
 TEST_F(WebContentsImplUtilsTest, UpdateRenderAcceptLanguageIfNeed_WithLangSwitch) {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   command_line->AppendSwitchASCII(::switches::kLang, "en-US");
-
-  utils_->webContentsImpl->renderer_preferences_.accept_languages = "zh-CN";
+  std::string origin_accept_language = "zh-CN";
+  SetAcceptLanguage(origin_accept_language);
   auto& mock = base::ohos::LanguageMock::getInstance();
   EXPECT_CALL(mock, ComputeLanguageByRegionMock()).WillOnce(testing::Return(""));
-
-  utils_->UpdateRenderAcceptLanguageIfNeed("zh-CN");
-  EXPECT_TRUE(utils_->webContentsImpl->renderer_preferences_.accept_languages == "zh-CN");
+  std::string old_accept_language = "zh-CN";
+  utils_->UpdateRenderAcceptLanguageIfNeed(old_accept_language);
+  EXPECT_TRUE(GetAcceptLanguage() == origin_accept_language);
 }
 
 TEST_F(WebContentsImplUtilsTest, UpdateRenderAcceptLanguageIfNeed_WithLangSwitch_NoRegion) {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   command_line->AppendSwitchASCII(::switches::kLang, "en");
-
-  utils_->webContentsImpl->renderer_preferences_.accept_languages = "zh-CN";
+  std::string origin_accept_language = "zh-CN";
+  SetAcceptLanguage(origin_accept_language);
   auto& mock = base::ohos::LanguageMock::getInstance();
   EXPECT_CALL(mock, ComputeLanguageByRegionMock()).WillOnce(testing::Return(""));
-
-  utils_->UpdateRenderAcceptLanguageIfNeed("zh-CN");
-  EXPECT_TRUE(utils_->webContentsImpl->renderer_preferences_.accept_languages == "zh-CN");
+  std::string old_accept_language = "zh-CN";
+  utils_->UpdateRenderAcceptLanguageIfNeed(old_accept_language);
+  EXPECT_TRUE(GetAcceptLanguage() == origin_accept_language);
 }
 
 TEST_F(WebContentsImplUtilsTest, UpdateRenderAcceptLanguageIfNeed_HasRegion_SameLanguage) {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   command_line->AppendSwitchASCII(::switches::kLang, "en-US");
-
-  utils_->webContentsImpl->renderer_preferences_.accept_languages = "zh-CN";
+  std::string origin_accept_language = "zh-CN";
+  SetAcceptLanguage(origin_accept_language);
   auto& mock = base::ohos::LanguageMock::getInstance();
   EXPECT_CALL(mock, ComputeLanguageByRegionMock()).WillOnce(testing::Return("en-US"));
-
-  utils_->UpdateRenderAcceptLanguageIfNeed("en-US");
-  EXPECT_TRUE(utils_->webContentsImpl->renderer_preferences_.accept_languages == "zh-CN");
+  std::string old_accept_language = "en-US";
+  utils_->UpdateRenderAcceptLanguageIfNeed(old_accept_language);
+  EXPECT_TRUE(GetAcceptLanguage() == origin_accept_language);
 }
 
 TEST_F(WebContentsImplUtilsTest, UpdateRenderAcceptLanguageIfNeed_HasRegion_CurrentLanguage) {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   command_line->AppendSwitchASCII(::switches::kLang, "en-US");
-
-  utils_->webContentsImpl->renderer_preferences_.accept_languages = "zh-CN";
+  std::string origin_accept_language = "zh-CN";
+  SetAcceptLanguage(origin_accept_language);
   auto& mock = base::ohos::LanguageMock::getInstance();
   EXPECT_CALL(mock, ComputeLanguageByRegionMock()).WillOnce(testing::Return("en-US"));
-
-  utils_->UpdateRenderAcceptLanguageIfNeed("zh-CN");
-  EXPECT_TRUE(utils_->webContentsImpl->renderer_preferences_.accept_languages == "en-US");
+  std::string old_accept_language = "zh-CN";
+  utils_->UpdateRenderAcceptLanguageIfNeed(old_accept_language);
+  EXPECT_NE(GetAcceptLanguage(), origin_accept_language);
+  EXPECT_TRUE(GetAcceptLanguage() == "en-US");
 }
 
 TEST_F(WebContentsImplUtilsTest, RenderProcessShareInit_EmptyToken) {
@@ -156,7 +183,7 @@ TEST_F(WebContentsImplUtilsTest, RenderProcessShareInit_WithToken) {
 
   params.shared_render_process_token = "test-token";
   utils_->renderProcessShareInit(params, site_instance);
-  EXPECT_EQ(utils_->webContentsImpl->AsWebContentsImplExt()->shared_render_process_token_, "test-token");
+  EXPECT_EQ(utils_->webContentsImpl->AsWebContentsImplExt()->SharedRenderProcessToken(), "test-token");
 }
 
 TEST_F(WebContentsImplUtilsTest, RenderProcessShareInit_WithToken_ExistingProcess) {
@@ -171,7 +198,7 @@ TEST_F(WebContentsImplUtilsTest, RenderProcessShareInit_WithToken_ExistingProces
   ArkwebRenderProcessHostImplUtils::RegisteProcessForSharedToken("test-token", renderProcessHost.get());
   EXPECT_EQ(ArkwebRenderProcessHostImplUtils::GetProcessForSharedToken("test-token"), renderProcessHost.get());
   utils_->renderProcessShareInit(params, site_instance);
-  EXPECT_EQ(utils_->webContentsImpl->AsWebContentsImplExt()->shared_render_process_token_, "test-token");
+  EXPECT_EQ(utils_->webContentsImpl->AsWebContentsImplExt()->SharedRenderProcessToken(), "test-token");
 }
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
@@ -204,22 +231,22 @@ TEST_F(WebContentsImplUtilsTest, UpdateUserAgentOverride) {
   blink::UserAgentOverride ua_override;
   ua_override.ua_string_override = "Fake-UA";
 
-  utils_->webContentsImpl->delayed_load_url_params_ = nullptr;
+  SetDelayedLoadUrlParams(nullptr);
   utils_->UpdateUserAgentOverride(ua_override);
-  EXPECT_EQ(utils_->webContentsImpl->AsWebContentsImplExt()->user_agent_, ua_override.ua_string_override);
+  EXPECT_EQ(GetUserAgent(), ua_override.ua_string_override);
 }
 
 TEST_F(WebContentsImplUtilsTest, UpdateUserAgentOverride_WithDelayedLoadUrlParams) {
   blink::UserAgentOverride ua_override;
   ua_override.ua_string_override = "Fake-UA";
 
-  utils_->webContentsImpl->delayed_load_url_params_ =
+  auto load_url_params = 
       std::make_unique<NavigationController::LoadURLParams>(GURL("https://example.com/navigation.html"));
+  SetDelayedLoadUrlParams(std::move(load_url_params));
+  SetOverrideUserAgent(NavigationController::UA_OVERRIDE_FALSE);
   utils_->UpdateUserAgentOverride(ua_override);
-
-  EXPECT_EQ(utils_->webContentsImpl->AsWebContentsImplExt()->user_agent_, ua_override.ua_string_override);
-  EXPECT_EQ(utils_->webContentsImpl->delayed_load_url_params_->override_user_agent,
-      NavigationController::UA_OVERRIDE_TRUE);
+  EXPECT_EQ(GetUserAgent(), ua_override.ua_string_override);
+  EXPECT_EQ(GetOverrideUserAgent(), NavigationController::UA_OVERRIDE_TRUE);
 }
 
 TEST_F(WebContentsImplUtilsTest, JudgeIsPdfPageVisibilityChanged_VisibilityHidden) {
@@ -227,12 +254,12 @@ TEST_F(WebContentsImplUtilsTest, JudgeIsPdfPageVisibilityChanged_VisibilityHidde
 }
 
 TEST_F(WebContentsImplUtilsTest, JudgeIsPdfPageVisibilityChanged_NotFirstVisible) {
-  utils_->webContentsImpl->did_first_set_visible_ = true;
+  SetDidFirstSetVisible(true);
   ASSERT_NO_FATAL_FAILURE(utils_->JudgeIsPdfPageVisibilityChanged(Visibility::VISIBLE));
 }
 
 TEST_F(WebContentsImplUtilsTest, JudgeIsPdfPageVisibilityChanged_FirstVisiblePdf) {
-  utils_->webContentsImpl->did_first_set_visible_ = false;
+  SetDidFirstSetVisible(false);
   ASSERT_NO_FATAL_FAILURE(utils_->JudgeIsPdfPageVisibilityChanged(Visibility::VISIBLE));
 }
 

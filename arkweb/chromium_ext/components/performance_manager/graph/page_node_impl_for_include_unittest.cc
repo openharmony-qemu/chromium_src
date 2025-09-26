@@ -43,88 +43,72 @@ using testing::Invoke;
 using testing::InvokeWithoutArgs;
 
 class LenientMockObserver : public PageNodeImpl::Observer {
- public:
-  LenientMockObserver() = default;
-  ~LenientMockObserver() override = default;
+public:
+    LenientMockObserver() = default;
+    ~LenientMockObserver() override = default;
 
-  MOCK_METHOD(void, OnPageNodeAdded, (const PageNode*), (override));
-  MOCK_METHOD(void, OnBeforePageNodeRemoved, (const PageNode*), (override));
-  // Note that opener/embedder functionality is actually tested in the
-  // FrameNodeImpl and GraphImpl unittests.
-  MOCK_METHOD(void,
-              OnOpenerFrameNodeChanged,
-              (const PageNode*, const FrameNode*),
-              (override));
-  MOCK_METHOD(void,
-              OnEmbedderFrameNodeChanged,
-              (const PageNode*, const FrameNode*, EmbeddingType),
-              (override));
-  MOCK_METHOD(void, OnTypeChanged, (const PageNode*, PageType), (override));
-  MOCK_METHOD(void, OnIsFocusedChanged, (const PageNode*), (override));
-  MOCK_METHOD(void, OnIsVisibleChanged, (const PageNode*), (override));
-  MOCK_METHOD(void, OnIsAudibleChanged, (const PageNode*), (override));
-  MOCK_METHOD(void,
-              OnHasPictureInPictureChanged,
-              (const PageNode*),
-              (override));
-  MOCK_METHOD(void,
-              OnLoadingStateChanged,
-              (const PageNode*, PageNode::LoadingState),
-              (override));
-  MOCK_METHOD(void, OnUkmSourceIdChanged, (const PageNode*), (override));
-  MOCK_METHOD(void, OnPageLifecycleStateChanged, (const PageNode*), (override));
-  MOCK_METHOD(void,
-              OnPageIsHoldingWebLockChanged,
-              (const PageNode*),
-              (override));
-  MOCK_METHOD(void,
-              OnPageIsHoldingIndexedDBLockChanged,
-              (const PageNode*),
-              (override));
-  MOCK_METHOD(void, OnPageUsesWebRTCChanged, (const PageNode*), (override));
-  MOCK_METHOD(void, OnMainFrameUrlChanged, (const PageNode*), (override));
-  MOCK_METHOD(void, OnMainFrameDocumentChanged, (const PageNode*), (override));
-  MOCK_METHOD(void, OnTitleUpdated, (const PageNode*), (override));
-  MOCK_METHOD(void, OnFaviconUpdated, (const PageNode*), (override));
-  MOCK_METHOD(void, OnHadFormInteractionChanged, (const PageNode*), (override));
-  MOCK_METHOD(void, OnHadUserEditsChanged, (const PageNode*), (override));
-  MOCK_METHOD(void,
-              OnAboutToBeDiscarded,
-              (const PageNode*, const PageNode*),
-              (override));
+    MOCK_METHOD(void, OnPageNodeAdded, (const PageNode *), (override));
+    MOCK_METHOD(void, OnBeforePageNodeRemoved, (const PageNode *), (override));
+    // Note that opener/embedder functionality is actually tested in the
+    // FrameNodeImpl and GraphImpl unittests.
+    MOCK_METHOD(void, OnOpenerFrameNodeChanged, (const PageNode *, const FrameNode *), (override));
+    MOCK_METHOD(void, OnEmbedderFrameNodeChanged, (const PageNode *, const FrameNode *, EmbeddingType), (override));
+    MOCK_METHOD(void, OnTypeChanged, (const PageNode *, PageType), (override));
+    MOCK_METHOD(void, OnIsFocusedChanged, (const PageNode *), (override));
+    MOCK_METHOD(void, OnIsVisibleChanged, (const PageNode *), (override));
+    MOCK_METHOD(void, OnIsAudibleChanged, (const PageNode *), (override));
+    MOCK_METHOD(void, OnHasPictureInPictureChanged, (const PageNode *), (override));
+    MOCK_METHOD(void, OnLoadingStateChanged, (const PageNode *, PageNode::LoadingState), (override));
+    MOCK_METHOD(void, OnUkmSourceIdChanged, (const PageNode *), (override));
+    MOCK_METHOD(void, OnPageLifecycleStateChanged, (const PageNode *), (override));
+    MOCK_METHOD(void, OnPageIsHoldingWebLockChanged, (const PageNode *), (override));
+    MOCK_METHOD(void, OnPageIsHoldingIndexedDBLockChanged, (const PageNode *), (override));
+    MOCK_METHOD(void, OnPageUsesWebRTCChanged, (const PageNode *), (override));
+    MOCK_METHOD(void, OnMainFrameUrlChanged, (const PageNode *), (override));
+    MOCK_METHOD(void, OnMainFrameDocumentChanged, (const PageNode *), (override));
+    MOCK_METHOD(void, OnTitleUpdated, (const PageNode *), (override));
+    MOCK_METHOD(void, OnFaviconUpdated, (const PageNode *), (override));
+    MOCK_METHOD(void, OnHadFormInteractionChanged, (const PageNode *), (override));
+    MOCK_METHOD(void, OnHadUserEditsChanged, (const PageNode *), (override));
+    MOCK_METHOD(void, OnAboutToBeDiscarded, (const PageNode *, const PageNode *), (override));
 
 #if BUILDFLAG(ARKWEB_BGTASK)
-  MOCK_METHOD(void, SetBrowserForeground, (const PageNode*), (override));
-  MOCK_METHOD(void, SetBrowserBackground, (const PageNode*), (override));
+    MOCK_METHOD(void, SetBrowserForeground, (const PageNode *), (override));
+    MOCK_METHOD(void, SetBrowserBackground, (const PageNode *), (override));
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-  MOCK_METHOD(void, OnDecrementAudioNum, (const PageNode*), (override));
-  MOCK_METHOD(void, OnAudioContextPlaybackStarted, (const AudioContextId&), (override));
-  MOCK_METHOD(void, OnAudioContextPlaybackStopped, (const AudioContextId&), (override));
+    MOCK_METHOD(void, OnDecrementAudioNum, (const PageNode *), (override));
+    MOCK_METHOD(void, OnAudioContextPlaybackStarted, (const AudioContextId &), (override));
+    MOCK_METHOD(void, OnAudioContextPlaybackStopped, (const AudioContextId &), (override));
+    void SetNotifiedAudioContextId(const AudioContextId &audio_context_id)
+    {
+        audio_context_id_ = audio_context_id;
+    }
+
+    const AudioContextId TakeNotifiedAudioContextId()
+    {
+        return audio_context_id_;
+    }
 #endif
 
-  void SetNotifiedPageNode(const PageNode* page_node) {
-    notified_page_node_ = page_node;
-  }
+    void SetNotifiedPageNode(const PageNode *page_node)
+    {
+        notified_page_node_ = page_node;
+    }
+    
+    const PageNode *TakeNotifiedPageNode()
+    {
+        const PageNode *node = notified_page_node_;
+        notified_page_node_ = nullptr;
+        return node;
+    }
 
-  void SetNotifiedAudioContextId(const AudioContextId& audio_context_id) {
-    audio_context_id_ = audio_context_id;
-  }
-
-  const PageNode* TakeNotifiedPageNode() {
-    const PageNode* node = notified_page_node_;
-    notified_page_node_ = nullptr;
-    return node;
-  }
-
-  const AudioContextId TakeNotifiedAudioContextId() {
-    return audio_context_id_;
-  }
-
- private:
-  AudioContextId audio_context_id_;
-  raw_ptr<const PageNode, DanglingUntriaged> notified_page_node_ = nullptr;
+private:
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+    AudioContextId audio_context_id_;
+#endif
+    raw_ptr<const PageNode, DanglingUntriaged> notified_page_node_ = nullptr;
 };
 
 using MockObserver = ::testing::StrictMock<LenientMockObserver>;
@@ -143,7 +127,7 @@ TEST_F(PageNodeImplExtTest, SetIsMediaPlaying001)
     EXPECT_FALSE(is_media_playing);
 }
 
-TEST_F(PageNodeImplExtTest, OneShotMediaPlayerStopped) {
+TEST_F(PageNodeImplExtTest, AudioContextTest) {
   MockObserver obs;
   graph()->AddPageNodeObserver(&obs);
 
@@ -158,12 +142,6 @@ TEST_F(PageNodeImplExtTest, OneShotMediaPlayerStopped) {
       .WillOnce(Invoke(&obs, &MockObserver::SetNotifiedPageNode));
   page_node->OneShotMediaPlayerStopped();
   EXPECT_EQ(raw_page_node, obs.TakeNotifiedPageNode());
-}
-
-TEST_F(PageNodeImplExtTest, OnAudioContextPlaybackStarted001) {
-  MockObserver obs;
-  graph()->AddPageNodeObserver(&obs);
-  auto page_node = CreateNode<PageNodeImpl>();
 
   const AudioContextId audio_context_id = std::make_pair(nullptr, 1);
   EXPECT_CALL(obs, OnAudioContextPlaybackStarted(_))
@@ -171,18 +149,9 @@ TEST_F(PageNodeImplExtTest, OnAudioContextPlaybackStarted001) {
   page_node->AudioContextPlaybackStarted(audio_context_id);
   EXPECT_EQ(audio_context_id, obs.TakeNotifiedAudioContextId());
 
-  graph()->RemovePageNodeObserver(&obs);
-}
-
-TEST_F(PageNodeImplExtTest, OneShotMediaPlayerStopped001) {
-  MockObserver obs;
-  graph()->AddPageNodeObserver(&obs);
-  auto page_node = CreateNode<PageNodeImpl>();
-
-  const AudioContextId audio_context_id = std::make_pair(nullptr, 1);
-  EXPECT_CALL(obs, OnAudioContextPlaybackStarted(_))
+  EXPECT_CALL(obs, OnAudioContextPlaybackStopped(_))
       .WillOnce(Invoke(&obs, &MockObserver::SetNotifiedAudioContextId));
-  page_node->AudioContextPlaybackStarted(audio_context_id);
+  page_node->AudioContextPlaybackStopped(audio_context_id);
   EXPECT_EQ(audio_context_id, obs.TakeNotifiedAudioContextId());
 
   graph()->RemovePageNodeObserver(&obs);

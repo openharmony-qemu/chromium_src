@@ -79,7 +79,7 @@ TEST_F(DfxReporterBrowserImplTest, ReportRendererInfo) {
     bool isSysEvent = false;
     ReportRendererInfo(sysEventInfoJson, isSysEvent);
 
-    bool isSysEvent = true;
+    isSysEvent = true;
     ReportRendererInfo(sysEventInfoJson, isSysEvent);
 }
 
@@ -87,8 +87,8 @@ TEST_F(DfxReporterBrowserImplTest, ReportHiSysEvent) {
     DfxReporterImpl dfxreporterimpl;
     const std::string eventName = "test_eventname";
     const std::string sysEventInfoJson = "";
-    dfxreproterimpl.ReportHiSysEvent(eventName, sysEventInfoJson);
+    dfxreporterimpl.ReportHiSysEvent(eventName, sysEventInfoJson);
 
     const std::string eventName1 = "PAGE_MEM_LEAK";
-    dfxreproterimpl.ReportHiSysEvent(eventName, sysEventInfoJson);
+    dfxreporterimpl.ReportHiSysEvent(eventName, sysEventInfoJson);
 }

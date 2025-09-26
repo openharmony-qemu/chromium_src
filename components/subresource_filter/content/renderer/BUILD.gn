@@ -59,4 +59,8 @@ source_set("unit_tests") {
   if (is_ios) {
     deps += [ "//components/test:subresource_filter_test_bundle_data" ]
   }
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    sources += arkweb_components_subresource_filter_content_renderer_unittest_sources
+    deps += [ "//components/subresource_filter/core/browser" ]
+  }
 }

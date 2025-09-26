@@ -18,14 +18,13 @@
 
 #include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
-#include "third_party/blink/renderer/platform/heap/persistent.h"
 
 namespace blink {
 class ImageResource;
 
 class ImageResourceUtils {
  public:
-  Persistent<ImageResource> imageResource;
+  ImageResource* imageResource;
   ImageResourceUtils(ImageResource* impl);
 
 #if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)

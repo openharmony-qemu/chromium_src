@@ -39,7 +39,7 @@ bool DrawImmediatelyWhenInteractive() {
   if (!base::ohos::IsPcDevice() && !base::ohos::IsTabletDevice())
     return false;
 #endif
-    return features::ShouldDrawImmediatelyWhenInteractive();
+  return features::ShouldDrawImmediatelyWhenInteractive();
 }
 
 bool AdpfCanUseSetThreads() {

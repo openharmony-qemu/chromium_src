@@ -90,5 +90,5 @@ TEST_F(DfxReporterBrowserImplTest, ReportHiSysEvent) {
     dfxreporterimpl.ReportHiSysEvent(eventName, sysEventInfoJson);
 
     const std::string eventName1 = "PAGE_MEM_LEAK";
-    dfxreporterimpl.ReportHiSysEvent(eventName, sysEventInfoJson);
+    dfxreporterimpl.ReportHiSysEvent(eventName1, sysEventInfoJson);
 }

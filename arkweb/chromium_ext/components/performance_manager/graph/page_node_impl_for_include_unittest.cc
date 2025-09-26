@@ -90,7 +90,6 @@ public:
     {
         return audio_context_id_;
     }
-#endif
 
     void SetNotifiedPageNode(const PageNode *page_node)
     {
@@ -103,6 +102,7 @@ public:
         notified_page_node_ = nullptr;
         return node;
     }
+#endif
 
 private:
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)

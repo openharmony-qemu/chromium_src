@@ -993,6 +993,12 @@ class NWebImpl : public NWeb {
                        int width,
                        int height,
                        const WebSnapshotCallback callback) override;
+
+  bool WebPageSnapshotV2(const char* id,
+                         PixelUnit type,
+                         int width,
+                         int height,
+                         std::shared_ptr<NWebSnapshotCallback> callback) override;
 #endif
 
 #ifdef BUILDFLAG(IS_OHOS)

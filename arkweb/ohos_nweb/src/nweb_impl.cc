@@ -5801,6 +5801,24 @@ bool NWebImpl::WebPageSnapshot(const char* id,
   }
   return nweb_delegate_->WebPageSnapshot(id, type, width, height, callback);
 }
+
+bool NWebImpl::WebPageSnapshotV2(const char* id,
+                                 PixelUnit type,
+                                 int width,
+                                 int height,
+                                 std::shared_ptr<NWebSnapshotCallback> callback) {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("WebPageSnapshotV2 failed, nweb delegate is nullptr");
+    return false;
+  }
+  return nweb_delegate_->WebPageSnapshot(
+    id, type, width, height,
+    [callback](const char* id, bool state, float radio, void* data, int width,
+               int height) {
+      WVLOG_I("WebPageSnapshotV2 result return to OH");
+      callback->OnSnapshotResult(id, state, radio, data, width, height);
+    });
+}
 #endif
 
 #ifdef BUILDFLAG(IS_OHOS)

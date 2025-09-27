@@ -17,6 +17,9 @@
 #include "base/trace_event/trace_event.h"
 #include "components/viz/common/features.h"
 #include "components/viz/service/performance_hint/hint_session.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace viz {
 
@@ -32,6 +35,10 @@ base::TimeDelta ComputeAdpfTarget(const BeginFrameArgs& args) {
 }
 
 bool DrawImmediatelyWhenInteractive() {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  if (!base::ohos::IsPcDevice() && !base::ohos::IsTabletDevice())
+    return false;
+#endif
   return features::ShouldDrawImmediatelyWhenInteractive();
 }
 

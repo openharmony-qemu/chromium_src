@@ -128,6 +128,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_default_engine_prefetch_args_impl.h",
     "src/cef_delegate/nweb_delegate.cc",
     "src/cef_delegate/nweb_delegate.h",
+    "src/cef_delegate/nweb_autolayout.cc",
+    "src/cef_delegate/nweb_autolayout.h",
     "src/cef_delegate/nweb_devtools_message_handler_impl.cc",
     "src/cef_delegate/nweb_devtools_message_handler_impl.h",
     "src/cef_delegate/nweb_display_listener.cc",

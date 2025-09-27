@@ -250,6 +250,7 @@ declare_args() {
   arkweb_reader_mode=false
   arkweb_ex_enable_applinking = false
   arkweb_blank_prop_config = true
+  arkweb_autolayout = true
 }
 
 # Features enabled in mojom bindings.

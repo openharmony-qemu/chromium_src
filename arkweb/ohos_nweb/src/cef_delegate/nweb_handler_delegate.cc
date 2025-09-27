@@ -173,6 +173,9 @@
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 #include "arkweb/chromium_ext/base/ohos/logger.h"
 #endif
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+#include "nweb_autolayout.h"
+#endif
 
 namespace OHOS::NWeb {
 namespace {
@@ -1600,6 +1603,9 @@ void NWebHandlerDelegate::OnLoadEnd(CefRefPtr<CefBrowser> browser,
              << " http_status_code=" << http_status_code;
   g_access_sum_count++;
   ReportPageLoadStatsInternal(nweb_id_);
+#endif
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+  NwebAutolayout::GetInstance()->CheckWebContainer(browser, frame);
 #endif
 }
 

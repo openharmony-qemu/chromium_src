@@ -6245,6 +6245,21 @@ void NWebDelegate::EnableHttpsUpgrades(bool enable) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void NWebDelegate::SetBlankScreenDetectionConfig(
+    bool enable,
+    const std::vector<double>& detectionTiming,
+    const std::vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "SetBlankScreenDetectionConfig can not get browser";
+    return;
+  }
+  GetBrowser()->GetHost()->SetBlankScreenDetectionConfig(
+      enable, detectionTiming, detectionMethods, contentfulNodesCountThreshold);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_BGTASK)
 void NWebDelegate::OnBrowserForeground() {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {

@@ -50,6 +50,12 @@ class CONTENT_EXPORT RenderWidgetHostViewBaseInterface {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  virtual void OnDetectedBlankScreen(const std::string& url,
+                                     int32_t blankScreenReason,
+                                     int32_t detectedContentfulNodesCount) {}
+#endif
+
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   virtual void SendCurrentLanguage(const std::string& ans) {}
 #endif

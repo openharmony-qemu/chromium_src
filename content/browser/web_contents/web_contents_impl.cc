@@ -6915,7 +6915,11 @@ void WebContentsImpl::DidStartNavigation(NavigationHandle* navigation_handle) {
         GetController().IsInitialNavigation() &&
         !navigation_handle->IsRendererInitiated() &&
         navigation_handle->GetURL() == url::kAboutBlankURL;
-  }
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+    AsWebContentsImplExt()->DetectBlankScreen(
+        navigation_handle->GetURL().spec());
+#endif
+  }  
 }
 
 void WebContentsImpl::DidRedirectNavigation(

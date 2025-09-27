@@ -304,6 +304,15 @@ class WebContentsImplExt : public WebContentsImpl {
   bool OnStartBackgroundTask(int32_t type, const std::string& message) override;
 #endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override;
+  void DetectBlankScreen(const std::string& url);
+#endif
+
 #if BUILDFLAG(ARKWEB_READER_MODE)
   void OnIsPageDistillable(int page_type,
                            const std::string& distillable_page_url,

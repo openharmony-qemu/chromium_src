@@ -1167,6 +1167,29 @@ void WebContentsImplExt::OnBrowserBackground() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void WebContentsImplExt::DetectBlankScreen(const std::string& url) {
+  RenderFrameHostImpl* render_frame_host = GetPrimaryMainFrame();
+  if (!render_frame_host) {
+    return;
+  }
+  render_frame_host->DetectBlankScreen(url);
+}
+
+void WebContentsImplExt::SetBlankScreenDetectionConfig(
+    bool enable,
+    const std::vector<double>& detectionTiming,
+    const std::vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) {
+  RenderFrameHostImpl* render_frame_host = GetPrimaryMainFrame();
+  if (!render_frame_host) {
+    return;
+  }
+  render_frame_host->SetBlankScreenDetectionConfig(
+      enable, detectionTiming, detectionMethods, contentfulNodesCountThreshold);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
 bool WebContentsImplExt::OnStartBackgroundTask(int32_t type,
                                                const std::string& message) {

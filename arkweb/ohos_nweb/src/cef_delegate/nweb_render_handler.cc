@@ -1573,6 +1573,19 @@ void NWebRenderHandler::RestoreRenderFit() {
 }
 #endif  // ARKWEB_MAXIMIZE_RESIZE
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void NWebRenderHandler::OnDetectedBlankScreen(
+    const std::string& url,
+    int32_t blankScreenReason,
+    int32_t detectedContentfulNodesCount) {
+  LOG(INFO) << "NWebRenderHandler::OnDetectedBlankScreen";
+  if (auto handler = handler_.lock()) {
+    handler->OnDetectedBlankScreen(url, blankScreenReason,
+                                   detectedContentfulNodesCount);
+  }
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 void NWebRenderHandler::OnAccessibilityEvent(int64_t accessibilityId,
                                              int32_t eventType,

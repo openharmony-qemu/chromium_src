@@ -932,6 +932,14 @@ class NWebDelegateInterface
   virtual void AbortDistill() = 0;
 #endif // ARKWEB_READER_MODE
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  virtual void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   virtual void SetErrorPageEnabled(bool enable) = 0;
   virtual bool GetErrorPageEnabled() = 0;

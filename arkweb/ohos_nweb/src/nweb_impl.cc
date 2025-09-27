@@ -6849,6 +6849,22 @@ void NWebImpl::EnableHttpsUpgrades(bool enable) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void NWebImpl::SetBlankScreenDetectionConfig(
+    bool enable,
+    const std::vector<double>& detectionTiming,
+    const std::vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) {
+  LOG(INFO) << "NWebImpl::SetBlankScreenDetectionConfig.";
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "SetBlankScreenDetectionConfig nweb_delegate_ is null";
+    return;
+  }
+  nweb_delegate_->SetBlankScreenDetectionConfig(
+      enable, detectionTiming, detectionMethods, contentfulNodesCountThreshold);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
 void NWebImpl::SetSocketIdleTimeout(int32_t timeout) {
   if (!NWebApplication::GetDefault()->HasInitializedCef()) {

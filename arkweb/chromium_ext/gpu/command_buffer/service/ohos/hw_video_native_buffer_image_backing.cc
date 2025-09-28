@@ -388,21 +388,22 @@ class HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation
     std::shared_ptr<OHOS::NWeb::NativeBufferConfigAdapterImpl> 
         configAdapterTmp =
             std::make_shared<OHOS::NWeb::NativeBufferConfigAdapterImpl>();
-    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+    if (configAdapterTmp) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetOhosNativeBufferAdapter()
         .Describe(configAdapterTmp, scoped_hardware_buffer_->buffer());
+    } else {
+      return {};
+    }
     if (!vulkan_image_) {
       DCHECK(!promise_texture_);
       real_size_ = size();
-      if (configAdapterTmp) {
-        real_size_.set_width(std::min(size().width(), configAdapterTmp->GetBufferWidth()));
-        real_size_.set_height(std::min(size().height(), configAdapterTmp->GetBufferHeight()));
-      }
+      real_size_.set_width(std::min(size().width(), configAdapterTmp->GetBufferWidth()));
+      real_size_.set_height(std::min(size().height(), configAdapterTmp->GetBufferHeight()));
       if (real_size_ != size()) {
         LOG(INFO) << "HwVideoNativeBufferImageBacking create vkimage width: "
-          << real_size_.width() << " height: " << real_size_.height();
-        LOG(INFO) << "HwVideoNativeBufferImageBacking backing width: "
-          << size().width() << " height: " << size().height();
+          << real_size_.width() << " height: " << real_size_.height()
+          << " backing width: " << size().width() << " height: " << size().height();
       }
       vulkan_image_ = CreateVkImageFromNativeBufferHandle(
           scoped_hardware_buffer_->TakeBuffer(), context_state(), real_size_,

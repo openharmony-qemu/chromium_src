@@ -54,6 +54,9 @@ class DisplayCutoutHostOhos : public blink::mojom::DisplayCutoutHost {
   // Updates the safe area insets on the current frame.
   void SetDisplayCutoutSafeArea(gfx::Insets insets);
 
+#if BUILDFLAG(ARKWEB_TEST)
+#define private public
+#endif
  private:
   // Set the current |RenderFrameHost| that should have control over the
   // viewport fit value and we should set safe area insets on.
@@ -79,6 +82,9 @@ class DisplayCutoutHostOhos : public blink::mojom::DisplayCutoutHost {
   // Weak pointer to the owning |WebContentsImpl| instance.
   raw_ptr<WebContentsImpl> web_contents_impl_;
   blink::mojom::ViewportFit mainFrameViewportFit_ = blink::mojom::ViewportFit::kAuto;
+#if BUILDFLAG(ARKWEB_TEST)
+#undef private
+#endif
 };
 
 }  // namespace content

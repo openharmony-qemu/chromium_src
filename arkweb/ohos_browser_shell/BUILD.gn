@@ -3,12 +3,7 @@ import("//arkweb/build/hap/hap.gni")
 ohos_hap("ohos_browser_shell") {
   auto_signed = true
   output = "$root_out_dir/ohos_browser_shell.hap"
-  deps = [
-    "//ohos_autolayout:autolayout_bundle",
-    "//ohos_nweb_ex:browser_service_har",
-  ]
-
-  entry_raw_resources = [ "autolayout.js" ]
+  deps = [ "//ohos_nweb_ex:browser_service_har" ]
 
   npm_har = "$root_out_dir/browser_service_hos.tgz"
   if (defined(use_musl) && use_musl) {

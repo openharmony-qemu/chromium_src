@@ -26,28 +26,41 @@ export enum CheckRuleStateResult {
   inWhiteList = 2,
   outOfWhiteList =3
 }
-// ===================================
-//  1. 接口定义
-// ===================================
-export interface ICCMConfig {
+
+export interface ICCMConfigBase {
   /**
    * 蒙版最小屏占比阈值
-   * 例如: 100% 对应的值是 1
+   * 例如: 100% 对应的值是 100
    */
   minMaskAreaRatioThreshold: number;
 
   /**
    * 透明度筛选范围
-   * 一个包含最小值和最大值的元组, 例如: [0, 1]
+   * 一个包含最小值和最大值的元组, 例如: [0, 100] 表示透明度在 0% 到 100% 之间
    */
   opacityFilter: [number, number];
 
   /**
    * 弹窗内容节点最小屏占比阈值
-   * 例如: 15% 对应的值是 0.15
+   * 例如: 15% 对应的值是 15
    */
   minContentAreaRatioThreshold: number;
 
+  /**
+   * 弹窗缩放动画时长 (单位: 毫秒)，50到400之间
+   */
+  scaleAnimationDuration: number;
+
+  /**
+   * 不同产品的窗口缩放系数
+   * 例如: 55 对应的值是 55%
+   */
+  minDesScale: number;
+
+  appRuleInfos: AppRuleInfo[];
+}
+
+export interface ICCMConfig extends ICCMConfigBase {
   /**
    * 弹窗内容节点滚动特征值 (用于识别可滚动区域)
    * 包含多个关键词，忽略大小写
@@ -62,25 +75,19 @@ export interface ICCMConfig {
 
   buttonPattern: string[];
 
+  /* 吸顶吸底元素最小高度，默认值5
+  */
+  minSARTofStickyComponent:number,
 
-  /**
-   * 弹窗缩放动画时长 (单位: 毫秒)
-   */
-  scaleAnimationDuration: number;
-
-  /**
-   * 不同产品的窗口缩放系数
-   * 键是产品名，值是包含最小和最大缩放值的元组
-   */
-  minDesScale: number;
+  /* 吸顶吸底元素最大高度，默认值45
+  */
+  maxSARTofStickyComponent:number,
 
   /**
    * 响应式断点配置
    * 每个对象定义了一个宽度范围及其对应的宽高比范围
    */
   breakpoints: Breakpoint[];
-
-  appRuleInfos: AppRuleInfo[];
 }
 
 // ===================================
@@ -98,10 +105,12 @@ const defaultCCMConfig: ICCMConfig = {
   minDesScale: 55,
   breakpoints: [
     { widthRange: { min: 320, max: 500 }, aspectRatioRange: { min: 0.61, max: 1.63 } },
-    { widthRange: { min: 660, max: 730 }, aspectRatioRange: { min: 0.89, max: 2.0 } },
+    { widthRange: { min: 660, max: 900 }, aspectRatioRange: { min: 0.89, max: 2.0 } },
     { widthRange: { min: 1000, max: 1150 }, aspectRatioRange: { min: 1.3, max: 1.45 } }
   ],
   appRuleInfos: [{'id':"000",'pg':['home']}],
+  minSARTofStickyComponent:5,
+  maxSARTofStickyComponent:45,
 };
 
 // ===================================
@@ -123,6 +132,9 @@ export class CCMConfig {
   private _minDesScale: number;
   private _breakpoints: Breakpoint[];
   private _appRuleInfos:AppRuleInfo[];
+
+  private _minSARTofStickyComponent:number;
+  private _maxSARTofStickyComponent:number;
 
   private appId:string;
   private page:string;
@@ -147,11 +159,22 @@ export class CCMConfig {
     this.appId = "";
     this.page = "";
     this.checkRuleStateResult = CheckRuleStateResult.initial;
+    this._minSARTofStickyComponent = data.minSARTofStickyComponent;
+    this._maxSARTofStickyComponent = data.maxSARTofStickyComponent;
   }
 
   public getMinMaskAreaRatioThreshold(): number {
     return this._minMaskAreaRatioThreshold;
   }
+
+  public getMinSARTofStickyComponent(): number {
+    return this._minSARTofStickyComponent;
+  }
+
+  public getMaxSARTofStickyComponent(): number {
+    return this._maxSARTofStickyComponent;
+  } 
+
   public getOpacityFilter(): [number, number] {
     return this._opacityFilter;
   }
@@ -159,6 +182,7 @@ export class CCMConfig {
   public getMinContentAreaRatioThreshold(): number {
     return this._minContentAreaRatioThreshold;
   }
+
   public setMinContentAreaRatioThreshold(value: number): void {
     this._minContentAreaRatioThreshold = value;
   }
@@ -207,13 +231,13 @@ export class CCMConfig {
    * 使用新的数据对象更新实例的属性
    * @param data - 包含新配置的 IProductConfigData 对象
    */
-  public update(data: ICCMConfig): void {
+  public update(data: ICCMConfigBase): void {
       this._minMaskAreaRatioThreshold = data.minMaskAreaRatioThreshold;
       this._opacityFilter = data.opacityFilter;
       this._minContentAreaRatioThreshold = data.minContentAreaRatioThreshold;
       this._scaleAnimationDuration = data.scaleAnimationDuration;
       this._minDesScale = data.minDesScale ;
-      this._appRuleInfos = data.appRuleInfos;
+      this._appRuleInfos = typeof data.appRuleInfos === 'string' ? JSON.parse(data.appRuleInfos) : data.appRuleInfos;
   }
 
   /**
@@ -224,8 +248,8 @@ export class CCMConfig {
    */
   fromJson(jsonString: string): boolean {
     try {
-      const dataObject: ICCMConfig = JSON.parse(jsonString);
-      this.update(dataObject); // 使用新数据更新实例
+      const dataObject: ICCMConfigBase = JSON.parse(jsonString);
+      this.update(dataObject);
     } catch (error) {
       console.error("Failed to parse ProductConfig from JSON:", error);
       return false;
@@ -260,10 +284,10 @@ export class CCMConfig {
     }
     // 要检查的App ID。
     // @ts-ignore
-    const idAsString = String( window._getAppID_());
+    const idAsString = String(typeof window._getAppId_ === 'function' ? window._getAppId_() : "");
 
     // @ts-ignore
-    const pg:string = window._getPG_();
+    const pg:string = String(typeof window._getPage_ === 'function' ? window._getPage_() : "");
     if(idAsString && idAsString != "" && pg && pg != "") {
       this.appId = idAsString;
       this.page = pg;

@@ -1,10 +1,5 @@
 export default class Constant {
-    static readonly scaleFactor = 0.7;
     static readonly minMargin = 5;
-    static readonly minScreenAreaRatioThreshold = 15;
-    static readonly maxScreenAreaRatioThreshold = 98;
-    static readonly minSARTofStickyComponent = 5;
-    static readonly maxSARTofStickyComponent = 45;
     
     // Layout
     static readonly margin = "margin";

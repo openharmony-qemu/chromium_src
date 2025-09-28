@@ -24,6 +24,7 @@ import { PopupRecog } from "./PopupRecog";
 import { PopupType } from "./PopupType";
 import { PopupInfo, PotentialElements } from "./PopupInfo";
 import Utils from "../Common/Utils";
+import { CCMConfig } from "../Common/CCMConfig";
 
 export class PopupWindow {
 
@@ -104,7 +105,7 @@ export class PopupWindow {
 
             // 判断元素是否覆盖整个视口, 屏占比大于{screen_ratio_threshold}的元素被认为是潜在的Mask节点。
             const screenAreaRatio = Utils.getScreenAreaRatio(el);
-            if(screenAreaRatio > Constant.maxScreenAreaRatioThreshold) {
+            if(screenAreaRatio > CCMConfig.getInstance().getMinMaskAreaRatioThreshold()) {
                 // 硬性条件，mask是半透明的
                 if(Utils.isBackgroundSemiTransparent(style)) {
                     potentialMasks.push(el);
@@ -114,7 +115,8 @@ export class PopupWindow {
                 // DOM结构弹窗：遮罩是fixed，100%屏占比，子节点是absolute,并且带有close按钮
                 if(style.position === Constant.fixed && el.children.length == 1) {
                     const child = el.children[0];
-                    if (getComputedStyle(child).position === Constant.absolute && Utils.getScreenAreaRatio(child) > Constant.minScreenAreaRatioThreshold) {
+                    if (getComputedStyle(child).position === Constant.absolute && 
+                            Utils.getScreenAreaRatio(child) > CCMConfig.getInstance().getMinContentAreaRatioThreshold()) {
                         if (Utils.hasCloseButton(el.children[0])) {
                             potentialMasks.push(el);
                             continue;
@@ -131,8 +133,8 @@ export class PopupWindow {
             }
 
             // 识别吸顶吸底元素
-            if (style.position === 'fixed' && screenAreaRatio > Constant.minSARTofStickyComponent && 
-                screenAreaRatio < Constant.maxSARTofStickyComponent && parseInt(style.left) == 0) {
+            if (style.position === 'fixed' && screenAreaRatio > CCMConfig.getInstance().getMinSARTofStickyComponent() && 
+                screenAreaRatio < CCMConfig.getInstance().getMaxSARTofStickyComponent() && parseInt(style.left) == 0) {
                 // 有的容器是透明的，但是子元素是不透明的
                 // 有的容器是透明的，没有子元素
                 // 因此，要分别区别处理，全透明的子元素不影响弹窗缩放
@@ -272,7 +274,7 @@ export class PopupWindow {
                 }
             }
         }
-        return maxRatio >= Constant.minScreenAreaRatioThreshold ? [bestCandidate, root] : [null, null];
+        return maxRatio >= CCMConfig.getInstance().getMinContentAreaRatioThreshold() ? [bestCandidate, root] : [null, null];
     }
 
     // 2. 寻找最佳后代内容候选者(A型/C型弹窗)
@@ -294,7 +296,7 @@ export class PopupWindow {
                 bestCandidate = node;
             }
         }
-        return maxRatio >= Constant.minScreenAreaRatioThreshold ? bestCandidate : null;
+        return maxRatio >= CCMConfig.getInstance().getMinContentAreaRatioThreshold() ? bestCandidate : null;
     }
     
     /**

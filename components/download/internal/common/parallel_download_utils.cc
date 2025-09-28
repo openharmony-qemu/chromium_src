@@ -217,7 +217,7 @@ bool IsParallelDownloadEnabled() {
   bool enabled_parameter = GetFieldTrialParamByFeatureAsBool(
       features::kParallelDownloading, kEnableParallelDownloadFinchKey, true);
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  return feature_enabled && enabled_parameter && base::ohos::IsMobileDevice();
+  return feature_enabled && enabled_parameter && (base::ohos::IsMobileDevice() || base::ohos::IsTabletDevice());
 #else
   return feature_enabled && enabled_parameter;
 #endif

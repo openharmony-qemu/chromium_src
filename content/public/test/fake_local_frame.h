@@ -201,6 +201,13 @@ class FakeLocalFrame : public blink::mojom::LocalFrame {
       GenerateCodeCacheCallback callback) override {}
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void DetectBlankScreen(const std::string& url,
+                         const std::vector<double>& detection_timing,
+                         const std::vector<int32_t>& detection_methods,
+                         int32_t contentful_nodes_count_threshold) override {}
+#endif
+
  private:
   void BindFrameHostReceiver(mojo::ScopedInterfaceEndpointHandle handle);
 

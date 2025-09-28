@@ -59,6 +59,14 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void SetFocus(bool) override {}
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig( 
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override {}
+#endif
+
   CefWindowHandle GetWindowHandle() override { return 0; }
   CefWindowHandle GetOpenerWindowHandle() override { return 0; }
 

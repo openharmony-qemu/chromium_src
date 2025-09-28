@@ -317,6 +317,7 @@ if (!enable_arkweb) {
   arkweb_bgtask = false
   arkweb_privacy_compliance = true
   arkweb_ex_enable_applinking = false
+  arkweb_blank_screen_detection = false
   arkweb_blank_prop_config = true
 }
 
@@ -556,6 +557,7 @@ buildflag_header("features") {
     "ARKWEB_HWASAN=$is_hwasan",
     "ARKWEB_PRIVACY_COMPLIANCE=$arkweb_privacy_compliance",
     "ARKWEB_BGTASK=$arkweb_bgtask",
+    "ARKWEB_BLANK_SCREEN_DETECTION=$arkweb_blank_screen_detection",
     "ARKWEB_BLANK_PROP_CONFIG=$arkweb_blank_prop_config",
 
     # ARKWEB_EXT dafault value

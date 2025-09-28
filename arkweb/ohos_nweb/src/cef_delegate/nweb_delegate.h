@@ -893,6 +893,13 @@ void AbortDistill() override;
   int32_t GetHeight() override;
   void SetRotationType(RotationType rotation);
 #endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override;
+#endif
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override;
   void OnBrowserBackground() override;

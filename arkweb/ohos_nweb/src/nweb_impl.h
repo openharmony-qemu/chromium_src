@@ -1093,6 +1093,13 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_EDM_POLICY)
   static void SetEnterprisePolicy(const std::string& policy, int version);
 #endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override;
+#endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool SetFocusByPosition(float x, float y) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)

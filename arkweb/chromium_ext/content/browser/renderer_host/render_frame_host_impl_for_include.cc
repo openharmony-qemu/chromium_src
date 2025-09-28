@@ -388,6 +388,39 @@ void RenderFrameHostImpl::OnPdfLoadEvent(int32_t result, const std::string& url)
 #endif  // BUILDFLAG(ARKWEB_PDF)
 // LCOV_EXCL_STOP
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void RenderFrameHostImpl::OnDetectedBlankScreen(
+    const std::string& url,
+    int32_t blankScreenReason,
+    int32_t detectedContentfulNodesCount) {
+  RenderWidgetHostViewBase* view = static_cast<RenderWidgetHostViewBase*>(
+      render_view_host_->GetWidget()->GetView());
+  if (view && blank_screen_detection_enable_) {
+    view->OnDetectedBlankScreen(url, blankScreenReason,
+                                detectedContentfulNodesCount);
+  }
+}
+
+void RenderFrameHostImpl::DetectBlankScreen(const std::string& url) {
+  if (blank_screen_detection_enable_) {
+    GetAssociatedLocalFrame()->DetectBlankScreen(
+        url, blank_screen_detection_timing_, blank_screen_detection_methods_,
+        blank_screen_threshold_);
+  }
+}
+
+void RenderFrameHostImpl::SetBlankScreenDetectionConfig(
+    bool enable,
+    const std::vector<double>& detectionTiming,
+    const std::vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) {
+  blank_screen_detection_enable_ = enable;
+  blank_screen_detection_timing_ = detectionTiming;
+  blank_screen_detection_methods_ = detectionMethods;
+  blank_screen_threshold_ = contentfulNodesCountThreshold;
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_READER_MODE)
 net::Error RenderFrameHostImpl::GetNetErrorCode() {
   return net_error_;

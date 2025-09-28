@@ -3218,6 +3218,17 @@ class CONTENT_EXPORT RenderFrameHostImpl
                       base::Value::List& async_method_list,
                       bool need_update);
 #endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void OnDetectedBlankScreen(const std::string& url,
+                             int32_t blankScreenReason,
+                             int32_t detectedContentfulNodesCount) override;
+  void DetectBlankScreen(const std::string& url);
+  void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold);
+#endif
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   void CommitFailedNavigation(
     mojom::NavigationClient* navigation_client,
@@ -5387,6 +5398,13 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // is ongoing. Destroying this object cancels the validation.
   std::unique_ptr<WebAuthRequestSecurityChecker::RemoteValidation>
       webauthn_remote_rp_id_validation_;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  bool blank_screen_detection_enable_ = false;
+  std::vector<double> blank_screen_detection_timing_;
+  std::vector<int32_t> blank_screen_detection_methods_;
+  int32_t blank_screen_threshold_ = 0;
 #endif
 
   // Tracks the page that initiates Protected Audience auction. This is set

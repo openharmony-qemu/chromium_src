@@ -295,6 +295,12 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
   bool HasOverscroll();
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void OnDetectedBlankScreen(const std::string& url,
+                             int32_t blankScreenReason,
+                             int32_t detectedContentfulNodesCount) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   void OnAccessibilityEvent(int64_t accessibilityId,
                             int32_t eventType,

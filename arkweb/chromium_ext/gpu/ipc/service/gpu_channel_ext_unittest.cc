@@ -13,14 +13,16 @@
  * limitations under the License.
  */
 
+#include "gpu/ipc/service/gpu_channel.h"
+#define private public
 #include "arkweb/chromium_ext/gpu/ipc/service/gpu_channel_ext.h"
+#undef private
 #include "gtest/gtest.h"
 #include "base/test/task_environment.h"
 #include "gpu/ipc/service/gpu_channel_manager.h"
 #include "testing/gmock/include/gmock/gmock.h"
 
 #include <stdint.h>
-#include "gpu/ipc/service/gpu_channel.h"
 #include "base/run_loop.h"
 #include "base/test/test_simple_task_runner.h"
 #include "build/build_config.h"
@@ -28,6 +30,7 @@
 #include "gpu/ipc/common/gpu_channel.mojom.h"
 #include "gpu/ipc/service/gpu_channel_manager.h"
 #include "gpu/ipc/service/gpu_channel_test_common.h"
+#include "gpu/ipc/service/stream_texture_ohos.h"
 #include "base/threading/thread.h"
 #include "base/logging.h"
 
@@ -78,19 +81,42 @@ TEST_F(GpuChannelExtOHOSTest, test001) {
     int32_t result = gpu_channel_ext_->CreateNativeTexture(
         validNativeId, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
     EXPECT_NE(result, -1);
+    result = gpu_channel_ext_->CreateNativeTexture(
+        validNativeId, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
+    EXPECT_EQ(result, -1);
 }
 
 TEST_F(GpuChannelExtOHOSTest, test002) {
-  auto ret = gpu_channel_ext_->AsGpuChannelExt();
-  EXPECT_NE(ret, nullptr);
+    auto ret = gpu_channel_ext_->AsGpuChannelExt();
+    EXPECT_NE(ret, nullptr);
 }
 
 TEST_F(GpuChannelExtOHOSTest, test003) {
-  gpu_channel_ext_->DestroyNativeTexture(invalidNativeId);
+    int32_t kClientId = 1;
+    bool is_gpu_host = false;
+    GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+    mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+    scoped_refptr<StreamTexture> StreamTexture = StreamTexture::Create(
+        channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture,
+        std::move(receiver));
+    EXPECT_NE(StreamTexture, nullptr);
+    gpu_channel_ext_->native_textures_[validNativeId] = StreamTexture;
+    gpu_channel_ext_->DestroyNativeTexture(invalidNativeId);
+    EXPECT_FALSE(gpu_channel_ext_->native_textures_.empty());
 }
 
 TEST_F(GpuChannelExtOHOSTest, test004) {
-  gpu_channel_ext_->DestroyNativeTexture(validNativeId);
+    int32_t kClientId = 1;
+    bool is_gpu_host = false;
+    GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+    mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+    scoped_refptr<StreamTexture> StreamTexture = StreamTexture::Create(
+        channel, 1, gl::ohos::TextureOwnerMode::kNativeImageTexture,
+        std::move(receiver));
+    EXPECT_NE(StreamTexture, nullptr);
+    gpu_channel_ext_->native_textures_[validNativeId] = StreamTexture;
+    gpu_channel_ext_->DestroyNativeTexture(validNativeId);
+    EXPECT_TRUE(gpu_channel_ext_->native_textures_.empty());
 }
 
 TEST_F(GpuChannelExtOHOSTest, test005) {

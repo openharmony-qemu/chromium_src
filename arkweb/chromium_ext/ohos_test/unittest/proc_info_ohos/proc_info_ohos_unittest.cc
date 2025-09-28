@@ -62,6 +62,15 @@ TEST_F(ProcInfoOhosTest, TidToNstid002) {
    EXPECT_FALSE(result);
 }
 
+TEST_F(ProcInfoOhosTest, TidToNstid002) {
+   const int realPid = 12444;
+   const int realTid = 213132;
+   int nstid = 0;
+   bool result = TidToNstid(realPid, realTid, nstid);
+   EXPECT_FALSE(result);
+}
+
+
 TEST_F(ProcInfoOhosTest, IsThreadInPid001) {
    int realPid = getpid();
    int realTid = gettid();

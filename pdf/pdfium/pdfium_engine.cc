@@ -599,6 +599,9 @@ PDFiumEngine::~PDFiumEngine() {
   // Clear all the containers that can prevent unloading.
   find_results_.clear();
   selection_.clear();
+#if BUILDFLAG(ARKWEB_PDF)
+  isFindingResult_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 #if BUILDFLAG(ENABLE_PDF_INK2)
   ink_stroke_objects_map_.clear();
   stroked_pages_unload_preventers_.clear();
@@ -1002,6 +1005,9 @@ void PDFiumEngine::SetFormHighlight(bool enable_form) {
 void PDFiumEngine::ClearTextSelection() {
   SelectionChangeInvalidator selection_invalidator(this);
   selection_.clear();
+#if BUILDFLAG(ARKWEB_PDF)
+  isFindingResult_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PDFiumEngine::ContinueFind(bool case_sensitive) {
@@ -1337,6 +1343,9 @@ bool PDFiumEngine::OnLeftMouseDown(const blink::WebMouseEvent& event) {
   auto selection_invalidator =
       std::make_unique<SelectionChangeInvalidator>(this);
   selection_.clear();
+#if BUILDFLAG(ARKWEB_PDF)
+  isFindingResult_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   int page_index = -1;
   int char_index = -1;
@@ -2122,6 +2131,10 @@ bool PDFiumEngine::SelectFindResult(bool forward) {
   if (find_results_.empty())
     return false;
 
+#if BUILDFLAG(ARKWEB_PDF)
+  isFindingResult_ = true;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   SelectionChangeInvalidator selection_invalidator(this);
 
   // Move back/forward through the search locations we previously found.
@@ -2185,6 +2198,9 @@ void PDFiumEngine::StopFind() {
   SelectionChangeInvalidator selection_invalidator(this);
   selection_.clear();
   selecting_ = false;
+#if BUILDFLAG(ARKWEB_PDF)
+  isFindingResult_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   find_results_.clear();
   next_page_to_search_ = -1;
@@ -2434,6 +2450,9 @@ void PDFiumEngine::SelectAll() {
       selection_.push_back(PDFiumRange::AllTextOnPage(page.get()));
     }
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  isFindingResult_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 const std::vector<DocumentAttachmentInfo>&
@@ -2661,6 +2680,10 @@ void PDFiumEngine::HandleLongPress(const blink::WebTouchEvent& event) {
   // Only consider the first touch point.
   DCHECK_GT(event.touches_length, 0u);
 
+#if BUILDFLAG(ARKWEB_PDF)
+  isFindingResult_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   // Send a fake mouse down to trigger the multi-click selection code.
   blink::WebMouseEvent mouse_event(blink::WebInputEvent::Type::kMouseDown,
                                    event.GetModifiers(), event.TimeStamp());
@@ -2721,6 +2744,9 @@ void PDFiumEngine::AppendBlankPages(size_t num_pages) {
 
   selection_.clear();
   pending_pages_.clear();
+#if BUILDFLAG(ARKWEB_PDF)
+  isFindingResult_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Delete all pages except the first one.
   while (pages_.size() > 1) {
@@ -3773,7 +3799,11 @@ void PDFiumEngine::OnSelectionPositionChanged() {
     return;
   }
   gfx::Rect clipped_selection_bounds(0, 0, 0, 0);
-  OnSelectionPositionChangedForPDF(left, right, clipped_selection_bounds, selection_);
+  // When searching for results, do not calculate the selection position to
+  // hide the menu and handles.
+  if (!isFindingResult_) {
+    OnSelectionPositionChangedForPDF(left, right, clipped_selection_bounds, selection_);
+  }
 #else
   for (const auto& sel : selection_) {
     const std::vector<gfx::Rect>& screen_rects =
@@ -3924,7 +3954,9 @@ void PDFiumEngine::SetSelection(const PageCharacterIndex& selection_start_index,
                                 const PageCharacterIndex& selection_end_index) {
   SelectionChangeInvalidator selection_invalidator(this);
   selection_.clear();
-
+#if BUILDFLAG(ARKWEB_PDF)
+  isFindingResult_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
   PageCharacterIndex sel_start_index = selection_start_index;
   PageCharacterIndex sel_end_index = selection_end_index;
   if (sel_end_index.page_index < sel_start_index.page_index) {
@@ -4079,6 +4111,9 @@ void PDFiumEngine::MoveRangeSelectionExtent(const gfx::Point& extent) {
   // the previously provided base location.
   selection_.clear();
   selection_.push_back(PDFiumRange(pages_[page_index].get(), char_index, 0));
+#if BUILDFLAG(ARKWEB_PDF)
+  isFindingResult_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // This should always succeeed because the range selection base should have
   // already been selected.

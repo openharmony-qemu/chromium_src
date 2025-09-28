@@ -15,12 +15,15 @@
 
 #include "nweb_extension_utils.h"
 
+#include <optional>
+
 #include "base/logging.h"
 #include "cef/libcef/browser/request_context_impl.h"
 #include "chrome/browser/profiles/profile.h"
 #include "extensions/browser/extension_registry.h"
 #include "extensions/browser/extensions_browser_client.h"
 #include "extensions/common/extension.h"
+#include "ohos_nweb/src/capi/browser_service/nweb_extension_common_types.h"
 
 namespace OHOS::NWeb {
 
@@ -123,6 +126,21 @@ content::BrowserContext* GetIncognitoContext(
   }
 
   return browser_client->GetOffTheRecordContext(browser_context);
+}
+
+std::optional<NWebExtensionFunctionContext> GetExtensionFunctionContext(
+    const std::string& extension_id,
+    content::BrowserContext* browser_context,
+    std::optional<bool> include_incognito_info) {
+  NWebExtensionFunctionContext context;
+  context.extension_id = extension_id;
+  context.context_type = GetExtensionContextType(browser_context);
+  context.include_incognito_info =
+      include_incognito_info
+          ? include_incognito_info
+          : GetIncludeIncognitoInformation(extension_id, browser_context);
+
+  return context;
 }
 
 }  // namespace OHOS::NWeb

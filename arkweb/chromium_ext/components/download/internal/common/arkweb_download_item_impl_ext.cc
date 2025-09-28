@@ -218,7 +218,7 @@ void ArkWebDownloadItemImplExt::ReadDownloadData(
  
   if (GetDownloadTaskRunner()) {
     bool read_now = !IsDownloadInProgress() || PercentComplete() == 100;
- 
+    // Safe because we control download file lifetime.
     GetDownloadTaskRunner()->PostTask(
         FROM_HERE,
         base::BindOnce(
@@ -246,7 +246,7 @@ void ArkWebDownloadItemImplExt::RunCallbackIfStateMatch() {
   }
  
   LOG(INFO) << "DownloadItemImpl::RunCallbackIfStateMatch";
- 
+  // Safe because we control download file lifetime.
   if (GetDownloadTaskRunner()) {
     GetDownloadTaskRunner()->PostTask(
         FROM_HERE, base::BindOnce(&ReadDownloadDataAndRunCallbackImpl,
@@ -262,11 +262,17 @@ void ArkWebDownloadItemImplExt::RunCallbackIfExistsCallback() {
     ReadDataFromDownloadFileDone(std::vector<uint8_t>());
     return;
   }
+  // Safe because we control download file lifetime.
   if (GetDownloadTaskRunner()) {
     GetDownloadTaskRunner()->PostTask(
         FROM_HERE, base::BindOnce(&ReadDownloadDataAndRunCallbackImpl,
                                   base::Unretained(download_file_.get())));
   }
+}
+
+void ArkWebDownloadItemImplExt::Cancel(bool user_cancel) {
+  DownloadItemImpl::Cancel(user_cancel);
+  ReadDataFromDownloadFileDone(std::vector<uint8_t>());
 }
 #endif  //  ARKWEB_EXT_DOWNLOAD
 

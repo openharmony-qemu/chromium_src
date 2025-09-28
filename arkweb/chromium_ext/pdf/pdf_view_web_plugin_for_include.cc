@@ -130,6 +130,9 @@ void PdfViewWebPlugin::SetIsTouching(bool isTouching) {
 void PdfViewWebPlugin::SetIsScrolling(bool isScrolling) {
   isScrolling_ = isScrolling;
   RefreshMenuWithTouchAndScroll();
+  if (!isScrolling_) {
+    paint_manager_.DoPaintAtScrollStopped();
+  }
 }
 
 scoped_refptr<base::SequencedTaskRunner> PdfViewWebPlugin::GetTaskRunner() {

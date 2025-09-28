@@ -139,6 +139,10 @@ class PaintManager {
   // This does not schedule a flush.
   void ClearTransform();
 
+#if BUILDFLAG(ARKWEB_PDF)
+  void DoPaintAtScrollStopped();
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
  private:
   // Makes sure there is a callback that will trigger a paint at a later time.
   // This will be either a Flush callback telling us we're allowed to generate

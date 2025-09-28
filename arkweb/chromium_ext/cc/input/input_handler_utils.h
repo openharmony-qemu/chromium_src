@@ -56,10 +56,7 @@ public:
   static bool PdfOverSpeed();
   static double pdf_delta_x_;
   static double pdf_delta_y_;
-
-  static void SetScrollEndEventListener(const std::function<void()>& listener);
-  static std::recursive_mutex scroll_end_listener_mutex;
-  static std::function<void()> scroll_end_listener_;
+  static void SetScrollStopped();
 #endif
 
 private:

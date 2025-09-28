@@ -102,6 +102,37 @@ TEST_F(DfxReporterBrowserImplTest, ReportRendererInfo003) {
     ReportRendererInfo(sysEventInfoJson, true);
 }
 
+TEST_F(DfxReporterBrowserImplTest, ReportRendererInfo004) {
+    const std::string sysEventInfoJson = 
+    R"({
+        "fd_num":"43690",
+        "js_heap_total":"12297829382473034410",
+        "js_heap_used":"12297829382473034410",
+        "pid":"0",
+        "pss":"12297829382473034410",
+        "rss":"12297829382473034410",
+        "type":"gpu",
+        "url":""
+    })";
+    ReportRendererInfo(sysEventInfoJson, false);
+    ReportRendererInfo(sysEventInfoJson, true);
+}
+
+TEST_F(DfxReporterBrowserImplTest, ReportRendererInfo005) {
+    const std::string sysEventInfoJson = 
+    R"({
+        "fd_num":"43690",
+        "js_heap_total":"12297829382473034410",
+        "js_heap_used":"12297829382473034410",
+        "pid":"",
+        "pss":"12297829382473034410",
+        "rss":"12297829382473034410",
+        "type":"gpu",
+        "url":""
+    })";
+    ReportRendererInfo(sysEventInfoJson, false);
+    ReportRendererInfo(sysEventInfoJson, true);
+}
 
 TEST_F(DfxReporterBrowserImplTest, ReportHiSysEvent) {
     DfxReporterImpl dfxreporterimpl;

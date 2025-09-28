@@ -74,21 +74,37 @@ TEST_F(DfxReporterBrowserImplTest, OnVideoMemoryUsageStatsUpdate) {
     EXPECT_NE(log_output.find("gpu_mem = 2"), std::string::npos);
 }
 
-TEST_F(DfxReporterBrowserImplTest, ReportRendererInfo) {
+TEST_F(DfxReporterBrowserImplTest, ReportRendererInfo001) {
     const std::string sysEventInfoJson = "";
-    bool isSysEvent = false;
-    ReportRendererInfo(sysEventInfoJson, isSysEvent);
-
-    isSysEvent = true;
-    ReportRendererInfo(sysEventInfoJson, isSysEvent);
+    ReportRendererInfo(sysEventInfoJson, false);
+    ReportRendererInfo(sysEventInfoJson, true);
 }
+
+TEST_F(DfxReporterBrowserImplTest, ReportRendererInfo002) {
+    const std::string sysEventInfoJson = "invalid json string";
+    ReportRendererInfo(sysEventInfoJson, false);
+    ReportRendererInfo(sysEventInfoJson, true);
+}
+
+TEST_F(DfxReporterBrowserImplTest, ReportRendererInfo003) {
+    const std::string sysEventInfoJson = 
+    R"({
+        "fd_num":"43690",
+        "js_heap_total":"12297829382473034410",
+        "js_heap_used":"12297829382473034410",
+        "pid":"-1431655766",
+        "pss":"12297829382473034410",
+        "rss":"12297829382473034410",
+        "type":"gpu",
+        "url":""
+    })";
+    ReportRendererInfo(sysEventInfoJson, false);
+    ReportRendererInfo(sysEventInfoJson, true);
+}
+
 
 TEST_F(DfxReporterBrowserImplTest, ReportHiSysEvent) {
     DfxReporterImpl dfxreporterimpl;
-    const std::string eventName = "test_eventname";
-    const std::string sysEventInfoJson = "";
-    dfxreporterimpl.ReportHiSysEvent(eventName, sysEventInfoJson);
-
-    const std::string eventName1 = "PAGE_MEM_LEAK";
-    dfxreporterimpl.ReportHiSysEvent(eventName1, sysEventInfoJson);
+    dfxreporterimpl.ReportHiSysEvent("test_eventname", "");
+    dfxreporterimpl.ReportHiSysEvent("PAGE_MEM_LEAK", "");
 }

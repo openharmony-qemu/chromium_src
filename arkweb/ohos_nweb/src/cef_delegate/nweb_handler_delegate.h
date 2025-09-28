@@ -410,11 +410,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                       CefRefPtr<CefRequest> request,
                       bool user_gesture,
                       bool is_redirect) override;
-  bool OnCertificateError(CefRefPtr<CefBrowser> browser,
-                          cef_errorcode_t cert_error,
-                          const CefString& request_url,
-                          CefRefPtr<CefSSLInfo> ssl_info,
-                          CefRefPtr<CefCallback> callback) override;
+  bool OnCertificateErrorExt(CefRefPtr<CefBrowser> browser,
+                             cef_errorcode_t cert_error,
+                             const CefString& request_url,
+                             CefRefPtr<CefSSLInfo> ssl_info,
+                             CefRefPtr<ArkWebCefSslCallback> callback) override;
 
   bool OnSelectClientCertificate(
       CefRefPtr<CefBrowser> browser,

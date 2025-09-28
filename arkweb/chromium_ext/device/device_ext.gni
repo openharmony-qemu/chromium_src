@@ -6,6 +6,7 @@ device_unittests_ext = {
     "//arkweb/chromium_ext/device/fido/ohos/fido2_api_utils.cpp",
     "//arkweb/chromium_ext/device/fido/ohos/fido2_api_utils_unittests.cc",
     "//arkweb/chromium_ext/device/fido/ohos/ohos_authenticator.cpp",
+    "//arkweb/chromium_ext/device/fido/ohos/ohos_authenticator_unittests.cc",
     "//arkweb/chromium_ext/device/fido/ohos/ohos_fido_discovery.cpp",
     "//arkweb/chromium_ext/device/fido/ohos/ohos_webauthn_api.cpp",
     "//arkweb/chromium_ext/device/fido/ohos/ohos_webauthn_api_unittest.cc",

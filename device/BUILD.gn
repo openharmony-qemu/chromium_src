@@ -509,8 +509,11 @@ test("device_unittests") {
     deps += [ "//chromeos/dbus/u2f" ]
   }
 
-  import("//arkweb/chromium_ext/device/device_ext.gni")
-  sources += device_unittests_ext.sources
+  if (arkweb_test) {
+    import("//arkweb/chromium_ext/device/device_ext.gni")
+    sources += device_unittests_ext.sources
+    configs += [ "//arkweb/chromium_ext:arkweb_device_unittest_config" ]
+  }
 }
 
 if (is_android) {

@@ -13,6 +13,7 @@ interface NearestSibling {
 }
 
 export class PopupDecisionTree {
+    private static discrepancy: number = 1.0;
 
     public static judgePopupDecisionTreeType(mComponent: HTMLElement, allNodes: HTMLElement[], popupInfo: PopupInfo): PopupDecisionTreeType {
         const rootNode = popupInfo.root_node;
@@ -77,8 +78,8 @@ export class PopupDecisionTree {
             const url = style.backgroundImage;
             return rootNode.contains(node) &&
                     (CCMConfig.getInstance().getcloseButtonPattern()?.some(kw => classList.includes(kw) || bgImage.includes(kw)) ||
-                    CCMConfig.getInstance().getSpecialCloseButtonPattern()?.some(kw => url.includes(kw)) || 
-                    (node.tagName === "IMG" && CCMConfig.getInstance().getSpecialCloseButtonPattern()?.some(kw => (node as HTMLImageElement).src.includes(kw))));
+                    CCMConfig.getInstance().getcloseButtonPattern()?.some(kw => url.includes(kw)) || 
+                    (node.tagName === "IMG" && CCMConfig.getInstance().getcloseButtonPattern()?.some(kw => (node as HTMLImageElement).src.includes(kw))));
         })
 
         // 过滤被其他节点包含的节点
@@ -336,7 +337,7 @@ export class PopupDecisionTree {
         // 提取元素
         const topmostChildren = filteredChildren.map(child => child.element);
 
-        console.log('getTopmostChildren: print topmostChildren size = ' + topmostChildren.length);
+        console.log('mdquan print topmostChildren size = ' + topmostChildren.length);
         return topmostChildren;
     }
 
@@ -372,18 +373,17 @@ export class PopupDecisionTree {
                             return false;
                         }
                         const rect = contentNode.getBoundingClientRect();
-                        return Math.abs(rect.bottom - window.innerHeight) < 0.1 && !(style.flexDirection === "row" && style.alignItems === "center");
+                        return Math.abs(rect.bottom - window.innerHeight) < this.discrepancy && !(style.flexDirection === "row" && style.alignItems === "center");
                     }  
                     
                     const hasBottomStyle = LayoutUtils.hasBottomStyle(contentNode, computedPosition, computedBottom);
-
                     if (!hasBottomStyle) {
                         return false;
                     }
 
                     const rect = contentNode.getBoundingClientRect();
-                    return Math.abs(rect.bottom - window.innerHeight) < 0.1 && !(style.flexDirection === "row" && style.alignItems === "center");
-                } 
+                    return Math.abs(rect.bottom - window.innerHeight) < this.discrepancy && !(style.flexDirection === "row" && style.alignItems === "center");
+                }
                 return false;  // 没有content节点
             }
         } else if (popType === PopupType.B) {
@@ -459,7 +459,7 @@ export class PopupDecisionTree {
         const computedPosition = style.position;
         const computedBottom = style.bottom;
         const computedWidth = style.width;
-        if (parseFloat(computedBottom) !== 0 || (parseFloat(computedWidth) !== window.innerWidth && !PopupDecisionTree.equalToScreenWidth(node, 0.1))) {
+        if (parseFloat(computedBottom) !== 0 || (parseFloat(computedWidth) !== window.innerWidth && !PopupDecisionTree.equalToScreenWidth(node, this.discrepancy))) {
             return false;
         }
         const hasBottomStyle = LayoutUtils.hasBottomStyle(node, computedPosition, computedBottom);
@@ -468,7 +468,7 @@ export class PopupDecisionTree {
         }
 
         const rect = node.getBoundingClientRect();
-        return Math.abs(rect.bottom - window.innerHeight) < 0.1 && !(style.flexDirection === "row" && style.alignItems === "center");
+        return Math.abs(rect.bottom - window.innerHeight) < this.discrepancy && !(style.flexDirection === "row" && style.alignItems === "center");
     }
 
     static hasMoreThanNumChild(rootNode: HTMLElement, num: number): boolean {

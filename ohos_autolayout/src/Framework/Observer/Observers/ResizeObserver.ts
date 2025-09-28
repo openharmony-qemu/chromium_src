@@ -9,15 +9,22 @@ import BoundingRectFix from "../../SystemFix/BoundingRectFix";
 import Log from "../../../Debug/Log";
  
 export default class ResizeObserver {
+    static init: boolean = false;
+
     static init_() {
-        window.addEventListener(Txt.resize_, () => {
-            Log.checkState("resize");
-            if (HwRelayout.initFlag) {
-                ResizeObserver.onResize();
-                return;
-            }
-            HwRelayout.reInit();
-        });
+        if (ResizeObserver.init) {
+            return;
+        }
+        ResizeObserver.init = true;
+
+        window.addEventListener(Txt.resize_, ResizeObserver.resizeCallback);
+    }
+    static resizeCallback() {
+        if (HwRelayout.initFlag) {
+            ResizeObserver.onResize();
+            return;
+        }
+        HwRelayout.reInit();
     }
  
     static onResize() {
@@ -33,5 +40,10 @@ export default class ResizeObserver {
         // 当窗口大小或内容发生变化时，判断是否需要调整布局
         DiffEleRecord.setAllEleDiff();
         ObserverHandler.postTask();
+    }
+
+    static removeListener() {
+        ResizeObserver.init = false;
+        removeEventListener(Txt.resize_, ResizeObserver.resizeCallback);
     }
 }

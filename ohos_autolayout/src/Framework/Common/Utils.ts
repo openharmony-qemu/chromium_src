@@ -525,7 +525,6 @@ export default class Utils {
         const intersectionArea = Math.max(0, Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0)) *
                             Math.max(0, Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0));
         const result = intersectionArea / (viewportWidth * viewportHeight)*100;
-        console.log(`getScreenAreaRatio ${(el as HTMLElement).className} :${result}`);
         return result;
     }
 

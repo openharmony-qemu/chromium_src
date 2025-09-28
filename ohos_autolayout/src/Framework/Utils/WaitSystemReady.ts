@@ -1,5 +1,4 @@
 import Tag from "../../Debug/Tag";
-import Utils from "../../Framework/Common/Utils";
 import { Main } from "../../Main";
 
 export default class WaitSystemReady {
@@ -65,10 +64,17 @@ export default class WaitSystemReady {
         console.log("waitForSystemReady");
         // check DOM ready?
         WaitSystemReady.sysReady = WaitSystemReady.checkDOMReady(document.body);
+
+        addEventListener("resize", ()=>{
+            console.log('mdquan run resize, availWidth:', screen.availWidth, 'availHeight:', screen.availHeight);
+            Main.start_();
+        });
+
         if (WaitSystemReady.sysReady == false) {
             setTimeout(WaitSystemReady.waitForSystemReady, 200);
         } else {
-            Main.start();
+            console.log("waitForSystemReady run main.start");
+            Main.start_();
         }
     }
 

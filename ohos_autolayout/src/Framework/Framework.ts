@@ -16,6 +16,8 @@ import IntelliLayout from "./IntelligentLayout";
 import IntelligentLayout from "./IntelligentLayout";
 import { Level, PerfExecution } from "../Framework/Common/Perf";
 import { LayoutConstraintMetrics } from "../Framework/Common/LayoutConstraintDetector";
+import { SpecificStyleCache } from "../Common/Style/Common/CacheStyleGetter";
+import { CCMConfig } from "./Common/CCMConfig";
 
 export default class Framework {
     static TAG = Tag.framework;
@@ -27,7 +29,7 @@ export default class Framework {
     /**
      * 是否自动启用弹窗修复功能。true：自动启用， false: 手动启用（点击on按钮）
      */
-    static isAutoEnable: boolean = false;
+    static isAutoEnable: boolean = true;
 
     private static isAvailable(): boolean {
         if (Framework.stopFlag) {
@@ -84,30 +86,12 @@ export default class Framework {
 
     @PerfExecution({ level: Level.INFO })
     static mainTask() {
-        // if (true) {
-        //     return;
-        // }
-
-        if (!Framework.isAutoEnable) {
-            if (!document.getElementById('SmartSwitch')) {
-                IntelliLayout.injectSwitchButton();
-                // IntelliLayout.injectBorderButton();
-            }
-
-            if (!document.getElementById('SaveSwitch')) {
-                IntelliLayout.injectSaveButton();
-            }
-
-            let isIntelligentLayoutEnabled = sessionStorage.getItem('intelligentLayoutEnable');
-            console.log("isIntelligentLayoutEnabled: " + isIntelligentLayoutEnabled);
-            if (isIntelligentLayoutEnabled == "false" || isIntelligentLayoutEnabled == null) {
-                return;
-            }
-        }
-
         console.log("执行mainTask");
         if (!Framework.taskinit()) return;
-
+        if (!CCMConfig.getInstance().checkRule()) {
+            console.log("应用检查不通过:Appid:"+ CCMConfig.getInstance().getAppID() + 
+                                ", Page:" + CCMConfig.getInstance().getPage());
+        }
         IntelliLayout.intelligentLayout(document.body);
 
         // STEP 9，flush新计算的样式，触发回流重绘
@@ -124,8 +108,7 @@ export default class Framework {
             return;
         }
 
-        // 中信银行 财富 中body的宽度会变化，由于缓存，会导致initConstant中使用了错误的innerWidth计算常量
-        // 这里需要清理一次缓存保证取值正确
+        SpecificStyleCache.init();
         Cached.clearAllCache();
 
         console.log("re init");

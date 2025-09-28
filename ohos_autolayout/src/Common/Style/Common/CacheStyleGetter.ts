@@ -95,7 +95,7 @@ export default class CacheStyleGetter {
             eleStyle = new Map<string, string>();
         }
 
-        if (!CacheStyleGetter.computedStyleDec) {
+        if (!CacheStyleGetter.computedStyleDec || !SpecificStyleCache.getComputedStyleCache) {
             return value;
         }
         value = CacheStyleGetter.computedStyleDec(ele).getPropertyValue(attr);

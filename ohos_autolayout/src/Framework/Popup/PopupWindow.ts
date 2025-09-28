@@ -425,7 +425,6 @@ export class PopupWindow {
         // 多个弹窗，选择最上层的一个返回
         const finalPop = PopupWindow.findTopMostPopup(finalPopups);
         // 如果存在吸顶和吸底元素，需要更新finalPop的吸顶吸底元素的高度值
-        const rootNodeStyle = getComputedStyle(finalPop.root_node);
         if(finalPop!= null && potentialElements.potentialStickyBottom != null) {
             const stickyBottomStyle = getComputedStyle(potentialElements.potentialStickyBottom);
             if (LayoutUtils.compareZIndex(finalPop.mask_node, potentialElements.potentialStickyBottom as HTMLElement) <= 0) {

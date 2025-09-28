@@ -581,6 +581,7 @@ export class PopWindow extends AComponent {
                 scrollElementRect.left >= window.innerWidth ||
                 scrollElementRect.bottom <= 0 ||
                 scrollElementRect.right <= 0) {
+                console.log('scaleByTransform: 滚动元素在屏幕外，不进行缩放');
                 return;
             }
             else {
@@ -719,16 +720,14 @@ export class PopWindow extends AComponent {
                 flex_shrink: computedStyle.flexShrink,
                 display: computedStyle.display,
             });
-            console.log(`保存原始样式: ${node.className}`);
         }
     }
 
     // 恢复样式
     private restoreStyles(): void {
-        console.log("恢复原始样式开始");
+        console.log("恢复原始样式");
 
         this.originalStyles.forEach((style, node) => {
-            console.log(`恢复节点: ${node.className}`);
             StyleSetter.setStyle(node, Constant.transform, style.transform);
             StyleSetter.setStyle(node, Constant.transition, style.transition);
             StyleSetter.setStyle(node, Constant.width, style.width);
@@ -742,7 +741,6 @@ export class PopWindow extends AComponent {
         });
         StyleSetter.flushAllStyles();
         this.originalStyles.clear();
-        console.log("恢复原始样式完成");
     }
 
     private fixFlexShrink(node: HTMLElement): void {

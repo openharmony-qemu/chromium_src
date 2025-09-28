@@ -4,6 +4,7 @@ import Utils from "../../Common/Utils/Utils";
 import Framework from "../Framework";
 import Throttle from "../Utils/Throttle";
 import ModifyObserver from "./Observers/ModifyObserver";
+import ResizeObserver from "./Observers/ResizeObserver";
 import TransitionEndObserver from "./Observers/TransitionEndObserver";
 
 export default class ObserverHandler {
@@ -20,6 +21,7 @@ export default class ObserverHandler {
     static reInit() {
         ModifyObserver.reInit();
         TransitionEndObserver.reInit();
+        ResizeObserver.init_();
         ObserverHandler.postTask();
     }
 
@@ -33,6 +35,7 @@ export default class ObserverHandler {
     static removeObserver() {
         ModifyObserver.disconnect();
         TransitionEndObserver.removeListener();
+        ResizeObserver.removeListener();
     }
 
     static nextRoundAndPost(ele: HTMLElement): void {

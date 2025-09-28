@@ -912,7 +912,7 @@ export default class LayoutUtils{
     }
 
     /**
-     * 比较两个节点的层叠顺序
+     * 比较两个可见节点的层叠顺序
      * @returns 1: nodeA在上, -1: nodeB在上, 0: 同一层级或无法比较
      */
     static compareZIndex(nodeA: HTMLElement, nodeB: HTMLElement) {

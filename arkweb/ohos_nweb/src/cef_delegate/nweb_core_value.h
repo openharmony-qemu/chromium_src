@@ -66,6 +66,10 @@ class NWebCoreValue : public NWebHapValue {
 
   void SaveListChildValue() override;
 
+  std::string GetErrorDescription() override;
+
+  void SetErrorDescription(const std::string& description) override;
+
  private:
   void CheckType(NWebHapValue::Type type);
 
@@ -74,6 +78,7 @@ class NWebCoreValue : public NWebHapValue {
 
   data_union data_;
   std::string str_;
+  std::string error_description_;
   std::shared_ptr<NWebHapValue> child_node_ = nullptr;
   std::vector<std::shared_ptr<NWebHapValue>> list_value_;
   std::map<std::string, std::shared_ptr<NWebHapValue>> dict_value_;

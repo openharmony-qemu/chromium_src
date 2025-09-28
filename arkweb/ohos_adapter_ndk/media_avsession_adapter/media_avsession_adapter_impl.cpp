@@ -23,6 +23,9 @@ namespace OHOS::NWeb {
 
 std::unordered_map<std::string, MediaAVSessionAdapterImpl *> MediaAVSessionAdapterImpl::avSessionMap;
 CallbackSharedWrapper<MediaAVSessionCallbackAdapter> MediaAVSessionAdapterImpl::callback_wrapper_;
+constexpr int64_t TIME_OUT = 0;
+constexpr int64_t URL_NUM = 2;
+
 void MediaAVSessionKey::Init() {
     pid_ = getpid();
     OH_NativeBundle_ElementName bundleInfo = OH_NativeBundle_GetMainElementName();

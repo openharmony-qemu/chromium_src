@@ -1666,3 +1666,76 @@ TEST_F(MediaAVSessionAdapterImplTest, MediaAVSessionAdapterImplDestroyAndEraseSe
   ASSERT_NO_FATAL_FAILURE(adapter->DestroyAndEraseSession());
   EXPECT_EQ(adapter->avSessionMap.find(adapter->avSessionKey_->ToString()), adapter->avSessionMap.end());
 }
+
+TEST_F(MediaAVSessionAdapterImplTest, MediaAVSessionAdapterImplCreateNewSessionTest) {
+  SetAllMockType(true);
+  auto adapter = std::make_shared<MediaAVSessionAdapterImpl>();
+  auto type = MediaAVSessionType::MEDIA_TYPE_INVALID;
+  bool ret = adapter->CreateNewSession(type);
+  EXPECT_FALSE(ret);
+}
+
+TEST_F(MediaAVSessionAdapterImplTest, MediaAVSessionAdapterImplCreateNewSessionTest2) {
+  SetAllMockType(true);
+  auto adapter = std::make_shared<MediaAVSessionAdapterImpl>();
+  auto type = MediaAVSessionType::MEDIA_TYPE_AUDIO;
+  EXPECT_CALL(OhosInterfaceMock::GetInstance(),
+              OH_AVSession_Create(testing::_, testing::_, testing::_, testing::_, testing::_))
+      .WillOnce(testing::Return(AV_SESSION_ERR_SUCCESS));
+  bool ret = adapter->CreateNewSession(type);
+  EXPECT_TRUE(ret);
+}
+
+TEST_F(MediaAVSessionAdapterImplTest, MediaAVSessionAdapterImplCreateNewSessionTest3) {
+  SetAllMockType(true);
+  auto adapter = std::make_shared<MediaAVSessionAdapterImpl>();
+  auto type = MediaAVSessionType::MEDIA_TYPE_VIDEO;
+  ASSERT_NE(adapter->avSessionKey_, nullptr);
+  EXPECT_CALL(OhosInterfaceMock::GetInstance(),
+              OH_AVSession_Create(testing::_, testing::_, testing::_, testing::_, testing::_))
+      .WillOnce(testing::Return(AV_SESSION_ERR_INVALID_PARAMETER));
+  bool ret = adapter->CreateNewSession(type);
+  EXPECT_FALSE(ret);
+}
+
+TEST_F(MediaAVSessionAdapterImplTest, MediaAVSessionAdapterImplCreateNewSessionTest4) {
+  SetAllMockType(true);
+  auto adapter = std::make_shared<MediaAVSessionAdapterImpl>();
+  ASSERT_NE(adapter->avSessionKey_, nullptr);
+
+  EXPECT_CALL(OhosInterfaceMock::GetInstance(),
+              OH_AVSession_Create(testing::_, testing::_, testing::_, testing::_, testing::_))
+      .WillOnce(testing::Return(AV_SESSION_ERR_INVALID_PARAMETER));
+
+  auto type = MediaAVSessionType::MEDIA_TYPE_AUDIO;
+  bool ret = adapter->CreateNewSession(type);
+  EXPECT_FALSE(ret);
+}
+
+TEST_F(MediaAVSessionAdapterImplTest, MediaAVSessionAdapterImplCreateNewSessionTest5) {
+  SetAllMockType(true);
+  auto adapter = std::make_shared<MediaAVSessionAdapterImpl>();
+  ASSERT_NE(adapter->avSessionKey_, nullptr);
+  EXPECT_CALL(OhosInterfaceMock::GetInstance(),
+              OH_AVSession_Create(testing::_, testing::_, testing::_, testing::_, testing::_))
+      .WillOnce(testing::Return(AV_SESSION_ERR_SUCCESS));
+  auto type = MediaAVSessionType::MEDIA_TYPE_AUDIO;
+  bool ret = adapter->CreateNewSession(type);
+  EXPECT_TRUE(ret);
+  EXPECT_EQ(adapter->avSessionKey_->GetType(), type);
+  EXPECT_NE(adapter->avSessionMap.find(adapter->avSessionKey_->ToString()), adapter->avSessionMap.end());
+}
+
+TEST_F(MediaAVSessionAdapterImplTest, MediaAVSessionAdapterImplCreateNewSessionTest6) {
+  SetAllMockType(true);
+  auto adapter = std::make_shared<MediaAVSessionAdapterImpl>();
+  ASSERT_NE(adapter->avSessionKey_, nullptr);
+  EXPECT_CALL(OhosInterfaceMock::GetInstance(),
+              OH_AVSession_Create(testing::_, testing::_, testing::_, testing::_, testing::_))
+      .WillOnce(testing::Return(AV_SESSION_ERR_SUCCESS));
+  auto type = MediaAVSessionType::MEDIA_TYPE_VIDEO;
+  bool ret = adapter->CreateNewSession(type);
+  EXPECT_TRUE(ret);
+  EXPECT_EQ(adapter->avSessionKey_->GetType(), type);
+  EXPECT_NE(adapter->avSessionMap.find(adapter->avSessionKey_->ToString()), adapter->avSessionMap.end());
+}

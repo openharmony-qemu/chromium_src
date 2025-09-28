@@ -478,3 +478,263 @@ TEST_F(BrowserAccessibilityManagerOhosTest, MoveAccessibilityFocus) {
   manager->HandleFocusChanged(5101);
   ASSERT_NO_FATAL_FAILURE((manager->MoveAccessibilityFocus(5102,5102)));
 }
+
+TEST_F(BrowserAccessibilityManagerOhosTest, JumpToElementType_EmptySelector_UsesDefaultPredicate) {
+  ui::AXNodeData root;
+  root.id = 6100;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {6101, 6102};
+
+  ui::AXNodeData b1;
+  b1.id = 6101;
+  b1.role = ax::mojom::Role::kButton;
+
+  ui::AXNodeData b2;
+  b2.id = 6102;
+  b2.role = ax::mojom::Role::kButton;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, b1, b2);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  EXPECT_TRUE(manager->JumpToElementType(6101, "", true, true));
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, OnHoverEvent_Hit_UsesNode) {
+  ui::AXNodeData root;
+  root.id = 6200;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {6201};
+
+  ui::AXNodeData b1;
+  b1.id = 6201;
+  b1.role = ax::mojom::Role::kButton;
+  b1.relative_bounds.bounds = gfx::RectF(0, 0, 10, 10);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, b1);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  ASSERT_NO_FATAL_FAILURE(manager->OnHoverEvent(gfx::PointF(5, 5)));
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, SendAccessibilityEvent_ArkWebId_DirectDispatch) {
+  ui::AXNodeData root;
+  root.id = 6300;
+  root.role = ax::mojom::Role::kRootWebArea;
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  ASSERT_NO_FATAL_FAILURE(manager->SendAccessibilityEvent(
+      kArkWebId, OHOS::NWeb::AccessibilityEventType::CLICK, "x"));
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, FireGeneratedEvent_SubtreeCreated_DialogOpens) {
+  ui::AXNodeData root;
+  root.id = 6400;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {6401};
+
+  ui::AXNodeData dialog;
+  dialog.id = 6401;
+  dialog.role = ax::mojom::Role::kDialog;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, dialog);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  ui::BrowserAccessibility* node = manager->GetFromID(6401);
+  ASSERT_NE(node, nullptr);
+  manager->eventDispatcher_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(manager->FireGeneratedEvent(
+      AXEventGenerator::Event::SUBTREE_CREATED, node->node()));
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, FireFocusEvent_DialogRole_NoOp) {
+  ui::AXNodeData root;
+  root.id = 5200;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {5201};
+
+  ui::AXNodeData dialog;
+  dialog.id = 5201;
+  dialog.role = ax::mojom::Role::kDialog;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, dialog);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  ui::BrowserAccessibility* node = manager->GetFromID(5201);
+  ASSERT_NE(node, nullptr);
+  ASSERT_NO_FATAL_FAILURE(manager->FireFocusEvent(node->node()));
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, MoveAccessibilityFocusToId_ReturnsTrue) {
+  ui::AXNodeData root;
+  root.id = 5300;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {5301, 5302};
+
+  ui::AXNodeData b1;
+  b1.id = 5301;
+  b1.role = ax::mojom::Role::kButton;
+
+  ui::AXNodeData b2;
+  b2.id = 5302;
+  b2.role = ax::mojom::Role::kButton;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, b1, b2);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  manager->HandleFocusChanged(5301);
+  EXPECT_TRUE(manager->MoveAccessibilityFocusToId(5302));
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, SendLocationChangeEvents_TooMany_UsesDelayedRoot) {
+  ui::AXNodeData root;
+  root.id = 5400;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {5401};
+
+  ui::AXNodeData b1;
+  b1.id = 5401;
+  b1.role = ax::mojom::Role::kButton;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, b1);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  manager->eventDispatcher_ = nullptr;
+
+  std::vector<ui::AXLocationChange> changes;
+  for (int i = 0; i < kMaxContentChangedEventsToFire + 1; ++i) {
+    changes.emplace_back();
+  }
+  ASSERT_NO_FATAL_FAILURE(manager->SendLocationChangeEvents(changes));
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, RetargetForEvents_BlinkHover_PrefersInterestingChild) {
+  ui::AXNodeData root;
+  root.id = 5500;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {5501};
+
+  ui::AXNodeData container;
+  container.id = 5501;
+  container.role = ax::mojom::Role::kGenericContainer;
+  container.child_ids = {5502};
+
+  ui::AXNodeData button;
+  button.id = 5502;
+  button.role = ax::mojom::Role::kButton;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, container, button);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  ui::BrowserAccessibility* container_ba = manager->GetFromID(5501);
+  ASSERT_NE(container_ba, nullptr);
+  AXNode* ret = manager->RetargetForEvents(
+      container_ba->node(), ui::AXPlatformTreeManager::RetargetEventType::RetargetEventTypeBlinkHover);
+  ASSERT_NE(ret, nullptr);
+  EXPECT_EQ(ret->id(), 5502);
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, OnHoverEvent_NoHit_UsesRoot) {
+  ui::AXNodeData root;
+  root.id = 5600;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {5601};
+
+  ui::AXNodeData b1;
+  b1.id = 5601;
+  b1.role = ax::mojom::Role::kButton;
+  b1.relative_bounds.bounds = gfx::RectF(0, 0, 10, 10);
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, b1);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  manager->eventDispatcher_ = nullptr;
+  ASSERT_NO_FATAL_FAILURE(manager->OnHoverEvent(gfx::PointF(10000, 10000)));
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, FireGeneratedEvent_Alert_And_LiveRegionNodeChanged) {
+  ui::AXNodeData root;
+  root.id = 5700;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {5701};
+
+  ui::AXNodeData alert;
+  alert.id = 5701;
+  alert.role = ax::mojom::Role::kAlert;
+  alert.SetName("Alert text");
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, alert);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  manager->eventDispatcher_ = nullptr;
+  ui::BrowserAccessibility* node = manager->GetFromID(5701);
+  ASSERT_NE(node, nullptr);
+  ASSERT_NO_FATAL_FAILURE(manager->FireGeneratedEvent(
+      AXEventGenerator::Event::ALERT, node->node()));
+  ASSERT_NO_FATAL_FAILURE(manager->FireGeneratedEvent(
+      AXEventGenerator::Event::LIVE_REGION_NODE_CHANGED, node->node()));
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, FireGeneratedEvent_Expanded_Combobox_WithFocusedDescendant) {
+  ui::AXNodeData root;
+  root.id = 5800;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {5801};
+
+  ui::AXNodeData combobox;
+  combobox.id = 5801;
+  combobox.role = ax::mojom::Role::kComboBoxMenuButton;
+  combobox.child_ids = {5802};
+
+  ui::AXNodeData option;
+  option.id = 5802;
+  option.role = ax::mojom::Role::kListBoxOption;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, combobox, option);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  manager->eventDispatcher_ = nullptr;
+
+  manager->HandleFocusChanged(5802);
+  ui::BrowserAccessibility* combo_ba = manager->GetFromID(5801);
+  ASSERT_NE(combo_ba, nullptr);
+  ASSERT_NO_FATAL_FAILURE(manager->FireGeneratedEvent(
+      AXEventGenerator::Event::EXPANDED, combo_ba->node()));
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, ScrollToMakeNodeVisible_Simple) {
+  ui::AXNodeData root;
+  root.id = 5900;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {5901};
+
+  ui::AXNodeData b1;
+  b1.id = 5901;
+  b1.role = ax::mojom::Role::kButton;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, b1);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  ASSERT_NO_FATAL_FAILURE(manager->ScrollToMakeNodeVisible(5901));
+}
+
+TEST_F(BrowserAccessibilityManagerOhosTest, PredicateForSearchKey_Unknown_UsesAllInteresting) {
+  ui::AXNodeData root;
+  root.id = 6001;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.child_ids = {6002, 6003};
+
+  ui::AXNodeData b1;
+  b1.id = 6002;
+  b1.role = ax::mojom::Role::kButton;
+
+  ui::AXNodeData b2;
+  b2.id = 6003;
+  b2.role = ax::mojom::Role::kButton;
+
+  ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, b1, b2);
+  std::unique_ptr<ui::BrowserAccessibilityManagerOHOS> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
+      update, node_id_delegate_, test_browser_accessibility_delegate_.get());
+  int64_t result = manager->FindElementType(6002, "unknown_selector", true, true, false);
+  EXPECT_NE(result, 0);
+}

@@ -15,6 +15,8 @@
 
 #include <string>
 #include <string_view>
+#include <cstdint>
+#include <vector>
 #define private public
 #include "base/ohos/blankless/blankless_controller.h"
 #undef private
@@ -230,6 +232,57 @@ TEST_F(BlanklessControllerTest, CheckSysWhiteList02) {
   controller.m_white_list_.m_is_sys_loaded_ = true;
   uint64_t key = 0;
   EXPECT_FALSE(controller.m_white_list_.CheckSysWhiteList(url, key));
+}
+
+TEST_F(BlanklessControllerTest, CheckSysWhiteList_ExactMatch_Success) {
+  controller.m_white_list_.m_is_sys_loaded_ = true;
+  controller.m_white_list_.m_exact_match_set_.clear();
+  controller.m_white_list_.m_fuzzy_match_set_.clear();
+  std::string url = "https://site.example/page";
+  controller.m_white_list_.m_exact_match_set_.insert(url);
+  uint64_t key = 0;
+  EXPECT_TRUE(controller.m_white_list_.CheckSysWhiteList(url, key));
+  EXPECT_NE(key, 0u);
+}
+
+TEST_F(BlanklessControllerTest, CheckSysWhiteList_FuzzyMatch_Success) {
+  controller.m_white_list_.m_is_sys_loaded_ = true;
+  controller.m_white_list_.m_exact_match_set_.clear();
+  controller.m_white_list_.m_fuzzy_match_set_.clear();
+  std::string prefix = "https://example.com";
+  std::string url = prefix + "/resource?id=1";
+  controller.m_white_list_.m_fuzzy_match_set_.insert(prefix);
+  uint64_t key = 0;
+  EXPECT_TRUE(controller.m_white_list_.CheckSysWhiteList(url, key));
+  EXPECT_NE(key, 0u);
+}
+
+TEST_F(BlanklessControllerTest, ConvertToBlanklessKey_StableHash) {
+  std::string v = "value123";
+  uint64_t k1 = BlanklessController::ConvertToBlanklessKey(v);
+  uint64_t k2 = BlanklessController::ConvertToBlanklessKey(v);
+  EXPECT_EQ(k1, k2);
+}
+
+TEST_F(BlanklessControllerTest, Clear_PerNwebEntriesOnly) {
+  uint32_t n1 = nweb_id1;
+  uint32_t n2 = n1 + 1;
+
+  // Populate per-nweb maps
+  controller.RecordSystemTime(n1, 111, 1000);
+  controller.RecordDumpTime(n1, 111, 2000);
+  controller.RecordSystemTime(n2, 222, 3000);
+  controller.RecordDumpTime(n2, 222, 4000);
+
+  // Clear only n1
+  controller.Clear(n1);
+
+  EXPECT_EQ(controller.GetSystemTime(n1, 111), BlanklessController::INVALID_TIMESTAMP);
+  EXPECT_EQ(controller.GetDumpTime(n1, 111), BlanklessController::INVALID_TIMESTAMP);
+
+  // n2 remains
+  EXPECT_EQ(controller.GetSystemTime(n2, 222), 3000u);
+  EXPECT_EQ(controller.GetDumpTime(n2, 222), 4000u);
 }
 
 TEST_F(BlanklessControllerTest, FrameRemoveCallback)
@@ -656,6 +709,86 @@ TEST_F(BlanklessControllerTest, Check_Record_Dump_Time)
   uint32_t nweb_id2 = 2;
   auto record_time2 = controller.GetDumpTime(nweb_id2, blankless_key1);
   EXPECT_EQ(record_time2, BlanklessController::INVALID_TIMESTAMP);
+}
+
+TEST_F(BlanklessControllerTest, ResetStatus_MainFrameRedirect_NotAllowed)
+{
+  auto status = controller.ResetStatus(nweb_id1, true, true);
+  EXPECT_EQ(status, BlanklessController::StatusCode::NOT_ALLOWED);
+  BlanklessController::StatusInfo info = {
+    .status_code = BlanklessController::StatusCode::NOT_ALLOWED,
+    .allowed = false,
+  };
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info));
+}
+
+TEST_F(BlanklessControllerTest, FireCallbacks_NoEntry_NoCrash)
+{
+  // No registration for this key; both should no-op safely.
+  controller.FireFrameRemoveCallback(nweb_id1, blankless_key1);
+  EXPECT_EQ(controller.FireFrameInsertCallback(nweb_id1, blankless_key1), 0);
+}
+
+TEST_F(BlanklessControllerTest, CheckEnableForSysUrl_ReturnsExpectedKey)
+{
+  controller.m_white_list_.m_is_sys_loaded_ = true;
+  controller.m_white_list_.m_exact_match_set_.clear();
+  controller.m_white_list_.m_fuzzy_match_set_.clear();
+  std::string url = "https://exact.match.domain";
+  controller.m_white_list_.m_exact_match_set_.insert(url);
+  uint64_t key = 0;
+  EXPECT_TRUE(controller.CheckEnableForSysUrl(url, key));
+  EXPECT_EQ(key, std::hash<std::string>{}(url));
+}
+
+TEST_F(BlanklessControllerTest, Clear_All_ResetEverything)
+{
+  // Populate various maps and status
+  controller.RecordWindowId(nweb_id1, 7);
+  controller.RecordSystemTime(nweb_id1, blankless_key1, 111);
+  controller.RecordDumpTime(nweb_id1, blankless_key1, 222);
+  (void)controller.ResetStatus(nweb_id1, true, false);
+  controller.RecordKey(nweb_id1, blankless_key1);
+
+  controller.Clear(0);
+
+  EXPECT_EQ(controller.GetWindowIdByNWebId(nweb_id1), 0u);
+  EXPECT_EQ(controller.GetSystemTime(nweb_id1, blankless_key1), BlanklessController::INVALID_TIMESTAMP);
+  EXPECT_EQ(controller.GetDumpTime(nweb_id1, blankless_key1), BlanklessController::INVALID_TIMESTAMP);
+
+  BlanklessController::StatusInfo info = {};
+  EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info, false));
+}
+
+TEST_F(BlanklessControllerTest, SystemTime_LruEviction_PerNweb)
+{
+  uint32_t nid = nweb_id1;
+  controller.Clear(nid);
+  // LRU size is 3; add 4 entries, expect oldest evicted.
+  controller.RecordSystemTime(nid, 1001, 11);
+  controller.RecordSystemTime(nid, 1002, 22);
+  controller.RecordSystemTime(nid, 1003, 33);
+  controller.RecordSystemTime(nid, 1004, 44);
+
+  EXPECT_EQ(controller.GetSystemTime(nid, 1001), BlanklessController::INVALID_TIMESTAMP);
+  EXPECT_EQ(controller.GetSystemTime(nid, 1002), 22u);
+  EXPECT_EQ(controller.GetSystemTime(nid, 1003), 33u);
+  EXPECT_EQ(controller.GetSystemTime(nid, 1004), 44u);
+}
+
+TEST_F(BlanklessControllerTest, CancelFrameInsertCallback_NoEntry_NoCrash)
+{
+  // Ensure no entry; cancel should not crash, subsequent fire returns 0.
+  controller.Clear(nweb_id1);
+  controller.CancelFrameInsertCallback(nweb_id1, blankless_key1);
+  EXPECT_EQ(controller.FireFrameInsertCallback(nweb_id1, blankless_key1), 0);
+}
+
+TEST_F(BlanklessControllerTest, FireFrameRemoveCallback_NoEntry_NoCrash)
+{
+  controller.Clear(nweb_id1);
+  // No registration -> should do nothing
+  ASSERT_NO_FATAL_FAILURE(controller.FireFrameRemoveCallback(nweb_id1, blankless_key1));
 }
 }  // namespace ohos
 }  // namespace base

@@ -303,6 +303,11 @@ void GLSurfacePresentationHelper::CheckPendingFrames() {
       else
         std::move(frame.callback).Run(gfx::PresentationFeedback::Failure());
     }
+#if BUILDFLAG(IS_ARKWEB)
+    if (gpu_timing_client_) {
+      gpu_timing_client_->ClearQuery();
+    }
+#endif
     pending_frames_.clear();
   }
 

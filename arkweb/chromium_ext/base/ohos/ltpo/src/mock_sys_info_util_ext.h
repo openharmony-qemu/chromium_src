@@ -32,6 +32,15 @@ public:
   MOCK_METHOD(std::string, BaseOsName, (), ());
   MOCK_METHOD(int32_t, MajorVersion, (), ());
   MOCK_METHOD(int32_t, SeniorVersion, (), ());
+
+  static bool osVersion;
+  static bool compatibleDeviceType;
+  static bool isMobileDevice;
+  static bool isTabletDevice;
+  static bool isPcDevice;
+  static bool baseOsName;
+  static bool majorVersion;
+  static bool seniorVersion;
 };
 
 #ifdef __cplusplus
@@ -45,6 +54,15 @@ extern "C" {
   std::string __wrap_BaseOsName();
   int32_t __wrap_MajorVersion();
   int32_t __wrap_SeniorVersion();
+
+  std::string __real_OsVersion();
+  std::string __real_CompatibleDeviceType();
+  bool __real_IsMobileDevice();
+  bool __real_IsTabletDevice();
+  bool __real_IsPcDevice();
+  std::string __real_BaseOsName();
+  int32_t __real_MajorVersion();
+  int32_t __real_SeniorVersion();
 #ifdef __cplusplus
 }
 #endif

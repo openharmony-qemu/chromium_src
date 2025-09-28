@@ -28,6 +28,9 @@
 #include "base/files/file_util.cc"
 #include "base/values.h"
 #include "base/json/json_writer.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_system_properties_adapter.h"
+using namespace OHOS::NWeb;
 
 namespace base {
 namespace ohos {
@@ -284,6 +287,90 @@ TEST_F(BlanklessControllerTest, Clear_PerNwebEntriesOnly) {
   EXPECT_EQ(controller.GetSystemTime(n2, 222), 3000u);
   EXPECT_EQ(controller.GetDumpTime(n2, 222), 4000u);
 }
+
+#if BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
+TEST_F(BlanklessControllerTest, LoadAppWhiteList001) {
+  OhosAdapterHelper& original_instance = OhosAdapterHelper::GetInstance();
+  MockOhosAdapterHelper* instance = new MockOhosAdapterHelper();
+  OhosAdapterHelper::SetInstance(instance);
+  MockSystemPropertiesAdapter adapter;
+
+  EXPECT_CALL(*instance, GetSystemPropertiesInstance()).WillOnce(testing::ReturnRef(adapter));
+  EXPECT_CALL(adapter, GetBundleName()).WillOnce(testing::Return("abc"));
+  controller.m_white_list_.LoadAppWhiteList();
+  EXPECT_TRUE(controller.m_white_list_.m_is_app_loaded_);
+  OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
+}
+
+TEST_F(BlanklessControllerTest, LoadAppWhiteList002) {
+  controller.m_white_list_.m_is_sys_loaded_ = true;
+  ASSERT_NO_FATAL_FAILURE(controller.m_white_list_.LoadAppWhiteList());
+}
+
+TEST_F(BlanklessControllerTest, ParseAppWhiteList001) {
+  testing::internal::CaptureStderr();
+  std::vector<char> buffer;
+  controller.m_white_list_.ParseAppWhiteList(buffer);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("blankless BlankOptWhiteList parse app file as invalid json format failed."), std::string::npos);
+}
+
+TEST_F(BlanklessControllerTest, ParseAppWhiteList002) {
+  testing::internal::CaptureStderr();
+  std::vector<char> buffer = {'1', '2'};
+  controller.m_white_list_.ParseAppWhiteList(buffer);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("blankless BlankOptWhiteList parse app file as invalid json format failed."), std::string::npos);
+}
+
+TEST_F(BlanklessControllerTest, GetBaseUrl001) {
+  std::string url = "abc";
+  std::string result = controller.m_white_list_.GetBaseUrl(url);
+  EXPECT_EQ(result, url);
+}
+
+TEST_F(BlanklessControllerTest, GetBaseUrl002) {
+  std::string url = "abc?123";
+  std::string result = controller.m_white_list_.GetBaseUrl(url);
+  EXPECT_EQ(result, "abc");
+}
+
+TEST_F(BlanklessControllerTest, GetQueryUrl001) {
+  std::string url = "abc";
+  std::string result = controller.m_white_list_.GetQueryUrl(url);
+  EXPECT_EQ(result, url);
+}
+
+TEST_F(BlanklessControllerTest, GetQueryUrl002) {
+  std::string url = "abc?123";
+  controller.m_white_list_.m_query_match_map_["abc"].insert("");
+  std::string result = controller.m_white_list_.GetQueryUrl(url);
+  EXPECT_EQ(result, "abc?");
+}
+
+TEST_F(BlanklessControllerTest, GetQueryUrl003) {
+  std::string url = "abc?123";
+  controller.m_white_list_.m_query_match_map_["abc"].insert("abc");
+  std::string result = controller.m_white_list_.GetQueryUrl(url);
+  EXPECT_EQ(result, "abc?");
+}
+
+TEST_F(BlanklessControllerTest, CheckAppWhiteList001) {
+  std::string url = "12";
+  uint64_t blankless_key = 1;
+  bool result = controller.m_white_list_.CheckAppWhiteList(url, blankless_key);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(BlanklessControllerTest, CheckAppWhiteList002) {
+  std::string url = "12";
+  uint64_t blankless_key = 1;
+  controller.m_white_list_.m_query_match_map_["12"].insert("abc");
+  bool result = controller.m_white_list_.CheckAppWhiteList(url, blankless_key);
+  EXPECT_TRUE(result);
+}
+#endif // BUILDFLAG(ARKWEB_BLANK_PROP_CONFIG)
 
 TEST_F(BlanklessControllerTest, FrameRemoveCallback)
 {

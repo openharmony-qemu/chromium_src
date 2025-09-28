@@ -10,6 +10,7 @@
 #include "base/command_line.h"
 #include "base/ohos/sys_info_utils_ext.h"
 #include "arkweb/chromium_ext/base/ohos/ltpo/src/mock_sys_info_util_ext.h"
+using namespace base::ohos;
 
 namespace content {
 
@@ -29,32 +30,40 @@ public:
 };
 
 TEST_F(ArkwebUserAgentExtTest, GetDistVersionNormalFormat) {
+  SysInfoUtilsMock::osVersion = true;
   auto &sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, OsVersion())
       .WillOnce(testing::Return("3.1.2"))
       .WillRepeatedly(testing::Return("3.1.2"));
   std::string version = GetDistVersion();
   EXPECT_EQ(version, "3.1");
+  SysInfoUtilsMock::osVersion = false;
 }
 
 TEST_F(ArkwebUserAgentExtTest, GetDistVersionOnePart) {
+  SysInfoUtilsMock::osVersion = true;
   EXPECT_CALL(base::ohos::SysInfoUtilsMock::GetInstance(), OsVersion())
       .WillOnce(testing::Return("xxx"))
       .WillRepeatedly(testing::Return("3.1.2"));
   std::string version = GetDistVersion();
   EXPECT_EQ(version, "");
+  SysInfoUtilsMock::osVersion = false;
 }
 
 TEST_F(ArkwebUserAgentExtTest, CompatibleTypeSetIsTrue) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   content::SetArkwebUserAgentExtStateForTest(true);
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).Times(0);
   std::string user_agent = "Mozilla/5.0 ";
   SetProductString(user_agent);
   EXPECT_THAT(user_agent, testing::HasSubstr("ArkWeb/"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
 }
 
 TEST_F(ArkwebUserAgentExtTest, MobileDevice) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::isMobileDevice = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("Phone"));
   EXPECT_CALL(sys_info_utils_mock, IsMobileDevice()).WillOnce(testing::Return(true));
@@ -62,10 +71,16 @@ TEST_F(ArkwebUserAgentExtTest, MobileDevice) {
   SetProductString(user_agent);
   EXPECT_THAT(user_agent, testing::HasSubstr("ArkWeb/"));
   EXPECT_THAT(user_agent, testing::HasSubstr("Mobile"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::isMobileDevice = false;
 }
 
 // Test case for tablet device
 TEST_F(ArkwebUserAgentExtTest, TabletDevice) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::isMobileDevice = true;
+  SysInfoUtilsMock::isTabletDevice = true;
+  SysInfoUtilsMock::isPcDevice = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("Tablet"));
   EXPECT_CALL(sys_info_utils_mock, IsMobileDevice()).WillOnce(testing::Return(false));
@@ -75,10 +90,18 @@ TEST_F(ArkwebUserAgentExtTest, TabletDevice) {
   SetProductString(user_agent);
   EXPECT_THAT(user_agent, testing::HasSubstr("ArkWeb/"));
   EXPECT_THAT(user_agent, testing::Not(testing::HasSubstr("Mobile")));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::isMobileDevice = false;
+  SysInfoUtilsMock::isTabletDevice = false;
+  SysInfoUtilsMock::isPcDevice = false;
 }
 
 // Test case for PC device
 TEST_F(ArkwebUserAgentExtTest, PcDevice) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::isMobileDevice = true;
+  SysInfoUtilsMock::isTabletDevice = true;
+  SysInfoUtilsMock::isPcDevice = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("PC"));
   EXPECT_CALL(sys_info_utils_mock, IsMobileDevice()).WillOnce(testing::Return(false));
@@ -88,10 +111,17 @@ TEST_F(ArkwebUserAgentExtTest, PcDevice) {
   SetProductString(user_agent);
   EXPECT_THAT(user_agent, testing::HasSubstr("ArkWeb/"));
   EXPECT_THAT(user_agent, testing::Not(testing::HasSubstr("Mobile")));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::isMobileDevice = false;
+  SysInfoUtilsMock::isTabletDevice = false;
+  SysInfoUtilsMock::isPcDevice = false;
 }
 
 // Test case for compatible mode: phone on tablet
 TEST_F(ArkwebUserAgentExtTest, CompatiblePhoneOnTablet) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::isMobileDevice = true;
+  SysInfoUtilsMock::isTabletDevice = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("Phone"));
   EXPECT_CALL(sys_info_utils_mock, IsMobileDevice()).WillOnce(testing::Return(false));
@@ -100,10 +130,17 @@ TEST_F(ArkwebUserAgentExtTest, CompatiblePhoneOnTablet) {
   SetProductString(user_agent);
   EXPECT_THAT(user_agent, testing::HasSubstr("ArkWeb/"));
   EXPECT_THAT(user_agent, testing::HasSubstr("Mobile"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::isMobileDevice = false;
+  SysInfoUtilsMock::isTabletDevice = false;
 }
 
 // Test case for compatible mode: phone on PC
 TEST_F(ArkwebUserAgentExtTest, CompatiblePhoneOnPc) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::isMobileDevice = true;
+  SysInfoUtilsMock::isTabletDevice = true;
+  SysInfoUtilsMock::isPcDevice = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("Phone"));
   EXPECT_CALL(sys_info_utils_mock, IsMobileDevice()).WillOnce(testing::Return(false));
@@ -113,9 +150,17 @@ TEST_F(ArkwebUserAgentExtTest, CompatiblePhoneOnPc) {
   SetProductString(user_agent);
   EXPECT_THAT(user_agent, testing::HasSubstr("ArkWeb/"));
   EXPECT_THAT(user_agent, testing::HasSubstr("Mobile"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::isMobileDevice = false;
+  SysInfoUtilsMock::isTabletDevice = false;
+  SysInfoUtilsMock::isPcDevice = false;
 }
 
 TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest0) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::majorVersion = true;
+  SysInfoUtilsMock::seniorVersion = true;
+  SysInfoUtilsMock::baseOsName = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   content::SetArkwebUserAgentExtStateForTest(true);
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).Times(0);
@@ -128,10 +173,18 @@ TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest0) {
   EXPECT_THAT(result, testing::Not(testing::HasSubstr("Tablet")));
   EXPECT_THAT(result, testing::HasSubstr("HarmonyOS"));
   EXPECT_THAT(result, testing::HasSubstr("3.1"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::majorVersion = false;
+  SysInfoUtilsMock::seniorVersion = false;
+  SysInfoUtilsMock::baseOsName = false;
 }
 
 // Test case for GetOhosFullname function
 TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest1) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::majorVersion = true;
+  SysInfoUtilsMock::seniorVersion = true;
+  SysInfoUtilsMock::baseOsName = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("Phone"));
   EXPECT_CALL(sys_info_utils_mock, MajorVersion()).WillOnce(testing::Return(3));
@@ -141,10 +194,18 @@ TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest1) {
   EXPECT_THAT(result, testing::HasSubstr("Phone"));
   EXPECT_THAT(result, testing::HasSubstr("HarmonyOS"));
   EXPECT_THAT(result, testing::HasSubstr("3.1"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::majorVersion = false;
+  SysInfoUtilsMock::seniorVersion = false;
+  SysInfoUtilsMock::baseOsName = false;
 }
 
 // Test case for GetOhosFullname function
 TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest2) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::majorVersion = true;
+  SysInfoUtilsMock::seniorVersion = true;
+  SysInfoUtilsMock::baseOsName = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("PC"));
   EXPECT_CALL(sys_info_utils_mock, MajorVersion()).WillOnce(testing::Return(3));
@@ -154,10 +215,18 @@ TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest2) {
   EXPECT_THAT(result, testing::HasSubstr("PC"));
   EXPECT_THAT(result, testing::HasSubstr("HarmonyOS"));
   EXPECT_THAT(result, testing::HasSubstr("3.1"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::majorVersion = false;
+  SysInfoUtilsMock::seniorVersion = false;
+  SysInfoUtilsMock::baseOsName = false;
 }
 
 // Test case for GetOhosFullname function
 TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest3) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::majorVersion = true;
+  SysInfoUtilsMock::seniorVersion = true;
+  SysInfoUtilsMock::baseOsName = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("Tablet"));
   EXPECT_CALL(sys_info_utils_mock, MajorVersion()).WillOnce(testing::Return(3));
@@ -167,10 +236,18 @@ TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest3) {
   EXPECT_THAT(result, testing::HasSubstr("Tablet"));
   EXPECT_THAT(result, testing::HasSubstr("HarmonyOS"));
   EXPECT_THAT(result, testing::HasSubstr("3.1"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::majorVersion = false;
+  SysInfoUtilsMock::seniorVersion = false;
+  SysInfoUtilsMock::baseOsName = false;
 }
 
 // Test case for GetOhosFullname function
 TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest4) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::majorVersion = true;
+  SysInfoUtilsMock::seniorVersion = true;
+  SysInfoUtilsMock::baseOsName = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("unknown"));
   EXPECT_CALL(sys_info_utils_mock, MajorVersion()).WillOnce(testing::Return(3));
@@ -180,10 +257,18 @@ TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest4) {
   EXPECT_THAT(result, testing::HasSubstr("Phone"));
   EXPECT_THAT(result, testing::HasSubstr("HarmonyOS"));
   EXPECT_THAT(result, testing::HasSubstr("3.1"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::majorVersion = false;
+  SysInfoUtilsMock::seniorVersion = false;
+  SysInfoUtilsMock::baseOsName = false;
 }
 
 // Test case for GetOhosFullname function with empty base OS name
 TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest5) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::majorVersion = true;
+  SysInfoUtilsMock::seniorVersion = true;
+  SysInfoUtilsMock::baseOsName = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("Phone"));
   EXPECT_CALL(sys_info_utils_mock, MajorVersion()).WillOnce(testing::Return(-1));
@@ -192,10 +277,18 @@ TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest5) {
   std::string result = GetOhosFullname();
   EXPECT_THAT(result, testing::HasSubstr("Phone"));
   EXPECT_THAT(result, testing::HasSubstr("OpenHarmony"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::majorVersion = false;
+  SysInfoUtilsMock::seniorVersion = false;
+  SysInfoUtilsMock::baseOsName = false;
 }
 
 // Test case for GetOhosFullname function with empty base OS name
 TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest6) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::majorVersion = true;
+  SysInfoUtilsMock::seniorVersion = true;
+  SysInfoUtilsMock::baseOsName = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("Phone"));
   EXPECT_CALL(sys_info_utils_mock, MajorVersion()).WillOnce(testing::Return(3));
@@ -204,10 +297,18 @@ TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest6) {
   std::string result = GetOhosFullname();
   EXPECT_THAT(result, testing::HasSubstr("Phone"));
   EXPECT_THAT(result, testing::HasSubstr("OpenHarmony"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::majorVersion = false;
+  SysInfoUtilsMock::seniorVersion = false;
+  SysInfoUtilsMock::baseOsName = false;
 }
 
 // Test case for GetOhosFullname function with empty base OS name
 TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest7) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::majorVersion = true;
+  SysInfoUtilsMock::seniorVersion = true;
+  SysInfoUtilsMock::baseOsName = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("Phone"));
   EXPECT_CALL(sys_info_utils_mock, MajorVersion()).WillOnce(testing::Return(3));
@@ -216,9 +317,17 @@ TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest7) {
   std::string result = GetOhosFullname();
   EXPECT_THAT(result, testing::HasSubstr("Phone"));
   EXPECT_THAT(result, testing::HasSubstr("OpenHarmony"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::majorVersion = false;
+  SysInfoUtilsMock::seniorVersion = false;
+  SysInfoUtilsMock::baseOsName = false;
 }
 
 TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest8) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::majorVersion = true;
+  SysInfoUtilsMock::seniorVersion = true;
+  SysInfoUtilsMock::baseOsName = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("Phone"));
   EXPECT_CALL(sys_info_utils_mock, MajorVersion()).WillOnce(testing::Return(3));
@@ -230,9 +339,17 @@ TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest8) {
   std::string result = GetOhosFullname();
   EXPECT_THAT(result, testing::HasSubstr("Phone"));
   EXPECT_THAT(result, testing::HasSubstr("HarmonyOS"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::majorVersion = false;
+  SysInfoUtilsMock::seniorVersion = false;
+  SysInfoUtilsMock::baseOsName = false;
 }
 
 TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest9) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::majorVersion = true;
+  SysInfoUtilsMock::seniorVersion = true;
+  SysInfoUtilsMock::baseOsName = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("Phone"));
   EXPECT_CALL(sys_info_utils_mock, MajorVersion()).WillOnce(testing::Return(3));
@@ -244,9 +361,17 @@ TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest9) {
   EXPECT_THAT(result, testing::HasSubstr("Phone"));
   EXPECT_THAT(result, testing::HasSubstr("HarmonyOS"));
   EXPECT_THAT(result, testing::HasSubstr("3.1"));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::majorVersion = false;
+  SysInfoUtilsMock::seniorVersion = false;
+  SysInfoUtilsMock::baseOsName = false;
 }
 
 TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest10) {
+  SysInfoUtilsMock::compatibleDeviceType = true;
+  SysInfoUtilsMock::majorVersion = true;
+  SysInfoUtilsMock::seniorVersion = true;
+  SysInfoUtilsMock::baseOsName = true;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, CompatibleDeviceType()).WillOnce(testing::Return("Phone"));
   EXPECT_CALL(sys_info_utils_mock, MajorVersion()).WillOnce(testing::Return(3));
@@ -258,6 +383,10 @@ TEST_F(ArkwebUserAgentExtTest, GetOhosFullnameTest10) {
   EXPECT_THAT(result, testing::HasSubstr("Phone"));
   EXPECT_THAT(result, testing::HasSubstr("HarmonyOS"));
   EXPECT_THAT(result, testing::Not(testing::HasSubstr("3.1.2")));
+  SysInfoUtilsMock::compatibleDeviceType = false;
+  SysInfoUtilsMock::majorVersion = false;
+  SysInfoUtilsMock::seniorVersion = false;
+  SysInfoUtilsMock::baseOsName = false;
 }
 
 #endif // BUILDFLAG(ARKWEB_USERAGENT)

@@ -3730,6 +3730,7 @@ test("base_unittests") {
       "//ui/accessibility:test_support",
       "//content/public/browser",
       "//components/subresource_filter/content/browser",
+      "//components/js_injection/browser",
     ]
   }
 

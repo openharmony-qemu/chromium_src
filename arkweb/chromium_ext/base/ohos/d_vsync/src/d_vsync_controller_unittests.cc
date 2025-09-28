@@ -20,6 +20,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "base/test/task_environment.h"
+#include "base/test/test_simple_task_runner.h"
 
 namespace base {
 namespace ohos {
@@ -46,6 +47,38 @@ TEST_F(DVsyncControllerTest, GetIsFling) {
 
   controller.is_fling_ = false;
   EXPECT_FALSE(controller.GetIsFling());
+}
+
+TEST_F(DVsyncControllerTest, Init001) {
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
+  controller.Init();
+  EXPECT_NE(controller.curent_task_runner_, nullptr);
+}
+
+TEST_F(DVsyncControllerTest, Init002) {
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
+  controller.curent_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
+  ASSERT_NO_FATAL_FAILURE(controller.Init());
+}
+
+TEST_F(DVsyncControllerTest, SetIsFling001) {
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
+  controller.SetIsFling(true);
+  EXPECT_TRUE(controller.curent_task_runner_);
+}
+
+TEST_F(DVsyncControllerTest, SetIsFling002) {
+  scoped_refptr<SingleThreadTaskRunner> task_runner_1(MakeRefCounted<TestSimpleTaskRunner>());
+  SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_1);
+  controller.curent_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
+  testing::internal::CaptureStderr();
+  controller.SetIsFling(false);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("curent_task_runner_ is nullptr, try to start init"), std::string::npos);
+  EXPECT_NE(log_output.find("DVsyncController::SetIsFling:"), std::string::npos);
 }
 
 }  // namespace ohos

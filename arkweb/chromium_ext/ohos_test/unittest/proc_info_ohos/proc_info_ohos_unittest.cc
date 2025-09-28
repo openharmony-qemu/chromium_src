@@ -62,7 +62,7 @@ TEST_F(ProcInfoOhosTest, TidToNstid002) {
    EXPECT_FALSE(result);
 }
 
-TEST_F(ProcInfoOhosTest, TidToNstid002) {
+TEST_F(ProcInfoOhosTest, TidToNstid003) {
    const int realPid = 12444;
    const int realTid = 213132;
    int nstid = 0;

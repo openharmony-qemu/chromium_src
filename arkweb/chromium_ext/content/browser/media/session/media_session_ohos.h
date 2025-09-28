@@ -80,7 +80,7 @@ class MediaSessionOHOS final
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   std::shared_ptr<OHOS::NWeb::MediaAVSessionMetadataAdapter> av_metadata_;
   std::shared_ptr<OHOS::NWeb::MediaAVSessionPositionAdapter> av_position_;
-  std::unique_ptr<OHOS::NWeb::MediaAVSessionAdapter> avsession_adapter_;
+  std::shared_ptr<OHOS::NWeb::MediaAVSessionAdapter> avsession_adapter_;
   OHOS::NWeb::MediaAVSessionType media_type_;
   const raw_ptr<MediaSessionImpl, DanglingUntriaged> media_session_;
   mojo::Receiver<media_session::mojom::MediaSessionObserver> observer_receiver_{

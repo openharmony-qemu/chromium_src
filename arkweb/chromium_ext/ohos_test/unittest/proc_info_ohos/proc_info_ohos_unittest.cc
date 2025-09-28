@@ -70,7 +70,6 @@ TEST_F(ProcInfoOhosTest, TidToNstid002) {
    EXPECT_FALSE(result);
 }
 
-
 TEST_F(ProcInfoOhosTest, IsThreadInPid001) {
    int realPid = getpid();
    int realTid = gettid();

@@ -164,6 +164,13 @@ class MockNWebAccessRequest : public NWebAccessRequest {
    MOCK_METHOD(void, Refuse, (), (override));
 }
 
+class MockNWebJsProxyMethod : public OHOS::NWeb::NWebJsProxyMethod {
+  public:
+   ~MockNWebJsProxyMethod() = default;
+   MOCK_METHOD(int, GetSize, (), (override));
+   MOCK_METHOD(void, OnHandle, (int, const std::vector<std::string>&), (override));
+};
+
 #if BUILDFLAG(IS_ARKWEB)
 class MockNWebPrintDocumentAdapterAdapter : public NWebPrintDocumentAdapterAdapter {
   public:
@@ -7318,5 +7325,76 @@ TEST_F(NWebImplTest, GetBlanklessInfoWithKey004) {
   EXPECT_EQ(result, 0);
 }
 #endif  // BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy001) {
+  const std::string objName = "test";
+  const std::vector<std::string> methodName = {"Default", "IncludeSensitive", "Everything"};
+  std::shared_ptr<OHOS::NWeb::NWebJsProxyMethod> data = nullptr;
+  bool isAsync = false;
+  const std::string permission = "permission";
+  
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, RegisterNativeJSProxy(::testing::_, ::testing::_, ::testing::_, ::testing::_,
+      ::testing::_)).Times(0);
+  nweb_impl_->RegisterNativeJavaScriptProxy(objName, methodName, data, isAsync, permission);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy002) {
+  const std::string objName = "test";
+  const std::vector<std::string> methodName = {"Default", "IncludeSensitive", "Everything"};
+  std::shared_ptr<MockNWebJsProxyMethod> data = std::make_shared<MockNWebJsProxyMethod>();
+  bool isAsync = false;
+  const std::string permission = "permission";
+  EXPECT_CALL(*data, GetSize()).WillOnce(::testing::Return(0));
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, RegisterNativeJSProxy(::testing::_, ::testing::_, ::testing::_, ::testing::_,
+      ::testing::_)).Times(1);
+  nweb_impl_->RegisterNativeJavaScriptProxy(objName, methodName, data, isAsync, permission);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy003) {
+  const std::string objName = "test";
+  const std::vector<std::string> methodName = {"Default", "IncludeSensitive", "Everything"};
+  std::shared_ptr<MockNWebJsProxyMethod> data = std::make_shared<MockNWebJsProxyMethod>();
+  bool isAsync = false;
+  const std::string permission = "permission";
+  EXPECT_CALL(*data, GetSize()).WillOnce(::testing::Return(1));
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, RegisterNativeJSProxy(::testing::_, ::testing::_, ::testing::_, ::testing::_,
+      ::testing::_)).Times(1);
+  nweb_impl_->RegisterNativeJavaScriptProxy(objName, methodName, data, isAsync, permission);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif  // BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+
+TEST_F(NWebImplTest, SetProxyOverride001) {
+  const std::vector<std::string> proxyUrls = {"Default", "IncludeSensitive", "Everything"};
+  const std::vector<std::string> proxySchemeFilters = {"Default", "IncludeSensitive", "Everything"};
+  const std::vector<std::string> bypassRules = {"Default", "IncludeSensitive", "Everything"};
+  const bool reverseBypass = false;
+  std::shared_ptr<NWebProxyChangedCallback> callback = nullptr;
+  EXPECT_EQ(proxySchemeFilters.size(), proxyUrls.size());
+  nweb_impl_->nweb_delegate_ = nullptr;
+  nweb_impl_->SetProxyOverride(proxyUrls, proxySchemeFilters, bypassRules, reverseBypass, callback);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+TEST_F(NWebImplTest, AbortDistill001) {
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, AbortDistill()).Times(0);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, AbortDistill002) {
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, AbortDistill()).Times(1);
+  nweb_impl_->AbortDistill();
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif  // BUILDFLAG(ARKWEB_READER_MODE)
 }  // namespace OHOS::NWeb
                           

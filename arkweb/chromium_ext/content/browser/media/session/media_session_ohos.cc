@@ -179,7 +179,7 @@ void MediaSessionOHOS::MediaSessionActionsChanged(
 void MediaSessionOHOS::MediaSessionImagesChanged(
     const base::flat_map<media_session::mojom::MediaSessionImageType,
                          std::vector<media_session::MediaImage>>& images) {
-  if (!avsession_adapter_ || images.empty()) {
+  if (!avsession_adapter_ || images.empty() || !av_metadata_) {
     LOG(ERROR)
         << __FUNCTION__
         << "media avsession avsession_adapter_ or metadata is null return";
@@ -191,7 +191,7 @@ void MediaSessionOHOS::MediaSessionImagesChanged(
       av_metadata_->SetImageUrl(it_img.src.spec());
     }
   }
-  if (av_metadata_ && avsession_adapter_ && !av_metadata_->GetTitle().empty()) {
+  if (avsession_adapter_ && !av_metadata_->GetTitle().empty()) {
     avsession_adapter_->SetMetadata(av_metadata_);
   }
 }

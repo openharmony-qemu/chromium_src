@@ -1,29 +1,8 @@
-action("autolayout_bundle") {
-  script = "scripts/build_autolayout.py"
-
-  inputs = [
-    "package.json",
-    "tsconfig.json",
-    "build/common/webpack.common.js",
-    "build/umd/common/webpack.umd.common.js",
-  ]
-
-  depfile = "$target_gen_dir/autolayout.d"
-
-  outputs = [ "$root_out_dir/autolayout.js" ]
-
-  args = [
-    "--source-dir",
-    rebase_path(".", root_build_dir),
-    "--work-dir",
-    rebase_path("$target_gen_dir/work", root_build_dir),
-    "--output-dir",
-    rebase_path("$root_out_dir", root_build_dir),
-    "--mode",
-    "dev",
-    "--npm",
-    rebase_path("//third_party/node/linux/node-linux-x64/bin/npm", root_build_dir),
-    "--depfile",
-    rebase_path(depfile, root_build_dir),
-  ]
+copy("copy_autolayout") {
+    sources = [ "./dist/sdk/webview/autolayout.js" ]
+    outputs = [ "$root_out_dir/autolayout.js" ]
+    data = [ "$root_out_dir/autolayout.js" ]
+}
+group("ohos_autolayout") {
+    public_deps = [ ":copy_autolayout" ]
 }

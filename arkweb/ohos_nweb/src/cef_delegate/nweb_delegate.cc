@@ -133,6 +133,7 @@ static const double kZoomLevelToFactorRatio = 1.2;
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
 const int NWebPlaybackState_NONE = 0;
 #endif
+const int kErrorDescriptionMaxLen = 2048;
 
 static const int kDefaultWebNativeProxy = -2;
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
@@ -261,12 +262,14 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
     auto data =
         std::make_shared<OHOS::NWeb::NWebCoreValue>(NWebHapValue::Type::NONE);
     AddNWebValueCefV2(result, data);
+    data->SetErrorDescription(error_description_);
     if (callback_) {
       callback_->OnReceiveValueV2(data);
       if (ArkWebGetErrno() != RESULT_OK) {
         auto data2 =
             std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
         ConvertCefValueToNWebMessage(result, data2);
+        data2->SetErrorDescription(error_description_);
         callback_->OnReceiveValue(data2);
       }
     }
@@ -290,7 +293,13 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
     }
   }
 
+  void SetErrorDescription(const std::string& description) override {
+    error_description_ = "Not support type: <" +
+        description.substr(0, kErrorDescriptionMaxLen) + ">";
+  }
+
  private:
+  std::string error_description_;
   std::shared_ptr<NWebMessageValueCallback> callback_;
   uint32_t callbackId_;
   std::shared_ptr<NWebDelegateInterface> nwebDelegate_;

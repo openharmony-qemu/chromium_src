@@ -22,7 +22,9 @@ namespace {
 
 #if BUILDFLAG(ARKWEB_PDF)
 void PaintManager::DoPaintAtScrollStopped() {
+#if !defined(COMPONENT_BUILD)
   cc::InputHandlerUtils::SetScrollStopped();
+#endif  // !defined(COMPONENT_BUILD)
   DoPaint(true);
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)

@@ -174,18 +174,20 @@ void WidgetBaseUtils::DidNativeEmbedEvent(blink::WebInputEvent::Type type,
       static_cast<String>(embedId), id, x, y, x, y, nativeType, x, y));
 }
 
-void WidgetBaseUtils::MouseHitTest(const WebMouseEvent& event) {
+void WidgetBaseUtils::MouseHitTest(const WebMouseEvent& event, int32_t button) {
   FrameWidget* frame_widget = widget_base_->client_->FrameWidget();
   if (!frame_widget) {
     return;
   }
-  frame_widget->MouseHitTest(event);
+  frame_widget->MouseHitTest(event, button);
 }
 
-void WidgetBaseUtils::NativeMouseHitTestResult(bool isNative, int layerId) {
+void WidgetBaseUtils::NativeMouseHitTestResult(bool isNative,
+                                               int layerId,
+                                               int32_t button) {
   if (widget_base_->widget_input_handler_manager_) {
     widget_base_->widget_input_handler_manager_->manager_utils()
-      ->NativeMouseHitTestResult(isNative, layerId);
+      ->NativeMouseHitTestResult(isNative, layerId, button);
   }
 }
 
@@ -211,11 +213,23 @@ void WidgetBaseUtils::DidNativeEmbedMouseEvent(
       nativeMouseType = mojom::blink::NativeMouseType::CANCEL;
   }
   mojom::blink::NativeMouseButton nativeMouseButton;
-  if (modifiers & blink::WebInputEvent::Modifiers::kLeftButtonDown) {
+
+  auto is_left_click = modifiers == WebInputEvent::Modifiers::kLeftButtonDown ||
+                       modifiers == (WebInputEvent::Modifiers::kLeftButtonDown |
+                                    WebInputEvent::Modifiers::kIsAutoRepeat);
+  auto is_right_click =
+      modifiers == WebInputEvent::Modifiers::kRightButtonDown ||
+      modifiers == (WebInputEvent::Modifiers::kRightButtonDown |
+                   WebInputEvent::Modifiers::kIsAutoRepeat);
+  auto is_mid_click =
+      modifiers == WebInputEvent::Modifiers::kMiddleButtonDown ||
+      modifiers == (WebInputEvent::Modifiers::kMiddleButtonDown |
+                   WebInputEvent::Modifiers::kIsAutoRepeat);
+  if (is_left_click) {
     nativeMouseButton = mojom::blink::NativeMouseButton::LEFT_BUTTON;
-  } else if (modifiers & blink::WebInputEvent::Modifiers::kRightButtonDown) {
+  } else if (is_right_click) {
     nativeMouseButton = mojom::blink::NativeMouseButton::RIGHT_BUTTON;
-  } else if (modifiers & blink::WebInputEvent::Modifiers::kMiddleButtonDown) {
+  } else if (is_mid_click) {
     nativeMouseButton = mojom::blink::NativeMouseButton::MIDDLE_BUTTON;
   }
   LOG(DEBUG) << "[NativeEmbed] DidNativeEmbedEvent mouse event type is : "

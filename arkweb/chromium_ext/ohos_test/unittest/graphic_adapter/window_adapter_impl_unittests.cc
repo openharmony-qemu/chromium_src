@@ -21,8 +21,10 @@
 #define private public
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
 #undef private
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_ndk_api.h"
 
 using namespace testing;
+using namespace MockNdkApi;
 
 namespace OHOS::NWeb {
 
@@ -61,5 +63,69 @@ TEST_F(WindowAdapterImplTest, WindowAdapterImplTest_002)
 
     ret = adapter.GetNativeWindowAbortBuffer(nullptr, nullptr);
     EXPECT_NE(ret, 0);
+}
+
+TEST_F(WindowAdapterImplTest, AddNativeWindowRef)
+{
+    WindowAdapterNdkImpl &adapter = WindowAdapterNdkImpl::GetInstance();
+    g_mock_OH_NativeWindow_NativeObjectReference = [](void *obj) {
+        return 0;
+    };
+    ASSERT_NO_FATAL_FAILURE(adapter.AddNativeWindowRef(nullptr));
+    g_mock_OH_NativeWindow_NativeObjectReference = [](void *obj) {
+        return __real_OH_NativeWindow_NativeObjectReference(obj);
+    };
+    ASSERT_NO_FATAL_FAILURE(adapter.AddNativeWindowRef(nullptr));
+    g_mock_OH_NativeWindow_NativeObjectReference = nullptr;
+}
+
+TEST_F(WindowAdapterImplTest, NativeWindowUnRef)
+{
+    WindowAdapterNdkImpl &adapter = WindowAdapterNdkImpl::GetInstance();
+    g_mock_OH_NativeWindow_NativeObjectUnreference = [](void *obj) {
+        return 0;
+    };
+    ASSERT_NO_FATAL_FAILURE(adapter.NativeWindowUnRef(nullptr));
+    g_mock_OH_NativeWindow_NativeObjectUnreference = [](void *obj) {
+        return __real_OH_NativeWindow_NativeObjectUnreference(obj);
+    };
+    ASSERT_NO_FATAL_FAILURE(adapter.NativeWindowUnRef(nullptr));
+    g_mock_OH_NativeWindow_NativeObjectUnreference = nullptr;
+}
+
+TEST_F(WindowAdapterImplTest, GetNativeWindowRequestBuffer)
+{
+    WindowAdapterNdkImpl &adapter = WindowAdapterNdkImpl::GetInstance();
+    g_mock_OH_NativeWindow_NativeWindowRequestBuffer = [](OHNativeWindow *window,
+        OHNativeWindowBuffer **buffer, int *fenceFd) {
+        return 0;
+    };
+    int32_t ret = adapter.GetNativeWindowRequestBuffer(nullptr, nullptr, nullptr);
+    EXPECT_EQ(ret, 0);
+    g_mock_OH_NativeWindow_NativeWindowRequestBuffer = [](OHNativeWindow *window,
+        OHNativeWindowBuffer **buffer, int *fenceFd) {
+        return __real_OH_NativeWindow_NativeWindowRequestBuffer(window, buffer, fenceFd);
+    };
+    ret = adapter.GetNativeWindowRequestBuffer(nullptr, nullptr, nullptr);
+    EXPECT_NE(ret, 0);
+    g_mock_OH_NativeWindow_NativeWindowRequestBuffer = nullptr;
+}
+
+TEST_F(WindowAdapterImplTest, GetNativeWindowAbortBuffer)
+{
+    WindowAdapterNdkImpl &adapter = WindowAdapterNdkImpl::GetInstance();
+    g_mock_OH_NativeWindow_NativeWindowAbortBuffer = [](OHNativeWindow *window,
+        OHNativeWindowBuffer *buffer) {
+        return 0;
+    };
+    int32_t ret = adapter.GetNativeWindowAbortBuffer(nullptr, nullptr);
+    EXPECT_EQ(ret, 0);
+    g_mock_OH_NativeWindow_NativeWindowAbortBuffer = [](OHNativeWindow *window,
+        OHNativeWindowBuffer *buffer) {
+        return __real_OH_NativeWindow_NativeWindowAbortBuffer(window, buffer);
+    };
+    ret = adapter.GetNativeWindowAbortBuffer(nullptr, nullptr);
+    EXPECT_NE(ret, 0);
+    g_mock_OH_NativeWindow_NativeWindowAbortBuffer = nullptr;
 }
 } // namespace OHOS::NWeb

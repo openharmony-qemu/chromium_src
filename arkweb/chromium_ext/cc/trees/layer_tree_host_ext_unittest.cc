@@ -172,5 +172,56 @@ class OnLayerRectVisibilityChangeFalseTest : public LayerTreeHostExtTestBase {
 
 SINGLE_AND_MULTI_THREAD_TEST_F(OnLayerRectVisibilityChangeFalseTest);
 
+class OnLayerRectUpdateValidLayerTest : public LayerTreeHostExtTestBase {
+ protected:
+  void BeginTest() override {
+    auto layer = Layer::Create();
+    host_ext()->RegisterLayer(layer.get());
+    const int layer_id = layer->id();
+    gfx::Rect rect(0, 0, 100, 100);
+    host_ext()->OnLayerRectUpdate(layer_id, rect);
+    EndTest();
+  }
+};
+
+SINGLE_AND_MULTI_THREAD_TEST_F(OnLayerRectUpdateValidLayerTest);
+
+class OnLayerRectVisibilityChangeLayerTest : public LayerTreeHostExtTestBase {
+ protected:
+  void BeginTest() override {
+    auto layer = Layer::Create();
+    host_ext()->RegisterLayer(layer.get());
+    const int layer_id = layer->id();
+    host_ext()->OnLayerRectVisibilityChange(layer_id, false);
+    EndTest();
+  }
+};
+
+SINGLE_AND_MULTI_THREAD_TEST_F(OnLayerRectVisibilityChangeLayerTest);
+
+class CleanupRemovedLayerVisibleNullLayerTest : public LayerTreeHostExtTestBase {
+ protected:
+  void BeginTest() override {
+    host_ext()->CleanupVisibilityForRemovedLayer(nullptr);
+    EndTest();
+  }
+};
+
+SINGLE_AND_MULTI_THREAD_TEST_F(CleanupRemovedLayerVisibleNullLayerTest);
+
+class OnLayerBoundsUpdateWithLayerTest : public LayerTreeHostExtTestBase {
+ protected:
+  void BeginTest() override {
+    auto layer = Layer::Create();
+    host_ext()->RegisterLayer(layer.get());
+    const int layer_id = layer->id();
+    gfx::Rect bounds(0, 0, 200, 200);
+    host_ext()->OnLayerBoundsUpdate(layer_id, bounds);
+    EndTest();
+  }
+};
+
+SINGLE_AND_MULTI_THREAD_TEST_F(OnLayerBoundsUpdateWithLayerTest);
+
 }  //namespace
 }  // namespace cc

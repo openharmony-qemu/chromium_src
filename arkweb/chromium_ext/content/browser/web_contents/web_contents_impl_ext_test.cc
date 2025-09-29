@@ -22,6 +22,7 @@
 #include "content/public/browser/custom_media_player_listener.h"
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/web_contents_delegate.h"
+#include "content/public/common/content_switches_ext.h"
 #include "content/public/common/main_function_params.h"
 #include "content/public/test/test_utils.h"
 #include "content/test/test_render_frame_host.h"
@@ -1558,5 +1559,39 @@ TEST_F(WebContentsImplExtTest, DisableSessionReuse002) {
       std::make_unique<BrowserMainLoop>(std::move(main_func_para),
                                         std::move(scoped_execution_fence));
   ExtendContent()->DisableSessionReuse();
+}
+
+TEST_F(WebContentsImplExtTest, EnterFullscreenMode002) {
+  base::CommandLine::ForCurrentProcess()->AppendSwitch(
+      "enable-nweb-ex-top-controls");
+  int render_process_id = 0;
+  int render_frame_id = 0;
+  auto ptr_host = RenderFrameHost::FromID(render_process_id, render_frame_id);
+  auto ptr_host_impl = RenderFrameHostImpl::From(ptr_host);
+  blink::mojom::FullscreenOptions options;
+  EXPECT_TRUE(base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kEnableNwebExTopControls));
+  ExtendContent()->EnterFullscreenMode(ptr_host_impl, options);
+}
+
+TEST_F(WebContentsImplExtTest, ExitFullscreenMode002) {
+  base::CommandLine::ForCurrentProcess()->AppendSwitch(
+      "enable-nweb-ex-top-controls");
+  EXPECT_TRUE(base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kEnableNwebExTopControls));
+  bool will_cause_resize = false;
+  ExtendContent()->ExitFullscreenMode(will_cause_resize);
+}
+
+TEST_F(WebContentsImplExtTest, RenderViewReady002) {
+  base::CommandLine::ForCurrentProcess()->AppendSwitch(
+      "enable-nweb-ex-top-controls");
+  EXPECT_TRUE(base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kEnableNwebExTopControls));
+  int render_process_id = 0;
+  int render_view_id = 0;
+  RenderViewHost* view_host =
+      RenderViewHost::FromID(render_process_id, render_view_id);
+  ExtendContent()->RenderViewReady(view_host);
 }
 }  // namespace content

@@ -67,7 +67,16 @@ void InitializeSkia() {
   if (base::FeatureList::IsEnabled(kSmallerFontCache)) {
     // Could also reduce the maximum number of cached strikes, but the intent
     // being to reduce memory usage, only control cache memory usage.
+  #if BUILDFLAG(IS_ARKWEB)
+    auto type = cmd.GetSwitchValueASCII(switches::kProcessType);
+    if (type != switches::kRendererProcess) {
+      SkGraphics::SetFontCacheLimit(3 * kMB);
+    } else {
+      SkGraphics::SetFontCacheLimit(kMB);
+    }
+  #else
     SkGraphics::SetFontCacheLimit(kMB);
+  #endif
   }
 
   InitSkiaEventTracer();

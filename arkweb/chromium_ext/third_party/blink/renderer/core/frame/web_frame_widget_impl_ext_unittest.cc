@@ -96,6 +96,10 @@ class WebFrameWidgetImplExtSimTest : public SimTest {
         std::move(callback));
   }
 
+  void SetWidgetBaseForTesting(std::unique_ptr<WidgetBase> widget_base) {
+    MockMainFrameWidget()->widget_base_ = std::move(widget_base);
+  }
+
   void SetUp() override {
     SimTest::SetUp();
     WebView().MainFrameViewWidget()->Resize(gfx::Size(800, 600));
@@ -380,6 +384,31 @@ TEST_F(WebFrameWidgetImplExtSimTest, OnDataDetectorSelectText_Focused) {
   input_element->Focus();
   ASSERT_TRUE(GetDocument().FocusedElement());
   MockMainFrameWidget()->OnDataDetectorSelectTextForTest();
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SetZoomLevel_WithoutWidgetBase) {
+  auto widget_base = std::move(MockMainFrameWidget()->widget_base_);
+  SetWidgetBaseForTesting(nullptr);
+  MockMainFrameWidget()->SetZoomLevel(1.5, gfx::Point(10, 20));
+  SetWidgetBaseForTesting(std::move(widget_base));
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, SetOverscrollMode_WithoutWidgetBase) {
+  auto widget_base = std::move(MockMainFrameWidget()->widget_base_);
+  SetWidgetBaseForTesting(nullptr);
+  int mode = 42;
+  EXPECT_TRUE(MockMainFrameWidget()->widget_base_);
+  MockMainFrameWidget()->SetOverscrollMode(mode);
+  SetWidgetBaseForTesting(std::move(widget_base));
+}
+
+TEST_F(WebFrameWidgetImplExtSimTest, GetOverScrollOffset_WithoutWidgetBase) {
+  auto widget_base = std::move(MockMainFrameWidget()->widget_base_);
+  SetWidgetBaseForTesting(nullptr);
+  auto offset = MockMainFrameWidget()->GetOverScrollOffsetForTest();
+  EXPECT_EQ(offset.x(), 0);
+  EXPECT_EQ(offset.y(), 0);
+  SetWidgetBaseForTesting(std::move(widget_base));
 }
 
 }  // namespace

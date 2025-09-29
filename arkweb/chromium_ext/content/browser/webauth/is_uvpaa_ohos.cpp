@@ -25,6 +25,6 @@ void IsUVPlatformAuthenticatorAvailable(
   device::OhosAuthenticator::IsUserVerifyingPlatformAuthenticatorAvailable(
       std::move(callback));
 }
-#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
+#endif // BUILDFLAG(ARKWEB_FIDO)
 
 } // namespace content

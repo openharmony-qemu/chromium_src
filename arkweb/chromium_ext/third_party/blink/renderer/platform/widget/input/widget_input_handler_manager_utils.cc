@@ -256,23 +256,31 @@ void WidgetInputHandlerManagerUtils::SetMouseEventResult(bool result, bool stopP
   manager_->input_handler_proxy_->proxy_utils()->SetMouseEventResult(result, stopPropagation);
 }
 
-void WidgetInputHandlerManagerUtils::MouseHitTest(const WebMouseEvent& event) {
+void WidgetInputHandlerManagerUtils::MouseHitTest(const WebMouseEvent& event,
+                                                  int32_t button) {
   manager_->main_thread_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&WidgetBaseUtils::MouseHitTest,
-                     manager_->widget_->utils()->GetWeakPtr(), event));
+                     manager_->widget_->utils()->GetWeakPtr(), event, button));
 }
 
-void WidgetInputHandlerManagerUtils::NativeMouseHitTestResult(bool isNative, int layerId) {
+void WidgetInputHandlerManagerUtils::NativeMouseHitTestResult(bool isNative,
+                                                              int layerId,
+                                                              int32_t button) {
   manager_->compositor_thread_default_task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&WidgetInputHandlerManagerUtils::AsyncNativeMouseHitTestResult, AsWeakPtr(),
-                     isNative, layerId));
+      base::BindOnce(
+          &WidgetInputHandlerManagerUtils::AsyncNativeMouseHitTestResult,
+          AsWeakPtr(), isNative, layerId, button));
 }
 
-void WidgetInputHandlerManagerUtils::AsyncNativeMouseHitTestResult(bool isNative, int layerId) {
+void WidgetInputHandlerManagerUtils::AsyncNativeMouseHitTestResult(
+    bool isNative,
+    int layerId,
+    int32_t button) {
   if (manager_->input_handler_proxy_) {
-    manager_->input_handler_proxy_->proxy_utils()->NativeMouseHitTestResult(isNative, layerId);
+    manager_->input_handler_proxy_->proxy_utils()->NativeMouseHitTestResult(
+        isNative, layerId, button);
   }
 }
 

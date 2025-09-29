@@ -59,6 +59,7 @@ BackgroundTaskHolder::BackgroundTaskHolder()
     backgroundTaskAdapter_ = OhosAdapterHelper::GetInstance().CreateBackgroundTaskAdapter();
     if (!backgroundTaskAdapter_) {
       LOG(ERROR) << "BackgroundTaskHolder::backgroundTaskAdapter_ is nullptr.";
+      return;
     }
     backgroundStateChangeCallbackAdapter_ = std::make_shared<BackgroundStateChangeCallback>();
     if (backgroundStateChangeCallbackAdapter_) {

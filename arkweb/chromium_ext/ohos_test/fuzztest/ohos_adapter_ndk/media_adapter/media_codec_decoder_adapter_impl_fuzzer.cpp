@@ -131,7 +131,6 @@ public:
 bool MediaCodecDecoderAdapterImplFuzzTest(const uint8_t* data, size_t size)
 {
     NWeb::MediaCodecDecoderAdapterImpl mediaCodecDecoderAdapterImpl;
-    
     std::shared_ptr<NWeb::DecoderFormatAdapter> format = std::make_unique<DecoderFormatAdapterMock>();
     FuzzedDataProvider dataProvider(data, size);
     std::string stringParam = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);

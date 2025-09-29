@@ -530,7 +530,6 @@ component("nweb_sources") {
     "//ohos_glue:ohos_nweb_glue_source",
     "//cef/libcef/features",
     "//arkweb/build/features",
-    "//ohos_autolayout",
   ]
 
   if (defined(arkweb_no_state_prefetch) && arkweb_no_state_prefetch) {

@@ -97,7 +97,11 @@ struct WebExtensionManifestUrlOverride {
   std::optional<std::string> bookmarks;
   std::optional<std::string> history;
 };
- 
+
+struct WebExtensionManifestOmnibox {
+  std::string keyword;
+};
+
 struct WebExtensionManifestOptionsPageInfo {
   std::string options_page;
   bool open_in_tab;
@@ -118,6 +122,7 @@ struct WebExtensionManifestInfo {
   std::optional<ExtensionIncognitoMode> incognito_mode;
   std::optional<NWebExtensionActionIconV2> icons;
   std::optional<WebExtensionManifestUrlOverride> url_override;
+  std::optional<WebExtensionManifestOmnibox> omnibox;
 };
  
 struct WebExtensionInfoV2 {

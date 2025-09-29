@@ -6906,3 +6906,10 @@ void NWebImpl::SetSocketIdleTimeout(int32_t timeout) {
   content::GetNetworkService()->SetSocketIdleTimeout(timeout);
 }
 #endif
+
+void NWebImpl::StopFling() {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->StopFling();
+}

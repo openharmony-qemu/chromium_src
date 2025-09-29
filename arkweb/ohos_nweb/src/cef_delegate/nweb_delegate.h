@@ -657,6 +657,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       std::shared_ptr<NWebMessageValueCallback> callback) override;
   void FillAutofillData(std::shared_ptr<NWebMessage> data) override;
   void FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) override;
+  void StopFling() override;
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
   void StartCamera() override;

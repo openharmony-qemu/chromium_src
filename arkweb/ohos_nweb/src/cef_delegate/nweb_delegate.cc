@@ -6279,4 +6279,13 @@ void NWebDelegate::OnBrowserBackground() {
   GetBrowser()->GetHost()->OnBrowserBackground();
 }
 #endif
+
+void NWebDelegate::StopFling() {
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(DEBUG) << "NWebDelegate::WebStopFling";
+    return;
+  }
+
+  GetBrowser()->GetHost()->StopFling();
+}
 }  // namespace OHOS::NWeb

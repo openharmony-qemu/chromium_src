@@ -57,13 +57,16 @@ void BackgroundStateChangeCallback::NotifyApplicationBackground()
 BackgroundTaskHolder::BackgroundTaskHolder()
 {
     backgroundTaskAdapter_ = OhosAdapterHelper::GetInstance().CreateBackgroundTaskAdapter();
-    CHECK(backgroundTaskAdapter_);
+    if (!backgroundTaskAdapter_) {
+      LOG(ERROR) << "BackgroundTaskHolder::backgroundTaskAdapter_ is nullptr.";
+      return;
+    }
     backgroundStateChangeCallbackAdapter_ = std::make_shared<BackgroundStateChangeCallback>();
     if (backgroundStateChangeCallbackAdapter_) {
       backgroundTaskAdapter_->RegisterBackgroundTaskPolicyCallback(backgroundStateChangeCallbackAdapter_);
       LOG(INFO) << "BackgroundTaskHolder::backgroundStateChangeCallbackAdapter_ is registered.";
     } else {
-      LOG(INFO) << "BackgroundTaskHolder::backgroundStateChangeCallbackAdapter_ is nullptr.";
+      LOG(ERROR) << "BackgroundTaskHolder::backgroundStateChangeCallbackAdapter_ is nullptr.";
     }
 }
 

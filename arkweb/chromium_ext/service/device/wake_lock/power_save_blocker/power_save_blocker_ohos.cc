@@ -4,6 +4,7 @@
 
 #include "services/device/wake_lock/power_save_blocker/power_save_blocker.h"
 
+#include <mutex>
 #include "base/logging.h"
 #include "base/memory/ref_counted.h"
 #include "services/device/wake_lock/power_save_blocker/power_save_blocker.h"
@@ -25,11 +26,13 @@ class PowerSaveBlocker::Delegate
  private:
   mojom::WakeLockType type_;
   std::map<int32_t, mojom::WakeLockType> lock_map_;
+  std::mutex lock_map_mutex_;
   friend class base::RefCountedThreadSafe<Delegate>;
   ~Delegate() {}
 };
 
 void PowerSaveBlocker::Delegate::ApplyBlock(const int32_t& id) {
+  std::lock_guard<std::mutex> lock(lock_map_mutex_);
   switch (type_) {
     case mojom::WakeLockType::kPreventAppSuspension:
       if (id != -1) {
@@ -48,6 +51,7 @@ void PowerSaveBlocker::Delegate::ApplyBlock(const int32_t& id) {
 }
 
 void PowerSaveBlocker::Delegate::RemoveBlock(const int32_t& id) {
+  std::lock_guard<std::mutex> lock(lock_map_mutex_);
   if (lock_map_.find(id) == lock_map_.end() || type_ != lock_map_[id]) {
     LOG(WARNING) << "The lock dose not exist, id: " << id
                  << ", type_: " << type_;

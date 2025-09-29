@@ -346,4 +346,5 @@ void OhosWebPermissionDataBaseAdapterImpl::GetOriginsByPermission(const WebPermi
         origins.push_back(origin);
         delete[] origin;
     } while (cursor->goToNextRow(cursor) == RDB_OK);
+    cursor->destroy(cursor);
 }

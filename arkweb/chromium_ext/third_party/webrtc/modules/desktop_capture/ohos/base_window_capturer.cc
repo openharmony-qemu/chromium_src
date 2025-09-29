@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/hash/hash.h"
 #include "absl/memory/memory.h"
 #include "base/logging.h"
 #include "base/memory/platform_shared_memory_region.h"
@@ -40,7 +41,6 @@
 #include "third_party/webrtc/modules/desktop_capture/ohos/audio_enc_info_adapter_impl.h"
 #include "third_party/webrtc/modules/desktop_capture/ohos/audio_info_adapter_impl.h"
 #include "third_party/webrtc/modules/desktop_capture/ohos/base_audio_capturer_source.h"
-#include "third_party/webrtc/modules/desktop_capture/ohos/base_screen_capture_source_bridge.h"
 #include "third_party/webrtc/modules/desktop_capture/ohos/recorder_info_adapter_impl.h"
 #include "third_party/webrtc/modules/desktop_capture/ohos/screen_capture_config_adapter_impl.h"
 #include "third_party/webrtc/modules/desktop_capture/ohos/video_capture_info_adapter_impl.h"
@@ -130,14 +130,12 @@ void BaseWindowCapturer::SetSharedMemoryFactory(
   factory_ = std::move(shared_memory_factory);
 }
 
-BaseWindowCapturer::BaseWindowCapturer(CaptureSourceType source_type, bool is_picker_show, int nweb_id,
-                                       base::OnceCallback<void(uint64_t displayId)> callback)
+BaseWindowCapturer::BaseWindowCapturer(CaptureSourceType source_type, bool is_picker_show, int nweb_id)
     : capture_source_type_(source_type) {
-  BaseScreenCaptureSource::GetInstance().SetDisplaySelectCallback(std::move(callback));
   portal_init_failed_ = true;
 
-  LOG(INFO) << "BaseWindowCapturer, CreateBaseScreenCaptureSource: "
-            << &BaseScreenCaptureSource::GetInstance();
+  LOG(INFO) << "BaseWindowCapturer, CreateBaseScreenCaptureSource: hash="
+            << std::hex << base::FastHash(base::byte_span_from_ref(&BaseScreenCaptureSource::GetInstance()));
   nweb_id_ = nweb_id;
   BaseScreenCaptureSource::GetInstance().SetScreenCapturePickerShow(is_picker_show);
   if (!BaseScreenCaptureSource::GetInstance().SetScreenCaptureConfig(nweb_id_)) {
@@ -159,26 +157,20 @@ BaseWindowCapturer::BaseWindowCapturer(CaptureSourceType source_type, bool is_pi
 }
 
 BaseWindowCapturer::~BaseWindowCapturer() {
-  LOG(DEBUG) << "BaseWindowCapturer::~BaseWindowCapturer";
-}
-
-void BaseWindowCapturer::Stop()
-{
-  LOG(INFO) << "stop and release capture success";
+  LOG(INFO) << "BaseWindowCapturer::~BaseWindowCapturer, nweb_id = " << nweb_id_;
   BaseScreenCaptureSource::GetInstance().StopCapture(nweb_id_);
   BaseScreenCaptureSource::GetInstance().ReleaseCapture(nweb_id_);
 }
 
 // LCOV_EXCL_START
 void BaseWindowCapturer::HandleBuffer() {
-  if (portal_init_failed_ || !BaseScreenCaptureSource::GetInstance().ScreenCaptureAdapterIsExist(nweb_id_) ||
-    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_] == nullptr) {
+  if (portal_init_failed_) {
     LOG(ERROR) << "init failed";
     return;
   }
 
   std::shared_ptr<OHOS::NWeb::SurfaceBufferAdapter> buffer =
-      BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->AcquireVideoBuffer();
+      BaseScreenCaptureSource::GetInstance().AcquireVideoBuffer(nweb_id_);
   if (!buffer) {
     LOG(ERROR) << "acquire video buffer failed";
     return;
@@ -187,7 +179,7 @@ void BaseWindowCapturer::HandleBuffer() {
   int32_t format = buffer->GetFormat();
   if (format != OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888) {
     LOG(ERROR) << "buffer format error";
-    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
+    BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
     return;
   }
   int32_t width = buffer->GetWidth();
@@ -199,7 +191,7 @@ void BaseWindowCapturer::HandleBuffer() {
              << ", stride:" << stride;
   if (buffSize < static_cast<uint32_t>(height * stride)) {
     LOG(ERROR) << "screen capture buff size error";
-    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
+    BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
     return;
   }
 
@@ -220,13 +212,13 @@ void BaseWindowCapturer::HandleBuffer() {
   char* pSrcData = (char*)(buffer->GetVirAddr());
   if (!pData || !pSrcData) {
     LOG(ERROR) << "data or GetVirAddr failed";
-    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
+    BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
     return;
   }
   for (int32_t i = 0; i < height; i++) {
     if (memcpy_s(pData, frameStride, pSrcData, frameStride) != EOK) {
       LOG(ERROR) << "data memcpy_s failed";
-      BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
+      BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
       return;
     }
     pData += frameStride;
@@ -239,7 +231,7 @@ void BaseWindowCapturer::HandleBuffer() {
     webrtc::MutexLock lock(&current_frame_lock_);
     current_frame_ = std::move(current_frame);
   }
-  BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
+  BaseScreenCaptureSource::GetInstance().ReleaseVideoBuffer(nweb_id_);
 }
 // LCOV_EXCL_STOP
 
@@ -261,11 +253,6 @@ void BaseWindowCapturer::Start(Callback* callback) {
     return;
   }
   isStart_ = true;
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  BaseScreenCaptureSource::GetInstance().SetScreenCaptureState(
-      OHOS::NWeb::ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_STARTED,
-      nweb_id_);
-#endif
   LOG(INFO) << "start capture success";
 }
 
@@ -341,11 +328,9 @@ bool BaseWindowCapturer::SelectSource(SourceId id) {
 // static
 std::unique_ptr<DesktopCapturer> BaseWindowCapturer::CreateRawCapturer(
     const DesktopCaptureOptions& options,
-    const BaseWindowCapturer::CaptureSourceType& type,
-    base::OnceCallback<void(uint64_t displayId)> callback) {
+    const BaseWindowCapturer::CaptureSourceType& type) {
   return std::make_unique<BaseWindowCapturer>(type, options.get_picker_show(),
-                                              options.get_nweb_id(),
-                                              std::move(callback));
+                                              options.get_nweb_id());
 }
 
 }  // namespace webrtc

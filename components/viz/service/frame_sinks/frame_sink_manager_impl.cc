@@ -996,9 +996,8 @@ void FrameSinkManagerImpl::SendInternalBeginFrame(const FrameSinkId& id) {
 #endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
 void FrameSinkManagerImpl::EvictFrameBackBuffers(
-    const FrameSinkId& root_frame_sink_id,
-    bool invisible) {
-    managerImplUtils->EvictFrameBackBuffers(root_frame_sink_id, invisible);
+    const FrameSinkId& root_frame_sink_id) {
+    managerImplUtils->EvictFrameBackBuffers(root_frame_sink_id);
 }
 #endif
 

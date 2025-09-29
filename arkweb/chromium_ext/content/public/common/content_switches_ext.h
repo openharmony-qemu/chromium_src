@@ -110,6 +110,9 @@ CONTENT_EXPORT extern const char kSetExtensionName[];
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
 CONTENT_EXPORT extern const char  kOhosEnableGwpAsanType[];
 #endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+CONTENT_EXPORT extern const char  kEnableWebAudioBackgroundTask[];
+#endif
 }  // namespace switches
 
 #endif  // ARKWEB_CONTENT_PUBLIC_COMMON_CONTENT_SWITCHES_EXT_H_

@@ -27,7 +27,6 @@ std::shared_mutex audio_map_lock_;
 std::unordered_map<int, std::queue<std::shared_ptr<SurfaceBufferAdapter>>> bufferAvailableQueueMap_;
 std::unordered_map<int, std::queue<std::shared_ptr<OH_AudioBufferAdapterImpl>>> audioBufferAvailableQueueMap_;
 OH_AVScreenCaptureConfig avConfig_;
-const int MAX_QUEUE_SIZE = 20;
 namespace {
 OH_CaptureMode GetOHCaptureMode(const CaptureModeAdapter& mode)
 {
@@ -267,64 +266,31 @@ AudioCaptureSourceTypeAdapter ConvertAudioCaptureSourceType(const OH_AudioCaptur
 }
 } // namespace
 
-void ScreenCaptureCallbackOnError(OH_AVScreenCapture *capture, int32_t errorCode, void* userData)
+CallbackSharedWrapper<CallbackInfo> ScreenCaptureAdapterImpl::callback_wrapper_;
+
+void ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnError(
+    OH_AVScreenCapture *capture, int32_t errorCode, void* userData)
 {
     if (userData == nullptr) {
         WVLOG_E("userData is null");
         return;
     }
+    size_t callback_index = reinterpret_cast<size_t>(userData);
+    auto callbackInfo = callback_wrapper_.GetCallback(callback_index);
+    if (!callbackInfo) {
+       WVLOG_E("ScreenCaptureCallbackOnError callbackInfo is nullptr");
+       return;
+    }
+    if (callbackInfo->callback == nullptr) {
+        WVLOG_E("callback is null");
+        return;
+    }
     WVLOG_I("OnError is called, errorCode %{public}d", errorCode);
-    CallbackInfo* callbackInfo = (CallbackInfo*)userData;
     callbackInfo->callback->OnError(errorCode);
 }
 
-void PushBufferToVideoQueue(std::shared_ptr<SurfaceBufferAdapter> buffer, int nwebId)
-{
-    WVLOG_I("%{public}s enter", __FUNCTION__);
-    // During the screen capture process, the audio buffer and video buffer are alternately
-    // sent to the screen_capture_adapter object. therefore, it is only necessary to check if
-    // the video queue exceeds the specified size.
-    auto video_it = bufferAvailableQueueMap_.find(nwebId);
-    if (video_it == bufferAvailableQueueMap_.end()) {
-        std::queue<std::shared_ptr<SurfaceBufferAdapter>> bufferAvailableQueue;
-        bufferAvailableQueue.push(std::move(buffer));
-        bufferAvailableQueueMap_[nwebId] = bufferAvailableQueue;
-        return;
-    }
-    WVLOG_I("%{public}s enter, video size = %{public}u", __FUNCTION__, video_it->second.size());
-    video_it->second.push(std::move(buffer));
-    if (video_it->second.size() <= MAX_QUEUE_SIZE) {
-        WVLOG_I("%{public}s enter, video size =", __FUNCTION__);
-        return;
-    }
-    video_it->second.pop();
-
-    auto audio_it = audioBufferAvailableQueueMap_.find(nwebId);
-    if (!audio_it->second.empty()) {
-        audio_it->second.pop();
-    }
-}
-
-void PushBufferToAudioQueue(std::shared_ptr<OH_AudioBufferAdapterImpl> buffer, int nwebId)
-{
-    WVLOG_I("%{public}s enter", __FUNCTION__);
-    auto it = audioBufferAvailableQueueMap_.find(nwebId);
-    if (it == audioBufferAvailableQueueMap_.end()) {
-        std::queue<std::shared_ptr<OH_AudioBufferAdapterImpl>> bufferAvailableQueue;
-        bufferAvailableQueue.push(std::move(buffer));
-        audioBufferAvailableQueueMap_[nwebId] = bufferAvailableQueue;
-        return;
-    }
-    it->second.push(std::move(buffer));
-    if (it->second.size() <= MAX_QUEUE_SIZE) {
-        WVLOG_I("%{public}s enter, video size =", __FUNCTION__);
-        return;
-    }
-    it->second.pop();
-}
-
-void ScreenCaptureCallbackOnBufferAvailable(OH_AVScreenCapture *capture, OH_AVBuffer *buffer,
-    OH_AVScreenCaptureBufferType bufferType, int64_t timestamp, void* userData)
+void ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(OH_AVScreenCapture *capture,
+    OH_AVBuffer *buffer, OH_AVScreenCaptureBufferType bufferType, int64_t timestamp, void* userData)
 {
     if (userData == nullptr) {
         WVLOG_E("userData is null");
@@ -334,7 +300,12 @@ void ScreenCaptureCallbackOnBufferAvailable(OH_AVScreenCapture *capture, OH_AVBu
         WVLOG_E("OH_AVBuffer is null");
         return;
     }
-    CallbackInfo* callbackInfo = (CallbackInfo*)userData;
+    size_t callback_index = reinterpret_cast<size_t>(userData);
+    auto callbackInfo = callback_wrapper_.GetCallback(callback_index);
+    if (!callbackInfo) {
+       WVLOG_E("ScreenCaptureCallbackOnBufferAvailable callbackInfo is nullptr");
+       return;
+    }
     if (callbackInfo->callback == nullptr) {
         WVLOG_E("callback is null");
         return;
@@ -348,18 +319,36 @@ void ScreenCaptureCallbackOnBufferAvailable(OH_AVScreenCapture *capture, OH_AVBu
         if (ret != 0) {
             WVLOG_E("release native buffer failed, ret = %{public}d", ret);
         }
-        auto tmpBuffer = std::make_shared<OH_SurfaceBufferAdapterImpl>(buffer, config);
+        auto surfaceBufferImpl = std::make_shared<OH_SurfaceBufferAdapterImpl>(buffer, config);
 
-        std::shared_lock<std::shared_mutex> lock(surface_map_lock_);
-        PushBufferToVideoQueue(std::move(tmpBuffer), callbackInfo->nweb_id);
+        {
+            std::unique_lock<std::shared_mutex> lock(surface_map_lock_);
+            auto it = bufferAvailableQueueMap_.find(callbackInfo->nweb_id);	
+            if (it != bufferAvailableQueueMap_.end()) {
+                it->second.push(std::move(surfaceBufferImpl));
+            } else {
+                std::queue<std::shared_ptr<SurfaceBufferAdapter>> bufferAvailableQueue;
+                bufferAvailableQueue.push(std::move(surfaceBufferImpl));
+                bufferAvailableQueueMap_[callbackInfo->nweb_id] = bufferAvailableQueue;
+            }
+        }
         WVLOG_D("OnBufferAvailable is called, buffer type = %{public}d", bufferType);
         callbackInfo->callback->OnVideoBufferAvailableV2(true, callbackInfo->nweb_id);
     } else if (bufferType == OH_SCREEN_CAPTURE_BUFFERTYPE_AUDIO_INNER) {
         auto audioBufferImpl = std::make_shared<OH_AudioBufferAdapterImpl>(
             buffer, timestamp, OH_AudioCaptureSourceType::OH_ALL_PLAYBACK);
         
-        std::shared_lock<std::shared_mutex> lock(audio_map_lock_);
-        PushBufferToAudioQueue(std::move(audioBufferImpl), callbackInfo->nweb_id);
+        {
+            std::unique_lock<std::shared_mutex> lock(audio_map_lock_);
+            auto it = audioBufferAvailableQueueMap_.find(callbackInfo->nweb_id);	
+            if (it != audioBufferAvailableQueueMap_.end()) {
+                it->second.push(std::move(audioBufferImpl));
+            } else {
+                std::queue<std::shared_ptr<OH_AudioBufferAdapterImpl>> audioBufferAvailableQueue;
+                audioBufferAvailableQueue.push(std::move(audioBufferImpl));
+                audioBufferAvailableQueueMap_[callbackInfo->nweb_id] = audioBufferAvailableQueue;
+            }
+        }
         WVLOG_D("OnBufferAvailable is called, buffer type = %{public}d", bufferType);
         callbackInfo->callback->OnAudioBufferAvailableV2(
             true, ConvertAudioCaptureSourceType(OH_AudioCaptureSourceType::OH_ALL_PLAYBACK), callbackInfo->nweb_id);
@@ -370,73 +359,50 @@ void ScreenCaptureCallbackOnBufferAvailable(OH_AVScreenCapture *capture, OH_AVBu
     }
 }
 
-void ScreenCaptureAdapterImpl::ClearBufferQueue(int nwebId) {
-    WVLOG_I(" %{public}s enter", __FUNCTION__);
-    auto audio_it = audioBufferAvailableQueueMap_.find(nwebId);
-    if (audio_it != audioBufferAvailableQueueMap_.end()) {
-        std::queue<std::shared_ptr<OH_AudioBufferAdapterImpl>>().swap(
-            audio_it->second);
-    }
-
-    auto video_it = bufferAvailableQueueMap_.find(nwebId);
-    if (video_it != bufferAvailableQueueMap_.end()) {
-        std::queue<std::shared_ptr<SurfaceBufferAdapter>>().swap(
-            video_it->second);
-    }
-}
-
-void ScreenCaptureCallbackOnStateChange(struct OH_AVScreenCapture *capture,
+void ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnStateChange(struct OH_AVScreenCapture *capture,
     OH_AVScreenCaptureStateCode stateCode, void* userData)
 {
     if (userData == nullptr) {
         WVLOG_E("userData is null");
         return;
     }
+    size_t callback_index = reinterpret_cast<size_t>(userData);
+    auto callbackInfo = callback_wrapper_.GetCallback(callback_index);
+    if (!callbackInfo) {
+       WVLOG_E("ScreenCaptureCallbackOnBufferAvailable callbackInfo is nullptr");
+       return;
+    }
+    if (callbackInfo->callback == nullptr) {
+        WVLOG_E("callback is null");
+        return;
+    }
     WVLOG_I("OnStateChange is called, stateCode %{public}d", stateCode);
-    CallbackInfo* callbackInfo = (CallbackInfo*)userData;
-    if (callbackInfo->callback == nullptr) {
-        WVLOG_E("callback is null");
-        return;
-    }
     callbackInfo->callback->OnStateChangeV2(GetScreenCaptureStateCodeAdapter(stateCode), callbackInfo->nweb_id);
-}
-
-void ScreenCaptureCallbackOnDisplaySelected(OH_AVScreenCapture* capture,
-                                            uint64_t displayId,
-                                            void* userData) {
-    WVLOG_I("%{public}s enter", __FUNCTION__);
-    if (userData == nullptr) {
-        WVLOG_E("userData is null");
-        return;
-    }
-    WVLOG_I("OnDisplaySelected is called, displayId %{public}d", displayId);
-    CallbackInfo* callbackInfo = static_cast<CallbackInfo*>(userData);
-    if (callbackInfo->callback == nullptr) {
-        WVLOG_E("callback is null");
-        return;
-    }
-    callbackInfo->callback->OnDisplaySelectedV2(displayId,
-                                                callbackInfo->nweb_id);
 }
 
 ScreenCaptureAdapterImpl::~ScreenCaptureAdapterImpl()
 {
+    WVLOG_I("ScreenCaptureAdapterImpl::~ScreenCaptureAdapterImpl, nweb_id = %{public}d", nweb_id_);
     {
-        std::shared_lock<std::shared_mutex> lock(surface_map_lock_);
-        auto video = bufferAvailableQueueMap_.find(callback_info_.nweb_id);
+        std::unique_lock<std::shared_mutex> lock(surface_map_lock_);
+        auto video = bufferAvailableQueueMap_.find(nweb_id_);
         if (video != bufferAvailableQueueMap_.end()) {
             bufferAvailableQueueMap_.erase(video);
         }
     }
 
     {
-        std::shared_lock<std::shared_mutex> lock(audio_map_lock_);
-        auto audio = audioBufferAvailableQueueMap_.find(callback_info_.nweb_id);
+        std::unique_lock<std::shared_mutex> lock(audio_map_lock_);
+        auto audio = audioBufferAvailableQueueMap_.find(nweb_id_);
         if (audio != audioBufferAvailableQueueMap_.end()) {
             audioBufferAvailableQueueMap_.erase(audio);
         }
     }
     Release();
+    if (callback_index_ > 0) {
+        callback_wrapper_.Clear(callback_index_);
+        callback_index_ = 0;
+    }
 }
 
 int32_t ScreenCaptureAdapterImpl::InitV2(const std::shared_ptr<ScreenCaptureConfigAdapter> config, int nweb_id)
@@ -463,7 +429,14 @@ int32_t ScreenCaptureAdapterImpl::InitV2(const std::shared_ptr<ScreenCaptureConf
         return -1;
     }
 
-    callback_info_.nweb_id = nweb_id;
+    if (callback_index_ > 0) {
+        callback_wrapper_.Clear(callback_index_);
+        callback_index_ = 0;
+    }
+    std::shared_ptr<CallbackInfo> callback_info = std::make_shared<CallbackInfo>();
+    callback_info->nweb_id = nweb_id;
+    nweb_id_ = nweb_id;
+    callback_index_ = callback_wrapper_.AddCallback(callback_info);
     return 0;
 }
 
@@ -479,7 +452,6 @@ void ScreenCaptureAdapterImpl::Release()
     int32_t ret = OH_AVScreenCapture_Release(screenCapture_);
     if (ret != OH_AVSCREEN_CAPTURE_ErrCode::AV_SCREEN_CAPTURE_ERR_OK) {
         WVLOG_E("OH_AVScreenCapture release failed, ret = %{public}d", ret);
-        return;
     }
     screenCapture_ = nullptr;
 }
@@ -514,7 +486,6 @@ int32_t ScreenCaptureAdapterImpl::StartCapture()
         WVLOG_E("start capture failed, ret = %{public}d", ret);
         return -1;
     }
-    WVLOG_I("start screen capture[%{public}p] success", screenCapture_);
     return 0;
 }
 
@@ -529,46 +500,43 @@ int32_t ScreenCaptureAdapterImpl::StopCapture()
         WVLOG_E("stop capture failed, ret = %{public}d", ret);
         return -1;
     }
-    WVLOG_I("stop screen capture[%{public}p] success", screenCapture_);
     return 0;
 }
 
 int32_t ScreenCaptureAdapterImpl::SetCaptureCallback(const std::shared_ptr<ScreenCaptureCallbackAdapter> callback)
 {
-    callback_info_.callback = std::move(callback);
-    if (!screenCapture_ || !callback_info_.callback) {
+    auto callback_info = callback_wrapper_.GetCallback(callback_index_);
+    if (!callback_info) {
+        WVLOG_E("SetCaptureCallback callback_info is nullptr");
+        return -1;
+    }
+    callback_info->callback = std::move(callback);
+    if (!screenCapture_ || !callback_info->callback) {
         WVLOG_E("not init or param error");
         return -1;
     }
     int32_t errorRet = OH_AVScreenCapture_SetErrorCallback(screenCapture_,
-        ScreenCaptureCallbackOnError, &callback_info_);
+        ScreenCaptureCallbackOnError, reinterpret_cast<void*>(callback_index_));
     if (errorRet != OH_AVSCREEN_CAPTURE_ErrCode::AV_SCREEN_CAPTURE_ERR_OK) {
         WVLOG_E("set callback failed, errorRet = %{public}d", errorRet);
-        callback_info_.callback = nullptr;
+        callback_info->callback = nullptr;
         return -1;
     }
     int32_t dataRet = OH_AVScreenCapture_SetDataCallback(screenCapture_,
-        ScreenCaptureCallbackOnBufferAvailable, &callback_info_);
+        ScreenCaptureCallbackOnBufferAvailable, reinterpret_cast<void*>(callback_index_));
     if (dataRet != OH_AVSCREEN_CAPTURE_ErrCode::AV_SCREEN_CAPTURE_ERR_OK) {
         WVLOG_E("set callback failed, dataRet = %{public}d", dataRet);
-        callback_info_.callback = nullptr;
+        callback_info->callback = nullptr;
         return -1;
     }
     int32_t stateRet = OH_AVScreenCapture_SetStateCallback(screenCapture_,
-        ScreenCaptureCallbackOnStateChange, &callback_info_);
+        ScreenCaptureCallbackOnStateChange, reinterpret_cast<void*>(callback_index_));
     if (stateRet != OH_AVSCREEN_CAPTURE_ErrCode::AV_SCREEN_CAPTURE_ERR_OK) {
         WVLOG_E("set callback failed, stateRet = %{public}d", stateRet);
-        callback_info_.callback = nullptr;
+        callback_info->callback = nullptr;
         return -1;
     }
-    int32_t DisplayRet = OH_AVScreenCapture_SetDisplayCallback(screenCapture_,
-         ScreenCaptureCallbackOnDisplaySelected, &callback_info_);
-    if (DisplayRet != OH_AVSCREEN_CAPTURE_ErrCode::AV_SCREEN_CAPTURE_ERR_OK) {
-        WVLOG_E("set callback failed, stateRet = %{public}d", DisplayRet);
-        callback_info_.callback = nullptr;
-        return -1;
-    }
-    return errorRet + dataRet + stateRet + DisplayRet;
+    return errorRet + dataRet + stateRet;
 }
 
 std::shared_ptr<SurfaceBufferAdapter> ScreenCaptureAdapterImpl::AcquireVideoBuffer()
@@ -579,14 +547,14 @@ std::shared_ptr<SurfaceBufferAdapter> ScreenCaptureAdapterImpl::AcquireVideoBuff
     }
 
     std::shared_lock<std::shared_mutex> lock(surface_map_lock_);
-    auto video = bufferAvailableQueueMap_.find(callback_info_.nweb_id);
+    auto video = bufferAvailableQueueMap_.find(nweb_id_);
     if (video == bufferAvailableQueueMap_.end()) {
-        WVLOG_E("bufferAvailableQueue is not found, nwebId=%{public}d", callback_info_.nweb_id);
+        WVLOG_E("bufferAvailableQueue is not found, nwebId=%{public}d", nweb_id_);
         return nullptr;
     }
 
     if (video->second.empty()) {
-        WVLOG_E("bufferAvailableQueue is empty, nwebId=%{public}d", callback_info_.nweb_id);
+        WVLOG_E("bufferAvailableQueue is empty, nwebId=%{public}d", nweb_id_);
         return nullptr;
     }
     auto surfaceBufferImpl = std::move(video->second.front());
@@ -618,14 +586,14 @@ int32_t ScreenCaptureAdapterImpl::AcquireAudioBuffer(
     }
 
     std::shared_lock<std::shared_mutex> lock(audio_map_lock_);
-    auto audio = audioBufferAvailableQueueMap_.find(callback_info_.nweb_id);
+    auto audio = audioBufferAvailableQueueMap_.find(nweb_id_);
     if (audio == audioBufferAvailableQueueMap_.end()) {
-        WVLOG_E("audioBufferAvailableQueue is not found, nwebId=%{public}d", callback_info_.nweb_id);
+        WVLOG_E("audioBufferAvailableQueue is not found, nwebId=%{public}d", nweb_id_);
         return -1;
     }
 
     if (audio->second.empty()) {
-        WVLOG_E("audioBufferAvailableQueue is empty, nwebId=%{public}d", callback_info_.nweb_id);
+        WVLOG_E("audioBufferAvailableQueue is empty, nwebId=%{public}d", nweb_id_);
         return -1;
     }
 

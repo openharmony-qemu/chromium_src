@@ -203,6 +203,56 @@ bool OHOSAudioFocusController::CheckOneShotPlayersOnUIThread(const AudioParamete
     return mediaSession->HasOnlyOneShotPlayersPublic();
 }
 
+bool OHOSAudioFocusController::HasOneShotPlayersWhenSetMetadataPublic(const AudioParameters &parameters)
+{
+    if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+        return CheckOneShotPlayersWhenSetMetadataOnUIThread(parameters);
+    }
+
+    bool result = false;
+    base::WaitableEvent event(
+        base::WaitableEvent::ResetPolicy::AUTOMATIC, base::WaitableEvent::InitialState::NOT_SIGNALED);
+
+    content::GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
+        base::BindOnce(
+            [](const media::AudioParameters &params, bool *out_result, base::WaitableEvent *out_event) {
+                *out_result = CheckOneShotPlayersWhenSetMetadataOnUIThread(params);
+                out_event->Signal();
+            },
+            parameters,
+            &result,
+            &event));
+    event.Wait();
+    return result;
+}
+
+bool OHOSAudioFocusController::CheckOneShotPlayersWhenSetMetadataOnUIThread(const AudioParameters &params)
+{
+    DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+
+    content::RenderFrameHost *renderFrameHost =
+        content::RenderFrameHost::FromID(params.render_process_id(), params.render_frame_id());
+    if (!renderFrameHost) {
+        LOG(ERROR) << "CheckOneShotPlayersWhenSetMetadataOnUIThread RenderFrameHost not found for PID: " << params.render_process_id()
+                   << ", FrameID: " << params.render_frame_id();
+        return false;
+    }
+
+    content::WebContents *webContents = content::WebContents::FromRenderFrameHost(renderFrameHost);
+    if (!webContents) {
+        LOG(ERROR) << "CheckOneShotPlayersWhenSetMetadataOnUIThread WebContents not found for RenderFrameHost";
+        return false;
+    }
+
+    content::MediaSessionImpl *mediaSession = content::MediaSessionImpl::FromWebContents(webContents);
+    if (!mediaSession) {
+        LOG(ERROR) << "CheckOneShotPlayersWhenSetMetadataOnUIThread MediaSession not available for WebContents";
+        return false;
+    }
+
+    return mediaSession->HasOneShotPlayersWhenSetMetadataPublic();
+}
+
 content::MediaSessionImpl::NWebMediaSessionState OHOSAudioFocusController::GetSessionState(
     const AudioParameters &parameters)
 {
@@ -572,6 +622,59 @@ bool OHOSAudioFocusController::CheckIsSuspendedUIThread(const AudioParameters &p
     }
 
     return mediaSession->IsSuspended();
+}
+
+bool OHOSAudioFocusController::GetMediaPlayerMuteState(
+    const AudioParameters& parameters) {
+    if (content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+        return CheckGetMediaPlayerMuteStateOnUIThread(parameters);
+    }
+
+    bool result = false;
+    base::WaitableEvent event(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                              base::WaitableEvent::InitialState::NOT_SIGNALED);
+
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE, base::BindOnce(
+                       [](const media::AudioParameters& params,
+                          bool* out_result, base::WaitableEvent* out_event) {
+                         *out_result =
+                             CheckGetMediaPlayerMuteStateOnUIThread(params);
+                         out_event->Signal();
+                       },
+                       parameters, &result, &event));
+    event.Wait();
+    return result;
+}
+
+bool OHOSAudioFocusController::CheckGetMediaPlayerMuteStateOnUIThread(
+    const AudioParameters& params) {
+    DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+
+    content::RenderFrameHost* render_frame_host =
+        content::RenderFrameHost::FromID(params.render_process_id(),
+                                         params.render_frame_id());
+    if (!render_frame_host) {
+        LOG(ERROR) << __func__ << "render_frame_host not found for PID: "
+                   << params.render_process_id()
+                   << ", frame_id: " << params.render_frame_id();
+        return false;
+    }
+
+    content::WebContents* web_contents =
+        content::WebContents::FromRenderFrameHost(render_frame_host);
+    if (!web_contents) {
+        LOG(ERROR) << "web_contents not found for render_frame_host";
+        return false;
+    }
+    content::MediaSessionImpl* media_session =
+        content::MediaSessionImpl::Get(web_contents);
+    if (!media_session) {
+        LOG(ERROR) << "media_session not available for web_contents";
+        return false;
+    }
+
+    return media_session->GetMediaPlayerMuteState();
 }
 
 }  // namespace media

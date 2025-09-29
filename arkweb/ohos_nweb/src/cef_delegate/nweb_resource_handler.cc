@@ -18,6 +18,7 @@
 #include <unistd.h>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #if BUILDFLAG(ARKWEB_SAFE_FUNCTION)
 #include <securec.h>
 #endif
@@ -186,7 +187,8 @@ bool NWebResourceHandler::ReadResourceDataByHap() {
     std::string resourceUrlHead("resource:/RAWFILE");
     std::string resourceUrl = response_->ResponseResourceUrl();
     if (resourceUrl.find(resourceUrlHead) == std::string::npos) {
-      LOG(ERROR) << "intercept find resource head fail : " << resourceUrl;
+      LOG(ERROR) << "intercept find resource head fail : "
+                 << url::LogUtils::ConvertUrlWithMask(resourceUrl);
       return false;
     }
     resourceUrl.erase(0, resourceUrlHead.length());

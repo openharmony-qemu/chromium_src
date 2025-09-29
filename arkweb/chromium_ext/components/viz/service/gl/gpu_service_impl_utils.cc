@@ -162,12 +162,11 @@ bool GpuServiceImpl::GetIsScroll() {
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-void GpuServiceImpl::SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr info,
-                                               const std::vector<gfx::Rect>& quad_list,
+void GpuServiceImpl::SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
                                                mojo::ScopedSharedBufferHandle buffer,
                                                mojom::BlanklessBitmapMetadataPtr metadata) {
   TRACE_EVENT0("viz", "blankless SendBlanklessSnapshotInfo to browser");
-  gpu_host_->SendBlanklessSnapshotInfo(std::move(info), quad_list, std::move(buffer), std::move(metadata));
+  gpu_host_->SendBlanklessSnapshotInfo(std::move(infoPtr), std::move(buffer), std::move(metadata));
 }
 
 void GpuServiceImpl::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {
@@ -231,11 +230,11 @@ void GpuServiceImpl::OnFrameSnapshotCopyOutputResult(std::unique_ptr<CopyOutputR
     infoPtr->lcp_time = blankless_info.lcp_time;
     infoPtr->system_time = system_time;
     infoPtr->pref_hash = blankless_info.pref_hash;
+    infoPtr->width = blankless_info.width;
+    infoPtr->height = blankless_info.height;
 
-    io_runner_->PostTask(FROM_HERE,
-                      base::BindOnce(&GpuServiceImpl::SendBlanklessSnapshotInfo,
-                      weak_ptr_, std::move(infoPtr), utils->GetQuadList(),
-                      std::move(shared_buffer), std::move(metadata)));
+    io_runner_->PostTask(FROM_HERE, base::BindOnce(&GpuServiceImpl::SendBlanklessSnapshotInfo,
+                         weak_ptr_, std::move(infoPtr), std::move(shared_buffer), std::move(metadata)));
   }
 }
 

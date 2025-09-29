@@ -79,4 +79,11 @@ VirtualFidoDeviceFactory::MaybeCreateWinWebAuthnApiDiscovery() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_FIDO)
+std::unique_ptr<FidoDiscoveryBase>
+VirtualFidoDeviceFactory::CreateOhosFidoDiscovery() {
+  return nullptr;
+}
+#endif  // BUILDFLAG(ARKWEB_FIDO)
+
 }  // namespace device::test

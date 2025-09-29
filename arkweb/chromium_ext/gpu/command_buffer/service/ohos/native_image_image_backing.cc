@@ -67,9 +67,6 @@ NativeImageImageBacking::~NativeImageImageBacking() {
 
 size_t NativeImageImageBacking::GetEstimatedSizeForMemoryDump() const {
   DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());
-#if false
-  return stream_texture_sii_->IsUsingGpuMemory() ? GetEstimatedSize() : 0;
-#endif
     return 0;
 }
 
@@ -280,41 +277,6 @@ class NativeImageImageBacking::SharedImageRepresentationOverlayVideo {
       const SharedImageRepresentationOverlayVideo&) = delete;
   SharedImageRepresentationOverlayVideo& operator=(
       const SharedImageRepresentationOverlayVideo&) = delete;
-
- protected:
-#if false
-  void RenderToOverlay() {
-    DCHECK(!stream_image()->HasTextureOwner())
-        << "CodecImage must be already in overlay";
-    TRACE_EVENT0("media", "OverlayVideoImageRepresentation::RenderToOverlay");
-    stream_image()->RenderToOverlay();
-  }
-
-  void NotifyOverlayPromotion(bool promotion,
-                              const gfx::Rect& bounds) {
-    stream_image()->NotifyOverlayPromotion(promotion, bounds);
-  }
-#endif
- private:
-#if false
-  StreamTextureSharedImageInterface* stream_image() {
-    auto* video_backing =
-        static_cast<SharedImageVideoOhosNativeImage*>(backing());
-    DCHECK(video_backing);
-    return video_backing->stream_texture_sii_.get();
-  }
-#endif
 };
 
-#if false
-std::unique_ptr<gpu::LegacyOverlayImageRepresentation>
-SharedImageVideoOhosNativeImage::ProduceLegacyOverlay(
-    gpu::SharedImageManager* manager,
-    gpu::MemoryTypeTracker* tracker) {
-  DCHECK(gpu_main_task_runner_->RunsTasksInCurrentSequence());
-
-  return std::make_unique<SharedImageRepresentationOverlayVideo>(manager, this,
-                                                           tracker);
-}
-#endif
 }  // namespace gpu

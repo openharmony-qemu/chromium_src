@@ -51,6 +51,9 @@ GpuChannelExt::GpuChannelExt(GpuChannelManager* gpu_channel_manager,
                  gpu_memory_buffer_factory) {}
 
 GpuChannelExt::~GpuChannelExt() {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  ClearCurBlanklessDumpInfo();
+#endif
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   // Release any references to this channel held by StreamTexture.
   for (auto& native_texture : native_textures_) {
@@ -103,22 +106,47 @@ int32_t GpuChannelExt::current_native_embed_id(int32_t native_id) {
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+std::map<uint32_t, std::map<uint64_t, base::ohos::BlanklessDumpInfo>> GpuChannelExt::blankless_dump_info_map_;
+std::mutex GpuChannelExt::dump_info_map_mtx_;
+
 //LCOV_EXCL_START
 void GpuChannelExt::SetBlanklessDumpInfo(uint64_t frame_sink_id, const base::ohos::BlanklessDumpInfo& info) {
   std::lock_guard<std::mutex> lck(dump_info_map_mtx_);
-  blankless_dump_info_map_[frame_sink_id] = std::move(info);
+  LOG(DEBUG) << "blankless GpuChannelExt::SetBlanklessDumpInfo frame_sink_id:"
+    << frame_sink_id << " client_id:" << client_id_;
+  if (blankless_dump_info_map_.find(client_id_) != blankless_dump_info_map_.end()) {
+    blankless_dump_info_map_[client_id_][frame_sink_id] = std::move(info);
+  } else {
+    blankless_dump_info_map_[client_id_] = {{frame_sink_id, std::move(info)}};
+  }
 }
 //LCOV_EXCL_STOP
-
-bool GpuChannelExt::GetBlanklessDumpInfoAndDisableDump(uint64_t frame_sink_id, base::ohos::BlanklessDumpInfo& info) {
+// static
+bool GpuChannelExt::GetBlanklessDumpInfoAndDisableDump(uint32_t client_id, uint64_t frame_sink_id,
+  base::ohos::BlanklessDumpInfo& info) {
   std::lock_guard<std::mutex> lck(dump_info_map_mtx_);
-  auto it = blankless_dump_info_map_.find(frame_sink_id);
+  auto it = blankless_dump_info_map_.find(client_id);
   if (it == blankless_dump_info_map_.end()) {
     return false;
   }
-  info = it->second;
-  it->second.dump_enabled = false;
+  auto iter = it->second.find(frame_sink_id);
+  if (iter == it->second.end()) {
+    return false;
+  }
+  if (!iter->second.dump_enabled) {
+    return false;
+  }
+  LOG(DEBUG) << "blankless GpuChannelExt::GetBlanklessDumpInfoAndDisableDump got it, frame_sink_id:"
+    << frame_sink_id << " client_id:" << client_id;
+  info = iter->second;
+  iter->second.dump_enabled = false;
   return true;
+}
+
+void GpuChannelExt::ClearCurBlanklessDumpInfo() {
+  std::lock_guard<std::mutex> lck(dump_info_map_mtx_);
+  LOG(DEBUG) << "blankless GpuChannelExt::ClearCurBlanklessDumpInfo, client_id:" << client_id_;
+  blankless_dump_info_map_.erase(client_id_);
 }
 #endif
 }

@@ -300,6 +300,14 @@ void ArkWebContentSubresourceFilterThrottleManagerExt::UserSetDocumentLoadStatis
     statistics_->AsPageLoadStatisticsExt()->OnUserDocumentLoadStatistics(*statistics);
   }
 }
+
+void ArkWebContentSubresourceFilterThrottleManagerExt::OnUserAdsViolationTriggered(
+    mojom::AdsViolation violation) {
+  CHECK(page_, base::NotFatalUntil::M129);
+  CHECK_EQ(&GetSubresourceFilterRootPage(user_receiver_.GetCurrentTargetFrame()),
+           page_, base::NotFatalUntil::M129);
+  OnAdsViolationTriggered(&page_->GetMainDocument(), violation);
+}
 #endif  // BUILDFLAG(ARKWEB_ADBLOCK)
 
 }  // namespace subresource_filter

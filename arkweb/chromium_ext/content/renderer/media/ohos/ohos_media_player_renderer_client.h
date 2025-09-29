@@ -28,13 +28,6 @@
 
 namespace content {
 
-struct CachedBuffer {
-  int fd_browser_;
-  int fd_;
-  uint8_t* mapped_;
-  uint32_t buffer_size_;
-};
-
 class OHOSMediaPlayerRendererClient
     : public media::mojom::MediaPlayerRendererClientExtension,
       public media::MojoRendererWrapper {
@@ -93,8 +86,6 @@ class OHOSMediaPlayerRendererClient
 
   // Add native texture impl
   media::ScopedNativeTextureWrapper native_texture_wrapper_;
-
-  std::deque<CachedBuffer> cached_buffers_;
 
   raw_ptr<media::RendererClient> client_ = nullptr;
 

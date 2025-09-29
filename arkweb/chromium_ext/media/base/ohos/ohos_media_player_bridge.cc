@@ -245,13 +245,13 @@ void OHOSMediaPlayerBridge::SetPlayerSurface() {
     }
   } else {
     LOG(INFO) << "SetPlayerSurface enter web surface";
-    ret = player_->SetVideoSurfaceNew(native_window_origin_);
+    ret = player_->SetVideoSurfaceNew(native_window_origin_.get());
     if (ret != 0) {
       LOG(ERROR) << "SetPlayerSurface enter web surface error::ret=" << ret;
     }
   }
 #else
-  int32_t ret = player_->SetVideoSurfaceNew(native_window_origin_);
+  int32_t ret = player_->SetVideoSurfaceNew(native_window_origin_.get());
   if (ret != 0) {
     LOG(ERROR) << "SetPlayerSurface enter web surface error::ret=" << ret;
   }
@@ -259,7 +259,7 @@ void OHOSMediaPlayerBridge::SetPlayerSurface() {
 
   int32_t prepare_ret = player_->PrepareAsync();
   if (prepare_ret != 0) {
-    LOG(ERROR) << "Prepare error::ret=" << prepare_ret << " url=" << url_.spec();
+    LOG(ERROR) << "Prepare error::ret=" << prepare_ret;
   }
 }
 
@@ -687,7 +687,7 @@ void OHOSMediaPlayerBridge::SetVideoSurfaceOld() {
       LOG(INFO) << "web setVideoSurface  player is nullptr";
       return;
     }
-    int32_t ret = player_->SetVideoSurfaceNew(native_window_origin_);
+    int32_t ret = player_->SetVideoSurfaceNew(native_window_origin_.get());
     if (ret != 0) {
       LOG(ERROR) << "web SetVideoSurface error" << ret;
       return;

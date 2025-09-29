@@ -19,6 +19,7 @@
 #include <array>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "ohos_nweb/src/capi/browser_service/nweb_basic_pub.h"
 
@@ -78,7 +79,7 @@ struct NWebExtensionActionOpenPopupOptions {
 
 const NWebExtensionActionOpenPopupOptions
     web_extension_action_open_popup_options_default = {};
- 
+
 struct NWebExtensionActionSetTitleDetails {
   static constexpr int NUM_PROPERTIES = 2;
   std::string title;
@@ -96,7 +97,7 @@ struct NWebExtensionActionSetPopupDetails {
 
 const NWebExtensionActionSetPopupDetails
     web_extension_action_set_popup_details_default = {};
- 
+
 struct NWebExtensionActionSetBadgeTextDetails {
   static constexpr int NUM_PROPERTIES = 2;
   std::optional<std::string> text;
@@ -105,7 +106,7 @@ struct NWebExtensionActionSetBadgeTextDetails {
 
 const NWebExtensionActionSetBadgeTextDetails
     web_extension_action_set_badge_text_details_default = {};
- 
+
 struct NWebExtensionActionSetBadgeBackgroundColorDetails {
   static constexpr int NUM_PROPERTIES = 2;
   ColorArray color;
@@ -124,4 +125,87 @@ struct NWebExtensionActionSetBadgeTextColorDetails {
 const NWebExtensionActionSetBadgeTextColorDetails
     web_extension_action_set_badge_text_color_details_default = {};
 
-#endif // NWEB_EXTENSION_ACTION_ICON_H
+struct NWebExtensionActionDisableOptionsV2 {
+  static constexpr int NUM_PROPERTIES = 3;
+  std::optional<int32_t> tabId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionActionEnableOptionsV2 {
+  static constexpr int NUM_PROPERTIES = 3;
+  std::optional<int32_t> tabId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionActionOpenPopupOptionsV2 {
+  static constexpr int NUM_PROPERTIES = 3;
+  std::optional<int32_t> windowId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionActionSetTitleDetailsV2 {
+  static constexpr int NUM_PROPERTIES = 4;
+  std::string title;
+  std::optional<int32_t> tabId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionActionSetPopupDetailsV2 {
+  static constexpr int NUM_PROPERTIES = 4;
+  std::string popup;
+  std::optional<int32_t> tabId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionActionIconBitmapV2 {
+  static constexpr int NUM_PROPERTIES = 5;
+  NWebExtensionActionIconColorType colorType;
+  NWebExtensionActionIconAlphaType alphaType;
+  int32_t width;
+  int32_t height;
+  std::vector<uint8_t> bitmap;
+};
+
+struct NWebExtensionActionIconV2 {
+  static constexpr int NUM_PROPERTIES = 1;
+  std::map<double, NWebExtensionActionIconBitmapV2> bitmaps;
+};
+
+struct NWebExtensionActionSetIconDetailsV2 {
+  static constexpr int NUM_PROPERTIES = 4;
+  NWebExtensionActionIconV2 icon;
+  std::optional<int32_t> tabId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionActionSetBadgeTextDetailsV2 {
+  static constexpr int NUM_PROPERTIES = 4;
+  std::optional<std::string> text;
+  std::optional<int32_t> tabId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionActionSetBadgeTextColorDetailsV2 {
+  static constexpr int NUM_PROPERTIES = 4;
+  ColorArray color;
+  std::optional<int32_t> tabId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+struct NWebExtensionActionSetBadgeBackgroundColorDetailsV2 {
+  static constexpr int NUM_PROPERTIES = 4;
+  ColorArray color;
+  std::optional<int32_t> tabId;
+  std::optional<std::string> contextType;
+  std::optional<bool> includeIncognitoInfo;
+};
+
+#endif  // NWEB_EXTENSION_ACTION_ICON_H

@@ -34,7 +34,9 @@
 #include "arkweb/chromium_ext/services/device/public/mojom/res_sched_report.mojom.h"
 #include "arkweb/chromium_ext/services/device/public/mojom/sysprop_render_observer.mojom.h"
 #endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
-
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "../dfx/dfx_reporter_browser_impl.h"
+#endif
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
@@ -487,16 +489,6 @@ ThemeFont* ArkwebRenderProcessHostImplUtils::EnsureThemeFont() {
   // {"id":"0","origin":"online","ttfFileSrc":"/absolute/path/themefont.ttf"}
   // {"id":"1","origin":"preset","ttfFileSrc":"/absolute/path/default.ttf"}
   const base::Value::Dict& dict = parsed_json->GetDict();
-  const std::string* origin = dict.FindString("origin");
-  if (!origin || origin->empty()) {
-    LOG(ERROR) << "[themefont] manifest file has no origin tag";
-    return nullptr;
-  }
-  if (*origin != std::string("online")) {
-    LOG(DEBUG) << "[themefont] manifest file's origin tag is not online";
-    return nullptr;
-  }
-
   const std::string* absolte_font_path = dict.FindString("ttfFileSrc");
   if (!absolte_font_path || absolte_font_path->empty()) {
     LOG(ERROR) << "[themefont] manifest file has no ttfFileSrc tag";
@@ -590,6 +582,13 @@ void ArkwebRenderProcessHostImplUtils::AddHostUIThreadInterface(
             GetDeviceService().BindSysPropRenderObserver(
                 std::move(receiver));
           }));
+}
+
+void ArkwebRenderProcessHostImplUtils::AddDFXToUIThreadInterface(
+    service_manager::BinderRegistry* registry) {
+  render_process_host_impl_->AddUIThreadInterface(
+      registry,
+      base::BindRepeating(&FreezeReporterImpl::ProcessPendingReceiver));
 }
 
 }  // namespace content

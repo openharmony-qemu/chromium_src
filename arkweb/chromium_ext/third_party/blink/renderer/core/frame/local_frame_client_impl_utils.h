@@ -21,7 +21,6 @@
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 #include "third_party/blink/renderer/core/loader/native_loader.h"
 #endif
-#include "third_party/blink/renderer/platform/heap/persistent.h"
 
 namespace blink {
 class LocalFrameClientImpl;
@@ -48,7 +47,7 @@ class LocalFrameClientImplUtils {
 #endif
 
  private:
-  Persistent<LocalFrameClientImpl> frame_client_impl_;
+  raw_ptr<LocalFrameClientImpl> frame_client_impl_;
 };
 }  // namespace blink
 

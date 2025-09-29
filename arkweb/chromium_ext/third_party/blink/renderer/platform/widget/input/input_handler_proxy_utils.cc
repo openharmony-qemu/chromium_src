@@ -171,8 +171,7 @@ void InputHandlerProxyUtils::SendMouseNativeEvent(
           std::to_string(layer_impl->layer_impl_utils()->native_embed_id());
       x = x - nativeRect_.x();
       y = y - nativeRect_.y();
-      LOG(DEBUG) << "[NativeEmbed] SendMouseNativeEvent x = " << x
-                 << ",y = " << y;
+      LOG(DEBUG) << "[NativeEmbed] SendMouseNativeEvent";
 
       proxy_->client_->DidNativeEmbedMouseEvent(type, modifiers, embed_id_, result, x, y);
     } else {
@@ -206,7 +205,7 @@ void InputHandlerProxyUtils::SendNativeEvent(const WebTouchEvent& touch_event,
       embed_id_ = std::to_string(layer_impl->layer_impl_utils()->native_embed_id());
       x = x - nativeRect_.x();
       y = y - nativeRect_.y();
-      LOG(DEBUG) << "[NativeEmbed] SendNativeEvent x = " << x << ",y = " << y;
+      LOG(DEBUG) << "[NativeEmbed] SendNativeEvent";
       proxy_->client_->DidNativeEmbedEvent(type, embed_id_, id, x, y);
     } else {
       if (!native_event_queue_->empty()) {
@@ -1069,8 +1068,7 @@ void InputHandlerProxyUtils::SendEventToNative(const WebTouchEvent& touch_event)
         std::to_string(layer_impl->layer_impl_utils()->native_embed_id());
     x = x - nativeRects_[finger_id].x();
     y = y - nativeRects_[finger_id].y();
-    LOG(DEBUG) << "[NativeEmbedGesture] SendNativeEvent x = " << x
-               << ",y = " << y;
+    LOG(DEBUG) << "[NativeEmbedGesture] SendNativeEvent";
     std::string trace_name = "InputHandlerProxyUtils::SendEventToNative";
     TRACE_EVENT1(
         "input",
@@ -1084,8 +1082,7 @@ void InputHandlerProxyUtils::SendEventToNative(const WebTouchEvent& touch_event)
   } else {
     LOG(ERROR)
         << "[NativeEmbedGesture] SendNativeEvent error layer_impl is null."
-        << "fingerId " << finger_id << ", type: " << type << ", x: " << x
-        << ", y: " << y;
+        << "fingerId " << finger_id << ", type: " << type;
   }
 }
 

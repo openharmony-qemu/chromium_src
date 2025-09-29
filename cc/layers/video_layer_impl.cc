@@ -176,9 +176,6 @@ void VideoLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
   if (is_clipped()) {
     clip_rect_opt = clip_rect();
   }
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  updater_->SetHasNativeLayer(videoImplUtils_->HasNativeLayer());
-#endif
   updater_->AppendQuad(render_pass, frame_, transform, quad_rect,
                        visible_quad_rect, draw_properties().mask_filter_info,
                        clip_rect_opt, contents_opaque(), draw_opacity(),

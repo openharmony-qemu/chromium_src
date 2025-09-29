@@ -33,6 +33,15 @@ namespace {
   static std::map<int, HistorySearchCallback> g_history_search_map_;
   std::mutex g_history_search_map_mutex_;
 
+  static std::map<int, HistoryAddUrlCallback> g_history_add_url_map_;
+  std::mutex g_history_add_url_map_mutex_;
+
+  static std::map<int, HistoryDeleteUrlCallback> g_history_delete_url_map_;
+  std::mutex g_history_delete_url_map_mutex_;
+
+  static std::map<int, HistoryDeleteAllCallback> g_history_delete_all_map_;
+  std::mutex g_history_delete_all_map_mutex_;
+
   content::BrowserContext* GetBrowserContext() {
     CefRefPtr<CefRequestContext> request_context =
         CefRequestContext::GetGlobalContext();
@@ -67,15 +76,85 @@ bool NWebExtensionHistoryCefDelegate::Search(const NWebExtensionHistoryQueryInfo
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
-  static int request_id = 0;
-  request_id++;
-
-  if (!NWebExtensionHistoryDispatcher::GetInstance().Search(request_id, data)) {
-    return false;
+  static std::atomic<int> requestId(0);
+  int currentRequestId;
+  {
+    std::lock_guard<std::mutex> lock(g_history_search_map_mutex_);
+    currentRequestId = ++requestId;
+    g_history_search_map_[currentRequestId] = std::move(callback);
   }
-  std::lock_guard<std::mutex> lock(g_history_search_map_mutex_);
-  g_history_search_map_[request_id] = std::move(callback);
-  return true;
+  bool result = NWebExtensionHistoryDispatcher::GetInstance().Search(
+      currentRequestId, data);
+  if (!result) {
+    std::lock_guard<std::mutex> lock(g_history_search_map_mutex_);
+    g_history_search_map_.erase(currentRequestId);
+  }
+  return result;
+#endif
+}
+
+bool NWebExtensionHistoryCefDelegate::AddUrl(const char* url,
+                                             HistoryAddUrlCallback callback) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  static std::atomic<int> requestId(0);
+  int currentRequestId;
+  {
+    std::lock_guard<std::mutex> lock(g_history_add_url_map_mutex_);
+    currentRequestId = ++requestId;
+    g_history_add_url_map_[currentRequestId] = std::move(callback);
+  }
+  bool result = NWebExtensionHistoryDispatcher::GetInstance().AddUrl(
+      currentRequestId, url);
+  if (!result) {
+    std::lock_guard<std::mutex> lock(g_history_add_url_map_mutex_);
+    g_history_add_url_map_.erase(currentRequestId);
+  }
+  return result;
+#endif
+}
+
+bool NWebExtensionHistoryCefDelegate::DeleteAll(HistoryDeleteAllCallback callback) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  static std::atomic<int> requestId(0);
+  int currentRequestId;
+  {
+    std::lock_guard<std::mutex> lock(g_history_delete_all_map_mutex_);
+    currentRequestId = ++requestId;
+    g_history_delete_all_map_[currentRequestId] = std::move(callback);
+  }
+  bool result = NWebExtensionHistoryDispatcher::GetInstance().DeleteAll(
+      currentRequestId);
+  if (!result) {
+    std::lock_guard<std::mutex> lock(g_history_delete_all_map_mutex_);
+    g_history_delete_all_map_.erase(currentRequestId);
+  }
+  return result;
+#endif
+}
+
+bool NWebExtensionHistoryCefDelegate::DeleteUrl(const char* url,
+                                             HistoryDeleteUrlCallback callback) {
+#if !BUILDFLAG(ARKWEB_NWEB_EX)
+  return false;
+#else
+  static std::atomic<int> requestId(0);
+  int currentRequestId;
+  {
+    std::lock_guard<std::mutex> lock(g_history_delete_url_map_mutex_);
+    currentRequestId = ++requestId;
+    g_history_delete_url_map_[currentRequestId] = std::move(callback);
+  }
+  bool result = NWebExtensionHistoryDispatcher::GetInstance().DeleteUrl(
+      currentRequestId, url);
+  if (!result) {
+    std::lock_guard<std::mutex> lock(g_history_delete_url_map_mutex_);
+    g_history_delete_url_map_.erase(currentRequestId);
+  }
+  return result;
 #endif
 }
 
@@ -92,42 +171,28 @@ void NWebExtensionHistoryCefDelegate::SearchCallback(
   }
 }
 
-bool NWebExtensionHistoryCefDelegate::AddUrl(const char* url) {
-#if !BUILDFLAG(ARKWEB_NWEB_EX)
-  return false;
-#else
-  if (!NWebExtensionHistoryDispatcher::GetInstance().AddUrl(url)) {
-    LOG(ERROR) << "NWebExtensionHistoryCefDelegate::AddUrl fail";
-    return false;
+void NWebExtensionHistoryCefDelegate::AddUrlCallback(int requestId, const char* error) {
+  std::lock_guard<std::mutex> lock(g_history_add_url_map_mutex_);
+  if (g_history_add_url_map_.count(requestId)) {
+    std::move(g_history_add_url_map_[requestId]).Run(error);
+    g_history_add_url_map_.erase(requestId);
   }
-
-  return true;
-#endif
 }
 
-bool NWebExtensionHistoryCefDelegate::DeleteAll() {
-#if !BUILDFLAG(ARKWEB_NWEB_EX)
-  return false;
-#else
-  if (!NWebExtensionHistoryDispatcher::GetInstance().DeleteAll()) {
-    LOG(ERROR) << "NWebExtensionHistoryCefDelegate::DeleteAll fail";
-    return false;
+void NWebExtensionHistoryCefDelegate::DeleteUrlCallback(int requestId, const char* error) {
+  std::lock_guard<std::mutex> lock(g_history_delete_url_map_mutex_);
+  if (g_history_delete_url_map_.count(requestId)) {
+    std::move(g_history_delete_url_map_[requestId]).Run(error);
+    g_history_delete_url_map_.erase(requestId);
   }
-  return true;
-#endif
 }
 
-bool NWebExtensionHistoryCefDelegate::DeleteUrl(const char* url) {
-#if !BUILDFLAG(ARKWEB_NWEB_EX)
-  return false;
-#else
-  if (!NWebExtensionHistoryDispatcher::GetInstance().DeleteUrl(url)) {
-    LOG(ERROR) << "NWebExtensionHistoryCefDelegate::DeleteUrl fail";
-    return false;
+void NWebExtensionHistoryCefDelegate::DeleteAllCallback(int requestId, const char* error) {
+  std::lock_guard<std::mutex> lock(g_history_delete_all_map_mutex_);
+  if (g_history_delete_all_map_.count(requestId)) {
+    std::move(g_history_delete_all_map_[requestId]).Run(error);
+    g_history_delete_all_map_.erase(requestId);
   }
-
-  return true;
-#endif
 }
 
 void NWebExtensionHistoryCefDelegate::OnVisited(const NWebExtensionHistoryItem* item) {

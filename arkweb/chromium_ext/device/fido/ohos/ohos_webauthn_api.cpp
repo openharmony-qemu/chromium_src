@@ -6,6 +6,7 @@
 
 #include "base/native_library.h"
 #include "base/no_destructor.h"
+#include "base/threading/scoped_blocking_call.h"
 #include "device/fido/attestation_statement_formats.h"
 #include "device/fido/ohos/type_conversions.h"
 
@@ -22,6 +23,8 @@ class OhosWebAuthnApiImpl : public OhosWebAuthnApi {
 
   GetClientCapabilitiesResult GetClientCapabilities() override;
 
+  bool IsUserVerifyingPlatformAuthenticatorAvailable() override;
+
   RegisterResult Register(
       CtapMakeCredentialRequest request,
       MakeCredentialOptions request_options) override;
@@ -31,6 +34,12 @@ class OhosWebAuthnApiImpl : public OhosWebAuthnApi {
       CtapGetAssertionOptions options) override;
 
  private:
+  template<typename Request>
+  void InitializeTokenBindingAndOrigin(
+      const Request& request,
+      FIDO2_TokenBinding* token_binding,
+      const char** origin);
+
   bool is_available_ = false;
 
   using FuncGetClientCapabilityPtr =
@@ -124,6 +133,10 @@ OhosWebAuthnApi::GetClientCapabilitiesResult OhosWebAuthnApi::GetClientCapabilit
   return {};
 }
 
+bool OhosWebAuthnApi::IsUserVerifyingPlatformAuthenticatorAvailable() {
+  return false;
+}
+
 OhosWebAuthnApi::RegisterResult OhosWebAuthnApi::Register(
     CtapMakeCredentialRequest request,
     MakeCredentialOptions request_options)
@@ -213,6 +226,17 @@ OhosWebAuthnApi::GetClientCapabilitiesResult OhosWebAuthnApiImpl::GetClientCapab
 // LCOV_EXCL_STOP
 
 NO_SANITIZE("cfi")
+bool OhosWebAuthnApiImpl::IsUserVerifyingPlatformAuthenticatorAvailable() {
+  auto capabilities = GetClientCapabilities();
+  for (const auto& capability : capabilities) {
+    if (capability.second) {
+      return true;
+    }
+  }
+  return false;
+}
+
+NO_SANITIZE("cfi")
 OhosWebAuthnApi::RegisterResult OhosWebAuthnApiImpl::Register(
     CtapMakeCredentialRequest request,
     MakeCredentialOptions request_options)
@@ -237,19 +261,19 @@ OhosWebAuthnApi::RegisterResult OhosWebAuthnApiImpl::Register(
   LOG(INFO) << "options: " << Convert<std::string>(options);
 
   FIDO2_TokenBinding token_binding;
-  if (func_init_token_binding_ptr_) {
-    func_init_token_binding_ptr_(&token_binding);
-  }
   const char* origin = nullptr;
-  if (request.extra) {
-    origin = request.extra->common.origin.c_str();
-  }
+  InitializeTokenBindingAndOrigin(request, &token_binding, &origin);
 
   FIDO2_PublicKeyAttestationCredential* credential_ptr = nullptr;
   do {
     LOG(INFO) << "before register";
-    FIDO2_ErrorCode error =
-        func_register_ptr_(options, token_binding, origin, &credential_ptr);
+    FIDO2_ErrorCode error;
+    {
+      base::ScopedBlockingCall scoped_blocking_call(
+          FROM_HERE, base::BlockingType::MAY_BLOCK);
+      error = func_register_ptr_(
+          options, token_binding, origin, &credential_ptr);
+    }
     LOG(INFO) << "after register, error["
               << static_cast<int>(error) << ", " << !!credential_ptr << "]";
     ret.first = MakeCredentialStatus::kAuthenticatorResponseInvalid;
@@ -261,8 +285,7 @@ OhosWebAuthnApi::RegisterResult OhosWebAuthnApiImpl::Register(
     ret.second = Convert<AuthenticatorMakeCredentialResponse>(*credential_ptr);
   } while (false);
 
-  if (credential_ptr &&
-      func_public_key_attestation_credential_destroy_ptr_) {
+  if (credential_ptr && func_public_key_attestation_credential_destroy_ptr_) {
     func_public_key_attestation_credential_destroy_ptr_(credential_ptr);
   }
 
@@ -293,20 +316,20 @@ OhosWebAuthnApi::GetAssertionResult OhosWebAuthnApiImpl::GetAssertion(
   LOG(INFO) << "fido_options: " << Convert<std::string>(fido_options);
 
   FIDO2_TokenBinding token_binding;
-  if (func_init_token_binding_ptr_) {
-    func_init_token_binding_ptr_(&token_binding);
-  }
   const char* origin = nullptr;
-  if (request.extra) {
-    origin = request.extra->common.origin.c_str();
-  }
+  InitializeTokenBindingAndOrigin(request, &token_binding, &origin);
 
   FIDO2_PublicKeyAssertionCredential* credential_ptr = nullptr;
 
   do {
     LOG(INFO) << "before authenticate";
-    FIDO2_ErrorCode error =
-        func_authenticate_ptr_(fido_options, token_binding, origin, &credential_ptr);
+    FIDO2_ErrorCode error;
+    {
+      base::ScopedBlockingCall scoped_blocking_call(
+          FROM_HERE, base::BlockingType::MAY_BLOCK);
+      error = func_authenticate_ptr_(
+          fido_options, token_binding, origin, &credential_ptr);
+    }
     ret.first = GetAssertionStatus::kAuthenticatorResponseInvalid;
     LOG(INFO) << "after authenticate, error["
               << static_cast<int>(error) << ", " << !!credential_ptr << "]";
@@ -324,4 +347,19 @@ OhosWebAuthnApi::GetAssertionResult OhosWebAuthnApiImpl::GetAssertion(
   return ret;
 }
 
-} // namepsace device
+template<typename Request>
+void OhosWebAuthnApiImpl::InitializeTokenBindingAndOrigin(
+    const Request& request,
+    FIDO2_TokenBinding* token_binding,
+    const char** origin) {
+  DCHECK(token_binding);
+  DCHECK(origin);
+  if (func_init_token_binding_ptr_) {
+    func_init_token_binding_ptr_(token_binding);
+  }
+  if (request.extra) {
+    *origin = request.extra->common.origin.c_str();
+  }
+}
+
+} // namespace device

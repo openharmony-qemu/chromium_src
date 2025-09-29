@@ -15,6 +15,7 @@
 
 #include "nweb_pipe_resource_handler.h"
 
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/logging.h"
 #include "base/strings/string_util.h"
 #include "net/base/mime_sniffer.h"
@@ -151,7 +152,7 @@ void NWebPipeResourceHandler::GetResponseHeaders(
     CefString& redirectUrl) {
   base::AutoLock scoped_lock_(lock_);
   LOG(DEBUG) << "scheme_handler get response headers url: "
-             << response_->GetURL().ToString()
+             << url::LogUtils::ConvertUrlWithMask(response_->GetURL().ToString())
              << " status: " << response_->GetStatus()
              << " error: " << response_->GetError();
   if (response_->GetURL().ToString() != "") {

@@ -129,7 +129,7 @@ class CONTENT_EXPORT RenderWidgetHostView {
   virtual void Hide() = 0;
 
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
-  virtual void EvictFrameBackBuffers(bool invisible) = 0;
+  virtual void EvictFrameBackBuffers() {}
   virtual bool GetScrollable() = 0;
 #endif
 

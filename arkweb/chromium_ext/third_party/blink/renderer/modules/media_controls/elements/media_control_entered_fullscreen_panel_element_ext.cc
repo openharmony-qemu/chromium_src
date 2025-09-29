@@ -17,9 +17,7 @@ MediaControlEnteredFullscreenPanelElement::
 }
 
 void MediaControlEnteredFullscreenPanelElement::SetIsMask(bool is_mask) {
-#if false
-  SetClass("mask", is_mask);
-#endif
+  SetClass(AtomicString("mask"), is_mask);
 }
 
 }  // namespace blink

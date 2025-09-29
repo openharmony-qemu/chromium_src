@@ -182,7 +182,7 @@ class DnsConfigServiceOhos::ConfigReader : public SerialWorker {
         IPEndPoint dns_server(std::move(*dns_address),
                               dns_protocol::kDefaultPort);
         dns_config_->nameservers.push_back(dns_server);
-        LOG(INFO) << "dns name server " << dns_server.ToString();
+        LOG(INFO) << "dns name server: *** ";
       }
     }
 

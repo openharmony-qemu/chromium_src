@@ -193,19 +193,12 @@ FourccAndFlip GetFourccAndFlipFromPixelFormat(
     case media::PIXEL_FORMAT_ARGB:
       // Windows platforms e.g. send the data vertically flipped sometimes.
       return {libyuv::FOURCC_ARGB, flip_y};
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_WEBRTC)
     case media::PIXEL_FORMAT_ABGR:
       return {libyuv::FOURCC_ABGR};
 #endif
     case media::PIXEL_FORMAT_MJPEG:
       return {libyuv::FOURCC_MJPG};
-#if false
-#if BUILDFLAG(ARKWEB_WEBRTC)
-    case PIXEL_FORMAT_ABGR:
-      fourcc_format = libyuv::FOURCC_ABGR;
-      break;
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
-#endif
     default:
       NOTREACHED();
   }
@@ -1083,7 +1076,8 @@ void VideoCaptureDeviceClient::OnIncomingCapturedY16Data(
     return;
   }
   auto buffer_access = buffer.handle_provider->GetHandleForInProcessAccess();
-  memcpy(buffer_access->data(), data, length);
+  memcpy(buffer_access->data(), data,
+         std::min(static_cast<size_t>(length), buffer_access->mapped_size()));
   const VideoCaptureFormat output_format = VideoCaptureFormat(
       format.frame_size, format.frame_rate, PIXEL_FORMAT_Y16);
   OnIncomingCapturedBuffer(std::move(buffer), output_format, reference_time,

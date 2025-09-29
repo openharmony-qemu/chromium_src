@@ -40,117 +40,6 @@ NWebExtensionScheme ConvertProxyServerScheme(net::ProxyServer::Scheme scheme) {
   }
 }
 
-std::string NWebExtensionSchemeAsHumanString(NWebExtensionScheme scheme) {
-  switch (scheme) {
-  case HTTP:
-    return "HTTP";
-  case HTTPS:
-    return "HTTPS";
-  case QUIC:
-    return "QUIC";
-  case SOCKS4:
-    return "SOCKS4";
-  case SOCKS5:
-    return "SOCKS5";
-  case INVALID:
-  default:
-    return "INVALID";
-  }
-}
-
-std::string NWebExtensionProxyModeAsHumanString(NWebExtensionProxyMode mode) {
-  switch(mode) {
-  case DIRECT:
-    return "DIRECT";
-  case AUTO_DETECT:
-    return "AUTO_DETECT";
-  case PAC_SCRIPT:
-    return "PAC_SCRIPT";
-  case FIXED_SERVERS:
-    return "FIXED_SERVERS";
-  case SYSTEM:
-    return "SYSTEM";
-  default:
-    return "INVALID";
-  }
-}
-
-std::string PrintProxyServer(const NWebExtensionProxyServer& server) {
-  std::ostringstream s;
-
-  s << "host=" << server.host << "; ";
-  if (server.port) {
-    s << "port=" << server.port.value() << "; ";
-  }
-  if (server.scheme) {
-    s << "scheme=" << NWebExtensionSchemeAsHumanString(server.scheme.value()) << "; ";
-  }
-
-  return s.str();
-}
-
-std::string PrintProxyRules(const NWebExtensionProxyRules& rules) {
-  std::ostringstream s;
-
-  s << " rules: ";
-  if (!rules.bypassList.empty()) {
-    s << " bypassList:";
-    for (const auto& url : rules.bypassList) {
-      s << url << "; ";
-    }
-  }
-
-  if (rules.fallbackProxy) {
-    s << " fallbackProxy: " << PrintProxyServer(rules.fallbackProxy.value());
-  }
-
-  if (rules.proxyForFtp) {
-    s << " proxyForFtp: " << PrintProxyServer(rules.proxyForFtp.value());
-  }
-
-  if (rules.proxyForHttp) {
-    s << " proxyForHttp: " << PrintProxyServer(rules.proxyForHttp.value());
-  }
-
-  if (rules.proxyForHttps) {
-    s << " proxyForHttps: " << PrintProxyServer(rules.proxyForHttps.value());
-  }
-
-  if (rules.singleProxy) {
-    s << " singleProxy: " << PrintProxyServer(rules.singleProxy.value());
-  }
-
-  return s.str();
-}
-
-std::string PrintProxyInfo(const NWebExtensionProxyInfo& info) {
-  std::ostringstream s;
-  s << "proxyInfo:";
-  if (!info.enable) {
-    s << " there is no extension controls proxy";
-    return s.str();
-  }
-
-  if (!info.effective) {
-    s << " there is no effective proxy";
-    return s.str();
-  }
-
-  s << "mode=" << NWebExtensionProxyModeAsHumanString(info.effective->mode) << "; ";
-
-  if (info.effective->pacScript) {
-    s << " pac: ";
-    s << " mandatory=" << info.effective->pacScript->mandatory << "; ";
-    s << " url=" << info.effective->pacScript->url << "; ";
-  }
-
-  if (info.effective->rules) {
-    s << PrintProxyRules(info.effective->rules.value());
-  }
-
-  return s.str();
-}
-
 std::optional<NWebExtensionProxyServer> ProxyServerToNWebExtensionProxyServer(
     const std::vector<net::ProxyChain>& chains) {
   if (!chains.empty()) {
@@ -223,7 +112,6 @@ void NotifyProxyInfo(Profile* profile, const net::ProxyConfigWithAnnotation& pre
       if (pref_config.pref_proxy_mode() >= (int)DIRECT &&
           pref_config.pref_proxy_mode() <= (int)SYSTEM) {
         ProxyConfigToProxyInfo(extension_id, pref_config.pref_proxy_mode(), pref_config.value(), info);
-        LOG(DEBUG) << PrintProxyInfo(info);
         OHOS::NWeb::NWebExtensionProxyCefDelegate::NotifyProxyInfo(info);
       } else {
         LOG(ERROR) << "invalid proxy mode:" << pref_config.pref_proxy_mode();
@@ -330,7 +218,7 @@ bool PrefProxyConfigTrackerImpl::PrefConfigToNetConfig(
       }
       GURL proxy_pac_url(proxy_pac);
       if (!proxy_pac_url.is_valid()) {
-        LOG(ERROR) << "Invalid proxy PAC url: " << proxy_pac;
+        LOG(ERROR) << "Invalid proxy PAC url";
         config->set_pref_proxy_mode(ProxyPrefs::MODE_DIRECT);
         return true;
       }

@@ -39,12 +39,7 @@ void InitializeSkia() {
     SkGraphics::Init();
   }
 
-#if BUILDFLAG(IS_ARKWEB)
-  const int kMB = 3 * 1024 * 1024;
-#else
   const int kMB = 1024 * 1024;
-#endif
-
   size_t font_cache_limit;
 #if BUILDFLAG(IS_ANDROID)
   font_cache_limit =
@@ -72,7 +67,16 @@ void InitializeSkia() {
   if (base::FeatureList::IsEnabled(kSmallerFontCache)) {
     // Could also reduce the maximum number of cached strikes, but the intent
     // being to reduce memory usage, only control cache memory usage.
+  #if BUILDFLAG(IS_ARKWEB)
+    auto type = cmd.GetSwitchValueASCII(switches::kProcessType);
+    if (type != switches::kRendererProcess) {
+      SkGraphics::SetFontCacheLimit(3 * kMB);
+    } else {
+      SkGraphics::SetFontCacheLimit(kMB);
+    }
+  #else
     SkGraphics::SetFontCacheLimit(kMB);
+  #endif
   }
 
   InitSkiaEventTracer();

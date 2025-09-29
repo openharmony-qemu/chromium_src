@@ -55,9 +55,9 @@
 #include "capi/nweb_statistic_callback.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-struct FrameInfos;
-struct IsolatedWorld;
 struct OpenDevToolsParam;
+struct RunJavaScriptParam;
+
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "capi/nweb_extension_manager_callback.h"
 #include "capi/nweb_extension_context_menus_callback.h"
@@ -67,6 +67,10 @@ struct OpenDevToolsParam;
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include "components/prefs/pref_service.h"
 #endif
 
 namespace OHOS::NWeb {
@@ -510,7 +514,7 @@ class NWebImpl : public NWeb {
                                      int policy,
                                      const std::string& mappingType,
                                      const std::string& url);
-  static void OnGlobalConfigResult(const std::string& path);
+  static void OnGlobalConfigResult(const std::string& path, PrefService* localState);
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
 #if BUILDFLAG(IS_OHOS)
@@ -594,8 +598,7 @@ class NWebImpl : public NWeb {
   void PutWebExtensionCallback(
       std::shared_ptr<NWebExtensionCallback> web_extension_callback);
   void RemoveWebExtensionCallback();
-  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
-                             bool recursive, IsolatedWorld world,
+  void RunJavaScriptInFrames(RunJavaScriptParam param,
                              OnReceiveValueCallback callback);
   void GetImageFromContextNode();
   void GetImageFromCache(const std::string& url);
@@ -740,6 +743,11 @@ class NWebImpl : public NWeb {
   void WebExtensionContextMenuReloadFocusedFrame();
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void WebExtensionContextMenuGetFocusedFrameInfo(int32_t& frame_id,
+                                                  std::string& frame_url);
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
   static void SetDefaultBrowserZoomLevel(double zoom_factor);
   void SetBrowserZoomLevel(double zoom_factor) const;
@@ -878,8 +886,6 @@ class NWebImpl : public NWeb {
       int tab_id,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
       std::unique_ptr<NWebExtensionTab> tab);
-  void WebExtensionTabActivated(
-      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo);
   void WebExtensionTabAttached(int tab_id,
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo);
   void WebExtensionTabDetached(int tab_id,
@@ -938,6 +944,8 @@ class NWebImpl : public NWeb {
   int PrerenderPage(const std::string& url,
                     const std::string& additional_headers);
   void CancelAllPrerendering();
+  static void SetExtraHeadersMap(const std::string& url,
+                                 const std::string& additional_headers);
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
@@ -1031,7 +1039,8 @@ class NWebImpl : public NWeb {
   int32_t SetBlanklessLoadingWithKey(const std::string& key, bool isStart) override;
   int64_t GetPreferenceHash();
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
-  void RemoveBlanklessFrame();
+  bool TriggerBlanklessForUrl(const std::string& url) override;
+  void SetVisibility(bool isVisible) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
@@ -1118,7 +1127,6 @@ class NWebImpl : public NWeb {
 
   std::unique_ptr<base::RetainingOneShotTimer> drag_over_timer_;
   DelegateDragEvent drag_over_event_;
-  base::WeakPtrFactory<NWebImpl> weak_factory_{this};
 
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   void AvoidVisibleViewportBottom(int32_t avoidHeight) override;
@@ -1127,12 +1135,19 @@ class NWebImpl : public NWeb {
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void ClearBlanklessKey();
-  void CallBlanklessFrameFunc(uint64_t blankless_key, int32_t lcp_time, const std::string& file);
+  bool CheckNetAvailable();
+  void CallBlanklessFrameFunc(uint64_t blankless_key,
+                              int32_t lcp_time,
+                              const std::string& file,
+                              int32_t width,
+                              int32_t height);
   // To avoid include blankless_controller.h in nweb_impl.h, we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
   std::atomic<uint64_t> blankless_key_ = UINT64_MAX;
   std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
 #endif
+
+  base::WeakPtrFactory<NWebImpl> weak_factory_{this};
 };
 }  // namespace OHOS::NWeb
 

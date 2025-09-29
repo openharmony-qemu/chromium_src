@@ -982,6 +982,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                   int event) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  bool OnStartBackgroundTask(int32_t type, const std::string& message) override;
+#endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
+
 #if BUILDFLAG(ARKWEB_PDF)
   void OnPdfScrollAtBottom(const std::string& url) override;
   void OnPdfLoadEvent(int32_t result, const std::string& url) override;
@@ -990,7 +994,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_MENU)
   void OnVisibleChanged(bool isVisible);
   void SetHandleVisibleCallback(
-      std::function<void(bool)> on_handle_visible) override {
+      const base::RepeatingCallback<void(bool)>& on_handle_visible) override {
     this->on_handle_visible_ = on_handle_visible;
   }
   void ShowMagnifier() override;
@@ -1008,6 +1012,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
     const CefString& extra_request_headers_str,
     int error_code,
     const CefString& error_text) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessLoadingKey(uint64_t blankless_key);
+  void ClearSnapshot();
 #endif
 
  private:
@@ -1080,6 +1089,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   ImageAlphaType alpha_type_ = ImageAlphaType::ALPHA_TYPE_UNKNOWN;
 
   uint32_t nweb_id_ = 0;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  // To avoid include blankless_controller.h in nweb_handler_delegate.h,
+  // we use UINT64_MAX instead of INVALID_BLANKLESS_KEY.
+  uint64_t blankless_key_ = UINT64_MAX;
+#endif
 
 #if BUILDFLAG(ARKWEB_PIP)
   int pip_status_ = -1;
@@ -1188,7 +1202,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};
 
 #if BUILDFLAG(ARKWEB_MENU)
-  std::function<void(bool)> on_handle_visible_;
+  base::RepeatingCallback<void(bool)> on_handle_visible_;
 #endif
 };
 }  // namespace OHOS::NWeb

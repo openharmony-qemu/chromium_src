@@ -380,6 +380,7 @@ class MediaSessionImpl : public MediaSession,
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   bool HasOnlyOneShotPlayersPublic() const;
+  bool HasOneShotPlayersWhenSetMetadataPublic() const;
 #endif
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
   void PutWebMediaAVSessionEnabled(bool enable);
@@ -415,6 +416,7 @@ class MediaSessionImpl : public MediaSession,
   bool fileAccess_ = false;
   std::vector<std::string> grantMediaFileAccessDirs_;
   NWebMediaSessionState sessionState_ = NWebMediaSessionState::NOINITIAL;
+  bool has_one_shot_players_ = false;
 #endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 #if BUILDFLAG(ARKWEB_PIP)
   void OnPictureInPictureStateChanged(
@@ -428,6 +430,11 @@ class MediaSessionImpl : public MediaSession,
   std::unique_ptr<base::MemoryPressureListener> memory_pressure_listener_;
   base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level_ =
       base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE;
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  void UpdateMediaPlayersMuteState(int player_id, bool mute);
+  bool GetMediaPlayerMuteState();
 #endif
 
  private:
@@ -697,6 +704,7 @@ class MediaSessionImpl : public MediaSession,
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   media::MediaContentType media_content_type_;
+  std::unordered_map<int, bool> players_mute_state_;
 #endif
 
   // Returns the PageData for the specified |page|.

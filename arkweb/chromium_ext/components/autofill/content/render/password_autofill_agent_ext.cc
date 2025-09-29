@@ -48,6 +48,8 @@ PasswordAutofillAgentExt::PasswordAutofillAgentExt(
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   ohos_last_supplied_password_info_iter_ =
       ohos_web_input_to_password_info_.end();
+  username_autofill_state_ = blink::WebAutofillState::kNotFilled;
+  password_autofill_state_ = blink::WebAutofillState::kNotFilled;
 #endif
 }
 

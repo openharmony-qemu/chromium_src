@@ -7,6 +7,7 @@
 
 #include <string_view>
 
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/not_fatal_until.h"
@@ -81,7 +82,8 @@ void ArkWebHostResolverDnsTaskExt::RecordFailedTransactionInfo(
   LOG(INFO) << "The completed transaction [" << index << "] is failed "
             << net_error << ", failedQueryType "
             << static_cast<int>(dns_query_type) << ", host "
-            << std::string(hostResolverDnsTask->host_.GetHostnameWithoutBrackets())
+            << url::LogUtils::ConvertUrlWithMask(std::string(
+                   hostResolverDnsTask->host_.GetHostnameWithoutBrackets()))
             << ", and needed tranactions num is 2";
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO)

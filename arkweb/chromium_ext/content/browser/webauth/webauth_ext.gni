@@ -3,6 +3,9 @@
 # found in the LICENSE file.
 
 arkweb_webauth_ext_sources = get_path_info([
+    "authenticator_common_impl_ext.cc",
+    "is_uvpaa_ohos.cpp",
+    "is_uvpaa_ohos.h",
     "utils.cpp",
     "utils.h",
   ], "abspath")

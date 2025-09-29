@@ -74,13 +74,15 @@ class ArkwebDisplayUtils {
                    AggregatedFrame& frame);
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  void removeDuplicatesRect(std::vector<gfx::Rect>& quad_list);
-
   void DumpSnapshotForBlankLess(AggregatedFrame& frame);
 
   void SetClientId(const uint32_t client_id);
 
   void SetGpuServiceImpl(GpuServiceImpl* gpu_service_impl);
+#endif
+
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+  void DiscardBackbuffer();
 #endif
 
  private:

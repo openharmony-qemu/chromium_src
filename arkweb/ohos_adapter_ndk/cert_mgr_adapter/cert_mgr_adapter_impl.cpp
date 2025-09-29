@@ -110,7 +110,7 @@ bool CertManagerAdapterImpl::GetPinSetForHostName(
     NetStack_CertificatePinning certificatePinning;
     int32_t ret = OH_NetStack_GetPinSetForHostName(hostname.c_str(), &certificatePinning);
     if (ret != 0) {
-        WVLOG_E("GetPinSetForHostName for hostname:%{public}s failed, ret:%{public}d",
+        WVLOG_E("GetPinSetForHostName for hostname:%{private}s failed, ret:%{private}d",
             hostname.c_str(), ret);
         return false;
     }

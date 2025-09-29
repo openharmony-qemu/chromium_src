@@ -3473,28 +3473,37 @@ TEST_F(NWebImplTest, RemoveWebExtensionCallback002) {
 }
 
 TEST_F(NWebImplTest, RunJavaScriptInFrames001) {
-  const std::string jsString = "test";
   FrameInfos rootFrame;
-  bool recursive = false;
   IsolatedWorld world;
+  RunJavaScriptParam param;
+  param.script = "test";
+  param.recursive = false;
+  param.rootFrame = rootFrame;
+  param.world = world;
+  param.callbackId = 0;
   OnReceiveValueCallback callback = nullptr;
   nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, RunJavaScriptInFrames(jsString, ::testing::_, recursive, ::testing::_, callback))
+  EXPECT_CALL(*mock_delegate_, RunJavaScriptInFrames(::testing::_, callback))
       .Times(0);
-  nweb_impl_->RunJavaScriptInFrames(jsString, rootFrame, recursive, world, callback);
+  nweb_impl_->RunJavaScriptInFrames(param, callback);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
 }
 
 TEST_F(NWebImplTest, RunJavaScriptInFrames002) {
-  const std::string jsString = "test";
   FrameInfos rootFrame;
-  bool recursive = false;
   IsolatedWorld world;
+  RunJavaScriptParam param;
+  param.script = "test";
+  param.recursive = false;
+  param.rootFrame = rootFrame;
+  param.world = world;
+  param.callbackId = 0;
+
   OnReceiveValueCallback callback = nullptr;
   nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, RunJavaScriptInFrames(jsString, ::testing::_, recursive, ::testing::_, callback))
+  EXPECT_CALL(*mock_delegate_, RunJavaScriptInFrames(::testing::_, callback))
       .Times(0);
-  nweb_impl_->RunJavaScriptInFrames(jsString, rootFrame, recursive, world, callback);
+  nweb_impl_->RunJavaScriptInFrames(param, callback);
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
@@ -4470,6 +4479,30 @@ TEST_F(NWebImplTest, WebExtensionContextMenuReloadFocusedFrame002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 #endif // BUILDFLAG(ARKWEB_EX_REFRESH_IFRAME)
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+TEST_F(NWebImplTest, WebExtensionContextMenuGetFocusedFrameInfo001) {
+  int32_t id = 0;
+  std::string url = "https://example.com";
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_,
+              WebExtensionContextMenuGetFocusedFrameInfo(id, url))
+      .Times(0);
+  nweb_impl_->WebExtensionContextMenuGetFocusedFrameInfo(id, url);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, WebExtensionContextMenuGetFocusedFrameInfo002) {
+  int32_t id = 0;
+  std::string url = "https://example.com";
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_,
+              WebExtensionContextMenuGetFocusedFrameInfo(id, url))
+      .Times(1);
+  nweb_impl_->WebExtensionContextMenuGetFocusedFrameInfo(id, url);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
 TEST_F(NWebImplTest, UpdateBrowserControlsState001) {
@@ -6187,9 +6220,11 @@ TEST_F(NWebImplTest, CallBlanklessFrameFunc001) {
   uint64_t blankless_key = 0;
   int32_t lcp_time = 0;
   const std::string file = "test";
+  int32_t width = 100;
+  int32_t height = 100;
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = nullptr;
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file, width, height);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_EQ(nweb_impl_->nweb_handle_, nullptr);
 }
@@ -6198,9 +6233,11 @@ TEST_F(NWebImplTest, CallBlanklessFrameFunc002) {
   uint64_t blankless_key = 0;
   int32_t lcp_time = INT32_MAX;
   const std::string file = "test";
+  int32_t width = 100;
+  int32_t height = 100;
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file, width, height);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
 }
@@ -6209,9 +6246,11 @@ TEST_F(NWebImplTest, CallBlanklessFrameFunc003) {
   uint64_t blankless_key = 0;
   int32_t lcp_time = 0;
   const std::string file = "test";
+  int32_t width = 100;
+  int32_t height = 100;
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file, width, height);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
 }
@@ -6220,9 +6259,11 @@ TEST_F(NWebImplTest, CallBlanklessFrameFunc004) {
   uint64_t blankless_key = 0;
   int32_t lcp_time = 5;
   const std::string file = "test";
+  int32_t width = 100;
+  int32_t height = 100;
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file, width, height);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
 }
@@ -6231,9 +6272,11 @@ TEST_F(NWebImplTest, CallBlanklessFrameFunc005) {
   uint64_t blankless_key = 0;
   int32_t lcp_time = 5;
   const std::string file = "";
+  int32_t width = 100;
+  int32_t height = 100;
   nweb_impl_->nweb_delegate_ = nullptr;
   nweb_impl_->nweb_handle_ = std::make_shared<NWebHandler>();
-  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file);
+  nweb_impl_->CallBlanklessFrameFunc(blankless_key, lcp_time, file, width, height);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
   EXPECT_NE(nweb_impl_->nweb_handle_, nullptr);
   EXPECT_TRUE(file.empty());

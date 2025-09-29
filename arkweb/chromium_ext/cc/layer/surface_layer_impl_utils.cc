@@ -70,8 +70,5 @@ void SurfaceLayerImplUtils::LayerRectUpdate()
   }
 }
 
-bool SurfaceLayerImplUtils::HasNativeLayer() {
-  return impl->layer_impl_utils()->may_contain_native();
-}
 // LCOV_EXCL_STOP
 }  // namespace cc

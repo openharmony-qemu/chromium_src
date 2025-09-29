@@ -32,7 +32,7 @@ void DateTimeChooserOHOS::OnDateTimeChooserReceiver(
   date_time_chooser_receiver_.Bind(std::move(receiver));
   date_time_chooser_receiver_.set_disconnect_handler(base::BindOnce(
       &DateTimeChooserOHOS::OnDateTimeChooserReceiverConnectionError,
-      base::Unretained(this)));
+      GetWeakPtr()));
 }
 
 void DateTimeChooserOHOS::OpenDateTimeDialog(

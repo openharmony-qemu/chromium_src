@@ -115,6 +115,7 @@ bssl::UniquePtr<EVP_PKEY> FindPrivateKeyByCertOHOS(
       while ((pkey = PEM_read_bio_PrivateKey(pkey_bio.get(), nullptr, nullptr,
                                              nullptr))) {
         bssl::UniquePtr<EVP_PKEY> bssl_pkey(pkey);
+        //returns 1 means the private key matches the certificate.
         if (X509_check_private_key(cert, pkey) == 1) {
           return bssl_pkey;
         }
@@ -151,6 +152,9 @@ scoped_refptr<SSLPrivateKey> FetchClientCertPrivateKey(
   }
 
   char* uri_cert = (char*)X509_get_ex_data(bssl_cert, 0);
+  if (!uri_cert) {
+    return nullptr;
+  }
   std::string str_uri(uri_cert);
   free(uri_cert);
 

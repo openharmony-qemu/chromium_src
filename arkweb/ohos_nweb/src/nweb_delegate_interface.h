@@ -62,6 +62,7 @@
 #endif
 
 struct OpenDevToolsParam;
+struct RunJavaScriptParam;
 
 namespace OHOS::NWeb {
 class NWebValue;
@@ -742,8 +743,6 @@ class NWebDelegateInterface
       int tab_id,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
       std::unique_ptr<NWebExtensionTab> tab) = 0;
-  virtual void WebExtensionTabActivated(
-      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) = 0;
   virtual void WebExtensionTabAttached(
       int tab_id,
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) = 0;
@@ -832,6 +831,12 @@ class NWebDelegateInterface
   virtual void WebExtensionContextMenuReloadFocusedFrame() = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  virtual void WebExtensionContextMenuGetFocusedFrameInfo(
+      int32_t& frame_id,
+      std::string& frame_url) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   virtual void EnableViewAutoResize(
       const CefSize& min_size,
@@ -884,9 +889,6 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   virtual void SetBlanklessLoadingKey(uint32_t nweb_id, uint64_t blankless_key) = 0;
   virtual int64_t GetPreferenceHash() = 0;
-  virtual void SetNearestSnapshotSize(int32_t width, int32_t height) = 0;
-  virtual int32_t NearestSnapshotWidth() = 0;
-  virtual int32_t NearestSnapshotHeight() = 0;
   virtual int32_t GetWidth() = 0;
   virtual int32_t GetHeight() = 0;
 #endif
@@ -898,8 +900,7 @@ class NWebDelegateInterface
 #endif  // BUILDFLAG(ARKWEB_MENU)
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  virtual void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
-                                     bool recursive, IsolatedWorld world,
+  virtual void RunJavaScriptInFrames(RunJavaScriptParam param,
                                      OnReceiveValueCallback callback) = 0;
 #endif
 

@@ -25,7 +25,6 @@ void VideoFrameSubmitter::SetHasNativeLayer(bool has_native_layer) {
     return;
   }
   has_native_layer_ = has_native_layer;
-  resource_provider_->SetHasNativeLayer(has_native_layer);
 }
 
 void VideoFrameSubmitter::StartRenderingForSameLayer()

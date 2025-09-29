@@ -9,6 +9,7 @@
 #include <string_view>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/files/file_path.h"
 #include "base/functional/bind.h"
@@ -95,7 +96,11 @@ const char kReinstallInstallSource[] = "reinstall";
 const char kGoogleDotCom[] = "google.com";
 const char kTokenServiceConsumerId[] = "extension_downloader";
 const char kWebstoreOAuth2Scope[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://www.googleapis.com/auth/chromewebstore.readonly";
+#endif
 
 ExtensionDownloader::TestObserver* g_test_observer = nullptr;
 ExtensionDownloaderTestDelegate* g_test_delegate = nullptr;
@@ -745,7 +750,7 @@ void ExtensionDownloader::OnManifestLoadComplete(
   // available, we want to fire off requests to fetch those updates.
   if (response_body && !response_body->empty()) {
     RETRY_HISTOGRAM("ManifestFetchSuccess", request_failure_count, url);
-    LOG(INFO) << "beginning manifest parse for " << url;
+    VLOG(2) << "beginning manifest parse for " << url;
     NotifyExtensionsDownloadStageChanged(
         request.fetch->GetExtensionIds(),
         ExtensionDownloaderDelegate::Stage::PARSING_MANIFEST);
@@ -754,7 +759,7 @@ void ExtensionDownloader::OnManifestLoadComplete(
                                    std::move(request.fetch));
     ParseUpdateManifest(*response_body, std::move(callback));
   } else {
-    LOG(INFO) << "Failed to fetch manifest '" << url.possibly_invalid_spec()
+    VLOG(1) << "Failed to fetch manifest '" << url.possibly_invalid_spec()
             << "' response code:" << response_code;
     RetryRequestOrHandleFailureOnManifestFetchFailure(std::move(request),
                                                       *loader, response_code);
@@ -770,7 +775,7 @@ void ExtensionDownloader::HandleManifestResults(
     std::unique_ptr<UpdateManifestResults> results,
     const std::optional<ManifestParseFailure>& error) {
   if (!results) {
-    LOG(INFO) << "parsing manifest failed (" << fetch_data->full_url() << ")";
+    VLOG(2) << "parsing manifest failed (" << fetch_data->full_url() << ")";
     DCHECK(error.has_value());
     if (TryFetchingExtensionsFromCache(fetch_data.get()))
       return;
@@ -793,8 +798,7 @@ void ExtensionDownloader::HandleManifestResults(
                                            fetch_data->request_ids());
     return;
   } else {
-    LOG(INFO) << "parsing manifest succeeded (" << fetch_data->full_url()
-              << ")";
+    VLOG(2) << "parsing manifest succeeded (" << fetch_data->full_url() << ")";
   }
 
   const ExtensionIdSet extension_ids = fetch_data->GetExtensionIds();
@@ -829,8 +833,7 @@ void ExtensionDownloader::HandleManifestResults(
                 DownloadFetchPriority::kForeground);
     }
 
-    LOG(INFO) << "FetchUpdatedExtension:" << extension_id
-              << ", crx_url=" << crx_url;
+    LOG(INFO) << "FetchUpdatedExtension:" << extension_id;
     FetchUpdatedExtension(
         std::make_unique<ExtensionFetch>(
             std::move(update.first), crx_url, update.second->package_hash,
@@ -1086,7 +1089,7 @@ void ExtensionDownloader::FetchUpdatedExtension(
     std::optional<std::string> info) {
   if (!fetch_data->url.is_valid()) {
     // TODO(asargent): This can sometimes be invalid. See crbug.com/130881.
-    LOG(INFO) << "Invalid URL: '" << fetch_data->url.possibly_invalid_spec()
+    DLOG(WARNING) << "Invalid URL: '" << fetch_data->url.possibly_invalid_spec()
                   << "' for extension " << fetch_data->id;
     delegate_->OnExtensionDownloadStageChanged(
         fetch_data->id, ExtensionDownloaderDelegate::Stage::FINISHED);
@@ -1227,7 +1230,7 @@ void ExtensionDownloader::CreateExtensionLoader() {
         base::StringPrintf("Bearer %s", access_token_.c_str()));
   }
 
-  LOG(INFO) << "Starting load of " << fetch->url << " for " << fetch->id;
+  VLOG(2) << "Starting load of " << fetch->url << " for " << fetch->id;
 
   StartExtensionLoader();
 }
@@ -1323,7 +1326,7 @@ void ExtensionDownloader::OnExtensionLoadComplete(base::FilePath crx_path) {
     std::unique_ptr<ExtensionFetch> fetch_data =
         std::move(extensions_queue_.reset_active_request().fetch);
 
-    LOG(INFO) << "Extension load complete, crx_path=" << crx_path.value();
+    LOG(INFO) << "Extension load complete";
 
     delegate_->OnExtensionDownloadStageChanged(
         id, ExtensionDownloaderDelegate::Stage::FINISHED);

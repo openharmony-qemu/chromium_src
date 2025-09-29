@@ -25,6 +25,9 @@
  
 namespace OHOS::NWeb {
 using HistorySearchCallback = base::RepeatingCallback<void(const NWebExtensionHistoryItems*)>;
+using HistoryAddUrlCallback = base::RepeatingCallback<void(const char* error)>;
+using HistoryDeleteUrlCallback = base::RepeatingCallback<void(const char* error)>;
+using HistoryDeleteAllCallback = base::RepeatingCallback<void(const char* error)>;
 
 class NWebExtensionHistoryCefDelegate {
   public:
@@ -32,14 +35,20 @@ class NWebExtensionHistoryCefDelegate {
 
     bool Search(const NWebExtensionHistoryQueryInfo* data, HistorySearchCallback callback);
 
+    bool AddUrl(const char* url, HistoryAddUrlCallback callback);
+
+    bool DeleteAll(HistoryDeleteAllCallback callback);
+
+    bool DeleteUrl(const char* url, HistoryDeleteUrlCallback callback);
+  
     void SearchCallback(
       const NWebExtensionHistoryItems* items);
+    
+    void AddUrlCallback(int requestId, const char* error);
 
-    bool AddUrl(const char* url);
+    void DeleteUrlCallback(int requestId, const char* error);
 
-    bool DeleteAll();
-
-    bool DeleteUrl(const char* url);
+    void DeleteAllCallback(int requestId, const char* error);
 
     void OnVisited(const NWebExtensionHistoryItem* item);
 

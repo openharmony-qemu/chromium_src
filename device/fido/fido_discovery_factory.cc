@@ -96,7 +96,6 @@ std::vector<std::unique_ptr<FidoDiscoveryBase>> FidoDiscoveryFactory::Create(
           return {};
         }
       }
-#include "device/fido/ohos/ohos_fido_discovery.h"
 #endif  // BUILDFLAG(ARKWEB_FIDO)
       if (device::BluetoothAdapterFactory::Get()->IsLowEnergySupported() &&
           (cable_data_.has_value() || qr_generator_key_.has_value())) {

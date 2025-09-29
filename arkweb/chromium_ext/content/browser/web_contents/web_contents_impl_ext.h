@@ -232,7 +232,7 @@ class WebContentsImplExt : public WebContentsImpl {
   void HideAutofillPopup() override;
 #endif // BUILDFLAG(ARKWEB_DATALIST)
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
-  bool is_selectable_;
+  bool is_selectable_ = false;
   void SetShouldShowFreeCopyMenu(bool is_selectable) {
     is_selectable_ = is_selectable;
   }
@@ -297,6 +297,11 @@ class WebContentsImplExt : public WebContentsImpl {
   void SetUpdateSurface(bool state);
   bool IsUpdateSurface();
 #endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  bool OnStartBackgroundTask(int32_t type, const std::string& message) override;
+#endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 friend class WebContentsImpl;
 friend class WebContentsImplUtils;

@@ -17,6 +17,7 @@
 #define EVENT_HANDLER_ADAPTER_IMPL_H
 
 #include "event_handler_adapter.h"
+#include <mutex>
 #include <unordered_map>
 #include <ffrt/loop.h>
 
@@ -48,10 +49,10 @@ public:
 
     void RemoveFileDescriptorListener(int32_t fileDescriptor) override;
 
-    void PostTask(const std::shared_ptr<OnceCallbackAdapter> callback) override;
 private:
     ffrt_loop_t loop_ = nullptr;
     std::unordered_map<int32_t, EventHandlerFDListenerAdapterImpl *> fdListenerMap_;
+    std::mutex fd_listener_map_mutex_;
 };
 } // namespace OHOS::NWeb
 

@@ -102,8 +102,7 @@ class RootCompositorFrameSinkImplExt : public RootCompositorFrameSinkImpl {
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  void DisableSwapUntilMaximized(
-      DisableSwapUntilMaximizedCallback callback) override;
+  void DisableSwapUntilMaximized() override;
 #endif  // ARKWEB_MAXIMIZE_RESIZE
 
 #if BUILDFLAG(ARKWEB_PIP)

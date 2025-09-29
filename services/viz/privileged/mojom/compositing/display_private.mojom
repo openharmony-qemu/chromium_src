@@ -122,8 +122,8 @@ interface DisplayPrivate {
   [EnableIf=arkweb_performance_jitter]
   SetCurrentFrameSinkId(FrameSinkId frame_sink_id);
 
-  [EnableIf=arkweb_maximize_resize, Sync]
-  DisableSwapUntilMaximized() => ();
+  [EnableIf=arkweb_maximize_resize]
+  DisableSwapUntilMaximized();
 
   [EnableIf=arkweb_same_layer]
   SetNativeInnerWeb(bool isInnerWeb);

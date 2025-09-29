@@ -1128,6 +1128,9 @@ test("skia_unittests") {
     deps += [
       "//third_party/jsoncpp:jsoncpp"
     ]
+    include_dirs = [
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+    ]
     sources += ark_third_party_skia_src_ports_unittest_sources
   }
 }

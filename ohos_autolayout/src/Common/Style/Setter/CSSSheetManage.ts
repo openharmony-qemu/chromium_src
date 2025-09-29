@@ -1,12 +1,12 @@
-import { Txt } from "../../Txt";
-import Utils from "../../Utils/Utils";
-import StyleCommon from "../Common/StyleCommon";
+import { Txt } from '../../Txt';
+import Utils from '../../Utils/Utils';
+import StyleCommon from '../Common/StyleCommon';
 
 export default class CSSSheetManage {
     static initFlag = false;
 
     // 生成CSS样式表
-    static reInit() {
+    static reInit(): void {
         if (CSSSheetManage.initFlag) {
             return;
         }
@@ -28,7 +28,7 @@ export default class CSSSheetManage {
         return styleNode;
     }
 
-    static enableMedia() {
+    static enableMedia(): void {
         if (!this.styleNodeList.length) {
             return;
         }
@@ -49,7 +49,7 @@ export default class CSSSheetManage {
         }
     }
 
-    static disableMedia(force: boolean = false) {
+    static disableMedia(force: boolean = false): void {
         if (!this.styleNodeList.length) {
             return;
         }
@@ -63,7 +63,7 @@ export default class CSSSheetManage {
         }
     }
 
-    static updateState() {
+    static updateState(): void {
         // 放大模式且clientHeight高度大于500px的页面，需onResize监控来设置CSSSheet是否生效
         if (Utils.isWideScreen()) {
             CSSSheetManage.enableMedia();

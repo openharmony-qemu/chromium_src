@@ -1,7 +1,7 @@
 // 没有缓存进行计算并存入缓存
-import { Txt } from "../../../Txt";
-import DomReader from "./DomReader";
-import OriginStyleCache from "./OriginStyleCache";
+import { Txt } from '../../../Txt';
+import DomReader from './DomReader';
+import OriginStyleCache from './OriginStyleCache';
 
 export default class OriginStyle {
     static cacheArr = [

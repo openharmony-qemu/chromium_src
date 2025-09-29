@@ -1,5 +1,5 @@
-import Tag from "../../../../Debug/Tag";
-import Log from "../../../../Debug/Log";
+import Tag from '../../../../Debug/Tag';
+import Log from '../../../../Debug/Log';
  
 export default class OriginStyleCache {
     private static TAG = Tag.originStyleCache;

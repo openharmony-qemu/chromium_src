@@ -2,22 +2,22 @@
  * Module Framework.ts
  * 框架模块
  */
-import Cached from "../Common/Cached";
-import CSSSheetManage from "../Common/Style/Setter/CSSSheetManage";
-import StyleSetter from "../Common/Style/Setter/StyleSetter";
-import { Txt } from "../Common/Txt";
-import Utils from "../Common/Utils/Utils";
-import Log from "../Debug/Log";
-import Tag from "../Debug/Tag";
-import ObserverHandler from "./Observer/ObserverHandler";
-import HtmlChangedChecker from "./Utils/HtmlChangedChecker";
-import WaitSystemReady from "./Utils/WaitSystemReady";
-import IntelliLayout from "./IntelligentLayout";
-import IntelligentLayout from "./IntelligentLayout";
-import { Level, PerfExecution } from "../Framework/Common/Perf";
-import { LayoutConstraintMetrics } from "../Framework/Common/LayoutConstraintDetector";
-import { SpecificStyleCache } from "../Common/Style/Common/CacheStyleGetter";
-import { CCMConfig } from "./Common/CCMConfig";
+import Cached from '../Common/Cached';
+import CSSSheetManage from '../Common/Style/Setter/CSSSheetManage';
+import StyleSetter from '../Common/Style/Setter/StyleSetter';
+import { Txt } from '../Common/Txt';
+import Utils from '../Common/Utils/Utils';
+import Log from '../Debug/Log';
+import Tag from '../Debug/Tag';
+import ObserverHandler from './Observer/ObserverHandler';
+import HtmlChangedChecker from './Utils/HtmlChangedChecker';
+import WaitSystemReady from './Utils/WaitSystemReady';
+import IntelliLayout from './IntelligentLayout';
+import IntelligentLayout from './IntelligentLayout';
+import { Level, PerfExecution } from '../Framework/Common/Perf';
+import { LayoutConstraintMetrics } from '../Framework/Common/LayoutConstraintDetector';
+import { SpecificStyleCache } from '../Common/Style/Common/CacheStyleGetter';
+import { CCMConfig } from './Common/CCMConfig';
 
 export default class Framework {
     static TAG = Tag.framework;
@@ -58,9 +58,9 @@ export default class Framework {
             return false;
         }
 
-        if (IntelligentLayout.operation_state == 1) {
+        if (IntelligentLayout.operation_state === 1) {
             return false;
-        } else if (IntelligentLayout.operation_state == 2) {
+        } else if (IntelligentLayout.operation_state === 2) {
             return false;
         }
 
@@ -85,7 +85,7 @@ export default class Framework {
     }
 
     @PerfExecution({ level: Level.INFO })
-    static mainTask() {
+    static mainTask(): void {
         console.log("执行mainTask");
         if (!Framework.taskinit()) return;
         if (!CCMConfig.getInstance().checkRule()) {
@@ -103,7 +103,7 @@ export default class Framework {
         Cached.clearAllCache();
     }
 
-    static reInit() {
+    static reInit(): void {
         if (!Utils.isWideScreen()) {
             return;
         }
@@ -126,11 +126,11 @@ export default class Framework {
         IntelligentLayout.reInit();
     }
 
-    static configReady() {
+    static configReady(): void {
         WaitSystemReady.headReady(Framework.headReadyTask);
     }
 
-    static headReadyTask() {
+    static headReadyTask(): void {
         WaitSystemReady.bodyReady(Framework.reInit);
     }
 

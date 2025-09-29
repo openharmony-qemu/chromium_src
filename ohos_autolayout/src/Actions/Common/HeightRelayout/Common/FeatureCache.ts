@@ -1,8 +1,8 @@
-import OriginStyle from "../../../../Common/Style/Getter/OriginStyleGetter/OriginStyle";
-import OriginStyleGetter from "../../../../Common/Style/Getter/OriginStyleGetter/OriginStyleGetter";
-import Log from "../../../../Debug/Log";
-import CacheStyleGetter from "../../../../Common/Style/Common/CacheStyleGetter";
-import { Txt } from "../../../../Common/Txt";
+import OriginStyle from '../../../../Common/Style/Getter/OriginStyleGetter/OriginStyle';
+import OriginStyleGetter from '../../../../Common/Style/Getter/OriginStyleGetter/OriginStyleGetter';
+import Log from '../../../../Debug/Log';
+import CacheStyleGetter from '../../../../Common/Style/Common/CacheStyleGetter';
+import { Txt } from '../../../../Common/Txt';
  
 export default class FeatureCache {
     static styleCacheMap: Map<string, Map<string, string>> = new Map();
@@ -25,7 +25,7 @@ export default class FeatureCache {
     }
  
     // 类型缓存
-    static setTypeCached(ele: HTMLElement, type: string, result: string) {
+    static setTypeCached(ele: HTMLElement, type: string, result: string): void {
         const feature = this.getFeature(ele);
         let cacheMap = this.typeCacheMap.get(feature) || new Map();
  
@@ -35,7 +35,7 @@ export default class FeatureCache {
     }
  
     // 类型缓存
-    static getTypeCached(ele: HTMLElement, type: string) {
+    static getTypeCached(ele: HTMLElement, type: string): string {
         const feature = this.getFeature(ele);
  
         let cacheMap = this.typeCacheMap.get(feature);

@@ -1,13 +1,13 @@
-import CacheStyleGetter from "../../../../Common/Style/Common/CacheStyleGetter";
-import Utils from "../../../../Common/Utils/Utils";
-import Tag from "../../../../Debug/Tag";
-import PageObserver from "../../../../Framework/Observer/Observers/PageObserver";
+import CacheStyleGetter from '../../../../Common/Style/Common/CacheStyleGetter';
+import Utils from '../../../../Common/Utils/Utils';
+import Tag from '../../../../Debug/Tag';
+import PageObserver from '../../../../Framework/Observer/Observers/PageObserver';
 
 export const TAG = Tag.heightReLayout;
 export default class HeaderAdj {
     static fixedList: Set<HTMLElement> = new Set();
 
-    static collectHeaderEle(ele: HTMLElement) {
+    static collectHeaderEle(ele: HTMLElement): void {
         if (!PageObserver.hadScroll) {
             return;
         }
@@ -24,7 +24,7 @@ export default class HeaderAdj {
         HeaderAdj.postFixedDOM(ele);
     }
 
-    static postFixedDOM(ele: HTMLElement) {
+    static postFixedDOM(ele: HTMLElement): void {
         if (Utils.ignoreLocalName(ele)) {
             return;
         }
@@ -32,7 +32,7 @@ export default class HeaderAdj {
         this.fixedList.add(ele);
     }
 
-    static removeEle(ele: HTMLElement) {
+    static removeEle(ele: HTMLElement): void {
         this.fixedList.delete(ele);
     }
 }

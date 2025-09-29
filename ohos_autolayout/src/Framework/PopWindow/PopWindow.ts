@@ -1,15 +1,15 @@
-import StyleSetter from "../../Common/Style/Setter/StyleSetter";
-import Constant from "../Common/Constant";
-import Utils from "../Common/Utils";
-import LayoutUtils from "../Common/LayoutUtils";
-import { AComponent } from "../Common/base/AComponent";
-import { DetectorInst } from "../Common/DetectorInst";
-import { LayoutConstraintMetricsDetector, LayoutConstraintMetrics } from "../Common/LayoutConstraintDetector";
-import { PopupInfo } from "../Popup/PopupInfo";
-import { PopupType } from "../Popup/PopupType";
-import { PopupDecisionTreeType } from "../Popup/PopupDecisionTreeType";
-import { PopupDecisionTree } from "../Popup/PopupDecisionTree";
-import { CCMConfig } from "../Common/CCMConfig";
+import StyleSetter from '../../Common/Style/Setter/StyleSetter';
+import Constant from '../Common/Constant';
+import Utils from '../Common/Utils';
+import LayoutUtils from '../Common/LayoutUtils';
+import { AComponent } from '../Common/base/AComponent';
+import { DetectorInst } from '../Common/DetectorInst';
+import { LayoutConstraintMetricsDetector, LayoutConstraintMetrics } from '../Common/LayoutConstraintDetector';
+import { PopupInfo } from '../Popup/PopupInfo';
+import { PopupType } from '../Popup/PopupType';
+import { PopupDecisionTreeType } from '../Popup/PopupDecisionTreeType';
+import { PopupDecisionTree } from '../Popup/PopupDecisionTree';
+import { CCMConfig } from '../Common/CCMConfig';
 
 /**
  * 弹窗
@@ -49,8 +49,8 @@ export class PopWindow extends AComponent {
         return true;
     }
 
-    public intelligenceLayout() {
-        if (this.mComponent == null) {
+    public intelligenceLayout(): void {
+        if (this.mComponent === null) {
             return;
         }
 
@@ -64,7 +64,7 @@ export class PopWindow extends AComponent {
         const allNodes = this.traverseTree(this.mComponent, []);
 
         // 先将所有flex布局的子节点都设置flex-shrink:0，避免控件缩放导致的子节点高度压缩问题，也为了更好的计算高度。
-        if (this.relayoutTimes == 0) {
+        if (this.relayoutTimes === 0) {
             // 首次触发重布局，先解除所有flex压缩子节点的设定。其他逻辑下一次重布局执行
             this.fixFlexShrink(this.mComponent);
             StyleSetter.flushAllStyles();
@@ -75,7 +75,7 @@ export class PopWindow extends AComponent {
         // step1: 计算被截断的节点
         this.findTruncateNodes(allNodes);
 
-        if (this.truncateNodes.length == 0) {
+        if (this.truncateNodes.length === 0) {
             console.log(`no truncateNodes found.`);
             let metrics: LayoutConstraintMetrics = {
                 resultCode: -1,
@@ -132,9 +132,7 @@ export class PopWindow extends AComponent {
                     style.visibility !== 'hidden' &&
                     child instanceof HTMLElement &&
                     parseFloat(style.opacity) === 1 &&
-                    !Utils.isBackgroundSemiTransparent(style) &&
-                    child.id != 'SmartSwitch' &&
-                    child.id != 'SaveSwitch';
+                    !Utils.isBackgroundSemiTransparent(style)
             });
 
         if (children.length === 0) return [];
@@ -142,7 +140,7 @@ export class PopWindow extends AComponent {
         // 获取 mask 节点的 z-index
         const maskStyle = window.getComputedStyle(this.popupInfo.mask_node);
         let maskZIndex: string | number = maskStyle.zIndex;
-        if (popup_type == PopupType.C || popup_type == PopupType.A) {
+        if (popup_type === PopupType.C || popup_type === PopupType.A) {
             maskZIndex = -1;
         } else {
             if (maskZIndex === 'auto') {
@@ -191,7 +189,7 @@ export class PopWindow extends AComponent {
     * @param {HTMLElement[]} grandChildren - 需要过滤的 grandChildren 数组
     * @returns {HTMLElement[]} 过滤后的 grandChildren 数组
     */
-    private getValidGrandChildren(grandChildren: HTMLElement[]) {
+    private getValidGrandChildren(grandChildren: HTMLElement[]): HTMLElement[] {
         return grandChildren.filter(grandchild => {
             const style = getComputedStyle(grandchild);
             const matrixMatch = style.transform.match(/matrix\((.*?),(.*?),(.*?),(.*?),(.*?),(.*?)\)/);
@@ -207,7 +205,7 @@ export class PopWindow extends AComponent {
      * step3：scale = (screenHeight * 0.7) / (maxBottom - minTop)
      * step4: 记录maxBottom对应的bottomNode
      */
-    private calScale() {
+    private calScale(): void {
         this.truncateNodes.forEach(truncateNode => {
             console.log('tangcd print truncateNode classname = ' + truncateNode ?.className);
             let rect = truncateNode.getBoundingClientRect();
@@ -217,7 +215,7 @@ export class PopWindow extends AComponent {
                 this.maxBottom = rect.bottom;
             }
             let tmpNode = truncateNode;
-            if (truncateNode == this.mComponent) {
+            if (truncateNode === this.mComponent) {
                 tmpNode = truncateNode;
             } else {
                 tmpNode = truncateNode.parentElement;
@@ -282,7 +280,7 @@ export class PopWindow extends AComponent {
      */
     private resetByScale(): void {
         // 如果mask和rootNode是同一个节点，则直接缩放rootNode的所有子节点。
-        if (this.popupInfo.popup_type == PopupType.C) {
+        if (this.popupInfo.popup_type === PopupType.C) {
             let topNodes = this.getTopmostChildren(this.mComponent, this.popupInfo.popup_type);
             for (let child of topNodes) {
                 const childStyle = child.children.length > 0 ? getComputedStyle(child.children[0]) : null;
@@ -302,7 +300,7 @@ export class PopWindow extends AComponent {
                     console.log(`resetByScale for type C: ${child.className}`);
                 }
             }
-        } else if (this.popupInfo.popup_type == PopupType.B) {
+        } else if (this.popupInfo.popup_type === PopupType.B) {
             this.equivalentMask = this.getEquivalentMask();
             // 如果mask和content是兄弟节点，则其他兄弟节点做缩放
             let topNodes = this.getTopmostChildren(this.equivalentMask.parentElement, this.popupInfo.popup_type);
@@ -338,7 +336,7 @@ export class PopWindow extends AComponent {
                     console.log(`resetByScale for type B: ${child.className}`);
                 }
             }
-        } else if (this.popupInfo.popup_type == PopupType.A) {
+        } else if (this.popupInfo.popup_type === PopupType.A) {
             // 如果mask是rootNode的子节点，content是mask的子节点，则对mask的所有子节点以及它的兄弟节点做缩放
             let topNodes = this.getTopmostChildren(this.popupInfo.mask_node, this.popupInfo.popup_type);
             for (let child of topNodes) {
@@ -357,13 +355,13 @@ export class PopWindow extends AComponent {
     */
     getEquivalentMask(): HTMLElement {
         let oriMaskNode = this.popupInfo.mask_node;
-        if (this.popupInfo.popup_type != PopupType.B) {
+        if (this.popupInfo.popup_type !== PopupType.B) {
             return oriMaskNode;
         }
         let equivalentMask = oriMaskNode;
-        if (oriMaskNode != this.mComponent && oriMaskNode.parentElement != this.mComponent && !LayoutUtils.hasElementSiblings(oriMaskNode as HTMLElement)) {
+        if (oriMaskNode != this.mComponent && oriMaskNode.parentElement !== this.mComponent && !LayoutUtils.hasElementSiblings(oriMaskNode as HTMLElement)) {
             let maskParentNode = oriMaskNode.parentElement;
-            while (maskParentNode != this.mComponent && !LayoutUtils.hasElementSiblings(maskParentNode as HTMLElement)) {
+            while (maskParentNode !== this.mComponent && !LayoutUtils.hasElementSiblings(maskParentNode as HTMLElement)) {
                 maskParentNode = maskParentNode.parentElement;
             }
             equivalentMask = maskParentNode;
@@ -376,7 +374,7 @@ export class PopWindow extends AComponent {
      */
     private resetTruncateBkgImgNodes(): void {
         this.truncateBkgImgNodes.forEach((node: HTMLElement) => {
-            if (node != this.popupInfo.mask_node) {
+            if (node !== this.popupInfo.mask_node) {
                 this.saveOriginalStyles(node);
                 StyleSetter.setStyle(node, Constant.background_size, `contain`);
             }
@@ -388,7 +386,7 @@ export class PopWindow extends AComponent {
      * 递归地将节点及其所有父节点的 overflow 属性设置为 visible。
      * @param {HTMLElement} node - 需要处理的节点。
      */
-    private makeAllOverflowVisible(node: HTMLElement) {
+    private makeAllOverflowVisible(node: HTMLElement): void {
         while (node && node !== document.documentElement) {
             const style = window.getComputedStyle(node);
             if (style.overflow !== 'visible') {
@@ -424,7 +422,7 @@ export class PopWindow extends AComponent {
      * @param {HTMLElement[]} allNodes - 根节点下的所有节点
      * @returns {HTMLElement[]} - 符合条件的节点数组
      */
-    private findTruncateNodes(allNodes: HTMLElement[]) {
+    private findTruncateNodes(allNodes: HTMLElement[]): void {
         // 1. 查找所有符合条件的节点
         const tmpTruncateNodes = allNodes.filter(node => {
             return LayoutUtils.isNodeTruncated(node, this.popupInfo);
@@ -445,7 +443,7 @@ export class PopWindow extends AComponent {
      * @param {Array} [result=[]] - 结果数组
      * @returns {Array} 所有节点的数组
      */
-    private traverseTree(node: HTMLElement, result: HTMLElement[]) {
+    private traverseTree(node: HTMLElement, result: HTMLElement[]): HTMLElement[] {
         result.push(node);
         for (let i = 0; i < node.childNodes.length; i++) {
             if (node.childNodes[i] instanceof HTMLElement) {
@@ -456,7 +454,7 @@ export class PopWindow extends AComponent {
     }
 
     private async getLayoutConstraintReport(): Promise<void> {
-        if (this.needLayoutConstraintNodes.size == 0) {
+        if (this.needLayoutConstraintNodes.size === 0) {
             console.log('no report needed, because there is no relayout nodes');
             return;
         }
@@ -475,7 +473,7 @@ export class PopWindow extends AComponent {
      */
     private async forceLayoutUpdate(rafCount = 1): Promise<void> {
         return new Promise<void>((resolve) => {
-            const raf = () => {
+            const raf = (): void => {
                 // 强制触发布局重排
                 void document.body.offsetHeight;
 
@@ -492,7 +490,7 @@ export class PopWindow extends AComponent {
         });
     }
 
-    private filterContainedNodes(nodes: HTMLElement[]) {
+    private filterContainedNodes(nodes: HTMLElement[]): HTMLElement[] {
         const elementSet = new Set(nodes);
         const result: HTMLElement[] = [];
 
@@ -599,10 +597,10 @@ export class PopWindow extends AComponent {
 
         // 2. 计算元素中心点在视口中的绝对位置
         let visualCenterY = rect.top + rect.height / 2;
-        if (this.popupDecisionTreeType == PopupDecisionTreeType.Bottom) {
+        if (this.popupDecisionTreeType === PopupDecisionTreeType.Bottom) {
             offsetY = window.innerHeight - (visualCenterY + rect.height / 2 * newScale);
-        } else if (this.popupDecisionTreeType == PopupDecisionTreeType.Center ||
-            this.popupDecisionTreeType == PopupDecisionTreeType.Center_Button_Overlap) {
+        } else if (this.popupDecisionTreeType === PopupDecisionTreeType.Center ||
+            this.popupDecisionTreeType === PopupDecisionTreeType.Center_Button_Overlap) {
             if (hasBrother) {
                 // A. 计算“组”需要移动的距离：将“组中心”移动到“视口中心”
                 // to do: 后续优化下相关逻辑，提升计算效果，看看是否和calScale进行合并计算
@@ -631,19 +629,19 @@ export class PopWindow extends AComponent {
         offsetY += newScale * rect.offsetY;
 
         // 4. 如果父布局设置了display: flex，则子节点需要设置flex-shrink: 0; 处理子节点高度被挤压的场景，仅靠scale无法恢复
-        if (style.display == 'flex') {
+        if (style.display === 'flex') {
             for (let child of element.children) {
                 this.saveOriginalStyles(child as HTMLElement);
                 StyleSetter.setStyle(child as HTMLElement, Constant.flex_shrink, '0');
             }
         }
-        if (parentStyle.display == 'flex') {
+        if (parentStyle.display === 'flex') {
             StyleSetter.setStyle(element, Constant.flex_shrink, '0');
         }
 
         // 5. 对于有吸顶吸底组件的弹窗，重新调整offsetY（只针对居中弹窗需要调整）
-        if (this.popupDecisionTreeType == PopupDecisionTreeType.Center ||
-            this.popupDecisionTreeType == PopupDecisionTreeType.Center_Button_Overlap) {
+        if (this.popupDecisionTreeType === PopupDecisionTreeType.Center ||
+            this.popupDecisionTreeType === PopupDecisionTreeType.Center_Button_Overlap) {
             offsetY -= this.popupInfo.stickyBottom_height / 2;
             offsetY += this.popupInfo.stickyTop_height / 2;
         }
@@ -799,7 +797,7 @@ export class PopWindow extends AComponent {
     private fixButtonOverlap(): void {
         // 查找所有可能的关闭按钮
         const closeElements = this.mComponent.querySelectorAll('[class*="close"]');
-        if (closeElements.length != 1) {
+        if (closeElements.length !== 1) {
             return;
         }
         console.log('ther is a close button to be fixed.');
@@ -815,7 +813,7 @@ export class PopWindow extends AComponent {
         const buttonTop = closeButton.getBoundingClientRect().top;
         const bottomNodeStyle = getComputedStyle(this.bottomNode);
         const bottomNodeBottom = this.bottomNode.getBoundingClientRect().bottom;
-        if (closeButton == this.bottomNode) {
+        if (closeButton === this.bottomNode) {
             translateY = parseFloat(bottomNodeStyle.height);
         } else {
             translateY = bottomNodeBottom - buttonTop;

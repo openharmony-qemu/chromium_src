@@ -1,5 +1,5 @@
-import Tag from "../../Debug/Tag";
-import { AdjacentImageInfo } from "../List/List/AdjacentImageAction";
+import Tag from '../../Debug/Tag';
+import { AdjacentImageInfo } from '../List/List/AdjacentImageAction';
 
 
 export interface LargeImgInfo {

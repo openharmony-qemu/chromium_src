@@ -1,16 +1,16 @@
-import { Txt } from "../../../Common/Txt";
-import OriginStyleCache from "../../../Common/Style/Getter/OriginStyleGetter/OriginStyleCache";
-import ObserverHandler from "../ObserverHandler";
-import Utils from "../../../Common/Utils/Utils";
-import DiffEleRecord from "../../../Common/Perform/DiffEleRecorder";
-import { LayoutKey, LayoutValue } from "../../../Common/Constant";
-import Store from "../../../Common/Utils/Store";
-import { ObserverRecord, recordType } from "../../../Common/Perform/ChangeRecord";
+import { Txt } from '../../../Common/Txt';
+import OriginStyleCache from '../../../Common/Style/Getter/OriginStyleGetter/OriginStyleCache';
+import ObserverHandler from '../ObserverHandler';
+import Utils from '../../../Common/Utils/Utils';
+import DiffEleRecord from '../../../Common/Perform/DiffEleRecorder';
+import { LayoutKey, LayoutValue } from '../../../Common/Constant';
+import Store from '../../../Common/Utils/Store';
+import { ObserverRecord, recordType } from '../../../Common/Perform/ChangeRecord';
  
 export default class TransitionEndObserver {
     static init: boolean = false;
  
-    static reInit() {
+    static reInit(): void {
         if (TransitionEndObserver.init) {
             return;
         }
@@ -19,7 +19,7 @@ export default class TransitionEndObserver {
         addEventListener("transitionend", TransitionEndObserver.onTransitionEnd);
     }
  
-    private static onTransitionEnd(e: TransitionEvent) {
+    private static onTransitionEnd(e: TransitionEvent): void {
         console.log("on transition end");
         // todo: 这个方法某些小程序会一致被调用和执行
         const node = e.target as HTMLElement;
@@ -44,7 +44,7 @@ export default class TransitionEndObserver {
         ObserverHandler.postTask();
     }
  
-    static removeListener() {
+    static removeListener(): void {
         TransitionEndObserver.init = false;
         removeEventListener("transitionend", TransitionEndObserver.onTransitionEnd);
     }

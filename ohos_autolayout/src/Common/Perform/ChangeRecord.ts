@@ -1,8 +1,8 @@
-import Log from "../../Debug/Log";
-import Tag from "../../Debug/Tag";
-import StyleSetter from "../Style/Setter/StyleSetter";
-import { LayoutKey, LayoutValue } from "../Constant";
-import Store from "../Utils/Store";
+import Log from '../../Debug/Log';
+import Tag from '../../Debug/Tag';
+import StyleSetter from '../Style/Setter/StyleSetter';
+import { LayoutKey, LayoutValue } from '../Constant';
+import Store from '../Utils/Store';
 
 const CHANGE_COUNT_IDX = 0;
 const UPPER_LIMIT = 3;
@@ -41,7 +41,7 @@ export class ObserverRecord {
     }
 
     // 清除保存的changeEle计数
-    static clearChangeCount() {
+    static clearChangeCount(): void {
         for (let [observerType, changeEleSet] of ObserverRecord.changeEleCache.entries()) {
             // 找到当前Observer类型对应的次数
             let changeEleCountMap: Map<HTMLElement, recordType> =
@@ -60,7 +60,7 @@ export class ObserverRecord {
     }
 
     // 保存的changeEle计数+1
-    static addChangeCount() {
+    static addChangeCount(): void {
         for (let [observerType, changeEleSet] of ObserverRecord.changeEleCache.entries()) {
             // 找到变动元素在某Observer类型触发下的对应次数
             let changeEleCountMap: Map<HTMLElement, recordType> =
@@ -86,7 +86,7 @@ export class ObserverRecord {
         return ele;
     }
 
-    private static setChangeEleCache(changeEle: HTMLElement, observerType: recordType) {
+    private static setChangeEleCache(changeEle: HTMLElement, observerType: recordType): void {
         let changeEleSet = ObserverRecord.changeEleCache.get(observerType);
         if (!changeEleSet) {
             changeEleSet = new Set<HTMLElement>();
@@ -112,7 +112,7 @@ export class ObserverRecord {
 export class StyleRecord {
     // styleCount: Map<父元素, [变动次数, 状态标记]>
     private static styleCount: Map<HTMLElement, [number, boolean]> = new Map();
-    static ignoreStyleChange(ele: HTMLElement, isReset: boolean) {
+    static ignoreStyleChange(ele: HTMLElement, isReset: boolean): void {
         // 被配置的大图不进行缓存
         if (Store.getValue(ele, LayoutKey.CONFIG_LAYOUT_TAG) === LayoutValue.LARGE_IMG) {
             return;
@@ -151,7 +151,7 @@ export class StyleRecord {
 
     private static count = 0;
     // 第100次调用该函数且countMap规模大于100时，清理CountMap
-    private static clear(countMap: Map<HTMLElement | string, any[]>) {
+    private static clear(countMap: Map<HTMLElement | string, any[]>): void {
         if (StyleRecord.count < OBSERVER_CONT_LIMIT) {
             StyleRecord.count++;
             return;

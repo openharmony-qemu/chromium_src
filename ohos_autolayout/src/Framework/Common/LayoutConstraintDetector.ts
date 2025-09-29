@@ -1,7 +1,7 @@
-import { PopupInfo } from "../Popup/PopupInfo";
-import Constant from "./Constant";
-import {DetectorInst, LayoutMetrics} from "./DetectorInst";
-import LayoutUtils from "./LayoutUtils";
+import { PopupInfo } from '../Popup/PopupInfo';
+import Constant from './Constant';
+import {DetectorInst, LayoutMetrics} from './DetectorInst';
+import LayoutUtils from './LayoutUtils';
 
 // 布局约束指标检测结果接口
 export interface LayoutConstraintMetrics {
@@ -217,7 +217,7 @@ export class LayoutConstraintMetricsDetector {
         };
         
         // 生成详细报告
-        const statusSymbol = (pass: boolean) => pass ? "✅ 通过" : "❌ 未通过";
+        const statusSymbol = (pass: boolean): string => pass ? "✅ 通过" : "❌ 未通过";
         
         const report = `### 1. 安全间隙检测(弹窗距离屏幕)\n` +
                     `- **要求**: 弹窗四边到安全区域边缘 ≥ ${DetectorInst.minGap}\n` +
@@ -246,8 +246,6 @@ export class LayoutConstraintMetricsDetector {
         layoutMap: Map<HTMLElement, LayoutMetrics>,
         reportLines: string[]
     ): number {
-        // const rootMetrics = layoutMap.get(rootNode);
-        // if (!rootMetrics) return 0;
 
         // 获取安全区域（兼容不同设备和浏览器）
         const safeArea = {
@@ -275,7 +273,7 @@ export class LayoutConstraintMetricsDetector {
             if (el === rootNode) return;
 
             const metrics = layoutMap.get(el)!;
-            if (!metrics || metrics.width == 0 || metrics.height == 0) return;
+            if (!metrics || metrics.width === 0 || metrics.height === 0) return;
 
             // 检查四边是否在屏幕内
             const overflowLeft = Math.round(metrics.left) < Math.round(effectiveBounds.left);
@@ -306,7 +304,7 @@ export class LayoutConstraintMetricsDetector {
         const overflowRate = interactiveElements.length > 0 
             ? (overflowCount / interactiveElements.length * 100) 
             : 0;
-        const passed = overflowRate == 0;
+        const passed = overflowRate === 0;
         const status = passed ? "✅ 通过" : "❌ 未通过";
         
         const report = `### 3.  元素溢出率检测(弹窗内控件是否溢出弹窗)\n` +
@@ -398,7 +396,7 @@ export class LayoutConstraintMetricsDetector {
      * @returns {boolean} - 是否是 滚动 组件
      */
     private static isScrollableList(element: HTMLElement, rootNode:HTMLElement): boolean {
-        const checkOverflow = (el: HTMLElement) => {
+        const checkOverflow = (el: HTMLElement): boolean => {
             const style = window.getComputedStyle(el);
             const overflow = style.overflow;
             const overflowY = style.overflowY;
@@ -411,7 +409,7 @@ export class LayoutConstraintMetricsDetector {
         }
     
         let parent = element.parentElement;
-        while (parent != rootNode.parentElement) {
+        while (parent !== rootNode.parentElement) {
             if (checkOverflow(parent)) {
                 return true;
             }

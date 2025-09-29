@@ -1,10 +1,10 @@
 // 创建隐藏dom，读取样式
-import { Txt } from "../../../Txt";
-import Store from "../../../Utils/Store";
-import { HwTag } from "../../../Constant";
-import StyleSetter from "../../Setter/StyleSetter";
-import Tag from "../../../../Debug/Tag";
-import Log from "../../../../Debug/Log";
+import { Txt } from '../../../Txt';
+import Store from '../../../Utils/Store';
+import { HwTag } from '../../../Constant';
+import StyleSetter from '../../Setter/StyleSetter';
+import Tag from '../../../../Debug/Tag';
+import Log from '../../../../Debug/Log';
  
 export default class DomReader {
     private static TAG = Tag.domReader;

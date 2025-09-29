@@ -17,14 +17,14 @@
 */
 
 
-import Constant from "../Common/Constant";
-import LayoutUtils from "../Common/LayoutUtils";
-import { Level, PerfExecution } from "../Common/Perf";
-import { PopupRecog } from "./PopupRecog";
-import { PopupType } from "./PopupType";
-import { PopupInfo, PotentialElements } from "./PopupInfo";
-import Utils from "../Common/Utils";
-import { CCMConfig } from "../Common/CCMConfig";
+import Constant from '../Common/Constant';
+import LayoutUtils from '../Common/LayoutUtils';
+import { Level, PerfExecution } from '../Common/Perf';
+import { PopupRecog } from './PopupRecog';
+import { PopupType } from './PopupType';
+import { PopupInfo, PotentialElements } from './PopupInfo';
+import Utils from '../Common/Utils';
+import { CCMConfig } from '../Common/CCMConfig';
 
 export class PopupWindow {
 
@@ -53,7 +53,7 @@ export class PopupWindow {
             // --- 核心筛选条件 ---
             // 1. 检查可见性 (Is Visible?)
             // 元素必须有实际尺寸，且不能被 CSS 隐藏。
-            if(style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) == 0) {
+            if(style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) {
                 //具备传染性，不再检查子元素
                 continue;
             }
@@ -113,7 +113,7 @@ export class PopupWindow {
                 }
                 // 特例1：发现有非半透明情况，重新考虑
                 // DOM结构弹窗：遮罩是fixed，100%屏占比，子节点是absolute,并且带有close按钮
-                if(style.position === Constant.fixed && el.children.length == 1) {
+                if(style.position === Constant.fixed && el.children.length === 1) {
                     const child = el.children[0];
                     if (getComputedStyle(child).position === Constant.absolute && 
                             Utils.getScreenAreaRatio(child) > CCMConfig.getInstance().getMinContentAreaRatioThreshold()) {
@@ -134,21 +134,21 @@ export class PopupWindow {
 
             // 识别吸顶吸底元素
             if (style.position === 'fixed' && screenAreaRatio > CCMConfig.getInstance().getMinSARTofStickyComponent() && 
-                screenAreaRatio < CCMConfig.getInstance().getMaxSARTofStickyComponent() && parseInt(style.left) == 0) {
+                screenAreaRatio < CCMConfig.getInstance().getMaxSARTofStickyComponent() && parseInt(style.left) === 0) {
                 // 有的容器是透明的，但是子元素是不透明的
                 // 有的容器是透明的，没有子元素
                 // 因此，要分别区别处理，全透明的子元素不影响弹窗缩放
                 // 如果容器透明，需要往下寻找不透明的全宽子元素
                 if(PopupWindow.isStickyComponentVisiable(el)) {
                     // 只保留一个层级最高的吸顶吸底元素
-                    if(parseInt(style.top) == 0) {
+                    if(parseInt(style.top) === 0) {
                         console.log(`找到吸顶元素${el.className}`);
                         if(potentialStickyTop != null && !PopupWindow.isFirstElementOnTop(el, potentialStickyTop)) {
                             continue;
                         }
                         potentialStickyTop = el;
                     }
-                    if(parseInt(style.bottom) == 0) {
+                    if(parseInt(style.bottom) === 0) {
                         console.log(`找到吸底元素${el.className}`);
                         if(potentialStickyBottom != null && !PopupWindow.isFirstElementOnTop(el, potentialStickyBottom)) {
                             continue;
@@ -169,7 +169,7 @@ export class PopupWindow {
      * @param {Element} elementB - 第二个元素。
      * @returns {boolean} 如果 elementA 在 elementB 之上，则返回 true；如果它们不重叠或 elementB 在上，则返回 false。
      */
-    private static isFirstElementOnTop(elementA:Element, elementB:Element) {
+    private static isFirstElementOnTop(elementA:Element, elementB:Element): boolean {
         if (!elementA || !elementB) {
             return false;
         }
@@ -286,7 +286,7 @@ export class PopupWindow {
         
         for (const node of descendants) {
             // 过滤掉不可见节点
-            if(Utils.visualFilter(node) == false) {
+            if(Utils.visualFilter(node) === false) {
                 continue;
             }
             // 对于后代节点，它们天然在父节点（遮罩）之上，无需比较z-index
@@ -414,7 +414,7 @@ export class PopupWindow {
             .filter(info => {
                 if(!popupsToRemove.has(info)) {
                     // fastPass快速判断
-                    if(info.has_mask && info.mask_area_ratio > 95 && (info.mask_position == 'fixed' || info.mask_position == 'absolute')) {
+                    if(info.has_mask && info.mask_area_ratio > 95 && (info.mask_position === 'fixed' || info.mask_position === 'absolute')) {
                         return  true;
                     }
                     // 通过模型判断
@@ -449,7 +449,7 @@ export class PopupWindow {
      * @param {Element} potentialNodeBelow - 需要检查的节点
      * @returns {boolean} - 如果 potentialNodeBelow 是长兄节点则返回 true，否则返回 false
      */
-    private static isPreviousElementSibling(currentNode:Element, potentialNodeBelow:Element) {
+    private static isPreviousElementSibling(currentNode:Element, potentialNodeBelow:Element): boolean {
         // 确保两个节点存在且是兄弟关系
         if (!currentNode || !potentialNodeBelow || currentNode.parentNode !== potentialNodeBelow.parentNode) {
             return false;

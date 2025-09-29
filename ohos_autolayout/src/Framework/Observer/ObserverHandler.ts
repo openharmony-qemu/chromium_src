@@ -1,38 +1,38 @@
-import { LayoutKey, LayoutValue } from "../../Common/Constant";
-import Store from "../../Common/Utils/Store";
-import Utils from "../../Common/Utils/Utils";
-import Framework from "../Framework";
-import Throttle from "../Utils/Throttle";
-import ModifyObserver from "./Observers/ModifyObserver";
-import ResizeObserver from "./Observers/ResizeObserver";
-import TransitionEndObserver from "./Observers/TransitionEndObserver";
+import { LayoutKey, LayoutValue } from '../../Common/Constant';
+import Store from '../../Common/Utils/Store';
+import Utils from '../../Common/Utils/Utils';
+import Framework from '../Framework';
+import Throttle from '../Utils/Throttle';
+import ModifyObserver from './Observers/ModifyObserver';
+import ResizeObserver from './Observers/ResizeObserver';
+import TransitionEndObserver from './Observers/TransitionEndObserver';
 
 export default class ObserverHandler {
     static relayoutHandler: Throttle;
     private static TIMEOUT = 200;
 
-    static postTask() {
+    static postTask(): void {
         if (!ObserverHandler.relayoutHandler) {
             ObserverHandler.relayoutHandler = new Throttle(ObserverHandler.TIMEOUT, Framework.mainTask);
         }
         ObserverHandler.relayoutHandler.postTask();
     }
 
-    static reInit() {
+    static reInit():void {
         ModifyObserver.reInit();
         TransitionEndObserver.reInit();
         ResizeObserver.init_();
         ObserverHandler.postTask();
     }
 
-    static updateObserver() {
+    static updateObserver(): void {
         if (Utils.isWideScreen()) {
             return;
         }
         ObserverHandler.removeObserver();
     }
 
-    static removeObserver() {
+    static removeObserver(): void {
         ModifyObserver.disconnect();
         TransitionEndObserver.removeListener();
         ResizeObserver.removeListener();

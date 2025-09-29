@@ -1,5 +1,5 @@
-import OriginStyle from "./OriginStyle";
-import OriginStyleCache from "./OriginStyleCache";
+import OriginStyle from './OriginStyle';
+import OriginStyleCache from './OriginStyleCache';
 
 // 样式对外接口
 export default class OriginStyleGetter {

@@ -1,12 +1,12 @@
-import WaitSystemReady from "./WaitSystemReady";
-import Framework from "../Framework";
+import WaitSystemReady from './WaitSystemReady';
+import Framework from '../Framework';
 
 export default class HtmlChangedChecker {
     static initHtml: HTMLElement = null;
     static tryTimes = 7;
     static TIMEOUT = 200;
 
-    private static checkAndRestart() {
+    private static checkAndRestart(): boolean {
         if (!HtmlChangedChecker.initHtml) {
             HtmlChangedChecker.initHtml = document.documentElement;
             return false;
@@ -19,7 +19,7 @@ export default class HtmlChangedChecker {
         return false;
     }
 
-    static startCheckHtml() {
+    static startCheckHtml():void {
         HtmlChangedChecker.tryTimes--;
         if (HtmlChangedChecker.tryTimes < 0) {
             return;

@@ -1,14 +1,14 @@
-import Constant, { HwTag, LayoutKey, LayoutValue } from "../../Constant";
-import Log from "../../../Debug/Log";
-import Utils from "../../Utils/Utils";
-import StyleCommon from "../Common/StyleCommon";
-import Tag from "../../../Debug/Tag";
-import Cached from "../../Cached";
-import { Txt } from "../../Txt";
-import Store from "../../Utils/Store";
-import CacheStyleGetter from "../Common/CacheStyleGetter";
-import PersistStore from "../../Utils/PersistStore";
-import Logger from "../../../Framework/Common/Logger";
+import Constant, { HwTag, LayoutKey, LayoutValue } from '../../Constant';
+import Log from '../../../Debug/Log';
+import Utils from '../../Utils/Utils';
+import StyleCommon from '../Common/StyleCommon';
+import Tag from '../../../Debug/Tag';
+import Cached from '../../Cached';
+import { Txt } from '../../Txt';
+import Store from '../../Utils/Store';
+import CacheStyleGetter from '../Common/CacheStyleGetter';
+import PersistStore from '../../Utils/PersistStore';
+import Logger from '../../../Framework/Common/Logger';
 
 export default class StyleSetter {
     static insertRuleSelectorArr: [string, string[], string][] = [];
@@ -16,7 +16,7 @@ export default class StyleSetter {
     // 当前状态假如有元素和设置的选择器匹配，则通过forceCSS设置的优先
     // 但是由于这个方法和flush绑定 所以会有flush的时候不匹配但是，下一个瞬间匹配但是不flush的情况
     // 所以设置的时候可以把所以的状态都通过forcecss insert rule的方法覆盖到
-    static queryInsertRuleEle() {
+    static queryInsertRuleEle(): void {
         for (let [selector, attrs] of this.insertRuleSelectorArr) {
             const eles = document.querySelectorAll(selector);
             for (let i = 0; i < eles.length; i++) {
@@ -30,9 +30,8 @@ export default class StyleSetter {
     }
 
     static forceCSSAppendStyle: HTMLStyleElement;
-    static appendRule(selector: string, cssList: [string, string][]) {
+    static appendRule(selector: string, cssList: [string, string][]): void {
         if (!this.forceCSSAppendStyle) {
-            // this.forceCSSAppendStyle = CSSSheetManage.creatStyleDiv();
         }
 
         let cssStr = "";
@@ -63,7 +62,7 @@ export default class StyleSetter {
     static observeList: HTMLElement[] = [];
 
     // 添加ele节点的缓存样式
-    static setStyle(ele: HTMLElement, key: string, value: string) {
+    static setStyle(ele: HTMLElement, key: string, value: string): void {
         // 检查本次设置的样式是否已被强制设置
         if (this.hasForceCSS(ele, key)) {
             Log.i(ele, key + "已做强制更改", Tag.styleSetter);
@@ -89,7 +88,7 @@ export default class StyleSetter {
         }
     }
 
-    static setStyleByInsertRule(ele: HTMLElement, key: string, value: string) {
+    static setStyleByInsertRule(ele: HTMLElement, key: string, value: string): void {
         if (this.hasForceCSS(ele, key)) {
             Log.i(ele, key + "已做强制更改", Tag.styleSetter);
             return;
@@ -136,7 +135,7 @@ export default class StyleSetter {
     }
 
     // 将缓存样式刷新至元素上，触发回流
-    static flushAllStyles() {
+    static flushAllStyles(): void {
         if (StyleCommon.styleDiv.parentElement !== document.head) {
             StyleCommon.styleDiv = document.head.appendChild(<Node>StyleCommon.styleDiv) as HTMLStyleElement;
         }
@@ -150,7 +149,7 @@ export default class StyleSetter {
         StyleCommon.styleCache.clear();
     }
 
-    private static flushRemove() {
+    private static flushRemove(): void {
         for (let i = 0; i < StyleSetter.deleteList.length; i++) {
             // 使用parent.removeChild会出现parent为空的情况
             StyleSetter.deleteList[i].remove();
@@ -158,7 +157,7 @@ export default class StyleSetter {
         StyleSetter.deleteList = [];
     }
 
-    static removeEle(ele: ChildNode) {
+    static removeEle(ele: ChildNode): void  {
         if (!ele) {
             return;
         }
@@ -166,7 +165,7 @@ export default class StyleSetter {
     }
 
     // 刷新当前缓存样式
-    private static flushCacheToCSSSheet() {
+    private static flushCacheToCSSSheet(): void  {
         for (const [ele, style] of StyleCommon.styleCache.entries()) {
             if(!ele) continue;
             let styleFlushArr = StyleCommon.styleFlushed.get(ele);
@@ -205,7 +204,7 @@ export default class StyleSetter {
         }
     }
 
-    private static mergeStyle(styleCache: Map<string, string>, styleFlush: Map<string, string>) {
+    private static mergeStyle(styleCache: Map<string, string>, styleFlush: Map<string, string>): Map<string, string> {
         for (let [attr, value] of styleCache.entries()) {
             if (value === Txt.delete_) {
                 styleFlush.delete(attr);
@@ -217,7 +216,7 @@ export default class StyleSetter {
     }
 
     // 删除ele在storeMap和CSSSheet中的原样式
-    private static deleteOldStyle(ele: HTMLElement, index: number) {
+    private static deleteOldStyle(ele: HTMLElement, index: number): void {
         StyleCommon.styleFlushed.delete(ele);
         StyleSetter.delAttr(ele);
         // 从indexMappingList中获取CSSRule对应的序号
@@ -228,7 +227,7 @@ export default class StyleSetter {
         }
     }
 
-    private static setStoreStyleToCSSSheet(ele: HTMLElement, index: number, styleMap: Map<string, string>) {
+    private static setStoreStyleToCSSSheet(ele: HTMLElement, index: number, styleMap: Map<string, string>): void {
         const rulesStr = StyleSetter.getRulesStr(styleMap);
         const attrSelect = StyleSetter.getSelectStr(ele, index);
 
@@ -249,7 +248,7 @@ export default class StyleSetter {
     }
 
     // 获取CSS样式表规则字符串
-    private static getRulesStr(styleMap: Map<string, string>) {
+    private static getRulesStr(styleMap: Map<string, string>): string {
         let rulesStr = "";
         for (const [attr, attrValue] of styleMap) {
             rulesStr += attr + ":" + attrValue + " " + Txt.important_ + ";\n";
@@ -262,14 +261,14 @@ export default class StyleSetter {
      * @param ele 元素
      * @param index
      */
-    private static getSelectStr(ele: HTMLElement, index: number) {
+    private static getSelectStr(ele: HTMLElement, index: number): string {
         const attrSelect = StyleSetter.getAttrSelectStr(index);
         const idSelectStr = StyleSetter.getIdSelect(ele, attrSelect);
 
         return idSelectStr + attrSelect;
     }
 
-    private static getAttrSelectStr(index: number) {
+    private static getAttrSelectStr(index: number): string {
         let selectStr = "";
         const attrVal = Txt.a_ + index;
 
@@ -304,7 +303,7 @@ export default class StyleSetter {
         return idSlcStr;
     }
 
-    private static setAttr(ele: HTMLElement, index: number) {
+    private static setAttr(ele: HTMLElement, index: number): void {
         const attrVal = Txt.a_ + index;
 
         for (let i = 0; i < Constant.ATTR_NUM; i++) {
@@ -313,14 +312,14 @@ export default class StyleSetter {
         }
     }
 
-    static delAttr(ele: HTMLElement) {
+    static delAttr(ele: HTMLElement): void {
         for (let i = 0; i < Constant.ATTR_NUM; i++) {
             const attrKey = StyleSetter.generateAttrKey(i);
             ele.removeAttribute(attrKey);
         }
     }
 
-    private static checkAttr() {
+    private static checkAttr(): void {
         for (let i = 0; i < this.observeList.length; i++) {
             const ele = this.observeList[i];
             const flushedMsg = StyleCommon.styleFlushed.get(ele);
@@ -337,40 +336,18 @@ export default class StyleSetter {
         return StyleCommon.indexMappingList.length - 1;
     }
 
-    private static findRuleIdxInList(eleIdx: number) {
+    private static findRuleIdxInList(eleIdx: number): number {
         return StyleCommon.indexMappingList.findIndex((x) => x === eleIdx);
     }
 
-    private static delRuleIdxInList(ruleIdx: number) {
+    private static delRuleIdxInList(ruleIdx: number): void {
         if (ruleIdx < 0 || ruleIdx >= StyleCommon.indexMappingList.length) {
             return;
         }
         StyleCommon.indexMappingList.splice(ruleIdx, 1);
     }
 
-    /**
-     * 设置元素的宽度，对于content-box，设置的宽度需要减去padding和border
-     * @param ele
-     * @param offsetWidth 期望最终显示的元素宽度
-     */
-    static setWidth(ele: HTMLElement, offsetWidth: number) {
-    }
-
-    static setHeight(ele: HTMLElement, offsetHeight: number) {
-        const eleCSSStyle = CacheStyleGetter.computedStyleDec(ele);
-        let computedHeight = offsetHeight;
-        if (eleCSSStyle.boxSizing === Txt.contentBox_) {
-            computedHeight =
-                offsetHeight -
-                parseFloat(eleCSSStyle.paddingTop) -
-                parseFloat(eleCSSStyle.paddingBottom) -
-                parseFloat(eleCSSStyle.borderTop) -
-                parseFloat(eleCSSStyle.borderBottom);
-        }
-        StyleSetter.setStyle(ele, Txt.height_, computedHeight + "px");
-    }
-
-    static disableHandle(ele: HTMLElement) {
+    static disableHandle(ele: HTMLElement): void {
         Store.setValue(ele, LayoutKey.CONFIG_LAYOUT_TAG, LayoutValue.DISABLE);
         Utils.setParentTag(ele.parentElement, LayoutKey.LAYOUT_TAG, LayoutValue.ZOOM_PARENT);
         Utils.setParentTag(ele.parentElement, LayoutKey.CONFIG_LAYOUT_TAG, LayoutValue.ZOOM_PARENT);
@@ -388,7 +365,7 @@ export default class StyleSetter {
         }
     }
 
-    private static generateAttrKey(attrKey: number) {
+    private static generateAttrKey(attrKey: number): string {
         return Txt.hw_ + String.fromCharCode(attrKey + Txt.a_.charCodeAt(0));
     }
 }

@@ -1,34 +1,21 @@
-import HeaderAdj from "../../../Actions/Common/HeightRelayout/HeightAdj/HeaderAdj";
-import { ObserverRecord, recordType } from "../../../Common/Perform/ChangeRecord";
-import DiffEleRecord from "../../../Common/Perform/DiffEleRecorder";
-import OriginStyleCache from "../../../Common/Style/Getter/OriginStyleGetter/OriginStyleCache";
-import StyleCleaner from "../../../Common/Style/Setter/StyleCleaner";
-import { Txt } from "../../../Common/Txt";
-import Utils from "../../../Common/Utils/Utils";
-import Log from "../../../Debug/Log";
-import Tag from "../../../Debug/Tag";
-import IntelligentLayout from "../../../Framework/IntelligentLayout";
-import ObserverHandler from "../ObserverHandler";
+import HeaderAdj from '../../../Actions/Common/HeightRelayout/HeightAdj/HeaderAdj';
+import { ObserverRecord, recordType } from '../../../Common/Perform/ChangeRecord';
+import DiffEleRecord from '../../../Common/Perform/DiffEleRecorder';
+import OriginStyleCache from '../../../Common/Style/Getter/OriginStyleGetter/OriginStyleCache';
+import StyleCleaner from '../../../Common/Style/Setter/StyleCleaner';
+import { Txt } from '../../../Common/Txt';
+import Utils from '../../../Common/Utils/Utils';
+import Log from '../../../Debug/Log';
+import Tag from '../../../Debug/Tag';
+import IntelligentLayout from '../../../Framework/IntelligentLayout';
+import ObserverHandler from '../ObserverHandler';
 
 export default class ModifyObserver {
     static modifyObserver: MutationObserver;
     private static TAG = Tag.modifyObserver;
     private static records:MutationRecord[] = [];
 
-    // 定义递归遍历函数
-    private static traverseDOM(node: Node) {
-        // 递归遍历当前节点的子节点
-        const children = node.childNodes;
-        for (let i = 0; i < children.length; i++) {
-            const child = children[i];
-            if (child.nodeType === Node.ELEMENT_NODE) {
-                // 只处理元素节点（nodeType 为 1）
-                this.traverseDOM(child);
-            }
-        }
-    }
-
-    static reInit() {
+    static reInit(): void {
         console.log('mdquan run reInit modifyObserver');
         
         if (ModifyObserver.modifyObserver) {
@@ -46,13 +33,13 @@ export default class ModifyObserver {
         });
     }
 
-    static disconnect() {
+    static disconnect(): void {
         console.log('mdquan disconnect modifyObserver');
         ModifyObserver.modifyObserver?.disconnect();
         ModifyObserver.modifyObserver = null;
     }
 
-    private static handleRemove(item: MutationRecord) {
+    private static handleRemove(item: MutationRecord): void {
         let needSetTag = false;
 
         for (let i = 0; i < item.removedNodes.length; i++) {
@@ -121,7 +108,7 @@ export default class ModifyObserver {
      * 3、如果没有弹窗根节点，则通过300ms的定时任务，检测变化的节点的宽度是否与屏幕宽度是否一致。如果一致，则启动findPopups遍历节点查找弹窗。
      * @param records
      */
-    private static onElementModify(records: MutationRecord[]) {
+    private static onElementModify(records: MutationRecord[]): void {
         console.log("onElementModify");
         // 当窗口大小或内容发生变化时，判断是否需要调整布局
 
@@ -152,6 +139,42 @@ export default class ModifyObserver {
     }
 
     /**
+     * 从单个元素中获取动画时长
+     */
+    private static getDurationFromElement(element: HTMLElement): number {
+        const animationInfo = ModifyObserver.getAnimDurations(element);
+        return Math.max(animationInfo.animationDur, animationInfo.transitionDur);
+    }
+
+    /**
+     * 处理 "attributes" 类型的变更
+     */
+    private static handleAttributeMutation(record: MutationRecord): number {
+        if (record.target instanceof HTMLElement) {
+            return this.getDurationFromElement(record.target);
+        }
+        return 0;
+    }
+
+    /**
+     * 处理 "childList" 类型的变更
+     */
+    private static handleChildListMutation(record: MutationRecord, tmpAddedNodes: HTMLElement[]): number {
+        let maxDuration = 0;
+        for (const node of record.addedNodes) {
+            // 使用卫语句提前跳过不符合条件的节点
+            if (!(node instanceof HTMLElement) || tmpAddedNodes.includes(node)) {
+                continue;
+            }
+
+            tmpAddedNodes.push(node);
+            const currentDuration = this.getDurationFromElement(node);
+            maxDuration = Math.max(maxDuration, currentDuration);
+        }
+        return maxDuration;
+    }
+
+    /**
      * 动画时长通过两种方式获取
      * 1、animation
      * 2、transition
@@ -163,33 +186,18 @@ export default class ModifyObserver {
      * @returns 
      */
     private static calDuration(record: MutationRecord, tmpAddedNodes: HTMLElement[]): number {
-        let duration:number = 0;
-        
-        if (record.type == "attributes") {
-            if (record.target instanceof HTMLElement) {
-                const animationInfo = ModifyObserver.getAnimDurations(record.target);
-                duration = Math.max(animationInfo.animationDur, animationInfo.transitionDur);
-                if (duration > 0) {
-                    console.log('pause');
-                }
-            }
-        } else if (record.type == "childList") {
-            for (let addedNode of record.addedNodes) {
-                if (addedNode instanceof HTMLElement) {
-                    if (tmpAddedNodes.includes(addedNode)) {
-                        continue;
-                    }
+        let duration = 0;
 
-                    tmpAddedNodes.push(addedNode);
-
-                    const animationInfo = ModifyObserver.getAnimDurations(addedNode);
-                    duration = Math.max(Math.max(animationInfo.animationDur, animationInfo.transitionDur), duration);
-                    if (duration > 0) {
-                        console.log('pause');
-                    }
-                }
-            }
+        if (record.type === "attributes") {
+            duration = this.handleAttributeMutation(record);
+        } else if (record.type === "childList") {
+            duration = this.handleChildListMutation(record, tmpAddedNodes);
         }
+
+        if (duration > 0) {
+            console.log('pause');
+        }
+
         return duration;
     }
 

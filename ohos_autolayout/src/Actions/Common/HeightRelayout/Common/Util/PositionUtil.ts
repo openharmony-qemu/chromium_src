@@ -1,6 +1,6 @@
-import Cached from "../../../../../Common/Cached";
-import CacheStyleGetter from "../../../../../Common/Style/Common/CacheStyleGetter";
-import { Txt } from "../../../../../Common/Txt";
+import Cached from '../../../../../Common/Cached';
+import CacheStyleGetter from '../../../../../Common/Style/Common/CacheStyleGetter';
+import { Txt } from '../../../../../Common/Txt';
  
 export class PositionUtils {
     static isFixedOrAbsoluteEle(ele: HTMLElement): boolean {

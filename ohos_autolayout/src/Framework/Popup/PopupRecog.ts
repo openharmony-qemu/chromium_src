@@ -1,5 +1,5 @@
-import { PopupInfo } from "./PopupInfo";
-import { PredictionResult } from "./PredictionResult";
+import { PopupInfo } from './PopupInfo';
+import { PredictionResult } from './PredictionResult';
 
 // 定义模型参数的类型
 interface ModelParameters {
@@ -60,23 +60,19 @@ export class PopupRecog {
         
         // 1. 处理位置特征
         const rootPosKey = String(rawFeatures.root_position).toLowerCase();
-        features["root_position"] = positionMapping[rootPosKey] ?? NaN; // 如果未找到，使用 ?? 简洁地分配 NaN
+        features.root_position = positionMapping[rootPosKey] ?? NaN; // 如果未找到，使用 ?? 简洁地分配 NaN
 
         const maskPosKey = String(rawFeatures.mask_position).toLowerCase();
-        features["mask_position"] = positionMapping[maskPosKey] ?? NaN;
+        features.mask_position = positionMapping[maskPosKey] ?? NaN;
 
-        // 2. 处理 z-index 特征
-        // features["root_zindex"] = rawFeatures.root_zindex;
-        // features["mask_zindex"] = rawFeatures.mask_zindex;
+        // 2. 处理布尔值特征
+        features.has_mask = rawFeatures.has_mask ? 1 : 0;
+        features.root_is_visiable = rawFeatures.root_is_visiable ? 1 : 0;
+        features.has_close_button = rawFeatures.has_close_button ? 1 : 0;
 
-        // 3. 处理布尔值特征
-        features["has_mask"] = rawFeatures.has_mask ? 1 : 0;
-        features["root_is_visiable"] = rawFeatures.root_is_visiable ? 1 : 0;
-        features["has_close_button"] = rawFeatures.has_close_button ? 1 : 0;
-
-        // 4. 处理数值特征
-        features["root_screen_area_ratio"] = rawFeatures.root_screen_area_ratio;
-        features["mask_area_ratio"] = rawFeatures.mask_area_ratio;
+        // 3. 处理数值特征
+        features.root_screen_area_ratio = rawFeatures.root_screen_area_ratio;
+        features.mask_area_ratio = rawFeatures.mask_area_ratio;
 
         return features;
     }

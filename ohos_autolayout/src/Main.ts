@@ -2,9 +2,9 @@
  * Module Main.ts
  * 主入口模块
  */
-import { CCMConfig } from "./Framework/Common/CCMConfig";
-import Framework from "./Framework/Framework";
-import { HwRelayout } from "./Framework/HwRelayout";
+import { CCMConfig } from './Framework/Common/CCMConfig';
+import Framework from './Framework/Framework';
+import { HwRelayout } from './Framework/HwRelayout';
 
 
 export class Main {

@@ -1,15 +1,15 @@
-import Store from "../Utils/Store";
-import { HwTag, LayoutKey, LayoutValue } from "../Constant";
-import TypeCache from "./TypeCache";
-import Log from "../../Debug/Log";
-import Tag from "../../Debug/Tag";
+import Store from '../Utils/Store';
+import { HwTag, LayoutKey, LayoutValue } from '../Constant';
+import TypeCache from './TypeCache';
+import Log from '../../Debug/Log';
+import Tag from '../../Debug/Tag';
  
 export default class DiffEleRecorder {
     private static allEleDiff: boolean = true;
     private static TAG = Tag.diffRecorder;
  
     // resize/Rem变化时，全部遍历，故清空所有缓存
-    static setAllEleDiff() {
+    static setAllEleDiff(): void {
         DiffEleRecorder.allEleDiff = true;
         TypeCache.clearCache();
         Store.clearTag(HwTag.CROSS_TAG);
@@ -19,7 +19,7 @@ export default class DiffEleRecorder {
         return DiffEleRecorder.allEleDiff;
     }
  
-    static setTag(ele: HTMLElement) {
+    static setTag(ele: HTMLElement): void {
         Store.setValue(ele, LayoutKey.DIFF_ELE, LayoutValue.ROOT);
         Store.removeValue(ele, HwTag.CROSS_TAG);
         TypeCache.clearEleCache(ele);
@@ -57,12 +57,12 @@ export default class DiffEleRecorder {
     }
  
     private static diffEleCache: Set<HTMLElement> = new Set();
-    static setTagCache(ele: HTMLElement) {
+    static setTagCache(ele: HTMLElement): void {
         Log.i(ele, "发生变化", this.TAG);
         DiffEleRecorder.diffEleCache.add(ele);
     }
  
-    static flushTag() {
+    static flushTag(): void {
         Store.clearTag(LayoutKey.DIFF_ELE);
         DiffEleRecorder.allEleDiff = false;
  

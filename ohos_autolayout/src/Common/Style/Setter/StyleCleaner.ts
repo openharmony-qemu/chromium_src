@@ -1,21 +1,21 @@
-import Log from "../../../Debug/Log";
-import Tag from "../../../Debug/Tag";
-import { Txt } from "../../Txt";
-import StyleCommon from "../Common/StyleCommon";
-import Store from "../../Utils/Store";
-import { FontTag, LayoutKey, LayoutValue } from "../../Constant";
-import Cached from "../../Cached";
-import LargeImgAction from "../../../Actions/LargeImgAction/LargeImgAction";
-import StyleSetter from "./StyleSetter";
-import Utils from "../../Utils/Utils";
-import { StyleRecord } from "../../Perform/ChangeRecord";
-import DiffEleRecorder from "../../Perform/DiffEleRecorder";
-import PersistStore from "../../Utils/PersistStore";
-import ObserverHandler from "../../../Framework/Observer/ObserverHandler";
-import HeightReLayout from "../../../Actions/Common/HeightRelayout/HeightRelayout";
+import Log from '../../../Debug/Log';
+import Tag from '../../../Debug/Tag';
+import { Txt } from '../../Txt';
+import StyleCommon from '../Common/StyleCommon';
+import Store from '../../Utils/Store';
+import { FontTag, LayoutKey, LayoutValue } from '../../Constant';
+import Cached from '../../Cached';
+import LargeImgAction from '../../../Actions/LargeImgAction/LargeImgAction';
+import StyleSetter from './StyleSetter';
+import Utils from '../../Utils/Utils';
+import { StyleRecord } from '../../Perform/ChangeRecord';
+import DiffEleRecorder from '../../Perform/DiffEleRecorder';
+import PersistStore from '../../Utils/PersistStore';
+import ObserverHandler from '../../../Framework/Observer/ObserverHandler';
+import HeightReLayout from '../../../Actions/Common/HeightRelayout/HeightRelayout';
  
 export default class StyleCleaner {
-    static removeAllStyle(ele: HTMLElement) {
+    static removeAllStyle(ele: HTMLElement): void {
         Log.i(ele, "removeAllStyle", Tag.styleCleaner);
  
         const styleMap = new Map().set(Txt.delete_, Txt.true_);
@@ -26,13 +26,13 @@ export default class StyleCleaner {
         DiffEleRecorder.setTagCache(ele);
     }
  
-    static removeSingleStyle(ele: HTMLElement, attr: string) {
+    static removeSingleStyle(ele: HTMLElement, attr: string): void {
         Log.i(ele, "removeStyle: " + attr, Tag.styleCleaner);
         StyleSetter.setStyle(ele, attr, Txt.delete_);
     }
  
     // 重置Tag及子元素中的大图处理
-    static resetEle(ele: HTMLElement, isDelete: boolean = false) {
+    static resetEle(ele: HTMLElement, isDelete: boolean = false): void {
         Log.i(ele, "resetEle", Tag.styleCleaner);
  
         Log.i(ele, Store.getValue(ele, LayoutKey.LAYOUT_TAG), Tag.styleCleaner);
@@ -42,7 +42,7 @@ export default class StyleCleaner {
         StyleCleaner.resetParent(ele.parentElement);
     }
  
-    private static resetChild(ele: HTMLElement, isDelete: boolean) {
+    private static resetChild(ele: HTMLElement, isDelete: boolean): void {
         if (!ele) {
             return;
         }
@@ -65,7 +65,7 @@ export default class StyleCleaner {
         });
     }
  
-    static resetParent(ele: HTMLElement) {
+    static resetParent(ele: HTMLElement): void {
         if (!ele || ele === Cached.documentElement_()) {
             return;
         }
@@ -96,7 +96,7 @@ export default class StyleCleaner {
     }
  
     // 用于其他处理时解除大图处理
-    private static resetImg(img: HTMLElement) {
+    private static resetImg(img: HTMLElement): void {
         const largeImgInfo = LargeImgAction.handledImgMap.get(img);
         if (!largeImgInfo) {
             return;

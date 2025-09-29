@@ -1,10 +1,10 @@
-import { PopupType } from "./PopupType";
-import { PopupInfo } from "./PopupInfo";
-import Utils from "../Common/Utils";
-import LayoutUtils from "../Common/LayoutUtils";
-import { CCMConfig } from "../Common/CCMConfig";
-import { PopupDecisionTreeType } from "./PopupDecisionTreeType";
-import Constant from "../Common/Constant";
+import { PopupType } from './PopupType';
+import { PopupInfo } from './PopupInfo';
+import Utils from '../Common/Utils';
+import LayoutUtils from '../Common/LayoutUtils';
+import { CCMConfig } from '../Common/CCMConfig';
+import { PopupDecisionTreeType } from './PopupDecisionTreeType';
+import Constant from '../Common/Constant';
 
 
 interface NearestSibling {
@@ -15,50 +15,63 @@ interface NearestSibling {
 export class PopupDecisionTree {
     private static discrepancy: number = 1.0;
 
+    /**
+     * 检查中心弹窗是否含有与兄弟节点重叠的“绝对定位”关闭按钮
+     * @returns {boolean} true 如果存在重叠的按钮, 否则 false
+     */
+    private static hasOverlappingCloseButton(rootNode: HTMLElement, allNodes: HTMLElement[], popupInfo: PopupInfo): boolean {
+        const closeElements: HTMLElement[] = PopupDecisionTree.getCloseButtons(rootNode, allNodes) as HTMLElement[];
+
+        // 如果没有关闭按钮，直接返回 false
+        if (closeElements.length === 0) {
+            console.log("-----无关闭按钮----");
+            return false;
+        }
+
+        const isAbsoluteFlags: boolean[] = PopupDecisionTree.isCloseElementAbsolute(closeElements, rootNode, popupInfo);
+
+        const isOverlay = closeElements.some((element, index) => {
+            // 修正了原始代码中可能存在的bug（index不会在循环中重置）
+            const isAbsolute = isAbsoluteFlags[index];
+            return isAbsolute && PopupDecisionTree.hasOverlapWithSiblings(element);
+        });
+
+        if (isOverlay) {
+            console.log("-----特例1: 关闭按钮存在重叠----:", popupInfo?.root_node?.className);
+            return true;
+        } else {
+            console.log("-----无重叠----");
+            return false;
+        }
+    }
+
+    /**
+     * 根据弹窗的视觉和结构属性（如位置、关闭按钮状态等），判断并归类弹窗的具体类型。
+     *
+     * @param mComponent - 当前正在分析的组件根元素。
+     * @param allNodes - 页面上所有相关节点的集合数组，用于上下文分析。
+     * @param popupInfo - 包含弹窗核心信息的对象，其中最重要的属性是 `root_node` (弹窗的根节点)。
+     * @returns {PopupDecisionTreeType} - 返回一个 PopupDecisionTreeType 枚举值，表示该弹窗的最终分类（例如 Center, Bottom, Center_Button_Overlap 等）。
+     */
     public static judgePopupDecisionTreeType(mComponent: HTMLElement, allNodes: HTMLElement[], popupInfo: PopupInfo): PopupDecisionTreeType {
         const rootNode = popupInfo.root_node;
         
-        if (!PopupDecisionTree.isModalWin(allNodes, rootNode, popupInfo)) {  // if (positionType === PopPositionType.center) 
-            // @ts-ignore
-            window.popWin = "center";
-            console.log("----是中心弹窗----"); 
-            // 用if判断下面特例
-            // 特例1： 先拿到close按钮，判断close是否是absolute，不是的话往上找close按钮是absolute position，判断与close的兄弟节点有重叠
-            let closeElements: HTMLElement[] = PopupDecisionTree.getCloseButtons(rootNode, allNodes) as HTMLElement[];
-            if (closeElements.length !== 0) {
-                let isAbsolute: boolean[] = PopupDecisionTree.isCloseElementAbsolute(closeElements, rootNode, popupInfo);
-                let isOverlay: boolean = false;
-                for (const closeElement of closeElements) {
-                    let index: number = 0;  
-                    if (isAbsolute[index] && PopupDecisionTree.hasOverlapWithSiblings(closeElement)) {
-                        isOverlay = true;
-                        break;
-                    }
-                    index++;
-                }
-                if (isOverlay) {
-                    // 特例1，特殊处理
-                    console.log("-----特例1----:", popupInfo?.root_node?.className);
-                    return PopupDecisionTreeType.Center_Button_Overlap;
-                } else {
-                    // 通用处理
-                    console.log("-----无重叠----");
-                    return PopupDecisionTreeType.Center;
-                }
-            } else {
-                // 通用处理
-                console.log("-----无关闭按钮----");
-                return PopupDecisionTreeType.Center;
-            }
-            
-        } else if (PopupDecisionTree.isModalWin(allNodes, rootNode, popupInfo)) {  // else if (positionType === PopPositionType.bottom)
+        const isBottomPopup = PopupDecisionTree.isModalWin(allNodes, rootNode, popupInfo);
+
+        if (isBottomPopup) {
             // @ts-ignore
             window.popWin = "bottom";
-            console.log("----是底部弹窗----"); 
+            console.log("----是底部弹窗----");
             return PopupDecisionTreeType.Bottom;
+        }
+
+        // @ts-ignore
+        window.popWin = "center";
+        console.log("----是中心弹窗----");
+
+        if (this.hasOverlappingCloseButton(rootNode, allNodes, popupInfo)) {
+            return PopupDecisionTreeType.Center_Button_Overlap;
         } else {
-            // 打印弹窗的信息
-            console.log("弹窗不属于中心弹窗,也不属于底部弹窗,其rootNode为: " + popupInfo?.root_node?.className);
             return PopupDecisionTreeType.Center;
         }
     }
@@ -87,7 +100,7 @@ export class PopupDecisionTree {
         return closeButtons;
     }
 
-    private static filterContainedNodes(nodes: HTMLElement[]) {
+    private static filterContainedNodes(nodes: HTMLElement[]): HTMLElement[] {
         const elementSet = new Set(nodes);
         const result: HTMLElement[] = [];
         
@@ -112,34 +125,56 @@ export class PopupDecisionTree {
     }
 
     /**
-     * @description: 判断closeElement（一直向上找到rootNode/maskNode，不包含rootNode/maskNode）的position是否是absolute
-     * @param {HTMLElement[]} closeElements - 关闭按钮节点
-     * @param {HTMLElement} rootNode - 弹窗根节点
-     * @return {boolean[]} - position是absolute返回true，否则false
+     * 检查单个元素或其祖先节点（直到 stopNode）是否为 "absolute" 定位。
+     * @param element - 要检查的起始 HTML 元素。
+     * @param stopNode - 向上遍历时停止的祖先节点。
+     * @returns {boolean} - 如果找到 absolute 定位的元素则返回 true，否则返回 false。
+     */
+    private static isElementOrAncestorAbsolute(element: HTMLElement, stopNode: HTMLElement | null): boolean {
+        // 检查元素自身
+        let style = window.getComputedStyle(element);
+        if (style.position === "absolute") {
+            return true;
+        }
+
+        // 使用一个新变量来遍历祖先节点，避免修改原始数据
+        let currentNode = element.parentElement;
+
+        // 向上遍历 DOM 树
+        while (currentNode && currentNode !== stopNode) {
+            style = window.getComputedStyle(currentNode);
+            const rect = currentNode.getBoundingClientRect();
+            
+            // 检查祖先节点是否是 absolute 并且尺寸较小
+            if (style.position === "absolute" && rect.height < 50 && rect.width < 50) {
+                return true;
+            }
+            currentNode = currentNode.parentElement;
+        }
+
+        return false;
+    }
+
+
+    /**
+     * @description: 判断 closeElement 数组中每个元素或其祖先的 position 是否是 absolute。
+     * @param {HTMLElement[]} closeElements - 需要检查的关闭按钮节点数组。
+     * @param {HTMLElement} rootNode - 弹窗根节点。
+     * @param {PopupInfo} popupInfo - 弹窗的附加信息。
+     * @return {boolean[]} - 返回一个布尔值数组，对应每个 closeElement 的检查结果。
      */
     private static isCloseElementAbsolute(closeElements: HTMLElement[], rootNode: HTMLElement, popupInfo: PopupInfo): boolean[] {
-        let isAbsolute: boolean[] = new Array(closeElements.length).fill(false);
-        const popType = popupInfo.popup_type;
+        const { popup_type, mask_node } = popupInfo;
 
-        for (let i = 0; i < closeElements.length; i++) {
-            let style: CSSStyleDeclaration = window.getComputedStyle(closeElements[i]);
-            const topNode = (popType === PopupType.B || popType === PopupType.C) ? rootNode : popupInfo.mask_node;
-            if (style.position === "absolute") {
-                isAbsolute[i] = true;
-            } else {
-                while (closeElements[i] && closeElements[i] !== topNode) {
-                    closeElements[i] = closeElements[i].parentElement;
-                    style = window.getComputedStyle(closeElements[i]);
-                    let rect = closeElements[i].getBoundingClientRect();
-                    if (style.position === "absolute" && rect.height < 50 && rect.width < 50) {
-                        isAbsolute[i] = true;
-                        break;
-                    }
-                }
-            }
-        }
-        
-        return isAbsolute;
+        // 1. 首先确定向上遍历的终点节点
+        const stopNode = (popup_type === PopupType.B || popup_type === PopupType.C) 
+            ? rootNode 
+            : mask_node;
+
+        // 2. 使用 .map() 方法，对每个元素应用判断逻辑，返回新数组
+        return closeElements.map(element => 
+            this.isElementOrAncestorAbsolute(element, stopNode)
+        );
     }
 
     /**
@@ -287,9 +322,7 @@ export class PopupDecisionTree {
                 // parseFloat(style.height) > 0 &&
                 // parseFloat(style.width) > 0 &&
                 parseFloat(style.opacity) === 1 &&
-                !Utils.isBackgroundSemiTransparent(style) &&
-                child.id != 'SmartSwitch' &&
-                child.id != 'SaveSwitch';
+                !Utils.isBackgroundSemiTransparent(style)
         });
     
         if (children.length === 0) return [];
@@ -297,7 +330,7 @@ export class PopupDecisionTree {
         // 获取 mask 节点的 z-index
         const maskStyle = window.getComputedStyle(popupInfo.mask_node);
         let maskZIndex: string | number = maskStyle.zIndex;
-        if (popupInfo.popup_type == PopupType.C || popupInfo.popup_type == PopupType.A) {
+        if (popupInfo.popup_type === PopupType.C || popupInfo.popup_type === PopupType.A) {
             maskZIndex = -1;
         } else {
             if (maskZIndex === 'auto') {
@@ -349,109 +382,155 @@ export class PopupDecisionTree {
      * 4、top可能有radius，bottom没有radius
      */
     static isModalWin(allNodes: HTMLElement[], rootNode: HTMLElement, popupInfo: PopupInfo): boolean {
-        let closeElements: HTMLElement[] = PopupDecisionTree.getCloseButtons(rootNode, allNodes) as HTMLElement[];
-        for (const closeElement of closeElements) {
-            const rect = closeElement.getBoundingClientRect();
-            if (rect.width < 50 && rect.height < 50 && rect.bottom > window.innerHeight * 0.6) {
+        // 1. 初步筛选：检查关闭按钮的位置，这是一个通用的前置条件。
+        if (!this.passesCloseButtonCheck(rootNode, allNodes)) {
+            return false;
+        }
+
+        // 2. 根据不同的 popup 类型，分派给专门的函数处理。
+        switch (popupInfo.popup_type) {
+            case PopupType.C:
+                return this.isModalForTypeC(rootNode);
+            case PopupType.B:
+                return this.isModalForTypeB(rootNode, popupInfo);
+            default:
+                // 对于类型 'A' 或其他未知的类型，直接返回 false。
                 return false;
+        }
+    }
+
+
+    /**
+     * 检查关闭按钮是否满足特定位置要求。
+     * @returns {boolean} 如果所有按钮都通过检查，则返回 true。
+     */
+    private static passesCloseButtonCheck(rootNode: HTMLElement, allNodes: HTMLElement[]): boolean {
+        const closeElements = PopupDecisionTree.getCloseButtons(rootNode, allNodes) as HTMLElement[];
+        // 使用 .some() 可以让代码更简洁：如果“存在”一个不满足条件的按钮，则检查失败。
+        const hasInvalidCloseButton = closeElements.some(element => {
+            const rect = element.getBoundingClientRect();
+            return rect.width < 50 && rect.height < 50 && rect.bottom > window.innerHeight * 0.6;
+        });
+        return !hasInvalidCloseButton; // 如果没有无效按钮，则检查通过。
+    }
+
+    /**
+     *  PopupType.C 判断逻辑。
+     */
+    private static isModalForTypeC(rootNode: HTMLElement): boolean {
+        // 卫语句：如果子节点多于一个，则不满足条件。
+        if (PopupDecisionTree.hasMoreThanNumChild(rootNode, 1)) {
+            return false;
+        }
+
+        const contentNode = rootNode.firstElementChild as HTMLElement | null;
+        // 卫语句：如果不存在内容节点，则不满足条件。
+        if (!contentNode) {
+            return false;
+        }
+
+        const style = window.getComputedStyle(contentNode);
+        const { position, bottom, flexDirection, alignItems } = style;
+        const rect = contentNode.getBoundingClientRect();
+
+        // 核心判断逻辑
+        const isFlushWithBottom = Math.abs(rect.bottom - window.innerHeight) < this.discrepancy;
+        const isNotFlexRowCenter = !(flexDirection === "row" && alignItems === "center");
+
+        // 注意：原始代码这里有逻辑问题（存在不可达代码），这里进行了修正和简化。
+        // 检查是否明确设置了 bottom: 0px 或其位置紧贴底部。
+        if (parseFloat(bottom) === 0) {
+            const hasBottomStyle = LayoutUtils.hasBottomStyle(contentNode, position, bottom);
+            if (!hasBottomStyle) return false;
+        } else {
+            if (position === Constant.absolute || position === Constant.fixed) {
+                return false;
+            }
+        }
+
+        return isFlushWithBottom && isNotFlexRowCenter;
+    }
+
+    /**
+     * PopupType.B 判断逻辑。
+     */
+    private static isModalForTypeB(rootNode: HTMLElement, popupInfo: PopupInfo): boolean {
+        // 卫语句：B 类型的弹窗至少需要 mask 和 content 两个子节点。
+        if (rootNode.children.length < 2) {
+            return false;
+        }
+        
+        // 查找作为主要内容的节点（z-index 最高）。
+        const contentNode = this.findMainContentNode(rootNode, popupInfo.mask_node);
+        if (!contentNode) {
+            return false;
+        }
+        
+        // 复用通用的模态条件检查逻辑。
+        return this.checkNodeAndChildrenAreModal(contentNode);
+    }
+
+    /**
+     * 在 B 类型弹窗的子节点中，根据 z-index 找到作为“前景内容”的节点。
+     * @returns {HTMLElement | null} 返回找到的内容节点，如果找不到或存在多个 z-index 最高的节点，则返回 null。
+     */
+    private static findMainContentNode(rootNode: HTMLElement, maskNode: HTMLElement): HTMLElement | null {
+        // 找到作为直接子节点的 mask 元素
+        let directMaskChild = maskNode;
+        while (directMaskChild.parentElement !== rootNode) {
+            directMaskChild = directMaskChild.parentElement!;
+            if (!directMaskChild) return null; // 如果找不到，则结构异常
+        }
+
+        // 过滤掉 mask，剩下的就是内容节点
+        const contentNodes = Array.from(rootNode.children).filter(node => node !== directMaskChild) as HTMLElement[];
+
+        if (contentNodes.length === 0) return null;
+        if (contentNodes.length === 1) return contentNodes[0];
+        
+        // 如果有多个内容节点，通过 z-index 判断哪一个在最上层
+        let topNode: HTMLElement | null = null;
+        let maxZIndex = -Infinity;
+        let zIndexCount = 0;
+
+        for (const node of contentNodes) {
+            const style = window.getComputedStyle(node);
+            const zIndex = style.zIndex === "auto" ? 0 : parseFloat(style.zIndex);
+            if (zIndex > maxZIndex) {
+                maxZIndex = zIndex;
+                topNode = node;
+                zIndexCount = 1;
+            } else if (zIndex === maxZIndex) {
+                zIndexCount++;
             }
         }
         
-        const popType = popupInfo.popup_type;
-        if (popType === PopupType.C) {
-            if (PopupDecisionTree.hasMoreThanNumChild(rootNode, 1)) {  // content是多节点
-                return false;
-            } else {  // content是单节点
-                const contentNode = rootNode.firstElementChild as HTMLElement | null;
-                if (contentNode) {
-                    const style = window.getComputedStyle(contentNode);
-                    const computedPosition = style.position;
-                    const computedBottom = style.bottom;
-                    
-                    if (parseFloat(computedBottom) !== 0) {
-                        if (computedPosition === Constant.absolute || computedPosition == Constant.fixed) {
-                            return false;
-                        }
-                        const rect = contentNode.getBoundingClientRect();
-                        return Math.abs(rect.bottom - window.innerHeight) < this.discrepancy && !(style.flexDirection === "row" && style.alignItems === "center");
-                    }  
-                    
-                    const hasBottomStyle = LayoutUtils.hasBottomStyle(contentNode, computedPosition, computedBottom);
-                    if (!hasBottomStyle) {
-                        return false;
-                    }
+        // 如果存在多个 z-index 最高的节点，则无法判断，视为不满足条件。
+        return zIndexCount === 1 ? topNode : null;
+    }
 
-                    const rect = contentNode.getBoundingClientRect();
-                    return Math.abs(rect.bottom - window.innerHeight) < this.discrepancy && !(style.flexDirection === "row" && style.alignItems === "center");
-                }
-                return false;  // 没有content节点
-            }
-        } else if (popType === PopupType.B) {
-            if (PopupDecisionTree.hasMoreThanNumChild(rootNode, 2)) {  // content是多节点,待讨论
-                let tempNode = popupInfo.mask_node;
-                while (tempNode.parentElement !== rootNode) {
-                    tempNode = tempNode.parentElement;
-                }
 
-                const contentNodes = Array.from(rootNode.children).filter(node => {
-                    return node !== tempNode;
-                }) as HTMLElement[];
-                let contentNode = contentNodes[0];
-                let maxZIndex = -Infinity;
-                let maxNum = 0;
-                for (const node of contentNodes) {
-                    const style = window.getComputedStyle(node);
-                    const zIndex = style.zIndex === "auto" ? 0 : parseFloat(style.zIndex);
-                    if (zIndex > maxZIndex) {
-                        maxNum = 1;
-                        maxZIndex = zIndex;
-                        contentNode = node;
-                    } else if (zIndex === maxZIndex) {
-                        maxNum++;
-                    }
-                }
-
-                if (maxNum > 1) {
-                    return false;
-                }
-                const isModal = PopupDecisionTree.judgeModalConditions(contentNode);
-                const style = window.getComputedStyle(contentNode);
-                if (contentNode.children.length === 0) {
-                    return isModal && !(style.flexDirection === "row" && style.alignItems === "center");
-                }
-                if (!isModal) {
-                    for (const child of contentNode.children) {
-                        if (!PopupDecisionTree.judgeModalConditions(child as HTMLElement)) {
-                            return false;
-                        }
-                    }
-                }
-                return true;
-            } else if (rootNode.children.length === 2) {  // content是单节点
-                let tempNode = popupInfo.mask_node;
-                while (tempNode.parentElement !== rootNode) {
-                    tempNode = tempNode.parentElement;
-                }
-                const contentNode = (rootNode.children[0] === tempNode ? rootNode.children[1] : rootNode.children[0]) as HTMLElement;
-                const isModal = PopupDecisionTree.judgeModalConditions(contentNode);
-                const style = window.getComputedStyle(contentNode);
-                if (contentNode.children.length === 0) {
-                    return isModal && !(style.flexDirection === "row" && style.alignItems === "center");
-                }
-                if (!isModal) {
-                    for (const child of contentNode.children) {
-                        if (!PopupDecisionTree.judgeModalConditions(child as HTMLElement)) {
-                            return false;
-                        }
-                    }
-                }
-                return true;
-            } 
-            // rootNode的子节点数小于2
-            return false;
+    /**
+     *  检查一个节点本身或其所有子节点是否满足模态条件。
+     */
+    private static checkNodeAndChildrenAreModal(node: HTMLElement): boolean {
+        const isNodeModal = PopupDecisionTree.judgeModalConditions(node);
+        const style = window.getComputedStyle(node);
+        
+        if (node.children.length === 0) {
+            const isNotFlexRowCenter = !(style.flexDirection === "row" && style.alignItems === "center");
+            return isNodeModal && isNotFlexRowCenter;
         }
-        // popType = "A"
-        return false;
+
+        // 如果节点本身不满足，则检查其所有子节点是否都满足。
+        if (!isNodeModal) {
+            // 使用 .every() 检查是否“所有”子节点都满足条件。
+            return Array.from(node.children).every(child => 
+                PopupDecisionTree.judgeModalConditions(child as HTMLElement)
+            );
+        }
+        
+        return true;
     }
 
     static judgeModalConditions(node: HTMLElement): boolean {

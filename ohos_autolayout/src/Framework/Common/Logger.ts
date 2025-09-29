@@ -10,30 +10,30 @@ export default class Logger {
     private static readonly EnanlePrintNodeInfo = false;
     private static readonly MiscInfo = true;
 
-    static printStyle(ele: HTMLElement, key: string, value: string, tag: string) {
+    static printStyle(ele: HTMLElement, key: string, value: string, tag: string): void {
         if (Logger.EnanlePrintStyle) {
             console.log(`[${tag}] HTMLElement: ${ele ?.className}, key: ${key}, value: ${value}`);
         }
     }
 
-    static printComInfo(msg: string) {
+    static printComInfo(msg: string): void {
         if (Logger.EnanlePrintRecoComp) {
             console.log(msg);
         }
     }
 
-    static d(msg: string) {
+    static d(msg: string): void {
         if (Logger.EnanlePrintSysInfo) {
             console.log(msg);
         }
     }
 
-    static printNodeInfo(msg: string) {
+    static printNodeInfo(msg: string): void {
         if (Logger.EnanlePrintNodeInfo) {
             console.log(msg);
         }
     }
-    static printDebugMsg(msg: string) {
+    static printDebugMsg(msg: string): void {
         if (Logger.MiscInfo) {
             console.log(msg);
         }

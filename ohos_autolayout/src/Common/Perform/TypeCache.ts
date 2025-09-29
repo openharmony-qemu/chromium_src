@@ -1,9 +1,9 @@
-import Cached from "../Cached";
-import { LayoutKey, LayoutValue } from "../Constant";
-import CacheStyleGetter from "../Style/Common/CacheStyleGetter";
-import { Txt } from "../Txt";
-import Store from "../Utils/Store";
-import Utils from "../Utils/Utils";
+import Cached from '../Cached';
+import { LayoutKey, LayoutValue } from '../Constant';
+import CacheStyleGetter from '../Style/Common/CacheStyleGetter';
+import { Txt } from '../Txt';
+import Store from '../Utils/Store';
+import Utils from '../Utils/Utils';
  
 export enum EleType {
     IMG,
@@ -11,16 +11,16 @@ export enum EleType {
 }
  
 export default class TypeCache {
-    static init() {
+    static init(): void {
         CacheMethod.getCache(Cached.body_());
     }
  
-    static getImgAndText(ele: HTMLElement) {
+    static getImgAndText(ele: HTMLElement): { node: Node; type: EleType }[] {
         const list: { node: Node; type: EleType }[] = CacheMethod.imgAndText.get(ele);
         return list ? list : [];
     }
  
-    static clearCache() {
+    static clearCache(): void {
         CacheMethod.childImg.clear();
         CacheMethod.childText.clear();
         CacheMethod.imgAndText.clear();
@@ -29,7 +29,7 @@ export default class TypeCache {
         Store.clearTag(LayoutValue.HAS_TEXT_CHILD);
     }
  
-    static clearEleCache(ele: HTMLElement) {
+    static clearEleCache(ele: HTMLElement): void {
         CacheMethod.childImg.delete(ele);
         CacheMethod.childText.delete(ele);
         CacheMethod.imgAndText.delete(ele);
@@ -44,7 +44,7 @@ export class ImgCache {
         return imgList ? imgList : [];
     }
  
-    static getImgType(ele: HTMLElement) {
+    static getImgType(ele: HTMLElement): string {
         return Store.getValue(ele, LayoutValue.IS_IMG);
     }
  
@@ -117,7 +117,7 @@ class CacheMethod {
             }
  
             // 不关注非文本、非元素类型的子节点
-            if (nodeType != Node.ELEMENT_NODE) {
+            if (nodeType !== Node.ELEMENT_NODE) {
                 continue;
             }
  
@@ -210,11 +210,6 @@ class CacheMethod {
     private static isBackground(ele: HTMLElement): boolean {
         const backImg = CacheStyleGetter.computedStyle(ele, Txt.backgroundImage_);
         const dataBack = CacheStyleGetter.computedStyle(ele, Txt.dataBackground_);
- 
-        // why??????
-        // if (!CacheMethod.hasBackUrl(backImg) && !CacheMethod.hasBackUrl(dataBack)) {
-        //     return false;
-        // }
  
         // 背景图的尺寸或不以px结尾（auto、cover、contain...），或以px结尾但超过3px（有背景图，但是背景图尺寸小，不应该算图片）
         const backgroundSize = CacheStyleGetter.computedStyle(ele, Txt.backgroundSize_).split(" ");

@@ -8,14 +8,14 @@ export enum Level{
     ERROR = "ERROR"
 }
 
-export function PerfExecution(config?: { level?: string; enabled?: boolean }) {
-    return function (target: Object, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+export function PerfExecution(config?: { level?: string; enabled?: boolean }): MethodDecorator {
+    return function (target: Object, propertyKey: string | symbol, descriptor: PropertyDescriptor): PropertyDescriptor {
         if (config?.enabled === false) return descriptor;
-
+    
         const originalMethod = descriptor.value;
-
+    
         // 包装为同步或异步逻辑
-        const wrappedMethod = function (this: any, ...args: any[]) {
+        const wrappedMethod = function (this: any, ...args: any[]): any {
             console.log(`[${config?.level || Level.INFO}] Enter ${propertyKey.toString()}`, args);
 
             try {
@@ -42,7 +42,7 @@ export function PerfExecution(config?: { level?: string; enabled?: boolean }) {
                 throw error;
             }
         };
-
+    
         descriptor.value = wrappedMethod;
         return descriptor;
     };

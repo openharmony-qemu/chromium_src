@@ -1,5 +1,5 @@
-import Log from "../../Debug/Log";
-import Tag from "../../Debug/Tag";
+import Log from '../../Debug/Log';
+import Tag from '../../Debug/Tag';
 
 export default class Throttle {
     private taskCount = 0;
@@ -13,7 +13,7 @@ export default class Throttle {
         this.taskToRun = task;
     }
 
-    postTask() {
+    postTask(): void {
         // 缓冲区添加一个任务
         this.taskCount++;
         // 当任务未锁定时，执行任务
@@ -22,7 +22,7 @@ export default class Throttle {
         }
     }
 
-    private taskUnlock(from: this) {
+    private taskUnlock(from: this): () => void {
         return function () {
             // 解锁任务
             from.taskLock = false;
@@ -34,13 +34,13 @@ export default class Throttle {
         };
     }
 
-    private lockAndPost() {
+    private lockAndPost(): void {
         Log.i(null, "加锁: " + Date.now(), Tag.framework);
         this.taskLock = true; // 锁定任务
         this.taskCount = 0; // 清空缓冲区
     }
 
-    private lockAndRun() {
+    private lockAndRun(): void {
         const start = new Date().getTime();
         this.lockAndPost();
 

@@ -1,4 +1,4 @@
-import { PopupType } from "./PopupType";
+import { PopupType } from './PopupType';
 
 /**
  * 弹窗信息接口

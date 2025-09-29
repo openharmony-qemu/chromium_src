@@ -1,10 +1,10 @@
-import { AComponent } from "./Common/base/AComponent";
-import Logger from "./Common/Logger";
-import Utils from "./Common/Utils";
-import { PerfExecution, Level } from "./Common/Perf";
-import { PopWindow } from "./PopWindow/PopWindow";
-import { PopupWindow } from "./Popup/PopupWindow";
-import { PopupInfo } from "./Popup/PopupInfo";
+import { AComponent } from './Common/base/AComponent';
+import Logger from './Common/Logger';
+import Utils from './Common/Utils';
+import { PerfExecution, Level } from './Common/Perf';
+import { PopWindow } from './PopWindow/PopWindow';
+import { PopupWindow } from './Popup/PopupWindow';
+import { PopupInfo } from './Popup/PopupInfo';
 
 export default class IntelligentLayout {
     static TAG = "IntelligentLayout";
@@ -37,7 +37,7 @@ export default class IntelligentLayout {
         return false;
     }
 
-    static discardElements(comp:HTMLElement) {
+    static discardElements(comp:HTMLElement): void {
         if(!comp || Utils.shouldSkip(comp)) return;
         if( IntelligentLayout.HardCodeElementsCache.has(comp)) {
             IntelligentLayout.HardCodeElementsCache.delete(comp);
@@ -88,7 +88,7 @@ export default class IntelligentLayout {
     }
 
 
-    public static removePopwinCache(node: HTMLElement) {
+    public static removePopwinCache(node: HTMLElement): void {
         this.popWindowMap.forEach((popupWindow, popupInfo)=>{
             if (node.contains(popupInfo.root_node)) {
                 this.popWindowMap.delete(popupInfo);
@@ -96,7 +96,7 @@ export default class IntelligentLayout {
         });
     }
 
-    private static calculateForPopWin(popupInfo: PopupInfo) {
+    private static calculateForPopWin(popupInfo: PopupInfo): void {
         Logger.printDebugMsg(`calculate for popWindow ${popupInfo?.root_node?.className} `);
         const component:AComponent = this.popWindowMap.has(popupInfo) ? this.popWindowMap.get(popupInfo) : new PopWindow(popupInfo);
         if (component && component.isDirty()) {
@@ -115,7 +115,7 @@ export default class IntelligentLayout {
 
     // 新增节点是某个组件下的节点，标记这个组件为脏，下一次布局的时候，只需要布局这个组件就可以了
     // todo FIXME: 节点需要精细化处理
-    static markDirty(item: MutationRecord) {
+    static markDirty(item: MutationRecord): void {
         if(!item) return;
         for (let i = 0; i < item.addedNodes.length; i++) {
             if(Utils.shouldSkip(item.addedNodes[i] as HTMLElement)) {
@@ -134,7 +134,7 @@ export default class IntelligentLayout {
     }
 
     @PerfExecution({ level: Level.INFO })
-    static reInit() {
+    static reInit(): void {
         IntelligentLayout.HardCodeElementsCache.clear();
         for (const [ele, comp] of IntelligentLayout.ComponentMap) {
             if (!comp) continue;

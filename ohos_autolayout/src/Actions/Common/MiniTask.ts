@@ -1,6 +1,6 @@
-import Cached from "../../Common/Cached";
-import StyleSetter from "../../Common/Style/Setter/StyleSetter";
-import Log from "../../Debug/Log";
+import Cached from '../../Common/Cached';
+import StyleSetter from '../../Common/Style/Setter/StyleSetter';
+import Log from '../../Debug/Log';
  
 /**
  * 所有的动态高度处理都通过这个方法去执行
@@ -16,19 +16,19 @@ export default class MiniTask {
  
     static timer: number;
  
-    static post(dom: HTMLElement, handle: (dom: HTMLElement) => void) {
+    static post(dom: HTMLElement, handle: (dom: HTMLElement) => void): void {
         // 去重， 进来的dom元素中有将要进行处理的task 将task移除
         this.tasks.set(dom, handle);
  
         this.call();
     }
  
-    static postEndTask(dom: HTMLElement, handle: (dom: HTMLElement) => void) {
+    static postEndTask(dom: HTMLElement, handle: (dom: HTMLElement) => void): void {
         // 去重， 进来的dom元素中有将要进行处理的task 将task移除
         this.endTasks.set(dom, handle);
     }
  
-    static call() {
+    static call(): void {
         if (this.timer) {
             clearTimeout(this.timer);
         }
@@ -40,11 +40,11 @@ export default class MiniTask {
         }, 0);
     }
  
-    static execute(dom: HTMLElement, handle: (dom: HTMLElement) => void) {
+    static execute(dom: HTMLElement, handle: (dom: HTMLElement) => void): void {
         handle.call(null, dom);
     }
  
-    static startTask() {
+    static startTask(): void {
         console.time("mini task");
         Log.taskTimes();
  

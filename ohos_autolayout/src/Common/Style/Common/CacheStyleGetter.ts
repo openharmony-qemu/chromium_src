@@ -1,4 +1,4 @@
-import Log from "../../../Debug/Log";
+import Log from '../../../Debug/Log';
 
 /**
  * 缓存具体样式
@@ -19,7 +19,7 @@ export class SpecificStyleCache {
 
     static specStyleCache: Map<HTMLElement, Map<string, string>> = new Map();
 
-    static init() {
+    static init(): void {
         if (this.offsetHeightCache) {
             return;
         }
@@ -45,7 +45,7 @@ export class SpecificStyleCache {
         const cache = new Map();
         this.clearMap.set(cache, () => cache.clear());
 
-        return function (dom: HTMLElement) {
+        return function (dom: HTMLElement, ...args: any[]) {
             if (!dom) {
                 Log.e("input null to CacheStyleGetter");
                 return undefined;
@@ -57,7 +57,7 @@ export class SpecificStyleCache {
                 return cacheRes;
             }
 
-            const result = fn.apply(null, arguments);
+            const result = fn.apply(null, ...args);
 
             cache.set(dom, result);
             return result;
@@ -113,7 +113,7 @@ export default class CacheStyleGetter {
     }
 
     // 清除具体样式缓存表
-    static clearSpecCache() {
+    static clearSpecCache():void {
         for (const fn of SpecificStyleCache.clearMap.values()) {
             fn.call(null);
         }

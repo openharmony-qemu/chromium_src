@@ -1,10 +1,10 @@
-import Utils from "../../Common/Utils/Utils";
+import Utils from '../../Common/Utils/Utils';
  
 export default class BoundingRectFix {
     private static doubles: () => DOMRect;
     private static isActive: boolean = true;
  
-    static updateState() {
+    static updateState(): void {
         BoundingRectFix.isActive = Utils.isWideScreen();
     }
  

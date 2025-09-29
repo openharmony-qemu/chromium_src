@@ -1,10 +1,10 @@
-import { LayoutKey, LayoutValue } from "../../Common/Constant";
-import Store from "../../Common/Utils/Store";
-import Utils from "./Utils";
-import Constant from "./Constant";
-import { BoxShadow } from "./BoxShaodw";
-import { PopupInfo } from "../Popup/PopupInfo";
-import { PopupDecisionTreeType } from "../Popup/PopupDecisionTreeType";
+import { LayoutKey, LayoutValue } from '../../Common/Constant';
+import Store from '../../Common/Utils/Store';
+import Utils from './Utils';
+import Constant from './Constant';
+import { BoxShadow } from './BoxShaodw';
+import { PopupInfo } from '../Popup/PopupInfo';
+import { PopupDecisionTreeType } from '../Popup/PopupDecisionTreeType';
 
 interface VisualBoundingRect {
     left: number;
@@ -15,6 +15,20 @@ interface VisualBoundingRect {
     height: number;
     offsetY: number;
     scrollElement: HTMLElement | null; // 明确声明 scrollElement 的类型
+}
+
+interface BoundingState {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+    offsetY: number;
+    scrollElement: HTMLElement | null;
+}
+
+type StackingContextInfo = {
+    element: HTMLElement,
+    zIndex: number
 }
 
 export default class LayoutUtils{
@@ -37,9 +51,9 @@ export default class LayoutUtils{
      */
     static isCrossRow(element: HTMLElement,endElement: HTMLElement): boolean {
         let ele = element;
-        while(ele != endElement) {
+        while(ele !== endElement) {
             const display = window.getComputedStyle(ele).display;
-            if(display ==  'flex'&& ele.childNodes.length > 2) {
+            if(display === 'flex'&& ele.childNodes.length > 2) {
                 return false;
             }
             if(! ['block', 'flex'].includes(display) ) {
@@ -50,106 +64,83 @@ export default class LayoutUtils{
         return true;
     }
 
-    // 检查是否存在被clip的节点，即子节点尺寸>容器尺寸
-    static isExsitClipNode(root: HTMLElement,isRefTree:boolean) {
-        function traverse(node: HTMLElement) {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-                const nodeWidth = isRefTree?node.style.width: window.getComputedStyle(node).width;
-                const rootWidth = isRefTree?root.style.width: window.getComputedStyle(root).width;
-                const wdiff = parseFloat(nodeWidth) -parseFloat(rootWidth);
-                if (wdiff > 10 ) {
-                    return true;
-                }
-                for (let i = 0; i < node.children.length; i++) {
-                    const ele = node.children[i];
-                    if (traverse(ele as HTMLElement)) {
-                        return true;
+    /**
+     * 验证一个元素的某个样式属性是否被显式定义过。
+     * 警告：此函数会遍历页面所有样式规则，可能导致性能问题，请谨慎使用。
+     *
+     * @param element - 要检查的 HTML 元素。
+     * @param cssProperty - 要检查的 CSS 属性名 (例如 'top', 'bottom')。
+     * @param computedValue - `getComputedStyle` 预先计算出的属性值。
+     * @param computedPosition - `getComputedStyle` 预先计算出的 position 值。
+     * @returns {boolean} 如果样式被显式定义或符合特定布局规则，则返回 true。
+     */
+    private static hasExplicitlyDefinedStyle(element: HTMLElement, cssProperty: 'top' | 'bottom', computedValue: string, computedPosition: string): boolean {
+        // 1. 检查内联样式 (最快)
+        // 使用 bracket notation (方括号) 来动态访问属性
+        const inlineValue = element.style[cssProperty];
+        if (inlineValue && this.convertToPxUnits(inlineValue) === computedValue) {
+            return true;
+        }
+
+        // 2. 遍历所有样式表 (性能开销巨大)
+        const sheetCheckResult = this.findStyleInSheets(element, cssProperty, computedValue);
+        if (sheetCheckResult.isFound) {
+            return true;
+        }
+
+        // 3. 处理无法访问的跨域样式表
+        const isAbsolutePositioned = computedPosition === Constant.absolute || computedPosition === Constant.fixed;
+        if (isAbsolutePositioned) {
+            return sheetCheckResult.crossDomainSheetEncountered;
+        }
+
+        // 4. 对于其他定位方式 (static/relative)，我们认为它是有效的
+        return true;
+    }
+
+    /**
+     * 遍历所有样式表，查找匹配的样式规则。
+     * @returns 一个包含查找结果和是否遇到跨域样式表标志的对象。
+     */
+    private static findStyleInSheets(element: HTMLElement, cssProperty: string, computedValue: string): { isFound: boolean; crossDomainSheetEncountered: boolean } {
+        let crossDomainSheetEncountered = false;
+
+        for (const sheet of document.styleSheets) {
+            try {
+                for (const rule of sheet.cssRules) {
+                    if (!(rule instanceof CSSStyleRule && rule.selectorText && element.matches(rule.selectorText))) {
+                        continue;
+                    }
+                    
+                    // 动态获取属性值
+                    const propertyValue = rule.style.getPropertyValue(cssProperty);
+                    if (propertyValue && LayoutUtils.convertToPxUnits(propertyValue) === computedValue) {
+                        return { isFound: true, crossDomainSheetEncountered };
                     }
                 }
+            } catch (e) {
+                crossDomainSheetEncountered = true;
+                console.warn('无法访问跨域样式表，某些样式检查可能不准确:', sheet.href);
             }
-            return false;
-        }
-        return traverse(root);
-    }
- 
-    static hasBottomStyle(element: HTMLElement, computedPosition: string, computedBottom: string): boolean {
-
-        // 先检查内联样式(style属性)
-        const bottomInlineValue = element.style.bottom;
-        if (bottomInlineValue !== "" && this.convertToPxUnits(bottomInlineValue) === computedBottom) {
-            return true;
         }
 
-        // 获取元素的所有 CSS 规则（包含内部样式（style标签），外部样式（同源、跨域））
-        const stylesheets = document.styleSheets;
-        let hasCrossDomainStyle = false;
-        for (const sheet of stylesheets) {
-          try {
-            for (const rule of sheet.cssRules) {
-              if (rule instanceof CSSStyleRule && rule.selectorText && element.matches(rule.selectorText)) {
-                const bottomValue = rule.style.getPropertyValue(Constant.bottom);
-                if (bottomValue.length > 0) {  
-
-                    const convertValue = LayoutUtils.convertToPxUnits(bottomValue);
-                    if (convertValue === computedBottom) {
-                        return true;
-                    }  
-
-                }
-              }
-            }
-          } catch (e) {
-            hasCrossDomainStyle = true;
-            console.log('无法访问跨域样式表:', sheet.href);
-          }
-        }
-
-        if (computedPosition === Constant.absolute || computedPosition === Constant.fixed) {  // 绝对定位元素的bottom必须有值
-            return hasCrossDomainStyle;     
-        } 
-
-        // 对应position为relative|static，并且bottom计算样式为0px
-        return true;  
+        return { isFound: false, crossDomainSheetEncountered };
     }
 
+    /**
+     * 检查元素的 top 样式是否被显式定义。
+     */
     static hasTopStyle(element: HTMLElement, computedPosition: string, computedTop: string): boolean {
+        // 直接调用通用函数，传入 'top'
+        return this.hasExplicitlyDefinedStyle(element, 'top', computedTop, computedPosition);
+    }
 
-        // 先检查内联样式(style属性)
-        const topInlineValue = element.style.top;
-        if (topInlineValue !== "" && this.convertToPxUnits(topInlineValue) === computedTop) {
-            return true;
-        }
-
-        // 获取元素的所有 CSS 规则（包含内部样式（style标签），外部样式（同源、跨域））
-        const stylesheets = document.styleSheets;
-        let hasCrossDomainStyle = false;
-        for (const sheet of stylesheets) {
-          try {
-            for (const rule of sheet.cssRules) {
-              if (rule instanceof CSSStyleRule && rule.selectorText && element.matches(rule.selectorText)) {
-                const topValue = rule.style.getPropertyValue(Constant.top);
-                if (topValue.length > 0) {  
-
-                    const convertValue = LayoutUtils.convertToPxUnits(topValue);
-                    if (convertValue === computedTop) {
-                        return true;
-                    }  
-
-                }
-              }
-            }
-          } catch (e) {
-            hasCrossDomainStyle = true;
-            console.log('无法访问跨域样式表:', sheet.href);
-          }
-        }
-
-        if (computedPosition === Constant.absolute || computedPosition === Constant.fixed) {  // 绝对定位元素的top必须有值
-            return hasCrossDomainStyle;     
-        } 
-
-        // 对应position为relative|static，并且top计算样式为0px
-        return true;  
+    /**
+     * 检查元素的 bottom 样式是否被显式定义。
+     */
+    static hasBottomStyle(element: HTMLElement, computedPosition: string, computedBottom: string): boolean {
+        // 直接调用通用函数，传入 'bottom'
+        return this.hasExplicitlyDefinedStyle(element, 'bottom', computedBottom, computedPosition);
     }
 
     // 将获取到的宽度属性值转换为px单位
@@ -207,40 +198,10 @@ export default class LayoutUtils{
             return false;
         }
         let computedStyle = getComputedStyle(node);
-        if (computedStyle.backgroundImage != 'none' && computedStyle.backgroundSize == 'cover') {
+        if (computedStyle.backgroundImage !== 'none' && computedStyle.backgroundSize === 'cover') {
             return true;
         }
         return false;
-    }
-
-    static getPropFromStyle(node:HTMLElement, property: string): string {
-        let nodeClassList = node.classList;
-        let propValue = '';
-        const regex = new RegExp(`(^|;)\\s*bottom\\s*:\\s*([^;]+)`, 'i');
-        // 检查动态添加的<style>标签
-        document.querySelectorAll('style').forEach(styleTag => {
-            const cssText = styleTag.textContent;
-    
-            // 按规则拆分（简单正则匹配）
-            const rules = cssText.split('}');
-            rules.forEach(rule => {
-                for (let className of nodeClassList) {
-                    if (rule.includes(className + ":")) {
-                        // 提取完整的规则文本
-                        const fullRule = rule + '}';
-                        console.log('getPropFromStyle: find target rule ', fullRule);
-                        
-                        // 提取top值（更精确的正则匹配）
-                        const topMatch = fullRule.match(regex);
-                        if (topMatch && parseFloat(topMatch[2].trim()) != 0) {
-                            console.log('getPropFromStyle: find top ' + topMatch + ' with className ' + className);
-                            propValue = topMatch[2].trim();
-                        }
-                    }
-                }
-            });
-        });
-        return propValue;
     }
 
     static getWidthAsPx(element:HTMLElement, prop:string): string {
@@ -301,7 +262,7 @@ export default class LayoutUtils{
             const sizeMap = new Map();
             
             // 带容差的尺寸标准化
-            const normalize = (val: number) => 
+            const normalize = (val: number): number => 
                 Math.round(val / tolerance) * tolerance;
         
             // 统计尺寸出现次数
@@ -320,7 +281,7 @@ export default class LayoutUtils{
         // 深度优先递归搜索
         for (const child of visibleChildren) {
             const foundEle = this.findParentWithEqualChildren(child as HTMLElement, tolerance);
-            if (root != foundEle && root.contains(foundEle)) {
+            if (root !== foundEle && root.contains(foundEle)) {
                 continue;
             }
             if (foundEle) return foundEle;
@@ -398,7 +359,7 @@ export default class LayoutUtils{
     static isBottomCloseButtonOverlap(popup: PopupInfo): boolean {
         // 查找所有可能的关闭按钮
         const closeElements = popup.root_node.querySelectorAll('[class*="close"]');
-        if (closeElements.length != 1) {
+        if (closeElements.length !== 1) {
             return false;
         }
         const closeButton = closeElements[0] as HTMLElement;
@@ -422,7 +383,7 @@ export default class LayoutUtils{
     static isCloseButton(element: HTMLElement): boolean {
         const closeBtnStyle = getComputedStyle(element);
 
-        if (closeBtnStyle.background.includes('url') || element.getAttribute('role') == 'button') {
+        if (closeBtnStyle.background.includes('url') || element.getAttribute('role') === 'button') {
             console.log('this is a close button');
             return true;
         }
@@ -454,7 +415,7 @@ export default class LayoutUtils{
      * @param element 
      * @returns 
      */
-    static getVisualBoundingRectForAll(element: HTMLElement) {
+    static getVisualBoundingRectForAll(element: HTMLElement): {top: number ; bottom: number} | null {
         if (!element || typeof element.getBoundingClientRect !== 'function') {
             return null;
         }
@@ -602,18 +563,15 @@ export default class LayoutUtils{
         const style = window.getComputedStyle(element);
         const overflowY = style.overflowY;
         
-        const isScrollableY = (overflowY === 'scroll' || overflowY === 'auto' );
-        
-        // const hasVerticalScroll = element.scrollHeight > element.clientHeight;
-        
-        // 综合考虑
+        // to do: 将 scrollHeight 综合考虑进去
+        const isScrollableY = (overflowY === 'scroll' || overflowY === 'auto' );               
         return isScrollableY;
     }
 
     /**
      * 获取节点的层叠上下文链
      */
-    static getStackingContextChain(node: HTMLElement) {
+    static getStackingContextChain(node: HTMLElement): StackingContextInfo[] {
         const chain = [];
         let current = node;
         
@@ -680,7 +638,7 @@ export default class LayoutUtils{
      * 比较两个可见节点的层叠顺序
      * @returns 1: nodeA在上, -1: nodeB在上, 0: 同一层级或无法比较
      */
-    static compareZIndex(nodeA: HTMLElement, nodeB: HTMLElement) {
+    static compareZIndex(nodeA: HTMLElement, nodeB: HTMLElement): number{
         if (nodeA === nodeB) return 0;
         
         const chainA = LayoutUtils.getStackingContextChain(nodeA);

@@ -1,4 +1,4 @@
-import { Main } from "../../Main";
+import { Main } from '../../Main';
 
 /**
  * 用于描述一个数值范围，包含最小值和最大值
@@ -277,8 +277,8 @@ export class CCMConfig {
    * @returns 如果找到匹配的规则，则返回 true，否则返回 false。
    */
   public checkRule(): boolean {
-    if(this.checkRuleStateResult == CheckRuleStateResult.inWhiteList) return  true;
-    if(this.checkRuleStateResult == CheckRuleStateResult.outOfWhiteList) {
+    if(this.checkRuleStateResult === CheckRuleStateResult.inWhiteList) return  true;
+    if(this.checkRuleStateResult === CheckRuleStateResult.outOfWhiteList) {
       Main.stop();
       return  false;
     }
@@ -288,7 +288,7 @@ export class CCMConfig {
 
     // @ts-ignore
     const pg:string = String(typeof window._getPage_ === 'function' ? window._getPage_() : "");
-    if(idAsString && idAsString != "" && pg && pg != "") {
+    if(idAsString && idAsString !== "" && pg && pg !== "") {
       this.appId = idAsString;
       this.page = pg;
     } else{

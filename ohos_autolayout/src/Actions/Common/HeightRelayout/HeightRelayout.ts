@@ -5,8 +5,8 @@
  * 3. 多节点高度变化的时候css刷新
  */
 
-import Tag from "../../../Debug/Tag";
-import HeaderAdj from "./HeightAdj/HeaderAdj";
+import Tag from '../../../Debug/Tag';
+import HeaderAdj from './HeightAdj/HeaderAdj';
 
 export const TAG = Tag.heightReLayout;
 /**
@@ -27,10 +27,10 @@ export const TAG = Tag.heightReLayout;
  * waterFall 设置高度并且删除快照树
  */
 export default class HeightReLayout {
-    static initDOMSnapshotTree() {
+    static initDOMSnapshotTree():void {
     }
 
-    static removeEle(ele: HTMLElement) {
+    static removeEle(ele: HTMLElement): void {
         HeaderAdj.removeEle(ele);
     }
 }

@@ -1,5 +1,5 @@
-import Tag from "../../Debug/Tag";
-import { Main } from "../../Main";
+import Tag from '../../Debug/Tag';
+import { Main } from '../../Main';
 
 export default class WaitSystemReady {
     private static tryTimes = 1000;
@@ -9,8 +9,8 @@ export default class WaitSystemReady {
     static sysReady:boolean = false;
     static elementCount:number = 0;
 
-    static bodyReady(task: Function) {
-        (function wait() {
+    static bodyReady(task: Function): void {
+        (function wait(): void {
             if (!document.body || innerWidth <= 100) {
                 console.log("body null" + innerWidth, Tag.framework);
                 if (WaitSystemReady.tryTimes >= 0) {
@@ -24,7 +24,7 @@ export default class WaitSystemReady {
         })();
     }
 
-    static viewportReady(task: Function) {
+    static viewportReady(task: Function): void {
         let waitViewport: MutationObserver;
         if (viewportCheck()) {
             return;
@@ -36,7 +36,7 @@ export default class WaitSystemReady {
             childList: true,
         });
 
-        function viewportCheck() {
+        function viewportCheck(): boolean {
             let viewport = document.querySelector('meta[name="viewport"]');
             if (!viewport) {
                 console.log("viewport null");
@@ -56,11 +56,11 @@ export default class WaitSystemReady {
         }
     }
 
-    private static checkDOMReady(root:HTMLElement):boolean {
+    private static checkDOMReady(root:HTMLElement): boolean {
         return true;
     }
 
-    static waitForSystemReady() {
+    static waitForSystemReady(): void {
         console.log("waitForSystemReady");
         // check DOM ready?
         WaitSystemReady.sysReady = WaitSystemReady.checkDOMReady(document.body);
@@ -70,7 +70,7 @@ export default class WaitSystemReady {
             Main.start_();
         });
 
-        if (WaitSystemReady.sysReady == false) {
+        if (WaitSystemReady.sysReady === false) {
             setTimeout(WaitSystemReady.waitForSystemReady, 200);
         } else {
             console.log("waitForSystemReady run main.start");
@@ -78,7 +78,7 @@ export default class WaitSystemReady {
         }
     }
 
-    static headReady(task: Function) {
+    static headReady(task: Function): void {
         WaitSystemReady.tryHead--;
         if (WaitSystemReady.tryHead < 0) {
             return;
@@ -94,7 +94,7 @@ export default class WaitSystemReady {
         task();
     }
 
-    static configReady(task: Function) {
+    static configReady(task: Function):void {
         task();
     }
 }

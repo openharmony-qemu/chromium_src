@@ -1,17 +1,17 @@
-import { Txt } from "../../../Common/Txt";
-import ObserverHandler from "../ObserverHandler";
-import { HwRelayout } from "../../HwRelayout";
-import WaitSystemReady from "../../Utils/WaitSystemReady";
-import CSSSheetManage from "../../../Common/Style/Setter/CSSSheetManage";
-import DiffEleRecord from "../../../Common/Perform/DiffEleRecorder";
-import Framework from "../../Framework";
-import BoundingRectFix from "../../SystemFix/BoundingRectFix";
-import Log from "../../../Debug/Log";
+import { Txt } from '../../../Common/Txt';
+import ObserverHandler from '../ObserverHandler';
+import { HwRelayout } from '../../HwRelayout';
+import WaitSystemReady from '../../Utils/WaitSystemReady';
+import CSSSheetManage from '../../../Common/Style/Setter/CSSSheetManage';
+import DiffEleRecord from '../../../Common/Perform/DiffEleRecorder';
+import Framework from '../../Framework';
+import BoundingRectFix from '../../SystemFix/BoundingRectFix';
+import Log from '../../../Debug/Log';
  
 export default class ResizeObserver {
     static init: boolean = false;
 
-    static init_() {
+    static init_(): void {
         if (ResizeObserver.init) {
             return;
         }
@@ -19,7 +19,7 @@ export default class ResizeObserver {
 
         window.addEventListener(Txt.resize_, ResizeObserver.resizeCallback);
     }
-    static resizeCallback() {
+    static resizeCallback(): void {
         if (HwRelayout.initFlag) {
             ResizeObserver.onResize();
             return;
@@ -27,7 +27,7 @@ export default class ResizeObserver {
         HwRelayout.reInit();
     }
  
-    static onResize() {
+    static onResize(): void {
         console.log("onResize");
         if (!WaitSystemReady.hasBodyReady || !Framework.init) {
             return;
@@ -42,7 +42,7 @@ export default class ResizeObserver {
         ObserverHandler.postTask();
     }
 
-    static removeListener() {
+    static removeListener(): void {
         ResizeObserver.init = false;
         removeEventListener(Txt.resize_, ResizeObserver.resizeCallback);
     }

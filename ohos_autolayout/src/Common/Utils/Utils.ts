@@ -2,13 +2,13 @@
  * Module ModeUtils.ts
  * 工具模块
  */
-import Tag from "../../Debug/Tag";
-import {CCMRange, CCMConfig } from "../../Framework/Common/CCMConfig";
-import Cached from "../Cached";
-import Constant, { FontTag, LayoutKey, LayoutValue } from "../Constant";
-import CacheStyleGetter from "../Style/Common/CacheStyleGetter";
-import { Txt } from "../Txt";
-import Store from "./Store";
+import Tag from '../../Debug/Tag';
+import {CCMRange, CCMConfig } from '../../Framework/Common/CCMConfig';
+import Cached from '../Cached';
+import Constant, { FontTag, LayoutKey, LayoutValue } from '../Constant';
+import CacheStyleGetter from '../Style/Common/CacheStyleGetter';
+import { Txt } from '../Txt';
+import Store from './Store';
 
 export default class Utils {
     static TAG = Tag.util;
@@ -41,7 +41,7 @@ export default class Utils {
         }
         const config = CCMConfig.getInstance();
         const r = config.findAspectRatioRange(screenWidth);
-        if(r == undefined) {
+        if(r === undefined) {
             return false;
         }
 
@@ -57,7 +57,7 @@ export default class Utils {
         parent: HTMLElement | null,
         key: string = LayoutKey.LAYOUT_TAG,
         from: string = LayoutValue.ZOOM_PARENT
-    ) {
+    ): void {
         if (!parent) {
             return;
         }
@@ -80,11 +80,11 @@ export default class Utils {
         return Store.getValue(ele, LayoutKey.CONFIG_LAYOUT_TAG) != null;
     }
 
-    static timesBetween(a: number, b: number, times: number) {
+    static timesBetween(a: number, b: number, times: number): boolean {
         return a / b < times && b / a < times;
     }
 
-    static getInterval(A: [number, number], B: [number, number]) {
+    static getInterval(A: [number, number], B: [number, number]): number {
         if (A[0] > A[1] || B[0] > B[1]) {
             return null;
         }
@@ -96,7 +96,7 @@ export default class Utils {
     }
 
     // 判断MapA中是否包含MapB中的全部内容
-    static MapAContainsMapB(mapA: Map<string, string>, mapB: Map<string, string>) {
+    static MapAContainsMapB(mapA: Map<string, string>, mapB: Map<string, string>): boolean {
         for (const [attr, valueB] of mapB.entries()) {
             let valueA = mapA.get(attr);
             if (valueA !== valueB) {
@@ -265,7 +265,7 @@ export class Size {
     width: number;
     height: number;
 
-    static createByEle(ele: HTMLElement) {
+    static createByEle(ele: HTMLElement): Size {
         const width = CacheStyleGetter.offsetW(ele);
         const height = CacheStyleGetter.offsetH(ele);
         return Size.createBySize(width, height);

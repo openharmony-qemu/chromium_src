@@ -1,9 +1,9 @@
-import extUtils from "../../Common/Utils/Utils" 
-import Logger from "./Logger";
-import LayoutUtils from "./LayoutUtils";
-import StyleSetter from "../../Common/Style/Setter/StyleSetter";
-import Constant from "./Constant";
-import { CCMConfig } from "./CCMConfig";
+import extUtils from '../../Common/Utils/Utils' 
+import Logger from './Logger';
+import LayoutUtils from './LayoutUtils';
+import StyleSetter from '../../Common/Style/Setter/StyleSetter';
+import Constant from './Constant';
+import { CCMConfig } from './CCMConfig';
 export default class Utils {
 
     static isImageCanSafetyStrech(element:HTMLElement): boolean {
@@ -19,7 +19,7 @@ export default class Utils {
         }
 
         // 遍历单子节点,如果子节点只有1个，且是纯文本节点，放回true
-        return (node.childNodes.length == 1 && node.firstChild.nodeType === Node.TEXT_NODE);
+        return (node.childNodes.length === 1 && node.firstChild.nodeType === Node.TEXT_NODE);
     }
     
     /**
@@ -115,7 +115,7 @@ export default class Utils {
     static isOverFlowHidden(node:HTMLElement, root:HTMLElement): boolean{
         while (node && node !== root) {
             const style = getComputedStyle(node);
-            if(style.overflow == 'hidden') {
+            if(style.overflow === 'hidden') {
                 Logger.d(`${node?.className} overflow为hidden`);
                 return true;
             }
@@ -177,19 +177,16 @@ export default class Utils {
     static getSwiperIndicator(root:HTMLElement):HTMLElement {
         if(root && root.childNodes) {
             const indicators = root.querySelectorAll('[class*="indicator"]');
-            if(indicators && (indicators.length == 1)) {
+            if(indicators && (indicators.length === 1)) {
                 return indicators[0] as HTMLElement;
             }
         }
         return null;
     }
 
-    // 
-    static triggerSwiperAction(swiper:HTMLElement, isVertical?:boolean) {
-    }
 
-    static findVisibleImageNode(item:HTMLElement):HTMLElement {
-        while(Utils.getValidChildNodeLength(item) != 0) {
+    static findVisibleImageNode(item:HTMLElement): HTMLElement {
+        while(Utils.getValidChildNodeLength(item) !== 0) {
             for (const it of item.childNodes) {
                 const imgNode = it as HTMLElement;
                 if(Utils.shouldSkip(imgNode)) {
@@ -202,22 +199,6 @@ export default class Utils {
             }
         }
         return null;
-    }
-
-    static setSwiperImageItemMargin(swiper:HTMLElement) {
-        if(swiper) {
-            const items = swiper.querySelectorAll('[class*="item"]');
-            if(items && items.length >= 2) {
-                items.forEach(item => {
-                    const img = Utils.findVisibleImageNode(item as HTMLElement);
-                    if(img) {
-                        const width = parseFloat(getComputedStyle(swiper).width) - 2 * Constant.minMargin;
-                        StyleSetter.setStyle(img, Constant.margin, `0 ${Constant.minMargin}px`);
-                        StyleSetter.setStyle(img, Constant.width, `${width}px`);
-                    }
-                });
-            }
-        }
     }
 
     // 跳过不需要处理的元素
@@ -253,11 +234,10 @@ export default class Utils {
      * @param {HTMLElement} root - 作为检查范围的根 HTML 元素。函数会在以这个根元素为起点的树形结构内进行可见性检查。
      * @returns {boolean} - 如果目标元素在根元素的树形结构中是可见的，则返回 true；否则返回 false。
      */
-    static isElementVisible(node:HTMLElement, root:HTMLElement) {
+    static isElementVisible(node:HTMLElement, root:HTMLElement): boolean {
         // 步骤1: 快速排除
         if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
         // 最后合并后续节点时，会将合并body节点
-        // if(node == root) return true;
     
         // 步骤2: 当前节点基础隐藏检测
         const style = getComputedStyle(node);
@@ -294,10 +274,6 @@ export default class Utils {
                 break;
             // 步骤4.2: 未脱离文档流，祖先节点的
             default:
-                // 本节点可以宽高，但祖先节点不可见，则
-                //    if (!isElementVisible(parent)) {
-                //         // return false;
-                //    }
                 break;
         }
         // 步骤5: 定位上下文检测
@@ -366,7 +342,7 @@ export default class Utils {
         if (colorValue.startsWith('rgba') || colorValue.startsWith('hsla')) {
             const alpha = parseFloat(colorValue.split(',')[3]);
             // 有alpha通道且值小于1,大于0
-            return !isNaN(alpha) && alpha == 0 ;
+            return !isNaN(alpha) && alpha === 0 ;
         }
         
         // HEX 带透明度 (#RRGGBBAA/#RGBA)
@@ -375,12 +351,12 @@ export default class Utils {
             // #RGBA 格式
             if (hex.length === 4) {
                 const alpha = parseInt(hex[3] + hex[3], 16) / 255;
-                return alpha == 0;
+                return alpha === 0;
             }
             // #RRGGBBAA 格式
             if (hex.length === 8) {
                 const alpha = parseInt(hex.slice(6, 8), 16) / 255;
-                return alpha == 0;
+                return alpha === 0;
             }
         }
         
@@ -582,7 +558,7 @@ export default class Utils {
      * @param {Element} node - 要查找其兄弟节点的DOM元素。
      * @returns {Element[]} - 可见的兄弟节点数组。
      */
-    static getVisibleSiblings(node:Element) {
+    static getVisibleSiblings(node:Element): Element[] {
         // 确保节点及其父节点存在
         if (!node || !node.parentNode) {
             return [];

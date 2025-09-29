@@ -1,12 +1,12 @@
-import Log from "../../Debug/Log";
-import Tag from "../../Debug/Tag";
-import { HwTag, LayoutKey, LayoutValue } from "../Constant";
-import CacheStyleGetter from "../Style/Common/CacheStyleGetter";
+import Log from '../../Debug/Log';
+import Tag from '../../Debug/Tag';
+import { HwTag, LayoutKey, LayoutValue } from '../Constant';
+import CacheStyleGetter from '../Style/Common/CacheStyleGetter';
 
 export default class Store {
     static valueMap = new Map<string, WeakMap<HTMLElement, string>>();
     static nextRoundCache: HTMLElement[] = [];
-    static setValue(ele: HTMLElement, key: string, value: string) {
+    static setValue(ele: HTMLElement, key: string, value: string): void {
         if (!ele) {
             return;
         }
@@ -24,7 +24,7 @@ export default class Store {
         Store.saveOriginHeight(ele, key);
     }
 
-    static removeValue(ele: HTMLElement, key: string) {
+    static removeValue(ele: HTMLElement, key: string): void {
         if (!ele) {
             return;
         }
@@ -39,7 +39,7 @@ export default class Store {
         Log.deleteValue(ele, key);
     }
 
-    static getValue(ele: HTMLElement, key: string) {
+    static getValue(ele: HTMLElement, key: string): string {
         if (!ele) {
             return null;
         }
@@ -56,13 +56,13 @@ export default class Store {
         return value;
     }
 
-    static clearTag(key: string) {
+    static clearTag(key: string): void {
         Log.clearTag(this.valueMap, key);
 
         this.valueMap.delete(key);
     }
 
-    static clearAllTag(ele: HTMLElement, isDelete: boolean) {
+    static clearAllTag(ele: HTMLElement, isDelete: boolean): void {
         const persistentTags = [
             HwTag.ORIGIN_WIDTH,
             HwTag.ELE_NUM,

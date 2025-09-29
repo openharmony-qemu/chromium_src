@@ -1,7 +1,7 @@
-import CacheStyleGetter from "./Style/Common/CacheStyleGetter";
-import { Txt } from "./Txt";
-import Utils from "./Utils/Utils";
-import Store from "./Utils/Store";
+import CacheStyleGetter from './Style/Common/CacheStyleGetter';
+import { Txt } from './Txt';
+import Utils from './Utils/Utils';
+import Store from './Utils/Store';
 
 export default class Cached {
     private static bodyCache: HTMLElement = undefined;
@@ -10,7 +10,7 @@ export default class Cached {
     private static innerWCache: number = undefined;
     private static rootFontSize: number = undefined;
 
-    static clearAllCache() {
+    static clearAllCache(): void {
         Store.removeNextRoundTags();
 
         this.bodyCache = undefined;
@@ -20,11 +20,11 @@ export default class Cached {
         this.rootFontSize = undefined;
     }
 
-    static clearStyleCache() {
+    static clearStyleCache(): void {
         CacheStyleGetter.clearSpecCache();
     }
 
-    static body_() {
+    static body_(): HTMLElement {
         if (!this.bodyCache) {
             this.bodyCache = document.body;
         }
@@ -32,7 +32,7 @@ export default class Cached {
         return this.bodyCache;
     }
 
-    static documentElement_() {
+    static documentElement_(): HTMLElement {
         if (!this.documentCache) {
             this.documentCache = document.documentElement;
         }
@@ -40,7 +40,7 @@ export default class Cached {
         return this.documentCache;
     }
 
-    static innerH() {
+    static innerH(): number {
         if (!this.innerHCache) {
             this.innerHCache = innerHeight;
         }
@@ -48,7 +48,7 @@ export default class Cached {
         return this.innerHCache;
     }
 
-    static innerW() {
+    static innerW(): number {
         if (!this.innerWCache) {
             // 在放大模式下，因为InnerWidth被修改了，所以需要通过这个方式来读取页面的宽度
             this.innerWCache = document.documentElement.offsetWidth;
@@ -57,7 +57,7 @@ export default class Cached {
         return this.innerWCache;
     }
 
-    static rootFont() {
+    static rootFont(): number {
         if (!this.rootFontSize) {
             this.rootFontSize = parseFloat(CacheStyleGetter.computedStyle(Cached.documentElement_(), Txt.fontSize_));
         }

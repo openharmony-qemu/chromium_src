@@ -43,13 +43,6 @@ export class DetectorInst {
     }
 
     /**
-     * 获取记录的原始布局状态
-     */
-    public getOriginalLayoutState() {
-        return this.originalLayoutState;
-    }
-
-    /**
      * 记录原始布局位置和屏幕尺寸
      */
     public recordOriginalPosition(rootNode: HTMLElement): void {

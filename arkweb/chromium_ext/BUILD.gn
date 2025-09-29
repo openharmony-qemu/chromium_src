@@ -169,3 +169,7 @@ config("arkweb_ohos_adapter_unittest_config") {
     "-Wl,--wrap=OH_AVMetadataBuilder_SetMediaImageUri",
   ]
 }
+
+config("arkweb_device_unittest_config") {
+  ldflags = [ "-Wl,--wrap=LoadNativeLibrary" ]
+}

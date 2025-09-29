@@ -18,6 +18,7 @@
 #include "base/logging.h"
 #include "base/no_destructor.h"
 #include "chrome/browser/extensions/menu_manager.h"
+#include "chrome/common/extensions/api/omnibox/omnibox_handler.h"
 #include "chrome/common/extensions/chrome_manifest_url_handlers.h"
 #include "chrome/common/extensions/manifest_handlers/settings_overrides_handler.h"
 #include "content/public/common/url_constants.h"
@@ -181,6 +182,18 @@ std::optional<std::array<int32_t, EXT_COLOR_MAX>> GetBadgeTextColor(
   color[EXT_COLOR_ALPHA] = static_cast<int32_t>(SkColorGetA(textColor));
 
   return color;
+}
+
+std::optional<WebExtensionManifestOmnibox> GetManifestOmnibox(
+    const Extension* extension) {
+  const std::string& keyword = OmniboxInfo::GetKeyword(extension);
+  if (keyword.empty()) {
+    return std::nullopt;
+  }
+
+  WebExtensionManifestOmnibox omnibox;
+  omnibox.keyword = keyword;
+  return std::make_optional<WebExtensionManifestOmnibox>(keyword);
 }
 
 std::optional<WebExtensionManifestOptionsPageInfo> GetManifestOptionsPageInfo(
@@ -595,6 +608,7 @@ void ExtensionRegistryInfoManager::GetExtensionManifestInfo(
   manifest.incognito_mode =
       std::make_optional<ExtensionIncognitoMode>(GetExtensionIncognitoMode(&extension));
 #endif
+  manifest.omnibox = GetManifestOmnibox(&extension);
 }
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)

@@ -58,7 +58,7 @@ void LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
     float& text_zoom_factor,
     bool& layout_zoom_changed,
     Page* page) {
-  if (base::ohos::IsTabletDevice()) {
+  if (base::ohos::IsTabletDevice() && !base::ohos::IsPcMode()) {
     float zoom_factor_for_device_scale =
         page->GetChromeClient().ZoomFactorForViewportLayout();
     zoom_factor_for_device_scale =

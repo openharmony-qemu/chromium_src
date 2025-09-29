@@ -356,7 +356,7 @@ void ZoomController::RenderFrameHostChanged(
 
 void ZoomController::OnPageScaleFactorChanged(float page_scale_factor) {
 #if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
-  if (base::ohos::IsTabletDevice()) {
+  if (base::ohos::IsTabletDevice() && !base::ohos::IsPcMode()) {
     return;
   }
 #endif

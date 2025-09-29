@@ -676,7 +676,7 @@ void ExtensionRegistryInfoManager::RegisterWebExtensionManagerListener(
 
 // static
 void ExtensionRegistryInfoManager::UnRegisterWebExtensionManagerListener() {
-  LOG(INFO) << "ExtensionRegistryInfoManager::RegisterWebExtensionManagerListener";
+  LOG(INFO) << "ExtensionRegistryInfoManager::UnRegisterWebExtensionManagerListener";
   *g_extension_manager_listener = nullptr;
 }
 

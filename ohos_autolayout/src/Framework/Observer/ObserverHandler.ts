@@ -19,6 +19,7 @@ export default class ObserverHandler {
     }
 
     static reInit():void {
+        console.log('ObserverHandler reInit');
         ModifyObserver.reInit();
         TransitionEndObserver.reInit();
         ResizeObserver.init_();

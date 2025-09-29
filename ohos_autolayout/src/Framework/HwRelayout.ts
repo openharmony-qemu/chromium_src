@@ -11,6 +11,7 @@ export class HwRelayout {
     }
 
     static reInit(): void {
+        console.log('HwRelayout reInit');
         if (!HwRelayout.initFlag) {
             WaitSystemReady.configReady(Framework.configReady);
             HwRelayout.initFlag = true;

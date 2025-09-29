@@ -10,6 +10,7 @@ import { PopupType } from '../Popup/PopupType';
 import { PopupDecisionTreeType } from '../Popup/PopupDecisionTreeType';
 import { PopupDecisionTree } from '../Popup/PopupDecisionTree';
 import { CCMConfig } from '../Common/CCMConfig';
+import StyleCleaner from '../../Common/Style/Setter/StyleCleaner';
 
 interface BoundingRect {
     top: number,
@@ -791,20 +792,11 @@ export class PopWindow extends AComponent {
     }
 
     // 恢复样式
-    private restoreStyles(): void {
+    public restoreStyles(): void {
         console.log("恢复原始样式");
 
         this.originalStyles.forEach((style, node) => {
-            StyleSetter.setStyle(node, Constant.transform, style.transform);
-            StyleSetter.setStyle(node, Constant.transition, style.transition);
-            StyleSetter.setStyle(node, Constant.width, style.width);
-            StyleSetter.setStyle(node, Constant.max_width, style.max_width);
-            StyleSetter.setStyle(node, Constant.max_height, style.max_height);
-            StyleSetter.setStyle(node, Constant.bottom, style.bottom);
-            StyleSetter.setStyle(node, Constant.background_size, style.backgroundSize);
-            StyleSetter.setStyle(node, Constant.overflow, style.overflow);
-            StyleSetter.setStyle(node, Constant.flex_shrink, style.flex_shrink);
-            StyleSetter.setStyle(node, Constant.display, style.display);
+            StyleCleaner.removeAllStyle(node);
         });
         StyleSetter.flushAllStyles();
         this.originalStyles.clear();

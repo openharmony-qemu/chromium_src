@@ -12,14 +12,17 @@ export default class ResizeObserver {
     static init: boolean = false;
 
     static init_(): void {
+        console.log('ResizeObserver init');
         if (ResizeObserver.init) {
             return;
         }
         ResizeObserver.init = true;
 
+        console.log('ResizeObserver addEventListener');
         window.addEventListener(Txt.resize_, ResizeObserver.resizeCallback);
     }
     static resizeCallback(): void {
+        console.log('ResizeObserver resizeCallback');
         if (HwRelayout.initFlag) {
             ResizeObserver.onResize();
             return;
@@ -28,7 +31,7 @@ export default class ResizeObserver {
     }
  
     static onResize(): void {
-        console.log("onResize");
+        console.log("ResizeObserver onResize");
         if (!WaitSystemReady.hasBodyReady || !Framework.init) {
             return;
         }
@@ -39,10 +42,15 @@ export default class ResizeObserver {
         CSSSheetManage.updateState();
         // 当窗口大小或内容发生变化时，判断是否需要调整布局
         DiffEleRecord.setAllEleDiff();
-        ObserverHandler.postTask();
+        
+        console.log("ResizeObserver try to postTask");
+        setTimeout(()=>{
+            ObserverHandler.postTask();
+        }, 100);
     }
 
     static removeListener(): void {
+        console.log("ResizeObserver remove");
         ResizeObserver.init = false;
         removeEventListener(Txt.resize_, ResizeObserver.resizeCallback);
     }

@@ -87,6 +87,14 @@ export default class IntelligentLayout {
         }
     }
 
+    public static recoverPopwinStyle(): void {
+        if (this.popWindowMap.size > 0) {
+            const component:PopWindow = this.popWindowMap.values().next().value;
+            component.restoreStyles();
+        }
+        this.popWindowMap.clear();
+    }
+
 
     public static removePopwinCache(node: HTMLElement): void {
         this.popWindowMap.forEach((popupWindow, popupInfo)=>{
@@ -136,6 +144,7 @@ export default class IntelligentLayout {
     @PerfExecution({ level: Level.INFO })
     static reInit(): void {
         IntelligentLayout.HardCodeElementsCache.clear();
+        IntelligentLayout.recoverPopwinStyle();
         for (const [ele, comp] of IntelligentLayout.ComponentMap) {
             if (!comp) continue;
             comp.setDirty(true);

@@ -97,10 +97,10 @@ export default class Framework {
         // STEP 9，flush新计算的样式，触发回流重绘
         StyleSetter.flushAllStyles();
         Cached.clearStyleCache();
+    }
 
-        // STEP 12，Update到当前DOM树上
-        StyleSetter.flushAllStyles();
-        Cached.clearAllCache();
+    static recoverStyle(): void { 
+        IntelliLayout.recoverPopwinStyle();
     }
 
     static reInit(): void {
@@ -111,7 +111,7 @@ export default class Framework {
         SpecificStyleCache.init();
         Cached.clearAllCache();
 
-        console.log("re init");
+        console.log("Framework reInit");
         if (!Framework.init) {
             console.log("change Framework.init to true");
             HtmlChangedChecker.startCheckHtml();

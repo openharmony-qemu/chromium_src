@@ -770,12 +770,14 @@ void InputHandlerProxyUtils::HandleTouchStartInit(
   bool isHitTopLayer = HandleTouchStartIfHitVideo(touch_event);
   if (isHitTopLayer) {
     touchEventQueue->Queue(std::move(event_with_callback));
+    return;
   }
   // nativeEmbedGesture
   if (native_enabled_) {
     bool isHitNativeLayer = HandleTouchStartIfHitNative(touch_event);
     if (isHitNativeLayer) {
       touchEventQueue->Queue(std::move(event_with_callback));
+      return;
     }
   }
   touchEventQueue->SetStatus(SEND_BLINK);
@@ -911,6 +913,35 @@ void InputHandlerProxyUtils::NativeTouchEndProcess(std::unique_ptr<EventWithCall
   }
 }
 
+void InputHandlerProxyUtils::NativeTouchCancelProcess(
+    std::unique_ptr<EventWithCallback> event_with_callback) {
+  const WebInputEvent& event = event_with_callback->event();
+  const WebTouchEvent& touch_event = static_cast<const WebTouchEvent&>(event);
+  for (size_t i = 0; i < touch_event.touches_length; ++i) {
+      std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+      NativeTouchEventQueues_[i];
+      auto status = touchEventQueue->GetStatus();
+      switch (status) {
+        case INIT:
+        case PEND_HITTEST:
+        case SEND_NATIVE_BLINK:
+        case SEND_TO_NATIVE:
+        case SEND_NATIVE_BLINK_CONSUMER:
+        case PEND_NATIVE:
+          while (!touchEventQueue->empty()) {
+            auto pop_event_with_callback = touchEventQueue->Pop();
+            SendToBlink(std::move(pop_event_with_callback), true);
+          }
+          SendEventToNativeByIndex(touch_event, static_cast<int32_t>(i));
+          touchEventQueue->SetStatus(INIT);
+          break;
+        default:
+          break;
+    }
+  }
+  SendToBlink(std::move(event_with_callback));
+}
+
 void InputHandlerProxyUtils::SendEventToNativeByIndex(const WebTouchEvent& touch_event, int32_t index) {
   auto type = touch_event.GetType();
   if (CheckFingerIdOutOfIndex(index)) {
@@ -951,35 +982,6 @@ void InputHandlerProxyUtils::SendEventToNativeByIndex(const WebTouchEvent& touch
         << "[NativeEmbedGesture] SendNativeEvent error layer_impl is null."
         << "fingerId " << finger_id << ", type: " << type;
   }
-}
-
-void InputHandlerProxyUtils::NativeTouchCancelProcess(
-    std::unique_ptr<EventWithCallback> event_with_callback) {
-  const WebInputEvent& event = event_with_callback->event();
-  const WebTouchEvent& touch_event = static_cast<const WebTouchEvent&>(event);
-  for (size_t i = 0; i < touch_event.touches_length; ++i) {
-      std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
-      NativeTouchEventQueues_[i];
-      auto status = touchEventQueue->GetStatus();
-      switch (status) {
-        case INIT:
-        case PEND_HITTEST:
-        case SEND_NATIVE_BLINK:
-        case SEND_TO_NATIVE:
-        case SEND_NATIVE_BLINK_CONSUMER:
-        case PEND_NATIVE:
-          while (!touchEventQueue->empty()) {
-            auto pop_event_with_callback = touchEventQueue->Pop();
-            SendToBlink(std::move(pop_event_with_callback), true);
-          }
-          SendEventToNativeByIndex(touch_event, static_cast<int32_t>(i));
-          touchEventQueue->SetStatus(INIT);
-          break;
-        default:
-          break;
-    }
-  }
-  SendToBlink(std::move(event_with_callback));
 }
 
 void InputHandlerProxyUtils::SetGestureEventResult(bool result,

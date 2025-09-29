@@ -105,26 +105,58 @@ export default class LayoutUtils{
     private static findStyleInSheets(element: HTMLElement, cssProperty: string, computedValue: string): { isFound: boolean; crossDomainSheetEncountered: boolean } {
         let crossDomainSheetEncountered = false;
 
+        // 主函数职责：遍历样式表，调用处理器，并聚合结果。嵌套深度只有 1。
         for (const sheet of document.styleSheets) {
-            try {
-                for (const rule of sheet.cssRules) {
-                    if (!(rule instanceof CSSStyleRule && rule.selectorText && element.matches(rule.selectorText))) {
-                        continue;
-                    }
-                    
-                    // 动态获取属性值
-                    const propertyValue = rule.style.getPropertyValue(cssProperty);
-                    if (propertyValue && LayoutUtils.convertToPxUnits(propertyValue) === computedValue) {
-                        return { isFound: true, crossDomainSheetEncountered };
-                    }
-                }
-            } catch (e) {
+            const result = this._processSingleSheet(sheet, element, cssProperty, computedValue);
+
+            if (result.error) {
                 crossDomainSheetEncountered = true;
-                console.warn('无法访问跨域样式表，某些样式检查可能不准确:', sheet.href);
+            }
+
+            if (result.isFound) {
+                // 一旦找到，就可以提前返回最终结果
+                return { isFound: true, crossDomainSheetEncountered };
             }
         }
 
+        // 遍历完所有样式表都未找到
         return { isFound: false, crossDomainSheetEncountered };
+    }
+
+    /**
+     * 处理单个样式表，封装了 try-catch 和规则遍历。
+     * @returns 返回一个对象，表明是否找到匹配项以及是否发生错误。
+     */
+    private static _processSingleSheet(sheet: CSSStyleSheet, element: HTMLElement, cssProperty: string, computedValue: string): { isFound: boolean, error: boolean } {
+        try {
+            // 嵌套深度 1
+            for (const rule of sheet.cssRules) {
+                // 嵌套深度 2：将具体的匹配逻辑再次提炼
+                if (this._isRuleMatch(rule, element, cssProperty, computedValue)) {
+                    return { isFound: true, error: false };
+                }
+            }
+            return { isFound: false, error: false };
+        } catch (e) {
+            console.warn('无法访问跨域样式表，某些样式检查可能不准确:', sheet.href);
+            return { isFound: false, error: true };
+        }
+    }
+
+    /**
+     * 检查单个 CSS 规则是否匹配。
+     * @returns 如果规则匹配，则返回 true。
+     */
+    private static _isRuleMatch(rule: CSSRule, element: HTMLElement, cssProperty: string, computedValue: string): boolean {
+        // 使用卫语句（Guard Clause）提前退出，避免嵌套
+        if (!(rule instanceof CSSStyleRule && rule.selectorText && element.matches(rule.selectorText))) {
+            return false;
+        }
+
+        const propertyValue = rule.style.getPropertyValue(cssProperty);
+        
+        // 返回最终的比较结果
+        return propertyValue && LayoutUtils.convertToPxUnits(propertyValue) === computedValue;
     }
 
     /**
@@ -469,56 +501,97 @@ export default class LayoutUtils{
     }
 
     /**
-     * 计算一个元素及其所有后代元素所形成的整体视觉边界框。
-     * 返回一个类似 DOMRect 的对象，包含 {x, y, top, left, bottom, right, width, height}。
-     * @param {HTMLElement} element - 要计算的目标父元素。
-     * @param {isCloseButtonTruncatedByScroll} boolean 关闭按钮是否被scroll截断
-     * @param {originY} string 缩放中心
-     * @returns {object|null} 一个类似 DOMRect 的对象，如果元素无效则返回 null。
-     */
+         * 计算一个元素及其所有后代元素所形成的整体视觉边界框。
+         * 返回一个类似 DOMRect 的对象，包含 {x, y, top, left, bottom, right, width, height}。
+         * @param {HTMLElement} element - 要计算的目标父元素。
+         * @param {isCloseButtonTruncatedByScroll} boolean 关闭按钮是否被scroll截断
+         * @param {popupDecisionTreeType} PopupDecisionTreeType 弹窗决策树类型
+         * @returns {object|null} 一个类似 DOMRect 的对象，如果元素无效则返回 null。
+         */
     static getVisualBoundingRect(element: HTMLElement, isCloseButtonTruncatedByScroll: boolean, popupDecisionTreeType: PopupDecisionTreeType): VisualBoundingRect {
         if (!element || typeof element.getBoundingClientRect !== 'function') {
             return null;
         }
+
         const parentRect = element.getBoundingClientRect();
-        let scrollElement = null;
+        let scrollElement: HTMLElement | null = null;
         let offsetY = 0;
 
-        // 递归函数，用于更新边界
-        const updateBounds = (el: HTMLElement, rootNode: HTMLElement) => {
-            // 跳过具有滚动条的元素
-            if (this.hasScrollbar(el)) {
-                if (isCloseButtonTruncatedByScroll) {
-                    if (popupDecisionTreeType === PopupDecisionTreeType.Bottom) {
-                        offsetY -= (el.scrollHeight - el.getBoundingClientRect().height);
-                    } else if (popupDecisionTreeType === PopupDecisionTreeType.Center || popupDecisionTreeType === PopupDecisionTreeType.Center_Button_Overlap) {
-                        offsetY -= (el.scrollHeight - el.getBoundingClientRect().height) / 2;
-                    }
-                }
-                scrollElement = el;
+        // 1. 初始化边界
+        let minX = Number.MAX_SAFE_INTEGER;
+        let minY = Number.MAX_SAFE_INTEGER;
+        let maxX = Number.MIN_SAFE_INTEGER;
+        let maxY = Number.MIN_SAFE_INTEGER;
+
+        if (parentRect.height !== 0 && parentRect.width !== 0) {
+            minX = parentRect.left;
+            minY = parentRect.top;
+            maxX = parentRect.right;
+            maxY = parentRect.bottom;
+        }
+
+        /**
+         * 辅助函数：处理带有滚动条的元素
+         * @param el 当前元素
+         */
+        const handleScrollableElement = (el: HTMLElement): void => {
+            scrollElement = el;
+            if (!isCloseButtonTruncatedByScroll) {
                 return;
             }
+            
+            const scrollDiff = el.scrollHeight - el.getBoundingClientRect().height;
+            if (popupDecisionTreeType === PopupDecisionTreeType.Bottom) {
+                offsetY -= scrollDiff;
+            } else if (popupDecisionTreeType === PopupDecisionTreeType.Center || popupDecisionTreeType === PopupDecisionTreeType.Center_Button_Overlap) {
+                offsetY -= scrollDiff / 2;
+            }
+        };
+
+        /**
+         * 辅助函数：为可见元素更新边界
+         * @param el 当前元素
+         */
+        const updateBoundsForVisibleElement = (el: HTMLElement): void => {
             const rect = el.getBoundingClientRect();
             const style = window.getComputedStyle(el);
-            // 节点被隐藏，不继续参与遍历计算
-            if (el !== rootNode && style.overflowY === 'hidden' && el.scrollHeight > el.clientHeight) {
-                return;
-            }
-            // 检查元素是否可见
+
             const isElementVisible = rect.width > 0 && rect.height > 0 &&
                 style.display !== 'none' && style.visibility !== 'hidden' &&
                 parseFloat(style.opacity) > 0;
-            if (isElementVisible) {
-                // 计算宽高比并检查是否在合理范围内
-                const aspectRatio = rect.height / rect.width;
-                if (aspectRatio > 0.1 && aspectRatio < 10) {
-                    // 更新边界坐标
-                    minX = Math.min(minX, rect.left);
-                    minY = Math.min(minY, rect.top);
-                    maxX = Math.max(maxX, rect.right);
-                    maxY = Math.max(maxY, rect.bottom);
-                }
+
+            if (!isElementVisible) {
+                return;
             }
+
+            const aspectRatio = rect.height / rect.width;
+            if (aspectRatio > 0.1 && aspectRatio < 10) {
+                minX = Math.min(minX, rect.left);
+                minY = Math.min(minY, rect.top);
+                maxX = Math.max(maxX, rect.right);
+                maxY = Math.max(maxY, rect.bottom);
+            }
+        };
+
+        /**
+         * 递归函数，用于遍历并更新边界
+         */
+        const updateBounds = (el: HTMLElement, rootNode: HTMLElement): void => {
+            // 卫语句：如果是滚动元素，特殊处理后直接返回
+            if (this.hasScrollbar(el)) {
+                handleScrollableElement(el);
+                return;
+            }
+
+            // 卫语句：如果节点内容被隐藏，则跳过
+            const style = window.getComputedStyle(el);
+            if (el !== rootNode && style.overflowY === 'hidden' && el.scrollHeight > el.clientHeight) {
+                return;
+            }
+            
+            // 更新当前元素的边界
+            updateBoundsForVisibleElement(el);
+
             // 递归遍历子节点
             for (const child of el.children) {
                 if (child instanceof HTMLElement) {
@@ -526,26 +599,19 @@ export default class LayoutUtils{
                 }
             }
         };
-        // 1. 初始化边界
-        let minX = Number.MAX_SAFE_INTEGER;
-        let minY = Number.MAX_SAFE_INTEGER;
-        let maxX = Number.MIN_SAFE_INTEGER;
-        let maxY = Number.MIN_SAFE_INTEGER;
-        if (parentRect.height !== 0 && parentRect.width !== 0) {
-            minX = Math.min(minX, parentRect.left);
-            minY = Math.min(minY, parentRect.top);
-            maxX = Math.max(maxX, parentRect.right);
-            maxY = Math.max(maxY, parentRect.bottom);
-        }
+
         // 遍历所有节点来更新边界
         updateBounds(element, element);
+
         // 计算最终的边界尺寸
         const width = maxX - minX;
         const height = maxY - minY;
+
         // 计算子元素超出父元素区域的偏差高度
         if (parentRect.height !== 0 && parentRect.width !== 0) {
             offsetY += (minY - parentRect.top + (height - parentRect.height) / 2);
         }
+
         return {
             left: minX,
             top: minY,

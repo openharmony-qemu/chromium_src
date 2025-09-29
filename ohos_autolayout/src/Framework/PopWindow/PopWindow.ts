@@ -11,6 +11,13 @@ import { PopupDecisionTreeType } from '../Popup/PopupDecisionTreeType';
 import { PopupDecisionTree } from '../Popup/PopupDecisionTree';
 import { CCMConfig } from '../Common/CCMConfig';
 
+interface BoundingRect {
+    top: number,
+    left: number,
+    bottom: number,
+    right: number
+}
+
 /**
  * 弹窗
  * 输入为一个popupInfo
@@ -280,27 +287,16 @@ export class PopWindow extends AComponent {
      */
     private resetByScale(): void {
         // 如果mask和rootNode是同一个节点，则直接缩放rootNode的所有子节点。
-        if (this.popupInfo.popup_type === PopupType.C) {
+        if (this.popupInfo.popup_type == PopupType.C) {
             let topNodes = this.getTopmostChildren(this.mComponent, this.popupInfo.popup_type);
             for (let child of topNodes) {
                 const childStyle = child.children.length > 0 ? getComputedStyle(child.children[0]) : null;
                 const childRect = child.getBoundingClientRect();
                 const isFixedOrAbsolute = childStyle ? childStyle.position === 'fixed' || childStyle.position === 'absolute' : false;
                 const isZeroSize = childRect.width === 0 || childRect.height === 0;
-                if (childStyle && isFixedOrAbsolute && isZeroSize) {
-                    const grandChildren = this.getValidGrandChildren(Array.from(child.children) as HTMLElement[]);
-                    for (let i = 0; i < grandChildren.length; i++) {
-                        const grandchild = grandChildren[i];
-                        this.scaleByTransform(grandchild, this.scale, topNodes.length > 1, topNodes, grandChildren.length > 1, grandChildren);
-                        console.log(`resetByScale for type C: ${grandchild.className}`);
-                    }
-                }
-                else {
-                    this.scaleByTransform(child, this.scale, topNodes.length > 1, topNodes, false, []);
-                    console.log(`resetByScale for type C: ${child.className}`);
-                }
+                this.scaleChildForTypeC(childStyle, isFixedOrAbsolute, isZeroSize, child, topNodes);
             }
-        } else if (this.popupInfo.popup_type === PopupType.B) {
+        } else if (this.popupInfo.popup_type == PopupType.B) {
             this.equivalentMask = this.getEquivalentMask();
             // 如果mask和content是兄弟节点，则其他兄弟节点做缩放
             let topNodes = this.getTopmostChildren(this.equivalentMask.parentElement, this.popupInfo.popup_type);
@@ -314,35 +310,58 @@ export class PopWindow extends AComponent {
                 const isFixedOrAbsolute = childStyle ? childStyle.position === 'fixed' || childStyle.position === 'absolute' : false;
                 const isZeroSize = childRect.width === 0 || childRect.height === 0;
                 if (childStyle && isFixedOrAbsolute && isZeroSize) {
-                    const grandChildren = this.getValidGrandChildren(Array.from(child.children) as HTMLElement[]);
-                    for (let i = 0; i < grandChildren.length; i++) {
-                        const grandchild = grandChildren[i];
-                        if (this.popupDecisionTreeType === PopupDecisionTreeType.Bottom) {
-                            this.scaleByTransform(grandchild, this.scale, false, topNodes, grandChildren.length > 1, grandChildren);
-                        }
-                        else {
-                            this.scaleByTransform(grandchild, this.scale, topNodes.length > 1, topNodes, grandChildren.length > 1, grandChildren);
-                        }
-                        console.log(`resetByScale for type B: ${grandchild.className}`);
-                    }
+                    this.scaleGrandChildrenForTypeB(child, topNodes);
                 }
                 else {
-                    if (this.popupDecisionTreeType === PopupDecisionTreeType.Bottom) {
-                        this.scaleByTransform(child, this.scale, false, topNodes, false, []);
-                    }
-                    else {
-                        this.scaleByTransform(child, this.scale, topNodes.length > 1, topNodes, false, []);
-                    }
-                    console.log(`resetByScale for type B: ${child.className}`);
+                    this.scaleChildForTypeB(child, topNodes);
                 }
             }
-        } else if (this.popupInfo.popup_type === PopupType.A) {
+        } else if (this.popupInfo.popup_type == PopupType.A) {
             // 如果mask是rootNode的子节点，content是mask的子节点，则对mask的所有子节点以及它的兄弟节点做缩放
             let topNodes = this.getTopmostChildren(this.popupInfo.mask_node, this.popupInfo.popup_type);
             for (let child of topNodes) {
                 this.scaleByTransform(child as HTMLElement, this.scale, false, topNodes, false, []);
                 console.log(`resetByScale for type A: ${child.className}`);
             }
+        }
+    }
+
+    private scaleChildForTypeB(child: HTMLElement, topNodes: HTMLElement[]) {
+        if (this.popupDecisionTreeType === PopupDecisionTreeType.Bottom) {
+            this.scaleByTransform(child, this.scale, false, topNodes, false, []);
+        }
+        else {
+            this.scaleByTransform(child, this.scale, topNodes.length > 1, topNodes, false, []);
+        }
+        console.log(`resetByScale for type B: ${child.className}`);
+    }
+
+    private scaleGrandChildrenForTypeB(child: HTMLElement, topNodes: HTMLElement[]) {
+        const grandChildren = this.getValidGrandChildren(Array.from(child.children) as HTMLElement[]);
+        for (let i = 0; i < grandChildren.length; i++) {
+            const grandchild = grandChildren[i];
+            if (this.popupDecisionTreeType === PopupDecisionTreeType.Bottom) {
+                this.scaleByTransform(grandchild, this.scale, false, topNodes, grandChildren.length > 1, grandChildren);
+            }
+            else {
+                this.scaleByTransform(grandchild, this.scale, topNodes.length > 1, topNodes, grandChildren.length > 1, grandChildren);
+            }
+            console.log(`resetByScale for type B: ${grandchild.className}`);
+        }
+    }
+
+    private scaleChildForTypeC(childStyle: CSSStyleDeclaration, isFixedOrAbsolute: boolean, isZeroSize: boolean, child: HTMLElement, topNodes: HTMLElement[]) {
+        if (childStyle && isFixedOrAbsolute && isZeroSize) {
+            const grandChildren = this.getValidGrandChildren(Array.from(child.children) as HTMLElement[]);
+            for (let i = 0; i < grandChildren.length; i++) {
+                const grandchild = grandChildren[i];
+                this.scaleByTransform(grandchild, this.scale, topNodes.length > 1, topNodes, grandChildren.length > 1, grandChildren);
+                console.log(`resetByScale for type C: ${grandchild.className}`);
+            }
+        }
+        else {
+            this.scaleByTransform(child, this.scale, topNodes.length > 1, topNodes, false, []);
+            console.log(`resetByScale for type C: ${child.className}`);
         }
     }
 
@@ -359,7 +378,7 @@ export class PopWindow extends AComponent {
             return oriMaskNode;
         }
         let equivalentMask = oriMaskNode;
-        if (oriMaskNode != this.mComponent && oriMaskNode.parentElement !== this.mComponent && !LayoutUtils.hasElementSiblings(oriMaskNode as HTMLElement)) {
+        if (oriMaskNode !== this.mComponent && oriMaskNode.parentElement !== this.mComponent && !LayoutUtils.hasElementSiblings(oriMaskNode as HTMLElement)) {
             let maskParentNode = oriMaskNode.parentElement;
             while (maskParentNode !== this.mComponent && !LayoutUtils.hasElementSiblings(maskParentNode as HTMLElement)) {
                 maskParentNode = maskParentNode.parentElement;
@@ -555,80 +574,131 @@ export class PopWindow extends AComponent {
      * @param hasBrother
      */
     private scaleByTransform(element: HTMLElement, newScale: number, hasBrother: boolean, brotherNodes: HTMLElement[], hasGrandChild: boolean, grandChildNodes: HTMLElement[]): void {
-        console.log(`scaleByTransform: ${element ?.className}, hasBrother = ${hasBrother}`);
-        // 1. 获取当前视觉位置和变换状态
-        const rect = LayoutUtils.getVisualBoundingRect(element, this.isCloseButtonTruncatedByScroll, this.popupDecisionTreeType);
-        const style = window.getComputedStyle(element);
-        const parentStyle = window.getComputedStyle(element.parentElement);
-        const currentTransform = style.transform === 'none' ? '' : style.transform;
-        let offsetX = 0;
-        let offsetY = 0;
-
-        // 解析 matrix 变换，提取 translateY 值
-        const matrixMatch = style.transform.match(/matrix\((.*?),(.*?),(.*?),(.*?),(.*?),(.*?)\)/);
-        const translateY = matrixMatch ? parseFloat(matrixMatch[6]) : 0;
-
-        // 检查 translateY 是否超过屏幕高度 && 且元素不在视口区域内
-        if (Math.abs(translateY) > window.innerHeight && (rect.top >= window.innerHeight || rect.left >= window.innerWidth || rect.bottom <= 0 || rect.right <= 0)) {
-            console.log('scaleByTransform: translateY 超过屏幕高度，不进行缩放');
+        console.log(`scaleByTransform: ${element?.className}, hasBrother = ${hasBrother}`);
+    
+        // 1. 提炼前置检查逻辑，使用卫语句提前退出
+        if (this._shouldSkipScaling(element)) {
             return;
         }
-
+    
+        const style = window.getComputedStyle(element);
+        const rect = LayoutUtils.getVisualBoundingRect(element, this.isCloseButtonTruncatedByScroll, this.popupDecisionTreeType);
+    
+        // 2. 保存样式并准备布局约束
+        this.saveOriginalStyles(element);
+        this.needLayoutConstraintNodes.add(element);
+    
+        // 3. 提炼核心计算逻辑
+        let offsetY = this._calculateOffsetY(element, rect, newScale, { hasBrother, brotherNodes, hasGrandChild, grandChildNodes });
+    
+        // 4. 提炼所有样式修复和调整的逻辑
+        this._applyStyleFixes(element, style, rect);
+        
+        // 5. 提炼最终应用变换的逻辑
+        this._applyTransform(element, style, offsetY, newScale);
+    }
+        
+    /**
+     * 检查是否应跳过缩放操作。封装了所有前置条件判断。
+     * @returns {boolean} 如果应该跳过，则返回 true。
+     */
+    private _shouldSkipScaling(element: HTMLElement): boolean {
+        const style = window.getComputedStyle(element);
+        const rect = LayoutUtils.getVisualBoundingRect(element, this.isCloseButtonTruncatedByScroll, this.popupDecisionTreeType);
+    
+        // 检查1: 根据 transform 的 translateY 判断元素是否远在屏幕外
+        const matrixMatch = style.transform.match(/matrix\((.*?),(.*?),(.*?),(.*?),(.*?),(.*?)\)/);
+        const translateY = matrixMatch ? parseFloat(matrixMatch[6]) : 0;
+        if (Math.abs(translateY) > window.innerHeight && !this._isElementInViewport(rect)) {
+            console.log('scaleByTransform: translateY 超过屏幕高度且元素不在视口内，不进行缩放');
+            return true;
+        }
+    
+        // 检查2: 针对底部弹窗，检查其滚动容器是否在屏幕外
         if (this.popupDecisionTreeType === PopupDecisionTreeType.Bottom && rect.scrollElement) {
             const scrollElementRect = rect.scrollElement.getBoundingClientRect();
-            // 检查元素是否在视口内
-            if (scrollElementRect.top >= window.innerHeight ||
-                scrollElementRect.left >= window.innerWidth ||
-                scrollElementRect.bottom <= 0 ||
-                scrollElementRect.right <= 0) {
+            if (!this._isElementInViewport(scrollElementRect)) {
                 console.log('scaleByTransform: 滚动元素在屏幕外，不进行缩放');
-                return;
-            }
-            else {
-                // 设置 max-height，解决一些滚动弹窗不可用滚动的问题
+                return true;
+            } else {
+                // 此处保留了对滚动容器的样式设置，因为它属于前置处理的一部分
                 const maxHeightVh = ((window.innerHeight - scrollElementRect.top) / window.innerHeight) * 100;
                 this.saveOriginalStyles(rect.scrollElement);
                 StyleSetter.setStyle(rect.scrollElement, Constant.max_height, `${maxHeightVh}vh`);
             }
         }
-
-        this.saveOriginalStyles(element);
-        this.needLayoutConstraintNodes.add(element);
-
-        // 2. 计算元素中心点在视口中的绝对位置
-        let visualCenterY = rect.top + rect.height / 2;
-        if (this.popupDecisionTreeType === PopupDecisionTreeType.Bottom) {
-            offsetY = window.innerHeight - (visualCenterY + rect.height / 2 * newScale);
-        } else if (this.popupDecisionTreeType === PopupDecisionTreeType.Center ||
-            this.popupDecisionTreeType === PopupDecisionTreeType.Center_Button_Overlap) {
-            if (hasBrother) {
-                // A. 计算“组”需要移动的距离：将“组中心”移动到“视口中心”
-                // to do: 后续优化下相关逻辑，提升计算效果，看看是否和calScale进行合并计算
-                // const groupCenterY = this.minTop + (this.maxBottom - this.minTop) / 2;
-                const groupCenterY = this.calculateGroupCenter(element, brotherNodes).centerY;
-                const groupTranslationY = window.innerHeight / 2 - groupCenterY;
-                // B. 计算“当前元素”因缩放而相对于“组中心”产生的位移
-                //    (visualCenterY - groupCenterY) 是当前元素中心相对于组中心的偏移量
-                //    (newScale - 1) 是这个偏移量因缩放而发生改变的比例
-                const elementRelativeShiftY = (visualCenterY - groupCenterY) * (newScale - 1);
-                // C. 总的 offsetY 是这两部分的和
-                offsetY = groupTranslationY + elementRelativeShiftY;
-            } else {
-                offsetY = (window.innerHeight / 2 - visualCenterY);
-            }
-
-            if (hasGrandChild) {
-                const groupCenterY = this.calculateGroupCenter(element, grandChildNodes).centerY;
-                const elementRelativeShiftY = (groupCenterY - visualCenterY) * (newScale - 1);
-                offsetY += elementRelativeShiftY;
-            }
-            console.log(`scaleByTransform: print offsetY: ${offsetY}`);
+    
+        return false;
+    }
+    
+    /**
+     * 封装判断元素是否在视口内的逻辑
+     */
+    private _isElementInViewport(rect: BoundingRect): boolean {
+        return rect.top < window.innerHeight && rect.left < window.innerWidth && rect.bottom > 0 && rect.right > 0;
+    }
+    
+    
+    /**
+     * 核心计算函数：根据弹窗类型计算垂直方向的偏移量 (offsetY)
+     */
+    private _calculateOffsetY(element: HTMLElement, rect: any, newScale: number, groupInfo: { hasBrother: boolean, brotherNodes: HTMLElement[], hasGrandChild: boolean, grandChildNodes: HTMLElement[] }): number {
+        let offsetY = 0;
+        const visualCenterY = rect.top + rect.height / 2;
+    
+        switch (this.popupDecisionTreeType) {
+            case PopupDecisionTreeType.Bottom:
+                offsetY = window.innerHeight - (visualCenterY + rect.height / 2 * newScale);
+                break;
+            
+            case PopupDecisionTreeType.Center:
+            case PopupDecisionTreeType.Center_Button_Overlap:
+                offsetY = this._calculateCenterOffsetY(element, visualCenterY, newScale, groupInfo);
+                // 针对居中弹窗，调整吸顶吸底组件带来的偏移
+                offsetY -= this.popupInfo.stickyBottom_height / 2;
+                offsetY += this.popupInfo.stickyTop_height / 2;
+                break;
         }
-
-        // 3. 更新元素中心的偏移量（子元素高度超过父元素的情况）
+        
+        // 应用子元素高度超过父元素的偏移量
         offsetY += newScale * rect.offsetY;
-
-        // 4. 如果父布局设置了display: flex，则子节点需要设置flex-shrink: 0; 处理子节点高度被挤压的场景，仅靠scale无法恢复
+    
+        return offsetY;
+    }
+    
+    /**
+     * 专门为居中弹窗计算 offsetY，处理有兄弟节点或孙子节点的复杂情况
+     */
+    private _calculateCenterOffsetY(element: HTMLElement, visualCenterY: number, newScale: number, groupInfo: { hasBrother: boolean, brotherNodes: HTMLElement[], hasGrandChild: boolean, grandChildNodes: HTMLElement[] }): number {
+        let offsetY = 0;
+    
+        if (groupInfo.hasBrother) {
+            const groupCenterY = this.calculateGroupCenter(element, groupInfo.brotherNodes).centerY;
+            const groupTranslationY = window.innerHeight / 2 - groupCenterY;
+            const elementRelativeShiftY = (visualCenterY - groupCenterY) * (newScale - 1);
+            offsetY = groupTranslationY + elementRelativeShiftY;
+        } else {
+            offsetY = (window.innerHeight / 2 - visualCenterY);
+        }
+    
+        if (groupInfo.hasGrandChild) {
+            const groupCenterY = this.calculateGroupCenter(element, groupInfo.grandChildNodes).centerY;
+            const elementRelativeShiftY = (groupCenterY - visualCenterY) * (newScale - 1);
+            offsetY += elementRelativeShiftY;
+        }
+        
+        console.log(`scaleByTransform: print offsetY: ${offsetY}`);
+        return offsetY;
+    }
+    
+    
+    /**
+     * 应用所有非 transform 的样式修复和调整
+     */
+    private _applyStyleFixes(element: HTMLElement, style: CSSStyleDeclaration, rect: any): void {
+        const parentStyle = window.getComputedStyle(element.parentElement);
+    
+        // 修复 flex 布局挤压问题
         if (style.display === 'flex') {
             for (let child of element.children) {
                 this.saveOriginalStyles(child as HTMLElement);
@@ -638,36 +708,33 @@ export class PopWindow extends AComponent {
         if (parentStyle.display === 'flex') {
             StyleSetter.setStyle(element, Constant.flex_shrink, '0');
         }
-
-        // 5. 对于有吸顶吸底组件的弹窗，重新调整offsetY（只针对居中弹窗需要调整）
-        if (this.popupDecisionTreeType === PopupDecisionTreeType.Center ||
-            this.popupDecisionTreeType === PopupDecisionTreeType.Center_Button_Overlap) {
-            offsetY -= this.popupInfo.stickyBottom_height / 2;
-            offsetY += this.popupInfo.stickyTop_height / 2;
-        }
-
-        // 6. 应用新缩放
-        StyleSetter.setStyle(element, Constant.transform, `${currentTransform}
-            translate(${offsetX}px, ${offsetY}px)
-            scale(${newScale})`);
-        StyleSetter.setStyle(element, Constant.transition, `all ${this.scaleAnimationDuration}ms ease-in`);
-
-        // 7. transform 属性对 display: inline的元素不起作用
+    
+        // 确保 transform 生效
         if (style.display === 'inline') {
             StyleSetter.setStyle(element, Constant.display, 'block');
         }
-
-        // 8. 设置子节点的margin
-        for (let i = 0; i < element.children.length; i++) {
-            let child = element.children[i] as HTMLElement;
-            if (child.style.bottom !== '' && child.style.bottom !== 'auto') {
-                this.saveOriginalStyles(child);
-                StyleSetter.setStyle(element, Constant.bottom, 'unset');
+    
+        // 重置子节点的 bottom 样式
+        for (let child of element.children) {
+            if ((child as HTMLElement).style.bottom !== '' && (child as HTMLElement).style.bottom !== 'auto') {
+                this.saveOriginalStyles(child as HTMLElement);
+                StyleSetter.setStyle(child as HTMLElement, Constant.bottom, 'unset');
             }
         }
-
-        // 9. 确保给定元素的所有子元素宽度不为0，如果子元素宽度为0，则将其设置为100%
+    
+        // 确保子元素宽度不为0
         this.adjustChildWidths(element);
+    }
+    
+    /**
+     * 应用最终的 transform 和 transition 样式
+     */
+    private _applyTransform(element: HTMLElement, style: CSSStyleDeclaration, offsetY: number, newScale: number): void {
+        const currentTransform = style.transform === 'none' ? '' : style.transform;
+        const offsetX = 0; // offsetX 在原逻辑中始终为0
+    
+        StyleSetter.setStyle(element, Constant.transform, `${currentTransform} translate(${offsetX}px, ${offsetY}px) scale(${newScale})`);
+        StyleSetter.setStyle(element, Constant.transition, `all ${this.scaleAnimationDuration}ms ease-in`);
     }
 
     /**

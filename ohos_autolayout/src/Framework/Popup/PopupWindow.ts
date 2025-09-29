@@ -71,94 +71,143 @@ export class PopupWindow {
     };
 
 
-    /**
-     * 从根节点开始，获取所有潜在的Mask元素。
-     * 该函数合并了节点遍历和Mask节点筛选的逻辑。
-     * @param {HTMLElement} root - 扫描的起始根节点。
-     * @returns {Element[]} - 符合Mask节点条件的元素数组。
-     */
-    @PerfExecution(({ level: Level.INFO }))
+/**
+     * 从根节点开始，获取所有潜在的Mask、吸顶和吸底元素。
+     * @param {HTMLElement} root - 扫描的起始根节点。
+     * @returns {PotentialElements} - 包含潜在元素的对​​象。
+     */
     private static getPotentialElements(root: HTMLElement): PotentialElements {
         const isNode = (node: Node): node is HTMLElement => node.nodeType === Node.ELEMENT_NODE;
         const allNodes = Array.from(root.getElementsByTagName("*")).filter(isNode);
-        const potentialMasks = new Array<Element>();
-        let potentialStickyTop:Element = null;
-        let potentialStickyBottom:Element = null;
-        // 对所有节点进行筛选，找到潜在的Mask和吸顶吸底元素
-        for(const el of allNodes) {
+
+        let potentialMasks = new Array<Element>();
+        let potentialStickyTop: Element | null = null;
+        let potentialStickyBottom: Element | null = null;
+
+        for (const el of allNodes) {
             const style = getComputedStyle(el);
-            // 排除未渲染的元素，
-            if ((el as HTMLElement).offsetWidth === 0 || (el as HTMLElement).offsetHeight === 0 ||
-                style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) {
-                // 添加特例规则：蚂蚁宠物小程序，它既设置了opacity为0，设置了background透明度
-                // 1、如果尺寸为0，则会被下面的屏占比条件过滤掉 2、hidden的visibility仍然会占据布局尺寸，所以opacity和visibility为hidden需要同时判断
-                if( style.visibility !== 'hidden' && parseFloat(style.opacity) === 0 && Utils.isColorSemiTransparent(style.backgroundColor) ) {
-                    console.log("special popup,just skip");
-                }else{
-                    continue;
-                }
-            }
-            // 弹窗/吸顶/吸底元素都具备一个特征:宽度与屏幕的宽度保持一致,这样可以过滤绝大多数的节点
-            if (Math.abs(el.offsetWidth - window.innerWidth) >= 2 ) {
+
+            // 1. 使用卫语句进行初步筛选，提前跳出不合格的元素
+            if (!this.isElementQualified(el, style)) {
                 continue;
             }
 
-            // 判断元素是否覆盖整个视口, 屏占比大于{screen_ratio_threshold}的元素被认为是潜在的Mask节点。
-            const screenAreaRatio = Utils.getScreenAreaRatio(el);
-            if(screenAreaRatio > CCMConfig.getInstance().getMinMaskAreaRatioThreshold()) {
-                // 硬性条件，mask是半透明的
-                if(Utils.isBackgroundSemiTransparent(style)) {
-                    potentialMasks.push(el);
-                    continue;
-                }
-                // 特例1：发现有非半透明情况，重新考虑
-                // DOM结构弹窗：遮罩是fixed，100%屏占比，子节点是absolute,并且带有close按钮
-                if(style.position === Constant.fixed && el.children.length === 1) {
-                    const child = el.children[0];
-                    if (getComputedStyle(child).position === Constant.absolute && 
-                            Utils.getScreenAreaRatio(child) > CCMConfig.getInstance().getMinContentAreaRatioThreshold()) {
-                        if (Utils.hasCloseButton(el.children[0])) {
-                            potentialMasks.push(el);
-                            continue;
-                        }
-                    }
-                }
-
-            }
-            // 识别特例蒙版
-            if (style.position === 'fixed' && LayoutUtils.analyzeComputedBoxShadow(style.boxShadow)) {
-                // 特例，有一些弹窗的遮罩是使用BoxShadow来实现的
+            // 2. 检查并添加遮罩元素
+            if (this.isPotentialMask(el, style)) {
                 potentialMasks.push(el);
-                continue;
+                continue; // 如果是遮罩，则不考虑其为吸顶/吸底
             }
+            
+            // 3. 检查并更新吸顶/吸底元素
+            const stickyResult = this.checkStickyElement(el, style, potentialStickyTop, potentialStickyBottom);
+            potentialStickyTop = stickyResult.potentialStickyTop;
+            potentialStickyBottom = stickyResult.potentialStickyBottom;
+        }
 
-            // 识别吸顶吸底元素
-            if (style.position === 'fixed' && screenAreaRatio > CCMConfig.getInstance().getMinSARTofStickyComponent() && 
-                screenAreaRatio < CCMConfig.getInstance().getMaxSARTofStickyComponent() && parseInt(style.left) === 0) {
-                // 有的容器是透明的，但是子元素是不透明的
-                // 有的容器是透明的，没有子元素
-                // 因此，要分别区别处理，全透明的子元素不影响弹窗缩放
-                // 如果容器透明，需要往下寻找不透明的全宽子元素
-                if(PopupWindow.isStickyComponentVisiable(el)) {
-                    // 只保留一个层级最高的吸顶吸底元素
-                    if(parseInt(style.top) === 0) {
-                        console.log(`找到吸顶元素${el.className}`);
-                        if(potentialStickyTop != null && !PopupWindow.isFirstElementOnTop(el, potentialStickyTop)) {
-                            continue;
-                        }
-                        potentialStickyTop = el;
-                    }
-                    if(parseInt(style.bottom) === 0) {
-                        console.log(`找到吸底元素${el.className}`);
-                        if(potentialStickyBottom != null && !PopupWindow.isFirstElementOnTop(el, potentialStickyBottom)) {
-                            continue;
-                        }
-                        potentialStickyBottom = el;
-                    }
-                }
+        return { potentialMasks, potentialStickyTop, potentialStickyBottom };
+    }
+
+    /**
+     * 检查元素是否为合格的候选者（可见且宽度足够）。
+     * @param el 元素
+     * @param style 计算后的样式
+     * @returns {boolean}
+     */
+    private static isElementQualified(el: Element, style: CSSStyleDeclaration): boolean {
+        // 排除未渲染的元素
+        const isVisible = (el as HTMLElement).offsetWidth > 0 && (el as HTMLElement).offsetHeight > 0 &&
+                          style.display !== 'none' && style.visibility !== 'hidden' && parseFloat(style.opacity) > 0;
+        
+        // 特例：处理opacity为0但背景半透明的特殊弹窗（如蚂蚁宠物小程序）
+        const isSpecialPopup = style.visibility !== 'hidden' && parseFloat(style.opacity) === 0 && Utils.isColorSemiTransparent(style.backgroundColor);
+        
+        if (!isVisible && !isSpecialPopup) {
+            return false;
+        }
+
+        // 排除宽度与屏幕宽度差异过大的元素
+        if (Math.abs((el as HTMLElement).offsetWidth - window.innerWidth) >= 2) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * 检查元素是否为潜在的遮罩（Mask）。
+     * @param el 元素
+     * @param style 计算后的样式
+     * @returns {boolean}
+     */
+    private static isPotentialMask(el: Element, style: CSSStyleDeclaration): boolean {
+        const screenAreaRatio = Utils.getScreenAreaRatio(el);
+        const minMaskAreaRatio = CCMConfig.getInstance().getMinMaskAreaRatioThreshold();
+
+        // Case 1: 屏占比足够大且背景半透明
+        if (screenAreaRatio > minMaskAreaRatio && Utils.isBackgroundSemiTransparent(style)) {
+            return true;
+        }
+
+        // Case 2: 特例 - DOM结构弹窗（fixed父+absolute子+关闭按钮）
+        if (screenAreaRatio > minMaskAreaRatio && style.position === Constant.fixed && el.children.length === 1) {
+            const child = el.children[0];
+            if (getComputedStyle(child).position === Constant.absolute &&
+                Utils.getScreenAreaRatio(child) > CCMConfig.getInstance().getMinContentAreaRatioThreshold() &&
+                Utils.hasCloseButton(child)) {
+                return true;
             }
         }
-        return {potentialMasks, potentialStickyTop, potentialStickyBottom};
+        
+        // Case 3: 特例 - 使用box-shadow实现的遮罩
+        if (style.position === 'fixed' && LayoutUtils.analyzeComputedBoxShadow(style.boxShadow)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 检查元素是否为吸顶或吸底元素，并返回更新后的结果。
+     * @param el 当前元素
+     * @param style 计算后的样式
+     * @param potentialStickyTop 已找到的吸顶元素
+     * @param potentialStickyBottom 已找到的吸底元素
+     * @returns {{potentialStickyTop: Element | null, potentialStickyBottom: Element | null}}
+     */
+    private static checkStickyElement(el: Element, style: CSSStyleDeclaration, potentialStickyTop: Element | null, potentialStickyBottom: Element | null) {
+        let updatedTop = potentialStickyTop;
+        let updatedBottom = potentialStickyBottom;
+
+        const screenAreaRatio = Utils.getScreenAreaRatio(el);
+        const isStickyCandidate = style.position === 'fixed' &&
+                                  parseInt(style.left) === 0 &&
+                                  screenAreaRatio > CCMConfig.getInstance().getMinSARTofStickyComponent() &&
+                                  screenAreaRatio < CCMConfig.getInstance().getMaxSARTofStickyComponent() &&
+                                  PopupWindow.isStickyComponentVisiable(el);
+
+        if (!isStickyCandidate) {
+            return { potentialStickyTop, potentialStickyBottom };
+        }
+
+        // 检查是否为吸顶元素
+        if (parseInt(style.top) === 0) {
+            console.log(`找到吸顶元素${el.className}`);
+            // 如果没有已知的吸顶，或者当前元素在更上层，则更新
+            if (updatedTop === null || PopupWindow.isFirstElementOnTop(el, updatedTop)) {
+                updatedTop = el;
+            }
+        }
+
+        // 检查是否为吸底元素
+        if (parseInt(style.bottom) === 0) {
+            console.log(`找到吸底元素${el.className}`);
+            // 如果没有已知的吸底，或者当前元素在更上层，则更新
+            if (updatedBottom === null || PopupWindow.isFirstElementOnTop(el, updatedBottom)) {
+                updatedBottom = el;
+            }
+        }
+        
+        return { potentialStickyTop: updatedTop, potentialStickyBottom: updatedBottom };
     }
 
     /**
@@ -241,40 +290,72 @@ export class PopupWindow {
         });
     }
 
+    /**
+     * 在给定的兄弟节点及其所有子节点中，寻找最佳候选弹窗内容。
+     * @param sibling - 要搜索的兄弟节点（作为根节点）。
+     * @param maskNode - 蒙版节点，用于位置和 z-index 比较。
+     * @param maskZIndex - 已经计算好的蒙版 z-index。
+     * @returns 返回一个包含最佳候选者及其屏幕面积比的对象。
+     */
+    private static findBestCandidateInSibling(
+        sibling: Element,
+        maskNode: Element,
+        maskZIndex: number
+    ): { candidate: Element | null; ratio: number } {
+        let bestCandidate: Element | null = null;
+        let maxRatio = 0;
+    
+        // 1. 获取所有候选节点（包括兄弟节点自身及其所有后代）
+        const candidates = [sibling, ...Array.from(sibling.querySelectorAll('*'))];
+    
+        // 2. 根据兄弟节点是位于蒙版节点之前还是之后，确定z-index的比较偏移量
+        //    这解决了长兄/弟弟节点与蒙版z-index相等时的堆叠上下文问题。
+        const maskZIndexOffset = PopupWindow.isPreviousElementSibling(maskNode, sibling) ? 1 : 0;
+    
+        // 3. 遍历所有候选节点，找出最优解
+        for (const node of candidates) {
+            const nodeZIndex = Utils.zIndexToNumber(window.getComputedStyle(node).zIndex);
+    
+            // 核心判断：节点的z-index必须高于（或等于，对于弟弟节点）蒙版的z-index
+            if (nodeZIndex >= maskZIndex + maskZIndexOffset) {
+                const ratio = Utils.getScreenAreaRatio(node);
+                if (ratio > maxRatio) {
+                    maxRatio = ratio;
+                    bestCandidate = node;
+                }
+            }
+        }
+    
+        return { candidate: bestCandidate, ratio: maxRatio };
+    }
+    
     // 1. 寻找最佳兄弟内容候选者(B型弹窗)
     // 2、如果mask的children节点和兄弟节点的数量都为0，需要继续往上寻找父节点
     // 3、往上找到最多3个节点（规则约束）
     // 4、最先找到一个节点，除mask节点之外还有其他它有子节点，且包含close按钮，则这个节点是根节点
     // 5、如果找到的兄弟节点是mask的长兄节点，则需要判断它的zindex，保证在堆叠关系中，兄弟节点在mask节点的上面
-    private static findBestSiblingContent(maskNode:Element) : [Element,Element] {
+    private static findBestSiblingContent(maskNode: Element): [Element | null, Element | null] {
         let bestCandidate: Element | null = null;
         let maxRatio = 0;
+    
         const maskZIndex = Utils.zIndexToNumber(window.getComputedStyle(maskNode).zIndex);
-        
         const [siblings, root] = Utils.findSiblingContent(maskNode);
-
-        // CSS堆叠上下文的判断逻辑
+    
+        // 遍历所有可能的兄弟容器
         for (const sibling of siblings) {
-            // 只要有一个兄弟容器的层级高于或等于遮罩，就认为其内部所有内容都可见
-            const candidatesInSibling: Element[] = [sibling];
-            // 兄弟节点自身也必须算在内
-            candidatesInSibling.push(sibling);
-            sibling.querySelectorAll('*').forEach(node_ => candidatesInSibling.push(node_));
-            // 对于长兄节点，它的zindex与蒙版节点zindex相等，会导致长兄节点显示在蒙版的底层，不满足弹窗内容节点的筛选要求
-            // 通过设置zindex的偏移解决这个比对问题,长兄节点与蒙版zindex+1比较，弟弟节点与蒙版zindex比较。
-            const maskZIndexOffset = PopupWindow.isPreviousElementSibling(maskNode,sibling)?1:0;
-            for (const node of candidatesInSibling) {
-                const siblingZIndex = Utils.zIndexToNumber(window.getComputedStyle(node).zIndex);
-                if (siblingZIndex >= (maskZIndex + maskZIndexOffset)) {
-                    const ratio = Utils.getScreenAreaRatio(node);
-                    if (ratio > maxRatio) {
-                        maxRatio = ratio;
-                        bestCandidate = node;
-                    }
-                }
+            // 在每个兄弟容器中寻找最佳候选节点
+            const result = this.findBestCandidateInSibling(sibling, maskNode, maskZIndex);
+    
+            // 如果在当前兄弟容器中找到了更好的候选者，则更新全局最优解
+            if (result.ratio > maxRatio) {
+                maxRatio = result.ratio;
+                bestCandidate = result.candidate;
             }
         }
-        return maxRatio >= CCMConfig.getInstance().getMinContentAreaRatioThreshold() ? [bestCandidate, root] : [null, null];
+    
+        // 最后，根据配置的阈值决定是否返回找到的最佳候选者
+        const minThreshold = CCMConfig.getInstance().getMinContentAreaRatioThreshold();
+        return maxRatio >= minThreshold ? [bestCandidate, root] : [null, null];
     }
 
     // 2. 寻找最佳后代内容候选者(A型/C型弹窗)
@@ -300,147 +381,184 @@ export class PopupWindow {
     }
     
     /**
-     * 查找页面上所有符合条件的弹窗组件
-     * @param {HTMLElement} root - 根节点
-     * @returns { PopupInfo | null }
+     * 查找页面上所有符合条件的弹窗组件 (主函数)
+     * @param {PotentialElements} potentialElements - 包含潜在遮罩和粘性元素的集合
+     * @returns {PopupInfo | null} 返回最顶层的有效弹窗信息，否则返回 null
      */
-    private static findPopupsInternal(potentialElements:PotentialElements): PopupInfo | null {
-        const potentialMasks: Element[] = potentialElements.potentialMasks;
-        if(!potentialMasks || potentialMasks.length <1) {
-            return null;
-        }
- 
-        // 临时存储所有找到的弹窗及其节点
-        const allDetectedPopups: { info: PopupInfo; node: Element }[] = [];
+    private static findPopupsInternal(potentialElements: PotentialElements): PopupInfo | null {
+        const { potentialMasks, potentialStickyTop, potentialStickyBottom } = potentialElements;
+        if (!potentialMasks || potentialMasks.length === 0) return null;
 
         potentialMasks.sort((a, b) => Utils.getElementDepth(b) - Utils.getElementDepth(a));
 
-        potentialMasks.forEach(maskNode => {
-            let rootNode: Element | null = null;
-            let contentNode: Element | null = null;
-            let popupType = PopupType.Unknown;
+        const allDetectedPopups = potentialMasks
+            .map(maskNode => this.identifyPopupFromMask(maskNode))
+            .filter((p): p is { info: PopupInfo; node: Element } => p !== null);
 
-            const [bestSiblingContent, root] = PopupWindow.findBestSiblingContent(maskNode);
-            
-            // 3. 决策：优先选择兄弟节点作为内容（B型），因为这是更明确的结构
-            if (bestSiblingContent) {
-                const style = getComputedStyle(maskNode.parentNode as Element);
-                // 即使子节点的 position 是 absolute 或 fixed，它仍然会受到父节点 opacity: 0 的影响，从而变得不可见
-                // 因此对于B型弹窗，需要过滤根节点节透明的情况
-                if(!(style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0)) {
-                    console.log(`Process potentialMasks ${maskNode}, has Large Child: ${bestSiblingContent}`);
-                    popupType = PopupType.B;
-                    contentNode = bestSiblingContent;
-                    rootNode = root;
-                }
-            } else {
-                // 继承2.2 mask的后代节点
-                const bestDescendantContent = PopupWindow.findBestDescendantContent(maskNode);
-                // 如果没有合适的兄弟节点，再采纳后代节点作为内容（A/C型）
-                // 对于A/c型弹窗，需要过滤mask节点为透明的情况)
-                if(bestDescendantContent && Utils.visualFilter(maskNode)) {
-                    contentNode = bestDescendantContent;
-                    const maskPosition = window.getComputedStyle(maskNode).position;
-                    console.log(`Process potentialMasks ${maskNode}, maskPosition: ${maskPosition}`);
-                    if (maskPosition === 'fixed' || maskPosition === 'absolute') {
-                        popupType = PopupType.C;
-                        rootNode = maskNode;
-                    } else {
-                        popupType = PopupType.A;
-                        let parent: Element | null = maskNode.parentElement;
-                        while (parent && parent !== document.body) {
-                            const parentPosition = window.getComputedStyle(parent).position;
-                            if (parentPosition === 'fixed' || parentPosition === 'absolute') {
-                                rootNode = parent;
-                                break;
-                            }
-                            parent = parent.parentElement;
-                        }
-                        if (!rootNode) rootNode = maskNode.parentElement;
-                    }
-                }else{
-                    console.log(`Unkown PopUp type, mask node is ${maskNode}`);
-                }
-            }
-            if (rootNode && maskNode) {
-                console.log(`Process potentialMasks ${maskNode.className}, rootNode: ${rootNode.className}`);
-                const rootStyle = window.getComputedStyle(rootNode);
-                const maskStyle = window.getComputedStyle(maskNode);
-                const popupInfo: PopupInfo = {
-                    root_node: rootNode as HTMLElement,
-                    mask_node: maskNode as HTMLElement,
-                    content_node: contentNode as HTMLElement,
-                    popup_type: popupType,
-                    root_position: rootStyle.position,
-                    root_zindex: Utils.zIndexToNumber(rootStyle.zIndex),
-                    has_mask:true,
-                    root_screen_area_ratio: Utils.getScreenAreaRatio(rootNode),
-                    root_is_visiable: Utils.isElementVisibleInViewPort(rootNode),
-                    has_close_button: Utils.hasCloseButton(contentNode || rootNode),
-                    mask_area_ratio: Utils.getScreenAreaRatio(maskNode),
-                    mask_position: maskStyle.position,
-                    mask_zindex: Utils.zIndexToNumber(maskStyle.zIndex),
-                    stickyTop_height:0,
-                    stickyBottom_height:0
-                };
-                
-                // 将弹窗信息和节点存入临时列表
-                allDetectedPopups.push({ info: popupInfo, node: rootNode });
-            }
-        });
-
-        // 1. 筛选出所有作为“父弹窗”的弹窗对象
-        const parentPopups = allDetectedPopups.filter(p => {
-                // 判断是否存在任何一个 q 被 p 包含。
-                return allDetectedPopups.some(q => {
-                    if(p.node !== q.node) {
-                        return p.node.contains(q.node);
-                    } else {
-                        // 如果mask存在“父子关系，取子元素”
-                        const pm = p.info.mask_node;
-                        const qm = q.info.mask_node;
-                        return (qm !== pm) && pm.contains(qm);
-                    }
-                }
-            );
-        });
-
-        // 2. 将找到的父弹窗的 info 属性提取出来，放入 Set 中
-        const popupsToRemove = new Set<PopupInfo>(parentPopups.map(p => p.info));
-
-        // 3. 返回过滤后的结果，使用模型预测
-        const finalPopups = allDetectedPopups
-            .map(p => p.info)
-            .filter(info => {
-                if(!popupsToRemove.has(info)) {
-                    // fastPass快速判断
-                    if(info.has_mask && info.mask_area_ratio > 95 && (info.mask_position === 'fixed' || info.mask_position === 'absolute')) {
-                        return  true;
-                    }
-                    // 通过模型判断
-                    const result = PopupRecog.predictIsPopup(info);
-                    return result.prediction;
-                }
-                return false;
-            });
+        if (allDetectedPopups.length === 0) return null;
         
-        // 多个弹窗，选择最上层的一个返回
-        const finalPop = PopupWindow.findTopMostPopup(finalPopups);
-        // 如果存在吸顶和吸底元素，需要更新finalPop的吸顶吸底元素的高度值
-        if(finalPop!= null && potentialElements.potentialStickyBottom != null) {
-            const stickyBottomStyle = getComputedStyle(potentialElements.potentialStickyBottom);
-            if (LayoutUtils.compareZIndex(finalPop.mask_node, potentialElements.potentialStickyBottom as HTMLElement) <= 0) {
-                finalPop.stickyBottom_height = parseInt(stickyBottomStyle.height);
-            }
-        }
-        if(finalPop != null && potentialElements.potentialStickyTop != null) {
-            const stickyTopStyle = getComputedStyle(potentialElements.potentialStickyTop);
-            if (LayoutUtils.compareZIndex(finalPop.mask_node, potentialElements.potentialStickyTop as HTMLElement) <= 0) {
-                finalPop.stickyTop_height = parseInt(stickyTopStyle.height);
-            }
-        }
+        const nonNestedPopups = this.filterNestedPopups(allDetectedPopups);
+        const finalPopups = this.filterByPrediction(nonNestedPopups);
+        const topMostPopup = PopupWindow.findTopMostPopup(finalPopups);
+        
+        if (!topMostPopup) return null;
 
-        return finalPop;
+        this.updateStickyHeights(topMostPopup, { potentialStickyTop, potentialStickyBottom });
+        return topMostPopup;
+    }
+
+    /**
+     * [辅助函数] 从单个遮罩节点识别并构建弹窗信息对象
+     */
+    private static identifyPopupFromMask(maskNode: Element): { info: PopupInfo; node: Element } | null {
+        const popupDetails = this.determinePopupStructure(maskNode);
+        if (!popupDetails) return null;
+
+        const { rootNode, contentNode, popupType } = popupDetails;
+        return { 
+            info: this.createPopupInfo(rootNode, maskNode, contentNode, popupType), 
+            node: rootNode 
+        };
+    }
+    
+    /**
+     * [辅助函数] 确定弹窗的结构（根、内容、类型）
+     */
+    private static determinePopupStructure(maskNode: Element): { rootNode: Element; contentNode: Element; popupType: PopupType } | null {
+        const [bestSiblingContent, root] = PopupWindow.findBestSiblingContent(maskNode);
+
+        if (bestSiblingContent && root) {
+            // **修正 #1**: 严格使用 `maskNode.parentNode` 进行可见性检查
+            const parentNode = maskNode.parentNode;
+            if (!parentNode || !(parentNode instanceof Element)) return null;
+
+            const style = getComputedStyle(parentNode);
+            const isVisible = !(style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0);
+            
+            if (isVisible) {
+                return { contentNode: bestSiblingContent, rootNode: root, popupType: PopupType.B };
+            } else {
+                return null;
+            }
+        } else {
+            return this.findDescendantBasedPopup(maskNode);
+        }
+    }
+
+    /**
+     * [辅助函数] 尝试查找 A 或 C 型弹窗
+     */
+    private static findDescendantBasedPopup(maskNode: Element): { rootNode: Element; contentNode: Element; popupType: PopupType.A | PopupType.C } | null {
+        const bestDescendantContent = PopupWindow.findBestDescendantContent(maskNode);
+        if (!bestDescendantContent || !Utils.visualFilter(maskNode)) return null;
+        
+        const maskPosition = window.getComputedStyle(maskNode).position;
+
+        if (maskPosition === 'fixed' || maskPosition === 'absolute') {
+            return { contentNode: bestDescendantContent, rootNode: maskNode, popupType: PopupType.C };
+        } else {
+            // 此处逻辑与原始代码的 while + if(!rootNode) fallback 等价
+            const rootNode = this.findPositionedAncestor(maskNode) || maskNode.parentElement;
+            if (rootNode) {
+                return { contentNode: bestDescendantContent, rootNode: rootNode, popupType: PopupType.A };
+            }
+        }
+        return null;
+    }
+
+    /**
+     * [辅助函数] 向上遍历 DOM 树查找定位的祖先
+     */
+    private static findPositionedAncestor(element: Element): Element | null {
+        let parent = element.parentElement;
+        while (parent && parent !== document.body) {
+            const position = window.getComputedStyle(parent).position;
+            if (position === 'fixed' || position === 'absolute') {
+                return parent;
+            }
+            parent = parent.parentElement;
+        }
+        return null;
+    }
+
+    /**
+     * [辅助函数] 过滤掉作为其他弹窗容器的父弹窗
+     */
+    private static filterNestedPopups(popups: { info: PopupInfo; node: Element }[]): PopupInfo[] {
+        const parentPopups = new Set<PopupInfo>();
+        for (const p of popups) {
+            for (const q of popups) {
+                if (p === q) continue;
+
+                // **修正 #2**: 严格复现原始的 if/else 互斥逻辑
+                let isParent = false;
+                if (p.node !== q.node) {
+                    isParent = p.node.contains(q.node);
+                } else { // 只有在 p.node === q.node 时，才比较 mask
+                    const pMask = p.info.mask_node;
+                    const qMask = q.info.mask_node;
+                    isParent = (pMask !== qMask) && pMask.contains(qMask);
+                }
+
+                if (isParent) {
+                    parentPopups.add(p.info);
+                    break; // p 已确定是父弹窗，跳出内层循环
+                }
+            }
+        }
+        return popups.map(p => p.info).filter(info => !parentPopups.has(info));
+    }
+
+    /**
+     * [辅助函数] 通过快速通道规则或模型预测来过滤弹窗
+     */
+    private static filterByPrediction(popups: PopupInfo[]): PopupInfo[] {
+        return popups.filter(info => {
+            const isFastPass = info.has_mask && 
+                             info.mask_area_ratio > 95 && 
+                             (info.mask_position === 'fixed' || info.mask_position === 'absolute');
+            if (isFastPass) return true;
+            
+            return PopupRecog.predictIsPopup(info).prediction;
+        });
+    }
+    
+    /**
+     * [辅助函数] 更新弹窗的 sticky header/footer 高度
+     */
+    private static updateStickyHeights(popup: PopupInfo, stickyElements: { potentialStickyTop?: Element | null, potentialStickyBottom?: Element | null }): void {
+        const { potentialStickyTop, potentialStickyBottom } = stickyElements;
+        if (potentialStickyTop && LayoutUtils.compareZIndex(popup.mask_node, potentialStickyTop as HTMLElement) <= 0) {
+            popup.stickyTop_height = parseInt(getComputedStyle(potentialStickyTop).height, 10) || 0;
+        }
+        if (potentialStickyBottom && LayoutUtils.compareZIndex(popup.mask_node, potentialStickyBottom as HTMLElement) <= 0) {
+            popup.stickyBottom_height = parseInt(getComputedStyle(potentialStickyBottom).height, 10) || 0;
+        }
+    }
+
+    /**
+     * [辅助函数] 创建 PopupInfo 对象
+     */
+    private static createPopupInfo(rootNode: Element, maskNode: Element, contentNode: Element, popupType: PopupType): PopupInfo {
+        const rootStyle = window.getComputedStyle(rootNode);
+        const maskStyle = window.getComputedStyle(maskNode);
+        return {
+            root_node: rootNode as HTMLElement,
+            mask_node: maskNode as HTMLElement,
+            content_node: contentNode as HTMLElement,
+            popup_type: popupType,
+            root_position: rootStyle.position,
+            root_zindex: Utils.zIndexToNumber(rootStyle.zIndex),
+            has_mask: true,
+            root_screen_area_ratio: Utils.getScreenAreaRatio(rootNode),
+            root_is_visiable: Utils.isElementVisibleInViewPort(rootNode),
+            has_close_button: Utils.hasCloseButton(contentNode || rootNode),
+            mask_area_ratio: Utils.getScreenAreaRatio(maskNode),
+            mask_position: maskStyle.position,
+            mask_zindex: Utils.zIndexToNumber(maskStyle.zIndex),
+            stickyTop_height: 0,
+            stickyBottom_height: 0
+        };
     }
 
     /**

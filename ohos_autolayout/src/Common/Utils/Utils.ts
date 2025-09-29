@@ -30,7 +30,6 @@ export default class Utils {
      * - 双折叠 内屏:782(高)*717(宽),宽高比=0.917 , 内屏：798 * 711(宽)，,宽高比=0.891
      * - 三折叠 M态: 776 * 712(宽),宽高比=0.918
      * - 三折叠 G态: 776 * 1107(宽),宽高比=1.423
-     * - HOPE: 内屏：683*443(683*530)，宽高比=1.542，(1.28~2)  外屏：418*450，宽高比=0.929 (0.9~1)
      */
     static isWideScreen(): boolean {
         const screenHeight = screen.availHeight;

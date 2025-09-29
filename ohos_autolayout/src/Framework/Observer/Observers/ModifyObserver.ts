@@ -10,6 +10,12 @@ import Tag from '../../../Debug/Tag';
 import IntelligentLayout from '../../../Framework/IntelligentLayout';
 import ObserverHandler from '../ObserverHandler';
 
+interface AnimationDurations {
+    animationDur: number,
+    transitionDur: number,
+    total: number
+}
+
 export default class ModifyObserver {
     static modifyObserver: MutationObserver;
     private static TAG = Tag.modifyObserver;
@@ -214,7 +220,7 @@ export default class ModifyObserver {
     }
   
     // 获取元素当前正在运行的动画总时长（animation + transition）
-    static getAnimDurations(el: HTMLElement) {
+    static getAnimDurations(el: HTMLElement): AnimationDurations {
         const cs = getComputedStyle(el);
         const animDur = ModifyObserver.cssTimeToMs(cs.animationDuration);
         const transDur = ModifyObserver.cssTimeToMs(cs.transitionDuration);

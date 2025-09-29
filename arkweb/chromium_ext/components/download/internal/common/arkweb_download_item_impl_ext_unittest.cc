@@ -163,7 +163,11 @@ class ArkWebDownloadItemImplExtTest : public ::testing::Test {
     }
     return false;
   }
-
+  void SetPercentCompleteTrue() {
+    download_item_->delegate_delayed_complete_ = false;
+    download_item_->total_bytes_ = 1;
+    download_item_->destination_info_.received_bytes = 1;
+  }
  protected:
   std::string original_command_line_;
   std::unique_ptr<MockDelegate> delegate_;
@@ -584,6 +588,43 @@ TEST_F(ArkWebDownloadItemImplExtTest, RunCallbackIfStateMatch_004) {
   EXPECT_TRUE(callback_called);
 }
 
+TEST_F(ArkWebDownloadItemImplExtTest, RunCallbackIfStateMatch_005) {
+  SetReadDownloadCallback(
+      base::OnceCallback<void(const std::vector<uint8_t>&)>());
+  SetState(DownloadItemImpl::MAX_DOWNLOAD_INTERNAL_STATE);
+  RunCallbackIfStateMatch();
+  EXPECT_EQ(0u, task_environment_.GetPendingMainThreadTaskCount());
+}
+
+TEST_F(ArkWebDownloadItemImplExtTest, RunCallbackIfStateMatch_006) {
+  SetReadDownloadCallback(
+      base::OnceCallback<void(const std::vector<uint8_t>&)>());
+  SetState(DownloadItemImpl::MAX_DOWNLOAD_INTERNAL_STATE);
+  SetDownloadFile(std::move(mock_download_file_));
+  RunCallbackIfStateMatch();
+  EXPECT_EQ(0u, task_environment_.GetPendingMainThreadTaskCount());
+}
+
+TEST_F(ArkWebDownloadItemImplExtTest, RunCallbackIfStateMatch_007) {
+  SetReadDownloadCallback(
+      base::OnceCallback<void(const std::vector<uint8_t>&)>());
+  SetState(DownloadItemImpl::COMPLETE_INTERNAL);
+  RunCallbackIfStateMatch();
+  EXPECT_EQ(0u, task_environment_.GetPendingMainThreadTaskCount());
+}
+
+TEST_F(ArkWebDownloadItemImplExtTest, RunCallbackIfStateMatch_008) {
+  bool callback_called = false;
+  SetReadDownloadCallback(base::BindOnce(
+      [](bool* called, const std::vector<uint8_t>& data) { *called = true; },
+      &callback_called));
+
+  SetState(DownloadItemImpl::MAX_DOWNLOAD_INTERNAL_STATE);
+  RunCallbackIfStateMatch();
+  EXPECT_EQ(0u, task_environment_.GetPendingMainThreadTaskCount());
+  EXPECT_FALSE(callback_called);
+}
+
 TEST_F(ArkWebDownloadItemImplExtTest, RunCallbackIfExistsCallback_001) {
   SetReadDownloadCallback(
       base::OnceCallback<void(const std::vector<uint8_t>&)>());
@@ -653,6 +694,17 @@ TEST_F(ArkWebDownloadItemImplExtTest, ReadDataFromDownloadFileDone_002) {
   ReadDataFromDownloadFileDone(std::vector<uint8_t>{6, 7, 8});
   EXPECT_FALSE(callback_called);
   EXPECT_TRUE(received_data.empty());
+}
+
+TEST_F(ArkWebDownloadItemImplExtTest, ReadDataFromDownloadFileDone_003) {
+  bool callback_called = false;
+  SetReadDownloadCallback(base::BindOnce(
+      [](bool* called, const std::vector<uint8_t>& data) { *called = true; },
+      &callback_called));
+  std::vector<uint8_t> test_data = {1, 2, 3, 4, 5};
+  ReadDataFromDownloadFileDone(test_data);
+  EXPECT_FALSE(IsReadDownload());
+  EXPECT_TRUE(callback_called);
 }
 
 TEST_F(ArkWebDownloadItemImplExtTest, ReadDownloadData_001) {
@@ -758,5 +810,91 @@ TEST_F(ArkWebDownloadItemImplExtTest, ReadDownloadData_004) {
   task_environment_.RunUntilIdle();
   EXPECT_EQ(1, read_and_run_callback_called_count);
   EXPECT_FALSE(callback_called);
+}
+
+TEST_F(ArkWebDownloadItemImplExtTest, ReadDownloadData_005) {
+  SetReadDownloadCallback(
+    base::OnceCallback<void(const std::vector<uint8_t>&)>());
+bool new_callback_called = false;
+  base::OnceCallback<void(const std::vector<uint8_t>&)> new_callback =
+      base::BindOnce([](bool* called,
+                        const std::vector<uint8_t>& data) { *called = true; },
+                     &new_callback_called);
+  download_item_->ReadDownloadData("test_guid", 1024, std::move(new_callback));
+  EXPECT_FALSE(IsReadDownload());
+}
+
+TEST_F(ArkWebDownloadItemImplExtTest, ReadDownloadData_006) {
+  int read_data_callback_called_count = 0;
+  MockArkWebDownloadFileImplExt mock_ext;
+  EXPECT_CALL(*mock_download_file_, AsArkWebDownloadFileImplExt())
+      .Times(2)
+      .WillRepeatedly(testing::Return(&mock_ext));
+  EXPECT_CALL(mock_ext, RegisterReadDownloadCallback(testing::_, 1024))
+      .Times(1);
+  EXPECT_CALL(mock_ext, GetNoHoleDownloadDataSize())
+      .WillOnce(testing::Return(1024));
+  EXPECT_CALL(mock_ext, ReadDownloadDataAndRunCallback(1024))
+      .WillOnce([this, &read_data_callback_called_count]() {
+        read_data_callback_called_count++;
+        LOG(INFO) << "ReadDownloadDataAndRunCallback called, count: "
+                  << read_data_callback_called_count;
+        ReadDataFromDownloadFileDone(std::vector<uint8_t>{1, 2, 3});
+      });
+  SetState(DownloadItemImpl::COMPLETE_INTERNAL);
+  SetPercentCompleteTrue();
+  SetReadDownloadCallback(
+      base::OnceCallback<void(const std::vector<uint8_t>&)>());
+  SetDownloadFile(std::move(mock_download_file_));
+  bool callback_called = false;
+  std::vector<uint8_t> received_data;
+  base::OnceCallback<void(const std::vector<uint8_t>&)> callback =
+      base::BindOnce(
+          [](bool* called, std::vector<uint8_t>* data,
+             const std::vector<uint8_t>& result) {
+            *called = true;
+            *data = result;
+          },
+          &callback_called, &received_data);
+  download_item_->ReadDownloadData("test_guid", 1024, std::move(callback));
+  task_environment_.RunUntilIdle();
+  EXPECT_EQ(1, read_data_callback_called_count);
+}
+
+TEST_F(ArkWebDownloadItemImplExtTest, ReadDownloadData_007) {
+  int read_data_callback_called_count = 0;
+  MockArkWebDownloadFileImplExt mock_ext;
+  EXPECT_CALL(*mock_download_file_, AsArkWebDownloadFileImplExt())
+      .Times(2)
+      .WillRepeatedly(testing::Return(&mock_ext));
+  EXPECT_CALL(mock_ext, RegisterReadDownloadCallback(testing::_, 1024))
+      .Times(1);
+  EXPECT_CALL(mock_ext, GetNoHoleDownloadDataSize())
+      .WillOnce(testing::Return(1024));
+  EXPECT_CALL(mock_ext, ReadDownloadDataAndRunCallback(1024))
+      .WillOnce([this, &read_data_callback_called_count]() {
+        read_data_callback_called_count++;
+        LOG(INFO) << "ReadDownloadDataAndRunCallback called, count: "
+                  << read_data_callback_called_count;
+        ReadDataFromDownloadFileDone(std::vector<uint8_t>{1, 2, 3});
+      });
+  SetState(DownloadItemImpl::MAX_DOWNLOAD_INTERNAL_STATE);
+  SetPercentCompleteTrue();
+  SetReadDownloadCallback(
+      base::OnceCallback<void(const std::vector<uint8_t>&)>());
+  SetDownloadFile(std::move(mock_download_file_));
+  bool callback_called = false;
+  std::vector<uint8_t> received_data;
+  base::OnceCallback<void(const std::vector<uint8_t>&)> callback =
+      base::BindOnce(
+          [](bool* called, std::vector<uint8_t>* data,
+             const std::vector<uint8_t>& result) {
+            *called = true;
+            *data = result;
+          },
+          &callback_called, &received_data);
+  download_item_->ReadDownloadData("test_guid", 1024, std::move(callback));
+  task_environment_.RunUntilIdle();
+  EXPECT_EQ(1, read_data_callback_called_count);
 }
 }  // namespace download

@@ -90,6 +90,16 @@ TEST_F(ArkWebNativeObjectTest, FireValidCallbackTest_002) {
   EXPECT_FALSE(result);
 }
 
+TEST_F(ArkWebNativeObjectTest, FireValidCallbackTest_003) {
+  bool callback_executed = false;
+  web_object_->SetValidCallback([&]() { callback_executed = true; });
+  web_object_->SetWebWeakPtr(nweb_impl_);
+  auto result = web_object_->FireValidCallback();
+  nweb_impl_->OnDestroy();
+  EXPECT_TRUE(callback_executed);
+  EXPECT_TRUE(result);
+}
+
 TEST_F(ArkWebNativeObjectTest, FireLoadStartCallbackTest_001) {
   auto result = web_object_->FireLoadStartCallback();
   EXPECT_FALSE(result);
@@ -127,6 +137,28 @@ TEST_F(ArkWebNativeObjectTest, FireDestroyCallbackTest_002) {
   auto result = web_object_->FireDestroyCallback();
   EXPECT_TRUE(result);
   EXPECT_TRUE(callbackExecuted);
+}
+
+TEST_F(ArkWebNativeObjectTest, FireScrollCallback_001) {
+  double x = 10.0;
+  double y = 20.0;
+  auto result = web_object_->FireScrollCallback(x, y);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(ArkWebNativeObjectTest, FireScrollCallback_002) {
+  double expected_x = 10.0;
+  double expected_y = 20.0;
+  double actual_x = 0.0;
+  double actual_y = 0.0;
+  web_object_->SetScrollCallback([&](double x, double y) {
+    actual_x = x;
+    actual_y = y;
+  });
+  bool result = web_object_->FireScrollCallback(expected_x, expected_y);
+  EXPECT_TRUE(result);
+  EXPECT_DOUBLE_EQ(expected_x, actual_x);
+  EXPECT_DOUBLE_EQ(expected_y, actual_y);
 }
 
 }  // namespace OHOS::NWeb

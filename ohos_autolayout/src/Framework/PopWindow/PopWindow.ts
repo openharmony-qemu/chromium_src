@@ -9,6 +9,7 @@ import { PopupInfo } from "../Popup/PopupInfo";
 import { PopupType } from "../Popup/PopupType";
 import { PopupDecisionTreeType } from "../Popup/PopupDecisionTreeType";
 import { PopupDecisionTree } from "../Popup/PopupDecisionTree";
+import { CCMConfig } from "../Common/CCMConfig";
 
 /**
  * 弹窗
@@ -21,7 +22,6 @@ export class PopWindow extends AComponent {
     private truncateNodes: HTMLElement[] = [];  // 被截断的节点
     private truncateBkgImgNodes: HTMLElement[] = [];    // 背景图被截断的节点（但是rect没有在视口内被截断）
     private popupInfo: PopupInfo;
-    private scaleMinLimit: number = 0.5;
     private bottomNode: HTMLElement = null;
     private originalStyles = new Map<HTMLElement, any>();
     private relayoutTimes: number = 0;
@@ -31,6 +31,8 @@ export class PopWindow extends AComponent {
     private isCloseButtonTruncatedByScroll = false;
     private popupDecisionTreeType = PopupDecisionTreeType.Center;
     private equivalentMask: HTMLElement;
+    private minScaleFactor = CCMConfig.getInstance().getMinScaleFactor() / 100;
+    private scaleAnimationDuration = CCMConfig.getInstance().getScaleAnimationDuration();
 
     resetStyle(): void {
         throw new Error("Method not implemented.");
@@ -264,7 +266,7 @@ export class PopWindow extends AComponent {
         let oriHeight = this.maxBottom - this.minTop;
         let screenHeight = this.visualHeight;
         this.scale = (screenHeight * 0.7) / oriHeight;
-        this.scale = Math.max(this.scale, this.scaleMinLimit);
+        this.scale = Math.max(this.scale, this.minScaleFactor);
         console.log(`PopWindow智能布局: calcScale = ${this.scale}, bottomNode: ${this.bottomNode ?.className}`);
     }
 
@@ -650,7 +652,7 @@ export class PopWindow extends AComponent {
         StyleSetter.setStyle(element, Constant.transform, `${currentTransform}
             translate(${offsetX}px, ${offsetY}px)
             scale(${newScale})`);
-        StyleSetter.setStyle(element, Constant.transition, 'all 0.1s ease-in');
+        StyleSetter.setStyle(element, Constant.transition, `all ${this.scaleAnimationDuration}ms ease-in`);
 
         // 7. transform 属性对 display: inline的元素不起作用
         if (style.display === 'inline') {
@@ -822,6 +824,6 @@ export class PopWindow extends AComponent {
 
         let newStyle = `${currentTransform} translate(0px, ${translateY}px)`;
         StyleSetter.setStyle(closeButton, Constant.transform, newStyle);
-        StyleSetter.setStyle(closeButton, Constant.transition, 'all 0.1s ease-in');
+        StyleSetter.setStyle(closeButton, Constant.transition, `all ${this.scaleAnimationDuration}ms ease-in`);
     }
 }

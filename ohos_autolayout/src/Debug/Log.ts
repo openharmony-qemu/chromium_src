@@ -23,7 +23,7 @@ export default class Log {
     }
 
     static i(ele: HTMLElement, log: string, tag: string) {
-        console.info(`HTMLElement: ${ele?.className}, log: ${log}, tag: ${tag}`);
+        // console.info(`HTMLElement: ${ele?.className}, log: ${log}, tag: ${tag}`);
     }
     static info(ele: HTMLElement, log: string, tag: string) {
         console.info(`HTMLElement: ${ele ?.className}, log: ${log}, tag: ${tag}`);

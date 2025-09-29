@@ -395,6 +395,7 @@ export default class Utils {
     static isColorSemiTransparent(colorValue: string): boolean {
         if (!colorValue) return false;
         colorValue = colorValue.toLowerCase().trim();
+        const opacityRange = CCMConfig.getInstance().getOpacityFilter();
         
         // 注意：纯透明不算
         if (colorValue === 'transparent') return false;
@@ -404,7 +405,7 @@ export default class Utils {
         if (colorValue.startsWith('rgba') || colorValue.startsWith('hsla')) {
             const alpha = parseFloat(colorValue.split(',')[3]);
             // 有alpha通道且值小于1,大于0
-            return !isNaN(alpha) && alpha > 0 && alpha < 1;
+            return !isNaN(alpha) && alpha > opacityRange[0] / 100 && alpha < opacityRange[1] / 100;
         }
         
         // HEX 带透明度 (#RRGGBBAA/#RGBA)
@@ -413,12 +414,12 @@ export default class Utils {
             // #RGBA 格式
             if (hex.length === 4) {
                 const alpha = parseInt(hex[3] + hex[3], 16) / 255;
-                return alpha > 0 && alpha < 1;
+                return alpha > opacityRange[0] / 100 && alpha < opacityRange[1] / 100;
             }
             // #RRGGBBAA 格式
             if (hex.length === 8) {
                 const alpha = parseInt(hex.slice(6, 8), 16) / 255;
-                return alpha > 0 && alpha < 1;
+                return alpha > opacityRange[0] / 100 && alpha < opacityRange[1] / 100;
             }
         }
         
@@ -448,10 +449,11 @@ export default class Utils {
         // 检测透明度滤镜
         if (/opacity$$[^)]*$$/i.test(filterValue)) {
             const match = filterValue.match(/opacity$$([^)]+)$$/);
+            const opacityRange = CCMConfig.getInstance().getOpacityFilter();
             if (match) {
                 const alpha = parseFloat(match[1].trim());
                 // 值小于100%表示透明度效果
-                return alpha > 0 && alpha < 1;
+                return alpha > opacityRange[0] / 100 && alpha < opacityRange[1] / 100;
             }
         }
         return false;
@@ -476,7 +478,8 @@ export default class Utils {
 
         // 2. 检查元素整体透明度
         const op = parseFloat(style.opacity);
-        if ( op > 0 && op < 1) return true;
+        const opacityRange = CCMConfig.getInstance().getOpacityFilter();
+        if ( op > opacityRange[0] / 100 && op < opacityRange[1] / 100) return true;
 
         // 3. 检查背景图片中的渐变透明
         if (Utils.hasSemiTransparentGradient(style.backgroundImage)) return true;

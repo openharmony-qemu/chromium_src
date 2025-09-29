@@ -55,7 +55,7 @@ export interface ICCMConfigBase {
    * 不同产品的窗口缩放系数
    * 例如: 55 对应的值是 55%
    */
-  minDesScale: number;
+  minScaleFactor: number;
 
   appRuleInfos: AppRuleInfo[];
 }
@@ -102,7 +102,7 @@ const defaultCCMConfig: ICCMConfig = {
   closeButtonPattern: ["close", "guanbi", "dele"],
   buttonPattern: ["button", 'btn'],
   scaleAnimationDuration: 100,
-  minDesScale: 55,
+  minScaleFactor: 55,
   breakpoints: [
     { widthRange: { min: 320, max: 500 }, aspectRatioRange: { min: 0.61, max: 1.63 } },
     { widthRange: { min: 660, max: 900 }, aspectRatioRange: { min: 0.89, max: 2.0 } },
@@ -129,7 +129,7 @@ export class CCMConfig {
   private _closeButtonPattern: string[];
   private _buttonPattern: string[];
   private _scaleAnimationDuration: number;
-  private _minDesScale: number;
+  private _minScaleFactor: number;
   private _breakpoints: Breakpoint[];
   private _appRuleInfos:AppRuleInfo[];
 
@@ -153,7 +153,7 @@ export class CCMConfig {
     this._closeButtonPattern = data.closeButtonPattern;
     this._buttonPattern = data.buttonPattern;
     this._scaleAnimationDuration = data.scaleAnimationDuration;
-    this._minDesScale = data.minDesScale;
+    this._minScaleFactor = data.minScaleFactor;
     this._breakpoints = data.breakpoints;
     this._appRuleInfos = data.appRuleInfos;
     this.appId = "";
@@ -202,8 +202,8 @@ export class CCMConfig {
     return this._scaleAnimationDuration;
   }
 
-  public getMinDesScale(): number {
-    return this._minDesScale;
+  public getMinScaleFactor(): number {
+    return this._minScaleFactor;
   }
   public getAppID(): string {
     return this.appId;
@@ -236,7 +236,7 @@ export class CCMConfig {
       this._opacityFilter = data.opacityFilter;
       this._minContentAreaRatioThreshold = data.minContentAreaRatioThreshold;
       this._scaleAnimationDuration = data.scaleAnimationDuration;
-      this._minDesScale = data.minDesScale ;
+      this._minScaleFactor = data.minScaleFactor ;
       this._appRuleInfos = typeof data.appRuleInfos === 'string' ? JSON.parse(data.appRuleInfos) : data.appRuleInfos;
   }
 

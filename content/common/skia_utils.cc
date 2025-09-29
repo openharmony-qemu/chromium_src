@@ -39,7 +39,12 @@ void InitializeSkia() {
     SkGraphics::Init();
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  const int kMB = 3 * 1024 * 1024;
+#else
   const int kMB = 1024 * 1024;
+#endif
+
   size_t font_cache_limit;
 #if BUILDFLAG(IS_ANDROID)
   font_cache_limit =

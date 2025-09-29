@@ -55,6 +55,7 @@ TEST_F(PRPPRequestLoaderFactoryImplTest, PRPPRequestLoaderFactoryImplTest_001)
   std::shared_ptr<PRPPRequestLoaderFactory> factory_shared =
     PRPPRequestLoaderFactory::CreatePRPPRequestLoaderFactory("page",
     url_request_context->GetWeakPtr());
+  EXPECT_TRUE(factory_shared != nullptr);
   
   PRPPRequestLoaderFactoryImpl factory =
     PRPPRequestLoaderFactoryImpl("page", url_request_context->GetWeakPtr());
@@ -74,6 +75,7 @@ TEST_F(PRPPRequestLoaderFactoryImplTest, PRPPRequestLoaderFactoryImplTest_001)
 
   (void)need_record_header_urls.insert("https://some.other.origin/echoall");
   factory.CreateReqLoaderAndStart(info, need_record_header_urls);
+  EXPECT_EQ(factory.need_record_header_urls_.count("https://some.other.origin/echoall"), 1);
 
   (void)factory.requests_already_start_set_.emplace("https://some.other.origin/echoall");
   factory.CreateReqLoaderAndStart(info, need_record_header_urls);

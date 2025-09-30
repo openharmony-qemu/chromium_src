@@ -669,6 +669,7 @@ arkweb_media_adapter_unittest_sources = [
   "//arkweb/ohos_adapter_ndk/media_adapter/media_codec_decoder_adapter_impl_unittest.cpp",
   "//arkweb/ohos_adapter_ndk/media_adapter/ohos_buffer_adapter_impl_unittest.cpp",
   "//arkweb/ohos_adapter_ndk/media_adapter/video_encoder_adapter_impl_unittest.cpp",
+  "//arkweb/ohos_adapter_ndk/cert_mgr_adapter/cert_mgr_adapter_impl_unittests.cc",
   "//arkweb/ohos_adapter_ndk/display_manager_adapter/native_display_manager_adapter_impl_unittest.cpp",
   "//arkweb/ohos_adapter_ndk/drawing_text_adapter/ohos_drawing_text_adapter_impl_unittest.cpp",
   "//arkweb/ohos_adapter_ndk/screen_capture_adapter/screen_capture_adapter_impl_unittest.cc",

@@ -77,7 +77,6 @@ std::string GetKey(const std::string& alias) {
     }
   }
   base::FilePath key_file = key_dir.Append(FILE_PATH_LITERAL(alias));
-  std::optional<int64_t> file_size = base::GetFileSize(key_file);
 
   std::string encryptedData;
   if (ValidataKeyAndGetEncryptedData(key_file, encryptedData)) {

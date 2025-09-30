@@ -35,7 +35,7 @@ constexpr char V10[] = "V10";
 constexpr uint32_t V10_SIZE = 3;
 
 namespace {
-size_t GetEncryptV10Size() {
+size_t GetEncryptSize() {
   return V10_SIZE + IV_SIZE + KEY_LENGTH;
 }
 
@@ -50,7 +50,7 @@ bool ValidataKeyAndGetEncryptedData(const base::FilePath& key_file_path, std::st
     return false;
   }
 
-  if (encryptedData.length() == GetEncryptV10Size() && encryptedData.compare(0, V10_SIZE, std::string(V10))) {
+  if (encryptedData.length() == GetEncryptSize() && encryptedData.compare(0, V10_SIZE, std::string(V10))) {
     return true;
   }
 

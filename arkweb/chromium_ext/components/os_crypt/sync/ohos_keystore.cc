@@ -58,6 +58,7 @@ bool ValidateKeyAndGetEncryptedData(const base::FilePath& key_file_path, std::st
     return true;
   }
 
+  LOG(ERROR) << "validate key fail encrypted data length: " << encryptedData.length();
   return false;
 }
 }

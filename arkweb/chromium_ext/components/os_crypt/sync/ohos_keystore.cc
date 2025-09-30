@@ -39,7 +39,7 @@ size_t GetEncryptSize() {
   return V10_SIZE + IV_SIZE + KEY_LENGTH;
 }
 
-bool ValidataKeyAndGetEncryptedData(const base::FilePath& key_file_path, std::string& encryptedData) {
+bool ValidateKeyAndGetEncryptedData(const base::FilePath& key_file_path, std::string& encryptedData) {
   if (!base::PathExists(key_file_path)) {
     return false;
   }
@@ -79,7 +79,7 @@ std::string GetKey(const std::string& alias) {
   base::FilePath key_file = key_dir.Append(FILE_PATH_LITERAL(alias));
 
   std::string encryptedData;
-  if (ValidataKeyAndGetEncryptedData(key_file, encryptedData)) {
+  if (ValidateKeyAndGetEncryptedData(key_file, encryptedData)) {
     std::string local_key;
     for (int i = 0; i < COUNT_FOR_RETRY; i++) {
       local_key = OHOS::NWeb::OhosAdapterHelper::GetInstance()

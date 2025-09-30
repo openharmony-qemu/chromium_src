@@ -672,6 +672,8 @@ source_set("unittests") {
     "src/ndk/scheme_handler/resource_handler_unittest.cc",
     "src/ndk/scheme_handler/resource_request_unittest.cc",
     "src/ndk/scheme_handler/response_unittest.cc",
+    "src/ndk/arkweb_native_javascript_execute_callback_unittest.cc",
+    "src/ndk/arkweb_native_web_message_callback_unittest.cc",
     "src/nweb_adsblock_manager_impl_unittest.cc",
     "src/nweb_cookie_manager_impl_unittest.cc",
     "src/nweb_impl_unittest.cc",

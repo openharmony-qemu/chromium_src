@@ -245,6 +245,7 @@ declare_args() {
   arkweb_gwp_asan = true
   arkweb_bgtask = false
   arkweb_privacy_compliance = true
+  arkweb_ndk_adapter = true
 }
 
 # Features enabled in mojom bindings.

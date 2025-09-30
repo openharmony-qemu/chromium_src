@@ -35,8 +35,30 @@ constexpr char V10[] = "V10";
 constexpr uint32_t V10_SIZE = 3;
 
 namespace {
-int32_t GetEncryptSize() {
+size_t GetEncryptV10Size() {
   return V10_SIZE + IV_SIZE + KEY_LENGTH;
+}
+
+bool ValidataKeyAndGetEncryptedData(const base::FilePath& key_file_path, std::string& encryptedData) {
+  if (!base::PathExists(key_file_path)) {
+    return false;
+  }
+
+  bool res = base::ReadFileToString(key_file_path, &encryptedData);
+  if (!res) {
+    PLOG(INFO) << "failed to read file";
+    return false;
+  }
+
+  if (encryptedData.length() == GetEncryptV10Size() && encryptedData.compare(0, V10_SIZE, std::string(V10))) {
+    return true;
+  }
+
+  if (encryptedData.length() == KEY_LENGTH) {
+    return true;
+  }
+
+  return false;
 }
 }
 
@@ -57,13 +79,8 @@ std::string GetKey(const std::string& alias) {
   base::FilePath key_file = key_dir.Append(FILE_PATH_LITERAL(alias));
   std::optional<int64_t> file_size = base::GetFileSize(key_file);
 
-  if (base::PathExists(key_file) && file_size && *file_size == GetEncryptSize()) {
-    std::string encryptedData;
-    bool res = base::ReadFileToString(key_file, &encryptedData);
-    if (!res) {
-      PLOG(INFO) << "failed to read file: " << alias;
-      return std::string();
-    }
+  std::string encryptedData;
+  if (ValidataKeyAndGetEncryptedData(key_file, encryptedData)) {
     std::string local_key;
     for (int i = 0; i < COUNT_FOR_RETRY; i++) {
       local_key = OHOS::NWeb::OhosAdapterHelper::GetInstance()

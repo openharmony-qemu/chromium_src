@@ -364,6 +364,11 @@ arkweb_net_dns_sources = [
   "//arkweb/chromium_ext/net/dns/arkweb_host_resolver_manager_job_ext.h",
 ]
 
+arkweb_net_dns_unittest_sources = [
+  "//arkweb/chromium_ext/net/dns/dns_config_service_ohos_unittest.cc",
+  "//arkweb/chromium_ext/net/dns/arkweb_host_resolver_dns_task_ext_unittest.cc",
+]
+
 arkweb_net_socket_sources = [
   "//arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext.cc",
   "//arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext.h",

@@ -30,15 +30,6 @@ class ArkWeb_ResourceHandler_Test : public Test {
   std::shared_ptr<ArkWeb_ResourceHandler_> _awrhst;
 };
 
-void ArkWeb_ResourceHandler_Test::SetUp() {
-  ArkWeb_ResourceRequest request(nullptr);
-  _awrhst = std::make_shared<ArkWeb_ResourceHandler_>(&request, nullptr, "test", false);
-}
-
-void ArkWeb_ResourceHandler_Test::TearDown() {
-  _awrhst.reset();
-}
-
 TEST_F(ArkWeb_ResourceHandler_Test, ArkWeb_ResourceHandler_Test_DidReceiveResponse01) {
   ArkWeb_ResourceRequest request(nullptr);
   _awrhst = std::make_shared<ArkWeb_ResourceHandler_>(&request, nullptr, "test", false);

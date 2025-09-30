@@ -10,6 +10,7 @@ source_set("run_all_unittests") {
   visibility = [
     "//services:*",
     "//arkweb/chromium_ext/services/network/prp_preload/tests:prp_preload_unittests",
+    "//arkweb/chromium_ext/services/network/tests:network_unittests"
   ]
 
   testonly = true

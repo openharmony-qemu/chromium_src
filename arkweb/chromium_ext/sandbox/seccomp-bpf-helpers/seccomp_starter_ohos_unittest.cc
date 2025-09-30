@@ -18,7 +18,6 @@
 #include <stdexcept>
 #include "base/logging.h"
 #include "sandbox/linux/bpf_dsl/bpf_dsl.h"
-#include "third_party/ohos_ndk/sysroot/usr/include/arm-linux-ohos/bits/syscall.h"
 #include "sandbox/linux/seccomp-bpf/bpf_tests.h"
 #define private public
 #include "seccomp_starter_ohos.h"

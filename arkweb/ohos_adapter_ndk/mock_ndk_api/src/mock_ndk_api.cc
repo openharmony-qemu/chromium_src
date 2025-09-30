@@ -275,9 +275,65 @@ bool MockAudioCommonEventSupport::generateCapturer = false;
 bool MockDatashareCommonEventSupport::bGetPath = false;
 bool MockDatashareCommonEventSupport::bGetFileNameMock = false;
 
+bool MockNetCommonEventSupport::bGetParameters = false;
+bool MockNetCommonEventSupport::bHasKey = false;
+bool MockNetCommonEventSupport::bGetInt = false;
+bool MockNetCommonEventSupport::bGetCode = false;
+bool MockNetCommonEventSupport::bGetCapacity = false;
+bool MockNetCommonEventSupport::bGetPluggedType = false;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+const CommonEvent_Parameters * __wrap_OH_CommonEvent_GetParametersFromRcvData(const CommonEvent_RcvData *rcvData) {
+    if (MockNetCommonEventSupport::bGetParameters == true) {
+        return MockNetCommonEventSupport::GetInstance().OH_CommonEvent_GetParametersFromRcvData(rcvData);
+    } else {
+        return __real_OH_CommonEvent_GetParametersFromRcvData(rcvData);
+    }
+}
+
+bool __wrap_OH_CommonEvent_HasKeyInParameters(const CommonEvent_Parameters *para, const char *key) {
+    if (MockNetCommonEventSupport::bHasKey == true) {
+        return MockNetCommonEventSupport::GetInstance().OH_CommonEvent_HasKeyInParameters(para, key);
+    } else {
+        return __real_OH_CommonEvent_HasKeyInParameters(para, key);
+    }
+}
+
+int __wrap_OH_CommonEvent_GetIntFromParameters(const CommonEvent_Parameters *para, const char *key, int defaultValue) {
+    if (MockNetCommonEventSupport::bGetInt == true) {
+        return MockNetCommonEventSupport::GetInstance().OH_CommonEvent_GetIntFromParameters(para, key, defaultValue);
+    } else {
+        return __real_OH_CommonEvent_GetIntFromParameters(para, key, defaultValue);
+    }
+}
+
+int32_t __wrap_OH_CommonEvent_GetCodeFromRcvData(const CommonEvent_RcvData *rcvData) {
+    if (MockNetCommonEventSupport::bGetCode == true) {
+        return MockNetCommonEventSupport::GetInstance().OH_CommonEvent_GetCodeFromRcvData(rcvData);
+    } else {
+        return __real_OH_CommonEvent_GetCodeFromRcvData(rcvData);
+    }
+}
+
+int32_t __wrap_OH_BatteryInfo_GetCapacity() {
+    if (MockNetCommonEventSupport::bGetCapacity == true) {
+        return MockNetCommonEventSupport::GetInstance().OH_BatteryInfo_GetCapacity();
+    } else {
+        return __real_OH_BatteryInfo_GetCapacity();
+    }
+}
+
+BatteryInfo_BatteryPluggedType __wrap_OH_BatteryInfo_GetPluggedType() {
+    if (MockNetCommonEventSupport::bGetPluggedType == true) {
+        return MockNetCommonEventSupport::GetInstance().OH_BatteryInfo_GetPluggedType();
+    } else {
+        return __real_OH_BatteryInfo_GetPluggedType();
+    }
+}
+
 OH_NativeBundle_ElementName __wrap_OH_NativeBundle_GetMainElementName() {
     if (OhosInterfaceMock::bNativeBundleGetMainElementName == true) {
         return OhosInterfaceMock::GetInstance().OH_NativeBundle_GetMainElementName();

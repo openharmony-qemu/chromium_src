@@ -95,7 +95,6 @@ std::string GetKey(const std::string& alias) {
                              base::File::FLAG_READ);
     std::string local_key = GenerateLocalKey(KEY_LENGTH);
 
-    std::string encryptedData;
     for (int i = 0; i < COUNT_FOR_RETRY; i++) {
       encryptedData = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                           .GetKeystoreAdapterInstance()

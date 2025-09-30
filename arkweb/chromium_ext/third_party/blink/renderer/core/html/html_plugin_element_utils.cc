@@ -97,6 +97,22 @@ void HTMLPlugInElementUtils::SetNativeEmbedOverlayInfinity(bool native_embed_ove
     native_loader->SetNativeEmbedOverlayInfinity(native_embed_overlay_infinity_);
   }
 }
+
+void HTMLPlugInElementUtils::ProcessParamChanges(const Vector<ParamChangeInfo>& changes) {
+  if (auto* native_loader = plugin_->NativeLoader()) {
+    native_loader->ProcessParamChanges(changes);
+  } else {
+    buffered_param_changes_.AppendVector(changes);
+  }
+}
+
+void HTMLPlugInElementUtils::ProcessBufferedParamChanges() {
+  if (!buffered_param_changes_.empty()) {
+    if (auto* native_loader = plugin_->NativeLoader()) {
+      native_loader->ProcessParamChanges(buffered_param_changes_);
+    }
+  }
+}
 #endif
 
 }  // namespace blink

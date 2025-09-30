@@ -13,6 +13,7 @@
 #include <memory>
 
 #include "arkweb/chromium_ext/media/mojo/mojom/native_bridge.mojom-blink.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_plugin_element_utils.h"
 #include "base/time/time.h"
 #include "base/timer/elapsed_timer.h"
 #include "components/viz/common/frame_timing_details.h"
@@ -81,6 +82,8 @@ class CORE_EXPORT NativeLoader : public GarbageCollected<NativeLoader>,
   void NotifyVisibilityChange(bool visibility);
   void SetNativeEmbedOverlayInfinity(bool native_embed_overlay_infinity);
   void SetNativeEmbedOverlay(bool native_embed_overlay);
+  void ProcessParamChanges(const Vector<ParamChangeInfo>& changes);
+  void ProcessPendingParamChanges();
 
   virtual String DebugName() const = 0;
 
@@ -159,6 +162,9 @@ class CORE_EXPORT NativeLoader : public GarbageCollected<NativeLoader>,
   Member<DisallowNewWrapper<
       HeapMojoAssociatedRemoteSet<media::mojom::blink::NativeBridgeObserver>>>
       native_bridge_observer_remote_set_;
+  Vector<media::mojom::blink::NativeEmbedParamItemPtr> pending_param_changes_;
+  bool param_update_task_pending_ = false;
+  base::WeakPtrFactory<NativeLoader> weak_ptr_factory_{this};
 };
 
 }  // namespace blink

@@ -59,6 +59,29 @@ struct CONTENT_EXPORT NativeEmbedInfo {
   std::map<std::string, std::string> params;
 };
 
+enum class NativeEmbedParamStatus { kAdd, kUpdate, kDelete };
+
+struct CONTENT_EXPORT NativeEmbedParamItem {
+  NativeEmbedParamItem() = default;
+  ~NativeEmbedParamItem() = default;
+
+  NativeEmbedParamStatus status;
+  std::string id;
+  std::string name;
+  std::string value;
+};
+
+struct CONTENT_EXPORT NativeEmbedParamDataInfo {
+  NativeEmbedParamDataInfo();
+  ~NativeEmbedParamDataInfo();
+  NativeEmbedParamDataInfo(const NativeEmbedParamDataInfo& other);
+  NativeEmbedParamDataInfo& operator=(const NativeEmbedParamDataInfo& other);
+
+  int embed_id = -1;
+  std::string object_attribute_id;
+  std::vector<NativeEmbedParamItem> param_items;
+};
+
 CONTENT_EXPORT std::ostream& operator<<(std::ostream& out,
                                         const NativeEmbedInfo& info);
 

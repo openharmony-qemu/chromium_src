@@ -26,6 +26,25 @@ struct NativeEmbedInfo {
   string tag;
   map<string, string> params;
 };
+
+enum NativeEmbedParamStatus {
+  kAdd,
+  kUpdate,
+  kDelete,
+};
+
+struct NativeEmbedParamItem {
+  NativeEmbedParamStatus status;
+  string id;
+  string name;
+  string value;
+};
+
+struct NativeEmbedParamChangeInfo {
+  int32 embed_id;
+  string object_attribute_id;
+  array<NativeEmbedParamItem> param_items;
+};
  
 // Implemented by NativeWebContentsObserver::NativeBridgeObserverHostImpl in the
 // browser process.
@@ -36,6 +55,7 @@ interface NativeBridgeObserver {
   OnEmbedRectChange(gfx.mojom.Rect rect);
   OnDestroyNativeSurface();
   OnLayerRectVisibilityChange(bool visibility, int32 embed_id);
+  OnEmbedObjectParamChange(NativeEmbedParamChangeInfo change_info);
 };
  
 // Implemented by NativeWebContentsObserver::NativeBridgeHostImpl in the browser

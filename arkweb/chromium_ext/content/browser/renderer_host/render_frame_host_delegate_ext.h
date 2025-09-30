@@ -53,6 +53,8 @@ class RenderFrameHostDelegateExt {
       const GlobalRenderFrameHostId& id) {}
   virtual void OnRenderFrameHostLeaveBackForwardCache(
       const GlobalRenderFrameHostId& id) {}
+  virtual void OnNativeEmbedObjectParamChange(
+      const NativeEmbedParamDataInfo& native_param_info) {}
 #endif
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   // Notified to UI, contextmenu popup window should be dimissed

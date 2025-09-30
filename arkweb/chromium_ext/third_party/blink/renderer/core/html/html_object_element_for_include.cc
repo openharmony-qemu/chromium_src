@@ -40,6 +40,35 @@ void HTMLObjectElement::NativeEmbedOverlay(
         "Arkwebnativestyle changed");
   }
 }
+
+void HTMLObjectElement::AddParamChange(Vector<ParamChangeInfo>& param_changes,
+                                       Node* node,
+                                       ParamChangeInfo::Status status) {
+  if (auto* param = DynamicTo<HTMLParamElement>(node)) {
+    param_changes.push_back(ParamChangeInfo(
+        status, param->GetIdAttribute(), param->GetName(), param->Value()));
+  }
+}
+
+void HTMLObjectElement::HandleParamAlterations(const ChildrenChange& change) {
+  Vector<ParamChangeInfo> param_changes;
+  if (change.IsChildInsertion()) {
+    AddParamChange(param_changes, change.sibling_changed, ParamChangeInfo::Status::kAdd);
+  } else if (change.IsChildRemoval()) {
+    AddParamChange(param_changes, change.sibling_changed, ParamChangeInfo::Status::kDelete);
+  } else if (change.type == ChildrenChangeType::kAllChildrenRemoved) {
+    for (Node* node : change.removed_nodes) {
+      AddParamChange(param_changes, node, ParamChangeInfo::Status::kDelete);
+    }
+  }
+  if (!param_changes.empty()) {
+    ProcessParamChanges(param_changes);
+  }
+}
+
+void HTMLObjectElement::ProcessParamChanges(const Vector<ParamChangeInfo>& changes) {
+  Utils()->ProcessParamChanges(changes);
+}
 #endif
 
 }  // namespace blink

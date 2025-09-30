@@ -54,5 +54,10 @@ std::ostream& operator<<(std::ostream& out, const NativeEmbedInfo& info) {
   return out;
 }
 
+NativeEmbedParamDataInfo::NativeEmbedParamDataInfo() = default;
+NativeEmbedParamDataInfo::~NativeEmbedParamDataInfo() = default;
+NativeEmbedParamDataInfo::NativeEmbedParamDataInfo(const NativeEmbedParamDataInfo& other) = default;
+NativeEmbedParamDataInfo& NativeEmbedParamDataInfo::operator=(const NativeEmbedParamDataInfo& other) = default;
+
 }  // namespace content
                        

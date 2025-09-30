@@ -284,7 +284,11 @@ class NET_EXPORT URLRequestContext {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif // ARKWEB_TEST
   friend class URLRequestContextBuilder;
 
   HttpNetworkSession* http_network_session() const {

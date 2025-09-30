@@ -126,6 +126,100 @@ Input_Result __wrap_OH_Input_GetDeviceIds(int32_t *deviceIds, int32_t inSize, in
   																	 :__real_OH_Input_GetDeviceIds(deviceIds, inSize, outSize);
 }
 
+std::function<OH_NativeVSync* (const char* name, unsigned int length)> g_mock_OH_NativeVSync_Create;
+OH_NativeVSync* __wrap_OH_NativeVSync_Create(const char* name, unsigned int length) {
+  return g_mock_OH_NativeVSync_Create ? g_mock_OH_NativeVSync_Create(name, length)
+                                      : __real_OH_NativeVSync_Create(name, length);
+}
+
+std::function<int (OH_NativeVSync* nativeVSync, long long* period)> g_mock_OH_NativeVSync_GetPeriod;
+int __wrap_OH_NativeVSync_GetPeriod(OH_NativeVSync* nativeVSync, long long* period) {
+  return g_mock_OH_NativeVSync_GetPeriod ? g_mock_OH_NativeVSync_GetPeriod(nativeVSync, period)
+                                         : __real_OH_NativeVSync_GetPeriod(nativeVSync, period);
+}
+
+std::function<int (OH_NativeVSync* nativeVSync, OH_NativeVSync_FrameCallback callback,
+    void* data)> g_mock_OH_NativeVSync_RequestFrame;
+int __wrap_OH_NativeVSync_RequestFrame(OH_NativeVSync* nativeVSync, OH_NativeVSync_FrameCallback callback,
+    void* data) {
+  return g_mock_OH_NativeVSync_RequestFrame ? g_mock_OH_NativeVSync_RequestFrame(nativeVSync, callback, data)
+                                            : __real_OH_NativeVSync_RequestFrame(nativeVSync, callback, data);
+}
+
+std::function<OHNativeWindow* (void* pSurface)> g_mock_OH_NativeWindow_CreateNativeWindow;
+OHNativeWindow* __wrap_OH_NativeWindow_CreateNativeWindow(void* pSurface) {
+  return g_mock_OH_NativeWindow_CreateNativeWindow ? g_mock_OH_NativeWindow_CreateNativeWindow(pSurface)
+                                                   : __real_OH_NativeWindow_CreateNativeWindow(pSurface);
+}
+
+std::function<int32_t (void* obj)> g_mock_OH_NativeWindow_NativeObjectReference;
+int32_t __wrap_OH_NativeWindow_NativeObjectReference(void* obj) {
+  return g_mock_OH_NativeWindow_NativeObjectReference ? g_mock_OH_NativeWindow_NativeObjectReference(obj)
+                                                      : __real_OH_NativeWindow_NativeObjectReference(obj);
+}
+
+std::function<int32_t (void* obj)> g_mock_OH_NativeWindow_NativeObjectUnreference;
+int32_t __wrap_OH_NativeWindow_NativeObjectUnreference(void* obj) {
+  return g_mock_OH_NativeWindow_NativeObjectUnreference ? g_mock_OH_NativeWindow_NativeObjectUnreference(obj)
+                                                        : __real_OH_NativeWindow_NativeObjectUnreference(obj);
+}
+
+std::function<int32_t (OHNativeWindow *window, OHNativeWindowBuffer **buffer,
+    int *fenceFd)> g_mock_OH_NativeWindow_NativeWindowRequestBuffer;
+int32_t __wrap_OH_NativeWindow_NativeWindowRequestBuffer(OHNativeWindow *window, OHNativeWindowBuffer **buffer,
+    int *fenceFd) {
+  return g_mock_OH_NativeWindow_NativeWindowRequestBuffer ?
+         g_mock_OH_NativeWindow_NativeWindowRequestBuffer(window, buffer, fenceFd) :
+         __real_OH_NativeWindow_NativeWindowRequestBuffer(window, buffer, fenceFd);
+}
+
+std::function<int32_t (OHNativeWindow *window, OHNativeWindowBuffer *buffer)>
+    g_mock_OH_NativeWindow_NativeWindowAbortBuffer;
+int32_t __wrap_OH_NativeWindow_NativeWindowAbortBuffer(OHNativeWindow *window, OHNativeWindowBuffer *buffer) {
+  return g_mock_OH_NativeWindow_NativeWindowAbortBuffer ?
+         g_mock_OH_NativeWindow_NativeWindowAbortBuffer(window, buffer) :
+         __real_OH_NativeWindow_NativeWindowAbortBuffer(window, buffer);
+}
+
+std::function<TimeService_ErrCode (char *timeZone, uint32_t len)> g_mock_OH_TimeService_GetTimeZone;
+TimeService_ErrCode __wrap_OH_TimeService_GetTimeZone(char *timeZone, uint32_t len) {
+  return g_mock_OH_TimeService_GetTimeZone ?
+         g_mock_OH_TimeService_GetTimeZone(timeZone, len) :
+         __real_OH_TimeService_GetTimeZone(timeZone, len);
+}
+
+std::function<void (CommonEvent_SubscribeInfo* info)> g_mock_OH_CommonEvent_DestroySubscribeInfo;
+void __wrap_OH_CommonEvent_DestroySubscribeInfo(CommonEvent_SubscribeInfo* info) {
+  return g_mock_OH_CommonEvent_DestroySubscribeInfo ?
+         g_mock_OH_CommonEvent_DestroySubscribeInfo(info) :
+         __real_OH_CommonEvent_DestroySubscribeInfo(info);
+}
+
+std::function<void (CommonEvent_Subscriber* subscriber)> g_mock_OH_CommonEvent_DestroySubscriber;
+void __wrap_OH_CommonEvent_DestroySubscriber(CommonEvent_Subscriber* subscriber) {
+  return g_mock_OH_CommonEvent_DestroySubscriber ?
+         g_mock_OH_CommonEvent_DestroySubscriber(subscriber) :
+         __real_OH_CommonEvent_DestroySubscriber(subscriber);
+}
+
+std::function<int32_t (OH_NativeImage* image, OHNativeWindowBuffer** nativeWindowBuffer,
+    int* fenceFd)> g_mock_OH_NativeImage_AcquireNativeWindowBuffer;
+int32_t __wrap_OH_NativeImage_AcquireNativeWindowBuffer(OH_NativeImage* image,
+    OHNativeWindowBuffer** nativeWindowBuffer, int* fenceFd) {
+  return g_mock_OH_NativeImage_AcquireNativeWindowBuffer ?
+         g_mock_OH_NativeImage_AcquireNativeWindowBuffer(image, nativeWindowBuffer, fenceFd) :
+         __real_OH_NativeImage_AcquireNativeWindowBuffer(image, nativeWindowBuffer, fenceFd);
+}
+
+std::function<int32_t (OHNativeWindowBuffer* nativeWindowBuffer, OH_NativeBuffer **buffer)>
+    g_mock_OH_NativeBuffer_FromNativeWindowBuffer;
+int32_t __wrap_OH_NativeBuffer_FromNativeWindowBuffer(OHNativeWindowBuffer* nativeWindowBuffer,
+    OH_NativeBuffer **buffer) {
+  return g_mock_OH_NativeBuffer_FromNativeWindowBuffer ?
+         g_mock_OH_NativeBuffer_FromNativeWindowBuffer(nativeWindowBuffer, buffer) :
+         __real_OH_NativeBuffer_FromNativeWindowBuffer(nativeWindowBuffer, buffer);
+}
+
 #ifdef __cplusplus
 }
 #endif

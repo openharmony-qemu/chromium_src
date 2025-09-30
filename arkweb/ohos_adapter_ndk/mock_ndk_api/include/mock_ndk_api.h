@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <BasicServicesKit/oh_commonevent.h>
 #include <BasicServicesKit/oh_commonevent_support.h>
+#include <BasicServicesKit/time_service.h>
 #include <network/netmanager/net_connection_type.h>
 #include <network/netmanager/net_connection.h>
 #include <telephony/core_service/telephony_radio_type.h>
@@ -36,6 +37,9 @@
 #include <ohaudio/native_audiostreambuilder.h>
 #include <ohaudio/native_audio_common.h>
 #include <filemanagement/file_uri/oh_file_uri.h>
+#include <native_vsync/native_vsync.h>
+#include <native_window/external_window.h>
+#include <native_image/native_image.h>
 
 namespace MockNdkApi {
 
@@ -116,6 +120,69 @@ Input_DeviceInfo* __wrap_OH_Input_CreateDeviceInfo();
 extern std::function<Input_Result (int32_t *deviceIds, int32_t inSize, int32_t *outSize)> g_mock_OH_Input_GetDeviceIds;
 Input_Result __real_OH_Input_GetDeviceIds(int32_t *deviceIds, int32_t inSize, int32_t *outSize);
 Input_Result __wrap_OH_Input_GetDeviceIds(int32_t *deviceIds, int32_t inSize, int32_t *outSize);
+
+extern std::function<OH_NativeVSync* (const char* name, unsigned int length)> g_mock_OH_NativeVSync_Create;
+OH_NativeVSync* __real_OH_NativeVSync_Create(const char* name, unsigned int length);
+OH_NativeVSync* __wrap_OH_NativeVSync_Create(const char* name, unsigned int length);
+
+extern std::function<int (OH_NativeVSync* nativeVSync, long long* period)> g_mock_OH_NativeVSync_GetPeriod;
+int __real_OH_NativeVSync_GetPeriod(OH_NativeVSync* nativeVSync, long long* period);
+int __wrap_OH_NativeVSync_GetPeriod(OH_NativeVSync* nativeVSync, long long* period);
+
+extern std::function<int (OH_NativeVSync* nativeVSync, OH_NativeVSync_FrameCallback callback,
+    void* data)> g_mock_OH_NativeVSync_RequestFrame;
+int __real_OH_NativeVSync_RequestFrame(OH_NativeVSync* nativeVSync, OH_NativeVSync_FrameCallback callback, void* data);
+int __wrap_OH_NativeVSync_RequestFrame(OH_NativeVSync* nativeVSync, OH_NativeVSync_FrameCallback callback, void* data);
+
+extern std::function<OHNativeWindow* (void* pSurface)> g_mock_OH_NativeWindow_CreateNativeWindow;
+OHNativeWindow* __real_OH_NativeWindow_CreateNativeWindow(void* pSurface);
+OHNativeWindow* __wrap_OH_NativeWindow_CreateNativeWindow(void* pSurface);
+
+extern std::function<int32_t (void* obj)> g_mock_OH_NativeWindow_NativeObjectReference;
+int32_t __real_OH_NativeWindow_NativeObjectReference(void* obj);
+int32_t __wrap_OH_NativeWindow_NativeObjectReference(void* obj);
+
+extern std::function<int32_t (void* obj)> g_mock_OH_NativeWindow_NativeObjectUnreference;
+int32_t __real_OH_NativeWindow_NativeObjectUnreference(void* obj);
+int32_t __wrap_OH_NativeWindow_NativeObjectUnreference(void* obj);
+
+extern std::function<int32_t (OHNativeWindow *window, OHNativeWindowBuffer **buffer,
+    int *fenceFd)> g_mock_OH_NativeWindow_NativeWindowRequestBuffer;
+int32_t __real_OH_NativeWindow_NativeWindowRequestBuffer(OHNativeWindow *window, OHNativeWindowBuffer **buffer,
+    int *fenceFd);
+int32_t __wrap_OH_NativeWindow_NativeWindowRequestBuffer(OHNativeWindow *window, OHNativeWindowBuffer **buffer,
+    int *fenceFd);
+
+extern std::function<int32_t (OHNativeWindow *window, OHNativeWindowBuffer *buffer)>
+    g_mock_OH_NativeWindow_NativeWindowAbortBuffer;
+int32_t __real_OH_NativeWindow_NativeWindowAbortBuffer(OHNativeWindow *window, OHNativeWindowBuffer *buffer);
+int32_t __wrap_OH_NativeWindow_NativeWindowAbortBuffer(OHNativeWindow *window, OHNativeWindowBuffer *buffer);
+
+extern std::function<TimeService_ErrCode (char *timeZone, uint32_t len)> g_mock_OH_TimeService_GetTimeZone;
+TimeService_ErrCode __real_OH_TimeService_GetTimeZone(char *timeZone, uint32_t len);
+TimeService_ErrCode __wrap_OH_TimeService_GetTimeZone(char *timeZone, uint32_t len);
+
+extern std::function<void (CommonEvent_SubscribeInfo* info)> g_mock_OH_CommonEvent_DestroySubscribeInfo;
+void __real_OH_CommonEvent_DestroySubscribeInfo(CommonEvent_SubscribeInfo* info);
+void __wrap_OH_CommonEvent_DestroySubscribeInfo(CommonEvent_SubscribeInfo* info);
+
+extern std::function<void (CommonEvent_Subscriber* subscriber)> g_mock_OH_CommonEvent_DestroySubscriber;
+void __real_OH_CommonEvent_DestroySubscriber(CommonEvent_Subscriber* subscriber);
+void __wrap_OH_CommonEvent_DestroySubscriber(CommonEvent_Subscriber* subscriber);
+
+extern std::function<int32_t (OH_NativeImage* image, OHNativeWindowBuffer** nativeWindowBuffer,
+    int* fenceFd)> g_mock_OH_NativeImage_AcquireNativeWindowBuffer;
+int32_t __real_OH_NativeImage_AcquireNativeWindowBuffer(OH_NativeImage* image,
+    OHNativeWindowBuffer** nativeWindowBuffer, int* fenceFd);
+int32_t __wrap_OH_NativeImage_AcquireNativeWindowBuffer(OH_NativeImage* image,
+    OHNativeWindowBuffer** nativeWindowBuffer, int* fenceFd);
+
+extern std::function<int32_t (OHNativeWindowBuffer* nativeWindowBuffer, OH_NativeBuffer **buffer)>
+    g_mock_OH_NativeBuffer_FromNativeWindowBuffer;
+int32_t __real_OH_NativeBuffer_FromNativeWindowBuffer(OHNativeWindowBuffer* nativeWindowBuffer,
+    OH_NativeBuffer **buffer);
+int32_t __wrap_OH_NativeBuffer_FromNativeWindowBuffer(OHNativeWindowBuffer* nativeWindowBuffer,
+    OH_NativeBuffer **buffer);
 
 #ifdef __cplusplus
 }

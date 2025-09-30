@@ -115,6 +115,26 @@ config("arkweb_base_unittest_config") {
     "-Wl,--wrap=OH_SensorEvent_GetData",
     "-Wl,--wrap=OH_SensorEvent_GetTimestamp",
   ]
+
+  ldflags += [
+    "-Wl,--wrap=OH_NativeVSync_Create",
+    "-Wl,--wrap=OH_NativeVSync_GetPeriod",
+    "-Wl,--wrap=OH_NativeVSync_RequestFrame",
+    "-Wl,--wrap=OH_NativeWindow_CreateNativeWindow",
+    "-Wl,--wrap=OH_NativeWindow_NativeObjectReference",
+    "-Wl,--wrap=OH_NativeWindow_NativeObjectUnreference",
+    "-Wl,--wrap=OH_NativeWindow_NativeWindowRequestBuffer",
+    "-Wl,--wrap=OH_NativeWindow_NativeWindowAbortBuffer",
+    "-Wl,--wrap=OH_TimeService_GetTimeZone",
+    "-Wl,--wrap=OH_CommonEvent_CreateSubscribeInfo",
+    "-Wl,--wrap=OH_CommonEvent_CreateSubscriber",
+    "-Wl,--wrap=OH_CommonEvent_Subscribe",
+    "-Wl,--wrap=OH_CommonEvent_DestroySubscribeInfo",
+    "-Wl,--wrap=OH_CommonEvent_DestroySubscriber",
+    "-Wl,--wrap=OH_CommonEvent_UnSubscribe",
+    "-Wl,--wrap=OH_NativeImage_AcquireNativeWindowBuffer",
+    "-Wl,--wrap=OH_NativeBuffer_FromNativeWindowBuffer",
+  ]
 }
 
 config("arkweb_codec_decoder_adapter_unittest_config") {

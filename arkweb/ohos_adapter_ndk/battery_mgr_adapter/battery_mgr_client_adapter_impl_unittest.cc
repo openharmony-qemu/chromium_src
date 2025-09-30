@@ -75,17 +75,17 @@ const char * mock_OH_CommonEvent_GetEventFromRcvData(const CommonEvent_RcvData *
   return MockCommonEventSupport::getInstance().OH_CommonEvent_GetEventFromRcvData(rcvData);
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void __wrap_OH_CommonEvent_DestroySubscribeInfo(CommonEvent_SubscribeInfo* info) {
+void mock_OH_CommonEvent_DestroySubscribeInfo(CommonEvent_SubscribeInfo* info) {
   return MockCommonEventSupport::getInstance().OH_CommonEvent_DestroySubscribeInfo(info);
 }
 
-void __wrap_OH_CommonEvent_DestroySubscriber(CommonEvent_Subscriber* subscriber) {
+void mock_OH_CommonEvent_DestroySubscriber(CommonEvent_Subscriber* subscriber) {
   return MockCommonEventSupport::getInstance().OH_CommonEvent_DestroySubscriber(subscriber);
 }
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int32_t __wrap_OH_BatteryInfo_GetCapacity() {
   return MockCommonEventSupport::getInstance().OH_BatteryInfo_GetCapacity();
@@ -116,18 +116,22 @@ class BatteryMgrClientAdapterImplTest : public ::testing::Test {
       adapter_ = std::make_shared<BatteryMgrClientAdapterImpl>();
       batteryInfo_ = std::make_shared<WebBatteryInfoImpl>(50.0, true, 60, 30);
       g_mock_OH_CommonEvent_CreateSubscribeInfo = mock_OH_CommonEvent_CreateSubscribeInfo;
-      g_mock_OH_CommonEvent_CreateSubscriber = mock_OH_CommonEvent_CreateSubscriber; 
-      g_mock_OH_CommonEvent_Subscribe = mock_OH_CommonEvent_Subscribe; 
-      g_mock_OH_CommonEvent_UnSubscribe = mock_OH_CommonEvent_UnSubscribe; 
-      g_mock_OH_CommonEvent_GetEventFromRcvData = mock_OH_CommonEvent_GetEventFromRcvData; 
+      g_mock_OH_CommonEvent_CreateSubscriber = mock_OH_CommonEvent_CreateSubscriber;
+      g_mock_OH_CommonEvent_Subscribe = mock_OH_CommonEvent_Subscribe;
+      g_mock_OH_CommonEvent_UnSubscribe = mock_OH_CommonEvent_UnSubscribe;
+      g_mock_OH_CommonEvent_GetEventFromRcvData = mock_OH_CommonEvent_GetEventFromRcvData;
+      g_mock_OH_CommonEvent_DestroySubscribeInfo = mock_OH_CommonEvent_DestroySubscribeInfo;
+      g_mock_OH_CommonEvent_DestroySubscriber = mock_OH_CommonEvent_DestroySubscriber;
     }
 
     void TearDown() override {
       g_mock_OH_CommonEvent_CreateSubscribeInfo = nullptr;
-      g_mock_OH_CommonEvent_CreateSubscriber = nullptr; 
-      g_mock_OH_CommonEvent_Subscribe = nullptr; 
-      g_mock_OH_CommonEvent_UnSubscribe = nullptr; 
-      g_mock_OH_CommonEvent_GetEventFromRcvData = nullptr; 
+      g_mock_OH_CommonEvent_CreateSubscriber = nullptr;
+      g_mock_OH_CommonEvent_Subscribe = nullptr;
+      g_mock_OH_CommonEvent_UnSubscribe = nullptr;
+      g_mock_OH_CommonEvent_GetEventFromRcvData = nullptr;
+      g_mock_OH_CommonEvent_DestroySubscribeInfo = nullptr;
+      g_mock_OH_CommonEvent_DestroySubscriber = nullptr;
     }
 
     std::shared_ptr<BatteryMgrClientAdapterImpl> adapter_;

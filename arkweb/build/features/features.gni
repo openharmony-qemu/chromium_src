@@ -251,6 +251,7 @@ declare_args() {
   arkweb_ex_enable_applinking = false
   arkweb_blank_screen_detection = true
   arkweb_blank_prop_config = true
+  arkweb_autolayout = true
 }
 
 # Features enabled in mojom bindings.

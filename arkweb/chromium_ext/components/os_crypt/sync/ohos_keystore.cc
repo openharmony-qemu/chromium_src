@@ -34,6 +34,12 @@ constexpr uint32_t IV_SIZE = 16;
 constexpr char V10[] = "V10";
 constexpr uint32_t V10_SIZE = 3;
 
+namespace {
+int32_t GetEncryptSize() {
+  return V10_SIZE + IV_SIZE + KEY_LENGTH;
+}
+}
+
 std::string GetKey(const std::string& alias) {
   base::FilePath cache_path;
   base::PathService::Get(base::DIR_CACHE, &cache_path);
@@ -49,8 +55,9 @@ std::string GetKey(const std::string& alias) {
     }
   }
   base::FilePath key_file = key_dir.Append(FILE_PATH_LITERAL(alias));
+  std::optional<int64_t> file_size = base::GetFileSize(key_file);
 
-  if (base::PathExists(key_file)) {
+  if (base::PathExists(key_file) && file_size && *file_size == GetEncryptSize()) {
     std::string encryptedData;
     bool res = base::ReadFileToString(key_file, &encryptedData);
     if (!res) {

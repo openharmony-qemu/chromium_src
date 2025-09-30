@@ -844,6 +844,7 @@ arkweb_third_party_blink_renderer_core_unittest_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_media_element_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/mojo/ark_web_mojo_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/loader/native_loader_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/loader/arkweb_subresource_filter_ext_test.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/loader/resource/script_resource_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/native_painter_unittest.cc",

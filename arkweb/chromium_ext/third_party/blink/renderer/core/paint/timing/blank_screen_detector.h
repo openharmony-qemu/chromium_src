@@ -33,7 +33,8 @@ enum class BlankScreenDetectionMethod : int32_t {
 
 class BlankScreenDetector {
  public:
-  BlankScreenDetector(LocalFrame* local_frame) : local_frame_(local_frame) {}
+  explicit BlankScreenDetector(LocalFrame* local_frame)
+      : local_frame_(local_frame) {}
   void DetectBlankScreen(const WTF::String& url,
                          const std::vector<double>& detection_timing,
                          const std::vector<int32_t>& detection_methods,

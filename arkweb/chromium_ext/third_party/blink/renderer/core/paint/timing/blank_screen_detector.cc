@@ -16,6 +16,7 @@
 #include "blank_screen_detector.h"
 
 #include "third_party/blink/renderer/core/frame/root_frame_viewport.h"
+#include "third_party/blink/renderer/core/frame/viewport_data.h"
 #include "third_party/blink/renderer/core/layout/layout_box.h"
 #include "third_party/blink/renderer/core/page/page.h"
 #include "third_party/blink/renderer/core/paint/timing/paint_timing_detector.h"
@@ -37,6 +38,7 @@ void BlankScreenDetector::StopTask() {
 
 void BlankScreenDetector::GenerateTaskDelays(
     const std::vector<double>& task_delays) {
+  task_delays_ms_ = {};
   for (auto task_delay : task_delays) {
     if (task_delay > 0.0f) {
       task_delays_ms_.emplace_back(
@@ -192,9 +194,13 @@ bool BlankScreenDetector::GenerateTestPoints() {
     return false;
   }
 
-  if (local_frame_->GetPage() && local_frame_->GetPage()->PageScaleFactor() > 0.0f) {
-    width = width / local_frame_->GetPage()->PageScaleFactor();
-    height = height / local_frame_->GetPage()->PageScaleFactor();
+  if (local_frame_->GetDocument()) {
+    auto viewport_description =
+        local_frame_->GetDocument()->GetViewportData().GetViewportDescription();
+    if (viewport_description.zoom > 0.0f) {
+      width /= viewport_description.zoom;
+      height /= viewport_description.zoom;
+    }
   }
   test_points_ = {};
   for (auto method : detection_methods_) {

@@ -30,7 +30,7 @@ class TextRecord;
 
 class FirstScreenCalculator {
  public:
-  FirstScreenCalculator(LocalFrameView* local_frame_view)
+  explicit FirstScreenCalculator(LocalFrameView* local_frame_view)
       : frame_view_(local_frame_view) {}
   void NotifyImagePaint(MediaRecordIdHash record_id_hash,
                         const ImageRecord* record,

@@ -128,12 +128,12 @@ handle_copy_files() {
     #sed -i '/ark_display_manager_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
 
     # 由于已经依赖adapter_ndk且adapter_ndk已实现camera_adapter，相关胶水层文件不参与编译
-    # sed -i '/ark_camera_manager_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
-    # sed -i '/ark_camera_rotation_info_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
-    # sed -i '/ark_format_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
-    # sed -i '/ark_video_capture_range_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
-    # sed -i '/ark_video_control_support_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
-    # sed -i '/ark_video_device_descriptor_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
+    sed -i '/ark_camera_manager_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
+    sed -i '/ark_camera_rotation_info_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
+    sed -i '/ark_format_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
+    sed -i '/ark_video_capture_range_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
+    sed -i '/ark_video_control_support_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
+    sed -i '/ark_video_device_descriptor_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
 
     # 由于已经依赖adapter_ndk且adapter_ndk已实现audio_capturer_adapter，胶水层ark_audio_capturer_adapter_wrapper.cpp不参与编译
     sed -i '/ark_audio_capturer_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
@@ -142,10 +142,10 @@ handle_copy_files() {
     sed -i '/ark_screen_capturer_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
 
     # 由于已经依赖adapter_ndk且adapter_ndk已实现audio_capturer_adapter，胶水层ark_audio_system_manager_adapter_wrapper.cpp不参与编译
-    # sed -i '/ark_audio_system_manager_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
+    sed -i '/ark_audio_system_manager_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
 
     # 由于已经依赖adapter_ndk且adapter_ndk已实现audio_capturer_adapter，胶水层ark_audio_device_desc_adapter_wrapper.cpp不参与编译
-    # sed -i '/ark_audio_device_desc_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
+    sed -i '/ark_audio_device_desc_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
 
     #由于已经依赖adapter_ndk且adapter_ndk已实现dataBase，胶水层ark_ohos_web_data_base_adapter_wrapper不参与编译
     # sed -i '/ark_ohos_web_data_base_adapter_wrapper/d' ${OHOS_GLUE_DIR}/BUILD.gn

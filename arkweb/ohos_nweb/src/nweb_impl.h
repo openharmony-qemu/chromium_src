@@ -55,9 +55,9 @@
 #include "capi/nweb_statistic_callback.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-struct FrameInfos;
-struct IsolatedWorld;
 struct OpenDevToolsParam;
+struct RunJavaScriptParam;
+
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "capi/nweb_extension_manager_callback.h"
 #include "capi/nweb_extension_context_menus_callback.h"
@@ -598,8 +598,7 @@ class NWebImpl : public NWeb {
   void PutWebExtensionCallback(
       std::shared_ptr<NWebExtensionCallback> web_extension_callback);
   void RemoveWebExtensionCallback();
-  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
-                             bool recursive, IsolatedWorld world,
+  void RunJavaScriptInFrames(RunJavaScriptParam param,
                              OnReceiveValueCallback callback);
   void GetImageFromContextNode();
   void GetImageFromCache(const std::string& url);
@@ -887,8 +886,6 @@ class NWebImpl : public NWeb {
       int tab_id,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
       std::unique_ptr<NWebExtensionTab> tab);
-  void WebExtensionTabActivated(
-      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo);
   void WebExtensionTabAttached(int tab_id,
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo);
   void WebExtensionTabDetached(int tab_id,
@@ -947,6 +944,8 @@ class NWebImpl : public NWeb {
   int PrerenderPage(const std::string& url,
                     const std::string& additional_headers);
   void CancelAllPrerendering();
+  static void SetExtraHeadersMap(const std::string& url,
+                                 const std::string& additional_headers);
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
@@ -1040,7 +1039,6 @@ class NWebImpl : public NWeb {
   int32_t SetBlanklessLoadingWithKey(const std::string& key, bool isStart) override;
   int64_t GetPreferenceHash();
   static int64_t GetPreferenceHashByNwebId(int32_t nweb_id);
-  void RecordBlanklessFrameSize(uint32_t width, uint32_t height) override;
   bool TriggerBlanklessForUrl(const std::string& url) override;
   void SetVisibility(bool isVisible) override;
 #endif
@@ -1147,8 +1145,6 @@ class NWebImpl : public NWeb {
   std::atomic<uint64_t> blankless_key_ = UINT64_MAX;
   std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
-  uint32_t cur_blankless_frame_width_ = 0;
-  uint32_t cur_blankless_frame_height_ = 0;
 #endif
 
   base::WeakPtrFactory<NWebImpl> weak_factory_{this};

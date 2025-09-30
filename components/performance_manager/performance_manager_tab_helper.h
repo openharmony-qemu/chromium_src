@@ -110,7 +110,11 @@ class PerformanceManagerTabHelper
       WebContentsObserver::MediaStoppedReason reason) override;
 
   void OneShotMediaPlayerStopped() override;
-#endif
+  void AudioContextPlaybackStarted(
+      const AudioContextId& audio_context_id) override;
+  void AudioContextPlaybackStopped(
+      const AudioContextId& audio_context_id) override;
+#endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override;

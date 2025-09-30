@@ -240,6 +240,9 @@ void MediaSessionController::OnMediaPositionStateChanged(
 
 void MediaSessionController::OnMediaMutedStatusChanged(bool mute) {
   media_session_->OnMediaMutedStatusChanged(mute);
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  media_session_->UpdateMediaPlayersMuteState(player_id_, mute);
+#endif
 }
 
 void MediaSessionController::OnPictureInPictureAvailabilityChanged(

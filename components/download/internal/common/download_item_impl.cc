@@ -542,11 +542,6 @@ DownloadItemImpl::~DownloadItemImpl() {
   DCHECK(!download_file_);
   CHECK(!is_updating_observers_);
 
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  LOG(DEBUG) << "DownloadItemImpl::~DownloadItemImpl";
-  AsArkWebDownloadItemImplExt()->RunCallbackIfExistsCallback();
-#endif
-
   for (auto& observer : observers_)
     observer.OnDownloadDestroyed(this);
   delegate_->Detach();
@@ -2154,15 +2149,21 @@ void DownloadItemImpl::Completed() {
   if (is_parallelizable) {
     RecordParallelizableDownloadCount(COMPLETED_COUNT,
                                       IsParallelDownloadEnabled());
-    int64_t content_length = -1;
-    if (response_headers_->response_code() != net::HTTP_PARTIAL_CONTENT) {
-      content_length = response_headers_->GetContentLength();
-    } else {
-      int64_t first_byte = -1;
-      int64_t last_byte = -1;
-      response_headers_->GetContentRangeFor206(&first_byte, &last_byte,
-                                               &content_length);
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+    if (response_headers_) {
+#endif
+      int64_t content_length = -1;
+      if (response_headers_->response_code() != net::HTTP_PARTIAL_CONTENT) {
+        content_length = response_headers_->GetContentLength();
+      } else {
+        int64_t first_byte = -1;
+        int64_t last_byte = -1;
+        response_headers_->GetContentRangeFor206(&first_byte, &last_byte,
+                                                 &content_length);
+      }
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
     }
+#endif
   }
 
   if (auto_opened_) {

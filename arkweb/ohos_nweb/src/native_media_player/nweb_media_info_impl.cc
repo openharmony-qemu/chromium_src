@@ -21,7 +21,7 @@ namespace {
 
 class NWebMediaSourceInfoImpl : public NWebMediaSourceInfo {
  public:
-  NWebMediaSourceInfoImpl(const CefMediaSourceInfo& info) : info_(info) {}
+  explicit NWebMediaSourceInfoImpl(const CefMediaSourceInfo& info) : info_(info) {}
   ~NWebMediaSourceInfoImpl() override = default;
 
   SourceType GetType() override {
@@ -37,7 +37,7 @@ class NWebMediaSourceInfoImpl : public NWebMediaSourceInfo {
 class NWebNativeMediaPlayerSurfaceInfoImpl
     : public NWebNativeMediaPlayerSurfaceInfo {
  public:
-  NWebNativeMediaPlayerSurfaceInfoImpl(
+  explicit NWebNativeMediaPlayerSurfaceInfoImpl(
       const CefNativeMediaPlayerSurfaceInfo& info)
       : info_(info) {}
   ~NWebNativeMediaPlayerSurfaceInfoImpl() override = default;

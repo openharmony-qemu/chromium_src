@@ -30,8 +30,11 @@
 #include "ohos_nweb/browser/performance_manager/mechanisms/background_task_holder.h"
 #include "gtest/gtest.h"
 
+#undef private
 #define private public
 #include "background_task_policy.h"
+#undef private
+#define private public
 #include "components/performance_manager/graph/graph_impl.h"
 
 using namespace testing;

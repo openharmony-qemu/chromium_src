@@ -45,7 +45,6 @@ class PaintLayerScrollableAreaExt : public PaintLayerScrollableArea {
   float ComputeVisibleAreaScale() const;
   void UpdateScrollbarLengthOrCreateWidthScale();
   void UpdateScrollbar();
-  void UpdateScrollbarByScale(bool will_be_overlay);
   void UpdateScrollbarProportions() override;
   gfx::Rect RectForHorizontalScrollbar() const override;
   gfx::Rect RectForVerticalScrollbar() const override;

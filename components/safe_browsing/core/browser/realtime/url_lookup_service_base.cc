@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/base64url.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
@@ -273,10 +274,14 @@ RealTimeUrlLookupServiceBase::GetWeakPtr() {
 
 bool RealTimeUrlLookupServiceBase::IsInBackoffMode() const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return true;
+#else
   bool in_backoff = backoff_operator_->IsInBackoffMode();
   RecordBooleanWithAndWithoutSuffix("SafeBrowsing.RT.BackoffState",
                                     GetMetricSuffix(), in_backoff);
   return in_backoff;
+#endif
 }
 
 std::unique_ptr<RTLookupResponse>

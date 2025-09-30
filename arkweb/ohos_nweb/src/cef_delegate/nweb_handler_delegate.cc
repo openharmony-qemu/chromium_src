@@ -614,7 +614,7 @@ void NWebHandlerDelegate::OnDestroy() {
 #if BUILDFLAG(ARKWEB_JSPROXY)
   RemoveTransientJavaScriptObject();
 #endif
-  if (main_browser_) {
+  if (main_browser_ && main_browser_->GetHost()) {
     main_browser_->GetHost()->CloseBrowser(true);
     main_browser_ = nullptr;
   }
@@ -951,17 +951,21 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
     LOG(WARNING) << "OnFrameCreated failed, frame is invalid";
     return;
   }
- 
+
   CefRefPtr<CefFrameHostImpl> frameHost = static_cast<CefFrameHostImpl*>(frame.get());
   if (!frameHost->GetRenderFrameHost()) {
     LOG(WARNING) << "OnFrameCreated failed, GetRenderFrameHost failed";
     return;
   }
- 
+
   content::RenderFrameHostImpl* rfh =
     static_cast<content::RenderFrameHostImpl*>(frameHost ->GetRenderFrameHost());
+  if (!rfh) {
+    LOG(WARNING) << "OnFrameCreated failed, dynamic_cast to content::RenderFrameHostImpl failed";
+    return;
+  }
   auto globalId = rfh->GetGlobalId();
- 
+
   FrameInfos frameInfo;
   frameInfo.id = std::to_string(globalId.child_id) + "_" + std::to_string(globalId.frame_routing_id);
   if (content::RenderFrameHostImpl* parent = rfh->GetParent()) {
@@ -971,8 +975,7 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
   } else {
     frameInfo.parentId.clear();
   }
-  frameInfo.url = rfh->GetLastCommittedURL().spec();
- 
+
   dispatcher_.OnFrameCreated(frameInfo);
 }
 #endif
@@ -985,6 +988,9 @@ void NWebHandlerDelegate::InjectJsToWebInner(
     JsRunTime time,
     ScriptItems& scriptItems,
     ScriptItemsByOrder& scriptItemsByOrder) {
+  if (!main_browser_ || !main_browser_->GetHost()) {
+    return;
+  }
   switch (time) {
     case JsRunTime::Start:
       scriptItems = preference_delegate_->GetJavaScriptOnDocumentStart();
@@ -1027,7 +1033,7 @@ void NWebHandlerDelegate::InjectJsToWeb(JsRunTime time) {
 
   InjectJsToWebInner(time, scriptItems, scriptItemsByOrder);
 
-  int count = 0;
+  size_t count = 0;
   for (const auto& item : scriptItemsByOrder) {
     if (scriptItems.find(item) == scriptItems.end()) {
       continue;
@@ -1038,6 +1044,9 @@ void NWebHandlerDelegate::InjectJsToWeb(JsRunTime time) {
       CefString cefRule;
       cefRule.FromString(rule);
       scriptRules.push_back(cefRule);
+    }
+    if (!main_browser_ || !main_browser_->GetHost()) {
+      return;
     }
     switch (time) {
       case JsRunTime::Start:
@@ -1257,10 +1266,10 @@ bool NWebHandlerDelegate::DoClose(CefRefPtr<CefBrowser> browser) {
         if (GetBrowser() && GetBrowser()->GetHost()) {
             GetBrowser()->GetHost()->SendPipEvent(
               pip_delegate_id_, pip_child_id_, pip_frame_routing_id_,
-              content::PIP_STATE_EXIT);
+              content::PIP_STATE_PAGE_CLOSE);
         }
-        nweb_handler_->OnPip(1, pip_delegate_id_, pip_child_id_,
-                             pip_frame_routing_id_, 0, 0);
+        nweb_handler_->OnPip(content::PIP_STATE_PAGE_CLOSE, pip_delegate_id_,
+                             pip_child_id_, pip_frame_routing_id_, 0, 0);
     }
   }
   // Closing the main window requires special handling. See the DoClose()
@@ -1289,7 +1298,7 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
     }
   } else {
     content::GpuProcessHost* host = content::GpuProcessHost::Get();
-    if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr) {
+    if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr && main_browser_->GetHost()) {
       host->gpu_host()->DestroyNativeWindow(main_browser_->GetHost()->GetAcceleratedWidget(false));
     }
     OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
@@ -1558,7 +1567,7 @@ void NWebHandlerDelegate::OnLoadStart(CefRefPtr<CefBrowser> browser,
   isWebPaintedForSnapshot_ = false;
 #endif
 
-  if (nweb_handler_ != nullptr) {
+  if (nweb_handler_ != nullptr && browser->GetHost()) {
     nweb_handler_->OnPageLoadBegin(url.ToString());
     browser->GetHost()->OnTextSelected(false);
   }
@@ -2267,7 +2276,7 @@ bool NWebHandlerDelegate::OnBeforeDownload(
     return false;
   }
 
-  if (download_listener_ != nullptr) {
+  if (download_listener_ != nullptr && browser->GetHost()) {
     download_listener_->OnDownloadStart(
         download_item->GetURL().ToString(),
         browser->GetHost()->DefaultUserAgent(),
@@ -5249,7 +5258,7 @@ void NWebHandlerDelegate::RegisterScreenCaptureDelegateListener(
 
 #if BUILDFLAG(ARKWEB_MENU)
 void NWebHandlerDelegate::OnVisibleChanged(bool isVisible) {
-  on_handle_visible_(isVisible);
+  on_handle_visible_.Run(isVisible);
 }
 
 void NWebHandlerDelegate::ShowMagnifier() {
@@ -5278,4 +5287,23 @@ void NWebHandlerDelegate::OnPdfLoadEvent(int32_t result, const std::string& url)
   }
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+bool NWebHandlerDelegate::OnStartBackgroundTask(int32_t type,
+                                                const std::string& message) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    return dispatcher_.OnStartBackgroundTask(type, message);
+  }
+#endif  // ARKWEB_NWEB_EX
+  if (web_app_client_extension_listener_ == nullptr ||
+      web_app_client_extension_listener_->OnStartBackgroundTask == nullptr) {
+    LOG(ERROR) << "NWebHandlerDelegate::OnStartBackgroundTask failed for "
+                  "nullptr. default return true";
+    return true;
+  }
+  return web_app_client_extension_listener_->OnStartBackgroundTask(
+      type, message, web_app_client_extension_listener_->nweb_id);
+}
+#endif  // RKWEB_PERFORMANCE_PERSISTENT_TASK
 }  // namespace OHOS::NWeb

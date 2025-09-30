@@ -62,6 +62,7 @@
 #endif
 
 struct OpenDevToolsParam;
+struct RunJavaScriptParam;
 
 namespace OHOS::NWeb {
 class NWebValue;
@@ -742,8 +743,6 @@ class NWebDelegateInterface
       int tab_id,
       std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo,
       std::unique_ptr<NWebExtensionTab> tab) = 0;
-  virtual void WebExtensionTabActivated(
-      std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo) = 0;
   virtual void WebExtensionTabAttached(
       int tab_id,
       std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo) = 0;
@@ -901,8 +900,7 @@ class NWebDelegateInterface
 #endif  // BUILDFLAG(ARKWEB_MENU)
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  virtual void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
-                                     bool recursive, IsolatedWorld world,
+  virtual void RunJavaScriptInFrames(RunJavaScriptParam param,
                                      OnReceiveValueCallback callback) = 0;
 #endif
 

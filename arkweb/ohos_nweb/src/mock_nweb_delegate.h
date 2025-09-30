@@ -1074,10 +1074,6 @@ class MockNWebDelegate : public NWebDelegateInterface {
                std::unique_ptr<NWebExtensionTab> tab),
               (override));
   MOCK_METHOD(void,
-              WebExtensionTabActivated,
-              (std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo),
-              (override));
-  MOCK_METHOD(void,
               WebExtensionTabAttached,
               (int tab_id,
                std::unique_ptr<NWebExtensionTabAttachInfo> attachInfo),
@@ -1224,10 +1220,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 
   MOCK_METHOD(void,
               RunJavaScriptInFrames,
-              (const std::string& jsString,
-               FrameInfos rootFrame,
-               bool recursive,
-               IsolatedWorld world,
+              (RunJavaScriptParam,
                OnReceiveValueCallback callback),
               (override));
 };

@@ -11,6 +11,7 @@
 #include "content/browser/media/session/media_session_impl.h"
 #include "content/public/browser/web_contents.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "media/audio/ohos/audio_dump.h"
 #include "media/audio/ohos/ohos_audio_focus_controller.h"
 
 namespace media {
@@ -66,6 +67,7 @@ OHOSAudioOutputStream::~OHOSAudioOutputStream() {
     OH_AudioStreamBuilder_Destroy(audio_stream_builder_);
     audio_stream_builder_ = nullptr;
   }
+  DumpFileUtil::CloseDumpScopedFile(&dumpFile_);
 }
 
 bool OHOSAudioOutputStream::Open() {
@@ -74,6 +76,12 @@ bool OHOSAudioOutputStream::Open() {
   if (!InitRender()) {
     return false;
   }
+  time_t now = time(nullptr);
+  std::string dumpFileName = std::to_string(now) + "_" +
+      std::to_string(parameters_.sample_rate()) + "_" +
+      std::to_string(parameters_.channels()) + "_" +
+      std::to_string(1) + "_output_write.pcm";
+  DumpFileUtil::OpenDumpScopedFile(dumpFileName, &dumpFile_);
   return true;
 }
 
@@ -81,6 +89,7 @@ void OHOSAudioOutputStream::Close() {
   LOG(INFO) << "OHOSAudioOutputStream::Close. [hash: "
             << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   Stop();
+  DumpFileUtil::CloseDumpScopedFile(&dumpFile_);
   manager_->ReleaseOutputStream(this);
 }
 // LCOV_EXCL_STOP
@@ -226,21 +235,27 @@ void OHOSAudioOutputStream::OnResume() {
     LOG(ERROR) << "OHOSAudioOutputStream::OnResume parameters_ is not valid.";
     return;
   }
-  if (isNeedResume(audioResumeInterval_) &&
-      OHOSAudioFocusController::IsSuspended(parameters_)) {
-    if (!main_task_runner_) {
-      LOG(ERROR) << "OHOSAudioOutputStream::OnResume main task runner is nullptr";
-      return;
+  if (OHOSAudioFocusController::IsSuspended(parameters_)) {
+    if(isNeedResume(audioResumeInterval_)) {
+      if (!main_task_runner_) {
+        LOG(ERROR) << "OHOSAudioOutputStream::OnResume main task runner is nullptr";
+        return;
+      }
+      main_task_runner_->PostTask(
+          FROM_HERE,
+          base::BindOnce(
+              [](base::WeakPtr<OHOSAudioOutputStream> self) {
+                if (self && self->parameters_.IsValid()) {
+                  OHOSAudioFocusController::OnResume(self->parameters_);
+                }
+              },
+              weak_factory_.GetWeakPtr()));
     }
-    main_task_runner_->PostTask(
-        FROM_HERE,
-        base::BindOnce(
-            [](base::WeakPtr<OHOSAudioOutputStream> self) {
-              if (self && self->parameters_.IsValid()) {
-                OHOSAudioFocusController::OnResume(self->parameters_);
-              }
-            },
-            weak_factory_.GetWeakPtr()));
+    return;
+  }
+  if(callback_) {
+    LOG(INFO) << "[Oneshot] try to restart stream";
+    Start(callback_);
   }
 }
 // LCOV_EXCL_STOP
@@ -340,7 +355,6 @@ void OHOSAudioOutputStream::SuspendOtherMediaSession() {
 void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   LOG(INFO) << "OHOSAudioOutputStream::Start [hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   base::AutoLock lock(lock_);
-  DCHECK(!callback_);
   DCHECK(reference_time_.is_null());
   isSuspended_ = false;
 
@@ -657,6 +671,7 @@ void OHOSAudioOutputStream::OnWriteData(void* buffer, int32_t length) {
   frames_filled = std::min(frames_filled, length / bytes_per_frame_);
   audio_bus_->ToInterleaved<SignedInt16SampleTypeTraits>(
       frames_filled, reinterpret_cast<int16_t*>(buffer));
+  DumpFileUtil::WriteDumpScopedFile(dumpFile_, buffer, length);
   if (reference_time_.is_null()) {
     reference_time_ = now;
   }
@@ -676,7 +691,7 @@ void OHOSAudioOutputStream::SetUpAudioSilentState() {
   bool is_playing = OHOSAudioFocusController::IsActive(parameters_) ||
                     OHOSAudioFocusController::GetPlayingState(parameters_) ||
                     write_data_counts_ >= 1;
-  bool is_muted = OHOSAudioFocusController::GetMuteState(parameters_);
+  bool is_muted = OHOSAudioFocusController::GetMediaPlayerMuteState(parameters_);
   if (is_playing && !is_muted) {
     OH_AudioRenderer_SetSilentModeAndMixWithOthers(audio_renderer_, false);
     LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode false!";
@@ -704,7 +719,7 @@ bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode() {
       OHOSAudioFocusController::GetSessionState(parameters_);
   bool is_active = OHOSAudioFocusController::IsActive(parameters_);
   bool is_playingState = OHOSAudioFocusController::GetPlayingState(parameters_);
-  bool is_muted = OHOSAudioFocusController::GetMuteState(parameters_);
+  bool is_muted = OHOSAudioFocusController::GetMediaPlayerMuteState(parameters_);
   LOG(INFO) << "OHOSAudioOutputStream sessionState:"
             << static_cast<uint32_t>(sessionState) << ", mutedMode:" << is_muted
             << ", activeMode:" << is_active

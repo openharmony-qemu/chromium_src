@@ -33,11 +33,13 @@
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
 #include "base/task/sequenced_task_runner.h"
+#include "base/no_destructor.h"
 #include "net/base/host_port_pair.h"
 #include "net/base/proxy_server.h"
 #include "net/base/proxy_string_util.h"
 #include "net/proxy_resolution/proxy_config_with_annotation.h"
 #include "url/third_party/mozilla/url_parse.h"
+#include "url/ohos/log_utils.h"
 
 namespace net {
 
@@ -372,6 +374,10 @@ class ProxyConfigServiceOHOS::Delegate
                               int port,
                               const std::string& pac_url,
                               const std::vector<std::string>& exclusion_list) {
+#if BUILDFLAG(ARKWEB_NETWORK_PROXY)
+    LOG(INFO) << "ohos_network ProxySettingsChangedTo has_proxy_override_ " << has_proxy_override_
+              << ", proxy host " << url::LogUtils::ConvertUrlWithMask(host);
+#endif
     if (has_proxy_override_) {
       return;
     }
@@ -462,19 +468,19 @@ class ProxyConfigServiceOHOS::Delegate
 };
 
 std::shared_ptr<NetProxyEventCallback> NetProxyEventCallback::GetInstance() {
-  static std::shared_ptr<NetProxyEventCallback> proxy_event_callback_ = nullptr;
+  static base::NoDestructor<std::shared_ptr<NetProxyEventCallback>> proxy_event_callback_(nullptr);
  
-  if (proxy_event_callback_) {
-    return proxy_event_callback_;
+  if (*proxy_event_callback_) {
+    return *proxy_event_callback_;
   }
  
   NetProxyEventCallback* raw = new NetProxyEventCallback();
-  proxy_event_callback_.reset(raw);
+  (*proxy_event_callback_).reset(raw);
  
   OHOS::NWeb::OhosAdapterHelper::GetInstance()
       .GetNetProxyInstance()
-      .RegNetProxyEvent(proxy_event_callback_);
-  return proxy_event_callback_;
+      .RegNetProxyEvent(*proxy_event_callback_);
+  return *proxy_event_callback_;
 }
  
 void NetProxyEventCallback::AddObserver(ProxyConfigServiceOHOS* observer) {

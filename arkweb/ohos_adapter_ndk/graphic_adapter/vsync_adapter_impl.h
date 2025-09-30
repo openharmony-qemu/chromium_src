@@ -53,7 +53,6 @@ private:
     std::unordered_map<void*, NWebVSyncCb> vsyncCallbacks_;
     OH_NativeVSync_FrameCallback frameCallback_ = OnVsync;
     static void (*callback_)();
-    static void (*onVsyncEndCallback_)();
     bool isGPUProcess_ = false;
 };
 } // namespace OHOS::NWeb

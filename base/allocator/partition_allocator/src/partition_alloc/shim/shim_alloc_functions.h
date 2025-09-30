@@ -104,7 +104,7 @@ PA_ALWAYS_INLINE void* ShimCppNewNoThrow(size_t size) {
 #if PA_BUILDFLAG(IS_OHOS)
   OhosMemtrace(ptr, size, "ShimCppNewNoThrow", true);
 #endif
-  return ptr; // chain_head->alloc_unchecked_function(size, context);
+  return ptr;
 }
 
 PA_ALWAYS_INLINE void* ShimCppAlignedNew(size_t size, size_t alignment) {

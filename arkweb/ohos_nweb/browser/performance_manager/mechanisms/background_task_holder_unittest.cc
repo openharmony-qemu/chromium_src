@@ -22,7 +22,7 @@
 
 #undef private
 #define private public
-#include "background_task_policy.h"
+#include "background_task_holder.h"
 #undef private
 #define private public
 
@@ -56,7 +56,7 @@ protected:
     }
 
     void TearDown() override {
-        delete backgroundStateChangeCallback
+        delete backgroundStateChangeCallback;
     }
 
     std::shared_ptr<MockApplicationStateChangeCallback> callback;

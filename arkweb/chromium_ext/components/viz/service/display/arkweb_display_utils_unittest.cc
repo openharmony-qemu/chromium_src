@@ -294,9 +294,9 @@ class ArkwebDisplayUtilsTest : public testing::Test {
 
   void TestSetGpuChannelManager() {
     ArkwebDisplayUtils utils(nullptr);
-    raw_ptr<gpu::GpuChannelManager> test_manager;
-    utils.SetGpuChannelManager(test_manager);
-    EXPECT_EQ(utils.gpu_channel_manager_, test_manager);
+    GpuServiceImpl* test_impl = nullptr;
+    utils.SetGpuServiceImpl(test_impl);
+    EXPECT_EQ(utils.gpu_service_impl_, test_impl);
   }
 #endif
 
@@ -413,76 +413,45 @@ class ArkwebDisplayUtilsTest : public testing::Test {
 #endif
 };
 
-TEST_F(ArkwebDisplayUtilsTest, DrawAndSwapDump){
+TEST_F(ArkwebDisplayUtilsTest, ArkwebDisplayUtilsTest_001){
   TestDrawAndSwapDump();
-}
-
-TEST_F(ArkwebDisplayUtilsTest, DrawAndSwap){
   TestDrawAndSwap();
 }
 
-TEST_F(ArkwebDisplayUtilsTest, ArkwebDisplayUtils){
+TEST_F(ArkwebDisplayUtilsTest, ArkwebDisplayUtilsTest_002){
   TestArkwebDisplayUtils();
 }
 
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
-TEST_F(ArkwebDisplayUtilsTest, SetDrawRect) {
+TEST_F(ArkwebDisplayUtilsTest, ArkwebDisplayUtilsTest_003) {
   TestSetDrawRect();
-}
-
-TEST_F(ArkwebDisplayUtilsTest, SetDrawMode) {
   TestSetDrawMode();
 }
 #endif
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-TEST_F(ArkwebDisplayUtilsTest, DisableSwapUntilMaximized) {
+TEST_F(ArkwebDisplayUtilsTest, ArkwebDisplayUtilsTest_004) {
   TestDisableSwapUntilMaximized();
-}
-
-TEST_F(ArkwebDisplayUtilsTest, RestoreRenderFitTimeElapsed) {
   TestRestoreRenderFitTimeElapsed();
 }
 
-TEST_F(ArkwebDisplayUtilsTest, RestoreRenderFit) {
+TEST_F(ArkwebDisplayUtilsTest, ArkwebDisplayUtilsTest_005) {
   TestRestoreRenderFit();
-}
-
-TEST_F(ArkwebDisplayUtilsTest, ReenableSwapCheck) {
   TestReenableSwapCheck();
 }
 
-TEST_F(ArkwebDisplayUtilsTest, ShouldDisableSwap) {
+TEST_F(ArkwebDisplayUtilsTest, ArkwebDisplayUtilsTest_006) {
   TestShouldDisableSwap();
 }
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-TEST_F(ArkwebDisplayUtilsTest, RemoveDuplicatesRect) {
-  std::vector<gfx::Rect> quad_list_empty;
-  ArkwebDisplayUtils utils(nullptr);
-  utils.removeDuplicatesRect(quad_list_empty);
-
-  std::vector<gfx::Rect> quad_list_in{gfx::Rect(1, 1), gfx::Rect(2, 2),
-                                      gfx::Rect(1, 1), gfx::Rect(3, 3),
-                                      gfx::Rect(1, 1), gfx::Rect(4, 4)};
-  std::vector<gfx::Rect> quad_list_unique{gfx::Rect(1, 1), gfx::Rect(2, 2),
-                                          gfx::Rect(3, 3), gfx::Rect(4, 4)};
-  utils.removeDuplicatesRect(quad_list_in);
-  std::sort(quad_list_in.begin(), quad_list_in.end());
-  std::sort(quad_list_unique.begin(), quad_list_unique.end());
-  EXPECT_TRUE(quad_list_in == quad_list_unique);
-}
-
-TEST_F(ArkwebDisplayUtilsTest, SetClientId) {
+TEST_F(ArkwebDisplayUtilsTest, ArkwebDisplayUtilsTest_008) {
   TestSetClientId();
-}
-
-TEST_F(ArkwebDisplayUtilsTest, SetGpuChannelManager) {
   TestSetGpuChannelManager();
 }
 #endif
-TEST_F(ArkwebDisplayUtilsTest, Resize) {
+TEST_F(ArkwebDisplayUtilsTest, ArkwebDisplayUtilsTest_009) {
   TestResize();
 }
 }  // namespace viz

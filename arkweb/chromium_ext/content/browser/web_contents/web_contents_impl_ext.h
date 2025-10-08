@@ -91,7 +91,7 @@ class WebContentsImplExt : public WebContentsImpl {
 
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   bool force_enable_zoom_ = false;
   void SetForceEnableZoom(bool forceEnableZoom) override;
   bool GetForceEnableZoom() override { return force_enable_zoom_; }
@@ -304,6 +304,15 @@ class WebContentsImplExt : public WebContentsImpl {
   bool OnStartBackgroundTask(int32_t type, const std::string& message) override;
 #endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override;
+  void DetectBlankScreen(const std::string& url);
+#endif
+
 #if BUILDFLAG(ARKWEB_READER_MODE)
   void OnIsPageDistillable(int page_type,
                            const std::string& distillable_page_url,
@@ -317,7 +326,10 @@ private:
   std::unique_ptr<VideoAssistant> video_assistant_;
   bool custom_media_player_enabled_ = false;
   std::map<MediaPlayerId, int32_t> surface_widget_map_;
-public:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class WebContentsImplExtTest;
+#endif  // ARKWEB_TEST
+ public:
   void EnableVideoAssistant(bool enable) override;
   void ExecuteVideoAssistantFunction(const std::string& cmdId) override;
   void OnShowToast(double duration, const std::string& toast);
@@ -365,6 +377,9 @@ public:
 #endif
 
 private:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class WebContentsImplUtilsTest;
+#endif
   std::string custom_user_agent_;
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   bool safe_browsing_strict_mode_ = false;
@@ -394,6 +409,40 @@ private:
   bool pip_update_surface_ = false;
   bool pip_status_ = false;
 #endif
+
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+  void SetPrimaryMainFrame(RenderFrameHostImpl* impl) { test_impl_ = impl; }
+  RenderFrameHostImpl* GetPrimaryMainFrame() override {
+    if (test_impl_) {
+      return test_impl_;
+    }
+    return WebContentsImpl::GetPrimaryMainFrame();
+  }
+
+  void SetTestFlag(bool flag) { flag_ = flag; }
+  blink::RendererPreferences* GetMutableRendererPrefs() override {
+    if (flag_) {
+      return nullptr;
+    }
+    return WebContentsImpl::GetMutableRendererPrefs();
+  }
+
+  void SetRenderManagerForTesting(RenderFrameHostManager* manager) {
+    test_manager_ = manager;
+  }
+  RenderFrameHostManager* GetRenderManager() override {
+    if (test_manager_) {
+      return test_manager_;
+    }
+    return WebContentsImpl::GetRenderManager();
+  }
+
+ private:
+  RenderFrameHostImpl* test_impl_ = nullptr;
+  RenderFrameHostManager* test_manager_ = nullptr;
+  bool flag_ = false;
+#endif  // ARKWEB_TEST
 };
 }  // namespace content
 

@@ -16,6 +16,9 @@
 #include "mojo/public/cpp/bindings/scoped_interface_endpoint_handle.h"
 #include "third_party/blink/public/mojom/input/input_handler.mojom.h"
 #include "third_party/blink/public/mojom/navigation/navigation_params.mojom-forward.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#include "base/gtest_prod_util.h"
+#endif
 
 namespace content {
 
@@ -82,6 +85,14 @@ class TestRenderFrame : public RenderFrameImpl {
   explicit TestRenderFrame(RenderFrameImpl::CreateParams params);
 
  private:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class ArkWebRenderFrameImplTest;
+#endif
+#if BUILDFLAG(ARKWEB_TEST)
+  bool frame_host_test_mode = false;
+  mojom::FrameHost* frame_host_test = nullptr;
+  void SetFrameHostForTest(mojom::FrameHost* frame_host);
+#endif
   void BindToFrame(blink::WebNavigationControl* frame) override;
   mojom::FrameHost* GetFrameHost() override;
 

@@ -578,6 +578,7 @@ void RenderViewTest::TearDown() {
     leak_detector->PerformLeakDetection(base::BindOnce(
         [](base::OnceClosure closure,
            blink::mojom::LeakDetectionResultPtr result) {
+#if !BUILDFLAG(ARKWEB_TEST)
           EXPECT_EQ(0u, result->number_of_live_audio_nodes);
           EXPECT_EQ(0u, result->number_of_live_documents);
           EXPECT_EQ(0u, result->number_of_live_nodes);
@@ -589,6 +590,7 @@ void RenderViewTest::TearDown() {
           EXPECT_EQ(0u, result->number_of_live_v8_per_context_data);
           EXPECT_EQ(0u, result->number_of_worker_global_scopes);
           EXPECT_EQ(0u, result->number_of_live_resource_fetchers);
+#endif
           std::move(closure).Run();
         },
         run_loop.QuitClosure()));

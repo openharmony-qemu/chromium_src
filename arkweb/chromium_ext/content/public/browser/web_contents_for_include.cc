@@ -44,7 +44,7 @@ virtual void CloseDateTimeChooser() = 0;
 virtual void CollapseAllFramesSelection() = 0;
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 virtual void SetForceEnableZoom(bool forceEnableZoom) = 0;
 virtual bool GetForceEnableZoom() = 0;
 #endif  // ARKWEB_EXT_FORCE_ZOOM
@@ -189,13 +189,26 @@ virtual void DisableSessionReuse() = 0;
 virtual bool OnStartBackgroundTask(int32_t type, const std::string& message) = 0;
 #endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+virtual void SetBlankScreenDetectionConfig(
+    bool enable,
+    const std::vector<double>& detectionTiming,
+    const std::vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_READER_MODE)
   virtual void OnIsPageDistillable(int page_type,
                                    const std::string& distillable_page_url,
                                    const std::string& title) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_TEST)
+public:
+#else
 private:
+#endif  // ARKWEB_TEST
+
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 std::string media_title_;
 std::string video_poster_;

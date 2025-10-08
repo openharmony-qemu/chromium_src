@@ -44,7 +44,8 @@ void AshmemFuzzTest(const uint8_t* data, size_t size)
     ShmemAdapterSetProt(fd, prot);
     ShmemAdapterGetSize(fd);
     ShmemAdapterGetProt(fd);
-    ShmemAdapterMap(fd, prot);
+    void *startAddr = ShmemAdapterMap(fd, prot);
+    ShmemAdapterUnmap(startAddr, ShmemAdapterGetSize(fd));
     ShmemAdapterClose(fd);
 }
 

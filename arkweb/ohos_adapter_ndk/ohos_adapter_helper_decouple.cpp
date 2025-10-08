@@ -71,6 +71,7 @@
 #include "ohos_adapter/bridge/ark_vsync_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_web_timezone_info_wrapper.h"
 #include "ohos_adapter/bridge/ark_window_adapter_wrapper.h"
+#include "ohos_adapter/bridge/ark_background_task_adapter_wrapper.h"
 #include "datashare_adapter/datashare_adapter_impl.h"
 #include "distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.h"
 
@@ -513,9 +514,9 @@ ArkOhosAdapterHelperWrapper::CreateFlowbufferAdapter() {
   return std::make_unique<ArkFlowbufferAdapterWrapper>(adapter);
 }
 
-std::unique_ptr<NWeb::MediaAVSessionAdapter>
+std::shared_ptr<NWeb::MediaAVSessionAdapter>
 ArkOhosAdapterHelperWrapper::CreateMediaAVSessionAdapter() {
-  return std::make_unique<NWeb::MediaAVSessionAdapterImpl>();
+  return std::make_shared<NWeb::MediaAVSessionAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::OhosImageDecoderAdapter>
@@ -600,5 +601,17 @@ ArkOhosAdapterHelperWrapper::CreateScreenlockManagerAdapter() {
 std::unique_ptr<NWeb::NetConfigAdapter>
 ArkOhosAdapterHelperWrapper::GetNetConfigAdapter() {
   return std::make_unique<NetConfigAdapterImpl>();
+}
+
+std::unique_ptr<NWeb::BackgroundTaskAdapter>
+ArkOhosAdapterHelperWrapper::CreateBackgroundTaskAdapter() {
+  ArkWebRefPtr<ArkBackgroundTaskAdapter> adapter =
+      ctocpp_->CreateBackgroundTaskAdapter();
+
+  if (CHECK_REF_PTR_IS_NULL(adapter)) {
+    return nullptr;
+  }
+
+  return std::make_unique<ArkBackgroundTaskAdapterWrapper>(adapter);
 }
 }  // namespace OHOS::ArkWeb

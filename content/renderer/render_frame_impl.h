@@ -917,6 +917,14 @@ class CONTENT_EXPORT RenderFrameImpl
   void ContentLoadFailedLoggerReport();
   void PageLoadFinishedLoggerReport();
 #endif
+#if BUILDFLAG(ARKWEB_TEST)
+  bool web_frame_widget_test_mode = false;
+  blink::WebFrameWidget* web_frame_widget_test = nullptr;
+  void SetLocalRootWebFrameWidgetForTest(blink::WebFrameWidget* widget);
+  bool web_view_test_mode = false;
+  blink::WebView* web_view_test = nullptr;
+  void SetWebViewForTest(blink::WebView* web_view);
+#endif
 
  protected:
   explicit RenderFrameImpl(CreateParams params);
@@ -930,6 +938,9 @@ class CONTENT_EXPORT RenderFrameImpl
   friend class RenderFrameImplTest;
   friend class RenderFrameObserver;
   friend class TestRenderFrame;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class ArkWebRenderFrameImplTest;
+#endif
 
   FRIEND_TEST_ALL_PREFIXES(RenderAccessibilityImplTest,
                            AccessibilityMessagesQueueWhileSwappedOut);

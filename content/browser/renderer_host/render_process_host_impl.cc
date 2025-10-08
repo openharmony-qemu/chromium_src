@@ -3544,6 +3544,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
       switches::kOhSchemeHandlerCustomScheme,
       switches::kOhosEnableVulkan,
       switches::kDisableMobileStyleSheet,
+      switches::kDisableNextPreviousFlag,
 #endif
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
       switches::kAdSecValue,

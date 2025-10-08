@@ -54,6 +54,11 @@
 #include "services/screen_ai/public/mojom/screen_ai_service.mojom-forward.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/task/delayed_task_handle.h"
+#include "base/task/sequenced_task_runner.h"
+#endif
+
 namespace blink {
 class WebAssociatedURLLoader;
 class WebInputEvent;
@@ -433,7 +438,8 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 #if BUILDFLAG(ARKWEB_PDF)
   gfx::Rect GetAvailableArea() override;
   void UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipped_selection_bounds) override;
-  void HideHandleAndQuickMenuForPDF(bool hide_handles) override;
+  void SetIsTouching(bool isTouching) override;
+  
 #endif
   // PdfAccessibilityActionHandler:
   void EnableAccessibility() override;
@@ -725,6 +731,12 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 
 #if BUILDFLAG(ARKWEB_PDF)
   void ForceSelectionChanged();
+  void RefreshMenuWithTouchAndScroll();
+  void SetIsScrolling(bool isScrolling);
+  void SetScrollStoppedAfterDelay();
+
+  // Used for cancelable delayed task in `UpdateScroll()`.
+  scoped_refptr<base::SequencedTaskRunner> GetTaskRunner();
 #endif
 
   bool initialized_ = false;
@@ -957,6 +969,15 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   bool scroll_at_bottom_status_ = false;
   gfx::Rect current_left_;
   gfx::Rect current_right_;
+  bool isTouching_ = false;
+  bool isScrolling_ = false;
+  bool isPinching_ = false;
+
+  // Used for cancelable delayed task in `UpdateScroll()`.
+  const scoped_refptr<base::SequencedTaskRunner> task_runner_;
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::DelayedTaskHandle cancelable_delayed_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   base::WeakPtrFactory<PdfViewWebPlugin> weak_factory_{this};

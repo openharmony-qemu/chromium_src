@@ -13,8 +13,10 @@
  * limitations under the License.	
  */
 #define protected public
+#define private public
 #include "SkTypeface_ohos.h"
 #undef protected
+#undef private
 #include <gtest/gtest.h>
 #include <memory>
 #include <fstream>
@@ -219,4 +221,45 @@ TEST_F(SkTypeface_OHOSTest, GetFontInfo) {
     EXPECT_STREQ(retrievedInfo->fname.c_str(), tempFontPath.c_str());
 }
 
+TEST_F(SkTypeface_OHOSTest, onOpenStream_NullFontInfo) {
+  FontInfo info;
+  info.familyName = "TestFont";
+  info.fname = "test.ttf";
+  info.style =
+      SkFontStyle(SkFontStyle::kNormal_Weight, SkFontStyle::kNormal_Width,
+                  SkFontStyle::kUpright_Slant);
+  auto typeface = sk_make_sp<SkTypeface_OHOS>(info);
+  typeface->fontInfo = nullptr;
+  int ttcIndex = 0;
+  auto result = typeface->onOpenStream(&ttcIndex);
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(SkTypeface_OHOSTest, onMakeFontData_NullFontInfo) {
+  FontInfo info;
+  info.familyName = "TestFont";
+  info.fname = "test.ttf";
+  info.style =
+      SkFontStyle(SkFontStyle::kNormal_Weight, SkFontStyle::kNormal_Width,
+                  SkFontStyle::kUpright_Slant);
+  auto typeface = sk_make_sp<SkTypeface_OHOS>(info);
+  typeface->fontInfo = nullptr;
+  auto result = typeface->onMakeFontData();
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(SkTypeface_OHOSTest, onGetFamilyName_NullFontInfo) {
+  FontInfo info;
+  info.familyName = "TestFont";
+  info.fname = "test.ttf";
+  info.style =
+      SkFontStyle(SkFontStyle::kNormal_Weight, SkFontStyle::kNormal_Width,
+                  SkFontStyle::kUpright_Slant);
+  auto typeface = sk_make_sp<SkTypeface_OHOS>(info);
+  typeface->specifiedName = "";
+  typeface->fontInfo = nullptr;
+  SkString result;
+  typeface->onGetFamilyName(&result);
+  EXPECT_EQ(result.size(), 0);
+}
 } // namespace skia

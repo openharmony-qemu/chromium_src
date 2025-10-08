@@ -214,7 +214,7 @@ class PDFiumEngineClient {
 
 #if BUILDFLAG(ARKWEB_PDF)
  virtual void UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipped_selection_bounds) {}
- virtual void HideHandleAndQuickMenuForPDF(bool hide_handles) {}
+ virtual void SetIsTouching(bool isTouching) {}
 #endif  // BUILDFLAG(ARKWEB_PDF)
 };
 

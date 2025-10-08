@@ -1,0 +1,43 @@
+#
+# Extending //device:device_unittests target
+#
+device_unittests_ext = {
+  sources = [
+    "//arkweb/chromium_ext/device/fido/ohos/fido2_api_utils.cpp",
+    "//arkweb/chromium_ext/device/fido/ohos/fido2_api_utils_unittests.cc",
+    "//arkweb/chromium_ext/device/fido/ohos/ohos_authenticator.cpp",
+    "//arkweb/chromium_ext/device/fido/ohos/ohos_authenticator_unittests.cc",
+    "//arkweb/chromium_ext/device/fido/ohos/ohos_fido_discovery.cpp",
+    "//arkweb/chromium_ext/device/fido/ohos/ohos_webauthn_api.cpp",
+    "//arkweb/chromium_ext/device/fido/ohos/ohos_webauthn_api_unittest.cc",
+    "//arkweb/chromium_ext/device/fido/ohos/type_conversions.cpp",
+    "//arkweb/chromium_ext/device/fido/ohos/type_conversions_unittests.cc",
+    "//arkweb/chromium_ext/services/device/generic_sensor/platform_sensor_ohos.cc",
+    "//arkweb/chromium_ext/services/device/generic_sensor/platform_sensor_ohos.h",
+    "//arkweb/chromium_ext/services/device/generic_sensor/platform_sensor_ohos_unittests.cc",
+    "//arkweb/chromium_ext/services/device/generic_sensor/platform_sensor_provider_ohos.cc",
+    "//arkweb/chromium_ext/services/device/generic_sensor/platform_sensor_provider_ohos.h",
+    "//services/device/generic_sensor/absolute_orientation_euler_angles_fusion_algorithm_using_accelerometer_and_magnetometer.cc",
+    "//services/device/generic_sensor/absolute_orientation_euler_angles_fusion_algorithm_using_accelerometer_and_magnetometer.h",
+    "//services/device/generic_sensor/gravity_fusion_algorithm_using_accelerometer.cc",
+    "//services/device/generic_sensor/gravity_fusion_algorithm_using_accelerometer.h",
+    "//services/device/generic_sensor/linear_acceleration_fusion_algorithm_using_accelerometer.cc",
+    "//services/device/generic_sensor/linear_acceleration_fusion_algorithm_using_accelerometer.h",
+    "//services/device/generic_sensor/orientation_euler_angles_fusion_algorithm_using_quaternion.cc",
+    "//services/device/generic_sensor/orientation_euler_angles_fusion_algorithm_using_quaternion.h",
+    "//services/device/generic_sensor/orientation_quaternion_fusion_algorithm_using_euler_angles.cc",
+    "//services/device/generic_sensor/orientation_quaternion_fusion_algorithm_using_euler_angles.h",
+    "//services/device/generic_sensor/orientation_util.cc",
+    "//services/device/generic_sensor/orientation_util.h",
+    "//services/device/generic_sensor/platform_sensor.cc",
+    "//services/device/generic_sensor/platform_sensor.h",
+    "//services/device/generic_sensor/platform_sensor_fusion.cc",
+    "//services/device/generic_sensor/platform_sensor_fusion.h",
+    "//services/device/generic_sensor/platform_sensor_fusion_algorithm.cc",
+    "//services/device/generic_sensor/platform_sensor_fusion_algorithm.h",
+    "//services/device/generic_sensor/platform_sensor_provider.cc",
+    "//services/device/generic_sensor/platform_sensor_provider.h",
+    "//services/device/generic_sensor/platform_sensor_util.cc",
+    "//services/device/generic_sensor/platform_sensor_util.h",
+  ]
+}

@@ -59,6 +59,9 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
       public DownloadDestinationObserver {
  public:
   friend ArkWebDownloadItemImplExt;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class ArkWebDownloadItemImplExtTest;
+#endif
   virtual ArkWebDownloadItemImplExt *AsArkWebDownloadItemImplExt() { return nullptr; }
   // Information about the initial request that triggers the download. Most of
   // the fields are immutable after the DownloadItem is successfully

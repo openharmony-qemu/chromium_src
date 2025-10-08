@@ -172,7 +172,6 @@ class DnsConfigServiceOhos::ConfigReader : public SerialWorker {
       std::vector<std::string> servers = NetworkChangeNotifier::GetDnsServers();
 #else
       std::vector<std::string> servers;
-      dns_config_ = ReadDnsConfig();
 #endif
       for (auto& server : servers) {
         if (server.empty()) {

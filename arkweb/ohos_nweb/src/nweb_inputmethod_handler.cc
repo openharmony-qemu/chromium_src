@@ -109,7 +109,11 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
   }
 
   void HandleSetSelection(int32_t start, int32_t end) override {}
-  void HandleExtendAction(int32_t action) override {}
+
+  void HandleExtendAction(int32_t action) override {
+    handler_->HandleExtendAction(action);
+  }
+
   void HandleSelect(int32_t keyCode, int32_t cursorMoveSkip) override {}
 
   int32_t GetTextIndexAtCursor() override {
@@ -343,6 +347,32 @@ void NWebInputMethodHandler::HandleSecurityLayerHandlerOnUI() {
 }
 // LCOV_EXCL_STOP
 
+void NWebInputMethodHandler::UpdateTextFieldStatus() {
+  if (browser_ == nullptr) {
+    return;
+  }
+
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+
+  CefRefPtr<CefTask> task = new InputMethodTask(base::BindOnce(
+      &NWebInputMethodHandler::UpdateTextFieldStatusHandlerOnUI, this));
+  host->PostTaskToUIThread(task);
+}
+
+void NWebInputMethodHandler::UpdateTextFieldStatusHandlerOnUI() {
+  if (browser_ == nullptr) {
+    return;
+  }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  host->UpdateTextFieldStatus(show_keyboard_, isAttachSuccess_);
+}
+
 void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo,
                                                int32_t customEnterKeyType) {
   type_text_flag_multi_line_ = false;
@@ -408,6 +438,7 @@ bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener, int3
   }
   isFocusSwitchOnBlur_ = false;
 
+  UpdateTextFieldStatus();
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   if (!fill_content_.empty()) {
     if (fill_content_node_id_ == input_node_id_) {
@@ -855,13 +886,7 @@ void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
   }
   CefKeyEvent keyEvent;
   keyEvent.windows_key_code = ui::VKEY_PROCESSKEY;
-  // keycode conversion for single char input on PC
-  if (base::ohos::IsPcDevice() && text.length() == 1) {
-    char16_t firstChar = text[0];
-    if (keycode_map.count(firstChar) > 0) {
-      keyEvent.windows_key_code = keycode_map[firstChar];
-    }
-  }
+
   keyEvent.modifiers = 0;
   keyEvent.is_system_key = false;
   keyEvent.type = KEYEVENT_RAWKEYDOWN;
@@ -1020,7 +1045,7 @@ void NWebInputMethodHandler::DeleteForwardHandlerOnUI(int32_t length) {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
     textCursorReady_ += text_cursor_length_;
   }
-  for (int32_t i = 0; i < text_cursor_length_; i++) {
+  for (int32_t i = 0; i < length; i++) {
     keyEvent.type = KEYEVENT_RAWKEYDOWN;
     host->SendKeyEvent(keyEvent);
     keyEvent.type = KEYEVENT_CHAR;
@@ -1058,7 +1083,7 @@ void NWebInputMethodHandler::DeleteBackwardHandlerOnUI(int32_t length) {
     std::unique_lock<std::mutex> lock(textCursorMutex_);
     textCursorReady_ += text_cursor_length_;
   }
-  for (int32_t i = 0; i < text_cursor_length_; i++) {
+  for (int32_t i = 0; i < length; i++) {
     keyEvent.type = KEYEVENT_RAWKEYDOWN;
     host->SendKeyEvent(keyEvent);
     keyEvent.type = KEYEVENT_CHAR;
@@ -1638,4 +1663,31 @@ bool NWebInputMethodHandler::ResetTextSelectiondata() {
   return false;
 }
 // LCOV_EXCL_STOP
+
+void NWebInputMethodHandler::HandleExtendAction(int32_t action) {
+  if (browser_ == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " browser is nullptr, " << action;
+    return;
+  }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << " browser host is nullptr, " << action;
+    return;
+  }
+  CefRefPtr<CefTask> extend_action_task = new InputMethodTask(base::BindOnce(
+        &NWebInputMethodHandler::HandleExtendActionOnUI, this, action));
+  host->PostTaskToUIThread(extend_action_task);
+}
+
+void NWebInputMethodHandler::HandleExtendActionOnUI(int32_t action) {
+  if (browser_ == nullptr) {
+    return;
+  }
+  CefRefPtr<ArkWebBrowserHostExt> host = browser_->GetHost();
+  if (host == nullptr) {
+    return;
+  }
+  LOG(DEBUG) << __FUNCTION__ << " action is " << action;
+  host->HandleInputMethodExtendAction(action);
+}
 }  // namespace OHOS::NWeb

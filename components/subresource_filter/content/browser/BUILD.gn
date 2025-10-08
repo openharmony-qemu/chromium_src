@@ -162,6 +162,9 @@ source_set("unit_tests") {
     "subresource_filter_content_settings_manager_unittest.cc",
     "subresource_filter_unittest.cc",
   ]
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    sources += arkweb_components_subresource_filter_content_browser_unitest_sources
+  }
   deps = [
     ":browser",
     ":test_support",

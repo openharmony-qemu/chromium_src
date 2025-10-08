@@ -56,6 +56,13 @@ class ArkWebLocalFrameMojoHandlerExt : public LocalFrameMojoHandler {
                          GetImageFromCacheCallback callback) final;
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void DetectBlankScreen(const WTF::String& url,
+                         const WTF::Vector<double>& detectionTiming,
+                         const WTF::Vector<int32_t>& detectionMethods,
+                         int32_t contentfulNodesCountThreshold) final;
+#endif
+
 #if BUILDFLAG(ARKWEB_PRECOMPILE)
   void GenerateCodeCache(const WTF::String& url,
                          const WTF::String& script,

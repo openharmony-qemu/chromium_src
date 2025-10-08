@@ -41,6 +41,9 @@ namespace download {
 class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItemImpl {
  public:
   friend DownloadItemImpl;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class ArkWebDownloadItemImplExtTest;
+#endif
   ArkWebDownloadItemImplExt *AsArkWebDownloadItemImplExt() override { return this; }
 
   // Constructing from persistent store:
@@ -164,6 +167,7 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItem
     int nweb_id_;
     NWebIdData(int nweb_id) { nweb_id_ = nweb_id; }
   };
+  void Cancel(bool user_cancel) override;
 #endif  //  BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 
  private:

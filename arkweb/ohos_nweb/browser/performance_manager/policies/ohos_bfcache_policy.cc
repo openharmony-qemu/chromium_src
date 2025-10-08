@@ -111,6 +111,12 @@ void OHOSBFCachePolicy::OnMemoryPressure(MemoryPressureLevel new_level) {
     return;
   }
 
+  auto* owningGraph = GetOwningGraph();
+  if (!owningGraph) {
+    LOG(ERROR) << "GetOwningGraph() returned null";
+    return;
+  }
+
   // Apply the cache limit to all pages.
   for (const PageNode* page_node : GetOwningGraph()->GetAllPageNodes()) {
     if (PageMightHaveFramesInBFCache(page_node)) {

@@ -153,10 +153,11 @@ void OhosNativeBufferAdapterImpl::Allocate(
     int width = bufferConfig->GetBufferWidth();
     int height = bufferConfig->GetBufferHeight();
     int usage = bufferConfig->GetBufferUsage();
+    int format = bufferConfig->GetBufferFormat();
     OH_NativeBuffer_Config config = {
         .width = width,
         .height = height,
-        .format = OH_NativeBuffer_Format::NATIVEBUFFER_PIXEL_FMT_RGBA_8888,
+        .format = format,
         .usage = usage,
     };
 

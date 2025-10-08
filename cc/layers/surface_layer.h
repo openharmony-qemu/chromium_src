@@ -129,6 +129,9 @@ class CC_EXPORT SurfaceLayer : public Layer {
   bool HasDrawableContent() const override;
 
  private:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class SurfaceLayerForIncludeTest;
+#endif
   ~SurfaceLayer() override;
 
   ProtectedSequenceWritable<UpdateSubmissionStateCB>

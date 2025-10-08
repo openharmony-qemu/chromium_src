@@ -19,7 +19,6 @@
 #include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "ui/gfx/geometry/insets.h"
-#include "third_party/blink/renderer/platform/heap/persistent.h"
 
 namespace blink {
 class DisplayCutoutClientImpl;
@@ -34,7 +33,7 @@ class DisplayCutoutClientImplUtils {
   void SetSafeArea(const gfx::Insets& safe_area);
 
  private:
-  Persistent<DisplayCutoutClientImpl> impl_;
+  raw_ptr<DisplayCutoutClientImpl> impl_;
 };
 }  // namespace blink
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_DISPLAY_CUTOUT_CLIENT_IMPL_UTILS_H_

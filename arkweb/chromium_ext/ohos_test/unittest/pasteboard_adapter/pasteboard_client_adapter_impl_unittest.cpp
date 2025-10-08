@@ -17,14 +17,21 @@
 #include <cstring>
 #include <memory>
 #include <gtest/gtest.h>
-
+#include <gmock/gmock.h>
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
- 
+#include <database/udmf/udmf_err_code.h>
+#include <database/udmf/udmf_meta.h>
+#include <database/pasteboard/oh_pasteboard_err_code.h>
+#include "ohos_sdk/openharmony/native/sysroot/usr/include/AbilityKit/ability_runtime/ability_runtime_common.h"
+
 #define private public
 #include "arkweb/ohos_adapter_ndk/pasteboard_adapter/include/pasteboard_client_adapter_impl.h"
 #undef private
- 
+
 using namespace testing;
+using testing::_;
+using testing::Return;
+
 
 namespace OHOS::NWeb {
 const int RESULT_OK = 0;
@@ -173,6 +180,174 @@ public:
     MockPasteboardObserver() = default;
     void OnPasteboardChanged() override {}
 };
+
+class MockOHOSFunction {
+public:
+ static MockOHOSFunction& GetInstance() {
+    static MockOHOSFunction instance;
+    return instance;
+ }
+
+ MOCK_METHOD(Pasteboard_GetDataParams*, OH_Pasteboard_GetDataParams_Create, ());
+ MOCK_METHOD(AbilityRuntime_ErrorCode, OH_AbilityRuntime_ApplicationContextGetCacheDir,
+            (char* buffer, int32_t bufferSize, int32_t* writeLength));
+ MOCK_METHOD(void, OH_Pasteboard_GetDataParams_SetProgressIndicator,
+            (Pasteboard_GetDataParams* params, Pasteboard_ProgressIndicator progressIndicator));
+ MOCK_METHOD(void, OH_Pasteboard_GetDataParams_SetDestUri,
+            (Pasteboard_GetDataParams* params, const char* destUri, uint32_t destUriLen));
+ MOCK_METHOD(void, OH_Pasteboard_GetDataParams_SetFileConflictOptions,
+            (Pasteboard_GetDataParams* params, Pasteboard_FileConflictOptions option));
+ MOCK_METHOD(OH_UdmfData*, OH_Pasteboard_GetDataWithProgress,
+            (OH_Pasteboard* pasteboard, Pasteboard_GetDataParams* params, int* status));
+ MOCK_METHOD(bool, OH_Pasteboard_HasData, (OH_Pasteboard* pasteboard));
+ MOCK_METHOD(void, OH_Pasteboard_GetDataParams_Destroy, (Pasteboard_GetDataParams* params));
+ MOCK_METHOD(OH_UdmfRecord**, OH_UdmfData_GetRecords, (OH_UdmfData* pThis, unsigned int* count));
+ MOCK_METHOD(bool, OH_UdmfData_IsLocal, (OH_UdmfData* data));
+
+static bool pasteboard_GetDataParams_Create;
+static bool abilityRuntime_ApplicationContextGetCacheDir;
+static bool pasteboard_GetDataParams_SetProgressIndicator;
+static bool pasteboard_GetDataParams_SetDestUri;
+static bool pasteboard_GetDataParams_SetFileConflictOptions;
+static bool pasteboard_GetDataWithProgress;
+static bool pasteboard_HasData;
+static bool pasteboard_GetDataParams_Destroy;
+static bool udmfData_GetRecords;
+static bool udmfData_IsLocal;
+};
+
+bool MockOHOSFunction::pasteboard_GetDataParams_Create = false;
+bool MockOHOSFunction::abilityRuntime_ApplicationContextGetCacheDir = false;
+bool MockOHOSFunction::pasteboard_GetDataParams_SetProgressIndicator = false;
+bool MockOHOSFunction::pasteboard_GetDataParams_SetDestUri = false;
+bool MockOHOSFunction::pasteboard_GetDataParams_SetFileConflictOptions = false;
+bool MockOHOSFunction::pasteboard_GetDataWithProgress = false;
+bool MockOHOSFunction::pasteboard_HasData = false;
+bool MockOHOSFunction::pasteboard_GetDataParams_Destroy = false;
+bool MockOHOSFunction::udmfData_GetRecords = false;
+bool MockOHOSFunction::udmfData_IsLocal = false;
+
+void SetMockState(bool status) {
+    MockOHOSFunction::pasteboard_GetDataParams_Create = status;
+    MockOHOSFunction::abilityRuntime_ApplicationContextGetCacheDir = status;
+    MockOHOSFunction::pasteboard_GetDataParams_SetProgressIndicator = status;
+    MockOHOSFunction::pasteboard_GetDataParams_SetDestUri = status;
+    MockOHOSFunction::pasteboard_GetDataParams_SetFileConflictOptions = status;
+    MockOHOSFunction::pasteboard_GetDataWithProgress = status;
+    MockOHOSFunction::pasteboard_HasData = status;
+    MockOHOSFunction::pasteboard_GetDataParams_Destroy = status;
+    MockOHOSFunction::udmfData_GetRecords = status;
+    MockOHOSFunction::udmfData_IsLocal = status;
+}
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+Pasteboard_GetDataParams* __real_OH_Pasteboard_GetDataParams_Create();
+Pasteboard_GetDataParams* __wrap_OH_Pasteboard_GetDataParams_Create() {
+    if (MockOHOSFunction::pasteboard_GetDataParams_Create) {
+        return MockOHOSFunction::GetInstance().OH_Pasteboard_GetDataParams_Create();
+    } else {
+        return __real_OH_Pasteboard_GetDataParams_Create();
+    }
+}
+
+AbilityRuntime_ErrorCode __real_OH_AbilityRuntime_ApplicationContextGetCacheDir(char* buffer,
+    int32_t bufferSize, int32_t* writeLength);
+AbilityRuntime_ErrorCode __wrap_OH_AbilityRuntime_ApplicationContextGetCacheDir(char* buffer,
+    int32_t bufferSize, int32_t* writeLength) {
+    if (MockOHOSFunction::abilityRuntime_ApplicationContextGetCacheDir) {
+        return MockOHOSFunction::GetInstance().OH_AbilityRuntime_ApplicationContextGetCacheDir(
+            buffer, bufferSize, writeLength);
+    } else {
+        return __real_OH_AbilityRuntime_ApplicationContextGetCacheDir(buffer, bufferSize, writeLength);
+    }
+}
+
+void __real_OH_Pasteboard_GetDataParams_SetProgressIndicator(Pasteboard_GetDataParams* params,
+    Pasteboard_ProgressIndicator progressIndicator);
+void __wrap_OH_Pasteboard_GetDataParams_SetProgressIndicator(Pasteboard_GetDataParams* params,
+    Pasteboard_ProgressIndicator progressIndicator) {
+    if (MockOHOSFunction::pasteboard_GetDataParams_SetProgressIndicator) {
+        return MockOHOSFunction::GetInstance().OH_Pasteboard_GetDataParams_SetProgressIndicator(params,
+            progressIndicator);
+    } else {
+        return __real_OH_Pasteboard_GetDataParams_SetProgressIndicator(params, progressIndicator);
+    }
+}
+
+void __real_OH_Pasteboard_GetDataParams_SetDestUri(Pasteboard_GetDataParams* params,
+    const char* destUri, uint32_t destUriLen);
+void __wrap_OH_Pasteboard_GetDataParams_SetDestUri(Pasteboard_GetDataParams* params,
+    const char* destUri, uint32_t destUriLen) {
+    if (MockOHOSFunction::pasteboard_GetDataParams_SetDestUri) {
+        return MockOHOSFunction::GetInstance().OH_Pasteboard_GetDataParams_SetDestUri(params, destUri, destUriLen);
+    } else {
+       return  __real_OH_Pasteboard_GetDataParams_SetDestUri(params, destUri, destUriLen);
+    }
+}
+
+void __real_OH_Pasteboard_GetDataParams_SetFileConflictOptions(Pasteboard_GetDataParams* params,
+    Pasteboard_FileConflictOptions option);
+void __wrap_OH_Pasteboard_GetDataParams_SetFileConflictOptions(Pasteboard_GetDataParams* params,
+    Pasteboard_FileConflictOptions option) {
+    if (MockOHOSFunction::pasteboard_GetDataParams_SetFileConflictOptions) {
+        return MockOHOSFunction::GetInstance().OH_Pasteboard_GetDataParams_SetFileConflictOptions(params, option);
+    } else {
+        return __real_OH_Pasteboard_GetDataParams_SetFileConflictOptions(params, option);
+    }
+}
+
+OH_UdmfData* __real_OH_Pasteboard_GetDataWithProgress(OH_Pasteboard* pasteboard,
+    Pasteboard_GetDataParams* params, int* status);
+OH_UdmfData* __wrap_OH_Pasteboard_GetDataWithProgress(OH_Pasteboard* pasteboard,
+    Pasteboard_GetDataParams* params, int* status) {
+    if (MockOHOSFunction::pasteboard_GetDataWithProgress) {
+        return MockOHOSFunction::GetInstance().OH_Pasteboard_GetDataWithProgress(pasteboard, params, status);
+    } else {
+        return __real_OH_Pasteboard_GetDataWithProgress(pasteboard, params, status);
+    }
+}
+
+bool __real_OH_Pasteboard_HasData(OH_Pasteboard* pasteboard);
+bool __wrap_OH_Pasteboard_HasData(OH_Pasteboard* pasteboard) {
+    if (MockOHOSFunction::pasteboard_HasData) {
+        return MockOHOSFunction::GetInstance().OH_Pasteboard_HasData(pasteboard);
+    } else {
+        return __real_OH_Pasteboard_HasData(pasteboard);
+    }
+}
+
+void __real_OH_Pasteboard_GetDataParams_Destroy(Pasteboard_GetDataParams* params);
+void __wrap_OH_Pasteboard_GetDataParams_Destroy(Pasteboard_GetDataParams* params) {
+    if (MockOHOSFunction::pasteboard_GetDataParams_Destroy) {
+        return MockOHOSFunction::GetInstance().OH_Pasteboard_GetDataParams_Destroy(params);
+    } else {
+        return __real_OH_Pasteboard_GetDataParams_Destroy(params);
+    }
+}
+
+OH_UdmfRecord** __real_OH_UdmfData_GetRecords(OH_UdmfData* pThis, unsigned int* count);
+OH_UdmfRecord** __wrap_OH_UdmfData_GetRecords(OH_UdmfData* pThis, unsigned int* count) {
+    if (MockOHOSFunction::udmfData_GetRecords) {
+        return MockOHOSFunction::GetInstance().OH_UdmfData_GetRecords(pThis, count);
+    } else {
+        return __real_OH_UdmfData_GetRecords(pThis, count);
+    }
+}
+
+bool __real_OH_UdmfData_IsLocal(OH_UdmfData* data);
+bool __wrap_OH_UdmfData_IsLocal(OH_UdmfData* data) {
+    if (MockOHOSFunction::udmfData_IsLocal) {
+        return MockOHOSFunction::GetInstance().OH_UdmfData_IsLocal(data);
+    } else {
+        return __real_OH_UdmfData_IsLocal(data);
+    }
+}
+
+#ifdef __cplusplus
+}
+#endif
 
 TEST_F(PasteboardClientAdapterImplTest, SetAndGetHtmlText)
 {
@@ -537,6 +712,158 @@ TEST_F(PasteboardClientAdapterImplTest, AllRecords001)
     PasteRecordVector recordVector = g_dataadapter->AllRecords();
     bool isEmpty = recordVector.empty();
     EXPECT_EQ(isEmpty, true);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, GetPasteDataTest001)
+{
+    PasteBoardClientAdapterImpl::GetInstance();
+    SetMockState(true);
+    PasteRecordVector data;
+    auto& mock = MockOHOSFunction::GetInstance();
+    Pasteboard_GetDataParams* params = reinterpret_cast<Pasteboard_GetDataParams*>(0x1);
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(params));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_PARAM_INVALID));
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
+
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataWithProgress(_, _, _)).WillRepeatedly(Return(nullptr));
+    EXPECT_CALL(mock, OH_Pasteboard_HasData(_)).WillRepeatedly(Return(false));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Destroy(_)).WillRepeatedly(Return());
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
+
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(params));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataWithProgress(_, _, _)).WillRepeatedly(testing::DoAll(
+            testing::SetArgPointee<2>(-1),testing::Return(nullptr)));
+    EXPECT_CALL(mock, OH_Pasteboard_HasData(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Destroy(_)).WillRepeatedly(Return());
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
+    SetMockState(false);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, GetPasteDataTest002)
+{
+    PasteBoardClientAdapterImpl::GetInstance();
+    SetMockState(true);
+    PasteRecordVector data;
+    auto& mock = MockOHOSFunction::GetInstance();
+    Pasteboard_GetDataParams* params = reinterpret_cast<Pasteboard_GetDataParams*>(0x1);
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(params));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
+
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataWithProgress(_, _, _)).WillRepeatedly(testing::DoAll(
+            testing::SetArgPointee<2>(ERR_OK),testing::Return(nullptr)));
+    EXPECT_CALL(mock, OH_Pasteboard_HasData(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(mock, OH_UdmfData_GetRecords(_, _)).WillRepeatedly(Return(nullptr));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Destroy(_)).WillRepeatedly(Return());
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
+
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(params));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
+
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataWithProgress(_, _, _)).WillRepeatedly(testing::DoAll(
+            testing::SetArgPointee<2>(ERR_OK),testing::Return(nullptr)));
+    EXPECT_CALL(mock, OH_Pasteboard_HasData(_)).WillRepeatedly(Return(true));
+
+    OH_UdmfRecord* records = reinterpret_cast<OH_UdmfRecord *>(0x1);
+    EXPECT_CALL(mock, OH_UdmfData_GetRecords(_, _)).WillRepeatedly(testing::DoAll(
+            testing::SetArgPointee<1>(0),testing::Return(&records)));
+    EXPECT_CALL(mock, OH_UdmfData_IsLocal(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Destroy(_)).WillRepeatedly(Return());
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), true);
+    SetMockState(false);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, GetPasteDataTest003)
+{
+    PasteBoardClientAdapterImpl::GetInstance();
+    SetMockState(true);
+    PasteRecordVector data;
+    auto& mock = MockOHOSFunction::GetInstance();
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(nullptr));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_PARAM_INVALID));
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
+
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataWithProgress(_, _, _)).WillRepeatedly(Return(nullptr));
+    EXPECT_CALL(mock, OH_Pasteboard_HasData(_)).WillRepeatedly(Return(false));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Destroy(_)).WillRepeatedly(Return());
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
+
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(nullptr));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataWithProgress(_, _, _)).WillRepeatedly(testing::DoAll(
+            testing::SetArgPointee<2>(-1),testing::Return(nullptr)));
+    EXPECT_CALL(mock, OH_Pasteboard_HasData(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Destroy(_)).WillRepeatedly(Return());
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
+    SetMockState(false);
+}
+
+TEST_F(PasteboardClientAdapterImplTest, GetPasteDataTest004)
+{
+    PasteBoardClientAdapterImpl::GetInstance();
+    SetMockState(true);
+    PasteRecordVector data;
+    auto& mock = MockOHOSFunction::GetInstance();
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(nullptr));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
+
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataWithProgress(_, _, _)).WillRepeatedly(testing::DoAll(
+            testing::SetArgPointee<2>(ERR_OK),testing::Return(nullptr)));
+    EXPECT_CALL(mock, OH_Pasteboard_HasData(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(mock, OH_UdmfData_GetRecords(_, _)).WillRepeatedly(Return(nullptr));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Destroy(_)).WillRepeatedly(Return());
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), false);
+
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Create()).WillRepeatedly(Return(nullptr));
+    EXPECT_CALL(mock, OH_AbilityRuntime_ApplicationContextGetCacheDir(_, _,
+        _)).WillRepeatedly(Return(ABILITY_RUNTIME_ERROR_CODE_NO_ERROR));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetProgressIndicator(_, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetDestUri(_, _, _)).WillRepeatedly(Return());
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_SetFileConflictOptions(_, _)).WillRepeatedly(Return());
+
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataWithProgress(_, _, _)).WillRepeatedly(testing::DoAll(
+            testing::SetArgPointee<2>(ERR_OK),testing::Return(nullptr)));
+    EXPECT_CALL(mock, OH_Pasteboard_HasData(_)).WillRepeatedly(Return(true));
+
+    OH_UdmfRecord* records = reinterpret_cast<OH_UdmfRecord *>(0x1);
+    EXPECT_CALL(mock, OH_UdmfData_GetRecords(_, _)).WillRepeatedly(testing::DoAll(
+            testing::SetArgPointee<1>(0),testing::Return(&records)));
+    EXPECT_CALL(mock, OH_UdmfData_IsLocal(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(mock, OH_Pasteboard_GetDataParams_Destroy(_)).WillRepeatedly(Return());
+    EXPECT_EQ(PasteBoardClientAdapterImpl::GetInstance().GetPasteData(data), true);
+    SetMockState(false);
 }
 
 }

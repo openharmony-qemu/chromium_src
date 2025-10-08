@@ -352,20 +352,27 @@ TEST_F(NativeWindowAdapterImplTest, NativeWindowAdapterImplTest_011)
     ret = consumerImpl.ReleaseBuffer(nullptr, fence);
     EXPECT_EQ(ret, -1);
     consumerImpl.cImage_ = cImage;
+}
 
+TEST_F(NativeWindowAdapterImplTest, NativeWindowAdapterImplTest_012)
+{
     OH_NativeImage *newImage = OH_NativeImage_Create(0, 0);
     OHNativeWindow* nativeWindow = OH_NativeImage_AcquireNativeWindow(newImage);
     EXPECT_NE(nativeWindow, nullptr);
     ProducerNativeAdapterImpl nativeImpl = ProducerNativeAdapterImpl(nativeWindow);
     EXPECT_NE(nativeImpl.window_, nullptr);
-    buffer = nativeImpl.RequestBuffer(fence, nullptr);
+    int32_t fence = -1;
+    auto buffer = nativeImpl.RequestBuffer(fence, nullptr);
     EXPECT_EQ(buffer, nullptr);
+    std::shared_ptr<MockBufferRequestConfigAdapter> configAdapter = std::make_shared<MockBufferRequestConfigAdapter>();
     buffer = nativeImpl.RequestBuffer(fence, configAdapter);
     EXPECT_NE(buffer, nullptr);
 
+    ProducerNativeAdapterImpl impl = ProducerNativeAdapterImpl(nullptr);
+    ConsumerNativeAdapterImpl consumerImpl = ConsumerNativeAdapterImpl();
     std::shared_ptr<BufferFlushConfigAdapter> flushConfigAdapter =
         std::make_shared<MockBufferFlushConfigAdapter>();
-    ret = impl.FlushBuffer(nullptr, fence, nullptr);
+    int32_t ret = impl.FlushBuffer(nullptr, fence, nullptr);
     EXPECT_EQ(ret, -1);
     ret = impl.FlushBuffer(nullptr, fence, flushConfigAdapter);
     EXPECT_EQ(ret, -1);
@@ -383,7 +390,7 @@ TEST_F(NativeWindowAdapterImplTest, NativeWindowAdapterImplTest_011)
     EXPECT_NE(ret, -1);
     ret = consumerImpl.ReleaseBuffer(buffer, fence);
     EXPECT_NE(ret, -1);
-    cImage = consumerImpl.cImage_;
+    OH_NativeImage* cImage = consumerImpl.cImage_;
     consumerImpl.cImage_ = nullptr;
     ret = consumerImpl.ReleaseBuffer(buffer, fence);
     EXPECT_EQ(ret, -1);

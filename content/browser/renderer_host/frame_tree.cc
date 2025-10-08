@@ -658,6 +658,12 @@ void FrameTree::SetFocusedFrame(FrameTreeNode* node,
                                         ->GetRenderFrameProxyHost(group);
 
       if (proxy) {
+      #if BUILDFLAG(ARKWEB_FOCUS)
+        if (focused_frame_tree_node_id_.is_null()) {
+          LOG(INFO) << "first time not clear the focus frame.";
+          break;
+        }
+      #endif
         proxy->SetFocusedFrame();
       } else {
         base::debug::DumpWithoutCrashing();

@@ -118,6 +118,9 @@
 #include "nweb_core_value.h"
 #include "ohos_glue/base/include/ark_web_errno.h"
 
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+#include "nweb_autolayout.h"
+#endif
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -835,6 +838,15 @@ bool NWebDelegate::Init(bool is_enhance_surface,
   }
   GetBrowser()->GetHost()->SetNWebId(GetBrowser()->GetNWebId());
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+  base::ThreadPool::PostTask(
+      FROM_HERE,
+      base::BindOnce([]() {
+            LOG(INFO) << "Init NwebAutolayout::GetInstance()";
+            NwebAutolayout::GetInstance();
+      })
+  );
+#endif
   return true;
 }
 
@@ -2586,6 +2598,22 @@ int NWebDelegate::LoadWithData(const std::string& data,
   return NWEB_OK;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+int NWebDelegate::LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
+                                    const std::string& refer, const std::string& headers,
+                                    const std::string& post_data, const bool allow_https_upgrade) {
+  LOG(DEBUG) << "NWebDelegate::LoadUrlWithParams";
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    return NWEB_ERR;
+  }
+  GetBrowser()->GetHost()->LoadUrlWithParams(url, load_type, refer,
+                                             headers, post_data, allow_https_upgrade);
+  RequestVisitedHistory();
+  return NWEB_OK;
+}
+#endif
+ 
+
 const CefRefPtr<ArkWebBrowserExt> NWebDelegate::GetBrowser() const {
   if (handler_delegate_) {
     return handler_delegate_->GetBrowser();
@@ -3222,7 +3250,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
         handler_delegate_->SetDragEnter(true);
         auto drag_data = render_handler_->GetDragData();
         GetBrowser()->GetHost()->DragTargetDragEnter(drag_data, event,
-                                                     DRAG_OPERATION_EVERY);
+                                                     dragEvent.allowed_op);
       } else {
         LOG(ERROR) << "DragDrop drag data render_handler_ nullptr";
       }
@@ -3239,7 +3267,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
     case DelegateDragAction::DRAG_OVER:
       LOG(DEBUG) << "DragDrop event SendDragEvent over webId:"
                  << GetBrowser()->GetNWebId();
-      GetBrowser()->GetHost()->DragTargetDragOver(event, DRAG_OPERATION_EVERY);
+      GetBrowser()->GetHost()->DragTargetDragOver(event, dragEvent.allowed_op);
       break;
     case DelegateDragAction::DRAG_DROP:
       event.modifiers = EVENTFLAG_NONE;
@@ -3274,8 +3302,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
       ClearDragData();
       LOG(INFO) << "DragDrop event SendDragEvent end webId:"
                 << GetBrowser()->GetNWebId();
-      GetBrowser()->GetHost()->DragSourceEndedAt(event.x, event.y,
-                                                 DRAG_OPERATION_COPY);
+      GetBrowser()->GetHost()->DragSourceEndedAt(event.x, event.y, dragEvent.op);
       GetBrowser()->GetHost()->DragSourceSystemDragEnded();
       break;
     case DelegateDragAction::DRAG_CANCEL:
@@ -3844,7 +3871,7 @@ bool NWebDelegate::IsEnableCustomVideoPlayer() {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
   LOG(INFO) << "NWebDelegate::SetForceEnableZoom " << forceEnableZoom;
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
@@ -3854,7 +3881,9 @@ void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
     GetBrowser()->SetForceEnableZoom(forceEnableZoom);
   }
 }
+#endif
 
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
 bool NWebDelegate::GetForceEnableZoom() {
   if (GetBrowser().get()) {
     return GetBrowser()->GetForceEnableZoom();
@@ -6217,6 +6246,32 @@ bool NWebDelegate::GetErrorPageEnabled() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+void NWebDelegate::EnableHttpsUpgrades(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "EnableHttpsUpgrades can not get browser";
+    return;
+  }
+  LOG(INFO) << "NWebDelegate::EnableHttpsUpgrades";
+  GetBrowser()->GetHost()->EnableHttpsUpgrades(enable);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void NWebDelegate::SetBlankScreenDetectionConfig(
+    bool enable,
+    const std::vector<double>& detectionTiming,
+    const std::vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "SetBlankScreenDetectionConfig can not get browser";
+    return;
+  }
+  GetBrowser()->GetHost()->SetBlankScreenDetectionConfig(
+      enable, detectionTiming, detectionMethods, contentfulNodesCountThreshold);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_BGTASK)
 void NWebDelegate::OnBrowserForeground() {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
@@ -6236,4 +6291,13 @@ void NWebDelegate::OnBrowserBackground() {
   GetBrowser()->GetHost()->OnBrowserBackground();
 }
 #endif
+
+void NWebDelegate::StopFling() {
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(DEBUG) << "NWebDelegate::WebStopFling";
+    return;
+  }
+
+  GetBrowser()->GetHost()->StopFling();
+}
 }  // namespace OHOS::NWeb

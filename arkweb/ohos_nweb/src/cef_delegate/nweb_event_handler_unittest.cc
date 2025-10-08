@@ -101,6 +101,14 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   bool TryCloseBrowser() override { return false; }
 
+  #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig( 
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override {}
+#endif
+
   MOCK_METHOD(void, SetFocus, (bool), (override));
 
   CefWindowHandle GetWindowHandle() { return 0; }
@@ -779,6 +787,12 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 #endif  // BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
+                         const std::string& refer, const std::string& headers,
+                         const std::string& post_data, const bool allow_https_upgrade) override {}
+  void EnableHttpsUpgrades(bool enable) override {}
+#endif
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetMediaResumeFromBFCachePage(bool resume) override {}
   void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {}

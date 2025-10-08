@@ -411,8 +411,12 @@ class CONTENT_EXPORT RenderThreadImpl
  private:
   FRIEND_TEST_ALL_PREFIXES(RenderThreadImplBrowserTest,
                            TransferSharedLastForegroundTime);
+
   friend class RenderThreadImplBrowserTest;
   friend class AgentSchedulingGroup;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class RenderThreadImplExtUnittest;
+#endif
 
   void OnProcessFinalRelease() override;
   // IPC::Listener

@@ -667,6 +667,13 @@ void NWebRenderHandler::UpdateSecurityLayer(bool isNeedSecurityLayer) {
     handler->EnableSecurityLayer(isNeedSecurityLayer);
   }
 }
+
+void NWebRenderHandler::UpdateTextFieldStatus(bool isShowKeyboard, bool isAttachIME) {
+  auto handler = handler_.lock();
+  if (handler) {
+    handler->UpdateTextFieldStatus(isShowKeyboard, isAttachIME);
+  }
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
@@ -1204,7 +1211,7 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
       drag_data, drag_touch_point, start_edge, end_edge,
       screen_info_.display_ratio, usefull_selection, dark_mode_enable,
       is_drag_new_style);
-
+  nweb_drag_data_->SetAllowedDragOperation(static_cast<NWebDragData::DragOperationsMask>(allowed_ops));
   auto handler = handler_.lock();
   if (handler == nullptr) {
     LOG(ERROR) << "can't get strong ptr with handler";
@@ -1572,6 +1579,19 @@ void NWebRenderHandler::RestoreRenderFit() {
   handler->RestoreRenderFit();
 }
 #endif  // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void NWebRenderHandler::OnDetectedBlankScreen(
+    const std::string& url,
+    int32_t blankScreenReason,
+    int32_t detectedContentfulNodesCount) {
+  LOG(INFO) << "NWebRenderHandler::OnDetectedBlankScreen";
+  if (auto handler = handler_.lock()) {
+    handler->OnDetectedBlankScreen(url, blankScreenReason,
+                                   detectedContentfulNodesCount);
+  }
+}
+#endif
 
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 void NWebRenderHandler::OnAccessibilityEvent(int64_t accessibilityId,

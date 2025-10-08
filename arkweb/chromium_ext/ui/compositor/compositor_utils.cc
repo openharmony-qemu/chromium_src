@@ -126,7 +126,6 @@ void CompositorUtils::SetCurrentFrameSinkId(const viz::FrameSinkId& id) {
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
 void CompositorUtils::DisableSwapUntilMaximized() {
   if (compositor_->display_private_) {
-    mojo::SyncCallRestrictions::ScopedAllowSyncCall scoped_allow_sync_call;
     compositor_->display_private_->DisableSwapUntilMaximized();
   }
 }

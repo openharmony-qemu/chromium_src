@@ -51,12 +51,23 @@ TEST_F(OhosDfxDataSourceTest, OhosDfxDataSourceTest001) {
     const char* test_data = "test_data";
     size_t data_size = strlen(test_data);
     OhosDfxDataSource source(KMinidumpStreamTypeOhosDfxInfo, test_data, data_size);
-    EXPECT_EQ(data_size, source.StreamDataSize());
     TestDelegate delegate{};
-    EXPECT_TRUE(source.ReadStreamData(&delegate));
+    source.ReadStreamData(&delegate);
+    source.ReadStreamData(nullptr);
+    EXPECT_EQ(data_size, source.StreamDataSize());
 }
 
 TEST_F(OhosDfxDataSourceTest, OhosDfxDataSourceTest002) {
+    const char* test_data = "";
+    size_t data_size = strlen(test_data);
+    OhosDfxDataSource source(KMinidumpStreamTypeOhosDfxInfo, test_data, data_size);
+    TestDelegate delegate{};
+    source.ReadStreamData(&delegate);
+    source.ReadStreamData(nullptr);
+    EXPECT_EQ(data_size, source.StreamDataSize());
+}
+
+TEST_F(OhosDfxDataSourceTest, OhosDfxDataSourceTest003) {
     int test_pid = getpid();
     TestConnection connection(test_pid);
     OhosUserStreamDataSource source(&connection);

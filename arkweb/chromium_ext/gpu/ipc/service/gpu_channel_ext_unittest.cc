@@ -13,14 +13,12 @@
  * limitations under the License.
  */
 
-#include "arkweb/chromium_ext/gpu/ipc/service/gpu_channel_ext.h"
 #include "gtest/gtest.h"
 #include "base/test/task_environment.h"
 #include "gpu/ipc/service/gpu_channel_manager.h"
 #include "testing/gmock/include/gmock/gmock.h"
 
 #include <stdint.h>
-#include "gpu/ipc/service/gpu_channel.h"
 #include "base/run_loop.h"
 #include "base/test/test_simple_task_runner.h"
 #include "build/build_config.h"
@@ -30,6 +28,11 @@
 #include "gpu/ipc/service/gpu_channel_test_common.h"
 #include "base/threading/thread.h"
 #include "base/logging.h"
+
+#define private public
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_channel_ext.h"
+#include "gpu/ipc/service/gpu_channel.h"
+#undef private
 
 #define invalidNativeId -10000
 #define validNativeId 1
@@ -78,6 +81,10 @@ TEST_F(GpuChannelExtOHOSTest, test001) {
     int32_t result = gpu_channel_ext_->CreateNativeTexture(
         validNativeId, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
     EXPECT_NE(result, -1);
+
+    result = gpu_channel_ext_->CreateNativeTexture(
+        validNativeId, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
+    EXPECT_EQ(result, -1);
 }
 
 TEST_F(GpuChannelExtOHOSTest, test002) {
@@ -90,10 +97,28 @@ TEST_F(GpuChannelExtOHOSTest, test003) {
 }
 
 TEST_F(GpuChannelExtOHOSTest, test004) {
+  mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+  gpu_channel_ext_->CreateNativeTexture(
+        validNativeId, gl::ohos::TextureOwnerMode::kNativeImageTexture, std::move(receiver));
   gpu_channel_ext_->DestroyNativeTexture(validNativeId);
 }
 
-TEST_F(GpuChannelExtOHOSTest, test005) {
+TEST_F(GpuChannelExtOHOSTest, test005_1) {
+  gpu_channel_ext_->blankless_dump_info_map_.clear();
+  base::ohos::BlanklessDumpInfo info;
+  gpu_channel_ext_->SetBlanklessDumpInfo(1, info);
+}
+
+TEST_F(GpuChannelExtOHOSTest, test005_2) {
+  std::map<uint64_t, base::ohos::BlanklessDumpInfo> map;
+  gpu_channel_ext_->blankless_dump_info_map_ .emplace(gpu_channel_ext_->client_id_, map);
+
+  base::ohos::BlanklessDumpInfo info;
+  info.dump_enabled = true;
+  gpu_channel_ext_->SetBlanklessDumpInfo(1, info);
+}
+
+TEST_F(GpuChannelExtOHOSTest, test006_1) {
     base::ohos::BlanklessDumpInfo valid_info;
     base::ohos::BlanklessDumpInfo info;
     std::unordered_map<uint64_t, base::ohos::BlanklessDumpInfo> blankless_dump_info_map_;
@@ -105,4 +130,40 @@ TEST_F(GpuChannelExtOHOSTest, test005) {
     EXPECT_FALSE(result);
 }
 
+TEST_F(GpuChannelExtOHOSTest, test006_2) {
+  uint32_t client_id = 2;
+  uint64_t frame_sink_id = 2;
+  base::ohos::BlanklessDumpInfo info;
+
+  std::map<uint64_t, base::ohos::BlanklessDumpInfo> map;
+  gpu_channel_ext_->blankless_dump_info_map_.emplace(0, map);
+  bool result = GpuChannelExt::GetBlanklessDumpInfoAndDisableDump(client_id, frame_sink_id, info);
+  EXPECT_FALSE(result);
+  result = GpuChannelExt::GetBlanklessDumpInfoAndDisableDump(0, frame_sink_id, info);
+  EXPECT_FALSE(result);
+
+  gpu_channel_ext_->blankless_dump_info_map_.clear();
+  map.emplace(0, info);
+  gpu_channel_ext_->blankless_dump_info_map_.emplace(0, map);
+  result = GpuChannelExt::GetBlanklessDumpInfoAndDisableDump(0, 0, info);
+  EXPECT_FALSE(result);
+
+  gpu_channel_ext_->blankless_dump_info_map_.clear();
+  info.dump_enabled = true;
+  map.emplace(0, info);
+  gpu_channel_ext_->blankless_dump_info_map_.emplace(0, map);
+  result = GpuChannelExt::GetBlanklessDumpInfoAndDisableDump(0, 0, info);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(GpuChannelExtOHOSTest, test006_3) {
+   base::ohos::BlanklessDumpInfo info;
+   info.dump_enabled = true;
+   std::map<uint64_t, base::ohos::BlanklessDumpInfo> map;
+   map.emplace(0, info);
+   gpu_channel_ext_->blankless_dump_info_map_.clear();
+   gpu_channel_ext_->blankless_dump_info_map_.emplace(0, map);
+   bool result = GpuChannelExt::GetBlanklessDumpInfoAndDisableDump(0, 0, info);
+   EXPECT_TRUE(result);
+}
 }

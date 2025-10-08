@@ -571,6 +571,10 @@ mojom("mojo_bindings") {
     enabled_features +=[ "arkweb_multi_window" ]
   }
 
+  if (arkweb_blank_screen_detection) {
+    enabled_features += [ "arkweb_blank_screen_detection" ]
+  }
+
   if (arkweb_network_base) {
     enabled_features += [ "arkweb_network_base" ]
   }

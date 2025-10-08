@@ -152,7 +152,7 @@ class OhosAdapterHelperMock : public OhosAdapterHelper {
   MOCK_METHOD(std::unique_ptr<MediaCodecAdapter>, CreateMediaCodecEncoderAdapter, (), (override));
   MOCK_METHOD(MediaCodecListAdapter &, GetMediaCodecListAdapter, (), (override));
   MOCK_METHOD(std::unique_ptr<FlowbufferAdapter>, CreateFlowbufferAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<MediaAVSessionAdapter>, CreateMediaAVSessionAdapter, (), (override));
+  MOCK_METHOD(std::shared_ptr<MediaAVSessionAdapter>, CreateMediaAVSessionAdapter, (), (override));
   MOCK_METHOD(std::unique_ptr<OhosImageDecoderAdapter>, CreateOhosImageDecoderAdapter, (), (override));
   MOCK_METHOD(std::unique_ptr<SensorAdapter>, CreateSensorAdapter, (), (override));
   MOCK_METHOD(void, SetArkWebCoreHapPathOverride, (const std::string &hapPath), (override));

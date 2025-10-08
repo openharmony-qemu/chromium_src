@@ -85,6 +85,8 @@ struct DelegateDragEvent {
   double x = 0.0;
   double y = 0.0;
   DelegateDragAction action = DelegateDragAction::DRAG_START;
+  CefBrowserHost::DragOperationsMask op = CefBrowserHost::DragOperationsMask::DRAG_OPERATION_COPY;
+  CefBrowserHost::DragOperationsMask allowed_op = CefBrowserHost::DragOperationsMask::DRAG_OPERATION_EVERY;
 };
 
 #if BUILDFLAG(ARKWEB_NAVIGATION)
@@ -288,6 +290,11 @@ class NWebDelegateInterface
   virtual int LoadWithData(const std::string& data,
                            const std::string& mimeType,
                            const std::string& encoding) = 0;
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  virtual int LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
+                                const std::string& refer, const std::string& headers,
+                                const std::string& post_data, const bool allow_https_upgrade) = 0;
+#endif
   virtual int ContentHeight() = 0;
 
   virtual void RegisterNativeArkJSFunction(
@@ -425,6 +432,7 @@ class NWebDelegateInterface
 
   virtual void GetImages(std::shared_ptr<NWebBoolValueCallback> callback) = 0;
   virtual void RemoveCache(bool include_disk_files) = 0;
+  virtual void StopFling() = 0;
 
 #if BUILDFLAG(ARKWEB_NAVIGATION)
   virtual std::shared_ptr<NWebHistoryList> GetHistoryList() = 0;
@@ -484,8 +492,10 @@ class NWebDelegateInterface
 #endif
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   virtual void SetForceEnableZoom(bool forceEnableZoom) = 0;
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
   virtual bool GetForceEnableZoom() = 0;
 #endif
 
@@ -923,10 +933,23 @@ class NWebDelegateInterface
   virtual void AbortDistill() = 0;
 #endif // ARKWEB_READER_MODE
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  virtual void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   virtual void SetErrorPageEnabled(bool enable) = 0;
   virtual bool GetErrorPageEnabled() = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  virtual void EnableHttpsUpgrades(bool enable) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_BGTASK)
   virtual void OnBrowserForeground() = 0;
   virtual void OnBrowserBackground() = 0;

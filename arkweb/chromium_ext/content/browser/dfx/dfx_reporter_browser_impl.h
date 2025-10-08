@@ -45,4 +45,11 @@ public:
   void ReportRenderFreeze(const std::string& eventInfo) override;
 };
 
+void OnVideoMemoryUsageStatsUpdate(pid_t pid, const std::map<std::string, std::string>& memMap, bool isSysEvent,
+                                   const gpu::VideoMemoryUsageStats& gpu_memory_stats);
+
+void GetGpuUsage(pid_t pid, const std::map<std::string, std::string>& memMap, bool isSysEvent);
+
+void ReportRendererInfo(const std::string& sysEventInfoJson, bool isSysEvent);
+
 #endif // BROWSER_PERFORMANCE_DFX_REPORTER_IMPL_H_

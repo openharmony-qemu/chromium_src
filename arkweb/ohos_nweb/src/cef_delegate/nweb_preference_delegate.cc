@@ -85,7 +85,7 @@ void NWebPreferenceDelegate::SetBrowser(CefRefPtr<CefBrowser> browser) {
 
 void NWebPreferenceDelegate::WebPreferencesChanged() {
   if (!browser_) {
-    // LOG(DEBUG) << "update web preferences failed, browser is null";
+    LOG(DEBUG) << "update web preferences failed, browser is null";
     return;
   }
 
@@ -188,6 +188,9 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.geolocation_enabled = GeolocationAllowed();
   browser_settings.supports_double_tap_zoom = ZoomingfunctionEnabled();
   browser_settings.supports_multi_touch_zoom = ZoomingfunctionEnabled();
+#if BUILDFLAG(ARKWEB_ZOOM)
+  browser_settings.zoom_control_access = IsZoomControlAccess();
+#endif
   browser_settings.user_gesture_required = GetMediaPlayGestureAccess();
   browser_settings.pinch_smooth_mode = GetPinchSmoothMode();
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
@@ -505,6 +508,16 @@ void NWebPreferenceDelegate::PutZoomingFunctionEnabled(bool flag) {
   }
 }
 
+#if BUILDFLAG(ARKWEB_ZOOM)
+void NWebPreferenceDelegate::PutZoomControlAccess(bool zoomControlAccess) {
+  LOG(INFO) << "set zoomControlAccess:" << zoomControlAccess << " zoom_control_access_:" << zoom_control_access_;
+  if (zoom_control_access_ != zoomControlAccess) {
+    zoom_control_access_ = zoomControlAccess;
+    WebPreferencesChanged();
+  }
+}
+#endif
+
 void NWebPreferenceDelegate::PutBlockNetwork(bool flag) {
   if (!flag && !has_internet_permission_) {
     LOG(ERROR) << "Put network-blocked false failed, because app missing "
@@ -717,6 +730,12 @@ bool NWebPreferenceDelegate::MixedContentAutoupgradesAllowed() {
 bool NWebPreferenceDelegate::ZoomingfunctionEnabled() {
   return zooming_function_enabled_;
 }
+
+#if BUILDFLAG(ARKWEB_ZOOM)
+bool NWebPreferenceDelegate::IsZoomControlAccess() {
+  return zoom_control_access_;
+}
+#endif
 
 bool NWebPreferenceDelegate::IsNetworkBlocked() {
   return is_network_blocked_;

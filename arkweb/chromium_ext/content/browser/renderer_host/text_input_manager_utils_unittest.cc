@@ -50,18 +50,18 @@ TEST_F(TextInputManagerUtilsTest, ArkWebUpdateSelectionMap)
 {
     auto utils = GetTextInputManager()->imp_utils_.get();
     TextInputState text_input_state;
-    utils->ArkWebUpdateSelectionMap(nullptr, text_input_state);
+    ASSERT_NO_FATAL_FAILURE(utils->ArkWebUpdateSelectionMap(nullptr, text_input_state));
 
     TextInputManager::TextSelection text_selection;
     std::u16string text;
     SetMap(nullptr, text, OFFSET_VAL, gfx::Range());
-    utils->ArkWebUpdateSelectionMap(nullptr, text_input_state);
+    ASSERT_NO_FATAL_FAILURE(utils->ArkWebUpdateSelectionMap(nullptr, text_input_state));
 
     text_input_state.value = u"a";
-    utils->ArkWebUpdateSelectionMap(nullptr, text_input_state);
+    ASSERT_NO_FATAL_FAILURE(utils->ArkWebUpdateSelectionMap(nullptr, text_input_state));
 
     SetMap(nullptr, u"a", OFFSET_VAL, gfx::Range());
-    utils->ArkWebUpdateSelectionMap(nullptr, text_input_state);
+    ASSERT_NO_FATAL_FAILURE(utils->ArkWebUpdateSelectionMap(nullptr, text_input_state));
 }
 
 }  // namespace content

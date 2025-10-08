@@ -28,9 +28,21 @@ using OHGetAddrInfoForNetwork = int32_t (*)(char* host,
 
 using OHFreeDnsResult = int32_t (*)(struct addrinfo* res);
 
+#if BUILDFLAG(ARKWEB_TEST)
+#ifdef __cplusplus
+extern "C" {
+#endif
 OHGetAddrInfoForNetwork GetOHGetAddrInfoForNetwork();
 
 OHFreeDnsResult GetOHFreeDnsResult();
+#ifdef __cplusplus
+}
+#endif
+#else
+OHGetAddrInfoForNetwork GetOHGetAddrInfoForNetwork();
+
+OHFreeDnsResult GetOHFreeDnsResult();
+#endif //ARKWEB_TEST
 
 namespace ohos {
 

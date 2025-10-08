@@ -4173,7 +4173,7 @@ void RenderFrameHostImpl::RenderFrameCreated() {
 
 void RenderFrameHostImpl::RendererWidgetCreated() {
   if (GetLocalRenderWidgetHost()) {
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
     GetLocalRenderWidgetHost()->SetForceEnableZoom(
         delegate_->GetOrCreateWebPreferences().force_enable_zoom);
 #endif  // BUILDFLAG(IS_ANDROID)

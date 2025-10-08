@@ -585,3 +585,7 @@ TEST_F(ContentPasswordManagerDriverTest,
 }
 
 }  // namespace password_manager
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/components/password_manager/content/browser/content_password_manager_driver_ext_unittest.cc"
+#endif

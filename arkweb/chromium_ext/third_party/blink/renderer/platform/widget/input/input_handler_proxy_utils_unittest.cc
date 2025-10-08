@@ -1755,8 +1755,8 @@ TEST_F(InputHandlerProxyUtilsTest, NativeHitTestResultV2_NativeTrue) {
   utils_->NativeTouchEventQueues_[0] = queue;
 
   utils_->NativeHitTestResultV2(true, 0, 1);
-  EXPECT_EQ(queue->GetStatus(), InputHandlerProxyUtils::PEND_NATIVE);
-  EXPECT_EQ(queue->GetLayerId(), 1);
+  EXPECT_EQ(queue->GetStatus(), InputHandlerProxyUtils::INIT);
+  EXPECT_EQ(queue->GetLayerId(), 0);
 }
 
 TEST_F(InputHandlerProxyUtilsTest, NativeHitTestResultV2_NativeFalse) {
@@ -1767,6 +1767,43 @@ TEST_F(InputHandlerProxyUtilsTest, NativeHitTestResultV2_NativeFalse) {
 
   utils_->NativeHitTestResultV2(false, 0, 1);
   EXPECT_EQ(queue->GetStatus(), InputHandlerProxyUtils::SEND_BLINK);
+}
+
+TEST_F(InputHandlerProxyUtilsTest,
+       SendNativeInQueueFrontSeq_TouchEndOutOfLoop) {
+  auto queue = std::make_shared<NativeEmbedEventQueue>();
+  queue->Queue(CreateTouchEventCallback(WebInputEvent::Type::kTouchEnd, 0,
+                                        WebTouchPoint::State::kStateReleased));
+  utils_->NativeTouchEventQueues_[0] = queue;
+
+  utils_->SendNativeInQueueFrontSeq(0);
+  EXPECT_FALSE(queue->empty());
+}
+
+TEST_F(InputHandlerProxyUtilsTest,
+       SendNativeInQueueFrontSeq_QueueEmptyOutOfLoop) {
+  auto queue = std::make_shared<NativeEmbedEventQueue>();
+  queue->Queue(CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0,
+                                        WebTouchPoint::State::kStatePressed));
+  utils_->NativeTouchEventQueues_[0] = queue;
+
+  utils_->SendNativeInQueueFrontSeq(0);
+  EXPECT_FALSE(queue->empty());
+}
+
+TEST_F(InputHandlerProxyUtilsTest,
+       SendNativeInQueueFrontSeq_StackEmptyOutOfLoop) {
+  auto queue = std::make_shared<NativeEmbedEventQueue>();
+  queue->Queue(CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0,
+                                        WebTouchPoint::State::kStatePressed));
+  queue->Queue(CreateTouchEventCallback(WebInputEvent::Type::kTouchMove, 0,
+                                        WebTouchPoint::State::kStateMoved));
+  queue->Queue(CreateTouchEventCallback(WebInputEvent::Type::kTouchEnd, 0,
+                                        WebTouchPoint::State::kStateReleased));
+  utils_->NativeTouchEventQueues_[0] = queue;
+
+  utils_->SendNativeInQueueFrontSeq(0);
+  EXPECT_FALSE(queue->empty());
 }
 
 TEST_F(InputHandlerProxyUtilsTest,
@@ -2374,7 +2411,7 @@ TEST_F(InputHandlerProxyUtilsTest, NativeTouchEndProcess_PendNative) {
   utils_->NativeTouchEventQueues_[0] = queue;
 
   utils_->NativeTouchEndProcess(std::move(event));
-  EXPECT_NE(queue->GetStatus(), InputHandlerProxyUtils::INIT);
+  EXPECT_NE(queue->GetStatus(), InputHandlerProxyUtils::PEND_NATIVE);
 }
 
 TEST_F(InputHandlerProxyUtilsTest, NativeTouchEndProcess_Others) {
@@ -2552,19 +2589,6 @@ TEST_F(InputHandlerProxyUtilsTest, SetGestureEventResult_InvalidFingerId) {
   EXPECT_TRUE(utils_->NativeTouchEventQueues_[0]->empty());
 }
 
-TEST_F(InputHandlerProxyUtilsTest, SetGestureEventResult_WrongStatus) {
-  auto queue = std::make_shared<NativeEmbedEventQueue>();
-  queue->Queue(CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 1,
-                                        WebTouchPoint::State::kStatePressed));
-  queue->SetStatus(InputHandlerProxyUtils::SEND_BLINK);
-  utils_->NativeTouchEventQueues_[0] = queue;
-
-  utils_->SetGestureEventResult(true, true, 0);
-  EXPECT_EQ(utils_->NativeTouchEventQueues_[0]->GetStatus(),
-            InputHandlerProxyUtils::INIT);
-  EXPECT_TRUE(utils_->NativeTouchEventQueues_[0]->empty());
-}
-
 TEST_F(InputHandlerProxyUtilsTest,
        SetGestureEventResult_ResultTrueStopPropagationTrue) {
   auto queue = std::make_shared<NativeEmbedEventQueue>();
@@ -2727,6 +2751,74 @@ TEST_F(InputHandlerProxyUtilsTest, FlushNativeTouchQueue_NeedStopPop) {
   utils_->NativeTouchEventQueues_[0] = queue;
   utils_->FlushNativeTouchQueue(0);
   EXPECT_FALSE(queue->empty());
+}
+
+TEST_F(InputHandlerProxyUtilsTest, PopNativeTouchQueue_OneStart) {
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  auto queue = std::make_shared<NativeEmbedEventQueue>();
+  queue->Queue(CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0,
+                                        WebTouchPoint::State::kStateReleased));
+  utils_->NativeTouchEventQueues_[0] = queue;
+  utils_->PopNativeTouchQueue(0);
+  EXPECT_TRUE(queue->empty());
+}
+
+TEST_F(InputHandlerProxyUtilsTest, PopNativeTouchQueue_QueueEmpty) {
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  auto queue = std::make_shared<NativeEmbedEventQueue>();
+  utils_->NativeTouchEventQueues_[0] = queue;
+  utils_->PopNativeTouchQueue(0);
+  EXPECT_TRUE(queue->empty());
+}
+
+TEST_F(InputHandlerProxyUtilsTest, PopNativeTouchQueue_PopSecMove) {
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  auto queue = std::make_shared<NativeEmbedEventQueue>();
+  queue->Queue(CreateTouchEventCallback(WebInputEvent::Type::kTouchMove, 0,
+                                        WebTouchPoint::State::kStateMoved));
+  queue->Queue(CreateTouchEventCallback(WebInputEvent::Type::kTouchMove, 0,
+                                        WebTouchPoint::State::kStateMoved));
+
+  utils_->NativeTouchEventQueues_[0] = queue;
+  utils_->PopNativeTouchQueue(0);
+  EXPECT_FALSE(queue->empty());
+}
+
+TEST_F(InputHandlerProxyUtilsTest, PopNativeTouchQueue_PopSecStart) {
+  EXPECT_CALL(*mock_input_handler_, handler_utils())
+      .WillRepeatedly(Return(mock_input_handler_utils_.get()));
+  EXPECT_CALL(*mock_input_handler_utils_, GetLayerImplIsHitByPoint(_))
+      .WillRepeatedly(Return(mock_layer_impl_.get()));
+  EXPECT_CALL(*mock_layer_impl_, layer_impl_utils())
+      .WillRepeatedly(Return(mock_layer_utils_.get()));
+  mock_layer_utils_->SetShouldInterceptTouchEvent(true);
+  auto queue = std::make_shared<NativeEmbedEventQueue>();
+  queue->Queue(CreateTouchEventCallback(WebInputEvent::Type::kTouchMove, 0,
+                                        WebTouchPoint::State::kStateMoved));
+  queue->Queue(CreateTouchEventCallback(WebInputEvent::Type::kTouchStart, 0,
+                                        WebTouchPoint::State::kStateReleased));
+
+  utils_->NativeTouchEventQueues_[0] = queue;
+  utils_->PopNativeTouchQueue(0);
+  EXPECT_TRUE(queue->empty());
 }
 
 // Test Cases for SendToBlink

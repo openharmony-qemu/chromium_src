@@ -6,9 +6,13 @@
 #define BASE_TEST_TEST_SUPPORT_OHOS_H_
 
 #include "base/test/test_suite.h"
+#include "base/base_export.h"
 
 namespace base {
 void RegisterPathProviderForOhosTest();
+
+// Init the message loop for tests in ohos
+BASE_EXPORT void InitOhosTestMessageLoop();
 }  // namespace base
 
 #endif  // BASE_TEST_TEST_SUPPORT_OHOS_H_

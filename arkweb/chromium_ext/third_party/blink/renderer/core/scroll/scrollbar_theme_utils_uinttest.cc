@@ -74,14 +74,12 @@ class ScrollbarThemeAuraButtonOverride final : public ScrollbarThemeAura {
 class ScrollbarThemeUtilsTest: public SimTest {
 public:
     HitTestResult HitTest(int x, int y) {
-    ASSERT_TRUE(WebView().MainFrameViewWidget());
     return WebView().MainFrameViewWidget()->CoreHitTestResultAt(
         gfx::PointF(x, y));
   }
 };
 
 TEST_F(ScrollbarThemeUtilsTest, HitTestUtils001) {
-    ASSERT_TRUE(WebView().MainFrameViewWidget());
     WebView().MainFrameViewWidget()->Resize(gfx::Size(POINT_VAL_F, POINT_VAL_F));
     SimRequest request("https://example.com/test.html", "text/html");
     LoadURL("https://example.com/test.html");
@@ -167,7 +165,6 @@ TEST_F(ScrollbarThemeUtilsTest, HitTestUtils002) {
 }
 
 TEST_F(ScrollbarThemeUtilsTest, HitTestUtils003) {
-    ASSERT_TRUE(WebView().MainFrameViewWidget());
     WebView().MainFrameViewWidget()->Resize(gfx::Size(POINT_VAL_F, POINT_VAL_F));
     SimRequest request("https://example.com/test.html", "text/html");
     LoadURL("https://example.com/test.html");

@@ -16,9 +16,11 @@
 #include "base/functional/bind.h"
 #include "base/test/launcher/unit_test_launcher.h"
 #include "ohos_nweb/test/ohos_nweb_test_suite.h"
+#include "mojo/core/embedder/embedder.h"
 
 int main(int argc, char** argv) {
   OHOS::NWeb::OhosNwebTestSuite test_suite(argc, argv);
+  mojo::core::Init();
 
   return base::LaunchUnitTests(
       argc, argv,

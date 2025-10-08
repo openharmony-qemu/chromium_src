@@ -327,6 +327,13 @@ source_set("unit_tests") {
     "//testing/gtest",
   ]
 
+  if (defined(arkweb_crashpad) && arkweb_crashpad) {
+    sources += arkweb_components_crashpad_ohos_unittest
+    deps += [
+      "//third_party/crashpad/crashpad/util",
+    ]
+    defines = [ "CRASH_IMPLEMENTATION" ]
+  }
   if (is_win) {
     sources += [
       "fallback_crash_handler_launcher_win_unittest.cc",

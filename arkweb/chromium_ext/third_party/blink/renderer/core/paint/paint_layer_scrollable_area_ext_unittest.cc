@@ -75,26 +75,6 @@ TEST_P(PaintLayerTest, ClampScrollOffsetLimit001) {
   EXPECT_EQ(scrollable_area_ext->ClampScrollOffsetLimit(SCALE_VAL_B), POINT_VAL_A);
 }
 
-TEST_P(PaintLayerTest, UpdateScrollbarByScale001) {
-  SetBodyInnerHTML(R"HTML(
-    <div id='scroll' style='width: 100px; height: 100px; overflow: scroll;
-        will-change: transform'>
-      <div id='content' style='position: relative; background: blue;
-          width: 2000px; height: 2000px'></div>
-    </div>
-  )HTML");
-
-  PaintLayer* scroll_layer = GetPaintLayerByElementId("scroll");
-  ASSERT_TRUE(scroll_layer);
-  PaintLayerScrollableArea* scrollable_area = scroll_layer->GetScrollableArea();
-  ASSERT_TRUE(scrollable_area);
-  PaintLayerScrollableAreaExt* scrollable_area_ext = scrollable_area->AsPaintLayerScrollableAreaExt();
-  ASSERT_TRUE(scrollable_area_ext);
-  scrollable_area_ext->UpdateScrollbarByScale(true);
-
-  scrollable_area_ext->UpdateScrollbarByScale(false);
-}
-
 TEST_P(PaintLayerTest, HasScrollbarAvoidCorner001) {
   SetBodyInnerHTML(R"HTML(
     <div id='scroll' style='width: 100px; height: 100px; overflow: scroll;

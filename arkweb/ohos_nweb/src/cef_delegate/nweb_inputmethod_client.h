@@ -66,6 +66,7 @@ class NWebInputMethodClient : public virtual CefBaseRefCounted {
       const CefRange& selected_range,
       const CefRange& compositon_range) = 0;
   virtual bool IsAttached() = 0;
+  virtual bool IsFocusSwitch() = 0;
   virtual bool IsKeyboardShow() = 0;
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)

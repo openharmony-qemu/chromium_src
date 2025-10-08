@@ -91,7 +91,17 @@ struct WebExtensionManifestSettingsOverrides {
   std::vector<std::string> startup_pages;
   std::optional<WebExtensionManifestSearchProvider> search_provider;
 };
- 
+
+struct WebExtensionManifestUrlOverride {
+  std::optional<std::string> newtab;
+  std::optional<std::string> bookmarks;
+  std::optional<std::string> history;
+};
+
+struct WebExtensionManifestOmnibox {
+  std::string keyword;
+};
+
 struct WebExtensionManifestOptionsPageInfo {
   std::string options_page;
   bool open_in_tab;
@@ -111,6 +121,8 @@ struct WebExtensionManifestInfo {
   std::optional<WebExtensionManifestOptionsPageInfo> options_page;
   std::optional<ExtensionIncognitoMode> incognito_mode;
   std::optional<NWebExtensionActionIconV2> icons;
+  std::optional<WebExtensionManifestUrlOverride> url_override;
+  std::optional<WebExtensionManifestOmnibox> omnibox;
 };
  
 struct WebExtensionInfoV2 {
@@ -132,6 +144,7 @@ struct WebExtensionInfoV2 {
   bool is_incognito_enabled = false;
   std::vector<NWebContextMenusItemV2> contextMenusV2;
   WebExtensionActionInfoV2 action_v2;
+  std::optional<double> install_time;
 };
 
 typedef void (*OnWebExtensionLoadedFun)(const WebExtensionInfo& load_info);

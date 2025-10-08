@@ -20,7 +20,6 @@
 #undef private
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "base/logging.h"
 
 using namespace OHOS::NWeb;
 namespace OHOS::NWeb {

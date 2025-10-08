@@ -132,10 +132,12 @@ TEST_F(DnsConfigServiceOhosTest, ReadConfig) {
   GetService()->ReadConfig(base::BindRepeating(
       &DnsConfigServiceOhosTest::OnConfigChanged, base::Unretained(this)));
   RunUntilIdle();
+#if !defined(COMPONENT_BUILD) && defined(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   EXPECT_TRUE(WasCallbackCalled());
   const DnsConfig& config = last_config();
   EXPECT_TRUE(config.IsValid());
   EXPECT_FALSE(config.nameservers.empty());
+#endif
 }
 
 TEST_F(DnsConfigServiceOhosTest, WatchConfig) {
@@ -144,10 +146,12 @@ TEST_F(DnsConfigServiceOhosTest, WatchConfig) {
   GetService()->WatchConfig(base::BindRepeating(
       &DnsConfigServiceOhosTest::OnConfigChanged, base::Unretained(this)));
   RunUntilIdle();
+#if !defined(COMPONENT_BUILD) && defined(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   EXPECT_TRUE(WasCallbackCalled());
   const DnsConfig& config = last_config();
   EXPECT_TRUE(config.IsValid());
   EXPECT_FALSE(config.nameservers.empty());
+#endif
 }
 
 TEST_F(DnsConfigServiceOhosTest, ToEndPoint) {

@@ -36,6 +36,7 @@ struct NWebContextMenusItem {
 struct NWebContextMenusItemV2 {
   NWebContextMenusItem item;
   std::optional<bool> isOffTheRecord;
+  std::optional<int32_t> intId;
 };
  
 #endif  //  OHOS_NWEB_SRC_NWEB_CONTEXT_MENUS_ITEM_H_

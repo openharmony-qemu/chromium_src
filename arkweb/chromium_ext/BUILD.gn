@@ -19,6 +19,10 @@ config("blink_renderer_config") {
   ldflags = [ "-Wl,--wrap=IsTabletDevice" ]
 }
 
+config("content_browser_config") {
+  ldflags = [ "-Wl,--wrap=ComputeLanguageByRegion" ]
+}
+
 config("arkweb_base_unittest_config") {
   ldflags = ["-Wl,--wrap=OH_FileUri_GetPathFromUri", 
   "-Wl,--wrap=OH_FileUri_GetFileName",
@@ -45,6 +49,8 @@ config("arkweb_base_unittest_config") {
   "-Wl,--wrap=OH_AudioStreamBuilder_SetCapturerCallback",
   "-Wl,--wrap=OH_AudioStreamBuilder_GenerateCapturer",
   "-Wl,--wrap=OH_CommonEvent_UnSubscribe",
+  "-Wl,--wrap=GetOHGetAddrInfoForNetwork",
+  "-Wl,--wrap=GetOHFreeDnsResult",
   ]
 
   ldflags += [ 
@@ -57,4 +63,135 @@ config("arkweb_base_unittest_config") {
     "-Wl,--wrap=MajorVersion",
     "-Wl,--wrap=SeniorVersion",
   ]
+
+  ldflags += [ 
+    "-Wl,--wrap=OH_Input_CreateDeviceInfo",
+    "-Wl,--wrap=OH_Input_GetDeviceIds",
+    "-Wl,--wrap=OH_NetConn_GetDefaultHttpProxy",
+    "-Wl,--wrap=OH_CommonEvent_GetEventFromRcvData",
+    "-Wl,--wrap=OH_Telephony_GetDefaultCellularDataSlotId",
+    "-Wl,--wrap=OH_Telephony_GetNetworkStateForSlot",
+    "-Wl,--wrap=OH_NetConn_RegisterDefaultNetConnCallback",
+    "-Wl,--wrap=OH_NetConn_UnregisterNetConnCallback",
+    "-Wl,--wrap=OH_NetConn_GetConnectionProperties",
+    "-Wl,--wrap=OH_NetConn_GetDefaultNet",
+    "-Wl,--wrap=OH_NetConn_GetAllNets",
+    "-Wl,--wrap=OH_NetConn_GetNetCapabilities",
+  ]
+
+  ldflags += [ 
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_Create",
+    "-Wl,--wrap=OH_AbilityRuntime_ApplicationContextGetCacheDir",
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_SetProgressIndicator",
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_SetDestUri",
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_SetFileConflictOptions",
+    "-Wl,--wrap=OH_Pasteboard_GetDataWithProgress",
+    "-Wl,--wrap=OH_Pasteboard_HasData",
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_Destroy",
+    "-Wl,--wrap=OH_UdmfData_GetRecords",
+    "-Wl,--wrap=OH_UdmfData_IsLocal",
+
+  ]
+
+  ldflags += [
+    "-Wl,--wrap=OH_Sensor_GetInfos",
+    "-Wl,--wrap=OH_Sensor_CreateInfos",
+    "-Wl,--wrap=OH_Sensor_DestroyInfos",
+    "-Wl,--wrap=OH_SensorInfo_GetType",
+    "-Wl,--wrap=OH_SensorInfo_GetMinSamplingInterval",
+    "-Wl,--wrap=OH_SensorInfo_GetMaxSamplingInterval",
+    "-Wl,--wrap=OH_Sensor_CreateSubscriber",
+    "-Wl,--wrap=OH_SensorSubscriber_SetCallback",
+    "-Wl,--wrap=OH_Sensor_CreateSubscriptionId",
+    "-Wl,--wrap=OH_SensorSubscriptionId_SetType",
+    "-Wl,--wrap=OH_Sensor_CreateSubscriptionAttribute",
+    "-Wl,--wrap=OH_SensorSubscriptionAttribute_SetSamplingInterval",
+    "-Wl,--wrap=OH_Sensor_Subscribe",
+    "-Wl,--wrap=OH_Sensor_Unsubscribe",
+    "-Wl,--wrap=OH_Sensor_DestroySubscriber",
+    "-Wl,--wrap=OH_Sensor_DestroySubscriptionId",
+    "-Wl,--wrap=OH_Sensor_DestroySubscriptionAttribute",
+    "-Wl,--wrap=OH_SensorEvent_GetType",
+    "-Wl,--wrap=OH_SensorEvent_GetData",
+    "-Wl,--wrap=OH_SensorEvent_GetTimestamp",
+  ]
+
+  ldflags += [
+    "-Wl,--wrap=OH_NativeVSync_Create",
+    "-Wl,--wrap=OH_NativeVSync_GetPeriod",
+    "-Wl,--wrap=OH_NativeVSync_RequestFrame",
+    "-Wl,--wrap=OH_NativeWindow_CreateNativeWindow",
+    "-Wl,--wrap=OH_NativeWindow_NativeObjectReference",
+    "-Wl,--wrap=OH_NativeWindow_NativeObjectUnreference",
+    "-Wl,--wrap=OH_NativeWindow_NativeWindowRequestBuffer",
+    "-Wl,--wrap=OH_NativeWindow_NativeWindowAbortBuffer",
+    "-Wl,--wrap=OH_TimeService_GetTimeZone",
+    "-Wl,--wrap=OH_CommonEvent_CreateSubscribeInfo",
+    "-Wl,--wrap=OH_CommonEvent_CreateSubscriber",
+    "-Wl,--wrap=OH_CommonEvent_Subscribe",
+    "-Wl,--wrap=OH_CommonEvent_DestroySubscribeInfo",
+    "-Wl,--wrap=OH_CommonEvent_DestroySubscriber",
+    "-Wl,--wrap=OH_CommonEvent_UnSubscribe",
+    "-Wl,--wrap=OH_NativeImage_AcquireNativeWindowBuffer",
+    "-Wl,--wrap=OH_NativeBuffer_FromNativeWindowBuffer",
+  ]
+}
+
+config("arkweb_codec_decoder_adapter_unittest_config") {
+  ldflags = [
+    "-Wl,--wrap=OH_VideoDecoder_Destroy",
+    "-Wl,--wrap=OH_VideoDecoder_CreateByMime",
+    "-Wl,--wrap=OH_VideoDecoder_CreateByName",
+    "-Wl,--wrap=OH_AVFormat_Create",
+    "-Wl,--wrap=OH_VideoDecoder_Configure",
+    "-Wl,--wrap=OH_VideoDecoder_SetSurface",
+    "-Wl,--wrap=OH_NativeWindow_NativeWindowHandleOpt",
+    "-Wl,--wrap=OH_VideoDecoder_Prepare",
+    "-Wl,--wrap=OH_VideoDecoder_Start",
+    "-Wl,--wrap=OH_VideoDecoder_Stop",
+    "-Wl,--wrap=OH_VideoDecoder_Flush",
+    "-Wl,--wrap=OH_VideoDecoder_Reset",
+    "-Wl,--wrap=OH_AVBuffer_SetBufferAttr",
+    "-Wl,--wrap=OH_VideoDecoder_PushInputBuffer",
+    "-Wl,--wrap=OH_VideoDecoder_GetOutputDescription",
+    "-Wl,--wrap=OH_VideoDecoder_RenderOutputBuffer",
+    "-Wl,--wrap=OH_VideoDecoder_RegisterCallback",
+    "-Wl,--wrap=OH_AVBuffer_GetBufferAttr",
+    "-Wl,--wrap=OH_AVCencInfo_SetAlgorithm",
+    "-Wl,--wrap=OH_AVCencInfo_SetSubsampleInfo",
+    "-Wl,--wrap=OH_AVCencInfo_SetMode",
+    "-Wl,--wrap=OH_VideoDecoder_SetDecryptionConfig",
+    "-Wl,--wrap=OH_AVCencInfo_Create",
+    "-Wl,--wrap=OH_AVCencInfo_SetAVBuffer",
+    "-Wl,--wrap=OH_AVCencInfo_Destroy",
+  ]
+}
+
+config("arkweb_ohos_adapter_unittest_config") {
+  ldflags = [
+    "-Wl,--wrap=OH_NativeBundle_GetMainElementName",
+    "-Wl,--wrap=OH_AVMetadataBuilder_Create",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetAssetId",
+    "-Wl,--wrap=OH_AVMetadataBuilder_GenerateAVMetadata",
+    "-Wl,--wrap=OH_AVMetadata_Destroy",
+    "-Wl,--wrap=OH_AVMetadataBuilder_Destroy",
+    "-Wl,--wrap=OH_AVSession_Create",
+    "-Wl,--wrap=OH_AVSession_Destroy",
+    "-Wl,--wrap=OH_AVSession_Activate",
+    "-Wl,--wrap=OH_AVSession_Deactivate",
+    "-Wl,--wrap=OH_AVSession_RegisterCommandCallback",
+    "-Wl,--wrap=OH_AVSession_RegisterSeekCallback",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetTitle",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetArtist",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetAlbum",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetDuration",
+    "-Wl,--wrap=OH_AVSession_SetPlaybackState",
+    "-Wl,--wrap=OH_AVSession_SetAVMetadata",
+    "-Wl,--wrap=OH_AVSession_SetPlaybackPosition",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetMediaImageUri",
+  ]
+}
+
+config("arkweb_device_unittest_config") {
+  ldflags = [ "-Wl,--wrap=LoadNativeLibrary" ]
 }

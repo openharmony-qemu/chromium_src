@@ -85,6 +85,10 @@ void PTDSupplementForBL::StopRecordingLCP(bool stop) {
         ptd_for_bl_->record_lcp_to_metrics_ = true;
     }
 }
+
+void PTDSupplementForBL::Trace(Visitor* visitor) const {
+    visitor->Trace(ptd_for_bl_);
+}
 #endif
 
 }  // namespace blink

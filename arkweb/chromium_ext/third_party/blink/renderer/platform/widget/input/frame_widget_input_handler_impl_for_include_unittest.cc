@@ -107,7 +107,9 @@ class MockFrameWidgetInputHandler : public mojom::blink::FrameWidgetInputHandler
   }
   
   MOCK_METHOD(void, SelectRangeV2, (const gfx::Point&, bool), (override));
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   MOCK_METHOD(void, ShowFreeCopyMenu, (), (override));
+#endif
   
   void AddImeTextSpansToExistingText(uint32_t, uint32_t, const Vector<ui::ImeTextSpan>&) override {}
   void ClearImeTextSpansByType(uint32_t, uint32_t, ui::ImeTextSpan::Type) override {}

@@ -136,6 +136,21 @@ class WebFrameWidgetImplExt : public WebFrameWidgetImpl {
 #if BUILDFLAG(ARKWEB_MEDIA_INTERACTION)
   int64_t rawKeyDownTime_ = 0;
 #endif
+#if BUILDFLAG(ARKWEB_TEST)
+  void SelectRangeV2ForTest(const gfx::Point& position, bool is_base) {
+    WebFrameWidgetImplExt::SelectRangeV2(position, is_base);
+  }
+  void OnTextRecognizedForTest(WTF::Vector<mojom::blink::TextRecognizeResultPtr> res, float scale);
+  void OnTextSelectedForTest(bool flag) { WebFrameWidgetImplExt::OnTextSelected(flag); }
+  void ShowFreeCopyMenuForTest() {
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+    WebFrameWidgetImplExt::ShowFreeCopyMenu();
+#endif
+  }
+  void OnDestroyImageAnalyzerOverlayForTest() { WebFrameWidgetImplExt::OnDestroyImageAnalyzerOverlay(); }
+  void OnDataDetectorSelectTextForTest() { WebFrameWidgetImplExt::OnDataDetectorSelectText(); }
+  gfx::Vector2dF GetOverScrollOffsetForTest() { return WebFrameWidgetImplExt::GetOverScrollOffset(); }
+#endif
 };
 }  // namespace blink
 

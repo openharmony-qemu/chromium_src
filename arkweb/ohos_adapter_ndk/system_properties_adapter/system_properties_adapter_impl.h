@@ -78,6 +78,8 @@ public:
 
     bool GetBoolParameter(const std::string& key, bool defaultValue) override;
 
+    std::string GetStringParameter(const std::string& key, const std::string& defaultValue) override;
+
     std::vector<FrameRateSetting> GetLTPOConfig(const std::string& settingName) override;
 
     std::string GetOOPGPUStatus() override;

@@ -428,7 +428,11 @@ class CertificateErrorAllowingContentBrowserClient
       const net::SSLInfo& ssl_info,
       const GURL& request_url,
       bool is_primary_main_frame_request,
-      bool strict_enforcement,
+      bool strict_enforcement
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      , const GURL& origin_url,
+      const std::string& referrer,
+#endif
       base::OnceCallback<void(CertificateRequestResultType)> callback)
       override {
     allow_certificate_error_called_ = true;

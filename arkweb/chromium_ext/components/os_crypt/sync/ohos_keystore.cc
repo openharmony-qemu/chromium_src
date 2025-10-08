@@ -50,7 +50,7 @@ bool ValidateKeyAndGetEncryptedData(const base::FilePath& key_file_path, std::st
     return false;
   }
 
-  if (encryptedData.length() == GetEncryptSize() && encryptedData.compare(0, V10_SIZE, std::string(V10))) {
+  if (encryptedData.length() == GetEncryptSize() && encryptedData.compare(0, V10_SIZE, std::string(V10)) == 0) {
     return true;
   }
 

@@ -344,24 +344,22 @@ std::optional<std::string> g_extension_name;
 
 static void HandleExtensionInstallResult(
     OnExtensionInstallCallback callback,
-    const std::optional<extensions::CrxInstallError>& error) {
+    const std::optional<extensions::CrxInstallError>& error,
+    const std::string& extension_id) {
   if (!callback) {
     return;
   }
 
   if (error.has_value()) {
     std::string error_message = base::UTF16ToUTF8(error->message());
-    callback(static_cast<int>(error->type()), error_message.c_str());
+    callback(static_cast<int>(error->type()), error_message.c_str(), nullptr);
   } else {
-    callback(0, "Success");
+    callback(0, "Success", extension_id.c_str());
   }
 }
 
 static void ConfigureCrxInstaller(
     scoped_refptr<extensions::CrxInstaller> installer) {
-  installer->set_off_store_install_allow_reason(
-      extensions::CrxInstaller::OffStoreInstallAllowedFromSettingsPage);
-  installer->set_install_cause(extension_misc::INSTALL_CAUSE_USER_DOWNLOAD);
   installer->set_install_immediately(true);
 }
 
@@ -372,7 +370,7 @@ static void PerformCrxInstallation(const std::string& file_path,
   if (!file_exists) {
     if (callback) {
       callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
-               "File not found");
+               "File not found", nullptr);
     }
     return;
   }
@@ -382,7 +380,7 @@ static void PerformCrxInstallation(const std::string& file_path,
   if (!service) {
     if (callback) {
       callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
-               "Extension service not available");
+               "Extension service not available", nullptr);
     }
     return;
   }
@@ -396,7 +394,15 @@ static void PerformCrxInstallation(const std::string& file_path,
   ConfigureCrxInstaller(installer);
 
   installer->AddInstallerCallback(
-      base::BindOnce(&HandleExtensionInstallResult, callback));
+      base::BindOnce([](OnExtensionInstallCallback callback,
+                       scoped_refptr<extensions::CrxInstaller> installer,
+                       const std::optional<extensions::CrxInstallError>& error) {
+        std::string extension_id;
+        if (!error.has_value() && installer->extension()) {
+          extension_id = installer->extension()->id();
+        }
+        HandleExtensionInstallResult(callback, error, extension_id);
+      }, callback, installer));
   installer->InstallCrx(base::FilePath(file_path));
 }
 #endif
@@ -4097,7 +4103,7 @@ void NWebImpl::InstallExtensionFile(const std::string& file_path,
   if (file_path.empty()) {
     if (callback) {
       callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
-               "Invalid file path");
+               "Invalid file path", nullptr);
     }
     return;
   }
@@ -4107,7 +4113,7 @@ void NWebImpl::InstallExtensionFile(const std::string& file_path,
     WVLOG_E("Failed to get global browser context");
     if (callback) {
       callback(static_cast<int>(extensions::CrxInstallErrorType::OTHER),
-               "Browser context not available");
+               "Browser context not available", nullptr);
     }
   }
 

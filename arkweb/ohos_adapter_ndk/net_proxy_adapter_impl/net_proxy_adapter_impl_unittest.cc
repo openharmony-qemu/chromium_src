@@ -75,6 +75,10 @@ TEST_F(NetProxyAdapterImplTest, NetProxyAdapterImplTest_Decode_001) {
   source = "dGVzdA==";
   std::string expect = "test";
   EXPECT_EQ(Base64::Decode(source), expect);
+
+  source = "+/";
+  expect = "\xFB";
+  EXPECT_EQ(Base64::Decode(source), expect);
 }
 
 /**
@@ -158,13 +162,22 @@ TEST_F(NetProxyAdapterImplTest, NetProxyAdapterImplTest_AppProxyChange_001) {
   EXPECT_EQ(callback_called, true);
 
   callback_called = false;
+  NetProxyAdapterImpl::GetInstance().RegNetProxyEvent(nullptr);
+  NetProxyAdapterImpl::AppProxyChange(&receive_http_proxy);
+  EXPECT_EQ(callback_called, false);
+  NetProxyAdapterImpl::GetInstance().RegNetProxyEvent(event_callback);
+
+  callback_called = false;
   NetProxyAdapterImpl::AppProxyChange(nullptr);
   EXPECT_EQ(callback_called, false);
+
+  receive_http_proxy.host[0] = 0;
+  NetProxyAdapterImpl::AppProxyChange(&receive_http_proxy);
+  EXPECT_EQ(callback_called, true);
 
   g_mock_OH_NetConn_GetDefaultHttpProxy = [](NetConn_HttpProxy *httpProxy) {
     return 1;
   };
-  receive_http_proxy.host[0] = 0;
   NetProxyAdapterImpl::AppProxyChange(&receive_http_proxy);
   EXPECT_EQ(callback_called, true);
 
@@ -182,6 +195,23 @@ TEST_F(NetProxyAdapterImplTest, NetProxyAdapterImplTest_AppProxyChange_001) {
   NetProxyAdapterImpl::AppProxyChange(&receive_http_proxy);
   EXPECT_EQ(callback_called, true);
   g_mock_OH_NetConn_GetDefaultHttpProxy = nullptr;
+}
+
+/**
+ * @tc.name: NetProxyAdapterImplTest_StartListenAppProxy_001.
+ * @tc.desc: test of StartListenAppProxy in NetProxyAdapterImplTest
+ * @tc.type: FUNC.
+ */
+TEST_F(NetProxyAdapterImplTest, NetProxyAdapterImplTest_StartListenAppProxy_001) {
+  g_mock_OH_NetConn_RegisterAppHttpProxyCallback = [](OH_NetConn_AppHttpProxyChange, uint32_t*) {
+    return -1;
+  };
+  NetProxyAdapterImpl::GetInstance().StartListenAppProxy();
+  EXPECT_EQ(NetProxyAdapterImpl::GetInstance().appProxyCallbackId_, 0);
+  g_mock_OH_NetConn_RegisterAppHttpProxyCallback = nullptr;
+
+  NetProxyAdapterImpl::GetInstance().StartListenAppProxy();
+  EXPECT_EQ(NetProxyAdapterImpl::GetInstance().appProxyCallbackId_, 1);
 }
 
 /**
@@ -251,6 +281,11 @@ TEST_F(NetProxyAdapterImplTest, NetProxyAdapterImplTest_OnReceiveEvent_001) {
   callback_called = false;
   NetProxyAdapterImpl::OnReceiveEvent(&data);
   EXPECT_EQ(callback_called, true);
+
+  callback_called = false;
+  NetProxyAdapterImpl::GetInstance().RegNetProxyEvent(nullptr);
+  NetProxyAdapterImpl::OnReceiveEvent(&data);
+  EXPECT_EQ(callback_called, false);
   g_mock_OH_NetConn_GetDefaultHttpProxy = nullptr;
   g_mock_OH_CommonEvent_GetEventFromRcvData = nullptr;
 }

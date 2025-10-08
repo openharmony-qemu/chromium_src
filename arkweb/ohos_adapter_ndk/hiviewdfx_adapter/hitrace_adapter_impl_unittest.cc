@@ -14,8 +14,10 @@
  */
 
 #include "gtest/gtest.h"
+#include "hitrace_adapter_impl.h"
 
 using namespace testing;
+using namespace OHOS::NWeb;
 
 class HiTraceAdapterImplTest : public ::testing::Test {};
 
@@ -36,4 +38,24 @@ TEST_F(HiTraceAdapterImplTest, HiTraceAdapterImplTest_ConvertToInt_001) {
 
   result = OHOS::NWeb::ConvertToInt(origin_value, default_value);
   EXPECT_EQ(result, 100);
+}
+
+/**
+ * @tc.name: HiTraceAdapterImplTest_ConvertToUint64_001.
+ * @tc.desc: test of ConvertToUint64 in HiTraceAdapterImplTest
+ * @tc.type: func.
+ */
+TEST_F(HiTraceAdapterImplTest, HiTraceAdapterImplTest_ConvertToUint64_001) {
+  HiTraceAdapterImpl hi_trace_adapter_impl; 
+  char origin_value[] = "100";
+  uint64_t default_value = 0;
+  auto result = hi_trace_adapter_impl.ConvertToUint64(nullptr, default_value);
+  EXPECT_EQ(result, 0);
+
+  result = hi_trace_adapter_impl.ConvertToUint64(origin_value, default_value);
+  EXPECT_EQ(result, 100);
+
+  char invaid_value[] = "test";
+  result = hi_trace_adapter_impl.ConvertToUint64(invaid_value, default_value);
+  EXPECT_EQ(result, 0);
 }

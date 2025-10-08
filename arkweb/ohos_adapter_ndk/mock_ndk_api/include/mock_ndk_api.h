@@ -48,12 +48,12 @@ extern "C" {
 #endif
 
 extern std::function<CommonEvent_SubscribeInfo* (const char* events[],
-		int32_t eventsNum)> g_mock_OH_CommonEvent_CreateSubscribeInfo;
+    int32_t eventsNum)> g_mock_OH_CommonEvent_CreateSubscribeInfo;
 CommonEvent_SubscribeInfo* __real_OH_CommonEvent_CreateSubscribeInfo(const char* events[], int32_t eventsNum);
 CommonEvent_SubscribeInfo* __wrap_OH_CommonEvent_CreateSubscribeInfo(const char* events[], int32_t eventsNum);
 
 extern std::function<CommonEvent_Subscriber*(const CommonEvent_SubscribeInfo* info,
-		CommonEvent_ReceiveCallback callback)> g_mock_OH_CommonEvent_CreateSubscriber;
+    CommonEvent_ReceiveCallback callback)> g_mock_OH_CommonEvent_CreateSubscriber;
 CommonEvent_Subscriber* __real_OH_CommonEvent_CreateSubscriber(const CommonEvent_SubscribeInfo* info,
     CommonEvent_ReceiveCallback callback);
 CommonEvent_Subscriber* __wrap_OH_CommonEvent_CreateSubscriber(const CommonEvent_SubscribeInfo* info,
@@ -85,7 +85,7 @@ Telephony_RadioResult __real_OH_Telephony_GetNetworkStateForSlot(int32_t slotId,
 Telephony_RadioResult __wrap_OH_Telephony_GetNetworkStateForSlot(int32_t slotId, Telephony_NetworkState *state);
 
 extern std::function<int32_t (NetConn_NetConnCallback *netConnCallback,
-		uint32_t *callbackId)> g_mock_OH_NetConn_RegisterDefaultNetConnCallback;
+    uint32_t *callbackId)> g_mock_OH_NetConn_RegisterDefaultNetConnCallback;
 int32_t __real_OH_NetConn_RegisterDefaultNetConnCallback(NetConn_NetConnCallback *netConnCallback,
     uint32_t *callbackId);
 int32_t __wrap_OH_NetConn_RegisterDefaultNetConnCallback(NetConn_NetConnCallback *netConnCallback,
@@ -96,7 +96,7 @@ int32_t __real_OH_NetConn_UnregisterNetConnCallback(uint32_t callbackId);
 int32_t __wrap_OH_NetConn_UnregisterNetConnCallback(uint32_t callbackId);
 
 extern std::function<int32_t (NetConn_NetHandle *netHandle,
-		NetConn_ConnectionProperties *prop)> g_mock_OH_NetConn_GetConnectionProperties;
+    NetConn_ConnectionProperties *prop)> g_mock_OH_NetConn_GetConnectionProperties;
 int32_t __real_OH_NetConn_GetConnectionProperties(NetConn_NetHandle *netHandle, NetConn_ConnectionProperties *prop);
 int32_t __wrap_OH_NetConn_GetConnectionProperties(NetConn_NetHandle *netHandle, NetConn_ConnectionProperties *prop);
 
@@ -105,7 +105,7 @@ int32_t __real_OH_NetConn_GetDefaultNet(NetConn_NetHandle *netHandle);
 int32_t __wrap_OH_NetConn_GetDefaultNet(NetConn_NetHandle *netHandle);
 
 extern std::function<int32_t (NetConn_NetHandle *netHandle,
-		NetConn_NetCapabilities *netCapabilities)> g_mock_OH_NetConn_GetNetCapabilities;
+    NetConn_NetCapabilities *netCapabilities)> g_mock_OH_NetConn_GetNetCapabilities;
 int32_t __real_OH_NetConn_GetNetCapabilities(NetConn_NetHandle *netHandle, NetConn_NetCapabilities *netCapabilities);
 int32_t __wrap_OH_NetConn_GetNetCapabilities(NetConn_NetHandle *netHandle, NetConn_NetCapabilities *netCapabilities);
 
@@ -120,6 +120,13 @@ Input_DeviceInfo* __wrap_OH_Input_CreateDeviceInfo();
 extern std::function<Input_Result (int32_t *deviceIds, int32_t inSize, int32_t *outSize)> g_mock_OH_Input_GetDeviceIds;
 Input_Result __real_OH_Input_GetDeviceIds(int32_t *deviceIds, int32_t inSize, int32_t *outSize);
 Input_Result __wrap_OH_Input_GetDeviceIds(int32_t *deviceIds, int32_t inSize, int32_t *outSize);
+
+extern std::function<int32_t (OH_NetConn_AppHttpProxyChange appHttpProxyChange,
+    uint32_t *callbackId)> g_mock_OH_NetConn_RegisterAppHttpProxyCallback;
+int32_t __real_OH_NetConn_RegisterAppHttpProxyCallback(OH_NetConn_AppHttpProxyChange appHttpProxyChange,
+    uint32_t *callbackId);
+int32_t __wrap_OH_NetConn_RegisterAppHttpProxyCallback(OH_NetConn_AppHttpProxyChange appHttpProxyChange,
+    uint32_t *callbackId);
 
 extern std::function<OH_NativeVSync* (const char* name, unsigned int length)> g_mock_OH_NativeVSync_Create;
 OH_NativeVSync* __real_OH_NativeVSync_Create(const char* name, unsigned int length);

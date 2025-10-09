@@ -1223,7 +1223,18 @@
                 "int OH_IPCParcel_WriteString(OHIPCParcel *parcel, const char *str)",
                 "int OH_IPCRemoteProxy_SendRequest(const OHIPCRemoteProxy *proxy, uint32_t code, const OHIPCParcel *data, OHIPCParcel *reply, const OH_IPC_MessageOption *option)",
                 "void OH_IPCRemoteStub_Destroy(OHIPCRemoteStub *stub)",
-                "OHIPCRemoteStub* OH_IPCRemoteStub_Create(const char *descriptor, OH_OnRemoteRequestCallback requestCallback, OH_OnRemoteDestroyCallback destroyCallback, void *userData)"
+                "OHIPCRemoteStub* OH_IPCRemoteStub_Create(const char *descriptor, OH_OnRemoteRequestCallback requestCallback, OH_OnRemoteDestroyCallback destroyCallback, void *userData)",
+                "int OH_IPCParcel_ReadFileDescriptor(const OHIPCParcel *parcel, int32_t *fd)",
+                "OHIPCRemoteProxy* OH_IPCParcel_ReadRemoteProxy(const OHIPCParcel *parcel)"
+            ]
+        },
+        "includes": []
+    },
+    "qos":{
+        "apiList": {
+            "12": [
+                "int OH_QoS_SetThreadQoS(QoS_Level level)",
+                "int OH_QoS_GetThreadQoS(QoS_Level *level)"
             ]
         },
         "includes": []

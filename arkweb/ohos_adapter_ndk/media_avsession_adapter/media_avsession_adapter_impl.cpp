@@ -131,7 +131,7 @@ bool MediaAVSessionAdapterImpl::CreateAVSession(MediaAVSessionType type) {
         return CreateNewSession(type);
     } else {
         if (findIter != avSessionMap.end()) {
-            if (findIter->second && findIter->second->avSession_ != avSession_) {
+            if (findIter->second != this) {
                 DestroyAndEraseSession();
                 DestroyAVSession();
             } else {
@@ -156,7 +156,7 @@ void MediaAVSessionAdapterImpl::DestroyAVSession() {
     }
     if (avSessionKey_) {
         auto iter = avSessionMap.find(avSessionKey_->ToString());
-        if (iter != avSessionMap.end()) {
+    if (iter != avSessionMap.end() && iter->second == this) {
             avSessionMap.erase(iter);
         }
     }
@@ -479,16 +479,17 @@ void MediaAVSessionAdapterImpl::DestroyAndEraseSession() {
         WVLOG_E("DestroyAndEraseSession avsession is null pointer return");
         return;
     }
-    AVSession_ErrCode ret = OH_AVSession_Destroy(iter->second->avSession_);
-    if (ret != AV_SESSION_ERR_SUCCESS) {
-        WVLOG_E("DestroyAndEraseSession Destroy failed, ret: %{public}d", ret);
-    } else {
-        WVLOG_I("DestroyAndEraseSession Destroy success");
+    if (iter->second->avSession_ != nullptr) {
+        AVSession_ErrCode ret = OH_AVSession_Destroy(iter->second->avSession_);
+        if (ret != AV_SESSION_ERR_SUCCESS) {
+            WVLOG_E("DestroyAndEraseSession Destroy failed, ret: %{public}d", ret);
+        } else {
+            WVLOG_I("DestroyAndEraseSession Destroy success");
+        }
     }
     // clear adapter->avSession, otherwise it will crash when callback
     iter->second->avSession_ = nullptr;
 
-    avSession_ = nullptr;
     avSessionMap.erase(iter);
     WVLOG_I("DestroyAndEraseSession out");
 }

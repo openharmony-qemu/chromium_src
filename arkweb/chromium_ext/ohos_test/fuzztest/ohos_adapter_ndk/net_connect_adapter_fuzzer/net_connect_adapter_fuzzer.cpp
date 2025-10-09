@@ -90,11 +90,6 @@ void FuzzApi(const uint8_t* data, size_t size) {
       std::make_shared<NiceMock<NetConnCallbackMock>>();
   int32_t id = ins.RegisterNetConnCallback(nullptr);
   id = ins.RegisterNetConnCallback(callback);
-  NetConnectType type =
-      static_cast<NetConnectType>(fdp.ConsumeIntegralInRange<uint32_t>(0, 9));
-  NetConnectSubtype netConnectSubtype = static_cast<NetConnectSubtype>(
-      fdp.ConsumeIntegralInRange<uint32_t>(0, 32));
-  ins.GetDefaultNetConnect(type, netConnectSubtype);
   ins.GetDnsServers();
   int32_t netId = fdp.ConsumeIntegral<int32_t>();
   ins.GetDnsServersByNetId(netId);
@@ -118,6 +113,11 @@ void FuzzApi(const uint8_t* data, size_t size) {
   FuzzOnReceiveEvent(fdp);
   ins.UnRegisterVpnListener();
   ins.UnregisterNetConnCallback(id);
+  NetConnectType type =
+      static_cast<NetConnectType>(fdp.ConsumeIntegralInRange<uint32_t>(0, 9));
+  NetConnectSubtype netConnectSubtype = static_cast<NetConnectSubtype>(
+      fdp.ConsumeIntegralInRange<uint32_t>(0, 32));
+  ins.GetDefaultNetConnect(type, netConnectSubtype);
 }
 }  // namespace OHOS::NWeb
 

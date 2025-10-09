@@ -55,24 +55,23 @@ int32_t OH_NetConn_RegisterDefaultNetConnCallback(
 }
 
 int32_t OH_NetConn_UnregisterNetConnCallback(uint32_t callBackId) {
-  NetConn_NetHandle netHandle;
-  if (g_netConnCallback == nullptr) {
-    return 0;
-  }
-  g_netConnCallback->onNetworkAvailable(&netHandle);
-  NetConn_NetCapabilities netCap;
-  netCap.bearerTypesSize = 1;
-  netCap.bearerTypes[0] = NETCONN_BEARER_CELLULAR;
-  g_netConnCallback->onNetCapabilitiesChange(&netHandle, &netCap);
-  NetConn_ConnectionProperties connProp;
-  g_netConnCallback->onConnetionProperties(&netHandle, &connProp);
-  g_netConnCallback->onNetLost(&netHandle);
-  g_netConnCallback->onNetUnavailable();
-  g_netConnCallback->onNetBlockStatusChange(&netHandle, true);
   return 0;
 }
 
 int32_t OH_NetConn_GetDefaultNet(NetConn_NetHandle* netHandle) {
+  if (g_netConnCallback == nullptr) {
+    return 0;
+  }
+  g_netConnCallback->onNetworkAvailable(netHandle);
+  NetConn_NetCapabilities netCap;
+  netCap.bearerTypesSize = 1;
+  netCap.bearerTypes[0] = NETCONN_BEARER_CELLULAR;
+  g_netConnCallback->onNetCapabilitiesChange(netHandle, &netCap);
+  NetConn_ConnectionProperties connProp;
+  g_netConnCallback->onConnetionProperties(netHandle, &connProp);
+  g_netConnCallback->onNetLost(netHandle);
+  g_netConnCallback->onNetUnavailable();
+  g_netConnCallback->onNetBlockStatusChange(netHandle, true);
   return 0;
 }
 
@@ -96,4 +95,19 @@ int32_t OH_NetConn_GetAllNets(NetConn_NetHandleList* netHandleList) {
   netHandleList->netHandleListSize = 1;
   netHandleList->netHandles[0].netId = 0;
   return 0;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+vkGetNativeBufferPropertiesOHOS(VkDevice device,
+                                const struct OH_NativeBuffer* buffer,
+                                VkNativeBufferPropertiesOHOS* pProperties) {
+  return VK_SUCCESS;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+vkCreateSurfaceOHOS(VkInstance instance,
+                    const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                    const VkAllocationCallbacks* pAllocator,
+                    VkSurfaceKHR* pSurface) {
+  return VK_SUCCESS;
 }

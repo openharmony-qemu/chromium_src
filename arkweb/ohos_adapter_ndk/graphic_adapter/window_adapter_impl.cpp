@@ -105,6 +105,28 @@ int WindowAdapterNdkImpl::GetNativeWindowAbortBuffer(NWebNativeWindow window, OH
     return ret;
 }
 
+void WindowAdapterNdkImpl::NativeWindowSetUsage(NWebNativeWindow window)
+{
+    if (window == nullptr) {
+        WVLOG_E("window is nullptr.");
+        return;
+    }
+
+    uint64_t usage = 0;
+    int32_t ret = OH_NativeWindow_NativeWindowHandleOpt(static_cast<OHNativeWindow *>(window), GET_USAGE, &usage);
+    if (ret != 0) {
+        WVLOG_E("Failed to get window usage.");
+        return;
+    }
+
+    usage &= (~NATIVEBUFFER_USAGE_CPU_READ);
+    ret = OH_NativeWindow_NativeWindowHandleOpt(static_cast<OHNativeWindow *>(window), SET_USAGE, usage);
+    if (ret != 0) {
+        WVLOG_E("Failed to set window usage.");
+        return;
+    }
+}
+
 int WindowAdapterNdkImpl::GetNativeWindowQueueSize(NWebNativeWindow window)
 {
     int bufferQueueSize = 0;

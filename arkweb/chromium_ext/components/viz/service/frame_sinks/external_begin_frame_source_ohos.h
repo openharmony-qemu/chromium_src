@@ -111,6 +111,7 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)
   bool last_dvsync_state_ = false;
+  bool dvsync_enable_ = false;
 #endif
 
 #if BUILDFLAG(ARKWEB_PIP)

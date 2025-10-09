@@ -144,6 +144,8 @@ public:
 
     virtual int32_t GetTimeout() = 0;
 
+    virtual int64_t GetTimestamp() = 0;
+
     virtual ColorGamutAdapter GetColorGamut() = 0;
 
     virtual TransformTypeAdapter GetTransformType() = 0;
@@ -237,6 +239,8 @@ public:
     virtual void AddNativeWindowRef(NWebNativeWindow window) = 0;
 
     virtual void NativeWindowUnRef(NWebNativeWindow window) = 0;
+
+    virtual void NativeWindowSetUsage(NWebNativeWindow window) = 0;
 };
 
 class AshmemAdapter {

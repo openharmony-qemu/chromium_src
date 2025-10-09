@@ -148,6 +148,8 @@ class NDKOhosAdapterHelper : public NWeb::OhosAdapterHelper {
       override;
 
   std::unique_ptr<NWeb::NetConfigAdapter> GetNetConfigAdapter() override;
+
+  NWeb::QosManagerAdapter& GetQosManagerInstance() override;
 };
 
 }  // namespace OHOS::ArkWeb

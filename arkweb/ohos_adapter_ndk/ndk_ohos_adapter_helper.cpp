@@ -68,6 +68,7 @@
 #include "arkweb/ohos_adapter_ndk/flowbuffer_adapter/flowbuffer_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/migration_manager_adapter/migration_manager_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/power_mgr_adapter/power_mgr_client_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/qos_manager_adapter/qos_manager_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -335,5 +336,10 @@ NDKOhosAdapterHelper::CreateScreenlockManagerAdapter() {
 std::unique_ptr<NWeb::NetConfigAdapter>
 NDKOhosAdapterHelper::GetNetConfigAdapter() {
   return std::make_unique<NetConfigAdapterImpl>();
+}
+
+NWeb::QosManagerAdapter& NDKOhosAdapterHelper::GetQosManagerInstance()
+{
+    return QosManagerAdapterImpl::GetInstance();
 }
 }  // namespace OHOS::ArkWeb

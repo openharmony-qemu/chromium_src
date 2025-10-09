@@ -63,6 +63,7 @@
 
 #include "arkweb/ohos_adapter_ndk/drawing_text_adapter/ohos_drawing_text_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/net_config_adapter/net_config_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/ohos_resource_adapter/ohos_resource_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -147,7 +148,7 @@ NDKOhosAdapterHelper::CreateSocPerfClientAdapter() {
 
 std::unique_ptr<NWeb::OhosResourceAdapter>
 NDKOhosAdapterHelper::GetResourceAdapter(const std::string& hapPath) {
-  return nullptr;
+  return std::make_unique<NWeb::OhosResourceAdapterImpl>(hapPath);
 }
 
 NWeb::SystemPropertiesAdapter&

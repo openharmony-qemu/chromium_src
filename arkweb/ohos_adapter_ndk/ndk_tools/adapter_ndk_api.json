@@ -742,14 +742,6 @@
         },
         "includes": []
     },
-    "bundle_ndk":{
-        "apiList": {
-            "14": [
-                "char* OH_NativeBundle_GetCompatibleDeviceType()"
-            ]
-        },
-        "includes": []
-    },
     "deviceinfo_ndk":{
         "apiList": {
             "14": [
@@ -1050,10 +1042,12 @@
         },
         "includes": []
     },
-    "bundle_ndk": {
+    "bundle": {
         "apiList": {
             "14": [
-                "OH_NativeBundle_ElementName OH_NativeBundle_GetMainElementName()"
+                "OH_NativeBundle_ElementName OH_NativeBundle_GetMainElementName()",
+                "OH_NativeBundle_ApplicationInfo OH_NativeBundle_GetCurrentApplicationInfo()",
+                "char* OH_NativeBundle_GetCompatibleDeviceType()"
             ]
         },
         "includes": []
@@ -1178,6 +1172,17 @@
             "13": [
                 "OH_NativeColorSpaceManager* OH_NativeColorSpaceManager_CreateFromName(ColorSpaceName colorSpaceName)",
                 "void OH_NativeColorSpaceManager_Destroy(OH_NativeColorSpaceManager* nativeColorSpaceManager)"
+            ]
+        },
+        "includes": []
+    },
+    "rawfile":{
+        "apiList": {
+            "14": [
+                "int OH_ResourceManager_ReadRawFile(const RawFile *rawFile, void *buf, size_t length)",
+                "RawFile *OH_ResourceManager_OpenRawFile(const NativeResourceManager *mgr, const char *fileName)",
+                "long OH_ResourceManager_GetRawFileSize(RawFile *rawFile)",
+                "void OH_ResourceManager_CloseRawFile(RawFile *rawFile)"
             ]
         },
         "includes": []

@@ -2456,14 +2456,19 @@ int NWebImpl::LoadWithData(const std::string& data,
 }
 
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-int NWebImpl::LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
-                                const std::string& refer, const std::string& headers,
-                                const std::string& post_data, const bool allow_https_upgrade) {
+int NWebImpl::LoadUrlWithParams(const std::string& url,
+                                const LoadUrlType load_type,
+                                const std::string& refer,
+                                const std::string& headers,
+                                const std::string& post_data,
+                                const bool allow_https_upgrade,
+                                int32_t transition_type) {
   if (nweb_delegate_ == nullptr) {
     return NWEB_ERR;
   }
-  return nweb_delegate_->LoadUrlWithParams(url, load_type, refer,
-                                           headers, post_data, allow_https_upgrade);
+  return nweb_delegate_->LoadUrlWithParams(url, load_type, refer, headers,
+                                           post_data, allow_https_upgrade,
+                                           transition_type);
 }
 #endif
 

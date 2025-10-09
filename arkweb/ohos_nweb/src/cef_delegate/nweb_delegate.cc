@@ -2599,15 +2599,20 @@ int NWebDelegate::LoadWithData(const std::string& data,
 }
 
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-int NWebDelegate::LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
-                                    const std::string& refer, const std::string& headers,
-                                    const std::string& post_data, const bool allow_https_upgrade) {
+int NWebDelegate::LoadUrlWithParams(const std::string& url,
+                                    const LoadUrlType load_type,
+                                    const std::string& refer,
+                                    const std::string& headers,
+                                    const std::string& post_data,
+                                    const bool allow_https_upgrade,
+                                    int32_t transition_type) {
   LOG(DEBUG) << "NWebDelegate::LoadUrlWithParams";
   if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
     return NWEB_ERR;
   }
-  GetBrowser()->GetHost()->LoadUrlWithParams(url, load_type, refer,
-                                             headers, post_data, allow_https_upgrade);
+  GetBrowser()->GetHost()->LoadUrlWithParams(url, load_type, refer, headers,
+                                             post_data, allow_https_upgrade,
+                                             transition_type);
   RequestVisitedHistory();
   return NWEB_OK;
 }

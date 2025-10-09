@@ -763,9 +763,13 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-  void LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
-                         const std::string& refer, const std::string& headers,
-                         const std::string& post_data, const bool allow_https_upgrade) override {}
+  void LoadUrlWithParams(const std::string& url,
+                         const LoadUrlType load_type,
+                         const std::string& refer,
+                         const std::string& headers,
+                         const std::string& post_data,
+                         const bool allow_https_upgrade,
+                         int32_t transition_type) override {}
   void EnableHttpsUpgrades(bool enable) override {}
 #endif
 

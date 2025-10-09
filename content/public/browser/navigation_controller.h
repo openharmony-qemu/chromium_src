@@ -354,6 +354,12 @@ class NavigationController {
     // login URLs which may be broken by HTTPS Upgrades due to the portal's
     // unconventional handling of HTTPS URLs.
     bool force_no_https_upgrade = false;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+    // With Arkweb Https Upgrade function, if user Type http as scheme, we will not
+    // upgrade to https. Otherwise, this param will set to FLASE;
+    bool url_typed_with_http_scheme = true;
+#endif
   };
 
   // Disables checking for a repost and prompting the user. This is used during

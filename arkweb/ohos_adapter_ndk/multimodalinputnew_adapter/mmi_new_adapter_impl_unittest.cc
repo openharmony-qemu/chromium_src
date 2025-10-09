@@ -62,10 +62,12 @@ class MockMMIDeviceInfoAdapter : public MMIDeviceInfoAdapter {
  * @tc.type: FUNC.
  */
 TEST_F(MMINewAdapterImplTest, MMINewAdapterImplTest_OnDeviceAdded_001) {
+  int32_t deviceId = 0;
+  OnDeviceAdded(deviceId);
+  OnDeviceRemoved(deviceId);
   std::string type;
   auto listener = std::make_shared<MockMMIListenerAdapter>();
   MMINewAdapterImpl::GetInstance().RegisterDevListener(type, listener);
-  int32_t deviceId = 0;
   bool callback_called = false;
   EXPECT_CALL(*listener, OnDeviceAdded(::testing::_, ::testing::_))
       .WillRepeatedly(::testing::Assign(&callback_called, true));
@@ -130,13 +132,14 @@ TEST_F(MMINewAdapterImplTest, MMINewAdapterImplTest_GetDeviceIds_001) {
   std::vector<int32_t> ids;
 
   g_mock_OH_Input_GetDeviceIds = [](int32_t *deviceIds, int32_t inSize, int32_t *outSize) {
-    return __real_OH_Input_GetDeviceIds(deviceIds, -1, outSize);
+    return INPUT_PERMISSION_DENIED;
   };
   auto result = MMINewAdapterImpl::GetInstance().GetDeviceIds(ids);
   EXPECT_EQ(result, -1);
 
   g_mock_OH_Input_GetDeviceIds = [](int32_t *deviceIds, int32_t inSize, int32_t *outSize) {
-    return __real_OH_Input_GetDeviceIds(deviceIds, 0, outSize);
+    *outSize = 0;
+    return INPUT_SUCCESS;
   };
   result = MMINewAdapterImpl::GetInstance().GetDeviceIds(ids);
   EXPECT_EQ(result, 0);

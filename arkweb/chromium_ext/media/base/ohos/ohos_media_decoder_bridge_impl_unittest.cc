@@ -331,7 +331,7 @@ class MockOhosAdapterHelper : public OhosAdapterHelper {
               CreateFlowbufferAdapter,
               (),
               (override));
-  MOCK_METHOD(std::unique_ptr<MediaAVSessionAdapter>,
+  MOCK_METHOD(std::shared_ptr<MediaAVSessionAdapter>,
               CreateMediaAVSessionAdapter,
               (),
               (override));
@@ -373,6 +373,14 @@ class MockOhosAdapterHelper : public OhosAdapterHelper {
               (override));
   MOCK_METHOD(std::unique_ptr<ScreenlockManagerAdapter>,
               CreateScreenlockManagerAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<CertManagerAdapter>,
+              GetCertManagerAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<NetConfigAdapter>,
+              GetNetConfigAdapter,
               (),
               (override));
   static MockOhosAdapterHelper& GetInstance() {
@@ -484,7 +492,6 @@ class MediaCodecDecoderBridgeImplTest : public ::testing::Test {
   }
 
   void SetIsFirstDecFrame(bool is_first_dec_frame) {
-    bridge_->isFirstDecFrame_ = is_first_dec_frame;
   }
 
   void SetIsRunning(bool is_running) {
@@ -522,9 +529,10 @@ class MediaCodecDecoderBridgeImplTest : public ::testing::Test {
   }
   DecoderAdapterCode PushInbufferDec(const uint32_t index,
                                      const uint32_t& bufferSize,
-                                     const int64_t& time)
+                                     const int64_t& time,
+                                     bool is_key_frame)
   {
-    return bridge_->PushInbufferDec(index, bufferSize, time);
+    return bridge_->PushInbufferDec(index, bufferSize, time, is_key_frame);
   }
   DecoderAdapterCode PushInbufferDecEos(const uint32_t index)
   {
@@ -990,7 +998,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, PushInbufferDec001) {
       .WillOnce(Return(DecoderAdapterCode::DECODER_OK));
   EXPECT_CALL(*mock_video_decoder, ReleaseDecoder()).Times(1);
   SetVideoDecoder(std::move(mock_video_decoder));
-  auto result = PushInbufferDec(index, bufferSize, time);
+  auto result = PushInbufferDec(index, bufferSize, time, false);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_OK);
 }
 
@@ -1007,7 +1015,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, PushInbufferDec002) {
   EXPECT_CALL(*mock_video_decoder, ReleaseDecoder()).Times(1);
   SetVideoDecoder(std::move(mock_video_decoder));
 
-  auto result = PushInbufferDec(index, bufferSize, time);
+  auto result = PushInbufferDec(index, bufferSize, time, false);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
 
@@ -1031,7 +1039,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer_ShouldReturnError_WhenD
   int64_t presentation_time = 1000000;
   auto expected_result = DecoderAdapterCode::DECODER_ERROR;
   auto actual_result = bridge_->QueueInputBuffer(data, data_size, presentation_time,
-      nullptr);
+      nullptr, false);
   ASSERT_EQ(expected_result, actual_result);
 }
 
@@ -1042,7 +1050,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer_ShouldReturnError_WhenD
   int64_t presentation_time = 1000000;
   auto expected_result = DecoderAdapterCode::DECODER_ERROR;
   auto actual_result = bridge_->QueueInputBuffer(data, data_size, presentation_time,
-      nullptr);
+      nullptr, false);
   ASSERT_EQ(expected_result, actual_result);
 }
 
@@ -1054,7 +1062,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer_ShouldReturnError_WhenS
   int64_t presentation_time = 1000000;
   auto expected_result = DecoderAdapterCode::DECODER_ERROR;
   auto actual_result = bridge_->QueueInputBuffer(data, data_size, presentation_time,
-      nullptr);
+      nullptr, false);
   ASSERT_EQ(expected_result, actual_result);
 }
 
@@ -1067,7 +1075,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer_ShouldReturnError_WhenI
   int64_t presentation_time = 1000000;
   auto expected_result = DecoderAdapterCode::DECODER_ERROR;
   auto actual_result = bridge_->QueueInputBuffer(data, data_size, presentation_time,
-      nullptr);
+      nullptr, false);
   ASSERT_EQ(expected_result, actual_result);
 }
 
@@ -1083,7 +1091,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer_ShouldReturnRetry_WhenI
 
   auto expected_result = DecoderAdapterCode::DECODER_RETRY;
   auto actual_result = bridge_->QueueInputBuffer(data, data_size, presentation_time,
-      nullptr);
+      nullptr, false);
   ASSERT_EQ(expected_result, actual_result);
 }
 
@@ -1099,7 +1107,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer_ShouldReturnRetry_WhenI
 
   auto expected_result = DecoderAdapterCode::DECODER_RETRY;
   auto actual_result = bridge_->QueueInputBuffer(data, data_size, presentation_time,
-      nullptr);
+      nullptr, false);
   ASSERT_EQ(expected_result, actual_result);
 }
 
@@ -1118,7 +1126,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer_ShouldReturnRetry_WhenI
   SetSignal(mock_signal);
   auto expected_result = DecoderAdapterCode::DECODER_RETRY;
   auto actual_result = bridge_->QueueInputBuffer(data, data_size, presentation_time,
-      nullptr);
+      nullptr, false);
   ASSERT_EQ(expected_result, actual_result);
 }
 
@@ -1138,7 +1146,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer_ShouldReturnError_WhenD
   SetVideoDecoder(nullptr);
   auto expected_result = DecoderAdapterCode::DECODER_ERROR;
   auto actual_result = bridge_->QueueInputBuffer(data, data_size, presentation_time,
-      nullptr);
+      nullptr, false);
   ASSERT_EQ(expected_result, actual_result);
 }
 
@@ -1165,7 +1173,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer_ShouldReturnOk_WhenPush
 
   auto expected_result = DecoderAdapterCode::DECODER_OK;
   auto actual_result = bridge_->QueueInputBuffer(data, data_size, presentation_time,
-      nullptr);
+      nullptr, false);
   ASSERT_EQ(expected_result, actual_result);
 }
 
@@ -1559,7 +1567,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest,
 
   auto expected_result = DecoderAdapterCode::DECODER_ERROR;
   auto actual_result =
-      bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
+      bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr, true);
   ASSERT_EQ(expected_result, actual_result);
 }
 

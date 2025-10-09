@@ -23,6 +23,13 @@
 
 namespace OHOS::NWeb {
 
+#if BUILDFLAG(ARKWEB_TEST)
+bool GetWebDebuggingEnabled();
+void SetWebDebuggingEnabled(bool value);
+int32_t GetWebDebuggingPort();
+void SetWebDebuggingPort(int32_t value);
+#endif
+
 class NWebEngineImpl : public NWebEngine {
  public:
   NWebEngineImpl();
@@ -125,6 +132,14 @@ class NWebEngineImpl : public NWebEngine {
   void EnablePrivateNetworkAccess(bool enable) override;
   bool IsPrivateNetworkAccessEnabled() override;
   void SetWebDestroyMode(WebDestroyMode mode) override;
+
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  void SetSocketIdleTimeout(int32_t timeout) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+  void SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) override;
+#endif
 
  private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;

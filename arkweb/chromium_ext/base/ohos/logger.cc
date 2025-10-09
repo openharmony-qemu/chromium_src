@@ -64,7 +64,7 @@ std::string normalizeTag(const std::string& tag) {
 
   int unprefixedTagStart = 0;
   if (StartWith(tag, DEPRECATED_TAG_PREFIX)) {
-    unprefixedTagStart = DEPRECATED_TAG_PREFIX.size();
+    unprefixedTagStart = static_cast<int>(DEPRECATED_TAG_PREFIX.size());
   }
 
   return TAG_PREFIX + tag.substr(unprefixedTagStart);
@@ -151,7 +151,9 @@ void LoggerCallbackFunction(int severity,
 void SetLoggerCallback(std::shared_ptr<NWebLoggerCallback> loggerCallback) {
   GetTaskRunner() = base::SingleThreadTaskRunner::GetCurrentDefault();
   GetLoggerCallBack() = loggerCallback;
-  logging::SetLoggerCallbackToBase(&LoggerCallbackFunction);
+  logging::LoggerCallbackFunction logger_callback_fn =
+      loggerCallback ? LoggerCallbackFunction : nullptr;
+  logging::SetLoggerCallbackToBase(logger_callback_fn);
 }
 
 // static

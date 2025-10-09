@@ -63,11 +63,140 @@ public:
   }
 };
 
+class PageNodeMock : public PageNode {
+public:
+
+    bool is_visible = false;
+
+    bool is_audible = false;
+
+    bool is_media_playing = false;
+
+    int frame_node_flag = 0;
+
+    int main_frame_nodes_count = 0;
+
+    PageNodeMock() { }
+
+    static const char* ToString(PageNode::EmbeddingType embedding_type) { }
+
+    static const char* ToString(performance_manager::PageType type) { }
+    static const char* ToString(PageNode::LoadingState loading_state) { }
+
+    static constexpr NodeTypeEnum Type() { return NodeTypeEnum::kPage; }
+
+    const std::string& GetBrowserContextID() const { }
+
+    const FrameNode* GetOpenerFrameNode() const { }
+
+    const FrameNode* GetEmbedderFrameNode() const { }
+
+    resource_attribution::PageContext GetResourceContext() const { }
+
+    EmbeddingType GetEmbeddingType() const { }
+
+    performance_manager::PageType GetType() const { }
+
+    bool IsFocused() const { }
+
+    void SetIsVisible(bool visibility) {
+        is_visible = visibility;
+    }
+
+    bool IsVisible() const { 
+        return is_visible;
+    }
+
+    base::TimeDelta GetTimeSinceLastVisibilityChange() const { }
+
+    void SetIsAudible(bool audible) {
+        is_audible = audible;
+    }
+
+    bool IsAudible() const { 
+        return is_audible;
+    }
+
+    std::optional<base::TimeDelta> GetTimeSinceLastAudibleChange()
+        const { }
+
+    bool HasPictureInPicture() const { }
+
+    bool IsOffTheRecord() const { }
+
+    #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+    void SetIsMediaPlaying(bool media_playing) {
+        is_media_playing = media_playing;
+    }
+
+    bool IsMediaPlaying() const { 
+        return is_media_playing;
+    }
+    #endif
+
+    LoadingState GetLoadingState() const { }
+
+    ukm::SourceId GetUkmSourceID() const { }
+
+    LifecycleState GetLifecycleState() const { }
+
+    bool IsHoldingWebLock() const { }
+
+    bool IsHoldingIndexedDBLock() const { }
+
+    bool UsesWebRTC() const { }
+
+    int64_t GetNavigationID() const { }
+
+    const std::string& GetContentsMimeType() const { }
+
+    std::optional<blink::mojom::PermissionStatus>
+    GetNotificationPermissionStatus() const { }
+
+    base::TimeDelta GetTimeSinceLastNavigation() const { }
+
+    const FrameNode* GetMainFrameNode() const { }
+
+    NodeSetView<const FrameNode*> GetMainFrameNodes() const {
+    }
+
+    const GURL& GetMainFrameUrl() const { }
+
+    uint64_t EstimateMainFramePrivateFootprintSize() const { }
+
+    bool HadFormInteraction() const { }
+
+    bool HadUserEdits() const { }
+
+    base::WeakPtr<content::WebContents> GetWebContents() const { }
+
+    uint64_t EstimateResidentSetSize() const { }
+
+    uint64_t EstimatePrivateFootprintSize() const { }
+
+    const void* GetImpl() const { }
+
+    uintptr_t GetImplType() const { }
+
+    NodeState GetNodeState() const { }
+
+    Graph* GetGraph() const { }
+};
+
 TEST(OHOS_BFCACHE_POLICY_TEST, OnPassedToGraph) {
-    auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
-    auto graph_mock = std::make_shared<GraphMock>();
-    graph_mock->SetLifecycleState();
-    ohos_bfcache_policy->OnPassedToGraph(graph_mock.get());
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  auto graph_mock = std::make_shared<GraphMock>();
+  graph_mock->SetLifecycleState();
+  ohos_bfcache_policy->OnPassedToGraph(graph_mock.get());
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnPassedToGraph001) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  
+  graph->SetUp();
+  ohos_bfcache_policy->OnPassedToGraph(graph.get());
+  graph->TearDown();
 }
 
 TEST(OHOS_BFCACHE_POLICY_TEST, OnTakenFromGraph) {
@@ -82,4 +211,108 @@ TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure) {
   ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_NONE);
 }
 
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure001) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+  
+  PageNodeMock page_node_mock;
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
 
+  SEQUENCE_CHECKER(sequence_checker_);
+
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+  
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    
+    graph->nodes_[page_index].insert(&page_node_mock);
+    
+    ASSERT_FALSE(graph->nodes_[page_index].empty());
+  }
+  
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure002) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock page_node_mock;
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+  
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    
+    graph->nodes_[page_index].insert(&page_node_mock);
+    
+    ASSERT_FALSE(graph->nodes_[page_index].empty());
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure003) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock pageA;
+  PageNodeMock pageB;
+
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+  
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    
+    graph->nodes_[page_index].insert(&pageA);
+    
+    ASSERT_FALSE(graph->nodes_[page_index].empty());
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  graph->TearDown();
+}
+
+TEST(OHOS_BFCACHE_POLICY_TEST, OnMemoryPressure004) {
+  auto ohos_bfcache_policy = std::make_shared<OHOSBFCachePolicy>();
+  std::unique_ptr<GraphImpl> graph = std::make_unique<GraphImpl>();
+  graph->SetUp();
+
+  PageNodeMock pageA;
+  PageNodeMock pageB;
+  PageNodeMock pageC;
+
+  const size_t page_index = static_cast<size_t>(PageNodeMock::Type());
+
+  SEQUENCE_CHECKER(sequence_checker_);
+
+  base::SequenceChecker sequence_checker_;
+  sequence_checker_.DetachFromSequence();
+  
+  {
+    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+    
+    graph->nodes_[page_index].insert(&pageA);
+    
+    ASSERT_FALSE(graph->nodes_[page_index].empty());
+  }
+
+  ohos_bfcache_policy->OnMemoryPressure(MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE);
+  graph->TearDown();
+}

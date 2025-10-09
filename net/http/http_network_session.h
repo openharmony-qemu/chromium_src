@@ -329,6 +329,10 @@ class NET_EXPORT HttpNetworkSession {
   bool is_strict_log_mode();
 #endif  // ARKWEB_LOGGER_REPORT
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  void SetSocketIdleTimeout(int32_t timeout);
+#endif
+
  private:
   friend class HttpNetworkSessionPeer;
 

@@ -267,7 +267,7 @@ void AddAppCert(const std::string_view& hostname, X509_STORE* ca_store) {
     return;
   }
 
-  int32_t userId = getuid() / UID_TRANSFORM_DIVISOR;
+  uint32_t userId = getuid() / UID_TRANSFORM_DIVISOR;
   std::string cueerntUserCaPath = std::string(kUserCaBasePath) + std::to_string(userId);
 
   X509_LOOKUP_add_dir(ca_look_up, kGlobalCaPath, X509_FILETYPE_PEM);
@@ -675,10 +675,7 @@ bool VerifyFromOhosTrustManager(const std::vector<std::string>& cert_bytes,
 CertVerifyProcOHOS::CertVerifyProcOHOS(
     scoped_refptr<CertNetFetcher> cert_net_fetcher)
     : CertVerifyProc(CRLSet::BuiltinCRLSet()),
-      cert_net_fetcher_(std::move(cert_net_fetcher)) {
-  if (!std::move(cert_net_fetcher)) {
-  }
-}
+      cert_net_fetcher_(std::move(cert_net_fetcher)) {}
 
 CertVerifyProcOHOS::~CertVerifyProcOHOS() {}
 

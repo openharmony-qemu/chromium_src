@@ -25,7 +25,7 @@ void FrameWidgetInputHandlerImpl::SelectRangeV2(const gfx::Point& position,
          base::WeakPtr<mojom::blink::FrameWidgetInputHandler> handler,
          const gfx::Point& position, bool is_base) {
         DCHECK_EQ(!!widget, !!handler);
-        if (!widget) {
+        if (!widget || !handler) {
           return;
         }
         HandlingState handling_state(widget, UpdateState::kIsSelectingRange);
@@ -43,7 +43,7 @@ void FrameWidgetInputHandlerImpl::ShowFreeCopyMenu() {
          base::WeakPtr<mojom::blink::FrameWidgetInputHandler> handler) {
         LOG(INFO) << "Entering ShowFreeCopyMenu";
         DCHECK_EQ(!!widget, !!handler);
-        if (!widget) {
+        if (!widget || !handler) {
           LOG(INFO) << "Widget is null, returning early";
           return;
         }

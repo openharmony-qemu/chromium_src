@@ -24,20 +24,6 @@
 #include "crypto/encryptor.h"
 #include "crypto/symmetric_key.h"
 
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-#include "base/feature_list.h"
-#include "base/files/file_path.h"
-#include "base/files/file_util.h"
-#include "base/ohos/nweb_engine_event_logger.h"
-#include "base/ohos/nweb_engine_event_logger_code.h"
-#include "base/path_service.h"
-#include "base/strings/string_number_conversions.h"
-#include "cef/libcef/browser/prefs/browser_prefs.h"
-#include "chrome/browser/browser_process.h"
-#include "components/prefs/pref_service.h"
-#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
-#endif
-
 #if BUILDFLAG(IS_ARKWEB)
 #include "arkweb/chromium_ext/components/os_crypt/sync/os_crypt_linux_for_include.h"
 #endif
@@ -94,49 +80,6 @@ std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKey(
 
   return encryption_key;
 }
-
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-static std::string AssetQuery(base::FilePath key_file) {
-  std::string assetHandle;
-  bool res = base::ReadFileToString(key_file, &assetHandle);
-  if (!res) {
-    LOG(ERROR) << "[Autofill] Read assethandle file failed.";
-    std::string err_msg = "Read assethandle file failed, error_code:" +
-                          std::to_string(ASSET_QUERY_FAILED);
-    base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
-                                  base::ohos::kPasswordManagerError, err_msg);
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-    g_browser_process->local_state()->CommitPendingWrite();
-    return std::string();
-  }
-
-  if (assetHandle.empty()) {
-    LOG(INFO) << "[Autofill] Assethandle is empty, not need to migrate.";
-    std::string err_msg = "Assethandle is empty, not need to migrate, error_code:" +
-                          std::to_string(MIGRATE_SUCCESS);
-    base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
-                                  base::ohos::kPasswordManagerError, err_msg);
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-    g_browser_process->local_state()->CommitPendingWrite();
-    return std::string();
-  }
-
-  std::string local_key = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                          .GetKeystoreAdapterInstance().AssetQuery(assetHandle);
-  if (local_key.empty()) {
-    LOG(ERROR) << "[Autofill] Get key from asset failed.";
-    std::string err_msg = "Get key from asset failed, error_code:" +
-                          std::to_string(ASSET_QUERY_FAILED);
-    base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
-                                  base::ohos::kPasswordManagerError, err_msg);
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-    g_browser_process->local_state()->CommitPendingWrite();
-    return std::string();
-  }
-  LOG(INFO) << "[Autofill] get key from asset success.";
-  return local_key;
-}
-#endif
 
 // Decrypt `ciphertext` using `encryption_key` and store the result in
 // `encryption_key`.

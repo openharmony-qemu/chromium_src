@@ -268,7 +268,11 @@ class CONTENT_EXPORT VideoCaptureManager
     return nullptr;
   }
 
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif // ARKWEB_TEST
   class CaptureDeviceStartRequest;
 
   using SessionMap =

@@ -6,13 +6,20 @@ import("//build/buildflag_header.gni")
 import("//testing/test.gni")
 
 test("ui_unittests") {
-  sources = [ "run_all_unittests.cc" ]
+  sources = [ 
+    "run_all_unittests.cc",
+    "//arkweb/chromium_ext/ui/ohos/overscroll_refresh_unittest.cc",
+  ]
 
   deps = [
     "//base/test:test_support",
     "//testing/gtest",
     "//ui/base",
     "//ui/menus:unit_tests",
+    "//arkweb/chromium_ext/ui/ohos",
+    "//ui/compositor",
+    "//ui/gfx",
+    "//cc/base",
   ]
 
   if (!is_ios && !is_android && !is_castos) {

@@ -325,6 +325,7 @@ std::shared_ptr<SurfaceBufferAdapter> ProducerNativeAdapterImpl::RequestBuffer(
         return nullptr;
     }
     TransToBufferConfig(configAdapter);
+    OH_NativeWindow_NativeWindowHandleOpt(window_, SET_UI_TIMESTAMP, configAdapter->GetTimestamp());
     OHNativeWindowBuffer* buffer = nullptr;
     if (OH_NativeWindow_NativeWindowRequestBuffer(window_, &buffer, &fence) != 0) {
         WVLOG_E("native window request buffer failed");
@@ -344,7 +345,6 @@ int32_t ProducerNativeAdapterImpl::FlushBuffer(std::shared_ptr<SurfaceBufferAdap
     Region::Rect rect = { flushConfigAdapter->GetX(), flushConfigAdapter->GetY(),
         flushConfigAdapter->GetW(), flushConfigAdapter->GetH() };
     Region region = {.rects = &rect, .rectNumber = 0};
-    OH_NativeWindow_NativeWindowHandleOpt(window_, SET_UI_TIMESTAMP, flushConfigAdapter->GetTimestamp());
     return OH_NativeWindow_NativeWindowFlushBuffer(window_, bufferImpl->GetBuffer(), fence, region);
 }
 } // namespace OHOS::NWeb

@@ -90,12 +90,14 @@ class TestGraphicsUtilities : public ::testing::Test {
   base::CommandLine* command_line_;
 };
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 TEST_F(TestGraphicsUtilities, SetDeleteDelayWhenConditionsMet) {
   command_line_->AppendSwitch(::switches::kEnableNwebEx);
   cc::LayerTreeSettings settings;
   settings.enable_delete_unused_resources_delay = true;
   SetEnableDeleteUnusedResourcesDelay(settings);
 }
+#endif
 
 }  // namespace
 }  // namespace blink

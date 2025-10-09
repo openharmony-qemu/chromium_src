@@ -27,6 +27,14 @@ class RulesetServiceClient {
 };
 #endif
 
+void DeleteObsoleteRulesetsExt(bool& has_different_format,
+                               base::FilePath& format_dir,
+                               base::FilePath& current_format_dir);
+void DeleteObsoleteRulesetsClientExt(
+    bool& has_different_format,
+    bool& has_different_version,
+    const base::FilePath& unindexed_ruleset_base_dir,
+    RulesetServiceClient* client);
 }  // namespace subresource_filter
 
 #endif  // COMPONENTS_SUBRESOURCE_FILTER_CONTENT_SHARED_BROWSER_RULESET_SERVICE_EXT_H_

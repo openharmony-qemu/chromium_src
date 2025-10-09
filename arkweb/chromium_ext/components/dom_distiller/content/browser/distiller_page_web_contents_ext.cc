@@ -26,6 +26,11 @@
 #include "net/http/http_response_headers.h"
 #include "net/http/http_status_code.h"
 #include "third_party/dom_distiller_js/dom_distiller_json_converter.h"
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+#include "cef/ohos_cef_ext/libcef/browser/useragent/arkweb_useragent_utils.h"
+#endif // ARKWEB_USERAGENT
+
 #endif  // ARKWEB_READER_MODE
 
 namespace dom_distiller {
@@ -208,5 +213,16 @@ void DistillerPageWebContentsExt::DidFinishNavigation(
 bool DistillerPageWebContentsExt::IsForDistillerPage() {
   return true;
 }
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+void DistillerPageWebContentsExt::DidStartNavigation(content::NavigationHandle* navigation_handle) {
+  arkweb_useragent_utils::MaybeOverrideUserAgentOnStartNavigation(navigation_handle);
+}
+
+void DistillerPageWebContentsExt::DidRedirectNavigation(content::NavigationHandle* navigation_handle) {
+  arkweb_useragent_utils::MaybeOverrideUserAgentOnRedirectNavigation(navigation_handle);
+}
+#endif // ARKWEB_USERAGENT
+
 #endif  // ARKWEB_READER_MODE
 }  // namespace dom_distiller

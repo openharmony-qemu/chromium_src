@@ -5753,7 +5753,11 @@ void NavigationRequest::OnRedirectChecksComplete(
                           std::move(modified_headers),
                           std::move(cors_exempt_headers));
 }
-
+#if BUILDFLAG(ARKWEB_USERAGENT)
+void NavigationRequest::EnableRedirectAbortCancel() {
+  loader_->EnableRedirectAbortCancel();
+}
+#endif
 void NavigationRequest::OnFailureChecksComplete(
     NavigationThrottle::ThrottleCheckResult result) {
   TRACE_EVENT_WITH_FLOW0("navigation",

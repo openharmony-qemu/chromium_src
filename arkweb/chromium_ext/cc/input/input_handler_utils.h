@@ -28,7 +28,11 @@ class InputHandler;
 class InputHandlerUtils {
 public:
   InputHandlerUtils(InputHandler* handler);
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual ~InputHandlerUtils();
+#else
   ~InputHandlerUtils();
+#endif  // BUILDFLAG(ARKWEB_TEST)
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void HandleScrollUpdateForInternalBeginFrame(
@@ -36,9 +40,15 @@ public:
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual LayerImpl* GetLayerImplById(int id);
+  virtual LayerImpl* GetLayerImplIsHitByPoint(const gfx::Point& viewport_point);
+  virtual LayerImpl* GetNativeLayerImpl(const gfx::Point& viewport_point);
+#else
   LayerImpl* GetLayerImplIsHitByPoint(const gfx::Point& viewport_point);
   LayerImpl* GetNativeLayerImpl(const gfx::Point& viewport_point);
   LayerImpl* GetLayerImplById(int id);
+#endif  // BUILDFLAG(ARKWEB_TEST)
   bool IsNativeLayer(gfx::PointF device_viewport_point);
 #endif
 
@@ -46,10 +56,7 @@ public:
   static bool PdfOverSpeed();
   static double pdf_delta_x_;
   static double pdf_delta_y_;
-
-  static void SetScrollEndEventListener(const std::function<void()>& listener);
-  static std::recursive_mutex scroll_end_listener_mutex;
-  static std::function<void()> scroll_end_listener_;
+  static void SetScrollStopped();
 #endif
 
 private:

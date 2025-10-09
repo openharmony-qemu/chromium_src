@@ -152,14 +152,16 @@ blink::mojom::GetAssertionAuthenticatorResponsePtr CreateGetAssertionResponse(
 void GetClientCapabilitiesFromOhosWebAuthnApi(
     blink::mojom::Authenticator::GetClientCapabilitiesCallback callback)
 {
-    const auto capabilities = device::OhosAuthenticator::GetClientCapabilities();
-    std::vector<blink::mojom::WebAuthnClientCapabilityPtr> result;
-    result.reserve(capabilities.size());
-    for (const auto& capability : capabilities) {
-        result.push_back(blink::mojom::WebAuthnClientCapability::New(
-            capability.first, capability.second));
-    }
-    std::move(callback).Run(std::move(result));
+    device::OhosAuthenticator::GetClientCapabilities(base::BindOnce(
+        [](const std::vector<std::pair<std::string, bool>>& capabilities) {
+            std::vector<blink::mojom::WebAuthnClientCapabilityPtr> result;
+            result.reserve(capabilities.size());
+            for (const auto& capability : capabilities) {
+                result.push_back(blink::mojom::WebAuthnClientCapability::New(
+                    capability.first, capability.second));
+            }
+            return result;
+        }).Then(std::move(callback)));
 }
 
 } // namespace content

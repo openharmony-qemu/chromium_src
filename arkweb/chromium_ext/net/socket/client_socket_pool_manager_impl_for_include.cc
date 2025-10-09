@@ -34,4 +34,12 @@ connect_job_with_secure_dns_timeout_ = seconds;
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+void ClientSocketPoolManagerImpl::SetSocketIdleTimeout(int32_t timeout) {
+  for (const auto& it : socket_pools_) {
+    it.second->SetSocketIdleTimeout(timeout);
+  }
+}
+#endif
+
 }  // namespace net

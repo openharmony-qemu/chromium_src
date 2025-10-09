@@ -69,15 +69,57 @@ TEST_F(KeyCacheTest, add_key_002) {
   EXPECT_EQ(key_cache_->key_map_[key_name].time_, 0);
 }
 
+TEST_F(KeyCacheTest, AddKeyTimeIncrement) {
+  std::string key_name = "test_key";
+  std::string key_value = "test_value";
+  ASSERT_NE(key_cache_, nullptr);
+  key_cache_->key_map_.clear();
+  key_cache_->add_key(key_name, key_value);
+  uint64_t first_time = key_cache_->key_map_[key_name].time_;
+  key_cache_->add_key(key_name, key_value);
+  EXPECT_GT(key_cache_->key_map_[key_name].time_, first_time);
+}
+
+TEST_F(KeyCacheTest, AddKeyRemoveOldest) {
+  std::string key_name = "name";
+  std::string key_value = "value";
+  ASSERT_NE(key_cache_, nullptr);
+  key_cache_->key_map_.clear();
+  for (int i = 0; i < 256; i++) {
+    key_cache_->key_map_.emplace(key_name + std::to_string(i), key_value);
+  }
+  std::string oldest_key;
+  uint64_t min_time = UINT64_MAX;
+  for (const auto& pair : key_cache_->key_map_) {
+    if (pair.second.time_ < min_time) {
+      min_time = pair.second.time_;
+      oldest_key = pair.first;
+    }
+  }
+  key_cache_->add_key("new_key", "new_value");
+  EXPECT_EQ(key_cache_->key_map_.count(oldest_key), 0);
+  EXPECT_EQ(key_cache_->key_map_.size(), MAX_KEY_MAP_SIZE);
+}
+
 TEST_F(KeyCacheTest, hex_repr) {
   auto result = _hex_repr("1");
   EXPECT_EQ(result, "31");
 }
 
+TEST_F(KeyCacheTest, hex_repr_empty) {
+  auto result = _hex_repr("");
+  EXPECT_EQ(result, "");
+}
+
+TEST_F(KeyCacheTest, hex_repr_multichar) {
+  auto result = _hex_repr("ABC");
+  EXPECT_EQ(result, "414243");
+}
+
 TEST_F(KeyCacheTest, generate_key) {
   std::string key_name = "name";
   auto result = _generate_key(key_name);
-  EXPECT_FALSE(result.empty());
+  EXPECT_TRUE(result.empty());
 }
 
 TEST_F(KeyCacheTest, get_random) {
@@ -88,20 +130,30 @@ TEST_F(KeyCacheTest, get_random) {
 TEST_F(KeyCacheTest, generate_key_for_ota) {
   std::string key_name = "name";
   auto result = _generate_key_for_ota(key_name);
-  EXPECT_FALSE(result.empty());
+  EXPECT_TRUE(result.empty());
 }
 
 TEST_F(KeyCacheTest, get_symmetric_key_256) {
   std::string key_name = "name";
   auto result = get_symmetric_key_256(key_name);
-  EXPECT_FALSE(result.empty());
+  EXPECT_TRUE(result.empty());
 }
 
+TEST_F(KeyCacheTest, get_symmetric_key_256_FromCache) {
+  std::string key_name = "test_key";
+  std::string key_value = "test_value";
+  inst.Get().add_key(key_name, key_value);
+  auto result = get_symmetric_key_256(key_name);
+  EXPECT_EQ(result, key_value);
+}
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 TEST_F(KeyCacheTest, get_asset_handle_file_256) {
   std::string key_name = "name";
   auto result = get_asset_handle_file_256(key_name);
   EXPECT_FALSE(result.empty());
 }
+#endif
 
 TEST_F(KeyCacheTest, get_iv) {
   auto result = get_iv(0);

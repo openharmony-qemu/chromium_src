@@ -303,6 +303,7 @@ class PipelineImpl::RendererWrapper final : public DemuxerHost,
   base::WeakPtrFactory<RendererWrapper> weak_factory_{this};
 };
 
+#ifndef ARKWEB_TEST_INCLUDE
 PipelineImpl::RendererWrapper::RendererWrapper(
     scoped_refptr<base::SequencedTaskRunner> media_task_runner,
     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner,
@@ -1870,7 +1871,8 @@ void PipelineImpl::OnSuspendDone() {
   if (suspend_cb_)
     std::move(suspend_cb_).Run(PIPELINE_OK);
 }
+#endif
 }  // namespace media
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_ARKWEB) && !defined(ARKWEB_TEST_INCLUDE)
 #include "arkweb/chromium_ext/media/base/pipeline_impl_for_include.cc"
 #endif

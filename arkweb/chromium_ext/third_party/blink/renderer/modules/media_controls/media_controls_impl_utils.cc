@@ -414,7 +414,10 @@ void MediaControlsImplUtils::BeginScrubbingStopTimer() {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 MediaControlsSizingClass MediaControlsImplUtils::GetSizingClassHM() {
-  if (media_controls_impl_ && media_controls_impl_->size_.width() < kMediaControlsSizingMediumThresholdVideoAssitant) {
+  if (!media_controls_impl_) {
+    return MediaControlsSizingClass::kLarge;
+  }
+  if (media_controls_impl_->size_.width() < kMediaControlsSizingMediumThresholdVideoAssitant) {
     return MediaControlsSizingClass::kSmall;
   }
   if (media_controls_impl_->size_.width() < kMediaControlsSizingLargeThresholdVideoAssitant) {
@@ -434,11 +437,11 @@ void MediaControlsImplUtils::MakeTransparentImmediately() {
 #endif
 
 void MediaControlsImplUtils::UpdateSizingCSSClassExt() {
-  MediaControlsSizingClass sizing_class_hm = GetSizingClassHM();
   if (!media_controls_impl_) {
     LOG(ERROR) << "UpdateSizingCSSClassExt media_controls_impl_ is nullptr";
     return;
   }
+  MediaControlsSizingClass sizing_class_hm = GetSizingClassHM();
   media_controls_impl_->SetClass(kMediaControlsSizingSmallCSSClass,
     media_controls_impl_->ShouldShowVideoControls() && sizing_class_hm == MediaControlsSizingClass::kSmall);
   media_controls_impl_->SetClass(kMediaControlsSizingMediumCSSClass,

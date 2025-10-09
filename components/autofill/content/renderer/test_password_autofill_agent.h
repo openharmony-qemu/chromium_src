@@ -8,7 +8,7 @@
 #include "components/autofill/content/renderer/password_autofill_agent.h"
 
 namespace autofill {
-#if BUILDFLAG(ARKWEB_UNITTESTS)
+#if BUILDFLAG(ARKWEB_TEST)
 class TestPasswordAutofillAgent : public PasswordAutofillAgentExt {
 #else
 class TestPasswordAutofillAgent : public PasswordAutofillAgent {
@@ -17,9 +17,6 @@ class TestPasswordAutofillAgent : public PasswordAutofillAgent {
   TestPasswordAutofillAgent(content::RenderFrame* render_frame,
                             blink::AssociatedInterfaceRegistry* registry);
   ~TestPasswordAutofillAgent() override;
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void AutofillSurfaceClosed(bool show_virtual_keyboard) override {}
-#endif
 
  private:
   // Always returns true. This allows browser tests with "data: " URL scheme to

@@ -100,4 +100,45 @@ TEST_F(FontUniqueNameLookupOhosTest, PrepareLookup_QueuesCallbacks) {
       base::BindOnce([](bool* flag) { *flag = true; }, &callback2_called));
 }
 
+TEST_F(FontUniqueNameLookupOhosTest, MatchUniqueName001) {
+  ScopedFontSrcLocalMatchingForTest scope(false);
+  base::MappedReadOnlyRegion mapped_region = base::ReadOnlySharedMemoryRegion::Create(1024);
+  base::ReadOnlySharedMemoryRegion region = std::move(mapped_region.region);
+  lookup_.ReceiveReadOnlySharedMemoryRegion(std::move(region));
+  EXPECT_EQ(lookup_.MatchUniqueName("test_font"), nullptr);
+}
+
+TEST_F(FontUniqueNameLookupOhosTest, MatchUniqueName002) {
+  ScopedFontSrcLocalMatchingForTest scope(true);
+  base::MappedReadOnlyRegion mapped_region = base::ReadOnlySharedMemoryRegion::Create(1024);
+  base::ReadOnlySharedMemoryRegion region = std::move(mapped_region.region);
+  lookup_.ReceiveReadOnlySharedMemoryRegion(std::move(region));
+  EXPECT_EQ(lookup_.MatchUniqueName("Arial"), nullptr);
+}
+
+TEST_F(FontUniqueNameLookupOhosTest, IsFontUniqueNameLookupReadyForSyncLookup001) {
+  ScopedFontSrcLocalMatchingForTest scope(true);
+  lookup_.ohos_font_lookup_service_.reset();
+  base::MappedReadOnlyRegion mapped_region = base::ReadOnlySharedMemoryRegion::Create(1024);
+  base::ReadOnlySharedMemoryRegion region = std::move(mapped_region.region);
+  lookup_.ReceiveReadOnlySharedMemoryRegion(std::move(region));
+  bool flag = lookup_.IsFontUniqueNameLookupReadyForSyncLookup();
+  EXPECT_TRUE(flag);
+}
+
+TEST_F(FontUniqueNameLookupOhosTest, IsFontUniqueNameLookupReadyForSyncLookup002) {
+  ScopedFontSrcLocalMatchingForTest scope(true);
+  lookup_.ohos_font_lookup_service_.reset();
+  bool flag = lookup_.IsFontUniqueNameLookupReadyForSyncLookup();
+  EXPECT_FALSE(flag);
+}
+
+TEST_F(FontUniqueNameLookupOhosTest, IsFontUniqueNameLookupReadyForSyncLookup003) {
+  ScopedFontSrcLocalMatchingForTest scope(true);
+  lookup_.ohos_font_lookup_service_.reset();
+  bool flag = lookup_.IsFontUniqueNameLookupReadyForSyncLookup();
+  flag = lookup_.IsFontUniqueNameLookupReadyForSyncLookup();
+  EXPECT_FALSE(flag);
+}
+
 }  // namespace blink

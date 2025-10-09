@@ -629,4 +629,12 @@ GetSupportedKeySystemsUpdates(content::RenderFrame* render_frame,
                                         can_persist_data, std::move(cb)));
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+void TestAddWiseplay(const media::KeySystemCapability& capability,
+                     bool can_persist_data,
+                     media::KeySystemInfos* key_systems) {
+  AddWiseplay(capability, can_persist_data, key_systems);
+}
+#endif  // ARKWEB_TEST
+
 }  // namespace cdm

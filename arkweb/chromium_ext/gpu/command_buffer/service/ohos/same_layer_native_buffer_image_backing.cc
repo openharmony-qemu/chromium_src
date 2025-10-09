@@ -18,6 +18,7 @@
 #include "gpu/command_buffer/service/abstract_texture_ohos.h"
 #include "gpu/command_buffer/service/gles2_cmd_decoder.h"
 #include "gpu/command_buffer/service/memory_tracking.h"
+#include "gpu/command_buffer/service/ohos/native_buffer_config_impl.h"
 #include "gpu/command_buffer/service/ohos/scoped_native_buffer_fence_sync.h"
 #include "gpu/command_buffer/service/shared_context_state.h"
 #include "gpu/command_buffer/service/shared_image/shared_image_backing.h"
@@ -109,7 +110,8 @@ void CreateAndBindEglImageFromNativeBuffer(OHOSNativeBuffer buffer,
     // We should never alter gl binding without updating state tracking, which
     // we can't do here, so restore previous after we done.
     gl::ScopedRestoreTexture scoped_restore(gl::g_current_gl_context,
-        GL_TEXTURE_EXTERNAL_OES);
+                                            GL_TEXTURE_EXTERNAL_OES);
+
     glBindTexture(GL_TEXTURE_EXTERNAL_OES, service_id);
     glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_image.get());
   }
@@ -309,12 +311,29 @@ class SameLayerNativeBufferImageBacking::SkiaVkSameLayerRepresentation
     // ready before the read. This is done by inserting the sync fd semaphore
     // into begin_semaphore vector which client will wait on.
     init_read_fence_ = scoped_native_buffer_->TakeFence();
-
+    std::shared_ptr<OHOS::NWeb::NativeBufferConfigAdapterImpl> 
+        configAdapterTmp =
+            std::make_shared<OHOS::NWeb::NativeBufferConfigAdapterImpl>();
+    if (configAdapterTmp) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetOhosNativeBufferAdapter()
+        .Describe(configAdapterTmp, scoped_native_buffer_->buffer());
+    } else {
+      return {};
+    }
+    
     if (!vulkan_image_) {
       DCHECK(!promise_texture_);
-
+      real_size_ = size();
+      real_size_.set_width(std::min(size().width(), configAdapterTmp->GetBufferWidth()));
+      real_size_.set_height(std::min(size().height(), configAdapterTmp->GetBufferHeight()));
+      if (real_size_ != size()) {
+        LOG(INFO) << "SameLayerNativeBufferImageBacking create vkimage width: "
+          << real_size_.width() << " height: " << real_size_.height()
+          << " backing width: " << size().width() << " height: " << size().height();
+      }
       vulkan_image_ = CreateVkImageFromNativeBufferHandle(
-          scoped_native_buffer_->TakeBuffer(), context_state(), size(),
+          scoped_native_buffer_->TakeBuffer(), context_state(), real_size_,
           format(), VK_QUEUE_FAMILY_FOREIGN_EXT);
       if (!vulkan_image_) {
         return {};
@@ -360,6 +379,7 @@ class SameLayerNativeBufferImageBacking::SkiaVkSameLayerRepresentation
 //LCOV_EXCL_STOP
 
  private:
+  gfx::Size real_size_;
   std::unique_ptr<ScopedNativeBufferFenceSync> scoped_native_buffer_;
 };
 

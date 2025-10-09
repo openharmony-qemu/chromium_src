@@ -408,3 +408,6 @@ TEST_F(FileURLLoaderFactoryTest, DlpRemoteInvalidFileUrl) {
 }
 
 }  // namespace content
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
+#include "arkweb/chromium_ext/content/browser/loader/file_url_loader_factory_for_include_unittest.cc"
+#endif

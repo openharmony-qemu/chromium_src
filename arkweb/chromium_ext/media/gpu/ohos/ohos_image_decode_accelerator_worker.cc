@@ -33,8 +33,17 @@
 #include "ui/gfx/linux/native_pixmap_dmabuf.h"
 #include "ui/gfx/native_pixmap_handle.h"
 
-namespace media {
+#include "third_party/skia/include/codec/SkEncodedImageFormat.h"
+#include "third_party/skia/src/codec/SkHeifCodec.h"
 
+namespace media {
+#if BUILDFLAG(ARKWEB_TEST)
+std::function<std::unique_ptr<OhosImageDecoder>()> test_decoder;
+void SetTestDecoder(
+    std::function<std::unique_ptr<OhosImageDecoder>()> decoder) {
+  test_decoder = decoder;
+}
+#endif
 namespace {
 // Uses |decoder| to decode the image corresponding to |encoded_data|.
 // |decode_cb| is called when finished or when an error is encountered. We don't
@@ -127,7 +136,13 @@ std::unique_ptr<OhosImageDecodeAcceleratorWorker>
 OhosImageDecodeAcceleratorWorker::Create() {
   OhosImageDecoderVector decoders;
 
+#if BUILDFLAG(ARKWEB_TEST)
+  auto heif_image_decoder = test_decoder
+                                ? test_decoder()
+                                : std::make_unique<OhosHeifImageDecoder>();
+#else
   auto heif_image_decoder = std::make_unique<OhosHeifImageDecoder>();
+#endif
 
   if (heif_image_decoder->Initialize()) {
     decoders.push_back(std::move(heif_image_decoder));
@@ -186,6 +201,10 @@ void OhosImageDecodeAcceleratorWorker::Decode(std::vector<uint8_t> encoded_data,
   // We defer checking for a null |decoder| until DecodeTask() because the
   // gpu::ImageDecodeAcceleratorWorker interface mandates that the callback be
   // called asynchronously.
+  if (!CheckImageFormatSupport(encoded_data)) {
+    return;
+  }
+
   OhosImageDecoder* decoder = GetDecoderForImage();
   decoder_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&DecodeTask, decoder, std::move(encoded_data),
@@ -198,5 +217,15 @@ void OhosImageDecodeAcceleratorWorker::ReleaseDecodedPixelMap() {
   }
 }
 
+bool OhosImageDecodeAcceleratorWorker::CheckImageFormatSupport(std::vector<uint8_t> encoded_data) {
+  SkEncodedImageFormat format;
+  if ((SkHeifCodec::IsSupported(encoded_data.data(),
+                                (size_t)encoded_data.size(), &format)) &&
+       format == SkEncodedImageFormat::kHEIF) {
+    return true;
+  }
+  LOG(ERROR) << "[ARKWEB_IMAGE]: OhosImageDecodeAcceleratorWorker doesn't support this image format.";
+  return false;
+}
+
 }  // namespace media
-                     

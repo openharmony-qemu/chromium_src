@@ -147,14 +147,15 @@ class ChromeContentBrowserClientUtils {
       WebContents* web_contents,
       raw_ptr<ChromeContentBrowserClient> obj) {
     auto rvh = web_contents->GetRenderViewHost();
-    CefRenderWidgetHostViewOSR* rwhvb =
-        static_cast<CefRenderWidgetHostViewOSR*>(rvh->GetWidget()->GetView());
+    auto rwhv_base =
+        static_cast<content::RenderWidgetHostViewBase*>(rvh->GetWidget()->GetView());
     CefRefPtr<CefBrowserHostBase> browser_host =
         CefBrowserHostBase::GetBrowserForHost(rvh);
-    if (rwhvb && rwhvb->GetViewType().empty()) {
+    if (rwhv_base && rwhv_base->GetViewType().empty()) {
       LOG(ERROR) << "GetViewType is empty, access wrong RenderWidgetHostView";
       return browser_host;
     }
+    auto rwhvb = static_cast<CefRenderWidgetHostViewOSR*>(rwhv_base);
     if (rwhvb && rwhvb->IsRenderWidgetHostViewChildFrame() && browser_host) {
       return browser_host;
     }
@@ -324,6 +325,18 @@ class ChromeContentBrowserClientUtils {
     }
 #endif  // BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
   }
+
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  static void SetSocketIdleTimeoutOnNetworkServiceCreated(
+      network::mojom::NetworkService* network_service) {
+    int32_t socket_idle_timeout =
+        net_service::NetHelpers::GetSocketIdleTimeout();
+    if (socket_idle_timeout !=
+        net_service::NetHelpers::GetDefaultSocketIdleTimeout()) {
+      network_service->SetSocketIdleTimeout(socket_idle_timeout);
+    }
+  }
+#endif
 };
 
 #if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)

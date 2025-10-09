@@ -384,7 +384,8 @@ void WebFrameWidgetImplExt::TouchHitTest(const WebPointerEvent& event,
                                              layer_id);
 }
 
-void WebFrameWidgetImplExt::MouseHitTest(const WebMouseEvent& event) {
+void WebFrameWidgetImplExt::MouseHitTest(const WebMouseEvent& event,
+                                         int32_t button) {
   auto pointEvent = WebPointerEvent(event.GetType(), event);
 
   WebPointerEvent transformed_event =
@@ -409,7 +410,8 @@ void WebFrameWidgetImplExt::MouseHitTest(const WebMouseEvent& event) {
       is_native_type = true;
     }
   }
-  widget_base_->utils()->NativeMouseHitTestResult(is_native_type, layer_id);
+  widget_base_->utils()->NativeMouseHitTestResult(is_native_type, layer_id,
+                                                  button);
 }
 #endif
 
@@ -456,7 +458,12 @@ void WebFrameWidgetImplExt::DeterminePageLanguage() {
             << ", contents_size: " << contents.size();
 
   if (auto host = GetAssociatedFrameWidgetHost(); host) {
-    host->SendCurrentLanguage(static_cast<WTF::String>(ans));
+    if (is_reliable) {
+      host->SendCurrentLanguage(static_cast<WTF::String>(model_ans));
+    } else {
+      host->SendCurrentLanguage(static_cast<WTF::String>(ans));
+    }
+    
   }
 }
 #endif
@@ -478,6 +485,13 @@ void WebFrameWidgetImplExt::ReportBlank(int64_t startTime, int64_t endTime) {
   if (content::ChildProcess::current() && duration > kDragBlankTime) {
     content::ChildProcess::current()->ReportHisyevent(duration, mode);
   }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_TEST)
+void WebFrameWidgetImplExt::OnTextRecognizedForTest(WTF::Vector<mojom::blink::TextRecognizeResultPtr> res,
+    float scale) {
+  WebFrameWidgetImplExt::OnTextRecognized(std::move(res), scale);
 }
 #endif
 

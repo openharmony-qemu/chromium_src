@@ -254,9 +254,16 @@ public:
 
     virtual ~FrameAvailableListener() = default;
 
-    virtual void* GetContext() = 0;
+    virtual void OnFrameAvailableListener() = 0;
+};
 
-    virtual OnFrameAvailableCb GetOnFrameAvailableCb() = 0;
+class OhosNativeImageAdapter {
+public:
+    OhosNativeImageAdapter() = default;
+
+    virtual ~OhosNativeImageAdapter() = default;
+
+    virtual void OnFrameAvailableListener() = 0;
 };
 
 class NativeImageAdapter {

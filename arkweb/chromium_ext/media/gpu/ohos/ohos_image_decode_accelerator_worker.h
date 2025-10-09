@@ -41,6 +41,9 @@ using OhosImageDecoderMap =
     base::small_map<std::unordered_map<gpu::ImageDecodeAcceleratorType,
                                        std::unique_ptr<OhosImageDecoder>>>;
 
+#if BUILDFLAG(ARKWEB_TEST)
+void SetTestDecoder(std::function<std::unique_ptr<OhosImageDecoder>()> decoder);
+#endif
 class OhosImageDecodeAcceleratorWorker
     : public gpu::ImageDecodeAcceleratorWorker {
  public:
@@ -65,6 +68,7 @@ class OhosImageDecodeAcceleratorWorker
   explicit OhosImageDecodeAcceleratorWorker(OhosImageDecoderVector decoders);
 
   OhosImageDecoder* GetDecoderForImage();
+  bool CheckImageFormatSupport(std::vector<uint8_t> encoded_data);
 
   // We delegate the decoding to the appropriate decoder in |decoders_| which
   // are used and destroyed on |decoder_task_runner_|.

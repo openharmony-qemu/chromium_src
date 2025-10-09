@@ -127,14 +127,8 @@ void NavigationRequestUtils::SetAdblockEnabledStatus(
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 bool NavigationRequestUtils::GetCustomScheme(const std::pair<url::Origin, std::string>& origin_and_debug_info)
 {
-  bool find_custom_scheme = false;
-  std::string scheme = origin_and_debug_info.first.GetURL().scheme();
-  for (size_t index = 0; index < url::GetCustomScheme().size(); index++) {
-    if (scheme == url::GetCustomScheme()[index]) {
-      find_custom_scheme = true;
-    }
-  }
-  return find_custom_scheme;
+  return base::Contains(url::GetCustomScheme(),
+                        origin_and_debug_info.first.GetURL().scheme());
 }
 #endif
 

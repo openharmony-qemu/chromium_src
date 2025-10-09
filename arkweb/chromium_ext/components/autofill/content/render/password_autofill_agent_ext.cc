@@ -48,6 +48,8 @@ PasswordAutofillAgentExt::PasswordAutofillAgentExt(
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   ohos_last_supplied_password_info_iter_ =
       ohos_web_input_to_password_info_.end();
+  username_autofill_state_ = blink::WebAutofillState::kNotFilled;
+  password_autofill_state_ = blink::WebAutofillState::kNotFilled;
 #endif
 }
 
@@ -155,16 +157,54 @@ bool PasswordAutofillAgentExt::IsPasswordAutofill(
     return false;
   }
 
-  WebInputElement username_element;
-  WebInputElement password_element;
-  PasswordInfo* password_info = nullptr;
   if (IsElementEditable(input_element) &&
-      OhosFindPasswordInfoForElement(input_element, UseFallbackData(true),
-                                     &username_element, &password_element,
-                                     &password_info)) {
+      OhosCheckPasswordInfoExists(input_element, UseFallbackData(true))) {
     return true;
   }
   return false;
+}
+
+bool PasswordAutofillAgentExt::OhosCheckPasswordInfoExists(
+    const blink::WebInputElement& element, UseFallbackData use_fallback_data) {
+  const blink::WebInputElement* username_element = nullptr;
+  if (!element.IsPasswordFieldForAutofill()) {
+    username_element = &element;
+  } else {
+    // If there is a password field, but a request to the store hasn't been sent
+    // yet, then do fetch saved credentials now.
+    if (!sent_request_to_store_) {
+      LOG(ERROR) << "[Autofill] No sent request to store";
+      return false;
+    }
+
+    auto iter = ohos_web_input_to_password_info_.find(element);
+    if (iter == ohos_web_input_to_password_info_.end()) {
+      PasswordToLoginMap::const_iterator password_iter =
+          ohos_password_to_username_.find(element);
+      if (password_iter == ohos_password_to_username_.end()) {
+        if (!use_fallback_data || ohos_web_input_to_password_info_.empty()) {
+          return false;
+        }
+        iter = ohos_last_supplied_password_info_iter_;
+      } else {
+        username_element = &password_iter->second;
+      }
+    }
+
+    if (iter != ohos_web_input_to_password_info_.end()) {
+      // It's a password field without corresponding username field. Try to find
+      // the username field based on visibility.
+      return true;
+    }
+    // Otherwise |username_element| has been set above.
+  }
+  if (!username_element ||
+      ohos_web_input_to_password_info_.find(*username_element) ==
+          ohos_web_input_to_password_info_.end()) {
+    return false;
+  }
+
+  return true;
 }
 
 bool PasswordAutofillAgentExt::OhosFindPasswordInfoForElement(

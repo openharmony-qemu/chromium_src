@@ -158,7 +158,7 @@ source_set("dns") {
       "dns_config_service_linux.cc",
       "dns_config_service_linux.h",
     ]
-  } else if (defined(arkweb_ex_http_dns_fallback) && arkweb_ex_http_dns_fallback) {
+  } else if (arkweb_ext_http_dns_fallback || is_ohos) {
     sources += arkweb_net_dns_sources
   } else if (is_posix) {
     sources += [
@@ -472,8 +472,8 @@ source_set("tests") {
     sources += [ "dns_config_service_android_unittest.cc" ]
   } else if (is_linux) {
     sources += [ "dns_config_service_linux_unittest.cc" ]
-  } else if (is_ohos) {
-    sources += [ "//arkweb/chromium_ext/net/dns/dns_config_service_ohos_unittest.cc" ]
+  } else if (arkweb_ext_http_dns_fallback || is_ohos) {
+    sources += arkweb_net_dns_unittest_sources
   } else if (is_posix) {
     sources += [ "dns_config_service_posix_unittest.cc" ]
   }
@@ -502,6 +502,12 @@ source_set("tests") {
     "//testing/gmock",
     "//testing/gtest",
   ]
+  
+  if (is_ohos) {
+    deps += [
+      "//third_party:huawei_securec",
+    ]
+  }
 }
 
 source_set("test_support") {

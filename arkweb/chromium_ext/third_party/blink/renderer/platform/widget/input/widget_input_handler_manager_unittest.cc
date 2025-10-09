@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,6 +14,8 @@
  */
 
 #include "third_party/blink/renderer/platform/widget/input/widget_input_handler_manager.h"
+#include "third_party/blink/renderer/platform/widget/input/widget_input_handler_manager_utils.h"
+#include "third_party/blink/renderer/platform/widget/input/widget_input_handler_manager_utils.cc"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -34,9 +36,6 @@
 #include "cc/raster/task.h"
 #include "cc/trees/layer_tree_host.h"
 #include "cc/trees/paint_holding_reason.h"
-#include "components/power_scheduler/power_mode.h"
-#include "components/power_scheduler/power_mode_arbiter.h"
-#include "components/power_scheduler/power_mode_voter.h"
 #include "services/tracing/public/cpp/perfetto/flow_event_utils.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/common/input/web_coalesced_input_event.h"
@@ -122,8 +121,8 @@ class LayerTreeHostImplClientMock : public cc::LayerTreeHostImplClient {
   void OnDrawForLayerTreeFrameSink(bool resourceless_software_draw,
                                    bool skip_draw);
   void NeedsImplSideInvalidation(bool needs_first_draw_on_activation);
-  void NotifyImageDecodeRequestFinished();
-  void NotifyTransitionRequestFinished(uint32_t sequence_id);
+  void NotifyImageDecodeRequestFinished(int request_id, bool decode_succeeded);
+  void NotifyTransitionRequestFinished(uint32_t sequence_id, const viz::ViewTransitionElementResourceRects&);
   void DidPresentCompositorFrameOnImplThread(
       uint32_t frame_token,
       cc::PresentationTimeCallbackBuffer::PendingCallbacks callbacks,
@@ -134,7 +133,7 @@ class LayerTreeHostImplClientMock : public cc::LayerTreeHostImplClient {
   void NotifyPaintWorkletStateChange(
       cc::SchedulerStateMachine::PaintWorkletState state);
   void NotifyThroughputTrackerResults(cc::CustomTrackerResults results);
-  void DidObserveFirstScrollDelay(base::TimeDelta first_scroll_delay,
+  void DidObserveFirstScrollDelay(int source_frame_number, base::TimeDelta first_scroll_delay,
                                   base::TimeTicks first_scroll_timestamp);
   bool IsInSynchronousComposite() const;
   void FrameSinksToThrottleUpdated(const base::flat_set<viz::FrameSinkId>& ids);
@@ -175,9 +174,9 @@ void LayerTreeHostImplClientMock::OnDrawForLayerTreeFrameSink(
     bool skip_draw) {}
 void LayerTreeHostImplClientMock::NeedsImplSideInvalidation(
     bool needs_first_draw_on_activation) {}
-void LayerTreeHostImplClientMock::NotifyImageDecodeRequestFinished() {}
+void LayerTreeHostImplClientMock::NotifyImageDecodeRequestFinished(int request_id, bool decode_succeeded) {}
 void LayerTreeHostImplClientMock::NotifyTransitionRequestFinished(
-    uint32_t sequence_id) {}
+    uint32_t sequence_id, const viz::ViewTransitionElementResourceRects&) {}
 void LayerTreeHostImplClientMock::DidPresentCompositorFrameOnImplThread(
     uint32_t frame_token,
     cc::PresentationTimeCallbackBuffer::PendingCallbacks callbacks,
@@ -190,6 +189,7 @@ void LayerTreeHostImplClientMock::NotifyPaintWorkletStateChange(
 void LayerTreeHostImplClientMock::NotifyThroughputTrackerResults(
     cc::CustomTrackerResults results) {}
 void LayerTreeHostImplClientMock::DidObserveFirstScrollDelay(
+    int source_frame_number,
     base::TimeDelta first_scroll_delay,
     base::TimeTicks first_scroll_timestamp) {}
 bool LayerTreeHostImplClientMock::IsInSynchronousComposite() const {
@@ -230,17 +230,7 @@ class RasterDarkModeFilterMock : public cc::RasterDarkModeFilter {
  public:
   RasterDarkModeFilterMock() = default;
   ~RasterDarkModeFilterMock() override = default;
-
-  sk_sp<SkColorFilter> ApplyToImage(const SkPixmap& pixmap,
-                                    const SkIRect& src) const override;
 };
-sk_sp<SkColorFilter> RasterDarkModeFilterMock::ApplyToImage(
-    const SkPixmap& pixmap,
-    const SkIRect& src) const {
-  SkHighContrastConfig config;
-  auto filter = SkHighContrastFilter::Make(config);
-  return filter;
-}
 
 class LayerTreeHostSchedulingClientMock
     : public cc::LayerTreeHostSchedulingClient {
@@ -281,7 +271,8 @@ class CompositorDelegateForInputMock : public cc::CompositorDelegateForInput {
   const cc::LayerTreeSettings& GetSettings() const;
   void UpdateBrowserControlsState(cc::BrowserControlsState constraints,
                                   cc::BrowserControlsState current,
-                                  bool animate);
+                                  bool animate,
+                                  base::optional_ref<const cc::BrowserControlsOffsetTagsInfo> offset_tags_info);
   bool HasScrollLinkedAnimation(cc::ElementId for_scroller) const;
   cc::LayerTreeHostImpl& GetImplDeprecated();
   const cc::LayerTreeHostImpl& GetImplDeprecated() const;
@@ -332,7 +323,8 @@ const cc::LayerTreeSettings& CompositorDelegateForInputMock::GetSettings()
 void CompositorDelegateForInputMock::UpdateBrowserControlsState(
     cc::BrowserControlsState constraints,
     cc::BrowserControlsState current,
-    bool animate) {}
+    bool animate,
+    base::optional_ref<const cc::BrowserControlsOffsetTagsInfo> offset_tags_info) {}
 bool CompositorDelegateForInputMock::HasScrollLinkedAnimation(
     cc::ElementId for_scroller) const {
   return false;
@@ -371,7 +363,7 @@ void SoftwareCompositorRegistryOhosMock::UnregisterSoftwareRenderer(
 TEST_F(SoftwareCompositorProxyRegistryOhosTest, CreateProxy) {
   cc::mojo_embedder::AsyncLayerTreeFrameSink::InitParams initParams;
   auto sink_ = std::make_unique<cc::mojo_embedder::AsyncLayerTreeFrameSink>(
-      nullptr, nullptr, &initParams);
+      nullptr, nullptr, nullptr, &initParams);
 
   auto registry_ = std::make_shared<SoftwareCompositorRegistryOhosMock>();
   auto renderer_ =
@@ -399,7 +391,7 @@ TEST_F(SoftwareCompositorProxyRegistryOhosTest, RegisterSoftwareRenderer) {
 TEST_F(SoftwareCompositorProxyRegistryOhosTest, UnregisterSoftwareRenderer) {
   cc::mojo_embedder::AsyncLayerTreeFrameSink::InitParams initParams;
   auto sink_ = std::make_unique<cc::mojo_embedder::AsyncLayerTreeFrameSink>(
-      nullptr, nullptr, &initParams);
+      nullptr, nullptr, nullptr, &initParams);
 
   auto registry_ = std::make_shared<SoftwareCompositorRegistryOhosMock>();
   auto renderer_ =

@@ -1006,7 +1006,9 @@ class SSLClientSocketCertRequestInfoTest : public SSLClientSocketVersionTest {
   }
 };
 
-class SSLClientSocketFalseStartTest : public SSLClientSocketTest {
+class SSLClientSocketFalseStartTest
+    : public SSLClientSocketTest, 
+      public ::testing::WithParamInterface<uint16_t>{
  protected:
   // Creates an SSLClientSocket with |client_config| attached to a
   // FakeBlockingStreamSocket, returning both in |*out_raw_transport| and
@@ -1115,6 +1117,7 @@ class SSLClientSocketFalseStartTest : public SSLClientSocketTest {
       EXPECT_FALSE(callback.have_result());
     }
   }
+  uint16_t version() const { return GetParam(); }
 };
 
 // Sends an HTTP request on the socket and reads the response. This may be used
@@ -3296,7 +3299,7 @@ TEST_F(SSLClientSocketFalseStartTest, SessionResumption) {
   int rv;
   ASSERT_TRUE(CreateAndConnectSSLClientSocket(client_config, &rv));
 #if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
-  if (version < SSL_CONNECTION_VERSION_TLS1_2) {
+  if (version() < SSL_CONNECTION_VERSION_TLS1_2) {
     EXPECT_THAT(rv, IsError(ERR_SSL_OBSOLETE_VERSION_OR_CIPHER));
     return;
   } else {

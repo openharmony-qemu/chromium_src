@@ -931,6 +931,9 @@ class CONTENT_EXPORT RenderProcessHostImpl
   friend class VisitRelayingRenderProcessHost;
   friend class StoragePartitonInterceptor;
   friend class RenderProcessHostTestBase;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class ArkWebRenderProcessHostImplExtTest;
+#endif
 #if BUILDFLAG(IS_ARKWEB)
   std::unique_ptr<ArkwebRenderProcessHostImplUtils> arkweb_render_process_host_impl_utils_;
 #endif

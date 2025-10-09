@@ -96,4 +96,13 @@ bool URLRequestContextExt::CanUseSecureDnsFallback() const
   return host_resolver()->CanUseSecureDnsFallback();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+void URLRequestContextExt::SetSocketIdleTimeout(int32_t timeout) {
+  if (auto* session = http_network_session()) {
+    session->SetSocketIdleTimeout(timeout);
+  }
+}
+#endif
+
 }  // namespace net

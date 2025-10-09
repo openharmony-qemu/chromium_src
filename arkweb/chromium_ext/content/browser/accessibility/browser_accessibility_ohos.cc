@@ -254,12 +254,15 @@ std::string BrowserAccessibilityOHOS::GetContentInvalidErrorMessage() const {
               ax::mojom::IntListAttribute::kMarkerTypes);
 
           for (const auto& marker_type : marker_types) {
-            if (marker_type &
-                static_cast<int32_t>(ax::mojom::MarkerType::kSpelling)) {
+            if (marker_type < 0) {
+              continue;
+            }
+            if (static_cast<uint32_t>(marker_type) &
+                static_cast<uint32_t>(ax::mojom::MarkerType::kSpelling)) {
               message_id = CONTENT_INVALID_SPELLING;
               break;
-            } else if (marker_type &
-                       static_cast<int32_t>(ax::mojom::MarkerType::kGrammar)) {
+            } else if (static_cast<uint32_t>(marker_type) &
+                       static_cast<uint32_t>(ax::mojom::MarkerType::kGrammar)) {
               message_id = CONTENT_INVALID_GRAMMAR;
               break;
             }
@@ -1460,6 +1463,12 @@ int32_t BrowserAccessibilityOHOS::GetCheckboxGroupSelectedStatus() const
 std::u16string BrowserAccessibilityOHOS::GetLocalizedString(
     int message_id) const {
   return CHECK_DEREF(content::GetContentClient()).GetLocalizedString(message_id);
+}
+
+std::u16string BrowserAccessibilityOHOS::GetComboboxCollapsedText() const {
+  if (IsCollapsed() && !IsExpanded()) {
+    return GetLocalizedString(IDS_AX_COMBOBOX_COLLAPSED);
+  }
 }
 
 std::u16string BrowserAccessibilityOHOS::GetComboboxExpandedText() const {

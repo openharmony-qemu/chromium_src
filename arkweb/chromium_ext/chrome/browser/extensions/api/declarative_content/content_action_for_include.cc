@@ -41,7 +41,7 @@ gfx::Image ContentActionGetActionIcon(const ExtensionAction* action,
   if (!icon.IsEmpty()) {
     return icon;
   }
-  return action->GetDefaultIconImageV2();
+  return action->GetDefaultIconImage();
 }
 
 void ContentActionShowExtension(ExtensionAction* action,

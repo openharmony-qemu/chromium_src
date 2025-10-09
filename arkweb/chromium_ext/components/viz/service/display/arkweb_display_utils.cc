@@ -54,6 +54,7 @@ class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
   ~DumpFrameObserver() override = default;
 
   void PropertiesUpdate(const char* value) override {
+    std::lock_guard<std::mutex> lock(mutex_);
     dump_param_list_.clear();
     if (strcmp(value, "true") == 0) {
       should_dump_ = true;
@@ -70,11 +71,13 @@ class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
   }
 
   bool ShouldDump() {
+    std::lock_guard<std::mutex> lock(mutex_);
     return should_dump_ ||
            (dump_param_list_.size() > 0 && dump_param_list_[0] == "true");
   }
 
   bool ShouldDumpInFreq() {
+    std::lock_guard<std::mutex> lock(mutex_);
     int32_t dumpFreq = DUMP_FRAME_FREQ;
     if (dump_param_list_.size() > 1) {
       dumpFreq = std::stoi(dump_param_list_[1]);
@@ -90,6 +93,7 @@ class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
   }
 
   std::string DumpPath() {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (dump_param_list_.size() > 2) {
       return dump_param_list_[2];
     }
@@ -101,6 +105,7 @@ class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
   bool should_dump_ = false;
   int dump_freq_count = 0;
   std::vector<std::string> dump_param_list_;
+  std::mutex mutex_;
 };
 #endif
 //LCOV_EXCL_STOP
@@ -115,7 +120,7 @@ static uint64_t g_dump_frame_id = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-constexpr base::TimeDelta reset_state_delay = base::Milliseconds(600);
+constexpr base::TimeDelta reset_state_delay = base::Milliseconds(800);
 constexpr base::TimeDelta reenable_draw_delay = base::Milliseconds(3000);
 #endif  // ARKWEB_MAXIMIZE_RESIZE
 
@@ -148,11 +153,11 @@ ArkwebDisplayUtils::ArkwebDisplayUtils(Display* display) : display_(display) {
   reset_init_timer_ = std::make_unique<base::RetainingOneShotTimer>(
       FROM_HERE, reset_state_delay,
       base::BindRepeating(&ArkwebDisplayUtils::RestoreRenderFitTimeElapsed,
-                          base::Unretained(this)));
+                          weak_factory_.GetWeakPtr()));
   reenable_swap_timer_ = std::make_unique<base::RetainingOneShotTimer>(
       FROM_HERE, reenable_draw_delay,
       base::BindRepeating(&ArkwebDisplayUtils::RestoreRenderFitTimeElapsed,
-                          base::Unretained(this)));
+                          weak_factory_.GetWeakPtr()));
 #endif  // ARKWEB_MAXIMIZE_RESIZE
 }
 
@@ -295,20 +300,10 @@ void ArkwebDisplayUtils::Resize(const gfx::Size& size) {
   LOG(INFO) << "Display::Resize newSize = " << newSize.ToString();
 #endif
 
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  LOG(DEBUG) << "Display::Resize,current_surface_size is :"
-             << display_->current_surface_size_.ToString().c_str();
-  if (draw_mode_ &&
-      display_->current_surface_size_.height() >= MIN_FITCONTENT_SURFACE_SIZE &&
-      display_->current_surface_size_.height() <= MAX_SURFACE_SIZE) {
-    display_->current_surface_size_.set_width(newSize.width());
-  } else {
-    display_->current_surface_size_ = newSize;
-  }
-#endif
-
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  if (temp_idle_state_ == TempIdleState::INIT) {
+  if (temp_idle_state_ == TempIdleState::INIT &&
+    (size.width() > display_->current_surface_size_.width() ||
+    size.height() > display_->current_surface_size_.height())) {
     LOG(INFO) << "Display::Resize, disable swap, frame_sink_id_: "
               << display_->frame_sink_id_.ToString();
     if (reset_init_timer_ && reset_init_timer_->IsRunning()) {
@@ -320,6 +315,18 @@ void ArkwebDisplayUtils::Resize(const gfx::Size& size) {
     }
   }
 #endif  // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  LOG(DEBUG) << "Display::Resize,current_surface_size is :"
+             << display_->current_surface_size_.ToString().c_str();
+  if (draw_mode_ &&
+      display_->current_surface_size_.height() >= MIN_FITCONTENT_SURFACE_SIZE &&
+      display_->current_surface_size_.height() <= MAX_SURFACE_SIZE) {
+    display_->current_surface_size_.set_width(newSize.width());
+  } else {
+    display_->current_surface_size_ = newSize;
+  }
+#endif
 }
 
 void ArkwebDisplayUtils::DrawAndSwap(AggregatedRenderPass& last_render_pass,
@@ -350,17 +357,6 @@ void ArkwebDisplayUtils::DrawAndSwap(AggregatedRenderPass& last_render_pass,
 }
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-void ArkwebDisplayUtils::removeDuplicatesRect(std::vector<gfx::Rect>& quad_list) {
-  if (quad_list.empty()) {
-    LOG(ERROR) << "blankless removeDuplicatesRect, quad_list is empty.";
-    return;
-  }
-  for (size_t i = 0; i < quad_list.size() - 1; ++i) {
-     auto iter = std::remove(quad_list.begin() + i + 1, quad_list.end(), quad_list[i]);
-     quad_list.erase(iter, quad_list.end());
-  }
-}
-
 //LCOV_EXCL_START
 void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
   if (!gpu_service_impl_) {
@@ -379,28 +375,20 @@ void ArkwebDisplayUtils::DumpSnapshotForBlankLess(AggregatedFrame& frame) {
     LOG(ERROR) << "blankless no root render pass";
     return;
   }
-  QuadList* quad_list = &root_render_pass->quad_list;
-  std::vector<gfx::Rect> draw_quad_list;
-  for (auto it = quad_list->begin(); it != quad_list->end(); ++it) {
-    gfx::Rect rect = it->rect;
-    draw_quad_list.push_back(rect);
+
+  auto snapshot_request = std::make_unique<FrameSnapshotCopyOutputRequest>(
+    base::BindOnce(&GpuServiceImpl::OnFrameSnapshotCopyOutputResult, gpu_service_impl_->GetWeakPtr()));
+  if (!snapshot_request || !snapshot_request->copy_output_request_utils()) {
+    LOG(ERROR) << "blankless snapshot_request is null";
+    return;
   }
-  removeDuplicatesRect(draw_quad_list);
-  if (draw_quad_list.size() >= kRectNumthreshold) {
-    auto snapshot_request = std::make_unique<FrameSnapshotCopyOutputRequest>(
-      base::BindOnce(&GpuServiceImpl::OnFrameSnapshotCopyOutputResult, gpu_service_impl_->GetWeakPtr()));
-    if (!snapshot_request || !snapshot_request->copy_output_request_utils()) {
-      LOG(ERROR) << "blankless snapshot_request is null";
-      return;
-    }
-    info.info.width = root_render_pass->output_rect.width();
-    info.info.height = root_render_pass->output_rect.height();
-    snapshot_request->SetUniformScaleRatio(base::ohos::BlanklessController::SNAPSHOT_SCALE_FACTOR, 1);
-    snapshot_request->copy_output_request_utils()->SetBlanklessInfo(info.info);
-    LOG(DEBUG) << "blankless push copy render pass. nweb_id: " << info.info.nweb_id
-               << ", blankless_key: " << info.info.blankless_key;
-    root_render_pass->copy_requests.push_back(std::move(snapshot_request));
-  }
+  info.info.width = root_render_pass->output_rect.width();
+  info.info.height = root_render_pass->output_rect.height();
+  snapshot_request->SetUniformScaleRatio(base::ohos::BlanklessController::SNAPSHOT_SCALE_FACTOR, 1);
+  snapshot_request->copy_output_request_utils()->SetBlanklessInfo(info.info);
+  LOG(DEBUG) << "blankless push copy render pass. nweb_id: " << info.info.nweb_id
+              << ", blankless_key: " << info.info.blankless_key;
+  root_render_pass->copy_requests.push_back(std::move(snapshot_request));
 }
 
 void ArkwebDisplayUtils::SetClientId(const uint32_t client_id) {

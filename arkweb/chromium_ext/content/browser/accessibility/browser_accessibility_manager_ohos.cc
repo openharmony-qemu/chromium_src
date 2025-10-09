@@ -345,6 +345,16 @@ void BrowserAccessibilityManagerOHOS::FireGeneratedEvent(
       }
       break;
     }
+    case AXEventGenerator::Event::COLLAPSED: {
+      if (ui::SupportsExpandCollapse(nodeOHOS->GetRole()) &&
+          GetFocus()->IsDescendantOf(nodeOHOS)) {
+        SendAccessibilityEvent(
+            accessibilityId,
+            OHOS::NWeb::AccessibilityEventType::ANNOUNCE_FOR_ACCESSIBILITY,
+            base::UTF16ToUTF8(nodeOHOS->GetComboboxCollapsedText()));
+      }
+      break;
+    }
     case AXEventGenerator::Event::LIVE_REGION_CHANGED: {
       std::string text = base::UTF16ToUTF8(nodeOHOS->GetTextContentUTF16());
       int32_t liveRegionType = nodeOHOS->OHOSLiveRegionType();
@@ -795,6 +805,11 @@ int64_t AccessibilityEventDispatcher::Uuid(int64_t accessibilityId,
   if (viewIndependentEvents_.find(eventType) != viewIndependentEvents_.end()) {
     return eventType;
   }
-  return (accessibilityId << kShiftedBitNumber) | eventType;
+  if (accessibilityId < 0 || eventType < 0) {
+    LOG(ERROR) << "AccessibilityEventDispatcher::Uuid input parameter invalid";
+    return 0;
+  }
+  return ((static_cast<uint64_t>(accessibilityId)) << (static_cast<uint32_t>(kShiftedBitNumber))) |
+    (static_cast<uint32_t>(eventType));
 }
 }  // namespace ui

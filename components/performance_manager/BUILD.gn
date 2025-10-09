@@ -4,6 +4,7 @@
 
 import("//components/guest_view/buildflags/buildflags.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 proto_library("site_data_proto") {
   sources = [ "persistence/site_data/site_data.proto" ]
@@ -498,6 +499,8 @@ source_set("unit_tests") {
 
     sources += [ "power/battery_level_provider_chromeos_unittest.cc" ]
   }
+
+  sources += arkweb_components_performance_manager_graph_test_sources
 }
 
 source_set("browser_tests") {

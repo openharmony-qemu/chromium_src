@@ -705,6 +705,9 @@ template("mojom") {
   build_metadata_filename = "$target_gen_dir/$target_name.build_metadata"
   build_metadata = {
   }
+  target_label = get_label_info(":${target_name}", "label_no_toolchain")
+  build_metadata.target_name = target_name
+  build_metadata.label = target_label
   build_metadata.sources = rebase_path(sources_list, target_gen_dir)
   build_metadata.deps = []
   foreach(dep, all_deps) {
@@ -1826,6 +1829,7 @@ template("mojom") {
       visibility = output_visibility + [
                      ":$output_target_name",
                      ":${target_name}_mojolpm",
+                     "//:mojo_pre"
                    ]
       if (defined(invoker.testonly)) {
         testonly = invoker.testonly

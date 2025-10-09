@@ -81,6 +81,9 @@ class NET_EXPORT_PRIVATE ClientSocketPoolManager {
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   virtual void SetConnectJobWithSecureDnsOnlyTimeout(int seconds) = 0;
 #endif
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  virtual void SetSocketIdleTimeout(int32_t timeout) = 0;
+#endif
 };
 
 // A helper method that uses the passed in proxy information to initialize a

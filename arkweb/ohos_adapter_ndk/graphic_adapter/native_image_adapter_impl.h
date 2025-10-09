@@ -20,6 +20,7 @@
 
 #include "base/memory/raw_ptr.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
+#include "arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper.h"
 
 namespace OHOS::NWeb {
 class NativeImageAdapterImpl : public NativeImageAdapter {
@@ -66,9 +67,14 @@ public:
         void* windowBuffer,
         uint32_t* width,
         uint32_t* height) override;
+    
+    static void OnFrameAvailable(void *context);
 
 private:
     raw_ptr<OH_NativeImage> ohNativeImage_ = nullptr;
+
+    size_t callback_index_ = 0;
+    static CallbackSharedWrapper<FrameAvailableListener> callback_wrapper_;
 };
 } // namespace OHOS::NWeb
 

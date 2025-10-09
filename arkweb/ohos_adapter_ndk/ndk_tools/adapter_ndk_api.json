@@ -47,9 +47,6 @@
                 "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetDataCallback(OH_AVScreenCapture *capture, OH_AVScreenCapture_OnBufferAvailable callback, void *userData)",
                 "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetStateCallback(OH_AVScreenCapture *capture, OH_AVScreenCapture_OnStateChange callback, void *userData)",
                 "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetCanvasRotation(OH_AVScreenCapture *capture, bool canvasRotation)"
-            ],
-        "15": [
-            "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetDisplayCallback(struct OH_AVScreenCapture *capture, OH_AVScreenCapture_OnDisplaySelected callback, void *userData)"
             ]
         },
         "includes": []
@@ -1021,7 +1018,8 @@
                 "AVSession_ErrCode OH_AVSession_SetPlaybackState(OH_AVSession* avsession, AVSession_PlaybackState playbackState)",
                 "AVSession_ErrCode OH_AVSession_SetAVMetadata(OH_AVSession* avsession, OH_AVMetadata* avmetadata)",
                 "AVSession_ErrCode OH_AVSession_SetPlaybackPosition(OH_AVSession* avsession, AVSession_PlaybackPosition* playbackPosition)",
-                "AVSession_ErrCode OH_AVSession_Create(AVSession_Type sessionType, const char* sessionTag, const char* bundleName, const char* abilityName, OH_AVSession** avsession)"
+                "AVSession_ErrCode OH_AVSession_Create(AVSession_Type sessionType, const char* sessionTag, const char* bundleName, const char* abilityName, OH_AVSession** avsession)",
+                "AVMetadata_Result OH_AVMetadataBuilder_SetMediaImageUri(OH_AVMetadataBuilder* builder, const char* mediaImageUri)"
             ]
         },
         "includes": []

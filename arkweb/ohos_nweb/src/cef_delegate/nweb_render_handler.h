@@ -101,6 +101,7 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
   void SetNeedFocusViewport(bool need);
   void OnResizeScrollableViewport(CefRefPtr<CefBrowser> browser) override;
   void UpdateSecurityLayer(bool isNeedSecurityLayer) override;
+  void UpdateTextFieldStatus(bool isShowKeyboard, bool isAttachIME) override;
 #endif
 #if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
   void SetViewportAvoidHeight(int32_t viewportAvoidHeight);
@@ -292,6 +293,12 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   void GetScrollOffset(float& x, float& y);
   bool HasOverscroll();
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void OnDetectedBlankScreen(const std::string& url,
+                             int32_t blankScreenReason,
+                             int32_t detectedContentfulNodesCount) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)

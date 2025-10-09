@@ -94,6 +94,13 @@ void SoftwareCompositorHostOhos::OnDrawSwCallback(WebSnapchatCallback callback,
     std::move(callback).Run(id.c_str(), result, nullptr, 0, 0);
     return;
   }
+#if BUILDFLAG(ARKWEB_TEST)
+  if (!software_draw_shm_ || !software_draw_shm_->shared_memory.IsValid()) {
+    LOG(ERROR) << "OnDrawSwCallback: shared memory is invalid!";
+    std::move(callback).Run(id.c_str(), false, nullptr, 0, 0);
+    return;
+  }
+#endif
   std::move(callback).Run(id.c_str(), result,
                           software_draw_shm_->shared_memory.memory(),
                           current_.width(), current_.height());

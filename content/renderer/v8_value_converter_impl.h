@@ -11,6 +11,9 @@
 #include "base/values.h"
 #include "content/common/content_export.h"
 #include "content/public/renderer/v8_value_converter.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#include "base/gtest_prod_util.h"
+#endif
 
 namespace content {
 
@@ -42,6 +45,9 @@ class CONTENT_EXPORT V8ValueConverterImpl : public V8ValueConverter {
 
   class FromV8ValueState;
   class ScopedUniquenessGuard;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class V8ValueConverterImplTest;
+#endif
 
   v8::Local<v8::Value> ToV8ValueImpl(v8::Isolate* isolate,
                                      v8::Local<v8::Object> creation_context,

@@ -23,6 +23,17 @@
 #include "arkweb/ohos_adapter_ndk/inputmethodframework_adapter/imf_adapter_impl.cpp"
 
 namespace OHOS::NWeb {
+
+class MockInputMethod {
+public:
+    MOCK_METHOD(InputMethod_ErrorCode, OH_TextConfig_GetCursorInfo,
+                (InputMethod_TextConfig*, InputMethod_CursorInfo**));
+    MOCK_METHOD(InputMethod_ErrorCode, OH_CursorInfo_GetRect,
+                (InputMethod_CursorInfo*, double*, double*, double*, double*));
+    MOCK_METHOD(InputMethod_ErrorCode, OH_CursorInfo_SetRect,
+                (InputMethod_CursorInfo*, double, double, double, double));
+};
+
 class MockIMFTextListenerAdapter : public IMFTextListenerAdapter {
  public:
   MOCK_METHOD(void, InsertText, (const std::u16string& text), (override));
@@ -116,6 +127,7 @@ class IMFTextEditorProxyImplTest : public ::testing::Test {
   }
   void TearDown() { key_adapter_.reset(); }
   std::shared_ptr<IMFAdapterFunctionKeyAdapterImpl> key_adapter_ = nullptr;
+  MockInputMethod mock;
 };
 
 TEST_F(IMFTextEditorProxyImplTest, AdapterTextInputTypeToTextInputType) {
@@ -368,6 +380,7 @@ TEST_F(IMFTextEditorProxyImplTest, SendEnterKeyFunc_001) {
       std::make_shared<IMFTextListenerAdapterImpl>(listener);
   IMFTextEditorProxyImpl::SendEnterKeyFunc(
       proxy, InputMethod_EnterKeyType::IME_ENTER_KEY_UNSPECIFIED);
+  IMFTextEditorProxyImpl::textListener_.reset();
 }
 
 TEST_F(IMFTextEditorProxyImplTest, SendEnterKeyFunc_002) {
@@ -383,6 +396,7 @@ TEST_F(IMFTextEditorProxyImplTest, SendEnterKeyFunc_002) {
       proxy, InputMethod_EnterKeyType::IME_ENTER_KEY_NONE);
   IMFTextEditorProxyImpl::SendEnterKeyFunc(
       proxy, InputMethod_EnterKeyType::IME_ENTER_KEY_GO);
+  IMFTextEditorProxyImpl::textListener_.reset();
 }
 
 TEST_F(IMFTextEditorProxyImplTest, SendEnterKeyFunc_003) {
@@ -398,6 +412,7 @@ TEST_F(IMFTextEditorProxyImplTest, SendEnterKeyFunc_003) {
       proxy, InputMethod_EnterKeyType::IME_ENTER_KEY_SEARCH);
   IMFTextEditorProxyImpl::SendEnterKeyFunc(
       proxy, InputMethod_EnterKeyType::IME_ENTER_KEY_SEND);
+  IMFTextEditorProxyImpl::textListener_.reset();
 }
 
 TEST_F(IMFTextEditorProxyImplTest, SendEnterKeyFunc_004) {
@@ -413,6 +428,7 @@ TEST_F(IMFTextEditorProxyImplTest, SendEnterKeyFunc_004) {
       proxy, InputMethod_EnterKeyType::IME_ENTER_KEY_NEXT);
   IMFTextEditorProxyImpl::SendEnterKeyFunc(
       proxy, InputMethod_EnterKeyType::IME_ENTER_KEY_DONE);
+  IMFTextEditorProxyImpl::textListener_.reset();
 }
 
 TEST_F(IMFTextEditorProxyImplTest, SendEnterKeyFunc_005) {
@@ -428,6 +444,7 @@ TEST_F(IMFTextEditorProxyImplTest, SendEnterKeyFunc_005) {
       proxy, InputMethod_EnterKeyType::IME_ENTER_KEY_PREVIOUS);
   IMFTextEditorProxyImpl::SendEnterKeyFunc(
       proxy, InputMethod_EnterKeyType::IME_ENTER_KEY_NEWLINE);
+  IMFTextEditorProxyImpl::textListener_.reset();
 }
 
 TEST_F(IMFTextEditorProxyImplTest, MoveCursorFunc_001) {
@@ -999,13 +1016,50 @@ TEST_F(IMFTextListenerAdapterImplTest, ReceivePrivateCommand_002) {
   EXPECT_EQ(result, 0);
 }
 
-TEST_F(IMFTextListenerAdapterImplTest, ReceivePrivateCommand_004) {
-  char key[] = "previewTextStyleunderline";
+TEST_F(IMFTextListenerAdapterImplTest, ReceivePrivateCommand_003) {
+  char key[] = "previewTextStyle";
   size_t keyLength = strlen(key);
   ASSERT_NE(listener_adapter_, nullptr);
   listener_adapter_->listener_ = mock_listener_adapter_;
   InputMethod_PrivateCommand* privateCommand =
       OH_PrivateCommand_Create(key, keyLength);
+  char value[] = "underline";
+  size_t valueLength = strlen(value);
+  OH_PrivateCommand_SetStrValue(privateCommand, value, valueLength);
+  InputMethod_PrivateCommand* commands[1] = {privateCommand};
+  size_t num = 1;
+  int32_t result = listener_adapter_->ReceivePrivateCommand(commands, num);
+  EXPECT_NE(listener_adapter_->listener_, nullptr);
+  listener_adapter_->listener_ = nullptr;
+  listener_adapter_->ReceivePrivateCommand(commands, num);
+}
+
+TEST_F(IMFTextListenerAdapterImplTest, ReceivePrivateCommand_004) {
+  char key[] = "com.autofill.params.userName";
+  size_t keyLength = strlen(key);
+  ASSERT_NE(listener_adapter_, nullptr);
+  listener_adapter_->listener_ = mock_listener_adapter_;
+  InputMethod_PrivateCommand* privateCommand =
+      OH_PrivateCommand_Create(key, keyLength);
+  char value[] = "underline";
+  size_t valueLength = strlen(value);
+  OH_PrivateCommand_SetStrValue(privateCommand, value, valueLength);
+  InputMethod_PrivateCommand* commands[1] = {privateCommand};
+  size_t num = 1;
+  int32_t result = listener_adapter_->ReceivePrivateCommand(commands, num);
+  EXPECT_NE(listener_adapter_->listener_, nullptr);
+}
+
+TEST_F(IMFTextListenerAdapterImplTest, ReceivePrivateCommand_005) {
+  char key[] = "com.autofill.params.otherAccount";
+  size_t keyLength = strlen(key);
+  ASSERT_NE(listener_adapter_, nullptr);
+  listener_adapter_->listener_ = mock_listener_adapter_;
+  InputMethod_PrivateCommand* privateCommand =
+      OH_PrivateCommand_Create(key, keyLength);
+  char value[] = "underline";
+  size_t valueLength = strlen(value);
+  OH_PrivateCommand_SetStrValue(privateCommand, value, valueLength);
   InputMethod_PrivateCommand* commands[1] = {privateCommand};
   size_t num = 1;
   int32_t result = listener_adapter_->ReceivePrivateCommand(commands, num);

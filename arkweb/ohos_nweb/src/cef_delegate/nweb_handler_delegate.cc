@@ -168,12 +168,13 @@
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "cef/libcef/browser/frame_host_impl.h"
-#include "content/browser/renderer_host/frame_tree.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
-#include "content/public/browser/render_frame_host.h"
 #endif
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 #include "arkweb/chromium_ext/base/ohos/logger.h"
+#endif
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+#include "nweb_autolayout.h"
 #endif
 
 namespace OHOS::NWeb {
@@ -477,21 +478,7 @@ bool IsPrerendering(const CefRefPtr<CefFrame> frame) {
     return false;
   }
 
-  if (!frame.get()) {
-    return false;
-  }
-
-  if (!static_cast<CefFrameHostImpl*>(frame.get())->GetRenderFrameHost()) {
-    return false;
-  }
-
-  if (!static_cast<content::RenderFrameHostImpl*>(static_cast<CefFrameHostImpl*>(
-        frame.get())->GetRenderFrameHost())->frame_tree()) {
-    return false;
-  }
-
-  return static_cast<content::RenderFrameHostImpl*>(static_cast<CefFrameHostImpl*>(
-    frame.get())->GetRenderFrameHost())->frame_tree()->is_prerendering();
+  return static_cast<CefFrameHostImpl*>(frame.get())->IsPrerendering();
 }
 
 }  // namespace
@@ -951,17 +938,21 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
     LOG(WARNING) << "OnFrameCreated failed, frame is invalid";
     return;
   }
- 
+
   CefRefPtr<CefFrameHostImpl> frameHost = static_cast<CefFrameHostImpl*>(frame.get());
   if (!frameHost->GetRenderFrameHost()) {
     LOG(WARNING) << "OnFrameCreated failed, GetRenderFrameHost failed";
     return;
   }
- 
+
   content::RenderFrameHostImpl* rfh =
     static_cast<content::RenderFrameHostImpl*>(frameHost ->GetRenderFrameHost());
+  if (!rfh) {
+    LOG(WARNING) << "OnFrameCreated failed, dynamic_cast to content::RenderFrameHostImpl failed";
+    return;
+  }
   auto globalId = rfh->GetGlobalId();
- 
+
   FrameInfos frameInfo;
   frameInfo.id = std::to_string(globalId.child_id) + "_" + std::to_string(globalId.frame_routing_id);
   if (content::RenderFrameHostImpl* parent = rfh->GetParent()) {
@@ -971,8 +962,7 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
   } else {
     frameInfo.parentId.clear();
   }
-  frameInfo.url = rfh->GetLastCommittedURL().spec();
- 
+
   dispatcher_.OnFrameCreated(frameInfo);
 }
 #endif
@@ -1614,6 +1604,9 @@ void NWebHandlerDelegate::OnLoadEnd(CefRefPtr<CefBrowser> browser,
   g_access_sum_count++;
   ReportPageLoadStatsInternal(nweb_id_);
 #endif
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+  NwebAutolayout::GetInstance()->CheckWebContainer(browser, frame);
+#endif
 }
 
 void NWebHandlerDelegate::OnPageVisible(CefRefPtr<CefBrowser> browser,
@@ -1869,13 +1862,14 @@ void NWebHandlerDelegate::OnRefreshAccessedHistory(
     CefRefPtr<CefBrowser> browser,
     CefRefPtr<CefFrame> frame,
     const CefString& url,
-    bool isReload) {
+    bool isReload,
+    bool isMainFrame) {
   std::string url1 = url.ToString();
   auto pos = url1.find("?");
   url1 = url1.substr(0, pos);
   LOG(DEBUG) << "NWebHandlerDelegate::OnRefreshAccessedHistory, intercepted "
                 "url: ***, isReload = "
-             << isReload;
+             << isReload << ", isMainFrame = " << isMainFrame;
   if (nweb_handler_ == nullptr) {
     LOG(ERROR) << "nweb handler is null";
     return;
@@ -1890,7 +1884,10 @@ void NWebHandlerDelegate::OnRefreshAccessedHistory(
 #endif
 
   edited_forms_id_.clear();
-  nweb_handler_->OnRefreshAccessedHistory(url.ToString(), isReload);
+  nweb_handler_->OnRefreshAccessedHistoryV2(url.ToString(), isReload, isMainFrame);
+  if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+    nweb_handler_->OnRefreshAccessedHistory(url.ToString(), isReload);
+  }
 }
 
 #if BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
@@ -1988,11 +1985,12 @@ bool NWebHandlerDelegate::OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
   return result;
 }
 
-bool NWebHandlerDelegate::OnCertificateError(CefRefPtr<CefBrowser> browser,
-                                             cef_errorcode_t cert_error,
-                                             const CefString& request_url,
-                                             CefRefPtr<CefSSLInfo> ssl_info,
-                                             CefRefPtr<CefCallback> callback) {
+bool NWebHandlerDelegate::OnCertificateErrorExt(
+    CefRefPtr<CefBrowser> browser,
+    cef_errorcode_t cert_error,
+    const CefString& request_url,
+    CefRefPtr<CefSSLInfo> ssl_info,
+    CefRefPtr<ArkWebCefSslCallback> callback) {
   LOG(INFO) << "NWebHandlerDelegate::OnCertificateError happened";
   SslError error = SslErrorConvert(cert_error);
 
@@ -5268,7 +5266,9 @@ void NWebHandlerDelegate::RegisterScreenCaptureDelegateListener(
 
 #if BUILDFLAG(ARKWEB_MENU)
 void NWebHandlerDelegate::OnVisibleChanged(bool isVisible) {
-  on_handle_visible_(isVisible);
+  if (!on_handle_visible_.is_null()) {
+    on_handle_visible_.Run(isVisible);
+  }
 }
 
 void NWebHandlerDelegate::ShowMagnifier() {

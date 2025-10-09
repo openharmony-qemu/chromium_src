@@ -1076,6 +1076,11 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
   // Whether to render PDF annotations.
   bool render_annots_ = true;
 
+#if BUILDFLAG(ARKWEB_PDF)
+  // Whether PDF is searching for results.
+  bool isFindingResult_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   // Pending progressive paints.
   class ProgressivePaint {
    public:

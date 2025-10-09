@@ -231,7 +231,7 @@ void NativeLoader::OnCreateNativeSurface(int native_embed_id,
   for (auto& observer : native_bridge_observer_remote_set_->Value()) {
     // TODO: We actually only have one observer now so just using std::move
     // here.
-    observer->OnCreateNativeSurface(std::move(embed_info));
+    observer->OnCreateNativeSurface(embed_info.Clone());
   }
 
   if (first_update_visibility_) {

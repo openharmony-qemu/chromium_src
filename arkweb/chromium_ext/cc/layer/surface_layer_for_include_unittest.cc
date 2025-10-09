@@ -29,6 +29,13 @@ class MockCallbacks {
   MOCK_METHOD(void, OnRectChange, (const gfx::Rect&), ());
 };
 
+class MockLayerBoundsChangeCallback {
+ public:
+  MOCK_METHOD(void, OnLayerBoundsChanged, (const gfx::Rect&));
+};
+
+}  // namespace
+
 class SurfaceLayerForIncludeTest : public testing::Test {
  protected:
   void SetUp() override {
@@ -40,6 +47,24 @@ class SurfaceLayerForIncludeTest : public testing::Test {
                            base::Unretained(&callbacks_)),
         base::BindRepeating(&MockCallbacks::OnLayerRemoved,
                            base::Unretained(&callbacks_)));
+  }
+
+  void ResetLayerRemovedVisibilityCallback() {
+    if (!layer_->layer_removed_visibility_callback_.is_null()) {
+      layer_->layer_removed_visibility_callback_.Reset();
+    }
+  }
+
+  SurfaceLayer::RectChangeCallback GetLayerRectUpdateCallback() {
+    return layer_->rect_change_callback_;
+  }
+
+  SurfaceLayer::RectVisibilityChangeCallback GetLayerRectVisibilityChangeCallback() {
+    return layer_->rect_visibility_change_callback_;
+  }
+
+  SurfaceLayer::LayerRemovedVisibilityCallback GetLayerRemovedVisibilityCallback() {
+    return layer_->layer_removed_visibility_callback_;
   }
 
   scoped_refptr<SurfaceLayer> layer_;
@@ -72,12 +97,30 @@ TEST_F(SurfaceLayerForIncludeTest, OnLayerRectVisibilityChange) {
   layer_->OnLayerRectVisibilityChange(true);
 }
 
+TEST_F(SurfaceLayerForIncludeTest, OnLayerRectVisibilityChange_IsNull) {
+  layer_->ResetLayerRectVisibilityChangeCallback();
+  layer_->OnLayerRectVisibilityChange(true);
+  ASSERT_TRUE(GetLayerRectVisibilityChangeCallback().is_null());
+}
+
 TEST_F(SurfaceLayerForIncludeTest, ResetLayerRectUpdateCallback) {
   layer_->ResetLayerRectUpdateCallback();
 }
 
+TEST_F(SurfaceLayerForIncludeTest, ResetLayerRectUpdateCallback_IsNull) {
+  layer_->ResetLayerRectUpdateCallback();
+  layer_->ResetLayerRectUpdateCallback();
+  ASSERT_TRUE(GetLayerRectUpdateCallback().is_null());
+}
+
 TEST_F(SurfaceLayerForIncludeTest, ResetLayerRectVisibilityChangeCallback) {
   layer_->ResetLayerRectVisibilityChangeCallback();
+}
+
+TEST_F(SurfaceLayerForIncludeTest, ResetLayerRectVisibilityChangeCallback_IsNull) {
+  layer_->ResetLayerRectVisibilityChangeCallback();
+  layer_->ResetLayerRectVisibilityChangeCallback();
+  ASSERT_TRUE(GetLayerRectVisibilityChangeCallback().is_null());
 }
 
 TEST_F(SurfaceLayerForIncludeTest, CleanupVisibilityForRemovedLayer) {
@@ -85,10 +128,27 @@ TEST_F(SurfaceLayerForIncludeTest, CleanupVisibilityForRemovedLayer) {
   layer_->CleanupVisibilityForRemovedLayer(false);
 }
 
+TEST_F(SurfaceLayerForIncludeTest, CleanupVisibilityForRemovedLayer_IsNull) {
+  ResetLayerRemovedVisibilityCallback();
+  layer_->CleanupVisibilityForRemovedLayer(false);
+  ASSERT_TRUE(GetLayerRemovedVisibilityCallback().is_null());
+}
+
 TEST_F(SurfaceLayerForIncludeTest, OnLayerBoundsUpdate) {
   gfx::Rect test_rect(10, 20, 30, 40);
   layer_->OnLayerBoundsUpdate(test_rect);
 }
 
-}  // namespace
+TEST_F(SurfaceLayerForIncludeTest, OnLayerBoundsUpdate_WithMockCallback) {
+  gfx::Rect new_bounds(10, 20, 30, 40);
+  MockLayerBoundsChangeCallback mock_callback;
+  EXPECT_CALL(mock_callback, OnLayerBoundsChanged(new_bounds));
+
+  layer_->SetLayerBoundsChangeCallback(
+      base::BindRepeating(&MockLayerBoundsChangeCallback::OnLayerBoundsChanged,
+                          base::Unretained(&mock_callback)));
+
+  layer_->OnLayerBoundsUpdate(new_bounds);
+}
+
 }  // namespace cc

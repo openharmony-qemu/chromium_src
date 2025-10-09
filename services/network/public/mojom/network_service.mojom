@@ -423,6 +423,11 @@ interface NetworkService {
   SetHttpsDnsFallbackData(network.mojom.HttpsDnsFallbackConfig config);
   // #endif
 
+  // #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  [EnableIf=arkweb_network_service]
+  SetSocketIdleTimeout(int32 timeout);
+  // #endif
+
   // Set IPv6 reachability override. When `reachability_override` is true, the
   // DNS stack queries AAAA record even when the IPv6 reachability probe fails.
   SetIPv6ReachabilityOverride(bool reachability_override);

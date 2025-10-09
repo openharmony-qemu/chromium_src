@@ -5,6 +5,7 @@
 #ifndef COMPONENTS_ARKWEB_URL_PATTERN_INDEX_URL_PATTERN_INDEX_EXT_H_
 #define COMPONENTS_ARKWEB_URL_PATTERN_INDEX_URL_PATTERN_INDEX_EXT_H_
 
+#include <limits>
 #include "components/url_pattern_index/url_pattern_index.h"
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
@@ -18,6 +19,11 @@ class Origin;
 }
 
 namespace url_pattern_index {
+#ifdef ARKWEB_TEST
+constexpr size_t kMinListSize = 4;
+#else
+constexpr size_t kMinListSize = std::numeric_limits<size_t>::max();
+#endif
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
 using CssRuleOffset = flatbuffers::Offset<flat::CssRule>;

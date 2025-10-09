@@ -30,6 +30,7 @@ typedef enum {
   EXT_COLOR_MAX = 4,
 } ExtensionColorIndex;
 
+// This is an exported struct. Do not modify it or its nested structs.
 struct WebExtensionActionInfo {
   std::string extensionId;
   std::optional<bool> isEnabled;
@@ -41,42 +42,32 @@ struct WebExtensionActionInfo {
   std::optional<NWebExtensionActionIcon*> icon;
 };
 
+struct WebExtensionActionInfoV2 {
+  std::string extensionId;
+  std::optional<bool> isEnabled;
+  std::optional<std::array<int32_t, EXT_COLOR_MAX>> badgeBackgroundColor;
+  std::optional<std::string> badgeText;
+  std::optional<std::array<int32_t, EXT_COLOR_MAX>> badgeTextColor;
+  std::optional<std::string> popup;
+  std::optional<std::string> title;
+  std::optional<NWebExtensionActionIconV2> icon;
+};
+
+// This is an exported struct. Do not modify it or its nested structs.
 struct WebExtensionSidePanelInfo {
   std::optional<bool> enable;
   std::optional<std::string> path;
   std::optional<bool> openPanelOnActionClick;
 };
 
+// This is an exported struct. Do not modify it or its nested structs.
 struct WebExtensionInfo {
-  /**
-   * extensionId of extension.
-   */
   std::string extensionId;
-
-  /**
-   * whether extension can be removed.
-   */
   bool mustRemainInstalled;
-
-  /**
-   * actionInfo of extension.
-   */
   WebExtensionActionInfo action;
-
-  /**
-   * sidePanel of extension.
-   */
   WebExtensionSidePanelInfo sidePanel;
-
-  /**
-   * contextMenus of extension.
-   */
   std::vector<NWebContextMenusItem> contextMenus;
-
-  /**
-   * extension's action icon is visible on toolbar.
-   */
-  bool isOnToolbar;
+  bool isOnToolbar = false;
 };
 
 struct WebExtensionManifestSearchProvider {
@@ -100,7 +91,17 @@ struct WebExtensionManifestSettingsOverrides {
   std::vector<std::string> startup_pages;
   std::optional<WebExtensionManifestSearchProvider> search_provider;
 };
- 
+
+struct WebExtensionManifestUrlOverride {
+  std::optional<std::string> newtab;
+  std::optional<std::string> bookmarks;
+  std::optional<std::string> history;
+};
+
+struct WebExtensionManifestOmnibox {
+  std::string keyword;
+};
+
 struct WebExtensionManifestOptionsPageInfo {
   std::string options_page;
   bool open_in_tab;
@@ -119,6 +120,9 @@ struct WebExtensionManifestInfo {
   std::optional<WebExtensionManifestSettingsOverrides> settings_overrides;
   std::optional<WebExtensionManifestOptionsPageInfo> options_page;
   std::optional<ExtensionIncognitoMode> incognito_mode;
+  std::optional<NWebExtensionActionIconV2> icons;
+  std::optional<WebExtensionManifestUrlOverride> url_override;
+  std::optional<WebExtensionManifestOmnibox> omnibox;
 };
  
 struct WebExtensionInfoV2 {
@@ -139,6 +143,8 @@ struct WebExtensionInfoV2 {
   WebExtensionManifestInfo manifest_info;
   bool is_incognito_enabled = false;
   std::vector<NWebContextMenusItemV2> contextMenusV2;
+  WebExtensionActionInfoV2 action_v2;
+  std::optional<double> install_time;
 };
 
 typedef void (*OnWebExtensionLoadedFun)(const WebExtensionInfo& load_info);
@@ -152,6 +158,8 @@ struct NWebExtensionManagerCallBack {
   void (*OnWebExtensionOpenUrlFun)(std::string url);
 };
 
-typedef void (*OnExtensionInstallCallback)(int code, const char* message);
+typedef void (*OnExtensionInstallCallback)(int code,
+                                           const char* message,
+                                           const char* extension_id);
 
 #endif  // OHOS_NWEB_SRC_NWEB_EXTENSION_MANAGER_CALLBACK_H_

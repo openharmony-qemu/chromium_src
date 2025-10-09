@@ -255,7 +255,6 @@ bool RenderFrameHostImpl::GetWorldId(const std::string& worldName, int32_t* worl
   if (it != isolated_world_.end()) {
     *worldId = it->second;
     return true;
- 
   }
  
   int32_t maxValue = INT_MIN;
@@ -276,7 +275,6 @@ void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
     JavaScriptResultCallback callback) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   CHECK(CanExecuteJavaScript());
-  AssertFrameWasCommitted();
  
   const bool wants_result = !callback.is_null();
   int32_t worldId = 0;
@@ -300,6 +298,7 @@ void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
     if (rfh == initialFrame) {
       return;
     }
+    rfh->AllowInjectingJavaScript();
     bool worldId_result = rfh->GetWorldId(worldName, &world_id); 
     if (worldId_result) {
       rfh->GetAssociatedLocalFrame()->JavaScriptExecuteRequestInIsolatedWorld(
@@ -388,6 +387,39 @@ void RenderFrameHostImpl::OnPdfLoadEvent(int32_t result, const std::string& url)
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 // LCOV_EXCL_STOP
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void RenderFrameHostImpl::OnDetectedBlankScreen(
+    const std::string& url,
+    int32_t blankScreenReason,
+    int32_t detectedContentfulNodesCount) {
+  RenderWidgetHostViewBase* view = static_cast<RenderWidgetHostViewBase*>(
+      render_view_host_->GetWidget()->GetView());
+  if (view && blank_screen_detection_enable_) {
+    view->OnDetectedBlankScreen(url, blankScreenReason,
+                                detectedContentfulNodesCount);
+  }
+}
+
+void RenderFrameHostImpl::DetectBlankScreen(const std::string& url) {
+  if (blank_screen_detection_enable_) {
+    GetAssociatedLocalFrame()->DetectBlankScreen(
+        url, blank_screen_detection_timing_, blank_screen_detection_methods_,
+        blank_screen_threshold_);
+  }
+}
+
+void RenderFrameHostImpl::SetBlankScreenDetectionConfig(
+    bool enable,
+    const std::vector<double>& detectionTiming,
+    const std::vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) {
+  blank_screen_detection_enable_ = enable;
+  blank_screen_detection_timing_ = detectionTiming;
+  blank_screen_detection_methods_ = detectionMethods;
+  blank_screen_threshold_ = contentfulNodesCountThreshold;
+}
+#endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
 net::Error RenderFrameHostImpl::GetNetErrorCode() {

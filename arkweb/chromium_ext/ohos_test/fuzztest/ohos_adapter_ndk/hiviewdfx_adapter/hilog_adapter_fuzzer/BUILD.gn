@@ -33,6 +33,7 @@ fuzzer_test("hilog_adapter_fuzzer") {
     "//third_party/boringssl/src/include",
     "//third_party/ohos_ndk/includes/ohos_adapter",
     "//arkweb/ohos_adapter_ndk/event_handler_adapter",
+    "//third_party/bounds_checking_function/include",
   ]
   deps = [
     "//arkweb/ohos_adapter_ndk:adapter_ndk_stub",

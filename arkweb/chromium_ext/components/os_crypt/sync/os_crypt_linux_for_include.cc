@@ -17,6 +17,10 @@
 #include "arkweb/chromium_ext/components/os_crypt/sync/os_crypt_linux_for_include.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "content/public/browser/browser_thread.h"
+#endif
+
 namespace {
 
 // LCOV_EXCL_START
@@ -27,6 +31,58 @@ constexpr char kNewbAssetHandleAlias[] = "asset_data_key";
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+void SetMigratePasswordsFlagToFile() {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&SetMigratePasswordsFlagToFile));
+    return;
+  }
+
+  if (g_browser_process && g_browser_process->local_state()) {
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
+  }
+}
+
+static std::string AssetQuery(base::FilePath key_file) {
+  std::string assetHandle;
+  bool res = base::ReadFileToString(key_file, &assetHandle);
+  if (!res) {
+    LOG(ERROR) << "[Autofill] Read assethandle file failed.";
+    std::string err_msg = "Read assethandle file failed, error_code:" +
+                          std::to_string(ASSET_QUERY_FAILED);
+    base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
+                                  base::ohos::kPasswordManagerError, err_msg);
+    SetMigratePasswordsFlagToFile();
+    return std::string();
+  }
+
+  if (assetHandle.empty()) {
+    LOG(INFO) << "[Autofill] Assethandle is empty, not need to migrate.";
+    std::string err_msg = "Assethandle is empty, not need to migrate, error_code:" +
+                          std::to_string(MIGRATE_SUCCESS);
+    base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
+                                  base::ohos::kPasswordManagerError, err_msg);
+    SetMigratePasswordsFlagToFile();
+    return std::string();
+  }
+
+  std::string local_key = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                          .GetKeystoreAdapterInstance().AssetQuery(assetHandle);
+  if (local_key.empty()) {
+    LOG(ERROR) << "[Autofill] Get key from asset failed.";
+    std::string err_msg = "Get key from asset failed, error_code:" +
+                          std::to_string(ASSET_QUERY_FAILED);
+    base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
+                                  base::ohos::kPasswordManagerError, err_msg);
+    SetMigratePasswordsFlagToFile();
+    return std::string();
+  }
+  LOG(INFO) << "[Autofill] get key from asset success.";
+  return local_key;
+}
+
 static std::string GetKeyFromAsset() {
   base::FilePath cache_path;
   base::PathService::Get(base::DIR_CACHE, &cache_path);
@@ -42,8 +98,7 @@ static std::string GetKeyFromAsset() {
                           std::to_string(DIRECTORY_OR_FILE_NOT_EXIST);
     base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
                                   base::ohos::kPasswordManagerError, err_msg);
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-    g_browser_process->local_state()->CommitPendingWrite();
+    SetMigratePasswordsFlagToFile();
     return std::string();
   }
 
@@ -55,8 +110,7 @@ static std::string GetKeyFromAsset() {
                           std::to_string(DIRECTORY_OR_FILE_NOT_EXIST);
     base::ohos::ReportEngineEvent(base::ohos::kModuleContentBrowser, base::ohos::kDefaultUrl,
                                   base::ohos::kPasswordManagerError, err_msg);
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-    g_browser_process->local_state()->CommitPendingWrite();
+    SetMigratePasswordsFlagToFile();
     return std::string();
   }
 

@@ -101,14 +101,18 @@ public:
                        bool result = true);
   void NativeHitTestResult(bool native, size_t fingerId, int layerId);
   void SetNativeEmbedMode(bool flag);
-  void NativeMouseHitTestResult(bool native, int layerId);
+  void NativeMouseHitTestResult(bool native, int layerId, int32_t button);
   InputHandlerProxyUtils::NativeEventDisposition DidMouseEmbedEvent(
     const WebInputEvent& event);
   void SetMouseEventResult(bool result, bool stopPropagation);
-  void SendMouseNativeEvent(const WebMouseEvent& mouse_event, WebInputEvent::Type type, bool result = true);
+  void SendMouseNativeEvent(const WebMouseEvent& mouse_event,
+                            WebInputEvent::Type type,
+                            int32_t button,
+                            bool result = true);
   void SendToBlink(std::unique_ptr<EventWithCallback> event_with_callback,
                    bool isDrop = false, bool result = false);
   void FlushNativeTouchQueue(size_t fingerId);
+  void PopNativeTouchQueue(size_t fingerId);
   void NativeEventProcess(
       std::unique_ptr<EventWithCallback> event_with_callback);
   bool NativeTouchEventProcess(
@@ -145,6 +149,7 @@ public:
   bool HandleTouchStartInitInQueue(
       std::unique_ptr<EventWithCallback> event_with_callback,
       int32_t finger_id);
+  void SendNativeInQueueFrontSeq(size_t finger_id);
 #endif
  private:
  raw_ptr<InputHandlerProxy> proxy_;
@@ -167,10 +172,10 @@ public:
   std::unique_ptr<NativeEmbedEventQueue> native_mouse_event_queue_;
   std::unique_ptr<NativeEmbedEventQueue> native_mouse_end_queue_;
   WebMouseEvent start_mouse_event_;
-  bool isMouseNativeArea_ = false;
   std::unordered_map<size_t, int> mouse_native_layer_map_;
-  int mouse_native_layer_id_ = 0;
   int32_t mouse_hit_testing_number_ = 0;
+  std::unordered_map<size_t, bool> mouse_native_map_;
+  std::unordered_map<size_t, int> mouse_native_id_map_;
   WebInputEvent::Type gesture_status_[MAX_FINGER_NUMBER];
   bool enable_custom_video_player_ = false;
   gfx::RectF nativeRects_[MAX_FINGER_NUMBER];

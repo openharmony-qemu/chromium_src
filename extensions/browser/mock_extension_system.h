@@ -65,6 +65,7 @@ class MockExtensionSystem : public ExtensionSystem {
 
  private:
   raw_ptr<content::BrowserContext> browser_context_;
+  std::unique_ptr<ManagementPolicy> management_policy_;
   base::OneShotEvent ready_;
 };
 

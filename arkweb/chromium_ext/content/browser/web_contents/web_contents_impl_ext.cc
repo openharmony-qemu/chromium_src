@@ -206,7 +206,7 @@ void WebContentsImplExt::CloseDateTimeChooser() {
 }
 #endif  // ARKWEB_CSS_INPUT_TIME
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 void WebContentsImplExt::SetForceEnableZoom(bool forceEnableZoom) {
   if (force_enable_zoom_ != forceEnableZoom) {
     force_enable_zoom_ = forceEnableZoom;
@@ -1164,6 +1164,29 @@ void WebContentsImplExt::OnBrowserForeground() {
 void WebContentsImplExt::OnBrowserBackground() {
   LOG(INFO) << "WebContentsImplExt::OnBrowserBackground";
   observers_.NotifyObservers(&WebContentsObserver::OnBrowserBackground);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void WebContentsImplExt::DetectBlankScreen(const std::string& url) {
+  RenderFrameHostImpl* render_frame_host = GetPrimaryMainFrame();
+  if (!render_frame_host) {
+    return;
+  }
+  render_frame_host->DetectBlankScreen(url);
+}
+
+void WebContentsImplExt::SetBlankScreenDetectionConfig(
+    bool enable,
+    const std::vector<double>& detectionTiming,
+    const std::vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) {
+  RenderFrameHostImpl* render_frame_host = GetPrimaryMainFrame();
+  if (!render_frame_host) {
+    return;
+  }
+  render_frame_host->SetBlankScreenDetectionConfig(
+      enable, detectionTiming, detectionMethods, contentfulNodesCountThreshold);
 }
 #endif
 

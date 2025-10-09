@@ -747,6 +747,10 @@ class NET_EXPORT_PRIVATE TransportClientSocketPool
   // this pool is stalled.
   void TryToCloseSocketsInLayeredPools();
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  void SetSocketIdleTimeout(int32_t timeout) override;
+#endif
+
   // Closes all idle sockets and cancels all unbound ConnectJobs associated with
   // |it->second|. Also increments the group's generation number, ensuring any
   // currently existing handed out socket will be silently closed when it is
@@ -805,6 +809,10 @@ class NET_EXPORT_PRIVATE TransportClientSocketPool
   // Reentrancy guard for RequestSocketInternal().
   bool request_in_process_ = false;
 #endif  // DCHECK_IS_ON()
+
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  base::TimeDelta arkweb_used_idle_socket_timeout_;
+#endif
 
   base::WeakPtrFactory<TransportClientSocketPool> weak_factory_{this};
 };

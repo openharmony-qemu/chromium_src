@@ -371,7 +371,8 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void OnRefreshAccessedHistory(CefRefPtr<CefBrowser> browser,
                                 CefRefPtr<CefFrame> frame,
                                 const CefString& url,
-                                bool isReload) override;
+                                bool isReload,
+                                bool isMainFrame) override;
 
   void OnPageVisible(CefRefPtr<CefBrowser> browser,
                      const CefString& url,
@@ -409,11 +410,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                       CefRefPtr<CefRequest> request,
                       bool user_gesture,
                       bool is_redirect) override;
-  bool OnCertificateError(CefRefPtr<CefBrowser> browser,
-                          cef_errorcode_t cert_error,
-                          const CefString& request_url,
-                          CefRefPtr<CefSSLInfo> ssl_info,
-                          CefRefPtr<CefCallback> callback) override;
+  bool OnCertificateErrorExt(CefRefPtr<CefBrowser> browser,
+                             cef_errorcode_t cert_error,
+                             const CefString& request_url,
+                             CefRefPtr<CefSSLInfo> ssl_info,
+                             CefRefPtr<ArkWebCefSslCallback> callback) override;
 
   bool OnSelectClientCertificate(
       CefRefPtr<CefBrowser> browser,
@@ -1000,7 +1001,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_MENU)
   void OnVisibleChanged(bool isVisible);
   void SetHandleVisibleCallback(
-      std::function<void(bool)> on_handle_visible) override {
+      const base::RepeatingCallback<void(bool)>& on_handle_visible) override {
     this->on_handle_visible_ = on_handle_visible;
   }
   void ShowMagnifier() override;
@@ -1209,7 +1210,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};
 
 #if BUILDFLAG(ARKWEB_MENU)
-  std::function<void(bool)> on_handle_visible_;
+  base::RepeatingCallback<void(bool)> on_handle_visible_;
 #endif
 };
 }  // namespace OHOS::NWeb

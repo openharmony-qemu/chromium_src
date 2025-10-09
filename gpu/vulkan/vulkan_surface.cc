@@ -269,9 +269,6 @@ base::TimeDelta VulkanSurface::GetDisplayRefreshInterval() {
 
 bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
                                     gfx::OverlayTransform transform) {
-#if BUILDFLAG(ARKWEB_VULKAN)
-  SWAP_CHAIN_DESTROY(swap_chain_);
-#endif
   // Get Surface Information.
   VkSurfaceCapabilitiesKHR surface_caps;
   VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
@@ -331,6 +328,11 @@ bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
 #endif
     return true;
   }
+#if BUILDFLAG(ARKWEB_VULKAN)
+  SWAP_CHAIN_DESTROY(swap_chain_);
+  LOG(INFO) << "vulkan old swap chain width: " << image_size_.width() << " height: " << image_size_.height();
+  LOG(INFO) << "vulkan new swap chain width: " << image_size.width() << " height: " << image_size.height();
+#endif
 
   image_size_ = image_size;
   transform_ = transform;

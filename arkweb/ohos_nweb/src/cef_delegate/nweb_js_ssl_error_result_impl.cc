@@ -18,7 +18,7 @@
 using namespace OHOS::NWeb;
 
 NWebJSSslErrorResultImpl::NWebJSSslErrorResultImpl(
-    CefRefPtr<CefCallback> callback)
+    CefRefPtr<ArkWebCefSslCallback> callback)
     : callback_(callback) {}
 
 void NWebJSSslErrorResultImpl::HandleConfirm() {
@@ -30,6 +30,12 @@ void NWebJSSslErrorResultImpl::HandleConfirm() {
 void NWebJSSslErrorResultImpl::HandleCancel() {
   if (callback_ != nullptr) {
     return callback_->Cancel();
+  }
+}
+
+void NWebJSSslErrorResultImpl::HandleCancelV2(bool abortLoading) {
+  if (callback_ != nullptr) {
+    return callback_->Cancel(abortLoading);
   }
 }
 

@@ -14,6 +14,10 @@
 #include <stdint.h>
 
 #include "absl/types/optional.h"
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#include "base/gtest_prod_util.h"
+#endif
 #include "base/memory/weak_ptr.h"
 #include "base/memory/raw_ptr.h"
 #include "content/common/content_export.h"
@@ -77,6 +81,9 @@ class CONTENT_EXPORT StreamTextureHost
   gpu::SyncToken GenUnverifiedSyncToken();
 
  private:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class StreamTextureHostTest;
+#endif
   // gpu::mojom::StreamTextureClient:
   void OnFrameAvailable() override;
   void OnFrameWithInfoAvailable(

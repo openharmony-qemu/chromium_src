@@ -90,6 +90,10 @@ source_set("unit_tests") {
     "time_measurements_unittest.cc",
     "unindexed_ruleset_unittest.cc",
   ]
+
+  if (arkweb_adblock) {
+    sources += arkweb_document_subresource_filter_unittest_sources
+  }
   deps = [
     ":common",
     ":test_support",

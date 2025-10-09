@@ -93,6 +93,7 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_FIDO)
+#include "arkweb/chromium_ext/content/browser/webauth/is_uvpaa_ohos.h"
 #include "content/browser/webauth/utils.h"
 #include "device/fido/ohos/ohos_authenticator.h"
 #include "device/fido/ohos/ohos_webauthn_api.h"
@@ -1709,7 +1710,7 @@ void AuthenticatorCommonImpl::GetClientCapabilities(
     blink::mojom::Authenticator::GetClientCapabilitiesCallback callback) {
 #if BUILDFLAG(ARKWEB_FIDO)
   if (device::OhosWebAuthnApi::Instance()->IsAvailable()) {
-    GetClientCapabilitiesFromOhosWebAuthnApi(std::move(callback));
+    GetClientCapabilitiesExt(caller_origin, std::move(callback));
     return;
   }
 #endif // BUILDFLAG(ARKWEB_FIDO)
@@ -1826,6 +1827,8 @@ void AuthenticatorCommonImpl::ContinueIsUvpaaAfterOverrideCheck(
   IsUVPlatformAuthenticatorAvailable(GetBrowserContext(),
                                      std::move(uma_decorated_callback));
 #elif BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+  IsUVPlatformAuthenticatorAvailable(std::move(uma_decorated_callback));
+#elif BUILDFLAG(ARKWEB_FIDO)
   IsUVPlatformAuthenticatorAvailable(std::move(uma_decorated_callback));
 #else
   std::move(uma_decorated_callback).Run(false);

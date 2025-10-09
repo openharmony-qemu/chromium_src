@@ -46,15 +46,23 @@ void MediaSessionControllerExt::SetSessionStateIfNeed(bool isNeedMediaSession)
     media_session_->SetSessionState(MediaSessionImpl::NWebMediaSessionState::NONEED);
   }
 }
+
+void MediaSessionControllerExt::HasOneShotPlayersWhenSetMetadata(
+    media::MediaContentType media_content_type) {
+  if (!media_session_) {
+    return;
+  }
+  if (media_content_type == media::MediaContentType::kOneShot) {
+    LOG(INFO) << "MediaSessionController contentType is oneShot, has webrtc oneShot players";
+    media_session_->has_one_shot_players_ = true;
+  }
+}
 #endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 #if BUILDFLAG(ARKWEB_PIP)
 void MediaSessionControllerExt::OnPictureInPictureStateChanged(
     const MediaPlayerId& id,
     uint32_t state, int32_t width, int32_t height) {
-  LOG(INFO) << __func__ << " Pip state:" << state <<  " "
-            << id.delegate_id << " " <<  id.frame_routing_id.child_id
-			<< " " << id.frame_routing_id.frame_routing_id;
   media_session_->OnPictureInPictureStateChanged(id, state, width, height);
 }
 #endif

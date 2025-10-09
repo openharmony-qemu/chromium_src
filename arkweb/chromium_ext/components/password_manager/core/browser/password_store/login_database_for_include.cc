@@ -49,4 +49,18 @@ bool LoginDatabase::UpdateLoginDisplayName(const PasswordForm& form,
 
   return true;
 }
+
+void LoginDatabaseSetMigratePasswordsFlagToFile() {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&LoginDatabaseSetMigratePasswordsFlagToFile));
+    return;
+  }
+ 
+  if (g_browser_process && g_browser_process->local_state()) {
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
+  }
+}
 #endif

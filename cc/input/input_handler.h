@@ -584,7 +584,11 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   void HandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) override;
 #endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool HasQueuedInput() const override;
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual InputHandlerUtils* handler_utils() {
+#else
   InputHandlerUtils* handler_utils() {
+#endif // BUILDFLAG(ARKWEB_TEST)
     return handler_utils_.get();
   }
 

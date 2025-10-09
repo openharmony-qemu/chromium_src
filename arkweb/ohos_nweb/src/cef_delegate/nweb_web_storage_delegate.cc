@@ -65,6 +65,9 @@ class GetOriginsCallback : public CefGetOriginsCallback {
     for (size_t i = 0; i < origins_.size(); i++) {
       std::shared_ptr<NWebWebStorageOriginImpl> items =
           std::make_shared<NWebWebStorageOriginImpl>();
+      if (quotas_.size() <= i || usages_.size() <= i) {
+        continue;
+      }
       items->SetOrigin(origins_[i]);
       items->SetQuota(quotas_[i]);
       items->SetUsage(usages_[i]);

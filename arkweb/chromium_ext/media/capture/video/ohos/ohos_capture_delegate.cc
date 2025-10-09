@@ -18,7 +18,6 @@
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"
 #include "media/capture/video/blob_utils.h"
-#include "media/capture/video/ohos/ohos_capture_delegate.h"
 #include "ohos_adapter_helper.h"
 #include "third_party/libyuv/include/libyuv.h"
 #include "video_capture_common_ohos.h"
@@ -55,7 +54,6 @@ int OHOSCaptureDelegate::TransToOHOSCaptrueParams(
   int matched_height = req_height;
   VideoPixelFormatAdapter matched_pixel_format =
       VideoPixelFormatAdapter::FORMAT_UNKNOWN;
-  ;
   std::string device_id = device_descriptor_.device_id;
 
   for (auto single_device_desc : devices_desc) {

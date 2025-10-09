@@ -68,6 +68,9 @@ class ArkwebChildProcessLauncherHelperUtils {
       bool known_dead,
       ChildProcessTerminationInfo& info);
 
+#if BUILDFLAG(ARKWEB_TEST)
+#define private public
+#endif
  private:
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
   static base::TerminationStatus GetProcessStatusByExitCode(int status,
@@ -77,6 +80,9 @@ class ArkwebChildProcessLauncherHelperUtils {
       base::TerminationStatus status);
 #endif
   const raw_ptr<ChildProcessLauncherHelper> child_process_launcher_helper_;
+#if BUILDFLAG(ARKWEB_TEST)
+#undef private
+#endif
 };
 
 }  // namespace internal

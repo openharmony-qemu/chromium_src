@@ -805,7 +805,12 @@ TransportClientSocketPool::TransportClientSocketPool(
       cleanup_on_ip_address_change_(cleanup_on_ip_address_change),
       connect_backup_jobs_enabled_(connect_backup_jobs_enabled &&
                                    g_connect_backup_jobs_enabled),
-      ssl_client_context_(ssl_client_context) {
+      ssl_client_context_(ssl_client_context)
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+      ,
+      arkweb_used_idle_socket_timeout_(used_idle_socket_timeout)
+#endif
+{
   DCHECK_LE(0, max_sockets_per_group);
   DCHECK_LE(max_sockets_per_group, max_sockets);
 
@@ -1488,6 +1493,15 @@ void TransportClientSocketPool::TryToCloseSocketsInLayeredPools() {
       return;
   }
 }
+
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+void TransportClientSocketPool::SetSocketIdleTimeout(int32_t timeout) {
+  if (arkweb_used_idle_socket_timeout_.InSeconds() != timeout) {
+    arkweb_used_idle_socket_timeout_ = base::Seconds(timeout);
+    CleanupIdleSockets(false, nullptr /* net_log_reason_utf8 */);
+  }
+}
+#endif
 
 TransportClientSocketPool::GroupMap::iterator
 TransportClientSocketPool::RefreshGroup(GroupMap::iterator it,

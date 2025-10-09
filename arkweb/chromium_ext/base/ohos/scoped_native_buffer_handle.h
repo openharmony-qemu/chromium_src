@@ -10,10 +10,10 @@
 #ifndef _GPU_COMMAND_BUFFER_SERVICE_OHOS_SCOPED_HARDWARE_BUFFER_HANDLE_H_
 #define _GPU_COMMAND_BUFFER_SERVICE_OHOS_SCOPED_HARDWARE_BUFFER_HANDLE_H_
 
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "base/base_export.h"
 #include "base/files/scoped_file.h"
 #include "base/memory/raw_ptr.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 typedef void* OHOSNativeBuffer;
 

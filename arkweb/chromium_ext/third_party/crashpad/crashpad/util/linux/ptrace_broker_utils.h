@@ -24,8 +24,10 @@
 #include "util/linux/exception_handler_protocol.h"
 #include "util/linux/ptrace_connection.h"
 #include "util/linux/ptracer.h"
+#include "util/linux/ptrace_broker.h"
 #include "util/linux/thread_info.h"
 #include "util/misc/address_types.h"
+
 
 namespace crashpad {
 

@@ -74,10 +74,8 @@ class NWebDataBaseDelegate {
   CefRefPtr<CefDataBase> GetGlobalCefDataBase();
   CefRefPtr<CefDataBase> data_base_ = nullptr;
 
-  // #if BUILDFLAG(IS_OHOS)
   CefRefPtr<CefDataBase> GetGlobalIncognitoCefDataBase();
   CefRefPtr<CefDataBase> incognito_data_base_ = nullptr;
-  // #endif
 };
 }  // namespace OHOS::NWeb
 #endif

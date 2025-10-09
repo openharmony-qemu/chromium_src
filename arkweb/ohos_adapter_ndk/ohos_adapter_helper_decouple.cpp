@@ -50,7 +50,6 @@
 #include "ohos_adapter/bridge/ark_media_codec_list_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_migration_manager_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_mmi_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_native_image_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_net_connect_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_net_proxy_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_ohos_drawing_text_adapter_wrapper.h"
@@ -72,6 +71,7 @@
 #include "ohos_adapter/bridge/ark_vsync_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_web_timezone_info_wrapper.h"
 #include "ohos_adapter/bridge/ark_window_adapter_wrapper.h"
+#include "ohos_adapter/bridge/ark_background_task_adapter_wrapper.h"
 #include "datashare_adapter/datashare_adapter_impl.h"
 #include "distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.h"
 
@@ -106,13 +106,26 @@
 #include "arkweb/ohos_adapter_ndk/net_config_adapter/net_config_adapter_impl.h"
 
 namespace OHOS::NWeb {
-
+#if BUILDFLAG(ARKWEB_TEST)
+static OhosAdapterHelper* instance_ = nullptr;
+#endif
 OhosAdapterHelper& OhosAdapterHelper::GetInstance() {
+#if BUILDFLAG(ARKWEB_TEST)
+    if (instance_) {
+        return *instance_;
+    }
+#endif
   static ArkWeb::ArkOhosAdapterHelperWrapper instance(
       ArkWeb::ArkOhosAdapterHelper::GetInstance());
   return instance;
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+void OhosAdapterHelper::SetInstance(OhosAdapterHelper* instance)
+{
+    instance_ = instance;
+}
+#endif
 }  // namespace OHOS::NWeb
 
 namespace OHOS::ArkWeb {
@@ -501,9 +514,9 @@ ArkOhosAdapterHelperWrapper::CreateFlowbufferAdapter() {
   return std::make_unique<ArkFlowbufferAdapterWrapper>(adapter);
 }
 
-std::unique_ptr<NWeb::MediaAVSessionAdapter>
+std::shared_ptr<NWeb::MediaAVSessionAdapter>
 ArkOhosAdapterHelperWrapper::CreateMediaAVSessionAdapter() {
-  return std::make_unique<NWeb::MediaAVSessionAdapterImpl>();
+  return std::make_shared<NWeb::MediaAVSessionAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::OhosImageDecoderAdapter>
@@ -588,5 +601,17 @@ ArkOhosAdapterHelperWrapper::CreateScreenlockManagerAdapter() {
 std::unique_ptr<NWeb::NetConfigAdapter>
 ArkOhosAdapterHelperWrapper::GetNetConfigAdapter() {
   return std::make_unique<NetConfigAdapterImpl>();
+}
+
+std::unique_ptr<NWeb::BackgroundTaskAdapter>
+ArkOhosAdapterHelperWrapper::CreateBackgroundTaskAdapter() {
+  ArkWebRefPtr<ArkBackgroundTaskAdapter> adapter =
+      ctocpp_->CreateBackgroundTaskAdapter();
+
+  if (CHECK_REF_PTR_IS_NULL(adapter)) {
+    return nullptr;
+  }
+
+  return std::make_unique<ArkBackgroundTaskAdapterWrapper>(adapter);
 }
 }  // namespace OHOS::ArkWeb

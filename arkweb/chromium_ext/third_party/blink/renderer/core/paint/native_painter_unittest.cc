@@ -138,5 +138,14 @@ TEST_F(NativePainterTest, SoftwarePaintPath) {
   painter.PaintReplaced(paint_info, PhysicalOffset());
 }
 
+TEST_F(NativePainterTest, AllowSelectionDragImagePhase) {
+  PaintController controller;
+  GraphicsContext context(controller);
+  PaintInfo paint_info(context, CullRect(), PaintPhase::kSelectionDragImage, false);
+
+  NativePainter painter(*layout_native_);
+  painter.PaintReplaced(paint_info, PhysicalOffset());
+}
+
 }  // namespace
 }  // namespace blink

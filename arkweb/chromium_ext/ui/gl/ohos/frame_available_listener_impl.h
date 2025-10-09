@@ -16,26 +16,20 @@
 #ifndef FRAME_AVAILABLE_LISTENER_IMPL_H
 #define FRAME_AVAILABLE_LISTENER_IMPL_H
 
-#include "third_party/ohos_ndk/includes/ohos_adapter/graphic_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "base/memory/raw_ptr.h"
 
 namespace OHOS::NWeb {
 
 class FrameAvailableListenerImpl : public FrameAvailableListener {
  public:
-  FrameAvailableListenerImpl() = default;
+   FrameAvailableListenerImpl(raw_ptr<OhosNativeImageAdapter> adapter);
 
-  void* GetContext() override;
-
-  OnFrameAvailableCb GetOnFrameAvailableCb() override;
-
-  void SetContext(void*);
-
-  void SetOnFrameAvailableCb(OnFrameAvailableCb);
+   void OnFrameAvailableListener() override;
 
  private:
-  raw_ptr<void> context_ = nullptr;
-  OnFrameAvailableCb cb_ = nullptr;
+  raw_ptr<OhosNativeImageAdapter> ohos_native_image_adapter_ = nullptr;
 };
 
 }  // namespace OHOS::NWeb

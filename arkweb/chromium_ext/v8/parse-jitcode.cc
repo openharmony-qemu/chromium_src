@@ -101,6 +101,7 @@ JSVMSymbolExtractor::JSVMSymbolExtractor(uint32_t pid) {
 
   if (!ReadMem(reinterpret_cast<uint64_t>(dfxAddress), address, SHM_SIZE)) {
     HilogPrint(ERROR, "failed read dfxAddress to local address.");
+    munmap(address, SHM_SIZE);
     return;
   }
 
@@ -109,17 +110,17 @@ JSVMSymbolExtractor::JSVMSymbolExtractor(uint32_t pid) {
   uint64_t codeID = 0;
   std::vector<JITCodeBlock> jitCodeBlocks;
   if (!elf::GetHeader(process_id_, shared_mem)) {
-    munmap(shared_mem, SHM_SIZE);
+    munmap(address, SHM_SIZE);
     return;
   }
 
   if (!elf::GetJitCode(process_id_, codeID, shared_mem, jitCodeBlocks)) {
     HilogPrint(ERROR, "GetJitCode error!");
-    munmap(shared_mem, SHM_SIZE);
+    munmap(address, SHM_SIZE);
     return;
   }
 
-  munmap(shared_mem, SHM_SIZE);
+  munmap(address, SHM_SIZE);
   std::string elfFile;
   elf::GenerateELF(jitCodeBlocks, elfFile);
   parser = new ELFParser();

@@ -147,6 +147,11 @@ TEST_F(AsyncLayerTreeFrameSinkUtilsTest, SubmitCompositorFrameArkWebSwapBuTr) {
   utils_->SubmitCompositorFrameArkWebSwapBuTr(id, FrameSkippedReason::kRecoverLatency);
 }
 
+TEST_F(AsyncLayerTreeFrameSinkUtilsTest, SubmitCompositorFrameDfxDumpTrace) {
+  int64_t id = 1;
+  utils_->SubmitCompositorFrameDfxDumpTrace(id);
+}
+
 }  // namespace
 }  // namespace mojo_embedder
 }  // namespace cc

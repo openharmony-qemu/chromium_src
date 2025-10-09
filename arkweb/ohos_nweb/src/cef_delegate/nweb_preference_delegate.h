@@ -119,7 +119,10 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool GetPinchSmoothMode() override;
 
   void PutHasInternetPermission(bool flag);
-
+#if BUILDFLAG(ARKWEB_ZOOM)
+  bool IsZoomControlAccess();
+  void PutZoomControlAccess(bool zoomControlAccess) override;
+#endif
   int ForceDarkModeEnabled() override;
   void PutDarkSchemeEnabled(int darkScheme) override;
   int DarkSchemeEnabled() override;
@@ -345,6 +348,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool geolocation_allowed_{true};
   AccessMode access_mode_{AccessMode::NEVER_ALLOW};
   bool zooming_function_enabled_{true};
+  bool zoom_control_access_{true};
   bool is_network_blocked_;
   bool has_internet_permission_;
   bool overload_mode_enabled_{true};

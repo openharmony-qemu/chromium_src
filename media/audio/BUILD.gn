@@ -468,9 +468,13 @@ source_set("unit_tests") {
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.h",
     ]
     sources += arkweb_content_renderer_sources
+    import("//arkweb/chromium_ext/content/renderer/media/ohos/arkweb_content_renderer_media_ohos.gni")
+    sources += arkweb_content_renderer_media_ohos_unittests_sources
+  
     deps += [
       "//content/public/browser:browser",
-      "//cef:libcef_static"
+      "//cef:libcef_static",
+      "//gpu/ipc/common:test_support"
     ]
   }
 

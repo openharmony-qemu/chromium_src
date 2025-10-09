@@ -40,7 +40,7 @@ public:
 
     void IsSuspended();
 
-    void PushBackMediaImage(std::vector<media_session::MediaImage> artwork);
+    void PushBackMediaImage(std::vector<media_session::MediaImage>& artwork);
 
     void SetMediaTitle(media_session::MediaMetadata& metadata);
 

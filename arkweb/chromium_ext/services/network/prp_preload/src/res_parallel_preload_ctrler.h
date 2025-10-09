@@ -46,6 +46,8 @@ class ResParallelPreloadCtrler : public base::RefCountedThreadSafe<ResParallelPr
     const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree,
     const std::set<std::string>& need_record_header_urls);
   void OnTimeout();
+  void InitDiskCacheBackendFactoryForTest();
+  void ResetDiskCacheBackendFactoryForTest();
   std::string url_;
   const net::NetworkAnonymizationKey networkAnonymizationKey_;
   scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;

@@ -45,6 +45,8 @@
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "arkweb/ohos_nweb_ex/public/nweb_basic_types_utils.h"
+#include "arkweb/ohos_nweb_ex/public/nweb_extension_javascript_types_utils.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
@@ -116,6 +118,9 @@
 #include "nweb_core_value.h"
 #include "ohos_glue/base/include/ark_web_errno.h"
 
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+#include "nweb_autolayout.h"
+#endif
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -136,22 +141,80 @@ static const int64_t kRootAccessibilityId = 1;
 #endif
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-std::string ConvertCefValueToString(CefRefPtr<CefValue> src) {
-  std::string dst;
+void ConvertCefListToJavaScriptValue(CefRefPtr<CefValue> src,
+                                     JavaScriptValue* dst) {
+  dst->type = JavaScriptDataType::LIST;
+  CefRefPtr<CefListValue> listValue = src->GetList();
+  size_t len = listValue->GetSize();
+  for (size_t i = 0; i < len; i++) {
+    CefRefPtr<CefValue> elem = listValue->GetValue(i);
+    if (elem->GetType() == VTYPE_STRING) {
+      dst->listValue.type = JavaScriptDataType::STRING;
+      dst->listValue.stringArr.push_back(elem->GetString());
+    } else if (elem->GetType() == VTYPE_BOOL) {
+      dst->listValue.type = JavaScriptDataType::BOOL;
+      dst->listValue.boolArr.push_back(elem->GetBool());
+    } else if (elem->GetType() == VTYPE_DOUBLE) {
+      dst->listValue.type = JavaScriptDataType::DOUBLE;
+      dst->listValue.doubleArr.push_back(elem->GetDouble());
+    } else if (elem->GetType() == VTYPE_INT) {
+      dst->listValue.type = JavaScriptDataType::INT;
+      dst->listValue.intArr.push_back(elem->GetInt());
+    }
+  }
+}
+
+void ConvertCefValueToJavaScriptValue(CefRefPtr<CefValue> src,
+                                      JavaScriptValue* dst) {
   int type = src->GetType();
-  LOG(DEBUG) << "OnMessage type:" << type;
+  LOG(DEBUG) << "JavaScriptValue type:" << type;
   switch (type) {
     case VTYPE_STRING: {
-      dst = src->GetString();
+      dst->type = JavaScriptDataType::STRING;
+      dst->stringValue = src->GetString().ToString();
+      break;
+    }
+    case VTYPE_BINARY: {
+      CefRefPtr<CefBinaryValue> binValue = src->GetBinary();
+      size_t len = binValue->GetSize();
+      std::vector<uint8_t> arr(len);
+      binValue->GetData(&arr[0], len, 0);
+      dst->type = JavaScriptDataType::BINARY;
+      dst->binaryData = arr;
+      break;
+    }
+    case VTYPE_BOOL: {
+      dst->type = JavaScriptDataType::BOOL;
+      dst->boolValue = src->GetBool();
+      break;
+    }
+    case VTYPE_DOUBLE: {
+      dst->type = JavaScriptDataType::DOUBLE;
+      dst->doubleValue = src->GetDouble();
+      break;
+    }
+    case VTYPE_INT: {
+      dst->type = JavaScriptDataType::INT;
+      dst->intValue = src->GetInt();
+      break;
+    }
+    case VTYPE_DICTIONARY: {
+      CefRefPtr<CefDictionaryValue> dict = src->GetDictionary();
+      dst->type = JavaScriptDataType::DICTIONARY;
+      dst->dictionaryValue.errName = dict->GetString("Error.name").ToString();
+      dst->dictionaryValue.errMsg = dict->GetString("Error.message").ToString();
+      break;
+    }
+    case VTYPE_LIST: {
+      ConvertCefListToJavaScriptValue(src, dst);
       break;
     }
     default: {
-      LOG(ERROR) << "OnMessage not support type";
-      dst = std::string("OnMessage not support type");
+      dst->type = JavaScriptDataType::NONE;
+      LOG(ERROR) << "JavaScriptValue not support type";
       break;
     }
   }
-  return dst;
 }
 #endif
 
@@ -538,23 +601,39 @@ class NavigationEntryVisitorImpl : public CefNavigationEntryVisitor {
 class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback {
  public:
   JavaScriptInFramesResultCallbackImpl(
-      OnReceiveValueCallback callback, uint32_t nweb_id)
+      OnReceiveValueCallback callback,
+      int32_t callback_id, uint32_t nweb_id)
       : callback_(callback),
+        callback_id_(callback_id),
         nweb_id_(nweb_id){}
   ~JavaScriptInFramesResultCallbackImpl() {}
  
   NO_SANITIZE("cfi")
   void OnJavaScriptExeResult(CefRefPtr<CefValue> result) override {
     if (callback_ != nullptr) {
-      std::string data = ConvertCefValueToString(result);
-      callback_(nweb_id_, data);
+      JavaScriptValue value;
+      ConvertCefValueToJavaScriptValue(result, &value);
+
+      nweb_ex::proto::JavaScriptValue pb_value;
+      NwebExtensionJavaScriptTypesUtils::ExtensionWebValueClassToPb(value, pb_value);
+      ArkWebPbBuffer pb_result_buffer = {};
+      bool ret = NWebBasicTypesUtils::AllocAndPopulateArkWebPbBuffer(pb_value, pb_result_buffer);
+      if (!ret) {
+        LOG(ERROR) << "failed to convert JavaScriptValue into pb buffer";
+        return;
+      }
+
+      callback_(nweb_id_, callback_id_, &pb_result_buffer);
+
+      NWebBasicTypesUtils::FreeArkWebPbBuffer(pb_result_buffer);
     }
   }
- 
+
  private:
-  OnReceiveValueCallback callback_;
+  OnReceiveValueCallback callback_ = nullptr;
+  int32_t callback_id_ = 0;
   uint32_t nweb_id_ = 0;
- 
+
   IMPLEMENT_REFCOUNTING(JavaScriptInFramesResultCallbackImpl);
 };
 #endif
@@ -759,6 +838,15 @@ bool NWebDelegate::Init(bool is_enhance_surface,
   }
   GetBrowser()->GetHost()->SetNWebId(GetBrowser()->GetNWebId());
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+  base::ThreadPool::PostTask(
+      FROM_HERE,
+      base::BindOnce([]() {
+            LOG(INFO) << "Init NwebAutolayout::GetInstance()";
+            NwebAutolayout::GetInstance();
+      })
+  );
+#endif
   return true;
 }
 
@@ -2510,6 +2598,22 @@ int NWebDelegate::LoadWithData(const std::string& data,
   return NWEB_OK;
 }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+int NWebDelegate::LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
+                                    const std::string& refer, const std::string& headers,
+                                    const std::string& post_data, const bool allow_https_upgrade) {
+  LOG(DEBUG) << "NWebDelegate::LoadUrlWithParams";
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    return NWEB_ERR;
+  }
+  GetBrowser()->GetHost()->LoadUrlWithParams(url, load_type, refer,
+                                             headers, post_data, allow_https_upgrade);
+  RequestVisitedHistory();
+  return NWEB_OK;
+}
+#endif
+ 
+
 const CefRefPtr<ArkWebBrowserExt> NWebDelegate::GetBrowser() const {
   if (handler_delegate_) {
     return handler_delegate_->GetBrowser();
@@ -3146,7 +3250,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
         handler_delegate_->SetDragEnter(true);
         auto drag_data = render_handler_->GetDragData();
         GetBrowser()->GetHost()->DragTargetDragEnter(drag_data, event,
-                                                     DRAG_OPERATION_EVERY);
+                                                     dragEvent.allowed_op);
       } else {
         LOG(ERROR) << "DragDrop drag data render_handler_ nullptr";
       }
@@ -3163,7 +3267,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
     case DelegateDragAction::DRAG_OVER:
       LOG(DEBUG) << "DragDrop event SendDragEvent over webId:"
                  << GetBrowser()->GetNWebId();
-      GetBrowser()->GetHost()->DragTargetDragOver(event, DRAG_OPERATION_EVERY);
+      GetBrowser()->GetHost()->DragTargetDragOver(event, dragEvent.allowed_op);
       break;
     case DelegateDragAction::DRAG_DROP:
       event.modifiers = EVENTFLAG_NONE;
@@ -3198,8 +3302,7 @@ void NWebDelegate::SendDragEvent(const DelegateDragEvent& dragEvent) const {
       ClearDragData();
       LOG(INFO) << "DragDrop event SendDragEvent end webId:"
                 << GetBrowser()->GetNWebId();
-      GetBrowser()->GetHost()->DragSourceEndedAt(event.x, event.y,
-                                                 DRAG_OPERATION_COPY);
+      GetBrowser()->GetHost()->DragSourceEndedAt(event.x, event.y, dragEvent.op);
       GetBrowser()->GetHost()->DragSourceSystemDragEnded();
       break;
     case DelegateDragAction::DRAG_CANCEL:
@@ -3768,7 +3871,7 @@ bool NWebDelegate::IsEnableCustomVideoPlayer() {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
 void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
   LOG(INFO) << "NWebDelegate::SetForceEnableZoom " << forceEnableZoom;
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
@@ -3778,7 +3881,9 @@ void NWebDelegate::SetForceEnableZoom(bool forceEnableZoom) {
     GetBrowser()->SetForceEnableZoom(forceEnableZoom);
   }
 }
+#endif
 
+#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
 bool NWebDelegate::GetForceEnableZoom() {
   if (GetBrowser().get()) {
     return GetBrowser()->GetForceEnableZoom();
@@ -5908,6 +6013,20 @@ void NWebDelegate::WebExtensionContextMenuReloadFocusedFrame() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void NWebDelegate::WebExtensionContextMenuGetFocusedFrameInfo(
+    int32_t& frame_id,
+    std::string& frame_url) {
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "get browser failed or get host failed";
+    return;
+  }
+  CefString cef_frame_url;
+  GetBrowser()->GetHost()->GetFocusedFrameInfo(frame_id, cef_frame_url);
+  frame_url = cef_frame_url.ToString();
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 bool NWebDelegate::SetFocusByPosition(float x, float y)
 {
@@ -6040,25 +6159,28 @@ void NWebDelegate::UpdateSingleHandleVisible(bool isVisible) {
 #endif
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-void NWebDelegate::RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
-                                         bool recursive, IsolatedWorld world,
+void NWebDelegate::RunJavaScriptInFrames(RunJavaScriptParam param,,
                                          OnReceiveValueCallback callback) {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(
         CEF_UIT,
         base::BindOnce((void(NWebDelegate::*)(
-                           const std::string&,
-                           FrameInfos, bool, IsolatedWorld,
+                           RunJavaScriptParam
                            OnReceiveValueCallback)) &
                            NWebDelegate::RunJavaScriptInFrames,
-                       this, jsString, rootFrame, recursive, world, callback));
+                       this, param, callback));
     return;
   }
  
   if (GetBrowser().get()) {
+    if (!param.rootFrame.has_value() || !param.world.has_value()) {
+      LOG(ERROR) << "RunJavaScriptInFrames param invaild";
+      return;
+    }
     CefRefPtr<JavaScriptInFramesResultCallbackImpl> JsResultCb =
-        new JavaScriptInFramesResultCallbackImpl(callback, nweb_id_);
-    GetBrowser()->GetHost()->RunJavaScriptInFrames(jsString, rootFrame, recursive, world, JsResultCb);
+        new JavaScriptInFramesResultCallbackImpl(callback, param.callbackId, nweb_id_);
+    GetBrowser()->GetHost()->RunJavaScriptInFrames(param.script, param.rootFrame.value(),
+                                                   param.recursive, param.world.value(), JsResultCb);
   }
 }
 #endif
@@ -6124,6 +6246,32 @@ bool NWebDelegate::GetErrorPageEnabled() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+void NWebDelegate::EnableHttpsUpgrades(bool enable) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "EnableHttpsUpgrades can not get browser";
+    return;
+  }
+  LOG(INFO) << "NWebDelegate::EnableHttpsUpgrades";
+  GetBrowser()->GetHost()->EnableHttpsUpgrades(enable);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void NWebDelegate::SetBlankScreenDetectionConfig(
+    bool enable,
+    const std::vector<double>& detectionTiming,
+    const std::vector<int32_t>& detectionMethods,
+    int32_t contentfulNodesCountThreshold) {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "SetBlankScreenDetectionConfig can not get browser";
+    return;
+  }
+  GetBrowser()->GetHost()->SetBlankScreenDetectionConfig(
+      enable, detectionTiming, detectionMethods, contentfulNodesCountThreshold);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_BGTASK)
 void NWebDelegate::OnBrowserForeground() {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
@@ -6143,4 +6291,13 @@ void NWebDelegate::OnBrowserBackground() {
   GetBrowser()->GetHost()->OnBrowserBackground();
 }
 #endif
+
+void NWebDelegate::StopFling() {
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    LOG(DEBUG) << "NWebDelegate::WebStopFling";
+    return;
+  }
+
+  GetBrowser()->GetHost()->StopFling();
+}
 }  // namespace OHOS::NWeb

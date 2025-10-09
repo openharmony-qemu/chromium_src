@@ -17,6 +17,9 @@
 #include <string>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_system_properties_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "audio_system_manager_adapter.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
@@ -27,9 +30,8 @@
 #include "gtest/gtest.h"
 #include "media/audio/audio_thread.h"
 #include "media/base/media_switches.h"
-#include "ohos_adapter_helper.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/adapter_base.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+
 #define private public
 #define protected public
 #include "audio_dump.h"
@@ -66,31 +68,33 @@ class DumpFileUtilTest : public testing::Test {
       if (S_ISDIR(st.st_mode)) {
         return true;
       } else {
-        LOG(WARNING) << "Path exists but is not a directory: " << path;
         return false;
       }
     }
 
+    return CreateParentDirectories(path);
+  }
+
+  bool CreateParentDirectories(const std::string& path) {
     size_t pos = path.find('/', 1);
     while (pos != std::string::npos) {
       std::string parentPath = path.substr(0, pos);
-      if (stat(parentPath.c_str(), &st) != 0) {
-        if (mkdir(parentPath.c_str(), 0755) != 0) {
-          if (errno != EEXIST) {
-            LOG(WARNING) << "Failed to create directory: " << parentPath
-                         << " errno: " << errno;
-            return false;
-          }
-        }
+      if (!CreateDirectoryIfNotExists(parentPath)) {
+        return false;
       }
       pos = path.find('/', pos + 1);
     }
 
-    if (mkdir(path.c_str(), 0755) != 0) {
-      if (errno != EEXIST) {
-        LOG(WARNING) << "Failed to create directory: " << path
-                     << " errno: " << errno;
-        return false;
+    return CreateDirectoryIfNotExists(path);
+  }
+
+  bool CreateDirectoryIfNotExists(const std::string& dirPath) {
+    struct stat st;
+    if (stat(dirPath.c_str(), &st) != 0) {
+      if (mkdir(dirPath.c_str(), 0755) != 0) {
+        if (errno != EEXIST) {
+          return false;
+        }
       }
     }
     return true;
@@ -106,7 +110,7 @@ TEST_F(DumpFileUtilTest, WriteDumpFile001) {
 
   ASSERT_NE(file, nullptr);
 
-  uint8_t* buffer = new uint8_t[1];
+  uint8_t* buffer = new uint8_t[10];
   buffer[0] = 97;
   buffer[1] = 1;
   DumpFileUtil::WriteDumpFile(nullptr, buffer, 1024);
@@ -119,6 +123,31 @@ TEST_F(DumpFileUtilTest, WriteDumpFile001) {
   uint8_t* bufferRes = new uint8_t[10];
   fread(bufferRes, sizeof(uint8_t), 1, file);
   ASSERT_EQ(buffer[0], bufferRes[0]);
+  fclose(file);
+  delete[] buffer;
+  delete[] bufferRes;
+}
+
+TEST_F(DumpFileUtilTest, WriteDumpFile002) {
+  FILE* file = nullptr;
+  std::string filename = "test";
+
+  std::string filePath = DUMP_APP_DIR + filename;
+  file = fopen(filePath.c_str(), "wb+");
+
+  ASSERT_NE(file, nullptr);
+
+  uint8_t* buffer = new uint8_t[10];
+  buffer[0] = 11;
+  buffer[1] = 1;
+  fclose(file);
+  file = fopen(filePath.c_str(), "rb");
+  DumpFileUtil::WriteDumpFile(file, buffer, 100);
+  file = fopen(filePath.c_str(), "rb");
+
+  uint8_t* bufferRes = new uint8_t[10];
+  fread(bufferRes, sizeof(uint8_t), 1, file);
+  ASSERT_NE(buffer[0], bufferRes[0]);
   fclose(file);
   delete[] buffer;
   delete[] bufferRes;
@@ -150,5 +179,185 @@ TEST_F(DumpFileUtilTest, OpenDumpFile001) {
   DumpFileUtil::OpenDumpFile(filename, nullptr);
   DumpFileUtil::OpenDumpFile(filename, &file);
   ASSERT_EQ(file, nullptr);
+}
+
+TEST_F(DumpFileUtilTest, OpenDumpFile002) {
+  OHOS::NWeb::MockOhosAdapterHelper* instance =
+      new OHOS::NWeb::MockOhosAdapterHelper();
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(instance);
+  MockSystemPropertiesAdapter adapter;
+
+  EXPECT_CALL(*instance, GetSystemPropertiesInstance())
+      .WillOnce(testing::ReturnRef(adapter));
+  EXPECT_CALL(adapter, GetBoolParameter(DUMP_AUDIO_PARA, false))
+      .WillOnce(Return(true));
+  FILE* file = nullptr;
+  std::string filename = "test.pcm";
+  DumpFileUtil::OpenDumpFile(filename, &file);
+  ASSERT_NE(file, nullptr);
+  DumpFileUtil::CloseDumpFile(&file);
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
+}
+
+TEST_F(DumpFileUtilTest, OpenDumpFile003) {
+  OHOS::NWeb::MockOhosAdapterHelper* instance =
+      new OHOS::NWeb::MockOhosAdapterHelper();
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(instance);
+  MockSystemPropertiesAdapter adapter;
+
+  EXPECT_CALL(*instance, GetSystemPropertiesInstance())
+      .WillOnce(testing::ReturnRef(adapter));
+  EXPECT_CALL(adapter, GetBoolParameter(DUMP_AUDIO_PARA, false))
+      .WillOnce(Return(true));
+  FILE* file = nullptr;
+  std::string filename = "￥？/|*O$%!a/aa/test.pcm";
+  DumpFileUtil::OpenDumpFile(filename, &file);
+  ASSERT_EQ(file, nullptr);
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
+}
+
+TEST_F(DumpFileUtilTest, OpenDumpFile004) {
+  OHOS::NWeb::MockOhosAdapterHelper* instance =
+      new OHOS::NWeb::MockOhosAdapterHelper();
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(instance);
+  MockSystemPropertiesAdapter adapter;
+
+  EXPECT_CALL(*instance, GetSystemPropertiesInstance())
+      .WillOnce(testing::ReturnRef(adapter));
+  EXPECT_CALL(adapter, GetBoolParameter(DUMP_AUDIO_PARA, false))
+      .WillOnce(Return(false));
+  FILE* file = nullptr;
+  std::string filename = "test.pcm";
+  DumpFileUtil::OpenDumpFile(filename, &file);
+  ASSERT_EQ(file, nullptr);
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
+}
+
+TEST_F(DumpFileUtilTest, WriteDumpScopedFile001) {
+  base::ScopedFILE file;
+  uint8_t* buffer = new uint8_t[10];
+  buffer[0] = 97;
+  buffer[1] = 1;
+  DumpFileUtil::WriteDumpScopedFile(file, buffer, 1024);
+  ASSERT_EQ(file.get(), nullptr);
+  delete[] buffer;
+}
+
+TEST_F(DumpFileUtilTest, WriteDumpScopedFile002) {
+  std::string filename = "test";
+  std::string filePath = DUMP_APP_DIR + filename;
+  base::ScopedFILE file(fopen(filePath.c_str(), "wb+"));
+  ASSERT_NE(file, nullptr);
+
+  uint8_t* buffer = new uint8_t[10];
+  buffer[0] = 97;
+  buffer[1] = 1;
+
+  DumpFileUtil::WriteDumpScopedFile(file, nullptr, 0);
+  DumpFileUtil::WriteDumpScopedFile(file, buffer, 1);
+  DumpFileUtil::WriteDumpScopedFile(file, buffer, 100);
+  file = nullptr;
+  FILE* file1 = fopen(filePath.c_str(), "rb");
+
+  uint8_t* bufferRes = new uint8_t[10];
+  fread(bufferRes, sizeof(uint8_t), 1, file1);
+  ASSERT_EQ(buffer[0], bufferRes[0]);
+  fclose(file1);
+  delete[] buffer;
+  delete[] bufferRes;
+}
+
+TEST_F(DumpFileUtilTest, WriteDumpScopedFile003) {
+  std::string filename = "test";
+  std::string filePath = DUMP_APP_DIR + filename;
+  base::ScopedFILE file(fopen(filePath.c_str(), "rb"));
+  ASSERT_NE(file, nullptr);
+  uint8_t* buffer = new uint8_t[10];
+  buffer[0] = 11;
+  buffer[1] = 1;
+
+  DumpFileUtil::WriteDumpScopedFile(file, buffer, 100);
+  FILE* file1 = fopen(filePath.c_str(), "rb");
+
+  uint8_t* bufferRes = new uint8_t[10];
+  bufferRes[0] = 0;
+  fread(bufferRes, sizeof(uint8_t), 1, file1);
+  ASSERT_NE(buffer[0], bufferRes[0]);
+  fclose(file1);
+  delete[] buffer;
+  delete[] bufferRes;
+}
+
+TEST_F(DumpFileUtilTest, CloseDumpScopedFile) {
+  std::string filename = "test";
+  std::string filePath = DUMP_APP_DIR + filename;
+  base::ScopedFILE file(fopen(filePath.c_str(), "wb+"));
+  DumpFileUtil::CloseDumpScopedFile(nullptr);
+  DumpFileUtil::CloseDumpScopedFile(&file);
+  ASSERT_EQ(file.get(), nullptr);
+}
+
+TEST_F(DumpFileUtilTest, OpenDumpScoped001) {
+  base::ScopedFILE* file = nullptr;
+  std::string filename = "test.pcm";
+  ASSERT_NO_FATAL_FAILURE(DumpFileUtil::OpenDumpScopedFile(filename, file));
+}
+
+TEST_F(DumpFileUtilTest, OpenDumpScoped002) {
+  OHOS::NWeb::MockOhosAdapterHelper* instance =
+      new OHOS::NWeb::MockOhosAdapterHelper();
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(instance);
+  MockSystemPropertiesAdapter adapter;
+
+  EXPECT_CALL(*instance, GetSystemPropertiesInstance())
+      .WillOnce(testing::ReturnRef(adapter));
+  EXPECT_CALL(adapter, GetBoolParameter(DUMP_AUDIO_PARA, false))
+      .WillOnce(Return(false));
+  base::ScopedFILE file;
+  std::string filename = "test.pcm";
+  DumpFileUtil::OpenDumpScopedFile(filename, &file);
+  ASSERT_EQ(file.get(), nullptr);
+  DumpFileUtil::CloseDumpScopedFile(&file);
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
+}
+
+TEST_F(DumpFileUtilTest, OpenDumpScoped003) {
+  OHOS::NWeb::MockOhosAdapterHelper* instance =
+      new OHOS::NWeb::MockOhosAdapterHelper();
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(instance);
+  MockSystemPropertiesAdapter adapter;
+
+  EXPECT_CALL(*instance, GetSystemPropertiesInstance())
+      .WillOnce(testing::ReturnRef(adapter));
+  EXPECT_CALL(adapter, GetBoolParameter(DUMP_AUDIO_PARA, false))
+      .WillOnce(Return(true));
+  base::ScopedFILE file;
+  std::string filename = "￥？/|*O$%!a/aa/test.pcm";
+  DumpFileUtil::OpenDumpScopedFile(filename, &file);
+  ASSERT_EQ(file.get(), nullptr);
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
+}
+
+TEST_F(DumpFileUtilTest, OpenDumpScoped004) {
+  OHOS::NWeb::MockOhosAdapterHelper* instance =
+      new OHOS::NWeb::MockOhosAdapterHelper();
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(instance);
+  MockSystemPropertiesAdapter adapter;
+
+  EXPECT_CALL(*instance, GetSystemPropertiesInstance())
+      .WillOnce(testing::ReturnRef(adapter));
+  EXPECT_CALL(adapter, GetBoolParameter(DUMP_AUDIO_PARA, false))
+      .WillOnce(Return(true));
+  base::ScopedFILE file;
+  std::string filename = "test.pcm";
+  DumpFileUtil::OpenDumpScopedFile(filename, &file);
+  ASSERT_NE(file.get(), nullptr);
+  OHOS::NWeb::OhosAdapterHelper::SetInstance(nullptr);
+  delete instance;
 }
 }  // namespace media

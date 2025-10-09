@@ -569,10 +569,12 @@ InputMethod_TextEditorProxy* IMFTextEditorProxyImpl::TextEditorProxyCreate(
 
     InputMethod_ErrorCode ret = TextEditorProxy_SetTextFunc(textEditorProxy);
     if (ret != IME_ERR_OK) {
+        OH_TextEditorProxy_Destroy(textEditorProxy);
         return nullptr;
     }
     ret = TextEditorProxy_SetFunc(textEditorProxy);
     if (ret != IME_ERR_OK) {
+        OH_TextEditorProxy_Destroy(textEditorProxy);
         return nullptr;
     }
     return textEditorProxy;

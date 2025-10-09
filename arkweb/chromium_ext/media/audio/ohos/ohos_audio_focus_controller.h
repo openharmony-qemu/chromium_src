@@ -7,6 +7,13 @@
 
 #include "media/base/audio_parameters.h"
 #include "content/browser/media/session/media_session_impl.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#undef private
+#endif  // ARKWEB_TEST
+#include "content/browser/web_contents/web_contents_impl.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#define private public
+#endif  // ARKWEB_TEST
 #include "content/public/browser/web_contents.h"
 
 namespace media {
@@ -20,6 +27,8 @@ public:
   static bool IsActive(const AudioParameters& parameters);
 
   static bool HasOnlyOneShotPlayersPublic(const AudioParameters& parameters);
+
+  static bool HasOneShotPlayersWhenSetMetadataPublic(const AudioParameters& parameters);
 
   static content::MediaSessionImpl::NWebMediaSessionState GetSessionState(const AudioParameters& parameters);
 
@@ -42,6 +51,10 @@ public:
 
   static bool GetMediaPlayerMuteState(const AudioParameters& parameters);
 
+  // Suspend other Avplayer and OhosAudioOutputStream playback.
+  static void SuspendOtherPlaybacks(const content::WebContentsImpl* webContentsImpl);
+
+  static void SuspendOtherPlaybacks(const AudioParameters& params);
 private:
   // OHOSAudioOutputStream mediaSession State
   static bool CheckActiveOnUIThread(const AudioParameters& params);
@@ -49,6 +62,8 @@ private:
   static MediaContentType GetContentTypeOnUIThread(const AudioParameters& params);
 
   static bool CheckOneShotPlayersOnUIThread(const AudioParameters& params);
+
+  static bool CheckOneShotPlayersWhenSetMetadataOnUIThread(const AudioParameters& params);
 
   static content::MediaSessionImpl::NWebMediaSessionState
       CheckGetSessionStateOnUIThread(const AudioParameters& params);
@@ -67,6 +82,10 @@ private:
   static bool CheckIsSuspendedUIThread(const AudioParameters& params);
 
   static bool CheckGetMediaPlayerMuteStateOnUIThread(const AudioParameters& params);
+
+  static void CheckSuspendOtherPlaybacksUIThread(const content::WebContentsImpl* webContentsImpl);
+
+  static void CheckSuspendOtherPlaybacksUIThread(const AudioParameters& params);
 };
 
 } // media

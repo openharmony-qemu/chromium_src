@@ -24,6 +24,9 @@ namespace OHOS::NWeb {
 
 NativeImageAdapterImpl::~NativeImageAdapterImpl()
 {
+    if (callback_index_ > 0) {
+        callback_wrapper_.Clear(callback_index_);
+    }
     DestroyNativeImage();
 }
 
@@ -88,14 +91,37 @@ int32_t NativeImageAdapterImpl::GetSurfaceId(uint64_t* surfaceId)
     return OH_NativeImage_GetSurfaceId(ohNativeImage_, surfaceId);
 }
 
+CallbackSharedWrapper<FrameAvailableListener> NativeImageAdapterImpl::callback_wrapper_;
+
+void NativeImageAdapterImpl::OnFrameAvailable(void *context) {
+    if (!context) {
+        return;
+    }
+
+    size_t callback_index = reinterpret_cast<size_t>(context);
+    std::shared_ptr<FrameAvailableListener> listener = callback_wrapper_.GetCallback(callback_index);
+    if (!listener) {
+        WVLOG_E("NativeImageAdapterImpl OnFrameAvailable fail");
+        return;
+    }
+    listener->OnFrameAvailableListener();
+}
+
 int32_t NativeImageAdapterImpl::SetOnFrameAvailableListener(std::shared_ptr<FrameAvailableListener> listener)
 {
     if (ohNativeImage_ == nullptr || listener == nullptr) {
         return NATIVE_ERROR_UNKNOWN;
     }
+
+    if (callback_index_ > 0) {
+        callback_wrapper_.Clear(callback_index_);
+    }
+
+    callback_index_ = callback_wrapper_.AddCallback(listener);
+
     OH_OnFrameAvailableListener callback;
-    callback.onFrameAvailable = listener->GetOnFrameAvailableCb();
-    callback.context = listener->GetContext();
+    callback.onFrameAvailable = OnFrameAvailable;
+    callback.context = reinterpret_cast<void*>(callback_index_);
     return OH_NativeImage_SetOnFrameAvailableListener(ohNativeImage_, callback);
 }
 

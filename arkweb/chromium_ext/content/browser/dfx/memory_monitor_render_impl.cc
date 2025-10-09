@@ -76,7 +76,7 @@ void ReadProcFile(const std::string& filePath, const std::string& token, T& valu
   LOG(ERROR) << "Failed to find token: " << token << " in file: " << filePath;
 }
 
-static void UpdateProcessBasicMemoryInfo(DfxMemInfo &mem_info)
+void MemoryMonitorImpl::UpdateProcessBasicMemoryInfo(DfxMemInfo &mem_info)
 {
   if (mem_info.pid == 0) {
     ReadProcFile("/proc/self/status", "NSpid:", mem_info.pid);
@@ -89,7 +89,7 @@ static void UpdateProcessBasicMemoryInfo(DfxMemInfo &mem_info)
   ReadProcFile("/proc/self/smaps_rollup", "Pss:", mem_info.pss);
 }
 
-static void UpdateProcessMemoryInfo(DfxMemInfo &mem_info)
+void MemoryMonitorImpl::UpdateProcessMemoryInfo(DfxMemInfo &mem_info)
 {
   UpdateProcessBasicMemoryInfo(mem_info);
 

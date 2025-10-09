@@ -16,6 +16,15 @@
 
 namespace chrome_pdf {
 
+namespace {
+
+// The minimum scale level allowed.
+constexpr double kMinScale = 0.001f;
+
+constexpr base::TimeDelta kPDFScrollDelay = base::Milliseconds(100);
+
+}  // namespace
+
 #if BUILDFLAG(ARKWEB_PDF)
 void PdfViewWebPlugin::NotifyPdfScrollAtBottom(float scroll_position_y, float max_y) {
   if (document_size_.height() == 0) {
@@ -69,12 +78,30 @@ int32_t PdfViewWebPlugin::CastFpdfErrorToPdfLoadEvent(int pdf_error) {
   return static_cast<int32_t>(load_event);
 }
 
-void PdfViewWebPlugin::UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) {
+void PdfViewWebPlugin::UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipped_selection_bounds) {
+  if (std::abs(device_scale_) <= kMinScale) {
+    LOG(ERROR) << "PDF device scale is almost equal to 0.";
+    return;
+  }
+
+  const float inverse_scale = 1.0 / device_scale_;
+  gfx::Point converted_origin(clipped_selection_bounds.x() + available_area_.x(),
+                              clipped_selection_bounds.y());
+  converted_origin.set_x(converted_origin.x() * inverse_scale);
+  converted_origin.set_y(converted_origin.y() * inverse_scale);
+  gfx::Size converted_size(clipped_selection_bounds.width() * inverse_scale,
+                            clipped_selection_bounds.height() * inverse_scale);
+  clipped_selection_bounds.set_origin(converted_origin);
+  clipped_selection_bounds.set_size(converted_size);
   pdf_host_->UpdateClientClippedSelectionBoundsForPDF(clipped_selection_bounds);
 }
 
-void PdfViewWebPlugin::HideHandleAndQuickMenuForPDF(bool hide_handles) {
-  pdf_host_->HideHandleAndQuickMenuForPDF(hide_handles);
+void PdfViewWebPlugin::RefreshMenuWithTouchAndScroll() {
+  if (!isTouching_ && !isScrolling_) {
+    pdf_host_->HideHandleAndQuickMenuForPDF(false);
+  } else {
+    pdf_host_->HideHandleAndQuickMenuForPDF(true);
+  }
 }
 
 void PdfViewWebPlugin::ForceSelectionChanged() {
@@ -93,6 +120,40 @@ void PdfViewWebPlugin::ForceSelectionChanged() {
 
   if (accessibility_state_ == AccessibilityState::kLoaded)
     PrepareAndSetAccessibilityViewportInfo();
+}
+
+void PdfViewWebPlugin::SetIsTouching(bool isTouching) {
+  isTouching_ = isTouching;
+  RefreshMenuWithTouchAndScroll();
+}
+
+void PdfViewWebPlugin::SetIsScrolling(bool isScrolling) {
+  isScrolling_ = isScrolling;
+  RefreshMenuWithTouchAndScroll();
+  if (!isScrolling_) {
+    paint_manager_.DoPaintAtScrollStopped();
+  }
+}
+
+scoped_refptr<base::SequencedTaskRunner> PdfViewWebPlugin::GetTaskRunner() {
+  return task_runner_ ? task_runner_
+                      : base::SequencedTaskRunner::GetCurrentDefault();
+}
+
+void PdfViewWebPlugin::SetScrollStoppedAfterDelay() {
+  if (cancelable_delayed_task_.IsValid()) {
+    cancelable_delayed_task_.CancelTask();
+  }
+  auto task_runner = GetTaskRunner();
+  if (!task_runner) {
+    LOG(ERROR) << "PDF task runner is null.";
+    return;
+  }
+  cancelable_delayed_task_ = task_runner->PostCancelableDelayedTask(
+    base::subtle::PostDelayedTaskPassKey(),
+    FROM_HERE,
+    base::BindOnce(&PdfViewWebPlugin::SetIsScrolling, weak_factory_.GetWeakPtr(), false),
+    kPDFScrollDelay);
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

@@ -40,6 +40,24 @@ namespace {
   int32_t g_web_debugging_port = 0;
 } // namespace
 
+#if BUILDFLAG(ARKWEB_TEST)
+bool GetWebDebuggingEnabled() {
+  return g_web_debugging_enabled;
+}
+
+void SetWebDebuggingEnabled(bool value) {
+  g_web_debugging_enabled = value;
+}
+
+int32_t GetWebDebuggingPort() {
+  return g_web_debugging_port;
+}
+
+void SetWebDebuggingPort(int32_t value) {
+  g_web_debugging_port = value;
+}
+#endif
+
 static std::shared_ptr<NWebEngineImpl> g_nweb_engine_impl =
     std::make_shared<NWebEngineImpl>();
 
@@ -221,6 +239,12 @@ void NWebEngineImpl::SetWebDestroyMode(WebDestroyMode mode) {
     NWebImpl::SetWebDestroyMode(mode);
 }
 
+#if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
+void NWebEngineImpl::SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) {
+    NWebImpl::SetSoftKeyboardBehaviorMode(mode);
+}
+#endif
+
 void NWebEngineImpl::ClearPrefetchedResource(
     const std::vector<std::string>& cache_key_list) {
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
@@ -333,5 +357,11 @@ bool NWebEngineImpl::IsPrivateNetworkAccessEnabled() {
   return false;
 #endif
 }
+
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+void NWebEngineImpl::SetSocketIdleTimeout(int32_t timeout) {
+  NWebImpl::SetSocketIdleTimeout(timeout);
+}
+#endif
 
 }  // namespace OHOS::NWeb

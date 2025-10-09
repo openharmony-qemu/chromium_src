@@ -53,8 +53,6 @@ private:
 
     OhosWebPermissionDataBaseAdapterImpl& operator=(const OhosWebPermissionDataBaseAdapterImpl&) = delete;
 
-    bool VerifyPermissionByOrigin(const std::string& origin, const WebPermissionType& key);
-
     std::string KeyToTableName(const WebPermissionType& key) const;
 
     Rdb_SecurityArea GetAreaMode(AbilityRuntime_AreaMode areaMode);

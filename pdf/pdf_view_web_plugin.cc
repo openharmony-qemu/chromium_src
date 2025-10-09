@@ -652,10 +652,19 @@ void PdfViewWebPlugin::UpdateGeometry(const gfx::Rect& window_rect,
 
   OnViewportChanged(window_rect, client_->DeviceScaleFactor());
 
+#if BUILDFLAG(ARKWEB_PDF)
+  if (!isPinching_) {
+    gfx::PointF scroll_position = client_->GetScrollPosition();
+    // Convert back to CSS pixels.
+    scroll_position.Scale(1.0f / device_scale_);
+    UpdateScroll(scroll_position);
+  }
+#else
   gfx::PointF scroll_position = client_->GetScrollPosition();
   // Convert back to CSS pixels.
   scroll_position.Scale(1.0f / device_scale_);
   UpdateScroll(scroll_position);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
@@ -680,6 +689,12 @@ void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
 
   engine_->ScrolledToXPosition(scaled_scroll_position.x());
   engine_->ScrolledToYPosition(scaled_scroll_position.y());
+  
+#if BUILDFLAG(ARKWEB_PDF)
+  SetIsScrolling(true);
+  SetScrollStoppedAfterDelay();
+#endif  // BUILDFLAG(ARKWEB_PDF)
+  
 }
 
 void PdfViewWebPlugin::UpdateFocus(bool focused,
@@ -1854,6 +1869,14 @@ void PdfViewWebPlugin::HandleViewportMessage(const base::Value::Dict& message) {
   received_viewport_message_ = true;
   stop_scrolling_ = false;
   const double zoom_ratio = new_zoom / zoom_;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  if (pinch_phase == PinchPhase::kNone || pinch_phase == PinchPhase::kEnd) {
+    isPinching_ = false;
+  } else {
+    isPinching_ = true;
+  }
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   if (pinch_phase == PinchPhase::kStart) {
     scroll_offset_at_last_raster_ = scroll_offset;

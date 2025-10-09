@@ -17,6 +17,9 @@
 
 #include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/page/page_utils.h"
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/blank_screen_detector.h"
+#endif
 #if BUILDFLAG(IS_ARKWEB)
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/frame_selection_ext.h"
 #include "base/ohos/sys_info_utils_ext.h"
@@ -55,7 +58,7 @@ void LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
     float& text_zoom_factor,
     bool& layout_zoom_changed,
     Page* page) {
-  if (base::ohos::IsTabletDevice()) {
+  if (base::ohos::IsTabletDevice() && !base::ohos::IsPcMode()) {
     float zoom_factor_for_device_scale =
         page->GetChromeClient().ZoomFactorForViewportLayout();
     zoom_factor_for_device_scale =
@@ -76,6 +79,23 @@ void LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
     }
   }
 }
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+void LocalFrame::OnDetectedBlankScreen(const WTF::String& url,
+                                       int32_t blankScreenReason,
+                                       int32_t detectedContentfulNodesCount) {
+  GetLocalFrameHostRemote().OnDetectedBlankScreen(url, blankScreenReason,
+                                                  detectedContentfulNodesCount);
+}
+
+std::shared_ptr<BlankScreenDetector> LocalFrame::GetBlankScreenDetector(
+    bool force) {
+  if (!blank_screen_detector_ && force) {
+    blank_screen_detector_ = std::make_shared<BlankScreenDetector>(this);
+  }
+  return blank_screen_detector_;
+}
+#endif
 
 // LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_ADBLOCK)

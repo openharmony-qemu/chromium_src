@@ -46,8 +46,11 @@ struct StackCrawlState {
 
 _Unwind_Reason_Code TraceStackFrame(_Unwind_Context* context, void* arg) {
   StackCrawlState* state = static_cast<StackCrawlState*>(arg);
-  uintptr_t ip = _Unwind_GetIP(context);
+  if (state == nullptr) {
+    return _URC_NO_REASON;
+  }
 
+  uintptr_t ip = _Unwind_GetIP(context);
   // The first stack frame is this function itself.  Skip it.
   if (ip != 0 && !state->have_skipped_self) {
     state->have_skipped_self = true;
@@ -216,7 +219,7 @@ size_t CollectStackTrace(span<const void*> trace) {
 void StackTrace::PrintMessageWithPrefix(cstring_view prefix_string,
                                         cstring_view message) {
   if (!prefix_string.empty()) {
-    LOG(ERROR) << StrCat({prefix_string, message}).c_str();
+    LOG(ERROR) << prefix_string.c_str() << message.c_str();
   } else {
     LOG(ERROR) << message.c_str();
   }

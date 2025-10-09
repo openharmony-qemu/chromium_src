@@ -41,7 +41,6 @@
 #include "third_party/webrtc/modules/desktop_capture/ohos/audio_enc_info_adapter_impl.h"
 #include "third_party/webrtc/modules/desktop_capture/ohos/audio_info_adapter_impl.h"
 #include "third_party/webrtc/modules/desktop_capture/ohos/base_audio_capturer_source.h"
-#include "third_party/webrtc/modules/desktop_capture/ohos/base_screen_capture_source_bridge.h"
 #include "third_party/webrtc/modules/desktop_capture/ohos/recorder_info_adapter_impl.h"
 #include "third_party/webrtc/modules/desktop_capture/ohos/screen_capture_config_adapter_impl.h"
 #include "third_party/webrtc/modules/desktop_capture/ohos/video_capture_info_adapter_impl.h"
@@ -131,10 +130,8 @@ void BaseWindowCapturer::SetSharedMemoryFactory(
   factory_ = std::move(shared_memory_factory);
 }
 
-BaseWindowCapturer::BaseWindowCapturer(CaptureSourceType source_type, bool is_picker_show, int nweb_id,
-                                       base::OnceCallback<void(uint64_t displayId)> callback)
+BaseWindowCapturer::BaseWindowCapturer(CaptureSourceType source_type, bool is_picker_show, int nweb_id)
     : capture_source_type_(source_type) {
-  BaseScreenCaptureSource::GetInstance().SetDisplaySelectCallback(std::move(callback));
   portal_init_failed_ = true;
 
   LOG(INFO) << "BaseWindowCapturer, CreateBaseScreenCaptureSource: hash="
@@ -161,11 +158,6 @@ BaseWindowCapturer::BaseWindowCapturer(CaptureSourceType source_type, bool is_pi
 
 BaseWindowCapturer::~BaseWindowCapturer() {
   LOG(INFO) << "BaseWindowCapturer::~BaseWindowCapturer, nweb_id = " << nweb_id_;
-}
-
-void BaseWindowCapturer::Stop()
-{
-  LOG(INFO) << "stop and release capture success";
   BaseScreenCaptureSource::GetInstance().StopCapture(nweb_id_);
   BaseScreenCaptureSource::GetInstance().ReleaseCapture(nweb_id_);
 }
@@ -261,11 +253,6 @@ void BaseWindowCapturer::Start(Callback* callback) {
     return;
   }
   isStart_ = true;
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  BaseScreenCaptureSource::GetInstance().SetScreenCaptureState(
-      OHOS::NWeb::ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_STARTED,
-      nweb_id_);
-#endif
   LOG(INFO) << "start capture success";
 }
 
@@ -341,11 +328,9 @@ bool BaseWindowCapturer::SelectSource(SourceId id) {
 // static
 std::unique_ptr<DesktopCapturer> BaseWindowCapturer::CreateRawCapturer(
     const DesktopCaptureOptions& options,
-    const BaseWindowCapturer::CaptureSourceType& type,
-    base::OnceCallback<void(uint64_t displayId)> callback) {
+    const BaseWindowCapturer::CaptureSourceType& type) {
   return std::make_unique<BaseWindowCapturer>(type, options.get_picker_show(),
-                                              options.get_nweb_id(),
-                                              std::move(callback));
+                                              options.get_nweb_id());
 }
 
 }  // namespace webrtc

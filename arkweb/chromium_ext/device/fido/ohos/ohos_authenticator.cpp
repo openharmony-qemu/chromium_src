@@ -86,9 +86,20 @@ void FilterFoundCredentials(
 // LCOV_EXCL_START
 // static
 void OhosAuthenticator::IsUserVerifyingPlatformAuthenticatorAvailable(
-    base::OnceCallback<void(bool is_available)> callback)
+    base::OnceCallback<void(bool)> callback)
 {
-  std::move(callback).Run(true);
+  if (!OhosWebAuthnApi::Instance()->IsAvailable()) {
+    LOG(INFO) << "OhosWebAuthnApi is no available";
+    std::move(callback).Run(false);
+    return;
+  }
+  base::ThreadPool::PostTaskAndReplyWithResult(
+      FROM_HERE,
+      {base::TaskPriority::USER_VISIBLE, base::MayBlock(),
+       base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
+      base::BindOnce(&OhosWebAuthnApi::IsUserVerifyingPlatformAuthenticatorAvailable,
+                     base::Unretained(OhosWebAuthnApi::Instance())),
+      std::move(callback));
 }
 
 // static
@@ -107,16 +118,27 @@ void OhosAuthenticator::SignalAllAcceptedCredentials(
 }
 
 // static
-std::vector<std::pair<std::string, bool>> OhosAuthenticator::GetClientCapabilities()
-{
-  return OhosWebAuthnApi::Instance()->GetClientCapabilities();
+void OhosAuthenticator::GetClientCapabilities(
+      base::OnceCallback<void(const ClientCapabilities&)> callback) {
+  if (!OhosWebAuthnApi::Instance()->IsAvailable()) {
+    LOG(INFO) << "OhosWebAuthnApi is no available";
+    std::move(callback).Run({});
+    return;
+  }
+  base::ThreadPool::PostTaskAndReplyWithResult(
+      FROM_HERE,
+      {base::TaskPriority::USER_VISIBLE, base::MayBlock(),
+       base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
+      base::BindOnce(&OhosWebAuthnApi::GetClientCapabilities,
+                     base::Unretained(OhosWebAuthnApi::Instance())),
+      std::move(callback));
 }
 
 OhosAuthenticator::OhosAuthenticator()
-    : options_(OhosWebAuthnApiOptions()),
-      ohos_api_(OhosWebAuthnApi::Instance())
-{
-  CHECK(ohos_api_->IsAvailable());
+    : options_(OhosWebAuthnApiOptions()) {
+  if (!OhosWebAuthnApi::Instance()->IsAvailable()) {
+    LOG(INFO) << "OhosWebAuthnApi is not available";
+  }
 }
 
 OhosAuthenticator::~OhosAuthenticator()
@@ -145,7 +167,8 @@ void OhosAuthenticator::MakeCredential(
 
   base::ThreadPool::PostTaskAndReplyWithResult(
       FROM_HERE, {base::TaskPriority::USER_BLOCKING, base::MayBlock()},
-      base::BindOnce(&OhosWebAuthnApi::Register, base::Unretained(ohos_api_),
+      base::BindOnce(&OhosWebAuthnApi::Register,
+                     base::Unretained(OhosWebAuthnApi::Instance()),
                      std::move(request),
                      std::move(options)),
       base::BindOnce(&OhosAuthenticator::MakeCredentialDone,
@@ -188,7 +211,8 @@ void OhosAuthenticator::GetAssertion(CtapGetAssertionRequest request,
 
   base::ThreadPool::PostTaskAndReplyWithResult(
       FROM_HERE, {base::TaskPriority::USER_BLOCKING, base::MayBlock()},
-      base::BindOnce(&OhosWebAuthnApi::GetAssertion, base::Unretained(ohos_api_),
+      base::BindOnce(&OhosWebAuthnApi::GetAssertion,
+                     base::Unretained(OhosWebAuthnApi::Instance()),
                      std::move(request),
                      std::move(options)),
       base::BindOnce(&OhosAuthenticator::GetAssertionDone,

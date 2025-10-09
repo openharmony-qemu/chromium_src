@@ -94,6 +94,13 @@ TEST_F(VideoEncoderAdapterImplTest, TestCreateVideoCodecByName001) {
   EXPECT_EQ(expected_result, actual_result);
 }
 
+TEST_F(VideoEncoderAdapterImplTest, TestCreateVideoCodecByName002) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::OK;
+  CodecCodeAdapter actual_result =
+      codec_adapter_->CreateVideoCodecByName("OMX.hisi.video.encoder.avc");
+  EXPECT_EQ(expected_result, actual_result);
+}
+
 TEST_F(VideoEncoderAdapterImplTest, TestSetCodecCallback001) {
   CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
   CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(nullptr);
@@ -111,6 +118,26 @@ TEST_F(VideoEncoderAdapterImplTest, TestSetCodecCallback002) {
 
 TEST_F(VideoEncoderAdapterImplTest, TestSetCodecCallback003) {
   CodecCodeAdapter expected_result = CodecCodeAdapter::OK;
+  codec_adapter_->callback_index_ = 0;
+  std::shared_ptr<CodecCallbackAdapter> callback =
+      std::make_shared<EncoderCallbackAdapterMock>();
+  CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(callback);
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestSetCodecCallback004) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::OK;
+  codec_adapter_->callback_index_ = 1;
+  std::shared_ptr<CodecCallbackAdapter> callback =
+      std::make_shared<EncoderCallbackAdapterMock>();
+  CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(callback);
+  EXPECT_EQ(expected_result, actual_result);
+}
+
+TEST_F(VideoEncoderAdapterImplTest, TestSetCodecCallback005) {
+  CodecCodeAdapter expected_result = CodecCodeAdapter::ERROR;
+  codec_adapter_->callback_index_ = 0;
+  codec_adapter_->encoder_ = nullptr;
   std::shared_ptr<CodecCallbackAdapter> callback =
       std::make_shared<EncoderCallbackAdapterMock>();
   CodecCodeAdapter actual_result = codec_adapter_->SetCodecCallback(callback);
@@ -262,6 +289,66 @@ TEST_F(VideoEncoderAdapterImplTest, TestGetBufferFlag002) {
   BufferFlag actual_result = codec_adapter_->GetBufferFlag(
       OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_DISCARD);
   EXPECT_EQ(expected_result, actual_result);    
+}
+
+TEST_F(VideoEncoderAdapterImplTest,
+       TestOnError_ShouldReturn_WhenUserDataIsNull) {
+  void* userData = nullptr;
+  codec_adapter_->OnError(nullptr, 0, userData);
+  EXPECT_FALSE(userData);
+}
+
+TEST_F(VideoEncoderAdapterImplTest,
+       TestOnError_ShouldReturn_WhenCallbackIsNull) {
+  size_t index = 1;
+  void* userData = reinterpret_cast<void*>(index);
+  codec_adapter_->OnError(nullptr, 0, userData);
+  EXPECT_TRUE(userData);
+}
+
+TEST_F(VideoEncoderAdapterImplTest,
+       TestOnStreamChanged_ShouldReturn_WhenUserDataIsNull) {
+  void* userData = nullptr;
+  codec_adapter_->OnStreamChanged(nullptr, nullptr, userData);
+  EXPECT_FALSE(userData);
+}
+
+TEST_F(VideoEncoderAdapterImplTest,
+       TestOnStreamChanged_ShouldReturn_WhenCallbackIsNull) {
+  size_t index = 1;
+  void* userData = reinterpret_cast<void*>(index);
+  codec_adapter_->OnStreamChanged(nullptr, nullptr, userData);
+  EXPECT_TRUE(userData);
+}
+
+TEST_F(VideoEncoderAdapterImplTest,
+       TestOnNeedInputBuffer_ShouldReturn_WhenUserDataIsNull) {
+  void* userData = nullptr;
+  codec_adapter_->OnNeedInputBuffer(nullptr, 0, nullptr, userData);
+  EXPECT_FALSE(userData);
+}
+
+TEST_F(VideoEncoderAdapterImplTest,
+       TestOnNeedInputBuffer_ShouldReturn_WhenCallbackIsNull) {
+  size_t index = 1;
+  void* userData = reinterpret_cast<void*>(index);
+  codec_adapter_->OnNeedInputBuffer(nullptr, 0, nullptr, userData);
+  EXPECT_TRUE(userData);
+}
+
+TEST_F(VideoEncoderAdapterImplTest,
+       TestOnNewOutputBuffer_ShouldReturn_WhenUserDataIsNull) {
+  void* userData = nullptr;
+  codec_adapter_->OnError(nullptr, 0, userData);
+  EXPECT_FALSE(userData);
+}
+
+TEST_F(VideoEncoderAdapterImplTest,
+       TestOnNewOutputBuffer_ShouldReturn_WhenCallbackIsNull) {
+  size_t index = 1;
+  void* userData = reinterpret_cast<void*>(index);
+  codec_adapter_->OnError(nullptr, 0, userData);
+  EXPECT_TRUE(userData);
 }
 
 TEST_F(EncoderCallbackImplTest, TestOnError001) {

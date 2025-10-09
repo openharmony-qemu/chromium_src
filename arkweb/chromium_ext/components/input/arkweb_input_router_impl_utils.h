@@ -54,8 +54,8 @@ class ArkwebInputRouterImplUtils {
 
  private:
   const raw_ptr<InputRouterImpl> input_router_impl_;
-  uint64_t timeStamp_ = 0;
-  uint64_t prePerfTimeStamp_ = 0;
+  int64_t timeStamp_ = 0;
+  int64_t prePerfTimeStamp_ = 0;
   void SendGestureEventEx(GestureEventWithLatencyInfo& gesture_event);
   void TracingAndSceneReport(const blink::WebInputEvent& input_event,
                              const ui::LatencyInfo& latency_info);

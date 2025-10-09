@@ -82,10 +82,6 @@ public:
 
     int32_t ReleaseAudioBuffer(AudioCaptureSourceTypeAdapter type, int nweb_id);
 
-    void SetDisplaySelectCallback(base::OnceCallback<void(uint64_t displayId)> callback);
-
-    void OnDisplaySelectCallback(uint64_t displayId);
-
     std::shared_mutex screen_capture_map_lock_;
 
     std::unordered_map<int, std::unique_ptr<OHOS::NWeb::ScreenCaptureAdapter>> screen_capture_adapter_map_;
@@ -109,10 +105,6 @@ public:
     std::shared_mutex capture_state_map_lock_;
 
     std::unordered_map<int, OHOS::NWeb::ScreenCaptureStateCodeAdapter> capture_state_code_map_;
-
-    base::OnceCallback<void(uint64_t displayId)> displaySelectedCallback_;
-
-    std::mutex displaySelectedCallbackMutex_;
 
     base::WeakPtrFactory<BaseScreenCaptureSource> weak_factory_{this};
 };

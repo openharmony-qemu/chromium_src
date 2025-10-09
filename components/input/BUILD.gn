@@ -191,6 +191,9 @@ source_set("unit_tests") {
     "touch_event_stream_validator_unittest.cc",
     "touchpad_pinch_event_queue_unittest.cc",
   ]
+
+  sources += arkweb_chrome_components_input_unittest_sources
+
   deps = [
     ":input",
     "//base:base",

@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "arkweb/build/features/features.h"
 #ifndef COMPONENTS_COMMERCE_CORE_COMMERCE_CONSTANTS_H_
 #define COMPONENTS_COMMERCE_CORE_COMMERCE_CONSTANTS_H_
+#include "arkweb/build/features/features.h"
 
 namespace commerce {
 

@@ -3701,18 +3701,36 @@ test("base_unittests") {
     sources += arkweb_storage_monitor_unittest_source
     sources += arkweb_crashpad_unittest_sources
     sources += arkweb_crashpad_sources
-    sources += arkweb_crashpad_dfx_sources
-    sources += arkweb_crashpad_dfx_unittest_sources
-
+    sources += arkweb_content_common_unittests_sources
+    sources += arkweb_content_renderer_unittests_sources
+    sources += arkweb_base_ohos_ltpo_unittests_sources
+    sources += arkweb_render_process_startup_unittest_sources
+    sources += arkweb_ptrace_unittest_sources
     sources += [
       "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
+      "//arkweb/chromium_ext/ohos_test/unittest/event_reporter/event_reporter_unittest.cc",
     ]
+    sources += arkweb_content_browser_dfx_unittests_sources
+    if (arkweb_test) {
+      configs += [
+        "//arkweb/chromium_ext:arkweb_base_unittest_config"
+      ]
+      sources += [
+        "//arkweb/chromium_ext/base/ohos/ltpo/src/mock_sys_info_util_ext.cc",
+        "//arkweb/ohos_adapter_ndk/ndk_version.cc",
+      ]
+    }
     sources += arkweb_ohos_adapter_ndk_unittests_sources
+    sources += arkweb_content_browser_accessibility_resources
+    sources += arkweb_media_codec_decoder_adapter_impl_unittest_sources
+    sources += ["//arkweb/ohos_adapter_ndk/mock_ndk_api/src/mock_ndk_api.cc"]
+    configs += ["//arkweb/chromium_ext:arkweb_ohos_adapter_unittest_config"]
 
     public_deps = [
+      "//ui/accessibility:test_support",
       "//content/public/browser",
-      "//components/autofill/core/browser",
       "//components/subresource_filter/content/browser",
+      "//components/js_injection/browser",
     ]
   }
 
@@ -3787,6 +3805,16 @@ test("base_unittests") {
    deps += ["//components/storage_monitor"]
    deps += ["//components/performance_manager"]
    deps += ["//third_party:huawei_securec"]
+   deps += ["//arkweb/chromium_ext/content/browser/dfx:memory_monitor_render"]
+    defines += [ "CRASHPAD_LSS_EXTERNAL" ]
+    deps +=[
+      "//third_party/crashpad/crashpad/client",
+      "//third_party/crashpad/crashpad/util",
+      "//third_party/crashpad/crashpad/minidump",
+      "//third_party/crashpad/crashpad/snapshot",
+      "//third_party:huawei_securec",
+    ]
+
    }
 
 

@@ -4,3 +4,7 @@ interface DfxReporter {
   ReportMemInfo(string sysEventInfoJson);
   ReportHiSysEvent(string eventName, string sysEventInfoJson);
 };
+
+interface FreezeReporter {
+  ReportRenderFreeze(string eventInfo);
+};

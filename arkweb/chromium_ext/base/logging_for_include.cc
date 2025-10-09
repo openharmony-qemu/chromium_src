@@ -10,6 +10,10 @@ void SetLoggerCallbackToBase(LoggerCallbackFunction loggerCallback) {
   g_logger_callback = loggerCallback;
 }
 
+BASE_EXPORT bool SupportFeedback() {
+  return g_logger_callback != nullptr || g_log_message_handler != nullptr;
+}
+
 bool IsEnableLoggerReport() {
   static bool is_enable = false;
   if (is_enable) {

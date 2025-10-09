@@ -7,11 +7,11 @@
 #include <mutex>
 #include <utility>
 
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "base/check.h"
 #include "base/command_line.h"
 #include "base/debug/crash_logging.h"
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #include "ui/gl/gl_bindings.h"
 
 namespace {
@@ -51,10 +51,7 @@ void OhosNativeImage::SetFrameAvailableCallback(
   std::lock_guard<std::mutex> lock(g_mutex_native_image);
   frame_available_cb_ = std::move(callback);
   if (native_image_adapter_ != nullptr && listener_ == nullptr) {
-    listener_ = std::make_shared<OHOS::NWeb::FrameAvailableListenerImpl>();
-    listener_->SetContext(reinterpret_cast<void*>(this));
-    listener_->SetOnFrameAvailableCb(
-        &OhosNativeImage::OnFrameAvailableListener);
+    listener_ = std::make_shared<OHOS::NWeb::FrameAvailableListenerImpl>(this);
     native_image_adapter_->SetOnFrameAvailableListener(listener_);
   }
 }
@@ -127,13 +124,8 @@ void* OhosNativeImage::AquireOhosNativeWindow() {
   return native_image_adapter_->AquireNativeWindowFromNativeImage();
 }
 
-void OhosNativeImage::OnFrameAvailableListener(void* context) {
-  std::lock_guard<std::mutex> lock(g_mutex_native_image);
-  OhosNativeImage* nativeImage = reinterpret_cast<OhosNativeImage*>(context);
-  if (nativeImage == nullptr) {
-    return;
-  }
-  nativeImage->frame_available_cb_.Run();
+void OhosNativeImage::OnFrameAvailableListener() {
+  frame_available_cb_.Run();
 }
 
 scoped_refptr<OhosNativeImage> OhosNativeImage::Create() {

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "log_utils.h"
 
 #include <memory>
@@ -12,6 +27,8 @@ const char kSchemeSeparator[] = "//";
 const char kSchemeSeparatorForReport[] = "://";
 const char kSchemeNotParseOne[] = "about:blank";
 const char kSchemeNotParseTwo[] = "hwweb://newtab";
+const size_t kSchemeSuffixLength = 3;
+const size_t kAdditionalCharsToShow = 2;
 int32_t FEEDSPAGE_TYPE = 5;
 // static
 bool LogUtils::IsSupportScheme(const std::string& url,
@@ -217,24 +234,36 @@ std::string LogUtils::ConvertUrl(const std::string& url,
 }
 
 // static
+std::string LogUtils::MaskHost(const std::string& host) {
+  size_t dotPos = host.find('.');
+  if (dotPos == std::string::npos) {
+    return host;
+  }
+  
+  return host.substr(0, dotPos + 1) + "***";
+}
+
+
+
+// static
 std::string LogUtils::ConvertUrlWithMask(const std::string& url) {
   if (url.find(kSchemeNotParseOne) == 0 || url.find(kSchemeNotParseTwo) == 0) {
     return url;
   }
 
   unsigned int colonIndex = 0;
-  std::string converted;
-
   if (!IsSupportScheme(url, url.length(), colonIndex)) {
-    if (colonIndex < url.length() - 1) {
-      return url.substr(0, colonIndex);
-    } else {
-      return url;
-    }
+    return MaskHost(url);
   }
 
-  converted.append(url.substr(0, colonIndex + 1));
-  converted.append("//***");
+  size_t endPos = colonIndex + kSchemeSuffixLength + kAdditionalCharsToShow;
+  if (endPos > url.length()) {
+    endPos = url.length();
+  }
+
+  std::string converted;
+  converted.append(url.substr(0, endPos));
+  converted.append("***");
   return converted;
 }
 

@@ -25,12 +25,12 @@
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 
 namespace {
-const uint32_t AES_COMMON_SIZE = 1024;
-static const uint32_t IV_SIZE = 16;
-static const uint8_t IV[IV_SIZE] = {0};
-const std::string V10 = "V10";
-const uint32_t V10_SIZE = 3;
-const uint32_t CIPHER_TEXT_SIZE = 32;
+constexpr uint32_t AES_COMMON_SIZE = 1024;
+constexpr uint32_t IV_SIZE = 16;
+constexpr uint8_t IV[IV_SIZE] = {0};
+constexpr std::string V10 = "V10";
+constexpr uint32_t V10_SIZE = 3;
+constexpr uint32_t CIPHER_TEXT_SIZE = 32;
 
 std::string _get_random(size_t size) {
   std::string result(size, 0);

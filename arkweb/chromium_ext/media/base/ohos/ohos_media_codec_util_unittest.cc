@@ -163,7 +163,7 @@ class MockOhosAdapterHelper : public OHOS::NWeb::OhosAdapterHelper {
               CreateFlowbufferAdapter,
               (),
               (override));
-  MOCK_METHOD(std::unique_ptr<MediaAVSessionAdapter>,
+  MOCK_METHOD(std::shared_ptr<MediaAVSessionAdapter>,
               CreateMediaAVSessionAdapter,
               (),
               (override));
@@ -336,89 +336,157 @@ TEST_F(OHOSMediaCodecUtilTest, VideoCodecToOHOSMimeType007) {
   EXPECT_EQ(res, "");
 }
 
-TEST_F(OHOSMediaCodecUtilTest, AudioCodecToOHOSMimeType001) {
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnBit_WhenFormatIsDts) {
   AudioCodec codec = AudioCodec::kMP3;
   SampleFormat sample_format = SampleFormat::kSampleFormatDts;
-  std::string res = OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
   EXPECT_EQ(res, "audio/raw");
 }
 
-TEST_F(OHOSMediaCodecUtilTest, AudioCodecToOHOSMimeType002) {
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnBit_WhenFormatIsDtsxP2) {
+  AudioCodec codec = AudioCodec::kMP3;
+  SampleFormat sample_format = SampleFormat::kSampleFormatDtsxP2;
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  EXPECT_EQ(res, "audio/raw");
+}
+
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnBit_WhenFormatIsAc3) {
+  AudioCodec codec = AudioCodec::kMP3;
+  SampleFormat sample_format = SampleFormat::kSampleFormatAc3;
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  EXPECT_EQ(res, "audio/raw");
+}
+
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnBit_WhenFormatIsEac3) {
+  AudioCodec codec = AudioCodec::kMP3;
+  SampleFormat sample_format = SampleFormat::kSampleFormatEac3;
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  EXPECT_EQ(res, "audio/raw");
+}
+
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnBit_WhenFormatIsMpegHAudio) {
+  AudioCodec codec = AudioCodec::kMP3;
+  SampleFormat sample_format = SampleFormat::kSampleFormatMpegHAudio;
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  EXPECT_EQ(res, "audio/raw");
+}
+
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnBit_WhenCodecIsAC3) {
+  AudioCodec codec = AudioCodec::kAC3;
+  SampleFormat sample_format = SampleFormat::kSampleFormatMpegHAudio;
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  EXPECT_EQ(res, "audio/raw");
+}
+
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnBit_WhenCodecIsEAC3) {
+  AudioCodec codec = AudioCodec::kEAC3;
+  SampleFormat sample_format = SampleFormat::kSampleFormatMpegHAudio;
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  EXPECT_EQ(res, "audio/raw");
+}
+
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnBit_WhenCodecIsDTS) {
+  AudioCodec codec = AudioCodec::kDTS;
+  SampleFormat sample_format = SampleFormat::kSampleFormatMpegHAudio;
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  EXPECT_EQ(res, "audio/raw");
+}
+
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnBit_WhenCodecIsDTSXP2) {
+  AudioCodec codec = AudioCodec::kDTSXP2;
+  SampleFormat sample_format = SampleFormat::kSampleFormatMpegHAudio;
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  EXPECT_EQ(res, "audio/raw");
+}
+
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnBit_WhenCodecIsMpegHAudio) {
+  AudioCodec codec = AudioCodec::kMpegHAudio;
+  SampleFormat sample_format = SampleFormat::kSampleFormatMpegHAudio;
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  EXPECT_EQ(res, "audio/raw");
+}
+
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnMP3_WhenIsPassThrougnFalse) {
   AudioCodec codec = AudioCodec::kMP3;
   SampleFormat sample_format = SampleFormat::kSampleFormatPlanarU8;
-  std::string res = OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
   EXPECT_EQ(res, "audio/mpeg");
 }
 
-TEST_F(OHOSMediaCodecUtilTest, AudioCodecToOHOSMimeType003) {
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnVorbis_WhenIsPassThrougnFalse) {
   AudioCodec codec = AudioCodec::kVorbis;
   SampleFormat sample_format = SampleFormat::kSampleFormatPlanarU8;
-  std::string res = OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
   EXPECT_EQ(res, "audio/vorbis");
 }
 
-TEST_F(OHOSMediaCodecUtilTest, AudioCodecToOHOSMimeType004) {
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnFLAC_WhenIsPassThrougnFalse) {
   AudioCodec codec = AudioCodec::kFLAC;
   SampleFormat sample_format = SampleFormat::kSampleFormatPlanarU8;
-  std::string res = OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
   EXPECT_EQ(res, "audio/flac");
 }
 
-TEST_F(OHOSMediaCodecUtilTest, AudioCodecToOHOSMimeType005) {
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnOpus_WhenIsPassThrougnFalse) {
   AudioCodec codec = AudioCodec::kOpus;
   SampleFormat sample_format = SampleFormat::kSampleFormatPlanarU8;
-  std::string res = OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
   EXPECT_EQ(res, "audio/opus");
 }
 
-TEST_F(OHOSMediaCodecUtilTest, AudioCodecToOHOSMimeType006) {
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnAAC_WhenIsPassThrougnFalse) {
   AudioCodec codec = AudioCodec::kAAC;
   SampleFormat sample_format = SampleFormat::kSampleFormatPlanarU8;
-  std::string res = OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
   EXPECT_EQ(res, "audio/mp4a-latm");
 }
 
-TEST_F(OHOSMediaCodecUtilTest, AudioCodecToOHOSMimeType007) {
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnDTSE_WhenIsPassThrougnFalse) {
   AudioCodec codec = AudioCodec::kDTSE;
   SampleFormat sample_format = SampleFormat::kSampleFormatPlanarU8;
-  std::string res = OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
   EXPECT_EQ(res, "audio/vnd.dts;profile=lbr");
 }
 
-
-TEST_F(OHOSMediaCodecUtilTest, AudioCodecToOHOSMimeType008) {
+TEST_F(OHOSMediaCodecUtilTest,
+       TestAudioCodecToOHOSMimeType_ShouldReturnNull_WhenCodecIsIAMF) {
   AudioCodec codec = AudioCodec::kIAMF;
   SampleFormat sample_format = SampleFormat::kSampleFormatPlanarU8;
-  std::string res = OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
+  std::string res =
+      OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
   EXPECT_EQ(res, "");
-}
-
-TEST_F(OHOSMediaCodecUtilTest, AudioCodecToOHOSMimeType009) {
-  AudioCodec codec = AudioCodec::kMP3;
-  SampleFormat sample_format = SampleFormat::kSampleFormatDtsxP2;
-  std::string res = OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
-  EXPECT_EQ(res, "audio/raw");
-}
-
-TEST_F(OHOSMediaCodecUtilTest, AudioCodecToOHOSMimeType010) {
-  AudioCodec codec = AudioCodec::kMP3;
-  SampleFormat sample_format = SampleFormat::kSampleFormatAc3;
-  std::string res = OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
-  EXPECT_EQ(res, "audio/raw");
-}
-
-TEST_F(OHOSMediaCodecUtilTest, AudioCodecToOHOSMimeType011) {
-  AudioCodec codec = AudioCodec::kMP3;
-  SampleFormat sample_format = SampleFormat::kSampleFormatEac3;
-  std::string res = OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
-  EXPECT_EQ(res, "audio/raw");
-}
-
-TEST_F(OHOSMediaCodecUtilTest, AudioCodecToOHOSMimeType012) {
-  AudioCodec codec = AudioCodec::kMP3;
-  SampleFormat sample_format = SampleFormat::kSampleFormatMpegHAudio;
-  std::string res = OHOSMediaCodecUtil::CodecToOHOSMimeType(codec, sample_format);
-  EXPECT_EQ(res, "audio/raw");
 }
 
 TEST_F(OHOSMediaCodecUtilTest, VideoCanDecode001) {

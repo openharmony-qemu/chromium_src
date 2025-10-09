@@ -58,6 +58,9 @@ source_set("unit_tests") {
     "subresource_filter_features_unittest.cc",
     "verified_ruleset_dealer_unittest.cc",
   ]
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    sources += arkweb_user_ruleset_version_unittest_sources
+  }
   deps = [
     ":browser",
     ":test_support",

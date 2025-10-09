@@ -52,6 +52,9 @@ public:
   void SetConnectJobWithSecureDnsOnlyTimeout(int second);
   bool CanUseSecureDnsFallback() const;
 #endif
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  void SetSocketIdleTimeout(int32_t timeout);
+#endif
 };
 
 }  // namespace net

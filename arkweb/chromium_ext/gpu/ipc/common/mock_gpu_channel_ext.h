@@ -17,17 +17,14 @@
 #define MOCK_GPU_CHANNEL_EXT_H
 
 #define ARKWEB_UNITTESTS_MOCK_METHOD4_BOOL() \
-  MOCK_METHOD4(CreateNativeTexture, \
-               bool(int32_t, \
-                    int32_t, \
-                    mojo::PendingAssociatedReceiver<mojom::StreamTexture>, \
-                    int32_t*))
+  MOCK_METHOD4(                              \
+      CreateNativeTextureReturnBool,         \
+      bool(int32_t, int32_t,                 \
+           mojo::PendingAssociatedReceiver<mojom::StreamTexture>, int32_t*))
 
-#define ARKWEB_UNITTESTS_MOCK_METHOD4_VOILD() \
-  MOCK_METHOD4(CreateNativeTexture, \
-               void(int32_t, \
-                    int32_t, \
+#define ARKWEB_UNITTESTS_MOCK_METHOD4_VOID()                               \
+  MOCK_METHOD4(CreateNativeTextureReturnVoid,                              \
+               void(int32_t, int32_t,                                      \
                     mojo::PendingAssociatedReceiver<mojom::StreamTexture>, \
                     CreateNativeTextureCallback))
-
 #endif // MOCK_GPU_CHANNEL_EXT_H

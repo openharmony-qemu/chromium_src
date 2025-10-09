@@ -269,6 +269,12 @@
 #include "content/browser/ohos/date_time_chooser_ohos.h"
 #endif  // ARKWEB_CSS_INPUT_TIME
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+#include "arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_helper.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -3604,8 +3610,10 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
   }
 
 #if BUILDFLAG(ARKWEB_USERAGENT) || BUILDFLAG(ARKWEB_EXT_UA)
-  if (!(AsWebContentsImplExt()->user_agent_.empty())) {
-    bool is_desktop = (AsWebContentsImplExt()->user_agent_.find("Mobile") == std::string::npos);
+  if (!(AsWebContentsImplExt()->user_agent_.empty()) &&
+      GetUserAgentOverride().from_app) {
+    bool is_desktop = (AsWebContentsImplExt()->user_agent_.find("Mobile") ==
+                       std::string::npos);
     prefs.viewport_meta_enabled = !is_desktop;
   } else {
     prefs.viewport_meta_enabled = true;
@@ -3651,7 +3659,7 @@ void WebContentsImpl::OnWebPreferencesChanged() {
 #else
   SetWebPreferences(ComputeWebPreferences());
 #endif
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   for (FrameTreeNode* node : primary_frame_tree_.Nodes()) {
     RenderFrameHostImpl* rfh = node->current_frame_host();
     if (rfh->is_local_root()) {
@@ -5037,6 +5045,19 @@ FrameTree* WebContentsImpl::CreateNewWindow(
   }
 
   auto* new_contents_impl = new_contents.get();
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES) && !defined(COMPONENT_BUILD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+        switches::kEnableNwebEx)) {
+    auto* https_helper = OhosHttpsUpgradesHelper::FromWebContents(this);
+    if (https_helper) {
+      OhosHttpsUpgradesHelper::CreateForWebContents(new_contents_impl);
+      auto* new_https_helper = OhosHttpsUpgradesHelper::FromWebContents(new_contents_impl);
+      if (new_https_helper) {
+        new_https_helper->set_is_arkweb_https_upgrades_enable(https_helper->is_arkweb_https_upgrades_enable());
+      }
+    }
+  }
+#endif
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
   if (delegate_) {
     delegate_->WebContentsCreated(this, render_process_id,
@@ -6913,7 +6934,11 @@ void WebContentsImpl::DidStartNavigation(NavigationHandle* navigation_handle) {
         GetController().IsInitialNavigation() &&
         !navigation_handle->IsRendererInitiated() &&
         navigation_handle->GetURL() == url::kAboutBlankURL;
-  }
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+    AsWebContentsImplExt()->DetectBlankScreen(
+        navigation_handle->GetURL().spec());
+#endif
+  }  
 }
 
 void WebContentsImpl::DidRedirectNavigation(

@@ -29,6 +29,7 @@
 #include "third_party/blink/renderer/core/dom/shadow_root.h"
 #include "third_party/blink/renderer/core/dom/slot_assignment_engine.h"
 #include "third_party/blink/renderer/core/editing/testing/editing_test_base.h"
+#include "third_party/blink/renderer/core/html/html_collection.h"
 #include "third_party/blink/renderer/core/html/html_div_element.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 
@@ -114,6 +115,38 @@ TEST_F(OhosAdblockUtilTest, IsValidTarget_005) {
   SetBodyContent(R"HTML(<body><span id="id"></span></body>)HTML");
   Node* one = GetDocument().getElementById(AtomicString("id"));
   auto result = IsValidTarget(one, 0, 0, 0, 0);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(OhosAdblockUtilTest, IsValidTarget_006) {
+  SetBodyContent(
+    "<div id='host'><span id='one'></span><span id='two' style='display:block;width:0px;height:10px;'></span></div>");
+  Node* one = GetDocument().getElementById(AtomicString("one"));
+  Node* two = GetDocument().getElementById(AtomicString("two"));
+  auto result = IsValidTarget(one, 0, 0, 10, 10);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(OhosAdblockUtilTest, IsValidTarget_007) {
+  SetBodyContent(
+    "<div id='host'><span id='one'></span><span id='two' style='display:block;width:10px;height:0px;'></span></div>");
+  Node* one = GetDocument().getElementById(AtomicString("one"));
+  Node* two = GetDocument().getElementById(AtomicString("two"));
+  auto result = IsValidTarget(one, 0, 0, 10, 10);
+  EXPECT_TRUE(result);
+}
+
+TEST_F(OhosAdblockUtilTest, IsValidTarget_008) {
+  SetBodyContent("<div>hello</div>");
+  Node* html_node = GetDocument().documentElement();
+  ASSERT_NE(html_node, nullptr);
+  EXPECT_EQ(html_node->parentNode(), &GetDocument());
+  Element* html_element = To<Element>(html_node);
+  int top = html_element->OffsetTop();
+  int left = html_element->OffsetLeft();
+  int width = html_element->OffsetWidth();
+  int height = html_element->OffsetHeight();
+  bool result = IsValidTarget(html_node, top, left, width, height);
   EXPECT_FALSE(result);
 }
 
@@ -312,5 +345,27 @@ TEST_F(OhosAdblockUtilTest, GetDomPath_005) {
   root->CreateUserAgentShadowRoot();
   GetDomPath(*root, false, true);
   EXPECT_TRUE(node->CanStartSelection());
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPath_006) {
+  SetBodyContent("<form><input type='email' value='test@'></form>");
+  HTMLCollection* inputs = GetDocument().getElementsByTagName(AtomicString("input"));
+  ASSERT_GT(inputs->length(), 0);
+  Element* input = To<Element>(inputs->item(0));
+  ASSERT_NE(input, nullptr);
+  std::string result = GetDomPath(*input, false, true);
+  EXPECT_EQ(result, "HTML>BODY>FORM>INPUT[type=email]");
+}
+
+TEST_F(OhosAdblockUtilTest, GetDomPath_007) {
+  SetBodyContent("<div id='app'><main><section><p class='intro'>Hello</p></section></main></div>");
+  Element* app = GetDocument().getElementById(AtomicString("app"));
+  ASSERT_NE(app, nullptr);
+  HTMLCollection* ps = app->getElementsByTagName(AtomicString("p"));
+  ASSERT_GT(ps->length(), 0);
+  Element* p = To<Element>(ps->item(0));
+  ASSERT_NE(p, nullptr);
+  std::string result = GetDomPath(*p, false, false);
+  EXPECT_EQ(result, "DIV#app>MAIN>SECTION>P");
 }
 }  // namespace blink

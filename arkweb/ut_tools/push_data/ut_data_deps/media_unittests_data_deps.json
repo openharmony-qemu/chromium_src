@@ -19,7 +19,7 @@
             "media",
             "test"
         ],
-        "dst_path": "media/test"
+        "dst_path": "src/media/test"
     },
     {
         "is_file": false,

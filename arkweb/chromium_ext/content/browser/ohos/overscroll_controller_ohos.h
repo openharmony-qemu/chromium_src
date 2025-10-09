@@ -78,6 +78,9 @@ class CONTENT_EXPORT OverscrollControllerOHOS {
 
   // TODO(jdduke): Factor out a common API from the two overscroll effects.
   std::unique_ptr<ui::OverscrollRefresh> refresh_effect_;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class TestableOverscrollControllerOHOS;
+#endif
 };
 
 }  // namespace content

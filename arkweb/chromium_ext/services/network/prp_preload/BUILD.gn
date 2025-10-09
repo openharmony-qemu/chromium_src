@@ -8,6 +8,7 @@ source_set("prp_preload") {
   visibility = [
     "//services/network:network_service",
     "//services/network:tests",
+    "//arkweb/chromium_ext/services/network/prp_preload/tests:prp_preload_unittests",
   ]
 
   include_dirs = [

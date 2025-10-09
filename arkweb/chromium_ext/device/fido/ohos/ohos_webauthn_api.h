@@ -26,6 +26,8 @@ class OhosWebAuthnApi {
   using GetClientCapabilitiesResult = std::vector<std::pair<std::string, bool>>;
   virtual GetClientCapabilitiesResult GetClientCapabilities();
 
+  virtual bool IsUserVerifyingPlatformAuthenticatorAvailable();
+
   using RegisterResult = std::pair<MakeCredentialStatus,
       std::optional<AuthenticatorMakeCredentialResponse>>;
   virtual RegisterResult Register(

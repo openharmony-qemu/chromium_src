@@ -418,6 +418,10 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
   static base::TimeDelta used_idle_socket_timeout();
   static void set_used_idle_socket_timeout(base::TimeDelta timeout);
 
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+  virtual void SetSocketIdleTimeout(int32_t timeout) {}
+#endif
+
  protected:
   ClientSocketPool(bool is_for_websockets,
                    const CommonConnectJobParams* common_connect_job_params,

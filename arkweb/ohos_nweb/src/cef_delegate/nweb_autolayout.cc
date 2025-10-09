@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "nweb_autolayout.h"
 
 #include "hilog/log.h"
@@ -7,15 +22,14 @@
 #include "base/files/memory_mapped_file.h"
 #include "libcef/browser/thread_util.h"
 #include "base/trace_event/trace_event.h"
+#include "arkweb/ohos_autolayout/grit/autolayout_resources.h"
+#include "ui/base/resource/resource_bundle.h"
+#include <charconv>
 
 namespace OHOS::NWeb {
 using namespace ConfigConstants;
 std::shared_ptr<NwebAutolayout> NwebAutolayout::GetInstance() {
-  struct NWebALMaker : public NwebAutolayout {};
-  static std::once_flag once_flag;
-  LOG(INFO) << "GetInstance.";
-  static std::shared_ptr<NwebAutolayout> instance;
-  std::call_once(once_flag, [] { instance = std::make_shared<NWebALMaker>(); });
+  static std::shared_ptr<NwebAutolayout> instance = std::make_shared<NwebAutolayout>();
   return instance;
 }
 
@@ -26,11 +40,8 @@ NwebAutolayout::NwebAutolayout() {
 void NwebAutolayout::Initialize() {
   ScopedTimeLogger timer("Initialize");
   TRACE_EVENT("base", "NwebAutolayout::Initialize");
-  LOG(DEBUG) << "begin to Initialize.";
-  auto sv = OhosAdapterHelper::GetInstance().
-                                GetSystemPropertiesInstance().
-                                GetStringParameter(std::string(kDesScale), "0");
-  LOG(DEBUG) << "get kDesScale" << sv;
+  auto &adapter = OhosAdapterHelper::GetInstance();
+  auto sv = adapter.GetSystemPropertiesInstance().GetStringParameter(std::string(kMinDesScale), "0");
   auto result = ParseInt(sv);
   if (result && result.value() > 0) {
       mCCMConfig_.minScaleFactor = result.value();
@@ -41,58 +52,38 @@ void NwebAutolayout::Initialize() {
       return;
   }
   LOG(DEBUG) << "get minScaleFactor:" << mCCMConfig_.minScaleFactor;
-  
-  mAppBundleName_ = OhosAdapterHelper::GetInstance()
-                        .GetSystemPropertiesInstance().GetBundleName();
-  if (!mAppBundleName_.length()) {
-    LOG(ERROR) << "Failed to get App bundle name. Disabling feature.";
-    mEnable_ = false;
-    return;
-  }
-  LOG(DEBUG) << "get mAppBundleName_:" << mAppBundleName_;
 
   std::string ccmConfig = "";
-  base::FilePath ccmfile_path = base::FilePath(std::string(kCCMConfig));
+  auto configPath = adapter.GetSystemPropertiesInstance().GetStringParameter(std::string(kConfigPath),"");
+  base::FilePath ccmfile_path = base::FilePath(configPath);
   if (!base::ReadFileToString(ccmfile_path, &ccmConfig)) {
-      LOG(WARNING) << "Failed to read MiniAppConfig.json from "
-                   << ccmfile_path.MaybeAsASCII();
+      LOG(WARNING) << "Failed to read Config.json from " << ccmfile_path.MaybeAsASCII();
       mEnable_ = false;
       return;
   }
-  LOG(DEBUG) << "get ccmConfig:" << (ccmConfig == ""?"failed":"successful");
+
+  LOG(DEBUG) << "get ccmConfig:" << (ccmConfig == "" ? "failed":"successful");
   mJsonRoot = base::JSONReader::Read(ccmConfig);
-  if (!mJsonRoot.has_value() || !Parse(mJsonRoot.value())) {
+  if (!mJsonRoot.has_value() || !Parse(mJsonRoot.value()) || mCCMConfig_.whitelist.empty()) {
     LOG(ERROR) << "Failed to parse CCM config. Disabling feature.";
     mEnable_ = false;
     return;
   }
 
-  if (mCCMConfig_.whitelist.empty()) {
-    LOG(INFO) << "checkCCM Error: Whitelist is empty. Disabling feature.";
-    mEnable_ = false;
-    return;
-  }
-
+  mAppBundleName_ = adapter.GetSystemPropertiesInstance().GetBundleName();
   auto app_it = mCCMConfig_.whitelist.find(mAppBundleName_);
   if (app_it == mCCMConfig_.whitelist.end()) {
-    LOG(ERROR) << "checkCCM Error: Current appBundleName '" << mAppBundleName_
-               << "' not in whitelist. Disabling feature.";
+    LOG(ERROR) << "checkCCM Error:app not in config. Disabling feature.";
     mEnable_ = false;
     return;
   }
 
   mWListEntry_ = &app_it->second;
   if (mWListEntry_ == nullptr) {
-    LOG(ERROR) << "checkCCM Error: Current whitelist is null. Disabling feature.";
+    LOG(ERROR) << "checkCCM Error:config info is null. Disabling feature.";
     mEnable_ = false;
     return;
   }
-  if (mWListEntry_->pattern == "" || mWListEntry_->getID == "" || mWListEntry_->getPage == "") {
-    LOG(ERROR) << "checkCCM Error: Current pattern config is null. Disabling feature.";
-    mEnable_ = false;
-    return;
-  }
-
   mPatternJSSource_ = std::string(mWListEntry_->pattern);
   LoadAutoLayoutFromHap();
   LOG(DEBUG) << "Initialize successfull";
@@ -118,7 +109,6 @@ void NwebAutolayout::CheckCCMandApplyRule(CefRefPtr<CefFrame> frame) {
   if (!mEnable_ || mWListEntry_ == nullptr) {
     return;
   }
-  LOG(DEBUG) << "register get enviroment param function JavaScript...";
   frame->ExecuteJavaScript(std::string(mWListEntry_->getID), frame->GetURL(), 0);
   frame->ExecuteJavaScript(std::string(mWListEntry_->getPage), frame->GetURL(), 0);
   LOG(DEBUG) << "Add autolayout JavaScript...";
@@ -128,8 +118,9 @@ void NwebAutolayout::CheckCCMandApplyRule(CefRefPtr<CefFrame> frame) {
   root_dict.Set(kMinMaskAreaRatioThresholdKey, mCCMConfig_.min_mask_area_ratio_threshold);
   root_dict.Set(kMinContentAreaRatioThresholdKey, mCCMConfig_.min_content_area_ratio_threshold);
   root_dict.Set(kScaleAnimationDurationKey, mCCMConfig_.scale_animation_duration);
-  root_dict.Set(kDesScaleKey, mCCMConfig_.minScaleFactor);
-  root_dict.Set(kAppRuleInfosKey, mWListEntry_->appRuleInfos);
+  root_dict.Set(kMinDesScaleKey, mCCMConfig_.minScaleFactor);
+  std::optional<base::Value::List> list = mWListEntry_->appRuleInfos->Clone();
+  root_dict.Set(kAppRuleInfosKey, std::move(*list));
 
   base::Value::List opacity_list;
   opacity_list.Append(mCCMConfig_.opacity_filter.first);
@@ -141,7 +132,7 @@ void NwebAutolayout::CheckCCMandApplyRule(CefRefPtr<CefFrame> frame) {
   std::string json_string;
   bool success = base::JSONWriter::Write(root_value, &json_string);
   if(success) {
-    std::string escaped_json = EscapeForJS_TemplateLiteral(json_string);
+    std::string escaped_json = json_string;
     std::stringstream script;
     script << kAutoLayoutBegin << escaped_json << kAutoLayoutEnd;
     LOG(DEBUG) << "start autolayout JavaScript:"<< script.str();
@@ -210,8 +201,8 @@ bool NwebAutolayout::ParseToplevelConfig(const base::Value::Dict& root_dict) {
       !(*opacity_list)[1].is_int()) {
     return false;
   }
-  int first_opacity = (*opacity_list)[0].GetInt(),
-      second_opacity = (*opacity_list)[1].GetInt();
+  int first_opacity = (*opacity_list)[0].GetInt();
+  int second_opacity = (*opacity_list)[1].GetInt();
   if (first_opacity < kMinOpacityFilter || first_opacity > kMaxOpacityFilter ||
       second_opacity < kMinOpacityFilter ||
       second_opacity > kMaxOpacityFilter || first_opacity > second_opacity) {
@@ -231,6 +222,7 @@ bool NwebAutolayout::ParseWhitelist(const base::Value::Dict& whitelist_dict) {
       return false;
     }
     if (!ParseWhitelistEntry(appName, entry_value.GetDict())) {
+      LOG(ERROR) << "ParseWhitelistEntry error, BundleName:"<< appName;
       return false;
     }
   }
@@ -239,15 +231,27 @@ bool NwebAutolayout::ParseWhitelist(const base::Value::Dict& whitelist_dict) {
 
 bool NwebAutolayout::ParseWhitelistEntry(std::string_view app_bundle_name_sv,
     const base::Value::Dict& whitelist_dict) {
+  LOG(DEBUG) << "ParseWhitelistEntry for APP:" << app_bundle_name_sv;
+  std::string json_str;
+  if (base::JSONWriter::Write(whitelist_dict, &json_str)) {
+    LOG(DEBUG) << "ParseWhitelistEntry whitelist Dict Content: " << json_str;
+  } else {
+    LOG(ERROR) << "Failed to convert Dict to JSON string.";
+  }
   WhitelistEntry& current_entry = mCCMConfig_.whitelist[app_bundle_name_sv];
   const std::string* pattern_ptr = whitelist_dict.FindString(kPatternKey);
   const std::string* get_id_ptr = whitelist_dict.FindString(kGetIDKey);
   const std::string* get_page_ptr = whitelist_dict.FindString(kGetPageKey);
-
-  if (!pattern_ptr || pattern_ptr->empty() ||
-       !get_id_ptr || get_id_ptr->empty()||
-       !get_page_ptr || get_page_ptr->empty()) {
+  if (!pattern_ptr || pattern_ptr->empty()) {
     LOG(ERROR) << "Parse Error: Missing, empty or invalid type for pattern.";
+    return false;
+  }
+  if (!get_id_ptr || get_id_ptr->empty() ) {
+    LOG(ERROR) << "Parse Error: Missing, empty or invalid type for getID.";
+    return false;
+  }
+  if (!get_page_ptr || get_page_ptr->empty() ) {
+    LOG(ERROR) << "Parse Error: Missing, empty or invalid type for getPage.";
     return false;
   }
   current_entry.pattern = std::string_view(*pattern_ptr);
@@ -261,9 +265,8 @@ bool NwebAutolayout::ParseWhitelistEntry(std::string_view app_bundle_name_sv,
                << kAppRuleInfosKey << "'.";
     return false;
   }
-  // base::Value root_value(std::move(app_rules_list->Clone()));
-
-  return base::JSONWriter::Write(*app_rules_list, &current_entry.appRuleInfos );
+  current_entry.appRuleInfos = app_rules_list->Clone();
+  return true;
 }
 
 class JSResultCallbackImpl : public CefJavaScriptResultCallback {
@@ -276,7 +279,6 @@ class JSResultCallbackImpl : public CefJavaScriptResultCallback {
   std::string ConvertCefValueToString(CefRefPtr<CefValue> src) {
       std::string dst;
       int type = src->GetType();
-      LOG(DEBUG) << "OnMessage type:" << type;
       switch (type) {
         case VTYPE_STRING: {
           dst = src->GetString();
@@ -328,28 +330,16 @@ void NwebAutolayout::CheckWebContainer(CefRefPtr<CefBrowser> browser, CefRefPtr<
 void NwebAutolayout::LoadAutoLayoutFromHap() {
   ScopedTimeLogger timer("NwebAutolayout::LoadAutoLayoutFromHap");
   TRACE_EVENT("base", "NwebAutolayout::LoadAutoLayoutFromHap");
-  auto resourceInstance = OhosAdapterHelper::GetInstance().GetResourceAdapter();
-  auto autolayoutPath = std::string(kAutoLayoutFileNameHap);
-  std::shared_ptr<OhosFileMapper> fileMapper =
-      resourceInstance->GetRawFileMapper(autolayoutPath, true);
-  if (!fileMapper || fileMapper->GetDataLen() == 0) {
-    LOG(ERROR) << "Couldn't filemap AL js file by hap";
-    mEnable_ = false;
-    return;
-  }
-  LOG(DEBUG) << "AL js file length: " << fileMapper->GetDataLen()
-            << " file fd:" << fileMapper->GetFd();
+  const auto& rb = ui::ResourceBundle::GetSharedInstance();
+  std::string_view script_data = rb.GetRawDataResource(IDR_AUTOLAYOUT_JS);
 
-  std::unique_ptr<base::MemoryMappedFile> mmap =
-      std::make_unique<base::MemoryMappedFile>();
-  mmap->SetOhosFileMapper(fileMapper);
-  if (reinterpret_cast<char*>(mmap->data()) == nullptr || mmap->length() == 0) {
-    LOG(ERROR) << "Couldn't mmap AL js file";
+  LOG(DEBUG) << "Read Autolayout JS script_data size:" << script_data.size();
+  if(script_data.empty()) {
+    LOG(ERROR) << "Failed to read Autolayout js failed. Disabling feature.";
     mEnable_ = false;
     return;
   }
-  LOG(DEBUG) << "read resource file successfull.";
-  mAutoLayoutJSSource_.assign(reinterpret_cast<char*>(mmap->data()), mmap->length());
+  mAutoLayoutJSSource_.assign(script_data.data(), script_data.size());
 }
 
 std::optional<int> NwebAutolayout::ParseInt(std::string_view input) {

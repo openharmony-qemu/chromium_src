@@ -1,7 +1,21 @@
+/*
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #ifndef NWEB_AUTOLAYOUT_H
 #define NWEB_AUTOLAYOUT_H
 
-#include <stdint.h>
+#include <cstdint>
 #include <vector>
 #include <optional>
 #include <map>
@@ -27,7 +41,7 @@ struct WhitelistEntry {
   std::string_view pattern;
   std::string_view getID;
   std::string_view getPage;
-  std::string appRuleInfos;
+  std::optional<base::Value::List> appRuleInfos;
 };
 
 struct ParsedCCMConfig {
@@ -58,18 +72,15 @@ constexpr std::string_view kMinContentAreaRatioThresholdKey = "minContentAreaRat
 constexpr std::string_view kScaleAnimationDurationKey = "scaleAnimationDuration";
 constexpr std::string_view kWhitelistKey = "whitelist";
 constexpr std::string_view kPatternKey = "pattern";
-constexpr std::string_view kGetIDKey = "getID";
-constexpr std::string_view kGetPageKey = "getPage";
+constexpr std::string_view kGetIDKey = "GetID";
+constexpr std::string_view kGetPageKey = "GetPage";
 constexpr std::string_view kAppRuleInfosKey = "appRuleInfos";
 constexpr std::string_view kIdKey = "id";
 constexpr std::string_view kPgKey = "pg";
 constexpr std::string_view kWildcard = "*";
-constexpr std::string_view kDesScaleKey = "minScaleFactor";
-constexpr std::string_view kDesScale = "const.product.web.minScaleFactor";
-
-constexpr std::string_view kCCMConfig = "/system/variant/phone/base/etc/web/MiniAppConfig.json";
-
-constexpr std::string_view kAutoLayoutFileNameHap = "resources/rawfile/autolayout.js";
+constexpr std::string_view kMinDesScaleKey = "minScaleFactor";
+constexpr std::string_view kMinDesScale = "const.product.web.minScaleFactor";
+constexpr std::string_view kConfigPath = "const.product.web.alconfig";
 
 constexpr std::string_view kAutoLayoutBegin = "AutoLayout.Main.start(`";
 constexpr std::string_view kAutoLayoutEnd = "`);";
@@ -92,7 +103,7 @@ private:
 };
 
 
-class NwebAutolayout : public std::enable_shared_from_this<NwebAutolayout> {
+class NwebAutolayout {
  public: 
   NwebAutolayout(const NwebAutolayout&) = delete;
   NwebAutolayout& operator=(const NwebAutolayout&) = delete;
@@ -102,7 +113,6 @@ class NwebAutolayout : public std::enable_shared_from_this<NwebAutolayout> {
   void CheckWebContainer(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame);
   void CheckCCMandApplyRule(CefRefPtr<CefFrame> frame);
 
-protected:
   NwebAutolayout();
 
  private:

@@ -24,6 +24,10 @@ using api::system_storage::StorageUnitType;
 namespace systeminfo {
 
 void BuildStorageUnitInfo(const StorageInfo& info, StorageUnitInfo* unit) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!StorageMonitor::GetInstance())
+    return;
+#endif
   unit->id = StorageMonitor::GetInstance()->GetTransientIdForDeviceId(
       info.device_id());
   unit->name = base::UTF16ToUTF8(info.GetDisplayName(false));

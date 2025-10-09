@@ -15,7 +15,7 @@
 
 #include "native_display_manager_adapter_impl.h"
 
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 #include <string>
 
 using namespace OHOS::NWeb;
@@ -211,7 +211,7 @@ DisplayOrientation NativeDisplayAdapterImpl::GetDisplayOrientation()
     NativeDisplayManager_Orientation displayOrientation;
     NativeDisplayManager_ErrorCode errorCode
         = OH_NativeDisplayManager_GetDefaultDisplayOrientation(&displayOrientation);
-    if (DISPLAY_MANAGER_OK != errorCode) {
+    if (DISPLAY_MANAGER_OK == errorCode) {
         return DisplayOrientation::UNKNOWN;
     }
     return ConvertDisplayOrientationType(displayOrientation);

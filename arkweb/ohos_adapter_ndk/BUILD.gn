@@ -186,6 +186,7 @@ component("adapter_ndk") {
     "net_connect_adapter/net_capabilities_adapter_impl.h",
     "net_connect_adapter/net_capabilities_adapter_impl.cpp",
     "hiviewdfx_adapter/hitrace_adapter_impl.cpp",
+    "hiviewdfx_adapter/hisysevent_adapter_impl.cpp",
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.h",
     "drawing_text_adapter/ohos_drawing_text_adapter_impl.cpp",
     "distributeddatamgr_adapter/ohos_web_snapshot_data_base.cpp",
@@ -196,6 +197,24 @@ component("adapter_ndk") {
     "ndk_callback_wrapper/callback_shared_wrapper.h",
     "ohos_resource_adapter/ohos_resource_adapter_impl.h",
     "ohos_resource_adapter/ohos_resource_adapter_impl.cpp",
+    "system_properties_adapter/system_properties_adapter_impl.cpp",
+    "camera_adapter/camera_manager_adapter_impl.cpp",
+    "camera_adapter/camera_rotation_info_adapter_impl.cpp",
+    "camera_adapter/format_adapter_impl.cpp",
+    "camera_adapter/video_capture_range_adapter_impl.cpp",
+    "camera_adapter/video_control_support_adapter_impl.cpp",
+    "camera_adapter/video_device_descriptor_adapter_impl.cpp",
+    "aafwk_adapter/aafwk_app_mgr_client_adapter_impl.cpp",
+    "distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.cpp",
+    "distributeddatamgr_adapter/ohos_web_permission_data_base_adapter_impl.cpp",
+    "print_manager_adapter/print_manager_adapter_impl.cpp",
+    "soc_perf_adapter/soc_perf_client_adapter_impl.cpp",
+    "enterprise_device_management_adapter/enterprise_device_management_adapter_impl.cpp",
+    "ohos_init_web_adapter/ohos_init_web_adapter_impl.cpp",
+    "flowbuffer_adapter/flowbuffer_adapter_impl.cpp",
+    "migration_manager_adapter/migration_manager_adapter_impl.cpp",
+    "power_mgr_adapter/power_mgr_client_adapter_impl.cpp",
+    "audio_capturer_adapter/audio_renderer_adapter_impl.cpp",
   ]
 
   include_dirs = [
@@ -208,6 +227,10 @@ component("adapter_ndk") {
     "utils/include/",
     "interfaces/",
     "graphic_adapter/",
+    "hiviewdfx_adapter/",
+    "system_properties_adapter",
+    "camera_adapter/include",
+    "audio_capturer_adapter",
     "third_party/bounds_checking_function/include",
     "ohos_sdk/openharmony/native/sysroot/usr/include/",
     "//third_party/skia",
@@ -257,7 +280,6 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_media_codecbase.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_buffer.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_media_core.so",
-    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_window.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_media_acodec.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_media_avcencinfo.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libimage_packer.so",
@@ -274,7 +296,12 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libhitrace_ndk.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_vsync.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libohresmgr.so",
-    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/librawfile.z.so",]
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/librawfile.z.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libohcamera.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libipc_capi.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libchild_process.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libnative_vsync.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/aarch64-linux-ohos/libohprint.so",]
   } else if (target_cpu == "arm") {
     libs = [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libffrt.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libhilog_ndk.z.so",
@@ -315,7 +342,6 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_media_codecbase.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_buffer.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_media_core.so",
-    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_window.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_media_acodec.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_media_avcencinfo.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libimage_packer.so",
@@ -331,7 +357,12 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_media_venc.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libhitrace_ndk.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libohresmgr.so",
-    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/librawfile.z.so", ]
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/librawfile.z.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libohcamera.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libipc_capi.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libchild_process.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnative_vsync.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libohprint.so", ]
   } else if (target_cpu == "x86_64" || target_cpu == "x64") {
     libs = [ "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libffrt.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libhilog_ndk.z.so",
@@ -372,7 +403,6 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_media_codecbase.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_buffer.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_media_core.so",
-    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_window.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_media_acodec.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_media_avcencinfo.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libimage_packer.so",
@@ -388,7 +418,12 @@ component("adapter_ndk") {
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_media_venc.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libhitrace_ndk.z.so",
     "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libohresmgr.so",
-    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/librawfile.z.so",]
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/librawfile.z.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libohcamera.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libipc_capi.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libchild_process.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnative_vsync.so",
+    "//ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libohprint.so",]
   }
 
   if (target_cpu == "arm") {

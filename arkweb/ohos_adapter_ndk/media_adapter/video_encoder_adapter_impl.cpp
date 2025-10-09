@@ -18,9 +18,9 @@
 #include "arkweb/ohos_adapter_ndk/media_adapter/buffer_info_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/media_adapter/ohos_buffer_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/media_adapter/codec_format_adapter_impl.h"
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 
-#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
+#include "native_window_adapter_impl.h"
 
 using namespace OHOS::NWeb;
 

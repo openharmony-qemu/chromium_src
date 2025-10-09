@@ -16,7 +16,7 @@
 
 #include <bundle/native_interface_bundle.h>
 
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 #include <unistd.h>
 
 namespace OHOS::NWeb {

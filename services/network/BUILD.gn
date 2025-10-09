@@ -628,6 +628,7 @@ source_set("tests") {
   if (arkweb_test) {
     sources += [
       "//arkweb/chromium_ext/services/network/network_service_network_delegate_ext_unittest.cc",
+      "//arkweb/chromium_ext/services/network/tests/url_loader_ext_unittests.cc",
     ]
   }
 }

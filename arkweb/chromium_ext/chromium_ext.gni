@@ -569,6 +569,10 @@ arkweb_components_subresource_filter_content_browser_sources = [
   "//arkweb/chromium_ext/components/subresource_filter/core/common/arkweb_indexed_ruleset_ext.h",
 ]
 
+arkweb_components_subresource_filter_content_browser_unitest_sources = [
+  "//arkweb/chromium_ext/components/subresource_filter/content/browser/safe_browsing_user_ruleset_publisher_unittest.cc",
+]
+
 arkweb_components_permissions_contexts_sources = [
   "//arkweb/chromium_ext/components/permissions/contexts/geolocation_permission_context_ohos.cc",
   "//arkweb/chromium_ext/components/permissions/contexts/geolocation_permission_context_ohos.h",
@@ -618,6 +622,7 @@ arkweb_components_subresource_filter_content_renderer_sources = [
 arkweb_components_subresource_filter_content_renderer_unittest_sources = [
   "//arkweb/chromium_ext/components/subresource_filter/content/renderer/user_subresource_filter_agent_unittest.cc",
   "//arkweb/chromium_ext/components/subresource_filter/content/renderer/user_unverified_ruleset_dealer_unittest.cc",
+  "//arkweb/chromium_ext/components/subresource_filter/content/renderer/web_document_subresource_filter_impl_for_include_unittest.cc",
 ]
 
 arkweb_third_patry_blink_renderer_platform_fonts_ohos_sources = [

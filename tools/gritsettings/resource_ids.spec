@@ -1406,6 +1406,11 @@
     "includes": [10160],
   },
 
+  # For autolayout
+  "arkweb/ohos_autolayout/autolayout_resources.grd": {
+    "includes": [10200],
+  },
+
   "cef/libcef/resources/cef_resources.grd": {
     "META": {"align": 31500},
     "includes": [31500],

@@ -842,7 +842,7 @@ bool NWebDelegate::Init(bool is_enhance_surface,
   base::ThreadPool::PostTask(
       FROM_HERE,
       base::BindOnce([]() {
-            LOG(INFO) << "Init NwebAutolayout::GetInstance()";
+            LOG(DEBUG) << "Init NwebAutolayout::GetInstance()";
             NwebAutolayout::GetInstance();
       })
   );

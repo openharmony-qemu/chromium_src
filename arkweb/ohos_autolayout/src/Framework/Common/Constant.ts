@@ -1,0 +1,114 @@
+export default class Constant {
+    static readonly minMargin = 5;
+    
+    // Layout
+    static readonly margin = 'margin';
+    static readonly display = 'display';
+    static readonly inline = 'inline';
+    static readonly height = 'height';
+    static readonly width = 'width';
+    static readonly minHeight = 'min-height';
+    static readonly font_size = 'font-size';
+    static readonly transform = 'transform';
+    static readonly transition = 'transition';
+    static readonly transform_origin = 'transform-origin';
+    static readonly translate = 'translate';
+    static readonly perspective = 'perspective';
+    static readonly flex = 'flex';
+    static readonly position = 'position';
+    static readonly top = 'top';
+    static readonly left = 'left';
+    static readonly bottom = 'bottom';
+    static readonly float = 'float';
+    static readonly vertical_align = 'vertical-align';
+    static readonly justify_content = 'justify-content';
+    static readonly margin_top = 'margin-top';
+    static readonly margin_left = 'margin-left';
+    static readonly margin_right = 'margin-right';
+    static readonly flex_direction = 'flex-direction';
+    static readonly align_items = 'align-items';
+    static readonly margin_bottom = 'margin-bottom';
+    static readonly padding_top = 'padding-top';
+    static readonly padding_bottom = 'padding-bottom';
+    static readonly padding_right = 'padding-right';
+    static readonly padding_left = 'padding-left';
+    static readonly right = 'right';
+    static readonly overflow = 'overflow';
+    static readonly overflow_x = 'overflow-x';
+    static readonly overflow_y = 'overflow-y';
+    static readonly zoom = 'zoom';
+    static readonly z_index = 'z-index';
+    static readonly line_height = 'line-height';
+    static readonly computedWidth = 'computedWidth';
+    static readonly box_sizing = 'box-sizing';
+    static readonly background_size = 'background-size';
+    static readonly border_bottom_width = 'border-bottom-width';
+    static readonly border_top_width = 'border-top-width';
+    static readonly border_left_width = 'border-left-width';
+    static readonly border_right_width = 'border-right-width';
+    static readonly border_left = 'border-left';
+    static readonly border_right = 'border-right';
+    static readonly border_top = 'border-top';
+    static readonly white_space = 'white-space';
+    static readonly text_align = 'text-align';
+    static readonly max_height = 'max-height';
+    static readonly flex_grow = 'flex-grow';
+    static readonly row = 'row';
+    static readonly flex_shrink = 'flex-shrink';
+    static readonly filter = 'filter';
+    static readonly flex_wrap = 'flex-wrap';
+    static readonly content = 'content';
+    static readonly name_ = 'name';
+    static readonly meta = 'meta';
+    static readonly viewport = 'viewport';
+    static readonly resize = 'resize';
+    static readonly load = 'load';
+    static readonly childList = 'childList';
+    static readonly border_radius = 'border-radius';
+    static readonly border = 'border';
+    static readonly border_width = 'border-width';
+    static readonly max_width = 'max-width';
+    static readonly transition_duration = 'transition-duration';
+    static readonly visibility = 'visibility';
+    static readonly opacity = 'opacity';
+    static readonly rel = 'rel';
+    static readonly href = 'href';
+    static readonly _webkit_box_flex = '-webkit-box-flex';
+    static readonly scale = 'scale';
+    static readonly flex_basis = 'flex-basis';
+    static readonly box_shadow = 'box-shadow';
+    static readonly pointer_events = 'pointer-events';
+    static readonly px = 'px';
+
+    static readonly fixed = 'fixed';
+    static readonly sticky = 'sticky';
+    static readonly absolute = 'absolute';
+    
+    static readonly wrap = 'wrap';
+    static readonly column = 'column';
+    static readonly space_between = 'space-between';
+    static readonly space_evenly = 'space-evenly';
+    static readonly space_around = 'space-around';
+
+    static readonly true = 'true';
+    static readonly false = 'false';
+
+    static readonly grid_template_columns = 'grid-template-columns';
+    static readonly gap = 'gap';
+    static readonly grid_auto_flow = 'grid-auto-flow';
+    static readonly dense = 'dense';
+    static readonly start = 'start';
+    static readonly fit_content = 'fit-content';
+    static readonly break_inside = 'break-inside';
+    static readonly avoid = 'avoid';
+    static readonly grid = 'grid';
+    static readonly border_box = 'border-box';
+
+    static readonly tag_truncate = 'truncate-tag';
+
+    static readonly ERR_CODE_GAPS = 100;
+    static readonly ERR_CODE_OVERFLOW = 50;
+    static readonly ERR_CODE_OFFSET = 10;
+    static readonly ERR_CODE_CLOSE_BTN_OVERLAP = 2;
+    static readonly ERR_CODE_INTERACTIVE = 1;
+}

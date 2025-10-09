@@ -128,8 +128,6 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_default_engine_prefetch_args_impl.h",
     "src/cef_delegate/nweb_delegate.cc",
     "src/cef_delegate/nweb_delegate.h",
-    "src/cef_delegate/nweb_autolayout.cc",
-    "src/cef_delegate/nweb_autolayout.h",
     "src/cef_delegate/nweb_devtools_message_handler_impl.cc",
     "src/cef_delegate/nweb_devtools_message_handler_impl.h",
     "src/cef_delegate/nweb_display_listener.cc",
@@ -254,6 +252,12 @@ component("cef_nweb") {
       "src/cef_delegate/nweb_extension_top_sites_cef_delegate.h",
     ]
 
+    if (defined(arkweb_autolayout) && arkweb_autolayout) {
+      sources += [
+        "src/cef_delegate/nweb_autolayout.cc",
+        "src/cef_delegate/nweb_autolayout.h",
+      ]
+    }
     if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
       deps += [
         "//ohos_nweb_ex:dispatcher",
@@ -562,6 +566,10 @@ component("nweb_sources") {
 
   if (defined(arkweb_ai) && arkweb_ai) {
     deps += [ "//ohos_resources/data_detector:data_detector_resources" ]
+  }
+
+  if (defined(arkweb_autolayout) && arkweb_autolayout) {
+    deps += [ "//arkweb/ohos_autolayout:autolayout_resources" ]
   }
 
   #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)

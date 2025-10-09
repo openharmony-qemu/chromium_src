@@ -43,6 +43,12 @@ public:
 
     std::vector<std::string> GetDnsServersByNetId(int32_t netId) override;
 
+    std::vector<std::string> GetDnsServersForVpn() override;
+
+    void RegisterVpnListener(std::shared_ptr<VpnListener> cb) override;
+
+    void UnRegisterVpnListener() override;
+
 private:
     static std::unordered_map<int32_t, std::shared_ptr<NetConnCallback>> netConnCallbackMap_;
     static std::mutex mutex_;

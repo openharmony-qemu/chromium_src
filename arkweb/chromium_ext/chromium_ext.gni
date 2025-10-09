@@ -121,6 +121,10 @@ arkweb_services_network_sources = [
   "//arkweb/chromium_ext/services/network/arkweb_network_service_ext.h",
 ]
 
+arkweb_services_network_unittest_sources = [
+  "//arkweb/chromium_ext/services/network/arkweb_network_service_ext_unittest.cc",
+]
+
 arkweb_power_save_blocker_source = [
   "//arkweb/chromium_ext/service/device/wake_lock/power_save_blocker/power_save_blocker_ohos.cc"
 ]

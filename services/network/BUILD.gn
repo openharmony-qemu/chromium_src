@@ -511,6 +511,11 @@ source_set("tests") {
     "web_transport_unittest.cc",
   ]
 
+  if (is_arkweb) {
+    sources += arkweb_services_network_unittest_sources
+    configs += [ "//cef/libcef/features:config" ]
+  }
+
   if (is_p2p_enabled) {
     sources += [
       "p2p/socket_manager_unittest.cc",

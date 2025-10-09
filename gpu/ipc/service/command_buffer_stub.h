@@ -354,10 +354,6 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
   mojo::AssociatedReceiver<mojom::CommandBuffer> receiver_{this};
   mojo::SharedAssociatedRemote<mojom::CommandBufferClient> client_;
 
-#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-  base::OneShotTimer wait_for_get_offset_in_range_timer_;
-#endif
-
   // Caching the `release_delegate` argument of ExecuteDeferredRequest() during
   // the call.
   raw_ptr<FenceSyncReleaseDelegate> release_delegate_ = nullptr;

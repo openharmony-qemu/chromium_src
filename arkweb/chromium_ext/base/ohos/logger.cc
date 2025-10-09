@@ -64,7 +64,7 @@ std::string normalizeTag(const std::string& tag) {
 
   int unprefixedTagStart = 0;
   if (StartWith(tag, DEPRECATED_TAG_PREFIX)) {
-    unprefixedTagStart = DEPRECATED_TAG_PREFIX.size();
+    unprefixedTagStart = static_cast<int>(DEPRECATED_TAG_PREFIX.size());
   }
 
   return TAG_PREFIX + tag.substr(unprefixedTagStart);

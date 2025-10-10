@@ -76,6 +76,10 @@ const OH_AudioStream_SourceType DEFAULT_SOURCETYPE = AUDIOSTREAM_SOURCE_TYPE_VOI
 } // namespace
 
 AudioCapturerAdapterImpl::~AudioCapturerAdapterImpl() {
+    WVLOG_D("~AudioCapturerAdapterImpl: Release capturer");
+    Stop();
+    Release();
+
     if (callback_index_ > 0) {
         callback_wrapper_.Clear(callback_index_);
         callback_index_ = 0;
@@ -110,13 +114,6 @@ int32_t AudioCapturerAdapterImpl::OnReadData(OH_AudioCapturer* capturer, void* u
     userDataCallback->callback->OnReadData(length);
     return 0;
 
-}
-
-AudioCapturerAdapterImpl::~AudioCapturerAdapterImpl()
-{
-    WVLOG_D("~AudioCapturerAdapterImpl: Release capturer");
-    Stop();
-    Release();
 }
 
 int32_t AudioCapturerAdapterImpl::Create(

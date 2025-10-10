@@ -176,7 +176,6 @@ int32_t NetConnectAdapterImpl::RegisterNetConnCallback(std::shared_ptr<NetConnCa
     }
 
     int32_t id = static_cast<int32_t>(uid);
-    std::lock_guard<std::mutex> lock(mutex_);
     netConnCallbackMap_.insert(std::make_pair(id, cb));
     WVLOG_I("register NetConnCallback success.");
     return id;

@@ -69,6 +69,7 @@ struct RunJavaScriptParam;
 #include "capi/nweb_extension_context_menus_callback.h"
 #include "capi/web_extension_tab_items.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h"
+#include "ohos_nweb/src/capi/web_extension_install_crx_items.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -939,6 +940,13 @@ class NWebImpl : public NWeb {
   static std::string GetExtensionVersion(const std::string& extension_id);
   static void InstallExtensionFile(const std::string& file_path,
                                    OnExtensionInstallCallback callback);
+  static void InstallExtensionFileV2(
+      const std::string& file_path,
+      const NWebExtensionInstallProperties& options,
+      OnExtensionInstallCallback callback);
+  static void SetPublisherKeys(const std::vector<std::vector<uint8_t>>& keys);
+  static void WebExtensionSetForbidDisplayInSettings(
+    const std::set<std::string>& extension_ids);
   //old version
   void WebExtensionTabCreated(int tab_id);
   void WebExtensionTabUpdated(

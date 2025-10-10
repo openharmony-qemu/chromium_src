@@ -16,6 +16,7 @@
 #ifndef OHOS_NWEB_SRC_NWEB_EXTENSION_MANAGER_CALLBACK_H_
 #define OHOS_NWEB_SRC_NWEB_EXTENSION_MANAGER_CALLBACK_H_
 
+#include <set>
 #include <stddef.h>
 #include <string>
 #include <map>
@@ -145,6 +146,10 @@ struct WebExtensionInfoV2 {
   std::vector<NWebContextMenusItemV2> contextMenusV2;
   WebExtensionActionInfoV2 action_v2;
   std::optional<double> install_time;
+};
+
+struct WebExtensionForbidDisplayParams {
+  std::set<std::string> extension_ids;
 };
 
 typedef void (*OnWebExtensionLoadedFun)(const WebExtensionInfo& load_info);

@@ -34,6 +34,9 @@ class DisplayInfoProviderOhos : public DisplayInfoProvider {
       DisplayUnitInfoList& units) const override;
 
  private:
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class DisplayInfoProviderOhosTest;
+#endif
   std::unique_ptr<OHOS::NWeb::DisplayManagerAdapter> display_manager_adapter_;
 };
 

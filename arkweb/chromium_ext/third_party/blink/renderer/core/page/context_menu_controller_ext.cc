@@ -153,7 +153,8 @@ GURL ContextMenuControllerExt::GetAbsoluteUrl(
 void ContextMenuControllerExt::FindImgUrl(ContextMenuData& data,
                                           HitTestResult& result,
                                           const PhysicalOffset& point) {
-  if (data.src_url.is_empty() && result.URLElement()) {
+  bool is_browser = base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebEx);
+  if (data.src_url.is_empty() && result.URLElement() && !is_browser) {
     // try to find image url
     data.src_url = GetChildImageUrlFromElement(
         blink::WebElement(result.URLElement()),

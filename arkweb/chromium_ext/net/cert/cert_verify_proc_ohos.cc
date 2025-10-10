@@ -509,7 +509,9 @@ int TryVerifyWithAIAFetching(const std::vector<std::string>& cert_bytes,
   // AIA URLs.
   bssl::CertErrors errors;
   bssl::ParsedCertificateList certs;
-  ConvertToParsedCertificates(cert_bytes, errors, certs);
+  if (ConvertToParsedCertificates(cert_bytes, errors, certs) != X509_V_OK) {
+    return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
+  }
 
   // Build a chain as far as possible from the target certificate at index 0,
   // using the initially provided certificates.

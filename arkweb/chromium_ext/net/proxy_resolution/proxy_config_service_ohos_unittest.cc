@@ -13,20 +13,33 @@
  * limitations under the License.
  */
 
-#include "net/proxy_resolution/proxy_config_service_ohos.cc"
+#include "net/base/proxy_server.h"
 
+#define private public
+#include "net/proxy_resolution/proxy_config_service_ohos.cc"
+#undef private
 #include "base/task/thread_pool.h"
 #include "base/test/task_environment.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "net/proxy_resolution/proxy_config_service.h"
 
 namespace net {
+class MockObserver : public ProxyConfigService::Observer {
+ public:
+  MOCK_METHOD(void,
+              OnProxyConfigChanged,
+              (const ProxyConfigWithAnnotation& config,
+               ProxyConfigService::ConfigAvailability availability),
+              (override));
+};
+
 class TestDelegate : public ProxyConfigServiceOHOS::Delegate {
  public:
   using Delegate::Delegate;
 
   void SetHasProxyOverride(bool value) { has_proxy_override_ = value; }
   bool GetHasProxyOverride() { return has_proxy_override_; }
-  void SetExcludePacUrl(bool value) { exclude_pac_url_ = value; }
   void TestSetNewConfigInMainSequence(
       const ProxyConfigWithAnnotation& proxy_config) {
     SetNewConfigInMainSequence(proxy_config);
@@ -39,7 +52,17 @@ class ProxyConfigServiceOHOSTest : public ::testing::Test {
     task_runner_ = base::ThreadPool::CreateSequencedTaskRunner(
         {base::TaskPriority::USER_VISIBLE, base::MayBlock(),
          base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN});
-    service_ = std::make_shared<ProxyConfigServiceOHOS>(task_runner_);
+    service_ = std::make_shared<ProxyConfigServiceOHOS>(
+        task_runner_,
+        base::BindRepeating([](const std::string& property) -> std::string {
+          if (property == "test_prefix.proxyHost") {
+            return "proxy1.example.com";
+          }
+          if (property == "test_prefix.proxyPort") {
+            return "6060";
+          }
+          return std::string();
+        }));
     delegate_ = base::MakeRefCounted<TestDelegate>(
         task_runner_,
         base::BindRepeating([](const std::string& property) -> std::string {
@@ -51,6 +74,7 @@ class ProxyConfigServiceOHOSTest : public ::testing::Test {
           }
           return std::string();
         }));
+    service_->delegate_->has_proxy_override_ = true;
     callback_ = NetProxyEventCallback::GetInstance();
   }
 
@@ -231,53 +255,84 @@ TEST_F(ProxyConfigServiceOHOSTest, AddBypassRules_003) {
   EXPECT_TRUE(bypass_rules.Matches(GURL("ftp://test.valid.com")));
 }
 
+std::string GetPropertyString(const std::string& property) {
+  if (property == "http.proxyHost") {
+    return "http.proxy.com";
+  }
+  if (property == "http.proxyPort") {
+    return "8080";
+  }
+  if (property == "https.proxyHost") {
+    return "https.proxy.com";
+  }
+  if (property == "https.proxyPort") {
+    return "8443";
+  }
+  if (property == "ftp.proxyHost") {
+    return "ftp.proxy.com";
+  }
+  if (property == "ftp.proxyPort") {
+    return "2121";
+  }
+  if (property == "socksProxyHost") {
+    return "socks.proxy.com";
+  }
+  if (property == "socksProxyPort") {
+    return "1080";
+  }
+  if (property == "http.nonProxyHosts") {
+    return "*.noproxy.com";
+  }
+  return std::string();
+}
+
 TEST_F(ProxyConfigServiceOHOSTest, GetProxyRules_001) {
   GetPropertyCallback get_property =
       base::BindRepeating([](const std::string& property) -> std::string {
-        if (property == "http.proxyHost") {
-          return "http.proxy.com";
-        }
-        if (property == "http.proxyPort") {
-          return "8080";
-        }
-        if (property == "https.proxyHost") {
-          return "https.proxy.com";
-        }
-        if (property == "https.proxyPort") {
-          return "8443";
-        }
-        if (property == "ftp.proxyHost") {
-          return "ftp.proxy.com";
-        }
-        if (property == "ftp.proxyPort") {
-          return "2121";
-        }
-        if (property == "socksProxyHost") {
-          return "socks.proxy.com";
-        }
-        if (property == "socksProxyPort") {
-          return "1080";
-        }
-        if (property == "http.nonProxyHosts") {
-          return "*.noproxy.com";
-        }
-        return std::string();
+        return GetPropertyString(property);
       });
   ProxyConfig::ProxyRules rules;
   bool result = GetProxyRules(get_property, &rules);
   EXPECT_TRUE(result);
+  EXPECT_EQ(rules.type, ProxyConfig::ProxyRules::Type::PROXY_LIST_PER_SCHEME);
+
+  EXPECT_FALSE(rules.proxies_for_http.IsEmpty());
   net::ProxyChain http_chain = rules.proxies_for_http.First();
+  ASSERT_EQ(http_chain.length(), 1u);
   net::ProxyServer http_proxy = http_chain.GetProxyServer(0);
+  EXPECT_EQ(http_proxy.scheme(), net::ProxyServer::SCHEME_HTTP);
   EXPECT_EQ(http_proxy.host_port_pair().host(), "http.proxy.com");
+  EXPECT_EQ(http_proxy.host_port_pair().port(), 8080);
+
+  EXPECT_FALSE(rules.proxies_for_https.IsEmpty());
   net::ProxyChain https_chain = rules.proxies_for_https.First();
+  ASSERT_EQ(https_chain.length(), 1u);
   net::ProxyServer https_proxy = https_chain.GetProxyServer(0);
+  EXPECT_EQ(https_proxy.scheme(), net::ProxyServer::SCHEME_HTTP);
   EXPECT_EQ(https_proxy.host_port_pair().host(), "https.proxy.com");
+  EXPECT_EQ(https_proxy.host_port_pair().port(), 8443);
+
+  EXPECT_FALSE(rules.proxies_for_ftp.IsEmpty());
   net::ProxyChain ftp_chain = rules.proxies_for_ftp.First();
+  ASSERT_EQ(ftp_chain.length(), 1u);
   net::ProxyServer ftp_proxy = ftp_chain.GetProxyServer(0);
+  EXPECT_EQ(ftp_proxy.scheme(), net::ProxyServer::SCHEME_HTTP);
   EXPECT_EQ(ftp_proxy.host_port_pair().host(), "ftp.proxy.com");
+  EXPECT_EQ(ftp_proxy.host_port_pair().port(), 2121);
+
+  EXPECT_FALSE(rules.fallback_proxies.IsEmpty());
   net::ProxyChain socks_chain = rules.fallback_proxies.First();
+  ASSERT_EQ(socks_chain.length(), 1u);
   net::ProxyServer socks_proxy = socks_chain.GetProxyServer(0);
+  EXPECT_EQ(socks_proxy.scheme(), net::ProxyServer::SCHEME_SOCKS5);
   EXPECT_EQ(socks_proxy.host_port_pair().host(), "socks.proxy.com");
+  EXPECT_EQ(socks_proxy.host_port_pair().port(), 1080);
+
+  EXPECT_FALSE(rules.bypass_rules.rules().empty());
+  GURL noproxy_url("http://test.noproxy.com");
+  EXPECT_TRUE(rules.bypass_rules.Matches(noproxy_url));
+  GURL proxy_url("http://test.proxy.com");
+  EXPECT_FALSE(rules.bypass_rules.Matches(proxy_url));
 }
 
 TEST_F(ProxyConfigServiceOHOSTest, GetProxyRules_002) {
@@ -354,11 +409,11 @@ TEST_F(ProxyConfigServiceOHOSTest, GetProxyRules_006) {
 
 TEST_F(ProxyConfigServiceOHOSTest, GetLatestProxyConfigInternal_001) {
   GetPropertyCallback get_property =
-      base::BindRepeating([](const std::string& key) -> std::string {
-        if (key == "http.proxyHost") {
-          return "proxy.com";
+      base::BindRepeating([](const std::string& property) -> std::string {
+        if (property == "http.proxyHost") {
+          return "http.proxy.com";
         }
-        if (key == "http.proxyPort") {
+        if (property == "http.proxyPort") {
           return "8080";
         }
         return std::string();
@@ -373,7 +428,7 @@ TEST_F(ProxyConfigServiceOHOSTest, GetLatestProxyConfigInternal_001) {
   net::ProxyChain http_chain = rules.proxies_for_http.First();
   ASSERT_EQ(http_chain.length(), 1u);
   net::ProxyServer http_proxy = http_chain.GetProxyServer(0);
-  EXPECT_EQ(http_proxy.host_port_pair().host(), "proxy.com");
+  EXPECT_EQ(http_proxy.host_port_pair().host(), "http.proxy.com");
   EXPECT_EQ(http_proxy.host_port_pair().port(), 8080);
 }
 
@@ -414,19 +469,27 @@ TEST_F(ProxyConfigServiceOHOSTest, FixupProxyHostScheme_004) {
 
 TEST_F(ProxyConfigServiceOHOSTest, GetProperty_001) {
   std::string http_host = GetProperty("http.proxyHost");
+  EXPECT_EQ(http_host, "");
   std::string https_host = GetProperty("https.proxyHost");
+  EXPECT_EQ(https_host, "");
 }
 
 TEST_F(ProxyConfigServiceOHOSTest, GetProperty_002) {
   std::string http_port = GetProperty("http.proxyPort");
+  EXPECT_EQ(http_port, "0");
   std::string https_port = GetProperty("https.proxyPort");
+  EXPECT_EQ(https_port, "0");
 }
 
 TEST_F(ProxyConfigServiceOHOSTest, GetProperty_003) {
   std::string http_nonProxyHosts = GetProperty("http.nonProxyHosts");
+  EXPECT_EQ(http_nonProxyHosts, "");
   std::string https_nonProxyHosts = GetProperty("https.nonProxyHosts");
+  EXPECT_EQ(https_nonProxyHosts, "");
   std::string ws_nonProxyHosts = GetProperty("ws.nonProxyHosts");
+  EXPECT_EQ(ws_nonProxyHosts, "");
   std::string wss_nonProxyHosts = GetProperty("wss.nonProxyHosts");
+  EXPECT_EQ(wss_nonProxyHosts, "");
 }
 
 TEST_F(ProxyConfigServiceOHOSTest, GetProperty_004) {
@@ -590,6 +653,7 @@ TEST_F(ProxyConfigServiceOHOSTest, Delegate_GetLatestProxyConfig_002) {
   ASSERT_NE(delegate_, nullptr);
   ProxyConfigWithAnnotation expected_config =
       ProxyConfigWithAnnotation::CreateDirect();
+  delegate_->AddObserver(new MockObserver());
   delegate_->TestSetNewConfigInMainSequence(expected_config);
   ProxyConfigWithAnnotation actual_config;
   auto result = delegate_->GetLatestProxyConfig(&actual_config);
@@ -619,7 +683,7 @@ TEST_F(ProxyConfigServiceOHOSTest, Delegate_ProxySettingsChangedTo_001) {
 TEST_F(ProxyConfigServiceOHOSTest, Delegate_ProxySettingsChangedTo_002) {
   ASSERT_NE(delegate_, nullptr);
   delegate_->SetHasProxyOverride(false);
-  delegate_->SetExcludePacUrl(true);
+  delegate_->set_exclude_pac_url(true);
   const std::string host = "proxy.example.com";
   const int port = 8888;
   const std::string pac_url = "http://example.com/pac.js";
@@ -629,7 +693,7 @@ TEST_F(ProxyConfigServiceOHOSTest, Delegate_ProxySettingsChangedTo_002) {
 TEST_F(ProxyConfigServiceOHOSTest, Delegate_ProxySettingsChangedTo_003) {
   ASSERT_NE(delegate_, nullptr);
   delegate_->SetHasProxyOverride(false);
-  delegate_->SetExcludePacUrl(false);
+  delegate_->set_exclude_pac_url(false);
   const std::string host = "proxy.example.com";
   const int port = 8888;
   const std::string pac_url = "http://example.com/pac.js";
@@ -695,4 +759,9 @@ TEST_F(ProxyConfigServiceOHOSTest, NetProxyEventCallback_GetInstance_002) {
   EXPECT_EQ(first_instance, second_instance);
 }
 
+TEST_F(ProxyConfigServiceOHOSTest, NetProxyEventCallback_Changed_001) {
+  callback_->AddObserver(service_.get());
+  callback_->AddObserver(nullptr);
+  callback_->Changed("example.com", 8080, "http://pac", {"*.example.com"});
+}
 }  // namespace net

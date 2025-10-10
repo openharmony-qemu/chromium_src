@@ -126,7 +126,7 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadFileImplExt
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-  uint32_t read_download_size_;
+  uint32_t read_download_size_{0};
   ReadDownloadDataCallback read_download_callback_;
 #endif
 };

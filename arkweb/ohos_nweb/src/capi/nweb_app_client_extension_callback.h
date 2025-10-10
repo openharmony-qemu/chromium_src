@@ -133,6 +133,12 @@ struct NWebAppClientExtensionCallback {
                               const char* distillable_page_url,
                               const char* title);
 #endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  const char* (*OnRewriteUrlForNavigation)(const char* original_url,
+                                           const char* referrer,
+                                           int32_t nweb_id);
+#endif
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_

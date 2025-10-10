@@ -136,4 +136,8 @@ virtual void OnIsPageDistillable(int page_type, const std::string& distillable_p
 virtual bool IsForDistillerPage();
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+virtual std::string OnRewriteUrlForNavigation(const std::string& original_url, const std::string& referrer) { return ""; }
+#endif
+
 #endif  // ARKWEB_CHROMIUM_EXT_CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_DELEGATE_FOR_INCLUDE_H_

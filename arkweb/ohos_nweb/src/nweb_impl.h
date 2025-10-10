@@ -1146,6 +1146,7 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   static void EnablePrivateNetworkAccess(bool enable);
   static bool IsPrivateNetworkAccessEnabled();
+  static void EnableRewriteUrlForNavigation(bool enable);
 #endif
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override;

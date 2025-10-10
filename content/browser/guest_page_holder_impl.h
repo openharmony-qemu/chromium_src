@@ -66,6 +66,10 @@ class GuestPageHolderImpl : public GuestPageHolder,
   void ActivateAndShowRepostFormWarningDialog() override;
   bool ShouldPreserveAbortedURLs() override;
   void UpdateOverridingUserAgent() override;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string NotifyNavigationRewriteUrl(const std::string& original_url,
+                                         const std::string& referrer) override;
+#endif
 
   ForwardingAudioStreamFactory* GetAudioStreamFactory();
   void SetAudioMutedFromWebContents(bool web_contents_muted);

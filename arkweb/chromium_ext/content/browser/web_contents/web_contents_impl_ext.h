@@ -319,6 +319,14 @@ class WebContentsImplExt : public WebContentsImpl {
                            const std::string& title) override;
 #endif // ARKWEB_READER_MODE
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string OnRewriteUrlForNavigation(const std::string& original_url,
+                                        const std::string& referrer) override;
+
+  std::string NotifyNavigationRewriteUrl(const std::string& original_url,
+                                         const std::string& referrer) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 friend class WebContentsImpl;
 friend class WebContentsImplUtils;

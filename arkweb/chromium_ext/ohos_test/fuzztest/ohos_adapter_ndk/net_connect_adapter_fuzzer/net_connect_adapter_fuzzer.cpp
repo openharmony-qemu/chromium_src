@@ -88,8 +88,8 @@ void FuzzApi(const uint8_t* data, size_t size) {
   NetConnectAdapterImpl ins;
   std::shared_ptr<NiceMock<NetConnCallbackMock>> callback =
       std::make_shared<NiceMock<NetConnCallbackMock>>();
-  int32_t id = ins.RegisterNetConnCallback(nullptr);
-  id = ins.RegisterNetConnCallback(callback);
+  ins.RegisterNetConnCallback(nullptr);
+  int32_t id = ins.RegisterNetConnCallback(callback);
   ins.GetDnsServers();
   int32_t netId = fdp.ConsumeIntegral<int32_t>();
   ins.GetDnsServersByNetId(netId);

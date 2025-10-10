@@ -14,7 +14,7 @@
  */
 
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
-#include "arkweb/ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/nweb_safe_browsing_detection_handler.h"
+#include "arkweb/ohos_nweb_ex/overrides/ohos_nweb/src/cef_delegate/cloud_control_config/global_config/nweb_cloud_control_global_config.h"
 #include "base/base_switches.h"
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
@@ -104,7 +104,7 @@ void AddGlobalConfigFeaturesSwitchesToCommandLine(PrefService* local_state) {
 void DealGlobalConfig(PrefService* local_state) {
   AddGlobalConfigFeaturesSwitchesToCommandLine(local_state);
 
-  OHOS::NWeb::NWebSafeBrowsingDetectionHandler::GetInstance().HandleGlobalConfig(local_state);
+  OHOS::NWeb::NwebCloudControlGlobalConfig::GetInstance().HandleGlobalConfig(local_state);
 }
 #endif
 }

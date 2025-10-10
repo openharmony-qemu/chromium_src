@@ -304,11 +304,6 @@ OnReportStatisticLogFunc
 
 #include "cef/include/cef_app.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-#include "cef/ohos_cef_ext/libcef/browser/global_config/global_config_prefs.h"
-#endif
-#endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 #include "base/ohos/sys_info_utils_ext.h"
 #endif
@@ -5117,13 +5112,6 @@ void NWebImpl::OnSafeBrowsingDetectionResult(int code,
   nweb_delegate_->OnSafeBrowsingDetectionResult(code, policy, mappingType,
                                                 url);
 }
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-// static
-void NWebImpl::OnGlobalConfigResult(const std::string& path, PrefService* localState) {
-  global_config::OnGlobalConfigResult(path, localState);
-}
-#endif  // BUILDFLAG(IS_ARKWEB_EXT)
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
 void NWebImpl::StartCamera() {

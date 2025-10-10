@@ -56,6 +56,10 @@
 #include "extensions/common/url_pattern.h"
 #include "extensions/common/user_script.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/extension_prefs_for_include.cc"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
 using extensions::mojom::ManifestLocation;
 
 namespace extensions {
@@ -2143,6 +2147,9 @@ void ExtensionPrefs::RegisterProfilePrefs(
       kMV2DeprecationDisabledAcknowledgedGloballyPref.name, false);
   registry->RegisterBooleanPref(
       kMV2DeprecationUnsupportedAcknowledgedGloballyPref.name, false);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  registry->RegisterBooleanPref(kPrefNotDisplayInSettings, false);
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 template <class ExtensionIdContainer>

@@ -126,9 +126,9 @@ bool MediaAVSessionAdapterImplFuzzTest(FuzzedDataProvider* fdp)
     avSessionAdapter->SetPlaybackState(playState);
 
     avSessionAdapter->SetPlaybackPosition(pointeradapter);
-    avSessionAdapter->UpdateMetaDataCache(metadataadapter);
-    avSessionAdapter->UpdateMetaDataCache(pointeradapter);
-    avSessionAdapter->UpdatePlaybackStateCache(playState);
+    avSessionAdapter->UpdateMetaData(metadataadapter);
+    avSessionAdapter->UpdateDuration(pointeradapter);
+    avSessionAdapter->UpdatePlaybackState(playState);
     avSessionAdapter->UpdateAVMetadata();
     avSessionAdapter->DeActivate();
     avSessionAdapter->DestroyAVSession();

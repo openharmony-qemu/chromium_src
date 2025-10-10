@@ -76,10 +76,6 @@ struct RunJavaScriptParam;
 #include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-#include "components/prefs/pref_service.h"
-#endif
-
 #if BUILDFLAG(ARKWEB_READER_MODE)
 #include "capi/nweb_extension_distill_item.h"
 #endif // ARKWEB_READER_MODE
@@ -562,7 +558,6 @@ class NWebImpl : public NWeb {
                                      int policy,
                                      const std::string& mappingType,
                                      const std::string& url);
-  static void OnGlobalConfigResult(const std::string& path, PrefService* localState);
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
 #if BUILDFLAG(IS_OHOS)

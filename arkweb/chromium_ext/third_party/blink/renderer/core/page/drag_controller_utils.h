@@ -48,6 +48,12 @@ class DragControllerUtils : public GarbageCollected<DragControllerUtils> {
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   gfx::Rect DragRectForSelectionDrag(const LocalFrame& frame,
                                      const gfx::RectF& visibleRect);
+  std::unique_ptr<DragImage> CreateClippedDragImageForImage(
+    LocalFrame* src,
+    const Element& element,
+    const gfx::Rect& image_rect,
+    const gfx::RectF& visibleRect,
+    gfx::Rect& clipped_image_rect);
 #endif
 }  // namespace blink
 

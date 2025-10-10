@@ -19,7 +19,7 @@ TEST_P(HTMLVideoElementTest, TestRequestEnterFullscreen) {
   test::RunPendingTasks();
   UpdateAllLifecyclePhasesForTest();
   EXPECT_FALSE(video()->IsFullscreen());
-  ASSERT_NO_FATAL_FAILURE(video()->RequestFullscreen());
+  ASSERT_NO_FATAL_FAILURE(video()->RequestEnterFullscreen());
 }
 
 TEST_P(HTMLVideoElementTest, TestRequestExitFullscreen) {

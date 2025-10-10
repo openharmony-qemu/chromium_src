@@ -59,6 +59,7 @@ group("oh_core_unittests") {
     "//mojo:mojo_unittests",
     "//net:net_unittests",
     "//services:services_unittests",
+    "//third_party/blink/renderer/controller:blink_unittests",
     "//third_party/blink/renderer/platform/heap:blink_heap_unittests",
     "//third_party/catapult/tracing/tracing:histogram_unittests",
     "//third_party/ced:ced_unittests",

@@ -36,6 +36,7 @@
 
 namespace blink {
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 TEST_F(ContextMenuControllerTest, ShouldShowFreeCopyMenuTest_1stIf) {
   RegisterMockedImageURLLoad("http://test.png");
   ContextMenuAllowedScope context_menu_allowed_scope;
@@ -389,6 +390,7 @@ TEST_F(ContextMenuControllerTest, ShouldShowFreeCopyMenuTest_6thIf) {
   EXPECT_FALSE(result);
   EXPECT_TRUE(ShowContextMenu(location_with_image, kMenuSourceLongPress));
 }
+#endif
 
 TEST_F(ContextMenuControllerTest, GetChildImageUrlFromElementTest_1stIf) {
   const WebElement null_element;
@@ -2135,6 +2137,7 @@ TEST_F(ContextMenuControllerTest, SetImageRectFromPotentialImageNodeTest_3rdIf) 
   EXPECT_TRUE(data_.image_rect.IsEmpty());
 }
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 TEST_F(ContextMenuControllerTest, HandleArkWebContextMenuTest_2ndIf) {
   RegisterMockedImageURLLoad("http://test.png");
   ContextMenuAllowedScope context_menu_allowed_scope;
@@ -2322,6 +2325,7 @@ TEST_F(ContextMenuControllerTest, HandleArkWebContextMenuTest_5thIf) {
 
   EXPECT_TRUE(!data_.is_selectable);
 }
+#endif
 
 TEST_F(ContextMenuControllerTest, GetImgUrlTest_001) {
   ContextMenuAllowedScope context_menu_allowed_scope;

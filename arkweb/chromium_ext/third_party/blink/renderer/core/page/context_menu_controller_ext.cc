@@ -42,7 +42,9 @@
 #include "third_party/blink/renderer/core/html/media/html_media_element.h"
 #include "third_party/blink/renderer/core/html/media/html_video_element.h"
 #include "third_party/blink/renderer/core/html/parser/html_parser_idioms.h"
+#include "third_party/blink/renderer/core/layout/layout_box.h"
 #include "third_party/blink/renderer/core/page/page.h"
+#include "ui/gfx/geometry/rect_conversions.h"
 #endif
 
 namespace blink {
@@ -246,6 +248,20 @@ void ContextMenuControllerExt::IsAILink(ContextMenuData& data, HitTestResult& re
           data.is_ai_link = true;
         }
       }
+    }
+  }
+}
+
+void ContextMenuControllerExt::SetImageRectFromPotentialImageNode(
+    ContextMenuData& data,
+    const blink::Node* potential_image_node) {
+  if (potential_image_node && data.has_image_contents) {
+    LayoutBox* layout_box = potential_image_node->GetLayoutBox();
+    if (layout_box) {
+      data.image_rect =
+          gfx::ToEnclosingRect(layout_box->AbsoluteContentQuad().BoundingBox());
+      LOG(DEBUG) << "potential_image_node image_rect: "
+                 << data.image_rect.ToString();
     }
   }
 }

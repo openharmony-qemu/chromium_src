@@ -33,9 +33,11 @@ class WebLocalFrameImplTest : public testing::Test {
     helper_.Reset();
   }
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   void SelectClosetWordAndShowSelectionMenu() {
     frame_impl_->SelectClosetWordAndShowSelectionMenu();
   }
+#endif
 
   void OnDataDetectorSelectText() {
     frame_impl_->OnDataDetectorSelectText();
@@ -80,6 +82,7 @@ TEST_F(WebLocalFrameImplTest, GetGlobalAdblockEnabled_NoClient) {
   frame_impl_->SetClient(origin_frame_impl);
 }
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 TEST_F(WebLocalFrameImplTest, SelectClosetWordAndShowSelectionMenu) {
   helper_.Reset();
   SelectClosetWordAndShowSelectionMenu();
@@ -95,6 +98,7 @@ TEST_F(WebLocalFrameImplTest, SelectClosetWordAndShowSelectionMenu_NoPage) {
   ASSERT_NO_FATAL_FAILURE(SelectClosetWordAndShowSelectionMenu());
   SetPage(origin_page);
 }
+#endif
 
 TEST_F(WebLocalFrameImplTest, OnDataDetectorSelectText) {
   helper_.Reset();

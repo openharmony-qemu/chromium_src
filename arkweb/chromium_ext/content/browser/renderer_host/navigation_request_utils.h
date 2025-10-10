@@ -21,6 +21,12 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 
+namespace {
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+constexpr char ORIGIN[] = "origin.DEFAULT";
+#endif
+}  // namespace
+
 namespace content {
 
 class NavigationRequest;
@@ -37,7 +43,6 @@ public:
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   uint64_t addr_web_handle_;
-  const std::string ORIGIN = "origin.DEFAULT";
   uint64_t GetAddrWebHandle() { return addr_web_handle_; }
   network::mojom::NetworkContext* GetNetworkContext() const;
   void StartPage(const net::NetworkAnonymizationKey networkAnonymizationKey, uint64_t addr_web_handle);

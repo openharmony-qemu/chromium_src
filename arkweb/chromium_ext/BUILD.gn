@@ -196,3 +196,7 @@ config("arkweb_ohos_adapter_unittest_config") {
 config("arkweb_device_unittest_config") {
   ldflags = [ "-Wl,--wrap=LoadNativeLibrary" ]
 }
+
+config("ohos_nweb_unittests_config") {
+  ldflags = [ "-Wl,--wrap=strcpy_s" ]
+}

@@ -1225,9 +1225,16 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (override));
 
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-  MOCK_METHOD(int, LoadUrlWithParams, (const std::string& url, const LoadUrlType load_type,
-                                       const std::string& refer, const std::string& headers,
-                                       const std::string& post_data, const bool allow_https_upgrade), (override));
+  MOCK_METHOD(int,
+              LoadUrlWithParams,
+              (const std::string& url,
+               const LoadUrlType load_type,
+               const std::string& refer,
+               const std::string& headers,
+               const std::string& post_data,
+               const bool allow_https_upgrade,
+               int32_t transition_type),
+              (override));
   MOCK_METHOD(void, EnableHttpsUpgrades, (bool enable), (override));                               
 #endif
 };

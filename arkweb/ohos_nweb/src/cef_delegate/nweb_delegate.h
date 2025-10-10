@@ -221,9 +221,13 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                    const std::string& mimeType,
                    const std::string& encoding) override;
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
-  int LoadUrlWithParams(const std::string& url, const LoadUrlType load_type,
-                        const std::string& refer, const std::string& headers,
-                        const std::string& post_data, const bool allow_https_upgrade) override;
+  int LoadUrlWithParams(const std::string& url,
+                        const LoadUrlType load_type,
+                        const std::string& refer,
+                        const std::string& headers,
+                        const std::string& post_data,
+                        const bool allow_https_upgrade,
+                        int32_t transition_type) override;
 #endif
   int ContentHeight() override;
 

@@ -32,6 +32,7 @@ struct LoadUrlParams {
   std::string headers;
   std::string post_data;
   bool allow_https_upgrade;
+  int32_t transition_type = -1;
 };
  
  

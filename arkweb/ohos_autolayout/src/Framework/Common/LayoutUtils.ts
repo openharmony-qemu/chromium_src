@@ -1,4 +1,6 @@
 import { LayoutKey, LayoutValue } from '../../Common/Constant';
+import Log from '../../Debug/Log';
+import Tag from '../../Debug/Tag';
 import Store from '../../Common/Utils/Store';
 import Utils from './Utils';
 import Constant from './Constant';
@@ -140,7 +142,7 @@ export default class LayoutUtils{
             );
             return { isFound, error: false };
         } catch (e) {
-            console.warn(`无法访问跨域样式表，某些样式检查可能不准确: ${sheet.href}`);
+            Log.w(`无法访问跨域样式表，某些样式检查可能不准确: ${sheet.href}`, Tag.layoutUtils);
             return { isFound: false, error: true };
         }
     }
@@ -209,7 +211,7 @@ export default class LayoutUtils{
         const visualHeight = window.innerHeight - popupInfo.stickyTop_height - popupInfo.stickyBottom_height;
 
         if ((topInt < 0 || bottomInt > visualHeight || leftInt < 0 || rightInt > window.innerWidth) && Utils.isElementVisible(node, root)) {
-            console.log(`find truncate node: ${node.className}`);
+            Log.d(`find truncate node: ${node.className}`);
             return true;
         }
         if (node.tagName === 'IMG') {
@@ -426,7 +428,7 @@ export default class LayoutUtils{
         const closeBtnStyle = getComputedStyle(element);
 
         if (closeBtnStyle.background.includes('url') || element.getAttribute('role') === 'button') {
-            console.log('this is a close button');
+            Log.d('this is a close button');
             return true;
         }
         return false;

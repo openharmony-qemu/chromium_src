@@ -6,9 +6,11 @@ import DiffEleRecord from '../../../Common/Perform/DiffEleRecorder';
 import { LayoutKey, LayoutValue } from '../../../Common/Constant';
 import Store from '../../../Common/Utils/Store';
 import { ObserverRecord, recordType } from '../../../Common/Perform/ChangeRecord';
+import Log from '../../../Debug/Log';
  
 export default class TransitionEndObserver {
     static init: boolean = false;
+    static TAG: string = 'TransitionEndObserver';
  
     static reInit(): void {
         if (TransitionEndObserver.init) {
@@ -20,7 +22,7 @@ export default class TransitionEndObserver {
     }
  
     private static onTransitionEnd(e: TransitionEvent): void {
-        console.log('on transition end');
+        Log.i(null,'on transition end',TransitionEndObserver.TAG);
         // todo: 这个方法某些小程序会一致被调用和执行
         const node = e.target as HTMLElement;
  

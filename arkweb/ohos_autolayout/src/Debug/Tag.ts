@@ -1,55 +1,52 @@
+/**
+ * 统一的日志 TAG 管理类
+ * 所有模块的 TAG 定义都应该在这里集中管理
+ */
 export default class Tag {
-    static framework = 'framework';
-    static swiper = 'swiper';
-    static util = 'util';
-    static scale = 'scale';
-    static largeImg = 'largeImg';
-    static heightReLayout = 'heightReLayout';
-    static styleSetter = 'styleSetter';
-    static styleGetter = 'styleGetter';
-    static cross = 'cross';
-    static domTraversal = 'domTraversal';
-    static zoomFont = 'zoomFont';
-    static store = 'store';
-    static fixed = 'BFD';
-    static debug = 'debug';
-    static text = 'text';
-    static button = 'button';
-    static list = 'list';
-    static oneRowList = 'oneRowList';
-    static correctDisplay = 'correctDisplay';
-    static originStyleGetter = 'originStyleGetter';
-    static multiImgsItem = 'multiImgsItem';
-    static asideBar = 'asideBar';
-    static gridList = 'gridList';
-    static scrollList = 'scrollList';
-    static oneColumnList = 'oneColumnList';
-    static acrossColumn = 'acrossColumn';
-    static waterfall = 'waterfall';
-    static bottomBar = 'bottomBar';
-    static columnInfo = 'columnInfo';
-    static originStyleCalculator = 'originStyleCalculator';
-    static domReader = 'domReader';
-    static originStyleCache = 'originStyleCache';
-    static originStyleMonitor = 'originStyleMonitor';
-    static positionGetter = 'positionGetter';
-    static structureChecker = 'structureChecker';
-    static listChecker = 'listChecker';
-    static listUtils = 'listUtils';
-    static singleElement = 'singleElement';
-    static config = 'config';
-    static record = 'record';
-    static fixedBar = 'fixedBar';
-    static smallFixed = 'smallFixed';
-    static comment = 'comment';
-    static bottom = 'bottom';
-    static position = 'position';
-    static styleCleaner = 'styleCleaner';
-    static stretch = 'stretch';
-    static checkState = 'checkState';
-    static adjacentImage = 'adjacentImage';
-    static empty = 'empty';
-    static attributeObserver = 'attributeObserver';
-    static diffRecorder = 'diffRecorder';
-    static modifyObserver = 'modifyObserver';
+    // Framework 相关
+    static framework = 'Framework';
+    static intelligentLayout = 'IntelligentLayout';
+    static observerHandler = 'ObserverHandler';
+    static resizeObserver = 'ResizeObserver';
+    static modifyObserver = 'ModifyObserver';
+    static pageContentObserver = 'PageContentObserver';
+    static transitionEndObserver = 'TransitionEndObserver';
+    static throttle = 'Throttle';
+    
+    // Popup 相关
+    static popupDecisionTree = 'PopupDecisionTree';
+    static popupRecog = 'PopupRecog';
+    
+    // Layout 相关
+    static layoutConstraintDetector = 'LayoutConstraintDetector';
+    static layoutUtils = 'LayoutUtils';
+    
+    // Common 相关
+    static util = 'Utils';
+    static ccmConfig = 'CCMConfig';
+    
+    // Style 相关
+    static styleSetter = 'StyleSetter';
+    static styleGetter = 'StyleGetter';
+    static styleCleaner = 'StyleCleaner';
+    static cssSheetManage = 'CSSSheetManage';
+    static domReader = 'DomReader';
+    static originStyleCache = 'OriginStyleCache';
+    
+    // Data 相关
+    static store = 'Store';
+    static record = 'Record';
+    static diffRecorder = 'DiffRecorder';
+    
+    // Font 相关
+    static zoomFont = 'ZoomFont';
+    
+    // Debug 辅助 TAG
+    static performance = 'Performance';
+    static visual = 'Visual';
+    static state = 'State';
+    static cache = 'Cache';
+    static debug = 'Debug';
+    static component = 'Component';
+    static node = 'Node';
 }

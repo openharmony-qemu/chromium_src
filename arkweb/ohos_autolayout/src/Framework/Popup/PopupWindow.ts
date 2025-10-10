@@ -18,6 +18,7 @@
 
 
 import Constant from '../Common/Constant';
+import Log from '../../Debug/Log';
 import LayoutUtils from '../Common/LayoutUtils';
 import { PopupRecog } from './PopupRecog';
 import { PopupType } from './PopupType';
@@ -196,7 +197,7 @@ export class PopupWindow {
 
         // 检查是否为吸顶元素
         if (parseInt(style.top) === 0) {
-            console.log(`找到吸顶元素${el.className}`);
+            Log.d(`找到吸顶元素${el.className}`);
             // 如果没有已知的吸顶，或者当前元素在更上层，则更新
             if (updatedTop === null || PopupWindow.isFirstElementOnTop(el, updatedTop)) {
                 updatedTop = el;
@@ -205,7 +206,7 @@ export class PopupWindow {
 
         // 检查是否为吸底元素
         if (parseInt(style.bottom) === 0) {
-            console.log(`找到吸底元素${el.className}`);
+            Log.d(`找到吸底元素${el.className}`);
             // 如果没有已知的吸底，或者当前元素在更上层，则更新
             if (updatedBottom === null || PopupWindow.isFirstElementOnTop(el, updatedBottom)) {
                 updatedBottom = el;

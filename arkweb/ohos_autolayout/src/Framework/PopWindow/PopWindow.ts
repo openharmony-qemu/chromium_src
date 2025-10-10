@@ -1,4 +1,5 @@
 import StyleSetter from '../../Common/Style/Setter/StyleSetter';
+import Log from '../../Debug/Log';
 import Constant from '../Common/Constant';
 import Utils from '../Common/Utils';
 import LayoutUtils from '../Common/LayoutUtils';
@@ -64,7 +65,7 @@ export class PopWindow extends AComponent {
 
         this.visualHeight = window.innerHeight - this.popupInfo.stickyBottom_height - this.popupInfo.stickyTop_height;
 
-        console.log(`intelligenceLayout for popWin: ${this.mComponent.className}}, window.innerWidth = ${window.innerWidth}, time = ${new Date()}`);
+        Log.d(`intelligenceLayout for popWin: ${this.mComponent.className}}, window.innerWidth = ${window.innerWidth}, time = ${new Date()}`);
         this.relayout();
     }
 
@@ -84,7 +85,7 @@ export class PopWindow extends AComponent {
         this.findTruncateNodes(allNodes);
 
         if (this.truncateNodes.length === 0) {
-            console.log(`no truncateNodes found.`);
+            Log.d(`no truncateNodes found.`);
             let metrics: LayoutConstraintMetrics = {
                 resultCode: -1,
                 errorMsg: 'no truncateNodes found',
@@ -109,7 +110,7 @@ export class PopWindow extends AComponent {
         DetectorInst.getInstance().recordOriginalPosition(this.popupInfo.content_node);
 
         if (this.scale > 1) {
-            console.log(`scale > 1, skip.`);
+            Log.d(`scale > 1, skip.`);
             return;
         }
 
@@ -189,7 +190,7 @@ export class PopWindow extends AComponent {
         // 提取元素
         const topmostChildren = filteredChildren.map(child => child.element);
 
-        console.log('getTopmostChildren: print topmostChildren size = ' + topmostChildren.length);
+        Log.d('getTopmostChildren: print topmostChildren size = ' + topmostChildren.length);
         return topmostChildren;
     }
 
@@ -216,7 +217,7 @@ export class PopWindow extends AComponent {
      */
     private calScale(): void {
         this.truncateNodes.forEach(truncateNode => {
-            console.log('tangcd print truncateNode classname = ' + truncateNode ?.className);
+            Log.d('tangcd print truncateNode classname = ' + truncateNode ?.className);
             let rect = truncateNode.getBoundingClientRect();
             this.minTop = Math.min(this.minTop, rect.top);
             if (rect.bottom > this.maxBottom) {
@@ -274,7 +275,7 @@ export class PopWindow extends AComponent {
         let screenHeight = this.visualHeight;
         this.scale = (screenHeight * 0.7) / oriHeight;
         this.scale = Math.max(this.scale, this.minScaleFactor);
-        console.log(`PopWindow智能布局: calcScale = ${this.scale}, bottomNode: ${this.bottomNode ?.className}`);
+        Log.d(`PopWindow智能布局: calcScale = ${this.scale}, bottomNode: ${this.bottomNode ?.className}`);
     }
 
     /**
@@ -323,7 +324,7 @@ export class PopWindow extends AComponent {
             let topNodes = this.getTopmostChildren(this.popupInfo.mask_node, this.popupInfo.popup_type);
             for (let child of topNodes) {
                 this.scaleByTransform(child as HTMLElement, this.scale, false, topNodes, false, []);
-                console.log(`resetByScale for type A: ${child.className}`);
+                Log.d(`resetByScale for type A: ${child.className}`);
             }
         }
     }
@@ -335,7 +336,7 @@ export class PopWindow extends AComponent {
         else {
             this.scaleByTransform(child, this.scale, topNodes.length > 1, topNodes, false, []);
         }
-        console.log(`resetByScale for type B: ${child.className}`);
+        Log.d(`resetByScale for type B: ${child.className}`);
     }
 
     private scaleGrandChildrenForTypeB(child: HTMLElement, topNodes: HTMLElement[]): void {
@@ -348,7 +349,7 @@ export class PopWindow extends AComponent {
             else {
                 this.scaleByTransform(grandchild, this.scale, topNodes.length > 1, topNodes, grandChildren.length > 1, grandChildren);
             }
-            console.log(`resetByScale for type B: ${grandchild.className}`);
+            Log.d(`resetByScale for type B: ${grandchild.className}`);
         }
     }
 
@@ -359,12 +360,12 @@ export class PopWindow extends AComponent {
             for (let i = 0; i < grandChildren.length; i++) {
                 const grandchild = grandChildren[i];
                 this.scaleByTransform(grandchild, this.scale, topNodes.length > 1, topNodes, grandChildren.length > 1, grandChildren);
-                console.log(`resetByScale for type C: ${grandchild.className}`);
+                Log.d(`resetByScale for type C: ${grandchild.className}`);
             }
         }
         else {
             this.scaleByTransform(child, this.scale, topNodes.length > 1, topNodes, false, []);
-            console.log(`resetByScale for type C: ${child.className}`);
+            Log.d(`resetByScale for type C: ${child.className}`);
         }
     }
 
@@ -477,14 +478,14 @@ export class PopWindow extends AComponent {
 
     private async getLayoutConstraintReport(): Promise<void> {
         if (this.needLayoutConstraintNodes.size === 0) {
-            console.log('no report needed, because there is no relayout nodes');
+            Log.d('no report needed, because there is no relayout nodes');
             return;
         }
         await this.forceLayoutUpdate(16);
         this.layoutConstraintResult = LayoutConstraintMetricsDetector.detectLayoutConstraintMetrics(this.popupInfo, this.needLayoutConstraintNodes);
         if (this.layoutConstraintResult.resultCode === Constant.ERR_CODE_GAPS || this.layoutConstraintResult.resultCode === Constant.ERR_CODE_OVERFLOW) {
             this.restoreStyles();
-            console.log(`resultCode: ${this.layoutConstraintResult.resultCode}, need to restore`);
+            Log.d(`resultCode: ${this.layoutConstraintResult.resultCode}, need to restore`);
         }
         // @ts-ignore
         window.layoutConstraintResult = this.layoutConstraintResult;
@@ -579,7 +580,7 @@ export class PopWindow extends AComponent {
      */
     private scaleByTransform(element: HTMLElement, newScale: number, hasBrother: boolean, brotherNodes: HTMLElement[],
         hasGrandChild: boolean, grandChildNodes: HTMLElement[]): void {
-        console.log(`scaleByTransform: ${element?.className}, hasBrother = ${hasBrother}`);
+        Log.d(`scaleByTransform: ${element?.className}, hasBrother = ${hasBrother}`);
     
         // 1. 提炼前置检查逻辑，使用卫语句提前退出
         if (this._shouldSkipScaling(element)) {
@@ -615,7 +616,7 @@ export class PopWindow extends AComponent {
         const matrixMatch = style.transform.match(/matrix\((.*?),(.*?),(.*?),(.*?),(.*?),(.*?)\)/);
         const translateY = matrixMatch ? parseFloat(matrixMatch[6]) : 0;
         if (Math.abs(translateY) > window.innerHeight && !this._isElementInViewport(rect)) {
-            console.log('scaleByTransform: translateY 超过屏幕高度且元素不在视口内，不进行缩放');
+            Log.d('scaleByTransform: translateY 超过屏幕高度且元素不在视口内，不进行缩放');
             return true;
         }
     
@@ -623,7 +624,7 @@ export class PopWindow extends AComponent {
         if (this.popupDecisionTreeType === PopupDecisionTreeType.Bottom && rect.scrollElement) {
             const scrollElementRect = rect.scrollElement.getBoundingClientRect();
             if (!this._isElementInViewport(scrollElementRect)) {
-                console.log('scaleByTransform: 滚动元素在屏幕外，不进行缩放');
+                Log.d('scaleByTransform: 滚动元素在屏幕外，不进行缩放');
                 return true;
             } else {
                 // 此处保留了对滚动容器的样式设置，因为它属于前置处理的一部分
@@ -694,7 +695,7 @@ export class PopWindow extends AComponent {
             offsetY += elementRelativeShiftY;
         }
         
-        console.log(`scaleByTransform: print offsetY: ${offsetY}`);
+        Log.d(`scaleByTransform: print offsetY: ${offsetY}`);
         return offsetY;
     }
     
@@ -799,7 +800,7 @@ export class PopWindow extends AComponent {
 
     // 恢复样式
     public restoreStyles(): void {
-        console.log('恢复原始样式');
+        Log.d('恢复原始样式');
 
         this.originalStyles.forEach((style, node) => {
             StyleCleaner.removeAllStyle(node);
@@ -845,7 +846,7 @@ export class PopWindow extends AComponent {
             });
         });
 
-        console.log(`fix ${flexContainers.length} flex contaner, ${totalProcessed} child elements`);
+        Log.d(`fix ${flexContainers.length} flex contaner, ${totalProcessed} child elements`);
     }
 
     /**
@@ -865,7 +866,7 @@ export class PopWindow extends AComponent {
         if (closeElements.length !== 1) {
             return;
         }
-        console.log('ther is a close button to be fixed.');
+        Log.d('ther is a close button to be fixed.');
         const closeButton = closeElements[0] as HTMLElement;
         const buttonStyle = getComputedStyle(closeButton);
         // 保存节点的原始样式并刷新needLayoutConstraintNodes

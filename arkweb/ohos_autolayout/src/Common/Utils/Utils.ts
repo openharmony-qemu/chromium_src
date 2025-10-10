@@ -3,8 +3,8 @@
  * 工具模块
  */
 import Tag from '../../Debug/Tag';
+import Log from '../../Debug/Log';
 import {CCMRange, CCMConfig } from '../../Framework/Common/CCMConfig';
-import Cached from '../Cached';
 import Constant, { FontTag, LayoutKey, LayoutValue } from '../Constant';
 import CacheStyleGetter from '../Style/Common/CacheStyleGetter';
 import { Txt } from '../Txt';
@@ -154,7 +154,7 @@ export default class Utils {
     }
 
     static getAvailWidth(): number {
-        console.log('使用screen.availWidth');
+        Log.d('使用screen.availWidth');
         return screen.availWidth;
     }
 

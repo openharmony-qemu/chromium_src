@@ -1,4 +1,3 @@
-import HeaderAdj from '../../../Actions/Common/HeightRelayout/HeightAdj/HeaderAdj';
 import { ObserverRecord, recordType } from '../../../Common/Perform/ChangeRecord';
 import DiffEleRecord from '../../../Common/Perform/DiffEleRecorder';
 import OriginStyleCache from '../../../Common/Style/Getter/OriginStyleGetter/OriginStyleCache';
@@ -19,17 +18,20 @@ interface AnimationDurations {
 export default class ModifyObserver {
     static modifyObserver: MutationObserver;
     private static TAG = Tag.modifyObserver;
-    private static records:MutationRecord[] = [];
+    
+    // 用于批处理的变量
+    private static pendingRecords: MutationRecord[] = [];
+    private static scheduledWork = false;
 
     static reInit(): void {
-        console.log(' run reInit modifyObserver');
+        Log.info('run reInit modifyObserver', ModifyObserver.TAG);
         
         if (ModifyObserver.modifyObserver) {
-            console.log(' disconnect modifyObserver');
+            Log.info('disconnect modifyObserver', ModifyObserver.TAG);
             ModifyObserver.modifyObserver.disconnect();
         }
 
-        console.log(' print document.body = ' + document.body);
+        Log.d(`document.body: ${document.body}`, ModifyObserver.TAG);
         ModifyObserver.modifyObserver = new MutationObserver(ModifyObserver.onElementModify);
         ModifyObserver.modifyObserver.observe(document.body, {
             childList: true,
@@ -40,170 +42,166 @@ export default class ModifyObserver {
     }
 
     static disconnect(): void {
-        console.log(' disconnect modifyObserver');
+        Log.info('disconnect modifyObserver', ModifyObserver.TAG);
         ModifyObserver.modifyObserver?.disconnect();
         ModifyObserver.modifyObserver = null;
+        
+        // 清理待处理的记录
+        ModifyObserver.pendingRecords = [];
+        ModifyObserver.scheduledWork = false;
     }
 
-    private static handleRemove(item: MutationRecord): void {
-        let needSetTag = false;
+    private static onElementModify(records: MutationRecord[]): void {
+        // 将 records 加入待处理队列
+        ModifyObserver.pendingRecords.push(...records);
 
-        for (let i = 0; i < item.removedNodes.length; i++) {
-            let child = item.removedNodes[i] as HTMLElement;
-            IntelligentLayout.removePopwinCache(child);
+        if (!ModifyObserver.scheduledWork) {
+            ModifyObserver.scheduledWork = true;
+            // 使用微任务批处理，在当前事件循环的微任务阶段执行
+            queueMicrotask(() => {
+                // 1. 快照当前待处理的记录，并清空队列，避免在处理过程中新加入的记录被处理
+                const recordsToProcess = ModifyObserver.pendingRecords;
+                ModifyObserver.pendingRecords = [];
+                ModifyObserver.scheduledWork = false;
 
-            if (child.nodeType !== Node.ELEMENT_NODE) {
-                continue;
-            }
-
-            StyleCleaner.resetEle(child, true);
-
-            if (child.style.display !== Txt.none_) {
-                needSetTag = true;
-            }
+                // 2. 批量处理快照的记录
+                ModifyObserver.processBatch(recordsToProcess);
+            });
         }
-
-        if (needSetTag) {
-            // 图片如果删除，找不到其父元素，在上边的循环中向上清除缓存时找不到parentElement，在这里进行清理
-            DiffEleRecord.setTag(item.target as HTMLElement);
-        }
-
-        StyleCleaner.resetParent(item.target as HTMLElement);
-    }
-
-    private static handleElementAdd(item: MutationRecord): boolean {
-        let needPostTask = false;
-
-        for (let i = 0; i < item.addedNodes.length; i++) {
-            const node = item.addedNodes[i] as HTMLElement;
-            if (node.nodeType !== Node.ELEMENT_NODE) {
-                continue;
-            }
-
-            Log.i(node, '新增元素', this.TAG);
-
-            if (node.style.display === Txt.none_) {
-                Log.i(node, '忽略隐藏节点', this.TAG);
-                continue;
-            }
-
-            if (Utils.ignoreEle(node)) {
-                Log.i(node, '忽略无意义节点', this.TAG);
-                continue;
-            }
-
-            OriginStyleCache.clearToTop(node);
-            HeaderAdj.collectHeaderEle(node);
-
-            if (ObserverRecord.ignoreChange(node, recordType.ADD)) {
-                Log.i(node, '忽略频繁变动', this.TAG);
-                continue;
-            }
-
-            Log.i(node, '变动有效', this.TAG);
-            needPostTask = true;
-            DiffEleRecord.setTag(node);
-        }
-        return needPostTask;
     }
 
     /**
-     * todo：
-     * 1、监听节点属性变化、节点增加减少
-     * 2、通过弹窗的root节点是否包含这些节点变化，判断弹窗是否需要重新修复。
-     * 3、如果没有弹窗根节点，则通过300ms的定时任务，检测变化的节点的宽度是否与屏幕宽度是否一致。如果一致，则启动findPopups遍历节点查找弹窗。
-     * @param records
+     * 批量处理累积的MutationRecord，减少DOM查询、合并操作、提前退出
+     * @param records 待处理的记录数组
      */
-    private static onElementModify(records: MutationRecord[]): void {
-        // 当窗口大小或内容发生变化时，判断是否需要调整布局
-
-        for (let item of records) {
-            ModifyObserver.handleRemove(item);
+    private static processBatch(records: MutationRecord[]): void {
+        if (records.length === 0) {
+            return;
         }
 
-        let animationDuration: number = 0;
-        let tmpAddedNodes: HTMLElement[] = [];
-        for (let item of records) {
-            const recordDuration = ModifyObserver.calDuration(item, tmpAddedNodes);
-            animationDuration = Math.max(animationDuration, recordDuration);
-        }
-        if (animationDuration > 0) {
-            console.log(` post task with delay: ${animationDuration}`);
-        }
+        Log.d(`批处理 ${records.length} 个变更记录`, ModifyObserver.TAG);
 
-        setTimeout(() => {
-            for (let item of records) {
-                const needPostTask = ModifyObserver.handleElementAdd(item);
+        // 使用 Set 收集所有需要处理的元素，去重
+        const addedNodes = new Set<HTMLElement>();
+        const removedNodesInfo = new Map<HTMLElement, HTMLElement>(); // <removedNode, parent>
+        const attributeChangedNodes = new Set<HTMLElement>();
 
-                if (needPostTask || animationDuration > 0) {
-                    ObserverHandler.postTask();
-                    IntelligentLayout.markDirty(item);
+        for (let i = 0; i < records.length; i++) {
+            const record = records[i];
+
+            // 收集新增节点
+            for (let j = 0; j < record.addedNodes.length; j++) {
+                const node = record.addedNodes[j] as HTMLElement;
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    addedNodes.add(node);
                 }
             }
-        }, animationDuration);
-    }
 
-    /**
-     * 从单个元素中获取动画时长
-     */
-    private static getDurationFromElement(element: HTMLElement): number {
-        const animationInfo = ModifyObserver.getAnimDurations(element);
-        return Math.max(animationInfo.animationDur, animationInfo.transitionDur);
-    }
-
-    /**
-     * 处理 'attributes' 类型的变更
-     */
-    private static handleAttributeMutation(record: MutationRecord): number {
-        if (record.target instanceof HTMLElement) {
-            return this.getDurationFromElement(record.target);
-        }
-        return 0;
-    }
-
-    /**
-     * 处理 'childList' 类型的变更
-     */
-    private static handleChildListMutation(record: MutationRecord, tmpAddedNodes: HTMLElement[]): number {
-        let maxDuration = 0;
-        for (const node of record.addedNodes) {
-            // 使用卫语句提前跳过不符合条件的节点
-            if (!(node instanceof HTMLElement) || tmpAddedNodes.includes(node)) {
-                continue;
+            // 收集移除节点
+            for (let j = 0; j < record.removedNodes.length; j++) {
+                const node = record.removedNodes[j] as HTMLElement;
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    removedNodesInfo.set(node, record.target as HTMLElement);
+                }
             }
 
-            tmpAddedNodes.push(node);
-            const currentDuration = this.getDurationFromElement(node);
-            maxDuration = Math.max(maxDuration, currentDuration);
+            // 收集属性变更节点
+            if (record.type === 'attributes' && record.target.nodeType === Node.ELEMENT_NODE) {
+                attributeChangedNodes.add(record.target as HTMLElement);
+            }
+        }
+
+        // STEP 1: 处理节点移除
+        if (removedNodesInfo.size > 0) {
+            removedNodesInfo.forEach((parent, node) => {
+                ModifyObserver.handleRemove(node, parent);
+            });
+        }
+
+        // STEP 2: 处理新增节点和属性变更
+        let hasValidChange = false;
+        const allChangedNodes = new Set([...addedNodes, ...attributeChangedNodes]);
+
+        if (allChangedNodes.size > 0) {
+            // 统一处理新增和属性变更
+            allChangedNodes.forEach(node => {
+                if (ModifyObserver.handleElementChange(node)) {
+                    hasValidChange = true;
+                }
+            });
+        }
+
+        // STEP 3: 计算动画延迟
+        const animationDuration = ModifyObserver.calculateAnimationDuration(allChangedNodes);
+
+        // STEP 4: 根据是否有有效变更来决定是否触发重排布
+        if (hasValidChange) {
+            setTimeout(() => {
+                ObserverHandler.postTask();
+                // 标记 dirty
+                if (allChangedNodes.size > 0) {
+                    // 从 Set 中获取第一个元素
+                    const firstNode = allChangedNodes.values().next().value;
+                    if (firstNode) {
+                        IntelligentLayout.markDirty(firstNode);
+                    }
+                }
+            }, animationDuration);
+        }
+    }
+
+    private static handleRemove(node: HTMLElement, parent: HTMLElement): void {
+        IntelligentLayout.removePopwinCache(node);
+        StyleCleaner.resetEle(node, true);
+
+        if (node.style.display !== Txt.none_) {
+            // 图片如果删除，找不到其父元素，在这里进行清理
+            DiffEleRecord.setTag(parent);
+        }
+        StyleCleaner.resetParent(parent);
+    }
+
+    private static handleElementChange(node: HTMLElement): boolean {
+        if (node.style.display === Txt.none_ || Utils.ignoreEle(node)) {
+            Log.i(node, '忽略隐藏或无意义节点', ModifyObserver.TAG);
+            return false;
+        }
+
+        OriginStyleCache.clearToTop(node);
+
+        if (ObserverRecord.ignoreChange(node, recordType.ADD)) {
+            Log.i(node, '忽略频繁变动', ModifyObserver.TAG);
+            return false;
+        }
+
+        Log.i(node, '变动有效', ModifyObserver.TAG);
+        DiffEleRecord.setTag(node);
+        return true;
+    }
+
+    private static calculateAnimationDuration(changedNodes: Set<HTMLElement>): number {
+        let maxDuration = 0;
+        if (changedNodes.size > 0) {
+            changedNodes.forEach(node => {
+                const duration = ModifyObserver.getDurationFromElement(node);
+                if (duration > maxDuration) {
+                    maxDuration = duration;
+                }
+            });
+
+            if (maxDuration > 0) {
+                Log.d(`检测到动画，延迟 ${maxDuration}ms 处理`, ModifyObserver.TAG);
+            }
         }
         return maxDuration;
     }
 
     /**
-     * 动画时长通过两种方式获取
-     * 1、animation
-     * 2、transition
-     * 逻辑如下：
-     * 1、对于attributes和变化引发的回调，筛选record.attributeName为style的变化，遍历节点，获取transition和animation
-     * 2、对于childList变化引发的回调，遍历节点，获取transition和animation
-     * @param record 
-     * @param tmpAddedNodes 
-     * @returns 
+     * 从单个元素中获取动画时长，直接返回最大值
      */
-    private static calDuration(record: MutationRecord, tmpAddedNodes: HTMLElement[]): number {
-        let duration = 0;
-
-        if (record.type === 'attributes') {
-            duration = this.handleAttributeMutation(record);
-        } else if (record.type === 'childList') {
-            duration = this.handleChildListMutation(record, tmpAddedNodes);
-        }
-
-        if (duration > 0) {
-            console.log('pause');
-        }
-
-        return duration;
+    private static getDurationFromElement(element: HTMLElement): number {
+        const animationInfo = ModifyObserver.getAnimDurations(element);
+        return Math.max(animationInfo.animationDur, animationInfo.transitionDur);
     }
 
     static cssTimeToMs(str: string): number {

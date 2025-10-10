@@ -438,7 +438,6 @@ bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener, int3
   }
   isFocusSwitchOnBlur_ = false;
 
-  UpdateTextFieldStatus();
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   if (!fill_content_.empty()) {
     if (fill_content_node_id_ == input_node_id_) {

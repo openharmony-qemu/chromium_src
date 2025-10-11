@@ -41,6 +41,7 @@
 #include "arkweb/ohos_adapter_ndk/screen_capture_adapter/screen_capture_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/audio_capturer_adapter/audio_system_manager_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/access_token_adapter/access_token_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/media_adapter/player_framework_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl.h"
 #include "pasteboard_adapter/include/pasteboard_client_adapter_impl.h"
@@ -219,7 +220,7 @@ NDKOhosAdapterHelper::CreateConsumerSurfaceAdapter() {
 
 std::unique_ptr<NWeb::PlayerAdapter>
 NDKOhosAdapterHelper::CreatePlayerAdapter() {
-  return nullptr;
+  return std::make_unique<NWeb::PlayerAdapterImpl>();
 }
 
 NWeb::WindowAdapter& NDKOhosAdapterHelper::GetWindowAdapterInstance() {

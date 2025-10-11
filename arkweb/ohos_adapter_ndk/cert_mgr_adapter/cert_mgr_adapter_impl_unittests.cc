@@ -14,6 +14,7 @@
  */
 
 #include "cert_mgr_adapter_impl.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -91,10 +92,14 @@ TEST_F(CertManagerAdapterImplTest, GetTrustAnchorsForHostName001) {
 
   NetStack_Certificates mock_certs;
   mock_certs.length = expected_certs.size();
-  mock_certs.content = new char*[mock_certs.length];
+  mock_certs.content = new char *[mock_certs.length];
   for (size_t i = 0; i < mock_certs.length; i++) {
     mock_certs.content[i] = new char[expected_certs[i].size() + 1];
-    strcpy(mock_certs.content[i], expected_certs[i].c_str());
+    errno_t res = strcpy_s(mock_certs.content[i], sizeof(mock_certs.content[i]),
+                           expected_certs[i].c_str());
+    if (res != EOK) {
+      return;
+    }
   }
 
   EXPECT_CALL(*g_mockNetStack, Mock_OH_NetStack_GetCertificatesForHostName(
@@ -161,11 +166,19 @@ TEST_F(CertManagerAdapterImplTest, GetTrustAnchorsForHostName004) {
 
   NetStack_Certificates mock_certs;
   mock_certs.length = 2;
-  mock_certs.content = new char*[mock_certs.length];
+  mock_certs.content = new char *[mock_certs.length];
   mock_certs.content[0] = new char[10];
-  strcpy(mock_certs.content[0], "cert1");
+  errno_t res =
+      strcpy_s(mock_certs.content[0], sizeof(mock_certs.content[0]), "cert1");
+  if (res != EOK) {
+    return;
+  }
+
   mock_certs.content[1] = new char[10];
-  strcpy(mock_certs.content[1], "cert2");
+  res = strcpy_s(mock_certs.content[1], sizeof(mock_certs.content[1]), "cert2");
+  if (res != EOK) {
+    return;
+  }
 
   EXPECT_CALL(*g_mockNetStack, Mock_OH_NetStack_GetCertificatesForHostName(
                                    StrEq(hostname.c_str()), _))

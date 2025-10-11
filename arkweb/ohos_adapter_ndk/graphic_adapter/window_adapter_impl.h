@@ -16,7 +16,7 @@
 #ifndef WINDOW_ADAPTER_IMPL_H
 #define WINDOW_ADAPTER_IMPL_H
 
-#include "third_party/ohos_ndk/includes/ohos_adapter/graphic_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
 #include "ohos_sdk/openharmony/native/sysroot/usr/include/native_window/external_window.h"
 #include <fcntl.h>
 #include <vector>
@@ -47,6 +47,8 @@ public:
     int GetNativeWindowRequestBuffer(NWebNativeWindow window, OHNativeWindowBuffer **buffer, int *fenceFd);
 
     int GetNativeWindowAbortBuffer(NWebNativeWindow window, OHNativeWindowBuffer *buffer);
+
+    void NativeWindowSetUsage(NWebNativeWindow window) override;
 
     int GetNativeWindowQueueSize(NWebNativeWindow window);
 };

@@ -482,6 +482,10 @@ void NetworkService::Initialize(mojom::NetworkServiceParamsPtr params,
   if (base::FeatureList::IsEnabled(features::kGetCookiesStringUma)) {
     metrics_updater_ = std::make_unique<RestrictedCookieManagerMetrics>();
   }
+
+#if BUILDFLAG(IS_OHOS)
+  base::PlatformThread::SetCurrentThreadType(base::ThreadType::kDisplayCritical);
+#endif
 }
 
 NetworkService::~NetworkService() {

@@ -16,7 +16,7 @@
 #include <set>
 #include <unordered_map>
 #include "audio_capturer_adapter_impl.h"
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 
 namespace OHOS::NWeb {
 
@@ -72,10 +72,14 @@ const int32_t DEFAULT_SAMPLING_RATE = 44100;
 const OH_AudioStream_EncodingType DEFAULT_ENCODETYPE = AUDIOSTREAM_ENCODING_TYPE_RAW;
 const OH_AudioStream_SampleFormat DEFAULT_SAMPLE_FORMAT = AUDIOSTREAM_SAMPLE_U8;
 const int32_t DEFAULT_AUDIO_CHANNEL = 2;
-const OH_AudioStream_SourceType DEFAULT_SourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_RECOGNITION;
+const OH_AudioStream_SourceType DEFAULT_SOURCETYPE = AUDIOSTREAM_SOURCE_TYPE_VOICE_RECOGNITION;
 } // namespace
 
 AudioCapturerAdapterImpl::~AudioCapturerAdapterImpl() {
+    WVLOG_D("~AudioCapturerAdapterImpl: Release capturer");
+    Stop();
+    Release();
+
     if (callback_index_ > 0) {
         callback_wrapper_.Clear(callback_index_);
         callback_index_ = 0;
@@ -109,6 +113,7 @@ int32_t AudioCapturerAdapterImpl::OnReadData(OH_AudioCapturer* capturer, void* u
     }
     userDataCallback->callback->OnReadData(length);
     return 0;
+
 }
 
 int32_t AudioCapturerAdapterImpl::Create(
@@ -369,7 +374,7 @@ OH_AudioStream_SourceType AudioCapturerAdapterImpl::GetAudioSourceType(AudioAdap
     auto item = SOURCE_TYPE_MAP.find(sourceType);
     if (item == SOURCE_TYPE_MAP.end()) {
         WVLOG_E("audio source type not found");
-        return DEFAULT_SourceType;
+        return DEFAULT_SOURCETYPE;
     }
     return item->second;
 }

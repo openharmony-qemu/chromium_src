@@ -194,15 +194,6 @@ void NWebApplication::OnContextInitialized() {
   }
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 
-#if BUILDFLAG(ARKWEB_INIT_CALLBACK)
-  auto runWebInitedCallback = OhosAdapterHelper::GetInstance()
-                                  .GetInitWebAdapter()
-                                  ->GetRunWebInitedCallback();
-  content::GetUIThreadTaskRunner({})->PostTask(
-      FROM_HERE, base::BindOnce(&NWebApplication::RunWebInitedCallback, this,
-                                runWebInitedCallback));
-#endif
-
   OnContextInitializedInternal();
 }
 

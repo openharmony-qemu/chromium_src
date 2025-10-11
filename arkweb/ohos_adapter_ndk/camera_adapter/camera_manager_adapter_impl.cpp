@@ -22,7 +22,8 @@
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 #include "camera_rotation_info_adapter_impl.h"
 #include "format_adapter_impl.h"
-// ArkWeb_Media_Not_Implement 依赖Hisysevent接口
+#include "hisysevent_adapter.h"
+#include "nweb_log.h"
 #include "ohos_adapter_helper.h"
 #include "video_capture_range_adapter_impl.h"
 #include "video_control_support_adapter_impl.h"

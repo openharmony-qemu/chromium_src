@@ -7,6 +7,10 @@
                 "OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer* renderer)",
                 "OH_AudioStream_Result OH_AudioRenderer_Start(OH_AudioRenderer* renderer)",
                 "OH_AudioStream_Result OH_AudioRenderer_Stop(OH_AudioRenderer* renderer)",
+                "OH_AudioStream_Result OH_AudioRenderer_SetVolume(OH_AudioRenderer* renderer, float volume)",
+                "OH_AudioStream_Result OH_AudioRenderer_GetCurrentState(OH_AudioRenderer* renderer, OH_AudioStream_State* state)",
+                "OH_AudioStream_Result OH_AudioRenderer_GetVolume(OH_AudioRenderer* renderer, float* volume)",
+                "OH_AudioStream_Result OH_AudioRenderer_Pause(OH_AudioRenderer* renderer)",
                 "OH_AudioStream_Result OH_AudioStreamBuilder_Create(OH_AudioStreamBuilder** builder, OH_AudioStream_Type type)",
                 "OH_AudioStream_Result OH_AudioStreamBuilder_Destroy(OH_AudioStreamBuilder* builder)",
                 "OH_AudioStream_Result OH_AudioStreamBuilder_GenerateRenderer(OH_AudioStreamBuilder* builder, OH_AudioRenderer** audioRenderer)",
@@ -78,18 +82,6 @@
         "apiList": {
             "14": [
                 "OH_NativeBuffer *OH_AVBuffer_GetNativeBuffer(OH_AVBuffer *buffer)"
-            ]
-        },
-        "includes": []
-    },
-    "native_buffer": {
-        "apiList": {
-            "14": [
-                "void OH_NativeBuffer_GetConfig(OH_NativeBuffer *buffer, OH_NativeBuffer_Config* config)",
-                "int32_t OH_NativeBuffer_Unreference(OH_NativeBuffer *buffer)",
-                "uint8_t *OH_AVBuffer_GetAddr(OH_AVBuffer *buffer)",
-                "int32_t OH_AVBuffer_GetCapacity(OH_AVBuffer *buffer)",
-                "OH_AVErrCode OH_AVBuffer_GetBufferAttr(OH_AVBuffer *buffer, OH_AVCodecBufferAttr *attr)"
             ]
         },
         "includes": []
@@ -239,7 +231,8 @@
                 "InputMethod_ErrorCode OH_TextEditorProxy_SetSetPreviewTextFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_SetPreviewTextFunc setPreviewTextFunc)",
                 "InputMethod_ErrorCode OH_InputMethodProxy_NotifyCursorUpdate(InputMethod_InputMethodProxy *inputMethodProxy, InputMethod_CursorInfo *cursorInfo)",
                 "InputMethod_ErrorCode OH_TextConfig_GetCursorInfo(InputMethod_TextConfig *config, InputMethod_CursorInfo **cursorInfo)",
-                "InputMethod_ErrorCode OH_TextConfig_SetSelection(InputMethod_TextConfig *config, int32_t start, int32_t end)"
+                "InputMethod_ErrorCode OH_TextConfig_SetSelection(InputMethod_TextConfig *config, int32_t start, int32_t end)",
+                "void OH_PrivateCommand_Destroy(InputMethod_PrivateCommand *command)"
             ]
         },
         "includes": []
@@ -368,7 +361,21 @@
                 "void OH_NativeWindow_DestroyNativeWindowBuffer(OHNativeWindowBuffer* buffer)",
                 "int32_t OH_NativeImage_ReleaseNativeWindowBuffer(OH_NativeImage* image, OHNativeWindowBuffer* nativeWindowBuffer, int fenceFd)",
                 "BufferHandle *OH_NativeWindow_GetBufferHandleFromNative(OHNativeWindowBuffer *buffer)",
-                "int32_t OH_ConsumerSurface_SetDefaultUsage(OH_NativeImage* image, uint64_t usage)"
+                "int32_t OH_ConsumerSurface_SetDefaultUsage(OH_NativeImage* image, uint64_t usage)",
+                "int32_t OH_NativeWindow_NativeWindowRequestBuffer(OHNativeWindow *window, OHNativeWindowBuffer **buffer, int *fenceFd)",
+                "int32_t OH_NativeWindow_NativeWindowFlushBuffer(OHNativeWindow *window, OHNativeWindowBuffer *buffer, int fenceFd, Region region)",
+                "OHNativeWindow* OH_NativeWindow_CreateNativeWindow(void* pSurface)",
+                "int32_t OH_NativeWindow_GetSurfaceId(OHNativeWindow *window, uint64_t *surfaceId)",
+                "int32_t OH_NativeWindow_NativeObjectUnreference(void *obj)",
+                "int32_t OH_NativeWindow_NativeObjectReference(void *obj)",
+                "int32_t OH_NativeBuffer_Reference(OH_NativeBuffer *buffer)",
+                "OH_NativeBuffer* OH_NativeBuffer_Alloc(const OH_NativeBuffer_Config* config)",
+                "void OH_NativeBuffer_GetConfig(OH_NativeBuffer *buffer, OH_NativeBuffer_Config* config)",
+                "int32_t OH_NativeBuffer_Map(OH_NativeBuffer *buffer, void **virAddr)",
+                "int32_t OH_NativeBuffer_Unmap(OH_NativeBuffer *buffer)",
+                "uint32_t OH_NativeBuffer_GetSeqNum(OH_NativeBuffer *buffer)",
+                "int32_t OH_NativeWindow_WriteToParcel(OHNativeWindow *window, OHIPCParcel *parcel)",
+                "int32_t OH_NativeWindow_ReadFromParcel(OHIPCParcel *parcel, OHNativeWindow **window)"
             ]
         },
         "includes": [
@@ -378,45 +385,14 @@
             "native_image/graphic_error_code.h"
         ]
     },
-    "native_buffer": {
-        "apiList": {
-            "12": [
-                "int32_t OH_NativeBuffer_Reference(OH_NativeBuffer *buffer)",
-                "int32_t OH_NativeBuffer_Unreference(OH_NativeBuffer *buffer)",
-                "int32_t OH_NativeBuffer_FromNativeWindowBuffer(OHNativeWindowBuffer *nativeWindowBuffer, OH_NativeBuffer **buffer)",
-                "OH_NativeBuffer* OH_NativeBuffer_Alloc(const OH_NativeBuffer_Config* config)",
-                "void OH_NativeBuffer_GetConfig(OH_NativeBuffer *buffer, OH_NativeBuffer_Config* config)",
-                "int32_t OH_NativeBuffer_Map(OH_NativeBuffer *buffer, void **virAddr)",
-                "int32_t OH_NativeBuffer_Unmap(OH_NativeBuffer *buffer)",
-                "uint32_t OH_NativeBuffer_GetSeqNum(OH_NativeBuffer *buffer)"
-            ]
-        },
-        "includes": []
-    },
     "native_window": {
         "apiList": {
             "12": [
-                "BufferHandle *OH_NativeWindow_GetBufferHandleFromNative(OHNativeWindowBuffer *buffer)",
-                "int32_t OH_NativeImage_AcquireNativeWindowBuffer(OH_NativeImage* image, OHNativeWindowBuffer** nativeWindowBuffer, int* fenceFd)",
-                "int32_t OH_NativeImage_ReleaseNativeWindowBuffer(OH_NativeImage* image, OHNativeWindowBuffer* nativeWindowBuffer, int fenceFd)",
-                "OH_NativeImage* OH_NativeImage_Create(uint32_t textureId, uint32_t textureTarget)",
-                "void OH_NativeImage_Destroy(OH_NativeImage** image)",
-                "int32_t OH_NativeImage_SetOnFrameAvailableListener(OH_NativeImage* image, OH_OnFrameAvailableListener listener)",
-                "int32_t OH_NativeWindow_NativeWindowHandleOpt(OHNativeWindow *window, int code, ...)",
-                "int32_t OH_NativeWindow_NativeWindowRequestBuffer(OHNativeWindow *window, OHNativeWindowBuffer **buffer, int *fenceFd)",
-                "int32_t OH_NativeWindow_NativeWindowFlushBuffer(OHNativeWindow *window, OHNativeWindowBuffer *buffer, int fenceFd, Region region)",
-                "void OH_NativeWindow_DestroyNativeWindow(OHNativeWindow* window)",
-                "OHNativeWindow* OH_NativeWindow_CreateNativeWindow(void* pSurface)",
-                "int32_t OH_NativeWindow_GetSurfaceId(OHNativeWindow *window, uint64_t *surfaceId)",
-                "int32_t OH_NativeWindow_NativeObjectUnreference(void *obj)",
-                "int32_t OH_NativeWindow_NativeObjectReference(void *obj)",
                 "int32_t OH_NativeWindow_NativeWindowAbortBuffer(OHNativeWindow *window, OHNativeWindowBuffer *buffer)"
             ]
         },
         "includes": [
-            "native_image/native_image.h",
-            "native_window/external_window.h",
-            "native_buffer/native_buffer.h"
+            "native_window/external_window.h"
         ]
     },
     "native_vsync": {
@@ -425,7 +401,8 @@
                 "void OH_NativeVSync_Destroy(OH_NativeVSync* nativeVsync)",
                 "OH_NativeVSync* OH_NativeVSync_Create(const char* name, unsigned int length)",
                 "int OH_NativeVSync_RequestFrame(OH_NativeVSync* nativeVsync, OH_NativeVSync_FrameCallback callback, void* data)",
-                "int OH_NativeVSync_GetPeriod(OH_NativeVSync* nativeVsync, long long* period)"
+                "int OH_NativeVSync_GetPeriod(OH_NativeVSync* nativeVsync, long long* period)",
+                "int OH_NativeVSync_DVSyncSwitch(OH_NativeVSync* nativeVsync, bool enable)"
             ]
         },
         "includes": [
@@ -742,14 +719,6 @@
         },
         "includes": []
     },
-    "bundle_ndk":{
-        "apiList": {
-            "14": [
-                "char* OH_NativeBundle_GetCompatibleDeviceType()"
-            ]
-        },
-        "includes": []
-    },
     "deviceinfo_ndk":{
         "apiList": {
             "14": [
@@ -1050,10 +1019,12 @@
         },
         "includes": []
     },
-    "bundle_ndk": {
+    "bundle": {
         "apiList": {
             "14": [
-                "OH_NativeBundle_ElementName OH_NativeBundle_GetMainElementName()"
+                "OH_NativeBundle_ElementName OH_NativeBundle_GetMainElementName()",
+                "OH_NativeBundle_ApplicationInfo OH_NativeBundle_GetCurrentApplicationInfo()",
+                "char* OH_NativeBundle_GetCompatibleDeviceType()"
             ]
         },
         "includes": []
@@ -1178,6 +1149,102 @@
             "13": [
                 "OH_NativeColorSpaceManager* OH_NativeColorSpaceManager_CreateFromName(ColorSpaceName colorSpaceName)",
                 "void OH_NativeColorSpaceManager_Destroy(OH_NativeColorSpaceManager* nativeColorSpaceManager)"
+            ]
+        },
+        "includes": []
+    },
+    "rawfile":{
+        "apiList": {
+            "14": [
+                "int OH_ResourceManager_ReadRawFile(const RawFile *rawFile, void *buf, size_t length)",
+                "RawFile *OH_ResourceManager_OpenRawFile(const NativeResourceManager *mgr, const char *fileName)",
+                "long OH_ResourceManager_GetRawFileSize(RawFile *rawFile)",
+                "void OH_ResourceManager_CloseRawFile(RawFile *rawFile)"
+            ]
+        },
+        "includes": []
+    },
+    "database":{
+        "apiList": {
+            "14": [
+                "int OH_PreferencesValue_GetBool(const OH_PreferencesValue *object, bool *value)"
+            ]
+        },
+        "includes": [
+            "database/preferences/oh_preferences_value.h"
+        ]
+    },
+    "ohcamera":{
+        "apiList": {
+            "14": [
+                "Camera_ErrorCode OH_CaptureSession_AddInput(Camera_CaptureSession* session, Camera_Input* cameraInput)",
+                "Camera_ErrorCode OH_CaptureSession_IsExposureModeSupported(Camera_CaptureSession* session, Camera_ExposureMode exposureMode, bool* isSupported)",
+                "Camera_ErrorCode OH_CaptureSession_Start(Camera_CaptureSession* session)",
+                "Camera_ErrorCode OH_CaptureSession_Stop(Camera_CaptureSession* session)",
+                "Camera_ErrorCode OH_CaptureSession_GetFocusMode(Camera_CaptureSession* session, Camera_FocusMode* focusMode)",
+                "Camera_ErrorCode OH_CaptureSession_BeginConfig(Camera_CaptureSession* session)",
+                "Camera_ErrorCode OH_CaptureSession_CommitConfig(Camera_CaptureSession* session)",
+                "Camera_ErrorCode OH_CaptureSession_GetExposureBias(Camera_CaptureSession* session, float* exposureBias)",
+                "Camera_ErrorCode OH_CaptureSession_Release(Camera_CaptureSession* session)",
+                "Camera_ErrorCode OH_CaptureSession_IsFocusModeSupported(Camera_CaptureSession* session, Camera_FocusMode focusMode, bool* isSupported)",
+                "Camera_ErrorCode OH_CaptureSession_GetExposureBiasRange(Camera_CaptureSession* session, float* minExposureBias, float* maxExposureBias, float* step)",
+                "Camera_ErrorCode OH_CaptureSession_GetExposureMode(Camera_CaptureSession* session, Camera_ExposureMode* exposureMode)",
+                "Camera_ErrorCode OH_CaptureSession_IsFlashModeSupported(Camera_CaptureSession* session, Camera_FlashMode flashMode, bool* isSupported)",
+                "Camera_ErrorCode OH_CaptureSession_AddPreviewOutput(Camera_CaptureSession* session, Camera_PreviewOutput* previewOutput)",
+                "Camera_ErrorCode OH_CameraManager_DeleteSupportedCameraOutputCapability(Camera_Manager* cameraManager, Camera_OutputCapability* cameraOutputCapability)",
+                "Camera_ErrorCode OH_CameraManager_UnregisterCallback(Camera_Manager* cameraManager, CameraManager_Callbacks* callback)",
+                "Camera_ErrorCode OH_CameraManager_GetSupportedCameraOutputCapability(Camera_Manager* cameraManager, const Camera_Device* camera, Camera_OutputCapability** cameraOutputCapability)",
+                "Camera_ErrorCode OH_CameraManager_DeleteSupportedCameras(Camera_Manager* cameraManager, Camera_Device* cameras, uint32_t size)",
+                "Camera_ErrorCode OH_CameraManager_CreateCameraInput(Camera_Manager* cameraManager, const Camera_Device* camera, Camera_Input** cameraInput)",
+                "Camera_ErrorCode OH_CameraManager_GetSupportedCameras(Camera_Manager* cameraManager, Camera_Device** cameras, uint32_t* size)",
+                "Camera_ErrorCode OH_CameraManager_CreateCaptureSession(Camera_Manager* cameraManager, Camera_CaptureSession** captureSession)",
+                "Camera_ErrorCode OH_CameraManager_RegisterCallback(Camera_Manager* cameraManager, CameraManager_Callbacks* callback)",
+                "Camera_ErrorCode OH_CameraManager_CreatePreviewOutput(Camera_Manager* cameraManager, const Camera_Profile* profile, const char* surfaceId, Camera_PreviewOutput** previewOutput)",
+                "Camera_ErrorCode OH_CameraInput_Release(Camera_Input* cameraInput)",
+                "Camera_ErrorCode OH_CameraInput_Open(Camera_Input* cameraInput)",
+                "Camera_ErrorCode OH_Camera_GetCameraManager(Camera_Manager** cameraManager)",
+                "Camera_ErrorCode OH_Camera_DeleteCameraManager(Camera_Manager* cameraManager)",
+                "Camera_ErrorCode OH_CameraDevice_GetCameraOrientation(Camera_Device* camera, uint32_t* orientation)",
+                "Camera_ErrorCode OH_PreviewOutput_Release(Camera_PreviewOutput* previewOutput)",
+                "Camera_ErrorCode OH_PreviewOutput_Stop(Camera_PreviewOutput* previewOutput)"
+            ]
+        },
+        "includes": []
+    },
+    "abilityKit":{
+        "apiList": {
+            "14": [
+                "Ability_NativeChildProcess_ErrCode OH_Ability_StartNativeChildProcess( const char* entry, NativeChildProcess_Args args, NativeChildProcess_Options options, int32_t *pid)",
+                "int OH_Ability_CreateNativeChildProcess(const char* libName, OH_Ability_OnNativeChildProcessStarted onProcessStarted)"
+            ]
+        },
+        "includes": []
+    },
+    "ipcKit":{
+        "apiList": {
+            "14": [
+                "OHIPCParcel* OH_IPCParcel_Create(void)",
+                "int OH_IPCParcel_ReadInt32(const OHIPCParcel *parcel, int32_t *value)",
+                "int OH_IPCParcel_WriteInt32(OHIPCParcel *parcel, int32_t value)",
+                "const char* OH_IPCParcel_ReadString(const OHIPCParcel *parcel)",
+                "void OH_IPCParcel_Destroy(OHIPCParcel *parcel)",
+                "int OH_IPCParcel_WriteFileDescriptor(OHIPCParcel *parcel, int32_t fd)",
+                "int OH_IPCParcel_WriteRemoteStub(OHIPCParcel *parcel, const OHIPCRemoteStub *stub)",
+                "int OH_IPCParcel_WriteString(OHIPCParcel *parcel, const char *str)",
+                "int OH_IPCRemoteProxy_SendRequest(const OHIPCRemoteProxy *proxy, uint32_t code, const OHIPCParcel *data, OHIPCParcel *reply, const OH_IPC_MessageOption *option)",
+                "void OH_IPCRemoteStub_Destroy(OHIPCRemoteStub *stub)",
+                "OHIPCRemoteStub* OH_IPCRemoteStub_Create(const char *descriptor, OH_OnRemoteRequestCallback requestCallback, OH_OnRemoteDestroyCallback destroyCallback, void *userData)",
+                "int OH_IPCParcel_ReadFileDescriptor(const OHIPCParcel *parcel, int32_t *fd)",
+                "OHIPCRemoteProxy* OH_IPCParcel_ReadRemoteProxy(const OHIPCParcel *parcel)"
+            ]
+        },
+        "includes": []
+    },
+    "qos":{
+        "apiList": {
+            "12": [
+                "int OH_QoS_SetThreadQoS(QoS_Level level)",
+                "int OH_QoS_GetThreadQoS(QoS_Level *level)"
             ]
         },
         "includes": []

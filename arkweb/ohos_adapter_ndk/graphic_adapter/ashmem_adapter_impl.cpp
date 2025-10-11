@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "graphic_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
 
 #include "ashmem_adapter.h"
 

@@ -19,27 +19,18 @@
 #include "arkweb/ohos_adapter_ndk/inputmethodframework_adapter/imf_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/media_adapter/include/media_codec_list_adapter_impl.h"
 
-#include "base/bridge/ark_web_bridge_macros.h"
-#include "ohos_adapter/bridge/ark_enterprise_device_management_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_hisysevent_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_net_proxy_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_ohos_drawing_text_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_ohos_web_data_base_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_print_manager_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_system_properties_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_vsync_adapter_wrapper.h"
-#include "ohos_adapter/bridge/ark_window_adapter_wrapper.h"
+#include "arkweb/ohos_adapter_ndk/enterprise_device_management_adapter/enterprise_device_management_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/event_handler_adapter/event_handler_adapter_impl.h"
 #include "datashare_adapter/datashare_adapter_impl.h"
-#include "distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.h"
-
-#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_image_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_data_base_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/distributeddatamgr_adapter/ohos_web_permission_data_base_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/ohos_native_buffer_adapter/ohos_native_buffer_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/cert_mgr_adapter/cert_mgr_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/media_avsession_adapter/media_avsession_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/audio_capturer_adapter/audio_capturer_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/screen_capture_adapter/screen_capture_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/audio_capturer_adapter/audio_system_manager_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/audio_capturer_adapter/audio_renderer_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/access_token_adapter/access_token_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/media_adapter/player_framework_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
@@ -60,10 +51,26 @@
 #include "arkweb/ohos_adapter_ndk/net_proxy_adapter_impl/net_proxy_adapter_impl.h"
 
 #include "arkweb/ohos_adapter_ndk/media_adapter/include/video_encoder_adapter_impl.h"
-#include "hiviewdfx_adapter/hitrace_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/hiviewdfx_adapter/hitrace_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/hiviewdfx_adapter/hisysevent_adapter_impl.h"
 
 #include "arkweb/ohos_adapter_ndk/drawing_text_adapter/ohos_drawing_text_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/net_config_adapter/net_config_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/ohos_resource_adapter/ohos_resource_adapter_impl.h"
+
+#include "arkweb/ohos_adapter_ndk/system_properties_adapter/system_properties_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/aafwk_adapter/aafwk_app_mgr_client_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_image_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/vsync_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/print_manager_adapter/print_manager_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/soc_perf_adapter/soc_perf_client_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/ohos_init_web_adapter/ohos_init_web_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/flowbuffer_adapter/flowbuffer_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/migration_manager_adapter/migration_manager_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/power_mgr_adapter/power_mgr_client_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/qos_manager_adapter/qos_manager_adapter_impl.h"
 
 namespace OHOS::NWeb {
 
@@ -75,23 +82,23 @@ OhosAdapterHelper& OhosAdapterHelper::GetInstance() {
 }  // namespace OHOS::NWeb
 
 namespace OHOS::ArkWeb {
-
+using namespace OHOS::NWeb;
 NDKOhosAdapterHelper::NDKOhosAdapterHelper()
     {}
 
 std::unique_ptr<NWeb::AafwkAppMgrClientAdapter>
 NDKOhosAdapterHelper::CreateAafwkAdapter() {
-  return nullptr;
+  return std::make_unique<AafwkAppMgrClientAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::PowerMgrClientAdapter>
 NDKOhosAdapterHelper::CreatePowerMgrClientAdapter() {
-  return nullptr;
+  return std::make_unique<PowerMgrClientAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::DisplayManagerAdapter>
 NDKOhosAdapterHelper::CreateDisplayMgrAdapter() {
-  return nullptr;
+  return std::make_unique<NativeDisplayManagerAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::BatteryMgrClientAdapter>
@@ -101,13 +108,12 @@ NDKOhosAdapterHelper::CreateBatteryClientAdapter() {
 
 std::unique_ptr<NWeb::NetConnectAdapter>
 NDKOhosAdapterHelper::CreateNetConnectAdapter() {
-  return nullptr;
+  return std::make_unique<NetConnectAdapterImpl>();
 }
 
 NWeb::OhosWebDataBaseAdapter&
 NDKOhosAdapterHelper::GetOhosWebDataBaseAdapterInstance() {
-  static ArkOhosWebDataBaseAdapterWrapper instance(nullptr);
-  return instance;
+  return OhosWebDataBaseAdapterImpl::GetInstance();
 }
 
 NWeb::PasteBoardClientAdapter& NDKOhosAdapterHelper::GetPasteBoard() {
@@ -117,7 +123,7 @@ NWeb::PasteBoardClientAdapter& NDKOhosAdapterHelper::GetPasteBoard() {
 
 std::unique_ptr<NWeb::AudioRendererAdapter>
 NDKOhosAdapterHelper::CreateAudioRendererAdapter() {
-  return nullptr;
+  return std::make_unique<AudioRendererAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::AudioCapturerAdapter>
@@ -132,39 +138,36 @@ NDKOhosAdapterHelper::GetAudioSystemManager() {
 
 NWeb::OhosWebPermissionDataBaseAdapter&
 NDKOhosAdapterHelper::GetWebPermissionDataBaseInstance() {
-  static ArkOhosWebPermissionDataBaseAdapterWrapper instance(nullptr);
-  return instance;
+  return OhosWebPermissionDataBaseAdapterImpl::GetInstance();
 }
 
 std::unique_ptr<NWeb::MMIAdapter>
 NDKOhosAdapterHelper::CreateMMIAdapter() {
-  return nullptr;
+  return std::make_unique<MMINewAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::SocPerfClientAdapter>
 NDKOhosAdapterHelper::CreateSocPerfClientAdapter() {
-  return nullptr;
+  return std::make_unique<SocPerfClientAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::OhosResourceAdapter>
 NDKOhosAdapterHelper::GetResourceAdapter(const std::string& hapPath) {
-  return nullptr;
+  return std::make_unique<NWeb::OhosResourceAdapterImpl>(hapPath);
 }
 
 NWeb::SystemPropertiesAdapter&
 NDKOhosAdapterHelper::GetSystemPropertiesInstance() {
-  static ArkSystemPropertiesAdapterWrapper instance(nullptr);
-  return instance;
+  return SystemPropertiesAdapterImpl::GetInstance();
 }
 
 NWeb::VSyncAdapter& NDKOhosAdapterHelper::GetVSyncAdapter() {
-  static ArkVSyncAdapterWrapper instance(nullptr);
-  return instance;
+  return VSyncAdapterNdkImpl::GetInstance();
 }
 
 std::unique_ptr<NWeb::OhosInitWebAdapter>
 NDKOhosAdapterHelper::GetInitWebAdapter() {
-  return nullptr;
+  return std::make_unique<OhosInitWebAdapterImpl>();
 }
 
 NWeb::KeystoreAdapter&
@@ -174,8 +177,7 @@ NDKOhosAdapterHelper::GetKeystoreAdapterInstance() {
 
 NWeb::EnterpriseDeviceManagementAdapter&
 NDKOhosAdapterHelper::GetEnterpriseDeviceManagementInstance() {
-  static ArkEnterpriseDeviceManagementAdapterWrapper instance(nullptr);
-  return instance;
+  return EnterpriseDeviceManagementAdapterImpl::GetInstance();
 }
 
 NWeb::DatashareAdapter& NDKOhosAdapterHelper::GetDatashareInstance() {
@@ -184,7 +186,7 @@ NWeb::DatashareAdapter& NDKOhosAdapterHelper::GetDatashareInstance() {
 
 std::unique_ptr<NWeb::IMFAdapter>
 NDKOhosAdapterHelper::CreateIMFAdapter() {
-  return nullptr;
+  return std::make_unique<IMFAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::CertManagerAdapter>
@@ -209,8 +211,7 @@ NDKOhosAdapterHelper::GetEventHandlerAdapter() {
 
 NWeb::PrintManagerAdapter&
 NDKOhosAdapterHelper::GetPrintManagerInstance() {
-  static ArkPrintManagerAdapterWrapper instance(nullptr);
-  return instance;
+  return PrintManagerAdapterImpl::GetInstance();
 }
 
 std::unique_ptr<NWeb::IConsumerSurfaceAdapter>
@@ -224,14 +225,12 @@ NDKOhosAdapterHelper::CreatePlayerAdapter() {
 }
 
 NWeb::WindowAdapter& NDKOhosAdapterHelper::GetWindowAdapterInstance() {
-  static ArkWindowAdapterWrapper instance(nullptr);
-  return instance;
+  return WindowAdapterNdkImpl::GetInstance();
 }
 
 NWeb::HiSysEventAdapter&
 NDKOhosAdapterHelper::GetHiSysEventAdapterInstance() {
-  static ArkHiSysEventAdapterWrapper instance(nullptr);
-  return instance;
+  return HiSysEventAdapterImpl::GetInstance();
 }
 
 NWeb::HiTraceAdapter& NDKOhosAdapterHelper::GetHiTraceAdapterInstance() {
@@ -239,8 +238,7 @@ NWeb::HiTraceAdapter& NDKOhosAdapterHelper::GetHiTraceAdapterInstance() {
 }
 
 NWeb::NetProxyAdapter& NDKOhosAdapterHelper::GetNetProxyInstance() {
-  static ArkNetProxyAdapterWrapper instance(nullptr);
-  return instance;
+  return NetProxyAdapterImpl::GetInstance();
 }
 
 NWeb::CameraManagerAdapter&
@@ -280,7 +278,7 @@ NDKOhosAdapterHelper::GetMediaCodecListAdapter() {
 
 std::unique_ptr<NWeb::FlowbufferAdapter>
 NDKOhosAdapterHelper::CreateFlowbufferAdapter() {
-  return nullptr;
+  return std::make_unique<FlowbufferAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::MediaAVSessionAdapter>
@@ -329,7 +327,7 @@ NDKOhosAdapterHelper::GetOhosDrawingTextTypographyAdapter() {
 
 std::unique_ptr<NWeb::MigrationManagerAdapter>
 NDKOhosAdapterHelper::CreateMigrationMgrAdapter() {
-  return nullptr;
+  return std::make_unique<MigrationManagerAdapterImpl>();
 }
 
 std::unique_ptr<NWeb::ScreenlockManagerAdapter>
@@ -340,5 +338,10 @@ NDKOhosAdapterHelper::CreateScreenlockManagerAdapter() {
 std::unique_ptr<NWeb::NetConfigAdapter>
 NDKOhosAdapterHelper::GetNetConfigAdapter() {
   return std::make_unique<NetConfigAdapterImpl>();
+}
+
+NWeb::QosManagerAdapter& NDKOhosAdapterHelper::GetQosManagerInstance()
+{
+    return QosManagerAdapterImpl::GetInstance();
 }
 }  // namespace OHOS::ArkWeb

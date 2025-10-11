@@ -16,12 +16,14 @@
 #include "system_properties_adapter_impl.h"
 
 #include <sstream>
-
+#include <dlfcn.h>
 #include <native_interface_bundle.h>
-#include "adapter_base.h"
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
 #include <deviceinfo.h>
 #include <AbilityKit/ability_runtime/application_context.h>
+
+#include "adapter_base.h"
+#include "nweb_log.h"
+#include "hitrace_adapter_impl.h"
 
 namespace OHOS::NWeb {
 const std::string FACTORY_CONFIG_VALUE = "factoryConfig";
@@ -45,6 +47,46 @@ const int ARRAY_INDEX_3 = 3;
 const std::unordered_map<std::string, PropertiesKey> PROP_KEY_MAP = {
     {PROP_RENDER_DUMP, PropertiesKey::PROP_RENDER_DUMP},
     {PROP_DEBUG_TRACE, PropertiesKey::PROP_DEBUG_TRACE}};
+
+    namespace {
+int32_t (*AdvancedSecurityModeGetStateByFeature)(const char *feature, uint32_t featureLen,
+    const char *param, uint32_t paramLen, uint32_t *state) = nullptr;
+
+typedef int32_t (*AdvSecModeGetPtr)(const char *feature, uint32_t featureLen,
+    const char *param, uint32_t paramLen, uint32_t *state);
+
+bool CheckAdvSecMode()
+{
+    constexpr uint32_t invalidMode = 0xffffffff; // invalidMode:0xffffffff
+    static uint32_t mode = invalidMode;
+    if (mode != invalidMode) {
+        WVLOG_I("AdvancedSecurityMode: %{public}d", !!mode);
+        return !!mode;
+    }
+
+    void *hdl = dlopen("/system/lib64/platformsdk/libdsmm_innersdk.z.so", RTLD_LAZY);
+    if (hdl == nullptr) {
+        WVLOG_I("failed to dlopen libdsmm_innersdk");
+        return false;
+    }
+
+    AdvancedSecurityModeGetStateByFeature = (AdvSecModeGetPtr)dlsym(hdl, "AdvancedSecurityModeGetStateByFeature");
+    if (AdvancedSecurityModeGetStateByFeature == nullptr) {
+        WVLOG_I("failed to dlsym AdvancedSecurityModeGetStateByFeature");
+        return false;
+    }
+
+    // returns 0 if success or errcode
+    int32_t ret = AdvancedSecurityModeGetStateByFeature("default", 7, "default", 7, &mode); // len:7
+    if (ret != 0) {
+        WVLOG_I("failed to get  AdvancedSecurityMode");
+        mode = invalidMode;
+        return false;
+    }
+    WVLOG_I("Succeeded in obtaining the AdvancedSecurityMode: %{public}d", !!mode);
+    return !!mode;
+}
+}
 
 void SystemPropertiesChangeCallback(void *context, const OH_PreferencesPair *pairs, uint32_t count)
 {
@@ -71,6 +113,19 @@ void SystemPropertiesChangeCallback(void *context, const OH_PreferencesPair *pai
             }
             WVLOG_D("sys prop change key: %{public}s ,value : %{public}s ", key,  value);
             SystemPropertiesAdapterImpl::GetInstance().DispatchAllWatcherInfo(key, value);
+        }
+        if (type == PREFERENCE_TYPE_BOOL) {
+            if (key != PROP_DEBUG_TRACE) {
+                continue;
+            }
+            bool value;
+            int ret = OH_PreferencesValue_GetBool(object, &value);
+            if (ret != PREFERENCES_OK) {
+                WVLOG_E("failed to get preferences string");
+                continue;
+            }
+            WVLOG_D("sys prop change key: %{public}s ,value : %{public}d ", key,  value);
+            SystemPropertiesAdapterImpl::GetInstance().SetTraceDebugEnable(value);
         }
     }
 }
@@ -162,6 +217,7 @@ void SystemPropertiesAdapterImpl::InitPreferences()
     }
     WVLOG_D("open preferences, bundle name %{public}s", bundleName);
     // If necessary, initialize the configuration here.
+    SetTraceDebugEnable(GetBoolParameter(PROP_DEBUG_TRACE, false));
 }
 
 bool SystemPropertiesAdapterImpl::GetResourceUseHapPathEnable()
@@ -242,8 +298,7 @@ bool SystemPropertiesAdapterImpl::GetWebOptimizationValue()
 
 bool SystemPropertiesAdapterImpl::IsAdvancedSecurityMode()
 {
-    // Only open to system applications, return false
-    return false;
+    return CheckAdvSecMode();
 }
 
 std::string SystemPropertiesAdapterImpl::GetUserAgentOSName()
@@ -276,6 +331,11 @@ int32_t SystemPropertiesAdapterImpl::GetSoftwareSeniorVersion()
 std::string SystemPropertiesAdapterImpl::GetNetlogMode()
 {
     return GetStringParameter("web.debug.netlog", "");
+}
+
+void SystemPropertiesAdapterImpl::SetTraceDebugEnable(bool isEnable)
+{
+    SetBoolParameter("web.debug.trace", isEnable);
 }
 
 bool SystemPropertiesAdapterImpl::GetTraceDebugEnable()
@@ -475,6 +535,26 @@ bool SystemPropertiesAdapterImpl::GetBoolParameter(const char *key, bool default
     return value;
 }
 
+void SystemPropertiesAdapterImpl::SetBoolParameter(const char *key, const bool value)
+{
+    if (preferences_ == nullptr) {
+        WVLOG_E("preferences is null");
+        return;
+    }
+
+    if (key == nullptr) {
+        WVLOG_E("param is nullptr");
+        return;
+    }
+
+    int ret = OH_Preferences_SetBool(preferences_, key, value);
+    if (ret != PREFERENCES_OK) {
+        WVLOG_E("failed to set bool, ret %{public}d", ret);
+        return;
+    }
+    WVLOG_D("set bool param, key:%{public}s, value:%{public}d", key, value);
+}
+
 int SystemPropertiesAdapterImpl::GetIntParameter(const char *key, int defaultValue)
 {
     if (preferences_ == nullptr) {
@@ -551,6 +631,21 @@ void SystemPropertiesAdapterImpl::SetStringParameter(const char *key, const char
         return;
     }
     WVLOG_D("set string param, key:%{public}s, value:%{public}s", key, value);
+}
+
+std::string SystemPropertiesAdapterImpl::GetStringParameter(const std::string& key, const std::string& defaultValue)
+{
+    return GetStringParameter(key.c_str(), defaultValue);
+}
+
+int32_t SystemPropertiesAdapterImpl::GetInitialCongestionWindowSize()
+{
+    return -1; // default -1
+}
+
+int32_t SystemPropertiesAdapterImpl::GetIntParameter(const std::string& key, int32_t defaultValue)
+{
+    return GetIntParameter(key.c_str(), defaultValue);
 }
 
 std::vector<FrameRateSetting> SystemPropertiesAdapterImpl::GetLTPOConfig(const std::string& settingName)

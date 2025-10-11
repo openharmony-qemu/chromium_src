@@ -470,6 +470,8 @@ component("nweb_sources") {
     "src/nweb_imf_selection_range_adapter_impl.h",
     "src/nweb_imf_text_config_adapter_impl.cc",
     "src/nweb_imf_text_config_adapter_impl.h",
+    "src/nweb_render_main.cc",
+    "src/nweb_gpu_main.cc",
   ]
 
   if (defined(arkweb_arkweb_extensions) && arkweb_arkweb_extensions) {
@@ -562,6 +564,12 @@ component("nweb_sources") {
     ]
   }
   #endif ARKWEB_VIDEO_ASSISTANT
+
+  libs = [
+    "child_process",
+    "ipc_capi",
+    "native_window",
+  ]
 }
 
 #################################################

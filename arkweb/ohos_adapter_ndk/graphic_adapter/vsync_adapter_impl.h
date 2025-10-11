@@ -21,7 +21,7 @@
 #include <mutex>
 #include <native_vsync/native_vsync.h>
 
-#include "third_party/ohos_ndk/includes/ohos_adapter/graphic_adapter.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
 
 namespace OHOS::NWeb {
 class VSyncAdapterNdkImpl : public VSyncAdapter {

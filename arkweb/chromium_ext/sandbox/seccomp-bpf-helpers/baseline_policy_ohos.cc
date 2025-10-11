@@ -350,7 +350,7 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
 
         return Switch(clockid)
             .Cases({CLOCK_MONOTONIC},
-                If(flags == (TFD_CLOEXEC | TFD_NONBLOCK), Error(EPERM)).Else(CrashSIGSYS()))
+                If(flags == (TFD_CLOEXEC | TFD_NONBLOCK), Allow()).Else(CrashSIGSYS()))
             .Default(BaselinePolicy::EvaluateSyscall(sysno));
     }
 

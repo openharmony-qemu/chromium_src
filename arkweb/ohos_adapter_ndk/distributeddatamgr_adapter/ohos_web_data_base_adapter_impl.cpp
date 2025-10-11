@@ -18,7 +18,7 @@
 #include <cinttypes>
 #include <unistd.h>
 
-#include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "nweb_log.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 #include <AbilityKit/ability_runtime/application_context.h>
 #include <unordered_map>

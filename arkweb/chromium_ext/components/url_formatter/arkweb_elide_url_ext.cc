@@ -277,6 +277,17 @@ UrlType ParseInput(const std::u16string& input,
   }
   return UrlType::UNKNOWN;
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+int TestNumNonHostComponents(const url::Parsed& parts) {
+  return NumNonHostComponents(parts);
+}
+
+UrlType TestGetInputTypeForScheme(const std::string& scheme) {
+  return GetInputTypeForScheme(scheme);
+}
+#endif  // BUILDFLAG(ARKWEB_TEST)
+
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
 
 }  // namespace url_formatter

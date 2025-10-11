@@ -49,8 +49,6 @@ config("arkweb_base_unittest_config") {
   "-Wl,--wrap=OH_AudioStreamBuilder_SetCapturerCallback",
   "-Wl,--wrap=OH_AudioStreamBuilder_GenerateCapturer",
   "-Wl,--wrap=OH_CommonEvent_UnSubscribe",
-  "-Wl,--wrap=GetOHGetAddrInfoForNetwork",
-  "-Wl,--wrap=GetOHFreeDnsResult",
   ]
 
   ldflags += [ 
@@ -135,6 +133,13 @@ config("arkweb_base_unittest_config") {
     "-Wl,--wrap=OH_CommonEvent_UnSubscribe",
     "-Wl,--wrap=OH_NativeImage_AcquireNativeWindowBuffer",
     "-Wl,--wrap=OH_NativeBuffer_FromNativeWindowBuffer",
+  ]
+}
+
+config("net_dns_config") {
+  ldflags = [
+    "-Wl,--wrap=GetOHFreeDnsResult",
+    "-Wl,--wrap=GetOHGetAddrInfoForNetwork"
   ]
 }
 

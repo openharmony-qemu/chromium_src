@@ -110,8 +110,8 @@ NDKOhosAdapterHelper::CreateNetConnectAdapter() {
 }
 
 NWeb::OhosWebDataBaseAdapter&
-NDKOhosAdapterHelper::GetOhosWebDataBaseAdapterInstance() {
-  return OhosWebDataBaseAdapterImpl::GetInstance();
+NDKOhosAdapterHelper::GetOhosWebDataBaseAdapterInstance(const std::string& cachePath) {
+  return OhosWebDataBaseAdapterImpl::GetInstance(cachePath);
 }
 
 NWeb::PasteBoardClientAdapter& NDKOhosAdapterHelper::GetPasteBoard() {
@@ -135,8 +135,8 @@ NDKOhosAdapterHelper::GetAudioSystemManager() {
 }
 
 NWeb::OhosWebPermissionDataBaseAdapter&
-NDKOhosAdapterHelper::GetWebPermissionDataBaseInstance() {
-  return OhosWebPermissionDataBaseAdapterImpl::GetInstance();
+NDKOhosAdapterHelper::GetWebPermissionDataBaseInstance(const std::string& cachePath) {
+  return OhosWebPermissionDataBaseAdapterImpl::GetInstance(cachePath);
 }
 
 std::unique_ptr<NWeb::MMIAdapter>

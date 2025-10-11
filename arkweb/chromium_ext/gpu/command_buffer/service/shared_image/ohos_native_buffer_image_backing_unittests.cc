@@ -21,6 +21,7 @@
 #undef private
 #undef protected
 
+#include "arkweb/ohos_adapter_ndk/ohos_native_buffer_adapter/ohos_native_buffer_adapter_impl.h"
 #include "base/ohos/scoped_native_buffer_handle.h"
 #include "base/functional/callback_helpers.h"
 #include "base/memory/raw_ptr.h"
@@ -68,18 +69,14 @@ constexpr int SIZE = 256;
 ScopedNativeBufferHandle CreateHandle()
 {
     void* buffer = nullptr;
-    std::shared_ptr<OHOS::NWeb::NativeBufferConfigAdapterImpl> configAdapter =
-        std::make_shared<OHOS::NWeb::NativeBufferConfigAdapterImpl>();
-    configAdapter->SetBufferWidth(SIZE);
-    configAdapter->SetBufferHeight(SIZE);
-    configAdapter->SetBufferUsage(1);
-    configAdapter->SetBufferFormat(1);
-    configAdapter->SetBufferStride(1);
-
-    // Allocate a NativeBuffer.
-    OHOS::NWeb::OhosNativeBufferAdapter& adapter =
-        OHOS::NWeb::OhosAdapterHelper::GetInstance().GetOhosNativeBufferAdapter();
-    adapter.Allocate(configAdapter, &buffer);
+    OH_NativeBuffer_Config config = {
+        .width = 10,
+        .height = 10,
+        .format = OH_NativeBuffer_Format::NATIVEBUFFER_PIXEL_FMT_RGBA_8888,
+        .usage = 1,
+        .stride = 1,
+    };
+    buffer = OH_NativeBuffer_Alloc(&config);
     EXPECT_NE(buffer, nullptr);
     auto handle = gpu::ScopedNativeBufferHandle::Adopt(buffer);
     return handle;

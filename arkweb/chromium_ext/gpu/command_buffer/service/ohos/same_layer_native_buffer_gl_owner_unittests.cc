@@ -619,4 +619,17 @@ TEST_F(SameLayerNativeBufferGLOwnerTest, ReleaseNativeImage)
     buffer_gl_owner_->ReleaseNativeImage();
     SUCCEED();
 }
+
+TEST_F(SameLayerNativeBufferGLOwnerTest, GetReadyFence)
+{
+    buffer_gl_owner_->UpdateNativeImage();
+    {
+        base::AutoLock lock(buffer_gl_owner_->lock_);
+        buffer_gl_owner_->current_image_ref_->GetReadyFence();
+    }
+    {
+        base::AutoLock lock(buffer_gl_owner_->lock_);
+        EXPECT_FALSE(buffer_gl_owner_->current_image_ref_.has_value());
+    }
+}
 } // namespace gpu

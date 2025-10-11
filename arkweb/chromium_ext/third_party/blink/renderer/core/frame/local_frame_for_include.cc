@@ -80,6 +80,15 @@ void LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
   }
 }
 
+void LocalFrameUtil::SetTextZoomFactorsExt(LocalFrame* LocalFrameObj) {
+  for (Frame* child = LocalFrameObj->Tree().FirstChild(); child;
+      child = child->Tree().NextSibling()) {
+    if (auto* child_local_frame = DynamicTo<LocalFrame>(child)) {
+        child_local_frame->SetTextZoomFactor(LocalFrameObj->text_zoom_factor_);
+    }
+  }
+}
+
 #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
 void LocalFrame::OnDetectedBlankScreen(const WTF::String& url,
                                        int32_t blankScreenReason,

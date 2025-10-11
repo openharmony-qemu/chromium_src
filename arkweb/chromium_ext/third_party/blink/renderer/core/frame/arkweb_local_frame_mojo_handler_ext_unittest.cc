@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "third_party/blink/renderer/core/frame/local_frame_mojo_handler.h"
+#include "third_party/blink/renderer/core/frame/arkweb_local_frame_mojo_handler_ext.h"
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -41,7 +41,7 @@ protected:
         web_view_helper_.Initialize();
         dummy_page_holder_ = std::make_unique<DummyPageHolder>();
         local_frame_ = &dummy_page_holder_->GetFrame();
-        handler_ = std::make_unique<ArkWebLocalFrameMojoHandlerExt>(*local_frame_);
+        handler_ = MakeGarbageCollected<ArkWebLocalFrameMojoHandlerExt>(*local_frame_);
         mock_callback_ = std::make_unique<MockCallbackHelper>();
     }
 
@@ -109,7 +109,7 @@ protected:
 TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GetImageFromCache_ValidUrl) {
 
     auto callback = base::BindOnce(&MockCallbackHelper::GetImageCallback,
-                                    base::Unretained(&mock_callback_.get()));
+                                    base::Unretained(mock_callback_.get()));
 
     EXPECT_CALL(*mock_callback_, GetImageCallback(
         testing::Eq(0u),
@@ -124,21 +124,7 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GetImageFromCache_ValidUrl) {
 TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GetImageFromCache_EmptyUrl) {
 
     auto callback = base::BindOnce(&MockCallbackHelper::GetImageCallback,
-                                    base::Unretained(&mock_callback_.get()));
-
-    EXPECT_CALL(*mock_callback_, GetImageCallback(
-        testing::Eq(0u),
-        testing::A<base::ReadOnlySharedMemoryRegion>()
-    )).Times(1);
-
-    GetImageFromCacheTest(
-        "",
-        std::move(callback));
-}
-
-TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_Success) {
-
-    auto cache_options = 
+                                    base::Unretained(mock_callback_.get()));
 
     EXPECT_CALL(*mock_callback_, GetImageCallback(
         testing::Eq(0u),
@@ -206,10 +192,10 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, JavaScriptExecuteRequestExt_Success) 
     const std::string kTestScript = "1 + 2;";
     const uint64_t kScriptLength = kTestScript.size();
     
-    mojo::ScopedHandle script_handle = CreateScriptFile(kTestScript);
+    mojo::ScopedHandle script_handle = CreateMockHandle(kTestScript);
 
     auto callback = base::BindOnce(&MockCallbackHelper::JavaScriptCallback,
-                                    base::Unretained(&mock_callback_.get()));
+                                    base::Unretained(mock_callback_.get()));
 
     JavaScriptExecuteRequestExtTest(
         std::move(script_handle), 
@@ -225,10 +211,10 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, JavaScriptExecuteRequestExt_NoResult)
     const std::string kTestScript = "console.log('Hello');";
     const uint64_t kScriptLength = kTestScript.size();
     
-    mojo::ScopedHandle script_handle = CreateScriptFile(kTestScript);
+    mojo::ScopedHandle script_handle = CreateMockHandle(kTestScript);
 
     auto callback = base::BindOnce(&MockCallbackHelper::JavaScriptCallback,
-                                    base::Unretained(&mock_callback_.get()));
+                                    base::Unretained(mock_callback_.get()));
 
     JavaScriptExecuteRequestExtTest(
         std::move(script_handle), 

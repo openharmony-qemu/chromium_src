@@ -29,6 +29,7 @@
 #include "third_party/blink/renderer/platform/mojo/heap_mojo_receiver.h"
 #include "third_party/blink/renderer/platform/mojo/heap_mojo_remote.h"
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
+#include "third_party/blink/renderer/core/frame/local_frame_mojo_handler.h"
 
 #if BUILDFLAG(IS_MAC)
 #include "third_party/blink/public/mojom/input/text_input_host.mojom-blink.h"
@@ -43,6 +44,7 @@ class ArkWebLocalFrameMojoHandlerExt : public LocalFrameMojoHandler {
   explicit ArkWebLocalFrameMojoHandlerExt(blink::LocalFrame& frame);
 
  private:
+  friend class ArkWebLocalFrameMojoHandlerExtTest;
 #if BUILDFLAG(IS_ARKWEB)
   void JavaScriptExecuteRequestExt(
       mojo::ScopedHandle handle_fd,

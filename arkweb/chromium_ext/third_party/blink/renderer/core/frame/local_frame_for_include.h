@@ -36,6 +36,7 @@ class LocalFrameUtil {
                                              float& text_zoom_factor,
                                              bool& layout_zoom_changed,
                                              Page* page);
+  static void SetTextZoomFactorsExt(LocalFrame* LocalFrameObj);
 };
 
 }  // namespace blink

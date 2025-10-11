@@ -312,7 +312,7 @@ TEST_F(WebFrameWidgetImplExtSimTest, MouseHitTest) {
                       WebInputEvent::kNoModifiers,
                       WebInputEvent::GetStaticTimeStampForTests());
   
-  MockMainFrameWidget()->MouseHitTest(event);
+  MockMainFrameWidget()->MouseHitTest(event, 1);
 }
 
 TEST_F(WebFrameWidgetImplExtSimTest, GetInputElementAttributes) {

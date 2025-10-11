@@ -140,9 +140,11 @@ class GestureManagerUtilsTest : public SimTestExt {
     return GetEventHandler().HandleGestureEvent(drag_event);
   }
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   void SetContextMenuCustomizationEnabled(bool enabled) {
     GetLocalFrame().GetSettings()->SetContextMenuCustomization(enabled);
   }
+#endif
 
   void SetGestureFocusMode(int mode) {
     GetLocalFrame().GetSettings()->SetGestureFocusMode(mode);

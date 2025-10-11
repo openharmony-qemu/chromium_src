@@ -35,6 +35,13 @@ UrlType ParseInput(const std::u16string& input,
                    url::Parsed* parts,
                    std::u16string* scheme,
                    GURL* canonicalized_url);
+
+#if BUILDFLAG(ARKWEB_TEST)
+int TestNumNonHostComponents(const url::Parsed& parts);
+
+UrlType TestGetInputTypeForScheme(const std::string& scheme);
+#endif  // BUILDFLAG(ARKWEB_TEST)
+
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
 
 }  // namespace url_formatter

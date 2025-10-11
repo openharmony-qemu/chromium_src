@@ -34,6 +34,7 @@
 #include "extensions/common/manifest_url_handlers.h"
 #include "extensions/test/test_extensions_client.h"
 #include "extensions/browser/extensions_test.h"
+#include "extension_registry_info_manager_test.h"
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
@@ -336,4 +337,30 @@ TEST_F(ExtensionRegistryInfoManagerTest,
   EXPECT_EQ(GetCalledCount(), 1);
 }
 
+TEST_F(ExtensionRegistryInfoManagerTest, GetTypeStr_Test) {
+  EXPECT_STREQ(GetTypeStr(extensions::MenuItem::Type::NORMAL).c_str(), "normal");
+  EXPECT_STREQ(GetTypeStr(extensions::MenuItem::Type::CHECKBOX).c_str(), "checkbox");
+  EXPECT_STREQ(GetTypeStr(extensions::MenuItem::Type::RADIO).c_str(), "radio");
+  EXPECT_STREQ(GetTypeStr(extensions::MenuItem::Type::SEPARATOR).c_str(), "separator");
+}
+
+TEST_F(ExtensionRegistryInfoManagerTest, GetContextStr_Test) {
+  EXPECT_STREQ(GetContextStr(extensions::MenuItem::Context::ALL).c_str(), "all");
+  EXPECT_STREQ(GetContextStr(extensions::MenuItem::Context::PAGE).c_str(), "page");
+  EXPECT_STREQ(GetContextStr(extensions::MenuItem::Context::SELECTION).c_str(), "selection");
+  EXPECT_STREQ(GetContextStr(extensions::MenuItem::Context::LINK).c_str(), "link");
+  EXPECT_STREQ(GetContextStr(extensions::MenuItem::Context::EDITABLE).c_str(), "editable");
+  EXPECT_STREQ(GetContextStr(extensions::MenuItem::Context::IMAGE).c_str(), "image");
+  EXPECT_STREQ(GetContextStr(extensions::MenuItem::Context::VIDEO).c_str(), "video");
+  EXPECT_STREQ(GetContextStr(extensions::MenuItem::Context::FRAME).c_str(), "frame");
+  EXPECT_STREQ(GetContextStr(extensions::MenuItem::Context::LAUNCHER).c_str(), "launcher");
+  EXPECT_STREQ(GetContextStr(extensions::MenuItem::Context::BROWSER_ACTION).c_str(), "browser_action");
+  EXPECT_STREQ(GetContextStr(extensions::MenuItem::Context::PAGE_ACTION).c_str(), "page_action");
+  EXPECT_STREQ(GetContextStr(extensions::MenuItem::Context::ACTION).c_str(), "action");
+}
+
+TEST_F(ExtensionRegistryInfoManagerTest, ContextListToStrVector_Test) {
+  extensions::MenuItem::ContextList contextList0(extensions::MenuItem::Context::IMAGE);
+  EXPECT_EQ(ContextListToStrVector(contextList0).size(), 1);
+}
 }  // namespace extensions

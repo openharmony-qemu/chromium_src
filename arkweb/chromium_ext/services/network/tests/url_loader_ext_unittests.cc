@@ -71,5 +71,76 @@ TEST_F(UrlLoaderExtTest, UrlLoaderExtTest_001) {
   protocol = network::GetProtocol(gUrl3, info);
   EXPECT_EQ(protocol, "http/1.1");
 }
+
+TEST_F(UrlLoaderExtTest, GetProtocol_AlpnProtocolValid_ReturnsDirectly) {
+  GURL url("https://www.example.com");
+  net::HttpResponseInfo info;
+
+  info.alpn_negotiated_protocol = "h3";
+  std::string protocol = network::GetProtocol(url, info);
+  EXPECT_EQ(protocol, "h3");
+}
+
+TEST_F(UrlLoaderExtTest, GetProtocol_NonHttpScheme_ReturnsScheme) {
+  GURL url("ws://example.com");
+  net::HttpResponseInfo info;
+
+  info.alpn_negotiated_protocol = "unknown";
+  info.was_fetched_via_spdy = false;
+  std::string protocol = network::GetProtocol(url, info);
+  EXPECT_EQ(protocol, "ws");
+}
+
+TEST_F(UrlLoaderExtTest, GetProtocol_NoHeaders_ReturnsHttp) {
+  GURL url("https://www.example.com");
+  net::HttpResponseInfo info;
+
+  info.alpn_negotiated_protocol = "unknown";
+  info.was_fetched_via_spdy = false;
+  info.headers.reset();
+  std::string protocol = network::GetProtocol(url, info);
+  EXPECT_EQ(protocol, "http");
+}
+
+TEST_F(UrlLoaderExtTest, GetProtocol_Http09_ReturnsHttp09) {
+  GURL url("http://www.example.com");
+  net::HttpResponseInfo info;
+
+  info.alpn_negotiated_protocol = "unknown";
+  info.was_fetched_via_spdy = false;
+  info.headers =
+      base::MakeRefCounted<net::HttpResponseHeaders>("HTTP/0.9 200 OK");
+  std::string protocol = network::GetProtocol(url, info);
+  EXPECT_EQ(protocol, "http/0.9");
+}
+
+TEST_F(UrlLoaderExtTest, GetProtocol_Http10_ReturnsHttp10) {
+  GURL url("http://www.example.com");
+  net::HttpResponseInfo info;
+
+  info.alpn_negotiated_protocol = "unknown";
+  info.was_fetched_via_spdy = false;
+  info.headers =
+      base::MakeRefCounted<net::HttpResponseHeaders>("HTTP/1.0 200 OK");
+  std::string protocol = network::GetProtocol(url, info);
+  EXPECT_EQ(protocol, "http/1.0");
+}
+
+TEST_F(UrlLoaderExtTest, GetProtocol_HttpOtherVersion_ReturnsHttp) {
+  GURL url("http://www.example.com");
+  net::HttpResponseInfo info;
+
+  info.alpn_negotiated_protocol = "unknown";
+  info.was_fetched_via_spdy = false;
+  info.headers =
+      base::MakeRefCounted<net::HttpResponseHeaders>("HTTP/2.0 200 OK");
+  std::string protocol = network::GetProtocol(url, info);
+  EXPECT_EQ(protocol, "http");
+}
+
+TEST_F(UrlLoaderExtTest, BoolToString) {
+  EXPECT_EQ(network::BoolToString(true), "true");
+  EXPECT_EQ(network::BoolToString(false), "false");
+}
 #endif
 }  // namespace

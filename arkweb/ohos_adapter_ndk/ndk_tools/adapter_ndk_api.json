@@ -385,6 +385,16 @@
             "native_image/graphic_error_code.h"
         ]
     },
+    "native_window": {
+        "apiList": {
+            "12": [
+                "int32_t OH_NativeWindow_NativeWindowAbortBuffer(OHNativeWindow *window, OHNativeWindowBuffer *buffer)"
+            ]
+        },
+        "includes": [
+            "native_window/external_window.h"
+        ]
+    },
     "native_vsync": {
         "apiList": {
             "10": [

@@ -633,6 +633,21 @@ void SystemPropertiesAdapterImpl::SetStringParameter(const char *key, const char
     WVLOG_D("set string param, key:%{public}s, value:%{public}s", key, value);
 }
 
+std::string SystemPropertiesAdapterImpl::GetStringParameter(const std::string& key, const std::string& defaultValue)
+{
+    return GetStringParameter(key.c_str(), defaultValue);
+}
+
+int32_t SystemPropertiesAdapterImpl::GetInitialCongestionWindowSize()
+{
+    return -1; // default -1
+}
+
+int32_t SystemPropertiesAdapterImpl::GetIntParameter(const std::string& key, int32_t defaultValue)
+{
+    return GetIntParameter(key.c_str(), defaultValue);
+}
+
 std::vector<FrameRateSetting> SystemPropertiesAdapterImpl::GetLTPOConfig(const std::string& settingName)
 {
 #ifdef WEBVIEW_ONLY

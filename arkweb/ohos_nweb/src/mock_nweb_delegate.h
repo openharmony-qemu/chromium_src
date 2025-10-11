@@ -574,6 +574,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (float x, float y, int32_t duration),
               (override));
   MOCK_METHOD(void,
+              StopFling,
+              (),
+              (override));
+  MOCK_METHOD(void,
               ScrollByWithAnime,
               (float delta_x, float delta_y, int32_t duration),
               (override));

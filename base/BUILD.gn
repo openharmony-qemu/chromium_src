@@ -3696,6 +3696,11 @@ test("base_unittests") {
     import("//arkweb/chromium_ext/chromium_ext.gni")
  
     sources += arkweb_base_unittest_sources
+    if (arkweb_unittests) {
+      configs += [
+        "//arkweb/chromium_ext:net_dns_config",
+      ]
+    }
     sources += arkweb_storage_browser_database_unittests_sources
     sources += arkweb_components_web_cache_browser_unittest_sources
     sources += arkweb_storage_monitor_unittest_source

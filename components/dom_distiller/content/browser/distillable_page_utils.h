@@ -11,6 +11,10 @@
 #include "base/functional/callback.h"
 #include "base/observer_list_types.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_READER_MODE)
 #include "components/dom_distiller/content/common/mojom/distillability_service.mojom.h"
 #endif

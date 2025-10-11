@@ -112,7 +112,7 @@ handle_copy_files() {
     sed -i '/ark_media_avsession_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
 
     # 由于已经依赖adapter_ndk且adapter_ndk已实现hilog，胶水层ark_hilog_adapter_wrapper.cpp不参与编译
-    sed -i '/ark_hilog_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
+    #sed -i '/ark_hilog_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
     sed -i '/ark_native_image_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
     sed -i '/ark_ohos_buffer_adapter_wrapper.cpp/d' ${OHOS_GLUE_DIR}/BUILD.gn
     # 由于已经依赖adapter_ndk且adapter_ndk已实现hilog，胶水层ark_cert_mgr_adapter_impl_wrapper.cpp不参与编译

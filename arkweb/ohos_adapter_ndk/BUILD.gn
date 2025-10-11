@@ -456,6 +456,8 @@ component("adapter_ndk") {
       "audio_capturer_adapter/audio_device_desc_adapter_impl.cpp",
       "audio_capturer_adapter/audio_system_manager_adapter_impl.h",
       "audio_capturer_adapter/audio_system_manager_adapter_impl.cpp",
+      "media_adapter/player_framework_adapter_impl.h",
+      "media_adapter/player_framework_adapter_impl.cpp",
     ]
 
     include_dirs += [

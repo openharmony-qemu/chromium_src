@@ -2483,6 +2483,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
 #if BUILDFLAG(ARKWEB_MENU)
   void MouseSelectMenuShow(bool show) override;
   void ChangeVisibilityOfQuickMenu() override;
+  void HideQuickMenu() override;
 #endif
   void ShowContextMenu(
       mojo::PendingAssociatedRemote<blink::mojom::ContextMenuClient>

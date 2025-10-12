@@ -223,6 +223,7 @@ class MockFrameHost : public mojom::FrameHost {
 #if BUILDFLAG(ARKWEB_MENU)
   void ChangeVisibilityOfQuickMenu() override {}
   void MouseSelectMenuShow(bool show) override {}
+  void HideQuickMenu(bool show) override {}
 #endif
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void GetCreateNewWindow(const ::GURL& target_url,

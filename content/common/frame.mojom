@@ -882,6 +882,9 @@ interface FrameHost {
   // #if BUILDFLAG(ARKWEB_MENU)
   [EnableIf=arkweb_menu]
   ChangeVisibilityOfQuickMenu();
+
+  [EnableIf=arkweb_menu]
+  HideQuickMenu();
   // #endif ARKWEB_MENU
 
   // #if BUILDFLAG(ARKWEB_DRAG_DROP)

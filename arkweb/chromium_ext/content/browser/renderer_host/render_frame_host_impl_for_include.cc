@@ -198,6 +198,12 @@ void RenderFrameHostImpl::ChangeVisibilityOfQuickMenu() {
     delegate_->ChangeVisibilityOfQuickMenu();
   }
 }
+
+void RenderFrameHostImpl::HideQuickMenu() {
+  if (delegate_ && delegate_->IsQuickMenuShow()) {
+    delegate_->ChangeVisibilityOfQuickMenu();
+  }
+}
 // LCOV_EXCL_STOP
 #endif
 

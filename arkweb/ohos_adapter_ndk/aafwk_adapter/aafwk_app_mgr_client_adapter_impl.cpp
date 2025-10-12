@@ -242,7 +242,7 @@ int AafwkAppMgrClientAdapterImpl::StartChildProcess(
     if (processType == GPU_PROCESS_TYPE) {
         std::unique_lock<std::mutex> lock(mtx);
         g_remote_proxy = nullptr;
-        if (OH_Ability_CreateNativeChildProcess("libweb_engine.so", &onGpuProcessStarted) != 0) {
+        if (OH_Ability_CreateNativeChildProcess("libarkweb_engine.so", &onGpuProcessStarted) != 0) {
             WVLOG_E("failed to startChildProcess for gpu-process");
             return -1;
         }
@@ -259,7 +259,7 @@ int AafwkAppMgrClientAdapterImpl::StartChildProcess(
     }
 
     // for Render process
-    const char* entry = "libweb_engine.so:NWebRenderMain";
+    const char* entry = "libarkweb_engine.so:NWebRenderMain";
 
     NativeChildProcess_Args args;
     args.entryParams = const_cast<char*>(renderParam.c_str());

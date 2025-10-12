@@ -545,6 +545,7 @@ component("nweb_sources") {
 
   deps += [
     "//ohos_glue:ohos_adapter_glue_source",
+    "//arkweb/ohos_adapter_ndk:ohos_adapter_napi",
   ]
 
   if (defined(arkweb_ai) && arkweb_ai) {

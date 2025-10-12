@@ -339,6 +339,11 @@ NDKOhosAdapterHelper::GetNetConfigAdapter() {
   return std::make_unique<NetConfigAdapterImpl>();
 }
 
+void NDKOhosAdapterHelper::SetApplicationResourceManager(void* mgr)
+{
+    OhosResourceAdapterImpl::SetApplicationResourceManager(mgr);
+}
+
 NWeb::QosManagerAdapter& NDKOhosAdapterHelper::GetQosManagerInstance()
 {
     return QosManagerAdapterImpl::GetInstance();

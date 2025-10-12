@@ -127,6 +127,8 @@ class NDKOhosAdapterHelper : public NWeb::OhosAdapterHelper {
 
   std::unique_ptr<NWeb::SensorAdapter> CreateSensorAdapter() override;
 
+  void SetApplicationResourceManager(void* mgr) override;
+
   void SetArkWebCoreHapPathOverride(const std::string& hapPath) override;
 
   NWeb::OhosNativeBufferAdapter& GetOhosNativeBufferAdapter() override;

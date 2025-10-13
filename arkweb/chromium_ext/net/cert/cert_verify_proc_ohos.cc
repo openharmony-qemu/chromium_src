@@ -599,7 +599,8 @@ void SetCertStatus(int status, CertVerifyResult* verify_result) {
         verify_result->cert_status |= CERT_STATUS_DEPTH_ZERO_SELF_SIGNED_CERT;
         break;
       default:
-        NOTREACHED();
+        verify_result->cert_status |= CERT_STATUS_INVALID;
+        break;
   }
 }
 

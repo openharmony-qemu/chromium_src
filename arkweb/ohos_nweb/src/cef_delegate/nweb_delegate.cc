@@ -5803,7 +5803,7 @@ bool NWebDelegate::IsMixedContentAutoUpgradesEnabled() {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#if BUILDFLAG(IS_ARKWEB)
 void NWebDelegate::EnableAppLinking(bool enable) {
   LOG(DEBUG) << "NWebDelegate::EnableAppLinking, enable: " << enable;
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
@@ -5814,7 +5814,7 @@ void NWebDelegate::EnableAppLinking(bool enable) {
   GetBrowser()->GetHost()->EnableAppLinking(enable);
   return;
 }
-#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#endif // BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
 void NWebDelegate::SetUsageScenario(int32_t usage_scenario) {

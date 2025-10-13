@@ -684,6 +684,8 @@ source_set("unittests") {
     "src/ndk/arkweb_native_web_message_callback_unittest.cc",
     "src/nweb_adsblock_manager_impl_unittest.cc",
     "src/nweb_cookie_manager_impl_unittest.cc",
+    "src/nweb_download_manager_impl_unittest.cc",
+    "src/nweb_permission_status_query_manager_unittest.cc",
     "src/nweb_impl_unittest.cc",
     "src/nweb_input_handler_unittest.cc",
     "src/nweb_inputmethod_handler_unittest.cc",

@@ -18,6 +18,8 @@
 
 #include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/dom/events/event.h"
+#include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+#include "third_party/blink/renderer/platform/heap/member.h"
 
 namespace blink {
 class MediaControlOverflowMenuListElement;
@@ -25,8 +27,10 @@ class MediaControlsImpl;
 
 class MediaControlOverflowMenuListElementUtils {
 public:
-    MediaControlOverflowMenuListElement* element;
-    MediaControlOverflowMenuListElementUtils(MediaControlOverflowMenuListElement* element);
+    DISALLOW_NEW();
+    void Trace(Visitor* visitor) const;
+    Member<MediaControlOverflowMenuListElement> element = nullptr;
+    explicit MediaControlOverflowMenuListElementUtils(MediaControlOverflowMenuListElement* element);
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
     void DefaultEventHandlerExt(Event& event);

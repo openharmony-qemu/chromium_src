@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "third_party/blink/renderer/core/html/media/html_media_element.h"
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_media_element_utils.h"
 
 #include "arkweb/build/features/features.h"
@@ -241,10 +242,10 @@ void HTMLMediaElementUtils::TryNotifyVideoPlaying() {
   }
   if (!htmlMediaElement_->video_assistant_) {
     auto callback = WTF::BindOnce(&HTMLMediaElement::NotifyVideoPlayingInternal,
-                                  WrapWeakPersistent(htmlMediaElement_.get()));
+                                  WrapWeakPersistent(htmlMediaElement_.Get()));
     htmlMediaElement_->GetMediaPlayerHostRemote().RequestVideoAssistantConfig(
         WTF::BindOnce(&HTMLMediaElement::OnVideoAssistantConfigReceived,
-                      WrapWeakPersistent(htmlMediaElement_.get()), std::move(callback)));
+                      WrapWeakPersistent(htmlMediaElement_.Get()), std::move(callback)));
     return;
   }
   htmlMediaElement_->NotifyVideoPlayingInternal();
@@ -501,6 +502,10 @@ bool HTMLMediaElementUtils::IsRTL() const {
     isRTL = true;
   }
   return isRTL && locale.find("ur") == std::string::npos;
+}
+
+void HTMLMediaElementUtils::Trace(Visitor* visitor) const {
+  visitor->Trace(htmlMediaElement_);
 }
 
 }

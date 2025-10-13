@@ -19,7 +19,7 @@ namespace blink {
 void LayoutVideo::WillBeDestroyed() {
   NOT_DESTROYED();
   LayoutMedia::WillBeDestroyed();
-  MediaElement()->html_media_element_utils_->NotifyVideoVisible(false);
+  MediaElement()->html_media_element_utils_.NotifyVideoVisible(false);
 }
 #endif  // ARKWEB_VIDEO_ASSISTANT
 

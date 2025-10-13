@@ -23,7 +23,6 @@
 
 #include "base/base_paths.h"
 #include "base/base_switches.h"
-
 #include "base/files/file_util.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/test/scoped_command_line.h"
@@ -35,6 +34,8 @@
 #include "net/log/net_log_with_source.h"
 #include "net/test/cert_builder.h"
 #include "net/test/cert_test_util.h"
+#include "openssl/x509.h"
+#include "openssl/x509_vfy.h"
 #include "third_party/boringssl/src/pki/cert_errors.h"
 #include "url/gurl.h"
 
@@ -44,7 +45,12 @@
 #undef private
 #undef protected
 #include "arkweb/chromium_ext/net/cert/cert_verify_proc_ohos_test.h"
+#include "arkweb/ohos_adapter_ndk/hiviewdfx_adapter/hitrace_adapter_impl.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_ohos_adapter_helper.h"
 #include "net/tools/transport_security_state_generator/cert_util.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/hitrace_adapter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+
 using ::testing::_;
 using ::testing::ByMove;
 using ::testing::Return;
@@ -58,50 +64,86 @@ const GURL kIntermediateURL("http://aia.test/intermediate");
 const char kInvalidPEM[] = "invalid pem data";
 }  // namespace
 
+class MockCertManagerAdapter : public OHOS::NWeb::CertManagerAdapter {
+ public:
+  MOCK_METHOD(uint32_t, GetCertMaxSize, (), (override));
+  MOCK_METHOD(uint32_t, GetAppCertMaxSize, (), (override));
+  MOCK_METHOD(int32_t,
+              GetSytemRootCertData,
+              (uint32_t certCount, uint8_t* certData),
+              (override));
+  MOCK_METHOD(uint32_t, GetSytemRootCertSum, (), (override));
+  MOCK_METHOD(int32_t,
+              GetUserRootCertData,
+              (uint32_t certCount, uint8_t* certData),
+              (override));
+  MOCK_METHOD(uint32_t, GetUserRootCertSum, (), (override));
+  MOCK_METHOD(int32_t,
+              GetAppCert,
+              (uint8_t * uriData, uint8_t* certData, uint32_t* len),
+              (override));
+  MOCK_METHOD(int32_t,
+              Sign,
+              (const uint8_t* uri,
+               const uint8_t* certData,
+               uint32_t certDataLen,
+               uint8_t* signData,
+               uint32_t signDataLen),
+              (override));
+  MOCK_METHOD(int32_t,
+              GetCertDataBySubject,
+              (const char* subjectName, uint8_t* certData, int32_t certType),
+              (override));
+  MOCK_METHOD(bool,
+              GetTrustAnchorsForHostName,
+              (const std::string& hostname, std::vector<std::string>& certs),
+              (override));
+  MOCK_METHOD(bool,
+              GetPinSetForHostName,
+              (const std::string& hostname, std::vector<std::string>& pins),
+              (override));
+  MOCK_METHOD(int32_t,
+              SignV2,
+              (const uint8_t* uri,
+               const uint8_t* certData,
+               uint32_t certDataLen,
+               uint8_t* signData,
+               uint32_t* signDataLen,
+               uint16_t algorithm),
+              (override));
+};
+
 class CertVerifyProcOHOSTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    instance_ = std::make_unique<OHOS::NWeb::MockOhosAdapterHelper>();
+    OHOS::NWeb::OhosAdapterHelper::SetInstance(instance_.get());
+    EXPECT_CALL(*instance_, GetHiTraceAdapterInstance())
+        .WillRepeatedly(testing::Invoke([]() -> OHOS::NWeb::HiTraceAdapter& {
+          return OHOS::NWeb::HiTraceAdapterImpl::GetInstance();
+        }));
+
     fetcher_ = base::MakeRefCounted<MockCertNetFetcher>();
     certVerifyProc_ = base::MakeRefCounted<CertVerifyProcOHOS>(fetcher_);
     scoped_command_line_ = std::make_unique<base::test::ScopedCommandLine>();
-    GetCertVerifyProcStub()->OH_NetStack_GetCertificatesForHostName =
-        GetCertificatesForHostName_stub;
   }
 
   void TearDown() override {
     ASSERT_TRUE(testing::Mock::VerifyAndClearExpectations(fetcher_.get()));
-    GetCertVerifyProcStub()->OH_NetStack_GetCertificatesForHostName = nullptr;
+    ASSERT_TRUE(testing::Mock::VerifyAndClearExpectations(instance_.get()));
+    OHOS::NWeb::OhosAdapterHelper::SetInstance(nullptr);
+    instance_.reset();
   }
 
-  static int32_t GetCertificatesForHostName_stub(const char* hostname,
-                                                 NetStack_Certificates* certs) {
-    if (hostname == nullptr || certs == nullptr) {
-      return -1;
-    }
-    certs->length = 0;
-    certs->content = nullptr;
-    base::FilePath path = GetTmpCertDir();
-    size_t content_size = sizeof(char*);
-    size_t total = content_size + path.value().size() + 1;
-    char* ptr = (char*)malloc(total);
-    if (ptr == nullptr) {
-      return -1;
-    }
-    char** content_ptr = reinterpret_cast<char**>(ptr);
-    char* cert_ptr = ptr + content_size;
-    if (strcpy(cert_ptr, path.value().c_str()) == nullptr) {
-      free(ptr);
-      return -1;
-    }
-    content_ptr[0] = cert_ptr;
-    certs->length = 1;
-    certs->content = content_ptr;
-    return 0;
+  void SetupMockAdapter(std::unique_ptr<MockCertManagerAdapter> mock_adapter) {
+    EXPECT_CALL(*instance_, GetRootCertDataAdapter())
+        .WillOnce(testing::Return(std::move(mock_adapter)));
   }
 
   scoped_refptr<CertVerifyProcOHOS> certVerifyProc_;
   scoped_refptr<MockCertNetFetcher> fetcher_;
   std::unique_ptr<base::test::ScopedCommandLine> scoped_command_line_;
+  std::unique_ptr<OHOS::NWeb::MockOhosAdapterHelper> instance_;
 };
 
 // Verify
@@ -109,6 +151,20 @@ TEST_F(CertVerifyProcOHOSTest, VerifyInternal_ValidCertificateChain) {
   auto [leaf, intermediate, root] = CertBuilder::CreateSimpleChain3();
   ScopedTestRoot test_root(root->GetX509Certificate());
 
+  auto mock_adapter = std::make_unique<MockCertManagerAdapter>();
+  ASSERT_TRUE(mock_adapter);
+  base::FilePath path = GetTmpCertDir();
+  EXPECT_CALL(*mock_adapter,
+              GetTrustAnchorsForHostName(::testing::_, ::testing::_))
+      .WillRepeatedly(
+          testing::Invoke([=](const std::string& hostname,
+                              std::vector<std::string>& certs) -> bool {
+            certs.push_back(path.value());
+            return true;
+          }));
+
+  auto adapter = mock_adapter.get();
+  SetupMockAdapter(std::move(mock_adapter));
   CertVerifyResult verify_result;
   int result = certVerifyProc_->VerifyInternal(
       leaf->GetX509CertificateChain().get(), kHostname, std::string(),
@@ -117,6 +173,7 @@ TEST_F(CertVerifyProcOHOSTest, VerifyInternal_ValidCertificateChain) {
   EXPECT_FALSE(IsCertStatusError(verify_result.cert_status));
   EXPECT_TRUE(verify_result.verified_cert);
   EXPECT_FALSE(verify_result.public_key_hashes.empty());
+  ASSERT_TRUE(testing::Mock::VerifyAndClearExpectations(adapter));
 }
 
 TEST_F(CertVerifyProcOHOSTest, VerifyInternal_Fail) {
@@ -159,19 +216,24 @@ TEST_F(CertVerifyProcOHOSTest, VerifyInternal_TryAIAFetch_FetchFail) {
           MockCertNetFetcherRequest::Create(ERR_DISALLOWED_URL_SCHEME))));
 
   // fail OH_NetStack_GetCertificatesForHostName
-  GetCertVerifyProcStub()->OH_NetStack_GetCertificatesForHostName =
-      [](const char* hostname, NetStack_Certificates* certs) {
-        certs->length = 0;
-        certs->content = nullptr;
-        return -1;
-      };
+  auto mock_adapter = std::make_unique<MockCertManagerAdapter>();
+  ASSERT_TRUE(mock_adapter);
+  base::FilePath path = GetTmpCertDir();
+  EXPECT_CALL(*mock_adapter,
+              GetTrustAnchorsForHostName(::testing::_, ::testing::_))
+      .WillRepeatedly(testing::Invoke(
+          [=](const std::string& hostname,
+              std::vector<std::string>& certs) -> bool { return false; }));
 
+  auto adapter = mock_adapter.get();
+  SetupMockAdapter(std::move(mock_adapter));
   CertVerifyResult verify_result;
   int result = certVerifyProc_->VerifyInternal(
       intermediate1->GetX509Certificate().get(), kHostname, std::string(),
       std::string(), 0, &verify_result, NetLogWithSource());
   EXPECT_NE(result, OK);
   EXPECT_TRUE(verify_result.cert_status & CERT_STATUS_AUTHORITY_INVALID);
+  ASSERT_TRUE(testing::Mock::VerifyAndClearExpectations(adapter));
 }
 
 TEST_F(CertVerifyProcOHOSTest, Constructor_ValidFetcher) {
@@ -184,6 +246,8 @@ TEST_F(CertVerifyProcOHOSTest, Constructor_NullFetcher) {
   auto proc = base::MakeRefCounted<CertVerifyProcOHOS>(nullptr);
   EXPECT_TRUE(proc);
   EXPECT_EQ(nullptr, proc->cert_net_fetcher_.get());
+  ASSERT_NO_FATAL_FAILURE(AddAppCert(kHostname, nullptr));
+  SetupMockAdapter(nullptr);
   ASSERT_NO_FATAL_FAILURE(AddAppCert(kHostname, nullptr));
 }
 
@@ -419,4 +483,83 @@ TEST_F(CertVerifyProcOHOSTest, VerifyInternal_X509_STORE_CTX_new_Fail) {
   EXPECT_TRUE(verify_result.public_key_hashes.empty());
   GetCertVerifyProcStub()->X509_STORE_CTX_new = nullptr;
 }
+
+TEST_F(CertVerifyProcOHOSTest, CertChainRootVerify_InvalidParam) {
+  auto ret = CertChainRootVerify(nullptr, 0, nullptr);
+  EXPECT_EQ(ret, X509_V_ERR_UNSPECIFIED);
+
+  X509* server_cert[1];
+  ret = CertChainRootVerify(server_cert, 0, nullptr);
+  EXPECT_EQ(ret, X509_V_ERR_UNSPECIFIED);
+
+  X509_STORE* ca_store = X509_STORE_new();
+  ret = CertChainRootVerify(server_cert, 0, ca_store);
+  EXPECT_EQ(ret, X509_V_ERR_UNSPECIFIED);
+
+  GetCertVerifyProcStub()->X509_STORE_CTX_new = X509_STORE_CTX_new_stub;
+  ret = CertChainRootVerify(server_cert, 0, ca_store);
+  EXPECT_EQ(ret, X509_V_ERR_UNSPECIFIED);
+  X509_STORE_free(ca_store);
+  GetCertVerifyProcStub()->X509_STORE_CTX_new = nullptr;
+}
+
+TEST_F(CertVerifyProcOHOSTest, CertChainRootVerify) {
+  auto [leaf, intermediate, root] = CertBuilder::CreateSimpleChain3();
+  root->SetCaIssuersUrl(kRootURL);
+  intermediate->SetCaIssuersUrl(kRootURL);
+  leaf->SetCaIssuersUrl(kIntermediateURL);
+  leaf->SetSubjectAltName(kHostname);
+  ScopedTestRoot test_root(root->GetX509Certificate());
+
+  auto mock_adapter = std::make_unique<MockCertManagerAdapter>();
+  ASSERT_TRUE(mock_adapter);
+  base::FilePath path = GetTmpCertDir();
+  EXPECT_CALL(*mock_adapter,
+              GetTrustAnchorsForHostName(::testing::_, ::testing::_))
+      .WillRepeatedly(
+          testing::Invoke([=](const std::string& hostname,
+                              std::vector<std::string>& certs) -> bool {
+            certs.push_back(path.value());
+            certs.push_back("");
+            return true;
+          }));
+
+  auto adapter = mock_adapter.get();
+  SetupMockAdapter(std::move(mock_adapter));
+
+  std::vector<std::string> cert_bytes;
+  GetChainDEREncodedBytes(leaf->GetX509CertificateChain().get(), &cert_bytes);
+
+  int ret = X509_V_OK;
+  uint32_t server_cert_sum = cert_bytes.size();
+  X509* server_cert[4] = {0}; // 4 max cert
+  for (uint32_t i = 0; i < server_cert_sum; i++) {
+    const unsigned char* der_encoded_tmp =
+        (unsigned char*)cert_bytes[i].c_str();
+    server_cert[i] = d2i_X509(nullptr, &der_encoded_tmp, cert_bytes[i].size());
+    if (server_cert[i] == nullptr) {
+      ERR_clear_error();
+      X509_d2i_free(server_cert, i);
+      ret = X509_V_ERR_UNSPECIFIED;
+      break;
+    }
+  }
+  EXPECT_EQ(ret, X509_V_OK);
+  {
+    // not add lookdir
+    X509_STORE* ca_store = X509_STORE_new();
+    ret = CertChainRootVerify(server_cert, 1, ca_store);
+    X509_STORE_free(ca_store);
+    EXPECT_NE(ret, X509_V_OK);
+  }
+  {
+    X509_STORE* ca_store = X509_STORE_new();
+    AddAppCert("test.com", ca_store);
+    ret = CertChainRootVerify(server_cert, 1, ca_store);
+    X509_STORE_free(ca_store);
+    EXPECT_EQ(ret, X509_V_OK);
+  }
+  ASSERT_TRUE(testing::Mock::VerifyAndClearExpectations(adapter));
+}
+
 }  // namespace net

@@ -2178,10 +2178,6 @@ static_library("test_support") {
     "url_request/url_request_test_util.h",
   ]
 
-  if (is_arkweb) {
-    sources += arkweb_net_cert_unittest_sources
-  }
-
   if (is_win) {
     sources += [
       "test/win/fake_network_cost_manager.cc",
@@ -2648,11 +2644,6 @@ if (is_cronet_build) {
 }
 
 target(_test_target_type, "net_unittests") {
-  ldflags = [
-    "-Wl,--wrap=BIO_new_mem_buf",
-    "-Wl,--wrap=X509_STORE_CTX_new",
-    "-W1,--wrap=OH_NetStack_GetCertificatesForHostName",
-  ]
   sources = [
     "base/address_family_unittest.cc",
     "base/address_list_unittest.cc",
@@ -2984,7 +2975,17 @@ target(_test_target_type, "net_unittests") {
     "//arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext_unittest.cc",
     "//arkweb/chromium_ext/net/url_request/url_requesrt_context_ext_unittest.cc"
   ]
-
+  ldflags = []
+  if (is_arkweb) {
+    sources += arkweb_net_cert_unittest_sources
+    ldflags += [
+      "-Wl,--wrap=BIO_new_mem_buf",
+      "-Wl,--wrap=X509_STORE_CTX_new",
+    ]
+    include_dirs = [
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+    ]
+  }
   if (arkweb_prp_preload) {
     import("//arkweb/chromium_ext/net/base/arkweb_net_base_ext.gni")
     sources += arkweb_net_base_ext_unittest_sources
@@ -3062,7 +3063,6 @@ target(_test_target_type, "net_unittests") {
   if (disable_zstd_filter) {
     defines += [ "NET_DISABLE_ZSTD" ]
   }
-  ldflags = []
   if (is_ohos) {
     sources += [
       "//arkweb/chromium_ext/net/cert/test_root_certs_ohos.cc",

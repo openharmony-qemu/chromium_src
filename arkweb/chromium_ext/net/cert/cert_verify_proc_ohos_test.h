@@ -17,9 +17,6 @@
 struct CertVerifyProcStub {
   BIO* (*BIO_new_mem_buf)(char* cert, int size);
   X509_STORE_CTX* (*X509_STORE_CTX_new)(void);
-  int32_t (*OH_NetStack_GetCertificatesForHostName)(
-      const char* hostname,
-      NetStack_Certificates* certs);
 };
 
 #ifdef __cplusplus
@@ -45,32 +42,6 @@ X509_STORE_CTX* __wrap_X509_STORE_CTX_new(void) {
     return GetCertVerifyProcStub()->X509_STORE_CTX_new();
   }
   return __real_X509_STORE_CTX_new();
-}
-
-int32_t __real_OH_NetStack_GetCertificatesForHostName(const char*,
-                                                      NetStack_Certificates*);
-int32_t __wrap_OH_NetStack_GetCertificatesForHostName(
-    const char* hostname,
-    NetStack_Certificates* certs) {
-  if (GetCertVerifyProcStub()->OH_NetStack_GetCertificatesForHostName) {
-    return GetCertVerifyProcStub()->OH_NetStack_GetCertificatesForHostName(
-        hostname, certs);
-  }
-  return __real_OH_NetStack_GetCertificatesForHostName(hostname, certs);
-}
-
-extern void __real_OH_Netstack_DestroyCertificatesContent(
-    NetStack_Certificates* certs);
-void __wrap_OH_Netstack_DestroyCertificatesContent(
-    NetStack_Certificates* certs) {
-  if (certs == nullptr || certs->content == nullptr) {
-    return;
-  }
-  if (GetCertVerifyProcStub()->OH_NetStack_GetCertificatesForHostName) {
-    free(certs->content);
-    return;
-  }
-  return __real_OH_Netstack_DestroyCertificatesContent(certs);
 }
 #ifdef __cplusplus
 }
@@ -131,4 +102,7 @@ int ConvertToParsedCertificates(const std::vector<std::string>& cert_bytes,
                                 bssl::CertErrors& errors,
                                 bssl::ParsedCertificateList& certs);
 base::FilePath GetTmpCertDir();
+int CertChainRootVerify(X509* server_cert[],
+                        int32_t index,
+                        X509_STORE* ca_store);
 }  // namespace net

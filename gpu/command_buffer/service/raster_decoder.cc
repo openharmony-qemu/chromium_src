@@ -3193,7 +3193,11 @@ void RasterDecoderImpl::DoEndRasterCHROMIUM() {
 
   // We just unlocked a bunch of handles. Give a call to skia to
   // attempt to purge any unlocked handles.
+#if BUILDFLAG(IS_ARKWEB)
+  // SkGraphics::PurgePinnedFontCache();
+#else
   SkGraphics::PurgePinnedFontCache();
+#endif
 
   // We just flushed a tile's worth of GPU work from the SkSurface in
   // flush above. Yield to the Scheduler to allow pre-emption before

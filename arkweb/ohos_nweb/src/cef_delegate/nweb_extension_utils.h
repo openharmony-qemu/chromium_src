@@ -17,10 +17,15 @@
 #define NWEB_EXTENSION_UTILS_H_
 
 #include "content/public/browser/browser_context.h"
+#include "extensions/common/extension.h"
 
 namespace OHOS::NWeb {
 
 content::BrowserContext* GetBrowserContext();
+
+const extensions::Extension* FindExtensionById(
+    content::BrowserContext* browser_context,
+    const std::string& extension_id);
 
 std::optional<std::string> GetExtensionContextType(
     content::BrowserContext* browser_context);

@@ -1,15 +1,18 @@
 import { LayoutKey, LayoutValue } from '../../Common/Constant';
 import Store from '../../Common/Utils/Store';
 import Utils from '../../Common/Utils/Utils';
+import Log from '../../Debug/Log';
+import Tag from '../../Debug/Tag';
 import Framework from '../Framework';
 import Throttle from '../Utils/Throttle';
 import ModifyObserver from './Observers/ModifyObserver';
+import PageContentObserver from './Observers/PageContentObserver';
 import ResizeObserver from './Observers/ResizeObserver';
 import TransitionEndObserver from './Observers/TransitionEndObserver';
 
 export default class ObserverHandler {
     static relayoutHandler: Throttle;
-    private static TIMEOUT = 200;
+    private static readonly TIMEOUT = 200;
 
     static postTask(): void {
         if (!ObserverHandler.relayoutHandler) {
@@ -19,24 +22,29 @@ export default class ObserverHandler {
     }
 
     static reInit():void {
-        console.log('ObserverHandler reInit');
+        Log.info('ObserverHandler reInit', Tag.observerHandler);
         ModifyObserver.reInit();
+        PageContentObserver.reInit();
         TransitionEndObserver.reInit();
         ResizeObserver.init_();
         ObserverHandler.postTask();
     }
 
     static updateObserver(): void {
+        if(Framework.stopFlag) {
+            ResizeObserver.removeListener();
+        }
         if (Utils.isWideScreen()) {
             return;
         }
+        Log.d(`screenHeight: ${screen.availHeight}, screenWidth: ${screen.availWidth}`, Tag.resizeObserver);
         ObserverHandler.removeObserver();
     }
 
-    static removeObserver(): void {
+    private static removeObserver(): void {
         ModifyObserver.disconnect();
+        PageContentObserver.disconnect();
         TransitionEndObserver.removeListener();
-        ResizeObserver.removeListener();
     }
 
     static nextRoundAndPost(ele: HTMLElement): void {

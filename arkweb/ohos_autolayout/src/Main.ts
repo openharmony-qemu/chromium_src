@@ -2,29 +2,36 @@
  * Module Main.ts
  * 主入口模块
  */
+import Utils from './Common/Utils/Utils';
+import Log from './Debug/Log';
 import { CCMConfig } from './Framework/Common/CCMConfig';
 import Framework from './Framework/Framework';
-import { HwRelayout } from './Framework/HwRelayout';
+import WaitSystemReady from './Framework/Utils/WaitSystemReady';
 
 
 export class Main {
+    static initFlag = false;
     static start(config:string): void {
         if(CCMConfig.getInstance().fromJson(config)) {
             Main.start_();
         }
     }
     static start_(): void {
-        HwRelayout.start_();
+        if (Utils.isWideScreen()) {
+            if (!Main.initFlag) {
+                WaitSystemReady.configReady(Framework.configReady);
+                Main.initFlag = true;
+            }
+        }
     }
+    // 彻底关闭
     static stop(): void {
         Framework.stopFlag = true;
     }
 
     static restart(): void {
         Framework.stopFlag = false;
-    }
-
-    static forceAllOpen(): void {
-        Framework.forceAllOpenFlag = true;
+        Log.d('Autolayout reInit');
+        Main.start_()
     }
 }

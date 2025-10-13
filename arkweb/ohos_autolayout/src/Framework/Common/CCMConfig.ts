@@ -1,3 +1,6 @@
+import Log from '../../Debug/Log';
+import Tag from '../../Debug/Tag';
+
 /**
  * 用于描述一个数值范围，包含最小值和最大值
  */
@@ -246,11 +249,10 @@ export class CCMConfig {
    */
   fromJson(jsonString: string): boolean {
     try {
-      jsonString = jsonString.replace(/\\/g, '\\\\');
       const dataObject: ICCMConfigBase = JSON.parse(jsonString);
       this.update(dataObject);
     } catch (error) {
-      console.error('Failed to parse ProductConfig from JSON:', error);
+      Log.e('Failed to parse ProductConfig from JSON', Tag.ccmConfig, error as Error);
       return false;
     }
     return true

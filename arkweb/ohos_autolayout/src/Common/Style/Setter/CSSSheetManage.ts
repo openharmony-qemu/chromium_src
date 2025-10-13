@@ -1,6 +1,8 @@
 import { Txt } from '../../Txt';
 import Utils from '../../Utils/Utils';
 import StyleCommon from '../Common/StyleCommon';
+import Log from '../../../Debug/Log';
+import Tag from '../../../Debug/Tag';
 
 export default class CSSSheetManage {
     static initFlag = false;
@@ -43,7 +45,7 @@ export default class CSSSheetManage {
             setMedia = '';
         }
 
-        console.log('set media: ' + setMedia);
+        Log.d(`设置 media 属性: ${setMedia}`, Tag.cssSheetManage);
         for (let i = 0; i < this.styleNodeList.length; i++) {
             this.styleNodeList[i].setAttribute(Txt.media_, setMedia);
         }

@@ -5,6 +5,8 @@ import LayoutUtils from '../Common/LayoutUtils';
 import { CCMConfig } from '../Common/CCMConfig';
 import { PopupDecisionTreeType } from './PopupDecisionTreeType';
 import Constant from '../Common/Constant';
+import Log from '../../Debug/Log';
+import Tag from '../../Debug/Tag';
 
 
 interface NearestSibling {
@@ -24,7 +26,7 @@ export class PopupDecisionTree {
 
         // 如果没有关闭按钮，直接返回 false
         if (closeElements.length === 0) {
-            console.log('-----无关闭按钮----');
+            Log.d('无关闭按钮', Tag.popupDecisionTree);
             return false;
         }
 
@@ -37,10 +39,10 @@ export class PopupDecisionTree {
         });
 
         if (isOverlay) {
-            console.log('-----特例1: 关闭按钮存在重叠----:', popupInfo?.root_node?.className);
+            Log.d(`特例1: 关闭按钮存在重叠，弹窗: ${popupInfo?.root_node?.className}`, Tag.popupDecisionTree);
             return true;
         } else {
-            console.log('-----无重叠----');
+            Log.d('无重叠', Tag.popupDecisionTree);
             return false;
         }
     }
@@ -61,13 +63,13 @@ export class PopupDecisionTree {
         if (isBottomPopup) {
             // @ts-ignore
             window.popWin = 'bottom';
-            console.log('----是底部弹窗----');
+            Log.d('判定为底部弹窗', Tag.popupDecisionTree);
             return PopupDecisionTreeType.Bottom;
         }
 
         // @ts-ignore
         window.popWin = 'center';
-        console.log('----是中心弹窗----');
+        Log.d('判定为中心弹窗', Tag.popupDecisionTree);
 
         if (this.hasOverlappingCloseButton(rootNode, allNodes, popupInfo)) {
             return PopupDecisionTreeType.Center_Button_Overlap;
@@ -371,7 +373,7 @@ export class PopupDecisionTree {
         // 提取元素
         const topmostChildren = filteredChildren.map(child => child.element);
 
-        console.log(' print topmostChildren size = ' + topmostChildren.length);
+        Log.d(`topmostChildren 数量: ${topmostChildren.length}`, Tag.popupDecisionTree);
         return topmostChildren;
     }
 

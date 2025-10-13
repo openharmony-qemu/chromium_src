@@ -8,7 +8,6 @@ import { Txt } from '../../Txt';
 import Store from '../../Utils/Store';
 import CacheStyleGetter from '../Common/CacheStyleGetter';
 import PersistStore from '../../Utils/PersistStore';
-import Logger from '../../../Framework/Common/Logger';
 
 export default class StyleSetter {
     static insertRuleSelectorArr: [string, string[], string][] = [];
@@ -65,10 +64,10 @@ export default class StyleSetter {
     static setStyle(ele: HTMLElement, key: string, value: string): void {
         // 检查本次设置的样式是否已被强制设置
         if (this.hasForceCSS(ele, key)) {
-            Log.i(ele, key + '已做强制更改', Tag.styleSetter);
+            Log.i(ele, `${key} 已做强制更改`, Tag.styleSetter);
             return;
         }
-        Logger.printStyle(ele,key,value,Tag.styleSetter);
+        Log.debug(ele, `设置样式 ${key}: ${value}`, Tag.styleSetter);
         const eleStyleMap = StyleCommon.styleCache.get(ele);
         if (!eleStyleMap) {
             StyleCommon.styleCache.set(ele, new Map().set(key, value));

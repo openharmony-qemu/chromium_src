@@ -1,10 +1,10 @@
 import extUtils from '../../Common/Utils/Utils' 
-import Logger from './Logger';
+import Log from '../../Debug/Log';
+import Tag from '../../Debug/Tag';
 import LayoutUtils from './LayoutUtils';
-import StyleSetter from '../../Common/Style/Setter/StyleSetter';
-import Constant from './Constant';
 import { CCMConfig } from './CCMConfig';
 export default class Utils {
+    private static TAG = Tag.util;
 
     static isImageCanSafetyStrech(element:HTMLElement): boolean {
         // 类型1：CSS背景图容器
@@ -126,7 +126,7 @@ export default class Utils {
         while (node && node !== root) {
             const style = getComputedStyle(node);
             if(style.overflow === 'hidden') {
-                Logger.d(`${node?.className} overflow为hidden`);
+                Log.d(`${node?.className} overflow为hidden`, Utils.TAG);
                 return true;
             }
             node = node.parentElement;
@@ -219,17 +219,17 @@ export default class Utils {
             return true;
         }
         if (extUtils.ignoreLocalName(ele)) {
-            Logger.d(`${ele?.className}非法标签名`);
+            Log.d(`${ele?.className} 非法标签名`, Utils.TAG);
             return true;
         }
 
         if (!LayoutUtils.canBeRelayout(ele)) {
-            Logger.d(`${ele?.className}元素已被调整过`);
+            Log.d(`${ele?.className} 元素已被调整过`, Utils.TAG);
             return true;
         }
 
         if (extUtils.isInvisibleElement(ele)) {
-            Logger.d(`${ele?.className}跳过不可见节点`);
+            Log.d(`${ele?.className} 跳过不可见节点`, Utils.TAG);
             return true;
         }
 
@@ -260,14 +260,14 @@ export default class Utils {
         if (style.display === 'none' || 
             style.visibility === 'hidden' || 
             style.opacity === '0') {
-                Logger.printNodeInfo(`${node?.className}样式为不可见`);
+                Log.d(`${node?.className} 样式为不可见`, Utils.TAG);
                 return false;
             } 
         
         // 步骤3: 自身物理尺寸检测
         const rect = node.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) {
-            Logger.printNodeInfo(`${node?.className}宽/高为0 `);
+            Log.d(`${node?.className} 宽/高为0`, Utils.TAG);
             return false;
         }
     
@@ -529,7 +529,7 @@ export default class Utils {
         }
         const style = getComputedStyle(el);
         if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) {
-            console.log(`isElementVisibleInViewPort ${(el as HTMLElement).className} display:${style.display}, style: ${style.display} ,opacity:${style.opacity}`);
+            Log.d(`isElementVisibleInViewPort ${(el as HTMLElement).className} display:${style.display}, style: ${style.display} ,opacity:${style.opacity}`);
             return false;
         }
         const rect = el.getBoundingClientRect();
@@ -648,19 +648,19 @@ export default class Utils {
         // 步骤 1: 检查 maskNode 当前层级的可见兄弟节点
         const initialSiblings = Utils.getVisibleSiblings(maskNode);
         if (initialSiblings.length > 0) {
-            console.log(`在初始层级找到了 ${initialSiblings.length} 个主体节点。`);
+            Log.d(`在初始层级找到了 ${initialSiblings.length} 个主体节点。`);
             return [initialSiblings, maskNode.parentNode as Element];
         }
 
         // 步骤 2: 检查是否满足向上搜索的条件
         // 条件: 没有可见的兄弟节点，并且自身没有子节点
         if (maskNode.children.length > 0) {
-            console.log('蒙版节点没有可见兄弟节点，但存在子节点，停止搜索');
+            Log.d('蒙版节点没有可见兄弟节点，但存在子节点，停止搜索');
             return [[], null]; // 不满足向上搜索的条件，直接返回空数组
         }
 
         // 步骤 3: 如果满足条件，则开始向上循环查找
-        console.log('蒙版节点没有可见兄弟节点和子节点，开始向上搜索...');
+        Log.d('蒙版节点没有可见兄弟节点和子节点，开始向上搜索...');
         let currentNode = maskNode.parentNode as HTMLElement;
         let currentDepth = 1;
 
@@ -669,7 +669,7 @@ export default class Utils {
 
             // 如果在当前层级找到了可见的兄弟节点，则立即返回它们
             if (siblings.length > 0) {
-                console.log(`在向上第 ${currentDepth} 层找到了 ${siblings.length} 个主体节点。`);
+                Log.d(`在向上第 ${currentDepth} 层找到了 ${siblings.length} 个主体节点。`);
                 return [siblings, currentNode.parentNode as Element];
             }
 
@@ -679,7 +679,7 @@ export default class Utils {
         }
 
         // 如果循环结束仍未找到，返回空数组
-        console.log(`向上查找了 ${maxDepth} 层，未找到任何可见的主体节点。`);
+        Log.d(`向上查找了 ${maxDepth} 层，未找到任何可见的主体节点。`);
         return [[], null];
     };
 

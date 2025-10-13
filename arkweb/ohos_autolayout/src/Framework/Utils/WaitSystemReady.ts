@@ -1,18 +1,18 @@
 import Tag from '../../Debug/Tag';
+import Log from '../../Debug/Log';
 import { Main } from '../../Main';
 
 export default class WaitSystemReady {
     private static tryTimes = 1000;
     static hasBodyReady = false;
     private static tryHead = 100;
-    private static tryConfig = 20;
     static sysReady:boolean = false;
     static elementCount:number = 0;
 
     static bodyReady(task: Function): void {
         (function wait(): void {
             if (!document.body || innerWidth <= 100) {
-                console.log('body null' + innerWidth, Tag.framework);
+                Log.d('body null' + innerWidth, Tag.framework);
                 if (WaitSystemReady.tryTimes >= 0) {
                     setTimeout(wait, 50);
                 }
@@ -30,7 +30,7 @@ export default class WaitSystemReady {
             return;
         }
 
-        console.log('viewport observe');
+        Log.d('viewport observe');
         waitViewport = new MutationObserver(viewportCheck);
         waitViewport.observe(document.head, {
             childList: true,
@@ -39,14 +39,14 @@ export default class WaitSystemReady {
         function viewportCheck(): boolean {
             let viewport = document.querySelector('meta[name="viewport"]');
             if (!viewport) {
-                console.log('viewport null');
+                Log.d('viewport null');
                 return false;
             }
 
-            console.log('viewport ready');
+            Log.d('viewport ready');
 
             if (waitViewport) {
-                console.log('viewportCheck disconnect');
+                Log.d('viewportCheck disconnect');
                 waitViewport.disconnect();
                 waitViewport = null;
             }
@@ -61,19 +61,14 @@ export default class WaitSystemReady {
     }
 
     static waitForSystemReady(): void {
-        console.log('waitForSystemReady');
+        Log.d('waitForSystemReady');
         // check DOM ready?
         WaitSystemReady.sysReady = WaitSystemReady.checkDOMReady(document.body);
-
-        addEventListener('resize', ()=>{
-            console.log(' run resize, availWidth:', screen.availWidth, 'availHeight:', screen.availHeight);
-            Main.start_();
-        });
 
         if (WaitSystemReady.sysReady === false) {
             setTimeout(WaitSystemReady.waitForSystemReady, 200);
         } else {
-            console.log('waitForSystemReady run main.start');
+            Log.d('waitForSystemReady run main.start');
             Main.start_();
         }
     }

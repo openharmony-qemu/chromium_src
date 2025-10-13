@@ -5,14 +5,12 @@ import StyleCommon from '../Common/StyleCommon';
 import Store from '../../Utils/Store';
 import { FontTag, LayoutKey, LayoutValue } from '../../Constant';
 import Cached from '../../Cached';
-import LargeImgAction from '../../../Actions/LargeImgAction/LargeImgAction';
 import StyleSetter from './StyleSetter';
 import Utils from '../../Utils/Utils';
 import { StyleRecord } from '../../Perform/ChangeRecord';
 import DiffEleRecorder from '../../Perform/DiffEleRecorder';
 import PersistStore from '../../Utils/PersistStore';
 import ObserverHandler from '../../../Framework/Observer/ObserverHandler';
-import HeightReLayout from '../../../Actions/Common/HeightRelayout/HeightRelayout';
  
 export default class StyleCleaner {
     static removeAllStyle(ele: HTMLElement): void {
@@ -20,7 +18,6 @@ export default class StyleCleaner {
  
         const styleMap = new Map().set(Txt.delete_, Txt.true_);
         StyleCommon.styleCache.set(ele, styleMap);
-        HeightReLayout.removeEle(ele);
         StyleRecord.ignoreStyleChange(ele, true);
  
         DiffEleRecorder.setTagCache(ele);
@@ -50,9 +47,6 @@ export default class StyleCleaner {
             Log.i(ele.parentElement, '遇到swiper-box', Tag.styleCleaner);
             ele.remove();
             return;
-        }
-        if (Store.getValue(ele, LayoutKey.LAYOUT_TAG) === LayoutValue.LARGE_IMG) {
-            StyleCleaner.resetImg(ele);
         }
  
         StyleCleaner.removeAllStyle(ele);
@@ -86,31 +80,9 @@ export default class StyleCleaner {
                 return;
             }
         }
-        if (Store.getValue(ele, LayoutKey.LAYOUT_TAG) === LayoutValue.LARGE_IMG) {
-            StyleCleaner.resetImg(ele);
-        }
- 
         this.removeAllStyle(ele);
         Store.clearAllTag(ele, false);
         this.resetParent(ele.parentElement);
-    }
- 
-    // 用于其他处理时解除大图处理
-    private static resetImg(img: HTMLElement): void {
-        const largeImgInfo = LargeImgAction.handledImgMap.get(img);
-        if (!largeImgInfo) {
-            return;
-        }
-        LargeImgAction.handledImgMap.delete(img);
- 
-        Log.i(img, '清除对应背景：back' + largeImgInfo.backIndex, Tag.largeImg);
-        const backWrapper = document.getElementsByTagName(Txt.back_ + largeImgInfo.backIndex)[0] as HTMLElement;
-        if (backWrapper) {
-            StyleCleaner.removeAllStyle(backWrapper);
-            // 需调用clearAllTag清除背景元素的标记，防止resetParent检测到背景标记时不处理，导致父元素高度未被reset（唯品会签到）
-            Store.clearAllTag(backWrapper, false);
-            StyleSetter.removeEle(backWrapper);
-        }
     }
  
     /**

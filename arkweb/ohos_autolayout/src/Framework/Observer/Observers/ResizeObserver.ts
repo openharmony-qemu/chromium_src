@@ -1,38 +1,40 @@
 import { Txt } from '../../../Common/Txt';
 import ObserverHandler from '../ObserverHandler';
-import { HwRelayout } from '../../HwRelayout';
 import WaitSystemReady from '../../Utils/WaitSystemReady';
 import CSSSheetManage from '../../../Common/Style/Setter/CSSSheetManage';
 import DiffEleRecord from '../../../Common/Perform/DiffEleRecorder';
 import Framework from '../../Framework';
 import BoundingRectFix from '../../SystemFix/BoundingRectFix';
 import Log from '../../../Debug/Log';
+import Tag from '../../../Debug/Tag';
+import { Main } from '../../../Main';
  
 export default class ResizeObserver {
+    private static readonly TAG = Tag.resizeObserver;
     static init: boolean = false;
 
     static init_(): void {
-        console.log('ResizeObserver init');
+        Log.info('init', ResizeObserver.TAG);
         if (ResizeObserver.init) {
             return;
         }
         ResizeObserver.init = true;
 
-        console.log('ResizeObserver addEventListener');
+        Log.d('addEventListener', ResizeObserver.TAG);
         window.addEventListener(Txt.resize_, ResizeObserver.resizeCallback);
     }
     static resizeCallback(): void {
-        console.log('ResizeObserver resizeCallback');
-        if (HwRelayout.initFlag) {
+        Log.d('resizeCallback', ResizeObserver.TAG);
+        if (Main.initFlag) {
             ResizeObserver.onResize();
             return;
         }
-        HwRelayout.reInit();
+        Main.restart();
     }
  
     static onResize(): void {
-        console.log('ResizeObserver onResize');
-        if (!WaitSystemReady.hasBodyReady || !Framework.init) {
+        Log.d('onResize', ResizeObserver.TAG);
+        if (!WaitSystemReady.hasBodyReady) {
             return;
         }
         Framework.headReadyTask();
@@ -43,14 +45,14 @@ export default class ResizeObserver {
         // 当窗口大小或内容发生变化时，判断是否需要调整布局
         DiffEleRecord.setAllEleDiff();
         
-        console.log('ResizeObserver try to postTask');
+        Log.d('try to postTask', ResizeObserver.TAG);
         setTimeout(()=>{
             ObserverHandler.postTask();
         }, 100);
     }
 
     static removeListener(): void {
-        console.log('ResizeObserver remove');
+        Log.info('remove', ResizeObserver.TAG);
         ResizeObserver.init = false;
         removeEventListener(Txt.resize_, ResizeObserver.resizeCallback);
     }

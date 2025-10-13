@@ -510,6 +510,13 @@ void WebContentsImplExt::ChangeVisibilityOfQuickMenu() {
     render_view_host_delegate_view_->ChangeVisibilityOfQuickMenu();
   }
 }
+
+bool WebContentsImplExt::IsQuickMenuShow() {
+  if (render_view_host_delegate_view_) {
+    render_view_host_delegate_view_->IsQuickMenuShow();
+  }
+  return false;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)

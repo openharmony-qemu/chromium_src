@@ -110,6 +110,12 @@ void RenderFrameImpl::ChangeVisibilityOfQuickMenu() {
     GetFrameHost()->ChangeVisibilityOfQuickMenu();
   }
 }
+
+void RenderFrameImpl::HideQuickMenu() {
+  if (GetFrameHost()) {
+    GetFrameHost()->HideQuickMenu();
+  }
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_PDF)

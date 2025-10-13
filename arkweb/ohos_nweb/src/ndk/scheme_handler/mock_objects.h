@@ -22,6 +22,8 @@
 #include "ohos_nweb/src/ndk/scheme_handler/resource_request.h"
 #include "ohos_nweb/src/ndk/scheme_handler/http_body_stream.h"
 #include "base/logging.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 class MockPostDataStream : public ArkWebCefPostDataStream {
  public:
@@ -200,4 +202,25 @@ class MockCefRequest : public CefRequest {
   ResourceType resource_type_;
   CefRequest::HeaderMap headers_;
 };
+
+class StrcpyMock {
+  public:
+    static StrcpyMock& GetInstance() {
+      static StrcpyMock instance;
+      return instance;
+    }
+    MOCK_METHOD(int, strcpy_s, (char* dest, size_t destMax, const char* src), ());
+
+    static bool strcpyMock;
+};
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  int __wrap_strcpy_s(char* dest, size_t destMax, const char* src);
+
+  int __real_strcpy_s(char* dest, size_t destMax, const char* src);
+#ifdef __cplusplus
+}
+#endif
 #endif // OHOS_NWEB_SRC_NDK_SCHEME_HANDLER_MOCK_OBJECTS_H

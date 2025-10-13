@@ -62,8 +62,6 @@ public:
 
     bool GetTraceDebugEnable() override;
 
-    void SetTraceDebugEnable(bool isEnable);
-
     std::string GetSiteIsolationMode() override;
 
     int32_t GetFlowBufMaxFd() override;

@@ -114,19 +114,6 @@ void SystemPropertiesChangeCallback(void *context, const OH_PreferencesPair *pai
             WVLOG_D("sys prop change key: %{public}s ,value : %{public}s ", key,  value);
             SystemPropertiesAdapterImpl::GetInstance().DispatchAllWatcherInfo(key, value);
         }
-        if (type == PREFERENCE_TYPE_BOOL) {
-            if (key != PROP_DEBUG_TRACE) {
-                continue;
-            }
-            bool value;
-            int ret = OH_PreferencesValue_GetBool(object, &value);
-            if (ret != PREFERENCES_OK) {
-                WVLOG_E("failed to get preferences string");
-                continue;
-            }
-            WVLOG_D("sys prop change key: %{public}s ,value : %{public}d ", key,  value);
-            SystemPropertiesAdapterImpl::GetInstance().SetTraceDebugEnable(value);
-        }
     }
 }
 
@@ -217,7 +204,6 @@ void SystemPropertiesAdapterImpl::InitPreferences()
     }
     WVLOG_D("open preferences, bundle name %{public}s", bundleName);
     // If necessary, initialize the configuration here.
-    SetTraceDebugEnable(GetBoolParameter(PROP_DEBUG_TRACE, false));
 }
 
 bool SystemPropertiesAdapterImpl::GetResourceUseHapPathEnable()
@@ -331,11 +317,6 @@ int32_t SystemPropertiesAdapterImpl::GetSoftwareSeniorVersion()
 std::string SystemPropertiesAdapterImpl::GetNetlogMode()
 {
     return GetStringParameter("web.debug.netlog", "");
-}
-
-void SystemPropertiesAdapterImpl::SetTraceDebugEnable(bool isEnable)
-{
-    SetBoolParameter("web.debug.trace", isEnable);
 }
 
 bool SystemPropertiesAdapterImpl::GetTraceDebugEnable()

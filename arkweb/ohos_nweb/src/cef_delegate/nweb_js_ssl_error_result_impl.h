@@ -24,13 +24,14 @@ namespace OHOS::NWeb {
 class NWebJSSslErrorResultImpl : public NWebJSSslErrorResult {
  public:
   NWebJSSslErrorResultImpl() = default;
-  explicit NWebJSSslErrorResultImpl(CefRefPtr<CefCallback> callback);
+  explicit NWebJSSslErrorResultImpl(CefRefPtr<ArkWebCefSslCallback> callback);
   ~NWebJSSslErrorResultImpl() = default;
   void HandleConfirm() override;
   void HandleCancel() override;
+  void HandleCancelV2(bool abortLoading) override;
 
  private:
-  CefRefPtr<CefCallback> callback_;
+  CefRefPtr<ArkWebCefSslCallback> callback_;
 };
 
 class NWebJSAllSslErrorResultImpl : public NWebJSAllSslErrorResult {

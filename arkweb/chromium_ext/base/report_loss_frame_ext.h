@@ -67,9 +67,9 @@ class ReportLossFrame {
 
   int64_t start_time_for_scroll_ = 0;
 
-  int64_t start_time_;
+  int64_t start_time_ = 0;
 
-  int64_t vsync_period_;
+  int64_t vsync_period_ = 0;
 
   bool need_report_ = false;
 

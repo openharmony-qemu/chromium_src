@@ -20,7 +20,6 @@
   void SetShouldFrameSubmissionBeforeDraw( \
       bool should, \
       SetShouldFrameSubmissionBeforeDrawCallback callback) override {} \
-  void DisableSwapUntilMaximized( \
-      DisableSwapUntilMaximizedCallback callback) override {} \
+  void DisableSwapUntilMaximized() override {} \
   void SetNativeInnerWeb(bool isInnerWeb) override {} \
   void SetBypassVsyncCondition(int32_t condition) override {}

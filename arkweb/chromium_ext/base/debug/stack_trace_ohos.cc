@@ -86,7 +86,7 @@ char* itoa_r(intptr_t i, char* buf, size_t sz, int base, size_t padding) {
 
   char* start = buf;
 
-  uintptr_t j = i;
+  uintptr_t j = static_cast<uintptr_t>(i);
 
   // Handle negative numbers (only for base 10).
   if (i < 0 && base == 10) {
@@ -216,7 +216,7 @@ size_t CollectStackTrace(span<const void*> trace) {
 void StackTrace::PrintMessageWithPrefix(cstring_view prefix_string,
                                         cstring_view message) {
   if (!prefix_string.empty()) {
-    LOG(ERROR) << StrCat({prefix_string, message}).c_str();
+    LOG(ERROR) << prefix_string.c_str() << message.c_str();
   } else {
     LOG(ERROR) << message.c_str();
   }

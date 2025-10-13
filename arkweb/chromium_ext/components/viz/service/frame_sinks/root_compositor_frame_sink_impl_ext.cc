@@ -129,13 +129,9 @@ void RootCompositorFrameSinkImplExt::SetCurrentFrameSinkId(
 #endif
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-void RootCompositorFrameSinkImplExt::DisableSwapUntilMaximized(
-    DisableSwapUntilMaximizedCallback callback) {
+void RootCompositorFrameSinkImplExt::DisableSwapUntilMaximized() {
   if (display_) {
     display_->display_utils()->DisableSwapUntilMaximized();
-  }
-  if (callback) {
-    std::move(callback).Run();
   }
 }
 

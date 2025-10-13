@@ -985,7 +985,11 @@ bool VariationsService::SetUpFieldTrials(
       variation_ids, command_line_variation_ids, extra_overrides,
       std::move(feature_list), state_manager_, synthetic_trial_registry_,
       platform_field_trials, &safe_seed_manager_,
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+      /*add_entropy_source_to_variations_ids=*/false, *entropy_providers_);
+#else
       /*add_entropy_source_to_variations_ids=*/true, *entropy_providers_);
+#endif
 }
 
 std::vector<StudyGroupNames> VariationsService::GetStudiesAvailableToForce() {

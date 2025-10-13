@@ -1210,7 +1210,7 @@ void RenderFrameHostManager::UnloadOldFrame(
                          can_store);
 #endif  // BUILDFLAG(ARKWEB_BFCACHE) || BUILDFLAG(ARKWEB_LOGGER_REPORT)
 #if BUILDFLAG(ARKWEB_USERAGENT)
-    if (!old_render_frame_host->GetUserAgentDifferentFromNavigatingFrame()) {
+    if (old_render_frame_host->GetUserAgentDifferentFromNavigatingFrame()) {
       can_store = false;
     }
 #endif  // BUILDFLAG(ARKWEB_USERAGENT)

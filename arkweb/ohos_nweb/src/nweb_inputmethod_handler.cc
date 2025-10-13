@@ -370,7 +370,7 @@ void NWebInputMethodHandler::UpdateTextFieldStatusHandlerOnUI() {
   if (host == nullptr) {
     return;
   }
-  host->UpdateTextFieldStatus(show_keyboard_, isAttachSuccess_);
+  host->UpdateTextFieldStatus(NeedKeyboardShow(), isAttachSuccess_);
 }
 
 void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo,
@@ -438,6 +438,7 @@ bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener, int3
   }
   isFocusSwitchOnBlur_ = false;
 
+  UpdateTextFieldStatus();
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   if (!fill_content_.empty()) {
     if (fill_content_node_id_ == input_node_id_) {
@@ -861,6 +862,7 @@ void NWebInputMethodHandler::WebBlurKeyboardHideOnUI() {
   if (browser_->GetHost()) {
     browser_->GetHost()->SetFocusOnWeb();
   }
+  UpdateTextFieldStatus();
 }
 // LCOV_EXCL_STOP
 

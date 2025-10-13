@@ -370,7 +370,7 @@ void NWebInputMethodHandler::UpdateTextFieldStatusHandlerOnUI() {
   if (host == nullptr) {
     return;
   }
-  host->UpdateTextFieldStatus(show_keyboard_, isAttachSuccess_);
+  host->UpdateTextFieldStatus(NeedKeyboardShow(), isAttachSuccess_);
 }
 
 void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo,
@@ -852,6 +852,7 @@ void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
     isManualCloseKeyboard_ = false;
   }
   ime_shown_ = status;
+  UpdateTextFieldStatus();
 }
 
 // LCOV_EXCL_START
@@ -861,6 +862,7 @@ void NWebInputMethodHandler::WebBlurKeyboardHideOnUI() {
   if (browser_->GetHost()) {
     browser_->GetHost()->SetFocusOnWeb();
   }
+  UpdateTextFieldStatus();
 }
 // LCOV_EXCL_STOP
 

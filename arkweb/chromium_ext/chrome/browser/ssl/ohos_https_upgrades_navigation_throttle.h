@@ -11,8 +11,6 @@
 #include "components/security_interstitials/core/https_only_mode_metrics.h"
 #include "content/public/browser/navigation_throttle.h"
 
-class Profile;
-
 // OhosHttpsUpgradesNavigationThrottle is responsible for observing HTTPS-First Mode
 // navigations that have been upgraded by OhosHttpsUpgradesInterceptor, timing them
 // out if they take too long, and catching fallback navigations to HTTP and

@@ -1209,7 +1209,11 @@ void RenderFrameHostManager::UnloadOldFrame(
                          bfcache_eligibility.flattened_reasons.ToString(),
                          can_store);
 #endif  // BUILDFLAG(ARKWEB_BFCACHE) || BUILDFLAG(ARKWEB_LOGGER_REPORT)
-
+#if BUILDFLAG(ARKWEB_USERAGENT)
+    if (!old_render_frame_host->GetUserAgentDifferentFromNavigatingFrame()) {
+      can_store = false;
+    }
+#endif  // BUILDFLAG(ARKWEB_USERAGENT)
     if (can_store) {
       bool is_same_process =
           (old_render_frame_host->GetProcess() ==

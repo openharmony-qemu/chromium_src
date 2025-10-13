@@ -912,6 +912,20 @@ void WebContentsImplExt::SetCustomUA(std::string custom_user_agent) {
 std::string WebContentsImplExt::GetCustomUA() {
   return custom_user_agent_;
 }
+
+bool WebContentsImplExt::isSameUserAgent(
+    const blink::UserAgentOverride& ua_override) {
+  if (GetUserAgentOverride() == ua_override) {
+    return true;
+  }
+
+  if (!ua_override.ua_string_override.empty() &&
+      !net::HttpUtil::IsValidHeaderValue(ua_override.ua_string_override)) {
+    return true;
+  }
+  return false;
+}
+
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
 void WebContentsImplExt::OneShotMediaPlayerStopped() {

@@ -662,6 +662,14 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // ManifestBrowserTest.GetManifestInterruptedByDestruction.
   void ReinitializeDocumentAssociatedDataForTesting();
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool GetUserAgentDifferentFromNavigatingFrame() const {
+    return is_useragent_different_from_navigating_frame;
+  }
+  void SetUserAgentDifferentFromNavigatingFrame(bool value) {
+    is_useragent_different_from_navigating_frame = value;
+  }
+#endif
   // Determines if a clipboard paste using |data| of type |data_type| is allowed
   // in this renderer frame.  The implementation delegates to
   // RenderFrameHostDelegate::IsClipboardPasteAllowedByPolicy().  See the
@@ -3349,7 +3357,9 @@ class CONTENT_EXPORT RenderFrameHostImpl
 #if BUILDFLAG(ARKWEB_TEST)
   friend class RenderFrameHostImplForIncludeTest;
 #endif
-
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool is_useragent_different_from_navigating_frame = true;
+#endif  // BUILDFLAG(ARKWEB_USERAGENT)
   FRIEND_TEST_ALL_PREFIXES(NavigatorTest, TwoNavigationsRacingCommit);
   FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplBeforeUnloadBrowserTest,
                            SubframeShowsDialogWhenMainFrameNavigates);

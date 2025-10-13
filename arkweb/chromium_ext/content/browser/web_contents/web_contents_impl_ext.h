@@ -254,6 +254,7 @@ class WebContentsImplExt : public WebContentsImpl {
 #if BUILDFLAG(ARKWEB_USERAGENT)
   void SetCustomUA(std::string custom_user_agent) override;
   std::string GetCustomUA() override;
+  bool isSameUserAgent(const blink::UserAgentOverride& ua_override);
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
   void OneShotMediaPlayerStopped() override;

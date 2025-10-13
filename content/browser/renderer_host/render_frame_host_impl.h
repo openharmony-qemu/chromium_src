@@ -3358,7 +3358,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
   friend class RenderFrameHostImplForIncludeTest;
 #endif
 #if BUILDFLAG(ARKWEB_USERAGENT)
-  bool is_useragent_different_from_navigating_frame = true;
+  bool is_useragent_different_from_navigating_frame = false;
 #endif  // BUILDFLAG(ARKWEB_USERAGENT)
   FRIEND_TEST_ALL_PREFIXES(NavigatorTest, TwoNavigationsRacingCommit);
   FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplBeforeUnloadBrowserTest,

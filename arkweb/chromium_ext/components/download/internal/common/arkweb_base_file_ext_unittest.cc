@@ -41,13 +41,14 @@ class ArkWebBaseFileExtTest : public ::testing::Test {
         CreateTestFile("test_base_file.bin", kTestContent, kTestContentSize);
   }
   void TearDown() override {
-    base::DeletePathRecursively(scoped_temp_dir_.GetPath());
+    base::DeletePathRecursively(
+        base::FilePath("/data/arkweb_base_file_ext_test/"));
   }
 
   base::FilePath CreateTestFile(const char* test_file,
                                 const char* text,
                                 size_t size) {
-    base::FilePath test_file_path = scoped_temp_dir_.GetPath();
+    base::FilePath test_file_path("/data/arkweb_base_file_ext_test/");
     test_file_path = test_file_path.Append("download/testdata");
     EXPECT_TRUE(base::CreateDirectory(test_file_path));
     test_file_path = test_file_path.Append(test_file);
@@ -58,7 +59,6 @@ class ArkWebBaseFileExtTest : public ::testing::Test {
   base::FilePath GetTestFilePath() { return test_file_path_; }
 
  private:
-  base::ScopedTempDir scoped_temp_dir_;
   base::FilePath test_file_path_;
 };
 
@@ -183,5 +183,36 @@ TEST_F(ArkWebBaseFileExtTest, GetSaveDirectory_Custom) {
   EXPECT_EQ(dir.value(), custom_dir.value());
   EXPECT_FALSE(base::DirectoryExists(dir));
 }
+
+TEST_F(ArkWebBaseFileExtTest, ReadDataFromFile_InitializeFileFails) {
+  ArkWebBaseFileExt file_ext(1);
+  file_ext.bytes_so_far_ = kTestContentSize;
+
+  std::string long_path = "/data/";
+  long_path.append(10000, 'a');
+  base::FilePath invalid_file(long_path);
+  char buffer[kTestContentSize + 1] = {0};
+  bool result =
+      file_ext.ReadDataFromFile(0, buffer, kTestContentSize, invalid_file);
+  EXPECT_FALSE(result);
+}
+
+TEST_F(ArkWebBaseFileExtTest, ReadDataFromFile_FileAlreadyValid_NoReopen) {
+  ArkWebBaseFileExt file_ext(1);
+  file_ext.bytes_so_far_ = kTestContentSize;
+
+  base::File file(GetTestFilePath(),
+                  base::File::FLAG_OPEN | base::File::FLAG_READ);
+  file_ext.file_ = std::move(file);
+  EXPECT_TRUE(file_ext.file_.IsValid());
+
+  char buffer[kTestContentSize + 1] = {0};
+  bool result =
+      file_ext.ReadDataFromFile(0, buffer, kTestContentSize, GetTestFilePath());
+  EXPECT_TRUE(result);
+  EXPECT_STREQ(buffer, kTestContent);
+  EXPECT_TRUE(file_ext.file_.IsValid());
+}
+
 #endif
 }  // namespace download

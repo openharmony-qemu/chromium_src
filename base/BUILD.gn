@@ -3718,7 +3718,8 @@ test("base_unittests") {
     sources += arkweb_content_browser_dfx_unittests_sources
     if (arkweb_test) {
       configs += [
-        "//arkweb/chromium_ext:arkweb_base_unittest_config"
+        "//arkweb/chromium_ext:arkweb_base_unittest_config",
+        "//ohos_glue:ohos_glue_config"
       ]
       sources += [
         "//arkweb/chromium_ext/base/ohos/ltpo/src/mock_sys_info_util_ext.cc",

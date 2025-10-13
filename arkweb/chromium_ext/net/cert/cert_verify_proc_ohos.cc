@@ -418,7 +418,7 @@ bool PerformAIAFetchAndAddResultToVector(
     bssl::ParsedCertificateList* cert_list) {
   GURL url(uri);
   if (!url.is_valid()) {
-    LOG(ERROR) << "PerformAIAFetchAndAddResultToVector: URL is invalied";
+    LOG(ERROR) << "PerformAIAFetchAndAddResultToVector: URL is invalid";
     return false;
   }
 

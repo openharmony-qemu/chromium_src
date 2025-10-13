@@ -579,7 +579,7 @@ buildflag_header("features") {
     "ARKWEB_EXT_SECURITY_STATE=false",
     "ARKWEB_EXT_PULL_TO_REFRESH=false",
     "ARKWEB_READER_MODE=false",
-    "ARKWEB_EXT_HTTPS_UPGRADES=false",
+    "ARKWEB_EXT_HTTPS_UPGRADES=$arkweb_ext_https_upgrades",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

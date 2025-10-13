@@ -3,6 +3,10 @@
 # found in the LICENSE file.
 import("//components/captive_portal/core/features.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 source_set("content") {
   sources = []
 
@@ -19,6 +23,10 @@ source_set("content") {
       "captive_portal_url_loader_throttle.cc",
       "captive_portal_url_loader_throttle.h",
     ]
+  }
+
+  if (defined(arkweb_ext_https_upgrades) && arkweb_ext_https_upgrades) {
+    sources += arkweb_components_captive_portal_content_sources
   }
 
   public_deps = [

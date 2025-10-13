@@ -281,7 +281,10 @@ class OhosAdapterHelperMock : public OhosAdapterHelper {
               CreateScreenlockManagerAdapter,
               (),
               (override));
-    
+    MOCK_METHOD(std::unique_ptr<NetEventAdapter>,
+              CreateNetEventAdapter,
+              (),
+              (override));
 };
 
 class VideoControlSupportAdapterMock : public VideoControlSupportAdapter {

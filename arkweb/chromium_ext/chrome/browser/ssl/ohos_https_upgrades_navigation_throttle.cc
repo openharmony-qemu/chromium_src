@@ -47,7 +47,7 @@ OhosHttpsUpgradesNavigationThrottle::MaybeCreateThrottleFor(
     return nullptr;
   }
   auto* https_helper = OhosHttpsUpgradesHelper::FromWebContents(handle->GetWebContents());
-  if ((!https_helper || !(https_helper->is_arkweb_https_upgrades_enable()))) {
+  if ((!https_helper || !(https_helper->should_upgrade_to_https()))) {
     return nullptr;
   }
 

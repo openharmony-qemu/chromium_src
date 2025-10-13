@@ -6,7 +6,6 @@
 
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/logging.h"
 #include "base/strings/string_number_conversions.h"
@@ -17,10 +16,16 @@
 #include "services/network/public/mojom/url_response_head.mojom.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace captive_portal {
 
 const char CaptivePortalDetector::kDefaultURL[] =
-#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+    "http://connectivitycheck.cbg-app.huawei.com/generate_204";
+#elif BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
     "http://xxx";
 #else
     "http://www.gstatic.com/generate_204";
@@ -56,6 +61,7 @@ void CaptivePortalDetector::StartProbe(
   resource_request->url = url;
   probe_url_ = url;
 
+  LOG(INFO) << __func__ << " xuefu this:" << this << " url:" << url;
   // Can't safely use net::LOAD_DISABLE_CERT_NETWORK_FETCHES here,
   // since then the connection may be reused without checking the cert.
   resource_request->load_flags = net::LOAD_BYPASS_CACHE;
@@ -69,6 +75,9 @@ void CaptivePortalDetector::StartProbe(
 
   simple_loader_ = network::SimpleURLLoader::Create(std::move(resource_request),
                                                     traffic_annotation);
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  simple_loader_->SetTimeoutDuration(base::Seconds(5));
+#endif
   simple_loader_->SetAllowHttpErrorResults(true);
   network::SimpleURLLoader::BodyAsStringCallbackDeprecated callback =
       base::BindOnce(&CaptivePortalDetector::OnSimpleLoaderComplete,
@@ -117,6 +126,16 @@ void CaptivePortalDetector::OnSimpleLoaderCompleteInternal(
   Results results;
   GetCaptivePortalResultFromResponse(net_error, response_code, content_length,
                                      url, headers, &results);
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  GURL fallback_probe_url(kDefaultURL);
+  if (results.result != captive_portal::RESULT_INTERNET_CONNECTED &&
+      probe_url_ != fallback_probe_url) {
+    state_ = State::kProbe;
+    LOG(INFO) << __func__ << " xuefu retry start probe this:" << this;
+    StartProbe(kTrafficAnnotation, fallback_probe_url);
+    return;
+  }
+#endif
   simple_loader_.reset();
   std::move(detection_callback_).Run(results);
 }
@@ -134,10 +153,10 @@ void CaptivePortalDetector::GetCaptivePortalResultFromResponse(
   results->landing_url = url;
   results->content_length = content_length;
 
-  VLOG(1) << "Getting captive portal result"
-          << " response code: " << results->response_code
-          << " content_length: " << results->content_length.value_or(-1)
-          << " landing_url: " << results->landing_url;
+  LOG(INFO) << __func__ << " xuefu Getting captive portal result"
+            << " response code: " << results->response_code
+            << " content_length: " << results->content_length.value_or(-1)
+            << " landing_url: " << results->landing_url;
 
   // If there's a network error of some sort when fetching a file via HTTP,
   // there may be a networking problem, rather than a captive portal.

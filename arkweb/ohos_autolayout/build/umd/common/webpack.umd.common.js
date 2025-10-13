@@ -80,6 +80,7 @@ module.exports = merge(common, {
                             'console.info',
                             'console.debug',
                             'Log.d',
+                            'Log.i',
                             // 不删除: console.warn, console.error
                         ],
                     },

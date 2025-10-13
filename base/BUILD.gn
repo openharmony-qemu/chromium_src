@@ -3719,7 +3719,9 @@ test("base_unittests") {
     if (arkweb_test) {
       configs += [
         "//arkweb/chromium_ext:arkweb_base_unittest_config",
-        "//ohos_glue:ohos_glue_config"
+        "//ohos_glue:ohos_glue_config",
+        "//arkweb/chromium_ext:arkweb_base_oh_ndk_config",
+        "//arkweb/chromium_ext:arkweb_base_pasteboard_config",
       ]
       sources += [
         "//arkweb/chromium_ext/base/ohos/ltpo/src/mock_sys_info_util_ext.cc",

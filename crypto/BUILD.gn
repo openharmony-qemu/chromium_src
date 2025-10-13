@@ -197,6 +197,7 @@ test("crypto_unittests") {
     "symmetric_key_unittest.cc",
     "unexportable_key_unittest.cc",
     "../arkweb/chromium_ext/components/os_crypt/sync/ohos_crypto_unittest.cc",
+    "../arkweb/chromium_ext/components/os_crypt/sync/os_crypt_linux_for_include_unittest.cc",
   ]
 
   if (is_win || is_mac) {

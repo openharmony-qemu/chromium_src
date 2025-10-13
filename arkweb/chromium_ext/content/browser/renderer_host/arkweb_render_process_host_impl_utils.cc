@@ -193,64 +193,46 @@ size_t ArkwebRenderProcessHostImplUtils::GetProcessCountForLimitArkweb(
 
 // LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-class DelayedRenderKiller {
-  public:
-    static DelayedRenderKiller* GetInstance() {
-      static DelayedRenderKiller* inst_ = new DelayedRenderKiller();
-      return inst_;
-    }
-    ~DelayedRenderKiller() = delete;
-    void StartTimer() {
-      if (!timer_.IsRunning()) {
-        rep_ = 0;
-        timer_.Start(FROM_HERE, base::Seconds(SLEEP_TIME),
-          base::BindRepeating(&DelayedRenderKiller::TryKillRender, base::Unretained(this)));
-      }
-    }
-    bool NeedDebug()
-    {
-      return rep_ >= MAX_REP;
-    }
+void DelayedRenderKiller::StartTimer() {
+  if (!timer_->IsRunning()) {
+    rep_ = 0;
+    timer_->Start(FROM_HERE, base::Seconds(SLEEP_TIME),
+                  base::BindRepeating(&DelayedRenderKiller::TryKillRender, base::Unretained(this)));
+  }
+}
 
-  private:
-    DelayedRenderKiller() = default;
-    DelayedRenderKiller(const DelayedRenderKiller& i) = delete;
-    DelayedRenderKiller& operator= (const DelayedRenderKiller& i) = delete;
+bool DelayedRenderKiller::NeedDebug() {
+  return rep_ >= MAX_REP;
+}
 
-    void TryKillRender() {
-      LOG(INFO) << "DelayedRenderKiller start timer";
-      rep_++;
-      if (rep_ > MAX_REP) {
-        LOG(INFO) << "DelayedRenderKiller up to limit";
-        timer_.Stop();
-        return;
-      }
-      size_t count = RenderProcessHostImpl::GetProcessCountForLimit();
-      if (RenderProcessHost::render_process_mode() !=
-            RenderProcessMode::SINGLE_MODE &&
-        (count > RenderProcessHostImpl::GetMaxRendererProcessCount())) {
-        // Kill the idel render process.
-        RenderProcessHostImpl* render_host = static_cast<RenderProcessHostImpl*>(
-            ArkwebRenderProcessHostImplUtils::GetExistingBackgroundProcessHost());
-        if (render_host) {
-          render_host->FastShutdownIfPossible(1u, true);
-          LOG(INFO) << "Successfully tried to fast shutdown idle render process with handle: "
-                    << render_host->GetProcess().Handle();
-        }
-      }
-
-      count = RenderProcessHostImpl::GetProcessCountForLimit();
-      if (count <= RenderProcessHostImpl::GetMaxRendererProcessCount()) {
-        timer_.Stop();
-        LOG(INFO) << "DelayedRenderKiller stop timer";
-      }
+void DelayedRenderKiller::TryKillRender() {
+  LOG(INFO) << "DelayedRenderKiller start timer";
+  rep_++;
+  if (rep_ > MAX_REP) {
+    LOG(INFO) << "DelayedRenderKiller up to limit";
+    timer_->Stop();
+    return;
+  }
+  size_t count = RenderProcessHostImpl::GetProcessCountForLimit();
+  if (RenderProcessHost::render_process_mode() !=
+      RenderProcessMode::SINGLE_MODE &&
+     (count > RenderProcessHostImpl::GetMaxRendererProcessCount())) {
+    // Kill the idel render process.
+    RenderProcessHostImpl* render_host = static_cast<RenderProcessHostImpl*>(
+        ArkwebRenderProcessHostImplUtils::GetExistingBackgroundProcessHost());
+    if (render_host) {
+      render_host->FastShutdownIfPossible(1u, true);
+      LOG(INFO) << "Successfully tried to fast shutdown idle render process with handle: "
+                << render_host->GetProcess().Handle();
     }
+  }
 
-    base::RepeatingTimer timer_;
-    int32_t rep_ = 0;
-    const int32_t MAX_REP = 15;
-    const int32_t SLEEP_TIME = 3;
-};
+  count = RenderProcessHostImpl::GetProcessCountForLimit();
+  if (count <= RenderProcessHostImpl::GetMaxRendererProcessCount()) {
+    timer_->Stop();
+    LOG(INFO) << "DelayedRenderKiller stop timer";
+  }
+}
 
 // static
 RenderProcessHost*
@@ -480,9 +462,13 @@ ThemeFont* ArkwebRenderProcessHostImplUtils::EnsureThemeFont() {
   }
 
   auto parsed_json = base::JSONReader::ReadAndReturnValueWithError(input_json);
-  if (!parsed_json.has_value() || !parsed_json->is_dict()) {
+  if (!parsed_json.has_value()) {
     LOG(ERROR) << "[themefont] manifest file occurs error:"
                << parsed_json.error().message;
+    return nullptr;
+  }
+
+  if (!parsed_json->is_dict()) {
     return nullptr;
   }
   // Two example for the manifest.json:

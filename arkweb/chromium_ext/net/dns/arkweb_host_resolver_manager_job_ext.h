@@ -61,7 +61,7 @@ class ArkWebHostResolverManagerJobExt : public HostResolverManager::Job {
  private:
   friend class Job;
 #if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
-  void CheckDnsFallBackTask(int net_error);
+  bool CheckDnsFallBackTask(int net_error);
   void ReportDnsFallBackTaskResult(HostCache::Entry results,
                                    base::TimeDelta duration);
   using DnsTransactionAddressFailedType =

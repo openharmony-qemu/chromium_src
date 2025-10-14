@@ -2050,7 +2050,12 @@ void URLRequestHttpJob::RecordTimer() {
 }
 
 void URLRequestHttpJob::ResetTimer() {
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  if (state_ != RetryState::DOH_FALLBACK &&
+    !request_creation_time_.is_null()) {
+#else
   if (!request_creation_time_.is_null()) {
+#endif
     NOTREACHED() << "The timer was reset before it was recorded.";
   }
   request_creation_time_ = base::Time::Now();

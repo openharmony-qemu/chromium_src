@@ -85,8 +85,8 @@ export default class Constant {
     static readonly link = 'link';
     static readonly delete = 'delete';
     static readonly maxWidth = 'max-width';
-
     static readonly flexBasis = 'flex-basis';
+
     static readonly fixed = 'fixed';
     static readonly sticky = 'sticky';
     static readonly absolute = 'absolute';

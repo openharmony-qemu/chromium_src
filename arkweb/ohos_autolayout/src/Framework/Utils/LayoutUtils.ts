@@ -1,7 +1,7 @@
 import { LayoutKey, LayoutValue } from '../Common/Constant';
 import Log from '../../Debug/Log';
 import Tag from '../../Debug/Tag';
-import Store from '../../Common/Utils/Store';
+import Store from '../Common/Utils/Store';
 import Utils from './Utils';
 import Constant from '../Common/Constant';
 import { BoxShadow } from '../Common/BoxShaodw';

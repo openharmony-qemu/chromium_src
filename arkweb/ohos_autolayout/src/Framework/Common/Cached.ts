@@ -1,5 +1,5 @@
 import CacheStyleGetter from './Style/Common/CacheStyleGetter';
-import { Txt } from './Txt';
+import Store from './Utils/Store';
 
 export default class Cached {
     private static bodyCache: HTMLElement = undefined;

@@ -3,7 +3,6 @@ import Utils from '../../Utils/Utils';
 import StyleCommon from '../Common/StyleCommon';
 import Tag from '../../../../Debug/Tag';
 import Cached from '../../Cached';
-import { Txt } from '../../Txt';
 import Store from '../../Utils/Store';
 import CacheStyleGetter from '../Common/CacheStyleGetter';
 import Constant, { HwTag, LayoutKey, LayoutValue } from '../../Constant';

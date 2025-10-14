@@ -32,5 +32,21 @@ struct ContextMenusOnClickedData {
   std::string srcUrl;
   bool wasChecked;
 };
- 
+
+struct ContextMenusOnClickedDataV2 {
+  bool editable;
+  int menuItemId = 0;
+  std::string menuItemIdStr;
+  std::optional<int> frameId;
+  std::optional<int> parentMenuItemId;
+  std::optional<bool> checked;
+  std::optional<bool> wasChecked;
+  std::optional<std::string> srcUrl;
+  std::optional<std::string> linkUrl;
+  std::optional<std::string> pageUrl;
+  std::optional<std::string> frameUrl;
+  std::optional<std::string> mediaType;
+  std::optional<std::string> selectionText;
+  std::optional<std::string> parentMenuItemIdStr;
+};
 #endif  //  OHOS_NWEB_SRC_NWEB_CONTEXT_MENUS_ON_CLICKED_DATA_H_

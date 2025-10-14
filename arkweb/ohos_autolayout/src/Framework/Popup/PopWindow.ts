@@ -98,7 +98,7 @@ export class PopWindow extends AComponent {
         }
  
         // step2: 判断弹窗决策树类型
-        this.popupDecisionTreeType = PopupDecisionTree.judgePopupDecisionTreeType(this.mComponent, allNodes, this.popupInfo);
+        this.popupDecisionTreeType = PopupDecisionTree.judgePopupDecisionTreeType(allNodes, this.popupInfo);
  
         // step3: 恢复背景图片被截断的节点
         if (this.truncateBkgImgNodes.length !== 0) {

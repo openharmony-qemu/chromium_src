@@ -90,7 +90,8 @@ export default class Constant {
     static readonly fixed = 'fixed';
     static readonly sticky = 'sticky';
     static readonly absolute = 'absolute';
-    
+    static readonly static = 'static';
+
     static readonly wrap = 'wrap';
     static readonly column = 'column';
     static readonly space_between = 'space-between';
@@ -113,6 +114,10 @@ export default class Constant {
 
     static readonly tag_truncate = 'truncate-tag';
 
+    static readonly discrepancy = 1;
+    static readonly maxCloseButtonSizeRatio = 0.15;
+    static readonly bottomCloseButtonRatio = 0.6;
+    
     static readonly ERR_CODE_GAPS = 100;
     static readonly ERR_CODE_OVERFLOW = 50;
     static readonly ERR_CODE_OFFSET = 10;

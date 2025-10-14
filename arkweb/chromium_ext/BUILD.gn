@@ -24,7 +24,7 @@ config("content_browser_config") {
 }
 
 config("arkweb_base_unittest_config") {
-  ldflags = [
+  ldflags = [ 
     "-Wl,--wrap=OsVersion",
     "-Wl,--wrap=CompatibleDeviceType",
     "-Wl,--wrap=IsMobileDevice",
@@ -164,8 +164,6 @@ config("arkweb_base_oh_ndk_config") {
     "-Wl,--wrap=OH_CommonEvent_CreateSubscribeInfo",
     "-Wl,--wrap=OH_CommonEvent_CreateSubscriber",
     "-Wl,--wrap=OH_CommonEvent_Subscribe",
-    "-Wl,--wrap=OH_CommonEvent_DestroySubscribeInfo",
-    "-Wl,--wrap=OH_CommonEvent_DestroySubscriber",
     "-Wl,--wrap=OH_BatteryInfo_GetCapacity",
     "-Wl,--wrap=OH_BatteryInfo_GetPluggedType",
     "-Wl,--wrap=OH_AudioCapturer_Start",
@@ -184,6 +182,9 @@ config("arkweb_base_oh_ndk_config") {
     "-Wl,--wrap=OH_AudioStreamBuilder_SetCapturerCallback",
     "-Wl,--wrap=OH_AudioStreamBuilder_GenerateCapturer",
     "-Wl,--wrap=OH_CommonEvent_UnSubscribe",
+    "-Wl,--wrap=OH_CommonEvent_GetParametersFromRcvData",
+    "-Wl,--wrap=OH_CommonEvent_HasKeyInParameters",
+    "-Wl,--wrap=OH_CommonEvent_GetIntFromParameters",
   ]
 }
 

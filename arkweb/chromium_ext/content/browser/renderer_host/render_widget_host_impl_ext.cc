@@ -125,6 +125,10 @@ void RenderWidgetHostImplExt::OnDataDetectorSelectText() {
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
 void RenderWidgetHostImplExt::GetVisibleRectToWeb(
     GetVisibleRectToWebCallback callback) {
+  if (!delegate_) {
+    std::move(callback).Run(gfx::Rect());
+    return;
+  }
   RenderViewHostDelegateView* view = delegate_->GetDelegateView();
   if (!view || !GetView()) {
     std::move(callback).Run(gfx::Rect());

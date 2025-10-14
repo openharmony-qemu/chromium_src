@@ -1,13 +1,11 @@
-import { Txt } from '../../../Common/Txt';
 import ObserverHandler from '../ObserverHandler';
 import WaitSystemReady from '../../Utils/WaitSystemReady';
-import CSSSheetManage from '../../../Common/Style/Setter/CSSSheetManage';
-import DiffEleRecord from '../../../Common/Perform/DiffEleRecorder';
+import CSSSheetManage from '../../Common/Style/Setter/CSSSheetManage';
 import Framework from '../../Framework';
-import BoundingRectFix from '../../SystemFix/BoundingRectFix';
 import Log from '../../../Debug/Log';
 import Tag from '../../../Debug/Tag';
 import { Main } from '../../../Main';
+import Constant from '../../Common/Constant';
  
 export default class ResizeObserver {
     private static readonly TAG = Tag.resizeObserver;
@@ -21,9 +19,10 @@ export default class ResizeObserver {
         ResizeObserver.init = true;
 
         Log.d('addEventListener', ResizeObserver.TAG);
-        window.addEventListener(Txt.resize_, ResizeObserver.resizeCallback);
+        window.addEventListener(Constant.resize, ResizeObserver.resizeCallback);
     }
-    static resizeCallback(): void {
+    
+    private static resizeCallback(): void {
         Log.d('resizeCallback', ResizeObserver.TAG);
         if (Main.initFlag) {
             ResizeObserver.onResize();
@@ -40,10 +39,7 @@ export default class ResizeObserver {
         Framework.headReadyTask();
         ObserverHandler.updateObserver();
         Log.checkState('after updateObserver');
-        BoundingRectFix.updateState();
         CSSSheetManage.updateState();
-        // 当窗口大小或内容发生变化时，判断是否需要调整布局
-        DiffEleRecord.setAllEleDiff();
         
         Log.d('try to postTask', ResizeObserver.TAG);
         setTimeout(()=>{
@@ -54,6 +50,6 @@ export default class ResizeObserver {
     static removeListener(): void {
         Log.info('remove', ResizeObserver.TAG);
         ResizeObserver.init = false;
-        removeEventListener(Txt.resize_, ResizeObserver.resizeCallback);
+        removeEventListener(Constant.resize, ResizeObserver.resizeCallback);
     }
 }

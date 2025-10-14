@@ -1,7 +1,7 @@
 import { PopupInfo } from '../Popup/PopupInfo';
 import Constant from './Constant';
 import {DetectorInst, LayoutMetrics} from './DetectorInst';
-import LayoutUtils from './LayoutUtils';
+import LayoutUtils from '../Utils/LayoutUtils';
 import Log from '../../Debug/Log';
 import Tag from '../../Debug/Tag';
 

@@ -1,10 +1,10 @@
-import { LayoutKey, LayoutValue } from '../../Common/Constant';
+import { LayoutKey, LayoutValue } from '../Common/Constant';
 import Log from '../../Debug/Log';
 import Tag from '../../Debug/Tag';
-import Store from '../../Common/Utils/Store';
+import Store from '../Common/Utils/Store';
 import Utils from './Utils';
-import Constant from './Constant';
-import { BoxShadow } from './BoxShaodw';
+import Constant from '../Common/Constant';
+import { BoxShadow } from '../Common/BoxShaodw';
 import { PopupInfo } from '../Popup/PopupInfo';
 import { PopupDecisionTreeType } from '../Popup/PopupDecisionTreeType';
 
@@ -83,21 +83,21 @@ export default class LayoutUtils{
         if (inlineValue && this.convertToPxUnits(inlineValue) === computedValue) {
             return true;
         }
-
+ 
         // 2. 遍历所有样式表 (性能开销巨大)
         const sheetCheckResult = this.findStyleInSheets(element, cssProperty, computedValue);
         if (sheetCheckResult.isFound) {
             return true;
         }
-
-        // 3. 处理无法访问的跨域样式表
-        const isAbsolutePositioned = computedPosition === Constant.absolute || computedPosition === Constant.fixed;
-        if (isAbsolutePositioned) {
-            return sheetCheckResult.crossDomainSheetEncountered;
+       
+        if (!sheetCheckResult.crossDomainSheetEncountered) {
+            return false;
         }
-
-        // 4. 对于其他定位方式 (static/relative)，我们认为它是有效的
-        return true;
+        const rect = element.getBoundingClientRect();
+        if (cssProperty === 'top') {
+            return Math.abs(rect[cssProperty] - parseFloat(computedValue)) < Constant.discrepancy;
+        }
+        return Math.abs(rect[cssProperty] - window.innerHeight) < Constant.discrepancy;
     }
 
     /**
@@ -185,7 +185,7 @@ export default class LayoutUtils{
         if (value.endsWith('rem')) {
             return parseFloat(value) * parseFloat(getComputedStyle(document.documentElement).fontSize) + px;
         } else if (value.endsWith('vw') || value.endsWith('%')) {
-            return window.innerWidth * parseFloat(value) / 100 + px;
+            return window.innerHeight * parseFloat(value) / 100 + px;
         } else {  // value本身就是px单位， 或是其他特殊情况
             return value;
         }

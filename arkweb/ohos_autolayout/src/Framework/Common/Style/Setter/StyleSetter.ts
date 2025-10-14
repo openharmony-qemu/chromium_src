@@ -1,13 +1,11 @@
-import Constant, { HwTag, LayoutKey, LayoutValue } from '../../Constant';
-import Log from '../../../Debug/Log';
+import Log from '../../../../Debug/Log';
 import Utils from '../../Utils/Utils';
 import StyleCommon from '../Common/StyleCommon';
-import Tag from '../../../Debug/Tag';
+import Tag from '../../../../Debug/Tag';
 import Cached from '../../Cached';
-import { Txt } from '../../Txt';
 import Store from '../../Utils/Store';
 import CacheStyleGetter from '../Common/CacheStyleGetter';
-import PersistStore from '../../Utils/PersistStore';
+import Constant, { HwTag, LayoutKey, LayoutValue } from '../../Constant';
 
 export default class StyleSetter {
     static insertRuleSelectorArr: [string, string[], string][] = [];
@@ -76,14 +74,10 @@ export default class StyleSetter {
         }
 
         // 被zoom的元素也要收集依赖，因为单独的zoom会影响offsetWidth，从而影响识别
-        if (key === Txt.width_ || key === Txt.zoom_) {
+        if (key === Constant.width || key === Constant.zoom) {
         }
 
-        if (key === Txt.zoom_) {
-        }
-
-        if (key.startsWith(Txt.margin_) && key !== Txt.margin_ && !Store.getValue(ele, key)) {
-            PersistStore.setValue(ele, key, CacheStyleGetter.computedStyle(ele, key));
+        if (key === Constant.zoom) {
         }
     }
 
@@ -96,7 +90,7 @@ export default class StyleSetter {
 
         let selector = `[class='${ele.className}']`;
 
-        if (ele.style.position === Txt.fixed_) {
+        if (ele.style.position === Constant.fixed) {
             selector += '[style*="position: fixed;"]';
         }
 
@@ -171,7 +165,7 @@ export default class StyleSetter {
             }
             let styleFlushArr = StyleCommon.styleFlushed.get(ele);
             // 删除样式
-            if (style.delete(Txt.delete_)) {
+            if (style.delete(Constant.delete)) {
                 if (styleFlushArr) {
                     const index = styleFlushArr[StyleCommon.INDEX_IDX];
                     this.deleteOldStyle(ele, index);
@@ -207,7 +201,7 @@ export default class StyleSetter {
 
     private static mergeStyle(styleCache: Map<string, string>, styleFlush: Map<string, string>): Map<string, string> {
         for (let [attr, value] of styleCache.entries()) {
-            if (value === Txt.delete_) {
+            if (value === Constant.delete) {
                 styleFlush.delete(attr);
             } else {
                 styleFlush.set(attr, value);
@@ -252,7 +246,7 @@ export default class StyleSetter {
     private static getRulesStr(styleMap: Map<string, string>): string {
         let rulesStr = '';
         for (const [attr, attrValue] of styleMap) {
-            rulesStr += attr + ':' + attrValue + ' ' + Txt.important_ + ';\n';
+            rulesStr += attr + ':' + attrValue + ' ' + Constant.important + ';\n';
         }
         return rulesStr;
     }
@@ -271,7 +265,7 @@ export default class StyleSetter {
 
     private static getAttrSelectStr(index: number): string {
         let selectStr = '';
-        const attrVal = Txt.a_ + index;
+        const attrVal = Constant.a_ + index;
 
         for (let i = 0; i < Constant.ATTR_NUM; i++) {
             const attrKey = StyleSetter.generateAttrKey(i);
@@ -305,7 +299,7 @@ export default class StyleSetter {
     }
 
     private static setAttr(ele: HTMLElement, index: number): void {
-        const attrVal = Txt.a_ + index;
+        const attrVal = Constant.a_ + index;
 
         for (let i = 0; i < Constant.ATTR_NUM; i++) {
             const attrKey = StyleSetter.generateAttrKey(i);
@@ -361,12 +355,12 @@ export default class StyleSetter {
 
         const currentValue = CacheStyleGetter.computedStyle(ele, style);
         // 当前元素已经被网页本身设置过style且不为空值 或 已经设置过目标value时，不再设置value
-        if (currentValue === null || currentValue === Txt.num0px) {
+        if (currentValue === null || currentValue === Constant.num0px) {
             StyleSetter.setStyle(ele, style, value);
         }
     }
 
     private static generateAttrKey(attrKey: number): string {
-        return Txt.hw_ + String.fromCharCode(attrKey + Txt.a_.charCodeAt(0));
+        return Constant.hw_ + String.fromCharCode(attrKey + Constant.a_.charCodeAt(0));
     }
 }

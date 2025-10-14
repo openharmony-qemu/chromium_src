@@ -1,14 +1,11 @@
 export default class Constant {
     static readonly minMargin = 5;
-    
+    static readonly ATTR_NUM = 5; // 样式表选择器关联属性个数
+
     // Layout
-    static readonly margin = 'margin';
     static readonly display = 'display';
-    static readonly inline = 'inline';
-    static readonly height = 'height';
     static readonly width = 'width';
     static readonly minHeight = 'min-height';
-    static readonly font_size = 'font-size';
     static readonly transform = 'transform';
     static readonly transition = 'transition';
     static readonly transform_origin = 'transform-origin';
@@ -79,11 +76,22 @@ export default class Constant {
     static readonly box_shadow = 'box-shadow';
     static readonly pointer_events = 'pointer-events';
     static readonly px = 'px';
+    static readonly style = 'style';
+    static readonly media_ = 'media';
+    static readonly WIDE_SCREEN_MEDIA_EN_DEFAULT = 'only screen and (max-height : 500px), screen and (min-width : 500px)';
+    static readonly WIDE_SCREEN_MEDIA_DIS = 'only screen and (max-height : -10px)';
+    static readonly none = 'none';
+    static readonly stylesheet = 'stylesheet';
+    static readonly link = 'link';
+    static readonly delete = 'delete';
+    static readonly maxWidth = 'max-width';
+    static readonly flexBasis = 'flex-basis';
 
     static readonly fixed = 'fixed';
     static readonly sticky = 'sticky';
     static readonly absolute = 'absolute';
-    
+    static readonly static = 'static';
+
     static readonly wrap = 'wrap';
     static readonly column = 'column';
     static readonly space_between = 'space-between';
@@ -106,9 +114,72 @@ export default class Constant {
 
     static readonly tag_truncate = 'truncate-tag';
 
+    static readonly discrepancy = 1;
+    static readonly maxCloseButtonSizeRatio = 0.15;
+    static readonly bottomCloseButtonRatio = 0.6;
+    
     static readonly ERR_CODE_GAPS = 100;
     static readonly ERR_CODE_OVERFLOW = 50;
     static readonly ERR_CODE_OFFSET = 10;
     static readonly ERR_CODE_CLOSE_BTN_OVERLAP = 2;
     static readonly ERR_CODE_INTERACTIVE = 1;
+ 
+    static readonly paddingTop = 'padding-top';
+    static readonly paddingBottom = 'padding-bottom';
+ 
+    // event name
+    static readonly transitionend = 'transitionend';
+ 
+    // localName
+    static readonly script = 'script';
+    static readonly noscript = 'noscript';
+    static readonly back = 'back';
+    static readonly swiperBox = 'swiper-box';
+ 
+    // value
+    static readonly num0px = '0px';
+    static readonly hidden = 'hidden';
+    static readonly num100percent = '100%';
+    static readonly important = '!important';
+ 
+    static readonly hw_ = 'hw_';
+    static readonly a_ = 'a';
+    static readonly hwA = Constant.hw_ + Constant.a_;
 }
+
+export const LayoutValue = {
+    DISABLE: 'disable', // 用于记录不重排元素，不做任何操作
+    VERTICAL_GRID: 'vertical_grid', // 用于记录宫格列表节点
+    ASIDE_BAR: 'asideBar', // 用于记录纵向侧边栏
+    BACK_IMG: 'backImg', // 用于记录大图(virImg)节点，后续不对此元素进行任何操作
+    ONE_LINE: 'oneLine', // 用于记录单行节点，后续不对此元素进行任何操作
+    ZOOM_PARENT: 'zoomParent', // 用于标记缩放过的节点的所有祖先节点，此节点禁止缩放，但可对其子孙元素中未缩放过的元素进行处理
+    IS_IMG: 'isImg', // 用来记录该元素是否为图片
+    HAS_TEXT_CHILD: 'hasTextChild', // 用来记录该元素是否为图片
+    WATERFALL: 'waterfall', // 用于标记瀑布流
+    SWIPER: 'swiper', // 标记swiper
+    SCROLL_LIST: 'scrollList', // 标记纵向列表
+    COMMENT: 'comment', // 用于标记评论
+    HEADER: 'header', // 用于标记顶栏
+    ACROSS_COLUMN: 'across_column', // 用于标记通栏
+    NEXT_ROUND: 'next_round', // 用于在reset尚未生效阶段暂时阻塞其他布局的处理
+    BOTTOM: 'bottom',
+    EMPTY: 'empty', // 标记通栏处理的空元素
+};
+ 
+export const LayoutKey = {
+    LAYOUT_TAG: 'hwLayout', // 用来记录元素是否被重排过
+    CONFIG_LAYOUT_TAG: 'thirdLayout', // 用来记录元素是否被重排过
+    DIFF_ELE: 'diffEle', // 用于记录本次重排需要处理的元素
+    INSERT_RULE: 'insertRule', // insert rule 的元素
+    INSERT_SWIPER: 'insertSwiper', // insert rule 的元素
+};
+ 
+export const HwTag = {
+    MULTI_IMGS: 'multi_items',
+    ELE_NUM: 'ele_num',
+    ORIGIN_WIDTH: 'origin_width',
+    HEIGHT_0: 'height0',
+    FORCE_CSS: 'force_css',
+    ORIGIN_HEIGHT: 'origin_height',
+};

@@ -1,7 +1,7 @@
 import { PopupType } from './PopupType';
 import { PopupInfo } from './PopupInfo';
-import Utils from '../Common/Utils';
-import LayoutUtils from '../Common/LayoutUtils';
+import Utils from '../Utils/Utils';
+import LayoutUtils from '../Utils/LayoutUtils';
 import { CCMConfig } from '../Common/CCMConfig';
 import { PopupDecisionTreeType } from './PopupDecisionTreeType';
 import Constant from '../Common/Constant';
@@ -15,7 +15,6 @@ interface NearestSibling {
 }
 
 export class PopupDecisionTree {
-    private static discrepancy: number = 1.0;
 
     /**
      * 检查中心弹窗是否含有与兄弟节点重叠的“绝对定位”关闭按钮
@@ -50,12 +49,11 @@ export class PopupDecisionTree {
     /**
      * 根据弹窗的视觉和结构属性（如位置、关闭按钮状态等），判断并归类弹窗的具体类型。
      *
-     * @param mComponent - 当前正在分析的组件根元素。
      * @param allNodes - 页面上所有相关节点的集合数组，用于上下文分析。
      * @param popupInfo - 包含弹窗核心信息的对象，其中最重要的属性是 `root_node` (弹窗的根节点)。
      * @returns {PopupDecisionTreeType} - 返回一个 PopupDecisionTreeType 枚举值，表示该弹窗的最终分类（例如 Center, Bottom, Center_Button_Overlap 等）。
      */
-    public static judgePopupDecisionTreeType(mComponent: HTMLElement, allNodes: HTMLElement[], popupInfo: PopupInfo): PopupDecisionTreeType {
+    public static judgePopupDecisionTreeType(allNodes: HTMLElement[], popupInfo: PopupInfo): PopupDecisionTreeType {
         const rootNode = popupInfo.root_node;
         
         const isBottomPopup = PopupDecisionTree.isModalWin(allNodes, rootNode, popupInfo);
@@ -385,17 +383,24 @@ export class PopupDecisionTree {
      * 4、top可能有radius，bottom没有radius
      */
     static isModalWin(allNodes: HTMLElement[], rootNode: HTMLElement, popupInfo: PopupInfo): boolean {
-        // 1. 初步筛选：检查关闭按钮的位置，这是一个通用的前置条件。
-        if (!this.passesCloseButtonCheck(rootNode, allNodes)) {
+        // 查找作为主要内容的节点（z-index 最高）。
+        const contentNode = this.findMainContentNode(rootNode, popupInfo);
+        if (!contentNode) {
             return false;
         }
 
-        // 2. 根据不同的 popup 类型，分派给专门的函数处理。
+        if (this.CheckCenterCloseButton(contentNode, allNodes)) {
+            return false;
+        }
+ 
+        popupInfo.content_node = contentNode;
+ 
+        // 根据不同的 popup 类型，分派给专门的函数处理。
         switch (popupInfo.popup_type) {
             case PopupType.C:
-                return this.isModalForTypeC(rootNode);
+                return PopupDecisionTree.isModalForTypeC(popupInfo);
             case PopupType.B:
-                return this.isModalForTypeB(rootNode, popupInfo);
+                return PopupDecisionTree.isModalForTypeB(popupInfo);
             default:
                 // 对于类型 'A' 或其他未知的类型，直接返回 false。
                 return false;
@@ -404,88 +409,71 @@ export class PopupDecisionTree {
 
 
     /**
-     * 检查关闭按钮是否满足特定位置要求。
-     * @returns {boolean} 如果所有按钮都通过检查，则返回 true。
+     * 检查一种典型中心弹窗关闭按钮的特征
+     * 特征1：弹窗只有一个关闭按钮；
+     * 特征2：该关闭按钮在屏幕下方；
+     * 特征3：该关闭按钮大小有限制。
+     * @returns {boolean} 
      */
-    private static passesCloseButtonCheck(rootNode: HTMLElement, allNodes: HTMLElement[]): boolean {
+    private static CheckCenterCloseButton(rootNode: HTMLElement, allNodes: HTMLElement[]): boolean {
         const closeElements = PopupDecisionTree.getCloseButtons(rootNode, allNodes) as HTMLElement[];
-        // 使用 .some() 可以让代码更简洁：如果“存在”一个不满足条件的按钮，则检查失败。
-        const hasInvalidCloseButton = closeElements.some(element => {
-            const rect = element.getBoundingClientRect();
-            return rect.width < 50 && rect.height < 50 && rect.bottom > window.innerHeight * 0.6;
-        });
-        return !hasInvalidCloseButton; // 如果没有无效按钮，则检查通过。
+        if (closeElements.length < 1) {
+            return false;
+        }
+        
+        const rect = closeElements[0].getBoundingClientRect();
+        const isTypicalCenterCloseButton = closeElements.length === 1 
+                                        && rect.height < window.innerHeight * Constant.maxCloseButtonSizeRatio 
+                                        && rect.bottom > window.innerHeight * Constant.bottomCloseButtonRatio;                               
+        return isTypicalCenterCloseButton; 
     }
 
     /**
      *  PopupType.C 判断逻辑。
      */
-    private static isModalForTypeC(rootNode: HTMLElement): boolean {
-        // 卫语句：如果子节点多于一个，则不满足条件。
-        if (PopupDecisionTree.hasMoreThanNumChild(rootNode, 1)) {
-            return false;
-        }
-
-        const contentNode = rootNode.firstElementChild as HTMLElement | null;
-        // 卫语句：如果不存在内容节点，则不满足条件。
-        if (!contentNode) {
-            return false;
-        }
-
-        const style = window.getComputedStyle(contentNode);
-        const { position, bottom, flexDirection, alignItems } = style;
-        const rect = contentNode.getBoundingClientRect();
-
-        // 核心判断逻辑
-        const isFlushWithBottom = Math.abs(rect.bottom - window.innerHeight) < this.discrepancy;
-        const isNotFlexRowCenter = !(flexDirection === 'row' && alignItems === 'center');
-
-        // 注意：原始代码这里有逻辑问题（存在不可达代码），这里进行了修正和简化。
-        // 检查是否明确设置了 bottom: 0px 或其位置紧贴底部。
-        if (parseFloat(bottom) === 0) {
-            const hasBottomStyle = LayoutUtils.hasBottomStyle(contentNode, position, bottom);
-            if (!hasBottomStyle) {
-                return false;
-            }
-        } else {
-            if (position === Constant.absolute || position === Constant.fixed) {
-                return false;
-            }
-        }
-
-        return isFlushWithBottom && isNotFlexRowCenter;
+    private static isModalForTypeC(popupInfo: PopupInfo): boolean {
+        const rootNode = popupInfo.root_node;
+        const contentNode = popupInfo.content_node;
+        return this.judgeModalConditions(rootNode, contentNode);
     }
 
     /**
      * PopupType.B 判断逻辑。
      */
-    private static isModalForTypeB(rootNode: HTMLElement, popupInfo: PopupInfo): boolean {
-        // 卫语句：B 类型的弹窗至少需要 mask 和 content 两个子节点。
-        if (rootNode.children.length < 2) {
-            return false;
-        }
-        
-        // 查找作为主要内容的节点（z-index 最高）。
-        const contentNode = this.findMainContentNode(rootNode, popupInfo.mask_node);
-        if (!contentNode) {
-            return false;
-        }
-        
+    private static isModalForTypeB(popupInfo: PopupInfo): boolean {
+        const rootNode = popupInfo.root_node;
+        const contentNode = popupInfo.content_node;
         // 复用通用的模态条件检查逻辑。
-        return this.checkNodeAndChildrenAreModal(contentNode);
+        const isNodeModal = PopupDecisionTree.judgeModalConditions(rootNode, contentNode);
+
+        if (contentNode.children.length === 0 || isNodeModal) {
+            return isNodeModal;
+        }
+    
+        // 如果节点本身不满足，则检查其所有子节点是否存在满足条件的。
+        if (!isNodeModal) {
+            
+            return Array.from(contentNode.children).some(child => 
+                PopupDecisionTree.judgeModalConditions(rootNode, child as HTMLElement)
+            );
+        }
+        
+        return true;
     }
 
     /**
      * 在 B 类型弹窗的子节点中，根据 z-index 找到作为“前景内容”的节点。
      * @returns {HTMLElement | null} 返回找到的内容节点，如果找不到或存在多个 z-index 最高的节点，则返回 null。
      */
-    private static findMainContentNode(rootNode: HTMLElement, maskNode: HTMLElement): HTMLElement | null {
+    private static findMainContentNode(rootNode: HTMLElement, popupInfo: PopupInfo): HTMLElement | null {
         // 找到作为直接子节点的 mask 元素
-        let directMaskChild = maskNode;
-        while (directMaskChild.parentElement !== rootNode) {
-            directMaskChild = directMaskChild.parentElement!;
-            if (!directMaskChild) {
-                return null; // 如果找不到，则结构异常
+        let directMaskChild = popupInfo.mask_node;
+        if (popupInfo.popup_type === PopupType.B) {
+            while (directMaskChild.parentElement !== rootNode) {
+                directMaskChild = directMaskChild.parentElement!;
+                if (!directMaskChild) {
+                    return null; // 如果找不到，则结构异常
+                }
             }
         }
 
@@ -521,61 +509,107 @@ export class PopupDecisionTree {
     }
 
 
-    /**
-     *  检查一个节点本身或其所有子节点是否满足模态条件。
+    /** 
+     * 要求1：满宽
+     * 要求2：贴底，即bottom为0
+     * 要求3：不贴顶，即top不为0
      */
-    private static checkNodeAndChildrenAreModal(node: HTMLElement): boolean {
-        const isNodeModal = PopupDecisionTree.judgeModalConditions(node);
-        const style = window.getComputedStyle(node);
-        
-        if (node.children.length === 0) {
-            const isNotFlexRowCenter = !(style.flexDirection === 'row' && style.alignItems === 'center');
-            return isNodeModal && isNotFlexRowCenter;
-        }
-
-        // 如果节点本身不满足，则检查其所有子节点是否都满足。
-        if (!isNodeModal) {
-            // 使用 .every() 检查是否“所有”子节点都满足条件。
-            return Array.from(node.children).every(child => 
-                PopupDecisionTree.judgeModalConditions(child as HTMLElement)
-            );
-        }
-        
-        return true;
-    }
-
-    static judgeModalConditions(node: HTMLElement): boolean {
-        const style = window.getComputedStyle(node);
-        const computedPosition = style.position;
-        const computedBottom = style.bottom;
-        const computedWidth = style.width;
-        if (parseFloat(computedBottom) !== 0 ||
-            (parseFloat(computedWidth) !== window.innerWidth && !PopupDecisionTree.equalToScreenWidth(node, this.discrepancy))) {
+    static judgeModalConditions(rootNode: HTMLElement, contentNode: HTMLElement): boolean {
+        // 特殊中心弹窗条件
+        if (PopupDecisionTree.specialCenterCondition(contentNode)) {
             return false;
         }
-        const hasBottomStyle = LayoutUtils.hasBottomStyle(node, computedPosition, computedBottom);
+        // 特殊底部弹窗条件
+        if (PopupDecisionTree.specialBottomCondition(rootNode, contentNode)) {
+            return true;
+        }
+
+        const style = window.getComputedStyle(contentNode);
+        const { position, bottom, top } = style;
+        const rect = contentNode.getBoundingClientRect();
+
+        // 核心判断逻辑
+        const isFullWidth = PopupDecisionTree.equalToScreenWidth(contentNode, Constant.discrepancy);
+        const isStickToBottom = Math.abs(rect.bottom - window.innerHeight) < Constant.discrepancy;
+        const isStickToTop = Math.abs(rect.top) < Constant.discrepancy;
+        
+        if (!isFullWidth) {
+            return false;
+        }
+
+        // 判断position为static并且bottom为auto的特殊情况
+        // 判断它的bottom的rect值是否贴底、top的rect值是否贴顶
+        if (position === Constant.static) {
+            if (bottom === 'auto') {
+                return isStickToBottom && !isStickToTop;
+            }
+        
+        }
+        if (parseFloat(bottom) !== 0) { 
+            return false;
+        }   
+        
+        const hasBottomStyle = LayoutUtils.hasBottomStyle(contentNode, position, bottom);
         if (!hasBottomStyle) {
             return false;
         }
 
-        const rect = node.getBoundingClientRect();
-        return Math.abs(rect.bottom - window.innerHeight) < this.discrepancy && !(style.flexDirection === 'row' && style.alignItems === 'center');
+        if (top.endsWith('px')) {
+            if (parseFloat(top) === 0) { 
+                if (LayoutUtils.hasTopStyle(contentNode, position, top)) {
+                    return false;
+                }
+            } else {
+                return true;
+            }
+            
+        }
+
+        return isStickToBottom;
     }
 
-    static hasMoreThanNumChild(rootNode: HTMLElement, num: number): boolean {
-        const children = rootNode.children;
-        return children.length > num;
+    /**
+     * @description: 特殊的底部弹窗判断条件
+     * @param {HTMLElement} rootNode - 弹窗根节点
+     * @param {HTMLElement} contentNode - 弹窗内容节点
+     * @return {boolean} 
+     */
+    static specialBottomCondition(rootNode: HTMLElement, contentNode: HTMLElement): boolean {
+        const style = window.getComputedStyle(contentNode);
+        const rootStyle = window.getComputedStyle(rootNode);
+        return (style.flexDirection === 'column' && (style.justifyContent === 'flex-end' || style.justifyContent === 'end'))
+               || (style.flexDirection === 'row' && (style.alignItems === 'flex-end' || style.alignItems === 'end')) 
+               || (rootStyle.flexDirection === 'column' && (rootStyle.justifyContent === 'flex-end' || rootStyle.justifyContent === 'end')) 
+               || (rootStyle.flexDirection === 'row' && (rootStyle.alignItems === 'flex-end' || rootStyle.alignItems === 'end'))
     }
 
-    // 部分用例的弹窗width为7.5rem，约为326.995px，或者是需要加上padding，所以与屏宽对比时允许存在偏差deviation
-    static equalToScreenWidth(node: HTMLElement, deviation: number): boolean {
+    /**
+     * @description: 特殊的中心弹窗判断条件
+     * @param {HTMLElement} contentNode - 弹窗内容节点
+     * @return {boolean} 
+     */
+    static specialCenterCondition(contentNode: HTMLElement): boolean {
+        const style = window.getComputedStyle(contentNode);
+        return (style.flexDirection === 'row' && style.alignItems === 'center')
+               || (style.flexDirection === 'column' && style.justifyContent === 'center');
+    }
+
+    // 校验满宽条件，允许存在偏差discrepancy
+    static equalToScreenWidth(node: HTMLElement, discrepancy: number): boolean {
         const style = window.getComputedStyle(node);
-        const paddingLeft = style.paddingLeft;
-        const paddingRight = style.paddingRight;
-        const computedWidth = style.width;
-        if (isNaN(parseFloat(paddingLeft)) || isNaN(parseFloat(paddingRight))) {
+        const {paddingLeft, paddingRight, width, boxSizing, borderLeft, borderRight} = style;
+
+        // boxSizing = border-box
+        if (boxSizing === 'border-box') {
+            return Math.abs(parseFloat(width) - window.innerWidth) < discrepancy;
+        }
+        
+        // boxSizing = content-box
+        if (isNaN(parseFloat(paddingLeft)) || isNaN(parseFloat(paddingRight)) 
+            || isNaN(parseFloat(borderLeft)) || isNaN(parseFloat(borderRight)) 
+            || boxSizing !== 'content-box') {
             return false;
         }
-        return Math.abs(parseFloat(computedWidth) + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) - window.innerWidth) < deviation;
+        return Math.abs(parseFloat(width) + parseFloat(paddingLeft) + parseFloat(paddingRight) - window.innerWidth) < discrepancy;
     }
 }

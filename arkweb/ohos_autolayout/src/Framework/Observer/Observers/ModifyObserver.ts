@@ -1,12 +1,9 @@
-import { ObserverRecord, recordType } from '../../../Common/Perform/ChangeRecord';
-import DiffEleRecord from '../../../Common/Perform/DiffEleRecorder';
-import OriginStyleCache from '../../../Common/Style/Getter/OriginStyleGetter/OriginStyleCache';
-import StyleCleaner from '../../../Common/Style/Setter/StyleCleaner';
-import { Txt } from '../../../Common/Txt';
-import Utils from '../../../Common/Utils/Utils';
+import StyleCleaner from '../../Common/Style/Setter/StyleCleaner';
+import Utils from '../../Common/Utils/Utils';
 import Log from '../../../Debug/Log';
 import Tag from '../../../Debug/Tag';
 import IntelligentLayout from '../../../Framework/IntelligentLayout';
+import Constant from '../../Common/Constant';
 import ObserverHandler from '../ObserverHandler';
 
 interface AnimationDurations {
@@ -153,29 +150,14 @@ export default class ModifyObserver {
     private static handleRemove(node: HTMLElement, parent: HTMLElement): void {
         IntelligentLayout.removePopwinCache(node);
         StyleCleaner.resetEle(node, true);
-
-        if (node.style.display !== Txt.none_) {
-            // 图片如果删除，找不到其父元素，在这里进行清理
-            DiffEleRecord.setTag(parent);
-        }
         StyleCleaner.resetParent(parent);
     }
 
     private static handleElementChange(node: HTMLElement): boolean {
-        if (node.style.display === Txt.none_ || Utils.ignoreEle(node)) {
+        if (node.style.display === Constant.none || Utils.ignoreEle(node)) {
             Log.i(node, '忽略隐藏或无意义节点', ModifyObserver.TAG);
             return false;
         }
-
-        OriginStyleCache.clearToTop(node);
-
-        if (ObserverRecord.ignoreChange(node, recordType.ADD)) {
-            Log.i(node, '忽略频繁变动', ModifyObserver.TAG);
-            return false;
-        }
-
-        Log.i(node, '变动有效', ModifyObserver.TAG);
-        DiffEleRecord.setTag(node);
         return true;
     }
 

@@ -1,4 +1,4 @@
-import Log from '../../../Debug/Log';
+import Log from '../../../../Debug/Log';
 
 /**
  * 缓存具体样式

@@ -83,6 +83,13 @@ export default class LayoutUtils{
         if (inlineValue && this.convertToPxUnits(inlineValue) === computedValue) {
             return true;
         }
+ 
+        // 2. 遍历所有样式表 (性能开销巨大)
+        const sheetCheckResult = this.findStyleInSheets(element, cssProperty, computedValue);
+        if (sheetCheckResult.isFound) {
+            return true;
+        }
+       
         if (!sheetCheckResult.crossDomainSheetEncountered) {
             return false;
         }

@@ -462,18 +462,15 @@ if [ $buildgn = 1 ]; then
   echo "$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
 
   third_party/depot_tools/gn gen $build_dir --export-compile-commands --args="$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
-
-  echo "extract build_metadata file and generate mojom_targets.gni"
-  python3 collect_mojom_targets.py --search-root out/ --output ${ROOT_DIR}/mojom_targets.gni --threads 10
-  buildargs="${buildargs}
-    enable_mojom_gni=true"
-  aa=1
-fi
-
-if [ $aa = 1 ]; then
-  echo "generating args list:"
-  echo "$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
-  third_party/depot_tools/gn gen $build_dir --export-compile-commands --args="$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
+  if [ "${build_v8}" = 0 ]; then
+    echo "extract build_metadata file and generate mojom_targets.gni"
+    python3 ${ROOT_DIR}/arkweb/build/collect_mojom_targets.py --search-root out/ --output ${ROOT_DIR}/${build_dir}mojom_targets.gni --threads 10
+    buildargs="${buildargs}
+      enable_mojom_gni=true"
+    echo "generating args list:"
+    echo "$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
+    third_party/depot_tools/gn gen $build_dir --export-compile-commands --args="$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
+  fi
 fi
 time_end_for_gn=$(date +%s)
 
@@ -489,13 +486,17 @@ if [ ${build_fuzz} -eq 1 ]; then
   exit 0
 fi
 export OHOS_BASE_SDK_HOME="${ROOT_DIR}/ohos_sdk"
-echo "third_party/depot_tools/ninja -C $build_dir -j$buildcount mojo_pre"
-ninja_mojo_pre_start=$(date +%s)
-third_party/depot_tools/ninja -C $build_dir -j$buildcount mojo_pre
-ninja_mojo_pre_end=$(date +%s)
-echo "##############################################"
-echo "ninja mojo_pre time cost: $(($ninja_mojo_pre_end - $ninja_mojo_pre_start))"
-echo "##############################################"
+
+if [ "${build_v8}" = 0 ]; then
+  echo "third_party/depot_tools/ninja -C $build_dir -j$buildcount mojo_pre"
+  ninja_mojo_pre_start=$(date +%s)
+  third_party/depot_tools/ninja -C $build_dir -j$buildcount mojo_pre
+  ninja_mojo_pre_end=$(date +%s)
+  echo "##############################################"
+  echo "ninja mojo_pre time cost: $(($ninja_mojo_pre_end - $ninja_mojo_pre_start))"
+  echo "##############################################"
+fi
+
 echo "third_party/depot_tools/ninja -C $build_dir -j$buildcount ${build_target}"
 ninja_start=$(date +%s)
 third_party/depot_tools/ninja -C $build_dir -j$buildcount ${build_target}

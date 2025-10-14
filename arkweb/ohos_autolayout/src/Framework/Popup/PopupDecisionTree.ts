@@ -465,7 +465,7 @@ export class PopupDecisionTree {
      * 在 B 类型弹窗的子节点中，根据 z-index 找到作为“前景内容”的节点。
      * @returns {HTMLElement | null} 返回找到的内容节点，如果找不到或存在多个 z-index 最高的节点，则返回 null。
      */
-    private static findMainContentNode(rootNode: HTMLElement, maskNode: HTMLElement): HTMLElement | null {
+    private static findMainContentNode(rootNode: HTMLElement, popupInfo: PopupInfo): HTMLElement | null {
         // 找到作为直接子节点的 mask 元素
         let directMaskChild = popupInfo.mask_node;
         if (popupInfo.popup_type === PopupType.B) {

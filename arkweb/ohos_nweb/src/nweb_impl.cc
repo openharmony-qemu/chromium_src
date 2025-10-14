@@ -6262,7 +6262,7 @@ void NWebImpl::SetMediaResumeFromBFCachePage(bool resume) {
 #endif // BUILDFLAG(ARKWEB_BFCACHE)
 }
 
-#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#if BUILDFLAG(IS_ARKWEB)
 void NWebImpl::EnableAppLinking(bool enable) {
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "EnableAppLinking failed"
@@ -6271,7 +6271,7 @@ void NWebImpl::EnableAppLinking(bool enable) {
   }
   nweb_delegate_->EnableAppLinking(enable);
 }
-#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#endif // BUILDFLAG(IS_ARKWEB)
 
 void NWebImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)

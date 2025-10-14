@@ -316,7 +316,6 @@ if (!enable_arkweb) {
   arkweb_gwp_asan = false
   arkweb_bgtask = false
   arkweb_privacy_compliance = true
-  arkweb_ex_enable_applinking = false
   arkweb_blank_screen_detection = false
   arkweb_blank_prop_config = true
   arkweb_autolayout = false
@@ -580,7 +579,6 @@ buildflag_header("features") {
     "ARKWEB_EXT_SECURITY_STATE=false",
     "ARKWEB_EXT_PULL_TO_REFRESH=false",
     "ARKWEB_READER_MODE=false",
-    "ARKWEB_EX_ENABLE_APPLINKING=arkweb_ex_enable_applinking",
     "ARKWEB_EXT_HTTPS_UPGRADES=false",
   ]
 

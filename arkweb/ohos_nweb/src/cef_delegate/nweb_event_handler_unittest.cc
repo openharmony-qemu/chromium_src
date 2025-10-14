@@ -774,10 +774,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
 #endif
-#if BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#if BUILDFLAG(IS_ARKWEB)
   void EnableAppLinking(bool enable) override {}
   bool IsAppLinkingEnabled() const override { return false; }
-#endif // BUILDFLAG(ARKWEB_EX_ENABLE_APPLINKING)
+#endif
 #if BUILDFLAG(ARKWEB_READER_MODE)
   void Distill(const std::string& guid, const DistillOptions& distill_options,
     CefRefPtr<CefDistillCallback> callback) override {}

@@ -2,13 +2,12 @@
  * Module ModeUtils.ts
  * 工具模块
  */
-import Tag from '../../Debug/Tag';
-import Log from '../../Debug/Log';
-import {CCMRange, CCMConfig } from '../../Framework/Common/CCMConfig';
-import Constant, { FontTag, LayoutKey, LayoutValue } from '../Constant';
+import Tag from '../../../Debug/Tag';
+import Log from '../../../Debug/Log';
+import { CCMConfig } from '../CCMConfig';
 import CacheStyleGetter from '../Style/Common/CacheStyleGetter';
-import { Txt } from '../Txt';
 import Store from './Store';
+import Constant, { LayoutKey, LayoutValue } from '../Constant';
 
 export default class Utils {
     static TAG = Tag.util;
@@ -100,7 +99,7 @@ export default class Utils {
             let valueA = mapA.get(attr);
             if (valueA !== valueB) {
                 // 如果MapB中key的值为delete且MapA中对应为空时，认为符合contains条件
-                if (valueB !== Txt.delete_ || valueA) {
+                if (valueB !== Constant.delete || valueA) {
                     return false;
                 }
             }
@@ -134,18 +133,18 @@ export default class Utils {
     }
 
     static isInvisibleElement(ele: HTMLElement): boolean {
-        const display = CacheStyleGetter.computedStyle(ele, Txt.display_);
-        if (display === Txt.none_) {
+        const display = CacheStyleGetter.computedStyle(ele, Constant.display);
+        if (display === Constant.none) {
             return true;
         }
 
-        const visibility = CacheStyleGetter.computedStyle(ele, Txt.visibility_);
-        if (visibility === Txt.hidden_) {
+        const visibility = CacheStyleGetter.computedStyle(ele, Constant.visibility);
+        if (visibility === Constant.hidden) {
             return true;
         }
         // 宽度为0和高度为0的元素需要跳过吗？如果它的子节点存在absolute布局的情况如何处理？
 
-        const opacity = CacheStyleGetter.computedStyle(ele, Txt.opacity_);
+        const opacity = CacheStyleGetter.computedStyle(ele, Constant.opacity);
         if (opacity === '0') {
             return true;
         }
@@ -176,9 +175,9 @@ export default class Utils {
     }
 
     static ignoreLocalName(ele: HTMLElement, extraTag: string[] = []): boolean {
-        const ignoreList = [Txt.script_, Txt.style_, Txt.swiperBox_, Txt.noscript_].concat(extraTag);
+        const ignoreList = [Constant.script, Constant.style, Constant.swiperBox, Constant.noscript].concat(extraTag);
         const localName = CacheStyleGetter.localName(ele);
-        return ignoreList.includes(localName) || localName.startsWith(Txt.back_);
+        return ignoreList.includes(localName) || localName.startsWith(Constant.back);
     }
 
     static callRelayoutHappen(): void {
@@ -197,16 +196,9 @@ export default class Utils {
         return !/[^\t\n\r ]/.test(text);
     }
 
-    /**
-     * 判断元素是否是最后一个有效的元素
-     */
-    static isLastEle(ele: HTMLElement): boolean {
-        return false;
-    }
-
     static paddingFillHeight(ele: HTMLElement): boolean {
-        const paddingTop = parseFloat(CacheStyleGetter.computedStyle(ele, Txt.paddingTop_));
-        const paddingBottom = parseFloat(CacheStyleGetter.computedStyle(ele, Txt.paddingBottom_));
+        const paddingTop = parseFloat(CacheStyleGetter.computedStyle(ele, Constant.paddingTop));
+        const paddingBottom = parseFloat(CacheStyleGetter.computedStyle(ele, Constant.paddingBottom));
 
         if (paddingTop === 0 && paddingBottom === 0) {
             return false;

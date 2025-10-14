@@ -1,6 +1,6 @@
-import { LayoutKey, LayoutValue } from '../../Common/Constant';
-import Store from '../../Common/Utils/Store';
-import Utils from '../../Common/Utils/Utils';
+import { LayoutKey, LayoutValue } from '../Common/Constant';
+import Store from '../Common/Utils/Store';
+import Utils from '../Common/Utils/Utils';
 import Log from '../../Debug/Log';
 import Tag from '../../Debug/Tag';
 import Framework from '../Framework';

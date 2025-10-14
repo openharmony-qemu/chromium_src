@@ -18,7 +18,7 @@ export default class PageContentObserver {
     private static readonly TAG = Tag.pageContentObserver;
     private static contentReady: boolean = false;  // 页面内容是否已就绪
     private static observer: MutationObserver | null = null;  // 内容变化观察器
-    private static readonly MIN_NODE_THRESHOLD = 10;  // 最小节点数阈值
+    private static readonly MIN_NODE_THRESHOLD = 9;  // 最小节点数阈值
     private static readonly MAX_CHECK_CHILDREN = 50;  // 每层最多检查的子节点数
 
     /**

@@ -1,5 +1,5 @@
-import Log from '../../Debug/Log';
-import Tag from '../../Debug/Tag';
+import Log from '../../../Debug/Log';
+import Tag from '../../../Debug/Tag';
 import { HwTag, LayoutKey, LayoutValue } from '../Constant';
 import CacheStyleGetter from '../Style/Common/CacheStyleGetter';
 

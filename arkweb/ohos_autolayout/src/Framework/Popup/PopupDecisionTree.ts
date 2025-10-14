@@ -1,7 +1,7 @@
 import { PopupType } from './PopupType';
 import { PopupInfo } from './PopupInfo';
-import Utils from '../Common/Utils';
-import LayoutUtils from '../Common/LayoutUtils';
+import Utils from '../Utils/Utils';
+import LayoutUtils from '../Utils/LayoutUtils';
 import { CCMConfig } from '../Common/CCMConfig';
 import { PopupDecisionTreeType } from './PopupDecisionTreeType';
 import Constant from '../Common/Constant';

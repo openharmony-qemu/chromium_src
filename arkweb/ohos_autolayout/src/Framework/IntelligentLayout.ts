@@ -1,7 +1,7 @@
 import { AComponent } from './Common/base/AComponent';
-import Utils from './Common/Utils';
-import { PopWindow } from './PopWindow/PopWindow';
-import { PopupWindow } from './Popup/PopupWindow';
+import Utils from './Utils/Utils';
+import { PopWindow } from './Popup/PopWindow';
+import { PopupWindowDetector } from './Popup/PopupWindowDetector';
 import { PopupInfo } from './Popup/PopupInfo';
 import Log from '../Debug/Log';
 import Tag from '../Debug/Tag';
@@ -58,7 +58,7 @@ export default class IntelligentLayout {
         if (this.popWindowMap.size > 0) {
             popupInfo = this.popWindowMap.keys().next().value;
         } else {
-            popupInfo = PopupWindow.findPopups(document.body);
+            popupInfo = PopupWindowDetector.findPopups(document.body);
         }
 
         if (popupInfo != null) {
@@ -76,7 +76,7 @@ export default class IntelligentLayout {
             // @ts-ignore
             window.popupInfo = popupInfo;
         } else {
-            popupInfo = PopupWindow.findPopups(root);
+            popupInfo = PopupWindowDetector.findPopups(root);
             // @ts-ignore
             window.popupInfo = popupInfo;
         }

@@ -1,8 +1,8 @@
-import extUtils from '../../Common/Utils/Utils' 
+import extUtils from '../Common/Utils/Utils' 
 import Log from '../../Debug/Log';
 import Tag from '../../Debug/Tag';
 import LayoutUtils from './LayoutUtils';
-import { CCMConfig } from './CCMConfig';
+import { CCMConfig } from '../Common/CCMConfig';
 export default class Utils {
     private static TAG = Tag.util;
 

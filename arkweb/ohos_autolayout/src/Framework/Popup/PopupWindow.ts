@@ -19,11 +19,11 @@
 
 import Constant from '../Common/Constant';
 import Log from '../../Debug/Log';
-import LayoutUtils from '../Common/LayoutUtils';
+import LayoutUtils from '../Utils/LayoutUtils';
 import { PopupRecog } from './PopupRecog';
 import { PopupType } from './PopupType';
 import { PopupInfo, PotentialElements } from './PopupInfo';
-import Utils from '../Common/Utils';
+import Utils from '../Utils/Utils';
 import { CCMConfig } from '../Common/CCMConfig';
 
 type StickyElements = {
@@ -31,7 +31,7 @@ type StickyElements = {
     potentialStickyBottom: Element | null;
 };
 
-export class PopupWindow {
+export class PopupWindowDetector {
 
     /**
      * 从根元素开始，通过广度优先搜索（BFS）查找第一个可见的、全宽的后代元素。
@@ -189,7 +189,7 @@ export class PopupWindow {
                                   parseInt(style.left) === 0 &&
                                   screenAreaRatio > CCMConfig.getInstance().getMinSARTofStickyComponent() &&
                                   screenAreaRatio < CCMConfig.getInstance().getMaxSARTofStickyComponent() &&
-                                  PopupWindow.isStickyComponentVisiable(el);
+                                  PopupWindowDetector.isStickyComponentVisiable(el);
 
         if (!isStickyCandidate) {
             return { potentialStickyTop, potentialStickyBottom };
@@ -199,7 +199,7 @@ export class PopupWindow {
         if (parseInt(style.top) === 0) {
             Log.d(`找到吸顶元素${el.className}`);
             // 如果没有已知的吸顶，或者当前元素在更上层，则更新
-            if (updatedTop === null || PopupWindow.isFirstElementOnTop(el, updatedTop)) {
+            if (updatedTop === null || PopupWindowDetector.isFirstElementOnTop(el, updatedTop)) {
                 updatedTop = el;
             }
         }
@@ -208,7 +208,7 @@ export class PopupWindow {
         if (parseInt(style.bottom) === 0) {
             Log.d(`找到吸底元素${el.className}`);
             // 如果没有已知的吸底，或者当前元素在更上层，则更新
-            if (updatedBottom === null || PopupWindow.isFirstElementOnTop(el, updatedBottom)) {
+            if (updatedBottom === null || PopupWindowDetector.isFirstElementOnTop(el, updatedBottom)) {
                 updatedBottom = el;
             }
         }
@@ -276,8 +276,8 @@ export class PopupWindow {
     static findPopups(root:HTMLElement): PopupInfo | null {
         // Slow Pass:从所有的节点中查找
         // 获取潜在的Mask节点和吸顶吸底元素
-        const potentialElements = PopupWindow.getPotentialElements(root);
-        return PopupWindow.findPopupsInternal(potentialElements);
+        const potentialElements = PopupWindowDetector.getPotentialElements(root);
+        return PopupWindowDetector.findPopupsInternal(potentialElements);
     }
 
 /**
@@ -315,7 +315,7 @@ export class PopupWindow {
     
         // 2. 根据兄弟节点是位于蒙版节点之前还是之后，确定z-index的比较偏移量
         //    这解决了长兄/弟弟节点与蒙版z-index相等时的堆叠上下文问题。
-        const maskZIndexOffset = PopupWindow.isPreviousElementSibling(maskNode, sibling) ? 1 : 0;
+        const maskZIndexOffset = PopupWindowDetector.isPreviousElementSibling(maskNode, sibling) ? 1 : 0;
     
         // 3. 遍历所有候选节点，找出最优解
         for (const node of candidates) {
@@ -406,7 +406,7 @@ export class PopupWindow {
         }
         const nonNestedPopups = this.filterNestedPopups(allDetectedPopups);
         const finalPopups = this.filterByPrediction(nonNestedPopups);
-        const topMostPopup = PopupWindow.findTopMostPopup(finalPopups);
+        const topMostPopup = PopupWindowDetector.findTopMostPopup(finalPopups);
         
         if (!topMostPopup) {
             return null;
@@ -434,7 +434,7 @@ export class PopupWindow {
      * [辅助函数] 确定弹窗的结构（根、内容、类型）
      */
     private static determinePopupStructure(maskNode: Element): { rootNode: Element; contentNode: Element; popupType: PopupType } | null {
-        const [bestSiblingContent, root] = PopupWindow.findBestSiblingContent(maskNode);
+        const [bestSiblingContent, root] = PopupWindowDetector.findBestSiblingContent(maskNode);
 
         if (bestSiblingContent && root) {
             // **修正 #1**: 严格使用 `maskNode.parentNode` 进行可见性检查
@@ -459,7 +459,7 @@ export class PopupWindow {
      * [辅助函数] 尝试查找 A 或 C 型弹窗
      */
     private static findDescendantBasedPopup(maskNode: Element): { rootNode: Element; contentNode: Element; popupType: PopupType.A | PopupType.C } | null {
-        const bestDescendantContent = PopupWindow.findBestDescendantContent(maskNode);
+        const bestDescendantContent = PopupWindowDetector.findBestDescendantContent(maskNode);
         if (!bestDescendantContent || !Utils.visualFilter(maskNode)) {
             return null;
         }

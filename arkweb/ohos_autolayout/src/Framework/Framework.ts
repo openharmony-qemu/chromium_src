@@ -2,11 +2,10 @@
  * Module Framework.ts
  * 框架模块
  */
-import Cached from '../Common/Cached';
-import CSSSheetManage from '../Common/Style/Setter/CSSSheetManage';
-import StyleSetter from '../Common/Style/Setter/StyleSetter';
-import { Txt } from '../Common/Txt';
-import Utils from '../Common/Utils/Utils';
+import Cached from './Common/Cached';
+import CSSSheetManage from './Common/Style/Setter/CSSSheetManage';
+import StyleSetter from './Common/Style/Setter/StyleSetter';
+import Utils from './Common/Utils/Utils';
 import Log from '../Debug/Log';
 import Tag from '../Debug/Tag';
 import ObserverHandler from './Observer/ObserverHandler';
@@ -15,9 +14,10 @@ import WaitSystemReady from './Utils/WaitSystemReady';
 import IntelliLayout from './IntelligentLayout';
 import IntelligentLayout from './IntelligentLayout';
 import { LayoutConstraintMetrics } from '../Framework/Common/LayoutConstraintDetector';
-import { SpecificStyleCache } from '../Common/Style/Common/CacheStyleGetter';
+import { SpecificStyleCache } from './Common/Style/Common/CacheStyleGetter';
 import { CCMConfig } from './Common/CCMConfig';
 import { Main } from '../Main';
+import Constant from './Common/Constant';
 
 export default class Framework {
     static TAG = Tag.framework;
@@ -108,8 +108,8 @@ export default class Framework {
         // html节点变化需要重新初始化
         // 此处可能会多次调用注意初始化逻辑
         CSSSheetManage.reInit();
-        ObserverHandler.reInit();
         IntelligentLayout.reInit();
+        ObserverHandler.reInit();
     }
 
     static configReady(): void {
@@ -139,12 +139,12 @@ export default class Framework {
         for (let i = 0; i < head.children.length; i++) {
             const child = head.children[i] as HTMLElement;
             // 这里应该只判断rel=stylesheet的link
-            if (child.localName === Txt.link_) {
+            if (child.localName === Constant.link) {
                 const link = child as HTMLLinkElement;
-                const rel = link.getAttribute(Txt.rel_);
-                const href = link.getAttribute(Txt.href_);
+                const rel = link.getAttribute(Constant.rel);
+                const href = link.getAttribute(Constant.href);
                 Log.i(link, `rel: ${rel}, href: ${href}`, this.TAG);
-                if (rel !== Txt.stylesheet_ || href === '' || !href) {
+                if (rel !== Constant.stylesheet || href === '' || !href) {
                     continue;
                 }
 

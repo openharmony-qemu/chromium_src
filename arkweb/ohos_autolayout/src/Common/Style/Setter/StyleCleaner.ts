@@ -1,31 +1,25 @@
-import Log from '../../../Debug/Log';
-import Tag from '../../../Debug/Tag';
-import { Txt } from '../../Txt';
+import Log from '../../../../Debug/Log';
+import Tag from '../../../../Debug/Tag';
 import StyleCommon from '../Common/StyleCommon';
 import Store from '../../Utils/Store';
-import { FontTag, LayoutKey, LayoutValue } from '../../Constant';
+import { LayoutKey, LayoutValue } from '../../Constant';
 import Cached from '../../Cached';
 import StyleSetter from './StyleSetter';
 import Utils from '../../Utils/Utils';
-import { StyleRecord } from '../../Perform/ChangeRecord';
-import DiffEleRecorder from '../../Perform/DiffEleRecorder';
-import PersistStore from '../../Utils/PersistStore';
-import ObserverHandler from '../../../Framework/Observer/ObserverHandler';
+import ObserverHandler from '../../../Observer/ObserverHandler';
+import Constant from '../../Constant';
  
 export default class StyleCleaner {
     static removeAllStyle(ele: HTMLElement): void {
         Log.i(ele, 'removeAllStyle', Tag.styleCleaner);
  
-        const styleMap = new Map().set(Txt.delete_, Txt.true_);
+        const styleMap = new Map().set(Constant.delete, Constant.true);
         StyleCommon.styleCache.set(ele, styleMap);
-        StyleRecord.ignoreStyleChange(ele, true);
- 
-        DiffEleRecorder.setTagCache(ele);
     }
  
     static removeSingleStyle(ele: HTMLElement, attr: string): void {
         Log.i(ele, 'removeStyle: ' + attr, Tag.styleCleaner);
-        StyleSetter.setStyle(ele, attr, Txt.delete_);
+        StyleSetter.setStyle(ele, attr, Constant.delete);
     }
  
     // 重置Tag及子元素中的大图处理
@@ -51,7 +45,6 @@ export default class StyleCleaner {
  
         StyleCleaner.removeAllStyle(ele);
         Store.clearAllTag(ele, isDelete);
-        PersistStore.clearAllTag(ele, isDelete);
  
         // 遍历时会做删除操作，用for i循环index会出错，用for of也会，用forEach不会
         [...ele.children].forEach((child) => {
@@ -99,7 +92,6 @@ export default class StyleCleaner {
         }
  
         Log.i(ele, 'tag: ' + Store.getValue(ele, LayoutKey.LAYOUT_TAG), Tag.styleCleaner);
-        Log.i(ele, 'font tag: ' + Store.getValue(ele, FontTag.ZOOM_FONT), Tag.styleCleaner);
         if (Store.getValue(ele, LayoutKey.LAYOUT_TAG) === LayoutValue.NEXT_ROUND) {
             return true;
         }
@@ -124,8 +116,8 @@ export default class StyleCleaner {
     }
  
     static removeWidth(ele: HTMLElement): void {
-        StyleCleaner.removeSingleStyle(ele, Txt.width_);
-        StyleCleaner.removeSingleStyle(ele, Txt.maxWidth_);
-        StyleCleaner.removeSingleStyle(ele, Txt.flexBasis_);
+        StyleCleaner.removeSingleStyle(ele, Constant.width);
+        StyleCleaner.removeSingleStyle(ele, Constant.maxWidth);
+        StyleCleaner.removeSingleStyle(ele, Constant.flexBasis);
     }
 }

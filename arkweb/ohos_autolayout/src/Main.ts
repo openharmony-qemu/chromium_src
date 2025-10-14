@@ -2,7 +2,7 @@
  * Module Main.ts
  * 主入口模块
  */
-import Utils from './Common/Utils/Utils';
+import Utils from './Framework/Common/Utils/Utils';
 import Log from './Debug/Log';
 import { CCMConfig } from './Framework/Common/CCMConfig';
 import Framework from './Framework/Framework';

@@ -598,7 +598,7 @@ export class PopWindow extends AComponent {
         let offsetY = this._calculateOffsetY(element, rect, newScale, { hasBrother, brotherNodes, hasGrandChild, grandChildNodes });
     
         // 4. 提炼所有样式修复和调整的逻辑
-        this._applyStyleFixes(element, style, rect);
+        this._applyStyleFixes(element, style);
         
         // 5. 提炼最终应用变换的逻辑
         this._applyTransform(element, style, offsetY, newScale);
@@ -703,20 +703,7 @@ export class PopWindow extends AComponent {
     /**
      * 应用所有非 transform 的样式修复和调整
      */
-    private _applyStyleFixes(element: HTMLElement, style: CSSStyleDeclaration, rect: any): void {
-        const parentStyle = window.getComputedStyle(element.parentElement);
-    
-        // 修复 flex 布局挤压问题
-        if (style.display === 'flex') {
-            for (let child of element.children) {
-                this.saveOriginalStyles(child as HTMLElement);
-                StyleSetter.setStyle(child as HTMLElement, Constant.flex_shrink, '0');
-            }
-        }
-        if (parentStyle.display === 'flex') {
-            StyleSetter.setStyle(element, Constant.flex_shrink, '0');
-        }
-    
+    private _applyStyleFixes(element: HTMLElement, style: CSSStyleDeclaration): void {
         // 确保 transform 生效
         if (style.display === 'inline') {
             StyleSetter.setStyle(element, Constant.display, 'block');
@@ -831,7 +818,9 @@ export class PopWindow extends AComponent {
         flexContainers.forEach(container => {
             Array.from(container.children).forEach(child => {
                 this.saveOriginalStyles(child as HTMLElement);
-                StyleSetter.setStyle(child as HTMLElement, Constant.flex_shrink, '0');
+                if (getComputedStyle(container).flexDirection == 'column') {
+                    StyleSetter.setStyle(child as HTMLElement, Constant.flex_shrink, '0');
+                }
                 // 检查父容器的尺寸
                 if (container.clientWidth > 0 && container.clientHeight > 0) {
                     StyleSetter.setStyle(child as HTMLElement, Constant.max_width, '100%');

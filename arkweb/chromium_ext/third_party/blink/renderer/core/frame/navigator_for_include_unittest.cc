@@ -41,5 +41,21 @@ TEST_F(NavigatorForIncludeTest, AppPackageNameTest2)
   EXPECT_EQ(package_name, "com.example.app");
 }
 
+TEST_F(NavigatorForIncludeTest, AppPackageName_NullCommandLine) {
+  base::CommandLine* original_command_line =
+      base::CommandLine::ForCurrentProcess();
+  ASSERT_NE(nullptr, original_command_line);
+
+  base::CommandLine::Reset();
+  EXPECT_EQ(base::CommandLine::ForCurrentProcess(), nullptr);
+
+  ExecutionContext *content = nullptr;
+  Navigator navigator(content);
+  String result = navigator.appPackageName();
+  EXPECT_EQ(result, "");
+
+  base::CommandLine::Init(0, nullptr);
+  EXPECT_NE(base::CommandLine::ForCurrentProcess(), nullptr);
+}
 }  // namespace blink
 

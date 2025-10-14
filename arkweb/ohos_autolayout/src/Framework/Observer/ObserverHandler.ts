@@ -8,7 +8,6 @@ import Throttle from '../Utils/Throttle';
 import ModifyObserver from './Observers/ModifyObserver';
 import PageContentObserver from './Observers/PageContentObserver';
 import ResizeObserver from './Observers/ResizeObserver';
-import TransitionEndObserver from './Observers/TransitionEndObserver';
 
 export default class ObserverHandler {
     static relayoutHandler: Throttle;
@@ -25,7 +24,6 @@ export default class ObserverHandler {
         Log.info('ObserverHandler reInit', Tag.observerHandler);
         ModifyObserver.reInit();
         PageContentObserver.reInit();
-        TransitionEndObserver.reInit();
         ResizeObserver.init_();
         ObserverHandler.postTask();
     }
@@ -44,7 +42,6 @@ export default class ObserverHandler {
     private static removeObserver(): void {
         ModifyObserver.disconnect();
         PageContentObserver.disconnect();
-        TransitionEndObserver.removeListener();
     }
 
     static nextRoundAndPost(ele: HTMLElement): void {

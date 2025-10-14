@@ -24,7 +24,7 @@ interface BoundingRect {
  * 弹窗
  * 输入为一个popupInfo
  */
-export class PopWindow extends AComponent {
+export class PopupWindowRelayout extends AComponent {
     private scale: number = 1.0;
     private minTop: number = Infinity;
     private maxBottom: number = -Infinity;

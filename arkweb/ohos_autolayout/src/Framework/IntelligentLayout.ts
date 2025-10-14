@@ -1,6 +1,6 @@
 import { AComponent } from './Common/base/AComponent';
 import Utils from './Utils/Utils';
-import { PopWindow } from './Popup/PopWindow';
+import { PopupWindowRelayout } from './Popup/PopupWindowRelayout';
 import { PopupWindowDetector } from './Popup/PopupWindowDetector';
 import { PopupInfo } from './Popup/PopupInfo';
 import Log from '../Debug/Log';
@@ -89,7 +89,7 @@ export default class IntelligentLayout {
 
     public static recoverPopwinStyle(): void {
         if (this.popWindowMap.size > 0) {
-            const component:PopWindow = this.popWindowMap.values().next().value;
+            const component:PopupWindowRelayout = this.popWindowMap.values().next().value;
             component.restoreStyles();
         }
         this.popWindowMap.clear();
@@ -106,7 +106,7 @@ export default class IntelligentLayout {
 
     static calculateForPopWin(popupInfo: PopupInfo): void {
         Log.d(`calculate for popWindow ${popupInfo?.root_node?.className}`, IntelligentLayout.TAG);
-        const component:AComponent = this.popWindowMap.has(popupInfo) ? this.popWindowMap.get(popupInfo) : new PopWindow(popupInfo);
+        const component:AComponent = this.popWindowMap.has(popupInfo) ? this.popWindowMap.get(popupInfo) : new PopupWindowRelayout(popupInfo);
         if (component && component.isDirty()) {
             component.intelligenceLayout();
             // 清除标记

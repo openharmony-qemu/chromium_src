@@ -653,7 +653,7 @@ void PdfViewWebPlugin::UpdateGeometry(const gfx::Rect& window_rect,
   OnViewportChanged(window_rect, client_->DeviceScaleFactor());
 
 #if BUILDFLAG(ARKWEB_PDF)
-  if (!isPinching_) {
+  if (!is_pinching_) {
     gfx::PointF scroll_position = client_->GetScrollPosition();
     // Convert back to CSS pixels.
     scroll_position.Scale(1.0f / device_scale_);
@@ -1872,9 +1872,9 @@ void PdfViewWebPlugin::HandleViewportMessage(const base::Value::Dict& message) {
 
 #if BUILDFLAG(ARKWEB_PDF)
   if (pinch_phase == PinchPhase::kNone || pinch_phase == PinchPhase::kEnd) {
-    isPinching_ = false;
+    is_pinching_ = false;
   } else {
-    isPinching_ = true;
+    is_pinching_ = true;
   }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

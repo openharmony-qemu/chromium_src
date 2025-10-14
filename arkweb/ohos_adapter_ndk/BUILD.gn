@@ -468,6 +468,8 @@ component("adapter_ndk") {
 
     sources += [
       "ndk_ohos_adapter_helper.cpp",
+      "event_handler_adapter/event_handler_adapter_impl.cpp",
+      "event_handler_adapter/event_handler_adapter_impl.h",
       "audio_capturer_adapter/audio_device_desc_adapter_impl.h",
       "audio_capturer_adapter/audio_device_desc_adapter_impl.cpp",
       "audio_capturer_adapter/audio_system_manager_adapter_impl.h",

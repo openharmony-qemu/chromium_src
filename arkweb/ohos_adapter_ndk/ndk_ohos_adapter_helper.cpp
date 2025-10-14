@@ -195,7 +195,7 @@ NDKOhosAdapterHelper::GetRootCertDataAdapter() {
 
 std::unique_ptr<NWeb::CertManagerAdapter>
 NDKOhosAdapterHelper::GetCertManagerAdapter() {
-    return nullptr;
+  return std::make_unique<CertManagerAdapterImpl>();
 }
 
 NWeb::AccessTokenAdapter&
@@ -205,7 +205,7 @@ NDKOhosAdapterHelper::GetAccessTokenAdapterInstance() {
 
 std::unique_ptr<NWeb::EventHandlerAdapter>
 NDKOhosAdapterHelper::GetEventHandlerAdapter() {
-  return nullptr;
+  return std::make_unique<EventHandlerAdapterImpl>();
 }
 
 NWeb::PrintManagerAdapter&

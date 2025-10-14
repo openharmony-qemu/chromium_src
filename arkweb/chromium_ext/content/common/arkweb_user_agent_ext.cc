@@ -11,10 +11,10 @@ namespace content {
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
 #if BUILDFLAG(ARKWEB_TEST)
-bool is_compatible_type_setted = false;
+std::atomic<bool> is_compatible_type_setted{false};
 static std::string compatible_device_type;
 void SetArkwebUserAgentExtStateForTest(bool is_setted) {
-  is_compatible_type_setted = is_setted;
+  is_compatible_type_setted.store(is_setted, std::memory_order_relaxed);
 }
 
 void ResetArkwebUserAgentExtStateForTest() {

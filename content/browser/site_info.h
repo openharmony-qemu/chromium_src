@@ -363,7 +363,11 @@ class CONTENT_EXPORT SiteInfo {
   // Write a representation of this object into a trace.
   void WriteIntoTrace(perfetto::TracedValue context) const;
 
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif
   // Helper that returns a tuple of all the fields that are relevant for
   // comparing one SiteInfo to another, to tell whether they represent the same
   // underlying security principal.   This determines the SiteInfo's key for

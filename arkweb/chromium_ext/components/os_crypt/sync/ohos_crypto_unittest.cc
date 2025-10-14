@@ -119,7 +119,7 @@ TEST_F(KeyCacheTest, hex_repr_multichar) {
 TEST_F(KeyCacheTest, generate_key) {
   std::string key_name = "name";
   auto result = _generate_key(key_name);
-  EXPECT_TRUE(result.empty());
+  EXPECT_FALSE(result.empty());
 }
 
 TEST_F(KeyCacheTest, get_random) {
@@ -130,13 +130,13 @@ TEST_F(KeyCacheTest, get_random) {
 TEST_F(KeyCacheTest, generate_key_for_ota) {
   std::string key_name = "name";
   auto result = _generate_key_for_ota(key_name);
-  EXPECT_TRUE(result.empty());
+  EXPECT_FALSE(result.empty());
 }
 
 TEST_F(KeyCacheTest, get_symmetric_key_256) {
   std::string key_name = "name";
   auto result = get_symmetric_key_256(key_name);
-  EXPECT_TRUE(result.empty());
+  EXPECT_FALSE(result.empty());
 }
 
 TEST_F(KeyCacheTest, get_symmetric_key_256_FromCache) {
@@ -145,6 +145,13 @@ TEST_F(KeyCacheTest, get_symmetric_key_256_FromCache) {
   inst.Get().add_key(key_name, key_value);
   auto result = get_symmetric_key_256(key_name);
   EXPECT_EQ(result, key_value);
+}
+
+TEST_F(KeyCacheTest, get_symmetric_key_256_noAdd) {
+std::string key_name = "test_new_key";
+std::string key_value = _generate_key(key_name);
+auto result = get_symmetric_key_256(key_name);
+EXPECT_EQ(result, key_value);
 }
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)

@@ -252,7 +252,11 @@ crypto::SymmetricKey* OSCryptImpl::GetPasswordForOtaFail() {
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 crypto::SymmetricKey* OSCryptImpl::GetPasswordV10ForMigrate() {
   base::AutoLock auto_lock(OSCryptImpl::GetLock());
+#if BUILDFLAG(ARKWEB_TEST)
+  int count = 1;
+#else
   int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCount);
+#endif
   if (!is_password_migrate_cached_ || migration_count_ < count) {
     migration_count_ = count;
     password_migrate_cache_ = GenerateEncryptionKeyForMigrate();

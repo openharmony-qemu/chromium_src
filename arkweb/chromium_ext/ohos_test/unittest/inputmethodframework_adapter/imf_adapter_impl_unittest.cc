@@ -274,82 +274,6 @@ TEST_F(IMFTextEditorProxyImplTest, GetWindowId) {
   EXPECT_EQ(result, IME_ERR_NULL_POINTER);
 }
 
-TEST_F(IMFTextEditorProxyImplTest, GetPreviewTextSupported) {
-  InputMethod_TextConfig* dest = nullptr;
-  InputMethod_TextConfig* src = nullptr;
-  InputMethod_ErrorCode result = GetPreviewTextSupported(dest, src);
-  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
-  src = OH_TextConfig_Create();
-  ASSERT_NE(nullptr, src);
-  result = GetPreviewTextSupported(dest, src);
-  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
-  dest = OH_TextConfig_Create();
-  ASSERT_NE(nullptr, dest);
-  result = GetPreviewTextSupported(dest, src);
-  EXPECT_EQ(result, IME_ERR_OK);
-  result = GetPreviewTextSupported(dest, nullptr);
-  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
-}
-
-TEST_F(IMFTextEditorProxyImplTest, GetTextConfigFunc) {
-  InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
-  InputMethod_TextConfig* config = OH_TextConfig_Create();
-  IMFTextEditorProxyImpl::textConfig_ = nullptr;
-  IMFTextEditorProxyImpl::GetTextConfigFunc(proxy, config);
-  EXPECT_EQ(IMFTextEditorProxyImpl::textConfig_, nullptr);
-  IMFTextEditorProxyImpl::textConfig_ = OH_TextConfig_Create();
-  IMFTextEditorProxyImpl::GetTextConfigFunc(proxy, config);
-  EXPECT_NE(IMFTextEditorProxyImpl::textConfig_, nullptr);
-}
-
-TEST_F(IMFTextEditorProxyImplTest, InsertTextFunc) {
-  InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
-  ASSERT_NE(nullptr, proxy);
-  char16_t* text = new char16_t[14];
-  std::memcpy(text, "Hello, World!", 14 * sizeof(char16_t));
-  size_t length = 1;
-  IMFTextEditorProxyImpl::textListener_.reset();
-  IMFTextEditorProxyImpl::InsertTextFunc(proxy, text, length);
-  EXPECT_EQ(IMFTextEditorProxyImpl::textListener_, nullptr);
-  std::shared_ptr<MockIMFTextListenerAdapter> listener =
-      std::make_shared<MockIMFTextListenerAdapter>();
-  IMFTextEditorProxyImpl::textListener_ =
-      std::make_shared<IMFTextListenerAdapterImpl>(listener);
-  IMFTextEditorProxyImpl::InsertTextFunc(proxy, text, length);
-  EXPECT_NE(IMFTextEditorProxyImpl::textListener_, nullptr);
-  delete[] text;
-}
-
-TEST_F(IMFTextEditorProxyImplTest, DeleteForwardFunc) {
-  InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
-  ASSERT_NE(nullptr, proxy);
-  int32_t length = 1;
-  IMFTextEditorProxyImpl::textListener_.reset();
-  IMFTextEditorProxyImpl::DeleteForwardFunc(proxy, length);
-  EXPECT_EQ(IMFTextEditorProxyImpl::textListener_, nullptr);
-  std::shared_ptr<MockIMFTextListenerAdapter> listener =
-      std::make_shared<MockIMFTextListenerAdapter>();
-  IMFTextEditorProxyImpl::textListener_ =
-      std::make_shared<IMFTextListenerAdapterImpl>(listener);
-  IMFTextEditorProxyImpl::DeleteForwardFunc(proxy, length);
-  EXPECT_NE(IMFTextEditorProxyImpl::textListener_, nullptr);
-}
-
-TEST_F(IMFTextEditorProxyImplTest, DeleteBackwardFunc) {
-  InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
-  ASSERT_NE(nullptr, proxy);
-  int32_t length = 1;
-  IMFTextEditorProxyImpl::textListener_.reset();
-  IMFTextEditorProxyImpl::DeleteBackwardFunc(proxy, length);
-  EXPECT_EQ(IMFTextEditorProxyImpl::textListener_, nullptr);
-  std::shared_ptr<MockIMFTextListenerAdapter> listener =
-      std::make_shared<MockIMFTextListenerAdapter>();
-  IMFTextEditorProxyImpl::textListener_ =
-      std::make_shared<IMFTextListenerAdapterImpl>(listener);
-  IMFTextEditorProxyImpl::DeleteBackwardFunc(proxy, length);
-  EXPECT_NE(IMFTextEditorProxyImpl::textListener_, nullptr);
-}
-
 TEST_F(IMFTextEditorProxyImplTest, SendKeyboardStatusFunc) {
   InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
   ASSERT_NE(nullptr, proxy);
@@ -445,6 +369,82 @@ TEST_F(IMFTextEditorProxyImplTest, SendEnterKeyFunc_005) {
   IMFTextEditorProxyImpl::SendEnterKeyFunc(
       proxy, InputMethod_EnterKeyType::IME_ENTER_KEY_NEWLINE);
   IMFTextEditorProxyImpl::textListener_.reset();
+}
+
+TEST_F(IMFTextEditorProxyImplTest, GetPreviewTextSupported) {
+  InputMethod_TextConfig* dest = nullptr;
+  InputMethod_TextConfig* src = nullptr;
+  InputMethod_ErrorCode result = GetPreviewTextSupported(dest, src);
+  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
+  src = OH_TextConfig_Create();
+  ASSERT_NE(nullptr, src);
+  result = GetPreviewTextSupported(dest, src);
+  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
+  dest = OH_TextConfig_Create();
+  ASSERT_NE(nullptr, dest);
+  result = GetPreviewTextSupported(dest, src);
+  EXPECT_EQ(result, IME_ERR_OK);
+  result = GetPreviewTextSupported(dest, nullptr);
+  EXPECT_EQ(result, IME_ERR_NULL_POINTER);
+}
+
+TEST_F(IMFTextEditorProxyImplTest, GetTextConfigFunc) {
+  InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
+  InputMethod_TextConfig* config = OH_TextConfig_Create();
+  IMFTextEditorProxyImpl::textConfig_ = nullptr;
+  IMFTextEditorProxyImpl::GetTextConfigFunc(proxy, config);
+  EXPECT_EQ(IMFTextEditorProxyImpl::textConfig_, nullptr);
+  IMFTextEditorProxyImpl::textConfig_ = OH_TextConfig_Create();
+  IMFTextEditorProxyImpl::GetTextConfigFunc(proxy, config);
+  EXPECT_NE(IMFTextEditorProxyImpl::textConfig_, nullptr);
+}
+
+TEST_F(IMFTextEditorProxyImplTest, InsertTextFunc) {
+  InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
+  ASSERT_NE(nullptr, proxy);
+  char16_t* text = new char16_t[14];
+  std::memcpy(text, "Hello, World!", 14 * sizeof(char16_t));
+  size_t length = 1;
+  IMFTextEditorProxyImpl::textListener_.reset();
+  IMFTextEditorProxyImpl::InsertTextFunc(proxy, text, length);
+  EXPECT_EQ(IMFTextEditorProxyImpl::textListener_, nullptr);
+  std::shared_ptr<MockIMFTextListenerAdapter> listener =
+      std::make_shared<MockIMFTextListenerAdapter>();
+  IMFTextEditorProxyImpl::textListener_ =
+      std::make_shared<IMFTextListenerAdapterImpl>(listener);
+  IMFTextEditorProxyImpl::InsertTextFunc(proxy, text, length);
+  EXPECT_NE(IMFTextEditorProxyImpl::textListener_, nullptr);
+  delete[] text;
+}
+
+TEST_F(IMFTextEditorProxyImplTest, DeleteForwardFunc) {
+  InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
+  ASSERT_NE(nullptr, proxy);
+  int32_t length = 1;
+  IMFTextEditorProxyImpl::textListener_.reset();
+  IMFTextEditorProxyImpl::DeleteForwardFunc(proxy, length);
+  EXPECT_EQ(IMFTextEditorProxyImpl::textListener_, nullptr);
+  std::shared_ptr<MockIMFTextListenerAdapter> listener =
+      std::make_shared<MockIMFTextListenerAdapter>();
+  IMFTextEditorProxyImpl::textListener_ =
+      std::make_shared<IMFTextListenerAdapterImpl>(listener);
+  IMFTextEditorProxyImpl::DeleteForwardFunc(proxy, length);
+  EXPECT_NE(IMFTextEditorProxyImpl::textListener_, nullptr);
+}
+
+TEST_F(IMFTextEditorProxyImplTest, DeleteBackwardFunc) {
+  InputMethod_TextEditorProxy* proxy = OH_TextEditorProxy_Create();
+  ASSERT_NE(nullptr, proxy);
+  int32_t length = 1;
+  IMFTextEditorProxyImpl::textListener_.reset();
+  IMFTextEditorProxyImpl::DeleteBackwardFunc(proxy, length);
+  EXPECT_EQ(IMFTextEditorProxyImpl::textListener_, nullptr);
+  std::shared_ptr<MockIMFTextListenerAdapter> listener =
+      std::make_shared<MockIMFTextListenerAdapter>();
+  IMFTextEditorProxyImpl::textListener_ =
+      std::make_shared<IMFTextListenerAdapterImpl>(listener);
+  IMFTextEditorProxyImpl::DeleteBackwardFunc(proxy, length);
+  EXPECT_NE(IMFTextEditorProxyImpl::textListener_, nullptr);
 }
 
 TEST_F(IMFTextEditorProxyImplTest, MoveCursorFunc_001) {

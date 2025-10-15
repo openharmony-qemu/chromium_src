@@ -860,6 +860,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool SetFocusByPosition(float x, float y) override;
+  std::pair<double, double> GetLastTouchMousePosition() override {
+    return last_touch_mouse_position_;
+  }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_PIP)
   void SetPipNativeWindow(int delegate_id,
@@ -1076,6 +1079,7 @@ void AbortDistill() override;
   bool is_enhance_surface_ = false;
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool is_onPause_ = false;
+  std::pair<double, double> last_touch_mouse_position_;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   bool accessibility_state_ = false;

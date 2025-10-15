@@ -26,6 +26,7 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/battery_mgr_client_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/camera_manager_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/cert_mgr_adapter.h"
+#include "color_picker_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/datashare_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/date_time_format_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/display_manager_adapter.h"
@@ -87,6 +88,8 @@ public:
     virtual OhosWebDataBaseAdapter& GetOhosWebDataBaseAdapterInstance() = 0;
 
     virtual PasteBoardClientAdapter& GetPasteBoard() = 0;
+
+    virtual ColorPickerAdapter& GetColorPickerAdapter() = 0;
 
     virtual std::unique_ptr<AudioRendererAdapter> CreateAudioRendererAdapter() = 0;
 

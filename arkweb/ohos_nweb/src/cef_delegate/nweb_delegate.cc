@@ -1202,6 +1202,7 @@ void NWebDelegate::OnTouchPress(int32_t id,
                                 double x,
                                 double y,
                                 bool from_overlay) {
+  last_touch_mouse_position_ = std::make_pair(x, y);
   if (event_handler_ != nullptr) {
     if (pressing_num_ < 0) {
       pressing_num_ = 0;
@@ -3617,6 +3618,7 @@ bool NWebDelegate::ScrollByWithResult(float delta_x, float delta_y) {
 
 void NWebDelegate::WebSendMouseEvent(
     const std::shared_ptr<OHOS::NWeb::NWebMouseEvent>& mouseEvent) {
+  last_touch_mouse_position_ = std::make_pair(mouseEvent->GetX(), mouseEvent->GetY());
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   if (event_handler_ != nullptr &&
       (!handler_delegate_ || !handler_delegate_->IsDragEnter())) {

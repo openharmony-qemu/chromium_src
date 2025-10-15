@@ -168,9 +168,7 @@
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "cef/libcef/browser/frame_host_impl.h"
-#include "content/browser/renderer_host/frame_tree.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
-#include "content/public/browser/render_frame_host.h"
 #endif
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 #include "arkweb/chromium_ext/base/ohos/logger.h"
@@ -477,21 +475,7 @@ bool IsPrerendering(const CefRefPtr<CefFrame> frame) {
     return false;
   }
 
-  if (!frame.get()) {
-    return false;
-  }
-
-  if (!static_cast<CefFrameHostImpl*>(frame.get())->GetRenderFrameHost()) {
-    return false;
-  }
-
-  if (!static_cast<content::RenderFrameHostImpl*>(static_cast<CefFrameHostImpl*>(
-        frame.get())->GetRenderFrameHost())->frame_tree()) {
-    return false;
-  }
-
-  return static_cast<content::RenderFrameHostImpl*>(static_cast<CefFrameHostImpl*>(
-    frame.get())->GetRenderFrameHost())->frame_tree()->is_prerendering();
+  return static_cast<CefFrameHostImpl*>(frame.get())->IsPrerendering();
 }
 
 }  // namespace
